@@ -1,0 +1,42 @@
+#!/usr/bin/make -f
+#
+# See http://www.simonschneegans.de/?p=346
+# for details about this file
+
+BUILDDIR = build_dir
+INSTALLDIR = debian/tmp
+
+# secondly called by launchpad
+build:
+	cp ChangeLog debian/changelog
+	gzip -c9 ChangeLog >debian/changelog.Debian.gz
+	cp LICENSE.txt debian/copyright
+	mkdir $(BUILDDIR);
+	cd $(BUILDDIR); cmake -DCMAKE_INSTALL_PREFIX=../$(INSTALLDIR)/usr ..
+	make -C $(BUILDDIR)
+
+# thirdly called by launchpad
+binary: binary-indep binary-arch
+
+binary-indep:
+	# nothing to be done
+
+binary-arch:
+	mkdir -p $(INSTALLDIR)/DEBIAN
+	cd $(BUILDDIR); cmake -D COMPONENT=runtime -P cmake_install.cmake
+	dpkg-gencontrol -plibtld
+	dpkg --build $(INSTALLDIR) ..
+	rm -rf $(INSTALLDIR)/usr
+	cd $(BUILDDIR); cmake -D COMPONENT=dev -P cmake_install.cmake
+	dpkg-gencontrol -plibtld-dev
+	dpkg --build $(INSTALLDIR) ..
+	rm -rf $(INSTALLDIR)/usr
+	cd $(BUILDDIR); cmake -D COMPONENT=doc -P cmake_install.cmake
+	dpkg-gencontrol -plibtld-doc
+	dpkg --build $(INSTALLDIR) ..
+
+# firstly called by launchpad
+clean:
+	rm -rf $(BUILDDIR) $(INSTALLDIR) debian/changelog.Debian.gz debian/copyright debian/files
+
+.PHONY: build binary binary-arch binary-indep clean

@@ -1,0 +1,143 @@
+/* TLD library -- TLD, domain name, and sub-domain extraction
+ * Copyright (C) 2011-2013  Made to Order Software Corp.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+ */
+#ifndef LIB_TLD_H
+#define LIB_TLD_H
+/** \file
+ * \brief The public header of the libtld library.
+ *
+ * This file declares all the functions, objects, structures, etc. publicly
+ * available from the libtld library.
+ */
+
+#if ( defined(LIBTLD_DLL) || defined(_WINDLL) ) && ( defined(_WINDOWS) || defined(WINDOWS) )
+#ifdef tld_EXPORT
+#define LIBTLD_EXPORT __declspec(dllexport)
+#else
+#define LIBTLD_EXPORT __declspec(dllimport)
+#endif
+#else
+#define LIBTLD_EXPORT
+#endif
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#define LIBTLD_VERSION_MAJOR    @LIBTLD_VERSION_MAJOR@
+#define LIBTLD_VERSION_MINOR    @LIBTLD_VERSION_MINOR@
+#define LIBTLD_VERSION_PATCH    @LIBTLD_VERSION_PATCH@
+#define LIBTLD_VERSION          "@LIBTLD_VERSION_MAJOR@.@LIBTLD_VERSION_MINOR@.@LIBTLD_VERSION_PATCH@"
+
+enum tld_category
+{
+    TLD_CATEGORY_INTERNATIONAL,
+    TLD_CATEGORY_PROFESSIONALS,
+    TLD_CATEGORY_LANGUAGE,
+    TLD_CATEGORY_GROUPS,
+    TLD_CATEGORY_REGION,
+    TLD_CATEGORY_TECHNICAL,
+    TLD_CATEGORY_COUNTRY,
+    TLD_CATEGORY_ENTREPRENEURIAL,
+    TLD_CATEGORY_UNDEFINED
+};
+
+enum tld_status
+{
+    TLD_STATUS_VALID,
+    TLD_STATUS_PROPOSED,
+    TLD_STATUS_DEPRECATED,
+    TLD_STATUS_UNUSED,
+    TLD_STATUS_RESERVED,
+    TLD_STATUS_INFRASTRUCTURE,
+    TLD_STATUS_UNDEFINED,
+
+    /* The following status is never returned. It is used internally to handle
+     * exceptions (i.e. usually 2nd level domain names that should not be.)
+     */
+    TLD_STATUS_EXCEPTION = 100
+};
+
+enum tld_result
+{
+    TLD_RESULT_SUCCESS,
+    TLD_RESULT_INVALID,   /* TLD not acceptable (reserved, deprecated, etc.) */
+    TLD_RESULT_NULL,      /* URI is a NULL pointer */
+    TLD_RESULT_NO_TLD,    /* no '.' in the URI */
+    TLD_RESULT_BAD_URI,   /* URI includes two '.' one after another or some other problem */
+    TLD_RESULT_NOT_FOUND
+};
+
+struct tld_info
+{
+    enum tld_category   f_category;
+    enum tld_status     f_status;
+    const char *        f_country;
+    const char *        f_tld; /* pointer within your URI string */
+    int                 f_offset;
+};
+
+#define VALID_URI_ASCII_ONLY  0x0001
+#define VALID_URI_NO_SPACES   0x0002
+
+
+extern LIBTLD_EXPORT void tld_clear_info(struct tld_info *info);
+extern LIBTLD_EXPORT enum tld_result tld(const char *uri, struct tld_info *info);
+extern LIBTLD_EXPORT enum tld_result tld_check_uri(const char *uri, struct tld_info *info, const char *protocols, int flags);
+
+extern LIBTLD_EXPORT const char *tld_version();
+
+#ifdef __cplusplus
+}
+#endif
+
+#ifdef __cplusplus
+/* For C++ users */
+#include <string>
+#include <stdexcept>
+struct invalid_domain : public std::runtime_error
+{
+    invalid_domain(const char *what_str = "this tld object is not currently valid") : runtime_error(what_str) {}
+};
+class LIBTLD_EXPORT tld_object
+{
+public:
+    tld_object(const char *domain_name = NULL);
+    tld_object(const std::string& domain_name);
+    void set_domain(const char *domain_name);
+    void set_domain(const std::string& domain_name);
+    tld_result result() const;
+    tld_status status() const;
+    bool is_valid() const;
+    std::string domain() const;
+    std::string sub_domains() const;
+    std::string full_domain() const;
+    std::string domain_only() const;
+    std::string tld_only() const;
+    tld_category category() const;
+    std::string country() const;
+private:
+    std::string f_domain;
+    tld_info f_info;
+    tld_result f_result;
+};
+#endif
+
+#endif
+/*#ifndef LIB_TLD_H*/
+/* vim: ts=4 sw=4 et
+ */

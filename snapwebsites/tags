@@ -1,0 +1,1589 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.9~svn20110310	//
+DOMAIN_VARIABLE_TYPE_FLAG_NO_DEFAULT	lib/snap_uri.cpp	/^const domain_variable::domain_variable_type_t domain_variable::DOMAIN_VARIABLE_TYPE_FLAG_NO_DEFAULT;$/;"	m	class:snap::domain_variable	file:
+DOMAIN_VARIABLE_TYPE_FLAG_NO_DEFAULT	lib/snap_uri.h	/^	static const domain_variable_type_t DOMAIN_VARIABLE_TYPE_FLAG_NO_DEFAULT = 3;$/;"	m	class:snap::domain_variable
+DOMAIN_VARIABLE_TYPE_FLAG_NO_DEFAULT	tests/test_snap_parser.cpp	/^		DOMAIN_VARIABLE_TYPE_FLAG_NO_DEFAULT$/;"	e	enum:domain_variable::domain_variable_type_t	file:
+DOMAIN_VARIABLE_TYPE_FLAG_WITH_DEFAULT	lib/snap_uri.cpp	/^const domain_variable::domain_variable_type_t domain_variable::DOMAIN_VARIABLE_TYPE_FLAG_WITH_DEFAULT;$/;"	m	class:snap::domain_variable	file:
+DOMAIN_VARIABLE_TYPE_FLAG_WITH_DEFAULT	lib/snap_uri.h	/^	static const domain_variable_type_t DOMAIN_VARIABLE_TYPE_FLAG_WITH_DEFAULT = 2;$/;"	m	class:snap::domain_variable
+DOMAIN_VARIABLE_TYPE_FLAG_WITH_DEFAULT	tests/test_snap_parser.cpp	/^		DOMAIN_VARIABLE_TYPE_FLAG_WITH_DEFAULT,$/;"	e	enum:domain_variable::domain_variable_type_t	file:
+DOMAIN_VARIABLE_TYPE_STANDARD	lib/snap_uri.cpp	/^const domain_variable::domain_variable_type_t domain_variable::DOMAIN_VARIABLE_TYPE_STANDARD;$/;"	m	class:snap::domain_variable	file:
+DOMAIN_VARIABLE_TYPE_STANDARD	lib/snap_uri.h	/^	static const domain_variable_type_t DOMAIN_VARIABLE_TYPE_STANDARD = 0;$/;"	m	class:snap::domain_variable
+DOMAIN_VARIABLE_TYPE_STANDARD	tests/test_snap_parser.cpp	/^		DOMAIN_VARIABLE_TYPE_STANDARD = 0,$/;"	e	enum:domain_variable::domain_variable_type_t	file:
+DOMAIN_VARIABLE_TYPE_WEBSITE	lib/snap_uri.cpp	/^const domain_variable::domain_variable_type_t domain_variable::DOMAIN_VARIABLE_TYPE_WEBSITE;$/;"	m	class:snap::domain_variable	file:
+DOMAIN_VARIABLE_TYPE_WEBSITE	lib/snap_uri.h	/^	static const domain_variable_type_t DOMAIN_VARIABLE_TYPE_WEBSITE = 1;$/;"	m	class:snap::domain_variable
+DOMAIN_VARIABLE_TYPE_WEBSITE	tests/test_snap_parser.cpp	/^		DOMAIN_VARIABLE_TYPE_WEBSITE,$/;"	e	enum:domain_variable::domain_variable_type_t	file:
+FIELD_NAME_DISALLOW	plugins/robotstxt/robotstxt.cpp	/^const char *		robotstxt::FIELD_NAME_DISALLOW = "Disallow";$/;"	m	class:robotstxt	file:
+FIELD_NAME_DISALLOW	plugins/robotstxt/robotstxt.h	/^	static const char *FIELD_NAME_DISALLOW;$/;"	m	class:snap::robotstxt::robotstxt
+FREQUENCY_NEVER	plugins/sitemapxml/sitemapxml.h	/^		static const int FREQUENCY_NEVER = -1;$/;"	m	class:snap::sitemapxml::sitemapxml::url_info
+FREQUENCY_NONE	plugins/sitemapxml/sitemapxml.h	/^		static const int FREQUENCY_NONE = 0;$/;"	m	class:snap::sitemapxml::sitemapxml::url_info
+HTML_SERIALIZER_STATUS_ELEMENT_OPEN	lib/qhtmlserializer.h	/^        HTML_SERIALIZER_STATUS_ELEMENT_OPEN$/;"	e	enum:QHtmlSerializer::html_serializer_status_t
+HTML_SERIALIZER_STATUS_READY	lib/qhtmlserializer.h	/^        HTML_SERIALIZER_STATUS_READY,$/;"	e	enum:QHtmlSerializer::html_serializer_status_t
+HTTP_COOKIE_TYPE_DELETE	lib/http_cookie.h	/^		HTTP_COOKIE_TYPE_DELETE$/;"	e	enum:snap::http_cookie::http_cookie_type_t
+HTTP_COOKIE_TYPE_PERMANENT	lib/http_cookie.h	/^		HTTP_COOKIE_TYPE_PERMANENT,$/;"	e	enum:snap::http_cookie::http_cookie_type_t
+HTTP_COOKIE_TYPE_SESSION	lib/http_cookie.h	/^		HTTP_COOKIE_TYPE_SESSION,$/;"	e	enum:snap::http_cookie::http_cookie_type_t
+LEXER_ERROR_INVALID_C_COMMENT	lib/snap_parser.h	/^		LEXER_ERROR_INVALID_C_COMMENT,$/;"	e	enum:snap::parser::lexer::lexer_error_t
+LEXER_ERROR_INVALID_NUMBER	lib/snap_parser.h	/^		LEXER_ERROR_INVALID_NUMBER,$/;"	e	enum:snap::parser::lexer::lexer_error_t
+LEXER_ERROR_INVALID_STRING	lib/snap_parser.h	/^		LEXER_ERROR_INVALID_STRING,$/;"	e	enum:snap::parser::lexer::lexer_error_t
+LEXER_ERROR_NONE	lib/snap_parser.h	/^		LEXER_ERROR_NONE,$/;"	e	enum:snap::parser::lexer::lexer_error_t
+LEXER_ERROR_max	lib/snap_parser.h	/^		LEXER_ERROR_max$/;"	e	enum:snap::parser::lexer::lexer_error_t
+LOG_LEVEL_DEBUG	lib/log.h	/^	LOG_LEVEL_DEBUG,$/;"	e	enum:snap::logging::log_level_t
+LOG_LEVEL_ERROR	lib/log.h	/^	LOG_LEVEL_ERROR,$/;"	e	enum:snap::logging::log_level_t
+LOG_LEVEL_FATAL	lib/log.h	/^	LOG_LEVEL_FATAL,$/;"	e	enum:snap::logging::log_level_t
+LOG_LEVEL_INFO	lib/log.h	/^	LOG_LEVEL_INFO,$/;"	e	enum:snap::logging::log_level_t
+LOG_LEVEL_OFF	lib/log.h	/^	LOG_LEVEL_OFF,$/;"	e	enum:snap::logging::log_level_t
+LOG_LEVEL_TRACE	lib/log.h	/^	LOG_LEVEL_TRACE$/;"	e	enum:snap::logging::log_level_t
+LOG_LEVEL_WARNING	lib/log.h	/^	LOG_LEVEL_WARNING,$/;"	e	enum:snap::logging::log_level_t
+LOG_SECURITY_NONE	lib/log.h	/^	LOG_SECURITY_NONE,$/;"	e	enum:snap::logging::log_security_t
+LOG_SECURITY_SECURE	lib/log.h	/^	LOG_SECURITY_SECURE$/;"	e	enum:snap::logging::log_security_t
+MAX_CONNECTIONS	lib/tcp_client_server.h	/^    static const int    MAX_CONNECTIONS = 50;$/;"	m	class:tcp_client_server::tcp_server
+MESSAGE_TYPE_DEBUG	plugins/messages/messages.h	/^			MESSAGE_TYPE_DEBUG$/;"	e	enum:snap::messages::messages::message::message_type_enum_t
+MESSAGE_TYPE_ERROR	plugins/messages/messages.h	/^			MESSAGE_TYPE_ERROR,$/;"	e	enum:snap::messages::messages::message::message_type_enum_t
+MESSAGE_TYPE_INFO	plugins/messages/messages.h	/^			MESSAGE_TYPE_INFO,$/;"	e	enum:snap::messages::messages::message::message_type_enum_t
+MESSAGE_TYPE_WARNING	plugins/messages/messages.h	/^			MESSAGE_TYPE_WARNING,$/;"	e	enum:snap::messages::messages::message::message_type_enum_t
+MyDomNode	lib/qdomnodemodel.cpp	/^	MyDomNode(QDomNodePrivate *otherImpl):$/;"	f	class:MyDomNode
+MyDomNode	lib/qdomnodemodel.cpp	/^	MyDomNode(const QDomNode& other):$/;"	f	class:MyDomNode
+MyDomNode	lib/qdomnodemodel.cpp	/^class MyDomNode: public QDomNode$/;"	c	file:
+NOTREACHED	lib/not_reached.h	/^__attribute__ ((noreturn)) inline void NOTREACHED()$/;"	f	namespace:snap
+Path	lib/qdomnodemodel.h	/^    typedef QVector<QDomNode> Path;$/;"	t	class:QDomNodeModel
+QDomNodeModel	lib/qdomnodemodel.cpp	/^QDomNodeModel::QDomNodeModel(QXmlNamePool pool, QDomDocument doc):$/;"	f	class:QDomNodeModel
+QDomNodeModel	lib/qdomnodemodel.h	/^class QDomNodeModel: public QAbstractXmlNodeModel$/;"	c
+QDomReceiver	lib/qdomreceiver.cpp	/^QDomReceiver::QDomReceiver(QXmlNamePool namepool, QDomDocument doc)$/;"	f	class:QDomReceiver
+QDomReceiver	lib/qdomreceiver.h	/^class QDomReceiver : public QAbstractXmlReceiver$/;"	c
+QHtmlSerializer	lib/qhtmlserializer.cpp	/^QHtmlSerializer::QHtmlSerializer(QXmlNamePool namepool, QBuffer *output)$/;"	f	class:QHtmlSerializer
+QHtmlSerializer	lib/qhtmlserializer.h	/^class QHtmlSerializer : public QAbstractXmlReceiver$/;"	c
+QLockFile	lib/qlockfile.h	/^	QLockFile()$/;"	f	class:QLockFile
+QLockFile	lib/qlockfile.h	/^	QLockFile(const QString& name)$/;"	f	class:QLockFile
+QLockFile	lib/qlockfile.h	/^class QLockFile: public QFile$/;"	c
+QtSerialization	lib/snap_uri.cpp	/^namespace QtSerialization {$/;"	n	file:
+ROBOT_NAME_ALL	plugins/robotstxt/robotstxt.cpp	/^const char *		robotstxt::ROBOT_NAME_ALL = "*";$/;"	m	class:robotstxt	file:
+ROBOT_NAME_ALL	plugins/robotstxt/robotstxt.h	/^	static const char *ROBOT_NAME_ALL;$/;"	m	class:snap::robotstxt::robotstxt
+ROBOT_NAME_GLOBAL	plugins/robotstxt/robotstxt.cpp	/^const char *		robotstxt::ROBOT_NAME_GLOBAL = "";$/;"	m	class:robotstxt	file:
+ROBOT_NAME_GLOBAL	plugins/robotstxt/robotstxt.h	/^	static const char *ROBOT_NAME_GLOBAL;$/;"	m	class:snap::robotstxt::robotstxt
+SALT_SIZE	plugins/users/users.cpp	/^const int SALT_SIZE = 32;$/;"	m	namespace:__anon2	file:
+SESSION_INFO_FORM	plugins/sessions/sessions.h	/^			SESSION_INFO_FORM,			\/\/ a form unique identifier$/;"	e	enum:snap::sessions::sessions::session_info::session_info_type_t
+SESSION_INFO_INCOMPATIBLE	plugins/sessions/sessions.h	/^			SESSION_INFO_INCOMPATIBLE	\/\/ key is not compatible (wrong path, object, etc.)$/;"	e	enum:snap::sessions::sessions::session_info::session_info_type_t
+SESSION_INFO_MISSING	plugins/sessions/sessions.h	/^			SESSION_INFO_MISSING,		\/\/ the key could not be loaded$/;"	e	enum:snap::sessions::sessions::session_info::session_info_type_t
+SESSION_INFO_OUT_OF_DATE	plugins/sessions/sessions.h	/^			SESSION_INFO_OUT_OF_DATE,	\/\/ key is too old$/;"	e	enum:snap::sessions::sessions::session_info::session_info_type_t
+SESSION_INFO_SECURE	plugins/sessions/sessions.h	/^			SESSION_INFO_SECURE,		\/\/ think PCI Compliant website (credit card payment, etc.)$/;"	e	enum:snap::sessions::sessions::session_info::session_info_type_t
+SESSION_INFO_USED_UP	plugins/sessions/sessions.h	/^			SESSION_INFO_USED_UP,		\/\/ key was already used$/;"	e	enum:snap::sessions::sessions::session_info::session_info_type_t
+SESSION_INFO_USER	plugins/sessions/sessions.h	/^			SESSION_INFO_USER,			\/\/ a user cookie when logged in$/;"	e	enum:snap::sessions::sessions::session_info::session_info_type_t
+SESSION_INFO_VALID	plugins/sessions/sessions.h	/^			SESSION_INFO_VALID,			\/\/ the key was loaded successfully$/;"	e	enum:snap::sessions::sessions::session_info::session_info_type_t
+SNAP_CHAR_CHART_H	plugins/char_chart/char_chart.h	18;"	d
+SNAP_CHILD_STATUS_READY	lib/snap_child.h	/^		SNAP_CHILD_STATUS_READY,$/;"	e	enum:snap::snap_child::status_t
+SNAP_CHILD_STATUS_RUNNING	lib/snap_child.h	/^		SNAP_CHILD_STATUS_RUNNING$/;"	e	enum:snap::snap_child::status_t
+SNAP_CONTENT_H	plugins/content/content.h	18;"	d
+SNAP_DEBUG	lib/debug.h	21;"	d
+SNAP_DEBUG_H	lib/debug.h	18;"	d
+SNAP_DOM_UTIL_H	lib/dom_util.h	18;"	d
+SNAP_EXCEPTION_H	lib/snap_exception.h	18;"	d
+SNAP_FILTER_H	plugins/filter/filter.h	18;"	d
+SNAP_FROM_H	plugins/form/form.h	18;"	d
+SNAP_HTTP_COOKIE_H	lib/http_cookie.h	18;"	d
+SNAP_HTTP_TOKEN_CHAR	lib/http_cookie.cpp	122;"	d	file:
+SNAP_HTTP_TOKEN_CHAR	lib/http_cookie.cpp	35;"	d	file:
+SNAP_JAVASCRIPT_H	plugins/javascript/javascript.h	18;"	d
+SNAP_LAYOUT_H	plugins/layout/layout.h	18;"	d
+SNAP_LINKS_H	plugins/links/links.h	18;"	d
+SNAP_LISTEN	lib/plugins.h	186;"	d
+SNAP_LISTEN0	lib/plugins.h	191;"	d
+SNAP_LOG_DEBUG	lib/log.h	91;"	d
+SNAP_LOG_ERROR	lib/log.h	88;"	d
+SNAP_LOG_FATAL	lib/log.h	87;"	d
+SNAP_LOG_H	lib/log.h	18;"	d
+SNAP_LOG_INFO	lib/log.h	90;"	d
+SNAP_LOG_TRACE	lib/log.h	92;"	d
+SNAP_LOG_WARNING	lib/log.h	89;"	d
+SNAP_MANAGER_ABOUT_H	snap-manager/snap-manager-about.h	18;"	d
+SNAP_MANAGER_DECODE_UTF8_H	snap-manager/snap-manager-decode-utf8.h	18;"	d
+SNAP_MANAGER_H	snap-manager/snap-manager.h	18;"	d
+SNAP_MANAGER_HELP_H	snap-manager/snap-manager-help.h	18;"	d
+SNAP_MESSAGES_H	plugins/messages/messages.h	18;"	d
+SNAP_NAME_CONTENT_ACCEPTED	plugins/content/content.h	/^	SNAP_NAME_CONTENT_ACCEPTED,$/;"	e	enum:snap::content::name_t
+SNAP_NAME_CONTENT_BODY	plugins/content/content.h	/^	SNAP_NAME_CONTENT_BODY,$/;"	e	enum:snap::content::name_t
+SNAP_NAME_CONTENT_CONTENT_TYPES	plugins/content/content.h	/^	SNAP_NAME_CONTENT_CONTENT_TYPES,$/;"	e	enum:snap::content::name_t
+SNAP_NAME_CONTENT_CONTENT_TYPES_NAME	plugins/content/content.h	/^	SNAP_NAME_CONTENT_CONTENT_TYPES_NAME,$/;"	e	enum:snap::content::name_t
+SNAP_NAME_CONTENT_COPYRIGHTED	plugins/content/content.h	/^	SNAP_NAME_CONTENT_COPYRIGHTED,$/;"	e	enum:snap::content::name_t
+SNAP_NAME_CONTENT_CREATED	plugins/content/content.h	/^	SNAP_NAME_CONTENT_CREATED,$/;"	e	enum:snap::content::name_t
+SNAP_NAME_CONTENT_ISSUED	plugins/content/content.h	/^	SNAP_NAME_CONTENT_ISSUED$/;"	e	enum:snap::content::name_t
+SNAP_NAME_CONTENT_LONG_TITLE	plugins/content/content.h	/^	SNAP_NAME_CONTENT_LONG_TITLE,$/;"	e	enum:snap::content::name_t
+SNAP_NAME_CONTENT_MODIFIED	plugins/content/content.h	/^	SNAP_NAME_CONTENT_MODIFIED,$/;"	e	enum:snap::content::name_t
+SNAP_NAME_CONTENT_PAGE_CONTENT_TYPE	plugins/content/content.h	/^	SNAP_NAME_CONTENT_PAGE_CONTENT_TYPE,$/;"	e	enum:snap::content::name_t
+SNAP_NAME_CONTENT_SHORT_TITLE	plugins/content/content.h	/^	SNAP_NAME_CONTENT_SHORT_TITLE,$/;"	e	enum:snap::content::name_t
+SNAP_NAME_CONTENT_SINCE	plugins/content/content.h	/^	SNAP_NAME_CONTENT_SINCE,$/;"	e	enum:snap::content::name_t
+SNAP_NAME_CONTENT_SUBMITTED	plugins/content/content.h	/^	SNAP_NAME_CONTENT_SUBMITTED,$/;"	e	enum:snap::content::name_t
+SNAP_NAME_CONTENT_TABLE	plugins/content/content.h	/^	SNAP_NAME_CONTENT_TABLE, 		\/\/ Cassandra Table used for content (pages, comments, tags, vocabularies, etc.)$/;"	e	enum:snap::content::name_t
+SNAP_NAME_CONTENT_TITLE	plugins/content/content.h	/^	SNAP_NAME_CONTENT_TITLE,$/;"	e	enum:snap::content::name_t
+SNAP_NAME_CONTENT_UNTIL	plugins/content/content.h	/^	SNAP_NAME_CONTENT_UNTIL,$/;"	e	enum:snap::content::name_t
+SNAP_NAME_CONTENT_UPDATED	plugins/content/content.h	/^	SNAP_NAME_CONTENT_UPDATED,$/;"	e	enum:snap::content::name_t
+SNAP_NAME_FORMS_TABLE	plugins/form/form.h	/^	SNAP_NAME_FORMS_TABLE$/;"	e	enum:snap::form::name_t
+SNAP_NAME_LAYOUT_LAYOUT	plugins/layout/layout.h	/^	SNAP_NAME_LAYOUT_LAYOUT$/;"	e	enum:snap::layout::name_t
+SNAP_NAME_LAYOUT_TABLE	plugins/layout/layout.h	/^	SNAP_NAME_LAYOUT_TABLE,$/;"	e	enum:snap::layout::name_t
+SNAP_NAME_LAYOUT_THEME	plugins/layout/layout.h	/^	SNAP_NAME_LAYOUT_THEME,$/;"	e	enum:snap::layout::name_t
+SNAP_NAME_LINKS_NAMESPACE	plugins/links/links.h	/^	SNAP_NAME_LINKS_NAMESPACE$/;"	e	enum:snap::links::name_t
+SNAP_NAME_LINKS_TABLE	plugins/links/links.h	/^	SNAP_NAME_LINKS_TABLE, 		\/\/ Cassandra Table used for content (pages, comments, tags, vocabularies, etc.)$/;"	e	enum:snap::links::name_t
+SNAP_NAME_MESSAGES_TABLE	plugins/messages/messages.h	/^	SNAP_NAME_MESSAGES_TABLE$/;"	e	enum:snap::messages::name_t
+SNAP_NAME_PATH_PRIMARY_OWNER	plugins/path/path.h	/^	SNAP_NAME_PATH_PRIMARY_OWNER$/;"	e	enum:snap::path::name_t
+SNAP_NAME_SEARCH_STATUS	plugins/search/search.h	/^	SNAP_NAME_SEARCH_STATUS$/;"	e	enum:snap::search::name_t
+SNAP_NAME_SESSIONS_ID	plugins/sessions/sessions.h	/^	SNAP_NAME_SESSIONS_ID,$/;"	e	enum:snap::sessions::name_t
+SNAP_NAME_SESSIONS_OBJECT_PATH	plugins/sessions/sessions.h	/^	SNAP_NAME_SESSIONS_OBJECT_PATH,$/;"	e	enum:snap::sessions::name_t
+SNAP_NAME_SESSIONS_PAGE_PATH	plugins/sessions/sessions.h	/^	SNAP_NAME_SESSIONS_PAGE_PATH,$/;"	e	enum:snap::sessions::name_t
+SNAP_NAME_SESSIONS_PLUGIN_OWNER	plugins/sessions/sessions.h	/^	SNAP_NAME_SESSIONS_PLUGIN_OWNER,$/;"	e	enum:snap::sessions::name_t
+SNAP_NAME_SESSIONS_REMOTE_ADDR	plugins/sessions/sessions.h	/^	SNAP_NAME_SESSIONS_REMOTE_ADDR,$/;"	e	enum:snap::sessions::name_t
+SNAP_NAME_SESSIONS_TABLE	plugins/sessions/sessions.h	/^	SNAP_NAME_SESSIONS_TABLE,$/;"	e	enum:snap::sessions::name_t
+SNAP_NAME_SESSIONS_TIME_LIMIT	plugins/sessions/sessions.h	/^	SNAP_NAME_SESSIONS_TIME_LIMIT,$/;"	e	enum:snap::sessions::name_t
+SNAP_NAME_SESSIONS_TIME_TO_LIVE	plugins/sessions/sessions.h	/^	SNAP_NAME_SESSIONS_TIME_TO_LIVE,$/;"	e	enum:snap::sessions::name_t
+SNAP_NAME_SESSIONS_USED_UP	plugins/sessions/sessions.h	/^	SNAP_NAME_SESSIONS_USED_UP$/;"	e	enum:snap::sessions::name_t
+SNAP_NAME_SITEMAPXML_COUNT	plugins/sitemapxml/sitemapxml.h	/^	SNAP_NAME_SITEMAPXML_COUNT,$/;"	e	enum:snap::sitemapxml::name_t
+SNAP_NAME_SITEMAPXML_PRIORITY	plugins/sitemapxml/sitemapxml.h	/^	SNAP_NAME_SITEMAPXML_PRIORITY$/;"	e	enum:snap::sitemapxml::name_t
+SNAP_NAME_SITEMAPXML_SITEMAP_XML	plugins/sitemapxml/sitemapxml.h	/^	SNAP_NAME_SITEMAPXML_SITEMAP_XML,$/;"	e	enum:snap::sitemapxml::name_t
+SNAP_NAME_TAXONOMY_NAME	plugins/taxonomy/taxonomy.h	/^	SNAP_NAME_TAXONOMY_NAME$/;"	e	enum:snap::taxonomy::name_t
+SNAP_NAME_USERS_ORIGINAL_EMAIL	plugins/users/users.h	/^	SNAP_NAME_USERS_ORIGINAL_EMAIL,$/;"	e	enum:snap::users::name_t
+SNAP_NAME_USERS_ORIGINAL_IP	plugins/users/users.h	/^	SNAP_NAME_USERS_ORIGINAL_IP$/;"	e	enum:snap::users::name_t
+SNAP_NAME_USERS_PASSWORD	plugins/users/users.h	/^	SNAP_NAME_USERS_PASSWORD,$/;"	e	enum:snap::users::name_t
+SNAP_NAME_USERS_PASSWORD_DIGEST	plugins/users/users.h	/^	SNAP_NAME_USERS_PASSWORD_DIGEST,$/;"	e	enum:snap::users::name_t
+SNAP_NAME_USERS_PASSWORD_SALT	plugins/users/users.h	/^	SNAP_NAME_USERS_PASSWORD_SALT,$/;"	e	enum:snap::users::name_t
+SNAP_NAME_USERS_TABLE	plugins/users/users.h	/^	SNAP_NAME_USERS_TABLE,$/;"	e	enum:snap::users::name_t
+SNAP_NOT_REACHED_H	lib/not_reached.h	18;"	d
+SNAP_PARSER_H	lib/snap_parser.h	18;"	d
+SNAP_PATH_H	plugins/path/path.h	18;"	d
+SNAP_PLUGINS_H	lib/plugins.h	18;"	d
+SNAP_PLUGIN_END	lib/plugins.h	163;"	d
+SNAP_PLUGIN_START	lib/plugins.h	140;"	d
+SNAP_PLUGIN_UPDATE	lib/plugins.h	316;"	d
+SNAP_PLUGIN_UPDATE_EXIT	lib/plugins.h	333;"	d
+SNAP_PLUGIN_UPDATE_INIT	lib/plugins.h	293;"	d
+SNAP_ROBOTSTXT_H	plugins/robotstxt/robotstxt.h	18;"	d
+SNAP_SEARCH_H	plugins/search/search.h	18;"	d
+SNAP_SESSIONS_H	plugins/sessions/sessions.h	18;"	d
+SNAP_SIGNAL	lib/snap_signals.h	42;"	d
+SNAP_SIGNAL_H	lib/snap_signals.h	18;"	d
+SNAP_SITEMAPXML_H	plugins/sitemapxml/sitemapxml.h	18;"	d
+SNAP_SNAPCHILD_H	lib/snap_child.h	18;"	d
+SNAP_TAXONOMY_H	plugins/taxonomy/taxonomy.h	18;"	d
+SNAP_UNIX_TIMESTAMP	lib/plugins.h	278;"	d
+SNAP_URI_H	lib/snap_uri.h	18;"	d
+SNAP_USERS_H	plugins/users/users.h	18;"	d
+TOKEN_ID_CHOICES_ENUM	lib/snap_parser.h	/^	TOKEN_ID_CHOICES_ENUM,		\/\/ pointer to a choices object$/;"	e	enum:snap::parser::token_t
+TOKEN_ID_EMPTY	lib/snap_parser.cpp	/^token_id_empty_def TOKEN_ID_EMPTY;$/;"	m	namespace:snap::parser	file:
+TOKEN_ID_EMPTY_ENUM	lib/snap_parser.h	/^	TOKEN_ID_EMPTY_ENUM,		\/\/ special empty token$/;"	e	enum:snap::parser::token_t
+TOKEN_ID_ERROR_ENUM	lib/snap_parser.h	/^	TOKEN_ID_ERROR_ENUM			\/\/ an error occured$/;"	e	enum:snap::parser::token_t
+TOKEN_ID_FLOAT	lib/snap_parser.cpp	/^token_id_float_def TOKEN_ID_FLOAT;$/;"	m	namespace:snap::parser	file:
+TOKEN_ID_FLOAT_ENUM	lib/snap_parser.h	/^	TOKEN_ID_FLOAT_ENUM,$/;"	e	enum:snap::parser::token_t
+TOKEN_ID_IDENTIFIER	lib/snap_parser.cpp	/^token_id_identifier_def TOKEN_ID_IDENTIFIER;$/;"	m	namespace:snap::parser	file:
+TOKEN_ID_IDENTIFIER_ENUM	lib/snap_parser.h	/^	TOKEN_ID_IDENTIFIER_ENUM,$/;"	e	enum:snap::parser::token_t
+TOKEN_ID_INTEGER	lib/snap_parser.cpp	/^token_id_integer_def TOKEN_ID_INTEGER;$/;"	m	namespace:snap::parser	file:
+TOKEN_ID_INTEGER_ENUM	lib/snap_parser.h	/^	TOKEN_ID_INTEGER_ENUM,$/;"	e	enum:snap::parser::token_t
+TOKEN_ID_KEYWORD	lib/snap_parser.cpp	/^token_id_keyword_def TOKEN_ID_KEYWORD;$/;"	m	namespace:snap::parser	file:
+TOKEN_ID_KEYWORD_ENUM	lib/snap_parser.h	/^	TOKEN_ID_KEYWORD_ENUM,$/;"	e	enum:snap::parser::token_t
+TOKEN_ID_LITERAL	lib/snap_parser.cpp	/^token_id_literal_def TOKEN_ID_LITERAL;$/;"	m	namespace:snap::parser	file:
+TOKEN_ID_LITERAL_ENUM	lib/snap_parser.h	/^	TOKEN_ID_LITERAL_ENUM,		\/\/ literal character(s)$/;"	e	enum:snap::parser::token_t
+TOKEN_ID_NODE_ENUM	lib/snap_parser.h	/^	TOKEN_ID_NODE_ENUM,			\/\/ pointer to a node object$/;"	e	enum:snap::parser::token_t
+TOKEN_ID_NONE	lib/snap_parser.cpp	/^token_id_none_def TOKEN_ID_NONE;$/;"	m	namespace:snap::parser	file:
+TOKEN_ID_NONE_ENUM	lib/snap_parser.h	/^	TOKEN_ID_NONE_ENUM = 0,		\/\/ "not a token" (also end of input)$/;"	e	enum:snap::parser::token_t
+TOKEN_ID_RULES_ENUM	lib/snap_parser.h	/^	TOKEN_ID_RULES_ENUM,		\/\/ pointer to a choices object (see rules operator |() )$/;"	e	enum:snap::parser::token_t
+TOKEN_ID_STRING	lib/snap_parser.cpp	/^token_id_string_def TOKEN_ID_STRING;$/;"	m	namespace:snap::parser	file:
+TOKEN_ID_STRING_ENUM	lib/snap_parser.h	/^	TOKEN_ID_STRING_ENUM,$/;"	e	enum:snap::parser::token_t
+USERS_SESSION_ID_LOG_IN	plugins/users/users.h	/^	static const sessions::sessions::session_info::session_id_t USERS_SESSION_ID_LOG_IN = 1;$/;"	m	class:snap::users::users
+USERS_SESSION_ID_LOG_IN_BLOCK	plugins/users/users.h	/^	static const sessions::sessions::session_info::session_id_t USERS_SESSION_ID_LOG_IN_BLOCK = 2;$/;"	m	class:snap::users::users
+USERS_SESSION_ID_LOG_IN_SESSION	plugins/users/users.h	/^	static const sessions::sessions::session_info::session_id_t USERS_SESSION_ID_LOG_IN_SESSION = 7;$/;"	m	class:snap::users::users
+USERS_SESSION_ID_PASSWORD	plugins/users/users.h	/^	static const sessions::sessions::session_info::session_id_t USERS_SESSION_ID_PASSWORD = 5;$/;"	m	class:snap::users::users
+USERS_SESSION_ID_PASSWORD_BLOCK	plugins/users/users.h	/^	static const sessions::sessions::session_info::session_id_t USERS_SESSION_ID_PASSWORD_BLOCK = 6;$/;"	m	class:snap::users::users
+USERS_SESSION_ID_REGISTER	plugins/users/users.h	/^	static const sessions::sessions::session_info::session_id_t USERS_SESSION_ID_REGISTER = 3;$/;"	m	class:snap::users::users
+USERS_SESSION_ID_REGISTER_BLOCK	plugins/users/users.h	/^	static const sessions::sessions::session_info::session_id_t USERS_SESSION_ID_REGISTER_BLOCK = 4;$/;"	m	class:snap::users::users
+WEBSITE_VARIABLE_PART_PATH	lib/snap_uri.h	/^	static const website_variable_part_t WEBSITE_VARIABLE_PART_PATH = 0;$/;"	m	class:snap::website_variable
+WEBSITE_VARIABLE_PART_PORT	lib/snap_uri.h	/^	static const website_variable_part_t WEBSITE_VARIABLE_PART_PORT = 1;$/;"	m	class:snap::website_variable
+WEBSITE_VARIABLE_PART_PROTOCOL	lib/snap_uri.h	/^	static const website_variable_part_t WEBSITE_VARIABLE_PART_PROTOCOL = 2;$/;"	m	class:snap::website_variable
+WEBSITE_VARIABLE_PART_QUERY	lib/snap_uri.h	/^	static const website_variable_part_t WEBSITE_VARIABLE_PART_QUERY = 3;$/;"	m	class:snap::website_variable
+WEBSITE_VARIABLE_TYPE_FLAG_NO_DEFAULT	lib/snap_uri.cpp	/^const website_variable::website_variable_type_t website_variable::WEBSITE_VARIABLE_TYPE_FLAG_NO_DEFAULT;$/;"	m	class:snap::website_variable	file:
+WEBSITE_VARIABLE_TYPE_FLAG_NO_DEFAULT	lib/snap_uri.h	/^	static const website_variable_type_t WEBSITE_VARIABLE_TYPE_FLAG_NO_DEFAULT = 3;$/;"	m	class:snap::website_variable
+WEBSITE_VARIABLE_TYPE_FLAG_WITH_DEFAULT	lib/snap_uri.cpp	/^const website_variable::website_variable_type_t website_variable::WEBSITE_VARIABLE_TYPE_FLAG_WITH_DEFAULT;$/;"	m	class:snap::website_variable	file:
+WEBSITE_VARIABLE_TYPE_FLAG_WITH_DEFAULT	lib/snap_uri.h	/^	static const website_variable_type_t WEBSITE_VARIABLE_TYPE_FLAG_WITH_DEFAULT = 2;$/;"	m	class:snap::website_variable
+WEBSITE_VARIABLE_TYPE_STANDARD	lib/snap_uri.cpp	/^const website_variable::website_variable_type_t website_variable::WEBSITE_VARIABLE_TYPE_STANDARD;$/;"	m	class:snap::website_variable	file:
+WEBSITE_VARIABLE_TYPE_STANDARD	lib/snap_uri.h	/^	static const website_variable_type_t WEBSITE_VARIABLE_TYPE_STANDARD = 0;$/;"	m	class:snap::website_variable
+WEBSITE_VARIABLE_TYPE_WEBSITE	lib/snap_uri.cpp	/^const website_variable::website_variable_type_t website_variable::WEBSITE_VARIABLE_TYPE_WEBSITE;$/;"	m	class:snap::website_variable	file:
+WEBSITE_VARIABLE_TYPE_WEBSITE	lib/snap_uri.h	/^	static const website_variable_type_t WEBSITE_VARIABLE_TYPE_WEBSITE = 1;$/;"	m	class:snap::website_variable
+_QDOMNODEMODEL_H_	lib/qdomnodemodel.h	2;"	d
+_QHTMLSERIALIZER_H	lib/qhtmlserializer.h	18;"	d
+_QXMLRECEIVER_H	lib/qdomreceiver.h	18;"	d
+_SNAP_UNIX_TIMESTAMP_FDAY	lib/plugins.h	210;"	d
+_SNAP_UNIX_TIMESTAMP_YDAY	lib/plugins.h	228;"	d
+about	snap-manager/snap-manager.cpp	/^void snap_manager::about()$/;"	f	class:snap_manager
+accept	lib/tcp_client_server.cpp	/^int tcp_server::accept()$/;"	f	class:tcp_client_server::tcp_server
+add_choices	lib/snap_parser.cpp	/^void grammar::add_choices(choices& c)$/;"	f	class:snap::parser::grammar
+add_choices	lib/snap_parser.cpp	/^void rule::add_choices(choices& c)$/;"	f	class:snap::parser::rule
+add_content	plugins/content/content.cpp	/^void content::add_content(const QString& path, const QString& plugin_owner)$/;"	f	class:content
+add_files	src/snaplayout.cpp	/^void snap_layout::add_files()$/;"	f	class:snap_layout
+add_form_elements	plugins/form/form.cpp	/^void form::add_form_elements(QDomDocument& add)$/;"	f	class:form
+add_form_elements	plugins/form/form.cpp	/^void form::add_form_elements(QString& filename)$/;"	f	class:form
+add_info	lib/snap_uri.h	/^	void add_info(QSharedPointer<domain_info> info)$/;"	f	class:snap::domain_rules
+add_info	lib/snap_uri.h	/^	void add_info(QSharedPointer<website_info> info)$/;"	f	class:snap::website_rules
+add_info	tests/test_snap_parser.cpp	/^	void add_info(QSharedPointer<domain_info> info)$/;"	f	class:domain_rules
+add_keyword	lib/snap_parser.cpp	/^void lexer::add_keyword(keyword& k)$/;"	f	class:snap::parser::lexer
+add_keyword	lib/snap_parser.cpp	/^void rule::add_keyword(const keyword& k)$/;"	f	class:snap::parser::rule
+add_link	plugins/content/content.cpp	/^void content::add_link(const QString& path, const links::link_info& source, const links::link_info& destination)$/;"	f	class:content
+add_literal	lib/snap_parser.cpp	/^void rule::add_literal(const QString& value)$/;"	f	class:snap::parser::rule
+add_node	lib/snap_parser.cpp	/^	void add_node(QSharedPointer<token_node> n)$/;"	f	struct:snap::parser::parser_state
+add_node	lib/snap_parser.h	/^	void add_node(QSharedPointer<token_node> n) { f_tokens.push_back(n); }$/;"	f	class:snap::parser::token_node
+add_param	plugins/content/content.cpp	/^void content::add_param(const QString& path, const QString& name, const QString& data)$/;"	f	class:content
+add_robots_txt_field	plugins/robotstxt/robotstxt.cpp	/^void robotstxt::add_robots_txt_field(const QString& value,$/;"	f	class:robotstxt
+add_rule	lib/snap_parser.cpp	/^void choices::add_rule(rule& r)$/;"	f	class:snap::parser::choices
+add_rules	lib/snap_parser.cpp	/^void rule::add_rules(choices& c)$/;"	f	class:snap::parser::rule
+add_token	lib/snap_parser.cpp	/^	void add_token(token& t)$/;"	f	struct:snap::parser::parser_state
+add_token	lib/snap_parser.cpp	/^void rule::add_token(token_t token)$/;"	f	class:snap::parser::rule
+add_token	lib/snap_parser.h	/^	void add_token(token& t) { f_tokens.push_back(QSharedPointer<token>(new token(t))); }$/;"	f	class:snap::parser::token_node
+add_url	plugins/sitemapxml/sitemapxml.cpp	/^void sitemapxml::add_url(const url_info& url)$/;"	f	class:sitemapxml
+add_var	lib/snap_uri.h	/^	void add_var(QSharedPointer<domain_variable> var)$/;"	f	class:snap::domain_info
+add_var	lib/snap_uri.h	/^	void add_var(QSharedPointer<website_variable> var)$/;"	f	class:snap::website_info
+add_var	tests/test_snap_parser.cpp	/^	void add_var(QSharedPointer<domain_variable> var)$/;"	f	class:domain_info
+add_xml	plugins/content/content.cpp	/^void content::add_xml(const QString& plugin_name)$/;"	f	class:content
+alloc	lib/snap_parser.cpp	/^	static parser_state *alloc(state_array_t& free_states, parser_state *parent, choices& c, int r)$/;"	f	struct:snap::parser::parser_state
+anchor	lib/snap_uri.cpp	/^const QString& snap_uri::anchor() const$/;"	f	class:snap::snap_uri
+apply_layout	plugins/layout/layout.cpp	/^QString layout::apply_layout(const QString& cpath, layout_content *content_plugin)$/;"	f	class:layout
+atomicValue	lib/qdomreceiver.cpp	/^void QDomReceiver::atomicValue(const QVariant& value)$/;"	f	class:QDomReceiver
+atomicValue	lib/qhtmlserializer.cpp	/^void QHtmlSerializer::atomicValue(const QVariant& value)$/;"	f	class:QHtmlSerializer
+attribute	lib/qdomreceiver.cpp	/^void QDomReceiver::attribute(const QXmlName& name, const QStringRef& value)$/;"	f	class:QDomReceiver
+attribute	lib/qhtmlserializer.cpp	/^void QHtmlSerializer::attribute(const QXmlName& name, const QStringRef& value)$/;"	f	class:QHtmlSerializer
+attributes	lib/qdomnodemodel.cpp	/^QVector<QXmlNodeModelIndex> QDomNodeModel::attributes ( const QXmlNodeModelIndex & ni ) const$/;"	f	class:QDomNodeModel
+auto_session_info_type_t	plugins/sessions/sessions.h	/^		typedef controlled_vars::limited_auto_init<session_info_type_t, SESSION_INFO_SECURE, SESSION_INFO_USER, SESSION_INFO_SECURE> auto_session_info_type_t;$/;"	t	class:snap::sessions::sessions::session_info
+backend	lib/snap_child.cpp	/^void snap_child::backend()$/;"	f	class:snap::snap_child
+backend	lib/snapwebsites.cpp	/^void server::backend()$/;"	f	class:snap::server
+backend_process_impl	lib/snapwebsites.cpp	/^bool server::backend_process_impl()$/;"	f	class:snap::server
+baseUri	lib/qdomnodemodel.cpp	/^QUrl QDomNodeModel::baseUri (const QXmlNodeModelIndex &) const$/;"	f	class:QDomNodeModel
+bootstrap_impl	lib/snapwebsites.cpp	/^bool server::bootstrap_impl(snap_child * \/*snap*\/)$/;"	f	class:snap::server
+can_handle_dynamic_path_impl	plugins/path/path.cpp	/^bool path::can_handle_dynamic_path_impl(path * \/*path_plugin*\/, const QString& \/*cpath*\/)$/;"	f	class:path
+canonalize_domain	lib/snap_child.cpp	/^void snap_child::canonalize_domain()$/;"	f	class:snap::snap_child
+canonalize_path	lib/snap_child.cpp	/^void snap_child::canonalize_path(QString& path)$/;"	f	class:snap::snap_child
+canonalize_website	lib/snap_child.cpp	/^void snap_child::canonalize_website()$/;"	f	class:snap::snap_child
+cassandraConnect	snap-manager/snap-manager.cpp	/^void snap_manager::cassandraConnect()$/;"	f	class:snap_manager
+cassandraDisconnect	snap-manager/snap-manager.cpp	/^void snap_manager::cassandraDisconnect()$/;"	f	class:snap_manager
+char_chart	plugins/char_chart/char_chart.cpp	/^char_chart::char_chart()$/;"	f	class:char_chart
+char_chart	plugins/char_chart/char_chart.h	/^class char_chart : public plugins::plugin, public path::path_execute, public layout::layout_content$/;"	c	namespace:snap::char_chart
+char_chart	plugins/char_chart/char_chart.h	/^namespace char_chart$/;"	n	namespace:snap
+characters	lib/qdomreceiver.cpp	/^void QDomReceiver::characters(const QStringRef& value)$/;"	f	class:QDomReceiver
+characters	lib/qhtmlserializer.cpp	/^void QHtmlSerializer::characters(const QStringRef& value)$/;"	f	class:QHtmlSerializer
+check_lexer	tests/test_snap_parser.cpp	/^void check_lexer()$/;"	f
+check_parser	tests/test_snap_parser.cpp	/^bool check_parser(const QString& script)$/;"	f
+check_parser_scripts	tests/test_snap_parser.cpp	/^void check_parser_scripts()$/;"	f
+check_status	lib/snap_child.cpp	/^snap_child::status_t snap_child::check_status()$/;"	f	class:snap::snap_child
+childIndex	lib/qdomnodemodel.cpp	/^int QDomNodeModel::childIndex(const QDomNode& n) const$/;"	f	class:QDomNodeModel
+choices	lib/snap_parser.cpp	/^choices::choices(grammar *parent, const char *choice_name)$/;"	f	class:snap::parser::choices
+choices	lib/snap_parser.h	/^class choices$/;"	c	namespace:snap::parser
+choices_array_t	lib/snap_parser.h	/^typedef QVector<choices *>			choices_array_t;$/;"	t	namespace:snap::parser
+clear	lib/snap_parser.cpp	/^	void clear()$/;"	f	struct:snap::parser::parser_state
+clear	lib/snap_parser.cpp	/^void choices::clear()$/;"	f	class:snap::parser::choices
+closeElement	lib/qhtmlserializer.cpp	/^void QHtmlSerializer::closeElement()$/;"	f	class:QHtmlSerializer
+closeEvent	snap-manager/snap-manager.cpp	/^void snap_manager::closeEvent(QCloseEvent *close_event)$/;"	f	class:snap_manager
+comment	lib/qdomreceiver.cpp	/^void QDomReceiver::comment(const QString& value)$/;"	f	class:QDomReceiver
+comment	lib/qhtmlserializer.cpp	/^void QHtmlSerializer::comment(const QString& value)$/;"	f	class:QHtmlSerializer
+compareOrder	lib/qdomnodemodel.cpp	/^QXmlNodeModelIndex::DocumentOrder QDomNodeModel::compareOrder ($/;"	f	class:QDomNodeModel
+config	lib/snapwebsites.cpp	/^void server::config(int argc, char *argv[])$/;"	f	class:snap::server
+configure	lib/log.cpp	/^void configure(QString filename)$/;"	f	namespace:snap::logging
+connect_cassandra	lib/snap_child.cpp	/^void snap_child::connect_cassandra()$/;"	f	class:snap::snap_child
+connections_count	lib/snapwebsites.cpp	/^unsigned long server::connections_count()$/;"	f	class:snap::server
+content	plugins/content/content.cpp	/^content::content()$/;"	f	class:content
+content	plugins/content/content.h	/^class content : public plugins::plugin, public path::path_execute, public layout::layout_content, public javascript::javascript_dynamic_plugin$/;"	c	namespace:snap::content
+content	plugins/content/content.h	/^namespace content$/;"	n	namespace:snap
+content_block	plugins/content/content.h	/^	struct content_block$/;"	s	class:snap::content::content
+content_block_map_t	plugins/content/content.h	/^	typedef QMap<QString, content_block>	content_block_map_t;$/;"	t	class:snap::content::content
+content_box_execute	plugins/content/content.h	/^class content_box_execute$/;"	c	namespace:snap::content
+content_exception	plugins/content/content.h	/^class content_exception : public snap_exception {};$/;"	c	namespace:snap::content
+content_exception_circular_dependencies	plugins/content/content.h	/^class content_exception_circular_dependencies : public content_exception {};$/;"	c	namespace:snap::content
+content_exception_content_already_defined	plugins/content/content.h	/^class content_exception_content_already_defined : public content_exception {};$/;"	c	namespace:snap::content
+content_exception_parameter_not_defined	plugins/content/content.h	/^class content_exception_parameter_not_defined : public content_exception {};$/;"	c	namespace:snap::content
+content_link	plugins/content/content.h	/^	struct content_link$/;"	s	class:snap::content::content
+content_links_t	plugins/content/content.h	/^	typedef QVector<content_link>		content_links_t;$/;"	t	class:snap::content::content
+content_param	plugins/content/content.h	/^	struct content_param$/;"	s	class:snap::content::content
+content_params_t	plugins/content/content.h	/^	typedef QMap<QString, content_param>		content_params_t;$/;"	t	class:snap::content::content
+content_update	plugins/char_chart/char_chart.cpp	/^void char_chart::content_update(int64_t variables_timestamp)$/;"	f	class:char_chart
+content_update	plugins/content/content.cpp	/^void content::content_update(int64_t variables_timestamp)$/;"	f	class:content
+content_update	plugins/javascript/javascript.cpp	/^void javascript::content_update(int64_t variables_timestamp)$/;"	f	class:javascript
+content_update	plugins/layout/layout.cpp	/^void layout::content_update(int64_t variables_timestamp)$/;"	f	class:layout
+content_update	plugins/messages/messages.cpp	/^void messages::content_update(int64_t variables_timestamp)$/;"	f	class:messages
+content_update	plugins/robotstxt/robotstxt.cpp	/^void robotstxt::content_update(int64_t variables_timestamp)$/;"	f	class:robotstxt
+content_update	plugins/search/search.cpp	/^void search::content_update(int64_t variables_timestamp)$/;"	f	class:search
+content_update	plugins/sessions/sessions.cpp	/^void sessions::content_update(int64_t variables_timestamp)$/;"	f	class:sessions
+content_update	plugins/sitemapxml/sitemapxml.cpp	/^void sitemapxml::content_update(int64_t variables_timestamp)$/;"	f	class:sitemapxml
+content_update	plugins/taxonomy/taxonomy.cpp	/^void taxonomy::content_update(int64_t variables_timestamp)$/;"	f	class:taxonomy
+content_update	plugins/users/users.cpp	/^void users::content_update(int64_t variables_timestamp)$/;"	f	class:users
+controlled_error_t	lib/snap_parser.h	/^	typedef controlled_vars::limited_auto_init<lexer_error_t, LEXER_ERROR_NONE, static_cast<lexer_error_t>(LEXER_ERROR_max - 1), LEXER_ERROR_NONE> controlled_error_t;$/;"	t	class:snap::parser::lexer
+convertData	lib/snap_uri.cpp	/^void convertData<controlled_vars::zbool_t>(controlled_vars::zbool_t& field, const QString& data)$/;"	f	namespace:QtSerialization
+cookie	lib/snap_child.cpp	/^QString snap_child::cookie(const QString& name) const$/;"	f	class:snap::snap_child
+cookie_is_defined	lib/snap_child.cpp	/^bool snap_child::cookie_is_defined(const QString& name) const$/;"	f	class:snap::snap_child
+cookie_map_t	lib/snap_child.h	/^	typedef QMap<QString, http_cookie>	cookie_map_t;$/;"	t	class:snap::snap_child
+copy	lib/snap_parser.cpp	/^	static parser_state *copy(state_array_t& free_states, parser_state *source)$/;"	f	struct:snap::parser::parser_state
+copy_reduce_states	lib/snap_parser.cpp	/^	void copy_reduce_states(state_array_t& free_states, state_array_t& add_on_reduce)$/;"	f	struct:snap::parser::parser_state
+count	lib/snap_parser.h	/^	int count() const { return f_tokens.count(); }$/;"	f	class:snap::parser::rule
+count	lib/snap_parser.h	/^	int count() { return f_rules.count(); }$/;"	f	class:snap::parser::choices
+count_html_lines	plugins/form/form.cpp	/^int form::count_html_lines(const QString& html)$/;"	f	class:form
+count_text_lines	plugins/form/form.cpp	/^int form::count_text_lines(const QString& text)$/;"	f	class:form
+create_link	plugins/links/links.cpp	/^void links::create_link(const link_info& src, const link_info& dst)$/;"	f	class:links
+create_password_salt	plugins/users/users.cpp	/^void users::create_password_salt(QByteArray& salt)$/;"	f	class:users
+create_session	plugins/sessions/sessions.cpp	/^QString sessions::create_session(const session_info& info)$/;"	f	class:sessions
+create_table	lib/snap_child.cpp	/^QSharedPointer<QtCassandra::QCassandraTable> snap_child::create_table(const QString& table_name, const QString& comment)$/;"	f	class:snap::snap_child
+create_table	lib/snapwebsites.cpp	/^QSharedPointer<QtCassandra::QCassandraTable> server::create_table(QSharedPointer<QtCassandra::QCassandraContext> context, QString table_name, QString comment)$/;"	f	class:snap::server
+data	plugins/links/links.cpp	/^QString link_info::data() const$/;"	f	class:link_info
+date_to_string	lib/snap_child.cpp	/^QString snap_child::date_to_string(int64_t v, bool long_format)$/;"	f	class:snap::snap_child
+debug	lib/log.cpp	/^logger debug(const char *file, const char *func, int line)$/;"	f	namespace:snap::logging
+decode_utf8	snap-manager/snap-manager.cpp	/^void snap_manager::decode_utf8()$/;"	f	class:snap_manager
+define_error_name	lib/snap_child.cpp	/^void snap_child::define_error_name(int err_code, QString& err_name)$/;"	f	class:snap::snap_child
+description	lib/snapwebsites.cpp	/^QString server::description() const$/;"	f	class:snap::server
+description	plugins/char_chart/char_chart.cpp	/^QString char_chart::description() const$/;"	f	class:char_chart
+description	plugins/content/content.cpp	/^QString content::description() const$/;"	f	class:content
+description	plugins/filter/filter.cpp	/^QString filter::description() const$/;"	f	class:filter
+description	plugins/form/form.cpp	/^QString form::description() const$/;"	f	class:form
+description	plugins/javascript/javascript.cpp	/^QString javascript::description() const$/;"	f	class:javascript
+description	plugins/layout/layout.cpp	/^QString layout::description() const$/;"	f	class:layout
+description	plugins/links/links.cpp	/^QString links::description() const$/;"	f	class:links
+description	plugins/messages/messages.cpp	/^QString messages::description() const$/;"	f	class:messages
+description	plugins/path/path.cpp	/^QString path::description() const$/;"	f	class:path
+description	plugins/robotstxt/robotstxt.cpp	/^QString robotstxt::description() const$/;"	f	class:robotstxt
+description	plugins/search/search.cpp	/^QString search::description() const$/;"	f	class:search
+description	plugins/sessions/sessions.cpp	/^QString sessions::description() const$/;"	f	class:sessions
+description	plugins/sitemapxml/sitemapxml.cpp	/^QString sitemapxml::description() const$/;"	f	class:sitemapxml
+description	plugins/taxonomy/taxonomy.cpp	/^QString taxonomy::description() const$/;"	f	class:taxonomy
+description	plugins/users/users.cpp	/^QString users::description() const$/;"	f	class:users
+detach	lib/snapwebsites.cpp	/^void server::detach()$/;"	f	class:snap::server
+die	lib/snap_child.cpp	/^void snap_child::die(int err_code, QString err_name, const QString& err_description, const QString& err_details)$/;"	f	class:snap::snap_child
+display	src/snapdb.cpp	/^void snapdb::display()$/;"	f	class:snapdb
+display_array	lib/snap_parser.cpp	/^	static void display_array(const state_array_t& a)$/;"	f	struct:snap::parser::parser_state
+do_update	lib/plugins.cpp	/^int64_t plugin::do_update(int64_t \/*last_updated*\/)$/;"	f	class:snap::plugins::plugin
+do_update	lib/snapwebsites.cpp	/^int64_t server::do_update(int64_t \/*last_updated*\/)$/;"	f	class:snap::server
+do_update	plugins/char_chart/char_chart.cpp	/^int64_t char_chart::do_update(int64_t last_updated)$/;"	f	class:char_chart
+do_update	plugins/content/content.cpp	/^int64_t content::do_update(int64_t last_updated)$/;"	f	class:content
+do_update	plugins/javascript/javascript.cpp	/^int64_t javascript::do_update(int64_t last_updated)$/;"	f	class:javascript
+do_update	plugins/layout/layout.cpp	/^int64_t layout::do_update(int64_t last_updated)$/;"	f	class:layout
+do_update	plugins/links/links.cpp	/^int64_t links::do_update(int64_t last_updated)$/;"	f	class:links
+do_update	plugins/messages/messages.cpp	/^int64_t messages::do_update(int64_t last_updated)$/;"	f	class:messages
+do_update	plugins/robotstxt/robotstxt.cpp	/^int64_t robotstxt::do_update(int64_t last_updated)$/;"	f	class:robotstxt
+do_update	plugins/search/search.cpp	/^int64_t search::do_update(int64_t last_updated)$/;"	f	class:search
+do_update	plugins/sessions/sessions.cpp	/^int64_t sessions::do_update(int64_t last_updated)$/;"	f	class:sessions
+do_update	plugins/sitemapxml/sitemapxml.cpp	/^int64_t sitemapxml::do_update(int64_t last_updated)$/;"	f	class:sitemapxml
+do_update	plugins/taxonomy/taxonomy.cpp	/^int64_t taxonomy::do_update(int64_t last_updated)$/;"	f	class:taxonomy
+do_update	plugins/users/users.cpp	/^int64_t users::do_update(int64_t last_updated)$/;"	f	class:users
+documentUri	lib/qdomnodemodel.cpp	/^QUrl QDomNodeModel::documentUri(const QXmlNodeModelIndex&) const$/;"	f	class:QDomNodeModel
+dom_util	lib/dom_util.cpp	/^namespace dom_util$/;"	n	namespace:snap	file:
+dom_util	lib/dom_util.h	/^namespace dom_util$/;"	n	namespace:snap
+domain	lib/snap_uri.cpp	/^const QString& snap_uri::domain() const$/;"	f	class:snap::snap_uri
+domainChanged	snap-manager/snap-manager.cpp	/^bool snap_manager::domainChanged()$/;"	f	class:snap_manager
+domainWithSelection	snap-manager/snap-manager.cpp	/^void snap_manager::domainWithSelection()$/;"	f	class:snap_manager
+domain_info	lib/snap_uri.h	/^class domain_info : public parser::parser_user_data, public QtSerialization::QSerializationObject$/;"	c	namespace:snap
+domain_info	tests/test_snap_parser.cpp	/^class domain_info : public snap::parser::parser_user_data$/;"	c	file:
+domain_rules	lib/snap_uri.h	/^class domain_rules : public parser::parser_user_data, public QtSerialization::QSerializationObject$/;"	c	namespace:snap
+domain_rules	tests/test_snap_parser.cpp	/^class domain_rules : public snap::parser::parser_user_data$/;"	c	file:
+domain_set_add_domain_list	lib/snap_uri.cpp	/^void domain_set_add_domain_list(const rule& \/*r*\/, QSharedPointer<token_node>& t)$/;"	f	namespace:snap
+domain_set_add_rule_list	lib/snap_uri.cpp	/^void domain_set_add_rule_list(const rule& \/*r*\/, QSharedPointer<token_node>& t)$/;"	f	namespace:snap
+domain_set_flag_var	lib/snap_uri.cpp	/^void domain_set_flag_var(const rule& \/*r*\/, QSharedPointer<token_node>& t)$/;"	f	namespace:snap
+domain_set_new_domain_list	lib/snap_uri.cpp	/^void domain_set_new_domain_list(const rule& \/*r*\/, QSharedPointer<token_node>& t)$/;"	f	namespace:snap
+domain_set_new_rule_list	lib/snap_uri.cpp	/^void domain_set_new_rule_list(const rule& \/*r*\/, QSharedPointer<token_node>& t)$/;"	f	namespace:snap
+domain_set_qualified_name	lib/snap_uri.cpp	/^void domain_set_qualified_name(const rule& \/*r*\/, QSharedPointer<token_node>& t)$/;"	f	namespace:snap
+domain_set_rule	lib/snap_uri.cpp	/^void domain_set_rule(const rule& \/*r*\/, QSharedPointer<token_node>& t)$/;"	f	namespace:snap
+domain_set_standard_var	lib/snap_uri.cpp	/^void domain_set_standard_var(const rule& \/*r*\/, QSharedPointer<token_node>& t)$/;"	f	namespace:snap
+domain_set_start_result	lib/snap_uri.cpp	/^void domain_set_start_result(const rule& \/*r*\/, QSharedPointer<token_node>& t)$/;"	f	namespace:snap
+domain_set_var_optional	lib/snap_uri.cpp	/^void domain_set_var_optional(const rule& \/*r*\/, QSharedPointer<token_node>& t)$/;"	f	namespace:snap
+domain_set_var_required	lib/snap_uri.cpp	/^void domain_set_var_required(const rule& \/*r*\/, QSharedPointer<token_node>& t)$/;"	f	namespace:snap
+domain_set_website_var	lib/snap_uri.cpp	/^void domain_set_website_var(const rule& \/*r*\/, QSharedPointer<token_node>& t)$/;"	f	namespace:snap
+domain_variable	lib/snap_uri.h	/^	domain_variable(domain_variable_type_t type, const QString& name, const QString& value)$/;"	f	class:snap::domain_variable
+domain_variable	lib/snap_uri.h	/^class domain_variable : public parser::parser_user_data$/;"	c	namespace:snap
+domain_variable	tests/test_snap_parser.cpp	/^	domain_variable(domain_variable_type_t type, const QString& name, const QString& value)$/;"	f	class:domain_variable
+domain_variable	tests/test_snap_parser.cpp	/^class domain_variable : public snap::parser::parser_user_data$/;"	c	file:
+domain_variable_type_t	lib/snap_uri.h	/^	typedef int domain_variable_type_t;$/;"	t	class:snap::domain_variable
+domain_variable_type_t	tests/test_snap_parser.cpp	/^	enum domain_variable_type_t {$/;"	g	class:domain_variable	file:
+drop_tables	src/snapdb.cpp	/^void snapdb::drop_tables()$/;"	f	class:snapdb
+dynamic_path_plugin_t	plugins/path/path.h	/^	typedef controlled_vars::ptr_no_init<plugins::plugin> dynamic_path_plugin_t;$/;"	t	class:snap::path::path
+dynamic_plugin_class	plugins/javascript/javascript.cpp	/^	dynamic_plugin_class(javascript *js, QScriptEngine *script_engine, javascript_dynamic_plugin *plugin)$/;"	f	class:dynamic_plugin_class
+dynamic_plugin_class	plugins/javascript/javascript.cpp	/^class dynamic_plugin_class : public QScriptClass$/;"	c	file:
+elementById	lib/qdomnodemodel.cpp	/^QXmlNodeModelIndex QDomNodeModel::elementById(const QXmlName& id) const$/;"	f	class:QDomNodeModel
+empty_output	lib/snap_child.cpp	/^bool snap_child::empty_output() const$/;"	f	class:snap::snap_child
+encrypt_password	plugins/users/users.cpp	/^void users::encrypt_password(const QString& digest, const QString& password, const QByteArray& salt, QByteArray& hash)$/;"	f	class:users
+endDocument	lib/qdomreceiver.cpp	/^void QDomReceiver::endDocument()$/;"	f	class:QDomReceiver
+endDocument	lib/qhtmlserializer.cpp	/^void QHtmlSerializer::endDocument()$/;"	f	class:QHtmlSerializer
+endElement	lib/qdomreceiver.cpp	/^void QDomReceiver::endElement()$/;"	f	class:QDomReceiver
+endElement	lib/qhtmlserializer.cpp	/^void QHtmlSerializer::endElement()$/;"	f	class:QHtmlSerializer
+endOfSequence	lib/qdomreceiver.cpp	/^void QDomReceiver::endOfSequence()$/;"	f	class:QDomReceiver
+endOfSequence	lib/qhtmlserializer.cpp	/^void QHtmlSerializer::endOfSequence()$/;"	f	class:QHtmlSerializer
+env	tests/test_snap_cgi.cpp	/^environ_t env;$/;"	v
+environ_t	tests/test_snap_cgi.cpp	/^typedef std::map<std::string, std::string> environ_t;$/;"	t	file:
+environment_map_t	lib/snap_child.h	/^	typedef QMap<QString, QString>		environment_map_t;$/;"	t	class:snap::snap_child
+eoi	lib/snap_parser.h	/^	bool			eoi() const { return f_pos == f_input.end(); }$/;"	f	class:snap::parser::lexer
+errmsg	lib/snap_uri.h	/^	const QString& errmsg() const { return f_errmsg; }$/;"	f	class:snap::snap_uri_rules
+error	lib/log.cpp	/^logger error(const char *file, const char *func, int line)$/;"	f	namespace:snap::logging
+error	src/snap.cpp	/^int snap_cgi::error(const char *code, const char *msg)$/;"	f	class:snap_cgi
+evaluate_script	plugins/javascript/javascript.cpp	/^QVariant javascript::evaluate_script(const QString& script)$/;"	f	class:javascript
+execute	lib/snap_child.cpp	/^void snap_child::execute()$/;"	f	class:snap::snap_child
+execute_impl	lib/snapwebsites.cpp	/^bool server::execute_impl(const QString& \/*url*\/)$/;"	f	class:snap::server
+exists	lib/plugins.cpp	/^bool exists(const QString& name)$/;"	f	namespace:snap::plugins
+f_about	snap-manager/snap-manager.h	/^	QPointer<QWidget>			f_about;$/;"	m	class:snap_manager
+f_accepted_addr	lib/tcp_client_server.h	/^	struct sockaddr_in  f_accepted_addr;$/;"	m	class:tcp_client_server::tcp_server	typeref:struct:tcp_client_server::tcp_server::sockaddr_in
+f_accepted_socket	lib/tcp_client_server.h	/^    int                 f_accepted_socket;$/;"	m	class:tcp_client_server::tcp_server
+f_add_on_reduce	lib/snap_parser.cpp	/^	state_array_t					f_add_on_reduce;$/;"	m	struct:snap::parser::parser_state	file:
+f_addr	lib/tcp_client_server.h	/^    std::string         f_addr;$/;"	m	class:tcp_client_server::tcp_client
+f_addr	lib/tcp_client_server.h	/^    std::string         f_addr;$/;"	m	class:tcp_client_server::tcp_server
+f_anchor	lib/snap_uri.h	/^	QString						f_anchor;$/;"	m	class:snap::snap_uri
+f_auto_close	lib/tcp_client_server.h	/^    bool                f_auto_close;$/;"	m	class:tcp_client_server::tcp_server
+f_blocks	plugins/content/content.h	/^	content_block_map_t								f_blocks;$/;"	m	class:snap::content::content
+f_body	plugins/messages/messages.h	/^		QString						f_body;$/;"	m	class:snap::messages::messages::message
+f_browser_cookies	lib/snap_child.h	/^	environment_map_t					f_browser_cookies;$/;"	m	class:snap::snap_child
+f_cassandra	lib/snap_child.h	/^	QPointer<QtCassandra::QCassandra>	f_cassandra;$/;"	m	class:snap::snap_child
+f_cassandra	snap-manager/snap-manager.h	/^	QPointer<QtCassandra::QCassandra>				f_cassandra;$/;"	m	class:snap_manager
+f_cassandra	src/snapdb.cpp	/^    QCassandra                      f_cassandra;$/;"	m	class:snapdb	file:
+f_cassandra	src/snaplayout.cpp	/^    QCassandra                      f_cassandra;$/;"	m	class:snap_layout	file:
+f_cassandra_host	snap-manager/snap-manager.h	/^	QString						f_cassandra_host;$/;"	m	class:snap_manager
+f_cassandra_port	snap-manager/snap-manager.h	/^	int							f_cassandra_port;$/;"	m	class:snap_manager
+f_cell_iterator	plugins/links/links.h	/^	QtCassandra::QCassandraCells::const_iterator	f_cell_iterator;$/;"	m	class:snap::links::link_context
+f_child_pid	lib/snap_child.h	/^	pid_t								f_child_pid;$/;"	m	class:snap::snap_child
+f_children	lib/snap_parser.cpp	/^	state_array_t					f_children;$/;"	m	struct:snap::parser::parser_state	file:
+f_choices	lib/snap_parser.cpp	/^	choices *						f_choices;$/;"	m	struct:snap::parser::parser_state	file:
+f_choices	lib/snap_parser.h	/^		choices *	f_choices;	\/\/ sub-rule if not null & token TOKEN_ID_CHOICES_ENUM$/;"	m	struct:snap::parser::rule::rule_data_t
+f_choices	lib/snap_parser.h	/^	choices_array_t				f_choices;$/;"	m	class:snap::parser::grammar
+f_column_predicate	plugins/links/links.h	/^	QtCassandra::QCassandraColumnRangePredicate		f_column_predicate;$/;"	m	class:snap::links::link_context
+f_content_table	plugins/content/content.h	/^	QSharedPointer<QtCassandra::QCassandraTable>	f_content_table;$/;"	m	class:snap::content::content
+f_content_table	plugins/layout/layout.h	/^	QSharedPointer<QtCassandra::QCassandraTable>	f_content_table;$/;"	m	class:snap::layout::layout
+f_content_table	plugins/links/links.h	/^	QSharedPointer<QtCassandra::QCassandraTable>	f_content_table;$/;"	m	class:snap::links::links
+f_context	lib/snap_child.h	/^	QSharedPointer<QtCassandra::QCassandraContext>	f_context;$/;"	m	class:snap::snap_child
+f_context	snap-manager/snap-manager.h	/^	QSharedPointer<QtCassandra::QCassandraContext>	f_context;$/;"	m	class:snap_manager
+f_context	src/snapdb.cpp	/^    QString                         f_context;$/;"	m	class:snapdb	file:
+f_cookies	lib/snap_child.h	/^	cookie_map_t						f_cookies;$/;"	m	class:snap::snap_child
+f_count	src/snapdb.cpp	/^    controlled_vars::mint32_t       f_count;$/;"	m	class:snapdb	file:
+f_data	plugins/content/content.h	/^		QString						f_data;$/;"	m	struct:snap::content::content::content_param
+f_data	snap-manager/snap-manager-decode-utf8.h	/^	QPointer<QTextEdit>			f_data;$/;"	m	class:snap_manager_decode_utf8
+f_decode_utf8	snap-manager/snap-manager.h	/^	QPointer<QWidget>			f_decode_utf8;$/;"	m	class:snap_manager
+f_default	lib/snap_uri.h	/^	QString						f_default;$/;"	m	class:snap::website_variable
+f_default	lib/snap_uri.h	/^	QString f_default;$/;"	m	class:snap::domain_variable
+f_default	tests/test_snap_parser.cpp	/^	QString							f_default;  \/\/ this may be the default (flag) or forced (website) value$/;"	m	class:domain_variable	file:
+f_destination	plugins/content/content.h	/^		links::link_info			f_destination;$/;"	m	struct:snap::content::content::content_link
+f_doc	lib/qdomnodemodel.h	/^    mutable QDomDocument f_doc;$/;"	m	class:QDomNodeModel
+f_doc	lib/qdomreceiver.h	/^    QDomDocument    f_doc;$/;"	m	class:QDomReceiver
+f_domain	lib/http_cookie.h	/^	QString						f_domain;    \/\/ domain for which the cookie is valid$/;"	m	class:snap::http_cookie
+f_domain	lib/snap_uri.h	/^	QString						f_domain;$/;"	m	class:snap::snap_uri
+f_domain_cancel	snap-manager/snap-manager.h	/^	QPointer<QPushButton>		f_domain_cancel;$/;"	m	class:snap_manager
+f_domain_delete	snap-manager/snap-manager.h	/^	QPointer<QPushButton>		f_domain_delete;$/;"	m	class:snap_manager
+f_domain_filter	snap-manager/snap-manager.h	/^	QPointer<QPushButton>		f_domain_filter;$/;"	m	class:snap_manager
+f_domain_filter_string	snap-manager/snap-manager.h	/^	QPointer<QLineEdit>			f_domain_filter_string;$/;"	m	class:snap_manager
+f_domain_key	lib/snap_child.h	/^	QString								f_domain_key;$/;"	m	class:snap::snap_child
+f_domain_list	snap-manager/snap-manager.h	/^	QPointer<QListWidget>		f_domain_list;$/;"	m	class:snap_manager
+f_domain_name	snap-manager/snap-manager.h	/^	QPointer<QLineEdit>			f_domain_name;$/;"	m	class:snap_manager
+f_domain_new	snap-manager/snap-manager.h	/^	QPointer<QPushButton>		f_domain_new;$/;"	m	class:snap_manager
+f_domain_org_name	snap-manager/snap-manager.h	/^	QString						f_domain_org_name; \/\/ the original name (in case user changes it)$/;"	m	class:snap_manager
+f_domain_org_rules	snap-manager/snap-manager.h	/^	QString						f_domain_org_rules; \/\/ the original rules (to check Cancel properly)$/;"	m	class:snap_manager
+f_domain_rules	snap-manager/snap-manager.h	/^	QPointer<QTextEdit>			f_domain_rules;$/;"	m	class:snap_manager
+f_domain_save	snap-manager/snap-manager.h	/^	QPointer<QPushButton>		f_domain_save;$/;"	m	class:snap_manager
+f_dynamic_plugins	plugins/javascript/javascript.cpp	/^	QMap<QString, QSharedPointer<dynamic_plugin_class> >	f_dynamic_plugins;$/;"	m	class:plugins_class	file:
+f_dynamic_plugins	plugins/javascript/javascript.h	/^	QVector<javascript_dynamic_plugin *>	f_dynamic_plugins;$/;"	m	class:snap::javascript::javascript
+f_element	lib/qdomreceiver.h	/^    QDomElement     f_element;$/;"	m	class:QDomReceiver
+f_element_stack	lib/qhtmlserializer.h	/^    QVector<QString>            f_element_stack;$/;"	m	class:QHtmlSerializer
+f_engine	plugins/javascript/javascript.cpp	/^	QScriptEngine *				f_engine;$/;"	m	class:javascript_dynamic_plugin_iterator	file:
+f_engine	plugins/javascript/javascript.cpp	/^	QScriptEngine *				f_engine;$/;"	m	class:javascript_plugins_iterator	file:
+f_env	lib/snap_child.h	/^	environment_map_t					f_env;$/;"	m	class:snap::snap_child
+f_errmsg	lib/snap_uri.h	/^	QString		f_errmsg;$/;"	m	class:snap::snap_uri_rules
+f_error_code	lib/snap_parser.h	/^	controlled_error_t			f_error_code;$/;"	m	class:snap::parser::lexer
+f_error_count	plugins/messages/messages.h	/^	controlled_vars::zint32_t	f_error_count;$/;"	m	class:snap::messages::messages
+f_error_line	lib/snap_parser.h	/^	controlled_vars::zuint32_t	f_error_line;$/;"	m	class:snap::parser::lexer
+f_error_message	lib/snap_parser.h	/^	QString						f_error_message;$/;"	m	class:snap::parser::lexer
+f_expire	lib/http_cookie.h	/^	QDateTime					f_expire;    \/\/ when to expire the cookie (if null, session, if past delete)$/;"	m	class:snap::http_cookie
+f_field	plugins/robotstxt/robotstxt.h	/^		QString		f_field;$/;"	m	struct:snap::robotstxt::robotstxt::robots_field_t
+f_file	lib/log.h	/^	const char *	f_file;$/;"	m	class:snap::logging::logger
+f_filename	lib/plugins.h	/^	const QString						f_filename;$/;"	m	class:snap::plugins::plugin
+f_fixed_server_protocol	lib/snap_child.h	/^	mutable controlled_vars::fbool_t	f_fixed_server_protocol;$/;"	m	class:snap::snap_child
+f_form_elements	plugins/form/form.h	/^	QDomDocument					f_form_elements;$/;"	m	class:snap::form::form
+f_form_elements_string	plugins/form/form.h	/^	QString							f_form_elements_string;$/;"	m	class:snap::form::form
+f_form_initialized	plugins/form/form.h	/^	controlled_vars::fbool_t		f_form_initialized;$/;"	m	class:snap::form::form
+f_form_stylesheet	plugins/form/form.h	/^	QDomElement 					f_form_stylesheet;$/;"	m	class:snap::form::form
+f_frequency	plugins/sitemapxml/sitemapxml.h	/^		weekly_t					f_frequency;			\/\/ number of seconds between modifications$/;"	m	class:snap::sitemapxml::sitemapxml::url_info
+f_func	lib/log.h	/^	const char *	f_func;$/;"	m	class:snap::logging::logger
+f_has_post	lib/snap_child.h	/^	controlled_vars::fbool_t			f_has_post;$/;"	m	class:snap::snap_child
+f_header	lib/snap_child.h	/^	header_map_t						f_header;$/;"	m	class:snap::snap_child
+f_help	snap-manager/snap-manager.h	/^	QPointer<QWidget>			f_help;$/;"	m	class:snap_manager
+f_host	src/snapdb.cpp	/^    QString                         f_host;$/;"	m	class:snapdb	file:
+f_http_only	lib/http_cookie.h	/^	controlled_vars::fbool_t	f_http_only; \/\/ JavaScript cannot access this cookie$/;"	m	class:snap::http_cookie
+f_id	lib/snap_parser.h	/^	token_t			f_id;$/;"	m	class:snap::parser::token
+f_id	plugins/messages/messages.h	/^		controlled_vars::mint32_t	f_id;$/;"	m	class:snap::messages::messages::message
+f_identifier	lib/snap_parser.h	/^	QString		f_identifier;$/;"	m	class:snap::parser::keyword
+f_idx_connect	snap-manager/snap-manager.h	/^	int							f_idx_connect;$/;"	m	class:snap_manager
+f_idx_domain	snap-manager/snap-manager.h	/^	int							f_idx_domain;$/;"	m	class:snap_manager
+f_info	lib/snap_uri.h	/^	QVector<QSharedPointer<domain_info> > f_info;$/;"	m	class:snap::domain_rules
+f_info	lib/snap_uri.h	/^	QVector<QSharedPointer<website_info> > f_info;$/;"	m	class:snap::website_rules
+f_info	plugins/links/links.h	/^	link_info										f_info;$/;"	m	class:snap::links::link_context
+f_info	tests/test_snap_parser.cpp	/^	QVector<QSharedPointer<domain_info> >			f_info;$/;"	m	class:domain_rules	file:
+f_input	lib/snap_parser.h	/^	QString						f_input;$/;"	m	class:snap::parser::lexer
+f_is_child	lib/snap_child.h	/^	controlled_vars::fbool_t			f_is_child;$/;"	m	class:snap::snap_child
+f_javascript	plugins/javascript/javascript.cpp	/^	javascript *							f_javascript;$/;"	m	class:plugins_class	file:
+f_javascript	plugins/javascript/javascript.cpp	/^	javascript *				f_javascript;$/;"	m	class:dynamic_plugin_class	file:
+f_javascript	plugins/javascript/javascript.cpp	/^	javascript *				f_javascript;$/;"	m	class:javascript_dynamic_plugin_iterator	file:
+f_javascript	plugins/javascript/javascript.cpp	/^	javascript *				f_javascript;$/;"	m	class:javascript_plugins_iterator	file:
+f_keepalive	lib/tcp_client_server.h	/^    bool                f_keepalive;$/;"	m	class:tcp_client_server::tcp_server
+f_key	plugins/links/links.h	/^	QString						f_key;$/;"	m	class:snap::links::link_info
+f_keyword	lib/snap_parser.h	/^		keyword		f_keyword;	\/\/ the keyword$/;"	m	struct:snap::parser::rule::rule_data_t
+f_keywords	lib/snap_parser.h	/^	keywords_map_t				f_keywords;$/;"	m	class:snap::parser::lexer
+f_last_modification	lib/plugins.h	/^	mutable controlled_vars::zint64_t	f_last_modification;$/;"	m	class:snap::plugins::plugin
+f_last_modification	plugins/sitemapxml/sitemapxml.h	/^		ztime_t						f_last_modification;	\/\/ Unix date when it was last modified$/;"	m	class:snap::sitemapxml::sitemapxml::url_info
+f_layouts	src/snaplayout.cpp	/^    string_array_t                  f_layouts;$/;"	m	class:snap_layout	file:
+f_line	lib/log.h	/^	int				f_line;$/;"	m	class:snap::logging::logger
+f_line	lib/snap_parser.cpp	/^	int								f_line;$/;"	m	struct:snap::parser::parser_state	file:
+f_line	lib/snap_parser.h	/^	controlled_vars::zint32_t			f_line;$/;"	m	class:snap::parser::token_node
+f_line	lib/snap_parser.h	/^	controlled_vars::zuint32_t	f_line;$/;"	m	class:snap::parser::lexer
+f_link	plugins/links/links.h	/^	QString											f_link;$/;"	m	class:snap::links::link_context
+f_links	plugins/content/content.h	/^		content_links_t				f_links;$/;"	m	struct:snap::content::content::content_block
+f_links_table	plugins/links/links.h	/^	QSharedPointer<QtCassandra::QCassandraTable>	f_links_table;$/;"	m	class:snap::links::links
+f_log_level	lib/log.h	/^	log_level_t		f_log_level;$/;"	m	class:snap::logging::logger
+f_max_connections	lib/tcp_client_server.h	/^    int                 f_max_connections;$/;"	m	class:tcp_client_server::tcp_server
+f_message	lib/log.h	/^	QString			f_message;$/;"	m	class:snap::logging::logger
+f_messages	plugins/messages/messages.h	/^	QVector<message>			f_messages;$/;"	m	class:snap::messages::messages
+f_name	lib/http_cookie.h	/^	QString						f_name;      \/\/ name of the cookie$/;"	m	class:snap::http_cookie
+f_name	lib/plugins.h	/^	const QString						f_name;$/;"	m	class:snap::plugins::plugin
+f_name	lib/snap_parser.h	/^	QString				f_name;$/;"	m	class:snap::parser::choices
+f_name	lib/snap_uri.h	/^	QString										f_name;$/;"	m	class:snap::website_info
+f_name	lib/snap_uri.h	/^	QString						f_name;$/;"	m	class:snap::website_variable
+f_name	lib/snap_uri.h	/^	QString f_name;$/;"	m	class:snap::domain_info
+f_name	lib/snap_uri.h	/^	QString f_name;$/;"	m	class:snap::domain_variable
+f_name	plugins/content/content.h	/^		QString						f_name;$/;"	m	struct:snap::content::content::content_param
+f_name	plugins/links/links.h	/^	QString						f_name;$/;"	m	class:snap::links::link_info
+f_name	tests/test_snap_parser.cpp	/^	QString							f_name;$/;"	m	class:domain_info	file:
+f_name	tests/test_snap_parser.cpp	/^	QString							f_name;$/;"	m	class:domain_variable	file:
+f_namepool	lib/qdomreceiver.h	/^    QXmlNamePool    f_namepool;$/;"	m	class:QDomReceiver
+f_namepool	lib/qhtmlserializer.h	/^    QXmlNamePool                f_namepool;$/;"	m	class:QHtmlSerializer
+f_new_content	lib/snap_child.h	/^	controlled_vars::fbool_t			f_new_content;$/;"	m	class:snap::snap_child
+f_node	lib/snap_parser.cpp	/^	QSharedPointer<token_node>		f_node;$/;"	m	struct:snap::parser::parser_state	file:
+f_number	lib/snap_parser.h	/^	int			f_number;$/;"	m	class:snap::parser::keyword
+f_object	plugins/javascript/javascript.cpp	/^	QScriptValue				f_object;$/;"	m	class:javascript_dynamic_plugin_iterator	file:
+f_object	plugins/javascript/javascript.cpp	/^	QScriptValue				f_object;$/;"	m	class:javascript_plugins_iterator	file:
+f_object_path	plugins/sessions/sessions.h	/^		QString						f_object_path; \/\/ exact path to user, form, etc.$/;"	m	class:snap::sessions::sessions::session_info
+f_options	lib/snap_uri.h	/^	snap_uri_options_t			f_options;$/;"	m	class:snap::snap_uri
+f_original	lib/snap_uri.h	/^	QString						f_original;$/;"	m	class:snap::snap_uri
+f_original_site_key	lib/snap_child.h	/^	QString								f_original_site_key;$/;"	m	class:snap::snap_child
+f_output	lib/qhtmlserializer.h	/^    QBuffer *                   f_output;$/;"	m	class:QHtmlSerializer
+f_output	lib/snap_child.h	/^	QBuffer								f_output;$/;"	m	class:snap::snap_child
+f_overwrite	plugins/content/content.h	/^		controlled_vars::fbool_t	f_overwrite;$/;"	m	struct:snap::content::content::content_param
+f_owner	plugins/content/content.h	/^		QString						f_owner;$/;"	m	struct:snap::content::content::content_block
+f_page_path	plugins/sessions/sessions.h	/^		QString						f_page_path;$/;"	m	class:snap::sessions::sessions::session_info
+f_params	plugins/content/content.h	/^		content_params_t			f_params;$/;"	m	struct:snap::content::content::content_block
+f_parent	lib/snap_parser.cpp	/^	parser_state *					f_parent;$/;"	m	struct:snap::parser::parser_state	file:
+f_parent	lib/snap_parser.h	/^	choices *				f_parent;$/;"	m	class:snap::parser::rule
+f_part	lib/snap_uri.h	/^	website_variable_part_t		f_part;$/;"	m	class:snap::website_variable
+f_password	lib/snap_uri.h	/^	QString						f_password;$/;"	m	class:snap::snap_uri
+f_path	lib/http_cookie.h	/^	QString						f_path;      \/\/ path under which the cookie is valid$/;"	m	class:snap::http_cookie
+f_path	lib/snap_uri.h	/^	QStringList					f_path;$/;"	m	class:snap::snap_uri
+f_path	plugins/content/content.h	/^		QString						f_path;$/;"	m	struct:snap::content::content::content_block
+f_path_plugin	plugins/path/path.h	/^	dynamic_path_plugin_t							f_path_plugin;$/;"	m	class:snap::path::path
+f_plugin	plugins/javascript/javascript.cpp	/^	javascript_dynamic_plugin *	f_plugin;$/;"	m	class:dynamic_plugin_class	file:
+f_plugin	plugins/javascript/javascript.cpp	/^	javascript_dynamic_plugin *	f_plugin;$/;"	m	class:javascript_dynamic_plugin_iterator	file:
+f_plugin_owner	plugins/sessions/sessions.h	/^		QString						f_plugin_owner;$/;"	m	class:snap::sessions::sessions::session_info
+f_pool	lib/qdomnodemodel.h	/^    mutable QXmlNamePool f_pool;$/;"	m	class:QDomNodeModel
+f_port	lib/snap_uri.h	/^	snap_uri_port_t				f_port;$/;"	m	class:snap::snap_uri
+f_port	lib/tcp_client_server.h	/^    int                 f_port;$/;"	m	class:tcp_client_server::tcp_client
+f_port	lib/tcp_client_server.h	/^    int                 f_port;$/;"	m	class:tcp_client_server::tcp_server
+f_pos	lib/snap_parser.h	/^	QString::const_iterator		f_pos;$/;"	m	class:snap::parser::lexer
+f_pos	plugins/javascript/javascript.cpp	/^	controlled_vars::mint32_t	f_pos;$/;"	m	class:javascript_dynamic_plugin_iterator	file:
+f_pos	plugins/javascript/javascript.cpp	/^	controlled_vars::mint32_t	f_pos;$/;"	m	class:javascript_plugins_iterator	file:
+f_position	lib/snap_parser.cpp	/^	controlled_vars::zint32_t		f_position;$/;"	m	struct:snap::parser::parser_state	file:
+f_position	lib/snap_parser.h	/^		int			f_position;$/;"	m	class:snap::parser::rule::rule_ref
+f_post	lib/snap_child.h	/^	environment_map_t					f_post;$/;"	m	class:snap::snap_child
+f_primary_owner	plugins/path/path.h	/^	QString											f_primary_owner;$/;"	m	class:snap::path::path
+f_priority	plugins/sitemapxml/sitemapxml.h	/^		controlled_vars::mfloat_t	f_priority;				\/\/ 0.001 to 1.0, default 0.5$/;"	m	class:snap::sitemapxml::sitemapxml::url_info
+f_protocol	lib/snap_uri.h	/^	QString						f_protocol;$/;"	m	class:snap::snap_uri
+f_query_strings	lib/snap_uri.h	/^	snap_uri_options_t			f_query_strings;$/;"	m	class:snap::snap_uri
+f_reducer	lib/snap_parser.h	/^	reducer_t				f_reducer;$/;"	m	class:snap::parser::rule
+f_required	lib/snap_uri.h	/^	controlled_vars::zbool_t	f_required;$/;"	m	class:snap::website_variable
+f_required	lib/snap_uri.h	/^	controlled_vars::zbool_t f_required;$/;"	m	class:snap::domain_variable
+f_required	tests/test_snap_parser.cpp	/^	controlled_vars::zbool_t		f_required;$/;"	m	class:domain_variable	file:
+f_reset_domains_index	snap-manager/snap-manager.h	/^	QPointer<QAction>			f_reset_domains_index;$/;"	m	class:snap_manager
+f_reset_websites_index	snap-manager/snap-manager.h	/^	QPointer<QAction>			f_reset_websites_index;$/;"	m	class:snap_manager
+f_result	lib/snap_parser.h	/^	QSharedPointer<token_node>	f_result;$/;"	m	class:snap::parser::grammar
+f_robots_txt	plugins/robotstxt/robotstxt.h	/^	robots_txt_t		f_robots_txt;$/;"	m	class:snap::robotstxt::robotstxt
+f_row	plugins/links/links.h	/^	QSharedPointer<QtCassandra::QCassandraRow>		f_row;$/;"	m	class:snap::links::link_context
+f_row	src/snapdb.cpp	/^    QString                         f_row;$/;"	m	class:snapdb	file:
+f_rule	lib/snap_parser.cpp	/^	controlled_vars::zint32_t		f_rule;$/;"	m	struct:snap::parser::parser_state	file:
+f_rule	lib/snap_parser.h	/^		const rule *f_rule;$/;"	m	class:snap::parser::rule::rule_ref
+f_rules	lib/snap_parser.h	/^	QVector<rule *>		f_rules;$/;"	m	class:snap::parser::choices
+f_saved	plugins/content/content.h	/^		controlled_vars::fbool_t	f_saved;$/;"	m	struct:snap::content::content::content_block
+f_secure	lib/http_cookie.h	/^	controlled_vars::fbool_t	f_secure;    \/\/ only valid on HTTPS$/;"	m	class:snap::http_cookie
+f_security	lib/log.h	/^	log_security_t	f_security;$/;"	m	class:snap::logging::logger
+f_server	lib/snap_child.h	/^	server *							f_server;$/;"	m	class:snap::snap_child
+f_session_id	plugins/sessions/sessions.h	/^		session_id_t				f_session_id;$/;"	m	class:snap::sessions::sessions::session_info
+f_site_key	lib/snap_child.h	/^	QString								f_site_key;$/;"	m	class:snap::snap_child
+f_site_key_with_slash	lib/snap_child.h	/^	QString								f_site_key_with_slash;$/;"	m	class:snap::snap_child
+f_site_table	lib/snap_child.h	/^	QSharedPointer<QtCassandra::QCassandraTable> f_site_table;$/;"	m	class:snap::snap_child
+f_snap	lib/http_cookie.h	/^	zpsnap_child_t				f_snap;      \/\/ the snap child that created this cookie$/;"	m	class:snap::http_cookie
+f_snap	plugins/char_chart/char_chart.h	/^	zpsnap_child_t		f_snap;$/;"	m	class:snap::char_chart::char_chart
+f_snap	plugins/content/content.h	/^	zpsnap_child_t									f_snap;$/;"	m	class:snap::content::content
+f_snap	plugins/filter/filter.h	/^	snap_child *	f_snap;$/;"	m	class:snap::filter::filter
+f_snap	plugins/form/form.h	/^	zpsnap_child_t					f_snap;$/;"	m	class:snap::form::form
+f_snap	plugins/javascript/javascript.h	/^	zpsnap_child_t							f_snap;$/;"	m	class:snap::javascript::javascript
+f_snap	plugins/layout/layout.h	/^	zpsnap_child_t									f_snap;$/;"	m	class:snap::layout::layout
+f_snap	plugins/links/links.h	/^	zpsnap_child_t									f_snap;$/;"	m	class:snap::links::link_context
+f_snap	plugins/links/links.h	/^	zpsnap_child_t									f_snap;$/;"	m	class:snap::links::links
+f_snap	plugins/messages/messages.h	/^	zpsnap_child_t				f_snap;$/;"	m	class:snap::messages::messages
+f_snap	plugins/path/path.h	/^	zpsnap_child_t									f_snap;$/;"	m	class:snap::path::path
+f_snap	plugins/robotstxt/robotstxt.h	/^	zpsnap_child_t		f_snap;$/;"	m	class:snap::robotstxt::robotstxt
+f_snap	plugins/search/search.h	/^	zpsnap_child_t									f_snap;$/;"	m	class:snap::search::search
+f_snap	plugins/sessions/sessions.h	/^	zpsnap_child_t		f_snap;$/;"	m	class:snap::sessions::sessions
+f_snap	plugins/sitemapxml/sitemapxml.h	/^	zpsnap_child_t		f_snap;$/;"	m	class:snap::sitemapxml::sitemapxml
+f_snap	plugins/taxonomy/taxonomy.h	/^	zpsnap_child_t		f_snap;$/;"	m	class:snap::taxonomy::taxonomy
+f_snap	plugins/users/users.h	/^	zpsnap_child_t			f_snap;$/;"	m	class:snap::users::users
+f_snap_host	snap-manager/snap-manager.h	/^	QString						f_snap_host;$/;"	m	class:snap_manager
+f_snap_port	snap-manager/snap-manager.h	/^	int							f_snap_port;$/;"	m	class:snap_manager
+f_socket	lib/snap_child.h	/^	int									f_socket;$/;"	m	class:snap::snap_child
+f_socket	lib/tcp_client_server.h	/^    int                 f_socket;$/;"	m	class:tcp_client_server::tcp_client
+f_socket	lib/tcp_client_server.h	/^    int                 f_socket;$/;"	m	class:tcp_client_server::tcp_server
+f_source	plugins/content/content.h	/^		links::link_info			f_source;$/;"	m	struct:snap::content::content::content_link
+f_start_date	lib/snap_child.h	/^	controlled_vars::mint64_t			f_start_date; \/\/ time request arrived$/;"	m	class:snap::snap_child
+f_status	lib/qhtmlserializer.h	/^    html_serializer_status_t    f_status;$/;"	m	class:QHtmlSerializer
+f_sub_domains	lib/snap_uri.h	/^	QStringList					f_sub_domains;$/;"	m	class:snap::snap_uri
+f_tab_connect	snap-manager/snap-manager.h	/^	QPointer<QWidget>			f_tab_connect;$/;"	m	class:snap_manager
+f_tab_domain	snap-manager/snap-manager.h	/^	QPointer<QWidget>			f_tab_domain;$/;"	m	class:snap_manager
+f_table	src/snapdb.cpp	/^    QString                         f_table;$/;"	m	class:snapdb	file:
+f_tabs	snap-manager/snap-manager.h	/^	QPointer<QTabWidget>		f_tabs;$/;"	m	class:snap_manager
+f_time_limit	plugins/sessions/sessions.h	/^		ztime_t						f_time_limit;$/;"	m	class:snap::sessions::sessions::session_info
+f_time_to_live	plugins/sessions/sessions.h	/^		time_to_live_t				f_time_to_live;$/;"	m	class:snap::sessions::sessions::session_info
+f_title	plugins/messages/messages.h	/^		QString						f_title;$/;"	m	class:snap::messages::messages::message
+f_token	lib/snap_parser.h	/^		token_t		f_token;$/;"	m	struct:snap::parser::rule::rule_data_t
+f_tokens	lib/snap_parser.h	/^	QVector<rule_data_t>	f_tokens;$/;"	m	class:snap::parser::rule
+f_tokens	lib/snap_parser.h	/^	vector_token_t						f_tokens;$/;"	m	class:snap::parser::token_node
+f_top_level_domain	lib/snap_uri.h	/^	QString						f_top_level_domain;$/;"	m	class:snap::snap_uri
+f_type	lib/snap_parser.h	/^struct token_id { token_id(token_t t) : f_type(t) {} operator token_t () const { return f_type; } private: token_t f_type; };$/;"	m	struct:snap::parser::token_id
+f_type	lib/snap_uri.h	/^	domain_variable_type_t f_type;$/;"	m	class:snap::domain_variable
+f_type	lib/snap_uri.h	/^	website_variable_type_t		f_type;$/;"	m	class:snap::website_variable
+f_type	plugins/messages/messages.h	/^		message_type_t				f_type;$/;"	m	class:snap::messages::messages::message
+f_type	plugins/sessions/sessions.h	/^		auto_session_info_type_t	f_type;$/;"	m	class:snap::sessions::sessions::session_info
+f_type	tests/test_snap_parser.cpp	/^	domain_variable_type_t			f_type;$/;"	m	class:domain_variable	file:
+f_unique	plugins/links/links.h	/^	controlled_vars::fbool_t	f_unique;$/;"	m	class:snap::links::link_info
+f_uri	lib/snap_child.h	/^	snap_uri							f_uri;$/;"	m	class:snap::snap_child
+f_uri	plugins/sitemapxml/sitemapxml.h	/^		QString						f_uri;					\/\/ the page URI$/;"	m	class:snap::sitemapxml::sitemapxml::url_info
+f_url_info	plugins/sitemapxml/sitemapxml.h	/^	url_info_list_t		f_url_info;$/;"	m	class:snap::sitemapxml::sitemapxml
+f_user_data	lib/snap_parser.h	/^	QSharedPointer<parser_user_data>	f_user_data;$/;"	m	class:snap::parser::token_node
+f_username	lib/snap_uri.h	/^	QString						f_username;$/;"	m	class:snap::snap_uri
+f_value	lib/http_cookie.h	/^	QByteArray					f_value;     \/\/ the cookie value (binary buffer)$/;"	m	class:snap::http_cookie
+f_value	lib/snap_parser.h	/^		QString		f_value;	\/\/ required value if not empty$/;"	m	struct:snap::parser::rule::rule_data_t
+f_value	lib/snap_parser.h	/^	QVariant		f_value;$/;"	m	class:snap::parser::token
+f_value	lib/snap_uri.h	/^	QString						f_value;$/;"	m	class:snap::website_variable
+f_value	lib/snap_uri.h	/^	QString f_value;$/;"	m	class:snap::domain_variable
+f_value	plugins/robotstxt/robotstxt.h	/^		QString		f_value;$/;"	m	struct:snap::robotstxt::robotstxt::robots_field_t
+f_value	tests/test_snap_parser.cpp	/^	QString							f_value;$/;"	m	class:domain_variable	file:
+f_vars	lib/snap_uri.h	/^	QVector<QSharedPointer<domain_variable> > f_vars;$/;"	m	class:snap::domain_info
+f_vars	lib/snap_uri.h	/^	QVector<QSharedPointer<website_variable> >	f_vars;$/;"	m	class:snap::website_info
+f_vars	tests/test_snap_parser.cpp	/^	QVector<QSharedPointer<domain_variable> >		f_vars;$/;"	m	class:domain_info	file:
+f_warning_count	plugins/messages/messages.h	/^	controlled_vars::zint32_t	f_warning_count;$/;"	m	class:snap::messages::messages
+f_website_cancel	snap-manager/snap-manager.h	/^	QPointer<QPushButton>		f_website_cancel;$/;"	m	class:snap_manager
+f_website_delete	snap-manager/snap-manager.h	/^	QPointer<QPushButton>		f_website_delete;$/;"	m	class:snap_manager
+f_website_key	lib/snap_child.h	/^	QString								f_website_key;$/;"	m	class:snap::snap_child
+f_website_list	snap-manager/snap-manager.h	/^	QPointer<QListWidget>		f_website_list;$/;"	m	class:snap_manager
+f_website_name	snap-manager/snap-manager.h	/^	QPointer<QLineEdit>			f_website_name;$/;"	m	class:snap_manager
+f_website_new	snap-manager/snap-manager.h	/^	QPointer<QPushButton>		f_website_new;$/;"	m	class:snap_manager
+f_website_org_name	snap-manager/snap-manager.h	/^	QString						f_website_org_name; \/\/ the original name (in case user changes it)$/;"	m	class:snap_manager
+f_website_org_rules	snap-manager/snap-manager.h	/^	QString						f_website_org_rules; \/\/ the original rules (to check Cancel properly)$/;"	m	class:snap_manager
+f_website_rules	snap-manager/snap-manager.h	/^	QPointer<QTextEdit>			f_website_rules;$/;"	m	class:snap_manager
+f_website_save	snap-manager/snap-manager.h	/^	QPointer<QPushButton>		f_website_save;$/;"	m	class:snap_manager
+fatal	lib/log.cpp	/^logger fatal(const char *file, const char *func, int line)$/;"	f	namespace:snap::logging
+filter	plugins/filter/filter.cpp	/^filter::filter()$/;"	f	class:filter
+filter	plugins/filter/filter.h	/^class filter : public plugins::plugin$/;"	c	namespace:snap::filter
+filter	plugins/filter/filter.h	/^namespace filter$/;"	n	namespace:snap
+find_type_with	plugins/taxonomy/taxonomy.cpp	/^QtCassandra::QCassandraValue taxonomy::find_type_with(const QString& cpath, const QString& taxonomy_name, const QString& col_name, const QString& limit_name)$/;"	f	class:taxonomy
+form	plugins/form/form.cpp	/^form::form()$/;"	f	class:form
+form	plugins/form/form.h	/^class form : public plugins::plugin$/;"	c	namespace:snap::form
+form	plugins/form/form.h	/^namespace form$/;"	n	namespace:snap
+form_element_impl	plugins/form/form.cpp	/^bool form::form_element_impl(form *f)$/;"	f	class:form
+form_post	plugins/form/form.h	/^class form_post$/;"	c	namespace:snap::form
+form_to_html	plugins/form/form.cpp	/^QDomDocument form::form_to_html(const sessions::sessions::session_info& info, const QDomDocument& xml)$/;"	f	class:form
+free	lib/snap_parser.cpp	/^	static void free(state_array_t& current, state_array_t& free_states, parser_state *s)$/;"	f	struct:snap::parser::parser_state
+fromDomNode	lib/qdomnodemodel.cpp	/^QXmlNodeModelIndex QDomNodeModel::fromDomNode(const QDomNode& n) const$/;"	f	class:QDomNodeModel
+from_data	plugins/links/links.cpp	/^void link_info::from_data(const QString& db_data)$/;"	f	class:link_info
+full_domain	lib/snap_uri.cpp	/^QString snap_uri::full_domain() const$/;"	f	class:snap::snap_uri
+g_application	lib/snapwebsites.cpp	/^QCoreApplication *g_application;$/;"	m	namespace:snap	file:
+g_instance	lib/snapwebsites.cpp	/^server *server::g_instance = NULL;$/;"	m	class:snap::server	file:
+g_log_config_filename	lib/log.cpp	/^QString g_log_config_filename;$/;"	m	namespace:snap::logging::__anon5	file:
+g_log_configured	lib/log.cpp	/^bool g_log_configured = false;$/;"	m	namespace:snap::logging::__anon5	file:
+g_logger	lib/log.cpp	/^log4cplus::Logger g_logger;$/;"	m	namespace:snap::logging::__anon5	file:
+g_message_id	plugins/messages/messages.cpp	/^controlled_vars::zint32_t		g_message_id;$/;"	m	namespace:__anon3	file:
+g_next_number	lib/snap_parser.cpp	/^int	keyword::g_next_number = 0;$/;"	m	class:snap::parser::keyword	file:
+g_next_number	lib/snap_parser.h	/^	static int	g_next_number;$/;"	m	class:snap::parser::keyword
+g_next_register_filename	lib/plugins.cpp	/^QString g_next_register_filename;$/;"	m	namespace:snap::plugins	file:
+g_next_register_name	lib/plugins.cpp	/^QString g_next_register_name;$/;"	m	namespace:snap::plugins	file:
+g_plugins	lib/plugins.cpp	/^QMap<QString, plugin *> g_plugins;$/;"	m	namespace:snap::plugins	file:
+g_secure_logger	lib/log.cpp	/^log4cplus::Logger g_secure_logger;$/;"	m	namespace:snap::logging::__anon5	file:
+g_undefined	plugins/path/path.cpp	/^const char *g_undefined = "undefined";$/;"	m	namespace:__anon1	file:
+generate_header_content_impl	plugins/layout/layout.cpp	/^bool layout::generate_header_content_impl(layout *c, const QString& path, QDomElement& header, QDomElement& metadata)$/;"	f	class:layout
+generate_login_form	plugins/users/users.cpp	/^void users::generate_login_form(QDomElement& body)$/;"	f	class:users
+generate_page_content_impl	plugins/layout/layout.cpp	/^bool layout::generate_page_content_impl(layout *l, const QString& path, QDomElement& page, QDomElement& body)$/;"	f	class:layout
+generate_register_form	plugins/users/users.cpp	/^void users::generate_register_form(QDomElement& body)$/;"	f	class:users
+generate_robotstxt_impl	plugins/robotstxt/robotstxt.cpp	/^bool robotstxt::generate_robotstxt_impl(robotstxt *r)$/;"	f	class:robotstxt
+generate_sitemapxml_impl	plugins/sitemapxml/sitemapxml.cpp	/^bool sitemapxml::generate_sitemapxml_impl(sitemapxml *r)$/;"	f	class:sitemapxml
+getChild	snap-manager/snap-manager.cpp	/^T *getChild(QWidget *parent, const char *name)$/;"	f
+getImpl	lib/qdomnodemodel.cpp	/^	QDomNodePrivate *getImpl()$/;"	f	class:MyDomNode
+get_addr	lib/tcp_client_server.cpp	/^std::string tcp_client::get_addr() const$/;"	f	class:tcp_client_server::tcp_client
+get_addr	lib/tcp_client_server.cpp	/^std::string tcp_server::get_addr() const$/;"	f	class:tcp_client_server::tcp_server
+get_body	plugins/messages/messages.cpp	/^const QString& messages::message::get_body() const$/;"	f	class:messages::message
+get_choices	lib/snap_parser.h	/^		choices& get_choices() const { return *f_rule->f_tokens[f_position].f_choices; }$/;"	f	class:snap::parser::rule::rule_ref
+get_content_parameter	plugins/content/content.cpp	/^QtCassandra::QCassandraValue content::get_content_parameter(const QString& path, const QString& param_name)$/;"	f	class:content
+get_content_table	plugins/content/content.cpp	/^QSharedPointer<QtCassandra::QCassandraTable> content::get_content_table()$/;"	f	class:content
+get_context	lib/snap_child.h	/^	QSharedPointer<QtCassandra::QCassandraContext> get_context() { return f_context; }$/;"	f	class:snap::snap_child
+get_default	lib/snap_uri.h	/^	const QString& get_default() const$/;"	f	class:snap::domain_variable
+get_default	lib/snap_uri.h	/^	const QString& get_default() const$/;"	f	class:snap::website_variable
+get_default	tests/test_snap_parser.cpp	/^	const QString& get_default() const { return f_default; }$/;"	f	class:domain_variable
+get_domain	lib/http_cookie.cpp	/^const QString& http_cookie::get_domain() const$/;"	f	class:snap::http_cookie
+get_domain_key	lib/snap_child.h	/^	const QString& get_domain_key() const { return f_domain_key; }$/;"	f	class:snap::snap_child
+get_error_code	lib/snap_parser.h	/^	lexer_error_t	get_error_code() const { return f_error_code; }$/;"	f	class:snap::parser::lexer
+get_error_count	plugins/messages/messages.cpp	/^int messages::get_error_count() const$/;"	f	class:messages
+get_error_line	lib/snap_parser.h	/^	uint32_t		get_error_line() const { return f_error_line; }$/;"	f	class:snap::parser::lexer
+get_error_message	lib/snap_parser.h	/^	QString			get_error_message() const { return f_error_message; }$/;"	f	class:snap::parser::lexer
+get_expire	lib/http_cookie.cpp	/^const QDateTime& http_cookie::get_expire() const$/;"	f	class:snap::http_cookie
+get_form_table	plugins/form/form.cpp	/^QSharedPointer<QtCassandra::QCassandraTable> form::get_form_table()$/;"	f	class:form
+get_frequency	plugins/sitemapxml/sitemapxml.cpp	/^int sitemapxml::url_info::get_frequency() const$/;"	f	class:sitemapxml::url_info
+get_header	lib/snap_child.cpp	/^QString snap_child::get_header(const QString& name) const$/;"	f	class:snap::snap_child
+get_http_only	lib/http_cookie.cpp	/^bool http_cookie::get_http_only() const$/;"	f	class:snap::http_cookie
+get_id	lib/snap_parser.h	/^	token_t get_id() const { return f_id; }$/;"	f	class:snap::parser::token
+get_id	plugins/messages/messages.cpp	/^int messages::message::get_id() const$/;"	f	class:messages::message
+get_keepalive	lib/tcp_client_server.cpp	/^bool tcp_server::get_keepalive() const$/;"	f	class:tcp_client_server::tcp_server
+get_keyword	lib/snap_parser.h	/^		keyword get_keyword() const { return f_rule->f_tokens[f_position].f_keyword; }$/;"	f	class:snap::parser::rule::rule_ref
+get_last_accepted_socket	lib/tcp_client_server.cpp	/^int tcp_server::get_last_accepted_socket()$/;"	f	class:tcp_client_server::tcp_server
+get_last_message	plugins/messages/messages.cpp	/^messages::message messages::get_last_message() const$/;"	f	class:messages
+get_last_modification	plugins/sitemapxml/sitemapxml.cpp	/^time_t sitemapxml::url_info::get_last_modification() const$/;"	f	class:sitemapxml::url_info
+get_layout	plugins/layout/layout.cpp	/^QString layout::get_layout(const QString& cpath, const QString& column_name)$/;"	f	class:layout
+get_layout_table	plugins/layout/layout.cpp	/^QSharedPointer<QtCassandra::QCassandraTable> layout::get_layout_table()$/;"	f	class:layout
+get_line	lib/snap_parser.h	/^	uint32_t get_line() const { return f_line; }$/;"	f	class:snap::parser::token_node
+get_links_table	plugins/links/links.cpp	/^QSharedPointer<QtCassandra::QCassandraTable> links::get_links_table()$/;"	f	class:links
+get_max_connections	lib/tcp_client_server.cpp	/^int tcp_server::get_max_connections() const$/;"	f	class:tcp_client_server::tcp_server
+get_name	lib/http_cookie.cpp	/^const QString& http_cookie::get_name() const$/;"	f	class:snap::http_cookie
+get_name	lib/snap_uri.h	/^	const QString& get_name() const$/;"	f	class:snap::domain_info
+get_name	lib/snap_uri.h	/^	const QString& get_name() const$/;"	f	class:snap::domain_variable
+get_name	lib/snap_uri.h	/^	const QString& get_name() const$/;"	f	class:snap::website_info
+get_name	lib/snap_uri.h	/^	const QString& get_name() const$/;"	f	class:snap::website_variable
+get_name	lib/snapwebsites.cpp	/^const char *get_name(name_t name)$/;"	f	namespace:snap
+get_name	plugins/content/content.cpp	/^const char *get_name(name_t name)$/;"	f
+get_name	plugins/form/form.cpp	/^const char *get_name(name_t name)$/;"	f
+get_name	plugins/layout/layout.cpp	/^const char *get_name(name_t name)$/;"	f
+get_name	plugins/links/links.cpp	/^const char *get_name(name_t name)$/;"	f
+get_name	plugins/messages/messages.cpp	/^const char *get_name(name_t name)$/;"	f
+get_name	plugins/path/path.cpp	/^const char *get_name(name_t name)$/;"	f
+get_name	plugins/search/search.cpp	/^const char *get_name(name_t name)$/;"	f
+get_name	plugins/sessions/sessions.cpp	/^const char *get_name(name_t name)$/;"	f
+get_name	plugins/sitemapxml/sitemapxml.cpp	/^const char *get_name(name_t name)$/;"	f
+get_name	plugins/taxonomy/taxonomy.cpp	/^const char *get_name(name_t name)$/;"	f
+get_name	plugins/users/users.cpp	/^const char *get_name(name_t name)$/;"	f
+get_name	tests/test_snap_parser.cpp	/^	const QString& get_name() const { return f_name; }$/;"	f	class:domain_variable
+get_name	tests/test_snap_parser.cpp	/^	const QString& get_name() const$/;"	f	class:domain_info
+get_object_path	plugins/sessions/sessions.cpp	/^const QString& sessions::session_info::get_object_path() const$/;"	f	class:sessions::session_info
+get_original_uri	lib/snap_uri.cpp	/^const QString& snap_uri::get_original_uri() const$/;"	f	class:snap::snap_uri
+get_page_path	plugins/sessions/sessions.cpp	/^const QString& sessions::session_info::get_page_path() const$/;"	f	class:sessions::session_info
+get_parameter	lib/snapwebsites.cpp	/^QString server::get_parameter(const QString& param_name)$/;"	f	class:snap::server
+get_part	lib/snap_uri.cpp	/^QString snap_uri::get_part(const QString& name, int part) const$/;"	f	class:snap::snap_uri
+get_part	lib/snap_uri.h	/^	website_variable_part_t get_part() const$/;"	f	class:snap::website_variable
+get_path	lib/http_cookie.cpp	/^const QString& http_cookie::get_path() const$/;"	f	class:snap::http_cookie
+get_plugin	lib/plugins.cpp	/^plugin *get_plugin(const QString& name)$/;"	f	namespace:snap::plugins
+get_plugin_name	lib/plugins.cpp	/^QString plugin::get_plugin_name() const$/;"	f	class:snap::plugins::plugin
+get_plugin_owner	plugins/sessions/sessions.cpp	/^const QString& sessions::session_info::get_plugin_owner() const$/;"	f	class:sessions::session_info
+get_port	lib/snap_uri.cpp	/^int snap_uri::get_port() const$/;"	f	class:snap::snap_uri
+get_port	lib/tcp_client_server.cpp	/^int tcp_client::get_port() const$/;"	f	class:tcp_client_server::tcp_client
+get_port	lib/tcp_client_server.cpp	/^int tcp_server::get_port() const$/;"	f	class:tcp_client_server::tcp_server
+get_priority	plugins/sitemapxml/sitemapxml.cpp	/^float sitemapxml::url_info::get_priority() const$/;"	f	class:sitemapxml::url_info
+get_required	lib/snap_uri.h	/^	bool get_required() const$/;"	f	class:snap::domain_variable
+get_required	lib/snap_uri.h	/^	bool get_required() const$/;"	f	class:snap::website_variable
+get_required	tests/test_snap_parser.cpp	/^	bool get_required() const { return f_required; }$/;"	f	class:domain_variable
+get_result	lib/snap_parser.h	/^	QSharedPointer<token_node> get_result() const { return f_result; }$/;"	f	class:snap::parser::grammar
+get_secure	lib/http_cookie.cpp	/^bool http_cookie::get_secure() const$/;"	f	class:snap::http_cookie
+get_session_id	plugins/sessions/sessions.cpp	/^sessions::session_info::session_id_t sessions::session_info::get_session_id() const$/;"	f	class:sessions::session_info
+get_session_type	plugins/sessions/sessions.cpp	/^sessions::session_info::session_info_type_t sessions::session_info::get_session_type() const$/;"	f	class:sessions::session_info
+get_sessions_table	plugins/sessions/sessions.cpp	/^QSharedPointer<QtCassandra::QCassandraTable> sessions::get_sessions_table()$/;"	f	class:sessions
+get_site_key	lib/snap_child.h	/^	const QString& get_site_key() const { return f_site_key; }$/;"	f	class:snap::snap_child
+get_site_key_with_slash	lib/snap_child.h	/^	const QString& get_site_key_with_slash() const { return f_site_key_with_slash; }$/;"	f	class:snap::snap_child
+get_site_parameter	lib/snap_child.cpp	/^QtCassandra::QCassandraValue snap_child::get_site_parameter(const QString& name)$/;"	f	class:snap::snap_child
+get_socket	lib/tcp_client_server.cpp	/^int tcp_client::get_socket() const$/;"	f	class:tcp_client_server::tcp_client
+get_socket	lib/tcp_client_server.cpp	/^int tcp_server::get_socket() const$/;"	f	class:tcp_client_server::tcp_server
+get_start_date	lib/snap_child.h	/^	int64_t get_start_date() const { return f_start_date; }$/;"	f	class:snap::snap_child
+get_tag	lib/dom_util.cpp	/^bool get_tag(const QString& tag_name, QDomElement& element, QDomElement& tag, bool create)$/;"	f	namespace:snap::dom_util
+get_time_limit	plugins/sessions/sessions.cpp	/^time_t sessions::session_info::get_time_limit() const$/;"	f	class:sessions::session_info
+get_time_to_live	plugins/sessions/sessions.cpp	/^int32_t sessions::session_info::get_time_to_live() const$/;"	f	class:sessions::session_info
+get_title	plugins/messages/messages.cpp	/^const QString& messages::message::get_title() const$/;"	f	class:messages::message
+get_token	lib/snap_parser.h	/^		token get_token() const { return f_rule->f_tokens[f_position].f_token; }$/;"	f	class:snap::parser::rule::rule_ref
+get_type	lib/http_cookie.cpp	/^http_cookie::http_cookie_type_t http_cookie::get_type() const$/;"	f	class:snap::http_cookie
+get_type	lib/snap_uri.h	/^	domain_variable_type_t get_type() const$/;"	f	class:snap::domain_variable
+get_type	lib/snap_uri.h	/^	website_variable_type_t get_type() const$/;"	f	class:snap::website_variable
+get_type	plugins/messages/messages.cpp	/^messages::message::message_type_enum_t messages::message::get_type() const$/;"	f	class:messages::message
+get_type	tests/test_snap_parser.cpp	/^	domain_variable_type_t get_type() const { return f_type; }$/;"	f	class:domain_variable
+get_unique_number	lib/snap_child.cpp	/^QString snap_child::get_unique_number()$/;"	f	class:snap::snap_child
+get_uri	lib/snap_child.cpp	/^const snap_uri& snap_child::get_uri() const$/;"	f	class:snap::snap_child
+get_uri	lib/snap_uri.cpp	/^const QString snap_uri::get_uri(bool use_hash_bang) const$/;"	f	class:snap::snap_uri
+get_uri	plugins/sitemapxml/sitemapxml.cpp	/^QString sitemapxml::url_info::get_uri() const$/;"	f	class:sitemapxml::url_info
+get_user_data	lib/snap_parser.h	/^	QSharedPointer<parser_user_data> get_user_data() const { return f_user_data; }$/;"	f	class:snap::parser::token_node
+get_users_table	plugins/users/users.cpp	/^QSharedPointer<QtCassandra::QCassandraTable> users::get_users_table()$/;"	f	class:users
+get_value	lib/http_cookie.cpp	/^const QByteArray& http_cookie::get_value() const$/;"	f	class:snap::http_cookie
+get_value	lib/snap_parser.h	/^		QString get_value() const { return f_rule->f_tokens[f_position].f_value; }$/;"	f	class:snap::parser::rule::rule_ref
+get_value	lib/snap_parser.h	/^	QVariant get_value() const { return f_value; }$/;"	f	class:snap::parser::token
+get_value	lib/snap_uri.h	/^	const QString& get_value() const$/;"	f	class:snap::domain_variable
+get_value	lib/snap_uri.h	/^	const QString& get_value() const$/;"	f	class:snap::website_variable
+get_value	tests/test_snap_parser.cpp	/^	const QString& get_value() const { return f_value; }$/;"	f	class:domain_variable
+get_variable	lib/snap_uri.h	/^	QSharedPointer<domain_variable> get_variable(int idx) const$/;"	f	class:snap::domain_info
+get_variable	lib/snap_uri.h	/^	QSharedPointer<website_variable> get_variable(int idx) const$/;"	f	class:snap::website_info
+get_warning_count	plugins/messages/messages.cpp	/^int messages::get_warning_count() const$/;"	f	class:messages
+get_website_key	lib/snap_child.h	/^	const QString& get_website_key() const { return f_website_key; }$/;"	f	class:snap::snap_child
+grammar	lib/snap_parser.cpp	/^grammar::grammar()$/;"	f	class:snap::parser::grammar
+grammar	lib/snap_parser.h	/^class grammar$/;"	c	namespace:snap::parser
+handle_dynamic_path	plugins/path/path.cpp	/^void path::handle_dynamic_path(const QString& plugin_name, plugins::plugin *p)$/;"	f	class:path
+hasNext	plugins/javascript/javascript.cpp	/^	virtual bool hasNext() const$/;"	f	class:javascript_dynamic_plugin_iterator
+hasNext	plugins/javascript/javascript.cpp	/^	virtual bool hasNext() const$/;"	f	class:javascript_plugins_iterator
+hasPrevious	plugins/javascript/javascript.cpp	/^	virtual bool hasPrevious() const$/;"	f	class:javascript_dynamic_plugin_iterator
+hasPrevious	plugins/javascript/javascript.cpp	/^	virtual bool hasPrevious() const$/;"	f	class:javascript_plugins_iterator
+has_header	lib/snap_child.cpp	/^bool snap_child::has_header(const QString& name) const$/;"	f	class:snap::snap_child
+has_query_option	lib/snap_uri.cpp	/^bool snap_uri::has_query_option(const QString& name) const$/;"	f	class:snap::snap_uri
+header_map_t	lib/snap_child.h	/^	typedef QMap<QString, QString>		header_map_t;$/;"	t	class:snap::snap_child
+help	snap-manager/snap-manager.cpp	/^void snap_manager::help()$/;"	f	class:snap_manager
+hex	snap-manager/snap-manager-decode-utf8.cpp	/^int hex(char c)$/;"	f
+html_64max	plugins/form/form.cpp	/^QString form::html_64max(const QString& html, bool is_secret)$/;"	f	class:form
+html_serializer_status_t	lib/qhtmlserializer.h	/^    enum html_serializer_status_t {$/;"	g	class:QHtmlSerializer
+http_cookie	lib/http_cookie.cpp	/^http_cookie::http_cookie()$/;"	f	class:snap::http_cookie
+http_cookie	lib/http_cookie.cpp	/^http_cookie::http_cookie(snap_child *snap, const QString& name, const QString& value)$/;"	f	class:snap::http_cookie
+http_cookie	lib/http_cookie.h	/^class http_cookie$/;"	c	namespace:snap
+http_cookie_type_t	lib/http_cookie.h	/^	enum http_cookie_type_t$/;"	g	class:snap::http_cookie
+http_token	lib/http_cookie.cpp	/^uint32_t http_token[4] = {$/;"	m	namespace:snap::__anon4	file:
+id	plugins/javascript/javascript.cpp	/^	virtual uint id() const$/;"	f	class:javascript_dynamic_plugin_iterator
+id	plugins/javascript/javascript.cpp	/^	virtual uint id() const$/;"	f	class:javascript_plugins_iterator
+identifier	lib/snap_parser.h	/^	QString identifier() const { return f_identifier; }$/;"	f	class:snap::parser::keyword
+improve_signature_impl	lib/snapwebsites.cpp	/^bool server::improve_signature_impl(const QString& path, QString& signature)$/;"	f	class:snap::server
+info	lib/log.cpp	/^logger info(const char *file, const char *func, int line)$/;"	f	namespace:snap::logging
+info	src/snapdb.cpp	/^void snapdb::info()$/;"	f	class:snapdb
+init_impl	lib/snapwebsites.cpp	/^bool server::init_impl()$/;"	f	class:snap::server
+init_plugins	lib/snap_child.cpp	/^void snap_child::init_plugins()$/;"	f	class:snap::snap_child
+init_start_date	lib/snap_child.cpp	/^void snap_child::init_start_date()$/;"	f	class:snap::snap_child
+initial_update	plugins/char_chart/char_chart.cpp	/^void char_chart::initial_update(int64_t variables_timestamp)$/;"	f	class:char_chart
+initial_update	plugins/content/content.cpp	/^void content::initial_update(int64_t variables_timestamp)$/;"	f	class:content
+initial_update	plugins/javascript/javascript.cpp	/^void javascript::initial_update(int64_t variables_timestamp)$/;"	f	class:javascript
+initial_update	plugins/layout/layout.cpp	/^void layout::initial_update(int64_t variables_timestamp)$/;"	f	class:layout
+initial_update	plugins/links/links.cpp	/^void links::initial_update(int64_t variables_timestamp)$/;"	f	class:links
+initial_update	plugins/robotstxt/robotstxt.cpp	/^void robotstxt::initial_update(int64_t variables_timestamp)$/;"	f	class:robotstxt
+initial_update	plugins/search/search.cpp	/^void search::initial_update(int64_t variables_timestamp)$/;"	f	class:search
+initial_update	plugins/sitemapxml/sitemapxml.cpp	/^void sitemapxml::initial_update(int64_t variables_timestamp)$/;"	f	class:sitemapxml
+initial_update	plugins/taxonomy/taxonomy.cpp	/^void taxonomy::initial_update(int64_t variables_timestamp)$/;"	f	class:taxonomy
+initial_update	plugins/users/users.cpp	/^void users::initial_update(int64_t variables_timestamp)$/;"	f	class:users
+instance	lib/snapwebsites.cpp	/^server *server::instance()$/;"	f	class:snap::server
+instance	plugins/char_chart/char_chart.cpp	/^char_chart *char_chart::instance()$/;"	f	class:char_chart
+instance	plugins/content/content.cpp	/^content *content::instance()$/;"	f	class:content
+instance	plugins/filter/filter.cpp	/^filter *filter::instance()$/;"	f	class:filter
+instance	plugins/form/form.cpp	/^form *form::instance()$/;"	f	class:form
+instance	plugins/javascript/javascript.cpp	/^javascript *javascript::instance()$/;"	f	class:javascript
+instance	plugins/layout/layout.cpp	/^layout *layout::instance()$/;"	f	class:layout
+instance	plugins/links/links.cpp	/^links *links::instance()$/;"	f	class:links
+instance	plugins/messages/messages.cpp	/^messages *messages::instance()$/;"	f	class:messages
+instance	plugins/path/path.cpp	/^path *path::instance()$/;"	f	class:path
+instance	plugins/robotstxt/robotstxt.cpp	/^robotstxt *robotstxt::instance()$/;"	f	class:robotstxt
+instance	plugins/search/search.cpp	/^search *search::instance()$/;"	f	class:search
+instance	plugins/sessions/sessions.cpp	/^sessions *sessions::instance()$/;"	f	class:sessions
+instance	plugins/sitemapxml/sitemapxml.cpp	/^sitemapxml *sitemapxml::instance()$/;"	f	class:sitemapxml
+instance	plugins/taxonomy/taxonomy.cpp	/^taxonomy *taxonomy::instance()$/;"	f	class:taxonomy
+instance	plugins/users/users.cpp	/^users *users::instance()$/;"	f	class:users
+is_configured	lib/log.cpp	/^bool is_configured()$/;"	f	namespace:snap::logging
+is_unique	plugins/links/links.h	/^	bool is_unique() const$/;"	f	class:snap::links::link_info
+javascript	plugins/javascript/javascript.cpp	/^javascript::javascript()$/;"	f	class:javascript
+javascript	plugins/javascript/javascript.h	/^class javascript : public plugins::plugin$/;"	c	namespace:snap::javascript
+javascript	plugins/javascript/javascript.h	/^namespace javascript$/;"	n	namespace:snap
+javascript_dynamic_plugin	plugins/javascript/javascript.h	/^class javascript_dynamic_plugin$/;"	c	namespace:snap::javascript
+javascript_dynamic_plugin_iterator	plugins/javascript/javascript.cpp	/^	javascript_dynamic_plugin_iterator(javascript *js, QScriptEngine *engine, const QScriptValue& object_value, javascript_dynamic_plugin *plugin)$/;"	f	class:javascript_dynamic_plugin_iterator
+javascript_dynamic_plugin_iterator	plugins/javascript/javascript.cpp	/^class javascript_dynamic_plugin_iterator : public QScriptClassPropertyIterator$/;"	c	file:
+javascript_plugins_iterator	plugins/javascript/javascript.cpp	/^	javascript_plugins_iterator(javascript *js, QScriptEngine *engine, const QScriptValue& object_value)$/;"	f	class:javascript_plugins_iterator
+javascript_plugins_iterator	plugins/javascript/javascript.cpp	/^class javascript_plugins_iterator : public QScriptClassPropertyIterator$/;"	c	file:
+js_property_count	plugins/content/content.cpp	/^int content::js_property_count() const$/;"	f	class:content
+js_property_get	plugins/content/content.cpp	/^QVariant content::js_property_get(const QString& name) const$/;"	f	class:content
+js_property_get	plugins/content/content.cpp	/^QVariant content::js_property_get(int index) const$/;"	f	class:content
+js_property_name	plugins/content/content.cpp	/^QString content::js_property_name(int index) const$/;"	f	class:content
+keepalive	lib/tcp_client_server.cpp	/^void tcp_server::keepalive(bool yes)$/;"	f	class:tcp_client_server::tcp_server
+key	plugins/links/links.h	/^	const QString& key() const$/;"	f	class:snap::links::link_info
+keyword	lib/snap_parser.cpp	/^keyword::keyword(lexer& parent, const QString& keyword_identifier, int index_number)$/;"	f	class:snap::parser::keyword
+keyword	lib/snap_parser.h	/^	keyword() : f_number(0) {}$/;"	f	class:snap::parser::keyword
+keyword	lib/snap_parser.h	/^class keyword$/;"	c	namespace:snap::parser
+keywords_map_t	lib/snap_parser.h	/^	typedef QMap<QString, int> keywords_map_t;$/;"	t	class:snap::parser::lexer
+kind	lib/qdomnodemodel.cpp	/^QXmlNodeModelIndex::NodeKind QDomNodeModel::kind(const QXmlNodeModelIndex& ni) const$/;"	f	class:QDomNodeModel
+last_modification	lib/plugins.cpp	/^int64_t plugin::last_modification() const$/;"	f	class:snap::plugins::plugin
+layout	plugins/layout/layout.cpp	/^layout::layout()$/;"	f	class:layout
+layout	plugins/layout/layout.h	/^class layout : public plugins::plugin \/\/, public javascript::javascript_dynamic_plugin$/;"	c	namespace:snap::layout
+layout	plugins/layout/layout.h	/^namespace layout$/;"	n	namespace:snap
+layout_box_execute	plugins/layout/layout.h	/^class layout_box_execute$/;"	c	namespace:snap::layout
+layout_content	plugins/layout/layout.h	/^class layout_content$/;"	c	namespace:snap::layout
+lexer	lib/snap_parser.h	/^					lexer() { f_pos = f_input.begin(); }$/;"	f	class:snap::parser::lexer
+lexer	lib/snap_parser.h	/^class lexer$/;"	c	namespace:snap::parser
+lexer_error_t	lib/snap_parser.h	/^	enum lexer_error_t {$/;"	g	class:snap::parser::lexer
+line	lib/snap_parser.h	/^	uint32_t		line() const { return f_line; }$/;"	f	class:snap::parser::lexer
+link_context	plugins/links/links.cpp	/^link_context::link_context(::snap::snap_child *snap, const link_info& info)$/;"	f	class:link_context
+link_context	plugins/links/links.h	/^class link_context$/;"	c	namespace:snap::links
+link_info	plugins/links/links.h	/^	link_info(const QString& new_name = "", bool unique = false, const QString& new_key = "")$/;"	f	class:snap::links::link_info
+link_info	plugins/links/links.h	/^class link_info$/;"	c	namespace:snap::links
+links	plugins/links/links.cpp	/^links::links()$/;"	f	class:links
+links	plugins/links/links.h	/^class links : public plugins::plugin$/;"	c	namespace:snap::links
+links	plugins/links/links.h	/^namespace links$/;"	n	namespace:snap
+links_exception	plugins/links/links.h	/^class links_exception : public snap_exception {};$/;"	c	namespace:snap::links
+links_exception_invalid_db_data	plugins/links/links.h	/^class links_exception_invalid_db_data : public links_exception {};$/;"	c	namespace:snap::links
+links_exception_invalid_name	plugins/links/links.h	/^class links_exception_invalid_name : public links_exception {};$/;"	c	namespace:snap::links
+links_exception_missing_content_table	plugins/links/links.h	/^class links_exception_missing_content_table : public links_exception {};$/;"	c	namespace:snap::links
+links_exception_missing_links_table	plugins/links/links.h	/^class links_exception_missing_links_table : public links_exception {};$/;"	c	namespace:snap::links
+list_all	lib/plugins.cpp	/^QStringList list_all(const QString& plugin_path)$/;"	f	namespace:snap::plugins
+listen	lib/snapwebsites.cpp	/^void server::listen()$/;"	f	class:snap::server
+load	lib/plugins.cpp	/^bool load(const QString& plugin_path, plugin *server, const QStringList& list_of_plugins)$/;"	f	namespace:snap::plugins
+loadDomains	snap-manager/snap-manager.cpp	/^void snap_manager::loadDomains()$/;"	f	class:snap_manager
+loadWebsites	snap-manager/snap-manager.cpp	/^void snap_manager::loadWebsites()$/;"	f	class:snap_manager
+load_session	plugins/sessions/sessions.cpp	/^void sessions::load_session(const QString& session_id, session_info& info, bool use_once)$/;"	f	class:sessions
+load_xsl_info	src/snaplayout.cpp	/^void snap_layout::load_xsl_info(QDomDocument& doc, const QString& filename, QString& layout_name, QString& layout_area, time_t& layout_modified)$/;"	f	class:snap_layout
+log_level_t	lib/log.h	/^enum log_level_t$/;"	g	namespace:snap::logging
+log_security_t	lib/log.h	/^enum log_security_t$/;"	g	namespace:snap::logging
+logger	lib/log.cpp	/^logger::logger(log_level_t log_level, const char *file, const char *func, int line)$/;"	f	class:snap::logging::logger
+logger	lib/log.h	/^class logger$/;"	c	namespace:snap::logging
+logging	lib/log.cpp	/^namespace logging$/;"	n	namespace:snap	file:
+logging	lib/log.h	/^namespace logging$/;"	n	namespace:snap
+main	snap-manager/snap-manager.cpp	/^int main(int argc, char *argv[])$/;"	f
+main	src/snap.cpp	/^int main(int argc, char *argv[])$/;"	f
+main	src/snapbackend.cpp	/^int main(int argc, char *argv[])$/;"	f
+main	src/snapdb.cpp	/^int main(int argc, char *argv[])$/;"	f
+main	src/snaplayout.cpp	/^int main(int argc, char *argv[])$/;"	f
+main	src/snapserver.cpp	/^int main(int argc, char *argv[])$/;"	f
+main	tests/test_snap_cgi.cpp	/^int main(int argc, char *argv[])$/;"	f
+main	tests/test_snap_parser.cpp	/^int main(int argc, char *argv[])$/;"	f
+main	tests/test_unix_timestamp.cpp	/^int main(int argc, char *argv[])$/;"	f
+message	plugins/messages/messages.cpp	/^messages::message::message()$/;"	f	class:messages::message
+message	plugins/messages/messages.cpp	/^messages::message::message(const message& rhs)$/;"	f	class:messages::message
+message	plugins/messages/messages.cpp	/^messages::message::message(message_type_t t, const QString& title, const QString& body)$/;"	f	class:messages::message
+message	plugins/messages/messages.h	/^	class message$/;"	c	class:snap::messages::messages
+message_type_enum_t	plugins/messages/messages.h	/^		enum message_type_enum_t$/;"	g	class:snap::messages::messages::message
+message_type_t	plugins/messages/messages.h	/^		typedef controlled_vars::limited_need_init<message_type_enum_t, MESSAGE_TYPE_ERROR, MESSAGE_TYPE_DEBUG> message_type_t;$/;"	t	class:snap::messages::messages::message
+messages	plugins/messages/messages.cpp	/^messages::messages()$/;"	f	class:messages
+messages	plugins/messages/messages.h	/^class messages : public plugins::plugin, public layout::layout_content$/;"	c	namespace:snap::messages
+messages	plugins/messages/messages.h	/^namespace messages$/;"	n	namespace:snap
+messages_exception	plugins/messages/messages.h	/^class messages_exception : public snap_exception {};$/;"	c	namespace:snap::messages
+messages_exception_already_defined	plugins/messages/messages.h	/^class messages_exception_already_defined : public messages_exception {};$/;"	c	namespace:snap::messages
+messages_exception_invalid_field_name	plugins/messages/messages.h	/^class messages_exception_invalid_field_name : public messages_exception {};$/;"	c	namespace:snap::messages
+name	lib/qdomnodemodel.cpp	/^QXmlName QDomNodeModel::name(const QXmlNodeModelIndex& ni) const$/;"	f	class:QDomNodeModel
+name	lib/snap_parser.h	/^	const QString& name() const { return f_name; }$/;"	f	class:snap::parser::choices
+name	plugins/javascript/javascript.cpp	/^	virtual QScriptString name() const$/;"	f	class:javascript_dynamic_plugin_iterator
+name	plugins/javascript/javascript.cpp	/^	virtual QScriptString name() const$/;"	f	class:javascript_plugins_iterator
+name	plugins/javascript/javascript.cpp	/^	virtual QString name() const$/;"	f	class:dynamic_plugin_class
+name	plugins/javascript/javascript.cpp	/^	virtual QString name() const$/;"	f	class:plugins_class
+name	plugins/links/links.h	/^	const QString& name() const$/;"	f	class:snap::links::link_info
+name_t	plugins/content/content.h	/^enum name_t {$/;"	g	namespace:snap::content
+name_t	plugins/form/form.h	/^enum name_t {$/;"	g	namespace:snap::form
+name_t	plugins/layout/layout.h	/^enum name_t$/;"	g	namespace:snap::layout
+name_t	plugins/links/links.h	/^enum name_t {$/;"	g	namespace:snap::links
+name_t	plugins/messages/messages.h	/^enum name_t$/;"	g	namespace:snap::messages
+name_t	plugins/path/path.h	/^enum name_t {$/;"	g	namespace:snap::path
+name_t	plugins/search/search.h	/^enum name_t {$/;"	g	namespace:snap::search
+name_t	plugins/sessions/sessions.h	/^enum name_t$/;"	g	namespace:snap::sessions
+name_t	plugins/sitemapxml/sitemapxml.h	/^enum name_t {$/;"	g	namespace:snap::sitemapxml
+name_t	plugins/taxonomy/taxonomy.h	/^enum name_t {$/;"	g	namespace:snap::taxonomy
+name_t	plugins/users/users.h	/^enum name_t$/;"	g	namespace:snap::users
+namespaceBinding	lib/qdomreceiver.cpp	/^void QDomReceiver::namespaceBinding(const QXmlName& name)$/;"	f	class:QDomReceiver
+namespaceBinding	lib/qhtmlserializer.cpp	/^void QHtmlSerializer::namespaceBinding(const QXmlName& name)$/;"	f	class:QHtmlSerializer
+namespaceBindings	lib/qdomnodemodel.cpp	/^QVector<QXmlName> QDomNodeModel::namespaceBindings(const QXmlNodeModelIndex&) const$/;"	f	class:QDomNodeModel
+newIterator	plugins/javascript/javascript.cpp	/^	virtual QScriptClassPropertyIterator *newIterator(const QScriptValue& object)$/;"	f	class:dynamic_plugin_class
+newIterator	plugins/javascript/javascript.cpp	/^	virtual QScriptClassPropertyIterator *newIterator(const QScriptValue& object)$/;"	f	class:plugins_class
+new_content	lib/snap_child.cpp	/^void snap_child::new_content()$/;"	f	class:snap::snap_child
+new_link_context	plugins/links/links.cpp	/^QSharedPointer<link_context> links::new_link_context(const link_info& info)$/;"	f	class:links
+next	plugins/javascript/javascript.cpp	/^	virtual void next()$/;"	f	class:javascript_dynamic_plugin_iterator
+next	plugins/javascript/javascript.cpp	/^	virtual void next()$/;"	f	class:javascript_plugins_iterator
+nextFromSimpleAxis	lib/qdomnodemodel.cpp	/^QXmlNodeModelIndex QDomNodeModel::nextFromSimpleAxis ( SimpleAxis axis, const QXmlNodeModelIndex & ni ) const$/;"	f	class:QDomNodeModel
+next_link	plugins/links/links.cpp	/^bool link_context::next_link(link_info& info)$/;"	f	class:link_context
+next_token	lib/snap_parser.cpp	/^token lexer::next_token()$/;"	f	class:snap::parser::lexer
+next_token	lib/snap_parser.cpp	/^void next_token(parser_state *state, state_array_t& current, state_array_t& free_states)$/;"	f	namespace:snap::parser
+nodesByIdref	lib/qdomnodemodel.cpp	/^QVector<QXmlNodeModelIndex> QDomNodeModel::nodesByIdref(const QXmlName&) const$/;"	f	class:QDomNodeModel
+number	lib/snap_parser.h	/^	int number() const { return f_number; }$/;"	f	class:snap::parser::keyword
+object	plugins/javascript/javascript.cpp	/^	QScriptValue object() const$/;"	f	class:javascript_dynamic_plugin_iterator
+object	plugins/javascript/javascript.cpp	/^	QScriptValue object() const$/;"	f	class:javascript_plugins_iterator
+on_backend_process	plugins/sitemapxml/sitemapxml.cpp	/^void sitemapxml::on_backend_process()$/;"	f	class:sitemapxml
+on_bootstrap	plugins/char_chart/char_chart.cpp	/^void char_chart::on_bootstrap(::snap::snap_child *snap)$/;"	f	class:char_chart
+on_bootstrap	plugins/content/content.cpp	/^void content::on_bootstrap(snap_child *snap)$/;"	f	class:content
+on_bootstrap	plugins/filter/filter.cpp	/^void filter::on_bootstrap(::snap::snap_child *snap)$/;"	f	class:filter
+on_bootstrap	plugins/form/form.cpp	/^void form::on_bootstrap(::snap::snap_child *snap)$/;"	f	class:form
+on_bootstrap	plugins/javascript/javascript.cpp	/^void javascript::on_bootstrap(snap_child *snap)$/;"	f	class:javascript
+on_bootstrap	plugins/layout/layout.cpp	/^void layout::on_bootstrap(snap_child *snap)$/;"	f	class:layout
+on_bootstrap	plugins/links/links.cpp	/^void links::on_bootstrap(::snap::snap_child *snap)$/;"	f	class:links
+on_bootstrap	plugins/messages/messages.cpp	/^void messages::on_bootstrap(snap_child *snap)$/;"	f	class:messages
+on_bootstrap	plugins/path/path.cpp	/^void path::on_bootstrap(::snap::snap_child *snap)$/;"	f	class:path
+on_bootstrap	plugins/robotstxt/robotstxt.cpp	/^void robotstxt::on_bootstrap(snap_child *snap)$/;"	f	class:robotstxt
+on_bootstrap	plugins/search/search.cpp	/^void search::on_bootstrap(::snap::snap_child *snap)$/;"	f	class:search
+on_bootstrap	plugins/sessions/sessions.cpp	/^void sessions::on_bootstrap(snap_child *snap)$/;"	f	class:sessions
+on_bootstrap	plugins/sitemapxml/sitemapxml.cpp	/^void sitemapxml::on_bootstrap(::snap::snap_child *snap)$/;"	f	class:sitemapxml
+on_bootstrap	plugins/taxonomy/taxonomy.cpp	/^void taxonomy::on_bootstrap(::snap::snap_child *snap)$/;"	f	class:taxonomy
+on_bootstrap	plugins/users/users.cpp	/^void users::on_bootstrap(::snap::snap_child *snap)$/;"	f	class:users
+on_can_handle_dynamic_path	plugins/char_chart/char_chart.cpp	/^void char_chart::on_can_handle_dynamic_path(path::path *path_plugin, const QString& cpath)$/;"	f	class:char_chart
+on_can_handle_dynamic_path	plugins/users/users.cpp	/^void users::on_can_handle_dynamic_path(path::path *path_plugin, const QString& cpath)$/;"	f	class:users
+on_clear_clicked	snap-manager/snap-manager-decode-utf8.cpp	/^void snap_manager_decode_utf8::on_clear_clicked()$/;"	f	class:snap_manager_decode_utf8
+on_close_clicked	snap-manager/snap-manager-decode-utf8.cpp	/^void snap_manager_decode_utf8::on_close_clicked()$/;"	f	class:snap_manager_decode_utf8
+on_decode_clicked	snap-manager/snap-manager-decode-utf8.cpp	/^void snap_manager_decode_utf8::on_decode_clicked()$/;"	f	class:snap_manager_decode_utf8
+on_domainCancel_clicked	snap-manager/snap-manager.cpp	/^void snap_manager::on_domainCancel_clicked()$/;"	f	class:snap_manager
+on_domainDelete_clicked	snap-manager/snap-manager.cpp	/^void snap_manager::on_domainDelete_clicked()$/;"	f	class:snap_manager
+on_domainFilter_clicked	snap-manager/snap-manager.cpp	/^void snap_manager::on_domainFilter_clicked()$/;"	f	class:snap_manager
+on_domainList_itemClicked	snap-manager/snap-manager.cpp	/^void snap_manager::on_domainList_itemClicked(QListWidgetItem *item)$/;"	f	class:snap_manager
+on_domainNew_clicked	snap-manager/snap-manager.cpp	/^void snap_manager::on_domainNew_clicked()$/;"	f	class:snap_manager
+on_domainSave_clicked	snap-manager/snap-manager.cpp	/^void snap_manager::on_domainSave_clicked()$/;"	f	class:snap_manager
+on_encode_clicked	snap-manager/snap-manager-decode-utf8.cpp	/^void snap_manager_decode_utf8::on_encode_clicked()$/;"	f	class:snap_manager_decode_utf8
+on_execute	plugins/path/path.cpp	/^void path::on_execute(const QString& uri_path)$/;"	f	class:path
+on_generate_main_content	plugins/char_chart/char_chart.cpp	/^void char_chart::on_generate_main_content(layout::layout *l, const QString& cpath, QDomElement& page, QDomElement& body)$/;"	f	class:char_chart
+on_generate_main_content	plugins/content/content.cpp	/^void content::on_generate_main_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body)$/;"	f	class:content
+on_generate_main_content	plugins/messages/messages.cpp	/^void messages::on_generate_main_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body)$/;"	f	class:messages
+on_generate_main_content	plugins/sessions/sessions.cpp	/^void sessions::on_generate_main_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body)$/;"	f	class:sessions
+on_generate_main_content	plugins/taxonomy/taxonomy.cpp	/^void taxonomy::on_generate_main_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body)$/;"	f	class:taxonomy
+on_generate_main_content	plugins/users/users.cpp	/^void users::on_generate_main_content(layout::layout *l, const QString& cpath, QDomElement& page, QDomElement& body)$/;"	f	class:users
+on_generate_page_content	plugins/content/content.cpp	/^void content::on_generate_page_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body)$/;"	f	class:content
+on_generate_page_content	plugins/messages/messages.cpp	/^void messages::on_generate_page_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body)$/;"	f	class:messages
+on_generate_page_content	plugins/search/search.cpp	/^void search::on_generate_page_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body)$/;"	f	class:search
+on_generate_robotstxt	plugins/sitemapxml/sitemapxml.cpp	/^void sitemapxml::on_generate_robotstxt(robotstxt::robotstxt *r)$/;"	f	class:sitemapxml
+on_generate_sitemapxml	plugins/char_chart/char_chart.cpp	/^void char_chart::on_generate_sitemapxml(sitemapxml::sitemapxml *sitemap)$/;"	f	class:char_chart
+on_get_xml_form	plugins/users/users.cpp	/^QDomDocument users::on_get_xml_form(const QString& cpath)$/;"	f	class:users
+on_improve_signature	plugins/search/search.cpp	/^void search::on_improve_signature(const QString& path, QString& signature)$/;"	f	class:search
+on_init	plugins/form/form.cpp	/^void form::on_init()$/;"	f	class:form
+on_init	plugins/path/path.cpp	/^void path::on_init()$/;"	f	class:path
+on_init	plugins/users/users.cpp	/^void users::on_init()$/;"	f	class:users
+on_path_execute	plugins/char_chart/char_chart.cpp	/^bool char_chart::on_path_execute(const QString& cpath)$/;"	f	class:char_chart
+on_path_execute	plugins/content/content.cpp	/^bool content::on_path_execute(const QString& cpath)$/;"	f	class:content
+on_path_execute	plugins/robotstxt/robotstxt.cpp	/^bool robotstxt::on_path_execute(const QString& url)$/;"	f	class:robotstxt
+on_path_execute	plugins/sitemapxml/sitemapxml.cpp	/^bool sitemapxml::on_path_execute(const QString& url)$/;"	f	class:sitemapxml
+on_path_execute	plugins/taxonomy/taxonomy.cpp	/^bool taxonomy::on_path_execute(const QString& path)$/;"	f	class:taxonomy
+on_path_execute	plugins/users/users.cpp	/^bool users::on_path_execute(const QString& cpath)$/;"	f	class:users
+on_process_cookies	plugins/users/users.cpp	/^void users::on_process_cookies()$/;"	f	class:users
+on_process_post	plugins/form/form.cpp	/^void form::on_process_post(const QString& uri_path)$/;"	f	class:form
+on_process_post	plugins/users/users.cpp	/^void users::on_process_post(const QString& cpath, const sessions::sessions::session_info& info)$/;"	f	class:users
+on_save_content	plugins/content/content.cpp	/^void content::on_save_content()$/;"	f	class:content
+on_websiteCancel_clicked	snap-manager/snap-manager.cpp	/^void snap_manager::on_websiteCancel_clicked()$/;"	f	class:snap_manager
+on_websiteDelete_clicked	snap-manager/snap-manager.cpp	/^void snap_manager::on_websiteDelete_clicked()$/;"	f	class:snap_manager
+on_websiteList_itemClicked	snap-manager/snap-manager.cpp	/^void snap_manager::on_websiteList_itemClicked(QListWidgetItem *item)$/;"	f	class:snap_manager
+on_websiteNew_clicked	snap-manager/snap-manager.cpp	/^void snap_manager::on_websiteNew_clicked()$/;"	f	class:snap_manager
+on_websiteSave_clicked	snap-manager/snap-manager.cpp	/^void snap_manager::on_websiteSave_clicked()$/;"	f	class:snap_manager
+on_xss_filter	plugins/filter/filter.cpp	/^void filter::on_xss_filter(QDomNode& node,$/;"	f	class:filter
+open	lib/qlockfile.h	/^	virtual bool open(OpenMode iomode)$/;"	f	class:QLockFile
+operator !=	lib/snap_uri.cpp	/^bool snap_uri::operator != (const snap_uri& rhs) const$/;"	f	class:snap::snap_uri
+operator ()	lib/log.cpp	/^logger& logger::operator () (const QString& s)$/;"	f	class:snap::logging::logger
+operator ()	lib/log.cpp	/^logger& logger::operator () (const char *s)$/;"	f	class:snap::logging::logger
+operator ()	lib/log.cpp	/^logger& logger::operator () (const char v)$/;"	f	class:snap::logging::logger
+operator ()	lib/log.cpp	/^logger& logger::operator () (const double v)$/;"	f	class:snap::logging::logger
+operator ()	lib/log.cpp	/^logger& logger::operator () (const float v)$/;"	f	class:snap::logging::logger
+operator ()	lib/log.cpp	/^logger& logger::operator () (const log_security_t v)$/;"	f	class:snap::logging::logger
+operator ()	lib/log.cpp	/^logger& logger::operator () (const signed char v)$/;"	f	class:snap::logging::logger
+operator ()	lib/log.cpp	/^logger& logger::operator () (const signed int v)$/;"	f	class:snap::logging::logger
+operator ()	lib/log.cpp	/^logger& logger::operator () (const signed long long v)$/;"	f	class:snap::logging::logger
+operator ()	lib/log.cpp	/^logger& logger::operator () (const signed long v)$/;"	f	class:snap::logging::logger
+operator ()	lib/log.cpp	/^logger& logger::operator () (const signed short v)$/;"	f	class:snap::logging::logger
+operator ()	lib/log.cpp	/^logger& logger::operator () (const unsigned char v)$/;"	f	class:snap::logging::logger
+operator ()	lib/log.cpp	/^logger& logger::operator () (const unsigned int v)$/;"	f	class:snap::logging::logger
+operator ()	lib/log.cpp	/^logger& logger::operator () (const unsigned long long v)$/;"	f	class:snap::logging::logger
+operator ()	lib/log.cpp	/^logger& logger::operator () (const unsigned long v)$/;"	f	class:snap::logging::logger
+operator ()	lib/log.cpp	/^logger& logger::operator () (const unsigned short v)$/;"	f	class:snap::logging::logger
+operator ()	lib/log.cpp	/^logger& logger::operator () (const wchar_t *s)$/;"	f	class:snap::logging::logger
+operator <	lib/snap_uri.cpp	/^bool snap_uri::operator < (const snap_uri& rhs) const$/;"	f	class:snap::snap_uri
+operator <	plugins/sitemapxml/sitemapxml.cpp	/^bool sitemapxml::url_info::operator < (const url_info& rhs) const$/;"	f	class:sitemapxml::url_info
+operator <=	lib/snap_uri.cpp	/^bool snap_uri::operator <= (const snap_uri& rhs) const$/;"	f	class:snap::snap_uri
+operator =	lib/snap_parser.cpp	/^choices& choices::operator = (const choices& rhs)$/;"	f	class:snap::parser::choices
+operator =	lib/snap_parser.h	/^	token& operator = (const token& t)$/;"	f	class:snap::parser::token
+operator ==	lib/snap_uri.cpp	/^bool snap_uri::operator == (const snap_uri& rhs) const$/;"	f	class:snap::snap_uri
+operator >	lib/snap_uri.cpp	/^bool snap_uri::operator > (const snap_uri& rhs) const$/;"	f	class:snap::snap_uri
+operator >=	lib/snap_parser.cpp	/^rule& operator >= (choices& c, rule::reducer_t function)$/;"	f	namespace:snap::parser
+operator >=	lib/snap_parser.cpp	/^rule& operator >= (const QString& literal, rule::reducer_t function)$/;"	f	namespace:snap::parser
+operator >=	lib/snap_parser.cpp	/^rule& operator >= (const keyword& k, rule::reducer_t function)$/;"	f	namespace:snap::parser
+operator >=	lib/snap_parser.cpp	/^rule& operator >= (const token_id& token, rule::reducer_t function)$/;"	f	namespace:snap::parser
+operator >=	lib/snap_parser.cpp	/^rule& rule::operator >= (rule::reducer_t function)$/;"	f	class:snap::parser::rule
+operator >=	lib/snap_uri.cpp	/^bool snap_uri::operator >= (const snap_uri& rhs) const$/;"	f	class:snap::snap_uri
+operator >>	lib/snap_parser.cpp	/^rule& operator >> (choices& c, const QString& literal)$/;"	f	namespace:snap::parser
+operator >>	lib/snap_parser.cpp	/^rule& operator >> (choices& c, const keyword& k)$/;"	f	namespace:snap::parser
+operator >>	lib/snap_parser.cpp	/^rule& operator >> (choices& c, const token_id& token)$/;"	f	namespace:snap::parser
+operator >>	lib/snap_parser.cpp	/^rule& operator >> (choices& c_left, choices& c_right)$/;"	f	namespace:snap::parser
+operator >>	lib/snap_parser.cpp	/^rule& operator >> (const QString& literal, choices& c)$/;"	f	namespace:snap::parser
+operator >>	lib/snap_parser.cpp	/^rule& operator >> (const QString& literal, const keyword& k)$/;"	f	namespace:snap::parser
+operator >>	lib/snap_parser.cpp	/^rule& operator >> (const QString& literal, const token_id& token)$/;"	f	namespace:snap::parser
+operator >>	lib/snap_parser.cpp	/^rule& operator >> (const QString& literal_left, const QString& literal_right)$/;"	f	namespace:snap::parser
+operator >>	lib/snap_parser.cpp	/^rule& operator >> (const keyword& k, choices& c)$/;"	f	namespace:snap::parser
+operator >>	lib/snap_parser.cpp	/^rule& operator >> (const keyword& k, const QString& literal)$/;"	f	namespace:snap::parser
+operator >>	lib/snap_parser.cpp	/^rule& operator >> (const keyword& k, const token_id& token)$/;"	f	namespace:snap::parser
+operator >>	lib/snap_parser.cpp	/^rule& operator >> (const keyword& k_left, const keyword& k_right)$/;"	f	namespace:snap::parser
+operator >>	lib/snap_parser.cpp	/^rule& operator >> (const token_id& token, choices& c)$/;"	f	namespace:snap::parser
+operator >>	lib/snap_parser.cpp	/^rule& operator >> (const token_id& token, const QString& literal)$/;"	f	namespace:snap::parser
+operator >>	lib/snap_parser.cpp	/^rule& operator >> (const token_id& token, const char *literal)$/;"	f	namespace:snap::parser
+operator >>	lib/snap_parser.cpp	/^rule& operator >> (const token_id& token, const keyword& k)$/;"	f	namespace:snap::parser
+operator >>	lib/snap_parser.cpp	/^rule& operator >> (const token_id& token_left, const token_id& token_right)$/;"	f	namespace:snap::parser
+operator >>	lib/snap_parser.cpp	/^rule& rule::operator >> (choices& c)$/;"	f	class:snap::parser::rule
+operator >>	lib/snap_parser.cpp	/^rule& rule::operator >> (const QString& literal)$/;"	f	class:snap::parser::rule
+operator >>	lib/snap_parser.cpp	/^rule& rule::operator >> (const char *literal)$/;"	f	class:snap::parser::rule
+operator >>	lib/snap_parser.cpp	/^rule& rule::operator >> (const keyword& k)$/;"	f	class:snap::parser::rule
+operator >>	lib/snap_parser.cpp	/^rule& rule::operator >> (const token_id& token)$/;"	f	class:snap::parser::rule
+operator >>=	lib/snap_parser.cpp	/^choices& choices::operator >>= (choices& rhs)$/;"	f	class:snap::parser::choices
+operator >>=	lib/snap_parser.cpp	/^choices& choices::operator >>= (const QString& literal)$/;"	f	class:snap::parser::choices
+operator >>=	lib/snap_parser.cpp	/^choices& choices::operator >>= (const keyword& k)$/;"	f	class:snap::parser::choices
+operator >>=	lib/snap_parser.cpp	/^choices& choices::operator >>= (const token_id& token)$/;"	f	class:snap::parser::choices
+operator >>=	lib/snap_parser.cpp	/^choices& choices::operator >>= (rule& r)$/;"	f	class:snap::parser::choices
+operator []	lib/snap_parser.h	/^	QSharedPointer<token> operator [] (int index) { return f_tokens[index]; }$/;"	f	class:snap::parser::token_node
+operator []	lib/snap_parser.h	/^	const QSharedPointer<token> operator [] (int index) const { return f_tokens[index]; }$/;"	f	class:snap::parser::token_node
+operator []	lib/snap_parser.h	/^	const rule& operator [] (int rule) const$/;"	f	class:snap::parser::choices
+operator []	lib/snap_parser.h	/^	const rule_ref operator [] (int position) const$/;"	f	class:snap::parser::rule
+operator []	lib/snap_uri.h	/^	QSharedPointer<domain_info> operator [] (int idx) const$/;"	f	class:snap::domain_rules
+operator []	lib/snap_uri.h	/^	QSharedPointer<domain_variable> operator [] (int idx) const$/;"	f	class:snap::domain_info
+operator []	lib/snap_uri.h	/^	QSharedPointer<website_info> operator [] (int idx) const$/;"	f	class:snap::website_rules
+operator []	lib/snap_uri.h	/^	QSharedPointer<website_variable> operator [] (int idx) const$/;"	f	class:snap::website_info
+operator []	tests/test_snap_parser.cpp	/^	QSharedPointer<domain_info> operator [] (int idx) const$/;"	f	class:domain_rules
+operator []	tests/test_snap_parser.cpp	/^	QSharedPointer<domain_variable> operator [] (int idx) const$/;"	f	class:domain_info
+operator token_t	lib/snap_parser.h	/^struct token_id { token_id(token_t t) : f_type(t) {} operator token_t () const { return f_type; } private: token_t f_type; };$/;"	f	struct:snap::parser::token_id
+operator |	lib/snap_parser.cpp	/^rule& choices::operator | (rule& r)$/;"	f	class:snap::parser::choices
+operator |	lib/snap_parser.cpp	/^rule& operator | (const token_id& token, rule& r_right)$/;"	f	namespace:snap::parser
+operator |	lib/snap_parser.cpp	/^rule& operator | (rule& r, choices& c)$/;"	f	namespace:snap::parser
+operator |	lib/snap_parser.cpp	/^rule& operator | (rule& r_left, rule& r_right)$/;"	f	namespace:snap::parser
+option	lib/snap_uri.cpp	/^QString snap_uri::option(const QString& name) const$/;"	f	class:snap::snap_uri
+option	lib/snap_uri.cpp	/^QString snap_uri::option(int part, QString& name) const$/;"	f	class:snap::snap_uri
+option_count	lib/snap_uri.cpp	/^int snap_uri::option_count() const$/;"	f	class:snap::snap_uri
+options_list	lib/snap_uri.cpp	/^const snap_uri::snap_uri_options_t& snap_uri::options_list() const$/;"	f	class:snap::snap_uri
+output	lib/snap_child.cpp	/^void snap_child::output(const QString& data)$/;"	f	class:snap::snap_child
+output	lib/snap_child.cpp	/^void snap_child::output(const char *data)$/;"	f	class:snap::snap_child
+output	lib/snap_child.cpp	/^void snap_child::output(const std::string& data)$/;"	f	class:snap::snap_child
+output	plugins/robotstxt/robotstxt.cpp	/^void robotstxt::output() const$/;"	f	class:robotstxt
+page_not_found_impl	plugins/path/path.cpp	/^bool path::page_not_found_impl(path * \/*path_plugin*\/, const QString& \/*cpath*\/)$/;"	f	class:path
+parse	lib/snap_parser.cpp	/^bool grammar::parse(lexer& input, choices& start)$/;"	f	class:snap::parser::grammar
+parse_domain_rules	lib/snap_uri.cpp	/^bool snap_uri_rules::parse_domain_rules(const QString& script, QByteArray& result)$/;"	f	class:snap::snap_uri_rules
+parse_url	tests/test_snap_cgi.cpp	/^void parse_url(const char *url)$/;"	f
+parse_website_rules	lib/snap_uri.cpp	/^bool snap_uri_rules::parse_website_rules(const QString& script, QByteArray& result)$/;"	f	class:snap::snap_uri_rules
+parser	lib/snap_parser.cpp	/^namespace parser$/;"	n	namespace:snap	file:
+parser	lib/snap_parser.h	/^namespace parser {$/;"	n	namespace:snap
+parser_state	lib/snap_parser.cpp	/^	parser_state(parser_state *parent, choices& c, int r)$/;"	f	struct:snap::parser::parser_state
+parser_state	lib/snap_parser.cpp	/^struct parser_state$/;"	s	namespace:snap::parser	file:
+parser_user_data	lib/snap_parser.h	/^class parser_user_data$/;"	c	namespace:snap::parser
+path	lib/qdomnodemodel.cpp	/^QDomNodeModel::Path QDomNodeModel::path(const QDomNode& n) const$/;"	f	class:QDomNodeModel
+path	lib/snap_uri.cpp	/^QString snap_uri::path(bool encoded) const$/;"	f	class:snap::snap_uri
+path	plugins/path/path.cpp	/^path::path()$/;"	f	class:path
+path	plugins/path/path.h	/^class path : public plugins::plugin$/;"	c	namespace:snap::path
+path	plugins/path/path.h	/^namespace path$/;"	n	namespace:snap
+path_count	lib/snap_uri.cpp	/^int snap_uri::path_count() const$/;"	f	class:snap::snap_uri
+path_execute	plugins/path/path.h	/^class path_execute$/;"	c	namespace:snap::path
+path_folder_name	lib/snap_uri.cpp	/^QString snap_uri::path_folder_name(int part) const$/;"	f	class:snap::snap_uri
+path_list	lib/snap_uri.cpp	/^const QStringList& snap_uri::path_list() const$/;"	f	class:snap::snap_uri
+plugin	lib/plugins.cpp	/^plugin::plugin()$/;"	f	class:snap::plugins::plugin
+plugin	lib/plugins.h	/^class plugin$/;"	c	namespace:snap::plugins
+plugin_exception	lib/plugins.h	/^	plugin_exception(const QString& what_msg) : runtime_error(what_msg.toUtf8().data())$/;"	f	class:snap::plugins::plugin_exception
+plugin_exception	lib/plugins.h	/^class plugin_exception : public std::runtime_error$/;"	c	namespace:snap::plugins
+plugin_exception_invalid_order	lib/plugins.h	/^	plugin_exception_invalid_order(const QString& what_msg)$/;"	f	class:snap::plugins::plugin_exception_invalid_order
+plugin_exception_invalid_order	lib/plugins.h	/^class plugin_exception_invalid_order : public plugin_exception$/;"	c	namespace:snap::plugins
+plugins	lib/plugins.cpp	/^namespace plugins$/;"	n	namespace:snap	file:
+plugins	lib/plugins.h	/^namespace plugins$/;"	n	namespace:snap
+plugins_class	plugins/javascript/javascript.cpp	/^	plugins_class(javascript *js, QScriptEngine *script_engine)$/;"	f	class:plugins_class
+plugins_class	plugins/javascript/javascript.cpp	/^class plugins_class : public QScriptClass$/;"	c	file:
+postenv	lib/snap_child.cpp	/^QString snap_child::postenv(const QString& name, const QString& default_value) const$/;"	f	class:snap::snap_child
+prepare_cassandra	lib/snapwebsites.cpp	/^void server::prepare_cassandra()$/;"	f	class:snap::server
+previous	plugins/javascript/javascript.cpp	/^	virtual void previous()$/;"	f	class:javascript_dynamic_plugin_iterator
+previous	plugins/javascript/javascript.cpp	/^	virtual void previous()$/;"	f	class:javascript_plugins_iterator
+process	lib/snap_child.cpp	/^bool snap_child::process(int socket)$/;"	f	class:snap::snap_child
+process	src/snap.cpp	/^int snap_cgi::process()$/;"	f	class:snap_cgi
+process_backend_uri	lib/snap_child.cpp	/^void snap_child::process_backend_uri(const QString& uri)$/;"	f	class:snap::snap_child
+process_connection	lib/snapwebsites.cpp	/^void server::process_connection(int socket)$/;"	f	class:snap::server
+process_cookies_impl	lib/snapwebsites.cpp	/^bool server::process_cookies_impl()$/;"	f	class:snap::server
+process_domain	lib/snap_uri.cpp	/^bool snap_uri::process_domain(const QString& full_domain_name,$/;"	f	class:snap::snap_uri
+process_login_form	plugins/users/users.cpp	/^void users::process_login_form()$/;"	f	class:users
+process_post_impl	lib/snapwebsites.cpp	/^bool server::process_post_impl(const QString& \/*url*\/)$/;"	f	class:snap::server
+process_register_form	plugins/users/users.cpp	/^void users::process_register_form()$/;"	f	class:users
+processingInstruction	lib/qdomreceiver.cpp	/^void QDomReceiver::processingInstruction(const QXmlName& target, const QString& value )$/;"	f	class:QDomReceiver
+processingInstruction	lib/qhtmlserializer.cpp	/^void QHtmlSerializer::processingInstruction(const QXmlName& target, const QString& value )$/;"	f	class:QHtmlSerializer
+property	plugins/javascript/javascript.cpp	/^	virtual QScriptValue property(const QScriptValue& object, const QScriptString& object_name, uint id)$/;"	f	class:dynamic_plugin_class
+property	plugins/javascript/javascript.cpp	/^	virtual QScriptValue property(const QScriptValue& object, const QScriptString& object_name, uint id)$/;"	f	class:plugins_class
+propertyFlags	plugins/javascript/javascript.cpp	/^	virtual QScriptValue::PropertyFlags propertyFlags(const QScriptValue& object, const QScriptString& property_name, uint id)$/;"	f	class:dynamic_plugin_class
+propertyFlags	plugins/javascript/javascript.cpp	/^	virtual QScriptValue::PropertyFlags propertyFlags(const QScriptValue& object, const QScriptString& property_name, uint id)$/;"	f	class:plugins_class
+protocol	lib/snap_uri.cpp	/^const QString& snap_uri::protocol() const$/;"	f	class:snap::snap_uri
+protocol_to_port	lib/snap_uri.cpp	/^int snap_uri::protocol_to_port(const QString& protocol)$/;"	f	class:snap::snap_uri
+prototype	plugins/javascript/javascript.cpp	/^	virtual QScriptValue prototype() const$/;"	f	class:dynamic_plugin_class
+prototype	plugins/javascript/javascript.cpp	/^	virtual QScriptValue prototype() const$/;"	f	class:plugins_class
+queryProperty	plugins/javascript/javascript.cpp	/^	virtual QueryFlags queryProperty(const QScriptValue& object, const QScriptString& property_name, QueryFlags flags, uint * id)$/;"	f	class:dynamic_plugin_class
+queryProperty	plugins/javascript/javascript.cpp	/^	virtual QueryFlags queryProperty(const QScriptValue& object, const QScriptString& property_name, QueryFlags flags, uint * id)$/;"	f	class:plugins_class
+query_option	lib/snap_uri.cpp	/^QString snap_uri::query_option(const QString& name) const$/;"	f	class:snap::snap_uri
+query_option	lib/snap_uri.cpp	/^QString snap_uri::query_option(int part, QString& name) const$/;"	f	class:snap::snap_uri
+query_option_count	lib/snap_uri.cpp	/^int snap_uri::query_option_count() const$/;"	f	class:snap::snap_uri
+query_string	lib/snap_uri.cpp	/^QString snap_uri::query_string() const$/;"	f	class:snap::snap_uri
+query_string_list	lib/snap_uri.cpp	/^const snap_uri::snap_uri_options_t& snap_uri::query_string_list() const$/;"	f	class:snap::snap_uri
+quit	snap-manager/snap-manager.cpp	/^void snap_manager::quit()$/;"	f	class:snap_manager
+read	lib/snap_uri.cpp	/^void domain_info::read(QtSerialization::QReader& r)$/;"	f	class:snap::domain_info
+read	lib/snap_uri.cpp	/^void domain_rules::read(QtSerialization::QReader& r)$/;"	f	class:snap::domain_rules
+read	lib/snap_uri.cpp	/^void domain_variable::read(QtSerialization::QReader& r)$/;"	f	class:snap::domain_variable
+read	lib/snap_uri.cpp	/^void website_info::read(QtSerialization::QReader& r)$/;"	f	class:snap::website_info
+read	lib/snap_uri.cpp	/^void website_rules::read(QtSerialization::QReader& r)$/;"	f	class:snap::website_rules
+read	lib/snap_uri.cpp	/^void website_variable::read(QtSerialization::QReader& r)$/;"	f	class:snap::website_variable
+read	lib/tcp_client_server.cpp	/^int tcp_client::read(char *buf, size_t size)$/;"	f	class:tcp_client_server::tcp_client
+readTag	lib/snap_uri.cpp	/^void domain_info::readTag(const QString& name, QtSerialization::QReader& r)$/;"	f	class:snap::domain_info
+readTag	lib/snap_uri.cpp	/^void domain_rules::readTag(const QString& name, QtSerialization::QReader& r)$/;"	f	class:snap::domain_rules
+readTag	lib/snap_uri.cpp	/^void website_info::readTag(const QString& name, QtSerialization::QReader& r)$/;"	f	class:snap::website_info
+readTag	lib/snap_uri.cpp	/^void website_rules::readTag(const QString& name, QtSerialization::QReader& r)$/;"	f	class:snap::website_rules
+read_environment	lib/snap_child.cpp	/^void snap_child::read_environment()$/;"	f	class:snap::snap_child
+reconfigure	lib/log.cpp	/^void reconfigure()$/;"	f	namespace:snap::logging
+reduce	lib/snap_parser.h	/^	void reduce(QSharedPointer<token_node> n) const$/;"	f	class:snap::parser::rule
+reducer_t	lib/snap_parser.h	/^	typedef void (*reducer_t)(const rule& r, QSharedPointer<token_node>& t);$/;"	t	class:snap::parser::rule
+register_dynamic_plugin	plugins/javascript/javascript.cpp	/^void javascript::register_dynamic_plugin(javascript_dynamic_plugin *p)$/;"	f	class:javascript
+register_plugin	lib/plugins.cpp	/^void register_plugin(const QString& name, plugin *p)$/;"	f	namespace:snap::plugins
+request	tests/test_snap_cgi.cpp	/^void request(const char *progname)$/;"	f
+reset	lib/snap_parser.cpp	/^	void reset(parser_state *parent, choices& c, int r)$/;"	f	struct:snap::parser::parser_state
+reset_domains_index	snap-manager/snap-manager.cpp	/^void snap_manager::reset_domains_index()$/;"	f	class:snap_manager
+reset_websites_index	snap-manager/snap-manager.cpp	/^void snap_manager::reset_websites_index()$/;"	f	class:snap_manager
+robots_field_array_t	plugins/robotstxt/robotstxt.h	/^	typedef std::vector<robots_field_t> robots_field_array_t;$/;"	t	class:snap::robotstxt::robotstxt
+robots_field_t	plugins/robotstxt/robotstxt.h	/^	struct robots_field_t$/;"	s	class:snap::robotstxt::robotstxt
+robots_txt_t	plugins/robotstxt/robotstxt.h	/^	typedef std::map<const QString, robots_field_array_t> robots_txt_t;$/;"	t	class:snap::robotstxt::robotstxt
+robotstxt	plugins/robotstxt/robotstxt.cpp	/^robotstxt::robotstxt()$/;"	f	class:robotstxt
+robotstxt	plugins/robotstxt/robotstxt.h	/^class robotstxt : public plugins::plugin, public path::path_execute$/;"	c	namespace:snap::robotstxt
+robotstxt	plugins/robotstxt/robotstxt.h	/^namespace robotstxt$/;"	n	namespace:snap
+robotstxt_exception	plugins/robotstxt/robotstxt.h	/^class robotstxt_exception : public snap_exception {};$/;"	c	namespace:snap::robotstxt
+robotstxt_exception_already_defined	plugins/robotstxt/robotstxt.h	/^class robotstxt_exception_already_defined : public robotstxt_exception {};$/;"	c	namespace:snap::robotstxt
+robotstxt_exception_invalid_field_name	plugins/robotstxt/robotstxt.h	/^class robotstxt_exception_invalid_field_name : public robotstxt_exception {};$/;"	c	namespace:snap::robotstxt
+root	lib/qdomnodemodel.cpp	/^QXmlNodeModelIndex QDomNodeModel::root ( const QXmlNodeModelIndex & ni ) const$/;"	f	class:QDomNodeModel
+rule	lib/snap_parser.cpp	/^rule::rule(choices& c)$/;"	f	class:snap::parser::rule
+rule	lib/snap_parser.cpp	/^rule::rule(const rule& r)$/;"	f	class:snap::parser::rule
+rule	lib/snap_parser.h	/^	rule() : f_parent(NULL), f_reducer(NULL) {}$/;"	f	class:snap::parser::rule
+rule	lib/snap_parser.h	/^class rule$/;"	c	namespace:snap::parser
+rule_data_t	lib/snap_parser.cpp	/^rule::rule_data_t::rule_data_t()$/;"	f	class:snap::parser::rule::rule_data_t
+rule_data_t	lib/snap_parser.cpp	/^rule::rule_data_t::rule_data_t(choices& c)$/;"	f	class:snap::parser::rule::rule_data_t
+rule_data_t	lib/snap_parser.cpp	/^rule::rule_data_t::rule_data_t(const QString& value)$/;"	f	class:snap::parser::rule::rule_data_t
+rule_data_t	lib/snap_parser.cpp	/^rule::rule_data_t::rule_data_t(const keyword& k)$/;"	f	class:snap::parser::rule::rule_data_t
+rule_data_t	lib/snap_parser.cpp	/^rule::rule_data_t::rule_data_t(const rule_data_t& s)$/;"	f	class:snap::parser::rule::rule_data_t
+rule_data_t	lib/snap_parser.cpp	/^rule::rule_data_t::rule_data_t(token_t token)$/;"	f	class:snap::parser::rule::rule_data_t
+rule_data_t	lib/snap_parser.h	/^	struct rule_data_t {$/;"	s	class:snap::parser::rule
+rule_ref	lib/snap_parser.h	/^		rule_ref(const rule *r, int position)$/;"	f	class:snap::parser::rule::rule_ref
+rule_ref	lib/snap_parser.h	/^		rule_ref(const rule_ref& ref)$/;"	f	class:snap::parser::rule::rule_ref
+rule_ref	lib/snap_parser.h	/^	class rule_ref$/;"	c	class:snap::parser::rule
+save_content_impl	lib/snapwebsites.cpp	/^bool server::save_content_impl()$/;"	f	class:snap::server
+search	plugins/search/search.cpp	/^search::search()$/;"	f	class:search
+search	plugins/search/search.h	/^class search : public plugins::plugin$/;"	c	namespace:snap::search
+search	plugins/search/search.h	/^namespace search$/;"	n	namespace:snap
+server	lib/snapwebsites.cpp	/^server::server()$/;"	f	class:snap::server
+session_id_t	plugins/sessions/sessions.h	/^		typedef int		session_id_t;$/;"	t	class:snap::sessions::sessions::session_info
+session_info	plugins/sessions/sessions.cpp	/^sessions::session_info::session_info()$/;"	f	class:sessions::session_info
+session_info	plugins/sessions/sessions.h	/^	class session_info$/;"	c	class:snap::sessions::sessions
+session_info_type_t	plugins/sessions/sessions.h	/^		enum session_info_type_t$/;"	g	class:snap::sessions::sessions::session_info
+sessions	plugins/sessions/sessions.cpp	/^sessions::sessions()$/;"	f	class:sessions
+sessions	plugins/sessions/sessions.h	/^class sessions : public plugins::plugin, public layout::layout_content$/;"	c	namespace:snap::sessions
+sessions	plugins/sessions/sessions.h	/^namespace sessions$/;"	n	namespace:snap
+sessions_exception	plugins/sessions/sessions.h	/^class sessions_exception : public snap_exception {};$/;"	c	namespace:snap::sessions
+sessions_exception_already_defined	plugins/sessions/sessions.h	/^class sessions_exception_already_defined : public sessions_exception {};$/;"	c	namespace:snap::sessions
+sessions_exception_invalid_field_name	plugins/sessions/sessions.h	/^class sessions_exception_invalid_field_name : public sessions_exception {};$/;"	c	namespace:snap::sessions
+setProperty	plugins/javascript/javascript.cpp	/^	virtual void setProperty(QScriptValue& object, const QScriptString& property_name, uint id, const QScriptValue& value)$/;"	f	class:dynamic_plugin_class
+setProperty	plugins/javascript/javascript.cpp	/^	virtual void setProperty(QScriptValue& object, const QScriptString& property_name, uint id, const QScriptValue& value)$/;"	f	class:plugins_class
+set_add_domain_list	tests/test_snap_parser.cpp	/^void set_add_domain_list(const snap::parser::rule& r, QSharedPointer<snap::parser::token_node>& t)$/;"	f
+set_add_rule_list	tests/test_snap_parser.cpp	/^void set_add_rule_list(const snap::parser::rule& r, QSharedPointer<snap::parser::token_node>& t)$/;"	f
+set_anchor	lib/snap_uri.cpp	/^void snap_uri::set_anchor(const QString& uri_anchor)$/;"	f	class:snap::snap_uri
+set_cookie	lib/snap_child.cpp	/^void snap_child::set_cookie(const http_cookie& cookie_info)$/;"	f	class:snap::snap_child
+set_debug	plugins/messages/messages.cpp	/^void messages::set_debug(QString debug_name, const QString& debug_description)$/;"	f	class:messages
+set_default	lib/snap_uri.h	/^	void set_default(const QString& default_value)$/;"	f	class:snap::domain_variable
+set_default	lib/snap_uri.h	/^	void set_default(const QString& default_value)$/;"	f	class:snap::website_variable
+set_default	tests/test_snap_parser.cpp	/^	void set_default(const QString& default_value)$/;"	f	class:domain_variable
+set_delete	lib/http_cookie.cpp	/^void http_cookie::set_delete()$/;"	f	class:snap::http_cookie
+set_domain	lib/http_cookie.cpp	/^void http_cookie::set_domain(const QString& domain)$/;"	f	class:snap::http_cookie
+set_domain	lib/snap_uri.cpp	/^void snap_uri::set_domain(const QString& full_domain_name)$/;"	f	class:snap::snap_uri
+set_error	plugins/messages/messages.cpp	/^void messages::set_error(QString err_name, const QString& err_description, const QString& err_details, bool err_security)$/;"	f	class:messages
+set_expire	lib/http_cookie.cpp	/^void http_cookie::set_expire(const QDateTime& date_time)$/;"	f	class:snap::http_cookie
+set_expire_in	lib/http_cookie.cpp	/^void http_cookie::set_expire_in(int seconds)$/;"	f	class:snap::http_cookie
+set_flag_empty	tests/test_snap_parser.cpp	/^void set_flag_empty(const snap::parser::rule& r, QSharedPointer<snap::parser::token_node>& t)$/;"	f
+set_flag_var	tests/test_snap_parser.cpp	/^void set_flag_var(const snap::parser::rule& r, QSharedPointer<snap::parser::token_node>& t)$/;"	f
+set_frequency	plugins/sitemapxml/sitemapxml.cpp	/^void sitemapxml::url_info::set_frequency(int frequency)$/;"	f	class:sitemapxml::url_info
+set_header	lib/snap_child.cpp	/^void snap_child::set_header(const QString& name, const QString& value)$/;"	f	class:snap::snap_child
+set_http_error	plugins/messages/messages.cpp	/^void messages::set_http_error(int err_code, QString err_name, const QString& err_description, const QString& err_details, bool err_security)$/;"	f	class:messages
+set_http_only	lib/http_cookie.cpp	/^void http_cookie::set_http_only(bool http_only)$/;"	f	class:snap::http_cookie
+set_id	lib/snap_parser.h	/^	void set_id(token_t id) { f_id = id; }$/;"	f	class:snap::parser::token
+set_info	plugins/messages/messages.cpp	/^void messages::set_info(QString info_name, const QString& info_description)$/;"	f	class:messages
+set_input	lib/snap_parser.cpp	/^void lexer::set_input(const QString& input)$/;"	f	class:snap::parser::lexer
+set_key	plugins/links/links.h	/^	void set_key(const QString& new_key)$/;"	f	class:snap::links::link_info
+set_last_modification	plugins/sitemapxml/sitemapxml.cpp	/^void sitemapxml::url_info::set_last_modification(time_t last_modification)$/;"	f	class:sitemapxml::url_info
+set_line	lib/snap_parser.h	/^	void set_line(uint32_t line) { f_line = line; }$/;"	f	class:snap::parser::token_node
+set_name	lib/snap_uri.h	/^	void set_name(const QString& name)$/;"	f	class:snap::domain_info
+set_name	lib/snap_uri.h	/^	void set_name(const QString& name)$/;"	f	class:snap::website_info
+set_name	plugins/links/links.h	/^	void set_name(const QString& new_name, bool unique = false)$/;"	f	class:snap::links::link_info
+set_name	tests/test_snap_parser.cpp	/^	void set_name(const QString& name)$/;"	f	class:domain_info
+set_new_domain_list	tests/test_snap_parser.cpp	/^void set_new_domain_list(const snap::parser::rule& r, QSharedPointer<snap::parser::token_node>& t)$/;"	f
+set_new_qualified_name	tests/test_snap_parser.cpp	/^void set_new_qualified_name(const snap::parser::rule& r, QSharedPointer<snap::parser::token_node>& t)$/;"	f
+set_new_rule_list	tests/test_snap_parser.cpp	/^void set_new_rule_list(const snap::parser::rule& r, QSharedPointer<snap::parser::token_node>& t)$/;"	f
+set_object_path	plugins/sessions/sessions.cpp	/^void sessions::session_info::set_object_path(const QString& object_path)$/;"	f	class:sessions::session_info
+set_opt_flag	tests/test_snap_parser.cpp	/^void set_opt_flag(const snap::parser::rule& r, QSharedPointer<snap::parser::token_node>& t)$/;"	f
+set_option	lib/snap_uri.cpp	/^void snap_uri::set_option(const QString& name, const QString& value)$/;"	f	class:snap::snap_uri
+set_page_path	plugins/sessions/sessions.cpp	/^void sessions::session_info::set_page_path(const QString& page_path)$/;"	f	class:sessions::session_info
+set_param_overwrite	plugins/content/content.cpp	/^void content::set_param_overwrite(const QString& path, const QString& name, bool overwrite)$/;"	f	class:content
+set_part	lib/snap_uri.h	/^	void set_part(website_variable_part_t part)$/;"	f	class:snap::website_variable
+set_path	lib/http_cookie.cpp	/^void http_cookie::set_path(const QString& path)$/;"	f	class:snap::http_cookie
+set_path	lib/snap_uri.cpp	/^void snap_uri::set_path(QString uri_path)$/;"	f	class:snap::snap_uri
+set_plugin_owner	plugins/sessions/sessions.cpp	/^void sessions::session_info::set_plugin_owner(const QString& plugin_owner)$/;"	f	class:sessions::session_info
+set_port	lib/snap_uri.cpp	/^void snap_uri::set_port(const QString& port)$/;"	f	class:snap::snap_uri
+set_port	lib/snap_uri.cpp	/^void snap_uri::set_port(int port)$/;"	f	class:snap::snap_uri
+set_priority	plugins/sitemapxml/sitemapxml.cpp	/^void sitemapxml::url_info::set_priority(float priority)$/;"	f	class:sitemapxml::url_info
+set_protocol	lib/snap_uri.cpp	/^void snap_uri::set_protocol(const QString& uri_protocol)$/;"	f	class:snap::snap_uri
+set_qualified_name	tests/test_snap_parser.cpp	/^void set_qualified_name(const snap::parser::rule& r, QSharedPointer<snap::parser::token_node>& t)$/;"	f
+set_query_option	lib/snap_uri.cpp	/^void snap_uri::set_query_option(const QString& name, const QString& value)$/;"	f	class:snap::snap_uri
+set_query_string	lib/snap_uri.cpp	/^void snap_uri::set_query_string(const QString& uri_query_string)$/;"	f	class:snap::snap_uri
+set_reducer	lib/snap_parser.h	/^	void set_reducer(reducer_t reducer)$/;"	f	class:snap::parser::rule
+set_required	lib/snap_uri.h	/^	void set_required(bool required = true)$/;"	f	class:snap::domain_variable
+set_required	lib/snap_uri.h	/^	void set_required(bool required = true)$/;"	f	class:snap::website_variable
+set_required	tests/test_snap_parser.cpp	/^	void set_required(bool required = true)$/;"	f	class:domain_variable
+set_rule	tests/test_snap_parser.cpp	/^void set_rule(const snap::parser::rule& r, QSharedPointer<snap::parser::token_node>& t)$/;"	f
+set_secure	lib/http_cookie.cpp	/^void http_cookie::set_secure(bool secure)$/;"	f	class:snap::http_cookie
+set_session	lib/http_cookie.cpp	/^void http_cookie::set_session()$/;"	f	class:snap::http_cookie
+set_session_id	plugins/sessions/sessions.cpp	/^void sessions::session_info::set_session_id(session_id_t id)$/;"	f	class:sessions::session_info
+set_session_type	plugins/sessions/sessions.cpp	/^void sessions::session_info::set_session_type(session_info_type_t type)$/;"	f	class:sessions::session_info
+set_site_parameter	lib/snap_child.cpp	/^void snap_child::set_site_parameter(const QString& name, const QtCassandra::QCassandraValue& value)$/;"	f	class:snap::snap_child
+set_start_result	tests/test_snap_parser.cpp	/^void set_start_result(const snap::parser::rule& r, QSharedPointer<snap::parser::token_node>& t)$/;"	f
+set_time_limit	plugins/sessions/sessions.cpp	/^void sessions::session_info::set_time_limit(time_t time_limit)$/;"	f	class:sessions::session_info
+set_time_to_live	plugins/sessions/sessions.cpp	/^void sessions::session_info::set_time_to_live(int32_t time_to_live)$/;"	f	class:sessions::session_info
+set_uri	lib/snap_uri.cpp	/^bool snap_uri::set_uri(const QString& uri)$/;"	f	class:snap::snap_uri
+set_uri	plugins/sitemapxml/sitemapxml.cpp	/^void sitemapxml::url_info::set_uri(const QString& uri)$/;"	f	class:sitemapxml::url_info
+set_user_data	lib/snap_parser.h	/^	void set_user_data(QSharedPointer<parser_user_data> data) { f_user_data = data; }$/;"	f	class:snap::parser::token_node
+set_value	lib/http_cookie.cpp	/^void http_cookie::set_value(const QByteArray& value)$/;"	f	class:snap::http_cookie
+set_value	lib/http_cookie.cpp	/^void http_cookie::set_value(const QString& value)$/;"	f	class:snap::http_cookie
+set_value	lib/snap_parser.h	/^	void set_value(const QVariant& value) { f_value = value; }$/;"	f	class:snap::parser::token
+set_value	lib/snap_uri.h	/^	void set_value(const QString& value)$/;"	f	class:snap::domain_variable
+set_value	lib/snap_uri.h	/^	void set_value(const QString& value)$/;"	f	class:snap::website_variable
+set_var	tests/test_snap_parser.cpp	/^void set_var(const snap::parser::rule& r, QSharedPointer<snap::parser::token_node>& t)$/;"	f
+set_var_optional	tests/test_snap_parser.cpp	/^void set_var_optional(const snap::parser::rule& r, QSharedPointer<snap::parser::token_node>& t)$/;"	f
+set_var_required	tests/test_snap_parser.cpp	/^void set_var_required(const snap::parser::rule& r, QSharedPointer<snap::parser::token_node>& t)$/;"	f
+set_warning	plugins/messages/messages.cpp	/^void messages::set_warning(QString warning_name, const QString& warning_description, const QString& warning_details)$/;"	f	class:messages
+set_website_var	tests/test_snap_parser.cpp	/^void set_website_var(const snap::parser::rule& r, QSharedPointer<snap::parser::token_node>& t)$/;"	f
+setup_as_backend	lib/snapwebsites.cpp	/^void server::setup_as_backend()$/;"	f	class:snap::server
+setup_uri	lib/snap_child.cpp	/^void snap_child::setup_uri()$/;"	f	class:snap::snap_child
+site_redirect	lib/snap_child.cpp	/^void snap_child::site_redirect()$/;"	f	class:snap::snap_child
+sitemapxml	plugins/sitemapxml/sitemapxml.cpp	/^sitemapxml::sitemapxml()$/;"	f	class:sitemapxml
+sitemapxml	plugins/sitemapxml/sitemapxml.h	/^class sitemapxml : public plugins::plugin, public path::path_execute$/;"	c	namespace:snap::sitemapxml
+sitemapxml	plugins/sitemapxml/sitemapxml.h	/^namespace sitemapxml$/;"	n	namespace:snap
+sitemapxml_exception	plugins/sitemapxml/sitemapxml.h	/^class sitemapxml_exception : public snap_exception {};$/;"	c	namespace:snap::sitemapxml
+sitemapxml_exception_missing_links_table	plugins/sitemapxml/sitemapxml.h	/^class sitemapxml_exception_missing_links_table : public sitemapxml_exception {};$/;"	c	namespace:snap::sitemapxml
+size	lib/snap_parser.h	/^	size_t size() const { return f_tokens.size(); }$/;"	f	class:snap::parser::token_node
+size	lib/snap_uri.h	/^	int size() const$/;"	f	class:snap::domain_info
+size	lib/snap_uri.h	/^	int size() const$/;"	f	class:snap::domain_rules
+size	lib/snap_uri.h	/^	int size() const$/;"	f	class:snap::website_info
+size	lib/snap_uri.h	/^	int size() const$/;"	f	class:snap::website_rules
+size	tests/test_snap_parser.cpp	/^	int size() const$/;"	f	class:domain_info
+size	tests/test_snap_parser.cpp	/^	int size() const$/;"	f	class:domain_rules
+snap	lib/dom_util.cpp	/^namespace snap$/;"	n	file:
+snap	lib/dom_util.h	/^namespace snap$/;"	n
+snap	lib/http_cookie.cpp	/^namespace snap$/;"	n	file:
+snap	lib/http_cookie.h	/^namespace snap$/;"	n
+snap	lib/log.cpp	/^namespace snap$/;"	n	file:
+snap	lib/log.h	/^namespace snap$/;"	n
+snap	lib/not_reached.h	/^namespace snap {$/;"	n
+snap	lib/plugins.cpp	/^namespace snap$/;"	n	file:
+snap	lib/plugins.h	/^namespace snap$/;"	n
+snap	lib/snap_child.cpp	/^namespace snap$/;"	n	file:
+snap	lib/snap_child.h	/^namespace snap$/;"	n
+snap	lib/snap_exception.h	/^namespace snap$/;"	n
+snap	lib/snap_parser.cpp	/^namespace snap$/;"	n	file:
+snap	lib/snap_parser.h	/^namespace snap {$/;"	n
+snap	lib/snap_uri.cpp	/^namespace snap$/;"	n	file:
+snap	lib/snap_uri.h	/^namespace snap$/;"	n
+snap	lib/snapwebsites.cpp	/^namespace snap$/;"	n	file:
+snap	plugins/char_chart/char_chart.h	/^namespace snap$/;"	n
+snap	plugins/content/content.h	/^namespace snap$/;"	n
+snap	plugins/filter/filter.h	/^namespace snap$/;"	n
+snap	plugins/form/form.h	/^namespace snap$/;"	n
+snap	plugins/javascript/javascript.h	/^namespace snap$/;"	n
+snap	plugins/layout/layout.h	/^namespace snap$/;"	n
+snap	plugins/links/links.h	/^namespace snap$/;"	n
+snap	plugins/messages/messages.h	/^namespace snap$/;"	n
+snap	plugins/path/path.h	/^namespace snap$/;"	n
+snap	plugins/robotstxt/robotstxt.h	/^namespace snap$/;"	n
+snap	plugins/search/search.h	/^namespace snap$/;"	n
+snap	plugins/sessions/sessions.h	/^namespace snap$/;"	n
+snap	plugins/sitemapxml/sitemapxml.h	/^namespace snap$/;"	n
+snap	plugins/taxonomy/taxonomy.h	/^namespace snap$/;"	n
+snap	plugins/users/users.h	/^namespace snap$/;"	n
+snapStats	snap-manager/snap-manager.cpp	/^void snap_manager::snapStats()$/;"	f	class:snap_manager
+snapTest	snap-manager/snap-manager.cpp	/^void snap_manager::snapTest()$/;"	f	class:snap_manager
+snap_cgi	src/snap.cpp	/^class snap_cgi$/;"	c	file:
+snap_cgi	src/snap.cpp	/^snap_cgi::snap_cgi()$/;"	f	class:snap_cgi
+snap_child	lib/snap_child.cpp	/^snap_child::snap_child(server *s)$/;"	f	class:snap::snap_child
+snap_child	lib/snap_child.h	/^class snap_child$/;"	c	namespace:snap
+snap_child_exception	lib/snap_child.h	/^class snap_child_exception : public snap_exception {};$/;"	c	namespace:snap
+snap_child_exception_invalid_header_field_name	lib/snap_child.h	/^class snap_child_exception_invalid_header_field_name : public snap_child_exception {};$/;"	c	namespace:snap
+snap_child_exception_invalid_header_value	lib/snap_child.h	/^class snap_child_exception_invalid_header_value : public snap_child_exception {};$/;"	c	namespace:snap
+snap_child_exception_unique_number_error	lib/snap_child.h	/^class snap_child_exception_unique_number_error : public snap_child_exception {};$/;"	c	namespace:snap
+snap_child_vector_t	lib/snap_child.h	/^typedef std::vector<snap_child *>					snap_child_vector_t;$/;"	t	namespace:snap
+snap_exception	lib/snap_exception.h	/^	snap_exception(const std::string& what_msg = "Snap! Exception") : runtime_error(what_msg) {}$/;"	f	class:snap::snap_exception
+snap_exception	lib/snap_exception.h	/^class snap_exception : public std::runtime_error$/;"	c	namespace:snap
+snap_info	lib/snap_child.cpp	/^void snap_child::snap_info()$/;"	f	class:snap::snap_child
+snap_layout	src/snaplayout.cpp	/^class snap_layout$/;"	c	file:
+snap_layout	src/snaplayout.cpp	/^snap_layout::snap_layout(int argc, char *argv[])$/;"	f	class:snap_layout
+snap_manager	snap-manager/snap-manager.cpp	/^snap_manager::snap_manager(QWidget *snap_parent)$/;"	f	class:snap_manager
+snap_manager	snap-manager/snap-manager.h	/^class snap_manager : public QMainWindow, public Ui_MainWindow$/;"	c
+snap_manager_about	snap-manager/snap-manager-about.cpp	/^snap_manager_about::snap_manager_about(QWidget *snap_parent)$/;"	f	class:snap_manager_about
+snap_manager_about	snap-manager/snap-manager-about.h	/^class snap_manager_about : public QDialog, public Ui_aboutSnapManager$/;"	c
+snap_manager_decode_utf8	snap-manager/snap-manager-decode-utf8.cpp	/^snap_manager_decode_utf8::snap_manager_decode_utf8(QWidget *snap_parent)$/;"	f	class:snap_manager_decode_utf8
+snap_manager_decode_utf8	snap-manager/snap-manager-decode-utf8.h	/^class snap_manager_decode_utf8 : public QDialog, public Ui_decodeUtf8SnapManager$/;"	c
+snap_manager_help	snap-manager/snap-manager-help.cpp	/^snap_manager_help::snap_manager_help(QWidget *snap_parent)$/;"	f	class:snap_manager_help
+snap_manager_help	snap-manager/snap-manager-help.h	/^class snap_manager_help : public QMainWindow, public Ui_helpBrowser$/;"	c
+snap_parser_no_current_choices	lib/snap_parser.h	/^class snap_parser_no_current_choices : public std::exception {};$/;"	c	namespace:snap::parser
+snap_parser_state_has_children	lib/snap_parser.h	/^class snap_parser_state_has_children : public std::exception {};$/;"	c	namespace:snap::parser
+snap_parser_unexpected_token	lib/snap_parser.h	/^class snap_parser_unexpected_token : public std::exception {};$/;"	c	namespace:snap::parser
+snap_statistics	lib/snap_child.cpp	/^void snap_child::snap_statistics()$/;"	f	class:snap::snap_child
+snap_uri	lib/snap_uri.cpp	/^snap_uri::snap_uri()$/;"	f	class:snap::snap_uri
+snap_uri	lib/snap_uri.cpp	/^snap_uri::snap_uri(const QString& uri)$/;"	f	class:snap::snap_uri
+snap_uri	lib/snap_uri.h	/^class snap_uri$/;"	c	namespace:snap
+snap_uri_exception_exclusive_parameters	lib/snap_uri.h	/^class snap_uri_exception_exclusive_parameters : public std::exception {};$/;"	c	namespace:snap
+snap_uri_exception_invalid_parameter	lib/snap_uri.h	/^class snap_uri_exception_invalid_parameter : public std::exception {};$/;"	c	namespace:snap
+snap_uri_exception_invalid_path	lib/snap_uri.h	/^class snap_uri_exception_invalid_path : public std::exception {};$/;"	c	namespace:snap
+snap_uri_exception_invalid_uri	lib/snap_uri.h	/^class snap_uri_exception_invalid_uri : public std::exception {};$/;"	c	namespace:snap
+snap_uri_exception_out_of_bounds	lib/snap_uri.h	/^class snap_uri_exception_out_of_bounds : public std::exception {};$/;"	c	namespace:snap
+snap_uri_options_t	lib/snap_uri.h	/^	typedef QMap<QString, QString>	snap_uri_options_t;$/;"	t	class:snap::snap_uri
+snap_uri_port_t	lib/snap_uri.h	/^	typedef controlled_vars::limited_auto_init<int32_t, 0, 65535, 80> snap_uri_port_t;$/;"	t	class:snap::snap_uri
+snap_uri_rules	lib/snap_uri.h	/^class snap_uri_rules$/;"	c	namespace:snap
+snap_url	lib/snap_child.cpp	/^QString snap_child::snap_url(const QString& url) const$/;"	f	class:snap::snap_child
+snapdb	src/snapdb.cpp	/^class snapdb$/;"	c	file:
+snapdb	src/snapdb.cpp	/^snapdb::snapdb(int argc, char *argv[])$/;"	f	class:snapdb
+snapenv	lib/snap_child.cpp	/^QString snap_child::snapenv(const QString& name) const$/;"	f	class:snap::snap_child
+startDocument	lib/qdomreceiver.cpp	/^void QDomReceiver::startDocument()$/;"	f	class:QDomReceiver
+startDocument	lib/qhtmlserializer.cpp	/^void QHtmlSerializer::startDocument()$/;"	f	class:QHtmlSerializer
+startElement	lib/qdomreceiver.cpp	/^void QDomReceiver::startElement(const QXmlName& name)$/;"	f	class:QDomReceiver
+startElement	lib/qhtmlserializer.cpp	/^void QHtmlSerializer::startElement(const QXmlName& name)$/;"	f	class:QHtmlSerializer
+startOfSequence	lib/qdomreceiver.cpp	/^void QDomReceiver::startOfSequence()$/;"	f	class:QDomReceiver
+startOfSequence	lib/qhtmlserializer.cpp	/^void QHtmlSerializer::startOfSequence()$/;"	f	class:QHtmlSerializer
+state_array_t	lib/snap_parser.cpp	/^typedef QVector<parser_state *> state_array_t;$/;"	t	namespace:snap::parser	file:
+state_map_t	lib/snap_parser.cpp	/^typedef QMap<parser_state *, int> state_map_t;$/;"	t	namespace:snap::parser	file:
+status_t	lib/snap_child.h	/^	enum status_t {$/;"	g	class:snap::snap_child
+stringValue	lib/qdomnodemodel.cpp	/^QString	QDomNodeModel::stringValue(const QXmlNodeModelIndex & ni) const$/;"	f	class:QDomNodeModel
+string_array_t	src/snaplayout.cpp	/^    typedef QVector<QString>        string_array_t;$/;"	t	class:snap_layout	file:
+sub_domain	lib/snap_uri.cpp	/^QString snap_uri::sub_domain(int part) const$/;"	f	class:snap::snap_uri
+sub_domain_count	lib/snap_uri.cpp	/^int snap_uri::sub_domain_count() const$/;"	f	class:snap::snap_uri
+sub_domains	lib/snap_uri.cpp	/^QString snap_uri::sub_domains() const$/;"	f	class:snap::snap_uri
+sub_domains_list	lib/snap_uri.cpp	/^const QStringList& snap_uri::sub_domains_list() const$/;"	f	class:snap::snap_uri
+taxonomy	plugins/taxonomy/taxonomy.cpp	/^taxonomy::taxonomy()$/;"	f	class:taxonomy
+taxonomy	plugins/taxonomy/taxonomy.h	/^class taxonomy : public plugins::plugin, public path::path_execute, public layout::layout_content$/;"	c	namespace:snap::taxonomy
+taxonomy	plugins/taxonomy/taxonomy.h	/^namespace taxonomy$/;"	n	namespace:snap
+tcp_client	lib/tcp_client_server.cpp	/^tcp_client::tcp_client(const std::string& addr, int port)$/;"	f	class:tcp_client_server::tcp_client
+tcp_client	lib/tcp_client_server.h	/^class tcp_client$/;"	c	namespace:tcp_client_server
+tcp_client_server	lib/tcp_client_server.cpp	/^namespace tcp_client_server$/;"	n	file:
+tcp_client_server	lib/tcp_client_server.h	/^namespace tcp_client_server$/;"	n
+tcp_client_server_logic_error	lib/tcp_client_server.h	/^    tcp_client_server_logic_error(const std::string& errmsg) : logic_error(errmsg) {}$/;"	f	class:tcp_client_server::tcp_client_server_logic_error
+tcp_client_server_logic_error	lib/tcp_client_server.h	/^class tcp_client_server_logic_error : public std::logic_error$/;"	c	namespace:tcp_client_server
+tcp_client_server_runtime_error	lib/tcp_client_server.h	/^    tcp_client_server_runtime_error(const std::string& errmsg) : runtime_error(errmsg) {}$/;"	f	class:tcp_client_server::tcp_client_server_runtime_error
+tcp_client_server_runtime_error	lib/tcp_client_server.h	/^class tcp_client_server_runtime_error : public std::runtime_error$/;"	c	namespace:tcp_client_server
+tcp_server	lib/tcp_client_server.cpp	/^tcp_server::tcp_server(const std::string& addr, int port, int max_connections, bool reuse_addr, bool auto_close)$/;"	f	class:tcp_client_server::tcp_server
+tcp_server	lib/tcp_client_server.h	/^class tcp_server$/;"	c	namespace:tcp_client_server
+text_64max	plugins/form/form.cpp	/^QString form::text_64max(const QString& text, bool is_secret)$/;"	f	class:form
+time_to_live_t	plugins/sessions/sessions.h	/^		typedef controlled_vars::auto_init<int32_t, 300> time_to_live_t;$/;"	t	class:snap::sessions::sessions::session_info
+toBack	plugins/javascript/javascript.cpp	/^	virtual void toBack()$/;"	f	class:javascript_dynamic_plugin_iterator
+toBack	plugins/javascript/javascript.cpp	/^	virtual void toBack()$/;"	f	class:javascript_plugins_iterator
+toDomNode	lib/qdomnodemodel.cpp	/^QDomNode QDomNodeModel::toDomNode(const QXmlNodeModelIndex& ni) const$/;"	f	class:QDomNodeModel
+toFront	plugins/javascript/javascript.cpp	/^	virtual void toFront()$/;"	f	class:javascript_dynamic_plugin_iterator
+toFront	plugins/javascript/javascript.cpp	/^	virtual void toFront()$/;"	f	class:javascript_plugins_iterator
+toString	lib/snap_parser.cpp	/^	QString toString()$/;"	f	struct:snap::parser::parser_state
+to_char	snap-manager/snap-manager-decode-utf8.cpp	/^char to_char(int c)$/;"	f
+to_http_header	lib/http_cookie.cpp	/^QString http_cookie::to_http_header() const$/;"	f	class:snap::http_cookie
+to_string	lib/snap_parser.cpp	/^QString choices::to_string() const$/;"	f	class:snap::parser::choices
+to_string	lib/snap_parser.cpp	/^QString rule::to_string() const$/;"	f	class:snap::parser::rule
+token	lib/snap_parser.h	/^	token(const token& t) : f_id(t.f_id), f_value(t.f_value) {}$/;"	f	class:snap::parser::token
+token	lib/snap_parser.h	/^	token(token_t id = TOKEN_ID_NONE) : f_id(id) {}$/;"	f	class:snap::parser::token
+token	lib/snap_parser.h	/^class token$/;"	c	namespace:snap::parser
+token_id	lib/snap_parser.h	/^struct token_id { token_id(token_t t) : f_type(t) {} operator token_t () const { return f_type; } private: token_t f_type; };$/;"	f	struct:snap::parser::token_id
+token_id	lib/snap_parser.h	/^struct token_id { token_id(token_t t) : f_type(t) {} operator token_t () const { return f_type; } private: token_t f_type; };$/;"	s	namespace:snap::parser
+token_id_empty_def	lib/snap_parser.h	/^struct token_id_empty_def : public token_id { token_id_empty_def() : token_id(TOKEN_ID_EMPTY_ENUM) {} };$/;"	f	struct:snap::parser::token_id_empty_def
+token_id_empty_def	lib/snap_parser.h	/^struct token_id_empty_def : public token_id { token_id_empty_def() : token_id(TOKEN_ID_EMPTY_ENUM) {} };$/;"	s	namespace:snap::parser
+token_id_float_def	lib/snap_parser.h	/^struct token_id_float_def : public token_id { token_id_float_def() : token_id(TOKEN_ID_FLOAT_ENUM) {} };$/;"	f	struct:snap::parser::token_id_float_def
+token_id_float_def	lib/snap_parser.h	/^struct token_id_float_def : public token_id { token_id_float_def() : token_id(TOKEN_ID_FLOAT_ENUM) {} };$/;"	s	namespace:snap::parser
+token_id_identifier_def	lib/snap_parser.h	/^struct token_id_identifier_def : public token_id { token_id_identifier_def() : token_id(TOKEN_ID_IDENTIFIER_ENUM) {} };$/;"	f	struct:snap::parser::token_id_identifier_def
+token_id_identifier_def	lib/snap_parser.h	/^struct token_id_identifier_def : public token_id { token_id_identifier_def() : token_id(TOKEN_ID_IDENTIFIER_ENUM) {} };$/;"	s	namespace:snap::parser
+token_id_integer_def	lib/snap_parser.h	/^struct token_id_integer_def : public token_id { token_id_integer_def() : token_id(TOKEN_ID_INTEGER_ENUM) {} };$/;"	f	struct:snap::parser::token_id_integer_def
+token_id_integer_def	lib/snap_parser.h	/^struct token_id_integer_def : public token_id { token_id_integer_def() : token_id(TOKEN_ID_INTEGER_ENUM) {} };$/;"	s	namespace:snap::parser
+token_id_keyword_def	lib/snap_parser.h	/^struct token_id_keyword_def : public token_id { token_id_keyword_def() : token_id(TOKEN_ID_KEYWORD_ENUM) {} };$/;"	f	struct:snap::parser::token_id_keyword_def
+token_id_keyword_def	lib/snap_parser.h	/^struct token_id_keyword_def : public token_id { token_id_keyword_def() : token_id(TOKEN_ID_KEYWORD_ENUM) {} };$/;"	s	namespace:snap::parser
+token_id_literal_def	lib/snap_parser.h	/^struct token_id_literal_def : public token_id { token_id_literal_def() : token_id(TOKEN_ID_LITERAL_ENUM) {} };$/;"	f	struct:snap::parser::token_id_literal_def
+token_id_literal_def	lib/snap_parser.h	/^struct token_id_literal_def : public token_id { token_id_literal_def() : token_id(TOKEN_ID_LITERAL_ENUM) {} };$/;"	s	namespace:snap::parser
+token_id_none_def	lib/snap_parser.h	/^struct token_id_none_def : public token_id { token_id_none_def() : token_id(TOKEN_ID_NONE_ENUM) {} };$/;"	f	struct:snap::parser::token_id_none_def
+token_id_none_def	lib/snap_parser.h	/^struct token_id_none_def : public token_id { token_id_none_def() : token_id(TOKEN_ID_NONE_ENUM) {} };$/;"	s	namespace:snap::parser
+token_id_string_def	lib/snap_parser.h	/^struct token_id_string_def : public token_id { token_id_string_def() : token_id(TOKEN_ID_STRING_ENUM) {} };$/;"	f	struct:snap::parser::token_id_string_def
+token_id_string_def	lib/snap_parser.h	/^struct token_id_string_def : public token_id { token_id_string_def() : token_id(TOKEN_ID_STRING_ENUM) {} };$/;"	s	namespace:snap::parser
+token_node	lib/snap_parser.h	/^	token_node() : token(TOKEN_ID_NODE_ENUM) {}$/;"	f	class:snap::parser::token_node
+token_node	lib/snap_parser.h	/^class token_node : public token$/;"	c	namespace:snap::parser
+token_t	lib/snap_parser.h	/^enum token_t {$/;"	g	namespace:snap::parser
+tokens	lib/snap_parser.h	/^	vector_token_t& tokens() { return f_tokens; }$/;"	f	class:snap::parser::token_node
+top_level_domain	lib/snap_uri.cpp	/^const QString& snap_uri::top_level_domain() const$/;"	f	class:snap::snap_uri
+trace	lib/log.cpp	/^logger trace(const char *file, const char *func, int line)$/;"	f	namespace:snap::logging
+typedValue	lib/qdomnodemodel.cpp	/^QVariant QDomNodeModel::typedValue(const QXmlNodeModelIndex& ni) const$/;"	f	class:QDomNodeModel
+unset_option	lib/snap_uri.cpp	/^void snap_uri::unset_option(const QString& name)$/;"	f	class:snap::snap_uri
+unset_query_option	lib/snap_uri.cpp	/^void snap_uri::unset_query_option(const QString& name)$/;"	f	class:snap::snap_uri
+update_impl	lib/snapwebsites.cpp	/^bool server::update_impl(int64_t \/*last_updated*\/)$/;"	f	class:snap::server
+update_plugins	lib/snap_child.cpp	/^void snap_child::update_plugins(const QStringList& list_of_plugins)$/;"	f	class:snap::snap_child
+url_info	plugins/sitemapxml/sitemapxml.cpp	/^sitemapxml::url_info::url_info()$/;"	f	class:sitemapxml::url_info
+url_info	plugins/sitemapxml/sitemapxml.h	/^	class url_info$/;"	c	class:snap::sitemapxml::sitemapxml
+url_info_list_t	plugins/sitemapxml/sitemapxml.h	/^	typedef std::vector<url_info>		url_info_list_t;$/;"	t	class:snap::sitemapxml::sitemapxml
+urldecode	lib/snap_uri.cpp	/^QString snap_uri::urldecode(const QString& uri, bool relax)$/;"	f	class:snap::snap_uri
+urlencode	lib/snap_uri.cpp	/^QString snap_uri::urlencode(const QString& uri, const char *accepted)$/;"	f	class:snap::snap_uri
+usage	lib/snapwebsites.cpp	/^void server::usage()$/;"	f	class:snap::server
+usage	src/snapdb.cpp	/^void snapdb::usage()$/;"	f	class:snapdb
+usage	src/snaplayout.cpp	/^void snap_layout::usage()$/;"	f	class:snap_layout
+usage	tests/test_snap_cgi.cpp	/^void usage()$/;"	f
+users	plugins/users/users.cpp	/^users::users()$/;"	f	class:users
+users	plugins/users/users.h	/^class users : public plugins::plugin, public path::path_execute, public layout::layout_content, public form::form_post$/;"	c	namespace:snap::users
+users	plugins/users/users.h	/^namespace users$/;"	n	namespace:snap
+validate_post_for_widget_impl	plugins/form/form.cpp	/^bool form::validate_post_for_widget_impl(const QString& cpath, sessions::sessions::session_info& info, const QDomElement& widget, const QString& widget_name, const QString& widget_type, bool is_secret)$/;"	f	class:form
+vector_token_t	lib/snap_parser.h	/^typedef QVector<QSharedPointer<token> >	vector_token_t;$/;"	t	namespace:snap::parser
+verify	src/snap.cpp	/^bool snap_cgi::verify()$/;"	f	class:snap_cgi
+verify_name	plugins/links/links.cpp	/^void link_info::verify_name()$/;"	f	class:link_info
+verify_plugin_name	lib/plugins.cpp	/^bool verify_plugin_name(const QString& name)$/;"	f	namespace:snap::plugins
+version	lib/snapwebsites.cpp	/^const char *server::version()$/;"	f	class:snap::server
+version_major	lib/snapwebsites.cpp	/^int server::version_major()$/;"	f	class:snap::server
+version_minor	lib/snapwebsites.cpp	/^int server::version_minor()$/;"	f	class:snap::server
+version_patch	lib/snapwebsites.cpp	/^int server::version_patch()$/;"	f	class:snap::server
+warning	lib/log.cpp	/^logger warning(const char *file, const char *func, int line)$/;"	f	namespace:snap::logging
+websiteChanged	snap-manager/snap-manager.cpp	/^bool snap_manager::websiteChanged()$/;"	f	class:snap_manager
+websiteWithSelection	snap-manager/snap-manager.cpp	/^void snap_manager::websiteWithSelection()$/;"	f	class:snap_manager
+website_info	lib/snap_uri.h	/^class website_info : public parser::parser_user_data, public QtSerialization::QSerializationObject$/;"	c	namespace:snap
+website_rules	lib/snap_uri.h	/^class website_rules : public parser::parser_user_data, public QtSerialization::QSerializationObject$/;"	c	namespace:snap
+website_set_add_rule_list	lib/snap_uri.cpp	/^void website_set_add_rule_list(const rule& \/*r*\/, QSharedPointer<token_node>& t)$/;"	f	namespace:snap
+website_set_add_website_list	lib/snap_uri.cpp	/^void website_set_add_website_list(const rule& \/*r*\/, QSharedPointer<token_node>& t)$/;"	f	namespace:snap
+website_set_flag_var	lib/snap_uri.cpp	/^void website_set_flag_var(const rule& \/*r*\/, QSharedPointer<token_node>& t)$/;"	f	namespace:snap
+website_set_new_rule_list	lib/snap_uri.cpp	/^void website_set_new_rule_list(const rule& \/*r*\/, QSharedPointer<token_node>& t)$/;"	f	namespace:snap
+website_set_new_website_list	lib/snap_uri.cpp	/^void website_set_new_website_list(const rule& \/*r*\/, QSharedPointer<token_node>& t)$/;"	f	namespace:snap
+website_set_qualified_name	lib/snap_uri.cpp	/^void website_set_qualified_name(const rule& \/*r*\/, QSharedPointer<token_node>& t)$/;"	f	namespace:snap
+website_set_rule	lib/snap_uri.cpp	/^void website_set_rule(const rule& \/*r*\/, QSharedPointer<token_node>& t)$/;"	f	namespace:snap
+website_set_standard_var	lib/snap_uri.cpp	/^void website_set_standard_var(const rule& \/*r*\/, QSharedPointer<token_node>& t)$/;"	f	namespace:snap
+website_set_start_result	lib/snap_uri.cpp	/^void website_set_start_result(const rule& \/*r*\/, QSharedPointer<token_node>& t)$/;"	f	namespace:snap
+website_set_var_optional	lib/snap_uri.cpp	/^void website_set_var_optional(const rule& \/*r*\/, QSharedPointer<token_node>& t)$/;"	f	namespace:snap
+website_set_var_path	lib/snap_uri.cpp	/^void website_set_var_path(const rule& \/*r*\/, QSharedPointer<token_node>& t)$/;"	f	namespace:snap
+website_set_var_port	lib/snap_uri.cpp	/^void website_set_var_port(const rule& \/*r*\/, QSharedPointer<token_node>& t)$/;"	f	namespace:snap
+website_set_var_protocol	lib/snap_uri.cpp	/^void website_set_var_protocol(const rule& \/*r*\/, QSharedPointer<token_node>& t)$/;"	f	namespace:snap
+website_set_var_query	lib/snap_uri.cpp	/^void website_set_var_query(const rule& \/*r*\/, QSharedPointer<token_node>& t)$/;"	f	namespace:snap
+website_set_var_required	lib/snap_uri.cpp	/^void website_set_var_required(const rule& \/*r*\/, QSharedPointer<token_node>& t)$/;"	f	namespace:snap
+website_set_variable_rule	lib/snap_uri.cpp	/^void website_set_variable_rule(const rule& \/*r*\/, QSharedPointer<token_node>& t)$/;"	f	namespace:snap
+website_set_website_var	lib/snap_uri.cpp	/^void website_set_website_var(const rule& \/*r*\/, QSharedPointer<token_node>& t)$/;"	f	namespace:snap
+website_variable	lib/snap_uri.h	/^	website_variable(website_variable_type_t type, const QString& name, const QString& value)$/;"	f	class:snap::website_variable
+website_variable	lib/snap_uri.h	/^class website_variable : public parser::parser_user_data$/;"	c	namespace:snap
+website_variable_part_t	lib/snap_uri.h	/^	typedef int website_variable_part_t;$/;"	t	class:snap::website_variable
+website_variable_type_t	lib/snap_uri.h	/^	typedef int website_variable_type_t;$/;"	t	class:snap::website_variable
+weekly_t	plugins/sitemapxml/sitemapxml.h	/^		typedef controlled_vars::auto_init<int, 604800>		weekly_t;$/;"	t	class:snap::sitemapxml::sitemapxml::url_info
+write	lib/snap_child.cpp	/^void snap_child::write(const QString& str)$/;"	f	class:snap::snap_child
+write	lib/snap_child.cpp	/^void snap_child::write(const char *data, ssize_t size)$/;"	f	class:snap::snap_child
+write	lib/snap_child.cpp	/^void snap_child::write(const char *str)$/;"	f	class:snap::snap_child
+write	lib/snap_uri.cpp	/^void domain_info::write(QtSerialization::QWriter& w) const$/;"	f	class:snap::domain_info
+write	lib/snap_uri.cpp	/^void domain_rules::write(QtSerialization::QWriter& w) const$/;"	f	class:snap::domain_rules
+write	lib/snap_uri.cpp	/^void domain_variable::write(QtSerialization::QWriter& w) const$/;"	f	class:snap::domain_variable
+write	lib/snap_uri.cpp	/^void website_info::write(QtSerialization::QWriter& w) const$/;"	f	class:snap::website_info
+write	lib/snap_uri.cpp	/^void website_rules::write(QtSerialization::QWriter& w) const$/;"	f	class:snap::website_rules
+write	lib/snap_uri.cpp	/^void website_variable::write(QtSerialization::QWriter& w) const$/;"	f	class:snap::website_variable
+write	lib/tcp_client_server.cpp	/^int tcp_client::write(const char *buf, size_t size)$/;"	f	class:tcp_client_server::tcp_client
+xss_filter_impl	lib/snapwebsites.cpp	/^bool server::xss_filter_impl(QDomNode& \/*node*\/,$/;"	f	class:snap::server
+zpsnap_child_t	lib/http_cookie.h	/^typedef controlled_vars::ptr_auto_init<snap_child>	zpsnap_child_t;$/;"	t	namespace:snap
+ztime_t	plugins/sessions/sessions.h	/^		typedef controlled_vars::auto_init<time_t, 0> ztime_t;$/;"	t	class:snap::sessions::sessions::session_info
+ztime_t	plugins/sitemapxml/sitemapxml.h	/^		typedef controlled_vars::auto_init<time_t, 0>		ztime_t;$/;"	t	class:snap::sitemapxml::sitemapxml::url_info
+~QDomNodeModel	lib/qdomnodemodel.h	/^    virtual ~QDomNodeModel() {}$/;"	f	class:QDomNodeModel
+~QDomReceiver	lib/qdomreceiver.cpp	/^QDomReceiver::~QDomReceiver()$/;"	f	class:QDomReceiver
+~QHtmlSerializer	lib/qhtmlserializer.cpp	/^QHtmlSerializer::~QHtmlSerializer()$/;"	f	class:QHtmlSerializer
+~char_chart	plugins/char_chart/char_chart.cpp	/^char_chart::~char_chart()$/;"	f	class:char_chart
+~choices	lib/snap_parser.cpp	/^choices::~choices()$/;"	f	class:snap::parser::choices
+~content	plugins/content/content.cpp	/^content::~content()$/;"	f	class:content
+~content_box_execute	plugins/content/content.h	/^	virtual ~content_box_execute() {} \/\/ ensure proper virtual tables$/;"	f	class:snap::content::content_box_execute
+~filter	plugins/filter/filter.cpp	/^filter::~filter()$/;"	f	class:filter
+~form	plugins/form/form.cpp	/^form::~form()$/;"	f	class:form
+~form_post	plugins/form/form.h	/^	virtual ~form_post() {}$/;"	f	class:snap::form::form_post
+~javascript	plugins/javascript/javascript.cpp	/^javascript::~javascript()$/;"	f	class:javascript
+~javascript_dynamic_plugin	plugins/javascript/javascript.h	/^	virtual ~javascript_dynamic_plugin() {}$/;"	f	class:snap::javascript::javascript_dynamic_plugin
+~layout	plugins/layout/layout.cpp	/^layout::~layout()$/;"	f	class:layout
+~layout_box_execute	plugins/layout/layout.h	/^	virtual ~layout_box_execute() {} \/\/ ensure proper virtual tables$/;"	f	class:snap::layout::layout_box_execute
+~layout_content	plugins/layout/layout.h	/^	virtual ~layout_content() {} \/\/ ensure proper virtual tables$/;"	f	class:snap::layout::layout_content
+~links	plugins/links/links.cpp	/^links::~links()$/;"	f	class:links
+~logger	lib/log.cpp	/^logger::~logger()$/;"	f	class:snap::logging::logger
+~messages	plugins/messages/messages.cpp	/^messages::~messages()$/;"	f	class:messages
+~parser_state	lib/snap_parser.cpp	/^	~parser_state()$/;"	f	struct:snap::parser::parser_state
+~parser_user_data	lib/snap_parser.h	/^	virtual ~parser_user_data() {}$/;"	f	class:snap::parser::parser_user_data
+~path	plugins/path/path.cpp	/^path::~path()$/;"	f	class:path
+~path_execute	plugins/path/path.h	/^	virtual ~path_execute() {} \/\/ ensure proper virtual tables$/;"	f	class:snap::path::path_execute
+~plugin	lib/plugins.h	/^	virtual ~plugin() {}$/;"	f	class:snap::plugins::plugin
+~robotstxt	plugins/robotstxt/robotstxt.cpp	/^robotstxt::~robotstxt()$/;"	f	class:robotstxt
+~search	plugins/search/search.cpp	/^search::~search()$/;"	f	class:search
+~server	lib/snapwebsites.cpp	/^server::~server()$/;"	f	class:snap::server
+~sessions	plugins/sessions/sessions.cpp	/^sessions::~sessions()$/;"	f	class:sessions
+~sitemapxml	plugins/sitemapxml/sitemapxml.cpp	/^sitemapxml::~sitemapxml()$/;"	f	class:sitemapxml
+~snap_cgi	src/snap.cpp	/^snap_cgi::~snap_cgi()$/;"	f	class:snap_cgi
+~snap_child	lib/snap_child.cpp	/^snap_child::~snap_child()$/;"	f	class:snap::snap_child
+~snap_manager	snap-manager/snap-manager.cpp	/^snap_manager::~snap_manager()$/;"	f	class:snap_manager
+~snap_manager_about	snap-manager/snap-manager-about.cpp	/^snap_manager_about::~snap_manager_about()$/;"	f	class:snap_manager_about
+~snap_manager_decode_utf8	snap-manager/snap-manager-decode-utf8.cpp	/^snap_manager_decode_utf8::~snap_manager_decode_utf8()$/;"	f	class:snap_manager_decode_utf8
+~snap_manager_help	snap-manager/snap-manager-help.cpp	/^snap_manager_help::~snap_manager_help()$/;"	f	class:snap_manager_help
+~taxonomy	plugins/taxonomy/taxonomy.cpp	/^taxonomy::~taxonomy()$/;"	f	class:taxonomy
+~tcp_client	lib/tcp_client_server.cpp	/^tcp_client::~tcp_client()$/;"	f	class:tcp_client_server::tcp_client
+~tcp_server	lib/tcp_client_server.cpp	/^tcp_server::~tcp_server()$/;"	f	class:tcp_client_server::tcp_server
+~token	lib/snap_parser.h	/^	virtual ~token() {}$/;"	f	class:snap::parser::token
+~users	plugins/users/users.cpp	/^users::~users()$/;"	f	class:users

@@ -1,0 +1,75 @@
+project( 3rdParty )
+
+set_property( GLOBAL PROPERTY 3RDPARTY_INCLUDED TRUE )
+
+function( ConfigureMakeProject PROJECT_NAME VERSION DISTFILE_PATH )
+	set( SRC_DIR           ${CMAKE_BINARY_DIR}/${PROJECT_NAME}-${VERSION}                            )
+	set( BUILD_DIR         ${CMAKE_BINARY_DIR}/${PROJECT_NAME}-${VERSION}/${PROJECT_NAME}-${VERSION} )
+	set( DIST_DIR          ${CMAKE_BINARY_DIR}/dist                                                  )
+	set( CONFIGURE_TARGETS ${BUILD_DIR}/config.log                                                   )
+
+	if( NOT EXISTS ${SRC_DIR} )
+		message( STATUS "Unpacking ${PROJECT_NAME} source distribution file into local build area." )
+		file( MAKE_DIRECTORY ${SRC_DIR} )
+		execute_process(
+			COMMAND ${CMAKE_COMMAND} -E tar xzf ${DISTFILE_PATH}
+			WORKING_DIRECTORY ${SRC_DIR}
+		)
+		execute_process(
+			COMMAND chmod a+x ${BUILD_DIR}/configure
+			WORKING_DIRECTORY ${BUILD_DIR}
+		)
+	endif()
+
+	if( NOT EXISTS ${BUILD_DIR} )
+		file( MAKE_DIRECTORY ${BUILD_DIR} )
+	endif()
+
+	add_custom_command(
+		OUTPUT ${CONFIGURE_TARGETS}
+		COMMAND ${BUILD_DIR}/configure --prefix=${DIST_DIR} ${ARGN}
+		WORKING_DIRECTORY ${BUILD_DIR}
+		COMMENT "Running ${PROJECT_NAME} configuration"
+		)
+
+	set( BUILD_OUTPUT ${BUILD_DIR}/stamp-h1 )
+	add_custom_command(
+		OUTPUT ${BUILD_OUTPUT}
+		COMMAND make
+		DEPENDS ${CONFIGURE_TARGETS}
+		WORKING_DIRECTORY ${BUILD_DIR}
+		COMMENT "Building ${PROJECT_NAME}"
+		)
+
+	set( INSTALL_OUTPUT ${DIST_DIR}/include/${PROJECT_NAME}/config.h )
+	add_custom_command(
+		OUTPUT ${INSTALL_OUTPUT}
+		COMMAND make install
+		DEPENDS ${BUILD_OUTPUT}
+		WORKING_DIRECTORY ${BUILD_DIR}
+		COMMENT "Installing ${PROJECT_NAME}"
+		)
+
+	add_custom_target(
+		${PROJECT_NAME}-build ALL
+		DEPENDS ${INSTALL_OUTPUT}
+		)
+endfunction()
+
+set( VERSION 0.8.0 )
+set( TARFILE ${3rdParty_SOURCE_DIR}/thrift-${VERSION}.tar.gz )
+set( CONFIG_ARGS
+	--without-csharp
+	--without-java
+	--without-erlang
+	--without-python
+	--without-perl
+	--without-php
+	--without-php_extension
+	--without-ruby
+	--without-haskell
+	--without-go
+	)
+ConfigureMakeProject( thrift ${VERSION} ${TARFILE} ${CONFIG_ARGS} )
+
+# vim: ts=4 sw=4 noet

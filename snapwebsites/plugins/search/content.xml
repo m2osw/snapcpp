@@ -1,0 +1,72 @@
+<?xml version="1.0" standalone="yes"?>
+<!--
+Snap Websites Server == search database setup
+Copyright (C) 2011-2012  Made to Order Software Corp.
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+-->
+<!DOCTYPE snap-tree [
+<!ELEMENT snap-tree (content)*>
+<!ELEMENT content (param|link)*>
+<!ATTLIST content path CDATA #REQUIRED>
+<!ELEMENT param (#PCDATA)>
+<!ATTLIST param name CDATA #REQUIRED
+                overwrite (yes|no) "no"
+                force-namespace (yes|no) "yes">
+<!ELEMENT link (#PCDATA)>
+<!ATTLIST link name CDATA #REQUIRED
+               to CDATA #REQUIRED
+               mode CDATA "1:1">
+]>
+<snap-tree>
+  <content path="/search">
+    <param name="content::title">Search</param>
+    <param name="content::body">
+      <![CDATA[<p>Enter what you want to search on our website: (handle form...)</p>]]>
+    </param>
+    <link name="search_index_ignore" to="search_index_ignore" mode="1:*">/types/taxonomy/system/search/status/ignore</link>
+  </content>
+  <content path="/admin/search/settings"/>
+  <content path="/types/taxonomy/system/search">
+    <param name="taxonomy::name">search</param>
+    <param name="content::title">Search Taxonomy</param>
+    <param name="content::body">
+      <![CDATA[<p>Set of terms used by the search plugin.</p>]]>
+    </param>
+  </content>
+  <content path="/types/taxonomy/system/search/status">
+    <param name="taxonomy::name">search_status</param>
+    <param name="content::title">Search Status</param>
+    <param name="content::body">
+      <![CDATA[<p>Set of status used to mark a page for search or not. A page without a search status does not get indexed.</p>]]>
+    </param>
+  </content>
+  <content path="/types/taxonomy/system/search/status/index">
+    <param name="taxonomy::name">search_status_index</param>
+    <param name="content::title">Search Status: Index</param>
+    <param name="content::body">
+      <![CDATA[<p>This page is to be indexed.</p>]]>
+    </param>
+  </content>
+  <content path="/types/taxonomy/system/search/status/ignore">
+    <param name="taxonomy::name">search_status_ignore</param>
+    <param name="content::title">Search Status: Ignore</param>
+    <param name="content::body">
+      <![CDATA[<p>This page is to be ignore by the search plugin.</p>]]>
+    </param>
+  </content>
+</snap-tree>
+<!-- vim: ts=2 sw=2 et syntax=xml
+-->

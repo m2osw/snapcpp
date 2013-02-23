@@ -1,0 +1,60 @@
+<?xml version="1.0" standalone="yes"?>
+<!--
+Snap Websites Server == permissions database setup (i.e. type tree)
+Copyright (C) 2011-2012  Made to Order Software Corp.
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+-->
+<!DOCTYPE snap-tree [
+<!ELEMENT snap-tree (content)*>
+<!ELEMENT content (param|link)*>
+<!ATTLIST content path CDATA #REQUIRED>
+<!ELEMENT param (#PCDATA)>
+<!ATTLIST param name CDATA #REQUIRED
+                overwrite (yes|no) "no"
+                force-namespace (yes|no) "yes">
+<!ELEMENT link (#PCDATA)>
+<!ATTLIST link name CDATA #REQUIRED
+               to CDATA #REQUIRED
+               mode CDATA "1:1">
+]>
+<snap-tree>
+  <content path="/types/permissions">
+    <param name="content::title">Permission Types</param>
+    <param name="content::body">
+      <![CDATA[<p>Set of permissions you can assign to your users.</p>]]>
+    </param>
+  </content>
+  <content path="/types/permissions/rights">
+    <param name="content::title">Permissions</param>
+    <param name="content::body">
+      <![CDATA[<p>Here you find all the permissions offered by the different Snap plugins.</p>]]>
+    </param>
+  </content>
+  <content path="/types/permissions/actions">
+    <param name="content::title">Actions</param>
+    <param name="content::body">
+      <![CDATA[<p>Actions allowed by the permission environment. Other content should never be assigned this type.</p>]]>
+    </param>
+  </content>
+  <content path="/types/permissions/groups">
+    <param name="content::title">Groups</param>
+    <param name="content::body">
+      <![CDATA[<p>Groups that can be used to manager permissions on a set of users.</p>]]>
+    </param>
+  </content>
+</snap-tree>
+<!-- vim: ts=2 sw=2 et syntax=xml
+-->

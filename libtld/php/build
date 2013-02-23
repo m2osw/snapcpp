@@ -1,0 +1,8 @@
+#!/bin/sh
+# At this time I have this as is, but I plain to have that done with
+# some form of makefile and maybe even the config.m4 expected by phpize
+
+set -e
+gcc `php-config --includes` -fpic -c  php_libtld.c
+gcc -shared php_libtld.o -o php_libtld.so -L ../../BUILD/libtld -ltld_static
+sudo cp php_libtld.so `php-config --extension-dir`

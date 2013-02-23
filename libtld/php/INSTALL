@@ -1,0 +1,47 @@
+
+In order to get the PHP plugin to work you need the php5-dev environment.
+Then run the build script.
+
+The installation will go to your php5 .so directory automatically.
+
+Next you need to edit your .ini files and include this:
+
+extension=php_libtld.so
+
+You will have to restart Apache2 if you want that to run there. Something
+like this:
+
+service apache2 restart
+
+(reload won't do it)
+
+Then you can start using the libtld library from PHP with the following:
+
+$a = check_tld('www.m2osw.com');
+var_dump($a);
+
+The result is either FALSE or an array with the different fields as found in
+the info structure:
+
+array(5) {
+  ["result"]=>
+  int(0)
+  ["category"]=>
+  int(0)
+  ["status"]=>
+  int(0)
+  ["offset"]=>
+  int(9)
+  ["tld"]=>
+  string(4) ".com"
+}
+
+If it worked, then $a['result'] == 0 and $a['status'] == 0. Before checking
+$a as an array, do this:
+
+  if ($a === FALSE) ... handle error ...
+
+You may consider including the check_tld.php file to get result, category,
+and status definitions.
+
+

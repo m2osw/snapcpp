@@ -1,0 +1,7 @@
+get_property( 3RDPARTY_INCLUDED GLOBAL PROPERTY 3RDPARTY_INCLUDED )
+if( NOT 3RDPARTY_INCLUDED )
+	find_library( THRIFT_LIBRARY thrift )
+	if( NOT thrift_FOUND )
+		message( FATAL_ERROR "Cannot find the thrift library. Make sure it is installed and try again." )
+	endif()
+endif()

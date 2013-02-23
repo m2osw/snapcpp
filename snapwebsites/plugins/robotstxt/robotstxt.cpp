@@ -1,0 +1,294 @@
+// Snap Websites Server -- robots.txt
+// Copyright (C) 2011-2013  Made to Order Software Corp.
+//
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation; either version 2 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+
+#include "robotstxt.h"
+#include "../../lib/plugins.h"
+#include "../content/content.h"
+#include <iostream>
+
+
+SNAP_PLUGIN_START(robotstxt, 1, 0)
+
+const char *		robotstxt::ROBOT_NAME_ALL = "*";
+const char *		robotstxt::ROBOT_NAME_GLOBAL = "";
+const char *		robotstxt::FIELD_NAME_DISALLOW = "Disallow";
+
+/** \brief Initialize the robotstxt plugin.
+ *
+ * This function is used to initialize the robotstxt plugin object.
+ */
+robotstxt::robotstxt()
+	//: f_snap(NULL) -- auto-init
+{
+}
+
+/** \brief Clean up the robotstxt plugin.
+ *
+ * Ensure the robotstxt object is clean before it is gone.
+ */
+robotstxt::~robotstxt()
+{
+}
+
+/** \brief Initialize the robotstxt.
+ *
+ * This function terminates the initialization of the robotstxt plugin
+ * by registring for different events.
+ *
+ * \param[in] snap  The child handling this request.
+ */
+void robotstxt::on_bootstrap(snap_child *snap)
+{
+	f_snap = snap;
+}
+
+/** \brief Get a pointer to the robotstxt plugin.
+ *
+ * This function returns an instance pointer to the robotstxt plugin.
+ *
+ * Note that you cannot assume that the pointer will be valid until the
+ * bootstrap event is called.
+ *
+ * \return A pointer to the robotstxt plugin.
+ */
+robotstxt *robotstxt::instance()
+{
+	return g_plugin_robotstxt_factory.instance();
+}
+
+
+/** \brief Return the description of this plugin.
+ *
+ * This function returns the English description of this plugin.
+ * The system presents that description when the user is offered to
+ * install or uninstall a plugin on his website. Translation may be
+ * available in the database.
+ *
+ * \return The description in a QString.
+ */
+QString robotstxt::description() const
+{
+	return "Generates the robots.txt file which is used by search engines to"
+		" discover your website pages. You can change the settings to hide"
+		" different pages or all your pages.";
+}
+
+
+/** \brief Check whether updates are necessary.
+ *
+ * This function updates the database when a newer version is installed
+ * and the corresponding updates where not run yet.
+ *
+ * This works for newly installed plugins and older plugins that were
+ * updated.
+ *
+ * \param[in] last_updated  The UTC Unix date when this plugin was last updated (in micro seconds).
+ *
+ * \return The UTC Unix date of the last update of this plugin.
+ */
+int64_t robotstxt::do_update(int64_t last_updated)
+{
+	SNAP_PLUGIN_UPDATE_INIT();
+
+//std::cerr << "Got the do_update() in robotstxt! "
+//		<< static_cast<int64_t>(last_updated) << ", "
+//		<< static_cast<int64_t>(SNAP_UNIX_TIMESTAMP(2012, 1, 1, 0, 0, 0) * 1000000LL) << "\n";
+
+	SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, initial_update);
+
+	SNAP_PLUGIN_UPDATE(2012, 10, 13, 17, 16, 40, content_update);
+
+	SNAP_PLUGIN_UPDATE_EXIT();
+}
+
+/** \brief First update to run for the robotstxt plugin.
+ *
+ * This function is the first update for the robotstxt plugin. It installs
+ * the initial robots.txt page.
+ *
+ * \param[in] variables_timestamp  The timestamp for all the variables added to the database by this update (in micro-seconds).
+ */
+void robotstxt::initial_update(int64_t variables_timestamp)
+{
+	// this is now done by the install content process
+	//path::path::instance()->add_path("robotstxt", "robots.txt", variables_timestamp);
+}
+
+/** \brief Update the content with our references.
+ *
+ * Send our content to the database so the system can find us when a
+ * user references our pages.
+ *
+ * \param[in] variables_timestamp  The timestamp for all the variables added to the database by this update (in micro-seconds).
+ */
+void robotstxt::content_update(int64_t variables_timestamp)
+{
+	content::content::instance()->add_xml("robotstxt");
+}
+
+/** \brief Check for the "robots.txt" path.
+ *
+ * This function ensures that the URL is robots.txt and if so write
+ * the robots.txt file content in the QBuffer of the path.
+ *
+ * \param[in] p  The plugin path pointer.
+ * \param[in] url  The URL being managed.
+ *
+ * \return true if the robots.txt file is properly generated, false otherwise.
+ */
+bool robotstxt::on_path_execute(const QString& url)
+{
+	if(url == "robots.txt") {
+		generate_robotstxt(this);
+		output();
+		return true;
+	}
+
+	return false;
+}
+
+/** \brief Output the results.
+ *
+ * This function outputs the contents of the robots.txt file.
+ */
+void robotstxt::output() const
+{
+	f_snap->set_header("Content-type", "text/plain; charset=utf-8");
+	// TODO: change the "Expires" header to 1 day because we don't need
+	//       users to check for the robots.txt that often!?
+
+//std::cout << "----------------------------- GENERATING robots.txt\n";
+	f_snap->output("# More info http://www.robotstxt.org/\n");
+	f_snap->output("# Generated by http://snapwebsites.org/\n");
+
+	robots_txt_t::const_iterator global = f_robots_txt.find("");
+	if(global != f_robots_txt.end()) {
+		// in this case we don't insert any User-agent
+		for(robots_field_array_t::const_iterator i = global->second.begin(); i != global->second.end(); ++i) {
+			f_snap->output(i->f_field);
+			f_snap->output(": ");
+			f_snap->output(i->f_value);
+			f_snap->output("\n");
+		}
+	}
+
+	robots_txt_t::const_iterator all = f_robots_txt.find("*");
+	if(all != f_robots_txt.end()) {
+		f_snap->output("User-agent: *\n");
+		for(robots_field_array_t::const_iterator i = all->second.begin(); i != all->second.end(); ++i) {
+			f_snap->output(i->f_field);
+			f_snap->output(": ");
+			f_snap->output(i->f_value);
+			f_snap->output("\n");
+		}
+	}
+
+	for(robots_txt_t::const_iterator r = f_robots_txt.begin(); r != f_robots_txt.end(); ++r) {
+		if(r->first == "*" || r->first == "") {
+			// skip the all robots ("*") and global ("") entries
+			continue;
+		}
+		f_snap->output("User-agent: ");
+		f_snap->output(r->first);
+		f_snap->output("\n");
+		for(robots_field_array_t::const_iterator i = r->second.begin(); i != r->second.end(); ++i) {
+			f_snap->output(i->f_field);
+			f_snap->output(": ");
+			f_snap->output(i->f_value);
+			f_snap->output("\n");
+		}
+	}
+}
+
+/** \brief Implementation of the robotstxt signal.
+ *
+ * This function readies the robotstxt signal.
+ *
+ * This function generates the header of the robots.txt.
+ *
+ * \return true if the signal has to be sent to other plugins.
+ */
+bool robotstxt::generate_robotstxt_impl(robotstxt *r)
+{
+	r->add_robots_txt_field("/admin/");
+	r->add_robots_txt_field("/cgi-bin/");
+
+	return true;
+}
+
+/** \brief Add Disallows to the robots.txt file.
+ *
+ * This function can be used to disallow a set of folders your plugin is
+ * responsible for. All the paths that are protected in some way (i.e. the
+ * user needs to be logged in to access that path) should be disallowed in
+ * the robots.txt file.
+ *
+ * Note that all the system administrative functions are found under /admin/
+ * which is already disallowed by the robots.txt plugin itself. So is the
+ * /cgi-bin/ folder.
+ *
+ * \todo
+ * The order can be important so we'll need to work on that part at some point.
+ * At this time we print the entries in this order:
+ *
+ * \li global entries (i.e. robot = "")
+ * \li the "all" robots list of fields
+ * \li the other robots
+ *
+ * One way to setup the robots file goes like this:
+ *
+ * User-agent: *
+ * Disallow: /
+ *
+ * User-agent: Good-guy
+ * Disallow: /admin/
+ *
+ * This way only Good-guy is expected to spider your website.
+ *
+ * \param[in] value  The content of this field
+ * \param[in] field  The name of the field being added (default "Disallow")
+ * \param[in] robot  The name of the robot (default "*")
+ * \param[in] unique  The field is unique, if already defined throw an error
+ */
+void robotstxt::add_robots_txt_field(const QString& value,
+									 const QString& field,
+									 const QString& robot,
+									 bool unique)
+{
+	if(field.isEmpty()) {
+		throw robotstxt_exception_invalid_field_name();
+	}
+
+	robots_field_array_t& d = f_robots_txt[robot];
+	if(unique) {
+		// verify unicity
+		for(robots_field_array_t::const_iterator i = d.begin(); i != d.end(); ++i) {
+			if(i->f_field == field) {
+				throw robotstxt_exception_invalid_field_name();
+			}
+		}
+	}
+	robots_field_t f;
+	f.f_field = field;
+	f.f_value = value;
+	d.push_back(f);
+}
+
+
+SNAP_PLUGIN_END()
+
+// vim: ts=4 sw=4

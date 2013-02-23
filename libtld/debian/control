@@ -1,0 +1,45 @@
+Source: libtld
+Section: devel
+Priority: optional
+Maintainer: Alexis Wilke <alexis@m2osw.com>
+Build-Depends: cmake, build-essential, qt4-dev
+Homepage: http://snapwebsites.org/project/libtld
+
+Package: libtld
+Architecture: any
+Depends:
+Description: C/C++ library used to verify domain names by extracting their TLD
+ A URL is composed of a protocol, a domain name, a path, a query string, and
+ an anchor. The query string and anchor are optional. The protocol is most
+ often very easy to verify. The domain name, however, can be very complicated
+ if you need to know of the sub-domains, the very domain name itself, and the
+ TLD. The libtld helps you with pointing out where the TLD starts in the
+ domain name. That way you can extract the sub-domains, the domain name itself
+ and the TLD for any world-wide URI. Note that this is very important if you
+ manage cookies in a browser.
+
+Package: libtld-dev
+Architecture: any
+Depends: libtld
+Description: C/C++ library used to verify domain names by extracting their TLD
+ A URL is composed of a protocol, a domain name, a path, a query string, and
+ an anchor. The query string and anchor are optional. The protocol is most
+ often very easy to verify. The domain name, however, can be very complicated
+ if you need to know of the sub-domains, the very domain name itself, and the
+ TLD. The libtld helps you with pointing out where the TLD starts in the
+ domain name. That way you can extract the sub-domains, the domain name itself
+ and the TLD for any world-wide URI. Note that this is very important if you
+ manage cookies in a browser.
+
+Package: libtld-doc
+Architecture: all
+Depends:
+Description: C/C++ library used to verify domain names by extracting their TLD
+ A URL is composed of a protocol, a domain name, a path, a query string, and
+ an anchor. The query string and anchor are optional. The protocol is most
+ often very easy to verify. The domain name, however, can be very complicated
+ if you need to know of the sub-domains, the very domain name itself, and the
+ TLD. The libtld helps you with pointing out where the TLD starts in the
+ domain name. That way you can extract the sub-domains, the domain name itself
+ and the TLD for any world-wide URI. Note that this is very important if you
+ manage cookies in a browser.

@@ -1,0 +1,13 @@
+/** \brief config.h file for the configure script.
+ *
+ * This file includes header that require specific checks
+ * depending on the platform the library is being compiled
+ * on. It also defines the library version.
+ */
+#ifndef QT_CASSANDRA_CONFIG_H
+#define QT_CASSANDRA_CONFIG_H
+
+
+#endif
+//#ifndef QT_CASSANDRA_CONFIG_H
+// vim: ts=4 sw=4 et

@@ -1,0 +1,68 @@
+<?xml version="1.0" standalone="yes"?>
+<!--
+Snap Websites Server == content plugin database setup
+Copyright (C) 2011-2012  Made to Order Software Corp.
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+-->
+<!DOCTYPE snap-tree [
+<!ELEMENT snap-tree (content)*>
+<!ELEMENT content (param|link)*>
+<!ATTLIST content path CDATA #REQUIRED>
+<!ELEMENT param (#PCDATA)>
+<!ATTLIST param name CDATA #REQUIRED
+                overwrite (yes|no) "no"
+                force-namespace (yes|no) "yes">
+<!ELEMENT link (#PCDATA)>
+<!ATTLIST link name CDATA #REQUIRED
+               to CDATA #REQUIRED
+               mode CDATA "1:1">
+]>
+<snap-tree>
+  <!-- the content grows as things are added to the site, at first it handles the root though -->
+  <content path="/">
+    <param name="content::title">Home Page</param>
+    <param name="content::body" overwrite="yes">
+      <![CDATA[<p>Welcome to your new Snap! C++ website.</p>]]>
+    </param>
+    <param name="layout::theme" force-namespace="no">plugins.content.modified>10?"large_theme":"small_theme";</param>
+    <link name="include_in_xml_sitemap" to="include_in_xml_sitemap" mode="1:*">/types/taxonomy/system/sitemapxml/include-in-xml-sitemap</link>
+  </content>
+  <content path="/types/content-types">
+    <param name="taxonomy::name">content_types</param>
+    <param name="content::title">Content Types</param>
+    <param name="content::body">
+      <![CDATA[<p>All your pages of content are linked against a type defined within the content-types. This represents the type of page that page is. The system defines Page and Administration Page as internal types.</p>]]>
+    </param>
+    <param name="layout::theme">"type_theme";</param>
+  </content>
+  <content path="/types/content-types/page">
+    <param name="taxonomy::name">page_content_type</param>
+    <param name="content::title">Page Content Type</param>
+    <param name="content::body">
+      <![CDATA[<p>By default pages you create are of this type. You can change the type of your pages in order to group them differently, give them a different look or environment, etc.</p>]]>
+    </param>
+    <param name="layout::theme">"page_theme";</param>
+    <link name="page_content_type" to="page_content_type" mode="*:1">/</link>
+  </content>
+  <content path="/types/content-types/administration-page">
+    <param name="content::title">Administration Page</param>
+    <param name="content::body">
+      <![CDATA[<p>Internal pages created by plugins to manage your website are considered administration pages.</p>]]>
+    </param>
+  </content>
+</snap-tree>
+<!-- vim: ts=2 sw=2 et syntax=xml
+-->

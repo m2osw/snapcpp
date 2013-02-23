@@ -1,0 +1,62 @@
+libtld (1.4.0) unstable; urgency=medium
+
+  * Added the debian folder to build packages for the PPA.
+  * Corrected the installation process with proper components.
+  * Fixed the ChangeLog dates and indentation for Debian.
+  * Reorganized the package with sub-folders.
+  * Fixed a few things so the library compiles under MS-Windows with cl.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Mon, 18 Feb 2013 00:43:48 -0800
+
+libtld (1.3.0) unstable; urgency=medium
+
+  * Added the ChangeLog file.
+  * Added a function to check the validity of a complete URI.
+  * Added a C++ class to easily handle URIs in C++.
+  * Added a PHP extension so [check_]tld() can be used in PHP.
+  * Added a static version of the library.
+  * Updated the TLDs as of Feb 2013.
+  * Updated copyright notices.
+  * Updated the tests as required.
+  * Enhanced the tests with better errors and added tests.
+  * Added a target to run all the TLD tests at once.
+  * Fixed the TLD exceptions which now return a valid answer.
+  * Fixed the Doxygen generation so we get the proper documentation.
+  * Fixed/enhanced the documentation as I was at it.
+  * Fixed the references to Qt through the CMakeLists.txt file.
+  * Fixed data test so it doesn't crash if it can find its XML data file.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sat, 16 Feb 2013 05:56:49 -0800
+
+libtld (1.2.0) unstable; urgency=medium
+
+  * Added support for exceptions such as nic.uk.
+  * Updated the tests accordingly.
+  * A test for the XML file to make sure it respects the DTD has been added.
+  * This release fixes offsets in the data table.
+  * The .us entries are complete.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Mon, 07 May 2012 05:56:49 -0800
+
+libtld (1.1.1) unstable; urgency=medium
+
+  * This release adds many TLDs as defined by the Public Suffix List.
+  * It has a new test to check data against the Public Suffix List.
+  * The existing tests have been updated to work with the new library.
+  * There is a new category called Entrepreneurial.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 18 Dec 2011 05:56:49 -0800
+
+libtld (1.1.0) unstable; urgency=medium
+
+  * Enhanced the CMakeLists.txt file.
+  * Fixed the output filename of the doxygen documentation.
+  * Added a function to retrieve the library version as a string.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sat, 26 Nov 2011 05:56:49 -0800
+
+libtld (1.0.0) unstable; urgency=medium
+
+  * First release of the libtld C library.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 20 Nov 2011 05:56:49 -0800

@@ -1,0 +1,2557 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<!--
+  There are several sources to find top level domain names. These ones
+  are quite complete and easy to work with:
+
+  http://en.wikipedia.org/wiki/List_of_Internet_top-level_domains
+  http://publicsuffix.org/
+
+  TLD library - - TLD declarations in XML
+  Copyright (C) 2011-2013  Made to Order Software Corp.
+
+  This program is free software; you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation; either version 2 of the License, or
+  (at your option) any later version.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with this program; if not, write to the Free Software
+  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+-->
+<!DOCTYPE tld [
+<!ELEMENT tld (area)+>
+<!ELEMENT area (#PCDATA|forbid|exceptions)*>
+<!ATTLIST area category (international|professionals|language|groups|region|technical|country|entrepreneurial) #REQUIRED
+               country CDATA ""
+               nic CDATA "">
+<!ELEMENT forbid (#PCDATA)>
+<!ATTLIST forbid reason (proposed|deprecated|unused|reserved|infrastructure) #REQUIRED>
+<!ELEMENT exceptions (#PCDATA)>
+<!ATTLIST exceptions apply-to CDATA #REQUIRED>
+]>
+<tld>
+  <!-- international (for the whole world) -->
+  <area category="international">
+    .biz .com .coop .edu .info .int .jobs .mobi .name .net
+    .org .post .tel .travel .xxx .eu.int
+    <!-- Note about .post:
+         Also the .post is defined as "having a complex second level domain
+         name rules", technically, it has no second level domain -->
+    <!-- yeah... .areo has gone crazy https://www.information.aero/ -->
+    .aero .accident-investigation.aero .accident-prevention.aero
+    .aerobatic.aero .aeroclub.aero .aerodrome.aero .agents.aero .aircraft.aero
+    .airline.aero .airport.aero .air-surveillance.aero .airtraffic.aero
+    .air-traffic-control.aero .ambulance.aero .amusement.aero .association.aero
+    .author.aero .ballooning.aero .broker.aero .caa.aero .cargo.aero
+    .catering.aero .certification.aero .championship.aero .charter.aero
+    .civilaviation.aero .club.aero .conference.aero .consultant.aero
+    .consulting.aero .control.aero .council.aero .crew.aero .design.aero
+    .dgca.aero .educator.aero .emergency.aero .engine.aero .engineer.aero
+    .entertainment.aero .equipment.aero .exchange.aero .express.aero
+    .federation.aero .flight.aero .freight.aero .fuel.aero .gliding.aero
+    .government.aero .groundhandling.aero .group.aero .hanggliding.aero
+    .homebuilt.aero .insurance.aero .journal.aero .journalist.aero .leasing.aero
+    .logistics.aero .magazine.aero .maintenance.aero .marketplace.aero
+    .media.aero .microlight.aero .modelling.aero .navigation.aero
+    .parachuting.aero .paragliding.aero .passenger-association.aero .pilot.aero
+    .press.aero .production.aero .recreation.aero .repbody.aero .res.aero
+    .research.aero .rotorcraft.aero .safety.aero .scientist.aero .services.aero
+    .show.aero .skydiving.aero .software.aero .student.aero .taxi.aero
+    .trader.aero .trading.aero .trainer.aero .union.aero .workinggroup.aero
+    .works.aero
+    <!-- yeah... this is the .museum total craziness! -->
+    .museum .academy.museum .agriculture.museum .air.museum .airguard.museum
+    .alabama.museum .alaska.museum .amber.museum .ambulance.museum
+    .american.museum .americana.museum .americanantiques.museum
+    .americanart.museum .amsterdam.museum .and.museum .annefrank.museum
+    .anthro.museum .anthropology.museum .antiques.museum .aquarium.museum
+    .arboretum.museum .archaeological.museum .archaeology.museum
+    .architecture.museum .art.museum .artanddesign.museum .artcenter.museum
+    .artdeco.museum .arteducation.museum .artgallery.museum .arts.museum
+    .artsandcrafts.museum .asmatart.museum .assassination.museum .assisi.museum
+    .association.museum .astronomy.museum .atlanta.museum .austin.museum
+    .australia.museum .automotive.museum .aviation.museum .axis.museum
+    .badajoz.museum .baghdad.museum .bahn.museum .bale.museum .baltimore.museum
+    .barcelona.museum .baseball.museum .basel.museum .baths.museum
+    .bauern.museum .beauxarts.museum .beeldengeluid.museum .bellevue.museum
+    .bergbau.museum .berkeley.museum .berlin.museum .bern.museum .bible.museum
+    .bilbao.museum .bill.museum .birdart.museum .birthplace.museum .bonn.museum
+    .boston.museum .botanical.museum .botanicalgarden.museum
+    .botanicgarden.museum .botany.museum .brandywinevalley.museum .brasil.museum
+    .bristol.museum .british.museum .britishcolumbia.museum .broadcast.museum
+    .brunel.museum .brussel.museum .brussels.museum .bruxelles.museum
+    .building.museum .burghof.museum .bus.museum .bushey.museum
+    .cadaques.museum .california.museum .cambridge.museum .can.museum
+    .canada.museum .capebreton.museum .carrier.museum .cartoonart.museum
+    .casadelamoneda.museum .castle.museum .castres.museum .celtic.museum
+    .center.museum .chattanooga.museum .cheltenham.museum .chesapeakebay.museum
+    .chicago.museum .children.museum .childrens.museum .childrensgarden.museum
+    .chiropractic.museum .chocolate.museum .christiansburg.museum
+    .cincinnati.museum .cinema.museum .circus.museum .civilisation.museum
+    .civilization.museum .civilwar.museum .clinton.museum .clock.museum
+    .coal.museum .coastaldefence.museum .cody.museum .coldwar.museum
+    .collection.museum .colonialwilliamsburg.museum .coloradoplateau.museum
+    .columbia.museum .columbus.museum .communication.museum
+    .communications.museum .community.museum .computer.museum
+    .computerhistory.museum .comunica&#x00E7;&#x00F5;es.museum
+    .contemporary.museum .contemporaryart.museum .convent.museum
+    .copenhagen.museum .corporation.museum
+    .correios-e-telecomunica&#x00E7;&#x00F5;es.museum
+    .corvette.museum .costume.museum .countryestate.museum .county.museum
+    .crafts.museum .cranbrook.museum .creation.museum .cultural.museum
+    .culturalcenter.museum .culture.museum .cyber.museum .cymru.museum
+    .dali.museum .dallas.museum .database.museum .ddr.museum
+    .decorativearts.museum .delaware.museum .delmenhorst.museum .denmark.museum
+    .depot.museum .design.museum .detroit.museum .dinosaur.museum
+    .discovery.museum .dolls.museum .donostia.museum .durham.museum
+    .eastafrica.museum .eastcoast.museum .education.museum .educational.museum
+    .egyptian.museum .eisenbahn.museum .elburg.museum .elvendrell.museum
+    .embroidery.museum .encyclopedic.museum .england.museum .entomology.museum
+    .environment.museum .environmentalconservation.museum .epilepsy.museum
+    .essex.museum .estate.museum .ethnology.museum .exeter.museum
+    .exhibition.museum .family.museum .farm.museum .farmequipment.museum
+    .farmers.museum .farmstead.museum .field.museum .figueres.museum
+    .filatelia.museum .film.museum .fineart.museum .finearts.museum
+    .finland.museum .flanders.museum .florida.museum .force.museum
+    .fortmissoula.museum .fortworth.museum .foundation.museum .francaise.museum
+    .frankfurt.museum .franziskaner.museum .freemasonry.museum .freiburg.museum
+    .fribourg.museum .frog.museum .fundacio.museum .furniture.museum
+    .gallery.museum .garden.museum .gateway.museum .geelvinck.museum
+    .gemological.museum .geology.museum .georgia.museum .giessen.museum
+    .glas.museum .glass.museum .gorge.museum .grandrapids.museum .graz.museum
+    .guernsey.museum .halloffame.museum .hamburg.museum .handson.museum
+    .harvestcelebration.museum .hawaii.museum .health.museum
+    .heimatunduhren.museum .hellas.museum .helsinki.museum
+    .hembygdsforbund.museum .heritage.museum .histoire.museum .historical.museum
+    .historicalsociety.museum .historichouses.museum .historisch.museum
+    .historisches.museum .history.museum .historyofscience.museum
+    .horology.museum .house.museum .humanities.museum .illustration.museum
+    .imageandsound.museum .indian.museum .indiana.museum
+    .indianapolis.museum .indianmarket.museum .intelligence.museum
+    .interactive.museum .iraq.museum .iron.museum
+    .isleofman.museum .jamison.museum .jefferson.museum
+    .jerusalem.museum .jewelry.museum .jewish.museum
+    .jewishart.museum .jfk.museum .journalism.museum
+    .judaica.museum .judygarland.museum .juedisches.museum
+    .juif.museum .karate.museum .karikatur.museum
+    .kids.museum .koebenhavn.museum .koeln.museum
+    .kunst.museum .kunstsammlung.museum .kunstunddesign.museum
+    .labor.museum .labour.museum .lajolla.museum
+    .lancashire.museum .landes.museum .lans.museum .l&#x00E4;ns.museum
+    .larsson.museum .lewismiller.museum .lincoln.museum .linz.museum
+    .living.museum .livinghistory.museum .localhistory.museum .london.museum
+    .losangeles.museum .louvre.museum .loyalist.museum .lucerne.museum
+    .luxembourg.museum .luzern.museum .mad.museum .madrid.museum
+    .mallorca.museum .manchester.museum .mansion.museum .mansions.museum
+    .manx.museum .marburg.museum .maritime.museum .maritimo.museum
+    .maryland.museum .marylhurst.museum .media.museum .medical.museum
+    .medizinhistorisches.museum .meeres.museum .memorial.museum
+    .mesaverde.museum .michigan.museum .midatlantic.museum .military.museum
+    .mill.museum .miners.museum .mining.museum .minnesota.museum
+    .missile.museum .missoula.museum .modern.museum .moma.museum
+    .money.museum .monmouth.museum .monticello.museum .montreal.museum
+    .moscow.museum .motorcycle.museum .muenchen.museum .muenster.museum
+    .mulhouse.museum .muncie.museum .museet.museum .museumcenter.museum
+    .museumvereniging.museum .music.museum .national.museum
+    .nationalfirearms.museum .nationalheritage.museum .nativeamerican.museum
+    .naturalhistory.museum .naturalhistorymuseum.museum .naturalsciences.museum
+    .nature.museum .naturhistorisches.museum .natuurwetenschappen.museum
+    .naumburg.museum .naval.museum .nebraska.museum
+    .neues.museum .newhampshire.museum .newjersey.museum
+    .newmexico.museum .newport.museum .newspaper.museum
+    .newyork.museum .niepce.museum .norfolk.museum
+    .north.museum .nrw.museum .nuernberg.museum
+    .nuremberg.museum .nyc.museum .nyny.museum
+    .oceanographic.museum .oceanographique.museum .omaha.museum
+    .online.museum .ontario.museum .openair.museum
+    .oregon.museum .oregontrail.museum .otago.museum
+    .oxford.museum .pacific.museum .paderborn.museum
+    .palace.museum .paleo.museum .palmsprings.museum
+    .panama.museum .paris.museum .pasadena.museum
+    .pharmacy.museum .philadelphia.museum .philadelphiaarea.museum
+    .philately.museum .phoenix.museum .photography.museum
+    .pilots.museum .pittsburgh.museum .planetarium.museum
+    .plantation.museum .plants.museum .plaza.museum
+    .portal.museum .portland.museum .portlligat.museum
+    .posts-and-telecommunications.museum .preservation.museum .presidio.museum
+    .press.museum .project.museum .public.museum
+    .pubol.museum .quebec.museum .railroad.museum
+    .railway.museum .research.museum .resistance.museum .riodejaneiro.museum
+    .rochester.museum .rockart.museum .roma.museum .russia.museum
+    .saintlouis.museum .salem.museum .salvadordali.museum .salzburg.museum
+    .sandiego.museum .sanfrancisco.museum .santabarbara.museum .santacruz.museum
+    .santafe.museum .saskatchewan.museum .satx.museum .savannahga.museum
+    .schlesisches.museum .schoenbrunn.museum .schokoladen.museum .school.museum
+    .schweiz.museum .science.museum .scienceandhistory.museum
+    .scienceandindustry.museum .sciencecenter.museum .sciencecenters.museum
+    .science-fiction.museum .sciencehistory.museum .sciences.museum
+    .sciencesnaturelles.museum .scotland.museum .seaport.museum
+    .settlement.museum .settlers.museum .shell.museum .sherbrooke.museum
+    .sibenik.museum .silk.museum .ski.museum .skole.museum .society.museum
+    .sologne.museum .soundandvision.museum .southcarolina.museum
+    .southwest.museum .space.museum .spy.museum .square.museum .stadt.museum
+    .stalbans.museum .starnberg.museum .state.museum .stateofdelaware.museum
+    .station.museum .steam.museum .steiermark.museum .stjohn.museum
+    .stockholm.museum .stpetersburg.museum .stuttgart.museum .suisse.museum
+    .surgeonshall.museum .surrey.museum .svizzera.museum .sweden.museum
+    .sydney.museum .tank.museum .tcm.museum .technology.museum
+    .telekommunikation.museum .television.museum .texas.museum .textile.museum
+    .theater.museum .time.museum .timekeeping.museum .topology.museum
+    .torino.museum .touch.museum .town.museum .transport.museum
+    .tree.museum .trolley.museum .trust.museum .trustee.museum
+    .uhren.museum .ulm.museum .undersea.museum .university.museum
+    .usa.museum .usantiques.museum .usarts.museum .uscountryestate.museum
+    .usculture.museum .usdecorativearts.museum .usgarden.museum
+    .ushistory.museum .ushuaia.museum .uslivinghistory.museum .utah.museum
+    .uvic.museum .valley.museum .vantaa.museum .versailles.museum
+    .viking.museum .village.museum .virginia.museum .virtual.museum
+    .virtuel.museum .vlaanderen.museum .volkenkunde.museum .wales.museum
+    .wallonie.museum .war.museum .washingtondc.museum .watchandclock.museum
+    .watch-and-clock.museum .western.museum .westfalen.museum .whaling.museum
+    .wildlife.museum .williamsburg.museum .windmill.museum .workshop.museum
+    .york.museum .yorkshire.museum .yosemite.museum .youth.museum
+    .zoological.museum .zoology.museum
+    .&#x05D9;&#x05E8;&#x05D5;&#x05E9;&#x05DC;&#x05D9;&#x05DD;.museum
+    .&#x0438;&#x043A;&#x043E;&#x043C;.museum
+    <forbid reason="deprecated">.nato</forbid>
+    <forbid reason="proposed">.web .mail .med .wine .shop .sport</forbid>
+  </area>
+
+  <!-- specialized TLDs -->
+  <area category="professionals">
+    .pro .aaa.pro .aca.pro .acct.pro .avocat.pro .bar.pro .cpa.pro .eng.pro
+    .jur.pro .law.pro .med.pro .recht.pro
+  </area>
+  <area category="language">
+    .cat
+    <forbid reason="proposed">.bzh .eus .gal .ker .lli .scot</forbid>
+  </area>
+  <area category="groups">
+    <forbid reason="proposed">.kids .nai .eco .gay .fc</forbid>
+  </area>
+  <area category="region">
+    .aq .asia .eu
+    <!-- the .cs and .yu were assigned to countries that are no more
+         because of splits; as such it is difficult to place them in
+         a specific country -->
+    <forbid reason="unused">.cs .yu</forbid>
+    <forbid reason="proposed">.geo .berlin .wien .london .nyc .paris .lat
+    .africa .moscow .eng .quebec .sci</forbid>
+  </area>
+  <area category="technical">
+    <!-- .local is used by Mac OS/X as in computername.local
+         it is also used by mDNS -->
+    <forbid reason="infrastructure">.arpa .e164.arpa .in-addr.arpa
+    .ip6.arpa .iris.arpa .uri.arpa .urn.arpa .local</forbid>
+  </area>
+
+  <!-- countries, sorted by country name in English -->
+  <area category="country" country="Afghanistan">
+    .af .com.af .edu.af .gov.af .net.af .org.af
+  </area>
+  <area category="country" country="&#xC5;land Islands">
+    .ax
+  </area>
+  <area category="country" country="Albania">
+    .al .com.al .edu.al .gov.al .mil.al .net.al .org.al
+  </area>
+  <area category="country" country="Algeria">
+    .dz .art.dz .asso.dz .com.dz .edu.dz .gov.dz .net.dz .org.dz .pol.dz
+    .&#x0627;&#x0644;&#x062C;&#x0632;&#x0627;&#x0626;&#x0631;
+  </area>
+  <area category="country" country="American Samoa">
+    .as .gov.as
+  </area>
+  <area category="country" country="Andorra">
+    .ad .nom.ad
+  </area>
+  <area category="country" country="Angola">
+    .ao .ed.ao .gv.ao .og.ao .co.ao .it.ao .pb.ao
+  </area>
+  <area category="country" country="Anguilla">
+    .ai .com.ai .net.ai .off.ai .org.ai
+  </area>
+  <area category="country" country="Antigua &amp; Barbuda">
+    .ag .co.ag .com.ag .net.ag .nom.ag .org.ag
+  </area>
+  <area category="country" country="Argentina">
+    .com.ar .edu.ar .gob.ar .gov.ar .int.ar .mil.ar .net.ar .org.ar .tur.ar
+    <forbid reason="unused">.ar</forbid>
+    <exceptions apply-to=".ar">.congresodelalengua3.ar .educ.ar
+    .gobiernoelectronico.ar .mecon.ar .nacion.ar .nic.ar .promocion.ar
+    .retina.ar .uba.ar</exceptions>
+  </area>
+  <area category="country" country="Armenia">
+    .am .com.am .net.am .org.am
+  </area>
+  <area category="country" country="Aruba">
+    .aw .com.aw
+  </area>
+  <area category="country" country="Ascension Island">
+    .ac .com.ac .edu.ac .net.ac .gov.ac .org.ac .mil.ac
+  </area>
+  <area category="country" country="Australia">
+    .com.au .net.au .org.au .edu.au .gov.au .csiro.au .asn.au .id.au
+    .wa.edu.au .wa.gov.au .vic.edu.au .vic.gov.au .qld.edu.au .qld.gov.au
+    .sa.edu.au .sa.gov.au .tas.edu.au .tas.gov.au .nt.edu.au .nt.gov.au
+    .act.edu.au .act.gov.au .schools.nsw.edu.au .eq.edu.au .act.au .nsw.au
+    .nt.au .qld.au .sa.au .tas.au .vic.au .wa.au
+    <forbid reason="unused">.au .nsw.edu.au</forbid>
+    <forbid reason="deprecated">.archie.au .conf.au .gw.au .info.au .otc.au
+    .oz.au .telememo.au</forbid>
+  </area>
+  <area category="country" country="Austria">
+    .at .ac.at .biz.at .co.at .gv.at .info.at .or.at .priv.at
+  </area>
+  <area category="country" country="Azerbaijan">
+    .az .com.az .net.az .int.az .gov.az .org.az .edu.az .info.az .pp.az .mil.az
+    .name.az .pro.az .biz.az .co.az
+  </area>
+  <area category="country" country="Bahamas">
+    .bs .com.bs .net.bs .org.bs .edu.bs .gov.bs .we.bs
+  </area>
+  <area category="country" country="Bahrain">
+    .bh .com.bh .info.bh .cc.bh .edu.bh .biz.bh .net.bh .org.bh .gov.bh
+  </area>
+  <area category="country" country="Bangladesh">
+    <!-- 2nd level not permitted -->
+    <forbid reason="unused">.bd</forbid>
+    .com.bd .edu.bd .ac.bd .net.bd .gov.bd .org.bd .mil.bd
+    .&#x09AC;&#x09BE;&#x0982;&#x09B2;&#x09BE;
+  </area>
+  <area category="country" country="Barbados">
+    .bb .co.bb .com.bb .net.bb .org.bb .gov.bb .edu.bb .info.bb .store.bb
+    .tv.bb .biz.bb
+  </area>
+  <area category="country" country="Belarus">
+    <!-- .ac.be is not official but we still require it here -->
+    .by .com.by .gov.by .mil.by .of.by
+  </area>
+  <area category="country" country="Belgium">
+    <!-- .ac.be is not official but we still require it here -->
+    .be .ac.be
+  </area>
+  <area category="country" country="Belize">
+    .bz .com.bz .edu.bz .gov.bz .net.bz .org.bz
+  </area>
+  <area category="country" country="Benin">
+    <!-- the 2nd level are not all listed -->
+    .bj .asso.bj .barreau.bj .com.bj .edu.bj .gouv.bj .gov.bj .mil.bj
+  </area>
+  <area category="country" country="Bermuda">
+    .bm .com.bm .edu.bm .gov.bm .net.bm .org.bm
+  </area>
+  <area category="country" country="Bhutan">
+    .bt .com.bt .edu.bt .gov.bt .net.bt .org.bt
+  </area>
+  <area category="country" country="Bolivia">
+    .bo .com.bo .net.bo .org.bo .tv.bo .mil.bo .int.bo .gob.bo .gov.bo .edu.bo
+  </area>
+  <area category="country" country="Bonaire, Sint Eustatius and Saba">
+    .bq
+  </area>
+  <area category="country" country="Bosnia and Herzegovina">
+    .ba .web.ba .org.ba .net.ba .edu.ba .gov.ba .mil.ba .unsa.ba .untz.ba
+    .unmo.ba .unbi.ba .unze.ba .co.ba .com.ba .rs.ba
+  </area>
+  <area category="country" country="Botswana">
+    .bw .co.bw .org.bw
+  </area>
+  <area category="country" country="Bouvet Island">
+    <forbid reason="unused">.bv</forbid>
+  </area>
+  <area category="country" country="Brazil">
+    .br .adm.br .adv.br .agr.br .am.br .arq.br .art.br .ato.br .b.br .bio.br
+    .blog.br .bmd.br .cim.br .cng.br .cnt.br .com.br .coop.br .ecn.br .eco.br
+    .edu.br .emp.br .eng.br .esp.br .etc.br .eti.br .far.br .flog.br .fm.br
+    .fnd.br .fot.br .fst.br .g12.br .ggf.br .gov.br .imb.br .ind.br .inf.br
+    .jor.br .jus.br .leg.br .lel.br .mat.br .med.br .mil.br .mp.br .mus.br
+    .net.br .nom.br .not.br .ntr.br .odo.br .org.br .ppg.br .pro.br .psc.br
+    .psi.br .qsl.br .radio.br .rec.br .slg.br .srv.br .taxi.br .teo.br .tmp.br
+    .trd.br .tur.br .tv.br .vet.br .vlog.br .wiki.br .zlg.br
+    <!-- I'm not too sure what happened to .can.br,
+         whether it ever really existed -->
+    <forbid reason="deprecated">.can.br</forbid>
+  </area>
+  <area category="country" country="British Indian Ocean Territory">
+    .io .com.io .net.io .org.io
+  </area>
+  <area category="country" country="British Virgin Islands">
+    .vg
+  </area>
+  <area category="country" country="Brunei Darussalam">
+    .com.bn .edu.bn .gov.bn .net.bn .org.bn
+    <forbid reason="unused">.bn</forbid>
+  </area>
+  <area category="country" country="Bulgaria">
+    .bg .a.bg .b.bg .c.bg .d.bg .e.bg .f.bg .g.bg .h.bg .i.bg .j.bg .k.bg .l.bg
+    .m.bg .n.bg .o.bg .p.bg .q.bg .r.bg .s.bg .t.bg .u.bg .v.bg .w.bg .x.bg
+    .y.bg .z.bg .0.bg .1.bg .2.bg .3.bg .4.bg .5.bg .6.bg .7.bg .8.bg .9.bg
+    <forbid reason="proposed">.&#x0431;&#x0433;</forbid>
+  </area>
+  <area category="country" country="Burkina Faso">
+    .bf .gov.bf
+  </area>
+  <area category="country" country="Burundi">
+    .bi .co.bi .com.bi .edu.bi .gov.bi .info.bi .or.bi .org.bi
+  </area>
+  <area category="country" country="Cameroon">
+    .cm .co.cm .com.cm .edu.cm .gov.cm .net.cm
+  </area>
+  <area category="country" country="Cape Verde">
+    .cv .net.cv .gov.cv .org.cv .edu.cv .int.cv .publ.cv .com.cv .nome.cv 
+  </area>
+  <area category="country" country="Cambodia">
+    <forbid reason="unused">.kh</forbid>
+    .per.kh .com.kh .edu.kh .gov.kh .mil.kh .net.kh .org.kh
+  </area>
+  <area category="country" country="Canada">
+    .ca .ab.ca .bc.ca .gc.ca .mb.ca .nb.ca .nl.ca .ns.ca .nt.ca .nu.ca .on.ca
+    .pe.ca .qc.ca .sk.ca .yk.ca
+    <forbid reason="deprecated">.nf.ca</forbid>
+  </area>
+  <area category="country" country="Cayman Islands">
+    .ky .com.ky .org.ky .net.ky .edu.ky .gov.ky
+    <forbid reason="unused">.cym</forbid>
+  </area>
+  <area category="country" country="Central African Republic">
+    .cf
+  </area>
+  <area category="country" country="Chad">
+    .td
+  </area>
+  <area category="country" country="Chile">
+    .cl .co.cl .gov.cl .gob.cl .mil.cl
+  </area>
+  <area category="country" country="Christmas Island">
+    .cx .gov.cx
+  </area>
+  <area category="country" country="Cocos Islands">
+    <!-- all third level domain names are not official but we probably won't
+         get them using Snap! Websites (not soon at least) and if we do, then
+         we can fix this entry. Anyone else will have to use a sub-domain -->
+    .cc .co.cc .cx.cc .cz.cc .uni.cc
+  </area>
+  <area category="country" country="Comoros">
+    .km .com.km .coop.km .asso.km .nom.km .presse.km .tm.km .medecin.km
+    .notaires.km .pharmaciens.km .veterinaire.km .edu.km .gouv.km .mil.km
+    .org.km .gov.km .prd.km .ass.km
+  </area>
+  <area category="country" country="Cook Islands">
+    .co.ck .org.ck .edu.ck .gov.ck .net.ck .gen.ck .biz.ck .info.ck
+    <forbid reason="unused">.ck</forbid>
+    <exceptions apply-to=".ck">.www.ck</exceptions>
+  </area>
+  <area category="country" country="Costa Rica">
+    .cr .ac.cr .co.cr .ed.cr .fi.cr .go.cr .or.cr .sa.cr
+  </area>
+  <area category="country" country="C&#xF4;te d'Ivoire">
+    .ci .ac.ci .a&#xE9;roport.ci  .asso.ci .com.ci .co.ci .edu.ci .ed.ci .go.ci
+    .int.ci .net.ci .org.ci .or.ci .presse.ci .md.ci .gouv.ci
+  </area>
+  <area category="country" country="Croatia">
+    .hr .com.hr .name.hr .from.hr .iz.hr
+  </area>
+  <area category="country" country="Cuba">
+    .cu .com.cu .edu.cu .org.cu .net.cu .gov.cu .inf.cu
+  </area>
+  <area category="country" country="Cura&#xE7;ao">
+    .cw
+  </area>
+  <area category="country" country="Cyprus">
+    .ac.cy .net.cy .gov.cy .org.cy .pro.cy .name.cy .ekloges.cy .tm.cy
+    .ltd.cy .biz.cy .press.cy .parliament.cy .com.cy
+    <!-- nearly all websites are required to use a 3rd level name; the .cy
+         is used by some companies such as nic.cy -->
+    <forbid reason="reserved">.cy</forbid>
+  </area>
+  <area category="country" country="Czech Repulic">
+    .cz
+  </area>
+  <area category="country" country="Democratic People's Republic of Korea">
+    .kp .com.kp .rep.kp .org.kp .edu.kp .gov.kp .tra.kp
+  </area>
+  <area category="country" country="Democratic Republic of the Congo">
+    .cd .gov.cd
+    <!-- .zr was for Zaire -->
+    <forbid reason="deprecated">.zr</forbid>
+  </area>
+  <area category="country" country="Denmark">
+    .dk
+  </area>
+  <area category="country" country="Djibouti">
+    .dj
+  </area>
+  <area category="country" country="Dominica">
+    .dm .com.dm .edu.dm .gov.dm .net.dm .org.dm
+  </area>
+  <area category="country" country="Dominican Republic">
+    .do .art.do .com.do .edu.do .gob.do .gov.do .mil.do .net.do .org.do .sld.do
+    .web.do
+  </area>
+  <area category="country" country="East Timor">
+    .tl .gov.tl .tp
+    <!-- .tp is being phased out, old East Timor -->
+  </area>
+  <area category="country" country="Ecuador">
+    .ec .com.ec .info.ec .net.ec .fin.ec .med.ec .pro.ec .org.ec .edu.ec
+    .gob.ec .gov.ec .mil.ec .k12.ec
+  </area>
+  <area category="country" country="Egypt">
+    .eg .com.eg .edu.eg .eun.eg .gov.eg .mil.eg .name.eg .net.eg .org.eg .sci.eg
+    .&#x0645;&#x0635;&#x0631;
+  </area>
+  <area category="country" country="El Salvador">
+    .edu.sv .gob.sv .com.sv .org.sv .red.sv
+    <forbid reason="unused">.sv</forbid>
+  </area>
+  <area category="country" country="Equatorial Guinea">
+    .gq
+  </area>
+  <area category="country" country="Eritrea">
+    .com.er .edu.er .gov.er .mil.er .net.er .org.er .ind.er
+    <forbid reason="unused">.er</forbid>
+  </area>
+  <area category="country" country="Estonia">
+    .ee .com.ee .pri.ee .fie.ee .med.ee .edu.ee .gov.ee .riik.ee .lib.ee
+    .aip.ee .org.ee
+  </area>
+  <area category="country" country="Ethiopia">
+    <!-- only 3rd level authorized -->
+    <forbid reason="unused">.et</forbid>
+    .com.et .gov.et .org.et .edu.et .net.et .biz.et .name.et .info.et
+  </area>
+  <area category="country" country="Falkland Islands">
+    <forbid reason="unused">.fk</forbid>
+    .co.fk .org.fk .gov.fk .ac.fk .nom.fk .net.fk
+  </area>
+  <area category="country" country="Faroe Islands">
+    .fo
+  </area>
+  <area category="country" country="Federated States of Micronesia">
+    .fm
+  </area>
+  <area category="country" country="Finland">
+    .fi .iki.fi
+    <forbid reason="deprecated">.aland.fi</forbid>
+  </area>
+  <area category="country" country="Fiji">
+    .ac.fj .biz.fj .com.fj .info.fj .mil.fj .name.fj .net.fj .org.fj .pro.fj
+    <!-- only 3rd level but they have domains.fj ... -->
+    <forbid reason="reserved">.fj</forbid>
+  </area>
+  <area category="country" country="France">
+    .fr .tm.fr .asso.fr .nom.fr .prd.fr .presse.fr .com.fr .gouv.fr
+    .aeroport.fr .assedic.fr .avocat.fr .avoues.fr .cci.fr .chambagri.fr
+    .chirurgiens-dentistes.fr .experts-comptables.fr .geometre-expert.fr
+    .greta.fr .huissier-justice.fr .medecin.fr .notaires.fr .pharmacien.fr
+    .port.fr .veterinaire.fr
+    <forbid reason="unused">.bl .mf</forbid>
+  </area>
+  <area category="country" country="French Guiana">
+    .gf
+  </area>
+  <area category="country" country="French Polynesia">
+    .pf .com.pf .org.pf .edu.pf
+  </area>
+  <area category="country" country="French Southern and Antarctic Lands">
+    .tf .edu.tf .eu.tf .net.tf .us.tf
+  </area>
+  <area category="country" country="Gabon">
+    .ga .md.ga .presse.ga .gouv.ga .go.ga .org.ga .or.ga .com.ga .co.ga
+    .edu.ga .ed.ga .ac.ga .net.ga .a&#xE9;roport.ga .int.ga
+  </area>
+  <area category="country" country="Georgia">
+    .ge .com.ge .edu.ge .gov.ge .org.ge .mil.ge .net.ge .pvt.ge
+    .&#x10D2;&#x10D4;
+  </area>
+  <area category="country" country="Germany">
+    .de .com.de
+    <forbid reason="unused">.dd</forbid>
+  </area>
+  <area category="country" country="Ghana">
+    .gh .com.gh .edu.gh .gov.gh .org.gh .mil.gh
+  </area>
+  <area category="country" country="Gibraltar">
+    .gi .com.gi .ltd.gi .gov.gi .mod.gi .edu.gi .org.gi
+  </area>
+  <area category="country" country="Greece">
+    .gr .co.gr .com.gr .edu.gr .net.gr .org.gr .gov.gr .mil.gr .mod.gr .sch.gr
+  </area>
+  <area category="country" country="Greenland">
+    .gl
+  </area>
+  <area category="country" country="Grenada">
+    .gd
+  </area>
+  <area category="country" country="Guadeloupe">
+    .gp .com.gp .net.gp .mobi.gp .edu.gp .asso.gp .org.gp
+  </area>
+  <area category="country" country="Guam">
+    .com.gu .net.gu .gov.gu .org.gu .edu.gu
+    <forbid reason="unused">.gu</forbid>
+  </area>
+  <area category="country" country="Guatemala">
+    .com.gt .edu.gt .net.gt .gob.gt .org.gt .mil.gt .ind.gt
+    <forbid reason="unused">.gt</forbid>
+  </area>
+  <area category="country" country="Guernsey">
+    .gg .co.gg .net.gg .org.gg .sch.gg .gov.gg
+  </area>
+  <area category="country" country="Guinea">
+    .gn .com.gn .ac.gn .gov.gn .org.gn .net.gn .edu.gn
+  </area>
+  <area category="country" country="Guinea-Bissau">
+    <forbid reason="unused">.gw</forbid>
+  </area>
+  <area category="country" country="Guyana">
+    .gy .co.gy .com.gy .org.gy .net.gy .edu.gy .gov.gy
+  </area>
+  <area category="country" country="Haiti">
+    .ht .com.ht .shop.ht .firm.ht .info.ht .adult.ht .net.ht .pro.ht .org.ht
+    .med.ht .art.ht .coop.ht .pol.ht .asso.ht .edu.ht .rel.ht .gouv.ht .perso.ht
+  </area>
+  <area category="country" country="Heard and McDonald Islands">
+    .hm
+  </area>
+  <area category="country" country="Honduras">
+    .hn .net.hn .org.hn .edu.hn .gob.hn .com.hn .mil.hn
+  </area>
+  <area category="country" country="Hong Kong">
+    .hk .com.hk .org.hk .net.hk .edu.hk .gov.hk .idv.hk
+    .&#x9999;&#x6E2F; .&#x516C;&#x53F8;.hk .&#x6559;&#x80B2;.hk
+    .&#x654E;&#x80B2;.hk .&#x653F;&#x5E9C;.hk .&#x500B;&#x4EBA;.hk
+    .&#x4E2A;&#x4EBA;.hk .&#x7B87;&#x4EBA;.hk .&#x7DB2;&#x7EDC;.hk
+    .&#x7F51;&#x7EDC;.hk .&#x7EC4;&#x7E54;.hk .&#x7DB2;&#x7D61;.hk
+    .&#x7F51;&#x7D61;.hk .&#x7EC4;&#x7EC7;.hk .&#x7D44;&#x7E54;.hk
+    .&#x7D44;&#x7EC7;.hk
+  </area>
+  <area category="country" country="Hungary">
+    .hu .co.hu .2000.hu .erotika.hu .jogasz.hu .sex.hu .video.hu .info.hu
+    .agrar.hu .film.hu .konyvelo.hu .shop.hu .org.hu .bolt.hu .forum.hu
+    .lakas.hu .suli.hu .priv.hu .casino.hu .games.hu .media.hu .szex.hu
+    .sport.hu .city.hu .hotel.hu .news.hu .tozsde.hu .tm.hu .erotica.hu
+    .ingatlan.hu .reklam.hu .utazas.hu 
+  </area>
+  <area category="country" country="Iceland">
+    .is .net.is .com.is .edu.is .gov.is .org.is .int.is
+  </area>
+  <area category="country" country="India">
+    .in .ac.in .co.in .edu.in .ernet.in .firm.in .gen.in .gov.in .ind.in
+    .mil.in .net.in .org.in .res.in .nic.in
+    .&#x092D;&#x093E;&#x0930;&#x0924;
+    .&#x0628;&#x06BE;&#x0627;&#x0631;&#x062A;
+    .&#x0C2D;&#x0C3E;&#x0C30;&#x0C24;&#x0C4D;
+    .&#x0AAD;&#x0ABE;&#x0AB0;&#x0AA4;
+    .&#x0A2D;&#x0A3E;&#x0A30;&#x0A24;
+    .&#x09AD;&#x09BE;&#x09B0;&#x09A4;
+    .&#x0B87;&#x0BA8;&#x0BCD;&#x0BA4;&#x0BBF;&#x0BAF;&#x0BBE;
+  </area>
+  <area category="country" country="Indonesia">
+    .id .ac.id .co.id .net.id .or.id .web.id .sch.id .mil.id .go.id
+  </area>
+  <area category="country" country="Iran">
+    .ir .ac.ir .co.ir .gov.ir .id.ir .net.ir .org.ir .sch.ir
+    .&#x0627;&#x06CC;&#x0631;&#x0627;&#x0646;.ir
+    .&#x0627;&#x064A;&#x0631;&#x0627;&#x0646;.ir
+    .&#x0627;&#x06CC;&#x0631;&#x0627;&#x0646;
+    .&#x0627;&#x064A;&#x0631;&#x0627;&#x0646;
+  </area>
+  <area category="country" country="Iraq">
+    .iq .gov.iq .edu.iq .com.iq .mil.iq .org.iq .net.iq
+  </area>
+  <area category="country" country="Isle of Man">
+    .im .plc.co.im .net.im .co.im .org.im .ac.im .ltd.co.im .com.im .gov.im
+    .nic.im
+  </area>
+  <area category="country" country="Israel">
+    .ac.il .co.il .org.il .net.il .k12.il .gov.il .muni.il .idf.il
+    <forbid reason="unused">.il</forbid>
+  </area>
+  <area category="country" country="Italy">
+    .it .gov.it .edu.it
+    .agrigento.it .ag.it .alessandria.it .al.it .ancona.it .an.it .aosta.it
+    .aoste.it .ao.it .arezzo.it .ar.it .ascoli-piceno.it .ascolipiceno.it .ap.it
+    .asti.it .at.it .avellino.it .av.it .bari.it .ba.it
+    .andria-barletta-trani.it .andriabarlettatrani.it .trani-barletta-andria.it
+    .tranibarlettaandria.it .barletta-trani-andria.it .barlettatraniandria.it
+    .andria-trani-barletta.it .andriatranibarletta.it .trani-andria-barletta.it
+    .traniandriabarletta.it .bt.it .belluno.it .bl.it .benevento.it .bn.it
+    .bergamo.it .bg.it .biella.it .bi.it .bologna.it .bo.it .bolzano.it
+    .bozen.it .balsan.it .alto-adige.it .altoadige.it .suedtirol.it .bz.it
+    .brescia.it .bs.it .brindisi.it .br.it .cagliari.it .ca.it .caltanissetta.it
+    .cl.it .campobasso.it .cb.it .carboniaiglesias.it .carbonia-iglesias.it
+    .iglesias-carbonia.it .iglesiascarbonia.it .ci.it .caserta.it .ce.it
+    .catania.it .ct.it .catanzaro.it .cz.it .chieti.it .ch.it .como.it .co.it
+    .cosenza.it .cs.it .cremona.it .cr.it .crotone.it .kr.it .cuneo.it .cn.it
+    .dell-ogliastra.it .dellogliastra.it .ogliastra.it .og.it .enna.it .en.it
+    .ferrara.it .fe.it .fermo.it .fm.it .firenze.it .florence.it .fi.it
+    .foggia.it .fg.it .forli-cesena.it .forlicesena.it .cesena-forli.it
+    .cesenaforli.it .fc.it .frosinone.it .fr.it .genova.it .genoa.it .ge.it
+    .gorizia.it .go.it .grosseto.it .gr.it .imperia.it .im.it .isernia.it .is.it
+    .laquila.it .aquila.it .aq.it .la-spezia.it .laspezia.it .sp.it .latina.it
+    .lt.it .lecce.it .le.it .lecco.it .lc.it .livorno.it .li.it .lodi.it .lo.it
+    .lucca.it .lu.it .macerata.it .mc.it .mantova.it .mn.it .massa-carrara.it
+    .massacarrara.it .carrara-massa.it .carraramassa.it .ms.it .matera.it .mt.it
+    .medio-campidano.it .mediocampidano.it .campidano-medio.it
+    .campidanomedio.it .vs.it .messina.it .me.it .milano.it .milan.it .mi.it
+    .modena.it .mo.it .monza.it .monza-brianza.it .monzabrianza.it
+    .monzaebrianza.it .monzaedellabrianza.it .monza-e-della-brianza.it .mb.it
+    .napoli.it .naples.it .na.it .novara.it .no.it .nuoro.it .nu.it .oristano.it
+    .or.it .padova.it .padua.it .pd.it .palermo.it .pa.it .parma.it .pr.it
+    .pavia.it .pv.it .perugia.it .pg.it .pescara.it .pe.it .pesaro-urbino.it
+    .pesarourbino.it .urbino-pesaro.it .urbinopesaro.it .pu.it .piacenza.it
+    .pc.it .pisa.it .pi.it .pistoia.it .pt.it .pordenone.it .pn.it .potenza.it
+    .pz.it .prato.it .po.it .ragusa.it .rg.it .ravenna.it .ra.it
+    .reggio-calabria.it .reggiocalabria.it .rc.it .reggio-emilia.it
+    .reggioemilia.it .re.it .rieti.it .ri.it .rimini.it .rn.it .roma.it .rome.it
+    .rm.it .rovigo.it .ro.it .salerno.it .sa.it .sassari.it .ss.it .savona.it
+    .sv.it .siena.it .si.it .siracusa.it .sr.it .sondrio.it .so.it .taranto.it
+    .ta.it .tempio-olbia.it .tempioolbia.it .olbia-tempio.it .olbiatempio.it
+    .ot.it .teramo.it .te.it .terni.it .tr.it .torino.it .turin.it .to.it
+    .trapani.it .tp.it .trento.it .trentino.it .tn.it .treviso.it .tv.it
+    .trieste.it .ts.it .udine.it .ud.it .varese.it .va.it .venezia.it .venice.it
+    .ve.it .verbania.it .vb.it .vercelli.it .vc.it .verona.it .vr.it
+    .vibo-valentia.it .vibovalentia.it .vv.it .vicenza.it .vi.it .viterbo.it
+    .vt.it
+  </area>
+  <area category="country" country="Jamaica">
+    <forbid reason="unused">.jm</forbid>
+    .com.jm .net.jm .org.jm .edu.jm .gov.jm .mil.jm
+  </area>
+  <area category="country" country="Japan">
+    .jp .ac.jp .ad.jp .co.jp .ed.jp .go.jp .gr.jp .lg.jp .ne.jp .or.jp
+
+    <!-- japan also includes reserved geographical domains for cities, towns,
+         prefectures and tokyo; these, however, make use of a sub-domain
+         and specific sub-domains (i.e. city.<city-name>.jp -->
+    .metro.tokyo.jp .pref.aichi.jp .pref.akita.jp .pref.aomori.jp .pref.chiba.jp
+    .pref.ehime.jp .pref.fukui.jp .pref.fukuoka.jp .pref.fukushima.jp
+    .pref.gifu.jp .pref.gunma.jp .pref.hiroshima.jp .pref.hokkaido.jp
+    .pref.hyogo.jp .pref.ibaraki.jp .pref.ishikawa.jp .pref.iwate.jp
+    .pref.kagawa.jp .pref.kagoshima.jp .pref.kanagawa.jp .pref.kochi.jp
+    .pref.kumamoto.jp .pref.kyoto.jp .pref.mie.jp .pref.miyagi.jp
+    .pref.miyazaki.jp .pref.nagano.jp .pref.nagasaki.jp .pref.nara.jp
+    .pref.niigata.jp .pref.oita.jp .pref.okayama.jp .pref.okinawa.jp
+    .pref.osaka.jp .pref.saga.jp .pref.saitama.jp .pref.shiga.jp
+    .pref.shimane.jp .pref.shizuoka.jp .pref.tochigi.jp .pref.tokushima.jp
+    .pref.tottori.jp .pref.toyama.jp .pref.wakayama.jp .pref.yamagata.jp
+    .pref.yamaguchi.jp .pref.yamanashi.jp
+    
+    .city.chiba.jp .city.fukuoka.jp .city.hiroshima.jp .city.kawasaki.jp
+    .city.kitakyushu.jp .city.kobe.jp .city.kyoto.jp .city.nagoya.jp
+    .city.niigata.jp .city.okayama.jp .city.osaka.jp .city.saitama.jp
+    .city.sapporo.jp .city.sendai.jp .city.shizuoka.jp .city.yokohama.jp
+
+    <!-- prefecture without the .pref are now available -->
+    .tokyo.jp .aichi.jp .akita.jp
+    .aomori.jp .chiba.jp .yamaguchi.jp .yamanashi.jp
+    .ehime.jp .fukui.jp .fukuoka.jp .fukushima.jp
+    .gifu.jp .gunma.jp .hiroshima.jp .hokkaido.jp
+    .hyogo.jp .ibaraki.jp .ishikawa.jp .iwate.jp
+    .kagawa.jp .kagoshima.jp .kanagawa.jp .kochi.jp
+    .kumamoto.jp .kyoto.jp .mie.jp .miyagi.jp
+    .miyazaki.jp .nagano.jp .nagasaki.jp .nara.jp
+    .niigata.jp .oita.jp .okayama.jp .okinawa.jp
+    .osaka.jp .saga.jp .saitama.jp .shiga.jp
+    .shimane.jp .shizuoka.jp .tochigi.jp .tokushima.jp
+    .tottori.jp .toyama.jp .wakayama.jp .yamagata.jp
+
+    <!-- except for a few names -->
+    <forbid reason="unused">.kawasaki.jp .kitakyushu.jp .kobe.jp
+    .nagoya.jp .sapporo.jp .sendai.jp .yokohama.jp</forbid>
+
+    <!-- 4th level registration under prefecture names (probably county
+         names?) -->
+    .aisai.aichi.jp .ama.aichi.jp .anjo.aichi.jp .asuke.aichi.jp
+    .chiryu.aichi.jp .chita.aichi.jp .fuso.aichi.jp .gamagori.aichi.jp
+    .handa.aichi.jp .hazu.aichi.jp .hekinan.aichi.jp .higashiura.aichi.jp
+    .ichinomiya.aichi.jp .inazawa.aichi.jp .inuyama.aichi.jp .isshiki.aichi.jp
+    .iwakura.aichi.jp .kanie.aichi.jp .kariya.aichi.jp .kasugai.aichi.jp
+    .kira.aichi.jp .kiyosu.aichi.jp .komaki.aichi.jp .konan.aichi.jp
+    .kota.aichi.jp .mihama.aichi.jp .miyoshi.aichi.jp .nagakute.aichi.jp
+    .nishio.aichi.jp .nisshin.aichi.jp .obu.aichi.jp .oguchi.aichi.jp
+    .oharu.aichi.jp .okazaki.aichi.jp .owariasahi.aichi.jp .seto.aichi.jp
+    .shikatsu.aichi.jp .shinshiro.aichi.jp .shitara.aichi.jp .tahara.aichi.jp
+    .takahama.aichi.jp .tobishima.aichi.jp .toei.aichi.jp .togo.aichi.jp
+    .tokai.aichi.jp .tokoname.aichi.jp .toyoake.aichi.jp .toyohashi.aichi.jp
+    .toyokawa.aichi.jp .toyone.aichi.jp .toyota.aichi.jp .tsushima.aichi.jp
+    .yatomi.aichi.jp .akita.akita.jp .daisen.akita.jp .fujisato.akita.jp
+    .gojome.akita.jp .hachirogata.akita.jp .happou.akita.jp
+    .higashinaruse.akita.jp .honjo.akita.jp .honjyo.akita.jp .ikawa.akita.jp
+    .kamikoani.akita.jp .kamioka.akita.jp .katagami.akita.jp .kazuno.akita.jp
+    .kitaakita.akita.jp .kosaka.akita.jp .kyowa.akita.jp .misato.akita.jp
+    .mitane.akita.jp .moriyoshi.akita.jp .nikaho.akita.jp .noshiro.akita.jp
+    .odate.akita.jp .oga.akita.jp .ogata.akita.jp .semboku.akita.jp
+    .yokote.akita.jp .yurihonjo.akita.jp .aomori.aomori.jp .gonohe.aomori.jp
+    .hachinohe.aomori.jp .hashikami.aomori.jp .hiranai.aomori.jp
+    .hirosaki.aomori.jp .itayanagi.aomori.jp .kuroishi.aomori.jp
+    .misawa.aomori.jp .mutsu.aomori.jp .nakadomari.aomori.jp .noheji.aomori.jp
+    .oirase.aomori.jp .owani.aomori.jp .rokunohe.aomori.jp .sannohe.aomori.jp
+    .shichinohe.aomori.jp .shingo.aomori.jp .takko.aomori.jp .towada.aomori.jp
+    .tsugaru.aomori.jp .tsuruta.aomori.jp .abiko.chiba.jp .asahi.chiba.jp
+    .chonan.chiba.jp .chosei.chiba.jp .choshi.chiba.jp .chuo.chiba.jp
+    .funabashi.chiba.jp .futtsu.chiba.jp .hanamigawa.chiba.jp .ichihara.chiba.jp
+    .ichikawa.chiba.jp .ichinomiya.chiba.jp .inzai.chiba.jp .isumi.chiba.jp
+    .kamagaya.chiba.jp .kamogawa.chiba.jp .kashiwa.chiba.jp .katori.chiba.jp
+    .katsuura.chiba.jp .kimitsu.chiba.jp .kisarazu.chiba.jp .kozaki.chiba.jp
+    .kujukuri.chiba.jp .kyonan.chiba.jp .matsudo.chiba.jp .midori.chiba.jp
+    .mihama.chiba.jp .minamiboso.chiba.jp .mobara.chiba.jp .mutsuzawa.chiba.jp
+    .nagara.chiba.jp .nagareyama.chiba.jp .narashino.chiba.jp .narita.chiba.jp
+    .noda.chiba.jp .oamishirasato.chiba.jp .omigawa.chiba.jp .onjuku.chiba.jp
+    .otaki.chiba.jp .sakae.chiba.jp .sakura.chiba.jp .shimofusa.chiba.jp
+    .shirako.chiba.jp .shiroi.chiba.jp .shisui.chiba.jp .sodegaura.chiba.jp
+    .sosa.chiba.jp .tako.chiba.jp .tateyama.chiba.jp .togane.chiba.jp
+    .tohnosho.chiba.jp .tomisato.chiba.jp .urayasu.chiba.jp .yachimata.chiba.jp
+    .yachiyo.chiba.jp .yokaichiba.chiba.jp .yokoshibahikari.chiba.jp
+    .yotsukaido.chiba.jp .ainan.ehime.jp .honai.ehime.jp .ikata.ehime.jp
+    .imabari.ehime.jp .iyo.ehime.jp .kamijima.ehime.jp .kihoku.ehime.jp
+    .kumakogen.ehime.jp .masaki.ehime.jp .matsuno.ehime.jp .matsuyama.ehime.jp
+    .namikata.ehime.jp .niihama.ehime.jp .ozu.ehime.jp .saijo.ehime.jp
+    .seiyo.ehime.jp .shikokuchuo.ehime.jp .tobe.ehime.jp .toon.ehime.jp
+    .uchiko.ehime.jp .uwajima.ehime.jp .yawatahama.ehime.jp .echizen.fukui.jp
+    .eiheiji.fukui.jp .fukui.fukui.jp .ikeda.fukui.jp .katsuyama.fukui.jp
+    .mihama.fukui.jp .minamiechizen.fukui.jp .obama.fukui.jp .ohi.fukui.jp
+    .ono.fukui.jp .sabae.fukui.jp .sakai.fukui.jp .takahama.fukui.jp
+    .tsuruga.fukui.jp .wakasa.fukui.jp .ashiya.fukuoka.jp .buzen.fukuoka.jp
+    .chikugo.fukuoka.jp .chikuho.fukuoka.jp .chikujo.fukuoka.jp
+    .chikushino.fukuoka.jp .chikuzen.fukuoka.jp .chuo.fukuoka.jp
+    .dazaifu.fukuoka.jp .fukuchi.fukuoka.jp .hakata.fukuoka.jp
+    .higashi.fukuoka.jp .hirokawa.fukuoka.jp .hisayama.fukuoka.jp
+    .iizuka.fukuoka.jp .inatsuki.fukuoka.jp .kaho.fukuoka.jp
+    .kasuga.fukuoka.jp .kasuya.fukuoka.jp .kawara.fukuoka.jp
+    .keisen.fukuoka.jp .koga.fukuoka.jp .kurate.fukuoka.jp
+    .kurogi.fukuoka.jp .kurume.fukuoka.jp .minami.fukuoka.jp
+    .miyako.fukuoka.jp .miyama.fukuoka.jp .miyawaka.fukuoka.jp
+    .mizumaki.fukuoka.jp .munakata.fukuoka.jp .nakagawa.fukuoka.jp
+    .nakama.fukuoka.jp .nishi.fukuoka.jp .nogata.fukuoka.jp .ogori.fukuoka.jp
+    .okagaki.fukuoka.jp .okawa.fukuoka.jp .oki.fukuoka.jp .omuta.fukuoka.jp
+    .onga.fukuoka.jp .onojo.fukuoka.jp .oto.fukuoka.jp .saigawa.fukuoka.jp
+    .sasaguri.fukuoka.jp .shingu.fukuoka.jp .shinyoshitomi.fukuoka.jp
+    .shonai.fukuoka.jp .soeda.fukuoka.jp .sue.fukuoka.jp .tachiarai.fukuoka.jp
+    .tagawa.fukuoka.jp .takata.fukuoka.jp .toho.fukuoka.jp .toyotsu.fukuoka.jp
+    .tsuiki.fukuoka.jp .ukiha.fukuoka.jp .umi.fukuoka.jp .usui.fukuoka.jp
+    .yamada.fukuoka.jp .yame.fukuoka.jp .yanagawa.fukuoka.jp
+    .yukuhashi.fukuoka.jp .aizubange.fukushima.jp .aizumisato.fukushima.jp
+    .aizuwakamatsu.fukushima.jp .asakawa.fukushima.jp .bandai.fukushima.jp
+    .date.fukushima.jp .fukushima.fukushima.jp .furudono.fukushima.jp
+    .futaba.fukushima.jp .hanawa.fukushima.jp .higashi.fukushima.jp
+    .hirata.fukushima.jp .hirono.fukushima.jp .iitate.fukushima.jp
+    .inawashiro.fukushima.jp .ishikawa.fukushima.jp .iwaki.fukushima.jp
+    .izumizaki.fukushima.jp .kagamiishi.fukushima.jp .kaneyama.fukushima.jp
+    .kawamata.fukushima.jp .kitakata.fukushima.jp .kitashiobara.fukushima.jp
+    .koori.fukushima.jp .koriyama.fukushima.jp .kunimi.fukushima.jp
+    .miharu.fukushima.jp .mishima.fukushima.jp .namie.fukushima.jp
+    .nango.fukushima.jp .nishiaizu.fukushima.jp .nishigo.fukushima.jp
+    .okuma.fukushima.jp .omotego.fukushima.jp .ono.fukushima.jp
+    .otama.fukushima.jp .samegawa.fukushima.jp .shimogo.fukushima.jp
+    .shirakawa.fukushima.jp .showa.fukushima.jp .soma.fukushima.jp
+    .sukagawa.fukushima.jp .taishin.fukushima.jp .tamakawa.fukushima.jp
+    .tanagura.fukushima.jp .tenei.fukushima.jp .yabuki.fukushima.jp
+    .yamato.fukushima.jp .yamatsuri.fukushima.jp .yanaizu.fukushima.jp
+    .yugawa.fukushima.jp .anpachi.gifu.jp .ena.gifu.jp .gifu.gifu.jp
+    .ginan.gifu.jp .godo.gifu.jp .gujo.gifu.jp .hashima.gifu.jp .hichiso.gifu.jp
+    .hida.gifu.jp .higashishirakawa.gifu.jp .ibigawa.gifu.jp .ikeda.gifu.jp
+    .kakamigahara.gifu.jp .kani.gifu.jp .kasahara.gifu.jp .kasamatsu.gifu.jp
+    .kawaue.gifu.jp .kitagata.gifu.jp .mino.gifu.jp .minokamo.gifu.jp
+    .mitake.gifu.jp .mizunami.gifu.jp .motosu.gifu.jp .nakatsugawa.gifu.jp
+    .ogaki.gifu.jp .sakahogi.gifu.jp .seki.gifu.jp .sekigahara.gifu.jp
+    .shirakawa.gifu.jp .tajimi.gifu.jp .takayama.gifu.jp .tarui.gifu.jp
+    .toki.gifu.jp .tomika.gifu.jp .wanouchi.gifu.jp .yamagata.gifu.jp
+    .yaotsu.gifu.jp .yoro.gifu.jp .annaka.gunma.jp .chiyoda.gunma.jp
+    .fujioka.gunma.jp .higashiagatsuma.gunma.jp .isesaki.gunma.jp
+    .itakura.gunma.jp .kanna.gunma.jp .kanra.gunma.jp .katashina.gunma.jp
+    .kawaba.gunma.jp .kiryu.gunma.jp .kusatsu.gunma.jp .maebashi.gunma.jp
+    .meiwa.gunma.jp .midori.gunma.jp .minakami.gunma.jp .naganohara.gunma.jp
+    .nakanojo.gunma.jp .nanmoku.gunma.jp .numata.gunma.jp .oizumi.gunma.jp
+    .ora.gunma.jp .ota.gunma.jp .shibukawa.gunma.jp .shimonita.gunma.jp
+    .shinto.gunma.jp .showa.gunma.jp .takasaki.gunma.jp .takayama.gunma.jp
+    .tamamura.gunma.jp .tatebayashi.gunma.jp .tomioka.gunma.jp
+    .tsukiyono.gunma.jp .tsumagoi.gunma.jp .ueno.gunma.jp .yoshioka.gunma.jp
+    .asaminami.hiroshima.jp .daiwa.hiroshima.jp .etajima.hiroshima.jp
+    .fuchu.hiroshima.jp .fukuyama.hiroshima.jp .hatsukaichi.hiroshima.jp
+    .higashihiroshima.hiroshima.jp .hongo.hiroshima.jp
+    .jinsekikogen.hiroshima.jp .kaita.hiroshima.jp .kui.hiroshima.jp
+    .kumano.hiroshima.jp .kure.hiroshima.jp .mihara.hiroshima.jp
+    .miyoshi.hiroshima.jp .naka.hiroshima.jp .onomichi.hiroshima.jp
+    .osakikamijima.hiroshima.jp .otake.hiroshima.jp .saka.hiroshima.jp
+    .sera.hiroshima.jp .seranishi.hiroshima.jp .shinichi.hiroshima.jp
+    .shobara.hiroshima.jp .takehara.hiroshima.jp .abashiri.hokkaido.jp
+    .abira.hokkaido.jp .aibetsu.hokkaido.jp .akabira.hokkaido.jp
+    .akkeshi.hokkaido.jp .asahikawa.hokkaido.jp .ashibetsu.hokkaido.jp
+    .ashoro.hokkaido.jp .assabu.hokkaido.jp .atsuma.hokkaido.jp
+    .bibai.hokkaido.jp .biei.hokkaido.jp .bifuka.hokkaido.jp .bihoro.hokkaido.jp
+    .biratori.hokkaido.jp .chippubetsu.hokkaido.jp .chitose.hokkaido.jp
+    .date.hokkaido.jp .ebetsu.hokkaido.jp .embetsu.hokkaido.jp
+    .eniwa.hokkaido.jp .erimo.hokkaido.jp .esan.hokkaido.jp .esashi.hokkaido.jp
+    .fukagawa.hokkaido.jp .fukushima.hokkaido.jp .furano.hokkaido.jp
+    .furubira.hokkaido.jp .haboro.hokkaido.jp .hakodate.hokkaido.jp
+    .hamatonbetsu.hokkaido.jp .hidaka.hokkaido.jp .higashikagura.hokkaido.jp
+    .higashikawa.hokkaido.jp .hiroo.hokkaido.jp .hokuryu.hokkaido.jp
+    .hokuto.hokkaido.jp .honbetsu.hokkaido.jp .horokanai.hokkaido.jp
+    .horonobe.hokkaido.jp .ikeda.hokkaido.jp .imakane.hokkaido.jp
+    .ishikari.hokkaido.jp .iwamizawa.hokkaido.jp .iwanai.hokkaido.jp
+    .kamifurano.hokkaido.jp .kamikawa.hokkaido.jp .kamishihoro.hokkaido.jp
+    .kamisunagawa.hokkaido.jp .kamoenai.hokkaido.jp .kayabe.hokkaido.jp
+    .kembuchi.hokkaido.jp .kikonai.hokkaido.jp .kimobetsu.hokkaido.jp
+    .kitahiroshima.hokkaido.jp .kitami.hokkaido.jp .kiyosato.hokkaido.jp
+    .koshimizu.hokkaido.jp .kunneppu.hokkaido.jp .kuriyama.hokkaido.jp
+    .kuromatsunai.hokkaido.jp .kushiro.hokkaido.jp .kutchan.hokkaido.jp
+    .kyowa.hokkaido.jp .mashike.hokkaido.jp .matsumae.hokkaido.jp
+    .mikasa.hokkaido.jp .minamifurano.hokkaido.jp .mombetsu.hokkaido.jp
+    .moseushi.hokkaido.jp .mukawa.hokkaido.jp .muroran.hokkaido.jp
+    .naie.hokkaido.jp .nakagawa.hokkaido.jp .nakasatsunai.hokkaido.jp
+    .nakatombetsu.hokkaido.jp .nanae.hokkaido.jp .nanporo.hokkaido.jp
+    .nayoro.hokkaido.jp .nemuro.hokkaido.jp .niikappu.hokkaido.jp
+    .niki.hokkaido.jp .nishiokoppe.hokkaido.jp .noboribetsu.hokkaido.jp
+    .numata.hokkaido.jp .obihiro.hokkaido.jp .obira.hokkaido.jp
+    .oketo.hokkaido.jp .okoppe.hokkaido.jp .otaru.hokkaido.jp
+    .otobe.hokkaido.jp .otofuke.hokkaido.jp .otoineppu.hokkaido.jp
+    .oumu.hokkaido.jp .ozora.hokkaido.jp .pippu.hokkaido.jp
+    .rankoshi.hokkaido.jp .rebun.hokkaido.jp .rikubetsu.hokkaido.jp
+    .rishiri.hokkaido.jp .rishirifuji.hokkaido.jp .saroma.hokkaido.jp
+    .sarufutsu.hokkaido.jp .shakotan.hokkaido.jp .shari.hokkaido.jp
+    .shibecha.hokkaido.jp .shibetsu.hokkaido.jp .shikabe.hokkaido.jp
+    .shikaoi.hokkaido.jp .shimamaki.hokkaido.jp .shimizu.hokkaido.jp
+    .shimokawa.hokkaido.jp .shinshinotsu.hokkaido.jp .shintoku.hokkaido.jp
+    .shiranuka.hokkaido.jp .shiraoi.hokkaido.jp .shiriuchi.hokkaido.jp
+    .sobetsu.hokkaido.jp .sunagawa.hokkaido.jp .taiki.hokkaido.jp
+    .takasu.hokkaido.jp .takikawa.hokkaido.jp .takinoue.hokkaido.jp
+    .teshikaga.hokkaido.jp .tobetsu.hokkaido.jp .tohma.hokkaido.jp
+    .tomakomai.hokkaido.jp .tomari.hokkaido.jp .toya.hokkaido.jp
+    .toyako.hokkaido.jp .toyotomi.hokkaido.jp .toyoura.hokkaido.jp
+    .tsubetsu.hokkaido.jp .tsukigata.hokkaido.jp .urakawa.hokkaido.jp
+    .urausu.hokkaido.jp .uryu.hokkaido.jp .utashinai.hokkaido.jp
+    .wakkanai.hokkaido.jp .wassamu.hokkaido.jp .yakumo.hokkaido.jp
+    .yoichi.hokkaido.jp .aioi.hyogo.jp .akashi.hyogo.jp .ako.hyogo.jp
+    .amagasaki.hyogo.jp .aogaki.hyogo.jp .asago.hyogo.jp .ashiya.hyogo.jp
+    .awaji.hyogo.jp .fukusaki.hyogo.jp .goshiki.hyogo.jp .harima.hyogo.jp
+    .himeji.hyogo.jp .ichikawa.hyogo.jp .inagawa.hyogo.jp .itami.hyogo.jp
+    .kakogawa.hyogo.jp .kamigori.hyogo.jp .kamikawa.hyogo.jp .kasai.hyogo.jp
+    .kasuga.hyogo.jp .kawanishi.hyogo.jp .miki.hyogo.jp .minamiawaji.hyogo.jp
+    .nishinomiya.hyogo.jp .nishiwaki.hyogo.jp .ono.hyogo.jp .sanda.hyogo.jp
+    .sannan.hyogo.jp .sasayama.hyogo.jp .sayo.hyogo.jp .shingu.hyogo.jp
+    .shinonsen.hyogo.jp .shiso.hyogo.jp .sumoto.hyogo.jp .taishi.hyogo.jp
+    .taka.hyogo.jp .takarazuka.hyogo.jp .takasago.hyogo.jp .takino.hyogo.jp
+    .tamba.hyogo.jp .tatsuno.hyogo.jp .toyooka.hyogo.jp .yabu.hyogo.jp
+    .yashiro.hyogo.jp .yoka.hyogo.jp .yokawa.hyogo.jp .ami.ibaraki.jp
+    .asahi.ibaraki.jp .bando.ibaraki.jp .chikusei.ibaraki.jp .daigo.ibaraki.jp
+    .fujishiro.ibaraki.jp .hitachi.ibaraki.jp .hitachinaka.ibaraki.jp
+    .hitachiomiya.ibaraki.jp .hitachiota.ibaraki.jp .ibaraki.ibaraki.jp
+    .ina.ibaraki.jp .inashiki.ibaraki.jp .itako.ibaraki.jp .iwama.ibaraki.jp
+    .joso.ibaraki.jp .kamisu.ibaraki.jp .kasama.ibaraki.jp .kashima.ibaraki.jp
+    .kasumigaura.ibaraki.jp .koga.ibaraki.jp .miho.ibaraki.jp .mito.ibaraki.jp
+    .moriya.ibaraki.jp .naka.ibaraki.jp .namegata.ibaraki.jp .oarai.ibaraki.jp
+    .ogawa.ibaraki.jp .omitama.ibaraki.jp .ryugasaki.ibaraki.jp
+    .sakai.ibaraki.jp .sakuragawa.ibaraki.jp .shimodate.ibaraki.jp
+    .shimotsuma.ibaraki.jp .shirosato.ibaraki.jp .sowa.ibaraki.jp
+    .suifu.ibaraki.jp .takahagi.ibaraki.jp .tamatsukuri.ibaraki.jp
+    .tokai.ibaraki.jp .tomobe.ibaraki.jp .tone.ibaraki.jp
+    .toride.ibaraki.jp .tsuchiura.ibaraki.jp .tsukuba.ibaraki.jp
+    .uchihara.ibaraki.jp .ushiku.ibaraki.jp .yachiyo.ibaraki.jp
+    .yamagata.ibaraki.jp .yawara.ibaraki.jp .yuki.ibaraki.jp
+    .anamizu.ishikawa.jp .hakui.ishikawa.jp .hakusan.ishikawa.jp
+    .kaga.ishikawa.jp .kahoku.ishikawa.jp .kanazawa.ishikawa.jp
+    .kawakita.ishikawa.jp .komatsu.ishikawa.jp .nakanoto.ishikawa.jp
+    .nanao.ishikawa.jp .nomi.ishikawa.jp .nonoichi.ishikawa.jp
+    .noto.ishikawa.jp .shika.ishikawa.jp .suzu.ishikawa.jp
+    .tsubata.ishikawa.jp .tsurugi.ishikawa.jp .uchinada.ishikawa.jp
+    .wajima.ishikawa.jp .fudai.iwate.jp .fujisawa.iwate.jp
+    .hanamaki.iwate.jp .hiraizumi.iwate.jp .hirono.iwate.jp
+    .ichinohe.iwate.jp .ichinoseki.iwate.jp .iwaizumi.iwate.jp
+    .iwate.iwate.jp .joboji.iwate.jp .kamaishi.iwate.jp
+    .kanegasaki.iwate.jp .karumai.iwate.jp .kawai.iwate.jp
+    .kitakami.iwate.jp .kuji.iwate.jp .kunohe.iwate.jp
+    .kuzumaki.iwate.jp .miyako.iwate.jp .mizusawa.iwate.jp
+    .morioka.iwate.jp .ninohe.iwate.jp .noda.iwate.jp
+    .ofunato.iwate.jp .oshu.iwate.jp .otsuchi.iwate.jp
+    .rikuzentakata.iwate.jp .shiwa.iwate.jp .shizukuishi.iwate.jp
+    .sumita.iwate.jp .takizawa.iwate.jp .tanohata.iwate.jp
+    .tono.iwate.jp .yahaba.iwate.jp .yamada.iwate.jp
+    .ayagawa.kagawa.jp .higashikagawa.kagawa.jp .kanonji.kagawa.jp
+    .kotohira.kagawa.jp .manno.kagawa.jp .marugame.kagawa.jp
+    .mitoyo.kagawa.jp .naoshima.kagawa.jp .sanuki.kagawa.jp
+    .tadotsu.kagawa.jp .takamatsu.kagawa.jp .tonosho.kagawa.jp
+    .uchinomi.kagawa.jp .utazu.kagawa.jp .zentsuji.kagawa.jp
+    .akune.kagoshima.jp .amami.kagoshima.jp .hioki.kagoshima.jp
+    .isa.kagoshima.jp .isen.kagoshima.jp .izumi.kagoshima.jp
+    .kagoshima.kagoshima.jp .kanoya.kagoshima.jp .kawanabe.kagoshima.jp
+    .kinko.kagoshima.jp .kouyama.kagoshima.jp .makurazaki.kagoshima.jp
+    .matsumoto.kagoshima.jp .minamitane.kagoshima.jp .nakatane.kagoshima.jp
+    .nishinoomote.kagoshima.jp .satsumasendai.kagoshima.jp .soo.kagoshima.jp
+    .tarumizu.kagoshima.jp .yusui.kagoshima.jp .aikawa.kanagawa.jp
+    .atsugi.kanagawa.jp .ayase.kanagawa.jp .chigasaki.kanagawa.jp
+    .ebina.kanagawa.jp .fujisawa.kanagawa.jp .hadano.kanagawa.jp
+    .hakone.kanagawa.jp .hiratsuka.kanagawa.jp .isehara.kanagawa.jp
+    .kaisei.kanagawa.jp .kamakura.kanagawa.jp .kiyokawa.kanagawa.jp
+    .matsuda.kanagawa.jp .minamiashigara.kanagawa.jp .miura.kanagawa.jp
+    .nakai.kanagawa.jp .ninomiya.kanagawa.jp .odawara.kanagawa.jp
+    .oi.kanagawa.jp .oiso.kanagawa.jp .sagamihara.kanagawa.jp
+    .samukawa.kanagawa.jp .tsukui.kanagawa.jp .yamakita.kanagawa.jp
+    .yamato.kanagawa.jp .yokosuka.kanagawa.jp .yugawara.kanagawa.jp
+    .zama.kanagawa.jp .zushi.kanagawa.jp .aki.kochi.jp
+    .geisei.kochi.jp .hidaka.kochi.jp .higashitsuno.kochi.jp
+    .ino.kochi.jp .kagami.kochi.jp .kami.kochi.jp
+    .kitagawa.kochi.jp .kochi.kochi.jp .mihara.kochi.jp
+    .motoyama.kochi.jp .muroto.kochi.jp .nahari.kochi.jp
+    .nakamura.kochi.jp .nankoku.kochi.jp .nishitosa.kochi.jp
+    .niyodogawa.kochi.jp .ochi.kochi.jp .okawa.kochi.jp
+    .otoyo.kochi.jp .otsuki.kochi.jp .sakawa.kochi.jp
+    .sukumo.kochi.jp .susaki.kochi.jp .tosa.kochi.jp
+    .tosashimizu.kochi.jp .toyo.kochi.jp .tsuno.kochi.jp
+    .umaji.kochi.jp .yasuda.kochi.jp .yusuhara.kochi.jp
+    .amakusa.kumamoto.jp .arao.kumamoto.jp .aso.kumamoto.jp
+    .choyo.kumamoto.jp .gyokuto.kumamoto.jp .hitoyoshi.kumamoto.jp
+    .kamiamakusa.kumamoto.jp .kashima.kumamoto.jp .kikuchi.kumamoto.jp
+    .kosa.kumamoto.jp .kumamoto.kumamoto.jp .mashiki.kumamoto.jp
+    .mifune.kumamoto.jp .minamata.kumamoto.jp .minamioguni.kumamoto.jp
+    .nagasu.kumamoto.jp .nishihara.kumamoto.jp .oguni.kumamoto.jp
+    .ozu.kumamoto.jp .sumoto.kumamoto.jp .takamori.kumamoto.jp
+    .uki.kumamoto.jp .uto.kumamoto.jp .yamaga.kumamoto.jp
+    .yamato.kumamoto.jp .yatsushiro.kumamoto.jp .ayabe.kyoto.jp
+    .fukuchiyama.kyoto.jp .higashiyama.kyoto.jp .ide.kyoto.jp
+    .ine.kyoto.jp .joyo.kyoto.jp .kameoka.kyoto.jp
+    .kamo.kyoto.jp .kita.kyoto.jp .kizu.kyoto.jp
+    .kumiyama.kyoto.jp .kyotamba.kyoto.jp .kyotanabe.kyoto.jp
+    .kyotango.kyoto.jp .maizuru.kyoto.jp .minami.kyoto.jp
+    .minamiyamashiro.kyoto.jp .miyazu.kyoto.jp .muko.kyoto.jp
+    .nagaokakyo.kyoto.jp .nakagyo.kyoto.jp .nantan.kyoto.jp
+    .oyamazaki.kyoto.jp .sakyo.kyoto.jp .seika.kyoto.jp
+    .tanabe.kyoto.jp .uji.kyoto.jp .ujitawara.kyoto.jp
+    .wazuka.kyoto.jp .yamashina.kyoto.jp .yawata.kyoto.jp
+    .asahi.mie.jp .inabe.mie.jp .ise.mie.jp
+    .kameyama.mie.jp .kawagoe.mie.jp .kiho.mie.jp
+    .kisosaki.mie.jp .kiwa.mie.jp .komono.mie.jp
+    .kumano.mie.jp .kuwana.mie.jp .matsusaka.mie.jp
+    .meiwa.mie.jp .mihama.mie.jp .minamiise.mie.jp
+    .misugi.mie.jp .miyama.mie.jp .nabari.mie.jp
+    .shima.mie.jp .suzuka.mie.jp .tado.mie.jp
+    .taiki.mie.jp .taki.mie.jp .tamaki.mie.jp
+    .toba.mie.jp .tsu.mie.jp .udono.mie.jp
+    .ureshino.mie.jp .watarai.mie.jp .yokkaichi.mie.jp
+    .furukawa.miyagi.jp .higashimatsushima.miyagi.jp .ishinomaki.miyagi.jp
+    .iwanuma.miyagi.jp .kakuda.miyagi.jp .kami.miyagi.jp
+    .kawasaki.miyagi.jp .kesennuma.miyagi.jp .marumori.miyagi.jp
+    .matsushima.miyagi.jp .minamisanriku.miyagi.jp .misato.miyagi.jp
+    .murata.miyagi.jp .natori.miyagi.jp .ogawara.miyagi.jp
+    .ohira.miyagi.jp .onagawa.miyagi.jp .osaki.miyagi.jp
+    .rifu.miyagi.jp .semine.miyagi.jp .shibata.miyagi.jp
+    .shichikashuku.miyagi.jp .shikama.miyagi.jp .shiogama.miyagi.jp
+    .shiroishi.miyagi.jp .tagajo.miyagi.jp .taiwa.miyagi.jp
+    .tome.miyagi.jp .tomiya.miyagi.jp .wakuya.miyagi.jp
+    .watari.miyagi.jp .yamamoto.miyagi.jp .zao.miyagi.jp
+    .aya.miyazaki.jp .ebino.miyazaki.jp .gokase.miyazaki.jp
+    .hyuga.miyazaki.jp .kadogawa.miyazaki.jp .kawaminami.miyazaki.jp
+    .kijo.miyazaki.jp .kitagawa.miyazaki.jp .kitakata.miyazaki.jp
+    .kitaura.miyazaki.jp .kobayashi.miyazaki.jp .kunitomi.miyazaki.jp
+    .kushima.miyazaki.jp .mimata.miyazaki.jp .miyakonojo.miyazaki.jp
+    .miyazaki.miyazaki.jp .morotsuka.miyazaki.jp .nichinan.miyazaki.jp
+    .nishimera.miyazaki.jp .nobeoka.miyazaki.jp .saito.miyazaki.jp
+    .shiiba.miyazaki.jp .shintomi.miyazaki.jp .takaharu.miyazaki.jp
+    .takanabe.miyazaki.jp .takazaki.miyazaki.jp .tsuno.miyazaki.jp
+    .achi.nagano.jp .agematsu.nagano.jp .anan.nagano.jp
+    .aoki.nagano.jp .asahi.nagano.jp .azumino.nagano.jp
+    .chikuhoku.nagano.jp .chikuma.nagano.jp .chino.nagano.jp
+    .fujimi.nagano.jp .hakuba.nagano.jp .hara.nagano.jp
+    .hiraya.nagano.jp .iida.nagano.jp .iijima.nagano.jp
+    .iiyama.nagano.jp .iizuna.nagano.jp .ikeda.nagano.jp
+    .ikusaka.nagano.jp .ina.nagano.jp .karuizawa.nagano.jp
+    .kawakami.nagano.jp .kiso.nagano.jp .kisofukushima.nagano.jp
+    .kitaaiki.nagano.jp .komagane.nagano.jp .komoro.nagano.jp
+    .matsukawa.nagano.jp .matsumoto.nagano.jp .miasa.nagano.jp
+    .minamiaiki.nagano.jp .minamimaki.nagano.jp .minamiminowa.nagano.jp
+    .minowa.nagano.jp .miyada.nagano.jp .miyota.nagano.jp
+    .mochizuki.nagano.jp .nagano.nagano.jp .nagawa.nagano.jp
+    .nagiso.nagano.jp .nakagawa.nagano.jp .nakano.nagano.jp
+    .nozawaonsen.nagano.jp .obuse.nagano.jp .ogawa.nagano.jp
+    .okaya.nagano.jp .omachi.nagano.jp .omi.nagano.jp
+    .ookuwa.nagano.jp .ooshika.nagano.jp .otaki.nagano.jp
+    .otari.nagano.jp .sakae.nagano.jp .sakaki.nagano.jp
+    .saku.nagano.jp .sakuho.nagano.jp .shimosuwa.nagano.jp
+    .shinanomachi.nagano.jp .shiojiri.nagano.jp .suwa.nagano.jp
+    .suzaka.nagano.jp .takagi.nagano.jp .takamori.nagano.jp
+    .takayama.nagano.jp .tateshina.nagano.jp .tatsuno.nagano.jp
+    .togakushi.nagano.jp .togura.nagano.jp .tomi.nagano.jp
+    .ueda.nagano.jp .wada.nagano.jp .yamagata.nagano.jp
+    .yamanouchi.nagano.jp .yasaka.nagano.jp .yasuoka.nagano.jp
+    .chijiwa.nagasaki.jp .futsu.nagasaki.jp .goto.nagasaki.jp
+    .hasami.nagasaki.jp .hirado.nagasaki.jp .iki.nagasaki.jp
+    .isahaya.nagasaki.jp .kawatana.nagasaki.jp .kuchinotsu.nagasaki.jp
+    .matsuura.nagasaki.jp .nagasaki.nagasaki.jp .obama.nagasaki.jp
+    .omura.nagasaki.jp .oseto.nagasaki.jp .saikai.nagasaki.jp
+    .sasebo.nagasaki.jp .seihi.nagasaki.jp .shimabara.nagasaki.jp
+    .shinkamigoto.nagasaki.jp .togitsu.nagasaki.jp .tsushima.nagasaki.jp
+    .unzen.nagasaki.jp .ando.nara.jp .gose.nara.jp
+    .heguri.nara.jp .higashiyoshino.nara.jp .ikaruga.nara.jp
+    .ikoma.nara.jp .kamikitayama.nara.jp .kanmaki.nara.jp
+    .kashiba.nara.jp .kashihara.nara.jp .katsuragi.nara.jp
+    .kawai.nara.jp .kawakami.nara.jp .kawanishi.nara.jp
+    .koryo.nara.jp .kurotaki.nara.jp .mitsue.nara.jp
+    .miyake.nara.jp .nara.nara.jp .nosegawa.nara.jp
+    .oji.nara.jp .ouda.nara.jp .oyodo.nara.jp
+    .sakurai.nara.jp .sango.nara.jp .shimoichi.nara.jp
+    .shimokitayama.nara.jp .shinjo.nara.jp .soni.nara.jp
+    .takatori.nara.jp .tawaramoto.nara.jp .tenkawa.nara.jp
+    .tenri.nara.jp .uda.nara.jp .yamatokoriyama.nara.jp
+    .yamatotakada.nara.jp .yamazoe.nara.jp .yoshino.nara.jp
+    .aga.niigata.jp .agano.niigata.jp .gosen.niigata.jp
+    .itoigawa.niigata.jp .izumozaki.niigata.jp .joetsu.niigata.jp
+    .kamo.niigata.jp .kariwa.niigata.jp .kashiwazaki.niigata.jp
+    .minamiuonuma.niigata.jp .mitsuke.niigata.jp .muika.niigata.jp
+    .murakami.niigata.jp .myoko.niigata.jp .nagaoka.niigata.jp
+    .niigata.niigata.jp .ojiya.niigata.jp .omi.niigata.jp
+    .sado.niigata.jp .sanjo.niigata.jp .seiro.niigata.jp
+    .seirou.niigata.jp .sekikawa.niigata.jp .shibata.niigata.jp
+    .tagami.niigata.jp .tainai.niigata.jp .tochio.niigata.jp
+    .tokamachi.niigata.jp .tsubame.niigata.jp .tsunan.niigata.jp
+    .uonuma.niigata.jp .yahiko.niigata.jp .yoita.niigata.jp
+    .yuzawa.niigata.jp .beppu.oita.jp .bungoono.oita.jp
+    .bungotakada.oita.jp .hasama.oita.jp .hiji.oita.jp
+    .himeshima.oita.jp .hita.oita.jp .kamitsue.oita.jp
+    .kokonoe.oita.jp .kuju.oita.jp .kunisaki.oita.jp
+    .kusu.oita.jp .oita.oita.jp .saiki.oita.jp
+    .taketa.oita.jp .tsukumi.oita.jp .usa.oita.jp
+    .usuki.oita.jp .yufu.oita.jp .akaiwa.okayama.jp
+    .asakuchi.okayama.jp .bizen.okayama.jp .hayashima.okayama.jp
+    .ibara.okayama.jp .kagamino.okayama.jp .kasaoka.okayama.jp
+    .kibichuo.okayama.jp .kumenan.okayama.jp .kurashiki.okayama.jp
+    .maniwa.okayama.jp .misaki.okayama.jp .nagi.okayama.jp
+    .niimi.okayama.jp .nishiawakura.okayama.jp .okayama.okayama.jp
+    .satosho.okayama.jp .setouchi.okayama.jp .shinjo.okayama.jp
+    .shoo.okayama.jp .soja.okayama.jp .takahashi.okayama.jp
+    .tamano.okayama.jp .tsuyama.okayama.jp .wake.okayama.jp
+    .yakage.okayama.jp .aguni.okinawa.jp .ginowan.okinawa.jp
+    .ginoza.okinawa.jp .gushikami.okinawa.jp .haebaru.okinawa.jp
+    .higashi.okinawa.jp .hirara.okinawa.jp .iheya.okinawa.jp
+    .ishigaki.okinawa.jp .ishikawa.okinawa.jp .itoman.okinawa.jp
+    .izena.okinawa.jp .kadena.okinawa.jp .kin.okinawa.jp
+    .kitadaito.okinawa.jp .kitanakagusuku.okinawa.jp .kumejima.okinawa.jp
+    .kunigami.okinawa.jp .minamidaito.okinawa.jp .motobu.okinawa.jp
+    .nago.okinawa.jp .naha.okinawa.jp .nakagusuku.okinawa.jp
+    .nakijin.okinawa.jp .nanjo.okinawa.jp .nishihara.okinawa.jp
+    .ogimi.okinawa.jp .okinawa.okinawa.jp .onna.okinawa.jp
+    .shimoji.okinawa.jp .taketomi.okinawa.jp .tarama.okinawa.jp
+    .tokashiki.okinawa.jp .tomigusuku.okinawa.jp .tonaki.okinawa.jp
+    .urasoe.okinawa.jp .uruma.okinawa.jp .yaese.okinawa.jp
+    .yomitan.okinawa.jp .yonabaru.okinawa.jp .yonaguni.okinawa.jp
+    .zamami.okinawa.jp .abeno.osaka.jp .chihayaakasaka.osaka.jp
+    .chuo.osaka.jp .daito.osaka.jp .fujiidera.osaka.jp
+    .habikino.osaka.jp .hannan.osaka.jp .higashiosaka.osaka.jp
+    .higashisumiyoshi.osaka.jp .higashiyodogawa.osaka.jp .hirakata.osaka.jp
+    .ibaraki.osaka.jp .ikeda.osaka.jp .izumi.osaka.jp
+    .izumiotsu.osaka.jp .izumisano.osaka.jp .kadoma.osaka.jp
+    .kaizuka.osaka.jp .kanan.osaka.jp .kashiwara.osaka.jp
+    .katano.osaka.jp .kawachinagano.osaka.jp .kishiwada.osaka.jp
+    .kita.osaka.jp .kumatori.osaka.jp .matsubara.osaka.jp
+    .minato.osaka.jp .minoh.osaka.jp .misaki.osaka.jp
+    .moriguchi.osaka.jp .neyagawa.osaka.jp .nishi.osaka.jp
+    .nose.osaka.jp .osakasayama.osaka.jp .sakai.osaka.jp
+    .sayama.osaka.jp .sennan.osaka.jp .settsu.osaka.jp
+    .shijonawate.osaka.jp .shimamoto.osaka.jp .suita.osaka.jp
+    .tadaoka.osaka.jp .taishi.osaka.jp .tajiri.osaka.jp
+    .takaishi.osaka.jp .takatsuki.osaka.jp .tondabayashi.osaka.jp
+    .toyonaka.osaka.jp .toyono.osaka.jp .yao.osaka.jp
+    .ariake.saga.jp .arita.saga.jp .fukudomi.saga.jp
+    .genkai.saga.jp .hamatama.saga.jp .hizen.saga.jp
+    .imari.saga.jp .kamimine.saga.jp .kanzaki.saga.jp
+    .karatsu.saga.jp .kashima.saga.jp .kitagata.saga.jp
+    .kitahata.saga.jp .kiyama.saga.jp .kouhoku.saga.jp
+    .kyuragi.saga.jp .nishiarita.saga.jp .ogi.saga.jp
+    .omachi.saga.jp .ouchi.saga.jp .saga.saga.jp
+    .shiroishi.saga.jp .taku.saga.jp .tara.saga.jp
+    .tosu.saga.jp .yoshinogari.saga.jp .arakawa.saitama.jp
+    .asaka.saitama.jp .chichibu.saitama.jp .fujimi.saitama.jp
+    .fujimino.saitama.jp .fukaya.saitama.jp .hanno.saitama.jp
+    .hanyu.saitama.jp .hasuda.saitama.jp .hatogaya.saitama.jp
+    .hatoyama.saitama.jp .hidaka.saitama.jp .higashichichibu.saitama.jp
+    .higashimatsuyama.saitama.jp .honjo.saitama.jp .ina.saitama.jp
+    .iruma.saitama.jp .iwatsuki.saitama.jp .kamiizumi.saitama.jp
+    .kamikawa.saitama.jp .kamisato.saitama.jp .kasukabe.saitama.jp
+    .kawagoe.saitama.jp .kawaguchi.saitama.jp .kawajima.saitama.jp
+    .kazo.saitama.jp .kitamoto.saitama.jp .koshigaya.saitama.jp
+    .kounosu.saitama.jp .kuki.saitama.jp .kumagaya.saitama.jp
+    .matsubushi.saitama.jp .minano.saitama.jp .misato.saitama.jp
+    .miyashiro.saitama.jp .miyoshi.saitama.jp .moroyama.saitama.jp
+    .nagatoro.saitama.jp .namegawa.saitama.jp .niiza.saitama.jp
+    .ogano.saitama.jp .ogawa.saitama.jp .ogose.saitama.jp
+    .okegawa.saitama.jp .omiya.saitama.jp .otaki.saitama.jp
+    .ranzan.saitama.jp .ryokami.saitama.jp .saitama.saitama.jp
+    .sakado.saitama.jp .satte.saitama.jp .sayama.saitama.jp
+    .shiki.saitama.jp .shiraoka.saitama.jp .soka.saitama.jp
+    .sugito.saitama.jp .toda.saitama.jp .tokigawa.saitama.jp
+    .tokorozawa.saitama.jp .tsurugashima.saitama.jp .urawa.saitama.jp
+    .warabi.saitama.jp .yashio.saitama.jp .yokoze.saitama.jp
+    .yono.saitama.jp .yorii.saitama.jp .yoshida.saitama.jp
+    .yoshikawa.saitama.jp .yoshimi.saitama.jp .aisho.shiga.jp
+    .gamo.shiga.jp .higashiomi.shiga.jp .hikone.shiga.jp
+    .koka.shiga.jp .konan.shiga.jp .kosei.shiga.jp
+    .koto.shiga.jp .kusatsu.shiga.jp .maibara.shiga.jp
+    .moriyama.shiga.jp .nagahama.shiga.jp .nishiazai.shiga.jp
+    .notogawa.shiga.jp .omihachiman.shiga.jp .otsu.shiga.jp
+    .ritto.shiga.jp .ryuoh.shiga.jp .takashima.shiga.jp
+    .takatsuki.shiga.jp .torahime.shiga.jp .toyosato.shiga.jp
+    .yasu.shiga.jp .akagi.shimane.jp .ama.shimane.jp
+    .gotsu.shimane.jp .hamada.shimane.jp .higashiizumo.shimane.jp
+    .hikawa.shimane.jp .hikimi.shimane.jp .izumo.shimane.jp
+    .kakinoki.shimane.jp .masuda.shimane.jp .matsue.shimane.jp
+    .misato.shimane.jp .nishinoshima.shimane.jp .ohda.shimane.jp
+    .okinoshima.shimane.jp .okuizumo.shimane.jp .shimane.shimane.jp
+    .tamayu.shimane.jp .tsuwano.shimane.jp .unnan.shimane.jp
+    .yakumo.shimane.jp .yasugi.shimane.jp .yatsuka.shimane.jp
+    .arai.shizuoka.jp .atami.shizuoka.jp .fuji.shizuoka.jp
+    .fujieda.shizuoka.jp .fujikawa.shizuoka.jp .fujinomiya.shizuoka.jp
+    .fukuroi.shizuoka.jp .gotemba.shizuoka.jp .haibara.shizuoka.jp
+    .hamamatsu.shizuoka.jp .higashiizu.shizuoka.jp .ito.shizuoka.jp
+    .iwata.shizuoka.jp .izu.shizuoka.jp .izunokuni.shizuoka.jp
+    .kakegawa.shizuoka.jp .kannami.shizuoka.jp .kawanehon.shizuoka.jp
+    .kawazu.shizuoka.jp .kikugawa.shizuoka.jp .kosai.shizuoka.jp
+    .makinohara.shizuoka.jp .matsuzaki.shizuoka.jp .minamiizu.shizuoka.jp
+    .mishima.shizuoka.jp .morimachi.shizuoka.jp .nishiizu.shizuoka.jp
+    .numazu.shizuoka.jp .omaezaki.shizuoka.jp .shimada.shizuoka.jp
+    .shimizu.shizuoka.jp .shimoda.shizuoka.jp .shizuoka.shizuoka.jp
+    .susono.shizuoka.jp .yaizu.shizuoka.jp .yoshida.shizuoka.jp
+    .ashikaga.tochigi.jp .bato.tochigi.jp .haga.tochigi.jp
+    .ichikai.tochigi.jp .iwafune.tochigi.jp .kaminokawa.tochigi.jp
+    .kanuma.tochigi.jp .karasuyama.tochigi.jp .kuroiso.tochigi.jp
+    .mashiko.tochigi.jp .mibu.tochigi.jp .moka.tochigi.jp
+    .motegi.tochigi.jp .nasu.tochigi.jp .nasushiobara.tochigi.jp
+    .nikko.tochigi.jp .nishikata.tochigi.jp .nogi.tochigi.jp
+    .ohira.tochigi.jp .ohtawara.tochigi.jp .oyama.tochigi.jp
+    .sakura.tochigi.jp .sano.tochigi.jp .shimotsuke.tochigi.jp
+    .shioya.tochigi.jp .takanezawa.tochigi.jp .tochigi.tochigi.jp
+    .tsuga.tochigi.jp .ujiie.tochigi.jp .utsunomiya.tochigi.jp
+    .yaita.tochigi.jp .aizumi.tokushima.jp .anan.tokushima.jp
+    .ichiba.tokushima.jp .itano.tokushima.jp .kainan.tokushima.jp
+    .komatsushima.tokushima.jp .matsushige.tokushima.jp .mima.tokushima.jp
+    .minami.tokushima.jp .miyoshi.tokushima.jp .mugi.tokushima.jp
+    .nakagawa.tokushima.jp .naruto.tokushima.jp .sanagochi.tokushima.jp
+    .shishikui.tokushima.jp .tokushima.tokushima.jp .wajiki.tokushima.jp
+    .adachi.tokyo.jp .akiruno.tokyo.jp .akishima.tokyo.jp
+    .aogashima.tokyo.jp .arakawa.tokyo.jp .bunkyo.tokyo.jp
+    .chiyoda.tokyo.jp .chofu.tokyo.jp .chuo.tokyo.jp
+    .edogawa.tokyo.jp .fuchu.tokyo.jp .fussa.tokyo.jp
+    .hachijo.tokyo.jp .hachioji.tokyo.jp .hamura.tokyo.jp
+    .higashikurume.tokyo.jp .higashimurayama.tokyo.jp .higashiyamato.tokyo.jp
+    .hino.tokyo.jp .hinode.tokyo.jp .hinohara.tokyo.jp
+    .inagi.tokyo.jp .itabashi.tokyo.jp .katsushika.tokyo.jp
+    .kita.tokyo.jp .kiyose.tokyo.jp .kodaira.tokyo.jp
+    .koganei.tokyo.jp .kokubunji.tokyo.jp .komae.tokyo.jp
+    .koto.tokyo.jp .kouzushima.tokyo.jp .kunitachi.tokyo.jp
+    .machida.tokyo.jp .meguro.tokyo.jp .minato.tokyo.jp
+    .mitaka.tokyo.jp .mizuho.tokyo.jp .musashimurayama.tokyo.jp
+    .musashino.tokyo.jp .nakano.tokyo.jp .nerima.tokyo.jp
+    .ogasawara.tokyo.jp .okutama.tokyo.jp .ome.tokyo.jp
+    .oshima.tokyo.jp .ota.tokyo.jp .setagaya.tokyo.jp
+    .shibuya.tokyo.jp .shinagawa.tokyo.jp .shinjuku.tokyo.jp
+    .suginami.tokyo.jp .sumida.tokyo.jp .tachikawa.tokyo.jp
+    .taito.tokyo.jp .tama.tokyo.jp .toshima.tokyo.jp
+    .chizu.tottori.jp .hino.tottori.jp .kawahara.tottori.jp
+    .koge.tottori.jp .kotoura.tottori.jp .misasa.tottori.jp
+    .nanbu.tottori.jp .nichinan.tottori.jp .sakaiminato.tottori.jp
+    .tottori.tottori.jp .wakasa.tottori.jp .yazu.tottori.jp
+    .yonago.tottori.jp .asahi.toyama.jp .fuchu.toyama.jp
+    .fukumitsu.toyama.jp .funahashi.toyama.jp .himi.toyama.jp
+    .imizu.toyama.jp .inami.toyama.jp .johana.toyama.jp
+    .kamiichi.toyama.jp .kurobe.toyama.jp .nakaniikawa.toyama.jp
+    .namerikawa.toyama.jp .nanto.toyama.jp .nyuzen.toyama.jp
+    .oyabe.toyama.jp .taira.toyama.jp .takaoka.toyama.jp
+    .tateyama.toyama.jp .toga.toyama.jp .tonami.toyama.jp
+    .toyama.toyama.jp .unazuki.toyama.jp .uozu.toyama.jp
+    .yamada.toyama.jp .arida.wakayama.jp .aridagawa.wakayama.jp
+    .gobo.wakayama.jp .hashimoto.wakayama.jp .hidaka.wakayama.jp
+    .hirogawa.wakayama.jp .inami.wakayama.jp .iwade.wakayama.jp
+    .kainan.wakayama.jp .kamitonda.wakayama.jp .katsuragi.wakayama.jp
+    .kimino.wakayama.jp .kinokawa.wakayama.jp .kitayama.wakayama.jp
+    .koya.wakayama.jp .koza.wakayama.jp .kozagawa.wakayama.jp
+    .kudoyama.wakayama.jp .kushimoto.wakayama.jp .mihama.wakayama.jp
+    .misato.wakayama.jp .nachikatsuura.wakayama.jp .shingu.wakayama.jp
+    .shirahama.wakayama.jp .taiji.wakayama.jp .tanabe.wakayama.jp
+    .wakayama.wakayama.jp .yuasa.wakayama.jp .yura.wakayama.jp
+    .asahi.yamagata.jp .funagata.yamagata.jp .higashine.yamagata.jp
+    .iide.yamagata.jp .kahoku.yamagata.jp .kaminoyama.yamagata.jp
+    .kaneyama.yamagata.jp .kawanishi.yamagata.jp .mamurogawa.yamagata.jp
+    .mikawa.yamagata.jp .murayama.yamagata.jp .nagai.yamagata.jp
+    .nakayama.yamagata.jp .nanyo.yamagata.jp .nishikawa.yamagata.jp
+    .obanazawa.yamagata.jp .oe.yamagata.jp .oguni.yamagata.jp
+    .ohkura.yamagata.jp .oishida.yamagata.jp .sagae.yamagata.jp
+    .sakata.yamagata.jp .sakegawa.yamagata.jp .shinjo.yamagata.jp
+    .shirataka.yamagata.jp .shonai.yamagata.jp .takahata.yamagata.jp
+    .tendo.yamagata.jp .tozawa.yamagata.jp .tsuruoka.yamagata.jp
+    .yamagata.yamagata.jp .yamanobe.yamagata.jp .yonezawa.yamagata.jp
+    .yuza.yamagata.jp .abu.yamaguchi.jp .hagi.yamaguchi.jp
+    .hikari.yamaguchi.jp .hofu.yamaguchi.jp .iwakuni.yamaguchi.jp
+    .kudamatsu.yamaguchi.jp .mitou.yamaguchi.jp .nagato.yamaguchi.jp
+    .oshima.yamaguchi.jp .shimonoseki.yamaguchi.jp .shunan.yamaguchi.jp
+    .tabuse.yamaguchi.jp .tokuyama.yamaguchi.jp .toyota.yamaguchi.jp
+    .ube.yamaguchi.jp .yuu.yamaguchi.jp .chuo.yamanashi.jp
+    .doshi.yamanashi.jp .fuefuki.yamanashi.jp .fujikawa.yamanashi.jp
+    .fujikawaguchiko.yamanashi.jp .fujiyoshida.yamanashi.jp .hayakawa.yamanashi.jp
+    .hokuto.yamanashi.jp .ichikawamisato.yamanashi.jp .kai.yamanashi.jp
+    .kofu.yamanashi.jp .koshu.yamanashi.jp .kosuge.yamanashi.jp
+    .minami-alps.yamanashi.jp .minobu.yamanashi.jp .nakamichi.yamanashi.jp
+    .nanbu.yamanashi.jp .narusawa.yamanashi.jp .nirasaki.yamanashi.jp
+    .nishikatsura.yamanashi.jp .oshino.yamanashi.jp .otsuki.yamanashi.jp
+    .showa.yamanashi.jp .tabayama.yamanashi.jp .tsuru.yamanashi.jp
+    .uenohara.yamanashi.jp .yamanakako.yamanashi.jp .yamanashi.yamanashi.jp
+
+    .&#x65E5;&#x672C;
+  </area>
+  <area category="country" country="Jordan">
+    .jo .com.jo .net.jo .gov.jo .edu.jo .org.jo .mil.jo .name.jo .sch.jo
+    .&#x0627;&#x0644;&#x0627;&#x0631;&#x062F;&#x0646;
+  </area>
+  <area category="country" country="Jersey">
+    .je .co.je .net.je .org.je .sch.je .gov.je
+  </area>
+  <area category="country" country="Kazakhstan">
+    .kz .com.kz .edu.kz .gov.kz .mil.kz .net.kz .org.kz
+  </area>
+  <area category="country" country="Kenya">
+    <forbid reason="unused">.ke</forbid>
+    .co.ke .or.ke .ne.ke .go.ke .ac.ke .sc.ke .me.ke .mobi.ke .info.ke
+  </area>
+  <area category="country" country="Kinribati">
+    .ki .com.ki .biz.ki .net.ki .info.ki .org.ki .gov.ki .edu.ki .mob.ki .tel.ki
+  </area>
+  <area category="country" country="Kuwait">
+    <forbid reason="unused">.kw</forbid>
+    .edu.kw .com.kw .net.kw .org.kw .gov.kw
+  </area>
+  <area category="country" country="Kyrgyzstan">
+    .kg .org.kg .net.kg .com.kg .edu.kg .gov.kg .mil.kg
+  </area>
+  <area category="country" country="Laos">
+    .la .int.la .net.la .info.la .edu.la .gov.la .per.la .com.la .org.la .c.la
+  </area>
+  <area category="country" country="Latvia">
+    .lv .com.lv .edu.lv .gov.lv .org.lv .mil.lv .id.lv .net.lv .asn.lv .conf.lv
+  </area>
+  <area category="country" country="Lebanon">
+    .lb .com.lb .edu.lb .gov.lb .net.lb .org.lb
+  </area>
+  <area category="country" country="Lesotho">
+    .ls .co.ls .org.ls
+  </area>
+  <area category="country" country="Liberia">
+    .lr .com.lr .edu.lr .gov.lr .org.lr .net.lr
+  </area>
+  <area category="country" country="Liechtenstein">
+    .li
+  </area>
+  <area category="country" country="Lithuania">
+    .lt .gov.lt
+  </area>
+  <area category="country" country="Luxembourg">
+    .lu
+  </area>
+  <area category="country" country="Lybia">
+    .ly .com.ly .net.ly .gov.ly .plc.ly .edu.ly .sch.ly .med.ly .org.ly .id.ly
+  </area>
+  <area category="country" country="Macao">
+    .mo .com.mo .edu.mo .gov.mo .net.mo .org.mo
+  </area>
+  <area category="country" country="Madagascar">
+    .mg .org.mg .nom.mg .gov.mg .prd.mg .tm.mg .edu.mg .mil.mg .com.mg
+  </area>
+  <area category="country" country="Malawi">
+    .mw .ac.mw .biz.mw .co.mw .com.mw .coop.mw .edu.mw .gov.mw .int.mw
+    .museum.mw .net.mw .org.mw
+  </area>
+  <area category="country" country="Malaysia">
+    <forbid reason="unused">.my</forbid>
+    .com.my .net.my .org.my .gov.my .edu.my .sch.my .mil.my .name.my
+  </area>
+  <area category="country" country="Mali">
+    .ml .com.ml .net.ml .org.ml .edu.ml .gov.ml .presse.ml .gouv.ml
+  </area>
+  <area category="country" country="Malta">
+    .com.mt .org.mt .net.mt .edu.mt .gov.mt
+    <forbid reason="unused">.mt</forbid>
+  </area>
+  <area category="country" country="Marshall Islands">
+    <forbid reason="unused">.mh</forbid>
+  </area>
+  <area category="country" country="Mauritius">
+    .mu .com.mu .net.mu .org.mu .gov.mu .ac.mu .co.mu .or.mu
+  </area>
+  <area category="country" country="Mayotte">
+    .yt
+  </area>
+  <area category="country" country="Martinique">
+    .mq
+  </area>
+  <area category="country" country="Mauritania">
+    .mr .gov.mr
+  </area>
+  <area category="country" country="Mexico">
+    .mx .com.mx .net.mx .org.mx .edu.mx .gob.mx
+  </area>
+  <area category="country" country="Moldova">
+    .md
+  </area>
+  <area category="country" country="Monaco">
+    .mc .tm.mc .asso.mc
+  </area>
+  <area category="country" country="Mongolia">
+    .mn .gov.mn .edu.mn .org.mn
+  </area>
+  <area category="country" country="Montenegro">
+    .me .co.me .net.me .org.me .edu.me .ac.me .gov.me .its.me .priv.me
+  </area>
+  <area category="country" country="Montserrat">
+    .ms .co.ms .com.ms .org.ms
+  </area>
+  <area category="country" country="Morocco">
+    .ma .net.ma .ac.ma .org.ma .gov.ma .press.ma .co.ma
+    .&#x0627;&#x0644;&#x0645;&#x063A;&#x0631;&#x0628;
+  </area>
+  <area category="country" country="Mozambique">
+    <forbid reason="unused">.mz</forbid>
+    .ac.mz .co.mz .edu.mz .gov.mz .org.mz
+    <exceptions apply-to=".mz">.teledata.mz</exceptions>
+  </area>
+  <area category="country" country="Namibia">
+    .na .co.na .com.na .info.na .pro.na .name.na .school.na .or.na .dr.na
+    .us.na .mx.na .ca.na .in.na .cc.na .tv.na .ws.na .mobi.na .org.na
+  </area>
+  <area category="country" country="Nauru">
+    .nr .edu.nr .gov.nr .biz.nr .info.nr .net.nr .org.nr .com.nr
+  </area>
+  <area category="country" country="Nepal">
+    .com.np .edu.np .gov.np .mil.np .net.np .org.np
+    <forbid reason="unused">.np</forbid>
+  </area>
+  <area category="country" country="Netherlands">
+    .nl .bv.nl .co.nl
+  </area>
+  <area category="country" country="Netherlands Antilles">
+    <forbid reason="deprecated">.an .com.an .edu.an .net.an .org.an</forbid>
+  </area>
+  <area category="country" country="New Caledonia">
+    .nc .asso.nc
+  </area>
+  <area category="country" country="New Zealand">
+    .ac.nz .co.nz .geek.nz .gen.nz .maori.nz .net.nz .org.nz .school.nz
+    .cri.nz .govt.nz .iwi.nz .parliament.nz .mil.nz .health.nz
+    <forbid reason="unused">.nz</forbid>
+  </area>
+  <area category="country" country="Nicaragua">
+    .gob.ni .co.ni .com.ni .ac.ni .edu.ni .org.ni .nom.ni .net.ni .mil.ni
+    <forbid reason="unused">.ni</forbid>
+  </area>
+  <area category="country" country="Niger">
+    .ne
+  </area>
+  <area category="country" country="Nigeria">
+    .ng .ac.ng .com.ng .org.ng .gov.ng .edu.ng .net.ng .sch.ng .name.ng .mobi.ng
+    .mil.ng
+  </area>
+  <area category="country" country="Niue">
+    .nu
+  </area>
+  <area category="country" country="Norfolk">
+    .nf .com.nf .net.nf .arts.nf .store.nf .web.nf .firm.nf .info.nf .other.nf
+    .per.nf .rec.nf
+  </area>
+  <area category="country" country="Northern Mariana Islands">
+    .mp .gov.mp .org.mp .co.mp
+  </area>
+  <area category="country" country="Norway">
+    .no .fhs.no .vgs.no .fylkesbibl.no .folkebibl.no .museum.no .idrett.no
+    .priv.no .mil.no .stat.no .dep.no .kommune.no .herad.no .aa.no .ah.no
+    .bu.no .fm.no .hl.no .hm.no .jan-mayen.no .mr.no .nl.no .nt.no .of.no .ol.no
+    .oslo.no .rl.no .sf.no .st.no .svalbard.no .tm.no .tr.no .va.no .vf.no
+    .gs.aa.no .gs.ah.no .gs.bu.no .gs.fm.no .gs.hl.no .gs.hm.no .gs.jan-mayen.no
+    .gs.mr.no .gs.nl.no .gs.nt.no .gs.of.no .gs.ol.no .gs.oslo.no .gs.rl.no
+    .gs.sf.no .gs.st.no .gs.svalbard.no .gs.tm.no .gs.tr.no .gs.va.no .gs.vf.no
+    .akrehamn.no .&#x00E5;krehamn.no .algard.no .&#x00E5;lg&#x00E5;rd.no
+    .arna.no .brumunddal.no .bryne.no .bronnoysund.no
+    .br&#x00F8;nn&#x00F8;ysund.no .drobak.no .dr&#x00F8;bak.no .egersund.no
+    .fetsund.no .floro.no .flor&#x00F8;.no .fredrikstad.no .hokksund.no
+    .honefoss.no .h&#x00F8;nefoss.no .jessheim.no .jorpeland.no
+    .j&#x00F8;rpeland.no .kirkenes.no .kopervik.no .krokstadelva.no .langevag.no
+    .langev&#x00E5;g.no .leirvik.no .mjondalen.no .mj&#x00F8;ndalen.no
+    .mo-i-rana.no .mosjoen.no .mosj&#x00F8;en.no .nesoddtangen.no
+    .orkanger.no .osoyro.no .os&#x00F8;yro.no .raholt.no .r&#x00E5;holt.no
+    .sandnessjoen.no .sandnessj&#x00F8;en.no .skedsmokorset.no .slattum.no
+    .spjelkavik.no .stathelle.no .stavern.no .stjordalshalsen.no
+    .stj&#x00F8;rdalshalsen.no .tananger.no .tranby.no .vossevangen.no
+    .afjord.no .&#x00E5;fjord.no .agdenes.no .al.no .&#x00E5;l.no .alesund.no
+    .&#x00E5;lesund.no .alstahaug.no .alta.no .&#x00E1;lt&#x00E1;.no
+    .alaheadju.no .&#x00E1;laheadju.no .alvdal.no .amli.no .&#x00E5;mli.no
+    .amot.no .&#x00E5;mot.no .andebu.no .andoy.no .and&#x00F8;y.no .andasuolo.no
+    .ardal.no .&#x00E5;rdal.no .aremark.no .arendal.no .&#x00E5;s.no .aseral.no
+    .&#x00E5;seral.no .asker.no .askim.no .askvoll.no .askoy.no .ask&#x00F8;y.no
+    .asnes.no .&#x00E5;snes.no .audnedaln.no .aukra.no .aure.no .aurland.no
+    .aurskog-holand.no .aurskog-h&#x00F8;land.no .austevoll.no .austrheim.no
+    .averoy.no .aver&#x00F8;y.no .balestrand.no .ballangen.no .balat.no
+    .b&#x00E1;l&#x00E1;t.no .balsfjord.no .bahccavuotna.no
+    .b&#x00E1;hccavuotna.no .bamble.no .bardu.no .beardu.no .beiarn.no
+    .bajddar.no .b&#x00E1;jddar.no .baidar.no .b&#x00E1;id&#x00E1;r.no
+    .berg.no .bergen.no .berlevag.no .berlev&#x00E5;g.no .bearalvahki.no
+    .bearalv&#x00E1;hki.no .bindal.no .birkenes.no .bjarkoy.no
+    .bjark&#x00F8;y.no .bjerkreim.no .bjugn.no .bodo.no .bod&#x00F8;.no
+    .badaddja.no .b&#x00E5;d&#x00E5;ddj&#x00E5;.no .budejju.no .bokn.no
+    .bremanger.no .bronnoy.no .br&#x00F8;nn&#x00F8;y.no .bygland.no .bykle.no
+    .barum.no .b&#x00E6;rum.no .bo.telemark.no .b&#x00F8;.telemark.no
+    .bo.nordland.no .b&#x00F8;.nordland.no .bievat.no .biev&#x00E1;t.no
+    .bomlo.no .b&#x00F8;mlo.no .batsfjord.no .b&#x00E5;tsfjord.no
+    .bahcavuotna.no .b&#x00E1;hcavuotna.no .dovre.no .drammen.no .drangedal.no
+    .dyroy.no .dyr&#x00F8;y.no .donna.no .d&#x00F8;nna.no .eid.no .eidfjord.no
+    .eidsberg.no .eidskog.no .eidsvoll.no .eigersund.no .elverum.no .enebakk.no
+    .engerdal.no .etne.no .etnedal.no .evenes.no .evenassi.no
+    .even&#x00E1;&#x0161;&#x0161;i.no .evje-og-hornnes.no .farsund.no .fauske.no
+    .fuossko.no .fuoisku.no .fedje.no .fet.no .finnoy.no .finn&#x00F8;y.no
+    .fitjar.no .fjaler.no .fjell.no .flakstad.no .flatanger.no .flekkefjord.no
+    .flesberg.no .flora.no .fla.no .fl&#x00E5;.no .folldal.no .forsand.no
+    .fosnes.no .frei.no .frogn.no .froland.no .frosta.no .frana.no
+    .fr&#x00E6;na.no .froya.no .fr&#x00F8;ya.no .fusa.no .fyresdal.no
+    .forde.no .f&#x00F8;rde.no .gamvik.no .gangaviika.no
+    .g&#x00E1;&#x014B;gaviika.no .gaular.no .gausdal.no .gildeskal.no
+    .gildesk&#x00E5;l.no .giske.no .gjemnes.no .gjerdrum.no .gjerstad.no
+    .gjesdal.no .gjovik.no .gj&#x00F8;vik.no .gloppen.no .gol.no .gran.no
+    .grane.no .granvin.no .gratangen.no .grimstad.no .grong.no .kraanghke.no
+    .kr&#x00E5;anghke.no .grue.no .gulen.no .hadsel.no .halden.no .halsa.no
+    .hamar.no .hamaroy.no .habmer.no .h&#x00E1;bmer.no .hapmir.no
+    .h&#x00E1;pmir.no .hammerfest.no .hammarfeasta.no
+    .h&#x00E1;mm&#x00E1;rfeasta.no .haram.no .hareid.no .harstad.no .hasvik.no
+    .aknoluokta.no .&#x00E1;k&#x014B;oluokta.no .hattfjelldal.no .aarborte.no
+    .haugesund.no .hemne.no .hemnes.no .hemsedal.no .heroy.more-og-romsdal.no
+    .her&#x00F8;y.m&#x00F8;re-og-romsdal.no .heroy.nordland.no
+    .her&#x00F8;y.nordland.no .hitra.no .hjartdal.no .hjelmeland.no .hobol.no
+    .hob&#x00F8;l.no .hof.no .hol.no .hole.no .holmestrand.no .holtalen.no
+    .holt&#x00E5;len.no .hornindal.no .horten.no .hurdal.no .hurum.no .hvaler.no
+    .hyllestad.no .hagebostad.no .h&#x00E6;gebostad.no .hoyanger.no
+    .h&#x00F8;yanger.no .hoylandet.no .h&#x00F8;ylandet.no .ha.no .h&#x00E5;.no
+    .ibestad.no .inderoy.no .inder&#x00F8;y.no .iveland.no .jevnaker.no
+    .jondal.no .jolster.no .j&#x00F8;lster.no .karasjok.no .karasjohka.no
+    .k&#x00E1;r&#x00E1;&#x0161;johka.no .karlsoy.no .galsa.no
+    .g&#x00E1;ls&#x00E1;.no .karmoy.no .karm&#x00F8;y.no .kautokeino.no
+    .guovdageaidnu.no .klepp.no .klabu.no .kl&#x00E6;bu.no .kongsberg.no
+    .kongsvinger.no .kragero.no .krager&#x00F8;.no .kristiansand.no
+    .kristiansund.no .krodsherad.no .kr&#x00F8;dsherad.no .kvalsund.no
+    .rahkkeravju.no .r&#x00E1;hkker&#x00E1;vju.no .kvam.no .kvinesdal.no
+    .kvinnherad.no .kviteseid.no .kvitsoy.no .kvits&#x00F8;y.no .kvafjord.no
+    .kv&#x00E6;fjord.no .giehtavuoatna.no .kvanangen.no .kv&#x00E6;nangen.no
+    .navuotna.no .n&#x00E1;vuotna.no .kafjord.no .k&#x00E5;fjord.no
+    .gaivuotna.no .g&#x00E1;ivuotna.no .larvik.no .lavangen.no
+    .lavagis.no .loabat.no .loab&#x00E1;t.no .lebesby.no .davvesiida.no
+    .leikanger.no .leirfjord.no .leka.no .leksvik.no .lenvik.no .leangaviika.no
+    .lea&#x014B;gaviika.no .lesja.no .levanger.no .lier.no .lierne.no
+    .lillehammer.no .lillesand.no .lindesnes.no .lindas.no .lind&#x00E5;s.no
+    .lom.no .loppa.no .lahppi.no .l&#x00E1;hppi.no .lund.no .lunner.no
+    .luroy.no .lur&#x00F8;y.no .luster.no .lyngdal.no .lyngen.no .ivgu.no
+    .lardal.no .lerdal.no .l&#x00E6;rdal.no .lodingen.no .l&#x00F8;dingen.no
+    .lorenskog.no .l&#x00F8;renskog.no .loten.no .l&#x00F8;ten.no .malvik.no
+    .masoy.no .m&#x00E5;s&#x00F8;y.no .muosat.no .muos&#x00E1;t.no .mandal.no
+    .marker.no .marnardal.no .masfjorden.no .meland.no .meldal.no .melhus.no
+    .meloy.no .mel&#x00F8;y.no .meraker.no .mer&#x00E5;ker.no .moareke.no
+    .mo&#x00E5;reke.no .midsund.no .midtre-gauldal.no .modalen.no .modum.no
+    .molde.no .moskenes.no .moss.no .mosvik.no .malselv.no .m&#x00E5;lselv.no
+    .malatvuopmi.no .m&#x00E1;latvuopmi.no .namdalseid.no .aejrie.no
+    .namsos.no .namsskogan.no .naamesjevuemie.no
+    .n&#x00E5;&#x00E5;mesjevuemie.no .laakesvuemie.no .nannestad.no
+    .narvik.no .narviika.no .naustdal.no .nedre-eiker.no .nes.akershus.no
+    .nes.buskerud.no .nesna.no .nesodden.no .nesseby.no .unjarga.no
+    .unj&#x00E1;rga.no .nesset.no .nissedal.no .nittedal.no .nord-aurdal.no
+    .nord-fron.no .nord-odal.no .norddal.no .nordkapp.no .davvenjarga.no
+    .davvenj&#x00E1;rga.no .nordre-land.no .nordreisa.no .raisa.no
+    .r&#x00E1;isa.no .nore-og-uvdal.no .notodden.no .naroy.no
+    .n&#x00E6;r&#x00F8;y.no .notteroy.no .n&#x00F8;tter&#x00F8;y.no .odda.no
+    .oksnes.no .&#x00F8;ksnes.no .oppdal.no .oppegard.no .oppeg&#x00E5;rd.no
+    .orkdal.no .orland.no .&#x00F8;rland.no .orskog.no .&#x00F8;rskog.no
+    .orsta.no .&#x00F8;rsta.no .os.hedmark.no .os.hordaland.no .osen.no
+    .osteroy.no .oster&#x00F8;y.no .ostre-toten.no .&#x00F8;stre-toten.no
+    .overhalla.no .ovre-eiker.no .&#x00F8;vre-eiker.no .oyer.no
+    .&#x00F8;yer.no .oygarden.no .&#x00F8;ygarden.no .oystre-slidre.no
+    .&#x00F8;ystre-slidre.no .porsanger.no .porsangu.no
+    .pors&#x00E1;&#x014B;gu.no .porsgrunn.no .radoy.no .rad&#x00F8;y.no
+    .rakkestad.no .rana.no .ruovat.no .randaberg.no .rauma.no .rendalen.no
+    .rennebu.no .rennesoy.no .rennes&#x00F8;y.no .rindal.no .ringebu.no
+    .ringerike.no .ringsaker.no .rissa.no .risor.no .ris&#x00F8;r.no
+    .roan.no .rollag.no .rygge.no .ralingen.no .r&#x00E6;lingen.no
+    .rodoy.no .r&#x00F8;d&#x00F8;y.no .romskog.no .r&#x00F8;mskog.no
+    .roros.no .r&#x00F8;ros.no .rost.no .r&#x00F8;st.no .royken.no
+    .r&#x00F8;yken.no .royrvik.no .r&#x00F8;yrvik.no .rade.no
+    .r&#x00E5;de.no .salangen.no .siellak.no .saltdal.no .salat.no
+    .s&#x00E1;l&#x00E1;t.no .s&#x00E1;lat.no .samnanger.no
+    .sande.more-og-romsdal.no .sande.m&#x00F8;re-og-romsdal.no .sande.vestfold.no
+    .sandefjord.no .sandnes.no .sandoy.no .sand&#x00F8;y.no .sarpsborg.no
+    .sauda.no .sauherad.no .sel.no .selbu.no .selje.no .seljord.no .sigdal.no
+    .siljan.no .sirdal.no .skaun.no .skedsmo.no .ski.no .skien.no .skiptvet.no
+    .skjervoy.no .skjerv&#x00F8;y.no .skierva.no .skierv&#x00E1;.no .skjak.no
+    .skj&#x00E5;k.no .skodje.no .skanland.no .sk&#x00E5;nland.no .skanit.no
+    .sk&#x00E1;nit.no .smola.no .sm&#x00F8;la.no .snillfjord.no .snasa.no
+    .sn&#x00E5;sa.no .snoasa.no .snaase.no .sn&#x00E5;ase.no .sogndal.no
+    .sokndal.no .sola.no .solund.no .songdalen.no .sortland.no
+    .spydeberg.no .stange.no .stavanger.no .steigen.no .steinkjer.no
+    .stjordal.no .stj&#x00F8;rdal.no .stokke.no .stor-elvdal.no .stord.no
+    .stordal.no .storfjord.no .omasvuotna.no .strand.no .stranda.no
+    .stryn.no .sula.no .suldal.no .sund.no .sunndal.no .surnadal.no
+    .sveio.no .svelvik.no .sykkylven.no .sogne.no .s&#x00F8;gne.no .somna.no
+    .s&#x00F8;mna.no .sondre-land.no .s&#x00F8;ndre-land.no .sor-aurdal.no
+    .s&#x00F8;r-aurdal.no .sor-fron.no .s&#x00F8;r-fron.no .sor-odal.no
+    .s&#x00F8;r-odal.no .sor-varanger.no .s&#x00F8;r-varanger.no .matta-varjjat.no
+    .m&#x00E1;tta-v&#x00E1;rjjat.no .sorfold.no .s&#x00F8;rfold.no .sorreisa.no
+    .s&#x00F8;rreisa.no .sorum.no .s&#x00F8;rum.no .tana.no .deatnu.no
+    .time.no .tingvoll.no .tinn.no .tjeldsund.no .dielddanuorri.no
+    .tjome.no .tj&#x00F8;me.no .tokke.no .tolga.no .torsken.no
+    .tranoy.no .tran&#x00F8;y.no .tromso.no .troms&#x00F8;.no .tromsa.no
+    .romsa.no .trondheim.no .troandin.no .trysil.no .trana.no
+    .tr&#x00E6;na.no .trogstad.no .tr&#x00F8;gstad.no .tvedestrand.no
+    .tydal.no .tynset.no .tysfjord.no .divtasvuodna.no .divttasvuotna.no
+    .tysnes.no .tysvar.no .tysv&#x00E6;r.no .tonsberg.no .t&#x00F8;nsberg.no
+    .ullensaker.no .ullensvang.no .ulvik.no .utsira.no .vadso.no .vads&#x00F8;.no
+    .cahcesuolo.no .&#x010D;&#x00E1;hcesuolo.no .vaksdal.no .valle.no
+    .vang.no .vanylven.no .vardo.no .vard&#x00F8;.no .varggat.no
+    .v&#x00E1;rgg&#x00E1;t.no .vefsn.no .vaapste.no .vega.no
+    .vegarshei.no .veg&#x00E5;rshei.no .vennesla.no .verdal.no
+    .verran.no .vestby.no .vestnes.no .vestre-slidre.no .vestre-toten.no
+    .vestvagoy.no .vestv&#x00E5;g&#x00F8;y.no .vevelstad.no .vik.no
+    .vikna.no .vindafjord.no .volda.no .voss.no .varoy.no .v&#x00E6;r&#x00F8;y.no
+    .vagan.no .v&#x00E5;gan.no .voagat.no .vagsoy.no .v&#x00E5;gs&#x00F8;y.no
+    .vaga.no .v&#x00E5;g&#x00E5;.no .valer.ostfold.no .co.no
+    .v&#x00E5;ler.&#x00F8;stfold.no .valer.hedmark.no .v&#x00E5;ler.hedmark.no
+    <forbid reason="unused">.&#x00F8;stfold.no .akershus.no .buskerud.no
+    .hedmark.no .hordaland.no .more-og-romsdal.no .m&#x00F8;re-og-romsdal.no
+    .nordland.no .ostfold.no .telemark.no .vestfold.no</forbid>
+  </area>
+  <area category="country" country="Oman">
+    .com.om .co.om .edu.om .ac.om .sch.om .gov.om .net.om .org.om .mil.om
+    .museum.om .biz.om .pro.om .med.om
+    .&#x0639;&#x0645;&#x0627;&#x0646;
+    <forbid reason="unused">.om</forbid>
+    <exceptions apply-to=".om">.mediaphone.om .nawrastelecom.om .nawras.om
+    .omanmobile.om .omanpost.om .omantel.om .rakpetroleum.om .siemens.om
+    .songfest.om .statecouncil.om</exceptions>
+  </area>
+  <area category="country" country="Pakistan">
+    .pk .com.pk .net.pk .edu.pk .org.pk .fam.pk .biz.pk .web.pk .gov.pk .gob.pk
+    .gok.pk .gon.pk .gop.pk .gos.pk .gog.pk .info.pk
+  </area>
+  <area category="country" country="Palau">
+    .pw .co.pw .ne.pw .or.pw .ed.pw .go.pw .belau.pw
+  </area>
+  <area category="country" country="Palestinian territories">
+    .ps .com.ps .net.ps .org.ps .edu.ps .gov.ps .plo.ps .sec.ps
+    .&#x0641;&#x0644;&#x0633;&#x0637;&#x064A;&#x0646;
+  </area>
+  <area category="country" country="Panama">
+    <!-- registrations are accepted under 3rd by some .pa exist -->
+    .pa .net.pa .com.pa .ac.pa .sld.pa .gob.pa .edu.pa .org.pa .abo.pa .ing.pa
+    .med.pa .nom.pa
+  </area>
+  <area category="country" country="Papua New Guinea">
+    <forbid reason="unused">.pg</forbid>
+    .com.pg .net.pg .ac.pg .gov.pg .mil.pg .org.pg
+  </area>
+  <area category="country" country="Paraguay">
+    .org.py .edu.py .mil.py .gov.py .net.py .com.py .coop.py
+    <forbid reason="unused">.py</forbid>
+  </area>
+  <area category="country" country="People's Republic of China">
+    .cn .ac.cn .com.cn .edu.cn .gov.cn .mil.cn .net.cn .org.cn .ah.cn .bj.cn
+    .cq.cn .fj.cn .gd.cn .gs.cn .gz.cn .gx.cn .ha.cn .hb.cn .he.cn .hi.cn
+    .hk.cn .hl.cn .hn.cn .jl.cn .js.cn .jx.cn .ln.cn .mo.cn .nm.cn .nx.cn
+    .qh.cn .sc.cn .sd.cn .sh.cn .sn.cn .sx.cn .tj.cn .tw.cn .xj.cn .xz.cn
+    .yn.cn .zj.cn
+    .&#x4E2D;&#x56FD; .&#x4E2D;&#x570B;
+    .&#x516C;&#x53F8;.cn .&#x7F51;&#x7EDC;.cn .&#x7DB2;&#x7D61;.cn
+  </area>
+  <area category="country" country="Peru">
+    .pe .edu.pe .gob.pe .nom.pe .mil.pe .sld.pe .org.pe .com.pe .net.pe
+  </area>
+  <area category="country" country="Philippines">
+    .ph .com.ph .net.ph .org.ph .i.ph .gov.ph .mil.ph .edu.ph .ngo.ph
+  </area>
+  <area category="country" country="Pitcairn Islands">
+    .pn .in.pn .co.pn .org.pn .net.pn .gov.pn .edu.pn
+  </area>
+  <area category="country" country="Poland">
+    .pl .com.pl .biz.pl .sklep.pl .shop.pl .agro.pl .travel.pl .tourism.pl
+    .nieruchomosci.pl .realestate.pl .net.pl .art.pl .edu.pl .org.pl .ngo.pl
+    .gov.pl .info.pl .mil.pl .bialystok.pl .bydgoszcz.pl .czest.pl .elk.pl
+    .gda.pl .gdansk.pl .gorzow.pl .kalisz.pl .katowice.pl .konin.pl .krakow.pl
+    .lodz.pl .lublin.pl .malopolska.pl .olsztyn.pl .opole.pl .pila.pl
+    .poznan.pl .radom.pl .rzeszow.pl .slupsk.pl .szczecin.pl .slask.pl
+    .tychy.pl .torun.pl .wroc.pl .wroclaw.pl .waw.pl .warszawa.pl .zgora.pl
+    .aid.pl .atm.pl .auto.pl .gmina.pl .gsm.pl .mail.pl .miasta.pl .media.pl
+    .nom.pl .pc.pl .powiat.pl .priv.pl .rel.pl .sex.pl .sos.pl .szkola.pl
+    .targi.pl .tm.pl .turystyka.pl .6bone.pl .mbone.pl .uw.gov.pl .um.gov.pl
+    .ug.gov.pl .upow.gov.pl .starostwo.gov.pl .so.gov.pl .sr.gov.pl .po.gov.pl
+    .pa.gov.pl .irc.pl .usenet.pl .augustow.pl .babia-gora.pl .bedzin.pl
+    .beskidy.pl .bialowieza.pl .bielawa.pl .bieszczady.pl .boleslawiec.pl
+    .bytom.pl .cieszyn.pl .czeladz.pl .dlugoleka.pl .elblag.pl .glogow.pl
+    .gniezno.pl .gorlice.pl .grajewo.pl .ilawa.pl .jaworzno.pl .jelenia-gora.pl
+    .jgora.pl .kazimierz-dolny.pl .karpacz.pl .kartuzy.pl .kaszuby.pl .kepno.pl
+    .ketrzyn.pl .klodzko.pl .kobierzyce.pl .kolobrzeg.pl .konskowola.pl
+    .kutno.pl .lapy.pl .lebork.pl .legnica.pl .lezajsk.pl .limanowa.pl .lomza.pl
+    .lowicz.pl .lubin.pl .lukow.pl .malbork.pl .mazowsze.pl .mazury.pl
+    .mielec.pl .mielno.pl .mragowo.pl .naklo.pl .nowaruda.pl .nysa.pl .olawa.pl
+    .olecko.pl .olkusz.pl .opoczno.pl .ostroda.pl .ostroleka.pl .ostrowiec.pl
+    .ostrowwlkp.pl .pisz.pl .podhale.pl .podlasie.pl .polkowice.pl .pomorze.pl
+    .pomorskie.pl .prochowice.pl .pruszkow.pl .przeworsk.pl .pulawy.pl
+    .rawa-maz.pl .rybnik.pl .sanok.pl .sejny.pl .siedlce.pl .sosnowiec.pl
+    .stalowa-wola.pl .skoczow.pl .starachowice.pl .stargard.pl .suwalki.pl
+    .swidnica.pl .swiebodzin.pl .swinoujscie.pl .szczytno.pl .tarnobrzeg.pl
+    .tgory.pl .turek.pl .ustka.pl .walbrzych.pl .warmia.pl .wegrow.pl .wielun.pl
+    .wlocl.pl .wloclawek.pl .wodzislaw.pl .wolomin.pl .zachpomor.pl .zagan.pl
+    .zarow.pl .zgorzelec.pl .gdynia.pl .med.pl .sopot.pl .gliwice.pl
+    .zakopane.pl .co.pl
+  </area>
+  <area category="country" country="Portugal">
+    .pt .com.pt .edu.pt .gov.pt .int.pt .net.pt .nome.pt .org.pt .publ.pt
+  </area>
+  <area category="country" country="Pueto Rico">
+    .pr .biz.pr .com.pr .edu.pr .gov.pr .info.pr .isla.pr .name.pr .net.pr
+    .org.pr .pro.pr .est.pr .prof.pr .ac.pr
+  </area>
+  <area category="country" country="Qatar">
+    <!-- .qa may be added later -->
+    .com.qa .net.qa .org.qa .gov.qa .edu.qa .mil.qa .name.qa .sch.qa
+    <forbid reason="reserved">.qa</forbid>
+    .&#x0642;&#x0637;&#x0631;
+  </area>
+  <area category="country" country="Republic of Colombia">
+    .co .com.co .edu.co .gov.co .mil.co .net.co .nom.co .org.co
+    .arts.co .firm.co .info.co .int.co .rec.co .web.co
+  </area>
+  <area category="country" country="Republic of Ireland">
+    .ie .gov.ie
+  </area>
+  <area category="country" country="Republic of Macedonia">
+    .mk .com.mk .org.mk .net.mk .edu.mk .gov.mk .inf.mk .name.mk .pro.mk
+  </area>
+  <area category="country" country="Republic of Maldives">
+    .mv .aero.mv .biz.mv .com.mv .coop.mv .edu.mv .gov.mv .info.mv .int.mv
+    .mil.mv .museum.mv .name.mv .net.mv .org.mv .pro.mv
+  </area>
+  <area category="country" country="Republic of the Congo">
+    .cg
+  </area>
+  <area category="country" country="Republic of the Union of Myanmar">
+    .net.mm .com.mm .edu.mm .mil.mm .org.mm .gov.mm
+    <forbid reason="unused">.mm</forbid>
+  </area>
+  <area category="country" country="Republic of Trinidad and Tobago">
+    .tt .co.tt .com.tt .org.tt .net.tt .biz.tt .info.tt .pro.tt .int.tt
+    .coop.tt .jobs.tt .mobi.tt .travel.tt .museum.tt .aero.tt .cat.tt
+    .tel.tt .name.tt .gov.tt .edu.tt
+  </area>
+  <area category="country" country="R&#xE9;union">
+    .re .asso.re .com.re .nom.re
+  </area>
+  <area category="country" country="Romania">
+    .ro .arts.ro .com.ro .firm.ro .info.ro .nom.ro .nt.ro .org.ro .rec.ro
+    .store.ro .tm.ro .www.ro
+  </area>
+  <area category="country" country="Russia">
+    .ru .ac.ru .com.ru .edu.ru .gov.ru .int.ru .mil.ru .net.ru .org.ru .pp.ru
+    .su .adygeya.ru .bashkiria.ru .buryatia.ru .ulan-ude.ru .grozny.ru .cap.ru
+    .dagestan.ru .nalchik.ru .kalmykia.ru .kchr.ru .karelia.ru .ptz.ru .test.ru
+    .khakassia.ru .komi.ru .mari-el.ru .mari.ru .joshkar-ola.ru .mordovia.ru
+    .yakutia.ru .vladikavkaz.ru .kazan.ru .tatarstan.ru .tuva.ru .izhevsk.ru
+    .udmurtia.ru .udm.ru .altai.ru .kamchatka.ru .khabarovsk.ru .khv.ru
+    .kuban.ru .kranoyarsk.ru .perm.ru .marine.ru .vladivostok.ru .stavropol.ru
+    .stv.ru .chita.ru .amur.ru .arkhangelsk.ru .astrakhan.ru .belgorod.ru
+    .bryansk.ru .chelyabinsk.ru .chel.ru .ivanovo.ru .irkutsk.ru .koenig.ru
+    .kaluga.ru .kemerovo.ru .kirov.ru .vyatka.ru .kostroma.ru .kurgan.ru
+    .kursk.ru .lipetsk.ru .magadan.ru .mosreg.ru .murmansk.ru .nnov.ru .nov.ru
+    .novosibirsk.ru .nsk.ru .omsk.ru .orenburg.ru .oryol.ru .penza.ru .pskov.ru
+    .rnd.ru .ryazan.ru .samara.ru .saratov.ru .sakhalin.ru .yuzhno-sakhalinsk.ru
+    .e-burg.ru .yekaterinburg.ru .smolensk.ru .tambov.ru .tver.ru .tomsk.ru
+    .tom.ru .tsk.ru .tula.ru .tyumen.ru .simbirsk.ru .vladimir.ru .volgograd.ru
+    .tsaritsyn.ru .vologda.ru .cbg.ru .voronezh.ru .vrn.ru .yaroslavl.ru .msk.ru
+    .spb.ru .bir.ru .jar.ru .chukotka.ru .surgut.ru .yamal.ru .palana.ru
+    .amursk.ru .baikal.ru .cmw.ru .fareast.ru .jamal.ru .kms.ru .k-uralsk.ru
+    .kustanai.ru .kuzbass.ru .magnitka.ru .mytis.ru .nakhodka.ru .nkz.ru
+    .norilsk.ru .snz.ru .oskol.ru .pyatigorsk.ru .rubtsovsk.ru .syzran.ru
+    .tlt.ru .vdonsk.ru .zgrad.ru .chuvashia.ru .dudinka.ru .krasnoyarsk.ru
+    .&#x0440;&#x0444;
+  </area>
+  <area category="country" country="Rwanda">
+    .rw .gov.rw .net.rw .edu.rw .ac.rw .com.rw .co.rw .int.rw .mil.rw .gouv.rw
+  </area>
+  <area category="country" country="Saint Helena">
+    .sh .co.sh .com.sh .edu.sh .gov.sh .net.sh .nom.sh .mil.sh .org.sh
+  </area>
+  <area category="country" country="Saint Kitts and Nevis">
+    .kn .net.kn .org.kn .edu.kn .gov.kn
+  </area>
+  <area category="country" country="Saint Lucia">
+    .lc .com.lc .org.lc .edu.lc .gov.lc .net.lc .co.lc .l.lc .p.lc
+  </area>
+  <area category="country" country="Saint Pierre and Miquelon">
+    .pm
+  </area>
+  <area category="country" country="Saint Vincent and the Grenadines">
+    .vc .com.vc .edu.vc .gov.vc .mil.vc .net.vc .org.vc
+  </area>
+  <area category="country" country="Samoa">
+    .ws .com.ws .org.ws .gov.ws .edu.ws .net.ws
+  </area>
+  <area category="country" country="San Marino">
+    .sm
+  </area>
+  <area category="country" country="S&#xE3;o Tom&#xE9; and Pr&#xED;ncipe">
+    .st .nic.st .gov.st .saotome.st .principe.st .consulado.st .embaixada.st
+    .org.st .edu.st .net.st .com.st .store.st .mil.st .co.st
+  </area>
+  <area category="country" country="Saudi Arabia">
+    .sa .com.sa .edu.sa .sch.sa .med.sa .gov.sa .net.sa .org.sa .pub.sa
+    .&#x0627;&#x0644;&#x0633;&#x0639;&#x0648;&#x062F;&#x064A;&#x0629;
+    .&#x0627;&#x0644;&#x0633;&#x0639;&#x0648;&#x062F;&#x06CC;&#x0629;
+    .&#x0627;&#x0644;&#x0633;&#x0639;&#x0648;&#x062F;&#x06CC;&#x06C3;
+    .&#x0627;&#x0644;&#x0633;&#x0639;&#x0648;&#x062F;&#x064A;&#x0647;
+  </area>
+  <area category="country" country="Senegal">
+    .sn .art.sn .com.sn .edu.sn .gouv.sn .org.sn .perso.sn .univ.sn
+  </area>
+  <area category="country" country="Serbia">
+    .rs .co.rs .org.rs .edu.rs .ac.rs .gov.rs .in.rs
+    .&#x0441;&#x0440;&#x0431;
+  </area>
+  <area category="country" country="Seychelles">
+    .sc .com.sc .net.sc .edu.sc .gov.sc .org.sc
+  </area>
+  <area category="country" country="Sierra Leone">
+    .sl .com.sl .net.sl .org.sl .edu.sl .gov.sl
+  </area>
+  <area category="country" country="Singapoor">
+    .com.sg .net.sg .org.sg .gov.sg .edu.sg .per.sg .idn.sg .sg
+    .&#x65B0;&#x52A0;&#x5761;
+    .&#x0B9A;&#x0BBF;&#x0B99;&#x0BCD;&#x0B95;&#x0BAA;&#x0BCD;&#x0BAA;&#x0BC2;&#x0BB0;&#x0BCD;
+  </area>
+  <area category="country" country="Sint Maarten">
+    .sx .gov.sx
+  </area>
+  <area category="country" country="Slovakia">
+    .sk
+  </area>
+  <area category="country" country="Slovenia">
+    .si
+  </area>
+  <area category="country" country="Solomon">
+    .sb .com.sb .net.sb .edu.sb .org.sb .gov.sb
+  </area>
+  <area category="country" country="Somalia">
+    .so .com.so .net.so .org.so
+  </area>
+  <area category="country" country="South Africa" nic="http://www.zadna.org.za/slds.html">
+    <!-- 2nd level is forbidden -->
+    .ac.za .city.za .co.za .edu.za .gov.za .law.za .mil.za .nom.za .org.za
+    .school.za .ecape.school.za .fs.school.za .gp.school.za .kzn.school.za .mpm.za
+    .ncape.school.za .lp.school.za .nw.school.za .wcape.school.za
+    <forbid reason="unused">.za .work.za</forbid>
+    <forbid reason="reserved">.alt.za .net.work.za .ngo.za .tm.za .web.za
+    .bourse.za .agric.za .cybernet.za .grondar.za .iaccess.za .inca.za .nis.za
+    .olivetti.za .pix.za .db.za .imt.za .landesign.za</forbid>
+  </area>
+  <area category="country" country="South Georgia and the South Sandwich Islands">
+    .gs
+  </area>
+  <area category="country" country="South Korea">
+    .kr .co.kr .ne.kr .or.kr .re.kr .pe.kr .go.kr .mil.kr .ac.kr .hs.kr .ms.kr
+    .es.kr .sc.kr .kg.kr .seoul.kr .busan.kr .daegu.kr .incheon.kr .gwangju.kr
+    .daejeon.kr .ulsan.kr .gyeonggi.kr .gangwon.kr .chungbuk.kr .chungnam.kr
+    .jeonbuk.kr .jeonnam.kr .gyeongbuk.kr .gyeongnam.kr .jeju.kr
+    .&#xD55C;&#xAD6D;
+  </area>
+  <area category="country" country="South Sudan">
+    <forbid reason="unused">.ss</forbid>
+  </area>
+  <area category="country" country="Spain">
+    .es .com.es .edu.es .nom.es .org.es .gob.es
+  </area>
+  <area category="country" country="Sri Lanka">
+    .lk .gov.lk .sch.lk .net.lk .int.lk .com.lk .org.lk .edu.lk .ngo.lk .soc.lk
+    .web.lk .ltd.lk .assn.lk .grp.lk .hotel.lk
+    .&#x0DBD;&#x0D82;&#x0D9A;&#x0DCF;
+    .&#x0B87;&#x0BB2;&#x0B99;&#x0BCD;&#x0B95;&#x0BC8;
+  </area>
+  <area category="country" country="State of the Vatican City">
+    .va
+  </area>
+  <area category="country" country="Sudan">
+    .sd .com.sd .net.sd .org.sd .edu.sd .med.sd .tv.sd .gov.sd .info.sd
+  </area>
+  <area category="country" country="Suriname">
+    .sr
+  </area>
+  <area category="country" country="Svalbard and Jan Mayen">
+    <forbid reason="reserved">.sj</forbid>
+  </area>
+  <area category="country" country="Sveden">
+    <!-- .se had 2nd level name, not too sure whether they were canceled
+         now and are available again or were banned -->
+    .se .a.se .ac.se .b.se .bd.se .brand.se .c.se .d.se .e.se .f.se
+    .fh.se .fhsk.se .fhv.se .g.se .h.se .i.se .k.se .komforb.se
+    .kommunalforbund.se .komvux.se .l.se .lanbib.se .m.se .n.se
+    .naturbruksgymn.se .o.se .org.se .p.se .parti.se .pp.se .press.se
+    .r.se .s.se .sshn.se .t.se .tm.se .u.se .w.se .x.se .y.se .z.se
+  </area>
+  <area category="country" country="Swaziland">
+    .sz .co.sz .ac.sz .org.sz
+  </area>
+  <area category="country" country="Switzerland">
+    .ch
+  </area>
+  <area category="country" country="Syria">
+    .sy .edu.sy .gov.sy .net.sy .mil.sy .com.sy .org.sy .news.sy
+    .&#x0633;&#x0648;&#x0631;&#x064A;&#x0629;
+    .&#x0633;&#x0648;&#x0631;&#x064A;&#x0627;
+  </area>
+  <area category="country" country="Taiwan" nic="http://www.twnic.net/english/dn/dn_07a.htm">
+    .tw .club.tw .com.tw .ebiz.tw .game.tw .gov.tw .idv.tw .mil.tw .net.tw
+    .org.tw .edu.tw
+    .&#x53F0;&#x7063; .&#x53F0;&#x6E7E; .&#x81FA;&#x7063;
+    .&#x7DB2;&#x8DEF;.tw .&#x7D44;&#x7E54;.tw .&#x5546;&#x696D;.tw
+  </area>
+  <area category="country" country="Tajikistan">
+    .tj .ac.tj .aero.tj .biz.tj .co.tj .com.tj .coop.tj .dyn.tj .edu.tj .go.tj
+    .gov.tj .info.tj .int.tj .mil.tj .museum.tj .my.tj .name.tj .net.tj .nic.tj
+    .org.tj .per.tj .pro.tj .test.tj .web.tj
+  </area>
+  <area category="country" country="Tanzania" nic="http://www.tznic.or.tz/index.php/domains">
+    <forbid reason="unused">.tz</forbid>
+    .co.tz .ac.tz .go.tz .hotel.tz .info.tz .me.tz .mil.tz .mobi.tz .ne.tz
+    .or.tz .sc.tz .tv.tz
+  </area>
+  <area category="country" country="Thailand" nic="http://www.thnic.co.th">
+    .th .ac.th .co.th .in.th .go.th .mi.th .or.th .net.th
+    .&#x0E44;&#x0E17;&#x0E22;
+  </area>
+  <area category="country" country="The Gambia">
+    .gm
+  </area>
+  <area category="country" country="Togo">
+    .tg
+  </area>
+  <area category="country" country="Tokelau">
+    .tk
+  </area>
+  <area category="country" country="Tonga">
+    .to .com.to .gov.to .net.to .org.to .edu.to .mil.to
+  </area>
+  <area category="country" country="Tunisia">
+    .tn .com.tn .ens.tn .fin.tn .gov.tn .ind.tn .intl.tn .nat.tn .net.tn
+    .org.tn .info.tn .perso.tn .tourism.tn .edunet.tn .rnrt.tn .rns.tn
+    .rnu.tn .mincom.tn .agrinet.tn .defense.tn .turen.tn
+    .&#x062A;&#x0648;&#x0646;&#x0633;
+  </area>
+  <area category="country" country="Turkey">
+    .com.tr .gen.tr .org.tr .biz.tr .info.tr .av.tr .dr.tr .pol.tr
+    .bel.tr .tsk.tr .bbs.tr .k12.tr .edu.tr .name.tr .net.tr .gov.tr
+    .web.tr .tel.tr .tv.tr .nc.tr .gov.nc.tr
+    <forbid reason="unused">.tr</forbid>
+    <exceptions apply-to=".tr">.nic.tr</exceptions>
+  </area>
+  <area category="country" country="Turkmenistan">
+    .tm .co.tm .com.tm .edu.tm .gov.tm .net.tm .nom.tm .mil.tm .org.tm
+  </area>
+  <area category="country" country="Turks and Caicos Islands">
+    .tc
+  </area>
+  <area category="country" country="Tuvalu">
+    .tv .gov.tv
+  </area>
+  <area category="country" country="Uganda">
+    .ug .co.ug .ac.ug .sc.ug .go.ug .ne.ug .or.ug .org.ug .com.ug
+  </area>
+  <area category="country" country="Ukraine">
+    .ua .com.ua .edu.ua .gov.ua .net.ua .in.ua .org.ua .co.ua .biz.ua .pp.ua
+    <!-- regions -->
+    .cherkassy.ua .cherkasy.ua .ck.ua .chernihiv.ua .chernigov.ua .chernivtsi.ua
+    .cn.ua .chernovtsy.ua .cr.ua .cv.ua .crimea.ua .dnepropetrovsk.ua
+    .dnipropetrovsk.ua .dp.ua .dominic.ua .donetsk.ua .dn.ua .ivano-frankivsk.ua
+    .if.ua .kharkiv.ua .kharkov.ua .kh.ua .kherson.ua .ks.ua .khmelnitskiy.ua
+    .khmelnytskyi.ua .km.ua .kiev.ua .kirovograd.ua .kr.ua .krym.ua .kv.ua
+    .kyiv.ua .lugansk.ua .lg.ua .lt.ua .lutsk.ua .lv.ua .lviv.ua .mykolaiv.ua
+    .nikolaev.ua .mk.ua .odesa.ua .odessa.ua .od.ua .poltava.ua .pl.ua .rivne.ua
+    .rovno.ua .rv.ua .sb.ua .sebastopol.ua .sevastopol.ua .sm.ua .sumy.ua
+    .ternopil.ua .te.ua .uzhgorod.ua .uz.ua .vinnica.ua .vinnytsia.ua .vn.ua
+    .volyn.ua .yalta.ua .zaporizhzhe.ua .zaporizhzhia.ua .zp.ua .zhitomir.ua
+    .zhytomyr.ua .zt.ua
+    .&#x443;&#x43A;&#x440;
+  </area>
+  <area category="country" country="United Arab Emirates" nic="http://www.aeda.ae/ar/index-ar.php">
+    .ae .co.ae .net.ae .gov.ae .ac.ae .sch.ae .org.ae .mil.ae
+    .&#x0627;&#x0645;&#x0627;&#x0631;&#x0627;&#x062A;
+    <forbid reason="deprecated">.pro.ae .name.ae</forbid>
+  </area>
+  <area category="country" country="United Kingdom">
+    .ac.uk .co.uk .gov.uk .ltd.uk .me.uk .net.uk .org.uk .plc.uk
+    <!-- for .sch.uk we need to know about the 3rd level -->
+    <!-- there are a few .uk such as nic.uk but at this point we refuse it -->
+    <forbid reason="unused">.uk .sco .cymru .sch.uk</forbid>
+    <forbid reason="deprecated">.icnet.uk .govt.uk .orgn.uk .lea.uk .mil.uk
+    .nel.uk</forbid>
+    <exceptions apply-to=".uk">.bl.uk .british-library.uk .jet.uk
+    .mod.uk .nhs.uk .nic.uk .nls.uk .national-library-scotland.uk
+    .parliament.uk .police.uk</exceptions>
+  </area>
+  <area category="country" country="United States">
+    <!-- .gov and .mil are now viewed as generic top level domains
+         but they are still more or less reserved to the United States -->
+    .gov .mil .us
+    <!-- most of the following are not used much, but they are still
+         reserved in the .us domain space; many state adgencies make
+         use of the .gov and some of the .com and .net instead -->
+    <!-- dni - distributed national institute
+         fed - federal government agencies
+         isa - interstate agency
+         kids - websites (safe) for kids under 13
+         nsn - native sovereign nations
+         -->
+    .dni.us .fed.us .isa.us .kids.us .nsn.us
+    <!-- states + as - American Samoa, gu - Guam, mp - Northern Mariana Island
+         pr Puerto Rico, vi - United States Virgin Islands -->
+    .ak.us .al.us .ar.us .as.us .az.us .ca.us .co.us .ct.us .dc.us .de.us .fl.us
+    .ga.us .gu.us .hi.us .ia.us .id.us .il.us .in.us .ks.us .ky.us .la.us .ma.us
+    .md.us .me.us .mi.us .mn.us .mo.us .ms.us .mt.us .nc.us .nd.us .ne.us .nh.us
+    .nj.us .nm.us .nv.us .ny.us .oh.us .ok.us .or.us .pa.us .pr.us .ri.us .sc.us
+    .sd.us .tn.us .tx.us .ut.us .vi.us .vt.us .va.us .wa.us .wi.us .wv.us .wy.us
+    <!-- state governments -->
+    .state.ak.us .state.al.us .state.ar.us .state.as.us .state.az.us
+    .state.ca.us .state.co.us .state.ct.us .state.dc.us .state.de.us
+    .state.fl.us .state.ga.us .state.gu.us .state.hi.us .state.ia.us
+    .state.id.us .state.il.us .state.in.us .state.ks.us .state.ky.us
+    .state.la.us .state.ma.us .state.md.us .state.me.us .state.mi.us
+    .state.mn.us .state.mo.us .state.ms.us .state.mt.us .state.nc.us
+    .state.nd.us .state.ne.us .state.nh.us .state.nj.us .state.nm.us
+    .state.nv.us .state.ny.us .state.oh.us .state.ok.us .state.or.us
+    .state.pa.us .state.pr.us .state.ri.us .state.sc.us .state.sd.us
+    .state.tn.us .state.tx.us .state.ut.us .state.vi.us .state.vt.us
+    .state.va.us .state.wa.us .state.wi.us .state.wv.us .state.wy.us
+    <!-- K12 schools -->
+    .k12.ak.us .k12.al.us .k12.ar.us .k12.as.us .k12.az.us .k12.ca.us .k12.co.us
+    .k12.ct.us .k12.dc.us .k12.de.us .k12.fl.us .k12.ga.us .k12.gu.us .k12.ia.us
+    .k12.id.us .k12.il.us .k12.in.us .k12.ks.us .k12.ky.us .k12.la.us .k12.ma.us
+    .k12.md.us .k12.me.us .k12.mi.us .k12.mn.us .k12.mo.us .k12.ms.us .k12.mt.us
+    .k12.nc.us .k12.nd.us .k12.ne.us .k12.nh.us .k12.nj.us .k12.nm.us .k12.nv.us
+    .k12.ny.us .k12.oh.us .k12.ok.us .k12.or.us .k12.pa.us .k12.pr.us .k12.ri.us
+    .k12.sc.us .k12.sd.us .k12.tn.us .k12.tx.us .k12.ut.us .k12.vi.us .k12.vt.us
+    .k12.va.us .k12.wa.us .k12.wi.us .k12.wv.us .k12.wy.us
+    <!-- private K12 schools -->
+    .pvt.k12.ak.us .pvt.k12.al.us .pvt.k12.ar.us .pvt.k12.as.us .pvt.k12.az.us
+    .pvt.k12.ca.us .pvt.k12.co.us .pvt.k12.ct.us .pvt.k12.dc.us .pvt.k12.de.us
+    .pvt.k12.fl.us .pvt.k12.ga.us .pvt.k12.gu.us .pvt.k12.ia.us .pvt.k12.id.us
+    .pvt.k12.il.us .pvt.k12.in.us .pvt.k12.ks.us .pvt.k12.ky.us .pvt.k12.la.us
+    .pvt.k12.ma.us .pvt.k12.md.us .pvt.k12.me.us .pvt.k12.mi.us .pvt.k12.mn.us
+    .pvt.k12.mo.us .pvt.k12.ms.us .pvt.k12.mt.us .pvt.k12.nc.us .pvt.k12.nd.us
+    .pvt.k12.ne.us .pvt.k12.nh.us .pvt.k12.nj.us .pvt.k12.nm.us .pvt.k12.nv.us
+    .pvt.k12.ny.us .pvt.k12.oh.us .pvt.k12.ok.us .pvt.k12.or.us .pvt.k12.pa.us
+    .pvt.k12.pr.us .pvt.k12.ri.us .pvt.k12.sc.us .pvt.k12.sd.us .pvt.k12.tn.us
+    .pvt.k12.tx.us .pvt.k12.ut.us .pvt.k12.vi.us .pvt.k12.vt.us .pvt.k12.va.us
+    .pvt.k12.wa.us .pvt.k12.wi.us .pvt.k12.wv.us .pvt.k12.wy.us
+    <!-- charter K12 schools -->
+    .chtr.k12.ak.us .chtr.k12.al.us .chtr.k12.ar.us .chtr.k12.as.us
+    .chtr.k12.az.us .chtr.k12.ca.us .chtr.k12.co.us .chtr.k12.ct.us
+    .chtr.k12.dc.us .chtr.k12.de.us .chtr.k12.fl.us .chtr.k12.ga.us
+    .chtr.k12.gu.us .chtr.k12.ia.us .chtr.k12.id.us .chtr.k12.il.us
+    .chtr.k12.in.us .chtr.k12.ks.us .chtr.k12.ky.us .chtr.k12.la.us
+    .chtr.k12.ma.us .chtr.k12.md.us .chtr.k12.me.us .chtr.k12.mi.us
+    .chtr.k12.mn.us .chtr.k12.mo.us .chtr.k12.ms.us .chtr.k12.mt.us
+    .chtr.k12.nc.us .chtr.k12.nd.us .chtr.k12.ne.us .chtr.k12.nh.us
+    .chtr.k12.nj.us .chtr.k12.nm.us .chtr.k12.nv.us .chtr.k12.ny.us
+    .chtr.k12.oh.us .chtr.k12.ok.us .chtr.k12.or.us .chtr.k12.pa.us
+    .chtr.k12.pr.us .chtr.k12.ri.us .chtr.k12.sc.us .chtr.k12.sd.us
+    .chtr.k12.tn.us .chtr.k12.tx.us .chtr.k12.ut.us .chtr.k12.vi.us
+    .chtr.k12.vt.us .chtr.k12.va.us .chtr.k12.wa.us .chtr.k12.wi.us
+    .chtr.k12.wv.us .chtr.k12.wy.us
+    <!-- parochial K12 schools -->
+    .paroch.k12.ak.us .paroch.k12.al.us .paroch.k12.ar.us .paroch.k12.as.us
+    .paroch.k12.az.us .paroch.k12.ca.us .paroch.k12.co.us .paroch.k12.ct.us
+    .paroch.k12.dc.us .paroch.k12.de.us .paroch.k12.fl.us .paroch.k12.ga.us
+    .paroch.k12.gu.us .paroch.k12.ia.us .paroch.k12.id.us .paroch.k12.il.us
+    .paroch.k12.in.us .paroch.k12.ks.us .paroch.k12.ky.us .paroch.k12.la.us
+    .paroch.k12.ma.us .paroch.k12.md.us .paroch.k12.me.us .paroch.k12.mi.us
+    .paroch.k12.mn.us .paroch.k12.mo.us .paroch.k12.ms.us .paroch.k12.mt.us
+    .paroch.k12.nc.us .paroch.k12.nd.us .paroch.k12.ne.us .paroch.k12.nh.us
+    .paroch.k12.nj.us .paroch.k12.nm.us .paroch.k12.nv.us .paroch.k12.ny.us
+    .paroch.k12.oh.us .paroch.k12.ok.us .paroch.k12.or.us .paroch.k12.pa.us
+    .paroch.k12.pr.us .paroch.k12.ri.us .paroch.k12.sc.us .paroch.k12.sd.us
+    .paroch.k12.tn.us .paroch.k12.tx.us .paroch.k12.ut.us .paroch.k12.vi.us
+    .paroch.k12.vt.us .paroch.k12.va.us .paroch.k12.wa.us .paroch.k12.wi.us
+    .paroch.k12.wv.us .paroch.k12.wy.us
+    <!-- community college -->
+    .cc.ak.us .cc.al.us .cc.ar.us .cc.as.us .cc.az.us .cc.ca.us .cc.co.us
+    .cc.ct.us .cc.dc.us .cc.de.us .cc.fl.us .cc.ga.us .cc.gu.us .cc.hi.us
+    .cc.ia.us .cc.id.us .cc.il.us .cc.in.us .cc.ks.us .cc.ky.us .cc.la.us
+    .cc.ma.us .cc.md.us .cc.me.us .cc.mi.us .cc.mn.us .cc.mo.us .cc.ms.us
+    .cc.mt.us .cc.nc.us .cc.nd.us .cc.ne.us .cc.nh.us .cc.nj.us .cc.nm.us
+    .cc.nv.us .cc.ny.us .cc.oh.us .cc.ok.us .cc.or.us .cc.pa.us .cc.pr.us
+    .cc.ri.us .cc.sc.us .cc.sd.us .cc.tn.us .cc.tx.us .cc.ut.us .cc.vi.us
+    .cc.vt.us .cc.va.us .cc.wa.us .cc.wi.us .cc.wv.us .cc.wy.us
+    <!-- technical and vocational schools -->
+    .tec.ak.us .tec.al.us .tec.ar.us .tec.as.us .tec.az.us .tec.ca.us .tec.co.us
+    .tec.ct.us .tec.dc.us .tec.de.us .tec.fl.us .tec.ga.us .tec.gu.us .tec.hi.us
+    .tec.ia.us .tec.id.us .tec.il.us .tec.in.us .tec.ks.us .tec.ky.us .tec.la.us
+    .tec.ma.us .tec.md.us .tec.me.us .tec.mi.us .tec.mn.us .tec.mo.us .tec.ms.us
+    .tec.mt.us .tec.nc.us .tec.nd.us .tec.ne.us .tec.nh.us .tec.nj.us .tec.nm.us
+    .tec.nv.us .tec.ny.us .tec.oh.us .tec.ok.us .tec.or.us .tec.pa.us .tec.pr.us
+    .tec.ri.us .tec.sc.us .tec.sd.us .tec.tn.us .tec.tx.us .tec.ut.us .tec.vi.us
+    .tec.vt.us .tec.va.us .tec.wa.us .tec.wi.us .tec.wv.us .tec.wy.us
+    <!-- public library -->
+    .lib.ak.us .lib.al.us .lib.ar.us .lib.as.us .lib.az.us .lib.ca.us .lib.co.us
+    .lib.ct.us .lib.dc.us .lib.de.us .lib.fl.us .lib.ga.us .lib.gu.us .lib.hi.us
+    .lib.ia.us .lib.id.us .lib.il.us .lib.in.us .lib.ks.us .lib.ky.us .lib.la.us
+    .lib.ma.us .lib.md.us .lib.me.us .lib.mi.us .lib.mn.us .lib.mo.us .lib.ms.us
+    .lib.mt.us .lib.nc.us .lib.nd.us .lib.ne.us .lib.nh.us .lib.nj.us .lib.nm.us
+    .lib.nv.us .lib.ny.us .lib.oh.us .lib.ok.us .lib.or.us .lib.pa.us .lib.pr.us
+    .lib.ri.us .lib.sc.us .lib.sd.us .lib.tn.us .lib.tx.us .lib.ut.us .lib.vi.us
+    .lib.vt.us .lib.va.us .lib.wa.us .lib.wi.us .lib.wv.us .lib.wy.us
+    <!-- councils of government -->
+    .cog.ak.us .cog.al.us .cog.ar.us .cog.as.us .cog.az.us .cog.ca.us .cog.co.us
+    .cog.ct.us .cog.dc.us .cog.de.us .cog.fl.us .cog.ga.us .cog.gu.us .cog.hi.us
+    .cog.ia.us .cog.id.us .cog.il.us .cog.in.us .cog.ks.us .cog.ky.us .cog.la.us
+    .cog.ma.us .cog.md.us .cog.me.us .cog.mi.us .cog.mn.us .cog.mo.us .cog.ms.us
+    .cog.mt.us .cog.nc.us .cog.nd.us .cog.ne.us .cog.nh.us .cog.nj.us .cog.nm.us
+    .cog.nv.us .cog.ny.us .cog.oh.us .cog.ok.us .cog.or.us .cog.pa.us .cog.pr.us
+    .cog.ri.us .cog.sc.us .cog.sd.us .cog.tn.us .cog.tx.us .cog.ut.us .cog.vi.us
+    .cog.vt.us .cog.va.us .cog.wa.us .cog.wi.us .cog.wv.us .cog.wy.us
+    <!-- administrative districts -->
+    .dst.ak.us .dst.al.us .dst.ar.us .dst.as.us .dst.az.us .dst.ca.us .dst.co.us
+    .dst.ct.us .dst.dc.us .dst.de.us .dst.fl.us .dst.ga.us .dst.gu.us .dst.hi.us
+    .dst.ia.us .dst.id.us .dst.il.us .dst.in.us .dst.ks.us .dst.ky.us .dst.la.us
+    .dst.ma.us .dst.md.us .dst.me.us .dst.mi.us .dst.mn.us .dst.mo.us .dst.ms.us
+    .dst.mt.us .dst.nc.us .dst.nd.us .dst.ne.us .dst.nh.us .dst.nj.us .dst.nm.us
+    .dst.nv.us .dst.ny.us .dst.oh.us .dst.ok.us .dst.or.us .dst.pa.us .dst.pr.us
+    .dst.ri.us .dst.sc.us .dst.sd.us .dst.tn.us .dst.tx.us .dst.ut.us .dst.vi.us
+    .dst.vt.us .dst.va.us .dst.wa.us .dst.wi.us .dst.wv.us .dst.wy.us
+    <!-- museums -->
+    .mus.ak.us .mus.al.us .mus.ar.us .mus.as.us .mus.az.us .mus.ca.us .mus.co.us
+    .mus.ct.us .mus.dc.us .mus.de.us .mus.fl.us .mus.ga.us .mus.gu.us .mus.ia.us
+    .mus.id.us .mus.il.us .mus.in.us .mus.ks.us .mus.ky.us .mus.la.us .mus.ma.us
+    .mus.md.us .mus.me.us .mus.mi.us .mus.mn.us .mus.mo.us .mus.ms.us .mus.mt.us
+    .mus.nc.us .mus.nd.us .mus.ne.us .mus.nh.us .mus.nj.us .mus.nm.us .mus.nv.us
+    .mus.ny.us .mus.oh.us .mus.ok.us .mus.or.us .mus.pa.us .mus.pr.us .mus.ri.us
+    .mus.sc.us .mus.sd.us .mus.tn.us .mus.tx.us .mus.ut.us .mus.vi.us .mus.vt.us
+    .mus.va.us .mus.wa.us .mus.wi.us .mus.wv.us .mus.wy.us
+    <!-- general -->
+    .gen.ak.us .gen.al.us .gen.ar.us .gen.as.us .gen.az.us .gen.ca.us .gen.co.us
+    .gen.ct.us .gen.dc.us .gen.de.us .gen.fl.us .gen.ga.us .gen.gu.us .gen.ia.us
+    .gen.id.us .gen.il.us .gen.in.us .gen.ks.us .gen.ky.us .gen.la.us .gen.ma.us
+    .gen.md.us .gen.me.us .gen.mi.us .gen.mn.us .gen.mo.us .gen.ms.us .gen.mt.us
+    .gen.nc.us .gen.nd.us .gen.ne.us .gen.nh.us .gen.nj.us .gen.nm.us .gen.nv.us
+    .gen.ny.us .gen.oh.us .gen.ok.us .gen.or.us .gen.pa.us .gen.pr.us .gen.ri.us
+    .gen.sc.us .gen.sd.us .gen.tn.us .gen.tx.us .gen.ut.us .gen.vi.us .gen.vt.us
+    .gen.va.us .gen.wa.us .gen.wi.us .gen.wv.us .gen.wy.us
+    <!-- .us also has city, town, ville, and county specification using a
+         sub-domain as in (ci|town|vil|co).<city-name>.<state>.us
+         there is nothing special we have to do for those here -->
+  </area>
+  <area category="country" country="United States Virgin Island">
+    .vi .co.vi .org.vi .com.vi .net.vi .k12.vi
+  </area>
+  <area category="country" country="Uruguay">
+    .com.uy .edu.uy .gub.uy .net.uy .mil.uy .org.uy
+    <forbid reason="unused">.uy</forbid>
+  </area>
+  <area category="country" country="Uzbekistan">
+    .uz .co.uz .com.uz .net.uz .org.uz
+  </area>
+  <area category="country" country="Vanuatu">
+    .vu .gov.vu
+  </area>
+  <area category="country" country="Venezuela">
+    .co.ve .com.ve .e12.ve .edu.ve .info.ve .gob.ve .gov.ve .mil.ve .net.ve
+    .org.ve .tec.ve .web.ve
+    <forbid reason="reserved">.ve</forbid>
+  </area>
+  <area category="country" country="Vietnam">
+    .vn .com.vn .biz.vn .edu.vn .gov.vn .net.vn .org.vn .int.vn .ac.vn
+    .pro.vn .info.vn .health.vn .name.vn
+  </area>
+  <area category="country" country="Wallis and Futuna Islands">
+    <forbid reason="proposed">.wf</forbid>
+  </area>
+  <area category="country" country="Western Sahara">
+    <forbid reason="reserved">.eh</forbid>
+  </area>
+  <area category="country" country="Yemen" nic="http://www.y.net.ye/services/domain_name.htm">
+    .com.ye .co.ye .ltd.ye .me.ye .net.ye .org.ye .plc.ye .gov.ye
+    <forbid reason="unused">.ye</forbid>
+    .&#x0627;&#x0644;&#x064A;&#x0645;&#x0646;
+  </area>
+  <area category="country" country="Zambia" nic="http://en.wikipedia.org/wiki/.zm">
+    .ac.zm .co.zm .com.zm .edu.zm .gov.zm .net.zm .org.zm .sch.zm
+    <forbid reason="unused">.zm</forbid>
+  </area>
+  <area category="country" country="Zimbabwe" nic="http://en.wikipedia.org/wiki/.zw">
+    .ac.zw .co.zw .org.zw
+    <forbid reason="unused">.zw</forbid>
+  </area>
+
+  <!-- entrepreneurial definitions which are not specific to a country
+       nor were assigned by the IANA, often referenced as private domains -->
+  <area category="entrepreneurial">
+    .ae.org
+    .ar.com
+    .appspot.com
+    .at-band-camp.net
+    .ath.cx
+    .barrel-of-knowledge.info
+    .barrell-of-knowledge.info
+    .betainabox.com
+    .better-than.tv
+    .blogdns.com
+    .blogdns.net
+    .blogdns.org
+    .blogsite.org
+    .blogspot.be
+    .blogspot.bj
+    .blogspot.ca
+    .blogspot.cf
+    .blogspot.ch
+    .blogspot.co.at
+    .blogspot.co.il
+    .blogspot.co.nz
+    .blogspot.co.uk
+    .blogspot.com
+    .blogspot.com.ar
+    .blogspot.com.au
+    .blogspot.com.br
+    .blogspot.com.es
+    .blogspot.cv
+    .blogspot.cz
+    .blogspot.de
+    .blogspot.dk
+    .blogspot.fi
+    .blogspot.fr
+    .blogspot.gr
+    .blogspot.hk
+    .blogspot.hu
+    .blogspot.ie
+    .blogspot.in
+    .blogspot.it
+    .blogspot.jp
+    .blogspot.kr
+    .blogspot.mr
+    .blogspot.mx
+    .blogspot.nl
+    .blogspot.no
+    .blogspot.pt
+    .blogspot.re
+    .blogspot.ro
+    .blogspot.se
+    .blogspot.sg
+    .blogspot.sk
+    .blogspot.td
+    .blogspot.tw
+    .boldlygoingnowhere.org
+    .br.com
+    .broke-it.net
+    .buyshouses.net
+    .cechire.com
+    .cn.com
+    .co.ca
+    .codespot.com
+    .de.com
+    .dnsalias.com
+    .dnsalias.net
+    .dnsalias.org
+    .dnsdojo.com
+    .dnsdojo.net
+    .dnsdojo.org
+    .does-it.net
+    .doesntexist.com
+    .doesntexist.org
+    .dontexist.com
+    .dontexist.net
+    .dontexist.org
+    .doomdns.com
+    .doomdns.org
+    .dreamhosters.com
+    .dvrdns.org
+    .dyn-o-saur.com
+    .dynalias.com
+    .dynalias.net
+    .dynalias.org
+    .dynathome.net
+    .dyndns.biz
+    .dyndns-at-home.com
+    .dyndns-at-work.com
+    .dyndns-blog.com
+    .dyndns-free.com
+    .dyndns-home.com
+    .dyndns.info
+    .dyndns-ip.com
+    .dyndns-mail.com
+    .dyndns-office.com
+    .dyndns-pics.com
+    .dyndns-remote.com
+    .dyndns-server.com
+    .dyndns-web.com
+    .dyndns-wiki.com
+    .dyndns-work.com
+    .dyndns.org
+    .dyndns.tv
+    .dyndns.ws
+    .endofinternet.net
+    .endofinternet.org
+    .endoftheinternet.org
+    .est-a-la-maison.com
+    .est-a-la-masion.com
+    .est-le-patron.com
+    .est-mon-blogueur.com
+    .eu.com
+    .for-better.biz
+    .for-more.biz
+    .for-our.info
+    .for-some.biz
+    .for-the.biz
+    .forgot.her.name
+    .forgot.his.name
+    .from-ak.com
+    .from-al.com
+    .from-ar.com
+    .from-az.net
+    .from-ca.com
+    .from-co.net
+    .from-ct.com
+    .from-dc.com
+    .from-de.com
+    .from-fl.com
+    .from-ga.com
+    .from-hi.com
+    .from-ia.com
+    .from-id.com
+    .from-il.com
+    .from-in.com
+    .from-ks.com
+    .from-ky.com
+    .from-la.net
+    .from-ma.com
+    .from-md.com
+    .from-me.org
+    .from-mi.com
+    .from-mn.com
+    .from-mo.com
+    .from-ms.com
+    .from-mt.com
+    .from-nc.com
+    .from-nd.com
+    .from-ne.com
+    .from-nh.com
+    .from-nj.com
+    .from-nm.com
+    .from-nv.com
+    .from-ny.net
+    .from-oh.com
+    .from-ok.com
+    .from-or.com
+    .from-pa.com
+    .from-pr.com
+    .from-ri.com
+    .from-sc.com
+    .from-sd.com
+    .from-tn.com
+    .from-tx.com
+    .from-ut.com
+    .from-va.com
+    .from-vt.com
+    .from-wa.com
+    .from-wi.com
+    .from-wv.com
+    .from-wy.com
+    .ftpaccess.cc
+    .fuettertdasnetz.de
+    .game-host.org
+    .game-server.cc
+    .gb.com
+    .gb.net
+    .getmyip.com
+    .gets-it.net
+    .go.dyndns.org
+    .googleapis.com
+    .googlecode.com
+    .gotdns.com
+    .gotdns.org
+    .gr.com
+    .groks-the.info
+    .groks-this.info
+    .ham-radio-op.net
+    .here-for-more.info
+    .hobby-site.com
+    .hobby-site.org
+    .home.dyndns.org
+    .homedns.org
+    .homeftp.net
+    .homeftp.org
+    .homeip.net
+    .homelinux.com
+    .homelinux.net
+    .homelinux.org
+    .homeunix.com
+    .homeunix.net
+    .homeunix.org
+    .hu.com
+    .hu.net
+    .iamallama.com
+    .in-the-band.net
+    .is-a-anarchist.com
+    .is-a-blogger.com
+    .is-a-bookkeeper.com
+    .is-a-bruinsfan.org
+    .is-a-bulls-fan.com
+    .is-a-candidate.org
+    .is-a-caterer.com
+    .is-a-celticsfan.org
+    .is-a-chef.com
+    .is-a-chef.net
+    .is-a-chef.org
+    .is-a-conservative.com
+    .is-a-cpa.com
+    .is-a-cubicle-slave.com
+    .is-a-democrat.com
+    .is-a-designer.com
+    .is-a-doctor.com
+    .is-a-financialadvisor.com
+    .is-a-geek.com
+    .is-a-geek.net
+    .is-a-geek.org
+    .is-a-green.com
+    .is-a-guru.com
+    .is-a-hard-worker.com
+    .is-a-hunter.com
+    .is-a-knight.org
+    .is-a-landscaper.com
+    .is-a-lawyer.com
+    .is-a-liberal.com
+    .is-a-libertarian.com
+    .is-a-linux-user.org
+    .is-a-llama.com
+    .is-a-musician.com
+    .is-a-nascarfan.com
+    .is-a-nurse.com
+    .is-a-painter.com
+    .is-a-patsfan.org
+    .is-a-personaltrainer.com
+    .is-a-photographer.com
+    .is-a-player.com
+    .is-a-republican.com
+    .is-a-rockstar.com
+    .is-a-socialist.com
+    .is-a-soxfan.org
+    .is-a-student.com
+    .is-a-teacher.com
+    .is-a-techie.com
+    .is-a-therapist.com
+    .is-an-accountant.com
+    .is-an-actor.com
+    .is-an-actress.com
+    .is-an-anarchist.com
+    .is-an-artist.com
+    .is-an-engineer.com
+    .is-an-entertainer.com
+    .is-by.us
+    .is-certified.com
+    .is-found.org
+    .is-gone.com
+    .is-into-anime.com
+    .is-into-cars.com
+    .is-into-cartoons.com
+    .is-into-games.com
+    .is-leet.com
+    .is-lost.org
+    .is-not-certified.com
+    .is-saved.org
+    .is-slick.com
+    .is-uberleet.com
+    .is-very-bad.org
+    .is-very-evil.org
+    .is-very-good.org
+    .is-very-nice.org
+    .is-very-sweet.org
+    .is-with-theband.com
+    .isa-geek.com
+    .isa-geek.net
+    .isa-geek.org
+    .isa-hockeynut.com
+    .issmarterthanyou.com
+    .isteingeek.de
+    .istmein.de
+    .jp.net
+    .jpn.com
+    .kicks-ass.net
+    .kicks-ass.org
+    .knowsitall.info
+    .kr.com
+    .land-4-sale.us
+    .lebtimnetz.de
+    .leitungsen.de
+    .likes-pie.com
+    .likescandy.com
+    .merseine.nu
+    .mine.nu
+    .misconfused.org
+    .mypets.ws
+    .myphotos.cc
+    .neat-url.com
+    .no.com
+    .office-on-the.net
+    .on-the-web.tv
+    .operaunite.com
+    .podzone.net
+    .podzone.org
+    .qc.com
+    .readmyblog.org
+    .rhcloud.com
+    .ru.com
+    .sa.com
+    .saves-the-whales.com
+    .scrapper-site.net
+    .scrapping.cc
+    .se.com
+    .se.net
+    .selfip.biz
+    .selfip.com
+    .selfip.info
+    .selfip.net
+    .selfip.org
+    .sells-for-less.com
+    .sells-for-u.com
+    .sells-it.net
+    .sellsyourhome.org
+    .servebbs.com
+    .servebbs.net
+    .servebbs.org
+    .serveftp.net
+    .serveftp.org
+    .servegame.org
+    .shacknet.nu
+    .simple-url.com
+    .space-to-rent.com
+    .stuff-4-sale.org
+    .stuff-4-sale.us
+    .teaches-yoga.com
+    .thruhere.net
+    .traeumtgerade.de
+    .uk.com
+    .uk.net
+    .us.com
+    .us.org
+    .uy.com
+    .webhop.biz
+    .webhop.info
+    .webhop.net
+    .webhop.org
+    .worse-than.tv
+    .writesthisblog.com
+    .za.com
+    .za.net
+    .za.org
+    <forbid reason="unused">
+      .her.name
+      .his.name
+    </forbid>
+  </area>
+</tld>
+<!-- vim: ts=2 sw=2 et syntax=xml
+-->
