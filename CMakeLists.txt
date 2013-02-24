@@ -9,7 +9,7 @@
 #      See the CMake documentation.
 #
 # License:
-#      Copyright (c) 2011-2012 Made to Order Software Corp.
+#      Copyright (c) 2011-2013 Made to Order Software Corp.
 #
 #      http://snapwebsites.org/
 #      contact@m2osw.com
@@ -51,7 +51,7 @@ add_subdirectory( libtld             )
 add_subdirectory( libQtCassandra     )
 add_subdirectory( libQtSerialization )
 add_subdirectory( snapwebsites       )
-add_subdirectory( backup             )
+#add_subdirectory( backup             )
 add_subdirectory( googlerank         )
 add_subdirectory( iplock             )
 add_subdirectory( CassandraBrowse    )
