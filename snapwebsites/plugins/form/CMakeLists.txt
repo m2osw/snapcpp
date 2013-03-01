@@ -12,7 +12,7 @@
 #      See the CMake documentation.
 #
 # License:
-#      Copyright (c) 2011-2012 Made to Order Software Corp.
+#      Copyright (c) 2011-2013 Made to Order Software Corp.
 #
 #      http://snapwebsites.org/
 #      contact@m2osw.com
@@ -39,13 +39,11 @@
 
 project(plugin_form)
 
+SnapIncludeQt4( QtCore )
 include_directories(
     "${CMAKE_CURRENT_SOURCE_DIR}"
-    "/usr/include/qt4"
+    ${QT_INCLUDES}
 )
-
-SnapIncludeQt4( QtCore )
-include_directories( ${QT_INCLUDES} )
 
 QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC
     form.qrc

@@ -10,7 +10,7 @@
 #      See the CMake documentation.
 #
 # License:
-#      Copyright (c) 2011-2012 Made to Order Software Corp.
+#      Copyright (c) 2011-2013 Made to Order Software Corp.
 #
 #      http://snapwebsites.org/
 #      contact@m2osw.com
@@ -37,16 +37,11 @@
 
 project(plugin_filter)
 
-include_directories(
-    #"${CMAKE_CURRENT_SOURCE_DIR}/../../lib"
-    #"${CMAKE_CURRENT_BINARY_DIR}/../../lib"
-    "${CMAKE_CURRENT_SOURCE_DIR}"
-    "/usr/include/qt4"
-    #"/usr/local/include"
-)
-
 SnapIncludeQt4( QtCore QtXml )
-include_directories( ${QT_INCLUDES} )
+include_directories(
+    "${CMAKE_CURRENT_SOURCE_DIR}"
+    ${QT_INCLUDES}
+)
 
 QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC
     filter.qrc

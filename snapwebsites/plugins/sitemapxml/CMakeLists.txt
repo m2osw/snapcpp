@@ -38,16 +38,11 @@
 
 project(plugin_sitemapxml)
 
-include_directories(
-    #"${CMAKE_CURRENT_SOURCE_DIR}/../../lib"
-    #"${CMAKE_CURRENT_BINARY_DIR}/../../lib"
-    "${CMAKE_CURRENT_SOURCE_DIR}"
-    "/usr/include/qt4"
-    #"/usr/local/include"
-)
-
 SnapIncludeQt4( QtCore )
-include_directories( ${QT_INCLUDES} )
+include_directories(
+    "${CMAKE_CURRENT_SOURCE_DIR}"
+    ${QT_INCLUDES}
+)
 
 QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC
     sitemapxml.qrc

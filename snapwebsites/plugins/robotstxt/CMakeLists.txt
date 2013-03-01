@@ -37,16 +37,11 @@
 
 project(plugin_robotstxt)
 
-include_directories(
-    #"${CMAKE_CURRENT_SOURCE_DIR}/../../lib"
-    #"${CMAKE_CURRENT_BINARY_DIR}/../../lib"
-    "${CMAKE_CURRENT_SOURCE_DIR}"
-    "/usr/include/qt4"
-    #"/usr/local/include"
-)
-
 SnapIncludeQt4( QtCore )
-include_directories( ${QT_INCLUDES} )
+include_directories(
+    "${CMAKE_CURRENT_SOURCE_DIR}"
+    ${QT_INCLUDES}
+)
 
 # This was an attempt to pre-process the .xml file to remove comments
 # but at this point it doesn't work right (i.e. the target cannot always

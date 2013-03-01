@@ -17,9 +17,11 @@
 #ifndef SNAP_SENDMAIL_H
 #define SNAP_SENDMAIL_H
 
-#include "plugin.h"
-#include <controlled_vars/controlled_vars_limited_need_init.h>
-#include <map>
+#include "plugins.h"
+#include "snap_child.h"
+#include <QMap>
+#include <QVector>
+#include <QByteArray>
 
 namespace snap
 {
@@ -27,8 +29,8 @@ namespace sendmail
 {
 
 class sendmail_exception : public snap_exception {};
-class sendmail_exception_invalid_field_name : public sendmail_exception {};
-class sendmail_exception_already_defined : public sendmail_exception {};
+class sendmail_exception_no_magic : public sendmail_exception {};
+class sendmail_exception_invalid_argument : public sendmail_exception {};
 
 enum name_t
 {
@@ -51,19 +53,9 @@ public:
 		};
 		typedef QMap<email_list_t, QVector<QString> > list_vector_t;
 
-		// some default MIME types
-		enum email_content_t
-		{
-			// character set is always UTF-8
-			EMAIL_CONTENT_PLAIN_TEXT,
-			EMAIL_CONTENT_HTML,
-			EMAIL_CONTENT_IMAGE,
-			EMAIL_CONTENT_BINARY
-		};
-
 		enum email_priority_t
 		{
-			EMAIL_PRIORITY_BULK,
+			EMAIL_PRIORITY_BULK = 1,
 			EMAIL_PRIORITY_LOW,
 			EMAIL_PRIORITY_NORMAL,
 			EMAIL_PRIORITY_HIGH,
@@ -77,16 +69,14 @@ public:
 		public:
 			email_attachment();
 
-			void set_data(const QByteArray& data);
-			void set_content_type(email_content_t type);
-			void set_content_type(const QString& mime_type);
+			void set_data(const QByteArray& data, QString mime_type);
 			void add_header(const QString& name, const QString& value);
 
 		private:
 			header_map_t		f_header;
 			QByteArray			f_data;
 		};
-		typedef QVector<QByteData> attachment_t;
+		typedef QVector<email_attachment> attachment_t;
 
 		email();
 		~email();
@@ -95,11 +85,11 @@ public:
 		void				set_cumulative(const QString& object);
 		void				set_priority(email_priority_t priority = EMAIL_PRIORITY_NORMAL);
 		void				clear_list(email_list_t list);
-		void				add_to_list(email_list_t list, const QString& to);
-		void				add_to_list(email_list_t list, const QStringList& to);
+		void				add_to_list(email_list_t list, const QString& address);
+		void				add_to_list(email_list_t list, const QStringList& addresses);
 		void				set_subject(const QString& subject);
 		void				add_header(const QString& name, const QString& value);
-		void				add_attachment(const QByteArray& data);
+		void				add_attachment(const email_attachment& data);
 
 	private:
 		QString						f_from;
@@ -107,7 +97,7 @@ public:
 		list_vector_t				f_list;
 		QString						f_subject;
 		header_map_t				f_header;
-		attachements_t				f_attachments;
+		attachment_t				f_attachment;
 	};
 
 	sendmail();
@@ -118,10 +108,7 @@ public:
 	virtual int64_t 	do_update(int64_t last_updated);
 
 	void				on_bootstrap(snap_child *snap);
-	virtual void 		on_generate_main_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body);
-	void				on_generate_page_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body);
-
-	void				sendemail(const email& e);
+	void				on_sendemail(const email& e);
 
 private:
 	void content_update(int64_t variables_timestamp);
