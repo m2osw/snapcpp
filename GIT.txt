@@ -1,0 +1,15 @@
+
+# check what you've changed (verify that you want to commit all of those)
+git diff [<filename>]
+
+# -a == all
+git commit -m 'info about commit' -a
+git commit -m 'info about commit' <filename>
+
+# retrieve data from repository (changes by others)
+git pull origin master
+
+# push your changes to the server (you may need a pull first)
+git push origin
+
+
