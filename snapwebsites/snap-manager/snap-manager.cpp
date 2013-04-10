@@ -319,7 +319,7 @@ void snap_manager::snapStats()
 		msg.exec();
 		return;
 	}
-	// send the #INFO command
+	// send the #STATS command
 	if(socket.write("#STATS\n", 7) != 7) {
 		console->addItem("Unknown state.");
 		QMessageBox msg(QMessageBox::Critical, "Connection to Snap! Server", "Snap! Manager was not able to communicate with the Snap! Server (write error).", QMessageBox::Ok, this);
