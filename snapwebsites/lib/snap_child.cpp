@@ -766,7 +766,19 @@ void snap_child::setup_uri()
 		die(503, "", "HTTP_HOST is required but not defined in your request.", "HTTP_HOST was not defined in the user request");
 		NOTREACHED();
 	}
-	f_uri.set_domain(f_env["HTTP_HOST"]);
+	QString host(f_env["HTTP_HOST"]);
+	int port_pos(host.indexOf(':'));
+	if(port_pos != -1)
+	{
+		// remove the port information
+		host = host.left(port_pos);
+	}
+	if(host.isEmpty())
+	{
+		die(503, "", "HTTP_HOST is required but is empty in your request.", "HTTP_HOST was defined but there was no domain name");
+		NOTREACHED();
+	}
+	f_uri.set_domain(host);
 
 	// PORT
 	if(f_env.count("SERVER_PORT") != 1) {
