@@ -17,15 +17,22 @@
  */
 
 /** \file
- * \brief Implementation of the C library.
+ * \brief Implementation of the TLD parser library.
  *
  * This file includes all the functions available in the C library
- * of libtld.
+ * of libtld that pertain to the parsing of URIs and extraction of
+ * TLDs.
  */
 
 #include "libtld/tld.h"
 #include "tld_data.h"
+#if defined(MO_DARWIN)
+#   include <malloc/malloc.h>
+#endif
+#if !defined(MO_DARWIN) && !defined(MO_FREEBSD)
 #include <malloc.h>
+#endif
+#include <stdlib.h>
 #include <limits.h>
 #include <string.h>
 #include <ctype.h>
@@ -634,6 +641,11 @@ enum tld_result tld_check_uri(const char *uri, struct tld_info *info, const char
     host = uri;
     for(; *uri != '/' && *uri != '\0'; ++uri)
     {
+        if((unsigned char) *uri < ' ')
+        {
+            /* forbid control characters in domain name */
+            return TLD_RESULT_BAD_URI;
+        }
         if(*uri == '@')
         {
             if(username != NULL)
@@ -654,6 +666,7 @@ enum tld_result tld_check_uri(const char *uri, struct tld_info *info, const char
         }
         else if(*uri == ' ' || *uri == '+')
         {
+            /* spaces not allowed in domain name */
             return TLD_RESULT_BAD_URI;
         }
         else if(*uri == '%')
@@ -673,7 +686,7 @@ enum tld_result tld_check_uri(const char *uri, struct tld_info *info, const char
             }
             if(uri[1] == '2' && uri[2] == '0')
             {
-                /* spaces not allowed by caller */
+                /* spaces not allowed in domain name */
                 return TLD_RESULT_BAD_URI;
             }
             if(uri[1] >= '8' && (flags & VALID_URI_ASCII_ONLY))
@@ -720,7 +733,7 @@ enum tld_result tld_check_uri(const char *uri, struct tld_info *info, const char
     anchor = 0;
     for(a = uri; *a != '\0'; ++a)
     {
-        if(*a < ' ')
+        if((unsigned char) *a < ' ')
         {
             /* no control characters allowed */
             return TLD_RESULT_BAD_URI;
@@ -799,7 +812,7 @@ enum tld_result tld_check_uri(const char *uri, struct tld_info *info, const char
 
     /* check the domain */
     length = (int) (port - host);
-    if(length >= sizeof(domain))
+    if(length >= (int) (sizeof(domain) / sizeof(domain[0])))
     {
         /* sub-domains + domain + TLD is more than 255 characters?!
          * note that the host main include many %XX characters but

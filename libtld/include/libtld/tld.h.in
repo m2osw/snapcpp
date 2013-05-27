@@ -25,7 +25,7 @@
  */
 
 #if ( defined(LIBTLD_DLL) || defined(_WINDLL) ) && ( defined(_WINDOWS) || defined(WINDOWS) )
-#ifdef tld_EXPORT
+#ifdef tld_EXPORTS
 #define LIBTLD_EXPORT __declspec(dllexport)
 #else
 #define LIBTLD_EXPORT __declspec(dllimport)
@@ -95,11 +95,35 @@ struct tld_info
 #define VALID_URI_NO_SPACES   0x0002
 
 
+extern LIBTLD_EXPORT const char *tld_version();
+
+
 extern LIBTLD_EXPORT void tld_clear_info(struct tld_info *info);
 extern LIBTLD_EXPORT enum tld_result tld(const char *uri, struct tld_info *info);
 extern LIBTLD_EXPORT enum tld_result tld_check_uri(const char *uri, struct tld_info *info, const char *protocols, int flags);
 
-extern LIBTLD_EXPORT const char *tld_version();
+
+
+struct tld_email
+{
+    const char *        f_group;
+    const char *        f_original_email;
+    const char *        f_fullname;
+    const char *        f_username;
+    const char *        f_domain;
+    const char *        f_email_only;
+    const char *        f_canonalized_email;
+};
+
+struct tld_email_list;
+
+extern LIBTLD_EXPORT struct tld_email_list *tld_email_alloc();
+extern LIBTLD_EXPORT void tld_email_free(struct tld_email_list *list);
+extern LIBTLD_EXPORT enum tld_result tld_email_parse(struct tld_email_list *list, const char *emails, int flags);
+extern LIBTLD_EXPORT int tld_email_count(struct tld_email_list *list);
+extern LIBTLD_EXPORT void tld_email_rewind(struct tld_email_list *list);
+extern LIBTLD_EXPORT int tld_email_next(struct tld_email_list *list, struct tld_email *e);
+
 
 #ifdef __cplusplus
 }
@@ -108,6 +132,7 @@ extern LIBTLD_EXPORT const char *tld_version();
 #ifdef __cplusplus
 /* For C++ users */
 #include <string>
+#include <vector>
 #include <stdexcept>
 struct invalid_domain : public std::runtime_error
 {
@@ -134,6 +159,42 @@ private:
     std::string f_domain;
     tld_info f_info;
     tld_result f_result;
+};
+
+struct LIBTLD_EXPORT tld_email_list
+{
+public:
+    struct tld_email_t
+    {
+        tld_result parse(const std::string& email);
+        tld_result parse_group(const std::string& group);
+
+        std::string         f_group;
+        std::string         f_original_email;
+        std::string         f_fullname;
+        std::string         f_username;
+        std::string         f_domain;
+        std::string         f_email_only;
+        std::string         f_canonalized_email;
+    };
+    typedef std::vector<tld_email_t>      tld_email_list_t;
+
+    tld_email_list();
+    tld_result parse(const std::string& emails, int flags);
+    int count() const;
+    void rewind() const;
+    bool next(tld_email_t& e) const;
+    bool next(tld_email *e) const;
+
+private:
+    void parse_all_emails();
+
+    std::string         f_input;
+    int                 f_flags;
+    tld_result          f_result;
+    std::string         f_last_group;
+    mutable int         f_pos;
+    tld_email_list_t    f_email_list;
 };
 #endif
 

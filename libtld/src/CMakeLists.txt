@@ -39,6 +39,7 @@ include_directories(
 add_library(tld SHARED
     tld.c
     tld_data.c
+    tld_emails.cpp
     tld_object.cpp
 )
 install(
@@ -58,6 +59,7 @@ include_directories(
 add_library(tld_static STATIC
     tld.c
     tld_data.c
+    tld_emails.cpp
     tld_object.cpp
 )
 # We need the -fPIC to use this library as extension of PHP, etc.

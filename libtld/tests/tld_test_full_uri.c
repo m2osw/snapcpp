@@ -32,6 +32,7 @@ extern unsigned short tld_start_offset;
 extern unsigned short tld_end_offset;
 
 int err_count = 0;
+int verbose = 0;
 
 
 void error(const char *msg)
@@ -242,9 +243,100 @@ const struct test_info test_info_entries[] =
       { TLD_CATEGORY_UNDEFINED, TLD_STATUS_UNDEFINED, NULL, NULL, -1 }
     },
     {
+      "http://www.m2osw.orange.om/missing/question/mark&good=values&here=perfect",
+      PROTOCOLS,
+      0,
+      TLD_RESULT_BAD_URI,
+      { TLD_CATEGORY_UNDEFINED, TLD_STATUS_UNDEFINED, NULL, NULL, -1 }
+    },
+    {
+      "http://www.m2osw.orange.om/invalid%9ftoo/large",
+      PROTOCOLS,
+      VALID_URI_ASCII_ONLY,
+      TLD_RESULT_BAD_URI,
+      { TLD_CATEGORY_UNDEFINED, TLD_STATUS_UNDEFINED, NULL, NULL, -1 }
+    },
+    {
+      "http://www.m2osw.orange.om/invalid%9ztoo/large",
+      PROTOCOLS,
+      0,
+      TLD_RESULT_BAD_URI,
+      { TLD_CATEGORY_UNDEFINED, TLD_STATUS_UNDEFINED, NULL, NULL, -1 }
+    },
+    {
+      "http://www.m2osw.orange.om/invalid%z9too/large",
+      PROTOCOLS,
+      0,
+      TLD_RESULT_BAD_URI,
+      { TLD_CATEGORY_UNDEFINED, TLD_STATUS_UNDEFINED, NULL, NULL, -1 }
+    },
+    {
+      "http://www.m2osw.backspace.\010.no/forbid/control-characters",
+      PROTOCOLS,
+      0,
+      TLD_RESULT_BAD_URI,
+      { TLD_CATEGORY_UNDEFINED, TLD_STATUS_UNDEFINED, NULL, NULL, -1 }
+    },
+    {
+      "http://www.m2osw.backspace.no/forbid/control-characters/\010/in/path/too",
+      PROTOCOLS,
+      0,
+      TLD_RESULT_BAD_URI,
+      { TLD_CATEGORY_UNDEFINED, TLD_STATUS_UNDEFINED, NULL, NULL, -1 }
+    },
+    {
       "http://www.m2osw.and\xF8y.no/forbid/special-characters",
       PROTOCOLS,
       VALID_URI_ASCII_ONLY,
+      TLD_RESULT_BAD_URI,
+      { TLD_CATEGORY_UNDEFINED, TLD_STATUS_UNDEFINED, NULL, NULL, -1 }
+    },
+    {
+      "http://www.m2osw.and%F8y.no/forbid/special-characters",
+      PROTOCOLS,
+      VALID_URI_ASCII_ONLY,
+      TLD_RESULT_BAD_URI,
+      { TLD_CATEGORY_UNDEFINED, TLD_STATUS_UNDEFINED, NULL, NULL, -1 }
+    },
+    {
+      "http://www.m2osw.and .no/forbid/spaces",
+      PROTOCOLS,
+      VALID_URI_ASCII_ONLY,
+      TLD_RESULT_BAD_URI,
+      { TLD_CATEGORY_UNDEFINED, TLD_STATUS_UNDEFINED, NULL, NULL, -1 }
+    },
+    {
+      "http://www.m2osw.and+.no/forbid/spaces",
+      PROTOCOLS,
+      VALID_URI_ASCII_ONLY,
+      TLD_RESULT_BAD_URI,
+      { TLD_CATEGORY_UNDEFINED, TLD_STATUS_UNDEFINED, NULL, NULL, -1 }
+    },
+    {
+      "http://www.m2osw.and%20.no/forbid/spaces",
+      PROTOCOLS,
+      VALID_URI_ASCII_ONLY,
+      TLD_RESULT_BAD_URI,
+      { TLD_CATEGORY_UNDEFINED, TLD_STATUS_UNDEFINED, NULL, NULL, -1 }
+    },
+    {
+      "http://www.m2osw.%1F.no/escape/forbidden",
+      PROTOCOLS,
+      VALID_URI_ASCII_ONLY,
+      TLD_RESULT_BAD_URI,
+      { TLD_CATEGORY_UNDEFINED, TLD_STATUS_UNDEFINED, NULL, NULL, -1 }
+    },
+    {
+      "http://www.m2osw.no/large/characters\xF0/forbidden",
+      PROTOCOLS,
+      VALID_URI_ASCII_ONLY,
+      TLD_RESULT_BAD_URI,
+      { TLD_CATEGORY_UNDEFINED, TLD_STATUS_UNDEFINED, NULL, NULL, -1 }
+    },
+    {
+      "http://a--really--long--domain-name--is-actually--forbidden.this--is--done-by--checking--the--length--which--is--limited--to--two--hundred--and--fifty--six--characters.note--that--the--buffer--must--include--a--null--terminator--which--means--you--really--are--limited--to--255--characters.www.m2osw.no/large/characters\xF0/forbidden",
+      PROTOCOLS,
+      0,
       TLD_RESULT_BAD_URI,
       { TLD_CATEGORY_UNDEFINED, TLD_STATUS_UNDEFINED, NULL, NULL, -1 }
     },
@@ -262,6 +354,27 @@ const struct test_info test_info_entries[] =
       0,
       TLD_RESULT_SUCCESS,
       { TLD_CATEGORY_COUNTRY, TLD_STATUS_VALID, "United Kingdom", ".ltd%2Euk/", 15 }
+    },
+    {
+      "http://www.m2osw.orange.ac.om/valid%9fcharacter",
+      PROTOCOLS,
+      0,
+      TLD_RESULT_SUCCESS,
+      { TLD_CATEGORY_COUNTRY, TLD_STATUS_VALID, "Oman", ".ac.om", 23 }
+    },
+    {
+      "http://www.m2osw.orange.ac.om/valid\x9f/character",
+      PROTOCOLS,
+      0,
+      TLD_RESULT_SUCCESS,
+      { TLD_CATEGORY_COUNTRY, TLD_STATUS_VALID, "Oman", ".ac.om", 23 }
+    },
+    {
+      "ftp://www.m2osw.ltd%2euk/encoded/period", /* still encoded */
+      PROTOCOLS,
+      0,
+      TLD_RESULT_SUCCESS,
+      { TLD_CATEGORY_COUNTRY, TLD_STATUS_VALID, "United Kingdom", ".ltd%2euk/", 15 }
     },
     {
       "http://m2osw.org.nr/encoded/period?#&=55", /* looks like an empty variable name */
@@ -313,7 +426,7 @@ void test_uri()
 {
     struct tld_info info;
     enum tld_result result;
-    int i;
+    size_t i;
 
     for(i = 0; i < test_info_entries_length; ++i)
     {
@@ -399,7 +512,15 @@ void test_uri()
 
 int main(int argc, char *argv[])
 {
-    fprintf(stderr, "testing tld version %s: tld_valid_uri() function\n", tld_version());
+    fprintf(stderr, "testing tld full URI version %s: tld_valid_uri() function\n", tld_version());
+
+	if(argc > 1)
+	{
+		if(strcmp(argv[1], "-v") == 0)
+		{
+			verbose = 1;
+		}
+	}
 
     /* call all the tests, one by one
      * failures are "recorded" in the err_count global variable

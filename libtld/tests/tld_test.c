@@ -32,6 +32,7 @@ extern unsigned short tld_start_offset;
 extern unsigned short tld_end_offset;
 
 int err_count = 0;
+int verbose = 0;
 
 /*
  * This test calls the tld() function with all the TLDs and then
@@ -90,11 +91,13 @@ void test_all()
 		"tld.",
 		"george.snap.",
 		"very.long.sub.domain.ext.en.sion.here."
+		"host.%20.space."
+		"host.%fa.u-acute."
+		"host.%FA.U-acute."
 	};
 	struct tld_info	info;
 	char			uri[256], extension_uri[256];
-	int				i, j, k, l, p, max_subdomains;
-	char			*s;
+	int				i, j, p, max_subdomains;
 	enum tld_result	r;
 
 	max_subdomains = sizeof(sub_domains) / sizeof(sub_domains[0]);
@@ -110,7 +113,7 @@ void test_all()
 			memset(&info, 0xFE, sizeof(info));
 			r = tld(uri, &info);
 			/*
-			for(l = 0; l < sizeof(info); ++l)
+			for(int l = 0; l < sizeof(info); ++l)
 			{
 				fprintf(stderr, "0x%02X ", ((unsigned char*)&info)[l]);
 			}
@@ -125,7 +128,7 @@ void test_all()
 			{
 				if(tld_descriptions[i].f_exception_apply_to == USHRT_MAX)
 				{
-					fprintf(stderr, "error: domain name for \"%s\" (%d) is said to be an exception but it has no apply-to parameter.\n",
+					fprintf(stderr, "error: domain name for \"%s\" (%d) is said to be an exception but it has no apply-to parameter. (result: %d)\n",
 							uri, i, r);
 					++err_count;
 				}
@@ -234,10 +237,11 @@ void test_unknown()
 	{
 		const char *		f_uri;
 	};
-	struct bad_data	d[] = {
-		"this.is.wrong",
-		"missing.tld",
-		".net.absolutely.com.no.info.on.this"
+	struct bad_data	d[] =
+	{
+		{ "this.is.wrong" },
+		{ "missing.tld" },
+		{ ".net.absolutely.com.no.info.on.this" }
 	};
 	struct tld_info	info;
 	int i, max;
@@ -358,6 +362,14 @@ void test_invalid()
 int main(int argc, char *argv[])
 {
 	fprintf(stderr, "testing tld version %s\n", tld_version());
+
+	if(argc > 1)
+	{
+		if(strcmp(argv[1], "-v") == 0)
+		{
+			verbose = 1;
+		}
+	}
 
 	/* call all the tests, one by one
 	 * failures are "recorded" in the err_count global variable

@@ -25,6 +25,7 @@
 #include <string.h>
 
 int err_count = 0;
+int verbose = 0;
 
 void test_compare()
 {
@@ -172,7 +173,10 @@ void test_search_array(int start, int end)
 	/* now test all from the arrays */
 	for(i = start; i < end; ++i)
 	{
-/*printf("{%d..%d} i = %d, [%s]\n", start, end, i, tld_descriptions[i].f_tld);*/
+		if(verbose)
+		{
+			printf("{%d..%d} i = %d, [%s]\n", start, end, i, tld_descriptions[i].f_tld);
+		}
 		r = search(start, end, tld_descriptions[i].f_tld, strlen(tld_descriptions[i].f_tld));
 		if(r != i)
 		{
@@ -180,7 +184,7 @@ void test_search_array(int start, int end)
 					tld_descriptions[i].f_tld, i, r);
 			++err_count;
 		}
-		if(tld_descriptions[i].f_start_offset != -1)
+		if(tld_descriptions[i].f_start_offset != USHRT_MAX)
 		{
 			test_search_array(tld_descriptions[i].f_start_offset,
 							  tld_descriptions[i].f_end_offset);
@@ -196,7 +200,15 @@ void test_search_all()
 
 int main(int argc, char *argv[])
 {
-	fprintf(stderr, "testing tld version %s\n", tld_version());
+	fprintf(stderr, "testing internal tld version %s\n", tld_version());
+
+	if(argc > 1)
+	{
+		if(strcmp(argv[1], "-v") == 0)
+		{
+			verbose = 1;
+		}
+	}
 
 	/* call all the tests, one by one
 	 * failures are "recorded" in the err_count global variable

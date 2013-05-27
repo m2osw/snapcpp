@@ -17,12 +17,14 @@
  */
 
 #include "libtld/tld.h"
-//#include <string.h>
+#include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
 //#include <limits.h>
 
 int err_count = 0;
+int verbose = 0;
+
 
 void error(const std::string& msg)
 {
@@ -45,7 +47,10 @@ void error(const std::string& msg)
 
 void test_valid_uri(const char *uri, const char *tld, const char *domain, const char *sub_domains, tld_category category, const char *country)
 {
-    printf("testing uri \"%s\"\n", uri);
+    if(verbose)
+    {
+        printf("testing uri \"%s\"\n", uri);
+    }
 
     // create object with a URI
     tld_object o(uri);
@@ -116,7 +121,10 @@ void test_invalid()
 {
     {
         // when empty that's equivalent to NULL or ""
-        printf("testing NULL pointer\n");
+        if(verbose)
+        {
+            printf("testing NULL pointer\n");
+        }
 
         tld_object bad;
 
@@ -164,7 +172,10 @@ void test_invalid()
 
     {
         // unknown TLD
-        printf("testing \"www.example.unknown\"\n");
+        if(verbose)
+        {
+            printf("testing \"www.example.unknown\"\n");
+        }
 
         std::string uri("www.example.unknown");
         tld_object bad(uri);
@@ -215,7 +226,10 @@ void test_invalid()
     }
 
     {
-        printf("testing \"el.salvador.sv\"\n");
+        if(verbose)
+        {
+            printf("testing \"el.salvador.sv\"\n");
+        }
 
         // invalid TLD
         std::string uri("el.salvador.sv");
@@ -271,7 +285,15 @@ void test_invalid()
 
 int main(int argc, char *argv[])
 {
-    printf("testing tld version %s\n", tld_version());
+    printf("testing tld object version %s\n", tld_version());
+
+    if(argc > 1)
+    {
+        if(strcmp(argv[1], "-v") == 0)
+        {
+            verbose = 1;
+        }
+    }
 
     /* Call all the tests, one by one.
      *

@@ -1,0 +1,755 @@
+/* TLD library -- test the TLD interface for emails
+ * Copyright (C) 2013  Made to Order Software Corp.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+ */
+
+#include "libtld/tld.h"
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <sstream>
+
+int err_count = 0;
+int verbose = 0;
+
+
+void error(const std::string& msg)
+{
+    fprintf(stderr, "%s\n", msg.c_str());
+    ++err_count;
+}
+
+
+#define EXPECTED_THROW(s, e) \
+    try \
+    { \
+        static_cast<void>(s); \
+        error("error: bad." #s "() of \"\" did not throw an error."); \
+    } \
+    catch(const e&) \
+    { \
+    }
+
+
+struct valid_email
+{
+    const char *        f_input_email;
+    int                 f_count;
+};
+
+//const char *        f_group;
+//const char *        f_original_email;
+//const char *        f_fullname;
+//const char *        f_username;
+//const char *        f_domain;
+//const char *        f_email_only;
+//const char *        f_canonalized_email;
+
+const tld_email list_of_results[] =
+{
+    { "", "alexis@m2osw.com",
+      "", "alexis", "m2osw.com", "alexis@m2osw.com", "alexis@m2osw.com" },
+    { "", "alexis@m2osw.com",
+      "", "alexis", "m2osw.com", "alexis@m2osw.com", "alexis@m2osw.com" },
+    { "", "\"Wilke, Alexis\" <alexis@m2osw.com>",
+      "Wilke, Alexis", "alexis", "m2osw.com", "alexis@m2osw.com", "\"Wilke, Alexis\" <alexis@m2osw.com>" },
+    { "", "(* Pascal Comments *) \t alexis@m2osw.com\n (Just (kidding) he! he!)",
+      "", "alexis", "m2osw.com", "alexis@m2osw.com", "alexis@m2osw.com" },
+    { "", "(Start-Comment)alexis@ \t [ \t m2osw.com \t ] \n (More (comment) here)",
+      "", "alexis", "m2osw.com", "alexis@m2osw.com", "alexis@m2osw.com" },
+    { "", "(Test with dots in user name) al.ex.is@ \t [ \t m2osw.com \t ] \n (More (comments) there)",
+      "", "al.ex.is", "m2osw.com", "al.ex.is@m2osw.com", "al.ex.is@m2osw.com" },
+    { "", "< (Test with dots in user name) al.ex.is@ \t [ \t m2osw.com \t ] \n (More (comments) there) >",
+      "", "al.ex.is", "m2osw.com", "al.ex.is@m2osw.com", "al.ex.is@m2osw.com" },
+    { "", "(With full name) Alexis Wilke < (Test with dots in user name) al.ex.is@ \t [ \t m2osw.com \t ] \n (More (comments) there) >",
+      "Alexis Wilke", "al.ex.is", "m2osw.com", "al.ex.is@m2osw.com", "\"Alexis Wilke\" <al.ex.is@m2osw.com>" },
+    { "This Group", "",
+      "", "", "", "", "" },
+    { "This Group", "(With full name) Alexis Wilke < \n alexis \t @ \t [ \t m2osw.com \t ] \n (Less) >",
+      "Alexis Wilke", "alexis", "m2osw.com", "alexis@m2osw.com", "\"Alexis Wilke\" <alexis@m2osw.com>" },
+    { "People", "",
+      "", "", "", "", "" },
+    { "People", "Alexis Wilke <alexis@m2osw.com>",
+      "Alexis Wilke", "alexis", "m2osw.com", "alexis@m2osw.com", "\"Alexis Wilke\" <alexis@m2osw.com>" },
+    { "People", "John Smith <john@m2osw.com>",
+      "John Smith", "john", "m2osw.com", "john@m2osw.com", "\"John Smith\" <john@m2osw.com>" },
+    { "Lists", "",
+      "", "", "", "", "" },
+    { "Lists", "Contact <contact@m2osw.com>",
+      "Contact", "contact", "m2osw.com", "contact@m2osw.com", "\"Contact\" <contact@m2osw.com>" },
+    { "Lists", "Resume <resume@m2osw.com>",
+      "Resume", "resume", "m2osw.com", "resume@m2osw.com", "\"Resume\" <resume@m2osw.com>" },
+    { "", "normal@m2osw.com",
+      "", "normal", "m2osw.com", "normal@m2osw.com", "normal@m2osw.com" },
+    { "No-Reply", "",
+      "", "", "", "", "" },
+    { "No-Reply", "no-reply@m2osw.com",
+      "", "no-reply", "m2osw.com", "no-reply@m2osw.com", "no-reply@m2osw.com" },
+    { "", "\"Complex <name> for !a! \\\"USER\\\"\" <user@example.co.uk>",
+      "Complex <name> for !a! \"USER\"", "user", "example.co.uk", "user@example.co.uk", "\"Complex <name> for !a! \"USER\"\" <user@example.co.uk>" },
+    { "", "(Comment \n New-Line) alexis@m2osw.com",
+      "", "alexis", "m2osw.com", "alexis@m2osw.com", "alexis@m2osw.com" },
+    { "", "(Comment (Sub-Comment (Sub-Sub-Comment (Sub-Sub-Sub-Comment \\) This is still the Sub-Sub-Sub-Comment!!!)))) alexis@m2osw.com",
+      "", "alexis", "m2osw.com", "alexis@m2osw.com", "alexis@m2osw.com" },
+    { "Group with  some sub-comments", "",
+      "", "", "", "", "" },
+    { "Group with  some sub-comments", "alexis@m2osw.com",
+      "", "alexis", "m2osw.com", "alexis@m2osw.com", "alexis@m2osw.com" },
+
+    { NULL, NULL, NULL, NULL, NULL, NULL, NULL }
+};
+
+const valid_email list_of_valid_emails[] =
+{
+    { "alexis@m2osw.com", 1 },
+    { " \t alexis@m2osw.com\n \t", 1 },
+    { "\"Wilke, Alexis\" <alexis@m2osw.com>", 1 },
+    { " (* Pascal Comments *) \t alexis@m2osw.com\n (Just (kidding) he! he!) \t", 1 },
+    { "(Start-Comment)alexis@ \t [ \t m2osw.com \t ] \n (More (comment) here) \r\n\t", 1 },
+    { "(Test with dots in user name) al.ex.is@ \t [ \t m2osw.com \t ] \n (More (comments) there) \r\n\t", 1 },
+    { "< (Test with dots in user name) al.ex.is@ \t [ \t m2osw.com \t ] \n (More (comments) there) > \r\n\t", 1 },
+    { "(With full name) Alexis Wilke < (Test with dots in user name) al.ex.is@ \t [ \t m2osw.com \t ] \n (More (comments) there) > \r\n\t", 1 },
+    { "  (Now a group:) This Group: (With full name) Alexis Wilke < \n alexis \t @ \t [ \t m2osw.com \t ] \n (Less) >; \r\n\t", 2 },
+    { "People: Alexis Wilke <alexis@m2osw.com>, John Smith <john@m2osw.com>; Lists: Contact <contact@m2osw.com>, Resume <resume@m2osw.com>; normal@m2osw.com, No-Reply: no-reply@m2osw.com;", 9 },
+    { "\"Complex <name> for !a! \\\"USER\\\"\" <user@example.co.uk>", 1 },
+    { "(Comment \n New-Line) alexis@m2osw.com", 1 },
+    { "(Comment (Sub-Comment (Sub-Sub-Comment (Sub-Sub-Sub-Comment \\) This is still the Sub-Sub-Sub-Comment!!!)))) alexis@m2osw.com", 1 },
+    { "Group with (Comment (Sub-Comment (Sub-Sub-Comment (Sub-Sub-Sub-Comment \\) This is still the Sub-Sub-Sub-Comment!!!)))) some sub-comments \t : alexis@m2osw.com;", 2 },
+
+    // end of list
+    { NULL, 0 }
+};
+
+
+std::string email_to_vstring(const std::string& e)
+{
+    std::string result;
+    char buf[3];
+
+    for(const char *s(e.c_str()); *s != '\0'; ++s)
+    {
+        if(static_cast<unsigned char>(*s) < ' ')
+        {
+            switch(*s)
+            {
+            case '\a': result += "\\a"; break;
+            case '\b': result += "\\b"; break;
+            case '\f': result += "\\f"; break;
+            case '\n': result += "\\n"; break;
+            case '\r': result += "\\r"; break;
+            case '\t': result += "\\t"; break;
+            case '\v': result += "\\v"; break;
+            default:
+                buf[0] = '^';
+                buf[1] = *s + '@';
+                buf[2] = '\0';
+                result += buf;
+                break;
+
+           }
+        }
+        else if(*s == 0x7F)
+        {
+            result += "<DEL>";
+        }
+        else if(static_cast<unsigned char>(*s) > 0x80)
+        {
+            static const char *hc = "0123456789ABCDEF";
+            result += "\\x";
+            buf[0] = hc[*s >> 4];
+            buf[1] = hc[*s & 15];
+            buf[2] = '\0';
+            result += buf;
+        }
+        else
+        {
+            result += *s;
+        }
+    }
+
+    return result;
+}
+
+
+void test_valid_emails()
+{
+    const tld_email *results(list_of_results);
+    for(const valid_email *v(list_of_valid_emails); v->f_input_email != NULL; ++v)
+    {
+        if(verbose)
+        {
+            printf("*** testing email \"%s\", start with C++ test\n", email_to_vstring(v->f_input_email).c_str());
+            fflush(stdout);
+        }
+
+        const tld_email * const cresults(results);
+
+        // C++ test
+        {
+            tld_email_list list;
+            tld_result r(list.parse(v->f_input_email, 0));
+            int max(v->f_count);
+            if(r != TLD_RESULT_SUCCESS)
+            {
+                error("error: unexpected returned value");
+            }
+            else if(list.count() != max)
+            {
+                fprintf(stderr, "parse() returned %d as count, expected %d\n", list.count(), max);
+                error("error: unexpected count");
+            }
+            else
+            {
+                // test the C++ function first
+                {
+                    tld_email_list::tld_email_t e;
+                    for(int i(0); i < max; ++i, ++results)
+                    {
+                        if(results->f_group == NULL)
+                        {
+                            error("error: end of results array reached before completion of the test.\n");
+                            return;
+                        }
+
+                        if(!list.next(e))
+                        {
+                            error("error: next() returned false too soon.");
+                        }
+                        if(e.f_group != results->f_group)
+                        {
+                            error("error: next() returned the wrong group. Got \"" + e.f_group + "\" instead of \"" + results->f_group + "\".");
+                        }
+                        if(e.f_original_email != results->f_original_email)
+                        {
+                            error("error: next() returned the wrong original email. Got \"" + e.f_original_email + "\" instead of \"" + results->f_original_email + "\".");
+                        }
+                        if(e.f_fullname != results->f_fullname)
+                        {
+                            error("error: next() returned the wrong fullname.");
+                        }
+                        if(e.f_username != results->f_username)
+                        {
+                            error("error: next() returned the wrong username.");
+                        }
+                        if(e.f_domain != results->f_domain)
+                        {
+                            error("error: next() returned the wrong username.");
+                        }
+                        if(e.f_email_only != results->f_email_only)
+                        {
+                            error("error: next() returned the wrong email only.");
+                        }
+                        if(e.f_canonalized_email != results->f_canonalized_email)
+                        {
+                            error("error: next() returned the wrong canonalized email. Got \"" + e.f_canonalized_email + "\" instead of \"" + results->f_canonalized_email + "\".");
+                        }
+                    }
+                    if(list.next(e))
+                    {
+                        error("error: next(e) returned the wrong result, it should be false after the whole set of emails were read.");
+                    }
+                }
+                // try the C function which also allows us to test the rewind()
+                list.rewind();
+                {
+                    results = cresults;
+                    tld_email e;
+                    for(int i(0); i < max; ++i, ++results)
+                    {
+                        if(!list.next(&e))
+                        {
+                            error("error: next() returned false too soon.");
+                        }
+                        if(strcmp(e.f_group, results->f_group) != 0)
+                        {
+                            error("error: next() returned the wrong group. Got \"" + std::string(e.f_group) + "\" from \"" + results->f_group + "\".");
+                        }
+                        if(strcmp(e.f_original_email, results->f_original_email) != 0)
+                        {
+                            error("error: next() returned the wrong original email. Got \"" + std::string(e.f_original_email) + "\" instead of \"" + results->f_original_email + "\".");
+                        }
+                        if(strcmp(e.f_fullname, results->f_fullname) != 0)
+                        {
+                            error("error: next() returned the wrong fullname.");
+                        }
+                        if(strcmp(e.f_username, results->f_username) != 0)
+                        {
+                            error("error: next() returned the wrong username.");
+                        }
+                        if(strcmp(e.f_domain, results->f_domain) != 0)
+                        {
+                            error("error: next() returned the wrong username.");
+                        }
+                        if(strcmp(e.f_email_only, results->f_email_only) != 0)
+                        {
+                            error("error: next() returned the wrong email only.");
+                        }
+                        if(strcmp(e.f_canonalized_email, results->f_canonalized_email) != 0)
+                        {
+                            error("error: next() returned the wrong canonalized email.");
+                        }
+                    }
+                    if(list.next(&e))
+                    {
+                        error("error: next(&e) returned the wrong result, it should be false after the whole set of emails were read.");
+                    }
+                }
+            }
+        }
+
+        if(verbose)
+        {
+            printf("*** C test now\n");
+            fflush(stdout);
+        }
+        // C test
+        {
+            tld_email_list *list;
+            list = tld_email_alloc();
+            tld_result r = tld_email_parse(list, v->f_input_email, 0);
+            int max(v->f_count);
+            if(r != TLD_RESULT_SUCCESS)
+            {
+                error("error: unexpected returned value");
+            }
+            else if(tld_email_count(list) != max)
+            {
+                fprintf(stderr, "parse() returned %d as count, expected %d\n", tld_email_count(list), max);
+                error("error: unexpected count");
+            }
+            else
+            {
+                // test the C++ function first
+                for(int repeat(0); repeat < 2; ++repeat)
+                {
+                    results = cresults;
+                    struct tld_email e;
+                    for(int i(0); i < max; ++i, ++results)
+                    {
+                        if(results->f_group == NULL)
+                        {
+                            error("error: end of results array reached before completion of the test.\n");
+                            return;
+                        }
+
+                        if(tld_email_next(list, &e) != 1)
+                        {
+                            error("error: next() returned false too soon.");
+                        }
+                        if(strcmp(e.f_group, results->f_group) != 0)
+                        {
+                            error("error: next() returned the wrong group. Got \"" + std::string(e.f_group) + "\" from \"" + results->f_group + "\".");
+                        }
+                        if(strcmp(e.f_original_email, results->f_original_email) != 0)
+                        {
+                            error("error: next() returned the wrong original email. Got \"" + std::string(e.f_original_email) + "\" instead of \"" + results->f_original_email + "\".");
+                        }
+                        if(strcmp(e.f_fullname, results->f_fullname) != 0)
+                        {
+                            error("error: next() returned the wrong fullname.");
+                        }
+                        if(strcmp(e.f_username, results->f_username) != 0)
+                        {
+                            error("error: next() returned the wrong username.");
+                        }
+                        if(strcmp(e.f_domain, results->f_domain) != 0)
+                        {
+                            error("error: next() returned the wrong username.");
+                        }
+                        if(strcmp(e.f_email_only, results->f_email_only) != 0)
+                        {
+                            error("error: next() returned the wrong email only.");
+                        }
+                        if(strcmp(e.f_canonalized_email, results->f_canonalized_email) != 0)
+                        {
+                            error("error: next() returned the wrong canonalized email.");
+                        }
+                    }
+                    if(tld_email_next(list, &e) != 0)
+                    {
+                        error("error: next(&e) returned the wrong result, it should be false after the whole set of emails were read.");
+                    }
+                    // try again
+                    tld_email_rewind(list);
+                }
+            }
+            tld_email_free(list);
+        }
+    }
+
+    {
+        // all valid atom characters
+        const char valid_chars[] =
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+            "abcdefghijklmnopqrstuvwxyz"
+            "0123456789"
+            "!#$%&'*+-/=?^_`{|}~" // here there is a NUL
+        ;
+        for(size_t i(0); i < sizeof(valid_chars) / sizeof(valid_chars[0]) - 1; ++i)
+        {
+            tld_email_list list;
+            std::string e("abc");
+            e += valid_chars[i];
+            e += "def@m2osw.com";
+            if(verbose)
+            {
+                printf("*** testing all atom characters with email \"%s\"\n", email_to_vstring(e).c_str());
+                fflush(stdout);
+            }
+            tld_result r(list.parse(e, 0));
+            if(r != TLD_RESULT_SUCCESS)
+            {
+                error("error: unexpected returned value");
+            }
+        }
+    }
+
+    {
+        // all valid quoted characters: " " to "\x7E" except the " and \ characters
+        if(sizeof(int) < 4)
+        {
+            error("error: the ctrl variable needs to be at least 32 bits");
+            return;
+        }
+        const int ctrl(1 << '\t');
+        for(size_t i(1); i <= 126; ++i)
+        {
+            switch(i)
+            {
+            case '"':
+            case '\\':
+            case 0x7F:  // not included in the loop anyway
+                break;
+
+            default:
+                if(i >= ' ' || (ctrl & (1 << i)) != 0)
+                {
+                    tld_email_list list;
+                    std::string e("\"abc");
+                    e += static_cast<char>(i);
+                    e += "def\"@m2osw.com";
+                    if(verbose)
+                    {
+                        printf("*** testing all atom characters with email \"%s\"\n", email_to_vstring(e).c_str());
+                        fflush(stdout);
+                    }
+                    tld_result r(list.parse(e, 0));
+                    if(r != TLD_RESULT_SUCCESS)
+                    {
+                        error("error: unexpected returned value");
+                    }
+                }
+                break;
+
+            }
+        }
+    }
+
+    {
+        // all valid quoted pair: '\t' and " " to "\x7E"
+        for(size_t i(31); i <= 126; ++i)
+        {
+            tld_email_list list;
+            std::string e("\"abc\\");
+            if(i == 31)
+            {
+                e += static_cast<char>('\t');
+            }
+            else
+            {
+                e += static_cast<char>(i);
+            }
+            e += "def\"@m2osw.com";
+            if(verbose)
+            {
+                printf("*** testing all atom characters with email \"%s\"\n", email_to_vstring(e).c_str());
+                fflush(stdout);
+            }
+            tld_result r(list.parse(e, 0));
+            if(r != TLD_RESULT_SUCCESS)
+            {
+                error("error: unexpected returned value");
+            }
+        }
+    }
+
+    {
+        // all valid comment characters: " " to "\x7E" except the " and \ characters
+        if(sizeof(int) < 4)
+        {
+            error("error: the ctrl variable needs to be at least 32 bits");
+            return;
+        }
+        const int ctrl((1 << '\t') | (1 << '\r') | (1 << '\n'));
+        for(size_t i(1); i <= 126; ++i)
+        {
+            // we skip all the special characters in a comment since
+            // those are already tested somewhere else
+            switch(i)
+            {
+            case '(': // avoid a sub-comment
+            case ')': // avoid closing the comment mid-way
+            case '\\':  // tested somewhere else
+            case 0x7F:  // not included in the loop anyway
+                break;
+
+            default:
+                if(i >= ' ' || (ctrl & (1 << i)) != 0)
+                {
+                    tld_email_list list;
+                    std::string e("(Comment \"");
+                    e += static_cast<char>(i);
+                    e += "\" char.) alexis@m2osw.com";
+                    if(verbose)
+                    {
+                        printf("*** testing all atom characters with email \"%s\"\n", email_to_vstring(e).c_str());
+                        fflush(stdout);
+                    }
+                    tld_result r(list.parse(e, 0));
+                    if(r != TLD_RESULT_SUCCESS)
+                    {
+                        error("error: unexpected returned value");
+                    }
+                }
+                break;
+
+            }
+        }
+    }
+
+    {
+        // all valid domain characters: "!" to "\x7E" except the [, ], and \ characters
+        for(size_t i('!'); i <= 126; ++i)
+        {
+            // a dot is valid but we cannot test it between two other dots
+            if(i == '[' || i == ']' || i == '\\' || i == '.')
+            {
+                continue;
+            }
+            tld_email_list list;
+            std::string e("alexis@[ m2osw.");
+            e += static_cast<char>(i);
+            e += ".com\t]";
+            if(verbose)
+            {
+                printf("*** testing all atom characters with email \"%s\"\n", email_to_vstring(e).c_str());
+                fflush(stdout);
+            }
+            tld_result r(list.parse(e, 0));
+            if(r != TLD_RESULT_SUCCESS)
+            {
+                error("error: unexpected returned value");
+            }
+        }
+    }
+}
+
+
+
+
+struct invalid_email
+{
+    tld_result          f_result;
+    const char *        f_input_email;
+};
+
+const invalid_email list_of_invalid_emails[] =
+{
+    { TLD_RESULT_INVALID, "alexism2osw.com (missing @)" },
+    { TLD_RESULT_INVALID, " \v alexis@m2osw.com\n \t (bad control)" },
+    { TLD_RESULT_INVALID, " (* Pascal Comments *) \t alexis@m2osw.com\n (missing closing parenthesis\\)" },
+    { TLD_RESULT_INVALID, "(Start-Comment)alexis@ \t [ \t m2osw.com \t ] \n (extra after domain done) \"more\tdata\" \r\n\t" },
+    { TLD_RESULT_INVALID, "(Test with dots in user name) al.ex.is@ \t(missing closing bracket ]) [ \t m2osw.com \t " },
+    { TLD_RESULT_NULL, "< (Test with dots in user name) al.ex.is@ \t [ \t m2osw.com \t ] \n (Missing >) \r\n\t" },
+    { TLD_RESULT_INVALID, "(Full name with period) Alexis.Wilke < (Test with dots in user name) al.ex.is@ \t [ \t m2osw.com \t ] \n (More (comments) there) > \r\n\t" },
+    { TLD_RESULT_INVALID, "  (Now a group:) This Group: (With full name) Alexis Wilke < \n alexis \t @ \t [ \t m2osw.com \t ] \n (missing ;) > \r\n\t" },
+    { TLD_RESULT_INVALID, "Good Group: alexis@m2osw.com, bad-group: test@example.com;" },
+    { TLD_RESULT_INVALID, "(No Group Name): alexis@m2osw.com;" },
+    { TLD_RESULT_INVALID, " (No Group Name) : alexis@m2osw.com;" },
+    { TLD_RESULT_INVALID, ": alexis@m2osw.com;" },
+    { TLD_RESULT_INVALID, "(Group with CTRL) Group \v Unexpected: alexis@m2osw.com;" },
+    { TLD_RESULT_INVALID, "\"alexis@m2osw.com;" },
+    { TLD_RESULT_INVALID, "\"alexis@m2osw.com;\v\"" },
+    { TLD_RESULT_INVALID, "\"Alexis Wilke\\" },  // \ followed by NUL
+    { TLD_RESULT_INVALID, "(Comment with \\\\ followed by NUL: \\" },
+    { TLD_RESULT_INVALID, "(Test Errors Once Done) \"Wilke, Alexis\" <alexis@m2osw.com> \"Bad\"" },
+    { TLD_RESULT_INVALID, "(Comment with CTRL \b) \"Wilke, Alexis\" <alexis@m2osw.com>" },
+    { TLD_RESULT_INVALID, "[m2osw.com]" },
+    { TLD_RESULT_INVALID, "(Test Errors Once Done) \"Wilke, Alexis\" <alexis@m2osw.com> [Bad]" },
+    { TLD_RESULT_INVALID, "(Test Errors Once Done) alexis@start[Bad]" },
+    { TLD_RESULT_INVALID, "(Test Errors Once Done) alexis@[first][Bad]" },
+    { TLD_RESULT_INVALID, "(Test Errors Once Done) alexis@[control:\v]" },
+    { TLD_RESULT_NULL, "(Test Errors Once Done) alexis@[ spaces BAD]" },
+    { TLD_RESULT_INVALID, "(Spurious Angle) alexis>@m2osw.com" },
+    { TLD_RESULT_INVALID, "(Spurious Angle) alexis@m2osw.com>" },
+    { TLD_RESULT_INVALID, "(Double Angle) <alexis@m2osw.com>>" },
+    { TLD_RESULT_NULL, "(Missing domain) <alexis@>" },
+    { TLD_RESULT_NULL, "(Missing domain) alexis@" },
+    { TLD_RESULT_INVALID, "(2 domains) <alexis@[m2osw.com]bad>" },
+    { TLD_RESULT_INVALID, "(Double @) <alexis@m2osw.com> @" },
+    { TLD_RESULT_INVALID, "(Double @) alexis@m2osw.com@" },
+    { TLD_RESULT_INVALID, "(Extra Chars) <alexis@m2osw.com> bad" },
+    { TLD_RESULT_NULL, "(Empty username within brackets) <@m2osw.com>" },
+    { TLD_RESULT_NULL, "(Empty User Name) @m2osw.com" },
+    { TLD_RESULT_INVALID, "(Cannot start with a dot) .alexis@m2osw.com" },
+    { TLD_RESULT_INVALID, "(Cannot start with a dot) <.alexis@m2osw.com>" },
+    { TLD_RESULT_INVALID, "(Cannot end with a dot) alexis.@m2osw.com" },
+    { TLD_RESULT_INVALID, "(Cannot end with a dot) <alexis.@m2osw.com>" },
+    { TLD_RESULT_INVALID, "(Cannot include double dots) ale..xis@m2osw.com" },
+    //{ TLD_RESULT_INVALID, "(End domain with dot not considered valid!) alexis@m2osw.com." }, viewed as valid! (that bad?)
+    { TLD_RESULT_INVALID, "(End domain with dot not considered valid!) <alexis@m2osw.com.>" },
+    { TLD_RESULT_NULL, "(Bad Emails) alexis,m2osw.com" },
+    { TLD_RESULT_INVALID, "(Bad Char) alexis@m2osw\001com" },
+    { TLD_RESULT_NOT_FOUND, "(Bad Extension) alexis@m2osw.comm" },
+    { TLD_RESULT_INVALID, "(Bad Extension) alexis@m2osw.uk" },
+    { TLD_RESULT_INVALID, "(Bad Extension) alexis@m2osw.edu.uk" },
+    { TLD_RESULT_NO_TLD, "(Bad Extension) alexis@m2osw" },
+    { TLD_RESULT_BAD_URI, "(Bad Extension) alexis@[m2osw..com]" },
+
+    // end of list
+    { TLD_RESULT_SUCCESS, NULL }
+};
+
+void test_invalid_emails()
+{
+    for(const invalid_email *v(list_of_invalid_emails); v->f_input_email != NULL; ++v)
+    {
+        if(verbose)
+        {
+            printf("+++ testing email \"%s\"\n", email_to_vstring(v->f_input_email).c_str());
+        }
+
+        // C++ test
+        {
+            tld_email_list list;
+            tld_result r(list.parse(v->f_input_email, 0));
+            if(r != v->f_result)
+            {
+                std::stringstream ss;
+                ss << "error: unexpected return value. Got " << static_cast<int>(r) << ", expected " << static_cast<int>(v->f_result);
+                error(ss.str());
+            }
+        }
+
+        // C test
+        {
+            tld_email_list *list;
+            list = tld_email_alloc();
+            tld_result r = tld_email_parse(list, v->f_input_email, 0);
+            if(r != v->f_result)
+            {
+                std::stringstream ss;
+                ss << "error: unexpected return value. Got " << static_cast<int>(r) << ", expected " << static_cast<int>(v->f_result);
+                error(ss.str());
+            }
+            tld_email_free(list);
+            list = NULL;
+        }
+    }
+}
+
+
+void contract_furfilled(tld_email_list::tld_email_t& e)
+{
+    if(!e.f_group.empty()
+    || !e.f_original_email.empty()
+    || !e.f_fullname.empty()
+    || !e.f_username.empty()
+    || !e.f_domain.empty()
+    || !e.f_email_only.empty()
+    || !e.f_canonalized_email.empty())
+    {
+        error("error: one of the structure parameters was modified on error!");
+    }
+}
+
+
+void test_direct_email()
+{
+    tld_email_list::tld_email_t email;
+
+    ////////////// EMAILS
+    // missing closing \"
+    EXPECTED_THROW(email.parse("\"blah alexis@m2osw.com"), std::logic_error);
+    contract_furfilled(email);
+
+    // missing closing )
+    EXPECTED_THROW(email.parse("(comment alexis@m2osw.com"), std::logic_error);
+    contract_furfilled(email);
+
+    // use of \ at the end of the comment
+    EXPECTED_THROW(email.parse("(comment\\"), std::logic_error);
+    contract_furfilled(email);
+
+    // missing closing ]
+    EXPECTED_THROW(email.parse("alexis@[m2osw.com"), std::logic_error);
+    contract_furfilled(email);
+
+    ////////////// GROUP
+    // missing closing )
+    EXPECTED_THROW(email.parse_group("Group (comment"), std::logic_error);
+    contract_furfilled(email);
+
+    // use of \ at the end of the comment
+    EXPECTED_THROW(email.parse_group("Group (comment \\"), std::logic_error);
+    contract_furfilled(email);
+}
+
+
+
+
+int main(int argc, char *argv[])
+{
+    printf("testing tld emails version %s\n", tld_version());
+
+    if(argc > 1)
+    {
+        if(strcmp(argv[1], "-v") == 0)
+        {
+            verbose = 1;
+        }
+    }
+
+    /* Call all the tests, one by one.
+     *
+     * Failures are "recorded" in the err_count global variable
+     * and the process stops with an error message and exit(1)
+     * if err_count is not zero.
+     *
+     * Exceptions that should not occur are expected to also
+     * be caught and reported as errors.
+     */
+    try
+    {
+        test_valid_emails();
+        test_invalid_emails();
+        test_direct_email();
+    }
+    catch(const invalid_domain&)
+    {
+        error("error: caught an exception when all emails are expected to be valid.");
+    }
+
+    if(err_count)
+    {
+        fprintf(stderr, "%d error%s occured.\n",
+                    err_count, err_count != 1 ? "s" : "");
+    }
+    exit(err_count ? 1 : 0);
+}
+
+/* vim: ts=4 sw=4 et
+ */

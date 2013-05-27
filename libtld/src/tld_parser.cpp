@@ -22,6 +22,9 @@
  * tld_data.c file.
  */
 
+// Qt headers make use of long long which is not considered a valid type
+#pragma GCC diagnostic ignored "-Wlong-long"
+
 #include "libtld/tld.h"
 #include <QtCore/QMap>
 #include <QtCore/QFile>
@@ -99,10 +102,10 @@ QString tld_encode(const QString& tld, int& level)
     for(int l = 0; l < max; ++l) {
         char c(p[l]);
         if(static_cast<unsigned char>(c) < 0x20) {
-            std::cerr << "error: controls characters (^" << (c + '@')
-                    << ") are not allowed in TLDs ("
-                    << p << ").\n";
-            exit(1);
+            std::cerr << "error: controls characters (^" << (c + '@') // LCOV_EXCL_LINE
+                    << ") are not allowed in TLDs (" // LCOV_EXCL_LINE
+                    << p << ").\n"; // LCOV_EXCL_LINE
+            exit(1); // LCOV_EXCL_LINE
         }
         if((c >= 'A' && c <= 'Z')
         || (c >= 'a' && c <= 'z')
@@ -122,8 +125,8 @@ QString tld_encode(const QString& tld, int& level)
         {
             // add/remove as appropriate
             if(c == '/' || c == ':' || c == '&') {
-                std::cerr << "error: character (^" << c << ") is not allowed in TLDs.\n";
-                exit(1);
+                std::cerr << "error: character (^" << c << ") is not allowed in TLDs.\n"; // LCOV_EXCL_LINE
+                exit(1); // LCOV_EXCL_LINE
             }
             result += '%';
             QString v(QString("%1").arg(c & 255, 2, 16, QLatin1Char('0')));
@@ -135,13 +138,13 @@ QString tld_encode(const QString& tld, int& level)
     // where countries defined 5 levels (which is definitively crazy!)
     if(level < 1)
     {
-        std::cerr << "error: level out of range (" << level << ") did you put a period at the beginning of the tld \"" << tld.toUtf8().data() << "\".\n";
-        exit(1);
+        std::cerr << "error: level out of range (" << level << ") did you put a period at the beginning of the tld \"" << tld.toUtf8().data() << "\".\n"; // LCOV_EXCL_LINE
+        exit(1); // LCOV_EXCL_LINE
     }
     if(level > 5)
     {
-        std::cerr << "error: level out of range (" << level << ") if larger than the maximum limit, you may want to increase the limit for \"" << tld.toUtf8().data() << "\".\n";
-        exit(1);
+        std::cerr << "error: level out of range (" << level << ") if larger than the maximum limit, you may want to increase the limit for \"" << tld.toUtf8().data() << "\".\n"; // LCOV_EXCL_LINE
+        exit(1); // LCOV_EXCL_LINE
     }
 
     // break it up to easily invert it
@@ -166,8 +169,8 @@ void read_tlds(const QString& path, tld_info_map_t& map, country_map_t& countrie
     // get input file
     QFile f(path + "/tld_data.xml");
     if(!f.open(QIODevice::ReadOnly)) {
-        std::cerr << "error: cannot open " << path.toUtf8().data() << "/tld_data.xml input file\n";
-        exit(1);
+        std::cerr << "error: cannot open " << path.toUtf8().data() << "/tld_data.xml input file\n"; // LCOV_EXCL_LINE
+        exit(1); // LCOV_EXCL_LINE
     }
 
     // create a DOM and attach file to it
@@ -177,23 +180,23 @@ void read_tlds(const QString& path, tld_info_map_t& map, country_map_t& countrie
     // search for the tld tag
     QDomNode n = doc.firstChild();
     if(n.isNull()) {
-        std::cerr << "error: your TLD document is empty.\n";
-        exit(1);
+        std::cerr << "error: your TLD document is empty.\n"; // LCOV_EXCL_LINE
+        exit(1); // LCOV_EXCL_LINE
     }
     while(!n.isNull()) {
         if(n.isElement()) {
             QDomElement tlc_tag = n.toElement();
             if(tlc_tag.tagName() != "tld") {
-                std::cerr << "error: the root tag must be a <tld> tag. We got <" << tlc_tag.tagName().toUtf8().data() << "> instead.\n";
-                exit(1);
+                std::cerr << "error: the root tag must be a <tld> tag. We got <" << tlc_tag.tagName().toUtf8().data() << "> instead.\n"; // LCOV_EXCL_LINE
+                exit(1); // LCOV_EXCL_LINE
             }
             break;
         }
         n = n.nextSibling();
     }
     if(n.isNull()) {
-        std::cerr << "error: your TLD document is expected to have a <tld> tag as the root tag; we could not find it.\n";
-        exit(1);
+        std::cerr << "error: your TLD document is expected to have a <tld> tag as the root tag; we could not find it.\n"; // LCOV_EXCL_LINE
+        exit(1); // LCOV_EXCL_LINE
     }
     n = n.firstChild();
 
@@ -208,8 +211,8 @@ void read_tlds(const QString& path, tld_info_map_t& map, country_map_t& countrie
             QDomElement e = n.toElement();
             if(e.tagName() != "area")
             {
-                std::cerr << "error: only <area> tags are expected in a <tld> XML file, got <" << e.tagName().toUtf8().data() << "> instead.\n";
-                exit(1);
+                std::cerr << "error: only <area> tags are expected in a <tld> XML file, got <" << e.tagName().toUtf8().data() << "> instead.\n"; // LCOV_EXCL_LINE
+                exit(1); // LCOV_EXCL_LINE
             }
 
             // Category (international|professionals|language|groups|region|country)
@@ -221,8 +224,8 @@ void read_tlds(const QString& path, tld_info_map_t& map, country_map_t& countrie
                 country = e.attribute("country", "undefined");
                 if(countries.contains(country))
                 {
-                    std::cerr << "error: found country \"" << country.toUtf8().data() << "\" defined twice.\n";
-                    exit(1);
+                    std::cerr << "error: found country \"" << country.toUtf8().data() << "\" defined twice.\n"; // LCOV_EXCL_LINE
+                    exit(1); // LCOV_EXCL_LINE
                 }
                 countries[country] = ++country_counter;
             }
@@ -244,14 +247,17 @@ void read_tlds(const QString& path, tld_info_map_t& map, country_map_t& countrie
                     {
                         if(nm->isEmpty())
                         {
-                            continue;
+                            // At this point this line doesn't get hit, but
+                            // I cannot say that it is or it is not to be
+                            // expected so I just hide the line from LCOV
+                            continue; // LCOV_EXCL_LINE
                         }
                         int level(0);
                         QString value_name(tld_encode(*nm, level));
                         if(map.contains(value_name))
                         {
-                            std::cerr << "error: found TLD \"" << nm->toUtf8().data() << "\" more than once.\n";
-                            exit(1);
+                            std::cerr << "error: found TLD \"" << nm->toUtf8().data() << "\" more than once.\n"; // LCOV_EXCL_LINE
+                            exit(1); // LCOV_EXCL_LINE
                         }
 
                         tld_info tld;
@@ -296,8 +302,8 @@ void read_tlds(const QString& path, tld_info_map_t& map, country_map_t& countrie
                                     QString value_name(tld_encode(*nm, level));
                                     if(map.contains(value_name))
                                     {
-                                        std::cerr << "error: found TLD \"" << nm->toUtf8().data() << "\" more than once (exceptions section).\n";
-                                        exit(1);
+                                        std::cerr << "error: found TLD \"" << nm->toUtf8().data() << "\" more than once (exceptions section).\n"; // LCOV_EXCL_LINE
+                                        exit(1); // LCOV_EXCL_LINE
                                     }
 
                                     tld_info tld;
@@ -340,8 +346,8 @@ void read_tlds(const QString& path, tld_info_map_t& map, country_map_t& countrie
                                     QString value_name(tld_encode(*nm, level));
                                     if(map.contains(value_name))
                                     {
-                                        std::cerr << "error: found TLD \"" << nm->toUtf8().data() << "\" more than once (forbidden section).\n";
-                                        exit(1);
+                                        std::cerr << "error: found TLD \"" << nm->toUtf8().data() << "\" more than once (forbidden section).\n"; // LCOV_EXCL_LINE
+                                        exit(1); // LCOV_EXCL_LINE
                                     }
 
                                     tld_info tld;
@@ -363,8 +369,8 @@ void read_tlds(const QString& path, tld_info_map_t& map, country_map_t& countrie
                         }
                     }
                     else {
-                        std::cerr << "error: only <forbid> and <exceptions> tags are expected in an <area> tag, got <" << g.tagName().toUtf8().data() << "> instead.\n";
-                        exit(1);
+                        std::cerr << "error: only <forbid> and <exceptions> tags are expected in an <area> tag, got <" << g.tagName().toUtf8().data() << "> instead.\n"; // LCOV_EXCL_LINE
+                        exit(1); // LCOV_EXCL_LINE
                     }
                 }
                 t = t.nextSibling();
@@ -398,42 +404,42 @@ void verify_data(tld_info_map_t& map)
                 if(i + 1 == j)
                 {
                     // this captures an ending period which we don't allow in our files (although it is legal in a domain name)
-                    if(j == t.length())
+                    if(j == t.length()) // LCOV_EXCL_LINE
                     {
-                        std::cerr << "error: an ending period is not acceptable in a TLD name; found in \"" << t.toUtf8().data() << "\"\n";
+                        std::cerr << "error: an ending period is not acceptable in a TLD name; found in \"" << t.toUtf8().data() << "\"\n"; // LCOV_EXCL_LINE
                     }
                     else
                     {
-                        std::cerr << "error: two periods one after another is not acceptable in a TLD name; found in \"" << t.toUtf8().data() << "\"\n";
+                        std::cerr << "error: two periods one after another is not acceptable in a TLD name; found in \"" << t.toUtf8().data() << "\"\n"; // LCOV_EXCL_LINE
                     }
-                    exit(1);
+                    exit(1); // LCOV_EXCL_LINE
                 }
                 if(i + 1 == k)
                 {
-                    std::cerr << "error: a dash cannot be just after a period; problem found in \"" << t.toUtf8().data() << "\"\n";
-                    exit(1);
+                    std::cerr << "error: a dash cannot be just after a period; problem found in \"" << t.toUtf8().data() << "\"\n"; // LCOV_EXCL_LINE
+                    exit(1); // LCOV_EXCL_LINE
                 }
                 j = i;
                 k = i;
             }
             else if(i == 0)
             {
-                std::cerr << "error: the TLD must start with a period; problem found in \"" << t.toUtf8().data() << "\"\n";
-                exit(1);
+                std::cerr << "error: the TLD must start with a period; problem found in \"" << t.toUtf8().data() << "\"\n"; // LCOV_EXCL_LINE
+                exit(1); // LCOV_EXCL_LINE
             }
             else if(u == '-')
             {
                 if(i + 1 == k)
                 {
-                    if(k == t.length())
+                    if(k == t.length()) // LCOV_EXCL_LINE
                     {
-                        std::cerr << "error: a dash cannot be found at the end of a TLD; problem found in \"" << t.toUtf8().data() << "\"\n";
+                        std::cerr << "error: a dash cannot be found at the end of a TLD; problem found in \"" << t.toUtf8().data() << "\"\n"; // LCOV_EXCL_LINE
                     }
                     else
                     {
-                        std::cerr << "error: a dash cannot be just before a period; problem found in \"" << t.toUtf8().data() << "\"\n";
+                        std::cerr << "error: a dash cannot be just before a period; problem found in \"" << t.toUtf8().data() << "\"\n"; // LCOV_EXCL_LINE
                     }
-                    exit(1);
+                    exit(1); // LCOV_EXCL_LINE
                 }
                 k = i;
             }
@@ -459,8 +465,10 @@ void verify_data(tld_info_map_t& map)
                     break;
 
                 default:
-                    std::cerr << "error: a TLD can only be composed of letters and numbers and dashes; problem found in \""
-                        << t.toUtf8().data() << "\" -- letter: &#x" << std::hex << static_cast<int>(c.unicode()) << std::dec << "; chr(" << c.unicode() << ")\n";
+                    std::cerr << "error: a TLD can only be composed of letters and numbers and dashes; problem found in \"" // LCOV_EXCL_LINE
+                        << t.toUtf8().data() << "\" -- letter: &#x" << std::hex << static_cast<int>(c.unicode()) << std::dec << "; chr(" << c.unicode() << ")\n";  // LCOV_EXCL_LINE
+                    exit(1); // LCOV_EXCL_LINE
+
                 }
             }
             //else we're good
@@ -500,8 +508,8 @@ void verify_data(tld_info_map_t& map)
         }
         else
         {
-            std::cerr << "error: unknown category \"" << it->f_category_name.toUtf8().data() << "\"\n";
-            exit(1);
+            std::cerr << "error: unknown category \"" << it->f_category_name.toUtf8().data() << "\"\n"; // LCOV_EXCL_LINE
+            exit(1); // LCOV_EXCL_LINE
         }
 
         // if within a <forbid> tag we have a reason too
@@ -527,8 +535,8 @@ void verify_data(tld_info_map_t& map)
         }
         else if(!it->f_reason_name.isEmpty())
         {
-            std::cerr << "error: unknown reason \"" << it->f_reason_name.toUtf8().data() << "\"\n";
-            exit(1);
+            std::cerr << "error: unknown reason \"" << it->f_reason_name.toUtf8().data() << "\"\n"; // LCOV_EXCL_LINE
+            exit(1); // LCOV_EXCL_LINE
         }
         else
         {
@@ -551,8 +559,8 @@ void setup_output(const QString& path)
 {
     out_file.setFileName(path + "/tld_data.c");
     if(!out_file.open(QIODevice::WriteOnly)) {
-        std::cerr << "error: cannot open snap_path_tld.cpp output file\n";
-        exit(1);
+        std::cerr << "error: cannot open snap_path_tld.cpp output file\n"; // LCOV_EXCL_LINE
+        exit(1); // LCOV_EXCL_LINE
     }
     out.setDevice(&out_file);
 }
@@ -614,10 +622,10 @@ void save_offset(tld_info_map_t& map, const QString& tld, int offset)
     QString parent = tld.left(e + 1);
     if(!map.contains(parent))
     {
-        std::cerr << "error: TLD \"" << tld.toUtf8().data()
-                    << "\" does not have a corresponding TLD at the previous level (i.e. \""
-                    << parent.toUtf8().data() << "\").\n";
-        exit(1);
+        std::cerr << "error: TLD \"" << tld.toUtf8().data() // LCOV_EXCL_LINE
+                    << "\" does not have a corresponding TLD at the previous level (i.e. \"" // LCOV_EXCL_LINE
+                    << parent.toUtf8().data() << "\").\n"; // LCOV_EXCL_LINE
+        exit(1); // LCOV_EXCL_LINE
     }
     if(map[parent].f_start_offset == USHRT_MAX)
     {
@@ -741,21 +749,21 @@ void output_tlds(tld_info_map_t& map,
 
 
 /// At this point we're not using this table.
-void output_offsets(const tld_info_map_t& map,
-                    const tld_info_letters_t& letters)
-{
-    // we know that the table always starts at zero so we skip the first
-    // entry (plus the first entry is for the '%' which is not contiguous
-    // with 'a')
-    out << "const int tld_offsets[] = {\n";
-    for(tld_info_letters_t::const_iterator it = letters.begin() + 1;
-                            it != letters.end();
-                            ++it)
-    {
-        out << "\t/* '" << static_cast<char>(it.key()) << "' */ " << it.value() << ",\n";
-    }
-    out << "\t/* total size */ " << map.size() << "\n};\n";
-}
+//void output_offsets(const tld_info_map_t& map,
+//                    const tld_info_letters_t& letters)
+//{
+//    // we know that the table always starts at zero so we skip the first
+//    // entry (plus the first entry is for the '%' which is not contiguous
+//    // with 'a')
+//    out << "const int tld_offsets[] = {\n";
+//    for(tld_info_letters_t::const_iterator it = letters.begin() + 1;
+//                            it != letters.end();
+//                            ++it)
+//    {
+//        out << "\t/* '" << static_cast<char>(it.key()) << "' */ " << it.value() << ",\n";
+//    }
+//    out << "\t/* total size */ " << map.size() << "\n};\n";
+//}
 
 
 /// Output the tld_data.c header.
@@ -792,23 +800,23 @@ void output_footer()
 
 
 /// This function is useful to see what the heck we're working on
-void output_map(const tld_info_map_t& map)
-{
-    for(tld_info_map_t::const_iterator it = map.begin();
-                            it != map.end();
-                            ++it)
-    {
-        std::cout << it->f_tld.toUtf8().data() << ":"
-            << it->f_category_name.toUtf8().data();
-        if(!it->f_country.isNull()) {
-            std::cout << " (" << it->f_country.toUtf8().data() << ")";
-        }
-        if(!it->f_reason_name.isNull()) {
-            std::cout << " [" << it->f_reason_name.toUtf8().data() << "]";
-        }
-        std::cout << "\n";
-    }
-}
+//void output_map(const tld_info_map_t& map)
+//{
+//    for(tld_info_map_t::const_iterator it = map.begin();
+//                            it != map.end();
+//                            ++it)
+//    {
+//        std::cout << it->f_tld.toUtf8().data() << ":"
+//            << it->f_category_name.toUtf8().data();
+//        if(!it->f_country.isNull()) {
+//            std::cout << " (" << it->f_country.toUtf8().data() << ")";
+//        }
+//        if(!it->f_reason_name.isNull()) {
+//            std::cout << " [" << it->f_reason_name.toUtf8().data() << "]";
+//        }
+//        std::cout << "\n";
+//    }
+//}
 
 
 } // namespace snap

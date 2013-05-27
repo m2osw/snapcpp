@@ -48,9 +48,13 @@ int main(int argc, char *argv[])
 	struct tld_info info;
 	enum tld_result r;
 
+	if(argc > 1)
+	{
+		uri = argv[1];
+	}
+
 	r = tld(uri, &info);
 	if(r == TLD_RESULT_SUCCESS) {
-		const char *tld = info.f_tld;
 		const char *s = uri + info.f_offset - 1;
 		while(s > uri) {
 			if(*s == '.') {

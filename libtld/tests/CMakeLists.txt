@@ -77,6 +77,15 @@ target_link_libraries(${PROJECT_NAME}
     tld
     ${QT_LIBRARIES}
 )
+# Test emails validity
+project(tld_test_emails)
+add_executable(${PROJECT_NAME}
+    tld_test_emails.cpp
+)
+target_link_libraries(${PROJECT_NAME}
+    tld
+    ${QT_LIBRARIES}
+)
 
 ##
 ## Run all the tests
@@ -93,6 +102,8 @@ add_custom_target(run_libtld_tests
 	COMMAND tld_test_object
 	COMMAND echo "*** tld_test_tld_names"
 	COMMAND tld_test_tld_names
+	COMMAND echo "*** tld_test_emails"
+	COMMAND tld_test_emails
 	COMMAND echo "*** tld_test_xml.sh"
 	COMMAND ./tld_test_xml.sh
 	COMMAND echo "*** TLD tests all ran"
