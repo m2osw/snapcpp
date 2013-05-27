@@ -38,7 +38,9 @@
 ##
 ## Documentation
 ##
-include( doxygen )
+project(documentation)
+
+include(doxygen)
 
 AddDoxygenTarget( libtld
     ${LIBTLD_VERSION_MAJOR}
@@ -49,19 +51,18 @@ AddDoxygenTarget( libtld
 install(
     DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/libtld-doc-${LIBTLD_VERSION_MAJOR}.${LIBTLD_VERSION_MINOR}/.
     DESTINATION share/doc/libtld/html
-    COMPONENT doc
+    COMPONENT documentation
 )
 install(
     FILES ${tld_library_SOURCE_DIR}/LICENSE.txt
-    RENAME copyright
     DESTINATION share/doc/libtld
     COMPONENT runtime
 )
-install(
-    FILES debian/changelog.Debian.gz
-    DESTINATION share/doc/libtld
-    COMPONENT runtime
-)
+#install(
+#    FILES debian/changelog.Debian.gz
+#    DESTINATION share/doc/libtld
+#    COMPONENT runtime
+#)
 
 ##
 ## A Simple Working Example

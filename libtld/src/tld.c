@@ -44,16 +44,18 @@
 /** \mainpage
  *
  * The libtld project is a library that gives you the capability to
- * determine the TLD part of any Internet URI.
+ * determine the TLD part of any Internet URI or email address.
  *
- * The library takes a URI string and a tld_info structure. The
- * library then computes the position where the TLD starts in your
- * URI.
+ * The main function of the library takes a URI string and a tld_info
+ * structure. From that information it computes the position where the
+ * TLD starts in the URI. For email addresses, it breaks down a full
+ * list of emails verifying the syntax as defined in RFC 5822.
  *
- * The main function offered by the library is tld().
- *
- * All the other functions in this library are private or part of
- * a test.
+ * The main function offered by the library is tld(). There are a
+ * few others that allow you to gather the version of the library
+ * and test more complex data, full URIs with protocol and lists of
+ * email addresses as supported in an Internet Message (email field
+ * such as the To or From fields.)
  *
  * \section example Example
  *
@@ -79,18 +81,19 @@
  *
  * \section requirements Library Requirements
  *
- * The library doesn't need anything special. It's one C function.
+ * The library doesn't need anything special. It's a few C functions.
  *
- * The library now offers a C++ object called tld_object. You do not
- * need a C++ compiler to use the library, but if you do, you can
- * use the tld_object instead of the C function directly. It makes
- * things a lot easier.
+ * The library also offers a C++ classes. You do not need a C++ compiler
+ * to use the library, but if you do program in C++, you can use the
+ * tld_object and tld_email_list instead of the C functions. It makes
+ * things a lot easier!
  *
- * To compile the library, you'll need CMake, a C++ compile for the
- * parser that makes use of QtXml and QtCore (Qt4). The QtXml library
- * is used to parse the XML file (tld_data.xml).
+ * To compile the library, you'll need CMake, a C++ compiler for different
+ * parts and the Qt library as we use the QtXml and QtCore (Qt4). The QtXml
+ * library is used to parse the XML file (tld_data.xml) which defines all
+ * the TLDs, worldwide.
  *
- * To regenerate the documentation we use Doxygen. It is optional.
+ * To regenerate the documentation we use Doxygen. It is optional, though.
  *
  * \section tests Tests Coming with the Library
  *

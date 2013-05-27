@@ -1,0 +1,23 @@
+#!/bin/sh -e
+# Build the project
+# Run the tests
+# Package the result
+
+# Stop immediately on errors
+set -e
+
+# Change this variable to point to your wpkg distribution
+export WPKG_DIST_PATH=/home/alexis/m2osw/sources/freeware/usys/wpkg/dist
+
+# The coverage builds everything and runs the tests
+dev/coverage
+
+# Now create a clean version
+rm -rf tmp/build
+mkdir -p tmp/build
+cd tmp/build
+cmake ../..
+VERBOSE=1 make
+VERBOSE=1 make package_source
+VERBOSE=1 make wpkg_package
+

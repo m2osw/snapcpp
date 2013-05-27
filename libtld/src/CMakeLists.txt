@@ -68,7 +68,7 @@ set_target_properties(tld_static PROPERTIES COMPILE_FLAGS -fPIC)
 install(
     TARGETS tld_static
     ARCHIVE DESTINATION lib
-    COMPONENT dev
+    COMPONENT development
 )
 
 ##
@@ -102,7 +102,24 @@ define_property(SOURCE
     FULL_DOCS "Once packaged, the tld_data.c file doesn't need to be regenerated (assuming the date and time of the source package is properly taken in account.)"
 )
 
-
-
+##
+## TLD command line tool
+##
+project(validate_tld)
+include_directories(
+    "${PROJECT_BINARY_DIR}/../include"
+    "${PROJECT_SOURCE_DIR}/../include"
+)
+add_executable(${PROJECT_NAME}
+    validate_tld.cpp
+)
+target_link_libraries(${PROJECT_NAME}
+    tld
+)
+install(
+    TARGETS ${PROJECT_NAME}
+    RUNTIME DESTINATION bin
+    COMPONENT runtime
+)
 
 # vim: ts=4 sw=4 et

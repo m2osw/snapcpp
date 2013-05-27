@@ -33,6 +33,6 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/libtld/tld.h.in ${CMAKE_CURRENT_BINAR
 
 install(
     DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/libtld
-    DESTINATION include/libtld
-    COMPONENT dev
+    DESTINATION include
+    COMPONENT development
 )

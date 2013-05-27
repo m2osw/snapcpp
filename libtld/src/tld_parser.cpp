@@ -72,11 +72,11 @@ public:
     QString                f_reason_name;
     /// The TLD this exception applies to (i.e. the actual response)
     QString                f_exception_apply_to;
-	/// The offset of this item in the final table.
+    /// The offset of this item in the final table.
     int                    f_offset;
-	/// The start offset of a TLDs next level entries
+    /// The start offset of a TLDs next level entries
     int                    f_start_offset;
-	/// The end offset (excluded) of a TLDs next level entries
+    /// The end offset (excluded) of a TLDs next level entries
     int                    f_end_offset;
 };
 
