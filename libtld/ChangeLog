@@ -1,10 +1,13 @@
 libtld (1.4.0) unstable; urgency=medium
 
-  * Added the debian folder to build packages for the PPA.
+  * Added the debian folder to build packages for the PPA (not working yet).
   * Corrected the installation process with proper components.
   * Fixed the ChangeLog dates and indentation for Debian.
   * Reorganized the package with sub-folders.
   * Fixed a few things so the library compiles under MS-Windows with cl.
+  * Added support to parse email addresses.
+  * Enhanced several of the unit tests.
+  * Added a script to run a full coverage over the library.
 
  -- Alexis Wilke <alexis@m2osw.com>  Mon, 18 Feb 2013 00:43:48 -0800
 
