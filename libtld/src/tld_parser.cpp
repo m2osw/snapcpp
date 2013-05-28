@@ -99,9 +99,11 @@ QString tld_encode(const QString& tld, int& level)
     QByteArray utf8 = tld.toUtf8();
     int max(utf8.length());
     const char *p = utf8.data();
-    for(int l = 0; l < max; ++l) {
+    for(int l = 0; l < max; ++l)
+    {
         char c(p[l]);
-        if(static_cast<unsigned char>(c) < 0x20) {
+        if(static_cast<unsigned char>(c) < 0x20)
+        {
             std::cerr << "error: controls characters (^" << (c + '@') // LCOV_EXCL_LINE
                     << ") are not allowed in TLDs (" // LCOV_EXCL_LINE
                     << p << ").\n"; // LCOV_EXCL_LINE
@@ -124,7 +126,8 @@ QString tld_encode(const QString& tld, int& level)
         else
         {
             // add/remove as appropriate
-            if(c == '/' || c == ':' || c == '&') {
+            if(c == '/' || c == ':' || c == '&')
+            {
                 std::cerr << "error: character (^" << c << ") is not allowed in TLDs.\n"; // LCOV_EXCL_LINE
                 exit(1); // LCOV_EXCL_LINE
             }
@@ -151,7 +154,8 @@ QString tld_encode(const QString& tld, int& level)
     QStringList split = result.split('!', QString::SkipEmptyParts);
     int i(0);
     int j(split.size() - 1);
-    while(i < j) {
+    while(i < j)
+    {
         split.swap(i, j);
         ++i;
         --j;
@@ -168,7 +172,8 @@ void read_tlds(const QString& path, tld_info_map_t& map, country_map_t& countrie
 {
     // get input file
     QFile f(path + "/tld_data.xml");
-    if(!f.open(QIODevice::ReadOnly)) {
+    if(!f.open(QIODevice::ReadOnly))
+    {
         std::cerr << "error: cannot open " << path.toUtf8().data() << "/tld_data.xml input file\n"; // LCOV_EXCL_LINE
         exit(1); // LCOV_EXCL_LINE
     }
@@ -179,14 +184,18 @@ void read_tlds(const QString& path, tld_info_map_t& map, country_map_t& countrie
 
     // search for the tld tag
     QDomNode n = doc.firstChild();
-    if(n.isNull()) {
+    if(n.isNull())
+    {
         std::cerr << "error: your TLD document is empty.\n"; // LCOV_EXCL_LINE
         exit(1); // LCOV_EXCL_LINE
     }
-    while(!n.isNull()) {
-        if(n.isElement()) {
+    while(!n.isNull())
+    {
+        if(n.isElement())
+        {
             QDomElement tlc_tag = n.toElement();
-            if(tlc_tag.tagName() != "tld") {
+            if(tlc_tag.tagName() != "tld")
+            {
                 std::cerr << "error: the root tag must be a <tld> tag. We got <" << tlc_tag.tagName().toUtf8().data() << "> instead.\n"; // LCOV_EXCL_LINE
                 exit(1); // LCOV_EXCL_LINE
             }
@@ -194,7 +203,8 @@ void read_tlds(const QString& path, tld_info_map_t& map, country_map_t& countrie
         }
         n = n.nextSibling();
     }
-    if(n.isNull()) {
+    if(n.isNull())
+    {
         std::cerr << "error: your TLD document is expected to have a <tld> tag as the root tag; we could not find it.\n"; // LCOV_EXCL_LINE
         exit(1); // LCOV_EXCL_LINE
     }
@@ -368,7 +378,8 @@ void read_tlds(const QString& path, tld_info_map_t& map, country_map_t& countrie
                             st = st.nextSibling();
                         }
                     }
-                    else {
+                    else
+                    {
                         std::cerr << "error: only <forbid> and <exceptions> tags are expected in an <area> tag, got <" << g.tagName().toUtf8().data() << "> instead.\n"; // LCOV_EXCL_LINE
                         exit(1); // LCOV_EXCL_LINE
                     }
@@ -447,7 +458,8 @@ void verify_data(tld_info_map_t& map)
             {
                 // we accept a certain number of signs that are not
                 // otherwise considered letters...
-                switch(c.unicode()) {
+                switch(c.unicode())
+                {
                 case 0x093E: // devanagari vowel sign AA
                 case 0x0982: // Bengali Sign Anusvara
                 case 0x09BE: // Bengali Vowel Sign AA
@@ -558,11 +570,13 @@ QTextStream out;
 void setup_output(const QString& path)
 {
     out_file.setFileName(path + "/tld_data.c");
-    if(!out_file.open(QIODevice::WriteOnly)) {
+    if(!out_file.open(QIODevice::WriteOnly))
+    {
         std::cerr << "error: cannot open snap_path_tld.cpp output file\n"; // LCOV_EXCL_LINE
         exit(1); // LCOV_EXCL_LINE
     }
     out.setDevice(&out_file);
+    out.setCodec("UTF-8");
 }
 
 
@@ -608,7 +622,8 @@ void output_countries(const country_map_t& countries)
     // first entry is used for international, etc.
     for(int i = 1; i <= max; ++i)
     {
-        out << "const char tld_country" << i << "[] = \"";
+        out << "/// Country " << countries.key(i);
+        out << "\nconst char tld_country" << i << "[] = \"";
         output_utf8(countries.key(i));
         out << "\";\n";
     }
@@ -707,7 +722,8 @@ void output_tlds(tld_info_map_t& map,
                 unsigned short apply_to(USHRT_MAX);
                 //unsigned char exception_level(USHRT_MAX);
                 QString status(it->f_reason);
-                if(!it->f_exception_apply_to.isEmpty()) {
+                if(!it->f_exception_apply_to.isEmpty())
+                {
                     status = "TLD_STATUS_EXCEPTION";
                     apply_to = map[it->f_exception_apply_to].f_offset;
                 }
@@ -789,6 +805,18 @@ void output_header()
     out << " * along with this program; if not, write to the Free Software\n";
     out << " * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA\n";
     out << " */\n";
+    out << " /** \\file\n";
+    out << " * \\brief GENERATED FILE -- the tld_data.c file is generated -- DO NOT EDIT\n";
+    out << " *\n";
+    out << " * This file is generated using the tld_parser tool and the tld_data.xml file.\n";
+    out << " * It is strongly advised that you do not edit this file directly except to\n";
+    out << " * test before editing the source of the tld_parser tool.\n";
+    out << " *\n";
+    out << " * The file includes information about all the TLDs as defined in the\n";
+    out << " * tld_data.xml file. It is used by the tld() function to determine whether\n";
+    out << " * a string with a domain name matches a valid TLD. It includes all the\n";
+    out << " * currently assigned TLDs (all countries plus international or common TLDs.)\n";
+    out << " */\n";
     out << "#include \"tld_data.h\"\n";
     out << "#include \"libtld/tld.h\"\n";
 }
@@ -808,10 +836,12 @@ void output_footer()
 //    {
 //        std::cout << it->f_tld.toUtf8().data() << ":"
 //            << it->f_category_name.toUtf8().data();
-//        if(!it->f_country.isNull()) {
+//        if(!it->f_country.isNull())
+//        {
 //            std::cout << " (" << it->f_country.toUtf8().data() << ")";
 //        }
-//        if(!it->f_reason_name.isNull()) {
+//        if(!it->f_reason_name.isNull())
+//        {
 //            std::cout << " [" << it->f_reason_name.toUtf8().data() << "]";
 //        }
 //        std::cout << "\n";

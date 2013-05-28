@@ -28,13 +28,22 @@
 #include <stdlib.h>
 #include <string.h>
 
-// number of errors so we know whether to exit with 0 or 1
+/// Number of errors so we know whether to exit with 0 or 1
 int err_count = 0;
 
+/// Whether the user asked for verbosity, false by default.
 int verbose = 0;
 
-// Schemes from:
-// http://en.wikipedia.org/wiki/URI_scheme
+/** \brief List of schemes that we more or less support (some schemes have extensions using the semi-colon that we do not support yet.)
+ *
+ * This list of schemes comes from http://en.wikipedia.org/wiki/URI_scheme and is
+ * likely not 100% valid, but it should cover a pretty large number of schemes
+ * expected to work with our system.
+ *
+ * \note
+ * The documentation does not show you all the schemes. Check out the
+ * source to see all the schemes currently included.
+ */
 const char *schemes = "afp,adiumxtra,aw,beshare,bolo,cap,coap,crid,dns,feed,file,"
                       "finger,fish,ftp,ftps,git,gopher,http,https,icap,imap,"
                       "ipp,irc,irc6,ircs,mumble,mupdate,mysql,nfs,nntp,"
@@ -43,6 +52,7 @@ const char *schemes = "afp,adiumxtra,aw,beshare,bolo,cap,coap,crid,dns,feed,file
                       "ssh,teamspeak,telnet,tftp,tip,udp,unreal,ut2004,vemmi,"
                       "ventrilo,wais,webcal,wyciwyg,z39.50r,z39.50s";
 
+/// Hold a list of schemes as defined by the end user.
 const char *user_schemes = NULL;
 
 /** \brief Check the parameter as a URI.

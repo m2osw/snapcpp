@@ -38,9 +38,7 @@
 
 set( WPKG_DIST_PATH "$ENV{WPKG_DIST_PATH}" CACHE PATH "Distribution path to find dependencies from the wpkg project." )
 find_program( WPKG wpkg PATH "${WPKG_DIST_PATH}/bin" )
-message("WPKG program was found in [${WPKG}] using [${WPKG_DIST_PATH}]")
 if(WPKG)
-message("so we can define the wpkg_package target!")
     set( WPKG_ROOT "${CMAKE_BINARY_DIR}/WPKG" )
     set( COMPONENT_LIST runtime development documentation )
     if( UNIX )
@@ -68,6 +66,8 @@ message("so we can define the wpkg_package target!")
     endforeach()
 
     add_custom_target( wpkg_package DEPENDS ${COMPONENT_LIST} )
+else()
+    message("Warning: The pkg tool was not found. In order to package libtld with wpkg, you want to install wpkg on your system and eventually define the environment variable named WPKG_DIST_PATH to point where it was installed.")
 endif()
 
 # vim: ts=4 sw=4 et

@@ -112,7 +112,7 @@ struct tld_email
     const char *        f_username;
     const char *        f_domain;
     const char *        f_email_only;
-    const char *        f_canonalized_email;
+    const char *        f_canonicalized_email;
 };
 
 struct tld_email_list;
@@ -175,7 +175,7 @@ public:
         std::string         f_username;
         std::string         f_domain;
         std::string         f_email_only;
-        std::string         f_canonalized_email;
+        std::string         f_canonicalized_email;
     };
     typedef std::vector<tld_email_t>      tld_email_list_t;
 

@@ -176,7 +176,7 @@ bool tld_object::is_valid() const
  *
  * The TLD object keeps a copy of the domain name as specified with the
  * constructor. This copy can be retrieved by this function. This is an
- * exact copy of the input (i.e. no canonalization.)
+ * exact copy of the input (i.e. no canonicalization.)
  *
  * \return The domain as specified to the constructor or the set_domain() functions.
  */
@@ -393,12 +393,12 @@ std::string tld_object::country() const
  * tld_object which URI is not valid.
  *
  * Instead of catching this error, you should call the is_valid() function
- * before a function that may otherwise raise this exception and prpoerly
+ * before a function that may otherwise raise this exception and properly
  * handle the case when it returns false.
  */
 
 /** \fn invalid_domain::invalid_domain(const char *what_str)
- * \brief Initialized the invalid_domain exception.
+ * \brief Initialize the invalid_domain exception.
  *
  * This function initializes the invalid_domain exception with the specified
  * \p what_str parameter as the what() string.

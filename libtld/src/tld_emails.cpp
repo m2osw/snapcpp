@@ -66,7 +66,7 @@
  * The following code comes from a mix versions starting with RFC 2822
  * (http://www.ietf.org/rfc/rfc2822.txt) which still accepted all
  * control characters everywhere. Now only white spaces are allowed
- * in most places (\r\n\t and the space \x20). We also do not
+ * in most places (\\r\\n\\t and the space \\x20). We also do not
  * allow control characters all over the place because it is likely
  * not valid.
  *
@@ -270,8 +270,8 @@ namespace
 {
 /** \brief Internal function used to trim a string.
  *
- * This function is used to remove any white spaces (\r, \n, \t, and
- * spaces (\x20)) from the end of the string passed in as a parameter.
+ * This function is used to remove any white spaces (\\r, \\n, \\t, and
+ * spaces (\\x20)) from the end of the string passed in as a parameter.
  *
  * The function makes use of the resize() function if any character
  * need to be removed.
@@ -303,7 +303,7 @@ void trim(std::string& value)
  *
  * \param[in] c  The character being escaped to know whether it can be.
  *
- * \return true if the character can be used with \, false otherwise
+ * \return true if the character can be used with \\, false otherwise
  */
 bool is_quoted_char(char c)
 {
@@ -344,6 +344,9 @@ tld_email_list::tld_email_list()
  *
  * \param[in] emails  A list of email address to be parsed.
  * \param[in] flags  A set of flags to define what should be checked and what should be ignored.
+ *
+ * \return TLD_RESULT_SUCCESS when no errors were detected, TLD_RESULT_INVALID
+ *         or some other value if any error occured.
  */
 tld_result tld_email_list::parse(const std::string& emails, int flags)
 {
@@ -684,13 +687,13 @@ bool tld_email_list::next(tld_email *e) const
         return false;
     }
 
-    e->f_group             = f_email_list[f_pos].f_group.c_str();
-    e->f_original_email    = f_email_list[f_pos].f_original_email.c_str();
-    e->f_fullname          = f_email_list[f_pos].f_fullname.c_str();
-    e->f_username          = f_email_list[f_pos].f_username.c_str();
-    e->f_domain            = f_email_list[f_pos].f_domain.c_str();
-    e->f_email_only        = f_email_list[f_pos].f_email_only.c_str();
-    e->f_canonalized_email = f_email_list[f_pos].f_canonalized_email.c_str();
+    e->f_group               = f_email_list[f_pos].f_group.c_str();
+    e->f_original_email      = f_email_list[f_pos].f_original_email.c_str();
+    e->f_fullname            = f_email_list[f_pos].f_fullname.c_str();
+    e->f_username            = f_email_list[f_pos].f_username.c_str();
+    e->f_domain              = f_email_list[f_pos].f_domain.c_str();
+    e->f_email_only          = f_email_list[f_pos].f_email_only.c_str();
+    e->f_canonicalized_email = f_email_list[f_pos].f_canonicalized_email.c_str();
     ++f_pos;
 
     return true;
@@ -1040,11 +1043,11 @@ tld_result tld_email_list::tld_email_t::parse(const std::string& email)
     f_email_only = username + "@" + domain;  // TODO protect characters...
     if(fullname.empty())
     {
-        f_canonalized_email = f_email_only;
+        f_canonicalized_email = f_email_only;
     }
     else
     {
-        f_canonalized_email = "\"" + fullname + "\" <" + f_email_only + ">";  // TODO protect characters...
+        f_canonicalized_email = "\"" + fullname + "\" <" + f_email_only + ">";  // TODO protect characters...
     }
 
     return TLD_RESULT_SUCCESS;
@@ -1188,6 +1191,9 @@ void tld_email_free(struct tld_email_list *list)
  * \param[in] list  The list of emails object.
  * \param[in] emails  The list of emails to be parsed.
  * \param[in] flags  The flags are used to change the behavior of the parser.
+ *
+ * \return TLD_RESULT_SUCCESS if the email was parsed successfully,
+ *         another TLD_RESULT_... when an error is detected
  */
 tld_result tld_email_parse(struct tld_email_list *list, const char *emails, int flags)
 {
@@ -1230,7 +1236,10 @@ void tld_email_rewind(struct tld_email_list *list)
  * called any number of times after it returned zero (0).
  *
  * \param[in] list  The list from which the email is to be read.
- * \param[out] email  The buffer where the email is to be written.
+ * \param[out] e  The buffer where the email is to be written.
+ *
+ * \return The function returns 0 if the end of the list was reached,
+ * it returns 1 if e was defined with the next email.
  *
  * \sa tld_email_parse()
  */
@@ -1239,6 +1248,326 @@ int tld_email_next(struct tld_email_list *list, struct tld_email *e)
     return list->next(e) ? 1 : 0;
 }
 
+/** \struct tld_email
+ * \brief Parts of one email.
+ *
+ * This is the C structure used to return the email parts. See the
+ * tld_email_list::tld_email_t structure documentation for details.
+ *
+ * \warning
+ * Remember that this structure has pointers to internal data. When
+ * the corresponding list of emails is modified by a call to
+ * tld_email_parse() or freed by tld_email_free(), these
+ * pointers become invalid. It is very important that you make use
+ * of the data immediatly or make copies as required.
+ */
+
+/** \var tld_email::f_group
+ * \brief The group this emails was defined in.
+ *
+ * Please see the documentation of tld_email_list::tld_email_t::f_group
+ * as this field is a pointer to that other field.
+ */
+
+/** \var tld_email::f_original_email
+ * \brief The email as read from the source.
+ *
+ * Please see the documentation of tld_email_list::tld_email_t::f_original_email
+ * as this field is a pointer to that other field.
+ */
+
+/** \var tld_email::f_fullname
+ * \brief The user full or display name.
+ *
+ * Please see the documentation of tld_email_list::tld_email_t::f_fullname
+ * as this field is a pointer to that other field.
+ */
+
+/** \var tld_email::f_username
+ * \brief The user being named in this email address.
+ *
+ * Please see the documentation of tld_email_list::tld_email_t::f_username
+ * as this field is a pointer to that other field.
+ */
+
+/** \var tld_email::f_domain
+ * \brief The domain part of the email address.
+ *
+ * Please see the documentation of tld_email_list::tld_email_t::f_domain
+ * as this field is a pointer to that other field.
+ */
+
+/** \var tld_email::f_email_only
+ * \brief The complete email address without display name.
+ *
+ * Please see the documentation of tld_email_list::tld_email_t::f_email_only
+ * as this field is a pointer to that other field.
+ */
+
+/** \var tld_email::f_canonicalized_email
+ * \brief The email including the display name.
+ *
+ * Please see the documentation of tld_email_list::tld_email_t::f_canonicalized_email
+ * as this field is a pointer to that other field.
+ */
+
+/** \class tld_email_list
+ * \brief The C++ side of the email list implementation.
+ *
+ * Note that this structure is always used internally, even when the C version
+ * of the library is used to read emails from a string.
+ *
+ * This class represents a list of emails as defined in a string and parsed by
+ * the parse() function. By default the list of emails is empty. The results
+ * of the parse can be retrieved using the next() function repetitively.
+ *
+ * \sa parse()
+ * \sa next()
+ */
+
+/** \var tld_email_list::f_input
+ * \brief The input string of the last call to parse().
+ *
+ * This is the exact input to the parse() function. It is used internally
+ * to hold the input string while parsing it.
+ */
+
+/** \var tld_email_list::f_flags
+ * \brief The flags as passed to the parse() function.
+ *
+ * This is the set of flags passed to the parse() funciton. These are used
+ * by the different parsing functions to determine what is allowed and what
+ * is not.
+ *
+ * \note
+ * In version 1.4.0 this parameter is not used and it should be set to zero
+ * to avoid surprises. Later I intend to add support to test for ASCII only,
+ * opposed to UTF-8, and a few other behaviors that may be useful when
+ * parsing emails.
+ */
+
+/** \var tld_email_list::f_result
+ * \brief The result of the parse() function.
+ *
+ * The result is stored in this parameter. By default this value is
+ * TLD_RESULT_SUCCESS. In most cases an error is represented by the
+ * TLD_RESULT_INVALID. If the domain of an email address is not correct,
+ * then other result values may be used.
+ *
+ * Note that the parse() function stops as soon as an error occurs and
+ * that first error is what appears in f_result.
+ */
+
+/** \var tld_email_list::f_last_group
+ * \brief The last group read in the input.
+ *
+ * While reading a list of emails, a group is defined as a display name
+ * followed by a colon. That name is saved in this parameter as all the
+ * following emails will be assigned this group. Once the semi-colon is
+ * found, the f_last_group parameter is reset back to the empty string.
+ *
+ * In the end, assuming no error occured, this parameter is always an
+ * empty string.
+ */
+
+/** \var tld_email_list::f_pos
+ * \brief The current position reading the emails.
+ *
+ * This parameter is the index in the f_email_list field. It is reset
+ * to zero each time you call the parse() function and the rewind()
+ * function. The next() function increases it by one on each call
+ * until all the emails were read in which case it stops changing.
+ *
+ * \sa next()
+ * \sa parse()
+ * \sa rewind()
+ */
+
+/** \var tld_email_list::f_email_list
+ * \brief The list of emails.
+ *
+ * This vector is the complete list of all the emails found while parsing
+ * the input string. Note that the parse() function clears the existing
+ * list each time it is called so new emails are not appended to an
+ * existing list. At the same time, the f_pos field is reset to zero.
+ *
+ * By default the list is empty so calling next() immediately returns
+ * false and the count() function returns zero.
+ *
+ * \sa count()
+ * \sa next()
+ * \sa parse()
+ */
+
+/** \struct tld_email_list::tld_email_t
+ * \brief Parts of one email.
+ *
+ * When parsing a list of email addresses, one can include a display name,
+ * a user name, and a domain. The user name and domain are mandatory, not
+ * the display name. Also the list may include comments and group
+ * names.
+ *
+ * This structure is used internally to store the emails and when someone
+ * queries the different emails with the \p next() or \p tld_email_next()
+ * functions.
+ *
+ * Note that in the list of emails, a new group is announced by itself.
+ * This means an entry may have just and only the f_group field defined.
+ *
+ * The fields of this structure use the same encoding as the input which
+ * is expected to be UTF-8 unless otherwise defined in the emails
+ * themselves. In the current version we do not decode international
+ * characters, however, we do plan to do so in a future version. This
+ * means the results should always be seen as valid UTF-8 even if for
+ * now it is just ASCII.
+ *
+ * \note
+ * I made this a simple structure instead of a class with all the fields
+ * private because I think it makes it easier. If you use the C++ version
+ * then you get a copy of the internal data in your own tld_email_t
+ * structure. However, the C version returns a tld_email object which
+ * has pointers pointing directly to the internal data. In that case it
+ * is a security risk as the strings should never be modified from the
+ * outside. Also a call to the \p parse() function replaces the list of
+ * email in effect invalidating all the pointers of all the tld_email
+ * objects that still exist.
+ */
+
+/** \var tld_email_list::tld_email_t::f_group
+ * \brief The group this emails was defined in.
+ *
+ * The name of the group is most often empty since not too many people
+ * make use of that parameter in lists of emails. However, when defined
+ * one of the "emails" will represent the group by itself, meaning that
+ * only this field is defined (all others are empty strings.) It is
+ * very important to remember because otherwise you will misinterpret
+ * an entry. It also means that if you have just one email, but it is
+ * defined in a group, then the number of emails returned is 2.
+ */
+
+/** \var tld_email_list::tld_email_t::f_original_email
+ * \brief The email as read from the source.
+ *
+ * The original email field has the complete email as it appeared in the
+ * source. This means this field includes the comments and additional
+ * spaces. It can be used to reconstruct the original string except for
+ * the possible trimming that was done before and after the email (the
+ * parser removes the leading and ending white spaces, new lines, and
+ * carriage returns.)
+ *
+ * In general this is only used for display so the user can see what
+ * one expects to see.
+ */
+
+/** \var tld_email_list::tld_email_t::f_fullname
+ * \brief The user full or display name.
+ *
+ * This parameter is called the display name of the email. In most
+ * cases it is the full name of the owner of the email address.
+ * For example, in the following email address:
+ *
+ * \code "Wilke, Alexis" <alexis@m2osw.com> \endcode
+ *
+ * The full name is "Wilke, Alexis".
+ *
+ * It is common to find empty full names. Your interpretation as a
+ * human of the full name is likely to be correct. However, the
+ * assumption for a common format is most certainly incorrect. For
+ * example, in "Wilke, Alexis", assuming that "Alexis" is a first
+ * name is just and only an assumption. In a display name such as
+ * "Albert George, Jr." the "Jr." is not the first name. There is
+ * no definition on how the display name should be presented.
+ */
+
+/** \var tld_email_list::tld_email_t::f_username
+ * \brief The user being named in this email address.
+ *
+ * This parameter is always defined (except in a group definition)
+ * and represents the user name of the email address. This is the
+ * user as defined on the destination machine. Under a Unix system
+ * it is the user as listed in /etc/passwd.
+ *
+ * The character set limitations of the target machine are not
+ * known when we parse an email. It is expected that the destination
+ * generates an error if the character set is not supported. On our
+ * end, the final result is always UTF-8.
+ */
+
+/** \var tld_email_list::tld_email_t::f_domain
+ * \brief The domain part of the email address.
+ *
+ * The parameter is always defined (except in a group definition)
+ * and represents the server handling the mail box for the email
+ * address. The domain is always checked for validity with the
+ * \p tld() function. So if the user typed an address such as:
+ *
+ * \code
+ * alexis@m2osw
+ * \endcode
+ *
+ * The email parser returns an error because the domain name m2osw
+ * is not valid. It should be m2osw.com or some other similar
+ * extension.
+ *
+ * All the emails are checked in this way so only valid domains
+ * are accepted. Note that also prevents someone from using an
+ * IP address as the destination server. So email addresses such
+ * as:
+ *
+ * \code
+ * alexis@1.2.3.4
+ * \endcode
+ *
+ * Are not considered valid and should never be used anyway.
+ */
+
+/** \var tld_email_list::tld_email_t::f_email_only
+ * \brief The complete email address without display name.
+ *
+ * This field holds the complete email address. You can use this
+ * email address as is to send emails to that user, although it
+ * is customary to include the display name when available. The
+ * email is canonical in the sense that it has no fluff added
+ * (no group name, no comments, no white spaces.)
+ *
+ * Note that if the name includes character that are not part
+ * of the atom set of characters, then it will be written between
+ * double quotes (i.e. the name of the user could include a space,
+ * a comma, etc.)
+ *
+ * Similarly, the domain name could include characters that
+ * cannot be represented with an atom, although that's unlikely
+ * for a valid domain name. In that case, the domain is written
+ * between square brackets.
+ *
+ * \code
+ * "Alexis Wilke"@[{code}.m2osw.com]
+ * \endcode
+ */
+
+/** \var tld_email_list::tld_email_t::f_canonicalized_email
+ * \brief The email including the display name.
+ *
+ * This field is the canonicalized email address with its display
+ * name. However, the email address still does not include the
+ * group name. If you want to reconstruct the entire input,
+ * groups have to be added manually before each canonicalized emails.
+ *
+ * The display name will be written between double quotes if any
+ * of the characters in the display name are not atom characters.
+ * This ensures the display can safely be reparsed.
+ *
+ * Note that comments are not included here.
+ */
+
+/** \typedef tld_email_list::tld_email_list_t
+ * \brief A vector of email details.
+ *
+ * This typedef creates a vector of emails that we use internally
+ * to store all the emails. We may later have additional functionality
+ * where this type becomes useful externally too. You are, of course,
+ * welcome to use it to store lists of emails.
+ */
 
 /* vim: ts=4 sw=4 et
  */

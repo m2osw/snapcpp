@@ -42,6 +42,8 @@ project(documentation)
 
 include(doxygen)
 
+set( PROJECT_ROOT_PATH ${CMAKE_SOURCE_DIR} )
+
 AddDoxygenTarget( libtld
     ${LIBTLD_VERSION_MAJOR}
     ${LIBTLD_VERSION_MINOR}

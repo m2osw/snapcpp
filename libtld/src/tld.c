@@ -43,25 +43,115 @@
 
 /** \mainpage
  *
+ * \section introduction The libtld Library
+ *
  * The libtld project is a library that gives you the capability to
  * determine the TLD part of any Internet URI or email address.
  *
- * The main function of the library takes a URI string and a tld_info
- * structure. From that information it computes the position where the
- * TLD starts in the URI. For email addresses, it breaks down a full
- * list of emails verifying the syntax as defined in RFC 5822.
+ * The main function of the library, tld(), takes a URI string and a
+ * tld_info structure. From that information it computes the position
+ * where the TLD starts in the URI. For email addresses (see the
+ * tld_email_list C++ object, or the tld_email.cpp file for the C
+ * functions,) it breaks down a full list of emails verifying the
+ * syntax as defined in RFC 5822.
  *
- * The main function offered by the library is tld(). There are a
- * few others that allow you to gather the version of the library
- * and test more complex data, full URIs with protocol and lists of
- * email addresses as supported in an Internet Message (email field
- * such as the To or From fields.)
+ * \section c_programmers For C Programmers
+ *
+ * The C functions that you are expected to use are listed here:
+ *
+ * \li tld_version() -- return a string representing the TLD library version
+ * \li tld() -- find the position of the TLD of any URI
+ * \li tld_check_uri() -- verify a full URI, with scheme, path, etc.
+ * \li tld_clear_info() -- reset a tld_info structure for use with tld()
+ * \li tld_email_alloc() -- allocate a tld_email_list object
+ * \li tld_email_free() -- free a tld_email_list object
+ * \li tld_email_parse() -- parse a list of email addresses
+ * \li tld_email_count() -- number of emails found by tld_email_parse()
+ * \li tld_email_rewind() -- go back at the start of the list of emails
+ * \li tld_email_next() -- read the next email from the list of emails
+ *
+ * \section cpp_programmers For C++ Programmers
+ *
+ * For C++ users, please make use of these tld classes:
+ *
+ * \li tld_object
+ * \li tld_email_list
+ *
+ * In C++, you may also make use of the tld_version() to check the current
+ * version of the library.
+ *
+ * To check whether the version is valid for your tool, you may look at the
+ * version handling of the libdebpackages library of the wpkg project. The
+ * libtld version is always a Debian compatible version.
+ *
+ * http://windowspackager.org/documentation/implementation-details/debian-version-api
+ *
+ * \section php_programmers For PHP Programmers
+ *
+ * At this point I do not have a very good environment to recompile everything
+ * for PHP. The main reason is because the library is being compiled with cmake
+ * opposed to the automake toolchain that Zend expects.
+ *
+ * This being said, the php directory includes all you need to make use of the
+ * library under PHP. It works like a charm for me and there should be no reason
+ * for you not to be able to do the same with the library.
+ *
+ * The way I rebuild everything for PHP:
+ *
+ * \code
+ * # from within the libtld directory:
+ * mkdir ../BUILD
+ * (cd ../BUILD; cmake ../libtld)
+ * make -C ../BUILD
+ * cd php
+ * ./build
+ * \endcode
+ *
+ * The build script will copy the resulting php_libtld.so file where it
+ * needs to go using sudo. Your system (Red Hat, Mandrake, etc.) may use
+ * su instead. Update the script as required.
+ *
+ * Note that the libtld will be linked statically inside the php_libtld.so
+ * so you do not have to actually install the libtld environment to make
+ * everything work as expected.
+ *
+ * The resulting functions added to PHP via this extension are:
+ *
+ * \li %check_tld()
+ * \li %check_uri()
+ * \li %check_email()
+ *
+ * For information about these functions, check out the php/php_libtld.c
+ * file which describes each function, its parameters, and its results
+ * in great details.
+ *
+ * \section not_linux Compiling on Other Platforms
+ *
+ * We can successfully compile the library under MS-Windows with cygwin
+ * and the Microsoft IDE. To do so, we use the CMakeLists.txt file found
+ * under the dev directory. Overwrite the CMakeLists.txt file in the
+ * main directory before configuring and you'll get a library without
+ * having to first compile Qt4.
+ *
+ * \code
+ * cp dev/libtld-only-CMakeLists.txt CMakeListst.txt
+ * \endcode
+ *
+ * At this point this configuration only compiles the library. It gives
+ * you a shared (.DLL) and a static (.lib) version. With the IDE you may
+ * create a debug and a release version.
+ *
+ * Later we'll look into having a single CMakeLists.txt so you do not
+ * have to make this copy.
  *
  * \section example Example
  *
  * We offer a file named example.c that shows you how to use the
  * library in C. It is very simple, one main() function so it is
  * very easy to get started with libtld.
+ *
+ * For a C++ example, check out the src/validate_tld.cpp tool which was
+ * created as a command line tool coming with the libtld library.
  *
  * \include example.c
  *
@@ -81,6 +171,8 @@
  *
  * \section requirements Library Requirements
  *
+ * \li Usage
+ *
  * The library doesn't need anything special. It's a few C functions.
  *
  * The library also offers a C++ classes. You do not need a C++ compiler
@@ -88,12 +180,24 @@
  * tld_object and tld_email_list instead of the C functions. It makes
  * things a lot easier!
  *
+ * Also if you are programming using PHP, the library includes a PHP
+ * extension so you can check URIs and emails directly from PHP without
+ * trying to create crazy regular expressions (that most often do not work
+ * right!)
+ *
+ * \li Compiling
+ *
  * To compile the library, you'll need CMake, a C++ compiler for different
  * parts and the Qt library as we use the QtXml and QtCore (Qt4). The QtXml
  * library is used to parse the XML file (tld_data.xml) which defines all
  * the TLDs, worldwide.
  *
  * To regenerate the documentation we use Doxygen. It is optional, though.
+ *
+ * \li PHP
+ *
+ * In order to recompile the PHP extension the Zend environment is required.
+ * Under a Debian or Ubuntu system you can install the php5-dev package.
  *
  * \section tests Tests Coming with the Library
  *
@@ -130,6 +234,35 @@
  * means all the TLDs are now being checked out as expected.
  * This test reads the effective_tld_names.dat file which has to be
  * available in your current directory.
+ *
+ * \par
+ * A copy of the Mozilla file is included with each version of the TLD
+ * library. It is named tests/effective_tld_names.dat and should be
+ * up to date when we produce a new version for download on
+ * SourceForge.net.
+ *
+ * \li tld_test_full_uri.c
+ *
+ * \par
+ * The library includes an advanced function that checks the validity
+ * of complete URIs making it very simple to test such in any software.
+ * The URI must include a scheme (often called protocol), fully qualified
+ * domain (sub-domains, domain, TLD), an absolute path, variables (after
+ * the question mark,) and an anchor. The test ensures that all the
+ * checks the parser uses are working as expected and allow valid URIs
+ * while it forbids any invalid URIs.
+ *
+ * \li tld_test_emails.cpp
+ *
+ * \par
+ * The libtld supports verifying and breaking up emails in different
+ * parts. This is done to make sure users enter valid emails (although
+ * it doesn't mean that the email address exists, it at least allows
+ * us to know when an email is definitively completely incorrect and
+ * should be immediately rejected.) The test ensures that all the
+ * different types of invalid emails are properly being caught (i.e.
+ * emails with control characters, invalid domain name, missing parts,
+ * etc.)
  *
  * \li tld_test_xml.sh
  *

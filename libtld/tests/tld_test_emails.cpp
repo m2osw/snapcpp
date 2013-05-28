@@ -22,10 +22,20 @@
 #include <string.h>
 #include <sstream>
 
+/// The number of errors encountered before exiting.
 int err_count = 0;
+
+/// Whether to be verbose, turned off by default.
 int verbose = 0;
 
 
+/** \brief Print an error.
+ *
+ * This function prints the specified \p msg in stderr and increases
+ * the error counter by one.
+ *
+ * \param[in] msg  The message to be printed.
+ */
 void error(const std::string& msg)
 {
     fprintf(stderr, "%s\n", msg.c_str());
@@ -33,6 +43,7 @@ void error(const std::string& msg)
 }
 
 
+/// Macro to check that exceptions are raised without having to write the try/catch each time.
 #define EXPECTED_THROW(s, e) \
     try \
     { \
@@ -44,9 +55,21 @@ void error(const std::string& msg)
     }
 
 
+/** \brief Define a valid email string.
+ *
+ * This structure is used to define a valid email string. The string may
+ * include any number of emails as defined by the \p f_count field. Note
+ * that the count is increased by 1 for each group definition in the list
+ * defined in the \p f_input_email string.
+ *
+ * This structure is used to validate many different types of email
+ * addresses to make sure that our parser works properly.
+ */
 struct valid_email
 {
+    /// The valid emails to be parsed.
     const char *        f_input_email;
+    /// The number of emails returned on f_input_email was parsed, plus one per group.
     int                 f_count;
 };
 
@@ -56,8 +79,9 @@ struct valid_email
 //const char *        f_username;
 //const char *        f_domain;
 //const char *        f_email_only;
-//const char *        f_canonalized_email;
+//const char *        f_canonicalized_email;
 
+/// List of results to verify all the fields of the parser output. There is one entry per group and email.
 const tld_email list_of_results[] =
 {
     { "", "alexis@m2osw.com",
@@ -112,6 +136,7 @@ const tld_email list_of_results[] =
     { NULL, NULL, NULL, NULL, NULL, NULL, NULL }
 };
 
+/// The list of valid emails used to check the parser out.
 const valid_email list_of_valid_emails[] =
 {
     { "alexis@m2osw.com", 1 },
@@ -134,6 +159,17 @@ const valid_email list_of_valid_emails[] =
 };
 
 
+/** \brief Transform an email string in a C-like string.
+ *
+ * This function transforms the characters in \p e into a set of C-like
+ * escape characters so it can safely be printed in the console.
+ *
+ * For example, the character 0x09 is transformed to the character \\t.
+ *
+ * \param[in] e  The email to be transformed.
+ *
+ * \return The transformed email.
+ */
 std::string email_to_vstring(const std::string& e)
 {
     std::string result;
@@ -252,9 +288,9 @@ void test_valid_emails()
                         {
                             error("error: next() returned the wrong email only.");
                         }
-                        if(e.f_canonalized_email != results->f_canonalized_email)
+                        if(e.f_canonicalized_email != results->f_canonicalized_email)
                         {
-                            error("error: next() returned the wrong canonalized email. Got \"" + e.f_canonalized_email + "\" instead of \"" + results->f_canonalized_email + "\".");
+                            error("error: next() returned the wrong canonicalized email. Got \"" + e.f_canonicalized_email + "\" instead of \"" + results->f_canonicalized_email + "\".");
                         }
                     }
                     if(list.next(e))
@@ -297,9 +333,9 @@ void test_valid_emails()
                         {
                             error("error: next() returned the wrong email only.");
                         }
-                        if(strcmp(e.f_canonalized_email, results->f_canonalized_email) != 0)
+                        if(strcmp(e.f_canonicalized_email, results->f_canonicalized_email) != 0)
                         {
-                            error("error: next() returned the wrong canonalized email.");
+                            error("error: next() returned the wrong canonicalized email.");
                         }
                     }
                     if(list.next(&e))
@@ -373,9 +409,9 @@ void test_valid_emails()
                         {
                             error("error: next() returned the wrong email only.");
                         }
-                        if(strcmp(e.f_canonalized_email, results->f_canonalized_email) != 0)
+                        if(strcmp(e.f_canonicalized_email, results->f_canonicalized_email) != 0)
                         {
-                            error("error: next() returned the wrong canonalized email.");
+                            error("error: next() returned the wrong canonicalized email.");
                         }
                     }
                     if(tld_email_next(list, &e) != 0)
@@ -560,9 +596,17 @@ void test_valid_emails()
 
 
 
+/** \brief Define an invalid email.
+ *
+ * This structure is used to list invalid emails in order to test that such
+ * emails are not accepted by the parser. The structure includes the expected
+ * result as well as a string pointer to the invalid email.
+ */
 struct invalid_email
 {
+    /// The expected reslut, if the call does not return this exact value the test fails
     tld_result          f_result;
+    /// The pointer to the invalid email to be tested
     const char *        f_input_email;
 };
 
@@ -670,7 +714,7 @@ void contract_furfilled(tld_email_list::tld_email_t& e)
     || !e.f_username.empty()
     || !e.f_domain.empty()
     || !e.f_email_only.empty()
-    || !e.f_canonalized_email.empty())
+    || !e.f_canonicalized_email.empty())
     {
         error("error: one of the structure parameters was modified on error!");
     }

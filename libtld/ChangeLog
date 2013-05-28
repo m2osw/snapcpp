@@ -9,6 +9,8 @@ libtld (1.4.0) unstable; urgency=medium
   * Enhanced several of the unit tests.
   * Added a script to run a full coverage over the library.
   * Added a command line tool for scripting.
+  * Enhanced documentation as first version was really just about tld().
+  * dev/libtld-only-CMakeLists.txt to compile libtld on other platforms.
 
  -- Alexis Wilke <alexis@m2osw.com>  Mon, 18 Feb 2013 00:43:48 -0800
 
