@@ -151,6 +151,15 @@ int main(int argc, char *argv[])
                 list();
                 /*NOTREACHED*/
             }
+            else if(strcmp(argv[i], "--version") == 0)
+            {
+                printf("%s\n", LIBTLD_VERSION);
+                if(verbose)
+                {
+                    printf("libtld v%s\n", tld_version());
+                }
+                exit(1);
+            }
             else if(strcmp(argv[i], "-s") == 0 || strcmp(argv[i], "--schemes") == 0)
             {
                 ++i;

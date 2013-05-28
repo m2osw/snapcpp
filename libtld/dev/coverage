@@ -65,6 +65,11 @@ then
     echo "validate_tld --list did not exit with an error";
     exit 1;
 fi
+if BUILD/src/validate_tld -v --version
+then
+    echo "validate_tld --list did not exit with an error";
+    exit 1;
+fi
 if ! BUILD/src/validate_tld http://www.m2osw.com/validate/tld?perfect=work
 then
     echo "validate_tld <valid URI> did exit with an error";

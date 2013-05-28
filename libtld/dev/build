@@ -18,6 +18,8 @@ mkdir -p tmp/build
 cd tmp/build
 cmake ../..
 VERBOSE=1 make
+ln -s ../cmake ../..
 VERBOSE=1 make package_source
+rm ../../cmake
 VERBOSE=1 make wpkg_package
 

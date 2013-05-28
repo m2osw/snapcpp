@@ -181,6 +181,7 @@ public:
 
     tld_email_list();
     tld_result parse(const std::string& emails, int flags);
+    static std::string quote_string(const std::string& name, char quote);
     int count() const;
     void rewind() const;
     bool next(tld_email_t& e) const;

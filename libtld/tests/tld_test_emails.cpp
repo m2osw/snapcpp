@@ -99,23 +99,23 @@ const tld_email list_of_results[] =
     { "", "< (Test with dots in user name) al.ex.is@ \t [ \t m2osw.com \t ] \n (More (comments) there) >",
       "", "al.ex.is", "m2osw.com", "al.ex.is@m2osw.com", "al.ex.is@m2osw.com" },
     { "", "(With full name) Alexis Wilke < (Test with dots in user name) al.ex.is@ \t [ \t m2osw.com \t ] \n (More (comments) there) >",
-      "Alexis Wilke", "al.ex.is", "m2osw.com", "al.ex.is@m2osw.com", "\"Alexis Wilke\" <al.ex.is@m2osw.com>" },
+      "Alexis Wilke", "al.ex.is", "m2osw.com", "al.ex.is@m2osw.com", "Alexis Wilke <al.ex.is@m2osw.com>" },
     { "This Group", "",
       "", "", "", "", "" },
     { "This Group", "(With full name) Alexis Wilke < \n alexis \t @ \t [ \t m2osw.com \t ] \n (Less) >",
-      "Alexis Wilke", "alexis", "m2osw.com", "alexis@m2osw.com", "\"Alexis Wilke\" <alexis@m2osw.com>" },
+      "Alexis Wilke", "alexis", "m2osw.com", "alexis@m2osw.com", "Alexis Wilke <alexis@m2osw.com>" },
     { "People", "",
       "", "", "", "", "" },
     { "People", "Alexis Wilke <alexis@m2osw.com>",
-      "Alexis Wilke", "alexis", "m2osw.com", "alexis@m2osw.com", "\"Alexis Wilke\" <alexis@m2osw.com>" },
+      "Alexis Wilke", "alexis", "m2osw.com", "alexis@m2osw.com", "Alexis Wilke <alexis@m2osw.com>" },
     { "People", "John Smith <john@m2osw.com>",
-      "John Smith", "john", "m2osw.com", "john@m2osw.com", "\"John Smith\" <john@m2osw.com>" },
+      "John Smith", "john", "m2osw.com", "john@m2osw.com", "John Smith <john@m2osw.com>" },
     { "Lists", "",
       "", "", "", "", "" },
     { "Lists", "Contact <contact@m2osw.com>",
-      "Contact", "contact", "m2osw.com", "contact@m2osw.com", "\"Contact\" <contact@m2osw.com>" },
+      "Contact", "contact", "m2osw.com", "contact@m2osw.com", "Contact <contact@m2osw.com>" },
     { "Lists", "Resume <resume@m2osw.com>",
-      "Resume", "resume", "m2osw.com", "resume@m2osw.com", "\"Resume\" <resume@m2osw.com>" },
+      "Resume", "resume", "m2osw.com", "resume@m2osw.com", "Resume <resume@m2osw.com>" },
     { "", "normal@m2osw.com",
       "", "normal", "m2osw.com", "normal@m2osw.com", "normal@m2osw.com" },
     { "No-Reply", "",
@@ -123,7 +123,7 @@ const tld_email list_of_results[] =
     { "No-Reply", "no-reply@m2osw.com",
       "", "no-reply", "m2osw.com", "no-reply@m2osw.com", "no-reply@m2osw.com" },
     { "", "\"Complex <name> for !a! \\\"USER\\\"\" <user@example.co.uk>",
-      "Complex <name> for !a! \"USER\"", "user", "example.co.uk", "user@example.co.uk", "\"Complex <name> for !a! \"USER\"\" <user@example.co.uk>" },
+      "Complex <name> for !a! \"USER\"", "user", "example.co.uk", "user@example.co.uk", "\"Complex <name> for !a! \\\"USER\\\"\" <user@example.co.uk>" },
     { "", "(Comment \n New-Line) alexis@m2osw.com",
       "", "alexis", "m2osw.com", "alexis@m2osw.com", "alexis@m2osw.com" },
     { "", "(Comment (Sub-Comment (Sub-Sub-Comment (Sub-Sub-Sub-Comment \\) This is still the Sub-Sub-Sub-Comment!!!)))) alexis@m2osw.com",
@@ -132,6 +132,8 @@ const tld_email list_of_results[] =
       "", "", "", "", "" },
     { "Group with  some sub-comments", "alexis@m2osw.com",
       "", "alexis", "m2osw.com", "alexis@m2osw.com", "alexis@m2osw.com" },
+    { "", "\"Wilke, Alexis\" <\"alexis,wilke\"@[:special:.m2osw.com]>",
+      "Wilke, Alexis", "alexis,wilke", ":special:.m2osw.com", "\"alexis,wilke\"@[:special:.m2osw.com]", "\"Wilke, Alexis\" <\"alexis,wilke\"@[:special:.m2osw.com]>" },
 
     { NULL, NULL, NULL, NULL, NULL, NULL, NULL }
 };
@@ -153,6 +155,7 @@ const valid_email list_of_valid_emails[] =
     { "(Comment \n New-Line) alexis@m2osw.com", 1 },
     { "(Comment (Sub-Comment (Sub-Sub-Comment (Sub-Sub-Sub-Comment \\) This is still the Sub-Sub-Sub-Comment!!!)))) alexis@m2osw.com", 1 },
     { "Group with (Comment (Sub-Comment (Sub-Sub-Comment (Sub-Sub-Sub-Comment \\) This is still the Sub-Sub-Sub-Comment!!!)))) some sub-comments \t : alexis@m2osw.com;", 2 },
+    { "\"Wilke, Alexis\" <\"alexis,wilke\"@[:special:.m2osw.com]>", 1 },
 
     // end of list
     { NULL, 0 }
@@ -274,19 +277,19 @@ void test_valid_emails()
                         }
                         if(e.f_fullname != results->f_fullname)
                         {
-                            error("error: next() returned the wrong fullname.");
+                            error("error: next() returned the wrong fullname. Got \"" + e.f_fullname + "\" instead of \"" + results->f_fullname + "\".");
                         }
                         if(e.f_username != results->f_username)
                         {
-                            error("error: next() returned the wrong username.");
+                            error("error: next() returned the wrong username. Got \"" + e.f_username + "\" instead of \"" + results->f_username + "\".");
                         }
                         if(e.f_domain != results->f_domain)
                         {
-                            error("error: next() returned the wrong username.");
+                            error("error: next() returned the wrong username. Got \"" + e.f_domain + "\" instead of \"" + results->f_domain + "\".");
                         }
                         if(e.f_email_only != results->f_email_only)
                         {
-                            error("error: next() returned the wrong email only.");
+                            error("error: next() returned the wrong email only. Got \"" + e.f_email_only + "\" instead of \"" + results->f_email_only + "\".");
                         }
                         if(e.f_canonicalized_email != results->f_canonicalized_email)
                         {
@@ -587,8 +590,19 @@ void test_valid_emails()
             tld_result r(list.parse(e, 0));
             if(r != TLD_RESULT_SUCCESS)
             {
-                error("error: unexpected returned value");
+                error("error: unexpected returned value while testing a domain with a special character");
             }
+        }
+    }
+
+    {
+        if(tld_email_list::quote_string("Test quoting a simple comment", '(') != "(Test quoting a simple comment)")
+        {
+            error("error: unexpected returned value when testing a simple comment quotation");
+        }
+        if(tld_email_list::quote_string("Test (quoting) a complex )comment(", '(') != "(Test \\(quoting\\) a complex \\)comment\\()")
+        {
+            error("error: unexpected returned value when testing a complex comment quotation");
         }
     }
 }

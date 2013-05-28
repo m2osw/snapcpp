@@ -17,6 +17,7 @@
  */
 #include "libtld/tld.h"
 #include <stdio.h>
+#include <string.h>
 
 /** \file
  * \brief Implementation of an email parser.
@@ -312,7 +313,34 @@ bool is_quoted_char(char c)
     // has UTF-8 as input data
     return c == '\t' || c >= ' ' && c != 0x7F;
 }
+
+/** \brief Check whether the character is a valid atom character.
+ *
+ * Characters that are valid atom characters can appear as is in
+ * a display name. Other characters need to be quoted. This function
+ * check whether a character is an atom character or not.
+ *
+ * \param[in] c  The character to be checked.
+ *
+ * \return true if the \p c character is an atom character.
+ */
+bool is_atom_char(char c)
+{
+    return (c >= 'A' && c <= 'Z')
+        || (c >= 'a' && c <= 'z')
+        || (c >= '0' && c <= '9')
+        || c == '!' || c == '#'
+        || c == '$' || c == '%'
+        || c == '&' || c == '\''
+        || c == '*' || c == '+'
+        || c == '-' || c == '/'
+        || c == '=' || c == '?'
+        || c == '^' || c == '_'
+        || c == '`' || c == '{'
+        || c == '|' || c == '}'
+        || c == '~';
 }
+} // no name namespace
 
 
 /** \brief Initialize the tld_email_list object.
@@ -606,6 +634,126 @@ void tld_email_list::parse_all_emails()
             f_email_list.push_back(email);
         }
     }
+}
+
+/** \brief Transform a name if it requires quotation.
+ *
+ * This function checks the \p quote parameter and react depending on
+ * what it is:
+ *
+ * \li Quote is a Double Quote (") character
+ *
+ * In this case, the characters are checked to see whether they all
+ * are atom characters, including spaces. If all are atoms, then the
+ * input \p str parameter is returned as is, otherwise it is returned
+ * between double quotes.
+ *
+ * This is used for the display or full name.
+ *
+ * \li Quote is a Single Quote (') character
+ *
+ * In this case, the characters are checked to see whether they all
+ * are atom characters, including dots. If all are atoms, then the
+ * input \p str parameter is returned as is, otherwise it is returned
+ * between double quotes.
+ *
+ * This is used for the username.
+ *
+ * \li Quote is an opening square bracket character
+ *
+ * In this case the character are checked to see whether they all
+ * are atom characters, including dots. If all are atoms, then the
+ * input \p str parameter is returned as is, otherwise it is returned
+ * between square brackets.
+ *
+ * This is used for domain names.
+ *
+ * \li Quote is an opening parenthesis character
+ *
+ * In this case the characters are not checked because comments are
+ * always written between parenthesis. The quoting always happens.
+ * However, if the comment includes opening and closing parenthesis,
+ * then those are backslased.
+ *
+ * This is used for comments.
+ *
+ * Note that in effect this function cannot be used to create
+ * comments that include sub-comments.
+ *
+ * \li Quote is another character.
+ *
+ * In this case the function raises an exception.
+ *
+ * \exception std::logic_error
+ * The function was called with an invalid quote parameter.
+ *
+ * \param[in] str  The string to be quoted as required.
+ * \param[in] quote  The type of quotes to use with this string.
+ *
+ * \return The input string with quotes if required.
+ */
+std::string tld_email_list::quote_string(const std::string& str, char quote)
+{
+    bool apply_quotes(false);
+    char open(quote);
+    char close('"');
+    const char *extra("");
+    const char *escape("");
+    switch(quote)
+    {
+    case '(':
+        close = ')';
+        apply_quotes = true;
+        escape = "()";
+        break;
+
+    case '"':
+        extra = " \t";
+        escape = "\"";
+        break;
+
+    case '\'':
+        open = '"';
+        close = '"';
+        extra = ".";
+        escape = "\"";
+        break;
+
+    case '[':
+        close = ']';
+        extra = ".";
+        break;
+
+    }
+    if(!apply_quotes)
+    {
+        // check whether quotes are required
+        const char *s(str.c_str());
+        for(; *s != '\0'; ++s)
+        {
+            if(!is_atom_char(*s) && strchr(extra, *s) == NULL)
+            {
+                break;
+            }
+        }
+        apply_quotes = *s != '\0';
+    }
+    if(apply_quotes)
+    {
+        std::string result;
+        result += open;
+        for(const char *s(str.c_str()); *s != '\0'; ++s)
+        {
+            if(strchr(escape, *s) != NULL)
+            {
+                result += '\\';
+            }
+            result += *s;
+        }
+        result += close;
+        return result;
+    }
+    return str;
 }
 
 /** \brief Return the number of emails recorded.
@@ -967,19 +1115,7 @@ tld_result tld_email_list::tld_email_t::parse(const std::string& email)
 
         default:
             // here we must have a valid atom character ([-A-Za-z0-9!#$%&'*+/=?^_`{|}~])
-            if((*s < 'A' || *s > 'Z')
-            && (*s < 'a' || *s > 'z')
-            && (*s < '0' || *s > '9')
-            && *s != '!' && *s != '#'
-            && *s != '$' && *s != '%'
-            && *s != '&' && *s != '\''
-            && *s != '*' && *s != '+'
-            && *s != '-' && *s != '/'
-            && *s != '=' && *s != '?'
-            && *s != '^' && *s != '_'
-            && *s != '`' && *s != '{'
-            && *s != '|' && *s != '}'
-            && *s != '~')
+            if(!is_atom_char(*s))
             {
                 // not a valid atom character
                 return TLD_RESULT_INVALID;
@@ -1040,14 +1176,14 @@ tld_result tld_email_list::tld_email_t::parse(const std::string& email)
     f_fullname = fullname;
     f_username = username;
     f_domain = domain;
-    f_email_only = username + "@" + domain;  // TODO protect characters...
+    f_email_only = quote_string(username, '\'') + "@" + quote_string(domain, '[');  // TODO protect characters...
     if(fullname.empty())
     {
         f_canonicalized_email = f_email_only;
     }
     else
     {
-        f_canonicalized_email = "\"" + fullname + "\" <" + f_email_only + ">";  // TODO protect characters...
+        f_canonicalized_email = quote_string(fullname, '"') + " <" + f_email_only + ">";  // TODO protect characters...
     }
 
     return TLD_RESULT_SUCCESS;
