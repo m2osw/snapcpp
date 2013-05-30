@@ -1,3 +1,10 @@
+libtld (1.4.1) unstable; urgency=medium
+
+  * Added a function determining the type of an email field that holds emails.
+  * Fixed the quotation of canonicalized emails.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 28 May 2013 11:57:12 -0800
+
 libtld (1.4.0) unstable; urgency=medium
 
   * Added the debian folder to build packages for the PPA (not working yet).

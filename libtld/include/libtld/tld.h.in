@@ -115,6 +115,16 @@ struct tld_email
     const char *        f_canonicalized_email;
 };
 
+enum tld_email_field_type
+{
+    TLD_EMAIL_FIELD_TYPE_INVALID = -1,
+    TLD_EMAIL_FIELD_TYPE_UNKNOWN,
+    TLD_EMAIL_FIELD_TYPE_MAILBOX_LIST,
+    TLD_EMAIL_FIELD_TYPE_MAILBOX,
+    TLD_EMAIL_FIELD_TYPE_ADDRESS_LIST,
+    TLD_EMAIL_FIELD_TYPE_ADDRESS_LIST_OPT
+};
+
 struct tld_email_list;
 
 extern LIBTLD_EXPORT struct tld_email_list *tld_email_alloc();
@@ -186,6 +196,8 @@ public:
     void rewind() const;
     bool next(tld_email_t& e) const;
     bool next(tld_email *e) const;
+
+    static tld_email_field_type email_field_type(const std::string& name);
 
 private:
     void parse_all_emails();

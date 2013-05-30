@@ -847,6 +847,79 @@ bool tld_email_list::next(tld_email *e) const
     return true;
 }
 
+/** \brief Check whether a name represents a field with a list of emails.
+ *
+ * This function checks whether a given name represents (is used as) a list
+ * of email addresses.
+ *
+ * All field names are expected to be ASCII. If any other characters appear
+ * then the function returns TLD_EMAIL_FIELD_TYPE_INVALID. The field name
+ * must also start with a letter (A-Z) and it cannot be empty.
+ *
+ * When a field that does not represent an email address or a list thereof
+ * the function returns TLD_EMAIL_FIELD_TYPE_UNKNOWN.
+ *
+ * In all other cases, the function return another TLD_EMAIL_FIELD_TYPE_...
+ *
+ * Note that the field name may be followed by a colon character in which
+ * case the parser stops there.
+ *
+ * \param[in] name  The name of the field to check.
+ *
+ * \return One of the TLD_EMAIL_FIELD_TYPE_... values.
+ */
+tld_email_field_type tld_email_list::email_field_type(const std::string& name)
+{
+    std::string uname;
+    for(const char *u(name.c_str()); *u != '\0' && *u != ':'; ++u)
+    {
+        if(*u >= 'a' && *u <= 'z')
+        {
+            uname += *u & 0x5F;
+        }
+        else if((*u >= 'A' && *u <= 'Z')
+             || (*u >= '0' && *u <= '9')
+             || *u == '-')
+        {
+            uname += *u;
+        }
+        else
+        {
+            return TLD_EMAIL_FIELD_TYPE_INVALID;
+        }
+    }
+    // the field must start with a letter and it cannot be empty
+    if(uname.empty() || uname[0] < 'A' || uname[0] > 'Z')
+    {
+        return TLD_EMAIL_FIELD_TYPE_INVALID;
+    }
+
+    if(uname == "FROM"
+    || uname == "RESENT-FROM")
+    {
+        return TLD_EMAIL_FIELD_TYPE_MAILBOX_LIST;
+    }
+    if(uname == "SENDER"
+    || uname == "RESENT-SENDER")
+    {
+        return TLD_EMAIL_FIELD_TYPE_MAILBOX;
+    }
+    if(uname == "TO"
+    || uname == "CC"
+    || uname == "REPLY-TO"
+    || uname == "RESENT-TO"
+    || uname == "RESENT-CC")
+    {
+        return TLD_EMAIL_FIELD_TYPE_ADDRESS_LIST;
+    }
+    if(uname == "BCC"
+    || uname == "RESENT-BCC")
+    {
+        return TLD_EMAIL_FIELD_TYPE_ADDRESS_LIST_OPT;
+    }
+
+    return TLD_EMAIL_FIELD_TYPE_UNKNOWN;
+}
 
 /** \brief Parse one email to a tld_email_t object.
  *

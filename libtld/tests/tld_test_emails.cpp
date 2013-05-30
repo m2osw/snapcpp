@@ -768,6 +768,92 @@ void test_direct_email()
 
 
 
+struct email_field_types
+{
+    const char *            f_field;
+    tld_email_field_type    f_type;
+};
+
+const email_field_types list_of_email_field_types[] =
+{
+    // make sure case does not have side effects
+    { "to", TLD_EMAIL_FIELD_TYPE_ADDRESS_LIST },
+    { "To", TLD_EMAIL_FIELD_TYPE_ADDRESS_LIST },
+    { "tO", TLD_EMAIL_FIELD_TYPE_ADDRESS_LIST },
+    { "TO", TLD_EMAIL_FIELD_TYPE_ADDRESS_LIST },
+
+    // check all fields that are expected to include emails
+    { "from", TLD_EMAIL_FIELD_TYPE_MAILBOX_LIST },
+    { "resent-from", TLD_EMAIL_FIELD_TYPE_MAILBOX_LIST },
+    { "sender", TLD_EMAIL_FIELD_TYPE_MAILBOX },
+    { "resent-sender", TLD_EMAIL_FIELD_TYPE_MAILBOX },
+    { "to", TLD_EMAIL_FIELD_TYPE_ADDRESS_LIST },
+    { "cc", TLD_EMAIL_FIELD_TYPE_ADDRESS_LIST },
+    { "reply-to", TLD_EMAIL_FIELD_TYPE_ADDRESS_LIST },
+    { "resent-to", TLD_EMAIL_FIELD_TYPE_ADDRESS_LIST },
+    { "resent-cc", TLD_EMAIL_FIELD_TYPE_ADDRESS_LIST },
+    { "bcc", TLD_EMAIL_FIELD_TYPE_ADDRESS_LIST_OPT },
+    { "resent-bcc", TLD_EMAIL_FIELD_TYPE_ADDRESS_LIST_OPT },
+
+    // check all fields with a colon
+    { "from: someone", TLD_EMAIL_FIELD_TYPE_MAILBOX_LIST },
+    { "resent-from: someone", TLD_EMAIL_FIELD_TYPE_MAILBOX_LIST },
+    { "sender: someone", TLD_EMAIL_FIELD_TYPE_MAILBOX },
+    { "resent-sender: someone", TLD_EMAIL_FIELD_TYPE_MAILBOX },
+    { "to: someone", TLD_EMAIL_FIELD_TYPE_ADDRESS_LIST },
+    { "cc: someone", TLD_EMAIL_FIELD_TYPE_ADDRESS_LIST },
+    { "reply-to: someone", TLD_EMAIL_FIELD_TYPE_ADDRESS_LIST },
+    { "resent-to: someone", TLD_EMAIL_FIELD_TYPE_ADDRESS_LIST },
+    { "resent-cc: someone", TLD_EMAIL_FIELD_TYPE_ADDRESS_LIST },
+    { "bcc: someone", TLD_EMAIL_FIELD_TYPE_ADDRESS_LIST_OPT },
+    { "resent-bcc: someone", TLD_EMAIL_FIELD_TYPE_ADDRESS_LIST_OPT },
+
+    // check other fields
+    { "message-id", TLD_EMAIL_FIELD_TYPE_UNKNOWN },
+    { "date", TLD_EMAIL_FIELD_TYPE_UNKNOWN },
+    { "subject", TLD_EMAIL_FIELD_TYPE_UNKNOWN },
+    { "x-extension", TLD_EMAIL_FIELD_TYPE_UNKNOWN },
+
+    // check other fields with a colon
+    { "message-id: something", TLD_EMAIL_FIELD_TYPE_UNKNOWN },
+    { "date: something", TLD_EMAIL_FIELD_TYPE_UNKNOWN },
+    { "subject: something", TLD_EMAIL_FIELD_TYPE_UNKNOWN },
+    { "x-extension: something", TLD_EMAIL_FIELD_TYPE_UNKNOWN },
+
+    // check for invalid field names
+    { "s\xfc\x62ject", TLD_EMAIL_FIELD_TYPE_INVALID },
+    { "subj\xe9\x63t", TLD_EMAIL_FIELD_TYPE_INVALID },
+    { "-bad-dash", TLD_EMAIL_FIELD_TYPE_INVALID },
+    { "0bad-digit", TLD_EMAIL_FIELD_TYPE_INVALID },
+    { "1bad-digit", TLD_EMAIL_FIELD_TYPE_INVALID },
+    { "2bad-digit", TLD_EMAIL_FIELD_TYPE_INVALID },
+    { "3bad-digit", TLD_EMAIL_FIELD_TYPE_INVALID },
+    { "4bad-digit", TLD_EMAIL_FIELD_TYPE_INVALID },
+    { "5bad-digit", TLD_EMAIL_FIELD_TYPE_INVALID },
+    { "6bad-digit", TLD_EMAIL_FIELD_TYPE_INVALID },
+    { "7bad-digit", TLD_EMAIL_FIELD_TYPE_INVALID },
+    { "8bad-digit", TLD_EMAIL_FIELD_TYPE_INVALID },
+    { "9bad-digit", TLD_EMAIL_FIELD_TYPE_INVALID },
+    { "" /*empty*/, TLD_EMAIL_FIELD_TYPE_INVALID },
+};
+
+void test_email_field_types()
+{
+    for(size_t i(0); i < sizeof(list_of_email_field_types) / sizeof(list_of_email_field_types[0]); ++i)
+    {
+        tld_email_field_type type(tld_email_list::email_field_type(list_of_email_field_types[i].f_field));
+        if(type != list_of_email_field_types[i].f_type)
+        {
+            std::stringstream ss;
+            ss << "error: email type mismatch for \"" << list_of_email_field_types[i].f_field
+                << "\", expected " << static_cast<int>(list_of_email_field_types[i].f_type)
+                << ", got " << static_cast<int>(type) << " instead.";
+            error(ss.str());
+        }
+    }
+}
+
+
 
 int main(int argc, char *argv[])
 {
@@ -795,6 +881,7 @@ int main(int argc, char *argv[])
         test_valid_emails();
         test_invalid_emails();
         test_direct_email();
+        test_email_field_types();
     }
     catch(const invalid_domain&)
     {
