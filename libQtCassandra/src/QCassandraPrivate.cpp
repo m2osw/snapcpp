@@ -1040,7 +1040,7 @@ uint32_t QCassandraPrivate::getColumnSlice(QCassandraTable& table, const QByteAr
         table.assignRow(row_key, cell_key, value);
 
         if(has_range && it + 1 == results.end()) {
-            range->setLastKey(it->column.name.c_str());
+            range->setLastKey(cell_key);
         }
     }
 
