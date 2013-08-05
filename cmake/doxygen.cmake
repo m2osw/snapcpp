@@ -22,7 +22,7 @@ function( AddDoxygenTarget TARGET_NAME VERSION_MAJOR VERSION_MINOR VERSION_PATCH
 
     if( DOXYGEN_FOUND )
         if( NOT DOXYGEN_DOT_FOUND )
-            message( WARNING "The dot executable was not found. Did you install Graphviz? No graphic output shall be generated in documenation." )
+            message( WARNING "The dot executable was not found. Did you install Graphviz? No graphic output shall be generated in documentation." )
         endif()
 
         configure_file(${CMAKE_CURRENT_SOURCE_DIR}/${TARGET_NAME}.doxy.in ${CMAKE_CURRENT_BINARY_DIR}/${TARGET_NAME}.doxy @ONLY)
