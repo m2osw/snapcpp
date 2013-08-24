@@ -1,3 +1,9 @@
+libtld (1.4.2) unstable; urgency=medium
+
+  * Added new TLDs such as .com.cw
+
+ -- Alexis Wilke <alexis@m2osw.com>  Fri, 23 Aug 2013 20:41:57 -0800
+
 libtld (1.4.1) unstable; urgency=medium
 
   * Added a function determining the type of an email field that holds emails.

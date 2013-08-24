@@ -461,7 +461,7 @@
     .cu .com.cu .edu.cu .org.cu .net.cu .gov.cu .inf.cu
   </area>
   <area category="country" country="Cura&#xE7;ao">
-    .cw
+    .cw .com.cw .edu.cw .net.cw .org.cw
   </area>
   <area category="country" country="Cyprus">
     .ac.cy .net.cy .gov.cy .org.cy .pro.cy .name.cy .ekloges.cy .tm.cy
@@ -537,7 +537,7 @@
     .fm
   </area>
   <area category="country" country="Finland">
-    .fi .iki.fi
+    .fi
     <forbid reason="deprecated">.aland.fi</forbid>
   </area>
   <area category="country" country="Fiji">
@@ -653,7 +653,8 @@
     .&#x0B87;&#x0BA8;&#x0BCD;&#x0BA4;&#x0BBF;&#x0BAF;&#x0BBE;
   </area>
   <area category="country" country="Indonesia">
-    .id .ac.id .co.id .net.id .or.id .web.id .sch.id .mil.id .go.id
+    .id .ac.id .biz.id .co.id .go.id .mil.id .my.id .net.id .or.id .sch.id
+    .web.id
   </area>
   <area category="country" country="Iran">
     .ir .ac.ir .co.ir .gov.ir .id.ir .net.ir .org.ir .sch.ir
@@ -2192,8 +2193,13 @@
        nor were assigned by the IANA, often referenced as private domains -->
   <area category="entrepreneurial">
     .ae.org
-    .ar.com
+    .ap-northeast-1.compute.amazonaws.com
+    .ap-southeast-1.compute.amazonaws.com
+    .ap-southeast-2.compute.amazonaws.com
     .appspot.com
+    .ar.com
+    .a.prod.fastly.net
+    .a.ssl.fastly.net
     .at-band-camp.net
     .ath.cx
     .barrel-of-knowledge.info
@@ -2247,11 +2253,17 @@
     .boldlygoingnowhere.org
     .br.com
     .broke-it.net
+    .b.ssl.fastly.net
     .buyshouses.net
     .cechire.com
+    .cloudfront.net
+    .cloudcontrolapp.com
+    .cloudcontrolled.com
     .cn.com
     .co.ca
     .codespot.com
+    .compute.amazonaws.com
+    .compute-1.amazonaws.com
     .de.com
     .dnsalias.com
     .dnsalias.net
@@ -2293,6 +2305,8 @@
     .dyndns.org
     .dyndns.tv
     .dyndns.ws
+    .elasticbeanstalk.com
+    .elb.amazonaws.com
     .endofinternet.net
     .endofinternet.org
     .endoftheinternet.org
@@ -2301,6 +2315,7 @@
     .est-le-patron.com
     .est-mon-blogueur.com
     .eu.com
+    .eu-west-1.compute.amazonaws.com
     .for-better.biz
     .for-more.biz
     .for-our.info
@@ -2368,6 +2383,9 @@
     .gb.net
     .getmyip.com
     .gets-it.net
+    .github.io
+    .global.prod.fastly.net
+    .global.ssl.fastly.net
     .go.dyndns.org
     .googleapis.com
     .googlecode.com
@@ -2378,6 +2396,8 @@
     .groks-this.info
     .ham-radio-op.net
     .here-for-more.info
+    .herokuapp.com
+    .herokussl.com
     .hobby-site.com
     .hobby-site.org
     .home.dyndns.org
@@ -2394,6 +2414,7 @@
     .hu.com
     .hu.net
     .iamallama.com
+    .iki.fi
     .in-the-band.net
     .is-a-anarchist.com
     .is-a-blogger.com
@@ -2495,6 +2516,7 @@
     .myphotos.cc
     .neat-url.com
     .no.com
+    .nyc.mn
     .office-on-the.net
     .on-the-web.tv
     .operaunite.com
@@ -2503,8 +2525,29 @@
     .qc.com
     .readmyblog.org
     .rhcloud.com
+    .ro.com
     .ru.com
+    .s3.amazonaws.com
+    .s3-ap-northeast-1.amazonaws.com
+    .s3-ap-southeast-1.amazonaws.com
+    .s3-ap-southeast-2.amazonaws.com
+    .s3-eu-west-1.amazonaws.com
+    .s3-fips-us-gov-west-1.amazonaws.com
+    .s3-sa-east-1.amazonaws.com
+    .s3-us-gov-west-1.amazonaws.com
+    .s3-us-west-1.amazonaws.com
+    .s3-us-west-2.amazonaws.com
+    .s3-website-ap-northeast-1.amazonaws.com
+    .s3-website-ap-southeast-1.amazonaws.com
+    .s3-website-ap-southeast-2.amazonaws.com
+    .s3-website-eu-west-1.amazonaws.com
+    .s3-website-sa-east-1.amazonaws.com
+    .s3-website-us-east-1.amazonaws.com
+    .s3-website-us-gov-west-1.amazonaws.com
+    .s3-website-us-west-1.amazonaws.com
+    .s3-website-us-west-2.amazonaws.com
     .sa.com
+    .sa-east-1.compute.amazonaws.com
     .saves-the-whales.com
     .scrapper-site.net
     .scrapping.cc
@@ -2536,7 +2579,11 @@
     .uk.com
     .uk.net
     .us.com
+    .us-east-1.amazonaws.com
+    .us-gov-west-1.compute.amazonaws.com
     .us.org
+    .us-west-1.compute.amazonaws.com
+    .us-west-2.compute.amazonaws.com
     .uy.com
     .webhop.biz
     .webhop.info
@@ -2544,12 +2591,18 @@
     .webhop.org
     .worse-than.tv
     .writesthisblog.com
+    .z-1.compute-1.amazonaws.com
+    .z-2.compute-1.amazonaws.com
     .za.com
     .za.net
     .za.org
     <forbid reason="unused">
+      .amazonaws.com
+      .fastly.net
       .her.name
       .his.name
+      .prod.fastly.net
+      .ssl.fastly.net
     </forbid>
   </area>
 </tld>

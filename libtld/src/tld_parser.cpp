@@ -882,6 +882,8 @@ int main(int argc, char *argv[])
     //snap::output_offsets(map, letters); -- letters is not computed
     snap::output_footer();
     //snap::output_map(map);
+
+    return 0;
 }
 
 

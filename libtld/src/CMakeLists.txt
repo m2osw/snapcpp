@@ -94,7 +94,8 @@ project(tld_data)
 add_custom_command(
     OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/tld_data.c
     COMMAND tld_parser ${libtld_SOURCE_DIR}
-    DEPENDS tld_parser tld_data.xml
+    MAIN_DEPENDENCY tld_data.xml
+    DEPENDS tld_parser
 )
 define_property(SOURCE
     PROPERTY GENERATED
