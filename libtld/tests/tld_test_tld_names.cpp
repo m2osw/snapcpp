@@ -30,6 +30,7 @@
 
 
 int err_count = 0;
+int verbose = 0;
 
 /*
  * This test calls the tld() function with all the TLDs as defined
@@ -134,7 +135,7 @@ void test_load()
             if(s.length() == 1)
             {
                 // all TLDs are at least 2 characters
-                fprintf(stderr, "effective_tld_names.data:%d:error: line too long.\n", line);
+                fprintf(stderr, "effective_tld_names.data:%d:error: a TLD must be at least two characters.\n", line);
                 ++err_count;
             }
             else if(s.length() > 1 && s[0] != '/' && s[1] != '/')
@@ -144,6 +145,10 @@ void test_load()
 //printf("found [%s]\n", s.c_str());
             }
         }
+    }
+    if(verbose)
+    {
+        printf("Found %d TLDs in the input file.\n", static_cast<int>(tlds.size()));
     }
 }
 
@@ -240,7 +245,15 @@ printf("\n");
 
 int main(int argc, char *argv[])
 {
-    fprintf(stderr, "testing tld names version %s\n", tld_version());
+    printf("testing tld names version %s\n", tld_version());
+
+    if(argc > 1)
+    {
+        if(strcmp(argv[1], "-v") == 0)
+        {
+            verbose = 1;
+        }
+    }
 
     /* call all the tests, one by one
      * failures are "recorded" in the err_count global variable
@@ -254,7 +267,7 @@ int main(int argc, char *argv[])
         test_tlds();
     }
 
-    if(err_count)
+    if(err_count || verbose)
     {
         fprintf(stderr, "%d error%s occured.\n",
                     err_count, err_count != 1 ? "s" : "");
