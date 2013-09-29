@@ -56,8 +56,8 @@ function( ConfigureMakeProject PROJECT_NAME VERSION DISTFILE_PATH )
 		)
 endfunction()
 
-set( VERSION 0.8.0 )
-set( TARFILE ${3rdParty_SOURCE_DIR}/thrift-${VERSION}.tar.gz )
+set( THRIFT_VERSION 0.9.0 )
+set( TARFILE ${3rdParty_SOURCE_DIR}/thrift-${THRIFT_VERSION}.tar.gz )
 set( CONFIG_ARGS
 	--without-csharp
 	--without-java
@@ -70,6 +70,6 @@ set( CONFIG_ARGS
 	--without-haskell
 	--without-go
 	)
-ConfigureMakeProject( thrift ${VERSION} ${TARFILE} ${CONFIG_ARGS} )
+ConfigureMakeProject( thrift ${THRIFT_VERSION} ${TARFILE} ${CONFIG_ARGS} )
 
 # vim: ts=4 sw=4 noet
