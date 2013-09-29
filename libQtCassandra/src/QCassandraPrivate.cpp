@@ -297,6 +297,8 @@ bool QCassandraPrivate::connect(const QString& host, const int port, const QStri
         f_client.reset(new org::apache::cassandra::CassandraClient(f_protocol));
 
         // once everything is connected as it should, open the transport link
+        // NB: you may get an error here because it tries to open with IPv6
+        //     first, but if we do not catch the error, IPv4 worked
         f_transport->open();
     }
     catch(...) {

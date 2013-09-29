@@ -2,10 +2,10 @@
 // You should copy it to another filename to avoid overwriting it.
 
 #include "Cassandra.h"
-#include <thrift/protocol/TBinaryProtocol.h>
-#include <thrift/server/TSimpleServer.h>
-#include <thrift/transport/TServerSocket.h>
-#include <thrift/transport/TBufferTransports.h>
+#include <protocol/TBinaryProtocol.h>
+#include <server/TSimpleServer.h>
+#include <transport/TServerSocket.h>
+#include <transport/TBufferTransports.h>
 
 using namespace ::apache::thrift;
 using namespace ::apache::thrift::protocol;
@@ -82,11 +82,6 @@ class CassandraHandler : virtual public CassandraIf {
     printf("add\n");
   }
 
-  void cas(CASResult& _return, const std::string& key, const std::string& column_family, const std::vector<Column> & expected, const std::vector<Column> & updates, const ConsistencyLevel::type serial_consistency_level, const ConsistencyLevel::type commit_consistency_level) {
-    // Your implementation goes here
-    printf("cas\n");
-  }
-
   void remove(const std::string& key, const ColumnPath& column_path, const int64_t timestamp, const ConsistencyLevel::type consistency_level) {
     // Your implementation goes here
     printf("remove\n");
@@ -100,11 +95,6 @@ class CassandraHandler : virtual public CassandraIf {
   void batch_mutate(const std::map<std::string, std::map<std::string, std::vector<Mutation> > > & mutation_map, const ConsistencyLevel::type consistency_level) {
     // Your implementation goes here
     printf("batch_mutate\n");
-  }
-
-  void atomic_batch_mutate(const std::map<std::string, std::map<std::string, std::vector<Mutation> > > & mutation_map, const ConsistencyLevel::type consistency_level) {
-    // Your implementation goes here
-    printf("atomic_batch_mutate\n");
   }
 
   void truncate(const std::string& cfname) {
@@ -137,11 +127,6 @@ class CassandraHandler : virtual public CassandraIf {
     printf("describe_ring\n");
   }
 
-  void describe_token_map(std::map<std::string, std::string> & _return) {
-    // Your implementation goes here
-    printf("describe_token_map\n");
-  }
-
   void describe_partitioner(std::string& _return) {
     // Your implementation goes here
     printf("describe_partitioner\n");
@@ -160,16 +145,6 @@ class CassandraHandler : virtual public CassandraIf {
   void describe_splits(std::vector<std::string> & _return, const std::string& cfName, const std::string& start_token, const std::string& end_token, const int32_t keys_per_split) {
     // Your implementation goes here
     printf("describe_splits\n");
-  }
-
-  void trace_next_query(std::string& _return) {
-    // Your implementation goes here
-    printf("trace_next_query\n");
-  }
-
-  void describe_splits_ex(std::vector<CfSplit> & _return, const std::string& cfName, const std::string& start_token, const std::string& end_token, const int32_t keys_per_split) {
-    // Your implementation goes here
-    printf("describe_splits_ex\n");
   }
 
   void system_add_column_family(std::string& _return, const CfDef& cf_def) {
@@ -207,29 +182,14 @@ class CassandraHandler : virtual public CassandraIf {
     printf("execute_cql_query\n");
   }
 
-  void execute_cql3_query(CqlResult& _return, const std::string& query, const Compression::type compression, const ConsistencyLevel::type consistency) {
-    // Your implementation goes here
-    printf("execute_cql3_query\n");
-  }
-
   void prepare_cql_query(CqlPreparedResult& _return, const std::string& query, const Compression::type compression) {
     // Your implementation goes here
     printf("prepare_cql_query\n");
   }
 
-  void prepare_cql3_query(CqlPreparedResult& _return, const std::string& query, const Compression::type compression) {
-    // Your implementation goes here
-    printf("prepare_cql3_query\n");
-  }
-
   void execute_prepared_cql_query(CqlResult& _return, const int32_t itemId, const std::vector<std::string> & values) {
     // Your implementation goes here
     printf("execute_prepared_cql_query\n");
-  }
-
-  void execute_prepared_cql3_query(CqlResult& _return, const int32_t itemId, const std::vector<std::string> & values, const ConsistencyLevel::type consistency) {
-    // Your implementation goes here
-    printf("execute_prepared_cql3_query\n");
   }
 
   void set_cql_version(const std::string& version) {

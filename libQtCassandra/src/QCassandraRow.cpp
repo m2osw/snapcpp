@@ -718,13 +718,6 @@ bool QCassandraRow::exists(const QUuid& column_uuid) const
  * The check is happening in memory first. If the cell doesn't exist in memory,
  * then the row checks in the Cassandra database.
  *
- * \todo
- * Look into why a cell is created when just checking for its existance.
- *
- * \bug
- * At this time this function CREATES the cell if it did not yet
- * exist!
- *
  * \param[in] column_key  The column binary key.
  *
  * \return true if the cell exists, false otherwise.
@@ -743,7 +736,9 @@ bool QCassandraRow::exists(const QByteArray& column_key) const
     // try reading this cell
     QCassandraValue value;
     try {
-        f_table->getValue(f_key, column_key, value);
+        if(!f_table->getValue(f_key, column_key, value)) {
+            return false;
+        }
     }
     catch(const org::apache::cassandra::NotFoundException&) {
         // it doesn't exist in Cassandra either

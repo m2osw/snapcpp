@@ -54,14 +54,14 @@ union double_switch_t {
 uint64_t my_rand()
 {
     return
-        static_cast<uint64_t>(rand() & 255) << 56
-      | static_cast<uint64_t>(rand() & 255) << 48
-      | static_cast<uint64_t>(rand() & 255) << 40
-      | static_cast<uint64_t>(rand() & 255) << 32
-      | static_cast<uint64_t>(rand() & 255) << 24
-      | static_cast<uint64_t>(rand() & 255) << 16
-      | static_cast<uint64_t>(rand() & 255) <<  8
-      | static_cast<uint64_t>(rand() & 255) <<  0
+        (static_cast<uint64_t>(rand() & 255) << 56)
+      | (static_cast<uint64_t>(rand() & 255) << 48)
+      | (static_cast<uint64_t>(rand() & 255) << 40)
+      | (static_cast<uint64_t>(rand() & 255) << 32)
+      | (static_cast<uint64_t>(rand() & 255) << 24)
+      | (static_cast<uint64_t>(rand() & 255) << 16)
+      | (static_cast<uint64_t>(rand() & 255) <<  8)
+      | (static_cast<uint64_t>(rand() & 255) <<  0)
     ;
 }
 
@@ -1890,6 +1890,99 @@ int main(int argc, char *argv[])
         }
         if(value.stringValue(0, size) != str) {
             qDebug() << "error: the value.setStringValue() did not set the string" << cleanString(str) << "as expected, or the value.stringValue(0, size) did not read it back properly" << QtCassandra::stringValue(array, 0, size);
+            ++err;
+        }
+        // test again with a copy
+        QtCassandra::QCassandraValue copy(value);
+        if(copy.size() != size) {
+            qDebug() << "error: the copy.setStringValue() is not setting the expected size.";
+            ++err;
+        }
+        if(copy.stringValue() != str) {
+            qDebug() << "error: the copy.setStringValue() did not set the string" << cleanString(str) << "as expected, or the copy.stringValue() did not read it back properly" << QtCassandra::stringValue(array);
+            ++err;
+        }
+        if(copy.stringValue(0) != str) {
+            qDebug() << "error: the copy.setStringValue() did not set the string" << cleanString(str) << "as expected, or the copy.stringValue(0) did not read it back properly" << QtCassandra::stringValue(array, 0);
+            ++err;
+        }
+        if(copy.stringValue(0, -1) != str) {
+            qDebug() << "error: the copy.setStringValue() did not set the string" << cleanString(str) << "as expected, or the copy.stringValue(0, -1) did not read it back properly" << QtCassandra::stringValue(array, 0, -1);
+            ++err;
+        }
+        if(copy.stringValue(0, size) != str) {
+            qDebug() << "error: the copy.setStringValue() did not set the string" << cleanString(str) << "as expected, or the copy.stringValue(0, size) did not read it back properly" << QtCassandra::stringValue(array, 0, size);
+            ++err;
+        }
+        if(!(copy == value)) {
+            qDebug() << "error: the copy.setStringValue() does not match the original" << cleanString(str) << "as expected";
+            ++err;
+        }
+        if(copy != value) {
+            qDebug() << "error: the copy.setStringValue() does not match the original which is unexpected" << cleanString(str);
+            ++err;
+        }
+        if(copy < value) {
+            qDebug() << "error: the copy.setStringValue() is considered smaller than the original which is unexpected" << cleanString(str);
+            ++err;
+        }
+        if(!(copy <= value)) {
+            qDebug() << "error: the copy.setStringValue() is not considered smaller or equal to the original which is unexpected" << cleanString(str);
+            ++err;
+        }
+        if(copy > value) {
+            qDebug() << "error: the copy.setStringValue() is considered larger than the original which is unexpected" << cleanString(str);
+            ++err;
+        }
+        if(!(copy >= value)) {
+            qDebug() << "error: the copy.setStringValue() is not considered larger or equal to the original which is unexpected" << cleanString(str);
+            ++err;
+        }
+        // test again with a copy
+        QtCassandra::QCassandraValue copy2;
+        copy2 = value;
+        if(copy2.size() != size) {
+            qDebug() << "error: the copy2.setStringValue() is not setting the expected size.";
+            ++err;
+        }
+        if(copy2.stringValue() != str) {
+            qDebug() << "error: the copy2.setStringValue() did not set the string" << cleanString(str) << "as expected, or the copy2.stringValue() did not read it back properly" << QtCassandra::stringValue(array);
+            ++err;
+        }
+        if(copy2.stringValue(0) != str) {
+            qDebug() << "error: the copy2.setStringValue() did not set the string" << cleanString(str) << "as expected, or the copy2.stringValue(0) did not read it back properly" << QtCassandra::stringValue(array, 0);
+            ++err;
+        }
+        if(copy2.stringValue(0, -1) != str) {
+            qDebug() << "error: the copy2.setStringValue() did not set the string" << cleanString(str) << "as expected, or the copy2.stringValue(0, -1) did not read it back properly" << QtCassandra::stringValue(array, 0, -1);
+            ++err;
+        }
+        if(copy2.stringValue(0, size) != str) {
+            qDebug() << "error: the copy2.setStringValue() did not set the string" << cleanString(str) << "as expected, or the copy2.stringValue(0, size) did not read it back properly" << QtCassandra::stringValue(array, 0, size);
+            ++err;
+        }
+        if(!(copy2 == value)) {
+            qDebug() << "error: the copy2.setStringValue() does not match the original" << cleanString(str) << "as expected";
+            ++err;
+        }
+        if(copy2 != value) {
+            qDebug() << "error: the copy2.setStringValue() does not match the original which is unexpected" << cleanString(str);
+            ++err;
+        }
+        if(copy2 < value) {
+            qDebug() << "error: the copy2.setStringValue() is considered smaller than the original which is unexpected" << cleanString(str);
+            ++err;
+        }
+        if(!(copy2 <= value)) {
+            qDebug() << "error: the copy2.setStringValue() is not considered smaller or equal to the original which is unexpected" << cleanString(str);
+            ++err;
+        }
+        if(copy2 > value) {
+            qDebug() << "error: the copy2.setStringValue() is considered larger than the original which is unexpected" << cleanString(str);
+            ++err;
+        }
+        if(!(copy2 >= value)) {
+            qDebug() << "error: the copy2.setStringValue() is not considered larger or equal to the original which is unexpected" << cleanString(str);
             ++err;
         }
         // the index and size need special care in case of a string
