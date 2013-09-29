@@ -27,9 +27,19 @@ snap_manager_about::snap_manager_about(QWidget *snap_parent)
 	QString about(textBrowser->toHtml());
 	about.replace("@VERSION@", SNAPWEBSITES_VERSION_STRING);
 	textBrowser->setHtml(about);
+
+connect(this, SIGNAL(click_now()), this, SLOT(clicked()));
 }
 
 snap_manager_about::~snap_manager_about()
+{
+}
+
+void snap_manager_about::random()
+{
+emit click_now();
+}
+void snap_manager_about::clicked()
 {
 }
 

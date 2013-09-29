@@ -64,7 +64,7 @@ p, li { white-space: pre-wrap; }
     <string/>
    </property>
    <property name="pixmap">
-    <pixmap>../../../../../../crap/snap-logo.png</pixmap>
+    <pixmap>:/images/snap-logo.png</pixmap>
    </property>
   </widget>
  </widget>

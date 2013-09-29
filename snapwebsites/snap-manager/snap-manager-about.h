@@ -27,7 +27,14 @@ public:
 	snap_manager_about(QWidget *parent);
 	virtual ~snap_manager_about();
 
+private slots:
+	void clicked();
+
+signals:
+	void click_now();
+
 private:
+	void random();
 };
 
 

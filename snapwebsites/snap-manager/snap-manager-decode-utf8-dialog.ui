@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>About Snap! Manager</string>
+   <string>UTF-8 Decoder/Encoder</string>
   </property>
   <widget class="QWidget" name="verticalLayoutWidget">
    <property name="geometry">
