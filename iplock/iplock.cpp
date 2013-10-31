@@ -30,6 +30,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <fcntl.h>
+#include <unistd.h>
 #include <map>
 #include <string>
 #include <vector>
@@ -162,7 +164,7 @@ void usage()
 }
 
 
-void block_ip(configuration& conf, const char *ip)
+void block_ip(configuration& conf, const char *ip, bool quiet)
 {
 	const configuration::ports_t& ports(conf.ports());
 
@@ -174,11 +176,14 @@ void block_ip(configuration& conf, const char *ip)
 		cmd.replace(port_position, 6, *p);
 		size_t ip_position(cmd.find("[ip]"));
 		cmd.replace(ip_position, 4, ip);
+		if(quiet) {
+			cmd += " 2>/dev/null";
+		}
 		system(cmd.c_str());
 	}
 }
 
-void unblock_ip(configuration& conf, const char *ip)
+void unblock_ip(configuration& conf, const char *ip, bool quiet)
 {
 	const configuration::ports_t& ports = conf.ports();
 
@@ -190,6 +195,9 @@ void unblock_ip(configuration& conf, const char *ip)
 		cmd.replace(port_position, 6, *p);
 		size_t ip_position(cmd.find("[ip]"));
 		cmd.replace(ip_position, 4, ip);
+		if(quiet) {
+			cmd += " 2>/dev/null";
+		}
 		system(cmd.c_str());
 	}
 }
@@ -236,12 +244,18 @@ int main(int argc, const char *argv[])
 	configuration conf;
 
 	bool block(true);
+	bool quiet(false);
 	for(int i = 1; i < argc; ++i) {
 		if(strcmp(argv[i], "-h") == 0
 		|| strcmp(argv[i], "--help") == 0) {
 			usage();
+			/*NOTREACHED*/
 		}
-		if(strcmp(argv[i], "-r") == 0
+		if(strcmp(argv[i], "-q") == 0
+		|| strcmp(argv[i], "--quiet") == 0) {
+			quiet = true;
+		}
+		else if(strcmp(argv[i], "-r") == 0
 		|| strcmp(argv[i], "--remove") == 0) {
 			block = false;
 		}
@@ -256,10 +270,10 @@ int main(int argc, const char *argv[])
 		else {
 			verify_ip(argv[i]);
 			if(block) {
-				block_ip(conf, argv[i]);
+				block_ip(conf, argv[i], quiet);
 			}
 			else {
-				unblock_ip(conf, argv[i]);
+				unblock_ip(conf, argv[i], quiet);
 			}
 		}
 	}
