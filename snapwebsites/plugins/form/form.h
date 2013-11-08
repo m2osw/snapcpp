@@ -17,8 +17,6 @@
 #ifndef SNAP_FROM_H
 #define SNAP_FROM_H
 
-//#include "snapwebsites.h"
-//#include "plugins.h"
 #include "../sessions/sessions.h"
 #include <QtCassandra/QCassandraTable.h>
 #include <QDomDocument>

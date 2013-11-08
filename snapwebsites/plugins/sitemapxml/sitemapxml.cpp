@@ -262,16 +262,16 @@ bool sitemapxml::url_info::operator < (const url_info& rhs) const
 }
 
 
-/** \brief Initialize the sitemapxml plug-in.
+/** \brief Initialize the sitemapxml plugin.
  *
- * This function is used to initialize the sitemapxml plug-in object.
+ * This function is used to initialize the sitemapxml plugin object.
  */
 sitemapxml::sitemapxml()
 	//: f_snap(NULL) -- auto-init
 {
 }
 
-/** \brief Clean up the sitemapxml plug-in.
+/** \brief Clean up the sitemapxml plugin.
  *
  * Ensure the sitemapxml object is clean before it is gone.
  */
@@ -279,14 +279,14 @@ sitemapxml::~sitemapxml()
 {
 }
 
-/** \brief Get a pointer to the sitemapxml plug-in.
+/** \brief Get a pointer to the sitemapxml plugin.
  *
- * This function returns an instance pointer to the sitemapxml plug-in.
+ * This function returns an instance pointer to the sitemapxml plugin.
  *
  * Note that you cannot assume that the pointer will be valid until the
  * bootstrap event is called.
  *
- * \return A pointer to the sitemapxml plug-in.
+ * \return A pointer to the sitemapxml plugin.
  */
 sitemapxml *sitemapxml::instance()
 {
@@ -312,8 +312,8 @@ QString sitemapxml::description() const
 
 /** \brief Initialize the sitemapxml.
  *
- * This function terminates the initialization of the sitemapxml plug-in
- * by registring for different events.
+ * This function terminates the initialization of the sitemapxml plugin
+ * by registering for different events.
  */
 void sitemapxml::on_bootstrap(::snap::snap_child *snap)
 {
@@ -378,7 +378,18 @@ void sitemapxml::content_update(int64_t variables_timestamp)
 /** \brief Implementation of the robotstxt signal.
  *
  * This function adds the Sitemap field to the robotstxt file as a global field.
- * (i.e. you're expected to have only one sitemap.)
+ * (i.e. you're expected to have only one main sitemap.)
+ *
+ * \note
+ * Note that at this time the sitemap.xml file is expected to reside on the
+ * exact same domain. This would need to be a parameter we can change.
+ * For example, for all our websites we could make use of a specialized
+ * computer to handle all the sitemaps and place the results on:
+ *
+ * http://sitemap.snapwebsites.net/
+ *
+ * That would reduce the load on the important servers that need to respond
+ * to normal users as fast as possible.
  *
  * \param[in] r  The robotstxt object.
  */
@@ -530,7 +541,9 @@ bool sitemapxml::on_path_execute(const QString& url)
  *
  * This function generates the header of the robots.txt.
  *
- * \return true if the signal has to be sent to other plug-ins.
+ * \param[in] r  At this point this parameter is ignored
+ *
+ * \return true if the signal has to be sent to other plugins.
  */
 bool sitemapxml::generate_sitemapxml_impl(sitemapxml *r)
 {
@@ -650,13 +663,13 @@ void sitemapxml::on_backend_process()
 		QDomText page_url(doc.createTextNode(u->get_uri()));
 		loc.appendChild(page_url);
 
-		// create /usr/priority
+		// create /url/priority
 		QDomElement priority(doc.createElement("priority"));
 		url.appendChild(priority);
 		QDomText prio(doc.createTextNode(QString("%1").arg(u->get_priority())));
 		priority.appendChild(prio);
 
-		// create /usr/lastmod
+		// create /url/lastmod (optional)
 		time_t t(u->get_last_modification());
 		if(t != 0)
 		{
@@ -668,7 +681,7 @@ void sitemapxml::on_backend_process()
 			lastmod.appendChild(mod);
 		}
 
-		// create /usr/changefreq
+		// create /url/changefreq (optional)
 		int f(u->get_frequency());
 		if(f != url_info::FREQUENCY_NONE)
 		{
@@ -701,6 +714,13 @@ void sitemapxml::on_backend_process()
 			QDomText freq(doc.createTextNode(frequency));
 			changefreq.appendChild(freq);
 		}
+
+		// create the /url/xhtml:link (rel="alternate")
+		// see http://googlewebmastercentral.blogspot.com/2012/05/multilingual-and-multinational-site.html
+		// (requires a pattern to generate the right URIs)
+		// see layouts/white-theme-parser.xsl for the pattern information,
+		// we have the mode that defines the "pattern" for the URI, but we
+		// need to know where it is defined which is not done yet
 	}
 
 	// TODO: we need to look into supporting multiple sitemap.xml files

@@ -37,64 +37,64 @@ SNAP_PLUGIN_START(content, 1, 0)
  */
 const char *get_name(name_t name)
 {
-	switch(name) {
-	case SNAP_NAME_CONTENT_TABLE: // pages, tags, comments, etc.
-		return "content";
+    switch(name) {
+    case SNAP_NAME_CONTENT_TABLE: // pages, tags, comments, etc.
+        return "content";
 
-	case SNAP_NAME_CONTENT_CONTENT_TYPES:
-		return "Content Types";
+    case SNAP_NAME_CONTENT_CONTENT_TYPES:
+        return "Content Types";
 
-	case SNAP_NAME_CONTENT_CONTENT_TYPES_NAME:
-		return "content_types";
+    case SNAP_NAME_CONTENT_CONTENT_TYPES_NAME:
+        return "content_types";
 
-	case SNAP_NAME_CONTENT_PAGE_CONTENT_TYPE:
-		return "page_content_type";
+    case SNAP_NAME_CONTENT_PAGE_CONTENT_TYPE:
+        return "page_content_type";
 
-	case SNAP_NAME_CONTENT_TITLE:
-		return "content::title";
+    case SNAP_NAME_CONTENT_TITLE:
+        return "content::title";
 
-	case SNAP_NAME_CONTENT_SHORT_TITLE:
-		return "content::short_title";
+    case SNAP_NAME_CONTENT_SHORT_TITLE:
+        return "content::short_title";
 
-	case SNAP_NAME_CONTENT_LONG_TITLE:
-		return "content::long_title";
+    case SNAP_NAME_CONTENT_LONG_TITLE:
+        return "content::long_title";
 
-	case SNAP_NAME_CONTENT_BODY:
-		return "content::body";
+    case SNAP_NAME_CONTENT_BODY:
+        return "content::body";
 
-	case SNAP_NAME_CONTENT_CREATED:
-		return "content::created";
+    case SNAP_NAME_CONTENT_CREATED:
+        return "content::created";
 
-	case SNAP_NAME_CONTENT_UPDATED:
-		return "content::updated";
+    case SNAP_NAME_CONTENT_UPDATED:
+        return "content::updated";
 
-	case SNAP_NAME_CONTENT_MODIFIED:
-		return "content::modified";
+    case SNAP_NAME_CONTENT_MODIFIED:
+        return "content::modified";
 
-	case SNAP_NAME_CONTENT_ACCEPTED:
-		return "content::accepted";
+    case SNAP_NAME_CONTENT_ACCEPTED:
+        return "content::accepted";
 
-	case SNAP_NAME_CONTENT_SUBMITTED:
-		return "content::submitted";
+    case SNAP_NAME_CONTENT_SUBMITTED:
+        return "content::submitted";
 
-	case SNAP_NAME_CONTENT_SINCE:
-		return "content::since";
+    case SNAP_NAME_CONTENT_SINCE:
+        return "content::since";
 
-	case SNAP_NAME_CONTENT_UNTIL:
-		return "content::until";
+    case SNAP_NAME_CONTENT_UNTIL:
+        return "content::until";
 
-	case SNAP_NAME_CONTENT_COPYRIGHTED:
-		return "content::copyrighted";
+    case SNAP_NAME_CONTENT_COPYRIGHTED:
+        return "content::copyrighted";
 
-	case SNAP_NAME_CONTENT_ISSUED:
-		return "content::issued";
+    case SNAP_NAME_CONTENT_ISSUED:
+        return "content::issued";
 
-	default:
-		// invalid index
-		throw snap_exception();
+    default:
+        // invalid index
+        throw snap_exception();
 
-	}
-	NOTREACHED();
+    }
+    NOTREACHED();
 }
 
 /** \brief Initialize the content plugin.
@@ -102,7 +102,7 @@ const char *get_name(name_t name)
  * This function is used to initialize the content plugin object.
  */
 content::content()
-	//: f_snap(NULL) -- auto-init
+    //: f_snap(NULL) -- auto-init
 {
 }
 
@@ -117,34 +117,34 @@ content::~content()
 /** \brief Initialize the content.
  *
  * This function terminates the initialization of the content plugin
- * by registring for different events.
+ * by registering for different events.
  *
  * \param[in] snap  The child handling this request.
  */
 void content::on_bootstrap(snap_child *snap)
 {
-	f_snap = snap;
+    f_snap = snap;
 
-	SNAP_LISTEN0(content, "server", server, save_content);
-	SNAP_LISTEN(content, "layout", layout::layout, generate_page_content, _1, _2, _3, _4);
+    SNAP_LISTEN0(content, "server", server, save_content);
+    SNAP_LISTEN(content, "layout", layout::layout, generate_page_content, _1, _2, _3, _4);
 
-	if(plugins::exists("javascript")) {
-		javascript::javascript::instance()->register_dynamic_plugin(this);
-	}
+    if(plugins::exists("javascript")) {
+        javascript::javascript::instance()->register_dynamic_plugin(this);
+    }
 }
 
-/** \brief Get a pointer to the content plug-in.
+/** \brief Get a pointer to the content plugin.
  *
- * This function returns an instance pointer to the content plug-in.
+ * This function returns an instance pointer to the content plugin.
  *
  * Note that you cannot assume that the pointer will be valid until the
  * bootstrap event is called.
  *
- * \return A pointer to the content plug-in.
+ * \return A pointer to the content plugin.
  */
 content *content::instance()
 {
-	return g_plugin_content_factory.instance();
+    return g_plugin_content_factory.instance();
 }
 
 
@@ -159,9 +159,9 @@ content *content::instance()
  */
 QString content::description() const
 {
-	return "Manage nearly all the content of your website. This plugin handles"
-		" your pages, the website taxonomy (tags, categories, permissions...)"
-		" and much much more.";
+    return "Manage nearly all the content of your website. This plugin handles"
+        " your pages, the website taxonomy (tags, categories, permissions...)"
+        " and much much more.";
 }
 
 
@@ -179,12 +179,12 @@ QString content::description() const
  */
 int64_t content::do_update(int64_t last_updated)
 {
-	SNAP_PLUGIN_UPDATE_INIT();
+    SNAP_PLUGIN_UPDATE_INIT();
 
-	SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, initial_update);
-	SNAP_PLUGIN_UPDATE(2012, 10, 28, 3, 51, 13, content_update);
+    SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, initial_update);
+    SNAP_PLUGIN_UPDATE(2013, 9, 19, 22, 50, 40, content_update);
 
-	SNAP_PLUGIN_UPDATE_EXIT();
+    SNAP_PLUGIN_UPDATE_EXIT();
 }
 
 /** \brief First update to run for the content plugin.
@@ -196,8 +196,8 @@ int64_t content::do_update(int64_t last_updated)
  */
 void content::initial_update(int64_t variables_timestamp)
 {
-	// add the index page! -- no like this!
-	//path::path::instance()->add_path("content", "", variables_timestamp);
+    // add the index page! -- not like this anymore! see the content.xml files instead
+    //path::path::instance()->add_path("content", "", variables_timestamp);
 }
 
 /** \brief Update the database with our content references.
@@ -209,7 +209,7 @@ void content::initial_update(int64_t variables_timestamp)
  */
 void content::content_update(int64_t variables_timestamp)
 {
-	content::content::instance()->add_xml("content");
+    content::content::instance()->add_xml("content");
 }
 
 /** \brief Execute a page: generate the complete output of that page.
@@ -227,12 +227,12 @@ void content::content_update(int64_t variables_timestamp)
  */
 bool content::on_path_execute(const QString& cpath)
 {
-	f_snap->output(layout::layout::instance()->apply_layout(cpath, this));
+    f_snap->output(layout::layout::instance()->apply_layout(cpath, this));
 
-	//QtCassandra::QCassandraValue title(get_content_parameter(path, get_name(SNAP_NAME_CONTENT_TITLE)));
-	//QtCassandra::QCassandraValue body(get_content_parameter(path, get_name(SNAP_NAME_CONTENT_BODY)));
-	//f_snap->output("<html><head><title>" + title.stringValue() + "</title></head><body>" + body.stringValue() + "</body></html>\n");
-	return true;
+    //QtCassandra::QCassandraValue title(get_content_parameter(path, get_name(SNAP_NAME_CONTENT_TITLE)));
+    //QtCassandra::QCassandraValue body(get_content_parameter(path, get_name(SNAP_NAME_CONTENT_BODY)));
+    //f_snap->output("<html><head><title>" + title.stringValue() + "</title></head><body>" + body.stringValue() + "</body></html>\n");
+    return true;
 }
 
 /** \brief Generate the header of the content.
@@ -250,7 +250,7 @@ bool content::on_path_execute(const QString& cpath)
  */
 //bool content::on_generate_header_content_impl(content *c, const QString& path, QDomElement& header)
 //{
-//	return true;
+//  return true;
 //}
 
 
@@ -274,182 +274,182 @@ bool content::on_path_execute(const QString& cpath)
  */
 void content::on_generate_main_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body)
 {
-	QDomDocument doc(page.ownerDocument());
-	//QDomNodeList bodies(doc.elementsByTagName("body"));
-	//if(bodies.count() != 1)
-	//{
-	//	return;
-	//}
-	//QDomNode node(bodies[0]);
-	//if(!node.isElement())
-	//{
-	//	return;
-	//}
-	//QDomElement body(node.toElement());
+    QDomDocument doc(page.ownerDocument());
+    //QDomNodeList bodies(doc.elementsByTagName("body"));
+    //if(bodies.count() != 1)
+    //{
+    //  return;
+    //}
+    //QDomNode node(bodies[0]);
+    //if(!node.isElement())
+    //{
+    //  return;
+    //}
+    //QDomElement body(node.toElement());
 
-	{
-		QDomElement created(doc.createElement("created"));
-		body.appendChild(created);
-		QtCassandra::QCassandraValue v(get_content_parameter(path, get_name(SNAP_NAME_CONTENT_CREATED)));
-		QDomText text(doc.createTextNode(f_snap->date_to_string(v.int64Value())));
-		created.appendChild(text);
-	}
+    {
+        QDomElement created(doc.createElement("created"));
+        body.appendChild(created);
+        QtCassandra::QCassandraValue v(get_content_parameter(path, get_name(SNAP_NAME_CONTENT_CREATED)));
+        QDomText text(doc.createTextNode(f_snap->date_to_string(v.int64Value())));
+        created.appendChild(text);
+    }
 
-	{
-		QDomElement modified(doc.createElement("modified"));
-		body.appendChild(modified);
-		QtCassandra::QCassandraValue v(get_content_parameter(path, get_name(SNAP_NAME_CONTENT_MODIFIED)));
-		QDomText text(doc.createTextNode(f_snap->date_to_string(v.int64Value())));
-		modified.appendChild(text);
-	}
+    {
+        QDomElement modified(doc.createElement("modified"));
+        body.appendChild(modified);
+        QtCassandra::QCassandraValue v(get_content_parameter(path, get_name(SNAP_NAME_CONTENT_MODIFIED)));
+        QDomText text(doc.createTextNode(f_snap->date_to_string(v.int64Value())));
+        modified.appendChild(text);
+    }
 
-	{
-		QDomElement updated(doc.createElement("updated"));
-		body.appendChild(updated);
-		QtCassandra::QCassandraValue v(get_content_parameter(path, get_name(SNAP_NAME_CONTENT_UPDATED)));
-		QDomText text(doc.createTextNode(f_snap->date_to_string(v.int64Value())));
-		updated.appendChild(text);
-	}
+    {
+        QDomElement updated(doc.createElement("updated"));
+        body.appendChild(updated);
+        QtCassandra::QCassandraValue v(get_content_parameter(path, get_name(SNAP_NAME_CONTENT_UPDATED)));
+        QDomText text(doc.createTextNode(f_snap->date_to_string(v.int64Value())));
+        updated.appendChild(text);
+    }
 
-	{
-		QtCassandra::QCassandraValue accepted_date(get_content_parameter(path, get_name(SNAP_NAME_CONTENT_ACCEPTED)));
-		if(!accepted_date.nullValue())
-		{
-			QDomElement accepted(doc.createElement("accepted"));
-			body.appendChild(accepted);
-			QDomText text(doc.createTextNode(f_snap->date_to_string(accepted_date.int64Value())));
-			accepted.appendChild(text);
-		}
-	}
+    {
+        QtCassandra::QCassandraValue accepted_date(get_content_parameter(path, get_name(SNAP_NAME_CONTENT_ACCEPTED)));
+        if(!accepted_date.nullValue())
+        {
+            QDomElement accepted(doc.createElement("accepted"));
+            body.appendChild(accepted);
+            QDomText text(doc.createTextNode(f_snap->date_to_string(accepted_date.int64Value())));
+            accepted.appendChild(text);
+        }
+    }
 
-	{
-		QtCassandra::QCassandraValue submitted_date(get_content_parameter(path, get_name(SNAP_NAME_CONTENT_SUBMITTED)));
-		if(!submitted_date.nullValue())
-		{
-			QDomElement submitted(doc.createElement("submitted"));
-			body.appendChild(submitted);
-			QDomText text(doc.createTextNode(f_snap->date_to_string(submitted_date.int64Value())));
-			submitted.appendChild(text);
-		}
-	}
+    {
+        QtCassandra::QCassandraValue submitted_date(get_content_parameter(path, get_name(SNAP_NAME_CONTENT_SUBMITTED)));
+        if(!submitted_date.nullValue())
+        {
+            QDomElement submitted(doc.createElement("submitted"));
+            body.appendChild(submitted);
+            QDomText text(doc.createTextNode(f_snap->date_to_string(submitted_date.int64Value())));
+            submitted.appendChild(text);
+        }
+    }
 
-	{
-		QtCassandra::QCassandraValue since_date(get_content_parameter(path, get_name(SNAP_NAME_CONTENT_SINCE)));
-		if(!since_date.nullValue())
-		{
-			QDomElement since(doc.createElement("since"));
-			body.appendChild(since);
-			QDomText text(doc.createTextNode(f_snap->date_to_string(since_date.int64Value(), true)));
-			since.appendChild(text);
-		}
-	}
+    {
+        QtCassandra::QCassandraValue since_date(get_content_parameter(path, get_name(SNAP_NAME_CONTENT_SINCE)));
+        if(!since_date.nullValue())
+        {
+            QDomElement since(doc.createElement("since"));
+            body.appendChild(since);
+            QDomText text(doc.createTextNode(f_snap->date_to_string(since_date.int64Value(), true)));
+            since.appendChild(text);
+        }
+    }
 
-	{
-		QtCassandra::QCassandraValue until_date(get_content_parameter(path, get_name(SNAP_NAME_CONTENT_UNTIL)));
-		if(!until_date.nullValue())
-		{
-			QDomElement until(doc.createElement("until"));
-			body.appendChild(until);
-			QDomText text(doc.createTextNode(f_snap->date_to_string(until_date.int64Value(), true)));
-			until.appendChild(text);
-		}
-	}
+    {
+        QtCassandra::QCassandraValue until_date(get_content_parameter(path, get_name(SNAP_NAME_CONTENT_UNTIL)));
+        if(!until_date.nullValue())
+        {
+            QDomElement until(doc.createElement("until"));
+            body.appendChild(until);
+            QDomText text(doc.createTextNode(f_snap->date_to_string(until_date.int64Value(), true)));
+            until.appendChild(text);
+        }
+    }
 
-	{
-		QtCassandra::QCassandraValue copyrighted_date(get_content_parameter(path, get_name(SNAP_NAME_CONTENT_COPYRIGHTED)));
-		if(!copyrighted_date.nullValue())
-		{
-			QDomElement copyrighted(doc.createElement("copyrighted"));
-			body.appendChild(copyrighted);
-			QDomText text(doc.createTextNode(f_snap->date_to_string(copyrighted_date.int64Value())));
-			copyrighted.appendChild(text);
-		}
-	}
+    {
+        QtCassandra::QCassandraValue copyrighted_date(get_content_parameter(path, get_name(SNAP_NAME_CONTENT_COPYRIGHTED)));
+        if(!copyrighted_date.nullValue())
+        {
+            QDomElement copyrighted(doc.createElement("copyrighted"));
+            body.appendChild(copyrighted);
+            QDomText text(doc.createTextNode(f_snap->date_to_string(copyrighted_date.int64Value())));
+            copyrighted.appendChild(text);
+        }
+    }
 
-	{
-		QtCassandra::QCassandraValue issued_date(get_content_parameter(path, get_name(SNAP_NAME_CONTENT_ISSUED)));
-		if(!issued_date.nullValue())
-		{
-			QDomElement issued(doc.createElement("issued"));
-			body.appendChild(issued);
-			QDomText text(doc.createTextNode(f_snap->date_to_string(issued_date.int64Value())));
-			issued.appendChild(text);
-		}
-	}
+    {
+        QtCassandra::QCassandraValue issued_date(get_content_parameter(path, get_name(SNAP_NAME_CONTENT_ISSUED)));
+        if(!issued_date.nullValue())
+        {
+            QDomElement issued(doc.createElement("issued"));
+            body.appendChild(issued);
+            QDomText text(doc.createTextNode(f_snap->date_to_string(issued_date.int64Value())));
+            issued.appendChild(text);
+        }
+    }
 
-	{
-		//QCassandraValue content_title();
-		QDomElement titles(doc.createElement("titles"));
-		body.appendChild(titles);
-		QDomElement title(doc.createElement("title"));
-		titles.appendChild(title);
-		QDomText text(doc.createTextNode(get_content_parameter(path, get_name(SNAP_NAME_CONTENT_TITLE)).stringValue()));
-		title.appendChild(text);
-		// short title
-		QtCassandra::QCassandraValue short_title_text(get_content_parameter(path, get_name(SNAP_NAME_CONTENT_SHORT_TITLE)));
-		if(!short_title_text.nullValue())
-		{
-			QDomElement short_title(doc.createElement("short-title"));
-			titles.appendChild(short_title);
-			QDomText short_text(doc.createTextNode(short_title_text.stringValue()));
-			short_title.appendChild(short_text);
-		}
-		// long title
-		QtCassandra::QCassandraValue long_title_text(get_content_parameter(path, get_name(SNAP_NAME_CONTENT_LONG_TITLE)));
-		if(!long_title_text.nullValue())
-		{
-			QDomElement long_title(doc.createElement("long-title"));
-			titles.appendChild(long_title);
-			QDomText long_text(doc.createTextNode(long_title_text.stringValue()));
-			long_title.appendChild(long_text);
-		}
-	}
+    {
+        //QCassandraValue content_title();
+        QDomElement titles(doc.createElement("titles"));
+        body.appendChild(titles);
+        QDomElement title(doc.createElement("title"));
+        titles.appendChild(title);
+        QDomText text(doc.createTextNode(get_content_parameter(path, get_name(SNAP_NAME_CONTENT_TITLE)).stringValue()));
+        title.appendChild(text);
+        // short title
+        QtCassandra::QCassandraValue short_title_text(get_content_parameter(path, get_name(SNAP_NAME_CONTENT_SHORT_TITLE)));
+        if(!short_title_text.nullValue())
+        {
+            QDomElement short_title(doc.createElement("short-title"));
+            titles.appendChild(short_title);
+            QDomText short_text(doc.createTextNode(short_title_text.stringValue()));
+            short_title.appendChild(short_text);
+        }
+        // long title
+        QtCassandra::QCassandraValue long_title_text(get_content_parameter(path, get_name(SNAP_NAME_CONTENT_LONG_TITLE)));
+        if(!long_title_text.nullValue())
+        {
+            QDomElement long_title(doc.createElement("long-title"));
+            titles.appendChild(long_title);
+            QDomText long_text(doc.createTextNode(long_title_text.stringValue()));
+            long_title.appendChild(long_text);
+        }
+    }
 
-	{
-		// we assume that the body content is valid because when we created it
-		// we checked the data and if the user data was invalid XML then we
-		// saved a place holder warning the user about the fact!
-		QDomDocument doc_body("body");
-		doc_body.setContent(get_content_parameter(path, get_name(SNAP_NAME_CONTENT_BODY)).stringValue(), true, NULL, NULL, NULL);
-		//doc_body.setContent(page_content, true, NULL, NULL, NULL);
-		QDomElement content_tag(doc.createElement("content"));
-		body.appendChild(content_tag);
-		content_tag.appendChild(doc.importNode(doc_body.documentElement(), true));
-	}
+    {
+        // we assume that the body content is valid because when we created it
+        // we checked the data and if the user data was invalid XML then we
+        // saved a place holder warning the user about the fact!
+        QDomDocument doc_body("body");
+        doc_body.setContent(get_content_parameter(path, get_name(SNAP_NAME_CONTENT_BODY)).stringValue(), true, NULL, NULL, NULL);
+        //doc_body.setContent(page_content, true, NULL, NULL, NULL);
+        QDomElement content_tag(doc.createElement("content"));
+        body.appendChild(content_tag);
+        content_tag.appendChild(doc.importNode(doc_body.documentElement(), true));
+    }
 
-	if(path != "")
-	{
-		// simple "up" navigation
-		QDomElement navigation;
-		dom_util::get_tag("navigation", body, navigation);
+    if(path != "")
+    {
+        // simple "up" navigation
+        QDomElement navigation;
+        dom_util::get_tag("navigation", body, navigation);
 
-		{
-			QDomElement link(doc.createElement("link"));
-			link.setAttribute("rel", "top");
-			link.setAttribute("title", "Index"); // TODO: translate
-			link.setAttribute("href", f_snap->get_site_key());
-			navigation.appendChild(link);
-		}
+        {
+            QDomElement link(doc.createElement("link"));
+            link.setAttribute("rel", "top");
+            link.setAttribute("title", "Index"); // TODO: translate
+            link.setAttribute("href", f_snap->get_site_key());
+            navigation.appendChild(link);
+        }
 
-		QString up(path);
-		int p(up.lastIndexOf('/'));
-		if(p == -1)
-		{
-			// in this case it is an equivalent to top
-			up = f_snap->get_site_key();
-		}
-		else
-		{
-			up = f_snap->get_site_key_with_slash() + path.mid(0, p);
-		}
-		{
-			QDomElement link(doc.createElement("link"));
-			link.setAttribute("rel", "up");
-			link.setAttribute("title", "Up"); // TODO: translate
-			link.setAttribute("href", up);
-			navigation.appendChild(link);
-		}
-	}
+        QString up(path);
+        int p(up.lastIndexOf('/'));
+        if(p == -1)
+        {
+            // in this case it is an equivalent to top
+            up = f_snap->get_site_key();
+        }
+        else
+        {
+            up = f_snap->get_site_key_with_slash() + path.mid(0, p);
+        }
+        {
+            QDomElement link(doc.createElement("link"));
+            link.setAttribute("rel", "up");
+            link.setAttribute("title", "Up"); // TODO: translate
+            link.setAttribute("href", up);
+            navigation.appendChild(link);
+        }
+    }
 }
 
 
@@ -480,7 +480,7 @@ void content::on_generate_page_content(layout::layout *l, const QString& path, Q
  */
 QSharedPointer<QtCassandra::QCassandraTable> content::get_content_table()
 {
-	return f_snap->create_table(get_name(SNAP_NAME_CONTENT_TABLE), "Website content table.");
+    return f_snap->create_table(get_name(SNAP_NAME_CONTENT_TABLE), "Website content table.");
 }
 
 /** \brief Retreive a content page parameter.
@@ -504,24 +504,24 @@ QSharedPointer<QtCassandra::QCassandraTable> content::get_content_table()
  */
 QtCassandra::QCassandraValue content::get_content_parameter(const QString& path, const QString& param_name)
 {
-	QString key(f_snap->get_site_key_with_slash() + path);
+    QString key(f_snap->get_site_key_with_slash() + path);
 //printf("get content for [%s] . [%s]\n", key.toUtf8().data(), param_name.toUtf8().data());
-	if(!get_content_table()->exists(key))
-	{
-		// an empty value is considered to be a null value
-		QtCassandra::QCassandraValue value;
-		return value;
-	}
-	// I need to fix the libQtCassandra because this creates an empty cell!
-	// (whereas the call below doesn't, so it's possible to do it correctly!)
-	//if(!f_site_table->row(f_snap->get_site_key())->exists(param_name))
-	//{
-	//	// an empty value is considered to be a null value
-	//	QtCassandra::QCassandraValue value;
-	//	return value;
-	//}
+    if(!get_content_table()->exists(key))
+    {
+        // an empty value is considered to be a null value
+        QtCassandra::QCassandraValue value;
+        return value;
+    }
+    // I need to fix the libQtCassandra because this creates an empty cell!
+    // (whereas the call below doesn't, so it's possible to do it correctly!)
+    //if(!f_site_table->row(f_snap->get_site_key())->exists(param_name))
+    //{
+    //  // an empty value is considered to be a null value
+    //  QtCassandra::QCassandraValue value;
+    //  return value;
+    //}
 
-	return get_content_table()->row(key)->cell(param_name)->value();
+    return get_content_table()->row(key)->cell(param_name)->value();
 }
 
 
@@ -560,192 +560,192 @@ QtCassandra::QCassandraValue content::get_content_parameter(const QString& path,
  */
 void content::add_xml(const QString& plugin_name)
 {
-	if(!plugins::verify_plugin_name(plugin_name))
-	{
-		// invalid plugin name
-		throw std::runtime_error(("add_xml() called with an invalid plugin name: \"" + plugin_name + "\"").toUtf8().data());
-	}
-	QString filename(":/plugins/" + plugin_name + "/content.xml");
-	QFile xml_content(filename);
-	if(!xml_content.open(QFile::ReadOnly))
-	{
-		// file not found
-		throw std::runtime_error(("add_xml() cannot open file: \"" + filename + "\"").toUtf8().data());
-	}
-	QDomDocument dom;
-	if(!dom.setContent(&xml_content, false))
-	{
-		// invalid XML
-		throw std::runtime_error(("add_xml() cannot read the XML of content file: \"" + filename + "\"").toUtf8().data());
-	}
-	QDomNodeList content_nodes(dom.elementsByTagName("content"));
-	int max(content_nodes.size());
-	for(int i(0); i < max; ++i)
-	{
-		QDomNode content_node(content_nodes.at(i));
-		if(!content_node.isElement())
-		{
-			// we're only interested in elements
-			continue;
-		}
-		QDomElement content_element(content_node.toElement());
-		if(content_element.isNull())
-		{
-			// somehow this is not an element
-			continue;
-		}
+    if(!plugins::verify_plugin_name(plugin_name))
+    {
+        // invalid plugin name
+        throw std::runtime_error(("add_xml() called with an invalid plugin name: \"" + plugin_name + "\"").toUtf8().data());
+    }
+    QString filename(":/plugins/" + plugin_name + "/content.xml");
+    QFile xml_content(filename);
+    if(!xml_content.open(QFile::ReadOnly))
+    {
+        // file not found
+        throw std::runtime_error(("add_xml() cannot open file: \"" + filename + "\"").toUtf8().data());
+    }
+    QDomDocument dom;
+    if(!dom.setContent(&xml_content, false))
+    {
+        // invalid XML
+        throw std::runtime_error(("add_xml() cannot read the XML of content file: \"" + filename + "\"").toUtf8().data());
+    }
+    QDomNodeList content_nodes(dom.elementsByTagName("content"));
+    int max(content_nodes.size());
+    for(int i(0); i < max; ++i)
+    {
+        QDomNode content_node(content_nodes.at(i));
+        if(!content_node.isElement())
+        {
+            // we're only interested in elements
+            continue;
+        }
+        QDomElement content_element(content_node.toElement());
+        if(content_element.isNull())
+        {
+            // somehow this is not an element
+            continue;
+        }
 
-		QString path(content_element.attribute("path"));
-		if(path.isEmpty())
-		{
-			throw std::runtime_error("all <content> tags supplied to add_xml() must include a valid \"path\" attribute");
-		}
-		f_snap->canonalize_path(path);
-		QString key(f_snap->get_site_key_with_slash() + path);
+        QString path(content_element.attribute("path"));
+        if(path.isEmpty())
+        {
+            throw std::runtime_error("all <content> tags supplied to add_xml() must include a valid \"path\" attribute");
+        }
+        f_snap->canonalize_path(path);
+        QString key(f_snap->get_site_key_with_slash() + path);
 
-		// create a new entry for the database
-		add_content(key, plugin_name);
+        // create a new entry for the database
+        add_content(key, plugin_name);
 
-		QDomNodeList children(content_element.childNodes());
-		int cmax(children.size());
-		for(int c(0); c < cmax; ++c)
-		{
-			// grab <param> and <link> tags
-			QDomNode child(children.at(c));
-			if(!child.isElement())
-			{
-				// we're only interested by elements
-				continue;
-			}
-			QDomElement element(child.toElement());
-			if(element.isNull())
-			{
-				// somehow this is not really an element
-				continue;
-			}
+        QDomNodeList children(content_element.childNodes());
+        int cmax(children.size());
+        for(int c(0); c < cmax; ++c)
+        {
+            // grab <param> and <link> tags
+            QDomNode child(children.at(c));
+            if(!child.isElement())
+            {
+                // we're only interested by elements
+                continue;
+            }
+            QDomElement element(child.toElement());
+            if(element.isNull())
+            {
+                // somehow this is not really an element
+                continue;
+            }
 
-			// <param name=... overwrite=... force-namespace=...> data </param>
-			if(element.tagName() == "param")
-			{
-				QString param_name(element.attribute("name"));
-				if(param_name.isEmpty())
-				{
-					throw std::runtime_error("all <param> tags supplied to add_xml() must include a valid \"name\" attribute");
-				}
+            // <param name=... overwrite=... force-namespace=...> data </param>
+            if(element.tagName() == "param")
+            {
+                QString param_name(element.attribute("name"));
+                if(param_name.isEmpty())
+                {
+                    throw std::runtime_error("all <param> tags supplied to add_xml() must include a valid \"name\" attribute");
+                }
 
-				// 1) prepare the buffer
-				// the parameter value can include HTML (should be in a [CDATA[...]] in that case)
-				QString buffer;
-				QTextStream data(&buffer);
-				// we have to save all the element children because
-				// saving the element itself would save the <param ...> tag
-				// also if the whole is a <![CDATA[...]]> entry, remove it
-				// (but keep sub-<![CDATA[...]]> if any.)
-				QDomNodeList values(element.childNodes());
-				int lmax(values.size());
-				if(lmax == 1)
-				{
-					QDomNode n(values.at(0));
-					if(n.isCDATASection())
-					{
-						QDomCDATASection raw_data(n.toCDATASection());
-						data << raw_data.data();
-					}
-					else
-					{
-						// not a CDATA section, save as is
-						n.save(data, 0);
-					}
-				}
-				else
-				{
-					// save all the children
-					for(int l(0); l < lmax; ++l)
-					{
-						values.at(l).save(data, 0);
-					}
-				}
+                // 1) prepare the buffer
+                // the parameter value can include HTML (should be in a [CDATA[...]] in that case)
+                QString buffer;
+                QTextStream data(&buffer);
+                // we have to save all the element children because
+                // saving the element itself would save the <param ...> tag
+                // also if the whole is a <![CDATA[...]]> entry, remove it
+                // (but keep sub-<![CDATA[...]]> if any.)
+                QDomNodeList values(element.childNodes());
+                int lmax(values.size());
+                if(lmax == 1)
+                {
+                    QDomNode n(values.at(0));
+                    if(n.isCDATASection())
+                    {
+                        QDomCDATASection raw_data(n.toCDATASection());
+                        data << raw_data.data();
+                    }
+                    else
+                    {
+                        // not a CDATA section, save as is
+                        n.save(data, 0);
+                    }
+                }
+                else
+                {
+                    // save all the children
+                    for(int l(0); l < lmax; ++l)
+                    {
+                        values.at(l).save(data, 0);
+                    }
+                }
 
-				// 2) prepare the name
-				QString fullname;
-				// It seems to me that if the developer included any namespace
-				// then it was meant to be defined that way
-				//if(param_name.left(plugin_name.length() + 2) == plugin_name + "::")
-				if(param_name.contains("::")) // already includes a namespace
-				{
-					// plugin namespace already defined
-					fullname = param_name;
-				}
-				else
-				{
-					// plugin namespace not defined
-					if(element.attribute("force-namespace") == "no")
-					{
-						// but developer said no namespace needed (?!)
-						fullname = param_name;
-					}
-					else
-					{
-						// this is the default!
-						fullname = plugin_name + "::" + param_name;
-					}
-				}
+                // 2) prepare the name
+                QString fullname;
+                // It seems to me that if the developer included any namespace
+                // then it was meant to be defined that way
+                //if(param_name.left(plugin_name.length() + 2) == plugin_name + "::")
+                if(param_name.contains("::")) // already includes a namespace
+                {
+                    // plugin namespace already defined
+                    fullname = param_name;
+                }
+                else
+                {
+                    // plugin namespace not defined
+                    if(element.attribute("force-namespace") == "no")
+                    {
+                        // but developer said no namespace needed (?!)
+                        fullname = param_name;
+                    }
+                    else
+                    {
+                        // this is the default!
+                        fullname = plugin_name + "::" + param_name;
+                    }
+                }
 
-				// add the resulting parameter
-				add_param(key, fullname, buffer);
+                // add the resulting parameter
+                add_param(key, fullname, buffer);
 
-				// check whether we allow overwrites
-				if(element.attribute("overwrite") == "yes")
-				{
-					set_param_overwrite(key, fullname, true);
-				}
-			}
-			// <link name=... to=...> destination path </link>
-			else if(element.tagName() == "link")
-			{
-				QString link_name(element.attribute("name"));
-				if(link_name.isEmpty())
-				{
-					throw std::runtime_error("all <link> tags supplied to add_xml() must include a valid \"name\" attribute");
-				}
-				QString link_to(element.attribute("to"));
-				if(link_to.isEmpty())
-				{
-					throw std::runtime_error("all <link> tags supplied to add_xml() must include a valid \"to\" attribute");
-				}
-				bool source_unique(true);
-				bool destination_unique(true);
-				QString mode(element.attribute("mode"));
-				if(!mode.isEmpty() && mode != "1:1")
-				{
-					if(mode == "1:*")
-					{
-						destination_unique = false;
-					}
-					else if(mode == "*:1")
-					{
-						source_unique = false;
-					}
-					else if(mode == "*:*")
-					{
-						destination_unique = false;
-						source_unique = false;
-					}
-					else
-					{
-						throw std::runtime_error("<link> tags mode attribute must be one of \"1:1\", \"1:*\", \"*:1\", or \"*:*\"");
-					}
-				}
-				// the destination URL is defined in the <link> content
-				QString destination_path(element.text());
-				f_snap->canonalize_path(destination_path);
-				QString destination_key(f_snap->get_site_key_with_slash() + destination_path);
-				links::link_info source(link_name, source_unique, key);
-				links::link_info destination(link_to, destination_unique, destination_key);
-				add_link(key, source, destination);
-			}
-		}
-	}
+                // check whether we allow overwrites
+                if(element.attribute("overwrite") == "yes")
+                {
+                    set_param_overwrite(key, fullname, true);
+                }
+            }
+            // <link name=... to=...> destination path </link>
+            else if(element.tagName() == "link")
+            {
+                QString link_name(element.attribute("name"));
+                if(link_name.isEmpty())
+                {
+                    throw std::runtime_error("all <link> tags supplied to add_xml() must include a valid \"name\" attribute");
+                }
+                QString link_to(element.attribute("to"));
+                if(link_to.isEmpty())
+                {
+                    throw std::runtime_error("all <link> tags supplied to add_xml() must include a valid \"to\" attribute");
+                }
+                bool source_unique(true);
+                bool destination_unique(true);
+                QString mode(element.attribute("mode"));
+                if(!mode.isEmpty() && mode != "1:1")
+                {
+                    if(mode == "1:*")
+                    {
+                        destination_unique = false;
+                    }
+                    else if(mode == "*:1")
+                    {
+                        source_unique = false;
+                    }
+                    else if(mode == "*:*")
+                    {
+                        destination_unique = false;
+                        source_unique = false;
+                    }
+                    else
+                    {
+                        throw std::runtime_error("<link> tags mode attribute must be one of \"1:1\", \"1:*\", \"*:1\", or \"*:*\"");
+                    }
+                }
+                // the destination URL is defined in the <link> content
+                QString destination_path(element.text());
+                f_snap->canonalize_path(destination_path);
+                QString destination_key(f_snap->get_site_key_with_slash() + destination_path);
+                links::link_info source(link_name, source_unique, key);
+                links::link_info destination(link_to, destination_unique, destination_key);
+                add_link(key, source, destination);
+            }
+        }
+    }
 }
 
 /** \brief Prepare to add content to the database.
@@ -765,28 +765,31 @@ void content::add_xml(const QString& plugin_name)
  */
 void content::add_content(const QString& path, const QString& plugin_owner)
 {
-	if(!plugins::verify_plugin_name(plugin_owner)) {
-		// invalid plugin name
-		throw std::runtime_error(("install_content() called with an invalid plugin name: \"" + plugin_owner + "\"").toUtf8().data());
-	}
+    if(!plugins::verify_plugin_name(plugin_owner))
+    {
+        // invalid plugin name
+        throw std::runtime_error(("install_content() called with an invalid plugin name: \"" + plugin_owner + "\"").toUtf8().data());
+    }
 
-	content_block_map_t::iterator b(f_blocks.find(path));
-	if(b != f_blocks.end()) {
-		if(b->f_owner != plugin_owner) {
-			// cannot change owner!?
-			throw content_exception_content_already_defined();
-		}
-		// it already exists, we're all good
-		return;
-	}
+    content_block_map_t::iterator b(f_blocks.find(path));
+    if(b != f_blocks.end())
+    {
+        if(b->f_owner != plugin_owner)
+        {
+            // cannot change owner!?
+            throw content_exception_content_already_defined();
+        }
+        // it already exists, we're all good
+        return;
+    }
 
-	// create the new block
-	content_block block;
-	block.f_path = path;
-	block.f_owner = plugin_owner;
-	f_blocks.insert(path, block);
+    // create the new block
+    content_block block;
+    block.f_path = path;
+    block.f_owner = plugin_owner;
+    f_blocks.insert(path, block);
 
-	f_snap->new_content();
+    f_snap->new_content();
 }
 
 /** \brief Add a parameter to the content to be saved in the database.
@@ -830,26 +833,29 @@ void content::add_content(const QString& path, const QString& plugin_owner)
  */
 void content::add_param(const QString& path, const QString& name, const QString& data)
 {
-	content_block_map_t::iterator b(f_blocks.find(path));
-	if(b == f_blocks.end()) {
-		throw content_exception_parameter_not_defined();
-	}
+    content_block_map_t::iterator b(f_blocks.find(path));
+    if(b == f_blocks.end())
+    {
+        throw content_exception_parameter_not_defined();
+    }
 
-	content_params_t::iterator p(b->f_params.find(name));
-	if(p == b->f_params.end()) {
-		content_param param;
-		param.f_name = name;
-		param.f_data = data;
-		b->f_params.insert(name, param);
-	}
-	else {
-		// replace the data
-		// TBD: should we generate an error because if defined by several
-		//      different plugins then we cannot ensure which one is going
-		//      to make it to the database! At the same time, we cannot
-		//      know whether we're overwriting a default value.
-		p->f_data = data;
-	}
+    content_params_t::iterator p(b->f_params.find(name));
+    if(p == b->f_params.end())
+    {
+        content_param param;
+        param.f_name = name;
+        param.f_data = data;
+        b->f_params.insert(name, param);
+    }
+    else
+    {
+        // replace the data
+        // TBD: should we generate an error because if defined by several
+        //      different plugins then we cannot ensure which one is going
+        //      to make it to the database! At the same time, we cannot
+        //      know whether we're overwriting a default value.
+        p->f_data = data;
+    }
 }
 
 /** \brief Set the overwrite flag to a specific parameter.
@@ -871,17 +877,19 @@ void content::add_param(const QString& path, const QString& name, const QString&
  */
 void content::set_param_overwrite(const QString& path, const QString& name, bool overwrite)
 {
-	content_block_map_t::iterator b(f_blocks.find(path));
-	if(b == f_blocks.end()) {
-		throw content_exception_parameter_not_defined();
-	}
+    content_block_map_t::iterator b(f_blocks.find(path));
+    if(b == f_blocks.end())
+    {
+        throw content_exception_parameter_not_defined();
+    }
 
-	content_params_t::iterator p(b->f_params.find(name));
-	if(p == b->f_params.end()) {
-		throw content_exception_parameter_not_defined();
-	}
+    content_params_t::iterator p(b->f_params.find(name));
+    if(p == b->f_params.end())
+    {
+        throw content_exception_parameter_not_defined();
+    }
 
-	p->f_overwrite = overwrite;
+    p->f_overwrite = overwrite;
 }
 
 /** \brief Add a link to the specified content.
@@ -922,15 +930,16 @@ void content::set_param_overwrite(const QString& path, const QString& name, bool
  */
 void content::add_link(const QString& path, const links::link_info& source, const links::link_info& destination)
 {
-	content_block_map_t::iterator b(f_blocks.find(path));
-	if(b == f_blocks.end()) {
-		throw content_exception_parameter_not_defined();
-	}
+    content_block_map_t::iterator b(f_blocks.find(path));
+    if(b == f_blocks.end())
+    {
+        throw content_exception_parameter_not_defined();
+    }
 
-	content_link link;
-	link.f_source = source;
-	link.f_destination = destination;
-	b->f_links.push_back(link);
+    content_link link;
+    link.f_source = source;
+    link.f_destination = destination;
+    b->f_links.push_back(link);
 }
 
 /** \brief Signal received when the system request that we save content.
@@ -944,129 +953,136 @@ void content::add_link(const QString& path, const links::link_info& source, cons
  */
 void content::on_save_content()
 {
-	// anything to save?
-	if(f_blocks.isEmpty()) {
-		return;
-	}
+    // anything to save?
+    if(f_blocks.isEmpty())
+    {
+        return;
+    }
 
-	QString site_key(f_snap->get_site_key_with_slash());
-	QSharedPointer<QtCassandra::QCassandraTable> content_table(get_content_table());
-	for(content_block_map_t::iterator d(f_blocks.begin());
-			d != f_blocks.end(); ++d)
-	{
-		// now do the actual save
-		// connect this entry to the corresponding plugin
-		// (unless that field is already defined!)
-		QString primary_owner(path::get_name(path::SNAP_NAME_PATH_PRIMARY_OWNER));
-		if(content_table->row(d->f_path)->cell(primary_owner)->value().nullValue()) {
-			content_table->row(d->f_path)->cell(primary_owner)->setValue(d->f_owner);
-		}
-		// if != then another plugin took ownership which is fine...
-		//else if(content_table->row(d->f_path)->cell(primary_owner)->value().stringValue() != d->f_owner) {
-		//}
+    QString site_key(f_snap->get_site_key_with_slash());
+    QSharedPointer<QtCassandra::QCassandraTable> content_table(get_content_table());
+    for(content_block_map_t::iterator d(f_blocks.begin());
+            d != f_blocks.end(); ++d)
+    {
+        // now do the actual save
+        // connect this entry to the corresponding plugin
+        // (unless that field is already defined!)
+        QString primary_owner(path::get_name(path::SNAP_NAME_PATH_PRIMARY_OWNER));
+        if(content_table->row(d->f_path)->cell(primary_owner)->value().nullValue())
+        {
+            content_table->row(d->f_path)->cell(primary_owner)->setValue(d->f_owner);
+        }
+        // if != then another plugin took ownership which is fine...
+        //else if(content_table->row(d->f_path)->cell(primary_owner)->value().stringValue() != d->f_owner) {
+        //}
 
-		// make sure we have our different basic content dates setup
-		uint64_t start_date(f_snap->get_uri().option("start_date").toLongLong());
-		if(content_table->row(d->f_path)->cell(QString(get_name(SNAP_NAME_CONTENT_CREATED)))->value().nullValue()) {
-			// do not overwrite the created date
-			content_table->row(d->f_path)->cell(QString(get_name(SNAP_NAME_CONTENT_CREATED)))->setValue(start_date);
-		}
-		if(content_table->row(d->f_path)->cell(QString(get_name(SNAP_NAME_CONTENT_UPDATED)))->value().nullValue()) {
-			// updated changes only because of a user action (i.e. Save)
-			content_table->row(d->f_path)->cell(QString(get_name(SNAP_NAME_CONTENT_UPDATED)))->setValue(start_date);
-		}
-		// always overwrite the modified date
-		content_table->row(d->f_path)->cell(QString(get_name(SNAP_NAME_CONTENT_MODIFIED)))->setValue(start_date);
+        // make sure we have our different basic content dates setup
+        uint64_t start_date(f_snap->get_uri().option("start_date").toLongLong());
+        if(content_table->row(d->f_path)->cell(QString(get_name(SNAP_NAME_CONTENT_CREATED)))->value().nullValue())
+        {
+            // do not overwrite the created date
+            content_table->row(d->f_path)->cell(QString(get_name(SNAP_NAME_CONTENT_CREATED)))->setValue(start_date);
+        }
+        if(content_table->row(d->f_path)->cell(QString(get_name(SNAP_NAME_CONTENT_UPDATED)))->value().nullValue())
+        {
+            // updated changes only because of a user action (i.e. Save)
+            content_table->row(d->f_path)->cell(QString(get_name(SNAP_NAME_CONTENT_UPDATED)))->setValue(start_date);
+        }
+        // always overwrite the modified date
+        content_table->row(d->f_path)->cell(QString(get_name(SNAP_NAME_CONTENT_MODIFIED)))->setValue(start_date);
 
-		// save the parameters (i.e. cells of data defined by the developer)
-		for(content_params_t::iterator p(d->f_params.begin());
-				p != d->f_params.end(); ++p)
-		{
-			// make sure no parameter is defined as path::primary_owner
-			// because we are 100% in control of that one!
-			// (we may want to add more as time passes)
-			if(p->f_name == primary_owner)
-			{
-				throw std::runtime_error("content::on_save_content() cannot accept a parameter named \"path::primary_owner\" as it is reserved");
-			}
+        // save the parameters (i.e. cells of data defined by the developer)
+        for(content_params_t::iterator p(d->f_params.begin());
+                p != d->f_params.end(); ++p)
+        {
+            // make sure no parameter is defined as path::primary_owner
+            // because we are 100% in control of that one!
+            // (we may want to add more as time passes)
+            if(p->f_name == primary_owner)
+            {
+                throw std::runtime_error("content::on_save_content() cannot accept a parameter named \"path::primary_owner\" as it is reserved");
+            }
 
-			// we just saved the path::primary_owner so the row exists now
-			//if(content_table->exists(d->f_block.f_path)) ...
+            // we just saved the path::primary_owner so the row exists now
+            //if(content_table->exists(d->f_block.f_path)) ...
 
-			// unless the developer said to overwrite the data, skip
-			// the save if the data alerady exists
-			if(p->f_overwrite
-			|| content_table->row(d->f_path)->cell(p->f_name)->value().nullValue())
-			{
-				content_table->row(d->f_path)->cell(p->f_name)->setValue(p->f_data);
-			}
-		}
+            // unless the developer said to overwrite the data, skip
+            // the save if the data alerady exists
+            if(p->f_overwrite
+            || content_table->row(d->f_path)->cell(p->f_name)->value().nullValue())
+            {
+                content_table->row(d->f_path)->cell(p->f_name)->setValue(p->f_data);
+            }
+        }
 
-		// link this entry to its parent automatically
-		// first we need to remove the site key from the path
-		QString path(d->f_path.mid(site_key.length()));
-		QStringList parts(path.split('/', QString::SkipEmptyParts));
-		while(parts.count() > 0) {
-			QString src(parts.join("/"));
-			src = site_key + src;
-			parts.pop_back();
-			QString dst(parts.join("/"));
-			dst = site_key + dst;
-			links::link_info source("parent", true, src);
-			links::link_info destination("children", false, dst);
+        // link this entry to its parent automatically
+        // first we need to remove the site key from the path
+        QString path(d->f_path.mid(site_key.length()));
+        QStringList parts(path.split('/', QString::SkipEmptyParts));
+        while(parts.count() > 0)
+        {
+            QString src(parts.join("/"));
+            src = site_key + src;
+            parts.pop_back();
+            QString dst(parts.join("/"));
+            dst = site_key + dst;
+            links::link_info source("parent", true, src);
+            links::link_info destination("children", false, dst);
 // TODO only repeat if the parent did not exist, otherwise we assume the
 //      parent created its own parent/children link already.
 //printf("parent/children [%s]/[%s]\n", src.toUtf8().data(), dst.toUtf8().data());
-			links::links::instance()->create_link(source, destination);
-		}
-	}
+            links::links::instance()->create_link(source, destination);
+        }
+    }
 
-	// link the nodes together (on top of the parent/child links)
-	// this is done as a second step so we're sure that all the source and
-	// destination rows exist at the time we create the links
-	for(content_block_map_t::iterator d(f_blocks.begin());
-			d != f_blocks.end(); ++d)
-	{
-		for(content_links_t::iterator l(d->f_links.begin());
-				l != d->f_links.end(); ++l)
-		{
+    // link the nodes together (on top of the parent/child links)
+    // this is done as a second step so we're sure that all the source and
+    // destination rows exist at the time we create the links
+    for(content_block_map_t::iterator d(f_blocks.begin());
+            d != f_blocks.end(); ++d)
+    {
+        for(content_links_t::iterator l(d->f_links.begin());
+                l != d->f_links.end(); ++l)
+        {
 //printf("developer link: [%s]/[%s]\n", l->f_source.key().toUtf8().data(), l->f_destination.key().toUtf8().data());
-			links::links::instance()->create_link(l->f_source, l->f_destination);
-		}
-	}
+            links::links::instance()->create_link(l->f_source, l->f_destination);
+        }
+    }
 
-	// we're done with that set of data
-	f_blocks.clear();
+    // we're done with that set of data
+    f_blocks.clear();
 }
 
 int content::js_property_count() const
 {
-	return 1;
+    return 1;
 }
 
 QVariant content::js_property_get(const QString& name) const
 {
-	if(name == "modified") {
-		return "content::modified";
-	}
-	return QVariant();
+    if(name == "modified")
+    {
+        return "content::modified";
+    }
+    return QVariant();
 }
 
 QString content::js_property_name(int index) const
 {
-	return "modified";
+    return "modified";
 }
 
 QVariant content::js_property_get(int index) const
 {
-	if(index == 0) {
-		return "content::modified";
-	}
-	return QVariant();
+    if(index == 0)
+    {
+        return "content::modified";
+    }
+    return QVariant();
 }
 
 
 
 SNAP_PLUGIN_END()
 
-// vim: ts=4 sw=4
+// vim: ts=4 sw=4 et

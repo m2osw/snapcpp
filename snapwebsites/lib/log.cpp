@@ -164,7 +164,8 @@ logger::~logger()
 {
 	log4cplus::LogLevel ll(log4cplus::FATAL_LOG_LEVEL);
 	int sll(-1);  // syslog level if log4cplus not available (if -1 don't syslog() anything)
-	switch(f_log_level) {
+	switch(f_log_level)
+	{
 	case LOG_LEVEL_OFF:
 		// off means we don't emit anything
 		return;

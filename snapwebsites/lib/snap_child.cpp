@@ -365,7 +365,43 @@ void snap_child::process_backend_uri(const QString& uri)
 
 	init_plugins();
 
-	snap::server::instance()->backend_process();
+	QString action(f_server->get_parameter("__BACKEND_ACTION"));
+	if(!action.isEmpty())
+	{
+		server::backend_action_map_t actions;
+		snap::server::instance()->register_backend_action(actions);
+		if(actions.contains(action))
+		{
+			// this is a valid action, execute the corresponding function!
+			actions[action]->on_backend_action(action);
+		}
+		else if(action == "list")
+		{
+			// the user wants to know what's supported
+			// we add a "list" entry so it appears in the right place
+			class fake : public server::backend_action
+			{
+				virtual void on_backend_action(const QString& /*action*/)
+				{
+				}
+			};
+			fake foo;
+			actions["list"] = &foo;
+			for(server::backend_action_map_t::const_iterator it(actions.begin()); it != actions.end(); ++it)
+			{
+				std::cout << it.key().toUtf8().data() << std::endl;
+			}
+		}
+		else
+		{
+			std::cerr << "error: unknown action \"" << action.toUtf8().data() << "\"" << std::endl;
+			exit(1);
+		}
+	}
+	else
+	{
+		snap::server::instance()->backend_process();
+	}
 }
 
 /** \brief Check the status of the child process.
@@ -749,20 +785,25 @@ void snap_child::snap_statistics()
 void snap_child::setup_uri()
 {
 	// PROTOCOL
-	if(f_env.count("HTTPS") == 1) {
-		if(f_env["HTTPS"] == "on") {
+	if(f_env.count("HTTPS") == 1)
+	{
+		if(f_env["HTTPS"] == "on")
+		{
 			f_uri.set_protocol("https");
 		}
-		else {
+		else
+		{
 			f_uri.set_protocol("http");
 		}
 	}
-	else {
+	else
+	{
 		f_uri.set_protocol("http");
 	}
 
 	// HOST (domain name including all sub-domains)
-	if(f_env.count("HTTP_HOST") != 1) {
+	if(f_env.count("HTTP_HOST") != 1)
+	{
 		die(503, "", "HTTP_HOST is required but not defined in your request.", "HTTP_HOST was not defined in the user request");
 		NOTREACHED();
 	}
@@ -781,20 +822,23 @@ void snap_child::setup_uri()
 	f_uri.set_domain(host);
 
 	// PORT
-	if(f_env.count("SERVER_PORT") != 1) {
+	if(f_env.count("SERVER_PORT") != 1)
+	{
 		die(503, "", "SERVER_PORT is required but not defined in your request.", "SERVER_PORT was not defined in the user request");
 		NOTREACHED();
 	}
 	f_uri.set_port(f_env["SERVER_PORT"]);
 
 	// QUERY STRING
-	if(f_env.count("QUERY_STRING") == 1) {
+	if(f_env.count("QUERY_STRING") == 1)
+	{
 		f_uri.set_query_string(f_env["QUERY_STRING"]);
 	}
 
 	// REQUEST URI
 	// Although we ignore the URI, it MUST be there
-	if(f_env.count("REQUEST_URI") != 1) {
+	if(f_env.count("REQUEST_URI") != 1)
+	{
 		die(503, "", "REQUEST_URI is required but not defined in your request.",
 					 "REQUEST_URI was not defined in the user request");
 		NOTREACHED();
@@ -811,20 +855,24 @@ void snap_child::setup_uri()
 	QString qs_path(f_server->get_parameter("qs_path"));
 	QString path(f_uri.query_option(qs_path));
 	QString extension;
-	if(path != "." && path != "..") {
+	if(path != "." && path != "..")
+	{
 		f_uri.set_path(path);
 		int limit(path.lastIndexOf('/'));
-		if(limit == -1) {
+		if(limit == -1)
+		{
 			limit = 1;
 		}
 		int ext(path.lastIndexOf('.'));
-		if(ext >= limit) {
+		if(ext >= limit)
+		{
 			extension = path.mid(ext);
 			// check for a compression and include that and
 			// the previous extension
-			if(extension == ".gz"      	// gzip
-			|| extension == ".Z"      	// Unix compress
-			|| extension == ".bz2") {  	// bzip2
+			if(extension == ".gz"		// gzip
+			|| extension == ".Z"		// Unix compress
+			|| extension == ".bz2")		// bzip2
+			{
 				// we generally expect .gz but we have to take
 				// whatever extension the user added to make sure
 				// we send the file in the right format
@@ -832,11 +880,13 @@ void snap_child::setup_uri()
 				// and make use of the Content-Encoding
 				f_uri.set_option("compression", extension);
 				int real_ext(path.lastIndexOf('.', ext - 1));
-				if(real_ext >= limit) {
+				if(real_ext >= limit)
+				{
 					// retrieve the extension without the compression
 					extension = path.mid(real_ext, real_ext - ext);
 				}
-				else {
+				else
+				{
 					extension = "";
 				}
 			}
@@ -1540,7 +1590,8 @@ QtCassandra::QCassandraValue snap_child::get_site_parameter(const QString& name)
 void snap_child::set_site_parameter(const QString& name, const QtCassandra::QCassandraValue& value)
 {
 	// retrieve site table if not there yet
-	if(f_site_table.isNull()) {
+	if(f_site_table.isNull())
+	{
 		QString table_name(get_name(SNAP_NAME_SITES));
 		QSharedPointer<QtCassandra::QCassandraTable> table(f_context->table(table_name));
 		table->setComment("List of sites with their global parameters.");
@@ -1666,7 +1717,8 @@ bool snap_child::empty_output() const
  */
 void snap_child::die(int err_code, QString err_name, const QString& err_description, const QString& err_details)
 {
-	try {
+	try
+	{
 		// define a default error name if undefined
 		define_error_name(err_code, err_name);
 
@@ -1702,7 +1754,8 @@ void snap_child::die(int err_code, QString err_name, const QString& err_descript
 		close(f_socket);
 		f_socket = -1;
 	}
-	catch(...) {
+	catch(...)
+	{
 		// ignore all errors because at this point we must die quickly.
 		SNAP_LOG_FATAL("snap_child.cpp:die(): try/catch caught an exception");
 	}
@@ -2031,23 +2084,27 @@ QString snap_child::get_header(const QString& name) const
  */
 QString snap_child::get_unique_number()
 {
-	QString lock_path = f_server->get_parameter("data_path");
+	QString lock_path(f_server->get_parameter("data_path"));
 
 	quint64 c(0);
 	{
 		QLockFile counter(lock_path + "/counter.u64");
-		if(!counter.open(QIODevice::ReadWrite)) {
+		if(!counter.open(QIODevice::ReadWrite))
+		{
 			throw snap_child_exception_unique_number_error();
 		}
 		// the very first time the size is zero (empty)
-		if(counter.size() != 0) {
-			if(counter.read(reinterpret_cast<char *>(&c), sizeof(c)) != sizeof(c)) {
+		if(counter.size() != 0)
+		{
+			if(counter.read(reinterpret_cast<char *>(&c), sizeof(c)) != sizeof(c))
+			{
 				throw snap_child_exception_unique_number_error();
 			}
 		}
 		++c;
 		counter.reset();
-		if(counter.write(reinterpret_cast<char *>(&c), sizeof(c)) != sizeof(c)) {
+		if(counter.write(reinterpret_cast<char *>(&c), sizeof(c)) != sizeof(c))
+		{
 			throw snap_child_exception_unique_number_error();
 		}
 		// close the file now; we do not want to hold the file for too long
@@ -2072,34 +2129,41 @@ void snap_child::init_plugins()
 	// load the plugins for this website
 	QtCassandra::QCassandraValue plugins(get_site_parameter(get_name(SNAP_NAME_CORE_PLUGINS)));
 	QString site_plugins(plugins.stringValue());
-	if(site_plugins.isEmpty()) {
+	if(site_plugins.isEmpty())
+	{
 		// if the list of plugins is empty in the site parameters
 		// then get the default from the server configuration
 		site_plugins = f_server->get_parameter("default_plugins");
 	}
 	QStringList list_of_plugins(site_plugins.split(","));
-	for(int i(0); i < list_of_plugins.length(); ++i) {
-		if(list_of_plugins.at(i).isEmpty()) {
+	for(int i(0); i < list_of_plugins.length(); ++i)
+	{
+		if(list_of_plugins.at(i).isEmpty())
+		{
 			list_of_plugins.removeAt(i);
 			--i;
 		}
 	}
 
 	// ensure a certain minimum number of plugins
-	static const char *minimum_plugins[] = {
+	static const char *minimum_plugins[] =
+	{
 		"path",
 		"filter",
 		"robotstxt",
 		NULL
 	};
-	for(int i(0); minimum_plugins[i] != NULL; ++i) {
-		if(!list_of_plugins.contains(minimum_plugins[i])) {
+	for(int i(0); minimum_plugins[i] != NULL; ++i)
+	{
+		if(!list_of_plugins.contains(minimum_plugins[i]))
+		{
 			list_of_plugins << minimum_plugins[i];
 		}
 	}
 
 	// load the plugins
-	if(!snap::plugins::load(f_server->get_parameter("plugins"), f_server, list_of_plugins)) {
+	if(!snap::plugins::load(f_server->get_parameter("plugins"), f_server, list_of_plugins))
+	{
 		die(503, "", "Server encountered problems with its plugins.", "An error occured loading the server plugins.");
 		NOTREACHED();
 	}
@@ -2154,7 +2218,8 @@ void snap_child::update_plugins(const QStringList& list_of_plugins)
 		QString core_plugin_threshold(get_name(SNAP_NAME_CORE_PLUGIN_THRESHOLD));
 		set_site_parameter(param_name, last_updated);
 		QtCassandra::QCassandraValue threshold(get_site_parameter(core_plugin_threshold));
-		if(threshold.nullValue()) {
+		if(threshold.nullValue())
+		{
 			// same old date...
 			threshold.setInt64Value(SNAP_UNIX_TIMESTAMP(1990, 1, 1, 0, 0, 0) * 1000000LL);
 		}
@@ -2169,9 +2234,11 @@ void snap_child::update_plugins(const QStringList& list_of_plugins)
 		{
 			QString plugin_name(*it);
 			plugins::plugin *p(plugins::get_plugin(plugin_name));
-			if(p != NULL && p->last_modification() > plugin_threshold) {
+			if(p != NULL && p->last_modification() > plugin_threshold)
+			{
 				// the plugin changed, we want to call do_update() on it!
-				if(p->last_modification() > new_plugin_threshold) {
+				if(p->last_modification() > new_plugin_threshold)
+				{
 					new_plugin_threshold = p->last_modification();
 				}
 				// run the updates as required
@@ -2195,13 +2262,15 @@ void snap_child::update_plugins(const QStringList& list_of_plugins)
 
 		// avoid a write to the DB if the value did not change
 		// (i.e. most of the time!)
-		if(new_plugin_threshold > plugin_threshold) {
+		if(new_plugin_threshold > plugin_threshold)
+		{
 			set_site_parameter(core_plugin_threshold, new_plugin_threshold);
 		}
 	}
 
 	// if content was prepared for the database, save it now
-	if(f_new_content) {
+	if(f_new_content)
+	{
 		f_new_content = false;
 		snap::server::instance()->save_content();
 	}
@@ -2227,7 +2296,7 @@ void snap_child::new_content()
 /** \brief Canonalize a path or URL for this plugin.
  *
  * This function is used to canonilize the paths used to check
- * URLs. This is used against the paths offered by other plug-ins
+ * URLs. This is used against the paths offered by other plugins
  * and the paths arriving from the HTTP server. This way, we know
  * that two paths will match 1 to 1.
  *
@@ -2260,7 +2329,8 @@ void snap_child::canonalize_path(QString& path)
 	int i(0);
 	while(i < path.length())
 	{
-		switch(path[i].cell()) {
+		switch(path[i].cell())
+		{
 		case '\\':
 			path[i] = '/';
 			break;
@@ -2277,30 +2347,39 @@ void snap_child::canonalize_path(QString& path)
 
 		}
 		// here we do not have to check for \ since we just replaced it with /
-		if(i == 0 && (path[0].cell() == '.' || path[0].cell() == '/' /*|| path[0].cell() == '\\'*/)) {
-			do {
+		if(i == 0 && (path[0].cell() == '.' || path[0].cell() == '/' /*|| path[0].cell() == '\\'*/))
+		{
+			do
+			{
 				path.remove(0, 1);
-			} while(!path.isEmpty() && (path[0].cell() == '.' || path[0].cell() == '/' || path[0].cell() == '\\'));
+			}
+			while(!path.isEmpty() && (path[0].cell() == '.' || path[0].cell() == '/' || path[0].cell() == '\\'));
 		}
-		else if(path[i].cell()  == '/' && i + 1 < path.length()) {
-			if(path[i + 1].cell() == '/') {
+		else if(path[i].cell()  == '/' && i + 1 < path.length())
+		{
+			if(path[i + 1].cell() == '/')
+			{
 				// remove double '/' in filename
 				path.remove(i + 1, 1);
 			}
-			else if(path[i + 1].cell() == '.') {
+			else if(path[i + 1].cell() == '.')
+			{
 				// Unix hidden files are forbidden (., .. and .<name>)
 				// (here we remove 1 period, on next loop we may remove others)
 				path.remove(i + 1, 1);
 			}
-			else {
+			else
+			{
 				++i;
 			}
 		}
-		else if((path[i].cell() == '.' || path[i].cell() == '-' || path[i].cell() == '/') && i + 1 >= path.length()) {
+		else if((path[i].cell() == '.' || path[i].cell() == '-' || path[i].cell() == '/') && i + 1 >= path.length())
+		{
 			// Filename cannot end with a period, dash (space,) or slash
 			path.remove(i, 1);
 		}
-		else {
+		else
+		{
 			++i;
 		}
 	}
@@ -2368,7 +2447,8 @@ void snap_child::execute()
 	// primary owner
 	snap::server::instance()->execute(f_uri.path());
 
-	if(f_output.buffer().size() == 0) {
+	if(f_output.buffer().size() == 0)
+	{
 		// somehow nothing was output... at this time output some random HTML
 		// (we should have an error instead)
 		//write("Status: HTTP/1.1 200 OK\n"); -- that's the default
@@ -2380,7 +2460,8 @@ void snap_child::execute()
 			  "<p>When you get this message, your system has been improperly installed.</p>\n"
 			  "</body></html>\n");
 	}
-	else {
+	else
+	{
 		// user created a page, output it now
 		// output the status first (we may want to order the fields by type
 		// and output them ordered by type as defined in the HTTP reference
@@ -2392,22 +2473,26 @@ void snap_child::execute()
 		// TODO (TBD):
 		// Do we always force this length?
 		// After all we have the exact length in f_output anyway
-		//if(!has_header("Content-length")) {
+		//if(!has_header("Content-length"))
+		//{
 			QString size(QString("%1").arg(f_output.buffer().size()));
 			set_header("Content-Length", size);
 		//}
 
 		QString connection(snapenv("HTTP_CONNECTION"));
 //printf("HTTP_CONNECTION=%s\n", connection.toUtf8().data());
-		if(connection.toLower() == "keep-alive") {
+		if(connection.toLower() == "keep-alive")
+		{
 			set_header("Connection", "keep-alive");
 		}
-		else {
+		else
+		{
 			set_header("Connection", "close");
 		}
 
 		// If status is defined, it should not be 200
-		if(has_header("Status")) {
+		if(has_header("Status"))
+		{
 			// print the status first because that's expected
 			// although it is not required by the standard
 			write((f_header["status"] + "\n").toLatin1().data());
@@ -2417,7 +2502,8 @@ void snap_child::execute()
 										 it != f_header.end();
 										 ++it)
 		{
-			if(it.key() != "status") {
+			if(it.key() != "status")
+			{
 				write((it.value() + "\n").toLatin1().data());
 //printf("%s", (it.value() + "\n").toLatin1().data());
 			}
@@ -2483,6 +2569,126 @@ QString snap_child::date_to_string(int64_t v, bool long_format)
 }
 
 
+/** \brief Send a PING message to the specified UDP server.
+ *
+ * This function sends a PING message (4 bytes) to the specified
+ * UDP server. This is used after you saved data in the Cassandra
+ * cluster to wake up a background process which can then "slowly"
+ * process the data further.
+ *
+ * Remember that UDP is not reliable so we do not in any way
+ * guarantee that this goes anywhere. The function returns no
+ * feedback at all. We do not wait for a reply since at the time
+ * we send the message the listening server may be busy. The
+ * idea of this ping is just to make sure that if the server is
+ * sleeping at that time, it wakes up sooner rather than later
+ * so it can immediately start processing the data we just added
+ * to Cassandra.
+ *
+ * The \p message is expected to be a NUL terminated string. The
+ * NUL is not sent across. At this point most of our servers
+ * accept a PING message to wake up and start working on new
+ * data.
+ *
+ * The \p name parameter is the name of a variable in the server
+ * configuration file.
+ *
+ * \param[in] name  The name of the configuration variable used to read the IP and port
+ * \param[in] message  The message to send, "PING" by default.
+ */
+void snap_child::udp_ping(const char *name, const char *message)
+{
+	// TODO: we should have a common function to read and transform the
+	//       parameter to a valid IP/Port pair (see below)
+	QString udp_addr_port(f_server->get_parameter(name));
+	QString addr, port;
+	int bracket(udp_addr_port.lastIndexOf("]"));
+	int p(udp_addr_port.lastIndexOf(":"));
+	if(bracket != -1 && p != -1)
+	{
+		if(p > bracket)
+		{
+			// IPv6 port specification
+			addr = udp_addr_port.mid(0, bracket + 1); // include the ']'
+			port = udp_addr_port.mid(p + 1); // ignore the ':'
+		}
+		else
+		{
+			throw std::runtime_error("invalid [IPv6]:port specification, port missing for UDP ping");
+		}
+	}
+	else if(p != -1)
+	{
+		// IPv4 port specification
+		addr = udp_addr_port.mid(0, p); // ignore the ':'
+		port = udp_addr_port.mid(p + 1); // ignore the ':'
+	}
+	else
+	{
+		throw std::runtime_error("invalid IPv4:port specification, port missing for UDP ping");
+	}
+	udp_client_server::udp_client client(addr.toUtf8().data(), port.toInt());
+	client.send(message, strlen(message)); // we do not send the '\0'
+}
+
+
+/** \brief Create a UDP server that receives udp_ping() messages.
+ *
+ * This function is used to receive PING messages from the udp_ping()
+ * function. Other messages can also be sent such as RSET and STOP.
+ *
+ * The server is expected to be used with the recv() or timed_recv()
+ * functions to wait for a message and act accordingly. A server
+ * that makes use of these pings is expected to be waiting for some
+ * data which, once available requires additional processing. The
+ * server that handles the row data sends the PING to the server.
+ * For example, the sendmail plugin just saves the email data in
+ * the Cassandra database, then it sends a PING to the sendmail
+ * backend process. That backend process wakes up and actually
+ * processes the email by sending it to the mail server.
+ *
+ * \param[in] name  The name of the configuration variable used to read the IP and port
+ */
+QSharedPointer<udp_client_server::udp_server> snap_child::udp_get_server(const char *name)
+{
+	// TODO: we should have a common function to read and transform the
+	//       parameter to a valid IP/Port pair (see above)
+	QString udp_addr_port(f_server->get_parameter(name));
+	QString addr, port;
+	int bracket(udp_addr_port.lastIndexOf("]"));
+	int p(udp_addr_port.lastIndexOf(":"));
+	if(bracket != -1 && p != -1)
+	{
+		if(p > bracket)
+		{
+			// IPv6 port specification
+			addr = udp_addr_port.mid(0, bracket + 1); // include the ']'
+			port = udp_addr_port.mid(p + 1); // ignore the ':'
+		}
+		else
+		{
+			throw std::runtime_error("invalid [IPv6]:port specification, port missing for UDP ping");
+		}
+	}
+	else if(p != -1)
+	{
+		// IPv4 port specification
+		addr = udp_addr_port.mid(0, p); // ignore the ':'
+		port = udp_addr_port.mid(p + 1); // ignore the ':'
+	}
+	else
+	{
+		throw std::runtime_error("invalid IPv4:port specification, port missing for UDP ping");
+	}
+	QSharedPointer<udp_client_server::udp_server> server(new udp_client_server::udp_server(addr.toUtf8().data(), port.toInt()));
+	if(server.isNull())
+	{
+		// this should not happen since std::badalloc is raised when allocation fails
+		// and the new operator will rethrow any exception that the constructor throws
+		throw std::runtime_error("server could not be allocated");
+	}
+	return server;
+}
 
 
 } // namespace snap

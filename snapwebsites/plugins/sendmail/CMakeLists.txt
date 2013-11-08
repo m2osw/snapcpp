@@ -4,7 +4,9 @@
 #
 # Description:
 #      Send emails to specified addresses using the system sendmail command
-#      line.
+#      line. This plugin makes use of a backend process to actually process
+#      the emails on a mail server. The front end saves the email in your
+#      Cassandra database.
 #
 # Documentation:
 #      See the CMake documentation.
@@ -41,13 +43,14 @@ SnapIncludeQt4( QtCore )
 include_directories(
     "${CMAKE_CURRENT_SOURCE_DIR}"
     ${QT_INCLUDES}
+    "${PROJECT_BINARY_DIR}/../../../libtld/include"
 )
 
 QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC
     sendmail.qrc
 )
 
-add_library(${PROJECT_NAME} SHARED
+add_library(sendmail SHARED
     sendmail.cpp
     ${SNAP_MANAGER_MOC_CXX}
     ${SNAP_MANAGER_RESOURCES_RCC}
@@ -55,10 +58,10 @@ add_library(${PROJECT_NAME} SHARED
     content.xml
 )
 
-target_link_libraries( ${PROJECT_NAME} ${QT_LIBRARIES} )
+target_link_libraries( sendmail ${QT_LIBRARIES} )
 
 install(
-    TARGETS ${PROJECT_NAME} LIBRARY DESTINATION lib/snapwebsites/plugins
+    TARGETS sendmail LIBRARY DESTINATION lib/snapwebsites/plugins
 )
 
 # vim: ts=4 sw=4 et

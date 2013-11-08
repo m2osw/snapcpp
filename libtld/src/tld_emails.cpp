@@ -1739,7 +1739,7 @@ int tld_email_next(struct tld_email_list *list, struct tld_email *e)
  * email is canonical in the sense that it has no fluff added
  * (no group name, no comments, no white spaces.)
  *
- * Note that if the name includes character that are not part
+ * Note that if the name includes characters that are not part
  * of the atom set of characters, then it will be written between
  * double quotes (i.e. the name of the user could include a space,
  * a comma, etc.)

@@ -226,13 +226,15 @@ QString link_info::data() const
 void link_info::from_data(const QString& db_data)
 {
 	QStringList lines(db_data.split('\n'));
-	if(lines.count() != 2) {
+	if(lines.count() != 2)
+	{
 		throw links_exception_invalid_db_data();
 	}
 	QStringList key_data(lines[0].split('='));
 	QStringList name_data(lines[1].split('='));
 	if(key_data.count() != 2 || name_data.count() != 2
-	|| key_data[0] != "key" || name_data[0] != "name") {
+	|| key_data[0] != "key" || name_data[0] != "name")
+	{
 		throw links_exception_invalid_db_data();
 	}
 	set_key(key_data[1]);
@@ -309,7 +311,7 @@ link_context::link_context(::snap::snap_child *snap, const link_info& info)
 /** \brief Retrieve the next link.
  *
  * This function reads one link and saves it in the info parameter.
- * If no more link is available, then the function returns false
+ * If no more links are available, then the function returns false
  * and the info parameter is not modified.
  *
  * \param[out] info  The structure where the result is saved if available.
@@ -401,10 +403,10 @@ links::~links()
 {
 }
 
-/** \brief Initialize the links plug-in.
+/** \brief Initialize the links plugin.
  *
- * This function terminates the initialization of the links plug-in
- * by registring for different events.
+ * This function terminates the initialization of the links plugin
+ * by registering for different events.
  *
  * \param[in] snap  The child handling this request.
  */
@@ -416,14 +418,14 @@ void links::on_bootstrap(::snap::snap_child *snap)
 	//SNAP_LISTEN(links, "server", server, update, _1); -- replaced with do_update()
 }
 
-/** \brief Get a pointer to the links plug-in.
+/** \brief Get a pointer to the links plugin.
  *
- * This function returns an instance pointer to the links plug-in.
+ * This function returns an instance pointer to the links plugin.
  *
  * Note that you cannot assume that the pointer will be valid until the
  * bootstrap event is called.
  *
- * \return A pointer to the links plug-in.
+ * \return A pointer to the links plugin.
  */
 links *links::instance()
 {

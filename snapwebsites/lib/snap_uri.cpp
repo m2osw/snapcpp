@@ -31,7 +31,7 @@ namespace QtSerialization {
 /** \brief Convert basic data from a string to a field of type qint8.
  *
  * This template specialization is used to convert a string to a field
- * of type qint8 defined in the user class.
+ * of type bool defined in the user class.
  *
  * \param[out] field  The reference to the field where the converted data is saved.
  * \param[in] data  The data to convert and save in \p field.

@@ -33,6 +33,7 @@ const char *		robotstxt::FIELD_NAME_DISALLOW = "Disallow";
  */
 robotstxt::robotstxt()
 	//: f_snap(NULL) -- auto-init
+    : f_robots_path("#")
 {
 }
 
@@ -47,13 +48,16 @@ robotstxt::~robotstxt()
 /** \brief Initialize the robotstxt.
  *
  * This function terminates the initialization of the robotstxt plugin
- * by registring for different events.
+ * by registering for different events.
  *
  * \param[in] snap  The child handling this request.
  */
 void robotstxt::on_bootstrap(snap_child *snap)
 {
 	f_snap = snap;
+
+	SNAP_LISTEN(robotstxt, "layout", layout::layout, generate_header_content, _1, _2, _3, _4);
+    SNAP_LISTEN(robotstxt, "layout", layout::layout, generate_page_content, _1, _2, _3, _4);
 }
 
 /** \brief Get a pointer to the robotstxt plugin.
@@ -214,9 +218,9 @@ void robotstxt::output() const
 	}
 }
 
-/** \brief Implementation of the robotstxt signal.
+/** \brief Implementation of the generate_robotstxt signal.
  *
- * This function readies the robotstxt signal.
+ * This function readies the generate_robotstxt signal.
  *
  * This function generates the header of the robots.txt.
  *
@@ -269,15 +273,19 @@ void robotstxt::add_robots_txt_field(const QString& value,
 									 const QString& robot,
 									 bool unique)
 {
-	if(field.isEmpty()) {
+	if(field.isEmpty())
+	{
 		throw robotstxt_exception_invalid_field_name();
 	}
 
 	robots_field_array_t& d = f_robots_txt[robot];
-	if(unique) {
+	if(unique)
+	{
 		// verify unicity
-		for(robots_field_array_t::const_iterator i = d.begin(); i != d.end(); ++i) {
-			if(i->f_field == field) {
+		for(robots_field_array_t::const_iterator i = d.begin(); i != d.end(); ++i)
+		{
+			if(i->f_field == field)
+			{
 				throw robotstxt_exception_invalid_field_name();
 			}
 		}
@@ -289,6 +297,135 @@ void robotstxt::add_robots_txt_field(const QString& value,
 }
 
 
+/** \brief Retrieve the robots setup for a page.
+ *
+ * This function loads the robots setup for the specified page.
+ *
+ * Note that the function returns an empty string if the current setup is
+ * index,follow pr index,follow,archive since those represent the default
+ * value of the robots meta tag.
+ *
+ * \todo
+ * At this time there are problems with links (at least it seems that way
+ * because I don't recall adding a nofollow link on the home page and yet
+ * it gets the nofollow. Yet lookat at the path of the link, it appears
+ * that we're reading the link for "/admin" instead if "/[index.html]".
+ * I probably use some kind of default. Not that the noindex has the exact
+ * same problem.
+ *
+ * \param[in] path  The path of the page for which links are checked to determine the robots setup.
+ */
+void robotstxt::define_robots(const QString& path)
+{
+    if(path != f_robots_path)
+    {
+        // Define the X-Robots HTTP header
+        QStringList robots;
+        QString site_key(f_snap->get_site_key_with_slash());
+        {
+// linking [http://csnap.m2osw.com/] / [http://csnap.m2osw.com/types/taxonomy/system/robotstxt/noindex]
+// <link name="noindex" to="noindex" mode="1:*">/types/taxonomy/system/robotstxt/noindex</link>
+            links::link_info xml_sitemap_info("noindex", false, site_key + path);
+            QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(xml_sitemap_info));
+            links::link_info robots_txt;
+            if(link_ctxt->next_link(robots_txt))
+            {
+                robots += QString("noindex");
+            }
+        }
+        {
+            links::link_info xml_sitemap_info("nofollow", false, site_key + path);
+            QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(xml_sitemap_info));
+            links::link_info robots_txt;
+            if(link_ctxt->next_link(robots_txt))
+            {
+                robots += QString("nofollow");
+            }
+        }
+        {
+            links::link_info xml_sitemap_info("noarchive", false, site_key + "types/taxonomy/system/robotstxt/noarchive");
+            QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(xml_sitemap_info));
+            links::link_info robots_txt;
+            if(link_ctxt->next_link(robots_txt))
+            {
+                robots += QString("noarchive");
+            }
+        }
+        // TODO: add the search engine specific tags
+
+        f_robots_cache = robots.join(",");
+        f_robots_path = path;
+    }
+}
+
+
+/** \brief Add the X-Robots to the header.
+ *
+ * If the robots metadata is set to something else than index,follow[,archive]
+ * then we want to add an X-Robots to the HTTP header. This is useful
+ * to increase changes that the robots understand what we're trying to
+ * tell it.
+ *
+ * \param[in] l  The layout being worked on.
+ * \param[in] path  The path concerned by this request.
+ * \param[in] header  The HTML header element.
+ * \param[in] metadata  The XML metadata used with the XSLT parser.
+ */
+void robotstxt::on_generate_header_content(layout::layout *l, const QString& path, QDomElement& header, QDomElement& metadata)
+{
+    define_robots(path);
+	if(!f_robots_cache.isEmpty())
+	{
+		f_snap->set_header("X-Robots", f_robots_cache);
+	}
+}
+
+
+/** \brief Implement the main content for this class.
+ *
+ * If this object becomes the content object, the the layout will call this
+ * function to generate the content.
+ *
+ * In case of the robots.txt file, we use a lower level function
+ *
+ * \param[in] l  Layout generating the main content.
+ * \param[in] path  The path being managed.
+ * \param[in,out] page  The page being generated.
+ * \param[in,out] body  The body being generated.
+ */
+void robotstxt::on_generate_main_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body)
+{
+}
+
+
+/** \brief Generate the page common content.
+ *
+ * This function generates some content that is expected in a page
+ * by default.
+ *
+ * \param[in] l  The layout pointer.
+ * \param[in] path  The path being managed.
+ * \param[in,out] page  The page being generated.
+ * \param[in,out] body  The body being generated.
+ */
+void robotstxt::on_generate_page_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body)
+{
+    QDomDocument doc(page.ownerDocument());
+
+    define_robots(path);
+	if(!f_robots_cache.isEmpty())
+	{
+        QDomElement created_root(doc.createElement("robots"));
+        body.appendChild(created_root);
+        QDomElement created(doc.createElement("tracking"));
+        created_root.appendChild(created);
+        QDomText text(doc.createTextNode(f_robots_cache));
+        created.appendChild(text);
+    }
+}
+
+
+
 SNAP_PLUGIN_END()
 
-// vim: ts=4 sw=4
+// vim: ts=4 sw=4 et

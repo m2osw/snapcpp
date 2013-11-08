@@ -97,7 +97,7 @@ javascript::~javascript()
 /** \brief Initialize the javascript.
  *
  * This function terminates the initialization of the javascript plugin
- * by registring for different events.
+ * by registering for different events.
  *
  * \param[in] snap  The child handling this request.
  */
@@ -106,14 +106,14 @@ void javascript::on_bootstrap(snap_child *snap)
 	f_snap = snap;
 }
 
-/** \brief Get a pointer to the javascript plug-in.
+/** \brief Get a pointer to the javascript plugin.
  *
- * This function returns an instance pointer to the javascript plug-in.
+ * This function returns an instance pointer to the javascript plugin.
  *
  * Note that you cannot assume that the pointer will be valid until the
  * bootstrap event is called.
  *
- * \return A pointer to the javascript plug-in.
+ * \return A pointer to the javascript plugin.
  */
 javascript *javascript::instance()
 {

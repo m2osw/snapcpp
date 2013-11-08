@@ -1,5 +1,5 @@
 // Snap Servers -- plugins loader
-// Copyright (C) 2011-2012  Made to Order Software Corp.
+// Copyright (C) 2011-2013  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -44,6 +44,11 @@ public:
 	}
 };
 
+class plugin_signal
+{
+public:
+	plugin_signal(const char *name);
+};
 
 
 class plugin
@@ -165,21 +170,21 @@ bool verify_plugin_name(const QString& name);
 
 /** \brief Conditionally listen to a signal.
  *
- * This function checks whether a given plug-in was loaded and if so
+ * This function checks whether a given plugin was loaded and if so
  * listen to one of its signals.
  *
- * The macro accepts the name of the listener plug-in (it must be
- * 'this'), the name of the emitter plug-in, and the name of the
+ * The macro accepts the name of the listener plugin (it must be
+ * 'this'), the name of the emitter plugin, and the name of the
  * signal to listen to.
  *
  * The listener must have a function named on_\<name of signal>.
  * The emitter is expected to define the signal using the
  * SNAP_SIGNAL() macro so the signal is called
- * signal_liste_\<name of signal>.
+ * signal_listen_\<name of signal>.
  *
- * \param[in] name  The name of the plug-in connecting.
- * \param[in] emitter_name  The name of the plug-in emitting this signal.
- * \param[in] emitter_class  The class with qualifiers if necessary of the plug-in emitting this signal.
+ * \param[in] name  The name of the plugin connecting.
+ * \param[in] emitter_name  The name of the plugin emitting this signal.
+ * \param[in] emitter_class  The class with qualifiers if necessary of the plugin emitting this signal.
  * \param[in] signal  The name of the signal to listen to.
  * \param[in] args...  The list of arguments to that signal.
  */

@@ -63,6 +63,10 @@ add_executable(test_unix_timestamp
     test_unix_timestamp.cpp
 )
 
+add_executable(test_snap_udp_message
+    test_snap_udp_message.cpp
+)
+
 # while developing you may need to set LD_LIBRARY_PATH
 target_link_libraries(test_snap_cgi
     #libsnapwebsites
@@ -75,6 +79,15 @@ target_link_libraries(test_snap_cgi
 )
 
 target_link_libraries(test_snap_parser
+    libsnapwebsites
+    ${QT_LIBRARIES}
+    QtCassandra
+    thrift
+    tld
+    dl
+)
+
+target_link_libraries(test_snap_udp_message
     libsnapwebsites
     ${QT_LIBRARIES}
     QtCassandra

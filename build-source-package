@@ -36,7 +36,7 @@ then
 	# (the Cassandra include are in libQtCassandra/thrift-gencpp-cassandra)
 	mkdir 3rdParty
 	cp ../3rdParty/CMakeLists.txt 3rdParty/.
-	cp ../3rdParty/thrift-0.8.0.tar.gz 3rdParty/.
+	cp ../3rdParty/thrift-0.9.0.tar.gz 3rdParty/.
 fi;
 cd BUILD
 if ! cmake ..

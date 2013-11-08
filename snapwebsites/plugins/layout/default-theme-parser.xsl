@@ -323,9 +323,7 @@
 				<!-- robots -->
 				<xsl:if test="page/body/robots/tracking">
 					<xsl:variable name="tracking" select="page/body/robots/tracking"/>
-					<xsl:if test="$tracking != 'index,follow' and index != 'index,follow,archive'">
-						<meta name="robots" content="{$tracking}"/>
-					</xsl:if>
+					<meta name="robots" content="{$tracking}"/>
 				</xsl:if>
 				<xsl:if test="page/body/robots/changefreq">
 					<xsl:variable name="changefreq" select="page/body/robots/changefreq"/>

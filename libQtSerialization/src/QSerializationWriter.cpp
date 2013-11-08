@@ -282,6 +282,8 @@ QString QWriter::xmlEncode(const QString& string, const int encode)
 
         case '\'':
             if(encode & ENCODE_QUOTE) {
+                // This is not compatible with older IE browsers
+                // You'd have to use &#x27; or &#39; instead
                 result += "&apos;";
             }
             else {

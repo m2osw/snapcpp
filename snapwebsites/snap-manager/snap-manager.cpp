@@ -76,8 +76,9 @@ snap_manager::snap_manager(QWidget *snap_parent)
     connect(a, SIGNAL(activated()), this, SLOT(decode_utf8()));
 
     f_tabs = getChild<QTabWidget>(this, "tabWidget");
-    f_tabs->setTabEnabled(1, false);
-    f_tabs->setTabEnabled(2, false);
+    f_tabs->setTabEnabled(TAB_DOMAINS, false);
+    f_tabs->setTabEnabled(TAB_WEBSITES, false);
+    f_tabs->setTabEnabled(TAB_SITES, false);
 
     // Snap! Server Connect
     QPushButton *b = getChild<QPushButton>(this, "snapTest");
@@ -131,6 +132,41 @@ snap_manager::snap_manager(QWidget *snap_parent)
     //connect(f_website_cancel, SIGNAL(clicked()), this, SLOT(on_websiteCancel_clicked()));
     f_website_delete = getChild<QPushButton>(this, "websiteDelete");
     //connect(f_website_delete, SIGNAL(clicked()), this, SLOT(on_websiteDelete_clicked()));
+
+    // get sites friends that are going to be used here and there
+    f_sites_filter = getChild<QPushButton>(this, "sitesFilter");
+    //connect(f_sites_filter, SIGNAL(itemClicked()), this, SLOT(on_sitesFilter_clicked()));
+    f_sites_filter_string = getChild<QLineEdit>(this, "sitesFilterString");
+    f_sites_list = getChild<QListWidget>(this, "sitesList");
+    //connect(f_sites_list, SIGNAL(itemClicked()), this, SLOT(on_sitesList_itemClicked()));
+    f_sites_name = getChild<QLineEdit>(this, "sitesDomainName");
+    f_sites_parameters = getChild<QTableWidget>(this, "sitesParameters");
+    f_sites_parameter_name = getChild<QLineEdit>(this, "sitesParameterName");
+    f_sites_parameter_value = getChild<QLineEdit>(this, "sitesParameterValue");
+    f_sites_parameter_type = getChild<QComboBox>(this, "sitesParameterType");
+    f_sites_new = getChild<QPushButton>(this, "sitesNew");
+    //connect(f_sites_new, SIGNAL(clicked()), this, SLOT(on_sitesNew_clicked()));
+    f_sites_save = getChild<QPushButton>(this, "sitesSave");
+    //connect(f_sites_save, SIGNAL(clicked()), this, SLOT(on_sitesSave_clicked()));
+    f_sites_delete = getChild<QPushButton>(this, "sitesDelete");
+    //connect(f_sites_delete, SIGNAL(clicked()), this, SLOT(on_sitesDelete_clicked()));
+
+    f_sites_parameters->setColumnCount(2);
+    QStringList labels;
+    labels += QString("Name");
+    labels += QString("Value");
+    f_sites_parameters->setHorizontalHeaderLabels(labels);
+
+    f_sites_parameter_type->addItem("Null");
+    f_sites_parameter_type->addItem("String"); // this is the default
+    f_sites_parameter_type->addItem("Boolean");
+    f_sites_parameter_type->addItem("Integer (8 bit)");
+    f_sites_parameter_type->addItem("Integer (16 bit)");
+    f_sites_parameter_type->addItem("Integer (32 bit)");
+    f_sites_parameter_type->addItem("Integer (64 bit)");
+    f_sites_parameter_type->addItem("Floating Point (32 bit)");
+    f_sites_parameter_type->addItem("Floating Point (64 bit)");
+    f_sites_parameter_type->setCurrentIndex(1);
 }
 
 snap_manager::~snap_manager()
@@ -421,8 +457,9 @@ void snap_manager::cassandraConnect()
     console->addItem("libQtCassandra version: " + QString(f_cassandra->version()));
     console->addItem("Host: " + f_cassandra_host);
     console->addItem("Port: " + QString::number(f_cassandra_port));
-    f_tabs->setTabEnabled(1, false);
-    f_tabs->setTabEnabled(2, false);
+    f_tabs->setTabEnabled(TAB_DOMAINS, false);
+    f_tabs->setTabEnabled(TAB_WEBSITES, false);
+    f_tabs->setTabEnabled(TAB_SITES, false);
 
     // reconnect with the new info
     // note: the disconnect does nothing if not already connected
@@ -443,7 +480,8 @@ void snap_manager::cassandraConnect()
     f_cassandra->contexts();
     QString context_name(snap::get_name(snap::SNAP_NAME_CONTEXT));
     f_context = f_cassandra->findContext(context_name);
-    if(f_context.isNull()) {
+    if(f_context.isNull())
+    {
         // we connected to the database, but it is not properly initialized
         console->addItem("The \"" + context_name + "\" context is not defined.");
         QMessageBox msg(QMessageBox::Critical, "Connection to Cassandra", "Snap! Manager was able to connect to your Cassandra Cluster but it does not include a \"" + context_name + "\" context. The Snap! Server creates the necessary context and tables, have you run it?", QMessageBox::Ok, this);
@@ -453,10 +491,12 @@ void snap_manager::cassandraConnect()
 
     // also check for the 2 main tables
     snap::name_t names[2] = { snap::SNAP_NAME_DOMAINS, snap::SNAP_NAME_WEBSITES /*, snap::SNAP_NAME_SITES*/ };
-    for(int i = 0; i < 2; ++i) {
+    for(int i = 0; i < 2; ++i)
+    {
         QString table_name(snap::get_name(names[i]));
         QSharedPointer<QtCassandra::QCassandraTable> table(f_context->findTable(table_name));
-        if(table.isNull()) {
+        if(table.isNull())
+        {
             // we connected to the database, but it is not properly initialized
             console->addItem("The \"" + table_name + "\" table is not defined.");
             QMessageBox msg(QMessageBox::Critical, "Connection to Cassandra", "Snap! Manager was able to connect to your Cassandra Cluster but it does not include a \"" + table_name + "\" table. The Snap! Server creates the necessary context and tables, have you run it?", QMessageBox::Ok, this);
@@ -473,6 +513,10 @@ void snap_manager::cassandraConnect()
 
     // TODO: call that function when the tab is clicked instead!
     loadDomains();
+    loadSites();
+
+    // we just need to be connected for TAB_SITES
+    f_tabs->setTabEnabled(TAB_SITES, true);
 }
 
 void snap_manager::cassandraDisconnect()
@@ -488,8 +532,9 @@ void snap_manager::cassandraDisconnect()
     f_reset_domains_index->setEnabled(false);
     f_reset_websites_index->setEnabled(false);
 
-    f_tabs->setTabEnabled(1, false);
-    f_tabs->setTabEnabled(2, false);
+    f_tabs->setTabEnabled(TAB_DOMAINS, false);
+    f_tabs->setTabEnabled(TAB_WEBSITES, false);
+    f_tabs->setTabEnabled(TAB_SITES, false);
 
     // this doesn't get cleared otherwise
     f_domain_list->clearSelection();
@@ -498,6 +543,20 @@ void snap_manager::cassandraDisconnect()
     f_domain_name->setText("");
     f_domain_org_rules = "";
     f_domain_rules->setText("");
+
+    // just in case, reset the sites widgets too
+    f_sites_org_name = "";
+    f_sites_name->setText("");
+    f_sites_parameters->setEnabled(false);
+    f_sites_parameter_name->setEnabled(false);
+    f_sites_parameter_name->setText("");
+    f_sites_parameter_value->setEnabled(false);
+    f_sites_parameter_value->setText("");
+    f_sites_parameter_type->setEnabled(false);
+    f_sites_parameter_type->setCurrentIndex(1);
+    f_sites_new->setEnabled(false);
+    f_sites_save->setEnabled(false);
+    f_sites_delete->setEnabled(false);
 }
 
 void snap_manager::reset_domains_index()
@@ -658,8 +717,8 @@ void snap_manager::loadDomains()
     f_domain_delete->setEnabled(false);
 
     // allow user to go to that tab
-    f_tabs->setTabEnabled(1, true);
-    f_tabs->setTabEnabled(2, false); // we lose focus so we want to reset that one
+    f_tabs->setTabEnabled(TAB_DOMAINS, true);
+    f_tabs->setTabEnabled(TAB_WEBSITES, false); // we lose focus so we want to reset that one
 }
 
 void snap_manager::domainWithSelection()
@@ -675,7 +734,7 @@ void snap_manager::domainWithSelection()
     // f_domain_org_name until the user saves since the name
     // may change in between...
     bool enable_websites = f_domain_org_name != "";
-    f_tabs->setTabEnabled(2, enable_websites);
+    f_tabs->setTabEnabled(TAB_WEBSITES, enable_websites);
     if(enable_websites) {
         // TODO: call that function when the tab is clicked instead!
         loadWebsites();
@@ -686,10 +745,12 @@ bool snap_manager::domainChanged()
 {
     // if something changed we want to warn the user before going further
     if(f_domain_org_name != f_domain_name->text()
-    || f_domain_org_rules != f_domain_rules->toPlainText()) {
+    || f_domain_org_rules != f_domain_rules->toPlainText())
+    {
         QMessageBox msg(QMessageBox::Critical, "Domain Modified", "You made changes to this entry and did not Save it yet. Do you really want to continue? If you click Ok you will lose your changes.", QMessageBox::Ok | QMessageBox::Cancel, this);
         int choice = msg.exec();
-        if(choice != QMessageBox::Ok) {
+        if(choice != QMessageBox::Ok)
+        {
             return false;
         }
     }
@@ -700,8 +761,10 @@ bool snap_manager::domainChanged()
 void snap_manager::on_domainFilter_clicked()
 {
     // make sure the user did not change something first
-    if(domainChanged()) {
-        // user supposedly changed the filter...
+    if(domainChanged())
+    {
+        // user is okay with losing changes or did not make any
+        // the following applies the filter (Apply button)
         loadDomains();
     }
 }
@@ -992,7 +1055,7 @@ void snap_manager::on_domainDelete_clicked()
     f_domain_cancel->setEnabled(false);
     f_domain_delete->setEnabled(false);
 
-    f_tabs->setTabEnabled(2, false);
+    f_tabs->setTabEnabled(TAB_WEBSITES, false);
 }
 
 void snap_manager::loadWebsites()
@@ -1299,6 +1362,140 @@ void snap_manager::on_websiteDelete_clicked()
     f_website_rules->setText("");
 }
 
+bool snap_manager::sitesChanged()
+{
+    // if something changed we want to warn the user before going further
+    if(f_sites_org_parameter_name != f_sites_parameter_name->text()
+    || f_sites_org_parameter_value != f_sites_parameter_value->text()
+    || f_sites_org_parameter_type != f_sites_parameter_type->currentIndex())
+    {
+        QMessageBox msg(QMessageBox::Critical, "Site Parameter Modified", "You made changes to this parameter and did not Save it yet. Do you really want to continue? If you click Ok you will lose your changes.", QMessageBox::Ok | QMessageBox::Cancel, this);
+        int choice = msg.exec();
+        if(choice != QMessageBox::Ok)
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+void snap_manager::loadSites()
+{
+    // we just checked to know whether the table existed so it cannot fail here
+    // however the index table could be missing...
+    f_sites_list->clear();
+
+    // TBD: we would need to have an "*index*" so we can cleanly search for
+    //      the list of sites; so at this point we ignore the filter info
+    //QString row_index_name(snap::get_name(snap::SNAP_NAME_INDEX)); // "*index*"
+
+    QString table_name(snap::get_name(snap::SNAP_NAME_SITES));
+    QSharedPointer<QtCassandra::QCassandraTable> table(f_context->findTable(table_name));
+    if(!table.isNull())
+    {
+        // if the table does not exist yet skip this part!
+        // this is possible until you access an actual website; although we
+        // will change the behavior at some point it is still that way now
+
+        // without a filter the rows will be disorganized, although until you
+        // have more than 100 it should look good
+        QtCassandra::QCassandraRowPredicate row_predicate;
+        table->clearCache();
+        table->readRows(row_predicate);
+        const QtCassandra::QCassandraRows& rows(table->rows());
+
+        for(QtCassandra::QCassandraRows::const_iterator it(rows.begin());
+            it != rows.end();
+            ++it)
+        {
+            // the row key is actually the name of the concern domain
+            f_sites_list->addItem(it.key());
+        }
+    }
+
+    // at first some of the entries are disabled
+    // until a select is made or New is clicked
+    f_sites_name->setText("");
+    f_sites_parameters->setEnabled(false);
+    f_sites_parameter_name->setEnabled(false);
+    f_sites_parameter_name->setText("");
+    f_sites_parameter_value->setEnabled(false);
+    f_sites_parameter_value->setText("");
+    f_sites_parameter_type->setEnabled(false);
+    f_sites_parameter_type->setCurrentIndex(1);
+    f_sites_new->setEnabled(false);
+    f_sites_save->setEnabled(false);
+    f_sites_delete->setEnabled(false);
+}
+
+void snap_manager::on_sitesFilter_clicked()
+{
+    // make sure the user did not change something first
+    if(sitesChanged())
+    {
+        // warning about the fact that the filter is currently ignored
+        if(!f_sites_filter_string->text().isEmpty())
+        {
+            QMessageBox msg(QMessageBox::Critical, "Internal Error", "WARNING: The *index* for the sites table was not yet defined. The filter will therefore be ignored.", QMessageBox::Ok, this);
+            msg.exec();
+        }
+
+        // user is okay with losing changes or did not make any
+        // the following applies the filter (Apply button)
+        loadSites();
+    }
+}
+
+void snap_manager::on_sitesList_itemClicked(QListWidgetItem *item)
+{
+    // same site? if so, skip on it
+    if(f_sites_org_name == item->text() && !f_sites_org_name.isEmpty())
+    {
+        return;
+    }
+
+    // check whether the current info was modified
+    if(!sitesChanged())
+    {
+        // user canceled his action
+        // TODO: we need to reset the item selection...
+        QList<QListWidgetItem *> items(f_sites_list->findItems(f_sites_org_name, Qt::MatchExactly));
+        if(items.count() > 0)
+        {
+            f_sites_list->setCurrentItem(items[0]);
+        }
+        return;
+    }
+
+    f_sites_org_name = item->text();
+    f_sites_name->setText(f_sites_org_name);
+    f_sites_parameters->clearContents();
+
+    // IMPORTANT: note that f_sites_org_name changed to the item->text() value
+    QString table_name(snap::get_name(snap::SNAP_NAME_SITES));
+    QSharedPointer<QtCassandra::QCassandraTable> table(f_context->findTable(table_name));
+    QSharedPointer<QtCassandra::QCassandraRow> row(table->row(f_sites_org_name));
+    QtCassandra::QCassandraColumnRangePredicate parameters_predicate;
+    parameters_predicate.setCount(1000); // that should be sufficient for 99% of the websites out there
+    row->clearCache();
+    uint32_t count(row->readCells(parameters_predicate));
+    f_sites_parameters->setRowCount(count);
+    const QtCassandra::QCassandraCells& parameters(row->cells());
+    int row_pos(0);
+    for(QtCassandra::QCassandraCells::const_iterator c(parameters.begin());
+            c != parameters.end(); ++c, ++row_pos)
+    {
+        QTableWidgetItem *param_name(new QTableWidgetItem(QString(c.key())));
+        f_sites_parameters->setItem(row_pos, 0, param_name);
+        // TODO: value needs to be typed...
+        QTableWidgetItem *param_value(new QTableWidgetItem(c.value()->value().stringValue()));
+        f_sites_parameters->setItem(row_pos, 1, param_value);
+    }
+
+    f_sites_parameters->setEnabled(true);
+}
+
 void snap_manager::closeEvent(QCloseEvent *close_event)
 {
     if(!domainChanged())
@@ -1311,16 +1508,27 @@ void snap_manager::closeEvent(QCloseEvent *close_event)
         close_event->ignore();
         return;
     }
+    if(!sitesChanged())
+    {
+        close_event->ignore();
+        return;
+    }
 
     close_event->accept();
 }
 
 void snap_manager::quit()
 {
-    if(!domainChanged()) {
+    if(!domainChanged())
+    {
         return;
     }
-    if(!websiteChanged()) {
+    if(!websiteChanged())
+    {
+        return;
+    }
+    if(!sitesChanged())
+    {
         return;
     }
     exit(0);

@@ -423,6 +423,11 @@ QSharedPointer<QCassandraCell> QCassandraRow::cell(const QByteArray& column_key)
  * clearCache() function. Then cells().isEmpty() returns true if no more
  * cells can be read from the database.
  *
+ * \warning
+ * The dropCell() function actually deletes the cell from this map and
+ * therefore the map becomes invalid if you use an iterator in a loop.
+ * Make sure you reset the iterator each time.
+ *
  * \return The map of cells referenced by column keys.
  *
  * \sa clearCache()
@@ -1057,10 +1062,23 @@ void QCassandraRow::dropCell(const QUuid& column_uuid, QCassandraValue::timestam
  *
  * By default the \p mode parameter is set to
  * QCassandraValue::TIMESTAMP_MODE_AUTO which means that the timestamp
- * value of the cell f_value parameter is used. This will not work right
+ * value of the cell f_value parameter is used. This will NOT WORK RIGHT
  * if the timestamp of the cell value was never set properly (i.e. you
  * never read the cell from the Cassandra database and never called
- * the setTimestamp() function on the cell value.)
+ * the setTimestamp() function on the cell value.) You have two choices here.
+ * You may specify the timestamp on the dropCell() call, or you may change
+ * the cell timestamp:
+ *
+ * \code
+ *     // this is likely to fail if you created the cell in this session
+ *     row->dropCell(cell_name);
+ *
+ *     // define the timestamp in the cell
+ *     cell->setTimestamp(QCassandra::timeofday());
+ *
+ *     // define the timestamp in the dropCell() call
+ *     row->dropCell(cell_name, QCassandraValue::TIMESTAMP_MODE_DEFINED, QCassandra::timeofday());
+ * \endcode
  *
  * The consistency level of the cell f_value is also passed to the Cassandra
  * remove() function. This means that by default you'll get whatever the
@@ -1082,11 +1100,18 @@ void QCassandraRow::dropCell(const QUuid& column_uuid, QCassandraValue::timestam
  * pointer of that cell does not make it reusable. You must forget about it
  * after this call.
  *
+ * \warning
+ * If you used the cells() function to retrieve a reference to the list of
+ * cells as a reference, that list is broken when this function returns.
+ * Make sure to re-retrieve the list after each call to the dropCell()
+ * function.
+ *
  * \param[in] column_key  A shared pointer to the cell to remove.
  * \param[in] mode  Specify the timestamp mode.
  * \param[in] timestamp  Specify the timestamp to remove only cells that are equal or older.
  *
  * \sa cell()
+ * \sa cells()
  * \sa QCassandra::timeofday()
  * \sa QCassandraCell::setConsistencyLevel()
  */

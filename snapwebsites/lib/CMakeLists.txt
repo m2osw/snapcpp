@@ -3,7 +3,7 @@
 #      lib/CMakeLists.txt
 #
 # Description:
-#      Library used by the Snap! Websites server and plug-ins. All the functions
+#      Library used by the Snap! Websites server and plugins. All the functions
 #      and classes that can be used in common are defined here
 #
 # Documentation:
@@ -42,7 +42,10 @@ configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/snapwebsites.h.in ${CMAKE_CURRENT_BI
 
 SnapIncludeQt4( QtCore QtXml )
 
-include_directories( ${QT_INCLUDES} ${CMAKE_CURRENT_BINARY_DIR}/../../libtld/include )
+include_directories(
+    ${QT_INCLUDES}
+    ${CMAKE_CURRENT_BINARY_DIR}/../../libtld/include
+)
 
 QT4_ADD_RESOURCES(SNAP_LIBRARY_RESOURCES_RCC
     snap.qrc
@@ -52,7 +55,7 @@ add_library( ${PROJECT_NAME} SHARED
     dom_util.cpp            # DOM utilities
     http_cookie.cpp         # HTTP cookie, server side
     log.cpp                 # log4cplus support
-    plugins.cpp             # plug-ins loader and list
+    plugins.cpp             # plugins loader and list
     qdomnodemodel.cpp       # Qt extension to support XSLT
     qdomreceiver.cpp        # Qt extension to output XSLT as XML
     qhtmlserializer.cpp     # Qt extension to output HTML as a string
@@ -61,6 +64,7 @@ add_library( ${PROJECT_NAME} SHARED
     snap_child.cpp          # requests processing
     snapwebsites.cpp        # server
     tcp_client_server.cpp   # low level TCP/IP that works
+    udp_client_server.cpp   # low level UDP/IP that works
 )
 
 target_link_libraries( ${PROJECT_NAME}
@@ -79,7 +83,7 @@ install(
     PATTERN .svn EXCLUDE
 )
 
-# At this time we suppose that all the plug-ins are compiled
+# At this time we suppose that all the plugins are compiled
 # within our environment, however, we probably want to consider
 # installing our headers at some point.
 

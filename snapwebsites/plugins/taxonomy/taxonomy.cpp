@@ -68,10 +68,10 @@ taxonomy::~taxonomy()
 {
 }
 
-/** \brief Initialize the taxonomy plug-in.
+/** \brief Initialize the taxonomy plugin.
  *
- * This function terminates the initialization of the taxonomy plug-in
- * by registring for different events.
+ * This function terminates the initialization of the taxonomy plugin
+ * by registering for different events.
  *
  * \param[in] snap  The child handling this request.
  */
@@ -80,14 +80,14 @@ void taxonomy::on_bootstrap(::snap::snap_child *snap)
 	f_snap = snap;
 }
 
-/** \brief Get a pointer to the taxonomy plug-in.
+/** \brief Get a pointer to the taxonomy plugin.
  *
- * This function returns an instance pointer to the taxonomy plug-in.
+ * This function returns an instance pointer to the taxonomy plugin.
  *
  * Note that you cannot assume that the pointer will be valid until the
  * bootstrap event is called.
  *
- * \return A pointer to the taxonomy plug-in.
+ * \return A pointer to the taxonomy plugin.
  */
 taxonomy *taxonomy::instance()
 {
@@ -138,7 +138,9 @@ int64_t taxonomy::do_update(int64_t last_updated)
  * This function is the first update for the taxonomy plugin. It installs
  * the initial data required by the taxonomy plugin.
  *
- * \param[in] variables_timestamp  The timestamp for all the variables added to the database by this update (in micro-seconds).
+ * \param[in] variables_timestamp  The timestamp for all the variables added
+ *                                 to the database by this update
+ *                                 (in micro-seconds).
  */
 void taxonomy::initial_update(int64_t variables_timestamp)
 {
@@ -164,7 +166,7 @@ void taxonomy::content_update(int64_t variables_timestamp)
  *
  * This function checks for the \p col_name field in the specified type
  * and up checking each parent up to and including the parent as specified
- * by the \p limit_title column name.
+ * by the \p limit_name column name.
  *
  * If the limit is not found, then an error is generated because it should
  * always exist (i.e. be a system type that the user cannot edit.)

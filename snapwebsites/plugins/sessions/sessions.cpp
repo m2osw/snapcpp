@@ -425,7 +425,7 @@ sessions::~sessions()
 /** \brief Initialize the sessions.
  *
  * This function terminates the initialization of the sessions plugin
- * by registring for different events it supports.
+ * by registering for different events it supports.
  *
  * \param[in] snap  The child handling this request.
  */
@@ -519,6 +519,17 @@ void sessions::content_update(int64_t variables_timestamp)
 QSharedPointer<QtCassandra::QCassandraTable> sessions::get_sessions_table()
 {
 	return f_snap->create_table(get_name(SNAP_NAME_SESSIONS_TABLE), "Sessions table.");
+}
+
+/** \brief Implementation of the generate_sessions signal.
+ *
+ * This function readies the generate_sessions signal.
+ *
+ * \return true if the signal has to be sent to other plugins.
+ */
+bool sessions::generate_sessions_impl(sessions * /*r*/)
+{
+	return true;
 }
 
 /** \brief Generate the actual content of the statistics page.

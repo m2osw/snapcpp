@@ -191,7 +191,7 @@ messages::~messages()
 /** \brief Initialize the messages.
  *
  * This function terminates the initialization of the messages plugin
- * by registring for different events it supports.
+ * by registering for different events it supports.
  *
  * \param[in] snap  The child handling this request.
  */

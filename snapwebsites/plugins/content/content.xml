@@ -37,8 +37,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="content::body" overwrite="yes">
       <![CDATA[<p>Welcome to your new Snap! C++ website.</p>]]>
     </param>
-    <param name="layout::theme" force-namespace="no">plugins.content.modified>10?"large_theme":"small_theme";</param>
+    <param name="layout::theme" force-namespace="no">plugins.content.modified&gt;10?"large_theme":"small_theme";</param>
     <link name="include_in_xml_sitemap" to="include_in_xml_sitemap" mode="1:*">/types/taxonomy/system/sitemapxml/include-in-xml-sitemap</link>
+    <link name="noindex" to="noindex" mode="1:*">/types/taxonomy/system/robotstxt/noindex</link>
   </content>
   <content path="/types/content-types">
     <param name="taxonomy::name">content_types</param>

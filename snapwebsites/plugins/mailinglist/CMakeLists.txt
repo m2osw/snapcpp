@@ -1,15 +1,16 @@
 #
 # File:
-#      plugins/CMakeLists.txt
+#      plugins/mailinglist/CMakeLists.txt
 #
 # Description:
-#      Set of extensions used by the Snap! Websites server.
+#      Manage lists of emails for systems such as a newsletter or a group of
+#      people who want to communicate via email instead of a sane forum.
 #
 # Documentation:
 #      See the CMake documentation.
 #
 # License:
-#      Copyright (c) 2011-2013 Made to Order Software Corp.
+#      Copyright (c) 2013 Made to Order Software Corp.
 #
 #      http://snapwebsites.org/
 #      contact@m2osw.com
@@ -34,22 +35,30 @@
 #      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
-# Keep the plugins in alphabetical order for ease of management
-add_subdirectory(char_chart)
-add_subdirectory(content)
-add_subdirectory(filter)
-add_subdirectory(form)
-add_subdirectory(javascript)
-add_subdirectory(layout)
-add_subdirectory(links)
-add_subdirectory(mailinglist)
-add_subdirectory(messages)
-add_subdirectory(path)
-add_subdirectory(robotstxt)
-add_subdirectory(search)
-add_subdirectory(sessions)
-add_subdirectory(sendmail)
-add_subdirectory(sitemapxml)
-add_subdirectory(taxonomy)
-add_subdirectory(users)
+project(plugin_mailinglist)
 
+SnapIncludeQt4( QtCore )
+include_directories(
+    "${CMAKE_CURRENT_SOURCE_DIR}"
+    ${QT_INCLUDES}
+)
+
+QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC
+    mailinglist.qrc
+)
+
+add_library(${PROJECT_NAME} SHARED
+    mailinglist.cpp
+    ${SNAP_MANAGER_MOC_CXX}
+    ${SNAP_MANAGER_RESOURCES_RCC}
+
+    content.xml
+)
+
+target_link_libraries( ${PROJECT_NAME} ${QT_LIBRARIES} )
+
+install(
+    TARGETS ${PROJECT_NAME} LIBRARY DESTINATION lib/snapwebsites/plugins
+)
+
+# vim: ts=4 sw=4 et

@@ -1,5 +1,5 @@
-// TCP Clinet & Server -- classes to ease handling sockets
-// Copyright (C) 2012  Made to Order Software Corp.
+// TCP Client & Server -- classes to ease handling sockets
+// Copyright (C) 2012-2013  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,6 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+#ifndef SNAP_TCP_CLIENT_SERVER_H
+#define SNAP_TCP_CLIENT_SERVER_H
 
 #include <stdexcept>
 #include <arpa/inet.h>
@@ -31,6 +33,12 @@ class tcp_client_server_runtime_error : public std::runtime_error
 {
 public:
     tcp_client_server_runtime_error(const std::string& errmsg) : runtime_error(errmsg) {}
+};
+
+class tcp_client_server_parameter_error : public tcp_client_server_logic_error
+{
+public:
+    tcp_client_server_parameter_error(const std::string& errmsg) : tcp_client_server_logic_error(errmsg) {}
 };
 
 
@@ -71,7 +79,7 @@ public:
 
     void                keepalive(bool yes = true);
     int                 accept();
-    int                 get_last_accepted_socket();
+    int                 get_last_accepted_socket() const;
 
 private:
     int                 f_max_connections;
@@ -86,4 +94,6 @@ private:
 
 
 } // namespace tcp_client_server
+#endif
+// SNAP_TCP_CLIENT_SERVER_H
 // vim: ts=4 sw=4 et

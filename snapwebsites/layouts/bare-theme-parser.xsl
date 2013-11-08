@@ -6,7 +6,7 @@
 															xmlns:snap="snap:snap">
 	<xsl:param name="layout-name">bare</xsl:param>
 	<xsl:param name="layout-area">theme</xsl:param>
-	<xsl:param name="layout-modified">2013-01-01 03:41:35</xsl:param>
+	<xsl:param name="layout-modified">2013-01-01 03:41:37</xsl:param>
 	<xsl:param name="year" select="year-from-date(current-date())"/>
 	<xsl:param name="use_dcterms">yes</xsl:param>
 	<!-- get the website URI (i.e. URI without any folder other than the website base folder) -->
@@ -324,9 +324,7 @@
 				<!-- robots -->
 				<xsl:if test="page/body/robots/tracking">
 					<xsl:variable name="tracking" select="page/body/robots/tracking"/>
-					<xsl:if test="$tracking != 'index,follow' and index != 'index,follow,archive'">
-						<meta name="robots" content="{$tracking}"/>
-					</xsl:if>
+					<meta name="robots" content="{$tracking}"/>
 				</xsl:if>
 				<xsl:if test="page/body/robots/changefreq">
 					<xsl:variable name="changefreq" select="page/body/robots/changefreq"/>

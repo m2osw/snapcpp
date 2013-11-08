@@ -1,5 +1,5 @@
 // Snap Websites Server -- sitemap.xml
-// Copyright (C) 2011-2012  Made to Order Software Corp.
+// Copyright (C) 2011-2013  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -27,7 +27,8 @@ namespace snap
 namespace sitemapxml
 {
 
-enum name_t {
+enum name_t
+{
 	SNAP_NAME_SITEMAPXML_COUNT,
 	SNAP_NAME_SITEMAPXML_SITEMAP_XML,
 	SNAP_NAME_SITEMAPXML_PRIORITY

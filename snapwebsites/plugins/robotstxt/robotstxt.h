@@ -18,6 +18,7 @@
 #define SNAP_ROBOTSTXT_H
 
 #include "../path/path.h"
+#include "../layout/layout.h"
 #include <map>
 
 namespace snap
@@ -29,50 +30,57 @@ class robotstxt_exception : public snap_exception {};
 class robotstxt_exception_invalid_field_name : public robotstxt_exception {};
 class robotstxt_exception_already_defined : public robotstxt_exception {};
 
-class robotstxt : public plugins::plugin, public path::path_execute
+class robotstxt : public plugins::plugin, public path::path_execute, public layout::layout_content
 {
 public:
-	static const char *ROBOT_NAME_ALL;
-	static const char *ROBOT_NAME_GLOBAL;
-	static const char *FIELD_NAME_DISALLOW;
+    static const char *ROBOT_NAME_ALL;
+    static const char *ROBOT_NAME_GLOBAL;
+    static const char *FIELD_NAME_DISALLOW;
 
-	robotstxt();
-	~robotstxt();
+    robotstxt();
+    ~robotstxt();
 
-	static robotstxt *	instance();
-	virtual QString		description() const;
-	virtual int64_t 	do_update(int64_t last_updated);
+    static robotstxt *  instance();
+    virtual QString     description() const;
+    virtual int64_t     do_update(int64_t last_updated);
 
-	void				on_bootstrap(snap_child *snap);
-	virtual bool 		on_path_execute(const QString& url);
+    void                on_bootstrap(snap_child *snap);
+    virtual bool        on_path_execute(const QString& url);
+    void                on_generate_header_content(layout::layout *l, const QString& path, QDomElement& header, QDomElement& metadata);
+    virtual void        on_generate_main_content(snap::layout::layout*, const QString&, QDomElement&, QDomElement&);
+    void                on_generate_page_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body);
 
-	SNAP_SIGNAL(generate_robotstxt, (robotstxt *r), (r));
+    SNAP_SIGNAL(generate_robotstxt, (robotstxt *r), (r));
 
-	void		add_robots_txt_field(const QString& value,
-	                                 const QString& field = FIELD_NAME_DISALLOW,
-									 const QString& robot = ROBOT_NAME_ALL,
-									 bool unique = false);
+    void        add_robots_txt_field(const QString& value,
+                                     const QString& field = FIELD_NAME_DISALLOW,
+                                     const QString& robot = ROBOT_NAME_ALL,
+                                     bool unique = false);
 
-	void		output() const;
+    void        output() const;
 
 private:
-	void initial_update(int64_t variables_timestamp);
-	void content_update(int64_t variables_timestamp);
+    void initial_update(int64_t variables_timestamp);
+    void content_update(int64_t variables_timestamp);
+    void define_robots(const QString& path);
 
-	struct robots_field_t
-	{
-		QString		f_field;
-		QString		f_value;
-	};
-	typedef std::vector<robots_field_t> robots_field_array_t;
-	typedef std::map<const QString, robots_field_array_t> robots_txt_t;
+    struct robots_field_t
+    {
+        QString     f_field;
+        QString     f_value;
+    };
+    typedef std::vector<robots_field_t> robots_field_array_t;
+    typedef std::map<const QString, robots_field_array_t> robots_txt_t;
 
-	zpsnap_child_t		f_snap;
-	robots_txt_t		f_robots_txt;
+    zpsnap_child_t      f_snap;
+    robots_txt_t        f_robots_txt;
+
+    QString             f_robots_path; // path that the cache represents
+    QString             f_robots_cache;
 };
 
 } // namespace robotstxt
 } // namespace snap
 #endif
 // SNAP_ROBOTSTXT_H
-// vim: ts=4 sw=4
+// vim: ts=4 sw=4 et

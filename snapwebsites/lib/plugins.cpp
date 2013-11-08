@@ -53,7 +53,7 @@ QStringList list_all(const QString& plugin_path)
 
 /** \brief Load all the plugins.
  *
- * Someone who wants to remove a plug-in simply deletes it or its
+ * Someone who wants to remove a plugin simply deletes it or its
  * softlink at least.
  *
  * \todo
@@ -84,15 +84,15 @@ bool load(const QString& plugin_path, plugin *server, const QStringList& list_of
 		QString name(*it);
 		if(name == "server") {
 			// the Snap server is already added to the list under that name!
-			std::cerr << "error: a plug-in cannot be called \"server\"." << std::endl;
+			std::cerr << "error: a plugin cannot be called \"server\"." << std::endl;
 			good = false;
 			continue;
 		}
 		// in case we get multiple calls to this function we must make sure that
-		// all plug-ins have a distinct name (i.e. a plug-in factory could call
-		// this function to load sub-plug-ins!)
+		// all plugins have a distinct name (i.e. a plugin factory could call
+		// this function to load sub-plugins!)
 		if(exists(name)) {
-			std::cerr << "error: two plug-ins cannot be named the same, found \""
+			std::cerr << "error: two plugins cannot be named the same, found \""
 							<< name.toUtf8().data() << "\" twice." << std::endl;
 			good = false;
 			continue;
@@ -108,7 +108,7 @@ bool load(const QString& plugin_path, plugin *server, const QStringList& list_of
 			// plugin names may start with "lib..."
 			filename = path + "/" + name + "/lib" + name + ".so";
 			if(!QFile::exists(filename)) {
-				std::cerr << "error: plug-in named \"" << name.toUtf8().data()
+				std::cerr << "error: plugin named \"" << name.toUtf8().data()
 						<< "\" (" << filename.toUtf8().data()
 						<< ") not found in the plugin directory."
 						<< std::endl;
@@ -124,7 +124,8 @@ bool load(const QString& plugin_path, plugin *server, const QStringList& list_of
 		//		 so we discover missing symbols
 		void *h = dlopen(filename.toUtf8().data(), RTLD_LAZY | RTLD_GLOBAL);
 		if(h == NULL) {
-			std::cerr << "error: cannot load plug-in file \"" << filename.toUtf8().data() << "\"" << std::endl;
+			int e(errno);
+			std::cerr << "error: cannot load plugin file \"" << filename.toUtf8().data() << "\" (errno: " << e << ", " << dlerror() << ")" << std::endl;
 			good = false;
 			continue;
 		}
@@ -147,7 +148,7 @@ bool load(const QString& plugin_path, plugin *server, const QStringList& list_of
 bool verify_plugin_name(const QString& name)
 {
 	if(name.isEmpty()) {
-		std::cerr << "error: an empty plug-in name is not valid." << std::endl;
+		std::cerr << "error: an empty plugin name is not valid." << std::endl;
 		return false;
 	}
 	for(QString::const_iterator p(name.begin()); p != name.end(); ++p) {
@@ -155,7 +156,7 @@ bool verify_plugin_name(const QString& name)
 		&& (*p < 'A' || *p > 'Z')
 		&& (*p < '0' || *p > '9')
 		&& *p != '_' && *p != '-' && *p != '.') {
-			std::cerr << "error: plug-in name \"" << name.toUtf8().data()
+			std::cerr << "error: plugin name \"" << name.toUtf8().data()
 					<< "\" includes forbidden characters." << std::endl;
 			return false;
 		}
@@ -163,7 +164,7 @@ bool verify_plugin_name(const QString& name)
 	// Note: we know that name is not empty
 	QChar first(name[0]);
 	if(first == '.' || first == '-') {
-		std::cerr << "error: plug-in name \"" << name.toUtf8().data()
+		std::cerr << "error: plugin name \"" << name.toUtf8().data()
 				<< "\" cannot start with a period (.) or dash (-)."
 				<< std::endl;
 		return false;
@@ -171,7 +172,7 @@ bool verify_plugin_name(const QString& name)
 	// Note: we know that name is not empty
 	QChar last(name[name.length() - 1]);
 	if(last == '.' || last == '-') {
-		std::cerr << "error: plug-in name \"" << name.toUtf8().data()
+		std::cerr << "error: plugin name \"" << name.toUtf8().data()
 				<< "\" cannot end with a period (.) or dash (-)."
 				<< std::endl;
 		return false;
@@ -180,14 +181,14 @@ bool verify_plugin_name(const QString& name)
 	return true;
 }
 
-/** \brief Check whether a plug-in was loaded.
+/** \brief Check whether a plugin was loaded.
  *
- * This function searches the list of loaded plug-ins and returns true if the
- * plug-in with the speficied \p name exists.
+ * This function searches the list of loaded plugins and returns true if the
+ * plugin with the speficied \p name exists.
  *
- * \param[in] name  The name of the plug-in to check for.
+ * \param[in] name  The name of the plugin to check for.
  *
- * \return true if the plug-in is loaded, false otherwise.
+ * \return true if the plugin is loaded, false otherwise.
  */
 bool exists(const QString& name)
 {

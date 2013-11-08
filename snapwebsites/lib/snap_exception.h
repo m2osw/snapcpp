@@ -25,10 +25,10 @@ namespace snap
 class snap_exception : public std::runtime_error
 {
 public:
-	snap_exception(const std::string& what_msg = "Snap! Exception") : runtime_error(what_msg) {}
+    snap_exception(const std::string& what_msg = "Snap! Exception") : runtime_error(what_msg) {}
 };
 
 } // namespace snap
 #endif
 // SNAP_EXCEPTION_H
-// vim: ts=4 sw=4
+// vim: ts=4 sw=4 et

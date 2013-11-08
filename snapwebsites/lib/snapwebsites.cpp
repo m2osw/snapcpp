@@ -27,7 +27,6 @@
 #include <QDirIterator>
 #include <QHostAddress>
 #include <QCoreApplication>
-//#include <QTcpServer>
 #include <syslog.h>
 #include <errno.h>
 #include <signal.h>
@@ -116,7 +115,7 @@ server *server::g_instance = NULL;
 /** \brief Return the server version.
  *
  * This function can be used to verify that the server version is
- * compatible with your plug-in or to display the version.
+ * compatible with your plugin or to display the version.
  *
  * To compare versions, however, it is suggested that you make
  * use of the version_major(), version_minor(), and version_patch()
@@ -133,7 +132,7 @@ const char *server::version()
  *
  * This function returns the major version of the server. This can be used
  * to verify that you have the correct version of the server to run your
- * plug-in.
+ * plugin.
  *
  * This is a positive number.
  *
@@ -148,7 +147,7 @@ int server::version_major()
  *
  * This function returns the minor version of the server. This can be used
  * to verify that you have the correct version of the server to run your
- * plug-in.
+ * plugin.
  *
  * This is a positive number.
  *
@@ -163,7 +162,7 @@ int server::version_minor()
  *
  * This function returns the patch version of the server. This can be used
  * to verify that you have the correct version of the server to run your
- * plug-in.
+ * plugin.
  *
  * This is a positive number.
  *
@@ -178,7 +177,7 @@ int server::version_patch()
  *
  * The main central hub is the server object.
  *
- * Like all the plug-ins, there can be only one server instance.
+ * Like all the plugins, there can be only one server instance.
  * Because of that, it is made a singleton which means whichever
  * plugin that first needs the server can get a pointer to it at
  * any time.
@@ -346,10 +345,42 @@ void server::config(int argc, char *argv[])
 
 	// parse the command line arguments
 	controlled_vars::zbool_t help;
-	for(int i(1); i < argc; ++i) {
-		if(argv[i][0] == '-') {
-			if(strcmp(argv[i], "-c") == 0 || strcmp(argv[i], "--config") == 0) {
-				if(i + 1 >= argc) {
+	for(int i(1); i < argc; ++i)
+	{
+		if(argv[i][0] == '-')
+		{
+			if(strcmp(argv[i], "-a") == 0 || strcmp(argv[i], "--action") == 0)
+			{
+				// this is expected to be followed by the action name
+				if(i + 1 >= argc)
+				{
+					syslog(LOG_CRIT, "-a must be followed by the name of an action, server not started. (in server::config())");
+					help = true;
+					break;
+				}
+				++i;
+				if(f_backend)
+				{
+					if(f_parameters.find("__BACKEND_ACTION") == f_parameters.end())
+					{
+						f_parameters["__BACKEND_ACTION"] = argv[i];
+					}
+					else
+					{
+						syslog(LOG_CRIT, "unexpected parameter \"%s %s\", at most one action can be specified, backend not started. (in server::config())", argv[i - 1], argv[i]);
+						help = true;
+					}
+				}
+				else
+				{
+					syslog(LOG_CRIT, "unexpected command line option \"%s\", server not started. (in server::config())", argv[i - 1]);
+					help = true;
+				}
+			}
+			else if(strcmp(argv[i], "-c") == 0 || strcmp(argv[i], "--config") == 0)
+			{
+				if(i + 1 >= argc)
+				{
 					syslog(LOG_CRIT, "-c must be followed by the name of the configuration file, server not started. (in server::config())");
 					help = true;
 					break;
@@ -359,13 +390,16 @@ void server::config(int argc, char *argv[])
 				// (i.e. possibly another option)
 				f_config = argv[i];
 			}
-			else if(strcmp(argv[i], "-d") == 0 || strcmp(argv[i], "--debug") == 0) {
+			else if(strcmp(argv[i], "-d") == 0 || strcmp(argv[i], "--debug") == 0)
+			{
 				f_debug = true;
 			}
-			else if(strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0) {
+			else if(strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0)
+			{
 				help = true;
 			}
-			//else if(strcmp(argv[i], "-r") == 0 || strcmp(argv[i], "--resources") == 0) {
+			//else if(strcmp(argv[i], "-r") == 0 || strcmp(argv[i], "--resources") == 0)
+			//{
 			//	// TODO: this does not show us the list of resources available
 			//	//       in plugins... unfortunately. So that's useless at this
 			//	//       point (and you need to have a site key to load the
@@ -378,30 +412,38 @@ void server::config(int argc, char *argv[])
 			//	}
 			//	exit(1);
 			//}
-			else {
+			else
+			{
 				syslog(LOG_CRIT, "unknown option \"%s\", server not started. (in server::config())", argv[i]);
 				help = true;
 			}
 		}
-		else {
-			if(f_backend) {
-				if(f_parameters.find("__BACKEND_URI") == f_parameters.end()) {
+		else
+		{
+			if(f_backend)
+			{
+				if(f_parameters.find("__BACKEND_URI") == f_parameters.end())
+				{
 					f_parameters["__BACKEND_URI"] = argv[i];
 				}
-				else {
+				else
+				{
 					syslog(LOG_CRIT, "unexpected parameter \"%s\", at most one URI can be specified, backend not started. (in server::config())", argv[i]);
 					help = true;
 				}
 			}
-			else {
+			else
+			{
 				syslog(LOG_CRIT, "unexpected parameter \"%s\", server not started. (in server::config())", argv[i]);
 				help = true;
 			}
 		}
 	}
-	if(help) {
+	if(help)
+	{
 		// if the user asked to not detach, then print the usage
-		if(f_debug) {
+		if(f_debug)
+		{
 			usage();
 		}
 		exit(1);
@@ -409,69 +451,84 @@ void server::config(int argc, char *argv[])
 
 	// read the configuration file now
 	QFile c;
-	if(f_config.length() == 0) {
+	if(f_config.length() == 0)
+	{
 		// empty string means the user did not specify a configuration file
 		// and in this case it is optional
 		c.setFileName("/etc/snapwebsites/snapserver.conf");
 		c.open(QIODevice::ReadOnly);
-		if(c.isOpen()) {
+		if(c.isOpen())
+		{
 			f_config = "/etc/snapwebsites/snapserver.conf";
 		}
 	}
-	else {
+	else
+	{
 		c.setFileName(f_config);
 		c.open(QIODevice::ReadOnly);
-		if(!c.isOpen()) {
+		if(!c.isOpen())
+		{
 			syslog(LOG_CRIT, "cannot read configuration file \"%s\", server not started. (in server::config())",
 													f_config.toUtf8().data());
 			exit(1);
 		}
 	}
-	if(c.isOpen()) { // if no configuration exists, isOpen() returns false
+	if(c.isOpen()) // if no configuration exists, isOpen() returns false
+	{
 		char buf[256];
-		for(int line(1); c.readLine(buf, sizeof(buf)) > 0; ++line) {
+		for(int line(1); c.readLine(buf, sizeof(buf)) > 0; ++line)
+		{
 			// make sure the last byte is '\0'
 			buf[sizeof(buf) - 1] = '\0';
 			int len = strlen(buf);
-			if(len == 0 || (buf[len - 1] != '\n' && buf[len - 1] != '\r')) {
+			if(len == 0 || (buf[len - 1] != '\n' && buf[len - 1] != '\r'))
+			{
 				syslog(LOG_CRIT, "line %d too long, server not started. (in server::config())", line);
 				exit(1);
 			}
 			buf[len - 1] = '\0';
 			--len;
-			while(len > 0 && (buf[len - 1] == '\n' || buf[len - 1] == '\r')) {
+			while(len > 0 && (buf[len - 1] == '\n' || buf[len - 1] == '\r'))
+			{
 				--len;
 				buf[len] = '\0';
 			}
-			if(len == 0) {
+			if(len == 0)
+			{
 				// comment or empty line
 				continue;
 			}
 			char *n(buf);
-			while(isspace(*n)) {
+			while(isspace(*n))
+			{
 				++n;
 			}
-			if(*n == '#' || *n == '\0') {
+			if(*n == '#' || *n == '\0')
+			{
 				// comment or empty line
 				continue;
 			}
 			char *v(n);
-			while(*v != '=' && *v != '\0') {
+			while(*v != '=' && *v != '\0')
+			{
 				++v;
 			}
-			if(*v != '=') {
+			if(*v != '=')
+			{
 				syslog(LOG_CRIT, "invalid variable on line %d, no equal sign found, server not started. (in server::config())\n", line);
 				exit(1);
 			}
 			char *e;
 			for(e = v; e > n && isspace(e[-1]); --e);
 			*e = '\0';
-			do {
+			do
+			{
 				++v;
 			} while(isspace(*v));
 			for(e = v + strlen(v); e > v && isspace(e[-1]); --e);
 			*e = '\0';
-			if(v != e && ((v[0] == '\'' && e[-1] == '\'') || (v[0] == '"' && e[-1] == '"'))) {
+			if(v != e && ((v[0] == '\'' && e[-1] == '\'') || (v[0] == '"' && e[-1] == '"')))
+			{
 				// remove single or double quotes
 				v++;
 				e[-1] = '\0';
@@ -481,9 +538,11 @@ void server::config(int argc, char *argv[])
 	}
 
 	// the name of the server is mandatory, use hostname by default
-	if(f_parameters["server_name"] == "") {
+	if(f_parameters["server_name"] == "")
+	{
 		char host[HOST_NAME_MAX + 1];
-		if(gethostname(host, sizeof(host)) != 0) {
+		if(gethostname(host, sizeof(host)) != 0)
+		{
 			syslog(LOG_CRIT, "hostname is not available as the server name, server not started. (in server::config())\n");
 			exit(1);
 		}
@@ -519,7 +578,7 @@ void server::config(int argc, char *argv[])
  * \li data_path -- path to the directory holding the system data (images, js, css, counters, etc.)
  * \li default_plugins -- list of default plugins to initialize a new website
  * \li listen -- address:port to listen to (default 0.0.0.0:4004)
- * \li plugins -- path to the list of plug-ins
+ * \li plugins -- path to the list of plugins
  * \li qs_path -- the variable holding the path in the URL; defaults to "q"
  * \li max_pending_connections -- the number of connections that can wait in
  *     the server queue, there is Snap default (i.e. the Qt TCP server default
@@ -545,7 +604,7 @@ QString server::get_parameter(const QString& param_name)
  * This is called once each time the server is started. It doesn't matter
  * too much as it is quite fast. Only the core tables are checked. Plug-ins
  * can create new tables on the fly so it doesn't matter as much. We may
- * later provide a way for plug-ins to create different contexts but at
+ * later provide a way for plugins to create different contexts but at
  * this point we expect all of them to only make use of the Core provided
  * context.
  */
@@ -887,7 +946,7 @@ unsigned long server::connections_count()
  *
  * \param[in,out] snap  The snap child process.
  *
- * \return true if the signal has to be sent to other plug-ins.
+ * \return true if the signal has to be sent to other plugins.
  */
 bool server::bootstrap_impl(snap_child * /*snap*/)
 {
@@ -900,7 +959,7 @@ bool server::bootstrap_impl(snap_child * /*snap*/)
  *
  * At this time, it does nothing.
  *
- * \return true if the signal has to be sent to other plug-ins.
+ * \return true if the signal has to be sent to other plugins.
  */
 bool server::init_impl()
 {
@@ -909,14 +968,14 @@ bool server::init_impl()
 
 /** \brief Update the Snap Websites server.
  *
- * This function ensure that the data managed by this plug-in is up to
+ * This function ensure that the data managed by this plugin is up to
  * date.
  *
  * This function does nothing at this point.
  *
  * \param[in] last_updated  The date and time when the website was last updated.
  *
- * \return true if the signal has to be sent to other plug-ins.
+ * \return true if the signal has to be sent to other plugins.
  */
 bool server::update_impl(int64_t /*last_updated*/)
 {
@@ -964,6 +1023,21 @@ bool server::process_post_impl(const QString& /*url*/)
  * \return true if the signal has to be sent to other plugins.
  */
 bool server::execute_impl(const QString& /*url*/)
+{
+	return true;
+}
+
+/** \brief Execute the specified backend action.
+ *
+ * This function readies the register_backend_action signal.
+ *
+ * At this time, it does nothing.
+ *
+ * \param[in,out] actions  A map where plugins can register the actions they support.
+ *
+ * \return true if the signal has to be sent to other plugins.
+ */
+bool server::register_backend_action_impl(backend_action_map_t& actions)
 {
 	return true;
 }
@@ -1038,7 +1112,7 @@ bool server::xss_filter_impl(QDomNode& /*node*/,
  * \param[in] path  The path that generated the error
  * \param[in,out] signature  The signature as inline HTML code (i.e. no blocks!)
  *
- * \return true if the signal has to be sent to other plug-ins.
+ * \return true if the signal has to be sent to other plugins.
  */
 bool server::improve_signature_impl(const QString& path, QString& signature)
 {

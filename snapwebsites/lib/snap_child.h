@@ -21,6 +21,7 @@
 #include "snap_signals.h"
 #include "snap_exception.h"
 #include "http_cookie.h"
+#include "udp_client_server.h"
 #include <stdlib.h>
 #include <controlled_vars/controlled_vars_need_init.h>
 #include <QPointer>
@@ -88,6 +89,9 @@ public:
 	void output(const std::string& data);
 	void output(const char *data);
 	bool empty_output() const;
+
+	void udp_ping(const char *name, const char *message = "PING");
+	QSharedPointer<udp_client_server::udp_server> udp_get_server(const char *name);
 
 private:
 	void read_environment();

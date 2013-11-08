@@ -57,7 +57,15 @@ const char *get_name(name_t name);
 class server : public plugins::plugin
 {
 public:
-	server();
+	class backend_action
+	{
+	public:
+		virtual ~backend_action() {}
+		virtual void on_backend_action(const QString& action) = 0;
+	};
+
+	typedef QMap<QString, backend_action *> backend_action_map_t;
+
 	virtual ~server();
 
 	static const char *version();
@@ -90,6 +98,7 @@ public:
 	SNAP_SIGNAL(process_cookies, (), ());
 	SNAP_SIGNAL(process_post, (const QString& url), (url));
 	SNAP_SIGNAL(execute, (const QString& url), (url));
+	SNAP_SIGNAL(register_backend_action, (backend_action_map_t& actions), (actions));
 	SNAP_SIGNAL(backend_process, (), ());
 	SNAP_SIGNAL(save_content, (), ());
 	SNAP_SIGNAL(xss_filter, (QDomNode& node,
@@ -100,8 +109,9 @@ public:
 	                               (path, signature));
 
 private:
-	typedef std::map<QString, QString>		parameter_map_t;
+	typedef QMap<QString, QString>		parameter_map_t;
 
+	server();
 	void process_connection(int socket);
 
 	static server *							g_instance;

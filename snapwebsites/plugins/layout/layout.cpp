@@ -89,7 +89,7 @@ layout::~layout()
 /** \brief Initialize the layout.
  *
  * This function terminates the initialization of the layout plugin
- * by registring for different events.
+ * by registering for different events.
  *
  * \param[in] snap  The child handling this request.
  */
@@ -103,14 +103,14 @@ void layout::on_bootstrap(snap_child *snap)
 	//}
 }
 
-/** \brief Get a pointer to the layout plug-in.
+/** \brief Get a pointer to the layout plugin.
  *
- * This function returns an instance pointer to the layout plug-in.
+ * This function returns an instance pointer to the layout plugin.
  *
  * Note that you cannot assume that the pointer will be valid until the
  * bootstrap event is called.
  *
- * \return A pointer to the layout plug-in.
+ * \return A pointer to the layout plugin.
  */
 layout *layout::instance()
 {

@@ -1,5 +1,5 @@
-// TCP Clinet & Server -- classes to ease handling sockets
-// Copyright (C) 2012  Made to Order Software Corp.
+// TCP Client & Server -- classes to ease handling sockets
+// Copyright (C) 2012-2013  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -18,9 +18,52 @@
 #include "tcp_client_server.h"
 #include <string.h>
 #include <unistd.h>
+#include <netdb.h>
 
 namespace tcp_client_server
 {
+
+/** \brief Address info class to auto-free the structures.
+ *
+ * This class is used so we can auto-free the addrinfo structure(s)
+ * because otherwise we find ourselves with many freeaddrinfo()
+ * calls (and that's not safe in case you have exceptions.)
+ */
+class addrinfo_t
+{
+public:
+    /** \brief Initialize the structure pointer to NULL.
+     *
+     * The constructor ensures that the pointer is NULL.
+     */
+    addrinfo_t()
+        : f_addrinfo(NULL)
+    {
+    }
+
+    /** \brief Ensures that the structures get cleaned up.
+     *
+     * This function ensures that the addrinfo pointers get freed with a
+     * call to the freeaddrinfo().
+     *
+     * If no structure was allocated, nothing happens.
+     */
+    ~addrinfo_t()
+    {
+        if(f_addrinfo != NULL)
+        {
+            freeaddrinfo(f_addrinfo);
+        }
+    }
+
+    /** \brief The address info.
+     *
+     * This is the address, it is public because we just use that internally
+     * in the client and server constructors (see below.)
+     */
+    struct addrinfo *   f_addrinfo;
+};
+
 
 // ========================= CLIENT =========================
 
@@ -42,10 +85,7 @@ namespace tcp_client_server
  * to the specified server. The server is defined with the address and port
  * specified as parameters.
  *
- * \todo
- * Use getaddrinfo() to support IPv6. At this time we only support IPv4.
- *
- * \exception tcp_client_server_logic_error
+ * \exception tcp_client_server_parameter_error
  * This exception is raised if the port parameter is out of range or the
  * IP address is an empty string or otherwise an invalid address.
  *
@@ -63,34 +103,39 @@ tcp_client::tcp_client(const std::string& addr, int port)
 {
     if(f_port < 0 || f_port >= 65536)
     {
-        throw tcp_client_server_logic_error("invalid port for a client socket");
+        throw tcp_client_server_parameter_error("invalid port for a client socket");
     }
     if(f_addr.empty())
     {
-        throw tcp_client_server_logic_error("an empty address is not valid for a client socket");
+        throw tcp_client_server_parameter_error("an empty address is not valid for a client socket");
     }
-    // TODO: add support for IPv6 (see getaddrinfo(3))
-    struct sockaddr_in addr_in;
-    memset(&addr_in, 0, sizeof(addr_in));
-    if(!inet_aton(f_addr.c_str(), &addr_in.sin_addr))
-    {
-        throw tcp_client_server_logic_error("\"" + f_addr + "\" is an invalid IP address");
-    }
-    addr_in.sin_family = AF_INET;
-    addr_in.sin_port = htons(f_port);
 
-    f_socket = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+    char decimal_port[16];
+    snprintf(decimal_port, sizeof(decimal_port), "%d", f_port);
+    decimal_port[sizeof(decimal_port) / sizeof(decimal_port[0]) - 1] = '\0';
+    struct addrinfo hints;
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = AF_UNSPEC;
+    hints.ai_socktype = SOCK_STREAM;
+    hints.ai_protocol = IPPROTO_TCP;
+    addrinfo_t addr_info;
+    int r(getaddrinfo(addr.c_str(), decimal_port, &hints, &addr_info.f_addrinfo));
+    if(r != 0 || addr_info.f_addrinfo == NULL)
+    {
+        throw tcp_client_server_runtime_error("invalid address or port: \"" + addr + ":" + decimal_port + "\"");
+    }
+
+    f_socket = socket(addr_info.f_addrinfo->ai_family, SOCK_STREAM, IPPROTO_TCP);
     if(f_socket < 0)
     {
         throw tcp_client_server_runtime_error("could not create socket for client");
     }
 
-    if(connect(f_socket, reinterpret_cast<struct sockaddr *>(&addr_in), sizeof(addr_in)) < 0)
+    if(connect(f_socket, addr_info.f_addrinfo->ai_addr, addr_info.f_addrinfo->ai_addrlen) < 0)
     {
         close(f_socket);
-        throw tcp_client_server_runtime_error("could not bind client socket to \"" + f_addr + "\"");
+        throw tcp_client_server_runtime_error("could not connect client socket to \"" + f_addr + "\"");
     }
-
 }
 
 /** \brief Clean up the TCP client object.
@@ -209,7 +254,7 @@ int tcp_client::write(const char *buf, size_t size)
  * By default the server is marked as "keepalive". You can turn it off
  * using the keepalive() function with false.
  *
- * \exception tcp_client_server_logic_error
+ * \exception tcp_client_server_parameter_error
  * This exception is raised if the address parameter is an empty string or
  * otherwise an invalid IP address, or if the port is out of range.
  *
@@ -234,23 +279,29 @@ tcp_server::tcp_server(const std::string& addr, int port, int max_connections, b
 {
     if(f_addr.empty())
     {
-        throw tcp_client_server_logic_error("the address cannot be an empty string");
+        throw tcp_client_server_parameter_error("the address cannot be an empty string");
     }
     if(f_port < 0 || f_port >= 65536)
     {
-        throw tcp_client_server_logic_error("invalid port for a client socket");
+        throw tcp_client_server_parameter_error("invalid port for a client socket");
     }
-    // TODO: add support for IPv6 (see getaddrinfo(3))
-    struct sockaddr_in addr_in;
-    memset(&addr_in, 0, sizeof(addr_in));
-    if(!inet_aton(f_addr.c_str(), &addr_in.sin_addr))
-    {
-        throw tcp_client_server_logic_error("\"" + f_addr + "\" is an invalid IP address");
-    }
-    addr_in.sin_family = AF_INET;
-    addr_in.sin_port = htons(f_port);
 
-    f_socket = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+    char decimal_port[16];
+    snprintf(decimal_port, sizeof(decimal_port), "%d", f_port);
+    decimal_port[sizeof(decimal_port) / sizeof(decimal_port[0]) - 1] = '\0';
+    struct addrinfo hints;
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = AF_UNSPEC;
+    hints.ai_socktype = SOCK_STREAM;
+    hints.ai_protocol = IPPROTO_TCP;
+    addrinfo_t addr_info;
+    int r(getaddrinfo(addr.c_str(), decimal_port, &hints, &addr_info.f_addrinfo));
+    if(r != 0 || addr_info.f_addrinfo == NULL)
+    {
+        throw tcp_client_server_runtime_error("invalid address or port: \"" + addr + ":" + decimal_port + "\"");
+    }
+
+    f_socket = socket(addr_info.f_addrinfo->ai_family, SOCK_STREAM, IPPROTO_TCP);
     if(f_socket < 0)
     {
         throw tcp_client_server_runtime_error("could not create socket for client");
@@ -263,10 +314,10 @@ tcp_server::tcp_server(const std::string& addr, int port, int max_connections, b
         // if this fails, we ignore the error (TODO log an INFO message)
         int optval(1);
         socklen_t optlen(sizeof(optval));
-        int r(setsockopt(f_socket, SOL_SOCKET, SO_REUSEADDR, &optval, optlen));
+        setsockopt(f_socket, SOL_SOCKET, SO_REUSEADDR, &optval, optlen);
     }
 
-	if(bind(f_socket, reinterpret_cast<struct sockaddr *>(&addr_in), sizeof(addr_in)) < 0)
+	if(bind(f_socket, addr_info.f_addrinfo->ai_addr, addr_info.f_addrinfo->ai_addrlen) < 0)
 	{
         throw tcp_client_server_runtime_error("could not bind the socket to \"" + f_addr + "\"");
     }
@@ -462,7 +513,7 @@ int tcp_server::accept()
  *
  * \return The last accepted socket descriptor.
  */
-int tcp_server::get_last_accepted_socket()
+int tcp_server::get_last_accepted_socket() const
 {
     return f_accepted_socket;
 }

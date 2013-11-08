@@ -66,7 +66,7 @@ search::~search()
 
 /** \brief Bootstrap the search.
  *
- * This function adds the events the search plug-in is listening for.
+ * This function adds the events the search plugin is listening for.
  *
  * \param[in] snap  The child handling this request.
  */
@@ -78,14 +78,14 @@ void search::on_bootstrap(::snap::snap_child *snap)
 	SNAP_LISTEN(search, "layout", layout::layout, generate_page_content, _1, _2, _3, _4);
 }
 
-/** \brief Get a pointer to the search plug-in.
+/** \brief Get a pointer to the search plugin.
  *
- * This function returns an instance pointer to the search plug-in.
+ * This function returns an instance pointer to the search plugin.
  *
  * Note that you cannot assume that the pointer will be valid until the
  * bootstrap event is called.
  *
- * \return A pointer to the search plug-in.
+ * \return A pointer to the search plugin.
  */
 search *search::instance()
 {

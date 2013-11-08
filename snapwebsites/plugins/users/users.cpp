@@ -19,6 +19,7 @@
 #include "../content/content.h"
 #include "../sessions/sessions.h"
 #include "../messages/messages.h"
+#include "../sendmail/sendmail.h"
 #include "not_reached.h"
 #include "log.h"
 
@@ -53,31 +54,31 @@ BOOST_STATIC_ASSERT((SALT_SIZE & 1) == 0);
  */
 const char *get_name(name_t name)
 {
-	switch(name) {
-	case SNAP_NAME_USERS_TABLE:
-		return "users";
+    switch(name) {
+    case SNAP_NAME_USERS_TABLE:
+        return "users";
 
-	case SNAP_NAME_USERS_PASSWORD:
-		return "users::password";
+    case SNAP_NAME_USERS_PASSWORD:
+        return "users::password";
 
-	case SNAP_NAME_USERS_PASSWORD_DIGEST:
-		return "users::password::digest";
+    case SNAP_NAME_USERS_PASSWORD_DIGEST:
+        return "users::password::digest";
 
-	case SNAP_NAME_USERS_PASSWORD_SALT:
-		return "users::password::salt";
+    case SNAP_NAME_USERS_PASSWORD_SALT:
+        return "users::password::salt";
 
-	case SNAP_NAME_USERS_ORIGINAL_EMAIL:
-		return "users::original_email";
+    case SNAP_NAME_USERS_ORIGINAL_EMAIL:
+        return "users::original_email";
 
-	case SNAP_NAME_USERS_ORIGINAL_IP:
-		return "users::original_ip";
+    case SNAP_NAME_USERS_ORIGINAL_IP:
+        return "users::original_ip";
 
-	default:
-		// invalid index
-		throw snap_exception();
+    default:
+        // invalid index
+        throw snap_exception();
 
-	}
-	NOTREACHED();
+    }
+    NOTREACHED();
 }
 
 
@@ -86,7 +87,7 @@ const char *get_name(name_t name)
  * This function initializes the users plugin.
  */
 users::users()
-	//: f_snap(NULL) -- auto-init
+    //: f_snap(NULL) -- auto-init
 {
 }
 
@@ -110,7 +111,7 @@ users::~users()
  */
 users *users::instance()
 {
-	return g_plugin_users_factory.instance();
+    return g_plugin_users_factory.instance();
 }
 
 
@@ -125,8 +126,8 @@ users *users::instance()
  */
 QString users::description() const
 {
-	return "The users plugin manages all the users on a website. It is also"
-		" capable to create new users which is a Snap! wide feature.";
+    return "The users plugin manages all the users on a website. It is also"
+        " capable to create new users which is a Snap! wide feature.";
 }
 
 
@@ -138,18 +139,19 @@ QString users::description() const
  * This works for newly installed plugins and older plugins that were
  * updated.
  *
- * \param[in] last_updated  The UTC Unix date when the website was last updated (in micro seconds).
+ * \param[in] last_updated  The UTC Unix date when the website was last
+ *                          updated (in micro seconds).
  *
  * \return The UTC Unix date of the last update of this plugin.
  */
 int64_t users::do_update(int64_t last_updated)
 {
-	SNAP_PLUGIN_UPDATE_INIT();
+    SNAP_PLUGIN_UPDATE_INIT();
 
-	SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, initial_update);
-	SNAP_PLUGIN_UPDATE(2012, 11, 11, 0, 23, 0, content_update);
+    SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, initial_update);
+    SNAP_PLUGIN_UPDATE(2012, 11, 11, 0, 23, 0, content_update);
 
-	SNAP_PLUGIN_UPDATE_EXIT();
+    SNAP_PLUGIN_UPDATE_EXIT();
 }
 
 /** \brief First update to run for the users plugin.
@@ -157,7 +159,9 @@ int64_t users::do_update(int64_t last_updated)
  * This function is the first update for the users plugin. It installs
  * the initial data required by the users plugin.
  *
- * \param[in] variables_timestamp  The timestamp for all the variables added to the database by this update (in micro-seconds).
+ * \param[in] variables_timestamp  The timestamp for all the variables added
+ *                                 to the database by this update
+ *                                 (in micro-seconds).
  */
 void users::initial_update(int64_t variables_timestamp)
 {
@@ -168,11 +172,13 @@ void users::initial_update(int64_t variables_timestamp)
  * This function updates the contents in the database using the
  * system update settings found in the resources.
  *
- * \param[in] variables_timestamp  The timestamp for all the variables added to the database by this update (in micro-seconds).
+ * \param[in] variables_timestamp  The timestamp for all the variables added
+ *                                 to the database by this update
+ *                                 (in micro-seconds).
  */
 void users::content_update(int64_t variables_timestamp)
 {
-	content::content::instance()->add_xml("users");
+    content::content::instance()->add_xml("users");
 }
 
 /** \brief Initialize the users table.
@@ -190,7 +196,7 @@ void users::content_update(int64_t variables_timestamp)
  */
 QSharedPointer<QtCassandra::QCassandraTable> users::get_users_table()
 {
-	return f_snap->create_table(get_name(SNAP_NAME_USERS_TABLE), "Global users table.");
+    return f_snap->create_table(get_name(SNAP_NAME_USERS_TABLE), "Global users table.");
 }
 
 /** \brief Bootstrap the users.
@@ -201,11 +207,11 @@ QSharedPointer<QtCassandra::QCassandraTable> users::get_users_table()
  */
 void users::on_bootstrap(::snap::snap_child *snap)
 {
-	f_snap = snap;
+    f_snap = snap;
 
-	SNAP_LISTEN0(users, "server", server, init);
-	SNAP_LISTEN0(users, "server", server, process_cookies);
-	SNAP_LISTEN(users, "path", path::path, can_handle_dynamic_path, _1, _2);
+    SNAP_LISTEN0(users, "server", server, init);
+    SNAP_LISTEN0(users, "server", server, process_cookies);
+    SNAP_LISTEN(users, "path", path::path, can_handle_dynamic_path, _1, _2);
 }
 
 
@@ -226,32 +232,32 @@ void users::on_init()
  */
 void users::on_process_cookies()
 {
-	// any snap session?
-	if(!f_snap->cookie_is_defined("snap_session"))
-	{
-		return;
-	}
+    // any snap session?
+    if(!f_snap->cookie_is_defined("snap_session"))
+    {
+        return;
+    }
 
-	// is that session a valid user session?
-	sessions::sessions::session_info info;
-	QString user_session(f_snap->cookie("snap_session"));
-	sessions::sessions::instance()->load_session(user_session, info);
-	if(info.get_session_type() != sessions::sessions::session_info::SESSION_INFO_VALID
-	|| info.get_session_id() != USERS_SESSION_ID_LOG_IN_SESSION)
-	{
-		// this is not a log in session, so we ignore it
-		return;
-	}
+    // is that session a valid user session?
+    sessions::sessions::session_info info;
+    QString user_session(f_snap->cookie("snap_session"));
+    sessions::sessions::instance()->load_session(user_session, info);
+    if(info.get_session_type() != sessions::sessions::session_info::SESSION_INFO_VALID
+    || info.get_session_id() != USERS_SESSION_ID_LOG_IN_SESSION)
+    {
+        // this is not a log in session, so we ignore it
+        return;
+    }
 
-	// valid, the user is logged in!
+    // valid, the user is logged in!
 
-	// refresh the session and the cookie (so it extends it)
-	// TBD: here Drupal refreshes the session identifier, should we
-	//      as well? it could be problematic though
-	info.set_time_to_live(86400 * 5);  // 5 days
-	http_cookie cookie(f_snap, "snap_session", user_session);
-	cookie.set_expire_in(86400 * 5);  // 5 days
-	f_snap->set_cookie(cookie);
+    // refresh the session and the cookie (so it extends it)
+    // TBD: here Drupal refreshes the session identifier, should we
+    //      as well? it could be problematic though
+    info.set_time_to_live(86400 * 5);  // 5 days
+    http_cookie cookie(f_snap, "snap_session", user_session);
+    cookie.set_expire_in(86400 * 5);  // 5 days
+    f_snap->set_cookie(cookie);
 printf("session id [%s]\n", user_session.toUtf8().data());
 }
 
@@ -284,17 +290,17 @@ printf("session id [%s]\n", user_session.toUtf8().data());
  */
 void users::on_can_handle_dynamic_path(path::path *path_plugin, const QString& cpath)
 {
-	if(cpath == "user"          	// list of (public) users
-	|| cpath.left(5) == "user/"		// show a user profile
-	|| cpath == "profile"			// the logged in user profile
-	|| cpath == "login"				// form to log user in
-	|| cpath == "logout"			// log user out
-	|| cpath == "register"			// form to let new users register
-	|| cpath == "forgot-passowrd")	// form for users to reset their password
-	{
-		// tell the path plugin that this is ours
-		path_plugin->handle_dynamic_path("user", this);
-	}
+    if(cpath == "user"              // list of (public) users
+    || cpath.left(5) == "user/"        // show a user profile
+    || cpath == "profile"            // the logged in user profile
+    || cpath == "login"                // form to log user in
+    || cpath == "logout"            // log user out
+    || cpath == "register"            // form to let new users register
+    || cpath == "forgot-passowrd")    // form for users to reset their password
+    {
+        // tell the path plugin that this is ours
+        path_plugin->handle_dynamic_path("user", this);
+    }
 }
 
 
@@ -306,29 +312,29 @@ void users::on_can_handle_dynamic_path(path::path *path_plugin, const QString& c
  */
 bool users::on_path_execute(const QString& cpath)
 {
-	f_snap->output(layout::layout::instance()->apply_layout(cpath, this));
+    f_snap->output(layout::layout::instance()->apply_layout(cpath, this));
 
-	return true;
+    return true;
 }
 
 
 void users::on_generate_main_content(layout::layout *l, const QString& cpath, QDomElement& page, QDomElement& body)
 {
-	if(cpath == "login")
-	{
-		generate_login_form(body);
-	}
-	else if(cpath == "logout")
-	{
-		// closing current session if any and show the logout page
-	}
-	else if(cpath == "register")
-	{
-		generate_register_form(body);
-	}
-	else if(cpath == "forgot-password")
-	{
-	}
+    if(cpath == "login")
+    {
+        generate_login_form(body);
+    }
+    else if(cpath == "logout")
+    {
+        // closing current session if any and show the logout page
+    }
+    else if(cpath == "register")
+    {
+        generate_register_form(body);
+    }
+    else if(cpath == "forgot-password")
+    {
+    }
 }
 
 
@@ -341,33 +347,33 @@ void users::on_generate_main_content(layout::layout *l, const QString& cpath, QD
  */
 void users::generate_login_form(QDomElement& body)
 {
-	QDomDocument doc(body.ownerDocument());
+    QDomDocument doc(body.ownerDocument());
 
-	QDomDocument login_form(on_get_xml_form("login"));
-	if(login_form.isNull())
-	{
-		// invalid (could not load the form!)
-		return;
-	}
+    QDomDocument login_form(on_get_xml_form("login"));
+    if(login_form.isNull())
+    {
+        // invalid (could not load the form!)
+        return;
+    }
 
-	sessions::sessions::session_info info;
-	info.set_session_type(info.SESSION_INFO_USER);
-	info.set_session_id(USERS_SESSION_ID_LOG_IN);
-	info.set_plugin_owner("users"); // ourselves
-	info.set_page_path("login");
-	//info.set_object_path(); -- default is okay
-	info.set_time_to_live(3600);  // 1h -- we want to have a JS that clears the data in 5 min. though
-	QDomDocument result(form::form::instance()->form_to_html(info, login_form));
-	//f_snap->output(result.toString());
+    sessions::sessions::session_info info;
+    info.set_session_type(info.SESSION_INFO_USER);
+    info.set_session_id(USERS_SESSION_ID_LOG_IN);
+    info.set_plugin_owner("users"); // ourselves
+    info.set_page_path("login");
+    //info.set_object_path(); -- default is okay
+    info.set_time_to_live(3600);  // 1h -- we want to have a JS that clears the data in 5 min. though
+    QDomDocument result(form::form::instance()->form_to_html(info, login_form));
+    //f_snap->output(result.toString());
 
-	{
-		// we assume that the body content is valid because when we created it
-		// we checked the data and if the user data was invalid XML then we
-		// already saved a place holder warning to the user about the fact!
-		QDomElement content_tag(doc.createElement("content"));
-		body.appendChild(content_tag);
-		content_tag.appendChild(doc.importNode(result.documentElement(), true));
-	}
+    {
+        // we assume that the body content is valid because when we created it
+        // we checked the data and if the user data was invalid XML then we
+        // already saved a place holder warning to the user about the fact!
+        QDomElement content_tag(doc.createElement("content"));
+        body.appendChild(content_tag);
+        content_tag.appendChild(doc.importNode(result.documentElement(), true));
+    }
 }
 
 
@@ -380,33 +386,33 @@ void users::generate_login_form(QDomElement& body)
  */
 void users::generate_register_form(QDomElement& body)
 {
-	QDomDocument doc(body.ownerDocument());
+    QDomDocument doc(body.ownerDocument());
 
-	QDomDocument register_form(on_get_xml_form("register"));
-	if(register_form.isNull())
-	{
-		// invalid (could not load the form!)
-		return;
-	}
+    QDomDocument register_form(on_get_xml_form("register"));
+    if(register_form.isNull())
+    {
+        // invalid (could not load the form!)
+        return;
+    }
 
-	sessions::sessions::session_info info;
-	info.set_session_type(info.SESSION_INFO_USER);
-	info.set_session_id(USERS_SESSION_ID_LOG_IN);
-	info.set_plugin_owner("users"); // ourselves
-	info.set_page_path("register");
-	//info.set_object_path(); -- default is okay
-	info.set_time_to_live(3600);  // 1h -- we want to have a JS that clears the data in 5 min. though
-	QDomDocument result(form::form::instance()->form_to_html(info, register_form));
-	//f_snap->output(result.toString());
+    sessions::sessions::session_info info;
+    info.set_session_type(info.SESSION_INFO_USER);
+    info.set_session_id(USERS_SESSION_ID_LOG_IN);
+    info.set_plugin_owner("users"); // ourselves
+    info.set_page_path("register");
+    //info.set_object_path(); -- default is okay
+    info.set_time_to_live(3600);  // 1h -- we want to have a JS that clears the data in 5 min. though
+    QDomDocument result(form::form::instance()->form_to_html(info, register_form));
+    //f_snap->output(result.toString());
 
-	{
-		// we assume that the body content is valid because when we created it
-		// we checked the data and if the user data was invalid XML then we
-		// already saved a place holder warning to the user about the fact!
-		QDomElement content_tag(doc.createElement("content"));
-		body.appendChild(content_tag);
-		content_tag.appendChild(doc.importNode(result.documentElement(), true));
-	}
+    {
+        // we assume that the body content is valid because when we created it
+        // we checked the data and if the user data was invalid XML then we
+        // already saved a place holder warning to the user about the fact!
+        QDomElement content_tag(doc.createElement("content"));
+        body.appendChild(content_tag);
+        content_tag.appendChild(doc.importNode(result.documentElement(), true));
+    }
 }
 
 
@@ -422,52 +428,52 @@ void users::generate_register_form(QDomElement& body)
  */
 QDomDocument users::on_get_xml_form(const QString& cpath)
 {
-	static QDomDocument invalid_form;
-	static QDomDocument login_form;
-	static QDomDocument register_form;
-	static QDomDocument password_form;
+    static QDomDocument invalid_form;
+    static QDomDocument login_form;
+    static QDomDocument register_form;
+    static QDomDocument password_form;
 
-	if(cpath == "login")
-	{
-		if(login_form.isNull())
-		{
-			// login page if user is not logged in, user account/stats otherwise
-			QFile file(":/xml/users/login-form.xml");
-			if(!file.open(QIODevice::ReadOnly))
-			{
-				SNAP_LOG_FATAL("user::on_path_execute() could not open login-form.xml resource file.");
-				return invalid_form;
-			}
-			if(!login_form.setContent(&file, true))
-			{
-				SNAP_LOG_FATAL("user::on_path_execute() could not parse login-form.xml resource file.");
-				return invalid_form;
-			}
-		}
-		return login_form;
-	}
+    if(cpath == "login")
+    {
+        if(login_form.isNull())
+        {
+            // login page if user is not logged in, user account/stats otherwise
+            QFile file(":/xml/users/login-form.xml");
+            if(!file.open(QIODevice::ReadOnly))
+            {
+                SNAP_LOG_FATAL("user::on_path_execute() could not open login-form.xml resource file.");
+                return invalid_form;
+            }
+            if(!login_form.setContent(&file, true))
+            {
+                SNAP_LOG_FATAL("user::on_path_execute() could not parse login-form.xml resource file.");
+                return invalid_form;
+            }
+        }
+        return login_form;
+    }
 
-	if(cpath == "register")
-	{
-		if(register_form.isNull())
-		{
-			// login page if user is not logged in, user account/stats otherwise
-			QFile file(":/xml/users/register-form.xml");
-			if(!file.open(QIODevice::ReadOnly))
-			{
-				SNAP_LOG_FATAL("user::on_path_execute() could not open register-form.xml resource file.");
-				return invalid_form;
-			}
-			if(!register_form.setContent(&file, true))
-			{
-				SNAP_LOG_FATAL("user::on_path_execute() could not parse register-form.xml resource file.");
-				return invalid_form;
-			}
-		}
-		return register_form;
-	}
+    if(cpath == "register")
+    {
+        if(register_form.isNull())
+        {
+            // login page if user is not logged in, user account/stats otherwise
+            QFile file(":/xml/users/register-form.xml");
+            if(!file.open(QIODevice::ReadOnly))
+            {
+                SNAP_LOG_FATAL("user::on_path_execute() could not open register-form.xml resource file.");
+                return invalid_form;
+            }
+            if(!register_form.setContent(&file, true))
+            {
+                SNAP_LOG_FATAL("user::on_path_execute() could not parse register-form.xml resource file.");
+                return invalid_form;
+            }
+        }
+        return register_form;
+    }
 
-	return invalid_form;
+    return invalid_form;
 }
 
 /** \brief Process a post from one of the users forms.
@@ -477,23 +483,23 @@ QDomDocument users::on_get_xml_form(const QString& cpath)
  */
 void users::on_process_post(const QString& cpath, const sessions::sessions::session_info& info)
 {
-	if(cpath == "login")
-	{
-		process_login_form();
-	}
-	else if(cpath == "register")
-	{
-		process_register_form();
-	}
-	else if(cpath == "forgot-password")
-	{
-	}
-	else
-	{
-		// this should not happen because invalid paths will not pass the
-		// session validation process
-		throw std::logic_error(("users::on_process_post() was called with an unsupported path: \"" + cpath + "\"").toUtf8().data());
-	}
+    if(cpath == "login")
+    {
+        process_login_form();
+    }
+    else if(cpath == "register")
+    {
+        process_register_form();
+    }
+    else if(cpath == "forgot-password")
+    {
+    }
+    else
+    {
+        // this should not happen because invalid paths will not pass the
+        // session validation process
+        throw std::logic_error(("users::on_process_post() was called with an unsupported path: \"" + cpath + "\"").toUtf8().data());
+    }
 }
 
 
@@ -507,89 +513,89 @@ void users::on_process_post(const QString& cpath, const sessions::sessions::sess
  */
 void users::process_login_form()
 {
-	QString details;
-	QSharedPointer<QtCassandra::QCassandraTable> table(get_users_table());
+    QString details;
+    QSharedPointer<QtCassandra::QCassandraTable> table(get_users_table());
 
-	// retrieve the row for that user
-	QString key(f_snap->postenv("email").toUtf8().data());
-	if(table->exists(key))
-	{
-		QSharedPointer<QtCassandra::QCassandraRow> row(table->row(key));
+    // retrieve the row for that user
+    QString key(f_snap->postenv("email"));
+    if(table->exists(key))
+    {
+        QSharedPointer<QtCassandra::QCassandraRow> row(table->row(key));
 
-		QtCassandra::QCassandraValue value;
+        QtCassandra::QCassandraValue value;
 
-		// compute the hash of the password
-		// (1) get the digest
-		value = row->cell(get_name(SNAP_NAME_USERS_PASSWORD_DIGEST))->value();
-		const QString digest(value.stringValue());
+        // compute the hash of the password
+        // (1) get the digest
+        value = row->cell(get_name(SNAP_NAME_USERS_PASSWORD_DIGEST))->value();
+        const QString digest(value.stringValue());
 
-		// (2) we need the passord:
-		const QString password(f_snap->postenv("password"));
+        // (2) we need the passord:
+        const QString password(f_snap->postenv("password"));
 
-		// (3) get the salt in a buffer
-		value = row->cell(get_name(SNAP_NAME_USERS_PASSWORD_SALT))->value();
-		const QByteArray salt(value.binaryValue());
+        // (3) get the salt in a buffer
+        value = row->cell(get_name(SNAP_NAME_USERS_PASSWORD_SALT))->value();
+        const QByteArray salt(value.binaryValue());
 
-		// (4) compute the expected hash
-		QByteArray hash;
-		encrypt_password(digest, password, salt, hash);
+        // (4) compute the expected hash
+        QByteArray hash;
+        encrypt_password(digest, password, salt, hash);
 
-		// (5) retrieved the saved hash
-		value = row->cell(get_name(SNAP_NAME_USERS_PASSWORD))->value();
-		const QByteArray saved_hash(value.binaryValue());
+        // (5) retrieved the saved hash
+        value = row->cell(get_name(SNAP_NAME_USERS_PASSWORD))->value();
+        const QByteArray saved_hash(value.binaryValue());
 
-		// (6) compare both hashes
-		// (note: at this point I don't trust the == operator of the QByteArray
-		// object; will it work with '\0' bytes???)
-		if(hash.size() == saved_hash.size()
-		&& memcmp(hash.data(), saved_hash.data(), hash.size()) == 0)
-		{
-			// User credentials are correct, create a cookie
-			sessions::sessions::session_info info;
-			info.set_session_type(sessions::sessions::session_info::SESSION_INFO_USER);
-			info.set_session_id(USERS_SESSION_ID_LOG_IN_SESSION);
-			info.set_plugin_owner("users"); // ourselves
-			//info.set_page_path(); -- default is okay
-			info.set_object_path("/user/??");
-			info.set_time_to_live(86400 * 5);  // 5 days
-			QString session(sessions::sessions::instance()->create_session(info));
-			http_cookie cookie(f_snap, "snap_session", session);
-			cookie.set_expire_in(86400 * 5);  // 5 days
-			f_snap->set_cookie(cookie);
+        // (6) compare both hashes
+        // (note: at this point I don't trust the == operator of the QByteArray
+        // object; will it work with '\0' bytes???)
+        if(hash.size() == saved_hash.size()
+        && memcmp(hash.data(), saved_hash.data(), hash.size()) == 0)
+        {
+            // User credentials are correct, create a cookie
+            sessions::sessions::session_info info;
+            info.set_session_type(sessions::sessions::session_info::SESSION_INFO_USER);
+            info.set_session_id(USERS_SESSION_ID_LOG_IN_SESSION);
+            info.set_plugin_owner("users"); // ourselves
+            //info.set_page_path(); -- default is okay
+            info.set_object_path("/user/??");
+            info.set_time_to_live(86400 * 5);  // 5 days
+            QString session(sessions::sessions::instance()->create_session(info));
+            http_cookie cookie(f_snap, "snap_session", session);
+            cookie.set_expire_in(86400 * 5);  // 5 days
+            f_snap->set_cookie(cookie);
 
-			// User is now logged in, redirect him to another page
-			// TODO: redirect...
-			return;
-		}
-		else
-		{
-			// user mistyped his password?
-			details = "invalid credentials (passwords don't match)";
-		}
-	}
-	else
-	{
-		// user mistyped his email or is not registered?
-		details = "invalid credentials (user with specified email does not exist)";
-	}
+            // User is now logged in, redirect him to another page
+            // TODO: redirect...
+            return;
+        }
+        else
+        {
+            // user mistyped his password?
+            details = "invalid credentials (passwords don't match)";
+        }
+    }
+    else
+    {
+        // user mistyped his email or is not registered?
+        details = "invalid credentials (user with specified email does not exist)";
+    }
 
-	// IMPORTANT:
-	//   We have ONE error message because whatever the error we do not
-	//   want to tell the user exactly what went wrong (i.e. wrong email,
-	//   or wrong password.)
-	//
-	//   This is important because if someone is registered with an email
-	//   such as example@snapwebsites.info and a hacker tries that email
-	//   and gets an error message saying "wrong password," now the hacker
-	//   knows that the user is registered on that Snap! C++ system.
+    // IMPORTANT:
+    //   We have ONE error message because whatever the error we do not
+    //   want to tell the user exactly what went wrong (i.e. wrong email,
+    //   or wrong password.)
+    //
+    //   This is important because if someone is registered with an email
+    //   such as example@snapwebsites.info and a hacker tries that email
+    //   and gets an error message saying "wrong password," now the hacker
+    //   knows that the user is registered on that Snap! C++ system.
 
-	// user not registered yet? (or email misspelled)
-	messages::messages::instance()->set_error(
-		"Could Not Log You In",
-		"Your email or password were incorrect. If you are not registered, you may want to consider <a href=\"/register\">registering</a> first?.",
-		details,
-		false // should this one be true?
-	);
+    // user not registered yet? (or email misspelled)
+    messages::messages::instance()->set_error(
+        "Could Not Log You In",
+        "Your email or password were incorrect. If you are not registered, you may want to consider <a href=\"/register\">registering</a> first?.",
+        details,
+        false // should this one be true?
+    );
 }
 
 
@@ -609,85 +615,164 @@ void users::process_login_form()
  */
 void users::process_register_form()
 {
-	messages::messages *messages(messages::messages::instance());
+    messages::messages *messages(messages::messages::instance());
 
-	QSharedPointer<QtCassandra::QCassandraTable> table(get_users_table());
+    // We validated the email already and we just don't need to do it
+    // twice, if two users create an account "simultaneously (enough)"
+    // with the same email, that's probably not a normal user (i.e. a
+    // normal user would not be able to create two accounts at the
+    // same time.) The email is the row key of the user table.
+    QString email(f_snap->postenv("email"));
+    if(register_user(email, f_snap->postenv("password")))
+    {
+        verify_email(email);
+        messages->set_info(
+            "We registered your account",
+            "We sent you an email to \"" + email + "\". In the email there is a link you need to follow to finish your registration."
+        );
+    }
+    else
+    {
+        messages->set_error(
+            "User Already Exists",
+            "A user with email \"" + email + "\" already exists. If it is you, then try to request a new password if you need a reminder.",
+            "user \"" + email + "\" trying to register a second time.",
+            true
+        );
+    }
+}
 
-	// We validated the email already and we just don't need to do it
-	// twice, if two users create an account "simultaneously (enough)"
-	// with the same email, that's probably not a normal user (i.e. a
-	// normal user would not be able to create two accounts at the
-	// same time.) The email is the row key of the user table.
-	QtCassandra::QCassandraValue digest(f_snap->get_site_parameter(get_name(SNAP_NAME_USERS_PASSWORD_DIGEST)));
-	if(digest.nullValue())
-	{
-		digest.setStringValue("sha512");
-	}
-	QString password(f_snap->postenv("password"));
-	QByteArray salt;
-	create_password_salt(salt);
-	QByteArray hash;
-	encrypt_password(digest.stringValue(), password, salt, hash);
 
-	QString email(f_snap->postenv("email"));
-	QString key(email.toUtf8().data());
-	QSharedPointer<QtCassandra::QCassandraRow> row(table->row(key));
+/** \brief Register a new user in the database
+ *
+ * If you find out that a user is not yet registered but still want to
+ * save some information about that user (i.e. when sending an email to
+ * someone) then this function is used for that purpose.
+ *
+ * This function accepts an email and a password. The password can be set
+ * to "!" to prevent that user from logging in (password too small!) but
+ * still have an account. The account can later be activated, which
+ * happens whenever the user decides to register.
+ *
+ * \param[in] email  The email of the user. It must be a valid email address.
+ * \param[in] password  The password of the user or "!".
+ *
+ * \return true if the user was newly created, false otherwise
+ */
+bool users::register_user(const QString& email, const QString& password)
+{
+    QByteArray salt;
+    QByteArray hash;
+    QtCassandra::QCassandraValue digest(f_snap->get_site_parameter(get_name(SNAP_NAME_USERS_PASSWORD_DIGEST)));
+    if(password == "!")
+    {
+        // special case; these users cannot log in
+        digest.setStringValue("no password");
+        salt = "no salt";
+        hash = "!";
+    }
+    else
+    {
+        if(digest.nullValue())
+        {
+            digest.setStringValue("sha512");
+        }
+        create_password_salt(salt);
+        encrypt_password(digest.stringValue(), password, salt, hash);
+    }
 
-	QtCassandra::QCassandraValue value;
-	value.setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
-	value.setStringValue(key);
+    QSharedPointer<QtCassandra::QCassandraTable> table(get_users_table());
+    QString key(email);
+    QSharedPointer<QtCassandra::QCassandraRow> row(table->row(key));
 
-	// we got as much as we could ready before locking
-	{
-		// first make sure this email is unique
-		QtCassandra::QCassandraLock lock(f_snap->get_context(), key);
+    QtCassandra::QCassandraValue value;
+    value.setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
+    value.setStringValue(key);
 
-		const char *email_key(get_name(SNAP_NAME_USERS_ORIGINAL_EMAIL));
-		QSharedPointer<QtCassandra::QCassandraCell> cell(row->cell(email_key));
-		cell->setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
-		QtCassandra::QCassandraValue email_data(cell->value());
-		if(!email_data.nullValue())
-		{
-			// someone else already registered with that email
-			lock.unlock(); // unlock ASAP
-			messages->set_error(
-				"User Already Exists",
-				"A user with email \"" + email + "\" already exists. If it is you, then try to request a new password if you need a reminder.",
-				"user \"" + email + "\" trying to register a second time.",
-				true
-			);
-			return;
-		}
+    // we got as much as we could ready before locking
+    {
+        // first make sure this email is unique
+        QtCassandra::QCassandraLock lock(f_snap->get_context(), key);
 
-		// we're the first to lock this row, the user is therefore unique
-		// so go on and register him
+        // TODO: we have to look at all the possible email addresses
+        const char *email_key(get_name(SNAP_NAME_USERS_ORIGINAL_EMAIL));
+        QSharedPointer<QtCassandra::QCassandraCell> cell(row->cell(email_key));
+        cell->setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
+        QtCassandra::QCassandraValue email_data(cell->value());
+        if(!email_data.nullValue())
+        {
+            // someone else already registered with that email
+            return false;
+        }
 
-		// Save the first email the user had when registering
-		row->cell(email_key)->setValue(value);
+        // we're the first to lock this row, the user is therefore unique
+        // so go on and register him
 
-		// the lock automatically goes away here
-	}
+        // Save the first email the user had when registering
+        row->cell(email_key)->setValue(value);
 
-	// Save the hashed password (never the original password!)
-	value.setBinaryValue(hash);
-	row->cell(get_name(SNAP_NAME_USERS_PASSWORD))->setValue(value);
+        // the lock automatically goes away here
+    }
 
-	// Save the password salt (otherwise we couldn't check whether the user
-	// knows his password!)
-	value.setBinaryValue(salt);
-	row->cell(get_name(SNAP_NAME_USERS_PASSWORD_SALT))->setValue(value);
+    // Save the hashed password (never the original password!)
+    value.setBinaryValue(hash);
+    row->cell(get_name(SNAP_NAME_USERS_PASSWORD))->setValue(value);
 
-	// also save the digest since it could change en-route
-	row->cell(get_name(SNAP_NAME_USERS_PASSWORD_DIGEST))->setValue(digest);
+    // Save the password salt (otherwise we couldn't check whether the user
+    // knows his password!)
+    value.setBinaryValue(salt);
+    row->cell(get_name(SNAP_NAME_USERS_PASSWORD_SALT))->setValue(value);
 
-	// Save the user IP address when registering
-	value.setStringValue(f_snap->snapenv("REMOTE_ADDR"));
-	row->cell(get_name(SNAP_NAME_USERS_ORIGINAL_IP))->setValue(value);
+    // also save the digest since it could change en-route
+    row->cell(get_name(SNAP_NAME_USERS_PASSWORD_DIGEST))->setValue(digest);
 
-	messages->set_info(
-		"We registered your account",
-		"We sent you an email. In the email there is a link you need to follow to finish your registration."
-	);
+    // Save the user IP address when registering
+    value.setStringValue(f_snap->snapenv("REMOTE_ADDR"));
+    row->cell(get_name(SNAP_NAME_USERS_ORIGINAL_IP))->setValue(value);
+
+    return true;
+}
+
+
+/** \brief Send an email to request email verification.
+ *
+ * This function generates an email and sends it. The email is used to request
+ * the user to verify that he receives said emails.
+ *
+ * \param[in] email  The user email.
+ */
+void users::verify_email(const QString& email)
+{
+    sendmail::sendmail::email e;
+
+    // administrator can define this email address
+    QtCassandra::QCassandraValue from(f_snap->get_site_parameter(get_name(SNAP_NAME_USERS_PASSWORD_DIGEST)));
+    if(from.nullValue())
+    {
+        from.setStringValue("contact@snapwebsites.com");
+    }
+    e.set_from(from.stringValue());
+
+    // mark priority as High
+    e.set_priority(sendmail::sendmail::email::EMAIL_PRIORITY_HIGH);
+
+    // destination email address
+    e.add_header(sendmail::get_name(sendmail::SNAP_NAME_SENDMAIL_TO), email);
+
+    // TODO: translations and generally email subject + body
+    e.set_subject("Please verify your Snap! Websites account");
+
+    sendmail::sendmail::email::email_attachment body;
+    QString email_body;
+    email_body = "Dear user,\n\nPlease click on the following link to confirm your registration:\n\nhttp://snapwebsites.com/magic-number\n\nThank you.\nThe Snap! Websites Team\n";
+    body.set_data(email_body.toUtf8(), "text/plain");
+    e.add_attachment(body);
+
+    // send the email
+    //
+    // really this just saves it in the database, the sendmail itself
+    // happens on the backend; see sendmail::on_backend_action()
+    sendmail::sendmail::instance()->post_email(e);
 }
 
 
@@ -713,12 +798,12 @@ void users::process_register_form()
  */
 void users::create_password_salt(QByteArray& salt)
 {
-	// we use 16 bytes before and 16 bytes after the password
-	// so create a salt of SALT_SIZE bytes (256 bits at time of writing)
-	unsigned char buf[SALT_SIZE];
-	int r(RAND_bytes(buf, sizeof(buf)));
-	salt.clear();
-	salt.append(reinterpret_cast<char *>(buf), sizeof(buf));
+    // we use 16 bytes before and 16 bytes after the password
+    // so create a salt of SALT_SIZE bytes (256 bits at time of writing)
+    unsigned char buf[SALT_SIZE];
+    int r(RAND_bytes(buf, sizeof(buf)));
+    salt.clear();
+    salt.append(reinterpret_cast<char *>(buf), sizeof(buf));
 }
 
 
@@ -753,67 +838,67 @@ void users::create_password_salt(QByteArray& salt)
  */
 void users::encrypt_password(const QString& digest, const QString& password, const QByteArray& salt, QByteArray& hash)
 {
-	// it is an out only so reset it immediately
-	hash.clear();
+    // it is an out only so reset it immediately
+    hash.clear();
 
-	// verify the size
-	if(salt.size() != SALT_SIZE)
-	{
-		throw std::logic_error("salt buffer must be exactly SALT_SIZE bytes (missed calling create_password_salt()?)");
-	}
-	unsigned char buf[SALT_SIZE];
-	memcpy(buf, salt.data(), SALT_SIZE);
+    // verify the size
+    if(salt.size() != SALT_SIZE)
+    {
+        throw std::logic_error("salt buffer must be exactly SALT_SIZE bytes (missed calling create_password_salt()?)");
+    }
+    unsigned char buf[SALT_SIZE];
+    memcpy(buf, salt.data(), SALT_SIZE);
 
-	// Initialize so we gain access to all the necessary digests
-	OpenSSL_add_all_digests();
+    // Initialize so we gain access to all the necessary digests
+    OpenSSL_add_all_digests();
 
-	// retrieve the digest we want to use
-	// (TODO: allows website owners to change this value)
-	const EVP_MD *md(EVP_get_digestbyname(digest.toUtf8().data()));
-	if(md == NULL)
-	{
-		throw std::runtime_error("the specified digest could not be found");
-	}
+    // retrieve the digest we want to use
+    // (TODO: allows website owners to change this value)
+    const EVP_MD *md(EVP_get_digestbyname(digest.toUtf8().data()));
+    if(md == NULL)
+    {
+        throw std::runtime_error("the specified digest could not be found");
+    }
 
-	// initialize the digest context
-	EVP_MD_CTX mdctx;
-	EVP_MD_CTX_init(&mdctx);
-	if(EVP_DigestInit_ex(&mdctx, md, NULL) != 1)
-	{
-		throw std::runtime_error("EVP_DigestInit_ex() failed digest initialization");
-	}
+    // initialize the digest context
+    EVP_MD_CTX mdctx;
+    EVP_MD_CTX_init(&mdctx);
+    if(EVP_DigestInit_ex(&mdctx, md, NULL) != 1)
+    {
+        throw std::runtime_error("EVP_DigestInit_ex() failed digest initialization");
+    }
 
-	// add first salt
-	if(EVP_DigestUpdate(&mdctx, buf, SALT_SIZE / 2) != 1)
-	{
-		throw std::runtime_error("EVP_DigestUpdate() failed digest update (salt1)");
-	}
+    // add first salt
+    if(EVP_DigestUpdate(&mdctx, buf, SALT_SIZE / 2) != 1)
+    {
+        throw std::runtime_error("EVP_DigestUpdate() failed digest update (salt1)");
+    }
 
-	// add password (encrypt to UTF-8)
-	const char *pwd(password.toUtf8().data());
-	if(EVP_DigestUpdate(&mdctx, pwd, strlen(pwd)) != 1)
-	{
-		throw std::runtime_error("EVP_DigestUpdate() failed digest update (password)");
-	}
+    // add password (encrypt to UTF-8)
+    const char *pwd(password.toUtf8().data());
+    if(EVP_DigestUpdate(&mdctx, pwd, strlen(pwd)) != 1)
+    {
+        throw std::runtime_error("EVP_DigestUpdate() failed digest update (password)");
+    }
 
-	// add second salt
-	if(EVP_DigestUpdate(&mdctx, buf + SALT_SIZE / 2, SALT_SIZE / 2) != 1)
-	{
-		throw std::runtime_error("EVP_DigestUpdate() failed digest update (salt2)");
-	}
+    // add second salt
+    if(EVP_DigestUpdate(&mdctx, buf + SALT_SIZE / 2, SALT_SIZE / 2) != 1)
+    {
+        throw std::runtime_error("EVP_DigestUpdate() failed digest update (salt2)");
+    }
 
-	// retrieve the result of the hash
-	unsigned char md_value[EVP_MAX_MD_SIZE];
-	unsigned int md_len(EVP_MAX_MD_SIZE);
-	if(EVP_DigestFinal_ex(&mdctx, md_value, &md_len) != 1)
-	{
-		throw std::runtime_error("EVP_DigestFinal_ex() digest finalization failed");
-	}
-	hash.append(reinterpret_cast<char *>(md_value), md_len);
+    // retrieve the result of the hash
+    unsigned char md_value[EVP_MAX_MD_SIZE];
+    unsigned int md_len(EVP_MAX_MD_SIZE);
+    if(EVP_DigestFinal_ex(&mdctx, md_value, &md_len) != 1)
+    {
+        throw std::runtime_error("EVP_DigestFinal_ex() digest finalization failed");
+    }
+    hash.append(reinterpret_cast<char *>(md_value), md_len);
 
-	// clean up the context
-	// (note: the return value is not documented so we ignore it)
-	EVP_MD_CTX_cleanup(&mdctx);
+    // clean up the context
+    // (note: the return value is not documented so we ignore it)
+    EVP_MD_CTX_cleanup(&mdctx);
 }
 
 
@@ -821,34 +906,4 @@ void users::encrypt_password(const QString& digest, const QString& password, con
 
 SNAP_PLUGIN_END()
 
-// Actually we're under Linux and want to use sendmail instead.
-// http://stackoverflow.com/questions/9317305/sending-an-email-from-a-c-c-program-in-linux
-//
-// http://curl.haxx.se/libcurl/c/smtp-tls.html
-// telnet mail.m2osw.com 25
-// Trying 69.55.233.23...
-// Connected to mail.m2osw.com.
-// Escape character is '^]'.
-// 220 mail.m2osw.com ESMTP Postfix (Made to Order Software Corporation)
-// HELO mail.m2osw.com
-// 250 mail.m2osw.com
-// MAIL FROM: <alexis@m2osw.com>
-// 250 2.1.0 Ok
-// RCPT TO: <alexis_wilke@yahoo.com>
-// 250 2.1.5 Ok
-// DATA
-// 354 End data with <CR><LF>.<CR><LF>
-// From: <alexis@m2osw.com>
-// To: <alexis_wilke@yahoo.com>
-// Subject: Hello!
-// 
-// Testing SMTP really quick. We need to understand how to get the necessary info so it works.
-// 
-// .
-// 250 2.0.0 Ok: queued as 9652742A0FC
-// QUIT
-// 221 2.0.0 Bye
-// Connection closed by foreign host.
-
-
-// vim: ts=4 sw=4
+// vim: ts=4 sw=4 et

@@ -45,14 +45,14 @@ filter::~filter()
 //std::cerr << " - Destroying filter!\n";
 }
 
-/** \brief Get a pointer to the filter plug-in.
+/** \brief Get a pointer to the filter plugin.
  *
- * This function returns an instance pointer to the filter plug-in.
+ * This function returns an instance pointer to the filter plugin.
  *
  * Note that you cannot assume that the pointer will be valid until the
  * bootstrap event is called.
  *
- * \return A pointer to the filter plug-in.
+ * \return A pointer to the filter plugin.
  */
 filter *filter::instance()
 {
@@ -76,10 +76,10 @@ QString filter::description() const
 		" computer through someone's website.";
 }
 
-/** \brief Initialize the filter plug-in.
+/** \brief Initialize the filter plugin.
  *
- * This function terminates the initialization of the filter plug-in
- * by registring for different events.
+ * This function terminates the initialization of the filter plugin
+ * by registering for different events.
  *
  * \param[in] snap  The child handling this request.
  */
@@ -87,7 +87,6 @@ void filter::on_bootstrap(::snap::snap_child *snap)
 {
 	f_snap = snap;
 
-	//std::cerr << " - Bootstrapping filter!\n";
 	SNAP_LISTEN(filter, "server", server, xss_filter, _1, _2, _3);
 }
 

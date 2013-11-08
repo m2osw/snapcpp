@@ -40,6 +40,7 @@ SnapIncludeQt4( QtCore )
 include_directories(
     "${CMAKE_CURRENT_SOURCE_DIR}"
     ${QT_INCLUDES}
+    "${PROJECT_BINARY_DIR}/../../../libtld/include"
 )
 
 QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC

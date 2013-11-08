@@ -42,10 +42,10 @@ char_chart::~char_chart()
 {
 }
 
-/** \brief Initialize the char_chart plug-in.
+/** \brief Initialize the char_chart plugin.
  *
- * This function terminates the initialization of the char_chart plug-in
- * by registring for different events.
+ * This function terminates the initialization of the char_chart plugin
+ * by registering for different events.
  *
  * \param[in] snap  The child handling this request.
  */
@@ -57,14 +57,14 @@ void char_chart::on_bootstrap(::snap::snap_child *snap)
 	SNAP_LISTEN(char_chart, "sitemapxml", sitemapxml::sitemapxml, generate_sitemapxml, _1);
 }
 
-/** \brief Get a pointer to the char_chart plug-in.
+/** \brief Get a pointer to the char_chart plugin.
  *
- * This function returns an instance pointer to the char_chart plug-in.
+ * This function returns an instance pointer to the char_chart plugin.
  *
  * Note that you cannot assume that the pointer will be valid until the
  * bootstrap event is called.
  *
- * \return A pointer to the char_chart plug-in.
+ * \return A pointer to the char_chart plugin.
  */
 char_chart *char_chart::instance()
 {
