@@ -46,19 +46,31 @@ include_directories(
     "${PROJECT_BINARY_DIR}/../../../libtld/include"
 )
 
+find_file( MAGIC magic.h )
+if( ${MAGIC} STREQUAL "MAGIC-NOTFOUND" )
+    message( FATAL_ERROR "Please install libmagic!" )
+endif()
+get_filename_component( MAGIC_INCLUDE_PATH ${MAGIC} PATH )
+
+find_library( MAGIC_LIBRARY magic )
+if( ${MAGIC_LIBRARY} STREQUAL "MAGIC_LIBRARY-NOTFOUND" )
+    message( FATAL_ERROR "Please install libmagic!" )
+endif()
+
 QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC
     sendmail.qrc
 )
+
+include_directories( ${MAGIC_INCLUDE_PATH} )
 
 add_library(sendmail SHARED
     sendmail.cpp
     ${SNAP_MANAGER_MOC_CXX}
     ${SNAP_MANAGER_RESOURCES_RCC}
-
     content.xml
 )
 
-target_link_libraries( sendmail ${QT_LIBRARIES} )
+target_link_libraries( sendmail ${QT_LIBRARIES} ${MAGIC_LIBRARY} )
 
 install(
     TARGETS sendmail LIBRARY DESTINATION lib/snapwebsites/plugins
