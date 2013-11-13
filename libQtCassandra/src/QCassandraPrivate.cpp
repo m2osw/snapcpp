@@ -730,10 +730,11 @@ void QCassandraPrivate::insertValue(const QString& table_name, const QByteArray&
     const QByteArray& data(value.binaryValue());
     column.__set_value(std::string(data.data(), data.size())); // "unavoidable" copy of the data
 
-    QCassandraValue::timestamp_mode_t mode = value.timestampMode();
+    const QCassandraValue::timestamp_mode_t mode = value.timestampMode();
     // some older version of gcc require a cast here
     switch(static_cast<QCassandraValue::def_timestamp_mode_t>(mode)) {
     case QCassandraValue::TIMESTAMP_MODE_AUTO:
+        // libQtCassandra default
         column.__set_timestamp(QCassandra::timeofday());
         break;
 
@@ -743,8 +744,9 @@ void QCassandraPrivate::insertValue(const QString& table_name, const QByteArray&
         break;
 
     case QCassandraValue::TIMESTAMP_MODE_CASSANDRA:
-#pragma message "What should we do on TIMESTAMP_MODE_CASSANDRA? g++ wants it specified in the switch stmt."
+        // let Cassandra use its own default
         break;
+
     }
 
     if(value.ttl() != QCassandraValue::TTL_PERMANENT) {

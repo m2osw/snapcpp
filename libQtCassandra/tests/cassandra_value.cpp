@@ -508,7 +508,6 @@ int main(int argc, char *argv[])
     for(size_t i(0); i < sizeof(char_buffer) / sizeof(char_buffer[0]); ++i) {
         char_buffer[i] = static_cast<char>(my_rand());
         QtCassandra::appendCharValue(array, char_buffer[i]);
-#pragma message "Why doesn't size() return size_t in the first place?"
         if(static_cast<size_t>(array.size()) != sizeof(char) * (i + 1)) {
             qDebug() << "error: the appendCharValue() generated the wrong array size" << (i + 1) << "/" << array.size() << ".";
             ++err;
