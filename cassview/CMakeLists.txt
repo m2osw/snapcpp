@@ -40,7 +40,7 @@ set(CASSVIEW_VERSION_MINOR 4)
 set(CASSVIEW_VERSION_PATCH 1)
 
 cmake_minimum_required(VERSION 2.8)
-project(cassview)
+project(cassview-project)
 
 add_definitions( -std=c++0x )
 
