@@ -224,8 +224,8 @@ namespace details
  * \param[in] parent  The parent object of this object (the QGooglePageRank)
  * \param[in] index  The index of the request using this QHttpRequest.
  */
-QHttpRequest::QHttpRequest(QObject *parent, QGooglePageRank::RequestType index)
-	: QObject(parent),
+QHttpRequest::QHttpRequest(QObject *prnt, QGooglePageRank::RequestType index)
+	: QObject(prnt),
 	  f_index(index),
 	  f_rank(QGooglePageRank::PageRankUnknown)
 {

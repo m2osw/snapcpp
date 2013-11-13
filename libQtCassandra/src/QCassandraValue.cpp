@@ -1311,9 +1311,9 @@ double QCassandraValue::doubleValue(int index) const
  *
  * \return The binary value in the form of a QString that was defined in this value.
  */
-QString QCassandraValue::stringValue(int index, int size) const
+QString QCassandraValue::stringValue(int index, int the_size) const
 {
-    return QtCassandra::stringValue(f_value, index, size);
+    return QtCassandra::stringValue(f_value, index, the_size);
 }
 
 /** \brief Get a reference to the internal buffer value.
@@ -1345,9 +1345,9 @@ const QByteArray& QCassandraValue::binaryValue() const
  *
  * \return The binary value held by this value.
  */
-QByteArray QCassandraValue::binaryValue(int index, int size) const
+QByteArray QCassandraValue::binaryValue(int index, int the_size) const
 {
-    return QtCassandra::binaryValue(f_value, index, size);
+    return QtCassandra::binaryValue(f_value, index, the_size);
 }
 
 /** \brief Make the value empty.
@@ -1767,13 +1767,13 @@ int32_t QCassandraValue::ttl() const
  *
  * \param[in] ttl  The new time to live of this value.
  */
-void QCassandraValue::setTtl(int32_t ttl)
+void QCassandraValue::setTtl(int32_t ttl_val)
 {
-    if(ttl < 0) {
+    if(ttl_val < 0) {
         throw std::runtime_error("the TTL value cannot be negative");
     }
 
-    f_ttl = ttl;
+    f_ttl = ttl_val;
 }
 
 /** \brief Retrieve the current consistency level of this value.
@@ -1954,10 +1954,13 @@ int64_t QCassandraValue::timestamp() const
  *
  * \param[in] timestamp  The time used to mark this value.
  */
-void QCassandraValue::setTimestamp(int64_t timestamp)
+void QCassandraValue::setTimestamp(int64_t val)
 {
+#pragma GCC push
+#pragma GCC diagnostic ignored "-Wsign-promo"
     f_timestamp_mode = TIMESTAMP_MODE_DEFINED;
-    f_timestamp = timestamp;
+#pragma GCC pop
+    f_timestamp = val;
 }
 
 /** \brief Assign a new timestamp to this value.
@@ -1968,9 +1971,9 @@ void QCassandraValue::setTimestamp(int64_t timestamp)
  *
  * \param[in] timestamp  The new value timestamp.
  */
-void QCassandraValue::assignTimestamp(int64_t timestamp)
+void QCassandraValue::assignTimestamp(int64_t val)
 {
-    f_timestamp = timestamp;
+    f_timestamp = val;
 }
 
 } // namespace QtCassandra

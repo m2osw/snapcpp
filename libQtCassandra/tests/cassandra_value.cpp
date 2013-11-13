@@ -160,7 +160,7 @@ int main(int argc, char *argv[])
         }
     }
 
-    for(int64_t i(QtCassandra::BUFFER_MAX_SIZE + 1); i <= QtCassandra::BUFFER_MAX_SIZE + 1024; ++i) {
+    for(uint64_t i(QtCassandra::BUFFER_MAX_SIZE + 1); i <= QtCassandra::BUFFER_MAX_SIZE + 1024; ++i) {
         try {
             QtCassandra::checkBufferSize(i);
             qDebug() << "error: checkBufferSize() did not generate an error with an invalid size";
@@ -505,10 +505,11 @@ int main(int argc, char *argv[])
     }
 
     char char_buffer[256];
-    for(int i(0); i < sizeof(char_buffer) / sizeof(char_buffer[0]); ++i) {
+    for(size_t i(0); i < sizeof(char_buffer) / sizeof(char_buffer[0]); ++i) {
         char_buffer[i] = static_cast<char>(my_rand());
         QtCassandra::appendCharValue(array, char_buffer[i]);
-        if(array.size() != sizeof(char) * (i + 1)) {
+#pragma message "Why doesn't size() return size_t in the first place?"
+        if(static_cast<size_t>(array.size()) != sizeof(char) * (i + 1)) {
             qDebug() << "error: the appendCharValue() generated the wrong array size" << (i + 1) << "/" << array.size() << ".";
             ++err;
         }
@@ -590,10 +591,10 @@ int main(int argc, char *argv[])
     }
 
     signed char signed_char_buffer[256];
-    for(int i(0); i < sizeof(signed_char_buffer) / sizeof(signed_char_buffer[0]); ++i) {
+    for(size_t i(0); i < sizeof(signed_char_buffer) / sizeof(signed_char_buffer[0]); ++i) {
         signed_char_buffer[i] = static_cast<signed char>(my_rand());
         QtCassandra::appendSignedCharValue(array, signed_char_buffer[i]);
-        if(array.size() != sizeof(signed char) * (i + 1)) {
+        if(static_cast<size_t>(array.size()) != sizeof(signed char) * (i + 1)) {
             qDebug() << "error: the appendSignedCharValue() generated the wrong array size" << (i + 1) << "/" << array.size() << ".";
             ++err;
         }
@@ -671,10 +672,10 @@ int main(int argc, char *argv[])
     }
 
     unsigned char unsigned_char_buffer[256];
-    for(int i(0); i < sizeof(unsigned_char_buffer) / sizeof(unsigned_char_buffer[0]); ++i) {
+    for(size_t i(0); i < sizeof(unsigned_char_buffer) / sizeof(unsigned_char_buffer[0]); ++i) {
         unsigned_char_buffer[i] = static_cast<unsigned char>(my_rand());
         QtCassandra::appendUnsignedCharValue(array, unsigned_char_buffer[i]);
-        if(array.size() != sizeof(unsigned char) * (i + 1)) {
+        if(static_cast<size_t>(array.size()) != sizeof(unsigned char) * (i + 1)) {
             qDebug() << "error: the appendUnsignedCharValue() generated the wrong array size" << (i + 1) << "/" << array.size() << ".";
             ++err;
         }
@@ -770,11 +771,11 @@ int main(int argc, char *argv[])
     }
 
     int16_t int16_buffer[256];
-    for(int i(0); i < sizeof(int16_buffer) / sizeof(int16_buffer[0]); ++i) {
+    for(size_t i(0); i < sizeof(int16_buffer) / sizeof(int16_buffer[0]); ++i) {
         int16_t r(static_cast<int16_t>(my_rand()));
         int16_buffer[i] = r;
         QtCassandra::appendInt16Value(array, int16_buffer[i]);
-        if(array.size() != sizeof(int16_t) * (i + 1)) {
+        if(static_cast<size_t>(array.size()) != sizeof(int16_t) * (i + 1)) {
             qDebug() << "error: the appendInt16Value() generated the wrong array size" << (i + 1) << "/" << array.size() << ".";
             ++err;
         }
@@ -788,7 +789,7 @@ int main(int argc, char *argv[])
         }
     }
     QByteArray int16_buf(QtCassandra::binaryValue(array, 0, sizeof(int16_buffer)));
-    for(int i(0); i < sizeof(int16_buffer) / sizeof(int16_buffer[0]); ++i) {
+    for(size_t i(0); i < sizeof(int16_buffer) / sizeof(int16_buffer[0]); ++i) {
         int16_t r((static_cast<unsigned char>(int16_buf.at(i * sizeof(int16_t) + 0)) << 8)
                   + static_cast<unsigned char>(int16_buf.at(i * sizeof(int16_t) + 1)));
         if(r != int16_buffer[i]) {
@@ -882,7 +883,7 @@ int main(int argc, char *argv[])
         uint16_t r(static_cast<uint16_t>(my_rand()));
         uint16_buffer[i] = r;
         QtCassandra::appendUInt16Value(array, uint16_buffer[i]);
-        if(array.size() != sizeof(uint16_t) * (i + 1)) {
+        if(static_cast<uint>(array.size()) != sizeof(uint16_t) * (i + 1)) {
             qDebug() << "error: the appendUInt16Value() generated the wrong array size" << (i + 1) << "/" << array.size() << ".";
             ++err;
         }
@@ -896,7 +897,7 @@ int main(int argc, char *argv[])
         }
     }
     QByteArray uint16_buf(QtCassandra::binaryValue(array, 0, sizeof(int16_buffer)));
-    for(int i(0); i < sizeof(uint16_buffer) / sizeof(uint16_buffer[0]); ++i) {
+    for(size_t i(0); i < sizeof(uint16_buffer) / sizeof(uint16_buffer[0]); ++i) {
         uint16_t r((static_cast<unsigned char>(uint16_buf.at(i * sizeof(uint16_t) + 0)) << 8)
                   + static_cast<unsigned char>(uint16_buf.at(i * sizeof(uint16_t) + 1)));
         if(r != uint16_buffer[i]) {
@@ -1003,11 +1004,11 @@ int main(int argc, char *argv[])
     }
 
     int32_t int32_buffer[256];
-    for(int i(0); i < sizeof(int32_buffer) / sizeof(int32_buffer[0]); ++i) {
+    for(size_t i(0); i < sizeof(int32_buffer) / sizeof(int32_buffer[0]); ++i) {
         int32_t r(static_cast<int32_t>(my_rand()));
         int32_buffer[i] = r;
         QtCassandra::appendInt32Value(array, int32_buffer[i]);
-        if(array.size() != sizeof(int32_t) * (i + 1)) {
+        if(static_cast<size_t>(array.size()) != sizeof(int32_t) * (i + 1)) {
             qDebug() << "error: the appendInt32Value() generated the wrong array size" << (i + 1) << "/" << array.size() << ".";
             ++err;
         }
@@ -1029,7 +1030,7 @@ int main(int argc, char *argv[])
         }
     }
     QByteArray int32_buf(QtCassandra::binaryValue(array, 0, sizeof(int32_buffer)));
-    for(int i(0); i < sizeof(int32_buffer) / sizeof(int32_buffer[0]); ++i) {
+    for(size_t i(0); i < sizeof(int32_buffer) / sizeof(int32_buffer[0]); ++i) {
         int32_t r((static_cast<unsigned char>(int32_buf.at(i * sizeof(int32_t) + 0)) << 24)
                 + (static_cast<unsigned char>(int32_buf.at(i * sizeof(int32_t) + 1)) << 16)
                 + (static_cast<unsigned char>(int32_buf.at(i * sizeof(int32_t) + 2)) << 8)
@@ -1138,11 +1139,11 @@ int main(int argc, char *argv[])
     }
 
     uint32_t uint32_buffer[256];
-    for(int i(0); i < sizeof(uint32_buffer) / sizeof(uint32_buffer[0]); ++i) {
+    for(size_t i(0); i < sizeof(uint32_buffer) / sizeof(uint32_buffer[0]); ++i) {
         uint32_t r(static_cast<uint32_t>(my_rand()));
         uint32_buffer[i] = r;
         QtCassandra::appendUInt32Value(array, uint32_buffer[i]);
-        if(array.size() != sizeof(uint32_t) * (i + 1)) {
+        if(static_cast<size_t>(array.size()) != sizeof(uint32_t) * (i + 1)) {
             qDebug() << "error: the appendUInt32Value() generated the wrong array size" << (i + 1) << "/" << array.size() << ".";
             ++err;
         }
@@ -1164,7 +1165,7 @@ int main(int argc, char *argv[])
         }
     }
     QByteArray uint32_buf(QtCassandra::binaryValue(array, 0, sizeof(uint32_buffer)));
-    for(int i(0); i < sizeof(uint32_buffer) / sizeof(uint32_buffer[0]); ++i) {
+    for(size_t i(0); i < sizeof(uint32_buffer) / sizeof(uint32_buffer[0]); ++i) {
         uint32_t r((static_cast<unsigned char>(uint32_buf.at(i * sizeof(uint32_t) + 0)) << 24)
                  + (static_cast<unsigned char>(uint32_buf.at(i * sizeof(uint32_t) + 1)) << 16)
                  + (static_cast<unsigned char>(uint32_buf.at(i * sizeof(uint32_t) + 2)) << 8)
@@ -1305,11 +1306,11 @@ int main(int argc, char *argv[])
     }
 
     int64_t int64_buffer[256];
-    for(int i(0); i < sizeof(int64_buffer) / sizeof(int64_buffer[0]); ++i) {
+    for(size_t i(0); i < sizeof(int64_buffer) / sizeof(int64_buffer[0]); ++i) {
         int64_t r(static_cast<int64_t>(my_rand()));
         int64_buffer[i] = r;
         QtCassandra::appendInt64Value(array, int64_buffer[i]);
-        if(array.size() != sizeof(int64_t) * (i + 1)) {
+        if(static_cast<size_t>(array.size()) != sizeof(int64_t) * (i + 1)) {
             qDebug() << "error: the appendInt64Value() generated the wrong array size" << (i + 1) << "/" << array.size() << ".";
             ++err;
         }
@@ -1347,7 +1348,7 @@ int main(int argc, char *argv[])
         }
     }
     QByteArray int64_buf(QtCassandra::binaryValue(array, 0, sizeof(int64_buffer)));
-    for(int i(0); i < sizeof(int64_buffer) / sizeof(int64_buffer[0]); ++i) {
+    for(size_t i(0); i < sizeof(int64_buffer) / sizeof(int64_buffer[0]); ++i) {
         int64_t r((static_cast<int64_t>(static_cast<unsigned char>(int64_buf.at(i * sizeof(int64_t) + 0))) << 56)
                 + (static_cast<int64_t>(static_cast<unsigned char>(int64_buf.at(i * sizeof(int64_t) + 1))) << 48)
                 + (static_cast<int64_t>(static_cast<unsigned char>(int64_buf.at(i * sizeof(int64_t) + 2))) << 40)
@@ -1492,11 +1493,11 @@ int main(int argc, char *argv[])
     }
 
     uint64_t uint64_buffer[256];
-    for(int i(0); i < sizeof(uint64_buffer) / sizeof(uint64_buffer[0]); ++i) {
+    for(size_t i(0); i < sizeof(uint64_buffer) / sizeof(uint64_buffer[0]); ++i) {
         uint64_t r(static_cast<uint64_t>(my_rand()));
         uint64_buffer[i] = r;
         QtCassandra::appendUInt64Value(array, uint64_buffer[i]);
-        if(array.size() != sizeof(uint64_t) * (i + 1)) {
+        if(static_cast<size_t>(array.size()) != sizeof(uint64_t) * (i + 1)) {
             qDebug() << "error: the appendUInt64Value() generated the wrong array size" << (i + 1) << "/" << array.size() << ".";
             ++err;
         }
@@ -1534,7 +1535,7 @@ int main(int argc, char *argv[])
         }
     }
     QByteArray uint64_buf(QtCassandra::binaryValue(array, 0, sizeof(uint64_buffer)));
-    for(int i(0); i < sizeof(uint64_buffer) / sizeof(uint64_buffer[0]); ++i) {
+    for(size_t i(0); i < sizeof(uint64_buffer) / sizeof(uint64_buffer[0]); ++i) {
         uint64_t r((static_cast<int64_t>(static_cast<unsigned char>(uint64_buf.at(i * sizeof(uint64_t) + 0))) << 56)
                  + (static_cast<int64_t>(static_cast<unsigned char>(uint64_buf.at(i * sizeof(uint64_t) + 1))) << 48)
                  + (static_cast<int64_t>(static_cast<unsigned char>(uint64_buf.at(i * sizeof(uint64_t) + 2))) << 40)
@@ -2175,8 +2176,8 @@ int main(int argc, char *argv[])
     }
 
     for(int i(0); i < 65536; ++i) {
-        int32_t a(my_rand());
-        int32_t b(my_rand());
+        //int32_t a(my_rand()); // shadow and unused
+        //int32_t b(my_rand()); // shadow and unused
         int sza(my_rand() & 3), szb(sza);
         if(sza == 0) {
             sza = my_rand() % 3 + 1;
@@ -2359,17 +2360,26 @@ int main(int argc, char *argv[])
     qDebug() << "+ Testing timestamp";
     value.setTimestampMode(QtCassandra::QCassandraValue::TIMESTAMP_MODE_CASSANDRA);
     if(QtCassandra::QCassandraValue::TIMESTAMP_MODE_CASSANDRA != value.timestampMode()) {
+#pragma GCC push
+#pragma GCC diagnostic ignored "-Wsign-promo"
         qDebug() << "error: the timestampMode() value does not match" << QtCassandra::QCassandraValue::TIMESTAMP_MODE_CASSANDRA << "; Got" << value.timestampMode() << "instead.";
+#pragma GCC pop
         ++err;
     }
     value.setTimestampMode(QtCassandra::QCassandraValue::TIMESTAMP_MODE_AUTO);
     if(QtCassandra::QCassandraValue::TIMESTAMP_MODE_AUTO != value.timestampMode()) {
+#pragma GCC push
+#pragma GCC diagnostic ignored "-Wsign-promo"
         qDebug() << "error: the timestampMode() value does not match" << QtCassandra::QCassandraValue::TIMESTAMP_MODE_AUTO << "; Got" << value.timestampMode() << "instead.";
+#pragma GCC pop
         ++err;
     }
     try {
         value.setTimestampMode(QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED);
+#pragma GCC push
+#pragma GCC diagnostic ignored "-Wsign-promo"
         qDebug() << "error: timestampMode() worked with" << QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED << "(Defined)";
+#pragma GCC pop
         ++err;
     }
     catch(const std::runtime_error&) {
@@ -2386,7 +2396,10 @@ int main(int argc, char *argv[])
             ++err;
         }
         if(QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED != value.timestampMode()) {
+#pragma GCC push
+#pragma GCC diagnostic ignored "-Wsign-promo"
             qDebug() << "error: the timestampMode() value does not match" << QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED << "; Got" << value.timestampMode() << "instead.";
+#pragma GCC pop
             ++err;
         }
     }

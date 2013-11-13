@@ -205,7 +205,7 @@ int QCassandraRow::cellCount(const QCassandraColumnPredicate& column_predicate)
     if(f_table == NULL) {
         throw std::runtime_error("row was dropped and is not attached to a table anymore");
     }
-    f_table->getCellCount(f_key, column_predicate);
+    return f_table->getCellCount(f_key, column_predicate);
 }
 
 /** \brief Read the cells as defined by a default column predicate.
@@ -966,12 +966,12 @@ const QCassandraCell& QCassandraRow::operator [] (const QUuid& column_uuid) cons
  */
 const QCassandraCell& QCassandraRow::operator [] (const QByteArray& column_key) const
 {
-    const QCassandraCell *cell = findCell(column_key).data();
-    if(cell == NULL) {
+    const QCassandraCell *p_cell = findCell(column_key).data();
+    if(p_cell == NULL) {
         throw std::runtime_error("named column while retrieving a cell was not found, cannot return a reference");
     }
 
-    return *cell;
+    return *p_cell;
 }
 
 /** \brief Clear the cached cells.

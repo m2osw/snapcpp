@@ -36,7 +36,10 @@
 
 #include "QtCassandra/QCassandraColumnDefinition.h"
 
+#pragma GCC push
+#pragma GCC diagnostic ignored "-Wundef"
 #include "thrift-gencpp-cassandra/cassandra_types.h"
+#pragma GCC pop
 #include <stdexcept>
 
 namespace QtCassandra

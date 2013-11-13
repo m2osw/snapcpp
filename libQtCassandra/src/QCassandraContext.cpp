@@ -562,12 +562,12 @@ QSharedPointer<QCassandraTable> QCassandraContext::findTable(const QString& tabl
  */
 QCassandraTable& QCassandraContext::operator [] (const QString& table_name)
 {
-    QCassandraTable *table = findTable(table_name).data();
-    if(table == NULL) {
+    QCassandraTable *ptable = findTable(table_name).data();
+    if(ptable == NULL) {
         throw std::runtime_error("named table was not found, cannot return a reference");
     }
 
-    return *table;
+    return *ptable;
 }
 
 /** \brief Retrieve a constant table reference.
@@ -590,12 +590,12 @@ QCassandraTable& QCassandraContext::operator [] (const QString& table_name)
  */
 const QCassandraTable& QCassandraContext::operator [] (const QString& table_name) const
 {
-    const QCassandraTable *table(findTable(table_name).data());
-    if(table == NULL) {
+    const QCassandraTable *ptable(findTable(table_name).data());
+    if(ptable == NULL) {
         throw std::runtime_error("named table was not found, cannot return a reference");
     }
 
-    return *table;
+    return *ptable;
 }
 
 /** \brief Set the replication factor.
@@ -1017,10 +1017,10 @@ void QCassandraContext::dropTable(const QString& table_name)
  *
  * \sa QCassandra::synchronizeSchemaVersions()
  */
-void QCassandraContext::createTable(const QCassandraTable *table)
+void QCassandraContext::createTable(const QCassandraTable *ptable)
 {
     makeCurrent();
-    f_cassandra->getPrivate()->createTable(table);
+    f_cassandra->getPrivate()->createTable(ptable);
 }
 
 /** \brief Update a Cassandra table.
@@ -1042,10 +1042,10 @@ void QCassandraContext::createTable(const QCassandraTable *table)
  *
  * \sa QCassandra::synchronizeSchemaVersions()
  */
-void QCassandraContext::updateTable(const QCassandraTable *table)
+void QCassandraContext::updateTable(const QCassandraTable *ptable)
 {
     makeCurrent();
-    f_cassandra->getPrivate()->updateTable(table);
+    f_cassandra->getPrivate()->updateTable(ptable);
 }
 
 /** \brief Truncate a Cassandra table.
@@ -1055,10 +1055,10 @@ void QCassandraContext::updateTable(const QCassandraTable *table)
  *
  * \param[in] table  The table to drop from the Cassandra server.
  */
-void QCassandraContext::truncateTable(const QCassandraTable *table)
+void QCassandraContext::truncateTable(const QCassandraTable *ptable)
 {
     makeCurrent();
-    f_cassandra->getPrivate()->truncateTable(table);
+    f_cassandra->getPrivate()->truncateTable(ptable);
 }
 
 /** \brief Insert a new value in the Cassandra database.
@@ -1191,10 +1191,10 @@ int32_t QCassandraContext::getCellCount(const QString& table_name, const QByteAr
  *
  * \return The number of columns read from Cassandra.
  */
-uint32_t QCassandraContext::getColumnSlice(QCassandraTable& table, const QByteArray& row_key, QCassandraColumnPredicate& column_predicate)
+uint32_t QCassandraContext::getColumnSlice(QCassandraTable& rtable, const QByteArray& row_key, QCassandraColumnPredicate& column_predicate)
 {
     makeCurrent();
-    return f_cassandra->getPrivate()->getColumnSlice(table, row_key, column_predicate);
+    return f_cassandra->getPrivate()->getColumnSlice(rtable, row_key, column_predicate);
 }
 
 /** \brief Remove a cell from the Cassandra database.
@@ -1228,10 +1228,10 @@ void QCassandraContext::remove(const QString& table_name, const QByteArray& row_
  *
  * \return The number of rows read on this call.
  */
-uint32_t QCassandraContext::getRowSlices(QCassandraTable& table, QCassandraRowPredicate& row_predicate)
+uint32_t QCassandraContext::getRowSlices(QCassandraTable& rtable, QCassandraRowPredicate& row_predicate)
 {
     makeCurrent();
-    return f_cassandra->getPrivate()->getRowSlices(table, row_predicate);
+    return f_cassandra->getPrivate()->getRowSlices(rtable, row_predicate);
 }
 
 /** \brief Clear the context cache.

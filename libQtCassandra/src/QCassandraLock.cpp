@@ -706,7 +706,7 @@ bool QCassandraLock::lock(const QByteArray& object_name)
             pause.tv_nsec = 100000000; // 100ms
             nanosleep(&pause, NULL);
 
-            return QCassandra::timeofday() < f_limit;
+            return static_cast<uint64_t>(QCassandra::timeofday()) < f_limit;
         }
 
     private:
@@ -904,7 +904,7 @@ bool QCassandraLock::lock(const QByteArray& object_name)
 
         if(jticket > our_ticket
         || (jticket == our_ticket && jhost_id > host_id)
-        || (jticket == our_ticket && jhost_id == host_id && jpid >= pid))
+        || (jticket == our_ticket && jhost_id == host_id && jpid >= static_cast<uint32_t>(pid)))
         {
             // do not wait on ourself
             //

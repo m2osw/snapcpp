@@ -235,15 +235,15 @@ const QCassandraValue& QCassandraCell::value() const
  *
  * \param[in] value  The new value for this cell.
  */
-void QCassandraCell::setValue(const QCassandraValue& value)
+void QCassandraCell::setValue(const QCassandraValue& val)
 {
-    if(!f_cached || f_value != value) {
+    if(!f_cached || f_value != val) {
         if(f_row == NULL) {
             throw std::runtime_error("this cell was dropped, it cannot be used anymore.");
         }
         // TODO: if the cell represents a counter, it should be resized
         //       to a 64 bit value to work in all places
-        f_value = value;
+        f_value = val;
         f_row->insertValue(f_key, f_value);
     }
     f_cached = true;
@@ -285,9 +285,9 @@ void QCassandraCell::setValue(const QCassandraValue& value)
  *
  * \param[in] value  The new value to assign to this cell.
  */
-void QCassandraCell::assignValue(const QCassandraValue& value)
+void QCassandraCell::assignValue(const QCassandraValue& val)
 {
-    f_value = value;
+    f_value = val;
     f_cached = true;
 }
 
@@ -312,9 +312,9 @@ void QCassandraCell::assignValue(const QCassandraValue& value)
  * \sa clearCache()
  * \sa setValue()
  */
-QCassandraCell& QCassandraCell::operator = (const QCassandraValue& value)
+QCassandraCell& QCassandraCell::operator = (const QCassandraValue& val)
 {
-    setValue(value);
+    setValue(val);
     return *this;
 }
 
@@ -355,7 +355,7 @@ QCassandraCell::operator QCassandraValue () const
  *
  * \return The expected value defined in the cell.
  */
-void QCassandraCell::add(int64_t value)
+void QCassandraCell::add(int64_t val)
 {
     // we update the value in memory as it is expected to be
     int64_t r(0);
@@ -364,19 +364,19 @@ void QCassandraCell::add(int64_t value)
         // increment it in memory; for this reason we don't do it at this point
         switch(f_value.size()) {
         case 8:
-            r = f_value.int64Value() + value;
+            r = f_value.int64Value() + val;
             break;
 
         case 4:
-            r = f_value.int32Value() + value;
+            r = f_value.int32Value() + val;
             break;
 
         case 2:
-            r = f_value.int16Value() + value;
+            r = f_value.int16Value() + val;
             break;
 
         case 1:
-            r = f_value.signedCharValue() + value;
+            r = f_value.signedCharValue() + val;
             break;
 
         default:
@@ -388,7 +388,7 @@ void QCassandraCell::add(int64_t value)
         f_cached = true;
     }
 
-    f_row->addValue(f_key, value);
+    f_row->addValue(f_key, val);
 }
 
 /** \brief Add to a counter.
@@ -414,9 +414,9 @@ void QCassandraCell::add(int64_t value)
  * \sa clearCache()
  * \sa add()
  */
-QCassandraCell& QCassandraCell::operator += (int64_t value)
+QCassandraCell& QCassandraCell::operator += (int64_t val)
 {
-    add(value);
+    add(val);
     return *this;
 }
 
@@ -485,9 +485,9 @@ QCassandraCell& QCassandraCell::operator ++ (int)
  * \sa clearCache()
  * \sa add()
  */
-QCassandraCell& QCassandraCell::operator -= (int64_t value)
+QCassandraCell& QCassandraCell::operator -= (int64_t val)
 {
-    add(-value);
+    add(-val);
     return *this;
 }
 
@@ -633,9 +633,9 @@ int64_t QCassandraCell::timestamp() const
  * \sa timestamp()
  * \sa QCassandraValue::setTimestamp()
  */
-void QCassandraCell::setTimestamp(int64_t timestamp)
+void QCassandraCell::setTimestamp(int64_t val)
 {
-    f_value.setTimestamp(timestamp);
+    f_value.setTimestamp(val);
 }
 
 } // namespace QtCassandra

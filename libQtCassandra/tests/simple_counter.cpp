@@ -150,9 +150,12 @@ int main(int argc, char *argv[])
     qDebug() << "Size of counter should be 8, it is" << cassandra["qt_cassandra_test_sc"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")][QString("size")].value().size();
     qDebug() << "Read value should be -4611686018427387907, it is" << cassandra["qt_cassandra_test_sc"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")][QString("size")].value().int64Value();
     cassandra["qt_cassandra_test_sc"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")][QString("size")].clearCache();
+#pragma GCC push
+#pragma GCC diagnostic ignored "-Wsign-compare"
     if(cassandra["qt_cassandra_test_sc"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")][QString("size")].value().int64Value() != 0xBFFFFFFFFFFFFFFD) {
         ++err;
     }
+#pragma GCC pop
 
     context->drop();
     cassandra.synchronizeSchemaVersions();

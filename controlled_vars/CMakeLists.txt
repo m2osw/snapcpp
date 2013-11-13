@@ -44,14 +44,22 @@ project(controlled_vars)
 # Basic static analysis done by the compiler, you may remove that line if
 # you have problems compiling (specifically the -Werror, -pedantic, and
 # -std=c++0x flags)
-set(CMAKE_CXX_FLAGS "-Werror -Wall -Wextra -pedantic -std=c++0x -Wcast-align -Wcast-qual -Wctor-dtor-privacy -Wdisabled-optimization -Wformat=2 -Winit-self -Wlogical-op -Wmissing-include-dirs -Wnoexcept -Wold-style-cast -Woverloaded-virtual -Wredundant-decls -Wshadow -Wstrict-null-sentinel -Wstrict-overflow=5 -Wswitch-default -Wundef -Wno-unused -Wno-variadic-macros -Wno-parentheses -fdiagnostics-show-option")
+#set(CMAKE_CXX_FLAGS "-Werror -Wall -Wextra -pedantic -std=c++0x -Wcast-align -Wcast-qual -Wctor-dtor-privacy -Wdisabled-optimization -Wformat=2 -Winit-self -Wlogical-op -Wmissing-include-dirs -Wnoexcept -Wold-style-cast -Woverloaded-virtual -Wredundant-decls -Wshadow -Wstrict-null-sentinel -Wstrict-overflow=5 -Wswitch-default -Wundef -Wno-unused -Wno-variadic-macros -Wno-parentheses -fdiagnostics-show-option")
 
 ## Include support modules
 ##
 if( NOT CMAKE_MODULE_PATH )
-	set( CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake )
+    find_path( CMAKE_DIRECTORY_PATH cmake
+        PATHS
+            ${PROJECT_SOURCE_DIR}
+            ${PROJECT_SOURCE_DIR}/..
+        NO_DEFAULT_PATH
+    )
+    set( CMAKE_MODULE_PATH ${CMAKE_DIRECTORY_PATH}/cmake )
+    message( "Found cmake in ${CMAKE_MODULE_PATH}" )
 endif()
-include( doxygen )
+include( 00-common )
+include( doxygen   )
 
 include(CheckIncludeFiles)
 check_include_files(unistd.h HAVE_UNISTD_H)

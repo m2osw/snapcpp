@@ -25,11 +25,20 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 #
+if( NOT COMMON_INCLUDED )
+set( COMMON_INCLUDED TRUE )
+
 set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -Werror -Wall -Wextra -pedantic -Wcast-align -Wcast-qual -Wctor-dtor-privacy -Wdisabled-optimization   -Winit-self -Wlogical-op -Wmissing-include-dirs    -Woverloaded-virtual -Wredundant-decls -Wshadow -Wsign-promo -Wstrict-null-sentinel    -Wstrict-overflow=1 -Wundef -Wno-unused -Wunused-variable -Wno-variadic-macros -Wno-parentheses -Wno-unknown-pragmas -Wwrite-strings -Wswitch -fdiagnostics-show-option" )
 set( CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror -Wall -Wextra" )
 
 set( CMAKE_CXX_FLAGS_DEBUG   "${CMAKE_CXX_FLAGS_DEBUG} -g -O0" )
 set( CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3" )
+
+if( ${CMAKE_SYSTEM_NAME} STREQUAL "Linux" )
+    set( SNAP_LINUX TRUE )
+else()
+    message( WARNING "You may have problems trying to compile this code on non-*nix platforms." )
+endif()
 
 set( ${PROJECT_NAME}_COVERAGE FALSE CACHE STRING "Turn on coverage" )
 
@@ -52,6 +61,8 @@ if( ${${PROJECT_NAME}_COVERAGE} )
 
 	set( COVERAGE_LIBS gcov )
 endif()
+
+endif( NOT COMMON_INCLUDED )
 
 # vim: ts=4 sw=4 expandtab
 

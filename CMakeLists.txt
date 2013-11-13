@@ -41,6 +41,8 @@ project( snapwebsites_main )
 
 set( CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake )
 
+include( 00-common )
+
 # This will cause us to look in the 3rdParty area for thrift and other 3rdparty libs
 #
 link_directories( ${CMAKE_BINARY_DIR}/dist/lib/ )

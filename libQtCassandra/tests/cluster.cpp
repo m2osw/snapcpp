@@ -139,9 +139,12 @@ int main(int argc, char *argv[])
                     break;
 
                 }
+#pragma GCC push
+#pragma GCC diagnostic ignored "-Wsign-promo"
                 qDebug() << "        Index Type" << (*col)->indexType()
                                                  << ("(" + type + ")");
                 qDebug() << "        Index Name" << (*col)->indexName();
+#pragma GCC pop
             }
         }
     }

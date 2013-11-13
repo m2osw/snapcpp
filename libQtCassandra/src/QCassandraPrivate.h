@@ -33,8 +33,11 @@
  *      TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
  *      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
+#pragma once
 #ifndef QCASSANDRA_PRIVATE_H
 #define QCASSANDRA_PRIVATE_H
+
+#pragma GCC system_header
 
 #include "QtCassandra/QCassandra.h"
 #include "QtCassandra/QCassandraColumnPredicate.h"
@@ -42,9 +45,9 @@
 // In thrift 0.8.0
 //   . sockaddr is not defined if we don't include netinet/in.h first
 #include <netinet/in.h>
-
 #include "thrift-gencpp-cassandra/Cassandra.h"
 #include "thrift-gencpp-cassandra/cassandra_types.h"
+
 #include <stdexcept>
 
 namespace apache { namespace thrift { namespace transport {

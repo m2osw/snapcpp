@@ -112,7 +112,7 @@ int main(int argc, char *argv[])
     }
 
     // now that it's created, we can access it with the [] operator
-    QtCassandra::QCassandraTable& t(cassandra["qt_cassandra_test_context"]["qt_cassandra_test_table"]);
+    //QtCassandra::QCassandraTable& t(cassandra["qt_cassandra_test_context"]["qt_cassandra_test_table"]);
 
     context->drop();
     cassandra.synchronizeSchemaVersions();

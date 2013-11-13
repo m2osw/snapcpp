@@ -34,21 +34,29 @@
 #      TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 #      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
+cmake_minimum_required(VERSION 2.8)
 
 set(LIBQTSERIALIZATION_VERSION_MAJOR 0)
 set(LIBQTSERIALIZATION_VERSION_MINOR 1)
 set(LIBQTSERIALIZATION_VERSION_PATCH 0)
 
-cmake_minimum_required(VERSION 2.8)
 project(libQtSerialization)
 
 ## Include support modules
 ##
 if( NOT CMAKE_MODULE_PATH )
-    set( CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake )
+    find_path( CMAKE_DIRECTORY_PATH cmake
+        PATHS
+            ${PROJECT_SOURCE_DIR}
+            ${PROJECT_SOURCE_DIR}/..
+        NO_DEFAULT_PATH
+    )
+    set( CMAKE_MODULE_PATH ${CMAKE_DIRECTORY_PATH}/cmake )
+    message( "Found cmake in ${CMAKE_MODULE_PATH}" )
 endif()
-include( doxygen )
-include( qt      )
+include( 00-common )
+include( doxygen   )
+include( qt        )
 
 SnapIncludeQt4( QtCore )
 
