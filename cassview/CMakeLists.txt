@@ -47,13 +47,13 @@ add_definitions( -std=c++0x )
 ## Include support modules
 ##
 if( NOT CMAKE_MODULE_PATH )
-    find_path( CMAKE_DIRECTORY_PATH cmake
+    find_path( CMAKE_DIRECTORY_PATH snapCMakeModules
         PATHS
             ${PROJECT_SOURCE_DIR}
             ${PROJECT_SOURCE_DIR}/..
         NO_DEFAULT_PATH
     )
-    set( CMAKE_MODULE_PATH ${CMAKE_DIRECTORY_PATH}/cmake )
+    set( CMAKE_MODULE_PATH ${CMAKE_DIRECTORY_PATH}/snapCMakeModules )
     message( "Found cmake in ${CMAKE_MODULE_PATH}" )
 endif()
 get_property( 3RDPARTY_INCLUDED GLOBAL PROPERTY 3RDPARTY_INCLUDED )

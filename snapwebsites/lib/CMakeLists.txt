@@ -42,12 +42,12 @@ configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/snapwebsites.h.in ${CMAKE_CURRENT_BI
 
 SnapIncludeQt4( QtCore QtXml )
 
-include( log4cplus )
+find_package( log4cplus REQUIRED )
 
 include_directories(
     ${QT_INCLUDES}
     ${CMAKE_CURRENT_BINARY_DIR}/../../libtld/include
-    ${log4cplus_INCLUDE_PATH}
+    ${LOG4CPLUS_INCLUDE_DIRS}
 )
 
 QT4_ADD_RESOURCES(SNAP_LIBRARY_RESOURCES_RCC
@@ -72,9 +72,8 @@ add_library( ${PROJECT_NAME} SHARED
 
 target_link_libraries( ${PROJECT_NAME}
     QtSerialization
-    log4cplus
     ${QT_LIBRARIES}
-    ${log4cplus_LIBRARY}
+    ${LOG4CPLUS_LIBRARIES}
 )
 
 install(
