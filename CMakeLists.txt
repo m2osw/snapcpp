@@ -45,16 +45,16 @@ set( CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake )
 #
 link_directories( ${CMAKE_BINARY_DIR}/dist/lib/ )
 
-add_subdirectory( 3rdParty           )
-add_subdirectory( controlled_vars    )
-add_subdirectory( libtld             )
-add_subdirectory( libQtCassandra     )
-add_subdirectory( libQtSerialization )
-add_subdirectory( snapwebsites       )
+add_subdirectory(  3rdParty           )
+add_subdirectory(  controlled_vars    )
+add_subdirectory(  libtld             )
+add_subdirectory(  libQtCassandra     )
+add_subdirectory(  libQtSerialization )
+add_subdirectory(  snapwebsites       )
 #add_subdirectory( backup             )
-add_subdirectory( googlerank         )
-add_subdirectory( iplock             )
-add_subdirectory( CassandraBrowse    )
+add_subdirectory(  googlerank         )
+add_subdirectory(  iplock             )
+add_subdirectory(  cassview           )
 
 ##
 ## Packaging

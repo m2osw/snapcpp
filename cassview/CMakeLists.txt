@@ -35,12 +35,12 @@
 #      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
-set(CASSANDRABROWSE_VERSION_MAJOR 0)
-set(CASSANDRABROWSE_VERSION_MINOR 4)
-set(CASSANDRABROWSE_VERSION_PATCH 1)
+set(CASSVIEW_VERSION_MAJOR 0)
+set(CASSVIEW_VERSION_MINOR 4)
+set(CASSVIEW_VERSION_PATCH 1)
 
 cmake_minimum_required(VERSION 2.8)
-project(CassandraBrowse)
+project(cassview)
 
 add_definitions( -std=c++0x )
 
@@ -77,22 +77,22 @@ add_subdirectory(src)
 #add_subdirectory(tests)
 #add_subdirectory(doc)
 
-set(CPACK_PACKAGE_NAME "CassandraBrowse")
-set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "CassandraBrowse -- a Qt based-application for browsing a Cassandra database.")
+set(CPACK_PACKAGE_NAME "cassview")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "cassview -- a Qt based-application for browsing a Cassandra database.")
 set(CPACK_PACKAGE_VENDOR "Made to Order Software Corporation")
 set(CPACK_PACKAGE_CONTACT "doug@m2osw.com")
 set(CPACK_RESOURCE_FILE_LICENSE "${${PROJECT_NAME}_SOURCE_DIR}/LICENSE.txt")
 set(CPACK_GENERATOR "TGZ" "DEB")
 set(CPACK_SOURCE_GENERATOR "TGZ")
 set(CPACK_SOURCE_IGNORE_FILES "/CVS/;/work-files/;/.svn/;.swp$;.*~;cscope.*;/tmp/;BUILD;Build;build")
-set(CPACK_PACKAGE_VERSION "${CASSANDRABROWSE_VERSION_MAJOR}.${CASSANDRABROWSE_VERSION_MINOR}.${CASSANDRABROWSE_VERSION_PATCH}")
-set(CPACK_PACKAGE_VERSION_MAJOR "${CASSANDRABROWSE_VERSION_MAJOR}")
-set(CPACK_PACKAGE_VERSION_MINOR "${CASSANDRABROWSE_VERSION_MINOR}")
-set(CPACK_PACKAGE_VERSION_PATCH "${CASSANDRABROWSE_VERSION_PATCH}")
-set(CPACK_SOURCE_PACKAGE_FILE_NAME "cassandrabrowse-${CASSANDRABROWSE_VERSION_MAJOR}.${CASSANDRABROWSE_VERSION_MINOR}.${CASSANDRABROWSE_VERSION_PATCH}")
-set(CPACK_PACKAGE_EXECUTABLES "cassandrabrowse")
+set(CPACK_PACKAGE_VERSION "${CASSVIEW_VERSION_MAJOR}.${CASSVIEW_VERSION_MINOR}.${CASSVIEW_VERSION_PATCH}")
+set(CPACK_PACKAGE_VERSION_MAJOR "${CASSVIEW_VERSION_MAJOR}")
+set(CPACK_PACKAGE_VERSION_MINOR "${CASSVIEW_VERSION_MINOR}")
+set(CPACK_PACKAGE_VERSION_PATCH "${CASSVIEW_VERSION_PATCH}")
+set(CPACK_SOURCE_PACKAGE_FILE_NAME "cassview-${CASSVIEW_VERSION_MAJOR}.${CASSVIEW_VERSION_MINOR}.${CASSVIEW_VERSION_PATCH}")
+set(CPACK_PACKAGE_EXECUTABLES "cassview")
 set(CPACK_DEBIAN_PACKAGE_SECTION "libs")
-set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "http://snapwebsites.org/project/cassandrabrowse")
+set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "http://snapwebsites.org/project/cassview")
 set(CPACK_DEBIAN_PACKAGE_ENHANCES "libqtcore4") # need to add "cassandra/thrift" once available
 # I'm not too sure how we can add this one... components?
 # See http://www.vtk.org/Wiki/CMake:Component_Install_With_CPack
