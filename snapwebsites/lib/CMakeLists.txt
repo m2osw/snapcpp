@@ -47,7 +47,7 @@ find_package( log4cplus REQUIRED )
 include_directories(
     ${QT_INCLUDES}
     ${CMAKE_CURRENT_BINARY_DIR}/../../libtld/include
-    ${LOG4CPLUS_INCLUDE_DIRS}
+    ${LOG4CPLUS_INCLUDE_DIR}
 )
 
 QT4_ADD_RESOURCES(SNAP_LIBRARY_RESOURCES_RCC
@@ -73,7 +73,7 @@ add_library( ${PROJECT_NAME} SHARED
 target_link_libraries( ${PROJECT_NAME}
     QtSerialization
     ${QT_LIBRARIES}
-    ${LOG4CPLUS_LIBRARIES}
+    ${LOG4CPLUS_LIBRARY}
 )
 
 install(
