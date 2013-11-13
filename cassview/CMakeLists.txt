@@ -62,9 +62,10 @@ if( NOT 3RDPARTY_INCLUDED )
 endif()
 include( 00-common )
 include( doxygen   )
-include( qt        )
 
-SnapIncludeQt4( QtCore QtNetwork QtGui )
+find_package( Qt4 4.8.1 REQUIRED QtCore QtNetwork QtGui )
+include( ${QT_USE_FILE} )
+add_definitions( ${QT_DEFINITIONS} )
 
 include_directories( 
     "${PROJECT_SOURCE_DIR}"

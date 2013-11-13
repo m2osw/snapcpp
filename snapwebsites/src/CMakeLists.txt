@@ -40,7 +40,9 @@
 ##
 ## The Snap! Server
 ##
-SnapIncludeQt4( QtCore QtNetwork QtXml QtXmlPatterns )
+find_package( Qt4 4.8.1 REQUIRED QtCore QtNetwork QtXml QtXmlPatterns )
+include( ${QT_USE_FILE} )
+add_definitions( ${QT_DEFINITIONS} )
 
 project(snapserver)
 

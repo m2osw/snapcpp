@@ -60,10 +60,11 @@ if( NOT 3RDPARTY_INCLUDED )
 endif()
 include( 00-common )
 include( doxygen )
-include( qt      )
 include( thrift  )
 
-SnapIncludeQt4( QtCore QtNetwork )
+find_package( Qt4 4.8.1 REQUIRED QtCore QtXml )
+include( ${QT_USE_FILE} )
+add_definitions( ${QT_DEFINITIONS} )
 
 # This will cause us to look in the 3rdParty area for thrift and other 3rdparty libs
 #

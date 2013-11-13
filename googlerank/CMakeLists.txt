@@ -65,8 +65,9 @@ endif()
 ##
 ## Find Qt4
 ##
-include( qt )
-SnapIncludeQt4( QtCore QtNetwork )
+find_package( Qt4 4.8.1 REQUIRED QtCore QtNetwork )
+include( ${QT_USE_FILE} )
+add_definitions( ${QT_DEFINITIONS} )
 include_directories( ${QT_INCLUDES} )
 
 ##

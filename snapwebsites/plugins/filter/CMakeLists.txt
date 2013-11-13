@@ -37,7 +37,10 @@
 
 project(plugin_filter)
 
-SnapIncludeQt4( QtCore QtXml )
+find_package( Qt4 4.8.1 REQUIRED QtCore QtXml )
+include( ${QT_USE_FILE} )
+add_definitions( ${QT_DEFINITIONS} )
+
 include_directories(
     "${CMAKE_CURRENT_SOURCE_DIR}"
     ${QT_INCLUDES}

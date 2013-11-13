@@ -36,7 +36,10 @@
 
 project(plugin_javascript)
 
-SnapIncludeQt4( QtCore QtScript )
+find_package( Qt4 4.8.1 REQUIRED QtCore QtScript )
+include( ${QT_USE_FILE} )
+add_definitions( ${QT_DEFINITIONS} )
+
 include_directories(
     "${CMAKE_CURRENT_SOURCE_DIR}"
     ${QT_INCLUDES}

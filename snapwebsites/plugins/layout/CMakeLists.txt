@@ -37,7 +37,10 @@
 
 project(plugin_layout)
 
-SnapIncludeQt4( QtCore )
+find_package( Qt4 4.8.1 REQUIRED QtCore )
+include( ${QT_USE_FILE} )
+add_definitions( ${QT_DEFINITIONS} )
+
 include_directories(
     "${CMAKE_CURRENT_SOURCE_DIR}"
     ${QT_INCLUDES}

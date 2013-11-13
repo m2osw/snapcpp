@@ -40,9 +40,10 @@ project(libsnapwebsites)
 # Put the version in the header file
 configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/snapwebsites.h.in ${CMAKE_CURRENT_BINARY_DIR}/snapwebsites.h )
 
-SnapIncludeQt4( QtCore QtXml )
-
 find_package( log4cplus REQUIRED )
+find_package( Qt4 4.8.1 REQUIRED QtCore QtXml )
+include( ${QT_USE_FILE} )
+add_definitions( ${QT_DEFINITIONS} )
 
 include_directories(
     ${QT_INCLUDES}

@@ -15,11 +15,6 @@ find_library( LOG4CPLUS_LIBRARY log4cplus
            HINTS /usr/lib /usr/local/lib
 		 )
 
-# No need for these
-#
-#set( LOG4CPLUS_INCLUDE_DIRS ${LOG4CPLUS_INCLUDE_DIR} )
-#set( LOG4CPLUS_LIBRARIES ${LOG4CPLUS_LIBRARY} )
-
 include( FindPackageHandleStandardArgs )
 # handle the QUIETLY and REQUIRED arguments and set LOG4CPLUS_FOUND to TRUE
 # if all listed variables are TRUE

@@ -35,7 +35,9 @@
 #      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
-SnapIncludeQt4( QtCore QtNetwork QtXml QtXmlPatterns )
+find_package( Qt4 4.8.1 REQUIRED QtCore QtNetwork QtXml QtXmlPatterns )
+include( ${QT_USE_FILE} )
+add_definitions( ${QT_DEFINITIONS} )
 include_directories( ${QT_INCLUDES} )
 
 ##
@@ -43,12 +45,7 @@ include_directories( ${QT_INCLUDES} )
 ##
 project(test_snap_cgi)
 
-include_directories(
-    #"${CMAKE_SOURCE_DIR}/lib"
-    #"${CMAKE_BINARY_DIR}/lib"
-    "${CMAKE_CURRENT_SOURCE_DIR}"
-    ${QT_INCLUDES}
-)
+include_directories( "${CMAKE_CURRENT_SOURCE_DIR}" )
 
 
 add_executable(test_snap_cgi

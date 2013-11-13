@@ -39,7 +39,9 @@
 
 project(plugin_search)
 
-SnapIncludeQt4( QtCore )
+find_package( Qt4 4.8.1 REQUIRED QtCore )
+include( ${QT_USE_FILE} )
+add_definitions( ${QT_DEFINITIONS} )
 
 include_directories(
     ${QT_INCLUDES}

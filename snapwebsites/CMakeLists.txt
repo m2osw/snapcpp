@@ -74,7 +74,6 @@ endif()
 include( 00-common )
 include( doxygen   )
 include( thrift    )
-include( qt        )
 
 include_directories( 
     "${PROJECT_SOURCE_DIR}"

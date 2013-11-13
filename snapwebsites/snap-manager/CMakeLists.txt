@@ -40,13 +40,14 @@
 ## The Snap! Manager
 ##
 
-
-SnapIncludeQt4(
+find_package( Qt4 4.8.1 REQUIRED 
     QtCore
     QtNetwork
     QtGui
     QtWebKit
 )
+include( ${QT_USE_FILE} )
+add_definitions( ${QT_DEFINITIONS} )
 
 project(snap-manager)
 
