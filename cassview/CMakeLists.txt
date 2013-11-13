@@ -47,22 +47,28 @@ add_definitions( -std=c++0x )
 ## Include support modules
 ##
 if( NOT CMAKE_MODULE_PATH )
-    set( CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake )
+    find_path( CMAKE_DIRECTORY_PATH cmake
+        PATHS
+            ${PROJECT_SOURCE_DIR}
+            ${PROJECT_SOURCE_DIR}/..
+        NO_DEFAULT_PATH
+    )
+    set( CMAKE_MODULE_PATH ${CMAKE_DIRECTORY_PATH}/cmake )
+    message( "Found cmake in ${CMAKE_MODULE_PATH}" )
 endif()
 get_property( 3RDPARTY_INCLUDED GLOBAL PROPERTY 3RDPARTY_INCLUDED )
 if( NOT 3RDPARTY_INCLUDED )
     add_subdirectory( 3rdParty )
 endif()
-include( doxygen )
-include( qt      )
+include( 00-common )
+include( doxygen   )
+include( qt        )
 
 SnapIncludeQt4( QtCore QtNetwork QtGui )
 
 include_directories( 
     "${PROJECT_SOURCE_DIR}"
-    "${PROJECT_SOURCE_DIR}/include"
     "${PROJECT_BINARY_DIR}"
-    "${PROJECT_BINARY_DIR}/include"
     "${libQtCassandra_SOURCE_DIR}/include"
     "${libQtCassandra_BINARY_DIR}/include"
     "${CMAKE_BINARY_DIR}"

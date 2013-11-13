@@ -801,7 +801,7 @@ void users::create_password_salt(QByteArray& salt)
     // we use 16 bytes before and 16 bytes after the password
     // so create a salt of SALT_SIZE bytes (256 bits at time of writing)
     unsigned char buf[SALT_SIZE];
-    int r(RAND_bytes(buf, sizeof(buf)));
+    /*int r(*/ RAND_bytes(buf, sizeof(buf));
     salt.clear();
     salt.append(reinterpret_cast<char *>(buf), sizeof(buf));
 }

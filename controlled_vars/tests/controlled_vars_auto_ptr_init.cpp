@@ -52,7 +52,7 @@ int main()
 	c.swap(z);
 	printf("c = %p   z = %p\n", c.get(), z.get());
 	z.swap(c);
-	char *g(z);
+	//char *g(z);
 	char *ptr(new char[123]);
 	controlled_vars::zpchar_t nptr(ptr);
 	// these work, but the z[5] = ... below then crashes

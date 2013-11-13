@@ -26,6 +26,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 #
+cmake_minimum_required(VERSION 2.8)
 
 ##
 ## IP Lock Version
@@ -34,8 +35,22 @@ set(IPLOCK_MAJOR 2)
 set(IPLOCK_MINOR 0)
 set(IPLOCK_PATCH 0)
 
-cmake_minimum_required(VERSION 2.8)
 project(iplock)
+
+##
+## Include common Snap! cmake modules
+##
+if( NOT CMAKE_MODULE_PATH )
+    find_path( CMAKE_DIRECTORY_PATH cmake
+        PATHS
+            ${PROJECT_SOURCE_DIR}
+            ${PROJECT_SOURCE_DIR}/..
+        NO_DEFAULT_PATH
+    )
+    set( CMAKE_MODULE_PATH ${CMAKE_DIRECTORY_PATH}/cmake )
+    message( "Found cmake in ${CMAKE_MODULE_PATH}" )
+endif()
+include( 00-common )
 
 ##
 ## IP Lock Tool

@@ -36,10 +36,7 @@
  */
 
 #include "QCassandraPrivate.h"
-#include <protocol/TBinaryProtocol.h>
-#include <transport/TSSLSocket.h>
-#include <transport/TTransportUtils.h>
-
+#include "QThriftHeaders.h"
 
 namespace QtCassandra
 {
@@ -439,7 +436,7 @@ void QCassandraPrivate::synchronizeSchemaVersions(int timeout)
             // (this should not happen unless we have unreachable nodes)
             return;
         }
-        if(QCassandra::timeofday() > limit) {
+        if( static_cast<uint32_t>(QCassandra::timeofday()) > limit ) {
             throw std::runtime_error("schema versions synchronization did not happen in 'timeout' seconds");
         }
         // The Cassandra CLI has a tight loop instead!
@@ -519,9 +516,9 @@ QString QCassandraPrivate::protocolVersion() const
 QString QCassandraPrivate::partitioner() const
 {
     mustBeConnected();
-    std::string partitioner;
-    f_client->describe_partitioner(partitioner);
-    return partitioner.c_str();
+    std::string partitioner_str;
+    f_client->describe_partitioner(partitioner_str);
+    return partitioner_str.c_str();
 }
 
 /** \brief Retrieve the snitch of the cluster.
@@ -534,9 +531,9 @@ QString QCassandraPrivate::partitioner() const
 QString QCassandraPrivate::snitch() const
 {
     mustBeConnected();
-    std::string snitch;
-    f_client->describe_snitch(snitch);
-    return snitch.c_str();
+    std::string snitch_str;
+    f_client->describe_snitch(snitch_str);
+    return snitch_str.c_str();
 }
 
 /** \brief Set the context keyspace name.
@@ -745,6 +742,9 @@ void QCassandraPrivate::insertValue(const QString& table_name, const QByteArray&
         column.__set_timestamp(value.timestamp());
         break;
 
+    case QCassandraValue::TIMESTAMP_MODE_CASSANDRA:
+#pragma message "What should we do on TIMESTAMP_MODE_CASSANDRA? g++ wants it specified in the switch stmt."
+        break;
     }
 
     if(value.ttl() != QCassandraValue::TTL_PERMANENT) {
@@ -1133,7 +1133,7 @@ uint32_t QCassandraPrivate::getRowSlices(QCassandraTable& table, QCassandraRowPr
     //    return 0;
     //}
     catch(const apache::thrift::transport::TTransportException& e) {
-        if(e.what() == "No more data to read.") {
+        if(e.what() == std::string("No more data to read.")) {
             return 0;
         }
         throw;

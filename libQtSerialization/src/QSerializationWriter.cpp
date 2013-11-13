@@ -359,7 +359,10 @@ void writeTag(QWriter& w, const QString& name, const qint8 data)
  */
 void writeTag(QWriter& w, const QString& name, const quint8 data)
 {
+#pragma GCC push
+#pragma GCC diagnostic ignored "-Wsign-promo"
     w.writeTag(name, QString("%1").arg(data));
+#pragma GCC pop
 }
 
 

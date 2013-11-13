@@ -601,9 +601,9 @@ bool QCassandraColumnRangePredicate::reversed() const
  *
  * \sa reversed()
  */
-void QCassandraColumnRangePredicate::setReversed(bool reversed)
+void QCassandraColumnRangePredicate::setReversed(bool val)
 {
-    f_reversed = reversed;
+    f_reversed = val;
 }
 
 /** \brief Return the maximum number of cells that will be returned.
@@ -635,9 +635,9 @@ int32_t QCassandraColumnRangePredicate::count() const
  *
  * \sa count()
  */
-void QCassandraColumnRangePredicate::setCount(int32_t count)
+void QCassandraColumnRangePredicate::setCount(int32_t val)
 {
-    f_count = count;
+    f_count = val;
 }
 
 /** \brief Retrieve the current status of the index flag.

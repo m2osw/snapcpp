@@ -33,8 +33,9 @@
  */
 
 #include <QtCassandra/QCassandra.h>
-#include <QtCore>
 #include <algorithm>
+
+#include "qt4.h"
 
 using namespace QtCassandra;
 

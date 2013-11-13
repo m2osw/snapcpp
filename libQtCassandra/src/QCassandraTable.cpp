@@ -257,9 +257,9 @@ QString QCassandraTable::tableName() const
  *
  * \param[in] identifier  The identifier to use for this table.
  */
-void QCassandraTable::setIdentifier(int32_t identifier)
+void QCassandraTable::setIdentifier(int32_t val)
 {
-    f_private->__set_id(identifier);
+    f_private->__set_id(val);
 }
 
 /** \brief Unset the table definition identifier.
@@ -310,9 +310,9 @@ int32_t QCassandraTable::identifier() const
  *
  * \param[in] comment  The new table comment.
  */
-void QCassandraTable::setComment(QString comment)
+void QCassandraTable::setComment(QString val)
 {
-    f_private->__set_comment(comment.toUtf8().data());
+    f_private->__set_comment(val.toUtf8().data());
 }
 
 /** \brief Unset a comment.
@@ -785,9 +785,9 @@ const QCassandraColumnDefinitions& QCassandraTable::columnDefinitions() const
  *
  * \param[in] caching  The name of the caching mode to use for this table.
  */
-void QCassandraTable::setCaching(const QString& caching)
+void QCassandraTable::setCaching(const QString& val)
 {
-    f_private->__set_caching(caching.toUtf8().data());
+    f_private->__set_caching(val.toUtf8().data());
 }
 
 /** \brief Unset the caching mode.
@@ -2967,11 +2967,11 @@ QCassandraRow& QCassandraTable::operator[] (const QByteArray& row_key)
  */
 const QCassandraRow& QCassandraTable::operator[] (const char *row_name) const
 {
-    const QCassandraRow *row(findRow(row_name).data());
-    if(row == NULL) {
+    const QCassandraRow *p_row(findRow(row_name).data());
+    if(p_row == NULL) {
         throw std::runtime_error("row does not exist so it cannot be read from");
     }
-    return *row;
+    return *p_row;
 }
 
 /** \brief Retrieve a table row.
@@ -2995,11 +2995,11 @@ const QCassandraRow& QCassandraTable::operator[] (const char *row_name) const
  */
 const QCassandraRow& QCassandraTable::operator[] (const wchar_t *row_name) const
 {
-    const QCassandraRow *row(findRow(row_name).data());
-    if(row == NULL) {
+    const QCassandraRow *p_row(findRow(row_name).data());
+    if(p_row == NULL) {
         throw std::runtime_error("row does not exist so it cannot be read from");
     }
-    return *row;
+    return *p_row;
 }
 
 /** \brief Retrieve a table row.
@@ -3022,11 +3022,11 @@ const QCassandraRow& QCassandraTable::operator[] (const wchar_t *row_name) const
  */
 const QCassandraRow& QCassandraTable::operator[] (const QString& row_name) const
 {
-    const QCassandraRow *row(findRow(row_name).data());
-    if(row == NULL) {
+    const QCassandraRow *p_row(findRow(row_name).data());
+    if(p_row == NULL) {
         throw std::runtime_error("row does not exist so it cannot be read from");
     }
-    return *row;
+    return *p_row;
 }
 
 /** \brief Retrieve a table row.
@@ -3049,11 +3049,11 @@ const QCassandraRow& QCassandraTable::operator[] (const QString& row_name) const
  */
 const QCassandraRow& QCassandraTable::operator[] (const QUuid& row_uuid) const
 {
-    const QCassandraRow *row(findRow(row_uuid).data());
-    if(row == NULL) {
+    const QCassandraRow *p_row(findRow(row_uuid).data());
+    if(p_row == NULL) {
         throw std::runtime_error("row does not exist so it cannot be read from");
     }
-    return *row;
+    return *p_row;
 }
 
 /** \brief Retrieve a table row.
@@ -3076,11 +3076,11 @@ const QCassandraRow& QCassandraTable::operator[] (const QUuid& row_uuid) const
  */
 const QCassandraRow& QCassandraTable::operator[] (const QByteArray& row_key) const
 {
-    const QCassandraRow *row(findRow(row_key).data());
-    if(row == NULL) {
+    const QCassandraRow *p_row(findRow(row_key).data());
+    if(p_row == NULL) {
         throw std::runtime_error("row does not exist so it cannot be read from");
     }
-    return *row;
+    return *p_row;
 }
 
 /** \brief Drop the named row.

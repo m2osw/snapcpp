@@ -500,7 +500,7 @@ int tcp_server::accept()
         // if this fails, we ignore the error (TODO log an INFO message)
         int optval(1);
         socklen_t optlen(sizeof(optval));
-        int r(setsockopt(f_accepted_socket, SOL_SOCKET, SO_KEEPALIVE, &optval, optlen));
+        /*int r(*/setsockopt(f_accepted_socket, SOL_SOCKET, SO_KEEPALIVE, &optval, optlen); //);
     }
 
     return f_accepted_socket;

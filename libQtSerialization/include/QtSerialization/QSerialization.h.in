@@ -82,7 +82,10 @@ namespace {
      * represents the version you are compiling with and not the version
      * of the library your software will link against when running.
      */
+#pragma GCC push
+#pragma GCC diagnostic ignored "-Wunused-variable"
     const char *QT_SERIALIZATION_LIBRARY_VERSION_STRING = "@LIBQTSERIALIZATION_VERSION_MAJOR@.@LIBQTSERIALIZATION_VERSION_MINOR@.@LIBQTSERIALIZATION_VERSION_PATCH@";
+#pragma GCC pop
 
     /** \brief The version of the data saved in the output.
      *

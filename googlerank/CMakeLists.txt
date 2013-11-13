@@ -35,8 +35,17 @@ project( googlerank )
 ## Include support modules
 ##
 if( NOT CMAKE_MODULE_PATH )
-    set( CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake ${PROJECT_SOURCE_DIR}/cmake/Modules )
+    find_path( CMAKE_DIRECTORY_PATH cmake
+        PATHS
+            ${PROJECT_SOURCE_DIR}
+            ${PROJECT_SOURCE_DIR}/..
+        NO_DEFAULT_PATH
+    )
+    set( CMAKE_MODULE_PATH ${CMAKE_DIRECTORY_PATH}/cmake )
+    message( "Found cmake in ${CMAKE_MODULE_PATH}" )
 endif()
+##
+include( 00-common )
 
 ##
 ## Find Snap! prerequisites

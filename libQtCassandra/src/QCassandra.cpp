@@ -35,11 +35,14 @@
  *      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+#pragma GCC push
+#pragma GCC diagnostic ignored "-Wundef"
 #include "QCassandraPrivate.h"
 #include <protocol/TBinaryProtocol.h>
 #include <transport/TSocket.h>
 #include <transport/TTransportUtils.h>
 #include <sys/time.h>
+#pragma GCC pop
 
 /** \brief The QtCassandra namespace includes all the Cassandra extensions.
  *
@@ -1403,12 +1406,12 @@ QSharedPointer<QCassandraContext> QCassandra::findContext(const QString& context
  */
 QCassandraContext& QCassandra::operator [] (const QString& context_name)
 {
-    QCassandraContext *context = findContext(context_name).data();
-    if(context == NULL) {
+    QCassandraContext *context_obj = findContext(context_name).data();
+    if(context_obj == NULL) {
         throw std::runtime_error("named context was not found, cannot return a reference");
     }
 
-    return *context;
+    return *context_obj;
 }
 
 /** \brief Retrieve a constant context reference.
@@ -1431,12 +1434,12 @@ QCassandraContext& QCassandra::operator [] (const QString& context_name)
  */
 const QCassandraContext& QCassandra::operator [] (const QString& context_name) const
 {
-    const QCassandraContext *context = findContext(context_name).data();
-    if(context == NULL) {
+    const QCassandraContext *context_obj = findContext(context_name).data();
+    if(context_obj == NULL) {
         throw std::runtime_error("named context was not found, cannot return a reference");
     }
 
-    return *context;
+    return *context_obj;
 }
 
 /** \brief Drop a context from the database and memory.

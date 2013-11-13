@@ -438,9 +438,9 @@ int32_t QCassandraRowPredicate::count() const
  *
  * \sa count()
  */
-void QCassandraRowPredicate::setCount(int32_t count)
+void QCassandraRowPredicate::setCount(int32_t val)
 {
-    f_count = count;
+    f_count = val;
 }
 
 /** \brief Return whether the row predicate is wrapped or not.
@@ -474,9 +474,9 @@ bool QCassandraRowPredicate::wrap() const
  *
  * \sa wrap()
  */
-void QCassandraRowPredicate::setWrap(bool wrap)
+void QCassandraRowPredicate::setWrap(bool val)
 {
-    f_wrap = wrap;
+    f_wrap = val;
 }
 
 /** \brief Retrieve a pointer to the column predicate.

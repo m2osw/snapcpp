@@ -60,7 +60,7 @@ public:
 
 	typedef int RequestType;
 
-	QGooglePageRank(QObject *parent = NULL) : QObject(parent) {}
+	QGooglePageRank(QObject *prnt = NULL) : QObject(prnt) {}
 	virtual ~QGooglePageRank() {}
 
 	static QString urlHash(const QUrl& url);

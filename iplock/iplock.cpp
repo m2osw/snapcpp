@@ -133,8 +133,8 @@ const configuration::ports_t configuration::ports()
 {
 	if(!f_ports_defined) {
 		f_ports_defined = true;
-		std::string ports = operator [] ("ports");
-		const char *s = ports.c_str();
+		const std::string prts( operator [] ("ports") );
+		const char *s = prts.c_str();
 		while(*s != '\0') {
 			while(*s == ',' || isspace(*s)) {
 				++s;

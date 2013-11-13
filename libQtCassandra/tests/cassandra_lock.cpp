@@ -54,7 +54,7 @@ int main(int argc, char *argv[])
     QtCassandra::QCassandra     cassandra;
     qDebug() << "+ libQtCassandra version" << cassandra.version();
 
-    int count(0);
+    int process_count(0);
     int repeat(0);
     int replication_factor(0);
     int mode(0);
@@ -91,7 +91,7 @@ int main(int argc, char *argv[])
                 qDebug() << "error: -i must be followed by a number.";
                 exit(1);
             }
-            count = atol(argv[i]);
+            process_count = atol(argv[i]);
         }
         else if(strcmp(argv[i], "-n") == 0) {
             ++i;
@@ -224,12 +224,12 @@ int main(int argc, char *argv[])
                 exit(1);
             }
             QSharedPointer<QtCassandra::QCassandraTable> table(context->table("qt_cassandra_test_table"));
-            QSharedPointer<QtCassandra::QCassandraColumnRangePredicate> column_predicate(new QtCassandra::QCassandraColumnRangePredicate);
-            column_predicate->setStartColumnName("unique");
-            column_predicate->setEndColumnName("uo");
+            QSharedPointer<QtCassandra::QCassandraColumnRangePredicate> col_predicate(new QtCassandra::QCassandraColumnRangePredicate);
+            col_predicate->setStartColumnName("unique");
+            col_predicate->setEndColumnName("uo");
             QtCassandra::QCassandraRowPredicate row_predicate;
-            row_predicate.setColumnPredicate(column_predicate);
-            int count(0);
+            row_predicate.setColumnPredicate(col_predicate);
+            int row_count(0);
             int err(0);
             for(;;) {
                 table->clearCache();
@@ -240,13 +240,13 @@ int main(int argc, char *argv[])
                 }
                 const QtCassandra::QCassandraRows& r(table->rows());
                 for(QtCassandra::QCassandraRows::const_iterator o(r.begin()); o != r.end(); ++o) {
-                    QtCassandra::QCassandraColumnRangePredicate column_predicate;
-                    column_predicate.setStartColumnName("unique");
-                    column_predicate.setEndColumnName("uo");
+                    QtCassandra::QCassandraColumnRangePredicate inner_col_predicate;
+                    inner_col_predicate.setStartColumnName("unique");
+                    inner_col_predicate.setEndColumnName("uo");
                     // TODO XXX What?!
                     // Having a predicate only here does not work, it needs
                     // to be on the readRows()!!!
-                    (*o)->readCells(column_predicate);
+                    (*o)->readCells(inner_col_predicate);
                     const QtCassandra::QCassandraCells& c(o.value()->cells());
                     if(c.size() > 1) {
                         QByteArray key((*o)->rowKey());
@@ -257,10 +257,10 @@ int main(int argc, char *argv[])
                             qDebug() << "error: cell" << (*p)->columnName();
                         }
                     }
-                    ++count;
+                    ++row_count;
                 }
             }
-            qDebug() << "info: found" << count << "rows.";
+            qDebug() << "info: found" << row_count << "rows.";
             if(err > 0) {
                 qDebug() << "warning: " << err << " errors occured.";
             }
@@ -311,11 +311,11 @@ int main(int argc, char *argv[])
         exit(0);
     }
 
-    if(count < 1) {
+    if(process_count < 1) {
         qDebug() << "error: -i must be followed by a valid decimal number larger than 0";
         exit(1);
     }
-    if(count > 100) {
+    if(process_count > 100) {
         qDebug() << "error: -i must be followed by a valid decimal number up to 100";
         exit(1);
     }
@@ -325,9 +325,9 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
-    qDebug() << "+ Starting test with" << count << "processes and repeat the lock" << repeat << "times";
+    qDebug() << "+ Starting test with" << process_count << "processes and repeat the lock" << repeat << "times";
 
-    for(int i(1); i < count; ++i) {
+    for(int i(1); i < process_count; ++i) {
         if(fork() == 0) {
             // the children don't create other processes
             break;

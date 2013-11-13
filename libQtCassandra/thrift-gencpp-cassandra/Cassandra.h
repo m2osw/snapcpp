@@ -4,14 +4,15 @@
  * DO NOT EDIT UNLESS YOU ARE SURE THAT YOU KNOW WHAT YOU ARE DOING
  *  @generated
  */
+#pragma once
 #ifndef Cassandra_H
 #define Cassandra_H
+#pragma GCC system_header
 
 // --- Snap! Website header additions ---
 // With Thrift 0.8.0, many basic types do not get defined properly
 #include <inttypes.h>
 // --- end ---
-
 #include <thrift/TDispatchProcessor.h>
 #include "cassandra_types.h"
 
