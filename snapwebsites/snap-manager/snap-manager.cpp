@@ -76,6 +76,7 @@ snap_manager::snap_manager(QWidget *snap_parent)
     connect(a, SIGNAL(activated()), this, SLOT(decode_utf8()));
 
     f_tabs = getChild<QTabWidget>(this, "tabWidget");
+    f_tabs->setTabEnabled(TAB_HOSTS, false);
     f_tabs->setTabEnabled(TAB_DOMAINS, false);
     f_tabs->setTabEnabled(TAB_WEBSITES, false);
     f_tabs->setTabEnabled(TAB_SITES, false);
@@ -101,6 +102,19 @@ snap_manager::snap_manager(QWidget *snap_parent)
     console = getChild<QListWidget>(this, "cassandraConsole");
     console->addItem("libQtCassandra version: " + QString(f_cassandra->version()));
     console->addItem("Not connected.");
+
+    // get host friends that are going to be used here and there
+    f_host_list = getChild<QListWidget>(this, "hostList");
+    //connect(f_host_list, SIGNAL(itemClicked()), this, SLOT(on_hostList_itemClicked()));
+    f_host_name = getChild<QLineEdit>(this, "hostName");
+    f_host_new = getChild<QPushButton>(this, "hostNew");
+    //connect(f_host_new, SIGNAL(clicked()), this, SLOT(on_hostNew_clicked()));
+    f_host_save = getChild<QPushButton>(this, "hostSave");
+    //connect(f_host_save, SIGNAL(clicked()), this, SLOT(on_hostSave_clicked()));
+    f_host_cancel = getChild<QPushButton>(this, "hostCancel");
+    //connect(f_host_cancel, SIGNAL(clicked()), this, SLOT(on_hostCancel_clicked()));
+    f_host_delete = getChild<QPushButton>(this, "hostDelete");
+    //connect(f_host_delete, SIGNAL(clicked()), this, SLOT(on_hostDelete_clicked()));
 
     // get domain friends that are going to be used here and there
     f_domain_filter = getChild<QPushButton>(this, "domainFilter");
@@ -457,6 +471,7 @@ void snap_manager::cassandraConnect()
     console->addItem("libQtCassandra version: " + QString(f_cassandra->version()));
     console->addItem("Host: " + f_cassandra_host);
     console->addItem("Port: " + QString::number(f_cassandra_port));
+    f_tabs->setTabEnabled(TAB_HOSTS, false);
     f_tabs->setTabEnabled(TAB_DOMAINS, false);
     f_tabs->setTabEnabled(TAB_WEBSITES, false);
     f_tabs->setTabEnabled(TAB_SITES, false);
@@ -511,7 +526,8 @@ void snap_manager::cassandraConnect()
     f_reset_domains_index->setEnabled(true);
     f_reset_websites_index->setEnabled(true);
 
-    // TODO: call that function when the tab is clicked instead!
+    // TODO: call these functions when their respective tab is clicked instead!
+    loadHosts();
     loadDomains();
     loadSites();
 
@@ -532,6 +548,7 @@ void snap_manager::cassandraDisconnect()
     f_reset_domains_index->setEnabled(false);
     f_reset_websites_index->setEnabled(false);
 
+    f_tabs->setTabEnabled(TAB_HOSTS, false);
     f_tabs->setTabEnabled(TAB_DOMAINS, false);
     f_tabs->setTabEnabled(TAB_WEBSITES, false);
     f_tabs->setTabEnabled(TAB_SITES, false);
@@ -662,6 +679,211 @@ void snap_manager::reset_websites_index()
 
     QMessageBox msg(QMessageBox::Information, "Reset Websites Index", QString("The websites index was reset with %1 entries.").arg(count), QMessageBox::Ok, this);
     msg.exec();
+}
+
+void snap_manager::loadHosts()
+{
+    // we just checked to know whether the table existed so it cannot fail here
+    // however the index table could be missing...
+    f_host_list->clear();
+
+    QString table_name(f_context->lockTableName());
+    QSharedPointer<QtCassandra::QCassandraTable> table(f_context->findTable(table_name));
+    // TODO: allow for a filter so we can have more than 5000 entries
+    // (although that is the number of computer in the cluster...)
+    QtCassandra::QCassandraRowPredicate row_predicate;
+    row_predicate.setCount(5000);
+    table->clearCache();
+    table->readRows(row_predicate);
+    const QtCassandra::QCassandraRows& rows(table->rows());
+    for(QtCassandra::QCassandraRows::const_iterator r(rows.begin());
+                r != rows.end();
+                ++r)
+    {
+        // the cell key is actually the row name which is the host name
+        // which is exactly what we want to display in our list!
+        f_host_list->addItem(r.key());
+    }
+
+    // at first some of the entries are disabled
+    // until a select is made or New is clicked
+    f_host_name->setEnabled(false);
+    f_host_org_name = ""; // not editing, this is new
+    f_host_name->setText("");
+    f_host_save->setEnabled(false);
+    f_host_cancel->setEnabled(false);
+    f_host_delete->setEnabled(false);
+
+    // allow user to go to that tab
+    f_tabs->setTabEnabled(TAB_HOSTS, true);
+}
+
+void snap_manager::on_hostList_itemClicked(QListWidgetItem *item)
+{
+    // same host? if so, skip on it
+    if(f_host_org_name == item->text() && !f_host_org_name.isEmpty())
+    {
+        return;
+    }
+
+    // check whether the current info was modified
+    if(!hostChanged())
+    {
+        // user canceled his action
+        // TODO: we need to reset the item selection...
+        QList<QListWidgetItem *> items(f_host_list->findItems(f_host_org_name, Qt::MatchExactly));
+        if(items.count() > 0)
+        {
+            f_host_list->setCurrentItem(items[0]);
+        }
+        return;
+    }
+
+    f_host_org_name = item->text();
+    f_host_name->setText(f_host_org_name);
+
+    hostWithSelection();
+}
+
+void snap_manager::on_hostNew_clicked()
+{
+    // check whether the current info was modified
+    if(!hostChanged())
+    {
+        // user canceled his action
+        return;
+    }
+
+    f_host_list->clearSelection();
+
+    f_host_org_name = ""; // not editing, this is new
+    f_host_name->setText("");
+
+    hostWithSelection();
+    f_host_delete->setEnabled(false);
+}
+
+void snap_manager::on_hostSave_clicked()
+{
+    QString name(f_host_name->text());
+    if(name.isEmpty())
+    {
+        QMessageBox msg(QMessageBox::Critical, "Name Missing", "You cannot create a new host entry without giving the host a valid name.", QMessageBox::Ok, this);
+        msg.exec();
+        return;
+    }
+    if(name != f_host_org_name)
+    {
+        // make sure the host name is correct (i.e. [a-zA-Z0-9_]+)
+        const int max(name.length());
+        for(int i(0); i < max; ++i)
+        {
+            int c(name[i].unicode());
+            if((c < 'a' || c > 'z')
+            && (c < 'A' || c > 'Z')
+            && (c < '0' || c > '9' || i == 0) // cannot start with a digit
+            && c != '_')
+            {
+                QMessageBox msg(QMessageBox::Critical, "Invalid Host Name", "The host name must only be composed of letters, digits, and underscores although it cannot start with a digit ([0-9a-zA-Z_]+)", QMessageBox::Ok, this);
+                msg.exec();
+                return;
+            }
+        }
+
+        // host name is considered valid for now
+        f_context->addLockHost(name);
+
+        // the data is now in the database, add it to the table too
+        if(f_host_org_name == "")
+        {
+            f_host_list->addItem(name);
+
+            // make sure we select that item too
+            QList<QListWidgetItem *> items(f_host_list->findItems(name, Qt::MatchExactly));
+            if(items.count() > 0)
+            {
+                f_host_list->setCurrentItem(items[0]);
+            }
+        }
+
+        f_host_org_name = name;
+
+        hostWithSelection();
+    }
+}
+
+void snap_manager::on_hostCancel_clicked()
+{
+    // check whether the current info was modified
+    if(!hostChanged())
+    {
+        // user canceled his action
+        return;
+    }
+
+    // restore the original values
+    f_host_name->setText(f_host_org_name);
+
+    if(f_host_org_name.length() == 0)
+    {
+        // if we had nothing selected, reset everything
+        f_host_name->setEnabled(false);
+        f_host_save->setEnabled(false);
+        f_host_cancel->setEnabled(false);
+        f_host_delete->setEnabled(false);
+    }
+}
+
+void snap_manager::on_hostDelete_clicked()
+{
+    QString name(f_host_name->text());
+
+    // verify that the user really wants to delete this host
+    QMessageBox msg(QMessageBox::Critical, "Delete Host", "<font color=\"red\"><b>WARNING:</b></font> You are about to delete host \"" + name + "\". Are you absolutely sure you want to do that?", QMessageBox::Ok | QMessageBox::Cancel, this);
+    int choice = msg.exec();
+    if(choice != QMessageBox::Ok)
+    {
+        return;
+    }
+
+    f_context->removeLockHost(name);
+
+    delete f_host_list->currentItem();
+
+    // mark empty
+    f_host_org_name = "";
+    f_host_name->setText("");
+
+    // in effect we just lost our selection
+    f_host_name->setEnabled(false);
+    f_host_save->setEnabled(false);
+    f_host_cancel->setEnabled(false);
+    f_host_delete->setEnabled(false);
+}
+
+void snap_manager::hostWithSelection()
+{
+    // now there is a selection, everything is enabled
+    f_host_name->setEnabled(true);
+    f_host_save->setEnabled(true);
+    f_host_cancel->setEnabled(true);
+    f_host_delete->setEnabled(true);
+}
+
+bool snap_manager::hostChanged()
+{
+    // if something changed we want to warn the user before going further
+    if(f_host_org_name != f_host_name->text())
+    {
+        QMessageBox msg(QMessageBox::Critical, "Host Name Modified", "You made changes to this entry and did not Save it yet. Do you really want to continue? If you click Ok you will lose your changes.", QMessageBox::Ok | QMessageBox::Cancel, this);
+        int choice = msg.exec();
+        if(choice != QMessageBox::Ok)
+        {
+            return false;
+        }
+    }
+
+    return true;
 }
 
 void snap_manager::loadDomains()

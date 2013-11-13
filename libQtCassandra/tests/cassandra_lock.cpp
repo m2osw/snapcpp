@@ -64,7 +64,7 @@ int main(int argc, char *argv[])
     QtCassandra::consistency_level_t consistency_level(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
     for(int i(1); i < argc; ++i) {
         if(strcmp(argv[i], "--help") == 0) {
-            qDebug() << "Usage:" << argv[0] << "[--help] [-a | -r | -o <computer-name>] [-h <hostname>] [-i <count>] [-n <repeat>] [-c <replication-factor>]";
+            qDebug() << "Usage:" << argv[0] << "[--help] [-a | -r | -o <computer-name>] [-h <hostname>] [-i <count>] [-n <repeat>] [-c <replication-factor>] [-V] [-t] [-l <consistency level>]";
             qDebug() << "  where -h indicates the Cassandra IP address";
             qDebug() << "  where -i indicates the number of process to spawn total";
             qDebug() << "  where -n indicates the number of time each process will create a unique row";

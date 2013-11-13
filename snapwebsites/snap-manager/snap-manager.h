@@ -49,6 +49,11 @@ private slots:
     void cassandraDisconnect();
     void reset_domains_index();
     void reset_websites_index();
+    void on_hostList_itemClicked(QListWidgetItem *item);
+    void on_hostNew_clicked();
+    void on_hostSave_clicked();
+    void on_hostCancel_clicked();
+    void on_hostDelete_clicked();
     void on_domainFilter_clicked();
     void on_domainNew_clicked();
     void on_domainList_itemClicked(QListWidgetItem *item);
@@ -68,10 +73,15 @@ private:
     enum tabs
     {
         TAB_CONNECTIONS = 0,
-        TAB_DOMAINS = 1,
-        TAB_WEBSITES = 2,
-        TAB_SITES = 3
+        TAB_HOSTS = 1,
+        TAB_DOMAINS = 2,
+        TAB_WEBSITES = 3,
+        TAB_SITES = 4
     };
+
+    void loadHosts();
+    void hostWithSelection();
+    bool hostChanged();
 
     void loadDomains();
     void domainWithSelection();
@@ -97,6 +107,15 @@ private:
 
     QPointer<QAction>               f_reset_domains_index;
     QPointer<QAction>               f_reset_websites_index;
+
+    // computer hosts
+    QString                         f_host_org_name;
+    QPointer<QListWidget>           f_host_list;
+    QPointer<QLineEdit>             f_host_name;
+    QPointer<QPushButton>           f_host_new;
+    QPointer<QPushButton>           f_host_save;
+    QPointer<QPushButton>           f_host_cancel;
+    QPointer<QPushButton>           f_host_delete;
 
     // snap domains
     QString                         f_domain_org_name; // the original name (in case user changes it)

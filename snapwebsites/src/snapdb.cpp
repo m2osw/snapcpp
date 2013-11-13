@@ -62,6 +62,7 @@ public:
 private:
     QCassandra                      f_cassandra;
     QString                         f_host;
+    controlled_vars::mint32_t       f_port;
     controlled_vars::mint32_t       f_count;
     QString                         f_context;
     QString                         f_table;
@@ -70,7 +71,9 @@ private:
 
 snapdb::snapdb(int argc, char *argv[])
     //: f_cassandra() -- auto-init
-    : f_count(100)
+    : f_host("localhost") // default
+    , f_port(9160) //default
+    , f_count(100)
     , f_context("snap_websites")
     //, f_table("") -- auto-init
     //, f_row("") -- auto-init
@@ -111,6 +114,22 @@ snapdb::snapdb(int argc, char *argv[])
                 exit(1);
             }
             f_host = argv[i];
+        }
+        else if(strcmp(argv[i], "--port") == 0)
+        {
+            ++i;
+            if(i >= argc)
+            {
+                fprintf(stderr, "error: --port expects one parameter.\n");
+                exit(1);
+            }
+            char *end;
+            f_port = strtol(argv[i], &end, 0);
+            if(end == NULL || *end != '\0')
+            {
+                fprintf(stderr, "error: invalid number for --port (%s, %s)\n", argv[i], end);
+                exit(1);
+            }
         }
         else if(strcmp(argv[i], "--context") == 0)
         {
@@ -155,7 +174,10 @@ void snapdb::usage()
     printf("Usage: snapdb [--opts] [table [row]]\n");
     printf("By default snap db prints out the list of tables (column families) found in Cassandra.\n");
     printf("  -h | --help      print out this help screen.\n");
+    printf("  --context <ctxt> name of the context to read from.\n");
     printf("  --count <count>  specify the number of rows to display.\n");
+    printf("  --drop-tables    drop all the tables of the specified context.\n");
+    printf("  --host <host>    host IP address or name defaults to localhost\n");
     printf("  --info           print out the cluster name and protocol version.\n");
     printf("  [table]          name of a table (column family) to print rows about.\n");
     printf("  [row]            name of a row, may be ending with %% to print all rows that start with that name.\n");
@@ -165,15 +187,22 @@ void snapdb::usage()
 
 void snapdb::info()
 {
-    f_cassandra.connect(f_host);
-    printf("Working on Cassandra Cluster Named \"%s\".\n", f_cassandra.clusterName().toUtf8().data());
-    printf("Working on Cassandra Protocol Version \"%s\".\n", f_cassandra.protocolVersion().toUtf8().data());
+    f_cassandra.connect(f_host, f_port);
+    if(f_cassandra.isConnected())
+    {
+        printf("Working on Cassandra Cluster Named \"%s\".\n", f_cassandra.clusterName().toUtf8().data());
+        printf("Working on Cassandra Protocol Version \"%s\".\n", f_cassandra.protocolVersion().toUtf8().data());
+    }
+    else
+    {
+        fprintf(stderr, "The connection failed!\n");
+    }
     exit(0);
 }
 
 void snapdb::drop_tables()
 {
-    f_cassandra.connect(f_host);
+    f_cassandra.connect(f_host, f_port);
     QSharedPointer<QCassandraContext> context(f_cassandra.context(f_context));
 
     // there are re-created when we connect and refilled when
@@ -185,7 +214,7 @@ void snapdb::drop_tables()
 
 void snapdb::display()
 {
-    f_cassandra.connect(f_host);
+    f_cassandra.connect(f_host, f_port);
     QSharedPointer<QCassandraContext> context(f_cassandra.context(f_context));
 
     if(f_table.isEmpty())
@@ -304,6 +333,7 @@ void snapdb::display()
                 else if(n == "sitemapxml::count"
                      || n == "sessions::id"
                      || n == "sessions::time_to_live"
+                     || (f_table == "libQtCassandraLockTable" && f_row == "hosts")
                 )
                 {
                     // 32 bit value
