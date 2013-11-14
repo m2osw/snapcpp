@@ -42,10 +42,12 @@ if( 3RDPARTY_INCLUDED )
 	set( THRIFT_LIBRARIES thrift )
 else()
 	find_path( THRIFT_INCLUDE_DIR thrift/thrift.h
-			   HINTS /usr/include /usr/local/include
+			   PATHS $ENV{THRIFT_INCLUDE_DIR}
 			   PATH_SUFFIXES controlled_vars
 			 )
-	find_library( THRIFT_LIBRARY thrift )
+	find_library( THRIFT_LIBRARY thrift
+				PATHS $ENV{THRIFT_LIBRARY}
+			)
 	set( THRIFT_INCLUDE_DIRS ${THRIFT_INCLUDE_DIR} )
 	set( THRIFT_LIBRARIES    ${THRIFT_LIBRARY}     )
 	mark_as_advanced( THRIFT_INCLUDE_DIR THRIFT_LIBRARY )

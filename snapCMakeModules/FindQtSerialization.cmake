@@ -16,11 +16,11 @@ if( 3RDPARTY_INCLUDED )
 	set( QTSERIALIZATION_LIBRARIES QtSerialization )
 else()
 	find_path( QTSERIALIZATION_INCLUDE_DIR QtSerialization/QCassandra.h
-			   HINTS /usr/include /usr/local/include
+			   PATHS $ENV{QTSERIALIZATION_INCLUDE_DIR}
 			   PATH_SUFFIXES QtSerialization
 			 )
 	find_library( QTSERIALIZATION_LIBRARY QtSerialization
-			   HINTS /usr/lib /usr/local/lib
+				PATHS $ENV{QTSERIALIZATION_LIBRARY}
 			 )
 	set( QTSERIALIZATION_INCLUDE_DIRS ${QTSERIALIZATION_INCLUDE_DIR} )
 	set( QTSERIALIZATION_LIBRARIES    ${QTSERIALIZATION_LIBRARY}     )

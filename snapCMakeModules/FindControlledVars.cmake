@@ -12,7 +12,7 @@ if( 3RDPARTY_INCLUDED )
 	set( CONTROLLEDVARS_INCLUDE_DIRS ${controlled_vars_BINARY_DIR} )
 else()
 	find_path( CONTROLLEDVARS_INCLUDE_DIR controlled_vars/controlled_vars_auto_init.h
-			   HINTS /usr/include /usr/local/include
+			   PATHS $ENV{CONTROLLEDVARS_INCLUDE_DIR}
 			   PATH_SUFFIXES controlled_vars
 			 )
 	set( CONTROLLEDVARS_INCLUDE_DIRS ${CONTROLLEDVARS_INCLUDE_DIR} )

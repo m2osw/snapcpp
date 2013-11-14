@@ -16,11 +16,11 @@ if( 3RDPARTY_INCLUDED )
 	set( QTCASSANDRA_LIBRARIES QtCassandra )
 else()
 	find_path( QTCASSANDRA_INCLUDE_DIR QtCassandra/QCassandra.h
-			   HINTS /usr/include /usr/local/include
+			   PATHS $ENV{QTCASSANDRA_INCLUDE_DIR}
 			   PATH_SUFFIXES QtCassandra
 			 )
 	find_library( QTCASSANDRA_LIBRARY QtCassandra
-			   HINTS /usr/lib /usr/local/lib
+				PATHS $ENV{QTCASSANDRA_LIBRARY}
 			 )
 	set( QTCASSANDRA_INCLUDE_DIRS ${QTCASSANDRA_INCLUDE_DIR} )
 	set( QTCASSANDRA_LIBRARIES    ${QTCASSANDRA_LIBRARY}     )

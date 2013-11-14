@@ -13,11 +13,11 @@ if( 3RDPARTY_INCLUDED )
 	set( LIBTLD_LIBRARIES tld )
 else()
 	find_path( LIBTLD_INCLUDE_DIR libtld/tld.h
-			   HINTS /usr/include /usr/local/include
-			   PATH_SUFFIXES libtld
+				PATHS $ENV{LIBTLD_INCLUDE_DIR}
+				PATH_SUFFIXES libtld
 			 )
 	find_library( LIBTLD_LIBRARY libtld
-			   HINTS /usr/lib /usr/local/lib
+				PATHS $ENV{LIBTLD_LIBRARY}
 			 )
 	set( LIBTLD_INCLUDE_DIRS ${LIBTLD_INCLUDE_DIR} )
 	set( LIBTLD_LIBRARIES    ${LIBTLD_LIBRARY}     )
