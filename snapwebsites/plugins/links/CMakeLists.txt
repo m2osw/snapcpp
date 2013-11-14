@@ -37,13 +37,15 @@
 
 project(plugin_links)
 
-find_package( Qt4 4.8.1 REQUIRED QtCore )
+find_package( ControlledVars QUIET )
+find_package( Qt4 4.8.1 QUIET REQUIRED QtCore )
 include( ${QT_USE_FILE} )
 add_definitions( ${QT_DEFINITIONS} )
 
 include_directories(
-    "${CMAKE_CURRENT_SOURCE_DIR}"
+    ${CMAKE_CURRENT_SOURCE_DIR}
     ${QT_INCLUDES}
+    ${CONTROLLEDVARS_INCLUDE_DIRS}
 )
 
 QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC
@@ -54,11 +56,15 @@ add_library(links SHARED
     links.cpp
     ${SNAP_MANAGER_MOC_CXX}
     ${SNAP_MANAGER_RESOURCES_RCC}
-
     content.xml
 )
 
 target_link_libraries( links ${QT_LIBRARIES} )
+
+get_property( 3RDPARTY_INCLUDED GLOBAL PROPERTY 3RDPARTY_INCLUDED )
+if( 3RDPARTY_INCLUDED )
+    add_dependencies( links make_controlled_vars_headers )
+endif()
 
 install(
     TARGETS links LIBRARY DESTINATION lib/snapwebsites/plugins

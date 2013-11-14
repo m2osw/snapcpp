@@ -36,12 +36,14 @@
 
 project(plugin_javascript)
 
-find_package( Qt4 4.8.1 REQUIRED QtCore QtScript )
+find_package( ControlledVars QUIET )
+find_package( Qt4 4.8.1 QUIET REQUIRED QtCore QtScript )
 include( ${QT_USE_FILE} )
 add_definitions( ${QT_DEFINITIONS} )
 
 include_directories(
-    "${CMAKE_CURRENT_SOURCE_DIR}"
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CONTROLLEDVARS_INCLUDE_DIRS}
     ${QT_INCLUDES}
 )
 
@@ -53,11 +55,15 @@ add_library(javascript SHARED
     javascript.cpp
     ${SNAP_MANAGER_MOC_CXX}
     ${SNAP_MANAGER_RESOURCES_RCC}
-
     content.xml
 )
 
 target_link_libraries( javascript ${QT_LIBRARIES} )
+
+get_property( 3RDPARTY_INCLUDED GLOBAL PROPERTY 3RDPARTY_INCLUDED )
+if( 3RDPARTY_INCLUDED )
+    add_dependencies( javascript make_controlled_vars_headers )
+endif()
 
 install(
     TARGETS javascript LIBRARY DESTINATION lib/snapwebsites/plugins

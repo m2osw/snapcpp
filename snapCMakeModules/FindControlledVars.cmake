@@ -7,12 +7,16 @@
 # CONTROLLEDVARS_LIBRARY      - The libraries needed to use ControlledVars (none)
 # CONTROLLEDVARS_DEFINITIONS  - Compiler switches required for using ControlledVars (none)
 
-find_path( CONTROLLEDVARS_INCLUDE_DIR controlled_vars/controlled_vars_auto_init.h
-           HINTS /usr/include /usr/local/include
-           PATH_SUFFIXES controlled_vars
-		 )
-
-#set( CONTROLLEDVARS_INCLUDE_DIRS ${CONTROLLEDVARS_INCLUDE_DIR} )
+get_property( 3RDPARTY_INCLUDED GLOBAL PROPERTY 3RDPARTY_INCLUDED )
+if( 3RDPARTY_INCLUDED )
+	set( CONTROLLEDVARS_INCLUDE_DIRS ${controlled_vars_BINARY_DIR} )
+else()
+	find_path( CONTROLLEDVARS_INCLUDE_DIR controlled_vars/controlled_vars_auto_init.h
+			   HINTS /usr/include /usr/local/include
+			   PATH_SUFFIXES controlled_vars
+			 )
+	set( CONTROLLEDVARS_INCLUDE_DIRS ${CONTROLLEDVARS_INCLUDE_DIR} )
+endif()
 
 include( FindPackageHandleStandardArgs )
 # handle the QUIETLY and REQUIRED arguments and set CONTROLLEDVARS_FOUND to TRUE

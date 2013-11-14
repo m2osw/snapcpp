@@ -86,6 +86,8 @@ add_custom_command(
 	DEPENDS controlled_vars
 )
 
+add_custom_target( make_controlled_vars_headers ALL DEPENDS controlled_vars.h )
+
 install(FILES
 		${CMAKE_CURRENT_BINARY_DIR}/controlled_vars.h
 		${CMAKE_CURRENT_BINARY_DIR}/controlled_vars_version.h
@@ -102,7 +104,7 @@ install(FILES
 
 # Pack the Headers the way I want them for SourceForge.net
 # (the default packer adds -Linux, even though this is not specific to an OS)
-add_custom_target(controlled_vars_headers
+add_custom_target( controlled_vars_headers
 	COMMAND rm -rf include
 	COMMAND mkdir -p include/controlled_vars
 	COMMAND cp -p controlled_vars*.h include/controlled_vars/.

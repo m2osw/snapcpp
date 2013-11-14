@@ -67,11 +67,11 @@ add_definitions( ${QT_DEFINITIONS} )
 link_directories( ${CMAKE_BINARY_DIR}/dist/lib/ )
 
 include_directories(
-    "${PROJECT_SOURCE_DIR}"
-    "${PROJECT_SOURCE_DIR}/include"
-    "${PROJECT_BINARY_DIR}"
-    "${PROJECT_BINARY_DIR}/include"
-    "${CMAKE_BINARY_DIR}"
+    ${PROJECT_SOURCE_DIR}
+    ${PROJECT_SOURCE_DIR}/include
+    ${PROJECT_BINARY_DIR}
+    ${PROJECT_BINARY_DIR}/include
+    ${CMAKE_BINARY_DIR}
     ${THRIFT_INCLUDE_DIRS}
     ${QT_INCLUDES}
 )

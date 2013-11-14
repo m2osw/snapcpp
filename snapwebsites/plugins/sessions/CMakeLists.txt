@@ -36,15 +36,17 @@
 
 project(plugin_sessions)
 
+find_package( ControlledVars QUIET )
 find_package( OpenSSL )
-find_package( Qt4 4.8.1 REQUIRED QtCore )
+find_package( Qt4 4.8.1 QUIET REQUIRED QtCore )
 include( ${QT_USE_FILE} )
 add_definitions( ${QT_DEFINITIONS} )
 
 include_directories(
-    "${CMAKE_CURRENT_SOURCE_DIR}"
-    ${QT_INCLUDES}
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CONTROLLEDVARS_INCLUDE_DIRS}
     ${OPENSSL_INCLUDE_DIRS}
+    ${QT_INCLUDES}
 )
 
 QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC
@@ -56,11 +58,15 @@ add_library(sessions SHARED
     ${SNAP_MANAGER_MOC_CXX}
     ${SNAP_MANAGER_RESOURCES_RCC}
     ${OPENSSL_LIBRARIES}
-
     content.xml
 )
 
 target_link_libraries( sessions ${QT_LIBRARIES} )
+
+get_property( 3RDPARTY_INCLUDED GLOBAL PROPERTY 3RDPARTY_INCLUDED )
+if( 3RDPARTY_INCLUDED )
+    add_dependencies( sessions make_controlled_vars_headers )
+endif()
 
 install(
     TARGETS sessions LIBRARY DESTINATION lib/snapwebsites/plugins
