@@ -47,10 +47,11 @@ target_link_libraries(tld_parser
 ## TLD data
 ##
 project(tld_data)
-set( TLD_DATA_C ${CMAKE_CURRENT_SOURCE_DIR}/tld_data.c )
+set( TLD_DATA_C ${PROJECT_SOURCE_DIR}/tld_data.c )
 add_custom_command(
     OUTPUT ${TLD_DATA_C}
-    COMMAND tld_parser ${libtld_SOURCE_DIR}
+    COMMAND tld_parser ${PROJECT_SOURCE_DIR}
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
     MAIN_DEPENDENCY tld_data.xml
     DEPENDS tld_parser
 )
