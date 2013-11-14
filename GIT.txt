@@ -10,6 +10,6 @@ git commit -m 'info about commit' <filename>
 git pull origin master
 
 # push your changes to the server (you may need a pull first)
-git push origin
+git push origin master
 
 
