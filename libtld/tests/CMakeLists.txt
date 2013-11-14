@@ -35,15 +35,17 @@ project(tld_internal_test)
 
 # The reference to the src folder is required by the internal test
 include_directories(
-    "${PROJECT_BINARY_DIR}/../include"
-    "${PROJECT_BINARY_DIR}/../src"
-    "${PROJECT_SOURCE_DIR}/../include"
-    "${PROJECT_SOURCE_DIR}/../src"
+    ${tld_library_BINARY_DIR}/include
+    ${tld_library_BINARY_DIR}/src
+    ${tld_library_SOURCE_DIR}/include
+    ${tld_library_SOURCE_DIR}/src
 )
 
 add_executable(${PROJECT_NAME}
     tld_internal_test.c
 )
+add_dependencies( ${PROJECT_NAME} tld_data ) # Add this so tld_parser will guarantee to build *first*
+
 # Test the library as an end user
 project(tld_test)
 add_executable(${PROJECT_NAME}

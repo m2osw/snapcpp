@@ -27,18 +27,51 @@
 # THE SOFTWARE.
 #
 
-project(libtld)
+##
+## TLD parser
+##
+project(tld_parser)
+include_directories(
+    ${CMAKE_BINARY_DIR}
+    ${tld_library_SOURCE_DIR}
+    ${QT_INCLUDES}
+)
+add_executable(tld_parser
+    tld_parser.cpp
+)
+target_link_libraries(tld_parser
+    ${QT_LIBRARIES}
+)
+
+##
+## TLD data
+##
+project(tld_data)
+set( TLD_DATA_C ${CMAKE_CURRENT_SOURCE_DIR}/tld_data.c )
+add_custom_command(
+    OUTPUT ${TLD_DATA_C}
+    COMMAND tld_parser ${libtld_SOURCE_DIR}
+    MAIN_DEPENDENCY tld_data.xml
+    DEPENDS tld_parser
+)
+add_custom_target( ${PROJECT_NAME} ALL DEPENDS ${TLD_DATA_C} )
+define_property(SOURCE
+    PROPERTY GENERATED
+    BRIEF_DOCS "The tld_data.c file is a table of all the TLDs defined in tld_data.xml"
+    FULL_DOCS "Once packaged, the tld_data.c file doesn't need to be regenerated (assuming the date and time of the source package is properly taken in account.)"
+)
 
 ##
 ## TLD library
 ##
+project(libtld)
 include_directories(
-    "${PROJECT_BINARY_DIR}/../include"
-    "${PROJECT_SOURCE_DIR}/../include"
+    ${tld_library_BINARY_DIR}/include
+    ${tld_library_SOURCE_DIR}/include
 )
 add_library(tld SHARED
     tld.c
-    tld_data.c
+    ${TLD_DATA_C}
     tld_emails.cpp
     tld_object.cpp
 )
@@ -53,8 +86,8 @@ install(
 ##
 project(libtld_static)
 include_directories(
-    "${PROJECT_BINARY_DIR}"
-    "${PROJECT_SOURCE_DIR}"
+    ${PROJECT_BINARY_DIR}
+    ${PROJECT_SOURCE_DIR}
 )
 add_library(tld_static STATIC
     tld.c
@@ -72,44 +105,12 @@ install(
 )
 
 ##
-## TLD parser
-##
-project(tld_parser)
-include_directories(
-    "${CMAKE_BINARY_DIR}"
-    "${PROJECT_SOURCE_DIR}/.."
-    ${QT_INCLUDES}
-)
-add_executable(tld_parser
-    tld_parser.cpp
-)
-target_link_libraries(tld_parser
-    ${QT_LIBRARIES}
-)
-
-##
-## TLD data
-##
-project(tld_data)
-add_custom_command(
-    OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/tld_data.c
-    COMMAND tld_parser ${libtld_SOURCE_DIR}
-    MAIN_DEPENDENCY tld_data.xml
-    DEPENDS tld_parser
-)
-define_property(SOURCE
-    PROPERTY GENERATED
-    BRIEF_DOCS "The tld_data.c file is a table of all the TLDs defined in tld_data.xml"
-    FULL_DOCS "Once packaged, the tld_data.c file doesn't need to be regenerated (assuming the date and time of the source package is properly taken in account.)"
-)
-
-##
 ## TLD command line tool
 ##
 project(validate_tld)
 include_directories(
-    "${PROJECT_BINARY_DIR}/../include"
-    "${PROJECT_SOURCE_DIR}/../include"
+    ${tld_library_BINARY_DIR}/include
+    ${tld_library_SOURCE_DIR}/include
 )
 add_executable(${PROJECT_NAME}
     validate_tld.cpp
