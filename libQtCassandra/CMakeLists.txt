@@ -54,14 +54,10 @@ if( NOT CMAKE_MODULE_PATH )
     set( CMAKE_MODULE_PATH ${CMAKE_DIRECTORY_PATH}/snapCMakeModules )
     message( "Found snapCMakeModules in ${CMAKE_MODULE_PATH}" )
 endif()
-get_property( 3RDPARTY_INCLUDED GLOBAL PROPERTY 3RDPARTY_INCLUDED )
-if( NOT 3RDPARTY_INCLUDED )
-    add_subdirectory( 3rdParty )
-endif()
-include( 00-common )
-include( doxygen )
-include( thrift  )
 
+find_package( SnapCMakeModules )
+find_package( SnapDoxygen      )
+find_package( Thrift           )
 find_package( Qt4 4.8.1 REQUIRED QtCore QtXml )
 include( ${QT_USE_FILE} )
 add_definitions( ${QT_DEFINITIONS} )
@@ -76,9 +72,8 @@ include_directories(
     "${PROJECT_BINARY_DIR}"
     "${PROJECT_BINARY_DIR}/include"
     "${CMAKE_BINARY_DIR}"
-    "${CMAKE_BINARY_DIR}/dist/include"
-    "${CMAKE_BINARY_DIR}/dist/include/thrift"
-    "${QT_INCLUDES}"
+    ${THRIFT_INCLUDE_DIRS}
+    ${QT_INCLUDES}
 )
 
 # Create a configure script

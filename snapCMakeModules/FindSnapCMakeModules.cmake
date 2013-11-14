@@ -1,4 +1,4 @@
-# File:         00-common.cmake
+# File:         FindSnapCMakeModules.cmake
 # Object:       Common definitions for all M2OSW Snap! C++ projects
 #
 # Copyright:    Copyright (c) 2011-2013 Made to Order Software Corp.
@@ -25,9 +25,6 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 #
-if( NOT COMMON_INCLUDED )
-set( COMMON_INCLUDED TRUE )
-
 set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -Werror -Wall -Wextra -pedantic -Wcast-align -Wcast-qual -Wctor-dtor-privacy -Wdisabled-optimization   -Winit-self -Wlogical-op -Wmissing-include-dirs    -Woverloaded-virtual -Wredundant-decls -Wshadow -Wsign-promo -Wstrict-null-sentinel    -Wstrict-overflow=1 -Wundef -Wno-unused -Wunused-variable -Wno-variadic-macros -Wno-parentheses -Wno-unknown-pragmas -Wwrite-strings -Wswitch -fdiagnostics-show-option" )
 set( CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror -Wall -Wextra" )
 
@@ -40,7 +37,7 @@ else()
     message( WARNING "You may have problems trying to compile this code on non-*nix platforms." )
 endif()
 
-set( ${PROJECT_NAME}_COVERAGE FALSE CACHE STRING "Turn on coverage" )
+option( ${PROJECT_NAME}_COVERAGE "Turn on coverage for ${PROJECT_NAME}." OFF )
 
 if( ${${PROJECT_NAME}_COVERAGE} )
 	message("*** COVERAGE TURNED ON ***")
@@ -58,11 +55,17 @@ if( ${${PROJECT_NAME}_COVERAGE} )
 	set( CMAKE_CXX_FLAGS           "${CMAKE_CXX_FLAGS} ${COV_CXX_FLAGS}"                     )
 	set( CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} ${COV_SHARED_LINKER_FLAGS}" )
 	set( CMAKE_EXE_LINKER_FLAGS    "${CMAKE_EXE_LINKER_FLAGS} ${COV_EXE_LINKER_FLAGS}"       )
-
-	set( COVERAGE_LIBS gcov )
 endif()
 
-endif( NOT COMMON_INCLUDED )
+include( FindPackageHandleStandardArgs )
+find_package_handle_standard_args(
+    SnapCMakeModules
+    DEFAULT_MSG
+    CMAKE_C_FLAGS
+    CMAKE_CXX_FLAGS
+    CMAKE_CXX_FLAGS_DEBUG
+    CMAKE_CXX_FLAGS_RELEASE
+)
 
 # vim: ts=4 sw=4 expandtab
 

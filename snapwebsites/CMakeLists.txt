@@ -71,9 +71,9 @@ if( NOT CMAKE_MODULE_PATH )
     set( CMAKE_MODULE_PATH ${CMAKE_DIRECTORY_PATH}/snapCMakeModules )
     message( "Found snapCMakeModules in ${CMAKE_MODULE_PATH}" )
 endif()
-include( 00-common )
-include( doxygen   )
-include( thrift    )
+find_package( SnapCMakeModules )
+find_package( SnapDoxygen      )
+find_package( Thrift           )
 
 include_directories( 
     "${PROJECT_SOURCE_DIR}"
@@ -87,8 +87,7 @@ include_directories(
     "${libtld_SOURCE_DIR}"
     "${libtld_BINARY_DIR}"
     "${CMAKE_BINARY_DIR}"
-    "${CMAKE_BINARY_DIR}/dist/include"
-    "${CMAKE_BINARY_DIR}/dist/include/thrift"
+    ${THRIFT_INCLUDE_DIR}
 )
 
 ##

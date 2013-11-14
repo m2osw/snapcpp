@@ -61,7 +61,7 @@ add_library(${PROJECT_NAME} SHARED
 
 
 target_link_libraries(QtCassandra
-    thrift
+    ${THRIFT_LIBRARIES}
     ${QT_LIBRARIES}
 )
 

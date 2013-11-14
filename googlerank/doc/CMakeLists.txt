@@ -38,7 +38,7 @@
 ##
 ## Documentation
 ##
-include( doxygen )
+find_package( SnapDoxygen )
 
 AddDoxygenTarget( libgooglerank
 	${GOOGLERANK_VERSION_MAJOR}

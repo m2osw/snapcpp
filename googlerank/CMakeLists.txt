@@ -45,7 +45,7 @@ if( NOT CMAKE_MODULE_PATH )
     message( "Found snapCMakeModules in ${CMAKE_MODULE_PATH}" )
 endif()
 ##
-include( 00-common )
+find_package( SnapCMakeModules )
 
 ##
 ## Find Snap! prerequisites
