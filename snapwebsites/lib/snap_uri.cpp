@@ -194,7 +194,8 @@ bool snap_uri::set_uri(const QString& uri)
     QString username;
     QString password;
     QString full_domain_name;
-    int port(protocol_to_port(protocol));
+#pragma message "Alexis: You had 'protocol' instead of 'protocol()'. I'm assuming you meant the method? Or the direct member 'f_protocol'?"
+    int port(protocol_to_port(protocol()));
 
     // retrieve the data
     if(colon1 != NULL)
