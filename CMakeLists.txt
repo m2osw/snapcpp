@@ -40,8 +40,7 @@ cmake_minimum_required(VERSION 2.8)
 project( snapwebsites_main )
 
 set( CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/snapCMakeModules )
-
-include( 00-common )
+find_package( SnapCMakeModules )
 
 # This will cause us to look in the 3rdParty area for thrift and other 3rdparty libs
 #

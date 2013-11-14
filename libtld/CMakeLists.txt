@@ -51,11 +51,11 @@ project(tld_library)
 #    #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3")
 #endif()
 
-##
-## Include support modules
-## (must be included in a project even though it is not made
-## specific to that project)
-##
+#
+# Include support modules
+# (must be included in a project even though it is not made
+# specific to that project)
+#
 if( NOT CMAKE_MODULE_PATH )
     find_path( CMAKE_DIRECTORY_PATH snapCMakeModules
         PATHS
@@ -67,7 +67,7 @@ if( NOT CMAKE_MODULE_PATH )
     message( "Found snapCMakeModules in ${CMAKE_MODULE_PATH}" )
 endif()
 #
-include( 00-common )
+find_package( SnapCMakeModules )
 find_package( Qt4 4.8.1 REQUIRED QtCore QtXml )
 include( ${QT_USE_FILE} )
 add_definitions( ${QT_DEFINITIONS} )

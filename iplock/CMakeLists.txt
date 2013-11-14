@@ -50,7 +50,7 @@ if( NOT CMAKE_MODULE_PATH )
     set( CMAKE_MODULE_PATH ${CMAKE_DIRECTORY_PATH}/snapCMakeModules )
     message( "Found snapCMakeModules in ${CMAKE_MODULE_PATH}" )
 endif()
-include( 00-common )
+find_package( SnapCMakeModules )
 
 ##
 ## IP Lock Tool

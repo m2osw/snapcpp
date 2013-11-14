@@ -40,7 +40,7 @@
 ##
 project(documentation)
 
-include(doxygen)
+find_package( SnapDoxygen )
 
 set( PROJECT_ROOT_PATH ${CMAKE_SOURCE_DIR} )
 

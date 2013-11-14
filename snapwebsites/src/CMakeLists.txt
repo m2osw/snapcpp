@@ -64,7 +64,7 @@ target_link_libraries(snapserver
     QtCassandra
     QtSerialization
     ${QT_LIBRARIES}
-    thrift
+    ${THRIFT_LIBRARIES}
     tld
     dl
 )
