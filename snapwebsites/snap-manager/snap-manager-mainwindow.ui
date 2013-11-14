@@ -207,19 +207,6 @@ p, li { white-space: pre-wrap; }
          </rect>
         </property>
        </widget>
-       <widget class="QLabel" name="label_14">
-        <property name="geometry">
-         <rect>
-          <x>20</x>
-          <y>40</y>
-          <width>311</width>
-          <height>17</height>
-         </rect>
-        </property>
-        <property name="text">
-         <string>Registered Hosts:</string>
-        </property>
-       </widget>
        <widget class="QWidget" name="layoutWidget">
         <property name="geometry">
          <rect>
@@ -315,6 +302,39 @@ p, li { white-space: pre-wrap; }
         <property name="wordWrap">
          <bool>true</bool>
         </property>
+       </widget>
+       <widget class="QWidget" name="horizontalLayoutWidget_2">
+        <property name="geometry">
+         <rect>
+          <x>10</x>
+          <y>20</y>
+          <width>361</width>
+          <height>31</height>
+         </rect>
+        </property>
+        <layout class="QHBoxLayout" name="horizontalLayout_11">
+         <item>
+          <widget class="QLabel" name="label_17">
+           <property name="text">
+            <string>Filter:</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLineEdit" name="hostFilterString">
+           <property name="toolTip">
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The filter allows you to limit the list of domains to a set that start with the given text. Only the beginning of the word is used. This filter requires a valid domain index.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="hostFilter">
+           <property name="text">
+            <string>Apply</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
        </widget>
       </widget>
       <widget class="QWidget" name="tab_domains">

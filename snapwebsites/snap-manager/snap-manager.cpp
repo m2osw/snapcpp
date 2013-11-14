@@ -26,9 +26,6 @@
 #include <QApplication>
 #include <QMessageBox>
 #include <QCloseEvent>
-//#include <QLineEdit>
-//#include <QTextEdit>
-//#include <QMenu>
 #include <QDebug>
 #include <libtld/tld.h>
 #include <stdio.h>
@@ -104,6 +101,9 @@ snap_manager::snap_manager(QWidget *snap_parent)
     console->addItem("Not connected.");
 
     // get host friends that are going to be used here and there
+    f_host_filter = getChild<QPushButton>(this, "hostFilter");
+    //connect(f_host_filter, SIGNAL(itemClicked()), this, SLOT(on_domainFilter_clicked()));
+    f_host_filter_string = getChild<QLineEdit>(this, "hostFilterString");
     f_host_list = getChild<QListWidget>(this, "hostList");
     //connect(f_host_list, SIGNAL(itemClicked()), this, SLOT(on_hostList_itemClicked()));
     f_host_name = getChild<QLineEdit>(this, "hostName");
@@ -554,6 +554,12 @@ void snap_manager::cassandraDisconnect()
     f_tabs->setTabEnabled(TAB_SITES, false);
 
     // this doesn't get cleared otherwise
+    f_host_list->clearSelection();
+    f_host_filter_string->setText("");
+    f_host_org_name = "";
+    f_host_name->setText("");
+
+    // this doesn't get cleared otherwise
     f_domain_list->clearSelection();
     f_domain_filter_string->setText("");
     f_domain_org_name = "";
@@ -689,20 +695,30 @@ void snap_manager::loadHosts()
 
     QString table_name(f_context->lockTableName());
     QSharedPointer<QtCassandra::QCassandraTable> table(f_context->findTable(table_name));
-    // TODO: allow for a filter so we can have more than 5000 entries
-    // (although that is the number of computer in the cluster...)
-    QtCassandra::QCassandraRowPredicate row_predicate;
-    row_predicate.setCount(5000);
-    table->clearCache();
-    table->readRows(row_predicate);
-    const QtCassandra::QCassandraRows& rows(table->rows());
-    for(QtCassandra::QCassandraRows::const_iterator r(rows.begin());
-                r != rows.end();
-                ++r)
+
+    QSharedPointer<QtCassandra::QCassandraRow> row(table->row(f_context->lockHostsKey()));
+
+    QtCassandra::QCassandraColumnRangePredicate hosts_predicate;
+    QString filter(f_host_filter_string->text());
+    if(filter.length() != 0)
+    {
+        // assign the filter only if not empty
+        hosts_predicate.setStartColumnName(filter);
+        hosts_predicate.setEndColumnName(filter + QtCassandra::QCassandraColumnPredicate::last_char);
+    }
+    row->clearCache(); // remove any previous load results
+    row->readCells(hosts_predicate);
+
+    // now we have a list of rows to read as defined in row->Cells()
+    const QtCassandra::QCassandraCells& row_keys(row->cells());
+
+    for(QtCassandra::QCassandraCells::const_iterator it(row_keys.begin());
+        it != row_keys.end();
+        ++it)
     {
         // the cell key is actually the row name which is the host name
         // which is exactly what we want to display in our list!
-        f_host_list->addItem(r.key());
+        f_host_list->addItem(it.key());
     }
 
     // at first some of the entries are disabled
@@ -735,6 +751,10 @@ void snap_manager::on_hostList_itemClicked(QListWidgetItem *item)
         if(items.count() > 0)
         {
             f_host_list->setCurrentItem(items[0]);
+        }
+        else
+        {
+            f_host_list->clearSelection();
         }
         return;
     }
@@ -850,6 +870,8 @@ void snap_manager::on_hostDelete_clicked()
 
     delete f_host_list->currentItem();
 
+    f_host_list->clearSelection();
+
     // mark empty
     f_host_org_name = "";
     f_host_name->setText("");
@@ -884,6 +906,17 @@ bool snap_manager::hostChanged()
     }
 
     return true;
+}
+
+void snap_manager::on_hostFilter_clicked()
+{
+    // make sure the user did not change something first
+    if(hostChanged())
+    {
+        // user is okay with losing changes or did not make any
+        // the following applies the filter (Apply button)
+        loadHosts();
+    }
 }
 
 void snap_manager::loadDomains()
@@ -1008,6 +1041,10 @@ void snap_manager::on_domainList_itemClicked(QListWidgetItem *item)
         if(items.count() > 0)
         {
             f_domain_list->setCurrentItem(items[0]);
+        }
+        else
+        {
+            f_domain_list->clearSelection();
         }
         return;
     }
@@ -1263,6 +1300,8 @@ void snap_manager::on_domainDelete_clicked()
     }
 
     delete f_domain_list->currentItem();
+
+    f_domain_list->clearSelection();
 
     // mark empty
     f_domain_org_name = "";

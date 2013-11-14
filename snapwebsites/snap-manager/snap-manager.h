@@ -50,6 +50,7 @@ private slots:
     void reset_domains_index();
     void reset_websites_index();
     void on_hostList_itemClicked(QListWidgetItem *item);
+    void on_hostFilter_clicked();
     void on_hostNew_clicked();
     void on_hostSave_clicked();
     void on_hostCancel_clicked();
@@ -110,6 +111,8 @@ private:
 
     // computer hosts
     QString                         f_host_org_name;
+    QPointer<QPushButton>           f_host_filter;
+    QPointer<QLineEdit>             f_host_filter_string;
     QPointer<QListWidget>           f_host_list;
     QPointer<QLineEdit>             f_host_name;
     QPointer<QPushButton>           f_host_new;
