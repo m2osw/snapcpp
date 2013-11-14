@@ -36,7 +36,6 @@
 
 project(plugin_javascript)
 
-find_package( ControlledVars QUIET )
 find_package( Qt4 4.8.1 QUIET REQUIRED QtCore QtScript )
 include( ${QT_USE_FILE} )
 add_definitions( ${QT_DEFINITIONS} )

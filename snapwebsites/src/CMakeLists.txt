@@ -40,16 +40,14 @@
 ##
 ## The Snap! Server
 ##
-find_package( Qt4 4.8.1 REQUIRED QtCore QtNetwork QtXml QtXmlPatterns )
+find_package( Qt4 4.8.1 QUIET REQUIRED QtCore QtNetwork QtXml QtXmlPatterns )
 include( ${QT_USE_FILE} )
 add_definitions( ${QT_DEFINITIONS} )
 
 project(snapserver)
 
 include_directories(
-    #"${CMAKE_CURRENT_SOURCE_DIR}/../../lib"
-    #"${CMAKE_CURRENT_BINARY_DIR}/../../lib"
-    "${CMAKE_CURRENT_SOURCE_DIR}"
+    ${CMAKE_CURRENT_SOURCE_DIR}
     ${QT_INCLUDES}
 )
 
@@ -61,11 +59,11 @@ add_executable(snapserver
 # while developing you may need to set LD_LIBRARY_PATH
 target_link_libraries(snapserver
     libsnapwebsites
-    QtCassandra
-    QtSerialization
+    ${QTCASSANDRA_LIBRARIES}
+    ${QTSERIALIZATION_LIBRARIES}
     ${QT_LIBRARIES}
     ${THRIFT_LIBRARIES}
-    tld
+    ${LIBTLD_LIBRARIES}
     dl
 )
 
@@ -80,7 +78,7 @@ install(
 project(snapbackend)
 
 include_directories(
-    "${CMAKE_CURRENT_SOURCE_DIR}"
+    ${CMAKE_CURRENT_SOURCE_DIR}
     ${QT_INCLUDES}
 )
 
@@ -92,11 +90,11 @@ add_executable(snapbackend
 # while developing you may need to set LD_LIBRARY_PATH
 target_link_libraries(snapbackend
     libsnapwebsites
-    QtCassandra
-    QtSerialization
+    ${QTCASSANDRA_LIBRARIES}
+    ${QTSERIALIZATION_LIBRARIES}
     ${QT_LIBRARIES}
-    thrift
-    tld
+    ${THRIFT_LIBRARIES}
+    ${LIBTLD_LIBRARIES}
     dl
 )
 
@@ -111,9 +109,7 @@ install(
 project(snapcgi)
 
 include_directories(
-    #"${CMAKE_CURRENT_SOURCE_DIR}/../lib"
-    #"${CMAKE_CURRENT_BINARY_DIR}/../lib"
-    "${CMAKE_CURRENT_SOURCE_DIR}"
+    ${CMAKE_CURRENT_SOURCE_DIR}
     ${QT_INCLUDES}
 )
 
@@ -136,7 +132,7 @@ install(
 project(snapdb)
 
 include_directories(
-    "${CMAKE_CURRENT_SOURCE_DIR}"
+    ${CMAKE_CURRENT_SOURCE_DIR}
     ${QT_INCLUDES}
 )
 
@@ -147,12 +143,10 @@ add_executable(snapdb
 
 # while developing you may need to set LD_LIBRARY_PATH
 target_link_libraries(snapdb
-    #libsnapwebsites
-    QtCassandra
-    #QtSerialization
+    ${QTCASSANDRA_LIBRARIES}
     ${QT_LIBRARIES}
-    thrift
-    tld
+    ${THRIFT_LIBRARIES}
+    ${LIBTLD_LIBRARIES}
 )
 
 install(
@@ -166,7 +160,7 @@ install(
 project(snaplayout)
 
 include_directories(
-    "${CMAKE_CURRENT_SOURCE_DIR}"
+    ${CMAKE_CURRENT_SOURCE_DIR}
     ${QT_INCLUDES}
 )
 
@@ -176,12 +170,10 @@ add_executable(snaplayout
 )
 
 target_link_libraries(snaplayout
-    #libsnapwebsites
-    QtCassandra
-    #QtSerialization
+    ${QTCASSANDRA_LIBRARIES}
     ${QT_LIBRARIES}
-    thrift
-    tld
+    ${THRIFT_LIBRARIES}
+    ${LIBTLD_LIBRARIES}
 )
 
 install(

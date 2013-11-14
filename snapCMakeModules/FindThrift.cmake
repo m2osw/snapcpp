@@ -48,6 +48,7 @@ else()
 	find_library( THRIFT_LIBRARY thrift )
 	set( THRIFT_INCLUDE_DIRS ${THRIFT_INCLUDE_DIR} )
 	set( THRIFT_LIBRARIES    ${THRIFT_LIBRARY}     )
+	mark_as_advanced( THRIFT_INCLUDE_DIR THRIFT_LIBRARY )
 endif()
 
 include( FindPackageHandleStandardArgs )
@@ -60,4 +61,3 @@ find_package_handle_standard_args(
 	THRIFT_LIBRARIES
 )
 
-mark_as_advanced( THRIFT_INCLUDE_DIRS THRIFT_LIBRARIES )

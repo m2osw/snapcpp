@@ -10,7 +10,7 @@
 get_property( 3RDPARTY_INCLUDED GLOBAL PROPERTY 3RDPARTY_INCLUDED )
 if( 3RDPARTY_INCLUDED )
 	set( LIBTLD_INCLUDE_DIRS ${tld_library_BINARY_DIR}/include )
-	set( LIBTLD_LIBRARIES libtld )
+	set( LIBTLD_LIBRARIES tld )
 else()
 	find_path( LIBTLD_INCLUDE_DIR libtld/tld.h
 			   HINTS /usr/include /usr/local/include
@@ -21,11 +21,10 @@ else()
 			 )
 	set( LIBTLD_INCLUDE_DIRS ${LIBTLD_INCLUDE_DIR} )
 	set( LIBTLD_LIBRARIES    ${LIBTLD_LIBRARY}     )
+	mark_as_advanced( LIBTLD_INCLUDE_DIR LIBTLD_LIBRARY )
 endif()
 
 include( FindPackageHandleStandardArgs )
 # handle the QUIETLY and REQUIRED arguments and set LIBTLD_FOUND to TRUE
 # if all listed variables are TRUE
 find_package_handle_standard_args( LibTLD DEFAULT_MSG LIBTLD_INCLUDE_DIR LIBTLD_LIBRARY )
-
-mark_as_advanced( LIBTLD_INCLUDE_DIR LIBTLD_LIBRARY )

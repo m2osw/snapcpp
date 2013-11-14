@@ -28,6 +28,8 @@ function( ConfigureMakeProject PROJECT_NAME VERSION DISTFILE_PATH )
 	add_custom_command(
 		OUTPUT ${CONFIGURE_TARGETS}
 		COMMAND ${BUILD_DIR}/configure --prefix=${DIST_DIR} ${ARGN}
+			1> ${BUILD_DIR}/${PROJECT_NAME}_configure.log
+			2> ${BUILD_DIR}/${PROJECT_NAME}_configure.err
 		WORKING_DIRECTORY ${BUILD_DIR}
 		COMMENT "Running ${PROJECT_NAME} configuration"
 		)
@@ -36,6 +38,8 @@ function( ConfigureMakeProject PROJECT_NAME VERSION DISTFILE_PATH )
 	add_custom_command(
 		OUTPUT ${BUILD_OUTPUT}
 		COMMAND make
+			1> ${BUILD_DIR}/${PROJECT_NAME}_make.log
+			2> ${BUILD_DIR}/${PROJECT_NAME}_make.err
 		DEPENDS ${CONFIGURE_TARGETS}
 		WORKING_DIRECTORY ${BUILD_DIR}
 		COMMENT "Building ${PROJECT_NAME}"
@@ -45,6 +49,8 @@ function( ConfigureMakeProject PROJECT_NAME VERSION DISTFILE_PATH )
 	add_custom_command(
 		OUTPUT ${INSTALL_OUTPUT}
 		COMMAND make install
+			1>> ${BUILD_DIR}/${PROJECT_NAME}_make.log
+			2>> ${BUILD_DIR}/${PROJECT_NAME}_make.err
 		DEPENDS ${BUILD_OUTPUT}
 		WORKING_DIRECTORY ${BUILD_DIR}
 		COMMENT "Installing ${PROJECT_NAME}"

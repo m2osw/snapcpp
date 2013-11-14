@@ -1,0 +1,33 @@
+# - Try to find QtSerialization
+#
+# Once done this will define
+#
+# QTSERIALIZATION_FOUND        - System has QtSerialization
+# QTSERIALIZATION_INCLUDE_DIR  - The QtSerialization include directories
+# QTSERIALIZATION_LIBRARY      - The libraries needed to use QtSerialization (none)
+# QTSERIALIZATION_DEFINITIONS  - Compiler switches required for using QtSerialization (none)
+
+get_property( 3RDPARTY_INCLUDED GLOBAL PROPERTY 3RDPARTY_INCLUDED )
+if( 3RDPARTY_INCLUDED )
+	set( QTSERIALIZATION_INCLUDE_DIRS
+			${libQtSerialization_SOURCE_DIR}/include
+			${libQtSerialization_BINARY_DIR}/include
+			)
+	set( QTSERIALIZATION_LIBRARIES QtSerialization )
+else()
+	find_path( QTSERIALIZATION_INCLUDE_DIR QtSerialization/QCassandra.h
+			   HINTS /usr/include /usr/local/include
+			   PATH_SUFFIXES QtSerialization
+			 )
+	find_library( QTSERIALIZATION_LIBRARY QtSerialization
+			   HINTS /usr/lib /usr/local/lib
+			 )
+	set( QTSERIALIZATION_INCLUDE_DIRS ${QTSERIALIZATION_INCLUDE_DIR} )
+	set( QTSERIALIZATION_LIBRARIES    ${QTSERIALIZATION_LIBRARY}     )
+	mark_as_advanced( QTSERIALIZATION_INCLUDE_DIR QTSERIALIZATION_LIBRARY )
+endif()
+
+include( FindPackageHandleStandardArgs )
+# handle the QUIETLY and REQUIRED arguments and set QTSERIALIZATION_FOUND to TRUE
+# if all listed variables are TRUE
+find_package_handle_standard_args( QtSerialization DEFAULT_MSG QTSERIALIZATION_INCLUDE_DIR QTSERIALIZATION_LIBRARY )

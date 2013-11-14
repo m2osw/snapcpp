@@ -55,6 +55,7 @@ if( NOT CMAKE_MODULE_PATH )
     message( "Found snapCMakeModules in ${CMAKE_MODULE_PATH}" )
 endif()
 
+find_package( ControlledVars   )
 find_package( SnapCMakeModules )
 find_package( SnapDoxygen      )
 find_package( Thrift           )
@@ -72,6 +73,7 @@ include_directories(
     ${PROJECT_BINARY_DIR}
     ${PROJECT_BINARY_DIR}/include
     ${CMAKE_BINARY_DIR}
+    ${CONTROLLEDVARS_INCLUDE_DIRS}
     ${THRIFT_INCLUDE_DIRS}
     ${QT_INCLUDES}
 )

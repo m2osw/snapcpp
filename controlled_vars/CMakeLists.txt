@@ -89,16 +89,21 @@ add_custom_command(
 add_custom_target( make_controlled_vars_headers ALL DEPENDS controlled_vars.h )
 
 install(FILES
-		${CMAKE_CURRENT_BINARY_DIR}/controlled_vars.h
-		${CMAKE_CURRENT_BINARY_DIR}/controlled_vars_version.h
-		${CMAKE_CURRENT_BINARY_DIR}/controlled_vars_exceptions.h
-		${CMAKE_CURRENT_BINARY_DIR}/controlled_vars_static_assert.h
 		${CMAKE_CURRENT_BINARY_DIR}/controlled_vars_auto_init.h
+		${CMAKE_CURRENT_BINARY_DIR}/controlled_vars_exceptions.h
+		${CMAKE_CURRENT_BINARY_DIR}/controlled_vars_fauto_init.h
+		${CMAKE_CURRENT_BINARY_DIR}/controlled_vars.h
 		${CMAKE_CURRENT_BINARY_DIR}/controlled_vars_limited_auto_init.h
-		${CMAKE_CURRENT_BINARY_DIR}/controlled_vars_need_init.h
+		${CMAKE_CURRENT_BINARY_DIR}/controlled_vars_limited_fauto_init.h
 		${CMAKE_CURRENT_BINARY_DIR}/controlled_vars_limited_need_init.h
-		${CMAKE_CURRENT_BINARY_DIR}/controlled_vars_no_init.h
 		${CMAKE_CURRENT_BINARY_DIR}/controlled_vars_limited_no_init.h
+		${CMAKE_CURRENT_BINARY_DIR}/controlled_vars_need_init.h
+		${CMAKE_CURRENT_BINARY_DIR}/controlled_vars_no_init.h
+		${CMAKE_CURRENT_BINARY_DIR}/controlled_vars_ptr_auto_init.h
+		${CMAKE_CURRENT_BINARY_DIR}/controlled_vars_ptr_need_init.h
+		${CMAKE_CURRENT_BINARY_DIR}/controlled_vars_ptr_no_init.h
+		${CMAKE_CURRENT_BINARY_DIR}/controlled_vars_static_assert.h
+		${CMAKE_CURRENT_BINARY_DIR}/controlled_vars_version.h
 	DESTINATION include/controlled_vars
 )
 
