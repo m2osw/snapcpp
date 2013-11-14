@@ -116,7 +116,7 @@ snap_uri::snap_uri(const QString& uri)
  * URI is not yet encoded.
  *
  * Anything wrong in the syntax and the function returns false. Wrong
- * means empty entries, zero value for the port, invalid encoding sequence.
+ * means empty entries, invalid encoding sequence, etc.
  *
  * \param[in] uri  The new URI to replace all the current data of this Snap URI object.
  *
@@ -194,8 +194,7 @@ bool snap_uri::set_uri(const QString& uri)
     QString username;
     QString password;
     QString full_domain_name;
-#pragma message "Alexis: You had 'protocol' instead of 'protocol()'. I'm assuming you meant the method? Or the direct member 'f_protocol'?"
-    int port(protocol_to_port(protocol()));
+    int port(protocol_to_port(uri_protocol));
 
     // retrieve the data
     if(colon1 != NULL)
@@ -233,11 +232,6 @@ bool snap_uri::set_uri(const QString& uri)
                 // port overflow
                 return false;
             }
-        }
-        if(port == 0)
-        {
-            // port zero is not accepted
-            return false;
         }
     }
     else
@@ -424,10 +418,8 @@ bool snap_uri::set_uri(const QString& uri)
     f_protocol = uri_protocol;
     f_username = urldecode(username);
     f_password = urldecode(password);
-    if(port != 0)
+    if(port != -1)
     {
-        // although port 0 is "valid" it does not make much sense in our
-        // case so we just ignore it
         f_port = port;
     }
     f_domain = domain_name;
@@ -975,17 +967,15 @@ const QStringList& snap_uri::sub_domains_list() const
  * This function changes the port of the URI from what it is now
  * to the specified value.
  *
- * The port value must be a positive number or zero. Zero represents
- * the default (80 or 443).
+ * The port value must be a positive number or zero.
  *
- * Negative values or invalid numbers generate an error.
+ * Negative values or other invalid numbers generate an error.
  *
- * Note that the port can be set to zero although that's probably not a good
- * idea to do so. However, the set_uri() function refuses a port of zero.
+ * You can retrieve the port number with the get_port() function.
  *
  * \exception snap_uri_exception_invalid_parameter
- * This function generates an exception if an invalid port is
- * detected (negative or characters other than 0-9).
+ * This function generates an exception if an invalid port is detected
+ * (negative, larger than 65535, or characters other than 0-9).
  *
  * \param[in] port  The new port for this Snap URI object.
  */
@@ -1005,13 +995,9 @@ void snap_uri::set_port(const QString& port)
  * This function changes the port of the URI from what it is now
  * to the specified value.
  *
- * The port value must be a positive number or zero. Zero represents
- * the default (80 or 443).
+ * The port value must be a positive number or zero.
  *
  * Negative values or invalid numbers generate an error.
- *
- * Note that the port can be set to zero although that's probably not a good
- * idea to do so. However, the set_uri() function refuses a port of zero.
  *
  * \exception snap_uri_exception_invalid_parameter
  * This function generates an exception if an invalid port is
