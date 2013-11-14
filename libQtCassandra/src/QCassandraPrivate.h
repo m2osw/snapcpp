@@ -37,8 +37,6 @@
 #ifndef QCASSANDRA_PRIVATE_H
 #define QCASSANDRA_PRIVATE_H
 
-#pragma GCC system_header
-
 #include "QtCassandra/QCassandra.h"
 #include "QtCassandra/QCassandraColumnPredicate.h"
 
