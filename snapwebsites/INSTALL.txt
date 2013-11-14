@@ -1,0 +1,270 @@
+
+Since the installation process is becoming harder and harder (as in more and
+more things need to happen before you can run the processes used in Snap! C++)
+I decided to write this document.
+
+Note: there is a plethora of documents on the website:
+
+     http://snapwebsites.org/
+
+
+1. Source Code
+
+Use git to retrieve the source code. See the tree here:
+
+  http://sourceforge.net/p/snapcpp/code/ci/master/tree/
+
+The current git command to retrieve the source is:
+
+  git clone git://git.code.sf.net/p/snapcpp/code snapcpp-code
+
+Now you are ready to compile the source code.
+
+
+2. Compiling
+
+At first, obviously, you need to recompile everything. Not just this,
+directory but all the libraries as well. We also offer those libraries as
+standalones, but we often make small modifications that do not always
+immediately make it in the official version of the corresponding library
+on the Internet.
+
+To compile everything, from within your master directory you can do the
+following:
+
+   mkdir BUILD
+   cd BUILD
+   cmake ..
+   make
+
+You may also run `make install`, although everything will run from the
+BUILD directory (that's how we do our development.)
+
+Later we'll have .deb packages, but not right now... Sorry!
+
+If you have any problems, please create a ticket on SourceForge.net:
+
+  http://sourceforge.net/p/snapcpp/tickets/
+
+
+3. Running
+
+This is where you'll run into a few hurdle if you do not know how to start
+Snap! We will make it easier later, but right now there is process to follow
+which is as follow (I'll probably forget to upgrade this with time... you'll
+have to forgive me, but I do a lot of things. If something fails for you, let
+me know and don't hesitate to ask me to update this file.)
+
+  a. Configure Cassandra
+
+     In the cassandra directory you will see different Cassandra binaries
+     (precompiled Java.) Decompress one of them (most recent makes sense!)
+     and then make sure to change the settings in:
+
+     In versions before 2.x, make sure to change the Java stack size (-Xss)
+     to 256Mb (or more). The default is too small and you will run in all
+     sorts of problems if you do not change it. This is found in file
+     conf/cassandra-env.sh where you'll see something like this:
+
+         JVM_OPTS="$JVM_OPTS -Xss256k"
+
+     In the conf/cassandra.yaml file:
+     
+     . We change the "cluster_name" parameter to whatever you like:
+
+         cluster_name: "Alexis Cluster"
+
+     . We setup the data_file_directories to a path such as:
+
+         data_file_directories: /home/alexis/cassandra/data
+
+       For a live system, put it somelike like
+     
+         data_file_directories: /var/cassandra/data
+
+       Since you should not have more than one cassandra instance running on
+       one computer, one location is enough. Although of course you could have
+       one official and one development directory, in which case you probably
+       want 2 cassandra directories.
+
+     . We set the commitlog_directory to a path where Cassandra can write.
+       This is all the data sent to cassandra. It is like a journal. Make sure
+       it is valid or nothing will work.
+
+         commitlog_directory: /home/alexis/cassandra/commitlog
+
+     . We also change the saved_caches_directory value to a valid path. This
+       is used to save data that is often accessed so Cassandra does not need
+       to re-retrieve it from its big tables. It makes it faster.
+
+         saved_caches_directory: /home/alexis/cassandra/saved_caches
+
+       This is useful to see what happens in Cassandra, although if you do
+       not do any development, it is likely to not help you much.
+
+     In the conf/log4j-server.properties file:
+
+       log4j.appender.R.File=/home/alexis/cassandra/log/system.log
+
+  b. Start Cassandra
+
+     Now that you changed the settings to your liking, you can start
+     Cassandra with the following:
+
+       bin/cassandra
+
+     That's it. I will print tons of messages in your console on startup,
+     but after that, it stops.
+
+     To test whether the server is running, you can try with the CLI:
+
+       bin/cassandra-cli
+
+     The first line should say: Connected to: "Alexis Cluster"
+     (the name of the cluster is whatever you set it up to be, of course.)
+     Try help to see the commands understood by the CLI:
+
+       help;
+
+     The few commands to see inside a Snap! cluster are:
+
+       connect localhost/9160; # should not be necessary
+       use snap_websites;
+       list domains;
+       list websites;
+       list sites;
+       list hosts;
+       ...
+
+     However, we define everything as binary (faster!) so the CLI will show
+     you stuff that looks like hexadecimal code. Lots of it... Instead we
+     suggest you use the snap-manager which recognizes the Snap! environment
+     as expected.
+
+  c. Start the Snap! C++ server
+
+     Inside the snapwebsites sub-directory of the source, you see a
+     sub-directory named src. In there you see a file named snapserver.c++.
+     That's the server that talks between the Apache server and the
+     Cassandra cluster. That's the core of Snap! C++.
+
+     You want to run the server first to create the snap environment in
+     the cluster and then run the snap-manager tool to add entries that
+     will let you access the server from your browsers.
+
+     To start the server, simply do this:
+
+       BUILD/snapwebsites/src/snapserver -d -c snapwebsites/src/snapserver.conf
+
+     The -d is optional, it means "debug", in other words the server will not
+     get detached from the console and that gives you the ability to do a
+     Ctrl-C to stop the server. Otherwise you'll have to do a
+     `killall snapserver`.
+
+     The -c option is followed by the name of a configuration file. You may
+     want to edit the file and fix a few things. The defaults are specific to
+     our environment and they may not be well adapted to your environment.
+
+     If it works, the server runs (it does not exit because the -d command
+     blocks the server there.) If a fatal error occurs, then the server
+     exists and you get the prompt back.
+
+     KNOWN BUG: At this time the Snap! server does not immediately create all
+                the tables it is going to use. This means it won't work right
+		in a cluster (i.e. more than one Cassandra node). We are
+		aware of this problem and will move the creation of tables
+		to the update processes. That way we will be able to wait
+		on any such changes before actually starting the server
+		(i.e. because you have to wait on Cassandra to tell you that
+		it is done creating the table before you can move on.)
+
+  d. Snap! Manager Setup
+
+     Once the Snap! C++ server is running, the next step is to run the Snap!
+     Manager tool to add hosts, domains, and websites. (and once it works,
+     tweak the Sites variables...)
+
+       BUILD/snapwebsites/snap-manager/snap-manager
+
+     The tool does not take any parameters since all are in the interface.
+     There you want to enter the connection information to the Cassandra
+     cluster and then click on Connect. That lets you make changes the
+     data in the Cassandra cluster that is not otherwise accessible via
+     the website interfaces of Snap. (although long term we may offer such
+     at this point it is a lot easier this way and high level administration
+     features are not really necessary in a browser.)
+
+     . Hosts
+
+     The list of hosts is used to lock databases on a per process basis.
+     One process runs whenever one user access your Snap! server. At times
+     an atomic actions is necessary and locks are used for that purpose.
+     Locks are easy to achieve with the cluster, but it requires the name
+     of all the servers on all the computers running Cassandra for your
+     one Snap! environment.
+
+     . Domains
+
+     The list of domains that have a website on your system. The domains
+     are scripts that define how to handle the domain name, sub-domains,
+     paths, etc. For example, we use the following for our test website:
+
+       Domain Name: m2osw.com
+       Domain Rules:
+         main {
+           required host = "csnap\.";
+         };
+
+     This says that if the server is accessed by csnap.m2osw.com, then
+     accept the connection.
+
+     More info: http://snapwebsites.org/help/snap-manager/create-and-manager-domains
+
+     . Websites
+
+     This is very similar to the Domains, only the script is much more
+     complicated as it accepts many more commands. We use the following
+     entry for our csnap.m2osw.com domain:
+
+       Full Domain Name: csnap.m2osw.com
+       Website Rules:
+         main {
+           protocol = "http";
+           port = "80";
+         };
+
+     In this case we accept connections only if on HTTP and port 80.
+
+     . Sites
+
+     Once you connect to the Cassandra cluster, the snap-manager checks for
+     the sites table and reads the URI defined in there. You should see
+     exactly one URI per website you defined. Nothing will appear until
+     you actually access the website because until then the site does not
+     even know it exists.
+
+     Once there, you can click on the URIs and you'll see the corresponding
+     name/value which represent variables used by that website.
+
+     IMPORTANT NOTE: At this time, you cannot edit anything in that table.
+     Also the value is not properly "cast" to its proper type so the data
+     looks "weird".
+
+  e. Snap! Layouts
+
+     To make website look like something, you need to have a layout. There
+     is an internal layout otherwise nothing would work, but the internal
+     one looks like the website is broken (we use the strict minimum to
+     display the information on the screen, pretty much...)
+
+     To add layout to the cluster, use the snaplayout tool with the name
+     of the layout file on the command line. For example:
+
+       BUILD/snapwebsites/src/snaplayout snapwebsites/layouts/white-theme-parser.xsl
+       BUILD/snapwebsites/src/snaplayout snapwebsites/layouts/white-body-parser.xsl
+
+     We intend for the white layout to some day be the default layout of
+     Snap! C++. It will remain as basic as possible so all the capabilities
+     of the system function as expected.
+
+// vim: ts=2 sw=2 et
