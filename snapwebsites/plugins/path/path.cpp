@@ -169,7 +169,7 @@ void path::on_init()
 //					int64_t timestamp)
 //{
 //	QString cpath(path);
-//	snap_child::canonalize_path(cpath);
+//	snap_child::canonicalize_path(cpath);
 //	const QString key(f_snap->get_site_key() + cpath);
 //	QtCassandra::QCassandraValue value(primary_owner);
 //	value.setTimestamp(timestamp);
@@ -193,7 +193,7 @@ void path::on_execute(const QString& uri_path)
 {
 	// get the name of the plugin that owns this URL 
 	QString cpath(uri_path);
-	snap_child::canonalize_path(cpath);
+	snap_child::canonicalize_path(cpath);
 	const QString key(f_snap->get_site_key_with_slash() + cpath);
 	QString owner;
 	dynamic_path_plugin_t path_plugin;
@@ -280,7 +280,7 @@ void path::on_execute(const QString& uri_path)
  * has priority and thus this function never gets called if that happens.)
  *
  * \param[in] path_plugin  The path plugin.
- * \param[in] cpath  The canonalized path to be checked
+ * \param[in] cpath  The canonicalized path to be checked
  */
 bool path::can_handle_dynamic_path_impl(path * /*path_plugin*/, const QString& /*cpath*/)
 {
@@ -298,7 +298,7 @@ bool path::can_handle_dynamic_path_impl(path * /*path_plugin*/, const QString& /
  * 404 will be presented to the user.
  *
  * \param[in] path_plugin  The path plugin.
- * \param[in] cpath  The canonalized path to be checked
+ * \param[in] cpath  The canonicalized path to be checked
  */
 bool path::page_not_found_impl(path * /*path_plugin*/, const QString& /*cpath*/)
 {

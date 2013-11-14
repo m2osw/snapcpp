@@ -47,7 +47,18 @@ If you have any problems, please create a ticket on SourceForge.net:
   http://sourceforge.net/p/snapcpp/tickets/
 
 
-3. Running
+3. Setting up Apache2
+
+We offer a file that shows an example on how you can setup Apache to
+respond to your queries. See this file:
+
+   snapwebsites/src/snap-apache2.conf
+
+This needs to be loaded by Apache, somehow. You will need to do tweaks so
+it works in your environment.
+
+
+4. Running
 
 This is where you'll run into a few hurdle if you do not know how to start
 Snap! We will make it easier later, but right now there is process to follow
@@ -126,6 +137,10 @@ me know and don't hesitate to ask me to update this file.)
 
        help;
 
+     Once you are done with a Cassandra CLI session use:
+
+       quit;
+
      The few commands to see inside a Snap! cluster are:
 
        connect localhost/9160; # should not be necessary
@@ -147,6 +162,11 @@ me know and don't hesitate to ask me to update this file.)
      sub-directory named src. In there you see a file named snapserver.c++.
      That's the server that talks between the Apache server and the
      Cassandra cluster. That's the core of Snap! C++.
+
+     Note: There is a snapwebsites/src/log.conf file in there. The
+     snapwebsites/src/snapserver.conf file points to that log file.
+     You will need to edit the configuration file in order
+     to change the path to the log configuration file.
 
      You want to run the server first to create the snap environment in
      the cluster and then run the snap-manager tool to add entries that
@@ -194,6 +214,8 @@ me know and don't hesitate to ask me to update this file.)
      at this point it is a lot easier this way and high level administration
      features are not really necessary in a browser.)
 
+     More info: http://snapwebsites.org/help/snap-manager
+
      . Hosts
 
      The list of hosts is used to lock databases on a per process basis.
@@ -235,6 +257,8 @@ me know and don't hesitate to ask me to update this file.)
 
      In this case we accept connections only if on HTTP and port 80.
 
+     More info: http://snapwebsites.org/help/snap-manager/create-and-manage-websites
+
      . Sites
 
      Once you connect to the Cassandra cluster, the snap-manager checks for
@@ -266,5 +290,55 @@ me know and don't hesitate to ask me to update this file.)
      We intend for the white layout to some day be the default layout of
      Snap! C++. It will remain as basic as possible so all the capabilities
      of the system function as expected.
+
+  f. Snap! Backends
+
+     One of the power of Snap! C++ is speed. This is realized in part by the
+     fact that you can run necessary processes on a backend server. One that
+     is neither used by the database nor a webserver (although at first you
+     may have everything running on a single computer... when more speed is
+     necessary, you will be able to get it simply by adding a computer and
+     moving different processes to different computers.)
+
+     Backends are started with the snapbackend program. Some of those backend
+     processes run once and return, others run for as long as you let them
+     run. Those that run once may be schedule to run repetitively using a
+     tool such as CRON. Those that run forever can just be started when
+     you reboot your server. In most cases you can stop backend processes
+     by sending them a UDP "STOP" signal.
+
+     Snap! C++ backend supports a CRON behavior by default. That is a set
+     of tasks that need to run once in a while to maintain the full
+     validity of the website (i.e. update the XML sitemap with any new or
+     deleted pages.) This is the default and it is run by calling the
+     snapbackend tool with just the -c option:
+
+       BUILD/snapwebsites/src/snapbackend -c snapwebsites/src/snapserver.conf
+
+     This command should be run once in a while. The frequency will depend
+     on your server setup and how fresh you want all the data worked on by
+     the CRON processes need to be on your sites. You could run it as often
+     as once a minute, or as infrequently as once a month. Although, if your
+     websites do not change that much, once an hour is a good choice.
+
+     Some tasks done by the backend are called actions. These actions are
+     run on a per action basis. That is, you cannot run all the actions at
+     once, although some actions take over the process (i.e. it will not
+     return.) Those actions can be started once and kept running.
+
+     There is an example to run the "sendmail" action. This is one of those
+     actions that stays running. It ignores the specified URI and runs on
+     all websites mail as it arrives. It can be sent a UDP STOP signal to
+     quit cleanly.
+
+       BUILD/snapwebsites/src/snapbackend -c snapwebsites/src/snapserver.conf -a sendmail
+
+     P.S. the sendmail is most certainly the first backend action you want to
+          start, without it you won't be able to register an account on your
+          website since that requires the server to send emails.
+
+     Note that the backends go through the same configuration drill as the
+     server. You may use the -d option to get error messages. Otherwise all
+     errors will only end up in your logs.
 
 // vim: ts=2 sw=2 et

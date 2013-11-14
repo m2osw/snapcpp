@@ -218,10 +218,10 @@ void content::content_update(int64_t variables_timestamp)
  * supposed that the page permissions were already checked and thus that
  * its contents can be displayed to the current user.
  *
- * Note that the path was canonalized by the path plugin and thus it does
+ * Note that the path was canonicalized by the path plugin and thus it does
  * not require any further corrections.
  *
- * \param[in] cpath  The canonalized path being managed.
+ * \param[in] cpath  The canonicalized path being managed.
  *
  * \return true if the content is properly generated, false otherwise.
  */
@@ -497,7 +497,7 @@ QSharedPointer<QtCassandra::QCassandraTable> content::get_content_table()
  *
  * If the value is undefined, the result is a null value.
  *
- * \param[in] path  The canonalized path being managed.
+ * \param[in] path  The canonicalized path being managed.
  * \param[in] name  The name of the parameter to retrieve.
  *
  * \return The content of the row as a Cassandra value.
@@ -600,7 +600,7 @@ void content::add_xml(const QString& plugin_name)
         {
             throw std::runtime_error("all <content> tags supplied to add_xml() must include a valid \"path\" attribute");
         }
-        f_snap->canonalize_path(path);
+        f_snap->canonicalize_path(path);
         QString key(f_snap->get_site_key_with_slash() + path);
 
         // create a new entry for the database
@@ -738,7 +738,7 @@ void content::add_xml(const QString& plugin_name)
                 }
                 // the destination URL is defined in the <link> content
                 QString destination_path(element.text());
-                f_snap->canonalize_path(destination_path);
+                f_snap->canonicalize_path(destination_path);
                 QString destination_key(f_snap->get_site_key_with_slash() + destination_path);
                 links::link_info source(link_name, source_unique, key);
                 links::link_info destination(link_to, destination_unique, destination_key);

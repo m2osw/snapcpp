@@ -1198,7 +1198,6 @@ void sendmail::on_backend_action(const QString& action)
  */
 void sendmail::process_emails()
 {
-fprintf(stderr, "checking emails...\n");
     QSharedPointer<QtCassandra::QCassandraTable> table(get_emails_table());
     QSharedPointer<QtCassandra::QCassandraRow> row(table->row(get_name(SNAP_NAME_SENDMAIL_NEW)));
     QtCassandra::QCassandraColumnRangePredicate column_predicate;

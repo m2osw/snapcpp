@@ -16,11 +16,6 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "snapwebsites.h"
-//#include "plugins.h"
-//#include <iostream>
-//#include "QtXml/QDomDocument"
-//#include "QtCore/QDebug"
-//#include <QtCore/QCoreApplication>
 
 
 int main(int argc, char *argv[])

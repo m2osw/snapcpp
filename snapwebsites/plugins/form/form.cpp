@@ -377,7 +377,7 @@ void form::on_process_post(const QString& uri_path)
 
 	// verify that one of the paths is valid
 	QString cpath(uri_path);
-	snap_child::canonalize_path(cpath);
+	snap_child::canonicalize_path(cpath);
 	if(info.get_page_path() != cpath
 	&& info.get_object_path() != cpath)
 	{

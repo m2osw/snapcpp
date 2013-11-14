@@ -74,7 +74,7 @@ public:
 	QString get_unique_number();
 	QSharedPointer<QtCassandra::QCassandraTable> create_table(const QString& table_name, const QString& comment);
 	void new_content();
-	static void canonalize_path(QString& path);
+	static void canonicalize_path(QString& path);
 	static QString date_to_string(int64_t v, bool long_format = false);
 
 	QString snapenv(const QString& name) const;
@@ -100,8 +100,8 @@ private:
 	void snap_info();
 	void snap_statistics();
 	void connect_cassandra();
-	void canonalize_domain();
-	void canonalize_website();
+	void canonicalize_domain();
+	void canonicalize_website();
 	void site_redirect();
 	void init_plugins();
 	void update_plugins(const QStringList& list_of_plugins);
