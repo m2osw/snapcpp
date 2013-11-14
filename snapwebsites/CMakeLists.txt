@@ -63,9 +63,7 @@ project( snapwebsites )
 ##
 if( NOT CMAKE_MODULE_PATH )
     find_path( CMAKE_DIRECTORY_PATH snapCMakeModules
-        PATHS
-            ${PROJECT_SOURCE_DIR}
-            ${PROJECT_SOURCE_DIR}/..
+        PATHS ${CMAKE_SOURCE_DIR}
         NO_DEFAULT_PATH
     )
     set( CMAKE_MODULE_PATH ${CMAKE_DIRECTORY_PATH}/snapCMakeModules )

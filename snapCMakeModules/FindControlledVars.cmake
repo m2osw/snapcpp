@@ -9,15 +9,16 @@
 
 get_property( 3RDPARTY_INCLUDED GLOBAL PROPERTY 3RDPARTY_INCLUDED )
 if( 3RDPARTY_INCLUDED )
-	set( CONTROLLEDVARS_INCLUDE_DIRS ${controlled_vars_BINARY_DIR} )
+	set( CONTROLLEDVARS_INCLUDE_DIR ${controlled_vars_BINARY_DIR} )
 else()
 	find_path( CONTROLLEDVARS_INCLUDE_DIR controlled_vars/controlled_vars_auto_init.h
 			   PATHS $ENV{CONTROLLEDVARS_INCLUDE_DIR}
 			   PATH_SUFFIXES controlled_vars
 			 )
-	set( CONTROLLEDVARS_INCLUDE_DIRS ${CONTROLLEDVARS_INCLUDE_DIR} )
 	mark_as_advanced( CONTROLLEDVARS_INCLUDE_DIR )
 endif()
+
+set( CONTROLLEDVARS_INCLUDE_DIRS ${CONTROLLEDVARS_INCLUDE_DIR} )
 
 include( FindPackageHandleStandardArgs )
 # handle the QUIETLY and REQUIRED arguments and set CONTROLLEDVARS_FOUND to TRUE
