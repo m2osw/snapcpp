@@ -40,22 +40,39 @@ cmake_minimum_required(VERSION 2.8)
 project( snapwebsites_main )
 
 set( CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/snapCMakeModules )
-find_package( SnapCMakeModules )
+find_package( SnapCMakeModules REQUIRED )
+find_package( SnapBuild        REQUIRED )
 
-# This will cause us to look in the 3rdParty area for thrift and other 3rdparty libs
-#
-link_directories( ${CMAKE_BINARY_DIR}/dist/lib/ )
+ConfigureMakeProject(
+    USE_CONFIGURE_SCRIPT
+    PROJECT_NAME  thrift
+    VERSION       0.9.0
+    DISTFILE_PATH ${CMAKE_SOURCE_DIR}/3rdParty/thrift-${THRIFT_VERSION}.tar.gz
+    CONFIG_ARGS
+        --without-csharp
+        --without-java
+        --without-erlang
+        --without-python
+        --without-perl
+        --without-php
+        --without-php_extension
+        --without-ruby
+        --without-haskell
+        --without-go
+)
 
-add_subdirectory(  3rdParty           )
-add_subdirectory(  controlled_vars    )
-add_subdirectory(  libtld             )
-add_subdirectory(  libQtCassandra     )
-add_subdirectory(  libQtSerialization )
-add_subdirectory(  snapwebsites       )
+#add_subdirectory(  controlled_vars    )
+#add_subdirectory(  libtld             )
+#add_subdirectory(  libQtCassandra     )
+#add_subdirectory(  libQtSerialization )
+#add_subdirectory(  snapwebsites       )
 #add_subdirectory( backup             )
-add_subdirectory(  googlerank         )
-add_subdirectory(  iplock             )
-add_subdirectory(  cassview           )
+#add_subdirectory(  googlerank         )
+#add_subdirectory(  iplock             )
+#add_subdirectory(  cassview           )
+
+ConfigureMakeProject( PROJECT_NAME controlled_vars )
+ConfigureMakeProject( PROJECT_NAME libtld          )
 
 ##
 ## Packaging
