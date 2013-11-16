@@ -57,6 +57,8 @@ add_executable(iplock
 	iplock.cpp
 )
 
+install( TARGETS iplock RUNTIME DESTINATION bin )
+
 ##
 ## To pack the source
 ##
