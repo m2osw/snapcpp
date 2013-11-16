@@ -65,7 +65,8 @@ ConfigureMakeProject( PROJECT_NAME cassview        DEPENDS libQtCassandra )
 ConfigureMakeProject( PROJECT_NAME controlled_vars )
 ConfigureMakeProject( PROJECT_NAME libtld          )
 ConfigureMakeProject( PROJECT_NAME libQtCassandra
-        CONFIG_ARGS -DTHRIFT_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include/thrift
+        CONFIG_ARGS
+            -DTHRIFT_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include/thrift
         DEPENDS thrift controlled_vars
         )
 ConfigureMakeProject( PROJECT_NAME libQtSerialization

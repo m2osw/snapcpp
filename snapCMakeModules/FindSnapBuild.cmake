@@ -32,8 +32,8 @@ include( CMakeParseArguments )
 
 function( ConfigureMakeProject )
 	set( options        USE_CONFIGURE_SCRIPT )
-	set( oneValueArgs   PROJECT_NAME VERSION DISTFILE_PATH DEPENDS )
-	set( multiValueArgs CONFIG_ARGS )
+	set( oneValueArgs   PROJECT_NAME VERSION DISTFILE_PATH )
+	set( multiValueArgs CONFIG_ARGS DEPENDS )
 	cmake_parse_arguments( ARG "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN} )
 	#
 	if( NOT ARG_PROJECT_NAME )
