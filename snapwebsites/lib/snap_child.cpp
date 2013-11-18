@@ -32,6 +32,7 @@
 #include <QDateTime>
 #include <QtSerialization/QSerialization.h>
 #include <QCoreApplication>
+#include "poison.h"
 
 namespace snap
 {
@@ -2612,37 +2613,7 @@ QString snap_child::date_to_string(int64_t v, bool long_format)
  */
 void snap_child::udp_ping(const char *name, const char *message)
 {
-    // TODO: we should have a common function to read and transform the
-    //       parameter to a valid IP/Port pair (see below)
-    QString udp_addr_port(f_server->get_parameter(name));
-    QString addr, port;
-    int bracket(udp_addr_port.lastIndexOf("]"));
-    int p(udp_addr_port.lastIndexOf(":"));
-    if(bracket != -1 && p != -1)
-    {
-        if(p > bracket)
-        {
-            // IPv6 port specification
-            addr = udp_addr_port.mid(0, bracket + 1); // include the ']'
-            port = udp_addr_port.mid(p + 1); // ignore the ':'
-        }
-        else
-        {
-            throw std::runtime_error("invalid [IPv6]:port specification, port missing for UDP ping");
-        }
-    }
-    else if(p != -1)
-    {
-        // IPv4 port specification
-        addr = udp_addr_port.mid(0, p); // ignore the ':'
-        port = udp_addr_port.mid(p + 1); // ignore the ':'
-    }
-    else
-    {
-        throw std::runtime_error("invalid IPv4:port specification, port missing for UDP ping");
-    }
-    udp_client_server::udp_client client(addr.toUtf8().data(), port.toInt());
-    client.send(message, strlen(message)); // we do not send the '\0'
+    f_server->udp_ping(name, message);
 }
 
 

@@ -58,20 +58,27 @@ enum name_t
     SNAP_NAME_SENDMAIL_EMAIL,
     SNAP_NAME_SENDMAIL_EMAILS_TABLE,
     SNAP_NAME_SENDMAIL_FREQUENCY,
+    SNAP_NAME_SENDMAIL_FREQUENCY_DAILY,
+    SNAP_NAME_SENDMAIL_FREQUENCY_IMMEDIATE,
+    SNAP_NAME_SENDMAIL_FREQUENCY_MONTHLY,
+    SNAP_NAME_SENDMAIL_FREQUENCY_WEEKLY,
     SNAP_NAME_SENDMAIL_FROM,
-    SNAP_NAME_SENDMAIL_IMMEDIATE,
     SNAP_NAME_SENDMAIL_IMPORTANT,
+    SNAP_NAME_SENDMAIL_INDEX,
     SNAP_NAME_SENDMAIL_LISTS,
     SNAP_NAME_SENDMAIL_NEW,
     SNAP_NAME_SENDMAIL_PING,
-    SNAP_NAME_SENDMAIL_SENT,
+    SNAP_NAME_SENDMAIL_SENDING_STATUS,
     SNAP_NAME_SENDMAIL_STATUS,
+    SNAP_NAME_SENDMAIL_STATUS_DELETED,
+    SNAP_NAME_SENDMAIL_STATUS_LOADING,
     SNAP_NAME_SENDMAIL_STATUS_NEW,
     SNAP_NAME_SENDMAIL_STATUS_READ,
-    SNAP_NAME_SENDMAIL_STATUS_DELETED,
+    SNAP_NAME_SENDMAIL_STATUS_SENDING,
+    SNAP_NAME_SENDMAIL_STATUS_SENT,
     SNAP_NAME_SENDMAIL_STATUS_SPAM,
-    SNAP_NAME_SENDMAIL_SUBJECT,
     SNAP_NAME_SENDMAIL_STOP,
+    SNAP_NAME_SENDMAIL_SUBJECT,
     SNAP_NAME_SENDMAIL_TO,
     SNAP_NAME_SENDMAIL_X_MSMAIL_PRIORITY,
     SNAP_NAME_SENDMAIL_X_PRIORITY
@@ -106,7 +113,10 @@ public:
             virtual ~email_attachment();
 
             void set_data(const QByteArray& data, QString mime_type);
+            QByteArray get_data() const;
             void add_header(const QString& name, const QString& value);
+            QString get_header(const QString& name) const;
+            const header_map_t& get_all_headers() const;
 
             // internal functions used to save the data serialized
             void unserialize(QtSerialization::QReader& r);
@@ -126,6 +136,8 @@ public:
         void set_cumulative(const QString& object);
         void set_site_key(const QString& site_key);
         const QString& get_site_key() const;
+        void set_email_path(const QString& email_path);
+        const QString& get_email_path() const;
         void set_email_key(const QString& site_key);
         const QString& get_email_key() const;
         time_t get_time() const;
@@ -134,6 +146,7 @@ public:
         void add_header(const QString& name, const QString& value);
         QString get_header(const QString& name) const;
         const header_map_t& get_all_headers() const;
+        void set_body_attachment(const email_attachment& data);
         void add_attachment(const email_attachment& data);
         int get_attachment_count() const;
         email_attachment& get_attachment(int index) const;
@@ -146,7 +159,8 @@ public:
     private:
         QString                     f_cumulative;
         QString                     f_site_key;
-        QString                     f_email_key;
+        QString                     f_email_path;
+        QString                     f_email_key; // set on post_email()
         controlled_vars::mint64_t   f_time;
         header_map_t                f_header;
         attachment_vector_t         f_attachment;
@@ -174,6 +188,7 @@ private:
     void process_emails();
     void attach_email(const email& e);
     void attach_user_email(const email& e);
+    void run_emails();
     void sendemail(const QString& key, const QString& unique_key);
 
     zpsnap_child_t      f_snap;

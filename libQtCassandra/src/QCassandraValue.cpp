@@ -1952,15 +1952,15 @@ int64_t QCassandraValue::timestamp() const
  * the timestamp. In other words, you can copy an old value over a new
  * value and it will overwrite the new value.
  *
- * \param[in] timestamp  The time used to mark this value.
+ * \param[in] timestamp_value  The time used to mark this value.
  */
-void QCassandraValue::setTimestamp(int64_t val)
+void QCassandraValue::setTimestamp(int64_t timestamp_value)
 {
 #pragma GCC push
 #pragma GCC diagnostic ignored "-Wsign-promo"
     f_timestamp_mode = TIMESTAMP_MODE_DEFINED;
 #pragma GCC pop
-    f_timestamp = val;
+    f_timestamp = timestamp_value;
 }
 
 /** \brief Assign a new timestamp to this value.
@@ -1969,11 +1969,11 @@ void QCassandraValue::setTimestamp(int64_t val)
  * the timestamp mode. This is used internally whenever a value is read
  * from the Cassandra server.
  *
- * \param[in] timestamp  The new value timestamp.
+ * \param[in] timestamp_value  The new value timestamp.
  */
-void QCassandraValue::assignTimestamp(int64_t val)
+void QCassandraValue::assignTimestamp(int64_t timestamp_value)
 {
-    f_timestamp = val;
+    f_timestamp = timestamp_value;
 }
 
 } // namespace QtCassandra

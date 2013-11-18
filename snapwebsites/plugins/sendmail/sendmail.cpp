@@ -18,9 +18,11 @@
 #include "sendmail.h"
 #include "plugins.h"
 #include "log.h"
+#include "mkgmtime.h"
 #include "not_reached.h"
 #include "../content/content.h"
 #include "../users/users.h"
+#include "process.h"
 #include <QtCassandra/QCassandraValue.h>
 #include <QtSerialization/QSerializationComposite.h>
 #include <QtSerialization/QSerializationFieldString.h>
@@ -59,14 +61,26 @@ const char *get_name(name_t name)
     case SNAP_NAME_SENDMAIL_FREQUENCY:
         return "sendmail::frequency";
 
+    case SNAP_NAME_SENDMAIL_FREQUENCY_DAILY:
+        return "daily";
+
+    case SNAP_NAME_SENDMAIL_FREQUENCY_IMMEDIATE:
+        return "immediate";
+
+    case SNAP_NAME_SENDMAIL_FREQUENCY_MONTHLY:
+        return "monthly";
+
+    case SNAP_NAME_SENDMAIL_FREQUENCY_WEEKLY:
+        return "weekly";
+
     case SNAP_NAME_SENDMAIL_FROM:
         return "From";
 
-    case SNAP_NAME_SENDMAIL_IMMEDIATE:
-        return "immediate";
-
     case SNAP_NAME_SENDMAIL_IMPORTANT:
         return "Importance";
+
+    case SNAP_NAME_SENDMAIL_INDEX:
+        return "*index*";
 
     case SNAP_NAME_SENDMAIL_LISTS:
         return "lists";
@@ -77,17 +91,35 @@ const char *get_name(name_t name)
     case SNAP_NAME_SENDMAIL_PING:
         return "PING";
 
-    case SNAP_NAME_SENDMAIL_SENT:
-        return "sendmail::sent";
-
-    case SNAP_NAME_SENDMAIL_STOP:
-        return "STOP";
+    case SNAP_NAME_SENDMAIL_SENDING_STATUS:
+        return "sendmail::sending_status";
 
     case SNAP_NAME_SENDMAIL_STATUS:
         return "sendmail::status";
 
+    case SNAP_NAME_SENDMAIL_STATUS_DELETED:
+        return "deleted";
+
+    case SNAP_NAME_SENDMAIL_STATUS_LOADING:
+        return "loading";
+
     case SNAP_NAME_SENDMAIL_STATUS_NEW:
         return "new";
+
+    case SNAP_NAME_SENDMAIL_STATUS_READ:
+        return "read";
+
+    case SNAP_NAME_SENDMAIL_STATUS_SENDING:
+        return "sending";
+
+    case SNAP_NAME_SENDMAIL_STATUS_SENT:
+        return "sent";
+
+    case SNAP_NAME_SENDMAIL_STATUS_SPAM:
+        return "spam";
+
+    case SNAP_NAME_SENDMAIL_STOP:
+        return "STOP";
 
     case SNAP_NAME_SENDMAIL_SUBJECT:
         return "Subject";
@@ -101,9 +133,9 @@ const char *get_name(name_t name)
     case SNAP_NAME_SENDMAIL_X_MSMAIL_PRIORITY:
         return "X-MSMail-Priority";
 
-    default:
-        // invalid index
-        throw snap_exception("Invalid SNAP_NAME_SENDMAIL_...");
+    //default:
+    //    // invalid index
+    //    throw snap_exception("Invalid SNAP_NAME_SENDMAIL_...");
 
     }
     NOTREACHED();
@@ -188,6 +220,50 @@ void sendmail::email::email_attachment::set_data(const QByteArray& data, QString
         mime_type = m.get_mime_type(f_data);
     }
     f_header[get_name(SNAP_NAME_SENDMAIL_CONTENT_TYPE)] = mime_type;
+}
+
+
+/** \brief The email attachment data.
+ *
+ * This function retrieves the attachment data from this email attachment
+ * object. This is generally UTF-8 characters when we are dealing with
+ * text (HTML or plain text.)
+ *
+ * The data type is defined in the Content-Type header which is automatically
+ * defined by the mime_type parameter of the set_data() function call. To
+ * retrieve the MIME type, use the following:
+ *
+ * \code
+ * QString mime_type(attachment->get_header(get_name(SNAP_NAME_SENDMAIL_CONTENT_TYPE)));
+ * \endcode
+ */
+QByteArray sendmail::email::email_attachment::get_data() const
+{
+    return f_data;
+}
+
+
+/** \brief Retrieve the value of a header.
+ *
+ * This function returns the value of the named header. If the header
+ * is not currently defined, this function returns an empty string.
+ *
+ * \exception sendmail_exception_invalid_argument
+ * The name of a header cannot be empty. This exception is raised if
+ * \p name is empty.
+ *
+ * \param[in] name  A valid header name.
+ *
+ * \return The current value of that header or an empty string if undefined.
+ */
+QString sendmail::email::email_attachment::get_header(const QString& name) const
+{
+    if(name.isEmpty())
+    {
+        throw sendmail_exception_invalid_argument("Cannot retrieve a header with an empty name");
+    }
+
+    return f_header[name];
 }
 
 
@@ -325,7 +401,8 @@ void sendmail::email::email_attachment::serialize(QtSerialization::QWriter& w) c
 sendmail::email::email()
     //: f_cumulative("") -- auto-init
     //, f_site_key("") -- auto-init, set when posting email
-    //, f_email_key("") -- auto-init, set when posting email
+    //, f_email_path("") -- auto-init
+    //, f_email_key("") -- auto-init, generated when posting email
     : f_time(static_cast<int64_t>(time(NULL)))
     //, f_header() -- auto-init
     //, f_attachments() -- auto-init, but at least one required
@@ -455,6 +532,44 @@ const QString& sendmail::email::get_site_key() const
 }
 
 
+/** \brief Define the path to the email in the system.
+ *
+ * This function sets up the path of the email subject, body, and optional
+ * attachments.
+ *
+ * Other attachments can also be added to the email. However, when a path
+ * is defined, the title and body of that page are used as the subject and
+ * the body of the email.
+ *
+ * \note
+ * At the time an email gets sent, the permissions of a page are not
+ * checked.
+ *
+ * \param[in] email_path  The path to a page that will be used as the email subject, body, and attachments
+ */
+void sendmail::email::set_email_path(const QString& email_path)
+{
+    f_email_path = email_path;
+}
+
+
+/** \brief Retrieve the path to the page used to generate the email.
+ *
+ * This email path is set to a page that represents the subject (title) and
+ * body of the email. It may also have attachments linked to it.
+ *
+ * If the path is empty, then the email is generated using the email object
+ * and its attachment, the first attachment being the body of the email.
+ *
+ * \return The path to the page to be used to generate the email subject and
+ *         title.
+ */
+const QString& sendmail::email::get_email_path() const
+{
+    return f_email_path;
+}
+
+
 /** \brief Set the email key.
  *
  * When a new email is posted, it is assigned a unique number used as a
@@ -550,6 +665,10 @@ void sendmail::email::set_priority(email_priority_t priority)
  * it and remove any unwanted characters (tabs, new lines, etc.)
  *
  * The subject line is also silently truncated to a reasonable size.
+ *
+ * Note that if the email is setup with a path to a page, the title of that
+ * page is used as the default subject. If the set_subject() function is
+ * called with a valid subject (not empty) then the page title is ignored.
  *
  * \note
  * The set_subject() function is the same as calling the add_header() with
@@ -670,9 +789,31 @@ const sendmail::email::header_map_t& sendmail::email::get_all_headers() const
 }
 
 
+/** \brief Add the body attachment to this email.
+ *
+ * When creating an email with a path to a page (which is close to mandatory
+ * if you want to have translation and let users of your system to be able
+ * to edit the email in all languages.)
+ *
+ * This function should be private because it should only be used internally.
+ * Unfortunately, the function is used from the outside. But you've been
+ * warn. Really, this is using a push_front() instead of a push_back() it
+ * is otherwise the same as the add_attachment() function and you may want
+ * to read that function's documentation too.
+ *
+ * \param[in] data  The attachment to add as the body of this email.
+ *
+ * \sa email::add_attachment()
+ */
+void sendmail::email::set_body_attachment(const email_attachment& data)
+{
+    f_attachment.push_front(data);
+}
+
+
 /** \brief Add an attachment to this email.
  *
- * All data appearing in the body of the email is defined using attachment.
+ * All data appearing in the body of the email is defined using attachments.
  * This includes the normal plain text body if you use one. See the
  * email_attachment class for details on how to create an attachment
  * for an email.
@@ -682,6 +823,12 @@ const sendmail::email::header_map_t& sendmail::email::get_all_headers() const
  * as alternatives. If only that one attachment is added to an email then
  * it won't be made a sub-attachment in the final email buffer.
  *
+ * \b IMPORTANT \b NOTE: the body and subject of emails are most often defined
+ * using a path to a page. This means the first attachment is to be viewed
+ * as an attachment, not the main body. Also, the attachments of the page
+ * are also viewed as attachments of the email and will appear before the
+ * attachments added here.
+ *
  * \note
  * It is important to note that the attachments are written in the email
  * in the order they are defined here. It is quite customary to add the
@@ -689,6 +836,8 @@ const sendmail::email::header_map_t& sendmail::email::get_all_headers() const
  * attach to the email.
  *
  * \param[in] data  The email attachment.
+ *
+ * \sa email::set_body_attachment()
  */
 void sendmail::email::add_attachment(const email_attachment& data)
 {
@@ -735,6 +884,7 @@ sendmail::email::email_attachment& sendmail::email::get_attachment(int index) co
     return const_cast<email_attachment&>(f_attachment[index]);
 }
 
+
 /** \brief Unserialize an email message.
  *
  * This function unserializes an email message that was serialized using
@@ -768,6 +918,7 @@ void sendmail::email::unserialize(const QString& data)
     reader.read(comp);
 }
 
+
 /** \brief Read the contents one tag from the reader.
  *
  * This function reads the contents of the main email tag. It calls
@@ -790,6 +941,7 @@ void sendmail::email::readTag(const QString& name, QtSerialization::QReader& r)
         QtSerialization::QComposite comp;
         QtSerialization::QFieldString tag_cumulative(comp, "cumulative", f_cumulative);
         QtSerialization::QFieldString tag_site_key(comp, "site_key", f_site_key);
+        QtSerialization::QFieldString tag_email_path(comp, "email_path", f_email_path);
         QtSerialization::QFieldString tag_email_key(comp, "email_key", f_email_key);
         QtSerialization::QFieldTag tag_header(comp, "header", this);
         QtSerialization::QFieldTag tag_attachment(comp, "attachment", this);
@@ -812,6 +964,7 @@ void sendmail::email::readTag(const QString& name, QtSerialization::QReader& r)
         add_attachment(attachment);
     }
 }
+
 
 /** \brief Transform the email in one string.
  *
@@ -841,6 +994,7 @@ QString sendmail::email::serialize() const
             QtSerialization::writeTag(w, "cumulative", f_cumulative);
         }
         QtSerialization::writeTag(w, "site_key", f_site_key);
+        QtSerialization::writeTag(w, "email_path", f_email_path);
         QtSerialization::writeTag(w, "email_key", f_email_key);
         for(header_map_t::const_iterator it(f_header.begin()); it != f_header.end(); ++it)
         {
@@ -869,6 +1023,7 @@ sendmail::sendmail()
 {
 }
 
+
 /** \brief Clean up the sendmail plugin.
  *
  * Ensure the sendmail object is clean before it is gone.
@@ -876,6 +1031,7 @@ sendmail::sendmail()
 sendmail::~sendmail()
 {
 }
+
 
 /** \brief Initialize sendmail.
  *
@@ -890,6 +1046,7 @@ void sendmail::on_bootstrap(snap_child *snap)
 
     SNAP_LISTEN(sendmail, "server", server, register_backend_action, _1);
 }
+
 
 /** \brief Get a pointer to the sendmail plugin.
  *
@@ -940,10 +1097,11 @@ int64_t sendmail::do_update(int64_t last_updated)
     SNAP_PLUGIN_UPDATE_INIT();
 
     SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, initial_update);
-    SNAP_PLUGIN_UPDATE(2013, 3, 3, 22, 50, 0, content_update);
+    SNAP_PLUGIN_UPDATE(2013, 11, 18, 1, 5, 0, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
+
 
 /** \brief First update to run for the content plugin.
  *
@@ -1078,10 +1236,21 @@ bool sendmail::filter_email_impl(email& e)
  * processed by the backend instead of the frontend. That way we can save
  * time in the frontend.
  *
+ * \exception sendmail_exception_invalid_argument
+ * An invalid argument exception is raised if no content was specified before
+ * you call this function. The email is considered empty if no attachments
+ * were added and no email path was defined.
+ *
  * \param[in] e  Email to post.
  */
 void sendmail::post_email(const email& e)
 {
+    // we do not accept to send an email email
+    if(e.get_attachment_count() == 0 && e.get_email_path().isEmpty())
+    {
+        throw sendmail_exception_invalid_argument("An email must have at least one attachment or the email path defined");
+    }
+
     email copy(e);
     copy.set_site_key(f_snap->get_site_key());
     QString key(f_snap->get_unique_number());
@@ -1150,6 +1319,7 @@ void sendmail::on_backend_action(const QString& action)
     {
         // immediately process emails that have already arrived
         process_emails();
+        run_emails();
         char buf[256];
         int r(udp_signals->timed_recv(buf, sizeof(buf), 5 * 60 * 1000)); // wait for up to 5 minutes (x 60 seconds)
         if(r != -1 || errno != EAGAIN)
@@ -1247,7 +1417,7 @@ void sendmail::process_emails()
  * same user multiple times the same email, to group emails, send emails
  * to a given user at most once a day, etc.
  *
- * \param[in] e  The email to attach to users.
+ * \param[in] e  The email to attach to a list of users.
  */
 void sendmail::attach_email(const email& e)
 {
@@ -1326,12 +1496,12 @@ void sendmail::attach_email(const email& e)
 /** \brief Attach the specified email to the specified user.
  *
  * The specified email has an email address which is expected to be the
- * final destination (i.e. a user). This email is added to the emails
- * table and if the user did not have special sending instructions then
- * the email is sent immediately (which is the default, important in case
- * a user was to register with us!)
+ * final destination (i.e. a user). This email is added to the user's email
+ * account. It is then added to an index of emails that need to actually
+ * be sent unless the user frequency parameter says that the email is only
+ * to be registered in the system.
  *
- * \param[in] e  The email to process.
+ * \param[in] e  The email to attach to a user's account.
  */
 void sendmail::attach_user_email(const email& e)
 {
@@ -1373,35 +1543,152 @@ void sendmail::attach_user_email(const email& e)
     //       address) then we need to get the new email...
 
     // save the email for that user
+    // (i.e. emails can be read from within the website)
     QString serialized_email(e.serialize());
     QtCassandra::QCassandraValue email_value;
     email_value.setStringValue(serialized_email);
     QString unique_key(e.get_email_key());
-    table->row(key)->cell(unique_key + ":" + get_name(SNAP_NAME_SENDMAIL_EMAIL))->setValue(email_value);
+    row->cell(unique_key + "::" + get_name(SNAP_NAME_SENDMAIL_EMAIL))->setValue(email_value);
     QtCassandra::QCassandraValue status_value;
     status_value.setStringValue(get_name(SNAP_NAME_SENDMAIL_STATUS_NEW));
-    table->row(key)->cell(unique_key + ":" + get_name(SNAP_NAME_SENDMAIL_STATUS))->setValue(status_value);
+    row->cell(unique_key + "::" + get_name(SNAP_NAME_SENDMAIL_STATUS))->setValue(status_value);
     QtCassandra::QCassandraValue sent_value;
-    sent_value.setBoolValue(false);
-    table->row(key)->cell(unique_key + ":" + get_name(SNAP_NAME_SENDMAIL_SENT))->setValue(sent_value);
+    sent_value.setStringValue(get_name(SNAP_NAME_SENDMAIL_STATUS_NEW));
+    row->cell(unique_key + "::" + get_name(SNAP_NAME_SENDMAIL_SENDING_STATUS))->setValue(sent_value);
 
-    // try to retrieve the frequency of the user, if undefined assume
-    // the default (immediate)
+    // try to retrieve the mail frequency the user likes, but first check
+    // whether the email has one because if so it overrides the user's choice
     QtCassandra::QCassandraValue freq_value(row->cell(get_name(SNAP_NAME_SENDMAIL_FREQUENCY))->value());
+    if(freq_value.nullValue())
+    {
+        freq_value = users_table->row(key)->cell(get_name(SNAP_NAME_SENDMAIL_FREQUENCY))->value();
+    }
 
-    const char *immediate(get_name(SNAP_NAME_SENDMAIL_IMMEDIATE));
+    const char *immediate(get_name(SNAP_NAME_SENDMAIL_FREQUENCY_IMMEDIATE));
     QString frequency(immediate);
     if(!freq_value.nullValue())
     {
         frequency = freq_value.stringValue();
     }
-    if(frequency == immediate)
+    // default date for immediate emails
+    time_t unix_date(time(NULL));
+    // TODO: add user's timezone adjustment or the following math is wrong
+    if(frequency != immediate)
     {
-        // TODO: support different types of emails and have a frequency
-        //       for each
-        //
-        // immediately send email to user!
-        sendemail(key, unique_key);
+        struct tm t;
+        gmtime_r(&unix_date, &t);
+        t.tm_sec = 0;
+        t.tm_min = 0;
+        t.tm_hour = 10;
+        if(frequency == get_name(SNAP_NAME_SENDMAIL_FREQUENCY_DAILY))
+        {
+            // tomorrow at 10am
+            ++t.tm_mday;
+        }
+        else if(frequency == get_name(SNAP_NAME_SENDMAIL_FREQUENCY_WEEKLY))
+        {
+            // next Sunday at 10am
+            t.tm_mday += 7 - t.tm_wday;
+            // TODO: allow users to select the day of the week they prefer
+        }
+        else if(frequency == get_name(SNAP_NAME_SENDMAIL_FREQUENCY_MONTHLY))
+        {
+            t.tm_mday = 1;
+            t.tm_mday = 1;
+            t.tm_mon += 1;
+        }
+        else
+        {
+            // TODO: warn about invalid value
+            SNAP_LOG_WARNING("unknown email frequency \"")(frequency)("\" for user \"")(key)("\"");
+            ++t.tm_mday; // as DAILY
+        }
+        t.tm_isdst = 0; // mkgmtime() ignores DST... (i.e. UTC is not affected)
+        unix_date = mkgmtime(&t);
+    }
+
+    QString index_key(QString("%1::%2").arg(unix_date, 16, 16, QLatin1Char('0')).arg(key));
+
+    QtCassandra::QCassandraValue index_value;
+    const char *index(get_name(SNAP_NAME_SENDMAIL_INDEX));
+    if(table->exists(index))
+    {
+        // the index already exists, check to see whether that cell exists
+        if(table->row(index)->exists(index_key))
+        {
+            // it exists, we need to concatenate the values
+            index_value = table->row(index)->cell(index_key);
+        }
+    }
+    if(!index_value.nullValue())
+    {
+        index_value.setStringValue(index_value.stringValue() + "," + unique_key);
+    }
+    else
+    {
+        index_value.setStringValue(unique_key);
+    }
+    table->row(index)->cell(index_key)->setValue(index_value);
+
+    //sendemail(key, unique_key);
+}
+
+
+/** \brief Go through the list of emails to send.
+ *
+ * This function goes through the '*index*' of emails that are ready to
+ * be sent to end users. When emails are posted to the sendmail plugin,
+ * they are added to a list with a date when they should be sent.
+ */
+void sendmail::run_emails()
+{
+    QSharedPointer<QtCassandra::QCassandraTable> table(get_emails_table());
+    const char *index(get_name(SNAP_NAME_SENDMAIL_INDEX));
+    QSharedPointer<QtCassandra::QCassandraRow> row(table->row(index));
+    QtCassandra::QCassandraColumnRangePredicate column_predicate;
+    column_predicate.setStartColumnName("0");
+    time_t unix_date(time(NULL));
+    QString end(QString("%1").arg(unix_date, 16, 16, QLatin1Char('0')));
+    column_predicate.setEndColumnName(end);
+printf("end = %s\n", end.toUtf8().data());
+    column_predicate.setCount(100); // should this be a parameter?
+    column_predicate.setIndex(); // behave like an index
+    for(;;)
+    {
+        row->clearCache();
+        row->readCells(column_predicate);
+        const QtCassandra::QCassandraCells& cells(row->cells());
+        if(cells.isEmpty())
+        {
+            break;
+        }
+        // handle one batch
+        for(QtCassandra::QCassandraCells::const_iterator c(cells.begin());
+                c != cells.end();
+                ++c)
+        {
+            // get the email from the database
+            // we expect empty values once in a while because a dropCell() is
+            // not exactly instantaneous in Cassandra
+            QSharedPointer<QtCassandra::QCassandraCell> cell(*c);
+            const QtCassandra::QCassandraValue value(cell->value());
+            const QString column_key(cell->columnKey());
+            const QString key(column_key.mid(18));
+printf("column_key = (%s) %s\n", key.toUtf8().data(), column_key.toUtf8().data());
+            if(!value.nullValue())
+            {
+                QString unique_keys(value.stringValue());
+printf("unique_keys = %s\n", unique_keys.toUtf8().data());
+                QStringList list(unique_keys.split(","));
+                const int max(list.size());
+                for(int i(0); i < max; ++i)
+                {
+                    sendemail(key, list[i]);
+                }
+            }
+            // we're done with that email, get rid of it
+            row->dropCell(column_key);
+        }
     }
 }
 
@@ -1418,21 +1705,88 @@ void sendmail::attach_user_email(const email& e)
 void sendmail::sendemail(const QString& key, const QString& unique_key)
 {
     QSharedPointer<QtCassandra::QCassandraTable> table(get_emails_table());
-    QtCassandra::QCassandraValue sent_value(table->row(key)->cell(unique_key + ":" + get_name(SNAP_NAME_SENDMAIL_SENT))->value());
-    if(sent_value.boolValue())
+    QtCassandra::QCassandraValue sent_value(table->row(key)->cell(unique_key + "::" + get_name(SNAP_NAME_SENDMAIL_SENDING_STATUS))->value());
+    //if(sent_value.stringValue() != get_name(SNAP_NAME_SENDMAIL_STATUS_NEW))
+    if(sent_value.stringValue() == get_name(SNAP_NAME_SENDMAIL_STATUS_SENT))
     {
         // email was already sent, not too sure why we're being called,
         // just ignore to avoid bothering the destination owner...
         return;
     }
     // mark that the email was sent, if it fails from here, then we do not
-    // try again...
-    table->row(key)->cell(unique_key + ":" + get_name(SNAP_NAME_SENDMAIL_SENT))->setValue(true);
+    // try again... althought we mark the status can be used to warn the
+    // sender that a problem arised before the email was actually sent
+    QtCassandra::QCassandraValue sending_value;
+    sending_value.setStringValue(get_name(SNAP_NAME_SENDMAIL_STATUS_LOADING));
+    table->row(key)->cell(unique_key + "::" + get_name(SNAP_NAME_SENDMAIL_SENDING_STATUS))->setValue(sending_value);
 
-    QtCassandra::QCassandraValue email_data(table->row(key)->cell(unique_key + ":" + get_name(SNAP_NAME_SENDMAIL_EMAIL))->value());
+    QtCassandra::QCassandraValue email_data(table->row(key)->cell(unique_key + "::" + get_name(SNAP_NAME_SENDMAIL_EMAIL))->value());
     email e;
     e.unserialize(email_data.stringValue());
+    e.add_header(get_name(SNAP_NAME_SENDMAIL_CONTENT_TYPE), "text/html; charset=\"utf-8\"");
 
+    const QString& path(e.get_email_path());
+    if(!path.isEmpty())
+    {
+        // TODO -- we need to get a layout that is for the email, not the
+        //         default layout which will include all the theme
+        //         everything (title, header, footer...)
+        content::content *c(content::content::instance());
+        const QString body(layout::layout::instance()->apply_layout(path, c));
+
+        email::email_attachment body_attachment;
+        // TBD: do we have to define a "text/plain" type too?
+        body_attachment.set_data(body.toUtf8(), "text/html; charset=\"utf-8\"");
+        e.set_body_attachment(body_attachment);
+
+        // Use the page title as the subject
+        // (TBD: should the page title always overwrite the subject?)
+        if(e.get_header(get_name(SNAP_NAME_SENDMAIL_SUBJECT)).isEmpty())
+        {
+            // TODO: apply filters on the subject
+            e.set_subject(c->get_content_parameter(path, get_name(content::SNAP_NAME_CONTENT_TITLE)).stringValue());
+        }
+    }
+
+    // verify that we have at least one attachment
+    const int max(e.get_attachment_count());
+    if(max < 1)
+    {
+        // this should never happen since this is tested in the post_email() function
+        throw sendmail_exception_invalid_argument("To: email is invalid, email won't get sent");
+    }
+
+    // we want to transform the body from HTML to text ahead of time
+printf("send email 6\n");
+    email::email_attachment body(e.get_attachment(0));
+    // TODO: verify that the body is indeed HTML!
+    //       although html2text works against plain text but that's a waste
+    QString plain_text;
+    const QString body_mime_type(body.get_header(get_name(SNAP_NAME_SENDMAIL_CONTENT_TYPE)));
+    if(body_mime_type.mid(0, 9) == "text/html")
+    {
+        process p("html2text");
+        p.set_mode(process::PROCESS_MODE_INOUT);
+        p.set_command("html2text");
+        //p.add_argument("-help");
+        p.add_argument("-nobs");
+        p.add_argument("-utf8");
+        p.add_argument("-style");
+        p.add_argument("pretty");
+        p.add_argument("-width");
+        p.add_argument("70");
+        QByteArray data(body.get_data());
+        p.set_input(QString::fromUtf8(data.data()));
+        int r(p.run());
+printf("return came back!\n");
+        if(r == 0)
+        {
+printf("get output...\n");
+            plain_text = p.get_output();
+        }
+    }
+
+printf("send email 7\n");
     QString to(e.get_header(get_name(SNAP_NAME_SENDMAIL_TO)));
     tld_email_list list;
     if(list.parse(to.toStdString(), 0) != TLD_RESULT_SUCCESS)
@@ -1446,6 +1800,11 @@ void sendmail::sendemail(const QString& key, const QString& unique_key)
         throw sendmail_exception_invalid_argument("To: email does not return at least one email, email won't get sent");
     }
 
+    // now we're starting to send the email to the system sendmail tool
+    sending_value.setStringValue(get_name(SNAP_NAME_SENDMAIL_STATUS_SENDING));
+    table->row(key)->cell(unique_key + "::" + get_name(SNAP_NAME_SENDMAIL_SENDING_STATUS))->setValue(sending_value);
+
+printf("send email 8\n");
     QString cmd("sendmail -f ");
     cmd += e.get_header(get_name(SNAP_NAME_SENDMAIL_FROM));
     cmd += " ";
@@ -1457,23 +1816,88 @@ void sendmail::sendemail(const QString& key, const QString& unique_key)
         return;
     }
     // convert email data to text and send that to the sendmail command
-    const email::header_map_t& headers(e.get_all_headers());
+    email::header_map_t headers(e.get_all_headers());
+    const bool body_only(max == 1 && plain_text.isEmpty());
+    QString boundary;
+    if(!body_only)
+    {
+        // boundary      := 0*69<bchars> bcharsnospace
+        // bchars        := bcharsnospace / " "
+        // bcharsnospace := DIGIT / ALPHA / "'" / "(" / ")" /
+        //                  "+" / "_" / "," / "-" / "." /
+        //                  "/" / ":" / "=" / "?"
+        // Note: we generate a boundary without the space nor the dahs (-) to simplify
+        const char allowed[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'()+_,./:=?";
+        boundary = "=Snap+Websites=";
+        for(int i(0); i < 20; ++i)
+        {
+            int c(rand() % (sizeof(allowed) - 1));
+            boundary += allowed[c];
+        }
+        headers["Content-Type"] = "multipart/alternative; boundary=\"" + boundary + "\"";
+    }
+printf("send email 9\n");
     for(email::header_map_t::const_iterator it(headers.begin());
                                             it != headers.end();
                                             ++it)
     {
         fprintf(f, "%s: %s\n", it.key().toUtf8().data(), it.value().toUtf8().data());
     }
+
     // one empty line before the contents
     fprintf(f, "\n");
-    const int max(e.get_attachment_count());
-    for(int i(0); i < max; ++i)
+
+printf("send email 10\n");
+    if(body_only)
     {
-        email::email_attachment attachment(e.get_attachment(i));
+        // in this case we only have one entry, probably HTML, and thus we
+        // can avoid the multi-part headers and attachments
+        email::email_attachment attachment(e.get_attachment(0));
+        fprintf(f, "%s\n", attachment.get_data().data());
     }
+    else
+    {
+        if(!plain_text.isEmpty())
+        {
+            fprintf(f, "--%s\n", boundary.toUtf8().data());
+            fprintf(f, "Content-Type: text/plain; charset=\"utf-8\"\n");
+            fprintf(f, "MIME-Version: 1.0\n");
+            //fprintf(f, "Content-Transfer-Encoding: quoted-printable\n");
+            fprintf(f, "Content-Description: Mail message body\n");
+            fprintf(f, "\n");
+            // TODO: actually quoted-printable encode this buffer!
+            fprintf(f, "%s\n", plain_text.toUtf8().data());
+        }
+        for(int i(1); i < max; ++i)
+        {
+            email::email_attachment attachment(e.get_attachment(i));
+            fprintf(f, "--%s\n", boundary.toUtf8().data());
+            email::header_map_t attachment_headers(attachment.get_all_headers());
+            for(email::header_map_t::const_iterator it(attachment_headers.begin());
+                                                    it != attachment_headers.end();
+                                                    ++it)
+            {
+                fprintf(f, "%s: %s\n", it.key().toUtf8().data(), it.value().toUtf8().data());
+            }
+
+            // one empty line before the contents
+            fprintf(f, "\n");
+
+            // in this case the data is expected to already be encoded except
+            // for the first message (is that true?)
+            fprintf(f, "%s\n", attachment.get_data().data());
+        }
+        fprintf(f, "--%s--\n", boundary.toUtf8().data());
+    }
+
+printf("send email 11\n");
     // end the message
     fprintf(f, ".\n");
     pclose(f);
+
+    // now it is marked as fully sent
+    sending_value.setStringValue(get_name(SNAP_NAME_SENDMAIL_STATUS_SENT));
+    table->row(key)->cell(unique_key + "::" + get_name(SNAP_NAME_SENDMAIL_SENDING_STATUS))->setValue(sending_value);
 }
 
 

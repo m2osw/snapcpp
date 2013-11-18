@@ -32,6 +32,18 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 ]>
 <snap-tree>
   <content path="/admin/sendmail/status"/>
+  <content path="/amdin/sendmail/header">
+    <![CDATA[<div class="snap-header">Snap! Websites email</div><hr/>]]>
+    <link name="search_index_ignore" to="search_index_ignore" mode="1:*">/types/taxonomy/system/search/status/ignore</link>
+    <link name="administration" to="administration" mode="1:*">/types/permissions/rights/administration</link>
+    <link name="sendmail" to="sendmail" mode="1:*">/types/permissions/rights/sendmail</link>
+  </content>
+  <content path="/amdin/sendmail/footer">
+    <![CDATA[<div class="snap-footer"><p>Email sent from Snap! C++ -- http://snapwebsites.com/</p><p>Click <a href="[unsubscribe-link]">unsubscribe</a> to remove yourself from our mailing list.</p></div>]]>
+    <link name="search_index_ignore" to="search_index_ignore" mode="1:*">/types/taxonomy/system/search/status/ignore</link>
+    <link name="administration" to="administration" mode="1:*">/types/permissions/rights/administration</link>
+    <link name="sendmail" to="sendmail" mode="1:*">/types/permissions/rights/sendmail</link>
+  </content>
 </snap-tree>
 <!-- vim: ts=2 sw=2 et syntax=xml
 -->

@@ -124,6 +124,7 @@ private:
     controlled_vars::fbool_t    f_stopping;
     pthread_t                   f_thread;
     pthread_attr_t              f_thread_attr;
+    std::exception_ptr          f_exception;
 };
 
 } // namespace snap

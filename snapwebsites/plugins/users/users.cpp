@@ -149,7 +149,7 @@ int64_t users::do_update(int64_t last_updated)
     SNAP_PLUGIN_UPDATE_INIT();
 
     SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, initial_update);
-    SNAP_PLUGIN_UPDATE(2012, 11, 11, 0, 23, 0, content_update);
+    SNAP_PLUGIN_UPDATE(2013, 11, 17, 1, 39, 0, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -258,7 +258,7 @@ void users::on_process_cookies()
     http_cookie cookie(f_snap, "snap_session", user_session);
     cookie.set_expire_in(86400 * 5);  // 5 days
     f_snap->set_cookie(cookie);
-printf("session id [%s]\n", user_session.toUtf8().data());
+//printf("session id [%s]\n", user_session.toUtf8().data());
 }
 
 
@@ -290,13 +290,13 @@ printf("session id [%s]\n", user_session.toUtf8().data());
  */
 void users::on_can_handle_dynamic_path(path::path *path_plugin, const QString& cpath)
 {
-    if(cpath == "user"              // list of (public) users
-    || cpath.left(5) == "user/"        // show a user profile
-    || cpath == "profile"            // the logged in user profile
-    || cpath == "login"                // form to log user in
-    || cpath == "logout"            // log user out
-    || cpath == "register"            // form to let new users register
-    || cpath == "forgot-passowrd")    // form for users to reset their password
+    if(cpath == "user"                  // list of (public) users
+    || cpath.left(5) == "user/"         // show a user profile
+    || cpath == "profile"               // the logged in user profile
+    || cpath == "login"                 // form to log user in
+    || cpath == "logout"                // log user out
+    || cpath == "register"              // form to let new users register
+    || cpath == "forgot-passowrd")      // form for users to reset their password
     {
         // tell the path plugin that this is ours
         path_plugin->handle_dynamic_path("user", this);
@@ -759,14 +759,8 @@ void users::verify_email(const QString& email)
     // destination email address
     e.add_header(sendmail::get_name(sendmail::SNAP_NAME_SENDMAIL_TO), email);
 
-    // TODO: translations and generally email subject + body
-    e.set_subject("Please verify your Snap! Websites account");
-
-    sendmail::sendmail::email::email_attachment body;
-    QString email_body;
-    email_body = "Dear user,\n\nPlease click on the following link to confirm your registration:\n\nhttp://snapwebsites.com/magic-number\n\nThank you.\nThe Snap! Websites Team\n";
-    body.set_data(email_body.toUtf8(), "text/plain");
-    e.add_attachment(body);
+    // add the email subject and body using a page
+    e.set_email_path("admin/users/mail/verify");
 
     // send the email
     //

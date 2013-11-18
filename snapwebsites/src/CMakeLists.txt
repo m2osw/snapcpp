@@ -54,12 +54,12 @@ include_directories(
 )
 
 
-add_executable(snapserver
+add_executable(${PROJECT_NAME}
     snapserver.cpp
 )
 
 # while developing you may need to set LD_LIBRARY_PATH
-target_link_libraries(snapserver
+target_link_libraries(${PROJECT_NAME}
     libsnapwebsites
     QtCassandra
     QtSerialization
@@ -70,7 +70,7 @@ target_link_libraries(snapserver
 )
 
 install(
-    TARGETS snapserver RUNTIME DESTINATION bin
+    TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin
 )
 
 
@@ -85,12 +85,12 @@ include_directories(
 )
 
 
-add_executable(snapbackend
+add_executable(${PROJECT_NAME}
     snapbackend.cpp
 )
 
 # while developing you may need to set LD_LIBRARY_PATH
-target_link_libraries(snapbackend
+target_link_libraries(${PROJECT_NAME}
     libsnapwebsites
     QtCassandra
     QtSerialization
@@ -101,7 +101,7 @@ target_link_libraries(snapbackend
 )
 
 install(
-    TARGETS snapbackend RUNTIME DESTINATION bin
+    TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin
 )
 
 
@@ -141,22 +141,50 @@ include_directories(
 )
 
 
-add_executable(snapdb
+add_executable(${PROJECT_NAME}
     snapdb.cpp
 )
 
 # while developing you may need to set LD_LIBRARY_PATH
-target_link_libraries(snapdb
-    #libsnapwebsites
+target_link_libraries(${PROJECT_NAME}
     QtCassandra
-    #QtSerialization
     ${QT_LIBRARIES}
     thrift
     tld
 )
 
 install(
-    TARGETS snapdb RUNTIME DESTINATION bin
+    TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin
+)
+
+
+##
+## Snap send signals
+##
+project(snapsignal)
+
+include_directories(
+    "${CMAKE_CURRENT_SOURCE_DIR}"
+    ${QT_INCLUDES}
+)
+
+
+add_executable(${PROJECT_NAME}
+    snapsignal.cpp
+)
+
+# while developing you may need to set LD_LIBRARY_PATH
+target_link_libraries(${PROJECT_NAME}
+    libsnapwebsites
+    QtCassandra
+    QtSerialization
+    ${QT_LIBRARIES}
+    thrift
+    tld
+)
+
+install(
+    TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin
 )
 
 
@@ -171,11 +199,11 @@ include_directories(
 )
 
 
-add_executable(snaplayout
+add_executable(${PROJECT_NAME}
     snaplayout.cpp
 )
 
-target_link_libraries(snaplayout
+target_link_libraries(${PROJECT_NAME}
     #libsnapwebsites
     QtCassandra
     #QtSerialization
@@ -185,7 +213,7 @@ target_link_libraries(snaplayout
 )
 
 install(
-    TARGETS snaplayout RUNTIME DESTINATION bin
+    TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin
 )
 
 

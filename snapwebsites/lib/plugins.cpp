@@ -23,6 +23,7 @@
 #include <QDir>
 #include <QMap>
 #include <QFileInfo>
+#include "poison.h"
 
 namespace snap
 {

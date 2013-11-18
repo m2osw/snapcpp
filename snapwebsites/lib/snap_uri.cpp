@@ -25,6 +25,7 @@
 #include <QBuffer>
 
 #include <QDebug>
+#include "poison.h"
 
 
 namespace QtSerialization {

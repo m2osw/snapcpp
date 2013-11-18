@@ -17,18 +17,27 @@
 #ifndef SNAP_PROCESS_H
 #define SNAP_PROCESS_H
 
+#include "snap_exception.h"
+#include "snap_thread.h"
 #include <QString>
+#include <QStringList>
 #include <QVector>
 #include <controlled_vars/controlled_vars_auto_init.h>
-#include <controlled_vars/controlled_vars_auto_ptr_init.h>
+#include <controlled_vars/controlled_vars_limited_auto_init.h>
+#include <controlled_vars/controlled_vars_ptr_auto_init.h>
+#include <map>
 
 namespace snap
 {
 
+class snap_process_exception : public snap_exception {};
+class snap_process_exception_invalid_mode_error : public snap_process_exception {};
 
 class process
 {
 public:
+    typedef std::map<std::string, std::string> environment_map_t;
+
     enum mode_t
     {
         PROCESS_MODE_COMMAND,
@@ -56,7 +65,7 @@ public:
 
     void                        set_command(const QString& name);
     void                        add_argument(const QString& arg);
-    void                        add_environ(const QString& env);
+    void                        add_environ(const QString& name, const QString& value);
 
     int                         run();
 
@@ -64,7 +73,7 @@ public:
     void                        set_input(const QString& input);
 
     // what is received from the command stdout
-    QString                     get_output(bool reset = false) const;
+    QString                     get_output(bool reset = false);
     void                        set_output_callback(process_output_callback *callback);
 
 private:
@@ -76,11 +85,12 @@ private:
     zmode_t                     f_mode;
     QString                     f_command;
     QStringList                 f_arguments;
-    QStringList                 f_environment;
+    environment_map_t           f_environment;
     QString                     f_input;
     QString                     f_output;
     controlled_vars::fbool_t    f_forced_environment;
     zpprocess_output_callback_t f_output_callback;
+    snap_thread::snap_mutex     f_mutex;
 };
 
 } // namespace snap

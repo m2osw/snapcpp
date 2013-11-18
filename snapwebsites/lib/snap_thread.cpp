@@ -222,7 +222,7 @@ bool snap_thread::snap_mutex::try_lock()
 void snap_thread::snap_mutex::unlock()
 {
     // We can't unlock if it wasn't locked before!
-    if(f_reference_count > 0UL)
+    if(f_reference_count <= 0UL)
     {
         SNAP_LOG_FATAL("attempting to unlock a mutex when it is still locked ")(f_reference_count)(" times");
         throw snap_thread_exception_not_locked_error();
@@ -263,11 +263,11 @@ void snap_thread::snap_mutex::wait()
     //       work in most cases; it should work even when locked
     //       multiple times, but it is less likely. For sure, it
     //       has to be at least once.
-    if(f_reference_count != 1UL)
-    {
-        SNAP_LOG_FATAL("attempting to wait on a mutex when it is not locked exactly once, current count is ")(f_reference_count);
-        throw snap_thread_exception_not_locked_once_error();
-    }
+    //if(f_reference_count != 1UL)
+    //{
+    //    SNAP_LOG_FATAL("attempting to wait on a mutex when it is not locked exactly once, current count is ")(f_reference_count);
+    //    throw snap_thread_exception_not_locked_once_error();
+    //}
     int err(pthread_cond_wait(&f_condition, &f_mutex));
     if(err != 0)
     {
@@ -307,11 +307,11 @@ bool snap_thread::snap_mutex::timed_wait(uint64_t usec)
     //       work in most cases; it should work even when locked
     //       multiple times, but it is less likely. For sure, it
     //       has to be at least once.
-    if(f_reference_count != 1UL)
-    {
-        SNAP_LOG_FATAL("attempting to timed wait ")(usec)(" usec on a mutex when it is not locked exactly once, current count is ")(f_reference_count);
-        throw snap_thread_exception_not_locked_once_error();
-    }
+    //if(f_reference_count != 1UL)
+    //{
+    //    SNAP_LOG_FATAL("attempting to timed wait ")(usec)(" usec on a mutex when it is not locked exactly once, current count is ")(f_reference_count);
+    //    throw snap_thread_exception_not_locked_once_error();
+    //}
 
     int err(0);
 
@@ -370,11 +370,11 @@ bool snap_thread::snap_mutex::dated_wait(uint64_t msec)
     //       work in most cases; it should work even when locked
     //       multiple times, but it is less likely. For sure, it
     //       has to be at least once.
-    if(f_reference_count != 1UL)
-    {
-        SNAP_LOG_FATAL("attempting to dated wait until ")(msec)(" msec on a mutex when it is not locked exactly once, current count is ")(f_reference_count);
-        throw snap_thread_exception_not_locked_once_error();
-    }
+    //if(f_reference_count != 1UL)
+    //{
+    //    SNAP_LOG_FATAL("attempting to dated wait until ")(msec)(" msec on a mutex when it is not locked exactly once, current count is ")(f_reference_count);
+    //    throw snap_thread_exception_not_locked_once_error();
+    //}
 
     // setup the timeout date
     struct timespec timeout;
@@ -545,7 +545,8 @@ snap_thread::snap_runner::snap_runner(const QString& name)
  */
 snap_thread::snap_runner::~snap_runner()
 {
-    if(f_thread->is_running())
+    // the thread should never be set when the runner gets deleted
+    if(f_thread)
     {
         // this is a bug; it could be that the object that derived from
         // the snap_runner calls gets destroyed under the thread controller's
@@ -773,22 +774,39 @@ void *func_internal_start(void *thread)
  *
  * The function marks the thread as started which allows the parent start()
  * function to return.
+ *
+ * \note
+ * The function catches standard exceptions thrown by any of the functions
+ * called by the thread. When that happens, the thread returns early after
+ * making a copy of the exception. The stop() function will then rethrow
+ * that exception and it can be managed as if it had happened in the main
+ * process (if a thread creates another thread, then it can be propagated
+ * multiple times between all the threads up to the main process.)
  */
 void snap_thread::internal_run()
 {
+    try
     {
-        snap_lock lock(f_mutex);
-        f_started = true;
-        f_mutex.signal();
+        {
+            snap_lock lock(f_mutex);
+            f_started = true;
+            f_mutex.signal();
+        }
+
+        f_runner->run();
+
+        {
+            snap_lock lock(f_mutex);
+            f_running = false;
+            f_mutex.signal();
+        }
     }
-
-    f_runner->run();
-
+    catch(const std::exception&)
     {
-        snap_lock lock(f_mutex);
-        f_running = false;
-        f_mutex.signal();
+        // keep a copy of the exception
+        f_exception = std::current_exception();
     }
+    // ... any other exception terminates the whole process ...
 }
 
 /** \brief Attempt to start the thread.
@@ -839,6 +857,10 @@ bool snap_thread::start()
  * time necessary to do all necessary cleanup before quitting.
  *
  * The stop function blocks until the thread is done.
+ *
+ * \warning
+ * This function throws the thread exceptions that weren't caught in your
+ * run() function. This happens after the thread has completed.
  */
 void snap_thread::stop()
 {
@@ -870,6 +892,12 @@ void snap_thread::stop()
         }
 
         f_mutex.wait();
+    }
+
+    // if the child died because of a standard exception, rethrow it now
+    if(f_exception != std::exception_ptr())
+    {
+        std::rethrow_exception(f_exception);
     }
 
     // note: the thread itself may still be running at this point, even

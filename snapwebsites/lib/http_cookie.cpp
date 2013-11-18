@@ -18,6 +18,7 @@
 #include "http_cookie.h"
 #include "snapwebsites.h"
 #include <QtCassandra/QCassandra.h>
+#include "poison.h"
 
 namespace snap
 {
