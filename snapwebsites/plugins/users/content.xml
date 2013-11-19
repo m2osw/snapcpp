@@ -39,6 +39,16 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <link name="robotstxt_noindex" to="robotstxt_noindex" mode="1:*">/types/taxonomy/system/robotstxt/noindex</link>
     <link name="robotstxt_nofollow" to="robotstxt_nofollow" mode="1:*">/types/taxonomy/system/robotstxt/nofollow</link>
   </content>
+  <content path="/admin/users/mail/verify">
+    <!-- email sent when users register so we can ask them to verify their email address -->
+    <param name="content::title">Please verify your email address</param>
+    <param name="content::body" overwrite="yes">
+      <![CDATA[<p>Welcome to your Snap! C++ website.</p><p>In order to complete the creation of your new account, please click on the following link:</p><blockquote>[verify-link]</blockquote><p>Thank you.</p>]]>
+    </param>
+    <link name="include_in_xml_sitemap" to="include_in_xml_sitemap" mode="1:*">/types/taxonomy/system/sitemapxml/include-in-xml-sitemap</link>
+    <link name="administration" to="administration" mode="1:*">/types/permissions/rights/administration</link>
+    <link name="users" to="users" mode="1:*">/types/permissions/rights/users</link>
+  </content>
   <content path="/types/users">
     <param name="content::title">Users</param>
     <param name="content::body">

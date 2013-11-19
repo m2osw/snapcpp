@@ -124,10 +124,10 @@ namespace QtCassandra
  * \param[in] column_key  The binary key of this cell.
  */
 QCassandraCell::QCassandraCell(QCassandraRow *row, const QByteArray& column_key)
-    : f_row(row),
-      f_key(column_key)
-      //f_cached(false) -- auto-init
-      //f_value() -- auto-init to "NULL" (nullValue() == true)
+    : f_row(row)
+    , f_key(column_key)
+    //, f_cached(false) -- auto-init
+    //, f_value() -- auto-init to "NULL" (nullValue() == true)
 {
     if(f_key.size() == 0) {
         throw std::runtime_error("the cell binary column key cannot be empty");
@@ -212,6 +212,7 @@ const QCassandraValue& QCassandraCell::value() const
         f_row->getValue(f_key, const_cast<QCassandraValue&>(f_value));
         f_cached = true;
     }
+//printf("reading [%s]\n", f_key.data());
     return f_value;
 }
 

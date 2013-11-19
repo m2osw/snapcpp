@@ -26,7 +26,7 @@
 
 #include "qhtmlserializer.h"
 #include <stdexcept>
-
+#include "poison.h"
 
 QHtmlSerializer::QHtmlSerializer(QXmlNamePool namepool, QBuffer *output)
     : f_namepool(namepool)

@@ -272,7 +272,7 @@ bool content::on_path_execute(const QString& cpath)
  * \param[in,out] page  The page being generated.
  * \param[in,out] body  The body being generated.
  */
-void content::on_generate_main_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body)
+void content::on_generate_main_content(layout::layout *l, const QString& fullpath, QDomElement& page, QDomElement& body)
 {
     QDomDocument doc(page.ownerDocument());
     //QDomNodeList bodies(doc.elementsByTagName("body"));
@@ -286,6 +286,17 @@ void content::on_generate_main_content(layout::layout *l, const QString& path, Q
     //  return;
     //}
     //QDomElement body(node.toElement());
+
+    // this is easier as some people (like me) will most certainly call this
+    // function with a path that starts with a slash once in a while; this
+    // way we avoid all sorts of trouble (should we generate a warning in the
+    // logs though?)
+    const char *s(fullpath.toUtf8().data());
+    while(*s == '/')
+    {
+        ++s;
+    }
+    const QString path(QString::fromUtf8(s));
 
     {
         QDomElement created(doc.createElement("created"));

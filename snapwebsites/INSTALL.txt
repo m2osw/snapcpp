@@ -57,6 +57,30 @@ respond to your queries. See this file:
 This needs to be loaded by Apache, somehow. You will need to do tweaks so
 it works in your environment.
 
+The file defines a directory where you will install your snap.cgi binary.
+This directory is shown here:
+
+  ScriptAlias /cgi-bin/ /var/www/snap.example.com/cgi-bin/
+
+Do something like:
+
+  sudo cp BUILD/snapwebsites/src/snap.cgi /var/www/snap.example.com/cgi-bin/.
+
+If necessary, change the permissions so Apache2 can run that executable. In
+general, the following will work:
+
+  sudo chmod 755 BUILD/snapwebsites/src/snap.cgi /var/www/snap.example.com/cgi-bin/.
+
+If you want to constrain the execution to only Apache2 you can change the
+owner and setup the group appropriately:
+
+  sudo chmod 750 BUILD/snapwebsites/src/snap.cgi /var/www/snap.example.com/cgi-bin/.
+  sudo chown root:www-data BUILD/snapwebsites/src/snap.cgi /var/www/snap.example.com/cgi-bin/.
+
+www-data is the default Debian/Ubuntu group for Apache2. Under RedHat and
+other rpm, it generally is apache. Please verify what it is under your
+system.
+
 
 4. Running
 

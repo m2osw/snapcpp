@@ -58,13 +58,16 @@ add_library( ${PROJECT_NAME} SHARED
     dom_util.cpp            # DOM utilities
     http_cookie.cpp         # HTTP cookie, server side
     log.cpp                 # log4cplus support
+    mkgmtime.c              # mktime() with a UTC time
     plugins.cpp             # plugins loader and list
+    process.cpp             # run a process optionally with pipes
     qdomnodemodel.cpp       # Qt extension to support XSLT
     qdomreceiver.cpp        # Qt extension to output XSLT as XML
     qhtmlserializer.cpp     # Qt extension to output HTML as a string
     snap_parser.cpp         # lexer/parser for all our script like entries
     snap_uri.cpp            # URI handling
     snap_child.cpp          # requests processing
+    snap_thread.cpp         # a C++ thread implementation
     snapwebsites.cpp        # server
     tcp_client_server.cpp   # low level TCP/IP that works
     udp_client_server.cpp   # low level UDP/IP that works

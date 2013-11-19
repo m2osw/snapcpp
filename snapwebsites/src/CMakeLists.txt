@@ -160,6 +160,36 @@ install(
 
 
 #################################################################################
+## Snap send signals
+##
+project(snapsignal)
+
+include_directories(
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${QT_INCLUDES}
+)
+
+
+add_executable(${PROJECT_NAME}
+    snapsignal.cpp
+)
+
+# while developing you may need to set LD_LIBRARY_PATH
+target_link_libraries(${PROJECT_NAME}
+    libsnapwebsites
+    ${QTCASSANDRA_LIBRARIES}
+    ${QT_LIBRARIES}
+    ${THRIFT_LIBRARIES}
+    ${LIBTLD_LIBRARIES}
+    ${QTSERIALIZATION_LIBRARIES}
+)
+
+install(
+    TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin
+)
+
+
+#################################################################################
 ## Snap layout process
 ##
 project(snaplayout)

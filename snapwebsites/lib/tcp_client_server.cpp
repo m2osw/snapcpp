@@ -19,6 +19,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <netdb.h>
+#include "poison.h"
 
 namespace tcp_client_server
 {

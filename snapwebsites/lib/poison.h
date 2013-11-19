@@ -1,5 +1,5 @@
-// Snap Websites Server -- base exception of the Snap! library
-// Copyright (C) 2011-2012  Made to Order Software Corp.
+// Snap Websites Server -- advanced handling of Unix processes
+// Copyright (C) 2013  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,21 +14,12 @@
 // You should have received a copy of the GNU General Public License
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-#ifndef SNAP_EXCEPTION_H
-#define SNAP_EXCEPTION_H
+#ifndef SNAP_POISON_H
+#define SNAP_POISON_H
 
-#include <stdexcept>
+// list of functions we 100% forbid in the Snap! C++ environment
+#pragma GCC poison strcat strncat wcscat wcsncat
 
-namespace snap
-{
-
-class snap_exception : public std::runtime_error
-{
-public:
-    snap_exception(const std::string& what_msg = "Snap! Exception") : runtime_error(what_msg) {}
-};
-
-} // namespace snap
 #endif
-// SNAP_EXCEPTION_H
+// SNAP_POISON_H
 // vim: ts=4 sw=4 et

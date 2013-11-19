@@ -20,6 +20,7 @@
 #include <log4cplus/configurator.h>
 #include <log4cplus/logger.h>
 #include <QFileInfo>
+#include "poison.h"
 
 namespace snap
 {

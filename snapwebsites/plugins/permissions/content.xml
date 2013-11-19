@@ -43,6 +43,24 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <![CDATA[<p>Here you find all the permissions offered by the different Snap plugins.</p>]]>
     </param>
   </content>
+  <content path="/types/permissions/rights/administration">
+    <param name="content::title">Administration</param>
+    <param name="content::body">
+      <![CDATA[<p>The user needs administration power to access this content.</p>]]>
+    </param>
+  </content>
+  <content path="/types/permissions/rights/users">
+    <param name="content::title">Users</param>
+    <param name="content::body">
+      <![CDATA[<p>Rights to access other users.</p>]]>
+    </param>
+  </content>
+  <content path="/types/permissions/rights/sendmail">
+    <param name="content::title">Sendmail</param>
+    <param name="content::body">
+      <![CDATA[<p>Rights to access the different emails that the system sends to users.</p>]]>
+    </param>
+  </content>
   <content path="/types/permissions/actions">
     <param name="content::title">Actions</param>
     <param name="content::body">

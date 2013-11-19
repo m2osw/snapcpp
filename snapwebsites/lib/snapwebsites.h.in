@@ -89,6 +89,7 @@ public:
 	void backend();
 	int cassandra_port() const { return f_cassandra_port; }
 	const QString& cassandra_host() const { return f_cassandra_host; }
+	void udp_ping(const char *name, const char *message = "PING");
 
 	unsigned long connections_count();
 

@@ -1,5 +1,5 @@
-// Snap Websites Server -- base exception of the Snap! library
-// Copyright (C) 2011-2012  Made to Order Software Corp.
+// Snap Websites Server -- to send UDP signals to backends
+// Copyright (C) 2011-2013  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,21 +14,32 @@
 // You should have received a copy of the GNU General Public License
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-#ifndef SNAP_EXCEPTION_H
-#define SNAP_EXCEPTION_H
 
-#include <stdexcept>
+#include "snapwebsites.h"
 
-namespace snap
+
+int main(int argc, char *argv[])
 {
+	// create a server object
+	snap::server *s = snap::server::instance();
+	s->setup_as_backend();
 
-class snap_exception : public std::runtime_error
-{
-public:
-    snap_exception(const std::string& what_msg = "Snap! Exception") : runtime_error(what_msg) {}
-};
+	// parse the command line arguments (this also brings in the .conf params)
+	s->config(argc, argv);
 
-} // namespace snap
-#endif
-// SNAP_EXCEPTION_H
-// vim: ts=4 sw=4 et
+	QString msg(s->get_parameter("__BACKEND_URI"));
+	if(msg.isEmpty())
+	{
+		msg = "PING";
+	}
+	if(s->get_parameter("__BACKEND_ACTION") == "sendmail")
+	{
+		// use sendmail UDP information
+		s->udp_ping("sendmail_udp_signal", msg.toUtf8().data());
+	}
+
+	return 0;
+}
+
+// vim: ts=4 sw=4
+
