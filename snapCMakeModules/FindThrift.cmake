@@ -33,25 +33,16 @@
 # THRIFT_LIBRARIES    - The libraries needed to use Thrift (none)
 # THRIFT_DEFINITIONS  - Compiler switches required for using Thrift (none)
 #
-get_property( 3RDPARTY_INCLUDED GLOBAL PROPERTY 3RDPARTY_INCLUDED )
-if( 3RDPARTY_INCLUDED )
-	set( THRIFT_INCLUDE_DIR 
-		"${CMAKE_BINARY_DIR}/dist/include"
-		"${CMAKE_BINARY_DIR}/dist/include/thrift"
-	   )
-	set( THRIFT_LIBRARY thrift )
-else()
-	find_path( THRIFT_INCLUDE_DIR thrift/thrift.h
-			   PATHS $ENV{THRIFT_INCLUDE_DIR}
-			   PATH_SUFFIXES controlled_vars
-			 )
-	find_library( THRIFT_LIBRARY thrift
-				PATHS $ENV{THRIFT_LIBRARY}
-			)
-	mark_as_advanced( THRIFT_INCLUDE_DIR THRIFT_LIBRARY )
-endif()
+find_path( THRIFT_INCLUDE_DIR thrift/thrift.h
+		   PATHS $ENV{THRIFT_INCLUDE_DIR}
+		   PATH_SUFFIXES thrift
+		 )
+find_library( THRIFT_LIBRARY thrift
+			PATHS $ENV{THRIFT_LIBRARY}
+		)
+mark_as_advanced( THRIFT_INCLUDE_DIR THRIFT_LIBRARY )
 
-set( THRIFT_INCLUDE_DIRS ${THRIFT_INCLUDE_DIR} )
+set( THRIFT_INCLUDE_DIRS ${THRIFT_INCLUDE_DIR} ${THRIFT_INCLUDE_DIR}/thrift )
 set( THRIFT_LIBRARIES    ${THRIFT_LIBRARY}     )
 
 include( FindPackageHandleStandardArgs )

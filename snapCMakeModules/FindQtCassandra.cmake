@@ -7,23 +7,14 @@
 # QTCASSANDRA_LIBRARY      - The libraries needed to use QtCassandra (none)
 # QTCASSANDRA_DEFINITIONS  - Compiler switches required for using QtCassandra (none)
 
-get_property( 3RDPARTY_INCLUDED GLOBAL PROPERTY 3RDPARTY_INCLUDED )
-if( 3RDPARTY_INCLUDED )
-	set( QTCASSANDRA_INCLUDE_DIR
-			${libQtCassandra_SOURCE_DIR}/include
-			${libQtCassandra_BINARY_DIR}/include
-			)
-	set( QTCASSANDRA_LIBRARY QtCassandra )
-else()
-	find_path( QTCASSANDRA_INCLUDE_DIR QtCassandra/QCassandra.h
-			   PATHS $ENV{QTCASSANDRA_INCLUDE_DIR}
-			   PATH_SUFFIXES QtCassandra
-			 )
-	find_library( QTCASSANDRA_LIBRARY QtCassandra
-				PATHS $ENV{QTCASSANDRA_LIBRARY}
-			 )
-	mark_as_advanced( QTCASSANDRA_INCLUDE_DIR QTCASSANDRA_LIBRARY )
-endif()
+find_path( QTCASSANDRA_INCLUDE_DIR QtCassandra/QCassandra.h
+		   PATHS $ENV{QTCASSANDRA_INCLUDE_DIR}
+		   PATH_SUFFIXES QtCassandra
+		 )
+find_library( QTCASSANDRA_LIBRARY QtCassandra
+			PATHS $ENV{QTCASSANDRA_LIBRARY}
+		 )
+mark_as_advanced( QTCASSANDRA_INCLUDE_DIR QTCASSANDRA_LIBRARY )
 
 set( QTCASSANDRA_INCLUDE_DIRS ${QTCASSANDRA_INCLUDE_DIR} )
 set( QTCASSANDRA_LIBRARIES    ${QTCASSANDRA_LIBRARY}     )
