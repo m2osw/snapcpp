@@ -80,7 +80,9 @@ ConfigureMakeProject( PROJECT_NAME snapwebsites
             -DLIBTLD_LIBRARY:PATH=${CMAKE_BINARY_DIR}/dist/lib/libtld.so
         DEPENDS libQtCassandra libQtSerialization libtld
         )
-ConfigureMakeProject( PROJECT_NAME googlerank )
+ConfigureMakeProject( PROJECT_NAME googlerank
+        DEPENDS controlled_vars
+        )
 ConfigureMakeProject( PROJECT_NAME iplock     )
 
 # vim: ts=4 sw=4 et
