@@ -309,6 +309,24 @@ void sendmail::email::email_attachment::add_header(const QString& name, const QS
 }
 
 
+/** \brief Get all the headers defined in this email attachment.
+ *
+ * This function returns the map of the headers defined in this email
+ * attachment. This can be used to quickly scan all the headers.
+ *
+ * \note
+ * It is important to remember that since this function returns a reference
+ * to the map of headers, it may break if you call add_header() while going
+ * through the references.
+ *
+ * \return A direct reference to the internal header map.
+ */
+const sendmail::email::header_map_t& sendmail::email::email_attachment::get_all_headers() const
+{
+    return f_header;
+}
+
+
 /** \brief Unserialize an email attachment.
  *
  * This function unserializes an email attachment that was serialized using
@@ -781,7 +799,7 @@ QString sendmail::email::get_header(const QString& name) const
  * to the map of headers, it may break if you call add_header() while going
  * through the references.
  *
- * \return A direct references to the internal header map.
+ * \return A direct reference to the internal header map.
  */
 const sendmail::email::header_map_t& sendmail::email::get_all_headers() const
 {
@@ -1647,10 +1665,10 @@ void sendmail::run_emails()
     QSharedPointer<QtCassandra::QCassandraRow> row(table->row(index));
     QtCassandra::QCassandraColumnRangePredicate column_predicate;
     column_predicate.setStartColumnName("0");
-    time_t unix_date(time(NULL));
+    // we use +1 otherwise immediate emails are sent 5 min. later!
+    time_t unix_date(time(NULL) + 1);
     QString end(QString("%1").arg(unix_date, 16, 16, QLatin1Char('0')));
     column_predicate.setEndColumnName(end);
-printf("end = %s\n", end.toUtf8().data());
     column_predicate.setCount(100); // should this be a parameter?
     column_predicate.setIndex(); // behave like an index
     for(;;)
@@ -1674,11 +1692,9 @@ printf("end = %s\n", end.toUtf8().data());
             const QtCassandra::QCassandraValue value(cell->value());
             const QString column_key(cell->columnKey());
             const QString key(column_key.mid(18));
-printf("column_key = (%s) %s\n", key.toUtf8().data(), column_key.toUtf8().data());
             if(!value.nullValue())
             {
                 QString unique_keys(value.stringValue());
-printf("unique_keys = %s\n", unique_keys.toUtf8().data());
                 QStringList list(unique_keys.split(","));
                 const int max(list.size());
                 for(int i(0); i < max; ++i)
@@ -1757,7 +1773,6 @@ void sendmail::sendemail(const QString& key, const QString& unique_key)
     }
 
     // we want to transform the body from HTML to text ahead of time
-printf("send email 6\n");
     email::email_attachment body(e.get_attachment(0));
     // TODO: verify that the body is indeed HTML!
     //       although html2text works against plain text but that's a waste
@@ -1778,15 +1793,12 @@ printf("send email 6\n");
         QByteArray data(body.get_data());
         p.set_input(QString::fromUtf8(data.data()));
         int r(p.run());
-printf("return came back!\n");
         if(r == 0)
         {
-printf("get output...\n");
             plain_text = p.get_output();
         }
     }
 
-printf("send email 7\n");
     QString to(e.get_header(get_name(SNAP_NAME_SENDMAIL_TO)));
     tld_email_list list;
     if(list.parse(to.toStdString(), 0) != TLD_RESULT_SUCCESS)
@@ -1804,12 +1816,20 @@ printf("send email 7\n");
     sending_value.setStringValue(get_name(SNAP_NAME_SENDMAIL_STATUS_SENDING));
     table->row(key)->cell(unique_key + "::" + get_name(SNAP_NAME_SENDMAIL_SENDING_STATUS))->setValue(sending_value);
 
-printf("send email 8\n");
     QString cmd("sendmail -f ");
     cmd += e.get_header(get_name(SNAP_NAME_SENDMAIL_FROM));
     cmd += " ";
     cmd += m.f_email_only.c_str();
+
+    // TODO: put the FILE pointer in an RAII class!!!
+    //       we're looping forever so it would leak quite a bit if not properly
+    //       closed with a pclose().
     FILE *f(popen(cmd.toUtf8().data(), "w"));
+
+    // To debug, you may set *f to stdout, but make sure to not pclose(f);
+    // once done with it!
+    //FILE *f(stdout);
+
     if(f == NULL)
     {
         // TODO: register the error
@@ -1826,9 +1846,10 @@ printf("send email 8\n");
         // bcharsnospace := DIGIT / ALPHA / "'" / "(" / ")" /
         //                  "+" / "_" / "," / "-" / "." /
         //                  "/" / ":" / "=" / "?"
-        // Note: we generate a boundary without the space nor the dahs (-) to simplify
-        const char allowed[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'()+_,./:=?";
-        boundary = "=Snap+Websites=";
+        // Note: we generate boundaries without special characters
+        //       (and especially no spaces or dashes)
+        const char allowed[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"; //'()+_,./:=?";
+        boundary = "=Snap.Websites=";
         for(int i(0); i < 20; ++i)
         {
             int c(rand() % (sizeof(allowed) - 1));
@@ -1836,7 +1857,6 @@ printf("send email 8\n");
         }
         headers["Content-Type"] = "multipart/alternative; boundary=\"" + boundary + "\"";
     }
-printf("send email 9\n");
     for(email::header_map_t::const_iterator it(headers.begin());
                                             it != headers.end();
                                             ++it)
@@ -1847,7 +1867,6 @@ printf("send email 9\n");
     // one empty line before the contents
     fprintf(f, "\n");
 
-printf("send email 10\n");
     if(body_only)
     {
         // in this case we only have one entry, probably HTML, and thus we
@@ -1868,7 +1887,10 @@ printf("send email 10\n");
             // TODO: actually quoted-printable encode this buffer!
             fprintf(f, "%s\n", plain_text.toUtf8().data());
         }
-        for(int i(1); i < max; ++i)
+        // note that we send ALL the attachments, including attachment 0 since
+        // if we converted the HTML to plain text, we still want to send the
+        // HTML to the user
+        for(int i(0); i < max; ++i)
         {
             email::email_attachment attachment(e.get_attachment(i));
             fprintf(f, "--%s\n", boundary.toUtf8().data());
@@ -1890,8 +1912,8 @@ printf("send email 10\n");
         fprintf(f, "--%s--\n", boundary.toUtf8().data());
     }
 
-printf("send email 11\n");
     // end the message
+    fprintf(f, "\n");
     fprintf(f, ".\n");
     pclose(f);
 
