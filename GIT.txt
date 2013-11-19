@@ -2,14 +2,14 @@
 # Note: in many cases a filename can be "." (current directory)
 
 # check what you've changed (verify that you want to commit all of those)
-git diff [<filename>]
+git diff ["<filename>"]
 
 # check files that have changed, the status
-git status [<filename>]
+git status ["<filename>"]
 
 # -a == all
 git commit -m 'info about commit' -a
-git commit -m 'info about commit' <filename>
+git commit -m 'info about commit' "<filename>"
 
 # retrieve data from repository (changes by others)
 git pull origin master
@@ -20,7 +20,9 @@ git push origin master
 # fix a conflict
 # After a git pull ... you may have a conflict (you should see that in the
 # output of git); first edit the file and search for <<<, >>>, or === and
-# correct the code as required
+# correct the code as required; then do a commit on that filename, after
+# that you should be all fine.
+git commit -i "<filename>"
 
 
 
