@@ -288,7 +288,7 @@ void QHttpRequest::exec(const QString& uri)
  */
 void QHttpRequest::finished()
 {
-	f_finished = true;
+	f_finished = static_cast<int32_t>(true);
 	extractRank();
 	emit pageRankReady(f_index, f_rank);
 }
@@ -338,7 +338,7 @@ void QHttpRequest::extractRank()
 	// output is Rank_1:1:<rank>
 	QStringList parts(f_data.split(':'));
 	if(parts.count() != 3) {
-		f_aborted = true;
+		f_aborted = static_cast<int32_t>(true);
 		f_rank = QGooglePageRank::PageRankInvalid;
 		return;
 	}
@@ -347,7 +347,7 @@ void QHttpRequest::extractRank()
 	bool ok;
 	QGooglePageRank::GooglePageRankStatus result(static_cast<QGooglePageRank::GooglePageRankStatus>(parts[2].toInt(&ok)));
 	if(!ok) {
-		f_aborted = true;
+		f_aborted = static_cast<int32_t>(true);
 		f_rank = QGooglePageRank::PageRankInvalid;
 		return;
 	}

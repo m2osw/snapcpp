@@ -159,13 +159,13 @@ install(
 )
 
 
-##
+#################################################################################
 ## Snap send signals
 ##
 project(snapsignal)
 
 include_directories(
-    "${CMAKE_CURRENT_SOURCE_DIR}"
+    ${CMAKE_CURRENT_SOURCE_DIR}
     ${QT_INCLUDES}
 )
 
@@ -177,11 +177,11 @@ add_executable(${PROJECT_NAME}
 # while developing you may need to set LD_LIBRARY_PATH
 target_link_libraries(${PROJECT_NAME}
     libsnapwebsites
-    QtCassandra
-    QtSerialization
+    ${QTCASSANDRA_LIBRARIES}
     ${QT_LIBRARIES}
-    thrift
-    tld
+    ${THRIFT_LIBRARIES}
+    ${LIBTLD_LIBRARIES}
+    ${QTSERIALIZATION_LIBRARIES}
 )
 
 install(
