@@ -22,6 +22,7 @@
 #include "not_reached.h"
 #include "tcp_client_server.h"
 #include <iostream>
+#include <memory>
 #include <QStringList>
 #include <QFile>
 #include <QDirIterator>
@@ -34,7 +35,8 @@
 namespace snap
 {
 
-QCoreApplication *g_application;
+std::shared_ptr<QCoreApplication> g_application;
+
 
 /** \brief Get a fixed name.
  *
@@ -331,9 +333,9 @@ void server::setup_as_backend()
  */
 void server::config(int argc, char *argv[])
 {
-    if(g_application == NULL)
+    if(!g_application)
     {
-        g_application = new QCoreApplication(argc, argv);
+        g_application.reset( new QCoreApplication(argc, argv) );
     }
 
     // save the command line arguments
