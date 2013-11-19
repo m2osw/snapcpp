@@ -68,7 +68,7 @@ if( 3RDPARTY_INCLUDED )
 endif()
 
 install(
-    TARGETS users LIBRARY DESTINATION lib/snapwebsites/plugins
+    TARGETS users LIBRARY DESTINATION ${PLUGIN_INSTALL_DIR}
 )
 
 # vim: ts=4 sw=4 et

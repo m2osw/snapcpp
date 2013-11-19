@@ -77,7 +77,7 @@ target_link_libraries( ${PROJECT_NAME}
 )
 
 install(
-    TARGETS libsnapwebsites LIBRARY DESTINATION lib/snapwebsites
+    TARGETS libsnapwebsites LIBRARY DESTINATION lib
 )
 install(
     DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}

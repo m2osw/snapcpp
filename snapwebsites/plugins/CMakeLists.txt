@@ -34,6 +34,9 @@
 #      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
+# We need a common place to install the plugins
+set( PLUGIN_INSTALL_DIR lib/snapwebsites/plugins )
+
 # Keep the plugins in alphabetical order for ease of management
 add_subdirectory(char_chart)
 add_subdirectory(content)

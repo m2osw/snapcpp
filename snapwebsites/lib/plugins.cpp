@@ -103,17 +103,34 @@ bool load(const QString& plugin_path, plugin *server, const QStringList& list_of
 		}
 		// check that the file exists, if not we simply skip the
 		// load step and generate an error
-		QString filename = path + "/" + name + "/" + name + ".so";
+		//
+		// First, check the proper installation place:
+		//
+		QString filename( path + "/" + name + ".so" );
 		if(!QFile::exists(filename)) {
-			// plugin names may start with "lib..."
-			filename = path + "/" + name + "/lib" + name + ".so";
+			//
+			// If not found, see if it has a "lib" at the front of the file:
+			//
+			filename = path + "/lib" + name + ".so";
 			if(!QFile::exists(filename)) {
-				std::cerr << "error: plugin named \"" << name.toUtf8().data()
-						<< "\" (" << filename.toUtf8().data()
-						<< ") not found in the plugin directory."
-						<< std::endl;
-				good = false;
-				continue;
+				//
+				// If not found, see if it lives under a named folder:
+				//
+				filename = path + "/" + name + "/" + name + ".so";
+				if(!QFile::exists(filename)) {
+					//
+					// Last test: check plugin names starting with "lib" in named folder:
+					//
+					filename = path + "/" + name + "/lib" + name + ".so";
+					if( !QFile::exists(filename)) {
+						std::cerr << "error: plugin named \"" << name.toUtf8().data()
+							<< "\" (" << filename.toUtf8().data()
+							<< ") not found in the plugin directory."
+							<< std::endl;
+						good = false;
+						continue;
+					}
+				}
 			}
 		}
 
