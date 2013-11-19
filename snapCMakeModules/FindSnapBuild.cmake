@@ -47,8 +47,12 @@ function( ConfigureMakeProject )
 		set( SRC_DIR   ${CMAKE_SOURCE_DIR}/${ARG_PROJECT_NAME} )
 		set( BUILD_DIR ${CMAKE_BINARY_DIR}/${ARG_PROJECT_NAME} )
 	endif()
-	set( DIST_DIR          ${CMAKE_BINARY_DIR}/dist )
-	set( CONFIGURE_TARGETS ${BUILD_DIR}/config.log  )
+	set( DIST_DIR ${CMAKE_BINARY_DIR}/dist )
+	if( ARG_DISTFILE_PATH )
+		set( RM_DIR ${SRC_DIR}   )
+		else()
+		set( RM_DIR ${BUILD_DIR} )
+	endif()
 
 	if( NOT EXISTS ${SRC_DIR} AND NOT ARG_DISTFILE_PATH )
 		message( FATAL_ERROR "No source directory '${SRC_DIR}'!" )
@@ -71,16 +75,21 @@ function( ConfigureMakeProject )
 		file( MAKE_DIRECTORY ${BUILD_DIR} )
 	endif()
 
+	add_custom_target( ${ARG_PROJECT_NAME}-depends DEPENDS ${ARG_DEPENDS} )
+
 	if( ARG_USE_CONFIGURE_SCRIPT )
+		set( CONFIGURE_TARGETS ${BUILD_DIR}/config.log  )
 		add_custom_command(
 			OUTPUT ${CONFIGURE_TARGETS}
 			COMMAND ${BUILD_DIR}/configure --prefix=${DIST_DIR} ${ARG_CONFIG_ARGS}
 				1> ${BUILD_DIR}/${ARG_PROJECT_NAME}_configure.log
 				2> ${BUILD_DIR}/${ARG_PROJECT_NAME}_configure.err
+			DEPENDS ${ARG_PROJECT_NAME}-depends
 			WORKING_DIRECTORY ${BUILD_DIR}
 			COMMENT "Running ${ARG_PROJECT_NAME} configure script..."
 			)
 	else()
+		set( CONFIGURE_TARGETS ${BUILD_DIR}/CMakeCache.txt  )
 		add_custom_command(
 			OUTPUT ${CONFIGURE_TARGETS}
 			COMMAND ${CMAKE_COMMAND}
@@ -90,15 +99,15 @@ function( ConfigureMakeProject )
 				${SRC_DIR}
 				1> ${BUILD_DIR}/${ARG_PROJECT_NAME}_configure.log
 				2> ${BUILD_DIR}/${ARG_PROJECT_NAME}_configure.err
+			DEPENDS ${ARG_PROJECT_NAME}-depends
 			WORKING_DIRECTORY ${BUILD_DIR}
 			COMMENT "Running ${ARG_PROJECT_NAME} CMake configuration..."
 			)
 	endif()
 
-	set( BUILD_OUTPUT ${BUILD_DIR}/stamp-h1 )
-	add_custom_command(
-		OUTPUT ${BUILD_OUTPUT}
-		COMMAND make
+	add_custom_target(
+		${ARG_PROJECT_NAME}-make
+		COMMAND ${CMAKE_BUILD_TOOL}
 			1> ${BUILD_DIR}/${ARG_PROJECT_NAME}_make.log
 			2> ${BUILD_DIR}/${ARG_PROJECT_NAME}_make.err
 		DEPENDS ${CONFIGURE_TARGETS}
@@ -106,29 +115,28 @@ function( ConfigureMakeProject )
 		COMMENT "Building ${ARG_PROJECT_NAME}"
 		)
 
-	set( INSTALL_OUTPUT ${DIST_DIR}/include/${ARG_PROJECT_NAME}/config.h )
-	add_custom_command(
-		OUTPUT ${INSTALL_OUTPUT}
-		COMMAND make install
+	add_custom_target(
+		${ARG_PROJECT_NAME}-install
+		COMMAND ${CMAKE_BUILD_TOOL} install
 			1>> ${BUILD_DIR}/${ARG_PROJECT_NAME}_make.log
 			2>> ${BUILD_DIR}/${ARG_PROJECT_NAME}_make.err
-		DEPENDS ${BUILD_OUTPUT}
+		DEPENDS ${ARG_PROJECT_NAME}-make
 		WORKING_DIRECTORY ${BUILD_DIR}
 		COMMENT "Installing ${ARG_PROJECT_NAME}"
 		)
 
 	add_custom_target(
-		${ARG_PROJECT_NAME} ALL
-		DEPENDS ${INSTALL_OUTPUT}
+		${ARG_PROJECT_NAME}-clean
+		COMMAND rm -rf ${RM_DIR}
 		)
-	if( ARG_DEPENDS )
-		add_dependencies( ${ARG_PROJECT_NAME} ${ARG_DEPENDS} )
-	endif()
-endfunction()
 
-#include( FindPackageHandleStandardArgs )
-# handle the QUIETLY and REQUIRED arguments and set CONTROLLEDVARS_FOUND to TRUE
-# if all listed variables are TRUE
-#find_package_handle_standard_args( ControlledVars DEFAULT_MSG CONTROLLEDVARS_INCLUDE_DIR )
+	add_custom_target(
+		${ARG_PROJECT_NAME}
+		DEPENDS ${ARG_PROJECT_NAME}-install
+		)
+
+	set_property( GLOBAL APPEND PROPERTY BUILD_TARGETS ${ARG_PROJECT_NAME}       )
+	set_property( GLOBAL APPEND PROPERTY CLEAN_TARGETS ${ARG_PROJECT_NAME}-clean )
+endfunction()
 
 # vim: ts=4 sw=4 noexpandtab

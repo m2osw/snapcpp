@@ -36,21 +36,23 @@
 #      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
-
-##
-## The Snap! Server
+#################################################################################
+## Dependencies
 ##
 find_package( Qt4 4.8.1 QUIET REQUIRED QtCore QtNetwork QtXml QtXmlPatterns )
 include( ${QT_USE_FILE} )
 add_definitions( ${QT_DEFINITIONS} )
 
+
+#################################################################################
+## The Snap! Server
+##
 project(snapserver)
 
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${QT_INCLUDES}
 )
-
 
 add_executable(${PROJECT_NAME}
     snapserver.cpp
@@ -72,7 +74,7 @@ install(
 )
 
 
-##
+#################################################################################
 ## Backend process
 ##
 project(snapbackend)
@@ -103,7 +105,7 @@ install(
 )
 
 
-##
+#################################################################################
 ## The Snap! Passthrough CGI script
 ##
 project(snapcgi)
@@ -113,20 +115,23 @@ include_directories(
     ${QT_INCLUDES}
 )
 
-add_executable(snap.cgi
+add_executable(${PROJECT_NAME}
     snap.cpp
-    ../lib/tcp_client_server.cpp
+    ${libsnapwebsites_SOURCE_DIR}/tcp_client_server.cpp
 )
 
-target_link_libraries(snap.cgi
+set_property( TARGET ${PROJECT_NAME} PROPERTY OUTPUT_NAME snap.cgi )
+
+target_link_libraries(${PROJECT_NAME}
     ${QT_LIBRARIES}
 )
 
 install(
-    TARGETS snap.cgi RUNTIME DESTINATION bin
+    TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin
 )
 
-##
+
+#################################################################################
 ## Snap DB process
 ##
 project(snapdb)
@@ -184,7 +189,7 @@ install(
 )
 
 
-##
+#################################################################################
 ## Snap layout process
 ##
 project(snaplayout)

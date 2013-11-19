@@ -39,6 +39,13 @@ cmake_minimum_required(VERSION 2.8)
 
 project( snapwebsites_main )
 
+#include( ProcessorCount )
+#ProcessorCount( NUM_PROCS )
+#
+#math( EXPR NUM_JOBS "${NUM_PROCS}*2" )
+#set( ENV{MAKEFLAGS} -j${NUM_JOBS} )    # Doesn't work. Nice idea, but no dice
+#message( "ENV{MAKEFLAGS}=$ENV{MAKEFLAGS}" )
+
 set( CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/snapCMakeModules )
 find_package( SnapCMakeModules REQUIRED )
 find_package( SnapBuild        REQUIRED )
@@ -66,21 +73,35 @@ ConfigureMakeProject( PROJECT_NAME controlled_vars )
 ConfigureMakeProject( PROJECT_NAME libtld          )
 ConfigureMakeProject( PROJECT_NAME libQtCassandra
         CONFIG_ARGS
-            -DTHRIFT_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include/thrift
+            -DTHRIFT_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
         DEPENDS thrift controlled_vars
         )
 ConfigureMakeProject( PROJECT_NAME libQtSerialization
-        CONFIG_ARGS -DTHRIFT_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include/thrift
+        CONFIG_ARGS
+            -DTHRIFT_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
         DEPENDS thrift
         )
 ConfigureMakeProject( PROJECT_NAME snapwebsites
         CONFIG_ARGS
-            -DTHRIFT_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include/thrift
+            -DTHRIFT_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
             -DQTSERIALIZATION_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include/QtSerialization
             -DLIBTLD_LIBRARY:PATH=${CMAKE_BINARY_DIR}/dist/lib/libtld.so
         DEPENDS libQtCassandra libQtSerialization libtld
         )
-ConfigureMakeProject( PROJECT_NAME googlerank )
+ConfigureMakeProject( PROJECT_NAME googlerank
+        DEPENDS controlled_vars
+        )
 ConfigureMakeProject( PROJECT_NAME iplock     )
 
-# vim: ts=4 sw=4 et
+get_property( BUILD_TARGETS GLOBAL PROPERTY BUILD_TARGETS )
+get_property( CLEAN_TARGETS GLOBAL PROPERTY CLEAN_TARGETS )
+add_custom_target( build-all ALL
+    DEPENDS ${BUILD_TARGETS}
+    )
+add_custom_target( clean-all
+    COMMAND ${CMAKE_COMMAND} ${CMAKE_BINARY_DIR}
+    DEPENDS ${CLEAN_TARGETS}
+    )
+
+
+# vim: ts=4 sw=4 et nocindent
