@@ -77,7 +77,8 @@ ConfigureMakeProject( PROJECT_NAME libQtCassandra
         DEPENDS thrift controlled_vars
         )
 ConfigureMakeProject( PROJECT_NAME libQtSerialization
-        CONFIG_ARGS -DTHRIFT_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
+        CONFIG_ARGS
+            -DTHRIFT_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
         DEPENDS thrift
         )
 ConfigureMakeProject( PROJECT_NAME snapwebsites
@@ -94,8 +95,13 @@ ConfigureMakeProject( PROJECT_NAME iplock     )
 
 get_property( BUILD_TARGETS GLOBAL PROPERTY BUILD_TARGETS )
 get_property( CLEAN_TARGETS GLOBAL PROPERTY CLEAN_TARGETS )
-add_custom_target( build-all ALL DEPENDS ${BUILD_TARGETS} )
-add_custom_target( clean-all     DEPENDS ${CLEAN_TARGETS} )
+add_custom_target( build-all ALL
+    DEPENDS ${BUILD_TARGETS}
+    )
+add_custom_target( clean-all
+    COMMAND ${CMAKE_COMMAND} ${CMAKE_BINARY_DIR}
+    DEPENDS ${CLEAN_TARGETS}
+    )
 
 
 # vim: ts=4 sw=4 et nocindent
