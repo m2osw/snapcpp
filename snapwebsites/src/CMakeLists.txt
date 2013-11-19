@@ -36,14 +36,17 @@
 #      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
-
-##
-## The Snap! Server
+#################################################################################
+## Dependencies
 ##
 find_package( Qt4 4.8.1 QUIET REQUIRED QtCore QtNetwork QtXml QtXmlPatterns )
 include( ${QT_USE_FILE} )
 add_definitions( ${QT_DEFINITIONS} )
 
+
+#################################################################################
+## The Snap! Server
+##
 project(snapserver)
 
 include_directories(
@@ -51,13 +54,12 @@ include_directories(
     ${QT_INCLUDES}
 )
 
-
-add_executable(snapserver
+add_executable(${PROJECT_NAME}
     snapserver.cpp
 )
 
 # while developing you may need to set LD_LIBRARY_PATH
-target_link_libraries(snapserver
+target_link_libraries(${PROJECT_NAME}
     libsnapwebsites
     ${QTCASSANDRA_LIBRARIES}
     ${QTSERIALIZATION_LIBRARIES}
@@ -68,11 +70,11 @@ target_link_libraries(snapserver
 )
 
 install(
-    TARGETS snapserver RUNTIME DESTINATION bin
+    TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin
 )
 
 
-##
+#################################################################################
 ## Backend process
 ##
 project(snapbackend)
@@ -83,12 +85,12 @@ include_directories(
 )
 
 
-add_executable(snapbackend
+add_executable(${PROJECT_NAME}
     snapbackend.cpp
 )
 
 # while developing you may need to set LD_LIBRARY_PATH
-target_link_libraries(snapbackend
+target_link_libraries(${PROJECT_NAME}
     libsnapwebsites
     ${QTCASSANDRA_LIBRARIES}
     ${QTSERIALIZATION_LIBRARIES}
@@ -99,11 +101,11 @@ target_link_libraries(snapbackend
 )
 
 install(
-    TARGETS snapbackend RUNTIME DESTINATION bin
+    TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin
 )
 
 
-##
+#################################################################################
 ## The Snap! Passthrough CGI script
 ##
 project(snapcgi)
@@ -113,20 +115,23 @@ include_directories(
     ${QT_INCLUDES}
 )
 
-add_executable(snap.cgi
+add_executable(${PROJECT_NAME}
     snap.cpp
-    ../lib/tcp_client_server.cpp
+    ${libsnapwebsites_SOURCE_DIR}/tcp_client_server.cpp
 )
 
-target_link_libraries(snap.cgi
+set_property( TARGET ${PROJECT_NAME} PROPERTY OUTPUT_NAME snap.cgi )
+
+target_link_libraries(${PROJECT_NAME}
     ${QT_LIBRARIES}
 )
 
 install(
-    TARGETS snap.cgi RUNTIME DESTINATION bin
+    TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin
 )
 
-##
+
+#################################################################################
 ## Snap DB process
 ##
 project(snapdb)
@@ -137,12 +142,12 @@ include_directories(
 )
 
 
-add_executable(snapdb
+add_executable(${PROJECT_NAME}
     snapdb.cpp
 )
 
 # while developing you may need to set LD_LIBRARY_PATH
-target_link_libraries(snapdb
+target_link_libraries(${PROJECT_NAME}
     ${QTCASSANDRA_LIBRARIES}
     ${QT_LIBRARIES}
     ${THRIFT_LIBRARIES}
@@ -150,11 +155,11 @@ target_link_libraries(snapdb
 )
 
 install(
-    TARGETS snapdb RUNTIME DESTINATION bin
+    TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin
 )
 
 
-##
+#################################################################################
 ## Snap layout process
 ##
 project(snaplayout)
@@ -165,11 +170,11 @@ include_directories(
 )
 
 
-add_executable(snaplayout
+add_executable(${PROJECT_NAME}
     snaplayout.cpp
 )
 
-target_link_libraries(snaplayout
+target_link_libraries(${PROJECT_NAME}
     ${QTCASSANDRA_LIBRARIES}
     ${QT_LIBRARIES}
     ${THRIFT_LIBRARIES}
@@ -177,7 +182,7 @@ target_link_libraries(snaplayout
 )
 
 install(
-    TARGETS snaplayout RUNTIME DESTINATION bin
+    TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin
 )
 
 
