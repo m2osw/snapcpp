@@ -36,14 +36,15 @@
 
 project(plugin_users)
 
-find_package( Qt4 4.8.1 REQUIRED QtCore )
+find_package( Qt4 4.8.1 QUIET REQUIRED QtCore )
 include( ${QT_USE_FILE} )
 add_definitions( ${QT_DEFINITIONS} )
 
 include_directories(
-    "${CMAKE_CURRENT_SOURCE_DIR}"
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CONTROLLEDVARS_INCLUDE_DIRS}
+    ${LIBTLD_INCLUDE_DIRS}
     ${QT_INCLUDES}
-    "${PROJECT_BINARY_DIR}/../../../libtld/include"
 )
 
 QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC
@@ -54,7 +55,6 @@ add_library(users SHARED
     users.cpp
     ${SNAP_MANAGER_MOC_CXX}
     ${SNAP_MANAGER_RESOURCES_RCC}
-
     content.xml
     login-form.xml
     register-form.xml
@@ -62,8 +62,13 @@ add_library(users SHARED
 
 target_link_libraries( users ${QT_LIBRARIES} )
 
+get_property( 3RDPARTY_INCLUDED GLOBAL PROPERTY 3RDPARTY_INCLUDED )
+if( 3RDPARTY_INCLUDED )
+    add_dependencies( users make_controlled_vars_headers )
+endif()
+
 install(
-    TARGETS users LIBRARY DESTINATION lib/snapwebsites/plugins
+    TARGETS users LIBRARY DESTINATION ${PLUGIN_INSTALL_DIR}
 )
 
 # vim: ts=4 sw=4 et

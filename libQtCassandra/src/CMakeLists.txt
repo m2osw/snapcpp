@@ -59,11 +59,15 @@ add_library(${PROJECT_NAME} SHARED
     ${THRIFT_SOURCE_FILES}
 )
 
-
 target_link_libraries(QtCassandra
     ${THRIFT_LIBRARIES}
     ${QT_LIBRARIES}
 )
+
+get_property( 3RDPARTY_INCLUDED GLOBAL PROPERTY 3RDPARTY_INCLUDED )
+if( 3RDPARTY_INCLUDED )
+    add_dependencies( ${PROJECT_NAME} thrift-build controlled_vars.h )
+endif()
 
 install(
     TARGETS QtCassandra LIBRARY DESTINATION lib

@@ -39,14 +39,15 @@
 
 project(plugin_sendmail)
 
-find_package( Qt4 4.8.1 REQUIRED QtCore )
+find_package( Qt4 4.8.1 QUIET REQUIRED QtCore )
 include( ${QT_USE_FILE} )
 add_definitions( ${QT_DEFINITIONS} )
 
 include_directories(
-    "${CMAKE_CURRENT_SOURCE_DIR}"
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CONTROLLEDVARS_INCLUDE_DIRS}
+    ${LIBTLD_INCLUDE_DIRS}
     ${QT_INCLUDES}
-    "${PROJECT_BINARY_DIR}/../../../libtld/include"
 )
 
 find_file( MAGIC magic.h )
@@ -75,8 +76,13 @@ add_library(sendmail SHARED
 
 target_link_libraries( sendmail ${QT_LIBRARIES} ${MAGIC_LIBRARY} )
 
+get_property( 3RDPARTY_INCLUDED GLOBAL PROPERTY 3RDPARTY_INCLUDED )
+if( 3RDPARTY_INCLUDED )
+    add_dependencies( sendmail make_controlled_vars_headers )
+endif()
+
 install(
-    TARGETS sendmail LIBRARY DESTINATION lib/snapwebsites/plugins
+    TARGETS sendmail LIBRARY DESTINATION ${PLUGIN_INSTALL_DIR}
 )
 
 # vim: ts=4 sw=4 et

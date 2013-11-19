@@ -40,7 +40,7 @@
 ## The Snap! Manager
 ##
 
-find_package( Qt4 4.8.1 REQUIRED 
+find_package( Qt4 4.8.1 QUIET REQUIRED 
     QtCore
     QtNetwork
     QtGui
@@ -74,13 +74,10 @@ QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC
 
 
 include_directories(
-    #"${CMAKE_CURRENT_SOURCE_DIR}/../lib"
-    #"${CMAKE_CURRENT_BINARY_DIR}/../lib"
-    #"${CMAKE_CURRENT_BINARY_DIR}/../snap-manager"
-    "${PROJECT_BINARY_DIR}"
-    "${CMAKE_CURRENT_SOURCE_DIR}"
+    ${PROJECT_BINARY_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${LIBTLD_INCLUDE_DIRS}
     ${QT_INCLUDES}
-    "${PROJECT_BINARY_DIR}/../../libtld/include"
 )
 
 
@@ -97,10 +94,10 @@ add_executable(snap-manager
 # while developing you may need to set LD_LIBRARY_PATH
 target_link_libraries( ${PROJECT_NAME}
     libsnapwebsites
-    QtCassandra
+    ${QTCASSANDRA_LIBRARIES}
     ${QT_LIBRARIES}
-    thrift
-    tld
+    ${THRIFT_LIBRARIES}
+    ${LIBTLD_LIBRARIES}
     dl
 )
 

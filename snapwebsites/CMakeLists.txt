@@ -63,30 +63,30 @@ project( snapwebsites )
 ##
 if( NOT CMAKE_MODULE_PATH )
     find_path( CMAKE_DIRECTORY_PATH snapCMakeModules
-        PATHS
-            ${PROJECT_SOURCE_DIR}
-            ${PROJECT_SOURCE_DIR}/..
+        PATHS ${CMAKE_SOURCE_DIR}
         NO_DEFAULT_PATH
     )
     set( CMAKE_MODULE_PATH ${CMAKE_DIRECTORY_PATH}/snapCMakeModules )
     message( "Found snapCMakeModules in ${CMAKE_MODULE_PATH}" )
 endif()
+find_package( ControlledVars   )
+find_package( LibTLD           )
+find_package( QtCassandra      )
+find_package( QtSerialization  )
 find_package( SnapCMakeModules )
 find_package( SnapDoxygen      )
 find_package( Thrift           )
 
 include_directories( 
-    "${PROJECT_SOURCE_DIR}"
-    "${PROJECT_SOURCE_DIR}/lib"
-    "${PROJECT_BINARY_DIR}"
-    "${PROJECT_BINARY_DIR}/lib"
-    "${libQtCassandra_SOURCE_DIR}/include"
-    "${libQtCassandra_BINARY_DIR}/include"
-    "${libQtSerialization_SOURCE_DIR}/include"
-    "${libQtSerialization_BINARY_DIR}/include"
-    "${libtld_SOURCE_DIR}"
-    "${libtld_BINARY_DIR}"
-    "${CMAKE_BINARY_DIR}"
+    ${PROJECT_SOURCE_DIR}
+    ${PROJECT_SOURCE_DIR}/lib
+    ${PROJECT_BINARY_DIR}
+    ${PROJECT_BINARY_DIR}/lib
+    ${QTCASSANDRA_INCLUDE_DIRS}
+    ${QTSERIALIZATION_INCLUDE_DIRS}
+    ${CMAKE_BINARY_DIR}
+    ${CONTROLLEDVARS_INCLUDE_DIRS}
+    ${LIBTLD_INCLUDE_DIRS}
     ${THRIFT_INCLUDE_DIR}
 )
 

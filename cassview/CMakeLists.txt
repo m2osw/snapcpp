@@ -48,16 +48,15 @@ add_definitions( -std=c++0x )
 ##
 if( NOT CMAKE_MODULE_PATH )
     find_path( CMAKE_DIRECTORY_PATH snapCMakeModules
-        PATHS
-            ${PROJECT_SOURCE_DIR}
-            ${PROJECT_SOURCE_DIR}/..
+        PATHS ${CMAKE_SOURCE_DIR}
         NO_DEFAULT_PATH
     )
     set( CMAKE_MODULE_PATH ${CMAKE_DIRECTORY_PATH}/snapCMakeModules )
     message( "Found cmake in ${CMAKE_MODULE_PATH}" )
 endif()
-find_package( SnapCMakeModules )
-find_package( SnapDoxygen      )
+find_package( SnapCMakeModules REQUIRED )
+find_package( SnapDoxygen      REQUIRED )
+find_package( QtCassandra      REQUIRED )
 
 find_package( Qt4 4.8.1 REQUIRED QtCore QtNetwork QtGui )
 include( ${QT_USE_FILE} )
@@ -66,8 +65,7 @@ add_definitions( ${QT_DEFINITIONS} )
 include_directories( 
     "${PROJECT_SOURCE_DIR}"
     "${PROJECT_BINARY_DIR}"
-    "${libQtCassandra_SOURCE_DIR}/include"
-    "${libQtCassandra_BINARY_DIR}/include"
+    "${QTCASSANDRA_INCLUDE_DIRS}"
     "${CMAKE_BINARY_DIR}"
     "${QT_INCLUDES}"
 )

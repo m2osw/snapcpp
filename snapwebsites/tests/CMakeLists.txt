@@ -35,35 +35,31 @@
 #      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
-find_package( Qt4 4.8.1 REQUIRED QtCore QtNetwork QtXml QtXmlPatterns )
+find_package( Qt4 4.8.1 QUIET REQUIRED QtCore QtNetwork QtXml QtXmlPatterns )
 include( ${QT_USE_FILE} )
 add_definitions( ${QT_DEFINITIONS} )
-include_directories( ${QT_INCLUDES} )
+include_directories(
+        ${CMAKE_CURRENT_SOURCE_DIR}
+        ${QT_INCLUDES}
+        )
+
+get_property( 3RDPARTY_INCLUDED GLOBAL PROPERTY 3RDPARTY_INCLUDED )
+if( 3RDPARTY_INCLUDED )
+    add_custom_target( test_prereqs DEPENDS make_controlled_vars_headers )
+else()
+    add_custom_target( test_prereqs )
+endif()
 
 ##
 ## Send orders to the Snap Server via the snap.cgi tool
 ##
 project(test_snap_cgi)
 
-include_directories( "${CMAKE_CURRENT_SOURCE_DIR}" )
-
 
 add_executable(test_snap_cgi
     test_snap_cgi.cpp
 )
-
-add_executable(test_snap_parser
-    test_snap_parser.cpp
-)
-
-add_executable(test_unix_timestamp
-    test_unix_timestamp.cpp
-)
-
-add_executable(test_snap_udp_message
-    test_snap_udp_message.cpp
-)
-
+add_dependencies( test_snap_cgi test_prereqs )
 # while developing you may need to set LD_LIBRARY_PATH
 target_link_libraries(test_snap_cgi
     #libsnapwebsites
@@ -75,21 +71,37 @@ target_link_libraries(test_snap_cgi
     #tld
 )
 
+
+add_executable(test_snap_parser
+    test_snap_parser.cpp
+)
+add_dependencies( test_snap_parser test_prereqs )
 target_link_libraries(test_snap_parser
     libsnapwebsites
+    ${QTCASSANDRA_LIBRARIES}
+    ${LIBTLD_LIBRARIES}
     ${QT_LIBRARIES}
-    QtCassandra
-    thrift
-    tld
+    ${THRIFT_LIBRARIES}
     dl
 )
 
+
+add_executable(test_unix_timestamp
+    test_unix_timestamp.cpp
+)
+add_dependencies( test_unix_timestamp test_prereqs )
+
+
+add_executable(test_snap_udp_message
+    test_snap_udp_message.cpp
+)
+add_dependencies( test_snap_udp_message test_prereqs )
 target_link_libraries(test_snap_udp_message
     libsnapwebsites
+    ${QTCASSANDRA_LIBRARIES}
+    ${LIBTLD_LIBRARIES}
     ${QT_LIBRARIES}
-    QtCassandra
-    thrift
-    tld
+    ${THRIFT_LIBRARIES}
     dl
 )
 

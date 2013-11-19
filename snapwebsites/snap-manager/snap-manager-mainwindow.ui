@@ -6,15 +6,15 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>800</width>
-    <height>600</height>
+    <width>859</width>
+    <height>617</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Snap! Manager</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QHBoxLayout" name="horizontalLayout">
+   <layout class="QHBoxLayout" name="horizontalLayout_18">
     <item>
      <widget class="QTabWidget" name="tabWidget">
       <property name="enabled">
@@ -197,145 +197,106 @@ p, li { white-space: pre-wrap; }
        <attribute name="title">
         <string>&amp;Hosts</string>
        </attribute>
-       <widget class="QListWidget" name="hostList">
-        <property name="geometry">
-         <rect>
-          <x>10</x>
-          <y>60</y>
-          <width>361</width>
-          <height>431</height>
-         </rect>
-        </property>
-       </widget>
-       <widget class="QWidget" name="layoutWidget">
-        <property name="geometry">
-         <rect>
-          <x>390</x>
-          <y>390</y>
-          <width>381</width>
-          <height>31</height>
-         </rect>
-        </property>
-        <layout class="QHBoxLayout" name="horizontalLayout_10">
-         <property name="topMargin">
-          <number>0</number>
-         </property>
-         <item>
-          <widget class="QLabel" name="label_15">
-           <property name="text">
-            <string>Computer Name:</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLineEdit" name="hostName"/>
-         </item>
-        </layout>
-       </widget>
-       <widget class="QPushButton" name="hostNew">
-        <property name="geometry">
-         <rect>
-          <x>390</x>
-          <y>430</y>
-          <width>85</width>
-          <height>27</height>
-         </rect>
-        </property>
-        <property name="text">
-         <string>New</string>
-        </property>
-       </widget>
-       <widget class="QPushButton" name="hostDelete">
-        <property name="geometry">
-         <rect>
-          <x>690</x>
-          <y>430</y>
-          <width>85</width>
-          <height>27</height>
-         </rect>
-        </property>
-        <property name="text">
-         <string>Delete</string>
-        </property>
-       </widget>
-       <widget class="QPushButton" name="hostSave">
-        <property name="geometry">
-         <rect>
-          <x>490</x>
-          <y>430</y>
-          <width>85</width>
-          <height>27</height>
-         </rect>
-        </property>
-        <property name="text">
-         <string>Save</string>
-        </property>
-       </widget>
-       <widget class="QPushButton" name="hostCancel">
-        <property name="geometry">
-         <rect>
-          <x>590</x>
-          <y>430</y>
-          <width>84</width>
-          <height>27</height>
-         </rect>
-        </property>
-        <property name="text">
-         <string>Cancel</string>
-        </property>
-       </widget>
-       <widget class="QLabel" name="label_16">
-        <property name="geometry">
-         <rect>
-          <x>400</x>
-          <y>60</y>
-          <width>341</width>
-          <height>301</height>
-         </rect>
-        </property>
-        <property name="text">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;As you add new computers to your Cassandra cluster, these computers need to be added to this table. This allows the Snap! system to lock all computers out of a specific table or row so that one process can work atomically. This is important for anything that needs to appear exactly once in the database. For example, when we add a new user, we cannot add the same user more than once (especially because their email address is used as the key to access that user's account.)&lt;/p&gt;&lt;p&gt;This table is a list of names as defined by the snap-server=... parameter in the server configuration file.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-        </property>
-        <property name="alignment">
-         <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
-        </property>
-        <property name="wordWrap">
-         <bool>true</bool>
-        </property>
-       </widget>
-       <widget class="QWidget" name="horizontalLayoutWidget_2">
-        <property name="geometry">
-         <rect>
-          <x>10</x>
-          <y>20</y>
-          <width>361</width>
-          <height>31</height>
-         </rect>
-        </property>
-        <layout class="QHBoxLayout" name="horizontalLayout_11">
-         <item>
-          <widget class="QLabel" name="label_17">
-           <property name="text">
-            <string>Filter:</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLineEdit" name="hostFilterString">
-           <property name="toolTip">
-            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The filter allows you to limit the list of domains to a set that start with the given text. Only the beginning of the word is used. This filter requires a valid domain index.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QPushButton" name="hostFilter">
-           <property name="text">
-            <string>Apply</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </widget>
+       <layout class="QHBoxLayout" name="horizontalLayout_13">
+        <item>
+         <layout class="QVBoxLayout" name="verticalLayout_4">
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_11">
+            <item>
+             <widget class="QLabel" name="label_17">
+              <property name="text">
+               <string>Filter:</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLineEdit" name="hostFilterString">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The filter allows you to limit the list of domains to a set that start with the given text. Only the beginning of the word is used. This filter requires a valid domain index.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="hostFilter">
+              <property name="text">
+               <string>Apply</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <widget class="QListWidget" name="hostList"/>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <layout class="QVBoxLayout" name="verticalLayout_6" stretch="1,0,0">
+          <item>
+           <widget class="QLabel" name="label_16">
+            <property name="text">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;As you add new computers to your Cassandra cluster, these computers need to be added to this table. This allows the Snap! system to lock all computers out of a specific table or row so that one process can work atomically. This is important for anything that needs to appear exactly once in the database. For example, when we add a new user, we cannot add the same user more than once (especially because their email address is used as the key to access that user's account.)&lt;/p&gt;&lt;p&gt;This table is a list of names as defined by the snap-server=... parameter in the server configuration file.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+            </property>
+            <property name="wordWrap">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_10">
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <item>
+             <widget class="QLabel" name="label_15">
+              <property name="text">
+               <string>Computer Name:</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLineEdit" name="hostName"/>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout">
+            <item>
+             <widget class="QPushButton" name="hostNew">
+              <property name="text">
+               <string>New</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="hostSave">
+              <property name="text">
+               <string>Save</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="hostCancel">
+              <property name="text">
+               <string>Cancel</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="hostDelete">
+              <property name="text">
+               <string>Delete</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+         </layout>
+        </item>
+       </layout>
       </widget>
       <widget class="QWidget" name="tab_domains">
        <attribute name="title">
@@ -344,122 +305,107 @@ p, li { white-space: pre-wrap; }
        <attribute name="toolTip">
         <string>Edit domain settings as defined in the Cassandra cluster</string>
        </attribute>
-       <widget class="QListWidget" name="domainList">
-        <property name="geometry">
-         <rect>
-          <x>9</x>
-          <y>59</y>
-          <width>361</width>
-          <height>431</height>
-         </rect>
-        </property>
-       </widget>
-       <widget class="QFrame" name="verticalFrame_2">
-        <property name="geometry">
-         <rect>
-          <x>378</x>
-          <y>9</y>
-          <width>391</width>
-          <height>481</height>
-         </rect>
-        </property>
-        <layout class="QVBoxLayout" name="verticalLayout_2">
-         <item>
-          <layout class="QHBoxLayout" name="horizontalLayout_3">
-           <property name="topMargin">
-            <number>0</number>
-           </property>
-           <item>
-            <widget class="QLabel" name="label_4">
-             <property name="text">
-              <string>Domain Name:</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QLineEdit" name="domainName"/>
-           </item>
-          </layout>
-         </item>
-         <item>
-          <widget class="QLabel" name="label_5">
-           <property name="text">
-            <string>Domain Rules:</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QTextEdit" name="domainRules"/>
-         </item>
-         <item>
-          <widget class="QFrame" name="horizontalFrame_2">
-           <layout class="QHBoxLayout" name="horizontalLayout_4">
+       <layout class="QHBoxLayout" name="horizontalLayout_14">
+        <item>
+         <layout class="QVBoxLayout" name="verticalLayout_7">
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_5">
             <item>
-             <widget class="QPushButton" name="domainNew">
+             <widget class="QLabel" name="label_8">
               <property name="text">
-               <string>New</string>
+               <string>Filter:</string>
               </property>
              </widget>
             </item>
             <item>
-             <widget class="QPushButton" name="domainSave">
-              <property name="text">
-               <string>Save</string>
+             <widget class="QLineEdit" name="domainFilterString">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The filter allows you to limit the list of domains to a set that start with the given text. Only the beginning of the word is used. This filter requires a valid domain index.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
              </widget>
             </item>
             <item>
-             <widget class="QPushButton" name="domainCancel">
+             <widget class="QPushButton" name="domainFilter">
               <property name="text">
-               <string>Cancel</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QPushButton" name="domainDelete">
-              <property name="text">
-               <string>Delete</string>
+               <string>Apply</string>
               </property>
              </widget>
             </item>
            </layout>
-          </widget>
-         </item>
-        </layout>
-       </widget>
-       <widget class="QWidget" name="horizontalLayoutWidget">
-        <property name="geometry">
-         <rect>
-          <x>9</x>
-          <y>20</y>
-          <width>361</width>
-          <height>31</height>
-         </rect>
-        </property>
-        <layout class="QHBoxLayout" name="horizontalLayout_5">
-         <item>
-          <widget class="QLabel" name="label_8">
-           <property name="text">
-            <string>Filter:</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLineEdit" name="domainFilterString">
-           <property name="toolTip">
-            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The filter allows you to limit the list of domains to a set that start with the given text. Only the beginning of the word is used. This filter requires a valid domain index.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QPushButton" name="domainFilter">
-           <property name="text">
-            <string>Apply</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </widget>
+          </item>
+          <item>
+           <widget class="QListWidget" name="domainList"/>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <widget class="QFrame" name="verticalFrame_2">
+          <layout class="QVBoxLayout" name="verticalLayout_2">
+           <item>
+            <layout class="QHBoxLayout" name="horizontalLayout_3">
+             <property name="topMargin">
+              <number>0</number>
+             </property>
+             <item>
+              <widget class="QLabel" name="label_4">
+               <property name="text">
+                <string>Domain Name:</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLineEdit" name="domainName"/>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <widget class="QLabel" name="label_5">
+             <property name="text">
+              <string>Domain Rules:</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QTextEdit" name="domainRules"/>
+           </item>
+           <item>
+            <widget class="QFrame" name="horizontalFrame_2">
+             <layout class="QHBoxLayout" name="horizontalLayout_4">
+              <item>
+               <widget class="QPushButton" name="domainNew">
+                <property name="text">
+                 <string>New</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="domainSave">
+                <property name="text">
+                 <string>Save</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="domainCancel">
+                <property name="text">
+                 <string>Cancel</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="domainDelete">
+                <property name="text">
+                 <string>Delete</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+       </layout>
       </widget>
       <widget class="QWidget" name="tab_websites">
        <attribute name="title">
@@ -468,239 +414,213 @@ p, li { white-space: pre-wrap; }
        <attribute name="toolTip">
         <string>Edit websites settings as defined in the Cassandra cluster.</string>
        </attribute>
-       <widget class="QListWidget" name="websiteList">
-        <property name="geometry">
-         <rect>
-          <x>9</x>
-          <y>9</y>
-          <width>361</width>
-          <height>481</height>
-         </rect>
-        </property>
-       </widget>
-       <widget class="QFrame" name="verticalFrame_4">
-        <property name="geometry">
-         <rect>
-          <x>378</x>
-          <y>9</y>
-          <width>391</width>
-          <height>481</height>
-         </rect>
-        </property>
-        <layout class="QVBoxLayout" name="verticalLayout_3">
-         <item>
-          <layout class="QHBoxLayout" name="horizontalLayout_6">
-           <property name="topMargin">
-            <number>0</number>
-           </property>
+       <layout class="QHBoxLayout" name="horizontalLayout_15">
+        <item>
+         <widget class="QListWidget" name="websiteList"/>
+        </item>
+        <item>
+         <widget class="QFrame" name="verticalFrame_4">
+          <layout class="QVBoxLayout" name="verticalLayout_3">
            <item>
-            <widget class="QLabel" name="label_6">
+            <layout class="QHBoxLayout" name="horizontalLayout_6">
+             <property name="topMargin">
+              <number>0</number>
+             </property>
+             <item>
+              <widget class="QLabel" name="label_6">
+               <property name="text">
+                <string>Full Domain Name:</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLineEdit" name="fullDomainName"/>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <widget class="QLabel" name="label_7">
              <property name="text">
-              <string>Full Domain Name:</string>
+              <string>Website Rules:</string>
              </property>
             </widget>
            </item>
            <item>
-            <widget class="QLineEdit" name="fullDomainName"/>
+            <widget class="QTextEdit" name="websiteRules"/>
+           </item>
+           <item>
+            <widget class="QFrame" name="horizontalFrame_3">
+             <layout class="QHBoxLayout" name="horizontalLayout_7">
+              <item>
+               <widget class="QPushButton" name="websiteNew">
+                <property name="text">
+                 <string>New</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="websiteSave">
+                <property name="text">
+                 <string>Save</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="websiteCancel">
+                <property name="text">
+                 <string>Cancel</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="websiteDelete">
+                <property name="text">
+                 <string>Delete</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </widget>
            </item>
           </layout>
-         </item>
-         <item>
-          <widget class="QLabel" name="label_7">
-           <property name="text">
-            <string>Website Rules:</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QTextEdit" name="websiteRules"/>
-         </item>
-         <item>
-          <widget class="QFrame" name="horizontalFrame_3">
-           <layout class="QHBoxLayout" name="horizontalLayout_7">
-            <item>
-             <widget class="QPushButton" name="websiteNew">
-              <property name="text">
-               <string>New</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QPushButton" name="websiteSave">
-              <property name="text">
-               <string>Save</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QPushButton" name="websiteCancel">
-              <property name="text">
-               <string>Cancel</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QPushButton" name="websiteDelete">
-              <property name="text">
-               <string>Delete</string>
-              </property>
-             </widget>
-            </item>
-           </layout>
-          </widget>
-         </item>
-        </layout>
-       </widget>
+         </widget>
+        </item>
+       </layout>
       </widget>
       <widget class="QWidget" name="tab_sites">
        <attribute name="title">
         <string>&amp;Sites</string>
        </attribute>
-       <widget class="QWidget" name="horizontalLayoutWidget_3">
-        <property name="geometry">
-         <rect>
-          <x>10</x>
-          <y>21</y>
-          <width>241</width>
-          <height>31</height>
-         </rect>
-        </property>
-        <layout class="QHBoxLayout" name="horizontalLayout_16">
-         <item>
-          <widget class="QLabel" name="label_23">
-           <property name="text">
-            <string>Filter:</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLineEdit" name="sitesFilterString">
-           <property name="toolTip">
-            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The filter allows you to limit the list of domains to a set that start with the given text. Only the beginning of the word is used. This filter requires a valid domain index.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QPushButton" name="sitesFilter">
-           <property name="text">
-            <string>Apply</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </widget>
-       <widget class="QFrame" name="verticalFrame_9">
-        <property name="geometry">
-         <rect>
-          <x>259</x>
-          <y>10</y>
-          <width>511</width>
-          <height>481</height>
-         </rect>
-        </property>
-        <layout class="QVBoxLayout" name="verticalLayout_9">
-         <item>
-          <layout class="QHBoxLayout" name="horizontalLayout_17">
-           <property name="topMargin">
-            <number>0</number>
-           </property>
+       <layout class="QHBoxLayout" name="horizontalLayout_19">
+        <item>
+         <layout class="QVBoxLayout" name="verticalLayout_8">
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_16">
+            <item>
+             <widget class="QLabel" name="label_23">
+              <property name="text">
+               <string>Filter:</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLineEdit" name="sitesFilterString">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The filter allows you to limit the list of domains to a set that start with the given text. Only the beginning of the word is used. This filter requires a valid domain index.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="sitesFilter">
+              <property name="text">
+               <string>Apply</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <widget class="QListWidget" name="sitesList"/>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <widget class="QFrame" name="verticalFrame_9">
+          <layout class="QVBoxLayout" name="verticalLayout_9">
            <item>
-            <widget class="QLabel" name="label_24">
-             <property name="text">
-              <string>Full Domain Name:</string>
+            <layout class="QHBoxLayout" name="horizontalLayout_17">
+             <property name="topMargin">
+              <number>0</number>
              </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QLineEdit" name="sitesDomainName">
-             <property name="focusPolicy">
-              <enum>Qt::NoFocus</enum>
-             </property>
-             <property name="acceptDrops">
-              <bool>false</bool>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </item>
-         <item>
-          <widget class="QLabel" name="label_25">
-           <property name="text">
-            <string>Site Parameters:</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QTableWidget" name="sitesParameters"/>
-         </item>
-         <item>
-          <layout class="QGridLayout" name="gridLayout_2">
-           <item row="0" column="1">
-            <widget class="QLineEdit" name="sitesParameterName"/>
-           </item>
-           <item row="1" column="0">
-            <widget class="QLabel" name="label_11">
-             <property name="text">
-              <string>Parameter Value:</string>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="0">
-            <widget class="QLabel" name="label_9">
-             <property name="text">
-              <string>Parameter Name:</string>
-             </property>
-            </widget>
-           </item>
-           <item row="2" column="1">
-            <layout class="QHBoxLayout" name="horizontalLayout_8">
              <item>
-              <widget class="QPushButton" name="sitesNew">
+              <widget class="QLabel" name="label_24">
                <property name="text">
-                <string>New</string>
+                <string>Full Domain Name:</string>
                </property>
               </widget>
              </item>
              <item>
-              <widget class="QPushButton" name="sitesSave">
-               <property name="text">
-                <string>Save</string>
+              <widget class="QLineEdit" name="sitesDomainName">
+               <property name="focusPolicy">
+                <enum>Qt::NoFocus</enum>
                </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QPushButton" name="sitesDelete">
-               <property name="text">
-                <string>Delete</string>
+               <property name="acceptDrops">
+                <bool>false</bool>
                </property>
               </widget>
              </item>
             </layout>
            </item>
-           <item row="1" column="1" colspan="2">
-            <layout class="QHBoxLayout" name="horizontalLayout_9">
-             <item>
-              <widget class="QLineEdit" name="sitesParameterValue"/>
+           <item>
+            <widget class="QLabel" name="label_25">
+             <property name="text">
+              <string>Site Parameters:</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QTableWidget" name="sitesParameters"/>
+           </item>
+           <item>
+            <layout class="QGridLayout" name="gridLayout_2">
+             <item row="0" column="1">
+              <widget class="QLineEdit" name="sitesParameterName"/>
              </item>
-             <item>
-              <widget class="QComboBox" name="sitesParameterType"/>
+             <item row="1" column="0">
+              <widget class="QLabel" name="label_11">
+               <property name="text">
+                <string>Parameter Value:</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="0">
+              <widget class="QLabel" name="label_9">
+               <property name="text">
+                <string>Parameter Name:</string>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="1">
+              <layout class="QHBoxLayout" name="horizontalLayout_8">
+               <item>
+                <widget class="QPushButton" name="sitesNew">
+                 <property name="text">
+                  <string>New</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QPushButton" name="sitesSave">
+                 <property name="text">
+                  <string>Save</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QPushButton" name="sitesDelete">
+                 <property name="text">
+                  <string>Delete</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </item>
+             <item row="1" column="1" colspan="2">
+              <layout class="QHBoxLayout" name="horizontalLayout_9">
+               <item>
+                <widget class="QLineEdit" name="sitesParameterValue"/>
+               </item>
+               <item>
+                <widget class="QComboBox" name="sitesParameterType"/>
+               </item>
+              </layout>
              </item>
             </layout>
            </item>
           </layout>
-         </item>
-        </layout>
-       </widget>
-       <widget class="QListWidget" name="sitesList">
-        <property name="geometry">
-         <rect>
-          <x>10</x>
-          <y>60</y>
-          <width>241</width>
-          <height>431</height>
-         </rect>
-        </property>
-       </widget>
+         </widget>
+        </item>
+       </layout>
       </widget>
      </widget>
     </item>
@@ -711,8 +631,8 @@ p, li { white-space: pre-wrap; }
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>800</width>
-     <height>23</height>
+     <width>859</width>
+     <height>25</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">

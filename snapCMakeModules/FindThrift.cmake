@@ -35,20 +35,24 @@
 #
 get_property( 3RDPARTY_INCLUDED GLOBAL PROPERTY 3RDPARTY_INCLUDED )
 if( 3RDPARTY_INCLUDED )
-	set( THRIFT_INCLUDE_DIRS 
+	set( THRIFT_INCLUDE_DIR 
 		"${CMAKE_BINARY_DIR}/dist/include"
 		"${CMAKE_BINARY_DIR}/dist/include/thrift"
 	   )
-	set( THRIFT_LIBRARIES thrift )
+	set( THRIFT_LIBRARY thrift )
 else()
 	find_path( THRIFT_INCLUDE_DIR thrift/thrift.h
-			   HINTS /usr/include /usr/local/include
+			   PATHS $ENV{THRIFT_INCLUDE_DIR}
 			   PATH_SUFFIXES controlled_vars
 			 )
-	find_library( THRIFT_LIBRARY thrift )
-	set( THRIFT_INCLUDE_DIRS ${THRIFT_INCLUDE_DIR} )
-	set( THRIFT_LIBRARIES    ${THRIFT_LIBRARY}     )
+	find_library( THRIFT_LIBRARY thrift
+				PATHS $ENV{THRIFT_LIBRARY}
+			)
+	mark_as_advanced( THRIFT_INCLUDE_DIR THRIFT_LIBRARY )
 endif()
+
+set( THRIFT_INCLUDE_DIRS ${THRIFT_INCLUDE_DIR} )
+set( THRIFT_LIBRARIES    ${THRIFT_LIBRARY}     )
 
 include( FindPackageHandleStandardArgs )
 # handle the QUIETLY and REQUIRED arguments and set THRIFT_FOUND to TRUE
@@ -60,4 +64,3 @@ find_package_handle_standard_args(
 	THRIFT_LIBRARIES
 )
 
-mark_as_advanced( THRIFT_INCLUDE_DIRS THRIFT_LIBRARIES )

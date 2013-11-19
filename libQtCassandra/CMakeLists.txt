@@ -46,15 +46,14 @@ project(libQtCassandra)
 ##
 if( NOT CMAKE_MODULE_PATH )
     find_path( CMAKE_DIRECTORY_PATH snapCMakeModules
-        PATHS
-            ${PROJECT_SOURCE_DIR}
-            ${PROJECT_SOURCE_DIR}/..
+        PATHS ${CMAKE_SOURCE_DIR}
         NO_DEFAULT_PATH
     )
     set( CMAKE_MODULE_PATH ${CMAKE_DIRECTORY_PATH}/snapCMakeModules )
     message( "Found snapCMakeModules in ${CMAKE_MODULE_PATH}" )
 endif()
 
+find_package( ControlledVars   )
 find_package( SnapCMakeModules )
 find_package( SnapDoxygen      )
 find_package( Thrift           )
@@ -67,11 +66,12 @@ add_definitions( ${QT_DEFINITIONS} )
 link_directories( ${CMAKE_BINARY_DIR}/dist/lib/ )
 
 include_directories(
-    "${PROJECT_SOURCE_DIR}"
-    "${PROJECT_SOURCE_DIR}/include"
-    "${PROJECT_BINARY_DIR}"
-    "${PROJECT_BINARY_DIR}/include"
-    "${CMAKE_BINARY_DIR}"
+    ${PROJECT_SOURCE_DIR}
+    ${PROJECT_SOURCE_DIR}/include
+    ${PROJECT_BINARY_DIR}
+    ${PROJECT_BINARY_DIR}/include
+    ${CMAKE_BINARY_DIR}
+    ${CONTROLLEDVARS_INCLUDE_DIRS}
     ${THRIFT_INCLUDE_DIRS}
     ${QT_INCLUDES}
 )

@@ -40,45 +40,47 @@ cmake_minimum_required(VERSION 2.8)
 project( snapwebsites_main )
 
 set( CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/snapCMakeModules )
-find_package( SnapCMakeModules )
+find_package( SnapCMakeModules REQUIRED )
+find_package( SnapBuild        REQUIRED )
 
-# This will cause us to look in the 3rdParty area for thrift and other 3rdparty libs
-#
-link_directories( ${CMAKE_BINARY_DIR}/dist/lib/ )
+ConfigureMakeProject(
+    USE_CONFIGURE_SCRIPT
+    PROJECT_NAME  thrift
+    VERSION       0.9.0
+    DISTFILE_PATH ${CMAKE_SOURCE_DIR}/3rdParty/thrift-0.9.0.tar.gz
+    CONFIG_ARGS
+        --without-csharp
+        --without-java
+        --without-erlang
+        --without-python
+        --without-perl
+        --without-php
+        --without-php_extension
+        --without-ruby
+        --without-haskell
+        --without-go
+)
 
-add_subdirectory(  3rdParty           )
-add_subdirectory(  controlled_vars    )
-add_subdirectory(  libtld             )
-add_subdirectory(  libQtCassandra     )
-add_subdirectory(  libQtSerialization )
-add_subdirectory(  snapwebsites       )
-#add_subdirectory( backup             )
-add_subdirectory(  googlerank         )
-add_subdirectory(  iplock             )
-add_subdirectory(  cassview           )
-
-##
-## Packaging
-##
-set(CPACK_PACKAGE_NAME "snapwebsites_main")
-set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "snapwebsites environement -- a fast and complete CMS written in C++")
-set(CPACK_PACKAGE_VENDOR "Made to Order Software Corporation")
-set(CPACK_PACKAGE_CONTACT "contact@m2osw.com")
-set(CPACK_RESOURCE_FILE_LICENSE "${snapwebsites_main_SOURCE_DIR}/snapwebsites/LICENSE.txt")
-set(CPACK_GENERATOR "TGZ" "DEB")
-set(CPACK_SOURCE_GENERATOR "TGZ")
-set(CPACK_SOURCE_IGNORE_FILES "/CVS/;/work-files/;/.svn/;.swp$;.*~;cscope.*;/tmp/;/research/;a.txt;/cassandra/;BUILD;Build;build")
-set(CPACK_PACKAGE_VERSION "${SNAPWEBSITES_VERSION_MAJOR}.${SNAPWEBSITES_VERSION_MINOR}.${SNAPWEBSITES_VERSION_PATCH}")
-set(CPACK_PACKAGE_VERSION_MAJOR "${SNAPWEBSITES_VERSION_MAJOR}")
-set(CPACK_PACKAGE_VERSION_MINOR "${SNAPWEBSITES_VERSION_MINOR}")
-set(CPACK_PACKAGE_VERSION_PATCH "${SNAPWEBSITES_VERSION_PATCH}")
-set(CPACK_SOURCE_PACKAGE_FILE_NAME "snapwebsites_main-${SNAPWEBSITES_VERSION_MAJOR}.${SNAPWEBSITES_VERSION_MINOR}.${SNAPWEBSITES_VERSION_PATCH}")
-#set(CPACK_PACKAGE_EXECUTABLES "snapwebsites.so")
-set(CPACK_DEBIAN_PACKAGE_SECTION "web")
-set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "http://snapwebsites.org/project/snap-websites")
-# I'm not too sure how we can add this one... components?
-# See http://www.vtk.org/Wiki/CMake:Component_Install_With_CPack
-#set(CPACK_DEBIAN_PACKAGE_DEV_DEPENDENCIES "cmake libqt4-dev")
-include(CPack)
+ConfigureMakeProject( PROJECT_NAME cassview        DEPENDS libQtCassandra )
+ConfigureMakeProject( PROJECT_NAME controlled_vars )
+ConfigureMakeProject( PROJECT_NAME libtld          )
+ConfigureMakeProject( PROJECT_NAME libQtCassandra
+        CONFIG_ARGS
+            -DTHRIFT_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include/thrift
+        DEPENDS thrift controlled_vars
+        )
+ConfigureMakeProject( PROJECT_NAME libQtSerialization
+        CONFIG_ARGS -DTHRIFT_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include/thrift
+        DEPENDS thrift
+        )
+ConfigureMakeProject( PROJECT_NAME snapwebsites
+        CONFIG_ARGS
+            -DTHRIFT_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include/thrift
+            -DQTSERIALIZATION_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include/QtSerialization
+            -DLIBTLD_LIBRARY:PATH=${CMAKE_BINARY_DIR}/dist/lib/libtld.so
+        DEPENDS libQtCassandra libQtSerialization libtld
+        )
+ConfigureMakeProject( PROJECT_NAME googlerank )
+ConfigureMakeProject( PROJECT_NAME iplock     )
 
 # vim: ts=4 sw=4 et

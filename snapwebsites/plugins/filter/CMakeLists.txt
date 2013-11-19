@@ -37,12 +37,13 @@
 
 project(plugin_filter)
 
-find_package( Qt4 4.8.1 REQUIRED QtCore QtXml )
+find_package( Qt4 4.8.1 QUIET REQUIRED QtCore QtXml )
 include( ${QT_USE_FILE} )
 add_definitions( ${QT_DEFINITIONS} )
 
 include_directories(
-    "${CMAKE_CURRENT_SOURCE_DIR}"
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CONTROLLEDVARS_INCLUDE_DIRS}
     ${QT_INCLUDES}
 )
 
@@ -54,14 +55,18 @@ add_library(filter SHARED
     filter.cpp
     ${SNAP_MANAGER_MOC_CXX}
     ${SNAP_MANAGER_RESOURCES_RCC}
-
     content.xml
 )
 
 target_link_libraries( filter ${QT_LIBRARIES} )
 
+get_property( 3RDPARTY_INCLUDED GLOBAL PROPERTY 3RDPARTY_INCLUDED )
+if( 3RDPARTY_INCLUDED )
+    add_dependencies( filter make_controlled_vars_headers )
+endif()
+
 install(
-    TARGETS filter LIBRARY DESTINATION lib/snapwebsites/plugins
+    TARGETS filter LIBRARY DESTINATION ${PLUGIN_INSTALL_DIR}
 )
 
 # vim: ts=4 sw=4 et

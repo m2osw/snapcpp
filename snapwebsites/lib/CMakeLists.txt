@@ -46,9 +46,8 @@ include( ${QT_USE_FILE} )
 add_definitions( ${QT_DEFINITIONS} )
 
 include_directories(
-    ${QT_INCLUDES}
-    ${CMAKE_CURRENT_BINARY_DIR}/../../libtld/include
     ${LOG4CPLUS_INCLUDE_DIR}
+    ${QT_INCLUDES}
 )
 
 QT4_ADD_RESOURCES(SNAP_LIBRARY_RESOURCES_RCC
@@ -75,13 +74,13 @@ add_library( ${PROJECT_NAME} SHARED
 )
 
 target_link_libraries( ${PROJECT_NAME}
-    QtSerialization
+    ${QTSERIALIZATION_LIBRARIES}
     ${QT_LIBRARIES}
     ${LOG4CPLUS_LIBRARY}
 )
 
 install(
-    TARGETS libsnapwebsites LIBRARY DESTINATION lib/snapwebsites
+    TARGETS libsnapwebsites LIBRARY DESTINATION lib
 )
 install(
     DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}

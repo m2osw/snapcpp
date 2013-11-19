@@ -695,6 +695,12 @@ void snap_manager::loadHosts()
 
     QString table_name(f_context->lockTableName());
     QSharedPointer<QtCassandra::QCassandraTable> table(f_context->findTable(table_name));
+    if( table.isNull() )
+    {
+        QString msg( tr("The table '%1' was not found in the current context. Are you sure the context is set up correctly?").arg(table_name) );
+        QMessageBox::critical( this, tr("Error!"), msg );
+        return;
+    }
 
     QSharedPointer<QtCassandra::QCassandraRow> row(table->row(f_context->lockHostsKey()));
 
@@ -927,6 +933,13 @@ void snap_manager::loadDomains()
 
     QString table_name(snap::get_name(snap::SNAP_NAME_DOMAINS));
     QSharedPointer<QtCassandra::QCassandraTable> table(f_context->findTable(table_name));
+    if( table.isNull() )
+    {
+        QString msg( tr("The table '%1' was not found in the current context. Are you sure the context is set up correctly?").arg(table_name) );
+        QMessageBox::critical( this, tr("Error!"), msg );
+        return;
+    }
+
     QString row_index_name(snap::get_name(snap::SNAP_NAME_INDEX)); // "*index*"
     if(!table->exists(row_index_name))
     {

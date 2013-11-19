@@ -51,9 +51,7 @@ add_executable(${PROJECT_NAME}
 
 # while developing you may need to set LD_LIBRARY_PATH
 target_link_libraries(${PROJECT_NAME}
-    QtCassandra
-    thrift
-    tld
+    ${QTCASSANDRA_LIBRARIES}
     ${QT_LIBRARIES}
 )
 

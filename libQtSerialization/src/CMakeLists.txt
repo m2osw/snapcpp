@@ -46,6 +46,16 @@ add_library(${PROJECT_NAME} SHARED
     QSerializationWriter.cpp
 )
 
+target_link_libraries( ${PROJECT_NAME}
+    ${QT_LIBRARIES}
+    ${THRIFT_LIBRARIES}
+)
+
+get_property( 3RDPARTY_INCLUDED GLOBAL PROPERTY 3RDPARTY_INCLUDED )
+if( 3RDPARTY_INCLUDED )
+    add_dependencies( ${PROJECT_NAME} thrift-build )
+endif()
+
 install(
     TARGETS QtSerialization LIBRARY DESTINATION lib
 )
@@ -58,10 +68,6 @@ install(
 install(
     FILES ${libQtSerialization_BINARY_DIR}/include/QtSerialization/QSerialization.h
     DESTINATION include/QtSerialization/
-)
-
-target_link_libraries( ${PROJECT_NAME}
-    ${QT_LIBRARIES}
 )
 
 # vim: ts=4 sw=4 et

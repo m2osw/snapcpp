@@ -46,29 +46,28 @@ project(libQtSerialization)
 ##
 if( NOT CMAKE_MODULE_PATH )
     find_path( CMAKE_DIRECTORY_PATH snapCMakeModules
-        PATHS
-            ${PROJECT_SOURCE_DIR}
-            ${PROJECT_SOURCE_DIR}/..
+        PATHS ${CMAKE_SOURCE_DIR}
         NO_DEFAULT_PATH
     )
     set( CMAKE_MODULE_PATH ${CMAKE_DIRECTORY_PATH}/snapCMakeModules )
     message( "Found snapCMakeModules in ${CMAKE_MODULE_PATH}" )
 endif()
+
 find_package( SnapCMakeModules )
 find_package( SnapDoxygen      )
-
+find_package( Thrift           )
 find_package( Qt4 4.8.1 REQUIRED QtCore )
 include( ${QT_USE_FILE} )
 add_definitions( ${QT_DEFINITIONS} )
 
 include_directories(
-    "${PROJECT_SOURCE_DIR}"
-    "${PROJECT_SOURCE_DIR}/include"
-    "${PROJECT_BINARY_DIR}"
-    "${PROJECT_BINARY_DIR}/include"
-    "${CMAKE_BINARY_DIR}"
-    "${CMAKE_BINARY_DIR}/dist/include"
-    "${QT_INCLUDES}"
+    ${PROJECT_SOURCE_DIR}
+    ${PROJECT_SOURCE_DIR}/include
+    ${PROJECT_BINARY_DIR}
+    ${PROJECT_BINARY_DIR}/include
+    ${CMAKE_BINARY_DIR}
+    ${THRIFT_INCLUDE_DIRS}
+    ${QT_INCLUDES}
 )
 
 # Create a configure script
