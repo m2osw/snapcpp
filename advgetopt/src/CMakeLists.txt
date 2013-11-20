@@ -32,11 +32,14 @@
 project(advgetopt)
 include_directories(
     ${PROJECT_SOURCE_DIR}
+    ${CONTROLLEDVARS_INCLUDE_DIRS}
+    ${QT_INCLUDES}
 )
 add_library( ${PROJECT_NAME} STATIC
     advgetopt.h
     advgetopt.cpp
 )
+target_link_libraries( ${PROJECT_NAME} ${QT_LIBRARIES} )
 install(
     TARGETS ${PROJECT_NAME}
     ARCHIVE DESTINATION lib

@@ -31,12 +31,15 @@
  * The class also includes support for displaying error messages and help
  * information about all the command line arguments.
  */
-#include    "libdebpackages/advgetopt.h"
-#include    "libdebpackages/compatibility.h"
-#include    "libdebpackages/memfile.h"
+#include    "advgetopt.h"
 #include    <stdarg.h>
 #include    <stdlib.h>
 #include    <errno.h>
+#include    <string.h>
+
+#include    <fstream>
+
+//#include <QtCore>
 
 
 /** \brief The advgetopt environment to parse command line options.
@@ -366,10 +369,10 @@ void getopt::reset(int argc, char *argv[], const option *opts, const std::vector
     }
 
     // load options from configuration files as specified by caller
-    for(std::vector<std::string>::const_iterator it(configuration_files.begin()); it != configuration_files.end(); ++it)
+    for( auto filename : configuration_files )
     {
-        wpkg_filename::uri_filename filename(*it);
-        if(!filename.exists())
+        std::ifstream conf(filename);
+        if( !conf )
         {
             if(errno == ENOENT)
             {
@@ -377,13 +380,12 @@ void getopt::reset(int argc, char *argv[], const option *opts, const std::vector
             }
             // we let it go through and we'll get an error from the read_file() instead
         }
-        memfile::memory_file conf;
-        conf.read_file(filename);
-        int offset(0);
+
         std::string str;
         int line(0);
-        while(conf.read_line(offset, str))
+        while( !conf.eof() )
         {
+            std::getline( conf, str );
             ++line;
             const char *s(str.c_str());
             while(isspace(*s))
@@ -409,7 +411,7 @@ void getopt::reset(int argc, char *argv[], const option *opts, const std::vector
                     if(*s != '\0' && *s != '=')
                     {
                         usage(error, "option name from \"%s\" on line %d in configuration file \"%s\" cannot include a space, missing = sign?",
-                                        str.c_str(), line, it->c_str());
+                                        str.c_str(), line, filename.c_str());
                         /*NOTREACHED*/
                     }
                 }
@@ -425,24 +427,24 @@ void getopt::reset(int argc, char *argv[], const option *opts, const std::vector
             if(e - str_name == 0)
             {
                 usage(error, "no option name in \"%s\" on line %d from configuration file \"%s\", missing name before = sign?",
-                                str.c_str(), line, it->c_str());
+                                str.c_str(), line, filename.c_str());
                 /*NOTREACHED*/
             }
             if(*str_name == '-')
             {
                 usage(error, "option names in configuration files cannot start with a dash in \"%s\" on line %d from configuration file \"%s\"",
-                                str.c_str(), line, it->c_str());
+                                str.c_str(), line, filename.c_str());
                 /*NOTREACHED*/
             }
             std::string name(str_name, e - str_name);
             if(opt_by_long_name.find(name) == opt_by_long_name.end())
             {
-                usage(error, "unknown options \"%s\" found in configuration file \"%s\"", name.c_str(), it->c_str());
+                usage(error, "unknown options \"%s\" found in configuration file \"%s\"", name.c_str(), filename.c_str());
                 /*NOTREACHED*/
             }
             if((opts[opt_by_long_name[name.c_str()]].f_flags & GETOPT_FLAG_CONFIGURATION_FILE) == 0)
             {
-                usage(error, "options \"%s\" is not supported in configuration files (found in \"%s\")", name.c_str(), it->c_str());
+                usage(error, "options \"%s\" is not supported in configuration files (found in \"%s\")", name.c_str(), filename.c_str());
                 /*NOTREACHED*/
             }
             if(*s == '=')
