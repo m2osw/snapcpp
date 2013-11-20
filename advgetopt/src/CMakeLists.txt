@@ -38,6 +38,7 @@ add_library( ${PROJECT_NAME} STATIC
     advgetopt.h
     advgetopt.cpp
 )
+#set_property( TARGET ${PROJECT_NAME} PROPERTY LINK_FLAGS "-fPIC" )
 install(
     TARGETS ${PROJECT_NAME}
     ARCHIVE DESTINATION lib

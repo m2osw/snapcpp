@@ -16,17 +16,12 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "snapwebsites.h"
-//#include "plugins.h"
-//#include "QtXml/QDomDocument"
-//#include "QtCore/QDebug"
-//#include <iostream>
-//#include <QtCore/QCoreApplication>
 
 
 int main(int argc, char *argv[])
 {
 	// create a server object
-	snap::server *s = snap::server::instance();
+	snap::server::pointer_t s( snap::server::instance() );
 
 	// parse the command line arguments
 	s->config(argc, argv);

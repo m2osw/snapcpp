@@ -74,7 +74,7 @@ namespace snap
  * and child processes other than the child process death that the parent
  * acknowledge at some point.
  */
-snap_child::snap_child(server *s)
+snap_child::snap_child(server_pointer_t s)
     : f_start_date(0)
     , f_server(s)
     //, f_cassandra() -- auto-init
@@ -2177,7 +2177,7 @@ void snap_child::init_plugins()
     }
 
     // load the plugins
-    if(!snap::plugins::load(f_server->get_parameter("plugins"), f_server, list_of_plugins))
+    if(!snap::plugins::load(f_server->get_parameter("plugins"), std::static_pointer_cast<snap::plugins::plugin>(f_server), list_of_plugins))
     {
         die(503, "", "Server encountered problems with its plugins.", "An error occured loading the server plugins.");
         NOTREACHED();

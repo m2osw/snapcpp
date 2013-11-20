@@ -64,49 +64,53 @@
 #include <iostream>
 #include <sstream>
 
-
-const std::vector<std::string> g_configuration_files  =
+namespace
+{
+	const std::vector<std::string> g_configuration_files  =
 	{
-		"/etc/snapwebsites/snapcgi.conf",
-		"~/.snapwebsites/snapcgi.conf"
+		"/etc/snapwebsites/snapcgi.conf"//,
+		//"~/.snapwebsites/snapcgi.conf"	// TODO: tildes are not supported
 	};
 
-const advgetopt::getopt::option g_snapcgi_options[] =
-{
-    {
-        '\0',
-        advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
-        NULL,
-        NULL,
-        "Usage: snap.cgi [-<opt>]",
-        advgetopt::getopt::help_argument
-    },
-    // OPTIONS
-    {
-        '\0',
-        0,
-        NULL,
-        NULL,
-        "options:",
-        advgetopt::getopt::help_argument
-    },
-    {
-        '\0',
-        advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_CONFIGURATION_FILE,
-        "serveraddr",
-        NULL,
-        "IP address on which the snapserver is running",
-        advgetopt::getopt::required_argument
-    },
-    {
-        '\0',
-        0,
-        NULL,
-        NULL,
-        NULL,
-        advgetopt::getopt::end_of_options
-    }
-};
+	const advgetopt::getopt::option g_snapcgi_options[] =
+	{
+		{
+			'\0',
+			advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
+			NULL,
+			NULL,
+			"Usage: snap.cgi [-<opt>]",
+			advgetopt::getopt::help_argument
+		},
+		// OPTIONS
+		{
+			'\0',
+			0,
+			NULL,
+			NULL,
+			"options:",
+			advgetopt::getopt::help_argument
+		},
+		{
+			'\0',
+			advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_CONFIGURATION_FILE,
+			"serveraddr",
+			NULL,
+			"IP address on which the snapserver is running",
+			advgetopt::getopt::required_argument
+		},
+		{
+			'\0',
+			0,
+			NULL,
+			NULL,
+			NULL,
+			advgetopt::getopt::end_of_options
+		}
+	};
+}
+//namespace
+
 
 class snap_cgi
 {
@@ -152,6 +156,11 @@ int snap_cgi::error(const char *code, const char *msg)
 
 bool snap_cgi::verify()
 {
+	if( !f_opt.is_defined("serveraddr") )
+	{
+		throw tcp_client_server::tcp_client_server_parameter_error("serveraddr is not defined!");
+	}
+
 	// catch "invalid" methods early so we don't waste
 	// any time with methods we don't support
 	// later we may add support for PUT and DELETE though
@@ -317,7 +326,6 @@ int main(int argc, char *argv[])
 	snap_cgi cgi( argc, argv );
 	try
 	{
-		//
 		if(!cgi.verify())
 		{
 			return 1;

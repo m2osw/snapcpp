@@ -21,7 +21,7 @@
 int main(int argc, char *argv[])
 {
 	// create a server object
-	snap::server *s = snap::server::instance();
+	snap::server::pointer_t s( snap::server::instance() );
 	s->setup_as_backend();
 
 	// parse the command line arguments

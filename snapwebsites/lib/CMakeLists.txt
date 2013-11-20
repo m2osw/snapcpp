@@ -74,6 +74,7 @@ add_library( ${PROJECT_NAME} SHARED
 )
 
 target_link_libraries( ${PROJECT_NAME}
+    ${ADVGETOPT_LIBRARIES}
     ${QTSERIALIZATION_LIBRARIES}
     ${QT_LIBRARIES}
     ${LOG4CPLUS_LIBRARY}

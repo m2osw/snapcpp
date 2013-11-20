@@ -19,11 +19,15 @@
 
 #include "snap_child.h"
 #include "plugins.h"
+
 #include <string>
 #include <map>
+#include <memory>
+
 #include <QtCassandra/QCassandra.h>
 #include <QTcpSocket>
 #include <controlled_vars/controlled_vars_auto_init.h>
+#include <advgetopt/advgetopt.h>
 
 #define	SNAPWEBSITES_VERSION_MAJOR	@SNAPWEBSITES_VERSION_MAJOR@
 #define	SNAPWEBSITES_VERSION_MINOR	@SNAPWEBSITES_VERSION_MINOR@
@@ -65,21 +69,22 @@ public:
 	};
 
 	typedef QMap<QString, backend_action *> backend_action_map_t;
+	typedef std::shared_ptr<server>			pointer_t;
 
+	static pointer_t instance();
 	virtual ~server();
 
 	static const char *version();
 	static int version_major();
 	static int version_minor();
 	static int version_patch();
-	static server *instance();
 	virtual QString description() const;
 	virtual int64_t do_update(int64_t last_updated);
 
 	void usage();
 	void setup_as_backend();
 	bool is_backend() { return f_backend; }
-	void config(int argc, char *argv[]);
+	void config( int argc, char *argv[] );
 	QString get_parameter(const QString& name);
 	void prepare_cassandra();
 	//QSharedPointer<QtCassandra::QCassandra> get_cassandra();
@@ -110,15 +115,17 @@ public:
 	                               (path, signature));
 
 private:
-	typedef QMap<QString, QString>		parameter_map_t;
+	typedef QMap<QString, QString>				parameter_map_t;
+	typedef std::shared_ptr<advgetopt::getopt>	getopt_ptr_t;
 
 	server();
 	void process_connection(int socket);
 
-	static server *							g_instance;
+	static pointer_t					    f_instance;
 
-	controlled_vars::zint32_t				f_argc;
-	const char **							f_argv;
+	//controlled_vars::zint32_t				f_argc;
+	//const char **							f_argv;
+	std::string								f_servername;
 	controlled_vars::fbool_t				f_debug;
 	controlled_vars::fbool_t				f_backend;
 	QString									f_config;
@@ -130,6 +137,8 @@ private:
 	controlled_vars::zuint64_t				f_connections_count;
 	snap_child_vector_t						f_children_running;
 	snap_child_vector_t						f_children_waiting;
+
+	getopt_ptr_t							f_opt;
 };
 
 } // namespace snap

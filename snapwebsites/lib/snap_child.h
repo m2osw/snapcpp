@@ -49,8 +49,9 @@ public:
 		SNAP_CHILD_STATUS_READY,
 		SNAP_CHILD_STATUS_RUNNING
 	};
+	typedef std::shared_ptr<server> server_pointer_t;
 
-	snap_child(server *s);
+	snap_child(server_pointer_t s);
 	~snap_child();
 
 	bool process(int socket);
@@ -116,7 +117,7 @@ private:
 	typedef QMap<QString, http_cookie>	cookie_map_t;
 
 	controlled_vars::mint64_t			f_start_date; // time request arrived
-	server *							f_server;
+	server_pointer_t					f_server;
 	QPointer<QtCassandra::QCassandra>	f_cassandra;
 	QSharedPointer<QtCassandra::QCassandraContext>	f_context;
 	QSharedPointer<QtCassandra::QCassandraTable> f_site_table;
