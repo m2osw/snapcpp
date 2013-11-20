@@ -55,24 +55,75 @@
 // SCRIPT_NAME=/cgi-bin/env_n_args.cgi
 //
 
-#include "../lib/tcp_client_server.h"
+#include "tcp_client_server.h"
+#include <advgetopt/advgetopt.h>
 #include <QtNetwork/QTcpSocket>
 #include <QtNetwork/QHostAddress>
 #include <syslog.h>
 #include <unistd.h>
+#include <iostream>
+#include <sstream>
+
+
+const std::vector<std::string> g_configuration_files  =
+	{
+		"/etc/snapwebsites/snapcgi.conf",
+		"~/.snapwebsites/snapcgi.conf"
+	};
+
+const advgetopt::getopt::option g_snapcgi_options[] =
+{
+    {
+        '\0',
+        advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
+        NULL,
+        NULL,
+        "Usage: snap.cgi [-<opt>]",
+        advgetopt::getopt::help_argument
+    },
+    // OPTIONS
+    {
+        '\0',
+        0,
+        NULL,
+        NULL,
+        "options:",
+        advgetopt::getopt::help_argument
+    },
+    {
+        '\0',
+        advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_CONFIGURATION_FILE,
+        "serveraddr",
+        NULL,
+        "IP address on which the snapserver is running",
+        advgetopt::getopt::required_argument
+    },
+    {
+        '\0',
+        0,
+        NULL,
+        NULL,
+        NULL,
+        advgetopt::getopt::end_of_options
+    }
+};
 
 class snap_cgi
 {
 public:
-	snap_cgi();
+	snap_cgi( int argc, char *argv[] );
 	~snap_cgi();
 
 	int error(const char *code, const char *msg);
 	bool verify();
 	int process();
+
+private:
+    advgetopt::getopt	f_opt;
 };
 
-snap_cgi::snap_cgi()
+snap_cgi::snap_cgi( int argc, char *argv[] )
+    : f_opt(argc, argv, g_snapcgi_options, g_configuration_files, "SNAPCGI_OPTIONS")
 {
 	openlog("snap.cgi", LOG_NDELAY | LOG_PID, LOG_DAEMON);
 }
@@ -87,12 +138,14 @@ int snap_cgi::error(const char *code, const char *msg)
 	// We should look into having that using the main Snap log settings.
 	syslog(LOG_CRIT, "%s", msg);
 
-	printf("HTTP/1.1 %s\n", code);
-	printf("Expires: Sun, 19 Nov 1978 05:00:00 GMT\n");
-	printf("Content-type: text/html\n");
-	printf("\n");
-	printf("<h1>Internal Error</h1>\n");
-	printf("<p>Sorry! We found an invalid server configuration or some other error occured.</p>\n");
+	std::cout	<< "HTTP/1.1 " << code << std::endl
+				<< "Expires: Sun, 19 Nov 1978 05:00:00 GMT" << std::endl
+				<< "Content-type: text/html" << std::endl
+				<< std::endl
+				<< "<h1>Internal Error</h1>" << std::endl
+				<< "<p>Sorry! We found an invalid server configuration or some other error occured.</p>"
+				<< std::endl
+				;
 
 	return 1;
 }
@@ -105,10 +158,10 @@ bool snap_cgi::verify()
 	const char *request_method(getenv("REQUEST_METHOD"));
 	if(request_method == NULL)
 	{
-		printf("Status: 405 Method Not Defined\n");
-		printf("Expires: Sat, 1 Jan 2000 00:00:00 GMT\n");
-		printf("Allow: GET, HEAD, POST\n");
-		printf("\n");
+		std::cout	<< "Status: 405 Method Not Defined"			<< std::endl
+					<< "Expires: Sat, 1 Jan 2000 00:00:00 GMT"	<< std::endl
+					<< "Allow: GET, HEAD, POST"					<< std::endl
+					<< std::endl;
 		return false;
 	}
 	if(strcmp(request_method, "GET") != 0
@@ -118,15 +171,16 @@ bool snap_cgi::verify()
 		if(strcmp(request_method, "BREW") == 0)
 		{
 			// see http://tools.ietf.org/html/rfc2324
-			printf("Status: 418 I'm a teapot\n");
+			std::cout << "Status: 418 I'm a teapot" << std::endl;
 		}
 		else
 		{
-			printf("Status: 405 Method Not Allowed\n");
+			std::cout << "Status: 405 Method Not Allowed" << std::endl;
 		}
-		printf("Expires: Sat, 1 Jan 2000 00:00:00 GMT\n");
-		printf("Allow: GET, HEAD, POST\n");
-		printf("\n");
+		//
+		std::cout	<< "Expires: Sat, 1 Jan 2000 00:00:00 GMT" << std::endl
+					<< "Allow: GET, HEAD, POST"                << std::endl
+					<< std::endl;
 		return false;
 	}
 
@@ -136,13 +190,17 @@ bool snap_cgi::verify()
 
 int snap_cgi::process()
 {
-	// we need to get the host address & port from the configuration file
-	//QHostAddress a("192.168.2.1");
+	// TODO: we need to get the host address & port from the configuration file
+	//
 	int port = 4004;
 	try
 	{
-		tcp_client_server::tcp_client socket("192.168.2.1", port);
-//FILE *f = fopen("/tmp/out.http", "w");
+		if( !f_opt.is_defined("serveraddr") )
+		{
+			throw tcp_client_server::tcp_client_server_parameter_error("serveraddr is not defined!");
+		}
+
+		tcp_client_server::tcp_client socket( f_opt.get_string("serveraddr"), port);
 
 		if(socket.write("#START\n", 7) != 7)
 		{
@@ -150,7 +208,6 @@ int snap_cgi::process()
 		}
 		for(char **e(environ); *e; ++e)
 		{
-//fprintf(stderr, "snap:env = [%s]\n", *e);
 			int len = strlen(*e);
 			if(socket.write(*e, len) != len)
 			{
@@ -213,12 +270,9 @@ int snap_cgi::process()
 			if(r > 0)
 			{
 				fwrite(buf, r, 1, stdout);
-				//printf("%c", c);
-//fwrite(buf, r, 1, f);
 			}
 			else if(r == -1)
 			{
-//fprintf(f, "\n--Error?!?--\n");
 				break;
 			}
 			else if(r == 0)
@@ -233,28 +287,37 @@ int snap_cgi::process()
 				sleep(1);
 			}
 		}
-//fclose(f);
 		// TODO: handle potential read problems...
 		return 0;
 	}
 	catch(tcp_client_server::tcp_client_server_runtime_error&)
 	{
-		std::string err("CGI client could not connect to server (socket error: ");
+		std::stringstream err;
+		err << "CGI client could not connect to server (socket error: ";
+		//
 		// TODO: add some error string in our socket
+		//
+		// please use strstream, since sprintf() is unsafe...
+		//
 		//char buf[16];
-		//sprintf(buf, "%d", socket.error());
+		//sprintf(buf, "%d", socket.error()); <--- EEEEWWWWW
 		//err += buf;
-		err += "...";
-		err += ").";
-		return error("503 Service Unavailable", err.c_str());
+#if 0
+		err << socket.error();
+#else
+		err << "...";
+#endif
+		err << ").";
+		return error( "503 Service Unavailable", err.str().c_str() );
 	}
 }
 
 int main(int argc, char *argv[])
 {
-	snap_cgi cgi;
+	snap_cgi cgi( argc, argv );
 	try
 	{
+		//
 		if(!cgi.verify())
 		{
 			return 1;
