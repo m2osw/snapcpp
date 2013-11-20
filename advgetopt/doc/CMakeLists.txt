@@ -56,9 +56,9 @@ install(
     COMPONENT documentation
 )
 install(
-    FILES ${tld_library_SOURCE_DIR}/LICENSE.txt
+    FILES ${advgetopt_library_SOURCE_DIR}/LICENSE.txt
     DESTINATION share/doc/advgetopt
-    COMPONENT runtime
+    COMPONENT development
 )
 
 # vim: ts=4 sw=4 et

@@ -43,9 +43,12 @@ target_link_libraries( ${PROJECT_NAME} ${QT_LIBRARIES} )
 install(
     TARGETS ${PROJECT_NAME}
     ARCHIVE DESTINATION lib
+    COMPONENT development
 )
 install(
-    FILES advgetopt.h DESTINATION include
+    FILES advgetopt.h
+    DESTINATION include/advgetopt
+    COMPONENT development
 )
 
 # vim: ts=4 sw=4 et nocindent
