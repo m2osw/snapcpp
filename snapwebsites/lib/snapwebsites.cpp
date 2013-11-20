@@ -41,10 +41,7 @@
 
 namespace
 {
-    const std::vector<std::string> g_configuration_files  =
-    {
-        "/etc/snapwebsites/snapserver.conf"
-    };
+    const std::vector<std::string> g_configuration_files;
 
     const advgetopt::getopt::option g_snapserver_options[] =
     {
@@ -67,7 +64,7 @@ namespace
         },
         {
             'a',
-            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_CONFIGURATION_FILE,
+            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE,
             "action",
             NULL,
             "Specify a server action.",
@@ -75,15 +72,15 @@ namespace
         },
         {
             'c',
-            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_CONFIGURATION_FILE,
+            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE,
             "config",
             "/etc/snapwebsites/snapserver.conf",
             "Specify the configuration file to load at startup.",
-            advgetopt::getopt::required_argument
+            advgetopt::getopt::optional_argument
         },
         {
             'd',
-            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_CONFIGURATION_FILE,
+            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE,
             "debug",
             NULL,
             "Keeps the server in the foreground (default is to detact and background), and display the log to the stdout.",
