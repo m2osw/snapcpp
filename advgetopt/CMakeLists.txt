@@ -36,9 +36,6 @@ project(advgetopt_library)
 
 find_package( ControlledVars   REQUIRED )
 find_package( SnapCMakeModules REQUIRED )
-find_package( Qt4 4.8.1 REQUIRED QtCore )
-include( ${QT_USE_FILE} )
-add_definitions( ${QT_DEFINITIONS} )
 
 add_subdirectory( src )
 add_subdirectory( doc )

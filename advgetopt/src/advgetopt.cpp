@@ -39,8 +39,6 @@
 
 #include    <fstream>
 
-//#include <QtCore>
-
 
 /** \brief The advgetopt environment to parse command line options.
  *
