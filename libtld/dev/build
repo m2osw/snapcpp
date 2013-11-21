@@ -9,6 +9,7 @@ set -e
 # Change this variable to point to your wpkg distribution
 export WPKG_DIST_PATH=/home/alexis/m2osw/sources/freeware/usys/wpkg/dist
 
+
 # The coverage builds everything and runs the tests
 dev/coverage
 
@@ -16,10 +17,10 @@ dev/coverage
 rm -rf tmp/build
 mkdir -p tmp/build
 cd tmp/build
+ln -s ../snapCMakeModules ../..
 cmake ../..
 VERBOSE=1 make
-ln -s ../cmake ../..
 VERBOSE=1 make package_source
-rm ../../cmake
 VERBOSE=1 make wpkg_package
+rm ../../snapCMakeModules
 

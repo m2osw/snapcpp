@@ -61,10 +61,15 @@ install(
     COMPONENT runtime
 )
 #install(
-#    FILES debian/changelog.Debian.gz
+#    FILES ../debian/changelog.Debian.gz
 #    DESTINATION share/doc/libtld
 #    COMPONENT runtime
 #)
+install(
+    FILES ${tld_library_SOURCE_DIR}/debian/copyright
+    DESTINATION share/doc/libtld
+    COMPONENT runtime
+)
 
 ##
 ## A Simple Working Example

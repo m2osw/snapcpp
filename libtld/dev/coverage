@@ -11,8 +11,8 @@ cd tmp/coverage
 mkdir BUILD
 cd BUILD
 # request coverage in this build
-export LIBTLD_COVERAGE=1
-cmake ../../..
+ln -s ../snapCMakeModules ../../..
+cmake -DCMAKE_BUILD_TYPE=Debug -Dtld_library_COVERAGE:BOOL=ON ../../..
 cd ..
 echo
 echo "***"
@@ -122,10 +122,11 @@ gcov -o ../BUILD/src/CMakeFiles/tld.dir/tld_emails.cpp.gcno ../../../src/tld_ema
 cd ..
 
 
-lcov --capture --directory ../.. --output-file coverage.info
+lcov --capture --directory BUILD --output-file coverage.info
 mkdir -p html
 genhtml --legend --demangle-cpp --no-branch-coverage --show-details coverage.info --output-directory html
 
+rm ../../snapCMakeModules
 
 echo "Process started  on $start_date"
 echo "Process finished on `date`"

@@ -37,6 +37,8 @@ else()
     message( WARNING "You may have problems trying to compile this code on non-*nix platforms." )
 endif()
 
+# To generate coverage, use -D<project name>_COVERAGE=ON
+#                       and -DCMAKE_BUILD_TYPE=Debug
 option( ${PROJECT_NAME}_COVERAGE "Turn on coverage for ${PROJECT_NAME}." OFF )
 
 if( ${${PROJECT_NAME}_COVERAGE} )
@@ -44,6 +46,9 @@ if( ${${PROJECT_NAME}_COVERAGE} )
 	find_program( COV gcov )
 	if( ${COV} STREQUAL "COV-NOTFOUND" )
 		message( FATAL_ERROR "Coverage requested, but gcov not installed!" )
+	endif()
+	if( NOT ${CMAKE_BUILD_TYPE} STREQUAL "Debug" )
+		message( FATAL_ERROR "Coverage requested, but Debug is not turned on! (i.e. -DCMAKE_BUILD_TYPE=Debug)" )
 	endif()
 	#
 	set( COV_C_FLAGS             "-fprofile-arcs -ftest-coverage" )

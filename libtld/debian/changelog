@@ -4,6 +4,7 @@ libtld (1.4.2) unstable; urgency=medium
   * Fixed the license notices in all the source files. It was supposed to be
     MIT everywhere.
   * Officially moved the ChangeLog to debian/changelog.
+  * Added a validate_tld tool to validate TLDs from shell scripts.
 
  -- Alexis Wilke <alexis@m2osw.com>  Fri, 23 Aug 2013 20:41:57 -0800
 
