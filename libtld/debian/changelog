@@ -1,3 +1,9 @@
+libtld (1.4.3) unstable; urgency=medium
+
+  * ...
+
+ -- Alexis Wilke <alexis@m2osw.com>  Thu, 21 Nov 2013 15:29:59 -0800
+
 libtld (1.4.2) unstable; urgency=medium
 
   * Added new TLDs such as .com.cw
@@ -5,6 +11,7 @@ libtld (1.4.2) unstable; urgency=medium
     MIT everywhere.
   * Officially moved the ChangeLog to debian/changelog.
   * Added a validate_tld tool to validate TLDs from shell scripts.
+  * Make use of a new set of CMake include files.
 
  -- Alexis Wilke <alexis@m2osw.com>  Fri, 23 Aug 2013 20:41:57 -0800
 
