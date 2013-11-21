@@ -1,8 +1,32 @@
-libtld (1.3.1) unstable; urgency=medium
+libtld (1.4.2) unstable; urgency=medium
 
-  * Added the debian folder to build packages for the PPA.
+  * Added new TLDs such as .com.cw
+  * Fixed the license notices in all the source files. It was supposed to be
+    MIT everywhere.
+  * Officially moved the ChangeLog to debian/changelog.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Fri, 23 Aug 2013 20:41:57 -0800
+
+libtld (1.4.1) unstable; urgency=medium
+
+  * Added a function determining the type of an email field that holds emails.
+  * Fixed the quotation of canonicalized emails.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 28 May 2013 11:57:12 -0800
+
+libtld (1.4.0) unstable; urgency=medium
+
+  * Added the debian folder to build packages for the PPA (not working yet).
   * Corrected the installation process with proper components.
   * Fixed the ChangeLog dates and indentation for Debian.
+  * Reorganized the package with sub-folders.
+  * Fixed a few things so the library compiles under MS-Windows with cl.
+  * Added support to parse email addresses.
+  * Enhanced several of the unit tests.
+  * Added a script to run a full coverage over the library.
+  * Added a command line tool for scripting.
+  * Enhanced documentation as first version was really just about tld().
+  * dev/libtld-only-CMakeLists.txt to compile libtld on other platforms.
 
  -- Alexis Wilke <alexis@m2osw.com>  Mon, 18 Feb 2013 00:43:48 -0800
 

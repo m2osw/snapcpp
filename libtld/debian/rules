@@ -8,9 +8,7 @@ INSTALLDIR = debian/tmp
 
 # secondly called by launchpad
 build:
-	cp ChangeLog debian/changelog
-	gzip -c9 ChangeLog >debian/changelog.Debian.gz
-	cp LICENSE.txt debian/copyright
+	gzip -c9 debian/changelog >debian/changelog.Debian.gz
 	mkdir $(BUILDDIR);
 	cd $(BUILDDIR); cmake -DCMAKE_INSTALL_PREFIX=../$(INSTALLDIR)/usr ..
 	make -C $(BUILDDIR)
@@ -37,6 +35,6 @@ binary-arch:
 
 # firstly called by launchpad
 clean:
-	rm -rf $(BUILDDIR) $(INSTALLDIR) debian/changelog.Debian.gz debian/copyright debian/files
+	rm -rf $(BUILDDIR) $(INSTALLDIR) debian/changelog.Debian.gz debian/files
 
 .PHONY: build binary binary-arch binary-indep clean

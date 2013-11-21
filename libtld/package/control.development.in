@@ -3,6 +3,7 @@ Version: @LIBTLD_VERSION_MAJOR@.@LIBTLD_VERSION_MINOR@.@LIBTLD_VERSION_PATCH@
 Section: libs
 Priority: optional
 Architecture: $(architecture())
+Depends: libtld
 Homepage: http://snapwebsites.org/project/libtld
 Maintainer: Made to Order Software Corporation <contact@m2osw.com>
 Description: TLD library to discover and verify TLDs in a URI.

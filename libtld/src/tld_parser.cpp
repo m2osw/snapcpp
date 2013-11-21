@@ -1,19 +1,25 @@
-// TLD library -- XML to C++ parser
-// Copyright (C) 2011-2013  Made to Order Software Corp.
-//
-// This program is free software; you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation; either version 2 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+/* TLD library -- XML to C++ parser
+ * Copyright (C) 2011-2013  Made to Order Software Corp.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the
+ * "Software"), to deal in the Software without restriction, including
+ * without limitation the rights to use, copy, modify, merge, publish,
+ * distribute, sublicense, and/or sell copies of the Software, and to
+ * permit persons to whom the Software is furnished to do so, subject to
+ * the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included
+ * in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+ * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+ * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+ * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+ * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+ * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
 
 /** \file
  * \brief Parser of the tld_data.xml file.
@@ -791,21 +797,27 @@ void output_header()
     out << " *\n";
     out << " * Copyright (C) 2011-2013  Made to Order Software Corp.\n";
     out << " *\n";
-    out << " * This program is free software; you can redistribute it and/or modify\n";
-    out << " * it under the terms of the GNU General Public License as published by\n";
-    out << " * the Free Software Foundation; either version 2 of the License, or\n";
-    out << " * (at your option) any later version.\n";
+    out << " * Permission is hereby granted, free of charge, to any person obtaining a\n";
+    out << " * copy of this software and associated documentation files (the\n";
+    out << " * \"Software\"), to deal in the Software without restriction, including\n";
+    out << " * without limitation the rights to use, copy, modify, merge, publish,\n";
+    out << " * distribute, sublicense, and/or sell copies of the Software, and to\n";
+    out << " * permit persons to whom the Software is furnished to do so, subject to\n";
+    out << " * the following conditions:\n";
     out << " *\n";
-    out << " * This program is distributed in the hope that it will be useful,\n";
-    out << " * but WITHOUT ANY WARRANTY; without even the implied warranty of\n";
-    out << " * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the\n";
-    out << " * GNU General Public License for more details.\n";
+    out << " * The above copyright notice and this permission notice shall be included\n";
+    out << " * in all copies or substantial portions of the Software.\n";
     out << " *\n";
-    out << " * You should have received a copy of the GNU General Public License\n";
-    out << " * along with this program; if not, write to the Free Software\n";
-    out << " * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA\n";
+    out << " * THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS\n";
+    out << " * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF\n";
+    out << " * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.\n";
+    out << " * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY\n";
+    out << " * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,\n";
+    out << " * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE\n";
+    out << " * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n";
     out << " */\n";
-    out << " /** \\file\n";
+    out << "\n";
+    out << "/** \\file\n";
     out << " * \\brief GENERATED FILE -- the tld_data.c file is generated -- DO NOT EDIT\n";
     out << " *\n";
     out << " * This file is generated using the tld_parser tool and the tld_data.xml file.\n";
