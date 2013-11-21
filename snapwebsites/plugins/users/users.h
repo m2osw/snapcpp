@@ -28,12 +28,15 @@ namespace users
 
 enum name_t
 {
-    SNAP_NAME_USERS_TABLE,
+    SNAP_NAME_USERS_CREATED_TIME,
+    SNAP_NAME_USERS_ORIGINAL_EMAIL,
+    SNAP_NAME_USERS_ORIGINAL_IP,
     SNAP_NAME_USERS_PASSWORD,
     SNAP_NAME_USERS_PASSWORD_DIGEST,
     SNAP_NAME_USERS_PASSWORD_SALT,
-    SNAP_NAME_USERS_ORIGINAL_EMAIL,
-    SNAP_NAME_USERS_ORIGINAL_IP
+    SNAP_NAME_USERS_TABLE,
+    SNAP_NAME_USERS_USERNAME,
+    SNAP_NAME_USERS_VERIFY_EMAIL
 };
 const char *get_name(name_t name);
 
@@ -49,6 +52,7 @@ public:
     static const sessions::sessions::session_info::session_id_t USERS_SESSION_ID_PASSWORD = 5;
     static const sessions::sessions::session_info::session_id_t USERS_SESSION_ID_PASSWORD_BLOCK = 6;
     static const sessions::sessions::session_info::session_id_t USERS_SESSION_ID_LOG_IN_SESSION = 7;
+    static const sessions::sessions::session_info::session_id_t USERS_SESSION_ID_VERIFY_EMAIL = 8;
 
     users();
     virtual ~users();
@@ -61,7 +65,9 @@ public:
     void                    on_bootstrap(::snap::snap_child *snap);
     void                    on_init();
     void                    on_can_handle_dynamic_path(path::path *path_plugin, const QString& cpath);
+    void                    on_generate_header_content(layout::layout *l, const QString& path, QDomElement& hader, QDomElement& metadata);
     virtual void            on_generate_main_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body);
+    //void                    on_generate_page_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body);
     void                    on_generate_sitemapxml(sitemapxml::sitemapxml *sitemap);
     bool                    on_path_execute(const QString& cpath);
     void                    on_process_cookies();
@@ -83,6 +89,7 @@ private:
     void                    encrypt_password(const QString& digest, const QString& password, const QByteArray& salt, QByteArray& hash);
 
     zpsnap_child_t          f_snap;
+    QString                 f_user_key;
 };
 
 } // namespace users

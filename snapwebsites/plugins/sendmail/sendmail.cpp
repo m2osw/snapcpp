@@ -262,8 +262,11 @@ QString sendmail::email::email_attachment::get_header(const QString& name) const
     {
         throw sendmail_exception_invalid_argument("Cannot retrieve a header with an empty name");
     }
-
-    return f_header[name];
+    if(f_header.contains(name))
+    {
+        return f_header[name];
+    }
+    return "";
 }
 
 
@@ -784,8 +787,12 @@ QString sendmail::email::get_header(const QString& name) const
     {
         throw sendmail_exception_invalid_argument("Cannot retrieve a header with an empty name");
     }
+    if(f_header.contains(name))
+    {
+        return f_header[name];
+    }
 
-    return f_header[name];
+    return "";
 }
 
 
@@ -900,6 +907,90 @@ sendmail::email::email_attachment& sendmail::email::get_attachment(int index) co
     // make sure we use the const version of the [] operator so
     // Qt does not make a deep copy of the element
     return const_cast<email_attachment&>(f_attachment[index]);
+}
+
+
+/** \brief Add a parameter to the email.
+ *
+ * Whenever you create an email, you may be able to offer additional
+ * parameters that are to be used as token replacement in the email.
+ * For example, when creating a new user, we ask the user to verify his
+ * email address. This is done by creating a session identifier and then
+ * asking the user to go to the special page /verify/&lt;session&gt;. That
+ * way we know that the user received the email (although it may not
+ * exactly be the right person...)
+ *
+ * The name of the parameter should be something like "users::verify",
+ * i.e. it should be namespace specific to not clash with sendmail or
+ * other plugins parameters.
+ *
+ * \warning
+ * Also the function is called 'add', because you may add as many parameters
+ * as you are available, the function does NOT cumulate data within one field.
+ * Instead it overwrites the content of the field. This is one way to replace
+ * an unwanted value or force the content of a field for a given email.
+ *
+ * \exception sendmail_exception_invalid_argument
+ * The name of a parameter cannot be empty. This exception is raised if
+ * \p name is empty.
+ *
+ * \param[in] name  A valid parameter name.
+ * \param[in] value  The value of this header.
+ */
+void sendmail::email::add_parameter(const QString& name, const QString& value)
+{
+    if(name.isEmpty())
+    {
+        throw sendmail_exception_invalid_argument("Cannot add a parameter with an empty name");
+    }
+
+    f_parameter[name] = value;
+}
+
+
+/** \brief Retrieve the value of a named parameter.
+ *
+ * This function returns the value of the named parameter. If the parameter
+ * is not currently defined, this function returns an empty string.
+ *
+ * \exception sendmail_exception_invalid_argument
+ * The name of a parameter cannot be empty. This exception is raised if
+ * \p name is empty.
+ *
+ * \param[in] name  A valid parameter name.
+ *
+ * \return The current value of that parameter or an empty string if undefined.
+ */
+QString sendmail::email::get_parameter(const QString& name) const
+{
+    if(name.isEmpty())
+    {
+        throw sendmail_exception_invalid_argument("Cannot retrieve a parameter with an empty name");
+    }
+    if(f_parameter.contains(name))
+    {
+        return f_parameter[name];
+    }
+
+    return "";
+}
+
+
+/** \brief Get all the parameters defined in this email.
+ *
+ * This function returns the map of the parameters defined in this email.
+ * This can be used to quickly scan all the parameters.
+ *
+ * \note
+ * It is important to remember that since this function returns a reference
+ * to the map of parameters, it may break if you call add_parameter() while
+ * going through the references.
+ *
+ * \return A direct reference to the internal parameter map.
+ */
+const sendmail::email::header_map_t& sendmail::email::get_all_parameters() const
+{
+    return f_parameter;
 }
 
 
@@ -1737,35 +1828,35 @@ void sendmail::sendemail(const QString& key, const QString& unique_key)
     table->row(key)->cell(unique_key + "::" + get_name(SNAP_NAME_SENDMAIL_SENDING_STATUS))->setValue(sending_value);
 
     QtCassandra::QCassandraValue email_data(table->row(key)->cell(unique_key + "::" + get_name(SNAP_NAME_SENDMAIL_EMAIL))->value());
-    email e;
-    e.unserialize(email_data.stringValue());
-    e.add_header(get_name(SNAP_NAME_SENDMAIL_CONTENT_TYPE), "text/html; charset=\"utf-8\"");
+    f_email = email();
+    f_email.unserialize(email_data.stringValue());
+    f_email.add_header(get_name(SNAP_NAME_SENDMAIL_CONTENT_TYPE), "text/html; charset=\"utf-8\"");
 
-    const QString& path(e.get_email_path());
+    const QString& path(f_email.get_email_path());
     if(!path.isEmpty())
     {
         // TODO -- we need to get a layout that is for the email, not the
         //         default layout which will include all the theme
         //         everything (title, header, footer...)
-        content::content *c(content::content::instance());
-        const QString body(layout::layout::instance()->apply_layout(path, c));
+        const QString body(layout::layout::instance()->apply_layout(path, this));
 
         email::email_attachment body_attachment;
         // TBD: do we have to define a "text/plain" type too?
         body_attachment.set_data(body.toUtf8(), "text/html; charset=\"utf-8\"");
-        e.set_body_attachment(body_attachment);
+        f_email.set_body_attachment(body_attachment);
 
         // Use the page title as the subject
         // (TBD: should the page title always overwrite the subject?)
-        if(e.get_header(get_name(SNAP_NAME_SENDMAIL_SUBJECT)).isEmpty())
+        if(f_email.get_header(get_name(SNAP_NAME_SENDMAIL_SUBJECT)).isEmpty())
         {
             // TODO: apply filters on the subject
-            e.set_subject(c->get_content_parameter(path, get_name(content::SNAP_NAME_CONTENT_TITLE)).stringValue());
+            content::content *c(content::content::instance());
+            f_email.set_subject(c->get_content_parameter(path, get_name(content::SNAP_NAME_CONTENT_TITLE)).stringValue());
         }
     }
 
     // verify that we have at least one attachment
-    const int max(e.get_attachment_count());
+    const int max(f_email.get_attachment_count());
     if(max < 1)
     {
         // this should never happen since this is tested in the post_email() function
@@ -1773,7 +1864,7 @@ void sendmail::sendemail(const QString& key, const QString& unique_key)
     }
 
     // we want to transform the body from HTML to text ahead of time
-    email::email_attachment body(e.get_attachment(0));
+    email::email_attachment body(f_email.get_attachment(0));
     // TODO: verify that the body is indeed HTML!
     //       although html2text works against plain text but that's a waste
     QString plain_text;
@@ -1799,7 +1890,7 @@ void sendmail::sendemail(const QString& key, const QString& unique_key)
         }
     }
 
-    QString to(e.get_header(get_name(SNAP_NAME_SENDMAIL_TO)));
+    QString to(f_email.get_header(get_name(SNAP_NAME_SENDMAIL_TO)));
     tld_email_list list;
     if(list.parse(to.toStdString(), 0) != TLD_RESULT_SUCCESS)
     {
@@ -1817,7 +1908,7 @@ void sendmail::sendemail(const QString& key, const QString& unique_key)
     table->row(key)->cell(unique_key + "::" + get_name(SNAP_NAME_SENDMAIL_SENDING_STATUS))->setValue(sending_value);
 
     QString cmd("sendmail -f ");
-    cmd += e.get_header(get_name(SNAP_NAME_SENDMAIL_FROM));
+    cmd += f_email.get_header(get_name(SNAP_NAME_SENDMAIL_FROM));
     cmd += " ";
     cmd += m.f_email_only.c_str();
 
@@ -1836,7 +1927,7 @@ void sendmail::sendemail(const QString& key, const QString& unique_key)
         return;
     }
     // convert email data to text and send that to the sendmail command
-    email::header_map_t headers(e.get_all_headers());
+    email::header_map_t headers(f_email.get_all_headers());
     const bool body_only(max == 1 && plain_text.isEmpty());
     QString boundary;
     if(!body_only)
@@ -1871,7 +1962,7 @@ void sendmail::sendemail(const QString& key, const QString& unique_key)
     {
         // in this case we only have one entry, probably HTML, and thus we
         // can avoid the multi-part headers and attachments
-        email::email_attachment attachment(e.get_attachment(0));
+        email::email_attachment attachment(f_email.get_attachment(0));
         fprintf(f, "%s\n", attachment.get_data().data());
     }
     else
@@ -1892,7 +1983,7 @@ void sendmail::sendemail(const QString& key, const QString& unique_key)
         // HTML to the user
         for(int i(0); i < max; ++i)
         {
-            email::email_attachment attachment(e.get_attachment(i));
+            email::email_attachment attachment(f_email.get_attachment(i));
             fprintf(f, "--%s\n", boundary.toUtf8().data());
             email::header_map_t attachment_headers(attachment.get_all_headers());
             for(email::header_map_t::const_iterator it(attachment_headers.begin());
@@ -1920,6 +2011,127 @@ void sendmail::sendemail(const QString& key, const QString& unique_key)
     // now it is marked as fully sent
     sending_value.setStringValue(get_name(SNAP_NAME_SENDMAIL_STATUS_SENT));
     table->row(key)->cell(unique_key + "::" + get_name(SNAP_NAME_SENDMAIL_SENDING_STATUS))->setValue(sending_value);
+}
+
+
+/** \brief Add sendmail specific tags to the layout DOM.
+ *
+ * This function adds different sendmail specific tags to the layout page
+ * and body XML documents. Especially, it will add all the parameters that
+ * the user added to the email object before calling the post_email()
+ * function.
+ *
+ * \param[in] l  The layout pointer.
+ * \param[in] path  The path being managed.
+ * \param[in,out] page  The page being generated.
+ * \param[in,out] body  The body being generated.
+ */
+void sendmail::on_generate_main_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body)
+{
+	// by default an email is just like a regular page
+	content::content::instance()->on_generate_main_content(l, path, page, body);
+
+    // but we also have email specific parameters we want to add
+    QDomDocument doc(page.ownerDocument());
+
+    {
+        QDomElement sendmail_tag(doc.createElement("sendmail"));
+        body.appendChild(sendmail_tag);
+
+        {
+            QDomElement from(doc.createElement("from"));
+            sendmail_tag.appendChild(from);
+            const QString from_email(f_email.get_header(get_name(SNAP_NAME_SENDMAIL_FROM)));
+            QDomText from_text(doc.createTextNode(from_email));
+            from.appendChild(from_text);
+            // TODO: parse the email address with libtld and offer:
+            //         sender-name
+            //         sender-email
+        }
+        {
+            QDomElement to(doc.createElement("to"));
+            sendmail_tag.appendChild(to);
+            const QString to_email(f_email.get_header(get_name(SNAP_NAME_SENDMAIL_TO)));
+            QDomText to_text(doc.createTextNode(to_email));
+            to.appendChild(to_text);
+        }
+        {
+            QDomElement path_tag(doc.createElement("path"));
+            sendmail_tag.appendChild(path_tag);
+            QDomText path_text(doc.createTextNode(f_email.get_email_path()));
+            path_tag.appendChild(path_text);
+        }
+        {
+            QDomElement key(doc.createElement("key"));
+            sendmail_tag.appendChild(key);
+            QDomText key_text(doc.createTextNode(f_email.get_email_key()));
+            key.appendChild(key_text);
+        }
+        const QString created(f_snap->date_to_string(f_email.get_time() * 1000000, true));
+        {
+            QDomElement time_tag(doc.createElement("created"));
+            sendmail_tag.appendChild(time_tag);
+            QDomText time_text(doc.createTextNode(created));
+            time_tag.appendChild(time_text);
+        }
+        {
+            QDomElement time_tag(doc.createElement("date"));
+            sendmail_tag.appendChild(time_tag);
+            QDomText time_text(doc.createTextNode(created.mid(0, 10)));
+            time_tag.appendChild(time_text);
+        }
+        {
+            QDomElement time_tag(doc.createElement("time"));
+            sendmail_tag.appendChild(time_tag);
+            QDomText time_text(doc.createTextNode(created.mid(11)));
+            time_tag.appendChild(time_text);
+        }
+        {
+            QDomElement time_tag(doc.createElement("attachment_count"));
+            sendmail_tag.appendChild(time_tag);
+            QDomText time_text(doc.createTextNode(QString("%1").arg(f_email.get_attachment_count())));
+            time_tag.appendChild(time_text);
+        }
+        const QString x_priority(f_email.get_header(get_name(SNAP_NAME_SENDMAIL_X_PRIORITY)));
+        {
+            // save the priority as a name
+            QDomElement important(doc.createElement("important"));
+            sendmail_tag.appendChild(important);
+            const QString important_email(f_email.get_header(get_name(SNAP_NAME_SENDMAIL_IMPORTANT)));
+            QDomText important_text(doc.createTextNode(important_email));
+            important.appendChild(important_text);
+        }
+        {
+            // save the priority as a value + name between parenthesis
+            QDomElement priority(doc.createElement("x-priority"));
+            sendmail_tag.appendChild(priority);
+            QDomText priority_text(doc.createTextNode(x_priority));
+            priority.appendChild(priority_text);
+        }
+        {
+            // save the priority as a value
+            QDomElement priority(doc.createElement("priority"));
+            sendmail_tag.appendChild(priority);
+            QStringList value_name(x_priority.split(" "));
+            QDomText priority_text(doc.createTextNode(value_name[0]));
+            priority.appendChild(priority_text);
+        }
+        const email::header_map_t& parameters(f_email.get_all_parameters());
+        if(parameters.size() > 0)
+        {
+            QDomElement parameters_tag(doc.createElement("parameters"));
+            sendmail_tag.appendChild(parameters_tag);
+            for(email::header_map_t::const_iterator it(parameters.begin());
+                                                    it != parameters.end();
+                                                    ++it)
+            {
+                QDomElement param_tag(doc.createElement("param"));
+                param_tag.setAttribute("name", it.key());
+                param_tag.setAttribute("value", it.value());
+                parameters_tag.appendChild(param_tag);
+            }
+        }
+    }
 }
 
 

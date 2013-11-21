@@ -29,6 +29,60 @@ namespace filter
 class filter : public plugins::plugin
 {
 public:
+	enum token_t
+	{
+		TOK_IDENTIFIER,
+		TOK_STRING,
+		TOK_INTEGER,
+		TOK_REAL,
+		TOK_SEPARATOR,
+		TOK_INVALID
+	};
+
+	// TODO: change that in a class
+	struct parameter_t
+	{
+		token_t                 f_type;
+		QString                 f_name;
+		QString                 f_value;
+
+		void reset()
+		{
+			f_type = TOK_INVALID;
+			f_name = "";
+			f_value = "";
+		}
+	};
+
+	// TODO: change that in a class
+	struct token_info_t
+	{
+		QString                 	f_name;
+		QVector<parameter_t>    	f_parameters;
+		controlled_vars::fbool_t	f_found;
+		QString						f_replacement;
+
+		bool is_token(const char *name)
+		{
+			// in a way, once marked as found a token is viewed as used up
+			// and thus it doesn't match anymore
+			bool result(!f_found && f_name == name);
+			if(result)
+			{
+				f_found = true;
+			}
+			return result;
+		}
+
+		void reset()
+		{
+			f_name = "";
+			f_parameters.clear();
+			f_found = false;
+			f_replacement = "";
+		}
+	};
+
 	filter();
 	~filter();
 
@@ -39,6 +93,9 @@ public:
 	void	on_xss_filter(QDomNode& node,
 						  const QString& accepted_tags,
 						  const QString& accepted_attributes);
+	void 	on_token_filter(QDomDocument& xml);
+
+	SNAP_SIGNAL(replace_token, (filter *f, QDomDocument& xml, token_info_t& token), (f, xml, token));
 
 private:
 	snap_child *	f_snap;

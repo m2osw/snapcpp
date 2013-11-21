@@ -416,17 +416,51 @@ void content::on_generate_main_content(layout::layout *l, const QString& fullpat
         }
     }
 
+#if 1
     {
         // we assume that the body content is valid because when we created it
         // we checked the data and if the user data was invalid XML then we
         // saved a place holder warning the user about the fact!
         QDomDocument doc_body("body");
-        doc_body.setContent(get_content_parameter(path, get_name(SNAP_NAME_CONTENT_BODY)).stringValue(), true, NULL, NULL, NULL);
+        QString body_data(get_content_parameter(path, get_name(SNAP_NAME_CONTENT_BODY)).stringValue());
+        // TBD: it probably doesn't matter but we currently add an extra <div>
+        //      tag; to remove it we'd have to append all the children found
+        //      in that <div> tag.
+        body_data = "<div class=\"snap-body\">" + body_data + "</div>";
+        doc_body.setContent(body_data, true, NULL, NULL, NULL);
         //doc_body.setContent(page_content, true, NULL, NULL, NULL);
         QDomElement content_tag(doc.createElement("content"));
         body.appendChild(content_tag);
         content_tag.appendChild(doc.importNode(doc_body.documentElement(), true));
     }
+#else
+    // using a CDATA section generates pure text (no tags at all, the &lt;
+    // characters become &amp;lt;
+    {
+        // we assume that the body content is valid because when we created it
+        // we checked the data and if the user data was invalid XML then we
+        // saved a place holder warning the user about the fact!
+        QDomDocument doc_body("body");
+        QString body_data(get_content_parameter(path, get_name(SNAP_NAME_CONTENT_BODY)).stringValue());
+        // TBD: it probably doesn't matter but we currently add an extra <div>
+        //      tag; to remove it we'd have to append all the children found
+        //      in that <div> tag.
+        body_data = "<div class=\"snap-body\">" + body_data + "</div>";
+        // add it as a CDATA section to the XML
+        QDomElement content_tag(doc.createElement("content"));
+
+        QDomElement div_tag(doc.createElement("div"));
+
+        QDomCDATASection cdata_section(doc.createCDATASection(body_data));
+        div_tag.appendChild(cdata_section);
+
+        content_tag.appendChild(div_tag);
+
+        //content_tag.appendChild(doc.importNode(doc_body.documentElement(), true));
+
+        body.appendChild(content_tag);
+    }
+#endif
 
     if(path != "")
     {

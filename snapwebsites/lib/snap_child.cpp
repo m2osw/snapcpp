@@ -2559,7 +2559,8 @@ printf("snap session = [%s]?\n", cookie_header.toUtf8().data());
  *
  * The date is always output as UTC (opposed to local time.)
  *
- * \param[in] v  A 64 bit time / date value, we only use precision to the second.
+ * \param[in] v  A 64 bit time / date value in microseconds, although we
+ *               really only use precision to the second.
  * \param[in] long_format  Whether to use the short (default) or long format.
  *
  * \return The formatted date and time.

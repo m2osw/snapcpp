@@ -43,7 +43,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <!-- email sent when users register so we can ask them to verify their email address -->
     <param name="content::title">Please verify your email address</param>
     <param name="content::body" overwrite="yes">
-      <![CDATA[<p>Welcome to your Snap! C++ website.</p><p>In order to complete the creation of your new account, please click on the following link:</p><blockquote>[verify-link]</blockquote><p>Thank you.</p>]]>
+      <![CDATA[<p class="welcome">Welcome to your Snap! C++ website.</p><p class="process-to-complete">In order to complete the creation of your new account, please click on the following link:</p><blockquote>Test this: [layout::select("snap/page/body/sendmail/parameters[type=users::verify_email]")]</blockquote><p class="thank-you">Thank you.</p>]]>
     </param>
     <link name="include_in_xml_sitemap" to="include_in_xml_sitemap" mode="1:*">/types/taxonomy/system/sitemapxml/include-in-xml-sitemap</link>
     <link name="administration" to="administration" mode="1:*">/types/permissions/rights/administration</link>

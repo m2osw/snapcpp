@@ -31,8 +31,19 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
                mode CDATA "1:1">
 ]>
 <snap-tree>
-  <content path="/robots.txt"/>
-  <content path="/admin/robotstxt/settings"/>
+  <content path="/admin/filter/settings"/>
+  <content path="/types/filter">
+    <param name="content::title">Filter Types</param>
+    <param name="content::body">
+      <![CDATA[<p>Set of filters that are used to tweak the data saved in a page.</p>]]>
+    </param>
+  </content>
+  <content path="/types/filter/processing/xss">
+    <param name="content::title">XSS Filter</param>
+    <param name="content::body">
+      <![CDATA[<p>Filter HTML data and remove unwanted tags such as &lt;script&gt; tags and attributes such as style="..." attributes.</p>]]>
+    </param>
+  </content>
 </snap-tree>
 <!-- vim: ts=2 sw=2 et syntax=xml
 -->

@@ -55,8 +55,14 @@ BOOST_STATIC_ASSERT((SALT_SIZE & 1) == 0);
 const char *get_name(name_t name)
 {
     switch(name) {
-    case SNAP_NAME_USERS_TABLE:
-        return "users";
+    case SNAP_NAME_USERS_CREATED_TIME:
+        return "users::created_time";
+
+    case SNAP_NAME_USERS_ORIGINAL_EMAIL:
+        return "users::original_email";
+
+    case SNAP_NAME_USERS_ORIGINAL_IP:
+        return "users::original_ip";
 
     case SNAP_NAME_USERS_PASSWORD:
         return "users::password";
@@ -67,11 +73,14 @@ const char *get_name(name_t name)
     case SNAP_NAME_USERS_PASSWORD_SALT:
         return "users::password::salt";
 
-    case SNAP_NAME_USERS_ORIGINAL_EMAIL:
-        return "users::original_email";
+    case SNAP_NAME_USERS_TABLE:
+        return "users";
 
-    case SNAP_NAME_USERS_ORIGINAL_IP:
-        return "users::original_ip";
+    case SNAP_NAME_USERS_USERNAME:
+        return "users::username";
+
+    case SNAP_NAME_USERS_VERIFY_EMAIL:
+        return "users::verify_email";
 
     default:
         // invalid index
@@ -127,7 +136,7 @@ users *users::instance()
 QString users::description() const
 {
     return "The users plugin manages all the users on a website. It is also"
-        " capable to create new users which is a Snap! wide feature.";
+           " capable to create new users which is a Snap! wide feature.";
 }
 
 
@@ -149,7 +158,7 @@ int64_t users::do_update(int64_t last_updated)
     SNAP_PLUGIN_UPDATE_INIT();
 
     SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, initial_update);
-    SNAP_PLUGIN_UPDATE(2013, 11, 17, 1, 39, 0, content_update);
+    SNAP_PLUGIN_UPDATE(2013, 11, 20, 1, 8, 0, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -178,6 +187,7 @@ void users::initial_update(int64_t variables_timestamp)
  */
 void users::content_update(int64_t variables_timestamp)
 {
+printf("add_xml()anew\n");
     content::content::instance()->add_xml("users");
 }
 
@@ -212,6 +222,8 @@ void users::on_bootstrap(::snap::snap_child *snap)
     SNAP_LISTEN0(users, "server", server, init);
     SNAP_LISTEN0(users, "server", server, process_cookies);
     SNAP_LISTEN(users, "path", path::path, can_handle_dynamic_path, _1, _2);
+    SNAP_LISTEN(users, "layout", layout::layout, generate_header_content, _1, _2, _3, _4);
+    //SNAP_LISTEN(users, "layout", layout::layout, generate_page_content, _1, _2, _3, _4);
 }
 
 
@@ -242,14 +254,24 @@ void users::on_process_cookies()
     sessions::sessions::session_info info;
     QString user_session(f_snap->cookie("snap_session"));
     sessions::sessions::instance()->load_session(user_session, info);
+    const QString path(info.get_object_path());
     if(info.get_session_type() != sessions::sessions::session_info::SESSION_INFO_VALID
-    || info.get_session_id() != USERS_SESSION_ID_LOG_IN_SESSION)
+    || info.get_session_id() != USERS_SESSION_ID_LOG_IN_SESSION
+    || path.left(6) != "/user/")
     {
         // this is not a log in session, so we ignore it
         return;
     }
 
-    // valid, the user is logged in!
+    // valid session, now verify the user
+    const QString key(path.mid(6));
+    QSharedPointer<QtCassandra::QCassandraTable> table(get_users_table());
+    if(!table->exists(key))
+    {
+        // this is not a valid user email address
+        return;
+    }
+    f_user_key = key;
 
     // refresh the session and the cookie (so it extends it)
     // TBD: here Drupal refreshes the session identifier, should we
@@ -282,6 +304,9 @@ void users::on_process_cookies()
  *
  * We understand "register" to display a registration form to users.
  *
+ * We understand "verify" to check a session that is being returned
+ * as the user clicks on the link we sent on registration.
+ *
  * We understand "forgot-password" to let users request a password reset
  * via a simple form.
  *
@@ -296,6 +321,7 @@ void users::on_can_handle_dynamic_path(path::path *path_plugin, const QString& c
     || cpath == "login"                 // form to log user in
     || cpath == "logout"                // log user out
     || cpath == "register"              // form to let new users register
+    || cpath == "verify"                // link to verify user's email
     || cpath == "forgot-passowrd")      // form for users to reset their password
     {
         // tell the path plugin that this is ours
@@ -320,20 +346,98 @@ bool users::on_path_execute(const QString& cpath)
 
 void users::on_generate_main_content(layout::layout *l, const QString& cpath, QDomElement& page, QDomElement& body)
 {
-    if(cpath == "login")
+    if(cpath == "user")
+    {
+        // TODO: write user listing
+        //list_users(body);
+    }
+    else if(cpath.left(5) == "user/")
+    {
+        // TODO: write user profile viewer
+        //show_user(body);
+    }
+    else if(cpath == "profile")
+    {
+        // TODO: write user profile editor
+        //user_profile(body);
+    }
+    else if(cpath == "login")
     {
         generate_login_form(body);
     }
     else if(cpath == "logout")
     {
+        // TODO: write log out feature
         // closing current session if any and show the logout page
     }
     else if(cpath == "register")
     {
         generate_register_form(body);
     }
+    else if(cpath == "verify")
+    {
+        //verify_user();
+    }
     else if(cpath == "forgot-password")
     {
+        // TODO: create forget password form
+    }
+    else
+    {
+        // a type is just like a regular page
+        content::content::instance()->on_generate_main_content(l, cpath, page, body);
+    }
+}
+
+
+void users::on_generate_header_content(layout::layout *l, const QString& path, QDomElement& header, QDomElement& metadata)
+{
+    QDomDocument doc(header.ownerDocument());
+
+    QSharedPointer<QtCassandra::QCassandraTable> table(get_users_table());
+
+    // retrieve the row for that user
+    if(!f_user_key.isEmpty() && table->exists(f_user_key))
+    {
+        QSharedPointer<QtCassandra::QCassandraRow> row(table->row(f_user_key));
+
+        {   // snap/head/metadata/desc[type=users::email]/data
+            QDomElement desc(doc.createElement("desc"));
+            desc.setAttribute("type", "users::email");
+            metadata.appendChild(desc);
+            QDomElement data(doc.createElement("data"));
+            desc.appendChild(data);
+            QDomText text(doc.createTextNode(f_user_key));
+            data.appendChild(text);
+        }
+
+        {   // snap/head/metadata/desc[type=user_name]/data
+            QtCassandra::QCassandraValue value(row->cell(get_name(SNAP_NAME_USERS_USERNAME))->value());
+            if(!value.nullValue())
+            {
+                QDomElement desc(doc.createElement("desc"));
+                desc.setAttribute("type", "users::name");
+                metadata.appendChild(desc);
+                QDomElement data(doc.createElement("data"));
+                desc.appendChild(data);
+                QDomText text(doc.createTextNode(value.stringValue()));
+                data.appendChild(text);
+            }
+        }
+
+        {   // snap/head/metadata/desc[type=user_created]/data
+            QtCassandra::QCassandraValue value(row->cell(get_name(SNAP_NAME_USERS_CREATED_TIME))->value());
+            if(!value.nullValue())
+            {
+                QDomElement desc(doc.createElement("desc"));
+                desc.setAttribute("type", "users::created");
+                metadata.appendChild(desc);
+                QDomElement data(doc.createElement("data"));
+                desc.appendChild(data);
+                QDomText text(doc.createTextNode(f_snap->date_to_string(value.int64Value())));
+                data.appendChild(text);
+            }
+        }
     }
 }
 
@@ -397,7 +501,7 @@ void users::generate_register_form(QDomElement& body)
 
     sessions::sessions::session_info info;
     info.set_session_type(info.SESSION_INFO_USER);
-    info.set_session_id(USERS_SESSION_ID_LOG_IN);
+    info.set_session_id(USERS_SESSION_ID_REGISTER);
     info.set_plugin_owner("users"); // ourselves
     info.set_page_path("register");
     //info.set_object_path(); -- default is okay
@@ -556,12 +660,15 @@ void users::process_login_form()
             info.set_session_id(USERS_SESSION_ID_LOG_IN_SESSION);
             info.set_plugin_owner("users"); // ourselves
             //info.set_page_path(); -- default is okay
-            info.set_object_path("/user/??");
+            info.set_object_path("/user/" + key);
             info.set_time_to_live(86400 * 5);  // 5 days
             QString session(sessions::sessions::instance()->create_session(info));
             http_cookie cookie(f_snap, "snap_session", session);
             cookie.set_expire_in(86400 * 5);  // 5 days
             f_snap->set_cookie(cookie);
+
+            // this is now the current user
+            f_user_key = key;
 
             // User is now logged in, redirect him to another page
             // TODO: redirect...
@@ -570,7 +677,7 @@ void users::process_login_form()
         else
         {
             // user mistyped his password?
-            details = "invalid credentials (passwords don't match)";
+            details = "invalid credentials (password doesn't match)";
         }
     }
     else
@@ -730,6 +837,10 @@ bool users::register_user(const QString& email, const QString& password)
     value.setStringValue(f_snap->snapenv("REMOTE_ADDR"));
     row->cell(get_name(SNAP_NAME_USERS_ORIGINAL_IP))->setValue(value);
 
+    // Date when the user was created (i.e. now)
+    uint64_t created_date(f_snap->get_uri().option("start_date").toLongLong());
+    row->cell(get_name(SNAP_NAME_USERS_CREATED_TIME))->setValue(created_date);
+
     return true;
 }
 
@@ -746,7 +857,7 @@ void users::verify_email(const QString& email)
     sendmail::sendmail::email e;
 
     // administrator can define this email address
-    QtCassandra::QCassandraValue from(f_snap->get_site_parameter(get_name(SNAP_NAME_USERS_PASSWORD_DIGEST)));
+    QtCassandra::QCassandraValue from(f_snap->get_site_parameter(get_name(SNAP_NAME_CORE_ADMINISTRATOR_EMAIL)));
     if(from.nullValue())
     {
         from.setStringValue("contact@snapwebsites.com");
@@ -761,6 +872,17 @@ void users::verify_email(const QString& email)
 
     // add the email subject and body using a page
     e.set_email_path("admin/users/mail/verify");
+
+    // verification makes use of a session identifier
+    sessions::sessions::session_info info;
+    info.set_session_type(sessions::sessions::session_info::SESSION_INFO_USER);
+    info.set_session_id(USERS_SESSION_ID_VERIFY_EMAIL);
+    info.set_plugin_owner("users"); // ourselves
+    //info.set_page_path(); -- default is okay
+    info.set_object_path("/user/" + email);
+    info.set_time_to_live(86400 * 3);  // 3 days
+    QString session(sessions::sessions::instance()->create_session(info));
+    e.add_parameter(get_name(SNAP_NAME_USERS_VERIFY_EMAIL), session);
 
     // send the email
     //

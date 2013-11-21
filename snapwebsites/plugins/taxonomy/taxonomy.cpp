@@ -247,10 +247,10 @@ bool taxonomy::on_path_execute(const QString& path)
 }
 
 
-void taxonomy::on_generate_main_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body)
+void taxonomy::on_generate_main_content(layout::layout *l, const QString& cpath, QDomElement& page, QDomElement& body)
 {
 	// a type is just like a regular page
-	content::content::instance()->on_generate_main_content(l, path, page, body);
+	content::content::instance()->on_generate_main_content(l, cpath, page, body);
 }
 
 

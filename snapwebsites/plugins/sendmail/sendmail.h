@@ -20,6 +20,7 @@
 #include "snapwebsites.h"
 #include "plugins.h"
 #include "snap_child.h"
+#include "../layout/layout.h"
 #include <libtld/tld.h>
 #include <QtSerialization/QSerializationReader.h>
 #include <controlled_vars/controlled_vars_need_init.h>
@@ -86,7 +87,7 @@ enum name_t
 const char *get_name(name_t name);
 
 
-class sendmail : public plugins::plugin, public snap::server::backend_action
+class sendmail : public plugins::plugin, public snap::server::backend_action, public layout::layout_content
 {
 public:
     class email : public QtSerialization::QSerializationObject
@@ -150,6 +151,9 @@ public:
         void add_attachment(const email_attachment& data);
         int get_attachment_count() const;
         email_attachment& get_attachment(int index) const;
+        void add_parameter(const QString& name, const QString& value);
+        QString get_parameter(const QString& name) const;
+        const header_map_t& get_all_parameters() const;
 
         // internal functions used to save the data serialized
         void unserialize(const QString& data);
@@ -164,6 +168,7 @@ public:
         controlled_vars::mint64_t   f_time;
         header_map_t                f_header;
         attachment_vector_t         f_attachment;
+        header_map_t                f_parameter;
     };
 
     sendmail();
@@ -177,6 +182,8 @@ public:
     void                on_bootstrap(snap_child *snap);
     void                on_register_backend_action(snap::server::backend_action_map_t& actions);
     virtual void        on_backend_action(const QString& action);
+	virtual void		on_generate_main_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body);
+	//void				on_generate_page_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body);
 
     void                post_email(const email& e);
 
@@ -192,6 +199,7 @@ private:
     void sendemail(const QString& key, const QString& unique_key);
 
     zpsnap_child_t      f_snap;
+    email               f_email; // email being processed
 };
 
 } // namespace sendmail
