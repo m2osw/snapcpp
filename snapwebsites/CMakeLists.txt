@@ -69,19 +69,21 @@ if( NOT CMAKE_MODULE_PATH )
     set( CMAKE_MODULE_PATH ${CMAKE_DIRECTORY_PATH}/snapCMakeModules )
     message( "Found snapCMakeModules in ${CMAKE_MODULE_PATH}" )
 endif()
-find_package( ControlledVars   )
-find_package( LibTLD           )
-find_package( QtCassandra      )
-find_package( QtSerialization  )
-find_package( SnapCMakeModules )
-find_package( SnapDoxygen      )
-find_package( Thrift           )
+find_package( AdvGetOpt        REQUIRED )
+find_package( ControlledVars   REQUIRED )
+find_package( LibTLD           REQUIRED )
+find_package( QtCassandra      REQUIRED )
+find_package( QtSerialization  REQUIRED )
+find_package( SnapCMakeModules REQUIRED )
+find_package( SnapDoxygen      REQUIRED )
+find_package( Thrift           REQUIRED )
 
 include_directories( 
     ${PROJECT_SOURCE_DIR}
     ${PROJECT_SOURCE_DIR}/lib
     ${PROJECT_BINARY_DIR}
     ${PROJECT_BINARY_DIR}/lib
+    ${ADVGETOPT_INCLUDE_DIRS}
     ${QTCASSANDRA_INCLUDE_DIRS}
     ${QTSERIALIZATION_INCLUDE_DIRS}
     ${CMAKE_BINARY_DIR}
@@ -142,4 +144,4 @@ set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "http://snapwebsites.org/project/snap-websites
 #set(CPACK_DEBIAN_PACKAGE_DEV_DEPENDENCIES "cmake libqt4-dev")
 include(CPack)
 
-# vim: ts=4 sw=4 et
+# vim: ts=4 sw=4 et nocindent

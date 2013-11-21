@@ -38,7 +38,7 @@ int main(int argc, char *argv[])
     {
         // I'm the child, sleep a bit and then create a client
         sleep(3);
-        snap::server *s(snap::server::instance());
+        snap::server::pointer_t s( snap::server::instance() );
         s->config(argc, argv);
         snap::snap_child *c(new snap::snap_child(s));
         c->udp_ping("sendmail_udp_signal"); // "PING" is the default
@@ -49,7 +49,7 @@ int main(int argc, char *argv[])
     }
     else
     {
-        snap::server *s(snap::server::instance());
+        snap::server::pointer_t s( snap::server::instance() );
         s->config(argc, argv);
         snap::snap_child *c(new snap::snap_child(s));
         QSharedPointer<udp_client_server::udp_server> u(c->udp_get_server("sendmail_udp_signal"));

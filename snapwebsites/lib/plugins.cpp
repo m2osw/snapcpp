@@ -67,9 +67,10 @@ QStringList list_all(const QString& plugin_path)
  *
  * \return true if all the modules were loaded.
  */
-bool load(const QString& plugin_path, plugin *server, const QStringList& list_of_plugins)
+bool load(const QString& plugin_path, plugin_ptr_t server, const QStringList& list_of_plugins)
 {
-	g_plugins.insert("server", server);
+#pragma message "This defeats the purpose of a shared_ptr, but this is because all plugins are treated as barepointers. This needs to be fixed in another iteration..."
+	g_plugins.insert("server", server.get());
 
 	QString path(plugin_path);
 	//if(glob(path.toUtf8().data(), GLOB_ERR | GLOB_NOSORT, NULL, &g) != 0) {

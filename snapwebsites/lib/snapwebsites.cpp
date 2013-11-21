@@ -21,21 +21,97 @@
 #include "log.h"
 #include "not_reached.h"
 #include "tcp_client_server.h"
+
 #include <iostream>
+#include <memory>
+#include <sstream>
+
 #include <QStringList>
 #include <QFile>
 #include <QDirIterator>
 #include <QHostAddress>
 #include <QCoreApplication>
+
 #include <syslog.h>
 #include <errno.h>
 #include <signal.h>
+
 #include "poison.h"
+
+
+namespace
+{
+    const std::vector<std::string> g_configuration_files;
+
+    const advgetopt::getopt::option g_snapserver_options[] =
+    {
+        {
+            '\0',
+            advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
+            NULL,
+            NULL,
+            "Usage: snapserver [-<opt>]",
+            advgetopt::getopt::help_argument
+        },
+        // OPTIONS
+        {
+            '\0',
+            0,
+            NULL,
+            NULL,
+            "options:",
+            advgetopt::getopt::help_argument
+        },
+        {
+            'a',
+            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE,
+            "action",
+            NULL,
+            "Specify a server action.",
+            advgetopt::getopt::optional_argument
+        },
+        {
+            'c',
+            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE,
+            "config",
+            "/etc/snapwebsites/snapserver.conf",
+            "Specify the configuration file to load at startup.",
+            advgetopt::getopt::optional_argument
+        },
+        {
+            'd',
+            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE,
+            "debug",
+            NULL,
+            "Keeps the server in the foreground (default is to detact and background), and display the log to the stdout.",
+            advgetopt::getopt::optional_argument
+        },
+        {
+            'h',
+            0x00,
+            "help",
+            NULL,
+            "Show usage and exit.",
+            advgetopt::getopt::optional_argument
+        },
+        {
+            '\0',
+            0,
+            NULL,
+            NULL,
+            NULL,
+            advgetopt::getopt::end_of_options
+        }
+    };
+}
+//namespace
+
 
 namespace snap
 {
 
-QCoreApplication *g_application;
+std::shared_ptr<QCoreApplication> g_application;
+
 
 /** \brief Get a fixed name.
  *
@@ -112,9 +188,9 @@ const char *get_name(name_t name)
 
 /** \brief Server instance.
  *
- * The g_instance variable holds the current server instance.
+ * The f_instance variable holds the current server instance.
  */
-server *server::g_instance = NULL;
+std::shared_ptr<server> server::f_instance;
 
 /** \brief Return the server version.
  *
@@ -191,12 +267,13 @@ int server::version_patch()
  *
  * \return A pointer to the server.
  */
-server *server::instance()
+server::pointer_t server::instance()
 {
-    if(g_instance == NULL) {
-        g_instance = new server;
+    if( !f_instance )
+    {
+        f_instance.reset( new server );
     }
-    return g_instance;
+    return f_instance;
 }
 
 /** \brief Return the description of this plugin.
@@ -236,7 +313,6 @@ int64_t server::do_update(int64_t /*last_updated*/)
  * This function initializes the server.
  */
 server::server()
-    : f_argv(0)
 {
     // default parameters -- we may want to have a separate function and
     //                       maybe some clear separate variables?
@@ -245,6 +321,7 @@ server::server()
     f_parameters["qs_path"] = "q";
     f_parameters["server_name"] = "";
 }
+
 
 /** \brief Clean up the server.
  *
@@ -256,6 +333,7 @@ server::~server()
 {
 }
 
+
 /** \brief Print out usage information to start the server.
  *
  * This function prints out a usage message that describes the arguments
@@ -265,22 +343,19 @@ server::~server()
  */
 void server::usage()
 {
-    const char *server_name;
-    if(f_argv == NULL) {
-        server_name = "snapserver";
-    }
-    else {
-        server_name = f_argv[0];
+    std::string server_name( "snapserver" );
+    if( !f_servername.empty() )
+    {
+        server_name = f_servername;
     }
 
-    fprintf(stderr, "Usage: %s -<arg> ...\n"
-                    "Where -<arg> is one or more of the following:\n"
-                    "  -c|--config <config>   define the name of the configuration file (default \"/etc/snapwebsites/snapserver.conf\")\n"
-                    "  -d|--debug             run in debug mode, and do not start in the background\n"
-                    "  -h|--help              display this help\n"
-                    "when run as the backend, you can specify the URI of the site to process.\n"
-                    , server_name);
-
+    std::cerr << "Usage: " << server_name << " -<arg> ..." << std::endl
+              << "Where -<arg> is one or more of the following:" << std::endl
+              << "  -c|--config <config>   define the name of the configuration file (default \"/etc/snapwebsites/snapserver.conf\")" << std::endl
+              << "  -d|--debug             run in debug mode, and do not start in the background" << std::endl
+              << "  -h|--help              display this help" << std::endl
+              << "when run as the backend, you can specify the URI of the site to process." << std::endl
+              ;
     exit(1);
 }
 
@@ -335,20 +410,50 @@ void server::setup_as_backend()
  */
 void server::config(int argc, char *argv[])
 {
-    if(g_application == NULL)
+    if(!g_application)
     {
-        g_application = new QCoreApplication(argc, argv);
+        g_application.reset( new QCoreApplication(argc, argv) );
     }
 
-    // save the command line arguments
-    f_argc = argc;
-    f_argv = const_cast<const char **>(argv);
+    f_opt.reset(
+        new advgetopt::getopt( argc, argv, g_snapserver_options, g_configuration_files, "SNAPSERVER_OPTIONS" )
+        );
+
+    // We want the servername for later.
+    //
+    f_servername = argv[0];
 
     // initialize the syslog() interface
     openlog("snapserver", LOG_NDELAY | LOG_PID, LOG_DAEMON);
 
+    if( f_opt->is_defined( "action" ) )
+    {
+        const std::string action( f_opt->get_string("action" ) );
+        if( f_backend )
+        {
+            if(f_parameters.find("__BACKEND_ACTION") == f_parameters.end())
+            {
+                f_parameters["__BACKEND_ACTION"] = action.c_str();
+            }
+            else
+            {
+                syslog( LOG_CRIT, "unexpected parameter \"--action %s\", at most one action can be specified, backend not started. (in server::config())", action.c_str() );
+            }
+        }
+        else
+        {
+            // If not backend, "--action" doesn't make sense.
+            //
+            syslog( LOG_CRIT, "unexpected command line option \"--action %s\", server not started. (in server::config())", action.c_str() );
+        }
+    }
+    //
+    f_config = f_opt->get_string( "config" ).c_str();
+    //
+    f_debug = f_opt->is_defined( "debug" );
+
+#if 0
     // parse the command line arguments
-    controlled_vars::zbool_t help;
     for(int i(1); i < argc; ++i)
     {
         if(argv[i][0] == '-')
@@ -443,10 +548,11 @@ void server::config(int argc, char *argv[])
             }
         }
     }
-    if(help)
+#endif
+    if( f_opt->is_defined( "help" ) )
     {
         // if the user asked to not detach, then print the usage
-        if(f_debug)
+        if( f_debug )
         {
             usage();
         }
@@ -455,6 +561,7 @@ void server::config(int argc, char *argv[])
 
     // read the configuration file now
     QFile c;
+#if 0
     if(f_config.length() == 0)
     {
         // empty string means the user did not specify a configuration file
@@ -468,20 +575,21 @@ void server::config(int argc, char *argv[])
     }
     else
     {
+#endif
         c.setFileName(f_config);
         c.open(QIODevice::ReadOnly);
         if(!c.isOpen())
         {
+            std::stringstream ss;
+            ss << "cannot read configuration file \"" << f_config.toUtf8().data() << "\"" << std::endl;
             if(f_debug)
             {
-                fprintf(stderr, "cannot read configuration file \"%s\".\n",
-                                                    f_config.toUtf8().data());
+                std::cerr << ss.str() << "." << std::endl;
             }
-            syslog(LOG_CRIT, "cannot read configuration file \"%s\", server not started. (in server::config())",
-                                                    f_config.toUtf8().data());
+            syslog( LOG_CRIT, "%s, server not started. (in server::config())", ss.str().c_str() );
             exit(1);
         }
-    }
+    //}
     if(c.isOpen()) // if no configuration exists, isOpen() returns false
     {
         char buf[256];
@@ -492,13 +600,13 @@ void server::config(int argc, char *argv[])
             int len = strlen(buf);
             if(len == 0 || (buf[len - 1] != '\n' && buf[len - 1] != '\r'))
             {
+                std::stringstream ss;
+                ss << "line " << line << " in \"" << f_config.toUtf8().data() << "\" is too long" << std::endl;
                 if(f_debug)
                 {
-                    fprintf(stderr, "line %d in \"%s\" is too long.\n",
-                                        line, f_config.toUtf8().data());
+                    std::cerr << ss.str() << "." << std::endl;
                 }
-                syslog(LOG_CRIT, "line %d in \"%s\" is too long, server not started. (in server::config())",
-                                        line, f_config.toUtf8().data());
+                syslog( LOG_CRIT, "%s, server not started. (in server::config())", ss.str().c_str() );
                 exit(1);
             }
             buf[len - 1] = '\0';
@@ -530,13 +638,13 @@ void server::config(int argc, char *argv[])
             }
             if(*v != '=')
             {
+                std::stringstream ss;
+                ss << "invalid variable on line " << line << " in \"" << f_config.toUtf8().data() << "\", no equal sign found" << std::endl;
                 if(f_debug)
                 {
-                    fprintf(stderr, "invalid variable on line %d in \"%s\", no equal sign found..\n",
-                                                line, f_config.toUtf8().data());
+                    std::cerr << ss.str() << "." << std::endl;
                 }
-                syslog(LOG_CRIT, "invalid variable on line %d in \"%s\", no equal sign found, server not started. (in server::config())\n",
-                                                line, f_config.toUtf8().data());
+                syslog( LOG_CRIT, "%s, server not started. (in server::config())", ss.str().c_str() );
                 exit(1);
             }
             char *e;
@@ -565,11 +673,13 @@ void server::config(int argc, char *argv[])
         char host[HOST_NAME_MAX + 1];
         if(gethostname(host, sizeof(host)) != 0)
         {
+            std::stringstream ss;
+            ss << "hostname is not available as the server name";
             if(f_debug)
             {
-                fprintf(stderr, "hostname is not available as the server name.\n");
+                std::cerr << ss.str() << "." << std::endl;
             }
-            syslog(LOG_CRIT, "hostname is not available as the server name, server not started. (in server::config())\n");
+            syslog( LOG_CRIT, "%s, server not started. (in server::config())", ss.str().c_str() );
             exit(1);
         }
         f_parameters["server_name"] = host;
@@ -908,7 +1018,7 @@ void server::listen()
  */
 void server::process_connection(int socket)
 {
-    snap_child *child;
+    snap_child* child;
 
     // we're handling one more connection, whether it works or
     // not we increase our internal counter
@@ -916,7 +1026,7 @@ void server::process_connection(int socket)
 
     if(f_children_waiting.empty())
     {
-        child = new snap_child(this);
+        child = new snap_child(f_instance);
     }
     else
     {
@@ -959,7 +1069,7 @@ void server::process_connection(int socket)
  */
 void server::backend()
 {
-    snap_child child(this);
+    snap_child child(f_instance);
     child.backend();
 }
 

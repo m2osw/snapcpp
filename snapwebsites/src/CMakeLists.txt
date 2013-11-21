@@ -79,12 +79,6 @@ install(
 ##
 project(snapbackend)
 
-include_directories(
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${QT_INCLUDES}
-)
-
-
 add_executable(${PROJECT_NAME}
     snapbackend.cpp
 )
@@ -111,9 +105,8 @@ install(
 project(snapcgi)
 
 include_directories(
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${QT_INCLUDES}
-)
+    ${libsnapwebsites_SOURCE_DIR}
+    )
 
 add_executable(${PROJECT_NAME}
     snap.cpp
@@ -123,6 +116,7 @@ add_executable(${PROJECT_NAME}
 set_property( TARGET ${PROJECT_NAME} PROPERTY OUTPUT_NAME snap.cgi )
 
 target_link_libraries(${PROJECT_NAME}
+    ${ADVGETOPT_LIBRARIES}
     ${QT_LIBRARIES}
 )
 
@@ -135,12 +129,6 @@ install(
 ## Snap DB process
 ##
 project(snapdb)
-
-include_directories(
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${QT_INCLUDES}
-)
-
 
 add_executable(${PROJECT_NAME}
     snapdb.cpp
@@ -163,12 +151,6 @@ install(
 ## Snap send signals
 ##
 project(snapsignal)
-
-include_directories(
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${QT_INCLUDES}
-)
-
 
 add_executable(${PROJECT_NAME}
     snapsignal.cpp
@@ -193,12 +175,6 @@ install(
 ## Snap layout process
 ##
 project(snaplayout)
-
-include_directories(
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${QT_INCLUDES}
-)
-
 
 add_executable(${PROJECT_NAME}
     snaplayout.cpp

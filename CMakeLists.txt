@@ -39,6 +39,10 @@ cmake_minimum_required(VERSION 2.8)
 
 project( snapwebsites_main )
 
+
+################################################################################
+# TODO: doesn't work...
+#
 #include( ProcessorCount )
 #ProcessorCount( NUM_PROCS )
 #
@@ -46,10 +50,18 @@ project( snapwebsites_main )
 #set( ENV{MAKEFLAGS} -j${NUM_JOBS} )    # Doesn't work. Nice idea, but no dice
 #message( "ENV{MAKEFLAGS}=$ENV{MAKEFLAGS}" )
 
+
+################################################################################
+# Load up necessary modules
+#
 set( CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/snapCMakeModules )
 find_package( SnapCMakeModules REQUIRED )
 find_package( SnapBuild        REQUIRED )
 
+
+################################################################################
+# Third party libraries
+#
 ConfigureMakeProject(
     USE_CONFIGURE_SCRIPT
     PROJECT_NAME  thrift
@@ -68,9 +80,15 @@ ConfigureMakeProject(
         --without-go
 )
 
+
+################################################################################
+# Snap libraries
+#
+ConfigureMakeProject( PROJECT_NAME advgetopt       DEPENDS controlled_vars )
 ConfigureMakeProject( PROJECT_NAME cassview        DEPENDS libQtCassandra )
 ConfigureMakeProject( PROJECT_NAME controlled_vars )
-ConfigureMakeProject( PROJECT_NAME libtld          )
+ConfigureMakeProject( PROJECT_NAME iplock          )
+ConfigureMakeProject( PROJECT_NAME googlerank      DEPENDS controlled_vars )
 ConfigureMakeProject( PROJECT_NAME libQtCassandra
         CONFIG_ARGS
             -DTHRIFT_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
@@ -81,6 +99,7 @@ ConfigureMakeProject( PROJECT_NAME libQtSerialization
             -DTHRIFT_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
         DEPENDS thrift
         )
+ConfigureMakeProject( PROJECT_NAME libtld )
 ConfigureMakeProject( PROJECT_NAME snapwebsites
         CONFIG_ARGS
             -DTHRIFT_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
@@ -88,10 +107,6 @@ ConfigureMakeProject( PROJECT_NAME snapwebsites
             -DLIBTLD_LIBRARY:PATH=${CMAKE_BINARY_DIR}/dist/lib/libtld.so
         DEPENDS libQtCassandra libQtSerialization libtld
         )
-ConfigureMakeProject( PROJECT_NAME googlerank
-        DEPENDS controlled_vars
-        )
-ConfigureMakeProject( PROJECT_NAME iplock     )
 
 get_property( BUILD_TARGETS GLOBAL PROPERTY BUILD_TARGETS )
 get_property( CLEAN_TARGETS GLOBAL PROPERTY CLEAN_TARGETS )
