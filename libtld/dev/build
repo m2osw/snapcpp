@@ -24,3 +24,7 @@ VERBOSE=1 make package_source
 VERBOSE=1 make wpkg_package
 rm ../../snapCMakeModules
 
+echo
+echo "*** BUILT VERSION `src/validate_tld --version` ***"
+echo
+
