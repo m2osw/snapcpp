@@ -6,7 +6,6 @@ libtld (1.4.3) unstable; urgency=medium
 
 libtld (1.4.2) unstable; urgency=medium
 
-  * Added new TLDs such as .com.cw
   * Fixed the license notices in all the source files. It was supposed to be
     MIT everywhere.
   * Officially moved the ChangeLog to debian/changelog.
@@ -17,6 +16,7 @@ libtld (1.4.2) unstable; urgency=medium
 
 libtld (1.4.1) unstable; urgency=medium
 
+  * Added new TLDs such as .com.cw
   * Added a function determining the type of an email field that holds emails.
   * Fixed the quotation of canonicalized emails.
 
