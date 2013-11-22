@@ -1,0 +1,11 @@
+Document: snapwebsites
+Title: Debian snapwebsites Manual
+Author: Alexis Wilke
+Abstract: This manual describes what snapwebsites is
+ and how it can be used to
+ manage online manuals on Debian systems.
+Section: web
+
+Format: HTML
+Index: /usr/share/doc/snapwebsites/html/index.html
+Files: /usr/share/doc/snapwebsites/html/*
