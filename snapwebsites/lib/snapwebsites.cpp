@@ -110,8 +110,8 @@ namespace
 namespace snap
 {
 
-#pragma message "Why do we even have this? Adding a smart pointer causes a crash when the server detaches, so commented out."
-//std::shared_ptr<QCoreApplication> g_application;
+//#pragma message "Why do we even have this? Adding a smart pointer causes a crash when the server detaches, so commented out."
+std::shared_ptr<QCoreApplication> g_application;
 
 
 /** \brief Get a fixed name.
@@ -408,14 +408,6 @@ void server::setup_as_backend()
  */
 void server::config(int argc, char *argv[])
 {
-#if 0
-    if(!g_application)
-    {
-        g_application.reset( new QCoreApplication(argc, argv) );
-    }
-#endif
-
-
     f_opt.reset(
         new advgetopt::getopt( argc, argv, g_snapserver_options, g_configuration_files, "SNAPSERVER_OPTIONS" )
         );
@@ -732,6 +724,23 @@ QString server::get_parameter(const QString& param_name)
 {
     return f_parameters[param_name];
 }
+
+
+/** \brief Set up the Qt4 application instance.
+ *
+ * This function creates the Qt4 application instance for application-wide use.
+ *
+ * \note This is code moved from config() above, since initializing and trying to delete
+ * on detach caused a crash.
+ */
+void server::prepare_qtapp( int argc, char *argv[] )
+{
+    if(!g_application)
+    {
+        g_application.reset( new QCoreApplication(argc, argv) );
+    }
+}
+
 
 /** \brief Prepare the Cassandra database.
  *
