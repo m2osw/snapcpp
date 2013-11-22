@@ -15,10 +15,10 @@
 
 # PATH should only include /usr/* if it runs after the mountnfs.sh script
 PATH=/sbin:/usr/sbin:/bin:/usr/bin
-DESC=snapwebsites             # Introduce a short description here
-NAME=snapwebsites             # Introduce the short server's name here
-DAEMON=/usr/sbin/snapwebsites # Introduce the server's location here
-DAEMON_ARGS=""             # Arguments to run the daemon with
+DESC=snapwebsites             	# Introduce a short description here
+NAME=snapwebsites             	# Introduce the short server's name here
+DAEMON=/usr/bin/snapwebsites	# Introduce the server's location here
+DAEMON_ARGS=""    				# Arguments to run the daemon with.
 PIDFILE=/var/run/$NAME.pid
 SCRIPTNAME=/etc/init.d/$NAME
 
@@ -27,6 +27,8 @@ SCRIPTNAME=/etc/init.d/$NAME
 
 # Read configuration variable file if it is present
 [ -r /etc/default/$NAME ] && . /etc/default/$NAME
+
+DAEMON_ARGS="${DAEMON_ARGS} ${DAEMON_OPTS}"    # DAEMON_OPTS comes from /etc/default/snapwebsites
 
 # Load the VERBOSE setting and other rcS variables
 . /lib/init/vars.sh
@@ -152,3 +154,5 @@ case "$1" in
 esac
 
 :
+
+# vim: ts=4 sw=4 noexpandtab syntax=sh

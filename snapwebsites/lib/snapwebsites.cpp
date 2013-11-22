@@ -110,7 +110,8 @@ namespace
 namespace snap
 {
 
-std::shared_ptr<QCoreApplication> g_application;
+#pragma message "Why do we even have this? Adding a smart pointer causes a crash when the server detaches, so commented out."
+//std::shared_ptr<QCoreApplication> g_application;
 
 
 /** \brief Get a fixed name.
@@ -407,10 +408,13 @@ void server::setup_as_backend()
  */
 void server::config(int argc, char *argv[])
 {
+#if 0
     if(!g_application)
     {
         g_application.reset( new QCoreApplication(argc, argv) );
     }
+#endif
+
 
     f_opt.reset(
         new advgetopt::getopt( argc, argv, g_snapserver_options, g_configuration_files, "SNAPSERVER_OPTIONS" )
