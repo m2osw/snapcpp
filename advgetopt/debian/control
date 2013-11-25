@@ -1,0 +1,33 @@
+Source: advgetopt
+Priority: extra
+Maintainer: R. Douglas Barbieri <doug@dooglio.net>
+Build-Depends: debhelper (>= 8.0.0), cmake
+Standards-Version: 3.9.3
+Section: libs
+Homepage: http://snapwebsites.org/
+Vcs-Git: git://git.code.sf.net/p/snapcpp/code
+Vcs-Browser: http://sourceforge.net/p/snapcpp/code/ci/master/tree/advgetopt/
+
+Package: advgetopt-dev
+Section: libdevel
+Architecture: any
+Depends: advgetopt (= ${binary:Version})
+Description: Parse command line arguments, environment vars and configs.
+ Provides the advgetopt::getopt class, which parses command line options (from
+ argc/argv). It is very advanced and is capable to read many different
+ types of options with a letter (-h) and a word (–verbose) with no parameters,
+ one parameter, any number of parameters, and a set of "filenames." Also,
+ entries can be read from the command line, the environment and/or a config
+ file.
+
+Package: advgetopt
+Section: libs
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Parse command line arguments, environment vars and configs.
+ Provides the advgetopt::getopt class, which parses command line options (from
+ argc/argv). It is very advanced and is capable to read many different
+ types of options with a letter (-h) and a word (–verbose) with no parameters,
+ one parameter, any number of parameters, and a set of "filenames." Also,
+ entries can be read from the command line, the environment and/or a config
+ file.
