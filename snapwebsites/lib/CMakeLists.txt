@@ -93,8 +93,8 @@ install(
     TARGETS libsnapwebsites LIBRARY DESTINATION lib
 )
 install(
-    DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-    DESTINATION include
+    DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/
+    DESTINATION include/snapwebsites
     FILES_MATCHING PATTERN "*.h"
     PATTERN .svn EXCLUDE
 )
