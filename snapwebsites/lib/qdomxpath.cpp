@@ -23,6 +23,14 @@
 #include <QMap>
 #pragma GCC diagnostic pop
 
+
+
+const char *                    QDomXPath::MAGIC = "XPTH";
+const QDomXPath::instruction_t  QDomXPath::VERSION_MAJOR;
+const QDomXPath::instruction_t  QDomXPath::VERSION_MINOR;
+
+
+
 /** \brief Verification mode.
  *
  * If the QDOM_XPATH_VERIFICATION macro is set to zero (0) then no
@@ -588,6 +596,42 @@ typedef QVector<int> jump_to_label_vector_t;
 typedef QMap<QString, jump_to_label_vector_t> future_labels_t;
 
 
+/** \brief Current context while running.
+ *
+ * While running the program, the context defines the current status of
+ * the process. It includes the current set of nodes, the context node
+ * (i.e. f_nodes[f_position]) and the set of nodes in the result being
+ * computed right now.
+ *
+ * By default the position is set to -1 which means "not set"
+ * and it cannot be used (if accessed [as in INST_GET_POSITION],
+ * you get an error.)
+ */
+struct context_t
+{
+    context_t()
+        : f_position(static_cast<uint32_t>(-1))
+        //, f_nodes() -- auto-init
+        //, f_result() -- auto-init
+    {
+    }
+
+    uint32_t                    f_position;
+    QDomXPath::node_vector_t    f_nodes;
+    QDomXPath::node_vector_t    f_result;
+};
+
+
+/** \brief An array of contexts.
+ *
+ * Whenever a new context is created (i.e. when a new entry in a list of
+ * entries starts execution) then it is added at the back of this array.
+ *
+ * The program as a whole has one stack of states.
+ */
+typedef QVector<context_t> context_vector_t;
+
+
 /** \brief A sub-class of the variant_t definition.
  *
  * The atomic values are defined in a separate class so that way we can
@@ -607,6 +651,8 @@ public:
      */
     enum type_t
     {
+        ATOMIC_TYPE_UNDEFINED,
+
         ATOMIC_TYPE_NULL,
         ATOMIC_TYPE_END_OF_ARGUMENTS,
         ATOMIC_TYPE_BOOLEAN,
@@ -615,9 +661,11 @@ public:
         ATOMIC_TYPE_SINGLE,
         ATOMIC_TYPE_DOUBLE,
         ATOMIC_TYPE_STRING,
+
         // we include the non-atomic types too
         ATOMIC_TYPE_SET,
-        ATOMIC_TYPE_NODE_SET
+        ATOMIC_TYPE_NODE_SET,
+        ATOMIC_TYPE_CONTEXT
     };
 
     /** \brief Initialize the atomic value.
@@ -1034,8 +1082,9 @@ public:
     void setValue(const char *str)
     {
         f_type = ATOMIC_TYPE_STRING;
-        f_string = str;
+        f_string = QString::fromUtf8(str);
     }
+
 
     /** \brief Set the value to the specified string.
      *
@@ -1052,6 +1101,7 @@ public:
         f_string = QString::fromWCharArray(str);
     }
 
+
     /** \brief Set the value to the specified string.
      *
      * This function sets the atomic value to the specified string
@@ -1064,8 +1114,9 @@ public:
     void setValue(const std::string& str)
     {
         f_type = ATOMIC_TYPE_STRING;
-        f_string = str.c_str();
+        f_string = QString::fromUtf8(str.c_str());
     }
+
 
 protected:
     type_t                      f_type;
@@ -1127,7 +1178,7 @@ public:
 
             case ATOMIC_TYPE_NODE_SET:
                 // TODO -- do proper implementation
-                return !f_set.isEmpty();
+                return !f_context.f_nodes.isEmpty();
 
             default:
                 break;
@@ -1163,7 +1214,7 @@ public:
 
             case ATOMIC_TYPE_NODE_SET:
                 // TODO -- do proper implementation
-                return static_cast<int64_t>(!f_node_set.isEmpty());
+                return static_cast<int64_t>(!f_context.f_nodes.isEmpty());
 
             default:
                 break;
@@ -1199,7 +1250,7 @@ public:
 
             case ATOMIC_TYPE_NODE_SET:
                 // TODO -- do proper implementation
-                return static_cast<float>(!f_node_set.isEmpty());
+                return static_cast<float>(!f_context.f_nodes.isEmpty());
 
             default:
                 break;
@@ -1235,7 +1286,7 @@ public:
 
             case ATOMIC_TYPE_NODE_SET:
                 // TODO -- do proper implementation
-                return static_cast<double>(!f_node_set.isEmpty());
+                return static_cast<double>(!f_context.f_nodes.isEmpty());
 
             default:
                 break;
@@ -1306,6 +1357,7 @@ public:
         f_set = set;
     }
 
+
     /** \brief Retrieve the node set value.
      *
      * This function retrieves the node set value from the variant.
@@ -1318,14 +1370,15 @@ public:
      *
      * \return The node set.
      */
-    QDomXPath::node_vector_t getNodeSetValue(bool cast = false) const
+    QDomXPath::node_vector_t& getNodeSetValue(bool cast = false) const
     {
-        if(f_type != ATOMIC_TYPE_SET)
+        if(f_type != ATOMIC_TYPE_NODE_SET)
         {
-            throw QDomXPathException_WrongType(QString("atomic type is %1, when a Set was requested").arg(static_cast<int>(f_type)).toStdString());
+            throw QDomXPathException_WrongType(QString("atomic type is %1, when a Node Set was requested").arg(static_cast<int>(f_type)).toStdString());
         }
-        return f_node_set;
+        return const_cast<QDomXPath::node_vector_t&>(f_context.f_nodes);
     }
+
 
     /** \brief Set the variant to a node set.
      *
@@ -1340,12 +1393,53 @@ public:
     void setValue(const QDomXPath::node_vector_t& node_set)
     {
         f_type = ATOMIC_TYPE_NODE_SET;
-        f_node_set = node_set;
+        f_context.f_nodes = node_set;
+    }
+
+
+    /** \brief Retrieve the context value.
+     *
+     * This function retrieves the context value from the variant.
+     *
+     * If the variant is not a context then an error is generated.
+     * Contexts should only be used in very specific places which do
+     * not call for casting. If an error occurs then there is an
+     * internal error.
+     *
+     * \param[in] cast  Ignored.
+     *
+     * \return The context.
+     */
+    context_t& getContextValue(bool cast = false) const
+    {
+        if(f_type != ATOMIC_TYPE_CONTEXT)
+        {
+            throw QDomXPathException_WrongType(QString("atomic type is %1, when a Context was requested").arg(static_cast<int>(f_type)).toStdString());
+        }
+        return const_cast<context_t&>(f_context);
+    }
+
+
+    /** \brief Set the variant to a context.
+     *
+     * This function sets the variant to the specified \p context.
+     *
+     * The input value is copied, although remember that in a DOM all
+     * the object we have access to are references and changing the
+     * DOM will affect the nodes wherever they are.
+     *
+     * \param[in] context  The context to save in this variant.
+     */
+    void setValue(const context_t& context)
+    {
+        f_type = ATOMIC_TYPE_CONTEXT;
+        f_context = context;
     }
 
 private:
     atomic_vector_t             f_set;      // set of atomic values
-    QDomXPath::node_vector_t    f_node_set; // set of nodes
+    //QDomXPath::node_vector_t    f_node_set; // set of nodes -- use the node vector in the context to save space
+    context_t                   f_context;  // the current context
 };
 
 /** \brief An array of variants.
@@ -1392,38 +1486,6 @@ struct function_t
  */
 typedef QVector<function_t> function_vector_t;
 
-/** \brief Current state while running.
- *
- * While running the program, the state defines the current status of
- * the process. It includes the current set of nodes, the context node
- * (i.e. f_nodes[f_position]) and the set of nodes in the result.
- *
- * By default the position is set to -1 which means it is not set
- * and it cannot be used (if accessed [as in INST_GET_POSITION],
- * you get an error.)
- */
-struct state_t
-{
-    state_t()
-        : f_position(static_cast<uint32_t>(-1))
-        //, f_nodes() -- auto-init
-        //, f_result() -- auto-init
-    {
-    }
-
-    uint32_t                    f_position;
-    QDomXPath::node_vector_t    f_nodes;
-    QDomXPath::node_vector_t    f_result;
-};
-
-/** \brief An array of states.
- *
- * Whenever a new state is created (i.e. when a new entry in a list of
- * entries starts execution) then it is added at the back of this array.
- *
- * The program as a whole has one stack of states.
- */
-typedef QVector<state_t> state_vector_t;
 
 /** \brief All the instructions are parameter less functions.
  *
@@ -1573,8 +1635,9 @@ static const QDomXPath::instruction_t      INST_SET_RESULT                 = 0x8
 static const QDomXPath::instruction_t      INST_GET_POSITION               = 0x86;
 static const QDomXPath::instruction_t      INST_SET_POSITION               = 0x87;
 static const QDomXPath::instruction_t      INST_NODE_SET_SIZE              = 0x88;
-static const QDomXPath::instruction_t      INST_APPEND_NODE_SETS           = 0x89;
+static const QDomXPath::instruction_t      INST_MERGE_SETS                 = 0x89;
 static const QDomXPath::instruction_t      INST_PREDICATE                  = 0x8A;
+static const QDomXPath::instruction_t      INST_CREATE_NODE_CONTEXT        = 0x8B;
 
 enum axis_t
 {
@@ -1615,6 +1678,12 @@ enum node_type_t
  * This function initializes the class. Once the constructor returns
  * the object parse() function can be called in order to get the
  * XPath transformed to tokens and ready to be applied against nodes.
+ *
+ * The function also initializes the program header as defined in the
+ * QDomXPath::getProgram().
+ *
+ * \param[in] owner  The QDomXPath, the owner or parent of this QDomXPathImpl
+ * \param[in] xpath  The XPath to be compiled; may be "" when used only to execute a program
  */
 QDomXPathImpl(QDomXPath *owner, const QString& xpath)
     : f_owner(owner)
@@ -1630,6 +1699,25 @@ QDomXPathImpl(QDomXPath *owner, const QString& xpath)
     //, f_states() --auto-init
     //, f_labels() --auto-init
 {
+    f_program.push_back(QDomXPath::MAGIC[0]);
+    f_program.push_back(QDomXPath::MAGIC[1]);
+    f_program.push_back(QDomXPath::MAGIC[2]);
+    f_program.push_back(QDomXPath::MAGIC[3]);
+    f_program.push_back(VERSION_MAJOR);
+    f_program.push_back(VERSION_MINOR);
+    std::string str(xpath.toUtf8().data());
+    size_t size(str.length());
+    if(size > 65535)
+    {
+        size = 65535;
+    }
+    f_program.push_back(static_cast<instruction_t>(size >> 8));
+    f_program.push_back(static_cast<instruction_t>(size));
+    for(size_t i(0); i < size; ++i)
+    {
+        f_program.push_back(str[i]);
+    }
+    f_program_start_offset = f_program.size();
 }
 
 
@@ -1663,12 +1751,33 @@ int get_next_program_byte()
  * This function checks the stack, if empty, it throws an internal error
  * as this should never happend.
  */
-variant_t pop_variant_data()
+void stack_not_empty(atomic_value_t::type_t type = atomic_value_t::ATOMIC_TYPE_UNDEFINED)
 {
     if(f_functions.back().f_stack.empty())
     {
         throw QDomXPathException_InternalError("cannot pop anything from an empty stack");
     }
+    if(type != atomic_value_t::ATOMIC_TYPE_UNDEFINED
+    && f_functions.back().f_stack.back().getType() != type)
+    {
+        throw QDomXPathException_WrongType(QString("the current type at the top of the stack is not of the right type (expected %1, it is %2)")
+                                            .arg(static_cast<int>(type))
+                                            .arg(static_cast<int>(f_functions.back().f_stack.back().getType()))
+                                            .toStdString());
+    }
+}
+
+
+/** \brief Pop one entry from the stack.
+ *
+ * This function checks the stack, if empty, it throws an internal error
+ * as this should never happend.
+ *
+ * \return A variant with the data from the top of the stack.
+ */
+variant_t pop_variant_data()
+{
+    stack_not_empty();
 
     variant_t v(f_functions.back().f_stack.back());
     f_functions.back().f_stack.pop_back();
@@ -1688,7 +1797,9 @@ variant_t pop_variant_data()
 void inst_undefined_instruction()
 {
     QDomXPath::instruction_t inst(f_program[f_functions.back().f_pc - 1]);
-    throw QDomXPathException_UndefinedInstructionError(QString("instruction %1 is not defined").arg(static_cast<int>(inst)).toStdString());
+    throw QDomXPathException_UndefinedInstructionError(QString("instruction %1 is not defined (pc = %2)")
+            .arg(static_cast<int>(inst)).arg(f_functions.back().f_pc - 1)
+            .toStdString());
 }
 
 
@@ -3980,24 +4091,26 @@ void inst_node_set_size()
         throw QDomXPathException_InternalError("INST_NODE_SET_SIZE not at the right location in the table of instructions");
     }
 #endif
+    variant_t value(pop_variant_data());
+    QDomXPath::node_vector_t node_set(value.getNodeSetValue());
     variant_t result;
-    result.atomic_value_t::setValue(static_cast<int64_t>(f_states.back().f_nodes.size()));
+    result.atomic_value_t::setValue(static_cast<int64_t>(node_set.size()));
     f_functions.back().f_stack.push_back(result);
 }
 
 
-/** \brief Append two node-sets.
+/** \brief Append two node-sets or atomic sets together.
  *
- * This function pops two node-sets from the stack, append one to the other,
+ * This function pops two sets from the stack, append one to the other,
  * and pushes the result back on the stack.
  */
-void inst_append_node_sets()
+void inst_merge_sets()
 {
 #if QDOM_XPATH_VERIFICATION
     // verify instruction location
-    if(f_program[f_functions.back().f_pc - 1] != INST_APPEND_NODE_SETS)
+    if(f_program[f_functions.back().f_pc - 1] != INST_MERGE_SETS)
     {
-        throw QDomXPathException_InternalError("INST_APPEND_NODE_SETS not at the right location in the table of instructions");
+        throw QDomXPathException_InternalError("INST_MERGE_SETS not at the right location in the table of instructions");
     }
 #endif
     variant_t rhs(pop_variant_data());
@@ -4005,18 +4118,35 @@ void inst_append_node_sets()
     if(rhs.getType() != atomic_value_t::ATOMIC_TYPE_NODE_SET
     || lhs.getType() != atomic_value_t::ATOMIC_TYPE_NODE_SET)
     {
+        QDomXPath::node_vector_t l(lhs.getNodeSetValue());
+        QDomXPath::node_vector_t r(rhs.getNodeSetValue());
+        const int max(r.size());
+        for(int i(0); i < max; ++i)
+        {
+            l.push_back(r[i]);
+        }
+        variant_t result;
+        result.setValue(l);
+        f_functions.back().f_stack.push_back(result);
+    }
+    else if(rhs.getType() != atomic_value_t::ATOMIC_TYPE_SET
+         || lhs.getType() != atomic_value_t::ATOMIC_TYPE_SET)
+    {
+        atomic_vector_t l(lhs.getSetValue());
+        atomic_vector_t r(rhs.getSetValue());
+        const int max(r.size());
+        for(int i(0); i < max; ++i)
+        {
+            l.push_back(r[i]);
+        }
+        variant_t result;
+        result.setValue(l);
+        f_functions.back().f_stack.push_back(result);
+    }
+    else
+    {
         throw QDomXPathException_WrongType("the 'union' operator cannot be used with anything else than node sets at this point");
     }
-    QDomXPath::node_vector_t l(lhs.getNodeSetValue());
-    QDomXPath::node_vector_t r(rhs.getNodeSetValue());
-    const int max(r.size());
-    for(int i(0); i < max; ++i)
-    {
-        l.push_back(r[i]);
-    }
-    variant_t result;
-    result.setValue(l);
-    f_functions.back().f_stack.push_back(result);
 }
 
 
@@ -4034,8 +4164,10 @@ void inst_get_position()
         throw QDomXPathException_InternalError("INST_GET_POSITION not at the right location in the table of instructions");
     }
 #endif
+    stack_not_empty();
     variant_t result;
-    result.atomic_value_t::setValue(static_cast<int64_t>(f_states.back().f_position + 1));
+    int64_t position(static_cast<int64_t>(f_functions.back().f_stack.back().getContextValue().f_nodes.size()));
+    result.atomic_value_t::setValue(position + 1);
     f_functions.back().f_stack.push_back(result);
 }
 
@@ -4057,14 +4189,15 @@ void inst_set_position()
     variant_t position(pop_variant_data());
     if(position.getType() != atomic_value_t::ATOMIC_TYPE_INTEGER)
     {
-        throw QDomXPathException_WrongType("the 'set_position' operator cannot be used with anything else than an integer");
+        throw QDomXPathException_WrongType("the 'set_position' operator cannot be used with anything else than an integer as its first operand");
     }
+    stack_not_empty(atomic_value_t::ATOMIC_TYPE_CONTEXT);
     int p(position.getIntegerValue());
-    if(p < 0 || p >= f_states.back().f_nodes.size())
+    if(p < 1 || p > f_functions.back().f_stack.back().getContextValue().f_nodes.size())
     {
         throw QDomXPathException_OutOfRange("the position in the 'set_position' is out of range");
     }
-    f_states.back().f_position = p;
+    f_functions.back().f_stack.back().getContextValue().f_position = p - 1;
 }
 
 
@@ -4082,7 +4215,8 @@ void inst_get_node_set()
     }
 #endif
     variant_t result;
-    result.setValue(f_states.back().f_nodes);
+    stack_not_empty(atomic_value_t::ATOMIC_TYPE_CONTEXT);
+    result.setValue(f_functions.back().f_stack.back().getContextValue().f_nodes);
     f_functions.back().f_stack.push_back(result);
 }
 
@@ -4105,7 +4239,8 @@ void inst_set_node_set()
     {
         throw QDomXPathException_WrongType("the 'set_node_set' operator cannot be used with anything else than a node-set");
     }
-    f_states.back().f_result = node_set.getNodeSetValue();
+    stack_not_empty(atomic_value_t::ATOMIC_TYPE_CONTEXT);
+    f_functions.back().f_stack.back().setValue(node_set.getNodeSetValue());
 }
 
 
@@ -4122,8 +4257,9 @@ void inst_get_result()
         throw QDomXPathException_InternalError("INST_GET_RESULT not at the right location in the table of instructions");
     }
 #endif
+    stack_not_empty(atomic_value_t::ATOMIC_TYPE_CONTEXT);
     variant_t result;
-    result.setValue(f_states.back().f_result);
+    result.setValue(f_functions.back().f_stack.back().getContextValue().f_result);
     f_functions.back().f_stack.push_back(result);
 }
 
@@ -4146,7 +4282,7 @@ void inst_set_result()
     {
         throw QDomXPathException_WrongType("the 'set_result' operator cannot be used with anything else than a node-set");
     }
-    f_states.back().f_result = result.getNodeSetValue();
+    f_functions.back().f_stack.back().getContextValue().f_result = result.getNodeSetValue();
 }
 
 
@@ -4165,23 +4301,21 @@ void inst_root()
     }
 #endif
     // if empty then it stays that way
-    if(!f_states.back().f_nodes.isEmpty())
+    stack_not_empty(atomic_value_t::ATOMIC_TYPE_NODE_SET);
+    QDomXPath::node_vector_t& node_set(f_functions.back().f_stack.back().getNodeSetValue());
+    if(!node_set.isEmpty())
     {
-        QDomNode root(f_states.back().f_nodes[0].ownerDocument());
+        QDomNode root(node_set[0].ownerDocument());
         if(root.isElement())
         {
             // this happens when the node we start with is an attribute
             root = root.ownerDocument();
         }
-        f_states.back().f_nodes.clear();
-        if(root.isNull())
+        node_set.clear();
+        if(!root.isNull())
         {
-            // when null we do not have a position per say
-            f_states.back().f_position = static_cast<uint32_t>(-1);
-        }
-        else
-        {
-            f_states.back().f_nodes.push_back(root);
+            // ignore null nodes and keep our list empty of them
+            node_set.push_back(root);
         }
     }
 }
@@ -4214,7 +4348,8 @@ void inst_predicate()
     case atomic_value_t::ATOMIC_TYPE_INTEGER:
     case atomic_value_t::ATOMIC_TYPE_SINGLE:
     case atomic_value_t::ATOMIC_TYPE_DOUBLE:
-        result = static_cast<uint32_t>(predicate_result.getIntegerValue(true)) == f_states.back().f_position;
+        stack_not_empty(atomic_value_t::ATOMIC_TYPE_CONTEXT);
+        result = static_cast<uint32_t>(predicate_result.getIntegerValue(true)) == f_functions.back().f_stack.back().getContextValue().f_position;
         break;
 
     default:
@@ -4223,8 +4358,32 @@ void inst_predicate()
     }
     if(result)
     {
-        f_states.back().f_result.push_back(f_states.back().f_nodes[f_states.back().f_position]);
+        context_t& context(f_functions.back().f_stack.back().getContextValue());
+        context.f_result.push_back(context.f_nodes[context.f_position]);
+        //f_states.back().f_result.push_back(f_states.back().f_nodes[f_states.back().f_position]);
     }
+}
+
+
+void inst_create_node_context()
+{
+#if QDOM_XPATH_VERIFICATION
+    // verify instruction location
+    if(f_program[f_functions.back().f_pc - 1] != INST_CREATE_NODE_CONTEXT)
+    {
+        throw QDomXPathException_InternalError("INST_CREATE_NODE_CONTEXT not at the right location in the table of instructions");
+    }
+#endif
+    variant_t node_set(pop_variant_data());
+    if(node_set.getType() != atomic_value_t::ATOMIC_TYPE_NODE_SET)
+    {
+        throw QDomXPathException_WrongType("a node set is required to create a node context");
+    }
+    context_t context;
+    context.f_nodes = node_set.getNodeSetValue();
+    variant_t result;
+    result.setValue(context);
+    f_functions.back().f_stack.push_back(result);
 }
 
 
@@ -4260,6 +4419,14 @@ void inst_axis()
     variant_t local_part_or_node_type(pop_variant_data());
     QString local_part;
     node_type_t node_type(NODE_TYPE_ELEMENT);
+
+    // the last parameter is the context node which we cannot pop because
+    // it is required to run through all the nodes, we only make use of the
+    // context node which is the one we're interested in
+    stack_not_empty(atomic_value_t::ATOMIC_TYPE_CONTEXT);
+    context_t& context(f_functions.back().f_stack.back().getContextValue());
+    //variant_t context_variant(pop_variant_data());
+    //context_t& context(context_variant.getContextValue());
 
     if(local_part_or_node_type.getType() == atomic_value_t::ATOMIC_TYPE_INTEGER)
     {
@@ -4338,8 +4505,9 @@ void inst_axis()
 
     }
 
-    state_t state;
-    QDomNode context_node(f_states.back().f_nodes[f_states.back().f_position]);
+    QDomXPath::node_vector_t result;
+    //QDomNode context_node(f_states.back().f_nodes[f_states.back().f_position]);
+    QDomNode context_node(context.f_nodes[context.f_position]);
 
     // axis only applies on element nodes, right?
     if(context_node.isElement())
@@ -4359,7 +4527,7 @@ void inst_axis()
                 && (any_prefix || prefix == context_node.prefix()))
                 {
                     // push so nodes stay in document order
-                    state.f_nodes.push_front(context_node);
+                    result.push_front(context_node);
                 }
                 break;
 
@@ -4384,7 +4552,7 @@ void inst_axis()
                     && (any_prefix || prefix == node.prefix()))
                     {
                         // push so nodes stay in document order
-                        state.f_nodes.push_front(node);
+                        result.push_front(node);
                     }
                 }
                 break;
@@ -4406,7 +4574,7 @@ axis_attribute:
                     QDomNode attr(attributes.item(i));
                     if(any_prefix || prefix == attr.prefix())
                     {
-                        state.f_nodes.push_back(attr);
+                        result.push_back(attr);
                     }
                 }
             }
@@ -4417,7 +4585,7 @@ axis_attribute:
                 QDomNode attr(context_node.attributes().namedItem(local_part));
                 if(any_prefix || prefix == attr.prefix())
                 {
-                    state.f_nodes.push_back(attr);
+                    result.push_back(attr);
                 }
             }
             break;
@@ -4443,7 +4611,7 @@ axis_attribute:
                         && (any_prefix || prefix == node.prefix()))
                         {
                             // push so nodes stay in document order
-                            state.f_nodes.push_front(node);
+                            result.push_front(node);
                         }
                         node = node.parentNode();
                     }
@@ -4470,7 +4638,7 @@ axis_attribute:
                         // the prefix must also match
                         if(any_prefix || prefix == node.prefix())
                         {
-                            state.f_nodes.push_back(node);
+                            result.push_back(node);
                         }
                         node = node.nextSiblingElement(local_part);
                     }
@@ -4490,7 +4658,7 @@ axis_attribute:
                         if(dom_node_type == node.nodeType()
                         && (any_prefix || prefix == node.prefix()))
                         {
-                            state.f_nodes.push_back(node);
+                            result.push_back(node);
                         }
                         node = node.nextSiblingElement(local_part);
                     }
@@ -4513,12 +4681,12 @@ axis_attribute:
                                 QDomProcessingInstruction pi(node.toProcessingInstruction());
                                 if(pi.target() == processing_language)
                                 {
-                                    state.f_nodes.push_back(node);
+                                    result.push_back(node);
                                 }
                             }
                             else
                             {
-                                state.f_nodes.push_back(node);
+                                result.push_back(node);
                             }
                         }
                         node = node.nextSiblingElement(local_part);
@@ -4546,7 +4714,7 @@ axis_attribute:
                     && (local_part.isEmpty() || local_part == context_node.toElement().tagName())
                     && (any_prefix || prefix == context_node.prefix()))
                     {
-                        state.f_nodes.push_back(context_node);
+                        result.push_back(context_node);
                     }
                     while(!node.isNull())
                     {
@@ -4576,7 +4744,7 @@ axis_attribute:
                         && (any_prefix || prefix == node.prefix()))
                         {
                             // push so nodes stay in document order
-                            state.f_nodes.push_back(node);
+                            result.push_back(node);
                         }
                     }
 axis_descendant_done:;
@@ -4667,7 +4835,7 @@ axis_descendant_done:;
                         && (any_prefix || prefix == node.prefix()))
                         {
                             // push so nodes stay in document order
-                            state.f_nodes.push_back(node);
+                            result.push_back(node);
                         }
                         node = node.nextSibling();
                     }
@@ -4692,7 +4860,7 @@ axis_descendant_done:;
                             && (any_prefix || prefix == node.prefix()))
                             {
                                 // push so nodes stay in document order
-                                state.f_nodes.push_back(node);
+                                result.push_back(node);
                             }
                             next = node.firstChild();
                             if(next.isNull())
@@ -4738,7 +4906,7 @@ axis_descendant_done:;
                         && (any_prefix || prefix == node.prefix()))
                         {
                             // push so nodes stay in document order
-                            state.f_nodes.push_front(node);
+                            result.push_front(node);
                         }
                         node = node.previousSibling();
                     }
@@ -4763,7 +4931,7 @@ axis_descendant_done:;
                             && (any_prefix || prefix == node.prefix()))
                             {
                                 // push so nodes stay in document order
-                                state.f_nodes.push_front(node);
+                                result.push_front(node);
                             }
                             previous = node.lastChild();
                             if(previous.isNull())
@@ -4794,7 +4962,9 @@ axis_descendant_done:;
         }
     }
 
-    f_states.push_back(state);
+    variant_t node_set;
+    node_set.setValue(result);
+    f_functions.back().f_stack.push_back(node_set);
 }
 
 
@@ -5794,11 +5964,6 @@ void append_axis(const token_t& axis, const token_t& prefix, const token_t& loca
     }
 
     append_instruction(INST_AXIS);
-
-    append_instruction(INST_GET_NODE_SET);
-    append_instruction(INST_NODE_SET_SIZE);
-    append_push_for_jump();
-    append_instruction(INST_JUMP_IF_ZERO);
 }
 
 
@@ -6046,24 +6211,18 @@ void function_call()
 
 void predicate()
 {
+    append_instruction(INST_CREATE_NODE_CONTEXT);
+
+    // we just had an axis, now we have n predicates following
+    // only the problem is that each predicate has to be applied
+    // to each node as a context node of the current state
     do
     {
         // skip the '['
         get_token();
 
-        // we just had an axis, now we have n predicates following
-        // only the problem is that each predicate has to be applied
-        // to each node as a context node of the current state
-        append_push(1);
-        append_instruction(INST_SET_POSITION);
-
         // 'next_node' label
         int next_node(f_program.size());
-
-        QString save_end_label(f_end_label);
-        ++f_label_counter;
-        f_end_label = QString("e%1").arg(f_label_counter);
-printf("--- new label (%s) [predicate]\n", f_end_label.toUtf8().data());
 
         or_expr();
         if(f_last_token.f_token != token_t::TOK_CLOSE_SQUARE_BRACKET)
@@ -6071,12 +6230,7 @@ printf("--- new label (%s) [predicate]\n", f_end_label.toUtf8().data());
             throw QDomXPathException_SyntaxError("missing ']' to close a Predicate");
         }
 
-printf("--- insert predicate\n");
         append_instruction(INST_PREDICATE); // "apply" predicate
-        // 'exit' label
-printf("--- marking now (%s) [predicate]\n", f_end_label.toUtf8().data());
-        mark_with_label(f_end_label);
-        f_end_label = save_end_label;
         append_instruction(INST_GET_POSITION);
         append_instruction(INST_INCREMENT);
         append_instruction(INST_DUPLICATE1);
@@ -6093,6 +6247,9 @@ printf("--- marking now (%s) [predicate]\n", f_end_label.toUtf8().data());
         get_token();
     }
     while(f_last_token.f_token == token_t::TOK_OPEN_SQUARE_BRACKET);
+
+    append_instruction(INST_GET_NODE_SET);
+    append_instruction(INST_POP2); // get rid of the context
 }
 
 void location_path()
@@ -6263,16 +6420,41 @@ axis_name_attribute:
                 prefix_token.f_token = token_t::TOK_UNDEFINED;
             }
 
-            // axis_token (axis::)
-            // prefix_token (prefix:)
-            // save_token (path or '*' or NodeType)
-
 axis_apply:
-            append_axis(axis_token, prefix_token, save_token);
-
-            if(accept_predicate && f_last_token.f_token == token_t::TOK_OPEN_SQUARE_BRACKET)
             {
-                predicate();
+                // replace the current node-set into a node context
+                // that way we can properly loop through the list of nodes
+                append_instruction(INST_CREATE_NODE_CONTEXT);
+
+                // 'next_node' label
+                int next_node(f_program.size());
+
+                // axis_token (axis::)
+                // prefix_token (prefix:)
+                // save_token (path or '*' or NodeType)
+                append_axis(axis_token, prefix_token, save_token);
+
+                if(accept_predicate && f_last_token.f_token == token_t::TOK_OPEN_SQUARE_BRACKET)
+                {
+                    // process all predicates following this step
+                    predicate();
+
+                    append_instruction(INST_GET_RESULT);
+                    append_instruction(INST_SWAP1);
+                    append_instruction(INST_MERGE_SETS);
+                    append_instruction(INST_SET_RESULT);
+                }
+
+                append_instruction(INST_GET_POSITION);
+                append_instruction(INST_INCREMENT);
+                append_instruction(INST_DUPLICATE1);
+                append_instruction(INST_SET_POSITION);
+                append_instruction(INST_NODE_SET_SIZE);
+                append_instruction(INST_LESS_OR_EQUAL);
+                append_push(next_node);
+                append_instruction(INST_JUMP_IF_TRUE); // next_node
+                append_instruction(INST_GET_RESULT);
+                append_instruction(INST_POP2); // get rid of the node context
             }
             break;
 
@@ -6372,19 +6554,12 @@ void union_expr()
 
     if(f_last_token.f_token == token_t::TOK_PIPE)
     {
-        append_instruction(INST_GET_RESULT);
-        append_instruction(INST_APPEND_NODE_SETS);
-        append_instruction(INST_SET_RESULT);
-
         do
         {
             path_expr();
-            append_instruction(INST_GET_RESULT);
-            append_instruction(INST_APPEND_NODE_SETS);
-            append_instruction(INST_SET_RESULT);
+            append_instruction(INST_MERGE_SETS);
         }
         while(f_last_token.f_token == token_t::TOK_PIPE);
-        append_instruction(INST_GET_RESULT);
     }
 }
 
@@ -6397,38 +6572,40 @@ void parse(bool show_commands)
     {
         throw QDomXPathException_SyntaxError("calling parse() immediately generated an error");
     }
-    f_program.clear();
+    //f_program.clear();
     f_label_counter = 0;
 
-    QString save_end_label(f_end_label);
-    ++f_label_counter;
-    f_end_label = QString("e%1").arg(f_label_counter);
-printf("--- new label (%s) [union]\n", f_end_label.toUtf8().data());
-    path_expr();
-printf("--- marking now (%s) [union]\n", f_end_label.toUtf8().data());
-    mark_with_label(f_end_label);
+    union_expr();
 
-    if(f_last_token.f_token == token_t::TOK_PIPE)
-    {
-        append_instruction(INST_GET_RESULT);
-        append_instruction(INST_APPEND_NODE_SETS);
-        append_instruction(INST_SET_RESULT);
-
-        do
-        {
-            ++f_label_counter;
-            f_end_label = QString("e%1").arg(f_label_counter);
-            path_expr();
-            append_instruction(INST_GET_RESULT);
-            append_instruction(INST_APPEND_NODE_SETS);
-            append_instruction(INST_SET_RESULT);
-            mark_with_label(f_end_label);
-        }
-        while(f_last_token.f_token == token_t::TOK_PIPE);
-        append_instruction(INST_GET_RESULT);
-    }
-
-    f_end_label = save_end_label;
+//    QString save_end_label(f_end_label);
+//    ++f_label_counter;
+//    f_end_label = QString("e%1").arg(f_label_counter);
+//printf("--- new label (%s) [union]\n", f_end_label.toUtf8().data());
+//    path_expr();
+//printf("--- marking now (%s) [union]\n", f_end_label.toUtf8().data());
+//    mark_with_label(f_end_label);
+//
+//    if(f_last_token.f_token == token_t::TOK_PIPE)
+//    {
+//        append_instruction(INST_GET_RESULT);
+//        append_instruction(INST_APPEND_NODE_SETS);
+//        append_instruction(INST_SET_RESULT);
+//
+//        do
+//        {
+//            ++f_label_counter;
+//            f_end_label = QString("e%1").arg(f_label_counter);
+//            path_expr();
+//            append_instruction(INST_GET_RESULT);
+//            append_instruction(INST_APPEND_NODE_SETS);
+//            append_instruction(INST_SET_RESULT);
+//            mark_with_label(f_end_label);
+//        }
+//        while(f_last_token.f_token == token_t::TOK_PIPE);
+//        append_instruction(INST_GET_RESULT);
+//    }
+//
+//    f_end_label = save_end_label;
 
     if(!f_future_labels.empty())
     {
@@ -6441,20 +6618,26 @@ QDomXPath::node_vector_t apply(QDomXPath::node_vector_t& nodes)
 {
     // reset the states and functions
     f_functions.clear();
-    f_states.clear();
 
     // setup the execution environment (program)
     function_t function;
-    f_functions.push_back(function);
+    function.f_pc = f_program_start_offset;
 
-    // setup the top state (from user node-set)
-    state_t state;
-    state.f_nodes = nodes;
-    f_states.push_back(state);
+    // set the node set on the stack
+    variant_t node_set;
+    node_set.setValue(nodes);
+    function.f_stack.push_back(node_set);
+
+    f_functions.push_back(function);
 
     // execute the program
     for(;;)
     {
+        if(f_show_commands)
+        {
+            disassemble_instruction(f_functions.back().f_pc);
+        }
+
         uint32_t pc(f_functions.back().f_pc);
         instruction_t instruction(f_program[pc]);
         if(instruction == INST_END)
@@ -6467,11 +6650,11 @@ QDomXPath::node_vector_t apply(QDomXPath::node_vector_t& nodes)
     }
 
     // retrieve the result
-    QDomXPath::node_vector_t result(f_states.back().f_nodes);
+    variant_t result_variant(pop_variant_data());
+    QDomXPath::node_vector_t result(result_variant.getNodeSetValue());
 
     // reset the states and functions
     // (this won't happen on errors which is why we also do it on entry
-    f_states.clear();
     f_functions.clear();
 
     return result;
@@ -7029,15 +7212,21 @@ uint32_t disassemble_node_set_size(uint32_t pc)
     return 1;
 }
 
-uint32_t disassemble_append_node_sets(uint32_t pc)
+uint32_t disassemble_merge_sets(uint32_t pc)
 {
-    printf("append_node_sets\n");
+    printf("merge_sets\n");
     return 1;
 }
 
 uint32_t disassemble_predicate(uint32_t pc)
 {
     printf("predicate\n");
+    return 1;
+}
+
+uint32_t disassemble_create_node_context(uint32_t pc)
+{
+    printf("create_node_context\n");
     return 1;
 }
 
@@ -7061,12 +7250,46 @@ void disassemble()
     }
 }
 
+
+void setProgram(const QDomXPath::program_t& program, bool show_commands)
+{
+    if(program[0] != QDomXPath::MAGIC[0]
+    || program[1] != QDomXPath::MAGIC[1]
+    || program[2] != QDomXPath::MAGIC[2]
+    || program[3] != QDomXPath::MAGIC[3])
+    {
+        throw QDomXPathException_InvalidMagic("this program does not start with the correct magic code");
+    }
+    if(program[4] != QDomXPath::VERSION_MAJOR
+    || program[5] != QDomXPath::VERSION_MINOR)
+    {
+        // we need a better test as we have newer versions, at this time,
+        // we do not need much more than what is here
+        throw QDomXPathException_InvalidMagic("this program version is not compatible");
+    }
+
+    f_show_commands = show_commands;
+
+    const int size((program[6] << 8) | program[7]);
+    f_program_start_offset = size + 8;
+    f_xpath = QString::fromUtf8(reinterpret_cast<const char *>(&program[8]), size);
+
+    f_program = program;
+}
+
+
+const QDomXPath::program_t& getProgram() const
+{
+    return f_program;
+}
+
+
 private:
     QDomXPath *                 f_owner;
     bool                        f_show_commands;
 
     // parser parameters
-    const QString               f_xpath;
+    QString                     f_xpath;
     const QChar *               f_start;
     const QChar *               f_in;
     token_t                     f_unget_token;
@@ -7078,9 +7301,9 @@ private:
 
     // execution environment
     //QDomXPath::node_vector_t    f_result;
+    int                         f_program_start_offset;
     QDomXPath::program_t        f_program;
     function_vector_t           f_functions;
-    state_vector_t              f_states;
 };
 
 
@@ -7231,9 +7454,9 @@ QDomXPath::QDomXPathImpl::instruction_function_t const QDomXPath::QDomXPathImpl:
     , /* 0x86 */ &QDomXPathImpl::inst_get_position
     , /* 0x87 */ &QDomXPathImpl::inst_set_position
     , /* 0x88 */ &QDomXPathImpl::inst_node_set_size
-    , /* 0x89 */ &QDomXPathImpl::inst_append_node_sets
+    , /* 0x89 */ &QDomXPathImpl::inst_merge_sets
     , /* 0x8A */ &QDomXPathImpl::inst_predicate
-    , /* 0x8B */ &QDomXPathImpl::inst_undefined_instruction
+    , /* 0x8B */ &QDomXPathImpl::inst_create_node_context
     , /* 0x8C */ &QDomXPathImpl::inst_undefined_instruction
     , /* 0x8D */ &QDomXPathImpl::inst_undefined_instruction
     , /* 0x8E */ &QDomXPathImpl::inst_undefined_instruction
@@ -7507,9 +7730,9 @@ QDomXPath::QDomXPathImpl::disassembly_function_t const QDomXPath::QDomXPathImpl:
     , /* 0x86 */ &QDomXPathImpl::disassemble_get_position
     , /* 0x87 */ &QDomXPathImpl::disassemble_set_position
     , /* 0x88 */ &QDomXPathImpl::disassemble_node_set_size
-    , /* 0x89 */ &QDomXPathImpl::disassemble_append_node_sets
+    , /* 0x89 */ &QDomXPathImpl::disassemble_merge_sets
     , /* 0x8A */ &QDomXPathImpl::disassemble_predicate
-    , /* 0x8B */ &QDomXPathImpl::disassemble_undefined_instruction
+    , /* 0x8B */ &QDomXPathImpl::disassemble_create_node_context
     , /* 0x8C */ &QDomXPathImpl::disassemble_undefined_instruction
     , /* 0x8D */ &QDomXPathImpl::disassemble_undefined_instruction
     , /* 0x8E */ &QDomXPathImpl::disassemble_undefined_instruction
@@ -8084,6 +8307,55 @@ QString QDomXPath::getVariable(const QString& name)
     return f_variables[name];
 }
 
+
+
+void QDomXPath::setProgram(const QDomXPath::program_t& program, bool show_commands)
+{
+    if(f_impl == NULL)
+    {
+        // the original XPath is not known (although it could be saved
+        // in the program and restored?)
+        f_impl = new QDomXPath::QDomXPathImpl(this, "");
+    }
+    f_impl->setProgram(program, show_commands);
+}
+
+
+
+/** \brief Retrieve the compiled program.
+ *
+ * The program can be retrieved after calling the setXPath() function.
+ * The program must be considered to be an array of bytes once outside
+ * of the QDomXPath environment.
+ *
+ * For the Unix 'file' tool trying to determine the type of a file, it
+ * can checks the first few bytes as:
+ *
+ * \li Byte 0 -- 'X'
+ * \li Byte 1 -- 'P'
+ * \li Byte 2 -- 'T'
+ * \li Byte 3 -- 'H'
+ * \li Byte 4 -- The major version, 0x01 or more (unsigned)
+ * \li Byte 5 -- The minor version, 0x00 or more (unsigned)
+ * \li Byte 6 -- higher size
+ * \li Byte 7 -- lower size
+ *
+ * The first 8 bytes are then followed by the original XPath so one can
+ * retrieve it, just in case. Bytes 6 and 7 represent the size of that
+ * XPath. If the XPath is more than 64Kb then only the first 65535 bytes
+ * are saved in the file.
+ *
+ * Note that it is possible to set byte 6 and 7 to zero and not save
+ * the XPath (this can be useful to save space.)
+ */
+const QDomXPath::program_t& QDomXPath::getProgram() const
+{
+    if(f_impl)
+    {
+        return f_impl->getProgram();
+    }
+    throw QDomXPathException_InternalError("error: no program to retrieve");
+}
 
 
 

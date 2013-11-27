@@ -22,6 +22,7 @@
 #include <QString>
 #include <QSharedPointer>
 #include <QMap>
+#include <QVector>
 #pragma GCC diagnostic pop
 #include <stdexcept>
 
@@ -49,6 +50,15 @@ class QDomXPathException_UndefinedInstructionError : public QDomXPathException
 {
 public:
     QDomXPathException_UndefinedInstructionError(const std::string& err)
+        : QDomXPathException(err)
+    {
+    }
+};
+
+class QDomXPathException_InvalidMagic : public QDomXPathException
+{
+public:
+    QDomXPathException_InvalidMagic(const std::string& err)
         : QDomXPathException(err)
     {
     }
@@ -163,13 +173,17 @@ public:
     typedef uint8_t                 instruction_t;
     typedef QVector<instruction_t>  program_t;
 
+    static const char *             MAGIC;
+    static const instruction_t      VERSION_MAJOR = 1;
+    static const instruction_t      VERSION_MINOR = 0;
+
                                     QDomXPath();
                                     ~QDomXPath();
 
     bool                            setXPath(const QString& xpath, bool show_commands = false);
     QString                         getXPath() const;
-    void                            setProgram(const program_t& program);
-    program_t                       getProgram() const;
+    void                            setProgram(const program_t& program, bool show_commands = false);
+    const program_t&                getProgram() const;
 
     void                            bindVariable(const QString& name, const QString& value);
     bool                            hasVariable(const QString& name);

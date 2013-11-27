@@ -30,6 +30,12 @@
 #include <not_reached.h>
 #include <qdomxpath.h>
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+#include <QFile>
+#pragma GCC diagnostic pop
+
+
 
 
 const advgetopt::getopt::option cxpath_options[] =
@@ -81,7 +87,7 @@ const advgetopt::getopt::option cxpath_options[] =
         "execute",
         NULL,
         "execute an xpath (.xpath file or parsed on the fly XPath) against one or more .xml files",
-        advgetopt::getopt::no_argument
+        advgetopt::getopt::required_argument
     },
     // OPTIONS
     {
@@ -91,6 +97,14 @@ const advgetopt::getopt::option cxpath_options[] =
         NULL,
         "options:",
         advgetopt::getopt::help_argument
+    },
+    {
+        'n',
+        0,
+        "namespace",
+        NULL,
+        "if specified, the namespaces are taken in account, otherwise the DOM ignores them",
+        advgetopt::getopt::required_argument
     },
     {
         'o',
@@ -155,12 +169,82 @@ void cxpath_compile()
         printf("compiling \"%s\" ... \n", xpath.c_str());
     }
 
-    bool disassemble(g_opt->is_defined("disassemble"));
+    const bool disassemble(g_opt->is_defined("disassemble"));
 
     QDomXPath dom_xpath;
-    dom_xpath.setXPath(xpath.c_str(), disassemble);
+    dom_xpath.setXPath(QString::fromUtf8(xpath.c_str()), disassemble);
+
+    if(g_opt->is_defined("output"))
+    {
+        QDomXPath::program_t program(dom_xpath.getProgram());
+        const QDomXPath::instruction_t *inst(program.data());
+        std::string filename(g_opt->get_string("output"));
+        FILE *f(fopen(filename.c_str(), "w"));
+        if(f == NULL)
+        {
+            fprintf(stderr, "error: cannot open output file \"%s\" for writing.\n", filename.c_str());
+            exit(1);
+        }
+        if(fwrite(inst, program.size(), 1, f) != 1)
+        {
+            fprintf(stderr, "error: I/O error while writing to output file \"%s\".\n", filename.c_str());
+            exit(1);
+        }
+        fclose(f);
+
+        if(g_verbose)
+        {
+            printf("saved compiled XPath in \"%s\" ... \n", filename.c_str());
+        }
+    }
 }
 
+
+
+void cxpath_execute()
+{
+    std::string program_filename(g_opt->get_string("execute"));
+    FILE *f(fopen(program_filename.c_str(), "r"));
+    if(f == NULL)
+    {
+        fprintf(stderr, "error: could not open program file \"%s\" for reading.\n", program_filename.c_str());
+        exit(1);
+    }
+    fseek(f, 0, SEEK_END);
+    const int program_size(ftell(f));
+    fseek(f, 0, SEEK_SET);
+    QDomXPath::program_t program;
+    program.resize(program_size);
+    if(fread(&program[0], program_size, 1, f) != 1)
+    {
+        fprintf(stderr, "error: an I/O error occured while reading the program file \"%s\".\n", program_filename.c_str());
+        exit(1);
+    }
+
+    const bool keep_namespace(g_opt->is_defined("namespace"));
+    const bool disassemble(g_opt->is_defined("disassemble"));
+
+    QDomXPath dom_xpath;
+    dom_xpath.setProgram(program, disassemble);
+
+    const int size(g_opt->size("filename"));
+    for(int i(0); i < size; ++i)
+    {
+        QFile file(QString::fromUtf8(g_opt->get_string("filename", i).c_str()));
+        if(!file.open(QIODevice::ReadOnly))
+        {
+            fprintf(stderr, "error: could not open XML file \"%s\".", g_opt->get_string("filename", i).c_str());
+            return;
+        }
+        QDomDocument document;
+        if(!document.setContent(&file, keep_namespace))
+        {
+            fprintf(stderr, "error: could not read XML file \"%s\".", g_opt->get_string("filename", i).c_str());
+            return;
+        }
+        dom_xpath.apply(document);
+    }
+}
 
 
 int main(int argc, char *argv[])
@@ -169,16 +253,22 @@ int main(int argc, char *argv[])
     g_opt = new advgetopt::getopt(argc, argv, cxpath_options, empty_list, NULL);
     if(g_opt->is_defined("help"))
     {
-        g_opt->usage(advgetopt::getopt::no_error, "Usage: cxpath --<command> [--<opt>] ['<xpath>'] [<filename>.xml] ...");
+        g_opt->usage(advgetopt::getopt::no_error, "Usage: cxpath [--<opt>] [-p '<xpath>'] | [-x <filename>.xpath <filename>.xml ...]");
         snap::NOTREACHED();
     }
+    g_verbose = g_opt->is_defined("verbose");
 
     if(g_opt->is_defined("compile"))
     {
         cxpath_compile();
     }
+    if(g_opt->is_defined("execute"))
+    {
+        cxpath_execute();
+    }
 
     return 0;
 }
+
 
 // vim: ts=4 sw=4 et
