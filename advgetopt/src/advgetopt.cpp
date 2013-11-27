@@ -932,7 +932,7 @@ long getopt::get_long(const std::string& name, int idx, long min, long max)
                     /*NOTREACHED*/
                 }
             }
-            opt.f_cvt = true;
+            opt.f_cvt = static_cast<int32_t>(true);
         }
         result = opt.f_int[idx];
     }
