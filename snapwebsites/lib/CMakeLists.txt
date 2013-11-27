@@ -62,8 +62,8 @@ add_library( ${PROJECT_NAME} SHARED
     plugins.cpp             # plugins loader and list
     process.cpp             # run a process optionally with pipes
     qdomnodemodel.cpp       # Qt extension to support XSLT
-    qdompath.cpp            # Qt extension to query a XML DOM with X-Path
     qdomreceiver.cpp        # Qt extension to output XSLT as XML
+    qdomxpath.cpp           # Qt extension to query a XML DOM with X-Path
     qhtmlserializer.cpp     # Qt extension to output HTML as a string
     snap_parser.cpp         # lexer/parser for all our script like entries
     snap_uri.cpp            # URI handling

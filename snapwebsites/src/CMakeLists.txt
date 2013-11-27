@@ -192,4 +192,27 @@ install(
 )
 
 
+#################################################################################
+## XPath compiler
+##
+project(cxpath)
+
+add_executable(${PROJECT_NAME}
+    cxpath.cpp
+)
+
+target_link_libraries(${PROJECT_NAME}
+    libsnapwebsites
+    ${QTCASSANDRA_LIBRARIES}
+    ${QT_LIBRARIES}
+    ${THRIFT_LIBRARIES}
+    ${LIBTLD_LIBRARIES}
+    ${QTSERIALIZATION_LIBRARIES}
+)
+
+install(
+    TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin
+)
+
+
 # vim: ts=4 sw=4 et

@@ -19,7 +19,11 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
 #include <QDomNode>
+#include <QString>
+#include <QSharedPointer>
+#include <QMap>
 #pragma GCC diagnostic pop
+#include <stdexcept>
 
 
 
@@ -28,6 +32,33 @@ class QDomXPathException : public std::runtime_error
 public:
     QDomXPathException(const std::string& err)
         : runtime_error(err)
+    {
+    }
+};
+
+class QDomXPathException_InternalError : public QDomXPathException
+{
+public:
+    QDomXPathException_InternalError(const std::string& err)
+        : QDomXPathException(err)
+    {
+    }
+};
+
+class QDomXPathException_UndefinedInstructionError : public QDomXPathException
+{
+public:
+    QDomXPathException_UndefinedInstructionError(const std::string& err)
+        : QDomXPathException(err)
+    {
+    }
+};
+
+class QDomXPathException_InvalidError : public QDomXPathException
+{
+public:
+    QDomXPathException_InvalidError(const std::string& err)
+        : QDomXPathException(err)
     {
     }
 };
@@ -53,7 +84,7 @@ public:
 class QDomXPathException_TooManyUnget : public QDomXPathException
 {
 public:
-    QDomXPathException_InvalidString(const std::string& err)
+    QDomXPathException_TooManyUnget(const std::string& err)
         : QDomXPathException(err)
     {
     }
@@ -68,21 +99,93 @@ public:
     }
 };
 
+class QDomXPathException_ExecutionTime : public QDomXPathException
+{
+public:
+    QDomXPathException_ExecutionTime(const std::string& err)
+        : QDomXPathException(err)
+    {
+    }
+};
+
+class QDomXPathException_NotImplemented : public QDomXPathException_ExecutionTime
+{
+public:
+    QDomXPathException_NotImplemented(const std::string& err)
+        : QDomXPathException_ExecutionTime(err)
+    {
+    }
+};
+
+class QDomXPathException_OutOfRange : public QDomXPathException_ExecutionTime
+{
+public:
+    QDomXPathException_OutOfRange(const std::string& err)
+        : QDomXPathException_ExecutionTime(err)
+    {
+    }
+};
+
+class QDomXPathException_EmptyStack : public QDomXPathException_ExecutionTime
+{
+public:
+    QDomXPathException_EmptyStack(const std::string& err)
+        : QDomXPathException_ExecutionTime(err)
+    {
+    }
+};
+
+class QDomXPathException_WrongType : public QDomXPathException_ExecutionTime
+{
+public:
+    QDomXPathException_WrongType(const std::string& err)
+        : QDomXPathException_ExecutionTime(err)
+    {
+    }
+};
+
+class QDomXPathException_UndefinedVariable : public QDomXPathException_ExecutionTime
+{
+public:
+    QDomXPathException_UndefinedVariable(const std::string& err)
+        : QDomXPathException_ExecutionTime(err)
+    {
+    }
+};
+
 
 
 class QDomXPath
 {
 public:
-    bool                setXPath(const QString& xpath);
-    QString             getXPath() const;
+    typedef QVector<QDomNode>       node_vector_t;
+    typedef QMap<QString, QString>  bind_vector_t;
+    typedef uint8_t                 instruction_t;
+    typedef QVector<instruction_t>  program_t;
 
-    QVector<QDomNode>   apply(QDomNode node) const;
+                                    QDomXPath();
+                                    ~QDomXPath();
+
+    bool                            setXPath(const QString& xpath, bool show_commands = false);
+    QString                         getXPath() const;
+    void                            setProgram(const program_t& program);
+    program_t                       getProgram() const;
+
+    void                            bindVariable(const QString& name, const QString& value);
+    bool                            hasVariable(const QString& name);
+    QString                         getVariable(const QString& name);
+
+    node_vector_t                   apply(QDomNode node) const;
+    node_vector_t                   apply(node_vector_t node) const;
+    void                            disassemble() const;
 
 private:
     class QDomXPathImpl;
+    friend QDomXPathImpl;
 
-    QString             f_xpath;
-    QSharedPointer<QDomXPathImpl> f_impl;
+    QString                         f_xpath;
+    QDomXPathImpl *                 f_impl;
+    bind_vector_t                   f_variables;
 };
 
 #endif
