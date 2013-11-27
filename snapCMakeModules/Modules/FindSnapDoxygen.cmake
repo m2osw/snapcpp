@@ -70,6 +70,11 @@ function( AddDoxygenTarget TARGET_NAME VERSION_MAJOR VERSION_MINOR VERSION_PATCH
             DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${DOCUMENTATION_OUTPUT}.tar.gz
             COMMENT "Generating API documentation with Doxygen" VERBATIM
         )
+
+        string( TOLOWER ${TARGET_NAME} LOWER_TARGET_NAME )
+        install( DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${DOCUMENTATION_OUTPUT}/
+                DESTINATION share/doc/${LOWER_TARGET_NAME}/html/
+        )
     else()
         message( WARNING "You do not seem to have doxygen installed on this system, no documentation will be generated." )
     endif()

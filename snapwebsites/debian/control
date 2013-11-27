@@ -1,12 +1,12 @@
 Source: snapwebsites
 Priority: extra
 Maintainer: R. Douglas Barbieri <doug@dooglio.net>
-Build-Depends: debhelper (>= 8.0.0), cmake
+Build-Depends: debhelper (>= 8.0.0), cmake (>= 2.8.9), snapcmakemodules (>= 1.0.0-1), libqt4-dev (>= 4.8.3), libqtcassandra-dev (>= 0.5.0-1), libqtserialization-dev (>= 0.1.0)
 Standards-Version: 3.9.3
 Section: libs
 Homepage: http://www.snapwebsites.org/
 Vcs-Git: git://git.code.sf.net/p/snapcpp/code
-#Vcs-Browser: http://git.debian.org/?p=collab-maint/snapwebsites.git;a=summary
+Vcs-Browser: http://sourceforge.net/p/snapcpp/code/ci/master/tree/snapwebsites
 
 Package: snapwebsites-doc
 Section: doc
