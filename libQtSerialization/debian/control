@@ -1,0 +1,23 @@
+Source: libqtserialization
+Priority: extra
+Maintainer: R. Douglas Barbieri <doug@dooglio.net>
+Build-Depends: debhelper (>= 8.0.0), cmake
+Standards-Version: 3.9.3
+Section: libs
+Homepage: <insert the upstream URL, if relevant>
+#Vcs-Git: git://git.debian.org/collab-maint/libqtserialization.git
+#Vcs-Browser: http://git.debian.org/?p=collab-maint/libqtserialization.git;a=summary
+
+Package: libqtserialization-dev
+Section: libdevel
+Architecture: any
+Depends: libqtserializationBROKEN (= ${binary:Version})
+Description: <insert up to 60 chars description>
+ <insert long description, indented with spaces>
+
+Package: libqtserializationBROKEN
+Section: libs
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: <insert up to 60 chars description>
+ <insert long description, indented with spaces>
