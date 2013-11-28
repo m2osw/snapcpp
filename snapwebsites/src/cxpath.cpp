@@ -172,7 +172,9 @@ void display_node(int j, QDomNode node)
     if(node.isDocument())
     {
         // documents cannot be imported properly
-        node = node.toDocument().documentElement();
+        //node = node.toDocument().documentElement();
+        printf("Result[%d] is the entire document.\n", j);
+        return;
     }
     QDomDocument document;
     QDomNode copy(document.importNode(node, true));

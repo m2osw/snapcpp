@@ -2600,6 +2600,10 @@ void inst_swap1()
         throw QDomXPathException_EmptyStack("swap(1) cannot be used with a stack of less than 2 items");
     }
     std::swap(f_functions.back().f_stack[size - 2], f_functions.back().f_stack[size - 1]);
+    //variant_t a(f_functions.back().f_stack[size - 2]);
+    //variant_t b(f_functions.back().f_stack[size - 1]);
+    //f_functions.back().f_stack[size - 2] = b;
+    //f_functions.back().f_stack[size - 1] = a;
 }
 
 
@@ -5942,6 +5946,10 @@ void append_push(const token_t& token)
 {
     switch(token.f_token)
     {
+    case token_t::TOK_ASTERISK:
+        append_push("*");
+        break;
+
     case token_t::TOK_STRING:
     case token_t::TOK_PREFIX: // this is like a string
     case token_t::TOK_NCNAME: // this can be a lie (in case of variable names, it can include a colon)
@@ -6396,6 +6404,8 @@ void location_path()
         {
         case token_t::TOK_DOT:
             // self
+            save_token.f_token = token_t::TOK_NCNAME;
+            save_token.f_string = "*";
             axis_token.f_token = token_t::TOK_AXIS_NAME_SELF;
             axis_token.f_string = "self";
             accept_predicate = false;
@@ -6403,6 +6413,8 @@ void location_path()
 
         case token_t::TOK_DOUBLE_DOT:
             // parent
+            save_token.f_token = token_t::TOK_NCNAME;
+            save_token.f_string = "*";
             axis_token.f_token = token_t::TOK_AXIS_NAME_PARENT;
             axis_token.f_string = "parent";
             accept_predicate = false;
@@ -6565,43 +6577,14 @@ axis_apply:
 finished:
     for(int i(labels.size() - 1); i >= 0; --i)
     {
+        // repeat with the next node of that context
         append_instruction(INST_NEXT_CONTEXT_NODE);
         append_push(labels[i]);
         append_instruction(INST_JUMP_IF_TRUE);
 
-        //append_instruction(INST_GET_RESULT);
-        //append_instruction(INST_SWAP2_3);
-        //append_instruction(INST_MERGE_SETS);
-        //append_instruction(INST_SET_RESULT);
-
-        //append_instruction(INST_GET_POSITION);
-        //append_instruction(INST_INCREMENT);
-        //append_instruction(INST_SWAP1);
-        //append_instruction(INST_GET_NODE_SET);
-        //append_instruction(INST_NODE_SET_SIZE);
-        //append_instruction(INST_SWAP2_3);
-        //append_instruction(INST_LESS_OR_EQUAL);
-        //++f_label_counter;
-        //QString done_label(QString("done%1").arg(f_label_counter));
-        //append_push_for_jump(done_label);
-        //append_instruction(INST_JUMP_IF_FALSE); // done
-        //append_instruction(INST_GET_POSITION);
-        //append_instruction(INST_INCREMENT);
-        //append_instruction(INST_SET_POSITION);
-        //append_push(labels[i]);
-        //append_instruction(INST_JUMP); // next_node
-        //mark_with_label(done_label);
-
+        // return the result (node-set)
         append_instruction(INST_GET_RESULT);
         append_instruction(INST_POP_CONTEXT); // get rid of the node context
-        if(f_predicate_variable.isEmpty())
-        {
-            append_instruction(INST_GET_RESULT);
-            append_instruction(INST_SWAP1); // swap to keep the order in which the nodes were found
-            append_instruction(INST_MERGE_SETS);
-            append_instruction(INST_DUPLICATE1);
-            append_instruction(INST_SET_RESULT);
-        }
     }
 }
 
@@ -6667,6 +6650,10 @@ void path_expr()
         location_path();
         break;
 
+    case token_t::TOK_PIPE:
+        // the '|' character is for the caller
+        return;
+
     default:
         throw QDomXPathException_SyntaxError(QString("unexpected token \"%1\"").arg(f_last_token.f_string).toStdString());
 
@@ -6685,12 +6672,26 @@ void path_expr()
  */
 void union_expr()
 {
+    // in case there is a pipe we'll need to have a duplicate of
+    // the input...
+    //append_instruction(INST_DUPLICATE1);
+    //++f_label_counter;
+    //QString variable(QString("$%1").arg(f_label_counter));
+    //append_push(variable);
+    //append_instruction(INST_SET_VARIABLE);
+
     path_expr();
 
     if(f_last_token.f_token == token_t::TOK_PIPE)
     {
         do
         {
+            // skip the pipe
+            get_token();
+
+            //append_push(variable);
+            //append_instruction(INST_GET_VARIABLE);
+
             path_expr();
             append_instruction(INST_MERGE_SETS);
         }
@@ -6710,37 +6711,17 @@ void parse(bool show_commands)
     //f_program.clear();
     f_label_counter = 0;
 
+    // save the input (we expect a node-set) in a variable
+    ++f_label_counter;
+    f_predicate_variable = QString("$%1").arg(f_label_counter);
+    QString save_predicate_variable(f_predicate_variable);
+    append_push(f_predicate_variable);
+    append_instruction(INST_SET_VARIABLE);
+
     union_expr();
 
-//    QString save_end_label(f_end_label);
-//    ++f_label_counter;
-//    f_end_label = QString("e%1").arg(f_label_counter);
-//printf("--- new label (%s) [union]\n", f_end_label.toUtf8().data());
-//    path_expr();
-//printf("--- marking now (%s) [union]\n", f_end_label.toUtf8().data());
-//    mark_with_label(f_end_label);
-//
-//    if(f_last_token.f_token == token_t::TOK_PIPE)
-//    {
-//        append_instruction(INST_GET_RESULT);
-//        append_instruction(INST_APPEND_NODE_SETS);
-//        append_instruction(INST_SET_RESULT);
-//
-//        do
-//        {
-//            ++f_label_counter;
-//            f_end_label = QString("e%1").arg(f_label_counter);
-//            path_expr();
-//            append_instruction(INST_GET_RESULT);
-//            append_instruction(INST_APPEND_NODE_SETS);
-//            append_instruction(INST_SET_RESULT);
-//            mark_with_label(f_end_label);
-//        }
-//        while(f_last_token.f_token == token_t::TOK_PIPE);
-//        append_instruction(INST_GET_RESULT);
-//    }
-//
-//    f_end_label = save_end_label;
+    // terminate the program with an INST_END instruction
+    append_instruction(INST_END);
 
     if(!f_future_labels.empty())
     {
@@ -6787,20 +6768,27 @@ QDomXPath::node_vector_t apply(QDomXPath::node_vector_t& nodes)
         (this->*g_instructions[instruction])();
     }
 
-#if QDOM_XPATH_VERIFICATION
-    // we could use the result from the stack or the context
-    // at this point we use the context result but that's the
-    // same
+    // we must have just one function on exit
+    if(f_functions.back().f_contexts.size() != 1)
+    {
+        throw QDomXPathException_InvalidError("function stack does not include just one item when existing program");
+    }
+
+    // the first context we push must still be here, but only that one
+    if(f_functions.back().f_contexts.size() != 1)
+    {
+        throw QDomXPathException_InvalidError("context stack does not include just one item when existing program");
+    }
+
+    // retrieve the result
     if(f_functions.back().f_stack.size() != 1)
     {
         throw QDomXPathException_InvalidError("stack does not include just one item when existing program");
     }
-#endif
+    QDomXPath::node_vector_t result(f_functions.back().f_stack.back().getNodeSetValue());
 
-    // retrieve the result
-    contexts_not_empty();
-    context = f_functions.back().f_contexts.back();
-    QDomXPath::node_vector_t result(context.f_result);
+    //context = f_functions.back().f_contexts.back();
+    //QDomXPath::node_vector_t result(context.f_result);
 
     // reset the states and functions
     // (this won't happen on errors which is why we also do it on entry
