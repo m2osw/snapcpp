@@ -123,6 +123,14 @@ const advgetopt::getopt::option cxpath_options[] =
         advgetopt::getopt::required_argument
     },
     {
+        'r',
+        0,
+        "results",
+        NULL,
+        "display the results of executing the XPath",
+        advgetopt::getopt::no_argument
+    },
+    {
         'v',
         0,
         "verbose",
@@ -152,6 +160,25 @@ const advgetopt::getopt::option cxpath_options[] =
 
 advgetopt::getopt * g_opt;
 bool                g_verbose;
+bool                g_results;
+
+
+void display_node(int j, QDomNode node)
+{
+    // unfortunate, but QtDOM does not offer a toString() at the
+    // QDomNode level, instead they implemented it at the document
+    // level... to make use of it you have to create a new document
+    // and import the node in there to generate the output
+    if(node.isDocument())
+    {
+        // documents cannot be imported properly
+        node = node.toDocument().documentElement();
+    }
+    QDomDocument document;
+    QDomNode copy(document.importNode(node, true));
+    document.appendChild(copy);
+    printf("Node[%d] = \"%s\"\n", j, document.toByteArray().data());
+}
 
 
 
@@ -235,6 +262,10 @@ void cxpath_execute()
     const int size(g_opt->size("filename"));
     for(int i(0); i < size; ++i)
     {
+        if(g_verbose)
+        {
+            printf("Processing \"%s\" ... ", g_opt->get_string("filename", i).c_str());
+        }
         QFile file(QString::fromUtf8(g_opt->get_string("filename", i).c_str()));
         if(!file.open(QIODevice::ReadOnly))
         {
@@ -247,7 +278,17 @@ void cxpath_execute()
             fprintf(stderr, "error: could not read XML file \"%s\".", g_opt->get_string("filename", i).c_str());
             return;
         }
-        dom_xpath.apply(document);
+        QDomXPath::node_vector_t result(dom_xpath.apply(document));
+
+        if(g_results)
+        {
+            const int max(result.size());
+            printf("This XPath returned %d nodes\n", max);
+            for(int j(0); j < max; ++j)
+            {
+                display_node(j, result[j]);
+            }
+        }
     }
 }
 
@@ -262,6 +303,7 @@ int main(int argc, char *argv[])
         snap::NOTREACHED();
     }
     g_verbose = g_opt->is_defined("verbose");
+    g_results = g_opt->is_defined("results");
 
     if(g_opt->is_defined("compile"))
     {

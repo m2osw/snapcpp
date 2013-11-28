@@ -6046,7 +6046,10 @@ void append_push_for_jump(const QString& label)
     {
         throw QDomXPathException_InternalError("pushing for a future label with an empty string is not supported");
     }
-printf("=== push for jump (%d)\n", f_program.size());
+    if(f_show_commands)
+    {
+        printf("=== push for jump (%d)\n", f_program.size());
+    }
     f_future_labels[label].push_back(f_program.size());
     append_push(0x1111);
 }
@@ -6591,11 +6594,14 @@ finished:
 
         append_instruction(INST_GET_RESULT);
         append_instruction(INST_POP_CONTEXT); // get rid of the node context
-        append_instruction(INST_GET_RESULT);
-        append_instruction(INST_SWAP1); // swap to keep the order in which the nodes were found
-        append_instruction(INST_MERGE_SETS);
-        append_instruction(INST_DUPLICATE1);
-        append_instruction(INST_SET_RESULT);
+        if(f_predicate_variable.isEmpty())
+        {
+            append_instruction(INST_GET_RESULT);
+            append_instruction(INST_SWAP1); // swap to keep the order in which the nodes were found
+            append_instruction(INST_MERGE_SETS);
+            append_instruction(INST_DUPLICATE1);
+            append_instruction(INST_SET_RESULT);
+        }
     }
 }
 
@@ -6793,7 +6799,7 @@ QDomXPath::node_vector_t apply(QDomXPath::node_vector_t& nodes)
 
     // retrieve the result
     contexts_not_empty();
-    context = function.f_contexts.back();
+    context = f_functions.back().f_contexts.back();
     QDomXPath::node_vector_t result(context.f_result);
 
     // reset the states and functions
