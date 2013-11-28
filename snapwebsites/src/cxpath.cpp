@@ -104,7 +104,7 @@ const advgetopt::getopt::option cxpath_options[] =
         "namespace",
         NULL,
         "if specified, the namespaces are taken in account, otherwise the DOM ignores them",
-        advgetopt::getopt::required_argument
+        advgetopt::getopt::no_argument
     },
     {
         'o',
@@ -128,7 +128,7 @@ const advgetopt::getopt::option cxpath_options[] =
         "verbose",
         NULL,
         "make the process verbose",
-        advgetopt::getopt::required_argument
+        advgetopt::getopt::no_argument
     },
     {
         '\0',
@@ -159,7 +159,7 @@ void cxpath_compile()
 {
     if(!g_opt->is_defined("xpath"))
     {
-        fprintf(stderr, "error: --xpath not defined, nothing to copmile.\n");
+        fprintf(stderr, "error: --xpath not defined, nothing to compile.\n");
         exit(1);
     }
 
@@ -226,6 +226,11 @@ void cxpath_execute()
 
     QDomXPath dom_xpath;
     dom_xpath.setProgram(program, disassemble);
+
+    if(g_verbose)
+    {
+        printf("Original XPath: %s\n", dom_xpath.getXPath().toUtf8().data());
+    }
 
     const int size(g_opt->size("filename"));
     for(int i(0); i < size; ++i)
