@@ -850,8 +850,8 @@ public:
             return static_cast<int64_t>(floor(f_double));
 
         case ATOMIC_TYPE_STRING:
-            // TODO -- create a "correct" string to single convertion
-            return static_cast<float>(atof(f_string.toUtf8().data()));
+            // TODO -- create a "correct" string to integer convertion
+            return static_cast<int64_t>(atol(f_string.toUtf8().data()));
 
         default:
             // this should be done in the previous level
@@ -1297,8 +1297,11 @@ public:
                 return static_cast<double>(!f_set.isEmpty());
 
             case ATOMIC_TYPE_NODE_SET:
-                // TODO -- do proper implementation
-                return static_cast<double>(!f_node_set.isEmpty());
+            {
+                QString str(getStringValue(true));
+                // TODO -- do proper string to double implementation
+                return atof(str.toUtf8().data());
+            }
 
             default:
                 break;
@@ -1351,62 +1354,12 @@ public:
                 throw QDomXPathException_NotImplemented("cast(atomic set) as string is not implemented");
 
             case ATOMIC_TYPE_NODE_SET:
+                if(f_node_set.isEmpty())
                 {
-                    if(f_node_set.isEmpty())
-                    {
-                        // no nodes, return an empty string
-                        return "";
-                    }
-                    QDomNode node(f_node_set[0]);
-                    switch(node.nodeType())
-                    {
-                    case QDomNode::ElementNode:
-                        // return all the text nodes from all the children
-                        return node.toElement().text();
-
-                    case QDomNode::AttributeNode:
-                        // return the corresponding value
-                        return node.toAttr().value();
-
-                    case QDomNode::TextNode:
-                        return node.toText().data();
-
-                    case QDomNode::CDATASectionNode:
-                        return node.toCDATASection().data();
-
-                    case QDomNode::ProcessingInstructionNode:
-                        return node.toProcessingInstruction().data();
-
-                    case QDomNode::CommentNode:
-                        return node.toComment().data();
-
-                    case QDomNode::DocumentNode:
-                        {
-                            QDomDocument document(node.toDocument());
-                            QDomElement element(document.documentElement());
-                            if(element.isNull())
-                            {
-                                return "";
-                            }
-                            return element.text();
-                        }
-
-                    case QDomNode::CharacterDataNode:
-                        return node.toCharacterData().data();
-
-                    //case QDomNode::BaseNode:
-                    //case QDomNode::DocumentTypeNode:
-                    //case QDomNode::DocumentFragmentNode:
-                    //case QDomNode::EntityReferenceNode:
-                    //case QDomNode::EntityNode:
-                    //case QDomNode::NotationNode:
-                    default:
-                        throw QDomXPathException_NotImplemented(QString("cast(node) as string for this node type (%1) is not implemented")
-                                                                        .arg(static_cast<int>(node.nodeType())).toStdString());
-
-                    }
-                    /*NOTREACHED*/
+                    // no nodes, return an empty string
+                    return "";
                 }
+                return node_to_string(f_node_set[0]);
 
             default:
                 break;
@@ -1414,6 +1367,58 @@ public:
             }
         }
         return atomic_value_t::getStringValue(cast);
+    }
+
+    static QString node_to_string(const QDomNode& node)
+    {
+        switch(node.nodeType())
+        {
+        case QDomNode::ElementNode:
+            // return all the text nodes from all the children
+            return node.toElement().text();
+
+        case QDomNode::AttributeNode:
+            // return the corresponding value
+            return node.toAttr().value();
+
+        case QDomNode::TextNode:
+            return node.toText().data();
+
+        case QDomNode::CDATASectionNode:
+            return node.toCDATASection().data();
+
+        case QDomNode::ProcessingInstructionNode:
+            return node.toProcessingInstruction().data();
+
+        case QDomNode::CommentNode:
+            return node.toComment().data();
+
+        case QDomNode::DocumentNode:
+            {
+                QDomDocument document(node.toDocument());
+                QDomElement element(document.documentElement());
+                if(element.isNull())
+                {
+                    return "";
+                }
+                return element.text();
+            }
+
+        case QDomNode::CharacterDataNode:
+            return node.toCharacterData().data();
+
+        //case QDomNode::BaseNode:
+        //case QDomNode::DocumentTypeNode:
+        //case QDomNode::DocumentFragmentNode:
+        //case QDomNode::EntityReferenceNode:
+        //case QDomNode::EntityNode:
+        //case QDomNode::NotationNode:
+        default:
+            throw QDomXPathException_NotImplemented(QString("cast(node) as string for this node type (%1) is not implemented")
+                                                            .arg(static_cast<int>(node.nodeType())).toStdString());
+
+        }
+        /*NOTREACHED*/
     }
 
     /** \brief Retrieve the set value.
@@ -1594,6 +1599,7 @@ struct function_t
     variables_t             f_variables;
 };
 
+
 /** \brief An array of function status.
  *
  * This array holds a set of function_t structures, each representing a
@@ -1606,6 +1612,24 @@ struct function_t
  * is not removed with a return, instead the program ends on a return.
  */
 typedef QVector<function_t> function_vector_t;
+
+
+/** \brief List of internal functions.
+ *
+ * This enumeration defines a list of internal functions which are called
+ * using the INST_CALL basic instruction.
+ *
+ * Note that some internal functions are transformed at compile time to
+ * work just like a simple push or some other basic instruction.
+ */
+enum internal_func_t
+{
+    FUNC_UNKNOWN,
+    FUNC_AVG,
+    FUNC_MIN,
+    FUNC_MAX,
+    FUNC_SUM
+};
 
 
 /** \brief All the instructions are parameter less functions.
@@ -1708,35 +1732,41 @@ static const QDomXPath::instruction_t      INST_PUSH_EMPTY_NODE_SET        = 0x4
 static const QDomXPath::instruction_t      INST_PUSH_EMPTY_SET             = 0x45;
 static const QDomXPath::instruction_t      INST_PUSH_EMPTY_STRING          = 0x46;
 static const QDomXPath::instruction_t      INST_PUSH_END_OF_ARGUMENTS      = 0x47;
-static const QDomXPath::instruction_t      INST_PUSH_LARGE_STRING          = 0x48;
-static const QDomXPath::instruction_t      INST_PUSH_LONG                  = 0x49;
-static const QDomXPath::instruction_t      INST_PUSH_LONGLONG              = 0x4A;
-static const QDomXPath::instruction_t      INST_PUSH_MEDIUM_STRING         = 0x4B;
-static const QDomXPath::instruction_t      INST_PUSH_NEGATIVE_BYTE         = 0x4C;
-static const QDomXPath::instruction_t      INST_PUSH_NEGATIVE_SHORT        = 0x4D;
-static const QDomXPath::instruction_t      INST_PUSH_NEGATIVE_LONG         = 0x4E;
-static const QDomXPath::instruction_t      INST_PUSH_SHORT                 = 0x4F;
-static const QDomXPath::instruction_t      INST_PUSH_SMALL_STRING          = 0x50;
-static const QDomXPath::instruction_t      INST_PUSH_ZERO                  = 0x51;
+static const QDomXPath::instruction_t      INST_PUSH_FALSE                 = 0x48;
+static const QDomXPath::instruction_t      INST_PUSH_LARGE_STRING          = 0x49;
+static const QDomXPath::instruction_t      INST_PUSH_LONG                  = 0x4A;
+static const QDomXPath::instruction_t      INST_PUSH_LONGLONG              = 0x4B;
+static const QDomXPath::instruction_t      INST_PUSH_MEDIUM_STRING         = 0x4C;
+static const QDomXPath::instruction_t      INST_PUSH_NEGATIVE_BYTE         = 0x4D;
+static const QDomXPath::instruction_t      INST_PUSH_NEGATIVE_SHORT        = 0x4E;
+static const QDomXPath::instruction_t      INST_PUSH_NEGATIVE_LONG         = 0x4F;
+static const QDomXPath::instruction_t      INST_PUSH_SHORT                 = 0x50;
+static const QDomXPath::instruction_t      INST_PUSH_SMALL_STRING          = 0x51;
+static const QDomXPath::instruction_t      INST_PUSH_TRUE                  = 0x52;
+static const QDomXPath::instruction_t      INST_PUSH_ZERO                  = 0x53;
 
 static const QDomXPath::instruction_t      INST_ADD                        = 0x60;
 static const QDomXPath::instruction_t      INST_AND                        = 0x61;
-static const QDomXPath::instruction_t      INST_DECREMENT                  = 0x62;
-static const QDomXPath::instruction_t      INST_DIVIDE                     = 0x63;
-static const QDomXPath::instruction_t      INST_EQUAL                      = 0x64;
-static const QDomXPath::instruction_t      INST_GREATER_OR_EQUAL           = 0x65;
-static const QDomXPath::instruction_t      INST_GREATER_THAN               = 0x66;
-static const QDomXPath::instruction_t      INST_IDIVIDE                    = 0x67;
-static const QDomXPath::instruction_t      INST_INCREMENT                  = 0x68;
-static const QDomXPath::instruction_t      INST_LESS_OR_EQUAL              = 0x69;
-static const QDomXPath::instruction_t      INST_LESS_THAN                  = 0x6A;
-static const QDomXPath::instruction_t      INST_MODULO                     = 0x6B;
-static const QDomXPath::instruction_t      INST_MULTIPLY                   = 0x6C;
-static const QDomXPath::instruction_t      INST_NEGATE                     = 0x6D;
-static const QDomXPath::instruction_t      INST_NOT                        = 0x6E;
-static const QDomXPath::instruction_t      INST_NOT_EQUAL                  = 0x6F;
-static const QDomXPath::instruction_t      INST_OR                         = 0x70;
-static const QDomXPath::instruction_t      INST_SUBTRACT                   = 0x71;
+static const QDomXPath::instruction_t      INST_CEILING                    = 0x62;
+static const QDomXPath::instruction_t      INST_DECREMENT                  = 0x63;
+static const QDomXPath::instruction_t      INST_DIVIDE                     = 0x64;
+static const QDomXPath::instruction_t      INST_EQUAL                      = 0x65;
+static const QDomXPath::instruction_t      INST_FLOOR                      = 0x66;
+static const QDomXPath::instruction_t      INST_GREATER_OR_EQUAL           = 0x67;
+static const QDomXPath::instruction_t      INST_GREATER_THAN               = 0x68;
+static const QDomXPath::instruction_t      INST_IDIVIDE                    = 0x69;
+static const QDomXPath::instruction_t      INST_INCREMENT                  = 0x6A;
+static const QDomXPath::instruction_t      INST_LESS_OR_EQUAL              = 0x6B;
+static const QDomXPath::instruction_t      INST_LESS_THAN                  = 0x6C;
+static const QDomXPath::instruction_t      INST_MODULO                     = 0x6D;
+static const QDomXPath::instruction_t      INST_MULTIPLY                   = 0x6E;
+static const QDomXPath::instruction_t      INST_NEGATE                     = 0x6F;
+static const QDomXPath::instruction_t      INST_NOT                        = 0x70;
+static const QDomXPath::instruction_t      INST_NOT_EQUAL                  = 0x71;
+static const QDomXPath::instruction_t      INST_OR                         = 0x72;
+static const QDomXPath::instruction_t      INST_ROUND                      = 0x73;
+static const QDomXPath::instruction_t      INST_STRING_LENGTH              = 0x74;
+static const QDomXPath::instruction_t      INST_SUBTRACT                   = 0x75;
 
 static const QDomXPath::instruction_t      INST_AXIS                       = 0x80;
 static const QDomXPath::instruction_t      INST_ROOT                       = 0x81;
@@ -2033,35 +2063,247 @@ void inst_call()
         throw QDomXPathException_InternalError("INST_CALL not at the right location in the table of instructions");
     }
 #endif
-    function_t function;
-
-    // get PC
-    variant_t function_pc(pop_variant_data());
-    if(function_pc.atomic_value_t::getType() != atomic_value_t::ATOMIC_TYPE_INTEGER)
+    // get the internal function number (FUNC_...)
+    variant_t function_number(pop_variant_data());
+    if(function_number.atomic_value_t::getType() != atomic_value_t::ATOMIC_TYPE_INTEGER)
     {
         throw QDomXPathException_InternalError("INST_CALL expects the first element on the stack to be of type INTEGER");
     }
-    function.f_pc = static_cast<uint32_t>(function_pc.getIntegerValue());
 
     // save arguments in variables named "a1", "a2", "a3"...
     // these can be accessed with "$a1", "$a2", "$a3"...
-    // the number of arguments is saved in $argc (argument count)
+    // --the number of arguments is saved in $argc (argument count)--
+    variant_vector_t arguments;
     for(int a(1);; ++a)
     {
         variant_t arg(pop_variant_data());
         if(arg.atomic_value_t::getType() == atomic_value_t::ATOMIC_TYPE_END_OF_ARGUMENTS)
         {
             // found the end of the argument list
-            arg.atomic_value_t::setValue(static_cast<int64_t>(a));
-            function.f_variables["argc"] = arg;
             break;
         }
-        QString name(QString("a%1").arg(a));
-        function.f_variables[name] = arg;
+        arguments.push_back(arg);
     }
 
-    // the new function becomes the running "program"
-    f_functions.push_back(function);
+    // now select the function to run
+    switch(function_number.getIntegerValue())
+    {
+    case FUNC_AVG:
+        func_avg(arguments);
+        break;
+
+    case FUNC_MAX:
+        func_max(arguments);
+        break;
+
+    case FUNC_MIN:
+        func_min(arguments);
+        break;
+
+    case FUNC_SUM:
+        func_sum(arguments);
+        break;
+
+    default:
+        throw QDomXPathException_NotImplemented(QString("function %1 is not yet implemented").arg(function_number.getIntegerValue()).toStdString());
+
+    }
+}
+
+
+void func_default_to_context_node(variant_vector_t& arguments)
+{
+    if(arguments.size() == 0)
+    {
+        // retrieve the context node if no parameters were specified
+        context_vector_t::reference context(f_functions.back().f_contexts.back());
+        if(context.f_position == -1)
+        {
+            throw QDomXPathException_EmptyContext("the sum() function cannot be used without a context node and no parameters");
+        }
+        QDomXPath::node_vector_t context_node;
+        context_node.push_back(context.f_nodes[context.f_position]);
+        variant_t value;
+        value.setValue(context_node);
+        arguments.push_back(value);
+    }
+}
+
+void func_calculate_sum_or_average(variant_vector_t& arguments, bool sum_only)
+{
+    func_default_to_context_node(arguments);
+    // TODO: support sums of only decimals and singles
+    bool integer(true);
+    int64_t isum(0);
+    int count(0);
+    double dsum(0.0);
+    const int imax(arguments.size());
+    for(int i(0); i < imax; ++i)
+    {
+        variant_t arg(arguments[i]);
+        switch(arg.getType())
+        {
+        case atomic_value_t::ATOMIC_TYPE_INTEGER:
+            if(integer)
+            {
+                isum += arg.getIntegerValue();
+                dsum = isum;
+                ++count;
+                break;
+            }
+        //case atomic_type_t::ATOMIC_TYPE_DECIMAL:
+        case atomic_value_t::ATOMIC_TYPE_SINGLE:
+        case atomic_value_t::ATOMIC_TYPE_DOUBLE:
+            integer = false;
+            dsum += arg.getDoubleValue(true);
+            ++count;
+            break;
+
+        case atomic_value_t::ATOMIC_TYPE_NODE_SET:
+            {
+                integer = false;
+                QDomXPath::node_vector_t node_set(arg.getNodeSetValue());
+                const int jmax(node_set.size());
+                for(int j(0); j < jmax; ++j)
+                {
+                    QString str(variant_t::node_to_string(node_set[j]));
+                    // TODO verify that the string is a valid number
+                    // TODO if the number is decimal, avoid forcing double
+                    // (in XPath 2.0 we can use the best possible type as
+                    // defined here: http://www.w3.org/TR/xpath20/#promotion )
+                    dsum += atof(str.toUtf8().data());
+                    ++count;
+                }
+            }
+            break;
+
+        default:
+            throw QDomXPathException_WrongType("the sum/avg() functions cannot be used with types other than numbers and node-set");
+
+        }
+    }
+
+    variant_t return_value;
+    if(integer && sum_only)
+    {
+        return_value.atomic_value_t::setValue(isum);
+    }
+    else
+    {
+        if(!sum_only)
+        {
+            // compute the average
+            dsum /= static_cast<double>(count);
+        }
+        return_value.atomic_value_t::setValue(dsum);
+    }
+    f_functions.back().f_stack.push_back(return_value);
+}
+
+
+void func_sum(variant_vector_t& arguments)
+{
+    func_calculate_sum_or_average(arguments, true);
+}
+
+
+void func_avg(variant_vector_t& arguments)
+{
+    func_calculate_sum_or_average(arguments, false);
+}
+
+
+void func_calculate_min_or_max(variant_vector_t& arguments, bool min)
+{
+    func_default_to_context_node(arguments);
+    // TODO: support min/max of only decimals and singles
+    // TODO: support min/max on strings (XPath 2.0 supports such + collation)
+    bool integer(true);
+    bool first(true);
+    int64_t iresult(0);
+    double dresult(0.0);
+    const int imax(arguments.size());
+    for(int i(0); i < imax; ++i)
+    {
+        variant_t arg(arguments[i]);
+        switch(arg.getType())
+        {
+        case atomic_value_t::ATOMIC_TYPE_INTEGER:
+            if(integer)
+            {
+                int64_t v(arg.getIntegerValue());
+                if(v > iresult ^ min || first)
+                {
+                    iresult = v;
+                    first = false;
+                }
+                dresult = iresult;
+                break;
+            }
+        //case atomic_type_t::ATOMIC_TYPE_DECIMAL:
+        case atomic_value_t::ATOMIC_TYPE_SINGLE:
+        case atomic_value_t::ATOMIC_TYPE_DOUBLE:
+            integer = false;
+            {
+                double v(arg.getDoubleValue(true));
+                if(v > dresult ^ min || first)
+                {
+                    dresult = v;
+                    first = false;
+                }
+            }
+            break;
+
+        case atomic_value_t::ATOMIC_TYPE_NODE_SET:
+            {
+                integer = false;
+                QDomXPath::node_vector_t node_set(arg.getNodeSetValue());
+                const int jmax(node_set.size());
+                for(int j(0); j < jmax; ++j)
+                {
+                    QString str(variant_t::node_to_string(node_set[j]));
+                    // TODO verify that the string is a valid number
+                    // TODO if the number is decimal, avoid forcing double
+                    // (in XPath 2.0 we can use the best possible type as
+                    // defined here: http://www.w3.org/TR/xpath20/#promotion )
+                    double v(atof(str.toUtf8().data()));
+                    if(v > dresult ^ min || first)
+                    {
+                        dresult = v;
+                        first = false;
+                    }
+                }
+            }
+            break;
+
+        default:
+            throw QDomXPathException_WrongType("the min/max() functions cannot be used with types other than numbers and node-set");
+
+        }
+    }
+
+    variant_t return_value;
+    if(integer)
+    {
+        return_value.atomic_value_t::setValue(iresult);
+    }
+    else
+    {
+        return_value.atomic_value_t::setValue(dresult);
+    }
+    f_functions.back().f_stack.push_back(return_value);
+}
+
+
+void func_max(variant_vector_t& arguments)
+{
+    func_calculate_min_or_max(arguments, false);
+}
+
+
+void func_min(variant_vector_t& arguments)
+{
+    func_calculate_min_or_max(arguments, true);
 }
 
 
@@ -2961,6 +3203,42 @@ void inst_push_zero()
     f_functions.back().f_stack.push_back(value);
 }
 
+/** \brief Push the Boolean true.
+ *
+ * This function pushes the Boolean true on the stack.
+ */
+void inst_push_true()
+{
+#if QDOM_XPATH_VERIFICATION
+    // verify instruction location
+    if(f_program[f_functions.back().f_pc - 1] != INST_PUSH_TRUE)
+    {
+        throw QDomXPathException_InternalError("INST_PUSH_TRUE not at the right location in the table of instructions");
+    }
+#endif
+    variant_t value;
+    value.atomic_value_t::setValue(true);
+    f_functions.back().f_stack.push_back(value);
+}
+
+/** \brief Push the Boolean false.
+ *
+ * This function pushes the Boolean false on the stack.
+ */
+void inst_push_false()
+{
+#if QDOM_XPATH_VERIFICATION
+    // verify instruction location
+    if(f_program[f_functions.back().f_pc - 1] != INST_PUSH_FALSE)
+    {
+        throw QDomXPathException_InternalError("INST_PUSH_FALSE not at the right location in the table of instructions");
+    }
+#endif
+    variant_t value;
+    value.atomic_value_t::setValue(false);
+    f_functions.back().f_stack.push_back(value);
+}
+
 /** \brief Push an integer on the stack from one byte.
  *
  * This function reads one byte from the program and pushes it on the stack.
@@ -3247,6 +3525,179 @@ void inst_decrement()
         throw QDomXPathException_WrongType("the '--' operator cannot be used with the left and right hand side types");
 
     }
+    f_functions.back().f_stack.push_back(value);
+}
+
+
+/** \brief Return the length of a string in characters.
+ *
+ * This function pops a string from the stack, computes its length in
+ * characters, and pushes that length back on the stack.
+ */
+void inst_string_length()
+{
+#if QDOM_XPATH_VERIFICATION
+    // verify instruction location
+    if(f_program[f_functions.back().f_pc - 1] != INST_STRING_LENGTH)
+    {
+        throw QDomXPathException_InternalError("INST_STRING_LENGTH not at the right location in the table of instructions");
+    }
+#endif
+    variant_t value(pop_variant_data());
+    if(value.getType() != atomic_value_t::ATOMIC_TYPE_STRING)
+    {
+        throw QDomXPathException_WrongType("the string-length() function only accepts strings");
+    }
+    value.atomic_value_t::setValue(static_cast<int64_t>(value.getStringValue().length()));
+
+    f_functions.back().f_stack.push_back(value);
+}
+
+
+/** \brief Compute the ceiling of a number.
+ *
+ * This function pops one number. If the number is an integer, then it pushes
+ * it back as is. If the number if a Decimal, a Single, or a Double, it
+ * checks the decimal digits. If all are zeroes, then the same value is
+ * pushed back on the stack. Otherwise it resets all the decimal digits
+ * adds one and then push the result back on the stack as the same type.
+ *
+ * \note
+ * This function does not yet handle NaN numbers.
+ *
+ * \note
+ * The value is NOT transformed to an integer. The cast needs to be used
+ * for that purpose.
+ */
+void inst_ceiling()
+{
+#if QDOM_XPATH_VERIFICATION
+    // verify instruction location
+    if(f_program[f_functions.back().f_pc - 1] != INST_CEILING)
+    {
+        throw QDomXPathException_InternalError("INST_CEILING not at the right location in the table of instructions");
+    }
+#endif
+    variant_t value(pop_variant_data());
+    switch(value.getType())
+    {
+    case atomic_value_t::ATOMIC_TYPE_INTEGER:
+        // nothing happens
+        break;
+
+    case atomic_value_t::ATOMIC_TYPE_SINGLE:
+        value.atomic_value_t::setValue(ceilf(value.getSingleValue()));
+        break;
+
+    case atomic_value_t::ATOMIC_TYPE_DOUBLE:
+        value.atomic_value_t::setValue(ceil(value.getDoubleValue()));
+        break;
+
+    default:
+        throw QDomXPathException_WrongType("the ceiling() function can only be applied against numbers");
+
+    }
+
+    f_functions.back().f_stack.push_back(value);
+}
+
+
+/** \brief Compute the floor of a number.
+ *
+ * This function pops one number. If the number is an integer, then it pushes
+ * it back as is. If the number if a Decimal, a Single, or a Double, it
+ * sets all of its decimal digits to zero and pushes that back on the
+ * same as the same type.
+ *
+ * \note
+ * This function does not yet handle NaN numbers.
+ *
+ * \note
+ * The value is NOT transformed to an integer. The cast needs to be used
+ * for that purpose.
+ */
+void inst_floor()
+{
+#if QDOM_XPATH_VERIFICATION
+    // verify instruction location
+    if(f_program[f_functions.back().f_pc - 1] != INST_FLOOR)
+    {
+        throw QDomXPathException_InternalError("INST_FLOOR not at the right location in the table of instructions");
+    }
+#endif
+    variant_t value(pop_variant_data());
+    switch(value.getType())
+    {
+    case atomic_value_t::ATOMIC_TYPE_INTEGER:
+        // nothing happens
+        break;
+
+    case atomic_value_t::ATOMIC_TYPE_SINGLE:
+        value.atomic_value_t::setValue(floorf(value.getSingleValue()));
+        break;
+
+    case atomic_value_t::ATOMIC_TYPE_DOUBLE:
+        value.atomic_value_t::setValue(floor(value.getDoubleValue()));
+        break;
+
+    default:
+        throw QDomXPathException_WrongType("the floor() function can only be applied against numbers");
+
+    }
+
+    f_functions.back().f_stack.push_back(value);
+}
+
+
+/** \brief Compute the rounded value of a number.
+ *
+ * This function pops one number. If the number is an integer, then it pushes
+ * it back as is. If the number if a Decimal, a Single, or a Double, then
+ * the function adds 0.5 and then it computes the floor() (the floor
+ * sets all the decimal digits of the result to zeroes.)
+ *
+ * The result is pushed back on the stack as the same type as the input.
+ *
+ * \note
+ * Numbers such as -0.8 are expected to return -0.0 which this function
+ * does not do.
+ *
+ * \note
+ * This function does not yet handle NaN numbers.
+ *
+ * \note
+ * The value is NOT transformed to an integer. The cast needs to be used
+ * for that purpose.
+ */
+void inst_round()
+{
+#if QDOM_XPATH_VERIFICATION
+    // verify instruction location
+    if(f_program[f_functions.back().f_pc - 1] != INST_ROUND)
+    {
+        throw QDomXPathException_InternalError("INST_ROUND not at the right location in the table of instructions");
+    }
+#endif
+    variant_t value(pop_variant_data());
+    switch(value.getType())
+    {
+    case atomic_value_t::ATOMIC_TYPE_INTEGER:
+        // nothing happens
+        break;
+
+    case atomic_value_t::ATOMIC_TYPE_SINGLE:
+        value.atomic_value_t::setValue(floorf(value.getSingleValue() + 0.5f));
+        break;
+
+    case atomic_value_t::ATOMIC_TYPE_DOUBLE:
+        value.atomic_value_t::setValue(floor(value.getDoubleValue() + 0.5));
+        break;
+
+    default:
+        throw QDomXPathException_WrongType("the round() function can only be applied against numbers");
+
+    }
+
     f_functions.back().f_stack.push_back(value);
 }
 
@@ -4335,7 +4786,7 @@ void inst_predicate()
     case atomic_value_t::ATOMIC_TYPE_SINGLE:
     case atomic_value_t::ATOMIC_TYPE_DOUBLE:
         contexts_not_empty();
-        result = predicate_result.getIntegerValue(true) == f_functions.back().f_contexts.back().f_position;
+        result = predicate_result.getIntegerValue(true) == f_functions.back().f_contexts.back().f_position + 1;
         break;
 
     default:
@@ -5322,6 +5773,11 @@ bool get_token()
                 f_last_token.f_token = token_t::TOK_DOUBLE_COLON;
                 f_last_token.f_string += c;
             }
+            else
+            {
+                ungetc(c);
+                f_last_token.f_token = token_t::TOK_COLON;
+            }
             break;
 
         case '/':
@@ -5420,7 +5876,14 @@ bool get_token()
                     }
                     if(c == quote)
                     {
-                        break;
+                        // in XPath 2.0 we can double quotes to insert
+                        // a quote in the string
+                        c = getc();
+                        if(c != quote)
+                        {
+                            ungetc(c);
+                            break;
+                        }
                     }
                     f_last_token.f_string += c;
                 }
@@ -5485,7 +5948,7 @@ bool get_token()
                     }
                     f_last_token.f_string += c;
                     frac /= 10.0;
-                    f_last_token.f_real += (c - '\0') * frac;
+                    f_last_token.f_real += (c - '0') * frac;
                     c = getc();
                 }
             }
@@ -5781,7 +6244,7 @@ void append_instruction(QDomXPath::instruction_t inst)
     }
 }
 
-void append_push(const QString& string)
+void append_push_string(const QString& string)
 {
     int offset(f_program.size());
 
@@ -5844,7 +6307,23 @@ void append_push(const QString& string)
     }
 }
 
-void append_push(const int64_t integer)
+
+void append_push_boolean(const bool boolean)
+{
+    // note: I used a terciary here, but that prevents the compiler from
+    //       optimizing the INST_PUSH_TRUE/FALSE and the link fails!?
+    if(boolean)
+    {
+        append_instruction(INST_PUSH_TRUE);
+    }
+    else
+    {
+        append_instruction(INST_PUSH_FALSE);
+    }
+}
+
+
+void append_push_integer(const int64_t integer)
 {
     int offset(f_program.size());
 
@@ -5909,7 +6388,7 @@ void append_push(const int64_t integer)
     }
 }
 
-void append_double(const double real)
+void append_push_double(const double real)
 {
     int offset(f_program.size());
 
@@ -5942,30 +6421,30 @@ void append_double(const double real)
     }
 }
 
-void append_push(const token_t& token)
+void append_push_token(const token_t& token)
 {
     switch(token.f_token)
     {
     case token_t::TOK_ASTERISK:
-        append_push("*");
+        append_push_string("*");
         break;
 
     case token_t::TOK_STRING:
     case token_t::TOK_PREFIX: // this is like a string
     case token_t::TOK_NCNAME: // this can be a lie (in case of variable names, it can include a colon)
-        append_push(token.f_string);
+        append_push_string(token.f_string);
         break;
 
     case token_t::TOK_INTEGER:
-        append_push(token.f_integer);
+        append_push_integer(token.f_integer);
         break;
 
     case token_t::TOK_REAL:
-        append_push(token.f_real);
+        append_push_double(token.f_real);
         break;
 
     default:
-        throw QDomXPathException_InternalError(QString("unexpected token type (%1/%2) in an append_push() call").arg(static_cast<int>(token.f_token)).arg(token.f_string).toStdString());
+        throw QDomXPathException_InternalError(QString("unexpected token type (%1/%2) in an append_push_token() call").arg(static_cast<int>(token.f_token)).arg(token.f_string).toStdString());
 
     }
 }
@@ -6000,10 +6479,10 @@ void append_axis(const token_t& axis, const token_t& prefix, const token_t& loca
         // Axis '::' NodeType '(' ')'
         switch(local_part.f_token)
         {
-        case token_t::TOK_NODE_TYPE_COMMENT:                 append_push(NODE_TYPE_COMMENT);                 break;
-        case token_t::TOK_NODE_TYPE_NODE:                    append_push(NODE_TYPE_NODE);                    break;
-        case token_t::TOK_NODE_TYPE_PROCESSING_INSTRUCTION:  append_push(NODE_TYPE_PROCESSING_INSTRUCTION);  break;
-        case token_t::TOK_NODE_TYPE_TEXT:                    append_push(NODE_TYPE_TEXT);                    break;
+        case token_t::TOK_NODE_TYPE_COMMENT:                 append_push_integer(NODE_TYPE_COMMENT);                 break;
+        case token_t::TOK_NODE_TYPE_NODE:                    append_push_integer(NODE_TYPE_NODE);                    break;
+        case token_t::TOK_NODE_TYPE_PROCESSING_INSTRUCTION:  append_push_integer(NODE_TYPE_PROCESSING_INSTRUCTION);  break;
+        case token_t::TOK_NODE_TYPE_TEXT:                    append_push_integer(NODE_TYPE_TEXT);                    break;
 
         default:
             throw QDomXPathException_InvalidError("invalid node type");
@@ -6012,32 +6491,32 @@ void append_axis(const token_t& axis, const token_t& prefix, const token_t& loca
 
         // if 'processing-instruction' then we could have a string here
         // if empty, then no name was specified to the NodeType '(' ')'
-        append_push(axis.f_string);
+        append_push_string(axis.f_string);
     }
     else
     {
         // push the name, it may be "*:*" if the node type is specified
-        append_push(local_part);
-        append_push(prefix);
+        append_push_token(local_part);
+        append_push_token(prefix);
     }
 
     // TODO: node type
  
     switch(axis.f_token)
     {
-    case token_t::TOK_AXIS_NAME_ANCESTOR:           append_push(AXIS_ANCESTOR);             break;
-    case token_t::TOK_AXIS_NAME_ANCESTOR_OR_SELF:   append_push(AXIS_ANCESTOR_OR_SELF);     break;
-    case token_t::TOK_AXIS_NAME_ATTRIBUTE:          append_push(AXIS_ATTRIBUTE);            break;
-    case token_t::TOK_AXIS_NAME_CHILD:              append_push(AXIS_CHILD);                break;
-    case token_t::TOK_AXIS_NAME_DESCENDANT:         append_push(AXIS_DESCENDANT);           break;
-    case token_t::TOK_AXIS_NAME_DESCENDANT_OR_SELF: append_push(AXIS_DESCENDANT_OR_SELF);   break;
-    case token_t::TOK_AXIS_NAME_FOLLOWING:          append_push(AXIS_FOLLOWING);            break;
-    case token_t::TOK_AXIS_NAME_FOLLOWING_SIBLING:  append_push(AXIS_FOLLOWING_SIBLING);    break;
-    case token_t::TOK_AXIS_NAME_NAMESPACE:          append_push(AXIS_NAMESPACE);            break;
-    case token_t::TOK_AXIS_NAME_PARENT:             append_push(AXIS_PARENT);               break;
-    case token_t::TOK_AXIS_NAME_PRECEDING:          append_push(AXIS_PRECEDING);            break;
-    case token_t::TOK_AXIS_NAME_PRECEDING_SIBLING:  append_push(AXIS_PRECEDING_SIBLING);    break;
-    case token_t::TOK_AXIS_NAME_SELF:               append_push(AXIS_SELF);                 break;
+    case token_t::TOK_AXIS_NAME_ANCESTOR:           append_push_integer(AXIS_ANCESTOR);             break;
+    case token_t::TOK_AXIS_NAME_ANCESTOR_OR_SELF:   append_push_integer(AXIS_ANCESTOR_OR_SELF);     break;
+    case token_t::TOK_AXIS_NAME_ATTRIBUTE:          append_push_integer(AXIS_ATTRIBUTE);            break;
+    case token_t::TOK_AXIS_NAME_CHILD:              append_push_integer(AXIS_CHILD);                break;
+    case token_t::TOK_AXIS_NAME_DESCENDANT:         append_push_integer(AXIS_DESCENDANT);           break;
+    case token_t::TOK_AXIS_NAME_DESCENDANT_OR_SELF: append_push_integer(AXIS_DESCENDANT_OR_SELF);   break;
+    case token_t::TOK_AXIS_NAME_FOLLOWING:          append_push_integer(AXIS_FOLLOWING);            break;
+    case token_t::TOK_AXIS_NAME_FOLLOWING_SIBLING:  append_push_integer(AXIS_FOLLOWING_SIBLING);    break;
+    case token_t::TOK_AXIS_NAME_NAMESPACE:          append_push_integer(AXIS_NAMESPACE);            break;
+    case token_t::TOK_AXIS_NAME_PARENT:             append_push_integer(AXIS_PARENT);               break;
+    case token_t::TOK_AXIS_NAME_PRECEDING:          append_push_integer(AXIS_PRECEDING);            break;
+    case token_t::TOK_AXIS_NAME_PRECEDING_SIBLING:  append_push_integer(AXIS_PRECEDING_SIBLING);    break;
+    case token_t::TOK_AXIS_NAME_SELF:               append_push_integer(AXIS_SELF);                 break;
 
     default:
         throw QDomXPathException_InvalidError("invalid axis type");
@@ -6059,7 +6538,7 @@ void append_push_for_jump(const QString& label)
         printf("=== push for jump (%d)\n", f_program.size());
     }
     f_future_labels[label].push_back(f_program.size());
-    append_push(0x1111);
+    append_push_integer(0x1111); // reserve 2 bytes for pc
 }
 
 
@@ -6099,7 +6578,7 @@ void unary_expr()
         {
             negate ^= 1;
         }
-        else if(f_last_token.f_token != token_t::TOK_PLUS) // XPath 2.0
+        else if(f_last_token.f_token != token_t::TOK_PLUS) // XPath 2.0 allows unary '+'
         {
             break;
         }
@@ -6267,19 +6746,246 @@ void or_expr()
     }
 }
 
-void function_call()
+
+/** \brief Parse a function call parameters.
+ *
+ * This function handles internal function calls such as fn:position().
+ *
+ * If the prefix is not defined, we use 'fn' as the default. I'm not
+ * totally sure that this is correct since some internal functions
+ * are defined with the xs prefix. (the op:... functions are operators
+ * only so it wouldn't apply as a default anyway.)
+ *
+ * Note that for speed a certain number of internal functions are fully
+ * parsed here and transformed into code directly instead of an INST_CALL
+ * instruction.
+ *
+ * \param[in] prefix_token  The prefix of the function, if "*" or "", then "fn" is used
+ * \param[in] local_part  The name of the function (i.e. "position", "last", ...)
+ */
+void function_call(token_t prefix_token, token_t local_part)
 {
     // the last token read was the '(', now we read the arguments which
     // each are full expressions:
     //      Argument ::= Expr
     //      Expr ::= OrExpr
-    append_instruction(INST_PUSH_END_OF_ARGUMENTS);
+
+    // skip the '('
     get_token();
+
+    // make sure we have the default namespace if the user did not specify it
+    if(prefix_token.f_string == "*" || prefix_token.f_string.isEmpty())
+    {
+        // the default namespace is "fn"
+        prefix_token.f_string = "fn";
+    }
+
+    // set of internal functions that we can transform in one or a very few
+    // basic instructions
+    if(prefix_token.f_string == "fn")
+    {
+        switch(local_part.f_string[0].unicode())
+        {
+        case 'c':
+            if(local_part.f_string == "ceiling")
+            {
+                if(f_last_token.f_token == token_t::TOK_CLOSE_PARENTHESIS)
+                {
+                    throw QDomXPathException_SyntaxError("expected one parameter for the ceiling() function");
+                }
+                or_expr();
+                if(f_last_token.f_token != token_t::TOK_CLOSE_PARENTHESIS)
+                {
+                    throw QDomXPathException_SyntaxError("expected exactly one parameter for the ceiling() function");
+                }
+                append_instruction(INST_CEILING);
+                // skip the ')'
+                get_token();
+                return;
+            }
+            if(local_part.f_string == "count")
+            {
+                if(f_last_token.f_token == token_t::TOK_CLOSE_PARENTHESIS)
+                {
+                    throw QDomXPathException_SyntaxError("expected one parameter for the count() function");
+                }
+                or_expr();
+                if(f_last_token.f_token != token_t::TOK_CLOSE_PARENTHESIS)
+                {
+                    throw QDomXPathException_SyntaxError("expected exactly one parameter for the count() function");
+                }
+                append_instruction(INST_NODE_SET_SIZE);
+                // skip the ')'
+                get_token();
+                return;
+            }
+            break;
+
+        case 'e':
+            if(local_part.f_string == "empty"
+            || local_part.f_string == "exists")
+            {
+                if(f_last_token.f_token == token_t::TOK_CLOSE_PARENTHESIS)
+                {
+                    throw QDomXPathException_SyntaxError("expected one parameter for the empty() function");
+                }
+                or_expr();
+                if(f_last_token.f_token != token_t::TOK_CLOSE_PARENTHESIS)
+                {
+                    throw QDomXPathException_SyntaxError("expected exactly one parameter for the empty() function");
+                }
+                append_instruction(INST_NODE_SET_SIZE);
+                append_push_integer(0);
+                append_instruction(INST_EQUAL);
+                // skip the ')'
+                get_token();
+                return;
+            }
+            break;
+
+        case 'f':
+            if(local_part.f_string == "false")
+            {
+                if(f_last_token.f_token != token_t::TOK_CLOSE_PARENTHESIS)
+                {
+                    throw QDomXPathException_SyntaxError("expected ')' immediately for the false() function does not accept parameters");
+                }
+                append_push_boolean(false);
+                // skip the ')'
+                get_token();
+                return;
+            }
+            if(local_part.f_string == "floor")
+            {
+                if(f_last_token.f_token == token_t::TOK_CLOSE_PARENTHESIS)
+                {
+                    throw QDomXPathException_SyntaxError("expected one parameter for the floor() function");
+                }
+                or_expr();
+                if(f_last_token.f_token != token_t::TOK_CLOSE_PARENTHESIS)
+                {
+                    throw QDomXPathException_SyntaxError("expected exactly one parameter for the floor() function");
+                }
+                append_instruction(INST_FLOOR);
+                // skip the ')'
+                get_token();
+                return;
+            }
+            break;
+
+        case 'l':
+            if(local_part.f_string == "last")
+            {
+                if(f_last_token.f_token != token_t::TOK_CLOSE_PARENTHESIS)
+                {
+                    throw QDomXPathException_SyntaxError("expected ')' immediately for the last() function does not accept parameters");
+                }
+                append_instruction(INST_GET_NODE_SET);
+                append_instruction(INST_NODE_SET_SIZE);
+                // skip the ')'
+                get_token();
+                return;
+            }
+            break;
+
+        case 'n':
+            if(local_part.f_string == "not")
+            {
+                if(f_last_token.f_token == token_t::TOK_CLOSE_PARENTHESIS)
+                {
+                    throw QDomXPathException_SyntaxError("expected one parameter for the not() function");
+                }
+                or_expr();
+                if(f_last_token.f_token != token_t::TOK_CLOSE_PARENTHESIS)
+                {
+                    throw QDomXPathException_SyntaxError("expected exactly one parameter for the not() function");
+                }
+                append_instruction(INST_NOT);
+                // skip the ')'
+                get_token();
+                return;
+            }
+            break;
+
+        case 'p':
+            if(local_part.f_string == "position")
+            {
+                if(f_last_token.f_token != token_t::TOK_CLOSE_PARENTHESIS)
+                {
+                    throw QDomXPathException_SyntaxError("expected ')' immediately for the position() function does not accept parameters");
+                }
+                append_instruction(INST_GET_POSITION);
+                // skip the ')'
+                get_token();
+                return;
+            }
+            break;
+
+        case 'r':
+            if(local_part.f_string == "round")
+            {
+                if(f_last_token.f_token == token_t::TOK_CLOSE_PARENTHESIS)
+                {
+                    throw QDomXPathException_SyntaxError("expected one parameter for the round() function");
+                }
+                or_expr();
+                if(f_last_token.f_token != token_t::TOK_CLOSE_PARENTHESIS)
+                {
+                    throw QDomXPathException_SyntaxError("expected exactly one parameter for the round() function");
+                }
+                append_instruction(INST_ROUND);
+                // skip the ')'
+                get_token();
+                return;
+            }
+            break;
+
+        case 's':
+            if(local_part.f_string == "string-length")
+            {
+                // TODO add support for '.' instead of an argument
+                if(f_last_token.f_token == token_t::TOK_CLOSE_PARENTHESIS)
+                {
+                    throw QDomXPathException_SyntaxError("expected one parameter for the string-length() function");
+                }
+                or_expr();
+                if(f_last_token.f_token != token_t::TOK_CLOSE_PARENTHESIS)
+                {
+                    throw QDomXPathException_SyntaxError("expected exactly one parameter for the string-length() function");
+                }
+                append_instruction(INST_STRING_LENGTH);
+                // skip the ')'
+                get_token();
+                return;
+            }
+            break;
+
+        case 't':
+            if(local_part.f_string == "true")
+            {
+                if(f_last_token.f_token != token_t::TOK_CLOSE_PARENTHESIS)
+                {
+                    throw QDomXPathException_SyntaxError("expected ')' immediately for the true() function does not accept parameters");
+                }
+                append_push_boolean(true);
+                // skip the ')'
+                get_token();
+                return;
+            }
+            break;
+
+        }
+    }
+
+    int argc(0);
+    append_instruction(INST_PUSH_END_OF_ARGUMENTS);
     if(f_last_token.f_token != token_t::TOK_CLOSE_PARENTHESIS)
     {
+        ++argc;
         or_expr();
         while(f_last_token.f_token == token_t::TOK_COMMA)
         {
+            ++argc;
             get_token();
             or_expr();
         }
@@ -6287,11 +6993,83 @@ void function_call()
         {
             throw QDomXPathException_SyntaxError("expected ')' or ',' in the list of argument to a function call");
         }
-        // skip the ')'
-        get_token();
     }
+    // skip the ')'
+    get_token();
+
+    // by default we expect no parameters
+    int min_argc(0);
+    int max_argc(0);
+    internal_func_t f(FUNC_UNKNOWN);
+
+    switch(prefix_token.f_string[0].unicode())
+    {
+    case 'f':
+        if(prefix_token.f_string == "fn")
+        {
+            switch(local_part.f_string[0].unicode())
+            {
+            case 'a':
+                if(local_part.f_string == "avg")
+                {
+                    f = FUNC_AVG;
+                    max_argc = -1; // any number of parameters
+                }
+                break;
+
+            case 'm':
+                if(local_part.f_string == "max")
+                {
+                    f = FUNC_MAX;
+                    max_argc = -1; // any number of parameters
+                }
+                else if(local_part.f_string == "min")
+                {
+                    f = FUNC_MIN;
+                    max_argc = -1; // any number of parameters
+                }
+                break;
+
+            case 's':
+                if(local_part.f_string == "sum")
+                {
+                    f = FUNC_SUM;
+                    max_argc = -1; // any number of parameters
+                }
+                break;
+
+            }
+        }
+        break;
+
+    default:
+        break;
+
+    }
+
+    // we do not yet support user defined functions
+    if(f == FUNC_UNKNOWN)
+    {
+        throw QDomXPathException_UnknownFunctionError(QString("'%1' is not a known function (we may not yet support it...)")
+                                                    .arg(prefix_token.f_string + ":" + local_part.f_string).toStdString());
+    }
+    if(argc < min_argc)
+    {
+        throw QDomXPathException_UnknownFunctionError(QString("'%1' expects at least %2 arguments, but got %3 instead")
+                                                    .arg(prefix_token.f_string + ":" + local_part.f_string)
+                                                    .arg(min_argc).arg(argc).toStdString());
+    }
+    if(max_argc != -1 && argc > max_argc)
+    {
+        throw QDomXPathException_UnknownFunctionError(QString("'%1' expects at most %2 arguments, it got %3 instead")
+                                                    .arg(prefix_token.f_string + ":" + local_part.f_string)
+                                                    .arg(max_argc).arg(argc).toStdString());
+    }
+
+    append_push_integer(f);
     append_instruction(INST_CALL);
 }
+
 
 void predicate()
 {
@@ -6313,7 +7091,7 @@ void predicate()
         const int next_node(f_program.size());
 
         append_instruction(INST_GET_CONTEXT_NODE);
-        append_push(f_predicate_variable);
+        append_push_string(f_predicate_variable);
         append_instruction(INST_SET_VARIABLE);
 
         or_expr();
@@ -6324,7 +7102,7 @@ void predicate()
 
         append_instruction(INST_PREDICATE); // "apply" predicate
         //append_instruction(INST_NEXT_CONTEXT_NODE);
-        append_push(next_node);
+        append_push_integer(next_node);
         append_instruction(INST_JUMP_IF_TRUE); // next_node
         append_instruction(INST_GET_RESULT);
         append_instruction(INST_SET_NODE_SET);
@@ -6368,7 +7146,7 @@ void location_path()
                 //       per document...
                 if(!predicate_variable.isEmpty())
                 {
-                    append_push(predicate_variable);
+                    append_push_string(predicate_variable);
                     append_instruction(INST_GET_VARIABLE);
                     predicate_variable.clear();
                 }
@@ -6443,7 +7221,7 @@ void location_path()
                 f_last_token = save_token;
                 if(!token_is_axis_name())
                 {
-                    throw QDomXPathException_SyntaxError("a double colon (::) must be precedeed by an axis name");
+                    throw QDomXPathException_SyntaxError(QString("a double colon (::) must be preceded by a valid axis name, \"%1\" was not recognized as such").arg(f_last_token.f_string).toStdString());
                 }
                 axis_token = f_last_token;
 axis_name_attribute:
@@ -6468,7 +7246,8 @@ axis_name_attribute:
                 prefix_token = save_token;
                 get_token();
                 save_token = f_last_token;
-                switch(f_last_token.f_token)
+                get_token();
+                switch(save_token.f_token)
                 {
                 case token_t::TOK_ASTERISK:
                     break;
@@ -6478,7 +7257,7 @@ axis_name_attribute:
                     {
                         // A function name is a QName which means it can include a prefix
                         //      Prefix ':' LocalPart '(' ... ')'
-                        function_call(); //(prefix_token, save_token);
+                        function_call(prefix_token, save_token);
                         goto finished;
                     }
                     break;
@@ -6487,7 +7266,6 @@ axis_name_attribute:
                     throw QDomXPathException_SyntaxError("expected an NCName or '*' after a prefix");
 
                 }
-                get_token();
             }
             else if(f_last_token.f_token == token_t::TOK_OPEN_PARENTHESIS)
             {
@@ -6502,7 +7280,7 @@ axis_name_attribute:
                     if(function_call_valid)
                     {
                         // the default prefix token is "*" meaning no prefix
-                        function_call(); //(prefix_token, save_token);
+                        function_call(prefix_token, save_token);
                         goto finished;
                     }
                     // we got a function call here!
@@ -6539,7 +7317,7 @@ axis_apply:
                 // nodes against this axis
                 if(!predicate_variable.isEmpty())
                 {
-                    append_push(predicate_variable);
+                    append_push_string(predicate_variable);
                     append_instruction(INST_GET_VARIABLE);
                     predicate_variable.clear();
                 }
@@ -6579,7 +7357,7 @@ finished:
     {
         // repeat with the next node of that context
         append_instruction(INST_NEXT_CONTEXT_NODE);
-        append_push(labels[i]);
+        append_push_integer(labels[i]);
         append_instruction(INST_JUMP_IF_TRUE);
 
         // return the result (node-set)
@@ -6611,7 +7389,7 @@ void variable_reference()
         // variables at this point
         prefix.f_string += ":" + f_last_token.f_string;
     }
-    append_push(prefix);
+    append_push_token(prefix);
     append_instruction(INST_GET_VARIABLE);
 }
 
@@ -6633,7 +7411,7 @@ void path_expr()
     case token_t::TOK_INTEGER: // PathExpr => FilterExpr => PrimaryExpr
     case token_t::TOK_REAL: // PathExpr => FilterExpr => PrimaryExpr
     case token_t::TOK_STRING: // PathExpr => FilterExpr => PrimaryExpr
-        append_push(f_last_token);
+        append_push_token(f_last_token);
         get_token();
         break;
 
@@ -6677,7 +7455,7 @@ void union_expr()
     //append_instruction(INST_DUPLICATE1);
     //++f_label_counter;
     //QString variable(QString("$%1").arg(f_label_counter));
-    //append_push(variable);
+    //append_push_string(variable);
     //append_instruction(INST_SET_VARIABLE);
 
     path_expr();
@@ -6689,7 +7467,7 @@ void union_expr()
             // skip the pipe
             get_token();
 
-            //append_push(variable);
+            //append_push_string(variable);
             //append_instruction(INST_GET_VARIABLE);
 
             path_expr();
@@ -6715,7 +7493,7 @@ void parse(bool show_commands)
     ++f_label_counter;
     f_predicate_variable = QString("$%1").arg(f_label_counter);
     QString save_predicate_variable(f_predicate_variable);
-    append_push(f_predicate_variable);
+    append_push_string(f_predicate_variable);
     append_instruction(INST_SET_VARIABLE);
 
     union_expr();
@@ -7040,6 +7818,12 @@ uint32_t disassemble_push_end_of_arguments(uint32_t pc)
     return 1;
 }
 
+uint32_t disassemble_push_false(uint32_t pc)
+{
+    printf("push_false\n");
+    return 1;
+}
+
 uint32_t disassemble_push_large_string(uint32_t pc)
 {
     uint32_t size = (static_cast<uint32_t>(f_program[pc + 0]) << 24)
@@ -7127,6 +7911,12 @@ uint32_t disassemble_push_small_string(uint32_t pc)
     return 2 + size;
 }
 
+uint32_t disassemble_push_true(uint32_t pc)
+{
+    printf("push_true\n");
+    return 1;
+}
+
 uint32_t disassemble_push_zero(uint32_t pc)
 {
     printf("push_integer 0\n");
@@ -7145,6 +7935,12 @@ uint32_t disassemble_and(uint32_t pc)
     return 1;
 }
 
+uint32_t disassemble_ceiling(uint32_t pc)
+{
+    printf("ceiling\n");
+    return 1;
+}
+
 uint32_t disassemble_decrement(uint32_t pc)
 {
     printf("decrement\n");
@@ -7160,6 +7956,12 @@ uint32_t disassemble_divide(uint32_t pc)
 uint32_t disassemble_equal(uint32_t pc)
 {
     printf("equal\n");
+    return 1;
+}
+
+uint32_t disassemble_floor(uint32_t pc)
+{
+    printf("floor\n");
     return 1;
 }
 
@@ -7232,6 +8034,18 @@ uint32_t disassemble_not_equal(uint32_t pc)
 uint32_t disassemble_or(uint32_t pc)
 {
     printf("or\n");
+    return 1;
+}
+
+uint32_t disassemble_round(uint32_t pc)
+{
+    printf("round\n");
+    return 1;
+}
+
+uint32_t disassemble_string_length(uint32_t pc)
+{
+    printf("string_length\n");
     return 1;
 }
 
@@ -7344,7 +8158,7 @@ int disassemble_instruction(int pc)
 
 void disassemble()
 {
-    int pc(0);
+    int pc(f_program_start_offset);
     while(pc < f_program.size())
     {
         pc += disassemble_instruction(pc);
@@ -7489,19 +8303,19 @@ QDomXPath::QDomXPathImpl::instruction_function_t const QDomXPath::QDomXPathImpl:
     , /* 0x45 */ &QDomXPathImpl::inst_push_empty_set
     , /* 0x46 */ &QDomXPathImpl::inst_push_empty_string
     , /* 0x47 */ &QDomXPathImpl::inst_push_end_of_arguments
-    , /* 0x48 */ &QDomXPathImpl::inst_push_large_string
-    , /* 0x49 */ &QDomXPathImpl::inst_push_long
-    , /* 0x4A */ &QDomXPathImpl::inst_push_longlong
-    , /* 0x4B */ &QDomXPathImpl::inst_push_medium_string
-    , /* 0x4C */ &QDomXPathImpl::inst_push_negative_byte
-    , /* 0x4D */ &QDomXPathImpl::inst_push_negative_short
-    , /* 0x4E */ &QDomXPathImpl::inst_push_negative_long
-    , /* 0x4F */ &QDomXPathImpl::inst_push_short
+    , /* 0x48 */ &QDomXPathImpl::inst_push_false
+    , /* 0x49 */ &QDomXPathImpl::inst_push_large_string
+    , /* 0x4A */ &QDomXPathImpl::inst_push_long
+    , /* 0x4B */ &QDomXPathImpl::inst_push_longlong
+    , /* 0x4C */ &QDomXPathImpl::inst_push_medium_string
+    , /* 0x4D */ &QDomXPathImpl::inst_push_negative_byte
+    , /* 0x4E */ &QDomXPathImpl::inst_push_negative_short
+    , /* 0x4F */ &QDomXPathImpl::inst_push_negative_long
 
-    , /* 0x50 */ &QDomXPathImpl::inst_push_small_string
-    , /* 0x51 */ &QDomXPathImpl::inst_push_zero
-    , /* 0x52 */ &QDomXPathImpl::inst_undefined_instruction
-    , /* 0x53 */ &QDomXPathImpl::inst_undefined_instruction
+    , /* 0x50 */ &QDomXPathImpl::inst_push_short
+    , /* 0x51 */ &QDomXPathImpl::inst_push_small_string
+    , /* 0x52 */ &QDomXPathImpl::inst_push_true
+    , /* 0x53 */ &QDomXPathImpl::inst_push_zero
     , /* 0x54 */ &QDomXPathImpl::inst_undefined_instruction
     , /* 0x55 */ &QDomXPathImpl::inst_undefined_instruction
     , /* 0x56 */ &QDomXPathImpl::inst_undefined_instruction
@@ -7517,27 +8331,27 @@ QDomXPath::QDomXPathImpl::instruction_function_t const QDomXPath::QDomXPathImpl:
 
     , /* 0x60 */ &QDomXPathImpl::inst_add
     , /* 0x61 */ &QDomXPathImpl::inst_and
-    , /* 0x62 */ &QDomXPathImpl::inst_decrement
-    , /* 0x63 */ &QDomXPathImpl::inst_divide
-    , /* 0x64 */ &QDomXPathImpl::inst_equal
-    , /* 0x65 */ &QDomXPathImpl::inst_greater_or_equal
-    , /* 0x66 */ &QDomXPathImpl::inst_greater_than
-    , /* 0x67 */ &QDomXPathImpl::inst_idivide
-    , /* 0x68 */ &QDomXPathImpl::inst_increment
-    , /* 0x69 */ &QDomXPathImpl::inst_less_or_equal
-    , /* 0x6A */ &QDomXPathImpl::inst_less_than
-    , /* 0x6B */ &QDomXPathImpl::inst_modulo
-    , /* 0x6C */ &QDomXPathImpl::inst_multiply
-    , /* 0x6D */ &QDomXPathImpl::inst_negate
-    , /* 0x6E */ &QDomXPathImpl::inst_not
-    , /* 0x6F */ &QDomXPathImpl::inst_not_equal
+    , /* 0x62 */ &QDomXPathImpl::inst_ceiling
+    , /* 0x63 */ &QDomXPathImpl::inst_decrement
+    , /* 0x64 */ &QDomXPathImpl::inst_divide
+    , /* 0x65 */ &QDomXPathImpl::inst_equal
+    , /* 0x66 */ &QDomXPathImpl::inst_floor
+    , /* 0x67 */ &QDomXPathImpl::inst_greater_or_equal
+    , /* 0x68 */ &QDomXPathImpl::inst_greater_than
+    , /* 0x69 */ &QDomXPathImpl::inst_idivide
+    , /* 0x6A */ &QDomXPathImpl::inst_increment
+    , /* 0x6B */ &QDomXPathImpl::inst_less_or_equal
+    , /* 0x6C */ &QDomXPathImpl::inst_less_than
+    , /* 0x6D */ &QDomXPathImpl::inst_modulo
+    , /* 0x6E */ &QDomXPathImpl::inst_multiply
+    , /* 0x6F */ &QDomXPathImpl::inst_negate
 
-    , /* 0x70 */ &QDomXPathImpl::inst_or
-    , /* 0x71 */ &QDomXPathImpl::inst_subtract
-    , /* 0x72 */ &QDomXPathImpl::inst_undefined_instruction
-    , /* 0x73 */ &QDomXPathImpl::inst_undefined_instruction
-    , /* 0x74 */ &QDomXPathImpl::inst_undefined_instruction
-    , /* 0x75 */ &QDomXPathImpl::inst_undefined_instruction
+    , /* 0x70 */ &QDomXPathImpl::inst_not
+    , /* 0x71 */ &QDomXPathImpl::inst_not_equal
+    , /* 0x72 */ &QDomXPathImpl::inst_or
+    , /* 0x73 */ &QDomXPathImpl::inst_round
+    , /* 0x74 */ &QDomXPathImpl::inst_string_length
+    , /* 0x75 */ &QDomXPathImpl::inst_subtract
     , /* 0x76 */ &QDomXPathImpl::inst_undefined_instruction
     , /* 0x77 */ &QDomXPathImpl::inst_undefined_instruction
     , /* 0x78 */ &QDomXPathImpl::inst_undefined_instruction
@@ -7765,19 +8579,19 @@ QDomXPath::QDomXPathImpl::disassembly_function_t const QDomXPath::QDomXPathImpl:
     , /* 0x45 */ &QDomXPathImpl::disassemble_push_empty_set
     , /* 0x46 */ &QDomXPathImpl::disassemble_push_empty_string
     , /* 0x47 */ &QDomXPathImpl::disassemble_push_end_of_arguments
-    , /* 0x48 */ &QDomXPathImpl::disassemble_push_large_string
-    , /* 0x49 */ &QDomXPathImpl::disassemble_push_long
-    , /* 0x4A */ &QDomXPathImpl::disassemble_push_longlong
-    , /* 0x4B */ &QDomXPathImpl::disassemble_push_medium_string
-    , /* 0x4C */ &QDomXPathImpl::disassemble_push_negative_byte
-    , /* 0x4D */ &QDomXPathImpl::disassemble_push_negative_short
-    , /* 0x4E */ &QDomXPathImpl::disassemble_push_negative_long
-    , /* 0x4F */ &QDomXPathImpl::disassemble_push_short
+    , /* 0x48 */ &QDomXPathImpl::disassemble_push_false
+    , /* 0x49 */ &QDomXPathImpl::disassemble_push_large_string
+    , /* 0x4A */ &QDomXPathImpl::disassemble_push_long
+    , /* 0x4B */ &QDomXPathImpl::disassemble_push_longlong
+    , /* 0x4C */ &QDomXPathImpl::disassemble_push_medium_string
+    , /* 0x4D */ &QDomXPathImpl::disassemble_push_negative_byte
+    , /* 0x4E */ &QDomXPathImpl::disassemble_push_negative_short
+    , /* 0x4F */ &QDomXPathImpl::disassemble_push_negative_long
 
-    , /* 0x50 */ &QDomXPathImpl::disassemble_push_small_string
-    , /* 0x51 */ &QDomXPathImpl::disassemble_push_zero
-    , /* 0x52 */ &QDomXPathImpl::disassemble_undefined_instruction
-    , /* 0x53 */ &QDomXPathImpl::disassemble_undefined_instruction
+    , /* 0x50 */ &QDomXPathImpl::disassemble_push_short
+    , /* 0x51 */ &QDomXPathImpl::disassemble_push_small_string
+    , /* 0x52 */ &QDomXPathImpl::disassemble_push_true
+    , /* 0x53 */ &QDomXPathImpl::disassemble_push_zero
     , /* 0x54 */ &QDomXPathImpl::disassemble_undefined_instruction
     , /* 0x55 */ &QDomXPathImpl::disassemble_undefined_instruction
     , /* 0x56 */ &QDomXPathImpl::disassemble_undefined_instruction
@@ -7793,27 +8607,27 @@ QDomXPath::QDomXPathImpl::disassembly_function_t const QDomXPath::QDomXPathImpl:
 
     , /* 0x60 */ &QDomXPathImpl::disassemble_add
     , /* 0x61 */ &QDomXPathImpl::disassemble_and
-    , /* 0x62 */ &QDomXPathImpl::disassemble_decrement
-    , /* 0x63 */ &QDomXPathImpl::disassemble_divide
-    , /* 0x64 */ &QDomXPathImpl::disassemble_equal
-    , /* 0x65 */ &QDomXPathImpl::disassemble_greater_or_equal
-    , /* 0x66 */ &QDomXPathImpl::disassemble_greater_than
-    , /* 0x67 */ &QDomXPathImpl::disassemble_idivide
-    , /* 0x68 */ &QDomXPathImpl::disassemble_increment
-    , /* 0x69 */ &QDomXPathImpl::disassemble_less_or_equal
-    , /* 0x6A */ &QDomXPathImpl::disassemble_less_than
-    , /* 0x6B */ &QDomXPathImpl::disassemble_modulo
-    , /* 0x6C */ &QDomXPathImpl::disassemble_multiply
-    , /* 0x6D */ &QDomXPathImpl::disassemble_negate
-    , /* 0x6E */ &QDomXPathImpl::disassemble_not
-    , /* 0x6F */ &QDomXPathImpl::disassemble_not_equal
+    , /* 0x62 */ &QDomXPathImpl::disassemble_ceiling
+    , /* 0x63 */ &QDomXPathImpl::disassemble_decrement
+    , /* 0x64 */ &QDomXPathImpl::disassemble_divide
+    , /* 0x65 */ &QDomXPathImpl::disassemble_equal
+    , /* 0x66 */ &QDomXPathImpl::disassemble_floor
+    , /* 0x67 */ &QDomXPathImpl::disassemble_greater_or_equal
+    , /* 0x68 */ &QDomXPathImpl::disassemble_greater_than
+    , /* 0x69 */ &QDomXPathImpl::disassemble_idivide
+    , /* 0x6A */ &QDomXPathImpl::disassemble_increment
+    , /* 0x6B */ &QDomXPathImpl::disassemble_less_or_equal
+    , /* 0x6C */ &QDomXPathImpl::disassemble_less_than
+    , /* 0x6D */ &QDomXPathImpl::disassemble_modulo
+    , /* 0x6E */ &QDomXPathImpl::disassemble_multiply
+    , /* 0x6F */ &QDomXPathImpl::disassemble_negate
 
-    , /* 0x70 */ &QDomXPathImpl::disassemble_or
-    , /* 0x71 */ &QDomXPathImpl::disassemble_subtract
-    , /* 0x72 */ &QDomXPathImpl::disassemble_undefined_instruction
-    , /* 0x73 */ &QDomXPathImpl::disassemble_undefined_instruction
-    , /* 0x74 */ &QDomXPathImpl::disassemble_undefined_instruction
-    , /* 0x75 */ &QDomXPathImpl::disassemble_undefined_instruction
+    , /* 0x70 */ &QDomXPathImpl::disassemble_not
+    , /* 0x71 */ &QDomXPathImpl::disassemble_not_equal
+    , /* 0x72 */ &QDomXPathImpl::disassemble_or
+    , /* 0x73 */ &QDomXPathImpl::disassemble_round
+    , /* 0x74 */ &QDomXPathImpl::disassemble_string_length
+    , /* 0x75 */ &QDomXPathImpl::disassemble_subtract
     , /* 0x76 */ &QDomXPathImpl::disassemble_undefined_instruction
     , /* 0x77 */ &QDomXPathImpl::disassemble_undefined_instruction
     , /* 0x78 */ &QDomXPathImpl::disassemble_undefined_instruction
@@ -8207,6 +9021,24 @@ QDomXPath::QDomXPathImpl::disassembly_function_t const QDomXPath::QDomXPathImpl:
  * LocalPart ::= NCName
  */
 
+
+
+/** \brief Initialize the QDomXPath object.
+ *
+ * The constructor initializes the QDomXPath object. By default, the XPath
+ * is viewed as "." and the internal parameter (f_impl) is set to NULL
+ * until you call setXPath() or setProgram(). Once a program was defined,
+ * it is possible to apply an XML file against the XPath by calling the
+ * apply() functions.
+ *
+ * The array of variable is initialized, but it remains empty until you
+ * bind some variables to it with bindVariable().
+ *
+ * \sa bindVariable()
+ * \sa setXPath()
+ * \sa setProgram()
+ * \sa apply()
+ */
 QDomXPath::QDomXPath()
     //: f_xpath("") -- auto-init
     : f_impl(NULL)
@@ -8215,6 +9047,12 @@ QDomXPath::QDomXPath()
 }
 
 
+/** \brief Clean up the QDomXPath object.
+ *
+ * Since the f_impl variable member is defined in the qdomxpath.cpp, I
+ * cannot have it as a smart pointer in the qdomxpath.h file. For this
+ * reason, I manage it here.
+ */
 QDomXPath::~QDomXPath()
 {
     delete f_impl;
@@ -8274,6 +9112,8 @@ bool QDomXPath::setXPath(const QString& xpath, bool show_commands)
  * function returns ".". Note that if the setXPath() function returns false,
  * then the XPath doesn't get changed and thus this function returns the
  * previous XPath.
+ *
+ * \return The XPath string, or "." if not yet defined.
  */
 QString QDomXPath::getXPath() const
 {
@@ -8290,12 +9130,23 @@ QString QDomXPath::getXPath() const
  * This function applies (queries) the XPath that was previously set with
  * the setXPath() function agains the input \p node parameter.
  *
- * The function returns a vector of node because it is not possible to
+ * The function returns a vector of nodes because it is not possible to
  * add parameters to a QDomNodeList without being within the implementation
  * (i.e. there is no function to add any node to the list.) This may be
  * because a list of nodes is dynamic, it includes a way to remove the
  * node from the list in the event the node gets deleted (just an assumption
  * of course.)
+ *
+ * \todo
+ * We want to implement an apply() function that can return processed
+ * data so we could get a string or an integer instead of a list of
+ * nodes.
+ *
+ * \note
+ * If no program was loaded, this function returns its input as is.
+ *
+ * \note
+ * XPath does not modifies its input document.
  *
  * \param[in] node  The node to query.
  *
@@ -8314,24 +9165,62 @@ QDomXPath::node_vector_t QDomXPath::apply(QDomNode node) const
 }
 
 
+/** \brief Apply the XPath against the specified list of nodes.
+ *
+ * This function applies (queries) the XPath that was previously set with
+ * one of the setXPath() or setProgram() functions against the set of
+ * input nodes.
+ *
+ * \todo
+ * We want to implement an apply() function that can return processed
+ * data so we could get a string or an integer instead of a list of
+ * nodes.
+ *
+ * \note
+ * The different nodes in the node vector do not all need to be from the
+ * same document.
+ *
+ * \note
+ * If no program was loaded, this function returns its input as is.
+ *
+ * \note
+ * XPath does not modifies its input document.
+ *
+ * \param[in] nodes  The list of nodes to query.
+ *
+ * \return A list of nodes (maybe empty.)
+ */
 QDomXPath::node_vector_t QDomXPath::apply(node_vector_t nodes) const
 {
     if(f_impl)
     {
         return f_impl->apply(nodes);
     }
-    // no f_impl means "." which is just this node
+    // no f_impl means "." which is just these nodes
     return nodes;
 }
 
 
+/** \brief Disassemble the program.
+ *
+ * This function prints out the disassembled program in your stdout.
+ *
+ * The disassembled program shows the pointer counter (position inside the
+ * program) the instruction, and for PUSH instruction, the data getting
+ * pushed (i.e. a number or a string.)
+ *
+ * This function is used by the -d option of the cxpath compiler.
+ */
 void QDomXPath::disassemble() const
 {
     if(f_impl)
     {
         f_impl->disassemble();
     }
-    throw QDomXPathException_InternalError("error: no program to disassemble");
+    else
+    {
+        throw QDomXPathException_InternalError("error: no program to disassemble");
+    }
 }
 
 
@@ -8380,6 +9269,8 @@ void QDomXPath::bindVariable(const QString& name, const QString& value)
  * \endcode
  *
  * \param[in] name  The name of the variable to check.
+ *
+ * \return true if the variable is defined, false otherwise.
  */
 bool QDomXPath::hasVariable(const QString& name)
 {
@@ -8401,6 +9292,8 @@ bool QDomXPath::hasVariable(const QString& name)
  * To avoid the exception, use the hasVariable() predicate first.
  *
  * \param[in] name  The name of the variable to retrieve.
+ *
+ * \return A copy of the variable contents as a string.
  */
 QString QDomXPath::getVariable(const QString& name)
 {
@@ -8412,7 +9305,23 @@ QString QDomXPath::getVariable(const QString& name)
 }
 
 
-
+/** \brief Set the program.
+ *
+ * When you store a previously compiled program somewhere (you can retrieve
+ * a compiled program with the getProgram() function), you can later reload
+ * it in your QDomXPath object with the setProgram() function.
+ *
+ * This is quite useful to compile many XPaths, save them in a file or
+ * your Qt resources, and later load them and pass them to this function
+ * for instant processing.
+ *
+ * Note that small XPaths may get compiled faster than the load from a file.
+ * It will be up to you to test what seems to be the fastest. Very large
+ * and complex XPaths are likely to benefit from a pre-compilation.
+ *
+ * \param[in] program  The program to save in this QDomXPath object.
+ * \param[in] show_commands  Whether the commands are shown in stdout while executing the program.
+ */
 void QDomXPath::setProgram(const QDomXPath::program_t& program, bool show_commands)
 {
     if(f_impl == NULL)
@@ -8451,6 +9360,8 @@ void QDomXPath::setProgram(const QDomXPath::program_t& program, bool show_comman
  *
  * Note that it is possible to set byte 6 and 7 to zero and not save
  * the XPath (this can be useful to save space.)
+ *
+ * \return A constant reference to the program.
  */
 const QDomXPath::program_t& QDomXPath::getProgram() const
 {

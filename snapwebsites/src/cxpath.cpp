@@ -295,6 +295,35 @@ void cxpath_execute()
 }
 
 
+void cxpath_disassemble()
+{
+    std::string program_filename(g_opt->get_string("filename"));
+    FILE *f(fopen(program_filename.c_str(), "r"));
+    if(f == NULL)
+    {
+        fprintf(stderr, "error: could not open program file \"%s\" for reading.\n", program_filename.c_str());
+        exit(1);
+    }
+    fseek(f, 0, SEEK_END);
+    const int program_size(ftell(f));
+    fseek(f, 0, SEEK_SET);
+    QDomXPath::program_t program;
+    program.resize(program_size);
+    if(fread(&program[0], program_size, 1, f) != 1)
+    {
+        fprintf(stderr, "error: an I/O error occured while reading the program file \"%s\".\n", program_filename.c_str());
+        exit(1);
+    }
+
+    QDomXPath dom_xpath;
+    dom_xpath.setProgram(program, true);
+
+    printf("Original XPath: %s\n", dom_xpath.getXPath().toUtf8().data());
+
+    dom_xpath.disassemble();
+}
+
+
 int main(int argc, char *argv[])
 {
     std::vector<std::string> empty_list;
@@ -314,6 +343,10 @@ int main(int argc, char *argv[])
     if(g_opt->is_defined("execute"))
     {
         cxpath_execute();
+    }
+    if(g_opt->is_defined("disassemble"))
+    {
+        cxpath_disassemble();
     }
 
     return 0;

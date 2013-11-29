@@ -55,6 +55,15 @@ public:
     }
 };
 
+class QDomXPathException_UnknownFunctionError : public QDomXPathException
+{
+public:
+    QDomXPathException_UnknownFunctionError(const std::string& err)
+        : QDomXPathException(err)
+    {
+    }
+};
+
 class QDomXPathException_InvalidMagic : public QDomXPathException
 {
 public:
@@ -140,6 +149,15 @@ class QDomXPathException_EmptyStack : public QDomXPathException_ExecutionTime
 {
 public:
     QDomXPathException_EmptyStack(const std::string& err)
+        : QDomXPathException_ExecutionTime(err)
+    {
+    }
+};
+
+class QDomXPathException_EmptyContext : public QDomXPathException_ExecutionTime
+{
+public:
+    QDomXPathException_EmptyContext(const std::string& err)
         : QDomXPathException_ExecutionTime(err)
     {
     }

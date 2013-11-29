@@ -22,10 +22,25 @@ cat >$TMP/test.xml <<EOF
 	<param name="to">alexis@mail.example.com</param>
       </sendmail>
     </metadata>
+    <statistics>
+      <value class="sonic">0.3</value>
+      <value class="lumen">0.21</value>
+      <value class="sonic">1.01</value>
+      <value class="sonic">0.7</value>
+      <value class="electromagnetic">0.855</value>
+      <value class="lumen">0.32</value>
+      <value class="sonic">0.05</value>
+      <value class="electromagnetic">7.3</value>
+      <value class="sonic">0.09</value>
+      <value class="lumen">0.34</value>
+      <value class="sonic">0.045</value>
+      <value class="electromagnetic">2.01</value>
+      <value class="sonic">0.62</value>
+    </statistics>
   </header>
   <page>
     <date>
-      <created>2013-11-27</created>
+      <created format="K&quot;7">2013-11-27</created>
     </date>
   </page>
 </snap>
@@ -43,7 +58,111 @@ echo "*** Get ancestors of sendmail"
 cxpath -c -p '/snap/header/metadata/sendmail/ancestor::*' -o $TMP/test.xpath
 cxpath -r -x $TMP/test.xpath $TMP/test.xml
 
+echo "*** Get descendants of sendmail"
+cxpath -c -p '/snap/header/metadata/sendmail/descendant::*' -o $TMP/test.xpath
+cxpath -r -x $TMP/test.xpath $TMP/test.xml
+
 echo "*** Get sendmail param named user-first-name"
 cxpath -c -p '/snap/header/metadata/sendmail/param[@name = "user-first-name"]|/snap/header/metadata/sendmail/param[@name = "user-last-name"]' -o $TMP/test.xpath
+cxpath -r -x $TMP/test.xpath $TMP/test.xml
+
+echo "*** Get following siblings of the param named user-first-name"
+cxpath -c -p '/snap/header/metadata/sendmail/param[@name = "user-first-name"]/following-sibling::*' -o $TMP/test.xpath
+cxpath -r -x $TMP/test.xpath $TMP/test.xml
+
+echo "*** Get preceding siblings of the param named user-first-name"
+cxpath -c -p '/snap/header/metadata/sendmail/param[@name = "user-first-name"]/preceding-sibling::*' -o $TMP/test.xpath
+cxpath -r -x $TMP/test.xpath $TMP/test.xml
+
+echo "*** Get param number two"
+cxpath -c -p '/snap/header/metadata/sendmail/param[6 div 3]' -o $TMP/test.xpath
+cxpath -r -x $TMP/test.xpath $TMP/test.xml
+
+echo "*** Get param number three"
+cxpath -c -p '/snap/header/metadata/sendmail/param[6 idiv 2]' -o $TMP/test.xpath
+cxpath -r -x $TMP/test.xpath $TMP/test.xml
+
+echo "*** Get param number four twice"
+cxpath -c -p '/snap/header/metadata/sendmail/param[2 * 2] | /snap/header/metadata/sendmail/param[2 + 2]' -o $TMP/test.xpath
+cxpath -r -x $TMP/test.xpath $TMP/test.xml
+
+echo "*** Get even positioned param's"
+cxpath -c -p '/snap/header/metadata/sendmail/param[position() mod 2 = 0]' -o $TMP/test.xpath
+cxpath -r -x $TMP/test.xpath $TMP/test.xml
+
+echo "*** Get odd positioned param's"
+cxpath -c -p '/snap/header/metadata/sendmail/param[position() mod 2 = 1]' -o $TMP/test.xpath
+cxpath -r -x $TMP/test.xpath $TMP/test.xml
+
+echo "*** Get the last and one before last params using last()"
+cxpath -c -p '/snap/header/metadata/sendmail/param[position() = last()] | /snap/header/metadata/sendmail/param[position() = last()-1]' -o $TMP/test.xpath
+cxpath -r -x $TMP/test.xpath $TMP/test.xml
+
+echo "*** Test fn:true() as the predicate value"
+cxpath -c -p '/snap/header/metadata/sendmail/param[fn:true()]' -o $TMP/test.xpath
+cxpath -r -x $TMP/test.xpath $TMP/test.xml
+
+echo "*** Test fn:false() as the predicate value"
+cxpath -c -p '/snap/header/metadata/sendmail/param[fn:false()]' -o $TMP/test.xpath
+cxpath -r -x $TMP/test.xpath $TMP/test.xml
+
+echo "*** Test count() function"
+cxpath -c -p '/snap/header/metadata/sendmail/param[count(/snap/header/metadata/sendmail/param) div 2]' -o $TMP/test.xpath
+cxpath -r -x $TMP/test.xpath $TMP/test.xml
+
+echo "*** Get params except number two"
+cxpath -c -p '/snap/header/metadata/sendmail/param[not(6 div 3 = position())]' -o $TMP/test.xpath
+cxpath -r -x $TMP/test.xpath $TMP/test.xml
+
+echo "*** Get third param using round()"
+cxpath -c -p '/snap/header/metadata/sendmail/param[round(6 div 2.2)]' -o $TMP/test.xpath
+cxpath -r -x $TMP/test.xpath $TMP/test.xml
+
+echo "*** Get second param using floor()"
+cxpath -c -p '/snap/header/metadata/sendmail/param[floor(6 div 2.2)]' -o $TMP/test.xpath
+cxpath -r -x $TMP/test.xpath $TMP/test.xml
+
+echo "*** Get third param using ceiling()"
+cxpath -c -p '/snap/header/metadata/sendmail/param[ceiling(6 div 2.8)]' -o $TMP/test.xpath
+cxpath -r -x $TMP/test.xpath $TMP/test.xml
+
+echo "*** Get third param using string-length()"
+cxpath -c -p '/snap/header/metadata/sendmail/param[string-length("abc")]' -o $TMP/test.xpath
+cxpath -r -x $TMP/test.xpath $TMP/test.xml
+
+echo "*** List the lumen entries"
+cxpath -c -p '/snap/header/statistics/value[@class="lumen"]' -o $TMP/test.xpath
+cxpath -r -x $TMP/test.xpath $TMP/test.xml
+
+echo "*** Get third param using sum()"
+cxpath -c -p '/snap/header/metadata/sendmail/param[sum(/snap/header/statistics/value[@class="lumen"]) * 4]' -o $TMP/test.xpath
+cxpath -r -x $TMP/test.xpath $TMP/test.xml
+
+echo "*** Get third param using sum()"
+cxpath -c -p '/snap/header/metadata/sendmail/param[ceiling(sum(/snap/header/statistics/value[@class="sonic"]))]' -o $TMP/test.xpath
+cxpath -r -x $TMP/test.xpath $TMP/test.xml
+
+echo "*** Get third param using avg()"
+cxpath -c -p '/snap/header/metadata/sendmail/param[avg(/snap/header/statistics/value[@class="electromagnetic"])]' -o $TMP/test.xpath
+cxpath -r -x $TMP/test.xpath $TMP/test.xml
+
+echo "*** Get first param using min()"
+cxpath -c -p '/snap/header/metadata/sendmail/param[ceiling(min(/snap/header/statistics/value[@class="electromagnetic"]))]' -o $TMP/test.xpath
+cxpath -r -x $TMP/test.xpath $TMP/test.xml
+
+echo "*** Get second param using max()"
+cxpath -c -p '/snap/header/metadata/sendmail/param[max(/snap/header/statistics/value[@class="electromagnetic"]) idiv 3]' -o $TMP/test.xpath
+cxpath -r -x $TMP/test.xpath $TMP/test.xml
+
+echo "*** Get all params using empty()"
+cxpath -c -p '/snap/header/metadata/sendmail/param[empty(/snap/does-not-exist)]' -o $TMP/test.xpath
+cxpath -r -x $TMP/test.xpath $TMP/test.xml
+
+echo "*** Get nothing using empty()"
+cxpath -c -p '/snap/header/metadata/sendmail/param[empty(/snap/header)]' -o $TMP/test.xpath
+cxpath -r -x $TMP/test.xpath $TMP/test.xml
+
+echo "*** Get a node testing \" inside a string"
+cxpath -c -p '/snap/page/date/created[@format = "K""7"]' -o $TMP/test.xpath
 cxpath -r -x $TMP/test.xpath $TMP/test.xml
 
