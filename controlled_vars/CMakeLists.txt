@@ -2,7 +2,7 @@
 # File:		CMakeLists.txt
 # Object:	Definitions to create the build environment
 #
-# Copyright:	Copyright (c) 2011-2012 Made to Order Software Corp.
+# Copyright:	Copyright (c) 2011-2013 Made to Order Software Corp.
 #		All Rights Reserved.
 #
 # http://snapwebsites.org/
@@ -53,7 +53,7 @@ if( NOT CMAKE_MODULE_PATH )
         PATHS ${CMAKE_SOURCE_DIR}
         NO_DEFAULT_PATH
     )
-    set( CMAKE_MODULE_PATH ${CMAKE_DIRECTORY_PATH}/snapCMakeModules )
+    set( CMAKE_MODULE_PATH ${CMAKE_DIRECTORY_PATH}/snapCMakeModules/Modules )
     message( "Found snapCMakeModules in ${CMAKE_MODULE_PATH}" )
 endif()
 find_package( SnapCMakeModules )

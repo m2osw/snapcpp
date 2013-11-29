@@ -2,7 +2,7 @@
 # File:         CMakeLists.txt
 # Object:       Query Google for a page rank.
 #
-# Copyright:    Copyright (c) 2012 Made to Order Software Corp.
+# Copyright:    Copyright (c) 2012-2013 Made to Order Software Corp.
 #               All Rights Reserved.
 #
 # http://snapwebsites.org/
@@ -39,7 +39,7 @@ if( NOT CMAKE_MODULE_PATH )
         PATHS ${CMAKE_SOURCE_DIR}
         NO_DEFAULT_PATH
     )
-    set( CMAKE_MODULE_PATH ${CMAKE_DIRECTORY_PATH}/snapCMakeModules )
+    set( CMAKE_MODULE_PATH ${CMAKE_DIRECTORY_PATH}/snapCMakeModules/Modules )
     message( "Found snapCMakeModules in ${CMAKE_MODULE_PATH}" )
 endif()
 ##
