@@ -105,7 +105,7 @@ ConfigureMakeProject( PROJECT_NAME snapwebsites
             -DTHRIFT_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
             -DQTSERIALIZATION_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include/QtSerialization
             -DLIBTLD_LIBRARY:PATH=${CMAKE_BINARY_DIR}/dist/lib/libtld.so
-        DEPENDS libQtCassandra libQtSerialization libtld advgetopt
+        DEPENDS advgetopt libQtCassandra libQtSerialization libtld
         )
 
 get_property( BUILD_TARGETS GLOBAL PROPERTY BUILD_TARGETS )

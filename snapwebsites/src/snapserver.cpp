@@ -30,6 +30,10 @@ int main(int argc, char *argv[])
 	s->detach();
 	// Only the child (server) process returns here
 
+    // Now create the qt application instance
+    //
+    s->prepare_qtapp( argc, argv );
+
 	// prepare the database
 	s->prepare_cassandra();
 

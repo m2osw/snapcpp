@@ -86,6 +86,11 @@ add_subdirectory(tools)
 add_subdirectory(tests)
 add_subdirectory(doc)
 
+install( FILES
+        INSTALL.txt LICENSE.txt README.txt
+        DESTINATION share/doc/libqtcassandra
+       )
+
 set(CPACK_PACKAGE_NAME "libQtCassandra")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "libQtCassandra -- a Qt extension to access the Cassandra server")
 set(CPACK_PACKAGE_VENDOR "Made to Order Software Corporation")

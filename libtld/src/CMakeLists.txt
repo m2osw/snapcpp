@@ -76,6 +76,10 @@ add_library(tld SHARED
     tld_emails.cpp
     tld_object.cpp
 )
+set_target_properties( tld PROPERTIES
+        VERSION ${LIBTLD_VERSION_MAJOR}.${LIBTLD_VERSION_MINOR}
+        SOVERSION ${LIBTLD_VERSION_MAJOR}
+        )
 install(
     TARGETS tld
     LIBRARY DESTINATION lib

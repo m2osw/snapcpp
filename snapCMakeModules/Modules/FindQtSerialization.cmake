@@ -7,7 +7,7 @@
 # QTSERIALIZATION_LIBRARY      - The libraries needed to use QtSerialization (none)
 # QTSERIALIZATION_DEFINITIONS  - Compiler switches required for using QtSerialization (none)
 
-find_path( QTSERIALIZATION_INCLUDE_DIR QtSerialization/QCassandra.h
+find_path( QTSERIALIZATION_INCLUDE_DIR QtSerialization/QSerialization.h
 		   PATHS $ENV{QTSERIALIZATION_INCLUDE_DIR}
 		   PATH_SUFFIXES QtSerialization
 		 )

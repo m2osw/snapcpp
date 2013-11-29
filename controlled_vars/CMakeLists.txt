@@ -105,6 +105,13 @@ install(FILES
 	DESTINATION include/controlled_vars
 )
 
+install(FILES
+		INSTALL.txt
+		LICENSE.txt
+		README.txt
+	DESTINATION share/doc/controlledvars
+)
+
 # Pack the Headers the way I want them for SourceForge.net
 # (the default packer adds -Linux, even though this is not specific to an OS)
 add_custom_target( controlled_vars_headers

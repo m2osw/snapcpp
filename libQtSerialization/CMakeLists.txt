@@ -73,6 +73,8 @@ include_directories(
 # Create a configure script
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/include/QtSerialization/QSerialization.h.in ${CMAKE_CURRENT_BINARY_DIR}/include/QtSerialization/QSerialization.h)
 
+install( FILES LICENSE.txt DESTINATION share/doc/libqtserialization )
+
 add_subdirectory(src)
 add_subdirectory(tests)
 add_subdirectory(doc)

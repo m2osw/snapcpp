@@ -11,7 +11,7 @@ find_path( LIBTLD_INCLUDE_DIR libtld/tld.h
 			PATHS $ENV{LIBTLD_INCLUDE_DIR}
 			PATH_SUFFIXES libtld
 		 )
-find_library( LIBTLD_LIBRARY libtld
+find_library( LIBTLD_LIBRARY tld
 			PATHS $ENV{LIBTLD_LIBRARY}
 		 )
 mark_as_advanced( LIBTLD_INCLUDE_DIR LIBTLD_LIBRARY )

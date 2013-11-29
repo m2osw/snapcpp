@@ -87,6 +87,7 @@ public:
 	bool is_backend() { return f_backend; }
 	void config( int argc, char *argv[] );
 	QString get_parameter(const QString& name);
+	void prepare_qtapp( int argc, char *argv[] );
 	void prepare_cassandra();
 	//QSharedPointer<QtCassandra::QCassandra> get_cassandra();
 	QSharedPointer<QtCassandra::QCassandraTable> create_table(QSharedPointer<QtCassandra::QCassandraContext> context, QString table_name, QString comment);

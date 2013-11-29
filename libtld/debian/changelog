@@ -1,8 +1,8 @@
 libtld (1.4.3) unstable; urgency=medium
 
-  * ...
+  * Update debian package, and with it the version.
 
- -- Alexis Wilke <alexis@m2osw.com>  Thu, 21 Nov 2013 15:29:59 -0800
+ -- R. Douglas Barbieri <doug@dooglio.net>  Tue, 26 Nov 2013 13:21:30 -0800
 
 libtld (1.4.2) unstable; urgency=medium
 

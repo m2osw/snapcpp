@@ -92,7 +92,7 @@ public:
         mutable snap_mutex  f_mutex;
 
     private:
-        friend snap_thread;
+        friend class snap_thread;
         zpthread_t          f_thread;
         const QString       f_name;
     };

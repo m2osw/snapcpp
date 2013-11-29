@@ -33,7 +33,7 @@
 # THRIFT_LIBRARIES    - The libraries needed to use Thrift (none)
 # THRIFT_DEFINITIONS  - Compiler switches required for using Thrift (none)
 #
-find_path( THRIFT_INCLUDE_DIR thrift/thrift.h
+find_path( THRIFT_INCLUDE_DIR thrift/Thrift.h
 		   PATHS $ENV{THRIFT_INCLUDE_DIR}
 		   PATH_SUFFIXES thrift
 		 )
