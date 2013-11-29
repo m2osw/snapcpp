@@ -54,7 +54,7 @@ project( snapwebsites_main )
 ################################################################################
 # Load up necessary modules
 #
-set( CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/snapCMakeModules )
+set( CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/snapCMakeModules/Modules )
 find_package( SnapCMakeModules REQUIRED )
 find_package( SnapBuild        REQUIRED )
 
