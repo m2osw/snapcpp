@@ -213,7 +213,7 @@ public:
 
 private:
     class QDomXPathImpl;
-    friend QDomXPathImpl;
+    friend class QDomXPathImpl;
 
     QString                         f_xpath;
     QDomXPathImpl *                 f_impl;

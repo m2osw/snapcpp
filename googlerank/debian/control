@@ -1,7 +1,7 @@
 Source: googlerank
 Priority: extra
 Maintainer: R. Douglas Barbieri <doug@dooglio.net>
-Build-Depends: debhelper (>= 8.0.0), cmake (>= 2.8.9), snapcmakemodules (>= 1.0.0-1)
+Build-Depends: debhelper, cmake, snapcmakemodules (>= 1.0.0-1)
 Standards-Version: 3.9.3
 Section: libs
 Homepage: http://snapwebsites.org/project/google-page-rank

@@ -1,7 +1,7 @@
 Source: snapcmakemodules
 Priority: extra
 Maintainer: R. Douglas Barbieri <doug@dooglio.net>
-Build-Depends: debhelper (>= 8.0.0), cmake (>= 2.8.9)
+Build-Depends: debhelper, cmake
 Standards-Version: 3.9.3
 Section: libs
 Homepage: http://snapwebsites.org/

@@ -676,7 +676,7 @@ public:
 
         // we include the non-atomic types too
         ATOMIC_TYPE_SET,
-        ATOMIC_TYPE_NODE_SET,
+        ATOMIC_TYPE_NODE_SET
         //ATOMIC_TYPE_CONTEXT
     };
 
