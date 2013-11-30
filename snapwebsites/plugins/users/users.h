@@ -28,12 +28,18 @@ namespace users
 
 enum name_t
 {
+    SNAP_NAME_USERS_BLOCKED_PATH,
     SNAP_NAME_USERS_CREATED_TIME,
+    SNAP_NAME_USERS_IDENTIFIER,
+    SNAP_NAME_USERS_ID_ROW,
+    SNAP_NAME_USERS_NEW_PATH,
     SNAP_NAME_USERS_ORIGINAL_EMAIL,
     SNAP_NAME_USERS_ORIGINAL_IP,
     SNAP_NAME_USERS_PASSWORD,
     SNAP_NAME_USERS_PASSWORD_DIGEST,
     SNAP_NAME_USERS_PASSWORD_SALT,
+    SNAP_NAME_USERS_PATH,
+    SNAP_NAME_USERS_STATUS,
     SNAP_NAME_USERS_TABLE,
     SNAP_NAME_USERS_USERNAME,
     SNAP_NAME_USERS_VERIFY_EMAIL
@@ -50,12 +56,12 @@ public:
     static const sessions::sessions::session_info::session_id_t USERS_SESSION_ID_REGISTER = 3;
     static const sessions::sessions::session_info::session_id_t USERS_SESSION_ID_REGISTER_BLOCK = 4;
     static const sessions::sessions::session_info::session_id_t USERS_SESSION_ID_PASSWORD = 5;
-    static const sessions::sessions::session_info::session_id_t USERS_SESSION_ID_PASSWORD_BLOCK = 6;
+    static const sessions::sessions::session_info::session_id_t USERS_SESSION_ID_VERIFY = 6;
     static const sessions::sessions::session_info::session_id_t USERS_SESSION_ID_LOG_IN_SESSION = 7;
     static const sessions::sessions::session_info::session_id_t USERS_SESSION_ID_VERIFY_EMAIL = 8;
 
-    users();
-    virtual ~users();
+                            users();
+    virtual                 ~users();
 
     static users *          instance();
     virtual QString         description() const;
@@ -83,10 +89,12 @@ private:
     void                    content_update(int64_t variables_timestamp);
     void                    generate_login_form(QDomElement& body);
     void                    generate_register_form(QDomElement& body);
+    void                    generate_verify_form(QDomElement& body);
     void                    process_login_form();
     void                    process_register_form();
     void                    create_password_salt(QByteArray& salt);
     void                    encrypt_password(const QString& digest, const QString& password, const QByteArray& salt, QByteArray& hash);
+    void                    verified_user(const QString& cpath, QDomElement& body);
 
     zpsnap_child_t          f_snap;
     QString                 f_user_key;

@@ -319,16 +319,29 @@ void snapdb::display()
             {
                 QString n((*c)->columnName());
                 QString v;
-                if(n == "content::created"
-                || n == "content::modified"
-                || n == "content::updated"
-                || n.left(18) == "core::last_updated"
-                || n == "core::plugin_threshold"
-                || n == "sessions::time_limit"
+                if(n == "users::identifier"
                 )
                 {
                     // 64 bit value
                     v = QString("%1").arg((*c)->value().uint64Value());
+                }
+                else if(n == "users::created_time"
+                     || n == "content::created"
+                     || n == "content::modified"
+                     || n == "content::updated"
+                     || n.left(18) == "core::last_updated"
+                     || n == "core::plugin_threshold"
+                     || n == "sessions::time_limit"
+                )
+                {
+                    // 64 bit value
+                    uint64_t time((*c)->value().uint64Value());
+                    char buf[64];
+                    struct tm t;
+                    time_t seconds(time / 1000000);
+                    gmtime_r(&seconds, &t);
+                    strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &t);
+                    v = QString("%1.%2").arg(buf).arg(time % 1000000, 6, 10, QChar('0'));
                 }
                 else if(n == "sitemapxml::count"
                      || n == "sessions::id"

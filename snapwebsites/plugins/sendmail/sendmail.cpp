@@ -19,6 +19,7 @@
 #include "plugins.h"
 #include "log.h"
 #include "mkgmtime.h"
+#include "qdomxpath.h"
 #include "not_reached.h"
 #include "../content/content.h"
 #include "../users/users.h"
@@ -1054,6 +1055,7 @@ void sendmail::email::readTag(const QString& name, QtSerialization::QReader& r)
         QtSerialization::QFieldString tag_email_key(comp, "email_key", f_email_key);
         QtSerialization::QFieldTag tag_header(comp, "header", this);
         QtSerialization::QFieldTag tag_attachment(comp, "attachment", this);
+        QtSerialization::QFieldTag tag_parameter(comp, "parameter", this);
         r.read(comp);
     }
     else if(name == "header")
@@ -1071,6 +1073,16 @@ void sendmail::email::readTag(const QString& name, QtSerialization::QReader& r)
         email_attachment attachment;
         attachment.unserialize(r);
         add_attachment(attachment);
+    }
+    else if(name == "parameter")
+    {
+        QtSerialization::QComposite comp;
+        QString parameter_name;
+        QtSerialization::QFieldString tag_name(comp, "name", parameter_name);
+        QString parameter_value;
+        QtSerialization::QFieldString tag_value(comp, "value", parameter_value);
+        r.read(comp);
+        f_parameter[parameter_name] = parameter_value;
     }
 }
 
@@ -1111,10 +1123,16 @@ QString sendmail::email::serialize() const
             QtSerialization::writeTag(w, "name", it.key());
             QtSerialization::writeTag(w, "value", it.value());
         }
-        int max(f_attachment.count());
-        for(int i(0); i < max; ++i)
+        const int amax(f_attachment.count());
+        for(int i(0); i < amax; ++i)
         {
             f_attachment[i].serialize(w);
+        }
+        for(header_map_t::const_iterator it(f_parameter.begin()); it != f_parameter.end(); ++it)
+        {
+            QtSerialization::QWriter::QTag parameter(w, "parameter");
+            QtSerialization::writeTag(w, "name", it.key());
+            QtSerialization::writeTag(w, "value", it.value());
         }
         // end the writer so everything gets saved in the buffer (result)
     }
@@ -1154,6 +1172,7 @@ void sendmail::on_bootstrap(snap_child *snap)
     f_snap = snap;
 
     SNAP_LISTEN(sendmail, "server", server, register_backend_action, _1);
+    SNAP_LISTEN(sendmail, "filter", filter::filter, replace_token, _1, _2, _3);
 }
 
 
@@ -2129,6 +2148,106 @@ void sendmail::on_generate_main_content(layout::layout *l, const QString& path, 
                 param_tag.setAttribute("name", it.key());
                 param_tag.setAttribute("value", it.value());
                 parameters_tag.appendChild(param_tag);
+            }
+        }
+    }
+}
+
+
+/** \brief Replace a token with a corresponding value.
+ *
+ * This function replaces the sendmail tokens with their value. The values
+ * were already computed in the XML document, so all we have to do is query
+ * the XML and return the corresponding value.
+ *
+ * The supported tokens are:
+ *
+ * \li [sendmail::unsubscribe-link]
+ *
+ * \param[in] f  The filter object.
+ * \param[in] token  The token object, with the token name and optional parameters.
+ */
+void sendmail::on_replace_token(filter::filter *f, QDomDocument& xml, filter::filter::token_info_t& token)
+{
+    if(token.f_name.mid(0, 10) == "sendmail::")
+    {
+        if(token.is_token("sendmail::unsubscribe-link"))
+        {
+            token.f_replacement = "http://snapwebsites.org/";
+            token.f_found = true;
+        }
+        else
+        {
+            QString xpath;
+            if(token.is_token("sendmail::from"))
+            {
+                xpath = "/snap/page/body/sendmail/from";
+            }
+            else if(token.is_token("sendmail::to"))
+            {
+                xpath = "/snap/page/body/sendmail/to";
+            }
+            else if(token.is_token("sendmail::path"))
+            {
+                xpath = "/snap/page/body/sendmail/path";
+            }
+            else if(token.is_token("sendmail::key"))
+            {
+                xpath = "/snap/page/body/sendmail/key";
+            }
+            else if(token.is_token("sendmail::created"))
+            {
+                xpath = "/snap/page/body/sendmail/created";
+            }
+            else if(token.is_token("sendmail::date"))
+            {
+                xpath = "/snap/page/body/sendmail/date";
+            }
+            else if(token.is_token("sendmail::time"))
+            {
+                xpath = "/snap/page/body/sendmail/time";
+            }
+            else if(token.is_token("sendmail::attachment_count"))
+            {
+                xpath = "/snap/page/body/sendmail/attachment_count";
+            }
+            else if(token.is_token("sendmail::priority"))
+            {
+                xpath = "/snap/page/body/sendmail/x-priority";
+            }
+            else if(token.is_token("sendmail::parameter"))
+            {
+                if(token.verify_args(1, 1))
+                {
+                    filter::filter::parameter_t param(token.get_arg("name", 0, filter::filter::TOK_STRING));
+                    if(!token.f_error)
+                    {
+                        xpath = "/snap/page/body/sendmail/parameters/param[@name=\"" + param.f_value + "\"]/@value";
+                    }
+                }
+            }
+            if(!xpath.isEmpty())
+            {
+                QDomXPath dom_xpath;
+                dom_xpath.setXPath(xpath);
+                QDomXPath::node_vector_t result(dom_xpath.apply(xml));
+                if(result.size() > 0)
+                {
+                    // apply the replacement
+                    if(result[0].isElement())
+                    {
+                        // get the value between the tags
+                        QDomDocument document;
+                        QDomNode copy(document.importNode(result[0], true));
+                        document.appendChild(copy);
+                        token.f_replacement = document.toString();
+                    }
+                    else if(result[0].isAttr())
+                    {
+                        // get an attribute
+                        token.f_replacement = result[0].toAttr().value();
+                    }
+                }
             }
         }
     }

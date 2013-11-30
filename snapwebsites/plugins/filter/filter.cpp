@@ -1,5 +1,5 @@
 // Snap Websites Server -- filter
-// Copyright (C) 2011-2012  Made to Order Software Corp.
+// Copyright (C) 2011-2013  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -18,6 +18,7 @@
 #include "filter.h"
 #include "snapwebsites.h"
 #include "plugins.h"
+#include "qdomxpath.h"
 #include "../content/content.h"
 #include <iostream>
 #include <cctype>
@@ -256,6 +257,13 @@ void filter::on_xss_filter(QDomNode& node,
  * in bold. It does not support parameters although it ignores the fact
  * (i.e. parameters can be used, they will be ignored.)
  *
+ * The default filter replace_token event supports the following
+ * general tokens:
+ *
+ * \li [test] -- a simple test token, it inserts "The Test Token Worked" message, in English.
+ * \li [select("\<xpath>")] -- select content from the XML document using the specified \<xpath>
+ * \li [year] -- the 4-digit year when the request started
+ *
  * \param[in] f  The filter object.
  * \param[in] token  The token object, with the token name and optional parameters.
  */
@@ -264,7 +272,47 @@ bool filter::replace_token_impl(filter *f, QDomDocument& xml, token_info_t& toke
     if(token.is_token("test"))
     {
         token.f_replacement = "<span style=\"font-weight: bold;\">The Test Token Worked</span>";
-        token.f_found = true;
+    }
+    else if(token.is_token("select"))
+    {
+        if(token.verify_args(1, 1))
+        {
+            parameter_t param(token.get_arg("xpath", 0));
+            if(!token.f_error)
+            {
+                // in this case the XPath is dynamic so we have to compile now
+                QDomXPath dom_xpath;
+                dom_xpath.setXPath(param.f_value);
+                QDomXPath::node_vector_t result(dom_xpath.apply(xml));
+//FILE *o(fopen("/tmp/test.xml", "w"));
+//fprintf(o, "%s\n", xml.toString().toUtf8().data());
+//fclose(o);
+                // at this point we expect the result to be 1 (or 0) entries
+                // if more than 1, ignore the following nodes
+                if(result.size() > 0)
+                {
+                    // apply the replacement
+                    if(result[0].isElement())
+                    {
+                        QDomDocument document;
+                        QDomNode copy(document.importNode(result[0], true));
+                        document.appendChild(copy);
+                        token.f_replacement = document.toString();
+                    }
+                    else if(result[0].isAttr())
+                    {
+                        token.f_replacement = result[0].toAttr().value();
+                    }
+                }
+            }
+        }
+    }
+    else if(token.is_token("year"))
+    {
+        time_t now(f_snap->get_start_time());
+        struct tm time_info;
+        gmtime_r(&now, &time_info);
+        token.f_replacement = QString("%1").arg(time_info.tm_year + 1900);
     }
 
     return true;

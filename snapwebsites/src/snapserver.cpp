@@ -16,6 +16,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "snapwebsites.h"
+#include "not_reached.h"
 
 
 int main(int argc, char *argv[])
@@ -78,6 +79,10 @@ std::cerr << "call XSS filter...\n";
 snap::tree2html::to_html n(node);//*node.child(node.begin(), 0));
 std::cerr << "text returned = [" << n << "]\n";
 #endif
+
+	// exit via the server so the server can clean itself up cleanly
+	s->exit(0);
+	snap::NOTREACHED();
 
 	return 0;
 }

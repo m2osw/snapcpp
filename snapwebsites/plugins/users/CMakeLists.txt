@@ -58,6 +58,7 @@ add_library(users SHARED
     content.xml
     login-form.xml
     register-form.xml
+    verify-form.xml
 )
 
 target_link_libraries( users ${QT_LIBRARIES} )

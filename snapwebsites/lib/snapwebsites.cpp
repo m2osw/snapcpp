@@ -413,7 +413,7 @@ void server::config(int argc, char *argv[])
 {
     f_opt.reset(
         new advgetopt::getopt( argc, argv, g_snapserver_options, g_configuration_files, "SNAPSERVER_OPTIONS" )
-        );
+    );
 
     // We want the servername for later.
     //
@@ -422,6 +422,7 @@ void server::config(int argc, char *argv[])
     // initialize the syslog() interface
     openlog("snapserver", LOG_NDELAY | LOG_PID, LOG_DAEMON);
 
+    bool help(false);
     if( f_opt->is_defined( "action" ) )
     {
         const std::string action( f_opt->get_string("action" ) );
@@ -434,6 +435,7 @@ void server::config(int argc, char *argv[])
             else
             {
                 syslog( LOG_CRIT, "unexpected parameter \"--action %s\", at most one action can be specified, backend not started. (in server::config())", action.c_str() );
+                help = true;
             }
         }
         else
@@ -441,6 +443,7 @@ void server::config(int argc, char *argv[])
             // If not backend, "--action" doesn't make sense.
             //
             syslog( LOG_CRIT, "unexpected command line option \"--action %s\", server not started. (in server::config())", action.c_str() );
+            help = true;
         }
     }
     //
@@ -545,7 +548,7 @@ void server::config(int argc, char *argv[])
         }
     }
 #endif
-    if( f_opt->is_defined( "help" ) )
+    if( help || f_opt->is_defined( "help" ) )
     {
         // if the user asked to not detach, then print the usage
         if( f_debug )
@@ -742,6 +745,36 @@ void server::prepare_qtapp( int argc, char *argv[] )
     {
         g_application.reset( new QCoreApplication(argc, argv) );
     }
+}
+
+
+/** \brief Before quitting your application, call this to delete the application.
+ *
+ * The application pointer is kept in memory until this function gets called.
+ * It is not generally necessary to call this function, however, some
+ * processes in Qt may still need proper cleanup. This will generally take
+ * care of those before quitting.
+ */
+void server::close_qtapp()
+{
+    g_application.reset();
+}
+
+
+/** \brief Exit the server.
+ *
+ * This function exists the program by calling the exit(3) function from
+ * the C library. Before doing so, though, it will first make sure that
+ * the server is cleaned up as required.
+ *
+ * \param[in] code  The exit code, generally 0 or 1.
+ */
+void server::exit(int code)
+{
+    close_qtapp();
+    // call the C exit(3) function
+    ::exit(code);
+    NOTREACHED();
 }
 
 

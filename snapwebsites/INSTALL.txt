@@ -215,12 +215,12 @@ me know and don't hesitate to ask me to update this file.)
 
      KNOWN BUG: At this time the Snap! server does not immediately create all
                 the tables it is going to use. This means it won't work right
-		in a cluster (i.e. more than one Cassandra node). We are
-		aware of this problem and will move the creation of tables
-		to the update processes. That way we will be able to wait
-		on any such changes before actually starting the server
-		(i.e. because you have to wait on Cassandra to tell you that
-		it is done creating the table before you can move on.)
+                in a cluster (i.e. more than one Cassandra node). We are
+                aware of this problem and will move the creation of tables
+                to the update processes. That way we will be able to wait
+                on any such changes before actually starting the server
+                (i.e. because you have to wait on Cassandra to tell you that
+                it is done creating the table before you can move on.)
 
   d. Snap! Manager Setup
 

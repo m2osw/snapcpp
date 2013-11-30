@@ -336,19 +336,24 @@ void messages::on_generate_page_content(layout::layout *l, const QString& path, 
 
 				// there is always a title
 				{
-					QDomElement message_title(doc.createElement("title"));
+					//QDomElement message_title(doc.createElement("title"));
+					//msg_tag.appendChild(message_title);
+					//QDomText text(doc.createTextNode(f_messages[i].get_title()));
+					//message_title.appendChild(text);
+
+					QDomDocument message_doc("snap");
+					message_doc.setContent("<title><span class=\"message-title\">" + f_messages[i].get_title() + "</span></title>");
+					QDomNode message_title(doc.importNode(message_doc.documentElement(), true));
 					msg_tag.appendChild(message_title);
-					QDomText text(doc.createTextNode(f_messages[i].get_title()));
-					message_title.appendChild(text);
 				}
 
 				// don't create the body if the message is empty
 				if(!f_messages[i].get_body().isEmpty())
 				{
-					QDomElement message_body(doc.createElement("body"));
+					QDomDocument message_doc("snap");
+					message_doc.setContent("<body><span class=\"message-body\">" + f_messages[i].get_body() + "</span></body>");
+					QDomNode message_body(doc.importNode(message_doc.documentElement(), true));
 					msg_tag.appendChild(message_body);
-					QDomText text(doc.createTextNode(f_messages[i].get_body()));
-					message_body.appendChild(text);
 				}
 			}
 		}

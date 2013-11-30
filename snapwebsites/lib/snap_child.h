@@ -60,6 +60,8 @@ public:
 
 	const snap_uri& get_uri() const;
 
+	void exit(int code);
+	bool is_debug() const;
 	QtCassandra::QCassandraValue get_site_parameter(const QString& name);
 	void set_site_parameter(const QString& name, const QtCassandra::QCassandraValue& value);
 	QSharedPointer<QtCassandra::QCassandraContext> get_context() { return f_context; }
@@ -68,6 +70,7 @@ public:
 	const QString& get_site_key() const { return f_site_key; }
 	const QString& get_site_key_with_slash() const { return f_site_key_with_slash; }
 	int64_t get_start_date() const { return f_start_date; }
+	time_t get_start_time() const { return f_start_date / static_cast<int64_t>(1000000); }
 	void set_header(const QString& name, const QString& value);
 	void set_cookie(const http_cookie& cookie);
 	bool has_header(const QString& name) const;

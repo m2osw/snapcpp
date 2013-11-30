@@ -6,7 +6,7 @@
 															xmlns:snap="snap:snap">
 	<xsl:param name="layout-name">bare</xsl:param>
 	<xsl:param name="layout-area">theme</xsl:param>
-	<xsl:param name="layout-modified">2013-01-01 03:41:37</xsl:param>
+	<xsl:param name="layout-modified">2013-11-29 03:41:37</xsl:param>
 	<xsl:param name="year" select="year-from-date(current-date())"/>
 	<xsl:param name="use_dcterms">yes</xsl:param>
 	<!-- get the website URI (i.e. URI without any folder other than the website base folder) -->
@@ -449,7 +449,8 @@
 					<meta name="{$name}" content="{$content}"/>
 				</xsl:for-each>
 		<style>
-		body, div {
+		body, div
+		{
 			padding: 0;
 			margin: 0;
 		}
@@ -487,6 +488,17 @@
 			float: left;
 			width: 730px;
 			padding: 10px;
+		}
+		div.user-messages
+		{
+			border: 1px solid #550000;
+			background-color: #fff0f0;
+			padding: 0 10px;
+			margin-bottom: 20px;
+		}
+		div.message h3
+		{
+			color: #770033;
 		}
 		.clear-both
 		{
@@ -601,7 +613,8 @@
 					<div class="clear-both"></div>
 				</div>
 				<div class="footer">
-					<p>Copyright (c) 2012 -- Made to Order Software Corp.</p>
+					<p>Powered by <a href="http://snapwebsites.com/">Snap! C++ Websites</a></p>
+					<p>Copyright (c) 2012-<xsl:value-of select="$year"/> by <a href="http://www.m2osw.com">Made to Order Software Corp.</a> &#8212; All Rights Reserved</p>
 				</div>
 			</div>
 		</body>

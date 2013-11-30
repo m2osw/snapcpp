@@ -728,13 +728,13 @@ int process::run()
             }
 
             // wait for the child process first
-printf("waiting child...\n");
+//printf("waiting child...\n");
             int r(child.wait());
 
             // then wait on the two threads
-printf("waiting in_t...\n");
+//printf("waiting in_t...\n");
             in_thread.stop();
-printf("waiting out_t...\n");
+//printf("waiting out_t...\n");
             out_thread.stop();
 
             return r;

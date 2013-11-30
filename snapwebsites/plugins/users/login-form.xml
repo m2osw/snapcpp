@@ -67,15 +67,15 @@
     </widget>
     <widget id="forgot_password" type="link">
       <label>Forgot Password</label>
-      <tooltip>Forgot your password? Click on this link to request Snap! to send you a likn to change it with a new one.</tooltip>
+      <tooltip>Forgot your password? Click on this link to request Snap! to send you a link to change it with a new one.</tooltip>
       <help>You use so many websites with an account... and each one has to have a different password! So it can be easy to forget the password for a given website. We store passwords in a one way encryption mechanism (i.e. we cannot decrypt it) so if you forget it, we can only offer you to replace it. This is done using the form this link sends you to.</help>
-      <value>/users/forgotten-password.html</value>
+      <value>/forgot-password</value>
     </widget>
     <widget id="register" type="link">
       <label>Register</label>
       <tooltip>No account yet? Register your own Snap! account now.</tooltip>
       <help>To log in a Snap! account, you first have to register an account. Click on this link if you don't already have an account. If you are not sure, you can always try the <strong>Forgot Password</strong> link. It will tell you whether we know your email address.</help>
-      <value>/users/register.html</value>
+      <value>/register</value>
     </widget>
     <widget id="remember" type="checkbox">
       <label>Remember Me</label>
@@ -99,7 +99,7 @@
       <tooltip>Click here to return to the home page</tooltip>
       <classes>my-cancel-class</classes>
       <help>Long description that goes in the help box explaining why you'd want to click Cancel.</help>
-      <value>/home.html</value>
+      <value>/</value>
     </widget>
   </widget>
 </snap-form>

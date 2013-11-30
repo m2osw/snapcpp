@@ -21,6 +21,7 @@
 #include "plugins.h"
 #include "snap_child.h"
 #include "../layout/layout.h"
+#include "../filter/filter.h"
 #include <libtld/tld.h>
 #include <QtSerialization/QSerializationReader.h>
 #include <controlled_vars/controlled_vars_need_init.h>
@@ -184,6 +185,7 @@ public:
     virtual void        on_backend_action(const QString& action);
 	virtual void		on_generate_main_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body);
 	//void				on_generate_page_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body);
+    void                on_replace_token(filter::filter *f, QDomDocument& xml, filter::filter::token_info_t& token);
 
     void                post_email(const email& e);
 

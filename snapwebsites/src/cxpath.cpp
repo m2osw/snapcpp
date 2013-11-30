@@ -340,11 +340,11 @@ int main(int argc, char *argv[])
     {
         cxpath_compile();
     }
-    if(g_opt->is_defined("execute"))
+    else if(g_opt->is_defined("execute"))
     {
         cxpath_execute();
     }
-    if(g_opt->is_defined("disassemble"))
+    else if(g_opt->is_defined("disassemble"))
     {
         cxpath_disassemble();
     }

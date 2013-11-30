@@ -16,6 +16,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "snapwebsites.h"
+#include "not_reached.h"
 
 
 int main(int argc, char *argv[])
@@ -27,11 +28,22 @@ int main(int argc, char *argv[])
 	// parse the command line arguments
 	s->config(argc, argv);
 
+	// if possible, detach the server
+	s->detach();
+	// Only the child (backend) process returns here
+
+    // now create the qt application instance
+    s->prepare_qtapp( argc, argv );
+
 	// prepare the database
 	s->prepare_cassandra();
 
 	// listen to connections
 	s->backend();
+
+	// exit via the server so the server can clean itself up cleanly
+	s->exit(0);
+	snap::NOTREACHED();
 
 	return 0;
 }

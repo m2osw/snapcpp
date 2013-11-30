@@ -16,6 +16,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "snapwebsites.h"
+#include "not_reached.h"
 
 
 int main(int argc, char *argv[])
@@ -27,6 +28,10 @@ int main(int argc, char *argv[])
 	// parse the command line arguments (this also brings in the .conf params)
 	s->config(argc, argv);
 
+    // Now create the qt application instance
+    //
+    s->prepare_qtapp( argc, argv );
+
 	QString msg(s->get_parameter("__BACKEND_URI"));
 	if(msg.isEmpty())
 	{
@@ -37,6 +42,10 @@ int main(int argc, char *argv[])
 		// use sendmail UDP information
 		s->udp_ping("sendmail_udp_signal", msg.toUtf8().data());
 	}
+
+	// exit via the server so the server can clean itself up cleanly
+	s->exit(0);
+	snap::NOTREACHED();
 
 	return 0;
 }

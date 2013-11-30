@@ -351,7 +351,8 @@ void robotstxt::define_robots(const QString& path)
             }
         }
         {
-            links::link_info xml_sitemap_info("noarchive", false, site_key + "types/taxonomy/system/robotstxt/noarchive");
+            // TBD -- here I had this path "types/taxonomy/system/robotstxt/noarchive", but `path` seems correct...
+            links::link_info xml_sitemap_info("noarchive", false, site_key + path);
             QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(xml_sitemap_info));
             links::link_info robots_txt;
             if(link_ctxt->next_link(robots_txt))

@@ -175,7 +175,7 @@ bool snap_child::process(int socket)
     }
 
 // to avoid the fork use 1 on the next line
-// (much easier to debug a crashing problem!)
+// (much easier to debug a crashing problem in a snap child!)
 #if 0
     pid_t p = 0;
 #else
@@ -241,7 +241,10 @@ bool snap_child::process(int socket)
     // object that needs to get cleaned up properly.
     //delete this;
     exit(0);
+    NOTREACHED();
+    return false;
 }
+
 
 /** \brief Execute the backend processes after initialization.
  *
@@ -298,6 +301,7 @@ void snap_child::backend()
         }
     }
 }
+
 
 /** \brief Process a backend request on the specified URI.
  *
@@ -405,6 +409,7 @@ void snap_child::process_backend_uri(const QString& uri)
     }
 }
 
+
 /** \brief Check the status of the child process.
  *
  * This function checks whether the child is still running or not.
@@ -460,6 +465,7 @@ snap_child::status_t snap_child::check_status()
 
     return f_child_pid == 0 ? SNAP_CHILD_STATUS_READY : SNAP_CHILD_STATUS_RUNNING;
 }
+
 
 /** \brief Read the command and eventually the environment sent by snap.cgi
  *
@@ -626,6 +632,7 @@ void snap_child::read_environment()
     }
 }
 
+
 /** \brief Write data to the output socket.
  *
  * This function writes data to the output socket.
@@ -653,6 +660,7 @@ void snap_child::write(const char *data, ssize_t size)
     }
 }
 
+
 /** \brief Write a string to the socket.
  *
  * This function is an overload of the write() data buffer. It writes the
@@ -666,6 +674,7 @@ void snap_child::write(const char *str)
     write(str, strlen(str));
 }
 
+
 /** \brief Write a QString to the socket.
  *
  * This function is an overload that writes the QString to the socket. This
@@ -678,6 +687,7 @@ void snap_child::write(const QString& str)
     QByteArray a(str.toUtf8());
     write(a.data(), a.size());
 }
+
 
 /** \brief Generate the Snap information buffer and return it.
  *
@@ -752,6 +762,7 @@ void snap_child::snap_info()
     exit(1);
 }
 
+
 /** \brief Return the current stats in name/value pairs format.
  *
  * This command returns the server statistics.
@@ -781,6 +792,7 @@ void snap_child::snap_statistics()
 
     exit(1);
 }
+
 
 /** \brief Setup the URI from the environment.
  *
@@ -915,6 +927,7 @@ void snap_child::setup_uri()
 //fprintf(stderr, "query string [%s]\n", f_uri.query_string().toUtf8().data());
 //fprintf(stderr, "q=[%s]\n", f_uri.query_option("q").toUtf8().data());
 }
+
 
 /** \brief Get a copy of the URI information.
  *
@@ -1535,6 +1548,42 @@ QString snap_child::snap_url(const QString& url) const
 }
 
 
+/** \brief Make sure to clean up then exit the child process.
+ *
+ * This function cleans up the child and then calls the
+ * server::exit() function to give the server a chance to
+ * also clean up. Then it exists by calling the exit(3)
+ * function of the C library.
+ *
+ * \param[in] code  The exit code, generally 0 or 1.
+ */
+void snap_child::exit(int code)
+{
+    f_server->exit(code);
+    NOTREACHED();
+}
+
+
+/** \brief Check whether the server was started in debug mode.
+ *
+ * With this function any plugin can determine whether the server was
+ * started with the --debug command line option and act accordingly
+ * (i.e. show a certain number of debug in stdout or stderr).
+ *
+ * It should not be used to display debug data in the HTML output.
+ * Other parameters can be used for that purpose (specifically, that
+ * very plugin can make use of its own debug parameter for that because
+ * having the debug turned on for all modules would be a killer.)
+ *
+ * \return true if the --debug (-d) command line option was used to start
+ *         the server
+ */
+bool snap_child::is_debug() const
+{
+    return f_server->is_debug();
+}
+
+
 /** \brief Retreive a website wide parameter.
  *
  * This function reads a column from the sites table using the site key as
@@ -2078,16 +2127,17 @@ QString snap_child::get_header(const QString& name) const
  * The file is a 64 bit long number (binary) which gets locked to ensure
  * that the number coming out is unique.
  *
- * The number is composed of the server name a dash and the unique number
- * generated from the unique number file.
+ * The resulting number is composed of the server name a dash and the
+ * unique number generated from the unique number file.
  *
  * At this point it is not expected that we'd ever run out of unique
- * numbers. 2^64 is a really large number. However, you do want to limit
- * calls as much as possible (if you can reuse the same number or check
- * all possibilities that could cause an error before getting the unique
- * numbers so as to avoid wasting too many of them.)
+ * numbers. 2^64 per server is a really large number. However, you do
+ * want to limit calls as much as possible (if you can reuse the same
+ * number or check all possibilities that could cause an error before
+ * getting the unique numbers so as to avoid wasting too many of them.)
  *
  * The server name is expected to be a unique name defined in the settings.
+ * (the .conf file for the server.)
  *
  * \todo
  * All the servers in a given realm should all be given a unique name and
@@ -2193,15 +2243,17 @@ void snap_child::init_plugins()
 
 /** \brief Run all the updates as required.
  *
- * This function checks since when the updates were run. If never, then it
+ * This function checks when the updates were last run. If never, then it
  * runs the update immediately. Otherwise, it waits at least 10 minutes
- * between runs to avoid overloading the server. We may increase that
- * amount of time as we get a better feel of the necessity.
+ * between running again to avoid overloading the server. We may increase
+ * (i.e. wait more than 10 minutes) that amount of time as we get a better
+ * feel of the necessity.
  *
- * The update is done by going through all the modules and checking they
+ * The update is done by going through all the modules and checking their
  * modification date and time. If newer than what was registered for
  * them so far, then we call their do_update() function. When it never
- * ran, the modification date and time is always seen as newer.
+ * ran, the modification date and time is always seen as \em newer and
+ * thus all updates are run.
  *
  * \todo
  * We may want to look into a way to "install" a plugin which would have
@@ -2226,7 +2278,8 @@ void snap_child::update_plugins(const QStringList& list_of_plugins)
     }
     int64_t last_update_timestamp(last_updated.int64Value());
     // 10 min. elapsed since last update?
-    if(f_start_date - static_cast<int64_t>(last_update_timestamp) > static_cast<int64_t>(10 * 60 * 1000000))
+    if(is_debug() // force update in debug mode so we don't have to wait 10 min.!
+    || f_start_date - static_cast<int64_t>(last_update_timestamp) > static_cast<int64_t>(10 * 60 * 1000000))
     {
         // save that last time we checked for an update
         last_updated.setInt64Value(f_start_date);
@@ -2267,9 +2320,9 @@ void snap_child::update_plugins(const QStringList& list_of_plugins)
                     specific_last_updated.setInt64Value(SNAP_UNIX_TIMESTAMP(1990, 1, 1, 0, 0, 0) * 1000000LL);
                 }
                 // IMPORTANT: Note that we save the newest date found in the
-                //              do_update() to make 100% sure we catch all the
-                //              updates every time (using "now" would often mean
-                //              missing many updates!)
+                //            do_update() to make 100% sure we catch all the
+                //            updates every time (using "now" would often mean
+                //            missing many updates!)
                 specific_last_updated.setInt64Value(p->do_update(specific_last_updated.int64Value()));
                 set_site_parameter(specific_param_name, specific_last_updated);
             }

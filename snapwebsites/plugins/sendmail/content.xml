@@ -39,7 +39,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <link name="sendmail" to="sendmail" mode="1:*">/types/permissions/rights/sendmail</link>
   </content>
   <content path="/amdin/sendmail/footer">
-    <![CDATA[<div class="snap-footer"><p>Email sent from Snap! C++ -- http://snapwebsites.com/</p><p>Click <a href="[unsubscribe-link]">unsubscribe</a> to remove yourself from our mailing list.</p></div>]]>
+    <![CDATA[<div class="snap-footer"><p>Email sent from Snap! C++ -- http://snapwebsites.com/</p><p>Click <a href="[sendmail::unsubscribe-link]">unsubscribe</a> to remove yourself from our mailing list.</p></div>]]>
     <link name="search_index_ignore" to="search_index_ignore" mode="1:*">/types/taxonomy/system/search/status/ignore</link>
     <link name="administration" to="administration" mode="1:*">/types/permissions/rights/administration</link>
     <link name="sendmail" to="sendmail" mode="1:*">/types/permissions/rights/sendmail</link>

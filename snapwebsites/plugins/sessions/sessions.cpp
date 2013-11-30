@@ -38,40 +38,40 @@ SNAP_PLUGIN_START(sessions, 1, 0)
  */
 const char *get_name(name_t name)
 {
-	switch(name) {
-	case SNAP_NAME_SESSIONS_TABLE:
-		return "sessions";
+    switch(name) {
+    case SNAP_NAME_SESSIONS_TABLE:
+        return "sessions";
 
-	case SNAP_NAME_SESSIONS_ID:
-		return "sessions::id";
+    case SNAP_NAME_SESSIONS_ID:
+        return "sessions::id";
 
-	case SNAP_NAME_SESSIONS_PLUGIN_OWNER:
-		return "sessions::plugin_owner";
+    case SNAP_NAME_SESSIONS_PLUGIN_OWNER:
+        return "sessions::plugin_owner";
 
-	case SNAP_NAME_SESSIONS_PAGE_PATH:
-		return "sessions::page_path";
+    case SNAP_NAME_SESSIONS_PAGE_PATH:
+        return "sessions::page_path";
 
-	case SNAP_NAME_SESSIONS_OBJECT_PATH:
-		return "sessions::object_path";
+    case SNAP_NAME_SESSIONS_OBJECT_PATH:
+        return "sessions::object_path";
 
-	case SNAP_NAME_SESSIONS_TIME_TO_LIVE:
-		return "sessions::time_to_live";
+    case SNAP_NAME_SESSIONS_TIME_TO_LIVE:
+        return "sessions::time_to_live";
 
-	case SNAP_NAME_SESSIONS_TIME_LIMIT:
-		return "sessions::time_limit";
+    case SNAP_NAME_SESSIONS_TIME_LIMIT:
+        return "sessions::time_limit";
 
-	case SNAP_NAME_SESSIONS_REMOTE_ADDR:
-		return "sessions::remote_addr";
+    case SNAP_NAME_SESSIONS_REMOTE_ADDR:
+        return "sessions::remote_addr";
 
-	case SNAP_NAME_SESSIONS_USED_UP:
-		return "sessions::used_up";
+    case SNAP_NAME_SESSIONS_USED_UP:
+        return "sessions::used_up";
 
-	default:
-		// invalid index
-		throw snap_exception();
+    default:
+        // invalid index
+        throw snap_exception();
 
-	}
-	NOTREACHED();
+    }
+    NOTREACHED();
 }
 
 
@@ -101,13 +101,13 @@ const char *get_name(name_t name)
  *                   matter what)
  */
 sessions::session_info::session_info()
-	//: f_type(SESSION_INFO_SECURE) -- auto-init
-	: f_session_id()
-	//, f_plugin_owner("") -- auto-init
-	//, f_page_path("") -- auto-init
-	//, f_object_path("") -- auto-init
-	//, f_time_to_live(300) -- auto-init
-	//, f_time_limit(0) -- auto-init
+    //: f_type(SESSION_INFO_SECURE) -- auto-init
+    : f_session_id()
+    //, f_plugin_owner("") -- auto-init
+    //, f_page_path("") -- auto-init
+    //, f_object_path("") -- auto-init
+    //, f_time_to_live(300) -- auto-init
+    //, f_time_limit(0) -- auto-init
 {
 }
 
@@ -144,8 +144,8 @@ sessions::session_info::session_info()
  */
 void sessions::session_info::set_session_type(session_info_type_t type)
 {
-	// TODO: get controlled_vars to support enumerations
-	f_type = static_cast<int>(type);
+    // TODO: get controlled_vars to support enumerations
+    f_type = static_cast<int>(type);
 }
 
 /** \brief Define a session identifier.
@@ -163,7 +163,7 @@ void sessions::session_info::set_session_type(session_info_type_t type)
  */
 void sessions::session_info::set_session_id(session_id_t id)
 {
-	f_session_id = id;
+    f_session_id = id;
 }
 
 /** \brief Set the session owner which is the name of a plugin.
@@ -178,7 +178,7 @@ void sessions::session_info::set_session_id(session_id_t id)
  */
 void sessions::session_info::set_plugin_owner(const QString& plugin_owner)
 {
-	f_plugin_owner = plugin_owner;
+    f_plugin_owner = plugin_owner;
 }
 
 /** \brief The path to the page where this session identifier is used.
@@ -201,7 +201,7 @@ void sessions::session_info::set_plugin_owner(const QString& plugin_owner)
  */
 void sessions::session_info::set_page_path(const QString& page_path)
 {
-	f_page_path = page_path;
+    f_page_path = page_path;
 }
 
 /** \brief The path of the object displaying this content.
@@ -220,7 +220,7 @@ void sessions::session_info::set_page_path(const QString& page_path)
  */
 void sessions::session_info::set_object_path(const QString& object_path)
 {
-	f_object_path = object_path;
+    f_object_path = object_path;
 }
 
 /** \brief The time to live of this session.
@@ -260,7 +260,7 @@ void sessions::session_info::set_object_path(const QString& object_path)
  */
 void sessions::session_info::set_time_to_live(int32_t time_to_live)
 {
-	f_time_to_live = time_to_live;
+    f_time_to_live = time_to_live;
 }
 
 /** \brief Limit the time by date.
@@ -289,7 +289,7 @@ void sessions::session_info::set_time_to_live(int32_t time_to_live)
  */
 void sessions::session_info::set_time_limit(time_t time_limit)
 {
-	f_time_limit = time_limit;
+    f_time_limit = time_limit;
 }
 
 /** \brief Retrieve the type of this session.
@@ -304,7 +304,7 @@ void sessions::session_info::set_time_limit(time_t time_limit)
  */
 sessions::session_info::session_info_type_t sessions::session_info::get_session_type() const
 {
-	return f_type;
+    return f_type;
 }
 
 /** \brief Define a session identifier.
@@ -319,7 +319,7 @@ sessions::session_info::session_info_type_t sessions::session_info::get_session_
  */
 sessions::session_info::session_id_t sessions::session_info::get_session_id() const
 {
-	return f_session_id;
+    return f_session_id;
 }
 
 /** \brief Set the session owner which is the name of a plugin.
@@ -334,7 +334,7 @@ sessions::session_info::session_id_t sessions::session_info::get_session_id() co
  */
 const QString& sessions::session_info::get_plugin_owner() const
 {
-	return f_plugin_owner;
+    return f_plugin_owner;
 }
 
 /** \brief Retrieve the path of the page linked to this session.
@@ -350,7 +350,7 @@ const QString& sessions::session_info::get_plugin_owner() const
  */
 const QString& sessions::session_info::get_page_path() const
 {
-	return f_page_path;
+    return f_page_path;
 }
 
 /** \brief Get the path of the attached object.
@@ -366,7 +366,7 @@ const QString& sessions::session_info::get_page_path() const
  */
 const QString& sessions::session_info::get_object_path() const
 {
-	return f_object_path;
+    return f_object_path;
 }
 
 /** \brief Get the time to live of this session.
@@ -383,7 +383,7 @@ const QString& sessions::session_info::get_object_path() const
  */
 int32_t sessions::session_info::get_time_to_live() const
 {
-	return f_time_to_live;
+    return f_time_to_live;
 }
 
 /** \brief Get the time limit of this session.
@@ -400,9 +400,41 @@ int32_t sessions::session_info::get_time_to_live() const
  */
 time_t sessions::session_info::get_time_limit() const
 {
-	return f_time_limit;
+    return f_time_limit;
 }
 
+
+/** \brief Get session type as a string.
+ *
+ * This function converts the session type to a string. This is particularly
+ * useful to generate errors.
+ *
+ * \exception
+ * When the input type is not valid, this exception is generated.
+ *
+ * \param[in] type  The type to convert to a string.
+ *
+ * \return A string representing the type.
+ */
+const char *sessions::session_info::session_type_to_string(session_info_type_t type)
+{
+    const char *type_names[] =
+    {
+        "SESSION_INFO_SECURE",
+        "SESSION_INFO_USER",
+        "SESSION_INFO_FORM",
+        "SESSION_INFO_VALID",
+        "SESSION_INFO_MISSING",
+        "SESSION_INFO_OUT_OF_DATE",
+        "SESSION_INFO_USED_UP",
+        "SESSION_INFO_INCOMPATIBLE"
+    };
+    if(type < 0 || type > sizeof(type_names) / sizeof(type_names[0]))
+    {
+        throw std::range_error("type is invalid while calling session_type_to_string()");
+    }
+    return type_names[type];
+}
 
 
 /** \brief Initialize the sessions plugin.
@@ -410,7 +442,7 @@ time_t sessions::session_info::get_time_limit() const
  * This function is used to initialize the sessions plugin object.
  */
 sessions::sessions()
-	//: f_snap(NULL) -- auto-init
+    //: f_snap(NULL) -- auto-init
 {
 }
 
@@ -431,7 +463,7 @@ sessions::~sessions()
  */
 void sessions::on_bootstrap(snap_child *snap)
 {
-	f_snap = snap;
+    f_snap = snap;
 }
 
 /** \brief Get a pointer to the sessions plugin.
@@ -445,7 +477,7 @@ void sessions::on_bootstrap(snap_child *snap)
  */
 sessions *sessions::instance()
 {
-	return g_plugin_sessions_factory.instance();
+    return g_plugin_sessions_factory.instance();
 }
 
 
@@ -460,12 +492,12 @@ sessions *sessions::instance()
  */
 QString sessions::description() const
 {
-	return "The sessions plugin is used by many other plugins to generate"
-		" session identifiers and save information about the given session."
-		" This is useful for many different reasons. In case of a user, a"
-		" session is used to make sure that the same user comes back to the"
-		" website. It is also used by forms to make sure that a for submission"
-		" is valid.";
+    return "The sessions plugin is used by many other plugins to generate"
+        " session identifiers and save information about the given session."
+        " This is useful for many different reasons. In case of a user, a"
+        " session is used to make sure that the same user comes back to the"
+        " website. It is also used by forms to make sure that a for submission"
+        " is valid.";
 }
 
 
@@ -483,11 +515,11 @@ QString sessions::description() const
  */
 int64_t sessions::do_update(int64_t last_updated)
 {
-	SNAP_PLUGIN_UPDATE_INIT();
+    SNAP_PLUGIN_UPDATE_INIT();
 
-	SNAP_PLUGIN_UPDATE(2012, 12, 29, 13, 45, 0, content_update);
+    SNAP_PLUGIN_UPDATE(2012, 12, 29, 13, 45, 0, content_update);
 
-	SNAP_PLUGIN_UPDATE_EXIT();
+    SNAP_PLUGIN_UPDATE_EXIT();
 }
 
 /** \brief Update the content with our references.
@@ -499,7 +531,7 @@ int64_t sessions::do_update(int64_t last_updated)
  */
 void sessions::content_update(int64_t variables_timestamp)
 {
-	content::content::instance()->add_xml("sessions");
+    content::content::instance()->add_xml("sessions");
 }
 
 /** \brief Initialize the sessions table.
@@ -518,7 +550,7 @@ void sessions::content_update(int64_t variables_timestamp)
  */
 QSharedPointer<QtCassandra::QCassandraTable> sessions::get_sessions_table()
 {
-	return f_snap->create_table(get_name(SNAP_NAME_SESSIONS_TABLE), "Sessions table.");
+    return f_snap->create_table(get_name(SNAP_NAME_SESSIONS_TABLE), "Sessions table.");
 }
 
 /** \brief Implementation of the generate_sessions signal.
@@ -529,7 +561,7 @@ QSharedPointer<QtCassandra::QCassandraTable> sessions::get_sessions_table()
  */
 bool sessions::generate_sessions_impl(sessions * /*r*/)
 {
-	return true;
+    return true;
 }
 
 /** \brief Generate the actual content of the statistics page.
@@ -544,10 +576,10 @@ bool sessions::generate_sessions_impl(sessions * /*r*/)
  */
 void sessions::on_generate_main_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body)
 {
-	// generate the statistics in the body then call the content generator
-	// (how do we do that at this point? do we assume that the backend takes
-	// care of it?)
-	content::content::instance()->on_generate_main_content(l, path, page, body);
+    // generate the statistics in the body then call the content generator
+    // (how do we do that at this point? do we assume that the backend takes
+    // care of it?)
+    content::content::instance()->on_generate_main_content(l, path, page, body);
 }
 
 /** \brief Create a new session.
@@ -592,138 +624,137 @@ void sessions::on_generate_main_content(layout::layout *l, const QString& path, 
  */
 QString sessions::create_session(const session_info& info)
 {
-	// creating a session of less than 1 minute?!
-	time_t time_limit(info.get_time_limit());
-	int32_t time_to_live(info.get_time_to_live());
-	int64_t start_date(f_snap->get_start_date());
-	time_t now(start_date / 1000000); // in seconds
-	if((time_limit != 0 && time_limit <= now + 60)
-	|| (time_to_live != 0 && time_to_live <= 60))
-	{
-		throw std::runtime_error("you cannot create a session of 1 minute or less");
-	}
+    // creating a session of less than 1 minute?!
+    time_t time_limit(info.get_time_limit());
+    int32_t time_to_live(info.get_time_to_live());
+    int64_t now(f_snap->get_start_time());
+    if((time_limit != 0 && time_limit <= now + 60)
+    || (time_to_live != 0 && time_to_live <= 60))
+    {
+        throw std::runtime_error("you cannot create a session of 1 minute or less");
+    }
 
-	// make sure that we have at least one path defined
-	// (this is our session key so it is required)
-	const QString& page_path(info.get_page_path());
-	const QString& object_path(info.get_object_path());
-	if(page_path.isEmpty() && object_path.isEmpty())
-	{
-		throw std::runtime_error("any session must have at least one path defined");
-	}
+    // make sure that we have at least one path defined
+    // (this is our session key so it is required)
+    const QString& page_path(info.get_page_path());
+    const QString& object_path(info.get_object_path());
+    if(page_path.isEmpty() && object_path.isEmpty())
+    {
+        throw std::runtime_error("any session must have at least one path defined");
+    }
 
-	// TODO? Need we set a specific OpenSSL random generator?
-	//       Although the default works for session identifiers
-	//       someone could change that under our feet (since it
-	//       looks like those functions have a global context)
+    // TODO? Need we set a specific OpenSSL random generator?
+    //       Although the default works for session identifiers
+    //       someone could change that under our feet (since it
+    //       looks like those functions have a global context)
 
-	// the maximum size we currently use is 16 bytes (128 bits)
-	unsigned char buf[16];
+    // the maximum size we currently use is 16 bytes (128 bits)
+    unsigned char buf[16];
 
-	int size(0);
-	switch(info.get_session_type())
-	{
-	case session_info::SESSION_INFO_SECURE:
-		size = 16;
-		break;
+    int size(0);
+    switch(info.get_session_type())
+    {
+    case session_info::SESSION_INFO_SECURE:
+        size = 16;
+        break;
 
-	case session_info::SESSION_INFO_USER:
-		size = 8;
-		break;
+    case session_info::SESSION_INFO_USER:
+        size = 8;
+        break;
 
-	case session_info::SESSION_INFO_FORM:
-		size = 4;
-		break;
+    case session_info::SESSION_INFO_FORM:
+        size = 4;
+        break;
 
-	default:
-		throw std::logic_error("used an undefined session type in create_session()");
+    default:
+        throw std::logic_error("used an undefined session type in create_session()");
 
-	}
+    }
 
-	// generate the session identifier
-	int r(RAND_bytes(buf, size));
-	if(r != 1)
-	{
-		throw std::runtime_error("RAND_bytes() could not generate a random number.");
-	}
+    // generate the session identifier
+    int r(RAND_bytes(buf, size));
+    if(r != 1)
+    {
+        throw std::runtime_error("RAND_bytes() could not generate a random number.");
+    }
 
-	// make the key specific to that website and append the session identifier
-	QString key(f_snap->get_website_key() + "/");
-	QString result;
-	for(int i(0); i < size; ++i)
-	{
-		QString hex(QString("%1").arg(static_cast<int>(buf[i]), 2, 16, static_cast<QChar>('0')));
-		key += hex;
-		result += hex;
-	}
+    // make the key specific to that website and append the session identifier
+    QString key(f_snap->get_website_key() + "/");
+    QString result;
+    for(int i(0); i < size; ++i)
+    {
+        QString hex(QString("%1").arg(static_cast<int>(buf[i]), 2, 16, static_cast<QChar>('0')));
+        key += hex;
+        result += hex;
+    }
 
-	// define timestamp for the session value in seconds
-	int64_t timestamp(0);
-	if(time_limit == 0)
-	{
-		if(time_to_live == 0)
-		{
-			// never expire we use 1 year which is
-			// way over the head of everyone
-			timestamp = now + 86400 * 364;
-		}
-		else
-		{
-			timestamp = now + time_to_live;
-		}
-	}
-	else
-	{
-		if(time_to_live == 0)
-		{
-			timestamp = time_limit;
-		}
-		else
-		{
-			timestamp = now + time_to_live;
-			if(timestamp < time_limit)
-			{
-				// keep the largest dead line time
-				timestamp = time_limit;
-			}
-		}
-	}
-	// keep it in the database for 1 more day than what we need it for
-	// the difference should always fit 32 bits
-	int64_t ttl(timestamp + 86400 - now);
-	if(ttl < 0 || ttl > 0x7FFFFFFF)
-	{
-		throw std::logic_error("the session computed ttl is out of bounds");
-	}
+    // define timestamp for the session value in seconds
+    int64_t timestamp(0);
+    if(time_limit == 0)
+    {
+        if(time_to_live == 0)
+        {
+            // never expire we use 1 year which is
+            // way over the head of everyone
+            timestamp = now + 86400 * 364;
+        }
+        else
+        {
+            timestamp = now + time_to_live;
+        }
+    }
+    else
+    {
+        if(time_to_live == 0)
+        {
+            timestamp = time_limit;
+        }
+        else
+        {
+            timestamp = now + time_to_live;
+            if(timestamp < time_limit)
+            {
+                // keep the largest dead line time
+                timestamp = time_limit;
+            }
+        }
+    }
+    // keep it in the database for 1 more day than what we need it for
+    // the difference should always fit 32 bits
+    int64_t ttl(timestamp + 86400 - now);
+    if(ttl < 0 || ttl > 0x7FFFFFFF)
+    {
+        throw std::logic_error("the session computed ttl is out of bounds");
+    }
 
-	QSharedPointer<QtCassandra::QCassandraTable> table(get_sessions_table());
-	QSharedPointer<QtCassandra::QCassandraRow> row(table->row(key));
+    QSharedPointer<QtCassandra::QCassandraTable> table(get_sessions_table());
+    QSharedPointer<QtCassandra::QCassandraRow> row(table->row(key));
 
-	QtCassandra::QCassandraValue value;
-	value.setTtl(static_cast<int32_t>(ttl));
+    QtCassandra::QCassandraValue value;
+    value.setTtl(static_cast<int32_t>(ttl));
 
-	value.setInt32Value(info.get_session_id());
-	row->cell(get_name(SNAP_NAME_SESSIONS_ID))->setValue(value);
+    value.setInt32Value(info.get_session_id());
+    row->cell(get_name(SNAP_NAME_SESSIONS_ID))->setValue(value);
 
-	value.setStringValue(info.get_plugin_owner());
-	row->cell(get_name(SNAP_NAME_SESSIONS_PLUGIN_OWNER))->setValue(value);
+    value.setStringValue(info.get_plugin_owner());
+    row->cell(get_name(SNAP_NAME_SESSIONS_PLUGIN_OWNER))->setValue(value);
 
-	value.setStringValue(info.get_page_path());
-	row->cell(get_name(SNAP_NAME_SESSIONS_PAGE_PATH))->setValue(value);
+    value.setStringValue(info.get_page_path());
+    row->cell(get_name(SNAP_NAME_SESSIONS_PAGE_PATH))->setValue(value);
 
-	value.setStringValue(info.get_object_path());
-	row->cell(get_name(SNAP_NAME_SESSIONS_OBJECT_PATH))->setValue(value);
+    value.setStringValue(info.get_object_path());
+    row->cell(get_name(SNAP_NAME_SESSIONS_OBJECT_PATH))->setValue(value);
 
-	value.setInt32Value(info.get_time_to_live());
-	row->cell(get_name(SNAP_NAME_SESSIONS_TIME_TO_LIVE))->setValue(value);
+    value.setInt32Value(info.get_time_to_live());
+    row->cell(get_name(SNAP_NAME_SESSIONS_TIME_TO_LIVE))->setValue(value);
 
-	value.setInt64Value(timestamp);
-	row->cell(get_name(SNAP_NAME_SESSIONS_TIME_LIMIT))->setValue(value);
+    value.setInt64Value(timestamp);
+    row->cell(get_name(SNAP_NAME_SESSIONS_TIME_LIMIT))->setValue(value);
 
-	value.setStringValue(f_snap->snapenv("REMOTE_ADDR"));
-	row->cell(get_name(SNAP_NAME_SESSIONS_REMOTE_ADDR))->setValue(value);
+    value.setStringValue(f_snap->snapenv("REMOTE_ADDR"));
+    row->cell(get_name(SNAP_NAME_SESSIONS_REMOTE_ADDR))->setValue(value);
 
-	return result;
+    return result;
 }
 
 /** \brief Load a session previously created with create_session().
@@ -758,107 +789,106 @@ QString sessions::create_session(const session_info& info)
  */
 void sessions::load_session(const QString& session_id, session_info& info, bool use_once)
 {
-	// reset this info (although it is likely already brand new...)
-	info = session_info();
+    // reset this info (although it is likely already brand new...)
+    info = session_info();
 
-	QString key(f_snap->get_website_key() + "/" + session_id);
+    QString key(f_snap->get_website_key() + "/" + session_id);
 
-	QSharedPointer<QtCassandra::QCassandraTable> table(get_sessions_table());
-	if(!table->exists(key))
-	{
-		// if the key doesn't exists it was either tempered with
-		// or the database already deleted it (i.e. it timed out)
-		info.set_session_type(session_info::SESSION_INFO_MISSING);
-		return;
-	}
+    QSharedPointer<QtCassandra::QCassandraTable> table(get_sessions_table());
+    if(!table->exists(key))
+    {
+        // if the key doesn't exists it was either tempered with
+        // or the database already deleted it (i.e. it timed out)
+        info.set_session_type(session_info::SESSION_INFO_MISSING);
+        return;
+    }
 
-	QSharedPointer<QtCassandra::QCassandraRow> row(table->row(key));
-	if(!row)
-	{
-		// XXX
-		// if we get a problem here it's probably something else
-		// than a missing row...
-		info.set_session_type(session_info::SESSION_INFO_MISSING);
-		return;
-	}
+    QSharedPointer<QtCassandra::QCassandraRow> row(table->row(key));
+    if(!row)
+    {
+        // XXX
+        // if we get a problem here it's probably something else
+        // than a missing row...
+        info.set_session_type(session_info::SESSION_INFO_MISSING);
+        return;
+    }
 
-	QtCassandra::QCassandraValue value;
+    QtCassandra::QCassandraValue value;
 
-	value = row->cell(get_name(SNAP_NAME_SESSIONS_ID))->value();
-	if(value.nullValue())
-	{
-		// row timed out between calls
-		info.set_session_type(session_info::SESSION_INFO_MISSING);
-		return;
-	}
-	info.set_session_id(value.int32Value());
+    value = row->cell(get_name(SNAP_NAME_SESSIONS_ID))->value();
+    if(value.nullValue())
+    {
+        // row timed out between calls
+        info.set_session_type(session_info::SESSION_INFO_MISSING);
+        return;
+    }
+    info.set_session_id(value.int32Value());
 
-	value = row->cell(get_name(SNAP_NAME_SESSIONS_PLUGIN_OWNER))->value();
-	if(value.nullValue())
-	{
-		// row timed out between calls
-		info.set_session_type(session_info::SESSION_INFO_MISSING);
-		return;
-	}
-	info.set_plugin_owner(value.stringValue());
+    value = row->cell(get_name(SNAP_NAME_SESSIONS_PLUGIN_OWNER))->value();
+    if(value.nullValue())
+    {
+        // row timed out between calls
+        info.set_session_type(session_info::SESSION_INFO_MISSING);
+        return;
+    }
+    info.set_plugin_owner(value.stringValue());
 
-	value = row->cell(get_name(SNAP_NAME_SESSIONS_PAGE_PATH))->value();
-	info.set_page_path(value.stringValue());
+    value = row->cell(get_name(SNAP_NAME_SESSIONS_PAGE_PATH))->value();
+    info.set_page_path(value.stringValue());
 
-	value = row->cell(get_name(SNAP_NAME_SESSIONS_OBJECT_PATH))->value();
-	info.set_object_path(value.stringValue());
+    value = row->cell(get_name(SNAP_NAME_SESSIONS_OBJECT_PATH))->value();
+    info.set_object_path(value.stringValue());
 
-	value = row->cell(get_name(SNAP_NAME_SESSIONS_TIME_TO_LIVE))->value();
-	if(value.nullValue())
-	{
-		// row timed out between calls
-		info.set_session_type(session_info::SESSION_INFO_MISSING);
-		return;
-	}
-	info.set_time_to_live(value.int32Value());
+    value = row->cell(get_name(SNAP_NAME_SESSIONS_TIME_TO_LIVE))->value();
+    if(value.nullValue())
+    {
+        // row timed out between calls
+        info.set_session_type(session_info::SESSION_INFO_MISSING);
+        return;
+    }
+    info.set_time_to_live(value.int32Value());
 
-	value = row->cell(get_name(SNAP_NAME_SESSIONS_TIME_LIMIT))->value();
-	if(value.nullValue())
-	{
-		// row timed out between calls
-		info.set_session_type(session_info::SESSION_INFO_MISSING);
-		return;
-	}
-	info.set_time_limit(value.int64Value());
+    value = row->cell(get_name(SNAP_NAME_SESSIONS_TIME_LIMIT))->value();
+    if(value.nullValue())
+    {
+        // row timed out between calls
+        info.set_session_type(session_info::SESSION_INFO_MISSING);
+        return;
+    }
+    info.set_time_limit(value.int64Value());
 
-	// At this point we don't have a field in the info structure for this one
-	// value = row->cell(get_name(SNAP_NAME_SESSIONS_REMOTE_ADDR))->value();
+    // At this point we don't have a field in the info structure for this one
+    // value = row->cell(get_name(SNAP_NAME_SESSIONS_REMOTE_ADDR))->value();
 
-	int64_t start_date(f_snap->get_start_date());
-	time_t now(start_date / 1000000); // in seconds
-	if(info.get_time_limit() < now)
-	{
-		info.set_session_type(session_info::SESSION_INFO_OUT_OF_DATE);
-		return;
-	}
+    int64_t now(f_snap->get_start_time());
+    if(info.get_time_limit() < now)
+    {
+        info.set_session_type(session_info::SESSION_INFO_OUT_OF_DATE);
+        return;
+    }
 
-	if(use_once)
-	{
-		value = row->cell(get_name(SNAP_NAME_SESSIONS_USED_UP))->value();
-		if(value.nullValue())
-		{
-			// IMPORTANT NOTE:
-			// As a side effect, since we just read values with a TTL
-			// this 'value' variable already has the expected TTL!
-			value.setCharValue(1);
-			row->cell(get_name(SNAP_NAME_SESSIONS_USED_UP))->setValue(value);
-		}
-		else
-		{
-			info.set_session_type(session_info::SESSION_INFO_USED_UP);
-			return;
-		}
-	}
+    if(use_once)
+    {
+        value = row->cell(get_name(SNAP_NAME_SESSIONS_USED_UP))->value();
+        if(value.nullValue())
+        {
+            // IMPORTANT NOTE:
+            // As a side effect, since we just read values with a TTL
+            // this 'value' variable already has the expected TTL!
+            value.setCharValue(1);
+            row->cell(get_name(SNAP_NAME_SESSIONS_USED_UP))->setValue(value);
+        }
+        else
+        {
+            info.set_session_type(session_info::SESSION_INFO_USED_UP);
+            return;
+        }
+    }
 
-	// only case when it is valid
-	info.set_session_type(session_info::SESSION_INFO_VALID);
+    // only case when it is valid
+    info.set_session_type(session_info::SESSION_INFO_VALID);
 }
 
 SNAP_PLUGIN_END()
 
-// vim: ts=4 sw=4
+// vim: ts=4 sw=4 et

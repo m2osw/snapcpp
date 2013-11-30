@@ -644,6 +644,7 @@ void links::create_link(const link_info& src, const link_info& dst)
 	(*f_content_table)[dst.key()][dst_col] = src.data(); // save src in dst
 }
 
+
 /** \brief Create a new link context to read links from.
  *
  * This function creates a new link context instance using your
@@ -665,6 +666,69 @@ QSharedPointer<link_context> links::new_link_context(const link_info& info)
 {
 	QSharedPointer<link_context> context(new link_context(f_snap, info));
 	return context;
+}
+
+
+/** \brief Make sure that the specified link is deleted.
+ *
+ * Once two nodes are linked together, it is possible to remove that
+ * link by calling this function on either node.
+ *
+ * In order to find the data in the database, the info must be properly
+ * initialized with the link name, the unicity (true or false) and
+ * the full URI &amp; path to the link.
+ *
+ * The function deletes the link in both locations.
+ *
+ * If the link does not exist, nothing happens.
+ */
+void links::delete_link(const link_info& info)
+{
+	if(info.is_unique())
+	{
+		QSharedPointer<QtCassandra::QCassandraTable> table(content::content::instance()->get_content_table());
+		if(table.isNull())
+		{
+			// the table does not exist?!
+			throw links_exception_missing_content_table();
+		}
+		const QString links_namespace(get_name(SNAP_NAME_LINKS_NAMESPACE));
+		const QString info_name(links_namespace + "::" + info.name());
+		QtCassandra::QCassandraValue link(content::content::instance()->get_content_table()->row(info.key())->cell(info_name)->value());
+		if(!link.nullValue())
+		{
+			// we read the link so that way we have information about the
+			// destination and can delete it too
+			QString dst_link(link.stringValue());
+			link_info destination;
+			destination.from_data(dst_link);
+
+			// delete the link on both sides now
+			content::content::instance()->get_content_table()->row(info.key())->dropCell(links_namespace + "::" + info.name());
+			content::content::instance()->get_content_table()->row(destination.key())->dropCell(links_namespace + "::" + destination.name());
+		}
+	}
+	//else
+	//{
+	//	// since we're loading these links from the links index we do
+	//	// not need to specify the column names in the column predicate
+	//	// it will automatically read all the data from that row
+	//	QSharedPointer<QtCassandra::QCassandraTable> table(links::links::instance()->get_links_table());
+	//	if(table.isNull())
+	//	{
+	//		// the table does not exist?!
+	//		// (since the links is a core plugin, that should not happen)
+	//		throw links_exception_missing_links_table();
+	//	}
+	//	row = table->row(f_info.key());
+	//	// TBD: should we give the caller the means to change this 1,000 count?
+	//	f_column_predicate.setCount(1000);
+	//	f_column_predicate.setIndex(); // behave like an index
+	//	// we MUST clear the cache in case we read the same list of links twice
+	//	row->clearCache();
+	//	// at this point begin() == end()
+	//	f_cell_iterator = row->cells().begin();
+	//}
 }
 
 

@@ -5,7 +5,7 @@
 															xmlns:snap="snap:snap">
 	<xsl:param name="layout-name">bare</xsl:param>
 	<xsl:param name="layout-area">body</xsl:param>
-	<xsl:param name="layout-modified">2013-01-01 02:53:54</xsl:param>
+	<xsl:param name="layout-modified">2013-11-29 02:53:54</xsl:param>
 	<xsl:param name="year" select="year-from-date(current-date())"/>
 	<xsl:param name="use_dcterms">yes</xsl:param>
 	<!-- get the website URI (i.e. URI without any folder other than the website base folder) -->
@@ -102,9 +102,9 @@
 			<xsl:if test="not($body)">
 				<xsl:attribute name="class">message message-<xsl:value-of select="$type"/> message-<xsl:value-of select="$type"/>-title-only</xsl:attribute>
 			</xsl:if>
-			<h2><xsl:value-of select="$title"/></h2>
+			<h3><xsl:copy-of select="$title"/></h3>
 			<xsl:if test="$body">
-				<p><xsl:value-of select="$body"/></p>
+				<p><xsl:copy-of select="$body"/></p>
 			</xsl:if>
 		</div>
 	</xsl:template>
@@ -124,15 +124,15 @@
 							<xsl:call-template name="snap:message">
 								<xsl:with-param name="type" select="@type"/>
 								<xsl:with-param name="id" select="@id"/>
-								<xsl:with-param name="title" select="title"/>
-								<xsl:with-param name="body" select="body"/>
+								<xsl:with-param name="title" select="title/*"/>
+								<xsl:with-param name="body" select="body/*"/>
 							</xsl:call-template>
 						</xsl:for-each>
 					</div>
 				</xsl:if>
 				<xsl:copy-of select="page/body/content/*"/>
 			</div>
-			<div id="footer">White Footer</div>
+			<div id="footer">Bare Footer</div>
 			<!--div id="content2">
 			<xsl:for-each select="page/body/content/*">
 				<xsl:call-template name="snap:content"/>
