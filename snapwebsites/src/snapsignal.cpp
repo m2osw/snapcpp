@@ -21,33 +21,33 @@
 
 int main(int argc, char *argv[])
 {
-	// create a server object
-	snap::server::pointer_t s( snap::server::instance() );
-	s->setup_as_backend();
+    // create a server object
+    snap::server::pointer_t s( snap::server::instance() );
+    s->setup_as_backend();
 
-	// parse the command line arguments (this also brings in the .conf params)
-	s->config(argc, argv);
+    // parse the command line arguments (this also brings in the .conf params)
+    s->config(argc, argv);
 
     // Now create the qt application instance
     //
     s->prepare_qtapp( argc, argv );
 
-	QString msg(s->get_parameter("__BACKEND_URI"));
-	if(msg.isEmpty())
-	{
-		msg = "PING";
-	}
-	if(s->get_parameter("__BACKEND_ACTION") == "sendmail")
-	{
-		// use sendmail UDP information
-		s->udp_ping("sendmail_udp_signal", msg.toUtf8().data());
-	}
+    QString msg(s->get_parameter("__BACKEND_URI"));
+    if(msg.isEmpty())
+    {
+        msg = "PING";
+    }
+    if(s->get_parameter("__BACKEND_ACTION") == "sendmail")
+    {
+        // use sendmail UDP information
+        s->udp_ping("sendmail_udp_signal", msg.toUtf8().data());
+    }
 
-	// exit via the server so the server can clean itself up cleanly
-	s->exit(0);
-	snap::NOTREACHED();
+    // exit via the server so the server can clean itself up cleanly
+    s->exit(0);
+    snap::NOTREACHED();
 
-	return 0;
+    return 0;
 }
 
 // vim: ts=4 sw=4

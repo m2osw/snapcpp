@@ -36,19 +36,19 @@ SNAP_PLUGIN_START(links, 1, 0)
  */
 const char *get_name(name_t name)
 {
-	switch(name) {
-	case SNAP_NAME_LINKS_TABLE: // sorted index of links
-		return "links";
+    switch(name) {
+    case SNAP_NAME_LINKS_TABLE: // sorted index of links
+        return "links";
 
-	case SNAP_NAME_LINKS_NAMESPACE:
-		return "links";
+    case SNAP_NAME_LINKS_NAMESPACE:
+        return "links";
 
-	default:
-		// invalid index
-		throw snap_exception();
+    default:
+        // invalid index
+        throw snap_exception();
 
-	}
-	NOTREACHED();
+    }
+    NOTREACHED();
 }
 
 /** \fn link_info::link_info(const QString new_name, bool unique, const QString new_key);
@@ -186,17 +186,17 @@ const char *get_name(name_t name)
  */
 void link_info::verify_name()
 {
-	for(QString::const_iterator it(f_name.begin()); it != f_name.end(); ++it)
-	{
-		ushort c = it->unicode();
-		if((c < '0' || c > '9')
-		&& (c < 'A' || c > 'Z')
-		&& (c < 'a' || c > 'z')
-		&& c != '_')
-		{
-			throw links_exception_invalid_name();
-		}
-	}
+    for(QString::const_iterator it(f_name.begin()); it != f_name.end(); ++it)
+    {
+        ushort c = it->unicode();
+        if((c < '0' || c > '9')
+        && (c < 'A' || c > 'Z')
+        && (c < 'a' || c > 'z')
+        && c != '_')
+        {
+            throw links_exception_invalid_name();
+        }
+    }
 }
 
 /** \brief Retrieve the data to be saved in the database.
@@ -212,7 +212,7 @@ void link_info::verify_name()
  */
 QString link_info::data() const
 {
-	return "key=" + f_key + "\nname=" + f_name;
+    return "key=" + f_key + "\nname=" + f_name;
 }
 
 /** \brief Parse a string of key & name back to a link info.
@@ -225,20 +225,20 @@ QString link_info::data() const
  */
 void link_info::from_data(const QString& db_data)
 {
-	QStringList lines(db_data.split('\n'));
-	if(lines.count() != 2)
-	{
-		throw links_exception_invalid_db_data();
-	}
-	QStringList key_data(lines[0].split('='));
-	QStringList name_data(lines[1].split('='));
-	if(key_data.count() != 2 || name_data.count() != 2
-	|| key_data[0] != "key" || name_data[0] != "name")
-	{
-		throw links_exception_invalid_db_data();
-	}
-	set_key(key_data[1]);
-	set_name(name_data[1], f_unique);
+    QStringList lines(db_data.split('\n'));
+    if(lines.count() != 2)
+    {
+        throw links_exception_invalid_db_data();
+    }
+    QStringList key_data(lines[0].split('='));
+    QStringList name_data(lines[1].split('='));
+    if(key_data.count() != 2 || name_data.count() != 2
+    || key_data[0] != "key" || name_data[0] != "name")
+    {
+        throw links_exception_invalid_db_data();
+    }
+    set_key(key_data[1]);
+    set_name(name_data[1], f_unique);
 }
 
 
@@ -256,56 +256,56 @@ void link_info::from_data(const QString& db_data)
  * \param[in] info  The link information about this link context.
  */
 link_context::link_context(::snap::snap_child *snap, const link_info& info)
-	: f_snap(snap)
-	, f_info(info)
-	//, f_row() -- auto-init
-	//, f_column_predicate() -- auto-init
-	//, f_link() -- auto-init
+    : f_snap(snap)
+    , f_info(info)
+    //, f_row() -- auto-init
+    //, f_column_predicate() -- auto-init
+    //, f_link() -- auto-init
 {
-	// if the link is unique, it only appears in the content
-	// and we don't need the context per se, so we just read
-	// the info and keep it in the context for retrieval;
-	// if not unique, then we read the first 1,000 links and
-	// make them available in the context to the caller
-	if(f_info.is_unique())
-	{
-		QSharedPointer<QtCassandra::QCassandraTable> table(content::content::instance()->get_content_table());
-		if(table.isNull())
-		{
-			// the table does not exist?!
-			throw links_exception_missing_content_table();
-		}
-		// f_row remains null (isNull() returns true)
-		//QSharedPointer<QtCassandra::QCassandraRow> row(table->row(f_info.key()));
-		QString links_namespace(get_name(SNAP_NAME_LINKS_NAMESPACE));
+    // if the link is unique, it only appears in the content
+    // and we don't need the context per se, so we just read
+    // the info and keep it in the context for retrieval;
+    // if not unique, then we read the first 1,000 links and
+    // make them available in the context to the caller
+    if(f_info.is_unique())
+    {
+        QSharedPointer<QtCassandra::QCassandraTable> table(content::content::instance()->get_content_table());
+        if(table.isNull())
+        {
+            // the table does not exist?!
+            throw links_exception_missing_content_table();
+        }
+        // f_row remains null (isNull() returns true)
+        //QSharedPointer<QtCassandra::QCassandraRow> row(table->row(f_info.key()));
+        QString links_namespace(get_name(SNAP_NAME_LINKS_NAMESPACE));
 //printf("links: content read row key [%s] cell [%s]\n", f_info.key().toUtf8().data(), (links_namespace + "::" + f_info.name()).toUtf8().data());
-		QtCassandra::QCassandraValue link(content::content::instance()->get_content_table()->row(f_info.key())->cell(links_namespace + "::" + f_info.name())->value());
-		if(!link.nullValue())
-		{
-			f_link = link.stringValue();
-		}
-	}
-	else
-	{
-		// since we're loading these links from the links index we do
-		// not need to specify the column names in the column predicate
-		// it will automatically read all the data from that row
-		QSharedPointer<QtCassandra::QCassandraTable> table(links::links::instance()->get_links_table());
-		if(table.isNull())
-		{
-			// the table does not exist?!
-			// (since the links is a core plugin, that should not happen)
-			throw links_exception_missing_links_table();
-		}
-		f_row = table->row(f_info.key());
-		// TBD: should we give the caller the means to change this 1,000 count?
-		f_column_predicate.setCount(1000);
-		f_column_predicate.setIndex(); // behave like an index
-		// we MUST clear the cache in case we read the same list of links twice
-		f_row->clearCache();
-		// at this point begin() == end()
-		f_cell_iterator = f_row->cells().begin();
-	}
+        QtCassandra::QCassandraValue link(content::content::instance()->get_content_table()->row(f_info.key())->cell(links_namespace + "::" + f_info.name())->value());
+        if(!link.nullValue())
+        {
+            f_link = link.stringValue();
+        }
+    }
+    else
+    {
+        // since we're loading these links from the links index we do
+        // not need to specify the column names in the column predicate
+        // it will automatically read all the data from that row
+        QSharedPointer<QtCassandra::QCassandraTable> table(links::links::instance()->get_links_table());
+        if(table.isNull())
+        {
+            // the table does not exist?!
+            // (since the links is a core plugin, that should not happen)
+            throw links_exception_missing_links_table();
+        }
+        f_row = table->row(f_info.key());
+        // TBD: should we give the caller the means to change this 1,000 count?
+        f_column_predicate.setCount(1000);
+        f_column_predicate.setIndex(); // behave like an index
+        // we MUST clear the cache in case we read the same list of links twice
+        f_row->clearCache();
+        // at this point begin() == end()
+        f_cell_iterator = f_row->cells().begin();
+    }
 }
 
 /** \brief Retrieve the next link.
@@ -320,39 +320,39 @@ link_context::link_context(::snap::snap_child *snap, const link_info& info)
  */
 bool link_context::next_link(link_info& info)
 {
-	// special case of a unique link
-	if(f_info.is_unique())
-	{
-		// return the f_link entry once, then an empty string
-		// if the link did not exist, the caller only gets an empty string
-		if(f_link.isEmpty()) {
-			return false;
-		}
-		info.from_data(f_link);
-		f_link.clear();
-		return true;
-	}
+    // special case of a unique link
+    if(f_info.is_unique())
+    {
+        // return the f_link entry once, then an empty string
+        // if the link did not exist, the caller only gets an empty string
+        if(f_link.isEmpty()) {
+            return false;
+        }
+        info.from_data(f_link);
+        f_link.clear();
+        return true;
+    }
 
-	const QtCassandra::QCassandraCells& cells(f_row->cells());
-	if(f_cell_iterator == cells.end()) {
-		// no more cells available in the cells, try to read more
-		f_row->clearCache();
-		f_row->readCells(f_column_predicate);
-		f_cell_iterator = cells.begin();
-		if(f_cell_iterator == cells.end()) {
-			// no more cells available
-			return false;
-		}
-	}
+    const QtCassandra::QCassandraCells& cells(f_row->cells());
+    if(f_cell_iterator == cells.end()) {
+        // no more cells available in the cells, try to read more
+        f_row->clearCache();
+        f_row->readCells(f_column_predicate);
+        f_cell_iterator = cells.begin();
+        if(f_cell_iterator == cells.end()) {
+            // no more cells available
+            return false;
+        }
+    }
 
-	// the result is at the current iterator
-	// note that from the links table we only get keys, no names
-	// which doesn't matter as the name is f_info.name() anyway
-	info.set_key(QString::fromUtf8(f_cell_iterator.key()));
-	info.set_name(f_info.name());
-	++f_cell_iterator;
+    // the result is at the current iterator
+    // note that from the links table we only get keys, no names
+    // which doesn't matter as the name is f_info.name() anyway
+    info.set_key(QString::fromUtf8(f_cell_iterator.key()));
+    info.set_name(f_info.name());
+    ++f_cell_iterator;
 
-	return true;
+    return true;
 }
 
 /** \brief Return the key of the link.
@@ -364,7 +364,7 @@ bool link_context::next_link(link_info& info)
  */
 //const QString& link_context::key() const
 //{
-//	return f_info.key();
+//    return f_info.key();
 //}
 
 /** \brief Return the name of the link.
@@ -375,7 +375,7 @@ bool link_context::next_link(link_info& info)
  */
 //const QString& link_context::name() const
 //{
-//	return f_info.name();
+//    return f_info.name();
 //}
 
 
@@ -389,9 +389,9 @@ bool link_context::next_link(link_info& info)
  * This function is used to initialize the links plugin object.
  */
 links::links()
-	//: f_snap(NULL) -- auto-init
-	//  f_links_table() -- auto-init
-	//  f_content_table() -- auto-init
+    //: f_snap(NULL) -- auto-init
+    //  f_links_table() -- auto-init
+    //  f_content_table() -- auto-init
 {
 }
 
@@ -412,10 +412,10 @@ links::~links()
  */
 void links::on_bootstrap(::snap::snap_child *snap)
 {
-	f_snap = snap;
+    f_snap = snap;
 
-	//std::cerr << " - Bootstrapping links!\n";
-	//SNAP_LISTEN(links, "server", server, update, _1); -- replaced with do_update()
+    //std::cerr << " - Bootstrapping links!\n";
+    //SNAP_LISTEN(links, "server", server, update, _1); -- replaced with do_update()
 }
 
 /** \brief Get a pointer to the links plugin.
@@ -429,7 +429,7 @@ void links::on_bootstrap(::snap::snap_child *snap)
  */
 links *links::instance()
 {
-	return g_plugin_links_factory.instance();
+    return g_plugin_links_factory.instance();
 }
 
 /** \brief Return the description of this plugin.
@@ -443,10 +443,10 @@ links *links::instance()
  */
 QString links::description() const
 {
-	return "This plugin offers functions to link rows of data together."
-		" For example, it allows you to attach a tag to the page of content."
-		" This plugin is part of core since it links everything that core"
-		" needs to make the system function as expected.";
+    return "This plugin offers functions to link rows of data together."
+        " For example, it allows you to attach a tag to the page of content."
+        " This plugin is part of core since it links everything that core"
+        " needs to make the system function as expected.";
 }
 
 /** \brief Check whether updates are necessary.
@@ -463,15 +463,15 @@ QString links::description() const
  */
 int64_t links::do_update(int64_t last_updated)
 {
-	SNAP_PLUGIN_UPDATE_INIT();
+    SNAP_PLUGIN_UPDATE_INIT();
 
 //std::cerr << "Got the do_update() in links! "
-//		<< static_cast<int64_t>(last_updated) << ", "
-//		<< static_cast<int64_t>(SNAP_UNIX_TIMESTAMP(2012, 1, 1, 0, 0, 0) * 1000000LL) << "\n";
+//        << static_cast<int64_t>(last_updated) << ", "
+//        << static_cast<int64_t>(SNAP_UNIX_TIMESTAMP(2012, 1, 1, 0, 0, 0) * 1000000LL) << "\n";
 
-	SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, initial_update);
+    SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, initial_update);
 
-	SNAP_PLUGIN_UPDATE_EXIT();
+    SNAP_PLUGIN_UPDATE_EXIT();
 }
 
 /** \brief First update to run for the links plugin.
@@ -496,8 +496,8 @@ void links::initial_update(int64_t variables_timestamp)
  */
 QSharedPointer<QtCassandra::QCassandraTable> links::get_links_table()
 {
-	// create an index so we can search by content
-	return f_snap->create_table(get_name(SNAP_NAME_LINKS_TABLE), "Links index table.");
+    // create an index so we can search by content
+    return f_snap->create_table(get_name(SNAP_NAME_LINKS_TABLE), "Links index table.");
 }
 
 /** \brief Create a link between two rows.
@@ -575,73 +575,73 @@ QSharedPointer<QtCassandra::QCassandraTable> links::get_links_table()
  */
 void links::create_link(const link_info& src, const link_info& dst)
 {
-	// retrieve links index table if not there yet
-	if(f_links_table.isNull()) {
-		QSharedPointer<QtCassandra::QCassandraTable> table(get_links_table());
-		if(table.isNull()) {
-			// the table does not exist?!
-			throw links_exception_missing_links_table();
-		}
-		f_links_table = table;
-	}
-	// retrieve content table if not there yet
-	if(f_content_table.isNull()) {
-		QSharedPointer<QtCassandra::QCassandraTable> table(content::content::instance()->get_content_table());
-		if(table.isNull()) {
-			// links cannot work if the content table doesn't already exist
-			throw links_exception_missing_content_table();
-		}
-		f_content_table = table;
-	}
+    // retrieve links index table if not there yet
+    if(f_links_table.isNull()) {
+        QSharedPointer<QtCassandra::QCassandraTable> table(get_links_table());
+        if(table.isNull()) {
+            // the table does not exist?!
+            throw links_exception_missing_links_table();
+        }
+        f_links_table = table;
+    }
+    // retrieve content table if not there yet
+    if(f_content_table.isNull()) {
+        QSharedPointer<QtCassandra::QCassandraTable> table(content::content::instance()->get_content_table());
+        if(table.isNull()) {
+            // links cannot work if the content table doesn't already exist
+            throw links_exception_missing_content_table();
+        }
+        f_content_table = table;
+    }
 
-	// define the column names
-	QString src_col, dst_col;
+    // define the column names
+    QString src_col, dst_col;
 
-	QString links_namespace(get_name(SNAP_NAME_LINKS_NAMESPACE));
-	src_col = links_namespace + "::" + src.name();
-	if(!src.is_unique()) {
-		src_col += "-";
-		// not unique, first check whether it was already created
-		QtCassandra::QCassandraValue value(f_links_table->row(src.key())->cell(dst.key())->value());
-		if(value.nullValue()) {
-			// it does not exist, create a unique number
-			QString no(f_snap->get_unique_number());
-			src_col += no;
-			// save in the index table
-			(*f_links_table)[src.key()][dst.key()] = QtCassandra::QCassandraValue(src_col);
-		}
-		else {
-			// it exists, make use of the existing key
-			src_col = value.stringValue();
-		}
-	}
+    QString links_namespace(get_name(SNAP_NAME_LINKS_NAMESPACE));
+    src_col = links_namespace + "::" + src.name();
+    if(!src.is_unique()) {
+        src_col += "-";
+        // not unique, first check whether it was already created
+        QtCassandra::QCassandraValue value(f_links_table->row(src.key())->cell(dst.key())->value());
+        if(value.nullValue()) {
+            // it does not exist, create a unique number
+            QString no(f_snap->get_unique_number());
+            src_col += no;
+            // save in the index table
+            (*f_links_table)[src.key()][dst.key()] = QtCassandra::QCassandraValue(src_col);
+        }
+        else {
+            // it exists, make use of the existing key
+            src_col = value.stringValue();
+        }
+    }
 
-	dst_col = links_namespace + "::" + dst.name();
-	if(!dst.is_unique()) {
-		dst_col += "-";
-		// not unique, first check whether it was already created
-		QtCassandra::QCassandraValue value(f_links_table->row(dst.key())->cell(src.key())->value());
-		if(value.nullValue()) {
-			// it does not exist, create a unique number
-			QString no(f_snap->get_unique_number());
-			dst_col += no;
-			// save in the index table
-			(*f_links_table)[dst.key()][src.key()] = QtCassandra::QCassandraValue(dst_col);
-		}
-		else {
-			// it exists, make use of the existing key
-			dst_col = value.stringValue();
-		}
-	}
+    dst_col = links_namespace + "::" + dst.name();
+    if(!dst.is_unique()) {
+        dst_col += "-";
+        // not unique, first check whether it was already created
+        QtCassandra::QCassandraValue value(f_links_table->row(dst.key())->cell(src.key())->value());
+        if(value.nullValue()) {
+            // it does not exist, create a unique number
+            QString no(f_snap->get_unique_number());
+            dst_col += no;
+            // save in the index table
+            (*f_links_table)[dst.key()][src.key()] = QtCassandra::QCassandraValue(dst_col);
+        }
+        else {
+            // it exists, make use of the existing key
+            dst_col = value.stringValue();
+        }
+    }
 
-	// define the columns data
-	//QString src_data, dst_data;
-	//src_data = "key=" + dst.key() + "\nname=" + dst.name();
-	//dst_data = "key=" + src.key() + "\nname=" + src.name();
+    // define the columns data
+    //QString src_data, dst_data;
+    //src_data = "key=" + dst.key() + "\nname=" + dst.name();
+    //dst_data = "key=" + src.key() + "\nname=" + src.name();
 
-	// save the links in the rows
-	(*f_content_table)[src.key()][src_col] = dst.data(); // save dst in src
-	(*f_content_table)[dst.key()][dst_col] = src.data(); // save src in dst
+    // save the links in the rows
+    (*f_content_table)[src.key()][src_col] = dst.data(); // save dst in src
+    (*f_content_table)[dst.key()][dst_col] = src.data(); // save src in dst
 }
 
 
@@ -664,8 +664,8 @@ void links::create_link(const link_info& src, const link_info& dst)
  */
 QSharedPointer<link_context> links::new_link_context(const link_info& info)
 {
-	QSharedPointer<link_context> context(new link_context(f_snap, info));
-	return context;
+    QSharedPointer<link_context> context(new link_context(f_snap, info));
+    return context;
 }
 
 
@@ -684,51 +684,51 @@ QSharedPointer<link_context> links::new_link_context(const link_info& info)
  */
 void links::delete_link(const link_info& info)
 {
-	if(info.is_unique())
-	{
-		QSharedPointer<QtCassandra::QCassandraTable> table(content::content::instance()->get_content_table());
-		if(table.isNull())
-		{
-			// the table does not exist?!
-			throw links_exception_missing_content_table();
-		}
-		const QString links_namespace(get_name(SNAP_NAME_LINKS_NAMESPACE));
-		const QString info_name(links_namespace + "::" + info.name());
-		QtCassandra::QCassandraValue link(content::content::instance()->get_content_table()->row(info.key())->cell(info_name)->value());
-		if(!link.nullValue())
-		{
-			// we read the link so that way we have information about the
-			// destination and can delete it too
-			QString dst_link(link.stringValue());
-			link_info destination;
-			destination.from_data(dst_link);
+    if(info.is_unique())
+    {
+        QSharedPointer<QtCassandra::QCassandraTable> table(content::content::instance()->get_content_table());
+        if(table.isNull())
+        {
+            // the table does not exist?!
+            throw links_exception_missing_content_table();
+        }
+        const QString links_namespace(get_name(SNAP_NAME_LINKS_NAMESPACE));
+        const QString info_name(links_namespace + "::" + info.name());
+        QtCassandra::QCassandraValue link(content::content::instance()->get_content_table()->row(info.key())->cell(info_name)->value());
+        if(!link.nullValue())
+        {
+            // we read the link so that way we have information about the
+            // destination and can delete it too
+            QString dst_link(link.stringValue());
+            link_info destination;
+            destination.from_data(dst_link);
 
-			// delete the link on both sides now
-			content::content::instance()->get_content_table()->row(info.key())->dropCell(links_namespace + "::" + info.name());
-			content::content::instance()->get_content_table()->row(destination.key())->dropCell(links_namespace + "::" + destination.name());
-		}
-	}
-	//else
-	//{
-	//	// since we're loading these links from the links index we do
-	//	// not need to specify the column names in the column predicate
-	//	// it will automatically read all the data from that row
-	//	QSharedPointer<QtCassandra::QCassandraTable> table(links::links::instance()->get_links_table());
-	//	if(table.isNull())
-	//	{
-	//		// the table does not exist?!
-	//		// (since the links is a core plugin, that should not happen)
-	//		throw links_exception_missing_links_table();
-	//	}
-	//	row = table->row(f_info.key());
-	//	// TBD: should we give the caller the means to change this 1,000 count?
-	//	f_column_predicate.setCount(1000);
-	//	f_column_predicate.setIndex(); // behave like an index
-	//	// we MUST clear the cache in case we read the same list of links twice
-	//	row->clearCache();
-	//	// at this point begin() == end()
-	//	f_cell_iterator = row->cells().begin();
-	//}
+            // delete the link on both sides now
+            content::content::instance()->get_content_table()->row(info.key())->dropCell(links_namespace + "::" + info.name());
+            content::content::instance()->get_content_table()->row(destination.key())->dropCell(links_namespace + "::" + destination.name());
+        }
+    }
+    //else
+    //{
+    //    // since we're loading these links from the links index we do
+    //    // not need to specify the column names in the column predicate
+    //    // it will automatically read all the data from that row
+    //    QSharedPointer<QtCassandra::QCassandraTable> table(links::links::instance()->get_links_table());
+    //    if(table.isNull())
+    //    {
+    //        // the table does not exist?!
+    //        // (since the links is a core plugin, that should not happen)
+    //        throw links_exception_missing_links_table();
+    //    }
+    //    row = table->row(f_info.key());
+    //    // TBD: should we give the caller the means to change this 1,000 count?
+    //    f_column_predicate.setCount(1000);
+    //    f_column_predicate.setIndex(); // behave like an index
+    //    // we MUST clear the cache in case we read the same list of links twice
+    //    row->clearCache();
+    //    // at this point begin() == end()
+    //    f_cell_iterator = row->cells().begin();
+    //}
 }
 
 

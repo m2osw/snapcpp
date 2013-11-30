@@ -1,5 +1,5 @@
 // Snap Websites Server -- snap websites backend tool
-// Copyright (C) 2011-2012  Made to Order Software Corp.
+// Copyright (C) 2011-2013  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -21,31 +21,31 @@
 
 int main(int argc, char *argv[])
 {
-	// create a server object
-	snap::server::pointer_t s( snap::server::instance() );
-	s->setup_as_backend();
+    // create a server object
+    snap::server::pointer_t s( snap::server::instance() );
+    s->setup_as_backend();
 
-	// parse the command line arguments
-	s->config(argc, argv);
+    // parse the command line arguments
+    s->config(argc, argv);
 
-	// if possible, detach the server
-	s->detach();
-	// Only the child (backend) process returns here
+    // if possible, detach the server
+    s->detach();
+    // Only the child (backend) process returns here
 
     // now create the qt application instance
     s->prepare_qtapp( argc, argv );
 
-	// prepare the database
-	s->prepare_cassandra();
+    // prepare the database
+    s->prepare_cassandra();
 
-	// listen to connections
-	s->backend();
+    // listen to connections
+    s->backend();
 
-	// exit via the server so the server can clean itself up cleanly
-	s->exit(0);
-	snap::NOTREACHED();
+    // exit via the server so the server can clean itself up cleanly
+    s->exit(0);
+    snap::NOTREACHED();
 
-	return 0;
+    return 0;
 }
 
 // vim: ts=4 sw=4

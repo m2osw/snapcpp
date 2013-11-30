@@ -183,8 +183,8 @@ public:
     void                on_bootstrap(snap_child *snap);
     void                on_register_backend_action(snap::server::backend_action_map_t& actions);
     virtual void        on_backend_action(const QString& action);
-	virtual void		on_generate_main_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body);
-	//void				on_generate_page_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body);
+    virtual void        on_generate_main_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body);
+    //void              on_generate_page_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body);
     void                on_replace_token(filter::filter *f, QDomDocument& xml, filter::filter::token_info_t& token);
 
     void                post_email(const email& e);

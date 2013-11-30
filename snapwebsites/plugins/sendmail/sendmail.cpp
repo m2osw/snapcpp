@@ -2047,8 +2047,8 @@ void sendmail::sendemail(const QString& key, const QString& unique_key)
  */
 void sendmail::on_generate_main_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body)
 {
-	// by default an email is just like a regular page
-	content::content::instance()->on_generate_main_content(l, path, page, body);
+    // by default an email is just like a regular page
+    content::content::instance()->on_generate_main_content(l, path, page, body);
 
     // but we also have email specific parameters we want to add
     QDomDocument doc(page.ownerDocument());

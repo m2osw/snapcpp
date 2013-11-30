@@ -30,7 +30,7 @@ SNAP_PLUGIN_START(messages, 1, 0)
 namespace
 {
 
-controlled_vars::zint32_t		g_message_id;
+controlled_vars::zint32_t        g_message_id;
 
 } // noname namespace
 
@@ -47,16 +47,16 @@ controlled_vars::zint32_t		g_message_id;
  */
 const char *get_name(name_t name)
 {
-	switch(name) {
-	//case SNAP_NAME_MESSAGES_TABLE:
-	//	return "messages";
+    switch(name) {
+    //case SNAP_NAME_MESSAGES_TABLE:
+    //    return "messages";
 
-	default:
-		// invalid index
-		throw snap_exception();
+    default:
+        // invalid index
+        throw snap_exception();
 
-	}
-	NOTREACHED();
+    }
+    NOTREACHED();
 }
 
 
@@ -66,10 +66,10 @@ const char *get_name(name_t name)
  * by the QVector implementation.
  */
 messages::message::message()
-	: f_type(static_cast<int>(MESSAGE_TYPE_ERROR))
-	, f_id(++g_message_id)
-	//, f_title("") -- auto-init
-	//, f_body("") -- auto-init
+    : f_type(static_cast<int>(MESSAGE_TYPE_ERROR))
+    , f_id(++g_message_id)
+    //, f_title("") -- auto-init
+    //, f_body("") -- auto-init
 {
 }
 
@@ -85,10 +85,10 @@ messages::message::message()
  * \param[in] body  The body of the message, it may be empty.
  */
 messages::message::message(message_type_t t, const QString& title, const QString& body)
-	: f_type(t)
-	, f_id(++g_message_id)
-	, f_title(title)
-	, f_body(body)
+    : f_type(t)
+    , f_id(++g_message_id)
+    , f_title(title)
+    , f_body(body)
 {
 }
 
@@ -101,10 +101,10 @@ messages::message::message(message_type_t t, const QString& title, const QString
  * \param[in] rhs  The message to copy.
  */
 messages::message::message(const message& rhs)
-	: f_type(rhs.f_type)
-	, f_id(rhs.f_id)
-	, f_title(rhs.f_title)
-	, f_body(rhs.f_body)
+    : f_type(rhs.f_type)
+    , f_id(rhs.f_id)
+    , f_title(rhs.f_title)
+    , f_body(rhs.f_body)
 {
 }
 
@@ -122,7 +122,7 @@ messages::message::message(const message& rhs)
  */
 messages::message::message_type_enum_t messages::message::get_type() const
 {
-	return f_type;
+    return f_type;
 }
 
 /** \brief Retrieve the message identifier.
@@ -138,7 +138,7 @@ messages::message::message_type_enum_t messages::message::get_type() const
  */
 int messages::message::get_id() const
 {
-	return f_id;
+    return f_id;
 }
 
 /** \brief Retrieve the message title.
@@ -150,7 +150,7 @@ int messages::message::get_id() const
  */
 const QString& messages::message::get_title() const
 {
-	return f_title;
+    return f_title;
 }
 
 /** \brief Retrieve the message body.
@@ -162,7 +162,7 @@ const QString& messages::message::get_title() const
  */
 const QString& messages::message::get_body() const
 {
-	return f_body;
+    return f_body;
 }
 
 
@@ -173,10 +173,10 @@ const QString& messages::message::get_body() const
  * This function is used to initialize the messages plugin object.
  */
 messages::messages()
-	//: f_snap(NULL) -- auto-init
-	//, f_messages() -- auto-init
-	//, f_error_count(0) -- auto-init
-	//, f_warning_count(0) -- auto-init
+    //: f_snap(NULL) -- auto-init
+    //, f_messages() -- auto-init
+    //, f_error_count(0) -- auto-init
+    //, f_warning_count(0) -- auto-init
 {
 }
 
@@ -197,9 +197,9 @@ messages::~messages()
  */
 void messages::on_bootstrap(snap_child *snap)
 {
-	f_snap = snap;
+    f_snap = snap;
 
-	SNAP_LISTEN(messages, "layout", layout::layout, generate_page_content, _1, _2, _3, _4);
+    SNAP_LISTEN(messages, "layout", layout::layout, generate_page_content, _1, _2, _3, _4);
 }
 
 /** \brief Get a pointer to the messages plugin.
@@ -213,7 +213,7 @@ void messages::on_bootstrap(snap_child *snap)
  */
 messages *messages::instance()
 {
-	return g_plugin_messages_factory.instance();
+    return g_plugin_messages_factory.instance();
 }
 
 
@@ -228,8 +228,8 @@ messages *messages::instance()
  */
 QString messages::description() const
 {
-	return "The messages plugin is used by many other plugins to manage"
-		" debug, information, warning, and error messages in the Snap! system.";
+    return "The messages plugin is used by many other plugins to manage"
+        " debug, information, warning, and error messages in the Snap! system.";
 }
 
 
@@ -247,11 +247,11 @@ QString messages::description() const
  */
 int64_t messages::do_update(int64_t last_updated)
 {
-	SNAP_PLUGIN_UPDATE_INIT();
+    SNAP_PLUGIN_UPDATE_INIT();
 
-	SNAP_PLUGIN_UPDATE(2013, 1, 1, 2, 5, 0, content_update);
+    SNAP_PLUGIN_UPDATE(2013, 1, 1, 2, 5, 0, content_update);
 
-	SNAP_PLUGIN_UPDATE_EXIT();
+    SNAP_PLUGIN_UPDATE_EXIT();
 }
 
 /** \brief Update the content with our references.
@@ -263,7 +263,7 @@ int64_t messages::do_update(int64_t last_updated)
  */
 void messages::content_update(int64_t variables_timestamp)
 {
-	content::content::instance()->add_xml("messages");
+    content::content::instance()->add_xml("messages");
 }
 
 /** \brief Generate the actual content of the statistics page.
@@ -278,9 +278,9 @@ void messages::content_update(int64_t variables_timestamp)
  */
 void messages::on_generate_main_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body)
 {
-	// generate the settings form for messages (i.e. show/hide debug, etc.)
-	// TODO: actually implement this properly
-	content::content::instance()->on_generate_main_content(l, path, page, body);
+    // generate the settings form for messages (i.e. show/hide debug, etc.)
+    // TODO: actually implement this properly
+    content::content::instance()->on_generate_main_content(l, path, page, body);
 }
 
 
@@ -296,69 +296,64 @@ void messages::on_generate_main_content(layout::layout *l, const QString& path, 
  */
 void messages::on_generate_page_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body)
 {
-	// go through the list of messages and append them to the body
-	int max(f_messages.count());
-	if(max > 0)
-	{
-		QDomDocument doc(page.ownerDocument());
+    // go through the list of messages and append them to the body
+    int max(f_messages.count());
+    if(max > 0)
+    {
+        QDomDocument doc(page.ownerDocument());
 
-		QDomElement messages_tag(doc.createElement("messages"));
-		body.appendChild(messages_tag);
+        QDomElement messages_tag(doc.createElement("messages"));
+        body.appendChild(messages_tag);
 
-		for(int i(0); i < max; ++i)
-		{
-			QString type;
-			switch(f_messages[i].get_type())
-			{
-			case message::MESSAGE_TYPE_ERROR:
-				type = "error";
-				break;
+        for(int i(0); i < max; ++i)
+        {
+            QString type;
+            switch(f_messages[i].get_type())
+            {
+            case message::MESSAGE_TYPE_ERROR:
+                type = "error";
+                break;
 
-			case message::MESSAGE_TYPE_WARNING:
-				type = "warning";
-				break;
+            case message::MESSAGE_TYPE_WARNING:
+                type = "warning";
+                break;
 
-			case message::MESSAGE_TYPE_INFO:
-				type = "info";
-				break;
+            case message::MESSAGE_TYPE_INFO:
+                type = "info";
+                break;
 
-			case message::MESSAGE_TYPE_DEBUG:
-				type = "debug";
-				break;
+            case message::MESSAGE_TYPE_DEBUG:
+                type = "debug";
+                break;
 
-			}
-			{
-				// create the message tag with its type
-				QDomElement msg_tag(doc.createElement("message"));
-				msg_tag.setAttribute("id", QString("messages_message_%1").arg(f_messages[i].get_id()));
-				msg_tag.setAttribute("type", type);
-				messages_tag.appendChild(msg_tag);
+            }
+            {
+                // create the message tag with its type
+                QDomElement msg_tag(doc.createElement("message"));
+                msg_tag.setAttribute("id", QString("messages_message_%1").arg(f_messages[i].get_id()));
+                msg_tag.setAttribute("type", type);
+                messages_tag.appendChild(msg_tag);
 
-				// there is always a title
-				{
-					//QDomElement message_title(doc.createElement("title"));
-					//msg_tag.appendChild(message_title);
-					//QDomText text(doc.createTextNode(f_messages[i].get_title()));
-					//message_title.appendChild(text);
+                // there is always a title
+                {
+                    QDomDocument message_doc("snap");
+                    message_doc.setContent("<title><span class=\"message-title\">" + f_messages[i].get_title() + "</span></title>");
+                    QDomNode message_title(doc.importNode(message_doc.documentElement(), true));
+                    msg_tag.appendChild(message_title);
+                }
 
-					QDomDocument message_doc("snap");
-					message_doc.setContent("<title><span class=\"message-title\">" + f_messages[i].get_title() + "</span></title>");
-					QDomNode message_title(doc.importNode(message_doc.documentElement(), true));
-					msg_tag.appendChild(message_title);
-				}
-
-				// don't create the body if the message is empty
-				if(!f_messages[i].get_body().isEmpty())
-				{
-					QDomDocument message_doc("snap");
-					message_doc.setContent("<body><span class=\"message-body\">" + f_messages[i].get_body() + "</span></body>");
-					QDomNode message_body(doc.importNode(message_doc.documentElement(), true));
-					msg_tag.appendChild(message_body);
-				}
-			}
-		}
-		f_messages.clear();
-	}
+                // don't create the body if empty
+                if(!f_messages[i].get_body().isEmpty())
+                {
+                    QDomDocument message_doc("snap");
+                    message_doc.setContent("<body><span class=\"message-body\">" + f_messages[i].get_body() + "</span></body>");
+                    QDomNode message_body(doc.importNode(message_doc.documentElement(), true));
+                    msg_tag.appendChild(message_body);
+                }
+            }
+        }
+        f_messages.clear();
+    }
 }
 
 
@@ -395,28 +390,28 @@ void messages::on_generate_page_content(layout::layout *l, const QString& path, 
  */
 void messages::set_http_error(int err_code, QString err_name, const QString& err_description, const QString& err_details, bool err_security)
 {
-	++f_error_count;
+    ++f_error_count;
 
-	// the error code must be valid
-	if(err_code < 400 || err_code > 599)
-	{
-		throw std::logic_error("the set_http_error() function was called with an invalid error code number");
-	}
+    // the error code must be valid
+    if(err_code < 400 || err_code > 599)
+    {
+        throw std::logic_error("the set_http_error() function was called with an invalid error code number");
+    }
 
-	// define a default error name if undefined
-	snap_child::define_error_name(err_code, err_name);
+    // define a default error name if undefined
+    snap_child::define_error_name(err_code, err_name);
 
-	// log the error
-	logging::log_security_t sec(err_security ? logging::LOG_SECURITY_SECURE : logging::LOG_SECURITY_NONE);
-	SNAP_LOG_FATAL(sec)(err_details)(" (")(err_name)(": ")(err_description)(")");
+    // log the error
+    logging::log_security_t sec(err_security ? logging::LOG_SECURITY_SECURE : logging::LOG_SECURITY_NONE);
+    SNAP_LOG_FATAL(sec)(err_details)(" (")(err_name)(": ")(err_description)(")");
 
-	// Status Header
-	// i.e. "Status: 503 Service Unavailable"
-	QString status(QString("%1 %2").arg(err_code).arg(err_name));
-	f_snap->set_header("Status", status);
+    // Status Header
+    // i.e. "Status: 503 Service Unavailable"
+    QString status(QString("%1 %2").arg(err_code).arg(err_name));
+    f_snap->set_header("Status", status);
 
-	message msg(message::MESSAGE_TYPE_ERROR, QString("%1 %2").arg(err_code).arg(err_name), err_description);
-	f_messages.push_back(msg);
+    message msg(message::MESSAGE_TYPE_ERROR, QString("%1 %2").arg(err_code).arg(err_name), err_description);
+    f_messages.push_back(msg);
 }
 
 
@@ -442,19 +437,19 @@ void messages::set_http_error(int err_code, QString err_name, const QString& err
  */
 void messages::set_error(QString err_name, const QString& err_description, const QString& err_details, bool err_security)
 {
-	++f_error_count;
+    ++f_error_count;
 
-	if(err_name.isEmpty())
-	{
-		throw std::runtime_error("The err_name parameter of the messages::set_error() function cannot be empty.");
-	}
+    if(err_name.isEmpty())
+    {
+        throw std::runtime_error("The err_name parameter of the messages::set_error() function cannot be empty.");
+    }
 
-	// log the error
-	logging::log_security_t sec(err_security ? logging::LOG_SECURITY_SECURE : logging::LOG_SECURITY_NONE);
-	SNAP_LOG_ERROR(sec)(err_details)(" (")(err_name)(": ")(err_description)(")");
+    // log the error
+    logging::log_security_t sec(err_security ? logging::LOG_SECURITY_SECURE : logging::LOG_SECURITY_NONE);
+    SNAP_LOG_ERROR(sec)(err_details)(" (")(err_name)(": ")(err_description)(")");
 
-	message msg(message::MESSAGE_TYPE_WARNING, err_name, err_description);
-	f_messages.push_back(msg);
+    message msg(message::MESSAGE_TYPE_WARNING, err_name, err_description);
+    f_messages.push_back(msg);
 }
 
 
@@ -479,18 +474,18 @@ void messages::set_error(QString err_name, const QString& err_description, const
  */
 void messages::set_warning(QString warning_name, const QString& warning_description, const QString& warning_details)
 {
-	++f_warning_count;
+    ++f_warning_count;
 
-	if(warning_name.isEmpty())
-	{
-		throw std::runtime_error("The warning_name parameter of the messages::set_warning() function cannot be empty.");
-	}
+    if(warning_name.isEmpty())
+    {
+        throw std::runtime_error("The warning_name parameter of the messages::set_warning() function cannot be empty.");
+    }
 
-	// log the warning
-	SNAP_LOG_WARNING(warning_details)(" (")(warning_name)(": ")(warning_description)(")");
+    // log the warning
+    SNAP_LOG_WARNING(warning_details)(" (")(warning_name)(": ")(warning_description)(")");
 
-	message msg(message::MESSAGE_TYPE_WARNING, warning_name, warning_description);
-	f_messages.push_back(msg);
+    message msg(message::MESSAGE_TYPE_WARNING, warning_name, warning_description);
+    f_messages.push_back(msg);
 }
 
 
@@ -515,15 +510,15 @@ void messages::set_warning(QString warning_name, const QString& warning_descript
  */
 void messages::set_info(QString info_name, const QString& info_description)
 {
-	if(info_name.isEmpty())
-	{
-		throw std::runtime_error("The info_name parameter of the messages::set_info() function cannot be empty.");
-	}
+    if(info_name.isEmpty())
+    {
+        throw std::runtime_error("The info_name parameter of the messages::set_info() function cannot be empty.");
+    }
 
-	SNAP_LOG_INFO("(")(info_name)(": ")(info_description)(")");
+    SNAP_LOG_INFO("(")(info_name)(": ")(info_description)(")");
 
-	message msg(message::MESSAGE_TYPE_INFO, info_name, info_description);
-	f_messages.push_back(msg);
+    message msg(message::MESSAGE_TYPE_INFO, info_name, info_description);
+    f_messages.push_back(msg);
 }
 
 
@@ -548,15 +543,15 @@ void messages::set_info(QString info_name, const QString& info_description)
  */
 void messages::set_debug(QString debug_name, const QString& debug_description)
 {
-	if(debug_name.isEmpty())
-	{
-		throw std::runtime_error("The debug_name parameter of the messages::set_debug() function cannot be empty.");
-	}
+    if(debug_name.isEmpty())
+    {
+        throw std::runtime_error("The debug_name parameter of the messages::set_debug() function cannot be empty.");
+    }
 
-	SNAP_LOG_DEBUG("(")(debug_name)(": ")(debug_description)(")");
+    SNAP_LOG_DEBUG("(")(debug_name)(": ")(debug_description)(")");
 
-	message msg(message::MESSAGE_TYPE_DEBUG, debug_name, debug_description);
-	f_messages.push_back(msg);
+    message msg(message::MESSAGE_TYPE_DEBUG, debug_name, debug_description);
+    f_messages.push_back(msg);
 }
 
 
@@ -571,7 +566,7 @@ void messages::set_debug(QString debug_name, const QString& debug_description)
  */
 int messages::get_error_count() const
 {
-	return f_error_count;
+    return f_error_count;
 }
 
 
@@ -586,7 +581,7 @@ int messages::get_error_count() const
  */
 int messages::get_warning_count() const
 {
-	return f_warning_count;
+    return f_warning_count;
 }
 
 
@@ -601,11 +596,11 @@ int messages::get_warning_count() const
  */
 messages::message messages::get_last_message() const
 {
-	if(f_messages.isEmpty())
-	{
-		throw std::runtime_error("get_last_message() cannot be called if no messages were added to the messages plugin.");
-	}
-	return f_messages.last();
+    if(f_messages.isEmpty())
+    {
+        throw std::runtime_error("get_last_message() cannot be called if no messages were added to the messages plugin.");
+    }
+    return f_messages.last();
 }
 
 
