@@ -1176,13 +1176,12 @@ bool server::update_impl(int64_t /*last_updated*/)
     return true;
 }
 
-/** \brief Process a POST request at the specified URL.
+
+/** \brief Process a cookies on an HTTP request.
  *
  * This function readies the process_cookies signal.
  *
  * At this time, it does nothing.
- *
- * \param[in] url  The URL to process a POST from.
  *
  * \return true if the signal has to be sent to other plugins.
  */
@@ -1190,6 +1189,35 @@ bool server::process_cookies_impl()
 {
     return true;
 }
+
+
+/** \brief Process the attach to session event.
+ *
+ * This function readies the attach to session event.
+ *
+ * At this time, it does nothing.
+ *
+ * \return true if the signal has to be sent to other plugins.
+ */
+bool server::attach_to_session_impl()
+{
+    return true;
+}
+
+
+/** \brief Process the detach from session event.
+ *
+ * This function readies the detach from session event.
+ *
+ * At this time, it does nothing.
+ *
+ * \return true if the signal has to be sent to other plugins.
+ */
+bool server::detach_from_session_impl()
+{
+    return true;
+}
+
 
 /** \brief Process a POST request at the specified URL.
  *
@@ -1206,6 +1234,7 @@ bool server::process_post_impl(const QString& /*url*/)
     return true;
 }
 
+
 /** \brief Execute the URL.
  *
  * This function readies the Execute signal.
@@ -1220,6 +1249,7 @@ bool server::execute_impl(const QString& /*url*/)
 {
     return true;
 }
+
 
 /** \brief Execute the specified backend action.
  *

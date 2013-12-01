@@ -20,7 +20,12 @@
 #include "log.h"
 #include "not_reached.h"
 #include "../content/content.h"
+#include "../users/users.h"
 #include <QtCassandra/QCassandraValue.h>
+#include <QtSerialization/QSerializationComposite.h>
+#include <QtSerialization/QSerializationFieldString.h>
+#include <QtSerialization/QSerializationFieldBasicTypes.h>
+//#include <QtSerialization/QSerializationFieldTag.h>
 #include <iostream>
 
 
@@ -48,8 +53,8 @@ controlled_vars::zint32_t        g_message_id;
 const char *get_name(name_t name)
 {
     switch(name) {
-    //case SNAP_NAME_MESSAGES_TABLE:
-    //    return "messages";
+    case SNAP_NAME_MESSAGES_MESSAGES:
+        return "messages::messages";
 
     default:
         // invalid index
@@ -166,6 +171,64 @@ const QString& messages::message::get_body() const
 }
 
 
+/** \brief Unserialize a message.
+ *
+ * This function unserializes a message that was serialized using
+ * the serialize() function. This is considered an internal function as it
+ * is called by the unserialize() function of the messages object.
+ *
+ * \param[in] r  The reader used to read the input data.
+ *
+ * \sa serialize()
+ */
+void messages::message::unserialize(QtSerialization::QReader& r)
+{
+    QtSerialization::QComposite comp;
+    int32_t type;
+    QtSerialization::QFieldInt32 tag_type(comp, "type", type);
+    int32_t id;
+    QtSerialization::QFieldInt32 tag_id(comp, "id", id);
+    QtSerialization::QFieldString tag_title(comp, "title", f_title);
+    QtSerialization::QFieldString tag_body(comp, "body", f_body);
+    r.read(comp);
+
+    f_type = type;
+    f_id = id;
+}
+
+
+/** \brief Read the contents one tag from the reader.
+ *
+ * This function reads the contents of the message tag. It handles
+ * the message fields.
+ *
+ * \param[in] name  The name of the tag being read.
+ * \param[in] r  The reader used to read the input data.
+ */
+void messages::message::readTag(const QString& name, QtSerialization::QReader& r)
+{
+}
+
+
+/** \brief Serialize a message to a writer.
+ *
+ * This function serialize a message so it can be saved in the database
+ * in the form of a string.
+ *
+ * \param[in,out] w  The writer where the data gets saved.
+ *
+ * \sa unserialize()
+ */
+void messages::message::serialize(QtSerialization::QWriter& w) const
+{
+    QtSerialization::QWriter::QTag tag(w, "message");
+    QtSerialization::writeTag(w, "type", f_type);
+    QtSerialization::writeTag(w, "id", static_cast<int32_t>(f_id));
+    QtSerialization::writeTag(w, "title", f_title);
+    QtSerialization::writeTag(w, "body", f_body);
+}
+
+
 
 
 /** \brief Initialize the messages plugin.
@@ -199,6 +262,8 @@ void messages::on_bootstrap(snap_child *snap)
 {
     f_snap = snap;
 
+    SNAP_LISTEN0(messages, "server", server::server, attach_to_session);
+    SNAP_LISTEN0(messages, "server", server::server, detach_from_session);
     SNAP_LISTEN(messages, "layout", layout::layout, generate_page_content, _1, _2, _3, _4);
 }
 
@@ -297,7 +362,7 @@ void messages::on_generate_main_content(layout::layout *l, const QString& path, 
 void messages::on_generate_page_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body)
 {
     // go through the list of messages and append them to the body
-    int max(f_messages.count());
+    const int max(f_messages.count());
     if(max > 0)
     {
         QDomDocument doc(page.ownerDocument());
@@ -357,6 +422,50 @@ void messages::on_generate_page_content(layout::layout *l, const QString& path, 
 }
 
 
+/** \brief Save the messages to the current user session.
+ *
+ * This function is mostly likely called because of a redirect to save
+ * data that would not otherwise make it between server accesses (sessions).
+ *
+ * In case you are to redirect a user, the messages will get lost because
+ * they are only saved in memory (although the administrator can see them
+ * in the logs too.) This function saves the current messages in the
+ * user session with the hope that they can be restored after the redirect.
+ *
+ * This is useful even if you send users to another website. Once the user
+ * comes back to your website, he will still see the error(s). Note that
+ * the session and cookie used for that purpose have a relatively short time
+ * to live (5 days at this time) and thus if the user does not come back
+ * soon enough, the message will anyway be deleted. This problem will
+ * likely be fixed at a later time.
+ */
+void messages::on_attach_to_session()
+{
+    if(!f_messages.isEmpty())
+    {
+        const QString data(serialize());
+        users::users::instance()->attach_to_session(get_name(SNAP_NAME_MESSAGES_MESSAGES), data);
+        f_messages.clear();
+    }
+}
+
+
+/** \brief Retrieve data that was attached to a session.
+ *
+ * This function is the opposite of the on_attach_to_session(). It is
+ * called before the execute() to reinitialize objects that previously
+ * saved data in the user session.
+ */
+void messages::on_detach_from_session()
+{
+    QString data(users::users::instance()->detach_from_session(get_name(SNAP_NAME_MESSAGES_MESSAGES)));
+    if(!data.isEmpty())
+    {
+        unserialize(data);
+    }
+}
+
+
 /** \brief Set an HTTP error on this page.
  *
  * This function is used to display an HTTP error message to the end user when
@@ -388,18 +497,18 @@ void messages::on_generate_page_content(layout::layout *l, const QString& path, 
  * \sa set_info()
  * \sa set_debug()
  */
-void messages::set_http_error(int err_code, QString err_name, const QString& err_description, const QString& err_details, bool err_security)
+void messages::set_http_error(snap_child::http_code_t err_code, QString err_name, const QString& err_description, const QString& err_details, bool err_security)
 {
     ++f_error_count;
 
-    // the error code must be valid
+    // the error code must be valid (i.e. an actual HTTP error!)
     if(err_code < 400 || err_code > 599)
     {
         throw std::logic_error("the set_http_error() function was called with an invalid error code number");
     }
 
     // define a default error name if undefined
-    snap_child::define_error_name(err_code, err_name);
+    snap_child::define_http_name(err_code, err_name);
 
     // log the error
     logging::log_security_t sec(err_security ? logging::LOG_SECURITY_SECURE : logging::LOG_SECURITY_NONE);
@@ -407,10 +516,10 @@ void messages::set_http_error(int err_code, QString err_name, const QString& err
 
     // Status Header
     // i.e. "Status: 503 Service Unavailable"
-    QString status(QString("%1 %2").arg(err_code).arg(err_name));
+    QString status(QString("%1 %2").arg(static_cast<int>(err_code)).arg(err_name));
     f_snap->set_header("Status", status);
 
-    message msg(message::MESSAGE_TYPE_ERROR, QString("%1 %2").arg(err_code).arg(err_name), err_description);
+    message msg(message::MESSAGE_TYPE_ERROR, QString("%1 %2").arg(static_cast<int>(err_code)).arg(err_name), err_description);
     f_messages.push_back(msg);
 }
 
@@ -594,7 +703,7 @@ int messages::get_warning_count() const
  *
  * \return The body of the message is returned in this string.
  */
-messages::message messages::get_last_message() const
+const messages::message& messages::get_last_message() const
 {
     if(f_messages.isEmpty())
     {
@@ -604,6 +713,92 @@ messages::message messages::get_last_message() const
 }
 
 
+/** \brief Unserialize a set of messages.
+ *
+ * This function unserializes a message that was serialized using
+ * the serialize() function. This is considered an internal function as it
+ * is called by the unserialize() function of the messages object.
+ *
+ * \param[in] r  The reader used to read the input data.
+ *
+ * \sa serialize()
+ */
+void messages::unserialize(const QString& data)
+{
+    // QBuffer takes a non-const QByteArray so we have to create a copy
+    QByteArray non_const_data(data.toUtf8().data());
+    QBuffer in(&non_const_data);
+    in.open(QIODevice::ReadOnly);
+    QtSerialization::QReader reader(in);
+    QtSerialization::QComposite comp;
+    QtSerialization::QFieldTag messages_tag(comp, "messages", this);
+    reader.read(comp);
+}
+
+
+/** \brief Read the contents of one tag from the reader.
+ *
+ * This function reads the contents of one message tag. It calls
+ * the attachment unserialize() as required whenever an attachment
+ * is found in the stream.
+ *
+ * \param[in] name  The name of the tag being read.
+ * \param[in] r  The reader used to read the input data.
+ */
+void messages::readTag(const QString& name, QtSerialization::QReader& r)
+{
+    if(name == "messages")
+    {
+        QtSerialization::QComposite comp;
+        int32_t error_count(0);
+        QtSerialization::QFieldInt32 error_count_tag(comp, "error_count", error_count);
+        int32_t warning_count(0);
+        QtSerialization::QFieldInt32 warning_count_tag(comp, "warning_count", warning_count);
+        QtSerialization::QFieldTag tag_attachment(comp, "message", this);
+        r.read(comp);
+        f_error_count = error_count;
+        f_warning_count = warning_count;
+    }
+    else if(name == "message")
+    {
+        message msg;
+        msg.unserialize(r);
+        f_messages.push_back(msg);
+    }
+}
+
+
+/** \brief Serialize a list of messages to a writer.
+ *
+ * This function serialize the current list of messages so it can be
+ * saved in the database in the form of a string.
+ *
+ * \param[in,out] w  The writer where the data gets saved.
+ *
+ * \sa unserialize()
+ */
+QString messages::serialize() const
+{
+    QByteArray result;
+    QBuffer archive(&result);
+    archive.open(QIODevice::WriteOnly);
+    {
+        QtSerialization::QWriter w(archive, "messages", MESSAGES_MAJOR_VERSION, MESSAGES_MINOR_VERSION);
+        QtSerialization::QWriter::QTag tag(w, "messages");
+        QtSerialization::writeTag(w, "error_count", f_error_count);
+        QtSerialization::writeTag(w, "warning_count", f_warning_count);
+        const int max(f_messages.count());
+        for(int i(0); i < max; ++i)
+        {
+            f_messages[i].serialize(w);
+        }
+        // end the writer so everything gets saved in the buffer (result)
+    }
+
+    return QString::fromUtf8(result.data());
+}
+
+
 SNAP_PLUGIN_END()
 
-// vim: ts=4 sw=4
+// vim: ts=4 sw=4 et

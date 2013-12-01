@@ -17,6 +17,7 @@
 
 #include "http_cookie.h"
 #include "snapwebsites.h"
+#include <sys/time.h>
 #include <QtCassandra/QCassandra.h>
 #include "poison.h"
 
@@ -47,7 +48,6 @@ uint32_t http_token[4] = {
 		| SNAP_HTTP_TOKEN_CHAR(0x20, '+')
 		| SNAP_HTTP_TOKEN_CHAR(0x20, '-')
 		| SNAP_HTTP_TOKEN_CHAR(0x20, '.')
-		| SNAP_HTTP_TOKEN_CHAR(0x20, '-')
 		| SNAP_HTTP_TOKEN_CHAR(0x20, '0')
 		| SNAP_HTTP_TOKEN_CHAR(0x20, '1')
 		| SNAP_HTTP_TOKEN_CHAR(0x20, '2')
@@ -164,7 +164,13 @@ http_cookie::http_cookie()
  *
  * \note
  * The name of a cookie is case sensitive. In other words cookie "foo" and
- * cookie "Foo" can be cohexist (although it certainly should not be used!)
+ * cookie "Foo" can cohexist (although it certainly should not be used!)
+ *
+ * \warning
+ * The cookie domain cannot be determined without a pointer to the snap
+ * child object. If you do not have access to that pointer, make sure that
+ * an object that has access calls the set_domain() at some point or the
+ * cookie is likely to fail.
  *
  * \todo
  * If there is a redirect (i.e. we show website A but the user was
@@ -206,7 +212,7 @@ http_cookie::http_cookie(snap_child *snap, const QString& name, const QString& v
 		ushort c(f_name[i].unicode());
 		if(c <= ' ' || c >= 127 || (http_token[c >> 5] & (1 << (c & 0x1F))) == 0)
 		{
-			throw std::runtime_error("the name of a cookie must only include token compatible characters");
+			throw std::runtime_error(QString("the name of a cookie must only include token compatible characters (offensive character: %1)").arg(QChar(c)).toStdString());
 		}
 	}
 	if(f_name[0] == '$')
@@ -214,15 +220,18 @@ http_cookie::http_cookie(snap_child *snap, const QString& name, const QString& v
 		throw std::runtime_error("cookie name cannot start with '$'; those are reserved by the HTTP protocol");
 	}
 
-	QtCassandra::QCassandraValue cookie_domain(f_snap->get_site_parameter(snap::get_name(SNAP_NAME_CORE_COOKIE_DOMAIN)));
-	if(cookie_domain.nullValue())
+	if(f_snap)
 	{
-		// use the fully qualified website domain name
-		f_domain = f_snap->get_website_key();
-	}
-	else
-	{
-		f_domain = cookie_domain.stringValue();
+		QtCassandra::QCassandraValue cookie_domain(f_snap->get_site_parameter(snap::get_name(SNAP_NAME_CORE_COOKIE_DOMAIN)));
+		if(cookie_domain.nullValue())
+		{
+			// use the fully qualified website domain name
+			f_domain = f_snap->get_website_key();
+		}
+		else
+		{
+			f_domain = cookie_domain.stringValue();
+		}
 	}
 
 	set_value(value);
@@ -441,6 +450,11 @@ void http_cookie::set_expire(const QDateTime& date_time)
  * of seconds, but it sends the cookie with an Expire field (i.e. we do
  * not make use of the Max-Age field.)
  *
+ * \note
+ * If the HTTP cookie object was passed a pointer to the snap child
+ * object, then the request start date is used, otherwise the current
+ * date is used as the fallback.
+ *
  * \param[in] seconds  The number of seconds from now when the cookie expires.
  *
  * \sa set_expire();
@@ -450,7 +464,18 @@ void http_cookie::set_expire(const QDateTime& date_time)
  */
 void http_cookie::set_expire_in(int seconds)
 {
-	f_expire = QDateTime::fromMSecsSinceEpoch(f_snap->get_start_date() / 1000 + seconds * 1000);
+	if(f_snap)
+	{
+		f_expire = QDateTime::fromMSecsSinceEpoch(f_snap->get_start_date() / 1000 + seconds * 1000);
+	}
+	else
+	{
+		struct timeval tv;
+		gettimeofday(&tv, NULL);
+		int64_t start_date(static_cast<int64_t>(tv.tv_sec) * static_cast<int64_t>(1000000)
+                         + static_cast<int64_t>(tv.tv_usec));
+		f_expire = QDateTime::fromMSecsSinceEpoch(start_date / 1000 + seconds * 1000);
+	}
 }
 
 

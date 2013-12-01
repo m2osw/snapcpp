@@ -45,7 +45,95 @@ class server;
 class snap_child
 {
 public:
-	enum status_t {
+	enum http_code_t
+	{
+		// a couple of internal codes used here and there (never sent to user)
+        HTTP_CODE_INVALID = -2,
+        HTTP_CODE_UNDEFINED = -1,
+
+        HTTP_CODE_CONTINUE = 100,
+        HTTP_CODE_SWITCHING_PROTOCOLS = 101,
+        HTTP_CODE_PROCESSING = 102,
+
+        HTTP_CODE_OK = 200,
+        HTTP_CODE_CREATED = 201,
+        HTTP_CODE_ACCEPTED = 202,
+        HTTP_CODE_NON_AUTHORITATIVE_INFORMATION = 203,
+        HTTP_CODE_NO_CONTENT = 204,
+        HTTP_CODE_RESET_CONTENT = 205,
+        HTTP_CODE_PARTIAL_CONTENT = 206,
+        HTTP_CODE_MULTI_STATUS = 207,
+        HTTP_CODE_ALREADY_REPORTED = 208,
+		HTTP_CODE_IM_USED = 226, // Instance Manipulation Used
+
+        HTTP_CODE_MULTIPLE_CHOICE = 300,
+        HTTP_CODE_MOVED_PERMANENTLY = 301,
+        HTTP_CODE_FOUND = 302,
+        HTTP_CODE_SEE_OTHER = 303,
+        HTTP_CODE_NOT_MODIFIED = 304,
+        HTTP_CODE_USE_PROXY = 305,
+        HTTP_CODE_SWITCH_PROXY = 306,
+        HTTP_CODE_TEMPORARY_REDIRECT = 307,
+        HTTP_CODE_PERMANENT_REDIRECT = 308,
+
+        HTTP_CODE_BAD_REQUEST = 400,
+        HTTP_CODE_UNAUTHORIZED = 401,
+        HTTP_CODE_PAYMENT_REQUIRED = 402,
+        HTTP_CODE_FORBIDDEN = 403,
+        HTTP_CODE_NOT_FOUND = 404,
+        HTTP_CODE_METHOD_NOT_ALLOWED = 405,
+        HTTP_CODE_NOT_ACCEPTABLE = 406,
+        HTTP_CODE_PROXY_AUTHENTICATION_REQUIRED = 407,
+        HTTP_CODE_REQUEST_TIMEOUT = 408,
+        HTTP_CODE_CONFLICT = 409,
+        HTTP_CODE_GONE = 410,
+        HTTP_CODE_LENGTH_REQUIRED = 411,
+        HTTP_CODE_PRECONDITION_FAILED = 412,
+        HTTP_CODE_REQUEST_ENTITY_TOO_LARGE = 413,
+        HTTP_CODE_REQUEST_URI_TOO_LONG = 414,
+        HTTP_CODE_UNSUPPORTED_MEDIA_TYPE = 415,
+        HTTP_CODE_REQUESTED_RANGE_NOT_SATISFIABLE = 416,
+        HTTP_CODE_EXPECTATION_FAILED = 417,
+        HTTP_CODE_I_AM_A_TEAPOT = 418,
+        HTTP_CODE_ENHANCE_YOUR_CALM = 420,
+        HTTP_CODE_UNPROCESSABLE_ENTITY = 422,
+        HTTP_CODE_LOCKED = 423,
+        HTTP_CODE_FAILED_DEPENDENCY = 424,
+        HTTP_CODE_METHOD_FAILURE = 424, /* WARNING: same as Failed Dependency */
+        HTTP_CODE_UNORDERED_COLLECTION = 425,
+        HTTP_CODE_UPGRADE_REQUIRED = 426,
+        HTTP_CODE_PRECONDITION_REQUIRED = 428,
+        HTTP_CODE_TOO_MANY_REQUESTS = 429,
+        HTTP_CODE_REQUEST_HEADER_FIELDS_TOO_LARGE = 431,
+        HTTP_CODE_NO_RESPONSE = 444,
+        HTTP_CODE_RETRY_WITH = 449,
+        HTTP_CODE_BLOCKED_BY_WINDOWS_PARENTAL_CONTROLS = 450,
+        HTTP_CODE_UNAVAILABLE_FOR_LEGAL_REASONS = 451,
+        HTTP_CODE_REDIRECT = 451, /* WARNING: same as Unavailable For Legal Reasons */
+        HTTP_CODE_REQUEST_HEADER_TOO_LARGE = 494,
+        HTTP_CODE_CERT_ERROR = 495,
+        HTTP_CODE_NO_CERT = 496,
+        HTTP_CODE_HTTP_TO_HTTPS = 497,
+        HTTP_CODE_CLIENT_CLOSED_REQUEST = 499,
+
+        HTTP_CODE_INTERNAL_SERVER_ERROR = 500,
+        HTTP_CODE_NOT_IMPLEMENTED = 501,
+        HTTP_CODE_BAD_GATEWAY = 502,
+        HTTP_CODE_SERVICE_UNAVAILABLE = 503,
+        HTTP_CODE_GATEWAY_TIMEOUT = 504,
+        HTTP_CODE_HTTP_VERSION_NOT_SUPPORTED = 505,
+        HTTP_CODE_VARIANTS_ALSO_NEGOTIATES = 506,
+        HTTP_CODE_INSUFFICIANT_STORAGE = 507,
+        HTTP_CODE_LOOP_DETECTED = 508,
+        HTTP_CODE_BANDWIDTH_LIMIT_EXCEEDED = 509,
+        HTTP_CODE_NOT_EXTENDED = 510,
+        HTTP_CODE_NETWORK_AUTHENTICATION_REQUIRED = 511,
+        HTTP_CODE_ACCESS_DENIED = 531,
+        HTTP_CODE_NETWORK_READ_TIMEOUT_ERROR = 598,
+        HTTP_CODE_NETWORK_CONNECT_TIMEOUT_ERROR = 599
+	};
+	enum status_t
+	{
 		SNAP_CHILD_STATUS_READY,
 		SNAP_CHILD_STATUS_RUNNING
 	};
@@ -86,8 +174,9 @@ public:
 	bool cookie_is_defined(const QString& name) const;
 	QString cookie(const QString& name) const;
 	QString snap_url(const QString& url) const;
-	void die(int err_code, QString err_name, const QString& err_description, const QString& err_details);
-	static void define_error_name(int err_code, QString& err_name);
+	void page_redirect(const QString& path, http_code_t http_code = HTTP_CODE_MOVED_PERMANENTLY);
+	void die(http_code_t err_code, QString err_name, const QString& err_description, const QString& err_details);
+	static void define_http_name(http_code_t http_code, QString& http_name);
 
 	void output(const QString& data);
 	void output(const std::string& data);
@@ -114,6 +203,7 @@ private:
 	void write(const char *data, ssize_t size);
 	void write(const char *str);
 	void write(const QString& str);
+	void output_cookies();
 
 	typedef QMap<QString, QString>		environment_map_t;
 	typedef QMap<QString, QString>		header_map_t;

@@ -39,6 +39,7 @@ enum name_t
     SNAP_NAME_USERS_PASSWORD_DIGEST,
     SNAP_NAME_USERS_PASSWORD_SALT,
     SNAP_NAME_USERS_PATH,
+    SNAP_NAME_USERS_SESSION_COOKIE,
     SNAP_NAME_USERS_STATUS,
     SNAP_NAME_USERS_TABLE,
     SNAP_NAME_USERS_USERNAME,
@@ -83,6 +84,8 @@ public:
 
     bool                    register_user(const QString& email, const QString& password);
     void                    verify_email(const QString& email);
+    void                    attach_to_session(const QString& name, const QString& data);
+    QString                 detach_from_session(const QString& name) const;
 
 private:
     void                    initial_update(int64_t variables_timestamp);
@@ -98,6 +101,7 @@ private:
 
     zpsnap_child_t          f_snap;
     QString                 f_user_key;
+    std::shared_ptr<sessions::sessions::session_info> f_info;
 };
 
 } // namespace users

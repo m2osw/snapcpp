@@ -239,14 +239,14 @@ void path::on_execute(const QString& uri_path)
 			// no page_not_found() plugin support...
 			if(page_exists)
 			{
-				f_snap->die(404,
+				f_snap->die(snap_child::HTTP_CODE_NOT_FOUND,
 							"Plugin Missing",
 							"This page is not currently available as its plugin is not currently installed.",
 							"User tried to access page \"" + cpath + "\" but its plugin (" + owner + ") refused it");
 			}
 			else
 			{
-				f_snap->die(404,
+				f_snap->die(snap_child::HTTP_CODE_NOT_FOUND,
 							"Page Not Found",
 							"This page does not exist on this website.",
 							"User tried to access page \"" + cpath + "\" and no dynamic path handling happened");
@@ -263,7 +263,7 @@ void path::on_execute(const QString& uri_path)
 			// page_not_found() not called here because the page exists
 			// it's just not available right now and thus we
 			// may not want to replace it with something else?
-			f_snap->die(404,
+			f_snap->die(snap_child::HTTP_CODE_NOT_FOUND,
 					"Page Not Present",
 					"Somehow this page is not currently available.",
 					"User tried to access page \"" + cpath + "\" but its plugin (" + owner + ") refused it");
@@ -341,7 +341,7 @@ void path::handle_dynamic_path(const QString& plugin_name, plugins::plugin *p)
 		// two different plugins are fighting for the same path
 		// we'll have to enhance our error to give the user a way to choose
 		// the plugin one wants to use for this request...
-		f_snap->die(300,
+		f_snap->die(snap_child::HTTP_CODE_MULTIPLE_CHOICE,
 					"Multiple Choices",
 					"This page references multiple plugins and the server does not currently have means of choosing one over the other.",
 					"User tried to access dynamic page but more than one plugin says it owns the resource, primary is \"" + f_primary_owner + "\", second request by \"" + plugin_name + "\"["+g_undefined+"]");

@@ -54,6 +54,9 @@ const char *get_name(name_t name)
     case SNAP_NAME_SESSIONS_OBJECT_PATH:
         return "sessions::object_path";
 
+    case SNAP_NAME_SESSIONS_RANDOM:
+        return "sessions::random";
+
     case SNAP_NAME_SESSIONS_TIME_TO_LIVE:
         return "sessions::time_to_live";
 
@@ -84,6 +87,10 @@ const char *get_name(name_t name)
  * \li session id -- 0, a default session identifier; this is specific to the
  *                      plugins using this session and 0 is not expected to be
  *                      a valid session identifier for any plugin;
+ * \li session_key -- "", the key or name of the session, it is set when you
+ *                        call the create_session() function;
+ * \li session_random -- 0, a random number regenerated each time you save the
+ *                          session
  * \li plugin owner -- "", the name of the plugin that created this session and
  *                         that will process the results
  * \li page path -- "", the path to the page being managed
@@ -102,7 +109,9 @@ const char *get_name(name_t name)
  */
 sessions::session_info::session_info()
     //: f_type(SESSION_INFO_SECURE) -- auto-init
-    : f_session_id()
+    //, f_session_id(0) -- auto-init
+    //, f_session_key("") -- auto-init
+    //, f_session_random("") -- auto-init
     //, f_plugin_owner("") -- auto-init
     //, f_page_path("") -- auto-init
     //, f_object_path("") -- auto-init
@@ -110,6 +119,7 @@ sessions::session_info::session_info()
     //, f_time_limit(0) -- auto-init
 {
 }
+
 
 /** \brief Set the type of session.
  *
@@ -148,6 +158,7 @@ void sessions::session_info::set_session_type(session_info_type_t type)
     f_type = static_cast<int>(type);
 }
 
+
 /** \brief Define a session identifier.
  *
  * This function accepts a session identifier (a number) which represents
@@ -166,6 +177,72 @@ void sessions::session_info::set_session_id(session_id_t id)
     f_session_id = id;
 }
 
+
+/** \brief Define a session key.
+ *
+ * This function is set whenever you call the create_session() function.
+ * You should never set this value yourself since you do not actually
+ * have any control over that value from the outside.
+ *
+ * This key is exactly what is sent to the user via a cookie.
+ *
+ * \param[in] key  The key of this session.
+ *
+ * \sa get_session_key()
+ */
+void sessions::session_info::set_session_key(const QString& key)
+{
+    f_session_key = key;
+}
+
+
+/** \brief Generate a ramdon session key.
+ *
+ * This function is called once each time you call the save_session().
+ * This number should be saved in your cookie along the get_session_key()
+ * string. This number changes each time the user access the server but
+ * it should always match. If a mismatch is found, then the session may
+ * have been hacked.
+ *
+ * To retrieve the session random key number use the get_session_random().
+ *
+ * \sa get_session_random()
+ */
+void sessions::session_info::set_session_random()
+{
+    // generate the session identifier
+    do
+    {
+        int r(RAND_bytes(reinterpret_cast<unsigned char *>(&f_session_random), sizeof(f_session_random)));
+        if(r != 1)
+        {
+            throw std::runtime_error("RAND_bytes() could not generate a random number.");
+        }
+        // make it always positive, just in case
+        f_session_random &= 0x7FFFFFFF;
+    }
+    while(f_session_random == 0);
+    // we avoid zero because pretty much whatever would represent zero in
+    // a string... so that's not a good choice
+}
+
+
+/** \brief Set the ramdon session key.
+ *
+ * This function is used to set the random session value in this
+ * object. This function is used whenever we load sessions from
+ * the database.
+ *
+ * \param[in] random  The new random value to save in the session.
+ *
+ * \sa get_session_random()
+ */
+void sessions::session_info::set_session_random(int32_t random)
+{
+    f_session_random = random;
+}
+
+
 /** \brief Set the session owner which is the name of a plugin.
  *
  * This function defined the session owner as the name of the a plugin.
@@ -180,6 +257,7 @@ void sessions::session_info::set_plugin_owner(const QString& plugin_owner)
 {
     f_plugin_owner = plugin_owner;
 }
+
 
 /** \brief The path to the page where this session identifier is used.
  *
@@ -204,6 +282,7 @@ void sessions::session_info::set_page_path(const QString& page_path)
     f_page_path = page_path;
 }
 
+
 /** \brief The path of the object displaying this content.
  *
  * This path represents the object being displayed. For example, the smaller user
@@ -222,6 +301,7 @@ void sessions::session_info::set_object_path(const QString& object_path)
 {
     f_object_path = object_path;
 }
+
 
 /** \brief The time to live of this session.
  *
@@ -263,6 +343,7 @@ void sessions::session_info::set_time_to_live(int32_t time_to_live)
     f_time_to_live = time_to_live;
 }
 
+
 /** \brief Limit the time by date.
  *
  * This function saves the time limit of a session to the specified date.
@@ -292,6 +373,7 @@ void sessions::session_info::set_time_limit(time_t time_limit)
     f_time_limit = time_limit;
 }
 
+
 /** \brief Retrieve the type of this session.
  *
  * This function is used to retrieve the type of this session.
@@ -306,6 +388,7 @@ sessions::session_info::session_info_type_t sessions::session_info::get_session_
 {
     return f_type;
 }
+
 
 /** \brief Define a session identifier.
  *
@@ -322,6 +405,43 @@ sessions::session_info::session_id_t sessions::session_info::get_session_id() co
     return f_session_id;
 }
 
+
+/** \brief Retrieve the session key.
+ *
+ * This function returns the session key of this session. The key is what
+ * is randomly generated and used as the key of the row holding the
+ * session data.
+ *
+ * See the set_session_key() function for more information.
+ *
+ * \return The key of this session.
+ *
+ * \sa set_session_key()
+ */
+const QString& sessions::session_info::get_session_key() const
+{
+    return f_session_key;
+}
+
+
+/** \brief Retrieve the session random key.
+ *
+ * This function returns the session random key which changes each time the
+ * session gets saved. It is in general saved in the user's cookie and
+ * checked on reload, and it should always match!
+ *
+ * See the set_session_random() function for more information.
+ *
+ * \return The random key of this session.
+ *
+ * \sa set_session_random()
+ */
+int32_t sessions::session_info::get_session_random() const
+{
+    return f_session_random;
+}
+
+
 /** \brief Set the session owner which is the name of a plugin.
  *
  * This function defined the session owner as the name of the a plugin.
@@ -336,6 +456,7 @@ const QString& sessions::session_info::get_plugin_owner() const
 {
     return f_plugin_owner;
 }
+
 
 /** \brief Retrieve the path of the page linked to this session.
  *
@@ -353,6 +474,7 @@ const QString& sessions::session_info::get_page_path() const
     return f_page_path;
 }
 
+
 /** \brief Get the path of the attached object.
  *
  * A session may be created for a specific object that may appear on
@@ -368,6 +490,7 @@ const QString& sessions::session_info::get_object_path() const
 {
     return f_object_path;
 }
+
 
 /** \brief Get the time to live of this session.
  *
@@ -385,6 +508,7 @@ int32_t sessions::session_info::get_time_to_live() const
 {
     return f_time_to_live;
 }
+
 
 /** \brief Get the time limit of this session.
  *
@@ -446,6 +570,7 @@ sessions::sessions()
 {
 }
 
+
 /** \brief Clean up the sessions plugin.
  *
  * Ensure the sessions object is clean before it is gone.
@@ -453,6 +578,7 @@ sessions::sessions()
 sessions::~sessions()
 {
 }
+
 
 /** \brief Initialize the sessions.
  *
@@ -465,6 +591,7 @@ void sessions::on_bootstrap(snap_child *snap)
 {
     f_snap = snap;
 }
+
 
 /** \brief Get a pointer to the sessions plugin.
  *
@@ -493,11 +620,11 @@ sessions *sessions::instance()
 QString sessions::description() const
 {
     return "The sessions plugin is used by many other plugins to generate"
-        " session identifiers and save information about the given session."
-        " This is useful for many different reasons. In case of a user, a"
-        " session is used to make sure that the same user comes back to the"
-        " website. It is also used by forms to make sure that a for submission"
-        " is valid.";
+          " session identifiers and save information about the given session."
+          " This is useful for many different reasons. In case of a user, a"
+          " session is used to make sure that the same user comes back to the"
+          " website. It is also used by forms to make sure that a for submission"
+          " is valid.";
 }
 
 
@@ -522,6 +649,7 @@ int64_t sessions::do_update(int64_t last_updated)
     SNAP_PLUGIN_UPDATE_EXIT();
 }
 
+
 /** \brief Update the content with our references.
  *
  * Send our content to the database so the system can find us when a
@@ -533,6 +661,7 @@ void sessions::content_update(int64_t variables_timestamp)
 {
     content::content::instance()->add_xml("sessions");
 }
+
 
 /** \brief Initialize the sessions table.
  *
@@ -553,6 +682,7 @@ QSharedPointer<QtCassandra::QCassandraTable> sessions::get_sessions_table()
     return f_snap->create_table(get_name(SNAP_NAME_SESSIONS_TABLE), "Sessions table.");
 }
 
+
 /** \brief Implementation of the generate_sessions signal.
  *
  * This function readies the generate_sessions signal.
@@ -563,6 +693,7 @@ bool sessions::generate_sessions_impl(sessions * /*r*/)
 {
     return true;
 }
+
 
 /** \brief Generate the actual content of the statistics page.
  *
@@ -582,11 +713,16 @@ void sessions::on_generate_main_content(layout::layout *l, const QString& path, 
     content::content::instance()->on_generate_main_content(l, path, page, body);
 }
 
+
 /** \brief Create a new session.
  *
  * This function creates a new session using the specified information.
  * Later one can load a session to verify the validity of some data
  * such as a form post or a user cookie.
+ *
+ * If you modify a session, you can save it again with the save_session()
+ * function. The info must include a session key. A key is generated by
+ * the create_session() or loaded by the load_session() function.
  *
  * The function returns the session identifier which includes letters
  * and digits (A-Za-z0-9).
@@ -597,6 +733,10 @@ void sessions::on_generate_main_content(layout::layout *l, const QString& path, 
  * verify the session again when necessary. If both, the page and the
  * object are defined, then the page has priority and it becomes the
  * session database key.
+ *
+ * \note
+ * The info receives the result key that you can later retrieve using
+ * the get_session_key(). The key does NOT include the website URI.
  *
  * \note
  * The bit size of the source of the entropy (random values) is more
@@ -618,11 +758,14 @@ void sessions::on_generate_main_content(layout::layout *l, const QString& path, 
  * context to know which randomizer to use. We should look into forcing
  * a specific generator when called.
  *
- * \param[in] info  The session information.
+ * \param[in,out] info  The session information.
  *
- * \return The session identifier.
+ * \return The new session key.
+ *
+ * \sa save_session
+ * \sa load_session
  */
-QString sessions::create_session(const session_info& info)
+QString sessions::create_session(session_info& info)
 {
     // creating a session of less than 1 minute?!
     time_t time_limit(info.get_time_limit());
@@ -679,16 +822,48 @@ QString sessions::create_session(const session_info& info)
     }
 
     // make the key specific to that website and append the session identifier
-    QString key(f_snap->get_website_key() + "/");
     QString result;
     for(int i(0); i < size; ++i)
     {
         QString hex(QString("%1").arg(static_cast<int>(buf[i]), 2, 16, static_cast<QChar>('0')));
-        key += hex;
         result += hex;
     }
+    info.set_session_key(result);
+
+    save_session(info);
+
+    return result;
+}
+
+
+/** \brief Save the session.
+ *
+ * If you loaded a session, or created a session and made changes to
+ * the session parameters (using one of the set_...() functions) then
+ * you'll have to save the session again by calling this function.
+ *
+ * Forgetting to save the session has two side effects:
+ *
+ * \li All your changes are lost
+ * \li The session deadline is not reset to match the time and date
+ *     when those last changes were made and thus the session will
+ *     be deleted early
+ *
+ * Note that the random session key is regenerated each time you call
+ * this function (hence the \p info parameter is an in,out parameter.)
+ *
+ * \param[in,out] info  The session info to save.
+ */
+void sessions::save_session(session_info& info)
+{
+    info.set_session_random();
+
+    QString key(f_snap->get_website_key() + "/" + info.get_session_key());
 
     // define timestamp for the session value in seconds
+    time_t time_limit(info.get_time_limit());
+    int32_t time_to_live(info.get_time_to_live());
+    int64_t now(f_snap->get_start_time());
     int64_t timestamp(0);
     if(time_limit == 0)
     {
@@ -696,7 +871,7 @@ QString sessions::create_session(const session_info& info)
         {
             // never expire we use 1 year which is
             // way over the head of everyone
-            timestamp = now + 86400 * 364;
+            timestamp = now + 86400 * 365;
         }
         else
         {
@@ -754,8 +929,10 @@ QString sessions::create_session(const session_info& info)
     value.setStringValue(f_snap->snapenv("REMOTE_ADDR"));
     row->cell(get_name(SNAP_NAME_SESSIONS_REMOTE_ADDR))->setValue(value);
 
-    return result;
+    value.setInt32Value(info.get_session_random());
+    row->cell(get_name(SNAP_NAME_SESSIONS_RANDOM))->setValue(value);
 }
+
 
 /** \brief Load a session previously created with create_session().
  *
@@ -783,21 +960,26 @@ QString sessions::create_session(const session_info& info)
  * caller (at this point this very function doesn't use this error code);
  * the session info is other valid
  *
- * \param[in] session_id  The session identifier to load.
+ * \warning
+ * You must check the session type before checking any of the other session
+ * parameters. If the type is not VALID then the other parameters are
+ * likely not defined or may have erroneous information.
+ *
+ * \param[in] session_key  The session key to load, on input the key does not include the URI.
  * \param[out] info  The variable where the session variables get saved.
  * \param[in] use_once  Whether this session can be used more than once.
  */
-void sessions::load_session(const QString& session_id, session_info& info, bool use_once)
+void sessions::load_session(const QString& session_key, session_info& info, bool use_once)
 {
     // reset this info (although it is likely already brand new...)
     info = session_info();
 
-    QString key(f_snap->get_website_key() + "/" + session_id);
+    QString key(f_snap->get_website_key() + "/" + session_key);
 
     QSharedPointer<QtCassandra::QCassandraTable> table(get_sessions_table());
     if(!table->exists(key))
     {
-        // if the key doesn't exists it was either tempered with
+        // if the key doesn't exist it was either tempered with
         // or the database already deleted it (i.e. it timed out)
         info.set_session_type(session_info::SESSION_INFO_MISSING);
         return;
@@ -812,6 +994,9 @@ void sessions::load_session(const QString& session_id, session_info& info, bool 
         info.set_session_type(session_info::SESSION_INFO_MISSING);
         return;
     }
+
+    // save the key as it is not unlikely that the rest will work
+    info.set_session_key(session_key);
 
     QtCassandra::QCassandraValue value;
 
@@ -857,6 +1042,15 @@ void sessions::load_session(const QString& session_id, session_info& info, bool 
     }
     info.set_time_limit(value.int64Value());
 
+    value = row->cell(get_name(SNAP_NAME_SESSIONS_RANDOM))->value();
+    if(value.nullValue())
+    {
+        // row timed out between calls
+        info.set_session_type(session_info::SESSION_INFO_MISSING);
+        return;
+    }
+    info.set_session_random(value.int32Value());
+
     // At this point we don't have a field in the info structure for this one
     // value = row->cell(get_name(SNAP_NAME_SESSIONS_REMOTE_ADDR))->value();
 
@@ -888,6 +1082,99 @@ void sessions::load_session(const QString& session_id, session_info& info, bool 
     // only case when it is valid
     info.set_session_type(session_info::SESSION_INFO_VALID);
 }
+
+
+/** \brief Attach data to a session.
+ *
+ * This function allows you to attach data to an existing session.
+ *
+ * In most cases this is used with the user session (see the users plugin
+ * functions of the same name.)
+ *
+ * \bug
+ * Note that the TTL of the cell is set to the session TTL + 1 day
+ * (as we do in the save_session() function.) Unfortunately, that TTL
+ * does NOT get refreshed whenever someone calls save_session() since
+ * we have no clue this cell even exists. Since it is expected to be
+ * used just once quickly, it is probably not a problem.
+ *
+ * \param[in] session_key  The session key as defined when you called
+ *                         create_session().
+ * \param[in] name  The name of the cell where the data is saved.
+ * \param[in] data  The data to save in this session.
+ */
+void sessions::attach_to_session(const session_info& info, const QString& name, const QString& data)
+{
+    QString key(f_snap->get_website_key() + "/" + info.get_session_key());
+
+    QSharedPointer<QtCassandra::QCassandraTable> table(get_sessions_table());
+    if(!table->exists(key))
+    {
+        return;
+    }
+
+    QSharedPointer<QtCassandra::QCassandraRow> row(table->row(key));
+    if(!row)
+    {
+        return;
+    }
+
+    // we use the saved time limit
+    time_t timestamp(info.get_time_limit());
+    int64_t now(f_snap->get_start_time());
+
+    // keep it in the database for 1 more day than what we need it for
+    // the difference should always fit 32 bits
+    int64_t ttl(timestamp + 86400 - now);
+    if(ttl < 0 || ttl > 0x7FFFFFFF)
+    {
+        throw std::logic_error("the session computed ttl is out of bounds");
+    }
+
+    QtCassandra::QCassandraValue value;
+    value.setTtl(static_cast<int32_t>(ttl));
+
+    value.setStringValue(data);
+    row->cell(name)->setValue(value);
+}
+
+
+/** \brief Detach data from a session.
+ *
+ * This function grabs data previous attached to a session and drop it
+ * from the database.
+ *
+ * \param[in] session_key  The key of the session to read from.
+ * \param[in] name  The name of the cell where the data was saved.
+ *
+ * \return The data in a string.
+ */
+QString sessions::detach_from_session(const session_info& info, const QString& name)
+{
+    QString key(f_snap->get_website_key() + "/" + info.get_session_key());
+
+    QSharedPointer<QtCassandra::QCassandraTable> table(get_sessions_table());
+    if(!table->exists(key))
+    {
+        return "";
+    }
+
+    QSharedPointer<QtCassandra::QCassandraRow> row(table->row(key));
+    if(!row)
+    {
+        return "";
+    }
+
+    // if not defined, we'll get an empty string which is what's expected
+    QtCassandra::QCassandraValue value(row->cell(name)->value());
+
+    // used once, so delete
+    row->dropCell(name);
+
+    return value.stringValue();
+}
+
+
 
 SNAP_PLUGIN_END()
 

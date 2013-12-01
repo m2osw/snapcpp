@@ -33,74 +33,89 @@ class messages_exception_already_defined : public messages_exception {};
 
 enum name_t
 {
-	SNAP_NAME_MESSAGES_TABLE
+    SNAP_NAME_MESSAGES_MESSAGES
 };
 const char *get_name(name_t name);
 
 
-class messages : public plugins::plugin, public layout::layout_content
+class messages : public plugins::plugin, public layout::layout_content, public QtSerialization::QSerializationObject
 {
 public:
-	class message
-	{
-	public:
-		enum message_type_enum_t
-		{
-			MESSAGE_TYPE_ERROR,
-			MESSAGE_TYPE_WARNING,
-			MESSAGE_TYPE_INFO,
-			MESSAGE_TYPE_DEBUG
-		};
-		typedef controlled_vars::limited_need_init<message_type_enum_t, MESSAGE_TYPE_ERROR, MESSAGE_TYPE_DEBUG> message_type_t;
+    static const int MESSAGES_MAJOR_VERSION = 1;
+    static const int MESSAGES_MINOR_VERSION = 0;
 
-		message();
-		message(message_type_t t, const QString& title, const QString& body);
-		message(const message& rhs);
+    class message : public QtSerialization::QSerializationObject
+    {
+    public:
+        enum message_type_enum_t
+        {
+            MESSAGE_TYPE_ERROR,
+            MESSAGE_TYPE_WARNING,
+            MESSAGE_TYPE_INFO,
+            MESSAGE_TYPE_DEBUG
+        };
+        typedef controlled_vars::limited_need_init<message_type_enum_t, MESSAGE_TYPE_ERROR, MESSAGE_TYPE_DEBUG> message_type_t;
 
-		message_type_enum_t get_type() const;
-		int get_id() const;
-		const QString& get_title() const;
-		const QString& get_body() const;
+                            message();
+                            message(message_type_t t, const QString& title, const QString& body);
+                            message(const message& rhs);
 
-	private:
-		message_type_t				f_type;
-		controlled_vars::mint32_t	f_id;
-		QString						f_title;
-		QString						f_body;
-	};
+        message_type_enum_t get_type() const;
+        int                 get_id() const;
+        const QString&      get_title() const;
+        const QString&      get_body() const;
 
-	messages();
-	~messages();
+        // internal functions used to save the data serialized
+        void                unserialize(QtSerialization::QReader& r);
+        virtual void        readTag(const QString& name, QtSerialization::QReader& r);
+        void                serialize(QtSerialization::QWriter& w) const;
 
-	static messages *	instance();
-	virtual QString		description() const;
-	virtual int64_t 	do_update(int64_t last_updated);
+    private:
+        message_type_t              f_type;
+        controlled_vars::mint32_t   f_id;
+        QString                     f_title;
+        QString                     f_body;
+    };
 
-	void				on_bootstrap(snap_child *snap);
-	virtual void 		on_generate_main_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body);
-	void				on_generate_page_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body);
+                        messages();
+                        ~messages();
 
-	void				set_http_error(int err_code, QString err_name, const QString& err_description, const QString& err_details, bool err_security);
-	void				set_error(QString err_name, const QString& err_description, const QString& err_details, bool err_security);
-	void				set_warning(QString warning_name, const QString& warning_description, const QString& warning_details);
-	void				set_info(QString info_name, const QString& info_description);
-	void				set_debug(QString debug_name, const QString& debug_description);
+    static messages *   instance();
+    virtual QString     description() const;
+    virtual int64_t     do_update(int64_t last_updated);
 
-	message				get_last_message() const;
-	int					get_error_count() const;
-	int					get_warning_count() const;
+    void                on_bootstrap(snap_child *snap);
+    virtual void        on_generate_main_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body);
+    void                on_generate_page_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body);
+    void                on_attach_to_session();
+    void                on_detach_from_session();
+
+    void                set_http_error(snap_child::http_code_t err_code, QString err_name, const QString& err_description, const QString& err_details, bool err_security);
+    void                set_error(QString err_name, const QString& err_description, const QString& err_details, bool err_security);
+    void                set_warning(QString warning_name, const QString& warning_description, const QString& warning_details);
+    void                set_info(QString info_name, const QString& info_description);
+    void                set_debug(QString debug_name, const QString& debug_description);
+
+    const message&      get_last_message() const;
+    int                 get_error_count() const;
+    int                 get_warning_count() const;
+
+    // internal functions used to save the data serialized
+    void                unserialize(const QString& data);
+    virtual void        readTag(const QString& name, QtSerialization::QReader& r);
+    QString             serialize() const;
 
 private:
-	void content_update(int64_t variables_timestamp);
+    void content_update(int64_t variables_timestamp);
 
-	zpsnap_child_t				f_snap;
-	QVector<message>			f_messages;
-	controlled_vars::zint32_t	f_error_count;
-	controlled_vars::zint32_t	f_warning_count;
+    zpsnap_child_t              f_snap;
+    QVector<message>            f_messages;
+    controlled_vars::zint32_t   f_error_count;
+    controlled_vars::zint32_t   f_warning_count;
 };
 
 } // namespace messages
 } // namespace snap
 #endif
 // SNAP_MESSAGES_H
-// vim: ts=4 sw=4
+// vim: ts=4 sw=4 et

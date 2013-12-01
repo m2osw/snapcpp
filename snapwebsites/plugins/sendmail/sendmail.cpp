@@ -1029,7 +1029,7 @@ void sendmail::email::unserialize(const QString& data)
 }
 
 
-/** \brief Read the contents one tag from the reader.
+/** \brief Read the contents of one tag from the reader.
  *
  * This function reads the contents of the main email tag. It calls
  * the attachment unserialize() as required whenever an attachment

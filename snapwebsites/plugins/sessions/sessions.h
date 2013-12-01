@@ -37,6 +37,7 @@ enum name_t
     SNAP_NAME_SESSIONS_PLUGIN_OWNER,
     SNAP_NAME_SESSIONS_PAGE_PATH,
     SNAP_NAME_SESSIONS_OBJECT_PATH,
+    SNAP_NAME_SESSIONS_RANDOM,
     SNAP_NAME_SESSIONS_TIME_TO_LIVE,
     SNAP_NAME_SESSIONS_TIME_LIMIT,
     SNAP_NAME_SESSIONS_REMOTE_ADDR,
@@ -69,6 +70,9 @@ public:
 
         void set_session_type(session_info_type_t type);
         void set_session_id(session_id_t session_id);
+        void set_session_key(const QString& session_key);
+        void set_session_random();
+        void set_session_random(int32_t random);
         void set_plugin_owner(const QString& plugin_owner);
         void set_page_path(const QString& page_path);
         void set_object_path(const QString& object_path);
@@ -77,6 +81,8 @@ public:
 
         session_info_type_t get_session_type() const;
         session_id_t get_session_id() const;
+        const QString& get_session_key() const;
+        int32_t get_session_random() const;
         const QString& get_plugin_owner() const;
         const QString& get_page_path() const;
         const QString& get_object_path() const;
@@ -90,9 +96,12 @@ public:
         typedef controlled_vars::limited_auto_init<session_info_type_t, SESSION_INFO_SECURE, SESSION_INFO_USER, SESSION_INFO_SECURE> auto_session_info_type_t;
         typedef controlled_vars::auto_init<int32_t, 300> time_to_live_t;
         typedef controlled_vars::auto_init<time_t, 0> ztime_t;
+        typedef controlled_vars::auto_init<session_id_t, 0> zsession_id_t;
 
         auto_session_info_type_t    f_type;
-        session_id_t                f_session_id;
+        zsession_id_t               f_session_id;
+        QString                     f_session_key;
+        controlled_vars::zint32_t   f_session_random;
         QString                     f_plugin_owner;
         QString                     f_page_path;
         QString                     f_object_path; // exact path to user, form, etc.
@@ -110,8 +119,12 @@ public:
     void                    on_bootstrap(snap_child *snap);
     virtual void            on_generate_main_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body);
 
-    QString                 create_session(const session_info& info);
+    QString                 create_session(session_info& info);
+    void                    save_session(session_info& info);
     void                    load_session(const QString& session_id, session_info& info, bool use_once = true);
+
+    void                    attach_to_session(const session_info& info, const QString& name, const QString& data);
+    QString                 detach_from_session(const session_info& info, const QString& name);
 
     SNAP_SIGNAL(generate_sessions, (sessions *r), (r));
 

@@ -162,7 +162,8 @@ bool snap_child::process(int socket)
 {
     if(f_is_child) {
         // this is a bug! die() on the spot
-        die(503, "Server Bug", "Your Snap! server detected a serious problem. Please check your logs for more information.", "snap_child::process() was called from the child process.");
+        // (here we ARE in the child process!)
+        die(HTTP_CODE_SERVICE_UNAVAILABLE, "Server Bug", "Your Snap! server detected a serious problem. Please check your logs for more information.", "snap_child::process() was called from the child process.");
         return false;
     }
 
@@ -207,16 +208,16 @@ bool snap_child::process(int socket)
     f_is_child = true;
     f_socket = socket;
 
-    read_environment();        // environment to QMap<>
-    setup_uri();            // the raw URI
+    read_environment();         // environment to QMap<>
+    setup_uri();                // the raw URI
 
     // now we connect to the DB
     // move all possible work that does not required the DB before
     // this line so we avoid a network connection altogether
     connect_cassandra();
 
-    canonicalize_domain();    // using the URI, find the domain core::rules and start the canonalization process
-    canonicalize_website();    // using the canonicalized domain, find the website core::rules and continue the canonalization process
+    canonicalize_domain();      // using the URI, find the domain core::rules and start the canonalization process
+    canonicalize_website();     // using the canonicalized domain, find the website core::rules and continue the canonalization process
 
     // check whether this website has a redirect and apply it if necessary
     // (not a full 301, just show site B instead of site A)
@@ -232,13 +233,9 @@ bool snap_child::process(int socket)
     // finally, "execute" the page being accessed
     execute();
 
-    // we're done with the socket on our end, we can just close it as
-    // that is enough to send the proper signal to the client.
-    close(f_socket);
-    f_socket = -1;
-
     // we could delete ourselves but really only the socket is an
-    // object that needs to get cleaned up properly.
+    // object that needs to get cleaned up properly and it is done
+    // in the exit() function.
     //delete this;
     exit(0);
     NOTREACHED();
@@ -374,7 +371,7 @@ void snap_child::process_backend_uri(const QString& uri)
     if(!action.isEmpty())
     {
         server::backend_action_map_t actions;
-        snap::server::instance()->register_backend_action(actions);
+        f_server->register_backend_action(actions);
         if(actions.contains(action))
         {
             // this is a valid action, execute the corresponding function!
@@ -405,7 +402,7 @@ void snap_child::process_backend_uri(const QString& uri)
     }
     else
     {
-        snap::server::instance()->backend_process();
+        f_server->backend_process();
     }
 }
 
@@ -521,7 +518,7 @@ void snap_child::read_environment()
         // we'd be blocked here forever)
         if(read(f_socket, &c, 1) != 1)
         {
-            die(503, "", "Unstable network connection", "an error occured while reading the environment from the socket in the child.");
+            die(HTTP_CODE_SERVICE_UNAVAILABLE, "", "Unstable network connection", "an error occured while reading the environment from the socket in the child.");
             NOTREACHED();
         }
         if(c == '=' && reading_name)
@@ -655,7 +652,7 @@ void snap_child::write(const char *data, ssize_t size)
     if(::write(f_socket, data, size) != size)
     {
         SNAP_LOG_FATAL("error while sending data to a client.");
-        // XXX throw? should we call die() instead?
+        // XXX throw? we cannot call die() because die() calls write()!
         throw std::runtime_error("error while sending data to the client");
     }
 }
@@ -755,10 +752,6 @@ void snap_child::snap_info()
     // done
     write("#END\n");
 
-    // we're not returning so close the socket ourself
-    close(f_socket);
-    f_socket = -1;
-
     exit(1);
 }
 
@@ -785,10 +778,6 @@ void snap_child::snap_statistics()
 
     // done
     write("#END\n");
-
-    // we're not returning so close the socket ourself
-    close(f_socket);
-    f_socket = -1;
 
     exit(1);
 }
@@ -823,7 +812,7 @@ void snap_child::setup_uri()
     // HOST (domain name including all sub-domains)
     if(f_env.count("HTTP_HOST") != 1)
     {
-        die(503, "", "HTTP_HOST is required but not defined in your request.", "HTTP_HOST was not defined in the user request");
+        die(HTTP_CODE_SERVICE_UNAVAILABLE, "", "HTTP_HOST is required but not defined in your request.", "HTTP_HOST was not defined in the user request");
         NOTREACHED();
     }
     QString host(f_env["HTTP_HOST"]);
@@ -835,7 +824,7 @@ void snap_child::setup_uri()
     }
     if(host.isEmpty())
     {
-        die(503, "", "HTTP_HOST is required but is empty in your request.", "HTTP_HOST was defined but there was no domain name");
+        die(HTTP_CODE_SERVICE_UNAVAILABLE, "", "HTTP_HOST is required but is empty in your request.", "HTTP_HOST was defined but there was no domain name");
         NOTREACHED();
     }
     f_uri.set_domain(host);
@@ -843,7 +832,7 @@ void snap_child::setup_uri()
     // PORT
     if(f_env.count("SERVER_PORT") != 1)
     {
-        die(503, "", "SERVER_PORT is required but not defined in your request.", "SERVER_PORT was not defined in the user request");
+        die(HTTP_CODE_SERVICE_UNAVAILABLE, "", "SERVER_PORT is required but not defined in your request.", "SERVER_PORT was not defined in the user request");
         NOTREACHED();
     }
     f_uri.set_port(f_env["SERVER_PORT"]);
@@ -858,8 +847,9 @@ void snap_child::setup_uri()
     // Although we ignore the URI, it MUST be there
     if(f_env.count("REQUEST_URI") != 1)
     {
-        die(503, "", "REQUEST_URI is required but not defined in your request.",
-                     "REQUEST_URI was not defined in the user request");
+        die(HTTP_CODE_SERVICE_UNAVAILABLE, "",
+                     "REQUEST_URI is required but not defined in your request.",
+                     "REQUEST_URI was not defined in the user's request");
         NOTREACHED();
     }
     // This is useless since the URI points to the CGI which
@@ -871,6 +861,7 @@ void snap_child::setup_uri()
     //else {
     //    f_uri.set_path(f_env["REQUEST_URI"].mid(0, p));
     //}
+
     QString qs_path(f_server->get_parameter("qs_path"));
     QString path(f_uri.query_option(qs_path));
     QString extension;
@@ -888,9 +879,9 @@ void snap_child::setup_uri()
             extension = path.mid(ext);
             // check for a compression and include that and
             // the previous extension
-            if(extension == ".gz"        // gzip
+            if(extension == ".gz"       // gzip
             || extension == ".Z"        // Unix compress
-            || extension == ".bz2")        // bzip2
+            || extension == ".bz2")     // bzip2
             {
                 // we generally expect .gz but we have to take
                 // whatever extension the user added to make sure
@@ -953,14 +944,14 @@ void snap_child::connect_cassandra()
 {
     // Cassandra already exists?
     if(!f_cassandra.isNull()) {
-        die(503, "", "Our database is being initialized more than once.", "The connect_cassandra() function cannot be called more than once.");
+        die(HTTP_CODE_SERVICE_UNAVAILABLE, "", "Our database is being initialized more than once.", "The connect_cassandra() function cannot be called more than once.");
         NOTREACHED();
     }
 
     // connect to Cassandra
     f_cassandra = new QtCassandra::QCassandra;
     if(!f_cassandra->connect(f_server->cassandra_host(), f_server->cassandra_port())) {
-        die(503, "", "Our database system is temporarilly unavailable.", "Could not connect to Cassandra");
+        die(HTTP_CODE_SERVICE_UNAVAILABLE, "", "Our database system is temporarilly unavailable.", "Could not connect to Cassandra");
         NOTREACHED();
     }
 
@@ -970,7 +961,7 @@ void snap_child::connect_cassandra()
     f_context = f_cassandra->findContext(context_name);
     if(f_context.isNull()) {
         // we connected to the database, but it is not properly initialized!?
-        die(503, "", "Our database system does not seem to be properly installed.", "The child process connected to Cassandra but it could not find the \"" + context_name + "\" context.");
+        die(HTTP_CODE_SERVICE_UNAVAILABLE, "", "Our database system does not seem to be properly installed.", "The child process connected to Cassandra but it could not find the \"" + context_name + "\" context.");
         NOTREACHED();
     }
 }
@@ -1015,7 +1006,7 @@ void snap_child::canonicalize_domain()
     f_domain_key = f_uri.domain() + f_uri.top_level_domain();
     if(!table->exists(f_domain_key)) {
         // this domain doesn't exist; i.e. that's a 404
-        die(404, "Domain Not Found", "This website does not exist. Please check the URI and make corrections as required.", "User attempt to access \"" + f_domain_key + "\" which is not defined as a domain.");
+        die(HTTP_CODE_NOT_FOUND, "Domain Not Found", "This website does not exist. Please check the URI and make corrections as required.", "User attempt to access \"" + f_domain_key + "\" which is not defined as a domain.");
         NOTREACHED();
     }
 
@@ -1024,7 +1015,7 @@ void snap_child::canonicalize_domain()
     if(value.nullValue()) {
         // Null value means an empty string or undefined column and either
         // way it's wrong here
-        die(404, "Domain Not Found", "This website does not exist. Please check the URI and make corrections as required.", "User attempt to access domain \"" + f_domain_key + "\" which does not have a valid core::rules entry.");
+        die(HTTP_CODE_NOT_FOUND, "Domain Not Found", "This website does not exist. Please check the URI and make corrections as required.", "User attempt to access domain \"" + f_domain_key + "\" which does not have a valid core::rules entry.");
         NOTREACHED();
     }
 
@@ -1118,7 +1109,7 @@ void snap_child::canonicalize_domain()
     }
 
     // no domain match, we're dead meat
-    die(404, "Domain Not Found", "This website does not exist. Please check the URI and make corrections as required.", "The domain \"" + f_uri.full_domain() + "\" did not match any domain name defined in your Snap! system. Should you remove it from your DNS?");
+    die(HTTP_CODE_NOT_FOUND, "Domain Not Found", "This website does not exist. Please check the URI and make corrections as required.", "The domain \"" + f_uri.full_domain() + "\" did not match any domain name defined in your Snap! system. Should you remove it from your DNS?");
 }
 
 
@@ -1165,7 +1156,7 @@ void snap_child::canonicalize_website()
     if(!table->exists(f_website_key))
     {
         // this website doesn't exist; i.e. that's a 404
-        die(404, "Website Not Found", "This website does not exist. Please check the URI and make corrections as required.", "User attempt to access \"" + f_website_key + "\" which was not defined as a website.");
+        die(HTTP_CODE_NOT_FOUND, "Website Not Found", "This website does not exist. Please check the URI and make corrections as required.", "User attempt to access \"" + f_website_key + "\" which was not defined as a website.");
         NOTREACHED();
     }
 
@@ -1175,7 +1166,7 @@ void snap_child::canonicalize_website()
     {
         // Null value means an empty string or undefined column and either
         // way it's wrong here
-        die(404, "Website Not Found", "This website does not exist. Please check the URI and make corrections as required.", "User attempt to access website \"" + f_website_key + "\" which does not have a valid core::rules entry.");
+        die(HTTP_CODE_NOT_FOUND, "Website Not Found", "This website does not exist. Please check the URI and make corrections as required.", "User attempt to access website \"" + f_website_key + "\" which does not have a valid core::rules entry.");
         NOTREACHED();
     }
 
@@ -1213,7 +1204,8 @@ void snap_child::canonicalize_website()
             {
             case website_variable::WEBSITE_VARIABLE_PART_PATH:
                 re_path += param_value;
-                if(!var->get_required()) {
+                if(!var->get_required())
+                {
                     // optional sub-domain
                     re_path += "?";
                 }
@@ -1222,7 +1214,8 @@ void snap_child::canonicalize_website()
             case website_variable::WEBSITE_VARIABLE_PART_PORT:
             {
                 QRegExp regex(param_value);
-                if(!regex.exactMatch(QString("%1").arg(f_uri.get_port()))) {
+                if(!regex.exactMatch(QString("%1").arg(f_uri.get_port())))
+                {
                     matching = false;
                     break;
                 }
@@ -1239,7 +1232,8 @@ void snap_child::canonicalize_website()
                 // Although I'm not 100% sure this is correct, we may
                 // instead want to use lower case in the source
                 regex.setCaseSensitivity(Qt::CaseInsensitive);
-                if(!regex.exactMatch(f_uri.protocol())) {
+                if(!regex.exactMatch(f_uri.protocol()))
+                {
                     matching = false;
                     break;
                 }
@@ -1278,7 +1272,8 @@ void snap_child::canonicalize_website()
 
             }
         }
-        if(!matching) {
+        if(!matching)
+        {
             // one of protocol, port, or query string failed
             // (path is checked below)
             continue;
@@ -1286,10 +1281,12 @@ void snap_child::canonicalize_website()
         // now check the path, if empty assume it matches and
         // also we have no extra options
         QString canonicalized_path;
-        if(!re_path.isEmpty()) {
+        if(!re_path.isEmpty())
+        {
             // match from the start, but it doesn't need to match the whole path
             QRegExp regex("^" + re_path);
-            if(regex.indexIn(uri_path) != -1) {
+            if(regex.indexIn(uri_path) != -1)
+            {
                 // we found the site including a path!
                 // TODO: should we keep the length of the captured data and
                 //       remove it from the path sent down the road?
@@ -1302,16 +1299,20 @@ void snap_child::canonicalize_website()
                 QStringList captured(regex.capturedTexts());
 
                 // note captured[0] is the full matching pattern, we ignore it
-                for(int v = 0; v < vmax; ++v) {
+                for(int v = 0; v < vmax; ++v)
+                {
                     QSharedPointer<website_variable> var(info->get_variable(v));
 
-                    if(var->get_part() == website_variable::WEBSITE_VARIABLE_PART_PATH) {
+                    if(var->get_part() == website_variable::WEBSITE_VARIABLE_PART_PATH)
+                    {
                         QString path_value(captured[v + 1]);
 
-                        if(var->get_required()) {
+                        if(var->get_required())
+                        {
                             // required, use default if empty
                             if(path_value.isEmpty()
-                            || var->get_type() == website_variable::WEBSITE_VARIABLE_TYPE_WEBSITE) {
+                            || var->get_type() == website_variable::WEBSITE_VARIABLE_TYPE_WEBSITE)
+                            {
                                 path_value = var->get_default();
                             }
                             f_uri.set_option(var->get_name(), path_value);
@@ -1319,60 +1320,73 @@ void snap_child::canonicalize_website()
                             // these make up the final canonicalized domain name
                             canonicalized_path += "/" + snap_uri::urlencode(path_value, "~");
                         }
-                        else if(!path_value.isEmpty()) {
+                        else if(!path_value.isEmpty())
+                        {
                             // optional path, set only if not empty
-                            if(var->get_type() == website_variable::WEBSITE_VARIABLE_TYPE_WEBSITE) {
+                            if(var->get_type() == website_variable::WEBSITE_VARIABLE_TYPE_WEBSITE)
+                            {
                                 path_value = var->get_default();
                             }
                             f_uri.set_option(var->get_name(), path_value);
                         }
-                        else {
+                        else
+                        {
                             // optional with a default, use it
                             path_value = var->get_default();
-                            if(!path_value.isEmpty()) {
+                            if(!path_value.isEmpty())
+                            {
                                 f_uri.set_option(var->get_name(), path_value);
                             }
                         }
                     }
                 }
             }
-            else {
+            else
+            {
                 matching = false;
             }
         }
 
-        if(matching) {
+        if(matching)
+        {
             // now we've got the protocol, port, query strings, and paths
             // so we can build the final URI that we'll use as the site key
             QString canonicalized;
             f_uri.set_option("protocol", protocol);
             canonicalized += protocol + "://" + f_website_key;
             f_uri.set_option("port", port);
-            if(port.toInt() != 80) {
+            if(port.toInt() != 80)
+            {
                 canonicalized += ":" + port;
             }
-            if(canonicalized_path.isEmpty()) {
+            if(canonicalized_path.isEmpty())
+            {
                 canonicalized += "/";
             }
-            else {
+            else
+            {
                 canonicalized += canonicalized_path;
             }
             QString canonicalized_query;
-            for(QMap<QString, QString>::const_iterator it(query.begin()); it != query.end(); ++it) {
+            for(QMap<QString, QString>::const_iterator it(query.begin()); it != query.end(); ++it)
+            {
                 f_uri.set_query_option(it.key(), it.value());
-                if(!canonicalized_query.isEmpty()) {
+                if(!canonicalized_query.isEmpty())
+                {
                     canonicalized_query += "&";
                 }
                 canonicalized_query += snap_uri::urlencode(it.key()) + "=" + snap_uri::urlencode(it.value());
             }
-            if(!canonicalized_query.isEmpty()) {
+            if(!canonicalized_query.isEmpty())
+            {
                 canonicalized += "?" + canonicalized_query;
             }
             // now we've got the site key
             f_site_key = canonicalized;
             f_original_site_key = f_site_key; // in case of a redirect...
             f_site_key_with_slash = f_site_key;
-            if(f_site_key.right(1) != "/") {
+            if(f_site_key.right(1) != "/")
+            {
                 f_site_key_with_slash += "/";
             }
             return;
@@ -1380,7 +1394,7 @@ void snap_child::canonicalize_website()
     }
 
     // no website match, we're dead meat
-    die(404, "Website Not Found", "This website does not exist. Please check the URI and make corrections as required.", "The website \"" + f_website_key + "\" did not match any website defined in your Snap! system. Should you remove it from your DNS?");
+    die(HTTP_CODE_NOT_FOUND, "Website Not Found", "This website does not exist. Please check the URI and make corrections as required.", "The website \"" + f_website_key + "\" did not match any website defined in your Snap! system. Should you remove it from your DNS?");
 }
 
 
@@ -1408,6 +1422,99 @@ void snap_child::site_redirect()
 
     // the site table is the old one, we want to switch to the new one
     f_site_table.clear();
+}
+
+
+/** \brief Redirect the user to a new page.
+ *
+ * This function forcibly redirects a user to a new page. If the path
+ * includes a protocol (is a full URI) then it is used as is. If
+ * the path includes no protocol, the current site key is prepended.
+ *
+ * The HTTP code can be specified. By default, 301 is assumed because
+ * that's the most prominent redirect code used. If a page is used to
+ * redirect dynamically, make sure to use 302 or 303 instead. You can
+ * safely use one of the following codes:
+ *
+ * \li HTTP_CODE_MOVED_PERMANENTLY (301)
+ * \li HTTP_CODE_FOUND (302)
+ * \li HTTP_CODE_SEE_OTHER (303) -- POST becomes GET
+ * \li HTTP_CODE_TEMPORARY_REDIRECT (307) -- keep same method
+ * \li HTTP_CODE_PERMANENT_REDIRECT (308) -- keep same method
+ *
+ * The path may include a query string and an anchor.
+ *
+ * \param[in] path  The full URI or the local website path to redirect the
+ *                  user browser to.
+ * \param[in] http_code  The code used to send the redirect.
+ */
+void snap_child::page_redirect(const QString& path, http_code_t http_code)
+{
+    if(f_site_key_with_slash.isEmpty())
+    {
+        die(HTTP_CODE_INTERNAL_SERVER_ERROR, "Initialization Mismatch", "An internal server error was detected while initializing the process.", "The server snap_child::page_redirect() function was called before the website got canonicalized.");
+        NOTREACHED();
+    }
+
+    if(path.contains('\n') || path.contains('\r'))
+    {
+        // if the path includes a \n or \r then the user could inject
+        // a header which could have all sorts of effects we don't even
+        // want to think about! just deny it...
+        die(HTTP_CODE_INTERNAL_SERVER_ERROR, "Hack Prevention", "Server prevented a potential hack from being applied.", "The server snap_child::page_redirect() function was called with a path that includes \n or \r and refused processing it: \"" + path + "\"");
+        NOTREACHED();
+    }
+
+    snap_uri uri;
+    if(!uri.set_uri(path))
+    {
+        // in most cases it fails because the protocol is missing
+        QString local_path(path);
+        canonicalize_path(local_path);
+        if(!uri.set_uri(get_site_key_with_slash() + local_path))
+        {
+            die(HTTP_CODE_ACCESS_DENIED, "Invalid URI", "The server prevented a redirect because it could not understand the destination URI.", "The server snap_child::page_redirect() function was called with a path that it did not like: \"" + path + "\"");
+            NOTREACHED();
+        }
+    }
+
+    f_server->attach_to_session();
+
+    // redirect the user to the specified path
+    QString http_name;
+    define_http_name(http_code, http_name);
+
+    QString status(QString("Status: %1 %2\n")
+                    .arg(static_cast<int>(http_code))
+                    .arg(http_name));
+    write(status);
+    write("Location: " + uri.get_uri() + "\n");
+    write("Expires: Sat,  1 Jan 2000 00:00:00 GMT\n");
+    write("Content-Type: text/html\n");
+
+    // compute the body ahead so we can get its size
+    // (should we support getting the content of a page? since 99.9999% of
+    // the time this content is ignored, I would say no.)
+    QString body("<html><head>"
+            "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\"/>"
+            "<title>Moved</title>"
+            "<meta http-equiv=\"Refresh\" content=\"0; url=" + uri.get_uri() + "\"/>"
+            "<meta name=\"ROBOTS\" content=\"NOINDEX\"/>" // no need for the NOFOLLOW on this one
+            "</head><body><h1>Moved</h1><p>This page has moved to <a href=\""
+                    + uri.get_uri() + "\">"
+                    + uri.get_uri() + "</a>.</p></body></html>");
+
+    write(QString("Content-Length: %1\n").arg(body.length()));
+
+    // in case there are any cookies, send them along too
+    output_cookies();
+
+    write("\n"); // header / body separator
+
+    write(body);
+
+    // XXX should we exit with 1 in this case?
+    exit(0);
 }
 
 
@@ -1559,6 +1666,12 @@ QString snap_child::snap_url(const QString& url) const
  */
 void snap_child::exit(int code)
 {
+    // make sure the socket data is pushed to the caller
+    if(f_socket != -1)
+    {
+        close(f_socket);
+        f_socket = -1;
+    }
     f_server->exit(code);
     NOTREACHED();
 }
@@ -1587,8 +1700,8 @@ bool snap_child::is_debug() const
 /** \brief Retreive a website wide parameter.
  *
  * This function reads a column from the sites table using the site key as
- * defined by the canonalization process. The function cannot be called
- * before the canonalization process ends.
+ * defined by the canonicalization process. The function cannot be called
+ * before the canonicalization process ends.
  *
  * The table is opened once and remains opened so calling this function
  * many times is not a problem. Also the libQtCassandra library caches
@@ -1640,8 +1753,8 @@ QtCassandra::QCassandraValue snap_child::get_site_parameter(const QString& name)
 /** \brief Save a website wide parameter.
  *
  * This function writes a column to the sites table using the site key as
- * defined by the canonalization process. The function cannot be called
- * before the canonalization process ends.
+ * defined by the canonicalization process. The function cannot be called
+ * before the canonicalization process ends.
  *
  * The table is opened once and remains opened so calling this function
  * many times is not a problem.
@@ -1779,20 +1892,21 @@ bool snap_child::empty_output() const
  * \param[in] err_description  HTML message about the problem.
  * \param[in] err_details  Server side text message with details that are logged only.
  */
-void snap_child::die(int err_code, QString err_name, const QString& err_description, const QString& err_details)
+void snap_child::die(http_code_t err_code, QString err_name, const QString& err_description, const QString& err_details)
 {
     try
     {
         // define a default error name if undefined
-        define_error_name(err_code, err_name);
+        define_http_name(err_code, err_name);
 
         // log the error
-        SNAP_LOG_FATAL("snap child process: ")(err_details)(" (")(err_code)(" ")(err_name)(": ")(err_description)(")");
+        SNAP_LOG_FATAL("snap child process: ")(err_details)(" (")(static_cast<int>(err_code))(" ")(err_name)(": ")(err_description)(")");
 
-        // HTTP header
-        // i.e. "Status: HTTP/1.1 503 Service Unavailable"
-        QString status(QString("%1 %2 %3")
-                .arg(snapenv("SERVER_PROTOCOL")).arg(err_code).arg(err_name));
+        // On error we do not return the HTTP protocol, only the Status field
+        // it just needs to be first to make sure it works right
+        QString status(QString("Status: %1 %2\n")
+                .arg(static_cast<int>(err_code))
+                .arg(err_name));
         write(status);
 
         // a date in the past
@@ -1801,22 +1915,45 @@ void snap_child::die(int err_code, QString err_name, const QString& err_descript
         // content type is HTML
         write("Content-type: text/html\n");
 
+        // in case there are any cookies, send them along too
+        output_cookies();
+
         // end header, start body
         write("\n");
 
         // Generate the signature
-        QtCassandra::QCassandraValue site_name(get_site_parameter(get_name(SNAP_NAME_CORE_SITE_NAME)));
-        QString signature("<a href=\"" + get_site_key() + "\">" + site_name.stringValue() + "</a>");
-        snap::server::instance()->improve_signature(f_uri.path(), signature);
+        QString signature;
+        const QString site_key(get_site_key());
+        if(!f_cassandra.isNull())
+        {
+            // TODO: the description could also come from a user defined page
+            //       so that way it can get translated (only for some
+            //       4XX errors though)
+
+            QtCassandra::QCassandraValue site_name(get_site_parameter(get_name(SNAP_NAME_CORE_SITE_NAME)));
+            signature = "<a href=\"" + get_site_key() + "\">" + site_name.stringValue() + "</a>";
+            f_server->improve_signature(f_uri.path(), signature);
+        }
+        else if(!site_key.isEmpty())
+        {
+            signature = "<a href=\"" + get_site_key() + "\">" + get_site_key() + "</a>";
+            f_server->improve_signature(f_uri.path(), signature);
+        }
+        // else -- no signature...
 
         // HTML output
-        QString html(QString("<html><head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\"/><title>Snap Server Error</title></head><body><h1>%1 %2</h1><p>%3</p><p>%4</p></body></html>\n")
-                .arg(err_code).arg(err_name).arg(err_description).arg(signature));
+        QString html(QString("<html><head>"
+                        "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\"/>"
+                        "<meta name=\"ROBOTS\" content=\"NOINDEX,NOFOLLOW\"/>"
+                        "<title>Snap Server Error</title>"
+                        "</head>"
+                        "<body><h1>%1 %2</h1><p>%3</p><p>%4</p></body></html>\n")
+                .arg(static_cast<int>(err_code))
+                .arg(err_name)
+                .arg(err_description)
+                .arg(signature));
         write(html);
 
-        // make sure the socket data is pushed to the caller
-        close(f_socket);
-        f_socket = -1;
     }
     catch(...)
     {
@@ -1828,78 +1965,103 @@ void snap_child::die(int err_code, QString err_name, const QString& err_descript
     exit(1);
 }
 
-/** \brief Ensure that the err_name variable is not empty.
+/** \brief Ensure that the http_name variable is not empty.
  *
- * This function sets the content of the \p err_name variable if empty. It
- * uses the \p err_code value to define a default message in \p err_name.
+ * This function sets the content of the \p http_name variable if empty. It
+ * uses the \p http_code value to define a default message in \p http_name.
  *
- * If the \p err_name string is not empty then it is not modified.
+ * If the \p http_name string is not empty then it is not modified.
  *
- * \param[in] err_code  The code used to determine the err_name value.
- * \param[in,out] err_name  The error name to set if not already defined.
+ * \param[in] http_code  The code used to determine the http_name value.
+ * \param[in,out] http_name  The http request name to set if not already defined.
  */
-void snap_child::define_error_name(int err_code, QString& err_name)
+void snap_child::define_http_name(http_code_t http_code, QString& http_name)
 {
-    if(err_name.isEmpty()) {
-        switch(err_code) {
-        case 400: err_name = "Bad Request"; break;
-        case 401: err_name = "Unauthorized"; break;
-        case 402: err_name = "Payment Required"; break;
-        case 403: err_name = "Forbidden"; break;
-        case 404: err_name = "Not Found"; break;
-        case 405: err_name = "Method Not Allowed"; break;
-        case 406: err_name = "Not Acceptable"; break;
-        case 407: err_name = "Proxy Authentication Required"; break;
-        case 408: err_name = "Request Timeout"; break;
-        case 409: err_name = "Conflict"; break;
-        case 410: err_name = "Gone"; break;
-        case 411: err_name = "Length Required"; break;
-        case 412: err_name = "Precondition Failed"; break;
-        case 413: err_name = "Request Entity Too Large"; break;
-        case 414: err_name = "Request-URI Too Long"; break;
-        case 415: err_name = "Unsupported Media Type"; break;
-        case 416: err_name = "Requested Range Not Satisfiable"; break;
-        case 417: err_name = "Expectation Failed"; break;
-        case 418: err_name = "I'm a teapot"; break;
-        case 420: err_name = "Enhance Your Calm"; break;
-        case 422: err_name = "Unprocessable Entity"; break;
-        case 423: err_name = "Locked"; break;
-        case 424: err_name = "Failed Dependency"; break;
-        //case 424: err_name = "Method Failure"; break;
-        case 425: err_name = "Unordered Collection"; break;
-        case 426: err_name = "Upgrade Required"; break;
-        case 428: err_name = "Precondition Required"; break;
-        case 429: err_name = "Too Many Requests"; break;
-        case 431: err_name = "Request Header Fields Too Large"; break;
-        case 444: err_name = "No Response"; break;
-        case 449: err_name = "Retry With"; break;
-        case 450: err_name = "Blocked by Windows Parental Controls"; break;
-        case 451: err_name = "Unavailable For Legal Reasons"; break;
-        //case 451: err_name = "Redirect"; break;
-        case 494: err_name = "Request Header Too Large"; break;
-        case 495: err_name = "Cert Error"; break;
-        case 496: err_name = "No Cert"; break;
-        case 497: err_name = "HTTP to HTTPS"; break;
-        case 499: err_name = "Client Closed Request"; break;
+    if(http_name.isEmpty()) {
+        switch(http_code) {
+        case 100: http_name = "Continue"; break;
+        case 101: http_name = "Switching Protocols"; break;
+        case 102: http_name = "Processing"; break;
 
-        case 500: err_name = "Internal Server Error"; break;
-        case 501: err_name = "Not Implemented"; break;
-        case 502: err_name = "Bad Gateway"; break;
-        case 503: err_name = "Service Unavailable"; break;
-        case 504: err_name = "Gateway Timeout"; break;
-        case 505: err_name = "HTTP Version Not Supported"; break;
-        case 506: err_name = "Variants Also Negotiates"; break;
-        case 507: err_name = "Insufficiant Storage"; break;
-        case 508: err_name = "Loop Detected"; break;
-        case 509: err_name = "Bandwidth Limit Exceeded"; break;
-        case 510: err_name = "Not Extended"; break;
-        case 511: err_name = "Network Authentication Required"; break;
-        case 531: err_name = "Access Denied"; break;
-        case 598: err_name = "Network read timeout error"; break;
-        case 599: err_name = "Network connect timeout error"; break;
+        case 200: http_name = "OK"; break;
+        case 201: http_name = "Created"; break;
+        case 202: http_name = "Accepted"; break;
+        case 203: http_name = "Non-Authoritative Information"; break;
+        case 204: http_name = "No Content"; break;
+        case 205: http_name = "Reset Content"; break;
+        case 206: http_name = "Partial Content"; break;
+        case 207: http_name = "Multi-Status"; break;
+        case 208: http_name = "Already Reported"; break;
+        case 226: http_name = "Instance-Manipulation Used"; break;
+
+        case 300: http_name = "Multiple Choice"; break;
+        case 301: http_name = "Moved Permanently"; break;
+        case 302: http_name = "Found"; break;
+        case 303: http_name = "See Other"; break; // POST becomes GET
+        case 304: http_name = "Not Modified"; break;
+        case 305: http_name = "Use Proxy"; break;
+        case 306: http_name = "Switch Proxy"; break;
+        case 307: http_name = "Temporary Redirect"; break; // keep same method
+        case 308: http_name = "Permanent Redirect"; break; // keep same method
+
+        case 400: http_name = "Bad Request"; break;
+        case 401: http_name = "Unauthorized"; break;
+        case 402: http_name = "Payment Required"; break;
+        case 403: http_name = "Forbidden"; break;
+        case 404: http_name = "Not Found"; break;
+        case 405: http_name = "Method Not Allowed"; break;
+        case 406: http_name = "Not Acceptable"; break;
+        case 407: http_name = "Proxy Authentication Required"; break;
+        case 408: http_name = "Request Timeout"; break;
+        case 409: http_name = "Conflict"; break;
+        case 410: http_name = "Gone"; break;
+        case 411: http_name = "Length Required"; break;
+        case 412: http_name = "Precondition Failed"; break;
+        case 413: http_name = "Request Entity Too Large"; break;
+        case 414: http_name = "Request-URI Too Long"; break;
+        case 415: http_name = "Unsupported Media Type"; break;
+        case 416: http_name = "Requested Range Not Satisfiable"; break;
+        case 417: http_name = "Expectation Failed"; break;
+        case 418: http_name = "I'm a teapot"; break;
+        case 420: http_name = "Enhance Your Calm"; break;
+        case 422: http_name = "Unprocessable Entity"; break;
+        case 423: http_name = "Locked"; break;
+        case 424: http_name = "Failed Dependency"; break;
+        //case 424: http_name = "Method Failure"; break;
+        case 425: http_name = "Unordered Collection"; break;
+        case 426: http_name = "Upgrade Required"; break;
+        case 428: http_name = "Precondition Required"; break;
+        case 429: http_name = "Too Many Requests"; break;
+        case 431: http_name = "Request Header Fields Too Large"; break;
+        case 444: http_name = "No Response"; break;
+        case 449: http_name = "Retry With"; break;
+        case 450: http_name = "Blocked by Windows Parental Controls"; break;
+        case 451: http_name = "Unavailable For Legal Reasons"; break;
+        //case 451: http_name = "Redirect"; break;
+        case 494: http_name = "Request Header Too Large"; break;
+        case 495: http_name = "Cert Error"; break;
+        case 496: http_name = "No Cert"; break;
+        case 497: http_name = "HTTP to HTTPS"; break;
+        case 499: http_name = "Client Closed Request"; break;
+
+        case 500: http_name = "Internal Server Error"; break;
+        case 501: http_name = "Not Implemented"; break;
+        case 502: http_name = "Bad Gateway"; break;
+        case 503: http_name = "Service Unavailable"; break;
+        case 504: http_name = "Gateway Timeout"; break;
+        case 505: http_name = "HTTP Version Not Supported"; break;
+        case 506: http_name = "Variants Also Negotiates"; break;
+        case 507: http_name = "Insufficiant Storage"; break;
+        case 508: http_name = "Loop Detected"; break;
+        case 509: http_name = "Bandwidth Limit Exceeded"; break;
+        case 510: http_name = "Not Extended"; break;
+        case 511: http_name = "Network Authentication Required"; break;
+        case 531: http_name = "Access Denied"; break;
+        case 598: http_name = "Network read timeout error"; break;
+        case 599: http_name = "Network connect timeout error"; break;
 
         default:
-            err_name = "Unknown Error Code";
+            http_name = "Unknown HTTP Code";
             break;
 
         }
@@ -2073,16 +2235,57 @@ void snap_child::set_header(const QString& name, const QString& value)
  *
  * \param[in] name  The name of the cookie.
  * \param[in] cookie  The cookie value, expiration, etc.
+ *
+ * \sa cookie()
+ * \sa cookie_is_defined()
+ * \sa output_cookies()
  */
 void snap_child::set_cookie(const http_cookie& cookie_info)
 {
     f_cookies[cookie_info.get_name()] = cookie_info;
 }
 
+
+/** \brief Output the cookies in your header.
+ *
+ * Since we generate HTTP headers in different places but still want to
+ * always generate the cookies if possible (if they are available) we
+ * have this function to add the cookies.
+ *
+ * This function directly outputs the cookies to the socket of the snap.cgi
+ * tool.
+ *
+ * \sa cookie()
+ * \sa set_cookie()
+ * \sa cookie_is_defined()
+ */
+void snap_child::output_cookies()
+{
+    if(!f_cookies.isEmpty())
+    {
+        for(cookie_map_t::const_iterator it(f_cookies.begin());
+                                         it != f_cookies.end();
+                                         ++it)
+        {
+            // the to_http_header() ensures only ASCII characters
+            // are used so we can use toLatin1() below
+            QString cookie_header(it.value().to_http_header() + "\n");
+printf("snap session = [%s]?\n", cookie_header.toLatin1().data());
+            write(cookie_header.toLatin1().data());
+        }
+    }
+}
+
+
 /** \brief Check whether a header is defined.
  *
  * This function searches for the specified name in the list of
  * headers and returns true if it finds it.
+ *
+ * \warning
+ * Cookies are headers, but these are managed using the cookie manager
+ * which offers functions such as set_cookie(), cookie_is_defined(),
+ * and cookie().
  *
  * \param[in] name  Name of the header to check for.
  *
@@ -2229,13 +2432,13 @@ void snap_child::init_plugins()
     // load the plugins
     if(!snap::plugins::load(f_server->get_parameter("plugins"), std::static_pointer_cast<snap::plugins::plugin>(f_server), list_of_plugins))
     {
-        die(503, "", "Server encountered problems with its plugins.", "An error occured loading the server plugins.");
+        die(HTTP_CODE_SERVICE_UNAVAILABLE, "Plugin Unavailable", "Server encountered problems with its plugins.", "An error occured loading the server plugins.");
         NOTREACHED();
     }
 
     // now boot the plugin system
-    snap::server::instance()->bootstrap(this);
-    snap::server::instance()->init();
+    f_server->bootstrap(this);
+    f_server->init();
 
     // run updates if any
     update_plugins(list_of_plugins);
@@ -2340,7 +2543,7 @@ void snap_child::update_plugins(const QStringList& list_of_plugins)
     if(f_new_content)
     {
         f_new_content = false;
-        snap::server::instance()->save_content();
+        f_server->save_content();
     }
 }
 
@@ -2363,14 +2566,14 @@ void snap_child::new_content()
 
 /** \brief Canonalize a path or URL for this plugin.
  *
- * This function is used to canonilize the paths used to check
+ * This function is used to canonicalize the paths used to check
  * URLs. This is used against the paths offered by other plugins
  * and the paths arriving from the HTTP server. This way, we know
  * that two paths will match 1 to 1.
  *
- * The canonalization is done in place.
+ * The canonicalization is done in place.
  *
- * Note that the canonalization needs to occur before the
+ * Note that the canonicalization needs to occur before the
  * regular expresions are checked. Also, internal paths that
  * include regular expressions are not getting canonicalized
  * since we may otherwise break the regular expression
@@ -2495,7 +2698,10 @@ void snap_child::execute()
 
     // give a chance to the system to use cookies such as the
     // cookie used to mark a user as logged in to kick in early
-    snap::server::instance()->process_cookies();
+    f_server->process_cookies();
+
+    // let plugins detach whatever data they attached to the user session
+    f_server->detach_from_session();
 
     // if the user POSTed something, manage that content first, the
     // effect is often to redirect the user in which case we want to
@@ -2504,7 +2710,7 @@ void snap_child::execute()
     // return the "form results".)
     if(f_has_post)
     {
-        snap::server::instance()->process_post(f_uri.path());
+        f_server->process_post(f_uri.path());
     }
 
     // generate the output
@@ -2513,14 +2719,14 @@ void snap_child::execute()
     // path::primary_owner of the content that match f_uri.path() and
     // then calls the corresponding on_path_execute() function of that
     // primary owner
-    snap::server::instance()->execute(f_uri.path());
+    f_server->execute(f_uri.path());
 
     if(f_output.buffer().size() == 0)
     {
         // somehow nothing was output... at this time output some random HTML
         // (we should have an error instead)
         //write("Status: HTTP/1.1 200 OK\n"); -- that's the default
-        write("Expires: Sun, 19 Nov 1978 05:00:00 GMT\n"
+        write("Expires: Sat,  1 Jan 2000 00:00:00 GMT\n"
               "Content-Type: text/html\n"
               "\n"
               "<html><head><title>Welcome to Snap!</title></head><body>\n"
@@ -2576,17 +2782,7 @@ void snap_child::execute()
 //printf("%s", (it.value() + "\n").toLatin1().data());
             }
         }
-        if(!f_cookies.isEmpty())
-        {
-            for(cookie_map_t::const_iterator it(f_cookies.begin());
-                                             it != f_cookies.end();
-                                             ++it)
-            {
-                QString cookie_header(it.value().to_http_header() + "\n");
-printf("snap session = [%s]?\n", cookie_header.toUtf8().data());
-                write(cookie_header.toLatin1().data());
-            }
-        }
+        output_cookies();
         // end the header and start the body
         write("\n");
 //printf("\n");
@@ -2598,6 +2794,7 @@ printf("snap session = [%s]?\n", cookie_header.toUtf8().data());
         }
     }
 }
+
 
 /** \brief Convert a time/date value to a string.
  *

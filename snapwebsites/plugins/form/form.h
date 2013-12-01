@@ -59,7 +59,7 @@ public:
 	SNAP_SIGNAL(form_element, (form *f), (f));
 	SNAP_SIGNAL(validate_post_for_widget, (const QString& cpath, sessions::sessions::session_info& info, const QDomElement& widget, const QString& widget_name, const QString& widget_type, bool is_secret), (cpath, info, widget, widget_name, widget_type, is_secret));
 
-	QDomDocument form_to_html(const sessions::sessions::session_info& info, const QDomDocument& xml);
+	QDomDocument form_to_html(sessions::sessions::session_info& info, const QDomDocument& xml);
 	void add_form_elements(QDomDocument& add);
 	void add_form_elements(QString& filename);
 

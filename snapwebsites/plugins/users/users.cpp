@@ -17,7 +17,6 @@
 
 #include "users.h"
 #include "../content/content.h"
-#include "../sessions/sessions.h"
 #include "../messages/messages.h"
 #include "../sendmail/sendmail.h"
 #include "not_reached.h"
@@ -87,6 +86,11 @@ const char *get_name(name_t name)
 
     case SNAP_NAME_USERS_PATH:
         return "user";
+
+    case SNAP_NAME_USERS_SESSION_COOKIE:
+        // cookie names cannot include ':' so I use "__" to represent
+        // the namespace separation
+        return "users__snap_session";
 
     case SNAP_NAME_USERS_STATUS:
         return "status";
@@ -241,6 +245,8 @@ void users::on_bootstrap(::snap::snap_child *snap)
     SNAP_LISTEN(users, "path", path::path, can_handle_dynamic_path, _1, _2);
     SNAP_LISTEN(users, "layout", layout::layout, generate_header_content, _1, _2, _3, _4);
     //SNAP_LISTEN(users, "layout", layout::layout, generate_page_content, _1, _2, _3, _4);
+
+    f_info.reset(new sessions::sessions::session_info);
 }
 
 
@@ -256,48 +262,90 @@ void users::on_init()
 /** \brief Process the cookies.
  *
  * This function is our opportunity to log the user in. We check for the
- * snap_session cookie and use it to know whether the user is currently
- * logged in.
+ * cookie named SNAP_NAME_USERS_SESSION_COOKIE and use it to know whether
+ * the user is currently logged in or not.
+ *
+ * Note that this session is always created and is used by all the other
+ * plugins as the current user session.
+ *
+ * Only this very function also checks whether the user is currently
+ * logged in and defines the user key (email address) if so. Otherwise the
+ * session can be used for things such as saving messages between redirects.
  */
 void users::on_process_cookies()
 {
+    bool create_new_session(true);
+
     // any snap session?
-    if(!f_snap->cookie_is_defined("snap_session"))
+    if(f_snap->cookie_is_defined(get_name(SNAP_NAME_USERS_SESSION_COOKIE)))
     {
-        return;
+        // is that session a valid user session?
+        QString session_cookie(f_snap->cookie(get_name(SNAP_NAME_USERS_SESSION_COOKIE)));
+        QStringList parameters(session_cookie.split("/"));
+        QString session_key(parameters[0]);
+        QString random_key;
+        if(parameters.size() > 1)
+        {
+            random_key = parameters[1];
+        }
+        sessions::sessions::instance()->load_session(session_key, *f_info, false);
+        const QString path(f_info->get_object_path());
+printf("compare: %d <> %d\n", f_info->get_session_random(), random_key.toInt());
+        if(f_info->get_session_type() == sessions::sessions::session_info::SESSION_INFO_VALID
+        && f_info->get_session_id() == USERS_SESSION_ID_LOG_IN_SESSION
+        && f_info->get_session_random() == random_key.toInt()
+        && path.left(6) == "/user/")
+        {
+            // this session qualifies as a log in session
+            // so now verify the user
+            const QString key(path.mid(6));
+            // not authenticated user?
+            if(!key.isEmpty())
+            {
+                QSharedPointer<QtCassandra::QCassandraTable> table(get_users_table());
+                if(table->exists(key))
+                {
+                    // this is a valid user email address!
+                    f_user_key = key;
+                }
+            }
+            create_new_session = false;
+        }
     }
 
-    // is that session a valid user session?
-    sessions::sessions::session_info info;
-    QString user_session(f_snap->cookie("snap_session"));
-    sessions::sessions::instance()->load_session(user_session, info);
-    const QString path(info.get_object_path());
-    if(info.get_session_type() != sessions::sessions::session_info::SESSION_INFO_VALID
-    || info.get_session_id() != USERS_SESSION_ID_LOG_IN_SESSION
-    || path.left(6) != "/user/")
+    // create or refresh the session
+    if(create_new_session)
     {
-        // this is not a log in session, so we ignore it
-        return;
+        // create a new session
+        f_info->set_session_type(sessions::sessions::session_info::SESSION_INFO_USER);
+        f_info->set_session_id(USERS_SESSION_ID_LOG_IN_SESSION);
+        f_info->set_plugin_owner("users"); // ourselves
+        //f_info->set_page_path(); -- default is fine, we do not use the path
+        f_info->set_object_path("/user/"); // no user id for the anonymous user
+        f_info->set_time_to_live(86400 * 5);  // 5 days
+        sessions::sessions::instance()->create_session(*f_info);
+    }
+    else
+    {
+        // extend the session
+        f_info->set_time_to_live(86400 * 5);  // 5 days
+        sessions::sessions::instance()->save_session(*f_info);
     }
 
-    // valid session, now verify the user
-    const QString key(path.mid(6));
-    QSharedPointer<QtCassandra::QCassandraTable> table(get_users_table());
-    if(!table->exists(key))
-    {
-        // this is not a valid user email address
-        return;
-    }
-    f_user_key = key;
-
-    // refresh the session and the cookie (so it extends it)
-    // TBD: here Drupal refreshes the session identifier, should we
-    //      as well? it could be problematic though
-    info.set_time_to_live(86400 * 5);  // 5 days
-    http_cookie cookie(f_snap, "snap_session", user_session);
+    //
+    // TODO here we want to add a parameter to the session, a parameter
+    //      which changes each time this user accesses the website
+    //      and that additional identifier must also match (we send it
+    //      in the cookie)
+    //
+    http_cookie cookie(
+            f_snap,
+            get_name(SNAP_NAME_USERS_SESSION_COOKIE),
+            QString("%1/%2").arg(f_info->get_session_key()).arg(f_info->get_session_random())
+        );
     cookie.set_expire_in(86400 * 5);  // 5 days
     f_snap->set_cookie(cookie);
-//printf("session id [%s]\n", user_session.toUtf8().data());
+//printf("session id [%s]\n", f_info->get_session_key().toUtf8().data());
 }
 
 
@@ -641,7 +689,6 @@ void users::generate_verify_form(QDomElement& body)
 void users::verified_user(const QString& cpath, QDomElement& body)
 {
     QString session_id(cpath.mid(7));
-printf("path is [%s] session [%s]\n", cpath.toUtf8().data(), session_id.toUtf8().data());
     sessions::sessions::session_info info;
     sessions::sessions *session(sessions::sessions::instance());
     session->load_session(session_id, info);
@@ -662,8 +709,8 @@ printf("path is [%s] session [%s]\n", cpath.toUtf8().data(), session_id.toUtf8()
                     + sessions::sessions::session_info::session_type_to_string(info.get_session_type()) + ".",
             true
         );
-        // TODO -- redirect the user to the verification form
-        generate_verify_form(body);
+        // redirect the user to the verification form
+        f_snap->page_redirect("verify", snap_child::HTTP_CODE_SEE_OTHER);
         return;
     }
 
@@ -680,8 +727,8 @@ printf("path is [%s] session [%s]\n", cpath.toUtf8().data(), session_id.toUtf8()
             "user account for " + email + " does not exist at this point",
             true
         );
-        // TODO -- redirect the user to the verification form
-        generate_verify_form(body);
+        // redirect the user to the log in page
+        f_snap->page_redirect("login", snap_child::HTTP_CODE_SEE_OTHER);
         return;
     }
 
@@ -771,12 +818,12 @@ QDomDocument users::on_get_xml_form(const QString& cpath)
             QFile file(":/xml/users/verify-form.xml");
             if(!file.open(QIODevice::ReadOnly))
             {
-                SNAP_LOG_FATAL("users::on_get_xml_form() could not open register-form.xml resource file.");
+                SNAP_LOG_FATAL("users::on_get_xml_form() could not open verify-form.xml resource file.");
                 return invalid_form;
             }
             if(!verify_form.setContent(&file, true))
             {
-                SNAP_LOG_FATAL("users::on_get_xml_form() could not parse register-form.xml resource file.");
+                SNAP_LOG_FATAL("users::on_get_xml_form() could not parse verify-form.xml resource file.");
                 return invalid_form;
             }
         }
@@ -900,15 +947,14 @@ void users::process_login_form()
             && memcmp(hash.data(), saved_hash.data(), hash.size()) == 0)
             {
                 // User credentials are correct, create a cookie
-                sessions::sessions::session_info info;
-                info.set_session_type(sessions::sessions::session_info::SESSION_INFO_USER);
-                info.set_session_id(USERS_SESSION_ID_LOG_IN_SESSION);
-                info.set_plugin_owner("users"); // ourselves
-                //info.set_page_path(); -- default is okay
-                info.set_object_path("/user/" + key);
-                info.set_time_to_live(86400 * 5);  // 5 days
-                QString session(sessions::sessions::instance()->create_session(info));
-                http_cookie cookie(f_snap, "snap_session", session);
+                f_info->set_session_type(sessions::sessions::session_info::SESSION_INFO_USER);
+                f_info->set_session_id(USERS_SESSION_ID_LOG_IN_SESSION);
+                f_info->set_plugin_owner("users"); // ourselves
+                //f_info->set_page_path(); -- default is okay
+                f_info->set_object_path("/user/" + key);
+                f_info->set_time_to_live(86400 * 5);  // 5 days
+                QString session_key(sessions::sessions::instance()->create_session(*f_info));
+                http_cookie cookie(f_snap, get_name(SNAP_NAME_USERS_SESSION_COOKIE), session_key);
                 cookie.set_expire_in(86400 * 5);  // 5 days
                 f_snap->set_cookie(cookie);
 
@@ -1189,6 +1235,54 @@ void users::verify_email(const QString& email)
     // really this just saves it in the database, the sendmail itself
     // happens on the backend; see sendmail::on_backend_action()
     sendmail::sendmail::instance()->post_email(e);
+}
+
+
+/** \brief Save the specified data to the user session.
+ *
+ * This function is used to attach data to the current user session so it
+ * can be retrieved on a later request. Note that the detach_from_session()
+ * will also delete the data from the session as it is expected to only be
+ * used once. If you need it again, then call the attach_to_session()
+ * function again (in the grand scheme of things it should be 100%
+ * automatic!)
+ *
+ * The \p name parameter should be qualified (i.e. "messages::messages").
+ *
+ * The data to be attached must be in the form of a string. If you are saving
+ * a large structure, or set of structures, make sure to use serialization
+ * first.
+ *
+ * \param[in] name  The name of the cell that is to be used to save the data.
+ * \param[in] data  The data to save in the session.
+ *
+ * \sa detach_from_session()
+ */
+void users::attach_to_session(const QString& name, const QString& data)
+{
+    sessions::sessions::instance()->attach_to_session(*f_info, name, data);
+}
+
+
+/** \brief Retrieve the specified data from the user session.
+ *
+ * This function is used to retrieve data that was previously attached
+ * to the user session with a call to the attach_to_session() function.
+ *
+ * Note that the data retreived in this way is deleted from the session
+ * since we do not want to offer this data more than once (although in
+ * some cases it may be necessary to do so, then the attach_to_session()
+ * should be called again.)
+ *
+ * \param[in] name  The name of the cell that is to be used to save the data.
+ *
+ * \return The data read from the session if any, otherwise an empty string.
+ *
+ * \sa attach_to_session()
+ */
+QString users::detach_from_session(const QString& name) const
+{
+    return sessions::sessions::instance()->detach_from_session(*f_info, name);
 }
 
 

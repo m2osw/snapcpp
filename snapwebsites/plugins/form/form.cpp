@@ -155,7 +155,7 @@ QSharedPointer<QtCassandra::QCassandraTable> form::get_form_table()
  *
  * \return The HTML document
  */
-QDomDocument form::form_to_html(const sessions::sessions::session_info& info, const QDomDocument& xml)
+QDomDocument form::form_to_html(sessions::sessions::session_info& info, const QDomDocument& xml)
 {
     QDomDocument doc_output("body");
     if(!f_form_initialized)
@@ -358,16 +358,16 @@ void form::on_process_post(const QString& uri_path)
         break;
 
     case sessions::sessions::session_info::SESSION_INFO_MISSING:
-        f_snap->die(410, "Form Session Gone", "It looks like you attempted to submit a form without first loading it.", "User sent a form with a form session identifier that is not available.");
+        f_snap->die(snap_child::HTTP_CODE_GONE, "Form Session Gone", "It looks like you attempted to submit a form without first loading it.", "User sent a form with a form session identifier that is not available.");
         NOTREACHED();
         return;
 
     case sessions::sessions::session_info::SESSION_INFO_OUT_OF_DATE:
-        messages->set_http_error(410, "Form Timeout", "Sorry! You sent this request back to Snap! way too late. It timed out. Please re-enter your information and re-submit.", "User did not click the submit button soon enough, the server session timed out.", true);
+        messages->set_http_error(snap_child::HTTP_CODE_GONE, "Form Timeout", "Sorry! You sent this request back to Snap! way too late. It timed out. Please re-enter your information and re-submit.", "User did not click the submit button soon enough, the server session timed out.", true);
         return;
 
     case sessions::sessions::session_info::SESSION_INFO_USED_UP:
-        messages->set_http_error(409, "Form Already Submitted", "This form was already processed. If you clicked Reload, this error is expected.", "The user submitted the same form more than once.", true);
+        messages->set_http_error(snap_child::HTTP_CODE_CONFLICT, "Form Already Submitted", "This form was already processed. If you clicked Reload, this error is expected.", "The user submitted the same form more than once.", true);
         return;
 
     default:
@@ -382,7 +382,7 @@ void form::on_process_post(const QString& uri_path)
     && info.get_object_path() != cpath)
     {
         // the path was tempered with?
-        f_snap->die(406, "Not Acceptable", "The POST request does not correspond to the form it was defined for.", "User POSTed a request against form \"" + cpath + "\" with an incompatible page (" + info.get_page_path() + ") or object (" + info.get_object_path() + ") path.");
+        f_snap->die(snap_child::HTTP_CODE_NOT_ACCEPTABLE, "Not Acceptable", "The POST request does not correspond to the form it was defined for.", "User POSTed a request against form \"" + cpath + "\" with an incompatible page (" + info.get_page_path() + ") or object (" + info.get_object_path() + ") path.");
         NOTREACHED();
     }
 
@@ -393,14 +393,14 @@ void form::on_process_post(const QString& uri_path)
     {
         // we've got a problem, that plugin doesn't even exist?!
         // (it could happen assuming someone is removing plugins while someone else submits a form)
-        f_snap->die(403, "Forbidden", "The POST request is not attached to a currently supported plugin.", "Somehow the user posted a form that has a plugin name which is not currently installed.");
+        f_snap->die(snap_child::HTTP_CODE_FORBIDDEN, "Forbidden", "The POST request is not attached to a currently supported plugin.", "Somehow the user posted a form that has a plugin name which is not currently installed.");
         NOTREACHED();
     }
     form_post *fp(dynamic_cast<form_post *>(p));
     if(fp == NULL)
     {
         // the programmer forgot to derive from form_post?!
-        throw std::logic_error("you cannot use your plugin as a supporting forms without also deriving it from form_post");
+        throw std::logic_error("you cannot use your plugin as supporting forms without also deriving it from form_post");
     }
 
     // retrieve the XML form information so we can verify the data
@@ -448,7 +448,7 @@ void form::on_process_post(const QString& uri_path)
         validate_post_for_widget(cpath, info, widget, widget_name, widget_type, is_secret);
         if(info.get_session_type() != sessions::sessions::session_info::SESSION_INFO_VALID)
         {
-            // it was not valid mark the widgets as errorneous (i.e. so we
+            // it was not valid so mark the widgets as errorneous (i.e. so we
             // can display it with an error message)
             if(messages->get_error_count() == errcnt
             && messages->get_warning_count() == warncnt)
@@ -464,7 +464,7 @@ void form::on_process_post(const QString& uri_path)
                     false
                 );
             }
-            messages::messages::message msg(messages->get_last_message());
+            const messages::messages::message& msg(messages->get_last_message());
 
             // Add the following to the widget so we can display the
             // widget as having an error and show the error on request

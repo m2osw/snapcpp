@@ -107,6 +107,8 @@ public:
 	SNAP_SIGNAL(init, (), ());
 	SNAP_SIGNAL(update, (int64_t last_updated), (last_updated));
 	SNAP_SIGNAL(process_cookies, (), ());
+	SNAP_SIGNAL(attach_to_session, (), ());
+	SNAP_SIGNAL(detach_from_session, (), ());
 	SNAP_SIGNAL(process_post, (const QString& url), (url));
 	SNAP_SIGNAL(execute, (const QString& url), (url));
 	SNAP_SIGNAL(register_backend_action, (backend_action_map_t& actions), (actions));
