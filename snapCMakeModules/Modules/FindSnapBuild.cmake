@@ -47,7 +47,7 @@ function( ConfigureMakeProject )
 		set( SRC_DIR   ${CMAKE_SOURCE_DIR}/${ARG_PROJECT_NAME} )
 		set( BUILD_DIR ${CMAKE_BINARY_DIR}/${ARG_PROJECT_NAME} )
 	endif()
-	set( DIST_DIR ${CMAKE_BINARY_DIR}/dist )
+	set( SNAP_DIST_DIR "${CMAKE_BINARY_DIR}/dist" CACHE PATH "Destination installation folder." )
 	if( ARG_DISTFILE_PATH )
 		set( RM_DIR ${SRC_DIR}   )
 		else()
@@ -81,7 +81,7 @@ function( ConfigureMakeProject )
 		set( CONFIGURE_TARGETS ${BUILD_DIR}/config.log  )
 		add_custom_command(
 			OUTPUT ${CONFIGURE_TARGETS}
-			COMMAND ${BUILD_DIR}/configure --prefix=${DIST_DIR} ${ARG_CONFIG_ARGS}
+			COMMAND ${BUILD_DIR}/configure --prefix=${SNAP_DIST_DIR} ${ARG_CONFIG_ARGS}
 				1> ${BUILD_DIR}/${ARG_PROJECT_NAME}_configure.log
 				2> ${BUILD_DIR}/${ARG_PROJECT_NAME}_configure.err
 			DEPENDS ${ARG_PROJECT_NAME}-depends
@@ -93,7 +93,7 @@ function( ConfigureMakeProject )
 		add_custom_command(
 			OUTPUT ${CONFIGURE_TARGETS}
 			COMMAND ${CMAKE_COMMAND}
-				-DCMAKE_INSTALL_PREFIX:PATH=${DIST_DIR}
+				-DCMAKE_INSTALL_PREFIX:PATH=${SNAP_DIST_DIR}
 				-DCMAKE_MODULE_PATH:PATH=${CMAKE_SOURCE_DIR}/snapCMakeModules/Modules
 				${ARG_CONFIG_ARGS}
 				${SRC_DIR}

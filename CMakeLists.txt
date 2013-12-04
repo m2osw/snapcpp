@@ -84,22 +84,23 @@ ConfigureMakeProject(
 ################################################################################
 # Snap libraries
 #
-ConfigureMakeProject( PROJECT_NAME advgetopt       DEPENDS controlled_vars )
-ConfigureMakeProject( PROJECT_NAME cassview        DEPENDS libQtCassandra )
-ConfigureMakeProject( PROJECT_NAME controlled_vars )
+ConfigureMakeProject( PROJECT_NAME snapCMakeModules )
+ConfigureMakeProject( PROJECT_NAME advgetopt       DEPENDS snapCMakeModules controlled_vars )
+ConfigureMakeProject( PROJECT_NAME cassview        DEPENDS snapCMakeModules libQtCassandra )
+ConfigureMakeProject( PROJECT_NAME controlled_vars DEPENDS snapCMakeModules )
 ConfigureMakeProject( PROJECT_NAME iplock          )
-ConfigureMakeProject( PROJECT_NAME googlerank      DEPENDS controlled_vars )
+ConfigureMakeProject( PROJECT_NAME googlerank      DEPENDS snapCMakeModules controlled_vars )
 ConfigureMakeProject( PROJECT_NAME libQtCassandra
         CONFIG_ARGS
             -DTHRIFT_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
-        DEPENDS thrift controlled_vars
+        DEPENDS snapCMakeModules thrift controlled_vars
         )
 ConfigureMakeProject( PROJECT_NAME libQtSerialization
         CONFIG_ARGS
             -DTHRIFT_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
-        DEPENDS thrift
+        DEPENDS snapCMakeModules thrift
         )
-ConfigureMakeProject( PROJECT_NAME libtld )
+ConfigureMakeProject( PROJECT_NAME libtld DEPENDS snapCMakeModules )
 ConfigureMakeProject( PROJECT_NAME snapwebsites
         CONFIG_ARGS
             -DTHRIFT_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
