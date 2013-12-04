@@ -718,7 +718,7 @@ void create_all_ptr_operators(const char *name, long flags)
 }
 
 
-void create_typedef(const char *name, const char *short_name, long flags)
+void create_typedef(const char *name, const char *short_name )
 {
 	const char	*t;
 	unsigned int	idx;
@@ -891,7 +891,7 @@ void create_class(const char *name, const char *short_name, long flags)
 	fprintf(out, "};\n");
 
 	if((flags & FLAG_HAS_LIMITS) == 0) {
-		create_typedef(name, short_name, flags);
+		create_typedef(name, short_name );
 	}
 }
 
@@ -996,11 +996,11 @@ void create_class_ptr(const char *name, const char *short_name, long flags)
 	fprintf(out, "\tprimary_type_t f_ptr;\n");
 	fprintf(out, "};\n");
 
-	create_typedef(name, short_name, flags);
+	create_typedef(name, short_name);
 }
 
 
-void create_direct_typedef(const char *name, const char *short_name)
+void create_direct_typedef(const char *short_name)
 {
 	unsigned int	idx;
 
@@ -1230,7 +1230,7 @@ void print_no_init()
 	fprintf(out, "#ifdef CONTROLLED_VARS_DEBUG\n");
 	create_class("no", "r", FLAG_HAS_VOID | FLAG_HAS_INITFLG | FLAG_HAS_DEBUG_ALREADY);
 	fprintf(out, "#else\n");
-	create_direct_typedef("no", "r");
+	create_direct_typedef("no");
 	fprintf(out, "#endif\n");
 }
 

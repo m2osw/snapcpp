@@ -49,7 +49,7 @@ public:
 };
 
 
-int main(int argc, char *argv[])
+int main(int /*argc*/, char * /*argv*/[])
 {
 	int e(0);
 	Test t;
