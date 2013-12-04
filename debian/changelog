@@ -1,0 +1,5 @@
+snapcpp (0.0.1-1) unstable; urgency=low
+
+  * Initial release (Closes: #nnnn)  <nnnn is the bug number of your ITP>
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Tue, 03 Dec 2013 16:18:43 -0800

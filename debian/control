@@ -1,0 +1,64 @@
+Source: snapcpp
+Section: libdevel
+Priority: extra
+Maintainer: R. Douglas Barbieri <doug@dooglio.net>
+Build-Depends: debhelper (>= 8.0.0), cmake (>= 2.8)
+Standards-Version: 3.9.3
+Homepage: http://www.snapwebsites.org/
+Vcs-Git: git://git.code.sf.net/p/snapcpp/code
+Vcs-Browser: https://sourceforge.net/p/snapcpp/code/ci/master/tree/
+
+Package: snapcmakemodules
+Section: devel
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Common Snap C++ CMake modules
+ This package contains common CMake modules to support Snap C++ projects.
+
+#Package: snapcpp
+#Architecture: any
+#Depends: ${shlibs:Depends}, ${misc:Depends}
+#Description: <insert up to 60 chars description>
+# <insert long description, indented with spaces>
+#
+#Package: snapcpp-doc
+#Architecture: all
+#Description: documentation for snapcpp
+# <insert long description, indented with spaces>
+
+Package: controlledvars-dev
+Section: libdevel
+Architecture: any
+Depends: controlledvars (= ${binary:Version})
+Description: Never forget to initialize your C++ variables!
+ The controlled_vars.h and other header files are C++ templates, that gives you
+ the ability to control the initialization of your basic C types (i.e. char,
+ int, long long, etc.)
+ Especially, it allows you to avoid forgetting the initialization of variable
+ members since these variables cannot be initialized where declared1. Classes
+ are here to help you and they do a great job at this, even for basic types
+ such as char, int, and long variables. Really! My main C++ bugs came from
+ forgetting the initialization of variable members and this is the reason why I
+ created these headers.
+ Controlled Variables can actually be used anywhere you declare a basic type
+ variable without immediately initializing it (and limited controlled variables
+ anywhere a bounded value is used.)
+
+Package: controlledvars
+Section: libs
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Never forget to initialize your C++ variables!
+ The controlled_vars.h and other header files are C++ templates, that gives you
+ the ability to control the initialization of your basic C types (i.e. char,
+ int, long long, etc.)
+ Especially, it allows you to avoid forgetting the initialization of variable
+ members since these variables cannot be initialized where declared1. Classes
+ are here to help you and they do a great job at this, even for basic types
+ such as char, int, and long variables. Really! My main C++ bugs came from
+ forgetting the initialization of variable members and this is the reason why I
+ created these headers.
+ Controlled Variables can actually be used anywhere you declare a basic type
+ variable without immediately initializing it (and limited controlled variables
+ anywhere a bounded value is used.)
+
