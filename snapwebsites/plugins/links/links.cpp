@@ -634,7 +634,8 @@ void links::create_link(const link_info& src, const link_info& dst)
             // save in the index table
             (*f_links_table)[src.key()][dst.key()] = QtCassandra::QCassandraValue(src_col);
         }
-        else {
+        else
+        {
             // it exists, make use of the existing key
             src_col = value.stringValue();
         }
@@ -654,7 +655,8 @@ void links::create_link(const link_info& src, const link_info& dst)
             // save in the index table
             (*f_links_table)[dst.key()][src.key()] = QtCassandra::QCassandraValue(dst_col);
         }
-        else {
+        else
+        {
             // it exists, make use of the existing key
             dst_col = value.stringValue();
         }
@@ -755,13 +757,13 @@ void links::delete_link(const link_info& info)
         QtCassandra::QCassandraValue link(src_row->cell(unique_link_name)->value());
 
         // delete the source link right now
-        src_row->dropCell(unique_link_name);
+        src_row->dropCell(unique_link_name, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
 
         // we read the link so that way we have information about the
         // destination and can delete it too
         link_info destination;
         destination.from_data(link.stringValue());
-        if(f_content_table->exists(destination.key()))
+        if(!f_content_table->exists(destination.key()))
         {
             SNAP_LOG_WARNING("links::delete_link() could not find the destination link for \"")
                         (destination.key())("\" (destination row missing in content).");
@@ -775,7 +777,7 @@ void links::delete_link(const link_info& info)
         if(dst_row->exists(dest_cell_unique_name))
         {
             // unique links are easy to handle!
-            dst_row->dropCell(dest_cell_unique_name);
+            dst_row->dropCell(dest_cell_unique_name, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
         }
         else
         {
@@ -790,23 +792,23 @@ void links::delete_link(const link_info& info)
                 return;
             }
             QSharedPointer<QtCassandra::QCassandraRow> dst_multi_row(f_links_table->row(destination.key()));
-            if(!dst_multi_row->exists(dest_cell_unique_name))
+            if(!dst_multi_row->exists(info.key()))
             {
                 // the destination does not exist anywhere!?
                 // (this could happen in case the server crashes or something
                 // of the sort...)
                 SNAP_LOG_WARNING("links::delete_link() could not find the destination link for \"")
                             (destination.key())(" / ")
-                            (dest_cell_unique_name)("\" (cell missing in links).");
+                            (info.key())("\" (cell missing in links).");
                 return;
             }
             // note that this is a multi-link, but in a (1:*) there is only
             // one destination that correspond to the (1:...) and thus only
             // one link that we need to load here
-            QtCassandra::QCassandraValue destination_link(dst_multi_row->cell(dest_cell_unique_name));
+            QtCassandra::QCassandraValue destination_link(dst_multi_row->cell(info.key())->value());
 
             // we can drop that link immediately, since we got the information we needed
-            dst_multi_row->dropCell(dest_cell_unique_name);
+            dst_multi_row->dropCell(info.key(), QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
 
             // TODO: should we drop the row if empty?
             //       I think it automatically happens when a row is empty
@@ -816,7 +818,7 @@ void links::delete_link(const link_info& info)
             QString dest_cell_multi_name(destination_link.stringValue());
             if(dst_row->exists(dest_cell_multi_name))
             {
-                dst_row->dropCell(dest_cell_multi_name);
+                dst_row->dropCell(dest_cell_multi_name, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
             }
             else
             {
@@ -871,7 +873,7 @@ void links::delete_link(const link_info& info)
                     if(dst_row->exists(unique_link_name))
                     {
                         // here we have a "*:1"
-                        dst_row->dropCell(unique_link_name);
+                        dst_row->dropCell(unique_link_name, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
                     }
                     else
                     {
@@ -898,7 +900,7 @@ void links::delete_link(const link_info& info)
                             else
                             {
                                 // we can drop that link now
-                                link_row->dropCell(dest_cell_unique_name);
+                                link_row->dropCell(dest_cell_unique_name, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
                             }
                         }
                     }

@@ -17,6 +17,7 @@
 
 #include "content.h"
 #include "plugins.h"
+#include "log.h"
 #include "../layout/layout.h"
 #include "not_reached.h"
 #include "dom_util.h"
@@ -291,7 +292,8 @@ void content::on_generate_main_content(layout::layout *l, const QString& fullpat
     // function with a path that starts with a slash once in a while; this
     // way we avoid all sorts of trouble (should we generate a warning in the
     // logs though?)
-    const char *s(fullpath.toUtf8().data());
+    QByteArray utf8(fullpath.toUtf8());
+    const char *s(utf8.data());
     while(*s == '/')
     {
         ++s;
@@ -301,25 +303,46 @@ void content::on_generate_main_content(layout::layout *l, const QString& fullpat
     {
         QDomElement created(doc.createElement("created"));
         body.appendChild(created);
-        QtCassandra::QCassandraValue v(get_content_parameter(path, get_name(SNAP_NAME_CONTENT_CREATED)));
-        QDomText text(doc.createTextNode(f_snap->date_to_string(v.int64Value())));
-        created.appendChild(text);
+        QtCassandra::QCassandraValue created_date(get_content_parameter(path, get_name(SNAP_NAME_CONTENT_CREATED)));
+        if(!created_date.nullValue())
+        {
+            QDomText text(doc.createTextNode(f_snap->date_to_string(created_date.int64Value())));
+            created.appendChild(text);
+        }
+        else
+        {
+            SNAP_LOG_WARNING("The content::created field is missing in ")(path)(" (")(fullpath)(")");
+        }
     }
 
     {
         QDomElement modified(doc.createElement("modified"));
         body.appendChild(modified);
-        QtCassandra::QCassandraValue v(get_content_parameter(path, get_name(SNAP_NAME_CONTENT_MODIFIED)));
-        QDomText text(doc.createTextNode(f_snap->date_to_string(v.int64Value())));
-        modified.appendChild(text);
+        QtCassandra::QCassandraValue modified_date(get_content_parameter(path, get_name(SNAP_NAME_CONTENT_MODIFIED)));
+        if(!modified_date.nullValue())
+        {
+            QDomText text(doc.createTextNode(f_snap->date_to_string(modified_date.int64Value())));
+            modified.appendChild(text);
+        }
+        else
+        {
+            SNAP_LOG_WARNING("The content::modified field is missing in ")(path);
+        }
     }
 
     {
         QDomElement updated(doc.createElement("updated"));
         body.appendChild(updated);
-        QtCassandra::QCassandraValue v(get_content_parameter(path, get_name(SNAP_NAME_CONTENT_UPDATED)));
-        QDomText text(doc.createTextNode(f_snap->date_to_string(v.int64Value())));
-        updated.appendChild(text);
+        QtCassandra::QCassandraValue updated_date(get_content_parameter(path, get_name(SNAP_NAME_CONTENT_UPDATED)));
+        if(!updated_date.nullValue())
+        {
+            QDomText text(doc.createTextNode(f_snap->date_to_string(updated_date.int64Value())));
+            updated.appendChild(text);
+        }
+        else
+        {
+            SNAP_LOG_WARNING("The content::updated field is missing in ")(path);
+        }
     }
 
     {

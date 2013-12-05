@@ -33,8 +33,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 <snap-tree>
   <content path="/logout">
     <param name="content::title">Logout</param>
-    <param name="content::body">
-      <![CDATA[<p>Thank you for visiting our website. See you again soon.</p>]]>
+    <param name="content::body" overwrite="yes">
+      <![CDATA[<p>Thank you for visiting our website. See you again soon.</p><p>Got back to the <a href="/">home page</a>.</p>]]>
     </param>
     <link name="robotstxt_noindex" to="robotstxt_noindex" mode="1:*">/types/taxonomy/system/robotstxt/noindex</link>
     <link name="robotstxt_nofollow" to="robotstxt_nofollow" mode="1:*">/types/taxonomy/system/robotstxt/nofollow</link>

@@ -332,7 +332,11 @@ void snapdb::display()
                      || n == "core::plugin_threshold"
                      || n == "sessions::time_limit"
                      || n == "users::created_time"
+                     || n == "users::login_on"
+                     || n == "users::logout_on"
+                     || n == "users::previous_login_on"
                      || n == "users::start_date"
+                     || n == "users::verified_on"
                 )
                 {
                     // 64 bit value

@@ -32,6 +32,10 @@ enum name_t
     SNAP_NAME_USERS_CREATED_TIME,
     SNAP_NAME_USERS_IDENTIFIER,
     SNAP_NAME_USERS_ID_ROW,
+    SNAP_NAME_USERS_LOGIN_IP,
+    SNAP_NAME_USERS_LOGIN_ON,
+    SNAP_NAME_USERS_LOGOUT_IP,
+    SNAP_NAME_USERS_LOGOUT_ON,
     SNAP_NAME_USERS_NEW_PATH,
     SNAP_NAME_USERS_ORIGINAL_EMAIL,
     SNAP_NAME_USERS_ORIGINAL_IP,
@@ -39,6 +43,8 @@ enum name_t
     SNAP_NAME_USERS_PASSWORD_DIGEST,
     SNAP_NAME_USERS_PASSWORD_SALT,
     SNAP_NAME_USERS_PATH,
+    SNAP_NAME_USERS_PREVIOUS_LOGIN_IP,
+    SNAP_NAME_USERS_PREVIOUS_LOGIN_ON,
     SNAP_NAME_USERS_SESSION_COOKIE,
     SNAP_NAME_USERS_STATUS,
     SNAP_NAME_USERS_TABLE,
@@ -94,13 +100,15 @@ private:
     void                    content_update(int64_t variables_timestamp);
     void                    show_user(layout::layout *l, const QString& cpath, QDomElement& page, QDomElement& body);
     void                    generate_login_form(QDomElement& body);
+    void                    logout_user(layout::layout *l, QString cpath, QDomElement& page, QDomElement& body);
     void                    generate_register_form(QDomElement& body);
     void                    generate_verify_form(QDomElement& body);
     void                    process_login_form();
     void                    process_register_form();
     void                    create_password_salt(QByteArray& salt);
     void                    encrypt_password(const QString& digest, const QString& password, const QByteArray& salt, QByteArray& hash);
-    void                    verified_user(const QString& cpath, QDomElement& body);
+    void                    verify_user(const QString& cpath);
+    void                    process_verify_form();
 
     zpsnap_child_t          f_snap;
     QString                 f_user_key; // logged in user email address

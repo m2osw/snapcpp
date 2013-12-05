@@ -66,6 +66,18 @@ const char *get_name(name_t name)
     case SNAP_NAME_USERS_ID_ROW:
         return "*id_row*";
 
+    case SNAP_NAME_USERS_LOGIN_IP:
+        return "users::login_ip";
+
+    case SNAP_NAME_USERS_LOGIN_ON:
+        return "users::login_on";
+
+    case SNAP_NAME_USERS_LOGOUT_IP:
+        return "users::logout_ip";
+
+    case SNAP_NAME_USERS_LOGOUT_ON:
+        return "users::logout_on";
+
     case SNAP_NAME_USERS_NEW_PATH:
         return "types/users/new";
 
@@ -86,6 +98,12 @@ const char *get_name(name_t name)
 
     case SNAP_NAME_USERS_PATH:
         return "user";
+
+    case SNAP_NAME_USERS_PREVIOUS_LOGIN_IP:
+        return "users::previous_login_ip";
+
+    case SNAP_NAME_USERS_PREVIOUS_LOGIN_ON:
+        return "users::previous_login_on";
 
     case SNAP_NAME_USERS_SESSION_COOKIE:
         // cookie names cannot include ':' so I use "__" to represent
@@ -186,7 +204,7 @@ int64_t users::do_update(int64_t last_updated)
     SNAP_PLUGIN_UPDATE_INIT();
 
     SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, initial_update);
-    SNAP_PLUGIN_UPDATE(2013, 12, 5, 1, 55, 40, content_update);
+    SNAP_PLUGIN_UPDATE(2013, 12, 5, 11, 52, 40, content_update);
 //<a href="[select('snap/head/metadata/desc[type=website_uri]/data')]/verify/[select('/snap/page/body/sendmail/parameters/param[@name=''users::verify_email'']/@value')]" title="Click to finish your registration by confirming your email address">Verify My Email</a>
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -311,7 +329,30 @@ void users::on_process_cookies()
                 if(users_table->exists(key))
                 {
                     // this is a valid user email address!
-                    f_user_key = key;
+                    QString uri_path(f_snap->get_uri().path());
+                    if(uri_path == "/logout" || uri_path.left(8) == "/logout/")
+                    {
+                        // the user is requesting to log out, here we avoid
+                        // dealing with all the session information again
+                        // inside the user_logout() function and this way
+                        // we right away cancel the session
+                        f_info->set_object_path("/user/");
+
+                        QSharedPointer<QtCassandra::QCassandraRow> row(users_table->row(key));
+
+                        // Save the date when the user logged out
+                        QtCassandra::QCassandraValue value;
+                        value.setInt64Value(f_snap->get_uri().option("start_date").toLongLong());
+                        row->cell(get_name(SNAP_NAME_USERS_LOGOUT_ON))->setValue(value);
+
+                        // Save the user IP address when logged out
+                        value.setStringValue(f_snap->snapenv("REMOTE_ADDR"));
+                        row->cell(get_name(SNAP_NAME_USERS_LOGOUT_IP))->setValue(value);
+                    }
+                    else
+                    {
+                        f_user_key = key;
+                    }
                 }
             }
             create_new_session = false;
@@ -440,8 +481,8 @@ void users::on_generate_main_content(layout::layout *l, const QString& cpath, QD
     }
     else if(cpath == "logout")
     {
-        // TODO: write log out feature
         // closing current session if any and show the logout page
+        logout_user(l, cpath, page, body);
     }
     else if(cpath == "register")
     {
@@ -453,7 +494,7 @@ void users::on_generate_main_content(layout::layout *l, const QString& cpath, QD
     }
     else if(cpath.left(7) == "verify/")
     {
-        verified_user(cpath, body);
+        verify_user(cpath);
     }
     else if(cpath == "forgot-password")
     {
@@ -585,7 +626,7 @@ void users::show_user(layout::layout *l, const QString& cpath, QDomElement& page
     }
 
     // generate the default body
-	content::content::instance()->on_generate_main_content(l, "admin/users/page/profile", page, body);
+    content::content::instance()->on_generate_main_content(l, "admin/users/page/profile", page, body);
 }
 
 
@@ -641,6 +682,39 @@ void users::generate_login_form(QDomElement& body)
         QDomText text(doc.createTextNode("User Log In"));
         title.appendChild(text);
     }
+}
+
+
+/** \brief Log the current user out.
+ *
+ * Actually this function only generates the log out page. The log out itself
+ * is processed at the same time as the cookie in the on_process_cookies()
+ * function.
+ *
+ * This function calls the on_generate_main_content() of the content plugin.
+ *
+ * \param[in] l  The layout concerned to generated this page.
+ * \param[in] cpath  The path being processed (logout[/...]).
+ * \param[in] page  The page XML data.
+ * \param[in] body  The body XML data.
+ */
+void users::logout_user(layout::layout *l, QString cpath, QDomElement& page, QDomElement& body)
+{
+    // generate the body
+    // we already logged the user out in the on_process_cookies() function
+    if(cpath != "logout" && cpath != "logout/")
+    {
+        // make sure the page exists if the user was sent to antoher plugin
+        // path (i.e. logout/fantom from the fantom plugin could be used to
+        // display a different greating because the user was kicked out by
+        // magic...); if it does not exist, force "logout" as the default
+        QSharedPointer<QtCassandra::QCassandraTable> content_table(content::content::instance()->get_content_table());
+        if(!content_table->exists(cpath))
+        {
+            cpath = "logout";
+        }
+    }
+    content::content::instance()->on_generate_main_content(l, cpath, page, body);
 }
 
 
@@ -782,7 +856,7 @@ void users::generate_verify_form(QDomElement& body)
  * \param[in] cpath  The path used to access this page.
  * \param[in] body  The body where the result is generated.
  */
-void users::verified_user(const QString& cpath, QDomElement& body)
+void users::verify_user(const QString& cpath)
 {
     if(!f_user_key.isEmpty())
     {
@@ -802,7 +876,7 @@ void users::verified_user(const QString& cpath, QDomElement& body)
     || path.mid(0, 6) != "/user/")
     {
         // it failed, the session could not be loaded properly
-        SNAP_LOG_WARNING("users::verified_user() could not load the user session ")
+        SNAP_LOG_WARNING("users::verify_user() could not load the user session ")
                             (session_id)(" properly. Session error: ")
                             (sessions::sessions::session_info::session_type_to_string(info.get_session_type()))(".");
         // TODO change message support to use strings from the database so they can get translated
@@ -842,6 +916,16 @@ void users::verified_user(const QString& cpath, QDomElement& body)
 
     QSharedPointer<QtCassandra::QCassandraRow> row(users_table->row(email));
     const QtCassandra::QCassandraValue user_identifier(row->cell(get_name(SNAP_NAME_USERS_IDENTIFIER))->value());
+    if(user_identifier.nullValue())
+    {
+        SNAP_LOG_FATAL("users::verify_user() could not load the user identifier, the row exists but the cell did not make it (")
+                        (email)("/")
+                        (get_name(SNAP_NAME_USERS_IDENTIFIER))(").");
+        // redirect the user to the verification form although it won't work
+        // next time either...
+        f_snap->page_redirect("verify", snap_child::HTTP_CODE_SEE_OTHER);
+        return;
+    }
     const int64_t identifier(user_identifier.int64Value());
     const QString site_key(f_snap->get_site_key_with_slash());
     const QString user_key(site_key + get_name(SNAP_NAME_USERS_PATH) + QString("/%1").arg(identifier));
@@ -1016,7 +1100,7 @@ void users::on_process_post(const QString& cpath, const sessions::sessions::sess
     }
     else if(cpath == "verify")
     {
-        // TODO
+        process_verify_form();
     }
     else
     {
@@ -1053,6 +1137,20 @@ void users::process_login_form()
 
         // existing users have a unique identifier
         QtCassandra::QCassandraValue user_identifier(row->cell(get_name(SNAP_NAME_USERS_IDENTIFIER))->value());
+        if(user_identifier.nullValue())
+        {
+            messages::messages::instance()->set_error(
+                "Could Not Log You In",
+                "Somehow your user identifier is not available. Without we cannot log your in.",
+                "users::process_login_form() could not load the user identifier, the row exists but the cell did not make it ("
+                             + key + "/" + get_name(SNAP_NAME_USERS_IDENTIFIER) + ").",
+                false
+            );
+            // XXX should we redirect to some error page in that regard?
+            //     (i.e. your user account is messed up, please contact us?)
+            f_snap->page_redirect("verify", snap_child::HTTP_CODE_SEE_OTHER);
+            return;
+        }
         int64_t identifier(user_identifier.int64Value());
         const QString site_key(f_snap->get_site_key_with_slash());
         QString user_key(site_key + get_name(SNAP_NAME_USERS_PATH) + QString("/%1").arg(identifier));
@@ -1124,6 +1222,24 @@ void users::process_login_form()
 
                 // this is now the current user
                 f_user_key = key;
+
+                // Copy the previous login date and IP to the previous fields
+                if(row->exists(get_name(SNAP_NAME_USERS_LOGIN_ON)))
+                {
+                    row->cell(get_name(SNAP_NAME_USERS_PREVIOUS_LOGIN_ON))->setValue(row->cell(get_name(SNAP_NAME_USERS_LOGIN_ON))->value());
+                }
+                if(row->exists(get_name(SNAP_NAME_USERS_LOGIN_IP)))
+                {
+                    row->cell(get_name(SNAP_NAME_USERS_PREVIOUS_LOGIN_IP))->setValue(row->cell(get_name(SNAP_NAME_USERS_LOGIN_IP))->value());
+                }
+
+                // Save the date when the user logged out
+                value.setInt64Value(f_snap->get_uri().option("start_date").toLongLong());
+                row->cell(get_name(SNAP_NAME_USERS_LOGIN_ON))->setValue(value);
+
+                // Save the user IP address when logged out
+                value.setStringValue(f_snap->snapenv("REMOTE_ADDR"));
+                row->cell(get_name(SNAP_NAME_USERS_LOGIN_IP))->setValue(value);
 
                 // User is now logged in, redirect him to another page
                 // TODO: give priority to the saved redirect... (which is not yet implemented!)
@@ -1218,6 +1334,22 @@ void users::process_register_form()
 }
 
 
+/** \brief Process the verification code.
+ *
+ * This function runs the verify_user() function with the code that the
+ * user entered in the form. This is similar to going to the
+ * verify/\<verification_code> page to get an account confirmed.
+ */
+void users::process_verify_form()
+{
+    // verify the code the user entered, the verify_user() function
+    // will automatically redirect us if necessary; we should
+    // get an error if redirect to ourselves
+    QString verification_code(f_snap->postenv("verification_code"));
+    verify_user("verify/" + verification_code);
+}
+
+
 /** \brief Register a new user in the database
  *
  * If you find out that a user is not yet registered but still want to
@@ -1300,6 +1432,21 @@ bool users::register_user(const QString& email, const QString& password)
         {
             QSharedPointer<QtCassandra::QCassandraRow> id_row(users_table->row(id_key));
             QtCassandra::QCassandraValue current_identifier(id_row->cell(identifier_key)->value());
+            if(current_identifier.nullValue())
+            {
+                // this means no user can register until this value gets
+                // fixed somehow!
+                messages::messages::instance()->set_error(
+                    "Could Not Log You In",
+                    "Somehow we could not generate a user identifier for your account. Please try again later.",
+                    "users::register_user() could not load the *id_row* identifier, the row exists but the cell did not make it ("
+                                 + id_key + "/" + identifier_key + ").",
+                    false
+                );
+                // XXX redirect user to an error page instead?
+                //     if they try again it will fail again anyway...
+                return false;
+            }
             identifier = current_identifier.int64Value();
         }
         ++identifier;
