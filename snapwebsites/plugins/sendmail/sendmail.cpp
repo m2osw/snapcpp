@@ -2106,7 +2106,7 @@ void sendmail::on_generate_main_content(layout::layout *l, const QString& path, 
             time_tag.appendChild(time_text);
         }
         {
-            QDomElement time_tag(doc.createElement("attachment_count"));
+            QDomElement time_tag(doc.createElement("attachment-count"));
             sendmail_tag.appendChild(time_tag);
             QDomText time_text(doc.createTextNode(QString("%1").arg(f_email.get_attachment_count())));
             time_tag.appendChild(time_text);
@@ -2171,10 +2171,54 @@ void sendmail::on_replace_token(filter::filter *f, QDomDocument& xml, filter::fi
 {
     if(token.f_name.mid(0, 10) == "sendmail::")
     {
-        if(token.is_token("sendmail::unsubscribe-link"))
+        if(token.is_token("sendmail::unsubscribe_link"))
         {
-            token.f_replacement = "http://snapwebsites.org/";
+            QString user_email;
+            QDomXPath dom_xpath;
+            dom_xpath.setXPath("/snap/page/body/sendmail/to");
+            QDomXPath::node_vector_t result(dom_xpath.apply(xml));
+            if(result.size() > 0 && result[0].isElement())
+            {
+                //QDomDocument document;
+                //QDomNode copy(document.importNode(result[0], true));
+                //document.appendChild(copy);
+                user_email = "/" + result[0].toElement().text();
+            }
+            QString anchor_text("unsubscribe from Snap! Websites emails");
+            if(token.verify_args(1, 1))
+            {
+                filter::filter::parameter_t param(token.get_arg("text", 0, filter::filter::TOK_STRING));
+                if(!token.f_error)
+                {
+                    anchor_text = param.f_value;
+                }
+            }
+            token.f_replacement = "<a href=\"" + f_snap->get_site_key_with_slash() + "unsubscribe" + user_email + "\">" + anchor_text + "</a>";
             token.f_found = true;
+printf(" unsubscribe [%s]\n", token.f_replacement.toUtf8().data());
+        }
+        else if(token.is_token("sendmail::verify_link"))
+        {
+            QString identifier;
+            QDomXPath dom_xpath;
+            dom_xpath.setXPath(QString("/snap/page/body/sendmail/parameters/param[@name=\"") + users::get_name(users::SNAP_NAME_USERS_VERIFY_EMAIL) + "\"]/@value");
+            QDomXPath::node_vector_t result(dom_xpath.apply(xml));
+            if(result.size() > 0 && result[0].isAttr())
+            {
+                identifier = "/" + result[0].toAttr().value();
+            }
+            QString anchor_text("Click here to verify your account");
+            if(token.verify_args(1, 1))
+            {
+                filter::filter::parameter_t param(token.get_arg("text", 0, filter::filter::TOK_STRING));
+                if(!token.f_error)
+                {
+                    anchor_text = param.f_value;
+                }
+            }
+            token.f_replacement = "<a href=\"" + f_snap->get_site_key_with_slash() + "verify" + identifier + "\">" + anchor_text + "</a>";
+            token.f_found = true;
+printf(" verify [%s]\n", token.f_replacement.toUtf8().data());
         }
         else
         {
@@ -2209,7 +2253,7 @@ void sendmail::on_replace_token(filter::filter *f, QDomDocument& xml, filter::fi
             }
             else if(token.is_token("sendmail::attachment_count"))
             {
-                xpath = "/snap/page/body/sendmail/attachment_count";
+                xpath = "/snap/page/body/sendmail/attachment-count";
             }
             else if(token.is_token("sendmail::priority"))
             {

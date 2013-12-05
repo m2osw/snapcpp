@@ -965,6 +965,17 @@ void sessions::save_session(session_info& info)
  * parameters. If the type is not VALID then the other parameters are
  * likely not defined or may have erroneous information.
  *
+ * \todo
+ * The use_once flag of this function has the side effect of completely
+ * deleting a session. There is one problem with that and hackers wannabe...
+ * If a hacker checks many sessions with say /verify/\<session-id>, the
+ * result is that those sessions get deleted (so the verification fails
+ * as expected, but the session may have been necessary for some other
+ * reason...) Something to think about! One way to avoid some problems
+ * would be to request that the session be at least of the right type
+ * (i.e. right path for example). Then we can avoid the delete if the
+ * type does not match and the other user can have his session.
+ *
  * \param[in] session_key  The session key to load, on input the key does not include the URI.
  * \param[out] info  The variable where the session variables get saved.
  * \param[in] use_once  Whether this session can be used more than once.

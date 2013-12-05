@@ -43,6 +43,8 @@ enum name_t
     SNAP_NAME_USERS_STATUS,
     SNAP_NAME_USERS_TABLE,
     SNAP_NAME_USERS_USERNAME,
+    SNAP_NAME_USERS_VERIFIED_IP,
+    SNAP_NAME_USERS_VERIFIED_ON,
     SNAP_NAME_USERS_VERIFY_EMAIL
 };
 const char *get_name(name_t name);
@@ -90,6 +92,7 @@ public:
 private:
     void                    initial_update(int64_t variables_timestamp);
     void                    content_update(int64_t variables_timestamp);
+    void                    show_user(layout::layout *l, const QString& cpath, QDomElement& page, QDomElement& body);
     void                    generate_login_form(QDomElement& body);
     void                    generate_register_form(QDomElement& body);
     void                    generate_verify_form(QDomElement& body);
@@ -100,8 +103,8 @@ private:
     void                    verified_user(const QString& cpath, QDomElement& body);
 
     zpsnap_child_t          f_snap;
-    QString                 f_user_key;
-    std::shared_ptr<sessions::sessions::session_info> f_info;
+    QString                 f_user_key; // logged in user email address
+    std::shared_ptr<sessions::sessions::session_info> f_info; // user, logged in or anonymous, cookie related information
 };
 
 } // namespace users

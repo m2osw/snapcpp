@@ -1515,6 +1515,7 @@ void snap_child::page_redirect(const QString& path, http_code_t http_code)
 
     // XXX should we exit with 1 in this case?
     exit(0);
+    NOTREACHED();
 }
 
 

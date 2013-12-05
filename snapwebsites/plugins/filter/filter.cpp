@@ -717,13 +717,15 @@ void filter::on_token_filter(QDomDocument& xml)
             }
         }
 
+        // TODO support comments, instructions, etc.
+
         // we want to transform tokens in text areas and in attributes
         if(n.isCDATASection())
         {
             // this works too, although the final result is still plain text!
             // (it must be xslt that converts the contents of CDATA sections)
             QDomCDATASection cdata_section(n.toCDATASection());
-printf("checking CDATA [%s]\n", cdata_section.data().toUtf8().data());
+//printf("checking CDATA [%s]\n", cdata_section.data().toUtf8().data());
             text_t t(this, xml, cdata_section.data());
             if(t.parse())
             {
@@ -734,6 +736,7 @@ printf("checking CDATA [%s]\n", cdata_section.data().toUtf8().data());
         else if(n.isText())
         {
             QDomText text(n.toText());
+//printf("checking text [%s]\n", text.data().toUtf8().data());
             text_t t(this, xml, text.data());
             if(t.parse())
             {

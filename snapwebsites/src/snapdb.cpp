@@ -325,13 +325,14 @@ void snapdb::display()
                     // 64 bit value
                     v = QString("%1").arg((*c)->value().uint64Value());
                 }
-                else if(n == "users::created_time"
-                     || n == "content::created"
+                else if(n == "content::created"
                      || n == "content::modified"
                      || n == "content::updated"
                      || n.left(18) == "core::last_updated"
                      || n == "core::plugin_threshold"
                      || n == "sessions::time_limit"
+                     || n == "users::created_time"
+                     || n == "users::start_date"
                 )
                 {
                     // 64 bit value
@@ -359,16 +360,18 @@ void snapdb::display()
                     // cast to integer so arg() doesn't take it as a character
                     v = QString("%1").arg(static_cast<int>((*c)->value().unsignedCharValue()));
                 }
-                else if(n == "users::password::salt"
+                else if(n == "sessions::random"
+                     || n == "users::password::salt"
                      || n == "users::password"
                 )
                 {
                     // n bit binary value
                     const QByteArray& buf((*c)->value().binaryValue());
                     int max(buf.size());
+                    v += "(hex) ";
                     for(int i(0); i < max; ++i)
                     {
-                        v += QString("0x%1 ").arg(static_cast<int>(static_cast<unsigned char>(buf.at(i))), 2, 16, QChar('0'));
+                        v += QString("%1 ").arg(static_cast<int>(static_cast<unsigned char>(buf.at(i))), 2, 16, QChar('0'));
                     }
                 }
                 else

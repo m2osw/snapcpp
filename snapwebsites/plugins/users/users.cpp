@@ -101,6 +101,12 @@ const char *get_name(name_t name)
     case SNAP_NAME_USERS_USERNAME:
         return "users::username";
 
+    case SNAP_NAME_USERS_VERIFIED_IP:
+        return "users::verified_ip";
+
+    case SNAP_NAME_USERS_VERIFIED_ON:
+        return "users::verified_on";
+
     case SNAP_NAME_USERS_VERIFY_EMAIL:
         return "users::verify_email";
 
@@ -180,8 +186,8 @@ int64_t users::do_update(int64_t last_updated)
     SNAP_PLUGIN_UPDATE_INIT();
 
     SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, initial_update);
-    SNAP_PLUGIN_UPDATE(2013, 11, 29, 22, 27, 40, content_update);
-
+    SNAP_PLUGIN_UPDATE(2013, 12, 5, 1, 55, 40, content_update);
+//<a href="[select('snap/head/metadata/desc[type=website_uri]/data')]/verify/[select('/snap/page/body/sendmail/parameters/param[@name=''users::verify_email'']/@value')]" title="Click to finish your registration by confirming your email address">Verify My Email</a>
     SNAP_PLUGIN_UPDATE_EXIT();
 }
 
@@ -290,7 +296,6 @@ void users::on_process_cookies()
         }
         sessions::sessions::instance()->load_session(session_key, *f_info, false);
         const QString path(f_info->get_object_path());
-printf("compare: %d <> %d\n", f_info->get_session_random(), random_key.toInt());
         if(f_info->get_session_type() == sessions::sessions::session_info::SESSION_INFO_VALID
         && f_info->get_session_id() == USERS_SESSION_ID_LOG_IN_SESSION
         && f_info->get_session_random() == random_key.toInt()
@@ -302,8 +307,8 @@ printf("compare: %d <> %d\n", f_info->get_session_random(), random_key.toInt());
             // not authenticated user?
             if(!key.isEmpty())
             {
-                QSharedPointer<QtCassandra::QCassandraTable> table(get_users_table());
-                if(table->exists(key))
+                QSharedPointer<QtCassandra::QCassandraTable> users_table(get_users_table());
+                if(users_table->exists(key))
                 {
                     // this is a valid user email address!
                     f_user_key = key;
@@ -422,7 +427,7 @@ void users::on_generate_main_content(layout::layout *l, const QString& cpath, QD
     else if(cpath.left(5) == "user/")
     {
         // TODO: write user profile viewer
-        //show_user(body);
+        show_user(l, cpath, page, body);
     }
     else if(cpath == "profile")
     {
@@ -466,12 +471,12 @@ void users::on_generate_header_content(layout::layout *l, const QString& path, Q
 {
     QDomDocument doc(header.ownerDocument());
 
-    QSharedPointer<QtCassandra::QCassandraTable> table(get_users_table());
+    QSharedPointer<QtCassandra::QCassandraTable> users_table(get_users_table());
 
     // retrieve the row for that user
-    if(!f_user_key.isEmpty() && table->exists(f_user_key))
+    if(!f_user_key.isEmpty() && users_table->exists(f_user_key))
     {
-        QSharedPointer<QtCassandra::QCassandraRow> row(table->row(f_user_key));
+        QSharedPointer<QtCassandra::QCassandraRow> row(users_table->row(f_user_key));
 
         {   // snap/head/metadata/desc[type=users::email]/data
             QDomElement desc(doc.createElement("desc"));
@@ -514,6 +519,76 @@ void users::on_generate_header_content(layout::layout *l, const QString& path, Q
 }
 
 
+/** \brief Show the user profile.
+ *
+ * This function shows a user profile. By default one can use user/me to
+ * see his profile. The administrators can see any profile. Otherwise
+ * only public profiles and the user own profile are accessible.
+ */
+void users::show_user(layout::layout *l, const QString& cpath, QDomElement& page, QDomElement& body)
+{
+    int64_t identifier(0);
+    QString user_id(cpath.mid(5));
+    if(user_id == "me")
+    {
+        // retrieve the logged in user identifier
+        if(f_user_key.isEmpty())
+        {
+            messages::messages::instance()->set_error(
+                "Permission Denied",
+                "You are not currently logged in. You may check out your profile only when logged in.",
+                "attempt to view the current user page when the user is not logged in",
+                false
+            );
+            // TODO: save current path so login can come back here on success
+            // redirect the user to the log in page
+            f_snap->page_redirect("login", snap_child::HTTP_CODE_SEE_OTHER);
+            NOTREACHED();
+        }
+        QSharedPointer<QtCassandra::QCassandraTable> users_table(get_users_table());
+        if(!users_table->exists(f_user_key))
+        {
+            // This should never happen... we checked that account when the
+            // user logged in
+            messages::messages::instance()->set_error(
+                "Could Not Find Your Account",
+                "Somehow we could not find your account on this system.",
+                "user account for " + f_user_key + " does not exist at this point",
+                true
+            );
+            // redirect the user to the log in page
+            f_snap->page_redirect("login", snap_child::HTTP_CODE_SEE_OTHER);
+            NOTREACHED();
+            return;
+        }
+        QtCassandra::QCassandraValue value(users_table->row(f_user_key)->cell(get_name(SNAP_NAME_USERS_IDENTIFIER))->value());
+        if(value.nullValue())
+        {
+            messages::messages::instance()->set_error(
+                "Could Not Find Your Account",
+                "Somehow we could not find your account on this system.",
+                "user account for " + f_user_key + " does not have an identifier",
+                true
+            );
+            // redirect the user to the log in page
+            f_snap->page_redirect("login", snap_child::HTTP_CODE_SEE_OTHER);
+            NOTREACHED();
+            return;
+        }
+        identifier = value.int64Value();
+        // Probably not necessary to fix
+        //user_id = QString("%1").arg(identifier);
+    }
+    else
+    {
+        identifier = user_id.toLongLong();
+    }
+
+    // generate the default body
+	content::content::instance()->on_generate_main_content(l, "admin/users/page/profile", page, body);
+}
+
+
 /** \brief Generate the login form.
  *
  * This function adds a compiled login form to the body content.
@@ -523,6 +598,13 @@ void users::on_generate_header_content(layout::layout *l, const QString& path, Q
  */
 void users::generate_login_form(QDomElement& body)
 {
+    if(!f_user_key.isEmpty())
+    {
+        // user is logged in already, just send him to his profile
+        f_snap->page_redirect("user/me", snap_child::HTTP_CODE_SEE_OTHER);
+        NOTREACHED();
+    }
+
     QDomDocument doc(body.ownerDocument());
 
     QDomDocument login_form(on_get_xml_form("login"));
@@ -571,6 +653,13 @@ void users::generate_login_form(QDomElement& body)
  */
 void users::generate_register_form(QDomElement& body)
 {
+    if(!f_user_key.isEmpty())
+    {
+        // user is logged in already, just send him to his profile
+        f_snap->page_redirect("user/me", snap_child::HTTP_CODE_SEE_OTHER);
+        NOTREACHED();
+    }
+
     QDomDocument doc(body.ownerDocument());
 
     QDomDocument register_form(on_get_xml_form("register"));
@@ -623,6 +712,13 @@ void users::generate_register_form(QDomElement& body)
  */
 void users::generate_verify_form(QDomElement& body)
 {
+    if(!f_user_key.isEmpty())
+    {
+        // user is logged in already, just send him to his profile
+        f_snap->page_redirect("user/me", snap_child::HTTP_CODE_SEE_OTHER);
+        NOTREACHED();
+    }
+
     QDomDocument doc(body.ownerDocument());
 
     QDomDocument verify_form(on_get_xml_form("verify"));
@@ -688,9 +784,18 @@ void users::generate_verify_form(QDomElement& body)
  */
 void users::verified_user(const QString& cpath, QDomElement& body)
 {
+    if(!f_user_key.isEmpty())
+    {
+        // user is logged in already, just send him to his profile
+        f_snap->page_redirect("user/me", snap_child::HTTP_CODE_SEE_OTHER);
+        NOTREACHED();
+    }
+
     QString session_id(cpath.mid(7));
     sessions::sessions::session_info info;
     sessions::sessions *session(sessions::sessions::instance());
+    // TODO: remove the ending characters such as " ", "/", "\" and "|"?
+    //       (it happens that people add those by mistake at the end of a URI...)
     session->load_session(session_id, info);
     const QString path(info.get_object_path());
     if(info.get_session_type() != sessions::sessions::session_info::SESSION_INFO_VALID
@@ -702,23 +807,25 @@ void users::verified_user(const QString& cpath, QDomElement& body)
                             (sessions::sessions::session_info::session_type_to_string(info.get_session_type()))(".");
         // TODO change message support to use strings from the database so they can get translated
         messages::messages::instance()->set_error(
-            QString("Invalid User Session"),
+            "Invalid User Verification Code",
             "The specified verification code (" + session_id
-                    + ") is not correct. Please verify that you used the correct link or try to use the form below to enter your verification code.",
-            "user trying his verification with \"" + session_id + "\" got error: "
+                    + ") is not correct. Please verify that you used the correct link or try to use the form below to enter your verification code."
+                      " If you already followed the link once, then you already were verified and all you need to do is click the log in link below.",
+            "user trying his verification with code \"" + session_id + "\" got error: "
                     + sessions::sessions::session_info::session_type_to_string(info.get_session_type()) + ".",
             true
         );
         // redirect the user to the verification form
         f_snap->page_redirect("verify", snap_child::HTTP_CODE_SEE_OTHER);
+        NOTREACHED();
         return;
     }
 
     // it looks like the session is valid, get the user email and verify
     // that the account exists in the database
     QString email(path.mid(6));
-    QSharedPointer<QtCassandra::QCassandraTable> table(get_users_table());
-    if(!table->exists(email))
+    QSharedPointer<QtCassandra::QCassandraTable> users_table(get_users_table());
+    if(!users_table->exists(email))
     {
         // This should never happen...
         messages::messages::instance()->set_error(
@@ -729,23 +836,78 @@ void users::verified_user(const QString& cpath, QDomElement& body)
         );
         // redirect the user to the log in page
         f_snap->page_redirect("login", snap_child::HTTP_CODE_SEE_OTHER);
+        NOTREACHED();
         return;
     }
 
-    QSharedPointer<QtCassandra::QCassandraRow> row(table->row(email));
+    QSharedPointer<QtCassandra::QCassandraRow> row(users_table->row(email));
     const QtCassandra::QCassandraValue user_identifier(row->cell(get_name(SNAP_NAME_USERS_IDENTIFIER))->value());
     const int64_t identifier(user_identifier.int64Value());
-
     const QString site_key(f_snap->get_site_key_with_slash());
-    QString destination_key(site_key + get_name(SNAP_NAME_USERS_NEW_PATH));
-    const QString link_name(get_name(SNAP_NAME_USERS_STATUS));
-    const bool source_unique(true);
     const QString user_key(site_key + get_name(SNAP_NAME_USERS_PATH) + QString("/%1").arg(identifier));
-    links::link_info source(link_name, source_unique, user_key);
-    const QString link_to(get_name(SNAP_NAME_USERS_STATUS));
-    const bool destination_unique(false);
-    links::link_info destination(link_to, destination_unique, destination_key);
-    links::links::instance()->create_link(source, destination);
+
+    // before we actually accept this verification code, we must make sure
+    // the user is still marked as a new user (he should or the session
+    // would be invalid, but for security it is better to check again)
+    links::link_info user_status_info(get_name(SNAP_NAME_USERS_STATUS), true, user_key);
+    QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(user_status_info));
+    links::link_info status_info;
+    if(!link_ctxt->next_link(status_info))
+    {
+        // This should never happen... because the session should logically
+        // prevent it from happening (i.e. the status link should always be
+        // there) although maybe the admin could delete this link somehow?
+        messages::messages::instance()->set_error(
+            "Not a New Account",
+            "Your account is not marked as a new account. The verification failed.",
+            "user account for " + email + ", which is being verified, is not marked as being a new account",
+            true
+        );
+        // redirect the user to the log in page
+        f_snap->page_redirect("login", snap_child::HTTP_CODE_SEE_OTHER);
+        NOTREACHED();
+        return;
+    }
+
+    // a status link exists...
+    if(status_info.key() != site_key + get_name(SNAP_NAME_USERS_NEW_PATH))
+    {
+        // This should never happen... because the session should logically
+        // prevent it from happening (i.e. the status link should always be
+        // there) although maybe the admin could delete this link somehow?
+        messages::messages::instance()->set_error(
+            "Not a New Account",
+            "Your account is not marked as a new account. The verification failed. You may have been blocked.",
+            "user account for " + email + ", which is being verified, is not marked as being a new account: " + status_info.key(),
+            true
+        );
+        // redirect the user to the log in page? (XXX should this be the registration page instead?)
+        f_snap->page_redirect("login", snap_child::HTTP_CODE_SEE_OTHER);
+        NOTREACHED();
+        return;
+    }
+    // remove the "user/new" status link so the user can now log in
+    // he was successfully logged in
+    links::links::instance()->delete_link(user_status_info);
+
+    // Save the date when the user verified
+    QtCassandra::QCassandraValue value;
+    value.setInt64Value(f_snap->get_uri().option("start_date").toLongLong());
+    row->cell(get_name(SNAP_NAME_USERS_VERIFIED_ON))->setValue(value);
+
+    // Save the user IP address when verified
+    value.setStringValue(f_snap->snapenv("REMOTE_ADDR"));
+    row->cell(get_name(SNAP_NAME_USERS_VERIFIED_IP))->setValue(value);
+
+    // TODO offer an auto-log in feature
+
+    // send the user to the log in page since he got verified now
+    messages::messages::instance()->set_info(
+        "Verified!",
+        "Thank you for taking the time to register an account with us. Your account is now verified! You can now log in with the form below."
+    );
+    f_snap->page_redirect("login", snap_child::HTTP_CODE_SEE_OTHER);
+    NOTREACHED();
 }
 
 
@@ -876,16 +1038,16 @@ void users::on_process_post(const QString& cpath, const sessions::sessions::sess
 void users::process_login_form()
 {
     QString details;
-    QSharedPointer<QtCassandra::QCassandraTable> table(get_users_table());
+    QSharedPointer<QtCassandra::QCassandraTable> users_table(get_users_table());
     QSharedPointer<QtCassandra::QCassandraTable> content_table(content::content::instance()->get_content_table());
 
     bool validation_required(false);
 
     // retrieve the row for that user
     QString key(f_snap->postenv("email"));
-    if(table->exists(key))
+    if(users_table->exists(key))
     {
-        QSharedPointer<QtCassandra::QCassandraRow> row(table->row(key));
+        QSharedPointer<QtCassandra::QCassandraRow> row(users_table->row(key));
 
         QtCassandra::QCassandraValue value;
 
@@ -903,8 +1065,10 @@ void users::process_login_form()
         bool valid(true);
         if(link_ctxt->next_link(status_info))
         {
-            // the link exists, this means the user is a new user
-            // and therefore he cannot log in at this time
+            // the status link exists...
+            // this means the user is either a new user (not yet verified)
+            // or he is blocked
+            // either way it means he cannot log in at this time!
             if(status_info.key() == site_key + get_name(SNAP_NAME_USERS_NEW_PATH))
             {
                 details = "user's account is not yet active (not yet verified)";
@@ -954,7 +1118,7 @@ void users::process_login_form()
                 f_info->set_object_path("/user/" + key);
                 f_info->set_time_to_live(86400 * 5);  // 5 days
                 QString session_key(sessions::sessions::instance()->create_session(*f_info));
-                http_cookie cookie(f_snap, get_name(SNAP_NAME_USERS_SESSION_COOKIE), session_key);
+                http_cookie cookie(f_snap, get_name(SNAP_NAME_USERS_SESSION_COOKIE), QString("%1/%2").arg(session_key).arg(f_info->get_session_random()));
                 cookie.set_expire_in(86400 * 5);  // 5 days
                 f_snap->set_cookie(cookie);
 
@@ -962,8 +1126,10 @@ void users::process_login_form()
                 f_user_key = key;
 
                 // User is now logged in, redirect him to another page
-                // TODO: redirect...
-                return;
+                // TODO: give priority to the saved redirect... (which is not yet implemented!)
+                // go to the user profile (the admin needs to be able to change that default redirect)
+                f_snap->page_redirect("user/me", snap_child::HTTP_CODE_SEE_OTHER);
+                NOTREACHED();
             }
             else
             {
@@ -1036,6 +1202,9 @@ void users::process_register_form()
             "We registered your account",
             "We sent you an email to \"" + email + "\". In the email there is a link you need to follow to finish your registration."
         );
+        // redirect the user to the verification form
+        f_snap->page_redirect("verify", snap_child::HTTP_CODE_SEE_OTHER);
+        NOTREACHED();
     }
     else
     {
@@ -1088,9 +1257,9 @@ bool users::register_user(const QString& email, const QString& password)
         encrypt_password(digest.stringValue(), password, salt, hash);
     }
 
-    QSharedPointer<QtCassandra::QCassandraTable> table(get_users_table());
+    QSharedPointer<QtCassandra::QCassandraTable> users_table(get_users_table());
     QString key(email);
-    QSharedPointer<QtCassandra::QCassandraRow> row(table->row(key));
+    QSharedPointer<QtCassandra::QCassandraRow> row(users_table->row(key));
 
     QtCassandra::QCassandraValue value;
     value.setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
@@ -1127,15 +1296,15 @@ bool users::register_user(const QString& email, const QString& password)
         // unique identifier for each user, for that purpose we use
         // a special row in the users table and since we have a lock
         // we can safely do a read-increment-write cycle.
-        if(table->exists(id_key))
+        if(users_table->exists(id_key))
         {
-            QSharedPointer<QtCassandra::QCassandraRow> id_row(table->row(id_key));
+            QSharedPointer<QtCassandra::QCassandraRow> id_row(users_table->row(id_key));
             QtCassandra::QCassandraValue current_identifier(id_row->cell(identifier_key)->value());
             identifier = current_identifier.int64Value();
         }
         ++identifier;
         new_identifier.setInt64Value(identifier);
-        table->row(id_key)->cell(identifier_key)->setValue(new_identifier);
+        users_table->row(id_key)->cell(identifier_key)->setValue(new_identifier);
 
         // the lock automatically goes away here
     }

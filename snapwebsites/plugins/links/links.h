@@ -1,5 +1,5 @@
 // Snap Websites Server -- links
-// Copyright (C) 2012  Made to Order Software Corp.
+// Copyright (C) 2012-2013  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -26,8 +26,8 @@ namespace links
 {
 
 enum name_t {
-	SNAP_NAME_LINKS_TABLE, 		// Cassandra Table used for content (pages, comments, tags, vocabularies, etc.)
-	SNAP_NAME_LINKS_NAMESPACE
+    SNAP_NAME_LINKS_TABLE,         // Cassandra Table used for content (pages, comments, tags, vocabularies, etc.)
+    SNAP_NAME_LINKS_NAMESPACE
 };
 const char *get_name(name_t name);
 
@@ -41,99 +41,97 @@ class links_exception_invalid_db_data : public links_exception {};
 class link_info
 {
 public:
-	link_info(const QString& new_name = "", bool unique = false, const QString& new_key = "")
-		: f_unique(unique),
-		  f_name(new_name),
-		  f_key(new_key)
-	{
-		verify_name();
-	}
+    link_info(const QString& new_name = "", bool unique = false, const QString& new_key = "")
+        : f_unique(unique)
+        , f_name(new_name)
+        , f_key(new_key)
+    {
+        verify_name();
+    }
 
-	void set_name(const QString& new_name, bool unique = false)
-	{
-		f_unique = unique;
-		f_name = new_name;
-		verify_name();
-	}
-	void set_key(const QString& new_key)
-	{
-		f_key = new_key;
-	}
+    void set_name(const QString& new_name, bool unique = false)
+    {
+        f_unique = unique;
+        f_name = new_name;
+        verify_name();
+    }
+    void set_key(const QString& new_key)
+    {
+        f_key = new_key;
+    }
 
-	bool is_unique() const
-	{
-		return f_unique;
-	}
-	const QString& name() const
-	{
-		return f_name;
-	}
-	const QString& key() const
-	{
-		return f_key;
-	}
+    bool is_unique() const
+    {
+        return f_unique;
+    }
+    const QString& name() const
+    {
+        return f_name;
+    }
+    const QString& key() const
+    {
+        return f_key;
+    }
 
-	QString data() const;
-	void from_data(const QString& db_data);
+    QString data() const;
+    void from_data(const QString& db_data);
 
 private:
-	void verify_name();
+    void verify_name();
 
-	controlled_vars::fbool_t	f_unique;
-	QString						f_name;
-	QString						f_key;
+    controlled_vars::fbool_t    f_unique;
+    QString                     f_name;
+    QString                     f_key;
 };
 
 class link_context
 {
 public:
-	bool next_link(link_info& info);
-
-	//const QString& key() const;
-	//const QString& name() const;
+    bool next_link(link_info& info);
 
 private:
-	friend class links;
+    friend class links;
 
-	link_context(::snap::snap_child *snap, const link_info& info);
+    link_context(::snap::snap_child *snap, const link_info& info);
 
-	zpsnap_child_t									f_snap;
-	link_info										f_info;
-	QSharedPointer<QtCassandra::QCassandraRow>		f_row;
-	QtCassandra::QCassandraColumnRangePredicate		f_column_predicate;
-	QtCassandra::QCassandraCells::const_iterator	f_cell_iterator;
-	QString											f_link;
+    zpsnap_child_t                                  f_snap;
+    link_info                                       f_info;
+    QSharedPointer<QtCassandra::QCassandraRow>      f_row;
+    QtCassandra::QCassandraColumnRangePredicate     f_column_predicate;
+    QtCassandra::QCassandraCells::const_iterator    f_cell_iterator;
+    QString                                         f_link;
 };
 
 class links : public plugins::plugin
 {
 public:
-	links();
-	~links();
+                        links();
+                        ~links();
 
-	static links *	instance();
-	virtual QString	description() const;
-	virtual int64_t	do_update(int64_t last_updated);
-	QSharedPointer<QtCassandra::QCassandraTable> get_links_table();
+    static links *      instance();
+    virtual QString     description() const;
+    virtual int64_t     do_update(int64_t last_updated);
+    QSharedPointer<QtCassandra::QCassandraTable> get_links_table();
 
-	void			on_bootstrap(::snap::snap_child *snap);
+    void                on_bootstrap(::snap::snap_child *snap);
 
-	// should those be events?
-	void			create_link(const link_info& src, const link_info& dst);
-	void			delete_link(const link_info& info);
+    // should those be events?
+    void                create_link(const link_info& src, const link_info& dst);
+    void                delete_link(const link_info& info);
 
-	QSharedPointer<link_context>		new_link_context(const link_info& info);
+    QSharedPointer<link_context> new_link_context(const link_info& info);
 
 private:
-	void			initial_update(int64_t variables_timestamp);
+    void                initial_update(int64_t variables_timestamp);
+    void                init_tables();
 
-	zpsnap_child_t									f_snap;
-	QSharedPointer<QtCassandra::QCassandraTable>	f_links_table;
-	QSharedPointer<QtCassandra::QCassandraTable>	f_content_table;
+    zpsnap_child_t                                  f_snap;
+    QSharedPointer<QtCassandra::QCassandraTable>    f_links_table;
+    QSharedPointer<QtCassandra::QCassandraTable>    f_content_table;
 };
 
 } // namespace links
 } // namespace snap
 #endif
 // SNAP_LINKS_H
-// vim: ts=4 sw=4
+// vim: ts=4 sw=4 et
