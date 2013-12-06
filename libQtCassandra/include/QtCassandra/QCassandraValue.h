@@ -284,7 +284,7 @@ inline int64_t int64Value(const QByteArray& array, const int index = 0)
 {
     if(static_cast<unsigned int>(index) > static_cast<unsigned int>(array.size())
     || static_cast<unsigned int>(index + 8) > static_cast<unsigned int>(array.size())) {
-        throw std::runtime_error("buffer too small for this int64Value");
+        throw std::runtime_error(QString("buffer too small (%1) for this int64Value").arg(array.size()).toStdString());
     }
     return (static_cast<int64_t>(static_cast<unsigned char>(array.at(index + 0))) << 56)
          | (static_cast<int64_t>(static_cast<unsigned char>(array.at(index + 1))) << 48)
