@@ -124,6 +124,11 @@ target_link_libraries(${PROJECT_NAME}
     googlepagerank
 )
 
+install(
+    TARGETS ${PROJECT_NAME} 
+    DESTINATION bin
+)
+
 ##
 ## Include sub-folders
 ##
