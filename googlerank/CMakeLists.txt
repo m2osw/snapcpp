@@ -48,17 +48,10 @@ find_package( SnapCMakeModules )
 ##
 ## Find Snap! prerequisites
 ##
-if( NOT controlled_vars_SOURCE_DIR )
-    find_package( ControlledVars REQUIRED )
-    include_directories(
-        "${CONTROLLEDVARS_INCLUDE_DIRS}"
-    )
-else()
-    include_directories(
-        "${CMAKE_SOURCE_DIR}"
-        "${CMAKE_BINARY_DIR}"
-    )
-endif()
+find_package( ControlledVars REQUIRED )
+include_directories(
+    "${CONTROLLEDVARS_INCLUDE_DIRS}"
+)
 
 ##
 ## Find Qt4
@@ -96,10 +89,6 @@ target_link_libraries(googlepagerank
     ${QT_LIBRARIES}
 )
 
-if( controlled_vars_SOURCE_DIR )
-    add_dependencies( googlepagerank controlled_vars_headers )
-endif()
-
 install(
     FILES googlepagerank.h
     DESTINATION include
@@ -123,10 +112,6 @@ target_link_libraries(${PROJECT_NAME}
     ${QT_LIBRARIES}
     googlepagerank
 )
-
-if( controlled_vars_SOURCE_DIR )
-    add_dependencies( ${PROJECT_NAME} controlled_vars_headers )
-endif()
 
 ##
 ## Include sub-folders
