@@ -51,7 +51,10 @@ public:
 };
 
 
-int main(int argc, char *argv[])
+#pragma GCC push
+#pragma GCC diagnostic ignored "-Wunused-but-set-parameter" )
+int main(int argc, char * /*argv*/[])
+#pragma GCC pop
 {
 	int e(0);
 	Test t;

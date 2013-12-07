@@ -48,17 +48,10 @@ find_package( SnapCMakeModules )
 ##
 ## Find Snap! prerequisites
 ##
-if( NOT controlled_vars_SOURCE_DIR )
-    find_package( ControlledVars REQUIRED )
-    include_directories(
-        "${CONTROLLEDVARS_INCLUDE_DIRS}"
-    )
-else()
-    include_directories(
-        "${CMAKE_SOURCE_DIR}"
-        "${CMAKE_BINARY_DIR}"
-    )
-endif()
+find_package( ControlledVars REQUIRED )
+include_directories(
+    "${CONTROLLEDVARS_INCLUDE_DIRS}"
+)
 
 ##
 ## Find Qt4
@@ -86,7 +79,7 @@ QT4_WRAP_CPP(
     googlepagerank_http.h
 )
 
-add_library(googlepagerank SHARED
+add_library( googlepagerank SHARED
     googlepagerank.cpp
     googlepagerank_http.cpp
     ${GOOGLEPAGERANK_MOC_OUTFILES}
@@ -96,9 +89,16 @@ target_link_libraries(googlepagerank
     ${QT_LIBRARIES}
 )
 
-if( controlled_vars_SOURCE_DIR )
-    add_dependencies( googlepagerank controlled_vars_headers )
-endif()
+set_target_properties(
+    googlepagerank PROPERTIES 
+    VERSION ${GOOGLERANK_VERSION_MAJOR}.${GOOGLERANK_VERSION_MINOR}
+    SOVERSION ${GOOGLERANK_VERSION_MAJOR}
+)
+
+install(
+    TARGETS googlepagerank
+    DESTINATION lib
+)
 
 install(
     FILES googlepagerank.h
@@ -124,9 +124,10 @@ target_link_libraries(${PROJECT_NAME}
     googlepagerank
 )
 
-if( controlled_vars_SOURCE_DIR )
-    add_dependencies( ${PROJECT_NAME} controlled_vars_headers )
-endif()
+install(
+    TARGETS ${PROJECT_NAME} 
+    DESTINATION bin
+)
 
 ##
 ## Include sub-folders
@@ -136,22 +137,22 @@ add_subdirectory(doc)       # API Documentation
 ##
 ## To pack the source
 ##
-set(CPACK_PACKAGE_NAME "googlerank")
-set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "googlerank -- Tool to check the rank of your pages with the famous Google search engine.")
-set(CPACK_PACKAGE_VENDOR "Made to Order Software Corporation")
-set(CPACK_PACKAGE_CONTACT "alexis@m2osw.com")
-set(CPACK_RESOURCE_FILE_LICENSE "${libgooglerank_SOURCE_DIR}/LICENSE.txt")
-set(CPACK_GENERATOR "TGZ" "DEB")
-set(CPACK_SOURCE_GENERATOR "TGZ")
-set(CPACK_SOURCE_IGNORE_FILES "/CVS/;/work-files/;/.svn/;.swp$;.*~;cscope.*;/tmp/;BUILD;Build;build")
-set(CPACK_PACKAGE_VERSION "${GOOGLERANK_VERSION_MAJOR}.${GOOGLERANK_VERSION_MINOR}.${GOOGLERANK_VERSION_PATCH}")
-set(CPACK_PACKAGE_VERSION_MAJOR "${GOOGLERANK_VERSION_MAJOR}")
-set(CPACK_PACKAGE_VERSION_MINOR "${GOOGLERANK_VERSION_MINOR}")
-set(CPACK_PACKAGE_VERSION_PATCH "${GOOGLERANK_VERSION_PATCH}")
-set(CPACK_SOURCE_PACKAGE_FILE_NAME "googlerank-${GOOGLERANK_VERSION_MAJOR}.${GOOGLERANK_VERSION_MINOR}.${GOOGLERANK_VERSION_PATCH}")
-#set(CPACK_PACKAGE_EXECUTABLES "")
-set(CPACK_DEBIAN_PACKAGE_SECTION "web")
-set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "http://snapwebsites.org/project/googlerank")
-include(CPack)
+#set(CPACK_PACKAGE_NAME "googlerank")
+#set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "googlerank -- Tool to check the rank of your pages with the famous Google search engine.")
+#set(CPACK_PACKAGE_VENDOR "Made to Order Software Corporation")
+#set(CPACK_PACKAGE_CONTACT "alexis@m2osw.com")
+#set(CPACK_RESOURCE_FILE_LICENSE "${libgooglerank_SOURCE_DIR}/LICENSE.txt")
+#set(CPACK_GENERATOR "TGZ" "DEB")
+#set(CPACK_SOURCE_GENERATOR "TGZ")
+#set(CPACK_SOURCE_IGNORE_FILES "/CVS/;/work-files/;/.svn/;.swp$;.*~;cscope.*;/tmp/;BUILD;Build;build")
+#set(CPACK_PACKAGE_VERSION "${GOOGLERANK_VERSION_MAJOR}.${GOOGLERANK_VERSION_MINOR}.${GOOGLERANK_VERSION_PATCH}")
+#set(CPACK_PACKAGE_VERSION_MAJOR "${GOOGLERANK_VERSION_MAJOR}")
+#set(CPACK_PACKAGE_VERSION_MINOR "${GOOGLERANK_VERSION_MINOR}")
+#set(CPACK_PACKAGE_VERSION_PATCH "${GOOGLERANK_VERSION_PATCH}")
+#set(CPACK_SOURCE_PACKAGE_FILE_NAME "googlerank-${GOOGLERANK_VERSION_MAJOR}.${GOOGLERANK_VERSION_MINOR}.${GOOGLERANK_VERSION_PATCH}")
+##set(CPACK_PACKAGE_EXECUTABLES "")
+#set(CPACK_DEBIAN_PACKAGE_SECTION "web")
+#set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "http://snapwebsites.org/project/googlerank")
+#include(CPack)
 
 # vim: ts=4 sw=4 et
