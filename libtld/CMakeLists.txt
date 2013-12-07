@@ -76,27 +76,27 @@ add_subdirectory( doc )
 add_subdirectory( tests )
 add_subdirectory( package )
 
-##
-## Packaging
-##
-set(CPACK_PACKAGE_NAME "libtld")
-set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "libtld -- a C library to extract TLDs in a URI")
-set(CPACK_PACKAGE_VENDOR "Made to Order Software Corporation")
-set(CPACK_PACKAGE_CONTACT "alexis@m2osw.com")
-set(CPACK_RESOURCE_FILE_LICENSE "${tld_library_SOURCE_DIR}/LICENSE.txt")
-set(CPACK_GENERATOR "TGZ" "DEB")
-set(CPACK_SOURCE_GENERATOR "TGZ")
-set(CPACK_SOURCE_IGNORE_FILES "/CVS/;/work-files/;/.svn/;.swp$;.*~;cscope.*;/tmp/;.*\\\\.o$;.*\\\\.so$;BUILD;Build;build;.gitignore")
-set(CPACK_PACKAGE_VERSION "${LIBTLD_VERSION_MAJOR}.${LIBTLD_VERSION_MINOR}.${LIBTLD_VERSION_PATCH}")
-set(CPACK_PACKAGE_VERSION_MAJOR "${LIBTLD_VERSION_MAJOR}")
-set(CPACK_PACKAGE_VERSION_MINOR "${LIBTLD_VERSION_MINOR}")
-set(CPACK_PACKAGE_VERSION_PATCH "${LIBTLD_VERSION_PATCH}")
-set(CPACK_SOURCE_PACKAGE_FILE_NAME "libtld-${LIBTLD_VERSION_MAJOR}.${LIBTLD_VERSION_MINOR}.${LIBTLD_VERSION_PATCH}")
-set(CPACK_PACKAGE_EXECUTABLES "libtld.so")
-set(CPACK_DEBIAN_PACKAGE_SECTION "libs")
-set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "http://snapwebsites.org/project/tld-library-libtld")
-# I'm not too sure how we can add this one...
-#set(CPACK_DEBIAN_PACKAGE_DEV_DEPENDENCIES "cmake libqt4-dev")
-include(CPack)
+###
+### Packaging
+###
+#set(CPACK_PACKAGE_NAME "libtld")
+#set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "libtld -- a C library to extract TLDs in a URI")
+#set(CPACK_PACKAGE_VENDOR "Made to Order Software Corporation")
+#set(CPACK_PACKAGE_CONTACT "alexis@m2osw.com")
+#set(CPACK_RESOURCE_FILE_LICENSE "${tld_library_SOURCE_DIR}/LICENSE.txt")
+#set(CPACK_GENERATOR "TGZ" "DEB")
+#set(CPACK_SOURCE_GENERATOR "TGZ")
+#set(CPACK_SOURCE_IGNORE_FILES "/CVS/;/work-files/;/.svn/;.swp$;.*~;cscope.*;/tmp/;.*\\\\.o$;.*\\\\.so$;BUILD;Build;build;.gitignore")
+#set(CPACK_PACKAGE_VERSION "${LIBTLD_VERSION_MAJOR}.${LIBTLD_VERSION_MINOR}.${LIBTLD_VERSION_PATCH}")
+#set(CPACK_PACKAGE_VERSION_MAJOR "${LIBTLD_VERSION_MAJOR}")
+#set(CPACK_PACKAGE_VERSION_MINOR "${LIBTLD_VERSION_MINOR}")
+#set(CPACK_PACKAGE_VERSION_PATCH "${LIBTLD_VERSION_PATCH}")
+#set(CPACK_SOURCE_PACKAGE_FILE_NAME "libtld-${LIBTLD_VERSION_MAJOR}.${LIBTLD_VERSION_MINOR}.${LIBTLD_VERSION_PATCH}")
+#set(CPACK_PACKAGE_EXECUTABLES "libtld.so")
+#set(CPACK_DEBIAN_PACKAGE_SECTION "libs")
+#set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "http://snapwebsites.org/project/tld-library-libtld")
+## I'm not too sure how we can add this one...
+##set(CPACK_DEBIAN_PACKAGE_DEV_DEPENDENCIES "cmake libqt4-dev")
+#include(CPack)
 
 # vim: ts=4 sw=4 et

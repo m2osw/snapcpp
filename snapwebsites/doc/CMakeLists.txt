@@ -38,18 +38,9 @@
 ##
 ## Documentation
 ##
-AddDoxygenTarget( snapwebsites ${SNAPWEBSITES_VERSION_MAJOR} ${SNAPWEBSITES_VERSION_MINOR} ${SNAPWEBSITES_VERSION_PATCH} )
-#project(snapwebsites_documentation)
-#find_package(Doxygen)
-#if(DOXYGEN_FOUND)
-#	configure_file(${CMAKE_CURRENT_SOURCE_DIR}/snapwebsites.doxy.in ${CMAKE_CURRENT_BINARY_DIR}/snapwebsites.doxy @ONLY)
-#	set(DOCUMENTATION_OUTPUT snapwebsites-doc-${SNAPWEBSITES_VERSION_MAJOR}.${SNAPWEBSITES_VERSION_MINOR})
-#	add_custom_target(${PROJECT_NAME}
-#		rm -rf ${DOCUMENTATION_OUTPUT}
-#		COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/snapwebsites.doxy
-#		COMMAND echo Compacting as ${DOCUMENTATION_OUTPUT}.tar.gz
-#		COMMAND tar czf ${DOCUMENTATION_OUTPUT}.tar.gz ${DOCUMENTATION_OUTPUT}
-#		WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-#		COMMENT "Generating API documentation with Doxygen" VERBATIM
-#	)
-#endif(DOXYGEN_FOUND)
+AddDoxygenTarget(
+	snapwebsites
+	${SNAPWEBSITES_VERSION_MAJOR}
+	${SNAPWEBSITES_VERSION_MINOR}
+	${SNAPWEBSITES_VERSION_PATCH}
+)

@@ -73,33 +73,33 @@ include_directories(
 # Create a configure script
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/include/QtSerialization/QSerialization.h.in ${CMAKE_CURRENT_BINARY_DIR}/include/QtSerialization/QSerialization.h)
 
-install( FILES LICENSE.txt DESTINATION share/doc/libqtserialization )
+#install( FILES LICENSE.txt DESTINATION share/doc/libqtserialization )
 
 add_subdirectory(src)
 add_subdirectory(tests)
 add_subdirectory(doc)
 
 
-set(CPACK_PACKAGE_NAME "libQtSerialization")
-set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "libQtSerialization -- a Qt extension to read and write data in a forward and backward compatible manner")
-set(CPACK_PACKAGE_VENDOR "Made to Order Software Corporation")
-set(CPACK_PACKAGE_CONTACT "alexis@m2osw.com")
-set(CPACK_RESOURCE_FILE_LICENSE "${libQtSerialization_SOURCE_DIR}/LICENSE.txt")
-set(CPACK_GENERATOR "TGZ" "DEB")
-set(CPACK_SOURCE_GENERATOR "TGZ")
-set(CPACK_SOURCE_IGNORE_FILES "/CVS/;/work-files/;/.svn/;.swp$;.*~;cscope.*;/tmp/;BUILD;Build;build")
-set(CPACK_PACKAGE_VERSION "${LIBQTSERIALIZATION_VERSION_MAJOR}.${LIBQTSERIALIZATION_VERSION_MINOR}.${LIBQTSERIALIZATION_VERSION_PATCH}")
-set(CPACK_PACKAGE_VERSION_MAJOR "${LIBQTSERIALIZATION_VERSION_MAJOR}")
-set(CPACK_PACKAGE_VERSION_MINOR "${LIBQTSERIALIZATION_VERSION_MINOR}")
-set(CPACK_PACKAGE_VERSION_PATCH "${LIBQTSERIALIZATION_VERSION_PATCH}")
-set(CPACK_SOURCE_PACKAGE_FILE_NAME "libQtSerialization-${LIBQTSERIALIZATION_VERSION_MAJOR}.${LIBQTSERIALIZATION_VERSION_MINOR}.${LIBQTSERIALIZATION_VERSION_PATCH}")
-set(CPACK_PACKAGE_EXECUTABLES "libQtSerialization.so")
-set(CPACK_DEBIAN_PACKAGE_SECTION "libs")
-set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "http://snapwebsites.org/project/libqtserialization")
-set(CPACK_DEBIAN_PACKAGE_ENHANCES "libqtcore4")
-# I'm not too sure how we can add this one... components?
-# See http://www.vtk.org/Wiki/CMake:Component_Install_With_CPack
-#set(CPACK_DEBIAN_PACKAGE_DEV_DEPENDENCIES "cmake libqtcore4-dev")
-include(CPack)
+#set(CPACK_PACKAGE_NAME "libQtSerialization")
+#set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "libQtSerialization -- a Qt extension to read and write data in a forward and backward compatible manner")
+#set(CPACK_PACKAGE_VENDOR "Made to Order Software Corporation")
+#set(CPACK_PACKAGE_CONTACT "alexis@m2osw.com")
+#set(CPACK_RESOURCE_FILE_LICENSE "${libQtSerialization_SOURCE_DIR}/LICENSE.txt")
+#set(CPACK_GENERATOR "TGZ" "DEB")
+#set(CPACK_SOURCE_GENERATOR "TGZ")
+#set(CPACK_SOURCE_IGNORE_FILES "/CVS/;/work-files/;/.svn/;.swp$;.*~;cscope.*;/tmp/;BUILD;Build;build")
+#set(CPACK_PACKAGE_VERSION "${LIBQTSERIALIZATION_VERSION_MAJOR}.${LIBQTSERIALIZATION_VERSION_MINOR}.${LIBQTSERIALIZATION_VERSION_PATCH}")
+#set(CPACK_PACKAGE_VERSION_MAJOR "${LIBQTSERIALIZATION_VERSION_MAJOR}")
+#set(CPACK_PACKAGE_VERSION_MINOR "${LIBQTSERIALIZATION_VERSION_MINOR}")
+#set(CPACK_PACKAGE_VERSION_PATCH "${LIBQTSERIALIZATION_VERSION_PATCH}")
+#set(CPACK_SOURCE_PACKAGE_FILE_NAME "libQtSerialization-${LIBQTSERIALIZATION_VERSION_MAJOR}.${LIBQTSERIALIZATION_VERSION_MINOR}.${LIBQTSERIALIZATION_VERSION_PATCH}")
+#set(CPACK_PACKAGE_EXECUTABLES "libQtSerialization.so")
+#set(CPACK_DEBIAN_PACKAGE_SECTION "libs")
+#set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "http://snapwebsites.org/project/libqtserialization")
+#set(CPACK_DEBIAN_PACKAGE_ENHANCES "libqtcore4")
+## I'm not too sure how we can add this one... components?
+## See http://www.vtk.org/Wiki/CMake:Component_Install_With_CPack
+##set(CPACK_DEBIAN_PACKAGE_DEV_DEPENDENCIES "cmake libqtcore4-dev")
+#include(CPack)
 
 # vim: ts=4 sw=4 et
