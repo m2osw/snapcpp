@@ -54,11 +54,26 @@ BOOST_STATIC_ASSERT((SALT_SIZE & 1) == 0);
 const char *get_name(name_t name)
 {
     switch(name) {
+    case SNAP_NAME_USERS_AUTO_PATH:
+        return "types/users/auto";
+
     case SNAP_NAME_USERS_BLOCKED_PATH:
         return "types/users/blocked";
 
+    case SNAP_NAME_USERS_CHANGING_PASSWORD_KEY:
+        return "users::changing_password_key";
+
     case SNAP_NAME_USERS_CREATED_TIME:
         return "users::created_time";
+
+    case SNAP_NAME_USERS_FORGOT_PASSWORD_EMAIL:
+        return "users::forgot_password_email";
+
+    case SNAP_NAME_USERS_FORGOT_PASSWORD_IP:
+        return "users::forgot_password_ip";
+
+    case SNAP_NAME_USERS_FORGOT_PASSWORD_ON:
+        return "users::forgot_password_on";
 
     case SNAP_NAME_USERS_IDENTIFIER:
         return "users::identifier";
@@ -92,6 +107,9 @@ const char *get_name(name_t name)
 
     case SNAP_NAME_USERS_PASSWORD_DIGEST:
         return "users::password::digest";
+
+    case SNAP_NAME_USERS_PASSWORD_PATH:
+        return "types/users/password";
 
     case SNAP_NAME_USERS_PASSWORD_SALT:
         return "users::password::salt";
@@ -204,8 +222,8 @@ int64_t users::do_update(int64_t last_updated)
     SNAP_PLUGIN_UPDATE_INIT();
 
     SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, initial_update);
-    SNAP_PLUGIN_UPDATE(2013, 12, 5, 11, 52, 40, content_update);
-//<a href="[select('snap/head/metadata/desc[type=website_uri]/data')]/verify/[select('/snap/page/body/sendmail/parameters/param[@name=''users::verify_email'']/@value')]" title="Click to finish your registration by confirming your email address">Verify My Email</a>
+    SNAP_PLUGIN_UPDATE(2013, 12, 5, 23, 31, 43, content_update);
+
     SNAP_PLUGIN_UPDATE_EXIT();
 }
 
@@ -266,9 +284,12 @@ void users::on_bootstrap(::snap::snap_child *snap)
 
     SNAP_LISTEN0(users, "server", server, init);
     SNAP_LISTEN0(users, "server", server, process_cookies);
+    SNAP_LISTEN0(users, "server", server, attach_to_session);
+    SNAP_LISTEN0(users, "server", server, detach_from_session);
     SNAP_LISTEN(users, "path", path::path, can_handle_dynamic_path, _1, _2);
     SNAP_LISTEN(users, "layout", layout::layout, generate_header_content, _1, _2, _3, _4);
     //SNAP_LISTEN(users, "layout", layout::layout, generate_page_content, _1, _2, _3, _4);
+    //SNAP_LISTEN(users, "filter", filter::filter, replace_token, _1, _2, _3);
 
     f_info.reset(new sessions::sessions::session_info);
 }
@@ -428,15 +449,17 @@ void users::on_process_cookies()
  */
 void users::on_can_handle_dynamic_path(path::path *path_plugin, const QString& cpath)
 {
-    if(cpath == "user"                  // list of (public) users
-    || cpath.left(5) == "user/"         // show a user profile (user/ is followed by the user identifier)
-    || cpath == "profile"               // the logged in user profile
-    || cpath == "login"                 // form to log user in
-    || cpath == "logout"                // log user out
-    || cpath == "register"              // form to let new users register
-    || cpath == "verify"                // verification form so the user can enter his code
-    || cpath.left(7) == "verify/"       // link to verify user's email
-    || cpath == "forgot-password")      // form for users to reset their password
+    if(cpath == "user"                      // list of (public) users
+    || cpath.left(5) == "user/"             // show a user profile (user/ is followed by the user identifier or some edit page such as user/password)
+    || cpath == "profile"                   // the logged in user profile
+    || cpath == "login"                     // form to log user in
+    || cpath == "logout"                    // log user out
+    || cpath == "register"                  // form to let new users register
+    || cpath == "verify"                    // verification form so the user can enter his code
+    || cpath.left(7) == "verify/"           // link to verify user's email; and verify/resend form
+    || cpath == "forgot-password"           // form for users to reset their password
+    || cpath == "new-password"              // form for users to enter their forgotten password verification code
+    || cpath.left(13) == "new-password/")   // form for users to enter their forgotten password verification code
     {
         // tell the path plugin that this is ours
         path_plugin->handle_dynamic_path("user", this);
@@ -465,6 +488,12 @@ void users::on_generate_main_content(layout::layout *l, const QString& cpath, QD
         // TODO: write user listing
         //list_users(body);
     }
+    else if(cpath == "user/password/replace")
+    {
+        // this is a very special form that is accessible by users who
+        // requested to change the password with the "forgot password"
+        generate_replace_password_form(body);
+    }
     else if(cpath.left(5) == "user/")
     {
         // TODO: write user profile viewer
@@ -492,13 +521,25 @@ void users::on_generate_main_content(layout::layout *l, const QString& cpath, QD
     {
         generate_verify_form(body);
     }
+    else if(cpath == "verify/resend")
+    {
+        generate_resend_email_form(body);
+    }
     else if(cpath.left(7) == "verify/")
     {
         verify_user(cpath);
     }
     else if(cpath == "forgot-password")
     {
-        // TODO: create forget password form
+        generate_forgot_password_form(body);
+    }
+    else if(cpath == "new-password")
+    {
+        generate_new_password_form(body);
+    }
+    else if(cpath.left(13) == "new-password/")
+    {
+        verify_password(cpath);
     }
     else
     {
@@ -556,6 +597,69 @@ void users::on_generate_header_content(layout::layout *l, const QString& path, Q
                 data.appendChild(text);
             }
         }
+    }
+}
+
+
+/** \brief Let the user replace their password.
+ *
+ * This is a very special form that is only accessible when the user
+ * requests a special link after forgetting their password.
+ *
+ * \param[in] body  The body where the form is saved.
+ */
+void users::generate_replace_password_form(QDomElement& body)
+{
+    // make sure the user is properly setup
+    if(!f_user_key.isEmpty())
+    {
+        // user is logged in already, send him to his normal password form
+        f_snap->page_redirect("user/password", snap_child::HTTP_CODE_SEE_OTHER);
+        NOTREACHED();
+    }
+    if(f_user_changing_password_key.isEmpty())
+    {
+        // user is not logged in and he did not follow a valid link
+        // XXX the login page is probably the best choice?
+        f_snap->page_redirect("login", snap_child::HTTP_CODE_SEE_OTHER);
+        NOTREACHED();
+    }
+
+    QDomDocument doc(body.ownerDocument());
+
+    QDomDocument replace_password_form(on_get_xml_form("replace-password"));
+    if(replace_password_form.isNull())
+    {
+        // invalid (could not load the form!)
+        return;
+    }
+
+    sessions::sessions::session_info info;
+    info.set_session_type(info.SESSION_INFO_USER);
+    info.set_session_id(USERS_SESSION_ID_REPLACE_PASSWORD);
+    info.set_plugin_owner("users"); // ourselves
+    info.set_page_path("user/password/replace");
+    //info.set_object_path(); -- default is okay
+    info.set_time_to_live(3600);  // 1h -- we want to have a JS that clears the data in 5 min. though
+    QDomDocument result(form::form::instance()->form_to_html(info, replace_password_form));
+    //f_snap->output(result.toString());
+
+    {
+        // we assume that the body content is valid because when we created it
+        // we checked the data and if the user data was invalid XML then we
+        // already saved a place holder warning to the user about the fact!
+        QDomElement content_tag(doc.createElement("content"));
+        body.appendChild(content_tag);
+        content_tag.appendChild(doc.importNode(result.documentElement(), true));
+    }
+
+    { // /snap/page/body/titles/title
+        QDomElement titles(doc.createElement("titles"));
+        body.appendChild(titles);
+        QDomElement title(doc.createElement("title"));
+        titles.appendChild(title);
+        QDomText text(doc.createTextNode(form::form::instance()->get_form_title("Replace Your Password")));
+        title.appendChild(text);
     }
 }
 
@@ -679,7 +783,7 @@ void users::generate_login_form(QDomElement& body)
         body.appendChild(titles);
         QDomElement title(doc.createElement("title"));
         titles.appendChild(title);
-        QDomText text(doc.createTextNode("User Log In"));
+        QDomText text(doc.createTextNode(form::form::instance()->get_form_title("User Log In")));
         title.appendChild(text);
     }
 }
@@ -767,7 +871,7 @@ void users::generate_register_form(QDomElement& body)
         body.appendChild(titles);
         QDomElement title(doc.createElement("title"));
         titles.appendChild(title);
-        QDomText text(doc.createTextNode("User Registration"));
+        QDomText text(doc.createTextNode(form::form::instance()->get_form_title("User Registration")));
         title.appendChild(text);
     }
 }
@@ -826,7 +930,206 @@ void users::generate_verify_form(QDomElement& body)
         body.appendChild(titles);
         QDomElement title(doc.createElement("title"));
         titles.appendChild(title);
-        QDomText text(doc.createTextNode("User Verification"));
+        QDomText text(doc.createTextNode(form::form::instance()->get_form_title("User Verification")));
+        title.appendChild(text);
+    }
+}
+
+
+/** \brief Resend a verification email to the user.
+ *
+ * This function sends the verification email as if the user was just
+ * registering. It is at items useful if the first email gets blocked
+ * or lost in a junk mail folder.
+ *
+ * We should also show the "From" email on our forms so users can say
+ * that these are okay.
+ *
+ * \param[in] body  The body where we're to add the resend verification
+ *                  email form.
+ */
+void users::generate_resend_email_form(QDomElement& body)
+{
+    if(!f_user_key.isEmpty())
+    {
+        // user is logged in already, just send him to his profile
+        // XXX add a message?
+        f_snap->page_redirect("user/me", snap_child::HTTP_CODE_SEE_OTHER);
+        NOTREACHED();
+    }
+
+    QDomDocument doc(body.ownerDocument());
+
+    QDomDocument resend_email_form(on_get_xml_form("resend-email"));
+    if(resend_email_form.isNull())
+    {
+        // invalid (could not load the form!)
+        return;
+    }
+
+    sessions::sessions::session_info info;
+    info.set_session_type(info.SESSION_INFO_USER);
+    info.set_session_id(USERS_SESSION_ID_RESEND_EMAIL);
+    info.set_plugin_owner("users"); // ourselves
+    info.set_page_path("verify/resend");
+    //info.set_object_path(); -- default is okay
+    info.set_time_to_live(3600);  // 1h -- we want to have a JS that clears the data in 5 min. though
+    QDomDocument result(form::form::instance()->form_to_html(info, resend_email_form));
+    //f_snap->output(result.toString());
+
+    {
+        // we assume that the body content is valid because when we created it
+        // we checked the data and if the user data was invalid XML then we
+        // already saved a place holder warning to the user about the fact!
+        QDomElement content_tag(doc.createElement("content"));
+        body.appendChild(content_tag);
+        content_tag.appendChild(doc.importNode(result.documentElement(), true));
+    }
+
+    { // /snap/page/body/titles/title
+        QDomElement titles(doc.createElement("titles"));
+        body.appendChild(titles);
+        QDomElement title(doc.createElement("title"));
+        titles.appendChild(title);
+        QDomText text(doc.createTextNode(form::form::instance()->get_form_title("Resend Verification Code")));
+        title.appendChild(text);
+    }
+}
+
+
+/** \brief Resend a verification email to the user.
+ *
+ * This function sends the verification email as if the user was just
+ * registering. It is at items useful if the first email gets blocked
+ * or lost in a junk mail folder.
+ *
+ * We should also show the "From" email on our forms so users can say
+ * that these are okay.
+ *
+ * \todo
+ * Add a question such as "what's your favority movie", "where were you
+ * born", etc. so we can limit the number of people who use this form.
+ *
+ * \param[in] body  The body where we're to add the resend verification
+ *                  email form.
+ */
+void users::generate_forgot_password_form(QDomElement& body)
+{
+    if(!f_user_key.isEmpty())
+    {
+        // send user to his change password form if he's logged in
+        // XXX look into changing this policy and allow logged in
+        //     users to request a password change? (I don't think
+        //     it matters actually)
+        messages::messages::instance()->set_error(
+            "You Are Logged In",
+            "If you want to change your password and forgot your old password, you'll have to log out and request for a new password while not logged in.",
+            "user tried to get to the forgot_password_form() while logged in.",
+            false
+        );
+        f_snap->page_redirect("user/password", snap_child::HTTP_CODE_SEE_OTHER);
+        NOTREACHED();
+    }
+
+    QDomDocument doc(body.ownerDocument());
+
+    QDomDocument forgot_password_form(on_get_xml_form("forgot-password"));
+    if(forgot_password_form.isNull())
+    {
+        // invalid (could not load the form!)
+        return;
+    }
+
+    sessions::sessions::session_info info;
+    info.set_session_type(info.SESSION_INFO_USER);
+    info.set_session_id(USERS_SESSION_ID_FORGOT_PASSWORD);
+    info.set_plugin_owner("users"); // ourselves
+    info.set_page_path("forgot-password");
+    //info.set_object_path(); -- default is okay
+    info.set_time_to_live(3600);  // 1h -- we want to have a JS that clears the data in 5 min. though
+    QDomDocument result(form::form::instance()->form_to_html(info, forgot_password_form));
+    //f_snap->output(result.toString());
+
+    {
+        // we assume that the body content is valid because when we created it
+        // we checked the data and if the user data was invalid XML then we
+        // already saved a place holder warning to the user about the fact!
+        QDomElement content_tag(doc.createElement("content"));
+        body.appendChild(content_tag);
+        content_tag.appendChild(doc.importNode(result.documentElement(), true));
+    }
+
+    { // /snap/page/body/titles/title
+        QDomElement titles(doc.createElement("titles"));
+        body.appendChild(titles);
+        QDomElement title(doc.createElement("title"));
+        titles.appendChild(title);
+        QDomText text(doc.createTextNode(form::form::instance()->get_form_title("Forgot Password")));
+        title.appendChild(text);
+    }
+}
+
+
+/** \brief Allow the user to use his verification code to log in.
+ *
+ * This function verifies a verification code that was sent so the user
+ * could change his password (i.e. an automatic log in mechanism.)
+ *
+ * \param[in] body  The body where we're to add the resend verification
+ *                  email form.
+ */
+void users::generate_new_password_form(QDomElement& body)
+{
+    if(!f_user_key.isEmpty())
+    {
+        // send user to his change password form if he's logged in
+        // XXX look into changing this policy and allow logged in
+        //     users to request a password change? (I don't think
+        //     it matters actually)
+        messages::messages::instance()->set_error(
+            "You Are Already Logged In",
+            "If you want to change your password and forgot your old password, you'll have to log out and request for a new password while not logged in.",
+            "user tried to get to the forgot_password_form() while logged in.",
+            false
+        );
+        f_snap->page_redirect("user/password", snap_child::HTTP_CODE_SEE_OTHER);
+        NOTREACHED();
+    }
+
+    QDomDocument doc(body.ownerDocument());
+
+    QDomDocument new_password_form(on_get_xml_form("new-password"));
+    if(new_password_form.isNull())
+    {
+        // invalid (could not load the form!)
+        return;
+    }
+
+    sessions::sessions::session_info info;
+    info.set_session_type(info.SESSION_INFO_USER);
+    info.set_session_id(USERS_SESSION_ID_NEW_PASSWORD);
+    info.set_plugin_owner("users"); // ourselves
+    info.set_page_path("new-password");
+    //info.set_object_path(); -- default is okay
+    info.set_time_to_live(3600);  // 1h -- we want to have a JS that clears the data in 5 min. though
+    QDomDocument result(form::form::instance()->form_to_html(info, new_password_form));
+    //f_snap->output(result.toString());
+
+    {
+        // we assume that the body content is valid because when we created it
+        // we checked the data and if the user data was invalid XML then we
+        // already saved a place holder warning to the user about the fact!
+        QDomElement content_tag(doc.createElement("content"));
+        body.appendChild(content_tag);
+        content_tag.appendChild(doc.importNode(result.documentElement(), true));
+    }
+
+    { // /snap/page/body/titles/title
+        QDomElement titles(doc.createElement("titles"));
+        body.appendChild(titles);
+        QDomElement title(doc.createElement("title"));
+        titles.appendChild(title);
+        QDomText text(doc.createTextNode(form::form::instance()->get_form_title("Forgotten Password Verification Code")));
         title.appendChild(text);
     }
 }
@@ -854,13 +1157,13 @@ void users::generate_verify_form(QDomElement& body)
  * his email later and wants to close everything in the meantime.
  *
  * \param[in] cpath  The path used to access this page.
- * \param[in] body  The body where the result is generated.
  */
 void users::verify_user(const QString& cpath)
 {
     if(!f_user_key.isEmpty())
     {
         // user is logged in already, just send him to his profile
+        // (if logged in he was verified in some way!)
         f_snap->page_redirect("user/me", snap_child::HTTP_CODE_SEE_OTHER);
         NOTREACHED();
     }
@@ -995,6 +1298,150 @@ void users::verify_user(const QString& cpath)
 }
 
 
+/** \brief Check that password verification code.
+ *
+ * This function verifies a password verification code that is sent to
+ * the user whenever he says he forgot his password.
+ *
+ * \param[in] cpath  The path used to access this page.
+ */
+void users::verify_password(const QString& cpath)
+{
+    if(!f_user_key.isEmpty())
+    {
+        // TODO: delete the "password" tag if present
+        //
+        // user is logged in already, just send him to his profile
+        // (if logged in he was verified in some way!)
+        f_snap->page_redirect("user/me", snap_child::HTTP_CODE_SEE_OTHER);
+        NOTREACHED();
+    }
+
+    QString session_id(cpath.mid(13));
+
+    sessions::sessions::session_info info;
+    sessions::sessions *session(sessions::sessions::instance());
+    // TODO: remove the ending characters such as " ", "/", "\" and "|"?
+    //       (it happens that people add those by mistake at the end of a URI...)
+    session->load_session(session_id, info);
+    const QString path(info.get_object_path());
+    if(info.get_session_type() != sessions::sessions::session_info::SESSION_INFO_VALID
+    || path.mid(0, 6) != "/user/")
+    {
+        // it failed, the session could not be loaded properly
+        SNAP_LOG_WARNING("users::process_new_password_form() could not load the user session ")
+                            (session_id)(" properly. Session error: ")
+                            (sessions::sessions::session_info::session_type_to_string(info.get_session_type()))(".");
+        // TODO change message support to use strings from the database so they can get translated
+        messages::messages::instance()->set_error(
+            "Invalid Forgotten Password Verification Code",
+            "The specified verification code (" + session_id
+                    + ") is not correct. Please verify that you used the correct link or try to use the form below to enter your verification code."
+                      " If you already followed the link once, then you already exhausted that verfication code and if you need another you have to click the Resend link below.",
+            "user trying his forgotten password verification with code \"" + session_id + "\" got error: "
+                    + sessions::sessions::session_info::session_type_to_string(info.get_session_type()) + ".",
+            true
+        );
+        // we are likely on the verification link for the new password
+        // so we want to send people to the new-password page instead
+        // XXX should we avoid the redirect if we're already on that page?
+        f_snap->page_redirect("new-password", snap_child::HTTP_CODE_SEE_OTHER);
+        NOTREACHED();
+    }
+
+    // it looks like the session is valid, get the user email and verify
+    // that the account exists in the database
+    const QString email(path.mid(6));
+    QSharedPointer<QtCassandra::QCassandraTable> users_table(get_users_table());
+    if(!users_table->exists(email))
+    {
+        // This should never happen...
+        messages::messages::instance()->set_error(
+            "Could Not Find Your Account",
+            "Somehow we could not find your account on this system.",
+            "user account for " + email + " does not exist at this point",
+            true
+        );
+        // redirect the user to the log in page
+        f_snap->page_redirect("login", snap_child::HTTP_CODE_SEE_OTHER);
+        NOTREACHED();
+    }
+
+    QSharedPointer<QtCassandra::QCassandraRow> row(users_table->row(email));
+    const QtCassandra::QCassandraValue user_identifier(row->cell(get_name(SNAP_NAME_USERS_IDENTIFIER))->value());
+    if(user_identifier.nullValue())
+    {
+        SNAP_LOG_FATAL("users::process_new_password_form() could not load the user identifier, the row exists but the cell did not make it (")
+                        (email)("/")
+                        (get_name(SNAP_NAME_USERS_IDENTIFIER))(").");
+        // TODO where to send that user?! have an error page for all of those
+        //      "your account is dead, sorry dear..."
+        f_snap->page_redirect("login", snap_child::HTTP_CODE_SEE_OTHER);
+        NOTREACHED();
+    }
+    const int64_t identifier(user_identifier.int64Value());
+    const QString site_key(f_snap->get_site_key_with_slash());
+    const QString user_key(site_key + get_name(SNAP_NAME_USERS_PATH) + QString("/%1").arg(identifier));
+
+    // before we actually accept this verification code, we must make sure
+    // the user is still marked as a new user (he should or the session
+    // would be invalid, but for security it is better to check again)
+    links::link_info user_status_info(get_name(SNAP_NAME_USERS_STATUS), true, user_key);
+    QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(user_status_info));
+    links::link_info status_info;
+    if(!link_ctxt->next_link(status_info))
+    {
+        // This should never happen... because the session should logically
+        // prevent it from happening (i.e. the status link should always be
+        // there) although maybe the admin could delete this link somehow?
+        messages::messages::instance()->set_error(
+            "Forgotten Password?",
+            "It does not look like you requested a new password for your account. The form is being canceled.",
+            "user account for " + email + ", which requested a mew password, is not marked as expected a new password",
+            true
+        );
+        // redirect the user to the log in page
+        f_snap->page_redirect("login", snap_child::HTTP_CODE_SEE_OTHER);
+        NOTREACHED();
+    }
+
+    // a status link exists... is it the right one?
+    if(status_info.key() != site_key + get_name(SNAP_NAME_USERS_PASSWORD_PATH))
+    {
+        // This should never happen... because the session should logically
+        // prevent it from happening (i.e. the status link should always be
+        // there) although maybe the admin could delete this link somehow?
+        messages::messages::instance()->set_error(
+            "Forgotten Password?",
+            "It does not look like you requested a new password for your account. If you did so multiple times, know that you can only follow one of the links once. Doing so voids the other links.",
+            "user account for " + email + ", which requested a new password, is not marked as expecting a new password: " + status_info.key(),
+            true
+        );
+        // redirect the user to the log in page? (XXX should this be the registration page instead?)
+        f_snap->page_redirect("login", snap_child::HTTP_CODE_SEE_OTHER);
+        NOTREACHED();
+    }
+    // remove the "user/password" status link so the user can now log in
+    // he was successfully logged in -- don't kill this one yet...
+    //links::links::instance()->delete_link(user_status_info);
+
+    // Save the date when the user verified
+    QtCassandra::QCassandraValue value;
+    value.setInt64Value(f_snap->get_uri().option("start_date").toLongLong());
+    row->cell(get_name(SNAP_NAME_USERS_FORGOT_PASSWORD_ON))->setValue(value);
+
+    // Save the user IP address when verified
+    value.setStringValue(f_snap->snapenv("REMOTE_ADDR"));
+    row->cell(get_name(SNAP_NAME_USERS_FORGOT_PASSWORD_IP))->setValue(value);
+
+    f_user_changing_password_key = email;
+
+    // send the user to the log in page since he got verified now
+    f_snap->page_redirect("user/password/replace", snap_child::HTTP_CODE_SEE_OTHER);
+    NOTREACHED();
+}
+
+
 /** \brief Retrieve the XML form for that path.
  *
  * This function retrieves the XML form for the specified path. It is used
@@ -1010,10 +1457,35 @@ QDomDocument users::on_get_xml_form(const QString& cpath)
     // forms are saved as static variables so calling the function more
     // than once for the same form simply returns the same document
     static QDomDocument invalid_form;
+    static QDomDocument email_form;
+    static QDomDocument forgot_password_form;
     static QDomDocument login_form;
+    static QDomDocument new_password_form;
     static QDomDocument register_form;
     static QDomDocument password_form;
+    static QDomDocument replace_password_form;
+    static QDomDocument resend_email_form;
     static QDomDocument verify_form;
+
+    if(cpath == "forgot-password")
+    {
+        if(forgot_password_form.isNull())
+        {
+            // login page if user is not logged in, user account/stats otherwise
+            QFile file(":/xml/users/forgot-password-form.xml");
+            if(!file.open(QIODevice::ReadOnly))
+            {
+                SNAP_LOG_FATAL("users::on_get_xml_form() could not open forgot-password-form.xml resource file.");
+                return invalid_form;
+            }
+            if(!forgot_password_form.setContent(&file, true))
+            {
+                SNAP_LOG_FATAL("users::on_get_xml_form() could not parse forgot-password-form.xml resource file.");
+                return invalid_form;
+            }
+        }
+        return forgot_password_form;
+    }
 
     if(cpath == "login")
     {
@@ -1035,6 +1507,26 @@ QDomDocument users::on_get_xml_form(const QString& cpath)
         return login_form;
     }
 
+    if(cpath == "new-password")
+    {
+        if(new_password_form.isNull())
+        {
+            // login page if user is not logged in, user account/stats otherwise
+            QFile file(":/xml/users/new-password-form.xml");
+            if(!file.open(QIODevice::ReadOnly))
+            {
+                SNAP_LOG_FATAL("users::on_get_xml_form() could not open new-password-form.xml resource file.");
+                return invalid_form;
+            }
+            if(!new_password_form.setContent(&file, true))
+            {
+                SNAP_LOG_FATAL("users::on_get_xml_form() could not parse new-password-form.xml resource file.");
+                return invalid_form;
+            }
+        }
+        return new_password_form;
+    }
+
     if(cpath == "register")
     {
         if(register_form.isNull())
@@ -1053,6 +1545,46 @@ QDomDocument users::on_get_xml_form(const QString& cpath)
             }
         }
         return register_form;
+    }
+
+    if(cpath == "replace-password")
+    {
+        if(replace_password_form.isNull())
+        {
+            // login page if user is not logged in, user account/stats otherwise
+            QFile file(":/xml/users/replace-password-form.xml");
+            if(!file.open(QIODevice::ReadOnly))
+            {
+                SNAP_LOG_FATAL("users::on_get_xml_form() could not open replace-password-form.xml resource file.");
+                return invalid_form;
+            }
+            if(!replace_password_form.setContent(&file, true))
+            {
+                SNAP_LOG_FATAL("users::on_get_xml_form() could not parse replace-password-form.xml resource file.");
+                return invalid_form;
+            }
+        }
+        return replace_password_form;
+    }
+
+    if(cpath == "resend-email")
+    {
+        if(resend_email_form.isNull())
+        {
+            // login page if user is not logged in, user account/stats otherwise
+            QFile file(":/xml/users/resend-email-form.xml");
+            if(!file.open(QIODevice::ReadOnly))
+            {
+                SNAP_LOG_FATAL("users::on_get_xml_form() could not open resend-email-form.xml resource file.");
+                return invalid_form;
+            }
+            if(!resend_email_form.setContent(&file, true))
+            {
+                SNAP_LOG_FATAL("users::on_get_xml_form() could not parse resend-email-form.xml resource file.");
+                return invalid_form;
+            }
+        }
+        return resend_email_form;
     }
 
     if(cpath == "verify")
@@ -1094,13 +1626,25 @@ void users::on_process_post(const QString& cpath, const sessions::sessions::sess
     {
         process_register_form();
     }
-    else if(cpath == "forgot-password")
+    else if(cpath == "verify/resend")
     {
-        // TODO
+        process_verify_resend_form();
     }
     else if(cpath == "verify")
     {
         process_verify_form();
+    }
+    else if(cpath == "forgot-password")
+    {
+        process_forgot_password_form();
+    }
+    else if(cpath == "new-password")
+    {
+        process_new_password_form();
+    }
+    else if(cpath == "user/password/replace")
+    {
+        process_replace_password_form();
     }
     else
     {
@@ -1178,6 +1722,11 @@ void users::process_login_form()
                 details = "user's account is blocked";
                 valid = false;
             }
+            else if(status_info.key() == site_key + get_name(SNAP_NAME_USERS_AUTO_PATH))
+            {
+                details = "user did not register, this is an auto-account only";
+                valid = false;
+            }
             // ignore other statuses at this point
         }
         if(valid)
@@ -1208,15 +1757,15 @@ void users::process_login_form()
             if(hash.size() == saved_hash.size()
             && memcmp(hash.data(), saved_hash.data(), hash.size()) == 0)
             {
-                // User credentials are correct, create a cookie
-                f_info->set_session_type(sessions::sessions::session_info::SESSION_INFO_USER);
-                f_info->set_session_id(USERS_SESSION_ID_LOG_IN_SESSION);
-                f_info->set_plugin_owner("users"); // ourselves
-                //f_info->set_page_path(); -- default is okay
+                // User credentials are correct, create a session & cookie
+
+                // log the user in by adding the correct object path
+                // the other parameters were already defined in the
+                // on_process_cookies() function
                 f_info->set_object_path("/user/" + key);
-                f_info->set_time_to_live(86400 * 5);  // 5 days
-                QString session_key(sessions::sessions::instance()->create_session(*f_info));
-                http_cookie cookie(f_snap, get_name(SNAP_NAME_USERS_SESSION_COOKIE), QString("%1/%2").arg(session_key).arg(f_info->get_session_random()));
+                sessions::sessions::instance()->save_session(*f_info);
+
+                http_cookie cookie(f_snap, get_name(SNAP_NAME_USERS_SESSION_COOKIE), QString("%1/%2").arg(f_info->get_session_key()).arg(f_info->get_session_random()));
                 cookie.set_expire_in(86400 * 5);  // 5 days
                 f_snap->set_cookie(cookie);
 
@@ -1331,6 +1880,352 @@ void users::process_register_form()
             true
         );
     }
+}
+
+
+/** \brief Send an email so the user can log in without password.
+ *
+ * This process generates an email with a secure code. It is sent to the
+ * user which will have to click on a link to auto-login in his account.
+ * Once there, he will be forced to enter a new password (and duplicate
+ * thereof).
+ *
+ * This only works for currently active users.
+ */
+void users::process_forgot_password_form()
+{
+    QString email(f_snap->postenv("email"));
+    QString details;
+
+    // check to make sure that a user with that email address exists
+    QSharedPointer<QtCassandra::QCassandraTable> users_table(get_users_table());
+    if(users_table->exists(email))
+    {
+        QSharedPointer<QtCassandra::QCassandraRow> row(users_table->row(email));
+
+        // existing users have a unique identifier
+        // necessary to create the user key below
+        QtCassandra::QCassandraValue user_identifier(row->cell(get_name(SNAP_NAME_USERS_IDENTIFIER))->value());
+        if(!user_identifier.nullValue())
+        {
+            int64_t identifier(user_identifier.int64Value());
+            const QString site_key(f_snap->get_site_key_with_slash());
+            QString user_key(site_key + get_name(SNAP_NAME_USERS_PATH) + QString("/%1").arg(identifier));
+
+            // verify the status of this user
+            links::link_info user_status_info(get_name(SNAP_NAME_USERS_STATUS), true, user_key);
+            QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(user_status_info));
+            links::link_info status_info;
+            QString status;
+            if(link_ctxt->next_link(status_info))
+            {
+                // a status link exists...
+                status = status_info.key();
+            }
+            // empty represents ACTIVE
+            // or if user already requested for a new password
+            if(status == "" || status == site_key + get_name(SNAP_NAME_USERS_PASSWORD_PATH))
+            {
+                // Only users considered active can request a new password
+                forgot_password_email(email);
+
+                // mark the user with the types/users/password tag
+                const QString link_name(get_name(SNAP_NAME_USERS_STATUS));
+                const bool source_unique(true);
+                links::link_info source(link_name, source_unique, user_key);
+                const QString link_to(get_name(SNAP_NAME_USERS_STATUS));
+                const bool destination_unique(false);
+                QString destination_key(site_key + get_name(SNAP_NAME_USERS_PASSWORD_PATH));
+                links::link_info destination(link_to, destination_unique, destination_key);
+                links::links::instance()->create_link(source, destination);
+
+                // once we sent the new code, we can send the user back
+                // to the verify form
+                messages::messages::instance()->set_info(
+                    "New Verification Email Send",
+                    "We just sent you a new verification email. Please check your account and follow the verification link or copy and paste your verification code below."
+                );
+                f_snap->page_redirect("new-password", snap_child::HTTP_CODE_SEE_OTHER);
+                NOTREACHED();
+            }
+            else
+            {
+                details = "user " + email + " is not active nor in \"new password\" mode, we do not send verification emails to such";
+            }
+        }
+        else
+        {
+            details = "somehow we saw that a row existed for " + email + ", but we could not retrieve it";
+        }
+    }
+    else
+    {
+        // XXX here we could test the email address and if invalid generate
+        //     different details (we'd need to do that only if we get quite
+        //     a few of those errors, we could then block IPs with repetitive
+        //     invalid email addresses)
+        //
+        // probably a stupid spammer robot
+        details = "user asking for forgot-password with an unknown email address: " + email;
+    }
+
+    // ONE error so whatever the reason the end user cannot really know
+    // whether someone registered with that email address on our systems
+    messages::messages::instance()->set_error(
+        "Not an Active Account",
+        "This email is not from an active account. No email was sent to you.",
+        details,
+        false
+    );
+    // no redirect, the same form will be shown again
+}
+
+
+/** \brief Processing the forgotten password verification code.
+ *
+ * This process verifies that the verification code entered is the one
+ * expected for the user to correct a forgotten password.
+ *
+ * This works only if the user is active with a status of "password".
+ * If not we assume that the user already changed his password because
+ * (1) we force the user to do so if that status is on; and (2) the
+ * link is removed when the new password gets saved successfully.
+ */
+void users::process_new_password_form()
+{
+    const QString session_id(f_snap->postenv("verification_code"));
+    verify_password("new-password/" + session_id);
+}
+
+
+
+/** \brief Save the new password assuming everything checks out.
+ *
+ * This saves the new password in the database and logs the user in so
+ * he can go on with his work.
+ */
+void users::process_replace_password_form()
+{
+    // make sure the user is properly setup
+    if(!f_user_key.isEmpty())
+    {
+        // user is logged in already, send him to his normal password form
+        f_user_changing_password_key.clear();
+        f_snap->page_redirect("user/password", snap_child::HTTP_CODE_SEE_OTHER);
+        NOTREACHED();
+    }
+    if(f_user_changing_password_key.isEmpty())
+    {
+        // user is not logged in and he did not follow a valid link
+        // XXX the login page is probably the best choice?
+        f_snap->page_redirect("login", snap_child::HTTP_CODE_SEE_OTHER);
+        NOTREACHED();
+    }
+
+    // for errors if any
+    QString details;
+
+    // replace the password assuming we can find that user information
+    QSharedPointer<QtCassandra::QCassandraTable> users_table(get_users_table());
+    if(users_table->exists(f_user_changing_password_key))
+    {
+        QSharedPointer<QtCassandra::QCassandraRow> row(users_table->row(f_user_changing_password_key));
+
+        // existing users have a unique identifier
+        // necessary to create the user key below
+        QtCassandra::QCassandraValue user_identifier(row->cell(get_name(SNAP_NAME_USERS_IDENTIFIER))->value());
+        if(!user_identifier.nullValue())
+        {
+            int64_t identifier(user_identifier.int64Value());
+            const QString site_key(f_snap->get_site_key_with_slash());
+            QString user_key(site_key + get_name(SNAP_NAME_USERS_PATH) + QString("/%1").arg(identifier));
+
+            // verify the status of this user
+            links::link_info user_status_info(get_name(SNAP_NAME_USERS_STATUS), true, user_key);
+            QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(user_status_info));
+            links::link_info status_info;
+            if(link_ctxt->next_link(status_info))
+            {
+                // a status link exists...
+                if(status_info.key() == site_key + get_name(SNAP_NAME_USERS_PASSWORD_PATH))
+                {
+                    // We're good, save the new password and remove that link
+
+                    // First encrypt the password
+                    QString password(f_snap->postenv("password"));
+                    QByteArray salt;
+                    QByteArray hash;
+                    QtCassandra::QCassandraValue digest(f_snap->get_site_parameter(get_name(SNAP_NAME_USERS_PASSWORD_DIGEST)));
+                    if(digest.nullValue())
+                    {
+                        digest.setStringValue("sha512");
+                    }
+                    create_password_salt(salt);
+                    encrypt_password(digest.stringValue(), password, salt, hash);
+
+                    // Save the hashed password (never the original password!)
+                    QtCassandra::QCassandraValue value;
+                    value.setBinaryValue(hash);
+                    row->cell(get_name(SNAP_NAME_USERS_PASSWORD))->setValue(value);
+
+                    // Save the password salt (otherwise we couldn't check whether the user
+                    // knows his password!)
+                    value.setBinaryValue(salt);
+                    row->cell(get_name(SNAP_NAME_USERS_PASSWORD_SALT))->setValue(value);
+
+                    // Also save the digest since it could change en-route
+                    row->cell(get_name(SNAP_NAME_USERS_PASSWORD_DIGEST))->setValue(digest);
+
+                    // Unlink from the password tag too
+                    links::links::instance()->delete_link(status_info);
+
+                    // Now we auto-log in the user... the session should
+                    // already be adequate from the on_process_cookies()
+                    // call
+                    //
+                    // TODO to make this safer we really need the extra 3 questions
+                    //      and ask them when the user request the new password or
+                    //      when he comes back in the replace password form
+                    f_info->set_object_path("/user/" + f_user_changing_password_key);
+                    sessions::sessions::instance()->save_session(*f_info);
+
+                    http_cookie cookie(f_snap, get_name(SNAP_NAME_USERS_SESSION_COOKIE), QString("%1/%2").arg(f_info->get_session_key()).arg(f_info->get_session_random()));
+                    cookie.set_expire_in(86400 * 5);  // 5 days
+                    f_snap->set_cookie(cookie);
+
+                    f_user_changing_password_key.clear();
+
+                    // once we sent the new code, we can send the user back
+                    // to the verify form
+                    messages::messages::instance()->set_info(
+                        "Password Changed",
+                        "Your new password was saved. Next time you want to log in, you can use your email with this new password."
+                    );
+                    f_snap->page_redirect("user/me", snap_child::HTTP_CODE_SEE_OTHER);
+                    NOTREACHED();
+                }
+
+                details = "user " + f_user_changing_password_key + " is not new (maybe it is active, blocked, auto...), we do not send verification emails to such";
+            }
+            else
+            {
+                // This happens for all users already active, users who are
+                // blocked, etc.
+                details = "user " + f_user_changing_password_key + " is currently active, we do not send verification emails to such";
+            }
+        }
+        else
+        {
+            details = "somehow we saw that a row existed for " + f_user_changing_password_key + ", but we could not retrieve the user identifier";
+        }
+    }
+    else
+    {
+        details = "user " + f_user_changing_password_key + " does not exist in the users table";
+    }
+
+    // we're done with this variable
+    // we have to explicitly clear it or it may stay around for a long time
+    // (i.e. it gets saved in the session table)
+    f_user_changing_password_key.clear();
+
+    messages::messages::instance()->set_error(
+        "Not a Valid Account",
+        "Somehow an error occured while we were trying to update your account password.",
+        details,
+        false
+    );
+
+    // XXX the login page is probably the best choice?
+    f_snap->page_redirect("login", snap_child::HTTP_CODE_SEE_OTHER);
+    NOTREACHED();
+}
+
+
+/** \brief "Resend" the verification email.
+ *
+ * This function runs whenever a user requests the system to send an
+ * additional verification code a given email address.
+ *
+ * Before we proceed, we verify that the user status is "new" (tag
+ * as such.) If not, we generate an error and prevent the email from
+ * being sent.
+ */
+void users::process_verify_resend_form()
+{
+    QString email(f_snap->postenv("email"));
+    QString details;
+
+    // check to make sure that a user with that email address exists
+    QSharedPointer<QtCassandra::QCassandraTable> users_table(get_users_table());
+    if(users_table->exists(email))
+    {
+        QSharedPointer<QtCassandra::QCassandraRow> row(users_table->row(email));
+
+        // existing users have a unique identifier
+        // necessary to create the user key below
+        QtCassandra::QCassandraValue user_identifier(row->cell(get_name(SNAP_NAME_USERS_IDENTIFIER))->value());
+        if(!user_identifier.nullValue())
+        {
+            int64_t identifier(user_identifier.int64Value());
+            const QString site_key(f_snap->get_site_key_with_slash());
+            QString user_key(site_key + get_name(SNAP_NAME_USERS_PATH) + QString("/%1").arg(identifier));
+
+            // verify the status of this user
+            links::link_info user_status_info(get_name(SNAP_NAME_USERS_STATUS), true, user_key);
+            QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(user_status_info));
+            links::link_info status_info;
+            if(link_ctxt->next_link(status_info))
+            {
+                // a status link exists...
+                if(status_info.key() == site_key + get_name(SNAP_NAME_USERS_NEW_PATH))
+                {
+                    // Only new users are allowed to get another verification email
+                    verify_email(email);
+                    // once we sent the new code, we can send the user back
+                    // to the verify form
+                    messages::messages::instance()->set_info(
+                        "New Verification Email Send",
+                        "We just sent you a new verification email. Please check your account and follow the verification link or copy and paste your verification code below."
+                    );
+                    f_snap->page_redirect("verify", snap_child::HTTP_CODE_SEE_OTHER);
+                    NOTREACHED();
+                }
+
+                details = "user " + email + " is not new (maybe it is active, blocked, auto...), we do not send verification emails to such";
+            }
+            else
+            {
+                // This happens for all users already active, users who are
+                // blocked, etc.
+                details = "user " + email + " is currently active, we do not send verification emails to such";
+            }
+        }
+        else
+        {
+            details = "somehow we saw that a row existed for " + email + ", but we could not retrieve it";
+        }
+    }
+    else
+    {
+        // XXX here we could test the email address and if invalid generate
+        //     different details (we'd need to do that only if we get quite
+        //     a few of those errors, we could then block IPs with repetitive
+        //     invalid email addresses)
+        //
+        // probably a stupid spammer robot
+        details = "user asking for verify-resend with an unknown email address: " + email;
+    }
+
+    // ONE error so whatever the reason the end user cannot really know
+    // whether someone registered with that email address on our systems
+    messages::messages::instance()->set_error(
+        "Not a New Account",
+        "This email is not from a new account. It may be from an already active account, or from someone who never registered with us, or someone who is currently blocked. <strong>No verification email was sent.</strong>",
+        details,
+        false
+    );
+    // no redirect, the same form will be shown again
 }
 
 
@@ -1494,12 +2389,12 @@ bool users::register_user(const QString& email, const QString& password)
     // however, we also want to include a link defined as the status
     // at first the user is marked as being new
     // the destination URL is defined in the <link> content
-    QString destination_key(site_key + get_name(SNAP_NAME_USERS_NEW_PATH));
     const QString link_name(get_name(SNAP_NAME_USERS_STATUS));
     const bool source_unique(true);
     links::link_info source(link_name, source_unique, user_key);
     const QString link_to(get_name(SNAP_NAME_USERS_STATUS));
     const bool destination_unique(false);
+    QString destination_key(site_key + get_name(SNAP_NAME_USERS_NEW_PATH));
     links::link_info destination(link_to, destination_unique, destination_key);
     links::links::instance()->create_link(source, destination);
 
@@ -1517,14 +2412,6 @@ bool users::register_user(const QString& email, const QString& password)
 void users::verify_email(const QString& email)
 {
     sendmail::sendmail::email e;
-
-    // administrator can define this email address
-    QtCassandra::QCassandraValue from(f_snap->get_site_parameter(get_name(SNAP_NAME_CORE_ADMINISTRATOR_EMAIL)));
-    if(from.nullValue())
-    {
-        from.setStringValue("contact@snapwebsites.com");
-    }
-    e.set_from(from.stringValue());
 
     // mark priority as High
     e.set_priority(sendmail::sendmail::email::EMAIL_PRIORITY_HIGH);
@@ -1545,6 +2432,54 @@ void users::verify_email(const QString& email)
     info.set_time_to_live(86400 * 3);  // 3 days
     QString session(sessions::sessions::instance()->create_session(info));
     e.add_parameter(get_name(SNAP_NAME_USERS_VERIFY_EMAIL), session);
+
+    // send the email
+    //
+    // really this just saves it in the database, the sendmail itself
+    // happens on the backend; see sendmail::on_backend_action()
+    sendmail::sendmail::instance()->post_email(e);
+}
+
+
+/** \brief Send an email to allow the user to change his password.
+ *
+ * This function generates an email and sends it to an active user. The
+ * email is used to allow the user to change his password without having
+ * to enter an old password.
+ *
+ * \param[in] email  The user email.
+ */
+void users::forgot_password_email(const QString& email)
+{
+    sendmail::sendmail::email e;
+
+    // administrator can define this email address
+    QtCassandra::QCassandraValue from(f_snap->get_site_parameter(get_name(SNAP_NAME_CORE_ADMINISTRATOR_EMAIL)));
+    if(from.nullValue())
+    {
+        from.setStringValue("contact@snapwebsites.com");
+    }
+    e.set_from(from.stringValue());
+
+    // mark priority as High
+    e.set_priority(sendmail::sendmail::email::EMAIL_PRIORITY_HIGH);
+
+    // destination email address
+    e.add_header(sendmail::get_name(sendmail::SNAP_NAME_SENDMAIL_TO), email);
+
+    // add the email subject and body using a page
+    e.set_email_path("admin/users/mail/forgot-password");
+
+    // verification makes use of a session identifier
+    sessions::sessions::session_info info;
+    info.set_session_type(sessions::sessions::session_info::SESSION_INFO_USER);
+    info.set_session_id(USERS_SESSION_ID_FORGOT_PASSWORD_EMAIL);
+    info.set_plugin_owner("users"); // ourselves
+    //info.set_page_path(); -- default is okay
+    info.set_object_path("/user/" + email);
+    info.set_time_to_live(3600 * 8);  // 8 hours
+    QString session(sessions::sessions::instance()->create_session(info));
+    e.add_parameter(get_name(SNAP_NAME_USERS_FORGOT_PASSWORD_EMAIL), session);
 
     // send the email
     //
@@ -1599,6 +2534,37 @@ void users::attach_to_session(const QString& name, const QString& data)
 QString users::detach_from_session(const QString& name) const
 {
     return sessions::sessions::instance()->detach_from_session(*f_info, name);
+}
+
+
+/** \brief Save the user session identifier on password change.
+ *
+ * To avoid loggin people before they are done changing their password,
+ * so that way they cannot go visit all the private pages on the website,
+ * we use a session variable to save the information about the user who
+ * is changing his password.
+ */
+void users::on_attach_to_session()
+{
+    if(!f_user_changing_password_key.isEmpty())
+    {
+        sessions::sessions::instance()->attach_to_session(*f_info, get_name(SNAP_NAME_USERS_CHANGING_PASSWORD_KEY), f_user_changing_password_key);
+    }
+}
+
+
+/** \brief Retrieve data that was attached to a session.
+ *
+ * This function is the opposite of the on_attach_to_session(). It is
+ * called before the execute() to reinitialize objects that previously
+ * saved data in the user session.
+ */
+void users::on_detach_from_session()
+{
+    // here we do a get_from_session() because we may need the variable
+    // between several different forms before it gets deleted; the concerned
+    // functions will clear() the variable when done with it
+    f_user_changing_password_key = sessions::sessions::instance()->get_from_session(*f_info, get_name(SNAP_NAME_USERS_CHANGING_PASSWORD_KEY));
 }
 
 
@@ -1726,6 +2692,27 @@ void users::encrypt_password(const QString& digest, const QString& password, con
     // (note: the return value is not documented so we ignore it)
     EVP_MD_CTX_cleanup(&mdctx);
 }
+
+
+/** \brief Replace a token with a corresponding value.
+ *
+ * This function replaces the users tokens with their value. In some cases
+ * the values were already computed in the XML document, so all we have to do is query
+ * the XML and return the corresponding value.
+ *
+ * The supported tokens are:
+ *
+ * \li ...
+ *
+ * \param[in] f  The filter object.
+ * \param[in] token  The token object, with the token name and optional parameters.
+ */
+//void users::on_replace_token(filter::filter *f, QDomDocument& xml, filter::filter::token_info_t& token)
+//{
+//    if(token.f_name.mid(0, 7) == "users::")
+//    {
+//    }
+//}
 
 
 

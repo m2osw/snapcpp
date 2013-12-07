@@ -262,8 +262,8 @@ void messages::on_bootstrap(snap_child *snap)
 {
     f_snap = snap;
 
-    SNAP_LISTEN0(messages, "server", server::server, attach_to_session);
-    SNAP_LISTEN0(messages, "server", server::server, detach_from_session);
+    SNAP_LISTEN0(messages, "server", server, attach_to_session);
+    SNAP_LISTEN0(messages, "server", server, detach_from_session);
     SNAP_LISTEN(messages, "layout", layout::layout, generate_page_content, _1, _2, _3, _4);
 }
 

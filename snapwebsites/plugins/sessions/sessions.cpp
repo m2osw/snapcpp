@@ -1107,12 +1107,19 @@ void sessions::load_session(const QString& session_key, session_info& info, bool
  * (as we do in the save_session() function.) Unfortunately, that TTL
  * does NOT get refreshed whenever someone calls save_session() since
  * we have no clue this cell even exists. Since it is expected to be
- * used just once quickly, it is probably not a problem.
+ * used just once and quickly, it is probably not a problem at this
+ * point. Note also that when used from the on_attach_to_session()
+ * and on_detach_from_session() events, all of these get refreshed each
+ * time the user access the website so the data gets updated to TTL + 1
+ * as expected.
  *
  * \param[in] session_key  The session key as defined when you called
  *                         create_session().
  * \param[in] name  The name of the cell where the data is saved.
  * \param[in] data  The data to save in this session.
+ *
+ * \sa detach_from_session()
+ * \sa get_from_session()
  */
 void sessions::attach_to_session(const session_info& info, const QString& name, const QString& data)
 {
@@ -1155,7 +1162,12 @@ void sessions::attach_to_session(const session_info& info, const QString& name, 
  * This function grabs data previous attached to a session and drop it
  * from the database.
  *
- * \param[in] session_key  The key of the session to read from.
+ * \warning
+ * The "detach" means that the data is taken out of the session for good
+ * and it is not available in the database after this call. To keep session
+ * data in the session, use the get_from_session() function instead.
+ *
+ * \param[in] info  The key of the session to read from.
  * \param[in] name  The name of the cell where the data was saved.
  *
  * \return The data in a string.
@@ -1180,7 +1192,41 @@ QString sessions::detach_from_session(const session_info& info, const QString& n
     QtCassandra::QCassandraValue value(row->cell(name)->value());
 
     // used once, so delete
-    row->dropCell(name);
+    row->dropCell(name, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+
+    return value.stringValue();
+}
+
+
+/** \brief Get a session variable and leave it in the session.
+ *
+ * Variables that have to leave across many accesses should be read using
+ * the get_from_session() function which reads the variable but does not
+ * delete it.
+ *
+ * \param[in] info  The key of the session to read from.
+ * \param[in] name  The name of the cell where the data was saved.
+ *
+ * \return The data in a string.
+ */
+QString sessions::get_from_session(const session_info& info, const QString& name)
+{
+    QString key(f_snap->get_website_key() + "/" + info.get_session_key());
+
+    QSharedPointer<QtCassandra::QCassandraTable> table(get_sessions_table());
+    if(!table->exists(key))
+    {
+        return "";
+    }
+
+    QSharedPointer<QtCassandra::QCassandraRow> row(table->row(key));
+    if(!row)
+    {
+        return "";
+    }
+
+    // if not defined, we'll get an empty string which is what's expected
+    QtCassandra::QCassandraValue value(row->cell(name)->value());
 
     return value.stringValue();
 }

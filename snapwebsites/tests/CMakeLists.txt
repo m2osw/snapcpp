@@ -106,4 +106,18 @@ target_link_libraries(test_snap_udp_message
 )
 
 
+add_executable(test_quoted_printable
+    test_quoted_printable.cpp
+)
+add_dependencies( test_quoted_printable test_prereqs )
+target_link_libraries(test_quoted_printable
+    libsnapwebsites
+    ${QTCASSANDRA_LIBRARIES}
+    ${LIBTLD_LIBRARIES}
+    ${QT_LIBRARIES}
+    ${THRIFT_LIBRARIES}
+    dl
+)
+
+
 # vim: ts=4 sw=4 et

@@ -365,4 +365,12 @@ me know and don't hesitate to ask me to update this file.)
      server. You may use the -d option to get error messages. Otherwise all
      errors will only end up in your logs.
 
+
+5. Email Setup
+
+   To the minimum you should setup your website email so whenever it sends
+   an email it looks proper. The internal default is contact@example.com
+   which is not unlikely to fail.
+
+
 // vim: ts=2 sw=2 et

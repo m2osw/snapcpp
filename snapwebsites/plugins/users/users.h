@@ -28,8 +28,13 @@ namespace users
 
 enum name_t
 {
+    SNAP_NAME_USERS_AUTO_PATH,
     SNAP_NAME_USERS_BLOCKED_PATH,
+    SNAP_NAME_USERS_CHANGING_PASSWORD_KEY,
     SNAP_NAME_USERS_CREATED_TIME,
+    SNAP_NAME_USERS_FORGOT_PASSWORD_EMAIL,
+    SNAP_NAME_USERS_FORGOT_PASSWORD_IP,
+    SNAP_NAME_USERS_FORGOT_PASSWORD_ON,
     SNAP_NAME_USERS_IDENTIFIER,
     SNAP_NAME_USERS_ID_ROW,
     SNAP_NAME_USERS_LOGIN_IP,
@@ -41,6 +46,7 @@ enum name_t
     SNAP_NAME_USERS_ORIGINAL_IP,
     SNAP_NAME_USERS_PASSWORD,
     SNAP_NAME_USERS_PASSWORD_DIGEST,
+    SNAP_NAME_USERS_PASSWORD_PATH,
     SNAP_NAME_USERS_PASSWORD_SALT,
     SNAP_NAME_USERS_PATH,
     SNAP_NAME_USERS_PREVIOUS_LOGIN_IP,
@@ -64,10 +70,14 @@ public:
     static const sessions::sessions::session_info::session_id_t USERS_SESSION_ID_LOG_IN_BLOCK = 2;
     static const sessions::sessions::session_info::session_id_t USERS_SESSION_ID_REGISTER = 3;
     static const sessions::sessions::session_info::session_id_t USERS_SESSION_ID_REGISTER_BLOCK = 4;
-    static const sessions::sessions::session_info::session_id_t USERS_SESSION_ID_PASSWORD = 5;
+    static const sessions::sessions::session_info::session_id_t USERS_SESSION_ID_FORGOT_PASSWORD = 5;
     static const sessions::sessions::session_info::session_id_t USERS_SESSION_ID_VERIFY = 6;
     static const sessions::sessions::session_info::session_id_t USERS_SESSION_ID_LOG_IN_SESSION = 7;
     static const sessions::sessions::session_info::session_id_t USERS_SESSION_ID_VERIFY_EMAIL = 8;
+    static const sessions::sessions::session_info::session_id_t USERS_SESSION_ID_FORGOT_PASSWORD_EMAIL = 9;
+    static const sessions::sessions::session_info::session_id_t USERS_SESSION_ID_RESEND_EMAIL = 10;
+    static const sessions::sessions::session_info::session_id_t USERS_SESSION_ID_NEW_PASSWORD = 11;
+    static const sessions::sessions::session_info::session_id_t USERS_SESSION_ID_REPLACE_PASSWORD = 12;
 
                             users();
     virtual                 ~users();
@@ -86,12 +96,13 @@ public:
     void                    on_generate_sitemapxml(sitemapxml::sitemapxml *sitemap);
     bool                    on_path_execute(const QString& cpath);
     void                    on_process_cookies();
+    void                    on_attach_to_session();
+    void                    on_detach_from_session();
 
     virtual QDomDocument    on_get_xml_form(const QString& cpath);
     virtual void            on_process_post(const QString& uri_path, const sessions::sessions::session_info& info);
 
     bool                    register_user(const QString& email, const QString& password);
-    void                    verify_email(const QString& email);
     void                    attach_to_session(const QString& name, const QString& data);
     QString                 detach_from_session(const QString& name) const;
 
@@ -103,15 +114,27 @@ private:
     void                    logout_user(layout::layout *l, QString cpath, QDomElement& page, QDomElement& body);
     void                    generate_register_form(QDomElement& body);
     void                    generate_verify_form(QDomElement& body);
+    void                    generate_resend_email_form(QDomElement& body);
+    void                    generate_forgot_password_form(QDomElement& body);
+    void                    generate_new_password_form(QDomElement& body);
     void                    process_login_form();
     void                    process_register_form();
     void                    create_password_salt(QByteArray& salt);
     void                    encrypt_password(const QString& digest, const QString& password, const QByteArray& salt, QByteArray& hash);
     void                    verify_user(const QString& cpath);
     void                    process_verify_form();
+    void                    process_verify_resend_form();
+    void                    process_forgot_password_form();
+    void                    process_new_password_form();
+    void                    process_replace_password_form();
+    void                    generate_replace_password_form(QDomElement& body);
+    void                    verify_email(const QString& email);
+    void                    verify_password(const QString& cpath);
+    void                    forgot_password_email(const QString& email);
 
     zpsnap_child_t          f_snap;
     QString                 f_user_key; // logged in user email address
+    QString                 f_user_changing_password_key; // not quite logged in user
     std::shared_ptr<sessions::sessions::session_info> f_info; // user, logged in or anonymous, cookie related information
 };
 

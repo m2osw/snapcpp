@@ -173,6 +173,7 @@ public:
 	QString postenv(const QString& name, const QString& default_value = "") const;
 	bool cookie_is_defined(const QString& name) const;
 	QString cookie(const QString& name) const;
+	void attach_to_session();
 	QString snap_url(const QString& url) const;
 	void page_redirect(const QString& path, http_code_t http_code = HTTP_CODE_MOVED_PERMANENTLY);
 	void die(http_code_t err_code, QString err_name, const QString& err_description, const QString& err_details);

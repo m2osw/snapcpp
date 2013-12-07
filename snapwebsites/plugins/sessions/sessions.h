@@ -55,14 +55,14 @@ public:
         enum session_info_type_t
         {
             SESSION_INFO_SECURE,        // think PCI Compliant website (credit card payment, etc.)
-            SESSION_INFO_USER,            // a user cookie when logged in
-            SESSION_INFO_FORM,            // a form unique identifier
+            SESSION_INFO_USER,          // a user cookie when logged in
+            SESSION_INFO_FORM,          // a form unique identifier
 
-            SESSION_INFO_VALID,            // the key was loaded successfully
-            SESSION_INFO_MISSING,        // the key could not be loaded
-            SESSION_INFO_OUT_OF_DATE,    // key is too old
-            SESSION_INFO_USED_UP,        // key was already used
-            SESSION_INFO_INCOMPATIBLE    // key is not compatible (wrong path, object, etc.)
+            SESSION_INFO_VALID,         // the key was loaded successfully
+            SESSION_INFO_MISSING,       // the key could not be loaded
+            SESSION_INFO_OUT_OF_DATE,   // key is too old
+            SESSION_INFO_USED_UP,       // key was already used
+            SESSION_INFO_INCOMPATIBLE   // key is not compatible (wrong path, object, etc.)
         };
         typedef int        session_id_t;
 
@@ -125,6 +125,7 @@ public:
 
     void                    attach_to_session(const session_info& info, const QString& name, const QString& data);
     QString                 detach_from_session(const session_info& info, const QString& name);
+    QString                 get_from_session(const session_info& info, const QString& name);
 
     SNAP_SIGNAL(generate_sessions, (sessions *r), (r));
 

@@ -19,8 +19,10 @@
 
 #include "snapwebsites.h"
 #include "plugins.h"
+#include "qcaseinsensitivestring.h"
 #include "snap_child.h"
 #include "../layout/layout.h"
+#include "../sessions/sessions.h"
 #include "../filter/filter.h"
 #include <libtld/tld.h>
 #include <QtSerialization/QSerializationReader.h>
@@ -52,10 +54,17 @@ public:
     sendmail_exception_invalid_argument(const std::string& what_msg) : sendmail_exception(what_msg) {}
 };
 
+class sendmail_exception_too_many_levels : public sendmail_exception
+{
+public:
+    sendmail_exception_too_many_levels(const std::string& what_msg) : sendmail_exception(what_msg) {}
+};
+
 
 enum name_t
 {
     SNAP_NAME_SENDMAIL,
+    SNAP_NAME_SENDMAIL_CONTENT_TRANSFER_ENCODING,
     SNAP_NAME_SENDMAIL_CONTENT_TYPE,
     SNAP_NAME_SENDMAIL_EMAIL,
     SNAP_NAME_SENDMAIL_EMAILS_TABLE,
@@ -70,6 +79,7 @@ enum name_t
     SNAP_NAME_SENDMAIL_LISTS,
     SNAP_NAME_SENDMAIL_NEW,
     SNAP_NAME_SENDMAIL_PING,
+    SNAP_NAME_SENDMAIL_PRECEDENCE,
     SNAP_NAME_SENDMAIL_SENDING_STATUS,
     SNAP_NAME_SENDMAIL_STATUS,
     SNAP_NAME_SENDMAIL_STATUS_DELETED,
@@ -91,13 +101,16 @@ const char *get_name(name_t name);
 class sendmail : public plugins::plugin, public snap::server::backend_action, public layout::layout_content
 {
 public:
+    static const sessions::sessions::session_info::session_id_t SENDMAIL_SESSION_ID_MESSAGE = 1;
+
     class email : public QtSerialization::QSerializationObject
     {
     public:
         static const int EMAIL_MAJOR_VERSION = 1;
         static const int EMAIL_MINOR_VERSION = 0;
 
-        typedef QMap<QString, QString> header_map_t;
+        typedef QMap<QCaseInsensitiveString, QString> header_map_t;
+        typedef QMap<QString, QString> parameter_map_t;
 
         enum email_priority_t
         {
@@ -119,6 +132,9 @@ public:
             void add_header(const QString& name, const QString& value);
             QString get_header(const QString& name) const;
             const header_map_t& get_all_headers() const;
+            void add_related(const email_attachment& data);
+            int get_related_count() const;
+            email_attachment& get_related(int index) const;
 
             // internal functions used to save the data serialized
             void unserialize(QtSerialization::QReader& r);
@@ -126,8 +142,10 @@ public:
             void serialize(QtSerialization::QWriter& w) const;
 
         private:
-            header_map_t        f_header;
-            QByteArray          f_data;
+            header_map_t                    f_header;
+            QByteArray                      f_data;
+            controlled_vars::fbool_t        f_is_sub_attachment;
+            QVector<QSharedPointer<email_attachment> >  f_sub_attachments; // for HTML data (images, css, ...)
         };
         typedef QVector<email_attachment> attachment_vector_t;
 
@@ -154,7 +172,7 @@ public:
         email_attachment& get_attachment(int index) const;
         void add_parameter(const QString& name, const QString& value);
         QString get_parameter(const QString& name) const;
-        const header_map_t& get_all_parameters() const;
+        const parameter_map_t& get_all_parameters() const;
 
         // internal functions used to save the data serialized
         void unserialize(const QString& data);
@@ -169,7 +187,7 @@ public:
         controlled_vars::mint64_t   f_time;
         header_map_t                f_header;
         attachment_vector_t         f_attachment;
-        header_map_t                f_parameter;
+        parameter_map_t             f_parameter;
     };
 
     sendmail();
@@ -188,6 +206,7 @@ public:
     void                on_replace_token(filter::filter *f, QDomDocument& xml, filter::filter::token_info_t& token);
 
     void                post_email(const email& e);
+    QString             default_from() const;
 
     SNAP_SIGNAL(filter_email, (email& e), (e));
 

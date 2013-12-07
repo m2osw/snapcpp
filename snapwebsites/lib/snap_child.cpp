@@ -1519,6 +1519,20 @@ void snap_child::page_redirect(const QString& path, http_code_t http_code)
 }
 
 
+/** \brief Attach variables to this session.
+ *
+ * Once in a while a plugin creates a form that is intermediary. In this
+ * case the session variables need to be saved and this function is called.
+ *
+ * Note that you may want to look into not detaching the variable(s) if at
+ * all possible.
+ */
+void snap_child::attach_to_session()
+{
+    f_server->attach_to_session();
+}
+
+
 /** \brief Retrieve an environment variable.
  *
  * This function can be used to read an environment variable. It will make

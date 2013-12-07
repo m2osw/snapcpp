@@ -63,6 +63,8 @@ public:
 	void add_form_elements(QDomDocument& add);
 	void add_form_elements(QString& filename);
 
+	QString get_form_title(const QString& default_title) const;
+
 	static QString text_64max(const QString& text, bool is_secret);
 	static QString html_64max(const QString& html, bool is_secret);
 	static int count_text_lines(const QString& text);
@@ -74,6 +76,7 @@ private:
 	QDomDocument					f_form_elements;
 	QDomElement 					f_form_stylesheet;
 	QString							f_form_elements_string;
+	QString							f_form_title;
 };
 
 } // namespace form

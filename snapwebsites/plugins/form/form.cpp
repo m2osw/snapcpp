@@ -18,6 +18,7 @@
 #include "form.h"
 #include "not_reached.h"
 #include "qdomreceiver.h"
+#include "qdomxpath.h"
 #include "log.h"
 #include "../messages/messages.h"
 #pragma GCC diagnostic push
@@ -209,7 +210,37 @@ QDomDocument form::form_to_html(sessions::sessions::session_info& info, const QD
     q.setQuery(f_form_elements_string);
     QDomReceiver receiver(q.namePool(), doc_output);
     q.evaluateTo(&receiver);
+
+	// also retrieve the form title which is often used as the page title
+	static QDomXPath dom_xpath;
+	dom_xpath.setXPath("/snap-form/title");
+	QDomXPath::node_vector_t title(dom_xpath.apply(xml));
+	if(title.size() > 0 && title[0].isElement())
+	{
+		f_form_title = title[0].toElement().text();
+	}
+
     return doc_output;
+}
+
+
+/** \brief Retrieve the title defined in the form.
+ *
+ * When a form defines a title, this function returns it. If no title is
+ * defined in a form, then this function returns an empty string.
+ *
+ * \param[in] default_title  If the form title was not specified in the form,
+ *                           then this function returns this string instead.
+ *
+ * \return The form title or an empty string.
+ */
+QString form::get_form_title(const QString& default_title) const
+{
+	if(f_form_title.isEmpty())
+	{
+		return default_title;
+	}
+	return f_form_title;
 }
 
 
@@ -560,8 +591,8 @@ QString form::html_64max(const QString& html, bool is_secret)
     }
 
     // TODO: go through the tree and keep data as long
-    //       as the text is shorter than 64 characters
-    //       and we have less than 100 tags.
+    //       as the text is more than 64 characters
+    //       and we have more than 100 tags (or so...)
     return html;
 }
 

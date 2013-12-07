@@ -65,6 +65,7 @@ add_library( ${PROJECT_NAME} SHARED
     qdomreceiver.cpp        # Qt extension to output XSLT as XML
     qdomxpath.cpp           # Qt extension to query a XML DOM with X-Path
     qhtmlserializer.cpp     # Qt extension to output HTML as a string
+    quoted_printable.cpp    # to encode / decode data using the quoted printable format
     snap_parser.cpp         # lexer/parser for all our script like entries
     snap_uri.cpp            # URI handling
     snap_child.cpp          # requests processing
