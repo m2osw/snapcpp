@@ -603,7 +603,7 @@ void test3()
 
 
 
-int main(int argc, char *argv[])
+int main(int /*argc*/, char * /*argv*/[]) // g++ >= 4.8 -Werror=unused-parameter
 {
     test1();
     test2();
