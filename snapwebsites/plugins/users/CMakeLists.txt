@@ -56,8 +56,13 @@ add_library(users SHARED
     ${SNAP_MANAGER_MOC_CXX}
     ${SNAP_MANAGER_RESOURCES_RCC}
     content.xml
+    forgot-password-form.xml
     login-form.xml
+    new-password-form.xml
+    password-form.xml
     register-form.xml
+    replace-password-form.xml
+    resend-email-form.xml
     verify-form.xml
 )
 

@@ -1931,7 +1931,7 @@ void sendmail::attach_user_email(const email& e)
         if(table->row(index)->exists(index_key))
         {
             // it exists, we need to concatenate the values
-            index_value = table->row(index)->cell(index_key);
+            index_value = table->row(index)->cell(index_key)->value();
         }
     }
     if(!index_value.nullValue())
@@ -2355,10 +2355,10 @@ void sendmail::sendemail(const QString& key, const QString& unique_key)
  * \param[in,out] page  The page being generated.
  * \param[in,out] body  The body being generated.
  */
-void sendmail::on_generate_main_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body)
+void sendmail::on_generate_main_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body, const QString& ctemplate)
 {
     // by default an email is just like a regular page
-    content::content::instance()->on_generate_main_content(l, path, page, body);
+    content::content::instance()->on_generate_main_content(l, path, page, body, ctemplate);
 
     // but we also have email specific parameters we want to add
     QDomDocument doc(page.ownerDocument());

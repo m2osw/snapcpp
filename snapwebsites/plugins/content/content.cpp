@@ -127,7 +127,7 @@ void content::on_bootstrap(snap_child *snap)
     f_snap = snap;
 
     SNAP_LISTEN0(content, "server", server, save_content);
-    SNAP_LISTEN(content, "layout", layout::layout, generate_page_content, _1, _2, _3, _4);
+    SNAP_LISTEN(content, "layout", layout::layout, generate_page_content, _1, _2, _3, _4, _5);
 
     if(plugins::exists("javascript")) {
         javascript::javascript::instance()->register_dynamic_plugin(this);
@@ -183,7 +183,7 @@ int64_t content::do_update(int64_t last_updated)
     SNAP_PLUGIN_UPDATE_INIT();
 
     SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, initial_update);
-    SNAP_PLUGIN_UPDATE(2013, 9, 19, 22, 50, 40, content_update);
+    SNAP_PLUGIN_UPDATE(2013, 12, 7, 16, 18, 40, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -255,6 +255,68 @@ bool content::on_path_execute(const QString& cpath)
 //}
 
 
+/** \brief Create a page at the specified path.
+ *
+ * This function creates a page in the database at the specified path.
+ * The page will be ready to be used once all the plugins had a chance
+ * to run their own on_create_content() function.
+ *
+ * Note that if the page (as in, the row as defined by the path) already
+ * exists then the function returns immediately.
+ *
+ * The full key for the page makes use of the site key which cannot already
+ * be included in the path.
+ *
+ * \param[in] path  The path of the new page.
+ * \param[in] owner  The name of the plugin that is to own this page.
+ */
+bool content::create_content_impl(const QString& path, const QString& owner)
+{
+    QSharedPointer<QtCassandra::QCassandraTable> content_table(get_content_table());
+    const QString site_key(f_snap->get_site_key_with_slash());
+    const QString key(site_key + path);
+
+    if(content_table->exists(key))
+    {
+        // the row already exists, this is considered created.
+        // (we may later want to have a repair_content signal
+        // which we could run as an action from the backend...)
+        return false;
+    }
+    QSharedPointer<QtCassandra::QCassandraRow> row(content_table->row(key));
+
+    // save the owner
+    const QString primary_owner(path::get_name(path::SNAP_NAME_PATH_PRIMARY_OWNER));
+    row->cell(primary_owner)->setValue(owner);
+
+    // add the different basic content dates setup
+    uint64_t start_date(f_snap->get_uri().option("start_date").toLongLong());
+    row->cell(QString(get_name(SNAP_NAME_CONTENT_CREATED)))->setValue(start_date);
+    row->cell(QString(get_name(SNAP_NAME_CONTENT_UPDATED)))->setValue(start_date);
+    row->cell(QString(get_name(SNAP_NAME_CONTENT_MODIFIED)))->setValue(start_date);
+
+    // link this entry to its parent automatically
+    // first we need to remove the site key from the path
+    QStringList parts(path.split('/', QString::SkipEmptyParts));
+    while(parts.count() > 0)
+    {
+        QString src(parts.join("/"));
+        src = site_key + src;
+        parts.pop_back();
+        QString dst(parts.join("/"));
+        dst = site_key + dst;
+        links::link_info source("parent", true, src);
+        links::link_info destination("children", false, dst);
+// TODO only repeat if the parent did not exist, otherwise we assume the
+//      parent created its own parent/children link already.
+//printf("parent/children [%s]/[%s]\n", src.toUtf8().data(), dst.toUtf8().data());
+        links::links::instance()->create_link(source, destination);
+    }
+
+    return true;
+}
+
+
 /** \brief Generate the page main content.
  *
  * This function generates the main content of the page. Other
@@ -273,20 +335,9 @@ bool content::on_path_execute(const QString& cpath)
  * \param[in,out] page  The page being generated.
  * \param[in,out] body  The body being generated.
  */
-void content::on_generate_main_content(layout::layout *l, const QString& fullpath, QDomElement& page, QDomElement& body)
+void content::on_generate_main_content(layout::layout *l, const QString& fullpath, QDomElement& page, QDomElement& body, const QString& ctemplate)
 {
     QDomDocument doc(page.ownerDocument());
-    //QDomNodeList bodies(doc.elementsByTagName("body"));
-    //if(bodies.count() != 1)
-    //{
-    //  return;
-    //}
-    //QDomNode node(bodies[0]);
-    //if(!node.isElement())
-    //{
-    //  return;
-    //}
-    //QDomElement body(node.toElement());
 
     // this is easier as some people (like me) will most certainly call this
     // function with a path that starts with a slash once in a while; this
@@ -417,10 +468,19 @@ void content::on_generate_main_content(layout::layout *l, const QString& fullpat
         body.appendChild(titles);
         QDomElement title(doc.createElement("title"));
         titles.appendChild(title);
-        QDomText text(doc.createTextNode(get_content_parameter(path, get_name(SNAP_NAME_CONTENT_TITLE)).stringValue()));
+        QtCassandra::QCassandraValue title_text(get_content_parameter(path, get_name(SNAP_NAME_CONTENT_TITLE)));
+        if(title_text.nullValue())
+        {
+            title_text = get_content_parameter(ctemplate, get_name(SNAP_NAME_CONTENT_TITLE));
+        }
+        QDomText text(doc.createTextNode(title_text.stringValue()));
         title.appendChild(text);
         // short title
         QtCassandra::QCassandraValue short_title_text(get_content_parameter(path, get_name(SNAP_NAME_CONTENT_SHORT_TITLE)));
+        if(short_title_text.nullValue())
+        {
+            short_title_text = get_content_parameter(ctemplate, get_name(SNAP_NAME_CONTENT_SHORT_TITLE));
+        }
         if(!short_title_text.nullValue())
         {
             QDomElement short_title(doc.createElement("short-title"));
@@ -430,6 +490,10 @@ void content::on_generate_main_content(layout::layout *l, const QString& fullpat
         }
         // long title
         QtCassandra::QCassandraValue long_title_text(get_content_parameter(path, get_name(SNAP_NAME_CONTENT_LONG_TITLE)));
+        if(long_title_text.nullValue())
+        {
+            long_title_text = get_content_parameter(ctemplate, get_name(SNAP_NAME_CONTENT_LONG_TITLE));
+        }
         if(!long_title_text.nullValue())
         {
             QDomElement long_title(doc.createElement("long-title"));
@@ -445,7 +509,12 @@ void content::on_generate_main_content(layout::layout *l, const QString& fullpat
         // we checked the data and if the user data was invalid XML then we
         // saved a place holder warning the user about the fact!
         QDomDocument doc_body("body");
-        QString body_data(get_content_parameter(path, get_name(SNAP_NAME_CONTENT_BODY)).stringValue());
+        QtCassandra::QCassandraValue body_value(get_content_parameter(path, get_name(SNAP_NAME_CONTENT_BODY)));
+        if(body_value.nullValue())
+        {
+            body_value = get_content_parameter(ctemplate, get_name(SNAP_NAME_CONTENT_BODY));
+        }
+        QString body_data(body_value.stringValue());
         // TBD: it probably doesn't matter but we currently add an extra <div>
         //      tag; to remove it we'd have to append all the children found
         //      in that <div> tag.
@@ -532,7 +601,7 @@ void content::on_generate_main_content(layout::layout *l, const QString& fullpat
  * \param[in,out] page  The page being generated.
  * \param[in,out] body  The body being generated.
  */
-void content::on_generate_page_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body)
+void content::on_generate_page_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body, const QString& ctemplate)
 {
 }
 
@@ -550,6 +619,7 @@ QSharedPointer<QtCassandra::QCassandraTable> content::get_content_table()
 {
     return f_snap->create_table(get_name(SNAP_NAME_CONTENT_TABLE), "Website content table.");
 }
+
 
 /** \brief Retreive a content page parameter.
  *
@@ -572,24 +642,31 @@ QSharedPointer<QtCassandra::QCassandraTable> content::get_content_table()
  */
 QtCassandra::QCassandraValue content::get_content_parameter(const QString& path, const QString& param_name)
 {
-    QString key(f_snap->get_site_key_with_slash() + path);
-//printf("get content for [%s] . [%s]\n", key.toUtf8().data(), param_name.toUtf8().data());
-    if(!get_content_table()->exists(key))
+    if(path.isEmpty())
     {
         // an empty value is considered to be a null value
         QtCassandra::QCassandraValue value;
         return value;
     }
-    // I need to fix the libQtCassandra because this creates an empty cell!
-    // (whereas the call below doesn't, so it's possible to do it correctly!)
-    //if(!f_site_table->row(f_snap->get_site_key())->exists(param_name))
-    //{
-    //  // an empty value is considered to be a null value
-    //  QtCassandra::QCassandraValue value;
-    //  return value;
-    //}
 
-    return get_content_table()->row(key)->cell(param_name)->value();
+    QSharedPointer<QtCassandra::QCassandraTable> content_table(get_content_table());
+
+    QString key(f_snap->get_site_key_with_slash() + path);
+//printf("get content for [%s] . [%s]\n", key.toUtf8().data(), param_name.toUtf8().data());
+    if(!content_table->exists(key))
+    {
+        // an empty value is considered to be a null value
+        QtCassandra::QCassandraValue value;
+        return value;
+    }
+    if(!content_table->row(f_snap->get_site_key())->exists(param_name))
+    {
+      // an empty value is considered to be a null value
+      QtCassandra::QCassandraValue value;
+      return value;
+    }
+
+    return content_table->row(key)->cell(param_name)->value();
 }
 
 
@@ -1120,6 +1197,8 @@ void content::on_save_content()
     // we're done with that set of data
     f_blocks.clear();
 }
+
+
 
 int content::js_property_count() const
 {

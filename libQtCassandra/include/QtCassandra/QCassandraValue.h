@@ -40,6 +40,7 @@
 #include <controlled_vars/controlled_vars_limited_auto_init.h>
 #include <QString>
 #include <QByteArray>
+#include <QSharedPointer>
 #include <stdint.h>
 
 
@@ -588,6 +589,10 @@ public:
 
 private:
     void assignTimestamp(int64_t timestamp);
+
+    // prevent share pointer assignments (i.e. output of
+    // row->cell() instead of row->cell()->value())
+    template<class T> QCassandraValue& operator = (QSharedPointer<T>);
 
     friend class QCassandraPrivate;
 

@@ -28,6 +28,8 @@ namespace users
 
 enum name_t
 {
+    SNAP_NAME_USERS_AUTHOR,
+    SNAP_NAME_USERS_AUTHORED_PAGES,
     SNAP_NAME_USERS_AUTO_PATH,
     SNAP_NAME_USERS_BLOCKED_PATH,
     SNAP_NAME_USERS_CHANGING_PASSWORD_KEY,
@@ -37,8 +39,10 @@ enum name_t
     SNAP_NAME_USERS_FORGOT_PASSWORD_ON,
     SNAP_NAME_USERS_IDENTIFIER,
     SNAP_NAME_USERS_ID_ROW,
+    SNAP_NAME_USERS_INDEX_ROW,
     SNAP_NAME_USERS_LOGIN_IP,
     SNAP_NAME_USERS_LOGIN_ON,
+    SNAP_NAME_USERS_LOGIN_REFERRER,
     SNAP_NAME_USERS_LOGOUT_IP,
     SNAP_NAME_USERS_LOGOUT_ON,
     SNAP_NAME_USERS_NEW_PATH,
@@ -90,14 +94,15 @@ public:
     void                    on_bootstrap(::snap::snap_child *snap);
     void                    on_init();
     void                    on_can_handle_dynamic_path(path::path *path_plugin, const QString& cpath);
-    void                    on_generate_header_content(layout::layout *l, const QString& path, QDomElement& hader, QDomElement& metadata);
-    virtual void            on_generate_main_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body);
-    //void                    on_generate_page_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body);
+    void                    on_generate_header_content(layout::layout *l, const QString& path, QDomElement& hader, QDomElement& metadata, const QString& ctemplate);
+    virtual void            on_generate_main_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body, const QString& ctemplate);
+    void                    on_generate_page_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body, const QString& ctemplate);
     void                    on_generate_sitemapxml(sitemapxml::sitemapxml *sitemap);
     bool                    on_path_execute(const QString& cpath);
     void                    on_process_cookies();
     void                    on_attach_to_session();
     void                    on_detach_from_session();
+    void                    on_create_content(const QString& path, const QString& owner);
 
     virtual QDomDocument    on_get_xml_form(const QString& cpath);
     virtual void            on_process_post(const QString& uri_path, const sessions::sessions::session_info& info);
@@ -116,6 +121,7 @@ private:
     void                    generate_verify_form(QDomElement& body);
     void                    generate_resend_email_form(QDomElement& body);
     void                    generate_forgot_password_form(QDomElement& body);
+    void                    generate_password_form(QDomElement& body);
     void                    generate_new_password_form(QDomElement& body);
     void                    process_login_form();
     void                    process_register_form();
@@ -126,6 +132,7 @@ private:
     void                    process_verify_resend_form();
     void                    process_forgot_password_form();
     void                    process_new_password_form();
+    void                    process_password_form();
     void                    process_replace_password_form();
     void                    generate_replace_password_form(QDomElement& body);
     void                    verify_email(const QString& email);

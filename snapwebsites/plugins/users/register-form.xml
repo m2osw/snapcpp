@@ -61,7 +61,7 @@
       <required>required</required>
       <help>Enter a password that you will use with your Snap! website activities. Note that it is suggested that you never use the same password on more than one website so this password should be unique. Any character can be used in your password and it can be as long as 256 characters.</help>
     </widget>
-    <widget id="confirm_password" type="password" secret="secret">
+    <widget id="confirm_password" type="password" secret="secret" duplicate-of="password">
       <label>Confirm Password</label>
       <background-value>*** repeat your password ***</background-value>
       <tooltip>Enter your Snap! password again to make sure you did not mistype it.</tooltip>

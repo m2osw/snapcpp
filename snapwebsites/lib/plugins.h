@@ -31,42 +31,42 @@ namespace plugins
 class plugin_exception : public std::runtime_error
 {
 public:
-	plugin_exception(const QString& what_msg) : runtime_error(what_msg.toUtf8().data())
-	{
-	}
+    plugin_exception(const QString& what_msg) : runtime_error(what_msg.toUtf8().data())
+    {
+    }
 };
 
 class plugin_exception_invalid_order : public plugin_exception
 {
 public:
-	plugin_exception_invalid_order(const QString& what_msg)
-		: plugin_exception(what_msg)
-	{
-	}
+    plugin_exception_invalid_order(const QString& what_msg)
+        : plugin_exception(what_msg)
+    {
+    }
 };
 
 class plugin_signal
 {
 public:
-	plugin_signal(const char *name);
+    plugin_signal(const char *name);
 };
 
 
 class plugin
 {
 public:
-	plugin();
-	virtual ~plugin() {}
+    plugin();
+    virtual ~plugin() {}
 
-	QString get_plugin_name() const;
-	int64_t last_modification() const;
-	virtual QString description() const = 0;
-	virtual int64_t do_update(int64_t last_updated);
+    QString get_plugin_name() const;
+    int64_t last_modification() const;
+    virtual QString description() const = 0;
+    virtual int64_t do_update(int64_t last_updated);
 
 private:
-	const QString						f_name;
-	const QString						f_filename;
-	mutable controlled_vars::zint64_t	f_last_modification;
+    const QString                        f_name;
+    const QString                        f_filename;
+    mutable controlled_vars::zint64_t    f_last_modification;
 };
 
 typedef std::shared_ptr<plugin> plugin_ptr_t;
@@ -146,21 +146,21 @@ bool verify_plugin_name(const QString& name);
  * \param[in] minor  The minor version of the plugin.
  */
 #define SNAP_PLUGIN_START(name, major, minor) \
-	extern int qInitResources_##name(); \
-	namespace snap { namespace name { \
-	class plugin_##name##_factory { \
-	public: plugin_##name##_factory() : f_plugin(new name) { \
-		qInitResources_##name(); \
-		::snap::plugins::register_plugin(#name, f_plugin); \
-		::snap::server::instance()->signal_listen_bootstrap( \
-			boost::bind(&name::on_bootstrap, f_plugin, _1)); } \
-	~plugin_##name##_factory() { delete f_plugin; } \
-	name *instance() { return f_plugin; } \
-	int version_major() const { return major; } \
-	int version_minor() const { return minor; } \
-	QString version() const { return #major "." #minor; } \
-	private: name *f_plugin; \
-	} g_plugin_##name##_factory;
+    extern int qInitResources_##name(); \
+    namespace snap { namespace name { \
+    class plugin_##name##_factory { \
+    public: plugin_##name##_factory() : f_plugin(new name) { \
+        qInitResources_##name(); \
+        ::snap::plugins::register_plugin(#name, f_plugin); \
+        ::snap::server::instance()->signal_listen_bootstrap( \
+            boost::bind(&name::on_bootstrap, f_plugin, _1)); } \
+    ~plugin_##name##_factory() { delete f_plugin; } \
+    name *instance() { return f_plugin; } \
+    int version_major() const { return major; } \
+    int version_minor() const { return minor; } \
+    QString version() const { return #major "." #minor; } \
+    private: name *f_plugin; \
+    } g_plugin_##name##_factory;
 
 /** \brief The counter part of the SNAP_PLUGIN_START() macro.
  *
@@ -169,7 +169,7 @@ bool verify_plugin_name(const QString& name);
  * plugin implementation.
  */
 #define SNAP_PLUGIN_END() \
-	}} // close namespaces
+    }} // close namespaces
 
 /** \brief Conditionally listen to a signal.
  *
@@ -192,14 +192,14 @@ bool verify_plugin_name(const QString& name);
  * \param[in] args...  The list of arguments to that signal.
  */
 #define SNAP_LISTEN(name, emitter_name, emitter_class, signal, args...) \
-	if(::snap::plugins::exists(emitter_name)) \
-		emitter_class::instance()->signal_listen_##signal( \
-					boost::bind(&name::on_##signal, this, ##args));
+    if(::snap::plugins::exists(emitter_name)) \
+        emitter_class::instance()->signal_listen_##signal( \
+                    boost::bind(&name::on_##signal, this, ##args));
 
 #define SNAP_LISTEN0(name, emitter_name, emitter_class, signal) \
-	if(::snap::plugins::exists(emitter_name)) \
-		emitter_class::instance()->signal_listen_##signal( \
-					boost::bind(&name::on_##signal, this));
+    if(::snap::plugins::exists(emitter_name)) \
+        emitter_class::instance()->signal_listen_##signal( \
+                    boost::bind(&name::on_##signal, this));
 
 /** \brief Compute the number of days in the month of February.
  * \private
@@ -216,10 +216,10 @@ bool verify_plugin_name(const QString& name);
  * \return 28 or 29 depending on whether the year is a leap year
  */
 #define _SNAP_UNIX_TIMESTAMP_FDAY(year) \
-	(((year) % 400) == 0 ? 29LL : \
-		(((year) % 100) == 0 ? 28LL : \
-			(((year) % 4) == 0 ? 29LL : \
-				28LL)))
+    (((year) % 400) == 0 ? 29LL : \
+        (((year) % 100) == 0 ? 28LL : \
+            (((year) % 4) == 0 ? 29LL : \
+                28LL)))
 
 /** \brief Compute the number of days in a year.
  * \private
@@ -234,20 +234,20 @@ bool verify_plugin_name(const QString& name);
  * \return The number of days within that year (starting at 1)
  */
 #define _SNAP_UNIX_TIMESTAMP_YDAY(year, month, day) \
-	( \
-		/* January */    static_cast<qint64>(day) \
-		/* February */ + ((month) >=  2 ? 31LL : 0LL) \
-		/* March */    + ((month) >=  3 ? _SNAP_UNIX_TIMESTAMP_FDAY(year) : 0LL) \
-		/* April */    + ((month) >=  4 ? 31LL : 0LL) \
-		/* May */      + ((month) >=  5 ? 30LL : 0LL) \
-		/* June */     + ((month) >=  6 ? 31LL : 0LL) \
-		/* July */     + ((month) >=  7 ? 30LL : 0LL) \
-		/* August */   + ((month) >=  8 ? 31LL : 0LL) \
-		/* September */+ ((month) >=  9 ? 31LL : 0LL) \
-		/* October */  + ((month) >= 10 ? 30LL : 0LL) \
-		/* November */ + ((month) >= 11 ? 31LL : 0LL) \
-		/* December */ + ((month) >= 12 ? 30LL : 0LL) \
-	)
+    ( \
+        /* January */    static_cast<qint64>(day) \
+        /* February */ + ((month) >=  2 ? 31LL : 0LL) \
+        /* March */    + ((month) >=  3 ? _SNAP_UNIX_TIMESTAMP_FDAY(year) : 0LL) \
+        /* April */    + ((month) >=  4 ? 31LL : 0LL) \
+        /* May */      + ((month) >=  5 ? 30LL : 0LL) \
+        /* June */     + ((month) >=  6 ? 31LL : 0LL) \
+        /* July */     + ((month) >=  7 ? 30LL : 0LL) \
+        /* August */   + ((month) >=  8 ? 31LL : 0LL) \
+        /* September */+ ((month) >=  9 ? 31LL : 0LL) \
+        /* October */  + ((month) >= 10 ? 30LL : 0LL) \
+        /* November */ + ((month) >= 11 ? 31LL : 0LL) \
+        /* December */ + ((month) >= 12 ? 30LL : 0LL) \
+    )
 
 /** \brief Compute a Unix date from a hard coded date.
  *
@@ -284,14 +284,14 @@ bool verify_plugin_name(const QString& name);
  * \param[in] second  The second representing this Unix timestamp.
  */
 #define SNAP_UNIX_TIMESTAMP(year, month, day, hour, minute, second) \
-	( /* time */ static_cast<qint64>(second) \
-				+ static_cast<qint64>(minute) * 60LL \
-				+ static_cast<qint64>(hour) * 3600LL \
-	+ /* year day (month + day) */ (_SNAP_UNIX_TIMESTAMP_YDAY(year, month, day) - 1) * 86400LL \
-	+ /* year */ (static_cast<qint64>(year) - 1970LL) * 31536000LL \
-				+ ((static_cast<qint64>(year) - 1969LL) / 4LL) * 86400LL \
-				- ((static_cast<qint64>(year) - 1901LL) / 100LL) * 86400LL \
-				+ ((static_cast<qint64>(year) - 1601LL) / 400LL) * 86400LL )
+    ( /* time */ static_cast<qint64>(second) \
+                + static_cast<qint64>(minute) * 60LL \
+                + static_cast<qint64>(hour) * 3600LL \
+    + /* year day (month + day) */ (_SNAP_UNIX_TIMESTAMP_YDAY(year, month, day) - 1) * 86400LL \
+    + /* year */ (static_cast<qint64>(year) - 1970LL) * 31536000LL \
+                + ((static_cast<qint64>(year) - 1969LL) / 4LL) * 86400LL \
+                - ((static_cast<qint64>(year) - 1901LL) / 100LL) * 86400LL \
+                + ((static_cast<qint64>(year) - 1601LL) / 400LL) * 86400LL )
 
 /** \brief Initialize the do_update() function.
  *
@@ -322,13 +322,13 @@ bool verify_plugin_name(const QString& name);
  * \param[in] function  The name of the function to call if the update is required.
  */
 #define SNAP_PLUGIN_UPDATE(year, month, day, hour, minute, second, function) \
-	if(last_plugin_update > SNAP_UNIX_TIMESTAMP(year, month, day, hour, minute, second) * 1000000LL) { \
-		throw plugins::plugin_exception_invalid_order("the updates in your do_update() functions must appear in increasing order in regard to date and time"); \
-	} \
-	last_plugin_update = SNAP_UNIX_TIMESTAMP(year, month, day, hour, minute, second) * 1000000LL; \
-	if(last_updated < last_plugin_update) { \
-		function(last_plugin_update); \
-	}
+    if(last_plugin_update > SNAP_UNIX_TIMESTAMP(year, month, day, hour, minute, second) * 1000000LL) { \
+        throw plugins::plugin_exception_invalid_order("the updates in your do_update() functions must appear in increasing order in regard to date and time"); \
+    } \
+    last_plugin_update = SNAP_UNIX_TIMESTAMP(year, month, day, hour, minute, second) * 1000000LL; \
+    if(last_updated < last_plugin_update) { \
+        function(last_plugin_update); \
+    }
 
 /** \brief End the plugin update function.
  *
@@ -345,4 +345,4 @@ bool verify_plugin_name(const QString& name);
 } // namespace snap
 #endif
 // SNAP_PLUGINS_H
-// vim: ts=4 sw=4
+// vim: ts=4 sw=4 et

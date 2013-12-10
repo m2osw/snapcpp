@@ -34,6 +34,7 @@ QMap<QString, plugin *> g_plugins;
 QString g_next_register_name;
 QString g_next_register_filename;
 
+
 /** \brief Load a complete list of available plugins.
  *
  * This is used in the administrator screen to offer users a complete list of
@@ -52,6 +53,7 @@ QStringList list_all(const QString& plugin_path)
 	return dir.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
 }
 
+
 /** \brief Load all the plugins.
  *
  * Someone who wants to remove a plugin simply deletes it or its
@@ -69,7 +71,28 @@ QStringList list_all(const QString& plugin_path)
  */
 bool load(const QString& plugin_path, plugin_ptr_t server, const QStringList& list_of_plugins)
 {
-#pragma message "This defeats the purpose of a shared_ptr, but this is because all plugins are treated as barepointers. This needs to be fixed in another iteration..."
+// Doug;
+// "This defeats the purpose of a shared_ptr, but this is because all plugins are treated as barepointers. This needs to be fixed in another iteration..."
+// Alexis:
+// "I do not think we want to have shared pointer of plugins for several reasons:
+//    1. plugins are allocated in a way that makes it complicated to handle
+//       as a shared pointer (although we could make it more complicated just
+//       for the fun of using shared pointers...)
+//    2. but the most important reason: this is a server which means:
+//       (a) we load, (b) we run in under 1 second, (c) we quit; the need
+//       of shared pointer is very important in a process that never dies
+//       for very long period of time; here it's plugins, clearly loaded once
+//       for a very short amount of time (there is an exception with backends
+//       though, but it still very safe without the shared pointer.)
+//    3. when loading the .so file, the plugins are not automatically
+//       complete which allows us to not have to load all plugins and yet
+//       have plugin A make use of plugin B but only if available; shared
+//       pointers prevent that scheme (and actually the load may fail)
+//    4. I have no clue what would happen when unloading plugins, it is likely
+//       to crash, especially if the plugins are not unloaded "in the right
+//       order" (whatever that might be)
+// I would strongly argue that your addition should be removed."
+#pragma message("Please restore the plugin pointer to a non-shared pointer. (see detailed reason above this message)")
 	g_plugins.insert("server", server.get());
 
 	QString path(plugin_path);
@@ -156,6 +179,7 @@ bool load(const QString& plugin_path, plugin_ptr_t server, const QStringList& li
 	return good;
 }
 
+
 /** \brief Verify that a name is a valid plugin name.
  *
  * This function checks a string to know whether it is a valid plugin name.
@@ -200,6 +224,7 @@ bool verify_plugin_name(const QString& name)
 	return true;
 }
 
+
 /** \brief Check whether a plugin was loaded.
  *
  * This function searches the list of loaded plugins and returns true if the
@@ -213,6 +238,7 @@ bool exists(const QString& name)
 {
 	return g_plugins.contains(name);
 }
+
 
 /** \brief Register a plugin in the list of plugins.
  *
@@ -241,6 +267,7 @@ void register_plugin(const QString& name, plugin *p)
 	g_plugins.insert(name, p);
 }
 
+
 /** \brief Initialize a plugin.
  *
  * This function initializes the plugin with its filename.
@@ -251,6 +278,7 @@ plugin::plugin()
 	  //f_last_modification(0) -- auto-init
 {
 }
+
 
 /** \brief Retrieve the name of the plugin as defined on creation.
  *
@@ -264,6 +292,7 @@ QString plugin::get_plugin_name() const
 {
 	return f_name;
 }
+
 
 /** \brief Get the last modification date of the plugin.
  *
@@ -288,6 +317,7 @@ int64_t plugin::last_modification() const
 	return f_last_modification;
 }
 
+
 /** \brief Run an update.
  *
  * This function is a stub that does nothing. It is here so any plug in that
@@ -309,6 +339,7 @@ int64_t plugin::do_update(int64_t /*last_updated*/)
 
 	SNAP_PLUGIN_UPDATE_EXIT();
 }
+
 
 /** \brief Retrieve a pointer to an existing plugin.
  *
@@ -333,6 +364,7 @@ plugin *get_plugin(const QString& name)
 {
 	return g_plugins.value(name, NULL);
 }
+
 
 } // namespace plugins
 } // namespace snap

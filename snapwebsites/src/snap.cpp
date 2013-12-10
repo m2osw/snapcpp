@@ -24,6 +24,8 @@
 // # arguments
 // argv[0] = "/usr/clients/www/alexis.m2osw.com/cgi-bin/env_n_args.cgi"
 //
+// # See also: http://www.cgi101.com/book/ch3/text.html
+//
 // # environment
 // UNIQUE_ID=TtISeX8AAAEAAHhHi7kAAAAB
 // HTTP_HOST=alexis.m2osw.com
@@ -35,6 +37,7 @@
 // HTTP_CONNECTION=keep-alive
 // HTTP_COOKIE=SESS8b653582e586f876284c0be25de5ac73=d32eb1fccf3f3f3beb5bc2b9439dd160; DRUPAL_UID=1
 // HTTP_CACHE_CONTROL=max-age=0
+// HTTP_REFERER=http://snapwebsites.com/
 // PATH=/usr/local/bin:/usr/bin:/bin
 // SERVER_SIGNATURE=
 // SERVER_SOFTWARE=Apache

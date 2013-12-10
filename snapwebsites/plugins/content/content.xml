@@ -1,7 +1,7 @@
 <?xml version="1.0" standalone="yes"?>
 <!--
 Snap Websites Server == content plugin database setup
-Copyright (C) 2011-2012  Made to Order Software Corp.
+Copyright (C) 2011-2013  Made to Order Software Corp.
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -35,7 +35,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   <content path="/">
     <param name="content::title">Home Page</param>
     <param name="content::body" overwrite="yes">
-      <![CDATA[<p>Welcome to your new Snap! C++ website.</p>]]>
+      <![CDATA[<p>Welcome to your new Snap! C++ website.</p><p><a href="/login">Log In Now!</a></p>]]>
     </param>
     <param name="layout::theme" force-namespace="no">plugins.content.modified&gt;10?"large_theme":"small_theme";</param>
     <link name="include_in_xml_sitemap" to="include_in_xml_sitemap" mode="1:*">/types/taxonomy/system/sitemapxml/include-in-xml-sitemap</link>

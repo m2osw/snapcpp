@@ -117,7 +117,7 @@ public:
     virtual int64_t         do_update(int64_t last_updated);
 
     void                    on_bootstrap(snap_child *snap);
-    virtual void            on_generate_main_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body);
+    virtual void            on_generate_main_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body, const QString& ctemplate);
 
     QString                 create_session(session_info& info);
     void                    save_session(session_info& info);

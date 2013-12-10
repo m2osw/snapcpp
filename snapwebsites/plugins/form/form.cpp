@@ -204,7 +204,7 @@ QDomDocument form::form_to_html(sessions::sessions::session_info& info, const QD
         f_form_initialized = true;
     }
     QXmlQuery q(QXmlQuery::XSLT20);
-    q.setFocus(xml.toString());
+	q.setFocus(xml.toString());
     // somehow the bind works here...
     q.bindVariable("form_session", QVariant(sessions::sessions::instance()->create_session(info)));
     q.setQuery(f_form_elements_string);
@@ -437,6 +437,11 @@ void form::on_process_post(const QString& uri_path)
     // retrieve the XML form information so we can verify the data
     // (i.e. the XML includes ranges, filters, data types, etc.)
     QDomDocument xml_form(fp->on_get_xml_form(cpath));
+    if(xml_form.isNull())
+	{
+		// programmer mispelled the path in his on_get_xml_form()
+        throw std::logic_error("this path does not correspond to a valid XML form");
+	}
 
     QDomNodeList widgets(xml_form.elementsByTagName("widget"));
     int count(widgets.length());
@@ -469,6 +474,25 @@ void form::on_process_post(const QString& uri_path)
         QDomNode secret(attributes.namedItem("secret"));
         bool is_secret(!secret.isNull() && secret.nodeValue() == "secret");
 
+		// if the form was submitted, we'll have some postenv() values
+		// which we want to save in the <post> tag of the widget then
+		// the widget can decide whether to use the <post> data or the
+		// default <value> data (although we do not hand the value back
+		// if the widget is marked as secret.)
+		QString post(f_snap->postenv(widget_name));
+		if(post.isEmpty() && widget_type == "checkbox")
+		{
+			post = "off";
+		}
+		if(!is_secret && !post.isEmpty())
+		{
+            QDomElement post_tag(xml_form.createElement("post"));
+            widget.appendChild(post_tag);
+			// TBD should post be HTML instead of just text here?
+            QDomText post_value(xml_form.createTextNode(post));
+            post_tag.appendChild(post_value);
+		}
+
         // now validate using a signal so any plugin can take over
         // the validation process
         sessions::sessions::session_info::session_info_type_t session_type(info.get_session_type());
@@ -487,10 +511,9 @@ void form::on_process_post(const QString& uri_path)
                 // the pluing marked that it found an error but did not
                 // generate an actual error, do so here with a generic
                 // error message
-                QString value(f_snap->postenv(widget_name));
                 messages->set_error(
                     "Invalid Content",
-                    "\"" + html_64max(value, is_secret) + "\" is not valid for \"" + widget_name + "\".",
+                    "\"" + html_64max(post, is_secret) + "\" is not valid for \"" + widget_name + "\".",
                     "unspecified error for widget",
                     false
                 );
@@ -731,7 +754,7 @@ bool form::validate_post_for_widget_impl(const QString& cpath, sessions::session
             }
             if(value.length() > l)
             {
-                // not enough characters
+                // length too large
                 messages->set_error(
                     "Length Too Long",
                     "\"" + html_64max(value, is_secret) + "\" is too long in \"" + widget_name + "\". The widget requires at most " + m + " characters.",
@@ -753,13 +776,13 @@ bool form::validate_post_for_widget_impl(const QString& cpath, sessions::session
             }
             if(widget_type == "text-edit")
             {
-                if(count_text_lines(value) > l)
+                if(count_text_lines(value) < l)
                 {
                     // not enough lines (text)
                     messages->set_error(
-                        "Length Too Long",
-                        "\"" + html_64max(value, is_secret) + "\" is too long in \"" + widget_name + "\". The widget requires at most " + m + " characters.",
-                        "too many characters error",
+                        "Not Enough Lines",
+                        "\"" + html_64max(value, is_secret) + "\" is too long in \"" + widget_name + "\". The widget requires at least " + m + " lines.",
+                        "not enough lines",
                         false
                     );
                     info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
@@ -771,9 +794,9 @@ bool form::validate_post_for_widget_impl(const QString& cpath, sessions::session
                 {
                     // not enough lines (HTML)
                     messages->set_error(
-                        "Length Too Long",
-                        "\"" + html_64max(value, is_secret) + "\" is too long in \"" + widget_name + "\". The widget requires at most " + m + " characters.",
-                        "too many characters error",
+                        "Not Enough Lines",
+                        "\"" + html_64max(value, is_secret) + "\" is too long in \"" + widget_name + "\". The widget requires at least " + m + " lines.",
+                        "not enough lines",
                         false
                     );
                     info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
@@ -782,18 +805,19 @@ bool form::validate_post_for_widget_impl(const QString& cpath, sessions::session
         }
     }
 
-    // check whether the field is required, in case of a checkbox required
-    // means that the user selects the checkbox ("on")
-    if(widget_type == "line-edit" || widget_type == "password" || widget_type == "checkbox")
-    {
-        QDomElement required(widget.firstChildElement("required"));
-        if(!required.isNull())
-        {
-            if(required.text() == "required")
-            {
-                // avoid the error if the minimum size error was already applied
-                if(!has_minimum && value.isEmpty())
-                {
+	// check whether the field is required, in case of a checkbox required
+	// means that the user selects the checkbox ("on")
+	if(widget_type == "line-edit" || widget_type == "password" || widget_type == "checkbox")
+	{
+		QDomElement required(widget.firstChildElement("required"));
+		if(!required.isNull())
+		{
+			if(required.text() == "required")
+			{
+				// not an additional error if the minimum error was
+				// already generated
+				if(!has_minimum && value.isEmpty())
+				{
                     messages->set_error(
                         "Value is Invalid",
                         "\"" + widget_name + "\" is a required field.",
@@ -804,7 +828,30 @@ bool form::validate_post_for_widget_impl(const QString& cpath, sessions::session
                 }
             }
         }
-    }
+	}
+
+	// check whether the widget has a "duplicate-of" attribute, if so
+	// then it must be equal to that other widget's value
+	QString duplicate_of(widget.attribute("duplicate-of"));
+	if(!duplicate_of.isEmpty())
+	{
+		// What we need is the name of the widget so we can get its
+		// current value and the duplicate-of attribute is just that!
+		//QDomXPath dom_xpath;
+		//dom_xpath.setXPath(QString("/snap-form//widget[@id=\"") + duplicate_of + "\"]/@id");
+		//dom_xpath.apply(widget);
+		QString duplicate_value(f_snap->postenv(duplicate_of));
+		if(duplicate_value != value)
+		{
+			messages->set_error(
+				"Value is Invalid",
+				"\"" + widget_name + "\" must be an exact copy of \"" + duplicate_of + "\". Please try again.",
+				"a confirmation widget data is not equal to the original (i.e. password confirmation)",
+				false
+			);
+			info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+		}
+	}
 
     QDomElement filters(widget.firstChildElement("filters"));
     if(!filters.isNull())
@@ -833,6 +880,7 @@ bool form::validate_post_for_widget_impl(const QString& cpath, sessions::session
                     case 'e':
                         if(regex_name == "email")
                         {
+							// TODO: replace the email test with libtld
                             // For emails we accept anything except local emails:
                             //     <name>@[<sub-domain>.]<domain>.<tld>
                             re = "/^[a-z0-9_\\-\\.\\+\\^!#\\$%&*+\\/\\=\\?\\`\\|\\{\\}~\\']+@(?:[a-z0-9]|[a-z0-9][a-z0-9\\-]*[a-z0-9])+\\.(?:(?:[a-z0-9]|[a-z0-9][a-z0-9\\-]*[a-z0-9])\\.?)+$/i";

@@ -202,13 +202,22 @@ void path::on_execute(const QString& uri_path)
 	if(page_exists)
 	{
 		// this should work so we go ahead and set the Last-Modified field in the header
-		uint64_t last_modified(content_table->row(key)->cell(QString(content::get_name(content::SNAP_NAME_CONTENT_MODIFIED)))->value().int64Value());
+		QtCassandra::QCassandraValue value(content_table->row(key)->cell(QString(content::get_name(content::SNAP_NAME_CONTENT_MODIFIED)))->value());
+		owner = content_table->row(key)->cell(QString(get_name(SNAP_NAME_PATH_PRIMARY_OWNER)))->value().stringValue();
+		if(value.nullValue() || owner.isEmpty())
+		{
+			f_snap->die(snap_child::HTTP_CODE_NOT_FOUND,
+						"Invalid Page",
+						"An internal error occured and this page cannot properly be displayed at this time.",
+						"User tried to access page \"" + cpath + "\" but it does not look valid");
+			NOTREACHED();
+		}
+		uint64_t last_modified(value.int64Value());
 		QDateTime date(QDateTime().toUTC());
 		date.setTime_t(last_modified / 1000000); // micro-seconds
 		f_snap->set_header("Last-Modified", date.toString("ddd, dd MMM yyyy hh:mm:ss' GMT'"));
 
 		// get the primary owner (plugin name) and retrieve the plugin pointer
-		owner = content_table->row(key)->cell(QString(get_name(SNAP_NAME_PATH_PRIMARY_OWNER)))->value().stringValue();
 //std::cerr << "Execute [" << key.toUtf8().data() << "] with plugin [" << owner.toUtf8().data() << "]\n";
 		path_plugin = plugins::get_plugin(owner);
 	}

@@ -54,6 +54,12 @@ BOOST_STATIC_ASSERT((SALT_SIZE & 1) == 0);
 const char *get_name(name_t name)
 {
     switch(name) {
+    case SNAP_NAME_USERS_AUTHOR:
+        return "author";
+
+    case SNAP_NAME_USERS_AUTHORED_PAGES:
+        return "authored_pages";
+
     case SNAP_NAME_USERS_AUTO_PATH:
         return "types/users/auto";
 
@@ -81,11 +87,17 @@ const char *get_name(name_t name)
     case SNAP_NAME_USERS_ID_ROW:
         return "*id_row*";
 
+    case SNAP_NAME_USERS_INDEX_ROW:
+        return "*index_row*";
+
     case SNAP_NAME_USERS_LOGIN_IP:
         return "users::login_ip";
 
     case SNAP_NAME_USERS_LOGIN_ON:
         return "users::login_on";
+
+    case SNAP_NAME_USERS_LOGIN_REFERRER:
+        return "users::login_referrer";
 
     case SNAP_NAME_USERS_LOGOUT_IP:
         return "users::logout_ip";
@@ -222,7 +234,7 @@ int64_t users::do_update(int64_t last_updated)
     SNAP_PLUGIN_UPDATE_INIT();
 
     SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, initial_update);
-    SNAP_PLUGIN_UPDATE(2013, 12, 5, 23, 31, 43, content_update);
+    SNAP_PLUGIN_UPDATE(2013, 12, 8, 2, 3, 23, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -251,7 +263,7 @@ void users::initial_update(int64_t variables_timestamp)
  */
 void users::content_update(int64_t variables_timestamp)
 {
-    content::content::instance()->add_xml("users");
+    content::content::instance()->add_xml(get_plugin_name());
 }
 
 /** \brief Initialize the users table.
@@ -286,9 +298,10 @@ void users::on_bootstrap(::snap::snap_child *snap)
     SNAP_LISTEN0(users, "server", server, process_cookies);
     SNAP_LISTEN0(users, "server", server, attach_to_session);
     SNAP_LISTEN0(users, "server", server, detach_from_session);
+    SNAP_LISTEN(users, "content", content::content, create_content, _1, _2);
     SNAP_LISTEN(users, "path", path::path, can_handle_dynamic_path, _1, _2);
-    SNAP_LISTEN(users, "layout", layout::layout, generate_header_content, _1, _2, _3, _4);
-    //SNAP_LISTEN(users, "layout", layout::layout, generate_page_content, _1, _2, _3, _4);
+    SNAP_LISTEN(users, "layout", layout::layout, generate_header_content, _1, _2, _3, _4, _5);
+    SNAP_LISTEN(users, "layout", layout::layout, generate_page_content, _1, _2, _3, _4, _5);
     //SNAP_LISTEN(users, "filter", filter::filter, replace_token, _1, _2, _3);
 
     f_info.reset(new sessions::sessions::session_info);
@@ -386,7 +399,7 @@ void users::on_process_cookies()
         // create a new session
         f_info->set_session_type(sessions::sessions::session_info::SESSION_INFO_USER);
         f_info->set_session_id(USERS_SESSION_ID_LOG_IN_SESSION);
-        f_info->set_plugin_owner("users"); // ourselves
+        f_info->set_plugin_owner(get_plugin_name()); // ourselves
         //f_info->set_page_path(); -- default is fine, we do not use the path
         f_info->set_object_path("/user/"); // no user id for the anonymous user
         f_info->set_time_to_live(86400 * 5);  // 5 days
@@ -481,7 +494,7 @@ bool users::on_path_execute(const QString& cpath)
 }
 
 
-void users::on_generate_main_content(layout::layout *l, const QString& cpath, QDomElement& page, QDomElement& body)
+void users::on_generate_main_content(layout::layout *l, const QString& cpath, QDomElement& page, QDomElement& body, const QString& ctemplate)
 {
     if(cpath == "user")
     {
@@ -496,7 +509,6 @@ void users::on_generate_main_content(layout::layout *l, const QString& cpath, QD
     }
     else if(cpath.left(5) == "user/")
     {
-        // TODO: write user profile viewer
         show_user(l, cpath, page, body);
     }
     else if(cpath == "profile")
@@ -544,12 +556,12 @@ void users::on_generate_main_content(layout::layout *l, const QString& cpath, QD
     else
     {
         // any other user page is just like regular content
-        content::content::instance()->on_generate_main_content(l, cpath, page, body);
+        content::content::instance()->on_generate_main_content(l, cpath, page, body, ctemplate);
     }
 }
 
 
-void users::on_generate_header_content(layout::layout *l, const QString& path, QDomElement& header, QDomElement& metadata)
+void users::on_generate_header_content(layout::layout *l, const QString& path, QDomElement& header, QDomElement& metadata, const QString& ctemplate)
 {
     QDomDocument doc(header.ownerDocument());
 
@@ -558,7 +570,7 @@ void users::on_generate_header_content(layout::layout *l, const QString& path, Q
     // retrieve the row for that user
     if(!f_user_key.isEmpty() && users_table->exists(f_user_key))
     {
-        QSharedPointer<QtCassandra::QCassandraRow> row(users_table->row(f_user_key));
+        QSharedPointer<QtCassandra::QCassandraRow> user_row(users_table->row(f_user_key));
 
         {   // snap/head/metadata/desc[type=users::email]/data
             QDomElement desc(doc.createElement("desc"));
@@ -570,8 +582,8 @@ void users::on_generate_header_content(layout::layout *l, const QString& path, Q
             data.appendChild(text);
         }
 
-        {   // snap/head/metadata/desc[type=user_name]/data
-            QtCassandra::QCassandraValue value(row->cell(get_name(SNAP_NAME_USERS_USERNAME))->value());
+        {   // snap/head/metadata/desc[type=users::name]/data
+            QtCassandra::QCassandraValue value(user_row->cell(get_name(SNAP_NAME_USERS_USERNAME))->value());
             if(!value.nullValue())
             {
                 QDomElement desc(doc.createElement("desc"));
@@ -584,8 +596,8 @@ void users::on_generate_header_content(layout::layout *l, const QString& path, Q
             }
         }
 
-        {   // snap/head/metadata/desc[type=user_created]/data
-            QtCassandra::QCassandraValue value(row->cell(get_name(SNAP_NAME_USERS_CREATED_TIME))->value());
+        {   // snap/head/metadata/desc[type=users::created]/data
+            QtCassandra::QCassandraValue value(user_row->cell(get_name(SNAP_NAME_USERS_CREATED_TIME))->value());
             if(!value.nullValue())
             {
                 QDomElement desc(doc.createElement("desc"));
@@ -595,6 +607,82 @@ void users::on_generate_header_content(layout::layout *l, const QString& path, Q
                 desc.appendChild(data);
                 QDomText text(doc.createTextNode(f_snap->date_to_string(value.int64Value())));
                 data.appendChild(text);
+            }
+        }
+    }
+}
+
+
+void users::on_generate_page_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body, const QString& ctemplate)
+{
+    QDomDocument doc(page.ownerDocument());
+
+    // retrieve the author
+    QSharedPointer<QtCassandra::QCassandraTable> content_table(content::content::instance()->get_content_table());
+    const QString site_key(f_snap->get_site_key_with_slash());
+    const QString page_key(site_key + path);
+    QSharedPointer<QtCassandra::QCassandraRow> content_row(content_table->row(page_key));
+    const QString link_name(get_name(SNAP_NAME_USERS_AUTHOR));
+    links::link_info author_info(get_name(SNAP_NAME_USERS_AUTHOR), true, page_key);
+    QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(author_info));
+    links::link_info user_info;
+    if(link_ctxt->next_link(user_info))
+    {
+        // an author is attached to this page
+        const QString author_key(user_info.key());
+        // all we want to offer here is the author details defined in the
+        // /user/... location although we may want access to his email
+        // address too (to display to an admin for example)
+        QSharedPointer<QtCassandra::QCassandraRow> author_row(content_table->row(author_key));
+
+        {   // snap/page/body/author[type=users::name]/data
+            QtCassandra::QCassandraValue value(author_row->cell(get_name(SNAP_NAME_USERS_USERNAME))->value());
+            if(!value.nullValue())
+            {
+                QDomElement author(doc.createElement("author"));
+                author.setAttribute("type", "users::name");
+                body.appendChild(author);
+                QDomElement data(doc.createElement("data"));
+                author.appendChild(data);
+                QDomText text(doc.createTextNode(value.stringValue()));
+                data.appendChild(text);
+            }
+        }
+
+        // TODO test whether the author has a public profile, if so then
+        //      add a link to the account
+    }
+}
+
+
+void users::on_create_content(const QString& path, const QString& owner)
+{
+    if(!f_user_key.isEmpty())
+    {
+        //QSharedPointer<QtCassandra::QCassandraTable> content_table(content::content::instance()->get_content_table());
+        //QSharedPointer<QtCassandra::QCassandraRow> row(content_table->row(key));
+
+        //const QString primary_owner(path::get_name(path::SNAP_NAME_PATH_PRIMARY_OWNER));
+        //row->cell(primary_owner)->setValue(owner);
+
+        QSharedPointer<QtCassandra::QCassandraTable> users_table(get_users_table());
+        if(users_table->exists(f_user_key))
+        {
+            QtCassandra::QCassandraValue value(users_table->row(f_user_key)->cell(get_name(SNAP_NAME_USERS_IDENTIFIER))->value());
+            if(value.nullValue())
+            {
+                int64_t identifier(value.int64Value());
+                const QString site_key(f_snap->get_site_key_with_slash());
+                const QString user_key(site_key + get_name(SNAP_NAME_USERS_PATH) + QString("/%1").arg(identifier));
+                const QString key(site_key + path);
+
+                const QString link_name(get_name(SNAP_NAME_USERS_AUTHOR));
+                const bool source_unique(true);
+                links::link_info source(link_name, source_unique, key);
+                const QString link_to(get_name(SNAP_NAME_USERS_AUTHORED_PAGES));
+                const bool destination_multi(false);
+                links::link_info destination(link_to, destination_multi, user_key);
+                links::links::instance()->create_link(source, destination);
             }
         }
     }
@@ -627,7 +715,7 @@ void users::generate_replace_password_form(QDomElement& body)
 
     QDomDocument doc(body.ownerDocument());
 
-    QDomDocument replace_password_form(on_get_xml_form("replace-password"));
+    QDomDocument replace_password_form(on_get_xml_form("user/password/replace"));
     if(replace_password_form.isNull())
     {
         // invalid (could not load the form!)
@@ -637,7 +725,7 @@ void users::generate_replace_password_form(QDomElement& body)
     sessions::sessions::session_info info;
     info.set_session_type(info.SESSION_INFO_USER);
     info.set_session_id(USERS_SESSION_ID_REPLACE_PASSWORD);
-    info.set_plugin_owner("users"); // ourselves
+    info.set_plugin_owner(get_plugin_name()); // ourselves
     info.set_page_path("user/password/replace");
     //info.set_object_path(); -- default is okay
     info.set_time_to_live(3600);  // 1h -- we want to have a JS that clears the data in 5 min. though
@@ -674,11 +762,13 @@ void users::show_user(layout::layout *l, const QString& cpath, QDomElement& page
 {
     int64_t identifier(0);
     QString user_id(cpath.mid(5));
-    if(user_id == "me")
+    if(user_id == "me" || user_id == "password")
     {
         // retrieve the logged in user identifier
         if(f_user_key.isEmpty())
         {
+            attach_to_session(get_name(SNAP_NAME_USERS_LOGIN_REFERRER), "user/password");
+
             messages::messages::instance()->set_error(
                 "Permission Denied",
                 "You are not currently logged in. You may check out your profile only when logged in.",
@@ -721,16 +811,115 @@ void users::show_user(layout::layout *l, const QString& cpath, QDomElement& page
             return;
         }
         identifier = value.int64Value();
-        // Probably not necessary to fix
+
+        if(user_id == "password")
+        {
+            // user is editing his password
+            generate_password_form(body);
+            return;
+        }
+
+        // Probably not necessary to change this one
         //user_id = QString("%1").arg(identifier);
     }
     else
     {
-        identifier = user_id.toLongLong();
+        bool ok(false);
+        identifier = user_id.toLongLong(&ok);
+        if(!ok)
+        {
+            // invalid user identifier, generate a 404
+            f_snap->die(snap_child::HTTP_CODE_NOT_FOUND,
+                    "User Not Found", "This user does not exist. Please check the URI and make corrections as required.",
+                    "User attempt to access user \"" + user_id + "\" which is not defined as a domain.");
+            NOTREACHED();
+        }
+
+        // verify that the identifier indeed represents a user
+        const QString site_key(f_snap->get_site_key_with_slash());
+        const QString user_key(site_key + get_name(SNAP_NAME_USERS_PATH) + "/" + user_id);
+        QSharedPointer<QtCassandra::QCassandraTable> content_table(content::content::instance()->get_content_table());
+        if(!content_table->exists(user_key))
+        {
+            f_snap->die(snap_child::HTTP_CODE_NOT_FOUND,
+                "User Not Found",
+                "We could not find an account for user " + user_id + " on this system.",
+                "user account for " + user_id + " does not exist at this point"
+            );
+            NOTREACHED();
+        }
     }
+printf("Got user [%ld]\n", identifier);
+fflush(stdout);
 
     // generate the default body
-    content::content::instance()->on_generate_main_content(l, "admin/users/page/profile", page, body);
+        // TODO: write user profile viewer (i.e. we need to make use of the identifier here!)
+        // WARNING: using a path such as "admin/.../profile" returns all the content of that profile
+    content::content::instance()->on_generate_main_content(l, cpath, page, body, "admin/users/page/profile");
+}
+
+
+/** \brief Generate the password form.
+ *
+ * This function adds a compiled password form to the body content.
+ * (i.e. this is the main page body content.)
+ *
+ * This form includes the original password, and the new password with
+ * a duplicate to make sure the user enters it twice properly.
+ *
+ * The password can also be changed by requiring the system to send
+ * an email. In that case, and if the user then remembers his old
+ * password, then this form is hit on the following log in.
+ *
+ * \param[in] body  The body where we're to add the login form.
+ */
+void users::generate_password_form(QDomElement& body)
+{
+    if(f_user_key.isEmpty())
+    {
+        // user needs to be logged in to edit his password
+        f_snap->die(snap_child::HTTP_CODE_FORBIDDEN,
+                "Access Denied", "You need to be logged in and have enough permissions to access this page.",
+                "user attempt to change a password without enough permissions.");
+        NOTREACHED();
+    }
+
+    QDomDocument doc(body.ownerDocument());
+
+    QDomDocument password_form(on_get_xml_form("user/password"));
+    if(password_form.isNull())
+    {
+        // invalid (could not load the form!)
+        return;
+    }
+
+    sessions::sessions::session_info info;
+    info.set_session_type(info.SESSION_INFO_USER);
+    info.set_session_id(USERS_SESSION_ID_LOG_IN);
+    info.set_plugin_owner(get_plugin_name()); // ourselves
+    info.set_page_path("user/password");
+    //info.set_object_path(); -- default is okay
+    info.set_time_to_live(3600);  // 1h -- we want to have a JS that clears the data in 5 min. though
+    QDomDocument result(form::form::instance()->form_to_html(info, password_form));
+    //f_snap->output(result.toString());
+
+    {
+        // we assume that the body content is valid because when we created it
+        // we checked the data and if the user data was invalid XML then we
+        // already saved a place holder warning to the user about the fact!
+        QDomElement content_tag(doc.createElement("content"));
+        body.appendChild(content_tag);
+        content_tag.appendChild(doc.importNode(result.documentElement(), true));
+    }
+
+    { // /snap/page/body/titles/title
+        QDomElement titles(doc.createElement("titles"));
+        body.appendChild(titles);
+        QDomElement title(doc.createElement("title"));
+        titles.appendChild(title);
+        QDomText text(doc.createTextNode(form::form::instance()->get_form_title("User Password")));
+        title.appendChild(text);
+    }
 }
 
 
@@ -762,7 +951,7 @@ void users::generate_login_form(QDomElement& body)
     sessions::sessions::session_info info;
     info.set_session_type(info.SESSION_INFO_USER);
     info.set_session_id(USERS_SESSION_ID_LOG_IN);
-    info.set_plugin_owner("users"); // ourselves
+    info.set_plugin_owner(get_plugin_name()); // ourselves
     info.set_page_path("login");
     //info.set_object_path(); -- default is okay
     info.set_time_to_live(3600);  // 1h -- we want to have a JS that clears the data in 5 min. though
@@ -785,6 +974,19 @@ void users::generate_login_form(QDomElement& body)
         titles.appendChild(title);
         QDomText text(doc.createTextNode(form::form::instance()->get_form_title("User Log In")));
         title.appendChild(text);
+    }
+
+    // use the current refererrer if there is one as the redirect page
+    // after log in; once the log in is complete, redirect to this referrer
+    // page; if you send the user on a page that only redirects to /login
+    // then the user will end up on his profile (/user/me)
+    if(sessions::sessions::instance()->get_from_session(*f_info, get_name(SNAP_NAME_USERS_LOGIN_REFERRER)).isEmpty())
+    {
+        QString referrer(f_snap->snapenv("HTTP_REFERER"));
+        if(!referrer.isEmpty() && referrer != f_snap->get_site_key_with_slash() + "login")
+        {
+            attach_to_session(get_name(SNAP_NAME_USERS_LOGIN_REFERRER), referrer);
+        }
     }
 }
 
@@ -818,7 +1020,7 @@ void users::logout_user(layout::layout *l, QString cpath, QDomElement& page, QDo
             cpath = "logout";
         }
     }
-    content::content::instance()->on_generate_main_content(l, cpath, page, body);
+    content::content::instance()->on_generate_main_content(l, cpath, page, body, "");
 }
 
 
@@ -850,7 +1052,7 @@ void users::generate_register_form(QDomElement& body)
     sessions::sessions::session_info info;
     info.set_session_type(info.SESSION_INFO_USER);
     info.set_session_id(USERS_SESSION_ID_REGISTER);
-    info.set_plugin_owner("users"); // ourselves
+    info.set_plugin_owner(get_plugin_name()); // ourselves
     info.set_page_path("register");
     //info.set_object_path(); -- default is okay
     info.set_time_to_live(3600);  // 1h -- we want to have a JS that clears the data in 5 min. though
@@ -909,7 +1111,7 @@ void users::generate_verify_form(QDomElement& body)
     sessions::sessions::session_info info;
     info.set_session_type(info.SESSION_INFO_USER);
     info.set_session_id(USERS_SESSION_ID_VERIFY);
-    info.set_plugin_owner("users"); // ourselves
+    info.set_plugin_owner(get_plugin_name()); // ourselves
     info.set_page_path("verify");
     //info.set_object_path(); -- default is okay
     info.set_time_to_live(3600);  // 1h -- we want to have a JS that clears the data in 5 min. though
@@ -960,7 +1162,7 @@ void users::generate_resend_email_form(QDomElement& body)
 
     QDomDocument doc(body.ownerDocument());
 
-    QDomDocument resend_email_form(on_get_xml_form("resend-email"));
+    QDomDocument resend_email_form(on_get_xml_form("verify/resend"));
     if(resend_email_form.isNull())
     {
         // invalid (could not load the form!)
@@ -970,7 +1172,7 @@ void users::generate_resend_email_form(QDomElement& body)
     sessions::sessions::session_info info;
     info.set_session_type(info.SESSION_INFO_USER);
     info.set_session_id(USERS_SESSION_ID_RESEND_EMAIL);
-    info.set_plugin_owner("users"); // ourselves
+    info.set_plugin_owner(get_plugin_name()); // ourselves
     info.set_page_path("verify/resend");
     //info.set_object_path(); -- default is okay
     info.set_time_to_live(3600);  // 1h -- we want to have a JS that clears the data in 5 min. though
@@ -1043,7 +1245,7 @@ void users::generate_forgot_password_form(QDomElement& body)
     sessions::sessions::session_info info;
     info.set_session_type(info.SESSION_INFO_USER);
     info.set_session_id(USERS_SESSION_ID_FORGOT_PASSWORD);
-    info.set_plugin_owner("users"); // ourselves
+    info.set_plugin_owner(get_plugin_name()); // ourselves
     info.set_page_path("forgot-password");
     //info.set_object_path(); -- default is okay
     info.set_time_to_live(3600);  // 1h -- we want to have a JS that clears the data in 5 min. though
@@ -1108,7 +1310,7 @@ void users::generate_new_password_form(QDomElement& body)
     sessions::sessions::session_info info;
     info.set_session_type(info.SESSION_INFO_USER);
     info.set_session_id(USERS_SESSION_ID_NEW_PASSWORD);
-    info.set_plugin_owner("users"); // ourselves
+    info.set_plugin_owner(get_plugin_name()); // ourselves
     info.set_page_path("new-password");
     //info.set_object_path(); -- default is okay
     info.set_time_to_live(3600);  // 1h -- we want to have a JS that clears the data in 5 min. though
@@ -1461,8 +1663,8 @@ QDomDocument users::on_get_xml_form(const QString& cpath)
     static QDomDocument forgot_password_form;
     static QDomDocument login_form;
     static QDomDocument new_password_form;
-    static QDomDocument register_form;
     static QDomDocument password_form;
+    static QDomDocument register_form;
     static QDomDocument replace_password_form;
     static QDomDocument resend_email_form;
     static QDomDocument verify_form;
@@ -1527,6 +1729,26 @@ QDomDocument users::on_get_xml_form(const QString& cpath)
         return new_password_form;
     }
 
+    if(cpath == "user/password")
+    {
+        if(password_form.isNull())
+        {
+            // login page if user is not logged in, user account/stats otherwise
+            QFile file(":/xml/users/password-form.xml");
+            if(!file.open(QIODevice::ReadOnly))
+            {
+                SNAP_LOG_FATAL("users::on_get_xml_form() could not open password-form.xml resource file.");
+                return invalid_form;
+            }
+            if(!password_form.setContent(&file, true))
+            {
+                SNAP_LOG_FATAL("users::on_get_xml_form() could not parse password-form.xml resource file.");
+                return invalid_form;
+            }
+        }
+        return password_form;
+    }
+
     if(cpath == "register")
     {
         if(register_form.isNull())
@@ -1547,7 +1769,7 @@ QDomDocument users::on_get_xml_form(const QString& cpath)
         return register_form;
     }
 
-    if(cpath == "replace-password")
+    if(cpath == "user/password/replace")
     {
         if(replace_password_form.isNull())
         {
@@ -1567,7 +1789,7 @@ QDomDocument users::on_get_xml_form(const QString& cpath)
         return replace_password_form;
     }
 
-    if(cpath == "resend-email")
+    if(cpath == "verify/resend")
     {
         if(resend_email_form.isNull())
         {
@@ -1646,6 +1868,10 @@ void users::on_process_post(const QString& cpath, const sessions::sessions::sess
     {
         process_replace_password_form();
     }
+    else if(cpath == "user/password")
+    {
+        process_password_form();
+    }
     else
     {
         // this should not happen because invalid paths will not pass the
@@ -1704,9 +1930,11 @@ void users::process_login_form()
         links::link_info user_status_info(get_name(SNAP_NAME_USERS_STATUS), true, user_key);
         QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(user_status_info));
         links::link_info status_info;
+        bool force_redirect_password_change(false);
         bool valid(true);
         if(link_ctxt->next_link(status_info))
         {
+//printf("Current status is [%s] / [%s]\n", status_info.key().toUtf8().data(), (site_key + get_name(SNAP_NAME_USERS_PASSWORD_PATH)).toUtf8().data());
             // the status link exists...
             // this means the user is either a new user (not yet verified)
             // or he is blocked
@@ -1726,6 +1954,20 @@ void users::process_login_form()
             {
                 details = "user did not register, this is an auto-account only";
                 valid = false;
+            }
+            else if(status_info.key() == site_key + get_name(SNAP_NAME_USERS_PASSWORD_PATH))
+            {
+                // user requested a new password but it looks like he
+                // remembered the old one in between; for redirect this user
+                // to the password form
+                //
+                // since the user knows his old password, we can log him in
+                // and send him to the full fledge password change form
+                //
+                // note that the status will not change until the user saves
+                // his new password so this redirection will happen again and
+                // again until the password gets changed
+                force_redirect_password_change = true;
             }
             // ignore other statuses at this point
         }
@@ -1790,10 +2032,27 @@ void users::process_login_form()
                 value.setStringValue(f_snap->snapenv("REMOTE_ADDR"));
                 row->cell(get_name(SNAP_NAME_USERS_LOGIN_IP))->setValue(value);
 
-                // User is now logged in, redirect him to another page
-                // TODO: give priority to the saved redirect... (which is not yet implemented!)
-                // go to the user profile (the admin needs to be able to change that default redirect)
-                f_snap->page_redirect("user/me", snap_child::HTTP_CODE_SEE_OTHER);
+                if(force_redirect_password_change)
+                {
+                    f_snap->page_redirect("user/password", snap_child::HTTP_CODE_SEE_OTHER);
+                }
+                else
+                {
+                    // here we detach from the session since we want to
+                    // redirect only once to that page
+                    QString referrer(sessions::sessions::instance()->detach_from_session(*f_info, get_name(SNAP_NAME_USERS_LOGIN_REFERRER)));
+                    if(referrer.isEmpty())
+                    {
+                        // User is now logged in, redirect him to another page
+                        // TODO: give priority to the saved redirect... (which is not yet implemented!)
+                        // go to the user profile (the admin needs to be able to change that default redirect)
+                        f_snap->page_redirect("user/me", snap_child::HTTP_CODE_SEE_OTHER);
+                    }
+                    else
+                    {
+                        f_snap->page_redirect(referrer, snap_child::HTTP_CODE_SEE_OTHER);
+                    }
+                }
                 NOTREACHED();
             }
             else
@@ -2142,6 +2401,172 @@ void users::process_replace_password_form()
 }
 
 
+/** \brief Process the password form.
+ *
+ * This function processes the password form. It verifies that the
+ * old_password is correct. If so, it saves the new password in the
+ * user's account.
+ *
+ * The function then redirects the user to his profile (user/me).
+ */
+void users::process_password_form()
+{
+    // make sure the user is properly setup
+    if(f_user_key.isEmpty())
+    {
+        // user is not even logged in!?
+        f_snap->page_redirect("user/me", snap_child::HTTP_CODE_SEE_OTHER);
+        NOTREACHED();
+    }
+
+    // for errors if any
+    QString details;
+
+    // replace the password assuming we can find that user information
+    QSharedPointer<QtCassandra::QCassandraTable> users_table(get_users_table());
+    if(users_table->exists(f_user_key))
+    {
+        // We're good, save the new password and remove that link
+        QSharedPointer<QtCassandra::QCassandraRow> row(users_table->row(f_user_key));
+
+        // existing users have a unique identifier
+        // necessary to create the user key below
+        QtCassandra::QCassandraValue user_identifier(row->cell(get_name(SNAP_NAME_USERS_IDENTIFIER))->value());
+        if(!user_identifier.nullValue())
+        {
+            int64_t identifier(user_identifier.int64Value());
+            const QString site_key(f_snap->get_site_key_with_slash());
+            QString user_key(site_key + get_name(SNAP_NAME_USERS_PATH) + QString("/%1").arg(identifier));
+
+            // verify the status of this user
+            links::link_info user_status_info(get_name(SNAP_NAME_USERS_STATUS), true, user_key);
+            QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(user_status_info));
+            bool delete_password_status(false);
+            links::link_info status_info;
+            if(link_ctxt->next_link(status_info))
+            {
+                // a status link exists...
+                if(status_info.key() == site_key + get_name(SNAP_NAME_USERS_BLOCKED_PATH)
+                || status_info.key() == site_key + get_name(SNAP_NAME_USERS_AUTO_PATH)
+                || status_info.key() == site_key + get_name(SNAP_NAME_USERS_NEW_PATH))
+                {
+                    // somehow the user is not blocked or marked as auto...
+                    f_snap->die(snap_child::HTTP_CODE_FORBIDDEN,
+                            "Access Denied", "You need to be logged in and have enough permissions to access this page.",
+                            "User attempt to change a password in his account which is currently blocked.");
+                    NOTREACHED();
+                }
+                else if(status_info.key() == site_key + get_name(SNAP_NAME_USERS_PASSWORD_PATH))
+                {
+                    // we will be able to delete this one
+                    delete_password_status = true;
+                }
+            }
+
+            // TODO make sure that the new password is not the same as the
+            //      last X passwords, including the old_password/new_password
+            //      variables as defined here
+
+            // compute the hash of the old password to make sure the user
+            // knows his password
+            //
+            // (1) get the digest
+            QtCassandra::QCassandraValue value(row->cell(get_name(SNAP_NAME_USERS_PASSWORD_DIGEST))->value());
+            const QString old_digest(value.stringValue());
+
+            // (2) we need the passord:
+            const QString old_password(f_snap->postenv("old_password"));
+
+            // (3) get the salt in a buffer
+            value = row->cell(get_name(SNAP_NAME_USERS_PASSWORD_SALT))->value();
+            const QByteArray old_salt(value.binaryValue());
+
+            // (4) compute the expected hash
+            QByteArray old_hash;
+            encrypt_password(old_digest, old_password, old_salt, old_hash);
+
+            // (5) retrieved the saved hashed password
+            value = row->cell(get_name(SNAP_NAME_USERS_PASSWORD))->value();
+            const QByteArray saved_hash(value.binaryValue());
+
+            // (6) verify that it matches
+            if(old_hash.size() == saved_hash.size()
+            && memcmp(old_hash.data(), saved_hash.data(), old_hash.size()) == 0)
+            {
+                // The user entered his old password properly
+                // save the new password
+                QString new_password(f_snap->postenv("new_password"));
+                QtCassandra::QCassandraValue new_digest(f_snap->get_site_parameter(get_name(SNAP_NAME_USERS_PASSWORD_DIGEST)));
+                if(new_digest.nullValue())
+                {
+                    new_digest.setStringValue("sha512");
+                }
+                QByteArray new_salt;
+                create_password_salt(new_salt);
+                QByteArray new_hash;
+                encrypt_password(new_digest.stringValue(), new_password, new_salt, new_hash);
+
+                // Save the hashed password (never the original password!)
+                value.setBinaryValue(new_hash);
+                row->cell(get_name(SNAP_NAME_USERS_PASSWORD))->setValue(value);
+
+                // Save the password salt (otherwise we couldn't check whether the user
+                // knows his password!)
+                value.setBinaryValue(new_salt);
+                row->cell(get_name(SNAP_NAME_USERS_PASSWORD_SALT))->setValue(value);
+
+                // also save the digest since it could change en-route
+                row->cell(get_name(SNAP_NAME_USERS_PASSWORD_DIGEST))->setValue(new_digest);
+
+                // Unlink from the password tag too
+                if(delete_password_status)
+                {
+                    links::links::instance()->delete_link(status_info);
+                }
+
+                // once we sent the new code, we can send the user back
+                // to the verify form
+                messages::messages::instance()->set_info(
+                    "Password Changed",
+                    "Your new password was saved. Next time you want to log in, you must use your email with this new password."
+                );
+                f_snap->page_redirect("user/me", snap_child::HTTP_CODE_SEE_OTHER);
+                NOTREACHED();
+            }
+            else
+            {
+                messages::messages::instance()->set_error(
+                    "Invalid Password",
+                    "The password your entered as your old password is not correct. Please try again.",
+                    "user is trying to change his password and he mistyped his existing password",
+                    false
+                );
+                return;
+            }
+        }
+        else
+        {
+            details = "somehow we saw that a row existed for " + f_user_key + ", but we could not retrieve the user identifier";
+        }
+    }
+    else
+    {
+        details = "user " + f_user_key + " does not exist in the users table";
+    }
+
+    messages::messages::instance()->set_error(
+        "Not a Valid Account",
+        "Somehow an error occured while we were trying to update your account password.",
+        details,
+        false
+    );
+
+    // XXX the profile page is probably the best choice?
+    f_snap->page_redirect("user/me", snap_child::HTTP_CODE_SEE_OTHER);
+    NOTREACHED();
+}
+
+
 /** \brief "Resend" the verification email.
  *
  * This function runs whenever a user requests the system to send an
@@ -2296,6 +2721,7 @@ bool users::register_user(const QString& email, const QString& password)
     QString id_key(get_name(SNAP_NAME_USERS_ID_ROW));
     QString identifier_key(get_name(SNAP_NAME_USERS_IDENTIFIER));
     QtCassandra::QCassandraValue new_identifier;
+    new_identifier.setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
 
     // we got as much as we could ready before locking
     {
@@ -2326,13 +2752,15 @@ bool users::register_user(const QString& email, const QString& password)
         if(users_table->exists(id_key))
         {
             QSharedPointer<QtCassandra::QCassandraRow> id_row(users_table->row(id_key));
-            QtCassandra::QCassandraValue current_identifier(id_row->cell(identifier_key)->value());
+            QSharedPointer<QtCassandra::QCassandraCell> id_cell(id_row->cell(identifier_key));
+            id_cell->setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
+            QtCassandra::QCassandraValue current_identifier(id_cell->value());
             if(current_identifier.nullValue())
             {
                 // this means no user can register until this value gets
                 // fixed somehow!
                 messages::messages::instance()->set_error(
-                    "Could Not Log You In",
+                    "Failed Creating User Account",
                     "Somehow we could not generate a user identifier for your account. Please try again later.",
                     "users::register_user() could not load the *id_row* identifier, the row exists but the cell did not make it ("
                                  + id_key + "/" + identifier_key + ").",
@@ -2350,6 +2778,10 @@ bool users::register_user(const QString& email, const QString& password)
 
         // the lock automatically goes away here
     }
+
+    // WARNING: if this breaks, someone probably changed the value
+    //          content; it should be the user email
+    users_table->row(get_name(SNAP_NAME_USERS_INDEX_ROW))->cell(new_identifier.binaryValue())->setValue(value);
 
     // Save the user identifier in his user account so we can easily find
     // the content user for that user account/email
@@ -2376,12 +2808,11 @@ bool users::register_user(const QString& email, const QString& password)
     row->cell(get_name(SNAP_NAME_USERS_CREATED_TIME))->setValue(created_date);
 
     // Now create the user in the contents
-    QSharedPointer<QtCassandra::QCassandraTable> content_table(content::content::instance()->get_content_table());
+    // (nothing else should be create at the path until now)
     QString user_path(get_name(SNAP_NAME_USERS_PATH));
     const QString site_key(f_snap->get_site_key_with_slash());
-    QString user_key(site_key + user_path + QString("/%1").arg(identifier));
-    QSharedPointer<QtCassandra::QCassandraRow> content_row(content_table->row(user_key));
-    content_row->cell(identifier_key)->setValue(new_identifier);
+    QString user_key(user_path + QString("/%1").arg(identifier));
+    content::content::instance()->create_content(user_key, get_plugin_name());
 
     // The "public" user account (i.e. in the content table) is limited
     // to the identifier at this point
@@ -2391,7 +2822,7 @@ bool users::register_user(const QString& email, const QString& password)
     // the destination URL is defined in the <link> content
     const QString link_name(get_name(SNAP_NAME_USERS_STATUS));
     const bool source_unique(true);
-    links::link_info source(link_name, source_unique, user_key);
+    links::link_info source(link_name, source_unique, site_key + user_key);
     const QString link_to(get_name(SNAP_NAME_USERS_STATUS));
     const bool destination_unique(false);
     QString destination_key(site_key + get_name(SNAP_NAME_USERS_NEW_PATH));
@@ -2426,7 +2857,7 @@ void users::verify_email(const QString& email)
     sessions::sessions::session_info info;
     info.set_session_type(sessions::sessions::session_info::SESSION_INFO_USER);
     info.set_session_id(USERS_SESSION_ID_VERIFY_EMAIL);
-    info.set_plugin_owner("users"); // ourselves
+    info.set_plugin_owner(get_plugin_name()); // ourselves
     //info.set_page_path(); -- default is okay
     info.set_object_path("/user/" + email);
     info.set_time_to_live(86400 * 3);  // 3 days
@@ -2474,7 +2905,7 @@ void users::forgot_password_email(const QString& email)
     sessions::sessions::session_info info;
     info.set_session_type(sessions::sessions::session_info::SESSION_INFO_USER);
     info.set_session_id(USERS_SESSION_ID_FORGOT_PASSWORD_EMAIL);
-    info.set_plugin_owner("users"); // ourselves
+    info.set_plugin_owner(get_plugin_name()); // ourselves
     //info.set_page_path(); -- default is okay
     info.set_object_path("/user/" + email);
     info.set_time_to_live(3600 * 8);  // 8 hours

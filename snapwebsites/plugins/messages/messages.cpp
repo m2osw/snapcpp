@@ -264,7 +264,7 @@ void messages::on_bootstrap(snap_child *snap)
 
     SNAP_LISTEN0(messages, "server", server, attach_to_session);
     SNAP_LISTEN0(messages, "server", server, detach_from_session);
-    SNAP_LISTEN(messages, "layout", layout::layout, generate_page_content, _1, _2, _3, _4);
+    SNAP_LISTEN(messages, "layout", layout::layout, generate_page_content, _1, _2, _3, _4, _5);
 }
 
 /** \brief Get a pointer to the messages plugin.
@@ -341,11 +341,11 @@ void messages::content_update(int64_t variables_timestamp)
  * \param[in] page  The page element being generated.
  * \param[in] body  The body element being generated.
  */
-void messages::on_generate_main_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body)
+void messages::on_generate_main_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body, const QString& ctemplate)
 {
     // generate the settings form for messages (i.e. show/hide debug, etc.)
     // TODO: actually implement this properly
-    content::content::instance()->on_generate_main_content(l, path, page, body);
+    content::content::instance()->on_generate_main_content(l, path, page, body, ctemplate);
 }
 
 
@@ -359,7 +359,7 @@ void messages::on_generate_main_content(layout::layout *l, const QString& path, 
  * \param[in,out] page  The page being generated.
  * \param[in,out] body  The body being generated.
  */
-void messages::on_generate_page_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body)
+void messages::on_generate_page_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body, const QString& ctemplate)
 {
     // go through the list of messages and append them to the body
     const int max(f_messages.count());

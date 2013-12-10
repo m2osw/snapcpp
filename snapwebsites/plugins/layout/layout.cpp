@@ -268,7 +268,9 @@ QString layout::get_layout(const QString& cpath, const QString& column_name)
 
 /** \brief Apply the layout to the content defined at \p cpath.
  *
- * This function defines a page content using the data as defined by \p cpath.
+ * This function defines a page content using the data as defined by \p cpath
+ * and \p ctemplate. \p ctemplate data is used only if data that is generally
+ * required is not currently available in \p cpath.
  *
  * First it looks for a JavaScript under the column key "layout::theme".
  * If such doesn't exist at cpath, then the function checks the \p cpath
@@ -280,40 +282,88 @@ QString layout::get_layout(const QString& cpath, const QString& column_name)
  * The type of the new document depends on the layout (it could be XHTML,
  * XML, PDF, text, SVG, etc.)
  *
+ * You may use the create_body() function directly to gather all the data
+ * to be used to create a page. The apply_theme() will then layout the
+ * result in a page.
+ *
  * \param[in] cpath  The canonalized path of content to be laid out.
  * \param[in] content_plugin  The plugin that will generate the content of the page.
+ * \param[in] ctemplate  The path to the template is used to get default data.
  *
  * \return The result is the output of the layout applied to the data in cpath.
  */
-QString layout::apply_layout(const QString& cpath, layout_content *content_plugin)
+QString layout::apply_layout(const QString& cpath, layout_content *content_plugin, const QString& ctemplate)
+{
+    QDomDocument doc(create_body(cpath, content_plugin, ctemplate));
+    return apply_theme(doc, cpath, content_plugin);
+}
+
+
+/** \brief Create the body XML data.
+ *
+ * This function creates the entire XML data that will be used by the
+ * theme XSLT parser. It first creates an XML document using the
+ * different generate functions to create the header and page data,
+ * then runs the body XSLT parser to format the specified content
+ * in a valid HTML buffer (valid as in, valid HTML tags, as a whole
+ * this is not a valid HTML document, only a block of content; in
+ * particular, the result does not include the \<head> tag.)
+ *
+ * This function is often used to generate parts of the content such
+ * as boxes on the side of the screen. It can also be used to create
+ * content of a page from a template (i.e. the user profile is
+ * created from the admin/users/pages/profile template.) In many
+ * cases, when the function is used in this way, only the title and
+ * body are used. If a block is to generate something that should
+ * appear in the header, then it should create it in the header of
+ * the main page.
+ *
+ * The system can now make use of a ctemplate to gather data which are
+ * not otherwise defined in the cpath cell. By default ctemplate is set
+ * to the empty string which means it does not get used.
+ *
+ * \param[in] cpath  The path being dealt with.
+ * \param[in] content_plugin  The plugin handling the content (body/title in general.)
+ * \param[in] ctemplate  The path to the template is used to get default data.
+ *
+ * \return The resulting body in an XML document.
+ */
+QDomDocument layout::create_body(const QString& cpath, layout_content *content_plugin, const QString& ctemplate)
 {
     // Retrieve the theme and layout for this path
-    QString theme_name(get_layout(cpath, get_name(SNAP_NAME_LAYOUT_THEME)));
+    // XXX should the ctemplate ever be used to retrieve the layout?
     QString layout_name(get_layout(cpath, get_name(SNAP_NAME_LAYOUT_LAYOUT)));
 
 // TODO: fix the default layout selection!?
-theme_name = "bare";
+// until we can get the theme system working right...
 layout_name = "bare";
 
 //printf("Got theme / layout name = [%s] / [%s] (path=%s)\n", theme_name.toUtf8().data(), layout_name.toUtf8().data(), cpath.toUtf8().data());
 
-    // Initialize the XML document
+    // Initialize the XML document tree
+    // More is done in the generate_header_content_impl() function
     QDomDocument doc("snap");
     QDomElement root = doc.createElement("snap");
     doc.appendChild(root);
-    QDomElement header(doc.createElement("head"));
-    root.appendChild(header);
+    QDomElement head(doc.createElement("head"));
+    root.appendChild(head);
     QDomElement metadata(doc.createElement("metadata"));
-    header.appendChild(metadata);
+    head.appendChild(metadata);
     QDomElement page(doc.createElement("page"));
     root.appendChild(page);
     QDomElement body(doc.createElement("body"));
     page.appendChild(body);
     QVector<QDomElement> boxes;
 
-    generate_header_content(this, cpath, header, metadata);
-    content_plugin->on_generate_main_content(this, cpath, page, body);
-    generate_page_content(this, cpath, page, body);
+    generate_header_content(this, cpath, head, metadata, ctemplate);
+    content_plugin->on_generate_main_content(this, cpath, page, body, ctemplate);
+    generate_page_content(this, cpath, page, body, ctemplate);
+
+    // TODO: the filtering needs to be a lot more generic!
+    //       plus the owner of the page should be able to select the
+    //       filters he wants to apply agains the page content
+    //       (i.e. ultimately we want to have some sort of filter
+    //       tagging capability)
     if(plugins::exists("filter"))
     {
         // replace all tokens if filtering is available
@@ -362,9 +412,11 @@ layout_name = "bare";
             QFile file(":/xsl/layout/default-body-parser.xsl");
             if(!file.open(QIODevice::ReadOnly))
             {
-                SNAP_LOG_FATAL("layout::apply_layout() could not open default-body-parser.xsl resource file.");
-                // TODO: I don't think we just want to return here?
-                return "body parser not available";
+                f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR,
+                        "Layout Unavailable",
+                        "Somehow no website layout was accessible, not even the internal default.",
+                        "layout::create_body() could not open default-body-parser.xsl resource file.");
+                NOTREACHED();
             }
             QByteArray data(file.readAll());
             xsl = QString::fromUtf8(data.data(), data.size());
@@ -417,59 +469,89 @@ layout_name = "bare";
 #endif
     }
 
+    return doc;
+}
+
+
+/** \brief Apply the theme on an XML document.
+ *
+ * This function applies the theme to an XML document representing a
+ * page. This should only be used against blocks that are themed
+ * and final pages.
+ *
+ * Whenever you create a body from a template, then you should not call
+ * this function since it would otherwise pre-theme your result. Instead
+ * you'd want to save the title and body elements of the \p doc XML
+ * document.
+ *
+ * \param[in] doc  The XML document to theme.
+ * \param[in] cpath  The path of the document being themed.
+ * \param[in] content_plugin  The
+ *
+ * \return The XML document themed in the form of a string.
+ */
+QString layout::apply_theme(QDomDocument doc, const QString& cpath, layout_content *content_plugin)
+{
+    (void)content_plugin; // not yet used
+
+    QString theme_name(get_layout(cpath, get_name(SNAP_NAME_LAYOUT_THEME)));
+
+// until we can get the theme system working right...
+theme_name = "bare";
+
     // finally apply the theme XSLT to the final XML
     // the output is what we want to return
+    QXmlQuery q(QXmlQuery::XSLT20);
+    q.setFocus(doc.toString());
+    //QFile xsl(":/xsl/layout/default-theme-parser.xsl");
+    //if(!xsl.open(QIODevice::ReadOnly))
+    //{
+    //    SNAP_LOG_FATAL("layout::apply_theme() could not open default-theme-parser.xsl resource file.");
+    //    // TODO: I don't think we just want to return here?
+    //    return "theme parser not available";
+    //}
+    QString xsl;
+    if(theme_name != "default")
     {
-        QXmlQuery q(QXmlQuery::XSLT20);
-        q.setFocus(doc.toString());
-        //QFile xsl(":/xsl/layout/default-theme-parser.xsl");
-        //if(!xsl.open(QIODevice::ReadOnly))
-        //{
-        //    SNAP_LOG_FATAL("layout::apply_layout() could not open default-theme-parser.xsl resource file.");
-        //    // TODO: I don't think we just want to return here?
-        //    return "theme parser not available";
-        //}
-        QString xsl;
-        if(theme_name != "default")
+        // try to load the layout from the database, if not found
+        // we'll switch to the default layout instead
+        QSharedPointer<QtCassandra::QCassandraTable> layout_table(get_layout_table());
+        QtCassandra::QCassandraValue theme_value(layout_table->row(theme_name)->cell(QString("theme"))->value());
+        if(theme_value.nullValue())
         {
-            // try to load the layout from the database, if not found
-            // we'll switch to the default layout instead
-            QtCassandra::QCassandraValue theme_value(layout_table->row(theme_name)->cell(QString("theme"))->value());
-            if(theme_value.nullValue())
-            {
-                // note that a layout cannot be empty so the test is correct
-                theme_name = "default";
-            }
-            else
-            {
-                xsl = theme_value.stringValue();
-            }
+            // note that a layout cannot be empty so the test is correct
+            theme_name = "default";
         }
-        if(theme_name == "default")
+        else
         {
-            QFile file(":/xsl/layout/default-theme-parser.xsl");
-            if(!file.open(QIODevice::ReadOnly))
-            {
-                SNAP_LOG_FATAL("layout::apply_layout() could not open default-theme-parser.xsl resource file.");
-                // TODO: I don't think we just want to return here?
-                return "theme parser not available";
-            }
-            QByteArray data(file.readAll());
-            xsl = QString::fromUtf8(data.data(), data.size());
+            xsl = theme_value.stringValue();
         }
-        q.setQuery(xsl);
+    }
+    if(theme_name == "default")
+    {
+        QFile file(":/xsl/layout/default-theme-parser.xsl");
+        if(!file.open(QIODevice::ReadOnly))
+        {
+            f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR,
+                "Layout Unavailable",
+                "Somehow no website layout was accessible, not even the internal default.",
+                "layout::apply_theme() could not open default-theme-parser.xsl resource file.");
+            NOTREACHED();
+        }
+        QByteArray data(file.readAll());
+        xsl = QString::fromUtf8(data.data(), data.size());
+    }
+    q.setQuery(xsl);
 
-        QBuffer output;
-        output.open(QBuffer::ReadWrite);
-        QHtmlSerializer html(q.namePool(), &output);
-        q.evaluateTo(&html);
+    QBuffer output;
+    output.open(QBuffer::ReadWrite);
+    QHtmlSerializer html(q.namePool(), &output);
+    q.evaluateTo(&html);
 
-        QString out(QString::fromUtf8(output.data()));
+    QString out(QString::fromUtf8(output.data()));
 //printf("Final HTML is [%s]\n", out.toUtf8().data());
 
-        return out;
-    }
-    // NOT REACHED
+    return out;
 }
 
 /** \brief Generate the header of the content.
@@ -493,8 +575,11 @@ layout_name = "bare";
  * \param[in] path  The path being managed.
  * \param[in,out] header  The header being generated.
  * \param[in,out] metadata  The metadata being generated.
+ * \param[in] ctemplate  The template used to generate the page or "".
+ *
+ * \return true if the signal should go on to all the other plugins.
  */
-bool layout::generate_header_content_impl(layout *l, const QString& path, QDomElement& header, QDomElement& metadata)
+bool layout::generate_header_content_impl(layout *l, const QString& path, QDomElement& header, QDomElement& metadata, const QString& ctemplate)
 {
     QDomDocument doc(header.ownerDocument());
 
@@ -533,6 +618,17 @@ bool layout::generate_header_content_impl(layout *l, const QString& path, QDomEl
         QDomElement data(header.ownerDocument().createElement("data"));
         desc.appendChild(data);
         QDomText text(doc.createTextNode(f_snap->get_site_key_with_slash() + path));
+        data.appendChild(text);
+    }
+
+    if(!ctemplate.isEmpty())
+    {   // snap/head/metadata/desc[type=template_uri]/data
+        QDomElement desc(header.ownerDocument().createElement("desc"));
+        desc.setAttribute("type", "template_uri");
+        metadata.appendChild(desc);
+        QDomElement data(header.ownerDocument().createElement("data"));
+        desc.appendChild(data);
+        QDomText text(doc.createTextNode(f_snap->get_site_key_with_slash() + ctemplate));
         data.appendChild(text);
     }
 
@@ -610,10 +706,12 @@ bool layout::generate_header_content_impl(layout *l, const QString& path, QDomEl
  * \param[in] page_content  The main content of the page.
  * \param[in,out] page  The page being generated.
  * \param[in,out] body  The body being generated.
+ * \param[in] ctemplate  The template used in case some parameters do not
+ *                       exist in the specified path
  *
  * \return true if the page content creation can proceed.
  */
-bool layout::generate_page_content_impl(layout *l, const QString& path, QDomElement& page, QDomElement& body)
+bool layout::generate_page_content_impl(layout *l, const QString& path, QDomElement& page, QDomElement& body, const QString& ctemplate)
 {
     return true;
 }

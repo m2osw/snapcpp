@@ -317,7 +317,18 @@ void snapdb::display()
                         c != cells.end();
                         ++c)
             {
-                QString n((*c)->columnName());
+                QString n;
+                if(f_table == "users" && f_row == "*index_row*")
+                {
+                    // special case where the column key is a 64 bit integer
+                    //const QByteArray& name((*c)->columnKey());
+                    QtCassandra::QCassandraValue identifier((*c)->columnKey());
+                    n = QString("%1").arg(identifier.int64Value());
+                }
+                else
+                {
+                    n = (*c)->columnName();
+                }
                 QString v;
                 if(n == "users::identifier"
                 )

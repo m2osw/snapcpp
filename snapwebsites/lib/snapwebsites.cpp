@@ -1279,6 +1279,7 @@ bool server::backend_process_impl()
     return true;
 }
 
+
 /** \brief Request new content to be saved.
  *
  * This function readies the Save Content signal.
@@ -1291,6 +1292,7 @@ bool server::save_content_impl()
 {
     return true;
 }
+
 
 /** \brief Implementation of the XSS filter signal.
  *

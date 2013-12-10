@@ -39,7 +39,6 @@
 #include "QCassandraValue.h"
 #include <QObject>
 #include <QMap>
-#include <QSharedPointer>
 
 
 namespace QtCassandra

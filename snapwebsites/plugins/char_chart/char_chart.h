@@ -1,5 +1,5 @@
 // Snap Websites Server -- char chart header
-// Copyright (C) 2012  Made to Order Software Corp.
+// Copyright (C) 2012-2013  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -29,28 +29,28 @@ namespace char_chart
 class char_chart : public plugins::plugin, public path::path_execute, public layout::layout_content
 {
 public:
-	char_chart();
-	~char_chart();
+                        char_chart();
+                        ~char_chart();
 
-	static char_chart *	instance();
-	virtual QString		description() const;
-	virtual int64_t		do_update(int64_t last_updated);
+    static char_chart * instance();
+    virtual QString     description() const;
+    virtual int64_t     do_update(int64_t last_updated);
 
-	void				on_bootstrap(::snap::snap_child *snap);
-	void				on_can_handle_dynamic_path(path::path *path_plugin, const QString& cpath);
-	void				on_generate_sitemapxml(sitemapxml::sitemapxml *sitemap);
-	virtual void		on_generate_main_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body);
-	bool				on_path_execute(const QString& cpath);
+    void                on_bootstrap(::snap::snap_child *snap);
+    void                on_can_handle_dynamic_path(path::path *path_plugin, const QString& cpath);
+    void                on_generate_sitemapxml(sitemapxml::sitemapxml *sitemap);
+    virtual void        on_generate_main_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body, const QString& ctemplate);
+    bool                on_path_execute(const QString& cpath);
 
 private:
-	void				initial_update(int64_t variables_timestamp);
-	void				content_update(int64_t variables_timestamp);
+    void                initial_update(int64_t variables_timestamp);
+    void                content_update(int64_t variables_timestamp);
 
-	zpsnap_child_t		f_snap;
+    zpsnap_child_t      f_snap;
 };
 
 } // namespace char_chart
 } // namespace snap
 #endif
 // SNAP_CHAR_CHART_H
-// vim: ts=4 sw=4
+// vim: ts=4 sw=4 et

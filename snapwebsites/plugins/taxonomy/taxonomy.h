@@ -45,7 +45,7 @@ public:
 
 	void				on_bootstrap(::snap::snap_child *snap);
 	virtual bool		on_path_execute(const QString& url);
-	virtual void 		on_generate_main_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body);
+	virtual void 		on_generate_main_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body, const QString& ctemplate);
 
 	QtCassandra::QCassandraValue	find_type_with(const QString& cpath, const QString& taxonomy, const QString& col_name, const QString& limit_name);
 

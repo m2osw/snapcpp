@@ -37,6 +37,7 @@ robotstxt::robotstxt()
 {
 }
 
+
 /** \brief Clean up the robotstxt plugin.
  *
  * Ensure the robotstxt object is clean before it is gone.
@@ -44,6 +45,7 @@ robotstxt::robotstxt()
 robotstxt::~robotstxt()
 {
 }
+
 
 /** \brief Initialize the robotstxt.
  *
@@ -56,9 +58,10 @@ void robotstxt::on_bootstrap(snap_child *snap)
 {
     f_snap = snap;
 
-    SNAP_LISTEN(robotstxt, "layout", layout::layout, generate_header_content, _1, _2, _3, _4);
-    SNAP_LISTEN(robotstxt, "layout", layout::layout, generate_page_content, _1, _2, _3, _4);
+    SNAP_LISTEN(robotstxt, "layout", layout::layout, generate_header_content, _1, _2, _3, _4, _5);
+    SNAP_LISTEN(robotstxt, "layout", layout::layout, generate_page_content, _1, _2, _3, _4, _5);
 }
+
 
 /** \brief Get a pointer to the robotstxt plugin.
  *
@@ -108,12 +111,7 @@ int64_t robotstxt::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-//std::cerr << "Got the do_update() in robotstxt! "
-//      << static_cast<int64_t>(last_updated) << ", "
-//      << static_cast<int64_t>(SNAP_UNIX_TIMESTAMP(2012, 1, 1, 0, 0, 0) * 1000000LL) << "\n";
-
     SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, initial_update);
-
     SNAP_PLUGIN_UPDATE(2012, 10, 13, 17, 16, 40, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
@@ -380,7 +378,7 @@ void robotstxt::define_robots(const QString& path)
  * \param[in] header  The HTML header element.
  * \param[in] metadata  The XML metadata used with the XSLT parser.
  */
-void robotstxt::on_generate_header_content(layout::layout *l, const QString& path, QDomElement& header, QDomElement& metadata)
+void robotstxt::on_generate_header_content(layout::layout *l, const QString& path, QDomElement& header, QDomElement& metadata, const QString& ctemplate)
 {
     define_robots(path);
     if(!f_robots_cache.isEmpty())
@@ -402,7 +400,7 @@ void robotstxt::on_generate_header_content(layout::layout *l, const QString& pat
  * \param[in,out] page  The page being generated.
  * \param[in,out] body  The body being generated.
  */
-void robotstxt::on_generate_main_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body)
+void robotstxt::on_generate_main_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body, const QString& ctemplate)
 {
 }
 
@@ -417,7 +415,7 @@ void robotstxt::on_generate_main_content(layout::layout *l, const QString& path,
  * \param[in,out] page  The page being generated.
  * \param[in,out] body  The body being generated.
  */
-void robotstxt::on_generate_page_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body)
+void robotstxt::on_generate_page_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body, const QString& ctemplate)
 {
     QDomDocument doc(page.ownerDocument());
 

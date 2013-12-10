@@ -1,5 +1,5 @@
 // Snap Websites Server -- snap websites server
-// Copyright (C) 2011-2012  Made to Order Software Corp.
+// Copyright (C) 2011-2013  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -29,126 +29,126 @@
 #include <controlled_vars/controlled_vars_auto_init.h>
 #include <advgetopt/advgetopt.h>
 
-#define	SNAPWEBSITES_VERSION_MAJOR	@SNAPWEBSITES_VERSION_MAJOR@
-#define	SNAPWEBSITES_VERSION_MINOR	@SNAPWEBSITES_VERSION_MINOR@
-#define	SNAPWEBSITES_VERSION_PATCH	@SNAPWEBSITES_VERSION_PATCH@
-#define	SNAPWEBSITES_VERSION_STRING	"@SNAPWEBSITES_VERSION_MAJOR@.@SNAPWEBSITES_VERSION_MINOR@.@SNAPWEBSITES_VERSION_PATCH@"
+#define    SNAPWEBSITES_VERSION_MAJOR    @SNAPWEBSITES_VERSION_MAJOR@
+#define    SNAPWEBSITES_VERSION_MINOR    @SNAPWEBSITES_VERSION_MINOR@
+#define    SNAPWEBSITES_VERSION_PATCH    @SNAPWEBSITES_VERSION_PATCH@
+#define    SNAPWEBSITES_VERSION_STRING    "@SNAPWEBSITES_VERSION_MAJOR@.@SNAPWEBSITES_VERSION_MINOR@.@SNAPWEBSITES_VERSION_PATCH@"
 
 namespace snap
 {
 
 
 enum name_t {
-	SNAP_NAME_SERVER,		// The name of the Snap! Server
-	SNAP_NAME_CONTEXT,		// Cassandra Keyspace
-	SNAP_NAME_INDEX,		// Row used for the domains & websites index
-	SNAP_NAME_DOMAINS,		// Cassandra Table used for domains
-	SNAP_NAME_WEBSITES,		// Cassandra Table used for websites
-	SNAP_NAME_SITES,		// Cassandra Table used for sites (one site per row)
-	SNAP_NAME_CORE_ADMINISTRATOR_EMAIL,
-	SNAP_NAME_CORE_LAST_UPDATED,
-	SNAP_NAME_CORE_SITE_NAME,
-	SNAP_NAME_CORE_SITE_SHORT_NAME,
-	SNAP_NAME_CORE_SITE_LONG_NAME,
-	SNAP_NAME_CORE_PLUGINS,
-	SNAP_NAME_CORE_REDIRECT,
-	SNAP_NAME_CORE_RULES,
-	SNAP_NAME_CORE_ORIGINAL_RULES,
-	SNAP_NAME_CORE_PLUGIN_THRESHOLD,
-	SNAP_NAME_CORE_COOKIE_DOMAIN
+    SNAP_NAME_SERVER,        // The name of the Snap! Server
+    SNAP_NAME_CONTEXT,        // Cassandra Keyspace
+    SNAP_NAME_INDEX,        // Row used for the domains & websites index
+    SNAP_NAME_DOMAINS,        // Cassandra Table used for domains
+    SNAP_NAME_WEBSITES,        // Cassandra Table used for websites
+    SNAP_NAME_SITES,        // Cassandra Table used for sites (one site per row)
+    SNAP_NAME_CORE_ADMINISTRATOR_EMAIL,
+    SNAP_NAME_CORE_LAST_UPDATED,
+    SNAP_NAME_CORE_SITE_NAME,
+    SNAP_NAME_CORE_SITE_SHORT_NAME,
+    SNAP_NAME_CORE_SITE_LONG_NAME,
+    SNAP_NAME_CORE_PLUGINS,
+    SNAP_NAME_CORE_REDIRECT,
+    SNAP_NAME_CORE_RULES,
+    SNAP_NAME_CORE_ORIGINAL_RULES,
+    SNAP_NAME_CORE_PLUGIN_THRESHOLD,
+    SNAP_NAME_CORE_COOKIE_DOMAIN
 };
 const char *get_name(name_t name);
 
 class server : public plugins::plugin
 {
 public:
-	class backend_action
-	{
-	public:
-		virtual ~backend_action() {}
-		virtual void on_backend_action(const QString& action) = 0;
-	};
+    class backend_action
+    {
+    public:
+        virtual ~backend_action() {}
+        virtual void on_backend_action(const QString& action) = 0;
+    };
 
-	typedef QMap<QString, backend_action *> backend_action_map_t;
-	typedef std::shared_ptr<server>			pointer_t;
+    typedef QMap<QString, backend_action *> backend_action_map_t;
+    typedef std::shared_ptr<server>            pointer_t;
 
-	static pointer_t instance();
-	virtual ~server();
+    static pointer_t instance();
+    virtual ~server();
 
-	static const char *version();
-	static int version_major();
-	static int version_minor();
-	static int version_patch();
-	virtual QString description() const;
-	virtual int64_t do_update(int64_t last_updated);
+    static const char *version();
+    static int version_major();
+    static int version_minor();
+    static int version_patch();
+    virtual QString description() const;
+    virtual int64_t do_update(int64_t last_updated);
 
-	void usage();
-	void setup_as_backend();
-	bool is_debug() const { return f_debug; }
-	bool is_backend() const { return f_backend; }
-	void config( int argc, char *argv[] );
-	QString get_parameter(const QString& name);
-	void exit(int code);
-	void prepare_qtapp( int argc, char *argv[] );
-	void close_qtapp();
-	void prepare_cassandra();
-	//QSharedPointer<QtCassandra::QCassandra> get_cassandra();
-	QSharedPointer<QtCassandra::QCassandraTable> create_table(QSharedPointer<QtCassandra::QCassandraContext> context, QString table_name, QString comment);
-	void detach();
-	void listen();
-	void backend();
-	int cassandra_port() const { return f_cassandra_port; }
-	const QString& cassandra_host() const { return f_cassandra_host; }
-	void udp_ping(const char *name, const char *message = "PING");
+    void usage();
+    void setup_as_backend();
+    bool is_debug() const { return f_debug; }
+    bool is_backend() const { return f_backend; }
+    void config( int argc, char *argv[] );
+    QString get_parameter(const QString& name);
+    void exit(int code);
+    void prepare_qtapp( int argc, char *argv[] );
+    void close_qtapp();
+    void prepare_cassandra();
+    //QSharedPointer<QtCassandra::QCassandra> get_cassandra();
+    QSharedPointer<QtCassandra::QCassandraTable> create_table(QSharedPointer<QtCassandra::QCassandraContext> context, QString table_name, QString comment);
+    void detach();
+    void listen();
+    void backend();
+    int cassandra_port() const { return f_cassandra_port; }
+    const QString& cassandra_host() const { return f_cassandra_host; }
+    void udp_ping(const char *name, const char *message = "PING");
 
-	unsigned long connections_count();
+    unsigned long connections_count();
 
-	SNAP_SIGNAL(bootstrap, (::snap::snap_child *snap), (snap));
-	SNAP_SIGNAL(init, (), ());
-	SNAP_SIGNAL(update, (int64_t last_updated), (last_updated));
-	SNAP_SIGNAL(process_cookies, (), ());
-	SNAP_SIGNAL(attach_to_session, (), ());
-	SNAP_SIGNAL(detach_from_session, (), ());
-	SNAP_SIGNAL(process_post, (const QString& url), (url));
-	SNAP_SIGNAL(execute, (const QString& url), (url));
-	SNAP_SIGNAL(register_backend_action, (backend_action_map_t& actions), (actions));
-	SNAP_SIGNAL(backend_process, (), ());
-	SNAP_SIGNAL(save_content, (), ());
-	SNAP_SIGNAL(xss_filter, (QDomNode& node,
-						     const QString& accepted_tags,
-							 const QString& accepted_attributes),
-	                        (node, accepted_tags, accepted_attributes));
-	SNAP_SIGNAL(improve_signature, (const QString& path, QString& signature),
-	                               (path, signature));
+    SNAP_SIGNAL(bootstrap, (::snap::snap_child *snap), (snap));
+    SNAP_SIGNAL(init, (), ());
+    SNAP_SIGNAL(update, (int64_t last_updated), (last_updated));
+    SNAP_SIGNAL(process_cookies, (), ());
+    SNAP_SIGNAL(attach_to_session, (), ());
+    SNAP_SIGNAL(detach_from_session, (), ());
+    SNAP_SIGNAL(process_post, (const QString& url), (url));
+    SNAP_SIGNAL(execute, (const QString& url), (url));
+    SNAP_SIGNAL(register_backend_action, (backend_action_map_t& actions), (actions));
+    SNAP_SIGNAL(backend_process, (), ());
+    SNAP_SIGNAL(save_content, (), ());
+    SNAP_SIGNAL(xss_filter, (QDomNode& node,
+                             const QString& accepted_tags,
+                             const QString& accepted_attributes),
+                            (node, accepted_tags, accepted_attributes));
+    SNAP_SIGNAL(improve_signature, (const QString& path, QString& signature),
+                                   (path, signature));
 
 private:
-	typedef QMap<QString, QString>				parameter_map_t;
-	typedef std::shared_ptr<advgetopt::getopt>	getopt_ptr_t;
+    typedef QMap<QString, QString>                parameter_map_t;
+    typedef std::shared_ptr<advgetopt::getopt>    getopt_ptr_t;
 
-	server();
-	void process_connection(int socket);
+    server();
+    void process_connection(int socket);
 
-	static pointer_t					    f_instance;
+    static pointer_t                        f_instance;
 
-	//controlled_vars::zint32_t				f_argc;
-	//const char **							f_argv;
-	std::string								f_servername;
-	controlled_vars::fbool_t				f_debug;
-	controlled_vars::fbool_t				f_backend;
-	QString									f_config;
-	parameter_map_t							f_parameters;
-	QString									f_cassandra_host;
-	controlled_vars::zint32_t				f_cassandra_port;
-	//QSharedPointer<QtCassandra::QCassandra>	f_cassandra;
+    //controlled_vars::zint32_t               f_argc;
+    //const char **                           f_argv;
+    std::string                             f_servername;
+    controlled_vars::fbool_t                f_debug;
+    controlled_vars::fbool_t                f_backend;
+    QString                                 f_config;
+    parameter_map_t                         f_parameters;
+    QString                                 f_cassandra_host;
+    controlled_vars::zint32_t               f_cassandra_port;
+    //QSharedPointer<QtCassandra::QCassandra> f_cassandra;
 
-	controlled_vars::zuint64_t				f_connections_count;
-	snap_child_vector_t						f_children_running;
-	snap_child_vector_t						f_children_waiting;
+    controlled_vars::zuint64_t              f_connections_count;
+    snap_child_vector_t                     f_children_running;
+    snap_child_vector_t                     f_children_waiting;
 
-	getopt_ptr_t							f_opt;
+    getopt_ptr_t                            f_opt;
 };
 
 } // namespace snap
 #endif
 // SNAP_SNAPWEBSITES_H
-// vim: ts=4 sw=4
+// vim: ts=4 sw=4 et

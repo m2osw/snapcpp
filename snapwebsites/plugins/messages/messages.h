@@ -85,8 +85,8 @@ public:
     virtual int64_t     do_update(int64_t last_updated);
 
     void                on_bootstrap(snap_child *snap);
-    virtual void        on_generate_main_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body);
-    void                on_generate_page_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body);
+    virtual void        on_generate_main_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body, const QString& ctemplate);
+    void                on_generate_page_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body, const QString& ctemplate);
     void                on_attach_to_session();
     void                on_detach_from_session();
 

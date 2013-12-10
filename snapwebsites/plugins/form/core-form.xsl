@@ -122,6 +122,10 @@
 			<xsl:if test="state = 'disabled'"><xsl:attribute name="disabled">disabled</xsl:attribute></xsl:if>
 			<xsl:if test="state = 'readonly'"><xsl:attribute name="readonly">readonly</xsl:attribute></xsl:if>
 			<xsl:choose>
+				<xsl:when test="post != ''">
+					<!-- use the post value when there is one, it has priority -->
+					<xsl:attribute name="value"><xsl:value-of select="post"/></xsl:attribute>
+				</xsl:when>
 				<xsl:when test="value != ''">
 					<!-- use the current value when there is one -->
 					<xsl:attribute name="value"><xsl:value-of select="value"/></xsl:attribute>
@@ -221,6 +225,14 @@
 	<!-- CHECKBOX WIDGET -->
 	<xsl:template name="snap:checkbox">
 		<xsl:param name="name"/>
+		<xsl:variable name="checked_status">
+			<xsl:choose>
+				<!-- use the post value when there is one, it has priority -->
+				<xsl:when test="post = 'on'">checked</xsl:when>
+				<xsl:when test="post = 'off'"></xsl:when>
+				<xsl:when test="checked = 'checked'">checked</xsl:when>
+			</xsl:choose>
+		</xsl:variable>
 		<input type="checkbox">
 			<xsl:attribute name="id"><xsl:value-of select="$name"/>_<xsl:value-of select="$unique_id"/></xsl:attribute>
 			<xsl:attribute name="name"><xsl:value-of select="$name"/></xsl:attribute>
@@ -241,12 +253,12 @@
 			<xsl:if test="sizes/width"><xsl:attribute name="size"><xsl:value-of select="sizes/width"/></xsl:attribute></xsl:if>
 			<xsl:if test="sizes/max"><xsl:attribute name="maxlength"><xsl:value-of select="sizes/max"/></xsl:attribute></xsl:if>
 			<xsl:if test="state = 'disabled'"><xsl:attribute name="disabled">disabled</xsl:attribute></xsl:if>
-			<xsl:if test="checked = 'checked'"><xsl:attribute name="checked">checked</xsl:attribute></xsl:if>
+			<xsl:if test="$checked_status != ''"><xsl:attribute name="checked">checked</xsl:attribute></xsl:if>
 		</input>
 		<!-- checkboxes have a bug in Firefox browsers (and maybe others)
-		     on Reload they don't get reset as expected, the following script
-				 fixes the problem by setting the state as it should on load -->
-		<script type="text/javascript"><xsl:value-of select="$name"/>_<xsl:value-of select="$unique_id"/>.checked = "<xsl:value-of select="checked"/>";</script>
+				 on Reload they don't get reset as expected, the following script
+				 fixes the problem by setting the state as it should be on load -->
+		<script type="text/javascript"><xsl:value-of select="$name"/>_<xsl:value-of select="$unique_id"/>.checked="<xsl:value-of select="$checked_status"/>";</script>
 	</xsl:template>
 	<xsl:template match="widget[@type='checkbox']">
 		<div class="form-item checkbox">
@@ -413,7 +425,7 @@
 					<xsl:attribute name="enctype">multipart/form-data</xsl:attribute>
 				</xsl:if>
 				<xsl:if test="default-button/@refid">
-					<!-- the even check should be in a function and it should verify that the element with focus is an input[type=text] -->
+					<!-- the event check should be in a function and it should verify that the element with focus is an input[type=text] -->
 					<xsl:attribute name="onkeypress">javascript:if((event.which&amp;&amp;event.which==13)||(event.keyCode&amp;&amp;event.keyCode==13))fire_event(<xsl:value-of select="default-button/@refid"/>_<xsl:value-of select="$unique_id"/>,'click');</xsl:attribute>
 				</xsl:if>
 				<input id="form_session" name="form_session" type="hidden" value="{$form_session}"/>
@@ -431,11 +443,11 @@
 				</xsl:choose>
 				<xsl:if test="focus/@refid">
 					<!-- force focus in the specified widget -->
-					<script type="text/javascript"><xsl:value-of select="focus/@refid"/>_<xsl:value-of select="$unique_id"/>.focus();</script>
+					<script type="text/javascript"><xsl:value-of select="focus/@refid"/>_<xsl:value-of select="$unique_id"/>.focus();<xsl:value-of select="focus/@refid"/>_<xsl:value-of select="$unique_id"/>.select();</script>
 				</xsl:if>
 				<xsl:if test="auto-reset">
 					<!-- TODO: reset timer each time the user makes a modification so it
-					           doesn't trigger too soon! -->
+										 doesn't trigger too soon! -->
 					<script type="text/javascript">function auto_reset_<xsl:value-of select="$unique_id"/>(){form_<xsl:value-of select="$unique_id"/>.reset();}window.setInterval(auto_reset_<xsl:value-of select="$unique_id"/>,<xsl:value-of select="auto-reset/@minutes * 60000"/>);</script>
 				</xsl:if>
 				<xsl:if test="default-button/@refid">

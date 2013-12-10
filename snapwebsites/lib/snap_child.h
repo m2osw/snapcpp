@@ -45,9 +45,9 @@ class server;
 class snap_child
 {
 public:
-	enum http_code_t
-	{
-		// a couple of internal codes used here and there (never sent to user)
+    enum http_code_t
+    {
+        // a couple of internal codes used here and there (never sent to user)
         HTTP_CODE_INVALID = -2,
         HTTP_CODE_UNDEFINED = -1,
 
@@ -64,7 +64,7 @@ public:
         HTTP_CODE_PARTIAL_CONTENT = 206,
         HTTP_CODE_MULTI_STATUS = 207,
         HTTP_CODE_ALREADY_REPORTED = 208,
-		HTTP_CODE_IM_USED = 226, // Instance Manipulation Used
+        HTTP_CODE_IM_USED = 226, // Instance Manipulation Used
 
         HTTP_CODE_MULTIPLE_CHOICE = 300,
         HTTP_CODE_MOVED_PERMANENTLY = 301,
@@ -131,113 +131,115 @@ public:
         HTTP_CODE_ACCESS_DENIED = 531,
         HTTP_CODE_NETWORK_READ_TIMEOUT_ERROR = 598,
         HTTP_CODE_NETWORK_CONNECT_TIMEOUT_ERROR = 599
-	};
-	enum status_t
-	{
-		SNAP_CHILD_STATUS_READY,
-		SNAP_CHILD_STATUS_RUNNING
-	};
-	typedef std::shared_ptr<server> server_pointer_t;
+    };
+    enum status_t
+    {
+        SNAP_CHILD_STATUS_READY,
+        SNAP_CHILD_STATUS_RUNNING
+    };
+    typedef std::shared_ptr<server> server_pointer_t;
+    typedef QMap<QString, QString>  environment_map_t;
 
-	snap_child(server_pointer_t s);
-	~snap_child();
+                               snap_child(server_pointer_t s);
+                               ~snap_child();
 
-	bool process(int socket);
-	void backend();
-	status_t check_status();
+    bool                       process(int socket);
+    void                        backend();
+    status_t                    check_status();
 
-	const snap_uri& get_uri() const;
+    const snap_uri&             get_uri() const;
 
-	void exit(int code);
-	bool is_debug() const;
-	QtCassandra::QCassandraValue get_site_parameter(const QString& name);
-	void set_site_parameter(const QString& name, const QtCassandra::QCassandraValue& value);
-	QSharedPointer<QtCassandra::QCassandraContext> get_context() { return f_context; }
-	const QString& get_domain_key() const { return f_domain_key; }
-	const QString& get_website_key() const { return f_website_key; }
-	const QString& get_site_key() const { return f_site_key; }
-	const QString& get_site_key_with_slash() const { return f_site_key_with_slash; }
-	int64_t get_start_date() const { return f_start_date; }
-	time_t get_start_time() const { return f_start_date / static_cast<int64_t>(1000000); }
-	void set_header(const QString& name, const QString& value);
-	void set_cookie(const http_cookie& cookie);
-	bool has_header(const QString& name) const;
-	QString get_header(const QString& name) const;
-	QString get_unique_number();
-	QSharedPointer<QtCassandra::QCassandraTable> create_table(const QString& table_name, const QString& comment);
-	void new_content();
-	static void canonicalize_path(QString& path);
-	static QString date_to_string(int64_t v, bool long_format = false);
+    void                        exit(int code);
+    bool                        is_debug() const;
+    QtCassandra::QCassandraValue get_site_parameter(const QString& name);
+    void                        set_site_parameter(const QString& name, const QtCassandra::QCassandraValue& value);
+    QSharedPointer<QtCassandra::QCassandraContext> get_context() { return f_context; }
+    const QString&              get_domain_key() const { return f_domain_key; }
+    const QString&              get_website_key() const { return f_website_key; }
+    const QString&              get_site_key() const { return f_site_key; }
+    const QString&              get_site_key_with_slash() const { return f_site_key_with_slash; }
+    int64_t                     get_start_date() const { return f_start_date; }
+    time_t                      get_start_time() const { return f_start_date / static_cast<int64_t>(1000000); }
+    void                        set_header(const QString& name, const QString& value);
+    void                        set_cookie(const http_cookie& cookie);
+    bool                        has_header(const QString& name) const;
+    QString                     get_header(const QString& name) const;
+    QString                     get_unique_number();
+    QSharedPointer<QtCassandra::QCassandraTable> create_table(const QString& table_name, const QString& comment);
+    void                        new_content();
+    static void                 canonicalize_path(QString& path);
+    static QString              date_to_string(int64_t v, bool long_format = false);
 
-	QString snapenv(const QString& name) const;
-	QString postenv(const QString& name, const QString& default_value = "") const;
-	bool cookie_is_defined(const QString& name) const;
-	QString cookie(const QString& name) const;
-	void attach_to_session();
-	QString snap_url(const QString& url) const;
-	void page_redirect(const QString& path, http_code_t http_code = HTTP_CODE_MOVED_PERMANENTLY);
-	void die(http_code_t err_code, QString err_name, const QString& err_description, const QString& err_details);
-	static void define_http_name(http_code_t http_code, QString& http_name);
+    QString                     snapenv(const QString& name) const;
+    bool                        postenv_exists(const QString& name) const;
+    QString                     postenv(const QString& name, const QString& default_value = "") const;
+    const environment_map_t&    all_postenv() const { return f_post; }
+    bool                        cookie_is_defined(const QString& name) const;
+    QString                     cookie(const QString& name) const;
+    void                        attach_to_session();
+    QString                     snap_url(const QString& url) const;
+    void                        page_redirect(const QString& path, http_code_t http_code = HTTP_CODE_MOVED_PERMANENTLY);
+    void                        die(http_code_t err_code, QString err_name, const QString& err_description, const QString& err_details);
+    static void                 define_http_name(http_code_t http_code, QString& http_name);
 
-	void output(const QString& data);
-	void output(const std::string& data);
-	void output(const char *data);
-	bool empty_output() const;
+    void                        output(const QString& data);
+    void                        output(const std::string& data);
+    void                        output(const char *data);
+    bool                        empty_output() const;
 
-	void udp_ping(const char *name, const char *message = "PING");
-	QSharedPointer<udp_client_server::udp_server> udp_get_server(const char *name);
+    void                        udp_ping(const char *name, const char *message = "PING");
+    QSharedPointer<udp_client_server::udp_server> udp_get_server(const char *name);
 
 private:
-	void read_environment();
-	void init_start_date();
-	void setup_uri();
-	void snap_info();
-	void snap_statistics();
-	void connect_cassandra();
-	void canonicalize_domain();
-	void canonicalize_website();
-	void site_redirect();
-	void init_plugins();
-	void update_plugins(const QStringList& list_of_plugins);
-	void execute();
-	void process_backend_uri(const QString& uri);
-	void write(const char *data, ssize_t size);
-	void write(const char *str);
-	void write(const QString& str);
-	void output_cookies();
+    typedef QMap<QString, QString>      header_map_t;
+    typedef QMap<QString, http_cookie>  cookie_map_t;
 
-	typedef QMap<QString, QString>		environment_map_t;
-	typedef QMap<QString, QString>		header_map_t;
-	typedef QMap<QString, http_cookie>	cookie_map_t;
+    void                        read_environment();
+    void                        init_start_date();
+    void                        setup_uri();
+    void                        snap_info();
+    void                        snap_statistics();
+    void                        connect_cassandra();
+    void                        canonicalize_domain();
+    void                        canonicalize_website();
+    void                        site_redirect();
+    void                        init_plugins();
+    void                        update_plugins(const QStringList& list_of_plugins);
+    void                        execute();
+    void                        process_backend_uri(const QString& uri);
+    void                        write(const char *data, ssize_t size);
+    void                        write(const char *str);
+    void                        write(const QString& str);
+    void                        output_cookies();
 
-	controlled_vars::mint64_t			f_start_date; // time request arrived
-	server_pointer_t					f_server;
-	QPointer<QtCassandra::QCassandra>	f_cassandra;
-	QSharedPointer<QtCassandra::QCassandraContext>	f_context;
-	QSharedPointer<QtCassandra::QCassandraTable> f_site_table;
-	controlled_vars::fbool_t			f_new_content;
-	controlled_vars::fbool_t			f_is_child;
-	pid_t								f_child_pid;
-	int									f_socket;
-	environment_map_t					f_env;
-	environment_map_t					f_post;
-	environment_map_t					f_browser_cookies;
-	controlled_vars::fbool_t			f_has_post;
-	mutable controlled_vars::fbool_t	f_fixed_server_protocol;
-	snap_uri							f_uri;
-	QString								f_domain_key;
-	QString								f_website_key;
-	QString								f_site_key;
-	QString								f_site_key_with_slash;
-	QString								f_original_site_key;
-	QBuffer								f_output;
-	header_map_t						f_header;
-	cookie_map_t						f_cookies;
+    controlled_vars::mint64_t           f_start_date; // time request arrived
+    server_pointer_t                    f_server;
+    QPointer<QtCassandra::QCassandra>   f_cassandra;
+    QSharedPointer<QtCassandra::QCassandraContext>  f_context;
+    QSharedPointer<QtCassandra::QCassandraTable>    f_site_table;
+    controlled_vars::fbool_t            f_new_content;
+    controlled_vars::fbool_t            f_is_child;
+    pid_t                               f_child_pid;
+    int                                 f_socket;
+    environment_map_t                   f_env;
+    environment_map_t                   f_post;
+    environment_map_t                   f_browser_cookies;
+    controlled_vars::fbool_t            f_has_post;
+    mutable controlled_vars::fbool_t    f_fixed_server_protocol;
+    snap_uri                            f_uri;
+    QString                             f_domain_key;
+    QString                             f_website_key;
+    QString                             f_site_key;
+    QString                             f_site_key_with_slash;
+    QString                             f_original_site_key;
+    QBuffer                             f_output;
+    header_map_t                        f_header;
+    cookie_map_t                        f_cookies;
 };
 
-typedef std::vector<snap_child *>					snap_child_vector_t;
+typedef std::vector<snap_child *> snap_child_vector_t;
 
 } // namespace snap
 #endif
 // SNAP_SNAPCHILD_H
-// vim: ts=4 sw=4
+// vim: ts=4 sw=4 et

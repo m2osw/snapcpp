@@ -55,8 +55,10 @@ QT4_ADD_RESOURCES(SNAP_LIBRARY_RESOURCES_RCC
 )
 
 add_library( ${PROJECT_NAME} SHARED
+    compression.cpp         # Compress/decompress data
     dom_util.cpp            # DOM utilities
     http_cookie.cpp         # HTTP cookie, server side
+    http_strings.cpp        # parse HTTP strings (Accept strings in particular)
     log.cpp                 # log4cplus support
     mkgmtime.c              # mktime() with a UTC time
     plugins.cpp             # plugins loader and list

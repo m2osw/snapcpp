@@ -22,6 +22,8 @@
 #include "plugins.h"
 #include "log.h"
 #include "qlockfile.h"
+#include "http_strings.h"
+#include "compression.h"
 #include <memory>
 #include <wait.h>
 #include <errno.h>
@@ -888,6 +890,7 @@ void snap_child::setup_uri()
                 // we send the file in the right format
                 // we will also need to use the Accept-Encoding
                 // and make use of the Content-Encoding
+                // TODO: make use of extension instead of Accept-Encoding
                 f_uri.set_option("compression", extension);
                 int real_ext(path.lastIndexOf('.', ext - 1));
                 if(real_ext >= limit)
@@ -966,6 +969,7 @@ void snap_child::connect_cassandra()
     }
 }
 
+
 /** \brief Create a table.
  *
  * This function is generally used by plugins to create indexes for the data
@@ -980,6 +984,7 @@ QSharedPointer<QtCassandra::QCassandraTable> snap_child::create_table(const QStr
 {
     return f_server->create_table(f_context, table_name, comment);
 }
+
 
 /** \brief Canonalize the domain information.
  *
@@ -1574,6 +1579,25 @@ QString snap_child::snapenv(const QString& name) const
     }
 
     return f_env.value(name, "");
+}
+
+
+/** \brief Check whether a POST variable was defined.
+ *
+ * Check whether the named POST variable was defined. This can be useful if
+ * you have some optional fields in a form. Also in some places where the
+ * code does not know about all the widgets.
+ *
+ * Note that the functions that directly access the post environment should
+ * not be used by most as the form plugin already does what is necessary.
+ *
+ * \param[in] name  The name of the POST variable to fetch.
+ *
+ * \return true if the value is defined, false otherwise.
+ */
+bool snap_child::postenv_exists(const QString& name) const
+{
+    return f_post.contains(name);
 }
 
 
@@ -2285,7 +2309,7 @@ void snap_child::output_cookies()
             // the to_http_header() ensures only ASCII characters
             // are used so we can use toLatin1() below
             QString cookie_header(it.value().to_http_header() + "\n");
-printf("snap session = [%s]?\n", cookie_header.toLatin1().data());
+//printf("snap session = [%s]?\n", cookie_header.toLatin1().data());
             write(cookie_header.toLatin1().data());
         }
     }
@@ -2741,6 +2765,7 @@ void snap_child::execute()
         // somehow nothing was output... at this time output some random HTML
         // (we should have an error instead)
         //write("Status: HTTP/1.1 200 OK\n"); -- that's the default
+        // TODO fix so we can include a Content-Length header
         write("Expires: Sat,  1 Jan 2000 00:00:00 GMT\n"
               "Content-Type: text/html\n"
               "\n"
@@ -2759,14 +2784,59 @@ void snap_child::execute()
         // Latin1, this is VERY important; headers are checked to ensure
         // that only Latin1 characters are used
 
-        // TODO (TBD):
-        // Do we always force this length?
-        // After all we have the exact length in f_output anyway
-        //if(!has_header("Content-length"))
-        //{
-            QString size(QString("%1").arg(f_output.buffer().size()));
-            set_header("Content-Length", size);
-        //}
+        // Handling the compression has to be done before defining the
+        // Content-Length header since that represents the compressed
+        // data and not the full length
+
+        // TODO add compression capabilities with bz2, lzma and sdch as
+        //      may be supported by the browser
+        QByteArray html_output;
+        http_strings::WeightedHttpString encodings(snapenv("HTTP_ACCEPT_ENCODING"));
+
+        // it looks like some browsers use that one instead of plain "gzip"
+        // try both just in case
+        float gzip_level(std::max(std::max(encodings.get_level("gzip"), encodings.get_level("x-gzip")), encodings.get_level("*")));
+        float deflate_level(encodings.get_level("deflate"));
+        if(gzip_level > 0.0f && gzip_level >= deflate_level)
+        {
+            // browser asked for gzip with higher preference
+            QString compressor("gzip");
+            html_output = compression::compress(compressor, f_output.buffer(), 100, true);
+            if(compressor == "gzip")
+            {
+                // compression succeeded
+                set_header("Content-Encoding", "gzip");
+            }
+        }
+        else if(deflate_level > 0.0f)
+        {
+            QString compressor("deflate");
+            html_output = compression::compress(compressor, f_output.buffer(), 100, true);
+            if(compressor == "deflate")
+            {
+                // compression succeeded
+                set_header("Content-Encoding", "deflate");
+            }
+        }
+        else
+        {
+            // This 406 is in the spec. (RFC2616) but frankly?!
+            float identity_level(encodings.get_level("identity"));
+            if(identity_level == 0.0f)
+            {
+                die(HTTP_CODE_NOT_ACCEPTABLE, "No Acceptable Compression Encoding",
+                    "Your client requested a compression that we do not offer and it does not accept content without compression.",
+                    "a client requested content with Accept-Encoding: identify;q=0 and no other compression we understand");
+                NOTREACHED();
+            }
+            html_output = f_output.buffer();
+            // The "identity" SHOULD NOT be used with the Content-Encoding
+            // (RFC 2616 -- https://tools.ietf.org/html/rfc2616)
+            //set_header("Content-Encoding", "identity");
+        }
+
+        QString size(QString("%1").arg(html_output.size()));
+        set_header("Content-Length", size);
 
         QString connection(snapenv("HTTP_CONNECTION"));
 //printf("HTTP_CONNECTION=%s\n", connection.toUtf8().data());
@@ -2804,7 +2874,8 @@ void snap_child::execute()
         // write the body unless method is HEAD
         if(snapenv("REQUEST_METHOD") != "HEAD")
         {
-            write(f_output.buffer(), f_output.buffer().size());
+            write(html_output, html_output.size());
+// Warning: don't use this printf() if you allow compression... 8-)
 //printf("%s [%d]\n", f_output.buffer().data(), f_output.buffer().size());
         }
     }

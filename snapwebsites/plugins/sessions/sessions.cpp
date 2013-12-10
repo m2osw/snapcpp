@@ -705,12 +705,12 @@ bool sessions::generate_sessions_impl(sessions * /*r*/)
  * \param[in] page  The page element being generated.
  * \param[in] body  The body element being generated.
  */
-void sessions::on_generate_main_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body)
+void sessions::on_generate_main_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body, const QString& ctemplate)
 {
     // generate the statistics in the body then call the content generator
     // (how do we do that at this point? do we assume that the backend takes
     // care of it?)
-    content::content::instance()->on_generate_main_content(l, path, page, body);
+    content::content::instance()->on_generate_main_content(l, path, page, body, ctemplate);
 }
 
 
