@@ -1775,17 +1775,15 @@ QtCassandra::QCassandraValue snap_child::get_site_parameter(const QString& name)
         QtCassandra::QCassandraValue value;
         return value;
     }
-    // TODO: exists() for cells creates the cell!
-    // I need to fix the libQtCassandra because this creates an empty cell!
-    // (whereas the call below doesn't, so it's possible to do it correctly!)
-    //if(!f_site_table->row(f_site_key)->exists(name))
-    //{
-    //    // an empty value is considered to be a null value
-    //    QtCassandra::QCassandraValue value;
-    //    return value;
-    //}
+    QSharedPointer<QtCassandra::QCassandraRow> row(f_site_table->row(f_site_key));
+    if(!row->exists(name))
+    {
+        // an empty value is considered to be a null value
+        QtCassandra::QCassandraValue value;
+        return value;
+    }
 
-    return f_site_table->row(f_site_key)->cell(name)->value();
+    return row->cell(name)->value();
 }
 
 
@@ -2752,6 +2750,10 @@ void snap_child::execute()
         f_server->process_post(f_uri.path());
     }
 
+    // get the action, if not action is defined, then use the default
+    // which  is "view"
+    verify_permissions();
+
     // generate the output
     //
     // on_execute() is defined in the path plugin which retrieves the
@@ -2879,6 +2881,40 @@ void snap_child::execute()
 //printf("%s [%d]\n", f_output.buffer().data(), f_output.buffer().size());
         }
     }
+}
+
+
+/** \brief Verify for permissions.
+ *
+ * This function calculates the permissions of the user to access the
+ * specified path with the specified action. If the result is that the
+ * current user does not have permission to access the page, then the
+ * function checks whether the user is logged in. If not, he gets
+ * sent to the log in page after saving the current path as the place
+ * to come back after logging in. If the user is already logged in,
+ * then an Access Denied error is generated.
+ */
+void snap_child::verify_permissions()
+{
+    QString qs_action(f_server->get_parameter("qs_action"));
+    QString action("view");
+    if(f_uri.has_query_option(qs_action))
+    {
+        // the user specified an action
+        action = f_uri.query_option(qs_action);
+    }
+
+    // only actions that are defined in the permission types are
+    // allowed, anything else is funky action from a hacker or
+    // whatnot and we can either change it to a "view" action or
+    // die with an error; this work is done by the permissions
+    // plugin which changes the action parameter
+    f_server->validate_action(f_uri.path(), action);
+
+    // save the found action in the URI so that way any plugin can access that
+    // information at any point, not just the verify_rights() function
+    // XXX -- note that right now plugins cannot know what qs_action is!
+    f_uri.set_query_option(qs_action, action);
 }
 
 

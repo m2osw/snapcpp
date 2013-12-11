@@ -320,6 +320,7 @@ server::server()
     f_parameters["listen"] = "0.0.0.0:4004";
     f_parameters["plugins"] = "/usr/lib/snapwebsites/plugins";
     f_parameters["qs_path"] = "q";
+    f_parameters["qs_action"] = "a";
     f_parameters["server_name"] = "";
 }
 
@@ -715,6 +716,7 @@ void server::config(int argc, char *argv[])
  * \li listen -- address:port to listen to (default 0.0.0.0:4004)
  * \li plugins -- path to the list of plugins
  * \li qs_path -- the variable holding the path in the URL; defaults to "q"
+ * \li qs_action -- the variable holding the action over this path ("view" if not specified)
  * \li max_pending_connections -- the number of connections that can wait in
  *     the server queue, there is Snap default (i.e. the Qt TCP server default
  *     is used if undefined, which in most cases means the system of 5.)
@@ -1312,6 +1314,24 @@ bool server::xss_filter_impl(QDomNode& /*node*/,
 {
     return true;
 }
+
+
+/** \brief Validate the user action.
+ *
+ * This function validates the user action. If invalid or if that means
+ * the user does not have enough rights to access the specified path,
+ * then the event calls die() at some point and returns.
+ *
+ * \param[in] path  The path being validated.
+ * \param[in,out] action  The action being performed against \p path.
+ *
+ * \return true if the event has to carry on.
+ */
+bool server::validate_action_impl(const QString& path, QString& action)
+{
+    return true;
+}
+
 
 /** \brief Improve the die() signature to add at the bottom of pages.
  *

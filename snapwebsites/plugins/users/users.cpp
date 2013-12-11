@@ -54,6 +54,9 @@ BOOST_STATIC_ASSERT((SALT_SIZE & 1) == 0);
 const char *get_name(name_t name)
 {
     switch(name) {
+    case SNAP_NAME_USERS_ANONYMOUS_PATH:
+        return "user";
+
     case SNAP_NAME_USERS_AUTHOR:
         return "author";
 
@@ -2667,6 +2670,69 @@ void users::process_verify_form()
     // get an error if redirect to ourselves
     QString verification_code(f_snap->postenv("verification_code"));
     verify_user("verify/" + verification_code);
+}
+
+
+/** \brief Get the logged in user key.
+ *
+ * This function returns the key of the user that is currently logged
+ * in. This key is the user's email address.
+ *
+ * If the user is not logged in, then his key is the empty string. This
+ * is a fast way to know whether the current user is logged in:
+ *
+ * \code
+ * if(users::users::instance()->get_user_key().isEmpty())
+ * {
+ *   // anonymous user code
+ * }
+ * else
+ * {
+ *   // logged in user code
+ * }
+ * \endcode
+ *
+ * \note
+ * We return a copy of the key, opposed to a const reference, because really
+ * it is too dangerous to allow someone from the outside to temper with this
+ * variable.
+ *
+ * \return The user email address (which is the user key in the users table).
+ */
+QString users::get_user_key() const
+{
+    return f_user_key;
+}
+
+
+/** \brief Get the user path.
+ *
+ * This function gets the user path in the content. If the user is not
+ * logged in, the function returns "user" which represents the anonymous
+ * user.
+ *
+ * \note
+ * To test whether the returned value represents the anonymous user,
+ * please make use  of get_name() with SNAP_NAME_USERS_ANONYMOUS_PATH.
+ *
+ * \return The path to the currently logged in user or "user".
+ */
+QString users::get_user_path() const
+{
+    if(!f_user_key.isEmpty())
+    {
+        QSharedPointer<QtCassandra::QCassandraTable> users_table(const_cast<users *>(this)->get_users_table());
+        if(users_table->exists(f_user_key))
+        {
+            const QtCassandra::QCassandraValue value(users_table->row(f_user_key)->cell(get_name(SNAP_NAME_USERS_IDENTIFIER))->value());
+            if(value.nullValue())
+            {
+                const int64_t identifier(value.int64Value());
+                return get_name(SNAP_NAME_USERS_PATH) + QString("/%1").arg(identifier);
+            }
+        }
+    }
+    return get_name(SNAP_NAME_USERS_ANONYMOUS_PATH);
 }
 
 

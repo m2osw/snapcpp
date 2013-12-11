@@ -16,8 +16,8 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "sessions.h"
-#include "../../lib/plugins.h"
-#include "../../lib/not_reached.h"
+#include "plugins.h"
+#include "not_reached.h"
 #include "../content/content.h"
 #include <QtCassandra/QCassandraValue.h>
 #include <openssl/rand.h>
@@ -659,7 +659,7 @@ int64_t sessions::do_update(int64_t last_updated)
  */
 void sessions::content_update(int64_t variables_timestamp)
 {
-    content::content::instance()->add_xml("sessions");
+    content::content::instance()->add_xml(get_plugin_name());
 }
 
 

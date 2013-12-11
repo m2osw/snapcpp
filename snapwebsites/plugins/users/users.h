@@ -28,6 +28,7 @@ namespace users
 
 enum name_t
 {
+    SNAP_NAME_USERS_ANONYMOUS_PATH,
     SNAP_NAME_USERS_AUTHOR,
     SNAP_NAME_USERS_AUTHORED_PAGES,
     SNAP_NAME_USERS_AUTO_PATH,
@@ -107,6 +108,8 @@ public:
     virtual QDomDocument    on_get_xml_form(const QString& cpath);
     virtual void            on_process_post(const QString& uri_path, const sessions::sessions::session_info& info);
 
+    QString                 get_user_key() const;
+    QString                 get_user_path() const;
     bool                    register_user(const QString& email, const QString& password);
     void                    attach_to_session(const QString& name, const QString& data);
     QString                 detach_from_session(const QString& name) const;

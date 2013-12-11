@@ -58,6 +58,7 @@ public:
     private:
         QString                     f_name;
         controlled_vars::zfloat_t   f_level; // q=0.8
+        // TODO add support for any other parameter
     };
     typedef QVector<part_t> part_vector_t; // do NOT use a map, we want to keep them in order!
 

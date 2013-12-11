@@ -211,6 +211,7 @@ private:
     void                        write(const char *str);
     void                        write(const QString& str);
     void                        output_cookies();
+    void                        verify_permissions();
 
     controlled_vars::mint64_t           f_start_date; // time request arrived
     server_pointer_t                    f_server;

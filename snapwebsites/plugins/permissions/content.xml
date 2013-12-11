@@ -1,7 +1,7 @@
 <?xml version="1.0" standalone="yes"?>
 <!--
 Snap Websites Server == permissions database setup (i.e. type tree)
-Copyright (C) 2011-2012  Made to Order Software Corp.
+Copyright (C) 2011-2013  Made to Order Software Corp.
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -55,6 +55,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <![CDATA[<p>Rights to access other users.</p>]]>
     </param>
   </content>
+  <content path="/types/permissions/rights/users/anonymous">
+    <param name="content::title">Anonymous Users</param>
+    <param name="content::body">
+      <![CDATA[<p>Any user that is not currently logged in. Note that a logged in user may not have permission to see pages that the anonymous user can see.</p>]]>
+    </param>
+  </content>
   <content path="/types/permissions/rights/sendmail">
     <param name="content::title">Sendmail</param>
     <param name="content::body">
@@ -67,8 +73,50 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <![CDATA[<p>Actions allowed by the permission environment. Other content should never be assigned this type.</p>]]>
     </param>
   </content>
+  <content path="/types/permissions/actions/view" >
+    <param name="content::title">View Action</param>
+    <param name="content::body">
+      <![CDATA[<p>View a page.</p><p>Contrary to the edit capabilities, the view applies to <em>all</em> the data in a page. (Although some boxes may still be hidden if the user does not have permission to see those boxes.)]]>
+    </param>
+  </content>
+  <content path="/types/permissions/actions/edit">
+    <param name="content::title">Edit Action</param>
+    <param name="content::body">
+      <![CDATA[<p>Edit the body and title of a page. Other parameters of a page require other actions.</p>]]>
+    </param>
+  </content>
+  <content path="/types/permissions/actions/delete">
+    <param name="content::title">Delete Action</param>
+    <param name="content::body">
+      <![CDATA[<p>Edit the body and title of a page. Other parameters of a page require other actions.</p>]]>
+    </param>
+  </content>
   <content path="/types/permissions/groups">
     <param name="content::title">Groups</param>
+    <param name="content::body">
+      <![CDATA[<p>Groups that can be used to manager permissions on a set of users.</p>]]>
+    </param>
+  </content>
+  <content path="/types/permissions/groups/administrator">
+    <param name="content::title">Administrator Group</param>
+    <param name="content::body">
+      <![CDATA[<p>Groups that can be used to manager permissions on a set of users.</p>]]>
+    </param>
+  </content>
+  <content path="/types/permissions/groups/editor">
+    <param name="content::title">Editor Group</param>
+    <param name="content::body">
+      <![CDATA[<p>Groups that can be used to manager permissions on a set of users.</p>]]>
+    </param>
+  </content>
+  <content path="/types/permissions/groups/author">
+    <param name="content::title">Author Group</param>
+    <param name="content::body">
+      <![CDATA[<p>Groups that can be used to manager permissions on a set of users.</p>]]>
+    </param>
+  </content>
+  <content path="/types/permissions/groups/authenticated">
+    <param name="content::title">Authenticated Group</param>
     <param name="content::body">
       <![CDATA[<p>Groups that can be used to manager permissions on a set of users.</p>]]>
     </param>

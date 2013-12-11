@@ -46,6 +46,8 @@ WeightedHttpString::WeightedHttpString(const QString& str)
         }
         QString name(QString::fromUtf8(v, s - v));
         name = name.simplified();
+        // an authoritative document at the IANA clearly says that
+        // the default level (quality value) is 1.0f.
         float level(1.0f);
         // read all the parameters, although we only keep
         // the 'q' parameter at this time
@@ -75,12 +77,14 @@ WeightedHttpString::WeightedHttpString(const QString& str)
             {
                 bool ok(false);
                 level = param_value.toFloat(&ok);
-                if(!ok)
+                if(!ok || level < 0)
                 {
                     // not okay, keep 1.0f instead
                     level = 1.0f;
                 }
             }
+            // TODO add support for other parameters, "charset" is one of
+            //      them in the Accept header which we want to support
         }
         part_t part(name, level);
         f_parts.push_back(part);

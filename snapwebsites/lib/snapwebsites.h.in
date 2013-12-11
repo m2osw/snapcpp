@@ -114,6 +114,7 @@ public:
     SNAP_SIGNAL(register_backend_action, (backend_action_map_t& actions), (actions));
     SNAP_SIGNAL(backend_process, (), ());
     SNAP_SIGNAL(save_content, (), ());
+    SNAP_SIGNAL(validate_action, (const QString& path, QString& action), (path, action));
     SNAP_SIGNAL(xss_filter, (QDomNode& node,
                              const QString& accepted_tags,
                              const QString& accepted_attributes),
