@@ -32,6 +32,23 @@ enum name_t {
 const char *get_name(name_t name);
 
 
+class form_exception : public snap_exception
+{
+public:
+    form_exception(const char *what_msg) : snap_exception("Form: " + std::string(what_msg)) {}
+    form_exception(const std::string& what_msg) : snap_exception("Form: " + what_msg) {}
+    form_exception(const QString& what_msg) : snap_exception("Form: " + what_msg.toStdString()) {}
+};
+
+class form_exception_invalid_form_xml : public form_exception
+{
+public:
+    form_exception_invalid_form_xml(const char *what_msg) : form_exception(what_msg) {}
+    form_exception_invalid_form_xml(const std::string& what_msg) : form_exception(what_msg) {}
+    form_exception_invalid_form_xml(const QString& what_msg) : form_exception(what_msg.toStdString()) {}
+};
+
+
 class form_post
 {
 public:

@@ -163,7 +163,7 @@ const char *get_name(name_t name)
 
     default:
         // invalid index
-        throw snap_exception();
+        throw snap_logic_exception("invalid SNAP_NAME_USERS_...");
 
     }
     NOTREACHED();
@@ -1879,7 +1879,7 @@ void users::on_process_post(const QString& cpath, const sessions::sessions::sess
     {
         // this should not happen because invalid paths will not pass the
         // session validation process
-        throw std::logic_error(("users::on_process_post() was called with an unsupported path: \"" + cpath + "\"").toUtf8().data());
+        throw users_exception_invalid_path("users::on_process_post() was called with an unsupported path: \"" + cpath + "\"");
     }
 }
 
@@ -3110,12 +3110,12 @@ void users::create_password_salt(QByteArray& salt)
  * Read more about hash functions on
  * http://ehash.iaik.tugraz.at/wiki/The_Hash_Function_Zoo
  *
- * \exception std::logic_error
+ * \exception users_exception_size_mismatch
  * This exception is raised if the salt byte array is not exactly SALT_SIZE
  * bytes. For new passwords, you want to call the create_password_salt()
  * function to create the salt buffer.
  *
- * \exception std::runtime_error
+ * \exception users_exception_digest_not_available
  * This exception is raised if any of the OpenSSL digest functions fail.
  * This include an invalid digest name and adding/retrieving data to/from
  * the digest.
@@ -3133,7 +3133,7 @@ void users::encrypt_password(const QString& digest, const QString& password, con
     // verify the size
     if(salt.size() != SALT_SIZE)
     {
-        throw std::logic_error("salt buffer must be exactly SALT_SIZE bytes (missed calling create_password_salt()?)");
+        throw users_exception_size_mismatch("salt buffer must be exactly SALT_SIZE bytes (missed calling create_password_salt()?)");
     }
     unsigned char buf[SALT_SIZE];
     memcpy(buf, salt.data(), SALT_SIZE);
@@ -3146,7 +3146,7 @@ void users::encrypt_password(const QString& digest, const QString& password, con
     const EVP_MD *md(EVP_get_digestbyname(digest.toUtf8().data()));
     if(md == NULL)
     {
-        throw std::runtime_error("the specified digest could not be found");
+        throw users_exception_digest_not_available("the specified digest could not be found");
     }
 
     // initialize the digest context
@@ -3154,26 +3154,26 @@ void users::encrypt_password(const QString& digest, const QString& password, con
     EVP_MD_CTX_init(&mdctx);
     if(EVP_DigestInit_ex(&mdctx, md, NULL) != 1)
     {
-        throw std::runtime_error("EVP_DigestInit_ex() failed digest initialization");
+        throw users_exception_encryption_failed("EVP_DigestInit_ex() failed digest initialization");
     }
 
     // add first salt
     if(EVP_DigestUpdate(&mdctx, buf, SALT_SIZE / 2) != 1)
     {
-        throw std::runtime_error("EVP_DigestUpdate() failed digest update (salt1)");
+        throw users_exception_encryption_failed("EVP_DigestUpdate() failed digest update (salt1)");
     }
 
     // add password (encrypt to UTF-8)
     const char *pwd(password.toUtf8().data());
     if(EVP_DigestUpdate(&mdctx, pwd, strlen(pwd)) != 1)
     {
-        throw std::runtime_error("EVP_DigestUpdate() failed digest update (password)");
+        throw users_exception_encryption_failed("EVP_DigestUpdate() failed digest update (password)");
     }
 
     // add second salt
     if(EVP_DigestUpdate(&mdctx, buf + SALT_SIZE / 2, SALT_SIZE / 2) != 1)
     {
-        throw std::runtime_error("EVP_DigestUpdate() failed digest update (salt2)");
+        throw users_exception_encryption_failed("EVP_DigestUpdate() failed digest update (salt2)");
     }
 
     // retrieve the result of the hash
@@ -3181,7 +3181,7 @@ void users::encrypt_password(const QString& digest, const QString& password, con
     unsigned int md_len(EVP_MAX_MD_SIZE);
     if(EVP_DigestFinal_ex(&mdctx, md_value, &md_len) != 1)
     {
-        throw std::runtime_error("EVP_DigestFinal_ex() digest finalization failed");
+        throw users_exception_encryption_failed("EVP_DigestFinal_ex() digest finalization failed");
     }
     hash.append(reinterpret_cast<char *>(md_value), md_len);
 

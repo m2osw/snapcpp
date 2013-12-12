@@ -41,7 +41,7 @@ const char *get_name(name_t name)
 
 	default:
 		// invalid index
-		throw snap_exception();
+		throw snap_logic_exception("invalid SNAP_NAME_PATH_...");
 
 	}
 	NOTREACHED();
@@ -49,7 +49,7 @@ const char *get_name(name_t name)
 
 namespace
 {
-const char *g_undefined = "undefined";
+char const * const g_undefined = "undefined";
 }
 
 /** \brief Initialize the path plugin.

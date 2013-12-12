@@ -2190,7 +2190,7 @@ void snap_child::set_header(const QString& name, const QString& value)
             }
             if(!valid) {
                 // more or less ASCII except well defined separators
-                throw snap_child_exception_invalid_header_field_name();
+                throw snap_child_exception_invalid_header_field_name("header field name \"" + name + "\" is not valid, found unwanted character: '" + QChar(wc) + "'");
             }
         }
     }
@@ -2207,17 +2207,17 @@ void snap_child::set_header(const QString& name, const QString& value)
             wchar_t wc(ws[p]);
             if((wc < 0x20 || wc == 127) && wc != L'\r' && wc != L'\n' && wc != L'\t') {
                 // refuse controls except \r, \n, \t
-                throw snap_child_exception_invalid_header_value();
+                throw snap_child_exception_invalid_header_value("header field value \"" + value + "\" is not valid, found unwanted character: '" + QChar(wc) + "'");
             }
             // we MUST have a space or tab after a newline
             if(wc == L'\r' || wc == L'\n') {
                 // if p + 1 == max then the user supplied the ending "\r\n"
                 if(p + 1 < max) {
-                    if(ws[p] == L' ' && ws[p] != L'\t' && ws[p] != L'\r' && ws[p] != L'\n') {
+                    if(ws[p] != L' ' && ws[p] != L'\t' && ws[p] != L'\r' && ws[p] != L'\n') {
                         // missing space or tab after a "\r\n" sequence
                         // (we also accept \r or \n although empty lines are
                         // forbidden but we'll remove them anyway)
-                        throw snap_child_exception_invalid_header_value();
+                        throw snap_child_exception_invalid_header_value("header field value \"" + value + "\" is not valid, found a \\r pr \\n not followed by a space");
                     }
                 }
             }
@@ -2393,24 +2393,25 @@ QString snap_child::get_unique_number()
 
     quint64 c(0);
     {
-        QLockFile counter(lock_path + "/counter.u64");
+        QString name(lock_path + "/counter.u64");
+        QLockFile counter(name);
         if(!counter.open(QIODevice::ReadWrite))
         {
-            throw snap_child_exception_unique_number_error();
+            throw snap_child_exception_unique_number_error("count not open counter file \"" + name + "\"");
         }
         // the very first time the size is zero (empty)
         if(counter.size() != 0)
         {
             if(counter.read(reinterpret_cast<char *>(&c), sizeof(c)) != sizeof(c))
             {
-                throw snap_child_exception_unique_number_error();
+                throw snap_child_exception_unique_number_error("count not read the counter file \"" + name + "\"");
             }
         }
         ++c;
         counter.reset();
         if(counter.write(reinterpret_cast<char *>(&c), sizeof(c)) != sizeof(c))
         {
-            throw snap_child_exception_unique_number_error();
+            throw snap_child_exception_unique_number_error("count not write to the counter file \"" + name + "\"");
         }
         // close the file now; we do not want to hold the file for too long
     }

@@ -181,7 +181,7 @@ const char *get_name(name_t name)
 
     default:
         // invalid index
-        throw snap_exception();
+        throw snap_logic_exception("invalid SNAP_NAME_CORE_...");
 
     }
     NOTREACHED();
@@ -1411,7 +1411,7 @@ void server::udp_ping(const char *name, const char *message)
         }
         else
         {
-            throw std::runtime_error("invalid [IPv6]:port specification, port missing for UDP ping");
+            throw snapwebsites_exception_invalid_parameters("invalid [IPv6]:port specification, port missing for UDP ping");
         }
     }
     else if(p != -1)
@@ -1422,7 +1422,7 @@ void server::udp_ping(const char *name, const char *message)
     }
     else
     {
-        throw std::runtime_error("invalid IPv4:port specification, port missing for UDP ping");
+        throw snapwebsites_exception_invalid_parameters("invalid IPv4:port specification, port missing for UDP ping");
     }
     udp_client_server::udp_client client(addr.toUtf8().data(), port.toInt());
     client.send(message, strlen(message)); // we do not send the '\0'

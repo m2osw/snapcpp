@@ -68,6 +68,48 @@ const char *get_name(name_t name);
 
 
 
+class users_exception : public snap_exception
+{
+public:
+    users_exception(const char *what_msg) : snap_exception("Users: " + std::string(what_msg)) {}
+    users_exception(const std::string& what_msg) : snap_exception("Users: " + what_msg) {}
+    users_exception(const QString& what_msg) : snap_exception("Users: " + what_msg.toStdString()) {}
+};
+
+class users_exception_invalid_path : public users_exception
+{
+public:
+    users_exception_invalid_path(const char *what_msg) : users_exception(what_msg) {}
+    users_exception_invalid_path(const std::string& what_msg) : users_exception(what_msg) {}
+    users_exception_invalid_path(const QString& what_msg) : users_exception(what_msg.toStdString()) {}
+};
+
+class users_exception_size_mismatch : public users_exception
+{
+public:
+    users_exception_size_mismatch(const char *what_msg) : users_exception(what_msg) {}
+    users_exception_size_mismatch(const std::string& what_msg) : users_exception(what_msg) {}
+    users_exception_size_mismatch(const QString& what_msg) : users_exception(what_msg.toStdString()) {}
+};
+
+class users_exception_digest_not_available : public users_exception
+{
+public:
+    users_exception_digest_not_available(const char *what_msg) : users_exception(what_msg) {}
+    users_exception_digest_not_available(const std::string& what_msg) : users_exception(what_msg) {}
+    users_exception_digest_not_available(const QString& what_msg) : users_exception(what_msg.toStdString()) {}
+};
+
+class users_exception_encryption_failed : public users_exception
+{
+public:
+    users_exception_encryption_failed(const char *what_msg) : users_exception(what_msg) {}
+    users_exception_encryption_failed(const std::string& what_msg) : users_exception(what_msg) {}
+    users_exception_encryption_failed(const QString& what_msg) : users_exception(what_msg.toStdString()) {}
+};
+
+
+
 class users : public plugins::plugin, public path::path_execute, public layout::layout_content, public form::form_post
 {
 public:

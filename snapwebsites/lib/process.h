@@ -30,8 +30,21 @@
 namespace snap
 {
 
-class snap_process_exception : public snap_exception {};
-class snap_process_exception_invalid_mode_error : public snap_process_exception {};
+class snap_process_exception : public snap_exception
+{
+public:
+    snap_process_exception(const char *whatmsg) : snap_exception("snap_process", whatmsg) {}
+    snap_process_exception(const std::string& whatmsg) : snap_exception("snap_process", whatmsg) {}
+    snap_process_exception(const QString& whatmsg) : snap_exception("snap_process", whatmsg) {}
+};
+
+class snap_process_exception_invalid_mode_error : public snap_process_exception
+{
+public:
+    snap_process_exception_invalid_mode_error(const char *whatmsg) : snap_process_exception(whatmsg) {}
+    snap_process_exception_invalid_mode_error(const std::string& whatmsg) : snap_process_exception(whatmsg) {}
+    snap_process_exception_invalid_mode_error(const QString& whatmsg) : snap_process_exception(whatmsg) {}
+};
 
 class process
 {

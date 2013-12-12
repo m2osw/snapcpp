@@ -36,36 +36,40 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="content::body" overwrite="yes">
       <![CDATA[<p>Thank you for visiting our website. See you again soon.</p><p>Got back to the <a href="/">home page</a>.</p>]]>
     </param>
-    <link name="robotstxt_noindex" to="robotstxt_noindex" mode="1:*">/types/taxonomy/system/robotstxt/noindex</link>
-    <link name="robotstxt_nofollow" to="robotstxt_nofollow" mode="1:*">/types/taxonomy/system/robotstxt/nofollow</link>
+    <link name="robotstxt::noindex" to="robotstxt::noindex" mode="1:*">/types/taxonomy/system/robotstxt/noindex</link>
+    <link name="robotstxt::nofollow" to="robotstxt::nofollow" mode="1:*">/types/taxonomy/system/robotstxt/nofollow</link>
+    <link name="permissions::administer" to="permissions::administer" mode="1:*">/types/permissions/rights/administer</link>
   </content>
   <content path="/user">
     <param name="content::title">User</param>
     <param name="content::body" overwrite="yes">
       <![CDATA[<p>List of users on your Snap! Website.</p>]]>
     </param>
+    <link name="permissions::administrer" to="permissions::administrer" mode="1:*">/types/permissions/rights/administration</link>
   </content>
-  <content path="/admin/users/mail/verify">
+  <content path="/admin/email/users/verify">
     <!-- email sent when users register so we can ask them to verify their email address -->
     <param name="content::title">Please verify your email address</param>
     <param name="content::body" overwrite="yes">
         <![CDATA[<p class="email_date" style="text-align: right;">Sent on [sendmail::date]</p><p class="welcome">Welcome to your Snap! C++ website.</p><p class="process-to-complete">In order to complete the creation of your new account, please click on the following link:</p><blockquote>[sendmail::verify_link("Click here to validate your email address")]</blockquote><p>If you have a problem clicking on this link, your verification code is:</p><blockquote><code>[select("/snap/page/body/sendmail/parameters/param[@name='users::verify_email']/@value")]</code></blockquote><p class="thank-you">Thank you.</p><p>To unsubscribe click here: [sendmail::unsubscribe_link("Unsubscribe from Snap! emails")].<p style="text-align: center;">Copyright [year] (c) by Made to Order Software Corporation -- All Rights Reserved</p>]]>
     </param>
-    <link name="include_in_xml_sitemap" to="include_in_xml_sitemap" mode="1:*">/types/taxonomy/system/sitemapxml/include-in-xml-sitemap</link>
-    <link name="administration" to="administration" mode="1:*">/types/permissions/rights/administration</link>
-    <link name="users" to="users" mode="1:*">/types/permissions/rights/users</link>
+    <link name="sitemapxml::include" to="sitemapxml::include" mode="1:*">/types/taxonomy/system/sitemapxml/include-in-xml-sitemap</link>
   </content>
-  <content path="/admin/users/mail/forgot-password">
+  <content path="/admin/email/users/forgot-password">
     <!-- email sent when users forgot their password -->
     <param name="content::title">Please follow the link below to change your password</param>
     <param name="content::body" overwrite="yes">
         <![CDATA[<p class="email_date" style="text-align: right;">Sent on [sendmail::date]</p><p class="welcome">It looks like you required the system to allow you to change your password. If this wasn't you, please reply to this email so we can make sure that everything is A-Okay.</p><p class="process-to-complete">In order to change your password, please click on the following link:</p><blockquote>[sendmail::forgot_password_link("Click here to change your password.")]</blockquote><p>You will be asked to change your password immediately. Once you save your password, you will automatically be logged in.</p><p>If you have a problem clicking on this link, your verification code is: <code>[select("/snap/page/body/sendmail/parameters/param[@name='users::forgot_password_email']/@value")]</code></p><p class="thank-you">Thank you.</p><p>To unsubscribe click here: [sendmail::unsubscribe_link("Unsubscribe from Snap! emails")].<p style="text-align: center;">Copyright [year] (c) by Made to Order Software Corporation -- All Rights Reserved</p>]]>
     </param>
-    <link name="include_in_xml_sitemap" to="include_in_xml_sitemap" mode="1:*">/types/taxonomy/system/sitemapxml/include-in-xml-sitemap</link>
-    <link name="administration" to="administration" mode="1:*">/types/permissions/rights/administration</link>
-    <link name="users" to="users" mode="1:*">/types/permissions/rights/users</link>
+    <link name="sitemapxml::include" to="sitemapxml::include" mode="1:*">/types/taxonomy/system/sitemapxml/include</link>
   </content>
-  <content path="/admin/users/page/profile">
+  <content path="/admin/page/users">
+    <param name="content::title">Users Templates</param>
+    <param name="content::body">
+      <![CDATA[<p>Templates for user pages.</p>]]>
+    </param>
+  </content>
+  <content path="/admin/page/users/profile">
     <param name="content::title">[user-name]</param>
     <param name="content::body">
       <![CDATA[<p>User profile stuff...</p><p>This will be composed of tags to show the data that the administrator deems useful.</p>]]>
@@ -76,6 +80,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="content::body">
       <![CDATA[<p>All users are defined as children of this type. Any other content should never be assigned this type.</p>]]>
     </param>
+    <link name="permissions::administer" to="permissions::administer" mode="1:*">/types/permissions/rights/administer</link>
   </content>
   <content path="/types/users/auto">
     <param name="content::title">Automatic Users</param>
@@ -107,6 +112,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="content::body">
       <![CDATA[<p>Set of tags used to label users on your site. These tags are considered free form so additional tags can be created.</p>]]>
     </param>
+    <link name="permissions::administer" to="permissions::administer" mode="1:*">/types/permissions/rights/administer/taxonomy</link>
   </content>
   <content path="/types/taxonomy/system/users/spammer">
     <param name="content::title">Spammer User</param>
@@ -127,7 +133,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     </param>
   </content>
   <content path="/types/taxonomy/system/users/offensive">
-    <param name="content::title">Offise User</param>
+    <param name="content::title">Offensive User</param>
     <param name="content::body">
       <![CDATA[<p>User is offensive when using our website (write profanity.)</p>]]>
     </param>

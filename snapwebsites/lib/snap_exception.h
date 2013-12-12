@@ -18,6 +18,7 @@
 #define SNAP_EXCEPTION_H
 
 #include <stdexcept>
+#include <QString>
 
 namespace snap
 {
@@ -25,7 +26,29 @@ namespace snap
 class snap_exception : public std::runtime_error
 {
 public:
-    snap_exception(const std::string& what_msg = "Snap! Exception") : runtime_error(what_msg) {}
+    // no sub-name
+    snap_exception(const char *what_msg) : runtime_error("Snap! Exception: " + std::string(what_msg)) {}
+    snap_exception(const std::string& what_msg) : runtime_error("Snap! Exception: " + what_msg) {}
+    snap_exception(const QString& what_msg) : runtime_error(("Snap! Exception: " + what_msg).toStdString()) {}
+
+    // with a sub-name
+    snap_exception(const char *subname, const char *what_msg) : runtime_error("Snap! Exception: " + (subname + std::string(what_msg))) {}
+    snap_exception(const char *subname, const std::string& what_msg) : runtime_error("Snap! Exception: " + (subname + what_msg)) {}
+    snap_exception(const char *subname, const QString& what_msg) : runtime_error(("Snap! Exception: " + (subname + what_msg)).toStdString()) {}
+};
+
+class snap_logic_exception : public std::logic_error
+{
+public:
+    // no sub-name
+    snap_logic_exception(const char *what_msg) : logic_error("Snap! Exception: " + std::string(what_msg)) {}
+    snap_logic_exception(const std::string& what_msg) : logic_error("Snap! Exception: " + what_msg) {}
+    snap_logic_exception(const QString& what_msg) : logic_error(("Snap! Exception: " + what_msg).toStdString()) {}
+
+    // with a sub-name
+    snap_logic_exception(const char *subname, const char *what_msg) : logic_error("Snap! Exception: " + (subname + std::string(what_msg))) {}
+    snap_logic_exception(const char *subname, const std::string& what_msg) : logic_error("Snap! Exception: " + (subname + what_msg)) {}
+    snap_logic_exception(const char *subname, const QString& what_msg) : logic_error(("Snap! Exception: " + (subname + what_msg)).toStdString()) {}
 };
 
 } // namespace snap

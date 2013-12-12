@@ -31,7 +31,19 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
                mode CDATA "1:1">
 ]>
 <snap-tree>
-  <content path="/admin/mailinglist/status"/>
+  <content path="/admin/settings/mailinglist">
+    <param name="content::title">Mailing List Administration</param>
+    <param name="content::body">
+      <![CDATA[<p>Administration of your mailing lists.</p>]]>
+    </param>
+  </content>
+  <content path="/types/mailinglist/status">
+    <param name="content::title">Mailing List Status</param>
+    <param name="content::body">
+      <![CDATA[<p>Different statuses used by mailing lists. These statuses are managed internally only.</p>]]>
+    </param>
+    <link name="permissions::administration" to="permissions::administration" mode="1:*">/types/permissions/rights/administration</link>
+  </content>
 </snap-tree>
 <!-- vim: ts=2 sw=2 et syntax=xml
 -->

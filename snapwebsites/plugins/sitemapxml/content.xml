@@ -31,16 +31,22 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
                mode CDATA "1:1">
 ]>
 <snap-tree>
+  <!-- files that are 100% dynamically generated are defined here, but they do not get a title and body -->
   <content path="/sitemap.xml"/>
   <content path="/sitemap.txt"/>
-  <content path="/admin/sitemapxml/settings"/>
+  <content path="/admin/settings/sitemapxml">
+    <param name="content::title">sitemap.xml settings</param>
+    <param name="content::body">
+      <![CDATA[<p>Administer the different sitemap.xml files of your website. These files are for robots only. In most cases the default works as is.</p>]]>
+    </param>
+  </content>
   <content path="/types/taxonomy/system/sitemapxml">
     <param name="content::title">XML Sitemap</param>
     <param name="content::body">
       <![CDATA[<p>Set of parameters used to change the insertion of pages in your XML sitemap. The XML sitemap defines a comprehensive list of all the pages that exist on your website and that you want to share with search engines.</p>]]>
     </param>
   </content>
-  <content path="/types/taxonomy/system/sitemapxml/include-in-xml-sitemap">
+  <content path="/types/taxonomy/system/sitemapxml/include">
     <param name="content::title">Include in XML Sitemap</param>
     <param name="content::body">
       <![CDATA[<p>This page is included in your XML sitemap.</p>]]>

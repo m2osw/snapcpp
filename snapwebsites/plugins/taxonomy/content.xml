@@ -1,7 +1,7 @@
 <?xml version="1.0" standalone="yes"?>
 <!--
 Snap Websites Server == taxonomy database setup (i.e. type tree)
-Copyright (C) 2011-2012  Made to Order Software Corp.
+Copyright (C) 2011-2013  Made to Order Software Corp.
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -38,19 +38,65 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <![CDATA[<p>This page represents the root of your entire website taxonomy tree.</p>]]>
     </param>
   </content>
+  <content path="/types/permissions/rights/administer/taxonomy">
+    <param name="content::title">Administer Taxonomy Right</param>
+    <param name="content::body">
+      <![CDATA[<p>Administer Taxonomy.</p><p>This right allows a user to manage the entire taxonomy. If you only want to offer tagging, make sure to only offer the Tag right.</p>]]>
+    </param>
+  </content>
+  <content path="/types/permissions/rights/administer/taxonomy/vocabulary">
+    <param name="content::title">Administer Taxonomy Right</param>
+    <param name="content::body">
+      <![CDATA[<p>Administer a Vocabulary.</p><p>Users with that right can edit an entire vocabulary to add, remove, and edit tags from it.</p>]]>
+    </param>
+  </content>
+  <content path="/types/permissions/rights/administer/taxonomy/vocabulary/tag">
+    <param name="content::title">Administer Tag Right</param>
+    <param name="content::body">
+      <![CDATA[<p>Allow user to tag or categorize pages.</p><p>A user given this right is allowed to use tags on a page, in effect, categorizing the page with a set of tags. With this right, any tag can be assigned to any page.</p>]]>
+    </param>
+  </content>
+  <content path="/types/permissions/rights/edit/taxonomy">
+    <param name="content::title">Administer Taxonomy Right</param>
+    <param name="content::body">
+      <![CDATA[<p>Edit Taxonomy.</p><p>This right allows a user to manage the entire taxonomy. If you only want to offer tagging, make sure to only offer the Tag right.</p>]]>
+    </param>
+  </content>
+  <content path="/types/permissions/rights/edit/taxonomy/vocabulary">
+    <param name="content::title">Edit Taxonomy Right</param>
+    <param name="content::body">
+      <![CDATA[<p>Edit a Vocabulary.</p><p>Users with that right can edit an entire vocabulary to add, remove, and edit tags from it.</p>]]>
+    </param>
+  </content>
+  <content path="/types/permissions/rights/edit/taxonomy/vocabulary/tag">
+    <param name="content::title">Edit Tag Right</param>
+    <param name="content::body">
+      <![CDATA[<p>Allow user to edit a tag or categorize pages.</p><p>A user given this right is allowed to edit a tag page which means changing its name, definition and other parameters.</p>]]>
+    </param>
+  </content>
+  <!--
+    Types under /types/taxonomy/... can be assigned to pages by users.
+    Other types defined under /types/... but not under /types/taxonomy/...
+    cannot generally be changed by users (i.e. /types/users/new and
+    /types/permissions/rights are two that are Snap! specific and not
+    editable)
+  -->
   <content path="/types/taxonomy">
-    <param name="taxonomy::name">taxonomy</param>
+    <!--param name="taxonomy::name">taxonomy::taxonomy</param-->
     <param name="content::title">Taxonomy</param>
     <param name="content::body">
       <![CDATA[<p>This is the top of the taxonomy tree used to tag / categories your pages.</p>]]>
     </param>
   </content>
   <content path="/types/taxonomy/system">
-    <param name="taxonomy::name">system_taxonomy</param>
+    <!--param name="taxonomy::name">taxonomy::system</param-->
     <param name="content::title">System Taxonomy</param>
     <param name="content::body">
-      <![CDATA[<p>Pages to be linked to a plugin for a specific purpose as defined by the plugin are linked using an entry under this path. For example the robots.txt plugin defines a set of tags so the user can tag his page in order for the plugin to know whether the page should be added to the robots.txt file.</p>]]>
+      <![CDATA[<p>Pages to be linked to a plugin for a specific purpose as defined by the plugin are linked using an entry under this path. For example the robots.txt plugin defines a set of tags so the user can tag his page in order for the plugin to know whether the page should be added to the robots.txt file.</p><p>In general these types are not editable by the owner of a website since they are required for the system to function as expected.</p>]]>
     </param>
+    <!-- the system taxonomy should not be indexed by search engines -->
+    <link name="robotstxt::noindex" to="robotstxt::noindex" mode="1:*">/types/taxonomy/system/robotstxt/noindex</link>
+    <link name="permissions::lock" to="permissions::lock" mode="1:*">/types/permissions/lock</link>
   </content>
 </snap-tree>
 <!-- vim: ts=2 sw=2 et syntax=xml

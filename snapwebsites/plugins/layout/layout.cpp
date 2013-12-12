@@ -24,7 +24,6 @@
 #include "../filter/filter.h"
 #include "../content/content.h"
 #include "../taxonomy/taxonomy.h"
-//#include "snap_parser.h"
 #include "not_reached.h"
 #include <iostream>
 #pragma GCC diagnostic push
@@ -63,7 +62,7 @@ const char *get_name(name_t name)
 
     default:
         // invalid index
-        throw snap_exception();
+        throw snap_logic_exception("invalid SNAP_NAME_LAYOUT_...");
 
     }
     NOTREACHED();

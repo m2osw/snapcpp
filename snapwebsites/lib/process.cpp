@@ -440,7 +440,7 @@ int process::run()
     if(PROCESS_MODE_INOUT_INTERACTIVE == f_mode && !f_output_callback)
     {
         // mode is not compatible with the current setup
-        throw snap_process_exception_invalid_mode_error();
+        throw snap_process_exception_invalid_mode_error("mode cnanot be in/out interactive without a callback");
     }
 
     // in this case we want to create a pipe(), fork(), execvp() the

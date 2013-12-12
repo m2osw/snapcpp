@@ -1,7 +1,7 @@
 <?xml version="1.0" standalone="yes"?>
 <!--
 Snap Websites Server == robots.txt database setup
-Copyright (C) 2011-2012  Made to Order Software Corp.
+Copyright (C) 2011-2013  Made to Order Software Corp.
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -31,8 +31,14 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
                mode CDATA "1:1">
 ]>
 <snap-tree>
+  <!-- files that are 100% dynamically generated are defined here, but they do not get a title and body -->
   <content path="/robots.txt"/>
-  <content path="/admin/robotstxt/settings"/>
+  <content path="/admin/settings/robotstxt">
+    <param name="content::title">robots.txt settings</param>
+    <param name="content::body">
+      <![CDATA[<p>Edit the settings used to generate the robots.txt file.</p>]]>
+    </param>
+  </content>
   <content path="/types/taxonomy/system/robotstxt">
     <param name="content::title">Robots Tags</param>
     <param name="content::body">
@@ -79,7 +85,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     </param>
   </content>
   <content path="/types/taxonomy/system/robotstxt/noydir">
-    <param name="content::title">Robots: No Snippet</param>
+    <param name="content::title">Robots: No Yahoo! Directory</param>
     <param name="content::body">
       <![CDATA[<p>Prevent the Yahoo! robots from accessing this page.</p>]]>
     </param>

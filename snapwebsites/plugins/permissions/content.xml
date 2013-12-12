@@ -31,94 +31,250 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
                mode CDATA "1:1">
 ]>
 <snap-tree>
+  <!--
+    PERMISSIONS
+
+    The set of Rights, Actions, and Groups form the whole of the permissions.
+    Users have rights. Content require rights (have permissions.) Users
+    perform actions. We link all three and if we find a match, the users
+    are allowed to perform the actions.
+
+    So... you only assign rights to different users and content, not
+    "permissions" although when assigning required rights on content, it
+    becomes a permission (semantically).
+
+    Some other terminology used by permissions:
+
+    . own: means that the current user is the author of the content
+    . contributor: means that the current user is one of the contributor
+                   or the author of the content
+    . any: means that even if the user is not the author or a contributor
+  -->
   <content path="/types/permissions">
     <param name="content::title">Permission Types</param>
     <param name="content::body">
-      <![CDATA[<p>Set of permissions you can assign to your users.</p>]]>
+      <![CDATA[<p>Set of permissions you can assign to your users and content.</p>]]>
+    </param>
+    <link name="robotstxt::noindex" to="robotstxt::noindex" mode="1:*">/types/taxonomy/system/robotstxt/noindex</link>
+    <link name="lock" to="lock" mode="1:*">/types/permissions/lock</link>
+  </content>
+  <content path="/types/permissions/lock">
+    <param name="content::title">System Lock</param>
+    <param name="content::body">
+      <![CDATA[<p>This lock is non-negotiable. Anything locked with this lock just cannot be deleted or moved (path changed). All the elements used by the system are locked with (i.e. linked to) this special type.</p>]]>
     </param>
   </content>
+  <!--
+    RIGHTS
+
+    Rights are distributed to users (User Rights) and to content (Content
+    Permissions.) When the user and a specific page of content both have
+    mutual rights (intersection of both sets) then the user can act on
+    that page as defined by the actions assigned to that right.
+
+    For example, the right "view page" is associated with the "view"
+    action. If a user has the right "view page", the page of content he
+    is trying to view also has the right "view page", then the user can
+    view that page.
+
+    Rights can be grouped in a tree. In that case, the rights with more
+    depth give a user less rights. For example, the view right can have
+    multiple sub-rights such as:
+
+    /types/permissions/rights/view
+    /types/permissions/rights/view/any_page
+    /types/permissions/rights/view/any_page/group_page
+    /types/permissions/rights/view/any_page/group_page/own_page
+
+    In this case the user can be given the right to see only his own
+    pages (own_page). However, a user who is given the right "group_page"
+    can see any page defined in the same group as well as his own pages
+    (i.e. the given right and all its children). Someone assigned the right
+    "any_page" can see all pages of the entire website, which includes all
+    groups, and his own pages.
+
+    There are also cases where a tree like set of rights is ill based.
+    For example, the rights over the editing of a page could be defined
+    as follow:
+
+    /types/permissions/rights/administer
+    /types/permissions/rights/administer/update
+    /types/permissions/rights/administer/update/delete
+    /types/permissions/rights/administer/update/delete/edit
+    /types/permissions/rights/administer/update/delete/edit/create
+
+    This scheme may work for some people, however, some website administrator
+    may want to offer a delete right to some people without also
+    offering the edit right. That scheme, however, shows the concept that
+    a user who can create a page may not be able to then edit that page.
+  -->
   <content path="/types/permissions/rights">
-    <param name="content::title">Permissions</param>
+    <param name="content::title">Rights</param>
     <param name="content::body">
       <![CDATA[<p>Here you find all the permissions offered by the different Snap plugins.</p>]]>
     </param>
   </content>
-  <content path="/types/permissions/rights/administration">
-    <param name="content::title">Administration</param>
+  <content path="/types/permissions/rights/administer">
+    <param name="content::title">Administer Right</param>
     <param name="content::body">
-      <![CDATA[<p>The user needs administration power to access this content.</p>]]>
+      <![CDATA[<p>Administer settings.</p><p>In general this is very similar to the Edit right, only it gives the user the permission to change things that are usually not accessible by people who just have Edit rights.</p>]]>
     </param>
   </content>
-  <content path="/types/permissions/rights/users">
-    <param name="content::title">Users</param>
+  <content path="/types/permissions/rights/create">
+    <param name="content::title">Create Right</param>
     <param name="content::body">
-      <![CDATA[<p>Rights to access other users.</p>]]>
+      <![CDATA[<p>Creating new content.</p><p>This is the general create permission. This permission should only be assigned to the root because it gives someone the right to create anything. Specific type of create are added under this right.</p>]]>
     </param>
   </content>
-  <content path="/types/permissions/rights/users/anonymous">
-    <param name="content::title">Anonymous Users</param>
+  <content path="/types/permissions/rights/edit">
+    <param name="content::title">Edit Right</param>
     <param name="content::body">
-      <![CDATA[<p>Any user that is not currently logged in. Note that a logged in user may not have permission to see pages that the anonymous user can see.</p>]]>
+      <![CDATA[<p>Edit content.</p><p>The main edit is only assigned to a root user. The edit allows the root user to edit anything that is not locked internally. Note that does not allow the root user to delete something without putting it in a trashcan first.</p>]]>
     </param>
   </content>
-  <content path="/types/permissions/rights/sendmail">
-    <param name="content::title">Sendmail</param>
+  <content path="/types/permissions/rights/delete">
+    <param name="content::title">Delete Right</param>
     <param name="content::body">
-      <![CDATA[<p>Rights to access the different emails that the system sends to users.</p>]]>
+      <![CDATA[<p>Delete content.</p><p>The main delete is only assigned to a root user. The delete allows the root user to delete anything that is not locked internally. Note that does not allow the root user to delete something without putting it in a trashcan first.</p>]]>
     </param>
   </content>
+  <content path="/types/permissions/rights/view">
+    <param name="content::title">View Right</param>
+    <param name="content::body">
+      <![CDATA[<p>View content.</p><p>This view permission is the main view permission for the root user giving the root user access to all the data. Note that other users will be assigned children of right to limit what they can view: public pages, reports, users, etc.</p>]]>
+    </param>
+  </content>
+  <!--
+    ACTIONS
+
+    Watchout! Actions, groups, and rights are three different things and they
+    are often confounded. All three form the permission system. The actions
+    are just that, an action that the user takes. The rights that the
+    user has are grouped by actions. The rights that a page requires to be
+    accessed one way or another are grouped by actions.
+  -->
   <content path="/types/permissions/actions">
     <param name="content::title">Actions</param>
     <param name="content::body">
       <![CDATA[<p>Actions allowed by the permission environment. Other content should never be assigned this type.</p>]]>
     </param>
   </content>
-  <content path="/types/permissions/actions/view" >
-    <param name="content::title">View Action</param>
+  <content path="/types/permissions/actions/administrer" >
+    <param name="content::title">Administer Action</param>
     <param name="content::body">
-      <![CDATA[<p>View a page.</p><p>Contrary to the edit capabilities, the view applies to <em>all</em> the data in a page. (Although some boxes may still be hidden if the user does not have permission to see those boxes.)]]>
+      <![CDATA[<p>Administer something. This includes administrating the website (accessing administration forms) and administrating pages (change parameters of a page such as the creation date).</p>]]>
     </param>
   </content>
-  <content path="/types/permissions/actions/edit">
-    <param name="content::title">Edit Action</param>
+  <content path="/types/permissions/actions/create">
+    <param name="content::title">Create Action</param>
     <param name="content::body">
-      <![CDATA[<p>Edit the body and title of a page. Other parameters of a page require other actions.</p>]]>
+      <![CDATA[<p>Allow a user to create new content. A user with Edit and Create rights (the majority of registered users who have Edit will have Create) can also do a Copy although that is not an action in itself (it can be setup with a URI query string: ?action=create&template=/path/to/page/to/copy).</p>]]>
     </param>
   </content>
   <content path="/types/permissions/actions/delete">
     <param name="content::title">Delete Action</param>
     <param name="content::body">
-      <![CDATA[<p>Edit the body and title of a page. Other parameters of a page require other actions.</p>]]>
+      <![CDATA[<p>Delete content. Deletion requires rights by all the concerned plugins since that's a pretty dramatic action. For example, a scheduler plugin could prevent the deletion until the page was published for a while and automatically unpublished. Before then the deletion is forbidden.</p>]]>
     </param>
   </content>
+  <content path="/types/permissions/actions/edit">
+    <param name="content::title">Edit Action</param>
+    <param name="content::body">
+      <![CDATA[<p>Edit allows users to modify the body, title, and modification date of a page of content. Editing of a page may require other rights depending on plugins permissions (i.e. a filter that gives more rights than what the current user has). Editing of other parameters of a page (date, author, etc.) require different rights and may require the Administer Action.</p>]]>
+    </param>
+  </content>
+  <content path="/types/permissions/actions/lock">
+    <param name="content::title">Lock Action</param>
+    <param name="content::body">
+      <![CDATA[<p>Lock content.</p><p>Note that the Unlock action is a separate action. So someone who can lock a page may not have enough rights to unlock that page and vice versa.</p><p>Some of the content is locked by the system and it can never be unlocked. This is important because content such as all the actions cannot be deleted since that would prevent you from accessing your website.</p>]]>
+    </param>
+  </content>
+  <content path="/types/permissions/actions/moderate">
+    <param name="content::title">Moderate Action</param>
+    <param name="content::body">
+      <![CDATA[<p>Someone offered to moderate a page is in effect given the right to change the current publication status of a page. The person is also expected to have enough rights to view unpublished content in order to moderate that content and publish it if acceptable.</p>]]>
+    </param>
+  </content>
+  <content path="/types/permissions/actions/unlock">
+    <param name="content::title">Unlock Action</param>
+    <param name="content::body">
+      <![CDATA[<p>Unlock content.</p><p>Note that the Lock action is a separate action. So someone who can unlock a page may not have enough rights to lock that page and vice versa.</p>]]>
+    </param>
+  </content>
+  <content path="/types/permissions/actions/view">
+    <param name="content::title">View Action</param>
+    <param name="content::body">
+      <![CDATA[<p>View a page.</p><p>Contrary to the edit capabilities, the view should generally apply to <em>all</em> the data in a page. (Although some boxes on the sides may still be hidden if the user does not have permission to see those boxes.) This means if some part of a page is not accessible by the current user then the whole page is not accessible.</p>]]>
+    </param>
+  </content>
+  <!--
+    GROUPS
+
+    here we offer a default set of groups which are 100% based on a tree
+    like scheme; the use of a tree is not required but it is often well
+    adapted in this environment; remember that all rights assigned to
+    a deeper group is also given to a higher level group (i.e. if the
+    editor can delete a page, so can the administrator)
+  -->
   <content path="/types/permissions/groups">
     <param name="content::title">Groups</param>
     <param name="content::body">
       <![CDATA[<p>Groups that can be used to manager permissions on a set of users.</p>]]>
     </param>
   </content>
-  <content path="/types/permissions/groups/administrator">
+  <content path="/types/permissions/groups/root">
+    <param name="content::title">Root Group</param>
+    <param name="content::body">
+      <![CDATA[<p>The very first used created in Snap! is assigned to the root group. This user can do anything in the entire set of websites.</p>]]>
+    </param>
+  </content>
+  <content path="/types/permissions/groups/root/administrator">
     <param name="content::title">Administrator Group</param>
     <param name="content::body">
-      <![CDATA[<p>Groups that can be used to manager permissions on a set of users.</p>]]>
+      <![CDATA[<p>Group used by managers. Managers are linked to one specific website and they can do pretty much anything they want in that website except editing some top level system pages. In most cases, site owners are assigned the administrator group.</p>]]>
     </param>
   </content>
-  <content path="/types/permissions/groups/editor">
+  <content path="/types/permissions/groups/root/administrator/editor">
     <param name="content::title">Editor Group</param>
     <param name="content::body">
-      <![CDATA[<p>Groups that can be used to manager permissions on a set of users.</p>]]>
+      <![CDATA[<p>Group used by editors. Editors are people who can modify all the website contents. However, they are limited to editing pages of content, not administration pages.</p>]]>
     </param>
   </content>
-  <content path="/types/permissions/groups/author">
+  <content path="/types/permissions/groups/root/administrator/editor/moderator">
+    <param name="content::title">Moderator Group</param>
+    <param name="content::body">
+      <![CDATA[<p>Group used by moderators. People who have the right to create and edit their own content and moderate (publish / unpublish) other users' content.</p>]]>
+    </param>
+  </content>
+  <content path="/types/permissions/groups/root/administrator/editor/moderator/author">
     <param name="content::title">Author Group</param>
     <param name="content::body">
+      <![CDATA[<p>Group used by authors. Authors are people who can create and edit their own content on your website. Authors cannot modify someone else content.</p>]]>
+    </param>
+  </content>
+  <content path="/types/permissions/groups/root/administrator/editor/moderator/author/commenter">
+    <param name="content::title">Commenter Group</param>
+    <param name="content::body">
+      <![CDATA[<p>Group offered to active commenters. Such users can comment without the need for moderation of their comments. Note that such commenters are also users of the website (they have an account and need to log in to comment in this way.)</p>]]>
+    </param>
+  </content>
+  <content path="/types/permissions/groups/root/administrator/editor/moderator/author/commenter/registered-user">
+    <param name="taxonomy::name">registered_user</param>
+    <param name="content::title">Registered User Group</param>
+    <param name="content::body">
+      <![CDATA[<p>Group of all the people who registered an account. In most cases registered users have just a little more rights than an anonymous user: he can see pages that are otherwise hidden from anonymous users.</p>]]>
+    </param>
+  </content>
+  <content path="/types/permissions/groups/root/administrator/editor/moderator/author/commenter/registered-user/visitor">
+    <param name="content::title">Visitor Group</param>
+    <param name="content::body">
       <![CDATA[<p>Groups that can be used to manager permissions on a set of users.</p>]]>
     </param>
   </content>
-  <content path="/types/permissions/groups/authenticated">
-    <param name="content::title">Authenticated Group</param>
+  <content path="/types/permissions/groups/root/administrator/editor/moderator/author/commenter/registered-user/visitor/spammer">
+    <param name="content::title">Spammer Group</param>
     <param name="content::body">
-      <![CDATA[<p>Groups that can be used to manager permissions on a set of users.</p>]]>
+      <![CDATA[<p>Spammers are blocked from nearly everything. We just show them our home page, privacy policy, and terms and conditions. It won't help them though.</p>]]>
     </param>
   </content>
 </snap-tree>

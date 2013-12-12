@@ -33,6 +33,7 @@
 
 SNAP_PLUGIN_START(sitemapxml, 1, 0)
 
+
 /** \brief Get a fixed sitemapxml name.
  *
  * The sitemapxml plugin makes use of different names in the database. This
@@ -57,11 +58,12 @@ const char *get_name(name_t name)
 
 	default:
 		// invalid index
-		throw snap_exception();
+		throw snap_logic_exception("invalid SNAP_NAME_SITEMAPXML_...");
 
 	}
 	NOTREACHED();
 }
+
 
 /** \brief Initialize the URL information to default values.
  *
@@ -76,6 +78,7 @@ sitemapxml::url_info::url_info()
 {
 }
 
+
 /** \brief Set the URI of this resource.
  *
  * This is the URI (often called URL) of the resource being
@@ -87,6 +90,7 @@ void sitemapxml::url_info::set_uri(const QString& uri)
 {
 	f_uri = uri;
 }
+
 
 /** \brief Set the priority of the resource.
  *
@@ -119,6 +123,7 @@ void sitemapxml::url_info::set_priority(float priority)
 	f_priority = priority;
 }
 
+
 /** \brief Set the last modification date.
  *
  * This function let you set the last modification date of the resource.
@@ -135,6 +140,7 @@ void sitemapxml::url_info::set_last_modification(time_t last_modification)
 	}
 	f_last_modification = last_modification;
 }
+
 
 /** \brief Change the frequency.
  *
@@ -167,6 +173,7 @@ void sitemapxml::url_info::set_frequency(int frequency)
 	f_frequency = frequency;
 }
 
+
 /** \brief Get the URI.
  *
  * This URL has a URI which represents the location of the page including
@@ -178,6 +185,7 @@ QString sitemapxml::url_info::get_uri() const
 {
 	return f_uri;
 }
+
 
 /** \brief Get the priority of this page.
  *
@@ -204,6 +212,7 @@ time_t sitemapxml::url_info::get_last_modification() const
 	return f_last_modification;
 }
 
+
 /** \brief Get frequency with which this page is modified.
  *
  * By default the frequency is set to 1 week. You may set
@@ -217,6 +226,7 @@ int sitemapxml::url_info::get_frequency() const
 {
 	return f_frequency;
 }
+
 
 /** \brief Compare two sitemap entries to sort them.
  *
@@ -271,6 +281,7 @@ sitemapxml::sitemapxml()
 {
 }
 
+
 /** \brief Clean up the sitemapxml plugin.
  *
  * Ensure the sitemapxml object is clean before it is gone.
@@ -278,6 +289,7 @@ sitemapxml::sitemapxml()
 sitemapxml::~sitemapxml()
 {
 }
+
 
 /** \brief Get a pointer to the sitemapxml plugin.
  *
@@ -292,6 +304,7 @@ sitemapxml *sitemapxml::instance()
 {
 	return g_plugin_sitemapxml_factory.instance();
 }
+
 
 /** \brief Return the description of this plugin.
  *
@@ -319,11 +332,10 @@ void sitemapxml::on_bootstrap(::snap::snap_child *snap)
 {
 	f_snap = snap;
 
-	//std::cerr << " - Bootstrapping sitemapxml!\n";
-	//SNAP_LISTEN(sitemapxml, "server", server, update, _1); -- use do_update() instead
 	SNAP_LISTEN(sitemapxml, "robotstxt", robotstxt::robotstxt, generate_robotstxt, _1);
 	SNAP_LISTEN0(sitemapxml, "server", server, backend_process);
 }
+
 
 /** \brief Check whether updates are necessary.
  *
@@ -347,6 +359,7 @@ int64_t sitemapxml::do_update(int64_t last_updated)
 	SNAP_PLUGIN_UPDATE_EXIT();
 }
 
+
 /** \brief First update to run for the sitemapxml plugin.
  *
  * This function is the first update for the sitemapxml plugin. It installs
@@ -361,6 +374,7 @@ void sitemapxml::initial_update(int64_t variables_timestamp)
 	//path::path::instance()->add_path("sitemapxml", "sitemap.xml", variables_timestamp);
 }
 
+
 /** \brief Update the content with our references.
  *
  * Send our content to the database so the system can find us when a
@@ -374,6 +388,7 @@ void sitemapxml::content_update(int64_t variables_timestamp)
 	// find out that additional pages are required.
 	content::content::instance()->add_xml("sitemapxml");
 }
+
 
 /** \brief Implementation of the robotstxt signal.
  *
@@ -397,6 +412,7 @@ void sitemapxml::on_generate_robotstxt(robotstxt::robotstxt *r)
 {
 	r->add_robots_txt_field(f_snap->get_site_key() + "sitemap.xml", "Sitemap", "", true);
 }
+
 
 /** \brief Called whenever the user tries to access a sitemap.xml file.
  *
@@ -547,39 +563,16 @@ bool sitemapxml::on_path_execute(const QString& url)
  */
 bool sitemapxml::generate_sitemapxml_impl(sitemapxml *r)
 {
-	//QString table_name(snap::get_name(snap::SNAP_NAME_LINKS_INDEX));
-	//QSharedPointer<QtCassandra::QCassandraTable> table(f_snap->get_context()->findTable(table_name));
-	//if(table.isNull())
-	//{
-	//	// the table does not exist?!
-	//	// (since the links is a core plugin, that should not happen)
-	//	throw sitemapxml_exception_missing_links_table();
-	//}
-
 	QSharedPointer<QtCassandra::QCassandraTable> content_table(content::content::instance()->get_content_table());
-
-	// get the XML sitemap row
-	//QString row_key(site_key + "types/taxonomy/system/sitemapxml/include-in-xml-sitemap");
-	//QSharedPointer<QtCassandra::QCassandraRow> row(table->row(row_key));
-	//QtCassandra::QCassandraColumnRangePredicate column_predicate;
-	//column_predicate.setCount(1000);
-	//column_predicate.setIndex(); // behave like an index
-	//for(;;)
-	//{
-	//	row->clearCache();
-	//	row->readCells(column_predicate);
-	//	const QtCassandra::QCassandraCells& cells(row->cells());
-	//	if(cells.isEmpty())
-	//	{
-	//		break;
-	//	}
-	//	for(QtCassandra::QCassandraCells::const_iterator c(cells.begin());
-	//			c != cells.end();
-	//			++c)
-	//	{
+	if(content_table.isNull())
+	{
+		// the table does not exist?!
+		// (since the content is a core plugin, that should not happen)
+		throw sitemapxml_exception_missing_table("could not get the content table");
+	}
 
 	QString site_key(f_snap->get_site_key_with_slash());
-	links::link_info xml_sitemap_info("include_in_xml_sitemap", false, site_key + "types/taxonomy/system/sitemapxml/include-in-xml-sitemap");
+	links::link_info xml_sitemap_info("sitemapxml::include", false, site_key + "types/taxonomy/system/sitemapxml/include");
 	QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(xml_sitemap_info));
 	links::link_info xml_sitemap;
 	while(link_ctxt->next_link(xml_sitemap))
@@ -625,13 +618,14 @@ bool sitemapxml::generate_sitemapxml_impl(sitemapxml *r)
 	return true;
 }
 
+
 /** \brief Implementation of the backend process signal.
  *
  * This function captures the backend processing signal which is sent
  * by the server whenever the backend tool is run against a site.
  *
  * The XML sitemap plugin generates XML files file the list of
- * pages that registered themselves as "included-in-xml-sitemap".
+ * pages that registered themselves as "sitemapxml::include".
  */
 void sitemapxml::on_backend_process()
 {
@@ -743,6 +737,7 @@ void sitemapxml::on_backend_process()
 	content_table->row(sitemap_txt)->cell(content_modified)->setValue(start_date);
 printf("Updating [%s]\n", sitemap_xml.toUtf8().data());
 }
+
 
 /** \brief Add a URL to the XML sitemap.
  *

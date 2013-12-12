@@ -37,7 +37,6 @@
 namespace snap
 {
 
-
 enum name_t {
     SNAP_NAME_SERVER,        // The name of the Snap! Server
     SNAP_NAME_CONTEXT,        // Cassandra Keyspace
@@ -58,6 +57,25 @@ enum name_t {
     SNAP_NAME_CORE_COOKIE_DOMAIN
 };
 const char *get_name(name_t name);
+
+
+
+class snapwebsites_exception : public snap_exception
+{
+public:
+    snapwebsites_exception(const char *whatmsg) : snap_exception("snap_thread", whatmsg) {}
+    snapwebsites_exception(const std::string& whatmsg) : snap_exception("snap_thread", whatmsg) {}
+    snapwebsites_exception(const QString& whatmsg) : snap_exception("snap_thread", whatmsg) {}
+};
+
+class snapwebsites_exception_invalid_parameters : public snapwebsites_exception
+{
+public:
+    snapwebsites_exception_invalid_parameters(const char *whatmsg) : snapwebsites_exception(whatmsg) {}
+    snapwebsites_exception_invalid_parameters(const std::string& whatmsg) : snapwebsites_exception(whatmsg) {}
+    snapwebsites_exception_invalid_parameters(const QString& whatmsg) : snapwebsites_exception(whatmsg) {}
+};
+
 
 class server : public plugins::plugin
 {

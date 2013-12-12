@@ -47,7 +47,7 @@ const char *get_name(name_t name)
 
     default:
         // invalid index
-        throw snap_exception();
+        throw snap_logic_exception("invalid SNAP_NAME_LINKS_...");
 
     }
     NOTREACHED();
@@ -81,15 +81,15 @@ const char *get_name(name_t name)
  * unique flag can be used to transform it to: one to many or one to one
  * link.
  *
- * The name of the columns is set to include a number when unique is false.
- * The gives us a many to many or many to one link capability:
+ * A number is appended to the column names when \p unique is false.
+ * This gives us a many to many or many to one link capability:
  *
- *   "links::<name>-<number>"
+ *   "links::<plugin name>::<link name>-<server name>-<unique number>"
  *
  * When the unique flag is set to true, the name of the column does not
- * include a number:
+ * include the unique number:
  *
- *   "links::<name>"
+ *   "links::<plugin name>::<link name>"
  *
  * \param[in] new_name  The name of the link used as the column name.
  * \param[in] unique  The unique flag, if true it means 'one', of false, it manes 'many'
@@ -105,9 +105,13 @@ const char *get_name(name_t name)
  * The key actually represents the exact name of the row where the link is
  * saved.
  *
- * The destination (i.e the data of the link) is defined from another link_info
- * (i.e. the on_create_link() uses source (src) and destination (dst)
- * parameters which are both link_info.)
+ * The destination (i.e the data of the link) is defined using another
+ * link_info (i.e. the on_create_link() uses source (src) and
+ * destination (dst) parameters which are both link_info.)
+ *
+ * \note
+ * What changes depending on the link category (unique or not) is the
+ * column name.
  * 
  * \param[in] new_key  The key to the row where the link is to be saved.
  *
@@ -118,9 +122,11 @@ const char *get_name(name_t name)
  * \brief Check whether this link is marked as unique.
  *
  * The function returns the current value of the unique flag as set on
- * construction or with the set_name() function.
+ * construction. It can be changed with the set_name() function as
+ * the second parameter. By default the set_name() function assumes that
+ * the link is not unique (many).
  *
- * \return true if the link is unique (one to many or one to one)
+ * \return true if the link is unique (one to many, many to one, or one to one)
  *
  * \sa set_name()
  */
@@ -128,10 +134,11 @@ const char *get_name(name_t name)
 /** \fn const QString& link_info::name() const
  * \brief Retrieve the name of the link.
  *
- * The function returns the name the link as set on construction
+ * The function returns the name of the link as set on construction
  * or with the set_name() function.
  *
- * \return the name of the link that is used to form the name of the column
+ * \return The name of the link that is used to form the full name of
+ *         the column.
  *
  * \sa set_name()
  */
@@ -140,7 +147,7 @@ const char *get_name(name_t name)
  * \brief Retrieve the key of the link.
  *
  * The function returns the key for the link as set on construction
- * or with the set_name() function.
+ * or with the set_key() function.
  *
  * \return the key of the link that is used as the row key
  *
@@ -150,9 +157,11 @@ const char *get_name(name_t name)
 /** \var controlled_vars::zbool_t link_info::f_unique;
  * \brief Unique (one) or not (many) links.
  *
- * This flag is used to save whether the link is unique or not.
+ * This flag is used to tell the link system whether the link is
+ * unique or not.
  *
- * \sa set_name()
+ * \sa is_unique() const
+ * \sa set_name() const
  */
 
 /** \var QString link_info::f_name;
@@ -160,6 +169,7 @@ const char *get_name(name_t name)
  *
  * The name of the column used for the link.
  *
+ * \sa name() const
  * \sa set_name()
  */
 
@@ -174,32 +184,111 @@ const char *get_name(name_t name)
 
 /** \brief Verify that the name is valid.
  *
- * Because the links system makes use of the name in a certain way, we
- * want to ensure that the name is valid.
+ * Because of the way the link plugin makes use of the link name, we
+ * want to make sure that the name is valid according to the rules
+ * defined below. The main reason is so we can avoid problems. A
+ * link name is expected to include a plugin name and a link name.
+ * There may be more than once plugin name when useful. For example,
+ * the "permissions::users::edit" link name is considered valid.
  *
- * A valid name includes letters A to Z in upper or lower case,
- * digits 0 to 9, and underscores. Any other character is illegal.
+ * For links that are not unique, the system appends the server name
+ * and a unique number separated by dashes. This is why the link plugin
+ * forbids the provided link names from including a dash.
  *
- * Note that the system adds -<server>-<counter> to the name when
- * multiple links can exist (one to many, many to many).
+ * So, a link name in the database looks like this:
+ *
+ * \code
+ *    links::(<plugin-name>::)+<link-name>
+ *    links::(<plugin-name>::)+<link-name>-<server-name>-<unique-number>
+ * \endcode
+ *
+ * Valid link and plugin names are defined with the following BNF:
+ *
+ * \code
+ *   plugin_name ::= link_name
+ *   link_name ::= word
+ *               | word '::' link_name
+ *   word ::= letters | digits | '_'
+ *   letters ::= ['A'-'Z']
+ *             | ['a'-'z']
+ *   digits ::= ['0'-'9']
+ * \endcode
+ *
+ * As we can see, this BNF does not allow for any '-' in the link name.
+ *
+ * \note
+ * It is to be noted that the syntax allows for a name to start with a
+ * digit. This may change in the future and only letters may be allowed.
  *
  * \exception links_exception_invalid_name
  * The links_exception_invalid_name is raised if the name is not valid.
+ *
+ * \param[in] vname  The name to be verified
  */
-void link_info::verify_name()
+void link_info::verify_name(const QString& vname)
 {
-    for(QString::const_iterator it(f_name.begin()); it != f_name.end(); ++it)
+    // the namespace is really only for debug purposes
+    // but at this time we'll keep it for security
+    const char *links_namespace(get_name(SNAP_NAME_LINKS_NAMESPACE));
+    QString ns;
+    ns.reserve(64);
+    bool has_namespace(false);
+    for(QString::const_iterator it(vname.begin()); it != vname.end(); ++it)
     {
         ushort c = it->unicode();
+        if(c == ':' && it != vname.begin())
+        {
+            // although "links" is a valid name, it is in conflict because
+            // out column name already starts with "links::" and it is not
+            // unlikely that a programmer is trying to make sure that the
+            // start of the name is "links::"...
+            if(ns == links_namespace)
+            {
+                throw links_exception_invalid_name("name \"" + vname + "\" is not acceptable, a name cannot make use of the \"links\" namespace");
+            }
+            ns.clear(); // TBD does that free the reserved buffer?
+
+            // we found a ':' which was not the very first character
+            ++it;
+            if(it == vname.end())
+            {
+                throw links_exception_invalid_name("name \"" + vname + "\" is not acceptable, a name cannot end with a ':'");
+            }
+            if(it->unicode() != ':')
+            {
+                throw links_exception_invalid_name("name \"" + vname + "\" is not acceptable, the namespace operator must be '::'");
+            }
+            ++it;
+            if(it == vname.end())
+            {
+                throw links_exception_invalid_name("name \"" + vname + "\" is not acceptable, a name cannot end with a namespace operator '::'");
+            }
+            // we must have a character that's not a ':' after a '::'
+            c = it->unicode();
+            has_namespace = true;
+        }
+        // colons are not acceptable here, we must have a valid character not
         if((c < '0' || c > '9')
         && (c < 'A' || c > 'Z')
         && (c < 'a' || c > 'z')
-        && c != '_')
+        && c == '_')
         {
-            throw links_exception_invalid_name();
+            throw links_exception_invalid_name("name \"" + vname + "\" is not acceptable, character '" + QChar(c) + "' is not valid");
         }
+        ns += c;
+    }
+    if(!has_namespace)
+    {
+        // at least one namespace is mandatory
+        throw links_exception_invalid_name("name \"" + vname + "\" is not acceptable, at least one namespace is expected");
+    }
+
+    if(ns == links_namespace)
+    {
+        throw links_exception_invalid_name("name \"" + vname + "\" is not acceptable, a name cannot end with \"links\"");
     }
 }
+
 
 /** \brief Retrieve the data to be saved in the database.
  *
@@ -230,14 +319,14 @@ void link_info::from_data(const QString& db_data)
     QStringList lines(db_data.split('\n'));
     if(lines.count() != 2)
     {
-        throw links_exception_invalid_db_data();
+        throw links_exception_invalid_db_data("db_data is not exactly 2 lines");
     }
     QStringList key_data(lines[0].split('='));
     QStringList name_data(lines[1].split('='));
     if(key_data.count() != 2 || name_data.count() != 2
     || key_data[0] != "key" || name_data[0] != "name")
     {
-        throw links_exception_invalid_db_data();
+        throw links_exception_invalid_db_data("db_data variables are not key and name");
     }
     set_key(key_data[1]);
     set_name(name_data[1], f_unique);
@@ -275,11 +364,11 @@ link_context::link_context(::snap::snap_child *snap, const link_info& info)
         if(table.isNull())
         {
             // the table does not exist?!
-            throw links_exception_missing_content_table();
+            throw links_exception_missing_content_table("could not get the content table");
         }
         // f_row remains null (isNull() returns true)
         //QSharedPointer<QtCassandra::QCassandraRow> row(table->row(f_info.key()));
-        QString links_namespace(get_name(SNAP_NAME_LINKS_NAMESPACE));
+        const QString links_namespace(get_name(SNAP_NAME_LINKS_NAMESPACE));
 //printf("links: content read row key [%s] cell [%s]\n", f_info.key().toUtf8().data(), (links_namespace + "::" + f_info.name()).toUtf8().data());
         QtCassandra::QCassandraValue link(content::content::instance()->get_content_table()->row(f_info.key())->cell(links_namespace + "::" + f_info.name())->value());
         if(!link.nullValue())
@@ -297,7 +386,7 @@ link_context::link_context(::snap::snap_child *snap, const link_info& info)
         {
             // the table does not exist?!
             // (since the links is a core plugin, that should not happen)
-            throw links_exception_missing_links_table();
+            throw links_exception_missing_links_table("could not find the links table");
         }
         f_row = table->row(f_info.key());
         // TBD: should we give the caller the means to change this 1,000 count?
@@ -520,7 +609,7 @@ void links::init_tables()
         if(table.isNull())
         {
             // the table does not exist?!
-            throw links_exception_missing_links_table();
+            throw links_exception_missing_links_table("could not find the links table");
         }
         f_links_table = table;
     }
@@ -532,7 +621,7 @@ void links::init_tables()
         if(table.isNull())
         {
             // links cannot work if the content table doesn't already exist
-            throw links_exception_missing_content_table();
+            throw links_exception_missing_content_table("could not get the content table");
         }
         f_content_table = table;
     }
@@ -619,7 +708,7 @@ void links::create_link(const link_info& src, const link_info& dst)
 
     init_tables();
 
-    QString links_namespace(get_name(SNAP_NAME_LINKS_NAMESPACE));
+    const QString links_namespace(get_name(SNAP_NAME_LINKS_NAMESPACE));
     src_col = links_namespace + "::" + src.name();
     if(!src.is_unique())
     {
@@ -887,7 +976,7 @@ void links::delete_link(const link_info& info)
                             QSharedPointer<QtCassandra::QCassandraRow> link_row(f_links_table->row(key));
                             // here we have a "*:*" although note that we want to
                             // only delete one link in this destination
-                            QString dest_cell_unique_name(links_namespace + "::" + cell_iterator.value()->value().stringValue());
+                            const QString dest_cell_unique_name(links_namespace + "::" + cell_iterator.value()->value().stringValue());
                             if(!link_row->exists(dest_cell_unique_name))
                             {
                                 // the destination does not exist anywhere!?

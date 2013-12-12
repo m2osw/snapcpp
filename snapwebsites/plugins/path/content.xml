@@ -32,7 +32,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 ]>
 <snap-tree>
   <!-- we want to support stuff like pathauto, remap, redirect, etc. -->
-  <content path="/admin/path/settings"/>
+  <content path="/admin/settings/path">
+    <param name="content::title">Path Settings</param>
+    <param name="content::body" overwrite="yes">
+      <![CDATA[<p>Administer your path environment.</p>]]>
+    </param>
+  </content>
 </snap-tree>
 <!-- vim: ts=2 sw=2 et syntax=xml
 -->

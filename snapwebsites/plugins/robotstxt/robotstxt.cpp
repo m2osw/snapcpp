@@ -281,7 +281,7 @@ void robotstxt::add_robots_txt_field(const QString& value,
 {
     if(field.isEmpty())
     {
-        throw robotstxt_exception_invalid_field_name();
+        throw robotstxt_exception_invalid_field_name("robots.txt field name cannot be empty");
     }
 
     robots_field_array_t& d = f_robots_txt[robot];
@@ -292,7 +292,7 @@ void robotstxt::add_robots_txt_field(const QString& value,
         {
             if(i->f_field == field)
             {
-                throw robotstxt_exception_invalid_field_name();
+                throw robotstxt_exception_already_defined("field \"" + field + "\" is already defined");
             }
         }
     }

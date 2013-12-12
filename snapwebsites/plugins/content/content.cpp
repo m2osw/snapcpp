@@ -39,8 +39,14 @@ SNAP_PLUGIN_START(content, 1, 0)
 const char *get_name(name_t name)
 {
     switch(name) {
-    case SNAP_NAME_CONTENT_TABLE: // pages, tags, comments, etc.
-        return "content";
+    case SNAP_NAME_CONTENT_ACCEPTED:
+        return "content::accepted";
+
+    case SNAP_NAME_CONTENT_BODY:
+        return "content::body";
+
+    case SNAP_NAME_CONTENT_CHILDREN:
+        return "content::children";
 
     case SNAP_NAME_CONTENT_CONTENT_TYPES:
         return "Content Types";
@@ -48,51 +54,51 @@ const char *get_name(name_t name)
     case SNAP_NAME_CONTENT_CONTENT_TYPES_NAME:
         return "content_types";
 
-    case SNAP_NAME_CONTENT_PAGE_CONTENT_TYPE:
-        return "page_content_type";
-
-    case SNAP_NAME_CONTENT_TITLE:
-        return "content::title";
-
-    case SNAP_NAME_CONTENT_SHORT_TITLE:
-        return "content::short_title";
-
-    case SNAP_NAME_CONTENT_LONG_TITLE:
-        return "content::long_title";
-
-    case SNAP_NAME_CONTENT_BODY:
-        return "content::body";
+    case SNAP_NAME_CONTENT_COPYRIGHTED:
+        return "content::copyrighted";
 
     case SNAP_NAME_CONTENT_CREATED:
         return "content::created";
 
-    case SNAP_NAME_CONTENT_UPDATED:
-        return "content::updated";
+    case SNAP_NAME_CONTENT_ISSUED:
+        return "content::issued";
+
+    case SNAP_NAME_CONTENT_LONG_TITLE:
+        return "content::long_title";
 
     case SNAP_NAME_CONTENT_MODIFIED:
         return "content::modified";
 
-    case SNAP_NAME_CONTENT_ACCEPTED:
-        return "content::accepted";
+    case SNAP_NAME_CONTENT_PAGE_CONTENT_TYPE:
+        return "content::type::page";
 
-    case SNAP_NAME_CONTENT_SUBMITTED:
-        return "content::submitted";
+    case SNAP_NAME_CONTENT_PARENT:
+        return "content::parent";
+
+    case SNAP_NAME_CONTENT_SHORT_TITLE:
+        return "content::short_title";
 
     case SNAP_NAME_CONTENT_SINCE:
         return "content::since";
 
+    case SNAP_NAME_CONTENT_SUBMITTED:
+        return "content::submitted";
+
+    case SNAP_NAME_CONTENT_TABLE: // pages, tags, comments, etc.
+        return "content";
+
+    case SNAP_NAME_CONTENT_TITLE:
+        return "content::title";
+
     case SNAP_NAME_CONTENT_UNTIL:
         return "content::until";
 
-    case SNAP_NAME_CONTENT_COPYRIGHTED:
-        return "content::copyrighted";
-
-    case SNAP_NAME_CONTENT_ISSUED:
-        return "content::issued";
+    case SNAP_NAME_CONTENT_UPDATED:
+        return "content::updated";
 
     default:
         // invalid index
-        throw snap_exception();
+        throw snap_logic_exception("invalid SNAP_NAME_CONTENT_...");
 
     }
     NOTREACHED();
@@ -305,8 +311,8 @@ bool content::create_content_impl(const QString& path, const QString& owner)
         parts.pop_back();
         QString dst(parts.join("/"));
         dst = site_key + dst;
-        links::link_info source("parent", true, src);
-        links::link_info destination("children", false, dst);
+        links::link_info source(get_name(SNAP_NAME_CONTENT_PARENT), true, src);
+        links::link_info destination(get_name(SNAP_NAME_CONTENT_CHILDREN), false, dst);
 // TODO only repeat if the parent did not exist, otherwise we assume the
 //      parent created its own parent/children link already.
 //printf("parent/children [%s]/[%s]\n", src.toUtf8().data(), dst.toUtf8().data());
@@ -687,8 +693,9 @@ QtCassandra::QCassandraValue content::get_content_parameter(const QString& path,
  * The content is not immediately added to the database because
  * of dependency issues. At the time all the content is added
  * using this function, the order in which it is added is not
- * generally proper proper (i.e. the taxonomy "/type" may be
- * added after the content "/type/content-types".)
+ * generally proper (i.e. the taxonomy "/types" may be
+ * added after the content "/types/taxonomy/system/content-types"
+ * which would then fail.)
  *
  * The content plugin saves this data when it receives the
  * save_content signal.
@@ -708,20 +715,20 @@ void content::add_xml(const QString& plugin_name)
     if(!plugins::verify_plugin_name(plugin_name))
     {
         // invalid plugin name
-        throw std::runtime_error(("add_xml() called with an invalid plugin name: \"" + plugin_name + "\"").toUtf8().data());
+        throw content_exception_invalid_content_xml("add_xml() called with an invalid plugin name: \"" + plugin_name + "\"");
     }
     QString filename(":/plugins/" + plugin_name + "/content.xml");
     QFile xml_content(filename);
     if(!xml_content.open(QFile::ReadOnly))
     {
         // file not found
-        throw std::runtime_error(("add_xml() cannot open file: \"" + filename + "\"").toUtf8().data());
+        throw content_exception_invalid_content_xml("add_xml() cannot open file: \"" + filename + "\"");
     }
     QDomDocument dom;
     if(!dom.setContent(&xml_content, false))
     {
         // invalid XML
-        throw std::runtime_error(("add_xml() cannot read the XML of content file: \"" + filename + "\"").toUtf8().data());
+        throw content_exception_invalid_content_xml("add_xml() cannot read the XML of content file: \"" + filename + "\"");
     }
     QDomNodeList content_nodes(dom.elementsByTagName("content"));
     int max(content_nodes.size());
@@ -743,7 +750,7 @@ void content::add_xml(const QString& plugin_name)
         QString path(content_element.attribute("path"));
         if(path.isEmpty())
         {
-            throw std::runtime_error("all <content> tags supplied to add_xml() must include a valid \"path\" attribute");
+            throw content_exception_invalid_content_xml("all <content> tags supplied to add_xml() must include a valid \"path\" attribute");
         }
         f_snap->canonicalize_path(path);
         QString key(f_snap->get_site_key_with_slash() + path);
@@ -775,7 +782,7 @@ void content::add_xml(const QString& plugin_name)
                 QString param_name(element.attribute("name"));
                 if(param_name.isEmpty())
                 {
-                    throw std::runtime_error("all <param> tags supplied to add_xml() must include a valid \"name\" attribute");
+                    throw content_exception_invalid_content_xml("all <param> tags supplied to add_xml() must include a valid \"name\" attribute");
                 }
 
                 // 1) prepare the buffer
@@ -845,18 +852,36 @@ void content::add_xml(const QString& plugin_name)
                     set_param_overwrite(key, fullname, true);
                 }
             }
-            // <link name=... to=...> destination path </link>
+            // <link name=... to=... [mode="1/*:1/*"]> destination path </link>
             else if(element.tagName() == "link")
             {
                 QString link_name(element.attribute("name"));
                 if(link_name.isEmpty())
                 {
-                    throw std::runtime_error("all <link> tags supplied to add_xml() must include a valid \"name\" attribute");
+                    throw content_exception_invalid_content_xml("all <link> tags supplied to add_xml() must include a valid \"name\" attribute");
+                }
+                if(link_name == plugin_name)
+                {
+                    throw content_exception_invalid_content_xml("the \"name\" attribute of a <link> tags cannot be set to the plugin name (" + plugin_name + ")");
+                }
+                if(!link_name.contains("::"))
+                {
+                    // force the owner in the link name
+                    link_name = plugin_name + "::" + link_name;
                 }
                 QString link_to(element.attribute("to"));
                 if(link_to.isEmpty())
                 {
-                    throw std::runtime_error("all <link> tags supplied to add_xml() must include a valid \"to\" attribute");
+                    throw content_exception_invalid_content_xml("all <link> tags supplied to add_xml() must include a valid \"to\" attribute");
+                }
+                if(link_to == plugin_name)
+                {
+                    throw content_exception_invalid_content_xml("the \"to\" attribute of a <link> tags cannot be set to the plugin name (" + plugin_name + ")");
+                }
+                if(!link_to.contains("::"))
+                {
+                    // force the owner in the link name
+                    link_to = plugin_name + "::" + link_to;
                 }
                 bool source_unique(true);
                 bool destination_unique(true);
@@ -878,7 +903,7 @@ void content::add_xml(const QString& plugin_name)
                     }
                     else
                     {
-                        throw std::runtime_error("<link> tags mode attribute must be one of \"1:1\", \"1:*\", \"*:1\", or \"*:*\"");
+                        throw content_exception_invalid_content_xml("<link> tags mode attribute must be one of \"1:1\", \"1:*\", \"*:1\", or \"*:*\"");
                     }
                 }
                 // the destination URL is defined in the <link> content
@@ -892,6 +917,7 @@ void content::add_xml(const QString& plugin_name)
         }
     }
 }
+
 
 /** \brief Prepare to add content to the database.
  *
@@ -922,7 +948,7 @@ void content::add_content(const QString& path, const QString& plugin_owner)
         if(b->f_owner != plugin_owner)
         {
             // cannot change owner!?
-            throw content_exception_content_already_defined();
+            throw content_exception_content_already_defined("adding block \"" + path + "\" with owner \"" + b->f_owner + "\" cannot be changed to \"" + plugin_owner + "\"");
         }
         // it already exists, we're all good
         return;
@@ -936,6 +962,7 @@ void content::add_content(const QString& path, const QString& plugin_owner)
 
     f_snap->new_content();
 }
+
 
 /** \brief Add a parameter to the content to be saved in the database.
  *
@@ -981,7 +1008,7 @@ void content::add_param(const QString& path, const QString& name, const QString&
     content_block_map_t::iterator b(f_blocks.find(path));
     if(b == f_blocks.end())
     {
-        throw content_exception_parameter_not_defined();
+        throw content_exception_parameter_not_defined("no block with path \"" + path + "\" was found");
     }
 
     content_params_t::iterator p(b->f_params.find(name));
@@ -1002,6 +1029,7 @@ void content::add_param(const QString& path, const QString& name, const QString&
         p->f_data = data;
     }
 }
+
 
 /** \brief Set the overwrite flag to a specific parameter.
  *
@@ -1025,17 +1053,18 @@ void content::set_param_overwrite(const QString& path, const QString& name, bool
     content_block_map_t::iterator b(f_blocks.find(path));
     if(b == f_blocks.end())
     {
-        throw content_exception_parameter_not_defined();
+        throw content_exception_parameter_not_defined("no block with path \"" + path + "\" found");
     }
 
     content_params_t::iterator p(b->f_params.find(name));
     if(p == b->f_params.end())
     {
-        throw content_exception_parameter_not_defined();
+        throw content_exception_parameter_not_defined("no param with name \"" + path + "\" found in block \"" + path + "\"");
     }
 
     p->f_overwrite = overwrite;
 }
+
 
 /** \brief Add a link to the specified content.
  *
@@ -1078,7 +1107,7 @@ void content::add_link(const QString& path, const links::link_info& source, cons
     content_block_map_t::iterator b(f_blocks.find(path));
     if(b == f_blocks.end())
     {
-        throw content_exception_parameter_not_defined();
+        throw content_exception_parameter_not_defined("no block with path \"" + path + "\" found");
     }
 
     content_link link;
@@ -1086,6 +1115,7 @@ void content::add_link(const QString& path, const links::link_info& source, cons
     link.f_destination = destination;
     b->f_links.push_back(link);
 }
+
 
 /** \brief Signal received when the system request that we save content.
  *
@@ -1171,8 +1201,8 @@ void content::on_save_content()
             parts.pop_back();
             QString dst(parts.join("/"));
             dst = site_key + dst;
-            links::link_info source("parent", true, src);
-            links::link_info destination("children", false, dst);
+            links::link_info source(get_name(SNAP_NAME_CONTENT_PARENT), true, src);
+            links::link_info destination(get_name(SNAP_NAME_CONTENT_CHILDREN), false, dst);
 // TODO only repeat if the parent did not exist, otherwise we assume the
 //      parent created its own parent/children link already.
 //printf("parent/children [%s]/[%s]\n", src.toUtf8().data(), dst.toUtf8().data());

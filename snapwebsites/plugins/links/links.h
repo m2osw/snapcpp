@@ -32,11 +32,47 @@ enum name_t {
 const char *get_name(name_t name);
 
 
-class links_exception : public snap_exception {};
-class links_exception_missing_links_table : public links_exception {};
-class links_exception_missing_content_table : public links_exception {};
-class links_exception_invalid_name : public links_exception {};
-class links_exception_invalid_db_data : public links_exception {};
+class links_exception : public snap_exception
+{
+public:
+    links_exception(const char *what_msg) : snap_exception("Links: " + std::string(what_msg)) {}
+    links_exception(const std::string& what_msg) : snap_exception("Links: " + what_msg) {}
+    links_exception(const QString& what_msg) : snap_exception("Links: " + what_msg) {}
+};
+
+class links_exception_missing_links_table : public links_exception
+{
+public:
+    links_exception_missing_links_table(const char *what_msg) : links_exception(what_msg) {}
+    links_exception_missing_links_table(const std::string& what_msg) : links_exception(what_msg) {}
+    links_exception_missing_links_table(const QString& what_msg) : links_exception(what_msg) {}
+};
+
+class links_exception_missing_content_table : public links_exception
+{
+public:
+    links_exception_missing_content_table(const char *what_msg) : links_exception(what_msg) {}
+    links_exception_missing_content_table(const std::string& what_msg) : links_exception(what_msg) {}
+    links_exception_missing_content_table(const QString& what_msg) : links_exception(what_msg) {}
+};
+
+class links_exception_invalid_name : public links_exception
+{
+public:
+    links_exception_invalid_name(const char *what_msg) : links_exception(what_msg) {}
+    links_exception_invalid_name(const std::string& what_msg) : links_exception(what_msg) {}
+    links_exception_invalid_name(const QString& what_msg) : links_exception(what_msg) {}
+};
+
+class links_exception_invalid_db_data : public links_exception
+{
+public:
+    links_exception_invalid_db_data(const char *what_msg) : links_exception(what_msg) {}
+    links_exception_invalid_db_data(const std::string& what_msg) : links_exception(what_msg) {}
+    links_exception_invalid_db_data(const QString& what_msg) : links_exception(what_msg) {}
+};
+
+
 
 class link_info
 {
@@ -46,14 +82,14 @@ public:
         , f_name(new_name)
         , f_key(new_key)
     {
-        verify_name();
+        verify_name(new_name);
     }
 
     void set_name(const QString& new_name, bool unique = false)
     {
+        verify_name(new_name);
         f_unique = unique;
         f_name = new_name;
-        verify_name();
     }
     void set_key(const QString& new_key)
     {
@@ -76,9 +112,9 @@ public:
     QString data() const;
     void from_data(const QString& db_data);
 
-private:
-    void verify_name();
+    static void verify_name(const QString& name);
 
+private:
     controlled_vars::fbool_t    f_unique;
     QString                     f_name;
     QString                     f_key;

@@ -28,31 +28,69 @@ namespace content
 {
 
 enum name_t {
-    SNAP_NAME_CONTENT_TABLE,         // Cassandra Table used for content (pages, comments, tags, vocabularies, etc.)
+    SNAP_NAME_CONTENT_ACCEPTED,
+    SNAP_NAME_CONTENT_BODY,
+    SNAP_NAME_CONTENT_CHILDREN,
     SNAP_NAME_CONTENT_CONTENT_TYPES,
     SNAP_NAME_CONTENT_CONTENT_TYPES_NAME,
-    SNAP_NAME_CONTENT_PAGE_CONTENT_TYPE,
-    SNAP_NAME_CONTENT_TITLE,
-    SNAP_NAME_CONTENT_SHORT_TITLE,
-    SNAP_NAME_CONTENT_LONG_TITLE,
-    SNAP_NAME_CONTENT_BODY,
-    SNAP_NAME_CONTENT_CREATED,
-    SNAP_NAME_CONTENT_UPDATED,
-    SNAP_NAME_CONTENT_MODIFIED,
-    SNAP_NAME_CONTENT_ACCEPTED,
-    SNAP_NAME_CONTENT_SUBMITTED,
-    SNAP_NAME_CONTENT_SINCE,
-    SNAP_NAME_CONTENT_UNTIL,
     SNAP_NAME_CONTENT_COPYRIGHTED,
-    SNAP_NAME_CONTENT_ISSUED
+    SNAP_NAME_CONTENT_CREATED,
+    SNAP_NAME_CONTENT_ISSUED,
+    SNAP_NAME_CONTENT_LONG_TITLE,
+    SNAP_NAME_CONTENT_MODIFIED,
+    SNAP_NAME_CONTENT_PAGE_CONTENT_TYPE,
+    SNAP_NAME_CONTENT_PARENT,
+    SNAP_NAME_CONTENT_SHORT_TITLE,
+    SNAP_NAME_CONTENT_SINCE,
+    SNAP_NAME_CONTENT_SUBMITTED,
+    SNAP_NAME_CONTENT_TABLE,         // Cassandra Table used for content (pages, comments, tags, vocabularies, etc.)
+    SNAP_NAME_CONTENT_TITLE,
+    SNAP_NAME_CONTENT_UNTIL,
+    SNAP_NAME_CONTENT_UPDATED
 };
 const char *get_name(name_t name);
 
 
-class content_exception : public snap_exception {};
-class content_exception_parameter_not_defined : public content_exception {};
-class content_exception_content_already_defined : public content_exception {};
-class content_exception_circular_dependencies : public content_exception {};
+class content_exception : public snap_exception
+{
+public:
+    content_exception(const char *what_msg) : snap_exception("Content: " + std::string(what_msg)) {}
+    content_exception(const std::string& what_msg) : snap_exception("Content: " + what_msg) {}
+    content_exception(const QString& what_msg) : snap_exception("Content: " + what_msg.toStdString()) {}
+};
+
+class content_exception_invalid_content_xml : public content_exception
+{
+public:
+    content_exception_invalid_content_xml(const char *what_msg) : content_exception(what_msg) {}
+    content_exception_invalid_content_xml(const std::string& what_msg) : content_exception(what_msg) {}
+    content_exception_invalid_content_xml(const QString& what_msg) : content_exception(what_msg) {}
+};
+
+class content_exception_parameter_not_defined : public content_exception
+{
+public:
+    content_exception_parameter_not_defined(const char *what_msg) : content_exception(what_msg) {}
+    content_exception_parameter_not_defined(const std::string& what_msg) : content_exception(what_msg) {}
+    content_exception_parameter_not_defined(const QString& what_msg) : content_exception(what_msg) {}
+};
+
+class content_exception_content_already_defined : public content_exception
+{
+public:
+    content_exception_content_already_defined(const char *what_msg) : content_exception(what_msg) {}
+    content_exception_content_already_defined(const std::string& what_msg) : content_exception(what_msg) {}
+    content_exception_content_already_defined(const QString& what_msg) : content_exception(what_msg) {}
+};
+
+class content_exception_circular_dependencies : public content_exception
+{
+public:
+    content_exception_circular_dependencies(const char *what_msg) : content_exception(what_msg) {}
+    content_exception_circular_dependencies(const std::string& what_msg) : content_exception(what_msg) {}
+    content_exception_circular_dependencies(const QString& what_msg) : content_exception(what_msg) {}
+};
+
 
 class content : public plugins::plugin, public path::path_execute, public layout::layout_content, public javascript::javascript_dynamic_plugin
 {

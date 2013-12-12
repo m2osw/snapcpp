@@ -70,28 +70,28 @@ snap_thread::snap_mutex::snap_mutex()
     if(err != 0)
     {
         SNAP_LOG_FATAL("a mutex attribute structure could not be initialized, error #")(err);
-        throw snap_thread_exception_invalid_error();
+        throw snap_thread_exception_invalid_error("pthread_muteattr_init() failed");
     }
     err = pthread_mutexattr_settype(&mattr, PTHREAD_MUTEX_RECURSIVE);
     if(err != 0)
     {
         SNAP_LOG_FATAL("a mutex attribute structure type could not be setup, error #")(err);
         pthread_mutexattr_destroy(&mattr);
-        throw snap_thread_exception_invalid_error();
+        throw snap_thread_exception_invalid_error("pthread_muteattr_settype() failed");
     }
     err = pthread_mutex_init(&f_mutex, &mattr);
     if(err != 0)
     {
         SNAP_LOG_FATAL("a mutex structure could not be initialized, error #")(err);
         pthread_mutexattr_destroy(&mattr);
-        throw snap_thread_exception_invalid_error();
+        throw snap_thread_exception_invalid_error("pthread_mutex_init() failed");
     }
     err = pthread_mutexattr_destroy(&mattr);
     if(err != 0)
     {
         SNAP_LOG_FATAL("a mutex attribute structure could not be destroyed, error #")(err);
         pthread_mutex_destroy(&f_mutex);
-        throw snap_thread_exception_invalid_error();
+        throw snap_thread_exception_invalid_error("pthread_mutexattr_destroy() failed");
     }
 
     pthread_condattr_t cattr;
@@ -100,7 +100,7 @@ snap_thread::snap_mutex::snap_mutex()
     {
         SNAP_LOG_FATAL("a mutex condition attribute structure could not be initialized, error #")(err);
         pthread_mutex_destroy(&f_mutex);
-        throw snap_thread_exception_invalid_error();
+        throw snap_thread_exception_invalid_error("pthread_condattr_init() failed");
     }
     err = pthread_cond_init(&f_condition, &cattr);
     if(err != 0)
@@ -108,14 +108,14 @@ snap_thread::snap_mutex::snap_mutex()
         SNAP_LOG_FATAL("a mutex condition structure could not be initialized, error #")(err);
         pthread_condattr_destroy(&cattr);
         pthread_mutex_destroy(&f_mutex);
-        throw snap_thread_exception_invalid_error();
+        throw snap_thread_exception_invalid_error("pthread_cond_init() failed");
     }
     err = pthread_condattr_destroy(&cattr);
     if(err != 0)
     {
         SNAP_LOG_FATAL("a mutex condition attribute structure could not be initialized, error #")(err);
         pthread_mutex_destroy(&f_mutex);
-        throw snap_thread_exception_invalid_error();
+        throw snap_thread_exception_invalid_error("pthread_condattr_destroy() failed");
     }
 }
 
@@ -167,7 +167,7 @@ void snap_thread::snap_mutex::lock()
     if(err != 0)
     {
         SNAP_LOG_ERROR("a mutex lock generated error #")(err);
-        throw snap_thread_exception_invalid_error();
+        throw snap_thread_exception_invalid_error("pthread_mutex_lock() failed");
     }
 
     // note: we don't need an atomic call since we
@@ -198,7 +198,7 @@ bool snap_thread::snap_mutex::try_lock()
     else if(err != EBUSY)
     {
         SNAP_LOG_ERROR("a mutex try lock generated error #")(err);
-        throw snap_thread_exception_invalid_error();
+        throw snap_thread_exception_invalid_error("pthread_mutex_trylock() failed");
     }
 
     return err == 0;
@@ -225,7 +225,7 @@ void snap_thread::snap_mutex::unlock()
     if(f_reference_count <= 0UL)
     {
         SNAP_LOG_FATAL("attempting to unlock a mutex when it is still locked ")(f_reference_count)(" times");
-        throw snap_thread_exception_not_locked_error();
+        throw snap_thread_exception_not_locked_error("unlock was called too many times");
     }
 
     // NOTE: we don't need an atomic call since we
@@ -236,7 +236,7 @@ void snap_thread::snap_mutex::unlock()
     if(err != 0)
     {
         SNAP_LOG_ERROR("a mutex unlock generated error #")(err);
-        throw snap_thread_exception_invalid_error();
+        throw snap_thread_exception_invalid_error("pthread_mutex_unlock() failed");
     }
 }
 
@@ -271,9 +271,9 @@ void snap_thread::snap_mutex::wait()
     int err(pthread_cond_wait(&f_condition, &f_mutex));
     if(err != 0)
     {
-        // an error occured!
+        // an error occurred!
         SNAP_LOG_ERROR("a mutex conditional wait generated error #")(err);
-        throw snap_thread_exception_mutex_failed_error();
+        throw snap_thread_exception_mutex_failed_error("pthread_cond_wait() failed");
     }
 }
 
@@ -322,7 +322,7 @@ bool snap_thread::snap_mutex::timed_wait(uint64_t usec)
     {
         err = errno;
         SNAP_LOG_FATAL("gettimeofday() failed with ")(err);
-        throw snap_thread_exception_system_error();
+        throw snap_thread_exception_system_error("gettimeofday() failed");
     }
 
     // now + user specified usec
@@ -343,9 +343,9 @@ bool snap_thread::snap_mutex::timed_wait(uint64_t usec)
             return false;
         }
 
-        // an error occured!
+        // an error occurred!
         SNAP_LOG_ERROR("a mutex conditional timed wait generated error #")(err);
-        throw snap_thread_exception_mutex_failed_error();
+        throw snap_thread_exception_mutex_failed_error("pthread_cond_timedwait() failed");
     }
 
     return true;
@@ -389,9 +389,9 @@ bool snap_thread::snap_mutex::dated_wait(uint64_t msec)
             return false;
         }
 
-        // an error occured!
+        // an error occurred!
         SNAP_LOG_ERROR("a mutex conditional dated wait generated error #")(err);
-        throw snap_thread_exception_mutex_failed_error();
+        throw snap_thread_exception_mutex_failed_error("pthread_cond_timedwait() failed");
     }
 
     return true;
@@ -412,21 +412,21 @@ void snap_thread::snap_mutex::signal()
     if(err != 0)
     {
         SNAP_LOG_ERROR("a mutex lock generated error #")(err);
-        throw snap_thread_exception_invalid_error();
+        throw snap_thread_exception_invalid_error("pthread_mutex_lock() failed");
     }
 
     err = pthread_cond_signal(&f_condition);
     if(err != 0)
     {
         SNAP_LOG_ERROR("a mutex condition signal generated error #")(err);
-        throw snap_thread_exception_invalid_error();
+        throw snap_thread_exception_invalid_error("pthread_cond_signal() failed");
     }
 
     err = pthread_mutex_unlock(&f_mutex);
     if(err != 0)
     {
         SNAP_LOG_ERROR("a mutex unlock generated error #")(err);
-        throw snap_thread_exception_invalid_error();
+        throw snap_thread_exception_invalid_error("pthread_mutex_unlock() failed");
     }
 }
 
@@ -464,7 +464,7 @@ snap_thread::snap_lock::snap_lock(snap_mutex& mutex)
     if(!f_mutex)
     {
         // mutex is mandatory
-        throw snap_thread_exception_invalid_error();
+        throw snap_thread_exception_invalid_error("mutex missing in snap_lock() constructor");
     }
     f_mutex->lock();
 }
@@ -660,25 +660,25 @@ snap_thread::snap_thread(const QString& name, snap_runner *runner)
 {
     if(!f_runner)
     {
-        throw snap_thread_exception_invalid_error();
+        throw snap_thread_exception_invalid_error("runner missing in snap_thread() constructor");
     }
     if(f_runner->f_thread)
     {
-        throw snap_thread_exception_in_used_error();
+        throw snap_thread_exception_in_use_error("this runner (" + name + ") is already is use");
     }
 
     int err(pthread_attr_init(&f_thread_attr));
     if(err != 0)
     {
         SNAP_LOG_ERROR("the thread attributes could not be initialized, error #")(err);
-        throw snap_thread_exception_invalid_error();
+        throw snap_thread_exception_invalid_error("pthread_attr_init() failed");
     }
     err = pthread_attr_setdetachstate(&f_thread_attr, PTHREAD_CREATE_DETACHED);
     if(err != 0)
     {
         SNAP_LOG_ERROR("the thread detach state could not be initialized, error #")(err);
         pthread_attr_destroy(&f_thread_attr);
-        throw snap_thread_exception_invalid_error();
+        throw snap_thread_exception_invalid_error("pthread_attr_setdetachstate() failed");
     }
 
     f_runner->f_thread = this;

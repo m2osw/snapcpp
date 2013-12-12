@@ -31,7 +31,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
                mode CDATA "1:1">
 ]>
 <snap-tree>
-  <content path="/admin/messages/status"/>
+  <content path="/admin/settings/messages">
+    <param name="content::title">Messages Administration</param>
+    <param name="content::body">
+      <![CDATA[<p>Settings on how to handle your website messages (errors, information, debug).</p>]]>
+    </param>
+  </content>
 </snap-tree>
 <!-- vim: ts=2 sw=2 et syntax=xml
 -->

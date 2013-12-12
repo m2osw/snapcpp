@@ -33,10 +33,38 @@
 namespace snap
 {
 
-class snap_child_exception : public snap_exception {};
-class snap_child_exception_unique_number_error : public snap_child_exception {};
-class snap_child_exception_invalid_header_value : public snap_child_exception {};
-class snap_child_exception_invalid_header_field_name : public snap_child_exception {};
+class snap_child_exception : public snap_exception
+{
+public:
+    snap_child_exception(const char *whatmsg) : snap_exception("snap_child", whatmsg) {}
+    snap_child_exception(const std::string& whatmsg) : snap_exception("snap_child", whatmsg) {}
+    snap_child_exception(const QString& whatmsg) : snap_exception("snap_child", whatmsg) {}
+};
+
+class snap_child_exception_unique_number_error : public snap_child_exception
+{
+public:
+    snap_child_exception_unique_number_error(const char *whatmsg) : snap_child_exception(whatmsg) {}
+    snap_child_exception_unique_number_error(const std::string& whatmsg) : snap_child_exception(whatmsg) {}
+    snap_child_exception_unique_number_error(const QString& whatmsg) : snap_child_exception(whatmsg) {}
+};
+
+class snap_child_exception_invalid_header_value : public snap_child_exception
+{
+public:
+    snap_child_exception_invalid_header_value(const char *whatmsg) : snap_child_exception(whatmsg) {}
+    snap_child_exception_invalid_header_value(const std::string& whatmsg) : snap_child_exception(whatmsg) {}
+    snap_child_exception_invalid_header_value(const QString& whatmsg) : snap_child_exception(whatmsg) {}
+};
+
+class snap_child_exception_invalid_header_field_name : public snap_child_exception
+{
+public:
+    snap_child_exception_invalid_header_field_name(const char *whatmsg) : snap_child_exception(whatmsg) {}
+    snap_child_exception_invalid_header_field_name(const std::string& whatmsg) : snap_child_exception(whatmsg) {}
+    snap_child_exception_invalid_header_field_name(const QString& whatmsg) : snap_child_exception(whatmsg) {}
+};
+
 
 
 class server;

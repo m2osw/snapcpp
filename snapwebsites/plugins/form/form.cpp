@@ -48,7 +48,7 @@ const char *get_name(name_t name)
 
     default:
         // invalid index
-        throw snap_exception();
+        throw snap_logic_exception("invalid SNAP_NAME_FORMS_...");
 
     }
     NOTREACHED();
@@ -402,7 +402,7 @@ void form::on_process_post(const QString& uri_path)
         return;
 
     default:
-        throw std::logic_error("load_session() returned an unexpected SESSION_INFO_... value");
+        throw snap_logic_exception("load_session() returned an unexpected SESSION_INFO_... value");
 
     }
 
@@ -431,7 +431,7 @@ void form::on_process_post(const QString& uri_path)
     if(fp == NULL)
     {
         // the programmer forgot to derive from form_post?!
-        throw std::logic_error("you cannot use your plugin as supporting forms without also deriving it from form_post");
+        throw snap_logic_exception("you cannot use your plugin as supporting forms without also deriving it from form_post");
     }
 
     // retrieve the XML form information so we can verify the data
@@ -440,7 +440,7 @@ void form::on_process_post(const QString& uri_path)
     if(xml_form.isNull())
 	{
 		// programmer mispelled the path in his on_get_xml_form()
-        throw std::logic_error("this path does not correspond to a valid XML form");
+        throw form_exception_invalid_form_xml("this path does not correspond to a valid XML form");
 	}
 
     QDomNodeList widgets(xml_form.elementsByTagName("widget"));
@@ -450,7 +450,7 @@ void form::on_process_post(const QString& uri_path)
         QDomNode w(widgets.item(i));
         if(!w.isElement())
         {
-            throw std::logic_error("elementsByTagName() returned a node that is not an element");
+            throw form_exception_invalid_form_xml("elementsByTagName() returned a node that is not an element");
         }
         QDomElement widget(w.toElement());
 
@@ -461,14 +461,14 @@ void form::on_process_post(const QString& uri_path)
         QString widget_name(id.nodeValue());
         if(widget_name.isEmpty())
         {
-            throw std::runtime_error("All widgets must have an id with its HTML variable form name");
+            throw form_exception_invalid_form_xml("All widgets must have an id with its HTML variable form name");
         }
 
         QDomNode type(attributes.namedItem("type"));
         QString widget_type(type.nodeValue());
         if(widget_type.isEmpty())
         {
-            throw std::runtime_error("All widgets must have a type with its HTML variable form name");
+            throw form_exception_invalid_form_xml("All widgets must have a type with its HTML variable form name");
         }
 
         QDomNode secret(attributes.namedItem("secret"));
@@ -728,7 +728,7 @@ bool form::validate_post_for_widget_impl(const QString& cpath, sessions::session
             int l(m.toInt(&ok));
             if(!ok)
             {
-                throw std::runtime_error(("the minimum size \"" + m + "\" must be a valid decimal integer").toUtf8().data());
+                throw form_exception_invalid_form_xml("the minimum size \"" + m + "\" must be a valid decimal integer");
             }
             if(value.length() < l)
             {
@@ -750,7 +750,7 @@ bool form::validate_post_for_widget_impl(const QString& cpath, sessions::session
             int l(m.toInt(&ok));
             if(!ok)
             {
-                throw std::runtime_error("the maximum size must be a valid decimal integer");
+                throw form_exception_invalid_form_xml("the maximum size \"" + m + "\" must be a valid decimal integer");
             }
             if(value.length() > l)
             {
@@ -772,7 +772,7 @@ bool form::validate_post_for_widget_impl(const QString& cpath, sessions::session
             int l(m.toInt(&ok));
             if(!ok)
             {
-                throw std::runtime_error("the number of lines must be a valid decimal integer");
+                throw form_exception_invalid_form_xml("the number of lines \"" + m + "\" must be a valid decimal integer");
             }
             if(widget_type == "text-edit")
             {
@@ -910,7 +910,7 @@ bool form::validate_post_for_widget_impl(const QString& cpath, sessions::session
                     // TBD: this can be a problem if we remove a plugin that
                     //      adds some regexes (although right now we don't
                     //      have such a signal...)
-                    throw std::runtime_error(("the regular expression named \"" + regex_name + "\" is not supported.").toUtf8().data());
+                    throw form_exception_invalid_form_xml("the regular expression named \"" + regex_name + "\" is not supported.");
                 }
                 // Note:
                 // We don't test whether there is some text here to avoid
@@ -945,7 +945,7 @@ bool form::validate_post_for_widget_impl(const QString& cpath, sessions::session
                         char buf[2];
                         buf[0] = *s;
                         buf[1] = '\0';
-                        throw std::runtime_error(("\"" + QString::fromLatin1(buf) + "\" is not a supported regex flag").toUtf8().data());
+                        throw form_exception_invalid_form_xml("\"" + QString::fromLatin1(buf) + "\" is not a supported regex flag");
                         }
 
                     }
@@ -954,7 +954,7 @@ bool form::validate_post_for_widget_impl(const QString& cpath, sessions::session
             QRegExp reg_expr(re, cs, QRegExp::RegExp2);
             if(!reg_expr.isValid())
             {
-                throw std::runtime_error(("\"" + re + "\" regular expression is invalid.").toUtf8().data());
+                throw form_exception_invalid_form_xml("\"" + re + "\" regular expression is invalid.");
             }
             if(reg_expr.indexIn(value) == -1)
             {

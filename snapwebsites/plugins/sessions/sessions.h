@@ -26,9 +26,38 @@ namespace snap
 namespace sessions
 {
 
-class sessions_exception : public snap_exception {};
-class sessions_exception_invalid_field_name : public sessions_exception {};
-class sessions_exception_already_defined : public sessions_exception {};
+class sessions_exception : public snap_exception
+{
+public:
+    sessions_exception(const char *what_msg) : snap_exception("Sessions: " + std::string(what_msg)) {}
+    sessions_exception(const std::string& what_msg) : snap_exception("Sessions: " + what_msg) {}
+    sessions_exception(const QString& what_msg) : snap_exception("Sessions: " + what_msg.toStdString()) {}
+};
+
+class sessions_exception_invalid_parameter : public sessions_exception
+{
+public:
+    sessions_exception_invalid_parameter(const char *what_msg) : sessions_exception(what_msg) {}
+    sessions_exception_invalid_parameter(const std::string& what_msg) : sessions_exception(what_msg) {}
+    sessions_exception_invalid_parameter(const QString& what_msg) : sessions_exception(what_msg.toStdString()) {}
+};
+
+class sessions_exception_invalid_range : public sessions_exception
+{
+public:
+    sessions_exception_invalid_range(const char *what_msg) : sessions_exception(what_msg) {}
+    sessions_exception_invalid_range(const std::string& what_msg) : sessions_exception(what_msg) {}
+    sessions_exception_invalid_range(const QString& what_msg) : sessions_exception(what_msg.toStdString()) {}
+};
+
+class sessions_exception_no_random_data : public sessions_exception
+{
+public:
+    sessions_exception_no_random_data(const char *what_msg) : sessions_exception(what_msg) {}
+    sessions_exception_no_random_data(const std::string& what_msg) : sessions_exception(what_msg) {}
+    sessions_exception_no_random_data(const QString& what_msg) : sessions_exception(what_msg.toStdString()) {}
+};
+
 
 enum name_t
 {

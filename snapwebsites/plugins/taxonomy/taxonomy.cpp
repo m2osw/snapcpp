@@ -44,7 +44,7 @@ const char *get_name(name_t name)
 
 	default:
 		// invalid index
-		throw snap_exception();
+		throw snap_logic_exception("invalid SNAP_NAME_TAXONOMY_...");
 
 	}
 	NOTREACHED();
@@ -169,7 +169,7 @@ void taxonomy::content_update(int64_t variables_timestamp)
  * by the \p limit_name column name.
  *
  * If the limit is not found, then an error is generated because it should
- * always exist (i.e. be a system type that the user cannot edit.)
+ * always exist (i.e. at least a system type that the user cannot edit.)
  *
  * \param[in] cpath  The content where we start.
  * \param[in] taxonomy_name  The name of the link to the taxonomy to use for the search.
@@ -202,22 +202,25 @@ QtCassandra::QCassandraValue taxonomy::find_type_with(const QString& cpath, cons
 		return not_found;
 	}
 	//QString type_key(site_key + type_path.stringValue());
+	QSharedPointer<QtCassandra::QCassandraTable> content_table(content::content::instance()->get_content_table());
 	for(;;)
 	{
-		if(!content::content::instance()->get_content_table()->exists(type_key))
+		if(!content_table->exists(type_key))
 		{
 			// TODO: should this be an error instead? all the types should exist!
 			return not_found;
 		}
+		QSharedPointer<QtCassandra::QCassandraRow> row(content_table->row(type_key));
+
 		// check for the key, if it exists we found what the user is
 		// looking for!
-		QtCassandra::QCassandraValue result(content::content::instance()->get_content_table()->row(type_key)->cell(col_name)->value());
+		QtCassandra::QCassandraValue result(row->cell(col_name)->value());
 		if(!result.nullValue())
 		{
 			return result;
 		}
 		// have we reached the limit
-		QtCassandra::QCassandraValue limit(content::content::instance()->get_content_table()->row(type_key)->cell(QString(get_name(SNAP_NAME_TAXONOMY_NAME)))->value());
+		QtCassandra::QCassandraValue limit(row->cell(QString(get_name(SNAP_NAME_TAXONOMY_NAME)))->value());
 		if(!limit.nullValue() && limit.stringValue() == limit_name)
 		{
 			// we reached the limit and have not found a result

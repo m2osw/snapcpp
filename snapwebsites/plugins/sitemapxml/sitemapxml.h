@@ -36,8 +36,23 @@ enum name_t
 const char *get_name(name_t name);
 
 
-class sitemapxml_exception : public snap_exception {};
-class sitemapxml_exception_missing_links_table : public sitemapxml_exception {};
+class sitemapxml_exception : public snap_exception
+{
+public:
+    sitemapxml_exception(const char *what_msg) : snap_exception("sitemap.xml: " + std::string(what_msg)) {}
+    sitemapxml_exception(const std::string& what_msg) : snap_exception("sitemap.xml: " + what_msg) {}
+    sitemapxml_exception(const QString& what_msg) : snap_exception("sitemap.xml: " + what_msg.toStdString()) {}
+};
+
+class sitemapxml_exception_missing_table : public sitemapxml_exception
+{
+public:
+    sitemapxml_exception_missing_table(const char *what_msg) : sitemapxml_exception(what_msg) {}
+    sitemapxml_exception_missing_table(const std::string& what_msg) : sitemapxml_exception(what_msg) {}
+    sitemapxml_exception_missing_table(const QString& what_msg) : sitemapxml_exception(what_msg) {}
+};
+
+
 
 class sitemapxml : public plugins::plugin, public path::path_execute
 {

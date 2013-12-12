@@ -71,7 +71,7 @@ const char *get_name(name_t name)
 
     default:
         // invalid index
-        throw snap_exception();
+        throw snap_logic_exception("invalid SNAP_NAME_SESSIONS_...");
 
     }
     NOTREACHED();
@@ -216,7 +216,7 @@ void sessions::session_info::set_session_random()
         int r(RAND_bytes(reinterpret_cast<unsigned char *>(&f_session_random), sizeof(f_session_random)));
         if(r != 1)
         {
-            throw std::runtime_error("RAND_bytes() could not generate a random number.");
+            throw sessions_exception_no_random_data("RAND_bytes() could not generate a random number.");
         }
         // make it always positive, just in case
         f_session_random &= 0x7FFFFFFF;
@@ -555,7 +555,7 @@ const char *sessions::session_info::session_type_to_string(session_info_type_t t
     };
     if(type < 0 || type > sizeof(type_names) / sizeof(type_names[0]))
     {
-        throw std::range_error("type is invalid while calling session_type_to_string()");
+        throw sessions_exception_invalid_range("type is invalid while calling session_type_to_string()");
     }
     return type_names[type];
 }
@@ -774,7 +774,7 @@ QString sessions::create_session(session_info& info)
     if((time_limit != 0 && time_limit <= now + 60)
     || (time_to_live != 0 && time_to_live <= 60))
     {
-        throw std::runtime_error("you cannot create a session of 1 minute or less");
+        throw sessions_exception_invalid_parameter("you cannot create a session of 1 minute or less");
     }
 
     // make sure that we have at least one path defined
@@ -783,7 +783,7 @@ QString sessions::create_session(session_info& info)
     const QString& object_path(info.get_object_path());
     if(page_path.isEmpty() && object_path.isEmpty())
     {
-        throw std::runtime_error("any session must have at least one path defined");
+        throw sessions_exception_invalid_parameter("any session must have at least one path defined");
     }
 
     // TODO? Need we set a specific OpenSSL random generator?
@@ -810,7 +810,7 @@ QString sessions::create_session(session_info& info)
         break;
 
     default:
-        throw std::logic_error("used an undefined session type in create_session()");
+        throw snap_logic_exception("used an undefined session type in create_session()");
 
     }
 
@@ -818,7 +818,7 @@ QString sessions::create_session(session_info& info)
     int r(RAND_bytes(buf, size));
     if(r != 1)
     {
-        throw std::runtime_error("RAND_bytes() could not generate a random number.");
+        throw sessions_exception_no_random_data("RAND_bytes() could not generate a random number.");
     }
 
     // make the key specific to that website and append the session identifier
@@ -899,7 +899,7 @@ void sessions::save_session(session_info& info)
     int64_t ttl(timestamp + 86400 - now);
     if(ttl < 0 || ttl > 0x7FFFFFFF)
     {
-        throw std::logic_error("the session computed ttl is out of bounds");
+        throw sessions_exception_invalid_range("the session computed ttl is out of bounds");
     }
 
     QSharedPointer<QtCassandra::QCassandraTable> table(get_sessions_table());
@@ -1146,7 +1146,7 @@ void sessions::attach_to_session(const session_info& info, const QString& name, 
     int64_t ttl(timestamp + 86400 - now);
     if(ttl < 0 || ttl > 0x7FFFFFFF)
     {
-        throw std::logic_error("the session computed ttl is out of bounds");
+        throw sessions_exception_invalid_range("the session computed ttl is out of bounds");
     }
 
     QtCassandra::QCassandraValue value;

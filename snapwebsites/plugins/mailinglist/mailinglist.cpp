@@ -49,7 +49,7 @@ const char *get_name(name_t name)
 
     default:
         // invalid index
-        throw snap_exception();
+        throw snap_logic_exception("invalid SNAP_NAME_MAILINGLIST_...");
 
     }
     NOTREACHED();
