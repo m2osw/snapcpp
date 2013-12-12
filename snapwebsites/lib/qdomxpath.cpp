@@ -7765,7 +7765,7 @@ uint32_t disassemble_push_any_string(uint32_t pc)
 uint32_t disassemble_push_byte(uint32_t pc)
 {
     int64_t value(static_cast<int64_t>(f_program[pc]));
-    printf("push_integer %ld\n", value);
+    cout << "push_integer " << value << std::endl;
     return 2;
 }
 
@@ -7841,7 +7841,7 @@ uint32_t disassemble_push_long(uint32_t pc)
                   | (static_cast<int64_t>(f_program[pc + 1]) << 16)
                   | (static_cast<int64_t>(f_program[pc + 2]) <<  8)
                   |  static_cast<int64_t>(f_program[pc + 3]);
-    printf("push_integer %ld\n", value);
+    cout << "push_integer " << value << std::endl;
     return 5;
 }
 
@@ -7855,7 +7855,7 @@ uint32_t disassemble_push_longlong(uint32_t pc)
                   | (static_cast<int64_t>(f_program[pc + 5]) << 16)
                   | (static_cast<int64_t>(f_program[pc + 6]) <<  8)
                   |  static_cast<int64_t>(f_program[pc + 7]);
-    printf("push_integer %ld\n", value);
+    cout << "push_integer " << value << std::endl;
     return 9;
 }
 
@@ -7871,7 +7871,7 @@ uint32_t disassemble_push_medium_string(uint32_t pc)
 uint32_t disassemble_push_negative_byte(uint32_t pc)
 {
     int64_t value(static_cast<int64_t>(f_program[pc]) | 0xFFFFFFFFFFFFFF00LL);
-    printf("push_integer %ld\n", value);
+    cout << "push_integer " << value << std::endl;
     return 2;
 }
 
@@ -7880,7 +7880,7 @@ uint32_t disassemble_push_negative_short(uint32_t pc)
     int64_t value((static_cast<int64_t>(f_program[pc]) << 8)
                  | static_cast<int64_t>(f_program[pc])
                  | 0xFFFFFFFFFFFF0000LL);
-    printf("push_integer %ld\n", value);
+    cout << "push_integer " << value << std::endl;
     return 3;
 }
 
@@ -7891,7 +7891,7 @@ uint32_t disassemble_push_negative_long(uint32_t pc)
                 | (static_cast<int64_t>(f_program[pc]) << 8)
                 |  static_cast<int64_t>(f_program[pc])
                 |  0xFFFFFFFF00000000LL);
-    printf("push_integer %ld\n", value);
+    cout << "push_integer " << value << std::endl;
     return 5;
 }
 
@@ -7899,7 +7899,7 @@ uint32_t disassemble_push_short(uint32_t pc)
 {
     int64_t value = (static_cast<int64_t>(f_program[pc + 0]) << 8)
                   |  static_cast<int64_t>(f_program[pc + 1]);
-    printf("push_integer %ld\n", value);
+    cout << "push_integer " << value << std::endl;
     return 5;
 }
 
