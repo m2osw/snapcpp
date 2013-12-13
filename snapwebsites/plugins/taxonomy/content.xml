@@ -96,7 +96,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     </param>
     <!-- the system taxonomy should not be indexed by search engines -->
     <link name="robotstxt::noindex" to="robotstxt::noindex" mode="1:*">/types/taxonomy/system/robotstxt/noindex</link>
-    <link name="permissions::lock" to="permissions::lock" mode="1:*">/types/permissions/lock</link>
+    <link name="permissions::lock" to="permissions::lock" mode="*:*">/types/permissions/lock</link>
   </content>
 </snap-tree>
 <!-- vim: ts=2 sw=2 et syntax=xml

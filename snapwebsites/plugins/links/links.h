@@ -17,8 +17,7 @@
 #ifndef SNAP_LINKS_H
 #define SNAP_LINKS_H
 
-#include "snap_child.h"
-#include "plugins.h"
+#include "snapwebsites.h"
 
 namespace snap
 {
@@ -82,7 +81,11 @@ public:
         , f_name(new_name)
         , f_key(new_key)
     {
-        verify_name(new_name);
+        // empty is valid on construction
+        if(!new_name.isEmpty())
+        {
+            verify_name(new_name);
+        }
     }
 
     void set_name(const QString& new_name, bool unique = false)

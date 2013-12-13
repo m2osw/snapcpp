@@ -17,8 +17,7 @@
 #ifndef SNAP_CHAR_CHART_H
 #define SNAP_CHAR_CHART_H
 
-#include "snap_child.h"
-#include "../layout/layout.h"
+//#include "snap_child.h"
 #include "../sitemapxml/sitemapxml.h"
 
 namespace snap

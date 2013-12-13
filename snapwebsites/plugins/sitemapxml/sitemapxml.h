@@ -17,10 +17,7 @@
 #ifndef SNAP_SITEMAPXML_H
 #define SNAP_SITEMAPXML_H
 
-#include "../path/path.h"
 #include "../robotstxt/robotstxt.h"
-#include <string>
-#include <map>
 
 namespace snap
 {

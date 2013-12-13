@@ -1,5 +1,5 @@
 // Snap Websites Server -- taxonomy
-// Copyright (C) 2012  Made to Order Software Corp.
+// Copyright (C) 2012-2013  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,10 +17,7 @@
 #ifndef SNAP_TAXONOMY_H
 #define SNAP_TAXONOMY_H
 
-#include "../path/path.h"
 #include "../layout/layout.h"
-#include "snap_child.h"
-#include "plugins.h"
 
 namespace snap
 {

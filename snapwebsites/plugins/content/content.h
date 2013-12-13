@@ -27,6 +27,7 @@ namespace snap
 namespace content
 {
 
+
 enum name_t {
     SNAP_NAME_CONTENT_ACCEPTED,
     SNAP_NAME_CONTENT_BODY,
@@ -112,7 +113,7 @@ public:
     void                on_generate_page_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body, const QString& ctemplate);
 
     SNAP_SIGNAL(new_content, (const QString& path), (path));
-    SNAP_SIGNAL(create_content, (const QString& path, const QString& owner), (path, owner));
+    SNAP_SIGNAL(create_content, (const QString& path, const QString& owner, const QString& type), (path, owner, type));
 
     void                output() const;
 

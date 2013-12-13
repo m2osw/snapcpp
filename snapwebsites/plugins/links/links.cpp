@@ -22,6 +22,7 @@
 #include "not_reached.h"
 #include <iostream>
 #include <QtCore/QDebug>
+#include "poison.h"
 
 
 SNAP_PLUGIN_START(links, 1, 0)
@@ -271,7 +272,7 @@ void link_info::verify_name(const QString& vname)
         if((c < '0' || c > '9')
         && (c < 'A' || c > 'Z')
         && (c < 'a' || c > 'z')
-        && c == '_')
+        && c != '_')
         {
             throw links_exception_invalid_name("name \"" + vname + "\" is not acceptable, character '" + QChar(c) + "' is not valid");
         }
@@ -368,7 +369,7 @@ link_context::link_context(::snap::snap_child *snap, const link_info& info)
         }
         // f_row remains null (isNull() returns true)
         //QSharedPointer<QtCassandra::QCassandraRow> row(table->row(f_info.key()));
-        const QString links_namespace(get_name(SNAP_NAME_LINKS_NAMESPACE));
+        QString const links_namespace(get_name(SNAP_NAME_LINKS_NAMESPACE));
 //printf("links: content read row key [%s] cell [%s]\n", f_info.key().toUtf8().data(), (links_namespace + "::" + f_info.name()).toUtf8().data());
         QtCassandra::QCassandraValue link(content::content::instance()->get_content_table()->row(f_info.key())->cell(links_namespace + "::" + f_info.name())->value());
         if(!link.nullValue())
@@ -389,6 +390,7 @@ link_context::link_context(::snap::snap_child *snap, const link_info& info)
             throw links_exception_missing_links_table("could not find the links table");
         }
         f_row = table->row(f_info.key());
+        // WARNING: Here the column names are the keys, not the link names...
         // TBD: should we give the caller the means to change this 1,000 count?
         f_column_predicate.setCount(1000);
         f_column_predicate.setIndex(); // behave like an index
@@ -425,26 +427,53 @@ bool link_context::next_link(link_info& info)
         return true;
     }
 
-    const QtCassandra::QCassandraCells& cells(f_row->cells());
-    if(f_cell_iterator == cells.end())
+    QString links_namespace(get_name(SNAP_NAME_LINKS_NAMESPACE));
+    links_namespace += "::";
+    QString name(f_info.name());
+    if(!name.isEmpty())
     {
-        // no more cells available in the cells, try to read more
-        f_row->clearCache();
-        f_row->readCells(f_column_predicate);
-        f_cell_iterator = cells.begin();
+        name = links_namespace + name;
+    }
+    int const namespace_len(links_namespace.length());
+    for(;;)
+    {
+        const QtCassandra::QCassandraCells& cells(f_row->cells());
         if(f_cell_iterator == cells.end())
         {
-            // no more cells available
-            return false;
+            // no more cells available in the cells, try to read more
+            f_row->clearCache();
+            f_row->readCells(f_column_predicate);
+            f_cell_iterator = cells.begin();
+            if(f_cell_iterator == cells.end())
+            {
+                // no more cells available
+                return false;
+            }
+        }
+
+        // the result is at the current iterator
+        // note that from the links table we only get keys, no names
+        // which doesn't matter as the name is f_info.name() anyway
+        QString const link_key(QString::fromUtf8(f_cell_iterator.key()));
+        QString link_name(f_cell_iterator.value()->value().stringValue());
+        if(!link_name.startsWith(links_namespace))
+        {
+            throw links_exception_invalid_name("link name \"" + link_name + "\" does not start with \"links::\"");
+        }
+
+        ++f_cell_iterator;
+
+        if(name.isEmpty() || name == link_name.left(name.length()))
+        {
+            // when the name is empty, everything matches
+            // otherwise make sure that the name starts as defined in the
+            // input name (f_info)
+            int const dash_pos(link_name.indexOf('-'));
+            info.set_name(link_name.mid(namespace_len, dash_pos - namespace_len));
+            info.set_key(link_key);
+            break;
         }
     }
-
-    // the result is at the current iterator
-    // note that from the links table we only get keys, no names
-    // which doesn't matter as the name is f_info.name() anyway
-    info.set_key(QString::fromUtf8(f_cell_iterator.key()));
-    info.set_name(f_info.name());
-    ++f_cell_iterator;
 
     return true;
 }
@@ -484,10 +513,11 @@ bool link_context::next_link(link_info& info)
  */
 links::links()
     //: f_snap(NULL) -- auto-init
-    //  f_links_table() -- auto-init
-    //  f_content_table() -- auto-init
+    //, f_links_table() -- auto-init
+    //, f_content_table() -- auto-init
 {
 }
+
 
 /** \brief Clean up the links plugin.
  *
@@ -496,6 +526,7 @@ links::links()
 links::~links()
 {
 }
+
 
 /** \brief Initialize the links plugin.
  *
@@ -507,10 +538,8 @@ links::~links()
 void links::on_bootstrap(::snap::snap_child *snap)
 {
     f_snap = snap;
-
-    //std::cerr << " - Bootstrapping links!\n";
-    //SNAP_LISTEN(links, "server", server, update, _1); -- replaced with do_update()
 }
+
 
 /** \brief Get a pointer to the links plugin.
  *
@@ -525,6 +554,7 @@ links *links::instance()
 {
     return g_plugin_links_factory.instance();
 }
+
 
 /** \brief Return the description of this plugin.
  *
@@ -543,6 +573,7 @@ QString links::description() const
         " needs to make the system function as expected.";
 }
 
+
 /** \brief Check whether updates are necessary.
  *
  * This function updates the database when a newer version is installed
@@ -559,25 +590,28 @@ int64_t links::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-//std::cerr << "Got the do_update() in links! "
-//        << static_cast<int64_t>(last_updated) << ", "
-//        << static_cast<int64_t>(SNAP_UNIX_TIMESTAMP(2012, 1, 1, 0, 0, 0) * 1000000LL) << "\n";
-
     SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, initial_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
 
+
 /** \brief First update to run for the links plugin.
  *
  * This function is the first update for the links plugin. It installs
- * the initial data required by the links plugin.
+ * the initial data required by the links plugin. Especially, it creates
+ * the links table.
  *
- * \param[in] variables_timestamp  The timestamp for all the variables added to the database by this update (in micro-seconds).
+ * \param[in] variables_timestamp  The timestamp for all the variables added
+ *                        to the database by this update (in micro-seconds).
  */
 void links::initial_update(int64_t variables_timestamp)
 {
+    // read the links table to create it
+    // as we're at it, we can always save it in our f_links_table
+    f_links_table = get_links_table();
 }
+
 
 /** \brief Initialize the content table.
  *
@@ -708,7 +742,7 @@ void links::create_link(const link_info& src, const link_info& dst)
 
     init_tables();
 
-    const QString links_namespace(get_name(SNAP_NAME_LINKS_NAMESPACE));
+    QString const links_namespace(get_name(SNAP_NAME_LINKS_NAMESPACE));
     src_col = links_namespace + "::" + src.name();
     if(!src.is_unique())
     {

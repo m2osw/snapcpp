@@ -16,21 +16,23 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "sendmail.h"
-#include "plugins.h"
+//#include "plugins.h"
 #include "log.h"
 #include "mkgmtime.h"
 #include "qdomxpath.h"
-#include "not_reached.h"
+//#include "not_reached.h"
 #include "quoted_printable.h"
 #include "../content/content.h"
 #include "../users/users.h"
 #include "process.h"
+#include <libtld/tld.h>
 #include <QtCassandra/QCassandraValue.h>
 #include <QtSerialization/QSerializationComposite.h>
 #include <QtSerialization/QSerializationFieldString.h>
 #include <QtSerialization/QSerializationFieldTag.h>
 #include <iostream>
 #include <magic.h>
+#include "poison.h"
 
 
 SNAP_PLUGIN_START(sendmail, 1, 0)

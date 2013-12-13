@@ -15,6 +15,22 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+/** \file
+ * \brief Session handling.
+ *
+ * Sessions are used to track anonymous and logged in users. Especially, the
+ * users plugin make use of sessions.
+ *
+ * The form plugin uses sessions too so as to avoid robots that just POST
+ * content. This is because a form includes a session reference which
+ * changes for each user. If a robot just sends a POST, it won't have a
+ * valid session reference.
+ *
+ * Other plugins are welcome to make use of sessions, although, if possible
+ * any data to carry for a user over multiple accesses should make use of
+ * the attach/detach/get session feature available in the user plugin.
+ */
+
 #include "sessions.h"
 #include "plugins.h"
 #include "not_reached.h"
@@ -22,6 +38,7 @@
 #include <QtCassandra/QCassandraValue.h>
 #include <openssl/rand.h>
 #include <iostream>
+#include "poison.h"
 
 
 SNAP_PLUGIN_START(sessions, 1, 0)
@@ -899,7 +916,7 @@ void sessions::save_session(session_info& info)
     int64_t ttl(timestamp + 86400 - now);
     if(ttl < 0 || ttl > 0x7FFFFFFF)
     {
-        throw sessions_exception_invalid_range("the session computed ttl is out of bounds");
+        throw sessions_exception_invalid_range(QString("the session computed ttl %1 is out of bounds (save_session)").arg(ttl));
     }
 
     QSharedPointer<QtCassandra::QCassandraTable> table(get_sessions_table());
@@ -924,6 +941,7 @@ void sessions::save_session(session_info& info)
     row->cell(get_name(SNAP_NAME_SESSIONS_TIME_TO_LIVE))->setValue(value);
 
     value.setInt64Value(timestamp);
+    info.set_time_limit(timestamp);
     row->cell(get_name(SNAP_NAME_SESSIONS_TIME_LIMIT))->setValue(value);
 
     value.setStringValue(f_snap->snapenv("REMOTE_ADDR"));
@@ -1146,7 +1164,7 @@ void sessions::attach_to_session(const session_info& info, const QString& name, 
     int64_t ttl(timestamp + 86400 - now);
     if(ttl < 0 || ttl > 0x7FFFFFFF)
     {
-        throw sessions_exception_invalid_range("the session computed ttl is out of bounds");
+        throw sessions_exception_invalid_range(QString("the session computed ttl %1 is out of bounds (attach_to_session) timestamp=%2, now=%3").arg(ttl).arg(timestamp).arg(now));
     }
 
     QtCassandra::QCassandraValue value;

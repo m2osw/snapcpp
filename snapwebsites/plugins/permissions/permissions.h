@@ -17,7 +17,6 @@
 #ifndef SNAP_PERMISSIONS_H
 #define SNAP_PERMISSIONS_H
 
-#include "../path/path.h"
 #include "../layout/layout.h"
 #include <QSet>
 
@@ -25,10 +24,6 @@ namespace snap
 {
 namespace permissions
 {
-
-class permissions_exception : public snap_exception {};
-class permissions_exception_invalid_field_name : public permissions_exception {};
-class permissions_exception_already_defined : public permissions_exception {};
 
 enum name_t
 {
@@ -40,6 +35,34 @@ enum name_t
 const char *get_name(name_t name);
 
 
+
+class permissions_exception : public snap_exception
+{
+public:
+    permissions_exception(const char *what_msg) : snap_exception("Permissions: " + std::string(what_msg)) {}
+    permissions_exception(const std::string& what_msg) : snap_exception("Permissions: " + what_msg) {}
+    permissions_exception(const QString& what_msg) : snap_exception("Permissions: " + what_msg.toStdString()) {}
+};
+
+class permissions_exception_invalid_group_name : public permissions_exception
+{
+public:
+    permissions_exception_invalid_group_name(const char *what_msg) : permissions_exception(what_msg) {}
+    permissions_exception_invalid_group_name(const std::string& what_msg) : permissions_exception(what_msg) {}
+    permissions_exception_invalid_group_name(const QString& what_msg) : permissions_exception(what_msg) {}
+};
+
+class permissions_exception_invalid_path : public permissions_exception
+{
+public:
+    permissions_exception_invalid_path(const char *what_msg) : permissions_exception(what_msg) {}
+    permissions_exception_invalid_path(const std::string& what_msg) : permissions_exception(what_msg) {}
+    permissions_exception_invalid_path(const QString& what_msg) : permissions_exception(what_msg) {}
+};
+
+
+
+
 class permissions : public plugins::plugin, public layout::layout_content
 {
 public:
@@ -49,16 +72,18 @@ public:
         typedef QSet<QString>           set_t;
         typedef QMap<QString, set_t>    req_sets_t;
 
-                            sets_t(const QString& user_path, const QString& path, const QString& action);
+                            sets_t(QString const& user_path, QString const& path, QString const& action);
 
-        const QString&      get_user_path() const;
-        const QString&      get_path() const;
-        const QString&      get_action() const;
+        QString const &     get_user_path() const;
+        QString const &     get_path() const;
+        QString const &     get_action() const;
 
-        void                add_user_right(const QString& right);
+        void                add_user_right(QString const& right);
         int                 get_user_rights_count() const;
 
-        void                add_plugin_permission(const QString& plugin, const QString& right);
+        void                add_plugin_permission(QString const& plugin, QString const& right);
+
+        bool                is_root() const;
         bool                allowed() const;
 
     private:
@@ -77,16 +102,20 @@ public:
     virtual int64_t         do_update(int64_t last_updated);
 
     void                    on_bootstrap(snap_child *snap);
-    virtual void            on_generate_main_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body, const QString& ctemplate);
-    void                    on_validate_action(const QString& path, QString& action);
+    virtual void            on_generate_main_content(layout::layout *l, QString const& path, QDomElement& page, QDomElement& body, QString const& ctemplate);
+    void                    on_validate_action(QString const& path, QString& action);
 
-    SNAP_SIGNAL(get_user_rights, (permissions *p, sets_t& sets), (p, sets));
-    SNAP_SIGNAL(get_plugin_permissions, (permissions *p, sets_t& sets), (p, sets));
+    SNAP_SIGNAL(get_user_rights, (permissions *perms, sets_t& sets), (perms, sets));
+    SNAP_SIGNAL(get_plugin_permissions, (permissions *perms, sets_t& sets), (perms, sets));
 
-    bool                    access_allowed(const QString& user_path, const QString& path, QString& action);
+    bool                    access_allowed(QString const& user_path, QString const& path, QString& action);
+    void                    add_user_rights(QString const & right, sets_t& sets);
+    void                    add_plugin_permissions(QString const& plugin_name, QString const& group, sets_t& sets);
 
 private:
-    void content_update(int64_t variables_timestamp);
+    void                    content_update(int64_t variables_timestamp);
+    void                    recursive_add_user_rights(QString const& key, sets_t& sets);
+    void                    recursive_add_plugin_permissions(QString const& plugin_name, QString const& key, sets_t& sets);
 
     zpsnap_child_t          f_snap;
 };

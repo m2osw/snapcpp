@@ -24,9 +24,18 @@
 #include <QtCassandra/QCassandraValue.h>
 #include <openssl/rand.h>
 #include <iostream>
+#include "poison.h"
 
 
 SNAP_PLUGIN_START(permissions, 1, 0)
+
+
+/** \enum name_t
+ * \brief Names used by the permissions plugin.
+ *
+ * This enumeration is used to avoid entering the same names over and
+ * over and the likelihood of misspelling that name once in a while.
+ */
 
 
 /** \brief Get a fixed permissions plugin name.
@@ -42,16 +51,16 @@ const char *get_name(name_t name)
 {
     switch(name) {
     case SNAP_NAME_PERMISSIONS_PATH:
-        return "/types/permissions";
+        return "types/permissions";
 
     case SNAP_NAME_PERMISSIONS_ACTION_PATH:
-        return "/types/permissions/actions";
+        return "types/permissions/actions";
 
     case SNAP_NAME_PERMISSIONS_GROUPS_PATH:
-        return "/types/permissions/groups";
+        return "types/permissions/groups";
 
     case SNAP_NAME_PERMISSIONS_RIGHTS_PATH:
-        return "/types/permissions/rights";
+        return "types/permissions/rights";
 
     default:
         // invalid index
@@ -141,6 +150,7 @@ const QString& permissions::sets_t::get_action() const
  */
 void permissions::sets_t::add_user_right(const QString& right)
 {
+printf("  USER RIGHT -> [%s]\n", right.toUtf8().data());
     f_user_rights.insert(right);
 }
 
@@ -179,7 +189,30 @@ int permissions::sets_t::get_user_rights_count() const
  */
 void permissions::sets_t::add_plugin_permission(const QString& plugin, const QString& right)
 {
+printf("  PLUGIN [%s] PERMISSION -> [%s]\n", plugin.toUtf8().data(), right.toUtf8().data());
     f_plugin_permissions[plugin].insert(right);
+}
+
+
+/** \brief Check whether the user has root permissions.
+ *
+ * This function quickly searches for the one permission that marks a
+ * user as the root user. This is done by testing whether the user has
+ * the main rights permission (types/permissions/rights).
+ *
+ * This function is called before checking all the rights on a page
+ * because whatever those rights, if the user has root permissions,
+ * then he will have the right. Period.
+ *
+ * This being said, the data that's locked is still checked and the
+ * access on those is still prevented if a system lock exists.
+ *
+ * \return true if the user is a root user.
+ */
+bool permissions::sets_t::is_root() const
+{
+    // the top rights type represents the full root user (i.e. all rights)
+    return f_user_rights.contains(get_name(SNAP_NAME_PERMISSIONS_RIGHTS_PATH));
 }
 
 
@@ -195,6 +228,12 @@ void permissions::sets_t::add_plugin_permission(const QString& plugin, const QSt
  */
 bool permissions::sets_t::allowed() const
 {
+    if(f_plugin_permissions.isEmpty())
+    {
+        // if the plugins added nothing, there are no rights to compare
+        return false;
+    }
+
     for(req_sets_t::iterator pp(f_plugin_permissions.begin());
             pp != f_plugin_permissions.end();
             ++pp)
@@ -318,23 +357,39 @@ void permissions::content_update(int64_t variables_timestamp)
  * This function readies the user rights in the specified \p sets.
  *
  * The plugins that capture this function are expected to add user
- * rights to the sets (with the add_user_right() function.) No other
- * permissions should be modified.
+ * rights to the sets (with the add_user_right() function.) No plugin
+ * permissions should be modified at this point. The
+ * get_plugin_permissions() is used to that effect.
  *
- * Note that only the right that correspond to the specified action are
+ * Note that only the rights that correspond to the specified action are
  * to be added here.
  *
  * \code
- *   sets.add_user_right("/types/permissions/rights/edit");
+ *   sets.add_user_right("/types/permissions/rights/edit/page");
  * \endcode
  *
- * \param[in] permissions  A pointer to the permissions plugin.
+ * \note
+ * Although it is a permission thing, the user plugin makes most of the
+ * work of determining the user rights (although the user plugin calls
+ * functions of the permission plugin such as the add_user_rights()
+ * function.) This is because the user plugin can include the permissions
+ * plugin, but not the other way around.
+ *
+ * \todo
+ * Fix the dependencies so one of permissions or user uses the other,
+ * at this time they depend on each other!
+ *
+ * \param[in] perms  A pointer to the permissions plugin.
  * \param[in,out] sets  The sets_t object where rights get added.
  *
  * \return true if the signal has to be sent to other plugins.
+ *
+ * \sa add_user_rights()
  */
-bool permissions::get_user_rights_impl(permissions * /*p*/, sets_t& sets)
+bool permissions::get_user_rights_impl(permissions *perms, sets_t& sets)
 {
+    (void)perms;
+    (void)sets;
     return true;
 }
 
@@ -345,7 +400,8 @@ bool permissions::get_user_rights_impl(permissions * /*p*/, sets_t& sets)
  *
  * The plugins that capture this function are expected to add plugin
  * permissions to the sets (with the add_plugin_permission() function.)
- * No user rights should be modified in this process.
+ * No user rights should be modified in this process. Those are taken
+ * cared of by the get_user_rights().
  *
  * Note that for plugins we use the term permissions because the plugin
  * allows that capability, whereas a user has rights. However, in the end,
@@ -365,13 +421,85 @@ bool permissions::get_user_rights_impl(permissions * /*p*/, sets_t& sets)
  *   users::users::get_plugin_name();
  * \endcode
  *
- * \param[in] permissions  A pointer to the permissions plugin.
+ * \note
+ * Although the permissions are rather tangled with the content, this
+ * plugin checks the basic content setup because the content plugin cannot
+ * have references to the permissions (because permissions include content
+ * we cannot then include permissions from the content.)
+ *
+ * \param[in] perms  A pointer to the permissions plugin.
  * \param[in,out] sets  The sets_t object where rights get added.
  *
  * \return true if the signal has to be sent to other plugins.
  */
-bool permissions::get_plugin_permissions_impl(permissions * /*p*/, sets_t& sets)
+bool permissions::get_plugin_permissions_impl(permissions *perms, sets_t& sets)
 {
+    // this very page may be assigned direct permissions
+    QSharedPointer<QtCassandra::QCassandraTable> content_table(content::content::instance()->get_content_table());
+    QString const path(sets.get_path());
+    QString const site_key(f_snap->get_site_key_with_slash());
+    QString const key(site_key + path);
+printf("path [%s] [%s]\n", path.toUtf8().data(), key.toUtf8().data());
+    if(!content_table->exists(key))
+    {
+        // is that not an error?
+        return true;
+        //throw permissions_exception_invalid_path("could not access content \"" + key + "\"");
+    }
+
+    //QSharedPointer<QtCassandra::QCassandraRow> row(content_table->row(key));
+
+    QString const link_start_name("permissions::" + sets.get_action());
+    {
+        // check local links for this action
+        links::link_info info(link_start_name, false, key);
+        QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
+        links::link_info right_info;
+        while(link_ctxt->next_link(right_info))
+        {
+            QString const right_key(right_info.key());
+            sets.add_plugin_permission(content::content::instance()->get_plugin_name(), right_key);
+        }
+    }
+
+    {
+        // get the content type (content::page_type) and then retrieve
+        // the rights directly from that type
+        QString const link_name("content::page_type");
+        links::link_info info(link_name, true, key);
+        QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
+        links::link_info content_type_info;
+        if(link_ctxt->next_link(content_type_info)) // use if() since it is unique on this end
+        {
+            QString const content_type_key(content_type_info.key());
+
+            {
+                // read from the content type now
+                links::link_info perm_info(link_start_name, false, content_type_key);
+                link_ctxt = links::links::instance()->new_link_context(perm_info);
+                links::link_info right_info;
+                while(link_ctxt->next_link(right_info))
+                {
+                    QString const right_key(right_info.key());
+                    sets.add_plugin_permission(content::content::instance()->get_plugin_name(), right_key);
+                }
+            }
+
+            {
+                // finally, check if there are groups defined for this content type
+                // groups here function the same way as user groups
+                links::link_info perm_info("permissions::groups", false, content_type_key);
+                link_ctxt = links::links::instance()->new_link_context(perm_info);
+                links::link_info right_info;
+                while(link_ctxt->next_link(right_info))
+                {
+                    QString const right_key(right_info.key());
+                    add_plugin_permissions(content::content::instance()->get_plugin_name(), right_key, sets);
+                }
+            }
+        }
+    }
+
     return true;
 }
 
@@ -417,22 +545,70 @@ void permissions::on_validate_action(const QString& path, QString& action)
         action = "view";
     }
 
-    QString user_path(users::users::instance()->get_user_path());
-    const bool allowed(access_allowed(user_path, path, action));
+    users::users *users_plugin(users::users::instance());
+    QString user_path(users_plugin->get_user_path());
+    if(user_path == "user")
+    {
+        user_path.clear();
+    }
+    QString key(path);
+    f_snap->canonicalize_path(key); // remove the starting slash
+    const bool allowed(access_allowed(user_path, key, action));
     if(!allowed)
     {
-        if(users::users::instance()->get_user_key().isEmpty())
+        if(users_plugin->get_user_key().isEmpty())
         {
+            // special case of spammers
+            if(users_plugin->user_is_a_spammer())
+            {
+                // force a redirect on error not from the home page
+                if(path != "/")
+                {
+                    // spammers are expected to have enough rights to access
+                    // the home page so we try to redirect them there
+                    messages::messages::instance()->set_error(
+                        "Access Denied",
+                        "The page you were trying to access (" + path + ") requires more privileges.",
+                        "spammer trying to \"" + action + "\" on page \"" + path + "\".",
+                        false
+                    );
+                    f_snap->page_redirect("/", snap_child::HTTP_CODE_ACCESS_DENIED);
+                }
+                else
+                {
+                    // if user does not even have access to the home page...
+                    f_snap->die(snap_child::HTTP_CODE_ACCESS_DENIED,
+                            "Access Denied",
+                            "You are not authorized to access our website.",
+                            "spammer trying to \"" + action + "\" on page \"" + path + "\" with unsufficient rights.");
+                }
+                NOTREACHED();
+            }
+
+            if(path == "/login")
+            {
+                // An IP, Agent, etc. based test could get us here...
+                f_snap->die(snap_child::HTTP_CODE_ACCESS_DENIED,
+                        "Access Denied",
+                        action != "view"
+                            ? "You are not authorized to access the login page with action " + action
+                            : "Somehow you are not authorized to access the login page.",
+                        "user trying to \"" + action + "\" on page \"" + path + "\" with unsufficient rights.");
+                NOTREACHED();
+            }
+
             // user is anonymous, there is hope, he may have access once
             // logged in
+            // TODO all redirects need to also include a valid action!
+            users_plugin->attach_to_session(get_name(users::SNAP_NAME_USERS_LOGIN_REFERRER), path);
             messages::messages::instance()->set_error(
-                "Access Denied",
+                "Unauthorized",
                 "The page you were trying to access (" + path
                         + ") requires more privileges. If you think you have such, try to log in first.",
                 "user trying to \"" + action + "\" on page \"" + path + "\" when not logged in.",
                 false
             );
-            f_snap->page_redirect("user/password", snap_child::HTTP_CODE_ACCESS_DENIED);
+            f_snap->page_redirect("login", snap_child::HTTP_CODE_UNAUTHORIZED);
         }
         else
         {
@@ -480,7 +656,8 @@ bool permissions::access_allowed(const QString& user_path, const QString& path, 
 {
     // check that the action is defined in the database (i.e. valid)
     QSharedPointer<QtCassandra::QCassandraTable> content_table(content::content::instance()->get_content_table());
-    QString key(get_name(SNAP_NAME_PERMISSIONS_ACTION_PATH) + ("/" + action));
+    QString const site_key(f_snap->get_site_key_with_slash());
+    QString const key(site_key + get_name(SNAP_NAME_PERMISSIONS_ACTION_PATH) + ("/" + action));
     if(!content_table->exists(key))
     {
         // TODO it is rather easy to arrive here so we need to test whether
@@ -498,15 +675,190 @@ bool permissions::access_allowed(const QString& user_path, const QString& path, 
     // first we get the user rights for that action because that's a lot
     // smaller and if empty we do not have to get anything else
     // (intersection of an empty set with anything else is the empty set)
+printf("retrieving USER rights... [%s]\n", sets.get_action().toUtf8().data());
     get_user_rights(this, sets);
     if(sets.get_user_rights_count() != 0)
     {
+        if(sets.is_root())
+        {
+            return true;
+        }
+printf("retrieving PLUGING permissions... [%s]\n", sets.get_action().toUtf8().data());
         get_plugin_permissions(this, sets);
+printf("now compute the intersection!\n");
         return sets.allowed();
     }
 
     return false;
 }
+
+
+/** \brief Add user rights.
+ *
+ * This function is called to add user rights from the specified group
+ * and all of its children.
+ *
+ * Groups are expected to include links to different permission rights.
+ *
+ * \param[in] group  The rights of this group are added.
+ * \param[in,out] sets  The sets receiving the rights.
+ */
+void permissions::add_user_rights(QString const& group, sets_t& sets)
+{
+    // a quick check to make sure that the programmer is not directly
+    // adding a right (which he should do to the sets instead of this
+    // function although we instead generate an error.)
+    if(group.contains("types/permissions/rights"))
+    {
+        throw snap_logic_exception("you cannot add rights using add_user_rights(), for those just use the add_user_rights() on the sets directly");
+    }
+
+    QSharedPointer<QtCassandra::QCassandraTable> content_table(content::content::instance()->get_content_table());
+    QString const site_key(f_snap->get_site_key_with_slash());
+    QString const key(site_key + group);
+    recursive_add_user_rights(key, sets);
+}
+
+
+/** \brief Recursively retrieve all the user rights.
+ *
+ * User rights are defined in groups and this function reads all the
+ * rights defined in a group and all of its children.
+ *
+ * The recursivity works over the group children, and children of those
+ * children and so on. So the number of iteration will remain relatively
+ * limited.
+ *
+ * \param[in] key  The key (row) being added.
+ * \param[in] sets  The sets where the different paths are being added.
+ */
+void permissions::recursive_add_user_rights(QString const& key, sets_t& sets)
+{
+    QSharedPointer<QtCassandra::QCassandraTable> content_table(content::content::instance()->get_content_table());
+    if(!content_table->exists(key))
+    {
+        throw permissions_exception_invalid_group_name("caller is trying to access group \"" + key + "\"");
+    }
+
+    QSharedPointer<QtCassandra::QCassandraRow> row(content_table->row(key));
+
+    // get the rights at this level
+    {
+        QString const link_start_name("permissions::" + sets.get_action());
+        links::link_info info(link_start_name, false, key);
+        QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
+        links::link_info right_info;
+        while(link_ctxt->next_link(right_info))
+        {
+            // an author is attached to this page
+            QString const right_key(right_info.key());
+            sets.add_user_right(right_key);
+        }
+    }
+
+    // get all the children and do a recursive call with them all
+    {
+        QString const children_name("content::children");
+        links::link_info info(children_name, false, key);
+        QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
+        links::link_info right_info;
+        while(link_ctxt->next_link(right_info))
+        {
+            // an author is attached to this page
+            const QString child_key(right_info.key());
+            recursive_add_user_rights(child_key, sets);
+        }
+    }
+}
+
+
+/** \brief Add plugin rights.
+ *
+ * This function is called to add plugin rights from the specified group
+ * and all of its children.
+ *
+ * Groups are expected to include links to different permission rights.
+ *
+ * \todo
+ * It seems to me that the name of the plugin should always be the
+ * same when groups are concerned, i.e. "content", but I'm not really
+ * 100% convinced of that so at this point it is a parameter. Also it
+ * could be that the name should be defined in the group and not by
+ * the caller (that may be the real deal).
+ *
+ * \param[in] plugin_name  The name of the plugin adding these rights.
+ * \param[in] group  The rights of this group are added.
+ * \param[in,out] sets  The sets receiving the rights.
+ */
+void permissions::add_plugin_permissions(QString const& plugin_name, QString const& group, sets_t& sets)
+{
+    // a quick check to make sure that the programmer is not directly
+    // adding a right (which he should do to the sets instead of this
+    // function although we instead generate an error.)
+    if(group.contains("types/permissions/rights"))
+    {
+        throw snap_logic_exception("you cannot add rights using add_user_rights(), for those just use the add_user_rights() on the sets directly");
+    }
+
+    QSharedPointer<QtCassandra::QCassandraTable> content_table(content::content::instance()->get_content_table());
+    QString const site_key(f_snap->get_site_key_with_slash());
+    QString const key(site_key + group);
+    recursive_add_plugin_permissions(plugin_name, key, sets);
+}
+
+
+/** \brief Recursively retrieve all the user rights.
+ *
+ * User rights are defined in groups and this function reads all the
+ * rights defined in a group and all of its children.
+ *
+ * The recursivity works over the group children, and children of those
+ * children and so on. So the number of iteration will remain relatively
+ * limited.
+ *
+ * \param[in] plugin_name  The name of the plugin adding these rights.
+ * \param[in] key  The key (row) being added.
+ * \param[in] sets  The sets where the different paths are being added.
+ */
+void permissions::recursive_add_plugin_permissions(QString const& plugin_name, QString const& key, sets_t& sets)
+{
+    QSharedPointer<QtCassandra::QCassandraTable> content_table(content::content::instance()->get_content_table());
+    if(!content_table->exists(key))
+    {
+        throw permissions_exception_invalid_group_name("caller is trying to access group \"" + key + "\"");
+    }
+
+    QSharedPointer<QtCassandra::QCassandraRow> row(content_table->row(key));
+
+    // get the rights at this level
+    {
+        QString const link_start_name("permissions::" + sets.get_action());
+        links::link_info info(link_start_name, false, key);
+        QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
+        links::link_info right_info;
+        while(link_ctxt->next_link(right_info))
+        {
+            // an author is attached to this page
+            QString const right_key(right_info.key());
+            sets.add_plugin_permission(plugin_name, right_key);
+        }
+    }
+
+    // get all the children and do a recursive call with them all
+    {
+        QString const children_name("content::children");
+        links::link_info info(children_name, false, key);
+        QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
+        links::link_info right_info;
+        while(link_ctxt->next_link(right_info))
+        {
+            // an author is attached to this page
+            const QString child_key(right_info.key());
+            recursive_add_plugin_permissions(plugin_name, child_key, sets);
+        }
+    }
+}
+
 
 
 SNAP_PLUGIN_END()

@@ -23,6 +23,7 @@
 #include "dom_util.h"
 #include <iostream>
 #include <QFile>
+#include "poison.h"
 
 
 SNAP_PLUGIN_START(content, 1, 0)
@@ -203,9 +204,9 @@ int64_t content::do_update(int64_t last_updated)
  */
 void content::initial_update(int64_t variables_timestamp)
 {
-    // add the index page! -- not like this anymore! see the content.xml files instead
-    //path::path::instance()->add_path("content", "", variables_timestamp);
+    get_content_table();
 }
+
 
 /** \brief Update the database with our content references.
  *
@@ -218,6 +219,22 @@ void content::content_update(int64_t variables_timestamp)
 {
     content::content::instance()->add_xml("content");
 }
+
+
+/** \brief Initialize the content table.
+ *
+ * This function creates the content table if it doesn't exist yet. Otherwise
+ * it simple initializes the f_content_table variable member.
+ *
+ * If the function is not able to create the table an exception is raised.
+ *
+ * \return The pointer to the content table.
+ */
+QSharedPointer<QtCassandra::QCassandraTable> content::get_content_table()
+{
+    return f_snap->create_table(get_name(SNAP_NAME_CONTENT_TABLE), "Website content table.");
+}
+
 
 /** \brief Execute a page: generate the complete output of that page.
  *
@@ -236,29 +253,8 @@ bool content::on_path_execute(const QString& cpath)
 {
     f_snap->output(layout::layout::instance()->apply_layout(cpath, this));
 
-    //QtCassandra::QCassandraValue title(get_content_parameter(path, get_name(SNAP_NAME_CONTENT_TITLE)));
-    //QtCassandra::QCassandraValue body(get_content_parameter(path, get_name(SNAP_NAME_CONTENT_BODY)));
-    //f_snap->output("<html><head><title>" + title.stringValue() + "</title></head><body>" + body.stringValue() + "</body></html>\n");
     return true;
 }
-
-/** \brief Generate the header of the content.
- *
- * This function generates the main content header information. Other
- * plugins will also receive the event and are invited to add their
- * own information to any header as required by their implementation.
- *
- * Remember that this is not exactly the HTML header, it's the XML
- * header that will be parsed through the theme XSLT file.
- *
- * \param[in] c  The content pointer.
- * \param[in] path  The path being managed.
- * \param[in] header  The header being generated.
- */
-//bool content::on_generate_header_content_impl(content *c, const QString& path, QDomElement& header)
-//{
-//  return true;
-//}
 
 
 /** \brief Create a page at the specified path.
@@ -273,10 +269,29 @@ bool content::on_path_execute(const QString& cpath)
  * The full key for the page makes use of the site key which cannot already
  * be included in the path.
  *
+ * The type of a new page must be specified. By default, the type is set
+ * to "page". Specific modules may offer additional types. The three offered
+ * by the content plugin are:
+ *
+ * \li "page" -- a standard user page.
+ * \li "administration-page" -- in general any page under /admin.
+ * \li "system-page" -- a page created by the content.xml which is not under
+ *                      /admin.
+ *
+ * The page type MUST be just the type. It may be a path since a type
+ * of page may be a sub-type of an basic type. For example, a "blog"
+ * type would actually be a page and thus the proper type to pass to
+ * this function is "page/blog" and not a full path or just "blog".
+ * We force you in this way so any plugin can test the type without
+ * having to frantically test all sorts of cases.
+ *
  * \param[in] path  The path of the new page.
  * \param[in] owner  The name of the plugin that is to own this page.
+ * \param[in] type  The type of page.
+ *
+ * \return true if the signal is to be propagated.
  */
-bool content::create_content_impl(const QString& path, const QString& owner)
+bool content::create_content_impl(const QString& path, const QString& owner, const QString& type)
 {
     QSharedPointer<QtCassandra::QCassandraTable> content_table(get_content_table());
     const QString site_key(f_snap->get_site_key_with_slash());
@@ -300,6 +315,21 @@ bool content::create_content_impl(const QString& path, const QString& owner)
     row->cell(QString(get_name(SNAP_NAME_CONTENT_CREATED)))->setValue(start_date);
     row->cell(QString(get_name(SNAP_NAME_CONTENT_UPDATED)))->setValue(start_date);
     row->cell(QString(get_name(SNAP_NAME_CONTENT_MODIFIED)))->setValue(start_date);
+
+    // link the page to its type (very important for permissions)
+    {
+        // TODO we probably should test whether that content-types exists
+        //      because if not it's certainly completely invalid (i.e. the
+        //      programmer mistyped the type [again])
+        QString const destination_key(site_key + "types/taxonomy/system/content-types/" + (type.isEmpty() ? "page" : type));
+        QString const link_name("content::page_type");
+        QString const link_to("content::page_type");
+        bool const source_unique(true);
+        bool const destination_unique(false);
+        links::link_info source(link_name, source_unique, key);
+        links::link_info destination(link_to, destination_unique, destination_key);
+        links::links::instance()->create_link(source, destination);
+    }
 
     // link this entry to its parent automatically
     // first we need to remove the site key from the path
@@ -612,21 +642,6 @@ void content::on_generate_page_content(layout::layout *l, const QString& path, Q
 }
 
 
-/** \brief Initialize the content table.
- *
- * This function creates the content table if it doesn't exist yet. Otherwise
- * it simple initializes the f_content_table variable member.
- *
- * If the function is not able to create the table an exception is raised.
- *
- * \return The pointer to the content table.
- */
-QSharedPointer<QtCassandra::QCassandraTable> content::get_content_table()
-{
-    return f_snap->create_table(get_name(SNAP_NAME_CONTENT_TABLE), "Website content table.");
-}
-
-
 /** \brief Retreive a content page parameter.
  *
  * This function reads a column from the content of the page using the
@@ -717,7 +732,7 @@ void content::add_xml(const QString& plugin_name)
         // invalid plugin name
         throw content_exception_invalid_content_xml("add_xml() called with an invalid plugin name: \"" + plugin_name + "\"");
     }
-    QString filename(":/plugins/" + plugin_name + "/content.xml");
+    QString const filename(":/plugins/" + plugin_name + "/content.xml");
     QFile xml_content(filename);
     if(!xml_content.open(QFile::ReadOnly))
     {
@@ -731,7 +746,7 @@ void content::add_xml(const QString& plugin_name)
         throw content_exception_invalid_content_xml("add_xml() cannot read the XML of content file: \"" + filename + "\"");
     }
     QDomNodeList content_nodes(dom.elementsByTagName("content"));
-    int max(content_nodes.size());
+    int const max(content_nodes.size());
     for(int i(0); i < max; ++i)
     {
         QDomNode content_node(content_nodes.at(i));
@@ -753,13 +768,14 @@ void content::add_xml(const QString& plugin_name)
             throw content_exception_invalid_content_xml("all <content> tags supplied to add_xml() must include a valid \"path\" attribute");
         }
         f_snap->canonicalize_path(path);
-        QString key(f_snap->get_site_key_with_slash() + path);
+        QString const key(f_snap->get_site_key_with_slash() + path);
 
         // create a new entry for the database
         add_content(key, plugin_name);
 
         QDomNodeList children(content_element.childNodes());
-        int cmax(children.size());
+        bool found_content_type(false);
+        int const cmax(children.size());
         for(int c(0); c < cmax; ++c)
         {
             // grab <param> and <link> tags
@@ -869,6 +885,10 @@ void content::add_xml(const QString& plugin_name)
                     // force the owner in the link name
                     link_name = plugin_name + "::" + link_name;
                 }
+                if(link_name == "content::page_type")
+                {
+                    found_content_type = true;
+                }
                 QString link_to(element.attribute("to"));
                 if(link_to.isEmpty())
                 {
@@ -914,6 +934,20 @@ void content::add_xml(const QString& plugin_name)
                 links::link_info destination(link_to, destination_unique, destination_key);
                 add_link(key, source, destination);
             }
+        }
+        if(!found_content_type)
+        {
+            QString const link_name("content::page_type");
+            QString const link_to("content::page_page");
+            bool const source_unique(true);
+            bool const destination_unique(false);
+            QString const destination_path(path.left(6) == "admin/"
+                    ? "types/taxonomy/system/content-types/administration-page"
+                    : "types/taxonomy/system/content-types/system-page");
+            QString const destination_key(f_snap->get_site_key_with_slash() + destination_path);
+            links::link_info source(link_name, source_unique, key);
+            links::link_info destination(link_to, destination_unique, destination_key);
+            add_link(key, source, destination);
         }
     }
 }

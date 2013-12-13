@@ -37,7 +37,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="content::body" overwrite="yes">
       <![CDATA[<p>Welcome to your new Snap! C++ website.</p><p><a href="/login">Log In Now!</a></p>]]>
     </param>
-    <param name="layout::theme" force-namespace="no">plugins.content.modified&gt;10?"large_theme":"small_theme";</param>
+    <!--param name="layout::theme" force-namespace="no">plugins.content.modified&gt;10?"large_theme":"small_theme";</param-->
+    <link name="content::page_type" to="content::page_type" mode="1:*">/types/taxonomy/system/content-types/page/public</link>
+    <link name="permissions::view" to="permissions::view" mode="*:*">/types/permissions/rights/view/page/for-spammers</link>
     <link name="sitemapxml::include" to="sitemapxml::include" mode="1:*">/types/taxonomy/system/sitemapxml/include</link>
     <!--link name="robotstxt::noindex" to="robotstxt::noindex" mode="1:*">/types/taxonomy/system/robotstxt/noindex</link-->
   </content>
@@ -46,7 +48,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="content::body" overwrite="yes">
       <![CDATA[<p>Administration pages are all listed here.</p>]]>
     </param>
-    <link name="permissions::administration" to="permissions::administration" mode="1:*">/types/permissions/rights/administration</link>
+    <link name="content::page_type" to="content::page_type" mode="1:*">/types/taxonomy/system/content-types/administration-page</link>
+    <link name="permissions::administer" to="permissions::administer" mode="*:*">/types/permissions/rights/administer</link>
   </content>
   <content path="/admin/settings">
     <param name="content::title">Settings</param>
@@ -68,25 +71,65 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     </param>
     <param name="layout::theme">"type_theme";</param>
     <!-- the root content-types requires root privileges -->
-    <link name="permissions::administer" to="permissions::administer" mode="1:*">/types/permissions/rights/administer</link>
-    <link name="permissions::create" to="permissions::create" mode="1:*">/types/permissions/rights/create</link>
-    <link name="permissions::delete" to="permissions::delete" mode="1:*">/types/permissions/rights/delete</link>
-    <link name="permissions::edit" to="permissions::edit" mode="1:*">/types/permissions/rights/administer</link>
-    <link name="permissions::view" to="permissions::view" mode="1:*">/types/permissions/rights/view</link>
+    <link name="permissions::administer" to="permissions::administer" mode="*:*">/types/permissions/rights/administer</link>
+    <link name="permissions::create" to="permissions::create" mode="*:*">/types/permissions/rights/create</link>
+    <link name="permissions::delete" to="permissions::delete" mode="*:*">/types/permissions/rights/delete</link>
+    <link name="permissions::edit" to="permissions::edit" mode="*:*">/types/permissions/rights/administer</link>
+    <link name="permissions::view" to="permissions::view" mode="*:*">/types/permissions/rights/view</link>
+  </content>
+  <content path="/types/taxonomy/system/content-types/administration-page">
+    <param name="taxonomy::name">content::administration_page</param>
+    <param name="content::title">Administration Page</param>
+    <param name="content::body">
+      <![CDATA[<p>Internal pages created by plugins to manage your website are considered administration pages.</p>]]>
+    </param>
   </content>
   <content path="/types/taxonomy/system/content-types/page">
-    <param name="taxonomy::name">content::types::page</param>
     <param name="content::title">Page Content Type</param>
     <param name="content::body">
       <![CDATA[<p>By default pages you create are of this type. You can change the type of your pages in order to group them differently, give them a different look or environment, etc.</p>]]>
     </param>
     <param name="layout::theme">"page_theme";</param>
-    <link name="content::types::page" to="content::types::page" mode="1:*">/</link>
+    <link name="permissions::view" to="permissions::view" mode="*:*">/types/permissions/rights/view</link>
   </content>
-  <content path="/types/taxonomy/system/content-types/administration-page">
-    <param name="content::title">Administration Page</param>
+  <content path="/types/taxonomy/system/content-types/page/public">
+    <param name="content::title">Page Content Type</param>
     <param name="content::body">
-      <![CDATA[<p>Internal pages created by plugins to manage your website are considered administration pages.</p>]]>
+      <![CDATA[<p>Public pages can be viewed by anyone including anonymous users.</p>]]>
+    </param>
+    <param name="layout::theme">"page_theme";</param>
+    <link name="permissions::view" to="permissions::view" mode="*:*">/types/permissions/rights/view/page/public</link>
+    <link name="permissions::administer" to="permissions::administer" mode="*:*">/types/permissions/rights/administer</link>
+  </content>
+  <content path="/types/taxonomy/system/content-types/system-page">
+    <param name="taxonomy::name">content::system_page</param>
+    <param name="content::title">System Page</param>
+    <param name="content::body">
+      <![CDATA[<p>These pages are created by the system on startup. This is the default type of all the pages of content generated from content.xml files when they do not otherwise specify a page type.</p>]]>
+    </param>
+  </content>
+  <content path="/types/permissions/rights/view/page">
+    <param name="content::title">View Page Right</param>
+    <param name="content::body">
+      <![CDATA[<p>View a page of content.</p><p>This right is used to mark public pages.</p>]]>
+    </param>
+  </content>
+  <content path="/types/permissions/rights/view/page/public">
+    <param name="content::title">Public Page Right</param>
+    <param name="content::body">
+      <![CDATA[<p>Right given to public pages to anonymous visitors can see it.</p>]]>
+    </param>
+  </content>
+  <content path="/types/permissions/rights/view/page/for-spammers">
+    <param name="content::title">Restricted View Page Right (For Spammers)</param>
+    <param name="content::body">
+      <![CDATA[<p>View one of the few pages that a spammer can view.</p><p>We offer the spammers to see our home page, our privacy policy, and our terms and conditions. This right is for those few pages.</p>]]>
+    </param>
+  </content>
+  <content path="/types/permissions/rights/view/system-page">
+    <param name="content::title">View System Page Right</param>
+    <param name="content::body">
+      <![CDATA[<p>View system pages.</p><p>This right is used to mark public pages that are managed by the system.</p>]]>
     </param>
   </content>
 </snap-tree>

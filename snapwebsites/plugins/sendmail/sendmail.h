@@ -17,19 +17,9 @@
 #ifndef SNAP_SENDMAIL_H
 #define SNAP_SENDMAIL_H
 
-#include "snapwebsites.h"
-#include "plugins.h"
-#include "qcaseinsensitivestring.h"
-#include "snap_child.h"
-#include "../layout/layout.h"
 #include "../sessions/sessions.h"
 #include "../filter/filter.h"
-#include <libtld/tld.h>
-#include <QtSerialization/QSerializationReader.h>
-#include <controlled_vars/controlled_vars_need_init.h>
-#include <QMap>
-#include <QVector>
-#include <QByteArray>
+#include "qcaseinsensitivestring.h"
 
 namespace snap
 {

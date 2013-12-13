@@ -655,9 +655,29 @@ WARN_LOGFILE           =
 # directories like "/usr/src/myproject". Separate the files or directories
 # with spaces.
 
+# Note: not too sure why, but any combo from "plugins/*[/[*.{cpp,h}]]"
+#       does not work!
 INPUT                  = @snapwebsites_SOURCE_DIR@/lib \
                          @snapwebsites_SOURCE_DIR@/src \
-                         @snapwebsites_SOURCE_DIR@/plugins/*
+                         @snapwebsites_BINARY_DIR@/lib/snapwebsites.h \
+                         @snapwebsites_SOURCE_DIR@/plugins/char_chart \
+                         @snapwebsites_SOURCE_DIR@/plugins/content \
+                         @snapwebsites_SOURCE_DIR@/plugins/filter \
+                         @snapwebsites_SOURCE_DIR@/plugins/form \
+                         @snapwebsites_SOURCE_DIR@/plugins/javascript \
+                         @snapwebsites_SOURCE_DIR@/plugins/layout \
+                         @snapwebsites_SOURCE_DIR@/plugins/links \
+                         @snapwebsites_SOURCE_DIR@/plugins/mailinglist \
+                         @snapwebsites_SOURCE_DIR@/plugins/messages \
+                         @snapwebsites_SOURCE_DIR@/plugins/path \
+                         @snapwebsites_SOURCE_DIR@/plugins/permissions \
+                         @snapwebsites_SOURCE_DIR@/plugins/robotstxt \
+                         @snapwebsites_SOURCE_DIR@/plugins/search \
+                         @snapwebsites_SOURCE_DIR@/plugins/sendmail \
+                         @snapwebsites_SOURCE_DIR@/plugins/sessions \
+                         @snapwebsites_SOURCE_DIR@/plugins/sitemapxml \
+                         @snapwebsites_SOURCE_DIR@/plugins/taxonomy \
+                         @snapwebsites_SOURCE_DIR@/plugins/users
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding, which is
@@ -1794,3 +1814,5 @@ GENERATE_LEGEND        = YES
 # the various graphs.
 
 DOT_CLEANUP            = YES
+
+# vim: ts=4 sw=4 et

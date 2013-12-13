@@ -17,8 +17,8 @@
 #ifndef SNAP_USERS_H
 #define SNAP_USERS_H
 
-#include "../layout/layout.h"
 #include "../form/form.h"
+#include "../permissions/permissions.h"
 #include "../sitemapxml/sitemapxml.h"
 
 namespace snap
@@ -32,6 +32,7 @@ enum name_t
     SNAP_NAME_USERS_AUTHOR,
     SNAP_NAME_USERS_AUTHORED_PAGES,
     SNAP_NAME_USERS_AUTO_PATH,
+    SNAP_NAME_USERS_BLACK_LIST,
     SNAP_NAME_USERS_BLOCKED_PATH,
     SNAP_NAME_USERS_CHANGING_PASSWORD_KEY,
     SNAP_NAME_USERS_CREATED_TIME,
@@ -145,13 +146,15 @@ public:
     void                    on_process_cookies();
     void                    on_attach_to_session();
     void                    on_detach_from_session();
-    void                    on_create_content(const QString& path, const QString& owner);
+    void                    on_create_content(const QString& path, const QString& owner, const QString& type);
+    void                    on_get_user_rights(permissions::permissions *perms, permissions::permissions::sets_t& sets);
 
     virtual QDomDocument    on_get_xml_form(const QString& cpath);
     virtual void            on_process_post(const QString& uri_path, const sessions::sessions::session_info& info);
 
     QString                 get_user_key() const;
     QString                 get_user_path() const;
+    bool                    user_is_a_spammer();
     bool                    register_user(const QString& email, const QString& password);
     void                    attach_to_session(const QString& name, const QString& data);
     QString                 detach_from_session(const QString& name) const;

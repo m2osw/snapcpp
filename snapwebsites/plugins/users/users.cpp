@@ -28,6 +28,8 @@
 #include <boost/static_assert.hpp>
 #include <QtCassandra/QCassandraLock.h>
 
+#include "poison.h"
+
 
 SNAP_PLUGIN_START(users, 1, 0)
 
@@ -58,13 +60,16 @@ const char *get_name(name_t name)
         return "user";
 
     case SNAP_NAME_USERS_AUTHOR:
-        return "author";
+        return "users::author";
 
     case SNAP_NAME_USERS_AUTHORED_PAGES:
-        return "authored_pages";
+        return "users::authored_pages";
 
     case SNAP_NAME_USERS_AUTO_PATH:
         return "types/users/auto";
+
+    case SNAP_NAME_USERS_BLACK_LIST:
+        return "*black_list*";
 
     case SNAP_NAME_USERS_BLOCKED_PATH:
         return "types/users/blocked";
@@ -144,7 +149,7 @@ const char *get_name(name_t name)
         return "users__snap_session";
 
     case SNAP_NAME_USERS_STATUS:
-        return "status";
+        return "users::status";
 
     case SNAP_NAME_USERS_TABLE:
         return "users";
@@ -301,10 +306,11 @@ void users::on_bootstrap(::snap::snap_child *snap)
     SNAP_LISTEN0(users, "server", server, process_cookies);
     SNAP_LISTEN0(users, "server", server, attach_to_session);
     SNAP_LISTEN0(users, "server", server, detach_from_session);
-    SNAP_LISTEN(users, "content", content::content, create_content, _1, _2);
+    SNAP_LISTEN(users, "content", content::content, create_content, _1, _2, _3);
     SNAP_LISTEN(users, "path", path::path, can_handle_dynamic_path, _1, _2);
     SNAP_LISTEN(users, "layout", layout::layout, generate_header_content, _1, _2, _3, _4, _5);
     SNAP_LISTEN(users, "layout", layout::layout, generate_page_content, _1, _2, _3, _4, _5);
+    SNAP_LISTEN(users, "permissions", permissions::permissions, get_user_rights, _1, _2);
     //SNAP_LISTEN(users, "filter", filter::filter, replace_token, _1, _2, _3);
 
     f_info.reset(new sessions::sessions::session_info);
@@ -658,7 +664,85 @@ void users::on_generate_page_content(layout::layout *l, const QString& path, QDo
 }
 
 
-void users::on_create_content(const QString& path, const QString& owner)
+/** \brief Check on the user rights.
+ *
+ * This function gathers all the rights that a user has and add them
+ * to the specified \p sets.
+ *
+ * \important
+ * Note how the function makes use of the get_user_path() function and
+ * get the rights assigned to that user and not the current user. This
+ * is very important since this function may be used to verify rights
+ * of any user, not just the logged in user.
+ *
+ * \param[in] perms  A pointer to the permission plugin.
+ * \param[in,out] sets  The sets of rights.
+ */
+void users::on_get_user_rights(permissions::permissions *perms, permissions::permissions::sets_t& sets)
+{
+    // if spammers are logged in they don't get access to anything anyway
+    // (i.e. they are UNDER visitors!)
+    bool const spammer(user_is_a_spammer());
+    QString const user_key(sets.get_user_path());
+    if(spammer || user_key.isEmpty())
+    {
+        // in this case the user is the anonymous user and we want to
+        // add the anonymous user rights
+        if(spammer)
+        {
+            perms->add_user_rights("types/permissions/groups/root/administrator/editor/moderator/author/commenter/registered-user/visitor/spammer", sets);
+        }
+        else
+        {
+            perms->add_user_rights("types/permissions/groups/root/administrator/editor/moderator/author/commenter/registered-user/visitor", sets);
+        }
+    }
+    else
+    {
+        sets.add_user_right(user_key);
+
+        // users who are logged in always have registered-user rights
+        // if nothing else
+        perms->add_user_rights("types/permissions/groups/root/administrator/editor/moderator/author/commenter/registered-user", sets);
+
+        // add all the groups the user is a member of
+        QSharedPointer<QtCassandra::QCassandraTable> content_table(content::content::instance()->get_content_table());
+        if(!content_table->exists(user_key))
+        {
+            throw users_exception_invalid_path("could not access user \"" + user_key + "\"");
+        }
+
+        //QSharedPointer<QtCassandra::QCassandraRow> row(content_table->row(user_key));
+
+        {
+            QString const link_start_name("permissions::group");
+            links::link_info info(link_start_name, false, user_key);
+            QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
+            links::link_info right_info;
+            while(link_ctxt->next_link(right_info))
+            {
+                QString const right_key(right_info.key());
+                perms->add_user_rights(right_key, sets);
+            }
+        }
+
+        // we can also assign permissions directly to a user so get those too
+        {
+            QString const link_start_name("permissions::" + sets.get_action());
+            links::link_info info(link_start_name, false, user_key);
+            QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
+            links::link_info right_info;
+            while(link_ctxt->next_link(right_info))
+            {
+                QString const right_key(right_info.key());
+                perms->add_user_rights(right_key, sets);
+            }
+        }
+    }
+}
+
+
+void users::on_create_content(const QString& path, const QString& owner, const QString& type)
 {
     if(!f_user_key.isEmpty())
     {
@@ -674,16 +758,16 @@ void users::on_create_content(const QString& path, const QString& owner)
             QtCassandra::QCassandraValue value(users_table->row(f_user_key)->cell(get_name(SNAP_NAME_USERS_IDENTIFIER))->value());
             if(value.nullValue())
             {
-                int64_t identifier(value.int64Value());
-                const QString site_key(f_snap->get_site_key_with_slash());
-                const QString user_key(site_key + get_name(SNAP_NAME_USERS_PATH) + QString("/%1").arg(identifier));
-                const QString key(site_key + path);
+                int64_t const identifier(value.int64Value());
+                QString const site_key(f_snap->get_site_key_with_slash());
+                QString const user_key(site_key + get_name(SNAP_NAME_USERS_PATH) + QString("/%1").arg(identifier));
+                QString const key(site_key + path);
 
-                const QString link_name(get_name(SNAP_NAME_USERS_AUTHOR));
-                const bool source_unique(true);
+                QString const link_name(get_name(SNAP_NAME_USERS_AUTHOR));
+                bool const source_unique(true);
                 links::link_info source(link_name, source_unique, key);
-                const QString link_to(get_name(SNAP_NAME_USERS_AUTHORED_PAGES));
-                const bool destination_multi(false);
+                QString const link_to(get_name(SNAP_NAME_USERS_AUTHORED_PAGES));
+                bool const destination_multi(false);
                 links::link_info destination(link_to, destination_multi, user_key);
                 links::links::instance()->create_link(source, destination);
             }
@@ -2878,7 +2962,7 @@ bool users::register_user(const QString& email, const QString& password)
     QString user_path(get_name(SNAP_NAME_USERS_PATH));
     const QString site_key(f_snap->get_site_key_with_slash());
     QString user_key(user_path + QString("/%1").arg(identifier));
-    content::content::instance()->create_content(user_key, get_plugin_name());
+    content::content::instance()->create_content(user_key, get_plugin_name(), "user-page");
 
     // The "public" user account (i.e. in the content table) is limited
     // to the identifier at this point
@@ -3212,6 +3296,39 @@ void users::encrypt_password(const QString& digest, const QString& password, con
 //}
 
 
+/** \brief Determine whether the current user is considered to be a spammer.
+ *
+ * This function checks the user IP address and if black listed, then we
+ * return true meaning that we consider that user as a spammer. This limits
+ * access to the bare minimum which generally are:
+ *
+ * \li The home page
+ * \li The privacy policy
+ * \li The terms and conditions
+ * \li The files referenced by those items (CSS, JavaScript, images, etc.)
+ *
+ * \return true if the user is a considered to be a spammer.
+ */
+bool users::user_is_a_spammer()
+{
+    // TODO implement the actual test
+    QSharedPointer<QtCassandra::QCassandraTable> users_table(get_users_table());
+    char const * const black_list(get_name(SNAP_NAME_USERS_BLACK_LIST));
+    if(users_table->exists(black_list))
+    {
+        // the row exists, check the IP
+        // TODO canonicalize the IP address as an IPv6 so it matches whatever
+        //      the system we're on
+        QString const ip(f_snap->snapenv("REMOTE_ADDR"));
+        QSharedPointer<QtCassandra::QCassandraRow> row(users_table->row(black_list));
+        if(row->exists(ip))
+        {
+            // "unfortunately" this user is marked as a spammer
+            return true;
+        }
+    }
+    return false;
+}
 
 
 SNAP_PLUGIN_END()

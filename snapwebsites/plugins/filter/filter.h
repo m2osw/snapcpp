@@ -20,7 +20,6 @@
 #include "snap_child.h"
 #include "plugins.h"
 #include "not_reached.h"
-#include <QtXml/QDomDocument>
 
 namespace snap
 {

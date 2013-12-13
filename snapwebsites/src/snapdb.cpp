@@ -56,7 +56,7 @@ public:
 
     void usage();
     void info();
-    void drop_tables();
+    void drop_tables(bool all);
     void display();
 
 private:
@@ -143,7 +143,11 @@ snapdb::snapdb(int argc, char *argv[])
         }
         else if(strcmp(argv[i], "--drop-tables") == 0)
         {
-            drop_tables();
+            drop_tables(false);
+        }
+        else if(strcmp(argv[i], "--drop-all-tables") == 0)
+        {
+            drop_tables(true);
         }
         else if(argv[i][0] == '-')
         {
@@ -173,15 +177,16 @@ void snapdb::usage()
 {
     printf("Usage: snapdb [--opts] [table [row]]\n");
     printf("By default snap db prints out the list of tables (column families) found in Cassandra.\n");
-    printf("  -h | --help      print out this help screen.\n");
-    printf("  --context <ctxt> name of the context to read from.\n");
-    printf("  --count <count>  specify the number of rows to display.\n");
-    printf("  --drop-tables    drop all the tables of the specified context.\n");
-    printf("  --host <host>    host IP address or name defaults to localhost\n");
-    printf("  --info           print out the cluster name and protocol version.\n");
-    printf("  [table]          name of a table (column family) to print rows about.\n");
-    printf("  [row]            name of a row, may be ending with %% to print all rows that start with that name.\n");
-    printf("                   when row is not specified, then up to 100 of the rows of that table are printed.\n");
+    printf("  -h | --help        print out this help screen.\n");
+    printf("  --context <ctxt>   name of the context to read from.\n");
+    printf("  --count <count>    specify the number of rows to display.\n");
+    printf("  --drop-tables      drop all the content tables of the specified context.\n");
+    printf("  --drop-all-tables  drop absolutely all the tables, including the domains and websites.\n");
+    printf("  --host <host>      host IP address or name defaults to localhost\n");
+    printf("  --info             print out the cluster name and protocol version.\n");
+    printf("  [table]            name of a table (column family) to print rows about.\n");
+    printf("  [row]              name of a row, may be ending with %% to print all rows that start with that name.\n");
+    printf("                     when row is not specified, then up to 100 of the rows of that table are printed.\n");
     exit(1);
 }
 
@@ -200,16 +205,29 @@ void snapdb::info()
     exit(0);
 }
 
-void snapdb::drop_tables()
+void snapdb::drop_tables(bool all)
 {
     f_cassandra.connect(f_host, f_port);
     QSharedPointer<QCassandraContext> context(f_cassandra.context(f_context));
 
     // there are re-created when we connect and refilled when
-    // we access a page
+    // we access a page; obviously this is VERY dangerous on
+    // a live system!
     context->dropTable("content");
+    context->dropTable("emails");
+    context->dropTable("layout");
+    context->dropTable("libQtCassandraLockTable");
     context->dropTable("links");
     context->dropTable("sites");
+    context->dropTable("sessions");
+    context->dropTable("users");
+
+    if(all)
+    {
+        // for those who also want to test the snapmanager work too
+        context->dropTable("domains");
+        context->dropTable("websites");
+    }
 }
 
 void snapdb::display()
@@ -341,7 +359,6 @@ void snapdb::display()
                      || n == "content::updated"
                      || n.left(18) == "core::last_updated"
                      || n == "core::plugin_threshold"
-                     || n == "sessions::time_limit"
                      || n == "users::created_time"
                      || n == "users::login_on"
                      || n == "users::logout_on"
@@ -350,14 +367,26 @@ void snapdb::display()
                      || n == "users::verified_on"
                 )
                 {
-                    // 64 bit value
+                    // 64 bit value (microseconds)
                     uint64_t time((*c)->value().uint64Value());
                     char buf[64];
                     struct tm t;
                     time_t seconds(time / 1000000);
                     gmtime_r(&seconds, &t);
                     strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &t);
-                    v = QString("%1.%2").arg(buf).arg(time % 1000000, 6, 10, QChar('0'));
+                    v = QString("%1.%2 (%3)").arg(buf).arg(time % 1000000, 6, 10, QChar('0')).arg(time);
+                }
+                else if(n == "sessions::time_limit"
+                )
+                {
+                    // 64 bit value (seconds)
+                    uint64_t time((*c)->value().uint64Value());
+                    char buf[64];
+                    struct tm t;
+                    time_t seconds(time);
+                    gmtime_r(&seconds, &t);
+                    strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &t);
+                    v = QString("%1 (%2)").arg(buf).arg(time);
                 }
                 else if(n == "sitemapxml::count"
                      || n == "sessions::id"

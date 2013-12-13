@@ -36,14 +36,14 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="content::body" overwrite="yes">
       <![CDATA[<p>Different emails that different plugins send to users.</p>]]>
     </param>
-    <link name="permissions::administer" to="permissions::administer" mode="1:*">/types/permissions/rights/administer/sendmail</link>
+    <link name="permissions::administer" to="permissions::administer" mode="*:*">/types/permissions/rights/administer/sendmail</link>
   </content>
   <content path="/types/sendmail">
     <param name="content::title">Sendmail Statuses</param>
     <param name="content::body" overwrite="yes">
       <![CDATA[<p>Different tags used for emails managed by the sendmail plugin.</p>]]>
     </param>
-    <link name="permissions::administer" to="permissions::administer" mode="1:*">/types/permissions/rights/administer/sendmail</link>
+    <link name="permissions::administer" to="permissions::administer" mode="*:*">/types/permissions/rights/administer/sendmail</link>
   </content>
   <content path="/types/sendmail/status">
     <!-- this is currently two direct values in two cells... -->

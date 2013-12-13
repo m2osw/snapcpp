@@ -17,10 +17,8 @@
 #ifndef SNAP_MESSAGES_H
 #define SNAP_MESSAGES_H
 
-#include "../path/path.h"
 #include "../layout/layout.h"
 #include <controlled_vars/controlled_vars_limited_need_init.h>
-#include <map>
 
 namespace snap
 {

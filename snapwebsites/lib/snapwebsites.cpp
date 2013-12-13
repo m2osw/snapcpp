@@ -38,11 +38,45 @@
 
 #include "poison.h"
 
+/** \file
+ * \brief This file represents the Snap! Server.
+ *
+ * The snapwebsites.cpp and corresponding header file represents the Snap!
+ * Server. When you create a server object, its code is available here.
+ * The server can listen for client connections or run backend processes.
+ */
 
+
+/** \mainpage
+ * \brief Snap! C++ Documentation
+ *
+ * The Snap! C++ environment includes a library, plugins, tools, and
+ * the necessary executables to run the snap server: a fast C++
+ * CMS (Content Management System).
+ *
+ * The database makes use of a Cassandra cluster. It is accessed using
+ * the libQtCassandra class.
+ */
+
+
+/** \brief Hidden Snap! Server namespace.
+ *
+ * This namespace encompasses global variables only available to the
+ * server code.
+ */
 namespace
 {
+    /** \brief List of configuration files.
+     *
+     * This variable is used as a list of configuration files. It may be
+     * empty.
+     */
     const std::vector<std::string> g_configuration_files;
 
+    /** \brief Command line options.
+     *
+     * This table includes all the options supported by the server.
+     */
     const advgetopt::getopt::option g_snapserver_options[] =
     {
         {
@@ -68,6 +102,14 @@ namespace
             "action",
             NULL,
             "Specify a server action.",
+            advgetopt::getopt::optional_argument
+        },
+        {
+            '\0',
+            0,
+            "add-host",
+            NULL,
+            "Add a host to the lock table. Remember that you cannot safely do that while any one of the servers are running.",
             advgetopt::getopt::optional_argument
         },
         {
@@ -107,6 +149,13 @@ namespace
 //namespace
 
 
+/** \brief The snap namespace.
+ *
+ * The snap namespace is used throughout all the snap objects: libraries,
+ * plugins, tools.
+ *
+ * Plugins make use of a sub-namespace within the snap namespace.
+ */
 namespace snap
 {
 
@@ -452,103 +501,6 @@ void server::config(int argc, char *argv[])
     //
     f_debug = f_opt->is_defined( "debug" );
 
-#if 0
-    // parse the command line arguments
-    for(int i(1); i < argc; ++i)
-    {
-        if(argv[i][0] == '-')
-        {
-            if(strcmp(argv[i], "-a") == 0 || strcmp(argv[i], "--action") == 0)
-            {
-                // this is expected to be followed by the action name
-                if(i + 1 >= argc)
-                {
-                    syslog(LOG_CRIT, "-a must be followed by the name of an action, server not started. (in server::config())");
-                    help = true;
-                    break;
-                }
-                ++i;
-                if(f_backend)
-                {
-                    if(f_parameters.find("__BACKEND_ACTION") == f_parameters.end())
-                    {
-                        f_parameters["__BACKEND_ACTION"] = argv[i];
-                    }
-                    else
-                    {
-                        syslog(LOG_CRIT, "unexpected parameter \"%s %s\", at most one action can be specified, backend not started. (in server::config())", argv[i - 1], argv[i]);
-                        help = true;
-                    }
-                }
-                else
-                {
-                    syslog(LOG_CRIT, "unexpected command line option \"%s\", server not started. (in server::config())", argv[i - 1]);
-                    help = true;
-                }
-            }
-            else if(strcmp(argv[i], "-c") == 0 || strcmp(argv[i], "--config") == 0)
-            {
-                if(i + 1 >= argc)
-                {
-                    syslog(LOG_CRIT, "-c must be followed by the name of the configuration file, server not started. (in server::config())");
-                    help = true;
-                    break;
-                }
-                ++i;
-                // TBD: should we refuse filenames that start with '-'?
-                // (i.e. possibly another option)
-                f_config = argv[i];
-            }
-            else if(strcmp(argv[i], "-d") == 0 || strcmp(argv[i], "--debug") == 0)
-            {
-                f_debug = true;
-            }
-            else if(strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0)
-            {
-                help = true;
-            }
-            //else if(strcmp(argv[i], "-r") == 0 || strcmp(argv[i], "--resources") == 0)
-            //{
-            //    // TODO: this does not show us the list of resources available
-            //    //       in plugins... unfortunately. So that's useless at this
-            //    //       point (and you need to have a site key to load the
-            //    //       expected plugins...)
-            //    printf("List of available resources in the server:\n");
-            //    QCoreApplication app(argc, argv);
-            //    QDirIterator it(":", QDirIterator::Subdirectories);
-            //    while(it.hasNext()) {
-            //        qDebug() << "" << it.next();
-            //    }
-            //    exit(1);
-            //}
-            else
-            {
-                syslog(LOG_CRIT, "unknown option \"%s\", server not started. (in server::config())", argv[i]);
-                help = true;
-            }
-        }
-        else
-        {
-            if(f_backend)
-            {
-                if(f_parameters.find("__BACKEND_URI") == f_parameters.end())
-                {
-                    f_parameters["__BACKEND_URI"] = argv[i];
-                }
-                else
-                {
-                    syslog(LOG_CRIT, "unexpected parameter \"%s\", at most one URI can be specified, backend not started. (in server::config())", argv[i]);
-                    help = true;
-                }
-            }
-            else
-            {
-                syslog(LOG_CRIT, "unexpected parameter \"%s\", server not started. (in server::config())", argv[i]);
-                help = true;
-            }
-        }
-    }
-#endif
     if( help || f_opt->is_defined( "help" ) )
     {
         // if the user asked to not detach, then print the usage
@@ -561,27 +513,34 @@ void server::config(int argc, char *argv[])
 
     // read the configuration file now
     QFile c;
-#if 0
-    if(f_config.length() == 0)
+    c.setFileName(f_config);
+    c.open(QIODevice::ReadOnly);
+    if(!c.isOpen())
     {
-        // empty string means the user did not specify a configuration file
-        // and in this case it is optional
-        c.setFileName("/etc/snapwebsites/snapserver.conf");
-        c.open(QIODevice::ReadOnly);
-        if(c.isOpen())
+        // if for nothing else we need to have the list of plugins so we always
+        // expect to have a configuration file... if we're here we could not
+        // read it, unfortunately
+        std::stringstream ss;
+        ss << "cannot read configuration file \"" << f_config.toUtf8().data() << "\"" << std::endl;
+        if(f_debug)
         {
-            f_config = "/etc/snapwebsites/snapserver.conf";
+            std::cerr << ss.str() << "." << std::endl;
         }
+        syslog( LOG_CRIT, "%s, server not started. (in server::config())", ss.str().c_str() );
+        exit(1);
     }
-    else
+
+    // read the configuration file variables as parameters
+    char buf[256];
+    for(int line(1); c.readLine(buf, sizeof(buf)) > 0; ++line)
     {
-#endif
-        c.setFileName(f_config);
-        c.open(QIODevice::ReadOnly);
-        if(!c.isOpen())
+        // make sure the last byte is '\0'
+        buf[sizeof(buf) - 1] = '\0';
+        int len = strlen(buf);
+        if(len == 0 || (buf[len - 1] != '\n' && buf[len - 1] != '\r'))
         {
             std::stringstream ss;
-            ss << "cannot read configuration file \"" << f_config.toUtf8().data() << "\"" << std::endl;
+            ss << "line " << line << " in \"" << f_config.toUtf8().data() << "\" is too long" << std::endl;
             if(f_debug)
             {
                 std::cerr << ss.str() << "." << std::endl;
@@ -589,82 +548,61 @@ void server::config(int argc, char *argv[])
             syslog( LOG_CRIT, "%s, server not started. (in server::config())", ss.str().c_str() );
             exit(1);
         }
-    //}
-    if(c.isOpen()) // if no configuration exists, isOpen() returns false
-    {
-        char buf[256];
-        for(int line(1); c.readLine(buf, sizeof(buf)) > 0; ++line)
+        buf[len - 1] = '\0';
+        --len;
+        while(len > 0 && (buf[len - 1] == '\n' || buf[len - 1] == '\r'))
         {
-            // make sure the last byte is '\0'
-            buf[sizeof(buf) - 1] = '\0';
-            int len = strlen(buf);
-            if(len == 0 || (buf[len - 1] != '\n' && buf[len - 1] != '\r'))
-            {
-                std::stringstream ss;
-                ss << "line " << line << " in \"" << f_config.toUtf8().data() << "\" is too long" << std::endl;
-                if(f_debug)
-                {
-                    std::cerr << ss.str() << "." << std::endl;
-                }
-                syslog( LOG_CRIT, "%s, server not started. (in server::config())", ss.str().c_str() );
-                exit(1);
-            }
-            buf[len - 1] = '\0';
             --len;
-            while(len > 0 && (buf[len - 1] == '\n' || buf[len - 1] == '\r'))
-            {
-                --len;
-                buf[len] = '\0';
-            }
-            if(len == 0)
-            {
-                // comment or empty line
-                continue;
-            }
-            char *n(buf);
-            while(isspace(*n))
-            {
-                ++n;
-            }
-            if(*n == '#' || *n == '\0')
-            {
-                // comment or empty line
-                continue;
-            }
-            char *v(n);
-            while(*v != '=' && *v != '\0')
-            {
-                ++v;
-            }
-            if(*v != '=')
-            {
-                std::stringstream ss;
-                ss << "invalid variable on line " << line << " in \"" << f_config.toUtf8().data() << "\", no equal sign found" << std::endl;
-                if(f_debug)
-                {
-                    std::cerr << ss.str() << "." << std::endl;
-                }
-                syslog( LOG_CRIT, "%s, server not started. (in server::config())", ss.str().c_str() );
-                exit(1);
-            }
-            char *e;
-            for(e = v; e > n && isspace(e[-1]); --e);
-            *e = '\0';
-            do
-            {
-                ++v;
-            }
-            while(isspace(*v));
-            for(e = v + strlen(v); e > v && isspace(e[-1]); --e);
-            *e = '\0';
-            if(v != e && ((v[0] == '\'' && e[-1] == '\'') || (v[0] == '"' && e[-1] == '"')))
-            {
-                // remove single or double quotes
-                v++;
-                e[-1] = '\0';
-            }
-            f_parameters[n] = v;
+            buf[len] = '\0';
         }
+        if(len == 0)
+        {
+            // comment or empty line
+            continue;
+        }
+        char *n(buf);
+        while(isspace(*n))
+        {
+            ++n;
+        }
+        if(*n == '#' || *n == '\0')
+        {
+            // comment or empty line
+            continue;
+        }
+        char *v(n);
+        while(*v != '=' && *v != '\0')
+        {
+            ++v;
+        }
+        if(*v != '=')
+        {
+            std::stringstream ss;
+            ss << "invalid variable on line " << line << " in \"" << f_config.toUtf8().data() << "\", no equal sign found" << std::endl;
+            if(f_debug)
+            {
+                std::cerr << ss.str() << "." << std::endl;
+            }
+            syslog( LOG_CRIT, "%s, server not started. (in server::config())", ss.str().c_str() );
+            exit(1);
+        }
+        char *e;
+        for(e = v; e > n && isspace(e[-1]); --e);
+        *e = '\0';
+        do
+        {
+            ++v;
+        }
+        while(isspace(*v));
+        for(e = v + strlen(v); e > v && isspace(e[-1]); --e);
+        *e = '\0';
+        if(v != e && ((v[0] == '\'' && e[-1] == '\'') || (v[0] == '"' && e[-1] == '"')))
+        {
+            // remove single or double quotes
+            v++;
+            e[-1] = '\0';
+        }
+        f_parameters[n] = v;
     }
 
     // the name of the server is mandatory, use hostname by default
@@ -693,6 +631,7 @@ void server::config(int argc, char *argv[])
     // process identifier is going to be wrong.
     SNAP_LOG_INFO("Snap v" SNAPWEBSITES_VERSION_STRING " on \"" + f_parameters["server_name"] + "\" started.");
 }
+
 
 /** \brief Retrieve one of the configuration file parameters.
  *
@@ -841,11 +780,28 @@ void server::prepare_cassandra()
         // and have the tables created as required (i.e. as we add new ones
         // they get added as expected, no need for special handling.)
     }
+    context->setHostName(f_parameters["server_name"]);
 
     // create missing tables
     create_table(context, get_name(SNAP_NAME_DOMAINS),  "List of domain descriptions.");
     create_table(context, get_name(SNAP_NAME_WEBSITES), "List of website descriptions.");
+
+    // --add-host used?
+    if(f_opt->is_defined("add-host"))
+    {
+        // The libQtCassandra library creates a lock table named
+        // libQtCassandraLockTable. That table needs to include each host as
+        // any one host may need to lock the system.
+        QString host_name(f_opt->get_string("add-host").c_str());
+        if(host_name.isEmpty())
+        {
+            host_name = f_parameters["server_name"];
+        }
+        context->addLockHost(host_name);
+        exit(0);
+    }
 }
+
 
 // XXX -- would this ever be necessary here?
 /** \brief Get the QCassandra pointer.

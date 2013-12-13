@@ -17,8 +17,6 @@
 #ifndef SNAP_LAYOUT_H
 #define SNAP_LAYOUT_H
 
-#include "../links/links.h"
-#include "../path/path.h"
 #include "../javascript/javascript.h"
 
 namespace snap

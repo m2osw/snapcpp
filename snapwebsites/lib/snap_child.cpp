@@ -454,7 +454,7 @@ snap_child::status_t snap_child::check_status()
             else if(WIFSIGNALED(status))
             {
                 // stopped because of a signal
-                SNAP_LOG_FATAL("child process ")(f_child_pid)(" exited after it received a signal.");
+                SNAP_LOG_FATAL("child process ")(f_child_pid)(" exited after it received signal #")(WTERMSIG(status));
                 f_child_pid = 0;
             }
 #pragma GCC diagnostic pop
@@ -967,6 +967,7 @@ void snap_child::connect_cassandra()
         die(HTTP_CODE_SERVICE_UNAVAILABLE, "", "Our database system does not seem to be properly installed.", "The child process connected to Cassandra but it could not find the \"" + context_name + "\" context.");
         NOTREACHED();
     }
+    f_context->setHostName(f_server->get_parameter("server_name"));
 }
 
 

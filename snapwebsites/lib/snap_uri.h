@@ -17,16 +17,13 @@
 #ifndef SNAP_URI_H
 #define SNAP_URI_H
 
-#include <QVector>
+#include "snap_parser.h"
 #include <QString>
 #include <QStringList>
 #include <QMap>
 #include <QtSerialization/QSerializationReader.h>
 #include <QtSerialization/QSerializationFieldTag.h>
 #include <QtSerialization/QSerializationWriter.h>
-#include <controlled_vars/controlled_vars_auto_init.h>
-
-#include "snap_parser.h"
 
 namespace snap
 {

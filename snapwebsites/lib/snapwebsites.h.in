@@ -20,13 +20,7 @@
 #include "snap_child.h"
 #include "plugins.h"
 
-#include <string>
-#include <map>
-#include <memory>
-
-#include <QtCassandra/QCassandra.h>
 #include <QTcpSocket>
-#include <controlled_vars/controlled_vars_auto_init.h>
 #include <advgetopt/advgetopt.h>
 
 #define    SNAPWEBSITES_VERSION_MAJOR    @SNAPWEBSITES_VERSION_MAJOR@

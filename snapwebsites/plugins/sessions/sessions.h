@@ -17,9 +17,7 @@
 #ifndef SNAP_SESSIONS_H
 #define SNAP_SESSIONS_H
 
-#include "../path/path.h"
 #include "../layout/layout.h"
-#include <map>
 
 namespace snap
 {

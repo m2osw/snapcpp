@@ -1,5 +1,5 @@
 // Snap Websites Server -- path handling
-// Copyright (C) 2011-2012  Made to Order Software Corp.
+// Copyright (C) 2011-2013  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -18,10 +18,6 @@
 #define SNAP_PATH_H
 
 #include "snapwebsites.h"
-#include "plugins.h"
-#include <string>
-#include <map>
-#include <QtCore/QRegExp>
 #include <controlled_vars/controlled_vars_ptr_no_init.h>
 
 namespace snap

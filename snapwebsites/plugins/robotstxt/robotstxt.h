@@ -1,5 +1,5 @@
 // Snap Websites Server -- robots.txt
-// Copyright (C) 2011-2012  Made to Order Software Corp.
+// Copyright (C) 2011-2013  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,9 +17,7 @@
 #ifndef SNAP_ROBOTSTXT_H
 #define SNAP_ROBOTSTXT_H
 
-#include "../path/path.h"
 #include "../layout/layout.h"
-#include <map>
 
 namespace snap
 {
