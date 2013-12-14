@@ -328,7 +328,7 @@ int process::run()
         //typedef controlled_vars::ptr_need_init<process> mpprocess_t;
         typedef controlled_vars::ptr_auto_init<FILE> zpfile_t;
 
-        raii_pipe(process *p, const QString& command, const QStringList& arguments)
+        raii_pipe(/*process *p,*/ const QString& command, const QStringList& arguments)
             //: f_process(p)
             //, f_file(NULL) -- auto-init
         {
@@ -383,7 +383,7 @@ int process::run()
         QString                     f_command;
     };
 
-    raii_pipe rp(this, f_command, f_arguments);
+    raii_pipe rp(/*this,*/ f_command, f_arguments);
     SNAP_LOG_INFO("Running process \"")(rp.command_line())("\" in mode ")(f_mode);
 
     // if the user imposes environment restrictions we cannot use system()
@@ -606,9 +606,12 @@ int process::run()
 
             // replace the stdin and stdout with the pipes
             close(0);  // stdin
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-result"
             dup(inout.f_pipes[0]);
             close(1);  // stdout
             dup(inout.f_pipes[3]);
+#pragma GCC diagnostic pop
             // should we redirect stderr somewhere else?
 
             inout.close();

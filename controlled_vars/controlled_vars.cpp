@@ -595,33 +595,33 @@ void create_unary_ptr_operators(const char *name, long flags)
 	for(i = 0; i < 2; ++i) {
 		s = i & 1 ? "" : "const ";
 
-		fprintf(out, "\tT *get() %s{", s);
+		fprintf(out, "\tT *get() %s {", s);
 		if((flags & FLAG_HAS_INITFLG) != 0) {
 			fprintf(out, " if(!f_initialized) throw controlled_vars_error_not_initialized(\"uninitialized variable\");");
 		}
 		fprintf(out, " return f_ptr; }\n");
 
-		fprintf(out, "\tprimary_type_t *ptr() %s{", s);
+		fprintf(out, "\tprimary_type_t *ptr() %s {", s);
 		if((flags & FLAG_HAS_INITFLG) != 0) {
 			fprintf(out, " if(!f_initialized) throw controlled_vars_error_not_initialized(\"uninitialized variable\");");
 		}
 		fprintf(out, " return &f_ptr; }\n");
 
-		fprintf(out, "\tT *operator -> () %s{", s);
+		fprintf(out, "\tT *operator -> () %s {", s);
 		if((flags & FLAG_HAS_INITFLG) != 0) {
 			fprintf(out, " if(!f_initialized) throw controlled_vars_error_not_initialized(\"uninitialized variable\");");
 		}
 		fprintf(out, " if(f_ptr == 0) throw controlled_vars_error_null_pointer(\"dereferencing a null pointer\");");
 		fprintf(out, " return f_ptr; }\n");
 
-		fprintf(out, "\tT& operator * () %s{", s);
+		fprintf(out, "\t%s T& operator * () %s {",s, s);
 		if((flags & FLAG_HAS_INITFLG) != 0) {
 			fprintf(out, " if(!f_initialized) throw controlled_vars_error_not_initialized(\"uninitialized variable\");");
 		}
 		fprintf(out, " if(f_ptr == 0) throw controlled_vars_error_null_pointer(\"dereferencing a null pointer\");");
 		fprintf(out, " return *f_ptr; }\n");
 
-		fprintf(out, "\tT%s operator [] (int index) %s{", i & 1 ? "&" : "", s);
+		fprintf(out, "\t%s T& operator [] (int index) %s {",s, s);
 		if((flags & FLAG_HAS_INITFLG) != 0) {
 			fprintf(out, " if(!f_initialized) throw controlled_vars_error_not_initialized(\"uninitialized variable\");");
 		}
