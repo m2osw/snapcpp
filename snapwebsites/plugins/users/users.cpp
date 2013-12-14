@@ -22,6 +22,7 @@
 #include "not_reached.h"
 #include "log.h"
 
+#include <iostream>
 #include <QFile>
 #include <openssl/evp.h>
 #include <openssl/rand.h>
@@ -849,8 +850,7 @@ void users::show_user(layout::layout *l, const QString& cpath, QDomElement& page
             NOTREACHED();
         }
     }
-printf("Got user [%ld]\n", identifier);
-fflush(stdout);
+std::cout << "Got user [" << identifier << "]" << std::endl << std::flush;
 
     // generate the default body
         // TODO: write user profile viewer (i.e. we need to make use of the identifier here!)

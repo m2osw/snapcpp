@@ -624,7 +624,10 @@ void char_chart::on_generate_sitemapxml(sitemapxml::sitemapxml *sitemap)
     sitemapxml::sitemapxml::url_info url;
     QString site_key(f_snap->get_site_key_with_slash());
     url.set_uri(site_key + "char_chart/0");
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Woverflow"
     url.set_last_modification(SNAP_UNIX_TIMESTAMP(2012, 1, 1, 0, 0, 0) * 1000000);
+#pragma GCC diagnostic pop
     url.set_priority(0.01f);
     url.set_frequency(0);
     sitemap->add_url(url);
