@@ -195,11 +195,14 @@ int64_t content::do_update(int64_t last_updated)
  *
  * \param[in] variables_timestamp  The timestamp for all the variables added to the database by this update (in micro-seconds).
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 void content::initial_update(int64_t variables_timestamp)
 {
     // add the index page! -- not like this anymore! see the content.xml files instead
     //path::path::instance()->add_path("content", "", variables_timestamp);
 }
+#pragma GCC diagnostic pop
 
 /** \brief Update the database with our content references.
  *
@@ -208,10 +211,13 @@ void content::initial_update(int64_t variables_timestamp)
  *
  * \param[in] variables_timestamp  The timestamp for all the variables added to the database by this update (in micro-seconds).
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 void content::content_update(int64_t variables_timestamp)
 {
     content::content::instance()->add_xml("content");
 }
+#pragma GCC diagnostic pop
 
 /** \brief Execute a page: generate the complete output of that page.
  *
@@ -335,6 +341,8 @@ bool content::create_content_impl(const QString& path, const QString& owner)
  * \param[in,out] page  The page being generated.
  * \param[in,out] body  The body being generated.
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 void content::on_generate_main_content(layout::layout *l, const QString& fullpath, QDomElement& page, QDomElement& body, const QString& ctemplate)
 {
     QDomDocument doc(page.ownerDocument());
@@ -588,6 +596,7 @@ void content::on_generate_main_content(layout::layout *l, const QString& fullpat
         }
     }
 }
+#pragma GCC diagnostic pop
 
 
 
@@ -601,9 +610,12 @@ void content::on_generate_main_content(layout::layout *l, const QString& fullpat
  * \param[in,out] page  The page being generated.
  * \param[in,out] body  The body being generated.
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 void content::on_generate_page_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body, const QString& ctemplate)
 {
 }
+#pragma GCC diagnostic pop
 
 
 /** \brief Initialize the content table.
@@ -1214,10 +1226,13 @@ QVariant content::js_property_get(const QString& name) const
     return QVariant();
 }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 QString content::js_property_name(int index) const
 {
     return "modified";
 }
+#pragma GCC diagnostic pop
 
 QVariant content::js_property_get(int index) const
 {

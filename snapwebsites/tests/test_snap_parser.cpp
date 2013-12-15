@@ -304,6 +304,8 @@ private:
 };
 
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 void set_new_qualified_name(const snap::parser::rule& r, QSharedPointer<snap::parser::token_node>& t)
 {
 fprintf(stderr, "reducing simple name... %p (%s)\n", reinterpret_cast<void *>(&(*t)), (*t)[0]->get_value().toString().toUtf8().data());
@@ -440,6 +442,7 @@ void set_start_result(const snap::parser::rule& r, QSharedPointer<snap::parser::
 	QSharedPointer<snap::parser::token_node> n(qSharedPointerDynamicCast<snap::parser::token_node, snap::parser::token>((*t)[0]));
 	t->set_user_data(n->get_user_data());
 }
+#pragma GCC diagnostic pop
 
 
 
@@ -604,10 +607,13 @@ void check_parser_scripts()
 }
 
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 int main(int argc, char *argv[])
 {
 	check_lexer();
 	check_parser_scripts();
 }
+#pragma GCC diagnostic pop
 
 // vim: ts=4 sw=4

@@ -1496,6 +1496,8 @@ public:
      *
      * \return The node set.
      */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
     QDomXPath::node_vector_t& getNodeSetValue(bool cast = false) const
     {
         if(f_type != ATOMIC_TYPE_NODE_SET)
@@ -1504,6 +1506,7 @@ public:
         }
         return const_cast<QDomXPath::node_vector_t&>(f_node_set);
     }
+#pragma GCC diagnostic pop
 
 
     /** \brief Set the variant to a node set.
@@ -4993,7 +4996,7 @@ void inst_axis()
     // NODE_TYPE_NODE
     // NODE_TYPE_PROCESSING_INSTRUCTION
     // NODE_TYPE_TEXT
-    QDomNode::NodeType dom_node_type;
+    QDomNode::NodeType dom_node_type( QDomNode::ElementNode );
     switch(node_type)
     {
     case NODE_TYPE_COMMENT:
@@ -7577,6 +7580,9 @@ QDomXPath::node_vector_t apply(QDomXPath::node_vector_t& nodes)
 }
 
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+
 uint32_t disassemble_undefined_instruction(uint32_t pc)
 {
     printf("***undefined instruction*** (%d)\n", f_program[pc - 1]);
@@ -8155,6 +8161,7 @@ int disassemble_instruction(int pc)
     instruction_t inst(f_program[pc]);
     return (this->*g_disassemble_instructions[inst])(pc + 1);
 }
+#pragma GCC diagnostic pop
 
 
 void disassemble()

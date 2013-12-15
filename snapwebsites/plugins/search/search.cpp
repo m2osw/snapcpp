@@ -137,9 +137,12 @@ int64_t search::do_update(int64_t last_updated)
  *
  * \param[in] variables_timestamp  The timestamp for all the variables added to the database by this update (in micro-seconds).
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 void search::initial_update(int64_t variables_timestamp)
 {
 }
+#pragma GCC diagnostic pop
 
 /** \brief Update the database with our search references.
  *
@@ -147,10 +150,13 @@ void search::initial_update(int64_t variables_timestamp)
  *
  * \param[in] variables_timestamp  The timestamp for all the variables added to the database by this update (in micro-seconds).
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 void search::content_update(int64_t variables_timestamp)
 {
 	content::content::instance()->add_xml("search");
 }
+#pragma GCC diagnostic pop
 
 /** \brief Improves the error signature.
  *
@@ -181,6 +187,8 @@ void search::on_improve_signature(const QString& path, QString& signature)
  * \param[in,out] page  The page being generated.
  * \param[in,out] body  The body being generated.
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 void search::on_generate_page_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body)
 {
 	QDomDocument doc(page.ownerDocument());
@@ -195,6 +203,7 @@ void search::on_generate_page_content(layout::layout *l, const QString& path, QD
 	link.setAttribute("href", f_snap->get_site_key_with_slash() + "search");
 	bookmarks.appendChild(link);
 }
+#pragma GCC diagnostic pop
 
 
 

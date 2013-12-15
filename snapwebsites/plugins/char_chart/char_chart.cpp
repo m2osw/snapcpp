@@ -118,9 +118,12 @@ int64_t char_chart::do_update(int64_t last_updated)
  *
  * \param[in] variables_timestamp  The timestamp for all the variables added to the database by this update (in micro-seconds).
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 void char_chart::initial_update(int64_t variables_timestamp)
 {
 }
+#pragma GCC diagnostic pop
 
 /** \brief Update the char_chart plugin content.
  *
@@ -133,10 +136,13 @@ void char_chart::initial_update(int64_t variables_timestamp)
  *
  * \param[in] variables_timestamp  The timestamp for all the variables added to the database by this update (in micro-seconds).
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 void char_chart::content_update(int64_t variables_timestamp)
 {
     content::content::instance()->add_xml("char_chart");
 }
+#pragma GCC diagnostic pop
 
 
 /** \brief Check whether \p cpath matches our introducer.
@@ -172,6 +178,8 @@ bool char_chart::on_path_execute(const QString& cpath)
 }
 
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 void char_chart::on_generate_main_content(layout::layout *l, const QString& cpath, QDomElement& page, QDomElement& body, const QString& ctemplate)
 {
     QDomDocument doc(page.ownerDocument());
@@ -612,6 +620,7 @@ void char_chart::on_generate_main_content(layout::layout *l, const QString& cpat
 
     //return true;
 }
+#pragma GCC diagnostic pop
 
 /** \brief Give access to the first page.
  *

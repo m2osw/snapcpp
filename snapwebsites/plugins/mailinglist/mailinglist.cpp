@@ -237,9 +237,12 @@ int64_t mailinglist::do_update(int64_t last_updated)
  *
  * \param[in] variables_timestamp  The timestamp for all the variables added to the database by this update (in micro-seconds).
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 void mailinglist::initial_update(int64_t variables_timestamp)
 {
 }
+#pragma GCC diagnostic pop
 
 /** \brief Update the database with our content references.
  *
@@ -248,10 +251,13 @@ void mailinglist::initial_update(int64_t variables_timestamp)
  *
  * \param[in] variables_timestamp  The timestamp for all the variables added to the database by this update (in micro-seconds).
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 void mailinglist::content_update(int64_t variables_timestamp)
 {
     content::content::instance()->add_xml("mailinglist");
 }
+#pragma GCC diagnostic pop
 
 /** \brief Initialize the emails table.
  *
@@ -281,10 +287,13 @@ QSharedPointer<QtCassandra::QCassandraTable> mailinglist::get_mailinglist_table(
  *
  * \return true if the signal is to be propagated to all the other plugins.
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 bool mailinglist::name_to_list_impl(const QString& name, QSharedPointer<list>& emails)
 {
     return true;
 }
+#pragma GCC diagnostic pop
 
 
 /** \brief Prepare the email for the filter_email signal.

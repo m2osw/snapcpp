@@ -657,10 +657,13 @@ int64_t sessions::do_update(int64_t last_updated)
  *
  * \param[in] variables_timestamp  The timestamp for all the variables added to the database by this update (in micro-seconds).
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 void sessions::content_update(int64_t variables_timestamp)
 {
     content::content::instance()->add_xml("sessions");
 }
+#pragma GCC diagnostic pop
 
 
 /** \brief Initialize the sessions table.

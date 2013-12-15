@@ -124,11 +124,14 @@ int64_t robotstxt::do_update(int64_t last_updated)
  *
  * \param[in] variables_timestamp  The timestamp for all the variables added to the database by this update (in micro-seconds).
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 void robotstxt::initial_update(int64_t variables_timestamp)
 {
     // this is now done by the install content process
     //path::path::instance()->add_path("robotstxt", "robots.txt", variables_timestamp);
 }
+#pragma GCC diagnostic pop
 
 /** \brief Update the content with our references.
  *
@@ -137,10 +140,13 @@ void robotstxt::initial_update(int64_t variables_timestamp)
  *
  * \param[in] variables_timestamp  The timestamp for all the variables added to the database by this update (in micro-seconds).
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 void robotstxt::content_update(int64_t variables_timestamp)
 {
     content::content::instance()->add_xml("robotstxt");
 }
+#pragma GCC diagnostic pop
 
 /** \brief Check for the "robots.txt" path.
  *
@@ -378,6 +384,8 @@ void robotstxt::define_robots(const QString& path)
  * \param[in] header  The HTML header element.
  * \param[in] metadata  The XML metadata used with the XSLT parser.
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 void robotstxt::on_generate_header_content(layout::layout *l, const QString& path, QDomElement& header, QDomElement& metadata, const QString& ctemplate)
 {
     define_robots(path);
@@ -386,6 +394,7 @@ void robotstxt::on_generate_header_content(layout::layout *l, const QString& pat
         f_snap->set_header("X-Robots", f_robots_cache);
     }
 }
+#pragma GCC diagnostic pop
 
 
 /** \brief Implement the main content for this class.
@@ -400,9 +409,12 @@ void robotstxt::on_generate_header_content(layout::layout *l, const QString& pat
  * \param[in,out] page  The page being generated.
  * \param[in,out] body  The body being generated.
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 void robotstxt::on_generate_main_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body, const QString& ctemplate)
 {
 }
+#pragma GCC diagnostic pop
 
 
 /** \brief Generate the page common content.
@@ -415,6 +427,8 @@ void robotstxt::on_generate_main_content(layout::layout *l, const QString& path,
  * \param[in,out] page  The page being generated.
  * \param[in,out] body  The body being generated.
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 void robotstxt::on_generate_page_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body, const QString& ctemplate)
 {
     QDomDocument doc(page.ownerDocument());
@@ -430,6 +444,7 @@ void robotstxt::on_generate_page_content(layout::layout *l, const QString& path,
         created.appendChild(text);
     }
 }
+#pragma GCC diagnostic pop
 
 
 

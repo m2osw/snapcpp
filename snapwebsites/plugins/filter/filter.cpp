@@ -267,6 +267,8 @@ void filter::on_xss_filter(QDomNode& node,
  * \param[in] f  The filter object.
  * \param[in] token  The token object, with the token name and optional parameters.
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 bool filter::replace_token_impl(filter *f, QDomDocument& xml, token_info_t& token)
 {
     if(token.is_token("test"))
@@ -317,6 +319,7 @@ bool filter::replace_token_impl(filter *f, QDomDocument& xml, token_info_t& toke
 
     return true;
 }
+#pragma GCC diagnostic pop
 
 
 /** \brief Read all the XML text and replace its tokens.

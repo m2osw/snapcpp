@@ -249,9 +249,12 @@ int64_t users::do_update(int64_t last_updated)
  *                                 to the database by this update
  *                                 (in micro-seconds).
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 void users::initial_update(int64_t variables_timestamp)
 {
 }
+#pragma GCC diagnostic pop
 
 /** \brief Update the users plugin content.
  *
@@ -262,10 +265,13 @@ void users::initial_update(int64_t variables_timestamp)
  *                                 to the database by this update
  *                                 (in micro-seconds).
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 void users::content_update(int64_t variables_timestamp)
 {
     content::content::instance()->add_xml(get_plugin_name());
 }
+#pragma GCC diagnostic pop
 
 /** \brief Initialize the users table.
  *
@@ -562,6 +568,8 @@ void users::on_generate_main_content(layout::layout *l, const QString& cpath, QD
 }
 
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 void users::on_generate_header_content(layout::layout *l, const QString& path, QDomElement& header, QDomElement& metadata, const QString& ctemplate)
 {
     QDomDocument doc(header.ownerDocument());
@@ -612,8 +620,11 @@ void users::on_generate_header_content(layout::layout *l, const QString& path, Q
         }
     }
 }
+#pragma GCC diagnostic pop
 
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 void users::on_generate_page_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body, const QString& ctemplate)
 {
     QDomDocument doc(page.ownerDocument());
@@ -654,8 +665,11 @@ void users::on_generate_page_content(layout::layout *l, const QString& path, QDo
         //      add a link to the account
     }
 }
+#pragma GCC diagnostic pop
 
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 void users::on_create_content(const QString& path, const QString& owner)
 {
     if(!f_user_key.isEmpty())
@@ -688,6 +702,7 @@ void users::on_create_content(const QString& path, const QString& owner)
         }
     }
 }
+#pragma GCC diagnostic pop
 
 
 /** \brief Let the user replace their password.
@@ -1838,6 +1853,8 @@ QDomDocument users::on_get_xml_form(const QString& cpath)
  * This function processes the post of a user form. The form is defined as
  * the session identifier.
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 void users::on_process_post(const QString& cpath, const sessions::sessions::session_info& info)
 {
     if(cpath == "login")
@@ -1879,6 +1896,7 @@ void users::on_process_post(const QString& cpath, const sessions::sessions::sess
         throw std::logic_error(("users::on_process_post() was called with an unsupported path: \"" + cpath + "\"").toUtf8().data());
     }
 }
+#pragma GCC diagnostic pop
 
 
 /** \brief Log the user in from the log in form.

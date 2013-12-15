@@ -164,9 +164,12 @@ int64_t layout::do_update(int64_t last_updated)
  *
  * \param[in] variables_timestamp  The timestamp for all the variables added to the database by this update (in micro-seconds).
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 void layout::initial_update(int64_t variables_timestamp)
 {
 }
+#pragma GCC diagnostic pop
 
 /** \brief Update the database with our layout references.
  *
@@ -175,10 +178,13 @@ void layout::initial_update(int64_t variables_timestamp)
  *
  * \param[in] variables_timestamp  The timestamp for all the variables added to the database by this update (in micro-seconds).
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 void layout::content_update(int64_t variables_timestamp)
 {
     content::content::instance()->add_xml("layout");
 }
+#pragma GCC diagnostic pop
 
 /** \brief Initialize the layout table.
  *
@@ -579,6 +585,8 @@ theme_name = "bare";
  *
  * \return true if the signal should go on to all the other plugins.
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 bool layout::generate_header_content_impl(layout *l, const QString& path, QDomElement& header, QDomElement& metadata, const QString& ctemplate)
 {
     QDomDocument doc(header.ownerDocument());
@@ -687,6 +695,7 @@ bool layout::generate_header_content_impl(layout *l, const QString& path, QDomEl
 
     return true;
 }
+#pragma GCC diagnostic pop
 
 /** \brief Generate the page main content.
  *
@@ -711,10 +720,13 @@ bool layout::generate_header_content_impl(layout *l, const QString& path, QDomEl
  *
  * \return true if the page content creation can proceed.
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 bool layout::generate_page_content_impl(layout *l, const QString& path, QDomElement& page, QDomElement& body, const QString& ctemplate)
 {
     return true;
 }
+#pragma GCC diagnostic pop
 
 
 // This was to test, at this point we don't offer anything in the layout itself
