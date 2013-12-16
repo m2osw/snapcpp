@@ -70,7 +70,7 @@ enum name_t
     SNAP_NAME_SESSIONS_REMOTE_ADDR,
     SNAP_NAME_SESSIONS_USED_UP
 };
-const char *get_name(name_t name);
+const char *get_name(name_t name) __attribute__ ((const));
 
 
 class sessions : public plugins::plugin, public layout::layout_content

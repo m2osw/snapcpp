@@ -37,7 +37,6 @@
  */
 
 #include <QtCassandra/QCassandra.h>
-//#include <QtCore>
 #include <algorithm>
 #include <controlled_vars/controlled_vars_need_init.h>
 
@@ -218,6 +217,7 @@ void snapdb::drop_tables(bool all)
     context->dropTable("layout");
     context->dropTable("libQtCassandraLockTable");
     context->dropTable("links");
+    context->dropTable("shorturl");
     context->dropTable("sites");
     context->dropTable("sessions");
     context->dropTable("users");
@@ -336,7 +336,9 @@ void snapdb::display()
                         ++c)
             {
                 QString n;
-                if(f_table == "users" && f_row == "*index_row*")
+                if((f_table == "users" && f_row == "*index_row*")
+                || (f_table == "shorturl" && f_row.endsWith("/*index_row*"))
+                )
                 {
                     // special case where the column key is a 64 bit integer
                     //const QByteArray& name((*c)->columnKey());
@@ -349,6 +351,8 @@ void snapdb::display()
                 }
                 QString v;
                 if(n == "users::identifier"
+                || n == "permissions::dynamic"
+                || n == "shorturl::identifier"
                 )
                 {
                     // 64 bit value
@@ -365,6 +369,7 @@ void snapdb::display()
                      || n == "users::previous_login_on"
                      || n == "users::start_date"
                      || n == "users::verified_on"
+                     || n == "shorturl::date"
                 )
                 {
                     // 64 bit value (microseconds)
@@ -398,6 +403,7 @@ void snapdb::display()
                     v = QString("%1").arg((*c)->value().uint32Value());
                 }
                 else if(n == "sessions::used_up"
+                     || n == "content::final"
                 )
                 {
                     // 8 bit value

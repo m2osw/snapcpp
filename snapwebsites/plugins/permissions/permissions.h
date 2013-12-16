@@ -27,12 +27,13 @@ namespace permissions
 
 enum name_t
 {
+    SNAP_NAME_PERMISSIONS_DYNAMIC,
     SNAP_NAME_PERMISSIONS_PATH,
     SNAP_NAME_PERMISSIONS_ACTION_PATH,
     SNAP_NAME_PERMISSIONS_GROUPS_PATH,
     SNAP_NAME_PERMISSIONS_RIGHTS_PATH
 };
-const char *get_name(name_t name);
+const char *get_name(name_t name) __attribute__ ((const));
 
 
 

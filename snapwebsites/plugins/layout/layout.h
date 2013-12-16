@@ -30,7 +30,7 @@ enum name_t
     SNAP_NAME_LAYOUT_THEME,
     SNAP_NAME_LAYOUT_LAYOUT
 };
-const char *get_name(name_t name);
+const char *get_name(name_t name) __attribute__ ((const));
 
 
 class layout;
@@ -38,7 +38,7 @@ class layout_content
 {
 public:
     virtual ~layout_content() {} // ensure proper virtual tables
-    virtual void on_generate_main_content(layout *l, const QString& path, QDomElement& page, QDomElement& body, const QString& ctemplate) = 0;
+    virtual void on_generate_main_content(layout *l, QString const& path, QDomElement& page, QDomElement& body, QString const& ctemplate) = 0;
 };
 
 

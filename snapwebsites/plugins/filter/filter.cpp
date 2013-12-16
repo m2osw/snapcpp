@@ -260,14 +260,21 @@ void filter::on_xss_filter(QDomNode& node,
  * The default filter replace_token event supports the following
  * general tokens:
  *
- * \li [test] -- a simple test token, it inserts "The Test Token Worked" message, in English.
- * \li [select("\<xpath>")] -- select content from the XML document using the specified \<xpath>
+ * \li [test] -- a simple test token, it inserts "The Test Token Worked"
+ *               message, in English.
+ * \li [select("\<xpath>")] -- select content from the XML document using
+ *                             the specified \<xpath>
+ * \li [date(\"format\")] -- date with format as per strftime(); without
+ *                           format, use the default which is %m/%d/%Y
+ * \li [version] -- version of the Snap! C++ server
  * \li [year] -- the 4-digit year when the request started
  *
  * \param[in] f  The filter object.
- * \param[in] token  The token object, with the token name and optional parameters.
+ * \param[in] cpath  The canonicalized path linked with this XML document.
+ * \param[in,out] xml  The XML document where tokens are being replaced.
+ * \param[in,out] token  The token object, with the token name and optional parameters.
  */
-bool filter::replace_token_impl(filter *f, QDomDocument& xml, token_info_t& token)
+bool filter::replace_token_impl(filter *f, QString const& cpath, QDomDocument& xml, token_info_t& token)
 {
     if(token.is_token("test"))
     {
@@ -314,6 +321,35 @@ bool filter::replace_token_impl(filter *f, QDomDocument& xml, token_info_t& toke
         gmtime_r(&now, &time_info);
         token.f_replacement = QString("%1").arg(time_info.tm_year + 1900);
     }
+    else if(token.is_token("date"))
+    {
+        if(token.verify_args(0, 2))
+        {
+            time_t unix_time(f_snap->get_start_time());
+            QString date_format("%m/%d/%Y");
+            if(token.f_parameters.size() >= 1)
+            {
+                parameter_t param(token.get_arg("format", 0, TOK_STRING));
+                date_format = param.f_value;
+            }
+            if(token.f_parameters.size() >= 2)
+            {
+                parameter_t param(token.get_arg("unixtime", 1, TOK_STRING));
+                bool ok(false);
+                unix_time = param.f_value.toLongLong(&ok);
+            }
+            struct tm t;
+            gmtime_r(&unix_time, &t);
+            char buf[256];
+            strftime(buf, sizeof(buf), date_format.toUtf8().data(), &t);
+            buf[sizeof(buf) / sizeof(buf[0]) - 1] = '\0'; // make sure there is a NUL
+            token.f_replacement = QString::fromUtf8(buf);
+        }
+    }
+    else if(token.is_token("version"))
+    {
+        token.f_replacement = SNAPWEBSITES_VERSION_STRING;
+    }
 
     return true;
 }
@@ -340,17 +376,19 @@ bool filter::replace_token_impl(filter *f, QDomDocument& xml, token_info_t& toke
  * is allowed after the opening square bracket ([). Spaces are ignored and
  * are not required.
  *
+ * \param[in] cpath  The canonicalized path being processed.
  * \param[in,out] xml  The XML document to filter.
  */
-void filter::on_token_filter(QDomDocument& xml)
+void filter::on_token_filter(QString const& cpath, QDomDocument& xml)
 {
     class text_t
     {
     public:
         typedef ushort char_t;
 
-        text_t(filter *f, QDomDocument& xml, const QString& text)
+        text_t(filter *f, QString const& cpath, QDomDocument& xml, QString const& text)
             : f_filter(f)
+            , f_cpath(cpath)
             , f_xml(xml)
             , f_index(0)
             , f_extra_index(0)
@@ -511,7 +549,7 @@ void filter::on_token_filter(QDomDocument& xml)
 
             // valid input, now verify that it does exist in the current
             // installation
-            f_filter->replace_token(f_filter, f_xml, info);
+            f_filter->replace_token(f_filter, f_cpath, f_xml, info);
             if(!info.f_found)
             {
                 // the token is not known, that's an error so we do not
@@ -648,8 +686,21 @@ void filter::on_token_filter(QDomDocument& xml)
         void ungets(const QString& s)
         {
             f_extra_input.remove(0, f_extra_index);
-            f_extra_index = 0;
             f_extra_input.insert(0, s);
+
+            // plugins that generate a token  replacement from a QDomDocument
+            // start with the <!DOCTYPE ...> tag which we have to remove here
+            if(f_extra_input.startsWith("<!DOCTYPE"))
+            {
+                // note that if the indexOf() fails to find the '>' then
+                // it returns -1 which is fine because the + 1 will get
+                // it right back to 0 which is what we want in that case
+                f_extra_index = f_extra_input.indexOf('>') + 1;
+            }
+            else
+            {
+                f_extra_index = 0;
+            }
         }
 
         void ungetc(char_t c)
@@ -685,6 +736,7 @@ void filter::on_token_filter(QDomDocument& xml)
         }
 
         filter *        f_filter;
+        QString         f_cpath;
         QDomDocument    f_xml;
         int             f_index;
         int             f_extra_index;
@@ -726,7 +778,7 @@ void filter::on_token_filter(QDomDocument& xml)
             // (it must be xslt that converts the contents of CDATA sections)
             QDomCDATASection cdata_section(n.toCDATASection());
 //printf("checking CDATA [%s]\n", cdata_section.data().toUtf8().data());
-            text_t t(this, xml, cdata_section.data());
+            text_t t(this, cpath, xml, cdata_section.data());
             if(t.parse())
             {
                 // replace the text with its contents
@@ -737,7 +789,7 @@ void filter::on_token_filter(QDomDocument& xml)
         {
             QDomText text(n.toText());
 //printf("checking text [%s]\n", text.data().toUtf8().data());
-            text_t t(this, xml, text.data());
+            text_t t(this, cpath, xml, text.data());
             if(t.parse())
             {
                 // replace the text with its contents

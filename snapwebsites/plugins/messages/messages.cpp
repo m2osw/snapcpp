@@ -16,16 +16,15 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "messages.h"
-#include "plugins.h"
+//#include "plugins.h"
 #include "log.h"
 #include "not_reached.h"
 #include "../content/content.h"
 #include "../users/users.h"
-#include <QtCassandra/QCassandraValue.h>
+//#include <QtCassandra/QCassandraValue.h>
 #include <QtSerialization/QSerializationComposite.h>
 #include <QtSerialization/QSerializationFieldString.h>
 #include <QtSerialization/QSerializationFieldBasicTypes.h>
-//#include <QtSerialization/QSerializationFieldTag.h>
 #include <iostream>
 
 
@@ -56,6 +55,9 @@ const char *get_name(name_t name)
     case SNAP_NAME_MESSAGES_MESSAGES:
         return "messages::messages";
 
+    case SNAP_NAME_MESSAGES_WARNING_HEADER:
+        return "Warning";
+
     default:
         // invalid index
         throw snap_logic_exception("invalid SNAP_NAME_MESSAGES_...");
@@ -78,6 +80,7 @@ messages::message::message()
 {
 }
 
+
 /** \brief Initialize a message object.
  *
  * This function initializes a message object with the specified
@@ -97,6 +100,7 @@ messages::message::message(message_type_t t, const QString& title, const QString
 {
 }
 
+
 /** \brief Copy operator so we can add messages to a vector.
  *
  * This function is overloaded because the default copy operator
@@ -112,6 +116,7 @@ messages::message::message(const message& rhs)
     , f_body(rhs.f_body)
 {
 }
+
 
 /** \brief Retrieve the message type.
  *
@@ -130,6 +135,7 @@ messages::message::message_type_enum_t messages::message::get_type() const
     return f_type;
 }
 
+
 /** \brief Retrieve the message identifier.
  *
  * This function returns this message unique identifier. Note that
@@ -146,6 +152,7 @@ int messages::message::get_id() const
     return f_id;
 }
 
+
 /** \brief Retrieve the message title.
  *
  * This function retrieves the title of the message. In most cases
@@ -157,6 +164,7 @@ const QString& messages::message::get_title() const
 {
     return f_title;
 }
+
 
 /** \brief Retrieve the message body.
  *
@@ -243,6 +251,7 @@ messages::messages()
 {
 }
 
+
 /** \brief Clean up the messages plugin.
  *
  * Ensure the messages object is clean before it is gone.
@@ -250,6 +259,7 @@ messages::messages()
 messages::~messages()
 {
 }
+
 
 /** \brief Initialize the messages.
  *
@@ -266,6 +276,7 @@ void messages::on_bootstrap(snap_child *snap)
     SNAP_LISTEN0(messages, "server", server, detach_from_session);
     SNAP_LISTEN(messages, "layout", layout::layout, generate_page_content, _1, _2, _3, _4, _5);
 }
+
 
 /** \brief Get a pointer to the messages plugin.
  *
@@ -319,6 +330,7 @@ int64_t messages::do_update(int64_t last_updated)
     SNAP_PLUGIN_UPDATE_EXIT();
 }
 
+
 /** \brief Update the content with our references.
  *
  * Send our content to the database so the system can find us when a
@@ -330,6 +342,7 @@ void messages::content_update(int64_t variables_timestamp)
 {
     content::content::instance()->add_xml("messages");
 }
+
 
 /** \brief Generate the actual content of the statistics page.
  *
@@ -370,6 +383,7 @@ void messages::on_generate_page_content(layout::layout *l, const QString& path, 
         QDomElement messages_tag(doc.createElement("messages"));
         body.appendChild(messages_tag);
 
+        int errcnt(0);
         for(int i(0); i < max; ++i)
         {
             QString type;
@@ -377,6 +391,7 @@ void messages::on_generate_page_content(layout::layout *l, const QString& path, 
             {
             case message::MESSAGE_TYPE_ERROR:
                 type = "error";
+                ++errcnt;
                 break;
 
             case message::MESSAGE_TYPE_WARNING:
@@ -418,6 +433,14 @@ void messages::on_generate_page_content(layout::layout *l, const QString& path, 
             }
         }
         f_messages.clear();
+
+        if(errcnt != 0)
+        {
+            // on errors generate a warning in the header
+            f_snap->set_header(get_name(SNAP_NAME_MESSAGES_WARNING_HEADER),
+                    QString("This page generated %1 error%2")
+                            .arg(errcnt).arg(errcnt == 1 ? "" : "s"));
+        }
     }
 }
 
@@ -557,7 +580,7 @@ void messages::set_error(QString err_name, const QString& err_description, const
     logging::log_security_t sec(err_security ? logging::LOG_SECURITY_SECURE : logging::LOG_SECURITY_NONE);
     SNAP_LOG_ERROR(sec)(err_details)(" (")(err_name)(": ")(err_description)(")");
 
-    message msg(message::MESSAGE_TYPE_WARNING, err_name, err_description);
+    message msg(message::MESSAGE_TYPE_ERROR, err_name, err_description);
     f_messages.push_back(msg);
 }
 

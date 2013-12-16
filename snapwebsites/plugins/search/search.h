@@ -27,7 +27,7 @@ namespace search
 enum name_t {
 	SNAP_NAME_SEARCH_STATUS
 };
-const char *get_name(name_t name);
+const char *get_name(name_t name) __attribute__ ((const));
 
 
 

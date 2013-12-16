@@ -16,11 +16,9 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "sendmail.h"
-//#include "plugins.h"
 #include "log.h"
 #include "mkgmtime.h"
 #include "qdomxpath.h"
-//#include "not_reached.h"
 #include "quoted_printable.h"
 #include "../content/content.h"
 #include "../users/users.h"
@@ -1320,7 +1318,7 @@ void sendmail::on_bootstrap(snap_child *snap)
     f_snap = snap;
 
     SNAP_LISTEN(sendmail, "server", server, register_backend_action, _1);
-    SNAP_LISTEN(sendmail, "filter", filter::filter, replace_token, _1, _2, _3);
+    SNAP_LISTEN(sendmail, "filter", filter::filter, replace_token, _1, _2, _3, _4);
 }
 
 
@@ -2489,149 +2487,150 @@ void sendmail::on_generate_main_content(layout::layout *l, const QString& path, 
  * \li [sendmail::parameter(name="parameter name")]
  *
  * \param[in] f  The filter object.
+ * \param[in] cpath  The path to the page being worked on.
+ * \param[in] xml  The XML document used with the layout.
  * \param[in] token  The token object, with the token name and optional parameters.
  */
-void sendmail::on_replace_token(filter::filter *f, QDomDocument& xml, filter::filter::token_info_t& token)
+void sendmail::on_replace_token(filter::filter *f, QString const& cpath, QDomDocument& xml, filter::filter::token_info_t& token)
 {
-    if(token.f_name.mid(0, 10) == "sendmail::")
+    if(!token.is_namespace("sendmail::"))
     {
-        if(token.is_token("sendmail::forgot_password_link"))
+        return;
+    }
+
+    if(token.is_token("sendmail::forgot_password_link"))
+    {
+        QString identifier;
+        QDomXPath dom_xpath;
+        dom_xpath.setXPath(QString("/snap/page/body/sendmail/parameters/param[@name=\"") + users::get_name(users::SNAP_NAME_USERS_FORGOT_PASSWORD_EMAIL) + "\"]/@value");
+        QDomXPath::node_vector_t result(dom_xpath.apply(xml));
+        if(result.size() > 0 && result[0].isAttr())
         {
-            QString identifier;
-            QDomXPath dom_xpath;
-            dom_xpath.setXPath(QString("/snap/page/body/sendmail/parameters/param[@name=\"") + users::get_name(users::SNAP_NAME_USERS_FORGOT_PASSWORD_EMAIL) + "\"]/@value");
-            QDomXPath::node_vector_t result(dom_xpath.apply(xml));
-            if(result.size() > 0 && result[0].isAttr())
+            identifier = "/" + result[0].toAttr().value();
+        }
+        QString anchor_text("Click here to change your password");
+        if(token.verify_args(0, 1) && token.f_parameters.size() >= 1)
+        {
+            filter::filter::parameter_t param(token.get_arg("text", 0, filter::filter::TOK_STRING));
+            if(!token.f_error)
             {
-                identifier = "/" + result[0].toAttr().value();
+                anchor_text = param.f_value;
             }
-            QString anchor_text("Click here to change your password");
+        }
+        token.f_replacement = "<a href=\"" + f_snap->get_site_key_with_slash() + "new-password" + identifier + "\">" + anchor_text + "</a>";
+    }
+    else if(token.is_token("sendmail::unsubscribe_link"))
+    {
+        QString user_email;
+        QDomXPath dom_xpath;
+        dom_xpath.setXPath("/snap/page/body/sendmail/to");
+        QDomXPath::node_vector_t result(dom_xpath.apply(xml));
+        if(result.size() > 0 && result[0].isElement())
+        {
+            user_email = "/" + result[0].toElement().text();
+        }
+        QString anchor_text("unsubscribe from Snap! Websites emails");
+        if(token.verify_args(0, 1) && token.f_parameters.size() >= 1)
+        {
+            filter::filter::parameter_t param(token.get_arg("text", 0, filter::filter::TOK_STRING));
+            if(!token.f_error)
+            {
+                anchor_text = param.f_value;
+            }
+        }
+        token.f_replacement = "<a href=\"" + f_snap->get_site_key_with_slash() + "unsubscribe" + user_email + "\">" + anchor_text + "</a>";
+    }
+    else if(token.is_token("sendmail::verify_link"))
+    {
+        QString identifier;
+        QDomXPath dom_xpath;
+        dom_xpath.setXPath(QString("/snap/page/body/sendmail/parameters/param[@name=\"") + users::get_name(users::SNAP_NAME_USERS_VERIFY_EMAIL) + "\"]/@value");
+        QDomXPath::node_vector_t result(dom_xpath.apply(xml));
+        if(result.size() > 0 && result[0].isAttr())
+        {
+            identifier = "/" + result[0].toAttr().value();
+        }
+        QString anchor_text("Click here to verify your account");
+        if(token.verify_args(0, 1) && token.f_parameters.size() >= 1)
+        {
+            filter::filter::parameter_t param(token.get_arg("text", 0, filter::filter::TOK_STRING));
+            if(!token.f_error)
+            {
+                anchor_text = param.f_value;
+            }
+        }
+        token.f_replacement = "<a href=\"" + f_snap->get_site_key_with_slash() + "verify" + identifier + "\">" + anchor_text + "</a>";
+    }
+    else
+    {
+        QString xpath;
+        if(token.is_token("sendmail::from"))
+        {
+            xpath = "/snap/page/body/sendmail/from";
+        }
+        else if(token.is_token("sendmail::to"))
+        {
+            xpath = "/snap/page/body/sendmail/to";
+        }
+        else if(token.is_token("sendmail::path"))
+        {
+            xpath = "/snap/page/body/sendmail/path";
+        }
+        else if(token.is_token("sendmail::key"))
+        {
+            xpath = "/snap/page/body/sendmail/key";
+        }
+        else if(token.is_token("sendmail::created"))
+        {
+            xpath = "/snap/page/body/sendmail/created";
+        }
+        else if(token.is_token("sendmail::date"))
+        {
+            xpath = "/snap/page/body/sendmail/date";
+        }
+        else if(token.is_token("sendmail::time"))
+        {
+            xpath = "/snap/page/body/sendmail/time";
+        }
+        else if(token.is_token("sendmail::attachment_count"))
+        {
+            xpath = "/snap/page/body/sendmail/attachment-count";
+        }
+        else if(token.is_token("sendmail::priority"))
+        {
+            xpath = "/snap/page/body/sendmail/x-priority";
+        }
+        else if(token.is_token("sendmail::parameter"))
+        {
             if(token.verify_args(1, 1))
             {
-                filter::filter::parameter_t param(token.get_arg("text", 0, filter::filter::TOK_STRING));
+                filter::filter::parameter_t param(token.get_arg("name", 0, filter::filter::TOK_STRING));
                 if(!token.f_error)
                 {
-                    anchor_text = param.f_value;
+                    xpath = "/snap/page/body/sendmail/parameters/param[@name=\"" + param.f_value + "\"]/@value";
                 }
             }
-            token.f_replacement = "<a href=\"" + f_snap->get_site_key_with_slash() + "new-password" + identifier + "\">" + anchor_text + "</a>";
-            token.f_found = true;
         }
-        else if(token.is_token("sendmail::unsubscribe_link"))
+        if(!xpath.isEmpty())
         {
-            QString user_email;
             QDomXPath dom_xpath;
-            dom_xpath.setXPath("/snap/page/body/sendmail/to");
+            dom_xpath.setXPath(xpath);
             QDomXPath::node_vector_t result(dom_xpath.apply(xml));
-            if(result.size() > 0 && result[0].isElement())
+            if(result.size() > 0)
             {
-                user_email = "/" + result[0].toElement().text();
-            }
-            QString anchor_text("unsubscribe from Snap! Websites emails");
-            if(token.verify_args(1, 1))
-            {
-                filter::filter::parameter_t param(token.get_arg("text", 0, filter::filter::TOK_STRING));
-                if(!token.f_error)
+                // apply the replacement
+                if(result[0].isElement())
                 {
-                    anchor_text = param.f_value;
+                    // get the value between the tags
+                    QDomDocument document;
+                    QDomNode copy(document.importNode(result[0], true));
+                    document.appendChild(copy);
+                    token.f_replacement = document.toString();
                 }
-            }
-            token.f_replacement = "<a href=\"" + f_snap->get_site_key_with_slash() + "unsubscribe" + user_email + "\">" + anchor_text + "</a>";
-            token.f_found = true;
-        }
-        else if(token.is_token("sendmail::verify_link"))
-        {
-            QString identifier;
-            QDomXPath dom_xpath;
-            dom_xpath.setXPath(QString("/snap/page/body/sendmail/parameters/param[@name=\"") + users::get_name(users::SNAP_NAME_USERS_VERIFY_EMAIL) + "\"]/@value");
-            QDomXPath::node_vector_t result(dom_xpath.apply(xml));
-            if(result.size() > 0 && result[0].isAttr())
-            {
-                identifier = "/" + result[0].toAttr().value();
-            }
-            QString anchor_text("Click here to verify your account");
-            if(token.verify_args(1, 1))
-            {
-                filter::filter::parameter_t param(token.get_arg("text", 0, filter::filter::TOK_STRING));
-                if(!token.f_error)
+                else if(result[0].isAttr())
                 {
-                    anchor_text = param.f_value;
-                }
-            }
-            token.f_replacement = "<a href=\"" + f_snap->get_site_key_with_slash() + "verify" + identifier + "\">" + anchor_text + "</a>";
-            token.f_found = true;
-        }
-        else
-        {
-            QString xpath;
-            if(token.is_token("sendmail::from"))
-            {
-                xpath = "/snap/page/body/sendmail/from";
-            }
-            else if(token.is_token("sendmail::to"))
-            {
-                xpath = "/snap/page/body/sendmail/to";
-            }
-            else if(token.is_token("sendmail::path"))
-            {
-                xpath = "/snap/page/body/sendmail/path";
-            }
-            else if(token.is_token("sendmail::key"))
-            {
-                xpath = "/snap/page/body/sendmail/key";
-            }
-            else if(token.is_token("sendmail::created"))
-            {
-                xpath = "/snap/page/body/sendmail/created";
-            }
-            else if(token.is_token("sendmail::date"))
-            {
-                xpath = "/snap/page/body/sendmail/date";
-            }
-            else if(token.is_token("sendmail::time"))
-            {
-                xpath = "/snap/page/body/sendmail/time";
-            }
-            else if(token.is_token("sendmail::attachment_count"))
-            {
-                xpath = "/snap/page/body/sendmail/attachment-count";
-            }
-            else if(token.is_token("sendmail::priority"))
-            {
-                xpath = "/snap/page/body/sendmail/x-priority";
-            }
-            else if(token.is_token("sendmail::parameter"))
-            {
-                if(token.verify_args(1, 1))
-                {
-                    filter::filter::parameter_t param(token.get_arg("name", 0, filter::filter::TOK_STRING));
-                    if(!token.f_error)
-                    {
-                        xpath = "/snap/page/body/sendmail/parameters/param[@name=\"" + param.f_value + "\"]/@value";
-                    }
-                }
-            }
-            if(!xpath.isEmpty())
-            {
-                QDomXPath dom_xpath;
-                dom_xpath.setXPath(xpath);
-                QDomXPath::node_vector_t result(dom_xpath.apply(xml));
-                if(result.size() > 0)
-                {
-                    // apply the replacement
-                    if(result[0].isElement())
-                    {
-                        // get the value between the tags
-                        QDomDocument document;
-                        QDomNode copy(document.importNode(result[0], true));
-                        document.appendChild(copy);
-                        token.f_replacement = document.toString();
-                    }
-                    else if(result[0].isAttr())
-                    {
-                        // get an attribute
-                        token.f_replacement = result[0].toAttr().value();
-                    }
+                    // get an attribute
+                    token.f_replacement = result[0].toAttr().value();
                 }
             }
         }

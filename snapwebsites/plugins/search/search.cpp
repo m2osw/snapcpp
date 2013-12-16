@@ -191,6 +191,7 @@ void search::on_generate_page_content(layout::layout *l, const QString& path, QD
 	QDomElement link(doc.createElement("link"));
 	link.setAttribute("rel", "search");
 	link.setAttribute("title", "Search"); // TODO: translate
+	link.setAttribute("type", "text/html");
 	QString query(path);
 	link.setAttribute("href", f_snap->get_site_key_with_slash() + "search");
 	bookmarks.appendChild(link);

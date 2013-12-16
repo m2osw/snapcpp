@@ -50,6 +50,9 @@ SNAP_PLUGIN_START(permissions, 1, 0)
 const char *get_name(name_t name)
 {
     switch(name) {
+    case SNAP_NAME_PERMISSIONS_DYNAMIC:
+        return "permissions::dynamic";
+
     case SNAP_NAME_PERMISSIONS_PATH:
         return "types/permissions";
 
@@ -365,7 +368,8 @@ void permissions::content_update(int64_t variables_timestamp)
  * to be added here.
  *
  * \code
- *   sets.add_user_right("/types/permissions/rights/edit/page");
+ *   QString const site_key(f_snap->get_site_key_with_slash());
+ *   sets.add_user_right(site_key + "types/permissions/rights/edit/page");
  * \endcode
  *
  * \note
@@ -409,7 +413,8 @@ bool permissions::get_user_rights_impl(permissions *perms, sets_t& sets)
  * in the /types/permissions/actions/\<name>.
  *
  * \code
- *   sets.add_plugin_permission(get_plugin_name(), "/types/permissions/rights/edit");
+ *   QString const site_key(f_snap->get_site_key_with_slash());
+ *   sets.add_plugin_permission(get_plugin_name(), site_key + "types/permissions/rights/edit");
  * \endcode
  *
  * Note that using the get_plugin_name() is a good idea to avoid typing the
@@ -436,18 +441,47 @@ bool permissions::get_plugin_permissions_impl(permissions *perms, sets_t& sets)
 {
     // this very page may be assigned direct permissions
     QSharedPointer<QtCassandra::QCassandraTable> content_table(content::content::instance()->get_content_table());
-    QString const path(sets.get_path());
+    QString path(sets.get_path());
     QString const site_key(f_snap->get_site_key_with_slash());
-    QString const key(site_key + path);
-printf("path [%s] [%s]\n", path.toUtf8().data(), key.toUtf8().data());
+    QString key(site_key + path);
     if(!content_table->exists(key))
     {
-        // is that not an error?
-        return true;
-        //throw permissions_exception_invalid_path("could not access content \"" + key + "\"");
+        // if that page does not exist, it may be dynamic, try to go up
+        // until we have one name in the path then check that the page
+        // allows such, if so, we have a chance, otherwise no rights
+        // from here... (as an example see /verify in plugins/users/content.xml)
+        QStringList parts(path.split('/'));
+        int depth(0);
+        for(;;)
+        {
+            parts.pop_back();
+            if(parts.isEmpty())
+            {
+                // let other modules take over, we're done here though
+                return true;
+            }
+            ++depth;
+            path = parts.join("/");
+            key = site_key + path;
+            if(content_table->exists(key))
+            {
+                break;
+            }
+        }
+        QSharedPointer<QtCassandra::QCassandraRow> row(content_table->row(key));
+        char const *dynamic(get_name(SNAP_NAME_PERMISSIONS_DYNAMIC));
+        if(!row->exists(dynamic))
+        {
+            // well, there is a page, but it does not authorize sub-pages
+            return true;
+        }
+        QtCassandra::QCassandraValue value(row->cell(dynamic)->value());
+        if(depth > value.signedCharValue())
+        {
+            // it is going too far
+            return true;
+        }
     }
-
-    //QSharedPointer<QtCassandra::QCassandraRow> row(content_table->row(key));
 
     QString const link_start_name("permissions::" + sets.get_action());
     {
@@ -465,7 +499,7 @@ printf("path [%s] [%s]\n", path.toUtf8().data(), key.toUtf8().data());
     {
         // get the content type (content::page_type) and then retrieve
         // the rights directly from that type
-        QString const link_name("content::page_type");
+        QString const link_name(get_name(content::SNAP_NAME_CONTENT_PAGE_TYPE));
         links::link_info info(link_name, true, key);
         QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
         links::link_info content_type_info;

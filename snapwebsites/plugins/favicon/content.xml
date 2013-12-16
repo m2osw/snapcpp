@@ -1,0 +1,46 @@
+<?xml version="1.0" standalone="yes"?>
+<!--
+Snap Websites Server == favicon plugin database setup
+Copyright (C) 2013  Made to Order Software Corp.
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+-->
+<!DOCTYPE snap-tree [
+<!ELEMENT snap-tree (content)*>
+<!ELEMENT content (param|link)*>
+<!ATTLIST content path CDATA #REQUIRED>
+<!ELEMENT param (#PCDATA)>
+<!ATTLIST param name CDATA #REQUIRED
+                overwrite (yes|no) "no"
+                force-namespace (yes|no) "yes">
+<!ELEMENT link (#PCDATA)>
+<!ATTLIST link name CDATA #REQUIRED
+               to CDATA #REQUIRED
+               mode CDATA "1:1">
+]>
+<snap-tree>
+  <content path="/favicon.ico">
+    <param name="content::final" type="int8">1</param>
+    <link name="permissions::view" to="permissions::view" mode="*:*">/types/permissions/rights/view/page/for-spammers</link>
+  </content>
+  <content path="/admin/settings/favicon">
+    <param name="content::title">Favorite Icon Settings (favicon.ico)</param>
+    <param name="content::body"><p>Body starts here...</p>[form::source]<p>Body Ends Here!</p></param>
+    <param name="form::source">settings</param>
+    <link name="permissions::view" to="permissions::view" mode="*:*">/types/permissions/rights/view/page/for-spammers</link>
+  </content>
+</snap-tree>
+<!-- vim: ts=2 sw=2 et syntax=xml
+-->

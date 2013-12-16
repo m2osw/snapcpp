@@ -28,7 +28,7 @@ namespace path
 enum name_t {
 	SNAP_NAME_PATH_PRIMARY_OWNER
 };
-const char *get_name(name_t name);
+const char *get_name(name_t name) __attribute__ ((const));
 
 
 class path_execute
@@ -60,7 +60,7 @@ public:
 	SNAP_SIGNAL(can_handle_dynamic_path, (path *path_plugin, const QString& cpath), (path_plugin, cpath));
 	SNAP_SIGNAL(page_not_found, (path *path_plugin, const QString& cpath), (path_plugin, cpath));
 
-	void handle_dynamic_path(const QString& plugin_name, plugins::plugin *p);
+	void handle_dynamic_path(plugins::plugin *p);
 
 private:
 	typedef controlled_vars::ptr_no_init<plugins::plugin> dynamic_path_plugin_t;

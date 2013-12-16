@@ -59,6 +59,97 @@
  */
 
 
+/** \brief The snap namespace.
+ *
+ * The snap namespace is used throughout all the snap objects: libraries,
+ * plugins, tools.
+ *
+ * Plugins make use of a sub-namespace within the snap namespace.
+ */
+namespace snap
+{
+
+//#pragma message "Why do we even have this? Adding a smart pointer causes a crash when the server detaches, so commented out."
+std::shared_ptr<QCoreApplication> g_application;
+
+
+/** \brief Get a fixed name.
+ *
+ * The Snap! Server makes use of a certain number of fixed names
+ * which instead of being defined in macros are defined here as
+ * static strings. To retrieve one of the strings, call the function
+ * with the appropriate index.
+ *
+ * \param[in] name  The name to retrieve.
+ *
+ * \return A pointer to the name.
+ */
+const char *get_name(name_t name)
+{
+    switch(name) {
+    case SNAP_NAME_SERVER:
+        return "Snap! Server";
+
+    case SNAP_NAME_CONTEXT:
+        return "snap_websites";
+
+    case SNAP_NAME_INDEX: // name used for the domains and websites indexes
+        return "*index*"; // this is a row name inside the domains/websites tables
+
+    case SNAP_NAME_DOMAINS: // domain/sub-domain canonalization
+        return "domains";
+
+    case SNAP_NAME_WEBSITES: // remaining of URL canonalization
+        return "websites";
+
+    case SNAP_NAME_SITES: // website global settings
+        return "sites";
+
+    case SNAP_NAME_CORE_FAVICON:
+        return "core::favicon";
+
+    case SNAP_NAME_CORE_ADMINISTRATOR_EMAIL:
+        return "core::administrator_email";
+
+    case SNAP_NAME_CORE_LAST_UPDATED:
+        return "core::last_updated";
+
+    case SNAP_NAME_CORE_SITE_NAME:
+        return "core::site_name";
+
+    case SNAP_NAME_CORE_SITE_SHORT_NAME:
+        return "core::site_short_name";
+
+    case SNAP_NAME_CORE_SITE_LONG_NAME:
+        return "core::site_long_name";
+
+    case SNAP_NAME_CORE_PLUGINS:
+        return "core::plugins";
+
+    case SNAP_NAME_CORE_REDIRECT:
+        return "core::redirect";
+
+    case SNAP_NAME_CORE_RULES:
+        return "core::rules";
+
+    case SNAP_NAME_CORE_ORIGINAL_RULES:
+        return "core::original_rules";
+
+    case SNAP_NAME_CORE_PLUGIN_THRESHOLD:
+        return "core::plugin_threshold";
+
+    case SNAP_NAME_CORE_COOKIE_DOMAIN:
+        return "core::cookie_domain";
+
+    default:
+        // invalid index
+        throw snap_logic_exception("invalid SNAP_NAME_CORE_...");
+
+    }
+    NOTREACHED();
+}
+
+
 /** \brief Hidden Snap! Server namespace.
  *
  * This namespace encompasses global variables only available to the
@@ -149,98 +240,12 @@ namespace
 //namespace
 
 
-/** \brief The snap namespace.
- *
- * The snap namespace is used throughout all the snap objects: libraries,
- * plugins, tools.
- *
- * Plugins make use of a sub-namespace within the snap namespace.
- */
-namespace snap
-{
-
-//#pragma message "Why do we even have this? Adding a smart pointer causes a crash when the server detaches, so commented out."
-std::shared_ptr<QCoreApplication> g_application;
-
-
-/** \brief Get a fixed name.
- *
- * The Snap! Server makes use of a certain number of fixed names
- * which instead of being defined in macros are defined here as
- * static strings. To retrieve one of the strings, call the function
- * with the appropriate index.
- *
- * \param[in] name  The name to retrieve.
- *
- * \return A pointer to the name.
- */
-const char *get_name(name_t name)
-{
-    switch(name) {
-    case SNAP_NAME_SERVER:
-        return "Snap! Server";
-
-    case SNAP_NAME_CONTEXT:
-        return "snap_websites";
-
-    case SNAP_NAME_INDEX: // name used for the domains and websites indexes
-        return "*index*"; // this is a row name inside the domains/websites tables
-
-    case SNAP_NAME_DOMAINS: // domain/sub-domain canonalization
-        return "domains";
-
-    case SNAP_NAME_WEBSITES: // remaining of URL canonalization
-        return "websites";
-
-    case SNAP_NAME_SITES: // website global settings
-        return "sites";
-
-    case SNAP_NAME_CORE_ADMINISTRATOR_EMAIL:
-        return "core::administrator_email";
-
-    case SNAP_NAME_CORE_LAST_UPDATED:
-        return "core::last_updated";
-
-    case SNAP_NAME_CORE_SITE_NAME:
-        return "core::site_name";
-
-    case SNAP_NAME_CORE_SITE_SHORT_NAME:
-        return "core::site_short_name";
-
-    case SNAP_NAME_CORE_SITE_LONG_NAME:
-        return "core::site_long_name";
-
-    case SNAP_NAME_CORE_PLUGINS:
-        return "core::plugins";
-
-    case SNAP_NAME_CORE_REDIRECT:
-        return "core::redirect";
-
-    case SNAP_NAME_CORE_RULES:
-        return "core::rules";
-
-    case SNAP_NAME_CORE_ORIGINAL_RULES:
-        return "core::original_rules";
-
-    case SNAP_NAME_CORE_PLUGIN_THRESHOLD:
-        return "core::plugin_threshold";
-
-    case SNAP_NAME_CORE_COOKIE_DOMAIN:
-        return "core::cookie_domain";
-
-    default:
-        // invalid index
-        throw snap_logic_exception("invalid SNAP_NAME_CORE_...");
-
-    }
-    NOTREACHED();
-}
-
 /** \brief Server instance.
  *
  * The f_instance variable holds the current server instance.
  */
 std::shared_ptr<server> server::f_instance;
+
 
 /** \brief Return the server version.
  *
@@ -258,6 +263,7 @@ const char *server::version()
     return SNAPWEBSITES_VERSION_STRING;
 }
 
+
 /** \brief Return the server major version.
  *
  * This function returns the major version of the server. This can be used
@@ -272,6 +278,7 @@ int server::version_major()
 {
     return SNAPWEBSITES_VERSION_MAJOR;
 }
+
 
 /** \brief Return the server minor version.
  *
@@ -288,6 +295,7 @@ int server::version_minor()
     return SNAPWEBSITES_VERSION_MINOR;
 }
 
+
 /** \brief Return the server patch version.
  *
  * This function returns the patch version of the server. This can be used
@@ -302,6 +310,7 @@ int server::version_patch()
 {
     return SNAPWEBSITES_VERSION_PATCH;
 }
+
 
 /** \brief Get the server instance.
  *
@@ -326,6 +335,7 @@ server::pointer_t server::instance()
     return f_instance;
 }
 
+
 /** \brief Return the description of this plugin.
  *
  * This function returns the English description of this plugin.
@@ -341,6 +351,7 @@ QString server::description() const
         " It handles the incoming and outgoing network connections."
         " The server handles a number of messages that are global.";
 }
+
 
 /** \brief Update the server, the function is mandatory.
  *
@@ -410,6 +421,7 @@ void server::usage()
     exit(1);
 }
 
+
 /** \brief Mark the server object as a backend tool instead.
  *
  * This function is called by the backend tool to mark the server
@@ -424,6 +436,7 @@ void server::setup_as_backend()
     f_backend = true;
 }
 
+
 /** \fn server::is_backend() const;
  * \brief Check whether the server is setup as a backend.
  *
@@ -432,6 +445,7 @@ void server::setup_as_backend()
  *
  * \return true if this is a server, false if this is used as a command line tool
  */
+
 
 /** \brief Configure the server.
  *
@@ -822,6 +836,7 @@ void server::prepare_cassandra()
 //
 //    return f_cassandra;
 //}
+
 
 /** \brief Create a table in the specified context.
  *

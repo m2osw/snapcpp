@@ -1,0 +1,67 @@
+<?xml version="1.0"?>
+<snap-form session_id="1" owner="favicon">
+  <auto-reset minutes="120"/>
+  <focus refid="icon"/>
+  <default-button refid="save"/>
+  <taborder>
+    <tabindex refid="icon"/>
+    <tabindex refid="sitewide"/>
+    <tabindex refid="save"/>
+    <tabindex refid="cancel"/>
+  </taborder>
+  <accesskeys>
+    <!-- by keeping those in alphabetical order you'll avoid problems (duplicates) -->
+    <key refid="cancel">c</key><!-- default cancelation is expected to be [Shift-]Alt-C -->
+    <key refid="icon">i</key>
+    <key refid="save">s</key><!-- default submit is expected to be [Shift-]Alt-S -->
+    <key refid="sitewide">w</key>
+  </accesskeys>
+  <widget id="shorturl_settings" type="fieldset">
+    <label>Favorite Icon Settings</label>
+    <tooltip>Icon Shown in your client's tab or location bar.</tooltip>
+    <help>The favorite icon (or favicon.ico) is the icon shown in your client's browser tab, location bar, bookmark, etc. This form lets you upload your own icon.</help>
+    <widgetorder>
+      <!-- used if order is tweaked (i.e. plugins add widgets) -->
+      <widgetpriority refid="icon"/>
+      <widgetpriority refid="sitewide"/>
+      <widgetpriority refid="save"/>
+      <widgetpriority refid="cancel"/>
+    </widgetorder>
+    <widget id="icon" type="image">
+      <label>Icon</label>
+      <background-value><img src="/default-favicon.ico" width="16" height="16" type="image/vnd.microsoft.icon"/></background-value>
+      <tooltip>Define the little icon that appears in the tab, the location bar, bookmarks, or some other locations of your browser.</tooltip>
+      <sizes>
+        <min>16x16</min>
+        <max>152x152</max>
+      </sizes>
+      <filters>
+        <extensions>ico,png,apng,jpg,jpeg,svg</extensions>
+      </filters>
+      <help>Click <b>Browse...</b> to select a file or drag and drop your favorite icon to replace the current one.</help>
+    </widget>
+    <widget id="sitewide" type="checkbox">
+      <label>Use One Sitewide Favorite Icon</label>
+      <tooltip>Select to only use the sitewide favorite icon</tooltip>
+      <checked>checked</checked>
+      <help>By default this flag is checked which means that only the sitewide favorite icon is to be used. This allows us to skip on checking the current page and its types for a favicon.ico file.</help>
+    </widget>
+    <widget id="save" type="submit">
+      <label>Save</label>
+      <tooltip>Click this button to save your changes.</tooltip>
+      <sizes>
+        <width>25</width>
+      </sizes>
+      <help>Make sure to click the Save button so your changes get commited to the database.</help>
+      <value>Save</value>
+    </widget>
+    <widget id="cancel" type="link">
+      <label>Cancel</label>
+      <tooltip>Click here to return to the administration page</tooltip>
+      <help>Changed your mind? Click on this Cancel link to return to the administration page.</help>
+      <value>/admin</value>
+    </widget>
+  </widget>
+</snap-form>
+<!-- vim: ts=2 sw=2 et
+-->

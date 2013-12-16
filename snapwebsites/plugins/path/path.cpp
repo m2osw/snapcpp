@@ -35,16 +35,16 @@ SNAP_PLUGIN_START(path, 1, 0)
  */
 const char *get_name(name_t name)
 {
-	switch(name) {
-	case SNAP_NAME_PATH_PRIMARY_OWNER:
-		return "path::primary_owner";
+    switch(name) {
+    case SNAP_NAME_PATH_PRIMARY_OWNER:
+        return "path::primary_owner";
 
-	default:
-		// invalid index
-		throw snap_logic_exception("invalid SNAP_NAME_PATH_...");
+    default:
+        // invalid index
+        throw snap_logic_exception("invalid SNAP_NAME_PATH_...");
 
-	}
-	NOTREACHED();
+    }
+    NOTREACHED();
 }
 
 namespace
@@ -57,9 +57,9 @@ char const * const g_undefined = "undefined";
  * This function initializes the path plugin.
  */
 path::path()
-	//: f_snap(NULL) -- auto-init
-	: f_primary_owner(g_undefined)
-	//, f_path_plugin() -- auto-init
+    //: f_snap(NULL) -- auto-init
+    : f_primary_owner(g_undefined)
+    //, f_path_plugin() -- auto-init
 {
 }
 
@@ -83,7 +83,7 @@ path::~path()
  */
 path *path::instance()
 {
-	return g_plugin_path_factory.instance();
+    return g_plugin_path_factory.instance();
 }
 
 
@@ -98,9 +98,9 @@ path *path::instance()
  */
 QString path::description() const
 {
-	return "This plugin manages the path to a page. This is used to determine"
-		" the plugin that knows how to handle the data displayed to the user"
-		" when given a specific path.";
+    return "This plugin manages the path to a page. This is used to determine"
+        " the plugin that knows how to handle the data displayed to the user"
+        " when given a specific path.";
 }
 
 
@@ -112,10 +112,10 @@ QString path::description() const
  */
 void path::on_bootstrap(::snap::snap_child *snap)
 {
-	f_snap = snap;
+    f_snap = snap;
 
-	SNAP_LISTEN0(path, "server", server, init);
-	SNAP_LISTEN(path, "server", server, execute, _1);
+    SNAP_LISTEN0(path, "server", server, init);
+    SNAP_LISTEN(path, "server", server, execute, _1);
 }
 
 
@@ -165,15 +165,15 @@ void path::on_init()
  * \param[in] timestamp  The time and date when the path is being created.
  */
 //void path::add_path(const QString& primary_owner,
-//					const QString& path,
-//					int64_t timestamp)
+//                    const QString& path,
+//                    int64_t timestamp)
 //{
-//	QString cpath(path);
-//	snap_child::canonicalize_path(cpath);
-//	const QString key(f_snap->get_site_key() + cpath);
-//	QtCassandra::QCassandraValue value(primary_owner);
-//	value.setTimestamp(timestamp);
-//	content::content::instance()->get_content_table()->row(key)->cell(QString("path::primary_owner"))->setValue(value);
+//    QString cpath(path);
+//    snap_child::canonicalize_path(cpath);
+//    const QString key(f_snap->get_site_key() + cpath);
+//    QtCassandra::QCassandraValue value(primary_owner);
+//    value.setTimestamp(timestamp);
+//    content::content::instance()->get_content_table()->row(key)->cell(QString("path::primary_owner"))->setValue(value);
 //}
 
 
@@ -191,94 +191,95 @@ void path::on_init()
  */
 void path::on_execute(const QString& uri_path)
 {
-	// get the name of the plugin that owns this URL 
-	QString cpath(uri_path);
-	snap_child::canonicalize_path(cpath);
-	const QString key(f_snap->get_site_key_with_slash() + cpath);
-	QString owner;
-	dynamic_path_plugin_t path_plugin;
-	QSharedPointer<QtCassandra::QCassandraTable> content_table(content::content::instance()->get_content_table());
-	bool page_exists(content_table->exists(key));
-	if(page_exists)
-	{
-		// this should work so we go ahead and set the Last-Modified field in the header
-		QtCassandra::QCassandraValue value(content_table->row(key)->cell(QString(content::get_name(content::SNAP_NAME_CONTENT_MODIFIED)))->value());
-		owner = content_table->row(key)->cell(QString(get_name(SNAP_NAME_PATH_PRIMARY_OWNER)))->value().stringValue();
-		if(value.nullValue() || owner.isEmpty())
-		{
-			f_snap->die(snap_child::HTTP_CODE_NOT_FOUND,
-						"Invalid Page",
-						"An internal error occured and this page cannot properly be displayed at this time.",
-						"User tried to access page \"" + cpath + "\" but it does not look valid");
-			NOTREACHED();
-		}
-		uint64_t last_modified(value.int64Value());
-		QDateTime date(QDateTime().toUTC());
-		date.setTime_t(last_modified / 1000000); // micro-seconds
-		f_snap->set_header("Last-Modified", date.toString("ddd, dd MMM yyyy hh:mm:ss' GMT'"));
+    // get the name of the plugin that owns this URL 
+    QString cpath(uri_path);
+    snap_child::canonicalize_path(cpath);
+    const QString key(f_snap->get_site_key_with_slash() + cpath);
+    QString owner;
+    dynamic_path_plugin_t path_plugin;
+    QSharedPointer<QtCassandra::QCassandraTable> content_table(content::content::instance()->get_content_table());
+    bool page_exists(content_table->exists(key));
+    if(page_exists)
+    {
+        // this should work so we go ahead and set the Last-Modified field in the header
+        QtCassandra::QCassandraValue value(content_table->row(key)->cell(QString(content::get_name(content::SNAP_NAME_CONTENT_MODIFIED)))->value());
+        owner = content_table->row(key)->cell(QString(get_name(SNAP_NAME_PATH_PRIMARY_OWNER)))->value().stringValue();
+        if(value.nullValue() || owner.isEmpty())
+        {
+            f_snap->die(snap_child::HTTP_CODE_NOT_FOUND,
+                        "Invalid Page",
+                        "An internal error occured and this page cannot properly be displayed at this time.",
+                        QString("User tried to access page \"%1\" but it does not look valid (value null? %2, owner null? %3)")
+                                .arg(key).arg(static_cast<int>(value.nullValue())).arg(static_cast<int>(owner.isEmpty())));
+            NOTREACHED();
+        }
+        uint64_t last_modified(value.int64Value());
+        QDateTime date(QDateTime().toUTC());
+        date.setTime_t(last_modified / 1000000); // micro-seconds
+        f_snap->set_header("Last-Modified", date.toString("ddd, dd MMM yyyy hh:mm:ss' GMT'"));
 
-		// get the primary owner (plugin name) and retrieve the plugin pointer
+        // get the primary owner (plugin name) and retrieve the plugin pointer
 //std::cerr << "Execute [" << key.toUtf8().data() << "] with plugin [" << owner.toUtf8().data() << "]\n";
-		path_plugin = plugins::get_plugin(owner);
-	}
-	else
-	{
-		// this key doesn't exist as is in the database, but...
-		// it may be a dynamically defined path, check for a
-		// plugin that would have defined such a path
+        path_plugin = plugins::get_plugin(owner);
+    }
+    else
+    {
+        // this key doesn't exist as is in the database, but...
+        // it may be a dynamically defined path, check for a
+        // plugin that would have defined such a path
 //printf("Testing for page dynamically [%s]\n", cpath.toUtf8().data());
-		f_primary_owner = g_undefined;
-		f_path_plugin.reset();
-		can_handle_dynamic_path(this, cpath);
-		owner = f_primary_owner;
-		path_plugin = f_path_plugin;
-		f_primary_owner = g_undefined; // reset to a value considered invalid
-	}
-	// if a plugin pointer was defined we expect that the dynamic_cast<> will
-	// always work, however path_plugin may be NULL
-	path_execute *pe(dynamic_cast<path_execute *>(path_plugin.get()));
-	if(pe == NULL)
-	{
-		// not found, give a chance to some plugins to do something with the
-		// current data (i.e. auto-search, internally redirect to a nice
-		// Page Not Found page, etc.)
-		page_not_found(this, cpath);
-		if(f_snap->empty_output())
-		{
-			// no page_not_found() plugin support...
-			if(page_exists)
-			{
-				f_snap->die(snap_child::HTTP_CODE_NOT_FOUND,
-							"Plugin Missing",
-							"This page is not currently available as its plugin is not currently installed.",
-							"User tried to access page \"" + cpath + "\" but its plugin (" + owner + ") refused it");
-			}
-			else
-			{
-				f_snap->die(snap_child::HTTP_CODE_NOT_FOUND,
-							"Page Not Found",
-							"This page does not exist on this website.",
-							"User tried to access page \"" + cpath + "\" and no dynamic path handling happened");
-			}
-			NOTREACHED();
-		}
-	}
-	else
-	{
-		// found it, execute the path for real
-		if(!pe->on_path_execute(cpath))
-		{
-			// TODO (TBD):
-			// page_not_found() not called here because the page exists
-			// it's just not available right now and thus we
-			// may not want to replace it with something else?
-			f_snap->die(snap_child::HTTP_CODE_NOT_FOUND,
-					"Page Not Present",
-					"Somehow this page is not currently available.",
-					"User tried to access page \"" + cpath + "\" but its plugin (" + owner + ") refused it");
-			NOTREACHED();
-		}
-	}
+        f_primary_owner = g_undefined;
+        f_path_plugin.reset();
+        can_handle_dynamic_path(this, cpath);
+        owner = f_primary_owner;
+        path_plugin = f_path_plugin;
+        f_primary_owner = g_undefined; // reset to a value considered invalid
+    }
+    // if a plugin pointer was defined we expect that the dynamic_cast<> will
+    // always work, however path_plugin may be NULL
+    path_execute *pe(dynamic_cast<path_execute *>(path_plugin.get()));
+    if(pe == NULL)
+    {
+        // not found, give a chance to some plugins to do something with the
+        // current data (i.e. auto-search, internally redirect to a nice
+        // Page Not Found page, etc.)
+        page_not_found(this, cpath);
+        if(f_snap->empty_output())
+        {
+            // no page_not_found() plugin support...
+            if(page_exists)
+            {
+                f_snap->die(snap_child::HTTP_CODE_NOT_FOUND,
+                            "Plugin Missing",
+                            "This page is not currently available as its plugin is not currently installed.",
+                            "User tried to access page \"" + cpath + "\" but its plugin (" + owner + ") refused it");
+            }
+            else
+            {
+                f_snap->die(snap_child::HTTP_CODE_NOT_FOUND,
+                            "Page Not Found",
+                            "This page does not exist on this website.",
+                            "User tried to access page \"" + cpath + "\" and no dynamic path handling happened");
+            }
+            NOTREACHED();
+        }
+    }
+    else
+    {
+        // found it, execute the path for real
+        if(!pe->on_path_execute(cpath))
+        {
+            // TODO (TBD):
+            // page_not_found() not called here because the page exists
+            // it's just not available right now and thus we
+            // may not want to replace it with something else?
+            f_snap->die(snap_child::HTTP_CODE_NOT_FOUND,
+                    "Page Not Present",
+                    "Somehow this page is not currently available.",
+                    "User tried to access page \"" + cpath + "\" but its plugin (" + owner + ") refused it");
+            NOTREACHED();
+        }
+    }
 }
 
 
@@ -293,7 +294,7 @@ void path::on_execute(const QString& uri_path)
  */
 bool path::can_handle_dynamic_path_impl(path * /*path_plugin*/, const QString& /*cpath*/)
 {
-	return true;
+    return true;
 }
 
 
@@ -311,7 +312,7 @@ bool path::can_handle_dynamic_path_impl(path * /*path_plugin*/, const QString& /
  */
 bool path::page_not_found_impl(path * /*path_plugin*/, const QString& /*cpath*/)
 {
-	return true;
+    return true;
 }
 
 
@@ -337,28 +338,29 @@ bool path::page_not_found_impl(path * /*path_plugin*/, const QString& /*cpath*/)
  *
  * \param[in] p  The plugin that can handle this dynamic path.
  */
-void path::handle_dynamic_path(const QString& plugin_name, plugins::plugin *p)
+void path::handle_dynamic_path(plugins::plugin *p)
 {
 //printf("handle_dynamic_path(%s)\n", plugin_name.toUtf8().data());
-	if(f_primary_owner == g_undefined)
-	{
-		f_primary_owner = plugin_name;
-		f_path_plugin = p;
-	}
-	else
-	{
-		// two different plugins are fighting for the same path
-		// we'll have to enhance our error to give the user a way to choose
-		// the plugin one wants to use for this request...
-		f_snap->die(snap_child::HTTP_CODE_MULTIPLE_CHOICE,
-					"Multiple Choices",
-					"This page references multiple plugins and the server does not currently have means of choosing one over the other.",
-					"User tried to access dynamic page but more than one plugin says it owns the resource, primary is \"" + f_primary_owner + "\", second request by \"" + plugin_name + "\"["+g_undefined+"]");
-		NOTREACHED();
-	}
+    if(f_primary_owner == g_undefined)
+    {
+        f_primary_owner = p->get_plugin_name();
+        f_path_plugin = p;
+    }
+    else
+    {
+        // two different plugins are fighting for the same path
+        // we'll have to enhance our error to give the user a way to choose
+        // the plugin one wants to use for this request...
+        f_snap->die(snap_child::HTTP_CODE_MULTIPLE_CHOICE,
+                    "Multiple Choices",
+                    "This page references multiple plugins and the server does not currently have means of choosing one over the other.",
+                    "User tried to access dynamic page but more than one plugin says it owns the resource, primary is \""
+                            + f_primary_owner + "\", second request by \"" + p->get_plugin_name() + " \"["+g_undefined+"]");
+        NOTREACHED();
+    }
 }
 
 
 SNAP_PLUGIN_END()
 
-// vim: ts=4 sw=4
+// vim: ts=4 sw=4 et

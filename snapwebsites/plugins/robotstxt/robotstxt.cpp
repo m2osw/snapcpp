@@ -171,7 +171,7 @@ bool robotstxt::on_path_execute(const QString& url)
  */
 void robotstxt::output() const
 {
-    f_snap->set_header("Content-type", "text/plain; charset=utf-8");
+    f_snap->set_header("Content-Type", "text/plain; charset=utf-8");
     // TODO: change the "Expires" header to 1 day because we don't need
     //       users to check for the robots.txt that often!?
 

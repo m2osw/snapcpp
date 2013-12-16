@@ -1,0 +1,62 @@
+<?xml version="1.0" standalone="yes"?>
+<!--
+Snap Websites Server == shorturl plugin database setup
+Copyright (C) 2013  Made to Order Software Corp.
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+-->
+<!DOCTYPE snap-tree [
+<!ELEMENT snap-tree (content)*>
+<!ELEMENT content (param|link)*>
+<!ATTLIST content path CDATA #REQUIRED>
+<!ELEMENT param (#PCDATA)>
+<!ATTLIST param name CDATA #REQUIRED
+                overwrite (yes|no) "no"
+                force-namespace (yes|no) "yes">
+<!ELEMENT link (#PCDATA)>
+<!ATTLIST link name CDATA #REQUIRED
+               to CDATA #REQUIRED
+               mode CDATA "1:1">
+]>
+<snap-tree>
+  <!-- we prevent shorturl's on the home page -->
+  <content path="/" owner="content">
+    <link name="shorturl::no_shorturl" to="shorturl::no_shorturl" mode="1:*">/types/taxonomy/system/robotstxt/nofollow</link>
+  </content>
+  <content path="/s">
+    <param name="content::title">Short URL Parent Page</param>
+    <param name="content::body">
+      <![CDATA[<p>This path is used by the Short URL plugin. When detected by the plugin, it takes the number and redirects the user to the full path page. TODO: add a list of the last 10 public pages that were added to the website.</p>]]>
+    </param>
+    <param name="permissions::dynamic" type="int8">1</param>
+    <link name="content::page_type" to="content::page_type" mode="1:*">/types/taxonomy/system/content-types/page/public</link>
+    <link name="shorturl::no_shorturl" to="shorturl::no_shorturl" mode="1:*">/types/taxonomy/system/robotstxt/nofollow</link>
+    <link name="robotstxt::noindex" to="robotstxt::noindex" mode="1:*">/types/taxonomy/system/robotstxt/noindex</link>
+  </content>
+  <content path="/types/taxonomy/system/shorturl">
+    <param name="content::title">Short URL Tags</param>
+    <param name="content::body">
+      <![CDATA[<p>Different tags for the Short URL environment.</p>]]>
+    </param>
+  </content>
+  <content path="/types/taxonomy/system/shorturl/no_shorturl">
+    <param name="content::title">Short URL: Prevent Short URL</param>
+    <param name="content::body">
+      <![CDATA[<p>When a page is tagged with this tag, then no Short URL is generated for it. This is the default on the home page.</p>]]>
+    </param>
+  </content>
+</snap-tree>
+<!-- vim: ts=2 sw=2 et syntax=xml
+-->

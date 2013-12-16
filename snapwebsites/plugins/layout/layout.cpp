@@ -213,7 +213,7 @@ QString layout::get_layout(const QString& cpath, const QString& column_name)
         // that very content doesn't define a layout, check its type(s)
         layout_value = taxonomy::taxonomy::instance()->find_type_with(
             cpath,
-            content::get_name(content::SNAP_NAME_CONTENT_PAGE_CONTENT_TYPE),
+            content::get_name(content::SNAP_NAME_CONTENT_PAGE_TYPE),
             column_name,
             content::get_name(content::SNAP_NAME_CONTENT_CONTENT_TYPES_NAME)
         );
@@ -333,11 +333,11 @@ QDomDocument layout::create_body(const QString& cpath, layout_content *content_p
     // XXX should the ctemplate ever be used to retrieve the layout?
     QString layout_name(get_layout(cpath, get_name(SNAP_NAME_LAYOUT_LAYOUT)));
 
-// TODO: fix the default layout selection!?
-// until we can get the theme system working right...
-layout_name = "bare";
-
 //printf("Got theme / layout name = [%s] / [%s] (path=%s)\n", theme_name.toUtf8().data(), layout_name.toUtf8().data(), cpath.toUtf8().data());
+
+// TODO: fix the default layout selection!?
+//       until we can get the theme system working right...
+layout_name = "bare";
 
     // Initialize the XML document tree
     // More is done in the generate_header_content_impl() function
@@ -345,6 +345,11 @@ layout_name = "bare";
     QDomElement root = doc.createElement("snap");
     doc.appendChild(root);
     QDomElement head(doc.createElement("head"));
+    plugin *p(dynamic_cast<plugin *>(content_plugin));
+    if(p != NULL)
+    {
+        head.setAttribute("owner", p->get_plugin_name());
+    }
     root.appendChild(head);
     QDomElement metadata(doc.createElement("metadata"));
     head.appendChild(metadata);
@@ -354,6 +359,7 @@ layout_name = "bare";
     page.appendChild(body);
     QVector<QDomElement> boxes;
 
+printf("got in layout...\n");
     generate_header_content(this, cpath, head, metadata, ctemplate);
     content_plugin->on_generate_main_content(this, cpath, page, body, ctemplate);
     generate_page_content(this, cpath, page, body, ctemplate);
@@ -366,7 +372,7 @@ layout_name = "bare";
     if(plugins::exists("filter"))
     {
         // replace all tokens if filtering is available
-        filter::filter::instance()->on_token_filter(doc);
+        filter::filter::instance()->on_token_filter(cpath, doc);
     }
     
     //box = QDomElement();
@@ -548,9 +554,9 @@ theme_name = "bare";
     q.evaluateTo(&html);
 
     QString out(QString::fromUtf8(output.data()));
-//printf("Final HTML is [%s]\n", out.toUtf8().data());
 
-    return out;
+    // HTML5 DOCTYPE is just "html" as follow!
+    return "<!DOCTYPE html>" + out;
 }
 
 /** \brief Generate the header of the content.
@@ -578,112 +584,56 @@ theme_name = "bare";
  *
  * \return true if the signal should go on to all the other plugins.
  */
-bool layout::generate_header_content_impl(layout *l, const QString& path, QDomElement& header, QDomElement& metadata, const QString& ctemplate)
+bool layout::generate_header_content_impl(layout *l, const QString& cpath, QDomElement& header, QDomElement& metadata, const QString& ctemplate)
 {
-    QDomDocument doc(header.ownerDocument());
+    int p(cpath.lastIndexOf('/'));
+    QString base(f_snap->get_site_key_with_slash() + (p == -1 ? "" : cpath.left(p)));
 
-    {   // snap/head/metadata/desc[type=website_uri]/data
-        QDomElement desc(doc.createElement("desc"));
-        desc.setAttribute("type", "website_uri");
-        metadata.appendChild(desc);
-        QDomElement data(doc.createElement("data"));
-        desc.appendChild(data);
-        QDomText text(doc.createTextNode(f_snap->get_site_key()));
-        data.appendChild(text);
-    }
+    FIELD_SEARCH
+        (content::field_search::COMMAND_ELEMENT, metadata)
+        (content::field_search::COMMAND_MODE, content::field_search::SEARCH_MODE_EACH)
 
-    {   // snap/head/metadata/desc[type=base_uri]/data
-        QDomElement desc(header.ownerDocument().createElement("desc"));
-        desc.setAttribute("type", "base_uri");
-        metadata.appendChild(desc);
-        QDomElement data(header.ownerDocument().createElement("data"));
-        desc.appendChild(data);
-        int p(path.lastIndexOf('/'));
-        QString base;
-        if(p == -1) {
-            base = "";
-        }
-        else {
-            base = path.left(p);
-        }
-        QDomText text(doc.createTextNode(f_snap->get_site_key_with_slash() + base));
-        data.appendChild(text);
-    }
+        // snap/head/metadata/desc[@type="website_uri"]/data
+        (content::field_search::COMMAND_DEFAULT_VALUE, f_snap->get_site_key())
+        (content::field_search::COMMAND_SAVE, "desc[type=website_uri]/data")
 
-    {   // snap/head/metadata/desc[type=page_uri]/data
-        QDomElement desc(header.ownerDocument().createElement("desc"));
-        desc.setAttribute("type", "page_uri");
-        metadata.appendChild(desc);
-        QDomElement data(header.ownerDocument().createElement("data"));
-        desc.appendChild(data);
-        QDomText text(doc.createTextNode(f_snap->get_site_key_with_slash() + path));
-        data.appendChild(text);
-    }
+        // snap/head/metadata/desc[@type="base_uri"]/data
+        (content::field_search::COMMAND_DEFAULT_VALUE, base)
+        (content::field_search::COMMAND_SAVE, "desc[type=base_uri]/data")
 
-    if(!ctemplate.isEmpty())
-    {   // snap/head/metadata/desc[type=template_uri]/data
-        QDomElement desc(header.ownerDocument().createElement("desc"));
-        desc.setAttribute("type", "template_uri");
-        metadata.appendChild(desc);
-        QDomElement data(header.ownerDocument().createElement("data"));
-        desc.appendChild(data);
-        QDomText text(doc.createTextNode(f_snap->get_site_key_with_slash() + ctemplate));
-        data.appendChild(text);
-    }
+        // snap/head/metadata/desc[type=page_uri]/data
+        (content::field_search::COMMAND_DEFAULT_VALUE, f_snap->get_site_key_with_slash() + cpath)
+        (content::field_search::COMMAND_SAVE, "desc[type=page_uri]/data")
 
-    {   // snap/head/metadata/desc[type=name]/data
-        QDomElement desc(header.ownerDocument().createElement("desc"));
-        desc.setAttribute("type", "name");
-        metadata.appendChild(desc);
-        QDomElement data(header.ownerDocument().createElement("data"));
-        desc.appendChild(data);
-        // normal name always exists
-        QDomText text(doc.createTextNode(f_snap->get_site_parameter(snap::get_name(snap::SNAP_NAME_CORE_SITE_NAME)).stringValue()));
-        data.appendChild(text);
-        // short name
-        QtCassandra::QCassandraValue short_name(f_snap->get_site_parameter(snap::get_name(snap::SNAP_NAME_CORE_SITE_SHORT_NAME)));
-        if(!short_name.nullValue())
-        {
-            QDomElement short_data(header.ownerDocument().createElement("short-data"));
-            desc.appendChild(short_data);
-            QDomText short_text(doc.createTextNode(short_name.stringValue()));
-            short_data.appendChild(short_text);
-        }
-        // long name
-        QtCassandra::QCassandraValue long_name(f_snap->get_site_parameter(snap::get_name(snap::SNAP_NAME_CORE_SITE_LONG_NAME)));
-        if(!long_name.nullValue())
-        {
-            QDomElement long_data(header.ownerDocument().createElement("long-data"));
-            desc.appendChild(long_data);
-            QDomText long_text(doc.createTextNode(long_name.stringValue()));
-            long_data.appendChild(long_text);
-        }
-    }
+        // snap/head/metadata/desc[type=template_uri]/data
+        (content::field_search::COMMAND_DEFAULT_VALUE_OR_NULL, ctemplate.isEmpty() ? "" : f_snap->get_site_key_with_slash() + ctemplate)
+        (content::field_search::COMMAND_SAVE, "desc[type=template_uri]/data")
 
-    {   // snap/head/metadata/desc[type=email]/data
-        QtCassandra::QCassandraValue email(f_snap->get_site_parameter(snap::get_name(snap::SNAP_NAME_CORE_ADMINISTRATOR_EMAIL)));
-        if(!email.nullValue())
-        {
-            QDomElement desc(header.ownerDocument().createElement("desc"));
-            desc.setAttribute("type", "email");
-            metadata.appendChild(desc);
-            QDomElement data(header.ownerDocument().createElement("data"));
-            desc.appendChild(data);
-            QDomText text(doc.createTextNode(email.stringValue()));
-            data.appendChild(text);
-        }
-    }
+        // snap/head/metadata/desc[type=name]/data
+        (content::field_search::COMMAND_CHILD_ELEMENT, "desc")
+        (content::field_search::COMMAND_ELEMENT_ATTR, "type=name")
+        (content::field_search::COMMAND_DEFAULT_VALUE, f_snap->get_site_parameter(snap::get_name(SNAP_NAME_CORE_SITE_NAME)))
+        (content::field_search::COMMAND_SAVE, "data")
+        // snap/head/metadata/desc[type=name]/short-data
+        (content::field_search::COMMAND_DEFAULT_VALUE_OR_NULL, f_snap->get_site_parameter(snap::get_name(SNAP_NAME_CORE_SITE_SHORT_NAME)))
+        (content::field_search::COMMAND_SAVE, "short-data")
+        // snap/head/metadata/desc[type=name]/long-data
+        (content::field_search::COMMAND_DEFAULT_VALUE_OR_NULL, f_snap->get_site_parameter(snap::get_name(SNAP_NAME_CORE_SITE_LONG_NAME)))
+        (content::field_search::COMMAND_SAVE, "long-data")
+        (content::field_search::COMMAND_PARENT_ELEMENT)
 
-    {   // snap/head/metadata/desc[type=remote_ip]/data
-        QDomElement desc(header.ownerDocument().createElement("desc"));
-        desc.setAttribute("type", "remote_ip");
-        metadata.appendChild(desc);
-        QDomElement data(header.ownerDocument().createElement("data"));
-        desc.appendChild(data);
-        QDomText text(doc.createTextNode(f_snap->snapenv("REMOTE_ADDR")));
-        data.appendChild(text);
-    }
+        // snap/head/metadata/desc[type=email]/data
+        (content::field_search::COMMAND_DEFAULT_VALUE_OR_NULL, f_snap->get_site_parameter(snap::get_name(SNAP_NAME_CORE_ADMINISTRATOR_EMAIL)))
+        (content::field_search::COMMAND_SAVE, "desc[type=email]/data")
 
+        // snap/head/metadata/desc[type=remote_ip]/data
+        (content::field_search::COMMAND_DEFAULT_VALUE, f_snap->snapenv("REMOTE_ADDR"))
+        (content::field_search::COMMAND_SAVE, "desc[type=remote_ip]/data")
+
+        // generate!
+        ;
+
+//printf("layout stuff [%s]\n", header.ownerDocument().toString().toUtf8().data());
     return true;
 }
 
@@ -714,6 +664,8 @@ bool layout::generate_page_content_impl(layout *l, const QString& path, QDomElem
 {
     return true;
 }
+
+
 
 
 // This was to test, at this point we don't offer anything in the layout itself

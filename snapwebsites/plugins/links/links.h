@@ -28,7 +28,7 @@ enum name_t {
     SNAP_NAME_LINKS_TABLE,         // Cassandra Table used for content (pages, comments, tags, vocabularies, etc.)
     SNAP_NAME_LINKS_NAMESPACE
 };
-const char *get_name(name_t name);
+const char *get_name(name_t name) __attribute__ ((const));
 
 
 class links_exception : public snap_exception

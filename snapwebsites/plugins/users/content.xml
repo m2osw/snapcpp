@@ -1,7 +1,7 @@
 <?xml version="1.0" standalone="yes"?>
 <!--
 Snap Websites Server == users database setup
-Copyright (C) 2012  Made to Order Software Corp.
+Copyright (C) 2012-2013  Made to Order Software Corp.
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -72,13 +72,14 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="content::body">
       <![CDATA[<p>We want to make sure that (1) you entered the correct email address, and (2) that you are indeed who you say your are. You'll receive an email very shortly and this form let you enter the code included in the email. The email also has a link which may be easier to follow to finish your registration.</p>]]>
     </param>
+    <param name="permissions::dynamic" type="int8">1</param>
     <link name="content::page_type" to="content::page_type" mode="1:*">/types/taxonomy/system/content-types/page/public</link>
     <link name="robotstxt::noindex" to="robotstxt::noindex" mode="1:*">/types/taxonomy/system/robotstxt/noindex</link>
     <link name="robotstxt::nofollow" to="robotstxt::nofollow" mode="1:*">/types/taxonomy/system/robotstxt/nofollow</link>
   </content>
   <content path="/logout">
     <param name="content::title">Logout</param>
-    <param name="content::body" overwrite="yes">
+    <param name="content::body">
       <![CDATA[<p>Thank you for visiting our website. See you again soon.</p><p>Got back to the <a href="/">home page</a>.</p>]]>
     </param>
     <link name="robotstxt::noindex" to="robotstxt::noindex" mode="1:*">/types/taxonomy/system/robotstxt/noindex</link>
@@ -87,10 +88,17 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   </content>
   <content path="/user">
     <param name="content::title">User</param>
-    <param name="content::body" overwrite="yes">
+    <param name="content::body">
       <![CDATA[<p>List of users on your Snap! Website.</p>]]>
     </param>
     <link name="permissions::administrer" to="permissions::administrer" mode="*:*">/types/permissions/rights/administer</link>
+  </content>
+  <content path="/user/me">
+    <param name="content::title">User Profile</param>
+    <param name="content::body">
+      <![CDATA[<p>This entry is a placeholder. You should never see it live on your website. It is used to simplify permission assignment.</p>]]>
+    </param>
+    <link name="permissions::view" to="permissions::view" mode="*:*">/types/permissions/rights/view/page/private</link>
   </content>
   <content path="/admin/email/users/verify">
     <!-- email sent when users register so we can ask them to verify their email address -->
@@ -98,7 +106,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="content::body" overwrite="yes">
         <![CDATA[<p class="email_date" style="text-align: right;">Sent on [sendmail::date]</p><p class="welcome">Welcome to your Snap! C++ website.</p><p class="process-to-complete">In order to complete the creation of your new account, please click on the following link:</p><blockquote>[sendmail::verify_link("Click here to validate your email address")]</blockquote><p>If you have a problem clicking on this link, your verification code is:</p><blockquote><code>[select("/snap/page/body/sendmail/parameters/param[@name='users::verify_email']/@value")]</code></blockquote><p class="thank-you">Thank you.</p><p>To unsubscribe click here: [sendmail::unsubscribe_link("Unsubscribe from Snap! emails")].<p style="text-align: center;">Copyright [year] (c) by Made to Order Software Corporation -- All Rights Reserved</p>]]>
     </param>
-    <link name="sitemapxml::include" to="sitemapxml::include" mode="1:*">/types/taxonomy/system/sitemapxml/include</link>
   </content>
   <content path="/admin/email/users/forgot-password">
     <!-- email sent when users forgot their password -->
@@ -106,7 +113,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="content::body" overwrite="yes">
         <![CDATA[<p class="email_date" style="text-align: right;">Sent on [sendmail::date]</p><p class="welcome">It looks like you required the system to allow you to change your password. If this wasn't you, please reply to this email so we can make sure that everything is A-Okay.</p><p class="process-to-complete">In order to change your password, please click on the following link:</p><blockquote>[sendmail::forgot_password_link("Click here to change your password.")]</blockquote><p>You will be asked to change your password immediately. Once you save your password, you will automatically be logged in.</p><p>If you have a problem clicking on this link, your verification code is: <code>[select("/snap/page/body/sendmail/parameters/param[@name='users::forgot_password_email']/@value")]</code></p><p class="thank-you">Thank you.</p><p>To unsubscribe click here: [sendmail::unsubscribe_link("Unsubscribe from Snap! emails")].<p style="text-align: center;">Copyright [year] (c) by Made to Order Software Corporation -- All Rights Reserved</p>]]>
     </param>
-    <link name="sitemapxml::include" to="sitemapxml::include" mode="1:*">/types/taxonomy/system/sitemapxml/include</link>
   </content>
   <content path="/admin/page/users">
     <param name="content::title">Users Templates</param>

@@ -150,10 +150,10 @@ void char_chart::content_update(int64_t variables_timestamp)
  */
 void char_chart::on_can_handle_dynamic_path(path::path *path_plugin, const QString& cpath)
 {
-    if(cpath.left(11) == "char-chart/")
+    if(cpath.startsWith("char-chart/"))
     {
         // tell the path plugin that this is ours
-        path_plugin->handle_dynamic_path("char_chart", this);
+        path_plugin->handle_dynamic_path(this);
     }
 }
 

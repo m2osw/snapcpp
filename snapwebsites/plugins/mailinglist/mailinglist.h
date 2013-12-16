@@ -38,7 +38,7 @@ enum name_t
 {
     SNAP_NAME_MAILINGLIST_TABLE
 };
-const char *get_name(name_t name);
+const char *get_name(name_t name) __attribute__ ((const));
 
 
 class mailinglist : public plugins::plugin

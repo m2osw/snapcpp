@@ -112,11 +112,13 @@ snap_child::snap_child(server_pointer_t s)
 snap_child::~snap_child()
 {
     // detach or wait till it dies?
-    if(f_child_pid > 0) {
+    if(f_child_pid > 0)
+    {
         int status;
         wait(&status);
     }
-    //else { // this is the child process deleting itself
+    //else
+    //{ // this is the child process deleting itself
     //    ...
     //    if(f_socket != -1)
     //    {
@@ -162,14 +164,16 @@ void snap_child::init_start_date()
  */
 bool snap_child::process(int socket)
 {
-    if(f_is_child) {
+    if(f_is_child)
+    {
         // this is a bug! die() on the spot
         // (here we ARE in the child process!)
         die(HTTP_CODE_SERVICE_UNAVAILABLE, "Server Bug", "Your Snap! server detected a serious problem. Please check your logs for more information.", "snap_child::process() was called from the child process.");
         return false;
     }
 
-    if(f_child_pid != 0) {
+    if(f_child_pid != 0)
+    {
         // this is a bug!
         // WARNING: At this point we CANNOT call the die() function
         //          (we're not the child and have the wrong socket)
@@ -184,9 +188,11 @@ bool snap_child::process(int socket)
 #else
     pid_t p = fork();
 #endif
-    if(p != 0) {
+    if(p != 0)
+    {
         // parent process
-        if(p == -1) {
+        if(p == -1)
+        {
             // WARNING: At this point we CANNOT call the die() function
             //          (we're not the child and have the wrong socket)
             SNAP_LOG_FATAL("snap_child::process() could not create child process, dropping connection.");
@@ -536,11 +542,14 @@ void snap_child::read_environment()
                     snap_info();
                     NOTREACHED();
                 }
-                if(name == "#STATS") {
+                if(name == "#STATS")
+                {
                     snap_statistics();
                     NOTREACHED();
                 }
-                if(name != "#START") {
+                if(name != "#START")
+                {
+                    // TODO use die()
                     SNAP_LOG_FATAL("#START or other supported command missing.");
                     exit(1);
                 }
@@ -558,15 +567,80 @@ void snap_child::read_environment()
                 {
                     if(f_has_post)
                     {
+                        // TODO use die()
                         SNAP_LOG_FATAL("at most 1 #POST is accepted in the environment.");
                         exit(1);
                     }
                     f_has_post = true;
+                    if(f_env.contains("CONTENT_TYPE")
+                    && f_env["CONTENT_TYPE"].startsWith("multipart/form-data"))
+                    {
+                        // the POST is going to be multiple lines with
+                        // \r characters included! We read then all
+                        // up to the closing boundary
+                        //
+                        // Example of such a variable:
+                        // CONTENT_TYPE=multipart/form-data; boundary=---------------------------5767747319210565111421458745
+                        QStringList content_info(f_env["CONTENT_TYPE"].split(';'));
+                        QString boundary;
+                        int const max(content_info.size());
+                        for(int i(1); i < max; ++i)
+                        {
+                            QString param(content_info[i].trimmed());
+                            if(param.startsWith("boundary="))
+                            {
+                                boundary = param.mid(9);
+                                break;
+                            }
+                        }
+                        if(boundary.isEmpty())
+                        {
+                            // TODO use die()
+                            SNAP_LOG_FATAL("multipart POST does not include a valid boundary.");
+                            exit(1);
+                        }
+                        QString post;
+                        QString end_boundary(boundary + "--");
+                        int const min(end_boundary.length());
+                        while(post.length() < min || !post.endsWith(end_boundary))
+                        {
+                            if(read(f_socket, &c, 1) != 1)
+                            {
+                                die(HTTP_CODE_SERVICE_UNAVAILABLE, "", "Unstable network connection", "an error occured while reading the environment from the socket in the child.");
+                                NOTREACHED();
+                            }
+                            post += c;
+                        }
+                        for(;;)
+                        {
+                            if(read(f_socket, &c, 1) != 1)
+                            {
+                                die(HTTP_CODE_SERVICE_UNAVAILABLE, "", "Unstable network connection", "an error occured while reading the environment from the socket in the child (network connection lost while reading new lines after the multi-part POST data).");
+                                NOTREACHED();
+                            }
+                            if(c == '#')
+                            {
+                                break;
+                            }
+                            if(c != '\r' && c != '\n')
+                            {
+                                die(HTTP_CODE_SERVICE_UNAVAILABLE, "", "Unstable network connection", "an error occured while reading the environment from the socket in the child (not new lines after the multi-part POST data).");
+                                NOTREACHED();
+                            }
+                        }
+                        name = "#";
+printf("Got POST! [%s]\n", post.toUtf8().data());
+                    }
+                    else
+                    {
+                        name.clear();
+                    }
                 }
                 else
                 {
                     if(name.isEmpty())
                     {
+                        // TODO use die()
                         SNAP_LOG_FATAL("empty lines are not accepted in the child environment.");
                         exit(1);
                     }
@@ -601,17 +675,18 @@ void snap_child::read_environment()
                         else
                         {
                             f_env[name] = value;
-//fprintf(stderr, " f_env[\"%s\"] = \"%s\"\n", name.toUtf8().data(), value.toUtf8().data());
+fprintf(stderr, " f_env[\"%s\"] = \"%s\"\n", name.toUtf8().data(), value.toUtf8().data());
                         }
                     }
+                    name.clear();
                 }
-                name.clear();
                 value.clear();
             }
             reading_name = true;
         }
         else if(c == '\r')
         {
+            // TODO use die()
             SNAP_LOG_FATAL("the \\r character is not accepted in the environment.");
             exit(1);
         }
@@ -619,6 +694,7 @@ void snap_child::read_environment()
         {
             if(isspace(c))
             {
+                // TODO use die()
                 SNAP_LOG_FATAL("spaces are not allowed in the environment variable names.");
                 exit(1);
             }
@@ -857,10 +933,12 @@ void snap_child::setup_uri()
     // This is useless since the URI points to the CGI which
     // we are not interested in
     //int p = f_env["REQUEST_URI"].indexOf('?');
-    //if(p == -1) {
+    //if(p == -1)
+    //{
     //    f_uri.set_path(f_env["REQUEST_URI"]);
     //}
-    //else {
+    //else
+    //{
     //    f_uri.set_path(f_env["REQUEST_URI"].mid(0, p));
     //}
 
@@ -946,14 +1024,16 @@ const snap_uri& snap_child::get_uri() const
 void snap_child::connect_cassandra()
 {
     // Cassandra already exists?
-    if(!f_cassandra.isNull()) {
+    if(!f_cassandra.isNull())
+    {
         die(HTTP_CODE_SERVICE_UNAVAILABLE, "", "Our database is being initialized more than once.", "The connect_cassandra() function cannot be called more than once.");
         NOTREACHED();
     }
 
     // connect to Cassandra
     f_cassandra = new QtCassandra::QCassandra;
-    if(!f_cassandra->connect(f_server->cassandra_host(), f_server->cassandra_port())) {
+    if(!f_cassandra->connect(f_server->cassandra_host(), f_server->cassandra_port()))
+    {
         die(HTTP_CODE_SERVICE_UNAVAILABLE, "", "Our database system is temporarilly unavailable.", "Could not connect to Cassandra");
         NOTREACHED();
     }
@@ -962,7 +1042,8 @@ void snap_child::connect_cassandra()
     f_cassandra->contexts();
     QString context_name(get_name(SNAP_NAME_CONTEXT));
     f_context = f_cassandra->findContext(context_name);
-    if(f_context.isNull()) {
+    if(f_context.isNull())
+    {
         // we connected to the database, but it is not properly initialized!?
         die(HTTP_CODE_SERVICE_UNAVAILABLE, "", "Our database system does not seem to be properly installed.", "The child process connected to Cassandra but it could not find the \"" + context_name + "\" context.");
         NOTREACHED();
@@ -1010,7 +1091,8 @@ void snap_child::canonicalize_domain()
 
     // row for that domain exists?
     f_domain_key = f_uri.domain() + f_uri.top_level_domain();
-    if(!table->exists(f_domain_key)) {
+    if(!table->exists(f_domain_key))
+    {
         // this domain doesn't exist; i.e. that's a 404
         die(HTTP_CODE_NOT_FOUND, "Domain Not Found", "This website does not exist. Please check the URI and make corrections as required.", "User attempt to access \"" + f_domain_key + "\" which is not defined as a domain.");
         NOTREACHED();
@@ -1018,7 +1100,8 @@ void snap_child::canonicalize_domain()
 
     // get the core::rules
     QtCassandra::QCassandraValue value(table->row(f_domain_key)->cell(QString(get_name(SNAP_NAME_CORE_RULES)))->value());
-    if(value.nullValue()) {
+    if(value.nullValue())
+    {
         // Null value means an empty string or undefined column and either
         // way it's wrong here
         die(HTTP_CODE_NOT_FOUND, "Domain Not Found", "This website does not exist. Please check the URI and make corrections as required.", "User attempt to access domain \"" + f_domain_key + "\" which does not have a valid core::rules entry.");
@@ -1037,49 +1120,58 @@ void snap_child::canonicalize_domain()
     // we add a dot because the list of variables are expected to
     // end with a dot, but only if sub_domains is not empty
     QString sub_domains(f_uri.sub_domains());
-    if(!sub_domains.isEmpty()) {
+    if(!sub_domains.isEmpty())
+    {
         sub_domains += ".";
     }
     int max(r.size());
-    for(int i = 0; i < max; ++i) {
+    for(int i = 0; i < max; ++i)
+    {
         QSharedPointer<domain_info> info(r[i]);
 
         // build the regex (TODO: pre-compile the regex?
         // the problem is the var. name versus data parsed)
         QString re;
         int vmax(info->size());
-        for(int v = 0; v < vmax; ++v) {
+        for(int v = 0; v < vmax; ++v)
+        {
             QSharedPointer<domain_variable> var(info->get_variable(v));
 
             // put parameters between () so we get the data in
             // variables (options) later
             re += "(" + var->get_value() + ")";
-            if(!var->get_required()) {
+            if(!var->get_required())
+            {
                 // optional sub-domain
                 re += "?";
             }
         }
         QRegExp regex(re);
-        if(regex.exactMatch(sub_domains)) {
+        if(regex.exactMatch(sub_domains))
+        {
             // we found the domain!
             QStringList captured(regex.capturedTexts());
             QString canonicalized;
 
             // note captured[0] is the full matching pattern, we ignore it
-            for(int v = 0; v < vmax; ++v) {
+            for(int v = 0; v < vmax; ++v)
+            {
                 QSharedPointer<domain_variable> var(info->get_variable(v));
 
                 QString sub_domain_value(captured[v + 1]);
                 // remove the last dot because in most cases we do not want it
                 // in the variable even if it were defined in the regex
-                if(!sub_domain_value.isEmpty() && sub_domain_value.right(1) == ".") {
+                if(!sub_domain_value.isEmpty() && sub_domain_value.right(1) == ".")
+                {
                     sub_domain_value = sub_domain_value.left(sub_domain_value.length() - 1);
                 }
 
-                if(var->get_required()) {
+                if(var->get_required())
+                {
                     // required, use default if empty
                     if(sub_domain_value.isEmpty()
-                    || var->get_type() == domain_variable::DOMAIN_VARIABLE_TYPE_WEBSITE) {
+                    || var->get_type() == domain_variable::DOMAIN_VARIABLE_TYPE_WEBSITE)
+                    {
                         sub_domain_value = var->get_default();
                     }
                     f_uri.set_option(var->get_name(), sub_domain_value);
@@ -1087,27 +1179,33 @@ void snap_child::canonicalize_domain()
                     // these make up the final canonicalized domain name
                     canonicalized += snap_uri::urlencode(sub_domain_value, ".");
                 }
-                else if(!sub_domain_value.isEmpty()) {
+                else if(!sub_domain_value.isEmpty())
+                {
                     // optional sub-domain, set only if not empty
-                    if(var->get_type() == domain_variable::DOMAIN_VARIABLE_TYPE_WEBSITE) {
+                    if(var->get_type() == domain_variable::DOMAIN_VARIABLE_TYPE_WEBSITE)
+                    {
                         sub_domain_value = var->get_default();
                     }
                     f_uri.set_option(var->get_name(), sub_domain_value);
                 }
-                else {
+                else
+                {
                     // optional with a default, use it
                     sub_domain_value = var->get_default();
-                    if(!sub_domain_value.isEmpty()) {
+                    if(!sub_domain_value.isEmpty())
+                    {
                         f_uri.set_option(var->get_name(), sub_domain_value);
                     }
                 }
             }
 
             // now we've got the website key
-            if(canonicalized.isEmpty()) {
+            if(canonicalized.isEmpty())
+            {
                 f_website_key = f_domain_key;
             }
-            else {
+            else
+            {
                 f_website_key = canonicalized + "." + f_domain_key;
             }
             return;
@@ -1416,7 +1514,8 @@ void snap_child::canonicalize_website()
 void snap_child::site_redirect()
 {
     QtCassandra::QCassandraValue redirect(get_site_parameter(get_name(SNAP_NAME_CORE_REDIRECT)));
-    if(redirect.nullValue()) {
+    if(redirect.nullValue())
+    {
         // no redirect
         return;
     }
@@ -1490,13 +1589,16 @@ void snap_child::page_redirect(const QString& path, http_code_t http_code)
     QString http_name;
     define_http_name(http_code, http_name);
 
-    QString status(QString("Status: %1 %2\n")
+    set_header("Status", QString("%1 %2")
                     .arg(static_cast<int>(http_code))
-                    .arg(http_name));
-    write(status);
-    write("Location: " + uri.get_uri() + "\n");
-    write("Expires: Sat,  1 Jan 2000 00:00:00 GMT\n");
-    write("Content-Type: text/html\n");
+                    .arg(http_name), HEADER_MODE_REDIRECT);
+
+    // TODO the URI MUST be encoded
+    set_header("Location", uri.get_uri(), HEADER_MODE_REDIRECT);
+
+    // also the default is already text/html we force it again in case this
+    // function is called after someone changed this header
+    set_header("Content-Type", "text/html; charset=utf-8", HEADER_MODE_EVERYWHERE);
 
     // compute the body ahead so we can get its size
     // (should we support getting the content of a page? since 99.9999% of
@@ -1510,10 +1612,11 @@ void snap_child::page_redirect(const QString& path, http_code_t http_code)
                     + uri.get_uri() + "\">"
                     + uri.get_uri() + "</a>.</p></body></html>");
 
-    write(QString("Content-Length: %1\n").arg(body.length()));
+    //write(QString("Content-Length: %1\n").arg(body.length()));
+    set_header("Content-Length", QString("%1").arg(body.toUtf8().size()), HEADER_MODE_REDIRECT);
 
     // in case there are any cookies, send them along too
-    output_cookies();
+    output_headers(HEADER_MODE_REDIRECT);
 
     write("\n"); // header / body separator
 
@@ -1557,20 +1660,25 @@ void snap_child::attach_to_session()
  */
 QString snap_child::snapenv(const QString& name) const
 {
-    if(name == "SERVER_PROTOCOL") {
+    if(name == "SERVER_PROTOCOL")
+    {
         // SERVER PROTOCOL
-        if(false == f_fixed_server_protocol) {
+        if(false == f_fixed_server_protocol)
+        {
             f_fixed_server_protocol = true;
             // Drupal does the following, can the SERVER_PROTOCOL really be wrong?
-            if(f_env.count("SERVER_PROTOCOL") != 1) {
+            if(f_env.count("SERVER_PROTOCOL") != 1)
+            {
                 // if undefined, set a default protocol
                 const_cast<snap_child *>(this)->f_env["SERVER_PROTOCOL"] = "HTTP/1.0";
             }
-            else {
+            else
+            {
                 // note that HTTP/0.9 could be somewhat supported but that's
                 // most certainly totally useless
                 if("HTTP/1.0" != f_env.value("SERVER_PROTOCOL")
-                && "HTTP/1.1" != f_env.value("SERVER_PROTOCOL")) {
+                && "HTTP/1.1" != f_env.value("SERVER_PROTOCOL"))
+                {
                     // environment is no good!?
                     const_cast<snap_child *>(this)->f_env["SERVER_PROTOCOL"] = "HTTP/1.0";
                 }
@@ -1835,6 +1943,24 @@ void snap_child::set_site_parameter(const QString& name, const QtCassandra::QCas
 }
 
 
+/** \brief Write the buffer to the output.
+ *
+ * This function writes the specified buffer (array of bytes) to
+ * the output of the snap child. When the execute function returns
+ * from running all the plugins, the data in the buffer is sent to
+ * Apache (through snap.cgi).
+ *
+ * This function is most often used when the process is replying with
+ * data other than text (i.e. images, PDF documents, etc.)
+ *
+ * \param[in] data  The array of byte to append to the buffer.
+ */
+void snap_child::output(QByteArray const& data)
+{
+    f_output.write(data);
+}
+
+
 /** \brief Write the string to the output buffer.
  *
  * This function writes the specified string to the output buffer
@@ -1843,7 +1969,7 @@ void snap_child::set_site_parameter(const QString& name, const QtCassandra::QCas
  *
  * The data is always written in UTF-8.
  *
- * \param[in] data  The string data to append o the buffer.
+ * \param[in] data  The string data to append to the buffer.
  */
 void snap_child::output(const QString& data)
 {
@@ -1860,7 +1986,7 @@ void snap_child::output(const QString& data)
  * The data is viewed as UTF-8 characters and it is sent as is to the
  * buffer.
  *
- * \param[in] data  The string data to append o the buffer.
+ * \param[in] data  The string data to append to the buffer.
  */
 void snap_child::output(const std::string& data)
 {
@@ -1877,11 +2003,28 @@ void snap_child::output(const std::string& data)
  * The data is viewed as UTF-8 characters and it is sent as is to the
  * buffer.
  *
- * \param[in] data  The string data to append o the buffer.
+ * \param[in] data  The string data to append to the buffer.
  */
 void snap_child::output(const char *data)
 {
     f_output.write(data);
+}
+
+
+/** \brief Write the string to the output buffer.
+ *
+ * This function writes the specified string to the output buffer
+ * of the snap child. When the execute function returns from running
+ * all the plugins, the data in the buffer is sent to Apache.
+ *
+ * The data is viewed as UTF-8 characters and it is sent as is to the
+ * buffer.
+ *
+ * \param[in] data  The string data to append to the buffer.
+ */
+void snap_child::output(const wchar_t *data)
+{
+    f_output.write(QString::fromWCharArray(data).toUtf8());
 }
 
 
@@ -1942,22 +2085,14 @@ void snap_child::die(http_code_t err_code, QString err_name, const QString& err_
 
         // On error we do not return the HTTP protocol, only the Status field
         // it just needs to be first to make sure it works right
-        QString status(QString("Status: %1 %2\n")
+        set_header("Status", QString("%1 %2\n")
                 .arg(static_cast<int>(err_code))
                 .arg(err_name));
-        write(status);
 
-        // a date in the past
-        write("Expires: Sat,  1 Jan 2000 00:00:00 GMT\n");
-
-        // content type is HTML
-        write("Content-type: text/html\n");
-
-        // in case there are any cookies, send them along too
-        output_cookies();
-
-        // end header, start body
-        write("\n");
+        // content type is HTML, we reset this header because it could have
+        // been changed to something else and prevent the error from showing
+        // up in the browser
+        set_header("Content-Type", "text/html; charset=utf8", HEADER_MODE_EVERYWHERE);
 
         // Generate the signature
         QString signature;
@@ -1990,8 +2125,13 @@ void snap_child::die(http_code_t err_code, QString err_name, const QString& err_
                 .arg(err_name)
                 .arg(err_description)
                 .arg(signature));
-        write(html);
+        set_header("Content-Length", QString("%1").arg(html.toUtf8().size()));
 
+        // in case there are any cookies, send them along too
+        output_headers(HEADER_MODE_ERROR);
+
+        // output body
+        write(html);
     }
     catch(...)
     {
@@ -2015,8 +2155,10 @@ void snap_child::die(http_code_t err_code, QString err_name, const QString& err_
  */
 void snap_child::define_http_name(http_code_t http_code, QString& http_name)
 {
-    if(http_name.isEmpty()) {
-        switch(http_code) {
+    if(http_name.isEmpty())
+    {
+        switch(http_code)
+        {
         case 100: http_name = "Continue"; break;
         case 101: http_name = "Switching Protocols"; break;
         case 102: http_name = "Processing"; break;
@@ -2153,15 +2295,25 @@ void snap_child::define_http_name(http_code_t http_code, QString& http_name)
  * References: http://www.w3.org/Protocols/rfc2616/rfc2616-sec2.html
  * and http://www.w3.org/Protocols/rfc2616/rfc2616-sec4.html
  *
+ * When adding a header, it is expected to only be used when no error
+ * occurs (HEADER_MODE_NO_ERROR). However, in some circumstances it
+ * is useful to send additional headers with errors or redirects.
+ * These headers can use a different mode so they appear in those other
+ * locations.
+ *
  * \note
  * The key of the f_header map is the name in lowercase. For this
  * reason we save the field name as defined by the user in the
  * value as expected in the final result (i.e. "Blah: " + value.)
  *
+ * \todo
+ * Added a separate function so we can add multiple HTTP Link entries.
+ *
  * \param[in] name  The name of the header.
  * \param[in] value  The value to assign to that header.
+ * \param[in] modes  Where the header will be used.
  */
-void snap_child::set_header(const QString& name, const QString& value)
+void snap_child::set_header(QString const& name, QString const& value, header_mode_t modes)
 {
     {
         // name cannot include controls or separators and only CHARs
@@ -2169,14 +2321,17 @@ void snap_child::set_header(const QString& name, const QString& value)
         ws.resize(name.length());
         name.toWCharArray(&ws[0]);
         int p(name.length());
-        while(p > 0) {
+        while(p > 0)
+        {
             --p;
             wchar_t wc(ws[p]);
             bool valid(true);
-            if(wc < 0x21 || wc > 0x7E) {
+            if(wc < 0x21 || wc > 0x7E)
+            {
                 valid = false;
             }
-            else switch(wc) {
+            else switch(wc)
+            {
             case L'(': case L')': case L'<': case L'>': case L'@':
             case L',': case L';': case L':': case L'\\': case L'"':
             case L'/': case L'[': case L']': case L'?': case L'=':
@@ -2189,7 +2344,8 @@ void snap_child::set_header(const QString& name, const QString& value)
                 break;
 
             }
-            if(!valid) {
+            if(!valid)
+            {
                 // more or less ASCII except well defined separators
                 throw snap_child_exception_invalid_header_field_name("header field name \"" + name + "\" is not valid, found unwanted character: '" + QChar(wc) + "'");
             }
@@ -2204,17 +2360,22 @@ void snap_child::set_header(const QString& name, const QString& value)
         value.toWCharArray(&ws[0]);
         int max(value.length());
         wchar_t lc(L'\0');
-        for(int p(0); p < max; ++p) {
+        for(int p(0); p < max; ++p)
+        {
             wchar_t wc(ws[p]);
-            if((wc < 0x20 || wc == 127) && wc != L'\r' && wc != L'\n' && wc != L'\t') {
+            if((wc < 0x20 || wc == 127) && wc != L'\r' && wc != L'\n' && wc != L'\t')
+            {
                 // refuse controls except \r, \n, \t
                 throw snap_child_exception_invalid_header_value("header field value \"" + value + "\" is not valid, found unwanted character: '" + QChar(wc) + "'");
             }
             // we MUST have a space or tab after a newline
-            if(wc == L'\r' || wc == L'\n') {
+            if(wc == L'\r' || wc == L'\n')
+            {
                 // if p + 1 == max then the user supplied the ending "\r\n"
-                if(p + 1 < max) {
-                    if(ws[p] != L' ' && ws[p] != L'\t' && ws[p] != L'\r' && ws[p] != L'\n') {
+                if(p + 1 < max)
+                {
+                    if(ws[p] != L' ' && ws[p] != L'\t' && ws[p] != L'\r' && ws[p] != L'\n')
+                    {
                         // missing space or tab after a "\r\n" sequence
                         // (we also accept \r or \n although empty lines are
                         // forbidden but we'll remove them anyway)
@@ -2222,39 +2383,157 @@ void snap_child::set_header(const QString& name, const QString& value)
                     }
                 }
             }
-            if(v.isEmpty() && (wc == L' ' || wc == L'\t' || wc == L'\r' || wc == L'\n')) {
+            if(v.isEmpty() && (wc == L' ' || wc == L'\t' || wc == L'\r' || wc == L'\n'))
+            {
                 // trim on the left (that's easy and fast to do here)
                 continue;
             }
-            if(wc == L'\r') {
+            if(wc == L'\r')
+            {
                 wc = L'\n';
             }
-            if(lc == L'\n' && wc == L'\n') {
+            if(lc == L'\n' && wc == L'\n')
+            {
                 // don't double '\n' (happens when user sends us "\r\n")
                 continue;
             }
             v += QChar(wc);
             lc = wc;
         }
-        while(!v.isEmpty()) {
+        while(!v.isEmpty())
+        {
             QChar c(v.right(1)[0]);
             // we skip the '\r' because those were removed anyway
-            if(c != ' ' || c != '\t' /*|| c != '\r'*/ || c != '\n') {
+            if(c != ' ' || c != '\t' /*|| c != '\r'*/ || c != '\n')
+            {
                 break;
             }
             v.remove(v.length() - 1, 1);
         }
     }
 
-    if(v.isEmpty()) {
+    if(v.isEmpty())
+    {
         f_header.remove(name.toLower());
     }
-    else {
+    else
+    {
         // Note that even the Status needs to be a field
         // because we're using Apache and they expect such
-        f_header[name.toLower()] = name + ": " + v;
+        http_header_t header;
+        header.f_header = name + ": " + v;
+        header.f_modes = modes;
+        f_header[name.toLower()] = header;
     }
 }
+
+
+/** \brief Check whether a header is defined.
+ *
+ * This function searches for the specified name in the list of
+ * headers and returns true if it finds it.
+ *
+ * \warning
+ * Cookies are headers, but these are managed using the cookie manager
+ * which offers functions such as set_cookie(), cookie_is_defined(),
+ * and cookie().
+ *
+ * \param[in] name  Name of the header to check for.
+ *
+ * \return false if the header was not defined yet, true otherwise.
+ */
+bool snap_child::has_header(const QString& name) const
+{
+    return f_header.find(name.toLower()) != f_header.end();
+}
+
+/** \brief Retrieve the current value of the given header.
+ *
+ * This function returns the value of the specified header, if
+ * it exists. You may want to first call has_header() to know
+ * whether the header exists. It is not an error to get a header
+ * that was not yet defined, you get an empty string as a result.
+ *
+ * \note
+ * We only return the value of the header even though the
+ * header field name is included in the f_header value,
+ * we simply skip that information.
+ *
+ * \param[in] name  The name of the header to query.
+ *
+ * \return The value of this header, "" if undefined.
+ */
+QString snap_child::get_header(const QString& name) const
+{
+    header_map_t::const_iterator it(f_header.find(name.toLower()));
+    if(it == f_header.end())
+    {
+        // it's not defined
+        return "";
+    }
+
+    // return the value without the field
+    return it->f_header.mid(name.length() + 2);
+}
+
+
+/** \brief Output the HTTP headers.
+ *
+ * This function prints the HTTP headers to the output.
+ *
+ * The headers are defined with a mode (a set of flags really) which
+ * can be used to tell the server when such and such header is to
+ * be output.
+ *
+ * Note that the Cookies headers are never printed by this function.
+ *
+ * \note
+ * Headers are NOT encoding in UTF-8, we output them as Latin1, this is
+ * VERY important; headers are checked at the time you do the set_header
+ * to ensure that only Latin1 characters are used.
+ *
+ * \todo
+ * Any header that a path other than the default (see the die() and
+ * page_redirect() functions) uses should not be printed by this
+ * function. At this point there is no real protection against that
+ * yet it should be protected. An idea is for us to change all those
+ * functions to use the set_header() first, then call this function
+ * because that way the set_header() will have overwritten whatever
+ * other plugins would have defined there.
+ *
+ * \param[in] modes  Print the headers for these modes.
+ */
+void snap_child::output_headers(header_mode_t modes)
+{
+    // Output the status first (we may want to order the HTTP header
+    // fields by type and output them ordered by type as defined in
+    // the HTTP reference chapter 4.2)
+    if(has_header("Status") && (f_header["status"].f_modes & modes) != 0)
+    {
+        // If status is defined, it should not be 200
+        write((f_header["status"].f_header + "\n").toLatin1().data());
+//printf("%s", (f_header["status"] + "\n").toLatin1().data());
+    }
+
+    // Now output all the other headers except the cookies
+    for(header_map_t::const_iterator it(f_header.begin());
+                                     it != f_header.end();
+                                     ++it)
+    {
+        if((it.value().f_modes & modes) != 0 && it.key() != "status")
+        {
+            write((it.value().f_header + "\n").toLatin1().data());
+//printf("%s", (it.value().f_header + "\n").toLatin1().data());
+        }
+    }
+
+    // Finally output the cookies
+    output_cookies();
+
+    // Done with the headers
+    write("\n");
+}
+
 
 /** \brief Add a cookie.
  *
@@ -2314,53 +2593,6 @@ void snap_child::output_cookies()
     }
 }
 
-
-/** \brief Check whether a header is defined.
- *
- * This function searches for the specified name in the list of
- * headers and returns true if it finds it.
- *
- * \warning
- * Cookies are headers, but these are managed using the cookie manager
- * which offers functions such as set_cookie(), cookie_is_defined(),
- * and cookie().
- *
- * \param[in] name  Name of the header to check for.
- *
- * \return false if the header was not defined yet, true otherwise.
- */
-bool snap_child::has_header(const QString& name) const
-{
-    return f_header.find(name.toLower()) != f_header.end();
-}
-
-/** \brief Retrieve the current value of the given header.
- *
- * This function returns the value of the specified header, if
- * it exists. You may want to first call has_header() to know
- * whetherthe header exists. It is not an error to get a header
- * that was not yet defined, you get an empty string as a result.
- *
- * \note
- * We only return the value of the header even though the
- * header field name is included in the f_header value,
- * we simply skip that information.
- *
- * \param[in] name  The name of the header to query.
- *
- * \return The value of this header, "" if undefined.
- */
-QString snap_child::get_header(const QString& name) const
-{
-    header_map_t::const_iterator it(f_header.find(name.toLower()));
-    if(it == f_header.end()) {
-        // it's not defined
-        return "";
-    }
-
-    // return the value without the field
-    return it->mid(name.length() + 2);
-}
 
 /** \brief Generate a unique number.
  *
@@ -2664,6 +2896,8 @@ void snap_child::canonicalize_path(QString& path)
                 path.remove(0, 1);
             }
             while(!path.isEmpty() && (path[0].cell() == '.' || path[0].cell() == '/' || path[0].cell() == '\\'));
+            // however, in the while we do since later characters were not yet
+            // modified to just '/'
         }
         else if(path[i].cell()  == '/' && i + 1 < path.length())
         {
@@ -2707,6 +2941,11 @@ void snap_child::canonicalize_path(QString& path)
  * Note that by default we expect text/html in the output. If a
  * different type of data is being processed, you are responsible
  * for changing the Content-type field.
+ *
+ * \todo
+ * Take the Origin header in account. If it is not the right
+ * origin, especially for log in, registration, and related
+ * parges, then we may want to generate an error.
  */
 void snap_child::execute()
 {
@@ -2715,25 +2954,72 @@ void snap_child::execute()
     f_output.buffer().reserve(64 * 1024);
     f_output.open(QIODevice::ReadWrite);
 
+    // TODO if the client says HTTP/1.0 and offers an Upgrade of 1.1, then
+    //      we should force switch to 1.1 with a 101 response about here
+    // TBD Apache may already take care of such things
+    // TBD It may also be used to switch between HTTP and SHTTP
+    //if(snapenv("SERVER_PROTOCOL").toUpper() == "HTTP/1.0")
+    //{
+    //    // if the Upgrade header was specified check whether it includes
+    //    // HTTP/1.1 as one of the supported protocols
+    //    // Note: we may want to make use of the http_string::WeightedHttpString
+    //    //       object to part that client parameter
+    //    if(snapenv("?REQUEST_UPGRADE?").simplified().replace(QRegExp("[ \t]?,[ \t]?"), ",").toLower().split(',', QString::SkipEmptyParts).contains("HTTP/1.1"))
+    //    {
+    //        set_header("Status", "HTTP/1.1 101 Switching Protocols");
+    //    }
+    //}
+
+    // TODO: Check the cache request status from the client, if not defined
+    //       or set to "max-age=0" or some other such value, then check whether
+    //       the current page is cached and can safely be resent to the client
+    //       (i.e. a public page without form...) if so send the cached version
+    //       which will allow us to avoid all the processing.
+    //
+    // Note: the cached versions are saved really only if the page is
+    //       public, mostly non-dynamic, and has no forms other than Search
+    //       and similar...
+
     // prepare the default headers
     // Status is set to HTTP/1.1 or 1.0 depending on the incoming protocol
     // DO NOT PUT A STATUS OF 200 FOR FastCGI TAKES CARE OF IT
     // Sending a status of 200 to Apache results in a status of 500 Internal Server Error
     //set_header("Status", QString("%1 200 OK").arg(snapenv("SERVER_PROTOCOL")));
 
+    // Normally Apache overwrites this information
+    set_header("Server", "Snap! C++", HEADER_MODE_EVERYWHERE);
+
     // By default all pages are to expire in 1 minute (TBD)
-    QDateTime expires(QDateTime().toUTC());
-    expires.setTime_t(f_start_date / 1000000); // micro-seconds
+    //QDateTime expires(QDateTime().toUTC());
+    //expires.setTime_t(f_start_date / 1000000); // micro-seconds
     // TODO:
     // WARNING: the ddd and MMM are localized, we probably need to "fix"
     //          the locale before this call (?)
-    set_header("Expires", expires.toString("ddd, dd MMM yyyy hh:mm:ss' GMT'"));
-    // The Date field is added by Apache automatically -- adding it generates a 500 Internal Server Error
-    //set_header("Date", expires.toString("ddd, dd MMM yyyy hh:mm:ss") + " GMT");
-    set_header("Cache-Control", "no-store, no-cache, must-revalidate, post-check=0, pre-check=0");
+    //expires.toString("ddd, dd MMM yyyy hh:mm:ss' GMT'"));
+    set_header("Expires", "Sat,  1 Jan 2000 00:00:00 GMT", HEADER_MODE_EVERYWHERE);
 
-    // By default we expect HTML in the output
-    set_header("Content-Type", "text/html; charset=utf-8");
+    // The Date field is added by Apache automatically
+    // adding it here generates a 500 Internal Server Error
+    //set_header("Date", expires.toString("ddd, dd MMM yyyy hh:mm:ss") + " GMT");
+
+    // XXX it feels like Apache2 adds another no-cache at the end of the list
+    set_header("Cache-Control", "no-store, no-cache, must-revalidate, post-check=0, pre-check=0", HEADER_MODE_EVERYWHERE);
+
+    // By default we expect [X]HTML in the output
+    set_header("Content-Type", "text/html; charset=utf-8", HEADER_MODE_EVERYWHERE);
+
+    // Let the caches know that the cookie changes all the time
+    // (the content is likely to change too, but it could still be cached)
+    // TBD -- I'm not entirely sure that this is smart; another default is
+    //        to use "Vary: *" so all fields are considered as varying.
+    //set_header("Vary", "Cookie");
+
+    if(f_uri.protocol() == "https")
+    {
+        // this is used by different load balancer as an indication that
+        // the request is secure
+        set_header("Front-End-Https", "on", HEADER_MODE_EVERYWHERE);
+    }
 
     // give a chance to the system to use cookies such as the
     // cookie used to mark a user as logged in to kick in early
@@ -2766,122 +3052,88 @@ void snap_child::execute()
 
     if(f_output.buffer().size() == 0)
     {
-        // somehow nothing was output... at this time output some random HTML
-        // (we should have an error instead)
-        //write("Status: HTTP/1.1 200 OK\n"); -- that's the default
-        // TODO fix so we can include a Content-Length header
-        write("Expires: Sat,  1 Jan 2000 00:00:00 GMT\n"
-              "Content-Type: text/html\n"
-              "\n"
-              "<html><head><title>Welcome to Snap!</title></head><body>\n"
-              "<h1>It works!</h1>\n"
-              "<p>When you get this message, your system has been improperly installed.</p>\n"
-              "</body></html>\n");
+        // somehow nothing was output...
+        die(HTTP_CODE_NOT_FOUND, "Page Empty",
+            "Somehow this page could not be generated.",
+            "the execute() command ran but the output is empty (this is never correct with HTML data, it could be with text/plain responses though)");
+        NOTREACHED();
+    }
+
+    // created a page, output it now
+
+    // Handling the compression has to be done before defining the
+    // Content-Length header since that represents the compressed
+    // data and not the full length
+
+    // TODO add compression capabilities with bz2, lzma and sdch as
+    //      may be supported by the browser
+    QByteArray html_output;
+    http_strings::WeightedHttpString encodings(snapenv("HTTP_ACCEPT_ENCODING"));
+
+    // it looks like some browsers use that one instead of plain "gzip"
+    // try both just in case
+    float gzip_level(std::max(std::max(encodings.get_level("gzip"), encodings.get_level("x-gzip")), encodings.get_level("*")));
+    float deflate_level(encodings.get_level("deflate"));
+    if(gzip_level > 0.0f && gzip_level >= deflate_level)
+    {
+        // browser asked for gzip with higher preference
+        QString compressor("gzip");
+        html_output = compression::compress(compressor, f_output.buffer(), 100, true);
+        if(compressor == "gzip")
+        {
+            // compression succeeded
+            set_header("Content-Encoding", "gzip");
+        }
+    }
+    else if(deflate_level > 0.0f)
+    {
+        QString compressor("deflate");
+        html_output = compression::compress(compressor, f_output.buffer(), 100, true);
+        if(compressor == "deflate")
+        {
+            // compression succeeded
+            set_header("Content-Encoding", "deflate");
+        }
     }
     else
     {
-        // user created a page, output it now
-        // output the status first (we may want to order the fields by type
-        // and output them ordered by type as defined in the HTTP reference
-        // chapter 4.2)
-        // note that headers are NOT encoding in UTF-8, we output them as
-        // Latin1, this is VERY important; headers are checked to ensure
-        // that only Latin1 characters are used
-
-        // Handling the compression has to be done before defining the
-        // Content-Length header since that represents the compressed
-        // data and not the full length
-
-        // TODO add compression capabilities with bz2, lzma and sdch as
-        //      may be supported by the browser
-        QByteArray html_output;
-        http_strings::WeightedHttpString encodings(snapenv("HTTP_ACCEPT_ENCODING"));
-
-        // it looks like some browsers use that one instead of plain "gzip"
-        // try both just in case
-        float gzip_level(std::max(std::max(encodings.get_level("gzip"), encodings.get_level("x-gzip")), encodings.get_level("*")));
-        float deflate_level(encodings.get_level("deflate"));
-        if(gzip_level > 0.0f && gzip_level >= deflate_level)
+        // This 406 is in the spec. (RFC2616) but frankly?!
+        float identity_level(encodings.get_level("identity"));
+        if(identity_level == 0.0f)
         {
-            // browser asked for gzip with higher preference
-            QString compressor("gzip");
-            html_output = compression::compress(compressor, f_output.buffer(), 100, true);
-            if(compressor == "gzip")
-            {
-                // compression succeeded
-                set_header("Content-Encoding", "gzip");
-            }
+            die(HTTP_CODE_NOT_ACCEPTABLE, "No Acceptable Compression Encoding",
+                "Your client requested a compression that we do not offer and it does not accept content without compression.",
+                "a client requested content with Accept-Encoding: identify;q=0 and no other compression we understand");
+            NOTREACHED();
         }
-        else if(deflate_level > 0.0f)
-        {
-            QString compressor("deflate");
-            html_output = compression::compress(compressor, f_output.buffer(), 100, true);
-            if(compressor == "deflate")
-            {
-                // compression succeeded
-                set_header("Content-Encoding", "deflate");
-            }
-        }
-        else
-        {
-            // This 406 is in the spec. (RFC2616) but frankly?!
-            float identity_level(encodings.get_level("identity"));
-            if(identity_level == 0.0f)
-            {
-                die(HTTP_CODE_NOT_ACCEPTABLE, "No Acceptable Compression Encoding",
-                    "Your client requested a compression that we do not offer and it does not accept content without compression.",
-                    "a client requested content with Accept-Encoding: identify;q=0 and no other compression we understand");
-                NOTREACHED();
-            }
-            html_output = f_output.buffer();
-            // The "identity" SHOULD NOT be used with the Content-Encoding
-            // (RFC 2616 -- https://tools.ietf.org/html/rfc2616)
-            //set_header("Content-Encoding", "identity");
-        }
+        html_output = f_output.buffer();
+        // The "identity" SHOULD NOT be used with the Content-Encoding
+        // (RFC 2616 -- https://tools.ietf.org/html/rfc2616)
+        //set_header("Content-Encoding", "identity");
+    }
 
-        QString size(QString("%1").arg(html_output.size()));
-        set_header("Content-Length", size);
+    QString size(QString("%1").arg(html_output.size()));
+    set_header("Content-Length", size);
 
-        QString connection(snapenv("HTTP_CONNECTION"));
+    QString connection(snapenv("HTTP_CONNECTION"));
 //printf("HTTP_CONNECTION=%s\n", connection.toUtf8().data());
-        if(connection.toLower() == "keep-alive")
-        {
-            set_header("Connection", "keep-alive");
-        }
-        else
-        {
-            set_header("Connection", "close");
-        }
+    if(connection.toLower() == "keep-alive")
+    {
+        set_header("Connection", "keep-alive");
+    }
+    else
+    {
+        set_header("Connection", "close");
+    }
 
-        // If status is defined, it should not be 200
-        if(has_header("Status"))
-        {
-            // print the status first because that's expected
-            // although it is not required by the standard
-            write((f_header["status"] + "\n").toLatin1().data());
-//printf("%s", (f_header["status"] + "\n").toLatin1().data());
-        }
-        for(header_map_t::const_iterator it(f_header.begin());
-                                         it != f_header.end();
-                                         ++it)
-        {
-            if(it.key() != "status")
-            {
-                write((it.value() + "\n").toLatin1().data());
-//printf("%s", (it.value() + "\n").toLatin1().data());
-            }
-        }
-        output_cookies();
-        // end the header and start the body
-        write("\n");
-//printf("\n");
-        // write the body unless method is HEAD
-        if(snapenv("REQUEST_METHOD") != "HEAD")
-        {
-            write(html_output, html_output.size());
+    output_headers(HEADER_MODE_NO_ERROR);
+
+    // write the body unless method is HEAD
+    if(snapenv("REQUEST_METHOD") != "HEAD")
+    {
+        write(html_output, html_output.size());
 // Warning: don't use this printf() if you allow compression... 8-)
 //printf("%s [%d]\n", f_output.buffer().data(), f_output.buffer().size());
-        }
     }
 }
 

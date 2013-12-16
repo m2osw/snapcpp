@@ -31,9 +31,10 @@ class messages_exception_already_defined : public messages_exception {};
 
 enum name_t
 {
-    SNAP_NAME_MESSAGES_MESSAGES
+    SNAP_NAME_MESSAGES_MESSAGES,
+    SNAP_NAME_MESSAGES_WARNING_HEADER
 };
-const char *get_name(name_t name);
+const char *get_name(name_t name) __attribute__ ((const));
 
 
 class messages : public plugins::plugin, public layout::layout_content, public QtSerialization::QSerializationObject

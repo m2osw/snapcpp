@@ -22,7 +22,10 @@
 #include "not_reached.h"
 #include "dom_util.h"
 #include <iostream>
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
 #include <QFile>
+#pragma GCC diagnostic pop
 #include "poison.h"
 
 
@@ -61,6 +64,9 @@ const char *get_name(name_t name)
     case SNAP_NAME_CONTENT_CREATED:
         return "content::created";
 
+    case SNAP_NAME_CONTENT_FINAL:
+        return "content::final";
+
     case SNAP_NAME_CONTENT_ISSUED:
         return "content::issued";
 
@@ -70,8 +76,8 @@ const char *get_name(name_t name)
     case SNAP_NAME_CONTENT_MODIFIED:
         return "content::modified";
 
-    case SNAP_NAME_CONTENT_PAGE_CONTENT_TYPE:
-        return "content::type::page";
+    case SNAP_NAME_CONTENT_PAGE_TYPE:
+        return "content::page_type";
 
     case SNAP_NAME_CONTENT_PARENT:
         return "content::parent";
@@ -105,6 +111,1019 @@ const char *get_name(name_t name)
     NOTREACHED();
 }
 
+
+/** \class field_search
+ * \brief Retrieve one or more parameters from one or more path.
+ *
+ * This function is used to search for a parameter in one or more paths
+ * in your existing database tree.
+ *
+ * In many cases, the parameter exists in the specified path (i.e. the
+ * "modified" parameter). In some other cases, the parameter only
+ * exists in a child, a parent, the template, or a settings page.
+ * This function is very easy to use and it will return said parameter
+ * from wherever it is first found.
+ *
+ * If you are creating an administrative screen (and in some other
+ * circumstances) it may be useful to find all instances of the parameter.
+ * In that case you can request all instances. Note that this case is
+ * considered SLOW and it should not be used lightly while generating
+ * a page!
+ *
+ * The following shows you an example of a tree that this function can
+ * search. Say that the input path represents B. If your search setup
+ * asks for SELF, its CHILDREN with a depth limit of 2, a template (assuming
+ * its template is D,) its type found using LINK (and assuming its type is
+ * F) and the PARENTS of that type with a limit on C then the search can
+ * check the following nodes in that order:
+ *
+ * \li B
+ * \li E (switched to children)
+ * \li H (switched to children; last time because depth is limited to 2)
+ * \li I
+ * \li J
+ * \li D (switched to template)
+ * \li F (switched to page type)
+ * \li C (switched to parent, stop on C)
+ *
+ * Pages A, K and G are therefore ignored.
+ *
+ *                +-------+       +------+       +-------+
+ *          +---->| B     |+----->| E    |+-+--->| H     |
+ *          |     +-------+       +------+  |    +-------+
+ *          |                               |
+ *          |                               |
+ *          |                     +------+  |    +-------+     +------+
+ *          |     +-------+  +--->| F    |  +--->| I     |+--->| K    |
+ *          +---->| C     |+-+    +------+  |    +-------+     +------+
+ *  +----+  |     +-------+  |              |
+ *  | A  |+-+                |              |
+ *  +----+  |                |    +------+  |
+ *          |                +--->| G    |  |    +-------+
+ *          |     +-------+       +------+  +--->| J     |
+ *          +---->| D     |                      +-------+
+ *                +-------+
+ *
+ * View: http://www.asciiflow.com/#1357940162213390220
+ * Edit: http://www.asciiflow.com/#1357940162213390220/1819073096
+ *
+ * This type of search can be used to gather pretty much all the
+ * necessary parameters used in a page to display that page.
+ *
+ * Note that this function is not used by the permissions because in
+ * that case all permission links defined in a page are sought. Whereas
+ * here we're interested in the content of a field in a page.
+ *
+ * Note that when searching children we first search all the children at
+ * a given depth, then repeat the search at the next level. So in our
+ * example, if we had a search depth of 3, we would end up searching
+ * K after J, not between I and J.
+ *
+ * Since the opt_info_t object is like a mini program, it is possible
+ * to do things such as change the name of the field being sought as
+ * the different parts of the tree are searched. So a parameter named
+ * "created" in SELF, could change to "modified" when searching the
+ * PARENT, and "primary-date" when searching the TYPE. It may, however,
+ * not be a good idea as in most situations you probably want to use
+ * just and only "modified". This being said, when you try to determine
+ * the modification date, you could try the "modified" date first, then
+ * try the "updated" and finally "created" and since "created" is
+ * mandatory you know you'll always find it (and it not, there is no
+ * other valid default):
+ *
+ * \code
+ * QStringList result(opt_info_t()
+ *      (PARAMETER_OPTION_FIELD_NAME, "modified")
+ *      (PARAMETER_OPTION_SELF, path)
+ *      (PARAMETER_OPTION_FIELD_NAME, "updated")
+ *      (PARAMETER_OPTION_SELF, path)
+ *      (PARAMETER_OPTION_FIELD_NAME, "created")
+ *      (PARAMETER_OPTION_SELF, path)
+ *      .run(PARAMETER_OPTION_MODE_FIRST)); // run
+ * \endcode
+ *
+ * In this example notice that we just lose the opt_info_t object. It is
+ * temporarily created on the stack, initialized, used to gather the
+ * first match, then return a list of strings our of which we expect
+ * either nothing (empty list) or one entry (the first parameter found.)
+ */
+
+
+/** \class cmd_info_t
+ * \brief Instructions about the search to perform.
+ *
+ * This sub-class is used by the parameters_t class as an instruction:
+ * what to search next to find a given parameter.
+ */
+
+
+/** \brief Create an empty cmd_info_t object.
+ *
+ * To be able to create cmd_info_t objects in a vector we have to create
+ * a constructor with no parameters. This creates an invalid command
+ * object.
+ */
+field_search::cmd_info_t::cmd_info_t()
+    //: f_cmd(COMMAND_UNKNOWN) -- auto-init
+    //, f_value() -- auto-init
+    //, f_element() -- auto-init
+    //, f_result(NULL) -- auto-init
+{
+}
+
+
+/** \brief Initialize an opt_info_t object.
+ *
+ * This function initializes the opt_info_t. Note that the parameters
+ * cannot be changed later (read-only.)
+ *
+ * \param[in] cmd  The search instruction (i.e. SELF, PARENTS, etc.)
+ */
+field_search::cmd_info_t::cmd_info_t(command_t cmd)
+    : f_cmd(static_cast<int>(cmd)) // XXX fix cast
+    //, f_value(str_value)
+    //, f_element() -- auto-init
+    //, f_result(NULL) -- auto-init
+{
+    switch(cmd)
+    {
+    case COMMAND_PARENT_ELEMENT:
+    case COMMAND_RESET:
+    case COMMAND_SELF:
+        break;
+
+    default:
+        throw content_exception_type_mismatch(QString("invalid parameter option (command %1) for an instruction without parameters").arg(static_cast<int>(cmd)));
+
+    }
+}
+
+
+/** \brief Initialize an opt_info_t object.
+ *
+ * This function initializes the opt_info_t. Note that the parameters
+ * cannot be changed later (read-only.)
+ *
+ * \param[in] opt  The search instruction (i.e. SELF, PARENTS, etc.)
+ * \param[in] str_value  The string value attached to that instruction.
+ */
+field_search::cmd_info_t::cmd_info_t(command_t cmd, QString const& str_value)
+    : f_cmd(static_cast<int>(cmd)) // XXX fix cast
+    , f_value(str_value)
+    //, f_element() -- auto-init
+    //, f_result(NULL) -- auto-init
+{
+    switch(cmd)
+    {
+    case COMMAND_FIELD_NAME:
+    case COMMAND_PATH:
+    case COMMAND_PARENTS:
+    case COMMAND_LINK:
+    case COMMAND_DEFAULT_VALUE:
+    case COMMAND_DEFAULT_VALUE_OR_NULL:
+    case COMMAND_CHILD_ELEMENT:
+    case COMMAND_ELEMENT_ATTR:
+    case COMMAND_SAVE:
+    case COMMAND_SAVE_INT64:
+    case COMMAND_SAVE_INT64_DATE:
+    case COMMAND_SAVE_XML:
+    case COMMAND_WARNING:
+        break;
+
+    default:
+        throw content_exception_type_mismatch(QString("invalid parameter option (command %1) for a string (%2)").arg(static_cast<int>(cmd)).arg(str_value));
+
+    }
+}
+
+
+/** \brief Initialize an opt_info_t object.
+ *
+ * This function initializes the opt_info_t. Note that the parameters
+ * cannot be changed later (read-only.)
+ *
+ * \param[in] opt  The search instruction (i.e. SELF, PARENTS, etc.)
+ * \param[in] int_value  The integer value attached to that instruction.
+ */
+field_search::cmd_info_t::cmd_info_t(command_t cmd, int64_t int_value)
+    : f_cmd(static_cast<int>(cmd)) // XXX fix cast
+    , f_value(int_value)
+    //, f_element() -- auto-init
+    //, f_result(NULL) -- auto-init
+{
+    switch(cmd)
+    {
+    case COMMAND_MODE:
+    case COMMAND_CHILDREN:
+    case COMMAND_DEFAULT_VALUE:
+    case COMMAND_DEFAULT_VALUE_OR_NULL:
+    case COMMAND_LABEL:
+    case COMMAND_GOTO:
+    case COMMAND_IF_FOUND:
+    case COMMAND_IF_NOT_FOUND:
+        break;
+
+    default:
+        throw content_exception_type_mismatch(QString("invalid parameter option (command %1) for a string (%2)").arg(static_cast<int>(cmd)).arg(int_value));
+
+    }
+}
+
+
+/** \brief Initialize an opt_info_t object.
+ *
+ * This function initializes the opt_info_t. Note that the parameters
+ * cannot be changed later (read-only.)
+ *
+ * \param[in] opt  The search instruction (i.e. SELF, PARENTS, etc.)
+ * \param[in] value  The value attached to that instruction.
+ */
+field_search::cmd_info_t::cmd_info_t(command_t cmd, QtCassandra::QCassandraValue& value)
+    : f_cmd(static_cast<int>(cmd)) // XXX fix cast
+    , f_value(value)
+    //, f_element() -- auto-init
+    //, f_result(NULL) -- auto-init
+{
+    switch(cmd)
+    {
+    case COMMAND_DEFAULT_VALUE:
+    case COMMAND_DEFAULT_VALUE_OR_NULL:
+        break;
+
+    default:
+        throw content_exception_type_mismatch(QString("invalid parameter option (command %1) for a QCassandraValue").arg(static_cast<int>(cmd)));
+
+    }
+}
+
+
+/** \brief Initialize an opt_info_t object.
+ *
+ * This function initializes the opt_info_t. Note that the parameters
+ * cannot be changed later (read-only.)
+ *
+ * \param[in] opt  The search instruction (i.e. SELF, PARENTS, etc.)
+ * \param[in] element  The value attached to that instruction.
+ */
+field_search::cmd_info_t::cmd_info_t(command_t cmd, QDomElement element)
+    : f_cmd(static_cast<int>(cmd)) // XXX fix cast
+    //, f_value() -- auto-init
+    , f_element(element)
+    //, f_result(NULL) -- auto-init
+{
+    switch(cmd)
+    {
+    case COMMAND_ELEMENT:
+        break;
+
+    default:
+        throw content_exception_type_mismatch(QString("invalid parameter option (command %1) for a QCassandraValue").arg(static_cast<int>(cmd)));
+
+    }
+}
+
+
+/** \brief Initialize an opt_info_t object.
+ *
+ * This function initializes the opt_info_t. Note that the parameters
+ * cannot be changed later (read-only.)
+ *
+ * \param[in] opt  The search instruction (i.e. SELF, PARENTS, etc.)
+ * \param[in,out] result  The value attached to that instruction.
+ */
+field_search::cmd_info_t::cmd_info_t(command_t cmd, search_result_t& result)
+    : f_cmd(static_cast<int>(cmd)) // XXX fix cast
+    //, f_value() -- auto-init
+    //, f_element(element)
+    , f_result(&result)
+{
+    switch(cmd)
+    {
+    case COMMAND_RESULT:
+        break;
+
+    default:
+        throw content_exception_type_mismatch(QString("invalid parameter option (command %1) for a search_result_t").arg(static_cast<int>(cmd)));
+
+    }
+}
+
+
+/** \brief Initialize a field search object.
+ *
+ * This constructor saves the snap child pointer in the field_search so
+ * it can be referenced later to access pages.
+ */
+field_search::field_search(char const *filename, char const *func, int line, snap_child *snap)
+    : f_filename(filename)
+    , f_function(func)
+    , f_line(line)
+    , f_snap(snap)
+    //, f_program() -- auto-init
+{
+}
+
+
+/** \brief Generate the data and then destroy the field_search object.
+ *
+ * The destructor makes sure that the program runs once, then it cleans
+ * up the object. This allows you to create a tempoary field_search object
+ * on the stack and at the time it gets deleted, it runs the program.
+ */
+field_search::~field_search()
+{
+    run();
+}
+
+
+/** \brief Add a command with no parameter.
+ *
+ * The following commands support this scheme:
+ *
+ * \li COMMAND_PARENT_ELEMENT
+ * \li COMMAND_RESET
+ *
+ * \param[in] cmd  The command.
+ *
+ * \return A reference to the field_search so further () can be used.
+ */
+field_search& field_search::operator () (field_search::command_t cmd)
+{
+    field_search::cmd_info_t inst(cmd);
+    f_program.push_back(inst);
+    return *this;
+}
+
+
+/** \brief Add a command with a "char const *".
+ *
+ * The following commands support the "char const *" value:
+ *
+ * \li COMMAND_FIELD_NAME
+ * \li COMMAND_PATH
+ * \li COMMAND_PARENTS
+ * \li COMMAND_LINK
+ * \li COMMAND_DEFAULT_VALUE
+ * \li COMMAND_DEFAULT_VALUE_OR_NULL
+ * \li COMMAND_CHILD_ELEMENT
+ * \li COMMAND_ELEMENT_ATTR
+ * \li COMMAND_SAVE
+ * \li COMMAND_SAVE_INT64
+ * \li COMMAND_SAVE_INT64_DATE
+ * \li COMMAND_SAVE_XML
+ * \li COMMAND_WARNING
+ *
+ * \param[in] cmd  The command.
+ * \param[in] str_value  The string attached to that command.
+ *
+ * \return A reference to the field_search so further () can be used.
+ */
+field_search& field_search::operator () (field_search::command_t cmd, char const *str_value)
+{
+    field_search::cmd_info_t inst(cmd, QString(str_value));
+    f_program.push_back(inst);
+    return *this;
+}
+
+
+/** \brief Add a command with a QString.
+ *
+ * The following commands support the QString value:
+ *
+ * \li COMMAND_FIELD_NAME
+ * \li COMMAND_PATH
+ * \li COMMAND_PARENTS
+ * \li COMMAND_LINK
+ * \li COMMAND_DEFAULT_VALUE
+ * \li COMMAND_DEFAULT_VALUE_OR_NULL
+ * \li COMMAND_CHILD_ELEMENT
+ * \li COMMAND_ELEMENT_ATTR
+ *
+ * \param[in] cmd  The command.
+ * \param[in] str_value  The string attached to that command.
+ *
+ * \return A reference to the field_search so further () can be used.
+ */
+field_search& field_search::operator () (field_search::command_t cmd, QString const& str_value)
+{
+    field_search::cmd_info_t inst(cmd, str_value);
+    f_program.push_back(inst);
+    return *this;
+}
+
+
+/** \brief Add a command with a 64 bit integer.
+ *
+ * The following commands support the integer:
+ *
+ * \li COMMAND_CHILDREN
+ * \li COMMAND_DEFAULT_VALUE
+ * \li COMMAND_DEFAULT_VALUE_OR_NULL
+ * \li COMMAND_LABEL
+ * \li COMMAND_GOTO
+ * \li COMMAND_IF_FOUND
+ * \li COMMAND_IF_NOT_FOUND
+ *
+ * \param[in] cmd  The command.
+ * \param[in] value  The integer attached to that command.
+ *
+ * \return A reference to the field_search so further () can be used.
+ */
+field_search& field_search::operator () (field_search::command_t cmd, int64_t int_value)
+{
+    field_search::cmd_info_t inst(cmd, int_value);
+    f_program.push_back(inst);
+    return *this;
+}
+
+
+/** \brief Add a command with a QCassandraValue.
+ *
+ * The following commands support the QCassandraValue:
+ *
+ * \li COMMAND_DEFAULT_VALUE
+ * \li COMMAND_DEFAULT_VALUE_OR_NULL
+ *
+ * \param[in] cmd  The command.
+ * \param[in] value  The value attached to that command.
+ *
+ * \return A reference to the field_search so further () can be used.
+ */
+field_search& field_search::operator () (field_search::command_t cmd, QtCassandra::QCassandraValue value)
+{
+    field_search::cmd_info_t inst(cmd, value);
+    f_program.push_back(inst);
+    return *this;
+}
+
+
+/** \brief Add a command with a QDomElement.
+ *
+ * The following commands support the QDomElement:
+ *
+ * \li COMMAND_ELEMENT
+ *
+ * \param[in] cmd  The command.
+ * \param[in] element  The element attached to that command.
+ *
+ * \return A reference to the field_search so further () can be used.
+ */
+field_search& field_search::operator () (command_t cmd, QDomElement element)
+{
+    field_search::cmd_info_t inst(cmd, element);
+    f_program.push_back(inst);
+    return *this;
+}
+
+
+/** \brief Add a command with a search_result_t reference.
+ *
+ * The following commands support the result reference:
+ *
+ * \li COMMAND_RESULT
+ *
+ * \param[in] cmd  The command.
+ * \param[in] element  The element attached to that command.
+ *
+ * \return A reference to the field_search so further () can be used.
+ */
+field_search& field_search::operator () (command_t cmd, search_result_t& result)
+{
+    field_search::cmd_info_t inst(cmd, result);
+    f_program.push_back(inst);
+    return *this;
+}
+
+
+/** \brief Run the search commands.
+ *
+ * This function runs the search commands over the data found in Cassandra.
+ * It is somewhat similar to an XPath only it applies to a tree in Cassandra
+ * instead of an XML tree.
+ *
+ * By default, you are expected to search for the very first instance of
+ * the parameter sought. It is possible to transform the search in order
+ * to search all the parameters that match.
+ *
+ * \return An array of QCassandraValue's.
+ */
+void field_search::run()
+{
+    struct auto_search
+    {
+        auto_search(char const *filename, char const *func, int line, snap_child *snap, cmd_info_vector_t& program)
+            : f_filename(filename)
+            , f_function(func)
+            , f_line(line)
+            , f_snap(snap)
+            , f_program(program)
+            //, f_mode(SEARCH_MODE_FIRST) -- auto-init
+            , f_site_key(f_snap->get_site_key_with_slash())
+            //, f_field_name("") -- auto-init
+            //, f_self("") -- auto-init
+            , f_content_table(content::content::instance()->get_content_table())
+            //, f_result() -- auto-init
+        {
+        }
+
+        void cmd_mode(int64_t mode)
+        {
+            f_mode = static_cast<int>(mode); // XXX fix, should be a cast to mode_t
+        }
+
+        void cmd_field_name(QString const& field_name)
+        {
+            if(field_name.isEmpty())
+            {
+                throw content_exception_invalid_sequence("COMMAND_FIELD_NAME cannot be set to an empty string");
+            }
+            f_field_name = field_name;
+        }
+
+        void cmd_self(QString const& self)
+        {
+            // verify that a field name is defined
+            if(f_field_name.isEmpty())
+            {
+                throw content_exception_invalid_sequence("the field_search cannot check COMMAND_SELF without first being given a COMMAND_FIELD_NAME");
+            }
+
+            if(f_content_table->exists(self)
+            && f_content_table->row(self)->exists(f_field_name))
+            {
+                f_found_self = true;
+
+                // found a field, add it to result
+                if(SEARCH_MODE_PATHS == f_mode)
+                {
+                    // save the path(s) only
+                    f_result.push_back(self);
+                }
+                else
+                {
+                    // save the value
+                    f_result.push_back(f_content_table->row(self)->cell(f_field_name)->value());
+                }
+            }
+        }
+
+        void cmd_path(QString const& path)
+        {
+            f_found_self = false;
+
+            // get the self path and add the site key if required
+            // (it CAN be empty in case we are trying to access the home page
+            f_self = path;
+            if(f_self.isEmpty() || !f_self.startsWith(f_site_key))
+            {
+                // path does not yet include the site key
+                f_snap->canonicalize_path(f_self);
+                f_self = f_site_key + f_self;
+            }
+        }
+
+        void cmd_children(int64_t depth)
+        {
+            // invalid depth?
+            if(depth < 0)
+            {
+                throw content_exception_invalid_sequence("COMMAND_CHILDREN expects a depth of 0 or more");
+            }
+            if(depth == 0 || !f_found_self)
+            {
+                // no depth or no self
+                return;
+            }
+
+            QStringList children;
+            children += f_self;
+
+            for(int i(0); i < children.size(); ++i)
+            {
+                // first loop through all the children of self for f_field_name
+                links::link_info info(get_name(SNAP_NAME_CONTENT_CHILDREN), false, children[i]);
+                QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
+                links::link_info child_info;
+                while(link_ctxt->next_link(child_info))
+                {
+                    QString const child(child_info.key());
+                    cmd_self(child);
+                    if(!f_result.isEmpty() && SEARCH_MODE_FIRST == f_mode)
+                    {
+                        return;
+                    }
+
+                    if(depth >= 2)
+                    {
+                        // record this child as its children will have to be tested
+                        children += child;
+                    }
+                }
+                --depth;
+            }
+        }
+
+        void cmd_parents(QString limit_path)
+        {
+            // verify that a field name is defined
+            if(f_field_name.isEmpty())
+            {
+                throw content_exception_invalid_sequence("the field_search cannot check COMMAND_PARENTS without first being given a COMMAND_FIELD_NAME");
+            }
+            if(!f_found_self)
+            {
+                return;
+            }
+
+            // fix the parent limit
+            if(!limit_path.startsWith(f_site_key) || limit_path.isEmpty())
+            {
+                // path does not yet include the site key
+                f_snap->canonicalize_path(limit_path);
+                limit_path = f_site_key + limit_path;
+            }
+
+            if(f_self.startsWith(limit_path))
+            {
+                // we could use the parent link from each page, but it is
+                // a lot faster to compute it each time (no db access)
+                QStringList parts(f_self.right(f_self.length() - f_site_key.length()).split('/'));
+                while(!parts.isEmpty())
+                {
+                    parts.pop_back();
+                    QString self(parts.join("/"));
+                    cmd_self(f_site_key + self);
+                    if((!f_result.isEmpty() && SEARCH_MODE_FIRST == f_mode)
+                    || self == limit_path)
+                    {
+                        return;
+                    }
+                }
+            }
+        }
+
+        void cmd_link(QString const& link_name)
+        {
+            if(!f_found_self)
+            {
+                // no self, no link to follow
+                return;
+            }
+
+            bool const unique_link(true);
+            links::link_info info(link_name, unique_link, f_self);
+            QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
+            links::link_info type_info;
+            if(link_ctxt->next_link(type_info))
+            {
+                f_self = type_info.key();
+                cmd_self(f_self);
+            }
+            else
+            {
+                // no such link
+                f_self.clear();
+                f_found_self = false;
+            }
+        }
+
+        void cmd_default_value(QtCassandra::QCassandraValue const& value, bool keep_null)
+        {
+            if(!value.nullValue() || keep_null)
+            {
+                f_result.push_back(value);
+            }
+        }
+
+        void cmd_element(QDomElement element)
+        {
+            f_element = element;
+        }
+
+        void cmd_child_element(QString const& child_name)
+        {
+            if(!f_element.isNull())
+            {
+                QDomDocument doc(f_element.ownerDocument());
+                QDomElement child(doc.createElement(child_name));
+                f_element.appendChild(child);
+                f_element = child;
+            }
+        }
+
+        void cmd_parent_element()
+        {
+            if(!f_element.isNull())
+            {
+                f_element = f_element.parentNode().toElement();
+            }
+        }
+
+        void cmd_element_attr(QString const& attr)
+        {
+            if(!f_element.isNull())
+            {
+                QStringList a(attr.split('='));
+                if(a.size() == 1)
+                {
+                    // checked="checked"
+                    a += a[0];
+                }
+                f_element.setAttribute(a[0], a[1]);
+            }
+        }
+
+        void cmd_reset(bool status)
+        {
+            f_saved = status;
+            f_result.clear();
+        }
+
+        void cmd_result(search_result_t& result)
+        {
+            result = f_result;
+        }
+
+        void cmd_save(QString const& child_name)
+        {
+            if(!f_result.isEmpty() && !f_element.isNull())
+            {
+                QDomDocument doc(f_element.ownerDocument());
+                QStringList children(child_name.split('/'));
+                QDomElement parent(f_element);
+                while(children.size() != 1)
+                {
+                    // TODO write a clean parser seeking in the string
+                    //      it would make it faster (i.e. no intermediate
+                    //      list of strings)
+                    QStringList child_attr(children[0].split('['));
+                    QDomElement child(doc.createElement(child_attr[0]));
+                    parent.appendChild(child);
+                    while(child_attr.size() > 1)
+                    {
+                        // remove the ']' if present
+                        if(child_attr[1].right(1) != "]")
+                        {
+                            throw content_exception_invalid_sequence("invalid attribute definition, missing ']'");
+                        }
+                        child_attr[1].remove(child_attr[1].length() - 1, 1);
+                        QStringList attr_value(child_attr[1].split('='));
+                        if(attr_value.size() == 1)
+                        {
+                            attr_value += attr_value[0];
+                        }
+                        child.setAttribute(attr_value[0], attr_value[1]);
+                        child_attr.removeAt(1);
+                    }
+                    parent = child;
+                    children.removeAt(0);
+                }
+                QDomElement last_child(doc.createElement(children[0]));
+                parent.appendChild(last_child);
+                QDomText text(doc.createTextNode(f_result[0].stringValue()));
+                last_child.appendChild(text);
+                cmd_reset(true);
+            }
+        }
+
+        void cmd_save_int64(QString const& child_name)
+        {
+            if(!f_result.isEmpty() && !f_element.isNull())
+            {
+                QDomDocument doc(f_element.ownerDocument());
+                QDomElement child(doc.createElement(child_name));
+                f_element.appendChild(child);
+                QDomText text(doc.createTextNode(QString("%1").arg(f_result[0].int64Value())));
+                child.appendChild(text);
+                cmd_reset(true);
+            }
+        }
+
+        void cmd_save_int64_date(QString const& child_name)
+        {
+            if(!f_result.isEmpty() && !f_element.isNull())
+            {
+                QDomDocument doc(f_element.ownerDocument());
+                QDomElement child(doc.createElement(child_name));
+                f_element.appendChild(child);
+                QDomText text(doc.createTextNode(f_snap->date_to_string(f_result[0].int64Value())));
+                child.appendChild(text);
+                cmd_reset(true);
+            }
+        }
+
+        void cmd_save_xml(QString const& child_name)
+        {
+            if(!f_result.isEmpty() && !f_element.isNull())
+            {
+                QDomDocument doc(f_element.ownerDocument());
+                QDomElement child(doc.createElement(child_name));
+                f_element.appendChild(child);
+
+                // parse the XML (XHTML) string
+                QString xml(f_result[0].stringValue());
+                xml = "<wrapper>" + xml + "</wrapper>";
+                QDomDocument xml_doc("wrapper");
+                xml_doc.setContent(xml, true, NULL, NULL, NULL);
+
+                // copy the result in a fragment of our document
+                QDomDocumentFragment frag(doc.createDocumentFragment());
+                frag.appendChild(doc.importNode(xml_doc.documentElement(), true));
+
+                // copy the fragment nodes at the right place
+                QDomNodeList children(frag.firstChild().childNodes());
+                QDomNode previous(children.at(0));
+                child.appendChild(children.at(0));
+                while(!children.isEmpty())
+                {
+                    QDomNode l(children.at(0));
+                    child.insertAfter(children.at(0), previous);
+                    previous = l;
+                }
+
+                cmd_reset(true);
+            }
+        }
+
+        void cmd_if_found(int& i, int64_t label, bool equal)
+        {
+            if(f_result.isEmpty() == equal)
+            {
+                cmd_goto(i, label);
+            }
+        }
+
+        void cmd_goto(int& i, int64_t label)
+        {
+            int const max(f_program.size());
+            for(int j(0); j < max; ++j)
+            {
+                if(f_program[j].get_command() == COMMAND_LABEL
+                && f_program[j].get_int64() == label)
+                {
+                    // NOTE: the for() loop will do a ++i which is fine
+                    //       since we're giving the label position here
+                    i = j;
+                    return;
+                }
+            }
+            throw content_exception_invalid_sequence(QString("found unknown label %1 at %2").arg(label).arg(i));
+        }
+
+        void cmd_warning(QString const& warning_msg)
+        {
+            // XXX only problem is we do not get the right filename,
+            //     line number, function name on this one...
+            if(!f_saved)
+            {
+                SNAP_LOG_WARNING("in ")(f_filename)(":")(f_function)(":")(f_line)(": ")(warning_msg)(" (path: \"")(f_self)("\" and field name: \"")(f_field_name)("\")");
+                f_saved = false;
+            }
+        }
+
+        void run()
+        {
+            int const max(f_program.size());
+            for(int i(0); i < max; ++i)
+            {
+                switch(f_program[i].get_command())
+                {
+                case COMMAND_RESET:
+                    cmd_reset(false);
+                    break;
+
+                case COMMAND_MODE:
+                    cmd_mode(f_program[i].get_int64());
+                    break;
+
+                case COMMAND_FIELD_NAME:
+                    cmd_field_name(f_program[i].get_string());
+                    break;
+
+                case COMMAND_SELF:
+                    cmd_self(f_self);
+                    break;
+
+                case COMMAND_PATH:
+                    cmd_path(f_program[i].get_string());
+                    break;
+
+                case COMMAND_CHILDREN:
+                    cmd_children(f_program[i].get_int64());
+                    break;
+
+                case COMMAND_PARENTS:
+                    cmd_parents(f_program[i].get_string());
+                    break;
+
+                case COMMAND_LINK:
+                    cmd_link(f_program[i].get_string());
+                    break;
+
+                case COMMAND_DEFAULT_VALUE:
+                    cmd_default_value(f_program[i].get_value(), true);
+                    break;
+
+                case COMMAND_DEFAULT_VALUE_OR_NULL:
+                    cmd_default_value(f_program[i].get_value(), false);
+                    break;
+
+                case COMMAND_ELEMENT:
+                    cmd_element(f_program[i].get_element());
+                    break;
+
+                case COMMAND_CHILD_ELEMENT:
+                    cmd_child_element(f_program[i].get_string());
+                    break;
+
+                case COMMAND_PARENT_ELEMENT:
+                    cmd_parent_element();
+                    break;
+
+                case COMMAND_ELEMENT_ATTR:
+                    cmd_element_attr(f_program[i].get_string());
+                    break;
+
+                case COMMAND_RESULT:
+                    cmd_result(*f_program[i].get_result());
+                    break;
+
+                case COMMAND_SAVE:
+                    cmd_save(f_program[i].get_string());
+                    break;
+
+                case COMMAND_SAVE_INT64:
+                    cmd_save_int64(f_program[i].get_string());
+                    break;
+
+                case COMMAND_SAVE_INT64_DATE:
+                    cmd_save_int64_date(f_program[i].get_string());
+                    break;
+
+                case COMMAND_SAVE_XML:
+                    cmd_save_xml(f_program[i].get_string());
+                    break;
+
+                case COMMAND_LABEL:
+                    // this is a nop
+                    break;
+
+                case COMMAND_IF_FOUND:
+                    cmd_if_found(i, f_program[i].get_int64(), false);
+                    break;
+
+                case COMMAND_IF_NOT_FOUND:
+                    cmd_if_found(i, f_program[i].get_int64(), true);
+                    break;
+
+                case COMMAND_GOTO:
+                    cmd_goto(i, f_program[i].get_int64());
+                    break;
+
+                case COMMAND_WARNING:
+                    cmd_warning(f_program[i].get_string());
+                    break;
+
+                default:
+                    throw content_exception_invalid_sequence(QString("encountered an unknown instruction (%1)").arg(static_cast<int>(f_program[i].get_command())));
+
+                }
+                if(!f_result.isEmpty() && SEARCH_MODE_FIRST == f_mode)
+                {
+                    return;
+                }
+            }
+        }
+
+        char const *                                    f_filename;
+        char const *                                    f_function;
+        int                                             f_line;
+        zpsnap_child_t                                  f_snap;
+        cmd_info_vector_t&                              f_program;
+        safe_mode_t                                     f_mode;
+        QString                                         f_site_key;
+        QString                                         f_field_name;
+        QString                                         f_self;
+        QSharedPointer<QtCassandra::QCassandraTable>    f_content_table;
+        QDomElement                                     f_element;
+        controlled_vars::fbool_t                        f_found_self;
+        controlled_vars::fbool_t                        f_saved;
+        field_search::search_result_t                   f_result;
+    } search(f_filename, f_function, f_line, f_snap, f_program);
+
+    search.run();
+}
+
+
+field_search create_field_search(char const *filename, char const *func, int line, snap_child *snap)
+{
+    field_search fs(filename, func, line, snap);
+    return fs;
+}
+
+
+
+
 /** \brief Initialize the content plugin.
  *
  * This function is used to initialize the content plugin object.
@@ -114,6 +1133,7 @@ content::content()
 {
 }
 
+
 /** \brief Clean up the content plugin.
  *
  * Ensure the content object is clean before it is gone.
@@ -121,6 +1141,7 @@ content::content()
 content::~content()
 {
 }
+
 
 /** \brief Initialize the content.
  *
@@ -136,10 +1157,12 @@ void content::on_bootstrap(snap_child *snap)
     SNAP_LISTEN0(content, "server", server, save_content);
     SNAP_LISTEN(content, "layout", layout::layout, generate_page_content, _1, _2, _3, _4, _5);
 
-    if(plugins::exists("javascript")) {
+    if(plugins::exists("javascript"))
+    {
         javascript::javascript::instance()->register_dynamic_plugin(this);
     }
 }
+
 
 /** \brief Get a pointer to the content plugin.
  *
@@ -195,6 +1218,7 @@ int64_t content::do_update(int64_t last_updated)
     SNAP_PLUGIN_UPDATE_EXIT();
 }
 
+
 /** \brief First update to run for the content plugin.
  *
  * This function is the first update for the content plugin. It installs
@@ -217,7 +1241,7 @@ void content::initial_update(int64_t variables_timestamp)
  */
 void content::content_update(int64_t variables_timestamp)
 {
-    content::content::instance()->add_xml("content");
+    add_xml(get_plugin_name());
 }
 
 
@@ -291,27 +1315,30 @@ bool content::on_path_execute(const QString& cpath)
  *
  * \return true if the signal is to be propagated.
  */
-bool content::create_content_impl(const QString& path, const QString& owner, const QString& type)
+bool content::create_content_impl(QString const& path, QString const& owner, QString const& type)
 {
     QSharedPointer<QtCassandra::QCassandraTable> content_table(get_content_table());
-    const QString site_key(f_snap->get_site_key_with_slash());
-    const QString key(site_key + path);
+    QString const site_key(f_snap->get_site_key_with_slash());
+    QString const key(site_key + path);
 
     if(content_table->exists(key))
     {
         // the row already exists, this is considered created.
         // (we may later want to have a repair_content signal
         // which we could run as an action from the backend...)
-        return false;
+        // however, if it were created by an add_xml() call,
+        // then the on_create_content() of all the other plugins
+        // should probably be called (i.e. f_updating is true then)
+        return f_updating;
     }
     QSharedPointer<QtCassandra::QCassandraRow> row(content_table->row(key));
 
     // save the owner
-    const QString primary_owner(path::get_name(path::SNAP_NAME_PATH_PRIMARY_OWNER));
+    QString const primary_owner(path::get_name(path::SNAP_NAME_PATH_PRIMARY_OWNER));
     row->cell(primary_owner)->setValue(owner);
 
     // add the different basic content dates setup
-    uint64_t start_date(f_snap->get_uri().option("start_date").toLongLong());
+    uint64_t const start_date(f_snap->get_uri().option("start_date").toLongLong());
     row->cell(QString(get_name(SNAP_NAME_CONTENT_CREATED)))->setValue(start_date);
     row->cell(QString(get_name(SNAP_NAME_CONTENT_UPDATED)))->setValue(start_date);
     row->cell(QString(get_name(SNAP_NAME_CONTENT_MODIFIED)))->setValue(start_date);
@@ -322,8 +1349,8 @@ bool content::create_content_impl(const QString& path, const QString& owner, con
         //      because if not it's certainly completely invalid (i.e. the
         //      programmer mistyped the type [again])
         QString const destination_key(site_key + "types/taxonomy/system/content-types/" + (type.isEmpty() ? "page" : type));
-        QString const link_name("content::page_type");
-        QString const link_to("content::page_type");
+        QString const link_name(get_name(SNAP_NAME_CONTENT_PAGE_TYPE));
+        QString const link_to(get_name(SNAP_NAME_CONTENT_PAGE_TYPE));
         bool const source_unique(true);
         bool const destination_unique(false);
         links::link_info source(link_name, source_unique, key);
@@ -371,260 +1398,58 @@ bool content::create_content_impl(const QString& path, const QString& owner, con
  * \param[in,out] page  The page being generated.
  * \param[in,out] body  The body being generated.
  */
-void content::on_generate_main_content(layout::layout *l, const QString& fullpath, QDomElement& page, QDomElement& body, const QString& ctemplate)
+void content::on_generate_main_content(layout::layout *l, const QString& cpath, QDomElement& page, QDomElement& body, const QString& ctemplate)
 {
-    QDomDocument doc(page.ownerDocument());
+    // if the content is the main page then define the titles and body here
+    FIELD_SEARCH
+        (field_search::COMMAND_MODE, field_search::SEARCH_MODE_EACH)
+        (field_search::COMMAND_ELEMENT, body)
+        (field_search::COMMAND_PATH, cpath)
 
-    // this is easier as some people (like me) will most certainly call this
-    // function with a path that starts with a slash once in a while; this
-    // way we avoid all sorts of trouble (should we generate a warning in the
-    // logs though?)
-    QByteArray utf8(fullpath.toUtf8());
-    const char *s(utf8.data());
-    while(*s == '/')
-    {
-        ++s;
-    }
-    const QString path(QString::fromUtf8(s));
+        // /snap/page/body/titles
+        (field_search::COMMAND_CHILD_ELEMENT, "titles")
+        // /snap/page/body/titles/title
+        (field_search::COMMAND_FIELD_NAME, get_name(SNAP_NAME_CONTENT_TITLE))
+        (field_search::COMMAND_SELF)
+        (field_search::COMMAND_IF_FOUND, 1)
+            (field_search::COMMAND_PATH, ctemplate)
+            (field_search::COMMAND_SELF)
+            (field_search::COMMAND_PATH, cpath)
+        (field_search::COMMAND_LABEL, 1)
+        (field_search::COMMAND_SAVE, "title")
+        // /snap/page/body/titles/short-title
+        (field_search::COMMAND_FIELD_NAME, get_name(SNAP_NAME_CONTENT_SHORT_TITLE))
+        (field_search::COMMAND_SELF)
+        (field_search::COMMAND_IF_FOUND, 2)
+            (field_search::COMMAND_PATH, ctemplate)
+            (field_search::COMMAND_SELF)
+            (field_search::COMMAND_PATH, cpath)
+        (field_search::COMMAND_LABEL, 2)
+        (field_search::COMMAND_SAVE, "short-title")
+        // /snap/page/body/titles/long-title
+        (field_search::COMMAND_FIELD_NAME, get_name(SNAP_NAME_CONTENT_LONG_TITLE))
+        (field_search::COMMAND_SELF)
+        (field_search::COMMAND_IF_FOUND, 3)
+            (field_search::COMMAND_PATH, ctemplate)
+            (field_search::COMMAND_SELF)
+            (field_search::COMMAND_PATH, cpath)
+        (field_search::COMMAND_LABEL, 3)
+        (field_search::COMMAND_SAVE, "long-title")
+        (field_search::COMMAND_PARENT_ELEMENT)
 
-    {
-        QDomElement created(doc.createElement("created"));
-        body.appendChild(created);
-        QtCassandra::QCassandraValue created_date(get_content_parameter(path, get_name(SNAP_NAME_CONTENT_CREATED)));
-        if(!created_date.nullValue())
-        {
-            QDomText text(doc.createTextNode(f_snap->date_to_string(created_date.int64Value())));
-            created.appendChild(text);
-        }
-        else
-        {
-            SNAP_LOG_WARNING("The content::created field is missing in ")(path)(" (")(fullpath)(")");
-        }
-    }
+        // /snap/page/body/content
+        (field_search::COMMAND_FIELD_NAME, get_name(SNAP_NAME_CONTENT_BODY))
+        (field_search::COMMAND_SELF)
+        (field_search::COMMAND_IF_FOUND, 10)
+            (field_search::COMMAND_PATH, ctemplate)
+            (field_search::COMMAND_SELF)
+            //(field_search::COMMAND_PATH, cpath) -- uncomment if we go on
+        (field_search::COMMAND_LABEL, 10)
+        (field_search::COMMAND_SAVE_XML, "content")
 
-    {
-        QDomElement modified(doc.createElement("modified"));
-        body.appendChild(modified);
-        QtCassandra::QCassandraValue modified_date(get_content_parameter(path, get_name(SNAP_NAME_CONTENT_MODIFIED)));
-        if(!modified_date.nullValue())
-        {
-            QDomText text(doc.createTextNode(f_snap->date_to_string(modified_date.int64Value())));
-            modified.appendChild(text);
-        }
-        else
-        {
-            SNAP_LOG_WARNING("The content::modified field is missing in ")(path);
-        }
-    }
-
-    {
-        QDomElement updated(doc.createElement("updated"));
-        body.appendChild(updated);
-        QtCassandra::QCassandraValue updated_date(get_content_parameter(path, get_name(SNAP_NAME_CONTENT_UPDATED)));
-        if(!updated_date.nullValue())
-        {
-            QDomText text(doc.createTextNode(f_snap->date_to_string(updated_date.int64Value())));
-            updated.appendChild(text);
-        }
-        else
-        {
-            SNAP_LOG_WARNING("The content::updated field is missing in ")(path);
-        }
-    }
-
-    {
-        QtCassandra::QCassandraValue accepted_date(get_content_parameter(path, get_name(SNAP_NAME_CONTENT_ACCEPTED)));
-        if(!accepted_date.nullValue())
-        {
-            QDomElement accepted(doc.createElement("accepted"));
-            body.appendChild(accepted);
-            QDomText text(doc.createTextNode(f_snap->date_to_string(accepted_date.int64Value())));
-            accepted.appendChild(text);
-        }
-    }
-
-    {
-        QtCassandra::QCassandraValue submitted_date(get_content_parameter(path, get_name(SNAP_NAME_CONTENT_SUBMITTED)));
-        if(!submitted_date.nullValue())
-        {
-            QDomElement submitted(doc.createElement("submitted"));
-            body.appendChild(submitted);
-            QDomText text(doc.createTextNode(f_snap->date_to_string(submitted_date.int64Value())));
-            submitted.appendChild(text);
-        }
-    }
-
-    {
-        QtCassandra::QCassandraValue since_date(get_content_parameter(path, get_name(SNAP_NAME_CONTENT_SINCE)));
-        if(!since_date.nullValue())
-        {
-            QDomElement since(doc.createElement("since"));
-            body.appendChild(since);
-            QDomText text(doc.createTextNode(f_snap->date_to_string(since_date.int64Value(), true)));
-            since.appendChild(text);
-        }
-    }
-
-    {
-        QtCassandra::QCassandraValue until_date(get_content_parameter(path, get_name(SNAP_NAME_CONTENT_UNTIL)));
-        if(!until_date.nullValue())
-        {
-            QDomElement until(doc.createElement("until"));
-            body.appendChild(until);
-            QDomText text(doc.createTextNode(f_snap->date_to_string(until_date.int64Value(), true)));
-            until.appendChild(text);
-        }
-    }
-
-    {
-        QtCassandra::QCassandraValue copyrighted_date(get_content_parameter(path, get_name(SNAP_NAME_CONTENT_COPYRIGHTED)));
-        if(!copyrighted_date.nullValue())
-        {
-            QDomElement copyrighted(doc.createElement("copyrighted"));
-            body.appendChild(copyrighted);
-            QDomText text(doc.createTextNode(f_snap->date_to_string(copyrighted_date.int64Value())));
-            copyrighted.appendChild(text);
-        }
-    }
-
-    {
-        QtCassandra::QCassandraValue issued_date(get_content_parameter(path, get_name(SNAP_NAME_CONTENT_ISSUED)));
-        if(!issued_date.nullValue())
-        {
-            QDomElement issued(doc.createElement("issued"));
-            body.appendChild(issued);
-            QDomText text(doc.createTextNode(f_snap->date_to_string(issued_date.int64Value())));
-            issued.appendChild(text);
-        }
-    }
-
-    {
-        //QCassandraValue content_title();
-        QDomElement titles(doc.createElement("titles"));
-        body.appendChild(titles);
-        QDomElement title(doc.createElement("title"));
-        titles.appendChild(title);
-        QtCassandra::QCassandraValue title_text(get_content_parameter(path, get_name(SNAP_NAME_CONTENT_TITLE)));
-        if(title_text.nullValue())
-        {
-            title_text = get_content_parameter(ctemplate, get_name(SNAP_NAME_CONTENT_TITLE));
-        }
-        QDomText text(doc.createTextNode(title_text.stringValue()));
-        title.appendChild(text);
-        // short title
-        QtCassandra::QCassandraValue short_title_text(get_content_parameter(path, get_name(SNAP_NAME_CONTENT_SHORT_TITLE)));
-        if(short_title_text.nullValue())
-        {
-            short_title_text = get_content_parameter(ctemplate, get_name(SNAP_NAME_CONTENT_SHORT_TITLE));
-        }
-        if(!short_title_text.nullValue())
-        {
-            QDomElement short_title(doc.createElement("short-title"));
-            titles.appendChild(short_title);
-            QDomText short_text(doc.createTextNode(short_title_text.stringValue()));
-            short_title.appendChild(short_text);
-        }
-        // long title
-        QtCassandra::QCassandraValue long_title_text(get_content_parameter(path, get_name(SNAP_NAME_CONTENT_LONG_TITLE)));
-        if(long_title_text.nullValue())
-        {
-            long_title_text = get_content_parameter(ctemplate, get_name(SNAP_NAME_CONTENT_LONG_TITLE));
-        }
-        if(!long_title_text.nullValue())
-        {
-            QDomElement long_title(doc.createElement("long-title"));
-            titles.appendChild(long_title);
-            QDomText long_text(doc.createTextNode(long_title_text.stringValue()));
-            long_title.appendChild(long_text);
-        }
-    }
-
-#if 1
-    {
-        // we assume that the body content is valid because when we created it
-        // we checked the data and if the user data was invalid XML then we
-        // saved a place holder warning the user about the fact!
-        QDomDocument doc_body("body");
-        QtCassandra::QCassandraValue body_value(get_content_parameter(path, get_name(SNAP_NAME_CONTENT_BODY)));
-        if(body_value.nullValue())
-        {
-            body_value = get_content_parameter(ctemplate, get_name(SNAP_NAME_CONTENT_BODY));
-        }
-        QString body_data(body_value.stringValue());
-        // TBD: it probably doesn't matter but we currently add an extra <div>
-        //      tag; to remove it we'd have to append all the children found
-        //      in that <div> tag.
-        body_data = "<div class=\"snap-body\">" + body_data + "</div>";
-        doc_body.setContent(body_data, true, NULL, NULL, NULL);
-        //doc_body.setContent(page_content, true, NULL, NULL, NULL);
-        QDomElement content_tag(doc.createElement("content"));
-        body.appendChild(content_tag);
-        content_tag.appendChild(doc.importNode(doc_body.documentElement(), true));
-    }
-#else
-    // using a CDATA section generates pure text (no tags at all, the &lt;
-    // characters become &amp;lt;
-    {
-        // we assume that the body content is valid because when we created it
-        // we checked the data and if the user data was invalid XML then we
-        // saved a place holder warning the user about the fact!
-        QDomDocument doc_body("body");
-        QString body_data(get_content_parameter(path, get_name(SNAP_NAME_CONTENT_BODY)).stringValue());
-        // TBD: it probably doesn't matter but we currently add an extra <div>
-        //      tag; to remove it we'd have to append all the children found
-        //      in that <div> tag.
-        body_data = "<div class=\"snap-body\">" + body_data + "</div>";
-        // add it as a CDATA section to the XML
-        QDomElement content_tag(doc.createElement("content"));
-
-        QDomElement div_tag(doc.createElement("div"));
-
-        QDomCDATASection cdata_section(doc.createCDATASection(body_data));
-        div_tag.appendChild(cdata_section);
-
-        content_tag.appendChild(div_tag);
-
-        //content_tag.appendChild(doc.importNode(doc_body.documentElement(), true));
-
-        body.appendChild(content_tag);
-    }
-#endif
-
-    if(path != "")
-    {
-        // simple "up" navigation
-        QDomElement navigation;
-        dom_util::get_tag("navigation", body, navigation);
-
-        {
-            QDomElement link(doc.createElement("link"));
-            link.setAttribute("rel", "top");
-            link.setAttribute("title", "Index"); // TODO: translate
-            link.setAttribute("href", f_snap->get_site_key());
-            navigation.appendChild(link);
-        }
-
-        QString up(path);
-        int p(up.lastIndexOf('/'));
-        if(p == -1)
-        {
-            // in this case it is an equivalent to top
-            up = f_snap->get_site_key();
-        }
-        else
-        {
-            up = f_snap->get_site_key_with_slash() + path.mid(0, p);
-        }
-        {
-            QDomElement link(doc.createElement("link"));
-            link.setAttribute("rel", "up");
-            link.setAttribute("title", "Up"); // TODO: translate
-            link.setAttribute("href", up);
-            navigation.appendChild(link);
-        }
-    }
+        // generate!
+        ;
 }
-
 
 
 /** \brief Generate the page common content.
@@ -633,12 +1458,110 @@ void content::on_generate_main_content(layout::layout *l, const QString& fullpat
  * by default.
  *
  * \param[in] l  The layout pointer.
- * \param[in] path  The path being managed.
+ * \param[in] cpath  The path being managed.
  * \param[in,out] page  The page being generated.
  * \param[in,out] body  The body being generated.
+ * \param[in] ctemplate  The body being generated.
  */
-void content::on_generate_page_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body, const QString& ctemplate)
+void content::on_generate_page_content(layout::layout *l, const QString& cpath, QDomElement& page, QDomElement& body, const QString& ctemplate)
 {
+    // create information mainly used in the HTML <head> tag
+    QString up;
+    int const p(cpath.lastIndexOf('/'));
+    if(p == -1)
+    {
+        // in this case it is an equivalent to top
+        up = f_snap->get_site_key();
+    }
+    else
+    {
+        up = f_snap->get_site_key_with_slash() + cpath.mid(0, p);
+    }
+
+    FIELD_SEARCH
+        (field_search::COMMAND_MODE, field_search::SEARCH_MODE_EACH)
+        (field_search::COMMAND_ELEMENT, body)
+        (field_search::COMMAND_PATH, cpath)
+
+        // /snap/page/body/created
+        (field_search::COMMAND_FIELD_NAME, get_name(SNAP_NAME_CONTENT_CREATED))
+        (field_search::COMMAND_SELF)
+        (field_search::COMMAND_SAVE_INT64_DATE, "created")
+        (field_search::COMMAND_WARNING, "field missing")
+
+        // /snap/page/body/modified
+        // XXX should it be mandatory or just use "created" as the default?
+        (field_search::COMMAND_FIELD_NAME, get_name(SNAP_NAME_CONTENT_MODIFIED))
+        (field_search::COMMAND_SELF)
+        (field_search::COMMAND_SAVE_INT64_DATE, "modified")
+        (field_search::COMMAND_WARNING, "field missing")
+
+        // /snap/page/body/updated
+        // XXX should it be mandatory or just use "created" as the default?
+        (field_search::COMMAND_FIELD_NAME, get_name(SNAP_NAME_CONTENT_UPDATED))
+        (field_search::COMMAND_SELF)
+        (field_search::COMMAND_SAVE_INT64_DATE, "updated")
+        (field_search::COMMAND_WARNING, "field missing")
+
+        // /snap/page/body/accepted
+        (field_search::COMMAND_FIELD_NAME, get_name(SNAP_NAME_CONTENT_ACCEPTED))
+        (field_search::COMMAND_SELF)
+        (field_search::COMMAND_SAVE_INT64_DATE, "accepted")
+
+        // /snap/page/body/submitted
+        (field_search::COMMAND_FIELD_NAME, get_name(SNAP_NAME_CONTENT_SUBMITTED))
+        (field_search::COMMAND_SELF)
+        (field_search::COMMAND_SAVE_INT64_DATE, "submitted")
+
+        // /snap/page/body/since
+        (field_search::COMMAND_FIELD_NAME, get_name(SNAP_NAME_CONTENT_SINCE))
+        (field_search::COMMAND_SELF)
+        (field_search::COMMAND_SAVE_INT64_DATE, "since")
+
+        // /snap/page/body/until
+        (field_search::COMMAND_FIELD_NAME, get_name(SNAP_NAME_CONTENT_UNTIL))
+        (field_search::COMMAND_SELF)
+        (field_search::COMMAND_SAVE_INT64_DATE, "until")
+
+        // /snap/page/body/copyrighted
+        (field_search::COMMAND_FIELD_NAME, get_name(SNAP_NAME_CONTENT_COPYRIGHTED))
+        (field_search::COMMAND_SELF)
+        (field_search::COMMAND_SAVE_INT64_DATE, "copyrighted")
+
+        // /snap/page/body/issued
+        (field_search::COMMAND_FIELD_NAME, get_name(SNAP_NAME_CONTENT_ISSUED))
+        (field_search::COMMAND_SELF)
+        (field_search::COMMAND_SAVE_INT64_DATE, "issued")
+
+        // /snap/page/body/navigation/link[@rel="top"][@title="Index"][@href="<site key>"]
+        // /snap/page/body/navigation/link[@rel="up"][@title="Up"][@href="<path/..>"]
+        (field_search::COMMAND_DEFAULT_VALUE_OR_NULL, cpath)
+        (field_search::COMMAND_IF_NOT_FOUND, 1)
+            //(field_search::COMMAND_RESET) -- uncomment if we go on with other things
+            (field_search::COMMAND_CHILD_ELEMENT, "navigation")
+
+            // Index
+            (field_search::COMMAND_CHILD_ELEMENT, "link")
+            (field_search::COMMAND_ELEMENT_ATTR, "rel=top")
+            (field_search::COMMAND_ELEMENT_ATTR, "title=Index") // TODO: translate
+            (field_search::COMMAND_ELEMENT_ATTR, "href=" + f_snap->get_site_key())
+            (field_search::COMMAND_PARENT_ELEMENT)
+
+            // Up
+            (field_search::COMMAND_CHILD_ELEMENT, "link")
+            (field_search::COMMAND_ELEMENT_ATTR, "rel=up")
+            (field_search::COMMAND_ELEMENT_ATTR, "title=Up") // TODO: translate
+            (field_search::COMMAND_ELEMENT_ATTR, "href=" + up)
+            //(field_search::COMMAND_PARENT_ELEMENT) -- uncomment if we go on with other things
+
+            //(field_search::COMMAND_PARENT_ELEMENT) -- uncomment if we go on with other things
+        (field_search::COMMAND_LABEL, 1)
+
+        // generate!
+        ;
+
+//QDomDocument doc(page.ownerDocument());
+//printf("content XML [%s]\n", doc.toString().toUtf8().data());
 }
 
 
@@ -656,19 +1579,27 @@ void content::on_generate_page_content(layout::layout *l, const QString& path, Q
  *
  * If the value is undefined, the result is a null value.
  *
+ * \note
+ * The path should be canonicalized before the call although we call
+ * the remove_slashes() function on it cleanup starting and ending
+ * slashes (because the URI object returns paths such as "/login" and
+ * the get_content_parameter() requires just "login" to work right.)
+ *
  * \param[in] path  The canonicalized path being managed.
- * \param[in] name  The name of the parameter to retrieve.
+ * \param[in] param_name  The name of the parameter to retrieve.
  *
  * \return The content of the row as a Cassandra value.
  */
-QtCassandra::QCassandraValue content::get_content_parameter(const QString& path, const QString& param_name)
+QtCassandra::QCassandraValue content::get_content_parameter(QString path, const QString& param_name)
 {
-    if(path.isEmpty())
-    {
-        // an empty value is considered to be a null value
-        QtCassandra::QCassandraValue value;
-        return value;
-    }
+    f_snap->canonicalize_path(path);
+    // "" represents the home page
+    //if(path.isEmpty())
+    //{
+    //    // an empty value is considered to be a null value
+    //    QtCassandra::QCassandraValue value;
+    //    return value;
+    //}
 
     QSharedPointer<QtCassandra::QCassandraTable> content_table(get_content_table());
 
@@ -680,7 +1611,7 @@ QtCassandra::QCassandraValue content::get_content_parameter(const QString& path,
         QtCassandra::QCassandraValue value;
         return value;
     }
-    if(!content_table->row(f_snap->get_site_key())->exists(param_name))
+    if(!content_table->row(key)->exists(param_name))
     {
       // an empty value is considered to be a null value
       QtCassandra::QCassandraValue value;
@@ -689,7 +1620,6 @@ QtCassandra::QCassandraValue content::get_content_parameter(const QString& path,
 
     return content_table->row(key)->cell(param_name)->value();
 }
-
 
 /** \brief Prepare a set of content to add to the database.
  *
@@ -762,6 +1692,12 @@ void content::add_xml(const QString& plugin_name)
             continue;
         }
 
+        QString owner(content_element.attribute("owner"));
+        if(owner.isEmpty())
+        {
+            owner = plugin_name;
+        }
+
         QString path(content_element.attribute("path"));
         if(path.isEmpty())
         {
@@ -771,7 +1707,7 @@ void content::add_xml(const QString& plugin_name)
         QString const key(f_snap->get_site_key_with_slash() + path);
 
         // create a new entry for the database
-        add_content(key, plugin_name);
+        add_content(key, owner);
 
         QDomNodeList children(content_element.childNodes());
         bool found_content_type(false);
@@ -866,6 +1802,30 @@ void content::add_xml(const QString& plugin_name)
                 if(element.attribute("overwrite") == "yes")
                 {
                     set_param_overwrite(key, fullname, true);
+                }
+
+                // check whether a data type was defined
+                QString type(element.attribute("type"));
+                if(!type.isEmpty())
+                {
+                    param_type_t param_type;
+                    if(type == "string")
+                    {
+                        param_type = PARAM_TYPE_STRING;
+                    }
+                    else if(type == "int8")
+                    {
+                        param_type = PARAM_TYPE_INT8;
+                    }
+                    else if(type == "int64")
+                    {
+                        param_type = PARAM_TYPE_INT64;
+                    }
+                    else
+                    {
+                        throw content_exception_invalid_content_xml(QString("unknown type in <param type=\"%1\"> tags").arg(type));
+                    }
+                    set_param_type(key, fullname, param_type);
                 }
             }
             // <link name=... to=... [mode="1/*:1/*"]> destination path </link>
@@ -973,7 +1933,7 @@ void content::add_content(const QString& path, const QString& plugin_owner)
     if(!plugins::verify_plugin_name(plugin_owner))
     {
         // invalid plugin name
-        throw std::runtime_error(("install_content() called with an invalid plugin name: \"" + plugin_owner + "\"").toUtf8().data());
+        throw content_exception_invalid_name("install_content() called with an invalid plugin name: \"" + plugin_owner + "\"");
     }
 
     content_block_map_t::iterator b(f_blocks.find(path));
@@ -985,14 +1945,15 @@ void content::add_content(const QString& path, const QString& plugin_owner)
             throw content_exception_content_already_defined("adding block \"" + path + "\" with owner \"" + b->f_owner + "\" cannot be changed to \"" + plugin_owner + "\"");
         }
         // it already exists, we're all good
-        return;
     }
-
-    // create the new block
-    content_block block;
-    block.f_path = path;
-    block.f_owner = plugin_owner;
-    f_blocks.insert(path, block);
+    else
+    {
+        // create the new block
+        content_block block;
+        block.f_path = path;
+        block.f_owner = plugin_owner;
+        f_blocks.insert(path, block);
+    }
 
     f_snap->new_content();
 }
@@ -1100,6 +2061,43 @@ void content::set_param_overwrite(const QString& path, const QString& name, bool
 }
 
 
+/** \brief Set the type to a specific value.
+ *
+ * The parameter must first be added with the add_param() function.
+ * By default the type of a parameter is "string". However, some
+ * parameters are integers and this function can be used to specify
+ * such. Note that it is important to understand that if you change
+ * the type in the content.xml then when reading the data you'll have
+ * to use the correct type.
+ *
+ * \exception content_exception_parameter_not_defined
+ * This exception is raised if the path or the name parameters do
+ * not match any block or parameter in that block.
+ *
+ * \param[in] path  The path of this parameter.
+ * \param[in] name  The name of the parameter to modify.
+ * \param[in] type  The new type for this parameter.
+ *
+ * \sa add_param()
+ */
+void content::set_param_type(const QString& path, const QString& name, param_type_t param_type)
+{
+    content_block_map_t::iterator b(f_blocks.find(path));
+    if(b == f_blocks.end())
+    {
+        throw content_exception_parameter_not_defined("no block with path \"" + path + "\" found");
+    }
+
+    content_params_t::iterator p(b->f_params.find(name));
+    if(p == b->f_params.end())
+    {
+        throw content_exception_parameter_not_defined("no param with name \"" + path + "\" found in block \"" + path + "\"");
+    }
+
+    p->f_type = static_cast<int>(param_type); // XXX fix cast
+}
+
+
 /** \brief Add a link to the specified content.
  *
  * This function links the specified content (defined by path) to the
@@ -1168,7 +2166,7 @@ void content::on_save_content()
         return;
     }
 
-    QString site_key(f_snap->get_site_key_with_slash());
+    QString const site_key(f_snap->get_site_key_with_slash());
     QSharedPointer<QtCassandra::QCassandraTable> content_table(get_content_table());
     for(content_block_map_t::iterator d(f_blocks.begin());
             d != f_blocks.end(); ++d)
@@ -1209,7 +2207,7 @@ void content::on_save_content()
             // (we may want to add more as time passes)
             if(p->f_name == primary_owner)
             {
-                throw std::runtime_error("content::on_save_content() cannot accept a parameter named \"path::primary_owner\" as it is reserved");
+                throw content_exception_invalid_content_xml("content::on_save_content() cannot accept a parameter named \"path::primary_owner\" as it is reserved");
             }
 
             // we just saved the path::primary_owner so the row exists now
@@ -1220,7 +2218,30 @@ void content::on_save_content()
             if(p->f_overwrite
             || content_table->row(d->f_path)->cell(p->f_name)->value().nullValue())
             {
-                content_table->row(d->f_path)->cell(p->f_name)->setValue(p->f_data);
+                bool ok(true);
+                switch(p->f_type)
+                {
+                case PARAM_TYPE_STRING:
+                    content_table->row(d->f_path)->cell(p->f_name)->setValue(p->f_data);
+                    break;
+
+                case PARAM_TYPE_INT8:
+                    {
+                    int const v(p->f_data.toInt(&ok));
+                    ok = ok && v >= -128 && v <= 127; // verify overflows
+                    content_table->row(d->f_path)->cell(p->f_name)->setValue(static_cast<signed char>(v));
+                    }
+                    break;
+
+                case PARAM_TYPE_INT64:
+                    content_table->row(d->f_path)->cell(p->f_name)->setValue(static_cast<int64_t>(p->f_data.toLongLong(&ok)));
+                    break;
+
+                }
+                if(!ok)
+                {
+                    throw content_exception_invalid_content_xml(QString("content::on_save_content() tried to convert %1 to a number and failed.").arg(p->f_data));
+                }
             }
         }
 
@@ -1257,6 +2278,27 @@ void content::on_save_content()
             links::links::instance()->create_link(l->f_source, l->f_destination);
         }
     }
+
+    // allow other plugins to add their own stuff dynamically
+    // (note that this is working only comme-ci comme-ca since all
+    // the other plugins should anyway have workable defaults; however,
+    // once in a while, defaults are not enough; for example the shorturl
+    // needs to generate a shorturl, there is real default other than:
+    // that page has no shorturl.)
+    f_updating = true;
+    for(content_block_map_t::iterator d(f_blocks.begin());
+            d != f_blocks.end(); ++d)
+    {
+        QtCassandra::QCassandraValue type(get_content_parameter(d->f_path, get_name(SNAP_NAME_CONTENT_PAGE_TYPE)));
+        QString path(d->f_path);
+        if(path.startsWith(site_key))
+        {
+            path = path.mid(site_key.length());
+            create_content(path, d->f_owner, type.stringValue());
+        }
+        // else -- if the path doesn't start with site_key we've got a problem
+    }
+    f_updating = false;
 
     // we're done with that set of data
     f_blocks.clear();

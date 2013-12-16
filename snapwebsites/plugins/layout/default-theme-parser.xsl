@@ -113,6 +113,11 @@
 					<link rel="canonical" title="Canonical URI" href="{$page_uri}"/>
 					<meta property="og:url" content="{$page_uri}"/>
 				</xsl:if>
+				<!-- shorturl == this is where we could test having or not having a plugin could dynamically change the XSL templates -->
+				<xsl:variable name="shorturl" select="head/metadata/desc[@type='shorturl']/data"/>
+				<xsl:if test="$shorturl != ''">
+					<link rel="shorturl" title="Short URL" href="{$shorturl}"/>
+				</xsl:if>
 				<!-- include dcterms? -->
 				<xsl:if test="$use_dcterms = 'yes'">
 					<link rel="schema.dcterms" href="http://purl.org/dc/terms/"/>

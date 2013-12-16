@@ -23,6 +23,8 @@ namespace http_strings
 {
 
 
+
+
 WeightedHttpString::WeightedHttpString(const QString& str)
     : f_str(str)
     //, f_parts() -- auto-init

@@ -65,7 +65,7 @@ enum name_t
     SNAP_NAME_USERS_VERIFIED_ON,
     SNAP_NAME_USERS_VERIFY_EMAIL
 };
-const char *get_name(name_t name);
+const char *get_name(name_t name) __attribute__ ((const));
 
 
 
@@ -148,6 +148,7 @@ public:
     void                    on_detach_from_session();
     void                    on_create_content(const QString& path, const QString& owner, const QString& type);
     void                    on_get_user_rights(permissions::permissions *perms, permissions::permissions::sets_t& sets);
+    void                    on_get_plugin_permissions(permissions::permissions *perms, permissions::permissions::sets_t& sets);
 
     virtual QDomDocument    on_get_xml_form(const QString& cpath);
     virtual void            on_process_post(const QString& uri_path, const sessions::sessions::session_info& info);

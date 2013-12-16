@@ -264,6 +264,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="content::body">
       <![CDATA[<p>Group of all the people who registered an account. In most cases registered users have just a little more rights than an anonymous user: he can see pages that are otherwise hidden from anonymous users.</p>]]>
     </param>
+    <link name="permissions::view" to="permissions::view" mode="*:*">/types/permissions/rights/view/page/private</link>
   </content>
   <content path="/types/permissions/groups/root/administrator/editor/moderator/author/commenter/registered-user/visitor">
     <param name="content::title">Visitor Group</param>

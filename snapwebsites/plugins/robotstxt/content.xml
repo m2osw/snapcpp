@@ -32,7 +32,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 ]>
 <snap-tree>
   <!-- files that are 100% dynamically generated are defined here, but they do not get a title and body -->
-  <content path="/robots.txt"/>
+  <content path="/robots.txt">
+    <param name="content::final" type="int8">1</param>
+    <link name="content::page_type" to="content::page_type" mode="1:*">/types/taxonomy/system/content-types/page/public</link>
+  </content>
   <content path="/admin/settings/robotstxt">
     <param name="content::title">robots.txt settings</param>
     <param name="content::body">

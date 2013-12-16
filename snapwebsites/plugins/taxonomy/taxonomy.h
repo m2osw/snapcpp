@@ -27,7 +27,7 @@ namespace taxonomy
 enum name_t {
 	SNAP_NAME_TAXONOMY_NAME
 };
-const char *get_name(name_t name);
+const char *get_name(name_t name) __attribute__ ((const));
 
 
 class taxonomy : public plugins::plugin, public path::path_execute, public layout::layout_content

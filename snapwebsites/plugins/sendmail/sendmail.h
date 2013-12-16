@@ -85,7 +85,7 @@ enum name_t
     SNAP_NAME_SENDMAIL_X_MSMAIL_PRIORITY,
     SNAP_NAME_SENDMAIL_X_PRIORITY
 };
-const char *get_name(name_t name);
+const char *get_name(name_t name) __attribute__ ((const));
 
 
 class sendmail : public plugins::plugin, public snap::server::backend_action, public layout::layout_content
@@ -165,8 +165,8 @@ public:
         const parameter_map_t& get_all_parameters() const;
 
         // internal functions used to save the data serialized
-        void unserialize(const QString& data);
-        virtual void readTag(const QString& name, QtSerialization::QReader& r);
+        void unserialize(QString const& data);
+        virtual void readTag(QString const& name, QtSerialization::QReader& r);
         QString serialize() const;
 
     private:
@@ -190,12 +190,12 @@ public:
 
     void                on_bootstrap(snap_child *snap);
     void                on_register_backend_action(snap::server::backend_action_map_t& actions);
-    virtual void        on_backend_action(const QString& action);
-    virtual void        on_generate_main_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body, const QString& ctemplate);
-    //void              on_generate_page_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body, const QString& ctemplate);
-    void                on_replace_token(filter::filter *f, QDomDocument& xml, filter::filter::token_info_t& token);
+    virtual void        on_backend_action(QString const& action);
+    virtual void        on_generate_main_content(layout::layout *l, QString const& path, QDomElement& page, QDomElement& body, QString const& ctemplate);
+    //void              on_generate_page_content(layout::layout *l, QString const& path, QDomElement& page, QDomElement& body, QString const& ctemplate);
+    void                on_replace_token(filter::filter *f, QString const& cpath, QDomDocument& xml, filter::filter::token_info_t& token);
 
-    void                post_email(const email& e);
+    void                post_email(email const& e);
     QString             default_from() const;
 
     SNAP_SIGNAL(filter_email, (email& e), (e));
@@ -204,10 +204,10 @@ private:
     void initial_update(int64_t variables_timestamp);
     void content_update(int64_t variables_timestamp);
     void process_emails();
-    void attach_email(const email& e);
-    void attach_user_email(const email& e);
+    void attach_email(email const& e);
+    void attach_user_email(email const& e);
     void run_emails();
-    void sendemail(const QString& key, const QString& unique_key);
+    void sendemail(QString const& key, QString const& unique_key);
 
     zpsnap_child_t      f_snap;
     email               f_email; // email being processed

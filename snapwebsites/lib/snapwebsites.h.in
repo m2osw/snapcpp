@@ -39,6 +39,7 @@ enum name_t {
     SNAP_NAME_WEBSITES,        // Cassandra Table used for websites
     SNAP_NAME_SITES,        // Cassandra Table used for sites (one site per row)
     SNAP_NAME_CORE_ADMINISTRATOR_EMAIL,
+    SNAP_NAME_CORE_FAVICON,
     SNAP_NAME_CORE_LAST_UPDATED,
     SNAP_NAME_CORE_SITE_NAME,
     SNAP_NAME_CORE_SITE_SHORT_NAME,

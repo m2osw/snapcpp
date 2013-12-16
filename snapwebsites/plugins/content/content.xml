@@ -41,7 +41,24 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <link name="content::page_type" to="content::page_type" mode="1:*">/types/taxonomy/system/content-types/page/public</link>
     <link name="permissions::view" to="permissions::view" mode="*:*">/types/permissions/rights/view/page/for-spammers</link>
     <link name="sitemapxml::include" to="sitemapxml::include" mode="1:*">/types/taxonomy/system/sitemapxml/include</link>
-    <!--link name="robotstxt::noindex" to="robotstxt::noindex" mode="1:*">/types/taxonomy/system/robotstxt/noindex</link-->
+  </content>
+  <content path="/privacy-policy">
+    <param name="content::title">Privacy Policy</param>
+    <param name="content::body">
+      <![CDATA[<p>Snap! Websites save your IP address and make use of a cookie to track all your movement all the time.</p><p>Also we do not generally use that information, it is checked by our robots to see whether you are spamming or hacking our systems.</p>]]>
+    </param>
+    <link name="content::page_type" to="content::page_type" mode="1:*">/types/taxonomy/system/content-types/page/public</link>
+    <link name="permissions::view" to="permissions::view" mode="*:*">/types/permissions/rights/view/page/for-spammers</link>
+    <link name="sitemapxml::include" to="sitemapxml::include" mode="1:*">/types/taxonomy/system/sitemapxml/include</link>
+  </content>
+  <content path="/terms-and-conditions">
+    <param name="content::title">Terms and Conditions</param>
+    <param name="content::body">
+      <![CDATA[<p>Our terms: do not spam or attempt to hack us. Otherwise, feel right at home and enjoy our Snap! Websites.</p>]]>
+    </param>
+    <link name="content::page_type" to="content::page_type" mode="1:*">/types/taxonomy/system/content-types/page/public</link>
+    <link name="permissions::view" to="permissions::view" mode="*:*">/types/permissions/rights/view/page/for-spammers</link>
+    <link name="sitemapxml::include" to="sitemapxml::include" mode="1:*">/types/taxonomy/system/sitemapxml/include</link>
   </content>
   <content path="/admin">
     <param name="content::title">Admin</param>
@@ -93,12 +110,19 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <link name="permissions::view" to="permissions::view" mode="*:*">/types/permissions/rights/view</link>
   </content>
   <content path="/types/taxonomy/system/content-types/page/public">
-    <param name="content::title">Page Content Type</param>
+    <param name="content::title">Public Page Content Type</param>
     <param name="content::body">
       <![CDATA[<p>Public pages can be viewed by anyone including anonymous users.</p>]]>
     </param>
-    <param name="layout::theme">"page_theme";</param>
     <link name="permissions::view" to="permissions::view" mode="*:*">/types/permissions/rights/view/page/public</link>
+    <link name="permissions::administer" to="permissions::administer" mode="*:*">/types/permissions/rights/administer</link>
+  </content>
+  <content path="/types/taxonomy/system/content-types/page/private">
+    <param name="content::title">Private Page Content Type</param>
+    <param name="content::body">
+      <![CDATA[<p>Private pages can be viewed by users who registered an account and are logged in.</p>]]>
+    </param>
+    <link name="permissions::view" to="permissions::view" mode="*:*">/types/permissions/rights/view/page/private</link>
     <link name="permissions::administer" to="permissions::administer" mode="*:*">/types/permissions/rights/administer</link>
   </content>
   <content path="/types/taxonomy/system/content-types/system-page">
@@ -114,10 +138,16 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <![CDATA[<p>View a page of content.</p><p>This right is used to mark public pages.</p>]]>
     </param>
   </content>
+  <content path="/types/permissions/rights/view/page/private">
+    <param name="content::title">Private Page Right</param>
+    <param name="content::body">
+      <![CDATA[<p>Right given to private pages so registered users can see them.</p>]]>
+    </param>
+  </content>
   <content path="/types/permissions/rights/view/page/public">
     <param name="content::title">Public Page Right</param>
     <param name="content::body">
-      <![CDATA[<p>Right given to public pages to anonymous visitors can see it.</p>]]>
+      <![CDATA[<p>Right given to public pages so anonymous visitors can see it.</p>]]>
     </param>
   </content>
   <content path="/types/permissions/rights/view/page/for-spammers">

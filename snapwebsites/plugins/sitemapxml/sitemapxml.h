@@ -30,7 +30,7 @@ enum name_t
 	SNAP_NAME_SITEMAPXML_SITEMAP_XML,
 	SNAP_NAME_SITEMAPXML_PRIORITY
 };
-const char *get_name(name_t name);
+const char *get_name(name_t name) __attribute__ ((const));
 
 
 class sitemapxml_exception : public snap_exception

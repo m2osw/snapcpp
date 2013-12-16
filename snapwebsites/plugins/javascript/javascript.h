@@ -28,7 +28,7 @@ namespace javascript
 //enum name_t {
 //	SNAP_NAME_JAVASCRIPT_NAME
 //};
-//const char *get_name(name_t name);
+//const char *get_name(name_t name) __attribute__ ((const));
 
 
 //class javascript_exception : public snap_exception {};

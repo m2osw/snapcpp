@@ -1,4 +1,4 @@
-// Snap Websites Servers -- snap websites child
+// Snap Websites Servers -- snap websites child process hanlding
 // Copyright (C) 2011-2013  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
@@ -36,33 +36,33 @@ namespace snap
 class snap_child_exception : public snap_exception
 {
 public:
-    snap_child_exception(const char *whatmsg) : snap_exception("snap_child", whatmsg) {}
-    snap_child_exception(const std::string& whatmsg) : snap_exception("snap_child", whatmsg) {}
-    snap_child_exception(const QString& whatmsg) : snap_exception("snap_child", whatmsg) {}
+    snap_child_exception(char const *whatmsg) : snap_exception("snap_child", whatmsg) {}
+    snap_child_exception(std::string const& whatmsg) : snap_exception("snap_child", whatmsg) {}
+    snap_child_exception(QString const& whatmsg) : snap_exception("snap_child", whatmsg) {}
 };
 
 class snap_child_exception_unique_number_error : public snap_child_exception
 {
 public:
-    snap_child_exception_unique_number_error(const char *whatmsg) : snap_child_exception(whatmsg) {}
-    snap_child_exception_unique_number_error(const std::string& whatmsg) : snap_child_exception(whatmsg) {}
-    snap_child_exception_unique_number_error(const QString& whatmsg) : snap_child_exception(whatmsg) {}
+    snap_child_exception_unique_number_error(char const *whatmsg) : snap_child_exception(whatmsg) {}
+    snap_child_exception_unique_number_error(std::string const& whatmsg) : snap_child_exception(whatmsg) {}
+    snap_child_exception_unique_number_error(QString const& whatmsg) : snap_child_exception(whatmsg) {}
 };
 
 class snap_child_exception_invalid_header_value : public snap_child_exception
 {
 public:
-    snap_child_exception_invalid_header_value(const char *whatmsg) : snap_child_exception(whatmsg) {}
-    snap_child_exception_invalid_header_value(const std::string& whatmsg) : snap_child_exception(whatmsg) {}
-    snap_child_exception_invalid_header_value(const QString& whatmsg) : snap_child_exception(whatmsg) {}
+    snap_child_exception_invalid_header_value(char const *whatmsg) : snap_child_exception(whatmsg) {}
+    snap_child_exception_invalid_header_value(std::string const& whatmsg) : snap_child_exception(whatmsg) {}
+    snap_child_exception_invalid_header_value(QString const& whatmsg) : snap_child_exception(whatmsg) {}
 };
 
 class snap_child_exception_invalid_header_field_name : public snap_child_exception
 {
 public:
-    snap_child_exception_invalid_header_field_name(const char *whatmsg) : snap_child_exception(whatmsg) {}
-    snap_child_exception_invalid_header_field_name(const std::string& whatmsg) : snap_child_exception(whatmsg) {}
-    snap_child_exception_invalid_header_field_name(const QString& whatmsg) : snap_child_exception(whatmsg) {}
+    snap_child_exception_invalid_header_field_name(char const *whatmsg) : snap_child_exception(whatmsg) {}
+    snap_child_exception_invalid_header_field_name(std::string const& whatmsg) : snap_child_exception(whatmsg) {}
+    snap_child_exception_invalid_header_field_name(QString const& whatmsg) : snap_child_exception(whatmsg) {}
 };
 
 
@@ -168,6 +168,12 @@ public:
     typedef std::shared_ptr<server> server_pointer_t;
     typedef QMap<QString, QString>  environment_map_t;
 
+    typedef int header_mode_t;
+    static header_mode_t const HEADER_MODE_NO_ERROR     = 0x0001;
+    static header_mode_t const HEADER_MODE_REDIRECT     = 0x0002;
+    static header_mode_t const HEADER_MODE_ERROR        = 0x0004;
+    static header_mode_t const HEADER_MODE_EVERYWHERE   = 0xFFFF;
+
                                snap_child(server_pointer_t s);
                                ~snap_child();
 
@@ -175,52 +181,59 @@ public:
     void                        backend();
     status_t                    check_status();
 
-    const snap_uri&             get_uri() const;
+    snap_uri const&             get_uri() const;
 
     void                        exit(int code);
     bool                        is_debug() const;
-    QtCassandra::QCassandraValue get_site_parameter(const QString& name);
-    void                        set_site_parameter(const QString& name, const QtCassandra::QCassandraValue& value);
+    QtCassandra::QCassandraValue get_site_parameter(QString const& name);
+    void                        set_site_parameter(QString const& name, QtCassandra::QCassandraValue const& value);
     QSharedPointer<QtCassandra::QCassandraContext> get_context() { return f_context; }
-    const QString&              get_domain_key() const { return f_domain_key; }
-    const QString&              get_website_key() const { return f_website_key; }
-    const QString&              get_site_key() const { return f_site_key; }
-    const QString&              get_site_key_with_slash() const { return f_site_key_with_slash; }
+    QString const&              get_domain_key() const { return f_domain_key; }
+    QString const&              get_website_key() const { return f_website_key; }
+    QString const&              get_site_key() const { return f_site_key; }
+    QString const&              get_site_key_with_slash() const { return f_site_key_with_slash; }
     int64_t                     get_start_date() const { return f_start_date; }
     time_t                      get_start_time() const { return f_start_date / static_cast<int64_t>(1000000); }
-    void                        set_header(const QString& name, const QString& value);
-    void                        set_cookie(const http_cookie& cookie);
-    bool                        has_header(const QString& name) const;
-    QString                     get_header(const QString& name) const;
+    void                        set_header(QString const& name, QString const& value, header_mode_t modes = HEADER_MODE_NO_ERROR);
+    void                        set_cookie(http_cookie const& cookie);
+    bool                        has_header(QString const& name) const;
+    QString                     get_header(QString const& name) const;
     QString                     get_unique_number();
     QSharedPointer<QtCassandra::QCassandraTable> create_table(const QString& table_name, const QString& comment);
     void                        new_content();
     static void                 canonicalize_path(QString& path);
     static QString              date_to_string(int64_t v, bool long_format = false);
 
-    QString                     snapenv(const QString& name) const;
-    bool                        postenv_exists(const QString& name) const;
-    QString                     postenv(const QString& name, const QString& default_value = "") const;
-    const environment_map_t&    all_postenv() const { return f_post; }
-    bool                        cookie_is_defined(const QString& name) const;
-    QString                     cookie(const QString& name) const;
+    QString                     snapenv(QString const& name) const;
+    bool                        postenv_exists(QString const& name) const;
+    QString                     postenv(QString const& name, QString const& default_value = "") const;
+    environment_map_t const&    all_postenv() const { return f_post; }
+    bool                        cookie_is_defined(QString const& name) const;
+    QString                     cookie(QString const& name) const;
     void                        attach_to_session();
-    QString                     snap_url(const QString& url) const;
-    void                        page_redirect(const QString& path, http_code_t http_code = HTTP_CODE_MOVED_PERMANENTLY);
-    void                        die(http_code_t err_code, QString err_name, const QString& err_description, const QString& err_details);
+    QString                     snap_url(QString const& url) const;
+    void                        page_redirect(QString const& path, http_code_t http_code = HTTP_CODE_MOVED_PERMANENTLY);
+    void                        die(http_code_t err_code, QString err_name, QString const& err_description, QString const& err_details);
     static void                 define_http_name(http_code_t http_code, QString& http_name);
 
-    void                        output(const QString& data);
-    void                        output(const std::string& data);
-    void                        output(const char *data);
+    void                        output(QByteArray const& data);
+    void                        output(QString const& data);
+    void                        output(std::string const& data);
+    void                        output(char const *data);
+    void                        output(wchar_t const *data);
     bool                        empty_output() const;
 
-    void                        udp_ping(const char *name, const char *message = "PING");
-    QSharedPointer<udp_client_server::udp_server> udp_get_server(const char *name);
+    void                        udp_ping(char const *name, char const *message = "PING");
+    QSharedPointer<udp_client_server::udp_server> udp_get_server(char const *name);
 
 private:
-    typedef QMap<QString, QString>      header_map_t;
-    typedef QMap<QString, http_cookie>  cookie_map_t;
+    struct http_header_t
+    {
+        QString         f_header;
+        header_mode_t   f_modes;
+    };
+    typedef QMap<QString, http_header_t>    header_map_t;
+    typedef QMap<QString, http_cookie>      cookie_map_t;
 
     void                        read_environment();
     void                        init_start_date();
@@ -232,12 +245,13 @@ private:
     void                        canonicalize_website();
     void                        site_redirect();
     void                        init_plugins();
-    void                        update_plugins(const QStringList& list_of_plugins);
+    void                        update_plugins(QStringList const& list_of_plugins);
     void                        execute();
-    void                        process_backend_uri(const QString& uri);
-    void                        write(const char *data, ssize_t size);
-    void                        write(const char *str);
-    void                        write(const QString& str);
+    void                        process_backend_uri(QString const& uri);
+    void                        write(char const *data, ssize_t size);
+    void                        write(char const *str);
+    void                        write(QString const& str);
+    void                        output_headers(header_mode_t modes);
     void                        output_cookies();
     void                        verify_permissions();
 

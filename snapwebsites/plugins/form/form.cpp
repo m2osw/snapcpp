@@ -16,6 +16,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "form.h"
+#include "../content/content.h"
 #include "not_reached.h"
 #include "qdomreceiver.h"
 #include "qdomxpath.h"
@@ -25,7 +26,9 @@
 #pragma GCC diagnostic ignored "-Wold-style-cast"
 #include <QXmlQuery>
 #include <QFile>
+#include <QFileInfo>
 #pragma GCC diagnostic pop
+#include "poison.h"
 
 
 SNAP_PLUGIN_START(form, 1, 0)
@@ -40,15 +43,27 @@ SNAP_PLUGIN_START(form, 1, 0)
  *
  * \return A pointer to the name.
  */
-const char *get_name(name_t name)
+char const *get_name(name_t const name)
 {
     switch(name) {
-    case SNAP_NAME_FORMS_TABLE:
-        return "forms";
+    case SNAP_NAME_FORM_FORM:
+        return "form::form";
+
+    case SNAP_NAME_FORM_PATH:
+        return "form::path";
+
+    case SNAP_NAME_FORM_RESOURCE:
+        return "form::resource";
+
+    case SNAP_NAME_FORM_SETTINGS:
+        return "form::settings";
+
+    case SNAP_NAME_FORM_SOURCE:
+        return "form::source";
 
     default:
         // invalid index
-        throw snap_logic_exception("invalid SNAP_NAME_FORMS_...");
+        throw snap_logic_exception("invalid SNAP_NAME_FORM_...");
 
     }
     NOTREACHED();
@@ -118,6 +133,7 @@ void form::on_bootstrap(::snap::snap_child *snap)
 
     SNAP_LISTEN0(form, "server", server, init);
     SNAP_LISTEN(form, "server", server, process_post, _1);
+    SNAP_LISTEN(form, "filter", filter::filter, replace_token, _1, _2, _3, _4);
 }
 
 /** \brief Initialize the form plugin.
@@ -128,19 +144,6 @@ void form::on_init()
 {
 }
 
-/** \brief Initialize the content table.
- *
- * This function creates the content table if it doesn't exist yet. Otherwise
- * it simple initializes the f_content_table variable member.
- *
- * If the function is not able to create the table an exception is raised.
- *
- * \return The pointer to the content table.
- */
-QSharedPointer<QtCassandra::QCassandraTable> form::get_form_table()
-{
-    return f_snap->create_table(get_name(SNAP_NAME_FORMS_TABLE), "Forms table.");
-}
 
 /** \brief Transform an XML form into an HTML document.
  *
@@ -203,22 +206,28 @@ QDomDocument form::form_to_html(sessions::sessions::session_info& info, const QD
 //printf("form [%s]\n", f_form_elements_string.toUtf8().data());
         f_form_initialized = true;
     }
+
+    // IMPORTANT NOTE:
+    // Forms are NOT modified here (see the const against the QDomDocument)
+    // Instead we allow other plugins to modify a form after loading it from
+    // wherever it is (resources, file, Cassandra).
+
     QXmlQuery q(QXmlQuery::XSLT20);
-	q.setFocus(xml.toString());
+    q.setFocus(xml.toString());
     // somehow the bind works here...
     q.bindVariable("form_session", QVariant(sessions::sessions::instance()->create_session(info)));
     q.setQuery(f_form_elements_string);
     QDomReceiver receiver(q.namePool(), doc_output);
     q.evaluateTo(&receiver);
 
-	// also retrieve the form title which is often used as the page title
-	static QDomXPath dom_xpath;
-	dom_xpath.setXPath("/snap-form/title");
-	QDomXPath::node_vector_t title(dom_xpath.apply(xml));
-	if(title.size() > 0 && title[0].isElement())
-	{
-		f_form_title = title[0].toElement().text();
-	}
+    // also retrieve the form title which is often used as the page title
+    static QDomXPath dom_xpath;
+    dom_xpath.setXPath("/snap-form/title");
+    QDomXPath::node_vector_t title(dom_xpath.apply(xml));
+    if(title.size() > 0 && title[0].isElement())
+    {
+        f_form_title = title[0].toElement().text();
+    }
 
     return doc_output;
 }
@@ -236,11 +245,11 @@ QDomDocument form::form_to_html(sessions::sessions::session_info& info, const QD
  */
 QString form::get_form_title(const QString& default_title) const
 {
-	if(f_form_title.isEmpty())
-	{
-		return default_title;
-	}
-	return f_form_title;
+    if(f_form_title.isEmpty())
+    {
+        return default_title;
+    }
+    return f_form_title;
 }
 
 
@@ -343,6 +352,158 @@ void form::add_form_elements(QString& filename)
 }
 
 
+/** \brief Load an XML form.
+ *
+ * This function loads an XML form and pre-processes it through any plugin
+ * that wants to make changes.
+ *
+ * The function supports two types of paths:
+ *
+ * \li Resource paths that start with ":/" or "qrc:/".
+ * \li "Cassandra" paths which start with "http://" or "https://".
+ *
+ * \param[in] cpath  The canonicalized path to page managing this form.
+ * \param[in] source  The path to the form to be loaded.
+ * \param[out] error  The error while loading the form.
+ *
+ * \return The document (may be empty if the load fails)
+ */
+QDomDocument const form::load_form(QString const& cpath, QString const& source, QString& error)
+{
+    // forms are cached as static variables so calling the function more
+    // than once for the exact same form simply returns the exact same
+    // document
+    //
+    // NOTE: Yes! We know. This means the forms are NOT ever freed from
+    //       memory. Remember that we are in a child process which will
+    //       die within 1 second or less. So it's fine!
+    struct doc_t
+    {
+        doc_t()
+            : f_doc("form")
+            //, f_error("") -- auto-init
+        {
+        }
+
+        QDomDocument    f_doc;
+        QString         f_error;
+    };
+    static QMap<QString, doc_t> g_cached_form;
+
+    // 1. canonicalize the source path
+    QString csource(source);
+    bool const qrc(csource.startsWith("qrc:/"));
+    if(qrc)
+    {
+        // remove "qrc" because the QFile doesn't recognize it
+        csource.remove(0, 3);
+    }
+
+    // 2. check whether the form is already available
+    if(g_cached_form.contains(csource))
+    {
+        error = g_cached_form[csource].f_error;
+        return g_cached_form[csource].f_doc;
+    }
+
+    // 3. load the form
+    if(qrc || csource.startsWith(":/"))
+    {
+        // 3.1 from the executable resources
+        QFile file(qrc ? csource.mid(3) : csource);
+        if(!file.open(QIODevice::ReadOnly))
+        {
+            g_cached_form[csource].f_error = "<span class=\"filter-error\"><span class=\"filter-error-word\">ERROR:</span> Resource \""
+                                                + source + "\" could not be opened.</span>";
+            SNAP_LOG_ERROR("form::load_form() could not open \"" + csource + "\" resource file.");
+            return g_cached_form[csource].f_doc;
+        }
+        if(!g_cached_form[csource].f_doc.setContent(&file, true))
+        {
+            g_cached_form[csource].f_error = "<span class=\"filter-error\"><span class=\"filter-error-word\">ERROR:</span> Resource \""
+                                                + source + "\" could not be parsed as valid XML.</span>";
+            SNAP_LOG_ERROR("form::load_form() could not parse \"" + csource + "\" resource file.");
+            return g_cached_form[csource].f_doc;
+        }
+    }
+    else if(csource.startsWith("http://") || csource.startsWith("https://"))
+    {
+        // 3.2 from Cassandra
+        QSharedPointer<QtCassandra::QCassandraTable> content_table(content::content::instance()->get_content_table());
+        if(!content_table->exists(csource))
+        {
+            g_cached_form[csource].f_error = "<span class=\"filter-error\"><span class=\"filter-error-word\">ERROR:</span> Form \""
+                                                + source + "\" could not be loaded from the database.</span>";
+            SNAP_LOG_ERROR("form::load_form() could not load \"" + csource + "\" from the database.");
+            return g_cached_form[csource].f_doc;
+        }
+        QSharedPointer<QtCassandra::QCassandraRow> row(content_table->row(csource));
+        if(!row->exists(get_name(SNAP_NAME_FORM_FORM)))
+        {
+            g_cached_form[csource].f_error = "<span class=\"filter-error\"><span class=\"filter-error-word\">ERROR:</span> No form defined at \""
+                                                + source + "\".</span>";
+            SNAP_LOG_ERROR("form::load_form() could not find a form at \"" + csource + "\".");
+            return g_cached_form[csource].f_doc;
+        }
+        QtCassandra::QCassandraValue form_xml(row->cell(get_name(SNAP_NAME_FORM_FORM)));
+        if(!g_cached_form[csource].f_doc.setContent(form_xml.binaryValue(), true))
+        {
+            g_cached_form[csource].f_error = "<span class=\"filter-error\"><span class=\"filter-error-word\">ERROR:</span> Form \""
+                                                + source + "\" could not be parsed as valid XML.</span>";
+            SNAP_LOG_ERROR("form::load_form() could not parse \"" + csource + "\" form.");
+            return g_cached_form[csource].f_doc;
+        }
+    }
+    else
+    {
+        // ???
+        // we cannot load from a file because otherwise it would be necessary
+        // to have that file on all computers in use and we cannot really
+        // guarantee that...
+        //
+        // SECURITY CONSIDERATION
+        // Also we need a function that allows us to verify that the csource
+        // sought is 100% secure (i.e. not a file such as /etc/passwd)
+        g_cached_form[csource].f_error = "<span class=\"filter-error\"><span class=\"filter-error-word\">ERROR:</span> Form \""
+                                            + source + "\" could not be loaded (direct files not supported yet).</span>";
+        SNAP_LOG_ERROR("form::load_form() prevented loading \"" + csource + "\" file from disk for security reasons.");
+        return g_cached_form[csource].f_doc;
+    }
+
+    // 4. save the source path in the document
+    g_cached_form[csource].f_doc.documentElement().setAttribute("src", csource);
+
+    // 5. broadcast the fact that this form was loaded
+    //
+    // form was loaded, give other plugins means to modify it
+    tweak_form(this, cpath, g_cached_form[csource].f_doc);
+
+    // 6. return to caller
+    return g_cached_form[csource].f_doc;
+}
+
+
+/** \brief Allow any plugin to tweak a form.
+ *
+ * Just before the load_form() returns, the form plugin broadcasts this
+ * signal so other plugins have a chance to tweak the form.
+ *
+ * \todo
+ * We'll need to add some kind of support so plugins that need to be called
+ * at the time we receive the post are.
+ *
+ * \param[in] f  The form plugin pointer.
+ * \param[in] cpath  The path of the page this form is attached to.
+ * \param[in] form_doc  The XML form in a DOM.
+ *
+ * \return This function returns true if other signals are to be processed.
+ */
+bool form::tweak_form_impl(form *f, QString const& cpath, QDomDocument form_doc)
+{
+    return true;
+}
+
+
 /** \brief Analyze the URL and process the POST data accordingly.
  *
  * This function searches for the plugin that generated the form this
@@ -413,7 +574,10 @@ void form::on_process_post(const QString& uri_path)
     && info.get_object_path() != cpath)
     {
         // the path was tempered with?
-        f_snap->die(snap_child::HTTP_CODE_NOT_ACCEPTABLE, "Not Acceptable", "The POST request does not correspond to the form it was defined for.", "User POSTed a request against form \"" + cpath + "\" with an incompatible page (" + info.get_page_path() + ") or object (" + info.get_object_path() + ") path.");
+        f_snap->die(snap_child::HTTP_CODE_NOT_ACCEPTABLE, "Not Acceptable",
+                "The POST request does not correspond to the form it was defined for.",
+                "User POSTed a request against form \"" + cpath + "\" with an incompatible page ("
+                        + info.get_page_path() + ") or object (" + info.get_object_path() + ") path.");
         NOTREACHED();
     }
 
@@ -428,20 +592,37 @@ void form::on_process_post(const QString& uri_path)
         NOTREACHED();
     }
     form_post *fp(dynamic_cast<form_post *>(p));
-    if(fp == NULL)
-    {
-        // the programmer forgot to derive from form_post?!
-        throw snap_logic_exception("you cannot use your plugin as supporting forms without also deriving it from form_post");
-    }
 
-    // retrieve the XML form information so we can verify the data
-    // (i.e. the XML includes ranges, filters, data types, etc.)
-    QDomDocument xml_form(fp->on_get_xml_form(cpath));
+    QDomDocument xml_form;
+
+    // first try to load the form directly from the page (form::source)
+    QString source(get_source(owner, cpath));
+    if(source.isEmpty())
+    {
+        if(fp == NULL)
+        {
+            // the programmer forgot to derive from form_post?!
+            throw snap_logic_exception(QString("you cannot use plugin \"%1\" as dynamically supporting forms without also deriving it from form_post").arg(owner));
+        }
+
+        // retrieve the XML form information so we can verify the data
+        // (i.e. the XML includes ranges, filters, data types, etc.)
+        xml_form = fp->on_get_xml_form(cpath);
+    }
+    else
+    {
+        QString error;
+        xml_form = load_form(cpath, source, error);
+        // We'll catch the error below and throw
+        //if(!error.isEmpty())
+        //{
+        //}
+    }
     if(xml_form.isNull())
-	{
-		// programmer mispelled the path in his on_get_xml_form()
-        throw form_exception_invalid_form_xml("this path does not correspond to a valid XML form");
-	}
+    {
+        // programmer mispelled the path in his on_get_xml_form()
+        throw form_exception_invalid_form_xml(QString("path \"%1\" does not correspond to a valid XML form").arg(cpath));
+    }
 
     QDomNodeList widgets(xml_form.elementsByTagName("widget"));
     int count(widgets.length());
@@ -474,24 +655,24 @@ void form::on_process_post(const QString& uri_path)
         QDomNode secret(attributes.namedItem("secret"));
         bool is_secret(!secret.isNull() && secret.nodeValue() == "secret");
 
-		// if the form was submitted, we'll have some postenv() values
-		// which we want to save in the <post> tag of the widget then
-		// the widget can decide whether to use the <post> data or the
-		// default <value> data (although we do not hand the value back
-		// if the widget is marked as secret.)
-		QString post(f_snap->postenv(widget_name));
-		if(post.isEmpty() && widget_type == "checkbox")
-		{
-			post = "off";
-		}
-		if(!is_secret && !post.isEmpty())
-		{
+        // if the form was submitted, we'll have some postenv() values
+        // which we want to save in the <post> tag of the widget then
+        // the widget can decide whether to use the <post> data or the
+        // default <value> data (although we do not hand the value back
+        // if the widget is marked as secret.)
+        QString post(f_snap->postenv(widget_name));
+        if(post.isEmpty() && widget_type == "checkbox")
+        {
+            post = "off";
+        }
+        if(!is_secret && !post.isEmpty())
+        {
             QDomElement post_tag(xml_form.createElement("post"));
             widget.appendChild(post_tag);
-			// TBD should post be HTML instead of just text here?
+            // TBD should post be HTML instead of just text here?
             QDomText post_value(xml_form.createTextNode(post));
             post_tag.appendChild(post_value);
-		}
+        }
 
         // now validate using a signal so any plugin can take over
         // the validation process
@@ -713,8 +894,10 @@ bool form::validate_post_for_widget_impl(const QString& cpath, sessions::session
     messages::messages *messages(messages::messages::instance());
 
     // get the value we're going to validate
-    QString value(f_snap->postenv(widget_name));
+    QString const value(f_snap->postenv(widget_name));
     bool has_minimum(false);
+
+    QString type(widget.attribute("type"));
 
     QDomElement sizes(widget.firstChildElement("sizes"));
     if(!sizes.isNull())
@@ -723,53 +906,102 @@ bool form::validate_post_for_widget_impl(const QString& cpath, sessions::session
         if(!min.isNull())
         {
             has_minimum = true;
-            QString m(min.text());
-            bool ok;
-            int l(m.toInt(&ok));
-            if(!ok)
+            QString const m(min.text());
+            if(type == "image")
             {
-                throw form_exception_invalid_form_xml("the minimum size \"" + m + "\" must be a valid decimal integer");
+                int width, height;
+                if(!parse_width_height(m, width, height))
+                {
+                    // invalid width 'x' height
+                    messages->set_error(
+                        "Invalid Sizes",
+                        "minimum size \"" + html_64max(m, false) + "\" is not a valid \"width 'x' height \" definition for this image widget.",
+                        "incorrect sizes for " + widget_name,
+                        false
+                    );
+                    // TODO add another type of error for setup ("programmer") data?
+                    info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                }
+                else
+                {
+                    // TODO load the image sizes and then compare to the
+                    //      minimum to know whether it is valid
+                }
             }
-            if(value.length() < l)
+            else
             {
-                // length too small
-                messages->set_error(
-                    "Length Too Small",
-                    "\"" + html_64max(value, is_secret) + "\" is too small in \"" + widget_name + "\". The widget requires at least " + m + " characters.",
-                    "not enough characters error",
-                    false
-                );
-                info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                bool ok;
+                int const l(m.toInt(&ok));
+                if(!ok)
+                {
+                    throw form_exception_invalid_form_xml("the minimum size \"" + m + "\" must be a valid decimal integer");
+                }
+                if(value.length() < l)
+                {
+                    // length too small
+                    messages->set_error(
+                        "Length Too Small",
+                        "\"" + html_64max(value, is_secret) + "\" is too small in \"" + widget_name + "\". The widget requires at least " + m + " characters.",
+                        "not enough characters error",
+                        false
+                    );
+                    info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                }
             }
         }
         QDomElement max(sizes.firstChildElement("max"));
         if(!max.isNull())
         {
-            QString m(max.text());
-            bool ok;
-            int l(m.toInt(&ok));
-            if(!ok)
+            QString const m(max.text());
+            if(type == "image")
             {
-                throw form_exception_invalid_form_xml("the maximum size \"" + m + "\" must be a valid decimal integer");
+                int width, height;
+                if(!parse_width_height(m, width, height))
+                {
+                    // invalid width 'x' height
+                    messages->set_error(
+                        "Invalid Sizes",
+                        "maximum size \"" + html_64max(m, false) + "\" is not a valid \"width 'x' height \" definition for this image widget.",
+                        "incorrect sizes for " + widget_name,
+                        false
+                    );
+                    // TODO add another type of error for setup ("programmer") data?
+                    info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                }
+                else
+                {
+                    // TODO load the image sizes and then compare to the
+                    //      minimum to know whether it is valid
+printf("max size %d x %d\n", width, height);
+                }
             }
-            if(value.length() > l)
+            else
             {
-                // length too large
-                messages->set_error(
-                    "Length Too Long",
-                    "\"" + html_64max(value, is_secret) + "\" is too long in \"" + widget_name + "\". The widget requires at most " + m + " characters.",
-                    "too many characters error",
-                    false
-                );
-                info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                bool ok;
+                int const l(m.toInt(&ok));
+                if(!ok)
+                {
+                    throw form_exception_invalid_form_xml("the maximum size \"" + m + "\" must be a valid decimal integer");
+                }
+                if(value.length() > l)
+                {
+                    // length too large
+                    messages->set_error(
+                        "Length Too Long",
+                        "\"" + html_64max(value, is_secret) + "\" is too long in \"" + widget_name + "\". The widget requires at most " + m + " characters.",
+                        "too many characters error",
+                        false
+                    );
+                    info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                }
             }
         }
         QDomElement lines(sizes.firstChildElement("lines"));
         if(!lines.isNull())
         {
-            QString m(lines.text());
+            QString const m(lines.text());
             bool ok;
-            int l(m.toInt(&ok));
+            int const l(m.toInt(&ok));
             if(!ok)
             {
                 throw form_exception_invalid_form_xml("the number of lines \"" + m + "\" must be a valid decimal integer");
@@ -805,53 +1037,53 @@ bool form::validate_post_for_widget_impl(const QString& cpath, sessions::session
         }
     }
 
-	// check whether the field is required, in case of a checkbox required
-	// means that the user selects the checkbox ("on")
-	if(widget_type == "line-edit" || widget_type == "password" || widget_type == "checkbox")
-	{
-		QDomElement required(widget.firstChildElement("required"));
-		if(!required.isNull())
-		{
-			if(required.text() == "required")
-			{
-				// not an additional error if the minimum error was
-				// already generated
-				if(!has_minimum && value.isEmpty())
-				{
+    // check whether the field is required, in case of a checkbox required
+    // means that the user selects the checkbox ("on")
+    if(widget_type == "line-edit" || widget_type == "password" || widget_type == "checkbox")
+    {
+        QDomElement required(widget.firstChildElement("required"));
+        if(!required.isNull())
+        {
+            if(required.text() == "required")
+            {
+                // not an additional error if the minimum error was
+                // already generated
+                if(!has_minimum && value.isEmpty())
+                {
                     messages->set_error(
-                        "Value is Invalid",
-                        "\"" + widget_name + "\" is a required field.",
-                        "no data entered in widget by user",
-                        false
-                    );
+                            "Value is Invalid",
+                            "\"" + widget_name + "\" is a required field.",
+                            "no data entered in widget by user",
+                            false
+                        );
                     info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
                 }
             }
         }
-	}
+    }
 
-	// check whether the widget has a "duplicate-of" attribute, if so
-	// then it must be equal to that other widget's value
-	QString duplicate_of(widget.attribute("duplicate-of"));
-	if(!duplicate_of.isEmpty())
-	{
-		// What we need is the name of the widget so we can get its
-		// current value and the duplicate-of attribute is just that!
-		//QDomXPath dom_xpath;
-		//dom_xpath.setXPath(QString("/snap-form//widget[@id=\"") + duplicate_of + "\"]/@id");
-		//dom_xpath.apply(widget);
-		QString duplicate_value(f_snap->postenv(duplicate_of));
-		if(duplicate_value != value)
-		{
-			messages->set_error(
-				"Value is Invalid",
-				"\"" + widget_name + "\" must be an exact copy of \"" + duplicate_of + "\". Please try again.",
-				"a confirmation widget data is not equal to the original (i.e. password confirmation)",
-				false
-			);
-			info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
-		}
-	}
+    // check whether the widget has a "duplicate-of" attribute, if so
+    // then it must be equal to that other widget's value
+    QString duplicate_of(widget.attribute("duplicate-of"));
+    if(!duplicate_of.isEmpty())
+    {
+        // What we need is the name of the widget so we can get its
+        // current value and the duplicate-of attribute is just that!
+        //QDomXPath dom_xpath;
+        //dom_xpath.setXPath(QString("/snap-form//widget[@id=\"") + duplicate_of + "\"]/@id");
+        //dom_xpath.apply(widget);
+        QString duplicate_value(f_snap->postenv(duplicate_of));
+        if(duplicate_value != value)
+        {
+            messages->set_error(
+              "Value is Invalid",
+              "\"" + widget_name + "\" must be an exact copy of \"" + duplicate_of + "\". Please try again.",
+              "a confirmation widget data is not equal to the original (i.e. password confirmation)",
+              false
+            );
+            info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+        }
+    }
 
     QDomElement filters(widget.firstChildElement("filters"));
     if(!filters.isNull())
@@ -880,7 +1112,7 @@ bool form::validate_post_for_widget_impl(const QString& cpath, sessions::session
                     case 'e':
                         if(regex_name == "email")
                         {
-							// TODO: replace the email test with libtld
+                            // TODO: replace the email test with libtld
                             // For emails we accept anything except local emails:
                             //     <name>@[<sub-domain>.]<domain>.<tld>
                             re = "/^[a-z0-9_\\-\\.\\+\\^!#\\$%&*+\\/\\=\\?\\`\\|\\{\\}~\\']+@(?:[a-z0-9]|[a-z0-9][a-z0-9\\-]*[a-z0-9])+\\.(?:(?:[a-z0-9]|[a-z0-9][a-z0-9\\-]*[a-z0-9])\\.?)+$/i";
@@ -967,6 +1199,43 @@ bool form::validate_post_for_widget_impl(const QString& cpath, sessions::session
                 info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
             }
         }
+
+        QDomElement extensions_tag(filters.firstChildElement("extensions"));
+        if(!extensions_tag.isNull())
+        {
+            QString extensions(extensions_tag.text());
+            QStringList ext_list(extensions.split(",", QString::SkipEmptyParts));
+            int const max(ext_list.size());
+            QFileInfo const file_info(value);
+            QString const file_ext(file_info.suffix());
+            int i;
+            for(i = 0; i < max; ++i)
+            {
+                QString ext(ext_list[i].trimmed());
+                if(ext.isEmpty())
+                {
+                    // skip empty entries (this can happen if the trimmed()
+                    // call removed all spaces and it was only spaces!)
+                    continue;
+                }
+                if(file_ext == ext)
+                {
+                    break;
+                }
+                ext_list[i] = ext; // save the trimmed version back for errors
+            }
+            // if all extensions were checked and none accepted, error
+            if(i >= max)
+            {
+                messages->set_error(
+                    "Filename Extension is Invalid",
+                    "\"" + value + "\" must end with one of \"" + ext_list.join(", ") + "\". Please try again.",
+                    "a widget with a filename tried to upload a file with an invalid extension",
+                    false
+                );
+                info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+            }
+        }
     }
 
     // Note:
@@ -976,6 +1245,366 @@ bool form::validate_post_for_widget_impl(const QString& cpath, sessions::session
 }
 
 
+/** \brief Parse dimensions (width by height).
+ *
+ * This function parses a width and a height. Both numbers must be in
+ * decimal. The numbers are separated by the letter 'x'. There can be
+ * spaces before and after each number. No other characters are
+ * allowed. Dimensions cannot be negative.
+ *
+ * If only one decimal number appears (and no 'x') then the height is
+ * set to the width and the function returns true.
+ *
+ * There are some examples:
+ *
+ * \code
+ *    16x16     equivalent to    16
+ *    800x600
+ *    45 x 95
+ * \endcode
+ *
+ * Note: The separator is the 'x' character (0x78) eventually in uppercase
+ * (0x58), not the multiply character (0x97).
+ *
+ * \return true if the dimensions were properly parsed, false otherwise.
+ */
+bool form::parse_width_height(QString const& size, int& width, int& height)
+{
+    width = 0;
+    height = 0;
+
+    QChar const *s(size.data());
+    while(isspace(s->unicode()))
+    {
+        ++s;
+    }
+    if(s->unicode() < '0' || s->unicode() > '9')
+    {
+        return false;
+    }
+    while(s->unicode() >= '0' && s->unicode() <= '9')
+    {
+        width = width * 10 + s->unicode() - '0';
+        ++s;
+    }
+    while(isspace(s->unicode()))
+    {
+        ++s;
+    }
+    if(s->unicode() == '\0')
+    {
+        height = width;
+        return true;
+    }
+    if(s->unicode() != 'x' && s->unicode() != 'X')
+    {
+        return false;
+    }
+    do
+    {
+        ++s;
+    }
+    while(isspace(s->unicode()));
+    if(s->unicode() < '0' || s->unicode() > '9')
+    {
+        return false;
+    }
+    while(s->unicode() >= '0' && s->unicode() <= '9')
+    {
+        height = height * 10 + s->unicode() - '0';
+        ++s;
+    }
+    while(isspace(s->unicode()))
+    {
+        ++s;
+    }
+    return s->unicode() == '\0';
+}
+
+
+/** \brief Replace a [form::...] token with a form.
+ *
+ * This function replaces the user tokens with their value.
+ *
+ * The supported tokens are:
+ *
+ * \li [form::path(path="\<website path>")]
+ * \li [form::resource(path="\<resource path>")]
+ * \li [form::settings]
+ *
+ * \param[in] f  The filter object.
+ * \param[in] cpath  The path to the page being worked on.
+ * \param[in] xml  The XML document used with the layout.
+ * \param[in,out] token  The token object, with the token name and optional parameters.
+ */
+void form::on_replace_token(filter::filter *f, QString const& cpath, QDomDocument& xml, filter::filter::token_info_t& token)
+{
+    // a form::... token?
+    if(!token.is_namespace("form::"))
+    {
+        return;
+    }
+
+    QString const site_key(f_snap->get_site_key_with_slash());
+    QDomDocument form_doc;
+    QString source;
+    QString plugin_owner;
+
+    QDomElement head(xml.documentElement().firstChildElement("head"));
+    if(!head.isNull())
+    {
+        QString name(head.attribute("owner"));
+        if(!name.isNull())
+        {
+            plugin_owner = name;
+        }
+    }
+
+    bool const resource(token.is_token(get_name(SNAP_NAME_FORM_RESOURCE)));
+    bool const settings(token.is_token(get_name(SNAP_NAME_FORM_SETTINGS)));
+    if(resource || settings)
+    {
+        if(resource)
+        {
+            // form::resource expects one parameter
+            if(!token.verify_args(1, 1))
+            {
+                return;
+            }
+            filter::filter::parameter_t param(token.get_arg("path", 0, filter::filter::TOK_STRING));
+            if(token.f_error)
+            {
+                // we're done
+                return;
+            }
+            source = param.f_value;
+            if(!source.isEmpty())
+            {
+                // define the full path to the form
+                source = ":/xml/" + plugin_owner + "/" + source + ".xml";
+            }
+        }
+        else //if(settings) -- if not resource, then settings is true
+        {
+            // form::settings does not take any parameter
+            source = ":/xml/" + plugin_owner + "/settings-form.xml";
+        }
+    }
+    else if(token.is_token(get_name(SNAP_NAME_FORM_SOURCE)))
+    {
+        // path to form comes from the database
+        source = get_source(plugin_owner, cpath);
+    }
+    else if(token.is_token(get_name(SNAP_NAME_FORM_PATH)))
+    {
+        if(token.verify_args(1, 1))
+        {
+            // form::path takes one parameter
+            filter::filter::parameter_t param(token.get_arg("path", 0, filter::filter::TOK_STRING));
+            source = param.f_value;
+            if(!source.isEmpty())
+            {
+                bool const includes_site_key(source.startsWith(site_key));
+                if(source[0] != '/' && !includes_site_key)
+                {
+                    // in case the user passed a relative path, change it
+                    // to a full URI using the page URI saved in the XML
+                    // document
+                    //
+                    // WARNING: DO NOT MOVE THE CANONALIZATION BEFORE THE IF()
+                    //          it removes the '/' at the start!
+                    f_snap->canonicalize_path(source);
+                    source = site_key + cpath + "/" + source;
+                }
+                else if(!includes_site_key)
+                {
+                    // in this case the user did not enter the site key
+                    // although the path is already absolute; note that
+                    // here we prevent cross domain URIs too (i.e. another
+                    // Snap! website on the same system cannot be accessed
+                    // in this way.)
+                    //
+                    // WARNING: DO NOT MOVE THE CANONALIZATION BEFORE THE IF()
+                    //          it removes the '/' at the start!
+                    f_snap->canonicalize_path(source);
+                    source = site_key + source;
+                }
+            }
+        }
+    }
+    else
+    {
+        // no token found, return as is so the [...] remains as is
+        // in the source
+        return;
+    }
+
+    if(source.isEmpty())
+    {
+        token.f_error = true;
+        token.f_replacement = "<span class=\"filter-error\"><span class=\"filter-error-word\">ERROR:</span> Could not determine a valid resource path.</span>";
+        SNAP_LOG_ERROR("form::on_replace_token() could not determine a valid resource path.");
+        return;
+    }
+
+    // verify that we had a valid plugin owner (we just cannot be processing
+    // anything without such.)
+    if(plugin_owner.isEmpty())
+    {
+        token.f_error = true;
+        token.f_replacement = "<span class=\"filter-error\"><span class=\"filter-error-word\">ERROR:</span> Resource \"" + source + "\" could not determine the plugin owner.</span>";
+        SNAP_LOG_ERROR("form::on_replace_token() could not determine the plugin owner for \"" + source + "\" resource file.");
+        return;
+    }
+
+    // if we get here and source is not empty then a form was loaded
+    // successfully
+    if(!source.isEmpty())
+    {
+        // 0. load the form from resources or Cassandra
+        QString error;
+        form_doc = load_form(cpath, source, error);
+        if(!error.isEmpty())
+        {
+            token.f_error = true;
+            token.f_replacement = error;
+            return;
+        }
+
+        // 1. Initialize session
+        //
+        // initialize the session information
+        sessions::sessions::session_info info;
+        info.set_session_type(info.SESSION_INFO_FORM);
+        //info.set_object_path(); -- form sessions are based on paths only, no objects
+
+        // 2. Get session identifier and optionally the type
+        //
+        // retrieve the identifier for this session so one can verify when
+        // processing the POST; we default to 1 for all those plugins that
+        // only have one form; the session information also may starts with
+        // "user/" or "form/" or "secure/" and those define the level of
+        // complexity for the session identifier; the default is "form/"
+        QDomElement snap_form(form_doc.documentElement());
+        QString session_id_str(snap_form.attribute("session_id", "1"));
+        if(session_id_str.startsWith("form/"))
+        {
+            // this is the default, we still need to remove the prefix
+            session_id_str = session_id_str.mid(5);
+        }
+        else if(session_id_str.startsWith("user/"))
+        {
+            session_id_str = session_id_str.mid(5);
+            info.set_session_type(info.SESSION_INFO_USER);
+        }
+        else if(session_id_str.startsWith("secure/"))
+        {
+            session_id_str = session_id_str.mid(7);
+            info.set_session_type(info.SESSION_INFO_SECURE);
+        }
+        bool ok(false);
+        info.set_session_id(session_id_str.toInt(&ok));
+        if(!ok)
+        {
+            token.f_error = true;
+            token.f_replacement = "<span class=\"filter-error\"><span class=\"filter-error-word\">ERROR:</span> Session identifier \"" + session_id_str + "\" is not a valid decimal number.</span>";
+            SNAP_LOG_ERROR("form::on_replace_token() could not parse \"" + session_id_str + "\" as a session identifier.");
+            return;
+        }
+
+        // 3. Get form timeout
+        //
+        // The timeout defaults to 1h (in minutes)
+        int timeout(60);
+        QDomElement auto_reset(form_doc.firstChildElement("auto-reset"));
+        if(!auto_reset.isNull())
+        {
+            QString const minutes(auto_reset.attribute("minutes"));
+            if(!minutes.isEmpty())
+            {
+                timeout = minutes.toInt(&ok);
+                if(!ok)
+                {
+                    token.f_error = true;
+                    token.f_replacement = "<span class=\"filter-error\"><span class=\"filter-error-word\">ERROR:</span> Session auto-reset minutes attribute (" + minutes + ") is not a valid decimal number.</span>";
+                    SNAP_LOG_ERROR("form::on_replace_token() could not parse \"" + minutes + "\" as a timeout in minutes.");
+                    return;
+                }
+            }
+        }
+        info.set_time_to_live(timeout * 60);  // time to live is in seconds, timeout is in minutes
+
+        // 4. Define the owner of the form
+        //
+        // In many cases the owner is not defined in the form in which
+        // case it comes from the page; however, if defined in the form
+        // then it is viewed as authoritative
+        QString const owner(snap_form.attribute("owner", plugin_owner));
+        // if(owner != plugin_owner) -- what would that test mean?
+        // I think the owner in a form is authoritative, period.
+        info.set_plugin_owner(owner);
+
+        // 5. Define the path of the form from the XML document
+        //
+        // If not empty then it was already defined in the previous step
+        // (when retrieving the form:: from the page)
+        info.set_page_path(cpath);
+
+        // 6. Run the XSLT against the form and save the result
+        //
+        QDomDocument result(form_to_html(info, form_doc));
+        token.f_replacement = result.toString();
+//printf("form is [%s] (%d), %d\n", token.f_replacement.toUtf8().data(), static_cast<int>(token.f_error), static_cast<int>(token.f_found));
+    }
+}
+
+
+/** \brief Retrieve the path to the form of the specified page.
+ *
+ * This function retrieves the path to the form specified in this page.
+ * It is possible to include this form in the body using the [form::source]
+ * token.
+ *
+ * This is particularly useful to automatically retrieve forms for
+ * settings so the user does not even have to derive from the form_post
+ * interface.
+ *
+ * \param[in] cpath  The page of which we want to take the default form.
+ *
+ * \return The path to the form.
+ */
+QString form::get_source(QString const& owner, QString const& cpath)
+{
+    QSharedPointer<QtCassandra::QCassandraTable> content_table(content::content::instance()->get_content_table());
+    QString const site_key(f_snap->get_site_key_with_slash());
+    QString const key(site_key + cpath);
+    if(!content_table->exists(key))
+    {
+        return "";
+    }
+    QSharedPointer<QtCassandra::QCassandraRow> row(content_table->row(key));
+    if(!row->exists(get_name(SNAP_NAME_FORM_SOURCE)))
+    {
+        return "";
+    }
+
+    QString source(row->cell(get_name(SNAP_NAME_FORM_FORM))->value().stringValue());
+
+    if(source == "settings")
+    {
+        // assume the default settings form filename
+        source = ":/xml/" + owner + "/settings-form.xml";
+    }
+    else if(!source.contains("/"))
+    {
+        // assume the default resource filename
+        source = ":/xml/" + owner + "/" + source + ".xml";
+    }
+
+    return source;
+}
+
+
 SNAP_PLUGIN_END()
 
-// vim: ts=4 sw=4
+// vim: ts=4 sw=4 et

@@ -227,7 +227,7 @@ QtCassandra::QCassandraValue taxonomy::find_type_with(const QString& cpath, cons
 			return not_found;
 		}
 		// get the parent
-		links::link_info info("parent", true, type_key);
+		links::link_info info(content::get_name(content::SNAP_NAME_CONTENT_PARENT), true, type_key);
 		QSharedPointer<links::link_context> ctxt(links::links::instance()->new_link_context(info));
 		links::link_info link_info;
 		if(!ctxt->next_link(link_info))
@@ -242,9 +242,9 @@ QtCassandra::QCassandraValue taxonomy::find_type_with(const QString& cpath, cons
 }
 
 
-bool taxonomy::on_path_execute(const QString& path)
+bool taxonomy::on_path_execute(const QString& cpath)
 {
-	f_snap->output(layout::layout::instance()->apply_layout(path, this));
+	f_snap->output(layout::layout::instance()->apply_layout(cpath, this));
 
 	return true;
 }

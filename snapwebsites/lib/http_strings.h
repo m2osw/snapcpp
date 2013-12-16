@@ -26,6 +26,8 @@ namespace snap
 namespace http_strings
 {
 
+
+
 // for HTTP_ACCEPT_ENCODING, HTTP_ACCEPT_LANGUAGE, HTTP_ACCEPT
 class WeightedHttpString
 {

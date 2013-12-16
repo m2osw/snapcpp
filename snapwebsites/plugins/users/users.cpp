@@ -242,7 +242,7 @@ int64_t users::do_update(int64_t last_updated)
     SNAP_PLUGIN_UPDATE_INIT();
 
     SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, initial_update);
-    SNAP_PLUGIN_UPDATE(2013, 12, 8, 2, 3, 23, content_update);
+    SNAP_PLUGIN_UPDATE(2013, 12, 14, 4, 11, 23, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -311,7 +311,8 @@ void users::on_bootstrap(::snap::snap_child *snap)
     SNAP_LISTEN(users, "layout", layout::layout, generate_header_content, _1, _2, _3, _4, _5);
     SNAP_LISTEN(users, "layout", layout::layout, generate_page_content, _1, _2, _3, _4, _5);
     SNAP_LISTEN(users, "permissions", permissions::permissions, get_user_rights, _1, _2);
-    //SNAP_LISTEN(users, "filter", filter::filter, replace_token, _1, _2, _3);
+    SNAP_LISTEN(users, "permissions", permissions::permissions, get_plugin_permissions, _1, _2);
+    //SNAP_LISTEN(users, "filter", filter::filter, replace_token, _1, _2, _3, _4);
 
     f_info.reset(new sessions::sessions::session_info);
 }
@@ -343,6 +344,7 @@ void users::on_process_cookies()
 {
     bool create_new_session(true);
 
+printf("Process cookies!!!\n");
     // any snap session?
     if(f_snap->cookie_is_defined(get_name(SNAP_NAME_USERS_SESSION_COOKIE)))
     {
@@ -438,7 +440,7 @@ void users::on_process_cookies()
 }
 
 
-/** \brief Check whether \p cpath matches our introducer.
+/** \brief Check whether \p cpath matches our introducers.
  *
  * This function checks that cpath matches our introducer and if
  * so we tell the path plugin that we're taking control to
@@ -466,6 +468,12 @@ void users::on_process_cookies()
  * We understand "forgot-password" to let users request a password reset
  * via a simple form.
  *
+ * \todo
+ * If we cannot find a global way to check the Origin HTTP header
+ * sent by the user agent, we probably want to check it here in
+ * pages where the referrer should not be a "weird" 3rd party
+ * website.
+ *
  * \param[in] path_plugin  A pointer to the path plugin.
  * \param[in] cpath  The path being handled dynamically.
  */
@@ -484,7 +492,7 @@ void users::on_can_handle_dynamic_path(path::path *path_plugin, const QString& c
     || cpath.left(13) == "new-password/")   // form for users to enter their forgotten password verification code
     {
         // tell the path plugin that this is ours
-        path_plugin->handle_dynamic_path("user", this);
+        path_plugin->handle_dynamic_path(this);
     }
 }
 
@@ -683,7 +691,8 @@ void users::on_get_user_rights(permissions::permissions *perms, permissions::per
     // if spammers are logged in they don't get access to anything anyway
     // (i.e. they are UNDER visitors!)
     bool const spammer(user_is_a_spammer());
-    QString const user_key(sets.get_user_path());
+    QString user_key(sets.get_user_path());
+printf("user key = [%s]\n", user_key.toUtf8().data());
     if(spammer || user_key.isEmpty())
     {
         // in this case the user is the anonymous user and we want to
@@ -699,6 +708,7 @@ void users::on_get_user_rights(permissions::permissions *perms, permissions::per
     }
     else
     {
+        user_key = f_snap->get_site_key_with_slash() + user_key;
         sets.add_user_right(user_key);
 
         // users who are logged in always have registered-user rights
@@ -738,6 +748,40 @@ void users::on_get_user_rights(permissions::permissions *perms, permissions::per
                 perms->add_user_rights(right_key, sets);
             }
         }
+    }
+}
+
+
+/** \brief Check on the dynamic plugin page rights.
+ *
+ * This function gathers all the rights that a pages has and add them
+ * to the specified \p sets.
+ *
+ * \important
+ * Note how the function makes use of the get_path() function and
+ * assign hard coded rights to the user for the purpose of allowing
+ * users access to their profile.
+ *
+ * \param[in] perms  A pointer to the permission plugin.
+ * \param[in,out] sets  The sets of rights.
+ */
+void users::on_get_plugin_permissions(permissions::permissions *perms, permissions::permissions::sets_t& sets)
+{
+    QString const path(sets.get_path());
+    if(path.left(5) == "user/")
+    {
+        QString const user_id(path.mid(5));
+        for(char const *s(user_id.toUtf8().data()); *s != '\0'; ++s)
+        {
+            if(*s < '0' || *s > '9')
+            {
+                // only digits allowed (i.e. user/123)
+                return;
+            }
+        }
+        QString const site_key(f_snap->get_site_key_with_slash());
+        sets.add_plugin_permission(content::content::instance()->get_plugin_name(), site_key + path);
+        //"types/permissions/rights/view/page/private"
     }
 }
 
@@ -819,16 +863,16 @@ void users::generate_replace_password_form(QDomElement& body)
     QDomDocument result(form::form::instance()->form_to_html(info, replace_password_form));
     //f_snap->output(result.toString());
 
-    {
+    {   // /snap/page/body/content
         // we assume that the body content is valid because when we created it
         // we checked the data and if the user data was invalid XML then we
-        // already saved a place holder warning to the user about the fact!
+        // already saved a warning to show to the user about the fact!
         QDomElement content_tag(doc.createElement("content"));
         body.appendChild(content_tag);
         content_tag.appendChild(doc.importNode(result.documentElement(), true));
     }
 
-    { // /snap/page/body/titles/title
+    {   // /snap/page/body/titles/title
         QDomElement titles(doc.createElement("titles"));
         body.appendChild(titles);
         QDomElement title(doc.createElement("title"));
@@ -847,6 +891,7 @@ void users::generate_replace_password_form(QDomElement& body)
  */
 void users::show_user(layout::layout *l, const QString& cpath, QDomElement& page, QDomElement& body)
 {
+    QString user_path(cpath);
     int64_t identifier(0);
     QString user_id(cpath.mid(5));
     if(user_id == "me" || user_id == "password")
@@ -908,6 +953,7 @@ void users::show_user(layout::layout *l, const QString& cpath, QDomElement& page
 
         // Probably not necessary to change this one
         //user_id = QString("%1").arg(identifier);
+        user_path = QString("user/%1").arg(identifier);
     }
     else
     {
@@ -936,13 +982,13 @@ void users::show_user(layout::layout *l, const QString& cpath, QDomElement& page
             NOTREACHED();
         }
     }
-printf("Got user [%ld]\n", identifier);
+printf("Got user [%s] / [%ld]\n", cpath.toUtf8().data(), identifier);
 fflush(stdout);
 
     // generate the default body
         // TODO: write user profile viewer (i.e. we need to make use of the identifier here!)
         // WARNING: using a path such as "admin/.../profile" returns all the content of that profile
-    content::content::instance()->on_generate_main_content(l, cpath, page, body, "admin/users/page/profile");
+    content::content::instance()->on_generate_main_content(l, user_path, page, body, "admin/users/page/profile");
 }
 
 
@@ -990,7 +1036,7 @@ void users::generate_password_form(QDomElement& body)
     QDomDocument result(form::form::instance()->form_to_html(info, password_form));
     //f_snap->output(result.toString());
 
-    {
+    {   // /snap/page/body/content
         // we assume that the body content is valid because when we created it
         // we checked the data and if the user data was invalid XML then we
         // already saved a place holder warning to the user about the fact!
@@ -1045,7 +1091,7 @@ void users::generate_login_form(QDomElement& body)
     QDomDocument result(form::form::instance()->form_to_html(info, login_form));
     //f_snap->output(result.toString());
 
-    {
+    {   // /snap/page/body/content
         // we assume that the body content is valid because when we created it
         // we checked the data and if the user data was invalid XML then we
         // already saved a place holder warning to the user about the fact!
@@ -1054,7 +1100,7 @@ void users::generate_login_form(QDomElement& body)
         content_tag.appendChild(doc.importNode(result.documentElement(), true));
     }
 
-    { // /snap/page/body/titles/title
+    {   // /snap/page/body/titles/title
         QDomElement titles(doc.createElement("titles"));
         body.appendChild(titles);
         QDomElement title(doc.createElement("title"));
@@ -1070,7 +1116,9 @@ void users::generate_login_form(QDomElement& body)
     if(sessions::sessions::instance()->get_from_session(*f_info, get_name(SNAP_NAME_USERS_LOGIN_REFERRER)).isEmpty())
     {
         QString referrer(f_snap->snapenv("HTTP_REFERER"));
-        if(!referrer.isEmpty() && referrer != f_snap->get_site_key_with_slash() + "login")
+        if(!referrer.isEmpty()
+        && referrer != f_snap->get_site_key_with_slash() + "login"
+        && referrer != f_snap->get_site_key_with_slash() + "logout")
         {
             attach_to_session(get_name(SNAP_NAME_USERS_LOGIN_REFERRER), referrer);
         }
@@ -1146,7 +1194,7 @@ void users::generate_register_form(QDomElement& body)
     QDomDocument result(form::form::instance()->form_to_html(info, register_form));
     //f_snap->output(result.toString());
 
-    {
+    {   // /snap/page/body/content
         // we assume that the body content is valid because when we created it
         // we checked the data and if the user data was invalid XML then we
         // already saved a place holder warning to the user about the fact!
@@ -1155,7 +1203,7 @@ void users::generate_register_form(QDomElement& body)
         content_tag.appendChild(doc.importNode(result.documentElement(), true));
     }
 
-    { // /snap/page/body/titles/title
+    {   // /snap/page/body/titles/title
         QDomElement titles(doc.createElement("titles"));
         body.appendChild(titles);
         QDomElement title(doc.createElement("title"));
@@ -1205,7 +1253,7 @@ void users::generate_verify_form(QDomElement& body)
     QDomDocument result(form::form::instance()->form_to_html(info, verify_form));
     //f_snap->output(result.toString());
 
-    {
+    {   // /snap/page/body/content
         // we assume that the body content is valid because when we created it
         // we checked the data and if the user data was invalid XML then we
         // already saved a place holder warning to the user about the fact!
@@ -1214,7 +1262,7 @@ void users::generate_verify_form(QDomElement& body)
         content_tag.appendChild(doc.importNode(result.documentElement(), true));
     }
 
-    { // /snap/page/body/titles/title
+    {   // /snap/page/body/titles/title
         QDomElement titles(doc.createElement("titles"));
         body.appendChild(titles);
         QDomElement title(doc.createElement("title"));
@@ -1266,7 +1314,7 @@ void users::generate_resend_email_form(QDomElement& body)
     QDomDocument result(form::form::instance()->form_to_html(info, resend_email_form));
     //f_snap->output(result.toString());
 
-    {
+    {   // /snap/page/body/content
         // we assume that the body content is valid because when we created it
         // we checked the data and if the user data was invalid XML then we
         // already saved a place holder warning to the user about the fact!
@@ -1275,7 +1323,7 @@ void users::generate_resend_email_form(QDomElement& body)
         content_tag.appendChild(doc.importNode(result.documentElement(), true));
     }
 
-    { // /snap/page/body/titles/title
+    {   // /snap/page/body/titles/title
         QDomElement titles(doc.createElement("titles"));
         body.appendChild(titles);
         QDomElement title(doc.createElement("title"));
@@ -1339,7 +1387,7 @@ void users::generate_forgot_password_form(QDomElement& body)
     QDomDocument result(form::form::instance()->form_to_html(info, forgot_password_form));
     //f_snap->output(result.toString());
 
-    {
+    {   // /snap/page/body/content
         // we assume that the body content is valid because when we created it
         // we checked the data and if the user data was invalid XML then we
         // already saved a place holder warning to the user about the fact!
@@ -1348,7 +1396,7 @@ void users::generate_forgot_password_form(QDomElement& body)
         content_tag.appendChild(doc.importNode(result.documentElement(), true));
     }
 
-    { // /snap/page/body/titles/title
+    {   // /snap/page/body/titles/title
         QDomElement titles(doc.createElement("titles"));
         body.appendChild(titles);
         QDomElement title(doc.createElement("title"));
@@ -1404,7 +1452,7 @@ void users::generate_new_password_form(QDomElement& body)
     QDomDocument result(form::form::instance()->form_to_html(info, new_password_form));
     //f_snap->output(result.toString());
 
-    {
+    {   // /snap/page/body/content
         // we assume that the body content is valid because when we created it
         // we checked the data and if the user data was invalid XML then we
         // already saved a place holder warning to the user about the fact!
@@ -1413,7 +1461,7 @@ void users::generate_new_password_form(QDomElement& body)
         content_tag.appendChild(doc.importNode(result.documentElement(), true));
     }
 
-    { // /snap/page/body/titles/title
+    {   // /snap/page/body/titles/title
         QDomElement titles(doc.createElement("titles"));
         body.appendChild(titles);
         QDomElement title(doc.createElement("title"));
@@ -2809,7 +2857,7 @@ QString users::get_user_path() const
         if(users_table->exists(f_user_key))
         {
             const QtCassandra::QCassandraValue value(users_table->row(f_user_key)->cell(get_name(SNAP_NAME_USERS_IDENTIFIER))->value());
-            if(value.nullValue())
+            if(!value.nullValue())
             {
                 const int64_t identifier(value.int64Value());
                 return get_name(SNAP_NAME_USERS_PATH) + QString("/%1").arg(identifier);
@@ -2868,8 +2916,8 @@ bool users::register_user(const QString& email, const QString& password)
     value.setStringValue(key);
 
     int64_t identifier(0);
-    QString id_key(get_name(SNAP_NAME_USERS_ID_ROW));
-    QString identifier_key(get_name(SNAP_NAME_USERS_IDENTIFIER));
+    QString const id_key(get_name(SNAP_NAME_USERS_ID_ROW));
+    QString const identifier_key(get_name(SNAP_NAME_USERS_IDENTIFIER));
     QtCassandra::QCassandraValue new_identifier;
     new_identifier.setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
 
@@ -3001,7 +3049,7 @@ void users::verify_email(const QString& email)
     e.add_header(sendmail::get_name(sendmail::SNAP_NAME_SENDMAIL_TO), email);
 
     // add the email subject and body using a page
-    e.set_email_path("admin/users/mail/verify");
+    e.set_email_path("admin/email/users/verify");
 
     // verification makes use of a session identifier
     sessions::sessions::session_info info;
@@ -3049,7 +3097,7 @@ void users::forgot_password_email(const QString& email)
     e.add_header(sendmail::get_name(sendmail::SNAP_NAME_SENDMAIL_TO), email);
 
     // add the email subject and body using a page
-    e.set_email_path("admin/users/mail/forgot-password");
+    e.set_email_path("admin/email/users/forgot-password");
 
     // verification makes use of a session identifier
     sessions::sessions::session_info info;
@@ -3286,12 +3334,15 @@ void users::encrypt_password(const QString& digest, const QString& password, con
  * \li ...
  *
  * \param[in] f  The filter object.
+ * \param[in] cpath  The path to the page being worked on.
+ * \param[in] xml  The XML document used with the layout.
  * \param[in] token  The token object, with the token name and optional parameters.
  */
-//void users::on_replace_token(filter::filter *f, QDomDocument& xml, filter::filter::token_info_t& token)
+//void users::on_replace_token(filter::filter *f, QString const& cpath, QDomDocument& xml, filter::filter::token_info_t& token)
 //{
-//    if(token.f_name.mid(0, 7) == "users::")
+//    if(!token.is_namespace("users::"))
 //    {
+//        return;
 //    }
 //}
 
