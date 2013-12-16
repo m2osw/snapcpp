@@ -116,7 +116,7 @@ QCassandraSocketFactory::~QCassandraSocketFactory()
  * \param[out] password  The string where the password is returned.
  * \param[in] max_size  The maximum size for the password.
  */
-void QCassandraSocketFactory::getPassword(std::string& password, int max_size)
+void QCassandraSocketFactory::getPassword(std::string& password, int /*max_size*/)
 {
     password = f_password;
 }

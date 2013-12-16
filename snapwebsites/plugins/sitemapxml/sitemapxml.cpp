@@ -367,12 +367,15 @@ int64_t sitemapxml::do_update(int64_t last_updated)
  *
  * \param[in] variables_timestamp  The timestamp for all the variables added to the database by this update (in micro-seconds).
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 void sitemapxml::initial_update(int64_t variables_timestamp)
 {
 	// additional sitemap<###>.xml will be added as the CRON processes
 	// find out that additional pages are required.
 	//path::path::instance()->add_path("sitemapxml", "sitemap.xml", variables_timestamp);
 }
+#pragma GCC diagnostic pop
 
 
 /** \brief Update the content with our references.
@@ -382,12 +385,15 @@ void sitemapxml::initial_update(int64_t variables_timestamp)
  *
  * \param[in] variables_timestamp  The timestamp for all the variables added to the database by this update (in micro-seconds).
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 void sitemapxml::content_update(int64_t variables_timestamp)
 {
 	// additional sitemap<###>.xml are added dynamically as the CRON processes
 	// find out that additional pages are required.
 	content::content::instance()->add_xml("sitemapxml");
 }
+#pragma GCC diagnostic pop
 
 
 /** \brief Implementation of the robotstxt signal.
@@ -561,6 +567,8 @@ bool sitemapxml::on_path_execute(const QString& url)
  *
  * \return true if the signal has to be sent to other plugins.
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 bool sitemapxml::generate_sitemapxml_impl(sitemapxml *r)
 {
 	QSharedPointer<QtCassandra::QCassandraTable> content_table(content::content::instance()->get_content_table());
@@ -617,6 +625,7 @@ bool sitemapxml::generate_sitemapxml_impl(sitemapxml *r)
 	}
 	return true;
 }
+#pragma GCC diagnostic pop
 
 
 /** \brief Implementation of the backend process signal.

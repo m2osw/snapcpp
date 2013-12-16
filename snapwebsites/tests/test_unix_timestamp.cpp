@@ -23,6 +23,8 @@
 #include <stdlib.h>
 #include <time.h>
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 int main(int argc, char *argv[])
 {
 	struct tm t;
@@ -98,5 +100,6 @@ int main(int argc, char *argv[])
 
 	return err;
 }
+#pragma GCC diagnostic pop
 
 // vim: ts=4 sw=4

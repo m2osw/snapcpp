@@ -399,6 +399,8 @@ public:
         return "deflate";
     }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
     virtual QByteArray compress(const QByteArray& input, level_t level, bool text)
     {
         // transform the 0 to 100 level to the standard 1 to 9 in zlib
@@ -448,6 +450,7 @@ public:
     {
         throw std::runtime_error("the deflate decompress() function is not yet implemented, mainly because it is not accessible via the compression::decompress() function.");
     }
+#pragma GCC pop
 
 } deflate; // create statically
 

@@ -166,6 +166,8 @@ int64_t javascript::do_update(int64_t last_updated)
  *
  * \param[in] variables_timestamp  The timestamp for all the variables added to the database by this update (in micro-seconds).
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 void javascript::initial_update(int64_t variables_timestamp)
 {
 }
@@ -181,6 +183,7 @@ void javascript::content_update(int64_t variables_timestamp)
 {
 	content::content::instance()->add_xml("javascript");
 }
+#pragma GCC diagnostic pop
 
 /** \brief Add plugin p as a dynamic plugin.
  *
@@ -318,6 +321,8 @@ public:
 		return new javascript_dynamic_plugin_iterator(f_javascript, engine(), object, f_plugin);
 	}
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 	virtual QScriptValue property(const QScriptValue& object, const QScriptString& object_name, uint id)
 	{
 		QScriptValue result(f_plugin->js_property_get(object_name).toString());
@@ -329,6 +334,7 @@ public:
 		// at some point we may want to allow read/write/delete...
 		return QScriptValue::ReadOnly | QScriptValue::Undeletable | QScriptValue::KeepExistingFlags;
 	}
+#pragma GCC diagnostic pop
 
 	virtual QScriptValue prototype() const
 	{
@@ -336,6 +342,8 @@ public:
 		return result;
 	}
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 	virtual QueryFlags queryProperty(const QScriptValue& object, const QScriptString& property_name, QueryFlags flags, uint * id)
 	{
 		return QScriptClass::HandlesReadAccess;
@@ -346,6 +354,7 @@ public:
 //printf("setProperty() called... not implemented yet\n");
 		throw std::runtime_error("setProperty() not implemented yet");
 	}
+#pragma GCC diagnostic pop
 
 private:
 	javascript *				f_javascript;
@@ -497,11 +506,14 @@ public:
 		return QScriptClass::property(object, object_name, id);
 	}
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 	virtual QScriptValue::PropertyFlags propertyFlags(const QScriptValue& object, const QScriptString& property_name, uint id)
 	{
 		// at some point we may want to allow read/write/delete...
 		return QScriptValue::ReadOnly | QScriptValue::Undeletable | QScriptValue::KeepExistingFlags;
 	}
+#pragma GCC diagnostic pop
 
 	virtual QScriptValue prototype() const
 	{
@@ -509,6 +521,8 @@ public:
 		return result;
 	}
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 	virtual QueryFlags queryProperty(const QScriptValue& object, const QScriptString& property_name, QueryFlags flags, uint * id)
 	{
 		return QScriptClass::HandlesReadAccess;
@@ -519,6 +533,7 @@ public:
 //printf("setProperty() called... not implemented yet\n");
 		throw std::runtime_error("setProperty() not implemented yet");
 	}
+#pragma GCC diagnostic pop
 
 private:
 	QMap<QString, QSharedPointer<dynamic_plugin_class> >	f_dynamic_plugins;

@@ -213,9 +213,12 @@ void messages::message::unserialize(QtSerialization::QReader& r)
  * \param[in] name  The name of the tag being read.
  * \param[in] r  The reader used to read the input data.
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 void messages::message::readTag(const QString& name, QtSerialization::QReader& r)
 {
 }
+#pragma GCC diagnostic pop
 
 
 /** \brief Serialize a message to a writer.
@@ -338,10 +341,13 @@ int64_t messages::do_update(int64_t last_updated)
  *
  * \param[in] variables_timestamp  The timestamp for all the variables added to the database by this update (in micro-seconds).
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 void messages::content_update(int64_t variables_timestamp)
 {
     content::content::instance()->add_xml("messages");
 }
+#pragma GCC diagnostic pop
 
 
 /** \brief Generate the actual content of the statistics page.
@@ -372,6 +378,8 @@ void messages::on_generate_main_content(layout::layout *l, const QString& path, 
  * \param[in,out] page  The page being generated.
  * \param[in,out] body  The body being generated.
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 void messages::on_generate_page_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body, const QString& ctemplate)
 {
     // go through the list of messages and append them to the body
@@ -443,6 +451,7 @@ void messages::on_generate_page_content(layout::layout *l, const QString& path, 
         }
     }
 }
+#pragma GCC diagnostic pop
 
 
 /** \brief Save the messages to the current user session.

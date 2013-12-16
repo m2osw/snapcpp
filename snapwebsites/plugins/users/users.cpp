@@ -22,6 +22,7 @@
 #include "not_reached.h"
 #include "log.h"
 
+#include <iostream>
 #include <QFile>
 #include <openssl/evp.h>
 #include <openssl/rand.h>
@@ -256,9 +257,12 @@ int64_t users::do_update(int64_t last_updated)
  *                                 to the database by this update
  *                                 (in micro-seconds).
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 void users::initial_update(int64_t variables_timestamp)
 {
 }
+#pragma GCC diagnostic pop
 
 /** \brief Update the users plugin content.
  *
@@ -269,10 +273,13 @@ void users::initial_update(int64_t variables_timestamp)
  *                                 to the database by this update
  *                                 (in micro-seconds).
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 void users::content_update(int64_t variables_timestamp)
 {
     content::content::instance()->add_xml(get_plugin_name());
 }
+#pragma GCC diagnostic pop
 
 /** \brief Initialize the users table.
  *
@@ -578,6 +585,8 @@ void users::on_generate_main_content(layout::layout *l, const QString& cpath, QD
 }
 
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 void users::on_generate_header_content(layout::layout *l, const QString& path, QDomElement& header, QDomElement& metadata, const QString& ctemplate)
 {
     QDomDocument doc(header.ownerDocument());
@@ -628,8 +637,11 @@ void users::on_generate_header_content(layout::layout *l, const QString& path, Q
         }
     }
 }
+#pragma GCC diagnostic pop
 
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 void users::on_generate_page_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body, const QString& ctemplate)
 {
     QDomDocument doc(page.ownerDocument());
@@ -670,6 +682,7 @@ void users::on_generate_page_content(layout::layout *l, const QString& path, QDo
         //      add a link to the account
     }
 }
+#pragma GCC diagnostic pop
 
 
 /** \brief Check on the user rights.
@@ -786,7 +799,9 @@ void users::on_get_plugin_permissions(permissions::permissions *perms, permissio
 }
 
 
-void users::on_create_content(const QString& path, const QString& owner, const QString& type)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+void users::on_create_content(QString const& path, QString const& owner, QString const& type)
 {
     if(!f_user_key.isEmpty())
     {
@@ -818,6 +833,7 @@ void users::on_create_content(const QString& path, const QString& owner, const Q
         }
     }
 }
+#pragma GCC diagnostic pop
 
 
 /** \brief Let the user replace their password.
@@ -982,10 +998,10 @@ void users::show_user(layout::layout *l, const QString& cpath, QDomElement& page
             NOTREACHED();
         }
     }
-printf("Got user [%s] / [%ld]\n", cpath.toUtf8().data(), identifier);
-fflush(stdout);
+//printf("Got user [%s] / [%ld]\n", cpath.toUtf8().data(), identifier);
+//std::cout << "Got user [" << identifier << "]" << std::endl << std::flush;
 
-    // generate the default body
+    // generate the user profile
         // TODO: write user profile viewer (i.e. we need to make use of the identifier here!)
         // WARNING: using a path such as "admin/.../profile" returns all the content of that profile
     content::content::instance()->on_generate_main_content(l, user_path, page, body, "admin/users/page/profile");
@@ -1973,6 +1989,8 @@ QDomDocument users::on_get_xml_form(const QString& cpath)
  * This function processes the post of a user form. The form is defined as
  * the session identifier.
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 void users::on_process_post(const QString& cpath, const sessions::sessions::session_info& info)
 {
     if(cpath == "login")
@@ -2014,6 +2032,7 @@ void users::on_process_post(const QString& cpath, const sessions::sessions::sess
         throw users_exception_invalid_path("users::on_process_post() was called with an unsupported path: \"" + cpath + "\"");
     }
 }
+#pragma GCC diagnostic pop
 
 
 /** \brief Log the user in from the log in form.

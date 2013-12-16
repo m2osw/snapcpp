@@ -29,7 +29,7 @@ QDomReceiver::~QDomReceiver()
 {
 }
 
-void QDomReceiver::atomicValue(const QVariant& value)
+void QDomReceiver::atomicValue(const QVariant& )
 {
 }
 

@@ -1384,9 +1384,12 @@ int64_t sendmail::do_update(int64_t last_updated)
  *
  * \param[in] variables_timestamp  The timestamp for all the variables added to the database by this update (in micro-seconds).
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 void sendmail::initial_update(int64_t variables_timestamp)
 {
 }
+#pragma GCC diagnostic pop
 
 
 /** \brief Update the database with our content references.
@@ -1396,10 +1399,13 @@ void sendmail::initial_update(int64_t variables_timestamp)
  *
  * \param[in] variables_timestamp  The timestamp for all the variables added to the database by this update (in micro-seconds).
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 void sendmail::content_update(int64_t variables_timestamp)
 {
     content::content::instance()->add_xml(get_name(SNAP_NAME_SENDMAIL));
 }
+#pragma GCC diagnostic pop
 
 
 /** \brief Initialize the emails table.
@@ -1486,10 +1492,13 @@ QSharedPointer<QtCassandra::QCassandraTable> sendmail::get_emails_table()
  *
  * \return true if the signal is to be propagated to all the other plugins.
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 bool sendmail::filter_email_impl(email& e)
 {
     return true;
 }
+#pragma GCC diagnostic pop
 
 
 /** \brief Post an email.
@@ -1623,6 +1632,8 @@ void sendmail::on_register_backend_action(snap::server::backend_action_map_t& ac
  *
  * \param[in] action  The action this function is being called with.
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 void sendmail::on_backend_action(const QString& action)
 {
     QSharedPointer<udp_client_server::udp_server> udp_signals(f_snap->udp_get_server("sendmail_udp_signal"));
@@ -1658,6 +1669,7 @@ void sendmail::on_backend_action(const QString& action)
         }
     }
 }
+#pragma GCC diagnostic pop
 
 
 /** \brief Process all the emails received in Cassandra.
@@ -2491,6 +2503,8 @@ void sendmail::on_generate_main_content(layout::layout *l, const QString& path, 
  * \param[in] xml  The XML document used with the layout.
  * \param[in] token  The token object, with the token name and optional parameters.
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 void sendmail::on_replace_token(filter::filter *f, QString const& cpath, QDomDocument& xml, filter::filter::token_info_t& token)
 {
     if(!token.is_namespace("sendmail::"))
@@ -2636,6 +2650,7 @@ void sendmail::on_replace_token(filter::filter *f, QString const& cpath, QDomDoc
         }
     }
 }
+#pragma GCC diagnostic pop
 
 
 SNAP_PLUGIN_END()

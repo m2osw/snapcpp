@@ -605,12 +605,15 @@ int64_t links::do_update(int64_t last_updated)
  * \param[in] variables_timestamp  The timestamp for all the variables added
  *                        to the database by this update (in micro-seconds).
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 void links::initial_update(int64_t variables_timestamp)
 {
     // read the links table to create it
     // as we're at it, we can always save it in our f_links_table
     f_links_table = get_links_table();
 }
+#pragma GCC diagnostic pop
 
 
 /** \brief Initialize the content table.

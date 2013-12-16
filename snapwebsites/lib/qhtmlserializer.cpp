@@ -40,9 +40,12 @@ QHtmlSerializer::~QHtmlSerializer()
 {
 }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 void QHtmlSerializer::atomicValue(const QVariant& value)
 {
 }
+#pragma GCC diagnostic pop
 
 void QHtmlSerializer::attribute(const QXmlName& name, const QStringRef& value)
 {

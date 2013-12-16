@@ -16,6 +16,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "qdomxpath.h"
+#include <iostream>
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
@@ -1495,6 +1496,8 @@ public:
      *
      * \return The node set.
      */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
     QDomXPath::node_vector_t& getNodeSetValue(bool cast = false) const
     {
         if(f_type != ATOMIC_TYPE_NODE_SET)
@@ -1503,6 +1506,7 @@ public:
         }
         return const_cast<QDomXPath::node_vector_t&>(f_node_set);
     }
+#pragma GCC diagnostic pop
 
 
     /** \brief Set the variant to a node set.
@@ -4992,7 +4996,7 @@ void inst_axis()
     // NODE_TYPE_NODE
     // NODE_TYPE_PROCESSING_INSTRUCTION
     // NODE_TYPE_TEXT
-    QDomNode::NodeType dom_node_type;
+    QDomNode::NodeType dom_node_type( QDomNode::ElementNode );
     switch(node_type)
     {
     case NODE_TYPE_COMMENT:
@@ -7576,6 +7580,9 @@ QDomXPath::node_vector_t apply(QDomXPath::node_vector_t& nodes)
 }
 
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+
 uint32_t disassemble_undefined_instruction(uint32_t pc)
 {
     printf("***undefined instruction*** (%d)\n", f_program[pc - 1]);
@@ -7765,7 +7772,7 @@ uint32_t disassemble_push_any_string(uint32_t pc)
 uint32_t disassemble_push_byte(uint32_t pc)
 {
     int64_t value(static_cast<int64_t>(f_program[pc]));
-    printf("push_integer %ld\n", value);
+    std::cout << "push_integer " << value << std::endl;
     return 2;
 }
 
@@ -7841,7 +7848,7 @@ uint32_t disassemble_push_long(uint32_t pc)
                   | (static_cast<int64_t>(f_program[pc + 1]) << 16)
                   | (static_cast<int64_t>(f_program[pc + 2]) <<  8)
                   |  static_cast<int64_t>(f_program[pc + 3]);
-    printf("push_integer %ld\n", value);
+    std::cout << "push_integer " << value << std::endl;
     return 5;
 }
 
@@ -7855,7 +7862,7 @@ uint32_t disassemble_push_longlong(uint32_t pc)
                   | (static_cast<int64_t>(f_program[pc + 5]) << 16)
                   | (static_cast<int64_t>(f_program[pc + 6]) <<  8)
                   |  static_cast<int64_t>(f_program[pc + 7]);
-    printf("push_integer %ld\n", value);
+    std::cout << "push_integer " << value << std::endl;
     return 9;
 }
 
@@ -7871,7 +7878,7 @@ uint32_t disassemble_push_medium_string(uint32_t pc)
 uint32_t disassemble_push_negative_byte(uint32_t pc)
 {
     int64_t value(static_cast<int64_t>(f_program[pc]) | 0xFFFFFFFFFFFFFF00LL);
-    printf("push_integer %ld\n", value);
+    std::cout << "push_integer " << value << std::endl;
     return 2;
 }
 
@@ -7880,7 +7887,7 @@ uint32_t disassemble_push_negative_short(uint32_t pc)
     int64_t value((static_cast<int64_t>(f_program[pc]) << 8)
                  | static_cast<int64_t>(f_program[pc])
                  | 0xFFFFFFFFFFFF0000LL);
-    printf("push_integer %ld\n", value);
+    std::cout << "push_integer " << value << std::endl;
     return 3;
 }
 
@@ -7891,7 +7898,7 @@ uint32_t disassemble_push_negative_long(uint32_t pc)
                 | (static_cast<int64_t>(f_program[pc]) << 8)
                 |  static_cast<int64_t>(f_program[pc])
                 |  0xFFFFFFFF00000000LL);
-    printf("push_integer %ld\n", value);
+    std::cout << "push_integer " << value << std::endl;
     return 5;
 }
 
@@ -7899,7 +7906,7 @@ uint32_t disassemble_push_short(uint32_t pc)
 {
     int64_t value = (static_cast<int64_t>(f_program[pc + 0]) << 8)
                   |  static_cast<int64_t>(f_program[pc + 1]);
-    printf("push_integer %ld\n", value);
+    std::cout << "push_integer " << value << std::endl;
     return 5;
 }
 
@@ -8154,6 +8161,7 @@ int disassemble_instruction(int pc)
     instruction_t inst(f_program[pc]);
     return (this->*g_disassemble_instructions[inst])(pc + 1);
 }
+#pragma GCC diagnostic pop
 
 
 void disassemble()

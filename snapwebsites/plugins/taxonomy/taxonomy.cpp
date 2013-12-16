@@ -142,9 +142,12 @@ int64_t taxonomy::do_update(int64_t last_updated)
  *                                 to the database by this update
  *                                 (in micro-seconds).
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 void taxonomy::initial_update(int64_t variables_timestamp)
 {
 }
+#pragma GCC diagnostic pop
 
 /** \brief Update the taxonomy plugin content.
  *
@@ -157,10 +160,13 @@ void taxonomy::initial_update(int64_t variables_timestamp)
  *
  * \param[in] variables_timestamp  The timestamp for all the variables added to the database by this update (in micro-seconds).
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 void taxonomy::content_update(int64_t variables_timestamp)
 {
 	content::content::instance()->add_xml("taxonomy");
 }
+#pragma GCC diagnostic pop
 
 /** \brief Search for a field in a type tree.
  *

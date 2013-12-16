@@ -1071,7 +1071,10 @@ void server::process_connection(int socket)
                       "\n"
                       "<h1>503 Service Unavailable</h1>\n"
                       "<p>Server cannot start child process.</p>\n");
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-result"
         write(socket, err.c_str(), err.size());
+#pragma GCC diagnostic pop
         // socket will be closed by the next accept() call
     }
 }
@@ -1331,10 +1334,13 @@ bool server::validate_action_impl(const QString& path, QString& action)
  *
  * \return true if the signal has to be sent to other plugins.
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 bool server::improve_signature_impl(const QString& path, QString& signature)
 {
     return true;
 }
+#pragma GCC diagnostic pop
 
 
 /** \brief Send a PING message to the specified UDP server.
