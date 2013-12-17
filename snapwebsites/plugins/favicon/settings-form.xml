@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<snap-form session_id="1" owner="favicon">
+<snap-form session_id="1" owner="favicon" auto-save="auto-save">
   <auto-reset minutes="120"/>
   <focus refid="icon"/>
   <default-button refid="save"/>
@@ -27,7 +27,7 @@
       <widgetpriority refid="save"/>
       <widgetpriority refid="cancel"/>
     </widgetorder>
-    <widget id="icon" type="image">
+    <widget id="icon" type="image" auto-save="binary">
       <label>Icon</label>
       <background-value><img src="/default-favicon.ico" width="16" height="16" type="image/vnd.microsoft.icon"/></background-value>
       <tooltip>Define the little icon that appears in the tab, the location bar, bookmarks, or some other locations of your browser.</tooltip>
@@ -40,7 +40,7 @@
       </filters>
       <help>Click <b>Browse...</b> to select a file or drag and drop your favorite icon to replace the current one.</help>
     </widget>
-    <widget id="sitewide" type="checkbox">
+    <widget id="sitewide" type="checkbox" auto-save="int8">
       <label>Use One Sitewide Favorite Icon</label>
       <tooltip>Select to only use the sitewide favorite icon</tooltip>
       <checked>checked</checked>

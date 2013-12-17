@@ -269,13 +269,22 @@ int snap_cgi::process()
         }
         // we also want to send the POST variables
         // http://httpd.apache.org/docs/2.4/howto/cgi.html
+        // note that in case of a non-multipart post variables are separated
+        // by & and the variable names and content cannot include the & since
+        // that would break the whole scheme so we can safely break (add \n)
+        // at that location
+        bool const is_multipart(QString(getenv("CONTENT_TYPE")).startsWith("multipart/form-data"));
+        int break_char(is_multipart ? '\n' : '&');
         std::string var;
         for(;;)
         {
             int c(getchar());
-            if(c == '&' || c == EOF)
+            if(c == break_char || c == EOF)
             {
-                var += "\n";
+                if(!is_multipart || c != EOF)
+                {
+                    var += "\n";
+                }
                 if(socket.write(var.c_str(), var.length()) != static_cast<int>(var.length()))
                 {
                     return error("504 Gateway Timeout", ("error while writing POST variable \"" + var + "\" to the child process.").c_str());

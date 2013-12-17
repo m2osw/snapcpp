@@ -404,6 +404,7 @@ void snapdb::display()
                 }
                 else if(n == "sessions::used_up"
                      || n == "content::final"
+                     || n == "favicon::sitewide"
                 )
                 {
                     // 8 bit value
@@ -417,11 +418,28 @@ void snapdb::display()
                 {
                     // n bit binary value
                     const QByteArray& buf((*c)->value().binaryValue());
-                    int max(buf.size());
+                    int const max(buf.size());
                     v += "(hex) ";
                     for(int i(0); i < max; ++i)
                     {
                         v += QString("%1 ").arg(static_cast<int>(static_cast<unsigned char>(buf.at(i))), 2, 16, QChar('0'));
+                    }
+                }
+                else if(n == "favicon::icon"
+                )
+                {
+                    // n bit binary value
+                    // same as previous only this can be huge so we limit it
+                    const QByteArray& buf((*c)->value().binaryValue());
+                    int const max(std::min(64, buf.size()));
+                    v += "(hex) ";
+                    for(int i(0); i < max; ++i)
+                    {
+                        v += QString("%1 ").arg(static_cast<int>(static_cast<unsigned char>(buf.at(i))), 2, 16, QChar('0'));
+                    }
+                    if(buf.size() > max)
+                    {
+                        v += "...";
                     }
                 }
                 else

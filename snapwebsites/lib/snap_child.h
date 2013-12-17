@@ -173,6 +173,7 @@ public:
     class post_file_t
     {
     public:
+        void                        set_name(QString const& name) { f_name = name; }
         void                        set_filename(QString const& filename) { f_filename = filename; }
         void                        set_mime_type(QString const& mime_type) { f_mime_type = mime_type; }
         void                        set_creation_time(time_t ctime) { f_creation_time = ctime; }
@@ -180,6 +181,7 @@ public:
         void                        set_data(QByteArray const& data) { f_data = data; }
         void                        set_index(int index) { f_index = index; }
 
+        QString                     get_name() const { return f_name; }
         QString                     get_filename() const { return f_filename; }
         QString                     get_mime_type() const { return f_mime_type; }
         time_t                      get_creation_time() const { return f_creation_time; }
@@ -190,6 +192,7 @@ public:
         bool                        verify_mime_type() const;
 
     private:
+        QString                     f_name; // field name
         QString                     f_filename;
         QString                     f_mime_type;
         controlled_vars::zint64_t   f_creation_time;
@@ -241,6 +244,7 @@ public:
     bool                        postenv_exists(QString const& name) const;
     QString                     postenv(QString const& name, QString const& default_value = "") const;
     environment_map_t const&    all_postenv() const { return f_post; }
+    post_file_t const&          postfile(QString const& name) const;
     bool                        cookie_is_defined(QString const& name) const;
     QString                     cookie(QString const& name) const;
     void                        attach_to_session();

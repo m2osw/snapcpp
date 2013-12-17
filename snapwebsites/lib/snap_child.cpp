@@ -679,13 +679,24 @@ void snap_child::read_environment()
             f_name = params["name"];
             if(params.contains("filename"))
             {
+                // make sure the filename is unique otherwise we'd overwrite
+                // the previous file with the same name...
+                QString filename(params["filename"]);
+
                 // this is a file so we want to save it in the f_file and
                 // not in the f_post although we do create an f_post entry
                 // with the filename
-                f_post[f_name] = params["filename"];
+                if(f_post.contains(f_name))
+                {
+                    die(QString("multipart post variable \"%1\" defined twice")
+                                .arg(f_name));
+                    NOTREACHED();
+                }
+                f_post[f_name] = filename;
 
-                post_file_t file;
-                file.set_filename(params["filename"]);
+                post_file_t& file(f_files[f_name]);
+                file.set_name(f_name);
+                file.set_filename(filename);
                 ++f_post_index; // 1-based
                 file.set_index(f_post_index);
                 file.set_data(f_post_content);
@@ -706,13 +717,14 @@ void snap_child::read_environment()
                 {
                     file.set_modification_time(string822_to_date(params["modification-date"]));
                 }
-                f_files[file.get_filename()] = file;
+//fprintf(stderr, " f_files[\"%s\"] = \"...\" (MIME: %s)\n", filename.toUtf8().data(), file.get_mime_type().toUtf8().data());
             }
             else
             {
                 // this is a simple parameter
                 if(f_post_environment.contains("CONTENT-TYPE"))
                 {
+                    // XXX accept a few valid types? it should not be necessary...
                     // the character encoding is defined as the form, page,
                     // or UTF-8 encoding; Content-Type not permitted here!
                     die(QString("multipart posts Content-Type is not allowed with simple parameters."));
@@ -721,13 +733,29 @@ void snap_child::read_environment()
                 // TODO verify that the content of a post just needs to be
                 //      decoded or whether it already is UTF-8 as required
                 //      to be saved in f_post
+                if(f_post_content.right(2) == "\r\n")
+                {
+                    f_post_content.resize(f_post_content.size() - 2);
+                }
+                else if(f_post_content.right(1) == "\n"
+                     || f_post_content.right(1) == "\r")
+                {
+                    f_post_content.resize(f_post_content.size() - 1);
+                }
+                if(f_post.contains(f_name))
+                {
+                    die(QString("multipart post variable \"%1\" defined twice")
+                                .arg(f_name));
+                    NOTREACHED();
+                }
                 f_post[f_name] = f_post_content;//snap_uri::urldecode(f_post_content, true);
+//fprintf(stderr, " f_post[\"%s\"] = \"%s\"\n", f_name.toUtf8().data(), f_post_content.data());
             }
         }
 
         bool process_post_line()
         {
-            // found the end marker?
+            // found a marker?
             if(f_post_line.length() >= f_boundary.length())
             {
                 if(f_post_line == f_end_boundary)
@@ -751,6 +779,13 @@ void snap_child::read_environment()
                         return false;
                     }
                     process_post_variable();
+
+                    // on next line, we're reading a new header
+                    f_post_header = true;
+
+                    // we're done with those in this iteration
+                    f_post_environment.clear();
+                    f_post_content.clear();
                     return false;
                 }
             }
@@ -763,7 +798,7 @@ void snap_child::read_environment()
 
             if(f_post_header)
             {
-                if(f_post_line.isEmpty())
+                if(f_post_line.isEmpty() || (f_post_line.size() == 1 && f_post_line.at(0) == '\r'))
                 {
                     // end of the header
                     f_post_header = false;
@@ -772,6 +807,7 @@ void snap_child::read_environment()
 
                 // we got a header (Blah: value)
                 QString line(f_post_line);
+//printf(" ++ header line [\n%s\n] %d\n", line.trimmed().toUtf8().data(), line.size());
                 if(isspace(f_post_line[0]))
                 {
                     // continuation of the previous header, concatenate
@@ -796,6 +832,7 @@ void snap_child::read_environment()
             {
                 // this is content for the current variable
                 f_post_content += f_post_line;
+                f_post_content += '\n'; // the '\n' was not added to f_post_line
             }
 
             return false;
@@ -854,7 +891,8 @@ void snap_child::read_environment()
             }
             f_boundary.append(("--" + boundary).toAscii());
             f_end_boundary = f_boundary;
-            f_end_boundary.append("--", 2);
+            f_end_boundary.append("--\r", 3);
+            f_boundary += '\r';
 
             for(;;)
             {
@@ -863,15 +901,15 @@ void snap_child::read_environment()
                 {
                     if(process_post_line())
                     {
-                        break;
+                        return;
                     }
+                    f_post_line.clear();
                 }
                 else
                 {
                     f_post_line += c;
                 }
             }
-//printf("Got POST! [%s]\n", post.toUtf8().data());
         }
 
         void process_line()
@@ -894,48 +932,53 @@ void snap_child::read_environment()
             if(f_name == "#POST")
             {
                 process_post();
+                return;
+            }
+
+            if(f_name.isEmpty())
+            {
+                die("empty lines are not accepted in the child environment.");
+                NOTREACHED();
+            }
+            if(f_has_post)
+            {
+                f_post[f_name] = snap_uri::urldecode(f_value, true);
+//fprintf(stderr, "(simple) f_post[\"%s\"] = \"%s\" (\"%s\");\n", f_name.toUtf8().data(), f_value.toUtf8().data(), f_post[f_name].toUtf8().data());
             }
             else
             {
-                if(f_name.isEmpty())
+                if(f_name == "HTTP_COOKIE")
                 {
-                    die("empty lines are not accepted in the child environment.");
-                    NOTREACHED();
-                }
-                if(f_has_post)
-                {
-                    f_post[f_name] = snap_uri::urldecode(f_value, true);
-//fprintf(stderr, "f_post[\"%s\"] = \"%s\" (\"%s\");\n", name.toUtf8().data(), value.toUtf8().data(), f_post[name].toUtf8().data());
+                    // special case
+                    QStringList cookies(f_value.split(';', QString::SkipEmptyParts));
+                    int max(cookies.size());
+                    for(int i(0); i < max; ++i)
+                    {
+                        QString name_value(cookies[i]);
+                        QStringList nv(name_value.trimmed().split('=', QString::SkipEmptyParts));
+                        if(nv.size() == 2)
+                        {
+                            // XXX check with other systems to see
+                            //     whether urldecode() is indeed
+                            //     necessary here
+                            QString cookie_name(snap_uri::urldecode(nv[0], true));
+                            QString cookie_value(snap_uri::urldecode(nv[1], true));
+                            if(f_browser_cookies.contains(cookie_name))
+                            {
+                                die(QString("cookie \"%1\" defined twice")
+                                            .arg(cookie_name));
+                                NOTREACHED();
+                            }
+                            f_browser_cookies[cookie_name] = cookie_value;
+//fprintf(stderr, "f_browser_cookies[\"%s\"] = \"%s\";\n", cookie_name.toUtf8().data(), cookie_value.toUtf8().data());
+                        }
+                    }
                 }
                 else
                 {
-                    if(f_name == "HTTP_COOKIE")
-                    {
-                        // special case
-                        QStringList cookies(f_value.split(';', QString::SkipEmptyParts));
-                        int max(cookies.size());
-                        for(int i(0); i < max; ++i)
-                        {
-                            QString name_value(cookies[i]);
-                            QStringList nv(name_value.trimmed().split('=', QString::SkipEmptyParts));
-                            if(nv.size() == 2)
-                            {
-                                // XXX check with other systems to see
-                                //     whether urldecode() is indeed
-                                //     necessary here
-                                QString cookie_name(snap_uri::urldecode(nv[0], true));
-                                QString cookie_value(snap_uri::urldecode(nv[1], true));
-                                f_browser_cookies[cookie_name] = cookie_value;
-//fprintf(stderr, "f_browser_cookies[\"%s\"] = \"%s\";\n", cookie_name.toUtf8().data(), cookie_value.toUtf8().data());
-                            }
-                        }
-                    }
-                    else
-                    {
-                        // TODO: verify that f_name is a valid header name
-                        f_env[f_name] = f_value;
-fprintf(stderr, " f_env[\"%s\"] = \"%s\"\n", f_name.toUtf8().data(), f_value.toUtf8().data());
-                    }
+                    // TODO: verify that f_name is a valid header name
+                    f_env[f_name] = f_value;
+//fprintf(stderr, " f_env[\"%s\"] = \"%s\"\n", f_name.toUtf8().data(), f_value.toUtf8().data());
                 }
             }
         }
@@ -1019,271 +1062,6 @@ fprintf(stderr, " f_env[\"%s\"] = \"%s\"\n", f_name.toUtf8().data(), f_value.toU
     read_env r(this, f_socket, f_env, f_browser_cookies, f_post, f_files);
     r.run();
     f_has_post = r.has_post();
-
-
-
-
-#if 0
-    QString name;
-    QString value;
-    char c;
-    bool started(false);
-    bool reading_name(true);
-    for(;;)
-    {
-        // this read blocks, so we read just 1 char. because we
-        // want to stop calling read() as soon as possible (otherwise
-        // we'd be blocked here forever)
-        if(read(f_socket, &c, 1) != 1)
-        {
-            die(HTTP_CODE_SERVICE_UNAVAILABLE, "", "Unstable network connection", "an error occured while reading the environment from the socket in the child.");
-            NOTREACHED();
-        }
-        if(c == '=' && reading_name)
-        {
-            reading_name = false;
-        }
-        else if(c == '\n')
-        {
-            if(!started)
-            {
-                if(name == "#INFO")
-                {
-                    snap_info();
-                    NOTREACHED();
-                }
-                if(name == "#STATS")
-                {
-                    snap_statistics();
-                    NOTREACHED();
-                }
-                if(name != "#START")
-                {
-                    // TODO use die()
-                    SNAP_LOG_FATAL("#START or other supported command missing.");
-                    exit(1);
-                }
-                started = true;
-                name.clear();
-                value.clear(); // we may use the value later for version, etc.
-            }
-            else
-            {
-                if(name == "#END")
-                {
-                    return;
-                }
-                if(name == "#POST")
-                {
-                    if(f_has_post)
-                    {
-                        // TODO use die()
-                        SNAP_LOG_FATAL("at most 1 #POST is accepted in the environment.");
-                        exit(1);
-                    }
-                    f_has_post = true;
-                    if(f_env.contains("CONTENT_TYPE")
-                    && f_env["CONTENT_TYPE"].startsWith("multipart/form-data"))
-                    {
-                        // the POST is going to be multiple lines with
-                        // \r characters included! We read then all
-                        // up to the closing boundary
-                        //
-                        // Example of such a variable:
-                        // CONTENT_TYPE=multipart/form-data; boundary=---------5767747
-                        QStringList content_info(f_env["CONTENT_TYPE"].split(';'));
-                        QString boundary;
-                        int const max(content_info.size());
-                        for(int i(1); i < max; ++i)
-                        {
-                            QString param(content_info[i].trimmed());
-                            if(param.startsWith("boundary="))
-                            {
-                                boundary = param.mid(9);
-                                break;
-                            }
-                        }
-                        if(boundary.isEmpty())
-                        {
-                            // TODO use die()
-                            SNAP_LOG_FATAL("multipart POST does not include a valid boundary.");
-                            exit(1);
-                        }
-                        QString post;
-                        QString line;
-                        QString end_boundary(boundary + "--");
-                        bool first(true);
-                        bool header(true);
-                        int has_newline(0);
-                        int const min(end_boundary.length());
-                        for(;;)
-                        {
-                            if(read(f_socket, &c, 1) != 1)
-                            {
-                                die(HTTP_CODE_SERVICE_UNAVAILABLE, "", "Unstable network connection", "an error occured while reading the environment from the socket in the child.");
-                                NOTREACHED();
-                            }
-                            skipped_cr = c == '\r';
-                            if(skipped_cr)
-                            {
-                                // Why do we need these \r, really?!
-                                // Our code handles \r\n or just \n
-                                // But it err on just \r
-                                if(read(f_socket, &c, 1) != 1)
-                                {
-                                    die(HTTP_CODE_SERVICE_UNAVAILABLE, "", "Unstable network connection", "an error occured while reading the environment from the socket in the child.");
-                                    NOTREACHED();
-                                }
-                            }
-                            if(c == '\n')
-                            {
-                                if(line == end_boundary)
-                                {
-                                    break;
-                                }
-                                if(line == boundary)
-                                {
-                                    if(first)
-                                    {
-                                        // we got the first boundary
-                                        first = false;
-                                    }
-                                    else
-                                    {
-                                        // we got a POST variable
-                                        name
-                                        f_post[name] = snap_uri::urldecode(value, true);
-                                        // and then we start a new header
-                                        header = true;
-                                    }
-                                }
-                                else if(header)
-                                {
-                                    // we got a header (Blah: value)
-                                    // however, headers can appear on multiple
-                                    // lines, so at this point we just
-                                    // register them
-                                }
-                                else
-                                {
-                                    // this is content for the current variable
-                                    switch(has_newline)
-                                    {
-                                    case 2:
-                                        content += '\r';
-                                    case 1:
-                                        content += '\n';
-                                        break;
-
-                                    }
-                                    content += line;
-                                    has_newline = skipped_cr ? 2 : 1;
-                                }
-                            }
-                            else
-                            {
-                                if(skipped_cr)
-                                {
-                                    line += '\r';
-                                }
-                                line += c;
-                            }
-                        }
-                        for(;;)
-                        {
-                            if(read(f_socket, &c, 1) != 1)
-                            {
-                                die(HTTP_CODE_SERVICE_UNAVAILABLE, "", "Unstable network connection", "an error occured while reading the environment from the socket in the child (network connection lost while reading new lines after the multi-part POST data).");
-                                NOTREACHED();
-                            }
-                            if(c == '#')
-                            {
-                                break;
-                            }
-                            if(c != '\r' && c != '\n')
-                            {
-                                die(HTTP_CODE_SERVICE_UNAVAILABLE, "", "Unstable network connection", "an error occured while reading the environment from the socket in the child (not new lines after the multi-part POST data).");
-                                NOTREACHED();
-                            }
-                        }
-                        name = "#";
-printf("Got POST! [%s]\n", post.toUtf8().data());
-                    }
-                    else
-                    {
-                        name.clear();
-                    }
-                }
-                else
-                {
-                    if(name.isEmpty())
-                    {
-                        // TODO use die()
-                        SNAP_LOG_FATAL("empty lines are not accepted in the child environment.");
-                        exit(1);
-                    }
-                    if(f_has_post)
-                    {
-                        f_post[name] = snap_uri::urldecode(value, true);
-//fprintf(stderr, "f_post[\"%s\"] = \"%s\" (\"%s\");\n", name.toUtf8().data(), value.toUtf8().data(), f_post[name].toUtf8().data());
-                    }
-                    else
-                    {
-                        if(name == "HTTP_COOKIE")
-                        {
-                            // special case
-                            QStringList cookies(value.split(';', QString::SkipEmptyParts));
-                            int max(cookies.size());
-                            for(int i(0); i < max; ++i)
-                            {
-                                QString name_value(cookies[i]);
-                                QStringList nv(name_value.trimmed().split('=', QString::SkipEmptyParts));
-                                if(nv.size() == 2)
-                                {
-                                    // XXX check with other systems to see
-                                    //     whether urldecode() is indeed
-                                    //     necessary here
-                                    QString cookie_name(snap_uri::urldecode(nv[0], true));
-                                    QString cookie_value(snap_uri::urldecode(nv[1], true));
-                                    f_browser_cookies[cookie_name] = cookie_value;
-//fprintf(stderr, "f_browser_cookies[\"%s\"] = \"%s\";\n", cookie_name.toUtf8().data(), cookie_value.toUtf8().data());
-                                }
-                            }
-                        }
-                        else
-                        {
-                            f_env[name] = value;
-fprintf(stderr, " f_env[\"%s\"] = \"%s\"\n", name.toUtf8().data(), value.toUtf8().data());
-                        }
-                    }
-                    name.clear();
-                }
-                value.clear();
-            }
-            reading_name = true;
-        }
-        else if(c == '\r')
-        {
-            // TODO use die()
-            SNAP_LOG_FATAL("the \\r character is not accepted in the environment.");
-            exit(1);
-        }
-        else if(reading_name)
-        {
-            if(isspace(c))
-            {
-                // TODO use die()
-                SNAP_LOG_FATAL("spaces are not allowed in the environment variable names.");
-                exit(1);
-            }
-            name += c;
-        }
-        else
-        {
-            value += c;
-        }
-    }
-#endif
 }
 
 
@@ -2307,6 +2085,24 @@ bool snap_child::postenv_exists(const QString& name) const
 QString snap_child::postenv(const QString& name, const QString& default_value) const
 {
     return f_post.value(name, default_value);
+}
+
+
+/** \brief Retrieve a file from the POST.
+ *
+ * This function can be called if this request included a POST with a
+ * file attached.
+ *
+ * Note that the files are saved by widget identifier. This means if
+ * you check a post with postenv("file") (which returns the filename),
+ * then you can get the actual file with postfile("file").
+ *
+ * \param[in] name  The id (name) of the Input File widget.
+ */
+const snap_child::post_file_t& snap_child::postfile(QString const& name) const
+{
+    // the QMap only returns a reference if this is not constant
+    return const_cast<snap_child *>(this)->f_files[name];
 }
 
 
@@ -3607,6 +3403,10 @@ void snap_child::execute()
     // let plugins detach whatever data they attached to the user session
     f_server->detach_from_session();
 
+    // get the action, if no action is defined, then use the default
+    // which  is "view" unless we are POSTing
+    verify_permissions();
+
     // if the user POSTed something, manage that content first, the
     // effect is often to redirect the user in which case we want to
     // emit an HTTP Location and return; also, with AJAX we may end
@@ -3616,10 +3416,6 @@ void snap_child::execute()
     {
         f_server->process_post(f_uri.path());
     }
-
-    // get the action, if not action is defined, then use the default
-    // which  is "view"
-    verify_permissions();
 
     // generate the output
     //

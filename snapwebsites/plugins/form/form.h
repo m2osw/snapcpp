@@ -90,6 +90,9 @@ public:
 
     QString                 get_form_title(QString const& default_title) const;
 
+    QString                 get_source(QString const& plugin_owner_name, QString const& cpath);
+    bool                    is_auto_save(QString const& cpath);
+
     static QString          text_64max(QString const& text, bool is_secret);
     static QString          html_64max(QString const& html, bool is_secret);
     static int              count_text_lines(QString const& text);
@@ -97,7 +100,8 @@ public:
     static bool             parse_width_height(QString const& size, int& width, int& height);
 
 private:
-    QString                     get_source(QString const& owner, QString const& cpath);
+    typedef QMap<QString, QString> auto_save_types_t;
+    void                    auto_save_form(QString const& owner, QString const& cpath, auto_save_types_t const& auto_save_type);
 
     zpsnap_child_t              f_snap;
     controlled_vars::fbool_t    f_form_initialized;

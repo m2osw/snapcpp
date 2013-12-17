@@ -507,6 +507,19 @@ bool form::tweak_form_impl(form *f, QString const& cpath, QDomDocument form_doc)
 }
 
 
+/** \typedef auto_save_types_t
+ * \brief Type used to save the type of the widget data for auto-save.
+ *
+ * This type defines the type of each widget content defined in
+ * the auto-save attribute of the corresponding widget. This
+ * allows us to also avoid to save all the widgets, even though that
+ * we could not handle.
+ *
+ * The widget id (the name in the f_post) and the type as defined in the
+ * XML form.
+ */
+
+
 /** \brief Analyze the URL and process the POST data accordingly.
  *
  * This function searches for the plugin that generated the form this
@@ -627,10 +640,15 @@ void form::on_process_post(const QString& uri_path)
         throw form_exception_invalid_form_xml(QString("path \"%1\" does not correspond to a valid XML form").arg(cpath));
     }
 
+    auto_save_types_t auto_save_type;
     QDomNodeList widgets(xml_form.elementsByTagName("widget"));
     int count(widgets.length());
     for(int i(0); i < count; ++i)
     {
+        // TODO properly record the use of each and every single widget
+        //      returned by the user (i.e. the POST variables) because
+        //      if some funky entries appear, we have to reject the
+        //      whole thing!
         QDomNode w(widgets.item(i));
         if(!w.isElement())
         {
@@ -658,12 +676,20 @@ void form::on_process_post(const QString& uri_path)
         QDomNode secret(attributes.namedItem("secret"));
         bool is_secret(!secret.isNull() && secret.nodeValue() == "secret");
 
+        QDomNode auto_save_attr(attributes.namedItem("auto-save"));
+        if(!auto_save_attr.isNull())
+        {
+            auto_save_type[widget_name] = auto_save_attr.nodeValue();
+        }
+
         // if the form was submitted, we'll have some postenv() values
         // which we want to save in the <post> tag of the widget then
         // the widget can decide whether to use the <post> data or the
         // default <value> data (although we do not hand the value back
         // if the widget is marked as secret.)
         QString post(f_snap->postenv(widget_name));
+        // XXX this is not correct, we'd have to tell the widget owner
+        //     to handle special cases like this!
         if(post.isEmpty() && widget_type == "checkbox")
         {
             post = "off";
@@ -738,7 +764,102 @@ void form::on_process_post(const QString& uri_path)
     }
 
     // data looks good, let the plugin process it
-    fp->on_process_post(cpath, info);
+    QDomElement snap_form(xml_form.documentElement());
+    QString auto_save_str(snap_form.attribute("auto-save", "0"));
+    if(!auto_save_str.isEmpty())
+    {
+        // in this case the form plugin just saves the data as is in the page
+        auto_save_form(owner, cpath, auto_save_type);
+
+        // after the auto-save, we also call the plugin on_process_post()
+        // if available and in case the plugin wants to do a little more
+        // work (i.e. mark something else out of date...)
+    }
+    else
+    {
+        if(fp == NULL)
+        {
+            // the programmer forgot to derive from form_post?!
+            throw snap_logic_exception(QString("you cannot use plugin \"%1\" as dynamically saving forms without also deriving it from form_post").arg(owner));
+        }
+    }
+    if(fp != NULL)
+    {
+        fp->on_process_post(cpath, info);
+    }
+}
+
+
+/** \brief Automatically save the form.
+ *
+ * This function automatically saves the form data in the database.
+ * This is particularly useful for any form that is not dynamic.
+ * (Dynamic forms will be supported at a later time.)
+ *
+ * \param[in] owner  The name of the plugin that owns this form.
+ * \param[in] cpath  The page where the data is to be saved.
+ * \param[in] xml_form  The form that's being saved.
+ */
+void form::auto_save_form(QString const& owner, QString const& cpath, auto_save_types_t const& auto_save_type)
+{
+    QSharedPointer<QtCassandra::QCassandraTable> content_table(content::content::instance()->get_content_table());
+    QString const site_key(f_snap->get_site_key_with_slash());
+    QString const key(site_key + cpath);
+    if(!content_table->exists(key))
+    {
+        // the row does not exist yet... the form should not even be
+        // in auto-save mode!?
+        return;
+    }
+    QSharedPointer<QtCassandra::QCassandraRow> row(content_table->row(key));
+
+    for(snap_child::environment_map_t::const_iterator it(auto_save_type.begin());
+            it != auto_save_type.end();
+            ++it)
+    {
+        // the key is the widget identifier
+        QString id(it.key());
+
+        // retrieve the value from the post variable
+        QString post(f_snap->postenv(id));
+
+        QString name(owner + "::" + id);
+
+        QString type(*it);
+        if(type == "int8")
+        {
+            if(post == "on")
+            {
+                row->cell(name)->setValue((static_cast<signed char>(1)));
+            }
+            else if(post == "off")
+            {
+                row->cell(name)->setValue((static_cast<signed char>(0)));
+            }
+            else
+            {
+                row->cell(name)->setValue((static_cast<signed char>(post.toInt())));
+            }
+        }
+        else if(type == "binary")
+        {
+            // in this case the post is the filename, the binary data
+            // is in the corresponding file
+            row->cell(name + "::filename")->setValue(post);
+            const snap_child::post_file_t& file(f_snap->postfile(id));
+            row->cell(name)->setValue(file.get_data());
+            // XXX still unverified MIME type!
+            row->cell(name + "::mime_type")->setValue(file.get_mime_type());
+            // TODO save the creation & modification time if defined
+            //      (from what I can see these are never defined anyway)
+        }
+        else if(type == "string")
+        {
+            // default is a simple string
+            row->cell(name)->setValue(post);
+        }
+        // else -- "undefined"
+    }
 }
 
 
