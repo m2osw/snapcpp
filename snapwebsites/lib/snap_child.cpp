@@ -511,9 +511,519 @@ snap_child::status_t snap_child::check_status()
  */
 void snap_child::read_environment()
 {
+    class read_env
+    {
+    public:
+        read_env(snap_child *snap, int socket, environment_map_t& env, environment_map_t& browser_cookies, environment_map_t& post, post_file_map_t& files)
+            : f_snap(snap)
+            , f_socket(socket)
+            //, f_unget('\0') -- auto-init
+            //, f_running(true) -- auto-init
+            //, f_started(false) -- auto-init
+            , f_env(env)
+            , f_browser_cookies(browser_cookies)
+            //, f_name("") -- auto-init
+            //, f_value("") -- auto-init
+            //, f_has_post(false) -- auto-init
+            , f_post(post)
+            , f_files(files)
+            //, f_post_first() -- auto-init
+            //, f_post_header() -- auto-init
+            //, f_post_line() -- auto-init
+            //, f_post_content() -- auto-init
+            //, f_boundary() -- auto-init
+            //, f_end_boundary() -- auto-init
+            //, f_post_environment() -- auto-init
+            //, f_post_index(0) -- auto-init
+        {
+        }
+
+        void die(QString const& details) const
+        {
+            f_snap->die(HTTP_CODE_SERVICE_UNAVAILABLE, "",
+                "Unstable network connection",
+                QString("an error occured while reading the environment from the socket in the server child process (%1).").arg(details));
+            NOTREACHED();
+        }
+
+        char getc() const
+        {
+            char c;
+
+            //if(f_unget != '\0')
+            //{
+            //    c = f_unget;
+            //    f_unget = '\0';
+            //    return c;
+            //}
+
+            // this read blocks, so we read just 1 char. because we
+            // want to stop calling read() as soon as possible (otherwise
+            // we'd be blocked here forever)
+            if(read(f_socket, &c, 1) != 1)
+            {
+                int e(errno);
+                die(QString("I/O error, errno: %1").arg(e));
+                NOTREACHED();
+            }
+            return c;
+        }
+
+        //void ungetc(char c)
+        //{
+        //    if(f_unget != '\0')
+        //    {
+        //        die("too many unget() called");
+        //        NOTREACHED();
+        //    }
+        //    f_unget = c;
+        //}
+
+        void start_process()
+        {
+            // #INFO
+            if(f_name == "#INFO")
+            {
+                f_snap->snap_info();
+                NOTREACHED();
+            }
+
+            // #STATS
+            if(f_name == "#STATS")
+            {
+                f_snap->snap_statistics();
+                NOTREACHED();
+            }
+
+            // #START
+            if(f_name != "#START")
+            {
+                die("#START or other supported command missing.");
+                NOTREACHED();
+            }
+            // TODO add support for a version: #START=1.2
+            //      so that way the server can cleanly "break" if the
+            //      snap.cgi version is not compatible
+
+            f_started = true;
+            f_name.clear();
+            f_value.clear();
+        }
+
+        void process_post_variable()
+        {
+            // here we have a set of post environment variables (header)
+            // and the f_post_content which represents the value of the field
+            //
+            // Content-Disposition: form-data; name="field-name"
+            // Content-Type: image/gif
+            // Content-Transfer-Encoding: binary
+            //
+            // The Content-Type cannot be used with plain variables. We
+            // distinguish plain variables from files as the
+            // Content-Disposition includes a filename="..." parameter.
+            //
+            if(!f_post_environment.contains("CONTENT-DISPOSITION"))
+            {
+                die("multipart posts must have a Content-Disposition header to be considered valid.");
+                NOTREACHED();
+            }
+            // TODO: verify and if necessary fix this as the ';' could I think
+            //       appear in a string; looking at the docs, I'm not too sure
+            //       but it looks like we would need to support the
+            //       extended-value and extended-other-values as defined in
+            //       http://tools.ietf.org/html/rfc2184
+            QStringList disposition(f_post_environment["CONTENT-DISPOSITION"].split(";"));
+            if(disposition.size() < 2)
+            {
+                die(QString("multipart posts Content-Disposition must at least include \"form-data\" and a name parameter, \"%1\" is not valid.")
+                            .arg(f_post_environment["CONTENT-DISPOSITION"]));
+                NOTREACHED();
+            }
+            if(disposition[0].trimmed() != "form-data")
+            {
+                // not happy if we don't get form-data parts
+                die(QString("multipart posts Content-Disposition must be a \"form-data\", \"%1\" is not valid.")
+                            .arg(f_post_environment["CONTENT-DISPOSITION"]));
+                NOTREACHED();
+            }
+            // retrieve all the parameters, then keep those we want to keep
+            int const max(disposition.size());
+            environment_map_t params;
+            for(int i(1); i < max; ++i)
+            {
+                // each parameter is name=<value>
+                QStringList nv(disposition[i].split('='));
+                if(nv.size() != 2)
+                {
+                    die(QString("parameter %1 in this multipart posts Content-Disposition does not include an equal character so \"%1\" is not valid.")
+                                .arg(i)
+                                .arg(f_post_environment["CONTENT-DISPOSITION"]));
+                    NOTREACHED();
+                }
+                nv[0] = nv[0].trimmed().toLower(); // case insensitive
+                nv[1] = nv[1].trimmed();
+                if(nv[1].startsWith("\"")
+                && nv[1].endsWith("\""))
+                {
+                    nv[1] = nv[1].mid(1, nv[1].length() - 2);
+                }
+                params[nv[0]] = nv[1];
+            }
+            if(!params.contains("name"))
+            {
+                die(QString("multipart posts Content-Disposition must include a name=\"...\" parameter, \"%1\" is not valid.")
+                            .arg(f_post_environment["CONTENT-DISPOSITION"]));
+                NOTREACHED();
+            }
+            f_name = params["name"];
+            if(params.contains("filename"))
+            {
+                // this is a file so we want to save it in the f_file and
+                // not in the f_post although we do create an f_post entry
+                // with the filename
+                f_post[f_name] = params["filename"];
+
+                post_file_t file;
+                file.set_filename(params["filename"]);
+                ++f_post_index; // 1-based
+                file.set_index(f_post_index);
+                file.set_data(f_post_content);
+                if(params.contains("creation-date"))
+                {
+                    file.set_creation_time(string822_to_date(params["creation-date"]));
+                }
+                if(params.contains("modification-date"))
+                {
+                    file.set_modification_time(string822_to_date(params["modification-date"]));
+                }
+                // Content-Type is actually expected on this side
+                if(f_post_environment.contains("CONTENT-TYPE"))
+                {
+                    file.set_mime_type(f_post_environment["CONTENT-TYPE"]);
+                }
+                if(params.contains("modification-date"))
+                {
+                    file.set_modification_time(string822_to_date(params["modification-date"]));
+                }
+                f_files[file.get_filename()] = file;
+            }
+            else
+            {
+                // this is a simple parameter
+                if(f_post_environment.contains("CONTENT-TYPE"))
+                {
+                    // the character encoding is defined as the form, page,
+                    // or UTF-8 encoding; Content-Type not permitted here!
+                    die(QString("multipart posts Content-Type is not allowed with simple parameters."));
+                    NOTREACHED();
+                }
+                // TODO verify that the content of a post just needs to be
+                //      decoded or whether it already is UTF-8 as required
+                //      to be saved in f_post
+                f_post[f_name] = f_post_content;//snap_uri::urldecode(f_post_content, true);
+            }
+        }
+
+        bool process_post_line()
+        {
+            // found the end marker?
+            if(f_post_line.length() >= f_boundary.length())
+            {
+                if(f_post_line == f_end_boundary)
+                {
+                    if(f_post_first)
+                    {
+                        die("got end boundary without a start");
+                        NOTREACHED();
+                    }
+                    process_post_variable();
+                    return true;
+                }
+
+                if(f_post_line == f_boundary)
+                {
+                    // got the first boundary yet?
+                    if(f_post_first)
+                    {
+                        // we got the first boundary
+                        f_post_first = false;
+                        return false;
+                    }
+                    process_post_variable();
+                    return false;
+                }
+            }
+
+            if(f_post_first)
+            {
+                die("the first POST boundary is missing.");
+                NOTREACHED();
+            }
+
+            if(f_post_header)
+            {
+                if(f_post_line.isEmpty())
+                {
+                    // end of the header
+                    f_post_header = false;
+                    return false;
+                }
+
+                // we got a header (Blah: value)
+                QString line(f_post_line);
+                if(isspace(f_post_line[0]))
+                {
+                    // continuation of the previous header, concatenate
+                    f_post_environment[f_name] += " " + line.trimmed();
+                }
+                else
+                {
+                    // new header
+                    int p(line.indexOf(':'));
+                    if(p == -1)
+                    {
+                        die("invalid header variable name/value pair, no ':' found.");
+                        NOTREACHED();
+                    }
+                    // render name case insensitive
+                    f_name = line.mid(0, p).trimmed().toUpper();
+                    // TODO: verify that f_name is a valid header name
+                    f_post_environment[f_name] = line.mid(p + 1).trimmed();
+                }
+            }
+            else
+            {
+                // this is content for the current variable
+                f_post_content += f_post_line;
+            }
+
+            return false;
+        }
+
+        void process_post()
+        {
+            // one POST per request!
+            if(f_has_post)
+            {
+                die("at most 1 #POST is accepted in the environment.");
+                NOTREACHED();
+            }
+            f_has_post = true;
+
+            if(!f_env.contains("CONTENT_TYPE")
+            || !f_env["CONTENT_TYPE"].startsWith("multipart/form-data"))
+            {
+                // standard post, just return and let the main loop
+                // handle the name/value pairs
+                return;
+            }
+
+            // multi-part posts require special handling
+            // (i.e. these are not simple VAR=VALUE)
+            //
+            // the POST is going to be multiple lines with
+            // \r characters included! We read then all
+            // up to the closing boundary
+            //
+            // Example of such a variable:
+            // CONTENT_TYPE=multipart/form-data; boundary=---------5767747
+            //
+            // IMPORTANT NOTE:
+            // Sub-parts are NOT supported in HTML POST messages. This is
+            // clearly mentioned in HTML5 documentations:
+            // http://www.w3.org/html/wg/drafts/html/master/forms.html#multipart-form-data
+
+            // 1. Get the main boundary from the CONTENT_TYPE
+            QStringList content_info(f_env["CONTENT_TYPE"].split(';'));
+            QString boundary;
+            int const max(content_info.size());
+            for(int i(1); i < max; ++i)
+            {
+                QString param(content_info[i].trimmed());
+                if(param.startsWith("boundary="))
+                {
+                    boundary = param.mid(9).trimmed();
+                    break;
+                }
+            }
+            if(boundary.isEmpty())
+            {
+                die("multipart POST does not include a valid boundary.");
+                NOTREACHED();
+            }
+            f_boundary.append(("--" + boundary).toAscii());
+            f_end_boundary = f_boundary;
+            f_end_boundary.append("--", 2);
+
+            for(;;)
+            {
+                char c(getc());
+                if(c == '\n')
+                {
+                    if(process_post_line())
+                    {
+                        break;
+                    }
+                }
+                else
+                {
+                    f_post_line += c;
+                }
+            }
+//printf("Got POST! [%s]\n", post.toUtf8().data());
+        }
+
+        void process_line()
+        {
+            // not started yet? check low level commands then
+            if(!f_started)
+            {
+                start_process();
+                return;
+            }
+
+            // got to the end?
+            if(f_name == "#END")
+            {
+                f_running = false;
+                return;
+            }
+
+            // got a POST?
+            if(f_name == "#POST")
+            {
+                process_post();
+            }
+            else
+            {
+                if(f_name.isEmpty())
+                {
+                    die("empty lines are not accepted in the child environment.");
+                    NOTREACHED();
+                }
+                if(f_has_post)
+                {
+                    f_post[f_name] = snap_uri::urldecode(f_value, true);
+//fprintf(stderr, "f_post[\"%s\"] = \"%s\" (\"%s\");\n", name.toUtf8().data(), value.toUtf8().data(), f_post[name].toUtf8().data());
+                }
+                else
+                {
+                    if(f_name == "HTTP_COOKIE")
+                    {
+                        // special case
+                        QStringList cookies(f_value.split(';', QString::SkipEmptyParts));
+                        int max(cookies.size());
+                        for(int i(0); i < max; ++i)
+                        {
+                            QString name_value(cookies[i]);
+                            QStringList nv(name_value.trimmed().split('=', QString::SkipEmptyParts));
+                            if(nv.size() == 2)
+                            {
+                                // XXX check with other systems to see
+                                //     whether urldecode() is indeed
+                                //     necessary here
+                                QString cookie_name(snap_uri::urldecode(nv[0], true));
+                                QString cookie_value(snap_uri::urldecode(nv[1], true));
+                                f_browser_cookies[cookie_name] = cookie_value;
+//fprintf(stderr, "f_browser_cookies[\"%s\"] = \"%s\";\n", cookie_name.toUtf8().data(), cookie_value.toUtf8().data());
+                            }
+                        }
+                    }
+                    else
+                    {
+                        // TODO: verify that f_name is a valid header name
+                        f_env[f_name] = f_value;
+fprintf(stderr, " f_env[\"%s\"] = \"%s\"\n", f_name.toUtf8().data(), f_value.toUtf8().data());
+                    }
+                }
+            }
+        }
+
+        void run()
+        {
+            bool reading_name(true);
+            do
+            {
+                char const c = getc();
+                if(c == '=' && reading_name)
+                {
+                    reading_name = false;
+                }
+                else if(c == '\n')
+                {
+                    process_line();
+
+                    // clear for next line
+                    f_name.clear();
+                    f_value.clear();
+                    reading_name = true;
+                }
+                else if(c == '\r')
+                {
+                    die("got a \\r character in the environment (not in a multi-part POST)");
+                    NOTREACHED();
+                }
+                else if(reading_name)
+                {
+                    if(isspace(c))
+                    {
+                        die("spaces are not allowed in environment variable names");
+                        NOTREACHED();
+                    }
+                    f_name += c;
+                }
+                else
+                {
+                    f_value += c;
+                }
+            }
+            while(f_running);
+        }
+
+        bool has_post() const
+        {
+            return f_has_post;
+        }
+
+    private:
+        mutable zpsnap_child_t      f_snap;
+        controlled_vars::zint32_t   f_socket;
+        //controlled_vars::zchar_t    f_unget;
+        controlled_vars::tbool_t    f_running;
+        controlled_vars::fbool_t    f_started;
+
+        environment_map_t&          f_env;
+        environment_map_t&          f_browser_cookies;
+        QString                     f_name;
+        QString                     f_value;
+
+        controlled_vars::fbool_t    f_has_post;
+        environment_map_t&          f_post;
+        post_file_map_t&            f_files;
+        controlled_vars::tbool_t    f_post_first;
+        controlled_vars::tbool_t    f_post_header;
+        QByteArray                  f_post_line;
+        QByteArray                  f_post_content;
+        QByteArray                  f_boundary;
+        QByteArray                  f_end_boundary;
+        environment_map_t           f_post_environment;
+        controlled_vars::zuint32_t  f_post_index;
+    };
+
     // reset the old environment
     f_env.clear();
+    f_post.clear();
+    f_files.clear();
 
+    read_env r(this, f_socket, f_env, f_browser_cookies, f_post, f_files);
+    r.run();
+    f_has_post = r.has_post();
+
+
+
+
+#if 0
     QString name;
     QString value;
     char c;
@@ -580,7 +1090,7 @@ void snap_child::read_environment()
                         // up to the closing boundary
                         //
                         // Example of such a variable:
-                        // CONTENT_TYPE=multipart/form-data; boundary=---------------------------5767747319210565111421458745
+                        // CONTENT_TYPE=multipart/form-data; boundary=---------5767747
                         QStringList content_info(f_env["CONTENT_TYPE"].split(';'));
                         QString boundary;
                         int const max(content_info.size());
@@ -600,16 +1110,84 @@ void snap_child::read_environment()
                             exit(1);
                         }
                         QString post;
+                        QString line;
                         QString end_boundary(boundary + "--");
+                        bool first(true);
+                        bool header(true);
+                        int has_newline(0);
                         int const min(end_boundary.length());
-                        while(post.length() < min || !post.endsWith(end_boundary))
+                        for(;;)
                         {
                             if(read(f_socket, &c, 1) != 1)
                             {
                                 die(HTTP_CODE_SERVICE_UNAVAILABLE, "", "Unstable network connection", "an error occured while reading the environment from the socket in the child.");
                                 NOTREACHED();
                             }
-                            post += c;
+                            skipped_cr = c == '\r';
+                            if(skipped_cr)
+                            {
+                                // Why do we need these \r, really?!
+                                // Our code handles \r\n or just \n
+                                // But it err on just \r
+                                if(read(f_socket, &c, 1) != 1)
+                                {
+                                    die(HTTP_CODE_SERVICE_UNAVAILABLE, "", "Unstable network connection", "an error occured while reading the environment from the socket in the child.");
+                                    NOTREACHED();
+                                }
+                            }
+                            if(c == '\n')
+                            {
+                                if(line == end_boundary)
+                                {
+                                    break;
+                                }
+                                if(line == boundary)
+                                {
+                                    if(first)
+                                    {
+                                        // we got the first boundary
+                                        first = false;
+                                    }
+                                    else
+                                    {
+                                        // we got a POST variable
+                                        name
+                                        f_post[name] = snap_uri::urldecode(value, true);
+                                        // and then we start a new header
+                                        header = true;
+                                    }
+                                }
+                                else if(header)
+                                {
+                                    // we got a header (Blah: value)
+                                    // however, headers can appear on multiple
+                                    // lines, so at this point we just
+                                    // register them
+                                }
+                                else
+                                {
+                                    // this is content for the current variable
+                                    switch(has_newline)
+                                    {
+                                    case 2:
+                                        content += '\r';
+                                    case 1:
+                                        content += '\n';
+                                        break;
+
+                                    }
+                                    content += line;
+                                    has_newline = skipped_cr ? 2 : 1;
+                                }
+                            }
+                            else
+                            {
+                                if(skipped_cr)
+                                {
+                                    line += '\r';
+                                }
+                                line += c;
+                            }
                         }
                         for(;;)
                         {
@@ -705,6 +1283,7 @@ fprintf(stderr, " f_env[\"%s\"] = \"%s\"\n", name.toUtf8().data(), value.toUtf8(
             value += c;
         }
     }
+#endif
 }
 
 
@@ -3208,6 +3787,335 @@ QString snap_child::date_to_string(int64_t v, bool long_format)
     );
 
     return buf;
+}
+
+
+/** \brief Convert an RFC822 date to a time_t.
+ *
+ * This function transforms a date received by the client to a Unix
+ * time_t value. We programmed our own because several fields are
+ * optional and the strptime() function does not support such. Also
+ * the strptime() uses the locale() for the day and month check
+ * which is not expected for HTTP.
+ *
+ * \param[in] date  The date to convert to a time_t.
+ *
+ * \return The date and time as a Unix time_t number, -1 if the convertion fails.
+ */
+time_t snap_child::string822_to_date(QString const& date)
+{
+    const char *s(date.trimmed().toLower().toUtf8().data());
+    struct tm time_info;
+
+    // date-time   =  [ day "," ] date time
+    // date        =  1*2DIGIT month 2DIGIT
+    // time        =  hour zone
+    // hour        =  2DIGIT ":" 2DIGIT [":" 2DIGIT]
+
+    // clear the info as default
+    memset(&time_info, 0, sizeof(time_info));
+
+    // week day? (as far as I know mktime() doesn't use that one)
+    //
+    // day         =  "Mon"  / "Tue" /  "Wed"  / "Thu"
+    //             /  "Fri"  / "Sat" /  "Sun"
+    if(*s >= 'a' && *s <= 'z')
+    {
+        if(s[0] == 'm' && s[1] == 'o' && s[2] == 'n')
+        {
+            time_info.tm_wday = 1;
+        }
+        else if(s[0] == 't' && s[1] == 'u' && s[2] == 'e')
+        {
+            time_info.tm_wday = 2;
+        }
+        else if(s[0] == 'w' && s[1] == 'e' && s[2] == 'd')
+        {
+            time_info.tm_wday = 3;
+        }
+        else if(s[0] == 't' && s[1] == 'h' && s[2] == 'u')
+        {
+            time_info.tm_wday = 4;
+        }
+        else if(s[0] == 'f' && s[1] == 'r' && s[2] == 'i')
+        {
+            time_info.tm_wday = 5;
+        }
+        else if(s[0] == 's' && s[1] == 'a' && s[2] == 't')
+        {
+            time_info.tm_wday = 6;
+        }
+        else if(s[0] == 's' && s[1] == 'u' && s[2] == 'n')
+        {
+            time_info.tm_wday = 0;
+        }
+        else
+        {
+            // invalid weekday
+            return -1;
+        }
+        if(s[3] != ',')
+        {
+            return -1;
+        }
+        s += 4;
+        while(isspace(*s))
+        {
+            ++s;
+        }
+    }
+
+    // day of the month (1*2DIGIT)
+    if(s[0] < '0' || s[0] > '9')
+    {
+        return -1;
+    }
+    if(s[1] >= '0' && s[1] <= '9')
+    {
+        time_info.tm_mday = (s[0] - '0') * 10 + s[1] - '0';
+        s += 2;
+    }
+    else
+    {
+        time_info.tm_mday = s[0] - '0';
+        ++s;
+    }
+
+    if(!isspace(*s))
+    {
+        return -1;
+    }
+    do
+    {
+        ++s;
+    }
+    while(isspace(*s));
+
+    // month       =  "Jan"  /  "Feb" /  "Mar"  /  "Apr"
+    //             /  "May"  /  "Jun" /  "Jul"  /  "Aug"
+    //             /  "Sep"  /  "Oct" /  "Nov"  /  "Dec"
+    if(s[0] == 'j' && s[1] == 'a' && s[2] == 'n')
+    {
+        time_info.tm_mon = 0;
+    }
+    else if(s[0] == 'f' && s[1] == 'e' && s[2] == 'b')
+    {
+        time_info.tm_mon = 1;
+    }
+    else if(s[0] == 'm' && s[1] == 'a' && s[2] == 'r')
+    {
+        time_info.tm_mon = 2;
+    }
+    else if(s[0] == 'a' && s[1] == 'p' && s[2] == 'r')
+    {
+        time_info.tm_mon = 3;
+    }
+    else if(s[0] == 'm' && s[1] == 'a' && s[2] == 'y')
+    {
+        time_info.tm_mon = 4;
+    }
+    else if(s[0] == 'j' && s[1] == 'u' && s[2] == 'n')
+    {
+        time_info.tm_mon = 5;
+    }
+    else if(s[0] == 'j' && s[1] == 'u' && s[2] == 'l')
+    {
+        time_info.tm_mon = 6;
+    }
+    else if(s[0] == 'a' && s[1] == 'u' && s[2] == 'g')
+    {
+        time_info.tm_mon = 7;
+    }
+    else if(s[0] == 's' && s[1] == 'e' && s[2] == 'p')
+    {
+        time_info.tm_mon = 8;
+    }
+    else if(s[0] == 'o' && s[1] == 'c' && s[2] == 't')
+    {
+        time_info.tm_mon = 9;
+    }
+    else if(s[0] == 'n' && s[1] == 'o' && s[2] == 'v')
+    {
+        time_info.tm_mon = 10;
+    }
+    else if(s[0] == 'd' && s[1] == 'e' && s[2] == 'c')
+    {
+        time_info.tm_mon = 11;
+    }
+    else
+    {
+        // invalid month
+        return -1;
+    }
+
+    s += 3;
+    if(!isspace(*s))
+    {
+        return -1;
+    }
+    do
+    {
+        ++s;
+    }
+    while(isspace(*s));
+
+    // year (2DIGIT)
+    if(s[0] < '0' || s[0] > '9'
+    || s[1] < '0' || s[1] > '9')
+    {
+        return -1;
+    }
+    time_info.tm_year = 1900 + (s[0] - '0') * 10 + s[1] - '0';
+
+    // How to handle this one? At this time I do not expect our software
+    // to work beyond 2070 which is probably short sighted (ha! ha!)
+    // However, that way we avoid calling time() and transform that in
+    // a tm structure and check that date
+    if(time_info.tm_year < 1970)
+    {
+        time_info.tm_year += 100;
+    }
+
+    // hour (2DIGIT)
+    if(s[0] < '0' || s[0] > '9'
+    || s[1] < '0' || s[1] > '9'
+    || s[2] != ':')
+    {
+        return -1;
+    }
+    time_info.tm_hour = 1900 + (s[0] - '0') * 10 + s[1] - '0';
+    s += 3;
+
+    // minute (2DIGIT)
+    if(s[0] < '0' || s[0] > '9'
+    || s[1] < '0' || s[1] > '9')
+    {
+        return -1;
+    }
+    time_info.tm_min = (s[0] - '0') * 10 + s[1] - '0';
+    s += 2;
+
+    if(*s == ':')
+    {
+        ++s;
+
+        // second (2DIGIT)
+        if(s[0] < '0' || s[0] > '9'
+        || s[1] < '0' || s[1] > '9')
+        {
+            return -1;
+        }
+        time_info.tm_sec = (s[0] - '0') * 10 + s[1] - '0';
+        s += 2;
+    }
+
+    while(isspace(*s))
+    {
+        ++s;
+    }
+
+    if(*s != '\0')
+    {
+        // not too sure that the zone is properly handled at this point, TBD
+        // (i.e. should I do += or -=, it may be wrong in many places...)
+        //
+        // zone        =  "UT"  / "GMT"
+        //             /  "EST" / "EDT"
+        //             /  "CST" / "CDT"
+        //             /  "MST" / "MDT"
+        //             /  "PST" / "PDT"
+        //             /  1ALPHA
+        //             / ( ("+" / "-") 4DIGIT )
+        if((s[0] == 'u' && s[1] == 't' && s[2] == '\0')                 // UT
+        || (s[0] == 'u' && s[1] == 't' && s[2] == 'c' && s[3] == '\0')  // UTC (not in the spec...)
+        || (s[0] == 'g' && s[1] == 'm' && s[2] == 't' && s[3] == '\0')) // GMT
+        {
+            // no adjustment for UTC (GMT)
+        }
+        else if(s[0] == 'e' && s[1] == 's' && s[2] == 't' && s[3] == '\0') // EST
+        {
+            time_info.tm_hour -= 5;
+        }
+        else if(s[0] == 'e' && s[1] == 'd' && s[2] == 't' && s[3] == '\0') // EDT
+        {
+            time_info.tm_hour -= 4;
+        }
+        else if(s[0] == 'c' && s[1] == 's' && s[2] == 't' && s[3] == '\0') // CST
+        {
+            time_info.tm_hour -= 6;
+        }
+        else if(s[0] == 'c' && s[1] == 'd' && s[2] == 't' && s[3] == '\0') // CDT
+        {
+            time_info.tm_hour -= 5;
+        }
+        else if(s[0] == 'm' && s[1] == 's' && s[2] == 't' && s[3] == '\0') // MST
+        {
+            time_info.tm_hour -= 7;
+        }
+        else if(s[0] == 'm' && s[1] == 'd' && s[2] == 't' && s[3] == '\0') // MDT
+        {
+            time_info.tm_hour -= 6;
+        }
+        else if(s[0] == 'p' && s[1] == 's' && s[2] == 't' && s[3] == '\0') // PST
+        {
+            time_info.tm_hour -= 8;
+        }
+        else if(s[0] == 'p' && s[1] == 'd' && s[2] == 't' && s[3] == '\0') // PDT
+        {
+            time_info.tm_hour -= 7;
+        }
+        else if(s[0] >= 'a' && s[0] <= 'z' && s[0] != 'j' && s[1] == '\0')
+        {
+            signed char adjust[26] = {
+                /* A */ -1,
+                /* B */ -2,
+                /* C */ -3,
+                /* D */ -4,
+                /* E */ -5,
+                /* F */ -6,
+                /* G */ -7,
+                /* H */ -8,
+                /* I */ -9,
+                /* J */ 0, // not used
+                /* K */ -10,
+                /* L */ -11,
+                /* M */ -12,
+                /* N */ 1,
+                /* O */ 2,
+                /* P */ 3,
+                /* Q */ 4,
+                /* R */ 5,
+                /* S */ 6,
+                /* T */ 7,
+                /* U */ 8,
+                /* V */ 9,
+                /* W */ 10,
+                /* X */ 11,
+                /* Y */ 12,
+                /* Z */ 0,
+            };
+            time_info.tm_hour += adjust[s[0] - 'a'];
+        }
+        else if((s[0] == '+' || s[0] == '-')
+              && s[1] >= '0' && s[1] <= '9'
+              && s[2] >= '0' && s[2] <= '9'
+              && s[3] >= '0' && s[3] <= '9'
+              && s[4] >= '0' && s[4] <= '9'
+              && s[5] == '\0')
+        {
+            time_info.tm_hour += ((s[1] - '0') * 10 + s[2] - '0') * (s[0] == '+' ? 1 : -1);
+            time_info.tm_min  += ((s[3] - '0') * 10 + s[4] - '0') * (s[0] == '+' ? 1 : -1);
+        }
+        else
+        {
+            // invalid month
+            return -1;
+        }
+    }
+
+    // now we have a time_info which is fully adjusted except for DST...
+    // let's make time
+    return mktime(&time_info);
 }
 
 

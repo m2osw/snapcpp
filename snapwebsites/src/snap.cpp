@@ -59,6 +59,7 @@
 //
 
 #include "tcp_client_server.h"
+#include "snapwebsites.h"
 #include <advgetopt/advgetopt.h>
 #include <syslog.h>
 #include <unistd.h>
@@ -242,7 +243,9 @@ int snap_cgi::process()
 {
     tcp_client_server::tcp_client socket(f_address, f_port);
 
-    if(socket.write("#START\n", 7) != 7)
+#define START_COMMAND "#START=" SNAPWEBSITES_VERSION_STRING
+    if(socket.write(START_COMMAND "\n", sizeof(START_COMMAND)) != sizeof(START_COMMAND))
+#undef START_COMMAND
     {
         return error("504 Gateway Timeout", "error while writing to the child process (1).");
     }

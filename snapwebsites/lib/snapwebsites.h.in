@@ -23,10 +23,10 @@
 #include <QTcpSocket>
 #include <advgetopt/advgetopt.h>
 
-#define    SNAPWEBSITES_VERSION_MAJOR    @SNAPWEBSITES_VERSION_MAJOR@
-#define    SNAPWEBSITES_VERSION_MINOR    @SNAPWEBSITES_VERSION_MINOR@
-#define    SNAPWEBSITES_VERSION_PATCH    @SNAPWEBSITES_VERSION_PATCH@
-#define    SNAPWEBSITES_VERSION_STRING    "@SNAPWEBSITES_VERSION_MAJOR@.@SNAPWEBSITES_VERSION_MINOR@.@SNAPWEBSITES_VERSION_PATCH@"
+#define    SNAPWEBSITES_VERSION_MAJOR   @SNAPWEBSITES_VERSION_MAJOR@
+#define    SNAPWEBSITES_VERSION_MINOR   @SNAPWEBSITES_VERSION_MINOR@
+#define    SNAPWEBSITES_VERSION_PATCH   @SNAPWEBSITES_VERSION_PATCH@
+#define    SNAPWEBSITES_VERSION_STRING  "@SNAPWEBSITES_VERSION_MAJOR@.@SNAPWEBSITES_VERSION_MINOR@.@SNAPWEBSITES_VERSION_PATCH@"
 
 namespace snap
 {
@@ -51,24 +51,24 @@ enum name_t {
     SNAP_NAME_CORE_PLUGIN_THRESHOLD,
     SNAP_NAME_CORE_COOKIE_DOMAIN
 };
-const char *get_name(name_t name);
+char const *get_name(name_t name) __attribute__ ((const));
 
 
 
 class snapwebsites_exception : public snap_exception
 {
 public:
-    snapwebsites_exception(const char *whatmsg) : snap_exception("snap_thread", whatmsg) {}
-    snapwebsites_exception(const std::string& whatmsg) : snap_exception("snap_thread", whatmsg) {}
-    snapwebsites_exception(const QString& whatmsg) : snap_exception("snap_thread", whatmsg) {}
+    snapwebsites_exception(char const *whatmsg) : snap_exception("snap_thread", whatmsg) {}
+    snapwebsites_exception(std::string const& whatmsg) : snap_exception("snap_thread", whatmsg) {}
+    snapwebsites_exception(QString const& whatmsg) : snap_exception("snap_thread", whatmsg) {}
 };
 
 class snapwebsites_exception_invalid_parameters : public snapwebsites_exception
 {
 public:
-    snapwebsites_exception_invalid_parameters(const char *whatmsg) : snapwebsites_exception(whatmsg) {}
-    snapwebsites_exception_invalid_parameters(const std::string& whatmsg) : snapwebsites_exception(whatmsg) {}
-    snapwebsites_exception_invalid_parameters(const QString& whatmsg) : snapwebsites_exception(whatmsg) {}
+    snapwebsites_exception_invalid_parameters(char const *whatmsg) : snapwebsites_exception(whatmsg) {}
+    snapwebsites_exception_invalid_parameters(std::string const& whatmsg) : snapwebsites_exception(whatmsg) {}
+    snapwebsites_exception_invalid_parameters(QString const& whatmsg) : snapwebsites_exception(whatmsg) {}
 };
 
 
@@ -78,12 +78,12 @@ public:
     class backend_action
     {
     public:
-        virtual ~backend_action() {}
-        virtual void on_backend_action(const QString& action) = 0;
+        virtual         ~backend_action() {}
+        virtual void    on_backend_action(QString const& action) = 0;
     };
 
     typedef QMap<QString, backend_action *> backend_action_map_t;
-    typedef std::shared_ptr<server>            pointer_t;
+    typedef std::shared_ptr<server>         pointer_t;
 
     static pointer_t instance();
     virtual ~server();
@@ -100,7 +100,7 @@ public:
     bool is_debug() const { return f_debug; }
     bool is_backend() const { return f_backend; }
     void config( int argc, char *argv[] );
-    QString get_parameter(const QString& name);
+    QString get_parameter(QString const& name);
     void exit(int code);
     void prepare_qtapp( int argc, char *argv[] );
     void close_qtapp();
@@ -112,7 +112,7 @@ public:
     void backend();
     int cassandra_port() const { return f_cassandra_port; }
     const QString& cassandra_host() const { return f_cassandra_host; }
-    void udp_ping(const char *name, const char *message = "PING");
+    void udp_ping(char const *name, char const *message = "PING");
 
     unsigned long connections_count();
 
@@ -122,17 +122,17 @@ public:
     SNAP_SIGNAL(process_cookies, (), ());
     SNAP_SIGNAL(attach_to_session, (), ());
     SNAP_SIGNAL(detach_from_session, (), ());
-    SNAP_SIGNAL(process_post, (const QString& url), (url));
-    SNAP_SIGNAL(execute, (const QString& url), (url));
+    SNAP_SIGNAL(process_post, (QString const& url), (url));
+    SNAP_SIGNAL(execute, (QString const& url), (url));
     SNAP_SIGNAL(register_backend_action, (backend_action_map_t& actions), (actions));
     SNAP_SIGNAL(backend_process, (), ());
     SNAP_SIGNAL(save_content, (), ());
-    SNAP_SIGNAL(validate_action, (const QString& path, QString& action), (path, action));
+    SNAP_SIGNAL(validate_action, (QString const& path, QString& action), (path, action));
     SNAP_SIGNAL(xss_filter, (QDomNode& node,
-                             const QString& accepted_tags,
-                             const QString& accepted_attributes),
+                             QString const& accepted_tags,
+                             QString const& accepted_attributes),
                             (node, accepted_tags, accepted_attributes));
-    SNAP_SIGNAL(improve_signature, (const QString& path, QString& signature),
+    SNAP_SIGNAL(improve_signature, (QString const& path, QString& signature),
                                    (path, signature));
 
 private:

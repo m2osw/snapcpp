@@ -168,6 +168,38 @@ public:
     typedef std::shared_ptr<server> server_pointer_t;
     typedef QMap<QString, QString>  environment_map_t;
 
+    // Note: the information saved in files come from the POST and
+    // is not to be trusted (especially the mime type)
+    class post_file_t
+    {
+    public:
+        void                        set_filename(QString const& filename) { f_filename = filename; }
+        void                        set_mime_type(QString const& mime_type) { f_mime_type = mime_type; }
+        void                        set_creation_time(time_t ctime) { f_creation_time = ctime; }
+        void                        set_modification_time(time_t mtime) { f_modification_time = mtime; }
+        void                        set_data(QByteArray const& data) { f_data = data; }
+        void                        set_index(int index) { f_index = index; }
+
+        QString                     get_filename() const { return f_filename; }
+        QString                     get_mime_type() const { return f_mime_type; }
+        time_t                      get_creation_time() const { return f_creation_time; }
+        time_t                      get_modification_time() const { return f_modification_time; }
+        QByteArray                  get_data() const { return f_data; }
+        int                         get_index() const { return f_index; }
+
+        bool                        verify_mime_type() const;
+
+    private:
+        QString                     f_filename;
+        QString                     f_mime_type;
+        controlled_vars::zint64_t   f_creation_time;
+        controlled_vars::zint64_t   f_modification_time;
+        QByteArray                  f_data;
+        controlled_vars::zuint32_t  f_index;
+    };
+    // map indexed by filename
+    typedef QMap<QString, post_file_t> post_file_map_t;
+
     typedef int header_mode_t;
     static header_mode_t const HEADER_MODE_NO_ERROR     = 0x0001;
     static header_mode_t const HEADER_MODE_REDIRECT     = 0x0002;
@@ -203,6 +235,7 @@ public:
     void                        new_content();
     static void                 canonicalize_path(QString& path);
     static QString              date_to_string(int64_t v, bool long_format = false);
+    static time_t               string822_to_date(QString const& date);
 
     QString                     snapenv(QString const& name) const;
     bool                        postenv_exists(QString const& name) const;
@@ -266,6 +299,7 @@ private:
     int                                 f_socket;
     environment_map_t                   f_env;
     environment_map_t                   f_post;
+    post_file_map_t                     f_files;
     environment_map_t                   f_browser_cookies;
     controlled_vars::fbool_t            f_has_post;
     mutable controlled_vars::fbool_t    f_fixed_server_protocol;

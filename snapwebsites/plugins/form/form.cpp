@@ -1594,7 +1594,12 @@ QString form::get_source(QString const& owner, QString const& cpath)
         return "";
     }
 
-    QString source(row->cell(get_name(SNAP_NAME_FORM_FORM))->value().stringValue());
+    QString source(row->cell(get_name(SNAP_NAME_FORM_SOURCE))->value().stringValue());
+    if(source.isEmpty())
+    {
+        // if empty it isn't valid
+        return source;
+    }
 
     if(source == "settings")
     {
