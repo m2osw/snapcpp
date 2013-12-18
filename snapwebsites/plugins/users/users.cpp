@@ -320,7 +320,6 @@ void users::on_bootstrap(::snap::snap_child *snap)
     SNAP_LISTEN(users, "permissions", permissions::permissions, get_user_rights, _1, _2);
     SNAP_LISTEN(users, "permissions", permissions::permissions, get_plugin_permissions, _1, _2);
     //SNAP_LISTEN(users, "filter", filter::filter, replace_token, _1, _2, _3, _4);
-    SNAP_LISTEN(users, "sitemapxml", sitemapxml::sitemapxml, generate_sitemapxml, _1);
 
     f_info.reset(new sessions::sessions::session_info);
 }
@@ -3062,34 +3061,6 @@ bool users::user_is_a_spammer()
         }
     }
     return false;
-}
-
-
-/** \brief Give access to the first page.
- *
- * This adds the first page of all the charts in the XML sitemap.
- *
- * \param[in] sitemap  The sitemap plugin pointer.
- */
-void users::on_generate_sitemapxml(sitemapxml::sitemapxml *sitemap)
-{
-    // anonymous user has access to /user?
-    bool const allowed(f_snap->access_allowed("", "user", "view"));
-    if(allowed)
-    {
-        sitemapxml::sitemapxml::url_info url;
-        QString site_key(f_snap->get_site_key_with_slash());
-        url.set_uri(site_key + "user");
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Woverflow"
-        // TODO look into fixing this date; it should be updated each time a
-        //      new user is created
-        url.set_last_modification(SNAP_UNIX_TIMESTAMP(2012, 1, 1, 0, 0, 0) * 1000000);
-#pragma GCC diagnostic pop
-        url.set_priority(0.45f);
-        url.set_frequency(0);
-        sitemap->add_url(url);
-    }
 }
 
 

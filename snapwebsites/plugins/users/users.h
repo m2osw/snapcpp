@@ -141,7 +141,6 @@ public:
     void                    on_generate_header_content(layout::layout *l, const QString& path, QDomElement& hader, QDomElement& metadata, const QString& ctemplate);
     virtual void            on_generate_main_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body, const QString& ctemplate);
     void                    on_generate_page_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body, const QString& ctemplate);
-    void                    on_generate_sitemapxml(sitemapxml::sitemapxml *sitemap);
     bool                    on_path_execute(const QString& cpath);
     void                    on_process_cookies();
     void                    on_attach_to_session();

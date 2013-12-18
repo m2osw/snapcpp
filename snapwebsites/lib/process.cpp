@@ -605,6 +605,8 @@ int process::run()
             envs_strings.push_back(NULL);
 
             // replace the stdin and stdout with the pipes
+            // TODO test result of the dup() command because if -1 things
+            //      fail and we cannot really go on
             close(0);  // stdin
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-result"
@@ -612,7 +614,7 @@ int process::run()
             close(1);  // stdout
             dup(inout.f_pipes[3]);
 #pragma GCC diagnostic pop
-            // should we redirect stderr somewhere else?
+            // TODO should we redirect stderr somewhere else?
 
             inout.close();
 

@@ -110,6 +110,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <![CDATA[<p>List of users on your Snap! Website.</p>]]>
     </param>
     <link name="permissions::administrer" to="permissions::administrer" mode="*:*">/types/permissions/rights/administer</link>
+    <link name="sitemapxml::include" to="sitemapxml::include" mode="1:*">/types/taxonomy/system/sitemapxml/include</link>
   </content>
   <content path="/user/me">
     <param name="content::title">User Profile</param>

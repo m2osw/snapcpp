@@ -130,6 +130,8 @@ void sitemapxml::url_info::set_priority(float priority)
  * By default this is set to zero which means no modification date will
  * be saved in the XML sitemap.
  *
+ * The date is in seconds.
+ *
  * \param[in] last_modification  The last modification Unix date.
  */
 void sitemapxml::url_info::set_last_modification(time_t last_modification)
@@ -588,40 +590,46 @@ bool sitemapxml::generate_sitemapxml_impl(sitemapxml *r)
 		const QString page_key(xml_sitemap.key());
 //printf("Found key [%s]\n", page_key.toUtf8().data());
 
-		// TODO: test that this page is accessible anonymously
-		url_info url;
-
-		// set the URI of the page
-		url.set_uri(page_key);
-
-		// author of the page defined a priority for the sitemap.xml file?
-		QtCassandra::QCassandraValue priority(content_table->row(page_key)->cell(QString(get_name(SNAP_NAME_SITEMAPXML_PRIORITY)))->value());
-		if(priority.nullValue())
+		// anonymous user has access to that page??
+		bool const allowed(f_snap->access_allowed("", page_key, "view"));
+		if(allowed)
 		{
-			// set the site priority to 1.0 for the home page
-			// if not defined by the user
-			if(page_key == site_key)
+
+			// TODO: test that this page is accessible anonymously
+			url_info url;
+
+			// set the URI of the page
+			url.set_uri(page_key);
+
+			// author of the page defined a priority for the sitemap.xml file?
+			QtCassandra::QCassandraValue priority(content_table->row(page_key)->cell(QString(get_name(SNAP_NAME_SITEMAPXML_PRIORITY)))->value());
+			if(priority.nullValue())
 			{
-				// home page special case
-				url.set_priority(1.0f);
+				// set the site priority to 1.0 for the home page
+				// if not defined by the user
+				if(page_key == site_key)
+				{
+					// home page special case
+					url.set_priority(1.0f);
+				}
 			}
-		}
-		else
-		{
-			url.set_priority(priority.floatValue());
-		}
+			else
+			{
+				url.set_priority(priority.floatValue());
+			}
 
-		// use the last modification date from that page
-		QtCassandra::QCassandraValue modified(content_table->row(page_key)->cell(QString(content::get_name(content::SNAP_NAME_CONTENT_MODIFIED)))->value());
-		if(!modified.nullValue())
-		{
-			url.set_last_modification(modified.int64Value());
+			// use the last modification date from that page
+			QtCassandra::QCassandraValue modified(content_table->row(page_key)->cell(QString(content::get_name(content::SNAP_NAME_CONTENT_MODIFIED)))->value());
+			if(!modified.nullValue())
+			{
+				url.set_last_modification(modified.int64Value() / 1000000L); // micro-seconds -> seconds
+			}
+
+			// TODO:
+			// url.set_frequency()... TBD
+
+			add_url(url);
 		}
-
-		// TODO:
-		// url.set_frequency()... TBD
-
-		add_url(url);
 	}
 	return true;
 }
@@ -677,7 +685,7 @@ void sitemapxml::on_backend_process()
 		if(t != 0)
 		{
 			QDateTime moddate(QDateTime().toUTC());
-			moddate.setTime_t(t / 1000000); // micro-seconds
+    		moddate.setTime_t(t);
 			QDomElement lastmod(doc.createElement("lastmod"));
 			url.appendChild(lastmod);
 			QDomText mod(doc.createTextNode(moddate.toString("yyyy-MM-dd'T'hh:mm:ss'Z'")));
