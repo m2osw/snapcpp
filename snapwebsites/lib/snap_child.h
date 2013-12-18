@@ -248,6 +248,7 @@ public:
     bool                        cookie_is_defined(QString const& name) const;
     QString                     cookie(QString const& name) const;
     void                        attach_to_session();
+    bool                        access_allowed(QString const& user_path, QString const& path, QString const& action);
     QString                     snap_url(QString const& url) const;
     void                        page_redirect(QString const& path, http_code_t http_code = HTTP_CODE_MOVED_PERMANENTLY);
     void                        die(http_code_t err_code, QString err_name, QString const& err_description, QString const& err_details);

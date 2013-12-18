@@ -104,12 +104,12 @@ public:
 
     void                    on_bootstrap(snap_child *snap);
     virtual void            on_generate_main_content(layout::layout *l, QString const& path, QDomElement& page, QDomElement& body, QString const& ctemplate);
-    void                    on_validate_action(QString const& path, QString& action);
+    void                    on_validate_action(QString const& path, QString const& action);
+    void                    on_access_allowed(QString const& user_path, QString const& path, QString const& action, server::permission_flag& result);
 
     SNAP_SIGNAL(get_user_rights, (permissions *perms, sets_t& sets), (perms, sets));
     SNAP_SIGNAL(get_plugin_permissions, (permissions *perms, sets_t& sets), (perms, sets));
 
-    bool                    access_allowed(QString const& user_path, QString const& path, QString& action);
     void                    add_user_rights(QString const & right, sets_t& sets);
     void                    add_plugin_permissions(QString const& plugin_name, QString const& group, sets_t& sets);
 

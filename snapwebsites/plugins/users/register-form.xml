@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<snap-form>
+<snap-form session_id="user/3" owner="users">
   <auto-reset minutes="5"/>
   <focus refid="email"/>
   <default-button refid="register"/>
@@ -10,6 +10,7 @@
     <tabindex refid="confirm_password"/>
     <tabindex refid="register"/>
     <tabindex refid="login"/>
+    <tabindex refid="verify"/>
     <tabindex refid="cancel"/>
   </taborder>
   <accesskeys>
@@ -20,6 +21,7 @@
     <key refid="password">p</key>
     <key refid="confirm_password">q</key>
     <key refid="register">s</key><!-- default submit is expected to be [Shift-]Alt-S -->
+    <key refid="verify">v</key>
   </accesskeys>
   <widget id="registration_info" type="fieldset">
     <label>Registration Information</label>
@@ -32,6 +34,7 @@
       <widgetpriority refid="confirm_password"/>
       <widgetpriority refid="register"/>
       <widgetpriority refid="login"/>
+      <widgetpriority refid="verify"/>
       <widgetpriority refid="cancel"/>
     </widgetorder>
     <widget id="email" type="line-edit">
@@ -87,6 +90,12 @@
       <tooltip>Click here to return to the log in page</tooltip>
       <help>You already have an account? Click this link to go to the log in page instead.</help>
       <value>/login</value>
+    </widget>
+    <widget id="verify" type="link">
+      <label>Enter Verification Code</label>
+      <tooltip>Click to enter your verification code.</tooltip>
+      <help>You received a registration email with a verification code? Click here to verify your email.</help>
+      <value>/verify</value>
     </widget>
     <widget id="cancel" type="link">
       <label>Cancel</label>

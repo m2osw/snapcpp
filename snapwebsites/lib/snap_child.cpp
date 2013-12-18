@@ -1914,7 +1914,9 @@ void snap_child::page_redirect(const QString& path, http_code_t http_code)
 {
     if(f_site_key_with_slash.isEmpty())
     {
-        die(HTTP_CODE_INTERNAL_SERVER_ERROR, "Initialization Mismatch", "An internal server error was detected while initializing the process.", "The server snap_child::page_redirect() function was called before the website got canonicalized.");
+        die(HTTP_CODE_INTERNAL_SERVER_ERROR, "Initialization Mismatch",
+                "An internal server error was detected while initializing the process.",
+                "The server snap_child::page_redirect() function was called before the website got canonicalized.");
         NOTREACHED();
     }
 
@@ -1923,7 +1925,9 @@ void snap_child::page_redirect(const QString& path, http_code_t http_code)
         // if the path includes a \n or \r then the user could inject
         // a header which could have all sorts of effects we don't even
         // want to think about! just deny it...
-        die(HTTP_CODE_INTERNAL_SERVER_ERROR, "Hack Prevention", "Server prevented a potential hack from being applied.", "The server snap_child::page_redirect() function was called with a path that includes \n or \r and refused processing it: \"" + path + "\"");
+        die(HTTP_CODE_INTERNAL_SERVER_ERROR, "Hack Prevention",
+                "Server prevented a potential hack from being applied.",
+                "The server snap_child::page_redirect() function was called with a path that includes \n or \r and refused processing it: \"" + path + "\"");
         NOTREACHED();
     }
 
@@ -1935,7 +1939,9 @@ void snap_child::page_redirect(const QString& path, http_code_t http_code)
         canonicalize_path(local_path);
         if(!uri.set_uri(get_site_key_with_slash() + local_path))
         {
-            die(HTTP_CODE_ACCESS_DENIED, "Invalid URI", "The server prevented a redirect because it could not understand the destination URI.", "The server snap_child::page_redirect() function was called with a path that it did not like: \"" + path + "\"");
+            die(HTTP_CODE_ACCESS_DENIED, "Invalid URI",
+                    "The server prevented a redirect because it could not understand the destination URI.",
+                    "The server snap_child::page_redirect() function was called with a path that it did not like: \"" + path + "\"");
             NOTREACHED();
         }
     }
@@ -1996,6 +2002,33 @@ void snap_child::page_redirect(const QString& path, http_code_t http_code)
 void snap_child::attach_to_session()
 {
     f_server->attach_to_session();
+}
+
+
+/** \brief Check whether access is permitted.
+ *
+ * This function checks whether \p user_path can perform \p action on
+ * \p path. If the action can be performed this function returns true,
+ * otherwise it returns false.
+ *
+ * The function makes use of an action such as "view". The action is
+ * very important to verify whether a user has permission to do something
+ * or not.
+ *
+ * The anonymous user is represented by an empty path and not "user"
+ * as in the session.
+ *
+ * \param[in] user_path  The path to the user account in the content table.
+ * \param[in] path  The path to check for permissions.
+ * \param[in] action  The action being checked.
+ *
+ * \return true if the specified user has permission.
+ */
+bool snap_child::access_allowed(QString const& user_path, QString const& path, QString const& action)
+{
+    server::permission_flag result;
+    f_server->access_allowed(user_path, path, action, result);
+    return result.allowed();
 }
 
 
@@ -3531,6 +3564,11 @@ void snap_child::verify_permissions()
     {
         // the user specified an action
         action = f_uri.query_option(qs_action);
+        if(action.isEmpty())
+        {
+            // use the default
+            action = "view";
+        }
     }
 
     // only actions that are defined in the permission types are

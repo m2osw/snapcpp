@@ -765,7 +765,7 @@ void form::on_process_post(const QString& uri_path)
 
     // data looks good, let the plugin process it
     QDomElement snap_form(xml_form.documentElement());
-    QString auto_save_str(snap_form.attribute("auto-save", "0"));
+    QString auto_save_str(snap_form.attribute("auto-save", ""));
     if(!auto_save_str.isEmpty())
     {
         // in this case the form plugin just saves the data as is in the page

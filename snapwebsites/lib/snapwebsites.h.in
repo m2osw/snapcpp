@@ -82,6 +82,16 @@ public:
         virtual void    on_backend_action(QString const& action) = 0;
     };
 
+    class permission_flag
+    {
+    public:
+        bool allowed() const { return f_allowed; }
+        void not_permitted() { f_allowed = false; }
+
+    private:
+        controlled_vars::tbool_t    f_allowed;
+    };
+
     typedef QMap<QString, backend_action *> backend_action_map_t;
     typedef std::shared_ptr<server>         pointer_t;
 
@@ -127,7 +137,8 @@ public:
     SNAP_SIGNAL(register_backend_action, (backend_action_map_t& actions), (actions));
     SNAP_SIGNAL(backend_process, (), ());
     SNAP_SIGNAL(save_content, (), ());
-    SNAP_SIGNAL(validate_action, (QString const& path, QString& action), (path, action));
+    SNAP_SIGNAL(validate_action, (QString const& path, QString const& action), (path, action));
+    SNAP_SIGNAL(access_allowed, (QString const& user_path, QString const& path, QString const& action, permission_flag& result), (user_path, path, action, result));
     SNAP_SIGNAL(xss_filter, (QDomNode& node,
                              QString const& accepted_tags,
                              QString const& accepted_attributes),

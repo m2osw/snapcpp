@@ -320,6 +320,7 @@ void users::on_bootstrap(::snap::snap_child *snap)
     SNAP_LISTEN(users, "permissions", permissions::permissions, get_user_rights, _1, _2);
     SNAP_LISTEN(users, "permissions", permissions::permissions, get_plugin_permissions, _1, _2);
     //SNAP_LISTEN(users, "filter", filter::filter, replace_token, _1, _2, _3, _4);
+    SNAP_LISTEN(users, "sitemapxml", sitemapxml::sitemapxml, generate_sitemapxml, _1);
 
     f_info.reset(new sessions::sessions::session_info);
 }
@@ -524,64 +525,63 @@ void users::on_generate_main_content(layout::layout *l, const QString& cpath, QD
     {
         // TODO: write user listing
         //list_users(body);
+        return;
     }
     else if(cpath == "user/password/replace")
     {
         // this is a very special form that is accessible by users who
         // requested to change the password with the "forgot password"
-        generate_replace_password_form(body);
+        prepare_replace_password_form(body);
     }
     else if(cpath.left(5) == "user/")
     {
         show_user(l, cpath, page, body);
+        return;
     }
-    else if(cpath == "profile")
-    {
-        // TODO: write user profile editor
-        //user_profile(body);
-    }
+    //else if(cpath == "profile")
+    //{
+    //    // TODO: write user profile editor
+    //    //       this is /user, /user/###, and /user/me at this point
+    //    //user_profile(body);
+    //    return;
+    //}
     else if(cpath == "login")
     {
-        generate_login_form(body);
+        prepare_login_form();
     }
     else if(cpath == "logout")
     {
         // closing current session if any and show the logout page
         logout_user(l, cpath, page, body);
+        return;
     }
-    else if(cpath == "register")
+    else if(cpath == "register"
+         || cpath == "verify"
+         || cpath == "verify/resend")
     {
-        generate_register_form(body);
-    }
-    else if(cpath == "verify")
-    {
-        generate_verify_form(body);
-    }
-    else if(cpath == "verify/resend")
-    {
-        generate_resend_email_form(body);
+        prepare_basic_anonymous_form();
     }
     else if(cpath.left(7) == "verify/")
     {
         verify_user(cpath);
+        return;
     }
     else if(cpath == "forgot-password")
     {
-        generate_forgot_password_form(body);
+        prepare_forgot_password_form();
     }
     else if(cpath == "new-password")
     {
-        generate_new_password_form(body);
+        prepare_new_password_form();
     }
     else if(cpath.left(13) == "new-password/")
     {
         verify_password(cpath);
+        return;
     }
-    else
-    {
-        // any other user page is just like regular content
-        content::content::instance()->on_generate_main_content(l, cpath, page, body, ctemplate);
-    }
+
+    // any other user page is just like regular content
+    content::content::instance()->on_generate_main_content(l, cpath, page, body, ctemplate);
 }
 
 
@@ -843,7 +843,7 @@ void users::on_create_content(QString const& path, QString const& owner, QString
  *
  * \param[in] body  The body where the form is saved.
  */
-void users::generate_replace_password_form(QDomElement& body)
+void users::prepare_replace_password_form(QDomElement& body)
 {
     // make sure the user is properly setup
     if(!f_user_key.isEmpty())
@@ -858,43 +858,6 @@ void users::generate_replace_password_form(QDomElement& body)
         // XXX the login page is probably the best choice?
         f_snap->page_redirect("login", snap_child::HTTP_CODE_SEE_OTHER);
         NOTREACHED();
-    }
-
-    QDomDocument doc(body.ownerDocument());
-
-    QDomDocument replace_password_form(on_get_xml_form("user/password/replace"));
-    if(replace_password_form.isNull())
-    {
-        // invalid (could not load the form!)
-        return;
-    }
-
-    sessions::sessions::session_info info;
-    info.set_session_type(info.SESSION_INFO_USER);
-    info.set_session_id(USERS_SESSION_ID_REPLACE_PASSWORD);
-    info.set_plugin_owner(get_plugin_name()); // ourselves
-    info.set_page_path("user/password/replace");
-    //info.set_object_path(); -- default is okay
-    info.set_time_to_live(3600);  // 1h -- we want to have a JS that clears the data in 5 min. though
-    QDomDocument result(form::form::instance()->form_to_html(info, replace_password_form));
-    //f_snap->output(result.toString());
-
-    {   // /snap/page/body/content
-        // we assume that the body content is valid because when we created it
-        // we checked the data and if the user data was invalid XML then we
-        // already saved a warning to show to the user about the fact!
-        QDomElement content_tag(doc.createElement("content"));
-        body.appendChild(content_tag);
-        content_tag.appendChild(doc.importNode(result.documentElement(), true));
-    }
-
-    {   // /snap/page/body/titles/title
-        QDomElement titles(doc.createElement("titles"));
-        body.appendChild(titles);
-        QDomElement title(doc.createElement("title"));
-        titles.appendChild(title);
-        QDomText text(doc.createTextNode(form::form::instance()->get_form_title("Replace Your Password")));
-        title.appendChild(text);
     }
 }
 
@@ -963,7 +926,8 @@ void users::show_user(layout::layout *l, const QString& cpath, QDomElement& page
         if(user_id == "password")
         {
             // user is editing his password
-            generate_password_form(body);
+            prepare_password_form();
+            content::content::instance()->on_generate_main_content(l, cpath, page, body, "");
             return;
         }
 
@@ -1022,107 +986,34 @@ void users::show_user(layout::layout *l, const QString& cpath, QDomElement& page
  *
  * \param[in] body  The body where we're to add the login form.
  */
-void users::generate_password_form(QDomElement& body)
+void users::prepare_password_form()
 {
     if(f_user_key.isEmpty())
     {
         // user needs to be logged in to edit his password
-        f_snap->die(snap_child::HTTP_CODE_FORBIDDEN,
-                "Access Denied", "You need to be logged in and have enough permissions to access this page.",
+        f_snap->die(snap_child::HTTP_CODE_FORBIDDEN, "Access Denied",
+                "You need to be logged in and have enough permissions to access this page.",
                 "user attempt to change a password without enough permissions.");
         NOTREACHED();
-    }
-
-    QDomDocument doc(body.ownerDocument());
-
-    QDomDocument password_form(on_get_xml_form("user/password"));
-    if(password_form.isNull())
-    {
-        // invalid (could not load the form!)
-        return;
-    }
-
-    sessions::sessions::session_info info;
-    info.set_session_type(info.SESSION_INFO_USER);
-    info.set_session_id(USERS_SESSION_ID_LOG_IN);
-    info.set_plugin_owner(get_plugin_name()); // ourselves
-    info.set_page_path("user/password");
-    //info.set_object_path(); -- default is okay
-    info.set_time_to_live(3600);  // 1h -- we want to have a JS that clears the data in 5 min. though
-    QDomDocument result(form::form::instance()->form_to_html(info, password_form));
-    //f_snap->output(result.toString());
-
-    {   // /snap/page/body/content
-        // we assume that the body content is valid because when we created it
-        // we checked the data and if the user data was invalid XML then we
-        // already saved a place holder warning to the user about the fact!
-        QDomElement content_tag(doc.createElement("content"));
-        body.appendChild(content_tag);
-        content_tag.appendChild(doc.importNode(result.documentElement(), true));
-    }
-
-    { // /snap/page/body/titles/title
-        QDomElement titles(doc.createElement("titles"));
-        body.appendChild(titles);
-        QDomElement title(doc.createElement("title"));
-        titles.appendChild(title);
-        QDomText text(doc.createTextNode(form::form::instance()->get_form_title("User Password")));
-        title.appendChild(text);
     }
 }
 
 
-/** \brief Generate the login form.
+/** \brief Prepare the login form.
  *
- * This function adds a compiled login form to the body content.
- * (i.e. this is the main page body content.)
+ * This function makes sure that the user is not already logged in because
+ * if so the user is just sent to his profile (/user/me).
  *
- * \param[in] body  The body where we're to add the login form.
+ * Otherwise it saves the HTTP_REFERER information as the redirect
+ * after a successfull log in.
  */
-void users::generate_login_form(QDomElement& body)
+void users::prepare_login_form()
 {
     if(!f_user_key.isEmpty())
     {
         // user is logged in already, just send him to his profile
         f_snap->page_redirect("user/me", snap_child::HTTP_CODE_SEE_OTHER);
         NOTREACHED();
-    }
-
-    QDomDocument doc(body.ownerDocument());
-
-    QDomDocument login_form(on_get_xml_form("login"));
-    if(login_form.isNull())
-    {
-        // invalid (could not load the form!)
-        return;
-    }
-
-    sessions::sessions::session_info info;
-    info.set_session_type(info.SESSION_INFO_USER);
-    info.set_session_id(USERS_SESSION_ID_LOG_IN);
-    info.set_plugin_owner(get_plugin_name()); // ourselves
-    info.set_page_path("login");
-    //info.set_object_path(); -- default is okay
-    info.set_time_to_live(3600);  // 1h -- we want to have a JS that clears the data in 5 min. though
-    QDomDocument result(form::form::instance()->form_to_html(info, login_form));
-    //f_snap->output(result.toString());
-
-    {   // /snap/page/body/content
-        // we assume that the body content is valid because when we created it
-        // we checked the data and if the user data was invalid XML then we
-        // already saved a place holder warning to the user about the fact!
-        QDomElement content_tag(doc.createElement("content"));
-        body.appendChild(content_tag);
-        content_tag.appendChild(doc.importNode(result.documentElement(), true));
-    }
-
-    {   // /snap/page/body/titles/title
-        QDomElement titles(doc.createElement("titles"));
-        body.appendChild(titles);
-        QDomElement title(doc.createElement("title"));
-        titles.appendChild(title);
-        QDomText text(doc.createTextNode(form::form::instance()->get_form_title("User Log In")));
-        title.appendChild(text);
     }
 
     // use the current refererrer if there is one as the redirect page
@@ -1132,9 +1023,10 @@ void users::generate_login_form(QDomElement& body)
     if(sessions::sessions::instance()->get_from_session(*f_info, get_name(SNAP_NAME_USERS_LOGIN_REFERRER)).isEmpty())
     {
         QString referrer(f_snap->snapenv("HTTP_REFERER"));
+        QString const site_key(f_snap->get_site_key_with_slash());
         if(!referrer.isEmpty()
-        && referrer != f_snap->get_site_key_with_slash() + "login"
-        && referrer != f_snap->get_site_key_with_slash() + "logout")
+        && referrer != site_key + "login"
+        && referrer != site_key + "logout")
         {
             attach_to_session(get_name(SNAP_NAME_USERS_LOGIN_REFERRER), referrer);
         }
@@ -1175,177 +1067,20 @@ void users::logout_user(layout::layout *l, QString cpath, QDomElement& page, QDo
 }
 
 
-/** \brief Generate the registration form.
+/** \brief Prepare a public user form.
  *
- * This function adds a compiled registration form to the body content.
- * (i.e. this is the main page body content.)
- *
- * \param[in] body  The body where we're to add the registration form.
+ * This function is used to prepare a basic user form which is only
+ * intended for anonymous users. All it does is verify that the user
+ * is not logged in. If logged in, then the user is simply send to
+ * his profile (user/me).
  */
-void users::generate_register_form(QDomElement& body)
+void users::prepare_basic_anonymous_form()
 {
     if(!f_user_key.isEmpty())
     {
         // user is logged in already, just send him to his profile
         f_snap->page_redirect("user/me", snap_child::HTTP_CODE_SEE_OTHER);
         NOTREACHED();
-    }
-
-    QDomDocument doc(body.ownerDocument());
-
-    QDomDocument register_form(on_get_xml_form("register"));
-    if(register_form.isNull())
-    {
-        // invalid (could not load the form!)
-        return;
-    }
-
-    sessions::sessions::session_info info;
-    info.set_session_type(info.SESSION_INFO_USER);
-    info.set_session_id(USERS_SESSION_ID_REGISTER);
-    info.set_plugin_owner(get_plugin_name()); // ourselves
-    info.set_page_path("register");
-    //info.set_object_path(); -- default is okay
-    info.set_time_to_live(3600);  // 1h -- we want to have a JS that clears the data in 5 min. though
-    QDomDocument result(form::form::instance()->form_to_html(info, register_form));
-    //f_snap->output(result.toString());
-
-    {   // /snap/page/body/content
-        // we assume that the body content is valid because when we created it
-        // we checked the data and if the user data was invalid XML then we
-        // already saved a place holder warning to the user about the fact!
-        QDomElement content_tag(doc.createElement("content"));
-        body.appendChild(content_tag);
-        content_tag.appendChild(doc.importNode(result.documentElement(), true));
-    }
-
-    {   // /snap/page/body/titles/title
-        QDomElement titles(doc.createElement("titles"));
-        body.appendChild(titles);
-        QDomElement title(doc.createElement("title"));
-        titles.appendChild(title);
-        QDomText text(doc.createTextNode(form::form::instance()->get_form_title("User Registration")));
-        title.appendChild(text);
-    }
-}
-
-
-/** \brief Generate the verification form.
- *
- * This function adds a compiled verification form to the body content.
- * (i.e. this is the main page body content.)
- *
- * This form shows one input box for the verification code the user
- * received in his email. It is customary to send the user to this
- * page right after a valid registration.
- *
- * \param[in] body  The body where we're to add the verification form.
- */
-void users::generate_verify_form(QDomElement& body)
-{
-    if(!f_user_key.isEmpty())
-    {
-        // user is logged in already, just send him to his profile
-        f_snap->page_redirect("user/me", snap_child::HTTP_CODE_SEE_OTHER);
-        NOTREACHED();
-    }
-
-    QDomDocument doc(body.ownerDocument());
-
-    QDomDocument verify_form(on_get_xml_form("verify"));
-    if(verify_form.isNull())
-    {
-        // invalid (could not load the form!)
-        return;
-    }
-
-    sessions::sessions::session_info info;
-    info.set_session_type(info.SESSION_INFO_USER);
-    info.set_session_id(USERS_SESSION_ID_VERIFY);
-    info.set_plugin_owner(get_plugin_name()); // ourselves
-    info.set_page_path("verify");
-    //info.set_object_path(); -- default is okay
-    info.set_time_to_live(3600);  // 1h -- we want to have a JS that clears the data in 5 min. though
-    QDomDocument result(form::form::instance()->form_to_html(info, verify_form));
-    //f_snap->output(result.toString());
-
-    {   // /snap/page/body/content
-        // we assume that the body content is valid because when we created it
-        // we checked the data and if the user data was invalid XML then we
-        // already saved a place holder warning to the user about the fact!
-        QDomElement content_tag(doc.createElement("content"));
-        body.appendChild(content_tag);
-        content_tag.appendChild(doc.importNode(result.documentElement(), true));
-    }
-
-    {   // /snap/page/body/titles/title
-        QDomElement titles(doc.createElement("titles"));
-        body.appendChild(titles);
-        QDomElement title(doc.createElement("title"));
-        titles.appendChild(title);
-        QDomText text(doc.createTextNode(form::form::instance()->get_form_title("User Verification")));
-        title.appendChild(text);
-    }
-}
-
-
-/** \brief Resend a verification email to the user.
- *
- * This function sends the verification email as if the user was just
- * registering. It is at items useful if the first email gets blocked
- * or lost in a junk mail folder.
- *
- * We should also show the "From" email on our forms so users can say
- * that these are okay.
- *
- * \param[in] body  The body where we're to add the resend verification
- *                  email form.
- */
-void users::generate_resend_email_form(QDomElement& body)
-{
-    if(!f_user_key.isEmpty())
-    {
-        // user is logged in already, just send him to his profile
-        // XXX add a message?
-        f_snap->page_redirect("user/me", snap_child::HTTP_CODE_SEE_OTHER);
-        NOTREACHED();
-    }
-
-    QDomDocument doc(body.ownerDocument());
-
-    QDomDocument resend_email_form(on_get_xml_form("verify/resend"));
-    if(resend_email_form.isNull())
-    {
-        // invalid (could not load the form!)
-        return;
-    }
-
-    sessions::sessions::session_info info;
-    info.set_session_type(info.SESSION_INFO_USER);
-    info.set_session_id(USERS_SESSION_ID_RESEND_EMAIL);
-    info.set_plugin_owner(get_plugin_name()); // ourselves
-    info.set_page_path("verify/resend");
-    //info.set_object_path(); -- default is okay
-    info.set_time_to_live(3600);  // 1h -- we want to have a JS that clears the data in 5 min. though
-    QDomDocument result(form::form::instance()->form_to_html(info, resend_email_form));
-    //f_snap->output(result.toString());
-
-    {   // /snap/page/body/content
-        // we assume that the body content is valid because when we created it
-        // we checked the data and if the user data was invalid XML then we
-        // already saved a place holder warning to the user about the fact!
-        QDomElement content_tag(doc.createElement("content"));
-        body.appendChild(content_tag);
-        content_tag.appendChild(doc.importNode(result.documentElement(), true));
-    }
-
-    {   // /snap/page/body/titles/title
-        QDomElement titles(doc.createElement("titles"));
-        body.appendChild(titles);
-        QDomElement title(doc.createElement("title"));
-        titles.appendChild(title);
-        QDomText text(doc.createTextNode(form::form::instance()->get_form_title("Resend Verification Code")));
-        title.appendChild(text);
     }
 }
 
@@ -1366,7 +1101,7 @@ void users::generate_resend_email_form(QDomElement& body)
  * \param[in] body  The body where we're to add the resend verification
  *                  email form.
  */
-void users::generate_forgot_password_form(QDomElement& body)
+void users::prepare_forgot_password_form()
 {
     if(!f_user_key.isEmpty())
     {
@@ -1383,43 +1118,6 @@ void users::generate_forgot_password_form(QDomElement& body)
         f_snap->page_redirect("user/password", snap_child::HTTP_CODE_SEE_OTHER);
         NOTREACHED();
     }
-
-    QDomDocument doc(body.ownerDocument());
-
-    QDomDocument forgot_password_form(on_get_xml_form("forgot-password"));
-    if(forgot_password_form.isNull())
-    {
-        // invalid (could not load the form!)
-        return;
-    }
-
-    sessions::sessions::session_info info;
-    info.set_session_type(info.SESSION_INFO_USER);
-    info.set_session_id(USERS_SESSION_ID_FORGOT_PASSWORD);
-    info.set_plugin_owner(get_plugin_name()); // ourselves
-    info.set_page_path("forgot-password");
-    //info.set_object_path(); -- default is okay
-    info.set_time_to_live(3600);  // 1h -- we want to have a JS that clears the data in 5 min. though
-    QDomDocument result(form::form::instance()->form_to_html(info, forgot_password_form));
-    //f_snap->output(result.toString());
-
-    {   // /snap/page/body/content
-        // we assume that the body content is valid because when we created it
-        // we checked the data and if the user data was invalid XML then we
-        // already saved a place holder warning to the user about the fact!
-        QDomElement content_tag(doc.createElement("content"));
-        body.appendChild(content_tag);
-        content_tag.appendChild(doc.importNode(result.documentElement(), true));
-    }
-
-    {   // /snap/page/body/titles/title
-        QDomElement titles(doc.createElement("titles"));
-        body.appendChild(titles);
-        QDomElement title(doc.createElement("title"));
-        titles.appendChild(title);
-        QDomText text(doc.createTextNode(form::form::instance()->get_form_title("Forgot Password")));
-        title.appendChild(text);
-    }
 }
 
 
@@ -1431,7 +1129,7 @@ void users::generate_forgot_password_form(QDomElement& body)
  * \param[in] body  The body where we're to add the resend verification
  *                  email form.
  */
-void users::generate_new_password_form(QDomElement& body)
+void users::prepare_new_password_form()
 {
     if(!f_user_key.isEmpty())
     {
@@ -1447,43 +1145,6 @@ void users::generate_new_password_form(QDomElement& body)
         );
         f_snap->page_redirect("user/password", snap_child::HTTP_CODE_SEE_OTHER);
         NOTREACHED();
-    }
-
-    QDomDocument doc(body.ownerDocument());
-
-    QDomDocument new_password_form(on_get_xml_form("new-password"));
-    if(new_password_form.isNull())
-    {
-        // invalid (could not load the form!)
-        return;
-    }
-
-    sessions::sessions::session_info info;
-    info.set_session_type(info.SESSION_INFO_USER);
-    info.set_session_id(USERS_SESSION_ID_NEW_PASSWORD);
-    info.set_plugin_owner(get_plugin_name()); // ourselves
-    info.set_page_path("new-password");
-    //info.set_object_path(); -- default is okay
-    info.set_time_to_live(3600);  // 1h -- we want to have a JS that clears the data in 5 min. though
-    QDomDocument result(form::form::instance()->form_to_html(info, new_password_form));
-    //f_snap->output(result.toString());
-
-    {   // /snap/page/body/content
-        // we assume that the body content is valid because when we created it
-        // we checked the data and if the user data was invalid XML then we
-        // already saved a place holder warning to the user about the fact!
-        QDomElement content_tag(doc.createElement("content"));
-        body.appendChild(content_tag);
-        content_tag.appendChild(doc.importNode(result.documentElement(), true));
-    }
-
-    {   // /snap/page/body/titles/title
-        QDomElement titles(doc.createElement("titles"));
-        body.appendChild(titles);
-        QDomElement title(doc.createElement("title"));
-        titles.appendChild(title);
-        QDomText text(doc.createTextNode(form::form::instance()->get_form_title("Forgotten Password Verification Code")));
-        title.appendChild(text);
     }
 }
 
@@ -1986,8 +1647,11 @@ QDomDocument users::on_get_xml_form(const QString& cpath)
 
 /** \brief Process a post from one of the users forms.
  *
- * This function processes the post of a user form. The form is defined as
- * the session identifier.
+ * This function processes the post of a user form. The function uses the
+ * \p cpath parameter in order to determine which form is being processed.
+ *
+ * \param[in] cpath  The path the user is accessing now.
+ * \param[in] info  The user session being processed.
  */
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
@@ -3398,6 +3062,34 @@ bool users::user_is_a_spammer()
         }
     }
     return false;
+}
+
+
+/** \brief Give access to the first page.
+ *
+ * This adds the first page of all the charts in the XML sitemap.
+ *
+ * \param[in] sitemap  The sitemap plugin pointer.
+ */
+void users::on_generate_sitemapxml(sitemapxml::sitemapxml *sitemap)
+{
+    // anonymous user has access to /user?
+    bool const allowed(f_snap->access_allowed("", "user", "view"));
+    if(allowed)
+    {
+        sitemapxml::sitemapxml::url_info url;
+        QString site_key(f_snap->get_site_key_with_slash());
+        url.set_uri(site_key + "user");
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Woverflow"
+        // TODO look into fixing this date; it should be updated each time a
+        //      new user is created
+        url.set_last_modification(SNAP_UNIX_TIMESTAMP(2012, 1, 1, 0, 0, 0) * 1000000);
+#pragma GCC diagnostic pop
+        url.set_priority(0.45f);
+        url.set_frequency(0);
+        sitemap->add_url(url);
+    }
 }
 
 

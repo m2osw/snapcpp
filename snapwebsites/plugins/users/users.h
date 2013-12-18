@@ -164,14 +164,12 @@ private:
     void                    initial_update(int64_t variables_timestamp);
     void                    content_update(int64_t variables_timestamp);
     void                    show_user(layout::layout *l, const QString& cpath, QDomElement& page, QDomElement& body);
-    void                    generate_login_form(QDomElement& body);
+    void                    prepare_login_form();
     void                    logout_user(layout::layout *l, QString cpath, QDomElement& page, QDomElement& body);
-    void                    generate_register_form(QDomElement& body);
-    void                    generate_verify_form(QDomElement& body);
-    void                    generate_resend_email_form(QDomElement& body);
-    void                    generate_forgot_password_form(QDomElement& body);
-    void                    generate_password_form(QDomElement& body);
-    void                    generate_new_password_form(QDomElement& body);
+    void                    prepare_basic_anonymous_form();
+    void                    prepare_forgot_password_form();
+    void                    prepare_password_form();
+    void                    prepare_new_password_form();
     void                    process_login_form();
     void                    process_register_form();
     void                    create_password_salt(QByteArray& salt);
@@ -183,7 +181,7 @@ private:
     void                    process_new_password_form();
     void                    process_password_form();
     void                    process_replace_password_form();
-    void                    generate_replace_password_form(QDomElement& body);
+    void                    prepare_replace_password_form(QDomElement& body);
     void                    verify_email(const QString& email);
     void                    verify_password(const QString& cpath);
     void                    forgot_password_email(const QString& email);

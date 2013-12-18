@@ -285,6 +285,7 @@ void permissions::on_bootstrap(snap_child *snap)
     f_snap = snap;
 
     SNAP_LISTEN(permissions, "server", server, validate_action, _1, _2);
+    SNAP_LISTEN(permissions, "server", server, access_allowed, _1, _2, _3, _4);
 }
 
 
@@ -571,12 +572,15 @@ void permissions::on_generate_main_content(layout::layout *l, const QString& pat
  * \param[in] path  The path the user wants to access.
  * \param[in,out] action  The action to be taken, the function may redefine it.
  */
-void permissions::on_validate_action(const QString& path, QString& action)
+void permissions::on_validate_action(QString const& path, QString const& action)
 {
-    // use the default (i.e. "view") if action is still empty
     if(action.isEmpty())
     {
-        action = "view";
+        f_snap->die(snap_child::HTTP_CODE_ACCESS_DENIED,
+                "Access Denied",
+                "You are not authorized to access our website.",
+                "programmer checking permission access with an empty action on page \"" + path + "\".");
+        NOTREACHED();
     }
 
     users::users *users_plugin(users::users::instance());
@@ -587,7 +591,7 @@ void permissions::on_validate_action(const QString& path, QString& action)
     }
     QString key(path);
     f_snap->canonicalize_path(key); // remove the starting slash
-    const bool allowed(access_allowed(user_path, key, action));
+    bool const allowed(f_snap->access_allowed(user_path, key, action));
     if(!allowed)
     {
         if(users_plugin->get_user_key().isEmpty())
@@ -685,8 +689,9 @@ void permissions::on_validate_action(const QString& path, QString& action)
  * \param[in] user_path  The user trying to acccess the specified path.
  * \param[in] path  The path that the user is trying to access.
  * \param[in] action  The action that the user is trying to perform.
+ * \param[in] result  The result of the test.
  */
-bool permissions::access_allowed(const QString& user_path, const QString& path, QString& action)
+void permissions::on_access_allowed(QString const& user_path, QString const& path, QString const& action, server::permission_flag& result)
 {
     // check that the action is defined in the database (i.e. valid)
     QSharedPointer<QtCassandra::QCassandraTable> content_table(content::content::instance()->get_content_table());
@@ -715,15 +720,18 @@ printf("retrieving USER rights... [%s]\n", sets.get_action().toUtf8().data());
     {
         if(sets.is_root())
         {
-            return true;
+            return;
         }
 printf("retrieving PLUGING permissions... [%s]\n", sets.get_action().toUtf8().data());
         get_plugin_permissions(this, sets);
 printf("now compute the intersection!\n");
-        return sets.allowed();
+        if(sets.allowed())
+        {
+            return;
+        }
     }
 
-    return false;
+    result.not_permitted();
 }
 
 

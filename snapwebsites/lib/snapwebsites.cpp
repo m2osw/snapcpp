@@ -1301,7 +1301,28 @@ bool server::xss_filter_impl(QDomNode& /*node*/,
  *
  * \return true if the event has to carry on.
  */
-bool server::validate_action_impl(const QString& path, QString& action)
+bool server::validate_action_impl(QString const& path, QString const& action)
+{
+    return true;
+}
+
+
+/** \brief Check whether a user has permission to access a page.
+ *
+ * This event is sent to all plugins that want to check for permissions.
+ * In general, just the permissions plugin does that work, but other
+ * plugins can also check. The result is true by default and if any
+ * plugin decides that the page is not accessible, the result is set
+ * to false. A plugin is not allowed to set the flag back to false.
+ *
+ * \param[in] user_path  The path to the user being checked.
+ * \param[in] path  The path being checked.
+ * \param[in] action  The action being checked.
+ * \param[in] result  The result to be returned.
+ *
+ * \return true if the signal should be propagated.
+ */
+bool server::access_allowed_impl(QString const& user_path, QString const& path, QString const& action, permission_flag& result)
 {
     return true;
 }

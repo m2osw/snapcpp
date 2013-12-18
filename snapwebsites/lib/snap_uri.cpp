@@ -123,7 +123,7 @@ snap_uri::snap_uri(const QString& uri)
  *
  * \return false if the URI could not be parsed (in which case nothing's changed in the object); true otherwise
  */
-bool snap_uri::set_uri(const QString& uri)
+bool snap_uri::set_uri(QString const& uri)
 {
     const QChar *u(uri.constData());
 
@@ -447,6 +447,13 @@ bool snap_uri::set_uri(const QString& uri)
  * This function returns the original URI as defined when calling the
  * set_uri() or creating the Snap URI object with the snap_uri() constructor
  * accepting a string.
+ *
+ * Note that it is possible to use the snap_uri object without using the
+ * set_uri() or a string in the constructor by calling the setters of
+ * the different parts of a URI. This is actually how snap_child does it
+ * because Apache does not give us one plane URI, instead we get pre
+ * separated parts. Therefore the get_original_uri() is always empty when
+ * called from that f_uri variable.
  *
  * Note that this URI may still include security issues, although if the
  * input was not considered valid (i.e. had a valid protocol, etc.) then
