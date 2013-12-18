@@ -1301,10 +1301,13 @@ bool server::xss_filter_impl(QDomNode& /*node*/,
  *
  * \return true if the event has to carry on.
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 bool server::validate_action_impl(const QString& path, QString& action)
 {
     return true;
 }
+#pragma GCC diagnostic pop
 
 
 /** \brief Improve the die() signature to add at the bottom of pages.
