@@ -47,71 +47,71 @@ enum name_t {
     SNAP_NAME_CONTENT_UNTIL,
     SNAP_NAME_CONTENT_UPDATED
 };
-const char *get_name(name_t name) __attribute__ ((const));
+char const *get_name(name_t name) __attribute__ ((const));
 
 
 class content_exception : public snap_exception
 {
 public:
-    content_exception(const char *what_msg) : snap_exception("Content: " + std::string(what_msg)) {}
-    content_exception(const std::string& what_msg) : snap_exception("Content: " + what_msg) {}
-    content_exception(const QString& what_msg) : snap_exception("Content: " + what_msg.toStdString()) {}
+    content_exception(char const *what_msg) : snap_exception("Content: " + std::string(what_msg)) {}
+    content_exception(std::string const& what_msg) : snap_exception("Content: " + what_msg) {}
+    content_exception(QString const& what_msg) : snap_exception("Content: " + what_msg.toStdString()) {}
 };
 
 class content_exception_invalid_content_xml : public content_exception
 {
 public:
-    content_exception_invalid_content_xml(const char *what_msg) : content_exception(what_msg) {}
-    content_exception_invalid_content_xml(const std::string& what_msg) : content_exception(what_msg) {}
-    content_exception_invalid_content_xml(const QString& what_msg) : content_exception(what_msg) {}
+    content_exception_invalid_content_xml(char const *what_msg) : content_exception(what_msg) {}
+    content_exception_invalid_content_xml(std::string const& what_msg) : content_exception(what_msg) {}
+    content_exception_invalid_content_xml(QString const& what_msg) : content_exception(what_msg) {}
 };
 
 class content_exception_parameter_not_defined : public content_exception
 {
 public:
-    content_exception_parameter_not_defined(const char *what_msg) : content_exception(what_msg) {}
-    content_exception_parameter_not_defined(const std::string& what_msg) : content_exception(what_msg) {}
-    content_exception_parameter_not_defined(const QString& what_msg) : content_exception(what_msg) {}
+    content_exception_parameter_not_defined(char const *what_msg) : content_exception(what_msg) {}
+    content_exception_parameter_not_defined(std::string const& what_msg) : content_exception(what_msg) {}
+    content_exception_parameter_not_defined(QString const& what_msg) : content_exception(what_msg) {}
 };
 
 class content_exception_content_already_defined : public content_exception
 {
 public:
-    content_exception_content_already_defined(const char *what_msg) : content_exception(what_msg) {}
-    content_exception_content_already_defined(const std::string& what_msg) : content_exception(what_msg) {}
-    content_exception_content_already_defined(const QString& what_msg) : content_exception(what_msg) {}
+    content_exception_content_already_defined(char const *what_msg) : content_exception(what_msg) {}
+    content_exception_content_already_defined(std::string const& what_msg) : content_exception(what_msg) {}
+    content_exception_content_already_defined(QString const& what_msg) : content_exception(what_msg) {}
 };
 
 class content_exception_circular_dependencies : public content_exception
 {
 public:
-    content_exception_circular_dependencies(const char *what_msg) : content_exception(what_msg) {}
-    content_exception_circular_dependencies(const std::string& what_msg) : content_exception(what_msg) {}
-    content_exception_circular_dependencies(const QString& what_msg) : content_exception(what_msg) {}
+    content_exception_circular_dependencies(char const *what_msg) : content_exception(what_msg) {}
+    content_exception_circular_dependencies(std::string const& what_msg) : content_exception(what_msg) {}
+    content_exception_circular_dependencies(QString const& what_msg) : content_exception(what_msg) {}
 };
 
 class content_exception_type_mismatch : public content_exception
 {
 public:
-    content_exception_type_mismatch(const char *what_msg) : content_exception(what_msg) {}
-    content_exception_type_mismatch(const std::string& what_msg) : content_exception(what_msg) {}
-    content_exception_type_mismatch(const QString& what_msg) : content_exception(what_msg) {}
+    content_exception_type_mismatch(char const *what_msg) : content_exception(what_msg) {}
+    content_exception_type_mismatch(std::string const& what_msg) : content_exception(what_msg) {}
+    content_exception_type_mismatch(QString const& what_msg) : content_exception(what_msg) {}
 };
 
 class content_exception_invalid_sequence : public content_exception
 {
 public:
-    content_exception_invalid_sequence(const char *what_msg) : content_exception(what_msg) {}
-    content_exception_invalid_sequence(const std::string& what_msg) : content_exception(what_msg) {}
-    content_exception_invalid_sequence(const QString& what_msg) : content_exception(what_msg) {}
+    content_exception_invalid_sequence(char const *what_msg) : content_exception(what_msg) {}
+    content_exception_invalid_sequence(std::string const& what_msg) : content_exception(what_msg) {}
+    content_exception_invalid_sequence(QString const& what_msg) : content_exception(what_msg) {}
 };
 
 class content_exception_invalid_name : public content_exception
 {
 public:
-    content_exception_invalid_name(const char *what_msg) : content_exception(what_msg) {}
-    content_exception_invalid_name(const std::string& what_msg) : content_exception(what_msg) {}
-    content_exception_invalid_name(const QString& what_msg) : content_exception(what_msg) {}
+    content_exception_invalid_name(char const *what_msg) : content_exception(what_msg) {}
+    content_exception_invalid_name(std::string const& what_msg) : content_exception(what_msg) {}
+    content_exception_invalid_name(QString const& what_msg) : content_exception(what_msg) {}
 };
 
 
@@ -199,7 +199,7 @@ public:
                         ~field_search();
 
     field_search&       operator () (command_t cmd);
-    field_search&       operator () (command_t cmd, const char *str_value);
+    field_search&       operator () (command_t cmd, char const *str_value);
     field_search&       operator () (command_t cmd, QString const& str_value);
     field_search&       operator () (command_t cmd, int64_t int_value);
     field_search&       operator () (command_t cmd, QtCassandra::QCassandraValue value);
@@ -244,14 +244,15 @@ public:
     QtCassandra::QCassandraValue get_content_parameter(QString path, QString const& name);
 
     void                on_bootstrap(snap_child *snap);
-    virtual bool        on_path_execute(const QString& url);
+    virtual bool        on_path_execute(QString const& url);
     void                on_save_content();
-    void                on_create_content(const QString& path);
+    void                on_create_content(QString const& path);
     virtual void        on_generate_main_content(layout::layout *l, QString const& path, QDomElement& page, QDomElement& body, QString const& ctemplate);
     void                on_generate_page_content(layout::layout *l, QString const& path, QDomElement& page, QDomElement& body, QString const& ctemplate);
 
-    SNAP_SIGNAL(new_content, (const QString& path), (path));
-    SNAP_SIGNAL(create_content, (const QString& path, const QString& owner, const QString& type), (path, owner, type));
+    SNAP_SIGNAL(new_content, (QString const& path), (path));
+    SNAP_SIGNAL(create_content, (QString const& path, QString const& owner, QString const& type), (path, owner, type));
+    SNAP_SIGNAL(modified_content, (QString const& path, bool updated), (path, updated));
 
     void                output() const;
 
@@ -260,7 +261,7 @@ public:
     void                add_content(QString const& path, QString const& plugin_owner);
     void                add_param(QString const& path, QString const& name, QString const& data);
     void                set_param_overwrite(QString const& path, const QString& name, bool overwrite);
-    void                set_param_type(const QString& path, const QString& name, param_type_t param_type);
+    void                set_param_type(QString const& path, const QString& name, param_type_t param_type);
     void                add_link(QString const& path, links::link_info const& source, links::link_info const& destination);
 
     virtual int         js_property_count() const;

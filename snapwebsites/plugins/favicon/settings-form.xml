@@ -28,6 +28,7 @@
       <widgetpriority refid="cancel"/>
     </widgetorder>
     <widget id="icon" type="image" auto-save="binary">
+      <attachment type="attachment/public"/>
       <label>Icon</label>
       <background-value><img src="/default-favicon.ico" width="16" height="16" type="image/vnd.microsoft.icon"/></background-value>
       <tooltip>Define the little icon that appears in the tab, the location bar, bookmarks, or some other locations of your browser.</tooltip>

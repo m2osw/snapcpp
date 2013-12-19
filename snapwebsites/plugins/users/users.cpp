@@ -2112,9 +2112,10 @@ void users::process_replace_password_form()
         QtCassandra::QCassandraValue user_identifier(row->cell(get_name(SNAP_NAME_USERS_IDENTIFIER))->value());
         if(!user_identifier.nullValue())
         {
-            int64_t identifier(user_identifier.int64Value());
-            const QString site_key(f_snap->get_site_key_with_slash());
-            QString user_key(site_key + get_name(SNAP_NAME_USERS_PATH) + QString("/%1").arg(identifier));
+            int64_t const identifier(user_identifier.int64Value());
+            QString const site_key(f_snap->get_site_key_with_slash());
+            QString const user_path(get_name(SNAP_NAME_USERS_PATH) + QString("/%1").arg(identifier));
+            QString const user_key(site_key + user_path);
 
             // verify the status of this user
             links::link_info user_status_info(get_name(SNAP_NAME_USERS_STATUS), true, user_key);
@@ -2170,6 +2171,8 @@ void users::process_replace_password_form()
                     f_snap->set_cookie(cookie);
 
                     f_user_changing_password_key.clear();
+
+                    content::content::instance()->modified_content(user_path, false);
 
                     // once we sent the new code, we can send the user back
                     // to the verify form
@@ -2251,9 +2254,10 @@ void users::process_password_form()
         QtCassandra::QCassandraValue user_identifier(row->cell(get_name(SNAP_NAME_USERS_IDENTIFIER))->value());
         if(!user_identifier.nullValue())
         {
-            int64_t identifier(user_identifier.int64Value());
-            const QString site_key(f_snap->get_site_key_with_slash());
-            QString user_key(site_key + get_name(SNAP_NAME_USERS_PATH) + QString("/%1").arg(identifier));
+            int64_t const identifier(user_identifier.int64Value());
+            QString const site_key(f_snap->get_site_key_with_slash());
+            QString const user_path(get_name(SNAP_NAME_USERS_PATH) + QString("/%1").arg(identifier));
+            QString const user_key(site_key + user_path);
 
             // verify the status of this user
             links::link_info user_status_info(get_name(SNAP_NAME_USERS_STATUS), true, user_key);
@@ -2340,6 +2344,8 @@ void users::process_password_form()
                 {
                     links::links::instance()->delete_link(status_info);
                 }
+
+                content::content::instance()->modified_content(user_path, false);
 
                 // once we sent the new code, we can send the user back
                 // to the verify form

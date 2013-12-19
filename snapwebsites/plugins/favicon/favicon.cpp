@@ -42,9 +42,19 @@ SNAP_PLUGIN_START(favicon, 1, 0)
  */
 const char *get_name(name_t name)
 {
-    switch(name) {
-    case SNAP_NAME_FAVICON_IMAGE:
+    switch(name)
+    {
+    case SNAP_NAME_FAVICON_ICON: // icon is in Cassandra
+        return "favicon::icon";
+
+    case SNAP_NAME_FAVICON_ICON_PATH:
+        return "favicon::icon::path";
+
+    case SNAP_NAME_FAVICON_IMAGE: // image is in XML
         return "favicon::image";
+
+    case SNAP_NAME_FAVICON_SETTINGS:
+        return "admin/settings/favicon";
 
     default:
         // invalid index
@@ -252,7 +262,7 @@ void favicon::output(QString const& cpath)
     content::field_search::search_result_t result;
 
     // check for a favicon.ico on this very page and then its type tree
-    bool const default_icon(cpath == "default-snap.ico");
+    bool const default_icon(cpath == "default-favicon.ico");
     if(!default_icon)
     {
         QString sub_path(cpath.left(cpath.length() - (sizeof("favicon.ico") - 1)));
@@ -266,7 +276,48 @@ void favicon::output(QString const& cpath)
         QtCassandra::QCassandraValue image_value;
         if(!default_icon)
         {
-            image_value = f_snap->get_site_parameter(snap::get_name(SNAP_NAME_CORE_FAVICON));
+            // try the site wide settings for an attachment
+            FIELD_SEARCH
+                // /admin/settings/favicon/@favicon::icon::path
+                (content::field_search::COMMAND_MODE, content::field_search::SEARCH_MODE_EACH)
+                (content::field_search::COMMAND_FIELD_NAME, get_name(SNAP_NAME_FAVICON_ICON_PATH))
+                (content::field_search::COMMAND_PATH, get_name(SNAP_NAME_FAVICON_SETTINGS))
+                (content::field_search::COMMAND_SELF)
+                (content::field_search::COMMAND_RESULT, result)
+
+                // generate
+                ;
+
+            if(!result.isEmpty())
+            {
+                // we got the path to the row with the icon data
+                QtCassandra::QCassandraValue path_value(result[0]);
+                if(!path_value.nullValue())
+                {
+                    QString icon_key(path_value.stringValue());
+                    QString const site_key(f_snap->get_site_key_with_slash());
+                    if(icon_key.startsWith(site_key))
+                    {
+                        icon_key.remove(0, site_key.length());
+                    }
+                    FIELD_SEARCH
+                        // Use the path from the previous search
+                        // /admin/settings/favicon/<filename>.ico/@favicon::icon
+                        (content::field_search::COMMAND_MODE, content::field_search::SEARCH_MODE_EACH)
+                        (content::field_search::COMMAND_FIELD_NAME, get_name(SNAP_NAME_FAVICON_ICON))
+                        (content::field_search::COMMAND_PATH, icon_key)
+                        (content::field_search::COMMAND_SELF)
+                        (content::field_search::COMMAND_RESULT, result)
+
+                        // generate
+                        ;
+
+                    if(!result.isEmpty())
+                    {
+                        image_value = result[0];
+                    }
+                }
+            }
         }
 
         if(image_value.nullValue())
@@ -431,26 +482,6 @@ void favicon::on_can_handle_dynamic_path(path::path *path_plugin, const QString&
         // tell the path plugin that this is ours
         path_plugin->handle_dynamic_path(this);
     }
-}
-
-
-QDomDocument favicon::on_get_xml_form(QString const& cpath)
-{
-    QDomDocument result;
-
-    if(cpath == "admin/settings/favicon")
-    {
-        // errors already get logged so we don't do it again here
-        QString error;
-        result = form::form::instance()->load_form(cpath, ":/xml/favicon/settings-form.xml", error);
-    }
-
-    return result;
-}
-
-
-void favicon::on_process_post(QString const& cpath, sessions::sessions::session_info const& info)
-{
 }
 
 

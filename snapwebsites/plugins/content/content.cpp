@@ -40,7 +40,7 @@ SNAP_PLUGIN_START(content, 1, 0)
  *
  * \return A pointer to the name.
  */
-const char *get_name(name_t name)
+char const *get_name(name_t name)
 {
     switch(name) {
     case SNAP_NAME_CONTENT_ACCEPTED:
@@ -1381,6 +1381,70 @@ bool content::create_content_impl(QString const& path, QString const& owner, QSt
 //printf("parent/children [%s]/[%s]\n", src.toUtf8().data(), dst.toUtf8().data());
         links::links::instance()->create_link(source, destination);
     }
+
+    return true;
+}
+
+
+/** \brief Tell the system that data was updated.
+ *
+ * This signal should be called any time you modify something in a page.
+ *
+ * This very function takes care of updating the content::modified and
+ * content:updated as required:
+ *
+ * \li content::modified -- if anything changes in a page, this date
+ *                          is changed; in other words, any time this
+ *                          function is called, this date is set to
+ *                          the current date
+ *
+ * \li content::updated -- if the content gets updated then this date
+ *                         is expected to change; "content" here means
+ *                         the title, body, or "any" important content
+ *                         that is shown to the user (i.e. a small
+ *                         change in a field that is not displayed or
+ *                         is not directly considered content as part of
+ *                         the main body of the page should not change
+ *                         this date)
+ *
+ * This signal also gives other modules a chance to update their own
+ * data (i.e. the sitemap.xml needs to update this page information.)
+ *
+ * Since the other plugins may make use of your plugin changes, you have
+ * to call this signal last.
+ *
+ * \note
+ * The function returns false and generates a warning (in your log) in the
+ * event the process cannot find the specified path.
+ *
+ * \param[in] path  The path to the page being udpated.
+ * \param[in] updated  Set to true if a user visible piece of content was
+ *                     modified (i.e. title, body...); meta data changes
+ *                     are not reported here and updated should be false
+ *                     for those.
+ *
+ * \return true if the event should be propagated.
+ */
+bool content::modified_content_impl(QString const& path, bool updated)
+{
+    QSharedPointer<QtCassandra::QCassandraTable> content_table(get_content_table());
+    QString const site_key(f_snap->get_site_key_with_slash());
+    QString const key(site_key + path);
+
+    if(!content_table->exists(key))
+    {
+        // the row doesn't exist?!
+        SNAP_LOG_WARNING("Page \"")(key)("\" does not exist. We cannot do anything about it being modified.");;
+        return false;
+    }
+    QSharedPointer<QtCassandra::QCassandraRow> row(content_table->row(key));
+
+    uint64_t const start_date(f_snap->get_uri().option("start_date").toLongLong());
+    if(updated)
+    {
+        row->cell(QString(get_name(SNAP_NAME_CONTENT_UPDATED)))->setValue(start_date);
+    }
+    row->cell(QString(get_name(SNAP_NAME_CONTENT_MODIFIED)))->setValue(start_date);
 
     return true;
 }

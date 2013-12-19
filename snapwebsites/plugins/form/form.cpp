@@ -769,7 +769,7 @@ void form::on_process_post(const QString& uri_path)
     if(!auto_save_str.isEmpty())
     {
         // in this case the form plugin just saves the data as is in the page
-        auto_save_form(owner, cpath, auto_save_type);
+        auto_save_form(owner, cpath, auto_save_type, xml_form);
 
         // after the auto-save, we also call the plugin on_process_post()
         // if available and in case the plugin wants to do a little more
@@ -798,9 +798,10 @@ void form::on_process_post(const QString& uri_path)
  *
  * \param[in] owner  The name of the plugin that owns this form.
  * \param[in] cpath  The page where the data is to be saved.
+ * \param[in] auto_save_type  The type of this cell in the database.
  * \param[in] xml_form  The form that's being saved.
  */
-void form::auto_save_form(QString const& owner, QString const& cpath, auto_save_types_t const& auto_save_type)
+void form::auto_save_form(QString const& owner, QString const& cpath, auto_save_types_t const& auto_save_type, QDomDocument xml_form)
 {
     QSharedPointer<QtCassandra::QCassandraTable> content_table(content::content::instance()->get_content_table());
     QString const site_key(f_snap->get_site_key_with_slash());
@@ -823,7 +824,7 @@ void form::auto_save_form(QString const& owner, QString const& cpath, auto_save_
         // retrieve the value from the post variable
         QString post(f_snap->postenv(id));
 
-        QString name(owner + "::" + id);
+        QString const name(owner + "::" + id);
 
         QString type(*it);
         if(type == "int8")
@@ -843,23 +844,86 @@ void form::auto_save_form(QString const& owner, QString const& cpath, auto_save_
         }
         else if(type == "binary")
         {
-            // in this case the post is the filename, the binary data
-            // is in the corresponding file
-            row->cell(name + "::filename")->setValue(post);
+            // by default the owner is the same as the form owner
+            QString attachment_owner(owner);
+
+            // by default the type of an attachment is set to
+            // "private attachment", it can be changed by the widget
+            // attachment and any module that wants to do so while
+            // generate the new page, of course
+            QString attachment_type("attachment/private");
+
+            // retrieve the attachment tag and get additional parameters
+            QDomXPath dom_xpath;
+            dom_xpath.setXPath(QString("/snap//widget[@id=\"%1\"]/attachment"));
+            QDomXPath::node_vector_t result(dom_xpath.apply(xml_form));
+            if(result.size() > 0 && result[0].isElement())
+            {
+                // retrieve the parameters from the tag attributes
+                QDomElement attachment_tag(result[0].toElement());
+                QString value;
+
+                // overwrite default owner
+                value = attachment_tag.attribute("owner");
+                if(!value.isEmpty())
+                {
+                    attachment_owner = value;
+                }
+
+                // overwrite default type
+                value = attachment_tag.attribute("type");
+                if(!value.isEmpty())
+                {
+                    attachment_type = type;
+                }
+            }
+
+            // make sure the filename from the browser does not include
+            // a path (remove the path if it is there); although browsers
+            // don't send a path, robots could...
+            int last_slash(post.lastIndexOf('/'));
+            if(last_slash != -1)
+            {
+                post = post.mid(last_slash + 1);
+            }
+            QString const attachment_key(key + "/" + post);
+            content::content::instance()->create_content(cpath + "/" + post, attachment_owner, attachment_type);
+
+            // save the key to the attachment in the parent (here)
+            row->cell(name + "::path")->setValue(attachment_key);
+
+            // get that row and add a few things
+            QSharedPointer<QtCassandra::QCassandraRow> attachment_row(content_table->row(attachment_key));
             const snap_child::post_file_t& file(f_snap->postfile(id));
-            row->cell(name)->setValue(file.get_data());
+
+            // in this case 'post' represents the filename as sent by the
+            // user, the binary data is in the corresponding file
+            attachment_row->cell(name + "::filename")->setValue(post);
+
+            // save the file itself
+            attachment_row->cell(name)->setValue(file.get_data());
+
             // XXX still unverified MIME type!
-            row->cell(name + "::mime_type")->setValue(file.get_mime_type());
+            attachment_row->cell(name + "::mime_type")->setValue(file.get_mime_type());
+
+            // mark that attachment as final (i.e. cannot create children below an attachment)
+            attachment_row->cell(content::get_name(content::SNAP_NAME_CONTENT_FINAL))->setValue(static_cast<signed char>(1));
+
             // TODO save the creation & modification time if defined
             //      (from what I can see these are never defined anyway)
+
         }
         else if(type == "string")
         {
-            // default is a simple string
+            // a simple string
             row->cell(name)->setValue(post);
         }
         // else -- "undefined"
     }
+
+    // let the world know that we modified this page
+    // this is not an update since the form itself was not modified
+    content::content::instance()->modified_content(cpath, false);
 }
 
 

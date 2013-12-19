@@ -101,7 +101,7 @@ public:
 
 private:
     typedef QMap<QString, QString> auto_save_types_t;
-    void                    auto_save_form(QString const& owner, QString const& cpath, auto_save_types_t const& auto_save_type);
+    void                    auto_save_form(QString const& owner, QString const& cpath, auto_save_types_t const& auto_save_type, QDomDocument xml_form);
 
     zpsnap_child_t              f_snap;
     controlled_vars::fbool_t    f_form_initialized;

@@ -676,6 +676,16 @@ void snap_child::read_environment()
                             .arg(f_post_environment["CONTENT-DISPOSITION"]));
                 NOTREACHED();
             }
+            // remove the ending \r\n
+            if(f_post_content.right(2) == "\r\n")
+            {
+                f_post_content.resize(f_post_content.size() - 2);
+            }
+            else if(f_post_content.right(1) == "\n"
+                 || f_post_content.right(1) == "\r")
+            {
+                f_post_content.resize(f_post_content.size() - 1);
+            }
             f_name = params["name"];
             if(params.contains("filename"))
             {
@@ -733,15 +743,6 @@ void snap_child::read_environment()
                 // TODO verify that the content of a post just needs to be
                 //      decoded or whether it already is UTF-8 as required
                 //      to be saved in f_post
-                if(f_post_content.right(2) == "\r\n")
-                {
-                    f_post_content.resize(f_post_content.size() - 2);
-                }
-                else if(f_post_content.right(1) == "\n"
-                     || f_post_content.right(1) == "\r")
-                {
-                    f_post_content.resize(f_post_content.size() - 1);
-                }
                 if(f_post.contains(f_name))
                 {
                     die(QString("multipart post variable \"%1\" defined twice")

@@ -105,9 +105,6 @@ const char *get_name(name_t name)
     case SNAP_NAME_SITES: // website global settings
         return "sites";
 
-    case SNAP_NAME_CORE_FAVICON:
-        return "core::favicon";
-
     case SNAP_NAME_CORE_ADMINISTRATOR_EMAIL:
         return "core::administrator_email";
 
