@@ -52,7 +52,7 @@ QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC
 )
 
 set( XMLFILES content.xml )
-snap_validate_dtd( ${XMLFILES} )
+snap_validate_dtd( ${PROJECT_NAME} ${XMLFILES} )
 
 add_library(messages SHARED
     messages.cpp

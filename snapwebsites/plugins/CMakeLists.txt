@@ -42,26 +42,33 @@ set( PLUGIN_INSTALL_DIR lib/snapwebsites/plugins )
 find_program( BASH    bash    /bin     )
 find_program( XMLLINT xmllint /usr/bin )
 
-function( snap_validate_dtd )
+function( snap_validate_dtd PROJECT_NAME )
 	set( lint_script ${snapwebsites_plugins_BINARY_DIR}/dolint.sh )
 	if( NOT EXISTS ${lint_script} )
-		file( WRITE  ${lint_script} "#!${BASH}\n"                 )
-		file( APPEND ${lint_script} "rm -f $2\n"                  )
-		file( APPEND ${lint_script} "${XMLLINT} $1 && touch $2\n" )
+		file( WRITE  ${lint_script} "#!${BASH}\n"                                       )
+		file( APPEND ${lint_script} "${XMLLINT} $1 > $2 && exit 0 || (rm $2; exit 1)\n" )
 	endif()
+	unset( touch_file_list )
 	foreach( xml_file ${ARGN} )
 		get_filename_component( full_xmlfile ${xml_file} ABSOLUTE )
 		set( touch_file "${CMAKE_CURRENT_BINARY_DIR}/${xml_file}.lint" )
-		message( STATUS "running xmllint on ${full_xmlfile}" )
-		execute_process(
+		# Command runs the lint_script above...
+		add_custom_command(
+			OUTPUT ${touch_file}
 			COMMAND ${BASH} ${lint_script} ${full_xmlfile} ${touch_file}
-			OUTPUT_QUIET
 			WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+			DEPENDS ${full_xmlfile}
+			COMMENT "running xmllint on ${full_xmlfile}"
 		)
-		if( NOT EXISTS ${touch_file} )
-			message( FATAL_ERROR "${full_xmlfile} fails to pass xmllint!" )
-		endif()
+		list( APPEND touch_file_list ${touch_file} )
 	endforeach()
+
+	# Make sure each file is processed...
+	add_custom_target(
+		${PROJECT_NAME}_xmllint ALL
+		DEPENDS ${touch_file_list}
+		COMMENT "xmllint for project ${PROJECT_NAME}"
+	)
 endfunction()
 
 

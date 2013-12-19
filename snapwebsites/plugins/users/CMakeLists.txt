@@ -62,7 +62,7 @@ set( XMLFILES
     resend-email-form.xml
     verify-form.xml
 )
-snap_validate_dtd( ${XMLFILES} )
+snap_validate_dtd( ${PROJECT_NAME} ${XMLFILES} )
 
 add_library(users SHARED
     users.cpp
