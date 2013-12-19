@@ -777,6 +777,8 @@ printf("user key = [%s]\n", user_key.toUtf8().data());
  * \param[in] perms  A pointer to the permission plugin.
  * \param[in,out] sets  The sets of rights.
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 void users::on_get_plugin_permissions(permissions::permissions *perms, permissions::permissions::sets_t& sets)
 {
     QString const path(sets.get_path());
@@ -796,6 +798,7 @@ void users::on_get_plugin_permissions(permissions::permissions *perms, permissio
         //"types/permissions/rights/view/page/private"
     }
 }
+#pragma GCC diagnostic pop
 
 
 #pragma GCC diagnostic push
@@ -842,6 +845,8 @@ void users::on_create_content(QString const& path, QString const& owner, QString
  *
  * \param[in] body  The body where the form is saved.
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 void users::prepare_replace_password_form(QDomElement& body)
 {
     // make sure the user is properly setup
@@ -859,6 +864,7 @@ void users::prepare_replace_password_form(QDomElement& body)
         NOTREACHED();
     }
 }
+#pragma GCC diagnostic pop
 
 
 /** \brief Show the user profile.

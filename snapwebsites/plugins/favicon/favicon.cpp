@@ -207,9 +207,12 @@ int64_t favicon::do_update(int64_t last_updated)
  *
  * \param[in] variables_timestamp  The timestamp for all the variables added to the database by this update (in micro-seconds).
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 void favicon::initial_update(int64_t variables_timestamp)
 {
 }
+#pragma GCC diagnostic pop
 
 
 /** \brief Update the database with our favicon references.
@@ -219,10 +222,13 @@ void favicon::initial_update(int64_t variables_timestamp)
  *
  * \param[in] variables_timestamp  The timestamp for all the variables added to the database by this update (in micro-seconds).
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 void favicon::content_update(int64_t variables_timestamp)
 {
     content::content::instance()->add_xml(get_plugin_name());
 }
+#pragma GCC diagnostic pop
 
 
 /** \brief Execute a page: generate the complete output of that page.
@@ -393,6 +399,8 @@ printf("*** main content?!...\n");
  * \param[in,out] body  The body being generated.
  * \param[in] ctemplate  The path to a template if cpath does not exist.
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 void favicon::on_generate_page_content(layout::layout *l, QString const& cpath, QDomElement& page, QDomElement& body, QString const& ctemplate)
 {
     content::field_search::search_result_t result;
@@ -429,6 +437,7 @@ void favicon::on_generate_page_content(layout::layout *l, QString const& cpath, 
         // generate
         ;
 }
+#pragma GCC diagnostic pop
 
 
 /** \brief Search for the favorite icon for a given page.
@@ -442,6 +451,8 @@ void favicon::on_generate_page_content(layout::layout *l, QString const& cpath, 
  * \param[in] image  If true the image itself is returned, if false you
  *                   get the path to the image.
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 void favicon::get_icon(QString const& cpath, content::field_search::search_result_t& result, bool image)
 {
     result.clear();
@@ -464,6 +475,7 @@ void favicon::get_icon(QString const& cpath, content::field_search::search_resul
         // retrieve!
         ;
 }
+#pragma GCC diagnostic pop
 
 
 /** \brief Check whether \p cpath matches our introducer.

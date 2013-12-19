@@ -350,10 +350,13 @@ int64_t permissions::do_update(int64_t last_updated)
  *
  * \param[in] variables_timestamp  The timestamp for all the variables added to the database by this update (in micro-seconds).
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 void permissions::content_update(int64_t variables_timestamp)
 {
     content::content::instance()->add_xml(get_plugin_name());
 }
+#pragma GCC diagnostic pop
 
 
 /** \brief Implementation of the get_user_rights signal.
@@ -438,6 +441,8 @@ bool permissions::get_user_rights_impl(permissions *perms, sets_t& sets)
  *
  * \return true if the signal has to be sent to other plugins.
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 bool permissions::get_plugin_permissions_impl(permissions *perms, sets_t& sets)
 {
     // this very page may be assigned direct permissions
@@ -537,6 +542,7 @@ bool permissions::get_plugin_permissions_impl(permissions *perms, sets_t& sets)
 
     return true;
 }
+#pragma GCC diagnostic pop
 
 
 /** \brief Generate the actual content of the statistics page.
