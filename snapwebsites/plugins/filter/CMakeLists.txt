@@ -51,11 +51,14 @@ QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC
     filter.qrc
 )
 
+set( XMLFILES content.xml )
+snap_validate_dtd( ${XMLFILES} )
+
 add_library(filter SHARED
     filter.cpp
     ${SNAP_MANAGER_MOC_CXX}
     ${SNAP_MANAGER_RESOURCES_RCC}
-    content.xml
+    ${XMLFILES}
 )
 
 target_link_libraries( filter ${QT_LIBRARIES} )

@@ -50,11 +50,14 @@ QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC
     char_chart.qrc
 )
 
+set( XMLFILES content.xml )
+snap_validate_dtd( ${XMLFILES} )
+
 add_library(char_chart SHARED
     char_chart.cpp
     ${SNAP_MANAGER_MOC_CXX}
     ${SNAP_MANAGER_RESOURCES_RCC}
-    content.xml
+    ${XMLFILES}
 )
 
 target_link_libraries( char_chart ${QT_LIBRARIES} )

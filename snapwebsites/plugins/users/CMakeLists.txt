@@ -51,10 +51,7 @@ QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC
     users.qrc
 )
 
-add_library(users SHARED
-    users.cpp
-    ${SNAP_MANAGER_MOC_CXX}
-    ${SNAP_MANAGER_RESOURCES_RCC}
+set( XMLFILES
     content.xml
     forgot-password-form.xml
     login-form.xml
@@ -64,6 +61,14 @@ add_library(users SHARED
     replace-password-form.xml
     resend-email-form.xml
     verify-form.xml
+)
+snap_validate_dtd( ${XMLFILES} )
+
+add_library(users SHARED
+    users.cpp
+    ${SNAP_MANAGER_MOC_CXX}
+    ${SNAP_MANAGER_RESOURCES_RCC}
+    ${XMLFILES}
 )
 
 target_link_libraries( users ${QT_LIBRARIES} )

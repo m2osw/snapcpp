@@ -51,11 +51,14 @@ QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC
     mailinglist.qrc
 )
 
+set( XMLFILES content.xml )
+snap_validate_dtd( ${XMLFILES} )
+
 add_library(${PROJECT_NAME} SHARED
     mailinglist.cpp
     ${SNAP_MANAGER_MOC_CXX}
     ${SNAP_MANAGER_RESOURCES_RCC}
-    content.xml
+    ${XMLFILES}
 )
 
 target_link_libraries( ${PROJECT_NAME} ${QT_LIBRARIES} )

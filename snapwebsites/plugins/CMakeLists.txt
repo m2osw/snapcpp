@@ -34,8 +34,36 @@
 #      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
+project( snapwebsites_plugins )
+
 # We need a common place to install the plugins
 set( PLUGIN_INSTALL_DIR lib/snapwebsites/plugins )
+
+find_program( BASH    bash    /bin     )
+find_program( XMLLINT xmllint /usr/bin )
+
+function( snap_validate_dtd )
+	set( lint_script ${snapwebsites_plugins_BINARY_DIR}/dolint.sh )
+	if( NOT EXISTS ${lint_script} )
+		file( WRITE  ${lint_script} "#!${BASH}\n"                 )
+		file( APPEND ${lint_script} "rm -f $2\n"                  )
+		file( APPEND ${lint_script} "${XMLLINT} $1 && touch $2\n" )
+	endif()
+	foreach( xml_file ${ARGN} )
+		get_filename_component( full_xmlfile ${xml_file} ABSOLUTE )
+		set( touch_file "${CMAKE_CURRENT_BINARY_DIR}/${xml_file}.lint" )
+		message( STATUS "running xmllint on ${full_xmlfile}" )
+		execute_process(
+			COMMAND ${BASH} ${lint_script} ${full_xmlfile} ${touch_file}
+			OUTPUT_QUIET
+			WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+		)
+		if( NOT EXISTS ${touch_file} )
+			message( FATAL_ERROR "${full_xmlfile} fails to pass xmllint!" )
+		endif()
+	endforeach()
+endfunction()
+
 
 # Keep the plugins in alphabetical order for ease of management
 add_subdirectory(char_chart)
