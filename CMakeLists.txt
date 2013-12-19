@@ -119,5 +119,7 @@ add_custom_target( clean-all
     DEPENDS ${CLEAN_TARGETS}
     )
 
+add_subdirectory( recipes )
+
 
 # vim: ts=4 sw=4 et nocindent

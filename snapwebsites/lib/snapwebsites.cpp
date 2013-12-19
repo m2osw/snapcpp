@@ -1301,10 +1301,13 @@ bool server::xss_filter_impl(QDomNode& /*node*/,
  *
  * \return true if the event has to carry on.
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 bool server::validate_action_impl(QString const& path, QString const& action)
 {
     return true;
 }
+#pragma GCC diagnostic pop
 
 
 /** \brief Check whether a user has permission to access a page.
@@ -1322,10 +1325,13 @@ bool server::validate_action_impl(QString const& path, QString const& action)
  *
  * \return true if the signal should be propagated.
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 bool server::access_allowed_impl(QString const& user_path, QString const& path, QString const& action, permission_flag& result)
 {
     return true;
 }
+#pragma GCC diagnostic pop
 
 
 /** \brief Improve the die() signature to add at the bottom of pages.
