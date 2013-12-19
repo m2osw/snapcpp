@@ -115,11 +115,15 @@ add_custom_target( build-all ALL
     DEPENDS ${BUILD_TARGETS}
     )
 add_custom_target( clean-all
+    COMMAND rm -rf ${CMAKE_BINARY_DIR}/recipes
     COMMAND ${CMAKE_COMMAND} ${CMAKE_BINARY_DIR}
     DEPENDS ${CLEAN_TARGETS}
     )
 
-add_subdirectory( recipes )
+#option( BUILD_RECIPES "Build source tarballs based on launchpad recipes." OFF )
+#if( ${BUILD_RECIPES} )
+#    add_subdirectory( recipes )
+#endif()
 
 
 # vim: ts=4 sw=4 et nocindent
