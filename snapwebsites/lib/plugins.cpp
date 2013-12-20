@@ -92,6 +92,26 @@ bool load(const QString& plugin_path, plugin_ptr_t server, const QStringList& li
 //       to crash, especially if the plugins are not unloaded "in the right
 //       order" (whatever that might be)
 // I would strongly argue that your addition should be removed."
+//
+// Doug replies:
+// "I would counter that a shared pointer is telling the developer that the main
+// manager owns the pointer and manages its lifetime. That it gets handed out
+// to plugins shouldn't matter. The weak_ptr is availble to deal with the
+// scenario that the manager destroyed the pointer (the plugin can and should
+// check the lock). And the act of handing it out is indeed sharing it.
+//
+// "However, thinking on it, perhaps instead of a shared_ptr, we really need an
+// auto_ptr, or at least some way of making sure the object really does get
+// destroyed properly (destructor of a main class). Presently destruction is
+// ignored, which isn't a problem for now, but possibly could be if the server,
+// on exit, must restore a shared resource that is used by another process
+// (like releasing a semaphore, for example). What I dislike is that
+// destruction of the server object is literally ignored. That could come back
+// to bite us on the rear in the future."
+// 
+// "I want to leave this here for now until we address this issue. Hope you
+// understand..."
+//
 #pragma message("Please restore the plugin pointer to a non-shared pointer. (see detailed reason above this message)")
 	g_plugins.insert("server", server.get());
 

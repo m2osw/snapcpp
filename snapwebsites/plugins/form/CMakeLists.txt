@@ -53,11 +53,14 @@ QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC
     form.qrc
 )
 
+set( XMLFILES content.xml )
+snap_validate_dtd( ${PROJECT_NAME} ${XMLFILES} )
+
 add_library(form SHARED
     form.cpp
     ${SNAP_MANAGER_MOC_CXX}
     ${SNAP_MANAGER_RESOURCES_RCC}
-    content.xml
+    ${XMLFILES}
 )
 
 target_link_libraries( form ${QT_LIBRARIES} )

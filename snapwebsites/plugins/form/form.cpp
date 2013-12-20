@@ -727,10 +727,13 @@ QDomDocument const form::load_form(QString const& cpath, QString const& source, 
  *
  * \return This function returns true if other signals are to be processed.
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 bool form::tweak_form_impl(form *f, QString const& cpath, QDomDocument form_doc)
 {
     return true;
 }
+#pragma GCC diagnostic pop
 
 
 /** \typedef auto_save_types_t
@@ -1746,6 +1749,8 @@ bool form::parse_width_height(QString const& size, int& width, int& height)
  * \param[in] xml  The XML document used with the layout.
  * \param[in,out] token  The token object, with the token name and optional parameters.
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 void form::on_replace_token(filter::filter *f, QString const& cpath, QDomDocument& xml, filter::filter::token_info_t& token)
 {
     // a form::... token?
@@ -1966,6 +1971,7 @@ void form::on_replace_token(filter::filter *f, QString const& cpath, QDomDocumen
 //printf("form is [%s] (%d), %d\n", token.f_replacement.toUtf8().data(), static_cast<int>(token.f_error), static_cast<int>(token.f_found));
     }
 }
+#pragma GCC diagnostic pop
 
 
 /** \brief Retrieve the path to the form of the specified page.

@@ -1,4 +1,4 @@
-#
+################################################################################
 # File:
 #      plugins/CMakeLists.txt
 #
@@ -32,12 +32,62 @@
 #      CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
 #      TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 #      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-#
+################################################################################
 
+project( snapwebsites_plugins )
+
+################################################################################
 # We need a common place to install the plugins
+#
 set( PLUGIN_INSTALL_DIR lib/snapwebsites/plugins )
 
+
+################################################################################
+# Handle linting the xml files...
+#
+find_program( BASH    bash    /bin     )
+find_program( XMLLINT xmllint /usr/bin )
+#
+function( snap_validate_dtd PROJECT_NAME )
+	set( master_dtd_file ${snapwebsites_plugins_SOURCE_DIR}/plugins.dtd )
+	set( lint_script ${snapwebsites_plugins_BINARY_DIR}/dolint.sh )
+	if( NOT EXISTS ${lint_script} )
+		file( WRITE  ${lint_script} "#!${BASH}\n"                                                            )
+		file( APPEND ${lint_script} "dtdopts=--valid\n"                                                      )
+		file( APPEND ${lint_script} "[ -n \"$3\" ] && [ -e \"$3\" ] && dtdopts=\"$dtdopts --dtdvalid $3\"\n" )
+		file( APPEND ${lint_script} "${XMLLINT} $dtdopts $1 > $2 && exit 0 || (rm $2; exit 1)\n"             )
+	endif()
+	unset( touch_file_list )
+	foreach( xml_file ${ARGN} )
+		get_filename_component( full_xmlfile ${xml_file} ABSOLUTE )
+		set( touch_file "${CMAKE_CURRENT_BINARY_DIR}/${xml_file}.lint" )
+		#
+		# Command runs the lint_script above...
+		#
+		add_custom_command(
+			OUTPUT ${touch_file}
+			COMMAND ${BASH} ${lint_script} ${full_xmlfile} ${touch_file} ${master_dtd_file}
+			WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+			DEPENDS ${full_xmlfile}
+			COMMENT "running xmllint on ${full_xmlfile}"
+		)
+		list( APPEND touch_file_list ${touch_file} )
+	endforeach()
+
+	# Make sure each file is processed...
+	#
+	add_custom_target(
+		build_lint_${PROJECT_NAME}
+		DEPENDS ${touch_file_list}
+	)
+	set_property( GLOBAL APPEND PROPERTY xml_lint_files   ${touch_file_list}         )
+	set_property( GLOBAL APPEND PROPERTY xml_lint_targets build_lint_${PROJECT_NAME} )
+endfunction()
+
+
+################################################################################
 # Keep the plugins in alphabetical order for ease of management
+#
 add_subdirectory(char_chart)
 add_subdirectory(content)
 add_subdirectory(favicon)
@@ -61,3 +111,23 @@ add_subdirectory(sitemapxml)
 add_subdirectory(taxonomy)
 add_subdirectory(users)
 
+
+################################################################################
+# Make sure all lint targets get built properly...
+#
+get_property( xml_lint_targets GLOBAL PROPERTY xml_lint_targets )
+add_custom_target(
+	build_lint ALL
+	DEPENDS ${xml_lint_targets}
+)
+#
+# Handy target for wiping out all lint files and forcing a recheck!
+#
+get_property( xml_lint_files GLOBAL PROPERTY xml_lint_files )
+add_custom_target(
+	clean_lint
+	COMMAND rm -rf ${xml_lint_files}
+	DEPENDS ${xml_lint_files}
+)
+
+# vim: ts=4 sw=4

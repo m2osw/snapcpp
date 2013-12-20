@@ -1,0 +1,11 @@
+<!ELEMENT snap-tree (content)*>
+<!ELEMENT content (param|link)*>
+<!ATTLIST content path CDATA #REQUIRED>
+<!ELEMENT param (#PCDATA)>
+<!ATTLIST param name CDATA #REQUIRED
+                overwrite (yes|no) "no"
+                force-namespace (yes|no) "yes">
+<!ELEMENT link (#PCDATA)>
+<!ATTLIST link name CDATA #REQUIRED
+               to CDATA #REQUIRED
+               mode CDATA "1:1">

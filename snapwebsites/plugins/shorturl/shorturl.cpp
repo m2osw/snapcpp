@@ -162,10 +162,13 @@ int64_t shorturl::do_update(int64_t last_updated)
  *
  * \param[in] variables_timestamp  The timestamp for all the variables added to the database by this update (in micro-seconds).
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 void shorturl::initial_update(int64_t variables_timestamp)
 {
     get_shorturl_table();
 }
+#pragma GCC diagnostic pop
 
 
 /** \brief Update the database with our shorturl references.
@@ -175,10 +178,13 @@ void shorturl::initial_update(int64_t variables_timestamp)
  *
  * \param[in] variables_timestamp  The timestamp for all the variables added to the database by this update (in micro-seconds).
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 void shorturl::content_update(int64_t variables_timestamp)
 {
     content::content::instance()->add_xml(get_plugin_name());
 }
+#pragma GCC diagnostic pop
 
 
 /** \brief Initialize the content table.
@@ -287,6 +293,8 @@ void shorturl::on_generate_main_content(layout::layout *l, const QString& cpath,
  * \param[in,out] body  The body being generated.
  * \param[in] ctemplate  The path to a template if cpath does not exist.
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 void shorturl::on_generate_header_content(layout::layout *l, const QString& cpath, QDomElement& header, QDomElement& metadata, const QString& ctemplate)
 {
     content::field_search::search_result_t result;
@@ -311,8 +319,11 @@ void shorturl::on_generate_header_content(layout::layout *l, const QString& cpat
         f_snap->set_header(get_name(SNAP_NAME_SHORTURL_HTTP_LINK), http_link);
     }
 }
+#pragma GCC diagnostic pop
 
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 void shorturl::on_create_content(QString const& path, QString const& owner, QString const& type)
 {
     // do not ever create short URLs for admin pages
@@ -402,6 +413,7 @@ void shorturl::on_create_content(QString const& path, QString const& owner, QStr
     QString const index(f_snap->get_website_key() + "/" + get_name(SNAP_NAME_SHORTURL_INDEX_ROW));
     shorturl_table->row(index)->cell(new_identifier.binaryValue())->setValue(key);
 }
+#pragma GCC diagnostic pop
 
 
 /** \brief Check whether \p cpath matches our introducer.
