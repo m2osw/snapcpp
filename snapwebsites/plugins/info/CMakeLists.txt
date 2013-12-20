@@ -1,15 +1,18 @@
 #
 # File:
-#      plugins/CMakeLists.txt
+#      plugins/info/CMakeLists.txt
 #
 # Description:
-#      Set of extensions used by the Snap! Websites server.
+#      Basic Information about the website. This module lets administrators
+#      edit global information about their website. It is separate from the
+#      content plugin because it requires form, permissions, etc. which the
+#      content plugin cannot directly access.
 #
 # Documentation:
 #      See the CMake documentation.
 #
 # License:
-#      Copyright (c) 2011-2013 Made to Order Software Corp.
+#      Copyright (c) 2013 Made to Order Software Corp.
 #
 #      http://snapwebsites.org/
 #      contact@m2osw.com
@@ -34,30 +37,38 @@
 #      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
-# We need a common place to install the plugins
-set( PLUGIN_INSTALL_DIR lib/snapwebsites/plugins )
+project(plugin_info)
 
-# Keep the plugins in alphabetical order for ease of management
-add_subdirectory(char_chart)
-add_subdirectory(content)
-add_subdirectory(favicon)
-add_subdirectory(filter)
-add_subdirectory(form)
-add_subdirectory(header)
-add_subdirectory(info)
-add_subdirectory(javascript)
-add_subdirectory(layout)
-add_subdirectory(links)
-add_subdirectory(mailinglist)
-add_subdirectory(messages)
-add_subdirectory(path)
-add_subdirectory(permissions)
-add_subdirectory(robotstxt)
-add_subdirectory(search)
-add_subdirectory(sessions)
-add_subdirectory(sendmail)
-add_subdirectory(shorturl)
-add_subdirectory(sitemapxml)
-add_subdirectory(taxonomy)
-add_subdirectory(users)
+find_package( Qt4 4.8.1 QUIET REQUIRED QtCore )
+include( ${QT_USE_FILE} )
+add_definitions( ${QT_DEFINITIONS} )
 
+include_directories(
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CONTROLLEDVARS_INCLUDE_DIRS}
+    ${QT_INCLUDES}
+)
+
+QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC
+    info.qrc
+)
+
+add_library(info SHARED
+    info.cpp
+    ${SNAP_MANAGER_MOC_CXX}
+    ${SNAP_MANAGER_RESOURCES_RCC}
+    content.xml
+)
+
+target_link_libraries( info ${QT_LIBRARIES} )
+
+get_property( 3RDPARTY_INCLUDED GLOBAL PROPERTY 3RDPARTY_INCLUDED )
+if( 3RDPARTY_INCLUDED )
+    add_dependencies( info make_controlled_vars_headers )
+endif()
+
+install(
+    TARGETS info LIBRARY DESTINATION ${PLUGIN_INSTALL_DIR}
+)
+
+# vim: ts=4 sw=4 et

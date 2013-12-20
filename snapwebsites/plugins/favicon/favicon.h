@@ -33,7 +33,7 @@ enum name_t
     SNAP_NAME_FAVICON_IMAGE,
     SNAP_NAME_FAVICON_SETTINGS
 };
-const char *get_name(name_t name) __attribute__ ((const));
+char const *get_name(name_t name) __attribute__ ((const));
 
 
 class favicon_exception : public snap_exception
@@ -49,6 +49,8 @@ public:
 class favicon : public plugins::plugin, public path::path_execute, public layout::layout_content
 {
 public:
+    static const sessions::sessions::session_info::session_id_t FAVICON_SESSION_ID_SETTINGS = 1;      // settings-form.xml
+
                             favicon();
                             ~favicon();
 

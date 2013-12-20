@@ -3,7 +3,7 @@
                               xmlns:xs="http://www.w3.org/2001/XMLSchema"
                               xmlns:fn="http://www.w3.org/2005/xpath-functions"
                               xmlns:snap="http://snapwebsites.info/snap-functions">
-  <xsl:param name="form-name">default</xsl:param>
+  <xsl:param name="form-name">core</xsl:param>
   <xsl:param name="form-modified">2012-11-14 03:44:54</xsl:param>
   <xsl:param name="year" select="year-from-date(current-date())"/>
   <xsl:param name="unique_id" select="34"/>
@@ -130,10 +130,6 @@
           <!-- use the current value when there is one -->
           <xsl:attribute name="value"><xsl:value-of select="value"/></xsl:attribute>
         </xsl:when>
-        <xsl:when test="default != ''">
-          <!-- if no current value, use the default when there is one -->
-          <xsl:attribute name="value"><xsl:value-of select="default"/></xsl:attribute>
-        </xsl:when>
       </xsl:choose>
     </input>
   </xsl:template>
@@ -230,7 +226,7 @@
         <!-- use the post value when there is one, it has priority -->
         <xsl:when test="post = 'on'">checked</xsl:when>
         <xsl:when test="post = 'off'"></xsl:when>
-        <xsl:when test="checked = 'checked'">checked</xsl:when>
+        <xsl:when test="value = 'on'">checked</xsl:when>
       </xsl:choose>
     </xsl:variable>
     <input type="checkbox">
@@ -335,6 +331,16 @@
   <!-- IMAGE WIDGET -->
   <xsl:template name="snap:image">
     <xsl:param name="name" select="@id"/>
+    <xsl:variable name="existing_image">
+      <xsl:choose>
+        <!-- use the post value when there is one, it has priority -->
+        <xsl:when test="post != ''"><xsl:copy-of select="post"/></xsl:when>
+        <xsl:when test="value != ''"><xsl:copy-of select="value"/></xsl:when>
+      </xsl:choose>
+    </xsl:variable>
+    <xsl:if test="$existing_image">
+      <xsl:copy-of select="$existing_image"/>
+    </xsl:if>
     <input type="file">
       <xsl:attribute name="id"><xsl:value-of select="$name"/>_<xsl:value-of select="$unique_id"/></xsl:attribute>
       <xsl:attribute name="name"><xsl:value-of select="$name"/></xsl:attribute>

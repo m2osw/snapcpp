@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<snap-form>
+<snap-form session_id="1" owner="shorturl">
   <auto-reset minutes="120"/>
   <focus refid="email"/>
   <default-button refid="save"/>

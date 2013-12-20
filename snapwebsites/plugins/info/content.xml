@@ -1,7 +1,7 @@
 <?xml version="1.0" standalone="yes"?>
 <!--
-Snap Websites Server == favicon plugin database setup
-Copyright (C) 2013  Made to Order Software Corp.
+Snap Websites Server == info plugin database setup
+Copyright (C) 2011-2013  Made to Order Software Corp.
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -31,14 +31,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
                mode CDATA "1:1">
 ]>
 <snap-tree>
-  <content path="/favicon.ico">
-    <param name="content::final" type="int8">1</param>
-    <link name="content::page_type" to="content::page_type" mode="1:*">/types/taxonomy/system/content-types/page/public</link>
-    <link name="permissions::view" to="permissions::view" mode="*:*">/types/permissions/rights/view/page/for-spammers</link>
-  </content>
-  <content path="/admin/settings/favicon">
-    <param name="content::title">Favorite Icon Settings (favicon.ico)</param>
-    <param name="content::body"><p>Body starts here...</p>[form::source]<p>Body Ends Here!</p></param>
+  <content path="/admin/settings/info">
+    <param name="content::title">Website Basic Settings</param>
+    <param name="content::body"><p>Site wide settings as offerred by the core system of your website.</p>[form::source]</param>
     <param name="form::source">settings</param>
     <link name="permissions::view" to="permissions::view" mode="*:*">/types/permissions/rights/administer</link>
   </content>

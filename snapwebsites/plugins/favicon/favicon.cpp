@@ -25,12 +25,6 @@
 SNAP_PLUGIN_START(favicon, 1, 0)
 
 
-/** \class favicon
- * \brief Support for the favorite icon.
- *
- */
-
-
 /** \brief Get a fixed favicon name.
  *
  * The favicon plugin makes use of different names in the database. This
@@ -40,7 +34,7 @@ SNAP_PLUGIN_START(favicon, 1, 0)
  *
  * \return A pointer to the name.
  */
-const char *get_name(name_t name)
+char const *get_name(name_t name)
 {
     switch(name)
     {
@@ -66,7 +60,7 @@ const char *get_name(name_t name)
 
 
 /** \class favicon
- * \brief Support for the favicon of a website.
+ * \brief Support for the favicon (favorite icon) of a website.
  *
  * The favorite icon plugin adds a small icon in your browser tab,
  * location, or some other location depending on the browser.
@@ -376,7 +370,6 @@ void favicon::output(QString const& cpath)
  */
 void favicon::on_generate_main_content(layout::layout *l, const QString& cpath, QDomElement& page, QDomElement& body, const QString& ctemplate)
 {
-printf("*** main content?!...\n");
     // our settings pages are like any standard pages
     content::content::instance()->on_generate_main_content(l, cpath, page, body, ctemplate);
 }

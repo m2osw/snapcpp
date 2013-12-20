@@ -82,7 +82,7 @@
       <label>Remember Me</label>
       <tooltip>Select this checkbox to let your browser record a long time cookie. This way you can come back to your Snap! account(s) without having to log back in everytime.</tooltip>
       <classes>remember-me-checkbox</classes>
-      <checked>checked</checked>
+      <value>on</value>
       <help>By checking this box you agree to have Snap! save a full session cookie which let you come back to your website over and over again. By not selecting the checkbox, you still get a cookie, but it will only last 2 hours unless your use your website constantly.</help>
     </widget>
     <widget id="login" type="submit">

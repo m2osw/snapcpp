@@ -18,7 +18,6 @@
 #include "content.h"
 #include "plugins.h"
 #include "log.h"
-#include "../layout/layout.h"
 #include "not_reached.h"
 #include "dom_util.h"
 #include <iostream>
@@ -921,25 +920,7 @@ void field_search::run()
                 f_element.appendChild(child);
 
                 // parse the XML (XHTML) string
-                QString xml(f_result[0].stringValue());
-                xml = "<wrapper>" + xml + "</wrapper>";
-                QDomDocument xml_doc("wrapper");
-                xml_doc.setContent(xml, true, NULL, NULL, NULL);
-
-                // copy the result in a fragment of our document
-                QDomDocumentFragment frag(doc.createDocumentFragment());
-                frag.appendChild(doc.importNode(xml_doc.documentElement(), true));
-
-                // copy the fragment nodes at the right place
-                QDomNodeList children(frag.firstChild().childNodes());
-                QDomNode previous(children.at(0));
-                child.appendChild(children.at(0));
-                while(!children.isEmpty())
-                {
-                    QDomNode l(children.at(0));
-                    child.insertAfter(children.at(0), previous);
-                    previous = l;
-                }
+                content::content::insert_html_string_to_xml_doc(child, f_result[0].stringValue());
 
                 cmd_reset(true);
             }
@@ -1115,6 +1096,18 @@ void field_search::run()
 }
 
 
+/** \brief This function is used by the FIELD_SEARCH macro.
+ *
+ * This function creates a field_search object and initializes it
+ * with the information specified by the FIELD_SEARCH macro. The
+ * result is a field_search that we can use to instantly run a
+ * search program.
+ *
+ * \param[in] filename  The name of the file where the FIELD_SEARCH macro is used.
+ * \param[in] func  The name of the function using the FIELD_SEARCH macro.
+ * \param[in] line  The line where the FIELD_SEARCH macro can be found.
+ * \param[in] snap  A pointer to the snap server.
+ */
 field_search create_field_search(char const *filename, char const *func, int line, snap_child *snap)
 {
     field_search fs(filename, func, line, snap);
@@ -1122,6 +1115,44 @@ field_search create_field_search(char const *filename, char const *func, int lin
 }
 
 
+/** \brief Useful function that transforms a QString to XML.
+ *
+ * When inserting a string in the XML document when that string may include
+ * HTML code, call this function, it will first convert the string to XML
+ * then insert the result as children of the \p child element.
+ *
+ * \param[in,out] child  DOM element receiving the result as children nodes.
+ * \param[in] xml  The input XML string.
+ */
+void content::insert_html_string_to_xml_doc(QDomElement child, QString const& xml)
+{
+    // parsing the XML can be slow, try to avoid that if possible
+    if(xml.contains('<'))
+    {
+        QDomDocument xml_doc("wrapper");
+        xml_doc.setContent("<wrapper>" + xml + "</wrapper>", true, NULL, NULL, NULL);
+
+        // copy the result in a fragment of our document
+        QDomDocumentFragment frag(child.ownerDocument().createDocumentFragment());
+        frag.appendChild(child.ownerDocument().importNode(xml_doc.documentElement(), true));
+
+        // copy the fragment nodes at the right place
+        QDomNodeList children(frag.firstChild().childNodes());
+        QDomNode previous(children.at(0));
+        child.appendChild(children.at(0));
+        while(!children.isEmpty())
+        {
+            QDomNode l(children.at(0));
+            child.insertAfter(children.at(0), previous);
+            previous = l;
+        }
+    }
+    else
+    {
+        QDomText text(child.ownerDocument().createTextNode(xml));
+        child.appendChild(text);
+    }
+}
 
 
 /** \brief Initialize the content plugin.

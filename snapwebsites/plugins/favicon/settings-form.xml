@@ -16,7 +16,7 @@
     <key refid="save">s</key><!-- default submit is expected to be [Shift-]Alt-S -->
     <key refid="sitewide">w</key>
   </accesskeys>
-  <widget id="shorturl_settings" type="fieldset">
+  <widget id="favicon_settings" type="fieldset">
     <label>Favorite Icon Settings</label>
     <tooltip>Icon Shown in your client's tab or location bar.</tooltip>
     <help>The favorite icon (or favicon.ico) is the icon shown in your client's browser tab, location bar, bookmark, etc. This form lets you upload your own icon.</help>
@@ -44,7 +44,7 @@
     <widget id="sitewide" type="checkbox" auto-save="int8">
       <label>Use One Sitewide Favorite Icon</label>
       <tooltip>Select to only use the sitewide favorite icon</tooltip>
-      <checked>checked</checked>
+      <value>on</value>
       <help>By default this flag is checked which means that only the sitewide favorite icon is to be used. This allows us to skip on checking the current page and its types for a favicon.ico file.</help>
     </widget>
     <widget id="save" type="submit">

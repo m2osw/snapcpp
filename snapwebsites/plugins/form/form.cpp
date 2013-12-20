@@ -155,11 +155,11 @@ void form::on_init()
  * output different HTML data every time this function is called.
  *
  * \param[in] info  The session information used to register this form
- * \param[in] xml  The XML document to transform to HTML
+ * \param[in] xml_form  The XML document (a form) to transform to HTML.
  *
- * \return The HTML document
+ * \return The resulting HTML document.
  */
-QDomDocument form::form_to_html(sessions::sessions::session_info& info, const QDomDocument& xml)
+QDomDocument form::form_to_html(sessions::sessions::session_info& info, QDomDocument& xml_form)
 {
     QDomDocument doc_output("body");
     if(!f_form_initialized)
@@ -200,7 +200,8 @@ QDomDocument form::form_to_html(sessions::sessions::session_info& info, const QD
         }
         f_form_stylesheet = stylesheet;
 
-        // give other plugins a chance to add their own widgets
+        // give other plugins a chance to add their own widgets to the XSTL
+        // (this is used to extend the capability of Snap! forms)
         form_element(this);
         f_form_elements_string = f_form_elements.toString();
 //printf("form [%s]\n", f_form_elements_string.toUtf8().data());
@@ -208,49 +209,273 @@ QDomDocument form::form_to_html(sessions::sessions::session_info& info, const QD
     }
 
     // IMPORTANT NOTE:
-    // Forms are NOT modified here (see the const against the QDomDocument)
-    // Instead we allow other plugins to modify a form after loading it from
-    // wherever it is (resources, file, Cassandra).
+    // Forms are nearly NOT modified, although we have to allow plugins to
+    // setup the form "default" values (i.e. if you saved a text entry
+    // with the word "foo", when you come back to that form you probably
+    // want the word "foo" in there, unless the field is a secret field
+    // or the form is not to be saved, i.e. a search like form.)
+    //
+    // Note that this update should only change the <value> tags, NOT the
+    // form itself (add/remove widgets). Form modifications are only allowed
+    // after the load of the form in the tweak_form signal.
+    //
+    // Note that we could set all the <value> tags too and ignore the
+    // fact that the <post> tags were created, however, it seems to be
+    // a waste of time (at least at this time it does.)
+    QDomElement snap_form(xml_form.documentElement());
+    if(snap_form.attribute("post").isEmpty())
+    {
+        auto_fill_form(xml_form);
+    }
 
     QXmlQuery q(QXmlQuery::XSLT20);
-    q.setFocus(xml.toString());
+    q.setFocus(xml_form.toString());
     // somehow the bind works here...
     q.bindVariable("form_session", QVariant(sessions::sessions::instance()->create_session(info)));
     q.setQuery(f_form_elements_string);
     QDomReceiver receiver(q.namePool(), doc_output);
     q.evaluateTo(&receiver);
 
-    // also retrieve the form title which is often used as the page title
-    static QDomXPath dom_xpath;
-    dom_xpath.setXPath("/snap-form/title");
-    QDomXPath::node_vector_t title(dom_xpath.apply(xml));
-    if(title.size() > 0 && title[0].isElement())
-    {
-        f_form_title = title[0].toElement().text();
-    }
-
     return doc_output;
 }
 
 
-/** \brief Retrieve the title defined in the form.
+/** \brief Automatically fill the form.
  *
- * When a form defines a title, this function returns it. If no title is
- * defined in a form, then this function returns an empty string.
+ * This function automatically fills the fields of a form with data
+ * from the database. Forms that accept defaults should have those
+ * defaults predefined in the XML data.
  *
- * \param[in] default_title  If the form title was not specified in the form,
- *                           then this function returns this string instead.
+ * For example, the favicon plugin offers the user to define whether
+ * only the main favicon file should be used. If so a flag is set to
+ * true. That value can be changed by going to the settings at:
  *
- * \return The form title or an empty string.
+ * \code
+ * .../admin/settings/favicon
+ * \endcode
+ *
+ * The form is defined in the plugin and it has a corresponding entry
+ * in the favicon content.xml. That entry could include a line like
+ * this to create the default parameter:
+ *
+ * \code
+ * <param name="favicon::sitewide" type="int8">1</param>
+ * \endcode
+ *
+ * Only "ultra"-dynamic defaults are to be added through the
+ * fill_form_widget() signal. Actually, it is very unlikely that any form
+ * will use that signal since in most cases the defaults and the last
+ * saved values come from the database.
+ *
+ * \important
+ * This function is NOT called if the form was just POSTed. This is because
+ * the default values for all the fields are taken from what the user just
+ * sent us and not the default or what's in the database.
+ *
+ * \param[in] xml_form  The form that's being saved.
  */
-QString form::get_form_title(const QString& default_title) const
+void form::auto_fill_form(QDomDocument xml_form)
 {
-    if(f_form_title.isEmpty())
+    // Get the root element
+    QDomElement snap_form(xml_form.documentElement());
+
+    // retrieve the cpath of the form (i.e. where the form is to be posted.)
+    QString const cpath(snap_form.attribute("path"));
+
+    // make sure that row exists
+    QSharedPointer<QtCassandra::QCassandraTable> content_table(content::content::instance()->get_content_table());
+    QString const site_key(f_snap->get_site_key_with_slash());
+    QString const key(site_key + cpath);
+    if(!content_table->exists(key))
     {
-        return default_title;
+        // the row does not exist yet... the form should not even be
+        // in auto-save mode!?
+        return;
     }
-    return f_form_title;
+    QSharedPointer<QtCassandra::QCassandraRow> row(content_table->row(key));
+
+    // if we have an auto-save, then we can auto-load too
+    // otherwise only let the user plugin take care of the auto-fill
+    QString auto_save_str(snap_form.attribute("auto-save"));
+    bool const auto_save(!auto_save_str.isEmpty());
+
+    QString const owner(snap_form.attribute("owner"));
+
+    QDomNodeList widgets(xml_form.elementsByTagName("widget"));
+    int const count(widgets.length());
+    for(int i(0); i < count; ++i)
+    {
+        QDomNode w(widgets.item(i));
+        if(!w.isElement())
+        {
+            throw form_exception_invalid_form_xml("elementsByTagName() returned a node that is not an element");
+        }
+        QDomElement widget(w.toElement());
+
+        // secrets are never sent back to the client!
+        // (i.e. these are passwords and such)
+        QString const secret(widget.attribute("secret"));
+        if(secret == "secret")
+        {
+            continue;
+        }
+
+        // retrieve the name and type once; use the name to retrieve the
+        // value from the database
+        QString const widget_name(widget.attribute("id"));
+        if(widget_name.isEmpty())
+        {
+            throw form_exception_invalid_form_xml("All widgets must have an id with its HTML variable form name");
+        }
+
+        // only widgets that are marked for auto-save can be auto-filled
+        // (note: although the auto-save could also be done inside the
+        //        fill_widget signal, it is done here so we can optimize
+        //        on this very test)
+        if(auto_save)
+        {
+            QString const auto_save_type(widget.attribute("auto-save"));
+            if(!auto_save_type.isEmpty())
+            {
+                // check whether that cell exists
+                QString name(owner + "::" + widget_name);
+                if(auto_save_type == "binary")
+                {
+                    // only the path is saved in the parent for attachments
+                    name += "::path";
+                }
+                if(row->exists(name))
+                {
+                    QString const widget_type(widget.attribute("type"));
+                    if(widget_type.isEmpty())
+                    {
+                        throw form_exception_invalid_form_xml("All auto-save widgets must have a type with its HTML variable form name");
+                    }
+                    QtCassandra::QCassandraValue const value(row->cell(name)->value());
+
+                    QString widget_value;
+
+                    // the auto-save attribute is set to the type of the data
+                    if(auto_save_type == "int8")
+                    {
+                        int const v(value.signedCharValue());
+                        if(widget_type == "checkbox")
+                        {
+                            if(v == 0)
+                            {
+                                widget_value = "off";
+                            }
+                            else
+                            {
+                                widget_value = "on";
+                            }
+                        }
+                        else
+                        {
+                            widget_value = QString("%1").arg(v);
+                        }
+                    }
+                    else if(auto_save_type == "binary")
+                    {
+                        // this is an attachment
+                        // we just create a link to it
+                        // TODO add support for images since we can add an
+                        //      <img ...> tag instead!
+                        if(widget_type == "image")
+                        {
+                            // in this case we can simply show the image
+                            widget_value = "<img src=\"" + value.stringValue() + "\"/>";
+                        }
+                        else
+                        {
+                            widget_value = "<a href=\"" + value.stringValue() + "\">view attachment</a>";
+                        }
+                    }
+                    else if(auto_save_type == "string")
+                    {
+                        // this is somewhat viewed as the default, but the
+                        // type must still be valid and set to "string"
+                        widget_value = value.stringValue();
+                    }
+                    // else -- undefined? -- should probably err here?
+                    if(!widget_value.isEmpty())
+                    {
+//printf("fill [%s] with [%s]\n", name.toUtf8().data(), widget_value.toUtf8().data());
+                        fill_value(widget, widget_value);
+                    }
+                }
+            }
+        }
+
+        fill_form_widget(this, owner, cpath, xml_form, widget, widget_name);
+    }
 }
+
+
+/** \brief Define the default value dynamically.
+ *
+ * This function can be called to setup the default value of a widget
+ * when it is determined dynamically (which should be really rare).
+ *
+ * Note that this function can also be used to change the text of a
+ * button. For example, a Save button could become Overwrite the
+ * next time the user saves that form.
+ *
+ * \param[in] widget  The widget receiving the value.
+ * \param[in] value  The value to assign to the widget as the default.
+ */
+void form::fill_value(QDomElement widget, QString const& value)
+{
+    // create the tag only if it doesn't already exist
+    QDomElement value_tag(widget.firstChildElement("value"));
+    if(value_tag.isNull())
+    {
+        value_tag = widget.ownerDocument().createElement("value");
+        widget.appendChild(value_tag);
+    }
+    else
+    {
+        // remove any old value
+        while(value_tag.hasChildNodes())
+        {
+            value_tag.removeChild(value_tag.lastChild());
+        }
+    }
+
+    content::content::insert_html_string_to_xml_doc(value_tag, value);
+}
+
+
+/** \brief Request plugins to fill in form widgets.
+ *
+ * This function offers widgets to fill out form widgets. This is used
+ * to dynamically fill forms. It should rarely be necessary to do so
+ * because in most cases the data is defined using the auto-fill form
+ * features.
+ *
+ * Your plugin should end up calling the set_default_value() function
+ * as follow if a dynamic fill value exists:
+ *
+ * \code
+ *   f->fill_value(width, "this is the default value");
+ * \endcode
+ *
+ * \param[in] f  A pointer to the form plugin
+ * \param[in] owner  The form owner.
+ * \param[in] cpath  The path of the form.
+ * \param[in] xml_form  The XML form being filled.
+ * \param[in] widget  The widget being worked on.
+ * \param[in] id  The identifier (name) of the widget (id=... attribute).
+ *
+ * \return true if the signal is to be propagated.
+ */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+bool form::fill_form_widget_impl(form *f, QString const& owner, QString const& cpath, QDomDocument xml_form, QDomElement widget, QString const& id)
+{
+    return true;
+}
+#pragma GCC diagnostic pop
 
 
 /** \brief Default implementation of the form element event.
@@ -473,7 +698,8 @@ QDomDocument const form::load_form(QString const& cpath, QString const& source, 
         return g_cached_form[csource].f_doc;
     }
 
-    // 4. save the source path in the document
+    // 4. save the page path and source path in the document
+    g_cached_form[csource].f_doc.documentElement().setAttribute("path", cpath);
     g_cached_form[csource].f_doc.documentElement().setAttribute("src", csource);
 
     // 5. broadcast the fact that this form was loaded
@@ -615,34 +841,26 @@ void form::on_process_post(const QString& uri_path)
     QString source(get_source(owner, cpath));
     if(source.isEmpty())
     {
-        if(fp == NULL)
-        {
-            // the programmer forgot to derive from form_post?!
-            throw snap_logic_exception(QString("you cannot use plugin \"%1\" as dynamically supporting forms without also deriving it from form_post").arg(owner));
-        }
+        // the programmer forgot to derive from form_post?!
+        throw snap_logic_exception(QString("could not find a valid source for a form in \"%1\".").arg(cpath));
+    }
 
-        // retrieve the XML form information so we can verify the data
-        // (i.e. the XML includes ranges, filters, data types, etc.)
-        xml_form = fp->on_get_xml_form(cpath);
-    }
-    else
-    {
-        QString error;
-        xml_form = load_form(cpath, source, error);
-        // We'll catch the error below and throw
-        //if(!error.isEmpty())
-        //{
-        //}
-    }
+    QString error;
+    xml_form = load_form(cpath, source, error);
     if(xml_form.isNull())
     {
-        // programmer mispelled the path in his on_get_xml_form()
+        // programmer mispelled the path?
         throw form_exception_invalid_form_xml(QString("path \"%1\" does not correspond to a valid XML form").arg(cpath));
     }
 
+    // clearly mark that this form has post values (i.e. do not
+    // update the form with the default data saved in the database)
+    QDomElement root(xml_form.documentElement());
+    root.setAttribute("post", "post");
+
     auto_save_types_t auto_save_type;
     QDomNodeList widgets(xml_form.elementsByTagName("widget"));
-    int count(widgets.length());
+    int const count(widgets.length());
     for(int i(0); i < count; ++i)
     {
         // TODO properly record the use of each and every single widget
@@ -765,7 +983,7 @@ void form::on_process_post(const QString& uri_path)
 
     // data looks good, let the plugin process it
     QDomElement snap_form(xml_form.documentElement());
-    QString auto_save_str(snap_form.attribute("auto-save", ""));
+    QString auto_save_str(snap_form.attribute("auto-save"));
     if(!auto_save_str.isEmpty())
     {
         // in this case the form plugin just saves the data as is in the page

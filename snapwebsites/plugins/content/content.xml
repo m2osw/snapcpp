@@ -190,8 +190,14 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <![CDATA[<p>View an attachment.</p><p>This right is used to mark attachments.</p>]]>
     </param>
   </content>
+  <content path="/types/permissions/rights/view/attachment/public">
+    <param name="content::title">Public Attachment Right</param>
+    <param name="content::body">
+      <![CDATA[<p>Right given to public attachments so visitors can see them.</p>]]>
+    </param>
+  </content>
   <content path="/types/permissions/rights/view/attachment/private">
-    <param name="content::title">Private Page Right</param>
+    <param name="content::title">Private Attachment Right</param>
     <param name="content::body">
       <![CDATA[<p>Right given to private attachments so registered users can see them.</p>]]>
     </param>

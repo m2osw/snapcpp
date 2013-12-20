@@ -17,7 +17,7 @@
 #ifndef SNAP_SHORTURL_H
 #define SNAP_SHORTURL_H
 
-#include "../layout/layout.h"
+#include "../sessions/sessions.h"
 
 namespace snap
 {
@@ -36,15 +36,15 @@ enum name_t
     SNAP_NAME_SHORTURL_TABLE,
     SNAP_NAME_SHORTURL_URL
 };
-const char *get_name(name_t name) __attribute__ ((const));
+char const *get_name(name_t name) __attribute__ ((const));
 
 
 class shorturl_exception : public snap_exception
 {
 public:
-    shorturl_exception(const char *what_msg) : snap_exception("Short URL: " + std::string(what_msg)) {}
-    shorturl_exception(const std::string& what_msg) : snap_exception("Short URL: " + what_msg) {}
-    shorturl_exception(const QString& what_msg) : snap_exception("Short URL: " + what_msg.toStdString()) {}
+    shorturl_exception(char const *what_msg) : snap_exception("Short URL: " + std::string(what_msg)) {}
+    shorturl_exception(std::string const& what_msg) : snap_exception("Short URL: " + what_msg) {}
+    shorturl_exception(QString const& what_msg) : snap_exception("Short URL: " + what_msg.toStdString()) {}
 };
 
 
@@ -52,6 +52,8 @@ public:
 class shorturl : public plugins::plugin, public path::path_execute, public layout::layout_content
 {
 public:
+    static const sessions::sessions::session_info::session_id_t SHORTURL_SESSION_ID_SETTINGS = 1;      // settings-form.xml
+
                         shorturl();
                         ~shorturl();
 

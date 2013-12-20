@@ -1,4 +1,4 @@
-// Snap Websites Server -- shorturl management (smaller URLs for all pages)
+// Snap Websites Server -- feed management (RSS like feeds and aggregators)
 // Copyright (C) 2013  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
@@ -14,51 +14,45 @@
 // You should have received a copy of the GNU General Public License
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-#ifndef SNAP_SHORTURL_H
-#define SNAP_SHORTURL_H
+#ifndef SNAP_FEED_H
+#define SNAP_FEED_H
 
 #include "../layout/layout.h"
 
 namespace snap
 {
-namespace shorturl
+namespace feed
 {
 
 
 enum name_t
 {
-    SNAP_NAME_SHORTURL_DATE,
-    SNAP_NAME_SHORTURL_HTTP_LINK,
-    SNAP_NAME_SHORTURL_IDENTIFIER,
-    SNAP_NAME_SHORTURL_ID_ROW,
-    SNAP_NAME_SHORTURL_INDEX_ROW,
-    SNAP_NAME_SHORTURL_NO_SHORTURL,
-    SNAP_NAME_SHORTURL_TABLE,
-    SNAP_NAME_SHORTURL_URL
+    SNAP_NAME_FEED_DATE
 };
-const char *get_name(name_t name) __attribute__ ((const));
+char const *get_name(name_t name) __attribute__ ((const));
 
 
-class shorturl_exception : public snap_exception
+class feed_exception : public snap_exception
 {
 public:
-    shorturl_exception(const char *what_msg) : snap_exception("Short URL: " + std::string(what_msg)) {}
-    shorturl_exception(const std::string& what_msg) : snap_exception("Short URL: " + what_msg) {}
-    shorturl_exception(const QString& what_msg) : snap_exception("Short URL: " + what_msg.toStdString()) {}
+    feed_exception(char const *what_msg) : snap_exception("Feed: " + std::string(what_msg)) {}
+    feed_exception(std::string const& what_msg) : snap_exception("Feed: " + what_msg) {}
+    feed_exception(QString const& what_msg) : snap_exception("Feed: " + what_msg.toStdString()) {}
 };
 
 
 
-class shorturl : public plugins::plugin, public path::path_execute, public layout::layout_content
+class feed : public plugins::plugin, public path::path_execute, public layout::layout_content
 {
 public:
-                        shorturl();
-                        ~shorturl();
+    static const sessions::sessions::session_info::session_id_t FEED_SESSION_ID_SETTINGS = 1;      // settings-form.xml
 
-    static shorturl *   instance();
+                        feed();
+                        ~feed();
+
+    static feed *       instance();
     virtual QString     description() const;
     virtual int64_t     do_update(int64_t last_updated);
-    QSharedPointer<QtCassandra::QCassandraTable> get_shorturl_table();
 
     void                on_bootstrap(snap_child *snap);
     virtual bool        on_path_execute(const QString& url);
@@ -72,12 +66,11 @@ private:
     void content_update(int64_t variables_timestamp);
 
     zpsnap_child_t                                  f_snap;
-    QSharedPointer<QtCassandra::QCassandraTable>    f_shorturl_table;
 };
 
 
-} // namespace shorturl
+} // namespace feed
 } // namespace snap
 #endif
-// SNAP_SHORTURL_H
+// SNAP_FEED_H
 // vim: ts=4 sw=4 et

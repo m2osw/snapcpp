@@ -65,48 +65,48 @@ enum name_t
     SNAP_NAME_USERS_VERIFIED_ON,
     SNAP_NAME_USERS_VERIFY_EMAIL
 };
-const char *get_name(name_t name) __attribute__ ((const));
+char const *get_name(name_t name) __attribute__ ((const));
 
 
 
 class users_exception : public snap_exception
 {
 public:
-    users_exception(const char *what_msg) : snap_exception("Users: " + std::string(what_msg)) {}
-    users_exception(const std::string& what_msg) : snap_exception("Users: " + what_msg) {}
-    users_exception(const QString& what_msg) : snap_exception("Users: " + what_msg.toStdString()) {}
+    users_exception(char const *what_msg) : snap_exception("Users: " + std::string(what_msg)) {}
+    users_exception(std::string const& what_msg) : snap_exception("Users: " + what_msg) {}
+    users_exception(QString const& what_msg) : snap_exception("Users: " + what_msg.toStdString()) {}
 };
 
 class users_exception_invalid_path : public users_exception
 {
 public:
-    users_exception_invalid_path(const char *what_msg) : users_exception(what_msg) {}
-    users_exception_invalid_path(const std::string& what_msg) : users_exception(what_msg) {}
-    users_exception_invalid_path(const QString& what_msg) : users_exception(what_msg.toStdString()) {}
+    users_exception_invalid_path(char const *what_msg) : users_exception(what_msg) {}
+    users_exception_invalid_path(std::string const& what_msg) : users_exception(what_msg) {}
+    users_exception_invalid_path(QString const& what_msg) : users_exception(what_msg.toStdString()) {}
 };
 
 class users_exception_size_mismatch : public users_exception
 {
 public:
-    users_exception_size_mismatch(const char *what_msg) : users_exception(what_msg) {}
-    users_exception_size_mismatch(const std::string& what_msg) : users_exception(what_msg) {}
-    users_exception_size_mismatch(const QString& what_msg) : users_exception(what_msg.toStdString()) {}
+    users_exception_size_mismatch(char const *what_msg) : users_exception(what_msg) {}
+    users_exception_size_mismatch(std::string const& what_msg) : users_exception(what_msg) {}
+    users_exception_size_mismatch(QString const& what_msg) : users_exception(what_msg.toStdString()) {}
 };
 
 class users_exception_digest_not_available : public users_exception
 {
 public:
-    users_exception_digest_not_available(const char *what_msg) : users_exception(what_msg) {}
-    users_exception_digest_not_available(const std::string& what_msg) : users_exception(what_msg) {}
-    users_exception_digest_not_available(const QString& what_msg) : users_exception(what_msg.toStdString()) {}
+    users_exception_digest_not_available(char const *what_msg) : users_exception(what_msg) {}
+    users_exception_digest_not_available(std::string const& what_msg) : users_exception(what_msg) {}
+    users_exception_digest_not_available(QString const& what_msg) : users_exception(what_msg.toStdString()) {}
 };
 
 class users_exception_encryption_failed : public users_exception
 {
 public:
-    users_exception_encryption_failed(const char *what_msg) : users_exception(what_msg) {}
-    users_exception_encryption_failed(const std::string& what_msg) : users_exception(what_msg) {}
-    users_exception_encryption_failed(const QString& what_msg) : users_exception(what_msg.toStdString()) {}
+    users_exception_encryption_failed(char const *what_msg) : users_exception(what_msg) {}
+    users_exception_encryption_failed(std::string const& what_msg) : users_exception(what_msg) {}
+    users_exception_encryption_failed(QString const& what_msg) : users_exception(what_msg.toStdString()) {}
 };
 
 
@@ -114,18 +114,19 @@ public:
 class users : public plugins::plugin, public path::path_execute, public layout::layout_content, public form::form_post
 {
 public:
-    static const sessions::sessions::session_info::session_id_t USERS_SESSION_ID_LOG_IN = 1;
+    static const sessions::sessions::session_info::session_id_t USERS_SESSION_ID_LOG_IN = 1;                    // login-form.xml
     static const sessions::sessions::session_info::session_id_t USERS_SESSION_ID_LOG_IN_BLOCK = 2;
-    static const sessions::sessions::session_info::session_id_t USERS_SESSION_ID_REGISTER = 3;
+    static const sessions::sessions::session_info::session_id_t USERS_SESSION_ID_REGISTER = 3;                  // register-form.xml
     static const sessions::sessions::session_info::session_id_t USERS_SESSION_ID_REGISTER_BLOCK = 4;
-    static const sessions::sessions::session_info::session_id_t USERS_SESSION_ID_FORGOT_PASSWORD = 5;
-    static const sessions::sessions::session_info::session_id_t USERS_SESSION_ID_VERIFY = 6;
+    static const sessions::sessions::session_info::session_id_t USERS_SESSION_ID_FORGOT_PASSWORD = 5;           // forgot-password-form.xml
+    static const sessions::sessions::session_info::session_id_t USERS_SESSION_ID_VERIFY = 6;                    // verify-form.xml
     static const sessions::sessions::session_info::session_id_t USERS_SESSION_ID_LOG_IN_SESSION = 7;
     static const sessions::sessions::session_info::session_id_t USERS_SESSION_ID_VERIFY_EMAIL = 8;
     static const sessions::sessions::session_info::session_id_t USERS_SESSION_ID_FORGOT_PASSWORD_EMAIL = 9;
-    static const sessions::sessions::session_info::session_id_t USERS_SESSION_ID_RESEND_EMAIL = 10;
-    static const sessions::sessions::session_info::session_id_t USERS_SESSION_ID_NEW_PASSWORD = 11;
-    static const sessions::sessions::session_info::session_id_t USERS_SESSION_ID_REPLACE_PASSWORD = 12;
+    static const sessions::sessions::session_info::session_id_t USERS_SESSION_ID_RESEND_EMAIL = 10;             // resend-email-form.xml
+    static const sessions::sessions::session_info::session_id_t USERS_SESSION_ID_NEW_PASSWORD = 11;             // new-password-form.xml
+    static const sessions::sessions::session_info::session_id_t USERS_SESSION_ID_REPLACE_PASSWORD = 12;         // replace-password-form.xml
+    static const sessions::sessions::session_info::session_id_t USERS_SESSION_ID_PASSWORD = 13;                 // password-form.xml
 
                             users();
     virtual                 ~users();
@@ -137,32 +138,31 @@ public:
 
     void                    on_bootstrap(::snap::snap_child *snap);
     void                    on_init();
-    void                    on_can_handle_dynamic_path(path::path *path_plugin, const QString& cpath);
-    void                    on_generate_header_content(layout::layout *l, const QString& path, QDomElement& hader, QDomElement& metadata, const QString& ctemplate);
-    virtual void            on_generate_main_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body, const QString& ctemplate);
-    void                    on_generate_page_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body, const QString& ctemplate);
-    bool                    on_path_execute(const QString& cpath);
+    void                    on_can_handle_dynamic_path(path::path *path_plugin, QString const& cpath);
+    void                    on_generate_header_content(layout::layout *l, QString const& path, QDomElement& hader, QDomElement& metadata, QString const& ctemplate);
+    virtual void            on_generate_main_content(layout::layout *l, QString const& path, QDomElement& page, QDomElement& body, QString const& ctemplate);
+    void                    on_generate_page_content(layout::layout *l, QString const& path, QDomElement& page, QDomElement& body, QString const& ctemplate);
+    bool                    on_path_execute(QString const& cpath);
     void                    on_process_cookies();
     void                    on_attach_to_session();
     void                    on_detach_from_session();
-    void                    on_create_content(const QString& path, const QString& owner, const QString& type);
+    void                    on_create_content(QString const& path, QString const& owner, QString const& type);
     void                    on_get_user_rights(permissions::permissions *perms, permissions::permissions::sets_t& sets);
     void                    on_get_plugin_permissions(permissions::permissions *perms, permissions::permissions::sets_t& sets);
 
-    virtual QDomDocument    on_get_xml_form(const QString& cpath);
-    virtual void            on_process_post(const QString& uri_path, const sessions::sessions::session_info& info);
+    virtual void            on_process_post(QString const& cpath, sessions::sessions::session_info const& info);
 
     QString                 get_user_key() const;
     QString                 get_user_path() const;
     bool                    user_is_a_spammer();
-    bool                    register_user(const QString& email, const QString& password);
-    void                    attach_to_session(const QString& name, const QString& data);
-    QString                 detach_from_session(const QString& name) const;
+    bool                    register_user(QString const& email, QString const& password);
+    void                    attach_to_session(QString const& name, QString const& data);
+    QString                 detach_from_session(QString const& name) const;
 
 private:
     void                    initial_update(int64_t variables_timestamp);
     void                    content_update(int64_t variables_timestamp);
-    void                    show_user(layout::layout *l, const QString& cpath, QDomElement& page, QDomElement& body);
+    void                    show_user(layout::layout *l, QString const& cpath, QDomElement& page, QDomElement& body);
     void                    prepare_login_form();
     void                    logout_user(layout::layout *l, QString cpath, QDomElement& page, QDomElement& body);
     void                    prepare_basic_anonymous_form();
@@ -172,8 +172,8 @@ private:
     void                    process_login_form();
     void                    process_register_form();
     void                    create_password_salt(QByteArray& salt);
-    void                    encrypt_password(const QString& digest, const QString& password, const QByteArray& salt, QByteArray& hash);
-    void                    verify_user(const QString& cpath);
+    void                    encrypt_password(QString const& digest, QString const& password, QByteArray const& salt, QByteArray& hash);
+    void                    verify_user(QString const& cpath);
     void                    process_verify_form();
     void                    process_verify_resend_form();
     void                    process_forgot_password_form();
@@ -181,9 +181,9 @@ private:
     void                    process_password_form();
     void                    process_replace_password_form();
     void                    prepare_replace_password_form(QDomElement& body);
-    void                    verify_email(const QString& email);
-    void                    verify_password(const QString& cpath);
-    void                    forgot_password_email(const QString& email);
+    void                    verify_email(QString const& email);
+    void                    verify_password(QString const& cpath);
+    void                    forgot_password_email(QString const& email);
 
     zpsnap_child_t          f_snap;
     QString                 f_user_key; // logged in user email address

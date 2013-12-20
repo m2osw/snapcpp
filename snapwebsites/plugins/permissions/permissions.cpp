@@ -337,7 +337,7 @@ int64_t permissions::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2013, 12, 10, 2, 53, 30, content_update);
+    SNAP_PLUGIN_UPDATE(2013, 12, 20, 14, 3, 30, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -458,7 +458,7 @@ bool permissions::get_plugin_permissions_impl(permissions *perms, sets_t& sets)
             parts.pop_back();
             if(parts.isEmpty())
             {
-                // let other modules take over, we're done here though
+                // let other modules take over, we're done here
                 return true;
             }
             ++depth;

@@ -263,6 +263,7 @@ public:
     void                set_param_overwrite(QString const& path, const QString& name, bool overwrite);
     void                set_param_type(QString const& path, const QString& name, param_type_t param_type);
     void                add_link(QString const& path, links::link_info const& source, links::link_info const& destination);
+    static void         insert_html_string_to_xml_doc(QDomElement child, QString const& xml);
 
     virtual int         js_property_count() const;
     virtual QVariant    js_property_get(QString const& name) const;

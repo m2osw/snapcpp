@@ -59,7 +59,6 @@ class form_post
 public:
     virtual ~form_post() {}
 
-    virtual QDomDocument    on_get_xml_form(QString const& cpath) = 0;
     virtual void            on_process_post(QString const& cpath, sessions::sessions::session_info const& info) = 0;
 };
 
@@ -82,13 +81,13 @@ public:
     SNAP_SIGNAL(tweak_form, (form *f, QString const& cpath, QDomDocument form_doc), (f, cpath, form_doc));
     SNAP_SIGNAL(form_element, (form *f), (f));
     SNAP_SIGNAL(validate_post_for_widget, (QString const& cpath, sessions::sessions::session_info& info, QDomElement const& widget, QString const& widget_name, QString const& widget_type, bool is_secret), (cpath, info, widget, widget_name, widget_type, is_secret));
+    SNAP_SIGNAL(fill_form_widget, (form *f, QString const& owner, QString const& cpath, QDomDocument xml_form, QDomElement widget, QString const& id), (f, owner, cpath, xml_form, widget, id));
 
     QDomDocument const      load_form(QString const& cpath, QString const& source, QString& error);
-    QDomDocument            form_to_html(sessions::sessions::session_info& info, QDomDocument const& xml);
+    QDomDocument            form_to_html(sessions::sessions::session_info& info, QDomDocument& xml);
     void                    add_form_elements(QDomDocument& add);
     void                    add_form_elements(QString& filename);
-
-    QString                 get_form_title(QString const& default_title) const;
+    void                    fill_value(QDomElement widget, QString const& value);
 
     QString                 get_source(QString const& plugin_owner_name, QString const& cpath);
     bool                    is_auto_save(QString const& cpath);
@@ -102,6 +101,7 @@ public:
 private:
     typedef QMap<QString, QString> auto_save_types_t;
     void                    auto_save_form(QString const& owner, QString const& cpath, auto_save_types_t const& auto_save_type, QDomDocument xml_form);
+    void                    auto_fill_form(QDomDocument xml_form);
 
     zpsnap_child_t              f_snap;
     controlled_vars::fbool_t    f_form_initialized;
