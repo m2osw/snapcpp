@@ -73,6 +73,15 @@ class server;
 class snap_child
 {
 public:
+    enum date_format_t
+    {
+        DATE_FORMAT_SHORT,
+        DATE_FORMAT_LONG,
+        DATE_FORMAT_TIME,
+        DATE_FORMAT_EMAIL,
+        DATE_FORMAT_HTTP
+    };
+
     enum http_code_t
     {
         // a couple of internal codes used here and there (never sent to user)
@@ -187,6 +196,7 @@ public:
         time_t                      get_creation_time() const { return f_creation_time; }
         time_t                      get_modification_time() const { return f_modification_time; }
         QByteArray                  get_data() const { return f_data; }
+        int                         get_size() const { return f_data.size(); }
         int                         get_index() const { return f_index; }
 
         bool                        verify_mime_type() const;
@@ -209,10 +219,10 @@ public:
     static header_mode_t const HEADER_MODE_ERROR        = 0x0004;
     static header_mode_t const HEADER_MODE_EVERYWHERE   = 0xFFFF;
 
-                               snap_child(server_pointer_t s);
-                               ~snap_child();
+                                snap_child(server_pointer_t s);
+                                ~snap_child();
 
-    bool                       process(int socket);
+    bool                        process(int socket);
     void                        backend();
     status_t                    check_status();
 
@@ -220,6 +230,7 @@ public:
 
     void                        exit(int code);
     bool                        is_debug() const;
+    QString                     get_server_parameter(QString const& name);
     QtCassandra::QCassandraValue get_site_parameter(QString const& name);
     void                        set_site_parameter(QString const& name, QtCassandra::QCassandraValue const& value);
     QSharedPointer<QtCassandra::QCassandraContext> get_context() { return f_context; }
@@ -236,14 +247,17 @@ public:
     QString                     get_unique_number();
     QSharedPointer<QtCassandra::QCassandraTable> create_table(const QString& table_name, const QString& comment);
     void                        new_content();
+    void                        verify_permissions();
+    void                        process_post();
     static void                 canonicalize_path(QString& path);
-    static QString              date_to_string(int64_t v, bool long_format = false);
-    static time_t               string822_to_date(QString const& date);
+    static QString              date_to_string(int64_t v, date_format_t date_format = DATE_FORMAT_SHORT);
+    static time_t               string_to_date(QString const& date);
 
     QString                     snapenv(QString const& name) const;
     bool                        postenv_exists(QString const& name) const;
     QString                     postenv(QString const& name, QString const& default_value = "") const;
     environment_map_t const&    all_postenv() const { return f_post; }
+    bool                        postfile_exists(QString const& name) const;
     post_file_t const&          postfile(QString const& name) const;
     bool                        cookie_is_defined(QString const& name) const;
     QString                     cookie(QString const& name) const;
@@ -291,7 +305,6 @@ private:
     void                        write(QString const& str);
     void                        output_headers(header_mode_t modes);
     void                        output_cookies();
-    void                        verify_permissions();
 
     controlled_vars::mint64_t           f_start_date; // time request arrived
     server_pointer_t                    f_server;

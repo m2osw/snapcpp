@@ -36,14 +36,6 @@
 SNAP_PLUGIN_START(sendmail, 1, 0)
 
 
-namespace
-{
-const char *g_month[12] = {
-    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
-};
-}
-
 /** \brief Get a fixed sendmail plugin name.
  *
  * The sendmail plugin makes use of different names in the database. This
@@ -1596,9 +1588,9 @@ QString sendmail::default_from() const
  *
  * At this time we only support one action named "sendmail".
  *
- * \param[in] actions  The list of supported actions where we add ourselves.
+ * \param[in,out] actions  The list of supported actions where we add ourselves.
  */
-void sendmail::on_register_backend_action(snap::server::backend_action_map_t& actions)
+void sendmail::on_register_backend_action(server::backend_action_map_t& actions)
 {
     actions[get_name(SNAP_NAME_SENDMAIL)] = this;
 }
@@ -2209,19 +2201,9 @@ void sendmail::sendemail(const QString& key, const QString& unique_key)
     if(!headers.contains("Date"))
     {
         // the date must be specified in English only which prevents us from
-        // using the strftime() function which is affected by the current
-        // locale of the server
-        time_t now(time(NULL));
-        struct tm t;
-        gmtime_r(&now, &t);
-        // TBD we may want to have that format supported in the library
-        headers["Date"] = QString("%1 %2 %3 %4:%5:%6 +0000")
-                        .arg(t.tm_mday)
-                        .arg(g_month[t.tm_mon])
-                        .arg(t.tm_year + 1900, 4, 10, QLatin1Char('0'))
-                        .arg(t.tm_hour, 2, 10, QLatin1Char('0'))
-                        .arg(t.tm_min, 2, 10, QLatin1Char('0'))
-                        .arg(t.tm_sec, 2, 10, QLatin1Char('0'));
+        // using the strftime() or QDateTime functions which are affected by
+        // the current locale of the server
+        headers["Date"] = f_snap->date_to_string(time(NULL), snap_child::DATE_FORMAT_EMAIL);
     }
     if(!headers.contains("Message-ID"))
     {
@@ -2408,7 +2390,7 @@ void sendmail::on_generate_main_content(layout::layout *l, const QString& path, 
             QDomText key_text(doc.createTextNode(f_email.get_email_key()));
             key.appendChild(key_text);
         }
-        const QString created(f_snap->date_to_string(f_email.get_time() * 1000000, true));
+        const QString created(f_snap->date_to_string(f_email.get_time() * 1000000, snap_child::DATE_FORMAT_LONG));
         {
             QDomElement time_tag(doc.createElement("created"));
             sendmail_tag.appendChild(time_tag);

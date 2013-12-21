@@ -212,7 +212,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   <content path="/types/permissions/groups/root">
     <param name="content::title">Root Group</param>
     <param name="content::body">
-      <![CDATA[<p>The very first used created in Snap! is assigned to the root group. This user can do anything in the entire set of websites.</p>]]>
+      <![CDATA[<p>The very first user created in Snap! is assigned to the root group. This user can do anything in the entire set of websites.</p>]]>
     </param>
   </content>
   <content path="/types/permissions/groups/root/administrator">
@@ -220,6 +220,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="content::body">
       <![CDATA[<p>Group used by managers. Managers are linked to one specific website and they can do pretty much anything they want in that website except editing some top level system pages. In most cases, site owners are assigned the administrator group.</p>]]>
     </param>
+    <link name="permissions::view" to="permissions::view" mode="*:*">/types/permissions/rights/administer</link>
+    <link name="permissions::administer" to="permissions::administer" mode="*:*">/types/permissions/rights/administer</link>
   </content>
   <content path="/types/permissions/groups/root/administrator/editor">
     <param name="content::title">Editor Group</param>
@@ -254,7 +256,19 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <link name="permissions::view" to="permissions::view" mode="*:*">/types/permissions/rights/view/page/private</link>
     <link name="permissions::view" to="permissions::view" mode="*:*">/types/permissions/rights/view/attachment/private</link>
   </content>
-  <content path="/types/permissions/groups/root/administrator/editor/moderator/author/commenter/registered-user/visitor">
+  <content path="/types/permissions/groups/root/administrator/editor/moderator/author/commenter/registered-user/returning-registered-user">
+    <param name="content::title">Visitor Group</param>
+    <param name="content::body">
+      <![CDATA[<p>Groups that can be used to manager permissions on a set of users.</p>]]>
+    </param>
+  </content>
+  <content path="/types/permissions/groups/root/administrator/editor/moderator/author/commenter/registered-user/returning-registered-user/returning-visitor">
+    <param name="content::title">Visitor Group</param>
+    <param name="content::body">
+      <![CDATA[<p>Groups that can be used to manager permissions on a set of users.</p>]]>
+    </param>
+  </content>
+  <content path="/types/permissions/groups/root/administrator/editor/moderator/author/commenter/registered-user/returning-registered-user/returning-visitor/visitor">
     <param name="content::title">Visitor Group</param>
     <param name="content::body">
       <![CDATA[<p>Groups that can be used to manager permissions on a set of users.</p>]]>
@@ -262,7 +276,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <link name="permissions::view" to="permissions::view" mode="*:*">/types/permissions/rights/view/page/public</link>
     <link name="permissions::view" to="permissions::view" mode="*:*">/types/permissions/rights/view/system-page</link>
   </content>
-  <content path="/types/permissions/groups/root/administrator/editor/moderator/author/commenter/registered-user/visitor/spammer">
+  <content path="/types/permissions/groups/root/administrator/editor/moderator/author/commenter/registered-user/returning-registered-user/returning-visitor/visitor/spammer">
     <param name="content::title">Spammer Group</param>
     <param name="content::body">
       <![CDATA[<p>Spammers are blocked from nearly everything. We just show them our home page, privacy policy, and terms and conditions. It won't help them though.</p>]]>

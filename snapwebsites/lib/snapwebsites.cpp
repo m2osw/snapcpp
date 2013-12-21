@@ -218,11 +218,19 @@ namespace
         },
         {
             'h',
-            0x00,
+            0,
             "help",
             NULL,
             "Show usage and exit.",
             advgetopt::getopt::optional_argument
+        },
+        {
+            'p',
+            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE,
+            "param",
+            NULL,
+            "Define one or more server parameters on the command line (-p name=value).",
+            advgetopt::getopt::required_multiple_argument
         },
         {
             '\0',
@@ -484,6 +492,34 @@ void server::config(int argc, char *argv[])
     openlog("snapserver", LOG_NDELAY | LOG_PID, LOG_DAEMON);
 
     bool help(false);
+
+    parameter_map_t cmd_line_params;
+    if(f_opt->is_defined("param"))
+    {
+        int const max(f_opt->size("param"));
+        for(int idx(0); idx < max; ++idx)
+        {
+            QString param(QString::fromUtf8(f_opt->get_string("param", idx).c_str()));
+            int const p(param.indexOf('='));
+            if(p == -1)
+            {
+                if(f_debug)
+                {
+                    std::cerr << "fatal error: unexpected parameter \"--param "<< f_opt->get_string("param", idx) << "\". No '=' found in the parameter definition. (in server::config())" << std::endl;
+                }
+                syslog(LOG_CRIT, "unexpected parameter \"--param %s\". No '=' found in the parameter definition. (in server::config())", f_opt->get_string("param", idx).c_str());
+                help = true;
+            }
+            else
+            {
+                // got a user defined parameter
+                QString const name(param.left(p));
+                f_parameters[name] = param.mid(p + 1);
+                cmd_line_params[name] = ""; // the value is not important here
+            }
+        }
+    }
+
     if( f_opt->is_defined( "action" ) )
     {
         const std::string action( f_opt->get_string("action" ) );
@@ -495,6 +531,11 @@ void server::config(int argc, char *argv[])
             }
             else
             {
+                // with the advgetopt this should never occur
+                if(f_debug)
+                {
+                    std::cerr << "fatal error: unexpected parameter \"--action "<< action << "\", at most one action can be specified, backend not started. (in server::config())" << std::endl;
+                }
                 syslog( LOG_CRIT, "unexpected parameter \"--action %s\", at most one action can be specified, backend not started. (in server::config())", action.c_str() );
                 help = true;
             }
@@ -503,6 +544,10 @@ void server::config(int argc, char *argv[])
         {
             // If not backend, "--action" doesn't make sense.
             //
+            if(f_debug)
+            {
+                std::cerr << "fatal error: unexpected command line option \"--action " << action << "\", server not started. (in server::config())" << std::endl;
+            }
             syslog( LOG_CRIT, "unexpected command line option \"--action %s\", server not started. (in server::config())", action.c_str() );
             help = true;
         }
@@ -584,6 +629,8 @@ void server::config(int argc, char *argv[])
         char *v(n);
         while(*v != '=' && *v != '\0')
         {
+            // TODO verify that the name is only ASCII? (probably not too
+            //      important because if not it will be ignored anyway)
             ++v;
         }
         if(*v != '=')
@@ -613,7 +660,17 @@ void server::config(int argc, char *argv[])
             v++;
             e[-1] = '\0';
         }
-        f_parameters[n] = v;
+        // keep the command line defined parameters
+        if(!cmd_line_params.contains(n))
+        {
+            f_parameters[n] = QString::fromUtf8(v);
+        }
+        else if(f_debug)
+        {
+            std::cerr << "warning: parameter \"" << n << "\" from the configuration file ("
+                      << v << ") ignored as it was specified on the command line ("
+                      << f_parameters[n].toStdString() << ")." << std::endl;
+        }
     }
 
     // the name of the server is mandatory, use hostname by default
@@ -678,9 +735,13 @@ void server::config(int argc, char *argv[])
  *
  * \return The value of the specified parameter.
  */
-QString server::get_parameter(const QString& param_name)
+QString server::get_parameter(const QString& param_name) const
 {
-    return f_parameters[param_name];
+    if(f_parameters.contains(param_name))
+    {
+        return f_parameters[param_name];
+    }
+    return "";
 }
 
 

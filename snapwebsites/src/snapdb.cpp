@@ -176,16 +176,17 @@ void snapdb::usage()
 {
     printf("Usage: snapdb [--opts] [table [row]]\n");
     printf("By default snap db prints out the list of tables (column families) found in Cassandra.\n");
-    printf("  -h | --help        print out this help screen.\n");
-    printf("  --context <ctxt>   name of the context to read from.\n");
-    printf("  --count <count>    specify the number of rows to display.\n");
-    printf("  --drop-tables      drop all the content tables of the specified context.\n");
-    printf("  --drop-all-tables  drop absolutely all the tables, including the domains and websites.\n");
-    printf("  --host <host>      host IP address or name defaults to localhost\n");
-    printf("  --info             print out the cluster name and protocol version.\n");
-    printf("  [table]            name of a table (column family) to print rows about.\n");
-    printf("  [row]              name of a row, may be ending with %% to print all rows that start with that name.\n");
-    printf("                     when row is not specified, then up to 100 of the rows of that table are printed.\n");
+    printf("  -h | --help          print out this help screen.\n");
+    printf("  --context <ctxt>     name of the context to read from.\n");
+    printf("  --count <count>      specify the number of rows to display.\n");
+    printf("  --drop-tables        drop all the content tables of the specified context.\n");
+    printf("  --drop-all-tables    drop absolutely all the tables.\n");
+    printf("  --host <host>        host IP address or name defaults to localhost.\n");
+    printf("  --info               print out the cluster name and protocol version.\n");
+    printf("  [table]              name of a table (column family) to print rows about.\n");
+    printf("  [row]                name of a row, may be ending with %% to print all rows\n");
+    printf("                       that start with that name; when row is not specified,\n");
+    printf("                       then up to 100 of the rows of that table are printed.\n");
     exit(1);
 }
 
@@ -203,6 +204,7 @@ void snapdb::info()
     }
     exit(0);
 }
+
 
 void snapdb::drop_tables(bool all)
 {

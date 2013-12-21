@@ -114,6 +114,9 @@ const char *get_name(name_t name)
     case SNAP_NAME_USERS_LOGOUT_ON:
         return "users::logout_on";
 
+    case SNAP_NAME_USERS_MAKE_ROOT:
+        return "makeroot";
+
     case SNAP_NAME_USERS_NEW_PATH:
         return "types/users/new";
 
@@ -313,6 +316,7 @@ void users::on_bootstrap(::snap::snap_child *snap)
     SNAP_LISTEN0(users, "server", server, process_cookies);
     SNAP_LISTEN0(users, "server", server, attach_to_session);
     SNAP_LISTEN0(users, "server", server, detach_from_session);
+    SNAP_LISTEN(users, "server", server, register_backend_action, _1);
     SNAP_LISTEN(users, "content", content::content, create_content, _1, _2, _3);
     SNAP_LISTEN(users, "path", path::path, can_handle_dynamic_path, _1, _2);
     SNAP_LISTEN(users, "layout", layout::layout, generate_header_content, _1, _2, _3, _4, _5);
@@ -702,62 +706,68 @@ void users::on_get_user_rights(permissions::permissions *perms, permissions::per
 {
     // if spammers are logged in they don't get access to anything anyway
     // (i.e. they are UNDER visitors!)
-    bool const spammer(user_is_a_spammer());
-    QString user_key(sets.get_user_path());
-printf("user key = [%s]\n", user_key.toUtf8().data());
-    if(spammer || user_key.isEmpty())
+    QString const site_key(f_snap->get_site_key_with_slash());
+    if(user_is_a_spammer())
     {
-        // in this case the user is the anonymous user and we want to
-        // add the anonymous user rights
-        if(spammer)
-        {
-            perms->add_user_rights("types/permissions/groups/root/administrator/editor/moderator/author/commenter/registered-user/visitor/spammer", sets);
-        }
-        else
-        {
-            perms->add_user_rights("types/permissions/groups/root/administrator/editor/moderator/author/commenter/registered-user/visitor", sets);
-        }
+        perms->add_user_rights(site_key + "types/permissions/groups/root/administrator/editor/moderator/author/commenter/registered-user/returning-registered-user/returning-visitor/visitor/spammer", sets);
     }
     else
     {
-        user_key = f_snap->get_site_key_with_slash() + user_key;
-        sets.add_user_right(user_key);
-
-        // users who are logged in always have registered-user rights
-        // if nothing else
-        perms->add_user_rights("types/permissions/groups/root/administrator/editor/moderator/author/commenter/registered-user", sets);
-
-        // add all the groups the user is a member of
-        QSharedPointer<QtCassandra::QCassandraTable> content_table(content::content::instance()->get_content_table());
-        if(!content_table->exists(user_key))
+        QString user_key(sets.get_user_path());
+//printf("user key = [%s]\n", user_key.toUtf8().data());
+        if(user_key.isEmpty())
         {
-            throw users_exception_invalid_path("could not access user \"" + user_key + "\"");
+            // in this case the user is an anonymous user and thus we want to
+            // add the anonymous user rights
+            //
+            // TODO determine, if possible, whether the user came on the
+            //      website before and if so whether he has an account
+            //      (make sure NOT to put that information in the cookie,
+            //      only in the user's session)
+            perms->add_user_rights(site_key + "types/permissions/groups/root/administrator/editor/moderator/author/commenter/registered-user/returning-registered-user/returning-visitor/visitor", sets);
         }
-
-        //QSharedPointer<QtCassandra::QCassandraRow> row(content_table->row(user_key));
-
+        else
         {
-            QString const link_start_name("permissions::group");
-            links::link_info info(link_start_name, false, user_key);
-            QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
-            links::link_info right_info;
-            while(link_ctxt->next_link(right_info))
+            user_key = f_snap->get_site_key_with_slash() + user_key;
+            sets.add_user_right(user_key);
+
+            // users who are logged in always have registered-user rights
+            // if nothing else
+            perms->add_user_rights(site_key + "types/permissions/groups/root/administrator/editor/moderator/author/commenter/registered-user", sets);
+
+            // add all the groups the user is a member of
+            QSharedPointer<QtCassandra::QCassandraTable> content_table(content::content::instance()->get_content_table());
+            if(!content_table->exists(user_key))
             {
-                QString const right_key(right_info.key());
-                perms->add_user_rights(right_key, sets);
+                throw users_exception_invalid_path("could not access user \"" + user_key + "\"");
             }
-        }
 
-        // we can also assign permissions directly to a user so get those too
-        {
-            QString const link_start_name("permissions::" + sets.get_action());
-            links::link_info info(link_start_name, false, user_key);
-            QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
-            links::link_info right_info;
-            while(link_ctxt->next_link(right_info))
+            //QSharedPointer<QtCassandra::QCassandraRow> row(content_table->row(user_key));
+
+            // add assigned groups
             {
-                QString const right_key(right_info.key());
-                perms->add_user_rights(right_key, sets);
+                QString const link_start_name(permissions::get_name(permissions::SNAP_NAME_PERMISSIONS_GROUP));
+                links::link_info info(link_start_name, false, user_key);
+                QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
+                links::link_info right_info;
+                while(link_ctxt->next_link(right_info))
+                {
+                    QString const right_key(right_info.key());
+                    perms->add_user_rights(right_key, sets);
+                }
+            }
+
+            // we can also assign permissions directly to a user so get those too
+            {
+                QString const link_start_name("permissions::" + sets.get_action());
+                links::link_info info(link_start_name, false, user_key);
+                QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
+                links::link_info right_info;
+                while(link_ctxt->next_link(right_info))
+                {
+                    QString const right_key(right_info.key());
+                    perms->add_user_rights(right_key, sets);
+                }
             }
         }
     }
@@ -2884,6 +2894,82 @@ bool users::user_is_a_spammer()
         }
     }
     return false;
+}
+
+
+/** \brief Register the users action.
+ *
+ * This function registers this plugin as supporting the "makeroot" action.
+ * After an installation and a user was created on the website, the server
+ * is ready to create a root user. This action is used for that purpose.
+ *
+ * The backend command line will look something like this:
+ *
+ * \code
+ * snapbackend [--config snapserver.conf] --param ROOT_USER_EMAIL=joe@example.com --action makeroot
+ * \endcode
+ *
+ * If you have problems with it (it doesn't seem to work,) try with --debug
+ * and make sure to look in the syslog output.
+ *
+ * \param[in,out] actions  The list of supported actions where we add ourselves.
+ */
+void users::on_register_backend_action(server::backend_action_map_t& actions)
+{
+    actions[get_name(SNAP_NAME_USERS_MAKE_ROOT)] = this;
+}
+
+
+/** \brief Create a root user.
+ *
+ * This function marks a user as a root user. The user email address has
+ * to be specified on the command line.
+ *
+ * \param[in] action  The action the user wants to execute.
+ */
+void users::on_backend_action(QString const& action)
+{
+    if(action == get_name(SNAP_NAME_USERS_MAKE_ROOT))
+    {
+        // make specified user root
+        QSharedPointer<QtCassandra::QCassandraTable> user_table(get_users_table());
+        if(user_table.isNull())
+        {
+            std::cerr << "error: table \"users\" not found." << std::endl;
+            exit(1);
+        }
+        QString const email(f_snap->get_server_parameter("ROOT_USER_EMAIL"));
+        if(!user_table->exists(email))
+        {
+            std::cerr << "error: user \"" << email.toStdString() << "\" not found." << std::endl;
+            exit(1);
+        }
+        QSharedPointer<QtCassandra::QCassandraRow> user_row(user_table->row(email));
+        if(!user_row->exists(get_name(SNAP_NAME_USERS_IDENTIFIER)))
+        {
+            std::cerr << "error: user \"" << email.toStdString() << "\" was not given an identifier." << std::endl;
+            exit(1);
+        }
+        QtCassandra::QCassandraValue identifier_value(user_row->cell(get_name(SNAP_NAME_USERS_IDENTIFIER))->value());
+        if(identifier_value.nullValue() || identifier_value.size() != 8)
+        {
+            std::cerr << "error: user \"" << email.toStdString() << "\" identifier could not be read." << std::endl;
+            exit(1);
+        }
+        int64_t const identifier(identifier_value.int64Value());
+
+        QString const site_key(f_snap->get_site_key_with_slash());
+        QString const user_key(site_key + get_name(SNAP_NAME_USERS_PATH) + QString("/%1").arg(identifier));
+        QString const key(site_key + permissions::get_name(permissions::SNAP_NAME_PERMISSIONS_GROUPS_PATH) + "/root");
+
+        QString const link_name(permissions::get_name(permissions::SNAP_NAME_PERMISSIONS_GROUP));
+        bool const source_multi(false);
+        links::link_info source(link_name, source_multi, user_key);
+        QString const link_to(permissions::get_name(permissions::SNAP_NAME_PERMISSIONS_GROUP));
+        bool const destination_multi(false);
+        links::link_info destination(link_to, destination_multi, key);
+        links::links::instance()->create_link(source, destination);
+    }
 }
 
 

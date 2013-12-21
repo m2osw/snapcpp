@@ -19,7 +19,6 @@
 #include "not_reached.h"
 #include "../content/content.h"
 #include <iostream>
-#include <QDateTime>
 
 
 SNAP_PLUGIN_START(path, 1, 0)
@@ -213,10 +212,9 @@ void path::on_execute(const QString& uri_path)
                                 .arg(key).arg(static_cast<int>(value.nullValue())).arg(static_cast<int>(owner.isEmpty())));
             NOTREACHED();
         }
-        uint64_t last_modified(value.int64Value());
-        QDateTime date(QDateTime().toUTC());
-        date.setTime_t(last_modified / 1000000); // micro-seconds
-        f_snap->set_header("Last-Modified", date.toString("ddd, dd MMM yyyy hh:mm:ss' GMT'"));
+        // ddd, dd MMM yyyy hh:mm:ss +0000
+        uint64_t const last_modified(value.int64Value());
+        f_snap->set_header("Last-Modified", f_snap->date_to_string(last_modified, snap_child::DATE_FORMAT_HTTP));
 
         // get the primary owner (plugin name) and retrieve the plugin pointer
 //std::cerr << "Execute [" << key.toUtf8().data() << "] with plugin [" << owner.toUtf8().data() << "]\n";
@@ -267,6 +265,18 @@ void path::on_execute(const QString& uri_path)
     else
     {
         // found it, execute the path for real
+
+        // get the action, if no action is defined, then use the default
+        // which  is "view" unless we are POSTing
+        f_snap->verify_permissions();
+
+        // if the user POSTed something, manage that content first, the
+        // effect is often to redirect the user in which case we want to
+        // emit an HTTP Location and return; also, with AJAX we may end
+        // up stopping early (i.e. not generate a full page but instead
+        // return the "form results".)
+        f_snap->process_post();
+
         if(!pe->on_path_execute(cpath))
         {
             // TODO (TBD):

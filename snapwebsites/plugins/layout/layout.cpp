@@ -31,7 +31,6 @@
 #include <QXmlQuery>
 #include <QDomDocument>
 #include <QFile>
-#include <QDate>
 #include <QXmlResultItems>
 #pragma GCC diagnostic pop
 
@@ -433,9 +432,6 @@ printf("got in layout...\n");
             xsl = QString::fromUtf8(data.data(), data.size());
         }
         // Somehow binding crashes everything at this point?! (Qt 4.8.1)
-        //QDate current_year;
-        //QXmlItem year(QVariant(current_year.toString("yyyy")));
-        //q.bindVariable("year", QVariant(current_year.toString("yyyy")));
         q.setQuery(xsl);
 #if 0
         QXmlResultItems results;

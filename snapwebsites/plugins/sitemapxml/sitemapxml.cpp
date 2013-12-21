@@ -684,11 +684,9 @@ void sitemapxml::on_backend_process()
 		time_t t(u->get_last_modification());
 		if(t != 0)
 		{
-			QDateTime moddate(QDateTime().toUTC());
-    		moddate.setTime_t(t);
-			QDomElement lastmod(doc.createElement("lastmod"));
+    		QDomElement lastmod(doc.createElement("lastmod"));
 			url.appendChild(lastmod);
-			QDomText mod(doc.createTextNode(moddate.toString("yyyy-MM-dd'T'hh:mm:ss'Z'")));
+			QDomText mod(doc.createTextNode(f_snap->date_to_string(t * 1000000, snap_child::DATE_FORMAT_LONG)));
 			lastmod.appendChild(mod);
 		}
 

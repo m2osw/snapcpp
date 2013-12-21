@@ -53,6 +53,9 @@ const char *get_name(name_t name)
     case SNAP_NAME_PERMISSIONS_DYNAMIC:
         return "permissions::dynamic";
 
+    case SNAP_NAME_PERMISSIONS_GROUP:
+        return "permissions::group";
+
     case SNAP_NAME_PERMISSIONS_PATH:
         return "types/permissions";
 
@@ -720,7 +723,7 @@ void permissions::on_access_allowed(QString const& user_path, QString const& pat
     // first we get the user rights for that action because that's a lot
     // smaller and if empty we do not have to get anything else
     // (intersection of an empty set with anything else is the empty set)
-printf("retrieving USER rights... [%s]\n", sets.get_action().toUtf8().data());
+printf("retrieving USER rights... [%s] [%s]\n", sets.get_action().toUtf8().data(), path.toUtf8().data());
     get_user_rights(this, sets);
     if(sets.get_user_rights_count() != 0)
     {
@@ -728,7 +731,7 @@ printf("retrieving USER rights... [%s]\n", sets.get_action().toUtf8().data());
         {
             return;
         }
-printf("retrieving PLUGING permissions... [%s]\n", sets.get_action().toUtf8().data());
+printf("retrieving PLUGIN permissions... [%s]\n", sets.get_action().toUtf8().data());
         get_plugin_permissions(this, sets);
 printf("now compute the intersection!\n");
         if(sets.allowed())
@@ -758,13 +761,10 @@ void permissions::add_user_rights(QString const& group, sets_t& sets)
     // function although we instead generate an error.)
     if(group.contains("types/permissions/rights"))
     {
-        throw snap_logic_exception("you cannot add rights using add_user_rights(), for those just use the add_user_rights() on the sets directly");
+        throw snap_logic_exception("you cannot add rights using add_user_rights(), for those just use sets.add_user_right() directly");
     }
 
-    QSharedPointer<QtCassandra::QCassandraTable> content_table(content::content::instance()->get_content_table());
-    QString const site_key(f_snap->get_site_key_with_slash());
-    QString const key(site_key + group);
-    recursive_add_user_rights(key, sets);
+    recursive_add_user_rights(group, sets);
 }
 
 
@@ -777,23 +777,23 @@ void permissions::add_user_rights(QString const& group, sets_t& sets)
  * children and so on. So the number of iteration will remain relatively
  * limited.
  *
- * \param[in] key  The key (row) being added.
+ * \param[in] group  The group being added (a row).
  * \param[in] sets  The sets where the different paths are being added.
  */
-void permissions::recursive_add_user_rights(QString const& key, sets_t& sets)
+void permissions::recursive_add_user_rights(QString const& group, sets_t& sets)
 {
     QSharedPointer<QtCassandra::QCassandraTable> content_table(content::content::instance()->get_content_table());
-    if(!content_table->exists(key))
+    if(!content_table->exists(group))
     {
-        throw permissions_exception_invalid_group_name("caller is trying to access group \"" + key + "\"");
+        throw permissions_exception_invalid_group_name("caller is trying to access group \"" + group + "\"");
     }
 
-    QSharedPointer<QtCassandra::QCassandraRow> row(content_table->row(key));
+    QSharedPointer<QtCassandra::QCassandraRow> row(content_table->row(group));
 
     // get the rights at this level
     {
         QString const link_start_name("permissions::" + sets.get_action());
-        links::link_info info(link_start_name, false, key);
+        links::link_info info(link_start_name, false, group);
         QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
         links::link_info right_info;
         while(link_ctxt->next_link(right_info))
@@ -807,7 +807,7 @@ void permissions::recursive_add_user_rights(QString const& key, sets_t& sets)
     // get all the children and do a recursive call with them all
     {
         QString const children_name("content::children");
-        links::link_info info(children_name, false, key);
+        links::link_info info(children_name, false, group);
         QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
         links::link_info right_info;
         while(link_ctxt->next_link(right_info))
@@ -845,13 +845,10 @@ void permissions::add_plugin_permissions(QString const& plugin_name, QString con
     // function although we instead generate an error.)
     if(group.contains("types/permissions/rights"))
     {
-        throw snap_logic_exception("you cannot add rights using add_user_rights(), for those just use the add_user_rights() on the sets directly");
+        throw snap_logic_exception("you cannot add rights using add_plugin_permissions(), for those just use sets.add_plugin_permission() directly");
     }
 
-    QSharedPointer<QtCassandra::QCassandraTable> content_table(content::content::instance()->get_content_table());
-    QString const site_key(f_snap->get_site_key_with_slash());
-    QString const key(site_key + group);
-    recursive_add_plugin_permissions(plugin_name, key, sets);
+    recursive_add_plugin_permissions(plugin_name, group, sets);
 }
 
 
@@ -865,23 +862,23 @@ void permissions::add_plugin_permissions(QString const& plugin_name, QString con
  * limited.
  *
  * \param[in] plugin_name  The name of the plugin adding these rights.
- * \param[in] key  The key (row) being added.
+ * \param[in] group  The key of the group being added (a row).
  * \param[in] sets  The sets where the different paths are being added.
  */
-void permissions::recursive_add_plugin_permissions(QString const& plugin_name, QString const& key, sets_t& sets)
+void permissions::recursive_add_plugin_permissions(QString const& plugin_name, QString const& group, sets_t& sets)
 {
     QSharedPointer<QtCassandra::QCassandraTable> content_table(content::content::instance()->get_content_table());
-    if(!content_table->exists(key))
+    if(!content_table->exists(group))
     {
-        throw permissions_exception_invalid_group_name("caller is trying to access group \"" + key + "\"");
+        throw permissions_exception_invalid_group_name("caller is trying to access group \"" + group + "\"");
     }
 
-    QSharedPointer<QtCassandra::QCassandraRow> row(content_table->row(key));
+    QSharedPointer<QtCassandra::QCassandraRow> row(content_table->row(group));
 
     // get the rights at this level
     {
         QString const link_start_name("permissions::" + sets.get_action());
-        links::link_info info(link_start_name, false, key);
+        links::link_info info(link_start_name, false, group);
         QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
         links::link_info right_info;
         while(link_ctxt->next_link(right_info))
@@ -895,7 +892,7 @@ void permissions::recursive_add_plugin_permissions(QString const& plugin_name, Q
     // get all the children and do a recursive call with them all
     {
         QString const children_name("content::children");
-        links::link_info info(children_name, false, key);
+        links::link_info info(children_name, false, group);
         QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
         links::link_info right_info;
         while(link_ctxt->next_link(right_info))
