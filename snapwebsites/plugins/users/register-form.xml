@@ -3,7 +3,6 @@
   <auto-reset minutes="5"/>
   <focus refid="email"/>
   <default-button refid="register"/>
-  <title>User Registration</title>
   <taborder>
     <tabindex refid="email"/>
     <tabindex refid="password"/>

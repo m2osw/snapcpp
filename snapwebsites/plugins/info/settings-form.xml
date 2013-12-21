@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <snap-form session_id="user/1" owner="info" auto-save="auto-save">
   <auto-reset minutes="120"/>
-  <focus refid="icon"/>
+  <focus refid="long_name"/>
   <default-button refid="save"/>
   <taborder>
     <tabindex refid="long_name"/>

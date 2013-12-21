@@ -22,7 +22,7 @@
 <!ELEMENT key (#PCDATA)>
 <!ATTLIST key refid IDREF #REQUIRED>
 
-<!ELEMENT widget (widget|label|tooltip|help|background-value|widgetorder|attachment|sizes|filters|value)*>
+<!ELEMENT widget (widget|label|tooltip|help|background-value|widgetorder|attachment|sizes|filters|value|required|classes)*>
 <!ATTLIST widget id ID #REQUIRED
                  type NMTOKEN #REQUIRED
 		 secret (public|secret) "public"
@@ -34,6 +34,8 @@
 <!ELEMENT help %html-data;>
 <!ELEMENT background-value %html-data;>
 <!ELEMENT value %html-data;>
+<!ELEMENT required (#PCDATA)*>
+<!ELEMENT classes (#PCDATA)*>
 
 <!ELEMENT widgetorder (widgetpriority)+>
 <!ELEMENT widgetpriority EMPTY>
@@ -47,8 +49,10 @@
 <!ELEMENT max (#PCDATA)>
 <!ELEMENT width (#PCDATA)>
 
-<!ELEMENT filters (extensions)+>
+<!ELEMENT filters (extensions|regex)+>
 <!ELEMENT extensions (#PCDATA)>
+<!ELEMENT regex (#PCDATA)*>
+<!ATTLIST regex name CDATA #IMPLIED>
 
 <!-- HTML tags that are used in default values or background values -->
 <!ELEMENT b (#PCDATA)>

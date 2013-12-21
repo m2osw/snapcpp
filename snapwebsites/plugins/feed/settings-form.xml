@@ -3,23 +3,20 @@
   <auto-reset minutes="120"/>
   <focus refid="email"/>
   <default-button refid="save"/>
-  <title>Short URL Settings</title>
   <taborder>
     <tabindex refid="email"/>
     <tabindex refid="password"/>
     <tabindex refid="confirm_password"/>
-    <tabindex refid="register"/>
-    <tabindex refid="login"/>
+    <tabindex refid="save"/>
     <tabindex refid="cancel"/>
   </taborder>
   <accesskeys>
     <!-- by keeping those in alphabetical order you'll avoid problems (duplicates) -->
     <key refid="cancel">c</key><!-- default cancelation is expected to be [Shift-]Alt-C -->
     <key refid="email">e</key>
-    <key refid="login">l</key>
     <key refid="password">p</key>
     <key refid="confirm_password">q</key>
-    <key refid="register">s</key><!-- default submit is expected to be [Shift-]Alt-S -->
+    <key refid="save">s</key><!-- default submit is expected to be [Shift-]Alt-S -->
   </accesskeys>
   <widget id="shorturl_settings" type="fieldset">
     <label>Short URL Settings</label>
@@ -30,8 +27,7 @@
       <widgetpriority refid="email"/>
       <widgetpriority refid="password"/>
       <widgetpriority refid="confirm_password"/>
-      <widgetpriority refid="register"/>
-      <widgetpriority refid="login"/>
+      <widgetpriority refid="save"/>
       <widgetpriority refid="cancel"/>
     </widgetorder>
     <widget id="email" type="line-edit">
@@ -73,18 +69,9 @@
       <required>required</required>
       <help>This box requires you to re-enter your Snap! password in order to make sure you typed it properly.</help>
     </widget>
-    <widget id="register" type="submit">
-      <label>Register</label>
-      <tooltip>Once you entered your information click here to register.</tooltip>
-      <sizes>
-        <width>25</width>
-      </sizes>
-      <help>Please enter all the required information before clicking on the Register button. Note that you will be able to edit your account information once you confirmed your email.</help>
-      <value>Register</value>
-    </widget>
-    <widget id="login" type="link">
-      <label>Log In</label>
-      <tooltip>Click here to return to the log in page</tooltip>
+    <widget id="save" type="link">
+      <label>Save</label>
+      <tooltip>Click to save your changes</tooltip>
       <help>You already have an account? Click this link to go to the log in page instead.</help>
       <value>/login</value>
     </widget>

@@ -3,12 +3,11 @@
   <auto-reset minutes="120"/>
   <focus refid="email"/>
   <default-button refid="save"/>
-  <title>Short URL Settings</title>
   <taborder>
     <tabindex refid="email"/>
     <tabindex refid="password"/>
     <tabindex refid="confirm_password"/>
-    <tabindex refid="register"/>
+    <tabindex refid="save"/>
     <tabindex refid="login"/>
     <tabindex refid="cancel"/>
   </taborder>
@@ -19,7 +18,7 @@
     <key refid="login">l</key>
     <key refid="password">p</key>
     <key refid="confirm_password">q</key>
-    <key refid="register">s</key><!-- default submit is expected to be [Shift-]Alt-S -->
+    <key refid="save">s</key><!-- default submit is expected to be [Shift-]Alt-S -->
   </accesskeys>
   <widget id="shorturl_settings" type="fieldset">
     <label>Short URL Settings</label>
@@ -30,7 +29,7 @@
       <widgetpriority refid="email"/>
       <widgetpriority refid="password"/>
       <widgetpriority refid="confirm_password"/>
-      <widgetpriority refid="register"/>
+      <widgetpriority refid="save"/>
       <widgetpriority refid="login"/>
       <widgetpriority refid="cancel"/>
     </widgetorder>
@@ -73,7 +72,7 @@
       <required>required</required>
       <help>This box requires you to re-enter your Snap! password in order to make sure you typed it properly.</help>
     </widget>
-    <widget id="register" type="submit">
+    <widget id="save" type="submit">
       <label>Register</label>
       <tooltip>Once you entered your information click here to register.</tooltip>
       <sizes>

@@ -3,7 +3,6 @@
   <auto-reset minutes="5"/>
   <focus refid="email"/>
   <default-button refid="resend"/>
-  <title>Resend the Verification Email</title>
   <taborder>
     <tabindex refid="email"/>
     <tabindex refid="resend"/>

@@ -3,7 +3,6 @@
   <auto-reset minutes="5"/>
   <focus refid="verification_code"/>
   <default-button refid="verify"/>
-  <title>User Registration</title>
   <taborder>
     <tabindex refid="verification_code"/>
     <tabindex refid="verify"/>

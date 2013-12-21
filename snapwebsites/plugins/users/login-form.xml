@@ -3,7 +3,6 @@
   <auto-reset minutes="5"/>
   <focus refid="email"/>
   <default-button refid="login"/>
-  <title>User Log In</title>
   <taborder>
     <tabindex refid="email"/>
     <tabindex refid="password"/>
@@ -21,7 +20,7 @@
     <key refid="log_info">l</key>
     <key refid="remember">m</key>
     <key refid="password">p</key>
-    <key refid="reset">r</key><!-- default reset is expected to be [Shift-]Alt-R -->
+    <!-- <key refid="reset">r</key>default reset is expected to be [Shift-]Alt-R -->
     <key refid="login">s</key><!-- default submit is expected to be [Shift-]Alt-S -->
     <key refid="register">u</key>
   </accesskeys>
