@@ -1,0 +1,71 @@
+<!ELEMENT snap-form (auto-reset|focus|default-button|taborder|accesskeys|widget)*>
+<!ATTLIST snap-form session_id CDATA #REQUIRED
+                    owner CDATA #REQUIRED
+                    auto-save (auto-save) #IMPLIED>
+
+<!ENTITY % html-data "(#PCDATA|b|i|u|em|strong|a|img)*" >
+
+<!ELEMENT auto-reset EMPTY>
+<!ATTLIST auto-reset minutes CDATA #REQUIRED>
+
+<!ELEMENT focus EMPTY>
+<!ATTLIST focus refid IDREF #REQUIRED>
+
+<!ELEMENT default-button EMPTY>
+<!ATTLIST default-button refid IDREF #REQUIRED>
+
+<!ELEMENT taborder (tabindex)*>
+<!ELEMENT tabindex EMPTY>
+<!ATTLIST tabindex refid IDREF #REQUIRED>
+
+<!ELEMENT accesskeys (key)*>
+<!ELEMENT key (#PCDATA)>
+<!ATTLIST key refid IDREF #REQUIRED>
+
+<!ELEMENT widget (widget|label|tooltip|help|background-value|widgetorder|attachment|sizes|filters|value)*>
+<!ATTLIST widget id ID #REQUIRED
+                 type NMTOKEN #REQUIRED
+		 secret (public|secret) "public"
+		 duplicate-of IDREF #IMPLIED
+		 auto-save (binary|int8|string) #IMPLIED>
+
+<!ELEMENT label %html-data;>
+<!ELEMENT tooltip %html-data;>
+<!ELEMENT help %html-data;>
+<!ELEMENT background-value %html-data;>
+<!ELEMENT value %html-data;>
+
+<!ELEMENT widgetorder (widgetpriority)+>
+<!ELEMENT widgetpriority EMPTY>
+<!ATTLIST widgetpriority refid IDREF #REQUIRED>
+
+<!ELEMENT attachment EMPTY>
+<!ATTLIST attachment type CDATA #REQUIRED>
+
+<!ELEMENT sizes (min|max|width)+>
+<!ELEMENT min (#PCDATA)>
+<!ELEMENT max (#PCDATA)>
+<!ELEMENT width (#PCDATA)>
+
+<!ELEMENT filters (extensions)+>
+<!ELEMENT extensions (#PCDATA)>
+
+<!-- HTML tags that are used in default values or background values -->
+<!ELEMENT b (#PCDATA)>
+<!ELEMENT i (#PCDATA)>
+<!ELEMENT u (#PCDATA)>
+<!ELEMENT em (#PCDATA)>
+<!ELEMENT strong (#PCDATA)>
+
+<!ELEMENT a (#PCDATA)>
+<!ATTLIST a href CDATA #REQUIRED
+            rel (nofollow) #IMPLIED
+            title CDATA "">
+
+<!ELEMENT img EMPTY>
+<!ATTLIST img src CDATA #REQUIRED
+	      width CDATA #IMPLIED
+	      height CDATA #IMPLIED
+	      title CDATA #IMPLIED
+	      alt CDATA #IMPLIED
+	      type CDATA #IMPLIED>
