@@ -52,7 +52,10 @@ QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC
     shorturl.qrc
 )
 
-set( XMLFILES content.xml settings-form.xml )
+set( XMLFILES
+    content.xml
+    #settings-form.xml
+)
 snap_validate_dtd( ${PROJECT_NAME} ${XMLFILES} )
 
 add_library(shorturl SHARED

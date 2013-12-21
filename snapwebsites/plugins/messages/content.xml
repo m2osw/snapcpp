@@ -1,4 +1,4 @@
-<?xml version="1.0" standalone="yes"?>
+<?xml version="1.0"?>
 <!--
 Snap Websites Server == messages database setup
 Copyright (C) 2013  Made to Order Software Corp.
@@ -17,19 +17,6 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 -->
-<!DOCTYPE snap-tree [
-<!ELEMENT snap-tree (content)*>
-<!ELEMENT content (param|link)*>
-<!ATTLIST content path CDATA #REQUIRED>
-<!ELEMENT param (#PCDATA)>
-<!ATTLIST param name CDATA #REQUIRED
-                overwrite (yes|no) "no"
-                force-namespace (yes|no) "yes">
-<!ELEMENT link (#PCDATA)>
-<!ATTLIST link name CDATA #REQUIRED
-               to CDATA #REQUIRED
-               mode CDATA "1:1">
-]>
 <snap-tree>
   <content path="/admin/settings/messages">
     <param name="content::title">Messages Administration</param>

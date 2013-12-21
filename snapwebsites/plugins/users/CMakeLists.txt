@@ -53,14 +53,14 @@ QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC
 
 set( XMLFILES
     content.xml
-    forgot-password-form.xml
-    login-form.xml
-    new-password-form.xml
-    password-form.xml
-    register-form.xml
-    replace-password-form.xml
-    resend-email-form.xml
-    verify-form.xml
+    #forgot-password-form.xml
+    #login-form.xml
+    #new-password-form.xml
+    #password-form.xml
+    #register-form.xml
+    #replace-password-form.xml
+    #resend-email-form.xml
+    #verify-form.xml
 )
 snap_validate_dtd( ${PROJECT_NAME} ${XMLFILES} )
 

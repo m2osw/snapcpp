@@ -1,9 +1,27 @@
+<!--
+Snap Websites Server == DTD for all *-form.xml files
+Copyright (C) 2011-2013  Made to Order Software Corp.
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+-->
 <!ELEMENT snap-form (auto-reset|focus|default-button|taborder|accesskeys|widget)*>
 <!ATTLIST snap-form session_id CDATA #REQUIRED
                     owner CDATA #REQUIRED
                     auto-save (auto-save) #IMPLIED>
 
-<!ENTITY % html-data "(#PCDATA|b|i|u|em|strong|a|img)*" >
+<!ENTITY % html-data "(#PCDATA|b|i|u|em|strong|a|img|p|div)*" >
 
 <!ELEMENT auto-reset EMPTY>
 <!ATTLIST auto-reset minutes CDATA #REQUIRED>
@@ -54,14 +72,15 @@
 <!ELEMENT regex (#PCDATA)*>
 <!ATTLIST regex name CDATA #IMPLIED>
 
-<!-- HTML tags that are used in default values or background values -->
-<!ELEMENT b (#PCDATA)>
-<!ELEMENT i (#PCDATA)>
-<!ELEMENT u (#PCDATA)>
-<!ELEMENT em (#PCDATA)>
-<!ELEMENT strong (#PCDATA)>
+<!-- HTML tags that are used in default values or background values
+     we're not trying to replicate the whole HTML DTD, so we simply here -->
+<!ELEMENT b %html-data;>
+<!ELEMENT i %html-data;>
+<!ELEMENT u %html-data;>
+<!ELEMENT em %html-data;>
+<!ELEMENT strong %html-data;>
 
-<!ELEMENT a (#PCDATA)>
+<!ELEMENT a %html-data;>
 <!ATTLIST a href CDATA #REQUIRED
             rel (nofollow) #IMPLIED
             title CDATA "">
@@ -73,3 +92,6 @@
 	      title CDATA #IMPLIED
 	      alt CDATA #IMPLIED
 	      type CDATA #IMPLIED>
+
+<!ELEMENT div %html-data;>
+<!ELEMENT p %html-data;>
