@@ -39,7 +39,7 @@
 
 using namespace QtCassandra;
 
-int main(int argc, char *argv[])
+int main(int /*argc*/, char * /*argv*/[])
 {
     QCassandra     cassandra;
 
