@@ -47,6 +47,7 @@ enum name_t
     SNAP_NAME_USERS_LOGIN_REFERRER,
     SNAP_NAME_USERS_LOGOUT_IP,
     SNAP_NAME_USERS_LOGOUT_ON,
+    SNAP_NAME_USERS_MAKE_ROOT,
     SNAP_NAME_USERS_NEW_PATH,
     SNAP_NAME_USERS_ORIGINAL_EMAIL,
     SNAP_NAME_USERS_ORIGINAL_IP,
@@ -111,7 +112,7 @@ public:
 
 
 
-class users : public plugins::plugin, public path::path_execute, public layout::layout_content, public form::form_post
+class users : public plugins::plugin, public path::path_execute, public layout::layout_content, public form::form_post, public server::backend_action
 {
 public:
     static const sessions::sessions::session_info::session_id_t USERS_SESSION_ID_LOG_IN = 1;                    // login-form.xml
@@ -149,6 +150,8 @@ public:
     void                    on_create_content(QString const& path, QString const& owner, QString const& type);
     void                    on_get_user_rights(permissions::permissions *perms, permissions::permissions::sets_t& sets);
     void                    on_get_plugin_permissions(permissions::permissions *perms, permissions::permissions::sets_t& sets);
+    void                    on_register_backend_action(server::backend_action_map_t& actions);
+    virtual void            on_backend_action(QString const& action);
 
     virtual void            on_process_post(QString const& cpath, sessions::sessions::session_info const& info);
 

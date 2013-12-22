@@ -1065,74 +1065,78 @@ void form::auto_save_form(QString const& owner, QString const& cpath, auto_save_
         }
         else if(type == "binary")
         {
-            // by default the owner is the same as the form owner
-            QString attachment_owner(owner);
-
-            // by default the type of an attachment is set to
-            // "private attachment", it can be changed by the widget
-            // attachment and any module that wants to do so while
-            // generate the new page, of course
-            QString attachment_type("attachment/private");
-
-            // retrieve the attachment tag and get additional parameters
-            QDomXPath dom_xpath;
-            dom_xpath.setXPath(QString("/snap//widget[@id=\"%1\"]/attachment"));
-            QDomXPath::node_vector_t result(dom_xpath.apply(xml_form));
-            if(result.size() > 0 && result[0].isElement())
+            // make sure the user uploaded an actual file!
+            if(f_snap->postfile_exists(id))
             {
-                // retrieve the parameters from the tag attributes
-                QDomElement attachment_tag(result[0].toElement());
-                QString value;
+printf("got a file with [%s]\n", id.toUtf8().data());
+                // by default the owner is the same as the form owner
+                QString attachment_owner(owner);
 
-                // overwrite default owner
-                value = attachment_tag.attribute("owner");
-                if(!value.isEmpty())
+                // by default the type of an attachment is set to
+                // "private attachment", it can be changed by the widget
+                // attachment and any module that wants to do so while
+                // generate the new page, of course
+                QString attachment_type("attachment/private");
+
+                // retrieve the attachment tag and get additional parameters
+                QDomXPath dom_xpath;
+                dom_xpath.setXPath(QString("/snap//widget[@id=\"%1\"]/attachment"));
+                QDomXPath::node_vector_t result(dom_xpath.apply(xml_form));
+                if(result.size() > 0 && result[0].isElement())
                 {
-                    attachment_owner = value;
+                    // retrieve the parameters from the tag attributes
+                    QDomElement attachment_tag(result[0].toElement());
+                    QString value;
+
+                    // overwrite default owner
+                    value = attachment_tag.attribute("owner");
+                    if(!value.isEmpty())
+                    {
+                        attachment_owner = value;
+                    }
+
+                    // overwrite default type
+                    value = attachment_tag.attribute("type");
+                    if(!value.isEmpty())
+                    {
+                        attachment_type = type;
+                    }
                 }
 
-                // overwrite default type
-                value = attachment_tag.attribute("type");
-                if(!value.isEmpty())
+                // make sure the filename from the browser does not include
+                // a path (remove the path if it is there); although browsers
+                // don't send a path, robots could...
+                int last_slash(post.lastIndexOf('/'));
+                if(last_slash != -1)
                 {
-                    attachment_type = type;
+                    post = post.mid(last_slash + 1);
                 }
+                QString const attachment_key(key + "/" + post);
+                content::content::instance()->create_content(cpath + "/" + post, attachment_owner, attachment_type);
+
+                // save the key to the attachment in the parent (here)
+                row->cell(name + "::path")->setValue(attachment_key);
+
+                // get that row and add a few things
+                QSharedPointer<QtCassandra::QCassandraRow> attachment_row(content_table->row(attachment_key));
+                const snap_child::post_file_t& file(f_snap->postfile(id));
+
+                // in this case 'post' represents the filename as sent by the
+                // user, the binary data is in the corresponding file
+                attachment_row->cell(name + "::filename")->setValue(post);
+
+                // save the file itself
+                attachment_row->cell(name)->setValue(file.get_data());
+
+                // XXX still unverified MIME type!
+                attachment_row->cell(name + "::mime_type")->setValue(file.get_mime_type());
+
+                // mark that attachment as final (i.e. cannot create children below an attachment)
+                attachment_row->cell(content::get_name(content::SNAP_NAME_CONTENT_FINAL))->setValue(static_cast<signed char>(1));
+
+                // TODO save the creation & modification time if defined
+                //      (from what I can see these are never defined anyway)
             }
-
-            // make sure the filename from the browser does not include
-            // a path (remove the path if it is there); although browsers
-            // don't send a path, robots could...
-            int last_slash(post.lastIndexOf('/'));
-            if(last_slash != -1)
-            {
-                post = post.mid(last_slash + 1);
-            }
-            QString const attachment_key(key + "/" + post);
-            content::content::instance()->create_content(cpath + "/" + post, attachment_owner, attachment_type);
-
-            // save the key to the attachment in the parent (here)
-            row->cell(name + "::path")->setValue(attachment_key);
-
-            // get that row and add a few things
-            QSharedPointer<QtCassandra::QCassandraRow> attachment_row(content_table->row(attachment_key));
-            const snap_child::post_file_t& file(f_snap->postfile(id));
-
-            // in this case 'post' represents the filename as sent by the
-            // user, the binary data is in the corresponding file
-            attachment_row->cell(name + "::filename")->setValue(post);
-
-            // save the file itself
-            attachment_row->cell(name)->setValue(file.get_data());
-
-            // XXX still unverified MIME type!
-            attachment_row->cell(name + "::mime_type")->setValue(file.get_mime_type());
-
-            // mark that attachment as final (i.e. cannot create children below an attachment)
-            attachment_row->cell(content::get_name(content::SNAP_NAME_CONTENT_FINAL))->setValue(static_cast<signed char>(1));
-
-            // TODO save the creation & modification time if defined
-            //      (from what I can see these are never defined anyway)
-
         }
         else if(type == "string")
         {
@@ -1300,7 +1304,9 @@ int form::count_html_lines(const QString& html)
  */
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
-bool form::validate_post_for_widget_impl(const QString& cpath, sessions::sessions::session_info& info, const QDomElement& widget, const QString& widget_name, const QString& widget_type, bool is_secret)
+bool form::validate_post_for_widget_impl(const QString& cpath, sessions::sessions::session_info& info,
+                                         const QDomElement& widget, const QString& widget_name,
+                                         const QString& widget_type, bool is_secret)
 {
     messages::messages *messages(messages::messages::instance());
 
@@ -1326,7 +1332,7 @@ bool form::validate_post_for_widget_impl(const QString& cpath, sessions::session
                     // invalid width 'x' height
                     messages->set_error(
                         "Invalid Sizes",
-                        "minimum size \"" + html_64max(m, false) + "\" is not a valid \"width 'x' height \" definition for this image widget.",
+                        "minimum size \"" + html_64max(m, false) + "\" is not a valid \"width 'x' height \" definition for image widget " + widget_name + ".",
                         "incorrect sizes for " + widget_name,
                         false
                     );
@@ -1350,10 +1356,11 @@ bool form::validate_post_for_widget_impl(const QString& cpath, sessions::session
                 if(value.length() < l)
                 {
                     // length too small
+                    QString const label(widget.firstChildElement("label").text());
                     messages->set_error(
                         "Length Too Small",
-                        "\"" + html_64max(value, is_secret) + "\" is too small in \"" + widget_name + "\". The widget requires at least " + m + " characters.",
-                        "not enough characters error",
+                        "\"" + html_64max(value, is_secret) + "\" is too small in \"" + label + "\". The widget requires at least " + m + " characters.",
+                        "not enough characters in " + widget_name + " error",
                         false
                     );
                     info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
@@ -1397,10 +1404,11 @@ printf("max size %d x %d\n", width, height);
                 if(value.length() > l)
                 {
                     // length too large
+                    QString const label(widget.firstChildElement("label").text());
                     messages->set_error(
                         "Length Too Long",
-                        "\"" + html_64max(value, is_secret) + "\" is too long in \"" + widget_name + "\". The widget requires at most " + m + " characters.",
-                        "too many characters error",
+                        "\"" + html_64max(value, is_secret) + "\" is too long in \"" + label + "\". The widget requires at most " + m + " characters.",
+                        "too many characters " + widget_name + " error",
                         false
                     );
                     info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
@@ -1436,10 +1444,11 @@ printf("max size %d x %d\n", width, height);
                 if(count_html_lines(value) < l)
                 {
                     // not enough lines (HTML)
+                    QString const label(widget.firstChildElement("label").text());
                     messages->set_error(
                         "Not Enough Lines",
-                        "\"" + html_64max(value, is_secret) + "\" is too long in \"" + widget_name + "\". The widget requires at least " + m + " lines.",
-                        "not enough lines",
+                        "\"" + html_64max(value, is_secret) + "\" is too long in \"" + label + "\". The widget requires at least " + m + " lines.",
+                        "not enough lines in " + widget_name,
                         false
                     );
                     info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
@@ -1455,19 +1464,42 @@ printf("max size %d x %d\n", width, height);
         QDomElement required(widget.firstChildElement("required"));
         if(!required.isNull())
         {
-            if(required.text() == "required")
+            QString const required_text(required.text());
+            if(required_text == "required")
             {
                 // not an additional error if the minimum error was
                 // already generated
                 if(!has_minimum && value.isEmpty())
                 {
+                    QString const label(widget.firstChildElement("label").text());
                     messages->set_error(
                             "Value is Invalid",
-                            "\"" + widget_name + "\" is a required field.",
-                            "no data entered in widget by user",
+                            "\"" + label + "\" is a required field.",
+                            "no data entered in widget \"" + widget_name + "\" by user",
                             false
                         );
                     info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                }
+            }
+            else if(required_text == "defined")
+            {
+                if(!f_snap->postfile_exists(widget_name))
+                {
+                    QDomElement root(widget.ownerDocument().documentElement());
+                    QString const name(root.attribute("owner") + "::" + widget_name + "::path");
+                    QtCassandra::QCassandraValue cassandra_value(content::content::instance()->get_content_parameter(cpath, name));
+                    if(cassandra_value.nullValue())
+                    {
+                        // not defined!
+                        QString const label(widget.firstChildElement("label").text());
+                        messages->set_error(
+                                "Value is Invalid",
+                                "\"" + label + "\" is a required field.",
+                                "no data entered by user in widget \"" + widget_name + "\"",
+                                false
+                            );
+                        info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                    }
                 }
             }
         }
@@ -1480,16 +1512,23 @@ printf("max size %d x %d\n", width, height);
     {
         // What we need is the name of the widget so we can get its
         // current value and the duplicate-of attribute is just that!
-        //QDomXPath dom_xpath;
-        //dom_xpath.setXPath(QString("/snap-form//widget[@id=\"") + duplicate_of + "\"]/@id");
-        //dom_xpath.apply(widget);
         QString duplicate_value(f_snap->postenv(duplicate_of));
         if(duplicate_value != value)
         {
+            QString dup_label(duplicate_of);
+            QDomXPath dom_xpath;
+            dom_xpath.setXPath(QString("/snap-form//widget[@id=\"") + duplicate_of + "\"]/@id");
+            QDomXPath::node_vector_t result(dom_xpath.apply(widget));
+            if(result.size() > 0 && result[0].isElement())
+            {
+                // we found the widget, display its label instead
+                dup_label = result[0].toElement().text();
+            }
+            QString const label(widget.firstChildElement("label").text());
             messages->set_error(
               "Value is Invalid",
-              "\"" + widget_name + "\" must be an exact copy of \"" + duplicate_of + "\". Please try again.",
-              "a confirmation widget data is not equal to the original (i.e. password confirmation)",
+              "\"" + label + "\" must be an exact copy of \"" + dup_label + "\". Please try again.",
+              "confirmation widget \"" + widget_name + "\" is not equal to the original \"" + duplicate_of + "\" (i.e. most likely a password confirmation)",
               false
             );
             info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
@@ -1601,50 +1640,55 @@ printf("max size %d x %d\n", width, height);
             }
             if(reg_expr.indexIn(value) == -1)
             {
+                QString const label(widget.firstChildElement("label").text());
                 messages->set_error(
                     "Invalid Value",
-                    "\"" + html_64max(value, is_secret) + "\" is not valid for \"" + widget_name + "\".",
-                    "the value did not match the filter regular expression",
+                    "\"" + html_64max(value, is_secret) + "\" is not valid for \"" + label + "\".",
+                    "the value did not match the filter regular expression of " + widget_name,
                     false
                 );
                 info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
             }
         }
 
-        QDomElement extensions_tag(filters.firstChildElement("extensions"));
-        if(!extensions_tag.isNull())
+        if(!value.isEmpty())
         {
-            QString extensions(extensions_tag.text());
-            QStringList ext_list(extensions.split(",", QString::SkipEmptyParts));
-            int const max(ext_list.size());
-            QFileInfo const file_info(value);
-            QString const file_ext(file_info.suffix());
-            int i;
-            for(i = 0; i < max; ++i)
+            QDomElement extensions_tag(filters.firstChildElement("extensions"));
+            if(!extensions_tag.isNull())
             {
-                QString ext(ext_list[i].trimmed());
-                if(ext.isEmpty())
+                QString extensions(extensions_tag.text());
+                QStringList ext_list(extensions.split(",", QString::SkipEmptyParts));
+                int const max(ext_list.size());
+                QFileInfo const file_info(value);
+                QString const file_ext(file_info.suffix());
+                int i;
+                for(i = 0; i < max; ++i)
                 {
-                    // skip empty entries (this can happen if the trimmed()
-                    // call removed all spaces and it was only spaces!)
-                    continue;
+                    QString ext(ext_list[i].trimmed());
+                    if(ext.isEmpty())
+                    {
+                        // skip empty entries (this can happen if the trimmed()
+                        // call removed all spaces and it was only spaces!)
+                        continue;
+                    }
+                    if(file_ext == ext)
+                    {
+                        break;
+                    }
+                    ext_list[i] = ext; // save the trimmed version back for errors
                 }
-                if(file_ext == ext)
+                // if all extensions were checked and none accepted, error
+                if(i >= max)
                 {
-                    break;
+                    QString const label(widget.firstChildElement("label").text());
+                    messages->set_error(
+                        "Filename Extension is Invalid",
+                        "\"" + value + "\" must end with one of \"" + ext_list.join(", ") + "\" in \"" + label + "\". Please try again.",
+                        "widget " + widget_name + " included a filename with an invalid extension",
+                        false
+                    );
+                    info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
                 }
-                ext_list[i] = ext; // save the trimmed version back for errors
-            }
-            // if all extensions were checked and none accepted, error
-            if(i >= max)
-            {
-                messages->set_error(
-                    "Filename Extension is Invalid",
-                    "\"" + value + "\" must end with one of \"" + ext_list.join(", ") + "\". Please try again.",
-                    "a widget with a filename tried to upload a file with an invalid extension",
-                    false
-                );
-                info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
             }
         }
     }

@@ -109,7 +109,7 @@ public:
     bool is_debug() const { return f_debug; }
     bool is_backend() const { return f_backend; }
     void config( int argc, char *argv[] );
-    QString get_parameter(QString const& name);
+    QString get_parameter(QString const& name) const;
     void exit(int code);
     void prepare_qtapp( int argc, char *argv[] );
     void close_qtapp();

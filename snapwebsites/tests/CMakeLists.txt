@@ -120,4 +120,18 @@ target_link_libraries(test_quoted_printable
 )
 
 
+add_executable(test_snap_child_date_parser
+    test_snap_child_date_parser.cpp
+)
+add_dependencies( test_snap_child_date_parser test_prereqs )
+target_link_libraries(test_snap_child_date_parser
+    libsnapwebsites
+    ${QTCASSANDRA_LIBRARIES}
+    ${LIBTLD_LIBRARIES}
+    ${QT_LIBRARIES}
+    ${THRIFT_LIBRARIES}
+    dl
+)
+
+
 # vim: ts=4 sw=4 et

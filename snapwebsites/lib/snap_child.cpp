@@ -23,6 +23,7 @@
 #include "log.h"
 #include "qlockfile.h"
 #include "http_strings.h"
+#include "mkgmtime.h"
 #include "compression.h"
 #include <memory>
 #include <wait.h>
@@ -59,6 +60,53 @@ namespace snap
  * wrong process (i.e. parent calling a child process function and vice
  * versa.)
  */
+
+
+namespace
+{
+char const *g_week_day_name[] =
+{
+    "Sunday", "Monday", "Tuesday", "Wedneday", "Thursday", "Friday", "Saturday"
+};
+int const g_week_day_length[] = { 6, 6, 7, 8, 8, 6, 8 };
+char const *g_month_name[] =
+{
+    "January", "February", "Marsh", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
+};
+int const g_month_length[] = { 7, 8, 5, 5, 3, 4, 4, 6, 9, 7, 8, 8 };
+signed char const g_timezone_adjust[26] =
+{
+    /* A */ -1,
+    /* B */ -2,
+    /* C */ -3,
+    /* D */ -4,
+    /* E */ -5,
+    /* F */ -6,
+    /* G */ -7,
+    /* H */ -8,
+    /* I */ -9,
+    /* J */ 0, // not used
+    /* K */ -10,
+    /* L */ -11,
+    /* M */ -12,
+    /* N */ 1,
+    /* O */ 2,
+    /* P */ 3,
+    /* Q */ 4,
+    /* R */ 5,
+    /* S */ 6,
+    /* T */ 7,
+    /* U */ 8,
+    /* V */ 9,
+    /* W */ 10,
+    /* X */ 11,
+    /* Y */ 12,
+    /* Z */ 0, // Zulu time is zero
+};
+
+} // no name namespace
+
 
 
 
@@ -232,7 +280,8 @@ bool snap_child::process(int socket)
     site_redirect();
 
     // save the start date as a variable so all the plugins have access
-    // to it as any other variable
+    // to it as any other variable (really we can do f_snap->get_start_date()
+    // now to directly get the int64 value.)
     f_uri.set_option("start_date", QString("%1").arg(f_start_date));
 
     // start the plugins and there initialization
@@ -704,30 +753,36 @@ void snap_child::read_environment()
                 }
                 f_post[f_name] = filename;
 
-                post_file_t& file(f_files[f_name]);
-                file.set_name(f_name);
-                file.set_filename(filename);
-                ++f_post_index; // 1-based
-                file.set_index(f_post_index);
-                file.set_data(f_post_content);
-                if(params.contains("creation-date"))
+                // an empty filename means no file was uploaded (which
+                // is fine for optional fields or fields that are already
+                // attached to a file anyway.)
+                if(!filename.isEmpty())
                 {
-                    file.set_creation_time(string822_to_date(params["creation-date"]));
+                    post_file_t& file(f_files[f_name]);
+                    file.set_name(f_name);
+                    file.set_filename(filename);
+                    ++f_post_index; // 1-based
+                    file.set_index(f_post_index);
+                    file.set_data(f_post_content);
+                    if(params.contains("creation-date"))
+                    {
+                        file.set_creation_time(string_to_date(params["creation-date"]));
+                    }
+                    if(params.contains("modification-date"))
+                    {
+                        file.set_modification_time(string_to_date(params["modification-date"]));
+                    }
+                    // Content-Type is actually expected on this side
+                    if(f_post_environment.contains("CONTENT-TYPE"))
+                    {
+                        file.set_mime_type(f_post_environment["CONTENT-TYPE"]);
+                    }
+                    if(params.contains("modification-date"))
+                    {
+                        file.set_modification_time(string_to_date(params["modification-date"]));
+                    }
+fprintf(stderr, " f_files[\"%s\"] = \"...\" (Filename: \"%s\" MIME: %s, size: %d)\n", f_name.toUtf8().data(), filename.toUtf8().data(), file.get_mime_type().toUtf8().data(), f_post_content.size());
                 }
-                if(params.contains("modification-date"))
-                {
-                    file.set_modification_time(string822_to_date(params["modification-date"]));
-                }
-                // Content-Type is actually expected on this side
-                if(f_post_environment.contains("CONTENT-TYPE"))
-                {
-                    file.set_mime_type(f_post_environment["CONTENT-TYPE"]);
-                }
-                if(params.contains("modification-date"))
-                {
-                    file.set_modification_time(string822_to_date(params["modification-date"]));
-                }
-//fprintf(stderr, " f_files[\"%s\"] = \"...\" (MIME: %s)\n", filename.toUtf8().data(), file.get_mime_type().toUtf8().data());
             }
             else
             {
@@ -2122,6 +2177,25 @@ QString snap_child::postenv(const QString& name, const QString& default_value) c
 }
 
 
+/** \brief Check whether a file from the POST is defined.
+ *
+ * This function is expected to be called to verify that a file was
+ * indeed uploaded for the named widget.
+ *
+ * If this function returns false, then the postfile() function should not
+ * be called.
+ *
+ * \param[in] name  The id (name) of the Input File widget.
+ *
+ * \sa postfile()
+ */
+bool snap_child::postfile_exists(QString const& name) const
+{
+    // the QMap only returns a reference if this is not constant
+    return f_files.contains(name) && f_files[name].get_size() != 0;
+}
+
+
 /** \brief Retrieve a file from the POST.
  *
  * This function can be called if this request included a POST with a
@@ -2131,7 +2205,14 @@ QString snap_child::postenv(const QString& name, const QString& default_value) c
  * you check a post with postenv("file") (which returns the filename),
  * then you can get the actual file with postfile("file").
  *
+ * \note
+ * If the file was not sent by the browser, then this function creates
+ * an entry in the global table which is probably not what you want.
+ * Make sure to call the postfile_exists() function first.
+ *
  * \param[in] name  The id (name) of the Input File widget.
+ *
+ * \sa postfile_exists()
  */
 const snap_child::post_file_t& snap_child::postfile(QString const& name) const
 {
@@ -2251,6 +2332,23 @@ void snap_child::exit(int code)
 bool snap_child::is_debug() const
 {
     return f_server->is_debug();
+}
+
+
+/** \brief Retrieve a server parameter.
+ *
+ * This function calls the get_parameter() function of the server. This
+ * gives you access to all the parameters defined in the server
+ * configuration file.
+ *
+ * This gives you access to parameters such as the qs_action and
+ * the default_plugins list.
+ *
+ * \param[in] name  The name of the parameter to retrieve.
+ */
+QString snap_child::get_server_parameter(QString const& name)
+{
+    return f_server->get_parameter(name);
 }
 
 
@@ -3437,20 +3535,6 @@ void snap_child::execute()
     // let plugins detach whatever data they attached to the user session
     f_server->detach_from_session();
 
-    // get the action, if no action is defined, then use the default
-    // which  is "view" unless we are POSTing
-    verify_permissions();
-
-    // if the user POSTed something, manage that content first, the
-    // effect is often to redirect the user in which case we want to
-    // emit an HTTP Location and return; also, with AJAX we may end
-    // up stopping early (i.e. not generate a full page but instead
-    // return the "form results".)
-    if(f_has_post)
-    {
-        f_server->process_post(f_uri.path());
-    }
-
     // generate the output
     //
     // on_execute() is defined in the path plugin which retrieves the
@@ -3560,7 +3644,7 @@ void snap_child::execute()
 void snap_child::verify_permissions()
 {
     QString qs_action(f_server->get_parameter("qs_action"));
-    QString action("view");
+    QString action(f_has_post ? "administer" : "view");
     if(f_uri.has_query_option(qs_action))
     {
         // the user specified an action
@@ -3568,7 +3652,7 @@ void snap_child::verify_permissions()
         if(action.isEmpty())
         {
             // use the default
-            action = "view";
+            action = f_has_post ? "administer" : "view";
         }
     }
 
@@ -3586,371 +3670,518 @@ void snap_child::verify_permissions()
 }
 
 
+/** \brief Process the post if there was one.
+ *
+ * This function processes the post, as in checks all the validity of
+ * all parameters and save the data in the database, and then returns.
+ *
+ * \note
+ * If the post was successful it is possible that the function generates
+ * an redirect and then exit immediately.
+ */
+void snap_child::process_post()
+{
+    if(f_has_post)
+    {
+        process_post();
+    }
+}
+
+
 /** \brief Convert a time/date value to a string.
  *
  * This function transform a date such as the content::modified field
  * to a format that is useful to the XSL parser. It supports a short
  * and a long form:
  *
- * \li Short: YYYY-MM-DD
- * \li Long: YYYY-MM-DDTHH:MM:SS
+ * \li DATE_FORMAT_SHORT -- YYYY-MM-DD
+ * \li DATE_FORMAT_LONG  -- YYYY-MM-DDTHH:MM:SSZ
+ * \li DATE_FORMAT_TIME  -- HH:MM:SS
+ * \li DATE_FORMAT_EMAIL -- dd MMM yyyy hh:mm:ss +0000
+ * \li DATE_FORAMT_HTTP  -- ddd, dd MMM yyyy hh:mm:ss +0000
  *
  * The long format includes the time.
+ *
+ * The HTTP format uses the day and month names in English only since
+ * the HTTP protocol only expects English.
  *
  * The date is always output as UTC (opposed to local time.)
  *
  * \param[in] v  A 64 bit time / date value in microseconds, although we
  *               really only use precision to the second.
- * \param[in] long_format  Whether to use the short (default) or long format.
+ * \param[in] date_format  Which format should be used.
  *
  * \return The formatted date and time.
  */
-QString snap_child::date_to_string(int64_t v, bool long_format)
+QString snap_child::date_to_string(int64_t v, date_format_t date_format)
 {
     // go to seconds
     time_t seconds(v / 1000000);
 
-    struct tm *time_info(gmtime(&seconds));
+    struct tm time_info;
+    gmtime_r(&seconds, &time_info);
 
     char buf[256];
+    buf[0] = '\0';
 
-    strftime(
-        buf,
-        sizeof(buf),
-        (long_format ? "%Y-%m-%dT%H:%M:%S" : "%Y-%m-%d"),
-        time_info
-    );
+    switch(date_format)
+    {
+    case DATE_FORMAT_SHORT:
+        strftime(buf, sizeof(buf), "%Y-%m-%d", &time_info);
+        break;
+
+    case DATE_FORMAT_LONG:
+        // TBD do we want the Z when generating time for HTML headers?
+        // (it is useful for the sitemap.xml at this point)
+        strftime(buf, sizeof(buf), "%Y-%m-%dT%H:%M:%SZ", &time_info);
+        break;
+
+    case DATE_FORMAT_TIME:
+        strftime(buf, sizeof(buf), "%H:%M:%S", &time_info);
+        break;
+
+    case DATE_FORMAT_EMAIL:
+        {
+        { // dd MMM yyyy hh:mm:ss +0000
+            // do it manually so the date is ALWAYS in English
+            return QString("%1 %2 %3 %4:%5:%6 +0000")
+                .arg(time_info.tm_mday, 2, 10, QChar('0'))
+                .arg(QString::fromAscii(g_month_name[time_info.tm_mon], 3))
+                .arg(time_info.tm_year + 1900, 4, 10, QChar('0'))
+                .arg(time_info.tm_hour, 2, 10, QChar('0'))
+                .arg(time_info.tm_min, 2, 10, QChar('0'))
+                .arg(time_info.tm_sec, 2, 10, QChar('0'));
+        }
+        }
+        break;
+
+    case DATE_FORMAT_HTTP:
+        { // ddd, dd MMM yyyy hh:mm:ss GMT
+            // do it manually so the date is ALWAYS in English
+            return QString("%1, %2 %3 %4 %5:%6:%7 +0000")
+                .arg(QString::fromAscii(g_week_day_name[time_info.tm_wday], 3))
+                .arg(time_info.tm_mday, 2, 10, QChar('0'))
+                .arg(QString::fromAscii(g_month_name[time_info.tm_mon], 3))
+                .arg(time_info.tm_year + 1900, 4, 10, QChar('0'))
+                .arg(time_info.tm_hour, 2, 10, QChar('0'))
+                .arg(time_info.tm_min, 2, 10, QChar('0'))
+                .arg(time_info.tm_sec, 2, 10, QChar('0'));
+        }
+        break;
+
+    }
 
     return buf;
 }
 
 
-/** \brief Convert an RFC822 date to a time_t.
+/** \brief Convert a date from a string to a time_t.
  *
  * This function transforms a date received by the client to a Unix
  * time_t value. We programmed our own because several fields are
  * optional and the strptime() function does not support such. Also
  * the strptime() uses the locale() for the day and month check
- * which is not expected for HTTP.
+ * which is not expected for HTTP. The QDateTime object has similar
+ * flaws.
+ *
+ * The function supports the RFC822, RFC850, and ANSI formats. On top
+ * of these formats, the function understands the month name in full,
+ * and the week day name and timezone parameters are viewed as optional.
+ *
+ * See the document we used to make sure we'd support pretty much all the
+ * dates that a client might send to us:
+ * http://www.w3.org/Protocols/rfc2616/rfc2616-sec3.html#sec3.3.1
  *
  * \param[in] date  The date to convert to a time_t.
  *
  * \return The date and time as a Unix time_t number, -1 if the convertion fails.
  */
-time_t snap_child::string822_to_date(QString const& date)
+time_t snap_child::string_to_date(QString const& date)
 {
-    const char *s(date.trimmed().toLower().toUtf8().data());
-    struct tm time_info;
-
-    // date-time   =  [ day "," ] date time
-    // date        =  1*2DIGIT month 2DIGIT
-    // time        =  hour zone
-    // hour        =  2DIGIT ":" 2DIGIT [":" 2DIGIT]
-
-    // clear the info as default
-    memset(&time_info, 0, sizeof(time_info));
-
-    // week day? (as far as I know mktime() doesn't use that one)
-    //
-    // day         =  "Mon"  / "Tue" /  "Wed"  / "Thu"
-    //             /  "Fri"  / "Sat" /  "Sun"
-    if(*s >= 'a' && *s <= 'z')
+    struct parser_t
     {
-        if(s[0] == 'm' && s[1] == 'o' && s[2] == 'n')
+        parser_t(QString const& date)
+            : f_date(date.simplified().toLower().toUtf8())
+            , f_s(f_date.data())
+            //, f_time_info() -- initialized below
         {
-            time_info.tm_wday = 1;
+            // clear the info as default
+            memset(&f_time_info, 0, sizeof(f_time_info));
         }
-        else if(s[0] == 't' && s[1] == 'u' && s[2] == 'e')
-        {
-            time_info.tm_wday = 2;
-        }
-        else if(s[0] == 'w' && s[1] == 'e' && s[2] == 'd')
-        {
-            time_info.tm_wday = 3;
-        }
-        else if(s[0] == 't' && s[1] == 'h' && s[2] == 'u')
-        {
-            time_info.tm_wday = 4;
-        }
-        else if(s[0] == 'f' && s[1] == 'r' && s[2] == 'i')
-        {
-            time_info.tm_wday = 5;
-        }
-        else if(s[0] == 's' && s[1] == 'a' && s[2] == 't')
-        {
-            time_info.tm_wday = 6;
-        }
-        else if(s[0] == 's' && s[1] == 'u' && s[2] == 'n')
-        {
-            time_info.tm_wday = 0;
-        }
-        else
-        {
-            // invalid weekday
-            return -1;
-        }
-        if(s[3] != ',')
-        {
-            return -1;
-        }
-        s += 4;
-        while(isspace(*s))
-        {
-            ++s;
-        }
-    }
 
-    // day of the month (1*2DIGIT)
-    if(s[0] < '0' || s[0] > '9')
+        void skip_spaces()
+        {
+            while(isspace(*f_s))
+            {
+                ++f_s;
+            }
+        }
+
+        bool parse_week_day()
+        {
+            // day         =  "Mon"  / "Tue" /  "Wed"  / "Thu"
+            //             /  "Fri"  / "Sat" /  "Sun"
+            if(f_s[0] == 'm' && f_s[1] == 'o' && f_s[2] == 'n')
+            {
+                f_time_info.tm_wday = 1;
+            }
+            else if(f_s[0] == 't' && f_s[1] == 'u' && f_s[2] == 'e')
+            {
+                f_time_info.tm_wday = 2;
+            }
+            else if(f_s[0] == 'w' && f_s[1] == 'e' && f_s[2] == 'd')
+            {
+                f_time_info.tm_wday = 3;
+            }
+            else if(f_s[0] == 't' && f_s[1] == 'h' && f_s[2] == 'u')
+            {
+                f_time_info.tm_wday = 4;
+            }
+            else if(f_s[0] == 'f' && f_s[1] == 'r' && f_s[2] == 'i')
+            {
+                f_time_info.tm_wday = 5;
+            }
+            else if(f_s[0] == 's' && f_s[1] == 'a' && f_s[2] == 't')
+            {
+                f_time_info.tm_wday = 6;
+            }
+            else if(f_s[0] == 's' && f_s[1] == 'u' && f_s[2] == 'n')
+            {
+                f_time_info.tm_wday = 0;
+            }
+            else
+            {
+                return false;
+            }
+
+            // check whether the other characters follow
+            if(strncmp(f_s + 3, g_week_day_name[f_time_info.tm_wday] + 3, g_week_day_length[f_time_info.tm_wday] - 3) == 0)
+            {
+                // full day (RFC850)
+                f_s += g_week_day_length[f_time_info.tm_wday];
+            }
+            else
+            {
+                f_s += 3;
+            }
+
+            return true;
+        }
+
+        bool parse_month()
+        {
+            // month       =  "Jan"  /  "Feb" /  "Mar"  /  "Apr"
+            //             /  "May"  /  "Jun" /  "Jul"  /  "Aug"
+            //             /  "Sep"  /  "Oct" /  "Nov"  /  "Dec"
+            if(f_s[0] == 'j' && f_s[1] == 'a' && f_s[2] == 'n')
+            {
+                f_time_info.tm_mon = 0;
+                f_s += 3;
+            }
+            else if(f_s[0] == 'f' && f_s[1] == 'e' && f_s[2] == 'b')
+            {
+                f_time_info.tm_mon = 1;
+                f_s += 3;
+            }
+            else if(f_s[0] == 'm' && f_s[1] == 'a' && f_s[2] == 'r')
+            {
+                f_time_info.tm_mon = 2;
+                f_s += 3;
+            }
+            else if(f_s[0] == 'a' && f_s[1] == 'p' && f_s[2] == 'r')
+            {
+                f_time_info.tm_mon = 3;
+                f_s += 3;
+            }
+            else if(f_s[0] == 'm' && f_s[1] == 'a' && f_s[2] == 'y')
+            {
+                f_time_info.tm_mon = 4;
+                f_s += 3;
+            }
+            else if(f_s[0] == 'j' && f_s[1] == 'u' && f_s[2] == 'n')
+            {
+                f_time_info.tm_mon = 5;
+                f_s += 3;
+            }
+            else if(f_s[0] == 'j' && f_s[1] == 'u' && f_s[2] == 'l')
+            {
+                f_time_info.tm_mon = 6;
+            }
+            else if(f_s[0] == 'a' && f_s[1] == 'u' && f_s[2] == 'g')
+            {
+                f_time_info.tm_mon = 7;
+            }
+            else if(f_s[0] == 's' && f_s[1] == 'e' && f_s[2] == 'p')
+            {
+                f_time_info.tm_mon = 8;
+            }
+            else if(f_s[0] == 'o' && f_s[1] == 'c' && f_s[2] == 't')
+            {
+                f_time_info.tm_mon = 9;
+            }
+            else if(f_s[0] == 'n' && f_s[1] == 'o' && f_s[2] == 'v')
+            {
+                f_time_info.tm_mon = 10;
+            }
+            else if(f_s[0] == 'd' && f_s[1] == 'e' && f_s[2] == 'c')
+            {
+                f_time_info.tm_mon = 11;
+            }
+            else
+            {
+                return false;
+            }
+
+            // check whether the other characters follow
+            if(strncmp(f_s + 3, g_month_name[f_time_info.tm_mon] + 3, g_month_length[f_time_info.tm_mon] - 3) == 0)
+            {
+                // full month (not in the specs)
+                f_s += g_month_length[f_time_info.tm_mon];
+            }
+            else
+            {
+                f_s += 3;
+            }
+
+            skip_spaces();
+            return true;
+        }
+
+        bool integer(int min_len, int max_len, int min, int max, int& result)
+        {
+            int count(0);
+            for(; *f_s >= '0' && *f_s <= '9'; ++f_s, ++count)
+            {
+                result = result * 10 + *f_s - '0';
+            }
+            if(count < min_len || count > max_len
+            || result < min || result > max)
+            {
+                return false;
+            }
+            return true;
+        }
+
+        bool parse_time()
+        {
+            if(!integer(2, 2, 0, 23, f_time_info.tm_hour))
+            {
+                return false;
+            }
+            if(*f_s != ':')
+            {
+                return false;
+            }
+            ++f_s;
+            if(!integer(2, 2, 0, 59, f_time_info.tm_min))
+            {
+                return false;
+            }
+            if(*f_s != ':')
+            {
+                return false;
+            }
+            ++f_s;
+            if(!integer(2, 2, 0, 60, f_time_info.tm_sec))
+            {
+                return false;
+            }
+            skip_spaces();
+            return true;
+        }
+
+        bool parse_timezone()
+        {
+            // any timezone?
+            if(*f_s == '\0')
+            {
+                return true;
+            }
+
+            // XXX not too sure that the zone is properly handled at this point
+            // (i.e. should I do += or -=, it may be wrong in many places...)
+            //
+            // The newest HTTP format is to only support "+/-####"
+            //
+            // zone        =  "UT"  / "GMT"
+            //             /  "EST" / "EDT"
+            //             /  "CST" / "CDT"
+            //             /  "MST" / "MDT"
+            //             /  "PST" / "PDT"
+            //             /  1ALPHA
+            //             / ( ("+" / "-") 4DIGIT )
+            if((f_s[0] == 'u' && f_s[1] == 't' && f_s[2] == '\0')                 // UT
+            || (f_s[0] == 'u' && f_s[1] == 't' && f_s[2] == 'c' && f_s[3] == '\0')  // UTC (not in the spec...)
+            || (f_s[0] == 'g' && f_s[1] == 'm' && f_s[2] == 't' && f_s[3] == '\0')) // GMT
+            {
+                // no adjustment for UTC (GMT)
+            }
+            else if(f_s[0] == 'e' && f_s[1] == 's' && f_s[2] == 't' && f_s[3] == '\0') // EST
+            {
+                f_time_info.tm_hour -= 5;
+            }
+            else if(f_s[0] == 'e' && f_s[1] == 'd' && f_s[2] == 't' && f_s[3] == '\0') // EDT
+            {
+                f_time_info.tm_hour -= 4;
+            }
+            else if(f_s[0] == 'c' && f_s[1] == 's' && f_s[2] == 't' && f_s[3] == '\0') // CST
+            {
+                f_time_info.tm_hour -= 6;
+            }
+            else if(f_s[0] == 'c' && f_s[1] == 'd' && f_s[2] == 't' && f_s[3] == '\0') // CDT
+            {
+                f_time_info.tm_hour -= 5;
+            }
+            else if(f_s[0] == 'm' && f_s[1] == 's' && f_s[2] == 't' && f_s[3] == '\0') // MST
+            {
+                f_time_info.tm_hour -= 7;
+            }
+            else if(f_s[0] == 'm' && f_s[1] == 'd' && f_s[2] == 't' && f_s[3] == '\0') // MDT
+            {
+                f_time_info.tm_hour -= 6;
+            }
+            else if(f_s[0] == 'p' && f_s[1] == 's' && f_s[2] == 't' && f_s[3] == '\0') // PST
+            {
+                f_time_info.tm_hour -= 8;
+            }
+            else if(f_s[0] == 'p' && f_s[1] == 'd' && f_s[2] == 't' && f_s[3] == '\0') // PDT
+            {
+                f_time_info.tm_hour -= 7;
+            }
+            else if(f_s[0] >= 'a' && f_s[0] <= 'z' && f_s[0] != 'j' && f_s[1] == '\0')
+            {
+                f_time_info.tm_hour += g_timezone_adjust[f_s[0] - 'a'];
+            }
+            else if((f_s[0] == '+' || f_s[0] == '-')
+                  && f_s[1] >= '0' && f_s[1] <= '9'
+                  && f_s[2] >= '0' && f_s[2] <= '9'
+                  && f_s[3] >= '0' && f_s[3] <= '9'
+                  && f_s[4] >= '0' && f_s[4] <= '9'
+                  && f_s[5] == '\0')
+            {
+                f_time_info.tm_hour += ((f_s[1] - '0') * 10 + f_s[2] - '0') * (f_s[0] == '+' ? 1 : -1);
+                f_time_info.tm_min  += ((f_s[3] - '0') * 10 + f_s[4] - '0') * (f_s[0] == '+' ? 1 : -1);
+            }
+            else
+            {
+                // invalid time zone
+                return false;
+            }
+
+            // WARNING: the time zone doesn't get skipped!
+            return true;
+        }
+
+        bool parse_ansi()
+        {
+            skip_spaces();
+            if(!parse_month())
+            {
+                return false;
+            }
+            if(!integer(1, 2, 1, 31, f_time_info.tm_mday))
+            {
+                return false;
+            }
+            skip_spaces();
+            if(!parse_time())
+            {
+                return false;
+            }
+            if(!integer(2, 4, 0, 3000, f_time_info.tm_year))
+            {
+                return false;
+            }
+            skip_spaces();
+            return parse_timezone();
+        }
+
+        bool parse()
+        {
+            // week day (optional in RFC822)
+            if(*f_s >= 'a' && *f_s <= 'z')
+            {
+                if(!parse_week_day())
+                {
+                    // maybe that was the month, not the day
+                    return parse_ansi();
+                }
+
+                if(f_s[0] == ' ')
+                {
+                    // the ANSI format is completely random!
+                    return parse_ansi();
+                }
+
+                if(f_s[0] != ',')
+                {
+                    return false;
+                }
+                ++f_s; // skip the comma
+                skip_spaces();
+            }
+
+            if(!integer(1, 2, 1, 31, f_time_info.tm_mday))
+            {
+                return false;
+            }
+
+            if(*f_s == '-')
+            {
+                ++f_s;
+            }
+            skip_spaces();
+
+            if(!parse_month())
+            {
+                return false;
+            }
+            if(*f_s == '-')
+            {
+                ++f_s;
+                skip_spaces();
+            }
+            if(!integer(2, 4, 0, 3000, f_time_info.tm_year))
+            {
+                return false;
+            }
+            skip_spaces();
+            if(!parse_time())
+            {
+                return false;
+            }
+
+            return parse_timezone();
+        }
+
+        struct tm       f_time_info;
+        QByteArray      f_date;
+        char const *    f_s;
+    } parser(date);
+
+    if(!parser.parse())
     {
         return -1;
     }
-    if(s[1] >= '0' && s[1] <= '9')
-    {
-        time_info.tm_mday = (s[0] - '0') * 10 + s[1] - '0';
-        s += 2;
-    }
-    else
-    {
-        time_info.tm_mday = s[0] - '0';
-        ++s;
-    }
 
-    if(!isspace(*s))
-    {
-        return -1;
-    }
-    do
-    {
-        ++s;
-    }
-    while(isspace(*s));
-
-    // month       =  "Jan"  /  "Feb" /  "Mar"  /  "Apr"
-    //             /  "May"  /  "Jun" /  "Jul"  /  "Aug"
-    //             /  "Sep"  /  "Oct" /  "Nov"  /  "Dec"
-    if(s[0] == 'j' && s[1] == 'a' && s[2] == 'n')
-    {
-        time_info.tm_mon = 0;
-    }
-    else if(s[0] == 'f' && s[1] == 'e' && s[2] == 'b')
-    {
-        time_info.tm_mon = 1;
-    }
-    else if(s[0] == 'm' && s[1] == 'a' && s[2] == 'r')
-    {
-        time_info.tm_mon = 2;
-    }
-    else if(s[0] == 'a' && s[1] == 'p' && s[2] == 'r')
-    {
-        time_info.tm_mon = 3;
-    }
-    else if(s[0] == 'm' && s[1] == 'a' && s[2] == 'y')
-    {
-        time_info.tm_mon = 4;
-    }
-    else if(s[0] == 'j' && s[1] == 'u' && s[2] == 'n')
-    {
-        time_info.tm_mon = 5;
-    }
-    else if(s[0] == 'j' && s[1] == 'u' && s[2] == 'l')
-    {
-        time_info.tm_mon = 6;
-    }
-    else if(s[0] == 'a' && s[1] == 'u' && s[2] == 'g')
-    {
-        time_info.tm_mon = 7;
-    }
-    else if(s[0] == 's' && s[1] == 'e' && s[2] == 'p')
-    {
-        time_info.tm_mon = 8;
-    }
-    else if(s[0] == 'o' && s[1] == 'c' && s[2] == 't')
-    {
-        time_info.tm_mon = 9;
-    }
-    else if(s[0] == 'n' && s[1] == 'o' && s[2] == 'v')
-    {
-        time_info.tm_mon = 10;
-    }
-    else if(s[0] == 'd' && s[1] == 'e' && s[2] == 'c')
-    {
-        time_info.tm_mon = 11;
-    }
-    else
-    {
-        // invalid month
-        return -1;
-    }
-
-    s += 3;
-    if(!isspace(*s))
-    {
-        return -1;
-    }
-    do
-    {
-        ++s;
-    }
-    while(isspace(*s));
-
-    // year (2DIGIT)
-    if(s[0] < '0' || s[0] > '9'
-    || s[1] < '0' || s[1] > '9')
-    {
-        return -1;
-    }
-    time_info.tm_year = 1900 + (s[0] - '0') * 10 + s[1] - '0';
-
+    // 2 digit year?
     // How to handle this one? At this time I do not expect our software
     // to work beyond 2070 which is probably short sighted (ha! ha!)
     // However, that way we avoid calling time() and transform that in
     // a tm structure and check that date
-    if(time_info.tm_year < 1970)
+    if(parser.f_time_info.tm_year < 100)
     {
-        time_info.tm_year += 100;
-    }
-
-    // hour (2DIGIT)
-    if(s[0] < '0' || s[0] > '9'
-    || s[1] < '0' || s[1] > '9'
-    || s[2] != ':')
-    {
-        return -1;
-    }
-    time_info.tm_hour = 1900 + (s[0] - '0') * 10 + s[1] - '0';
-    s += 3;
-
-    // minute (2DIGIT)
-    if(s[0] < '0' || s[0] > '9'
-    || s[1] < '0' || s[1] > '9')
-    {
-        return -1;
-    }
-    time_info.tm_min = (s[0] - '0') * 10 + s[1] - '0';
-    s += 2;
-
-    if(*s == ':')
-    {
-        ++s;
-
-        // second (2DIGIT)
-        if(s[0] < '0' || s[0] > '9'
-        || s[1] < '0' || s[1] > '9')
+        parser.f_time_info.tm_year += 1900;
+        if(parser.f_time_info.tm_year < 1970)
         {
-            return -1;
-        }
-        time_info.tm_sec = (s[0] - '0') * 10 + s[1] - '0';
-        s += 2;
-    }
-
-    while(isspace(*s))
-    {
-        ++s;
-    }
-
-    if(*s != '\0')
-    {
-        // not too sure that the zone is properly handled at this point, TBD
-        // (i.e. should I do += or -=, it may be wrong in many places...)
-        //
-        // zone        =  "UT"  / "GMT"
-        //             /  "EST" / "EDT"
-        //             /  "CST" / "CDT"
-        //             /  "MST" / "MDT"
-        //             /  "PST" / "PDT"
-        //             /  1ALPHA
-        //             / ( ("+" / "-") 4DIGIT )
-        if((s[0] == 'u' && s[1] == 't' && s[2] == '\0')                 // UT
-        || (s[0] == 'u' && s[1] == 't' && s[2] == 'c' && s[3] == '\0')  // UTC (not in the spec...)
-        || (s[0] == 'g' && s[1] == 'm' && s[2] == 't' && s[3] == '\0')) // GMT
-        {
-            // no adjustment for UTC (GMT)
-        }
-        else if(s[0] == 'e' && s[1] == 's' && s[2] == 't' && s[3] == '\0') // EST
-        {
-            time_info.tm_hour -= 5;
-        }
-        else if(s[0] == 'e' && s[1] == 'd' && s[2] == 't' && s[3] == '\0') // EDT
-        {
-            time_info.tm_hour -= 4;
-        }
-        else if(s[0] == 'c' && s[1] == 's' && s[2] == 't' && s[3] == '\0') // CST
-        {
-            time_info.tm_hour -= 6;
-        }
-        else if(s[0] == 'c' && s[1] == 'd' && s[2] == 't' && s[3] == '\0') // CDT
-        {
-            time_info.tm_hour -= 5;
-        }
-        else if(s[0] == 'm' && s[1] == 's' && s[2] == 't' && s[3] == '\0') // MST
-        {
-            time_info.tm_hour -= 7;
-        }
-        else if(s[0] == 'm' && s[1] == 'd' && s[2] == 't' && s[3] == '\0') // MDT
-        {
-            time_info.tm_hour -= 6;
-        }
-        else if(s[0] == 'p' && s[1] == 's' && s[2] == 't' && s[3] == '\0') // PST
-        {
-            time_info.tm_hour -= 8;
-        }
-        else if(s[0] == 'p' && s[1] == 'd' && s[2] == 't' && s[3] == '\0') // PDT
-        {
-            time_info.tm_hour -= 7;
-        }
-        else if(s[0] >= 'a' && s[0] <= 'z' && s[0] != 'j' && s[1] == '\0')
-        {
-            signed char adjust[26] = {
-                /* A */ -1,
-                /* B */ -2,
-                /* C */ -3,
-                /* D */ -4,
-                /* E */ -5,
-                /* F */ -6,
-                /* G */ -7,
-                /* H */ -8,
-                /* I */ -9,
-                /* J */ 0, // not used
-                /* K */ -10,
-                /* L */ -11,
-                /* M */ -12,
-                /* N */ 1,
-                /* O */ 2,
-                /* P */ 3,
-                /* Q */ 4,
-                /* R */ 5,
-                /* S */ 6,
-                /* T */ 7,
-                /* U */ 8,
-                /* V */ 9,
-                /* W */ 10,
-                /* X */ 11,
-                /* Y */ 12,
-                /* Z */ 0,
-            };
-            time_info.tm_hour += adjust[s[0] - 'a'];
-        }
-        else if((s[0] == '+' || s[0] == '-')
-              && s[1] >= '0' && s[1] <= '9'
-              && s[2] >= '0' && s[2] <= '9'
-              && s[3] >= '0' && s[3] <= '9'
-              && s[4] >= '0' && s[4] <= '9'
-              && s[5] == '\0')
-        {
-            time_info.tm_hour += ((s[1] - '0') * 10 + s[2] - '0') * (s[0] == '+' ? 1 : -1);
-            time_info.tm_min  += ((s[3] - '0') * 10 + s[4] - '0') * (s[0] == '+' ? 1 : -1);
-        }
-        else
-        {
-            // invalid month
-            return -1;
+            parser.f_time_info.tm_year += 100;
         }
     }
 
     // now we have a time_info which is fully adjusted except for DST...
     // let's make time
-    return mktime(&time_info);
+    parser.f_time_info.tm_year -= 1900;
+    return mkgmtime(&parser.f_time_info);
 }
 
 
