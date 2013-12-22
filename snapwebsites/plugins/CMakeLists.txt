@@ -48,33 +48,6 @@ set( PLUGIN_INSTALL_DIR lib/snapwebsites/plugins )
 find_program( BASH    bash    /bin     )
 find_program( XMLLINT xmllint /usr/bin )
 #
-<<<<<<< Updated upstream
-function( snap_validate_dtd PROJECT_NAME )
-	set( master_dtd_file ${snapwebsites_plugins_SOURCE_DIR}/plugins.dtd )
-	set( lint_script ${snapwebsites_plugins_BINARY_DIR}/dolint.sh )
-	if( NOT EXISTS ${lint_script} )
-		file( WRITE  ${lint_script} "#!${BASH}\n"                                                            )
-		file( APPEND ${lint_script} "dtdopts=--valid\n"                                                      )
-		file( APPEND ${lint_script} "[ -n \"$3\" ] && [ -e \"$3\" ] && dtdopts=\"--dtdvalid $3\"\n" )
-		file( APPEND ${lint_script} "${XMLLINT} $dtdopts $1 > $2 && exit 0 || (rm $2; exit 1)\n"             )
-	endif()
-	unset( touch_file_list )
-	foreach( xml_file ${ARGN} )
-		get_filename_component( full_xmlfile ${xml_file} ABSOLUTE )
-		set( touch_file "${CMAKE_CURRENT_BINARY_DIR}/${xml_file}.lint" )
-		#
-		# Command runs the lint_script above...
-		#
-		add_custom_command(
-			OUTPUT ${touch_file}
-			COMMAND ${BASH} ${lint_script} ${full_xmlfile} ${touch_file} ${master_dtd_file}
-			WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-			DEPENDS ${full_xmlfile}
-			COMMENT "running xmllint on ${full_xmlfile}"
-		)
-		list( APPEND touch_file_list ${touch_file} )
-	endforeach()
-=======
 set( lint_script ${snapwebsites_plugins_BINARY_DIR}/dolint.sh )
 if( NOT EXISTS ${lint_script} )
 	file( WRITE  ${lint_script} "#!${BASH}\n"                                                            )
@@ -85,7 +58,7 @@ endif()
 #
 macro( snap_validate_dtd PROJECT_NAME XML_FILE DTD_FILE )
 	get_filename_component( full_xmlfile ${XML_FILE} ABSOLUTE )
-	set( lint_file "${CMAKE_CURRENT_BINARY_DIR}/${xml_file}.lint"   )
+	set( lint_file "${CMAKE_CURRENT_BINARY_DIR}/${XML_FILE}.lint"   )
 	set( dtd_file  "${snapwebsites_plugins_SOURCE_DIR}/${DTD_FILE}" )
 	#
 	# Command runs the lint_script above...
@@ -97,7 +70,6 @@ macro( snap_validate_dtd PROJECT_NAME XML_FILE DTD_FILE )
 		DEPENDS ${full_xmlfile}
 		COMMENT "running xmllint on ${full_xmlfile}"
 	)
->>>>>>> Stashed changes
 
 	# Make sure each file is processed...
 	#
@@ -149,6 +121,7 @@ add_subdirectory(users)
 # Handy target for wiping out all lint files and forcing a recheck!
 #
 get_property( xml_lint_files GLOBAL PROPERTY xml_lint_files )
+message( "xml_lint_files=${xml_lint_files}" )
 add_custom_target(
 	build_lint ALL
 	DEPENDS ${xml_lint_files}
