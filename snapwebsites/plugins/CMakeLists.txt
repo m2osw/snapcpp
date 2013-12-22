@@ -48,6 +48,7 @@ set( PLUGIN_INSTALL_DIR lib/snapwebsites/plugins )
 find_program( BASH    bash    /bin     )
 find_program( XMLLINT xmllint /usr/bin )
 #
+<<<<<<< Updated upstream
 function( snap_validate_dtd PROJECT_NAME )
 	set( master_dtd_file ${snapwebsites_plugins_SOURCE_DIR}/plugins.dtd )
 	set( lint_script ${snapwebsites_plugins_BINARY_DIR}/dolint.sh )
@@ -73,16 +74,40 @@ function( snap_validate_dtd PROJECT_NAME )
 		)
 		list( APPEND touch_file_list ${touch_file} )
 	endforeach()
+=======
+set( lint_script ${snapwebsites_plugins_BINARY_DIR}/dolint.sh )
+if( NOT EXISTS ${lint_script} )
+	file( WRITE  ${lint_script} "#!${BASH}\n"                                                            )
+#	file( APPEND ${lint_script} "dtdopts=--valid\n"                                                      )
+	file( APPEND ${lint_script} "[ -n \"$3\" ] && [ -e \"$3\" ] && dtdopts=\"--dtdvalid $3\"\n" )
+	file( APPEND ${lint_script} "${XMLLINT} $dtdopts $1 --output $2 && exit 0 || (rm $2; exit 1)\n"             )
+endif()
+#
+macro( snap_validate_dtd PROJECT_NAME XML_FILE DTD_FILE )
+	get_filename_component( full_xmlfile ${XML_FILE} ABSOLUTE )
+	set( lint_file "${CMAKE_CURRENT_BINARY_DIR}/${xml_file}.lint"   )
+	set( dtd_file  "${snapwebsites_plugins_SOURCE_DIR}/${DTD_FILE}" )
+	#
+	# Command runs the lint_script above...
+	#
+	add_custom_command(
+		OUTPUT ${lint_file}
+		COMMAND ${BASH} ${lint_script} ${full_xmlfile} ${lint_file} ${dtd_file}
+		WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+		DEPENDS ${full_xmlfile}
+		COMMENT "running xmllint on ${full_xmlfile}"
+	)
+>>>>>>> Stashed changes
 
 	# Make sure each file is processed...
 	#
-	add_custom_target(
-		build_lint_${PROJECT_NAME}
-		DEPENDS ${touch_file_list}
-	)
-	set_property( GLOBAL APPEND PROPERTY xml_lint_files   ${touch_file_list}         )
-	set_property( GLOBAL APPEND PROPERTY xml_lint_targets build_lint_${PROJECT_NAME} )
-endfunction()
+#	add_custom_target(
+#		build_lint_${PROJECT_NAME}
+#		DEPENDS ${touch_file_list}
+#	)
+	set_property( GLOBAL APPEND PROPERTY xml_lint_files   ${lint_file}         )
+	#set_property( GLOBAL APPEND PROPERTY xml_lint_targets build_lint_${PROJECT_NAME} )
+endmacro()
 
 
 ################################################################################
@@ -115,19 +140,23 @@ add_subdirectory(users)
 ################################################################################
 # Make sure all lint targets get built properly...
 #
-get_property( xml_lint_targets GLOBAL PROPERTY xml_lint_targets )
-add_custom_target(
-	build_lint ALL
-	DEPENDS ${xml_lint_targets}
-)
+#get_property( xml_lint_targets GLOBAL PROPERTY xml_lint_targets )
+#add_custom_target(
+#	build_lint ALL
+#	DEPENDS ${xml_lint_targets}
+#)
 #
 # Handy target for wiping out all lint files and forcing a recheck!
 #
 get_property( xml_lint_files GLOBAL PROPERTY xml_lint_files )
+add_custom_target(
+	build_lint ALL
+	DEPENDS ${xml_lint_files}
+)
 add_custom_target(
 	clean_lint
 	COMMAND rm -rf ${xml_lint_files}
 	DEPENDS ${xml_lint_files}
 )
 
-# vim: ts=4 sw=4
+# vim: ts=4 sw=4 nocindent
