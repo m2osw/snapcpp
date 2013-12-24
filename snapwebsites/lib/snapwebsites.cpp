@@ -69,9 +69,6 @@
 namespace snap
 {
 
-//#pragma message "Why do we even have this? Adding a smart pointer causes a crash when the server detaches, so commented out."
-std::shared_ptr<QCoreApplication> g_application;
-
 
 /** \brief Get a fixed name.
  *
@@ -84,9 +81,10 @@ std::shared_ptr<QCoreApplication> g_application;
  *
  * \return A pointer to the name.
  */
-const char *get_name(name_t name)
+char const *get_name(name_t name)
 {
-    switch(name) {
+    switch(name)
+    {
     case SNAP_NAME_SERVER:
         return "Snap! Server";
 
@@ -107,6 +105,9 @@ const char *get_name(name_t name)
 
     case SNAP_NAME_CORE_ADMINISTRATOR_EMAIL:
         return "core::administrator_email";
+
+    case SNAP_NAME_CORE_HTTP_USER_AGENT:
+        return "HTTP_USER_AGENT";
 
     case SNAP_NAME_CORE_LAST_UPDATED:
         return "core::last_updated";
@@ -137,6 +138,9 @@ const char *get_name(name_t name)
 
     case SNAP_NAME_CORE_COOKIE_DOMAIN:
         return "core::cookie_domain";
+
+    case SNAP_NAME_CORE_USER_COOKIE_NAME:
+        return "core::user_cookie_name";
 
     default:
         // invalid index
@@ -202,7 +206,7 @@ namespace
         },
         {
             'c',
-            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE,
+            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
             "config",
             "/etc/snapwebsites/snapserver.conf",
             "Specify the configuration file to load at startup.",
@@ -218,7 +222,7 @@ namespace
         },
         {
             'h',
-            0,
+            advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
             "help",
             NULL,
             "Show usage and exit.",
@@ -243,6 +247,13 @@ namespace
     };
 }
 //namespace
+
+
+//#pragma message "Why do we even have this? Adding a smart pointer causes a crash when the server detaches, so commented out."
+// Note: We need the argc/argv when we create the application and those are
+//       not available when we create the server (they are not passed along)
+//       but I suppose the server could be ameliorated for that purpose...
+std::shared_ptr<QCoreApplication> g_application;
 
 
 /** \brief Server instance.
@@ -416,13 +427,8 @@ void server::usage()
         server_name = f_servername;
     }
 
-    std::cerr << "Usage: " << server_name << " -<arg> ..." << std::endl
-              << "Where -<arg> is one or more of the following:" << std::endl
-              << "  -c|--config <config>   define the name of the configuration file (default \"/etc/snapwebsites/snapserver.conf\")" << std::endl
-              << "  -d|--debug             run in debug mode, and do not start in the background" << std::endl
-              << "  -h|--help              display this help" << std::endl
-              << "when run as the backend, you can specify the URI of the site to process." << std::endl
-              ;
+    f_opt->usage(advgetopt::getopt::no_error, "Usage: %s -<arg> ...\n", server_name.c_str());
+
     exit(1);
 }
 

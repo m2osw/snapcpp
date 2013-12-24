@@ -51,7 +51,11 @@ QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC
     layout.qrc
 )
 
-set( XMLFILES content.xml )
+set( XMLFILES
+    content.xml
+    #default-body-parser.xsl
+    #default-theme-parser.xsl
+)
 snap_validate_dtd( ${PROJECT_NAME} ${XMLFILES} )
 
 add_library(layout SHARED

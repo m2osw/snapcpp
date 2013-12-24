@@ -28,6 +28,7 @@
 #include <QDomDocument>
 #include <QFile>
 #include <QDateTime>
+#include <QDomProcessingInstruction>
 #pragma GCC diagnostic pop
 
 
@@ -45,23 +46,26 @@ SNAP_PLUGIN_START(sitemapxml, 1, 0)
  */
 const char *get_name(name_t name)
 {
-	switch(name)
-	{
-	case SNAP_NAME_SITEMAPXML_COUNT: // in site table, int32
-		return "sitemapxml::count";
+    switch(name)
+    {
+    case SNAP_NAME_SITEMAPXML_COUNT: // in site table, int32
+        return "sitemapxml::count";
 
-	case SNAP_NAME_SITEMAPXML_SITEMAP_XML: // in site table, string
-		return "sitemapxml::sitemap.xml";
+    case SNAP_NAME_SITEMAPXML_FREQUENCY:
+        return "sitemapxml::frequency";
 
-	case SNAP_NAME_SITEMAPXML_PRIORITY: // float
-		return "sitemapxml::priority";
+    case SNAP_NAME_SITEMAPXML_SITEMAP_XML: // in site table, string
+        return "sitemapxml::sitemap.xml";
 
-	default:
-		// invalid index
-		throw snap_logic_exception("invalid SNAP_NAME_SITEMAPXML_...");
+    case SNAP_NAME_SITEMAPXML_PRIORITY: // float
+        return "sitemapxml::priority";
 
-	}
-	NOTREACHED();
+    default:
+        // invalid index
+        throw snap_logic_exception("invalid SNAP_NAME_SITEMAPXML_...");
+
+    }
+    NOTREACHED();
 }
 
 
@@ -71,10 +75,10 @@ const char *get_name(name_t name)
  * values. Especially, the priority is set to 0.5.
  */
 sitemapxml::url_info::url_info()
-	//: f_uri("") -- auto-init
-	: f_priority(0.5f)
-	//, f_last_modification() -- auto-init
-	//, f_frequency() -- auto-init
+    //: f_uri("") -- auto-init
+    : f_priority(0.5f)
+    //, f_last_modification() -- auto-init
+    //, f_frequency() -- auto-init
 {
 }
 
@@ -88,7 +92,7 @@ sitemapxml::url_info::url_info()
  */
 void sitemapxml::url_info::set_uri(const QString& uri)
 {
-	f_uri = uri;
+    f_uri = uri;
 }
 
 
@@ -112,15 +116,15 @@ void sitemapxml::url_info::set_uri(const QString& uri)
  */
 void sitemapxml::url_info::set_priority(float priority)
 {
-	if(priority < 0.001f)
-	{
-		priority = 0.001f;
-	}
-	if(priority > 1.0f)
-	{
-		priority = 1.0f;
-	}
-	f_priority = priority;
+    if(priority < 0.001f)
+    {
+        priority = 0.001f;
+    }
+    if(priority > 1.0f)
+    {
+        priority = 1.0f;
+    }
+    f_priority = priority;
 }
 
 
@@ -136,11 +140,11 @@ void sitemapxml::url_info::set_priority(float priority)
  */
 void sitemapxml::url_info::set_last_modification(time_t last_modification)
 {
-	if(last_modification < 0)
-	{
-		last_modification = 0;
-	}
-	f_last_modification = last_modification;
+    if(last_modification < 0)
+    {
+        last_modification = 0;
+    }
+    f_last_modification = last_modification;
 }
 
 
@@ -162,17 +166,17 @@ void sitemapxml::url_info::set_last_modification(time_t last_modification)
  */
 void sitemapxml::url_info::set_frequency(int frequency)
 {
-	if(frequency < 60 && frequency != 0 && frequency != -1)
-	{
-		// 1 min.
-		frequency = 60;
-	}
-	if(frequency > 31536000)
-	{
-		// yearly
-		frequency = 31536000;
-	}
-	f_frequency = frequency;
+    if(frequency < FREQUENCY_MIN && frequency != FREQUENCY_NONE && frequency != FREQUENCY_NEVER)
+    {
+        // 1 min.
+        frequency = FREQUENCY_MIN;
+    }
+    else if(frequency > FREQUENCY_MAX)
+    {
+        // yearly
+        frequency = FREQUENCY_MAX;
+    }
+    f_frequency = frequency;
 }
 
 
@@ -185,7 +189,7 @@ void sitemapxml::url_info::set_frequency(int frequency)
  */
 QString sitemapxml::url_info::get_uri() const
 {
-	return f_uri;
+    return f_uri;
 }
 
 
@@ -199,7 +203,7 @@ QString sitemapxml::url_info::get_uri() const
  */
 float sitemapxml::url_info::get_priority() const
 {
-	return f_priority;
+    return f_priority;
 }
 
 /** \brief Get the date when it was last modified.
@@ -211,7 +215,7 @@ float sitemapxml::url_info::get_priority() const
  */
 time_t sitemapxml::url_info::get_last_modification() const
 {
-	return f_last_modification;
+    return f_last_modification;
 }
 
 
@@ -226,7 +230,7 @@ time_t sitemapxml::url_info::get_last_modification() const
  */
 int sitemapxml::url_info::get_frequency() const
 {
-	return f_frequency;
+    return f_frequency;
 }
 
 
@@ -246,31 +250,31 @@ int sitemapxml::url_info::get_frequency() const
  */
 bool sitemapxml::url_info::operator < (const url_info& rhs) const
 {
-	if(f_priority > rhs.f_priority)
-	{
-		return true;
-	}
-	if(f_priority < rhs.f_priority)
-	{
-		return false;
-	}
-	if(f_last_modification > rhs.f_last_modification)
-	{
-		return true;
-	}
-	if(f_last_modification < rhs.f_last_modification)
-	{
-		return false;
-	}
-	if(f_frequency > rhs.f_frequency)
-	{
-		return true;
-	}
-	if(f_frequency < rhs.f_frequency)
-	{
-		return false;
-	}
-	return f_uri >= rhs.f_uri;
+    if(f_priority > rhs.f_priority)
+    {
+        return true;
+    }
+    if(f_priority < rhs.f_priority)
+    {
+        return false;
+    }
+    if(f_last_modification > rhs.f_last_modification)
+    {
+        return true;
+    }
+    if(f_last_modification < rhs.f_last_modification)
+    {
+        return false;
+    }
+    if(f_frequency > rhs.f_frequency)
+    {
+        return true;
+    }
+    if(f_frequency < rhs.f_frequency)
+    {
+        return false;
+    }
+    return f_uri >= rhs.f_uri;
 }
 
 
@@ -279,7 +283,7 @@ bool sitemapxml::url_info::operator < (const url_info& rhs) const
  * This function is used to initialize the sitemapxml plugin object.
  */
 sitemapxml::sitemapxml()
-	//: f_snap(NULL) -- auto-init
+    //: f_snap(NULL) -- auto-init
 {
 }
 
@@ -304,7 +308,7 @@ sitemapxml::~sitemapxml()
  */
 sitemapxml *sitemapxml::instance()
 {
-	return g_plugin_sitemapxml_factory.instance();
+    return g_plugin_sitemapxml_factory.instance();
 }
 
 
@@ -319,9 +323,9 @@ sitemapxml *sitemapxml::instance()
  */
 QString sitemapxml::description() const
 {
-	return "Generates the sitemap.xml file which is used by search engines to"
-		" discover your website pages. You can change the settings to hide"
-		" different pages or all your pages.";
+    return "Generates the sitemap.xml file which is used by search engines to"
+        " discover your website pages. You can change the settings to hide"
+        " different pages or all your pages.";
 }
 
 
@@ -332,10 +336,10 @@ QString sitemapxml::description() const
  */
 void sitemapxml::on_bootstrap(::snap::snap_child *snap)
 {
-	f_snap = snap;
+    f_snap = snap;
 
-	SNAP_LISTEN(sitemapxml, "robotstxt", robotstxt::robotstxt, generate_robotstxt, _1);
-	SNAP_LISTEN0(sitemapxml, "server", server, backend_process);
+    SNAP_LISTEN(sitemapxml, "robotstxt", robotstxt::robotstxt, generate_robotstxt, _1);
+    SNAP_LISTEN0(sitemapxml, "server", server, backend_process);
 }
 
 
@@ -353,12 +357,12 @@ void sitemapxml::on_bootstrap(::snap::snap_child *snap)
  */
 int64_t sitemapxml::do_update(int64_t last_updated)
 {
-	SNAP_PLUGIN_UPDATE_INIT();
+    SNAP_PLUGIN_UPDATE_INIT();
 
-	SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, initial_update);
-	SNAP_PLUGIN_UPDATE(2012, 10, 18, 9, 16, 3, content_update);
+    SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, initial_update);
+    SNAP_PLUGIN_UPDATE(2013, 12, 23, 18, 46, 42, content_update);
 
-	SNAP_PLUGIN_UPDATE_EXIT();
+    SNAP_PLUGIN_UPDATE_EXIT();
 }
 
 
@@ -373,9 +377,9 @@ int64_t sitemapxml::do_update(int64_t last_updated)
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 void sitemapxml::initial_update(int64_t variables_timestamp)
 {
-	// additional sitemap<###>.xml will be added as the CRON processes
-	// find out that additional pages are required.
-	//path::path::instance()->add_path("sitemapxml", "sitemap.xml", variables_timestamp);
+    // additional sitemap<###>.xml will be added as the CRON processes
+    // find out that additional pages are required.
+    //path::path::instance()->add_path("sitemapxml", "sitemap.xml", variables_timestamp);
 }
 #pragma GCC diagnostic pop
 
@@ -391,9 +395,9 @@ void sitemapxml::initial_update(int64_t variables_timestamp)
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 void sitemapxml::content_update(int64_t variables_timestamp)
 {
-	// additional sitemap<###>.xml are added dynamically as the CRON processes
-	// find out that additional pages are required.
-	content::content::instance()->add_xml("sitemapxml");
+    // additional sitemap<###>.xml are added dynamically as the CRON processes
+    // find out that additional pages are required.
+    content::content::instance()->add_xml("sitemapxml");
 }
 #pragma GCC diagnostic pop
 
@@ -418,7 +422,7 @@ void sitemapxml::content_update(int64_t variables_timestamp)
  */
 void sitemapxml::on_generate_robotstxt(robotstxt::robotstxt *r)
 {
-	r->add_robots_txt_field(f_snap->get_site_key() + "sitemap.xml", "Sitemap", "", true);
+    r->add_robots_txt_field(f_snap->get_site_key() + "sitemap.xml", "Sitemap", "", true);
 }
 
 
@@ -446,116 +450,132 @@ void sitemapxml::on_generate_robotstxt(robotstxt::robotstxt *r)
  */
 bool sitemapxml::on_path_execute(const QString& url)
 {
-	// TODO: add support for any number of sitemaps
-	//       (i.e. sitemap1.xml, sitemap2.xml, etc.)
+    if(url == "sitemap.xsl")
+    {
+        // this is the XSL file used to transform the XML sitemap to HTML
+        // and thus make it human readable (outside of the text version)
+        QFile xsl(":/plugins/sitemapxml/sitemapxml-to-html.xsl");
+        if(!xsl.open(QIODevice::ReadOnly))
+        {
+            SNAP_LOG_FATAL("sitemapxml::on_path_execute() could not open sitemapxml-to-html.xsl resource file.");
+            return false;
+        }
+        QByteArray data(xsl.readAll());
+        f_snap->set_header("Content-Type", "text/xml; charset=utf-8");
+        f_snap->output(data);
+        return true;
+    }
 
-	// We don't generate the sitemap from here, that's reserved
-	// for the backend... instead we get information from the
-	// database such as the count & actual XML
-	// Until the backend runs, the sitemap does not exist and the
-	// site returns a 404.
-	//
-	// Try something like this to get the XML sitemaps:
-	//       snapbackend -c snapserver.conf
+    // TODO: add support for any number of sitemaps
+    //       (i.e. sitemap1.xml, sitemap2.xml, etc.)
 
-	QtCassandra::QCassandraValue count_value(f_snap->get_site_parameter(get_name(SNAP_NAME_SITEMAPXML_COUNT)));
-	if(count_value.nullValue() || 0 == count_value.int32Value())
-	{
-		// no sitemap available at this point
-		return false;
-	}
+    // We don't generate the sitemap from here, that's reserved
+    // for the backend... instead we get information from the
+    // database such as the count & actual XML
+    // Until the backend runs, the sitemap does not exist and the
+    // site returns a 404.
+    //
+    // Try something like this to get the XML sitemaps:
+    //       snapbackend -c snapserver.conf
 
-	QtCassandra::QCassandraValue sitemap_data;
-	int count(count_value.int32Value());
-	if(1 == count)
-	{
-		// special case when there is just one file
-		if(url != "sitemap.xml" && url != "sitemap.txt")
-		{
-			// wrong filename!
-			return false;
-		}
-		sitemap_data = f_snap->get_site_parameter(get_name(SNAP_NAME_SITEMAPXML_SITEMAP_XML));
-	}
-	else
-	{
+    QtCassandra::QCassandraValue count_value(f_snap->get_site_parameter(get_name(SNAP_NAME_SITEMAPXML_COUNT)));
+    if(count_value.nullValue() || 0 == count_value.int32Value())
+    {
+        // no sitemap available at this point
+        return false;
+    }
 
-		if(count < 0)
-		{
-			// invalid sitemap count?!
-			return false;
-		}
+    QtCassandra::QCassandraValue sitemap_data;
+    int count(count_value.int32Value());
+    if(1 == count)
+    {
+        // special case when there is just one file
+        if(url != "sitemap.xml" && url != "sitemap.txt")
+        {
+            // wrong filename!
+            return false;
+        }
+        sitemap_data = f_snap->get_site_parameter(get_name(SNAP_NAME_SITEMAPXML_SITEMAP_XML));
+    }
+    else
+    {
 
-		// there are "many" files, that's handled differently than 1 file
-		QRegExp re("sitemap([0-9]*).xml");
-		if(!re.exactMatch(url))
-		{
-			// invalid filename for a sitemap
-			return false;
-		}
+        if(count < 0)
+        {
+            // invalid sitemap count?!
+            return false;
+        }
 
-		// check the sitemap number
-		QStringList sitemap_number(re.capturedTexts());
-		if(sitemap_number.size() == 1)
-		{
-			// send sitemap listing all the available sitemaps
-			sitemap_data = f_snap->get_site_parameter(get_name(SNAP_NAME_SITEMAPXML_SITEMAP_XML));
-		}
-		else
-		{
+        // there are "many" files, that's handled differently than 1 file
+        QRegExp re("sitemap([0-9]*).xml");
+        if(!re.exactMatch(url))
+        {
+            // invalid filename for a sitemap
+            return false;
+        }
 
-			if(sitemap_number.size() != 2)
-			{
-				// invalid filename?! (this case should never happen)
-				return false;
-			}
+        // check the sitemap number
+        QStringList sitemap_number(re.capturedTexts());
+        if(sitemap_number.size() == 1)
+        {
+            // send sitemap listing all the available sitemaps
+            sitemap_data = f_snap->get_site_parameter(get_name(SNAP_NAME_SITEMAPXML_SITEMAP_XML));
+        }
+        else
+        {
 
-			// we know that the number is only composed of valid digits
-			int index(sitemap_number[1].toInt());
-			if(index == 0 || index > count)
-			{
-				// this index is out of whack!?
-				return false;
-			}
+            if(sitemap_number.size() != 2)
+            {
+                // invalid filename?! (this case should never happen)
+                return false;
+            }
 
-			// send the requested sitemap
-			sitemap_data = f_snap->get_site_parameter("sitemapxml::" + url);
-		}
-	}
+            // we know that the number is only composed of valid digits
+            int index(sitemap_number[1].toInt());
+            if(index == 0 || index > count)
+            {
+                // this index is out of whack!?
+                return false;
+            }
 
-	QString xml(sitemap_data.stringValue());
-	QString extension(f_snap->get_uri().option("extension"));
-	if(extension == ".txt")
-	{
-		f_snap->set_header("Content-type", "text/plain; charset=utf-8");
-		QDomDocument d("urlset");
-		if(!d.setContent(xml, true))
-		{
-			SNAP_LOG_FATAL("sitemapxml::on_path_execute() could not set the DOM content.");
-			return false;
-		}
-		QXmlQuery q(QXmlQuery::XSLT20);
-		QDomNodeModel m(q.namePool(), d);
-		QXmlNodeModelIndex x(m.fromDomNode(d.documentElement()));
-		QXmlItem i(x);
-		q.setFocus(i);
-		QFile xsl(":/plugins/sitemapxml/sitemapxml-to-text.xsl");
-		if(!xsl.open(QIODevice::ReadOnly))
-		{
-			SNAP_LOG_FATAL("sitemapxml::on_path_execute() could not open sitemapxml-to-text.xsl resource file.");
-			return false;
-		}
-		q.setQuery(&xsl);
-		QString out;
-		q.evaluateTo(&out);
-		f_snap->output(out);
-	}
-	else
-	{
-		f_snap->set_header("Content-type", "text/xml; charset=utf-8");
-		f_snap->output(xml);
-	}
-	return true;
+            // send the requested sitemap
+            sitemap_data = f_snap->get_site_parameter("sitemapxml::" + url);
+        }
+    }
+
+    QString xml(sitemap_data.stringValue());
+    QString extension(f_snap->get_uri().option("extension"));
+    if(extension == ".txt")
+    {
+        f_snap->set_header("Content-type", "text/plain; charset=utf-8");
+        QDomDocument d("urlset");
+        if(!d.setContent(xml, true))
+        {
+            SNAP_LOG_FATAL("sitemapxml::on_path_execute() could not set the DOM content.");
+            return false;
+        }
+        QXmlQuery q(QXmlQuery::XSLT20);
+        QDomNodeModel m(q.namePool(), d);
+        QXmlNodeModelIndex x(m.fromDomNode(d.documentElement()));
+        QXmlItem i(x);
+        q.setFocus(i);
+        QFile xsl(":/plugins/sitemapxml/sitemapxml-to-text.xsl");
+        if(!xsl.open(QIODevice::ReadOnly))
+        {
+            SNAP_LOG_FATAL("sitemapxml::on_path_execute() could not open sitemapxml-to-text.xsl resource file.");
+            return false;
+        }
+        q.setQuery(&xsl);
+        QString out;
+        q.evaluateTo(&out);
+        f_snap->output(out);
+    }
+    else
+    {
+        f_snap->set_header("Content-type", "text/xml; charset=utf-8");
+        f_snap->output(xml);
+    }
+    return true;
 }
 
 
@@ -573,65 +593,94 @@ bool sitemapxml::on_path_execute(const QString& url)
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 bool sitemapxml::generate_sitemapxml_impl(sitemapxml *r)
 {
-	QSharedPointer<QtCassandra::QCassandraTable> content_table(content::content::instance()->get_content_table());
-	if(content_table.isNull())
-	{
-		// the table does not exist?!
-		// (since the content is a core plugin, that should not happen)
-		throw sitemapxml_exception_missing_table("could not get the content table");
-	}
+    QSharedPointer<QtCassandra::QCassandraTable> content_table(content::content::instance()->get_content_table());
+    if(content_table.isNull())
+    {
+        // the table does not exist?!
+        // (since the content is a core plugin, that should not happen)
+        throw sitemapxml_exception_missing_table("could not get the content table");
+    }
 
-	QString site_key(f_snap->get_site_key_with_slash());
-	links::link_info xml_sitemap_info("sitemapxml::include", false, site_key + "types/taxonomy/system/sitemapxml/include");
-	QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(xml_sitemap_info));
-	links::link_info xml_sitemap;
-	while(link_ctxt->next_link(xml_sitemap))
-	{
-		const QString page_key(xml_sitemap.key());
+    QString site_key(f_snap->get_site_key_with_slash());
+    links::link_info xml_sitemap_info("sitemapxml::include", false, site_key + "types/taxonomy/system/sitemapxml/include");
+    QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(xml_sitemap_info));
+    links::link_info xml_sitemap;
+    while(link_ctxt->next_link(xml_sitemap))
+    {
+        QString const page_key(xml_sitemap.key());
 //printf("Found key [%s]\n", page_key.toUtf8().data());
 
-		// anonymous user has access to that page??
-		bool const allowed(f_snap->access_allowed("", page_key, "view"));
-		if(allowed)
-		{
+        // anonymous user has access to that page??
+        bool allowed(false);
+        if(page_key.startsWith(site_key))
+        {
+            // check the path, not the site_key + path
+            allowed = f_snap->access_allowed("", page_key.mid(site_key.length()), "view");
+        }
+        if(allowed)
+        {
 
-			// TODO: test that this page is accessible anonymously
-			url_info url;
+            // TODO: test that this page is accessible anonymously
+            url_info url;
 
-			// set the URI of the page
-			url.set_uri(page_key);
+            // set the URI of the page
+            url.set_uri(page_key);
 
-			// author of the page defined a priority for the sitemap.xml file?
-			QtCassandra::QCassandraValue priority(content_table->row(page_key)->cell(QString(get_name(SNAP_NAME_SITEMAPXML_PRIORITY)))->value());
-			if(priority.nullValue())
-			{
-				// set the site priority to 1.0 for the home page
-				// if not defined by the user
-				if(page_key == site_key)
-				{
-					// home page special case
-					url.set_priority(1.0f);
-				}
-			}
-			else
-			{
-				url.set_priority(priority.floatValue());
-			}
+            // author of the page defined a priority for the sitemap.xml file?
+            QtCassandra::QCassandraValue priority(content_table->row(page_key)->cell(get_name(SNAP_NAME_SITEMAPXML_PRIORITY))->value());
+            if(priority.nullValue())
+            {
+                // set the site priority to 1.0 for the home page
+                // if not defined by the user
+                if(page_key == site_key)
+                {
+                    // home page special case
+                    url.set_priority(1.0f);
+                }
+            }
+            else
+            {
+                url.set_priority(priority.floatValue());
+            }
 
-			// use the last modification date from that page
-			QtCassandra::QCassandraValue modified(content_table->row(page_key)->cell(QString(content::get_name(content::SNAP_NAME_CONTENT_MODIFIED)))->value());
-			if(!modified.nullValue())
-			{
-				url.set_last_modification(modified.int64Value() / 1000000L); // micro-seconds -> seconds
-			}
+            // use the last modification date from that page
+            QtCassandra::QCassandraValue modified(content_table->row(page_key)->cell(QString(content::get_name(content::SNAP_NAME_CONTENT_MODIFIED)))->value());
+            if(!modified.nullValue())
+            {
+                url.set_last_modification(modified.int64Value() / 1000000L); // micro-seconds -> seconds
+            }
 
-			// TODO:
-			// url.set_frequency()... TBD
+            // XXX ameliorate as we grow this feature
+            QtCassandra::QCassandraValue frequency(content_table->row(page_key)->cell(get_name(SNAP_NAME_SITEMAPXML_FREQUENCY))->value());
+            if(!frequency.nullValue())
+            {
+                QString f(frequency.stringValue());
+                if(f == "never")
+                {
+                    url.set_frequency(url_info::FREQUENCY_NEVER);
+                }
+                else if(f == "always")
+                {
+                    url.set_frequency(url_info::FREQUENCY_MIN);
+                }
+                else if(f == "yearly")
+                {
+                    url.set_frequency(url_info::FREQUENCY_MAX);
+                }
+            }
 
-			add_url(url);
-		}
-	}
-	return true;
+            // TODO: add support for images, this can work by looking at
+            //       the attachments of a page and any images there get
+            //       added here
+            //<image:image>
+            //    <image:loc>http://example.com/image.jpg</image:loc>
+            //</image:image>
+            // http://googlewebmastercentral.blogspot.com/2010/04/adding-images-to-your-sitemaps.html
+
+            add_url(url);
+        }
+    }
+    return true;
 }
 #pragma GCC diagnostic pop
 
@@ -646,110 +695,130 @@ bool sitemapxml::generate_sitemapxml_impl(sitemapxml *r)
  */
 void sitemapxml::on_backend_process()
 {
-	// now give other plugins a chance to add dynamic links to the sitemap.xml
-	// file; we don't give the users access to the XML file, they call our
-	// add_url() function instead
-	generate_sitemapxml(this);
+    uint64_t const start_date(f_snap->get_uri().option("start_date").toLongLong());
 
-	// sort the result by priority, see operator < () for details
-	sort(f_url_info.begin(), f_url_info.end());
+    // now give other plugins a chance to add dynamic links to the sitemap.xml
+    // file; we don't give the users access to the XML file, they call our
+    // add_url() function instead
+    generate_sitemapxml(this);
 
-	QDomDocument doc;
-	QDomElement root(doc.createElement("urlset"));
-	root.setAttribute("xmlns", "http://www.sitemaps.org/schemas/sitemap/0.9");
-	doc.appendChild(root);
-	// TODO: if f_url_info.count() > 50,000 then break the table in multiple files
-	int count(0); // prevent an XML sitemap of more than 50000 entries for safety
-	for(url_info_list_t::const_iterator u(f_url_info.begin());
-				u != f_url_info.end() && count < 50000;
-				++u, ++count)
-	{
-		// create /url
-		QDomElement url(doc.createElement("url"));
-		root.appendChild(url);
+    // sort the result by priority, see operator < () for details
+    sort(f_url_info.begin(), f_url_info.end());
 
-		// create /url/loc
-		QDomElement loc(doc.createElement("loc"));
-		url.appendChild(loc);
-		QDomText page_url(doc.createTextNode(u->get_uri()));
-		loc.appendChild(page_url);
+    QDomDocument doc;
+    // add the XML "processing instruction"
+    QDomProcessingInstruction xml_marker(doc.createProcessingInstruction("xml", "version=\"1.0\" encoding=\"utf-8\""));
+    doc.appendChild(xml_marker);
 
-		// create /url/priority
-		QDomElement priority(doc.createElement("priority"));
-		url.appendChild(priority);
-		QDomText prio(doc.createTextNode(QString("%1").arg(u->get_priority())));
-		priority.appendChild(prio);
+    // add a little comment as some humans look at that stuff...
+    QDomComment comment(doc.createComment(QString(
+            "\n  Generator: sitemapxml plugin"
+            "\n  Creation Date: %1"
+            "\n  URL Count: %2"
+            "\n  System: http://snapwebsites.org/\n").arg(f_snap->date_to_string(start_date, f_snap->DATE_FORMAT_HTTP)).arg(f_url_info.size())));
+    doc.appendChild(comment);
 
-		// create /url/lastmod (optional)
-		time_t t(u->get_last_modification());
-		if(t != 0)
-		{
-    		QDomElement lastmod(doc.createElement("lastmod"));
-			url.appendChild(lastmod);
-			QDomText mod(doc.createTextNode(f_snap->date_to_string(t * 1000000, snap_child::DATE_FORMAT_LONG)));
-			lastmod.appendChild(mod);
-		}
+    // The stylesheet makes use of a processing instruction entry
+    // The XSLT file transforms the XML in an HTML table with styles
+    // <?xml-stylesheet type="text/xsl" href="/sitemap.xsl"?>
+    QDomProcessingInstruction stylesheet(doc.createProcessingInstruction("xml-stylesheet", "type=\"text/xsl\" href=\"/sitemap.xsl\""));
+    doc.appendChild(stylesheet);
 
-		// create /url/changefreq (optional)
-		int f(u->get_frequency());
-		if(f != url_info::FREQUENCY_NONE)
-		{
-			QString frequency("never");
-			if(f > 0)
-			{
-				if(f < 86400 + 86400 / 2)
-				{
-					frequency = "daily";
-				}
-				else if(f < 86400 * 7 + 86400 * 7 / 2)
-				{
-					frequency = "weekly";
-				}
-				else if(f < 86400 * 7 * 5 + 86400 * 7 * 5 / 2)
-				{
-					frequency = "monthly";
-				}
-				else if(f < 86400 * 7 * 5 * 3 + 86400 * 7 * 5 * 3 / 2)
-				{
-					frequency = "quarterly";
-				}
-				else
-				{
-					frequency = "yearly";
-				}
-			}
-			QDomElement changefreq(doc.createElement("changefreq"));
-			url.appendChild(changefreq);
-			QDomText freq(doc.createTextNode(frequency));
-			changefreq.appendChild(freq);
-		}
+    QDomElement root(doc.createElement("urlset"));
+    root.setAttribute("xmlns", "http://www.sitemaps.org/schemas/sitemap/0.9");
 
-		// create the /url/xhtml:link (rel="alternate")
-		// see http://googlewebmastercentral.blogspot.com/2012/05/multilingual-and-multinational-site.html
-		// (requires a pattern to generate the right URIs)
-		// see layouts/white-theme-parser.xsl for the pattern information,
-		// we have the mode that defines the "pattern" for the URI, but we
-		// need to know where it is defined which is not done yet
-	}
+    doc.appendChild(root);
+    // TODO: if f_url_info.count() > 50,000 then break the table in multiple files
+    int count(0); // prevent an XML sitemap of more than 50000 entries for safety
+    for(url_info_list_t::const_iterator u(f_url_info.begin());
+                u != f_url_info.end() && count < 50000;
+                ++u, ++count)
+    {
+        // create /url
+        QDomElement url(doc.createElement("url"));
+        root.appendChild(url);
 
-	// TODO: we need to look into supporting multiple sitemap.xml files
-	f_snap->set_site_parameter(get_name(SNAP_NAME_SITEMAPXML_COUNT), 1);
-	f_snap->set_site_parameter(get_name(SNAP_NAME_SITEMAPXML_SITEMAP_XML), doc.toString());
+        // create /url/loc
+        QDomElement loc(doc.createElement("loc"));
+        url.appendChild(loc);
+        QDomText page_url(doc.createTextNode(u->get_uri()));
+        loc.appendChild(page_url);
 
-	uint64_t start_date(f_snap->get_uri().option("start_date").toLongLong());
-	//QString content_table_name(snap::get_name(snap::SNAP_NAME_CONTENT));
-	QSharedPointer<QtCassandra::QCassandraTable> content_table(content::content::instance()->get_content_table());
-	// we also save updated because the user doesn't directly interact with this
-	// data and thus content::updated would otherwise never be changed
-	QString content_updated(content::get_name(content::SNAP_NAME_CONTENT_UPDATED));
-	QString content_modified(content::get_name(content::SNAP_NAME_CONTENT_MODIFIED));
-	QString site_key(f_snap->get_site_key_with_slash());
-	QString sitemap_xml(site_key + "sitemap.xml");
-	content_table->row(sitemap_xml)->cell(content_updated)->setValue(start_date);
-	content_table->row(sitemap_xml)->cell(content_modified)->setValue(start_date);
-	QString sitemap_txt(site_key + "sitemap.txt");
-	content_table->row(sitemap_txt)->cell(content_updated)->setValue(start_date);
-	content_table->row(sitemap_txt)->cell(content_modified)->setValue(start_date);
+        // create /url/priority
+        QDomElement priority(doc.createElement("priority"));
+        url.appendChild(priority);
+        QDomText prio(doc.createTextNode(QString("%1").arg(u->get_priority())));
+        priority.appendChild(prio);
+
+        // create /url/lastmod (optional)
+        time_t t(u->get_last_modification());
+        if(t != 0)
+        {
+            QDomElement lastmod(doc.createElement("lastmod"));
+            url.appendChild(lastmod);
+            QDomText mod(doc.createTextNode(f_snap->date_to_string(t * 1000000, snap_child::DATE_FORMAT_LONG)));
+            lastmod.appendChild(mod);
+        }
+
+        // create /url/changefreq (optional)
+        int f(u->get_frequency());
+        if(f != url_info::FREQUENCY_NONE)
+        {
+            QString frequency("never");
+            if(f > 0)
+            {
+                if(f < 86400 + 86400 / 2)
+                {
+                    frequency = "daily";
+                }
+                else if(f < 86400 * 7 + 86400 * 7 / 2)
+                {
+                    frequency = "weekly";
+                }
+                else if(f < 86400 * 7 * 5 + 86400 * 7 * 5 / 2)
+                {
+                    frequency = "monthly";
+                }
+                else if(f < 86400 * 7 * 5 * 3 + 86400 * 7 * 5 * 3 / 2)
+                {
+                    frequency = "quarterly";
+                }
+                else
+                {
+                    frequency = "yearly";
+                }
+            }
+            QDomElement changefreq(doc.createElement("changefreq"));
+            url.appendChild(changefreq);
+            QDomText freq(doc.createTextNode(frequency));
+            changefreq.appendChild(freq);
+        }
+
+        // create the /url/xhtml:link (rel="alternate")
+        // see http://googlewebmastercentral.blogspot.com/2012/05/multilingual-and-multinational-site.html
+        // (requires a pattern to generate the right URIs)
+        // see layouts/white-theme-parser.xsl for the pattern information,
+        // we have the mode that defines the "pattern" for the URI, but we
+        // need to know where it is defined which is not done yet
+    }
+
+    // TODO: we need to look into supporting multiple sitemap.xml files
+    f_snap->set_site_parameter(get_name(SNAP_NAME_SITEMAPXML_COUNT), 1);
+    f_snap->set_site_parameter(get_name(SNAP_NAME_SITEMAPXML_SITEMAP_XML), doc.toString());
+
+    //QString content_table_name(snap::get_name(snap::SNAP_NAME_CONTENT));
+    QSharedPointer<QtCassandra::QCassandraTable> content_table(content::content::instance()->get_content_table());
+    // we also save updated because the user doesn't directly interact with this
+    // data and thus content::updated would otherwise never be changed
+    QString content_updated(content::get_name(content::SNAP_NAME_CONTENT_UPDATED));
+    QString content_modified(content::get_name(content::SNAP_NAME_CONTENT_MODIFIED));
+    QString site_key(f_snap->get_site_key_with_slash());
+    QString sitemap_xml(site_key + "sitemap.xml");
+    content_table->row(sitemap_xml)->cell(content_updated)->setValue(start_date);
+    content_table->row(sitemap_xml)->cell(content_modified)->setValue(start_date);
+    QString sitemap_txt(site_key + "sitemap.txt");
+    content_table->row(sitemap_txt)->cell(content_updated)->setValue(start_date);
+    content_table->row(sitemap_txt)->cell(content_modified)->setValue(start_date);
 printf("Updating [%s]\n", sitemap_xml.toUtf8().data());
 }
 
@@ -764,10 +833,10 @@ printf("Updating [%s]\n", sitemap_xml.toUtf8().data());
  */
 void sitemapxml::add_url(const url_info& url)
 {
-	f_url_info.push_back(url);
+    f_url_info.push_back(url);
 }
 
 
 SNAP_PLUGIN_END()
 
-// vim: ts=4 sw=4
+// vim: ts=4 sw=4 et

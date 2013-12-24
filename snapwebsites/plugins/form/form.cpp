@@ -815,8 +815,8 @@ void form::on_process_post(const QString& uri_path)
     // verify that one of the paths is valid
     QString cpath(uri_path);
     snap_child::canonicalize_path(cpath);
-    if(info.get_page_path() != cpath
-    && info.get_object_path() != cpath)
+    if((info.get_page_path() != cpath && info.get_object_path() != cpath)
+    || info.get_user_agent() != f_snap->snapenv(snap::get_name(SNAP_NAME_CORE_HTTP_USER_AGENT)))
     {
         // the path was tempered with?
         f_snap->die(snap_child::HTTP_CODE_NOT_ACCEPTABLE, "Not Acceptable",
@@ -828,7 +828,7 @@ void form::on_process_post(const QString& uri_path)
 
     // get the owner of this form (plugin name)
     const QString& owner(info.get_plugin_owner());
-    plugin *p(plugins::get_plugin(owner));
+    plugin * const p(plugins::get_plugin(owner));
     if(p == NULL)
     {
         // we've got a problem, that plugin doesn't even exist?!
@@ -836,7 +836,7 @@ void form::on_process_post(const QString& uri_path)
         f_snap->die(snap_child::HTTP_CODE_FORBIDDEN, "Forbidden", "The POST request is not attached to a currently supported plugin.", "Somehow the user posted a form that has a plugin name which is not currently installed.");
         NOTREACHED();
     }
-    form_post *fp(dynamic_cast<form_post *>(p));
+    form_post * const fp(dynamic_cast<form_post *>(p));
 
     QDomDocument xml_form;
 
@@ -1119,7 +1119,7 @@ printf("got a file with [%s]\n", id.toUtf8().data());
 
                 // get that row and add a few things
                 QSharedPointer<QtCassandra::QCassandraRow> attachment_row(content_table->row(attachment_key));
-                const snap_child::post_file_t& file(f_snap->postfile(id));
+                snap_child::post_file_t const& file(f_snap->postfile(id));
 
                 // in this case 'post' represents the filename as sent by the
                 // user, the binary data is in the corresponding file
@@ -1935,6 +1935,7 @@ void form::on_replace_token(filter::filter *f, QString const& cpath, QDomDocumen
         sessions::sessions::session_info info;
         info.set_session_type(info.SESSION_INFO_FORM);
         //info.set_object_path(); -- form sessions are based on paths only, no objects
+        info.set_user_agent(f_snap->snapenv(snap::get_name(SNAP_NAME_CORE_HTTP_USER_AGENT)));
 
         // 2. Get session identifier and optionally the type
         //

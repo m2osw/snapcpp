@@ -158,6 +158,7 @@ void search::content_update(int64_t variables_timestamp)
 }
 #pragma GCC diagnostic pop
 
+
 /** \brief Improves the error signature.
  *
  * This function adds the search page to the brief signature of die()
@@ -165,7 +166,7 @@ void search::content_update(int64_t variables_timestamp)
  *
  * \param[in,out] signature  The HTML signature to improve.
  */
-void search::on_improve_signature(const QString& path, QString& signature)
+void search::on_improve_signature(QString const& path, QString& signature)
 {
 	// TODO: we probably want translations? (in which case we
 	//       want the signature to be in an XML document.)
@@ -175,6 +176,7 @@ void search::on_improve_signature(const QString& path, QString& signature)
 	query.replace(" ", "%20");
 	signature += " <a href=\"/search?search=" + query + "\">Search Our Website</a>";
 }
+
 
 /** \brief Generate a link to the search page.
  *

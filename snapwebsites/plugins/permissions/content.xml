@@ -107,6 +107,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <![CDATA[<p>Administer settings.</p><p>In general this is very similar to the Edit right, only it gives the user the permission to change things that are usually not accessible by people who just have Edit rights.</p>]]>
     </param>
   </content>
+  <content path="/types/permissions/rights/administer/website">
+    <param name="content::title">Administer the Website Right</param>
+    <param name="content::body">
+      <![CDATA[<p>Administer the website settings.</p><p>This is the main right allowing someone to administer anything in the website.</p>]]>
+    </param>
+  </content>
   <content path="/types/permissions/rights/create">
     <param name="content::title">Create Right</param>
     <param name="content::body">
@@ -146,7 +152,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <![CDATA[<p>Actions allowed by the permission environment. Other content should never be assigned this type.</p>]]>
     </param>
   </content>
-  <content path="/types/permissions/actions/administrer" >
+  <content path="/types/permissions/actions/administer" >
     <param name="content::title">Administer Action</param>
     <param name="content::body">
       <![CDATA[<p>Administer something. This includes administrating the website (accessing administration forms) and administrating pages (change parameters of a page such as the creation date).</p>]]>
@@ -220,8 +226,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="content::body">
       <![CDATA[<p>Group used by managers. Managers are linked to one specific website and they can do pretty much anything they want in that website except editing some top level system pages. In most cases, site owners are assigned the administrator group.</p>]]>
     </param>
-    <link name="permissions::view" to="permissions::view" mode="*:*">/types/permissions/rights/administer</link>
-    <link name="permissions::administer" to="permissions::administer" mode="*:*">/types/permissions/rights/administer</link>
+    <link name="permissions::administer" to="permissions::administer" mode="*:*">/types/permissions/rights/administer/website</link>
   </content>
   <content path="/types/permissions/groups/root/administrator/editor">
     <param name="content::title">Editor Group</param>

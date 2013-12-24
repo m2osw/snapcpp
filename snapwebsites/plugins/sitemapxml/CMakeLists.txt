@@ -52,7 +52,11 @@ QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC
     sitemapxml.qrc
 )
 
-set( XMLFILES content.xml )
+set( XMLFILES
+    content.xml
+    #sitemapxml-to-html.xsl
+    #sitemapxml-to-text.xsl
+)
 snap_validate_dtd( ${PROJECT_NAME} ${XMLFILES} )
 
 add_library(sitemapxml SHARED

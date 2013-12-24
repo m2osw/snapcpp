@@ -27,6 +27,7 @@ namespace sitemapxml
 enum name_t
 {
 	SNAP_NAME_SITEMAPXML_COUNT,
+	SNAP_NAME_SITEMAPXML_FREQUENCY,
 	SNAP_NAME_SITEMAPXML_SITEMAP_XML,
 	SNAP_NAME_SITEMAPXML_PRIORITY
 };
@@ -59,6 +60,8 @@ public:
 	public:
 		static const int FREQUENCY_NONE = 0;
 		static const int FREQUENCY_NEVER = -1;
+		static const int FREQUENCY_MIN = 60; // 1 minute
+		static const int FREQUENCY_MAX = 31536000; // 1 year
 
 		url_info();
 

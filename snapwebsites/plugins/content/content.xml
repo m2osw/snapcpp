@@ -1,4 +1,4 @@
-<?xml version="1.0" standalone="yes"?>
+<?xml version="1.0"?>
 <!--
 Snap Websites Server == content plugin database setup
 Copyright (C) 2011-2013  Made to Order Software Corp.
@@ -17,20 +17,6 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 -->
-<!DOCTYPE snap-tree [
-<!ELEMENT snap-tree (content)*>
-<!ELEMENT content (param|link)*>
-<!ATTLIST content path CDATA #REQUIRED>
-<!ELEMENT param (#PCDATA)>
-<!ATTLIST param name CDATA #REQUIRED
-                overwrite (yes|no) "no"
-                force-namespace (yes|no) "yes"
-                type (binary|int8|string) "string">
-<!ELEMENT link (#PCDATA)>
-<!ATTLIST link name CDATA #REQUIRED
-               to CDATA #REQUIRED
-               mode CDATA "1:1">
-]>
 <snap-tree>
   <!-- the content grows as things are added to the site, at first it handles the root though -->
   <content path="/">
@@ -38,6 +24,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="content::body" overwrite="yes">
       <![CDATA[<p>Welcome to your new Snap! C++ website.</p><p><a href="/login">Log In Now!</a></p>]]>
     </param>
+    <param name="sitemapxml::frequency">always</param>
     <!--param name="layout::theme" force-namespace="no">plugins.content.modified&gt;10?"large_theme":"small_theme";</param-->
     <link name="content::page_type" to="content::page_type" mode="1:*">/types/taxonomy/system/content-types/page/public</link>
     <link name="permissions::view" to="permissions::view" mode="*:*">/types/permissions/rights/view/page/for-spammers</link>
@@ -48,6 +35,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="content::body">
       <![CDATA[<p>Snap! Websites save your IP address and make use of a cookie to track all your movement all the time.</p><p>Also we do not generally use that information, it is checked by our robots to see whether you are spamming or hacking our systems.</p>]]>
     </param>
+    <param name="sitemapxml::priority" type="float">0.2</param>
+    <param name="sitemapxml::frequency">yearly</param>
     <link name="content::page_type" to="content::page_type" mode="1:*">/types/taxonomy/system/content-types/page/public</link>
     <link name="permissions::view" to="permissions::view" mode="*:*">/types/permissions/rights/view/page/for-spammers</link>
     <link name="sitemapxml::include" to="sitemapxml::include" mode="1:*">/types/taxonomy/system/sitemapxml/include</link>
@@ -57,6 +46,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="content::body">
       <![CDATA[<p>Our terms: do not spam or attempt to hack us. Otherwise, feel right at home and enjoy our Snap! Websites.</p>]]>
     </param>
+    <param name="sitemapxml::priority" type="float">0.15</param>
+    <param name="sitemapxml::frequency">yearly</param>
     <link name="content::page_type" to="content::page_type" mode="1:*">/types/taxonomy/system/content-types/page/public</link>
     <link name="permissions::view" to="permissions::view" mode="*:*">/types/permissions/rights/view/page/for-spammers</link>
     <link name="sitemapxml::include" to="sitemapxml::include" mode="1:*">/types/taxonomy/system/sitemapxml/include</link>

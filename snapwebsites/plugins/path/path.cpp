@@ -193,11 +193,11 @@ void path::on_execute(const QString& uri_path)
     // get the name of the plugin that owns this URL 
     QString cpath(uri_path);
     snap_child::canonicalize_path(cpath);
-    const QString key(f_snap->get_site_key_with_slash() + cpath);
+    QString const key(f_snap->get_site_key_with_slash() + cpath);
     QString owner;
     dynamic_path_plugin_t path_plugin;
     QSharedPointer<QtCassandra::QCassandraTable> content_table(content::content::instance()->get_content_table());
-    bool page_exists(content_table->exists(key));
+    bool const page_exists(content_table->exists(key));
     if(page_exists)
     {
         // this should work so we go ahead and set the Last-Modified field in the header

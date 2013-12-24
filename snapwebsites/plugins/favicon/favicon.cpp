@@ -17,6 +17,7 @@
 
 #include "favicon.h"
 #include "../messages/messages.h"
+#include "../permissions/permissions.h"
 #include "not_reached.h"
 #include <QFile>
 #include "poison.h"
@@ -189,7 +190,7 @@ int64_t favicon::do_update(int64_t last_updated)
     SNAP_PLUGIN_UPDATE_INIT();
 
     SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, initial_update);
-    SNAP_PLUGIN_UPDATE(2013, 12, 7, 16, 18, 40, content_update);
+    SNAP_PLUGIN_UPDATE(2013, 12, 23, 14, 21, 40, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -253,6 +254,31 @@ bool favicon::on_path_execute(QString const& cpath)
     f_snap->output(layout::layout::instance()->apply_layout(cpath, this));
 
     return true;
+}
+
+
+void favicon::on_process_post(QString const& cpath, sessions::sessions::session_info const& info)
+{
+    if(cpath == "admin/settings/favicon"
+    && f_snap->postfile_exists("icon"))
+    {
+        snap_child::post_file_t const& file(f_snap->postfile("icon"));
+        QString const site_key(f_snap->get_site_key_with_slash());
+        QString filename(file.get_filename());
+        int last_slash(filename.lastIndexOf('/'));
+        if(last_slash != -1)
+        {
+            filename = filename.mid(last_slash + 1);
+        }
+        QString const key(site_key + cpath + "/" + filename);
+        QString const destination_key(site_key + "types/permissions/rights/administer/website/info");
+        QString const link_name(permissions::get_name(permissions::SNAP_NAME_PERMISSIONS_ADMINISTER));
+        bool const source_unique(false);
+        bool const destination_unique(false);
+        links::link_info source(link_name, source_unique, key);
+        links::link_info destination(link_name, destination_unique, destination_key);
+        links::links::instance()->create_link(source, destination);
+    }
 }
 
 

@@ -20,6 +20,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 <RCC version="1.0">
   <qresource prefix="/plugins/sitemapxml">
     <file>content.xml</file>
+    <file>sitemapxml-to-html.xsl</file>
     <file>sitemapxml-to-text.xsl</file>
   </qresource>
 </RCC>

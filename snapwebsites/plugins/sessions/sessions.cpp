@@ -53,38 +53,48 @@ SNAP_PLUGIN_START(sessions, 1, 0)
  *
  * \return A pointer to the name.
  */
-const char *get_name(name_t name)
+char const *get_name(name_t name)
 {
-    switch(name) {
-    case SNAP_NAME_SESSIONS_TABLE:
-        return "sessions";
+    switch(name)
+    {
+    case SNAP_NAME_SESSIONS_DATE:
+        return "sessions::date";
 
     case SNAP_NAME_SESSIONS_ID:
         return "sessions::id";
 
-    case SNAP_NAME_SESSIONS_PLUGIN_OWNER:
-        return "sessions::plugin_owner";
-
-    case SNAP_NAME_SESSIONS_PAGE_PATH:
-        return "sessions::page_path";
+    case SNAP_NAME_SESSIONS_LOGIN_LIMIT:
+        return "sessions::login_limit";
 
     case SNAP_NAME_SESSIONS_OBJECT_PATH:
         return "sessions::object_path";
 
+    case SNAP_NAME_SESSIONS_PAGE_PATH:
+        return "sessions::page_path";
+
+    case SNAP_NAME_SESSIONS_PLUGIN_OWNER:
+        return "sessions::plugin_owner";
+
     case SNAP_NAME_SESSIONS_RANDOM:
         return "sessions::random";
-
-    case SNAP_NAME_SESSIONS_TIME_TO_LIVE:
-        return "sessions::time_to_live";
-
-    case SNAP_NAME_SESSIONS_TIME_LIMIT:
-        return "sessions::time_limit";
 
     case SNAP_NAME_SESSIONS_REMOTE_ADDR:
         return "sessions::remote_addr";
 
+    case SNAP_NAME_SESSIONS_TABLE:
+        return "sessions";
+
+    case SNAP_NAME_SESSIONS_TIME_LIMIT:
+        return "sessions::time_limit";
+
+    case SNAP_NAME_SESSIONS_TIME_TO_LIVE:
+        return "sessions::time_to_live";
+
     case SNAP_NAME_SESSIONS_USED_UP:
         return "sessions::used_up";
+
+    case SNAP_NAME_SESSIONS_USER_AGENT:
+        return "sessions::user_agent";
 
     default:
         // invalid index
@@ -132,8 +142,11 @@ sessions::session_info::session_info()
     //, f_plugin_owner("") -- auto-init
     //, f_page_path("") -- auto-init
     //, f_object_path("") -- auto-init
+    //, f_user_agent("") -- auto-init
     //, f_time_to_live(300) -- auto-init
     //, f_time_limit(0) -- auto-init
+    //, f_login_limit(0) -- auto-init
+    //, f_date(0) -- auto-init
 {
 }
 
@@ -207,7 +220,7 @@ void sessions::session_info::set_session_id(session_id_t id)
  *
  * \sa get_session_key()
  */
-void sessions::session_info::set_session_key(const QString& key)
+void sessions::session_info::set_session_key(QString const& key)
 {
     f_session_key = key;
 }
@@ -270,7 +283,7 @@ void sessions::session_info::set_session_random(int32_t random)
  *
  * \sa get_plugin_owner()
  */
-void sessions::session_info::set_plugin_owner(const QString& plugin_owner)
+void sessions::session_info::set_plugin_owner(QString const& plugin_owner)
 {
     f_plugin_owner = plugin_owner;
 }
@@ -294,7 +307,7 @@ void sessions::session_info::set_plugin_owner(const QString& plugin_owner)
  * \sa get_page_path()
  * \sa set_object_path()
  */
-void sessions::session_info::set_page_path(const QString& page_path)
+void sessions::session_info::set_page_path(QString const& page_path)
 {
     f_page_path = page_path;
 }
@@ -314,9 +327,40 @@ void sessions::session_info::set_page_path(const QString& page_path)
  * \sa get_object_path()
  * \sa set_page_path()
  */
-void sessions::session_info::set_object_path(const QString& object_path)
+void sessions::session_info::set_object_path(QString const& object_path)
 {
     f_object_path = object_path;
+}
+
+
+/** \brief Save the user agent for this session.
+ *
+ * This function is used to save the user agent in the session. This is
+ * useful for one simple reason: if a hacker wants to do a session fixation
+ * he has to also have the exact user agent from the user he wants to
+ * hack. This is probably very easy when you are targetting someone in
+ * particular. Much less likely to happen if the users being targetted are
+ * "random" (the first who falls for it.)
+ *
+ * The cookie reloading discards sessions with non-matching session user
+ * agents.
+ *
+ * \todo
+ * It seems that saving the user agent as is in the database "is not very
+ * secure". It also seems to me that if the database is compromised it
+ * is a much bigger problem than the user agent in clear and thus we
+ * probably don't have to worry about it (this is, of course, assuming that
+ * you do not offer a plugin that can peek at any value in the database
+ * and send it to the client...) Anyway, at this point it is saved in
+ * clear text for that reason.
+ *
+ * \param[in] user_agent  The user agent defined by the end user.
+ *
+ * \sa get_user_agent()
+ */
+void sessions::session_info::set_user_agent(QString const& user_agent)
+{
+    f_user_agent = user_agent;
 }
 
 
@@ -391,6 +435,43 @@ void sessions::session_info::set_time_limit(time_t time_limit)
 }
 
 
+/** \brief Limit the time for a full login session.
+ *
+ * Any semi-secure information is not visible/editable past this time
+ * unless the user goes through a log in session.
+ *
+ * More or less, the session goes from a fully logged in registered user
+ * to a mostly logged in user.
+ *
+ * \param[in] time_limit  The time when the logged in session becomes
+ *                        completely invalid.
+ *
+ * \sa get_time_limit()
+ */
+void sessions::session_info::set_login_limit(time_t time_limit)
+{
+    f_login_limit = time_limit;
+}
+
+
+/** \brief Timestamp of the session.
+ *
+ * This function saves a date in the session. This function is used when
+ * loading a session. Note that this value is NOT used when saving a
+ * session. The session plugin simply uses f_snap->start_date() to set
+ * this value when saving a session.
+ *
+ * \param[in] date  The date when the session was last saved.
+ *
+ * \sa get_time_limit()
+ * \sa set_time_to_live()
+ */
+void sessions::session_info::set_date(int64_t date)
+{
+    f_date = date;
+}
+
+
 /** \brief Retrieve the type of this session.
  *
  * This function is used to retrieve the type of this session.
@@ -435,7 +516,7 @@ sessions::session_info::session_id_t sessions::session_info::get_session_id() co
  *
  * \sa set_session_key()
  */
-const QString& sessions::session_info::get_session_key() const
+QString const& sessions::session_info::get_session_key() const
 {
     return f_session_key;
 }
@@ -469,7 +550,7 @@ int32_t sessions::session_info::get_session_random() const
  *
  * \sa set_plugin_owner()
  */
-const QString& sessions::session_info::get_plugin_owner() const
+QString const& sessions::session_info::get_plugin_owner() const
 {
     return f_plugin_owner;
 }
@@ -486,7 +567,7 @@ const QString& sessions::session_info::get_plugin_owner() const
  * \sa set_page_path()
  * \sa get_object_path()
  */
-const QString& sessions::session_info::get_page_path() const
+QString const& sessions::session_info::get_page_path() const
 {
     return f_page_path;
 }
@@ -503,9 +584,29 @@ const QString& sessions::session_info::get_page_path() const
  * \sa set_object_path()
  * \sa get_page_path()
  */
-const QString& sessions::session_info::get_object_path() const
+QString const& sessions::session_info::get_object_path() const
 {
     return f_object_path;
+}
+
+
+/** \brief Get the user agent of the attached object.
+ *
+ * A session is always created for a specific user agent. This means a
+ * user cannot take his credential from one browser to another browser
+ * and continue as if he was logged in with the new browser. Instead
+ * he has to properly log in with each browser as you would normally
+ * expect. However, this is particularly useful against session ID
+ * fixation attacks since the attacker must first be using the exact
+ * same User Agent string as his victim.
+ *
+ * \return This session User Agent.
+ *
+ * \sa set_user_agent()
+ */
+QString const& sessions::session_info::get_user_agent() const
+{
+    return f_user_agent;
 }
 
 
@@ -542,6 +643,40 @@ int32_t sessions::session_info::get_time_to_live() const
 time_t sessions::session_info::get_time_limit() const
 {
     return f_time_limit;
+}
+
+
+/** \brief Get the time limit of this logged in session.
+ *
+ * This function returns the Unix date when the logged in user is now
+ * just considered a registered user. This date is not updated each
+ * time the user accesses the site. This prevents an administrator from
+ * staying logged in forever, but he can still quickly moderate the
+ * website and add new content.
+ *
+ * \return The log in session Unix time limit.
+ *
+ * \sa set_login_limit()
+ */
+time_t sessions::session_info::get_login_limit() const
+{
+    return f_login_limit;
+}
+
+
+/** \brief Get the date when this session was last saved.
+ *
+ * This function returns the Unix date in microseconds when the session
+ * was last saved in Cassandra. This is used by the plugins using sessions
+ * to know whether a new random number should be used.
+ *
+ * \return The Unix time in microseconds when the session was last saved.
+ *
+ * \sa set_date()
+ */
+int64_t sessions::session_info::get_date() const
+{
+    return f_date;
 }
 
 
@@ -799,11 +934,14 @@ QString sessions::create_session(session_info& info)
 
     // make sure that we have at least one path defined
     // (this is our session key so it is required)
-    const QString& page_path(info.get_page_path());
-    const QString& object_path(info.get_object_path());
-    if(page_path.isEmpty() && object_path.isEmpty())
+    if(info.get_page_path().isEmpty() && info.get_object_path().isEmpty())
     {
         throw sessions_exception_invalid_parameter("any session must have at least one path defined");
+    }
+
+    if(info.get_user_agent().isEmpty())
+    {
+        throw sessions_exception_invalid_parameter("all sessions must have a user agent specified");
     }
 
     // TODO? Need we set a specific OpenSSL random generator?
@@ -850,7 +988,7 @@ QString sessions::create_session(session_info& info)
     }
     info.set_session_key(result);
 
-    save_session(info);
+    save_session(info, true);
 
     return result;
 }
@@ -872,11 +1010,31 @@ QString sessions::create_session(session_info& info)
  * Note that the random session key is regenerated each time you call
  * this function (hence the \p info parameter is an in,out parameter.)
  *
+ * By default the new_random flag should be true because it makes sense to
+ * generate a new random session number on each access by the client.
+ * However, that assumes that the user accesses the website in a very
+ * serialized manner and even if the user doesn't open 3 windows at the
+ * same time, that won't work because we server ALL the data (i.e. HTML,
+ * JavaScript, CSS, Images, etc.) and browsers tend to send the requests
+ * in parallel (Firefox has 2 at this time, but Chrome can have many more.)
+ * Since we cannot really know whether the request is for a new HTML page
+ * or any other part of a web page, it is just not really possible to
+ * send a new random number everytime.
+ *
+ * There are two reasons to send a new random number:
+ *
+ * \li The user logs in at some level (we can have multiple log in levels!)
+ * \li The user was inactive for long enough (i.e. over a minute?)
+ *
  * \param[in,out] info  The session info to save.
+ * \param[in] new_random  Whether the session should be given a new random number.
  */
-void sessions::save_session(session_info& info)
+void sessions::save_session(session_info& info, bool new_random)
 {
-    info.set_session_random();
+    if(new_random)
+    {
+        info.set_session_random();
+    }
 
     QString key(f_snap->get_website_key() + "/" + info.get_session_key());
 
@@ -940,12 +1098,21 @@ void sessions::save_session(session_info& info)
     value.setStringValue(info.get_object_path());
     row->cell(get_name(SNAP_NAME_SESSIONS_OBJECT_PATH))->setValue(value);
 
+    value.setStringValue(info.get_user_agent());
+    row->cell(get_name(SNAP_NAME_SESSIONS_USER_AGENT))->setValue(value);
+
     value.setInt32Value(info.get_time_to_live());
     row->cell(get_name(SNAP_NAME_SESSIONS_TIME_TO_LIVE))->setValue(value);
 
     value.setInt64Value(timestamp);
     info.set_time_limit(timestamp);
     row->cell(get_name(SNAP_NAME_SESSIONS_TIME_LIMIT))->setValue(value);
+
+    value.setInt64Value(info.get_login_limit());
+    row->cell(get_name(SNAP_NAME_SESSIONS_LOGIN_LIMIT))->setValue(value);
+
+    value.setInt64Value(f_snap->get_start_date());
+    row->cell(get_name(SNAP_NAME_SESSIONS_DATE))->setValue(value);
 
     value.setStringValue(f_snap->snapenv("REMOTE_ADDR"));
     row->cell(get_name(SNAP_NAME_SESSIONS_REMOTE_ADDR))->setValue(value);
@@ -1056,6 +1223,9 @@ void sessions::load_session(const QString& session_key, session_info& info, bool
     value = row->cell(get_name(SNAP_NAME_SESSIONS_OBJECT_PATH))->value();
     info.set_object_path(value.stringValue());
 
+    value = row->cell(get_name(SNAP_NAME_SESSIONS_USER_AGENT))->value();
+    info.set_user_agent(value.stringValue());
+
     value = row->cell(get_name(SNAP_NAME_SESSIONS_TIME_TO_LIVE))->value();
     if(value.nullValue())
     {
@@ -1073,6 +1243,24 @@ void sessions::load_session(const QString& session_key, session_info& info, bool
         return;
     }
     info.set_time_limit(value.int64Value());
+
+    value = row->cell(get_name(SNAP_NAME_SESSIONS_LOGIN_LIMIT))->value();
+    if(value.nullValue())
+    {
+        // row timed out between calls
+        info.set_session_type(session_info::SESSION_INFO_MISSING);
+        return;
+    }
+    info.set_login_limit(value.int64Value());
+
+    value = row->cell(get_name(SNAP_NAME_SESSIONS_DATE))->value();
+    if(value.nullValue())
+    {
+        // row timed out between calls
+        info.set_session_type(session_info::SESSION_INFO_MISSING);
+        return;
+    }
+    info.set_date(value.int64Value());
 
     value = row->cell(get_name(SNAP_NAME_SESSIONS_RANDOM))->value();
     if(value.nullValue())

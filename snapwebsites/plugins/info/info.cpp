@@ -17,6 +17,7 @@
 
 #include "info.h"
 #include "../messages/messages.h"
+#include "../users/users.h"
 #include "not_reached.h"
 #include "poison.h"
 
@@ -101,20 +102,12 @@ void info::on_bootstrap(snap_child *snap)
 {
     f_snap = snap;
 
+	SNAP_LISTEN(info, "server", server, improve_signature, _1, _2);
     //SNAP_LISTEN(info, "layout", layout::layout, generate_header_content, _1, _2, _3, _4, _5);
     //SNAP_LISTEN(info, "layout", layout::layout, generate_page_content, _1, _2, _3, _4, _5);
     //SNAP_LISTEN(info, "path", path::path, can_handle_dynamic_path, _1, _2);
 }
 
-// Not using that, but I tested and it worked perfectly
-//    SNAP_LISTEN(info, "form", form::form, fill_form_widget, _1, _2, _3, _4, _5, _6);
-//void info::on_fill_form_widget(form::form *f, QString const& owner, QString const& cpath, QDomDocument xml_form, QDomElement widget, QString const& id)
-//{
-//    if(id == "name")
-//    {
-//        f->fill_value(widget, "filled!");
-//    }
-//}
 
 /** \brief Get a pointer to the info plugin.
  *
@@ -165,7 +158,7 @@ int64_t info::do_update(int64_t last_updated)
     SNAP_PLUGIN_UPDATE_INIT();
 
     SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, initial_update);
-    SNAP_PLUGIN_UPDATE(2013, 12, 19, 2, 0, 40, content_update);
+    SNAP_PLUGIN_UPDATE(2013, 12, 23, 14, 21, 40, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -430,6 +423,25 @@ void info::on_process_post(QString const& cpath, sessions::sessions::session_inf
     f_snap->set_site_parameter(snap::get_name(SNAP_NAME_CORE_SITE_SHORT_NAME), value);
 }
 #pragma GCC diagnostic pop
+
+
+/** \brief Improves the error signature.
+ *
+ * This function adds a link to the administration page to the signature of
+ * die() errors. This is done only if the user is logged in.
+ *
+ * \param[in] path  The path on which the error occurs.
+ * \param[in,out] signature  The HTML signature to improve.
+ */
+void info::on_improve_signature(QString const& path, QString& signature)
+{
+    (void)path;
+    if(!users::users::instance()->get_user_key().isEmpty())
+    {
+        // TODO: translate
+        signature += " <a href=\"/admin\">Administration</a>";
+    }
+}
 
 
 

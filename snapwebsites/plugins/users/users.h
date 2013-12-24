@@ -58,7 +58,7 @@ enum name_t
     SNAP_NAME_USERS_PATH,
     SNAP_NAME_USERS_PREVIOUS_LOGIN_IP,
     SNAP_NAME_USERS_PREVIOUS_LOGIN_ON,
-    SNAP_NAME_USERS_SESSION_COOKIE,
+    //SNAP_NAME_USERS_SESSION_COOKIE, -- use a random name instead
     SNAP_NAME_USERS_STATUS,
     SNAP_NAME_USERS_TABLE,
     SNAP_NAME_USERS_USERNAME,
@@ -151,13 +151,16 @@ public:
     void                    on_get_user_rights(permissions::permissions *perms, permissions::permissions::sets_t& sets);
     void                    on_get_plugin_permissions(permissions::permissions *perms, permissions::permissions::sets_t& sets);
     void                    on_register_backend_action(server::backend_action_map_t& actions);
+    void                    on_improve_signature(QString const& path, QString& signature);
     virtual void            on_backend_action(QString const& action);
 
     virtual void            on_process_post(QString const& cpath, sessions::sessions::session_info const& info);
 
+    QString                 get_user_cookie_name();
     QString                 get_user_key() const;
     QString                 get_user_path() const;
     bool                    user_is_a_spammer();
+    bool                    user_is_logged_in();
     bool                    register_user(QString const& email, QString const& password);
     void                    attach_to_session(QString const& name, QString const& data);
     QString                 detach_from_session(QString const& name) const;
@@ -188,9 +191,10 @@ private:
     void                    verify_password(QString const& cpath);
     void                    forgot_password_email(QString const& email);
 
-    zpsnap_child_t          f_snap;
-    QString                 f_user_key; // logged in user email address
-    QString                 f_user_changing_password_key; // not quite logged in user
+    zpsnap_child_t              f_snap;
+    QString                     f_user_key; // logged in user email address
+    controlled_vars::fbool_t    f_user_logged_in;
+    QString                     f_user_changing_password_key; // not quite logged in user
     std::shared_ptr<sessions::sessions::session_info> f_info; // user, logged in or anonymous, cookie related information
 };
 
