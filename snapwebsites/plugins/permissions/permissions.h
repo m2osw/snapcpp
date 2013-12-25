@@ -27,12 +27,14 @@ namespace permissions
 
 enum name_t
 {
+    SNAP_NAME_PERMISSIONS_ACTION_PATH,
+    SNAP_NAME_PERMISSIONS_ADMINISTER,
     SNAP_NAME_PERMISSIONS_DYNAMIC,
     SNAP_NAME_PERMISSIONS_GROUP,
-    SNAP_NAME_PERMISSIONS_PATH,
-    SNAP_NAME_PERMISSIONS_ACTION_PATH,
     SNAP_NAME_PERMISSIONS_GROUPS_PATH,
-    SNAP_NAME_PERMISSIONS_RIGHTS_PATH
+    SNAP_NAME_PERMISSIONS_PATH,
+    SNAP_NAME_PERMISSIONS_RIGHTS_PATH,
+    SNAP_NAME_PERMISSIONS_VIEW
 };
 char const *get_name(name_t name) __attribute__ ((const));
 
@@ -71,7 +73,7 @@ public:
     class sets_t
     {
     public:
-        typedef QSet<QString>           set_t;
+        typedef QVector<QString>        set_t;
         typedef QMap<QString, set_t>    req_sets_t;
 
                             sets_t(QString const& user_path, QString const& path, QString const& action);

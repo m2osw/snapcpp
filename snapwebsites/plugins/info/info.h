@@ -71,7 +71,7 @@ public:
     virtual void            on_generate_main_content(layout::layout *l, QString const& path, QDomElement& page, QDomElement& body, QString const& ctemplate);
     //void                    on_generate_header_content(layout::layout *l, QString const& path, QDomElement& header, QDomElement& metadata, QString const& ctemplate);
     //void                    on_generate_page_content(layout::layout *l, QString const& cpath, QDomElement& page, QDomElement& body, QString const& ctemplate);
-void on_fill_form_widget(form::form *f, QString const& owner, QString const& cpath, QDomDocument xml_form, QDomElement widget, QString const& id);
+    void                    on_improve_signature(QString const& path, QString& signature);
 
 private:
     void initial_update(int64_t variables_timestamp);

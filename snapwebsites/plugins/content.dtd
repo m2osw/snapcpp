@@ -28,7 +28,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 <!ATTLIST param name CDATA #REQUIRED
                 overwrite (yes|no) "no"
                 force-namespace (yes|no) "yes"
-                type (binary|int8|string) "string">
+                type (binary|float|int8|string) "string">
 
 <!ELEMENT link (#PCDATA)>
 <!ATTLIST link name CDATA #REQUIRED

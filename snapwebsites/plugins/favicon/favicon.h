@@ -46,7 +46,7 @@ public:
 
 
 
-class favicon : public plugins::plugin, public path::path_execute, public layout::layout_content
+class favicon : public plugins::plugin, public path::path_execute, public layout::layout_content, public form::form_post
 {
 public:
     static const sessions::sessions::session_info::session_id_t FAVICON_SESSION_ID_SETTINGS = 1;      // settings-form.xml
@@ -65,6 +65,7 @@ public:
     void                    on_generate_page_content(layout::layout *l, QString const& cpath, QDomElement& page, QDomElement& body, QString const& ctemplate);
     void                    on_create_content(QString const& path, QString const& owner, QString const& type);
     void                    on_can_handle_dynamic_path(path::path *path_plugin, QString const& cpath);
+    virtual void            on_process_post(QString const& cpath, sessions::sessions::session_info const& info);
 
 private:
     void initial_update(int64_t variables_timestamp);

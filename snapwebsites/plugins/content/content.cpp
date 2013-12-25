@@ -1244,7 +1244,7 @@ int64_t content::do_update(int64_t last_updated)
     SNAP_PLUGIN_UPDATE_INIT();
 
     SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, initial_update);
-    SNAP_PLUGIN_UPDATE(2013, 12, 7, 16, 18, 40, content_update);
+    SNAP_PLUGIN_UPDATE(2013, 12, 23, 18, 11, 40, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -1920,6 +1920,10 @@ void content::add_xml(const QString& plugin_name)
                     {
                         param_type = PARAM_TYPE_STRING;
                     }
+                    else if(type == "float")
+                    {
+                        param_type = PARAM_TYPE_FLOAT;
+                    }
                     else if(type == "int8")
                     {
                         param_type = PARAM_TYPE_INT8;
@@ -2330,6 +2334,13 @@ void content::on_save_content()
                 {
                 case PARAM_TYPE_STRING:
                     content_table->row(d->f_path)->cell(p->f_name)->setValue(p->f_data);
+                    break;
+
+                case PARAM_TYPE_FLOAT:
+                    {
+                    float const v(p->f_data.toFloat(&ok));
+                    content_table->row(d->f_path)->cell(p->f_name)->setValue(v);
+                    }
                     break;
 
                 case PARAM_TYPE_INT8:

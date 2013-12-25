@@ -1,4 +1,4 @@
-<?xml version="1.0" standalone="yes"?>
+<?xml version="1.0"?>
 <!--
 Snap Websites Server == users database setup
 Copyright (C) 2012-2013  Made to Order Software Corp.
@@ -17,20 +17,6 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 -->
-<!DOCTYPE snap-tree [
-<!ELEMENT snap-tree (content)*>
-<!ELEMENT content (param|link)*>
-<!ATTLIST content path CDATA #REQUIRED>
-<!ELEMENT param (#PCDATA)>
-<!ATTLIST param name CDATA #REQUIRED
-                overwrite (yes|no) "no"
-                force-namespace (yes|no) "yes"
-                type (binary|int8|string) "string">
-<!ELEMENT link (#PCDATA)>
-<!ATTLIST link name CDATA #REQUIRED
-               to CDATA #REQUIRED
-               mode CDATA "1:1">
-]>
 <snap-tree>
   <content path="/login">
     <param name="content::title">User Log In</param>
@@ -38,6 +24,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <![CDATA[<p>Enter your email address and password to log in.</p>[form::source]]]>
     </param>
     <link name="content::page_type" to="content::page_type" mode="1:*">/types/taxonomy/system/content-types/page/public</link>
+    <link name="permissions::administer" to="permissions::administer" mode="*:*">/types/permissions/rights/administer/user/register</link>
     <link name="robotstxt::noindex" to="robotstxt::noindex" mode="1:*">/types/taxonomy/system/robotstxt/noindex</link>
     <link name="robotstxt::nofollow" to="robotstxt::nofollow" mode="1:*">/types/taxonomy/system/robotstxt/nofollow</link>
     <param name="form::source">login-form</param>
@@ -71,6 +58,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <link name="content::page_type" to="content::page_type" mode="1:*">/types/taxonomy/system/content-types/page/public</link>
     <link name="robotstxt::noindex" to="robotstxt::noindex" mode="1:*">/types/taxonomy/system/robotstxt/noindex</link>
     <link name="robotstxt::nofollow" to="robotstxt::nofollow" mode="1:*">/types/taxonomy/system/robotstxt/nofollow</link>
+    <link name="permissions::administer" to="permissions::administer" mode="*:*">/types/permissions/rights/administer/user/register</link>
     <param name="form::source">register-form</param>
   </content>
   <content path="/verify/resend">
@@ -92,6 +80,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <link name="content::page_type" to="content::page_type" mode="1:*">/types/taxonomy/system/content-types/page/public</link>
     <link name="robotstxt::noindex" to="robotstxt::noindex" mode="1:*">/types/taxonomy/system/robotstxt/noindex</link>
     <link name="robotstxt::nofollow" to="robotstxt::nofollow" mode="1:*">/types/taxonomy/system/robotstxt/nofollow</link>
+    <link name="permissions::administer" to="permissions::administer" mode="*:*">/types/permissions/rights/administer/user/register</link>
     <param name="form::source">verify-form</param>
   </content>
   <content path="/logout">
@@ -101,7 +90,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     </param>
     <link name="robotstxt::noindex" to="robotstxt::noindex" mode="1:*">/types/taxonomy/system/robotstxt/noindex</link>
     <link name="robotstxt::nofollow" to="robotstxt::nofollow" mode="1:*">/types/taxonomy/system/robotstxt/nofollow</link>
-    <link name="permissions::administer" to="permissions::administer" mode="*:*">/types/permissions/rights/administer</link>
     <!--link name="permissions::view" to="permissions::view" mode="*:*">/types/permissions/rights/view/page/private</link-->
     <link name="content::page_type" to="content::page_type" mode="1:*">/types/taxonomy/system/content-types/page/public</link>
   </content>
@@ -231,6 +219,21 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="content::body">
       <![CDATA[<p>User is offensive when using our website (write profanity.)</p>]]>
     </param>
+  </content>
+  <content path="/types/permissions/rights/administer/user">
+    <param name="content::title">Administer Users Right</param>
+    <param name="content::body">
+      <![CDATA[<p>Administer users on your website.</p><p>This is the main right allowing someone to administer all the users.</p>]]>
+    </param>
+  </content>
+  <content path="/types/permissions/rights/administer/user/register">
+    <param name="content::title">Allow User to Register</param>
+    <param name="content::body">
+      <![CDATA[<p>This right allows a user to register on your website. It has to be assigned to visitors in order for visitors to be able to register an account on your website.</p>]]>
+    </param>
+  </content>
+  <content path="/types/permissions/groups/root/administrator/editor/moderator/author/commenter/registered-user/returning-registered-user/returning-visitor/visitor" owner="permissions">
+    <link name="permissions::administer" to="permissions::administer" mode="*:*">/types/permissions/rights/administer/user/register</link>
   </content>
 </snap-tree>
 <!-- vim: ts=2 sw=2 et syntax=xml

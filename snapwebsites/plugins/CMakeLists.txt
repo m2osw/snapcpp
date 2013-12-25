@@ -117,6 +117,19 @@ add_subdirectory(users)
 #	build_lint ALL
 #	DEPENDS ${xml_lint_targets}
 #)
+get_property( XML_FILE_LIST GLOBAL PROPERTY XML_FILE_LIST )
+	set( lint_file "${CMAKE_CURRENT_BINARY_DIR}/${XML_FILE}.lint"   )
+	set( dtd_file  "${snapwebsites_plugins_SOURCE_DIR}/${DTD_FILE}" )
+	#
+	# Command runs the lint_script above...
+	#
+	add_custom_command(
+		OUTPUT ${lint_file}
+		COMMAND ${BASH} ${lint_script} ${full_xmlfile} ${lint_file} ${dtd_file}
+		WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+		DEPENDS ${full_xmlfile}
+		COMMENT "running xmllint on ${full_xmlfile}"
+	)
 #
 # Handy target for wiping out all lint files and forcing a recheck!
 #

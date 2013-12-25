@@ -229,6 +229,7 @@ public:
     enum param_type_t
     {
         PARAM_TYPE_STRING,
+        PARAM_TYPE_FLOAT,
         PARAM_TYPE_INT8,
         PARAM_TYPE_INT64
     };

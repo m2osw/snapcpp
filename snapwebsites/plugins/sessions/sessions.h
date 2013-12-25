@@ -24,6 +24,25 @@ namespace snap
 namespace sessions
 {
 
+enum name_t
+{
+    SNAP_NAME_SESSIONS_DATE,
+    SNAP_NAME_SESSIONS_ID,
+    SNAP_NAME_SESSIONS_LOGIN_LIMIT,
+    SNAP_NAME_SESSIONS_PAGE_PATH,
+    SNAP_NAME_SESSIONS_OBJECT_PATH,
+    SNAP_NAME_SESSIONS_PLUGIN_OWNER,
+    SNAP_NAME_SESSIONS_REMOTE_ADDR,
+    SNAP_NAME_SESSIONS_RANDOM,
+    SNAP_NAME_SESSIONS_TABLE,
+    SNAP_NAME_SESSIONS_TIME_TO_LIVE,
+    SNAP_NAME_SESSIONS_TIME_LIMIT,
+    SNAP_NAME_SESSIONS_USED_UP,
+    SNAP_NAME_SESSIONS_USER_AGENT
+};
+char const *get_name(name_t name) __attribute__ ((const));
+
+
 class sessions_exception : public snap_exception
 {
 public:
@@ -57,22 +76,6 @@ public:
 };
 
 
-enum name_t
-{
-    SNAP_NAME_SESSIONS_TABLE,
-    SNAP_NAME_SESSIONS_ID,
-    SNAP_NAME_SESSIONS_PLUGIN_OWNER,
-    SNAP_NAME_SESSIONS_PAGE_PATH,
-    SNAP_NAME_SESSIONS_OBJECT_PATH,
-    SNAP_NAME_SESSIONS_RANDOM,
-    SNAP_NAME_SESSIONS_TIME_TO_LIVE,
-    SNAP_NAME_SESSIONS_TIME_LIMIT,
-    SNAP_NAME_SESSIONS_REMOTE_ADDR,
-    SNAP_NAME_SESSIONS_USED_UP
-};
-const char *get_name(name_t name) __attribute__ ((const));
-
-
 class sessions : public plugins::plugin, public layout::layout_content
 {
 public:
@@ -97,26 +100,32 @@ public:
 
         void set_session_type(session_info_type_t type);
         void set_session_id(session_id_t session_id);
-        void set_session_key(const QString& session_key);
+        void set_session_key(QString const& session_key);
         void set_session_random();
         void set_session_random(int32_t random);
-        void set_plugin_owner(const QString& plugin_owner);
-        void set_page_path(const QString& page_path);
-        void set_object_path(const QString& object_path);
+        void set_plugin_owner(QString const& plugin_owner);
+        void set_page_path(QString const& page_path);
+        void set_object_path(QString const& object_path);
+        void set_user_agent(QString const& user_agent);
         void set_time_to_live(int32_t time_to_live);
         void set_time_limit(time_t time_limit);
+        void set_login_limit(time_t time_limit);
+        void set_date(int64_t date);
 
         session_info_type_t get_session_type() const;
         session_id_t get_session_id() const;
-        const QString& get_session_key() const;
+        QString const& get_session_key() const;
         int32_t get_session_random() const;
-        const QString& get_plugin_owner() const;
-        const QString& get_page_path() const;
-        const QString& get_object_path() const;
+        QString const& get_plugin_owner() const;
+        QString const& get_page_path() const;
+        QString const& get_object_path() const;
+        QString const& get_user_agent() const;
         int32_t get_time_to_live() const;
         time_t get_time_limit() const;
+        time_t get_login_limit() const;
+        int64_t get_date() const;
 
-        static const char *session_type_to_string(session_info_type_t type);
+        static char const *session_type_to_string(session_info_type_t type);
 
     private:
         // default to SESSION_INFO_SECURE
@@ -132,8 +141,11 @@ public:
         QString                     f_plugin_owner;
         QString                     f_page_path;
         QString                     f_object_path; // exact path to user, form, etc.
+        QString                     f_user_agent;
         time_to_live_t              f_time_to_live;
         ztime_t                     f_time_limit;
+        ztime_t                     f_login_limit;
+        controlled_vars::zint64_t   f_date;
     };
 
                             sessions();
@@ -144,15 +156,15 @@ public:
     virtual int64_t         do_update(int64_t last_updated);
 
     void                    on_bootstrap(snap_child *snap);
-    virtual void            on_generate_main_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body, const QString& ctemplate);
+    virtual void            on_generate_main_content(layout::layout *l, QString const& path, QDomElement& page, QDomElement& body, QString const& ctemplate);
 
     QString                 create_session(session_info& info);
-    void                    save_session(session_info& info);
-    void                    load_session(const QString& session_id, session_info& info, bool use_once = true);
+    void                    save_session(session_info& info, bool new_random);
+    void                    load_session(QString const& session_id, session_info& info, bool use_once = true);
 
-    void                    attach_to_session(const session_info& info, const QString& name, const QString& data);
-    QString                 detach_from_session(const session_info& info, const QString& name);
-    QString                 get_from_session(const session_info& info, const QString& name);
+    void                    attach_to_session(session_info const& info, QString const& name, QString const& data);
+    QString                 detach_from_session(session_info const& info, QString const& name);
+    QString                 get_from_session(session_info const& info, QString const& name);
 
     SNAP_SIGNAL(generate_sessions, (sessions *r), (r));
 

@@ -36,89 +36,89 @@ namespace
 //                    | "{" | "}" | SP | HT
 #define SNAP_HTTP_TOKEN_CHAR(base, c) (static_cast<uint32_t>(1)<<(((c)-(base))&0x1F))
 uint32_t http_token[4] = {
-	/* 00-1F */ 0x00000000,
-	/* 20-3F */
-		  SNAP_HTTP_TOKEN_CHAR(0x20, '!')
-		| SNAP_HTTP_TOKEN_CHAR(0x20, '#')
-		| SNAP_HTTP_TOKEN_CHAR(0x20, '$')
-		| SNAP_HTTP_TOKEN_CHAR(0x20, '%')
-		| SNAP_HTTP_TOKEN_CHAR(0x20, '&')
-		| SNAP_HTTP_TOKEN_CHAR(0x20, '\'')
-		| SNAP_HTTP_TOKEN_CHAR(0x20, '*')
-		| SNAP_HTTP_TOKEN_CHAR(0x20, '+')
-		| SNAP_HTTP_TOKEN_CHAR(0x20, '-')
-		| SNAP_HTTP_TOKEN_CHAR(0x20, '.')
-		| SNAP_HTTP_TOKEN_CHAR(0x20, '0')
-		| SNAP_HTTP_TOKEN_CHAR(0x20, '1')
-		| SNAP_HTTP_TOKEN_CHAR(0x20, '2')
-		| SNAP_HTTP_TOKEN_CHAR(0x20, '3')
-		| SNAP_HTTP_TOKEN_CHAR(0x20, '4')
-		| SNAP_HTTP_TOKEN_CHAR(0x20, '5')
-		| SNAP_HTTP_TOKEN_CHAR(0x20, '6')
-		| SNAP_HTTP_TOKEN_CHAR(0x20, '7')
-		| SNAP_HTTP_TOKEN_CHAR(0x20, '8')
-		| SNAP_HTTP_TOKEN_CHAR(0x20, '9')
-	,
-	/* 40-5F */
-		  SNAP_HTTP_TOKEN_CHAR(0x40, 'A')
-		| SNAP_HTTP_TOKEN_CHAR(0x40, 'B')
-		| SNAP_HTTP_TOKEN_CHAR(0x40, 'C')
-		| SNAP_HTTP_TOKEN_CHAR(0x40, 'D')
-		| SNAP_HTTP_TOKEN_CHAR(0x40, 'E')
-		| SNAP_HTTP_TOKEN_CHAR(0x40, 'F')
-		| SNAP_HTTP_TOKEN_CHAR(0x40, 'G')
-		| SNAP_HTTP_TOKEN_CHAR(0x40, 'H')
-		| SNAP_HTTP_TOKEN_CHAR(0x40, 'I')
-		| SNAP_HTTP_TOKEN_CHAR(0x40, 'J')
-		| SNAP_HTTP_TOKEN_CHAR(0x40, 'K')
-		| SNAP_HTTP_TOKEN_CHAR(0x40, 'L')
-		| SNAP_HTTP_TOKEN_CHAR(0x40, 'M')
-		| SNAP_HTTP_TOKEN_CHAR(0x40, 'N')
-		| SNAP_HTTP_TOKEN_CHAR(0x40, 'O')
-		| SNAP_HTTP_TOKEN_CHAR(0x40, 'P')
-		| SNAP_HTTP_TOKEN_CHAR(0x40, 'Q')
-		| SNAP_HTTP_TOKEN_CHAR(0x40, 'R')
-		| SNAP_HTTP_TOKEN_CHAR(0x40, 'S')
-		| SNAP_HTTP_TOKEN_CHAR(0x40, 'T')
-		| SNAP_HTTP_TOKEN_CHAR(0x40, 'U')
-		| SNAP_HTTP_TOKEN_CHAR(0x40, 'V')
-		| SNAP_HTTP_TOKEN_CHAR(0x40, 'W')
-		| SNAP_HTTP_TOKEN_CHAR(0x40, 'X')
-		| SNAP_HTTP_TOKEN_CHAR(0x40, 'Y')
-		| SNAP_HTTP_TOKEN_CHAR(0x40, 'Z')
-		| SNAP_HTTP_TOKEN_CHAR(0x40, '^')
-		| SNAP_HTTP_TOKEN_CHAR(0x40, '_')
-	,
-	/* 60-7F */
-		  SNAP_HTTP_TOKEN_CHAR(0x60, '`')
-		| SNAP_HTTP_TOKEN_CHAR(0x60, 'a')
-		| SNAP_HTTP_TOKEN_CHAR(0x60, 'b')
-		| SNAP_HTTP_TOKEN_CHAR(0x60, 'c')
-		| SNAP_HTTP_TOKEN_CHAR(0x60, 'd')
-		| SNAP_HTTP_TOKEN_CHAR(0x60, 'e')
-		| SNAP_HTTP_TOKEN_CHAR(0x60, 'f')
-		| SNAP_HTTP_TOKEN_CHAR(0x60, 'g')
-		| SNAP_HTTP_TOKEN_CHAR(0x60, 'h')
-		| SNAP_HTTP_TOKEN_CHAR(0x60, 'i')
-		| SNAP_HTTP_TOKEN_CHAR(0x60, 'j')
-		| SNAP_HTTP_TOKEN_CHAR(0x60, 'k')
-		| SNAP_HTTP_TOKEN_CHAR(0x60, 'l')
-		| SNAP_HTTP_TOKEN_CHAR(0x60, 'm')
-		| SNAP_HTTP_TOKEN_CHAR(0x60, 'n')
-		| SNAP_HTTP_TOKEN_CHAR(0x60, 'o')
-		| SNAP_HTTP_TOKEN_CHAR(0x60, 'p')
-		| SNAP_HTTP_TOKEN_CHAR(0x60, 'q')
-		| SNAP_HTTP_TOKEN_CHAR(0x60, 'r')
-		| SNAP_HTTP_TOKEN_CHAR(0x60, 's')
-		| SNAP_HTTP_TOKEN_CHAR(0x60, 't')
-		| SNAP_HTTP_TOKEN_CHAR(0x60, 'u')
-		| SNAP_HTTP_TOKEN_CHAR(0x60, 'v')
-		| SNAP_HTTP_TOKEN_CHAR(0x60, 'w')
-		| SNAP_HTTP_TOKEN_CHAR(0x60, 'x')
-		| SNAP_HTTP_TOKEN_CHAR(0x60, 'y')
-		| SNAP_HTTP_TOKEN_CHAR(0x60, 'z')
-		| SNAP_HTTP_TOKEN_CHAR(0x60, '|')
-		| SNAP_HTTP_TOKEN_CHAR(0x60, '~')
+    /* 00-1F */ 0x00000000,
+    /* 20-3F */
+          SNAP_HTTP_TOKEN_CHAR(0x20, '!')
+        | SNAP_HTTP_TOKEN_CHAR(0x20, '#')
+        | SNAP_HTTP_TOKEN_CHAR(0x20, '$')
+        | SNAP_HTTP_TOKEN_CHAR(0x20, '%')
+        | SNAP_HTTP_TOKEN_CHAR(0x20, '&')
+        | SNAP_HTTP_TOKEN_CHAR(0x20, '\'')
+        | SNAP_HTTP_TOKEN_CHAR(0x20, '*')
+        | SNAP_HTTP_TOKEN_CHAR(0x20, '+')
+        | SNAP_HTTP_TOKEN_CHAR(0x20, '-')
+        | SNAP_HTTP_TOKEN_CHAR(0x20, '.')
+        | SNAP_HTTP_TOKEN_CHAR(0x20, '0')
+        | SNAP_HTTP_TOKEN_CHAR(0x20, '1')
+        | SNAP_HTTP_TOKEN_CHAR(0x20, '2')
+        | SNAP_HTTP_TOKEN_CHAR(0x20, '3')
+        | SNAP_HTTP_TOKEN_CHAR(0x20, '4')
+        | SNAP_HTTP_TOKEN_CHAR(0x20, '5')
+        | SNAP_HTTP_TOKEN_CHAR(0x20, '6')
+        | SNAP_HTTP_TOKEN_CHAR(0x20, '7')
+        | SNAP_HTTP_TOKEN_CHAR(0x20, '8')
+        | SNAP_HTTP_TOKEN_CHAR(0x20, '9')
+    ,
+    /* 40-5F */
+          SNAP_HTTP_TOKEN_CHAR(0x40, 'A')
+        | SNAP_HTTP_TOKEN_CHAR(0x40, 'B')
+        | SNAP_HTTP_TOKEN_CHAR(0x40, 'C')
+        | SNAP_HTTP_TOKEN_CHAR(0x40, 'D')
+        | SNAP_HTTP_TOKEN_CHAR(0x40, 'E')
+        | SNAP_HTTP_TOKEN_CHAR(0x40, 'F')
+        | SNAP_HTTP_TOKEN_CHAR(0x40, 'G')
+        | SNAP_HTTP_TOKEN_CHAR(0x40, 'H')
+        | SNAP_HTTP_TOKEN_CHAR(0x40, 'I')
+        | SNAP_HTTP_TOKEN_CHAR(0x40, 'J')
+        | SNAP_HTTP_TOKEN_CHAR(0x40, 'K')
+        | SNAP_HTTP_TOKEN_CHAR(0x40, 'L')
+        | SNAP_HTTP_TOKEN_CHAR(0x40, 'M')
+        | SNAP_HTTP_TOKEN_CHAR(0x40, 'N')
+        | SNAP_HTTP_TOKEN_CHAR(0x40, 'O')
+        | SNAP_HTTP_TOKEN_CHAR(0x40, 'P')
+        | SNAP_HTTP_TOKEN_CHAR(0x40, 'Q')
+        | SNAP_HTTP_TOKEN_CHAR(0x40, 'R')
+        | SNAP_HTTP_TOKEN_CHAR(0x40, 'S')
+        | SNAP_HTTP_TOKEN_CHAR(0x40, 'T')
+        | SNAP_HTTP_TOKEN_CHAR(0x40, 'U')
+        | SNAP_HTTP_TOKEN_CHAR(0x40, 'V')
+        | SNAP_HTTP_TOKEN_CHAR(0x40, 'W')
+        | SNAP_HTTP_TOKEN_CHAR(0x40, 'X')
+        | SNAP_HTTP_TOKEN_CHAR(0x40, 'Y')
+        | SNAP_HTTP_TOKEN_CHAR(0x40, 'Z')
+        | SNAP_HTTP_TOKEN_CHAR(0x40, '^')
+        | SNAP_HTTP_TOKEN_CHAR(0x40, '_')
+    ,
+    /* 60-7F */
+          SNAP_HTTP_TOKEN_CHAR(0x60, '`')
+        | SNAP_HTTP_TOKEN_CHAR(0x60, 'a')
+        | SNAP_HTTP_TOKEN_CHAR(0x60, 'b')
+        | SNAP_HTTP_TOKEN_CHAR(0x60, 'c')
+        | SNAP_HTTP_TOKEN_CHAR(0x60, 'd')
+        | SNAP_HTTP_TOKEN_CHAR(0x60, 'e')
+        | SNAP_HTTP_TOKEN_CHAR(0x60, 'f')
+        | SNAP_HTTP_TOKEN_CHAR(0x60, 'g')
+        | SNAP_HTTP_TOKEN_CHAR(0x60, 'h')
+        | SNAP_HTTP_TOKEN_CHAR(0x60, 'i')
+        | SNAP_HTTP_TOKEN_CHAR(0x60, 'j')
+        | SNAP_HTTP_TOKEN_CHAR(0x60, 'k')
+        | SNAP_HTTP_TOKEN_CHAR(0x60, 'l')
+        | SNAP_HTTP_TOKEN_CHAR(0x60, 'm')
+        | SNAP_HTTP_TOKEN_CHAR(0x60, 'n')
+        | SNAP_HTTP_TOKEN_CHAR(0x60, 'o')
+        | SNAP_HTTP_TOKEN_CHAR(0x60, 'p')
+        | SNAP_HTTP_TOKEN_CHAR(0x60, 'q')
+        | SNAP_HTTP_TOKEN_CHAR(0x60, 'r')
+        | SNAP_HTTP_TOKEN_CHAR(0x60, 's')
+        | SNAP_HTTP_TOKEN_CHAR(0x60, 't')
+        | SNAP_HTTP_TOKEN_CHAR(0x60, 'u')
+        | SNAP_HTTP_TOKEN_CHAR(0x60, 'v')
+        | SNAP_HTTP_TOKEN_CHAR(0x60, 'w')
+        | SNAP_HTTP_TOKEN_CHAR(0x60, 'x')
+        | SNAP_HTTP_TOKEN_CHAR(0x60, 'y')
+        | SNAP_HTTP_TOKEN_CHAR(0x60, 'z')
+        | SNAP_HTTP_TOKEN_CHAR(0x60, '|')
+        | SNAP_HTTP_TOKEN_CHAR(0x60, '~')
 };
 #undef SNAP_HTTP_TOKEN_CHAR
 
@@ -134,13 +134,13 @@ uint32_t http_token[4] = {
  * server.
  */
 http_cookie::http_cookie()
-	//: f_snap(NULL) -- auto-init
-	//, f_name("") -- auto-init
-	//, f_domain("") -- auto-init
-	//, f_path("") -- auto-init
-	//, f_expire() -- auto-init
-	//, f_secure(false) -- auto-init
-	//, f_http_only(false) -- auto-init
+    //: f_snap(NULL) -- auto-init
+    //, f_name("") -- auto-init
+    //, f_domain("") -- auto-init
+    //, f_path("") -- auto-init
+    //, f_expire() -- auto-init
+    //, f_secure(false) -- auto-init
+    //, f_http_only(false) -- auto-init
 {
 }
 
@@ -191,50 +191,52 @@ http_cookie::http_cookie()
  * \sa set_expire_in()
  * \sa set_secure()
  * \sa set_http_only()
+ * \sa set_comment()
+ * \sa set_comment_url()
  */
 http_cookie::http_cookie(snap_child *snap, const QString& name, const QString& value)
-	: f_snap(snap)
-	, f_name(name)
-	//, f_domain("") -- auto-init
-	, f_path("/")
-	//, f_expire() -- auto-init
-	//, f_secure(false) -- auto-init
-	//, f_http_only(false) -- auto-init
+    : f_snap(snap)
+    , f_name(name)
+    //, f_domain("") -- auto-init
+    , f_path("/")
+    //, f_expire() -- auto-init
+    //, f_secure(false) -- auto-init
+    //, f_http_only(false) -- auto-init
 {
-	// XXX make this check only in debug-like versions
-	int max(f_name.length());
-	if(max == 0)
-	{
-		throw std::runtime_error("the name of a cookie cannot be empty");
-	}
-	for(int i(0); i < max; ++i)
-	{
-		ushort c(f_name[i].unicode());
-		if(c <= ' ' || c >= 127 || (http_token[c >> 5] & (1 << (c & 0x1F))) == 0)
-		{
-			throw std::runtime_error(QString("the name of a cookie must only include token compatible characters (offensive character: %1)").arg(QChar(c)).toStdString());
-		}
-	}
-	if(f_name[0] == '$')
-	{
-		throw std::runtime_error("cookie name cannot start with '$'; those are reserved by the HTTP protocol");
-	}
+    // XXX make this check only in debug-like versions
+    int max(f_name.length());
+    if(max == 0)
+    {
+        throw std::runtime_error("the name of a cookie cannot be empty");
+    }
+    for(int i(0); i < max; ++i)
+    {
+        ushort c(f_name[i].unicode());
+        if(c <= ' ' || c >= 127 || (http_token[c >> 5] & (1 << (c & 0x1F))) == 0)
+        {
+            throw std::runtime_error(QString("the name of a cookie must only include token compatible characters (offensive character: %1)").arg(QChar(c)).toStdString());
+        }
+    }
+    if(f_name[0] == '$')
+    {
+        throw std::runtime_error("cookie name cannot start with '$'; those are reserved by the HTTP protocol");
+    }
 
-	if(f_snap)
-	{
-		QtCassandra::QCassandraValue cookie_domain(f_snap->get_site_parameter(snap::get_name(SNAP_NAME_CORE_COOKIE_DOMAIN)));
-		if(cookie_domain.nullValue())
-		{
-			// use the fully qualified website domain name
-			f_domain = f_snap->get_website_key();
-		}
-		else
-		{
-			f_domain = cookie_domain.stringValue();
-		}
-	}
+    if(f_snap)
+    {
+        QtCassandra::QCassandraValue cookie_domain(f_snap->get_site_parameter(snap::get_name(SNAP_NAME_CORE_COOKIE_DOMAIN)));
+        if(cookie_domain.nullValue())
+        {
+            // use the fully qualified website domain name
+            f_domain = f_snap->get_website_key();
+        }
+        else
+        {
+            f_domain = cookie_domain.stringValue();
+        }
+    }
 
-	set_value(value);
+    set_value(value);
 }
 
 
@@ -254,7 +256,7 @@ http_cookie::http_cookie(snap_child *snap, const QString& name, const QString& v
  */
 void http_cookie::set_value(const QString& value)
 {
-	set_value(value.toUtf8());
+    set_value(value.toUtf8());
 }
 
 
@@ -274,7 +276,7 @@ void http_cookie::set_value(const QString& value)
  */
 void http_cookie::set_value(const QByteArray& value)
 {
-	f_value = value;
+    f_value = value;
 }
 
 
@@ -298,40 +300,40 @@ void http_cookie::set_value(const QByteArray& value)
  */
 void http_cookie::set_domain(const QString& domain)
 {
-	f_domain = domain;
+    f_domain = domain;
 
-	// TODO?
-	// Enhance the check so we don't accept two periods one after
-	// another or two dashes or a name that starts/ends with invalid
-	// characters (i.e. cannot start/end with a dash.) Although some
-	// of those would not be necessary if we check the domain against
-	// the website domain name.
-	int max(f_domain.length());
-	if(max > 0 && f_domain[0] == '.')
-	{
-		f_domain = f_domain.mid(1);
-		max = f_domain.length();
-	}
-	if(max == 0)
-	{
-		throw std::runtime_error("the domain of a cookie cannot be empty");
-	}
-	for(int i(0); i < max; ++i)
-	{
-		// TODO:
-		// TBD -- How is that supporting Unicode characters in domain names?
-		ushort c(f_domain[i].unicode());
-		if((c < 'A' || c > 'Z')
-		&& (c < 'a' || c > 'z')
-		&& (c < '0' || c > '9')
-		&& c != '.' && c != '-' && c != '_')
-		{
-			throw std::runtime_error("the domain of a cookie must only include domain name compatible characters");
-		}
-	}
+    // TODO?
+    // Enhance the check so we don't accept two periods one after
+    // another or two dashes or a name that starts/ends with invalid
+    // characters (i.e. cannot start/end with a dash.) Although some
+    // of those would not be necessary if we check the domain against
+    // the website domain name.
+    int max(f_domain.length());
+    if(max > 0 && f_domain[0] == '.')
+    {
+        f_domain = f_domain.mid(1);
+        max = f_domain.length();
+    }
+    if(max == 0)
+    {
+        throw std::runtime_error("the domain of a cookie cannot be empty");
+    }
+    for(int i(0); i < max; ++i)
+    {
+        // TODO:
+        // TBD -- How is that supporting Unicode characters in domain names?
+        ushort c(f_domain[i].unicode());
+        if((c < 'A' || c > 'Z')
+        && (c < 'a' || c > 'z')
+        && (c < '0' || c > '9')
+        && c != '.' && c != '-' && c != '_')
+        {
+            throw std::runtime_error("the domain of a cookie must only include domain name compatible characters");
+        }
+    }
 
-	// TODO: add a check to make sure this is a valid domain name
-	//       (i.e. to the minimum "domain + TLD")
+    // TODO: add a check to make sure this is a valid domain name
+    //       (i.e. to the minimum "domain + TLD")
 }
 
 
@@ -351,21 +353,21 @@ void http_cookie::set_domain(const QString& domain)
  */
 void http_cookie::set_path(const QString& path)
 {
-	// TODO:
-	// TBD -- How is that supporting Unicode characters in paths?
-	// (we may have to change them to some %XX syntax
-	int max(path.length());
-	for(int i(0); i < max; ++i)
-	{
-		ushort c(f_domain[i].unicode());
-		if((c < ' ' || c > '~')
-		&& c != ',' && c != ';')
-		{
-			throw std::runtime_error("the path of a cookie must only include ASCII characters except controls, ',' and ';'.");
-		}
-	}
+    // TODO:
+    // TBD -- How is that supporting Unicode characters in paths?
+    // (we may have to change them to some %XX syntax
+    int max(path.length());
+    for(int i(0); i < max; ++i)
+    {
+        ushort c(f_domain[i].unicode());
+        if((c < ' ' || c > '~')
+        && c != ',' && c != ';')
+        {
+            throw std::runtime_error("the path of a cookie must only include ASCII characters except controls, ',' and ';'.");
+        }
+    }
 
-	f_path = path;
+    f_path = path;
 }
 
 
@@ -381,8 +383,8 @@ void http_cookie::set_path(const QString& path)
  */
 void http_cookie::set_delete()
 {
-	// January 1, 1970 00:00:00 is represented as 0
-	f_expire = QDateTime::fromMSecsSinceEpoch(0);
+    // January 1, 1970 00:00:00 is represented as 0
+    f_expire = QDateTime::fromMSecsSinceEpoch(0);
 }
 
 
@@ -402,8 +404,8 @@ void http_cookie::set_delete()
  */
 void http_cookie::set_session()
 {
-	// use an invalid date
-	f_expire = QDateTime();
+    // use an invalid date
+    f_expire = QDateTime();
 }
 
 
@@ -436,7 +438,7 @@ void http_cookie::set_session()
  */
 void http_cookie::set_expire(const QDateTime& date_time)
 {
-	f_expire = date_time;
+    f_expire = date_time;
 }
 
 
@@ -464,18 +466,18 @@ void http_cookie::set_expire(const QDateTime& date_time)
  */
 void http_cookie::set_expire_in(int seconds)
 {
-	if(f_snap)
-	{
-		f_expire = QDateTime::fromMSecsSinceEpoch(f_snap->get_start_date() / 1000 + seconds * 1000);
-	}
-	else
-	{
-		struct timeval tv;
-		gettimeofday(&tv, NULL);
-		int64_t start_date(static_cast<int64_t>(tv.tv_sec) * static_cast<int64_t>(1000000)
+    if(f_snap)
+    {
+        f_expire = QDateTime::fromMSecsSinceEpoch(f_snap->get_start_date() / 1000 + seconds * 1000);
+    }
+    else
+    {
+        struct timeval tv;
+        gettimeofday(&tv, NULL);
+        int64_t start_date(static_cast<int64_t>(tv.tv_sec) * static_cast<int64_t>(1000000)
                          + static_cast<int64_t>(tv.tv_usec));
-		f_expire = QDateTime::fromMSecsSinceEpoch(start_date / 1000 + seconds * 1000);
-	}
+        f_expire = QDateTime::fromMSecsSinceEpoch(start_date / 1000 + seconds * 1000);
+    }
 }
 
 
@@ -499,7 +501,7 @@ void http_cookie::set_expire_in(int seconds)
  */
 void http_cookie::set_secure(bool secure)
 {
-	f_secure = secure;
+    f_secure = secure;
 }
 
 
@@ -518,7 +520,42 @@ void http_cookie::set_secure(bool secure)
  */
 void http_cookie::set_http_only(bool http_only)
 {
-	f_http_only = http_only;
+    f_http_only = http_only;
+}
+
+
+/** \brief Set a comment.
+ *
+ * This function sets the comment of the cookie.
+ *
+ * In general this is verbatim information about the cookie in regard to
+ * the user privacy.
+ *
+ * The set_comment_url() can also be used to set a page where the cookie
+ * privacy information can be found.
+ *
+ * \param[in] comment  The comment about this cookie.
+ *
+ * \sa get_comment();
+ */
+void http_cookie::set_comment(QString const& comment)
+{
+    f_comment = comment;
+}
+
+
+/** \brief Set a comment URL.
+ *
+ * This function sets the comment URL of the cookie. This is actually
+ * made mandatory in the Snap! webserver.
+ *
+ * \param[in] comment_url  The URL to a page tha explains the cookie usage.
+ *
+ * \sa get_comment_url();
+ */
+void http_cookie::set_comment_url(QString const& comment_url)
+{
+    f_comment_url = comment_url;
 }
 
 
@@ -531,7 +568,7 @@ void http_cookie::set_http_only(bool http_only)
  */
 const QString& http_cookie::get_name() const
 {
-	return f_name;
+    return f_name;
 }
 
 
@@ -551,7 +588,7 @@ const QString& http_cookie::get_name() const
  */
 const QByteArray& http_cookie::get_value() const
 {
-	return f_value;
+    return f_value;
 }
 
 
@@ -574,17 +611,17 @@ const QByteArray& http_cookie::get_value() const
  */
 http_cookie::http_cookie_type_t http_cookie::get_type() const
 {
-	if(!f_expire.isValid())
-	{
-		return HTTP_COOKIE_TYPE_SESSION;
-	}
-	// TBD -- Utc? or not Utc? As far as I know the cookie date is
-	//        in UTC so we need to compare with the UTC current date
-	if(f_expire < QDateTime::currentDateTimeUtc())
-	{
-		return HTTP_COOKIE_TYPE_DELETE;
-	}
-	return HTTP_COOKIE_TYPE_PERMANENT;
+    if(!f_expire.isValid())
+    {
+        return HTTP_COOKIE_TYPE_SESSION;
+    }
+    // TBD -- Utc? or not Utc? As far as I know the cookie date is
+    //        in UTC so we need to compare with the UTC current date
+    if(f_expire < QDateTime::currentDateTimeUtc())
+    {
+        return HTTP_COOKIE_TYPE_DELETE;
+    }
+    return HTTP_COOKIE_TYPE_PERMANENT;
 }
 
 
@@ -599,7 +636,7 @@ http_cookie::http_cookie_type_t http_cookie::get_type() const
  */
 const QString& http_cookie::get_domain() const
 {
-	return f_domain;
+    return f_domain;
 }
 
 
@@ -616,7 +653,7 @@ const QString& http_cookie::get_domain() const
  */
 const QString& http_cookie::get_path() const
 {
-	return f_path;
+    return f_path;
 }
 
 
@@ -639,7 +676,7 @@ const QString& http_cookie::get_path() const
  */
 const QDateTime& http_cookie::get_expire() const
 {
-	return f_expire;
+    return f_expire;
 }
 
 
@@ -656,7 +693,7 @@ const QDateTime& http_cookie::get_expire() const
  */
 bool http_cookie::get_secure() const
 {
-	return f_secure;
+    return f_secure;
 }
 
 
@@ -674,7 +711,35 @@ bool http_cookie::get_secure() const
  */
 bool http_cookie::get_http_only() const
 {
-	return f_http_only;
+    return f_http_only;
+}
+
+
+/** \brief Retrieve the cookie comment.
+ *
+ * This function returns the verbatim cookie comment.
+ *
+ * \return The verbatim comment of the cookie.
+ *
+ * \sa set_comment();
+ */
+QString const& http_cookie::get_comment() const
+{
+    return f_comment;
+}
+
+
+/** \brief Retrieve the cookie comment URL.
+ *
+ * This function returns the cookie comment URL.
+ *
+ * \return The comment URL of the cookie.
+ *
+ * \sa set_comment_url();
+ */
+QString const& http_cookie::get_comment_url() const
+{
+    return f_comment_url;
 }
 
 
@@ -688,72 +753,86 @@ bool http_cookie::get_http_only() const
  */
 QString http_cookie::to_http_header() const
 {
-	// Note: the name was already checked for invalid characters
-	QString result("Set-Cookie: " + f_name + "=");
+    // Note: the name was already checked for invalid characters
+    QString result("Set-Cookie: " + f_name + "=");
 
-	const char *v(f_value.constData());
-	int max(f_value.size());
-	for(int i(0); i < max; ++i)
-	{
-		char c(v[i]);
-		if(c == 0x21
-		|| (c >= 0x23 && c <= 0x2B)
-		|| (c >= 0x2D && c <= 0x3A)
-		|| (c >= 0x3C && c <= 0x5B)
-		|| (c >= 0x5D && c <= 0x7E))
-		{
-			result += c;
-		}
-		else
-		{
-			// add the byte as %XX
-			result += QString("%%%1").arg(c, 2, 16, QChar('0'));
-		}
-	}
+    const char *v(f_value.constData());
+    int max(f_value.size());
+    for(int i(0); i < max; ++i)
+    {
+        char c(v[i]);
+        if(c == 0x21
+        || (c >= 0x23 && c <= 0x2B)
+        || (c >= 0x2D && c <= 0x3A)
+        || (c >= 0x3C && c <= 0x5B)
+        || (c >= 0x5D && c <= 0x7E))
+        {
+            result += c;
+        }
+        else
+        {
+            // add the byte as %XX
+            result += QString("%%%1").arg(c, 2, 16, QChar('0'));
+        }
+    }
 
-	switch(get_type())
-	{
-	case HTTP_COOKIE_TYPE_PERMANENT:
-		// compute date/time
-		// HTTP format generates: Sun, 06 Nov 1994 08:49:37 GMT
-		// (see http://tools.ietf.org/html/rfc2616#section-3.3.1)
-		result += "; Expires=" + f_expire.toString("ddd, dd MMM yyyy hh:mm:ss GMT");
-		break;
+    switch(get_type())
+    {
+    case HTTP_COOKIE_TYPE_PERMANENT:
+        // compute date/time
+        // HTTP format generates: Sun, 06 Nov 1994 08:49:37 GMT
+        // (see http://tools.ietf.org/html/rfc2616#section-3.3.1)
+        result += "; Expires=" + f_expire.toString("ddd, dd MMM yyyy hh:mm:ss GMT");
+        break;
 
-	case HTTP_COOKIE_TYPE_SESSION:
-		// no Expires
-		break;
+    case HTTP_COOKIE_TYPE_SESSION:
+        // no Expires
+        break;
 
-	case HTTP_COOKIE_TYPE_DELETE:
-		// no need to waste time computing that date
-		result += "; Expires=Thu, 01-Jan-1970 00:00:01 GMT";
-		break;
+    case HTTP_COOKIE_TYPE_DELETE:
+        // no need to waste time computing that date
+        result += "; Expires=Thu, 01-Jan-1970 00:00:01 GMT";
+        break;
 
-	}
+    }
 
-	if(!f_domain.isEmpty())
-	{
-		// the domain sanity was already checked so we can save it as it here
-		result += "; Domain=" + f_domain;
-	}
+    if(!f_domain.isEmpty())
+    {
+        // the domain sanity was already checked so we can save it as it here
+        result += "; Domain=" + f_domain;
+    }
 
-	if(!f_path.isEmpty())
-	{
-		// the path sanity was already checked so we can save it as it here
-		result += "; Path=" + f_path;
-	}
+    if(!f_path.isEmpty())
+    {
+        // the path sanity was already checked so we can save it as it here
+        result += "; Path=" + f_path;
+    }
 
-	if(f_secure)
-	{
-		result += "; Secure";
-	}
+    if(f_secure)
+    {
+        result += "; Secure";
+    }
 
-	if(f_http_only)
-	{
-		result += "; HttpOnly";
-	}
+    if(f_http_only)
+    {
+        result += "; HttpOnly";
+    }
 
-	return result;
+    if(!f_comment.isEmpty())
+    {
+        // we need to escape all "bad" characters, not just quotes
+        QString safe(f_comment);
+        result += "; Comment=\"" + safe.replace("\"", "") + "\"";
+    }
+
+    if(!f_comment_url.isEmpty())
+    {
+        // we need to escape all "bad" characters, not just quotes
+        QString safe(f_comment_url);
+        result += "; CommentURL=\"" + safe.replace("\"", "") + "\"";
+    }
+
+    return result;
 }
 
 

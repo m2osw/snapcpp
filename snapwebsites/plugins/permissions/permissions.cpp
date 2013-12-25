@@ -50,23 +50,29 @@ SNAP_PLUGIN_START(permissions, 1, 0)
 const char *get_name(name_t name)
 {
     switch(name) {
+    case SNAP_NAME_PERMISSIONS_ACTION_PATH:
+        return "types/permissions/actions";
+
+    case SNAP_NAME_PERMISSIONS_ADMINISTER:
+        return "permissions::administer";
+
     case SNAP_NAME_PERMISSIONS_DYNAMIC:
         return "permissions::dynamic";
 
     case SNAP_NAME_PERMISSIONS_GROUP:
         return "permissions::group";
 
-    case SNAP_NAME_PERMISSIONS_PATH:
-        return "types/permissions";
-
-    case SNAP_NAME_PERMISSIONS_ACTION_PATH:
-        return "types/permissions/actions";
-
     case SNAP_NAME_PERMISSIONS_GROUPS_PATH:
         return "types/permissions/groups";
 
+    case SNAP_NAME_PERMISSIONS_PATH:
+        return "types/permissions";
+
     case SNAP_NAME_PERMISSIONS_RIGHTS_PATH:
         return "types/permissions/rights";
+
+    case SNAP_NAME_PERMISSIONS_VIEW:
+        return "permissions::view";
 
     default:
         // invalid index
@@ -75,6 +81,86 @@ const char *get_name(name_t name)
     }
     NOTREACHED();
 }
+
+
+/** \class permissions::sets_t
+ * \brief Handle sets of permissions.
+ *
+ * The permissions are represented by sets. A permission set includes rights,
+ * which are paths to different permission types. Each plugin can offer its
+ * own specific rights or make use of rights offered by other plugins.
+ *
+ * The user is given rights depending on his status on the website. A simple
+ * visitor will only get a very few rights. A full administrator will have
+ * many rights.
+ *
+ * Rights are represented by paths to types. For example, you could be given
+ * the right to tweak basic information on your website with this type:
+ *
+ * \code
+ * /types/permissions/rights/administer/website/info
+ * \endcode
+ *
+ * The interesting aspect of having a path is that by itself it already
+ * represents a set. So the filter module offers a filter right as follow:
+ *
+ * \code
+ * /types/permissions/rights/administer/website/filter
+ * \endcode
+ *
+ * A user who has the .../website/info right does not have the
+ * .../website/fitler right. However, a user who has the .../website
+ * right is allowed to access both: .../website/info and .../website/filter.
+ * This is because the parent of a right gives the user all the rights
+ * below that parent.
+ *
+ * In the following, the user has access:
+ *
+ * \code
+ * [User]
+ * /type/permissions/rights/administer/website
+ *
+ * [Plugins]
+ * /type/permissions/rights/administer/website/info
+ * /type/permissions/rights/administer/website/filter
+ * \endcode
+ *
+ * However, that works the other way around in the permissions set. This
+ * means the parent is required by the user if the parent is required
+ * by the plugin.
+ *
+ * In the following, the user does not have access:
+ *
+ * \code
+ * [User]
+ * /type/permissions/rights/administer/website/info
+ * /type/permissions/rights/administer/website/filter
+ *
+ * [Plugins]
+ * /type/permissions/rights/administer/website
+ * \endcode
+ *
+ * A top administrator has the full administer right:
+ *
+ * \code
+ * /type/permissions/rights/administer
+ * \endcode
+ *
+ * Because of those special features, we do not use the QSet class
+ * because QSet doesn't know anything about paths, parent/children, etc.
+ * Thus we use maps and vectors and compute the intersections ourselves.
+ * Actually, we very much avoid inserting duplicates within one set.
+ * For example, if a user has the following three rights:
+ *
+ * \code
+ * /type/permissions/rights/administer/website/info
+ * /type/permissions/rights/administer/website/filter
+ * /type/permissions/rights/administer/website
+ * \endcode
+ *
+ * Only the last one is required in the user's set since it covers the
+ * other two in the event the plugin require them too.
+ */
 
 
 /** \brief Initialize a permission sets_t object.
@@ -150,14 +236,86 @@ const QString& permissions::sets_t::get_action() const
  * right is a link path (i.e. /types/permissions/rights/\<name>).
  *
  * If the same right is added more than once, then only one instance is
- * kept.
+ * kept. Actually, if a better right is added, the old not as good right
+ * gets removed.
+ *
+ * \code
+ * # When adding this right:
+ * /type/permissions/rights/administer/website
+ *
+ * # and that right was in the set, then only the new right is kept
+ * /type/permissions/rights/administer/website/info
+ * \endcode
+ *
+ * Actually it is possible that adding one new right removes many existing
+ * rights because it is a much higher level right:
+ *
+ * \code
+ * # When adding this right:
+ * /type/permissions/rights/administer/website
+ *
+ * # then all those rights get removed:
+ * /type/permissions/rights/administer/website/layout
+ * /type/permissions/rights/administer/website/info
+ * /type/permissions/rights/administer/website/feed
+ * ...
+ * \endcode
  *
  * \param[in] right  The right being added.
  */
 void permissions::sets_t::add_user_right(const QString& right)
 {
-printf("  USER RIGHT -> [%s]\n", right.toUtf8().data());
-    f_user_rights.insert(right);
+    int const len(right.length());
+    int max(f_user_rights.size());
+    for(int i(0); i < max; ++i)
+    {
+        int const l(f_user_rights[i].length());
+        if(len > l)
+        {
+            if(right.startsWith(f_user_rights[i]))
+            {
+                // we're done, that right is already here
+printf("  USER RIGHT -> [%s] (ignore, better already there)\n", right.toUtf8().data());
+                return;
+            }
+        }
+        else if(l > len)
+        {
+            if(f_user_rights[i].startsWith(right))
+            {
+                // this new right is smaller, keep that smaller one instead
+                f_user_rights[i] = right;
+                ++i;
+                while(i < max)
+                {
+                    if(f_user_rights[i].startsWith(right))
+                    {
+                        f_user_rights.remove(i);
+                        --max; // here max decreases!
+                    }
+                    else
+                    {
+                        ++i; // in this case i increases
+                    }
+                }
+printf("  USER RIGHT -> [%s] (shrunk)\n", right.toUtf8().data());
+                return;
+            }
+        }
+        else /*if(l == len)*/
+        {
+            if(f_user_rights[i] == right)
+            {
+                // that's exactly the same, no need to have it twice
+printf("  USER RIGHT -> [%s] (already present)\n", right.toUtf8().data());
+                return;
+            }
+        }
+    }
+
+    // this one was not there yet, just append
+    f_user_rights.push_back(right);
+printf("  USER RIGHT -> [%s] (add)\n", right.toUtf8().data());
 }
 
 
@@ -181,22 +339,88 @@ int permissions::sets_t::get_user_rights_count() const
 
 /** \brief Add a permission from the specified plugin.
  *
- * This function adds a right for the specific plugin. In most cases this
+ * This function adds a right for the specified plugin. In most cases this
  * works on a per plugin basis. So a plugin adds its own rights only.
  * However, some plugins can add rights for other plugins (right
- * complements.)
+ * complements or right sharing.)
  *
- * The plugin name is used to create a separate set of rights per plugin.
- * The user must have that right for each separate group of plugin
- * permissions to be allowed the action sought.
+ * The plugin name is used to create a separate set of rights, one per
+ * plugin. The user must have enough rights for each separate group of
+ * plugin to be allowed the action sought.
+ *
+ * \note
+ * This function optimizes the set by removing more constraning rights.
+ * This means when adding a permissions such as .../administer/website/info
+ * and the set already has a permission .../administer/website then that
+ * permission gets replaced with the new one because the user may have
+ * right .../administer/website and match both those rights anyway.
+ *
+ * \code
+ * # In plugin permissions, the following
+ * /type/permissions/rights/administer/website/info
+ * /type/permissions/rights/administer/website
+ *
+ * # Is equivalent to the following:
+ * /type/permissions/rights/administer/website/info
+ * \endcode
+ *
+ * \note
+ * Similarly, we do not add a plugin permission if an easier to get right
+ * is already present in the set of that plugin.
  *
  * \param[in] plugin  The plugin adding this permission.
  * \param[in] right  The right the plugin offers.
  */
 void permissions::sets_t::add_plugin_permission(const QString& plugin, const QString& right)
 {
-printf("  PLUGIN [%s] PERMISSION -> [%s]\n", plugin.toUtf8().data(), right.toUtf8().data());
-    f_plugin_permissions[plugin].insert(right);
+    if(!f_plugin_permissions.contains(plugin))
+    {
+printf("  PLUGIN [%s] PERMISSION -> [%s] (add, new plugin)\n", plugin.toUtf8().data(), right.toUtf8().data());
+        f_plugin_permissions[plugin].push_back(right);
+        return;
+    }
+
+    set_t& set(f_plugin_permissions[plugin]);
+    int const len(right.length());
+    int const max(set.size());
+    int i(0);
+    while(i < max)
+    {
+        int const l(set[i].length());
+        if(len > l)
+        {
+            if(right.startsWith(set[i]))
+            {
+                // the new right is generally considered easier to get
+printf("  PLUGIN [%s] PERMISSION -> [%s] (REMOVING)\n", plugin.toUtf8().data(), set[i].toUtf8().data());
+                set.remove(i);
+                continue;
+            }
+        }
+        else if(l > len)
+        {
+            if(set[i].startsWith(right))
+            {
+                // this new right is harder to get, ignore it
+printf("  PLUGIN [%s] PERMISSION -> [%s] (skipped)\n", plugin.toUtf8().data(), right.toUtf8().data());
+                return;
+            }
+        }
+        else /*if(l == len)*/
+        {
+            if(set[i] == right)
+            {
+                // that's exactly the same, no need to have it twice
+printf("  PLUGIN [%s] PERMISSION -> [%s] (already present)\n", plugin.toUtf8().data(), right.toUtf8().data());
+                return;
+            }
+        }
+        ++i;
+    }
+
+    // this one was not there yet, just append
+    set.push_back(right);
+printf("  PLUGIN [%s] PERMISSION -> [%s] (add right)\n", plugin.toUtf8().data(), right.toUtf8().data());
 }
 
 
@@ -234,23 +458,62 @@ bool permissions::sets_t::is_root() const
  */
 bool permissions::sets_t::allowed() const
 {
-    if(f_plugin_permissions.isEmpty())
+    if(f_user_rights.isEmpty()
+    || f_plugin_permissions.isEmpty())
     {
         // if the plugins added nothing, there are no rights to compare
+        // or worst, the user have no rights at all (Should not happen,
+        // although someone could add a plugin testing something such as
+        // your IP address to strip you off all your rights unless you
+        // have an IP address considered "valid")
         return false;
     }
 
-    for(req_sets_t::iterator pp(f_plugin_permissions.begin());
+printf("final USER RIGHTS:\n");
+for(int i(0); i < f_user_rights.size(); ++i)
+{
+    printf("  [%s]\n", f_user_rights[i].toUtf8().data());
+}
+printf("final PLUGINS:\n");
+    for(req_sets_t::const_iterator pp(f_plugin_permissions.begin());
+            pp != f_plugin_permissions.end();
+            ++pp)
+{
+    printf("  [%s]:\n", pp.key().toUtf8().data());
+    for(int j(0); j < pp->size(); ++j)
+    {
+        printf("    [%s]\n", (*pp)[j].toUtf8().data());
+    }
+}
+
+    int const max(f_user_rights.size());
+    for(req_sets_t::const_iterator pp(f_plugin_permissions.begin());
             pp != f_plugin_permissions.end();
             ++pp)
     {
         // enough rights with this one?
-        if(pp->intersect(f_user_rights).isEmpty())
+        set_t p(*pp);
+        set_t::const_iterator i;
+        for(i = p.begin(); i != p.end(); ++i)
         {
-            // XXX add a log to determine the name of the plugin that
-            //     failed the user?
-            return false;
+            // the list of plugin permissions is generally smaller so
+            // we loop through that list although this contains can be
+            // slow... we may want to change the set_t type to a QMap
+            // which uses a faster binary search; although on very small
+            // maps it may not be any faster
+            for(int j(0); j < max; ++j)
+            {
+                if(i->startsWith(f_user_rights[j]))
+                {
+                    //break 2;
+                    goto next_plugin;
+                }
+            }
         }
+        // XXX add a log to determine the name of the plugin that
+        //     failed the user?
+        return false;
+next_plugin:;
     }
 
     return true;

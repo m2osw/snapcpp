@@ -248,6 +248,7 @@ public:
     QSharedPointer<QtCassandra::QCassandraTable> create_table(const QString& table_name, const QString& comment);
     void                        new_content();
     void                        verify_permissions();
+    QString                     default_action(QString uri_path);
     void                        process_post();
     static void                 canonicalize_path(QString& path);
     static QString              date_to_string(int64_t v, date_format_t date_format = DATE_FORMAT_SHORT);

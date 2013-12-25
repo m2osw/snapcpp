@@ -18,7 +18,7 @@
 #include "char_chart.h"
 #include "../content/content.h"
 #include <iostream>
-#include <QtCore/QDebug>
+#include <QDebug>
 
 
 SNAP_PLUGIN_START(char_chart, 1, 0)
@@ -106,7 +106,7 @@ int64_t char_chart::do_update(int64_t last_updated)
 //        << static_cast<int64_t>(SNAP_UNIX_TIMESTAMP(2012, 1, 1, 0, 0, 0) * 1000000LL) << "\n";
 
     SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, initial_update);
-    SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, content_update);
+    SNAP_PLUGIN_UPDATE(2013, 12, 23, 17, 10, 20, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -203,8 +203,8 @@ void char_chart::on_generate_main_content(layout::layout *l, const QString& cpat
     // range limit
     if(c < 0 || c >= 0x100000)
     {
-        // not an exact page
-        return;// false;
+        // not a supported page
+        return;
     }
 
     // create table
@@ -265,6 +265,10 @@ void char_chart::on_generate_main_content(layout::layout *l, const QString& cpat
             //f_snap->output("<td><span class='character'>");
             QDomElement td_tag(doc.createElement("td"));
             tr_tag.appendChild(td_tag);
+            if(QChar::unicodeVersion(static_cast<uint>(c)) == QChar::Unicode_Unassigned)
+            {
+                td_tag.setAttribute("class", "not-assigned");
+            }
             QDomElement span_tag(doc.createElement("span"));
             td_tag.appendChild(span_tag);
             span_tag.setAttribute("class", "character");
@@ -557,7 +561,7 @@ void char_chart::on_generate_main_content(layout::layout *l, const QString& cpat
             default:
                 {
                     //character = "&#" + QString("%1").arg(c) + ";";
-                    QDomEntityReference ref(doc.createEntityReference("#" + QString("%1").arg(c)));
+                    QDomEntityReference ref(doc.createEntityReference(QString("#%1").arg(c)));
                     span_tag.appendChild(ref);
                 }
                 break;
@@ -632,10 +636,10 @@ void char_chart::on_generate_sitemapxml(sitemapxml::sitemapxml *sitemap)
 {
     sitemapxml::sitemapxml::url_info url;
     QString site_key(f_snap->get_site_key_with_slash());
-    url.set_uri(site_key + "char_chart/0");
+    url.set_uri(site_key + "char-chart/0");
     url.set_last_modification(SNAP_UNIX_TIMESTAMP(2012, 1, 1, 0, 0, 0));
     url.set_priority(0.01f);
-    url.set_frequency(0);
+    url.set_frequency(url.FREQUENCY_NEVER);
     sitemap->add_url(url);
 }
 

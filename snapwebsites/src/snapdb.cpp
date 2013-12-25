@@ -365,13 +365,14 @@ void snapdb::display()
                      || n == "content::updated"
                      || n.left(18) == "core::last_updated"
                      || n == "core::plugin_threshold"
+                     || n == "sessions::date"
+                     || n == "shorturl::date"
                      || n == "users::created_time"
                      || n == "users::login_on"
                      || n == "users::logout_on"
                      || n == "users::previous_login_on"
                      || n == "users::start_date"
                      || n == "users::verified_on"
-                     || n == "shorturl::date"
                 )
                 {
                     // 64 bit value (microseconds)
@@ -394,6 +395,13 @@ void snapdb::display()
                     gmtime_r(&seconds, &t);
                     strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &t);
                     v = QString("%1 (%2)").arg(buf).arg(time);
+                }
+                else if(n == "sitemapxml::priority"
+                )
+                {
+                    // 32 bit float
+                    float value((*c)->value().floatValue());
+                    v = QString("%1").arg(value);
                 }
                 else if(n == "sitemapxml::count"
                      || n == "sessions::id"

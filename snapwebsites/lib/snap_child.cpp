@@ -3064,9 +3064,13 @@ void snap_child::output_headers(header_mode_t modes)
  * \sa cookie_is_defined()
  * \sa output_cookies()
  */
-void snap_child::set_cookie(const http_cookie& cookie_info)
+void snap_child::set_cookie(http_cookie const& cookie_info)
 {
     f_cookies[cookie_info.get_name()] = cookie_info;
+
+    // TODO: the privacy-policy URI should be locked if we want this to
+    //       continue to work forever
+    f_cookies[cookie_info.get_name()].set_comment_url(f_site_key_with_slash + "privacy-policy");
 }
 
 
@@ -3644,29 +3648,51 @@ void snap_child::execute()
 void snap_child::verify_permissions()
 {
     QString qs_action(f_server->get_parameter("qs_action"));
-    QString action(f_has_post ? "administer" : "view");
+    QString action;
     if(f_uri.has_query_option(qs_action))
     {
         // the user specified an action
         action = f_uri.query_option(qs_action);
-        if(action.isEmpty())
-        {
-            // use the default
-            action = f_has_post ? "administer" : "view";
-        }
+    }
+    if(action.isEmpty())
+    {
+        // use the default
+        action = default_action(f_uri.path());
     }
 
     // only actions that are defined in the permission types are
     // allowed, anything else is funky action from a hacker or
-    // whatnot and we can either change it to a "view" action or
-    // die with an error; this work is done by the permissions
-    // plugin which changes the action parameter
+    // whatnot and we just die with an error in that case
     f_server->validate_action(f_uri.path(), action);
 
     // save the found action in the URI so that way any plugin can access that
     // information at any point, not just the verify_rights() function
-    // XXX -- note that right now plugins cannot know what qs_action is!
     f_uri.set_query_option(qs_action, action);
+}
+
+
+/** \brief Dynamically compute the default action.
+ *
+ * Depending on the path and method (GET, POST, DELETE, PUT...) the system
+ * reacts with a default action.
+ */
+QString snap_child::default_action(QString uri_path)
+{
+    if(f_has_post)
+    {
+        // this could also be "edit" or "create"...
+        // but "administer" is more restrictive at this point
+        return "administer";
+    }
+
+    canonicalize_path(uri_path);
+
+    if(uri_path == "admin" || uri_path.startsWith("admin/"))
+    {
+        return "administer";
+    }
+
+    return "view";
 }
 
 
@@ -3683,7 +3709,7 @@ void snap_child::process_post()
 {
     if(f_has_post)
     {
-        process_post();
+        f_server->process_post(f_uri.path());
     }
 }
 

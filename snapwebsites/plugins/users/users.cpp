@@ -42,6 +42,10 @@ const int SALT_SIZE = 32;
 // the salt size must be even
 BOOST_STATIC_ASSERT((SALT_SIZE & 1) == 0);
 
+const int COOKIE_NAME_SIZE = 12; // the real size is (COOKIE_NAME_SIZE / 3) * 4
+// we want 3 bytes to generate 4 characters
+BOOST_STATIC_ASSERT((COOKIE_NAME_SIZE % 3) == 0);
+
 } // no name namespace
 
 
@@ -147,10 +151,14 @@ const char *get_name(name_t name)
     case SNAP_NAME_USERS_PREVIOUS_LOGIN_ON:
         return "users::previous_login_on";
 
-    case SNAP_NAME_USERS_SESSION_COOKIE:
-        // cookie names cannot include ':' so I use "__" to represent
-        // the namespace separation
-        return "users__snap_session";
+    // WARNING: We do not use a statically defined name!
+    //          To be more secure each Snap! website can use a different
+    //          cookie name; possibly one that changes over time and
+    //          later by user...
+    //case SNAP_NAME_USERS_SESSION_COOKIE:
+    //    // cookie names cannot include ':' so I use "__" to represent
+    //    // the namespace separation
+    //    return "users__snap_session";
 
     case SNAP_NAME_USERS_STATUS:
         return "users::status";
@@ -179,12 +187,51 @@ const char *get_name(name_t name)
 }
 
 
+/** \class users
+ * \brief The users plugin to handle user accounts.
+ *
+ * This class handles all the necessary user related pages:
+ *
+ * \li User log in
+ * \li User registration
+ * \li User registration token verification
+ * \li User registration token re-generation
+ * \li User forgotten password
+ * \li User forgotten password token verification
+ * \li User profile
+ * \li User change of password
+ * \li ...
+ *
+ * To enhance the security of the user session we randomly assign the name
+ * of the user session cookie. This way robots have a harder time to
+ * break-in since each Snap! website will have a different cookie name
+ * to track users (and one website may change the name at any time.)
+
+ * \todo
+ * To make it even harder we should look into a way to use a cookie
+ * that has a different name per user and changes name each time the
+ * user logs in. This should be possible since the list of cookies is
+ * easy to parse on the server side, then we can test each cookie for
+ * valid snap data which have the corresponding snap cookie name too.
+ * (i.e. the session would save the cookie name too!)
+ *
+ * \todo
+ * Add a Secure Cookie which is only secure... and if not present
+ * renders the logged in user quite less logged in (i.e. "returning
+ * registered user".)
+ */
+
+
 /** \brief Initialize the users plugin.
  *
  * This function initializes the users plugin.
  */
 users::users()
     //: f_snap(NULL) -- auto-init
+    //, f_user_key("") -- auto-init
+    //, f_user_logged_in(false) -- auto-init
+    //, f_user_changing_password_key("") -- auto-init
+    //, f_info(NULL) -- auto-init
 {
 }
 
@@ -246,7 +293,7 @@ int64_t users::do_update(int64_t last_updated)
     SNAP_PLUGIN_UPDATE_INIT();
 
     SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, initial_update);
-    SNAP_PLUGIN_UPDATE(2013, 12, 14, 4, 11, 23, content_update);
+    SNAP_PLUGIN_UPDATE(2013, 12, 21, 17, 12, 40, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -317,6 +364,7 @@ void users::on_bootstrap(::snap::snap_child *snap)
     SNAP_LISTEN0(users, "server", server, attach_to_session);
     SNAP_LISTEN0(users, "server", server, detach_from_session);
     SNAP_LISTEN(users, "server", server, register_backend_action, _1);
+	SNAP_LISTEN(users, "server", server, improve_signature, _1, _2);
     SNAP_LISTEN(users, "content", content::content, create_content, _1, _2, _3);
     SNAP_LISTEN(users, "path", path::path, can_handle_dynamic_path, _1, _2);
     SNAP_LISTEN(users, "layout", layout::layout, generate_header_content, _1, _2, _3, _4, _5);
@@ -338,11 +386,66 @@ void users::on_init()
 }
 
 
+/** \brief Retrieve the user cookie name.
+ *
+ * This function retrieves the user cookie name. This can be changed on
+ * each restart of the server or after a period of time. The idea is to
+ * not allow robots to use one statically defined cookie name on all
+ * Snap! websites. It is probably easy for them to find out what the
+ * current cookie name is, but it's definitively additional work for
+ * the hackers.
+ *
+ * Also since the cookie is marked as HttpOnly, it is even harder for
+ * hackers to do much with those.
+ *
+ * \return The current user cookie name for this website.
+ */
+QString users::get_user_cookie_name()
+{
+    QString user_cookie_name(f_snap->get_site_parameter(snap::get_name(SNAP_NAME_CORE_USER_COOKIE_NAME)).stringValue());
+    if(user_cookie_name.isEmpty())
+    {
+        // user cookie name not yet assigned or reset so a new name
+        // gets assigned
+        unsigned char buf[COOKIE_NAME_SIZE];
+        int r(RAND_bytes(buf, sizeof(buf)));
+        if(r != 1)
+        {
+            f_snap->die(snap_child::HTTP_CODE_SERVICE_UNAVAILABLE,
+                    "Service Not Available", "The server was not able to generate a safe random number. Please try again in a moment.",
+                    "User cookie name could not be generated as the RAND_bytes() function could not generate enough random data");
+            NOTREACHED();
+        }
+        // actually most ASCII characters are allowed, but to be fair, it
+        // is not safe to use most so we limit using a simple array
+        char allowed_characters[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_.";
+        for(int i(0); i < (COOKIE_NAME_SIZE - 2); i += 3)
+        {
+            // we can generate 4 characters with every 3 bytes we read
+            int a(buf[i + 0] & 0x3F);
+            int b(buf[i + 1] & 0x3F);
+            int c(buf[i + 2] & 0x3F);
+            int d((buf[i + 0] >> 6) | ((buf[i + 1] >> 4) & 0x0C) | ((buf[i + 2] >> 2) & 0x30));
+            if(i == 0 && a >= 52)
+            {
+                a &= 0x1F;
+            }
+            user_cookie_name += allowed_characters[a];
+            user_cookie_name += allowed_characters[b];
+            user_cookie_name += allowed_characters[c];
+            user_cookie_name += allowed_characters[d];
+        }
+        f_snap->set_site_parameter(snap::get_name(SNAP_NAME_CORE_USER_COOKIE_NAME), user_cookie_name);
+    }
+    return user_cookie_name;
+}
+
+
 /** \brief Process the cookies.
  *
  * This function is our opportunity to log the user in. We check for the
- * cookie named SNAP_NAME_USERS_SESSION_COOKIE and use it to know whether
- * the user is currently logged in or not.
+ * user cookie and use it to know whether the user is currently logged in
+ * or not.
  *
  * Note that this session is always created and is used by all the other
  * plugins as the current user session.
@@ -355,15 +458,17 @@ void users::on_process_cookies()
 {
     bool create_new_session(true);
 
-printf("Process cookies!!!\n");
+    // get cookie name
+    QString const user_cookie_name(get_user_cookie_name());
+
     // any snap session?
-    if(f_snap->cookie_is_defined(get_name(SNAP_NAME_USERS_SESSION_COOKIE)))
+    if(f_snap->cookie_is_defined(user_cookie_name))
     {
         // is that session a valid user session?
-        QString session_cookie(f_snap->cookie(get_name(SNAP_NAME_USERS_SESSION_COOKIE)));
+        QString session_cookie(f_snap->cookie(user_cookie_name));
         QStringList parameters(session_cookie.split("/"));
         QString session_key(parameters[0]);
-        QString random_key;
+        QString random_key; // no random key?
         if(parameters.size() > 1)
         {
             random_key = parameters[1];
@@ -373,6 +478,7 @@ printf("Process cookies!!!\n");
         if(f_info->get_session_type() == sessions::sessions::session_info::SESSION_INFO_VALID
         && f_info->get_session_id() == USERS_SESSION_ID_LOG_IN_SESSION
         && f_info->get_session_random() == random_key.toInt()
+        && f_info->get_user_agent() == f_snap->snapenv(snap::get_name(SNAP_NAME_CORE_HTTP_USER_AGENT))
         && path.left(6) == "/user/")
         {
             // this session qualifies as a log in session
@@ -408,6 +514,12 @@ printf("Process cookies!!!\n");
                     else
                     {
                         f_user_key = key;
+
+                        // the user still has a valid session, but he may not
+                        // be fully logged in... (i.e. not have as much
+                        // permission as given with a fresh log in) -- we need
+                        // an additional form to authorize the user to do more
+                        f_user_logged_in = f_snap->get_start_time() < f_info->get_login_limit();
                     }
                 }
             }
@@ -424,6 +536,7 @@ printf("Process cookies!!!\n");
         f_info->set_plugin_owner(get_plugin_name()); // ourselves
         //f_info->set_page_path(); -- default is fine, we do not use the path
         f_info->set_object_path("/user/"); // no user id for the anonymous user
+        f_info->set_user_agent(f_snap->snapenv(snap::get_name(SNAP_NAME_CORE_HTTP_USER_AGENT)));
         f_info->set_time_to_live(86400 * 5);  // 5 days
         sessions::sessions::instance()->create_session(*f_info);
     }
@@ -431,7 +544,14 @@ printf("Process cookies!!!\n");
     {
         // extend the session
         f_info->set_time_to_live(86400 * 5);  // 5 days
-        sessions::sessions::instance()->save_session(*f_info);
+
+        // TODO: change the 5 minutes with a parameter the admin can change
+        // if the last session was created more than 5 minutes ago then we
+        // generate a new random identifier (doing it on each access
+        // generates a lot of problems when the browser tries to load many
+        // things at the same time)
+        bool const new_random(f_info->get_date() + 60 * 5 * 1000000 < f_snap->get_start_date());
+        sessions::sessions::instance()->save_session(*f_info, new_random);
     }
 
     //
@@ -442,10 +562,11 @@ printf("Process cookies!!!\n");
     //
     http_cookie cookie(
             f_snap,
-            get_name(SNAP_NAME_USERS_SESSION_COOKIE),
+            user_cookie_name,
             QString("%1/%2").arg(f_info->get_session_key()).arg(f_info->get_session_random())
         );
     cookie.set_expire_in(86400 * 5);  // 5 days
+    cookie.set_http_only(); // make it a tad bit safer
     f_snap->set_cookie(cookie);
 //printf("session id [%s]\n", f_info->get_session_key().toUtf8().data());
 }
@@ -714,59 +835,85 @@ void users::on_get_user_rights(permissions::permissions *perms, permissions::per
     else
     {
         QString user_key(sets.get_user_path());
-//printf("user key = [%s]\n", user_key.toUtf8().data());
+//printf("  +-> user key = [%s]\n", user_key.toUtf8().data());
         if(user_key.isEmpty())
         {
             // in this case the user is an anonymous user and thus we want to
             // add the anonymous user rights
             //
-            // TODO determine, if possible, whether the user came on the
-            //      website before and if so whether he has an account
-            //      (make sure NOT to put that information in the cookie,
-            //      only in the user's session)
+            // TODO determine, once possible, whether the user came on the
+            //      website before (i.e. returning visitor)
             perms->add_user_rights(site_key + "types/permissions/groups/root/administrator/editor/moderator/author/commenter/registered-user/returning-registered-user/returning-visitor/visitor", sets);
         }
         else
         {
             user_key = f_snap->get_site_key_with_slash() + user_key;
-            sets.add_user_right(user_key);
-
-            // users who are logged in always have registered-user rights
-            // if nothing else
-            perms->add_user_rights(site_key + "types/permissions/groups/root/administrator/editor/moderator/author/commenter/registered-user", sets);
 
             // add all the groups the user is a member of
             QSharedPointer<QtCassandra::QCassandraTable> content_table(content::content::instance()->get_content_table());
             if(!content_table->exists(user_key))
             {
+                // that user is gone, this will generate a 500 by Apache
                 throw users_exception_invalid_path("could not access user \"" + user_key + "\"");
             }
 
             //QSharedPointer<QtCassandra::QCassandraRow> row(content_table->row(user_key));
 
-            // add assigned groups
+            // should this one NOT be offered to returning users?
+            sets.add_user_right(user_key);
+
+            if(!f_user_logged_in)
             {
-                QString const link_start_name(permissions::get_name(permissions::SNAP_NAME_PERMISSIONS_GROUP));
-                links::link_info info(link_start_name, false, user_key);
-                QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
-                links::link_info right_info;
-                while(link_ctxt->next_link(right_info))
+                // this is a registered user who comes back and is semi-logged
+                // in so we do go give this user full rights to avoid potential
+                // problems; we have to look into a way to offer different
+                // group/rights for such a user...
+                perms->add_user_rights(site_key + "types/permissions/groups/root/administrator/editor/moderator/author/commenter/registered-user/returning-registered-user", sets);
+
+                // add assigned groups
+                // by groups limited to returning registered users, not the logged in registered user
                 {
-                    QString const right_key(right_info.key());
-                    perms->add_user_rights(right_key, sets);
+                    QString const link_start_name(QString(permissions::get_name(permissions::SNAP_NAME_PERMISSIONS_GROUP)) + "::returning_registered_user");
+                    links::link_info info(link_start_name, false, user_key);
+                    QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
+                    links::link_info right_info;
+                    while(link_ctxt->next_link(right_info))
+                    {
+                        QString const right_key(right_info.key());
+                        perms->add_user_rights(right_key, sets);
+                    }
                 }
             }
-
-            // we can also assign permissions directly to a user so get those too
+            else
             {
-                QString const link_start_name("permissions::" + sets.get_action());
-                links::link_info info(link_start_name, false, user_key);
-                QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
-                links::link_info right_info;
-                while(link_ctxt->next_link(right_info))
+                // users who are logged in always have registered-user rights
+                // if nothing else
+                perms->add_user_rights(site_key + "types/permissions/groups/root/administrator/editor/moderator/author/commenter/registered-user", sets);
+
+                // add assigned groups
                 {
-                    QString const right_key(right_info.key());
-                    perms->add_user_rights(right_key, sets);
+                    QString const link_start_name(permissions::get_name(permissions::SNAP_NAME_PERMISSIONS_GROUP));
+                    links::link_info info(link_start_name, false, user_key);
+                    QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
+                    links::link_info right_info;
+                    while(link_ctxt->next_link(right_info))
+                    {
+                        QString const right_key(right_info.key());
+                        perms->add_user_rights(right_key, sets);
+                    }
+                }
+
+                // we can also assign permissions directly to a user so get those too
+                {
+                    QString const link_start_name("permissions::" + sets.get_action());
+                    links::link_info info(link_start_name, false, user_key);
+                    QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
+                    links::link_info right_info;
+                    while(link_ctxt->next_link(right_info))
+                    {
+                        QString const right_key(right_info.key());
+                        perms->add_user_rights(right_key, sets);
+                    }
                 }
             }
         }
@@ -827,7 +974,7 @@ void users::on_create_content(QString const& path, QString const& owner, QString
         if(users_table->exists(f_user_key))
         {
             QtCassandra::QCassandraValue value(users_table->row(f_user_key)->cell(get_name(SNAP_NAME_USERS_IDENTIFIER))->value());
-            if(value.nullValue())
+            if(!value.nullValue())
             {
                 int64_t const identifier(value.int64Value());
                 QString const site_key(f_snap->get_site_key_with_slash());
@@ -1649,10 +1796,12 @@ void users::process_login_form()
                 // the other parameters were already defined in the
                 // on_process_cookies() function
                 f_info->set_object_path("/user/" + key);
-                sessions::sessions::instance()->save_session(*f_info);
+                f_info->set_login_limit(f_snap->get_start_time() + 3600 * 3); // 3 hours (needs to become a parameter)
+                sessions::sessions::instance()->save_session(*f_info, true); // force new random session number
 
-                http_cookie cookie(f_snap, get_name(SNAP_NAME_USERS_SESSION_COOKIE), QString("%1/%2").arg(f_info->get_session_key()).arg(f_info->get_session_random()));
+                http_cookie cookie(f_snap, get_user_cookie_name(), QString("%1/%2").arg(f_info->get_session_key()).arg(f_info->get_session_random()));
                 cookie.set_expire_in(86400 * 5);  // 5 days
+                cookie.set_http_only(); // make it a tad bit safer
                 f_snap->set_cookie(cookie);
 
                 // this is now the current user
@@ -1991,10 +2140,11 @@ void users::process_replace_password_form()
                     //      and ask them when the user request the new password or
                     //      when he comes back in the replace password form
                     f_info->set_object_path("/user/" + f_user_changing_password_key);
-                    sessions::sessions::instance()->save_session(*f_info);
+                    sessions::sessions::instance()->save_session(*f_info, true); // force a new random session number
 
-                    http_cookie cookie(f_snap, get_name(SNAP_NAME_USERS_SESSION_COOKIE), QString("%1/%2").arg(f_info->get_session_key()).arg(f_info->get_session_random()));
+                    http_cookie cookie(f_snap, get_user_cookie_name(), QString("%1/%2").arg(f_info->get_session_key()).arg(f_info->get_session_random()));
                     cookie.set_expire_in(86400 * 5);  // 5 days
+                    cookie.set_http_only(); // make it a tad bit safer
                     f_snap->set_cookie(cookie);
 
                     f_user_changing_password_key.clear();
@@ -2320,22 +2470,41 @@ void users::process_verify_form()
 }
 
 
-/** \brief Get the logged in user key.
+/** \brief Get the registered (MAYBE NOT LOGGED IN) user key.
  *
- * This function returns the key of the user that is currently logged
- * in. This key is the user's email address.
+ * WARNING WARNING WARNING
+ * This returns the user key which is his email address. It does not
+ * tell you that the user is logged in. For that purpose you MUST
+ * use the is_user_logged_in() function.
  *
- * If the user is not logged in, then his key is the empty string. This
- * is a fast way to know whether the current user is logged in:
+ * This function returns the key of the user that last logged
+ * in. This key is the user's email address. Remember that a
+ * user is not considered fully logged in if his sesion his more than
+ * 3 hours old. You must make sure to check the is_user_logged_in()
+ * too. Note that the permission system should already take care of
+ * most of those problems for you anyway, but you need to know what
+ * you're doing!
+ *
+ * If the user is not recognized, then his key is the empty string. This
+ * is a fast way to know whether the current user is logged in, registed,
+ * or just a visitor:
  *
  * \code
  * if(users::users::instance()->get_user_key().isEmpty())
  * {
- *   // anonymous user code
+ *   // anonymous visitory user code
+ * }
+ * else if(users::users::instance()->is_user_logged_in())
+ * {
+ *   // user recently logged in (last 3 hours by default)
+ *   // here you can process "dangerous / top-secret" stuff
  * }
  * else
  * {
- *   // logged in user code
+ *   // registered user code
+ *   // user logged in more than 3 hours ago and is now considered
+ *   // a registered user, opposed to a logged in user who can
+ *   // make changes to his account, etc.
  * }
  * \endcode
  *
@@ -2343,6 +2512,11 @@ void users::process_verify_form()
  * We return a copy of the key, opposed to a const reference, because really
  * it is too dangerous to allow someone from the outside to temper with this
  * variable.
+ *
+ * WARNING WARNING WARNING
+ * This returns the user key which is his email address. It does not
+ * tell you that the user is logged in. For that purpose you MUST
+ * use the is_user_logged_in() function.
  *
  * \return The user email address (which is the user key in the users table).
  */
@@ -2573,6 +2747,7 @@ void users::verify_email(const QString& email)
     info.set_plugin_owner(get_plugin_name()); // ourselves
     //info.set_page_path(); -- default is okay
     info.set_object_path("/user/" + email);
+    info.set_user_agent(f_snap->snapenv(snap::get_name(SNAP_NAME_CORE_HTTP_USER_AGENT)));
     info.set_time_to_live(86400 * 3);  // 3 days
     QString session(sessions::sessions::instance()->create_session(info));
     e.add_parameter(get_name(SNAP_NAME_USERS_VERIFY_EMAIL), session);
@@ -2621,6 +2796,7 @@ void users::forgot_password_email(const QString& email)
     info.set_plugin_owner(get_plugin_name()); // ourselves
     //info.set_page_path(); -- default is okay
     info.set_object_path("/user/" + email);
+    info.set_user_agent(f_snap->snapenv(snap::get_name(SNAP_NAME_CORE_HTTP_USER_AGENT)));
     info.set_time_to_live(3600 * 8);  // 8 hours
     QString session(sessions::sessions::instance()->create_session(info));
     e.add_parameter(get_name(SNAP_NAME_USERS_FORGOT_PASSWORD_EMAIL), session);
@@ -2897,6 +3073,26 @@ bool users::user_is_a_spammer()
 }
 
 
+/** \brief Whether the user was logged in recently.
+ *
+ * This function MUST be called to know whether the user is a logged in
+ * user or just a registered user with a valid session.
+ *
+ * What's the difference really?
+ *
+ * \li A user who logged in within the last 3 hours (can be changed) has
+ *     more permissions; for example he can see all his account details
+ *     and edit them.
+ * \li A user who is just a registered user can only see the publicly
+ *     visible information from his account and he has no way to edit
+ *     anything without first going to the verify credential page.
+ */
+bool users::user_is_logged_in()
+{
+    return f_user_logged_in;
+}
+
+
 /** \brief Register the users action.
  *
  * This function registers this plugin as supporting the "makeroot" action.
@@ -2969,6 +3165,26 @@ void users::on_backend_action(QString const& action)
         bool const destination_multi(false);
         links::link_info destination(link_to, destination_multi, key);
         links::links::instance()->create_link(source, destination);
+    }
+}
+
+
+/** \brief Improves the error signature.
+ *
+ * This function adds the user profile link to the brief signature of die()
+ * errors. This is done only if the user is logged in.
+ *
+ * \param[in,out] signature  The HTML signature to improve.
+ */
+void users::on_improve_signature(QString const& path, QString& signature)
+{
+    (void)path;
+    if(!f_user_key.isEmpty())
+    {
+        QString const link(get_user_path());
+
+        // TODO: translate
+        signature += " <a href=\"/" + link + "\">My Account</a>";
     }
 }
 
