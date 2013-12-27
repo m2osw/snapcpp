@@ -77,12 +77,6 @@ install(
     FILES 
         log.conf
         snapserver.conf
-    DESTINATION
-        etc/snapwebsites
-)
-
-install(
-    FILES 
         snapcgi.conf
         snap-apache2.conf
     DESTINATION
