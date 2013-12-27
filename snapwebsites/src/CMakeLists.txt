@@ -80,7 +80,7 @@ install(
         snapcgi.conf
         snap-apache2.conf
     DESTINATION
-        share/snapwebsites
+        share/snapwebsites/conf
 )
 
 
