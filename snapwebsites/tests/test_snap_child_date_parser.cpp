@@ -17,6 +17,8 @@
 
 #include "snap_child.h"
 
+#include <iostream>
+
 struct date_t
 {
     char const *    f_string;
