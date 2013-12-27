@@ -73,6 +73,22 @@ install(
     TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin
 )
 
+install(
+    FILES 
+        log.conf
+        snapserver.conf
+    DESTINATION
+        etc/snapwebsites
+)
+
+install(
+    FILES 
+        snapcgi.conf
+        snap-apache2.conf
+    DESTINATION
+        share/snapwebsites
+)
+
 
 #################################################################################
 ## Backend process
