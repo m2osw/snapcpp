@@ -41,7 +41,7 @@ date_t dates[] =
 };
 
 
-int main(int argc, char *argv[])
+int main(int, char *[])
 {
     size_t const max(sizeof(dates) / sizeof(dates[0]));
     for(size_t i(0); i < max; ++i)

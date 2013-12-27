@@ -257,6 +257,8 @@ bool favicon::on_path_execute(QString const& cpath)
 }
 
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 void favicon::on_process_post(QString const& cpath, sessions::sessions::session_info const& info)
 {
     if(cpath == "admin/settings/favicon"
@@ -280,6 +282,7 @@ void favicon::on_process_post(QString const& cpath, sessions::sessions::session_
         links::links::instance()->create_link(source, destination);
     }
 }
+#pragma GCC diagnostic pop
 
 
 void favicon::output(QString const& cpath)
