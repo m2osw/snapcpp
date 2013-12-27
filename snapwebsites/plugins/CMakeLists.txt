@@ -127,7 +127,6 @@ endforeach()
 #
 # Make each lint file.
 #
-message( "lint_file_list=${lint_file_list}" )
 add_custom_target(
 	build_lint ALL
 	DEPENDS ${lint_file_list}
