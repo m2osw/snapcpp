@@ -119,29 +119,15 @@ add_custom_target(snap_code_analysis
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
 )
 
+install(
+    FILES 
+        layouts/bare-body-parser.xsl
+        layouts/bare-theme-parser.xsl
+        layouts/white-body-parser.xsl
+        layouts/white-theme-parser.xsl
+    DESTINATION
+        share/snapwebsites/layouts
+)
 
-###
-### Packaging
-###
-#set(CPACK_PACKAGE_NAME "snapwebsites")
-#set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "snapwebsites -- a fast CMS written in C++")
-#set(CPACK_PACKAGE_VENDOR "Made to Order Software Corporation")
-#set(CPACK_PACKAGE_CONTACT "contact@m2osw.com")
-#set(CPACK_RESOURCE_FILE_LICENSE "${snapwebsites_SOURCE_DIR}/LICENSE.txt")
-#set(CPACK_GENERATOR "TGZ" "DEB")
-#set(CPACK_SOURCE_GENERATOR "TGZ")
-#set(CPACK_SOURCE_IGNORE_FILES "/CVS/;/work-files/;/.svn/;.swp$;.*~;cscope.*;/tmp/;BUILD;Build;build")
-#set(CPACK_PACKAGE_VERSION "${SNAPWEBSITES_VERSION_MAJOR}.${SNAPWEBSITES_VERSION_MINOR}.${SNAPWEBSITES_VERSION_PATCH}")
-#set(CPACK_PACKAGE_VERSION_MAJOR "${SNAPWEBSITES_VERSION_MAJOR}")
-#set(CPACK_PACKAGE_VERSION_MINOR "${SNAPWEBSITES_VERSION_MINOR}")
-#set(CPACK_PACKAGE_VERSION_PATCH "${SNAPWEBSITES_VERSION_PATCH}")
-#set(CPACK_SOURCE_PACKAGE_FILE_NAME "snapwebsites-${SNAPWEBSITES_VERSION_MAJOR}.${SNAPWEBSITES_VERSION_MINOR}.${SNAPWEBSITES_VERSION_PATCH}")
-#set(CPACK_PACKAGE_EXECUTABLES "snapwebsites.so")
-#set(CPACK_DEBIAN_PACKAGE_SECTION "web")
-#set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "http://snapwebsites.org/project/snap-websites")
-## I'm not too sure how we can add this one... components?
-## See http://www.vtk.org/Wiki/CMake:Component_Install_With_CPack
-##set(CPACK_DEBIAN_PACKAGE_DEV_DEPENDENCIES "cmake libqt4-dev")
-#include(CPack)
 
 # vim: ts=4 sw=4 et nocindent

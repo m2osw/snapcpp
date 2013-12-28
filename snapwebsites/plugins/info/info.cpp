@@ -170,9 +170,12 @@ int64_t info::do_update(int64_t last_updated)
  *
  * \param[in] variables_timestamp  The timestamp for all the variables added to the database by this update (in micro-seconds).
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 void info::initial_update(int64_t variables_timestamp)
 {
 }
+#pragma GCC diagnostic pop
 
 
 /** \brief Update the database with our info references.
@@ -182,10 +185,13 @@ void info::initial_update(int64_t variables_timestamp)
  *
  * \param[in] variables_timestamp  The timestamp for all the variables added to the database by this update (in micro-seconds).
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 void info::content_update(int64_t variables_timestamp)
 {
     content::content::instance()->add_xml(get_plugin_name());
 }
+#pragma GCC diagnostic pop
 
 
 /** \brief Execute a page: generate the complete output of that page.

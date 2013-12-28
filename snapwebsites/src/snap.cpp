@@ -60,12 +60,15 @@
 
 #include "tcp_client_server.h"
 #include "snapwebsites.h"
+#include "log.h"
 #include <advgetopt/advgetopt.h>
-#include <syslog.h>
+//#include <syslog.h>
 #include <unistd.h>
 #include <string.h>
 #include <iostream>
 #include <sstream>
+
+using namespace snap;
 
 namespace
 {
@@ -136,7 +139,8 @@ snap_cgi::snap_cgi( int argc, char *argv[] )
     , f_port(4004)
     , f_address("0.0.0.0")
 {
-    openlog("snap.cgi", LOG_NDELAY | LOG_PID, LOG_DAEMON);
+    //openlog("snap.cgi", LOG_NDELAY | LOG_PID, LOG_DAEMON);
+    logging::configure("/etc/snapwebsites/snapcgilog.conf");
 }
 
 snap_cgi::~snap_cgi()
@@ -147,7 +151,8 @@ int snap_cgi::error(const char *code, const char *msg)
 {
     // XXX
     // We should look into having that using the main Snap log settings.
-    syslog(LOG_CRIT, "%s", msg);
+    //syslog(LOG_CRIT, "%s", msg);
+    SNAP_LOG_ERROR(msg);
 
     std::cout   << "HTTP/1.1 " << code << std::endl
                 << "Expires: Sun, 19 Nov 1978 05:00:00 GMT" << std::endl
@@ -327,7 +332,8 @@ int snap_cgi::process()
                 // there is not point in calling error() from here because
                 // the connection is probably broken anyway, just report
                 // the problem in syslog()
-                syslog(LOG_CRIT, "an I/O error occurred while sending the response to the client");
+                //syslog(LOG_CRIT, "an I/O error occurred while sending the response to the client");
+                SNAP_LOG_ERROR("an I/O error occurred while sending the response to the client");
                 return 1;
             }
 

@@ -45,6 +45,21 @@ add_definitions( ${QT_DEFINITIONS} )
 
 
 #################################################################################
+## Config files
+##
+install(
+    FILES 
+        log.conf
+        snapserver.conf
+        snapcgi.conf
+        snapcgilog.conf
+        snap-apache2.conf
+    DESTINATION
+        share/snapwebsites/conf
+)
+
+
+#################################################################################
 ## The Snap! Server
 ##
 project(snapserver)
@@ -116,6 +131,7 @@ add_executable(${PROJECT_NAME}
 set_property( TARGET ${PROJECT_NAME} PROPERTY OUTPUT_NAME snap.cgi )
 
 target_link_libraries(${PROJECT_NAME}
+    libsnapwebsites
     ${ADVGETOPT_LIBRARIES}
     ${QT_LIBRARIES}
 )
