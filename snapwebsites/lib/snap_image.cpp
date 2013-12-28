@@ -173,6 +173,8 @@ unsigned char *snap_image_buffer_t::get_buffer() const
  *
  * \return true if the JPEG was read successfully.
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 bool snap_image::info_jpeg(unsigned char const *s, size_t l, unsigned char const *e)
 {
     // create a buffer "on the stack"; add it to the list of buffers only
@@ -255,6 +257,7 @@ bool snap_image::info_jpeg(unsigned char const *s, size_t l, unsigned char const
     }
     NOTREACHED();
 }
+#pragma GCC diagnostic pop
 
 
 /** \brief Read an ICO header for its information.
@@ -271,6 +274,8 @@ bool snap_image::info_jpeg(unsigned char const *s, size_t l, unsigned char const
  *
  * \return true if the ICO was read successfully.
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 bool snap_image::info_ico(unsigned char const *s, size_t l, unsigned char const *e)
 {
     // number of images
@@ -352,6 +357,7 @@ bool snap_image::info_ico(unsigned char const *s, size_t l, unsigned char const 
     // got all the images successfully
     return true;
 }
+#pragma GCC diagnostic pop
 
 
 /** \brief Read an BMP header for its information.
@@ -368,6 +374,8 @@ bool snap_image::info_ico(unsigned char const *s, size_t l, unsigned char const 
  *
  * \return true if the BMP was read successfully.
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 bool snap_image::info_bmp(unsigned char const *s, size_t l, unsigned char const *e)
 {
     uint32_t headerinfosize(s[14] + s[15] * 256 + s[16] * 65536 + s[17] * 16777216);
@@ -438,6 +446,7 @@ printf("BMP size (%dx%d)\n", width, height);
     // got the image successfully
     return true;
 }
+#pragma GCC diagnostic pop
 
 
 /** \brief Read a PNG header for its information.
@@ -452,6 +461,8 @@ printf("BMP size (%dx%d)\n", width, height);
  *
  * \return true if the PNG was read successfully.
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 bool snap_image::info_png(unsigned char const *s, size_t l, unsigned char const *e)
 {
     smart_snap_image_buffer_t buffer(new snap_image_buffer_t(this));
@@ -536,6 +547,7 @@ bool snap_image::info_png(unsigned char const *s, size_t l, unsigned char const 
         q += size + 12;
     }
 }
+#pragma GCC diagnostic pop
 
 
 
@@ -551,6 +563,8 @@ bool snap_image::info_png(unsigned char const *s, size_t l, unsigned char const 
  *
  * \return true if the GIF was read successfully.
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 bool snap_image::info_gif(unsigned char const *s, size_t l, unsigned char const *e)
 {
     smart_snap_image_buffer_t buffer(new snap_image_buffer_t(this));
@@ -580,6 +594,7 @@ bool snap_image::info_gif(unsigned char const *s, size_t l, unsigned char const 
 
     return true;
 }
+#pragma GCC diagnostic pop
 
 
 
