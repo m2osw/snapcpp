@@ -2808,6 +2808,16 @@ bool QCassandraTable::exists(const QUuid& row_uuid) const
  * Empty keys are always viewed as non-existant and this function
  * returns false in that case.
  *
+ * \warning
+ * If you dropped the row recently, IT STILL EXISTS. This is a "bug" in
+ * Cassandra and there isn't really a way around it except by testing
+ * whether a specific cell exists in the row. We cannot really test for
+ * a cell here since we cannot know what cell exists here. So this test
+ * really only tells you that (1) the row was never created; or (2) the
+ * row was drop "a while back" (the amount of time it takes for a row
+ * to completely disappear is not specified and it looks like it can take
+ * days.)
+ *
  * \todo
  * At this time there isn't a way to specify the consistency level of the
  * calls used by this function. The QCassandra default is used.
@@ -2825,6 +2835,7 @@ bool QCassandraTable::exists(const QByteArray& row_key) const
 
     QCassandraRows::iterator ri(f_rows.find(row_key));
     if(ri != f_rows.end()) {
+        // row exists in memory
         return true;
     }
 

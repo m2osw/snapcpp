@@ -60,6 +60,7 @@ set( XMLFILES
     #register-form.xml
     #replace-password-form.xml
     #resend-email-form.xml
+    #verify-credentials-form.xml
     #verify-form.xml
 )
 snap_validate_dtd( ${PROJECT_NAME} ${XMLFILES} )

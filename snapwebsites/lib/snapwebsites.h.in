@@ -139,7 +139,7 @@ public:
     SNAP_SIGNAL(backend_process, (), ());
     SNAP_SIGNAL(save_content, (), ());
     SNAP_SIGNAL(validate_action, (QString const& path, QString const& action), (path, action));
-    SNAP_SIGNAL(access_allowed, (QString const& user_path, QString const& path, QString const& action, permission_flag& result), (user_path, path, action, result));
+    SNAP_SIGNAL(access_allowed, (QString const& user_path, QString const& path, QString const& action, QString const& login_status, permission_flag& result), (user_path, path, action, login_status, result));
     SNAP_SIGNAL(xss_filter, (QDomNode& node,
                              QString const& accepted_tags,
                              QString const& accepted_attributes),

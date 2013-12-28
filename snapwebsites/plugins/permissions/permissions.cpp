@@ -47,9 +47,10 @@ SNAP_PLUGIN_START(permissions, 1, 0)
  *
  * \return A pointer to the name.
  */
-const char *get_name(name_t name)
+char const *get_name(name_t name)
 {
-    switch(name) {
+    switch(name)
+    {
     case SNAP_NAME_PERMISSIONS_ACTION_PATH:
         return "types/permissions/actions";
 
@@ -62,8 +63,32 @@ const char *get_name(name_t name)
     case SNAP_NAME_PERMISSIONS_GROUP:
         return "permissions::group";
 
+    case SNAP_NAME_PERMISSIONS_GROUP_RETURNING_REGISTERED_USER:
+        return "permissions::group::returning_registered_user";
+
     case SNAP_NAME_PERMISSIONS_GROUPS_PATH:
         return "types/permissions/groups";
+
+    case SNAP_NAME_PERMISSIONS_LOGIN_STATUS_SPAMMER:
+        return "permissions::login_status::spammer";
+
+    case SNAP_NAME_PERMISSIONS_LOGIN_STATUS_VISITOR:
+        return "permissions::login_status::visitor";
+
+    case SNAP_NAME_PERMISSIONS_LOGIN_STATUS_RETURNING_VISITOR:
+        return "permissions::login_status::returning_visitor";
+
+    case SNAP_NAME_PERMISSIONS_LOGIN_STATUS_RETURNING_REGISTERED:
+        return "permissions::login_status::returning_registered";
+
+    case SNAP_NAME_PERMISSIONS_LOGIN_STATUS_REGISTERED:
+        return "permissions::login_status::registered";
+
+    case SNAP_NAME_PERMISSIONS_MAKE_ROOT:
+        return "makeroot";
+
+    case SNAP_NAME_PERMISSIONS_NAMESPACE:
+        return "permissions";
 
     case SNAP_NAME_PERMISSIONS_PATH:
         return "types/permissions";
@@ -172,13 +197,63 @@ const char *get_name(name_t name)
  * \param[in] path  The path being queried.
  * \param[in] action  The action being used in this query.
  */
-permissions::sets_t::sets_t(const QString& user_path, const QString& path, const QString& action)
+permissions::sets_t::sets_t(const QString& user_path, const QString& path, const QString& action, const QString& login_status)
     : f_user_path(user_path)
     , f_path(path)
     , f_action(action)
+    , f_login_status(login_status)
     //, f_user_rights() -- auto-init
     //, f_plugin_permissions() -- auto-init
 {
+}
+
+
+/** \brief Set the log in status of the user.
+ *
+ * This function is used to define the status login of the user. This
+ * is used by the get_user_rights() signal to know which set of rights
+ * should be added for the user.
+ *
+ * So defining the user is not enough, you also need to define his
+ * currently considered status. You could check whether a user can
+ * access a page as a visitor, as a returning registered user, or
+ * as a logged in user.
+ *
+ * \li SETS_LOGIN_STATUS_SPAMMER -- the user is considered a spammer
+ * \li SETS_LOGIN_STATUS_VISITOR -- the user is anonymous
+ * \li SETS_LOGIN_STATUS_RETURNING_VISITOR -- the user is anonymous, but
+ *                                            is a returning visitor
+ * \li SETS_LOGIN_STATUS_RETURNING_REGISTERED -- user logged in more than
+ *                                               3h ago (time can be changed)
+ * \li SETS_LOGIN_STATUS_REGISTERED -- the user logged in recently
+ *
+ * \note
+ * You are not supposed to modify the status while generating user or
+ * plugin rights. However, a plugin testing permissions for a user
+ * may want to test with multiple login status.
+ *
+ * \param[in] login_status  The log in status to consider while adding user rights.
+ */
+void permissions::sets_t::set_login_status(QString const& login_status)
+{
+    f_login_status = login_status;
+}
+
+
+/** \brief Retrieve the log in status of the user.
+ *
+ * By default the login status of the user is set to "visitor". Other
+ * statuses can be used to check whether a user has rights if logged in
+ * or as a spammer, etc.
+ *
+ * This function is used by the get_user_rights() signal to know which
+ * set of rights to add to the user.
+ *
+ * \return The login status of the user being checked.
+ */
+QString const& permissions::sets_t::get_login_status() const
+{
+    return f_login_status;
 }
 
 
@@ -263,8 +338,13 @@ const QString& permissions::sets_t::get_action() const
  *
  * \param[in] right  The right being added.
  */
-void permissions::sets_t::add_user_right(const QString& right)
+void permissions::sets_t::add_user_right(QString right)
 {
+    // so the startsWith() works as is:
+    if(right.right(1) != "/")
+    {
+        right = right + "/";
+    }
     int const len(right.length());
     int max(f_user_rights.size());
     for(int i(0); i < max; ++i)
@@ -371,8 +451,14 @@ int permissions::sets_t::get_user_rights_count() const
  * \param[in] plugin  The plugin adding this permission.
  * \param[in] right  The right the plugin offers.
  */
-void permissions::sets_t::add_plugin_permission(const QString& plugin, const QString& right)
+void permissions::sets_t::add_plugin_permission(const QString& plugin, QString right)
 {
+    // so the startsWith() works as is:
+    if(right.right(1) != "/")
+    {
+        right = right + "/";
+    }
+
     if(!f_plugin_permissions.contains(plugin))
     {
 printf("  PLUGIN [%s] PERMISSION -> [%s] (add, new plugin)\n", plugin.toUtf8().data(), right.toUtf8().data());
@@ -512,10 +598,12 @@ printf("final PLUGINS:\n");
         }
         // XXX add a log to determine the name of the plugin that
         //     failed the user?
+printf("  failed, no match for [%s]\n", pp.key().toUtf8().data());
         return false;
 next_plugin:;
     }
 
+printf("  allowed!!!\n");
     return true;
 }
 
@@ -551,7 +639,8 @@ void permissions::on_bootstrap(snap_child *snap)
     f_snap = snap;
 
     SNAP_LISTEN(permissions, "server", server, validate_action, _1, _2);
-    SNAP_LISTEN(permissions, "server", server, access_allowed, _1, _2, _3, _4);
+    SNAP_LISTEN(permissions, "server", server, access_allowed, _1, _2, _3, _4, _5);
+    SNAP_LISTEN(permissions, "server", server, register_backend_action, _1);
 }
 
 
@@ -603,7 +692,7 @@ int64_t permissions::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2013, 12, 20, 14, 3, 30, content_update);
+    SNAP_PLUGIN_UPDATE(2013, 12, 25, 11, 19, 40, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -663,7 +752,110 @@ void permissions::content_update(int64_t variables_timestamp)
 bool permissions::get_user_rights_impl(permissions *perms, sets_t& sets)
 {
     (void)perms;
-    (void)sets;
+
+    QString const& login_status(sets.get_login_status());
+
+    // if spammers are logged in they don't get access to anything anyway
+    // (i.e. they are UNDER visitors!)
+    QString const site_key(f_snap->get_site_key_with_slash());
+    if(login_status == get_name(SNAP_NAME_PERMISSIONS_LOGIN_STATUS_SPAMMER))
+    {
+        perms->add_user_rights(site_key + "types/permissions/groups/root/administrator/editor/moderator/author/commenter/registered-user/returning-registered-user/returning-visitor/visitor/spammer", sets);
+    }
+    else
+    {
+        if(login_status == get_name(SNAP_NAME_PERMISSIONS_LOGIN_STATUS_RETURNING_VISITOR))
+        {
+            perms->add_user_rights(site_key + "types/permissions/groups/root/administrator/editor/moderator/author/commenter/registered-user/returning-registered-user/returning-visitor", sets);
+        }
+        else
+        {
+            // unfortunately, whatever the login status, if we were not given
+            // a valid user path, we just cannot test anything else than
+            // some kind of visitor
+            QString user_key(sets.get_user_path());
+//printf("  +-> user key = [%s]\n", user_key.toUtf8().data());
+            if(user_key.isEmpty()
+            || login_status == get_name(SNAP_NAME_PERMISSIONS_LOGIN_STATUS_VISITOR))
+            {
+                // in this case the user is an anonymous user and thus we want to
+                // add the anonymous user rights
+                perms->add_user_rights(site_key + "types/permissions/groups/root/administrator/editor/moderator/author/commenter/registered-user/returning-registered-user/returning-visitor/visitor", sets);
+            }
+            else
+            {
+                user_key = f_snap->get_site_key_with_slash() + user_key;
+
+                // add all the groups the user is a member of
+                QSharedPointer<QtCassandra::QCassandraTable> content_table(content::content::instance()->get_content_table());
+                if(!content_table->exists(user_key))
+                {
+                    // that user is gone, this will generate a 500 by Apache
+                    throw permissions_exception_invalid_path("could not access user \"" + user_key + "\"");
+                }
+
+                //QSharedPointer<QtCassandra::QCassandraRow> row(content_table->row(user_key));
+
+                // should this one NOT be offered to returning users?
+                sets.add_user_right(user_key);
+
+                if(login_status == get_name(SNAP_NAME_PERMISSIONS_LOGIN_STATUS_REGISTERED))
+                {
+                    // users who are logged in always have registered-user rights
+                    // if nothing else
+                    perms->add_user_rights(site_key + "types/permissions/groups/root/administrator/editor/moderator/author/commenter/registered-user", sets);
+
+                    // add assigned groups
+                    {
+                        QString const link_start_name(get_name(SNAP_NAME_PERMISSIONS_GROUP));
+                        links::link_info info(link_start_name, false, user_key);
+                        QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
+                        links::link_info right_info;
+                        while(link_ctxt->next_link(right_info))
+                        {
+                            QString const right_key(right_info.key());
+                            perms->add_user_rights(right_key, sets);
+                        }
+                    }
+
+                    // we can also assign permissions directly to a user so get those too
+                    {
+                        QString const link_start_name(get_name(SNAP_NAME_PERMISSIONS_NAMESPACE) + ("::" + sets.get_action()));
+                        links::link_info info(link_start_name, false, user_key);
+                        QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
+                        links::link_info right_info;
+                        while(link_ctxt->next_link(right_info))
+                        {
+                            QString const right_key(right_info.key());
+                            perms->add_user_rights(right_key, sets);
+                        }
+                    }
+                }
+                else
+                {
+                    // this is a registered user who comes back and is semi-logged
+                    // in so we do go give this user full rights to avoid potential
+                    // problems; we have to look into a way to offer different
+                    // group/rights for such a user...
+                    perms->add_user_rights(site_key + "types/permissions/groups/root/administrator/editor/moderator/author/commenter/registered-user/returning-registered-user", sets);
+
+                    // add assigned groups
+                    // by groups limited to returning registered users, not the logged in registered user
+                    {
+                        QString const link_start_name(get_name(SNAP_NAME_PERMISSIONS_GROUP_RETURNING_REGISTERED_USER));
+                        links::link_info info(link_start_name, false, user_key);
+                        QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
+                        links::link_info right_info;
+                        while(link_ctxt->next_link(right_info))
+                        {
+                            QString const right_key(right_info.key());
+                            perms->add_user_rights(right_key, sets);
+                        }
+                    }
+                }
+            }
+        }
+    }
     return true;
 }
 
@@ -711,9 +903,36 @@ bool permissions::get_user_rights_impl(permissions *perms, sets_t& sets)
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 bool permissions::get_plugin_permissions_impl(permissions *perms, sets_t& sets)
 {
+    // the user plugin cannot include the permissions (since the
+    // permissions includes the user plugin) so we implement this
+    // user plugin feature in the permissions
+    QString const path(sets.get_path());
+    if(path.left(5) == "user/")
+    {
+        QString const user_id(path.mid(5));
+        char const *s;
+        for(s = user_id.toUtf8().data(); *s != '\0'; ++s)
+        {
+            if(*s < '0' || *s > '9')
+            {
+                // only digits allowed (i.e. user/123)
+                break;
+            }
+        }
+        if(*s != '\0')
+        {
+            QString const site_key(f_snap->get_site_key_with_slash());
+            sets.add_plugin_permission(content::content::instance()->get_plugin_name(), site_key + path);
+            //"types/permissions/rights/view/page/private"
+        }
+    }
+
+    // the content plugin cannot include the permissions (since the
+    // permissions includes the content plugin) so we implement this
+    // content plugin feature in the permissions
+    //
     // this very page may be assigned direct permissions
     QSharedPointer<QtCassandra::QCassandraTable> content_table(content::content::instance()->get_content_table());
-    QString path(sets.get_path());
     QString const site_key(f_snap->get_site_key_with_slash());
     QString key(site_key + path);
     if(!content_table->exists(key))
@@ -733,8 +952,8 @@ bool permissions::get_plugin_permissions_impl(permissions *perms, sets_t& sets)
                 return true;
             }
             ++depth;
-            path = parts.join("/");
-            key = site_key + path;
+            QString const parent_path(parts.join("/"));
+            key = site_key + parent_path;
             if(content_table->exists(key))
             {
                 break;
@@ -750,7 +969,8 @@ bool permissions::get_plugin_permissions_impl(permissions *perms, sets_t& sets)
         QtCassandra::QCassandraValue value(row->cell(dynamic)->value());
         if(depth > value.signedCharValue())
         {
-            // it is going too far
+            // there is a page, it gives permissions, but this very
+            // page is too deep to be allowed
             return true;
         }
     }
@@ -863,7 +1083,25 @@ void permissions::on_validate_action(QString const& path, QString const& action)
     }
     QString key(path);
     f_snap->canonicalize_path(key); // remove the starting slash
-    bool const allowed(f_snap->access_allowed(user_path, key, action));
+    QString login_status(get_name(SNAP_NAME_PERMISSIONS_LOGIN_STATUS_SPAMMER));
+    if(!users_plugin->user_is_a_spammer())
+    {
+        if(user_path.isEmpty())
+        {
+            login_status = get_name(SNAP_NAME_PERMISSIONS_LOGIN_STATUS_VISITOR);
+            // TODO determine, once possible, whether the user came on the
+            //      website before (i.e. returning visitor)
+        }
+        else if(users_plugin->user_is_logged_in())
+        {
+            login_status = get_name(SNAP_NAME_PERMISSIONS_LOGIN_STATUS_REGISTERED);
+        }
+        else
+        {
+            login_status = get_name(SNAP_NAME_PERMISSIONS_LOGIN_STATUS_RETURNING_REGISTERED);
+        }
+    }
+    bool const allowed(f_snap->access_allowed(user_path, key, action, login_status));
     if(!allowed)
     {
         if(users_plugin->get_user_key().isEmpty())
@@ -922,6 +1160,26 @@ void permissions::on_validate_action(QString const& path, QString const& action)
         }
         else
         {
+            if(login_status == get_name(SNAP_NAME_PERMISSIONS_LOGIN_STATUS_RETURNING_REGISTERED))
+            {
+                bool const allowed_if_logged_in(f_snap->access_allowed(user_path, key, action, get_name(SNAP_NAME_PERMISSIONS_LOGIN_STATUS_REGISTERED)));
+                if(allowed_if_logged_in)
+                {
+                    // ah! the user is not allowed here but he would be if
+                    // only he were recently logged in (with the last 3h or
+                    // whatever the administrator set that to.)
+                    users_plugin->attach_to_session(get_name(users::SNAP_NAME_USERS_LOGIN_REFERRER), path);
+                    messages::messages::instance()->set_error(
+                        "Unauthorized",
+                        "The page you were trying to access (" + path
+                                + ") requires you to verify your credentials. Please log in again and the system will send you back there.",
+                        "user trying to \"" + action + "\" on page \"" + path + "\" when not recently logged in.",
+                        false
+                    );
+                    f_snap->page_redirect("verify-credentials", snap_child::HTTP_CODE_UNAUTHORIZED);
+                    NOTREACHED();
+                }
+            }
             // user is already logged in; no redirect even once we support
             // the double password feature
             f_snap->die(snap_child::HTTP_CODE_ACCESS_DENIED,
@@ -961,9 +1219,10 @@ void permissions::on_validate_action(QString const& path, QString const& action)
  * \param[in] user_path  The user trying to acccess the specified path.
  * \param[in] path  The path that the user is trying to access.
  * \param[in] action  The action that the user is trying to perform.
+ * \param[in] login_status  The supposed status for that user.
  * \param[in] result  The result of the test.
  */
-void permissions::on_access_allowed(QString const& user_path, QString const& path, QString const& action, server::permission_flag& result)
+void permissions::on_access_allowed(QString const& user_path, QString const& path, QString const& action, QString const& login_status, server::permission_flag& result)
 {
     // check that the action is defined in the database (i.e. valid)
     QSharedPointer<QtCassandra::QCassandraTable> content_table(content::content::instance()->get_content_table());
@@ -981,12 +1240,12 @@ void permissions::on_access_allowed(QString const& user_path, QString const& pat
     }
 
     // setup a sets object which will hold all the user's sets
-    sets_t sets(user_path, path, action);
+    sets_t sets(user_path, path, action, login_status);
 
     // first we get the user rights for that action because that's a lot
     // smaller and if empty we do not have to get anything else
     // (intersection of an empty set with anything else is the empty set)
-printf("retrieving USER rights... [%s] [%s]\n", sets.get_action().toUtf8().data(), path.toUtf8().data());
+printf("retrieving USER rights... [%s] [%s] [%s]\n", sets.get_action().toUtf8().data(), sets.get_login_status().toUtf8().data(), path.toUtf8().data());
     get_user_rights(this, sets);
     if(sets.get_user_rights_count() != 0)
     {
@@ -1164,6 +1423,91 @@ void permissions::recursive_add_plugin_permissions(QString const& plugin_name, Q
             const QString child_key(right_info.key());
             recursive_add_plugin_permissions(plugin_name, child_key, sets);
         }
+    }
+}
+
+
+/** \brief Register the permissions action.
+ *
+ * This function registers this plugin as supporting the "makeroot" action.
+ * After an installation and a user was created on the website, the server
+ * is ready to create a root user. This action is used for that purpose.
+ *
+ * The backend command line looks something like this:
+ *
+ * \code
+ * snapbackend [--config snapserver.conf] --param ROOT_USER_EMAIL=joe@example.com --action makeroot
+ * \endcode
+ *
+ * If you have problems with it (it doesn't seem to work,) try with --debug
+ * and make sure to look in the syslog output.
+ *
+ * \note
+ * This should be a user action, unfortunately that would add a permissions
+ * dependency in the users plugin which we cannot have (i.e. permissions
+ * need to know about users...)
+ *
+ * \param[in,out] actions  The list of supported actions where we add ourselves.
+ */
+void permissions::on_register_backend_action(server::backend_action_map_t& actions)
+{
+    actions[get_name(SNAP_NAME_PERMISSIONS_MAKE_ROOT)] = this;
+}
+
+
+/** \brief Create a root user.
+ *
+ * This function marks a user as a root user. The user email address has
+ * to be specified on the command line.
+ *
+ * \note
+ * This should be a users plugin callback, but it requires access to the
+ * permissions plugin so it has to be here instead.
+ *
+ * \param[in] action  The action the user wants to execute.
+ */
+void permissions::on_backend_action(QString const& action)
+{
+    if(action == get_name(SNAP_NAME_PERMISSIONS_MAKE_ROOT))
+    {
+        // make specified user root
+        QSharedPointer<QtCassandra::QCassandraTable> user_table(users::users::instance()->get_users_table());
+        if(user_table.isNull())
+        {
+            std::cerr << "error: table \"users\" not found." << std::endl;
+            exit(1);
+        }
+        QString const email(f_snap->get_server_parameter("ROOT_USER_EMAIL"));
+        if(!user_table->exists(email))
+        {
+            std::cerr << "error: user \"" << email.toStdString() << "\" not found." << std::endl;
+            exit(1);
+        }
+        QSharedPointer<QtCassandra::QCassandraRow> user_row(user_table->row(email));
+        if(!user_row->exists(users::get_name(users::SNAP_NAME_USERS_IDENTIFIER)))
+        {
+            std::cerr << "error: user \"" << email.toStdString() << "\" was not given an identifier." << std::endl;
+            exit(1);
+        }
+        QtCassandra::QCassandraValue identifier_value(user_row->cell(users::get_name(users::SNAP_NAME_USERS_IDENTIFIER))->value());
+        if(identifier_value.nullValue() || identifier_value.size() != 8)
+        {
+            std::cerr << "error: user \"" << email.toStdString() << "\" identifier could not be read." << std::endl;
+            exit(1);
+        }
+        int64_t const identifier(identifier_value.int64Value());
+
+        QString const site_key(f_snap->get_site_key_with_slash());
+        QString const user_key(site_key + users::get_name(users::SNAP_NAME_USERS_PATH) + QString("/%1").arg(identifier));
+        QString const key(site_key + get_name(SNAP_NAME_PERMISSIONS_GROUPS_PATH) + "/root");
+
+        QString const link_name(get_name(SNAP_NAME_PERMISSIONS_GROUP));
+        bool const source_multi(false);
+        links::link_info source(link_name, source_multi, user_key);
+        QString const link_to(get_name(SNAP_NAME_PERMISSIONS_GROUP));
+        bool const destination_multi(false);
+        links::link_info destination(link_to, destination_multi, key);
+        links::links::instance()->create_link(source, destination);
     }
 }
 

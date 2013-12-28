@@ -20,10 +20,13 @@
 #include "not_reached.h"
 #include "snapwebsites.h"
 #include "plugins.h"
+#include "snap_image.h"
+#include "snap_utf8.h"
 #include "log.h"
 #include "qlockfile.h"
 #include "http_strings.h"
 #include "mkgmtime.h"
+#include "snap_magic.h"
 #include "compression.h"
 #include <memory>
 #include <wait.h>
@@ -108,6 +111,57 @@ signed char const g_timezone_adjust[26] =
 } // no name namespace
 
 
+
+/** \brief Save the file data in the post_file_t object.
+ *
+ * This function makes a copy of the data in the post_file_t
+ * object. Note that since we're using a QByteArray, the
+ * real copy is done only on write and since we do not modify
+ * the buffer, it should only copy the buffer pointer, not
+ * the content.
+ *
+ * The function also computes the "real" MIME type using the
+ * magic library.
+ *
+ * \param[in] data  The data of the file to save in this object.
+ *
+ * \sa snap::get_mime_type();
+ */
+void snap_child::post_file_t::set_data(QByteArray const& data)
+{
+    f_data = data;
+    f_size = data.size();
+
+    // namespace required otherwise we'd call the get_mime_type
+    // function of the post_file_t class!
+    f_mime_type = snap::get_mime_type(data);
+
+//printf("mime: %s\n", f_mime_type.toUtf8().data());
+}
+
+
+/** \brief Get the size of the buffer.
+ *
+ * This function retrieves the real size of the data buffer.
+ * When loading an attachment from Cassandra, it is possible to
+ * ask the system to not load the data to save time (i.e. if you
+ * are just looking into showing a list of attachments and you
+ * do not need the actual data...) In that case the load_attachment()
+ * function of the content plugin only sets the size and no data.
+ *
+ * This function makes sure that the correct size gets returned.
+ *
+ * \return The size of the data.
+ */
+int snap_child::post_file_t::get_size() const
+{
+    int size(f_data.size());
+    if(size == 0)
+    {
+        size = f_size;
+    }
+    return size;
+}
 
 
 /** \brief Initialize a child process.
@@ -775,13 +829,31 @@ void snap_child::read_environment()
                     // Content-Type is actually expected on this side
                     if(f_post_environment.contains("CONTENT-TYPE"))
                     {
-                        file.set_mime_type(f_post_environment["CONTENT-TYPE"]);
+                        file.set_original_mime_type(f_post_environment["CONTENT-TYPE"]);
                     }
                     if(params.contains("modification-date"))
                     {
                         file.set_modification_time(string_to_date(params["modification-date"]));
                     }
-fprintf(stderr, " f_files[\"%s\"] = \"...\" (Filename: \"%s\" MIME: %s, size: %d)\n", f_name.toUtf8().data(), filename.toUtf8().data(), file.get_mime_type().toUtf8().data(), f_post_content.size());
+                    // for images also get the dimensions (width x height)
+                    // note that some images are not detected properly by the
+                    // magic library so we ignore the MIME type here
+                    snap_image info;
+                    if(info.get_info(f_post_content))
+                    {
+                        if(info.get_size() > 0)
+                        {
+                            smart_snap_image_buffer_t buffer(info.get_buffer(0));
+                            file.set_image_width(buffer->get_width());
+                            file.set_image_height(buffer->get_height());
+                            file.set_mime_type(buffer->get_mime_type());
+                        }
+                    }
+fprintf(stderr, " f_files[\"%s\"] = \"...\" (Filename: \"%s\" MIME: %s, size: %d)\n",
+        f_name.toUtf8().data(),
+        filename.toUtf8().data(),
+        file.get_mime_type().toUtf8().data(),
+        f_post_content.size());
                 }
             }
             else
@@ -804,7 +876,18 @@ fprintf(stderr, " f_files[\"%s\"] = \"...\" (Filename: \"%s\" MIME: %s, size: %d
                                 .arg(f_name));
                     NOTREACHED();
                 }
-                f_post[f_name] = f_post_content;//snap_uri::urldecode(f_post_content, true);
+                // append a '\0' so we can call is_valid_utf8()
+                char const nul('\0');
+                f_post_content.append(nul);
+                if(!is_valid_utf8(f_post_content.data()))
+                {
+                    f_snap->die(HTTP_CODE_BAD_REQUEST, "Invalid Form Content",
+                        "Your form includes characters that are not compatible with the UTF-8 encoding. Try to avoid special characters and try again. If you are using Internet Explorer, know that older versions may not be compatible with international characters.",
+                        "is_valid_utf8() returned false against the user's content");
+                    NOTREACHED();
+                }
+                // make sure to view the input as UTF-8 characters
+                f_post[f_name] = QString::fromUtf8(f_post_content.data(), f_post_content.size() - 1); //snap_uri::urldecode(f_post_content, true);?
 //fprintf(stderr, " f_post[\"%s\"] = \"%s\"\n", f_name.toUtf8().data(), f_post_content.data());
             }
         }
@@ -860,11 +943,20 @@ fprintf(stderr, " f_files[\"%s\"] = \"...\" (Filename: \"%s\" MIME: %s, size: %d
                     f_post_header = false;
                     return false;
                 }
+                char const nul('\0');
+                f_post_line.append(nul);
+                if(!is_valid_ascii(f_post_line.data()))
+                {
+                    f_snap->die(HTTP_CODE_BAD_REQUEST, "Invalid Form Content",
+                        "Your multi-part form header includes characters that are not compatible with the ASCII encoding.",
+                        "is_valid_ascii() returned false against a line of the user's multipart form header");
+                    NOTREACHED();
+                }
 
                 // we got a header (Blah: value)
                 QString line(f_post_line);
 //printf(" ++ header line [\n%s\n] %d\n", line.trimmed().toUtf8().data(), line.size());
-                if(isspace(f_post_line[0]))
+                if(isspace(line.at(0).unicode()))
                 {
                     // continuation of the previous header, concatenate
                     f_post_environment[f_name] += " " + line.trimmed();
@@ -2077,13 +2169,14 @@ void snap_child::attach_to_session()
  * \param[in] user_path  The path to the user account in the content table.
  * \param[in] path  The path to check for permissions.
  * \param[in] action  The action being checked.
+ * \param[in] login_status  The user status to be checked.
  *
  * \return true if the specified user has permission.
  */
-bool snap_child::access_allowed(QString const& user_path, QString const& path, QString const& action)
+bool snap_child::access_allowed(QString const& user_path, QString const& path, QString const& action, QString const& login_status)
 {
     server::permission_flag result;
-    f_server->access_allowed(user_path, path, action, result);
+    f_server->access_allowed(user_path, path, action, login_status, result);
     return result.allowed();
 }
 
@@ -3562,10 +3655,18 @@ void snap_child::execute()
     // Content-Length header since that represents the compressed
     // data and not the full length
 
+    // TODO when downloading a file (an attachment) that's already
+    //      compressed we need to specify the compression of the output
+    //      buffer so that way here we can "adjust" the compression as
+    //      required
+
     // TODO add compression capabilities with bz2, lzma and sdch as
     //      may be supported by the browser
     QByteArray html_output;
     http_strings::WeightedHttpString encodings(snapenv("HTTP_ACCEPT_ENCODING"));
+
+    // TODO image file formats that are already compressed should not be
+    //      recompressed (i.e. JPEG, GIF, PNG...)
 
     // it looks like some browsers use that one instead of plain "gzip"
     // try both just in case

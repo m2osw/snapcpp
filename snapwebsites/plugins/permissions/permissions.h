@@ -31,7 +31,15 @@ enum name_t
     SNAP_NAME_PERMISSIONS_ADMINISTER,
     SNAP_NAME_PERMISSIONS_DYNAMIC,
     SNAP_NAME_PERMISSIONS_GROUP,
+    SNAP_NAME_PERMISSIONS_GROUP_RETURNING_REGISTERED_USER,
     SNAP_NAME_PERMISSIONS_GROUPS_PATH,
+    SNAP_NAME_PERMISSIONS_LOGIN_STATUS_SPAMMER,
+    SNAP_NAME_PERMISSIONS_LOGIN_STATUS_VISITOR,
+    SNAP_NAME_PERMISSIONS_LOGIN_STATUS_RETURNING_VISITOR,
+    SNAP_NAME_PERMISSIONS_LOGIN_STATUS_RETURNING_REGISTERED,  // partial log in
+    SNAP_NAME_PERMISSIONS_LOGIN_STATUS_REGISTERED,            // full log in
+    SNAP_NAME_PERMISSIONS_MAKE_ROOT,
+    SNAP_NAME_PERMISSIONS_NAMESPACE,
     SNAP_NAME_PERMISSIONS_PATH,
     SNAP_NAME_PERMISSIONS_RIGHTS_PATH,
     SNAP_NAME_PERMISSIONS_VIEW
@@ -67,7 +75,7 @@ public:
 
 
 
-class permissions : public plugins::plugin, public layout::layout_content
+class permissions : public plugins::plugin, public layout::layout_content, public server::backend_action
 {
 public:
     class sets_t
@@ -76,16 +84,19 @@ public:
         typedef QVector<QString>        set_t;
         typedef QMap<QString, set_t>    req_sets_t;
 
-                            sets_t(QString const& user_path, QString const& path, QString const& action);
+                            sets_t(QString const& user_path, QString const& path, QString const& action, QString const& login_status);
 
-        QString const &     get_user_path() const;
-        QString const &     get_path() const;
-        QString const &     get_action() const;
+        void                set_login_status(QString const& status);
+        QString const&      get_login_status() const;
+                       
+        QString const&      get_user_path() const;
+        QString const&      get_path() const;
+        QString const&      get_action() const;
 
-        void                add_user_right(QString const& right);
+        void                add_user_right(QString right);
         int                 get_user_rights_count() const;
 
-        void                add_plugin_permission(QString const& plugin, QString const& right);
+        void                add_plugin_permission(QString const& plugin, QString right);
 
         bool                is_root() const;
         bool                allowed() const;
@@ -94,6 +105,7 @@ public:
         QString             f_user_path;
         QString             f_path;
         QString             f_action;
+        QString             f_login_status;
         set_t               f_user_rights;
         req_sets_t          f_plugin_permissions;
     };
@@ -108,7 +120,9 @@ public:
     void                    on_bootstrap(snap_child *snap);
     virtual void            on_generate_main_content(layout::layout *l, QString const& path, QDomElement& page, QDomElement& body, QString const& ctemplate);
     void                    on_validate_action(QString const& path, QString const& action);
-    void                    on_access_allowed(QString const& user_path, QString const& path, QString const& action, server::permission_flag& result);
+    void                    on_access_allowed(QString const& user_path, QString const& path, QString const& action, QString const& login_status, server::permission_flag& result);
+    void                    on_register_backend_action(server::backend_action_map_t& actions);
+    virtual void            on_backend_action(QString const& action);
 
     SNAP_SIGNAL(get_user_rights, (permissions *perms, sets_t& sets), (perms, sets));
     SNAP_SIGNAL(get_plugin_permissions, (permissions *perms, sets_t& sets), (perms, sets));

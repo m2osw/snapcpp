@@ -20,7 +20,9 @@
 #include "log.h"
 #include "not_reached.h"
 #include "dom_util.h"
+#include "snap_magic.h"
 #include <iostream>
+#include <openssl/md5.h>
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
 #include <QFile>
@@ -45,11 +47,26 @@ char const *get_name(name_t name)
     case SNAP_NAME_CONTENT_ACCEPTED:
         return "content::accepted";
 
+    case SNAP_NAME_CONTENT_ATTACHMENT:
+        return "content::attachment";
+
+    case SNAP_NAME_CONTENT_ATTACHMENT_PATH_END:
+        return "path";
+
+    case SNAP_NAME_CONTENT_ATTACHMENT_FILENAME:
+        return "content::attachment::filename";
+
+    case SNAP_NAME_CONTENT_ATTACHMENT_MIME_TYPE:
+        return "content::attachment::mime_type";
+
     case SNAP_NAME_CONTENT_BODY:
         return "content::body";
 
     case SNAP_NAME_CONTENT_CHILDREN:
         return "content::children";
+
+    case SNAP_NAME_CONTENT_COMPRESSOR_UNCOMPRESSED:
+        return "uncompressed";
 
     case SNAP_NAME_CONTENT_CONTENT_TYPES:
         return "Content Types";
@@ -62,6 +79,45 @@ char const *get_name(name_t name)
 
     case SNAP_NAME_CONTENT_CREATED:
         return "content::created";
+
+    case SNAP_NAME_CONTENT_FILES_COMPRESSOR:
+        return "content::files::compressor";
+
+    case SNAP_NAME_CONTENT_FILES_CREATED:
+        return "content::files::created";
+
+    case SNAP_NAME_CONTENT_FILES_CREATION_TIME:
+        return "content::files::creation_time";
+
+    case SNAP_NAME_CONTENT_FILES_DATA:
+        return "content::files::data";
+
+    case SNAP_NAME_CONTENT_FILES_FILENAME:
+        return "content::files::filename";
+
+    case SNAP_NAME_CONTENT_FILES_IMAGE_HEIGHT:
+        return "content::files::image_height";
+
+    case SNAP_NAME_CONTENT_FILES_IMAGE_WIDTH:
+        return "content::files::image_width";
+
+    case SNAP_NAME_CONTENT_FILES_MIME_TYPE:
+        return "content::files::mime_type";
+
+    case SNAP_NAME_CONTENT_FILES_MODIFICATION_TIME:
+        return "content::files::modification_time";
+
+    case SNAP_NAME_CONTENT_FILES_ORIGINAL_MIME_TYPE:
+        return "content::files::original_mime_type";
+
+    case SNAP_NAME_CONTENT_FILES_SIZE:
+        return "content::files::size";
+
+    case SNAP_NAME_CONTENT_FILES_TABLE:
+        return "files";
+
+    case SNAP_NAME_CONTENT_FILES_UPDATED:
+        return "content::files::updated";
 
     case SNAP_NAME_CONTENT_FINAL:
         return "content::final";
@@ -1115,6 +1171,592 @@ field_search create_field_search(char const *filename, char const *func, int lin
 }
 
 
+
+
+/** \brief Create a structure used to setup an attachment file.
+ *
+ * This contructor is used whenever loading an attachment from the
+ * database. In this case the file is setup from the database
+ * information.
+ *
+ * \param[in] snap  A pointer to the snap_child object.
+ */
+attachment_file::attachment_file(snap_child *snap)
+    : f_snap(snap)
+    //, f_file()
+    //, f_multiple(false) -- auto-init
+    //, f_cpath("") -- auto-init
+    //, f_field_name("") -- auto-init
+    //, f_attachment_owner("") -- auto-init
+    //, f_attachment_type("") -- auto-init
+{
+}
+
+
+/** \brief Create a structure used to setup an attachment file.
+ *
+ * Create and properly initialize this structure and then you can call
+ * the create_attachment() function which takes this structure as a parameter
+ * to create a new file in the database.
+ *
+ * To finish the initialization of this structure you must call the
+ * following functions:
+ *
+ * \li set_cpath()
+ * \li set_field_name()
+ * \li set_attachment_owner()
+ * \li set_attachment_type()
+ *
+ * By default the attachment file structure is set to work on unique
+ * files. Call the set_multiple() function to make sure that the
+ * user does not overwrite previous attachments.
+ *
+ * \warning
+ * Each attachment file structure can really only be used once (it is
+ * used for throw away objects.) The get_name() function, for example,
+ * generates the name internally and it is not possible to change it
+ * afterward.
+ *
+ * \warning
+ * Calling the get_name() function fails with a throw if some of
+ * the mandatory parameters were not properly set.
+ *
+ * \param[in] snap  A pointer to the snap_child object.
+ * \param[in] file  The file to attach to this page.
+ */
+attachment_file::attachment_file(snap_child *snap, snap_child::post_file_t const& file)
+    : f_snap(snap)
+    , f_file(file)
+    //, f_multiple(false) -- auto-init
+    //, f_cpath("") -- auto-init
+    //, f_field_name("") -- auto-init
+    //, f_attachment_owner("") -- auto-init
+    //, f_attachment_type("") -- auto-init
+{
+}
+
+
+/** \brief Whether multiple files can be saved under this one name.
+ *
+ * This function is used to mark the attachment as unique (false) or
+ * not (true). If unique, saving the attachment again with a different
+ * files removes the existing file first.
+ *
+ * When multiple is set to true, saving a new file adds it to the list
+ * of existing files. The list may be empty too.
+ *
+ * Multiple adds a unique number at the end of each field name
+ * which gives us a full name such as:
+ *
+ * \code
+ * "content::attachment::<owner>::<field name>::path::<server_name>_<unique number>"
+ * \endcode
+ *
+ * By default a file is expected to be unique (multiple is set to false).
+ *
+ * \param[in] multiple  Whether the field represents a multi-file attachment.
+ *
+ * \sa get_multiple()
+ * \sa get_name()
+ */
+void attachment_file::set_multiple(bool multiple)
+{
+    f_multiple = multiple;
+}
+
+
+/** \brief Set the path where the attachment is being added.
+ *
+ * This is the path to the parent page to which this attachment is
+ * being added. A path is mandatory so you will have to call this
+ * function, although the empty path is allowed (it represents the
+ * home page so be careful!)
+ *
+ * \note
+ * The class marks whether you set the path or not. If not, trying
+ * to use it (get_cpath() function called) generates an exception
+ * because it is definitively a mistake.
+ *
+ * \param[in] cpath  The path to the page receiving the attachment.
+ *
+ * \sa get_cpath()
+ */
+void attachment_file::set_cpath(QString const& cpath)
+{
+    f_cpath = cpath;
+    f_has_cpath = true;
+}
+
+
+/** \brief Set the name of the field for the attachment.
+ *
+ * When saving a file as an attachment, we want to save the reference
+ * in the parent as such. This makes it a lot easier to find the
+ * attachments attached to a page.
+ *
+ * Note that to retreive the full name to the field, make sure to
+ * call the get_name() function, the get_field_name() will return
+ * just and only the \<field name> part, not the whole name.
+ *
+ * \code
+ * // name of the field in the database:
+ * "content::attachment::<owner>::<field name>::path"
+ *
+ * // or, if multiple is set to true:
+ * "content::attachment::<owner>::<field name>::path::<server_name>_<unique number>"
+ * \endcode
+ *
+ * \param[in] field_name  The name of the field used to save this attachment.
+ *
+ * \sa get_field_name()
+ * \sa get_name()
+ */
+void attachment_file::set_field_name(QString const& field_name)
+{
+    f_field_name = field_name;
+}
+
+
+/** \brief Set the owner of this attachment.
+ *
+ * This name represents the plugin owner of the attachment. It must be
+ * a valid plugin name as it is saved as the owner of the attachment.
+ * This allows the plugin to specially handle the attachment when the
+ * client wants to retrieve it.
+ *
+ * Note that this name is also used in the name of field holding the
+ * path to the attachment.
+ *
+ * \param[in] owner  The name of the plugin that owns that attachment.
+ *
+ * \sa get_attachment_owner()
+ */
+void attachment_file::set_attachment_owner(QString const& owner)
+{
+    f_attachment_owner = owner;
+}
+
+
+/** \brief Define the type of the attachment page.
+ *
+ * When adding an attachment to the database, a new page is created as
+ * a child of the page where the attachment is added. This allows us
+ * to easily do all sorts of things with attachments. This new page being
+ * content it needs to have a type and this type represents that type.
+ *
+ * In most cases the type is set to the parent by default.
+ *
+ * \param[in] type  The type of the page.
+ *
+ * \sa get_attachment_type()
+ */
+void attachment_file::set_attachment_type(QString const& type)
+{
+    f_attachment_type = type;
+}
+
+
+/** \brief Set the creation time of the attachment.
+ *
+ * The first time the user POSTs an attachment, it saves the start date of
+ * the HTTP request as the creation date. The loader sets the date back in
+ * the attachment.
+ *
+ * \param[in] time  The time when the attachment was added to the database.
+ *
+ * \sa get_creation_time()
+ */
+void attachment_file::set_creation_time(int64_t time)
+{
+    f_creation_time = time;
+}
+
+
+/** \brief Set the modification time of the attachment.
+ *
+ * Each time the user POSTs an attachment, it saves the start date of the
+ * HTTP request as the modification date. The loader sets the date back in
+ * the attachment.
+ *
+ * \param[in] time  The time when the attachment was last modified.
+ *
+ * \sa get_update_time()
+ */
+void attachment_file::set_update_time(int64_t time)
+{
+    f_update_time = time;
+}
+
+
+/** \brief Set the name of the field the attachment comes from.
+ *
+ * This function is used by the load_attachment() function to set the
+ * name of the file attachment as if it had been sent by a POST.
+ *
+ * \param[in] name  The name of the field used to upload this attachment.
+ */
+void attachment_file::set_file_name(QString const& name)
+{
+    f_file.set_name(name);
+}
+
+
+/** \brief Set the name of the file.
+ *
+ * This function sets the name of the file as it was sent by the POST
+ * sending the attachment.
+ *
+ * \param[in] filename  The name of the file as sent by the POST message.
+ */
+void attachment_file::set_file_filename(QString const& filename)
+{
+    f_file.set_filename(filename);
+}
+
+
+/** \brief Set the mime_type of the file.
+ *
+ * This function can be used to setup the MIME type of the file when
+ * the data if the file is not going to be set in the attachment file.
+ * (It is useful NOT to load the data if you are not going to use it
+ * anyway!)
+ *
+ * The original MIME type is the one sent by the browser at
+ * the time the attachment was POSTed.
+ *
+ * \param[in] mime_type  The original MIME time as sent by the client.
+ */
+void attachment_file::set_file_mime_type(QString const& mime_type)
+{
+    f_file.set_mime_type(mime_type);
+}
+
+
+/** \brief Set the original mime_type of the file.
+ *
+ * This function can be used to setup the original MIME type of the
+ * file. The original MIME type is the one sent by the browser at
+ * the time the attachment was POSTed.
+ *
+ * \param[in] mime_type  The original MIME time as sent by the client.
+ */
+void attachment_file::set_file_original_mime_type(QString const& mime_type)
+{
+    f_file.set_original_mime_type(mime_type);
+}
+
+
+/** \brief Set the creation time.
+ *
+ * This function sets the creating time of the file.
+ *
+ * \param[in] ctime  The creation time.
+ */
+void attachment_file::set_file_creation_time(time_t ctime)
+{
+    f_file.set_creation_time(ctime);
+}
+
+
+/** \brief Set the modification time.
+ *
+ * This function sets the creation time of the file.
+ *
+ * \param[in] mtime  The last modification time.
+ */
+void attachment_file::set_file_modification_time(time_t mtime)
+{
+    f_file.set_modification_time(mtime);
+}
+
+
+/** \brief Set the data of the file.
+ *
+ * This function sets the data of the file. This is the actual file
+ * content.
+ *
+ * \param[in] data  The last modification time.
+ */
+void attachment_file::set_file_data(QByteArray const& data)
+{
+    f_file.set_data(data);
+}
+
+
+/** \brief Set the size of the file.
+ *
+ * This function sets the size of the file. This is particularly
+ * useful if you do not want to load the data but still want to
+ * get the size for display purposes.
+ *
+ * \param[in] size  Set the size of the file.
+ */
+void attachment_file::set_file_size(int size)
+{
+    f_file.set_size(size);
+}
+
+
+/** \brief Set the image width.
+ *
+ * This function is used to set the width of the image.
+ *
+ * \param[in] width  The image width.
+ */
+void attachment_file::set_file_image_width(int width)
+{
+    f_file.set_image_width(width);
+}
+
+
+/** \brief Set the image height.
+ *
+ * This function is used to set the height of the image.
+ *
+ * \param[in] height  The image height.
+ */
+void attachment_file::set_file_image_height(int height)
+{
+    f_file.set_image_height(height);
+}
+
+
+/** \brief Set the index of the field.
+ *
+ * This function is used to set the field index within the form.
+ *
+ * \param[in] index  The index of the field.
+ */
+void attachment_file::set_file_index(int index)
+{
+    f_file.set_index(index);
+}
+
+
+/** \brief Return whether the attachment is unique or not.
+ *
+ * This function returns the flag as set by the set_multiple().
+ * If true it means that as many attachments as necessary can
+ * be added under the same field name. Otherwise only one
+ * attachment can be added.
+ *
+ * \return Whether multiple attachments can be saved.
+ *
+ * \sa set_multiple()
+ * \sa get_name()
+ */
+bool attachment_file::get_multiple() const
+{
+    return f_multiple;
+}
+
+
+/** \brief Return the file structure.
+ *
+ * When receiving a file, in most cases it is via an upload so we
+ * use that structure directly to avoid copying all that data all
+ * the time.
+ *
+ * This function returns a reference so you can directly use a
+ * reference instead of a copy.
+ *
+ * \note
+ * The only way to setup the file is via the constructor.
+ *
+ * \return A reference to the file representing this attachment.
+ *
+ * \sa attachment_file()
+ */
+snap_child::post_file_t const& attachment_file::get_file() const
+{
+    return f_file;
+}
+
+
+/** \brief Path to the parent of the file.
+ *
+ * This path represents the parent receiving this attachment.
+ *
+ * \return The path to the parent of the attachment.
+ *
+ * \sa set_cpath()
+ */
+QString const& attachment_file::get_cpath() const
+{
+    if(!f_has_cpath)
+    {
+        throw content_exception_invalid_name("the cpath parameter of a attachment_file object was never set");
+    }
+    return f_cpath;
+}
+
+
+/** \brief Retrieve the name of the field.
+ *
+ * This function retrieves the raw name of the field. For the complete
+ * name, make sure to use the get_name() function instead.
+ *
+ * \exception content_exception_invalid_name
+ * This function generates the invalid name exception if the owner was
+ * not defined an the parameter is still empty at the time it is to be
+ * used.
+ *
+ * \return The field name to use for this attachment file.
+ *
+ * \sa set_field_name()
+ */
+QString const& attachment_file::get_field_name() const
+{
+    if(f_field_name.isEmpty())
+    {
+        throw content_exception_invalid_name("the field name of a attachment_file object cannot be empty");
+    }
+    return f_field_name;
+}
+
+
+/** \brief Retrieve the owner of the attachment page.
+ *
+ * This function returns the name of the plugin that becomes the attachment
+ * owner in the content table. The owner has rights over the content to
+ * display it, allow the client to download it, etc.
+ *
+ * \exception content_exception_invalid_name
+ * This function generates the invalid name exception if the owner was
+ * not defined an the parameter is still empty at the time it is to be
+ * used.
+ *
+ * \return The name of the plugin that owns this attachment file.
+ *
+ * \sa set_attachment_owner()
+ */
+QString const& attachment_file::get_attachment_owner() const
+{
+    if(f_attachment_owner.isEmpty())
+    {
+        throw content_exception_invalid_name("the attachment owner of a attachment_file object cannot be empty");
+    }
+    return f_attachment_owner;
+}
+
+
+/** \brief Retrieve the type of the attachment page.
+ *
+ * This function returns the type to use for the page we are to create for
+ * this attachment. This is one of the .../content-types/\<name> types.
+ *
+ * \exception content_exception_invalid_name
+ * This function generates the invalid name exception if the type was
+ * not defined and the parameter is still empty at the time it is to be
+ * used.
+ *
+ * \return The name of the type to use for the attachment page.
+ *
+ * \sa set_attachment_type()
+ */
+QString const& attachment_file::get_attachment_type() const
+{
+    if(f_attachment_type.isEmpty())
+    {
+        throw content_exception_invalid_name("the attachment type of a attachment_file object cannot be empty");
+    }
+    return f_attachment_type;
+}
+
+
+/** \brief Set the creation time of the attachment.
+ *
+ * The first time the user POSTs an attachment, it saves the start date of
+ * the HTTP request as the creation date. The loader sets the date back in
+ * the attachment.
+ *
+ * \param[in] time  The time when the attachment was added to the database.
+ *
+ * \sa set_creation_time()
+ */
+int64_t attachment_file::get_creation_time() const
+{
+    return f_creation_time;
+}
+
+
+/** \brief Get the modification time of the attachment.
+ *
+ * Each time the user POSTs an attachment, it saves the start date of the
+ * HTTP request as the modification date. The loader sets the date back in
+ * the attachment.
+ *
+ * \param[in] time  The time when the attachment was last modified.
+ *
+ * \sa set_update_time()
+ */
+int64_t attachment_file::get_update_time() const
+{
+    return f_update_time;
+}
+
+
+/** \brief Generate the full field name.
+ *
+ * The name of the field in the parent page in the content is defined
+ * as follow:
+ *
+ * \code
+ * // name of the field in the database:
+ * "content::attachment::<owner>::<field name>::path"
+ *
+ * // or, if multiple is set to true:
+ * "content::attachment::<owner>::<field name>::path::<server_name>_<unique number>"
+ * \endcode
+ *
+ * To make sure that everyone always uses the same name each time, we
+ * created this function and you'll automatically get the right name
+ * every time.
+ *
+ * \warning
+ * After the first call this function always returns exactly the same
+ * name. This is because we cache the name so it can be called any
+ * number of time and it will quickly return with the name.
+ *
+ * \return The full name of the field.
+ *
+ * \sa set_multiple()
+ * \sa set_field_name()
+ * \sa set_attachment_owner()
+ */
+QString const& attachment_file::get_name() const
+{
+    if(f_name.isEmpty())
+    {
+        if(f_multiple)
+        {
+            f_name = QString("%1::%2::%3::%4::%5")
+                    .arg(snap::content::get_name(SNAP_NAME_CONTENT_ATTACHMENT))
+                    .arg(get_attachment_owner())
+                    .arg(get_field_name())
+                    .arg(f_snap->get_unique_number())
+                    .arg(snap::content::get_name(SNAP_NAME_CONTENT_ATTACHMENT_PATH_END))
+                    ;
+        }
+        else
+        {
+            f_name = QString("%1::%2::%3::%4")
+                    .arg(snap::content::get_name(SNAP_NAME_CONTENT_ATTACHMENT))
+                    .arg(get_attachment_owner())
+                    .arg(get_field_name())
+                    .arg(snap::content::get_name(SNAP_NAME_CONTENT_ATTACHMENT_PATH_END))
+                    ;
+        }
+    }
+    return f_name;
+}
+
+
+
+
+
+
+
 /** \brief Useful function that transforms a QString to XML.
  *
  * When inserting a string in the XML document when that string may include
@@ -1244,7 +1886,7 @@ int64_t content::do_update(int64_t last_updated)
     SNAP_PLUGIN_UPDATE_INIT();
 
     SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, initial_update);
-    SNAP_PLUGIN_UPDATE(2013, 12, 23, 18, 11, 40, content_update);
+    SNAP_PLUGIN_UPDATE(2013, 12, 25, 11, 19, 40, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -1257,13 +1899,12 @@ int64_t content::do_update(int64_t last_updated)
  *
  * \param[in] variables_timestamp  The timestamp for all the variables added to the database by this update (in micro-seconds).
  */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
 void content::initial_update(int64_t variables_timestamp)
 {
+    (void)variables_timestamp;
     get_content_table();
+    get_files_table();
 }
-#pragma GCC diagnostic pop
 
 
 /** \brief Update the database with our content references.
@@ -1273,10 +1914,9 @@ void content::initial_update(int64_t variables_timestamp)
  *
  * \param[in] variables_timestamp  The timestamp for all the variables added to the database by this update (in micro-seconds).
  */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
 void content::content_update(int64_t variables_timestamp)
 {
+    (void)variables_timestamp;
     add_xml(get_plugin_name());
 }
 
@@ -1288,13 +1928,50 @@ void content::content_update(int64_t variables_timestamp)
  *
  * If the function is not able to create the table an exception is raised.
  *
+ * The content table is the one that includes the entire content of all
+ * the websites. Since tables can grow as big as we want, this is not a
+ * concern. The content table looks like a tree although each row represents
+ * one leaf at any one level (the keys are the site key with slash + path).
+ *
  * \return The pointer to the content table.
  */
 QSharedPointer<QtCassandra::QCassandraTable> content::get_content_table()
 {
-    return f_snap->create_table(get_name(SNAP_NAME_CONTENT_TABLE), "Website content table.");
+    if(f_content_table.isNull())
+    {
+        f_content_table = f_snap->create_table(get_name(SNAP_NAME_CONTENT_TABLE), "Website content table.");
+    }
+    return f_content_table;
 }
-#pragma GCC diagnostic pop
+
+
+/** \brief Initialize the files table.
+ *
+ * This function creates the files table if it doesn't exist yet. Otherwise
+ * it simple initializes the f_files_table variable member.
+ *
+ * If the function is not able to create the table an exception is raised.
+ *
+ * The table is used to list all the files from all the websites managed
+ * by this Snap! server. Note that the files are listed for all the
+ * websites, by website & filename, when new and need to be checked
+ * (anti-virus, etc.) and maybe a few other things later.
+ *
+ * \li Rows are MD5 sums of the files, this is used as the key in the
+ *     content table
+ * \li '*new*' includes MD5 sums of files to be checked (anti-virus, ...)
+ * \li '*index*' lists of files by 'site key + filename'
+ *
+ * \return The pointer to the files table.
+ */
+QSharedPointer<QtCassandra::QCassandraTable> content::get_files_table()
+{
+    if(f_files_table.isNull())
+    {
+        f_files_table = f_snap->create_table(get_name(SNAP_NAME_CONTENT_FILES_TABLE), "List of all the files ever uploaded to all the websites.");
+    }
+    return f_files_table;
+}
 
 
 /** \brief Execute a page: generate the complete output of that page.
@@ -1358,7 +2035,9 @@ bool content::create_content_impl(QString const& path, QString const& owner, QSt
     QString const site_key(f_snap->get_site_key_with_slash());
     QString const key(site_key + path);
 
-    if(content_table->exists(key))
+    QString const primary_owner(path::get_name(path::SNAP_NAME_PATH_PRIMARY_OWNER));
+    QSharedPointer<QtCassandra::QCassandraRow> row(content_table->row(key));
+    if(row->exists(primary_owner))
     {
         // the row already exists, this is considered created.
         // (we may later want to have a repair_content signal
@@ -1368,10 +2047,8 @@ bool content::create_content_impl(QString const& path, QString const& owner, QSt
         // should probably be called (i.e. f_updating is true then)
         return f_updating;
     }
-    QSharedPointer<QtCassandra::QCassandraRow> row(content_table->row(key));
 
     // save the owner
-    QString const primary_owner(path::get_name(path::SNAP_NAME_PATH_PRIMARY_OWNER));
     row->cell(primary_owner)->setValue(owner);
 
     // add the different basic content dates setup
@@ -1411,6 +2088,356 @@ bool content::create_content_impl(QString const& path, QString const& owner, QSt
 //      parent created its own parent/children link already.
 //printf("parent/children [%s]/[%s]\n", src.toUtf8().data(), dst.toUtf8().data());
         links::links::instance()->create_link(source, destination);
+    }
+
+    return true;
+}
+
+
+/** \brief Create a page which represents an attachment (A file).
+ *
+ * This function creates a page that represents an attachment with the
+ * specified file, owner, and type.
+ *
+ * This function prepares the file and sends a create_content() event
+ * first.
+ *
+ * Note that the MIME type of the file is generated using the magic
+ * database. The \p attachment_type parameter is the one saved in the
+ * page referencing that file. However, only the one generated by magic
+ * is official.
+ *
+ * \note
+ * It is important to understand that we only save each file only ONCE
+ * in the database. This is accomplished by create_attachment() by computing
+ * the MD5 sum of the file and then checking whether the file was
+ * previously already loaded. If so, then the existing copy is used
+ * (even if it was uploaded by someone else.)
+ *
+ * Possible cases when creating an attachment:
+ *
+ * \li The file does not yet exist in the files table; in that case we
+ *     simply create it
+ *
+ * \li If the file already existed, we do not add it again (obviously)
+ *     and we can check whether it was already attached to that very
+ *     same page; if so then we have nothing else to do (files have
+ *     links of all the pages were they are attachments)
+ *
+ * \param[in] file  The file to save in the Cassandra database.
+ */
+bool content::create_attachment_impl(attachment_file const& file)
+{
+    // verify that the row specified by file::get_cpath() exists
+    QSharedPointer<QtCassandra::QCassandraTable> content_table(get_content_table());
+    QString const site_key(f_snap->get_site_key_with_slash());
+    QString const key(site_key + file.get_cpath());
+    if(!content_table->exists(key))
+    {
+        // the parent row does not even exist yet...
+        return false;
+    }
+    QSharedPointer<QtCassandra::QCassandraRow> parent_row(content_table->row(key));
+
+    snap_child::post_file_t const& post_file(file.get_file());
+
+    // create the path to the new attachment itself
+    QString filename(post_file.get_filename());
+    int last_slash(filename.lastIndexOf('/'));
+    if(last_slash != -1)
+    {
+        filename = filename.mid(last_slash + 1);
+    }
+    QString const attachment_cpath(file.get_cpath() + "/" + filename);
+    QString const attachment_key(site_key + attachment_cpath);
+
+    QString const name(file.get_name());
+
+    // compute the MD5 sum of the file
+    // TBD should we forbid the saving of empty files?
+    unsigned char md[MD5_DIGEST_LENGTH];
+    MD5(reinterpret_cast<unsigned char const *>(post_file.get_data().data()), post_file.get_size(), md);
+    QByteArray md5(reinterpret_cast<char const *>(md), sizeof(md));
+
+    // check whether the file already exists in the database
+    QSharedPointer<QtCassandra::QCassandraRow> attachment_row;
+    QSharedPointer<QtCassandra::QCassandraTable> files_table(get_files_table());
+    if(!files_table->exists(md5))
+    {
+        // the file does not exist yet, add it
+        //
+        // 1. create the row with the file data, the compression used, and size
+        files_table->row(md5)->cell(get_name(SNAP_NAME_CONTENT_FILES_DATA))->setValue(post_file.get_data());
+
+        QSharedPointer<QtCassandra::QCassandraRow> file_row(files_table->row(md5));
+
+        file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_COMPRESSOR))->setValue(get_name(SNAP_NAME_CONTENT_COMPRESSOR_UNCOMPRESSED));
+        file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_SIZE))->setValue(static_cast<int32_t>(post_file.get_size()));
+
+        // Note we save the following mainly for completness because it is
+        // not really usable (i.e. two people who are to upload the same file
+        // with the same filename, the same original MIME type, the same
+        // creation/modification dates... close to impossible!)
+        //
+        // 2. link back to the row where the file is saved in the content table
+        file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_FILENAME))->setValue(filename);
+
+        // 3. save the computed MIME type
+        file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_MIME_TYPE))->setValue(post_file.get_mime_type());
+
+        // 4. save the original MIME type
+        file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_ORIGINAL_MIME_TYPE))->setValue(post_file.get_original_mime_type());
+
+        // 5. save the creation date if available (i.e. if not zero)
+        if(post_file.get_creation_time() != 0)
+        {
+            file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_CREATION_TIME))->setValue(static_cast<int64_t>(post_file.get_creation_time()));
+        }
+
+        // 6. save the modification date if available (i.e. if not zero)
+        if(post_file.get_modification_time() != 0)
+        {
+            file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_MODIFICATION_TIME))->setValue(static_cast<int64_t>(post_file.get_modification_time()));
+        }
+
+        // 7. save the date when the file was uploaded
+        file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_CREATED))->setValue(f_snap->get_start_date());
+
+        // 8. save the date when the file was last updated
+        file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_UPDATED))->setValue(f_snap->get_start_date());
+
+        // 9. if the file is an image save the width & height
+        int32_t width(post_file.get_image_width());
+        int32_t height(post_file.get_image_height());
+        if(width > 0 && height > 0)
+        {
+            file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_IMAGE_WIDTH))->setValue(width);
+            file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_IMAGE_HEIGHT))->setValue(height);
+        }
+
+        // 10. save the description
+        // At this point we do not have that available, we could use the
+        // comment/description from the file if there is such, but those
+        // are often "broken"
+
+        // TODO should we also save a SHA1 of the files so people downloading
+        //      can be given the SHA1 even if the file is saved compressed?
+    }
+
+    // make a full reference back to the attachment (which may not yet
+    // exist at this point, we do that next)
+    signed char ref(1);
+    files_table->row(md5)->cell(attachment_cpath)->setValue(ref);
+
+    // if the field exists and that attach is unique (i.e. supports only
+    // one single file), then we want to delete the existing page unless
+    // the user uploaded a file with the exact same filename
+    if(content_table->exists(attachment_key))
+    {
+        if(!file.get_multiple())
+        {
+            // it exists, check the filename first
+            if(parent_row->exists(name))
+            {
+                // check the filename
+                QString old_attachment_key(parent_row->cell(name)->value().stringValue());
+                if(!old_attachment_key.isEmpty() && old_attachment_key != attachment_key)
+                {
+                    // that's not the same filename, drop it
+                    // WE CANNOT JUST DROP A ROW, it breaks all the links, etc.
+                    // TODO: implement a delete_content() function which
+                    //       does all the necessary work (and actually move
+                    //       the content to the trashcan)
+                    //content_table->dropRow(old_attachment_key, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+
+                    // TODO: nothing should be deleted in our system, instead
+                    //       it should be put in a form of trashcan; in this
+                    //       case it could remain an attachment, only moved
+                    //       to a special "old attachments" list
+
+                    // TBD if I'm correct, the md5 reference was already dropped
+                    //     in the previous if() blocks...
+                }
+            }
+        }
+
+        attachment_row = content_table->row(attachment_key);
+        if(attachment_row->exists(get_name(SNAP_NAME_CONTENT_ATTACHMENT)))
+        {
+            // the MD5 is saved in there, get it and compare
+            QtCassandra::QCassandraValue existing_ref(attachment_row->cell(get_name(SNAP_NAME_CONTENT_ATTACHMENT))->value());
+            if(!existing_ref.nullValue())
+            {
+                if(existing_ref.binaryValue() == md5)
+                {
+                    // this is the exact same file, do nearly nothing
+                    // (i.e. the file may already exist but the path
+                    //       may not be there anymore)
+                    parent_row->cell(name)->setValue(attachment_key);
+
+                    // TBD -- should the 'updated' flag really be true since there is
+                    //        no visible change to talk about?
+                    modified_content(attachment_cpath, true);
+
+                    // TBD -- should it be true here to let the other plugins
+                    //        do their own work?
+                    return false;
+                }
+
+                // not the same file, we've got to remove the reference
+                // from the existing file since it's going to be moved
+                // to a new file (i.e. the current md5 points to a
+                // different file)
+                //
+                // TODO: nothing should be just dropped in our system,
+                //       instead it should be moved to some form of
+                //       trashcan; in this case we'd use a new name
+                //       for the reference although if the whole row
+                //       is to be "dropped" (see below) then we should
+                //       not even have to drop this cell at all because
+                //       it will remain there, only under a different
+                //       name...
+                files_table->row(existing_ref.binaryValue())->dropCell(attachment_cpath);
+            }
+        }
+
+        // it is not there yet, so go on...
+        //
+        // TODO: we want to check all the attachments and see if any
+        //       one of them is the same file (i.e. user uploading the
+        //       same file twice with two different file names...)
+
+        files_table->row(md5)->cell(get_name(SNAP_NAME_CONTENT_FILES_UPDATED))->setValue(f_snap->get_start_date());
+    }
+
+    // yes that path may already exists, no worries since the create_content()
+    // function checks that and returns quickly if it does exist
+    create_content(attachment_cpath, file.get_attachment_owner(), file.get_attachment_type());
+
+    // if it is already filename it won't hurt too much to set it again
+    parent_row->cell(name)->setValue(attachment_key);
+
+    // get the attachment row anew, just in case it was not taken yet
+    attachment_row = content_table->row(attachment_key);
+
+    // in this case 'post' represents the filename as sent by the
+    // user, the binary data is in the corresponding file
+    attachment_row->cell(get_name(SNAP_NAME_CONTENT_ATTACHMENT_FILENAME))->setValue(filename);
+
+    // save the file reference
+    attachment_row->cell(get_name(SNAP_NAME_CONTENT_ATTACHMENT))->setValue(md5);
+
+    // save the MIME type (this is the one returned by the magic library)
+    attachment_row->cell(get_name(SNAP_NAME_CONTENT_ATTACHMENT_MIME_TYPE))->setValue(post_file.get_mime_type());
+
+    // XXX we could also save the modification and creation times, but the
+    //     likelihood that these exist is so small that I'll skip at this
+    //     time; we do save them in the files table
+
+    // mark that attachment as final (i.e. cannot create children below an attachment)
+    signed char final(1);
+    attachment_row->cell(get_name(SNAP_NAME_CONTENT_FINAL))->setValue(final);
+
+    return true;
+}
+
+
+/** \brief Load an attachment previously saved with create_attachment().
+ *
+ * The function checks that the attachment exists and is in good condition
+ * and if so, loads it in the specified file parameter.
+ *
+ * \param[in] key  The key to the attachment to load.
+ * \param[in] file  The file will be loaded in this structure.
+ * \param[in] load_data  Whether the data should be loaded (true by default.)
+ *
+ * \return true if the attachment was successfully loaded.
+ */
+bool content::load_attachment(QString const& key, attachment_file& file, bool load_data)
+{
+    QSharedPointer<QtCassandra::QCassandraTable> content_table(get_content_table());
+    if(!content_table->exists(key))
+    {
+        // the parent row does not even exist yet...
+        return false;
+    }
+    QSharedPointer<QtCassandra::QCassandraRow> attachment_row(content_table->row(key));
+
+    QtCassandra::QCassandraValue md5_value(attachment_row->cell(get_name(SNAP_NAME_CONTENT_ATTACHMENT))->value());
+
+    QSharedPointer<QtCassandra::QCassandraTable> files_table(get_files_table());
+    if(!files_table->exists(md5_value.binaryValue()))
+    {
+        // file not available?!
+        return false;
+    }
+    QSharedPointer<QtCassandra::QCassandraRow> file_row(files_table->row(md5_value.binaryValue()));
+
+    if(!file_row->exists(get_name(SNAP_NAME_CONTENT_FILES_DATA)))
+    {
+        // no data available
+        return false;
+    }
+
+    // TODO handle the compression of the file...
+    //file.set_file_compressor(file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_COMPRESSOR))->value()->stringValue());
+
+    if(load_data)
+    {
+        file.set_file_data(file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_DATA))->value().binaryValue());
+
+        // TODO if compressed, we may have (want) to decompress here?
+    }
+    else
+    {
+        // since we're not loading the data, we want to get some additional
+        // information on the side: the verified MIME type and the file size
+        if(file_row->exists(get_name(SNAP_NAME_CONTENT_FILES_MIME_TYPE)))
+        {
+            // This one gets set automatically when we set the data so we only
+            // load it if the data is not getting loaded
+            file.set_file_mime_type(file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_MIME_TYPE))->value().stringValue());
+        }
+        if(file_row->exists(get_name(SNAP_NAME_CONTENT_FILES_SIZE)))
+        {
+            // since we're not loading the data, we get the size parameter
+            // like this (later we may want to always do that once we save
+            // files compressed in the database!)
+            file.set_file_size(file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_SIZE))->value().int32Value());
+        }
+    }
+
+    if(file_row->exists(get_name(SNAP_NAME_CONTENT_FILES_FILENAME)))
+    {
+        file.set_file_filename(file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_FILENAME))->value().stringValue());
+    }
+    if(file_row->exists(get_name(SNAP_NAME_CONTENT_FILES_ORIGINAL_MIME_TYPE)))
+    {
+        file.set_file_original_mime_type(file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_ORIGINAL_MIME_TYPE))->value().stringValue());
+    }
+    if(file_row->exists(get_name(SNAP_NAME_CONTENT_FILES_CREATION_TIME)))
+    {
+        file.set_file_creation_time(file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_CREATION_TIME))->value().int64Value());
+    }
+    if(file_row->exists(get_name(SNAP_NAME_CONTENT_FILES_MODIFICATION_TIME)))
+    {
+        file.set_file_creation_time(file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_MODIFICATION_TIME))->value().int64Value());
+    }
+    if(file_row->exists(get_name(SNAP_NAME_CONTENT_FILES_CREATED)))
+    {
+        file.set_creation_time(file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_CREATED))->value().int64Value());
+    }
+    if(file_row->exists(get_name(SNAP_NAME_CONTENT_FILES_UPDATED)))
+    {
+        file.set_update_time(file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_UPDATED))->value().int64Value());
+    }
+    if(file_row->exists(get_name(SNAP_NAME_CONTENT_FILES_IMAGE_WIDTH)))
+    {
+        file.set_file_image_width(file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_IMAGE_WIDTH))->value().int32Value());
+    }
+    if(file_row->exists(get_name(SNAP_NAME_CONTENT_FILES_IMAGE_HEIGHT)))
+    {
+        file.set_file_image_height(file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_IMAGE_HEIGHT))->value().int32Value());
     }
 
     return true;

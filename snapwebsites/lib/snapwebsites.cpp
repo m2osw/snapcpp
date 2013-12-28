@@ -31,6 +31,7 @@
 #include <QDirIterator>
 #include <QHostAddress>
 #include <QCoreApplication>
+#include <QTextCodec>
 
 #include <syslog.h>
 #include <errno.h>
@@ -50,12 +51,37 @@
 /** \mainpage
  * \brief Snap! C++ Documentation
  *
+ * \section introduction Introduction
+ *
  * The Snap! C++ environment includes a library, plugins, tools, and
  * the necessary executables to run the snap server: a fast C++
  * CMS (Content Management System).
  *
+ * \section database The Database Environment in Snap! C++
+ *
  * The database makes use of a Cassandra cluster. It is accessed using
  * the libQtCassandra class.
+ *
+ * \section todo_xxx_tbd Usage of TODO, XXX, and TBD
+ *
+ * The TODO mark within the code is used to talk about things that are
+ * necessary but not yet implemented. The further we progress the less
+ * of these we should see as we implement each one of them as required.
+ *
+ * The XXX mark within the code are things that should be done, although
+ * it is most generally linked with a question: is it really necessary?
+ * It can also be a question about the hard coded value (is 5 minutes
+ * the right amount of time to wait between random session changes?)
+ * In most cases these should disappear as we get the answer to the
+ * questions. In effect they are between the TODO and the TBD.
+ *
+ * The TBD mark is a pure question: Is that code valid? A TBD does not
+ * mean that the code needs change just that we cannot really decide,
+ * at the time it get written, whether it is correct or not. With time
+ * (especially in terms of usage) we should be able to answer the
+ * question and transform the question in a comment explaining why
+ * the code is one way or the other. Of course, if proven wrong, the
+ * code is to be changed to better fit the needs.
  */
 
 
@@ -760,6 +786,9 @@ QString server::get_parameter(const QString& param_name) const
  */
 void server::prepare_qtapp( int argc, char *argv[] )
 {
+    // make sure the Qt Locale is UTF-8
+    QTextCodec::setCodecForLocale(QTextCodec::codecForName("UTF-8"));
+
     if(!g_application)
     {
         g_application.reset( new QCoreApplication(argc, argv) );
@@ -1385,15 +1414,16 @@ bool server::validate_action_impl(QString const& path, QString const& action)
  * \param[in] user_path  The path to the user being checked.
  * \param[in] path  The path being checked.
  * \param[in] action  The action being checked.
- * \param[in] result  The result to be returned.
+ * \param[in] login_status  The status the user is in.
+ * \param[in,out] result  The returned result.
  *
  * \return true if the signal should be propagated.
  */
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
-bool server::access_allowed_impl(QString const& user_path, QString const& path, QString const& action, permission_flag& result)
+bool server::access_allowed_impl(QString const& user_path, QString const& path, QString const& action, QString const& login_status, permission_flag& result)
 {
-    return true;
+    return result.allowed();
 }
 #pragma GCC diagnostic pop
 

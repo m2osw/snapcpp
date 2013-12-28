@@ -45,7 +45,8 @@ SNAP_PLUGIN_START(form, 1, 0)
  */
 char const *get_name(name_t const name)
 {
-    switch(name) {
+    switch(name)
+    {
     case SNAP_NAME_FORM_FORM:
         return "form::form";
 
@@ -131,17 +132,8 @@ void form::on_bootstrap(::snap::snap_child *snap)
 {
     f_snap = snap;
 
-    SNAP_LISTEN0(form, "server", server, init);
     SNAP_LISTEN(form, "server", server, process_post, _1);
     SNAP_LISTEN(form, "filter", filter::filter, replace_token, _1, _2, _3, _4);
-}
-
-/** \brief Initialize the form plugin.
- *
- * At this point this function does nothing.
- */
-void form::on_init()
-{
 }
 
 
@@ -217,16 +209,14 @@ QDomDocument form::form_to_html(sessions::sessions::session_info& info, QDomDocu
     //
     // Note that this update should only change the <value> tags, NOT the
     // form itself (add/remove widgets). Form modifications are only allowed
-    // after the load of the form in the tweak_form signal.
+    // after the load of the form in the tweak_form() signal.
     //
-    // Note that we could set all the <value> tags too and ignore the
-    // fact that the <post> tags were created, however, it seems to be
-    // a waste of time (at least at this time it does.)
-    QDomElement snap_form(xml_form.documentElement());
-    if(snap_form.attribute("post").isEmpty())
-    {
-        auto_fill_form(xml_form);
-    }
+    // Note that we cannot really avoid filling the form here even if the
+    // POST even just filled the last post information. The main reason is
+    // that certain fields (mainly the File based fields at this time) need
+    // to be set here if optional. (Also at this time a POST does not
+    // properly save attachments if the form generates an error!)
+    auto_fill_form(xml_form);
 
     QXmlQuery q(QXmlQuery::XSLT20);
     q.setFocus(xml_form.toString());
@@ -330,8 +320,8 @@ void form::auto_fill_form(QDomDocument xml_form)
 
         // only widgets that are marked for auto-save can be auto-filled
         // (note: although the auto-save could also be done inside the
-        //        fill_widget signal, it is done here so we can optimize
-        //        on this very test)
+        //        fill_form_widget() signal, it is done here so we can
+        //        optimize on this very test)
         if(auto_save)
         {
             QString const auto_save_type(widget.attribute("auto-save"));
@@ -342,7 +332,10 @@ void form::auto_fill_form(QDomDocument xml_form)
                 if(auto_save_type == "binary")
                 {
                     // only the path is saved in the parent for attachments
-                    name += "::path";
+                    // and that path represents an attachment
+                    name = QString(content::get_name(content::SNAP_NAME_CONTENT_ATTACHMENT))
+                            + "::" + name + "::"
+                            + content::get_name(content::SNAP_NAME_CONTENT_ATTACHMENT_PATH_END);
                 }
                 if(row->exists(name))
                 {
@@ -379,12 +372,28 @@ void form::auto_fill_form(QDomDocument xml_form)
                     {
                         // this is an attachment
                         // we just create a link to it
-                        // TODO add support for images since we can add an
-                        //      <img ...> tag instead!
                         if(widget_type == "image")
                         {
                             // in this case we can simply show the image
-                            widget_value = "<img src=\"" + value.stringValue() + "\"/>";
+                            content::attachment_file attachment(f_snap);
+                            if(content::content::instance()->load_attachment(value.stringValue(), attachment, false))
+                            {
+                                snap_child::post_file_t const&  file(attachment.get_file());
+                                int width(file.get_image_width());
+                                int height(file.get_image_height());
+                                QString path(value.stringValue());
+                                if(path.startsWith(site_key))
+                                {
+                                    // keep the start '/' but remove the domain
+                                    path = path.mid(site_key.length() - 1);
+                                }
+                                widget_value = "<img src=\"" + path + "\"";
+                                if(width != 0 && height != 0)
+                                {
+                                    widget_value += QString(" width=\"%1\" height=\"%2\"").arg(width).arg(height);
+                                }
+                                widget_value += "/>";
+                            }
                         }
                         else
                         {
@@ -915,7 +924,7 @@ void form::on_process_post(const QString& uri_path)
         {
             post = "off";
         }
-        if(!is_secret && !post.isEmpty())
+        if(!is_secret && !post.isEmpty() && widget_type != "image" && widget_type != "file")
         {
             QDomElement post_tag(xml_form.createElement("post"));
             widget.appendChild(post_tag);
@@ -975,6 +984,12 @@ void form::on_process_post(const QString& uri_path)
         {
             // restore the last type
             info.set_session_type(session_type);
+
+            // TODO support for attachment so they don't just disappear on
+            //      errors is required here; i.e. we need a way to be able
+            //      to save all the valid attachments in a temporary place
+            //      and then "move" them to their final location once the
+            //      form validates properly
         }
     }
     // if the previous loop found 1 or more errors, return now
@@ -1024,7 +1039,8 @@ void form::on_process_post(const QString& uri_path)
  */
 void form::auto_save_form(QString const& owner, QString const& cpath, auto_save_types_t const& auto_save_type, QDomDocument xml_form)
 {
-    QSharedPointer<QtCassandra::QCassandraTable> content_table(content::content::instance()->get_content_table());
+    content::content *content_plugin(content::content::instance());
+    QSharedPointer<QtCassandra::QCassandraTable> content_table(content_plugin->get_content_table());
     QString const site_key(f_snap->get_site_key_with_slash());
     QString const key(site_key + cpath);
     if(!content_table->exists(key))
@@ -1068,15 +1084,17 @@ void form::auto_save_form(QString const& owner, QString const& cpath, auto_save_
             // make sure the user uploaded an actual file!
             if(f_snap->postfile_exists(id))
             {
-printf("got a file with [%s]\n", id.toUtf8().data());
                 // by default the owner is the same as the form owner
                 QString attachment_owner(owner);
 
                 // by default the type of an attachment is set to
                 // "private attachment", it can be changed by the widget
-                // attachment and any module that wants to do so while
-                // generate the new page, of course
+                // attachment tag and any module that wants to do so while
+                // generating the new page, of course
                 QString attachment_type("attachment/private");
+
+                // by default attachments are unique (load one file)
+                bool multiple(false);
 
                 // retrieve the attachment tag and get additional parameters
                 QDomXPath dom_xpath;
@@ -1101,41 +1119,23 @@ printf("got a file with [%s]\n", id.toUtf8().data());
                     {
                         attachment_type = type;
                     }
+
+                    // accept multiple attachments
+                    value = attachment_tag.attribute("multiple");
+                    if(value == "multiple")
+                    {
+                        multiple = true;
+                    }
                 }
 
-                // make sure the filename from the browser does not include
-                // a path (remove the path if it is there); although browsers
-                // don't send a path, robots could...
-                int last_slash(post.lastIndexOf('/'));
-                if(last_slash != -1)
-                {
-                    post = post.mid(last_slash + 1);
-                }
-                QString const attachment_key(key + "/" + post);
-                content::content::instance()->create_content(cpath + "/" + post, attachment_owner, attachment_type);
-
-                // save the key to the attachment in the parent (here)
-                row->cell(name + "::path")->setValue(attachment_key);
-
-                // get that row and add a few things
-                QSharedPointer<QtCassandra::QCassandraRow> attachment_row(content_table->row(attachment_key));
-                snap_child::post_file_t const& file(f_snap->postfile(id));
-
-                // in this case 'post' represents the filename as sent by the
-                // user, the binary data is in the corresponding file
-                attachment_row->cell(name + "::filename")->setValue(post);
-
-                // save the file itself
-                attachment_row->cell(name)->setValue(file.get_data());
-
-                // XXX still unverified MIME type!
-                attachment_row->cell(name + "::mime_type")->setValue(file.get_mime_type());
-
-                // mark that attachment as final (i.e. cannot create children below an attachment)
-                attachment_row->cell(content::get_name(content::SNAP_NAME_CONTENT_FINAL))->setValue(static_cast<signed char>(1));
-
-                // TODO save the creation & modification time if defined
-                //      (from what I can see these are never defined anyway)
+                // save the file in the database
+                content::attachment_file attachment(f_snap, f_snap->postfile(id));
+                attachment.set_multiple(multiple);
+                attachment.set_cpath(cpath);
+                attachment.set_field_name(id);
+                attachment.set_attachment_owner(attachment_owner);
+                attachment.set_attachment_type(attachment_type);
+                content_plugin->create_attachment(attachment);
             }
         }
         else if(type == "string")
@@ -1148,7 +1148,7 @@ printf("got a file with [%s]\n", id.toUtf8().data());
 
     // let the world know that we modified this page
     // this is not an update since the form itself was not modified
-    content::content::instance()->modified_content(cpath, false);
+    content_plugin->modified_content(cpath, false);
 }
 
 
@@ -1339,10 +1339,31 @@ bool form::validate_post_for_widget_impl(const QString& cpath, sessions::session
                     // TODO add another type of error for setup ("programmer") data?
                     info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
                 }
-                else
+                else if(f_snap->postfile_exists(widget_name))
                 {
-                    // TODO load the image sizes and then compare to the
-                    //      minimum to know whether it is valid
+                    snap_child::post_file_t const& image(f_snap->postfile(widget_name));
+                    int image_width(image.get_image_width());
+                    int image_height(image.get_image_height());
+                    if(width == 0 || height == 0)
+                    {
+                        messages->set_error(
+                            "Incompatible Image File",
+                            "The image \"" + widget_name + "\" was not recognized as a supported image file format.",
+                            "the system did not recognize the image as such (width/height are not valid), cannot verify the minimum size",
+                            false
+                        );
+                        info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                    }
+                    else if(image_width < width || image_height < height)
+                    {
+                        messages->set_error(
+                            "Image Too Small",
+                            QString("The image \"" + widget_name + "\" you uploaded is too small (your image is %1x%2, the minimum required is %3x%4).").arg(image_width).arg(image_height).arg(width).arg(height),
+                            "the user uploaded an image that is too small",
+                            false
+                        );
+                        info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                    }
                 }
             }
             else
@@ -1386,11 +1407,34 @@ bool form::validate_post_for_widget_impl(const QString& cpath, sessions::session
                     // TODO add another type of error for setup ("programmer") data?
                     info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
                 }
-                else
+                else if(f_snap->postfile_exists(widget_name))
                 {
                     // TODO load the image sizes and then compare to the
                     //      minimum to know whether it is valid
-printf("max size %d x %d\n", width, height);
+                    snap_child::post_file_t const& image(f_snap->postfile(widget_name));
+                    int image_width(image.get_image_width());
+                    int image_height(image.get_image_height());
+                    if(width == 0 || height == 0)
+                    {
+                        // TODO avoid error a 2nd time if done in minimum case
+                        messages->set_error(
+                            "Incompatible Image File",
+                            "The image \"" + widget_name + "\" was not recognized as a supported image file format.",
+                            "the system did not recognize the image as such (width/height are not valid), cannot verify the minimum size",
+                            false
+                        );
+                        info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                    }
+                    else if(image_width > width || image_height > height)
+                    {
+                        messages->set_error(
+                            "Image Too Large",
+                            QString("The image \"" + widget_name + "\" you uploaded is too large (your image is %1x%2, the maximum allowed is %3x%4).").arg(image_width).arg(image_height).arg(width).arg(height),
+                            "the user uploaded an image that is too large",
+                            false
+                        );
+                        info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                    }
                 }
             }
             else

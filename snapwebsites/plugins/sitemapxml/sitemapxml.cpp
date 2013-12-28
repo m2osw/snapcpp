@@ -21,6 +21,7 @@
 #include "qdomnodemodel.h"
 #include "not_reached.h"
 #include "../content/content.h"
+#include "../permissions/permissions.h"
 #include <iostream>
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
@@ -615,7 +616,8 @@ bool sitemapxml::generate_sitemapxml_impl(sitemapxml *r)
         if(page_key.startsWith(site_key))
         {
             // check the path, not the site_key + path
-            allowed = f_snap->access_allowed("", page_key.mid(site_key.length()), "view");
+            // XXX should we use VISITOR or RETURNING VISITOR as the status?
+            allowed = f_snap->access_allowed("", page_key.mid(site_key.length()), "view", permissions::get_name(permissions::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_VISITOR));
         }
         if(allowed)
         {

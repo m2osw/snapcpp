@@ -29,6 +29,17 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <link name="robotstxt::nofollow" to="robotstxt::nofollow" mode="1:*">/types/taxonomy/system/robotstxt/nofollow</link>
     <param name="form::source">login-form</param>
   </content>
+  <content path="/verify-credentials">
+    <param name="content::title">User Credentials Verification</param>
+    <param name="content::body">
+      <![CDATA[<p>Please re-enter your email address and password before to continue. Most administrative and user profile interactions require a full log in which last only 3 hours, hence this verification process.</p>[form::source]]]>
+    </param>
+    <link name="content::page_type" to="content::page_type" mode="1:*">/types/taxonomy/system/content-types/page/public</link>
+    <link name="permissions::administer" to="permissions::administer" mode="*:*">/types/permissions/rights/administer/user/register</link>
+    <link name="robotstxt::noindex" to="robotstxt::noindex" mode="1:*">/types/taxonomy/system/robotstxt/noindex</link>
+    <link name="robotstxt::nofollow" to="robotstxt::nofollow" mode="1:*">/types/taxonomy/system/robotstxt/nofollow</link>
+    <param name="form::source">verify-credentials-form</param>
+  </content>
   <content path="/forgot-password">
     <param name="content::title">Forgot Password</param>
     <param name="content::body">

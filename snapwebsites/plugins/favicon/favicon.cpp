@@ -46,7 +46,7 @@ char const *get_name(name_t name)
         return "favicon::icon::path";
 
     case SNAP_NAME_FAVICON_IMAGE: // image is in XML
-        return "favicon::image";
+        return "content::attachment::favicon::icon::path";
 
     case SNAP_NAME_FAVICON_SETTINGS:
         return "admin/settings/favicon";
@@ -138,7 +138,6 @@ void favicon::on_bootstrap(snap_child *snap)
 {
     f_snap = snap;
 
-    //SNAP_LISTEN(favicon, "layout", layout::layout, generate_header_content, _1, _2, _3, _4, _5);
     SNAP_LISTEN(favicon, "layout", layout::layout, generate_page_content, _1, _2, _3, _4, _5);
     SNAP_LISTEN(favicon, "path", path::path, can_handle_dynamic_path, _1, _2);
 }
@@ -202,12 +201,10 @@ int64_t favicon::do_update(int64_t last_updated)
  *
  * \param[in] variables_timestamp  The timestamp for all the variables added to the database by this update (in micro-seconds).
  */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
 void favicon::initial_update(int64_t variables_timestamp)
 {
+    (void)variables_timestamp;
 }
-#pragma GCC diagnostic pop
 
 
 /** \brief Update the database with our favicon references.
@@ -217,13 +214,11 @@ void favicon::initial_update(int64_t variables_timestamp)
  *
  * \param[in] variables_timestamp  The timestamp for all the variables added to the database by this update (in micro-seconds).
  */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
 void favicon::content_update(int64_t variables_timestamp)
 {
+    (void)variables_timestamp;
     content::content::instance()->add_xml(get_plugin_name());
 }
-#pragma GCC diagnostic pop
 
 
 /** \brief Execute a page: generate the complete output of that page.
@@ -241,12 +236,26 @@ void favicon::content_update(int64_t variables_timestamp)
  */
 bool favicon::on_path_execute(QString const& cpath)
 {
+    // favicon.ico happens all the time so it is much faster to test here
+    // like this...
     if(cpath == "favicon.ico" || cpath == "default-favicon.ico" || cpath.endsWith("/favicon.ico"))
     {
         // got to use the master favorite icon or a page specific icon
         // either way we search using the get_icon() function
         output(cpath);
         return true;
+    }
+
+    QSharedPointer<QtCassandra::QCassandraTable> content_table(content::content::instance()->get_content_table());
+    QString const site_key(f_snap->get_site_key_with_slash());
+    QString const key(site_key + cpath);
+    if(content_table->exists(key))
+    {
+        if(content_table->row(key)->exists(content::get_name(content::SNAP_NAME_CONTENT_ATTACHMENT_FILENAME)))
+        {
+            output(cpath);
+            return true;
+        }
     }
 
     // not too sure right now whether we'd have a true here (most
@@ -291,9 +300,15 @@ void favicon::output(QString const& cpath)
     bool const default_icon(cpath == "default-favicon.ico");
     if(!default_icon)
     {
-        QString sub_path(cpath.left(cpath.length() - (sizeof("favicon.ico") - 1)));
-        f_snap->canonicalize_path(sub_path);
-        get_icon(sub_path, result, true);
+        // if the user tried with the default "favicon.ico" then it cannot
+        // be an attachment at the top so
+        int const pos(cpath.indexOf('/'));
+        if(pos > 0)
+        {
+            QString sub_path(cpath.left(pos));
+            f_snap->canonicalize_path(sub_path);
+            get_icon(sub_path, result, true);
+        }
     }
 
     if(result.isEmpty())
@@ -306,7 +321,7 @@ void favicon::output(QString const& cpath)
             FIELD_SEARCH
                 // /admin/settings/favicon/@favicon::icon::path
                 (content::field_search::COMMAND_MODE, content::field_search::SEARCH_MODE_EACH)
-                (content::field_search::COMMAND_FIELD_NAME, get_name(SNAP_NAME_FAVICON_ICON_PATH))
+                (content::field_search::COMMAND_FIELD_NAME, QString(content::get_name(content::SNAP_NAME_CONTENT_ATTACHMENT)) + "::" + get_name(SNAP_NAME_FAVICON_ICON_PATH))
                 (content::field_search::COMMAND_PATH, get_name(SNAP_NAME_FAVICON_SETTINGS))
                 (content::field_search::COMMAND_SELF)
                 (content::field_search::COMMAND_RESULT, result)
@@ -316,33 +331,7 @@ void favicon::output(QString const& cpath)
 
             if(!result.isEmpty())
             {
-                // we got the path to the row with the icon data
-                QtCassandra::QCassandraValue path_value(result[0]);
-                if(!path_value.nullValue())
-                {
-                    QString icon_key(path_value.stringValue());
-                    QString const site_key(f_snap->get_site_key_with_slash());
-                    if(icon_key.startsWith(site_key))
-                    {
-                        icon_key.remove(0, site_key.length());
-                    }
-                    FIELD_SEARCH
-                        // Use the path from the previous search
-                        // /admin/settings/favicon/<filename>.ico/@favicon::icon
-                        (content::field_search::COMMAND_MODE, content::field_search::SEARCH_MODE_EACH)
-                        (content::field_search::COMMAND_FIELD_NAME, get_name(SNAP_NAME_FAVICON_ICON))
-                        (content::field_search::COMMAND_PATH, icon_key)
-                        (content::field_search::COMMAND_SELF)
-                        (content::field_search::COMMAND_RESULT, result)
-
-                        // generate
-                        ;
-
-                    if(!result.isEmpty())
-                    {
-                        image_value = result[0];
-                    }
-                }
+                image_value = result[0];
             }
         }
 
@@ -361,12 +350,16 @@ void favicon::output(QString const& cpath)
         }
         else
         {
-            image = image_value.binaryValue();
+            content::attachment_file file(f_snap);
+            content::content::instance()->load_attachment(image_value.stringValue(), file);
+            image = file.get_file().get_data();
         }
     }
     else
     {
-        image = result[0].binaryValue();
+        content::attachment_file file(f_snap);
+        content::content::instance()->load_attachment(result[0].stringValue(), file);
+        image = file.get_file().get_data();
     }
 
     // Note: since IE v11.x PNG and GIF are supported.
@@ -375,8 +368,10 @@ void favicon::output(QString const& cpath)
     // we know that this image is an ICO, although if someone changes
     // it to something else (PNG, GIF...) the agent could fail
     // the newer media type is image/vnd.microsoft.icon
-    // the old media type was image/x-icon
-    f_snap->set_header("Content-Type", "image/vnd.microsoft.icon");
+    // the old media type was image/x-icon and it works better for our pupose
+    //f_snap->set_header("Content-Type", "image/vnd.microsoft.icon"); -- this is not supported by older browsers...
+    f_snap->set_header("Content-Type", "image/x-icon");
+    f_snap->set_header("Content-Transfer-Encoding", "binary");
 
     f_snap->output(image);
 }
@@ -430,23 +425,19 @@ void favicon::on_generate_page_content(layout::layout *l, QString const& cpath, 
     QString icon_path;
     if(result.isEmpty())
     {
+        // use the default if no other entries was found
         icon_path = f_snap->get_site_key_with_slash() + "favicon.ico";
     }
     else
     {
         icon_path = result[0].stringValue();
-        if(!icon_path.endsWith("/"))
-        {
-            icon_path += "/";
-        }
-        icon_path += "favicon.ico";
     }
 
     FIELD_SEARCH
         (content::field_search::COMMAND_ELEMENT, body)
         (content::field_search::COMMAND_CHILD_ELEMENT, "image")
         (content::field_search::COMMAND_CHILD_ELEMENT, "shortcut")
-        (content::field_search::COMMAND_ELEMENT_ATTR, "type=image/vnd.microsoft.icon")
+        (content::field_search::COMMAND_ELEMENT_ATTR, "type=image/x-icon") // should be vnd.microsoft.icon but that's not supported everywhere yet
         (content::field_search::COMMAND_ELEMENT_ATTR, "href=" + icon_path)
         // TODO get the image sizes when saving the image in the database
         //      so that way we can retrieve them around here
@@ -488,6 +479,8 @@ void favicon::get_icon(QString const& cpath, content::field_search::search_resul
             (content::field_search::COMMAND_SELF)
             (content::field_search::COMMAND_IF_FOUND, 1)
             (content::field_search::COMMAND_PARENTS, "types/taxonomy/system/content-types")
+            // we cannot check the default here because it
+            // cannot be accessed by anonymous visitors
         (content::field_search::COMMAND_LABEL, 1)
         (content::field_search::COMMAND_RESULT, result)
 

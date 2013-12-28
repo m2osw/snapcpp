@@ -185,30 +185,39 @@ public:
         void                        set_name(QString const& name) { f_name = name; }
         void                        set_filename(QString const& filename) { f_filename = filename; }
         void                        set_mime_type(QString const& mime_type) { f_mime_type = mime_type; }
+        void                        set_original_mime_type(QString const& mime_type) { f_original_mime_type = mime_type; }
         void                        set_creation_time(time_t ctime) { f_creation_time = ctime; }
         void                        set_modification_time(time_t mtime) { f_modification_time = mtime; }
-        void                        set_data(QByteArray const& data) { f_data = data; }
+        void                        set_data(QByteArray const& data);
+        void                        set_size(int size) { f_size = size; }
         void                        set_index(int index) { f_index = index; }
+        void                        set_image_width(int width) { f_image_width = width; }
+        void                        set_image_height(int height) { f_image_height = height; }
 
         QString                     get_name() const { return f_name; }
         QString                     get_filename() const { return f_filename; }
+        QString                     get_original_mime_type() const { return f_original_mime_type; }
         QString                     get_mime_type() const { return f_mime_type; }
         time_t                      get_creation_time() const { return f_creation_time; }
         time_t                      get_modification_time() const { return f_modification_time; }
         QByteArray                  get_data() const { return f_data; }
-        int                         get_size() const { return f_data.size(); }
+        int                         get_size() const;
         int                         get_index() const { return f_index; }
-
-        bool                        verify_mime_type() const;
+        int                         get_image_width() const { return f_image_width; }
+        int                         get_image_height() const { return f_image_height; }
 
     private:
         QString                     f_name; // field name
         QString                     f_filename;
+        QString                     f_original_mime_type;
         QString                     f_mime_type;
         controlled_vars::zint64_t   f_creation_time;
         controlled_vars::zint64_t   f_modification_time;
         QByteArray                  f_data;
+        controlled_vars::zuint32_t  f_size;
         controlled_vars::zuint32_t  f_index;
+        controlled_vars::zuint32_t  f_image_width;
+        controlled_vars::zuint32_t  f_image_height;
     };
     // map indexed by filename
     typedef QMap<QString, post_file_t> post_file_map_t;
@@ -263,7 +272,7 @@ public:
     bool                        cookie_is_defined(QString const& name) const;
     QString                     cookie(QString const& name) const;
     void                        attach_to_session();
-    bool                        access_allowed(QString const& user_path, QString const& path, QString const& action);
+    bool                        access_allowed(QString const& user_path, QString const& path, QString const& action, QString const& login_status);
     QString                     snap_url(QString const& url) const;
     void                        page_redirect(QString const& path, http_code_t http_code = HTTP_CODE_MOVED_PERMANENTLY);
     void                        die(http_code_t err_code, QString err_name, QString const& err_description, QString const& err_details);

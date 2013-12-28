@@ -37,8 +37,9 @@
  */
 
 #include <QtCassandra/QCassandra.h>
-#include <algorithm>
 #include <controlled_vars/controlled_vars_need_init.h>
+#include <algorithm>
+#include <iostream>
 
 using namespace QtCassandra;
 
@@ -66,6 +67,7 @@ private:
     QString                         f_context;
     QString                         f_table;
     QString                         f_row;
+    QByteArray                      f_row_key;
 };
 
 snapdb::snapdb(int argc, char *argv[])
@@ -216,6 +218,7 @@ void snapdb::drop_tables(bool all)
     // a live system!
     context->dropTable("content");
     context->dropTable("emails");
+    context->dropTable("files");
     context->dropTable("layout");
     context->dropTable("libQtCassandraLockTable");
     context->dropTable("links");
@@ -232,10 +235,45 @@ void snapdb::drop_tables(bool all)
     }
 }
 
+char hex_to_dec(ushort c)
+{
+    if(c >= '0' && c <= '9')
+    {
+        return c - '0';
+    }
+    if(c >= 'a' && c <= 'f')
+    {
+        return c - 'a' + 10;
+    }
+    if(c >= 'A' && c <= 'F')
+    {
+        return c - 'A' + 10;
+    }
+    std::cerr << "error: invalid hexadecimal digit, it cannot be converted." << std::endl;
+    exit(1);
+}
+
 void snapdb::display()
 {
     f_cassandra.connect(f_host, f_port);
     QSharedPointer<QCassandraContext> context(f_cassandra.context(f_context));
+
+    if(!f_row.isEmpty() && f_table == "files")
+    {
+        // these rows make use of MD5 sums so we have to convert them
+        QByteArray str(f_row.toUtf8());
+        char const *s(str.data());
+        while(s[0] != '\0' && s[1] != '\0')
+        {
+            char c((hex_to_dec(s[0]) << 4) | hex_to_dec(s[1]));
+            f_row_key.append(c);
+            s += 2;
+        }
+    }
+    else
+    {
+        f_row_key = f_row.toAscii();
+    }
 
     if(f_table.isEmpty())
     {
@@ -265,7 +303,22 @@ void snapdb::display()
                     r != rows.end();
                     ++r)
         {
-            printf("%s\n", (*r)->rowName().toUtf8().data());
+            if(f_table == "files")
+            {
+                // these are raw MD5 keys
+                QByteArray key((*r)->rowKey());
+                int const max(key.size());
+                for(int i(0); i < max; ++i)
+                {
+                    QString hex(QString("%1").arg(key[i] & 255, 2, 16, QChar('0')));
+                    std::cout << hex.toStdString();
+                }
+                std::cout << std::endl;
+            }
+            else
+            {
+                std::cout << (*r)->rowName().toUtf8().data() << std::endl;
+            }
         }
     }
     else if(f_row.endsWith("%"))
@@ -315,12 +368,12 @@ void snapdb::display()
             printf("error: table \"%s\" not found.\n", f_table.toUtf8().data());
             exit(1);
         }
-        if(!table->exists(f_row))
+        if(!table->exists(f_row_key))
         {
             printf("error: row \"%s\" not found in table \"%s\".\n", f_row.toUtf8().data(), f_table.toUtf8().data());
             exit(1);
         }
-        QSharedPointer<QCassandraRow> row(table->row(f_row));
+        QSharedPointer<QCassandraRow> row(table->row(f_row_key));
         QCassandraColumnRangePredicate column_predicate;
         column_predicate.setCount(f_count);
         column_predicate.setIndex();
@@ -361,6 +414,8 @@ void snapdb::display()
                     v = QString("%1").arg((*c)->value().uint64Value());
                 }
                 else if(n == "content::created"
+                     || n == "content::files::created"
+                     || n == "content::files::updated"
                      || n == "content::modified"
                      || n == "content::updated"
                      || n.left(18) == "core::last_updated"
@@ -384,7 +439,8 @@ void snapdb::display()
                     strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &t);
                     v = QString("%1.%2 (%3)").arg(buf).arg(time % 1000000, 6, 10, QChar('0')).arg(time);
                 }
-                else if(n == "sessions::time_limit"
+                else if(n == "sessions::login_limit"
+                     || n == "sessions::time_limit"
                 )
                 {
                     // 64 bit value (seconds)
@@ -403,7 +459,10 @@ void snapdb::display()
                     float value((*c)->value().floatValue());
                     v = QString("%1").arg(value);
                 }
-                else if(n == "sitemapxml::count"
+                else if(n == "content::files::image_height"
+                     || n == "content::files::image_width"
+                     || n == "content::files::size"
+                     || n == "sitemapxml::count"
                      || n == "sessions::id"
                      || n == "sessions::time_to_live"
                      || (f_table == "libQtCassandraLockTable" && f_row == "hosts")
@@ -415,13 +474,15 @@ void snapdb::display()
                 else if(n == "sessions::used_up"
                      || n == "content::final"
                      || n == "favicon::sitewide"
+                     || f_table == "files" && (*c)->value().size() == 1
                 )
                 {
                     // 8 bit value
                     // cast to integer so arg() doesn't take it as a character
                     v = QString("%1").arg(static_cast<int>((*c)->value().unsignedCharValue()));
                 }
-                else if(n == "sessions::random"
+                else if(n == "content::attachment"
+                     || n == "sessions::random"
                      || n == "users::password::salt"
                      || n == "users::password"
                 )
@@ -436,6 +497,7 @@ void snapdb::display()
                     }
                 }
                 else if(n == "favicon::icon"
+                     || n == "content::files::data"
                 )
                 {
                     // n bit binary value

@@ -18,6 +18,7 @@
 #include "sendmail.h"
 #include "log.h"
 #include "mkgmtime.h"
+#include "snap_magic.h"
 #include "qdomxpath.h"
 #include "quoted_printable.h"
 #include "../content/content.h"
@@ -29,7 +30,6 @@
 #include <QtSerialization/QSerializationFieldString.h>
 #include <QtSerialization/QSerializationFieldTag.h>
 #include <iostream>
-#include <magic.h>
 #include "poison.h"
 
 
@@ -135,6 +135,10 @@ const char *get_name(name_t name)
     case SNAP_NAME_SENDMAIL_TO:
         return "To";
 
+    case SNAP_NAME_SENDMAIL_USER_AGENT:
+        // it would be better with the version of the sendmail plugin...
+        return "Snap! C++ Sendmail User Agent v" SNAPWEBSITES_VERSION_STRING;
+
     case SNAP_NAME_SENDMAIL_X_PRIORITY:
         return "X-Priority";
 
@@ -182,50 +186,21 @@ sendmail::email::email_attachment::~email_attachment()
  * calling this function so that way you avoid asking the magic library
  * for it. This will save time as the magic library is much slower.
  *
- * \exception sendmail_exception_no_magic
- * If the data MIME type cannot be determined because the magic
- * library cannot be initialized, the function raises this exception.
- *
  * \param[in] data  The data to attach to this email.
+ * \param[in] mime_type  The MIME type of the data if known,
+ *                       otherwise leave empty.
  *
  * \sa add_header();
+ * \sa get_mime_type();
  */
 void sendmail::email::email_attachment::set_data(const QByteArray& data, QString mime_type)
 {
     f_data = data;
 
-    // RAII class to make sure magic gets closed on error
-    class magic
-    {
-    public:
-        magic()
-            : f_magic(magic_open(MAGIC_COMPRESS | MAGIC_MIME))
-        {
-            if(f_magic == NULL)
-            {
-                throw sendmail_exception_no_magic("Magic MIME type cannot be opened (magic_open() failed)");
-            }
-        }
-
-        ~magic()
-        {
-            magic_close(f_magic);
-        }
-
-        QString get_mime_type(const QByteArray& data)
-        {
-            return magic_buffer(f_magic, data.data(), data.length());
-        }
-
-    private:
-        magic_t f_magic;
-    };
-
     // if user did not define the MIME type then ask the magic library
     if(mime_type.isEmpty())
     {
-        magic m;
-        mime_type = m.get_mime_type(f_data);
+        mime_type = get_mime_type(f_data);
     }
     f_header[get_name(SNAP_NAME_SENDMAIL_CONTENT_TYPE)] = mime_type;
 }
@@ -1823,6 +1798,11 @@ void sendmail::attach_email(const email& e)
  */
 void sendmail::attach_user_email(const email& e)
 {
+    // TODO the sendmail plugin cannot directly access the user's
+    //      plugin if the user's plugin is to use the sendmail plugin
+    //      (it may be easier to implement events to send emails
+    //      from anyway and use that from the user plugin and avoid
+    //      the sendmail reference in the user plugin)
     QSharedPointer<QtCassandra::QCassandraTable> table(get_emails_table());
     users::users *users_plugin(users::users::instance());
     const char *email_key(users::get_name(users::SNAP_NAME_USERS_ORIGINAL_EMAIL));
@@ -2224,8 +2204,9 @@ void sendmail::sendemail(const QString& key, const QString& unique_key)
         info.set_plugin_owner(get_plugin_name()); // ourselves
         //info.set_page_path(); -- no path for emails
         info.set_object_path("/email/" + f_email.get_email_key()); // save the email key; this is not a real path though
+        info.set_user_agent(get_name(SNAP_NAME_SENDMAIL_USER_AGENT));
         info.set_time_to_live(86400 * 30);  // 30 days
-        const QString message_id(sessions::sessions::instance()->create_session(info));
+        QString const message_id(sessions::sessions::instance()->create_session(info));
 
         headers["Message-ID"] = "<" + message_id + "@snapwebsites>";
     }

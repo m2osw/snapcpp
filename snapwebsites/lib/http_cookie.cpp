@@ -839,4 +839,4 @@ QString http_cookie::to_http_header() const
 
 } // namespace snap
 
-// vim: ts=4 sw=4
+// vim: ts=4 sw=4 et

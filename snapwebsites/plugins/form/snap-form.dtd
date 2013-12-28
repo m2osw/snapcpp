@@ -43,9 +43,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 <!ELEMENT widget (widget|label|tooltip|help|background-value|widgetorder|attachment|sizes|filters|value|required|classes)*>
 <!ATTLIST widget id ID #REQUIRED
                  type NMTOKEN #REQUIRED
-		 secret (public|secret) "public"
-		 duplicate-of IDREF #IMPLIED
-		 auto-save (binary|int8|string) #IMPLIED>
+                 secret (public|secret) "public"
+                 duplicate-of IDREF #IMPLIED
+                 auto-save (binary|int8|string) #IMPLIED>
 
 <!ELEMENT label %html-data;>
 <!ELEMENT tooltip %html-data;>
@@ -60,7 +60,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 <!ATTLIST widgetpriority refid IDREF #REQUIRED>
 
 <!ELEMENT attachment EMPTY>
-<!ATTLIST attachment type CDATA #REQUIRED>
+<!ATTLIST attachment type CDATA #REQUIRED
+                     owner CDATA #IMPLIED
+                     multiple (multiple) #IMPLIED>
 
 <!ELEMENT sizes (min|max|width)+>
 <!ELEMENT min (#PCDATA)>
@@ -82,16 +84,19 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 <!ELEMENT a %html-data;>
 <!ATTLIST a href CDATA #REQUIRED
-            rel (nofollow) #IMPLIED
+            rel (nofollow|author) #IMPLIED
             title CDATA "">
 
 <!ELEMENT img EMPTY>
 <!ATTLIST img src CDATA #REQUIRED
-	      width CDATA #IMPLIED
-	      height CDATA #IMPLIED
-	      title CDATA #IMPLIED
-	      alt CDATA #IMPLIED
-	      type CDATA #IMPLIED>
+          width CDATA #IMPLIED
+          height CDATA #IMPLIED
+          title CDATA #IMPLIED
+          alt CDATA #IMPLIED
+          type CDATA #IMPLIED>
 
 <!ELEMENT div %html-data;>
 <!ELEMENT p %html-data;>
+<!--
+vim: ts=4 sw=4 et
+-->

@@ -27,12 +27,30 @@ namespace content
 
 enum name_t {
     SNAP_NAME_CONTENT_ACCEPTED,
+    SNAP_NAME_CONTENT_ATTACHMENT,
+    SNAP_NAME_CONTENT_ATTACHMENT_FILENAME,
+    SNAP_NAME_CONTENT_ATTACHMENT_MIME_TYPE,
+    SNAP_NAME_CONTENT_ATTACHMENT_PATH_END,
     SNAP_NAME_CONTENT_BODY,
     SNAP_NAME_CONTENT_CHILDREN,
+    SNAP_NAME_CONTENT_COMPRESSOR_UNCOMPRESSED,
     SNAP_NAME_CONTENT_CONTENT_TYPES,
     SNAP_NAME_CONTENT_CONTENT_TYPES_NAME,
     SNAP_NAME_CONTENT_COPYRIGHTED,
     SNAP_NAME_CONTENT_CREATED,
+    SNAP_NAME_CONTENT_FILES_COMPRESSOR,
+    SNAP_NAME_CONTENT_FILES_CREATED,
+    SNAP_NAME_CONTENT_FILES_CREATION_TIME,
+    SNAP_NAME_CONTENT_FILES_DATA,
+    SNAP_NAME_CONTENT_FILES_FILENAME,
+    SNAP_NAME_CONTENT_FILES_IMAGE_HEIGHT,
+    SNAP_NAME_CONTENT_FILES_IMAGE_WIDTH,
+    SNAP_NAME_CONTENT_FILES_MIME_TYPE,
+    SNAP_NAME_CONTENT_FILES_ORIGINAL_MIME_TYPE,
+    SNAP_NAME_CONTENT_FILES_MODIFICATION_TIME,
+    SNAP_NAME_CONTENT_FILES_SIZE,
+    SNAP_NAME_CONTENT_FILES_TABLE,
+    SNAP_NAME_CONTENT_FILES_UPDATED,
     SNAP_NAME_CONTENT_FINAL,
     SNAP_NAME_CONTENT_ISSUED,
     SNAP_NAME_CONTENT_LONG_TITLE,
@@ -221,6 +239,56 @@ field_search create_field_search(char const *filename, char const *func, int lin
 #define FIELD_SEARCH    snap::content::create_field_search(__FILE__, __func__, __LINE__, f_snap)
 
 
+class attachment_file
+{
+public:
+                                    attachment_file(snap_child *snap);
+                                    attachment_file(snap_child *snap, snap_child::post_file_t const& file);
+
+    void                            set_multiple(bool multiple);
+    void                            set_cpath(QString const& cpath);
+    void                            set_field_name(QString const& field_name);
+    void                            set_attachment_owner(QString const& owner);
+    void                            set_attachment_type(QString const& type);
+    void                            set_creation_time(int64_t time);
+    void                            set_update_time(int64_t time);
+
+    void                            set_file_name(QString const& name);
+    void                            set_file_filename(QString const& filename);
+    void                            set_file_mime_type(QString const& mime_type);
+    void                            set_file_original_mime_type(QString const& mime_type);
+    void                            set_file_creation_time(time_t ctime);
+    void                            set_file_modification_time(time_t mtime);
+    void                            set_file_data(QByteArray const& data);
+    void                            set_file_size(int size);
+    void                            set_file_index(int index);
+    void                            set_file_image_width(int width);
+    void                            set_file_image_height(int height);
+
+    bool                            get_multiple() const;
+    snap_child::post_file_t const&  get_file() const;
+    QString const&                  get_cpath() const;
+    QString const&                  get_field_name() const;
+    QString const&                  get_attachment_owner() const;
+    QString const&                  get_attachment_type() const;
+    int64_t                         get_creation_time() const;
+    int64_t                         get_update_time() const;
+    QString const&                  get_name() const;
+
+private:
+    zpsnap_child_t                  f_snap;
+    snap_child::post_file_t         f_file;
+    controlled_vars::fbool_t        f_multiple;
+    controlled_vars::fbool_t        f_has_cpath;
+    QString                         f_cpath;
+    QString                         f_field_name;
+    QString                         f_attachment_owner;
+    QString                         f_attachment_type;
+    mutable QString                 f_name;
+    int64_t                         f_creation_time;
+    int64_t                         f_update_time;
+};
+
 
 
 class content : public plugins::plugin, public path::path_execute, public layout::layout_content, public javascript::javascript_dynamic_plugin
@@ -242,6 +310,7 @@ public:
     virtual QString     description() const;
     virtual int64_t     do_update(int64_t last_updated);
     QSharedPointer<QtCassandra::QCassandraTable> get_content_table();
+    QSharedPointer<QtCassandra::QCassandraTable> get_files_table();
     QtCassandra::QCassandraValue get_content_parameter(QString path, QString const& name);
 
     void                on_bootstrap(snap_child *snap);
@@ -253,6 +322,7 @@ public:
 
     SNAP_SIGNAL(new_content, (QString const& path), (path));
     SNAP_SIGNAL(create_content, (QString const& path, QString const& owner, QString const& type), (path, owner, type));
+    SNAP_SIGNAL(create_attachment, (attachment_file const& file), (file));
     SNAP_SIGNAL(modified_content, (QString const& path, bool updated), (path, updated));
 
     void                output() const;
@@ -265,6 +335,7 @@ public:
     void                set_param_type(QString const& path, const QString& name, param_type_t param_type);
     void                add_link(QString const& path, links::link_info const& source, links::link_info const& destination);
     static void         insert_html_string_to_xml_doc(QDomElement child, QString const& xml);
+    bool                load_attachment(QString const& key, attachment_file& file, bool load_data = true);
 
     virtual int         js_property_count() const;
     virtual QVariant    js_property_get(QString const& name) const;
@@ -304,6 +375,7 @@ private:
 
     zpsnap_child_t                                  f_snap;
     QSharedPointer<QtCassandra::QCassandraTable>    f_content_table;
+    QSharedPointer<QtCassandra::QCassandraTable>    f_files_table;
     content_block_map_t                             f_blocks;
     controlled_vars::fbool_t                        f_updating;
 };

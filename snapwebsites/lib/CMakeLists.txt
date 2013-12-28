@@ -45,7 +45,19 @@ find_package( Qt4 4.8.1 REQUIRED QtCore QtXml QtXmlPatterns )
 include( ${QT_USE_FILE} )
 add_definitions( ${QT_DEFINITIONS} )
 
+find_file( MAGIC magic.h )
+if( ${MAGIC} STREQUAL "MAGIC-NOTFOUND" )
+    message( FATAL_ERROR "Please install libmagic!" )
+endif()
+get_filename_component( MAGIC_INCLUDE_PATH ${MAGIC} PATH )
+
+find_library( MAGIC_LIBRARY magic )
+if( ${MAGIC_LIBRARY} STREQUAL "MAGIC_LIBRARY-NOTFOUND" )
+    message( FATAL_ERROR "Please install libmagic!" )
+endif()
+
 include_directories(
+    ${MAGIC_INCLUDE_PATH}
     ${LOG4CPLUS_INCLUDE_DIR}
     ${QT_INCLUDES}
 )
@@ -68,10 +80,13 @@ add_library( ${PROJECT_NAME} SHARED
     qdomxpath.cpp           # Qt extension to query a XML DOM with X-Path
     qhtmlserializer.cpp     # Qt extension to output HTML as a string
     quoted_printable.cpp    # to encode / decode data using the quoted printable format
-    snap_parser.cpp         # lexer/parser for all our script like entries
-    snap_uri.cpp            # URI handling
     snap_child.cpp          # requests processing
+    snap_image.cpp          # image handling
+    snap_magic.cpp          # support for MIME type
+    snap_parser.cpp         # lexer/parser for all our script like entries
     snap_thread.cpp         # a C++ thread implementation
+    snap_uri.cpp            # URI handling
+    snap_utf8.cpp           # UTF-8 functions
     snapwebsites.cpp        # server
     tcp_client_server.cpp   # low level TCP/IP that works
     udp_client_server.cpp   # low level UDP/IP that works
@@ -84,6 +99,7 @@ target_link_libraries( ${PROJECT_NAME}
     ${QT_LIBRARIES}
     ${QTCASSANDRA_LIBRARIES}
     ${QTSERIALIZATION_LIBRARIES}
+    ${MAGIC_LIBRARY}
     pthread
     dl
 )

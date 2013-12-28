@@ -50,22 +50,10 @@ include_directories(
     ${QT_INCLUDES}
 )
 
-find_file( MAGIC magic.h )
-if( ${MAGIC} STREQUAL "MAGIC-NOTFOUND" )
-    message( FATAL_ERROR "Please install libmagic!" )
-endif()
-get_filename_component( MAGIC_INCLUDE_PATH ${MAGIC} PATH )
-
-find_library( MAGIC_LIBRARY magic )
-if( ${MAGIC_LIBRARY} STREQUAL "MAGIC_LIBRARY-NOTFOUND" )
-    message( FATAL_ERROR "Please install libmagic!" )
-endif()
 
 QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC
     sendmail.qrc
 )
-
-include_directories( ${MAGIC_INCLUDE_PATH} )
 
 set( XMLFILES content.xml )
 snap_validate_dtd( ${PROJECT_NAME} ${XMLFILES} )
@@ -77,7 +65,7 @@ add_library(sendmail SHARED
     ${XMLFILES}
 )
 
-target_link_libraries( sendmail ${QT_LIBRARIES} ${MAGIC_LIBRARY} )
+target_link_libraries( sendmail ${QT_LIBRARIES} )
 
 get_property( 3RDPARTY_INCLUDED GLOBAL PROPERTY 3RDPARTY_INCLUDED )
 if( 3RDPARTY_INCLUDED )

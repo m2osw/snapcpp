@@ -486,6 +486,8 @@
             <!-- the event check should be in a function and it should verify that the element with focus is an input[type=text] -->
             <xsl:attribute name="onkeypress">javascript:if((event.which&amp;&amp;event.which==13)||(event.keyCode&amp;&amp;event.keyCode==13))fire_event(<xsl:value-of select="default-button/@refid"/>_<xsl:value-of select="$unique_id"/>,'click');</xsl:attribute>
           </xsl:if>
+          <!-- see http://stackoverflow.com/questions/153527/setting-the-character-encoding-in-form-submit-for-internet-explorer -->
+          <input id="form__iehack" name="form__iehack" type="hidden" value="&#9760;"/>
           <input id="form_session" name="form_session" type="hidden" value="{$form_session}"/>
           <xsl:choose>
             <xsl:when test="widgetorder">

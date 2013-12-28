@@ -18,7 +18,6 @@
 #define SNAP_USERS_H
 
 #include "../form/form.h"
-#include "../permissions/permissions.h"
 #include "../sitemapxml/sitemapxml.h"
 
 namespace snap
@@ -47,7 +46,6 @@ enum name_t
     SNAP_NAME_USERS_LOGIN_REFERRER,
     SNAP_NAME_USERS_LOGOUT_IP,
     SNAP_NAME_USERS_LOGOUT_ON,
-    SNAP_NAME_USERS_MAKE_ROOT,
     SNAP_NAME_USERS_NEW_PATH,
     SNAP_NAME_USERS_ORIGINAL_EMAIL,
     SNAP_NAME_USERS_ORIGINAL_IP,
@@ -112,7 +110,7 @@ public:
 
 
 
-class users : public plugins::plugin, public path::path_execute, public layout::layout_content, public form::form_post, public server::backend_action
+class users : public plugins::plugin, public path::path_execute, public layout::layout_content, public form::form_post
 {
 public:
     static const sessions::sessions::session_info::session_id_t USERS_SESSION_ID_LOG_IN = 1;                    // login-form.xml
@@ -128,6 +126,7 @@ public:
     static const sessions::sessions::session_info::session_id_t USERS_SESSION_ID_NEW_PASSWORD = 11;             // new-password-form.xml
     static const sessions::sessions::session_info::session_id_t USERS_SESSION_ID_REPLACE_PASSWORD = 12;         // replace-password-form.xml
     static const sessions::sessions::session_info::session_id_t USERS_SESSION_ID_PASSWORD = 13;                 // password-form.xml
+    static const sessions::sessions::session_info::session_id_t USERS_SESSION_ID_VERIFY_CREDENTIALS = 14;       // verify-credentials-form.xml
 
                             users();
     virtual                 ~users();
@@ -148,11 +147,7 @@ public:
     void                    on_attach_to_session();
     void                    on_detach_from_session();
     void                    on_create_content(QString const& path, QString const& owner, QString const& type);
-    void                    on_get_user_rights(permissions::permissions *perms, permissions::permissions::sets_t& sets);
-    void                    on_get_plugin_permissions(permissions::permissions *perms, permissions::permissions::sets_t& sets);
-    void                    on_register_backend_action(server::backend_action_map_t& actions);
     void                    on_improve_signature(QString const& path, QString& signature);
-    virtual void            on_backend_action(QString const& action);
 
     virtual void            on_process_post(QString const& cpath, sessions::sessions::session_info const& info);
 
@@ -166,6 +161,11 @@ public:
     QString                 detach_from_session(QString const& name) const;
 
 private:
+    enum login_mode_t
+    {
+        LOGIN_MODE_FULL,
+        LOGIN_MODE_VERIFICATION
+    };
     void                    initial_update(int64_t variables_timestamp);
     void                    content_update(int64_t variables_timestamp);
     void                    show_user(layout::layout *l, QString const& cpath, QDomElement& page, QDomElement& body);
@@ -175,7 +175,8 @@ private:
     void                    prepare_forgot_password_form();
     void                    prepare_password_form();
     void                    prepare_new_password_form();
-    void                    process_login_form();
+    void                    process_login_form(login_mode_t login_mode);
+    void                    prepare_verify_credentials_form();
     void                    process_register_form();
     void                    create_password_salt(QByteArray& salt);
     void                    encrypt_password(QString const& digest, QString const& password, QByteArray const& salt, QByteArray& hash);

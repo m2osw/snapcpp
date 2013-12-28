@@ -29,25 +29,25 @@ namespace sendmail
 class sendmail_exception : public snap_exception
 {
 public:
-    sendmail_exception(const std::string& what_msg) : snap_exception(what_msg) {}
-};
-
-class sendmail_exception_no_magic : public sendmail_exception
-{
-public:
-    sendmail_exception_no_magic(const std::string& what_msg) : sendmail_exception(what_msg) {}
+    sendmail_exception(char const *whatmsg) : snap_exception("sendmail", whatmsg) {}
+    sendmail_exception(std::string const& what_msg) : snap_exception("sendmail", what_msg) {}
+    sendmail_exception(QString const& whatmsg) : snap_exception("sendmail", whatmsg) {}
 };
 
 class sendmail_exception_invalid_argument : public sendmail_exception
 {
 public:
-    sendmail_exception_invalid_argument(const std::string& what_msg) : sendmail_exception(what_msg) {}
+    sendmail_exception_invalid_argument(char const *what_msg) : sendmail_exception(what_msg) {}
+    sendmail_exception_invalid_argument(std::string const& what_msg) : sendmail_exception(what_msg) {}
+    sendmail_exception_invalid_argument(QString const& what_msg) : sendmail_exception(what_msg) {}
 };
 
 class sendmail_exception_too_many_levels : public sendmail_exception
 {
 public:
-    sendmail_exception_too_many_levels(const std::string& what_msg) : sendmail_exception(what_msg) {}
+    sendmail_exception_too_many_levels(char const *what_msg) : sendmail_exception(what_msg) {}
+    sendmail_exception_too_many_levels(std::string const& what_msg) : sendmail_exception(what_msg) {}
+    sendmail_exception_too_many_levels(QString const& what_msg) : sendmail_exception(what_msg) {}
 };
 
 
@@ -82,6 +82,7 @@ enum name_t
     SNAP_NAME_SENDMAIL_STOP,
     SNAP_NAME_SENDMAIL_SUBJECT,
     SNAP_NAME_SENDMAIL_TO,
+    SNAP_NAME_SENDMAIL_USER_AGENT,
     SNAP_NAME_SENDMAIL_X_MSMAIL_PRIORITY,
     SNAP_NAME_SENDMAIL_X_PRIORITY
 };
