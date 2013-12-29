@@ -55,6 +55,10 @@ QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC
 
 snap_validate_xml( content.xml content.dtd )
 
+# Unfortunate, but at this time this doesn't work too well...
+# (i.e. xmllint [as in libxml2] does not support this complex XSD schema)
+#snap_validate_xml( core-form.xsl schema-for-xslt20.xsd )
+
 add_library(form SHARED
     form.cpp
     ${SNAP_MANAGER_MOC_CXX}

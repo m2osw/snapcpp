@@ -53,12 +53,14 @@ QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC
 )
 
 snap_validate_xml( content.xml content.dtd )
+snap_validate_xml( settings-form.xml form/snap-form.dtd )
 
 add_library(shorturl SHARED
     shorturl.cpp
     ${SNAP_MANAGER_MOC_CXX}
     ${SNAP_MANAGER_RESOURCES_RCC}
     content.xml
+    settings-form.xml
 )
 
 target_link_libraries( shorturl ${QT_LIBRARIES} )

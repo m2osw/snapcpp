@@ -84,12 +84,12 @@ logger info   (const char *file = NULL, const char *func = NULL, int line = -1);
 logger debug  (const char *file = NULL, const char *func = NULL, int line = -1);
 logger trace  (const char *file = NULL, const char *func = NULL, int line = -1);
 
-#define	SNAP_LOG_FATAL 		logging::fatal  (__FILE__, __func__, __LINE__)
-#define	SNAP_LOG_ERROR 		logging::error  (__FILE__, __func__, __LINE__)
-#define	SNAP_LOG_WARNING 	logging::warning(__FILE__, __func__, __LINE__)
-#define	SNAP_LOG_INFO 		logging::info   (__FILE__, __func__, __LINE__)
-#define	SNAP_LOG_DEBUG 		logging::debug  (__FILE__, __func__, __LINE__)
-#define	SNAP_LOG_TRACE		logging::trace  (__FILE__, __func__, __LINE__)
+#define	SNAP_LOG_FATAL 		snap::logging::fatal  (__FILE__, __func__, __LINE__)
+#define	SNAP_LOG_ERROR 		snap::logging::error  (__FILE__, __func__, __LINE__)
+#define	SNAP_LOG_WARNING 	snap::logging::warning(__FILE__, __func__, __LINE__)
+#define	SNAP_LOG_INFO 		snap::logging::info   (__FILE__, __func__, __LINE__)
+#define	SNAP_LOG_DEBUG 		snap::logging::debug  (__FILE__, __func__, __LINE__)
+#define	SNAP_LOG_TRACE		snap::logging::trace  (__FILE__, __func__, __LINE__)
 
 } // namespace logging
 } // namespace snap

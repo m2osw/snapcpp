@@ -51,12 +51,14 @@ QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC
 )
 
 snap_validate_xml( content.xml content.dtd )
+snap_validate_xml( settings-form.xml form/snap-form.dtd )
 
 add_library(favicon SHARED
     favicon.cpp
     ${SNAP_MANAGER_MOC_CXX}
     ${SNAP_MANAGER_RESOURCES_RCC}
     content.xml
+    settings-form.xml
     snap-favicon.ico
 )
 

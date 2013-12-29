@@ -62,13 +62,11 @@
 #include "snapwebsites.h"
 #include "log.h"
 #include <advgetopt/advgetopt.h>
-//#include <syslog.h>
 #include <unistd.h>
 #include <string.h>
 #include <iostream>
 #include <sstream>
 
-using namespace snap;
 
 namespace
 {
@@ -140,7 +138,7 @@ snap_cgi::snap_cgi( int argc, char *argv[] )
     , f_address("0.0.0.0")
 {
     //openlog("snap.cgi", LOG_NDELAY | LOG_PID, LOG_DAEMON);
-    logging::configure("/etc/snapwebsites/snapcgilog.conf");
+    snap::logging::configure("/etc/snapwebsites/snapcgilog.conf");
 }
 
 snap_cgi::~snap_cgi()
@@ -217,7 +215,9 @@ bool snap_cgi::verify()
         std::cout   << "Status: 405 Method Not Defined"         << std::endl
                     << "Expires: Sat, 1 Jan 2000 00:00:00 GMT"  << std::endl
                     << "Allow: GET, HEAD, POST"                 << std::endl
-                    << std::endl;
+                    << "Content-Type: text/html; charset=utf-8" << std::endl
+                    << std::endl
+                    << "<html><head><title>Method Not Defined</title></head><body><p>Sorry. We only support GET, HEAD, and POST.</p></body></html>";
         return false;
     }
     if(strcmp(request_method, "GET") != 0
