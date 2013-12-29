@@ -39,6 +39,8 @@
 #include <QtSerialization/QSerialization.h>
 #include <QCoreApplication>
 #include "poison.h"
+#include "qstring_stream.h"
+#include <sstream>
 
 namespace snap
 {
@@ -285,7 +287,7 @@ bool snap_child::process(int socket)
 
 // to avoid the fork use 1 on the next line
 // (much easier to debug a crashing problem in a snap child!)
-#if 0
+#ifdef SNAP_NO_FORK
     pid_t p = 0;
 #else
     pid_t p = fork();
@@ -1177,6 +1179,18 @@ fprintf(stderr, " f_files[\"%s\"] = \"...\" (Filename: \"%s\" MIME: %s, size: %d
             return f_has_post;
         }
 
+        void output_debug_log()
+        {
+            std::stringstream ss;
+            ss << "post:" << std::endl;
+            for( auto &pair : f_post.toStdMap() )
+            {
+                ss << pair.first << ": " << pair.second << std::endl;
+            }
+
+            SNAP_LOG_DEBUG( ss.str().c_str() );
+        }
+
     private:
         mutable zpsnap_child_t      f_snap;
         controlled_vars::zint32_t   f_socket;
@@ -1208,6 +1222,7 @@ fprintf(stderr, " f_files[\"%s\"] = \"...\" (Filename: \"%s\" MIME: %s, size: %d
     f_files.clear();
 
     read_env r(this, f_socket, f_env, f_browser_cookies, f_post, f_files);
+    r.output_debug_log();
     r.run();
     f_has_post = r.has_post();
 }

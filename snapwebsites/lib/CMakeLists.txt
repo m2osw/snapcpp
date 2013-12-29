@@ -45,6 +45,11 @@ find_package( Qt4 4.8.1 REQUIRED QtCore QtXml QtXmlPatterns )
 include( ${QT_USE_FILE} )
 add_definitions( ${QT_DEFINITIONS} )
 
+option( SNAP_NO_FORK OFF "Set to suppress snapserver's inate forking [for debugging purposes only--not for release!]" )
+if( ${SNAP_NO_FORK} )
+    add_definitions( -DSNAP_NO_FORK )
+endif()
+
 find_file( MAGIC magic.h )
 if( ${MAGIC} STREQUAL "MAGIC-NOTFOUND" )
     message( FATAL_ERROR "Please install libmagic!" )
@@ -123,4 +128,4 @@ install(
 # within our environment, however, we probably want to consider
 # installing our headers at some point.
 
-# vim: ts=4 sw=4 et
+# vim: ts=4 sw=4 et nocindent
