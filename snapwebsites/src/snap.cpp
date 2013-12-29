@@ -101,7 +101,15 @@ namespace
             "snapserver",
             NULL,
             "IP address on which the snapserver is running, it may include a port (i.e. 192.168.0.1:4004)",
-            advgetopt::getopt::required_argument
+            advgetopt::getopt::optional_argument
+        },
+        {
+            '\0',
+            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_CONFIGURATION_FILE,
+            "logconfig",
+            "/etc/snapwebsites/snapcgilog.conf",
+            "Full path of log configuration file",
+            advgetopt::getopt::optional_argument
         },
         {
             '\0',
@@ -137,8 +145,8 @@ snap_cgi::snap_cgi( int argc, char *argv[] )
     , f_port(4004)
     , f_address("0.0.0.0")
 {
-    //openlog("snap.cgi", LOG_NDELAY | LOG_PID, LOG_DAEMON);
-    snap::logging::configure("/etc/snapwebsites/snapcgilog.conf");
+    std::string logconfig(f_opt.get_string("logconfig"));
+    snap::logging::configure( logconfig.c_str() );
 }
 
 snap_cgi::~snap_cgi()
@@ -147,9 +155,6 @@ snap_cgi::~snap_cgi()
 
 int snap_cgi::error(const char *code, const char *msg)
 {
-    // XXX
-    // We should look into having that using the main Snap log settings.
-    //syslog(LOG_CRIT, "%s", msg);
     SNAP_LOG_ERROR(msg);
 
     std::cout   << "HTTP/1.1 " << code << std::endl
@@ -246,6 +251,10 @@ bool snap_cgi::verify()
 
 int snap_cgi::process()
 {
+    const std::string request_method( getenv("REQUEST_METHOD") );
+    SNAP_LOG_DEBUG("processing request_method=")(request_method.c_str());
+
+    SNAP_LOG_DEBUG("f_address=")(f_address.c_str())(", f_port=")(f_port);
     tcp_client_server::tcp_client socket(f_address, f_port);
 
 #define START_COMMAND "#START=" SNAPWEBSITES_VERSION_STRING
@@ -266,8 +275,9 @@ int snap_cgi::process()
             return error("504 Gateway Timeout", "error while writing to the child process (3).");
         }
     }
-    if(strcmp(getenv("REQUEST_METHOD"), "POST") == 0)
+    if( request_method == "POST" )
     {
+        SNAP_LOG_DEBUG("writing #POST");
         if(socket.write("#POST\n", 6) != 6)
         {
             return error("504 Gateway Timeout", "error while writing to the child process (4).");
@@ -306,7 +316,9 @@ int snap_cgi::process()
                 var += c;
             }
         }
+        SNAP_LOG_DEBUG("wrote var=")(var.c_str());
     }
+    SNAP_LOG_DEBUG("writing #END");
     if(socket.write("#END\n", 5) != 5)
     {
         return error("504 Gateway Timeout", "error while writing to the child process (4).");
@@ -327,30 +339,31 @@ int snap_cgi::process()
         int r(socket.read(buf, sizeof(buf)));
         if(r > 0)
         {
+            SNAP_LOG_DEBUG("writing buf=")(buf);
             if(fwrite(buf, r, 1, stdout) != 1)
             {
                 // there is not point in calling error() from here because
                 // the connection is probably broken anyway, just report
-                // the problem in syslog()
-                //syslog(LOG_CRIT, "an I/O error occurred while sending the response to the client");
+                // the problem in to the logger
                 SNAP_LOG_ERROR("an I/O error occurred while sending the response to the client");
                 return 1;
             }
 
 // to get a "verbose" CGI (For debug purposes)
 #if 0
-{
-FILE *f = fopen("/tmp/snap.output", "a");
-if(f != NULL)
-{
-fwrite(buf, r, 1, f);
-fclose(f);
-}
-}
+            {
+                FILE *f = fopen("/tmp/snap.output", "a");
+                if(f != NULL)
+                {
+                    fwrite(buf, r, 1, f);
+                    fclose(f);
+                }
+            }
 #endif
         }
         else if(r == -1)
         {
+            SNAP_LOG_DEBUG("Done reading from socket.");
             break;
         }
         else if(r == 0)
@@ -362,10 +375,12 @@ fclose(f);
                 break;
             }
             more = true;
+            SNAP_LOG_DEBUG("Waiting, sleep 1");
             sleep(1);
         }
     }
     // TODO: handle potential read problems...
+    SNAP_LOG_DEBUG("Closing connection...");
     return 0;
 }
 
