@@ -1145,7 +1145,9 @@ fprintf(stderr, " f_files[\"%s\"] = \"...\" (Filename: \"%s\" MIME: %s, size: %d
                 }
                 else if(c == '\n')
                 {
+#ifdef DEBUG
                     SNAP_LOG_DEBUG("f_name=")(f_name.toUtf8().data());
+#endif
                     process_line();
 
                     // clear for next line
@@ -1180,6 +1182,7 @@ fprintf(stderr, " f_files[\"%s\"] = \"...\" (Filename: \"%s\" MIME: %s, size: %d
             return f_has_post;
         }
 
+#ifdef DEBUG
         void output_debug_log()
         {
             std::stringstream ss;
@@ -1191,6 +1194,7 @@ fprintf(stderr, " f_files[\"%s\"] = \"...\" (Filename: \"%s\" MIME: %s, size: %d
 
             SNAP_LOG_DEBUG( ss.str().c_str() );
         }
+#endif
 
     private:
         mutable zpsnap_child_t      f_snap;
@@ -1223,7 +1227,9 @@ fprintf(stderr, " f_files[\"%s\"] = \"...\" (Filename: \"%s\" MIME: %s, size: %d
     f_files.clear();
 
     read_env r(this, f_socket, f_env, f_browser_cookies, f_post, f_files);
+#ifdef DEBUG
     r.output_debug_log();
+#endif
     r.run();
     f_has_post = r.has_post();
 }
