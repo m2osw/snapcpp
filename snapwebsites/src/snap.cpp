@@ -67,7 +67,6 @@
 #include <iostream>
 #include <sstream>
 
-
 namespace
 {
     const std::vector<std::string> g_configuration_files  =
@@ -252,9 +251,11 @@ bool snap_cgi::verify()
 int snap_cgi::process()
 {
     const std::string request_method( getenv("REQUEST_METHOD") );
+#ifdef DEBUG
     SNAP_LOG_DEBUG("processing request_method=")(request_method.c_str());
 
     SNAP_LOG_DEBUG("f_address=")(f_address.c_str())(", f_port=")(f_port);
+#endif
     tcp_client_server::tcp_client socket(f_address, f_port);
 
 #define START_COMMAND "#START=" SNAPWEBSITES_VERSION_STRING
@@ -266,6 +267,9 @@ int snap_cgi::process()
     for(char **e(environ); *e; ++e)
     {
         int len = strlen(*e);
+#ifdef DEBUG
+        SNAP_LOG_DEBUG("Writing environment '")(*e)("'");
+#endif
         if(socket.write(*e, len) != len)
         {
             return error("504 Gateway Timeout", "error while writing to the child process (2).");
@@ -277,7 +281,9 @@ int snap_cgi::process()
     }
     if( request_method == "POST" )
     {
+#ifdef DEBUG
         SNAP_LOG_DEBUG("writing #POST");
+#endif
         if(socket.write("#POST\n", 6) != 6)
         {
             return error("504 Gateway Timeout", "error while writing to the child process (4).");
@@ -316,9 +322,13 @@ int snap_cgi::process()
                 var += c;
             }
         }
+#ifdef DEBUG
         SNAP_LOG_DEBUG("wrote var=")(var.c_str());
+#endif
     }
+#ifdef DEBUG
     SNAP_LOG_DEBUG("writing #END");
+#endif
     if(socket.write("#END\n", 5) != 5)
     {
         return error("504 Gateway Timeout", "error while writing to the child process (4).");
@@ -339,7 +349,9 @@ int snap_cgi::process()
         int r(socket.read(buf, sizeof(buf)));
         if(r > 0)
         {
+#ifdef DEBUG
             SNAP_LOG_DEBUG("writing buf=")(buf);
+#endif
             if(fwrite(buf, r, 1, stdout) != 1)
             {
                 // there is not point in calling error() from here because
@@ -363,7 +375,9 @@ int snap_cgi::process()
         }
         else if(r == -1)
         {
+#ifdef DEBUG
             SNAP_LOG_DEBUG("Done reading from socket.");
+#endif
             break;
         }
         else if(r == 0)
@@ -375,12 +389,16 @@ int snap_cgi::process()
                 break;
             }
             more = true;
+#ifdef DEBUG
             SNAP_LOG_DEBUG("Waiting, sleep 1");
+#endif
             sleep(1);
         }
     }
     // TODO: handle potential read problems...
+#ifdef DEBUG
     SNAP_LOG_DEBUG("Closing connection...");
+#endif
     return 0;
 }
 

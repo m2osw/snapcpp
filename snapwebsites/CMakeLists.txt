@@ -78,6 +78,10 @@ find_package( SnapCMakeModules REQUIRED )
 find_package( SnapDoxygen      REQUIRED )
 find_package( Thrift           REQUIRED )
 
+if( "${CMAKE_BUILD_TYPE}" STREQUAL "Debug" )
+    add_definitions( -DDEBUG )
+endif()
+
 include_directories( 
     ${PROJECT_SOURCE_DIR}
     ${PROJECT_SOURCE_DIR}/lib
