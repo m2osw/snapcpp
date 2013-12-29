@@ -266,11 +266,17 @@ int snap_cgi::process()
     }
     for(char **e(environ); *e; ++e)
     {
-        int len = strlen(*e);
+        std::string env(*e);
+        const int len = static_cast<int>(env.size()); //strlen(*e);
+        //
+        // Replacing all '\n' in the env variables to '|'
+        // to keep from causing the snap_child to complain and die.
+        //
+        std::replace( env.begin(), env.end(), '\n', '|' );
 #ifdef DEBUG
-        SNAP_LOG_DEBUG("Writing environment '")(*e)("'");
+        SNAP_LOG_DEBUG("Writing environment '")(env.c_str())("'");
 #endif
-        if(socket.write(*e, len) != len)
+        if(socket.write(env.c_str(), len) != len)
         {
             return error("504 Gateway Timeout", "error while writing to the child process (2).");
         }

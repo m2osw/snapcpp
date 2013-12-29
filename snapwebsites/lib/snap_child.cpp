@@ -1145,6 +1145,7 @@ fprintf(stderr, " f_files[\"%s\"] = \"...\" (Filename: \"%s\" MIME: %s, size: %d
                 }
                 else if(c == '\n')
                 {
+                    SNAP_LOG_DEBUG("f_name=")(f_name.toUtf8().data());
                     process_line();
 
                     // clear for next line
