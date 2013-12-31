@@ -255,7 +255,7 @@ snapdb::snapdb(int argc, char *argv[])
             std::cerr << "error: only two parameters (table and row) can be specified on the command line." << std::endl;
             usage();
         }
-        for( int idx; idx < arg_count; ++idx )
+        for( int idx = 0; idx < arg_count; ++idx )
         {
             if( idx == 0 )
             {
