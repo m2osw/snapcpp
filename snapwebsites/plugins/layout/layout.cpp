@@ -364,7 +364,9 @@ layout_name = "bare";
     page.appendChild(body);
     QVector<QDomElement> boxes;
 
+#ifdef DEBUG
 printf("got in layout...\n");
+#endif
     generate_header_content(this, cpath, head, metadata, ctemplate);
     content_plugin->on_generate_main_content(this, cpath, page, body, ctemplate);
     generate_page_content(this, cpath, page, body, ctemplate);

@@ -244,7 +244,7 @@ namespace
             "debug",
             NULL,
             "Keeps the server in the foreground (default is to detact and background), and display the log to the stdout.",
-            advgetopt::getopt::optional_argument
+            advgetopt::getopt::no_argument
         },
         {
             'h',
@@ -252,7 +252,7 @@ namespace
             "help",
             NULL,
             "Show usage and exit.",
-            advgetopt::getopt::optional_argument
+            advgetopt::getopt::no_argument
         },
         {
             'p',
@@ -591,11 +591,7 @@ void server::config(int argc, char *argv[])
 
     if( help || f_opt->is_defined( "help" ) )
     {
-        // if the user asked to not detach, then print the usage
-        if( f_debug )
-        {
-            usage();
-        }
+        usage();
         exit(1);
     }
 

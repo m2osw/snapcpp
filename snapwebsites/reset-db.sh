@@ -7,10 +7,9 @@
 # Warning: do not run this on a production server, unless you want to
 # erase the entire database! This is intended for testing only.
 #
+HOSTNAME=127.0.0.1
+PORT=9160
 LAYOUTDIR=/usr/share/snapwebsites/layouts
-snapdb --drop-tables
-snaplayout ${LAYOUTDIR}/bare-body-parser.xsl
-snaplayout ${LAYOUTDIR}/bare-theme-parser.xsl
-snaplayout ${LAYOUTDIR}/white-body-parser.xsl
-snaplayout ${LAYOUTDIR}/white-theme-parser.xsl
-snapserver -d --add-host
+snapdb --host ${HOSTNAME} --port ${PORT} --drop-tables
+snaplayout --host ${HOSTNAME} --port ${PORT} ${LAYOUTDIR}/bare-body-parser.xsl ${LAYOUTDIR}/bare-theme-parser.xsl ${LAYOUTDIR}/white-body-parser.xsl ${LAYOUTDIR}/white-theme-parser.xsl
+snapserver -d --add-host -p cassandra_host=${HOSTNAME} cassandra_port=${PORT}

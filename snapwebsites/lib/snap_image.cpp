@@ -390,7 +390,9 @@ bool snap_image::info_bmp(unsigned char const *s, size_t l, unsigned char const 
 
     uint32_t width(s[18] + s[19] * 256 + s[20] * 65536 + s[21] * 16777216);
     uint32_t height(s[22] + s[23] * 256 + s[24] * 65536 + s[25] * 16777216);
+#ifdef DEBUG
 printf("BMP size (%dx%d)\n", width, height);
+#endif
     if(width == 0 || height == 0)
     {
         // size just cannot be zero

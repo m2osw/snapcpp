@@ -31,8 +31,8 @@
  *      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+#include <advgetopt/advgetopt.h>
 #include <QtCassandra/QCassandra.h>
-//#include <QtCore>
 #include <algorithm>
 #include <controlled_vars/controlled_vars_need_init.h>
 #include <QDomDocument>
@@ -40,6 +40,77 @@
 #include <QDateTime>
 #include <QFile>
 #include <QTextStream>
+
+// snap library
+//
+#include "qstring_stream.h"
+
+namespace
+{
+    const std::vector<std::string> g_configuration_files; // Empty
+
+    const advgetopt::getopt::option g_snaplayout_options[] =
+    {
+        {
+            '\0',
+            advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
+            NULL,
+            NULL,
+            "Usage: snaplayout [--opts] layout-file1.xsl layout-file2.xsl ... layout-fileN.xsl",
+            advgetopt::getopt::help_argument
+        },
+        // OPTIONS
+        {
+            '\0',
+            0,
+            NULL,
+            NULL,
+            "options:",
+            advgetopt::getopt::help_argument
+        },
+        {
+            '?',
+            advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
+            "help",
+            NULL,
+            "show this help output",
+            advgetopt::getopt::no_argument
+        },
+        {
+            'h',
+            advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
+            "host",
+            "localhost",
+            "host IP address or name [default=localhost]",
+            advgetopt::getopt::optional_argument
+        },
+        {
+            'p',
+            advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
+            "port",
+            "9160",
+            "port on the host to which to connect [default=9160]",
+            advgetopt::getopt::optional_argument
+        },
+        {
+            '\0',
+            advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
+            NULL,
+            NULL,
+            NULL,
+            advgetopt::getopt::default_multiple_argument
+        },
+        {
+            '\0',
+            0,
+            NULL,
+            NULL,
+            NULL,
+            advgetopt::getopt::end_of_options
+        }
+    };
+}
+//namespace
 
 using namespace QtCassandra;
 
@@ -59,40 +130,45 @@ public:
     void load_xsl_info(QDomDocument& doc, const QString& filename, QString& layout_name, QString& layout_area, time_t& layout_modified);
 
 private:
+    typedef std::shared_ptr<advgetopt::getopt>    getopt_ptr_t;
+
     QCassandra                      f_cassandra;
     typedef QVector<QString>        string_array_t;
     string_array_t                  f_layouts;
+    QString                         f_host;
+    controlled_vars::zint32_t       f_port;
+    getopt_ptr_t                    f_opt;
 };
 
 snap_layout::snap_layout(int argc, char *argv[])
     //: f_cassandra() -- auto-init
     //, f_layouts() -- auto-init
+    //, f_host -- auto-init
+    //, f_port -- auto-init
+    : f_opt( new advgetopt::getopt( argc, argv, g_snaplayout_options, g_configuration_files, NULL ) )
 {
-    for(int i(1); i < argc; ++i)
+    if( f_opt->is_defined( "help" ) )
     {
-        if(strcmp(argv[i], "-h") == 0
-        || strcmp(argv[i], "--help") == 0)
-        {
-            usage();
-        }
-        else if(argv[i][0] == '-')
-        {
-            fprintf(stderr, "error: unknown command line option \"%s\".\n", argv[i]);
-            exit(1);
-        }
-        else
-        {
-            f_layouts.push_back(argv[i]);
-        }
+        usage();
+    }
+    //
+    f_host = f_opt->get_string( "host" ).c_str();
+    f_port = f_opt->get_long  ( "port" );
+    //
+    if( !f_opt->is_defined( "--" ) )
+    {
+        std::cerr << "one or more layout files are required!" << std::endl;
+        usage();
+    }
+    for( int idx(0); idx < f_opt->size( "--" ); ++idx )
+    {
+        f_layouts.push_back( f_opt->get_string( "--", idx ).c_str() );
     }
 }
 
 void snap_layout::usage()
 {
-    printf("Usage: snaplayout [--opts] layout-file.xsl ...\n");
-    printf("By default snap db prints out the list of tables (column families) found in Cassandra.\n");
-    printf("  -h | --help      print out this help screen.\n");
-    printf("  layout-file.xsl  one or more XSLT files to add to the layout table.\n");
+    f_opt->usage( advgetopt::getopt::no_error, "snaplayout" );
     exit(1);
 }
 
@@ -138,7 +214,9 @@ void snap_layout::load_xsl_info(QDomDocument& doc, const QString& filename, QStr
 
         // verify the name
         QString name(e.attribute("name"));
+//#ifdef DEBUG
 //printf("param name [%s] = [%s]\n", name.toUtf8().data(), buffer.toUtf8().data());
+//#endif
         if(name == "layout-name")
         {
             // that's the row key
@@ -158,7 +236,7 @@ void snap_layout::load_xsl_info(QDomDocument& doc, const QString& filename, QStr
 
     if(layout_name.isEmpty() || layout_area.isEmpty() || layout_modified_date.isEmpty())
     {
-        fprintf(stderr, "error: the layout_name, layout_area, and layout_modified parameters must all three be defined in your XSL document \"%s\".\n", filename.toUtf8().data());
+        std::cerr << "error: the layout_name, layout_area, and layout_modified parameters must all three be defined in your XSL document \"" << filename << "\"" << std::endl;
         exit(1);
     }
 
@@ -166,7 +244,7 @@ void snap_layout::load_xsl_info(QDomDocument& doc, const QString& filename, QStr
     QDateTime t(QDateTime::fromString(layout_modified_date, "yyyy-MM-dd HH:mm:ss"));
     if(!t.isValid())
     {
-        fprintf(stderr, "error: the date \"%s\" doesn't seem valid in \"%s\", the expected format is \"yyyy-MM-dd HH:mm:ss\".\n", layout_modified_date.toUtf8().data(), filename.toUtf8().data());
+        std::cerr << "error: the date \"" << layout_modified_date << "\" doesn't seem valid in \"" << filename << "\", the expected format is \"yyyy-MM-dd HH:mm:ss\"" << std::endl;
         exit(1);
     }
     layout_modified = t.toTime_t();
@@ -174,7 +252,18 @@ void snap_layout::load_xsl_info(QDomDocument& doc, const QString& filename, QStr
 
 void snap_layout::add_files()
 {
-    f_cassandra.connect();
+    f_cassandra.connect(f_host, f_port);
+    if( !f_cassandra.isConnected() )
+    {
+        std::cerr << "Error connecting to cassandra server on host='"
+            << f_host
+            << "', port="
+            << f_port
+            << "!"
+            << std::endl;
+        exit(1);
+    }
+
     QSharedPointer<QCassandraContext> context(f_cassandra.context("snap_websites"));
 
     QSharedPointer<QCassandraTable> table(context->findTable("layout"));
@@ -209,13 +298,13 @@ void snap_layout::add_files()
         int e(filename.lastIndexOf("."));
         if(e == -1 || filename.mid(e) != ".xsl")
         {
-            fprintf(stderr, "error: file \"%s\" must be an XSLT file (end with .xsl extension.)\n", filename.toUtf8().data());
+            std::cerr << "error: file \"" << filename << "\" must be an XSLT file (end with .xsl extension.)" << std::endl;
             exit(1);
         }
         QFile xsl(filename);
         if(!xsl.open(QIODevice::ReadOnly))
         {
-            fprintf(stderr, "error: file \"%s\" could not be opened for reading.\n", filename.toUtf8().data());
+            std::cerr << "error: file \"" << filename << "\" could not be opened for reading." << std::endl;
             exit(1);
         }
         QDomDocument doc("stylesheet");
@@ -223,7 +312,8 @@ void snap_layout::add_files()
         int error_line, error_column;
         if(!doc.setContent(&xsl, true, &error_msg, &error_line, &error_column))
         {
-            fprintf(stderr, "error: file \"%s\" parsing failed, detail %d[%d]: %s\n", filename.toUtf8().data(), error_line, error_column, error_msg.toUtf8().data());
+            std::cerr << "error: file \"" << filename << "\" parsing failed";
+            std::cerr << "detail " << error_line << "[" << error_column << "]: " << error_msg << std::endl;
             exit(1);
         }
         QString layout_name;
@@ -240,7 +330,8 @@ void snap_layout::add_files()
                 QDomDocument existing_doc("stylesheet");
                 if(!existing_doc.setContent(existing.stringValue(), true, &error_msg, &error_line, &error_column))
                 {
-                    fprintf(stderr, "warning: existing XSLT data parsing failed, it will get replaced, detail %d[%d]: %s\n", error_line, error_column, error_msg.toUtf8().data());
+                    std::cerr << "warning: existing XSLT data parsing failed, it will get replaced";
+                    std::cerr << ", detail " << error_line << "[" << error_column << "]: " << error_msg << std::endl;
                     // it failed so we want to replace it with a valid XSLT document instead!
                 }
                 else
@@ -255,12 +346,12 @@ void snap_layout::add_files()
                     {
                         // we refuse older versions
                         // (if necessary we could add a command line option to force such though)
-                        fprintf(stderr, "error: existing XSLT data was created more recently than the one specified on the command line: \"%s\".\n", filename.toUtf8().data());
+                        std::cerr << "error: existing XSLT data was created more recently than the one specified on the command line: \"" << filename << "\"." << std::endl;
                     }
                     else if(layout_modified == existing_layout_modified)
                     {
                         // we accept the exact same date but emit a warning
-                        fprintf(stderr, "warning: existing XSLT data has the same date, replacing with content of file \"%s\".\n", filename.toUtf8().data());
+                        std::cerr << "warning: existing XSLT data has the same date, replacing with content of file \"" << filename << "\"." << std::endl;
                     }
                 }
             }

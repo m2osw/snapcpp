@@ -855,7 +855,9 @@ void snap_child::read_environment()
                             file.set_mime_type(buffer->get_mime_type());
                         }
                     }
+#ifdef DEBUG
 fprintf(stderr, " f_files[\"%s\"] = \"...\" (Filename: \"%s\" MIME: %s, size: %d)\n",
+#endif
         f_name.toUtf8().data(),
         filename.toUtf8().data(),
         file.get_mime_type().toUtf8().data(),

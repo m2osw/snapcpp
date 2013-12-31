@@ -821,7 +821,9 @@ void sitemapxml::on_backend_process()
     QString sitemap_txt(site_key + "sitemap.txt");
     content_table->row(sitemap_txt)->cell(content_updated)->setValue(start_date);
     content_table->row(sitemap_txt)->cell(content_modified)->setValue(start_date);
+#ifdef DEBUG
 printf("Updating [%s]\n", sitemap_xml.toUtf8().data());
+#endif
 }
 
 
