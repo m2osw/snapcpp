@@ -38,8 +38,140 @@
 
 #include <QtCassandra/QCassandra.h>
 #include <controlled_vars/controlled_vars_need_init.h>
+#include <advgetopt/advgetopt.h>
 #include <algorithm>
 #include <iostream>
+#include "qstring_stream.h"
+
+namespace
+{
+    const std::vector<std::string> g_configuration_files; // Empty
+
+    const advgetopt::getopt::option g_snapdb_options[] =
+    {
+        {
+            '\0',
+            advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
+            NULL,
+            NULL,
+            "Usage: snapdb [--opts] [table [row]]",
+            advgetopt::getopt::help_argument
+        },
+        // no args
+        {
+            '\0',
+            0,
+            NULL,
+            NULL,
+            "without arguments, all tables are outputted for the current context.",
+            advgetopt::getopt::help_argument
+        },
+        // OPTIONS
+        {
+            '\0',
+            0,
+            NULL,
+            NULL,
+            "options:",
+            advgetopt::getopt::help_argument
+        },
+        {
+            '\0',
+            advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
+            "help",
+            NULL,
+            "show this help output",
+            advgetopt::getopt::no_argument
+        },
+        {
+            '\0',
+            advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
+            "context",
+            NULL,
+            "name of the context from which to read",
+            advgetopt::getopt::optional_argument
+        },
+        {
+            '\0',
+            advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
+            "count",
+            NULL,
+            "specify the number of rows to display",
+            advgetopt::getopt::optional_argument
+        },
+        {
+            '\0',
+            advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
+            "drop-tables",
+            NULL,
+            "drop all the content tables of the specified context",
+            advgetopt::getopt::no_argument
+        },
+        {
+            '\0',
+            advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
+            "drop-all-tables",
+            NULL,
+            "drop absolutely all the tables",
+            advgetopt::getopt::no_argument
+        },
+        {
+            '\0',
+            advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
+            "host",
+            NULL,
+            "host IP address or name defaults to localhost",
+            advgetopt::getopt::optional_argument
+        },
+        {
+            '\0',
+            advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
+            "info",
+            NULL,
+            "print out the cluster name and protocol version",
+            advgetopt::getopt::no_argument
+        },
+#if 0
+        {
+            '\0',
+            advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
+            "table",
+            NULL,
+            "name of a table (column family) to print rows about",
+            advgetopt::getopt::required_argument
+        },
+        {
+            '\0',
+            advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
+            "row",
+            NULL,
+            "name of a row, may be ending with % to print all rows "
+            "that start with that name; when row is not specified, "
+            "then up to 100 of the rows of that table are printed."
+            "",
+            advgetopt::getopt::optional_argument
+        },
+#else
+        {
+            '\0',
+            advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
+            NULL,
+            NULL,
+            NULL,
+            advgetopt::getopt::default_multiple_argument
+        },
+#endif
+        {
+            '\0',
+            0,
+            NULL,
+            NULL,
+            NULL,
+            advgetopt::getopt::end_of_options
+        }
+    };
+}
+//namespace
 
 using namespace QtCassandra;
 
@@ -60,6 +192,8 @@ public:
     void display();
 
 private:
+    typedef std::shared_ptr<advgetopt::getopt>    getopt_ptr_t;
+
     QCassandra                      f_cassandra;
     QString                         f_host;
     controlled_vars::mint32_t       f_port;
@@ -68,6 +202,7 @@ private:
     QString                         f_table;
     QString                         f_row;
     QByteArray                      f_row_key;
+    getopt_ptr_t                    f_opt;
 };
 
 snapdb::snapdb(int argc, char *argv[])
@@ -78,97 +213,57 @@ snapdb::snapdb(int argc, char *argv[])
     , f_context("snap_websites")
     //, f_table("") -- auto-init
     //, f_row("") -- auto-init
+    , f_opt( new advgetopt::getopt( argc, argv, g_snapdb_options, g_configuration_files, NULL ) )
 {
-    for(int i(1); i < argc; ++i)
+    if( f_opt->is_defined( "help" ) )
     {
-        if(strcmp(argv[i], "-h") == 0
-        || strcmp(argv[i], "--help") == 0)
+        usage();
+    }
+    if( f_opt->is_defined( "count" ) )
+    {
+        f_count = f_opt->get_long( "count" );
+    }
+    if( f_opt->is_defined( "info" ) )
+    {
+        info();
+    }
+    if( f_opt->is_defined( "host" ) )
+    {
+        f_host = f_opt->get_string( "host" ).c_str();
+    }
+    if( f_opt->is_defined( "port" ) )
+    {
+        f_port = f_opt->get_string( "port" ).c_str();
+    }
+    if( f_opt->is_defined( "context" ) )
+    {
+        f_context = f_opt->get_string( "context" ).c_str();
+    }
+    if( f_opt->is_defined( "drop-tables" ) )
+    {
+        drop_tables(false);
+    }
+    if( f_opt->is_defined( "drop-all-tables" ) )
+    {
+        drop_tables(true);
+    }
+    if( f_opt->is_defined( "--" ) )
+    {
+        const int arg_count = f_opt->size( "--" );
+        if( arg_count >= 3 )
         {
+            std::cerr << "error: only two parameters (table and row) can be specified on the command line." << std::endl;
             usage();
         }
-        else if(strcmp(argv[i], "--count") == 0)
+        for( int idx = 0; idx < arg_count; ++idx )
         {
-            ++i;
-            if(i >= argc)
+            if( idx == 0 )
             {
-                fprintf(stderr, "error: --count expects one parameter.\n");
-                exit(1);
+                f_table = f_opt->get_string( "--", idx ).c_str();
             }
-            char *end;
-            f_count = strtol(argv[i], &end, 0);
-            if(end == NULL || *end != '\0')
+            else if( idx == 1 )
             {
-                fprintf(stderr, "error: invalid number for --count (%s, %s)\n", argv[i], end);
-                exit(1);
-            }
-        }
-        else if(strcmp(argv[i], "--info") == 0)
-        {
-            info();
-        }
-        else if(strcmp(argv[i], "--host") == 0)
-        {
-            ++i;
-            if(i >= argc)
-            {
-                fprintf(stderr, "error: --host expects one parameter.\n");
-                exit(1);
-            }
-            f_host = argv[i];
-        }
-        else if(strcmp(argv[i], "--port") == 0)
-        {
-            ++i;
-            if(i >= argc)
-            {
-                fprintf(stderr, "error: --port expects one parameter.\n");
-                exit(1);
-            }
-            char *end;
-            f_port = strtol(argv[i], &end, 0);
-            if(end == NULL || *end != '\0')
-            {
-                fprintf(stderr, "error: invalid number for --port (%s, %s)\n", argv[i], end);
-                exit(1);
-            }
-        }
-        else if(strcmp(argv[i], "--context") == 0)
-        {
-            ++i;
-            if(i >= argc)
-            {
-                fprintf(stderr, "error: --context expects one parameter.\n");
-                exit(1);
-            }
-            f_context = argv[i];
-        }
-        else if(strcmp(argv[i], "--drop-tables") == 0)
-        {
-            drop_tables(false);
-        }
-        else if(strcmp(argv[i], "--drop-all-tables") == 0)
-        {
-            drop_tables(true);
-        }
-        else if(argv[i][0] == '-')
-        {
-            fprintf(stderr, "error: unknown command line option \"%s\".\n", argv[i]);
-            exit(1);
-        }
-        else
-        {
-            if(f_table.isEmpty())
-            {
-                f_table = argv[i];
-            }
-            else if(f_row.isEmpty())
-            {
-                f_row = argv[i];
-            }
-            else
-            {
-                fprintf(stderr, "error: only two parameters (table and row) can be specified on the command line.\n");
-                exit(1);
+                f_row = f_opt->get_string( "--", idx ).c_str();
             }
         }
     }
@@ -176,19 +271,7 @@ snapdb::snapdb(int argc, char *argv[])
 
 void snapdb::usage()
 {
-    printf("Usage: snapdb [--opts] [table [row]]\n");
-    printf("By default snap db prints out the list of tables (column families) found in Cassandra.\n");
-    printf("  -h | --help          print out this help screen.\n");
-    printf("  --context <ctxt>     name of the context to read from.\n");
-    printf("  --count <count>      specify the number of rows to display.\n");
-    printf("  --drop-tables        drop all the content tables of the specified context.\n");
-    printf("  --drop-all-tables    drop absolutely all the tables.\n");
-    printf("  --host <host>        host IP address or name defaults to localhost.\n");
-    printf("  --info               print out the cluster name and protocol version.\n");
-    printf("  [table]              name of a table (column family) to print rows about.\n");
-    printf("  [row]                name of a row, may be ending with %% to print all rows\n");
-    printf("                       that start with that name; when row is not specified,\n");
-    printf("                       then up to 100 of the rows of that table are printed.\n");
+    f_opt->usage( advgetopt::getopt::no_error, "snapdb" );
     exit(1);
 }
 

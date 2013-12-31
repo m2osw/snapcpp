@@ -33,4 +33,31 @@ inline std::ostream& operator << ( std::ostream& str, const QStringRef& qstr )
 	return str;
 }
 
+
+inline std::string operator +( const std::string& str, const QString& qstr )
+{
+    return str + qstr.toUtf8().data();
+}
+
+
+inline std::string operator +( const std::string& str, const QStringRef& qstr )
+{
+    return str + qstr.toString();
+}
+
+
+inline std::string& operator +=( std::string& str, const QString& qstr )
+{
+    str = str + qstr;
+    return str;
+}
+
+
+inline std::string& operator +=( std::string& str, const QStringRef& qstr )
+{
+    str = str + qstr;
+    return str;
+}
+
+
 // vim: ts=4 sw=4 et

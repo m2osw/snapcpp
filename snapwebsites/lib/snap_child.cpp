@@ -443,7 +443,11 @@ void snap_child::process_backend_uri(const QString& uri)
     // the foot print each time we run a new website,) but the worst
     // are the plugins; we can request a plugin to be unloaded but
     // frankly the system is not very well written to handle that case.
+#ifdef SNAP_NO_FORK
+    pid_t p = 0;
+#else
     pid_t p = fork();
+#endif
     if(p != 0)
     {
         // parent process
@@ -1146,7 +1150,7 @@ fprintf(stderr, " f_files[\"%s\"] = \"...\" (Filename: \"%s\" MIME: %s, size: %d
                 else if(c == '\n')
                 {
 #ifdef DEBUG
-                    SNAP_LOG_DEBUG("f_name=")(f_name.toUtf8().data());
+                    //SNAP_LOG_DEBUG("f_name=")(f_name.toUtf8().data());
 #endif
                     process_line();
 
@@ -1192,7 +1196,7 @@ fprintf(stderr, " f_files[\"%s\"] = \"...\" (Filename: \"%s\" MIME: %s, size: %d
                 ss << pair.first << ": " << pair.second << std::endl;
             }
 
-            SNAP_LOG_DEBUG( ss.str().c_str() );
+            //SNAP_LOG_DEBUG( ss.str().c_str() );
         }
 #endif
 

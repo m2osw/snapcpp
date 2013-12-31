@@ -274,7 +274,7 @@ int snap_cgi::process()
         //
         std::replace( env.begin(), env.end(), '\n', '|' );
 #ifdef DEBUG
-        SNAP_LOG_DEBUG("Writing environment '")(env.c_str())("'");
+        //SNAP_LOG_DEBUG("Writing environment '")(env.c_str())("'");
 #endif
         if(socket.write(env.c_str(), len) != len)
         {
