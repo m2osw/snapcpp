@@ -471,7 +471,7 @@ bool check_parser(const QString& script)
 	grammar g;
 
 printf("\n\n");
-	// qualified_name
+    // qualified_name
 	//printf("    flag optional parameter\n");
 	choices qualified_name(&g, "qualified_name");
 	qualified_name >>= TOKEN_ID_IDENTIFIER >= set_new_qualified_name

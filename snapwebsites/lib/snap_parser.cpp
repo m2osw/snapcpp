@@ -1507,6 +1507,7 @@ struct parser_state
      */
     static void display_array(const state_array_t& a)
     {
+#ifdef DEBUG
         fprintf(stderr, "+++ ARRAY (%d items)\n", a.size());
         for(state_array_t::const_iterator it(a.begin()); it != a.end(); ++it) {
             parser_state *state(*it);
@@ -1522,6 +1523,7 @@ struct parser_state
             }
         }
         fprintf(stderr, "---\n");
+#endif
     }
 
     int                                f_line;

@@ -1772,7 +1772,9 @@ QString snap_uri::urldecode(const QString& uri, bool relax)
             {
                 if(!relax)
                 {
+#ifdef DEBUG
 fprintf(stderr, "url decode?! [%s]\n", uri.toUtf8().data());
+#endif
                     throw snap_uri_exception_invalid_uri();
                 }
                 // use the % as is
@@ -1796,7 +1798,9 @@ fprintf(stderr, "url decode?! [%s]\n", uri.toUtf8().data());
             {
                 if(!relax)
                 {
+#ifdef DEBUG
 fprintf(stderr, "url decode?! [%s] (2)\n", uri.toUtf8().data());
+#endif
                     throw snap_uri_exception_invalid_uri();
                 }
                 // use the % as is
@@ -1821,7 +1825,9 @@ fprintf(stderr, "url decode?! [%s] (2)\n", uri.toUtf8().data());
         }
         else
         {
+#ifdef DEBUG
 fprintf(stderr, "url decode?! [%s] (3)\n", uri.toUtf8().data());
+#endif
             throw snap_uri_exception_invalid_uri();
         }
     }

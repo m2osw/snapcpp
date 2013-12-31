@@ -120,7 +120,15 @@ namespace
             advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
             "host",
             NULL,
-            "host IP address or name defaults to localhost",
+            "host IP address or name (defaults to localhost)",
+            advgetopt::getopt::optional_argument
+        },
+        {
+            '\0',
+            advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
+            "port",
+            NULL,
+            "port on the host to connect to (defaults to 9160)",
             advgetopt::getopt::optional_argument
         },
         {
@@ -131,27 +139,6 @@ namespace
             "print out the cluster name and protocol version",
             advgetopt::getopt::no_argument
         },
-#if 0
-        {
-            '\0',
-            advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
-            "table",
-            NULL,
-            "name of a table (column family) to print rows about",
-            advgetopt::getopt::required_argument
-        },
-        {
-            '\0',
-            advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
-            "row",
-            NULL,
-            "name of a row, may be ending with % to print all rows "
-            "that start with that name; when row is not specified, "
-            "then up to 100 of the rows of that table are printed."
-            "",
-            advgetopt::getopt::optional_argument
-        },
-#else
         {
             '\0',
             advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
@@ -160,7 +147,6 @@ namespace
             NULL,
             advgetopt::getopt::default_multiple_argument
         },
-#endif
         {
             '\0',
             0,
@@ -226,7 +212,7 @@ snapdb::snapdb(int argc, char *argv[])
     }
     if( f_opt->is_defined( "port" ) )
     {
-        f_port = f_opt->get_string( "port" ).c_str();
+        f_port = f_opt->get_long( "port" );
     }
     if( f_opt->is_defined( "context" ) )
     {
@@ -288,14 +274,15 @@ void snapdb::info()
     f_cassandra.connect(f_host, f_port);
     if(f_cassandra.isConnected())
     {
-        printf("Working on Cassandra Cluster Named \"%s\".\n", f_cassandra.clusterName().toUtf8().data());
-        printf("Working on Cassandra Protocol Version \"%s\".\n", f_cassandra.protocolVersion().toUtf8().data());
+        std::cout << "Working on Cassandra Cluster Named \""    << f_cassandra.clusterName()     << "\"." << std::endl;
+        std::cout << "Working on Cassandra Protocol Version \"" << f_cassandra.protocolVersion() << "\"." << std::endl;
+        exit(0);
     }
     else
     {
-        fprintf(stderr, "The connection failed!\n");
+        std::cerr << "The connection failed!" << std::endl;
+        exit(1);
     }
-    exit(0);
 }
 
 
@@ -374,7 +361,7 @@ void snapdb::display()
                     t != tables.end();
                     ++t)
         {
-            printf("%s\n", (*t)->tableName().toUtf8().data());
+            std::cout << (*t)->tableName() << std::endl;
         }
     }
     else if(f_row.isEmpty())
@@ -383,7 +370,7 @@ void snapdb::display()
         QSharedPointer<QCassandraTable> table(context->findTable(f_table));
         if(table.isNull())
         {
-            printf("error: table \"%s\" not found.\n", f_table.toUtf8().data());
+            std::cerr << "error: table \"" << f_table << "\" not found." << std::endl;
             exit(1);
         }
         QCassandraRowPredicate row_predicate;
@@ -418,7 +405,7 @@ void snapdb::display()
         QSharedPointer<QCassandraTable> table(context->findTable(f_table));
         if(table.isNull())
         {
-            printf("error: table \"%s\" not found.\n", f_table.toUtf8().data());
+            std::cerr << "error: table \"" << f_table << "\" not found." << std::endl;
             exit(1);
         }
         QCassandraRowPredicate row_predicate;
@@ -445,7 +432,7 @@ void snapdb::display()
                 if(name.length() >= row_start.length()
                 && row_start == name.mid(0, row_start.length()))
                 {
-                    printf("%s\n", name.toUtf8().data());
+                    std::cout << name << std::endl;
                 }
             }
         }
@@ -456,12 +443,12 @@ void snapdb::display()
         QSharedPointer<QCassandraTable> table(context->findTable(f_table));
         if(table.isNull())
         {
-            printf("error: table \"%s\" not found.\n", f_table.toUtf8().data());
+            std::cerr << "error: table \"" << f_table << "\" not found." << std::endl;
             exit(1);
         }
         if(!table->exists(f_row_key))
         {
-            printf("error: row \"%s\" not found in table \"%s\".\n", f_row.toUtf8().data(), f_table.toUtf8().data());
+            std::cerr << "error: row \"" << f_row << "\" not found in table \"" << f_table << "\"." << std::endl;
             exit(1);
         }
         QSharedPointer<QCassandraRow> row(table->row(f_row_key));
@@ -610,7 +597,8 @@ void snapdb::display()
                     // all others viewed as strings
                     v = (*c)->value().stringValue().replace("\n", "\\n");
                 }
-                printf("%s = %s\n", n.toUtf8().data(), v.toUtf8().data());
+                //
+                std::cout << n << " = " << v << std::endl;
             }
         }
     }

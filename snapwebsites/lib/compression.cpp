@@ -167,7 +167,9 @@ QByteArray compress(QString& compressor_name, const QByteArray& input, level_t l
     // nothing to compress if empty
     if(input.size() == 0 || level < 5)
     {
+#ifdef DEBUG
 printf("nothing to compress\n");
+#endif
         compressor_name = compressor_t::NO_COMPRESSION;
         return input;
     }
@@ -202,7 +204,9 @@ printf("nothing to compress\n");
     {
         // compressor is not available, return input as is...
         compressor_name = compressor_t::NO_COMPRESSION;
+#ifdef DEBUG
 printf("compressor not found?!\n");
+#endif
         return input;
     }
 
@@ -211,7 +215,9 @@ printf("compressor not found?!\n");
     if(result.size() >= input.size())
     {
         compressor_name = compressor_t::NO_COMPRESSION;
+#ifdef DEBUG
 printf("compression is larger?!\n");
+#endif
         return input;
     }
     return result;

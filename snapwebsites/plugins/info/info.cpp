@@ -335,7 +335,9 @@ bool info::on_path_execute(QString const& cpath)
  */
 void info::on_generate_main_content(layout::layout *l, const QString& cpath, QDomElement& page, QDomElement& body, const QString& ctemplate)
 {
+#ifdef DEBUG
 printf("*** info main content...\n");
+#endif
     // our settings pages are like any standard pages
     content::content::instance()->on_generate_main_content(l, cpath, page, body, ctemplate);
 }

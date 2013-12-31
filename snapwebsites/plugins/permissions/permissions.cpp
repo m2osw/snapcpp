@@ -23,7 +23,7 @@
 #include "../messages/messages.h"
 #include <QtCassandra/QCassandraValue.h>
 #include <openssl/rand.h>
-#include <iostream>
+#include "qstring_stream.h"
 #include "poison.h"
 
 
@@ -355,7 +355,9 @@ void permissions::sets_t::add_user_right(QString right)
             if(right.startsWith(f_user_rights[i]))
             {
                 // we're done, that right is already here
-printf("  USER RIGHT -> [%s] (ignore, better already there)\n", right.toUtf8().data());
+#ifdef DEBUG
+                std::cout << "  USER RIGHT -> [" << right << "] (ignore, better already there)" << std::endl;
+#endif
                 return;
             }
         }
@@ -378,7 +380,9 @@ printf("  USER RIGHT -> [%s] (ignore, better already there)\n", right.toUtf8().d
                         ++i; // in this case i increases
                     }
                 }
-printf("  USER RIGHT -> [%s] (shrunk)\n", right.toUtf8().data());
+#ifdef DEBUG
+                std::cout << "  USER RIGHT -> [" << right << "] (shrunk)" << std::endl;
+#endif
                 return;
             }
         }
@@ -387,7 +391,9 @@ printf("  USER RIGHT -> [%s] (shrunk)\n", right.toUtf8().data());
             if(f_user_rights[i] == right)
             {
                 // that's exactly the same, no need to have it twice
-printf("  USER RIGHT -> [%s] (already present)\n", right.toUtf8().data());
+#ifdef DEBUG
+                std::cout << "  USER RIGHT -> [" << right << "] (already present)" << std::endl;
+#endif
                 return;
             }
         }
@@ -395,7 +401,9 @@ printf("  USER RIGHT -> [%s] (already present)\n", right.toUtf8().data());
 
     // this one was not there yet, just append
     f_user_rights.push_back(right);
-printf("  USER RIGHT -> [%s] (add)\n", right.toUtf8().data());
+#ifdef DEBUG
+    std::cout << "  USER RIGHT -> [" << right << "] (add)" << std::endl;
+#endif
 }
 
 
@@ -461,7 +469,9 @@ void permissions::sets_t::add_plugin_permission(const QString& plugin, QString r
 
     if(!f_plugin_permissions.contains(plugin))
     {
-printf("  PLUGIN [%s] PERMISSION -> [%s] (add, new plugin)\n", plugin.toUtf8().data(), right.toUtf8().data());
+#ifdef DEBUG
+        std::cout << "  PLUGIN [" << plugin << "] PERMISSION -> [" << right << "] (add, new plugin)" << std::endl;
+#endif
         f_plugin_permissions[plugin].push_back(right);
         return;
     }
@@ -478,7 +488,9 @@ printf("  PLUGIN [%s] PERMISSION -> [%s] (add, new plugin)\n", plugin.toUtf8().d
             if(right.startsWith(set[i]))
             {
                 // the new right is generally considered easier to get
-printf("  PLUGIN [%s] PERMISSION -> [%s] (REMOVING)\n", plugin.toUtf8().data(), set[i].toUtf8().data());
+#ifdef DEBUG
+                std::cout << "  PLUGIN [" << plugin << "] PERMISSION -> [" << set[i] << "] (REMOVING)" << std::endl;
+#endif
                 set.remove(i);
                 continue;
             }
@@ -488,7 +500,9 @@ printf("  PLUGIN [%s] PERMISSION -> [%s] (REMOVING)\n", plugin.toUtf8().data(), 
             if(set[i].startsWith(right))
             {
                 // this new right is harder to get, ignore it
-printf("  PLUGIN [%s] PERMISSION -> [%s] (skipped)\n", plugin.toUtf8().data(), right.toUtf8().data());
+#ifdef DEBUG
+                std::cout << "  PLUGIN [" << plugin << "] PERMISSION -> [" << right << "] (skipped)" << std::endl;
+#endif
                 return;
             }
         }
@@ -497,7 +511,9 @@ printf("  PLUGIN [%s] PERMISSION -> [%s] (skipped)\n", plugin.toUtf8().data(), r
             if(set[i] == right)
             {
                 // that's exactly the same, no need to have it twice
-printf("  PLUGIN [%s] PERMISSION -> [%s] (already present)\n", plugin.toUtf8().data(), right.toUtf8().data());
+#ifdef DEBUG
+                std::cout << "  PLUGIN [" << right << "] PERMISSION -> [" << right << "] (already present)" << std::endl;
+#endif
                 return;
             }
         }
@@ -506,7 +522,9 @@ printf("  PLUGIN [%s] PERMISSION -> [%s] (already present)\n", plugin.toUtf8().d
 
     // this one was not there yet, just append
     set.push_back(right);
-printf("  PLUGIN [%s] PERMISSION -> [%s] (add right)\n", plugin.toUtf8().data(), right.toUtf8().data());
+#ifdef DEBUG
+    std::cout << "  PLUGIN [" << plugin << "] PERMISSION -> [" << right << "] (add right)" << std::endl;
+#endif
 }
 
 
@@ -555,22 +573,24 @@ bool permissions::sets_t::allowed() const
         return false;
     }
 
-printf("final USER RIGHTS:\n");
+#ifdef DEBUG
+std::cout << "final USER RIGHTS:" << std::endl;
 for(int i(0); i < f_user_rights.size(); ++i)
 {
-    printf("  [%s]\n", f_user_rights[i].toUtf8().data());
+    std::cout << "  [" << f_user_rights[i] << "]" << std::endl;
 }
-printf("final PLUGINS:\n");
-    for(req_sets_t::const_iterator pp(f_plugin_permissions.begin());
-            pp != f_plugin_permissions.end();
-            ++pp)
+std::cout << "final PLUGINS:" << std::endl;
+for(req_sets_t::const_iterator pp(f_plugin_permissions.begin());
+        pp != f_plugin_permissions.end();
+        ++pp)
 {
-    printf("  [%s]:\n", pp.key().toUtf8().data());
+    std::cout << "  [" << pp.key() << "]:" << std::endl;
     for(int j(0); j < pp->size(); ++j)
     {
-        printf("    [%s]\n", (*pp)[j].toUtf8().data());
+        std::cout << "    [" << (*pp)[j] << "]" << std::endl;
     }
 }
+#endif
 
     int const max(f_user_rights.size());
     for(req_sets_t::const_iterator pp(f_plugin_permissions.begin());
@@ -598,12 +618,16 @@ printf("final PLUGINS:\n");
         }
         // XXX add a log to determine the name of the plugin that
         //     failed the user?
-printf("  failed, no match for [%s]\n", pp.key().toUtf8().data());
+#ifdef DEBUG
+        std::cout << "  failed, no match for [" << pp.key() << "]" << std::endl;
+#endif
         return false;
 next_plugin:;
     }
 
-printf("  allowed!!!\n");
+#ifdef DEBUG
+    std::cout << "  allowed!!!" << std::endl;
+#endif
     return true;
 }
 
@@ -774,7 +798,9 @@ bool permissions::get_user_rights_impl(permissions *perms, sets_t& sets)
             // a valid user path, we just cannot test anything else than
             // some kind of visitor
             QString user_key(sets.get_user_path());
-//printf("  +-> user key = [%s]\n", user_key.toUtf8().data());
+//#ifdef DEBUG
+//std::cout << "  +-> user key = [" << user_key << "]" << std::endl;
+//#endif
             if(user_key.isEmpty()
             || login_status == get_name(SNAP_NAME_PERMISSIONS_LOGIN_STATUS_VISITOR))
             {
@@ -1245,7 +1271,9 @@ void permissions::on_access_allowed(QString const& user_path, QString const& pat
     // first we get the user rights for that action because that's a lot
     // smaller and if empty we do not have to get anything else
     // (intersection of an empty set with anything else is the empty set)
-printf("retrieving USER rights... [%s] [%s] [%s]\n", sets.get_action().toUtf8().data(), sets.get_login_status().toUtf8().data(), path.toUtf8().data());
+#ifdef DEBUG
+    std::cout << "retrieving USER rights... [" << sets.get_action() << "] [" << sets.get_login_status() << "] [" << path << "]" << std::endl;
+#endif
     get_user_rights(this, sets);
     if(sets.get_user_rights_count() != 0)
     {
@@ -1253,9 +1281,13 @@ printf("retrieving USER rights... [%s] [%s] [%s]\n", sets.get_action().toUtf8().
         {
             return;
         }
-printf("retrieving PLUGIN permissions... [%s]\n", sets.get_action().toUtf8().data());
+#ifdef DEBUG
+        std::cout << "retrieving PLUGIN permissions... [" << sets.get_action() << "]" << std::endl;
+#endif
         get_plugin_permissions(this, sets);
-printf("now compute the intersection!\n");
+#ifdef DEBUG
+        std::cout << "now compute the intersection!" << std::endl;
+#endif
         if(sets.allowed())
         {
             return;
