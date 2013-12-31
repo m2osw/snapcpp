@@ -186,7 +186,7 @@ class snapdb
 public:
     snapdb(int argc, char *argv[]);
 
-    void usage();
+    void usage(advgetopt::getopt::status_t status);
     void info();
     void drop_tables(bool all);
     void display();
@@ -215,17 +215,10 @@ snapdb::snapdb(int argc, char *argv[])
     //, f_row("") -- auto-init
     , f_opt( new advgetopt::getopt( argc, argv, g_snapdb_options, g_configuration_files, NULL ) )
 {
-    if( f_opt->is_defined( "help" ) )
-    {
-        usage();
-    }
+    // first check options
     if( f_opt->is_defined( "count" ) )
     {
         f_count = f_opt->get_long( "count" );
-    }
-    if( f_opt->is_defined( "info" ) )
-    {
-        info();
     }
     if( f_opt->is_defined( "host" ) )
     {
@@ -239,21 +232,36 @@ snapdb::snapdb(int argc, char *argv[])
     {
         f_context = f_opt->get_string( "context" ).c_str();
     }
+
+    // then check commands
+    if( f_opt->is_defined( "help" ) )
+    {
+        usage(advgetopt::getopt::no_error);
+    }
+    if( f_opt->is_defined( "info" ) )
+    {
+        info();
+        exit(0);
+    }
     if( f_opt->is_defined( "drop-tables" ) )
     {
         drop_tables(false);
+        exit(0);
     }
     if( f_opt->is_defined( "drop-all-tables" ) )
     {
         drop_tables(true);
+        exit(0);
     }
+
+    // finally check for parameters
     if( f_opt->is_defined( "--" ) )
     {
         const int arg_count = f_opt->size( "--" );
         if( arg_count >= 3 )
         {
             std::cerr << "error: only two parameters (table and row) can be specified on the command line." << std::endl;
-            usage();
+            usage(advgetopt::getopt::error);
         }
         for( int idx = 0; idx < arg_count; ++idx )
         {
@@ -269,9 +277,9 @@ snapdb::snapdb(int argc, char *argv[])
     }
 }
 
-void snapdb::usage()
+void snapdb::usage(advgetopt::getopt::status_t status)
 {
-    f_opt->usage( advgetopt::getopt::no_error, "snapdb" );
+    f_opt->usage( status, "snapdb" );
     exit(1);
 }
 
