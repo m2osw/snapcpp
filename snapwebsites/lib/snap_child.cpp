@@ -443,7 +443,11 @@ void snap_child::process_backend_uri(const QString& uri)
     // the foot print each time we run a new website,) but the worst
     // are the plugins; we can request a plugin to be unloaded but
     // frankly the system is not very well written to handle that case.
+#ifdef SNAP_NO_FORK
+    pid_t p = 0;
+#else
     pid_t p = fork();
+#endif
     if(p != 0)
     {
         // parent process
