@@ -131,27 +131,6 @@ namespace
             "print out the cluster name and protocol version",
             advgetopt::getopt::no_argument
         },
-#if 0
-        {
-            '\0',
-            advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
-            "table",
-            NULL,
-            "name of a table (column family) to print rows about",
-            advgetopt::getopt::required_argument
-        },
-        {
-            '\0',
-            advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
-            "row",
-            NULL,
-            "name of a row, may be ending with % to print all rows "
-            "that start with that name; when row is not specified, "
-            "then up to 100 of the rows of that table are printed."
-            "",
-            advgetopt::getopt::optional_argument
-        },
-#else
         {
             '\0',
             advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
@@ -160,7 +139,6 @@ namespace
             NULL,
             advgetopt::getopt::default_multiple_argument
         },
-#endif
         {
             '\0',
             0,

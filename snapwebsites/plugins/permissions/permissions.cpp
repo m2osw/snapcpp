@@ -355,7 +355,9 @@ void permissions::sets_t::add_user_right(QString right)
             if(right.startsWith(f_user_rights[i]))
             {
                 // we're done, that right is already here
+#ifdef DEBUG
 printf("  USER RIGHT -> [%s] (ignore, better already there)\n", right.toUtf8().data());
+#endif
                 return;
             }
         }
@@ -378,7 +380,9 @@ printf("  USER RIGHT -> [%s] (ignore, better already there)\n", right.toUtf8().d
                         ++i; // in this case i increases
                     }
                 }
+#ifdef DEBUG
 printf("  USER RIGHT -> [%s] (shrunk)\n", right.toUtf8().data());
+#endif
                 return;
             }
         }
@@ -387,7 +391,9 @@ printf("  USER RIGHT -> [%s] (shrunk)\n", right.toUtf8().data());
             if(f_user_rights[i] == right)
             {
                 // that's exactly the same, no need to have it twice
+#ifdef DEBUG
 printf("  USER RIGHT -> [%s] (already present)\n", right.toUtf8().data());
+#endif
                 return;
             }
         }
@@ -395,7 +401,9 @@ printf("  USER RIGHT -> [%s] (already present)\n", right.toUtf8().data());
 
     // this one was not there yet, just append
     f_user_rights.push_back(right);
+#ifdef DEBUG
 printf("  USER RIGHT -> [%s] (add)\n", right.toUtf8().data());
+#endif
 }
 
 
@@ -461,7 +469,9 @@ void permissions::sets_t::add_plugin_permission(const QString& plugin, QString r
 
     if(!f_plugin_permissions.contains(plugin))
     {
+#ifdef DEBUG
 printf("  PLUGIN [%s] PERMISSION -> [%s] (add, new plugin)\n", plugin.toUtf8().data(), right.toUtf8().data());
+#endif
         f_plugin_permissions[plugin].push_back(right);
         return;
     }
@@ -478,7 +488,9 @@ printf("  PLUGIN [%s] PERMISSION -> [%s] (add, new plugin)\n", plugin.toUtf8().d
             if(right.startsWith(set[i]))
             {
                 // the new right is generally considered easier to get
+#ifdef DEBUG
 printf("  PLUGIN [%s] PERMISSION -> [%s] (REMOVING)\n", plugin.toUtf8().data(), set[i].toUtf8().data());
+#endif
                 set.remove(i);
                 continue;
             }
@@ -488,7 +500,9 @@ printf("  PLUGIN [%s] PERMISSION -> [%s] (REMOVING)\n", plugin.toUtf8().data(), 
             if(set[i].startsWith(right))
             {
                 // this new right is harder to get, ignore it
+#ifdef DEBUG
 printf("  PLUGIN [%s] PERMISSION -> [%s] (skipped)\n", plugin.toUtf8().data(), right.toUtf8().data());
+#endif
                 return;
             }
         }
@@ -497,7 +511,9 @@ printf("  PLUGIN [%s] PERMISSION -> [%s] (skipped)\n", plugin.toUtf8().data(), r
             if(set[i] == right)
             {
                 // that's exactly the same, no need to have it twice
+#ifdef DEBUG
 printf("  PLUGIN [%s] PERMISSION -> [%s] (already present)\n", plugin.toUtf8().data(), right.toUtf8().data());
+#endif
                 return;
             }
         }
@@ -506,7 +522,9 @@ printf("  PLUGIN [%s] PERMISSION -> [%s] (already present)\n", plugin.toUtf8().d
 
     // this one was not there yet, just append
     set.push_back(right);
+#ifdef DEBUG
 printf("  PLUGIN [%s] PERMISSION -> [%s] (add right)\n", plugin.toUtf8().data(), right.toUtf8().data());
+#endif
 }
 
 
@@ -555,12 +573,14 @@ bool permissions::sets_t::allowed() const
         return false;
     }
 
+#ifdef DEBUG
 printf("final USER RIGHTS:\n");
 for(int i(0); i < f_user_rights.size(); ++i)
 {
     printf("  [%s]\n", f_user_rights[i].toUtf8().data());
 }
 printf("final PLUGINS:\n");
+#endif
     for(req_sets_t::const_iterator pp(f_plugin_permissions.begin());
             pp != f_plugin_permissions.end();
             ++pp)
@@ -598,12 +618,16 @@ printf("final PLUGINS:\n");
         }
         // XXX add a log to determine the name of the plugin that
         //     failed the user?
+#ifdef DEBUG
 printf("  failed, no match for [%s]\n", pp.key().toUtf8().data());
+#endif
         return false;
 next_plugin:;
     }
 
+#ifdef DEBUG
 printf("  allowed!!!\n");
+#endif
     return true;
 }
 
@@ -1245,7 +1269,9 @@ void permissions::on_access_allowed(QString const& user_path, QString const& pat
     // first we get the user rights for that action because that's a lot
     // smaller and if empty we do not have to get anything else
     // (intersection of an empty set with anything else is the empty set)
+#ifdef DEBUG
 printf("retrieving USER rights... [%s] [%s] [%s]\n", sets.get_action().toUtf8().data(), sets.get_login_status().toUtf8().data(), path.toUtf8().data());
+#endif
     get_user_rights(this, sets);
     if(sets.get_user_rights_count() != 0)
     {
@@ -1253,9 +1279,13 @@ printf("retrieving USER rights... [%s] [%s] [%s]\n", sets.get_action().toUtf8().
         {
             return;
         }
+#ifdef DEBUG
 printf("retrieving PLUGIN permissions... [%s]\n", sets.get_action().toUtf8().data());
+#endif
         get_plugin_permissions(this, sets);
+#ifdef DEBUG
 printf("now compute the intersection!\n");
+#endif
         if(sets.allowed())
         {
             return;
