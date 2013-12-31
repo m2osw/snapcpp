@@ -1992,7 +1992,7 @@ void snap_child::canonicalize_website()
             f_uri.set_option("protocol", protocol);
             canonicalized += protocol + "://" + f_website_key;
             f_uri.set_option("port", port);
-            if(port.toInt() != 80)
+            if(port.toInt() != snap_uri::protocol_to_port(protocol))
             {
                 canonicalized += ":" + port;
             }

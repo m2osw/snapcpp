@@ -219,7 +219,7 @@ bool snap_uri::set_uri(QString const& uri)
             // empty port entries are considered invalid
             return false;
         }
-        port = 0;	// Reset port. TODO: WHY is port being recalucated here? It was properly figured out above!
+        port = 0;	// Reset port.
         for(; p < u; ++p)
         {
             ushort d = p->unicode();
