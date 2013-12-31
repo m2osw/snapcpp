@@ -1146,7 +1146,7 @@ fprintf(stderr, " f_files[\"%s\"] = \"...\" (Filename: \"%s\" MIME: %s, size: %d
                 else if(c == '\n')
                 {
 #ifdef DEBUG
-                    SNAP_LOG_DEBUG("f_name=")(f_name.toUtf8().data());
+                    //SNAP_LOG_DEBUG("f_name=")(f_name.toUtf8().data());
 #endif
                     process_line();
 
@@ -1192,7 +1192,7 @@ fprintf(stderr, " f_files[\"%s\"] = \"...\" (Filename: \"%s\" MIME: %s, size: %d
                 ss << pair.first << ": " << pair.second << std::endl;
             }
 
-            SNAP_LOG_DEBUG( ss.str().c_str() );
+            //SNAP_LOG_DEBUG( ss.str().c_str() );
         }
 #endif
 
