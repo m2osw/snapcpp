@@ -9,7 +9,7 @@
 #      See the CMake documentation.
 #
 # License:
-#      Copyright (c) 2011-2013 Made to Order Software Corp.
+#      Copyright (c) 2011-2014 Made to Order Software Corp.
 #
 #      http://snapwebsites.org/
 #      contact@m2osw.com
@@ -63,6 +63,7 @@ endfunction()
 #
 add_subdirectory(char_chart)
 add_subdirectory(content)
+add_subdirectory(editor)
 add_subdirectory(favicon)
 add_subdirectory(filter)
 add_subdirectory(form)

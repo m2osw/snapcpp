@@ -1,5 +1,5 @@
 // Snap Websites Server -- path handling
-// Copyright (C) 2011-2012  Made to Order Software Corp.
+// Copyright (C) 2011-2014  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -32,9 +32,10 @@ SNAP_PLUGIN_START(path, 1, 0)
  *
  * \return A pointer to the name.
  */
-const char *get_name(name_t name)
+char const *get_name(name_t name)
 {
-    switch(name) {
+    switch(name)
+    {
     case SNAP_NAME_PATH_PRIMARY_OWNER:
         return "path::primary_owner";
 
@@ -127,55 +128,6 @@ void path::on_init()
 }
 
 
-/** \brief Add a path to the database.
- *
- * The current scheme works by adding your plugin paths to the database.
- * These can include JSON paths, paths to lists of data, paths to pages
- * of content to display to end users, etc.
- *
- * This functions takes 3 parameters that are all important:
- *
- * 1) Primary Owner
- *
- * This is the name of the plug that manages the given path. When executing
- * a path the system will (a) gather information about that path; and (b)
- * retrieve the owner and send a signal about executing that path.
- *
- * 2) Path
- *
- * The actual path. This is, for example, "robots.txt". This represents
- * the path to the page read by robots to know what pages should be
- * indexed and which ones should never be indexed.
- *
- * The index page is represened by "". It is handled by the "content" plugin.
- * Since the content plugin is mandatory, you cannot redefine the index
- * somewhere else.
- *
- * 3) Timestamp
- *
- * This is the timestamp that is to be used to register the path information.
- * The timestamp is in microseconds (usec). It is particularly important when
- * initializing paths at the time an update runs on your website. When creating
- * a new page of content (i.e. the user is posting data to his website) then
- * the current time is used.
- *
- * \param[in] primary_owner  The name of the plugin handling these requests.
- * \param[in] path  The path without protocol and domain information.
- * \param[in] timestamp  The time and date when the path is being created.
- */
-//void path::add_path(const QString& primary_owner,
-//                    const QString& path,
-//                    int64_t timestamp)
-//{
-//    QString cpath(path);
-//    snap_child::canonicalize_path(cpath);
-//    const QString key(f_snap->get_site_key() + cpath);
-//    QtCassandra::QCassandraValue value(primary_owner);
-//    value.setTimestamp(timestamp);
-//    content::content::instance()->get_content_table()->row(key)->cell(QString("path::primary_owner"))->setValue(value);
-//}
-
-
 /** \brief Analyze the URL and execute the corresponding callback.
  *
  * This function looks for the page that needs to be displayed
@@ -188,7 +140,7 @@ void path::on_init()
  *
  * \param[in] uri_path  The path received from the HTTP server.
  */
-void path::on_execute(const QString& uri_path)
+void path::on_execute(QString const& uri_path)
 {
     // get the name of the plugin that owns this URL 
     QString cpath(uri_path);
@@ -196,6 +148,7 @@ void path::on_execute(const QString& uri_path)
     QString const key(f_snap->get_site_key_with_slash() + cpath);
     QString owner;
     dynamic_path_plugin_t path_plugin;
+    // TODO: remove direct dependency on the content pluing
     QSharedPointer<QtCassandra::QCassandraTable> content_table(content::content::instance()->get_content_table());
     bool const page_exists(content_table->exists(key));
     if(page_exists)
@@ -365,7 +318,7 @@ void path::handle_dynamic_path(plugins::plugin *p)
                     "Multiple Choices",
                     "This page references multiple plugins and the server does not currently have means of choosing one over the other.",
                     "User tried to access dynamic page but more than one plugin says it owns the resource, primary is \""
-                            + f_primary_owner + "\", second request by \"" + p->get_plugin_name() + " \"["+g_undefined+"]");
+                            + f_primary_owner + "\", second request by \"" + p->get_plugin_name() + " \"[" + g_undefined + "]");
         NOTREACHED();
     }
 }

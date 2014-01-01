@@ -17,7 +17,7 @@
 #ifndef SNAP_LAYOUT_H
 #define SNAP_LAYOUT_H
 
-#include "../javascript/javascript.h"
+#include "snapwebsites.h"
 
 namespace snap
 {
@@ -30,7 +30,7 @@ enum name_t
     SNAP_NAME_LAYOUT_THEME,
     SNAP_NAME_LAYOUT_LAYOUT
 };
-const char *get_name(name_t name) __attribute__ ((const));
+char const *get_name(name_t name) __attribute__ ((const));
 
 
 class layout;
@@ -42,7 +42,7 @@ public:
 };
 
 
-class layout : public plugins::plugin //, public javascript::javascript_dynamic_plugin
+class layout : public plugins::plugin
 {
 public:
                         layout();
@@ -54,7 +54,6 @@ public:
     QSharedPointer<QtCassandra::QCassandraTable> get_layout_table();
 
     void                on_bootstrap(snap_child *snap);
-    void                on_get_dynamic_plugins(javascript::javascript *js);
 
     QString             get_layout(const QString& cpath, const QString& column_name);
     QString             apply_layout(const QString& cpath, layout_content *plugin, const QString& ctemplate = "");
@@ -65,11 +64,6 @@ public:
     SNAP_SIGNAL(generate_page_content, (layout *l, const QString& path, QDomElement& page, QDomElement& body, const QString& ctemplate), (l, path, page, body, ctemplate));
     //SNAP_SIGNAL(generate_box_content, (layout *l, const QString& path, QDomElement& box), (l, path, box));
 
-    //virtual int js_property_count() const;
-    //virtual QVariant js_property_get(const QString& name) const;
-    //virtual QString js_property_name(int index) const;
-    //virtual QVariant js_property_get(int index) const;
-
 private:
     void initial_update(int64_t variables_timestamp);
     void content_update(int64_t variables_timestamp);
@@ -77,12 +71,6 @@ private:
 
     zpsnap_child_t                                  f_snap;
     QSharedPointer<QtCassandra::QCassandraTable>    f_content_table;
-
-    // output document in XML format while building the output
-    //QDomDocument                                    f_doc;
-    //QDomElement                                     f_header;
-    //QDomElement                                     f_page;
-    //QVector<QDomElement>                            f_boxes;
 };
 
 class layout_box_execute

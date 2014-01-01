@@ -1,5 +1,5 @@
 // Snap Servers -- plugins loader
-// Copyright (C) 2011-2013  Made to Order Software Corp.
+// Copyright (C) 2011-2014  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -129,10 +129,11 @@ bool verify_plugin_name(const QString& name);
  * SNAP_PLUGIN_END() macro to close the namespaces that the start
  * macro automatically adds.
  *
- * Note that the factor initialization also takes care of
+ * Note that the factory initialization also takes care of
  * initializing the Qt resources of the plugin (resources
  * are mandatory in all plugins because you are expected
- * to call the install_content() function.)
+ * to call the add_xml() function, although a few low
+ * level plugins won't do that, they still need resources.)
  *
  * \note
  * If you create multiple source files to implement your plugin

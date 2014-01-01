@@ -11,7 +11,7 @@
  *      easy practical way which this tool offers.
  *
  * License:
- *      Copyright (c) 2012-2013 Made to Order Software Corp.
+ *      Copyright (c) 2012-2014 Made to Order Software Corp.
  * 
  *      http://snapwebsites.org/
  *      contact@m2osw.com
@@ -339,13 +339,20 @@ void snapdb::display()
     if(!f_row.isEmpty() && f_table == "files")
     {
         // these rows make use of MD5 sums so we have to convert them
-        QByteArray str(f_row.toUtf8());
-        char const *s(str.data());
-        while(s[0] != '\0' && s[1] != '\0')
+        if(f_row == "new")
         {
-            char c((hex_to_dec(s[0]) << 4) | hex_to_dec(s[1]));
-            f_row_key.append(c);
-            s += 2;
+            f_row_key = "new";
+        }
+        else
+        {
+            QByteArray str(f_row.toUtf8());
+            char const *s(str.data());
+            while(s[0] != '\0' && s[1] != '\0')
+            {
+                char c((hex_to_dec(s[0]) << 4) | hex_to_dec(s[1]));
+                f_row_key.append(c);
+                s += 2;
+            }
         }
     }
     else
@@ -385,11 +392,18 @@ void snapdb::display()
             {
                 // these are raw MD5 keys
                 QByteArray key((*r)->rowKey());
-                int const max(key.size());
-                for(int i(0); i < max; ++i)
+                if(key == "new")
                 {
-                    QString hex(QString("%1").arg(key[i] & 255, 2, 16, QChar('0')));
-                    std::cout << hex.toStdString();
+                    std::cout << "new";
+                }
+                else
+                {
+                    int const max(key.size());
+                    for(int i(0); i < max; ++i)
+                    {
+                        QString hex(QString("%1").arg(key[i] & 255, 2, 16, QChar('0')));
+                        std::cout << hex;
+                    }
                 }
                 std::cout << std::endl;
             }
@@ -469,8 +483,19 @@ void snapdb::display()
                         ++c)
             {
                 QString n;
-                if((f_table == "users" && f_row == "*index_row*")
-                || (f_table == "shorturl" && f_row.endsWith("/*index_row*"))
+                if(f_table == "files" && f_row == "new")
+                {
+                    // TODO write a function to convert MD5, SHA1, etc.
+                    QByteArray key((*c)->columnKey());
+                    int const max(key.size());
+                    for(int i(0); i < max; ++i)
+                    {
+                        QString hex(QString("%1").arg(key[i] & 255, 2, 16, QChar('0')));
+                        n += hex;
+                    }
+                }
+                else if((f_table == "users"    && f_row == "*index_row*")
+                     || (f_table == "shorturl" && f_row.endsWith("/*index_row*"))
                 )
                 {
                     // special case where the column key is a 64 bit integer
@@ -493,6 +518,7 @@ void snapdb::display()
                 }
                 else if(n == "content::created"
                      || n == "content::files::created"
+                     || n == "content::files::secure::last_check"
                      || n == "content::files::updated"
                      || n == "content::modified"
                      || n == "content::updated"
@@ -510,12 +536,19 @@ void snapdb::display()
                 {
                     // 64 bit value (microseconds)
                     uint64_t time((*c)->value().uint64Value());
-                    char buf[64];
-                    struct tm t;
-                    time_t seconds(time / 1000000);
-                    gmtime_r(&seconds, &t);
-                    strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &t);
-                    v = QString("%1.%2 (%3)").arg(buf).arg(time % 1000000, 6, 10, QChar('0')).arg(time);
+                    if(time == 0)
+                    {
+                        v = "time not set (0)";
+                    }
+                    else
+                    {
+                        char buf[64];
+                        struct tm t;
+                        time_t seconds(time / 1000000);
+                        gmtime_r(&seconds, &t);
+                        strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &t);
+                        v = QString("%1.%2 (%3)").arg(buf).arg(time % 1000000, 6, 10, QChar('0')).arg(time);
+                    }
                 }
                 else if(n == "sessions::login_limit"
                      || n == "sessions::time_limit"
@@ -540,6 +573,7 @@ void snapdb::display()
                 else if(n == "content::files::image_height"
                      || n == "content::files::image_width"
                      || n == "content::files::size"
+                     || n == "content::files::size::compressed"
                      || n == "sitemapxml::count"
                      || n == "sessions::id"
                      || n == "sessions::time_to_live"
@@ -552,7 +586,9 @@ void snapdb::display()
                 else if(n == "sessions::used_up"
                      || n == "content::final"
                      || n == "favicon::sitewide"
-                     || f_table == "files" && (*c)->value().size() == 1
+                     || n == "content::files::compressor"
+                     || n.startsWith("content::files::reference::")
+                     || f_table == "files" && f_row == "new"
                 )
                 {
                     // 8 bit value
@@ -576,6 +612,7 @@ void snapdb::display()
                 }
                 else if(n == "favicon::icon"
                      || n == "content::files::data"
+                     || n == "content::files::data::compressed"
                 )
                 {
                     // n bit binary value
@@ -590,6 +627,28 @@ void snapdb::display()
                     if(buf.size() > max)
                     {
                         v += "...";
+                    }
+                }
+                else if(n == "content::files::secure")
+                {
+                    switch((*c)->value().signedCharValue())
+                    {
+                    case -1:
+                        v = "not checked (-1)";
+                        break;
+
+                    case 0:
+                        v = "not secure (0)";
+                        break;
+
+                    case 1:
+                        v = "secure (1)";
+                        break;
+
+                    default:
+                        v = QString("unknown secure status (%1)").arg((*c)->value().signedCharValue());
+                        break;
+
                     }
                 }
                 else

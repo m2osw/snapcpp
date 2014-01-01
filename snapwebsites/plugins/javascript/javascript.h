@@ -1,5 +1,5 @@
 // Snap Websites Server -- server side javascript environment
-// Copyright (C) 2011-2012  Made to Order Software Corp.
+// Copyright (C) 2011-2014  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -25,10 +25,12 @@ namespace snap
 namespace javascript
 {
 
-//enum name_t {
-//	SNAP_NAME_JAVASCRIPT_NAME
-//};
-//const char *get_name(name_t name) __attribute__ ((const));
+enum name_t
+{
+	SNAP_NAME_JAVASCRIPT_MINIMIZED,
+	SNAP_NAME_JAVASCRIPT_MINIMIZED_COMPRESSED
+};
+char const *get_name(name_t name) __attribute__ ((const));
 
 
 //class javascript_exception : public snap_exception {};
@@ -56,6 +58,7 @@ public:
 	virtual int64_t		do_update(int64_t last_updated);
 
 	void				on_bootstrap(snap_child *snap);
+	void				on_process_attachment(QSharedPointer<QtCassandra::QCassandraTable> files_table, QByteArray const& key, snap_child::post_file_t const& file);
 
 	void				register_dynamic_plugin(javascript_dynamic_plugin *p);
 

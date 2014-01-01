@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!--
 Snap Websites Server == content plugin database setup
-Copyright (C) 2011-2013  Made to Order Software Corp.
+Copyright (C) 2011-2014  Made to Order Software Corp.
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -206,6 +206,30 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="content::title">Public Page Right</param>
     <param name="content::body">
       <![CDATA[<p>Right given to public attachments so anonymous visitors can see them.</p>]]>
+    </param>
+  </content>
+  <!-- the content plugin depends on the JavaScript plugin so it cannot define a content.xml file -->
+  <content path="/js">
+    <param name="content::title">JavaScripts</param>
+    <param name="content::body">
+      <![CDATA[<p>All our JavaScripts are installed under /js.</p>]]>
+    </param>
+    <link name="permissions::administer" to="permissions::administer" mode="*:*">/types/permissions/rights/administer/info</link>
+  </content>
+  <content path="/js/snap">
+    <!-- System JavaScript are the global scripts that are not really specific to one plugin -->
+    <param name="content::title">System JavaScripts</param>
+    <param name="content::body">
+      <![CDATA[<p>System or Global JavaScripts such as the jQuery library.</p>]]>
+    </param>
+    <link name="permissions::administer" to="permissions::administer" mode="*:*">/types/permissions/rights/administer/info</link>
+  </content>
+  <!-- the content plugin depends on the path plugin so it cannot defined a content.xml file -->
+  <content path="/admin/settings/path">
+    <param name="content::title">Path Settings</param>
+    <param name="content::body">
+      <!-- we want to support stuff like pathauto, remap, redirect, etc. -->
+      <![CDATA[<p>Administer your path environment.</p>]]>
     </param>
   </content>
 </snap-tree>

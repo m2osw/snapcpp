@@ -1,5 +1,5 @@
 // Snap Websites Server -- plugin loader
-// Copyright (C) 2011-2013  Made to Order Software Corp.
+// Copyright (C) 2011-2014  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -185,7 +185,8 @@ bool load(const QString& plugin_path, plugin_ptr_t server, const QStringList& li
 		// TODO: Use RTLD_NOW instead of RTLD_LAZY in DEBUG mode
 		//		 so we discover missing symbols
 		void *h = dlopen(filename.toUtf8().data(), RTLD_LAZY | RTLD_GLOBAL);
-		if(h == NULL) {
+		if(h == NULL)
+		{
 			int e(errno);
 			std::cerr << "error: cannot load plugin file \"" << filename.toUtf8().data() << "\" (errno: " << e << ", " << dlerror() << ")" << std::endl;
 			good = false;

@@ -9,7 +9,7 @@
 #      See the CMake documentation.
 #
 # License:
-#      Copyright (c) 2011-2013 Made to Order Software Corp.
+#      Copyright (c) 2011-2014 Made to Order Software Corp.
 #
 #      http://snapwebsites.org/
 #      contact@m2osw.com
@@ -79,7 +79,7 @@ find_package( SnapDoxygen      REQUIRED )
 find_package( Thrift           REQUIRED )
 
 if( "${CMAKE_BUILD_TYPE}" STREQUAL "Debug" )
-    add_definitions( -DDEBUG )
+    add_definitions( -DDEBUG -DCONTROLLED_VARS_DEBUG )
 endif()
 
 include_directories( 

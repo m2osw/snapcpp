@@ -18,6 +18,9 @@
 #define SNAP_CONTENT_H
 
 #include "../layout/layout.h"
+#include "../javascript/javascript.h"
+#include "../links/links.h"
+#include "../path/path.h"
 
 namespace snap
 {
@@ -42,13 +45,20 @@ enum name_t {
     SNAP_NAME_CONTENT_FILES_CREATED,
     SNAP_NAME_CONTENT_FILES_CREATION_TIME,
     SNAP_NAME_CONTENT_FILES_DATA,
+    SNAP_NAME_CONTENT_FILES_DATA_COMPRESSED,
     SNAP_NAME_CONTENT_FILES_FILENAME,
     SNAP_NAME_CONTENT_FILES_IMAGE_HEIGHT,
     SNAP_NAME_CONTENT_FILES_IMAGE_WIDTH,
     SNAP_NAME_CONTENT_FILES_MIME_TYPE,
     SNAP_NAME_CONTENT_FILES_ORIGINAL_MIME_TYPE,
     SNAP_NAME_CONTENT_FILES_MODIFICATION_TIME,
+    SNAP_NAME_CONTENT_FILES_NEW,
+    SNAP_NAME_CONTENT_FILES_REFERENCE,
+    SNAP_NAME_CONTENT_FILES_SECURE,
+    SNAP_NAME_CONTENT_FILES_SECURE_LAST_CHECK,
+    SNAP_NAME_CONTENT_FILES_SECURITY_REASON,
     SNAP_NAME_CONTENT_FILES_SIZE,
+    SNAP_NAME_CONTENT_FILES_SIZE_COMPRESSED,
     SNAP_NAME_CONTENT_FILES_TABLE,
     SNAP_NAME_CONTENT_FILES_UPDATED,
     SNAP_NAME_CONTENT_FINAL,
@@ -301,6 +311,31 @@ public:
         PARAM_TYPE_INT8,
         PARAM_TYPE_INT64
     };
+
+    class secure_flag
+    {
+    public:
+                        secure_flag() {}
+        bool            secure() const { return f_secure; }
+        QString const&  reason() const { return f_reason; }
+        void            not_secure(QString const& new_reason);
+
+    private:
+        // prevent copies or a user could reset the flag!
+        secure_flag(secure_flag const& rhs);
+        secure_flag& operator = (secure_flag const& rhs);
+
+        controlled_vars::tbool_t    f_secure;
+        QString                     f_reason;
+    };
+
+    enum : signed char
+    {
+        CONTENT_SECURE_UNDEFINED = -1,  // not checked yet
+        CONTENT_SECURE_UNSECURE = 0,    // a plugin said it was not safe to use
+        CONTENT_SECURE_SECURE = 1       // all plugins are go!
+    };
+
     typedef controlled_vars::limited_auto_init<param_type_t, PARAM_TYPE_STRING, PARAM_TYPE_INT64, PARAM_TYPE_STRING> safe_param_type_t;
 
                         content();
@@ -319,11 +354,14 @@ public:
     void                on_create_content(QString const& path);
     virtual void        on_generate_main_content(layout::layout *l, QString const& path, QDomElement& page, QDomElement& body, QString const& ctemplate);
     void                on_generate_page_content(layout::layout *l, QString const& path, QDomElement& page, QDomElement& body, QString const& ctemplate);
+    void                on_backend_process();
 
     SNAP_SIGNAL(new_content, (QString const& path), (path));
     SNAP_SIGNAL(create_content, (QString const& path, QString const& owner, QString const& type), (path, owner, type));
     SNAP_SIGNAL(create_attachment, (attachment_file const& file), (file));
     SNAP_SIGNAL(modified_content, (QString const& path, bool updated), (path, updated));
+    SNAP_SIGNAL(check_attachment_security, (attachment_file const& file, secure_flag& secure), (file, secure));
+    SNAP_SIGNAL(process_attachment, (QByteArray const& key, attachment_file const& file), (key, file));
 
     void                output() const;
 

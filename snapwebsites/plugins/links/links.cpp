@@ -1,5 +1,5 @@
 // Snap Websites Server -- manage double links
-// Copyright (C) 2012-2013  Made to Order Software Corp.
+// Copyright (C) 2012-2014  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -36,7 +36,7 @@ SNAP_PLUGIN_START(links, 1, 0)
  *
  * \return A pointer to the name.
  */
-const char *get_name(name_t name)
+char const *get_name(name_t name)
 {
     switch(name)
     {
@@ -361,6 +361,8 @@ link_context::link_context(::snap::snap_child *snap, const link_info& info)
     // make them available in the context to the caller
     if(f_info.is_unique())
     {
+        // TODO: we have to somehow remove this content dependency (circular
+        //       dependency)
         QSharedPointer<QtCassandra::QCassandraTable> table(content::content::instance()->get_content_table());
         if(table.isNull())
         {
@@ -371,7 +373,7 @@ link_context::link_context(::snap::snap_child *snap, const link_info& info)
         //QSharedPointer<QtCassandra::QCassandraRow> row(table->row(f_info.key()));
         QString const links_namespace(get_name(SNAP_NAME_LINKS_NAMESPACE));
 //printf("links: content read row key [%s] cell [%s]\n", f_info.key().toUtf8().data(), (links_namespace + "::" + f_info.name()).toUtf8().data());
-        QtCassandra::QCassandraValue link(content::content::instance()->get_content_table()->row(f_info.key())->cell(links_namespace + "::" + f_info.name())->value());
+        QtCassandra::QCassandraValue link(table->row(f_info.key())->cell(links_namespace + "::" + f_info.name())->value());
         if(!link.nullValue())
         {
             f_link = link.stringValue();
@@ -654,6 +656,7 @@ void links::init_tables()
     // retrieve content table if not there yet
     if(f_content_table.isNull())
     {
+        // TODO remove this circular dependency
         QSharedPointer<QtCassandra::QCassandraTable> table(content::content::instance()->get_content_table());
         if(table.isNull())
         {

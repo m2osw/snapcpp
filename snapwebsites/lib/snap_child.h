@@ -1,5 +1,5 @@
 // Snap Websites Servers -- snap websites child process hanlding
-// Copyright (C) 2011-2013  Made to Order Software Corp.
+// Copyright (C) 2011-2014  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -274,7 +274,8 @@ public:
     void                        attach_to_session();
     bool                        access_allowed(QString const& user_path, QString const& path, QString const& action, QString const& login_status);
     QString                     snap_url(QString const& url) const;
-    void                        page_redirect(QString const& path, http_code_t http_code = HTTP_CODE_MOVED_PERMANENTLY);
+    // TODO translations? (not too important though)
+    void                        page_redirect(QString const& path, http_code_t http_code = HTTP_CODE_MOVED_PERMANENTLY, QString const& reason_brief = "Moved", QString const& reason = "This page has moved");
     void                        die(http_code_t err_code, QString err_name, QString const& err_description, QString const& err_details);
     static void                 define_http_name(http_code_t http_code, QString& http_name);
 
@@ -298,6 +299,7 @@ private:
     typedef QMap<QString, http_cookie>      cookie_map_t;
 
     void                        read_environment();
+    void                        mark_for_initialization();
     void                        init_start_date();
     void                        setup_uri();
     void                        snap_info();
@@ -323,6 +325,7 @@ private:
     QSharedPointer<QtCassandra::QCassandraTable>    f_site_table;
     controlled_vars::fbool_t            f_new_content;
     controlled_vars::fbool_t            f_is_child;
+    controlled_vars::fbool_t            f_is_being_initialized;
     pid_t                               f_child_pid;
     int                                 f_socket;
     environment_map_t                   f_env;

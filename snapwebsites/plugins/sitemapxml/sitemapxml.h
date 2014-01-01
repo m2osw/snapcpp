@@ -1,5 +1,5 @@
 // Snap Websites Server -- sitemap.xml
-// Copyright (C) 2011-2013  Made to Order Software Corp.
+// Copyright (C) 2011-2014  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -88,8 +88,8 @@ public:
 	};
 	typedef std::vector<url_info>		url_info_list_t;
 
-	sitemapxml();
-	~sitemapxml();
+						sitemapxml();
+						~sitemapxml();
 
 	static sitemapxml *	instance();
 	virtual QString		description() const;

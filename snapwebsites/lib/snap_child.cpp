@@ -1,5 +1,5 @@
 // Snap Websites Server -- snap websites serving children
-// Copyright (C) 2011-2013  Made to Order Software Corp.
+// Copyright (C) 2011-2014  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -344,7 +344,10 @@ bool snap_child::process(int socket)
     init_plugins();
 
     // finally, "execute" the page being accessed
-    execute();
+    if(!f_is_being_initialized)
+    {
+        execute();
+    }
 
     // we could delete ourselves but really only the socket is an
     // object that needs to get cleaned up properly and it is done
@@ -704,11 +707,20 @@ void snap_child::read_environment()
                 NOTREACHED();
             }
 
-            // #START
-            if(f_name != "#START")
+            // #INIT
+            if(f_name == "#INIT")
             {
-                die("#START or other supported command missing.");
-                NOTREACHED();
+                // user wants to initialize the database
+                f_snap->mark_for_initialization();
+            }
+            else
+            {
+                // #START
+                if(f_name != "#START")
+                {
+                    die("#START or other supported command missing.");
+                    NOTREACHED();
+                }
             }
             // TODO add support for a version: #START=1.2
             //      so that way the server can cleanly "break" if the
@@ -1241,6 +1253,17 @@ fprintf(stderr, " f_files[\"%s\"] = \"...\" (Filename: \"%s\" MIME: %s, size: %d
 }
 
 
+/** \brief Mark the server for initialization.
+ *
+ * This special flag allows us to initialize the plugins without having
+ * to actually try to access a specific website.
+ */
+void snap_child::mark_for_initialization()
+{
+    f_is_being_initialized = true;
+}
+
+
 /** \brief Write data to the output socket.
  *
  * This function writes data to the output socket.
@@ -1403,6 +1426,14 @@ void snap_child::snap_statistics()
  */
 void snap_child::setup_uri()
 {
+    // If the server is being initialized, use a phony URI
+    // which we anyway won't execute
+    if(f_is_being_initialized)
+    {
+        f_uri.set_uri("http://www.example.com/");
+        return;
+    }
+
     // PROTOCOL
     if(f_env.count("HTTPS") == 1)
     {
@@ -1631,6 +1662,13 @@ void snap_child::canonicalize_domain()
         NOTREACHED();
     }
 
+    if(f_is_being_initialized)
+    {
+        // the URI is phony anyway, accept it as is
+        f_website_key = f_domain_key;
+        return;
+    }
+
     // get the core::rules
     QtCassandra::QCassandraValue value(table->row(f_domain_key)->cell(QString(get_name(SNAP_NAME_CORE_RULES)))->value());
     if(value.nullValue())
@@ -1795,6 +1833,15 @@ void snap_child::canonicalize_website()
         // this website doesn't exist; i.e. that's a 404
         die(HTTP_CODE_NOT_FOUND, "Website Not Found", "This website does not exist. Please check the URI and make corrections as required.", "User attempt to access \"" + f_website_key + "\" which was not defined as a website.");
         NOTREACHED();
+    }
+
+    if(f_is_being_initialized)
+    {
+        // the URI is phony anyway, accept it as is
+        f_site_key = "http://www.example.com/";
+        f_original_site_key = f_site_key;
+        f_site_key_with_slash = f_site_key;
+        return;
     }
 
     // get the core::rules
@@ -2086,7 +2133,7 @@ void snap_child::site_redirect()
  *                  user browser to.
  * \param[in] http_code  The code used to send the redirect.
  */
-void snap_child::page_redirect(const QString& path, http_code_t http_code)
+void snap_child::page_redirect(QString const& path, http_code_t http_code, QString const& reason_brief, QString const& reason)
 {
     if(f_site_key_with_slash.isEmpty())
     {
@@ -2144,10 +2191,10 @@ void snap_child::page_redirect(const QString& path, http_code_t http_code)
     // the time this content is ignored, I would say no.)
     QString body("<html><head>"
             "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\"/>"
-            "<title>Moved</title>"
+            "<title>" + reason_brief + "</title>"
             "<meta http-equiv=\"Refresh\" content=\"0; url=" + uri.get_uri() + "\"/>"
             "<meta name=\"ROBOTS\" content=\"NOINDEX\"/>" // no need for the NOFOLLOW on this one
-            "</head><body><h1>Moved</h1><p>This page has moved to <a href=\""
+            "</head><body><h1>" + reason_brief + "</h1><p>" + reason + ". New location: <a href=\""
                     + uri.get_uri() + "\">"
                     + uri.get_uri() + "</a>.</p></body></html>");
 

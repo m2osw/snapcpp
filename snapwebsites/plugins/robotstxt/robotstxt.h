@@ -18,6 +18,7 @@
 #define SNAP_ROBOTSTXT_H
 
 #include "../layout/layout.h"
+#include "../path/path.h"
 
 namespace snap
 {

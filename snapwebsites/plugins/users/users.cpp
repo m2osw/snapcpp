@@ -1,5 +1,5 @@
 // Snap Websites Server -- users handling
-// Copyright (C) 2012-2013  Made to Order Software Corp.
+// Copyright (C) 2012-2014  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -601,7 +601,7 @@ void users::on_process_cookies()
  * \param[in] path_plugin  A pointer to the path plugin.
  * \param[in] cpath  The path being handled dynamically.
  */
-void users::on_can_handle_dynamic_path(path::path *path_plugin, const QString& cpath)
+void users::on_can_handle_dynamic_path(path::path *path_plugin, QString const& cpath)
 {
     if(cpath == "user"                      // list of (public) users
     || cpath.left(5) == "user/"             // show a user profile (user/ is followed by the user identifier or some edit page such as user/password)
@@ -628,7 +628,7 @@ void users::on_can_handle_dynamic_path(path::path *path_plugin, const QString& c
  *
  * \param[in] cpath  The canonalized path.
  */
-bool users::on_path_execute(const QString& cpath)
+bool users::on_path_execute(QString const& cpath)
 {
     f_snap->output(layout::layout::instance()->apply_layout(cpath, this));
 
@@ -636,7 +636,7 @@ bool users::on_path_execute(const QString& cpath)
 }
 
 
-void users::on_generate_main_content(layout::layout *l, const QString& cpath, QDomElement& page, QDomElement& body, const QString& ctemplate)
+void users::on_generate_main_content(layout::layout *l, QString const& cpath, QDomElement& page, QDomElement& body, QString const& ctemplate)
 {
     if(cpath == "user")
     {
@@ -708,7 +708,7 @@ void users::on_generate_main_content(layout::layout *l, const QString& cpath, QD
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
-void users::on_generate_header_content(layout::layout *l, const QString& path, QDomElement& header, QDomElement& metadata, const QString& ctemplate)
+void users::on_generate_header_content(layout::layout *l, QString const& path, QDomElement& header, QDomElement& metadata, QString const& ctemplate)
 {
     QDomDocument doc(header.ownerDocument());
 
@@ -763,7 +763,7 @@ void users::on_generate_header_content(layout::layout *l, const QString& path, Q
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
-void users::on_generate_page_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body, const QString& ctemplate)
+void users::on_generate_page_content(layout::layout *l, QString const& path, QDomElement& page, QDomElement& body, QString const& ctemplate)
 {
     QDomDocument doc(page.ownerDocument());
 
@@ -859,20 +859,20 @@ void users::prepare_replace_password_form(QDomElement& body)
     if(user_is_logged_in())
     {
         // user is logged in already, send him to his normal password form
-        f_snap->page_redirect("user/password", snap_child::HTTP_CODE_SEE_OTHER);
+        f_snap->page_redirect("user/password", snap_child::HTTP_CODE_SEE_OTHER, "Already Logged In", "You are already logged in so you cannot access this page at this time.");
         NOTREACHED();
     }
     if(!f_user_key.isEmpty())
     {
         // user logged in a while back, ask for credentials again
-        f_snap->page_redirect("verify-credentials", snap_child::HTTP_CODE_SEE_OTHER);
+        f_snap->page_redirect("verify-credentials", snap_child::HTTP_CODE_SEE_OTHER, "Not Enough Permissions", "You are logged in with minimal permissions. To access this page we have to verify your credentials.");
         NOTREACHED();
     }
     if(f_user_changing_password_key.isEmpty())
     {
         // user is not even logged in and he did not follow a valid link
         // XXX the login page is probably the best choice?
-        f_snap->page_redirect("login", snap_child::HTTP_CODE_SEE_OTHER);
+        f_snap->page_redirect("login", snap_child::HTTP_CODE_SEE_OTHER, "Replace Password Not Possible", "You required to change your password in a way which is not current valid. Please go to log in instead.");
         NOTREACHED();
     }
 }

@@ -1230,7 +1230,7 @@ void print_no_init()
 	fprintf(out, "#ifdef CONTROLLED_VARS_DEBUG\n");
 	create_class("no", "r", FLAG_HAS_VOID | FLAG_HAS_INITFLG | FLAG_HAS_DEBUG_ALREADY);
 	fprintf(out, "#else\n");
-	create_direct_typedef("no");
+	create_direct_typedef("r");
 	fprintf(out, "#endif\n");
 }
 
@@ -1244,7 +1244,7 @@ void print_limited_no_init()
 	// in non-debug, this is essentially the same template, but we
 	// expect the users to declare their types "properly" (i.e. using
 	// a typedef whenever CONTROLLED_VARS_DEBUG is not defined.)
-	//create_class("limited_no", "r", FLAG_HAS_VOID | FLAG_HAS_LIMITS);
+	//create_direct_typedef("rl");
 	fprintf(out, "typedef bool rlbool_t;\n");
 	fprintf(out, "#endif\n");
 }

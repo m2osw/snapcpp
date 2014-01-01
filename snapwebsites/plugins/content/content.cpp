@@ -1,5 +1,5 @@
 // Snap Websites Server -- all the user content and much of the system content
-// Copyright (C) 2011-2013  Made to Order Software Corp.
+// Copyright (C) 2011-2014  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -18,6 +18,7 @@
 #include "content.h"
 #include "plugins.h"
 #include "log.h"
+#include "compression.h"
 #include "not_reached.h"
 #include "dom_util.h"
 #include "snap_magic.h"
@@ -92,6 +93,9 @@ char const *get_name(name_t name)
     case SNAP_NAME_CONTENT_FILES_DATA:
         return "content::files::data";
 
+    case SNAP_NAME_CONTENT_FILES_DATA_COMPRESSED:
+        return "content::files::data::compressed";
+
     case SNAP_NAME_CONTENT_FILES_FILENAME:
         return "content::files::filename";
 
@@ -107,11 +111,29 @@ char const *get_name(name_t name)
     case SNAP_NAME_CONTENT_FILES_MODIFICATION_TIME:
         return "content::files::modification_time";
 
+    case SNAP_NAME_CONTENT_FILES_NEW:
+        return "new";
+
+    case SNAP_NAME_CONTENT_FILES_REFERENCE:
+        return "content::files::reference";
+
+    case SNAP_NAME_CONTENT_FILES_SECURE: // -1 -- unknown, 0 -- unsecure, 1 -- secure
+        return "content::files::secure";
+
+    case SNAP_NAME_CONTENT_FILES_SECURE_LAST_CHECK:
+        return "content::files::secure::last_check";
+
+    case SNAP_NAME_CONTENT_FILES_SECURITY_REASON:
+        return "content::files::security_reason";
+
     case SNAP_NAME_CONTENT_FILES_ORIGINAL_MIME_TYPE:
         return "content::files::original_mime_type";
 
     case SNAP_NAME_CONTENT_FILES_SIZE:
         return "content::files::size";
+
+    case SNAP_NAME_CONTENT_FILES_SIZE_COMPRESSED:
+        return "content::files::size::compressed";
 
     case SNAP_NAME_CONTENT_FILES_TABLE:
         return "files";
@@ -1797,6 +1819,19 @@ void content::insert_html_string_to_xml_doc(QDomElement child, QString const& xm
 }
 
 
+void content::secure_flag::not_secure(QString const& new_reason)
+{
+    f_secure = false;
+
+    if(!f_reason.isEmpty())
+    {
+        f_reason += "\n";
+    }
+    // TBD: should we prevent "\n" in "reason"?
+    f_reason += new_reason;
+}
+
+
 /** \brief Initialize the content plugin.
  *
  * This function is used to initialize the content plugin object.
@@ -1828,6 +1863,7 @@ void content::on_bootstrap(snap_child *snap)
     f_snap = snap;
 
     SNAP_LISTEN0(content, "server", server, save_content);
+    SNAP_LISTEN0(content, "server", server, backend_process);
     SNAP_LISTEN(content, "layout", layout::layout, generate_page_content, _1, _2, _3, _4, _5);
 
     if(plugins::exists("javascript"))
@@ -2166,8 +2202,10 @@ bool content::create_attachment_impl(attachment_file const& file)
     {
         // the file does not exist yet, add it
         //
-        // 1. create the row with the file data, the compression used, and size
+        // 1. create the row with the file data, the compression used,
+        //    and size; also add it to the list of new cells
         files_table->row(md5)->cell(get_name(SNAP_NAME_CONTENT_FILES_DATA))->setValue(post_file.get_data());
+        files_table->row(get_name(SNAP_NAME_CONTENT_FILES_NEW))->cell(md5)->setValue(true);
 
         QSharedPointer<QtCassandra::QCassandraRow> file_row(files_table->row(md5));
 
@@ -2218,16 +2256,22 @@ bool content::create_attachment_impl(attachment_file const& file)
         // 10. save the description
         // At this point we do not have that available, we could use the
         // comment/description from the file if there is such, but those
-        // are often "broken"
+        // are often "broken" (i.e. version of the camera used...)
 
         // TODO should we also save a SHA1 of the files so people downloading
         //      can be given the SHA1 even if the file is saved compressed?
+
+        // 11. Some additional fields
+        signed char sflag(CONTENT_SECURE_UNDEFINED);
+        file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_SECURE))->setValue(sflag);
+        file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_SECURE_LAST_CHECK))->setValue(static_cast<int64_t>(0));
+        file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_SECURITY_REASON))->setValue(QString());
     }
 
     // make a full reference back to the attachment (which may not yet
     // exist at this point, we do that next)
     signed char ref(1);
-    files_table->row(md5)->cell(attachment_cpath)->setValue(ref);
+    files_table->row(md5)->cell(get_name(SNAP_NAME_CONTENT_FILES_REFERENCE) + ("::" + attachment_key))->setValue(ref);
 
     // if the field exists and that attach is unique (i.e. supports only
     // one single file), then we want to delete the existing page unless
@@ -3450,11 +3494,11 @@ void content::on_save_content()
 }
 
 
-
 int content::js_property_count() const
 {
     return 1;
 }
+
 
 QVariant content::js_property_get(const QString& name) const
 {
@@ -3465,13 +3509,16 @@ QVariant content::js_property_get(const QString& name) const
     return QVariant();
 }
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
+
 QString content::js_property_name(int index) const
 {
-    return "modified";
+	if(index == 0)
+	{
+		return "modified";
+	}
+	return "";
 }
-#pragma GCC diagnostic pop
+
 
 QVariant content::js_property_get(int index) const
 {
@@ -3482,6 +3529,210 @@ QVariant content::js_property_get(int index) const
     return QVariant();
 }
 
+
+
+/** \brief Process new attachments.
+ *
+ * As user upload new files to the server, we want to have them
+ * processed in different ways. This backend process does part of
+ * that work and allows other plugins to check files out to make
+ * sure they are fine.
+ *
+ * Type of processes we are expecting to run against files:
+ *
+ * \li The Anti-Virus plugin checks that the file is not viewed as a
+ *     virus using external tools such as clamscan. This is expected
+ *     to be checked within the check_attachment_security() signal.
+ *
+ * \li The JavaScript plugin checks the syntax of all JavaScript files.
+ *     It also minimizes them and save that minimized version.
+ *
+ * \li The Layout plugin checks the syntax of all the CSS files and
+ *     it also minimizes them and save that minimized version.
+ *
+ * \li The layout plugin tries to fully load all Images, play movies,
+ *     etc. to make sure that the files are valid. If that process
+ *     fails, then the file is marked as invalid.
+ *
+ * When serving a file that is an attachment, plugins that own those
+ * files are given a chance to server the attachment themselves. If
+ * they do, then the default code doesn't get used at all. This allows
+ * plugins such as the JavaScript plugin to send their compressed and
+ * minimized version of the file instead of the source version.
+ *
+ * \important
+ * This function generates two signals: check_attachment_security()
+ * and process_attachment(). If your plugin can check the file for
+ * security reason, implement the check_attachment_security(). In
+ * all other cases, use the process_attachment(). It is important to
+ * do that work in the right function because attempting to load a
+ * virus or some other bad file make cause havoc on the server.
+ *
+ * \todo
+ * The security checks may need to be re-run on all the files once
+ * in a while since brand new viruses may not be detected when they
+ * first get uploaded. Once signal on that one could be to count the
+ * number of time a file gets uploaded, if the counter increases
+ * outregiously fast, it's probably not a good sign.
+ */
+void content::on_backend_process()
+{
+    QSharedPointer<QtCassandra::QCassandraTable> files_table(get_files_table());
+    QSharedPointer<QtCassandra::QCassandraRow> new_row(files_table->row(get_name(SNAP_NAME_CONTENT_FILES_NEW)));
+    QtCassandra::QCassandraColumnRangePredicate column_predicate;
+    column_predicate.setCount(100); // should this be a parameter?
+    column_predicate.setIndex(); // behave like an index
+    for(;;)
+    {
+        new_row->clearCache();
+        new_row->readCells(column_predicate);
+        const QtCassandra::QCassandraCells& new_cells(new_row->cells());
+        if(new_cells.isEmpty())
+        {
+            break;
+        }
+        // handle one batch
+        for(QtCassandra::QCassandraCells::const_iterator nc(new_cells.begin());
+                nc != new_cells.end();
+                ++nc)
+        {
+            // get the email from the database
+            // we expect empty values once in a while because a dropCell() is
+            // not exactly instantaneous in Cassandra
+            QSharedPointer<QtCassandra::QCassandraCell> new_cell(*nc);
+            if(!new_cell->value().nullValue())
+            {
+                QByteArray file_key(new_cell->columnKey());
+
+                QSharedPointer<QtCassandra::QCassandraRow> file_row(files_table->row(file_key));
+                QtCassandra::QCassandraColumnRangePredicate reference_column_predicate;
+                reference_column_predicate.setStartColumnName(get_name(SNAP_NAME_CONTENT_FILES_REFERENCE));
+                reference_column_predicate.setEndColumnName(get_name(SNAP_NAME_CONTENT_FILES_REFERENCE) + QString(";"));
+                reference_column_predicate.setCount(100);
+                reference_column_predicate.setIndex(); // behave like an index
+                bool first(true); // load the image only once for now
+                secure_flag secure;
+                for(;;)
+                {
+                    file_row->clearCache();
+                    file_row->readCells(reference_column_predicate);
+                    const QtCassandra::QCassandraCells& content_cells(file_row->cells());
+                    if(content_cells.isEmpty())
+                    {
+                        break;
+                    }
+                    // handle one batch
+                    for(QtCassandra::QCassandraCells::const_iterator cc(content_cells.begin());
+                            cc != content_cells.end();
+                            ++cc)
+                    {
+                        // get the email from the database
+                        // we expect empty values once in a while because a dropCell() is
+                        // not exactly instantaneous in Cassandra
+                        QSharedPointer<QtCassandra::QCassandraCell> content_cell(*cc);
+                        if(!content_cell->value().nullValue())
+                        {
+                            QByteArray attachment_key(content_cell->columnKey().data() + (strlen(get_name(SNAP_NAME_CONTENT_FILES_REFERENCE)) + 2),
+                                                      content_cell->columnKey().size() - (strlen(get_name(SNAP_NAME_CONTENT_FILES_REFERENCE)) + 2));
+
+                            if(first)
+                            {
+                                first = false;
+
+                                attachment_file file(f_snap);
+                                if(!load_attachment(attachment_key, file, true))
+                                {
+                                    signed char const sflag(CONTENT_SECURE_UNDEFINED);
+                                    file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_SECURE))->setValue(sflag);
+                                    file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_SECURE_LAST_CHECK))->setValue(f_snap->get_start_date());
+                                    file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_SECURITY_REASON))->setValue(QString("Attachment could not be loaded."));
+
+                                    // TODO generate an email about the error...
+                                }
+                                else
+                                {
+                                    check_attachment_security(file, secure);
+
+                                    // always save the secure flag
+                                    signed char const sflag(secure.secure() ? CONTENT_SECURE_SECURE : CONTENT_SECURE_UNSECURE);
+                                    file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_SECURE))->setValue(sflag);
+                                    file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_SECURE_LAST_CHECK))->setValue(f_snap->get_start_date());
+                                    file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_SECURITY_REASON))->setValue(secure.reason());
+
+                                    if(secure.secure())
+                                    {
+                                        // only process the attachment further if it is
+                                        // considered secure
+                                        process_attachment(file_key, file);
+                                    }
+                                }
+                            }
+                            if(!secure.secure())
+                            {
+                                // TODO: warning the author that his file was
+                                //       quanranteened and will not be served
+                                //...sendmail()...
+                            }
+                        }
+                    }
+                }
+            }
+            // we're done with that file, remove it from the list of new files
+            new_row->dropCell(new_cell->columnKey());
+        }
+    }
+}
+
+
+/** \brief Check whether the attachment is considered secure.
+ *
+ * Before processing an attachment further we want to know whether it is
+ * secure. This event allows different plugins to check the security of
+ * each file.
+ *
+ * Once a process decides that a file is not secure, the secure flag is
+ * false and it cannot be reset back to true.
+ *
+ * \param[in] file  The file being processed.
+ * \param[in,out] secure  Whether the file is secure.
+ */
+bool content::check_attachment_security_impl(attachment_file const& file, secure_flag& secure)
+{
+    return true;
+}
+
+
+/** \brief Check the attachment for one thing or another.
+ *
+ * The startup function generates a compressed version of the file using
+ * gzip as the compression mode.
+ *
+ * \param[in] key  The key of the file in the files table.
+ * \param[in] file  The file being processed.
+ */
+bool content::process_attachment_impl(QByteArray const& file_key, attachment_file const& file)
+{
+    QSharedPointer<QtCassandra::QCassandraTable> files_table(get_files_table());
+    QSharedPointer<QtCassandra::QCassandraRow> file_row(files_table->row(file_key));
+    if(!file_row->exists(get_name(SNAP_NAME_CONTENT_FILES_DATA_COMPRESSED)))
+    {
+        QString compressor_name("gzip");
+        QByteArray compressed_file(compression::compress(compressor_name, file.get_file().get_data(), 100, false));
+        file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_DATA_COMPRESSED))->setValue(compressed_file);
+        file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_SIZE_COMPRESSED))->setValue(compressed_file.size());
+    }
+
+    // TODO: actually the JS plugin cannot save in the files table
+    //       unless we pass files_table to it; so we'll have to update
+    //       this call for the plugin!
+    //
+    // The JavaScript plugin does not know about us (content plugin),
+    // however, we know about it so we can ask it to do this job
+    // by calling it directly
+    javascript::javascript::instance()->on_process_attachment(files_table, file_key, file.get_file());
+
+    return true;
+}
 
 
 SNAP_PLUGIN_END()

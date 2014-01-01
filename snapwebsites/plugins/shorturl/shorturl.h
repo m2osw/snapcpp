@@ -18,6 +18,7 @@
 #define SNAP_SHORTURL_H
 
 #include "../sessions/sessions.h"
+#include "../path/path.h"
 
 namespace snap
 {

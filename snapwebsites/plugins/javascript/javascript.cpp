@@ -1,5 +1,5 @@
 // Snap Websites Server -- JavaScript plugin to run scripts on the server side
-// Copyright (C) 2012  Made to Order Software Corp.
+// Copyright (C) 2012-2014  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -29,7 +29,7 @@
 
 #include "javascript.h"
 #include "plugins.h"
-#include "../content/content.h"
+#include "not_reached.h"
 #include <QScriptEngine>
 #include <QScriptProgram>
 #include <QScriptClass>
@@ -52,28 +52,31 @@ SNAP_PLUGIN_START(javascript, 1, 0)
 
 
 
-/** \brief Get a fixed layout name.
+/** \brief Get a fixed javascript name.
  *
- * The layout plugin makes use of different names in the database. This
+ * The javascript plugin makes use of different names in the database. This
  * function ensures that you get the right spelling for a given name.
  *
  * \param[in] name  The name to retrieve.
  *
  * \return A pointer to the name.
  */
-//const char *get_name(name_t name)
-//{
-//	switch(name) {
-//	case SNAP_NAME_JAVASCRIPT_NAME:
-//		return "javascript::script";
-//
-//	default:
-//		// invalid index
-//		throw snap_exception();
-//
-//	}
-//	NOTREACHED();
-//}
+char const *get_name(name_t name)
+{
+	switch(name) {
+	case SNAP_NAME_JAVASCRIPT_MINIMIZED:
+		return "javascript::minimized";
+
+	case SNAP_NAME_JAVASCRIPT_MINIMIZED_COMPRESSED:
+		return "javascript::minimized::compressed";
+
+	default:
+		// invalid index
+		throw snap_logic_exception("invalid SNAP_NAME_JAVASCRIPT_...");
+
+	}
+	NOTREACHED();
+}
 
 
 /** \brief Initialize the javascript plugin.
@@ -88,7 +91,7 @@ javascript::javascript()
 
 /** \brief Clean up the javascript plugin.
  *
- * Ensure the layout object is clean before it is gone.
+ * Ensure the javascript object is clean before it is gone.
  */
 javascript::~javascript()
 {
@@ -105,6 +108,7 @@ void javascript::on_bootstrap(snap_child *snap)
 {
 	f_snap = snap;
 }
+
 
 /** \brief Get a pointer to the javascript plugin.
  *
@@ -154,7 +158,7 @@ int64_t javascript::do_update(int64_t last_updated)
 	SNAP_PLUGIN_UPDATE_INIT();
 
 	SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, initial_update);
-	SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, content_update);
+	//SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, content_update); -- content depends on JavaScript so we cannot do a content update here
 
 	SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -171,19 +175,8 @@ int64_t javascript::do_update(int64_t last_updated)
 void javascript::initial_update(int64_t variables_timestamp)
 {
 }
-
-/** \brief Update the database with our javascript references.
- *
- * Send our javascript to the database so the system can find us when a
- * user references our pages.
- *
- * \param[in] variables_timestamp  The timestamp for all the variables added to the database by this update (in micro-seconds).
- */
-void javascript::content_update(int64_t variables_timestamp)
-{
-	content::content::instance()->add_xml("javascript");
-}
 #pragma GCC diagnostic pop
+
 
 /** \brief Add plugin p as a dynamic plugin.
  *
@@ -197,6 +190,7 @@ void javascript::register_dynamic_plugin(javascript_dynamic_plugin *p)
 {
 	f_dynamic_plugins.push_back(p);
 }
+
 
 /** \brief Dynamic plugin object iterator.
  *
@@ -234,7 +228,8 @@ public:
 
 	virtual QScriptString name() const
 	{
-		if(f_pos < 0 || f_pos >= f_plugin->js_property_count()) {
+		if(f_pos < 0 || f_pos >= f_plugin->js_property_count())
+		{
 			throw std::runtime_error("querying the name of the iterator object when the iterator pointer is out of scope");
 		}
 		return f_engine->toStringHandle(f_plugin->js_property_name(f_pos));
@@ -278,6 +273,7 @@ private:
 	QScriptValue				f_object;
 	javascript_dynamic_plugin *	f_plugin;
 };
+
 
 /** \brief Implement our own script class so we can dynamically get plugins values.
  *
@@ -361,6 +357,7 @@ private:
 	javascript_dynamic_plugin *	f_plugin;
 };
 
+
 /** \brief Plugins object iterator.
  *
  * This class is used to iterate through the list of plugins.
@@ -401,7 +398,8 @@ public:
 
 	virtual QScriptString name() const
 	{
-		if(f_pos < 0 || f_pos >= f_javascript->f_dynamic_plugins.size()) {
+		if(f_pos < 0 || f_pos >= f_javascript->f_dynamic_plugins.size())
+		{
 			throw std::runtime_error("querying the name of the iterator object when the iterator pointer is out of scope");
 		}
 		return f_engine->toStringHandle(dynamic_cast<plugins::plugin *>(f_javascript->f_dynamic_plugins[f_pos])->get_plugin_name());
@@ -409,14 +407,16 @@ public:
 
 	virtual void next()
 	{
-		if(f_pos < f_javascript->f_dynamic_plugins.size()) {
+		if(f_pos < f_javascript->f_dynamic_plugins.size())
+		{
 			++f_pos;
 		}
 	}
 
 	virtual void previous()
 	{
-		if(f_pos > -1) {
+		if(f_pos > -1)
+		{
 			--f_pos;
 		}
 	}
@@ -444,6 +444,7 @@ private:
 	controlled_vars::mint32_t	f_pos;
 	QScriptValue				f_object;
 };
+
 
 /** \brief Implement our own script class so we can dynamically get plugins values.
  *
@@ -489,13 +490,16 @@ public:
 	virtual QScriptValue property(const QScriptValue& object, const QScriptString& object_name, uint id)
 	{
 		QString temp_name(object_name);
-		if(f_dynamic_plugins.contains(temp_name)) {
+		if(f_dynamic_plugins.contains(temp_name))
+		{
 			QScriptValue plugin_object(engine()->newObject(f_dynamic_plugins[temp_name].data()));
 			return plugin_object;
 		}
 		int max(f_javascript->f_dynamic_plugins.size());
-		for(int i(0); i < max; ++i) {
-			if(dynamic_cast<plugins::plugin *>(f_javascript->f_dynamic_plugins[i])->get_plugin_name() == temp_name) {
+		for(int i(0); i < max; ++i)
+		{
+			if(dynamic_cast<plugins::plugin *>(f_javascript->f_dynamic_plugins[i])->get_plugin_name() == temp_name)
+			{
 				QSharedPointer<dynamic_plugin_class> plugin(new dynamic_plugin_class(f_javascript, engine(), f_javascript->f_dynamic_plugins[i]));
 				f_dynamic_plugins[temp_name] = plugin;
 				QScriptValue plugin_object(engine()->newObject(plugin.data()));
@@ -540,6 +544,7 @@ private:
 	javascript *							f_javascript;
 };
 
+
 /** \brief Use this function to run a script and get the result.
  *
  * This function compiles and run the specified script and then
@@ -564,11 +569,34 @@ QVariant javascript::evaluate_script(const QString& script)
 	engine.globalObject().setProperty("plugins", plugins_object);
 //printf("object name = [%s] (%d)\n", plugins_object.scriptClass()->name().toUtf8().data(), plugins_object.isObject());
 	QScriptValue value(engine.evaluate(program));
-	if(engine.hasUncaughtException()) {
+	if(engine.hasUncaughtException())
+	{
 //QScriptValue e(engine.uncaughtException());
 //printf("result = %d (%d) -> [%s]\n", engine.hasUncaughtException(), e.isError(), e.toString().toUtf8().data() );
 	}
 	return value.toVariant();
+}
+
+
+/** \brief Process new JavaScripts.
+ *
+ * As users upload new JavaScripts to the server, we want to have them
+ * pre-minimized and compressed to serve them as fast as possible.
+ *
+ * \important
+ * The JavaScript plugin cannot depend on the content plugin (because
+ * the layout depends on JavaScript and content depends on layout)
+ *
+ * \param[in] files_table  The table where the file is saved at \p file_key.
+ * \param[in] file_key  The row where the file is saved in \p files_table.
+ * \param[in] file  The file to be processed.
+ */
+void javascript::on_process_attachment(QSharedPointer<QtCassandra::QCassandraTable> files_table, QByteArray const& file_key, snap_child::post_file_t const& file)
+{
+	// TODO: got to write the minimizer if I cannot find one in C/C++
+	(void)files_table;
+	(void)file_key;
+	(void)file;
 }
 
 

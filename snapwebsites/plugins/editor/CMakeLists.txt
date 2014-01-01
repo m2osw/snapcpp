@@ -1,20 +1,18 @@
 #
 # File:
-#      plugins/path/CMakeLists.txt
+#      plugins/editor/CMakeLists.txt
 #
 # Description:
-#      Plug-in used to handle the path to objects. This includes all the pages,
-#      administration screens, AJAX query paths, etc.
-#
-#      Note that this plug-in does not handle the canonalization and other
-#      handling of an incoming request. That's done in the libsnapwebsites.so
-#      library in the snap_path.cpp file instead.
+#      Implementation of a full WYSIWYG editor for our Snap! websites.
+#      This is similar to existing editors except that it let you edit
+#      your pages right there, inline, with the right fonts, right,
+#      effects, etc.
 #
 # Documentation:
 #      See the CMake documentation.
 #
 # License:
-#      Copyright (c) 2011-2014 Made to Order Software Corp.
+#      Copyright (c) 2013 Made to Order Software Corp.
 #
 #      http://snapwebsites.org/
 #      contact@m2osw.com
@@ -39,7 +37,7 @@
 #      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
-project(plugin_path)
+project(plugin_editor)
 
 find_package( Qt4 4.8.1 QUIET REQUIRED QtCore )
 include( ${QT_USE_FILE} )
@@ -48,28 +46,34 @@ add_definitions( ${QT_DEFINITIONS} )
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CONTROLLEDVARS_INCLUDE_DIRS}
+    ${LIBTLD_INCLUDE_DIRS}
     ${QT_INCLUDES}
 )
 
+
 QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC
-    path.qrc
+    editor.qrc
 )
 
-add_library(path SHARED
-    path.cpp
+snap_validate_xml( content.xml content.dtd )
+
+
+add_library(editor SHARED
+    editor.cpp
     ${SNAP_MANAGER_MOC_CXX}
     ${SNAP_MANAGER_RESOURCES_RCC}
+    content.xml
 )
 
-target_link_libraries( path ${QT_LIBRARIES} )
+target_link_libraries( editor ${QT_LIBRARIES} )
 
 get_property( 3RDPARTY_INCLUDED GLOBAL PROPERTY 3RDPARTY_INCLUDED )
 if( 3RDPARTY_INCLUDED )
-    add_dependencies( path make_controlled_vars_headers )
+    add_dependencies( editor make_controlled_vars_headers )
 endif()
 
 install(
-    TARGETS path LIBRARY DESTINATION ${PLUGIN_INSTALL_DIR}
+    TARGETS editor LIBRARY DESTINATION ${PLUGIN_INSTALL_DIR}
 )
 
 # vim: ts=4 sw=4 et

@@ -1,5 +1,5 @@
 // Snap Websites Server -- handle the theme/layout information
-// Copyright (C) 2011-2013  Made to Order Software Corp.
+// Copyright (C) 2011-2014  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -16,14 +16,13 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "layout.h"
-#include "plugins.h"
+#include "../filter/filter.h"
+#include "../content/content.h"
+#include "../taxonomy/taxonomy.h"
 #include "log.h"
 #include "qdomreceiver.h"
 #include "qhtmlserializer.h"
 //#include "qdomnodemodel.h" -- at this point the DOM Node Model seems bogus.
-#include "../filter/filter.h"
-#include "../content/content.h"
-#include "../taxonomy/taxonomy.h"
 #include "not_reached.h"
 #include <iostream>
 #pragma GCC diagnostic push
@@ -95,11 +94,6 @@ layout::~layout()
 void layout::on_bootstrap(snap_child *snap)
 {
     f_snap = snap;
-
-    //if(plugins::exists("javascript"))
-    //{
-    //    javascript::javascript::instance()->register_dynamic_plugin(this);
-    //}
 }
 
 /** \brief Get a pointer to the layout plugin.
