@@ -216,6 +216,8 @@ void editor::on_generate_main_content(layout::layout *l, QString const& path, QD
  * \param[in,out] metadata  The metadata being generated.
  * \param[in] ctemplate  The template in case path does not exist.
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 void editor::on_generate_header_content(layout::layout *l, QString const& path, QDomElement& header, QDomElement& metadata, QString const& ctemplate)
 {
     // but we also have email specific parameters we want to add
@@ -235,6 +237,7 @@ void editor::on_generate_header_content(layout::layout *l, QString const& path, 
         }
     }
 }
+#pragma GCC diagnostic pop
 
 
 SNAP_PLUGIN_END()

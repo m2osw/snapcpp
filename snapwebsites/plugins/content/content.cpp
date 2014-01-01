@@ -3696,10 +3696,13 @@ void content::on_backend_process()
  * \param[in] file  The file being processed.
  * \param[in,out] secure  Whether the file is secure.
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 bool content::check_attachment_security_impl(attachment_file const& file, secure_flag& secure)
 {
     return true;
 }
+#pragma GCC diagnostic pop
 
 
 /** \brief Check the attachment for one thing or another.
