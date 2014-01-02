@@ -1,5 +1,5 @@
 // Snap Websites Server -- C++ object to run advance processes
-// Copyright (C) 2011-2013  Made to Order Software Corp.
+// Copyright (C) 2013-2014  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -144,8 +144,8 @@ process::process(const QString& name)
     //, f_command("") -- auto-init
     //, f_arguments() -- auto-init
     //, f_environment() -- auto-init
-    //, f_input("") -- auto-init
-    //, f_output("") -- auto-init
+    //, f_input() -- auto-init
+    //, f_output() -- auto-init
     //, f_forced_environment("") -- auto-init
     //, f_output_callback(NULL) -- auto-init
     //, f_mutex() -- auto-init
@@ -245,6 +245,7 @@ void process::set_command(const QString& command)
     f_command = command;
 }
 
+
 /** \brief Add an argument to the command line.
  *
  * This function adds one individual arguement to the command line.
@@ -256,6 +257,7 @@ void process::add_argument(const QString& arg)
 {
     f_arguments.push_back(arg);
 }
+
 
 /** \brief Add an environment to the command line.
  *
@@ -293,6 +295,7 @@ void process::add_environ(const QString& name, const QString& value)
         f_environment[name.toUtf8().data()] = value.toUtf8().data();
     }
 }
+
 
 /** \brief Run the process and return once done.
  *
@@ -402,7 +405,7 @@ int process::run()
                 {
                     return -1;
                 }
-                QByteArray data(f_input.toUtf8());
+                QByteArray data(f_input);
                 if(fwrite(data.data(), data.size(), 1, f) != 1)
                 {
                     return -1;
@@ -440,7 +443,7 @@ int process::run()
     if(PROCESS_MODE_INOUT_INTERACTIVE == f_mode && !f_output_callback)
     {
         // mode is not compatible with the current setup
-        throw snap_process_exception_invalid_mode_error("mode cnanot be in/out interactive without a callback");
+        throw snap_process_exception_invalid_mode_error("mode cannot be in/out interactive without a callback");
     }
 
     // in this case we want to create a pipe(), fork(), execvp() the
@@ -640,7 +643,7 @@ int process::run()
             class in_t : public snap_thread::snap_runner
             {
             public:
-                in_t(const QString& input, int& pipe)
+                in_t(const QByteArray& input, int& pipe)
                     : snap_runner("process::in")
                     , f_input(input)
                     , f_pipe(pipe)
@@ -655,7 +658,7 @@ int process::run()
                     //
                     //       more or less, this means making the data buffer
                     //       a copy of any extra input before returning
-                    QByteArray data(f_input.toUtf8());
+                    QByteArray data(f_input);
                     if(write(f_pipe, data.data(), data.size()) != data.size())
                     {
                         // what do we do here? (i.e. we're in a thread)
@@ -670,7 +673,7 @@ int process::run()
                     f_pipe = -1;
                 }
 
-                const QString&  f_input;
+                const QByteArray&  f_input;
                 int&            f_pipe;
             } in(f_input, inout.f_pipes[1]);
             snap_thread in_thread("process::in::thread", &in);
@@ -682,7 +685,7 @@ int process::run()
             class out_t : public snap_thread::snap_runner
             {
             public:
-                out_t(QString& output)
+                out_t(QByteArray& output)
                     : snap_runner("process::out")
                     , f_output(output)
                 {
@@ -709,8 +712,8 @@ int process::run()
                             //if(l < 0) ... manage error?
                             break;
                         }
-                        QString output(QString::fromUtf8(buf, l));
-                        f_output += output;
+                        QByteArray output(buf, l);
+                        f_output.append(output);
                         if(f_callback)
                         {
                             f_callback->output_available(f_process, output);
@@ -718,7 +721,7 @@ int process::run()
                     }
                 }
 
-                QString&                    f_output;
+                QByteArray&                 f_output;
                 int                         f_pipe;
                 process_output_callback *   f_callback;
                 process *                   f_process;
@@ -748,6 +751,7 @@ int process::run()
     }
 }
 
+
 /** \brief The input to be sent to stdin.
  *
  * Add the input data to be written to the stdin pipe. Note that the input
@@ -763,31 +767,98 @@ int process::run()
  * The function is safe and adding new input from the output thread
  * (which happens in interactive mode) is protected.
  *
+ * \warning
+ * Strings are converted to UTF-8 before getting sent to stdin. If another
+ * convertion is required, make sure to use a QByteArray instead.
+ *
  * \param[in] input  The input of the process (stdin).
  */
 void process::set_input(const QString& input)
 {
     // this is additive!
+    f_input += input.toUtf8();
+}
+
+
+/** \brief Binary data to be sent to stdin.
+ *
+ * When the input data is binary, use the QByteArray instead of a QString
+ * so you are sure it gets properly added.
+ *
+ * Calling this function multiple times appends the new data to the
+ * existing data.
+ *
+ * Please, see the other set_input() function for additional information.
+ *
+ * \note
+ * When sending a QString, remember that these are converted to UTF-8
+ * which is not compatible with purely binary data (i.e. UTF-8, for example,
+ * does not allow for 0xFE and 0xFF.)
+ *
+ * \param[in] input  The input of the process (stdin).
+ */
+void process::set_input(const QByteArray& input)
+{
+    // this is additive!
     f_input += input;
 }
 
+
 /** \brief Read the output of the command.
  *
- * This function reads the output of the process.
+ * This function reads the output of the process. This function converts
+ * the output to UTF-8. Note that if some bytes are missing this function
+ * is likely to fail. If you are reading the data little by little as it
+ * comes in, you may want to use the get_binary_output() function
+ * instead. That way you can detect characters such as the "\n" and at
+ * that point convert the data from the previous "\n" you found in the
+ * buffer to that new "\n". This will generate valid UTF-8 strings.
+ *
+ * This function is most often used by users of commands that process
+ * one given input and generate one given output all at once.
  *
  * \param[in] reset  Whether the output so far should be cleared.
  *
  * \return The current output buffer.
+ *
+ * \sa get_binary_output()
  */
 QString process::get_output(bool reset)
 {
-    QString output(f_output);
+    QString output(QString::fromUtf8(f_output));
     if(reset)
     {
-        f_output = "";
+        f_output.clear();
     }
     return output;
 }
+
+
+/** \brief Read the output of the command as a binary buffer.
+ *
+ * This function reads the output of the process in binary (untouched).
+ *
+ * This function does not fail like the get_output() which attempts to
+ * convert the output of the function to UTF-8. Also the output of the
+ * command may not be UTF-8 in which case you would have to use the
+ * binary version and use a different conversion.
+ *
+ * \param[in] reset  Whether the output so far should be cleared.
+ *
+ * \return The current output buffer.
+ *
+ * \sa get_output()
+ */
+QByteArray process::get_binary_output(bool reset)
+{
+    QByteArray output(f_output);
+    if(reset)
+    {
+        f_output.clear();
+    }
+    return output;
+}
+
 
 /** \brief Setup a callback to receive the output as it comes in.
  *
@@ -801,6 +872,7 @@ void process::set_output_callback(process_output_callback *callback)
 {
     f_output_callback = callback;
 }
+
 
 } // namespace snap
 

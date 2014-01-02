@@ -1,5 +1,5 @@
 // Snap Websites Server -- advanced handling of Unix processes
-// Copyright (C) 2013  Made to Order Software Corp.
+// Copyright (C) 2013-2014  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -64,7 +64,7 @@ public:
     class process_output_callback
     {
     public:
-        virtual bool                output_available(process *p, const QString& output) = 0;
+        virtual bool                output_available(process *p, const QByteArray& output) = 0;
     };
     typedef controlled_vars::ptr_auto_init<process_output_callback> zpprocess_output_callback_t;
 
@@ -83,10 +83,12 @@ public:
     int                         run();
 
     // what is sent to the command stdin
-    void                        set_input(const QString& input);
+    void                        set_input(QString const& input);
+    void                        set_input(QByteArray const& input);
 
     // what is received from the command stdout
     QString                     get_output(bool reset = false);
+    QByteArray                  get_binary_output(bool reset = false);
     void                        set_output_callback(process_output_callback *callback);
 
 private:
@@ -99,8 +101,8 @@ private:
     QString                     f_command;
     QStringList                 f_arguments;
     environment_map_t           f_environment;
-    QString                     f_input;
-    QString                     f_output;
+    QByteArray                  f_input;
+    QByteArray                  f_output;
     controlled_vars::fbool_t    f_forced_environment;
     zpprocess_output_callback_t f_output_callback;
     snap_thread::snap_mutex     f_mutex;

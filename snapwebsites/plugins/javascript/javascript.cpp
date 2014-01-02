@@ -63,20 +63,363 @@ SNAP_PLUGIN_START(javascript, 1, 0)
  */
 char const *get_name(name_t name)
 {
-	switch(name) {
-	case SNAP_NAME_JAVASCRIPT_MINIMIZED:
-		return "javascript::minimized";
+    switch(name) {
+    case SNAP_NAME_JAVASCRIPT_MINIMIZED:
+        return "javascript::minimized";
 
-	case SNAP_NAME_JAVASCRIPT_MINIMIZED_COMPRESSED:
-		return "javascript::minimized::compressed";
+    case SNAP_NAME_JAVASCRIPT_MINIMIZED_COMPRESSED:
+        return "javascript::minimized::compressed";
 
-	default:
-		// invalid index
-		throw snap_logic_exception("invalid SNAP_NAME_JAVASCRIPT_...");
+    default:
+        // invalid index
+        throw snap_logic_exception("invalid SNAP_NAME_JAVASCRIPT_...");
 
-	}
-	NOTREACHED();
+    }
+    NOTREACHED();
 }
+
+
+/** \brief Retrieve the name and version of a JavaScript filename.
+ *
+ * This function takes a filename and extracts the name and version.
+ * This is particularly useful to then user to compare versions and
+ * sort them. The version is cut in a set of integers saved in a
+ * vector.
+ *
+ * \important
+ * The constructor does NOT throw. If the filename is considered
+ * invalid, it sets the reason() and the valid() flag remains false.
+ *
+ * \param[in] filename  The name of the file to convert.
+ * \param[in] extension  The expected extension (".js" for JavaScript files).
+ */
+javascript_filename::javascript_filename(QString const& source_filename, QString const& extension)
+    //: f_valid(false) -- auto-init
+    //, f_error("") -- auto-init
+    : f_filename(source_filename)
+    //, f_name("") -- auto-init
+    //, f_version() -- auto-init
+{
+    // the extension must be .js
+    if(!f_filename.endsWith(extension))
+    {
+        f_error = "a file uploaded under /js must have the .js extension, in lowercase. \"" + source_filename + "\" is not valid.";
+        return;
+    }
+
+    // this is expected to be a JavaScript filename
+    // but it may contain a path that we completely ignore here
+    int const last_slash(f_filename.lastIndexOf('/'));
+    if(last_slash != -1)
+    {
+        // remove the path and the extension at the same time (faster)
+        f_filename = f_filename.mid(last_slash + 1, f_filename.length() - last_slash - 1 - 3);
+    }
+    else
+    {
+        // remove the extension
+        f_filename = f_filename.left(f_filename.length() - 3);
+    }
+
+    // size of the filename
+    int const max(f_filename.size());
+    if(max < 4)
+    {
+        // having this test here simplifies a few things in the following code
+        //
+        // name cannot be less than 4 characters since:
+        //    <name>_<version>
+        // with <name> being at least 2 characters, we get 4 minimum
+        f_error = "a JavaScript filename is expected to be at least 4 characters without its \".js\" extension. \"" + source_filename + "\" is not valid.";
+        return;
+    }
+
+    // make sure that the name starts with a letter ([a-z])
+    ushort c(f_filename.at(0).unicode());
+    if(c < 'a' || c > 'z')
+    {
+        // name cannot start with dash (-) or a digit ([0-9])
+        f_error = "a JavaScript filename must start with a letter [a-z]. \"" + source_filename + "\" is not valid.";
+        return;
+    }
+
+    // first we read the name
+    int i(1); // <- 1 because we just checked 0 and it's valid
+    for(;; ++i)
+    {
+        if(i >= max)
+        {
+            f_error = "A JavaScript filename must include a valid name and version; version is missing. \"" + source_filename + "\" is not valid.";
+            return;
+        }
+
+        c = f_filename.at(i).unicode();
+
+        // name ends with a '_'
+        if(c == '_')
+        {
+            // name/version separator
+            if(i < 2)
+            {
+                // if i < 2 then the name is missing or too short
+                f_error = "A JavaScript name, before the underscore (_), must be at least 2 characters. \"" + source_filename + "\" is not valid.";
+                return;
+            }
+            if(f_filename.at(i - 1).unicode() == '-')
+            {
+                // name cannot end with a dash (-)
+                f_error = "A JavaScript name cannot end with a dash (-). \"" + source_filename + "\" is not valid.";
+                return;
+            }
+            f_name = f_filename.left(i);
+            break;
+        }
+
+        if(c == '-')
+        {
+            if(f_filename.at(i - 1).unicode() == '-')
+            {
+                f_error = "A JavaScript name cannot include two dashes (--) one after another. \"" + source_filename + "\" is not valid.";
+                return;
+            }
+        }
+        else if((c < '0' || c > '9')
+             && (c < 'a' || c > 'z'))
+        {
+            // name cannot start with a digit
+            // name can only include [a-z0-9] and dash (-)
+            f_error = "A JavaScript name can only include letters (a-z), digits (0-9), or dashes (-). \"" + source_filename + "\" is not valid.";
+            return;
+        }
+    }
+
+    if(i == max)
+    {
+        f_error = "A JavaScript version is required after the name. \"" + source_filename + "\" is not valid.";
+        return;
+    }
+
+    bool digit(true);
+    int value(0); // note: initialization not required for value (avoid warnings)
+    // start with ++i to skip the '_'
+    for(++i; i < max; ++i)
+    {
+        c = f_filename.at(i).unicode();
+
+        // version
+        if(digit)
+        {
+            if(c < '0' || c > '9')
+            {
+                // versions must start with a digit
+                f_error = "A JavaScript version number is expected at the start and after each period. \"" + source_filename + "\" is not valid.";
+                return;
+            }
+            digit = false;
+            value = c - '0';
+        }
+        else
+        {
+            if(c == '.')
+            {
+                f_version.push_back(value);
+                digit = true;
+            }
+            else
+            {
+                // Debian versions also accept colon (:), dash (-),
+                // letters (a-z), and tilde (~) which we refuse here
+                if(c < '0' || c > '9')
+                {
+                    f_error = "A JavaScript version number only accepts digits (0-9) and periods (.). \"" + source_filename + "\" is not valid.";
+                    return;
+                }
+                value = value * 10 + c - '0';
+            }
+        }
+    }
+    // no need to save the last value if zero (that's the default)
+    if(value != 0)
+    {
+        f_version.push_back(value);
+    }
+
+    // if digit is true we last got a period
+    if(digit)
+    {
+        // version cannot end with a period (.)
+        f_error = "a JavaScript version cannot end with a period. \"" + source_filename + "\" is not valid.";
+        return;
+    }
+}
+
+
+/** \brief Compare two javascript_filename's against each others.
+ *
+ * This function first makes sure that both filenames are considered
+ * valid, if not, the function returns -2.
+ *
+ * Assuming the two filenames are valid, the function returns:
+ *
+ * \li -1 if this filename is considered to appear before rhs
+ * \li 0 if both filenames are considered equal
+ * \li 1 if this filename is considered to appear after rhs
+ *
+ * \param[in] rhs  The right hand side to compare against this filename.
+ *
+ * \return -2, -1, 0, or 1 depending on the order (or unordered status)
+ */
+int javascript_filename::compare(javascript_filename const& rhs) const
+{
+    if(!f_valid || !rhs.f_valid)
+    {
+        return -2;
+    }
+
+    if(f_name < rhs.f_name)
+    {
+        return -1;
+    }
+    if(f_name > rhs.f_name)
+    {
+        return 1;
+    }
+
+    int const max(std::max(f_version.size(), rhs.f_version.size()));
+    for(int i(0); i < max; ++i)
+    {
+        int l(i >=     f_version.size() ? 0 : static_cast<int>(    f_version[i]));
+        int r(i >= rhs.f_version.size() ? 0 : static_cast<int>(rhs.f_version[i]));
+        if(l < r)
+        {
+            return -1;
+        }
+        if(l > r)
+        {
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
+
+/** \brief Compare two filenames for equality.
+ *
+ * This function returns true if both filenames are considered equal
+ * (i.e. if the compare() function returns 0.)
+ *
+ * Note that if one or both filenames are considered unordered, the
+ * function always returns false.
+ *
+ * \param[in] rhs  The other filename to compare against.
+ *
+ * \return true if both filenames are considered equal.
+ */
+bool javascript_filename::operator == (javascript_filename const& rhs) const
+{
+    int r(compare(rhs));
+    return r == 0;
+}
+
+
+/** \brief Compare two filenames for differences.
+ *
+ * This function returns true if both filenames are not considered equal
+ * (i.e. if the compare() function returns -1 or 1.)
+ *
+ * Note that if one or both filenames are considered unordered, the
+ * function always returns false.
+ *
+ * \param[in] rhs  The other filename to compare against.
+ *
+ * \return true if both filenames are considered different.
+ */
+bool javascript_filename::operator != (javascript_filename const& rhs) const
+{
+    int r(compare(rhs));
+    return r == -1 || r == 1;
+}
+
+
+/** \brief Compare two filenames for inequality.
+ *
+ * This function returns true if this filename is considered to appear before
+ * \p rhs filename (i.e. if the compare() function returns -1.)
+ *
+ * Note that if one or both filenames are considered unordered, the
+ * function always returns false.
+ *
+ * \param[in] rhs  The other filename to compare against.
+ *
+ * \return true if both filenames are considered inequal.
+ */
+bool javascript_filename::operator <  (javascript_filename const& rhs) const
+{
+    int r(compare(rhs));
+    return r == -1;
+}
+
+
+/** \brief Compare two filenames for inequality.
+ *
+ * This function returns true if this filename is considered to appear before
+ * \p rhs filename or both are equal (i.e. if the compare() function
+ * returns -1 or 0.)
+ *
+ * Note that if one or both filenames are considered unordered, the
+ * function always returns false.
+ *
+ * \param[in] rhs  The other filename to compare against.
+ *
+ * \return true if both filenames are considered inequal.
+ */
+bool javascript_filename::operator <= (javascript_filename const& rhs) const
+{
+    int r(compare(rhs));
+    return r == -1 || r == 0;
+}
+
+
+/** \brief Compare two filenames for inequality.
+ *
+ * This function returns true if this filename is considered to appear after
+ * \p rhs filename (i.e. if the compare() function returns 1.)
+ *
+ * Note that if one or both filenames are considered unordered, the
+ * function always returns false.
+ *
+ * \param[in] rhs  The other filename to compare against.
+ *
+ * \return true if both filenames are considered inequal.
+ */
+bool javascript_filename::operator >  (javascript_filename const& rhs) const
+{
+    int r(compare(rhs));
+    return r > 0;
+}
+
+
+/** \brief Compare two filenames for inequality.
+ *
+ * This function returns true if this filename is considered to appear before
+ * \p rhs filename or both are equal (i.e. if the compare() function
+ * returns 0 or 1.)
+ *
+ * Note that if one or both filenames are considered unordered, the
+ * function always returns false.
+ *
+ * \param[in] rhs  The other filename to compare against.
+ *
+ * \return true if both filenames are considered inequal.
+ */
+bool javascript_filename::operator >= (javascript_filename const& rhs) const
+{
+    int r(compare(rhs));
+    return r >= 0;
+}
+
+
 
 
 /** \brief Initialize the javascript plugin.
@@ -84,8 +427,8 @@ char const *get_name(name_t name)
  * This function is used to initialize the javascript plugin object.
  */
 javascript::javascript()
-	//: f_snap(NULL) -- auto-init
-	//  f_dynamic_plugins() -- auto-init
+    //: f_snap(NULL) -- auto-init
+    //  f_dynamic_plugins() -- auto-init
 {
 }
 
@@ -106,7 +449,7 @@ javascript::~javascript()
  */
 void javascript::on_bootstrap(snap_child *snap)
 {
-	f_snap = snap;
+    f_snap = snap;
 }
 
 
@@ -121,7 +464,7 @@ void javascript::on_bootstrap(snap_child *snap)
  */
 javascript *javascript::instance()
 {
-	return g_plugin_javascript_factory.instance();
+    return g_plugin_javascript_factory.instance();
 }
 
 
@@ -136,8 +479,8 @@ javascript *javascript::instance()
  */
 QString javascript::description() const
 {
-	return "Offer server side JavaScript support for different plugins."
-			" This implementation makes use of the QtScript extension.";
+    return "Offer server side JavaScript support for different plugins."
+            " This implementation makes use of the QtScript extension.";
 }
 
 
@@ -155,12 +498,12 @@ QString javascript::description() const
  */
 int64_t javascript::do_update(int64_t last_updated)
 {
-	SNAP_PLUGIN_UPDATE_INIT();
+    SNAP_PLUGIN_UPDATE_INIT();
 
-	SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, initial_update);
-	//SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, content_update); -- content depends on JavaScript so we cannot do a content update here
+    SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, initial_update);
+    //SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, content_update); -- content depends on JavaScript so we cannot do a content update here
 
-	SNAP_PLUGIN_UPDATE_EXIT();
+    SNAP_PLUGIN_UPDATE_EXIT();
 }
 
 /** \brief First update to run for the javascript plugin.
@@ -188,7 +531,7 @@ void javascript::initial_update(int64_t variables_timestamp)
  */
 void javascript::register_dynamic_plugin(javascript_dynamic_plugin *p)
 {
-	f_dynamic_plugins.push_back(p);
+    f_dynamic_plugins.push_back(p);
 }
 
 
@@ -199,79 +542,79 @@ void javascript::register_dynamic_plugin(javascript_dynamic_plugin *p)
 class javascript_dynamic_plugin_iterator : public QScriptClassPropertyIterator
 {
 public:
-	javascript_dynamic_plugin_iterator(javascript *js, QScriptEngine *engine, const QScriptValue& object_value, javascript_dynamic_plugin *plugin)
-		: QScriptClassPropertyIterator::QScriptClassPropertyIterator(object_value),
-		  f_javascript(js),
-		  f_engine(engine),
-		  f_pos(-1),
-		  f_object(object_value),
-		  f_plugin(plugin)
-	{
-	}
+    javascript_dynamic_plugin_iterator(javascript *js, QScriptEngine *engine, const QScriptValue& object_value, javascript_dynamic_plugin *plugin)
+        : QScriptClassPropertyIterator::QScriptClassPropertyIterator(object_value),
+          f_javascript(js),
+          f_engine(engine),
+          f_pos(-1),
+          f_object(object_value),
+          f_plugin(plugin)
+    {
+    }
 
-	//virtual QScriptValue::PropertyFlags flags() const;
+    //virtual QScriptValue::PropertyFlags flags() const;
 
-	virtual bool hasNext() const
-	{
-		return f_pos + 1 < f_plugin->js_property_count();
-	}
+    virtual bool hasNext() const
+    {
+        return f_pos + 1 < f_plugin->js_property_count();
+    }
 
-	virtual bool hasPrevious() const
-	{
-		return f_pos > 0;
-	}
+    virtual bool hasPrevious() const
+    {
+        return f_pos > 0;
+    }
 
-	virtual uint id() const
-	{
-		return f_pos;
-	}
+    virtual uint id() const
+    {
+        return f_pos;
+    }
 
-	virtual QScriptString name() const
-	{
-		if(f_pos < 0 || f_pos >= f_plugin->js_property_count())
-		{
-			throw std::runtime_error("querying the name of the iterator object when the iterator pointer is out of scope");
-		}
-		return f_engine->toStringHandle(f_plugin->js_property_name(f_pos));
-	}
+    virtual QScriptString name() const
+    {
+        if(f_pos < 0 || f_pos >= f_plugin->js_property_count())
+        {
+            throw std::runtime_error("querying the name of the iterator object when the iterator pointer is out of scope");
+        }
+        return f_engine->toStringHandle(f_plugin->js_property_name(f_pos));
+    }
 
-	virtual void next()
-	{
-		if(f_pos < f_plugin->js_property_count()) {
-			++f_pos;
-		}
-	}
+    virtual void next()
+    {
+        if(f_pos < f_plugin->js_property_count()) {
+            ++f_pos;
+        }
+    }
 
-	virtual void previous()
-	{
-		if(f_pos > -1) {
-			--f_pos;
-		}
-	}
+    virtual void previous()
+    {
+        if(f_pos > -1) {
+            --f_pos;
+        }
+    }
 
-	virtual void toBack()
-	{
-		// right after the last position
-		f_pos = f_plugin->js_property_count();
-	}
+    virtual void toBack()
+    {
+        // right after the last position
+        f_pos = f_plugin->js_property_count();
+    }
 
-	virtual void toFront()
-	{
-		// right before the first position
-		f_pos = -1;
-	}
+    virtual void toFront()
+    {
+        // right before the first position
+        f_pos = -1;
+    }
 
-	QScriptValue object() const
-	{
-		return f_object;
-	}
+    QScriptValue object() const
+    {
+        return f_object;
+    }
 
 private:
-	javascript *				f_javascript;
-	QScriptEngine *				f_engine;
-	controlled_vars::mint32_t	f_pos;
-	QScriptValue				f_object;
-	javascript_dynamic_plugin *	f_plugin;
+    javascript *                f_javascript;
+    QScriptEngine *                f_engine;
+    controlled_vars::mint32_t    f_pos;
+    QScriptValue                f_object;
+    javascript_dynamic_plugin *    f_plugin;
 };
 
 
@@ -282,7 +625,7 @@ private:
  * in. The JavaScript syntax looks like this:
  *
  * \code
- *		var n = plugins.layout.name;
+ *        var n = plugins.layout.name;
  * \endcode
  *
  * In this case the layout plugin is queried for its parameter "name".
@@ -290,71 +633,71 @@ private:
 class dynamic_plugin_class : public QScriptClass
 {
 public:
-	dynamic_plugin_class(javascript *js, QScriptEngine *script_engine, javascript_dynamic_plugin *plugin)
-		: QScriptClass(script_engine),
-		  f_javascript(js),
-		  f_plugin(plugin)
-	{
+    dynamic_plugin_class(javascript *js, QScriptEngine *script_engine, javascript_dynamic_plugin *plugin)
+        : QScriptClass(script_engine),
+          f_javascript(js),
+          f_plugin(plugin)
+    {
 //printf("Yo! got a dpc %p\n", reinterpret_cast<void*>(this));
-	}
+    }
 
 //~dynamic_plugin_class()
 //{
 //printf("dynamic_plugin_class destroyed... %p\n", reinterpret_cast<void*>(this));
 //}
 
-	// we don't currently support extensions
-	//virtual bool supportsExtension(Extension extension) const { return false; }
-	//virtual QVariant extension(Extension extension, const QVariant& argument = QVariant());
+    // we don't currently support extensions
+    //virtual bool supportsExtension(Extension extension) const { return false; }
+    //virtual QVariant extension(Extension extension, const QVariant& argument = QVariant());
 
-	virtual QString name() const
-	{
-		return dynamic_cast<plugins::plugin *>(f_plugin)->get_plugin_name();
-	}
+    virtual QString name() const
+    {
+        return dynamic_cast<plugins::plugin *>(f_plugin)->get_plugin_name();
+    }
 
-	virtual QScriptClassPropertyIterator *newIterator(const QScriptValue& object)
-	{
-		return new javascript_dynamic_plugin_iterator(f_javascript, engine(), object, f_plugin);
-	}
+    virtual QScriptClassPropertyIterator *newIterator(const QScriptValue& object)
+    {
+        return new javascript_dynamic_plugin_iterator(f_javascript, engine(), object, f_plugin);
+    }
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
-	virtual QScriptValue property(const QScriptValue& object, const QScriptString& object_name, uint id)
-	{
-		QScriptValue result(f_plugin->js_property_get(object_name).toString());
-		return result;
-	}
+    virtual QScriptValue property(const QScriptValue& object, const QScriptString& object_name, uint id)
+    {
+        QScriptValue result(f_plugin->js_property_get(object_name).toString());
+        return result;
+    }
 
-	virtual QScriptValue::PropertyFlags propertyFlags(const QScriptValue& object, const QScriptString& property_name, uint id)
-	{
-		// at some point we may want to allow read/write/delete...
-		return QScriptValue::ReadOnly | QScriptValue::Undeletable | QScriptValue::KeepExistingFlags;
-	}
+    virtual QScriptValue::PropertyFlags propertyFlags(const QScriptValue& object, const QScriptString& property_name, uint id)
+    {
+        // at some point we may want to allow read/write/delete...
+        return QScriptValue::ReadOnly | QScriptValue::Undeletable | QScriptValue::KeepExistingFlags;
+    }
 #pragma GCC diagnostic pop
 
-	virtual QScriptValue prototype() const
-	{
-		QScriptValue result;
-		return result;
-	}
+    virtual QScriptValue prototype() const
+    {
+        QScriptValue result;
+        return result;
+    }
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
-	virtual QueryFlags queryProperty(const QScriptValue& object, const QScriptString& property_name, QueryFlags flags, uint * id)
-	{
-		return QScriptClass::HandlesReadAccess;
-	}
+    virtual QueryFlags queryProperty(const QScriptValue& object, const QScriptString& property_name, QueryFlags flags, uint * id)
+    {
+        return QScriptClass::HandlesReadAccess;
+    }
 
-	virtual void setProperty(QScriptValue& object, const QScriptString& property_name, uint id, const QScriptValue& value)
-	{
+    virtual void setProperty(QScriptValue& object, const QScriptString& property_name, uint id, const QScriptValue& value)
+    {
 //printf("setProperty() called... not implemented yet\n");
-		throw std::runtime_error("setProperty() not implemented yet");
-	}
+        throw std::runtime_error("setProperty() not implemented yet");
+    }
 #pragma GCC diagnostic pop
 
 private:
-	javascript *				f_javascript;
-	javascript_dynamic_plugin *	f_plugin;
+    javascript *                f_javascript;
+    javascript_dynamic_plugin *    f_plugin;
 };
 
 
@@ -365,84 +708,84 @@ private:
 class javascript_plugins_iterator : public QScriptClassPropertyIterator
 {
 public:
-	javascript_plugins_iterator(javascript *js, QScriptEngine *engine, const QScriptValue& object_value)
-		: QScriptClassPropertyIterator::QScriptClassPropertyIterator(object_value),
-		  f_javascript(js),
-		  f_engine(engine),
-		  f_pos(-1),
-		  f_object(object_value)
-	{
+    javascript_plugins_iterator(javascript *js, QScriptEngine *engine, const QScriptValue& object_value)
+        : QScriptClassPropertyIterator::QScriptClassPropertyIterator(object_value),
+          f_javascript(js),
+          f_engine(engine),
+          f_pos(-1),
+          f_object(object_value)
+    {
 //printf("javascript_plugins_iterator created!!!\n");
-	}
+    }
 
 //~javascript_plugins_iterator()
 //{
 //printf("javascript_plugins_iterator destroyed...\n");
 //}
-	//virtual QScriptValue::PropertyFlags flags() const;
+    //virtual QScriptValue::PropertyFlags flags() const;
 
-	virtual bool hasNext() const
-	{
-		return f_pos + 1 < f_javascript->f_dynamic_plugins.size();
-	}
+    virtual bool hasNext() const
+    {
+        return f_pos + 1 < f_javascript->f_dynamic_plugins.size();
+    }
 
-	virtual bool hasPrevious() const
-	{
-		return f_pos > 0;
-	}
+    virtual bool hasPrevious() const
+    {
+        return f_pos > 0;
+    }
 
-	virtual uint id() const
-	{
-		return f_pos;
-	}
+    virtual uint id() const
+    {
+        return f_pos;
+    }
 
-	virtual QScriptString name() const
-	{
-		if(f_pos < 0 || f_pos >= f_javascript->f_dynamic_plugins.size())
-		{
-			throw std::runtime_error("querying the name of the iterator object when the iterator pointer is out of scope");
-		}
-		return f_engine->toStringHandle(dynamic_cast<plugins::plugin *>(f_javascript->f_dynamic_plugins[f_pos])->get_plugin_name());
-	}
+    virtual QScriptString name() const
+    {
+        if(f_pos < 0 || f_pos >= f_javascript->f_dynamic_plugins.size())
+        {
+            throw std::runtime_error("querying the name of the iterator object when the iterator pointer is out of scope");
+        }
+        return f_engine->toStringHandle(dynamic_cast<plugins::plugin *>(f_javascript->f_dynamic_plugins[f_pos])->get_plugin_name());
+    }
 
-	virtual void next()
-	{
-		if(f_pos < f_javascript->f_dynamic_plugins.size())
-		{
-			++f_pos;
-		}
-	}
+    virtual void next()
+    {
+        if(f_pos < f_javascript->f_dynamic_plugins.size())
+        {
+            ++f_pos;
+        }
+    }
 
-	virtual void previous()
-	{
-		if(f_pos > -1)
-		{
-			--f_pos;
-		}
-	}
+    virtual void previous()
+    {
+        if(f_pos > -1)
+        {
+            --f_pos;
+        }
+    }
 
-	virtual void toBack()
-	{
-		// right after the last position
-		f_pos = f_javascript->f_dynamic_plugins.size();
-	}
+    virtual void toBack()
+    {
+        // right after the last position
+        f_pos = f_javascript->f_dynamic_plugins.size();
+    }
 
-	virtual void toFront()
-	{
-		// right before the first position
-		f_pos = -1;
-	}
+    virtual void toFront()
+    {
+        // right before the first position
+        f_pos = -1;
+    }
 
-	QScriptValue object() const
-	{
-		return f_object;
-	}
+    QScriptValue object() const
+    {
+        return f_object;
+    }
 
 private:
-	javascript *				f_javascript;
-	QScriptEngine *				f_engine;
-	controlled_vars::mint32_t	f_pos;
-	QScriptValue				f_object;
+    javascript *                f_javascript;
+    QScriptEngine *                f_engine;
+    controlled_vars::mint32_t    f_pos;
+    QScriptValue                f_object;
 };
 
 
@@ -453,7 +796,7 @@ private:
  * in. The JavaScript syntax looks like this:
  *
  * \code
- *		var n = plugins.layout.name;
+ *        var n = plugins.layout.name;
  * \endcode
  *
  * In this case the layout plugin is queried for its parameter "name".
@@ -461,87 +804,87 @@ private:
 class plugins_class : public QScriptClass
 {
 public:
-	plugins_class(javascript *js, QScriptEngine *script_engine)
-		: QScriptClass(script_engine),
-		  f_javascript(js)
-	{
+    plugins_class(javascript *js, QScriptEngine *script_engine)
+        : QScriptClass(script_engine),
+          f_javascript(js)
+    {
 //printf("plugins_class created...\n");
-	}
+    }
 
 //~plugins_class()
 //{
 //printf("plugins_class destroyed...\n");
 //}
 
-	// we don't currently support extensions
-	//virtual bool supportsExtension(Extension extension) const { return false; }
-	//virtual QVariant extension(Extension extension, const QVariant& argument = QVariant());
+    // we don't currently support extensions
+    //virtual bool supportsExtension(Extension extension) const { return false; }
+    //virtual QVariant extension(Extension extension, const QVariant& argument = QVariant());
 
-	virtual QString name() const
-	{
-		return "plugins";
-	}
+    virtual QString name() const
+    {
+        return "plugins";
+    }
 
-	virtual QScriptClassPropertyIterator *newIterator(const QScriptValue& object)
-	{
-		return new javascript_plugins_iterator(f_javascript, engine(), object);
-	}
+    virtual QScriptClassPropertyIterator *newIterator(const QScriptValue& object)
+    {
+        return new javascript_plugins_iterator(f_javascript, engine(), object);
+    }
 
-	virtual QScriptValue property(const QScriptValue& object, const QScriptString& object_name, uint id)
-	{
-		QString temp_name(object_name);
-		if(f_dynamic_plugins.contains(temp_name))
-		{
-			QScriptValue plugin_object(engine()->newObject(f_dynamic_plugins[temp_name].data()));
-			return plugin_object;
-		}
-		int max(f_javascript->f_dynamic_plugins.size());
-		for(int i(0); i < max; ++i)
-		{
-			if(dynamic_cast<plugins::plugin *>(f_javascript->f_dynamic_plugins[i])->get_plugin_name() == temp_name)
-			{
-				QSharedPointer<dynamic_plugin_class> plugin(new dynamic_plugin_class(f_javascript, engine(), f_javascript->f_dynamic_plugins[i]));
-				f_dynamic_plugins[temp_name] = plugin;
-				QScriptValue plugin_object(engine()->newObject(plugin.data()));
-				return plugin_object;
-			}
-		}
-		// otherwise return whatever the default is
-		return QScriptClass::property(object, object_name, id);
-	}
+    virtual QScriptValue property(const QScriptValue& object, const QScriptString& object_name, uint id)
+    {
+        QString temp_name(object_name);
+        if(f_dynamic_plugins.contains(temp_name))
+        {
+            QScriptValue plugin_object(engine()->newObject(f_dynamic_plugins[temp_name].data()));
+            return plugin_object;
+        }
+        int max(f_javascript->f_dynamic_plugins.size());
+        for(int i(0); i < max; ++i)
+        {
+            if(dynamic_cast<plugins::plugin *>(f_javascript->f_dynamic_plugins[i])->get_plugin_name() == temp_name)
+            {
+                QSharedPointer<dynamic_plugin_class> plugin(new dynamic_plugin_class(f_javascript, engine(), f_javascript->f_dynamic_plugins[i]));
+                f_dynamic_plugins[temp_name] = plugin;
+                QScriptValue plugin_object(engine()->newObject(plugin.data()));
+                return plugin_object;
+            }
+        }
+        // otherwise return whatever the default is
+        return QScriptClass::property(object, object_name, id);
+    }
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
-	virtual QScriptValue::PropertyFlags propertyFlags(const QScriptValue& object, const QScriptString& property_name, uint id)
-	{
-		// at some point we may want to allow read/write/delete...
-		return QScriptValue::ReadOnly | QScriptValue::Undeletable | QScriptValue::KeepExistingFlags;
-	}
+    virtual QScriptValue::PropertyFlags propertyFlags(const QScriptValue& object, const QScriptString& property_name, uint id)
+    {
+        // at some point we may want to allow read/write/delete...
+        return QScriptValue::ReadOnly | QScriptValue::Undeletable | QScriptValue::KeepExistingFlags;
+    }
 #pragma GCC diagnostic pop
 
-	virtual QScriptValue prototype() const
-	{
-		QScriptValue result;
-		return result;
-	}
+    virtual QScriptValue prototype() const
+    {
+        QScriptValue result;
+        return result;
+    }
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
-	virtual QueryFlags queryProperty(const QScriptValue& object, const QScriptString& property_name, QueryFlags flags, uint * id)
-	{
-		return QScriptClass::HandlesReadAccess;
-	}
+    virtual QueryFlags queryProperty(const QScriptValue& object, const QScriptString& property_name, QueryFlags flags, uint * id)
+    {
+        return QScriptClass::HandlesReadAccess;
+    }
 
-	virtual void setProperty(QScriptValue& object, const QScriptString& property_name, uint id, const QScriptValue& value)
-	{
+    virtual void setProperty(QScriptValue& object, const QScriptString& property_name, uint id, const QScriptValue& value)
+    {
 //printf("setProperty() called... not implemented yet\n");
-		throw std::runtime_error("setProperty() not implemented yet");
-	}
+        throw std::runtime_error("setProperty() not implemented yet");
+    }
 #pragma GCC diagnostic pop
 
 private:
-	QMap<QString, QSharedPointer<dynamic_plugin_class> >	f_dynamic_plugins;
-	javascript *							f_javascript;
+    QMap<QString, QSharedPointer<dynamic_plugin_class> >    f_dynamic_plugins;
+    javascript *                            f_javascript;
 };
 
 
@@ -562,19 +905,19 @@ private:
 QVariant javascript::evaluate_script(const QString& script)
 {
 //printf("evaluating JS [%s]\n", script.toUtf8().data());
-	QScriptProgram program(script);
-	QScriptEngine engine;
-	plugins_class plugins(this, &engine);
-	QScriptValue plugins_object(engine.newObject(&plugins));
-	engine.globalObject().setProperty("plugins", plugins_object);
+    QScriptProgram program(script);
+    QScriptEngine engine;
+    plugins_class plugins(this, &engine);
+    QScriptValue plugins_object(engine.newObject(&plugins));
+    engine.globalObject().setProperty("plugins", plugins_object);
 //printf("object name = [%s] (%d)\n", plugins_object.scriptClass()->name().toUtf8().data(), plugins_object.isObject());
-	QScriptValue value(engine.evaluate(program));
-	if(engine.hasUncaughtException())
-	{
+    QScriptValue value(engine.evaluate(program));
+    if(engine.hasUncaughtException())
+    {
 //QScriptValue e(engine.uncaughtException());
 //printf("result = %d (%d) -> [%s]\n", engine.hasUncaughtException(), e.isError(), e.toString().toUtf8().data() );
-	}
-	return value.toVariant();
+    }
+    return value.toVariant();
 }
 
 
@@ -593,14 +936,88 @@ QVariant javascript::evaluate_script(const QString& script)
  */
 void javascript::on_process_attachment(QSharedPointer<QtCassandra::QCassandraTable> files_table, QByteArray const& file_key, snap_child::post_file_t const& file)
 {
-	// TODO: got to write the minimizer if I cannot find one in C/C++
-	(void)files_table;
-	(void)file_key;
-	(void)file;
+    // TODO: got to write the minimizer if I cannot find one in C/C++
+    (void)files_table;
+    (void)file_key;
+    (void)file;
 }
 
+
+/** \brief Verify filename on upload.
+ *
+ * If uploading a file under /js/... then we prevent "invalid" filenames.
+ * We force users to have a Debian compatible filename as in:
+ *
+ * \code
+ * <name>_<version>.js
+ * \endcode
+ *
+ * Any other filename is refused.
+ *
+ * The \<name> is composed of lower case letters (a-z) and digits (0-9)
+ * and dashes (-). The name must start with a letter and cannot start or
+ * end with a dash. The regex is:
+ *
+ * \code
+ * [-a-z0-9]+
+ * \endcode
+ *
+ * The name is mandatory and needs to be at least 2 characters.
+ *
+ * The \<version> must be a set of digits separated by periods. Note that
+ * debian accepts many other characters. We do not here. It will make it
+ * a lot easier to parse a version and sort items in order. In most cases,
+ * users will have to rename their JavaScript files so they work in Snap!
+ * The regex is:
+ *
+ * \code
+ * [0-9]+(\.[0-9]+)*
+ * \endcode
+ *
+ * A version is mandatory and must be at least one digit although we strongly
+ * suggest that you use 3 numbers for published versions and a forth number
+ * for development purposes:
+ *
+ * \code
+ * <version>.<release>.<patch>.<development>
+ * \endcode
+ *
+ * So, if you published a library with version 3.54.7 and find a small
+ * problem, use version 3.54.7.1, 3.54.7.2, etc. until you find the full
+ * fix for the problem and then release the fixed version as 3.54.8.
+ * This will help you with loading the script because a new version forces
+ * the browser to load the new image and refresh its cache. If you do not
+ * change the version, the cache will most probably be in the way.
+ *
+ * \param[in] file  The file attachment information.
+ * \param[in,out] secure  Whether the file is considered secure.
+ * \param[in] fast  Whether it is the fast check (true) or not (false).
+ */
+void javascript::on_check_attachment_security(snap_child::post_file_t const& file, server::permission_flag& secure, bool const fast)
+{
+    // always check the filename, just in case
+    QString cpath(file.get_filename());
+    if(cpath.startsWith("js/") || cpath == "js")
+    {
+        javascript_filename js_filename(file.get_filename(), ".js");
+        if(!js_filename.valid())
+        {
+            // not considered valid
+            secure.not_permitted(js_filename.error());
+            return;
+        }
+    }
+
+    if(!fast)
+    {
+        // slow check, here we can verify that the script compiles
+        // with QScript (TBD -- we'll have to make sure that QScript
+        // does indeed support the full spectrum of the JavaScript
+        // specification with scripts such as jQuery, Sizzle, etc.)
+    }
+}
 
 
 SNAP_PLUGIN_END()
 
-// vim: ts=4 sw=4
+// vim: ts=4 sw=4 et

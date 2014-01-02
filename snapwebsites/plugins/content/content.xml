@@ -223,6 +223,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <![CDATA[<p>System or Global JavaScripts such as the jQuery library.</p>]]>
     </param>
     <link name="permissions::administer" to="permissions::administer" mode="*:*">/types/permissions/rights/administer/info</link>
+    <attachment name="jquery" type="attachment/public">:/js/content/jquery_1.10.2.js</attachment>
   </content>
   <!-- the content plugin depends on the path plugin so it cannot defined a content.xml file -->
   <content path="/admin/settings/path">

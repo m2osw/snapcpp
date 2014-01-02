@@ -27,8 +27,8 @@ namespace javascript
 
 enum name_t
 {
-	SNAP_NAME_JAVASCRIPT_MINIMIZED,
-	SNAP_NAME_JAVASCRIPT_MINIMIZED_COMPRESSED
+    SNAP_NAME_JAVASCRIPT_MINIMIZED,
+    SNAP_NAME_JAVASCRIPT_MINIMIZED_COMPRESSED
 };
 char const *get_name(name_t name) __attribute__ ((const));
 
@@ -39,40 +39,71 @@ char const *get_name(name_t name) __attribute__ ((const));
 class javascript_dynamic_plugin
 {
 public:
-	virtual ~javascript_dynamic_plugin() {}
-	virtual int js_property_count() const = 0;
-	virtual QVariant js_property_get(const QString& name) const = 0;
-	virtual QString js_property_name(int index) const = 0;
-	virtual QVariant js_property_get(int index) const = 0;
+    virtual             ~javascript_dynamic_plugin() {}
+    virtual int         js_property_count() const = 0;
+    virtual QVariant    js_property_get(QString const& name) const = 0;
+    virtual QString     js_property_name(int index) const = 0;
+    virtual QVariant    js_property_get(int index) const = 0;
+};
+
+
+class javascript_filename
+{
+public:
+    typedef QVector<controlled_vars::zuint32_t> version_t;
+
+                        javascript_filename(QString const& filename, QString const& extension);
+
+    bool                valid() const { return f_valid; }
+    QString             error() const { return f_error; }
+    QString             filename() const { return f_filename; }
+    QString             name() const { return f_name; }
+    version_t           version() const { return f_version; }
+
+    int                 compare(javascript_filename const& rhs) const;
+    bool                operator == (javascript_filename const& rhs) const;
+    bool                operator != (javascript_filename const& rhs) const;
+    bool                operator <  (javascript_filename const& rhs) const;
+    bool                operator <= (javascript_filename const& rhs) const;
+    bool                operator >  (javascript_filename const& rhs) const;
+    bool                operator >= (javascript_filename const& rhs) const;
+
+private:
+    controlled_vars::fbool_t    f_valid;
+    QString                     f_error;
+    QString                     f_filename;
+    QString                     f_name;
+    version_t                   f_version;
 };
 
 
 class javascript : public plugins::plugin
 {
 public:
-	javascript();
-	~javascript();
+                        javascript();
+                        ~javascript();
 
-	static javascript *	instance();
-	virtual QString 	description() const;
-	virtual int64_t		do_update(int64_t last_updated);
+    static javascript * instance();
+    virtual QString     description() const;
+    virtual int64_t     do_update(int64_t last_updated);
 
-	void				on_bootstrap(snap_child *snap);
-	void				on_process_attachment(QSharedPointer<QtCassandra::QCassandraTable> files_table, QByteArray const& key, snap_child::post_file_t const& file);
+    void                on_bootstrap(snap_child *snap);
+    void                on_process_attachment(QSharedPointer<QtCassandra::QCassandraTable> files_table, QByteArray const& key, snap_child::post_file_t const& file);
+    void                on_check_attachment_security(snap_child::post_file_t const& file, server::permission_flag& secure, bool const fast);
 
-	void				register_dynamic_plugin(javascript_dynamic_plugin *p);
+    void                register_dynamic_plugin(javascript_dynamic_plugin *p);
 
-	QVariant			evaluate_script(const QString& script);
+    QVariant            evaluate_script(const QString& script);
 
 private:
-	friend class javascript_plugins_iterator;
-	friend class plugins_class;
+    friend class javascript_plugins_iterator;
+    friend class plugins_class;
 
-	void initial_update(int64_t variables_timestamp);
-	void content_update(int64_t variables_timestamp);
+    void                initial_update(int64_t variables_timestamp);
+    void                content_update(int64_t variables_timestamp);
 
-	zpsnap_child_t							f_snap;
-	QVector<javascript_dynamic_plugin *>	f_dynamic_plugins;
+    zpsnap_child_t                          f_snap;
+    QVector<javascript_dynamic_plugin *>    f_dynamic_plugins;
 };
 
 
@@ -81,4 +112,4 @@ private:
 } // namespace snap
 #endif
 // SNAP_JAVSCRIPT_H
-// vim: ts=4 sw=4
+// vim: ts=4 sw=4 et

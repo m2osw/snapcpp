@@ -1,5 +1,5 @@
 // Snap Websites Server -- content management (pages, tags, everything!)
-// Copyright (C) 2011-2013  Made to Order Software Corp.
+// Copyright (C) 2011-2014  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -312,28 +312,22 @@ public:
         PARAM_TYPE_INT64
     };
 
-    class secure_flag
-    {
-    public:
-                        secure_flag() {}
-        bool            secure() const { return f_secure; }
-        QString const&  reason() const { return f_reason; }
-        void            not_secure(QString const& new_reason);
-
-    private:
-        // prevent copies or a user could reset the flag!
-        secure_flag(secure_flag const& rhs);
-        secure_flag& operator = (secure_flag const& rhs);
-
-        controlled_vars::tbool_t    f_secure;
-        QString                     f_reason;
-    };
-
     enum : signed char
     {
+        // WARNING: these are saved in the database which is why we directly
+        //          assign values DO NOT CHANGE THE VALUES
         CONTENT_SECURE_UNDEFINED = -1,  // not checked yet
         CONTENT_SECURE_UNSECURE = 0,    // a plugin said it was not safe to use
         CONTENT_SECURE_SECURE = 1       // all plugins are go!
+    };
+
+    struct content_attachment
+    {
+        QString             f_owner;
+        QString             f_field_name;
+        QString             f_type;
+        QString             f_path;
+        QString             f_filename;
     };
 
     typedef controlled_vars::limited_auto_init<param_type_t, PARAM_TYPE_STRING, PARAM_TYPE_INT64, PARAM_TYPE_STRING> safe_param_type_t;
@@ -360,7 +354,7 @@ public:
     SNAP_SIGNAL(create_content, (QString const& path, QString const& owner, QString const& type), (path, owner, type));
     SNAP_SIGNAL(create_attachment, (attachment_file const& file), (file));
     SNAP_SIGNAL(modified_content, (QString const& path, bool updated), (path, updated));
-    SNAP_SIGNAL(check_attachment_security, (attachment_file const& file, secure_flag& secure), (file, secure));
+    SNAP_SIGNAL(check_attachment_security, (attachment_file const& file, server::permission_flag& secure, bool const fast), (file, secure, fast));
     SNAP_SIGNAL(process_attachment, (QByteArray const& key, attachment_file const& file), (key, file));
 
     void                output() const;
@@ -372,6 +366,7 @@ public:
     void                set_param_overwrite(QString const& path, const QString& name, bool overwrite);
     void                set_param_type(QString const& path, const QString& name, param_type_t param_type);
     void                add_link(QString const& path, links::link_info const& source, links::link_info const& destination);
+    void                add_attachment(QString const& path, content_attachment const& attachment);
     static void         insert_html_string_to_xml_doc(QDomElement child, QString const& xml);
     bool                load_attachment(QString const& key, attachment_file& file, bool load_data = true);
 
@@ -398,12 +393,15 @@ private:
     };
     typedef QVector<content_link>   content_links_t;
 
+    typedef QVector<content_attachment>    content_attachments_t;
+
     struct content_block
     {
         QString                             f_path;
         QString                             f_owner;
         content_params_t                    f_params;
         content_links_t                     f_links;
+        content_attachments_t               f_attachments;
         controlled_vars::fbool_t            f_saved;
     };
     typedef QMap<QString, content_block>    content_block_map_t;
@@ -415,6 +413,7 @@ private:
     QSharedPointer<QtCassandra::QCassandraTable>    f_content_table;
     QSharedPointer<QtCassandra::QCassandraTable>    f_files_table;
     content_block_map_t                             f_blocks;
+    controlled_vars::zint32_t                       f_file_index;
     controlled_vars::fbool_t                        f_updating;
 };
 

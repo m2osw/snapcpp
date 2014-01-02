@@ -849,10 +849,10 @@ void snap_child::read_environment()
                     {
                         file.set_original_mime_type(f_post_environment["CONTENT-TYPE"]);
                     }
-                    if(params.contains("modification-date"))
-                    {
-                        file.set_modification_time(string_to_date(params["modification-date"]));
-                    }
+                    //if(params.contains("description"))
+                    //{
+                    //    file.set_description(string_to_date(params["description"]));
+                    //}
                     // for images also get the dimensions (width x height)
                     // note that some images are not detected properly by the
                     // magic library so we ignore the MIME type here

@@ -22,6 +22,7 @@
 #include "not_reached.h"
 #include "dom_util.h"
 #include "snap_magic.h"
+#include "snap_image.h"
 #include <iostream>
 #include <openssl/md5.h>
 #pragma GCC diagnostic push
@@ -1819,19 +1820,6 @@ void content::insert_html_string_to_xml_doc(QDomElement child, QString const& xm
 }
 
 
-void content::secure_flag::not_secure(QString const& new_reason)
-{
-    f_secure = false;
-
-    if(!f_reason.isEmpty())
-    {
-        f_reason += "\n";
-    }
-    // TBD: should we prevent "\n" in "reason"?
-    f_reason += new_reason;
-}
-
-
 /** \brief Initialize the content plugin.
  *
  * This function is used to initialize the content plugin object.
@@ -2164,6 +2152,14 @@ bool content::create_content_impl(QString const& path, QString const& owner, QSt
  */
 bool content::create_attachment_impl(attachment_file const& file)
 {
+    // quick check for security reasons so we can avoid unwanted uploads
+    server::permission_flag secure;
+    check_attachment_security(file, secure, true);
+    if(!secure.allowed())
+    {
+        return false;
+    }
+
     // verify that the row specified by file::get_cpath() exists
     QSharedPointer<QtCassandra::QCassandraTable> content_table(get_content_table());
     QString const site_key(f_snap->get_site_key_with_slash());
@@ -2179,7 +2175,7 @@ bool content::create_attachment_impl(attachment_file const& file)
 
     // create the path to the new attachment itself
     QString filename(post_file.get_filename());
-    int last_slash(filename.lastIndexOf('/'));
+    int const last_slash(filename.lastIndexOf('/'));
     if(last_slash != -1)
     {
         filename = filename.mid(last_slash + 1);
@@ -2267,6 +2263,8 @@ bool content::create_attachment_impl(attachment_file const& file)
         file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_SECURE_LAST_CHECK))->setValue(static_cast<int64_t>(0));
         file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_SECURITY_REASON))->setValue(QString());
     }
+// for test purposes to check a file over and over again
+//files_table->row(get_name(SNAP_NAME_CONTENT_FILES_NEW))->cell(md5)->setValue(true);
 
     // make a full reference back to the attachment (which may not yet
     // exist at this point, we do that next)
@@ -2907,7 +2905,8 @@ void content::add_xml(const QString& plugin_name)
             }
 
             // <param name=... overwrite=... force-namespace=...> data </param>
-            if(element.tagName() == "param")
+            QString tag_name(element.tagName());
+            if(tag_name == "param")
             {
                 QString param_name(element.attribute("name"));
                 if(param_name.isEmpty())
@@ -3011,7 +3010,7 @@ void content::add_xml(const QString& plugin_name)
                 }
             }
             // <link name=... to=... [mode="1/*:1/*"]> destination path </link>
-            else if(element.tagName() == "link")
+            else if(tag_name == "link")
             {
                 QString link_name(element.attribute("name"));
                 if(link_name.isEmpty())
@@ -3020,7 +3019,7 @@ void content::add_xml(const QString& plugin_name)
                 }
                 if(link_name == plugin_name)
                 {
-                    throw content_exception_invalid_content_xml("the \"name\" attribute of a <link> tags cannot be set to the plugin name (" + plugin_name + ")");
+                    throw content_exception_invalid_content_xml("the \"name\" attribute of a <link> tag cannot be set to the plugin name (" + plugin_name + ")");
                 }
                 if(!link_name.contains("::"))
                 {
@@ -3038,7 +3037,7 @@ void content::add_xml(const QString& plugin_name)
                 }
                 if(link_to == plugin_name)
                 {
-                    throw content_exception_invalid_content_xml("the \"to\" attribute of a <link> tags cannot be set to the plugin name (" + plugin_name + ")");
+                    throw content_exception_invalid_content_xml("the \"to\" attribute of a <link> tag cannot be set to the plugin name (" + plugin_name + ")");
                 }
                 if(!link_to.contains("::"))
                 {
@@ -3075,6 +3074,40 @@ void content::add_xml(const QString& plugin_name)
                 links::link_info source(link_name, source_unique, key);
                 links::link_info destination(link_to, destination_unique, destination_key);
                 add_link(key, source, destination);
+            }
+            // <attachment name=... type=... [owner=...]> resource path to file </link>
+            else if(tag_name == "attachment")
+            {
+                content_attachment ca;
+
+                // the owner is optional, it defaults to "content"
+                // TODO: verify that "content" is correct, and that we should
+                //       not instead use the plugin name (owner of this page)
+                ca.f_owner = element.attribute("owner");
+                if(ca.f_owner.isEmpty())
+                {
+                    // we're the default owner
+                    ca.f_owner = "content";
+                }
+                ca.f_field_name = element.attribute("name");
+                if(ca.f_field_name.isEmpty())
+                {
+                    throw content_exception_invalid_content_xml("all <attachment> tags supplied to add_xml() must include a valid \"name\" attribute");
+                }
+                ca.f_type = element.attribute("type");
+                if(ca.f_type.isEmpty())
+                {
+                    throw content_exception_invalid_content_xml("all <attachment> tags supplied to add_xml() must include a valid \"type\" attribute");
+                }
+                // XXX Should we prevent filenames that do not represent
+                //     a resource? If not a resource, changes that it is not
+                //     accessible to the server are high unless the file was
+                //     installed in a shared location (/usr/share/snapwebsites/...)
+                ca.f_filename = element.text();
+
+                ca.f_path = path;
+
+                add_attachment(key, ca);
             }
         }
         if(!found_content_type)
@@ -3312,6 +3345,7 @@ void content::set_param_type(const QString& path, const QString& name, param_typ
  * \param[in] destination  The link definition of the destination.
  *
  * \sa add_content()
+ * \sa add_attachment()
  * \sa add_xml()
  * \sa add_param()
  * \sa create_link()
@@ -3328,6 +3362,43 @@ void content::add_link(const QString& path, const links::link_info& source, cons
     link.f_source = source;
     link.f_destination = destination;
     b->f_links.push_back(link);
+}
+
+
+/** \brief Add an attachment to the list of data to add on initialization.
+ *
+ * This function is used by the add_xml() function to add an attachment
+ * to the database once the content and links were all created.
+ *
+ * Note that the \p attachment parameter does not include the actual data.
+ * That data is to be loaded when the on_save_content() signal is sent.
+ * This is important to avoid using a huge amount of memory on setup.
+ *
+ * \warning
+ * To add an attachment from your plugin, make sure to call
+ * create_attachment() instead. The add_attachment() is a sub-function of
+ * the add_xml() feature. It will work on initialization, it is likely to
+ * fail if called from your plugin.
+ *
+ * \param[in] path  The path (key) to the parent of the attachment.
+ * \param[in] ca  The attachment information.
+ *
+ * \sa add_xml()
+ * \sa add_link()
+ * \sa add_content()
+ * \sa add_param()
+ * \sa on_save_content()
+ * \sa create_attachment()
+ */
+void content::add_attachment(QString const& path, content_attachment const& ca)
+{
+    content_block_map_t::iterator b(f_blocks.find(path));
+    if(b == f_blocks.end())
+    {
+        throw content_exception_parameter_not_defined("no block with path \"" + path + "\" found");
+    }
+
+    b->f_attachments.push_back(ca);
 }
 
 
@@ -3468,11 +3539,78 @@ void content::on_save_content()
         }
     }
 
+    // attachments are pages too, only they require a valid parent to be
+    // created and many require links to work (i.e. be assigned a type)
+    // so we add them after the basic content and links
+    for(content_block_map_t::iterator d(f_blocks.begin());
+            d != f_blocks.end(); ++d)
+    {
+        for(content_attachments_t::iterator a(d->f_attachments.begin());
+                a != d->f_attachments.end(); ++a)
+        {
+            attachment_file file(f_snap);
+
+            // attachment specific fields
+            file.set_multiple(false);
+            file.set_cpath(a->f_path);
+            file.set_field_name(a->f_field_name);
+            file.set_attachment_owner(a->f_owner);
+            file.set_attachment_type(a->f_type);
+            file.set_creation_time(f_snap->get_start_date());
+            file.set_update_time(f_snap->get_start_date());
+
+            // post file fields
+            file.set_file_name(a->f_field_name);
+            file.set_file_filename(a->f_filename);
+            //file.set_file_data(data);
+            // TBD should we have an original MIME type defined by the
+            //     user?
+            //file.set_file_original_mime_type(QString const& mime_type);
+            file.set_file_creation_time(f_snap->get_start_date());
+            file.set_file_modification_time(f_snap->get_start_date());
+            ++f_file_index; // this is more of a random number here!
+            file.set_file_index(f_file_index);
+
+            { // so QFile gets destroyed as soon as we're done with it
+                QFile file_attachment(a->f_filename);
+                if(!file_attachment.open(QIODevice::ReadOnly))
+                {
+                    f_snap->die(snap_child::HTTP_CODE_NOT_FOUND, "Attachment Not Found",
+                            "The attachment \"" + a->f_filename + "\" could not be read for installation in your Snap! website.",
+                            "Could not open the file to read the attachment.");
+                    NOTREACHED();
+                }
+                file.set_file_data(file_attachment.readAll());
+            }
+
+            // for images, also check the dimensions and if available
+            // save them in there because that's useful for the <img>
+            // tags (it is faster to load 8 bytes from Cassandra than
+            // a whole attachment!)
+            snap_image info;
+            if(info.get_info(file.get_file().get_data()))
+            {
+                if(info.get_size() > 0)
+                {
+                    smart_snap_image_buffer_t buffer(info.get_buffer(0));
+                    file.set_file_image_width(buffer->get_width());
+                    file.set_file_image_height(buffer->get_height());
+                    file.set_file_mime_type(buffer->get_mime_type());
+                }
+            }
+
+            // ready, create the attachment
+            create_attachment(file);
+
+            // here the data buffer gets freed!
+        }
+    }
+
     // allow other plugins to add their own stuff dynamically
     // (note that this is working only comme-ci comme-ca since all
     // the other plugins should anyway have workable defaults; however,
     // once in a while, defaults are not enough; for example the shorturl
-    // needs to generate a shorturl, there is real default other than:
+    // needs to generate a shorturl, there is no real default other than:
     // that page has no shorturl.)
     f_updating = true;
     for(content_block_map_t::iterator d(f_blocks.begin());
@@ -3489,7 +3627,7 @@ void content::on_save_content()
     }
     f_updating = false;
 
-    // we're done with that set of data
+    // we're done with that set of data, release it from memory
     f_blocks.clear();
 }
 
@@ -3611,7 +3749,7 @@ void content::on_backend_process()
                 reference_column_predicate.setCount(100);
                 reference_column_predicate.setIndex(); // behave like an index
                 bool first(true); // load the image only once for now
-                secure_flag secure;
+                server::permission_flag secure;
                 for(;;)
                 {
                     file_row->clearCache();
@@ -3651,15 +3789,15 @@ void content::on_backend_process()
                                 }
                                 else
                                 {
-                                    check_attachment_security(file, secure);
+                                    check_attachment_security(file, secure, false);
 
                                     // always save the secure flag
-                                    signed char const sflag(secure.secure() ? CONTENT_SECURE_SECURE : CONTENT_SECURE_UNSECURE);
+                                    signed char const sflag(secure.allowed() ? CONTENT_SECURE_SECURE : CONTENT_SECURE_UNSECURE);
                                     file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_SECURE))->setValue(sflag);
                                     file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_SECURE_LAST_CHECK))->setValue(f_snap->get_start_date());
                                     file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_SECURITY_REASON))->setValue(secure.reason());
 
-                                    if(secure.secure())
+                                    if(secure.allowed())
                                     {
                                         // only process the attachment further if it is
                                         // considered secure
@@ -3667,9 +3805,9 @@ void content::on_backend_process()
                                     }
                                 }
                             }
-                            if(!secure.secure())
+                            if(!secure.allowed())
                             {
-                                // TODO: warning the author that his file was
+                                // TODO: warn the author that his file was
                                 //       quanranteened and will not be served
                                 //...sendmail()...
                             }
@@ -3695,14 +3833,18 @@ void content::on_backend_process()
  *
  * \param[in] file  The file being processed.
  * \param[in,out] secure  Whether the file is secure.
+ * \param[in] fast  If true only perform fast checks (i.e. not the virus check).
+ *
+ * \return true if the check shall continue, false otherwise.
  */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-bool content::check_attachment_security_impl(attachment_file const& file, secure_flag& secure)
+bool content::check_attachment_security_impl(attachment_file const& file, server::permission_flag& secure, bool const fast)
 {
+    // we depend on javascript so it cannot connect to our events
+    // therefore we call the function directly
+    javascript::javascript::instance()->on_check_attachment_security(file.get_file(), secure, fast);
+
     return true;
 }
-#pragma GCC diagnostic pop
 
 
 /** \brief Check the attachment for one thing or another.

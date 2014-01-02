@@ -1,6 +1,7 @@
+<?xml version="1.0"?>
 <!--
-Snap Plugin - - snap content plugin resources
-Copyright (C) 2012-2014  Made to Order Software Corp.
+Snap Websites Server == antivirus plugin database setup
+Copyright (C) 2013  Made to Order Software Corp.
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -16,15 +17,13 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 -->
-<!DOCTYPE RCC>
-<RCC version="1.0">
-  <qresource prefix="/plugins/content">
-    <file>content.xml</file>
-  </qresource>
-  <qresource prefix="/js/content">
-    <file>jquery_1.10.2.js</file>
-  </qresource>
-</RCC>
-<!--
-vim: ts=2 sw=2 et syntax=xml
+<snap-tree>
+  <content path="/admin/settings/antivirus">
+    <param name="content::title">Anti-Virus Settings</param>
+    <param name="content::body">[form::source]</param>
+    <param name="form::source">settings</param>
+    <link name="permissions::administer" to="permissions::administer" mode="*:*">/types/permissions/rights/administer/website/info</link>
+  </content>
+</snap-tree>
+<!-- vim: ts=2 sw=2 et syntax=xml
 -->

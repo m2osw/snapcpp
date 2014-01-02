@@ -1,5 +1,5 @@
 // Snap Websites Server -- snap websites server
-// Copyright (C) 2011-2013  Made to Order Software Corp.
+// Copyright (C) 2011-2014  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -289,6 +289,31 @@ std::shared_ptr<QCoreApplication> g_application;
 std::shared_ptr<server> server::f_instance;
 
 
+/** \brief Set the permission and reason for refusal.
+ *
+ * This function marks the permission flag as not permitted (i.e. it
+ * sets it to false.) The default value of the permission flag is
+ * true. Note that once this function was called once it is not possible
+ * to set the flag back to true.
+ *
+ * \param[in] new_reason  The reason for the refusal, can be set to "".
+ */
+void server::permission_flag::not_permitted(QString const& new_reason)
+{
+    f_allowed = false;
+
+    if(!new_reason.isEmpty())
+    {
+        if(!f_reason.isEmpty())
+        {
+            f_reason += "\n";
+        }
+        // TBD: should we prevent "\n" in "new_reason"?
+        f_reason += new_reason;
+    }
+}
+
+
 /** \brief Return the server version.
  *
  * This function can be used to verify that the server version is
@@ -537,7 +562,7 @@ void server::config(int argc, char *argv[])
             {
                 if(f_debug)
                 {
-                    std::cerr << "fatal error: unexpected parameter \"--param "<< f_opt->get_string("param", idx) << "\". No '=' found in the parameter definition. (in server::config())" << std::endl;
+                    std::cerr << "fatal error: unexpected parameter \"--param " << f_opt->get_string("param", idx) << "\". No '=' found in the parameter definition. (in server::config())" << std::endl;
                 }
                 syslog(LOG_CRIT, "unexpected parameter \"--param %s\". No '=' found in the parameter definition. (in server::config())", f_opt->get_string("param", idx).c_str());
                 help = true;

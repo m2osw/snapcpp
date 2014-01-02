@@ -61,6 +61,7 @@ endfunction()
 ################################################################################
 # Keep the plugins in alphabetical order for ease of management
 #
+add_subdirectory(antivirus)
 add_subdirectory(char_chart)
 add_subdirectory(content)
 add_subdirectory(editor)

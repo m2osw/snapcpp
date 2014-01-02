@@ -1,5 +1,5 @@
 // Snap Websites Server -- favicon generator and settings
-// Copyright (C) 2013  Made to Order Software Corp.
+// Copyright (C) 2013-2014  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -141,6 +141,7 @@ void favicon::on_bootstrap(snap_child *snap)
     SNAP_LISTEN(favicon, "layout", layout::layout, generate_page_content, _1, _2, _3, _4, _5);
     SNAP_LISTEN(favicon, "path", path::path, can_handle_dynamic_path, _1, _2);
 }
+
 
 /** \brief Get a pointer to the favicon plugin.
  *
@@ -397,6 +398,7 @@ void favicon::output(QString const& cpath)
  * \param[in] path  The path being managed.
  * \param[in,out] page  The page being generated.
  * \param[in,out] body  The body being generated.
+ * \param[in] ctemplate  The path to a template page in case cpath is not defined.
  */
 void favicon::on_generate_main_content(layout::layout *l, const QString& cpath, QDomElement& page, QDomElement& body, const QString& ctemplate)
 {

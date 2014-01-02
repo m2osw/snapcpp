@@ -1,6 +1,6 @@
 <!--
 Snap Websites Server == DTD for all content.xml files
-Copyright (C) 2011-2013  Made to Order Software Corp.
+Copyright (C) 2011-2014  Made to Order Software Corp.
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 <!ENTITY % html-data "(#PCDATA|b|i|u|em|strong|a|img|div|p)*" >
 
-<!ELEMENT content (param|link)*>
+<!ELEMENT content (param|link|attachment)*>
 <!ATTLIST content path CDATA #REQUIRED
                   owner CDATA #IMPLIED>
 
@@ -34,6 +34,11 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 <!ATTLIST link name CDATA #REQUIRED
                to CDATA #REQUIRED
                mode CDATA "1:1">
+
+<!ELEMENT attachment (#PCDATA)>
+<!ATTLIST attachment name CDATA #REQUIRED
+                     type CDATA #REQUIRED
+                     owner CDATA #IMPLIED>
 
 <!-- HTML tags that are used in default values or background values
      we're not trying to replicate the whole HTML DTD, so we simply here -->
