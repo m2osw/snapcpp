@@ -15,180 +15,34 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "versioned_filename.h"
+#include "snap_version.h"
 #include "qstring_stream.h"
 #include <iostream>
+#include <QStringList>
+#include "poison.h"
 
 namespace snap
 {
-
-/** \brief Initialize a versioned filename object.
- *
- * The versioned filename class initializes the versioned filename object
- * with an extension which is mandatory and unique.
- *
- * \note
- * The period in the extension is optional. However, the extension cannot
- * be the empty string.
- *
- * \param[in] extension  The expected extension (i.e. ".js" for JavaScript files).
- */
-versioned_filename::versioned_filename(QString const& extension)
-    //: f_valid(false) -- auto-init
-    //, f_error("") -- auto-init
-    : f_extension(extension)
-    //, f_name("") -- auto-init
-    //, f_version_string("") -- auto-init
-    //, f_version() -- auto-init
+namespace snap_version
 {
-    if(f_extension.isEmpty())
-    {
-        throw versioned_filename_exception_invalid_extension("the extension of a versioned filename cannot be the empty string");
-    }
-
-    // make sure the extension includes the period
-    if(f_extension.at(0).unicode() != '.')
-    {
-        f_extension = "." + f_extension;
-    }
-}
 
 
-/** \brief Set the name of a file through the parser.
- *
- * This function is used to setup a versioned filename from a full filename.
- * The input filename can include a path. It must end with the valid
- * extension (as defined when creating the versioned_filename object.)
- * Assuming the function returns true, the get_filename() function
- * returns the basename (i.e. the filename without the path nor the
- * extension, although you can get the extension if you ask for it.)
- *
- * The filename is then broken up in a name, a version, and browser, all of
- * which are checked for validity. If invalid, the function returns false.
- *
- * \code
- * .../some/path/name_version_browser.ext
- * \endcode
- *
- * Note that the browser part is optional. In general, if not indicated
- * it means the file is compatible with all browsers.
- *
- * \note
- * This function respects the contract: if the function returns false,
- * then the name, version, and browser information are not changed.
- *
- * However, on entry the value of f_error is set to the empty string and
- * the value of f_valid is set to false. So most of the functions will
- * continue to return the old value of the versioned filename, except
- * the compare() and relational operators.
- *
- * \return true if the filename was a valid versioned filename.
- */
-bool versioned_filename::set_filename(QString const& filename)
+namespace
 {
-    f_error.clear();
-    f_valid = false;
-
-    // the extension must be exactly "extension"
-    if(!filename.endsWith(f_extension))
-    {
-        f_error = "this filename must end with \"" + f_extension + "\" in lowercase. \"" + filename + "\" is not valid.";
-        return false;
-    }
-
-    int const max(filename.length() - f_extension.length());
-
-    int start(filename.lastIndexOf('/'));
-    if(start == -1)
-    {
-        start = 0;
-    }
-    else
-    {
-        ++start;
-    }
-
-    // now break the name in two parts: <name> and <version> [<browser>]
-    int p1(filename.indexOf('_', start));
-    if(p1 == -1 || p1 > max)
-    {
-        f_error = "a versioned filename is expected to include an underscore (_) as the name and version separator. \"" + filename + "\" is not valid.";
-        return false;
-    }
-    // and check whether the <browser> part is specified
-    int p2(filename.indexOf('_', p1 + 1));
-    if(p2 > max || p2 == -1)
-    {
-        p2 = max;
-    }
-    else
-    {
-        if(p2 + 1 >= max)
-        {
-            f_error = "a browser name must be specified in a versioned filename if you include two underscores (_). \"" + filename + "\" is not valid.";
-            return false;
-        }
-    }
-
-    // name
-    QString name(filename.mid(start, p1 - start));
-    if(!validate_name(name))
-    {
-        return false;
-    }
-
-    // version
-    ++p1;
-    QString version_string(filename.mid(p1, p2 - p1));
-    version_t version;
-    if(!validate_version(version_string, version))
-    {
-        return false;
-    }
-
-    // browser
-    QString browser;
-    if(p2 < max)
-    {
-        // validate only if not empty (since it is optional empty is okay)
-        browser = filename.mid(p2 + 1, max - p2 - 1);
-        if(!validate_name(browser))
-        {
-            return false;
-        }
-    }
-
-    // save the result
-    f_name = name;
-    f_version_string = version_string;
-    f_version.swap(version);
-    f_browser = browser;
-    f_valid = true;
-
-    return true;
-}
-
-
-/** \brief Set the name of the versioned filename object.
+/** \brief List of operators.
  *
- * A versioned filename is composed of a name, a version, and an optional
- * browser reference. This function is used to replace the name.
- *
- * The name is checked using the \p validate_name() function.
- *
- * \param[in] name  The new file name.
- *
- * \return true if the name is valid.
+ * Operators are 1 or 2 characters. This string lists all the operators.
+ * It is safe because the operators are used from a limited_auto_init
+ * variable. Each string here is exactly 3 characters and thus we
+ * can use the index x 3 to access the string operator.
  */
-bool versioned_filename::set_name(QString const& name)
-{
-    bool r(validate_name(name));
-    if(r)
-    {
-        f_name = name;
-    }
-
-    return r;
+char const *g_operators = "\0\0\0"  // OPERATOR_UNORDERED
+                          "=\0\0"   // OPERATOR_EQUAL
+                          "!=\0"    // OPERATOR_EXCEPT
+                          "<\0\0"   // OPERATOR_EARLIER
+                          ">\0\0"   // OPERATOR_LATER
+                          "<=\0"    // OPERATOR_EARLIER_OR_EQUAL
+                          ">=\0";   // OPERATOR_LATER_OR_EQUAL
 }
 
 
@@ -217,16 +71,19 @@ bool versioned_filename::set_name(QString const& name)
  * This function is used to verify the name and the browser strings.
  *
  * \param[in] name  The name to be checked against the name pattern.
+ * \param[out] error  The error message in case an error occurs.
  *
  * \return true if the name matches, false otherwise.
  */
-bool versioned_filename::validate_name(QString const& name)
+bool validate_name(QString const& name, QString& error)
 {
+    error.clear();
+
     // length constraint
     int const max(name.length());
     if(max < 2)
     {
-        f_error = "the name or browser in a versioned filename must be at least two characters. \"" + name + "\" is not valid.";
+        error = "the name or browser in a versioned filename must be at least two characters. \"" + name + "\" is not valid.";
         return false;
     }
 
@@ -235,13 +92,13 @@ bool versioned_filename::validate_name(QString const& name)
     if(c < 'a' || c > 'z')
     {
         // name cannot start with dash (-) or a digit ([0-9])
-        f_error = "the name or browser of a versioned filename must start with a letter [a-z]. \"" + name + "\" is not valid.";
+        error = "the name or browser of a versioned filename must start with a letter [a-z]. \"" + name + "\" is not valid.";
         return false;
     }
     if(name.at(max - 1).unicode() == '-')
     {
         // name cannot end with a dash (-)
-        f_error = "A versioned name or browser cannot end with a dash (-). \"" + name + "\" is not valid.";
+        error = "A versioned name or browser cannot end with a dash (-). \"" + name + "\" is not valid.";
         return false;
     }
 
@@ -256,7 +113,7 @@ bool versioned_filename::validate_name(QString const& name)
             // the -1 is safe because we start the loop at 1
             if(name.at(i - 1).unicode() == '-')
             {
-                f_error = "A name or browser versioned filename cannot include two dashes (--) one after another. \"" + name + "\" is not valid.";
+                error = "A name or browser versioned filename cannot include two dashes (--) one after another. \"" + name + "\" is not valid.";
                 return false;
             }
         }
@@ -264,38 +121,12 @@ bool versioned_filename::validate_name(QString const& name)
              && (c < 'a' || c > 'z'))
         {
             // name can only include [a-z0-9] and dashes (-)
-            f_error = "A name or browser versioned filename can only include letters (a-z), digits (0-9), or dashes (-). \"" + name + "\" is not valid.";
+            error = "A name or browser versioned filename can only include letters (a-z), digits (0-9), or dashes (-). \"" + name + "\" is not valid.";
             return false;
         }
     }
 
     return true;
-}
-
-
-/** \brief Set the version of the versioned filename.
- *
- * This function sets the version of the versioned filename. Usually, you
- * will call the set_filename() function which sets the name, the version,
- * and the optional browser all at once and especially let the parsing
- * work to the versioned_filename class.
- *
- * \param[in] version_string  The version in the form of a string.
- *
- * \return true if the version was considered valid.
- */
-bool versioned_filename::set_version(QString const& version_string)
-{
-    QString vs(version_string);
-    version_t version;
-    bool r(validate_version(vs, version));
-    if(r)
-    {
-        f_version_string = vs;
-        f_version.swap(version);
-    }
-
-    return r;
 }
 
 
@@ -352,22 +183,23 @@ bool versioned_filename::set_version(QString const& version_string)
  *
  * \param[in,out] version_string  The version to be parsed.
  * \param[out] version  The array of numbers.
+ * \param[out] error  The error message if an error occurs.
  *
  * \return true if the version is considered valid.
  */
-bool versioned_filename::validate_version(QString& version_string, version_t& version)
+bool validate_version(QString const& version_string, version_numbers_vector_t& version, QString& error)
 {
     version.clear();
 
     int const max(version_string.length());
     if(max < 1)
     {
-        f_error = "The version in a versioned filename is required after the name. \"" + version_string + "\" is not valid.";
+        error = "The version in a versioned filename is required after the name. \"" + version_string + "\" is not valid.";
         return false;
     }
     if(version_string.at(max - 1).unicode() == '.')
     {
-        f_error = "The version in a versioned filename cannot end with a period. \"" + version_string + "\" is not valid.";
+        error = "The version in a versioned filename cannot end with a period. \"" + version_string + "\" is not valid.";
         return false;
     }
 
@@ -378,7 +210,7 @@ bool versioned_filename::validate_version(QString& version_string, version_t& ve
         ushort c(version_string.at(i).unicode());
         if(c < '0' || c > '9')
         {
-            f_error = "The version of a versioned filename is expected to have a number at the start and after each period. \"" + version_string + "\" is not valid.";
+            error = "The version of a versioned filename is expected to have a number at the start and after each period. \"" + version_string + "\" is not valid.";
             return false;
         }
         int value(c - '0');
@@ -391,7 +223,7 @@ bool versioned_filename::validate_version(QString& version_string, version_t& ve
             {
                 if(c != '.')
                 {
-                    f_error = "The version of a versioned filename is expected to be composed of numbers and periods (.) only. \"" + version_string + "\" is not valid.";
+                    error = "The version of a versioned filename is expected to be composed of numbers and periods (.) only. \"" + version_string + "\" is not valid.";
                     return false;
                 }
                 if(i == max)
@@ -411,19 +243,704 @@ bool versioned_filename::validate_version(QString& version_string, version_t& ve
         version.pop_back();
     }
 
-    // canonicalize the version string now
-    version_string.clear();
-    int const jmax(version.size());
-    for(int j(0); j < jmax; ++j)
+    return true;
+}
+
+
+/** \brief Validate an operator string.
+ *
+ * This function validates an operator string and converts it to an operator.
+ *
+ * The function clears the error string by default. If the operator cannot
+ * be converted, then an error message is saved in that string.
+ *
+ * \note
+ * Internally the strings get canonicalized in the version_operator
+ * object. The get_operator_string() function always returns a canonicalized
+ * version of the operator.
+ *
+ * \param[in] operator_string  The operator to convert.
+ * \param[out] op  The new operator.
+ * \param[out] error  An error string if the operator is not valid.
+ *
+ * \return true if the operator is valid.
+ */
+bool validate_operator(QString const& operator_string, operator_t& op, QString& error)
+{
+    error.clear();
+
+    if(operator_string == "=" || operator_string == "==")
     {
-        if(j != 0)
-        {
-            version_string += ".";
-        }
-        version_string += QString("%1").arg(version[j]);
+        op = OPERATOR_EQUAL;
+    }
+    else if(operator_string == "!=" || operator_string == "<>")
+    {
+        op = OPERATOR_EXCEPT;
+    }
+    else if(operator_string == "<")
+    {
+        // support << as well, like in Debian
+        op = OPERATOR_EARLIER;
+    }
+    else if(operator_string == ">")
+    {
+        // support >> as well, like in Debian
+        op = OPERATOR_LATER;
+    }
+    else if(operator_string == "<=")
+    {
+        op = OPERATOR_EARLIER_OR_EQUAL;
+    }
+    else if(operator_string == ">=")
+    {
+        op = OPERATOR_LATER_OR_EQUAL;
+    }
+    else
+    {
+        error = "Operator " + operator_string + " is not recognized as a valid operator.";
+        return false;
     }
 
     return true;
+}
+
+
+/** \fn name::clear()
+ * \brief Clear the name.
+ *
+ * This is the only way to clear a name object. This function clears the
+ * name (makes it an empty name) and clears the error message if there was
+ * one.
+ *
+ * Note that set_name() cannot be used with an empty string because that is
+ * not a valid entry. Names have to be at least two characters.
+ *
+ * By default, when a name object is constructed, the name is empty.
+ */
+
+
+/** \brief Set the name of the string.
+ *
+ * Set the name of the item. This function verifies that the name is valid,
+ * if so the function returns true and saves the new name in the name object.
+ * Otherwise it doesn't change anything and returns false.
+ *
+ * This function clears the error by default so that way if no error occurs
+ * the get_error() function returns an empty string.
+ *
+ * \param[in] name_string  The name to save in this object.
+ *
+ * \return true if the name was valid.
+ */
+bool name::set_name(QString const& name_string)
+{
+    bool const r(validate_name(name_string, f_error));
+    if(r)
+    {
+        f_name = name_string;
+    }
+    return r;
+}
+
+
+/** \fn name::get_name() const
+ * \brief Retrieve the name.
+ *
+ * This function returns the last name that was set with the set_name()
+ * function and was valid.
+ *
+ * This means only valid names or empty names are returned.
+ *
+ * \return The last name set with set_name().
+ */
+
+
+/** \fn name::is_valid() const
+ * \brief Check whether this name is considered valid.
+ *
+ * Although the set_name() function does not change the old value when it
+ * fails, it is considered invalid if the new value was invalid (had a
+ * character that is not considered valid in a name, was too short, etc.)
+ *
+ * This function returns true if the last set_name() generated no error.
+ * Note that a new empty name (or after a call to the clear() function)
+ * is considered valid even though in most cases a name is mandatory.
+ *
+ * \return true if the name is currently considered valid.
+ */
+
+
+/** \fn name::get_error() const
+ * \brief Retrieve the error.
+ *
+ * If the set_name() function returns false, then the error message will
+ * be set to what happened (why the name was refused.) This error message
+ * can be retrieved using this function.
+ *
+ * The clear() function empties the error message as well as the name.
+ *
+ * \return The last error message.
+ */
+
+
+/** \brief Compare two names together.
+ *
+ * This function compares two names together and returns one of the
+ * following:
+ *
+ * \li COMPARE_INVALID -- if the current name is considered invalid
+ * \li COMPARE_SMALLER -- if this is smaller than \p rhs
+ * \li COMPARE_EQUAL -- if this is equal \p rhs
+ * \li COMPARE_LARGER -- if this is larger than \p rhs
+ *
+ * \param[in] rhs  The right hand side name to compare with.
+ *
+ * \return one of the COMPARE_... values (-2, -1, 0, 1).
+ */
+compare_t name::compare(name const& rhs) const
+{
+    if(!is_valid() || !rhs.is_valid())
+    {
+        return COMPARE_INVALID;
+    }
+
+    if(f_name < rhs.f_name)
+    {
+        return COMPARE_SMALLER;
+    }
+    if(f_name > rhs.f_name)
+    {
+        return COMPARE_LARGER;
+    }
+    return COMPARE_EQUAL;
+}
+
+
+/** \brief Set the specified version string as the new version.
+ *
+ * This function parses the supplied version string in an array of
+ * version numbers saved internally.
+ *
+ * If an error occurs, the current version is not modified and
+ * an error message is saved internally. The message can be retrieved
+ * with the get_error() function.
+ *
+ * The error messages is cleared on entry so if no errore are discovered
+ * in \p version_string then get_error() returns an empty string.
+ *
+ * \param[in] version_string  The version string to parse in a series of
+ *                            numbers.
+ *
+ * \return true if the version is considered valid.
+ */
+bool version::set_version_string(QString const& version_string)
+{
+    version_numbers_vector_t version_vector;
+    bool const r(validate_version(version_string, version_vector, f_error));
+    if(r)
+    {
+        set_version(version_vector);
+    }
+    return r;
+}
+
+
+/** \brief Set a new version from an array of numbers.
+ *
+ * This function can be used to set the version directly from a set of
+ * numbers. The function canonicalize the version array by removing
+ * any ending zeroes.
+ *
+ * \param[in] version  The value of the new version.
+ */
+void version::set_version(version_numbers_vector_t const& version_vector)
+{
+    f_error.clear();    // no error possible in this case
+
+    // copy and then canonicalize the array
+    f_version = version_vector;
+    while(f_version.size() > 1 && 0 == f_version[f_version.size() - 1])
+    {
+        f_version.pop_back();
+    }
+
+    // make sure that if we have a new version we get a new version
+    // string that corresponds one to one
+    f_version_string.clear();
+}
+
+
+/** \brief Set the version operator.
+ *
+ * By default a version has operator Unordered. In general, a version is
+ * 'unordered' when not part of an expression (i.e. in a filename, the
+ * version is just that and no operator is defined.) In a list of versions
+ * of a dependency, the version is always defined with an operator although
+ * by default the \>= operator is not specified.
+ *
+ * \param[in] op  The version operator.
+ */
+void version::set_operator(version_operator const& op)
+{
+    f_operator = op;
+}
+
+
+/** \fn version::get_version() const
+ * \brief Retrieve the version as an array of numbers.
+ *
+ * This function returns the array of numbers representing this version.
+ * The array will have been canonicalized, which means it will not end
+ * with extra zeroes (it may be zero, if composed of one element.)
+ *
+ * By default, a version object is empty which means "no version".
+ *
+ * \return An array of version numbers.
+ */
+
+
+/** \fn version::get_version_string() const
+ * \brief Retrieve the version as a canonicalized string.
+ *
+ * This function returns the version as a canonicalized string. The version
+ * is canonnicalized by removing all .0 from the end of a version. So version
+ * 1.2 and 1.2.0 will both return string "1.2".
+ *
+ * \return The canonicalized version string.
+ */
+QString const& version::get_version_string() const
+{
+    if(f_version_string.isEmpty() && !f_version.isEmpty())
+    {
+        // create the version string
+        f_version_string = QString("%1").arg(static_cast<int>(f_version[0]));
+        int const max(f_version.size());
+        for(int i(1); i < max; ++i)
+        {
+            f_version_string += QString(".%1").arg(static_cast<int>(f_version[i]));
+        }
+    }
+
+    return f_version_string;
+}
+
+
+/** \brief Return the operator and version as a string.
+ *
+ * This function returns the operator followed by the version both
+ * separated by a space. If the operator is OPERATOR_UNORDERED then
+ * just the version string is returned, just as if you called the
+ * get_version_string() function.
+ *
+ * \note
+ * Dependencies are always expected to include an operator along their
+ * version. When a version is specified without an operator, the
+ * default OPERATOR_LATER_OR_EQUAL is used.
+ *
+ * \return The operator and version that this version object represent.
+ */
+QString version::get_opversion_string() const
+{
+    QString v(get_version_string());
+
+    if(f_operator.get_operator() != OPERATOR_UNORDERED)
+    {
+        v = f_operator.get_operator_string() + (" " + v);
+    }
+
+    return v;
+}
+
+
+/** \fn version::get_error() const
+ * \brief Get errors
+ *
+ * The function retrieve the last error message that happened when you
+ * called the set_version() function.
+ *
+ * The set_version() functions clear the error message out to represent
+ * a "no error state."
+ *
+ * \return The error message or an empty string if none.
+ */
+
+
+/** \brief Compare two versions against each others.
+ *
+ * This function compares this version against \p rhs and returns one of
+ * the following:
+ *
+ * \li COMPARE_INVALID -- if the current name is considered invalid
+ * \li COMPARE_SMALLER -- if this is smaller than \p rhs
+ * \li COMPARE_EQUAL -- if this is equal \p rhs
+ * \li COMPARE_LARGER -- if this is larger than \p rhs
+ *
+ * \param[in] rhs  The right hand side name to compare with.
+ *
+ * \return One of the COMPARE_... values (-2, -1, 0, 1).
+ */
+compare_t version::compare(version const& rhs) const
+{
+    if(!is_valid() || !rhs.is_valid())
+    {
+        return COMPARE_INVALID;
+    }
+
+    int const max(std::max(f_version.size(), rhs.f_version.size()));
+    for(int i(0); i < max; ++i)
+    {
+        int l(i >=     f_version.size() ? 0 : static_cast<int>(    f_version[i]));
+        int r(i >= rhs.f_version.size() ? 0 : static_cast<int>(rhs.f_version[i]));
+        if(l < r)
+        {
+            return COMPARE_SMALLER;
+        }
+        if(l > r)
+        {
+            return COMPARE_LARGER;
+        }
+    }
+
+    return COMPARE_EQUAL;
+}
+
+
+
+
+
+/** \brief Set the operator from a string.
+ *
+ * This function defines a version operator from a string as found in a
+ * dependency string.
+ *
+ * The valid operators are:
+ *
+ * \li = or == -- OPERATOR_EQUAL, canonicalized as "="
+ * \li != or <> -- OPERATOR_EXCEPT, canonicalized as "!="
+ * \li < -- OPERATOR_EARLIER
+ * \li > -- OPERATOR_LATER
+ * \li <= -- OPERATOR_EARLIER_OR_EQUAL
+ * \li >= -- OPERATOR_LATER_OR_EQUAL (TBD should this one be canonicalized
+ *           as an empty string?)
+ *
+ * By default a version operator object is set to OPERATOR_UNORDERED which
+ * pretty much means it was not set yet.
+ *
+ * Note that Debian supported \<\< and \>\> as an equivalent to \<= and \>=
+ * respectively. We do not support those operators since (1) Debian
+ * deprecated them, and (2) they are definitively confusing.
+ *
+ * You can also use the set_operator() function which access an OPERATOR_...
+ * enumeration.
+ *
+ * Note that it is possible to create a range with a shortcut in a dependency
+ * declaration:
+ *
+ * \code
+ * <smaller version> < <larger version>
+ * <smaller version> <= <larger version>
+ *
+ * // for example:
+ * 1.3.4 < 1.4.0
+ * 1.3.4 <= 1.4.0
+ * \endcode
+ *
+ * Once compiled in, this is represented using two version operators and
+ * the operator is changed from \< to > and \<, and from \<= to >= and
+ * \<= respectively, so the previous example becomes:
+ *
+ * \code
+ * // This range:
+ * my_lib (1.3.4 < 1.4.0)
+ *
+ * // is equivalent to those two entries
+ * my_lib (> 1.3.4)
+ * my_lib (< 1.4)
+ *
+ * // And that range:
+ * my_lib (1.3.4 <= 1.4.0)
+ *
+ * // is equivalent to those two entries
+ * my_lib (>= 1.3.4)
+ * my_lib (<= 1.4)
+ * \endcode
+ *
+ * \param[in] operator_string  The string to be checked.
+ *
+ * \return true if the operator string represents a valid operator.
+ */
+bool version_operator::set_operator_string(QString const& operator_string)
+{
+    operator_t op;
+    bool const r(validate_operator(operator_string, op, f_error));
+    if(r)
+    {
+        // valid, save it
+        set_operator(op);
+    }
+    return r;
+}
+
+
+/** \brief Set the operator using the enumeration.
+ *
+ * This function sets the operator using one of the enumeration values.
+ *
+ * \note
+ * You may use this function to reset the version operator back to
+ * OPERATOR_UNORDERED. In that case the operator string becomes
+ * the empty string ("").
+ *
+ * \param[in] op  The new operator for this version operator object.
+ *
+ * \return true if op is a valid operator.
+ */
+bool version_operator::set_operator(operator_t op)
+{
+    switch(op)
+    {
+    case OPERATOR_UNORDERED:
+    case OPERATOR_EQUAL:
+    case OPERATOR_EXCEPT:
+    case OPERATOR_EARLIER:
+    case OPERATOR_LATER:
+    case OPERATOR_EARLIER_OR_EQUAL:
+    case OPERATOR_LATER_OR_EQUAL:
+        f_operator = static_cast<int>(op); // FIXME remove cast
+        return true;
+
+    default:
+        return false;
+
+    }
+}
+
+
+/** \brief Retrieve the canonicalized operator string.
+ *
+ * This function returns the string representing the operator. The
+ * string is canonicalized, which means that it has one single
+ * representation (i.e. we accept "==" which is represented as "="
+ * when canonicalized.)
+ *
+ * \return The canonicalized operator string.
+ */
+char const *version_operator::get_operator_string() const
+{
+    return g_operators + static_cast<int>(f_operator) * 3;
+}
+
+
+/** \fn version_operator::get_operator() const
+ * \brief Retrieve the operator.
+ *
+ * This function retrieves the operator as a number. The operator is used
+ * to compare versions between each others while searching for dependencies.
+ *
+ * \return The operator, may be OPERATOR_UNORDERED if not initialized.
+ */
+
+
+
+
+
+/** \brief Initialize a versioned filename object.
+ *
+ * The versioned filename class initializes the versioned filename object
+ * with an extension which is mandatory and unique.
+ *
+ * \note
+ * The period in the extension is optional. However, the extension cannot
+ * be the empty string.
+ *
+ * \param[in] extension  The expected extension (i.e. ".js" for JavaScript files).
+ */
+versioned_filename::versioned_filename(QString const& extension)
+    //: f_valid(false) -- auto-init
+    //, f_error("") -- auto-init
+    : f_extension(extension)
+    //, f_name("") -- auto-init
+    //, f_version_string("") -- auto-init
+    //, f_version() -- auto-init
+{
+    if(f_extension.isEmpty())
+    {
+        throw snap_version_exception_invalid_extension("the extension of a versioned filename cannot be the empty string");
+    }
+
+    // make sure the extension includes the period
+    if(f_extension.at(0).unicode() != '.')
+    {
+        f_extension = "." + f_extension;
+    }
+}
+
+
+/** \brief Set the name of a file through the parser.
+ *
+ * This function is used to setup a versioned filename from a full filename.
+ * The input filename can include a path. It must end with the valid
+ * extension (as defined when creating the versioned_filename object.)
+ * Assuming the function returns true, the get_filename() function
+ * returns the basename (i.e. the filename without the path nor the
+ * extension, although you can get the extension if you ask for it.)
+ *
+ * The filename is then broken up in a name, a version, and browser, all of
+ * which are checked for validity. If invalid, the function returns false.
+ *
+ * \code
+ * .../some/path/name_version_browser.ext
+ * \endcode
+ *
+ * Note that the browser part is optional. In general, if not indicated
+ * it means the file is compatible with all browsers.
+ *
+ * \note
+ * This function respects the contract: if the function returns false,
+ * then the name, version, and browser information are not changed.
+ *
+ * However, on entry the value of f_error is set to the empty string and
+ * the value of f_valid is set to false. So most of the functions will
+ * continue to return the old value of the versioned filename, except
+ * the compare() and relational operators.
+ *
+ * \return true if the filename was a valid versioned filename.
+ */
+bool versioned_filename::set_filename(QString const& filename)
+{
+    f_error.clear();
+
+    // the extension must be exactly "extension"
+    if(!filename.endsWith(f_extension))
+    {
+        f_error = "this filename must end with \"" + f_extension + "\" in lowercase. \"" + filename + "\" is not valid.";
+        return false;
+    }
+
+    int const max(filename.length() - f_extension.length());
+
+    int start(filename.lastIndexOf('/'));
+    if(start == -1)
+    {
+        start = 0;
+    }
+    else
+    {
+        ++start;
+    }
+
+    // now break the name in two or three parts: <name> and <version> [<browser>]
+    int p1(filename.indexOf('_', start));
+    if(p1 == -1 || p1 > max)
+    {
+        f_error = "a versioned filename is expected to include an underscore (_) as the name and version separator. \"" + filename + "\" is not valid.";
+        return false;
+    }
+    // and check whether the <browser> part is specified
+    int p2(filename.indexOf('_', p1 + 1));
+    if(p2 > max || p2 == -1)
+    {
+        p2 = max;
+    }
+    else
+    {
+        if(p2 + 1 >= max)
+        {
+            f_error = "a browser name must be specified in a versioned filename if you include two underscores (_). \"" + filename + "\" is not valid.";
+            return false;
+        }
+    }
+
+    // name
+    QString const name(filename.mid(start, p1 - start));
+    if(!validate_name(name, f_error))
+    {
+        return false;
+    }
+
+    // version
+    ++p1;
+    QString const version_string(filename.mid(p1, p2 - p1));
+    version_numbers_vector_t version;
+    if(!validate_version(version_string, version, f_error))
+    {
+        return false;
+    }
+
+    // browser
+    QString browser;
+    if(p2 < max)
+    {
+        // validate only if not empty (since it is optional empty is okay)
+        browser = filename.mid(p2 + 1, max - p2 - 1);
+        if(!validate_name(browser, f_error))
+        {
+            return false;
+        }
+    }
+
+    // save the result
+    f_name.set_name(name);
+    f_version.set_version_string(version_string);
+    if(browser.isEmpty())
+    {
+        // browser info is optional and if not defined we need to clear
+        // the name (because a set_name() generates an error otherwise)
+        f_browser.clear();
+    }
+    else
+    {
+        f_browser.set_name(browser);
+    }
+
+    return true;
+}
+
+
+/** \brief Set the name of the versioned filename object.
+ *
+ * A versioned filename is composed of a name, a version, and an optional
+ * browser reference. This function is used to replace the name.
+ *
+ * The name is checked using the \p validate_name() function.
+ *
+ * \param[in] name  The new file name.
+ *
+ * \return true if the name is valid.
+ */
+bool versioned_filename::set_name(QString const& name)
+{
+    bool r(validate_name(name, f_error));
+    if(r)
+    {
+        f_name.set_name(name);
+    }
+
+    return r;
+}
+
+
+/** \brief Set the version of the versioned filename.
+ *
+ * This function sets the version of the versioned filename. Usually, you
+ * will call the set_filename() function which sets the name, the version,
+ * and the optional browser all at once and especially let the parsing
+ * work to the versioned_filename class.
+ *
+ * \param[in] version_string  The version in the form of a string.
+ *
+ * \return true if the version was considered valid.
+ */
+bool versioned_filename::set_version(QString const& version_string)
+{
+    version_numbers_vector_t version_vector;
+    bool r(validate_version(version_string, version_vector, f_error));
+    if(r)
+    {
+        f_version.set_version_string(version_string);
+    }
+
+    return r;
 }
 
 
@@ -441,13 +958,13 @@ bool versioned_filename::validate_version(QString& version_string, version_t& ve
  */
 QString versioned_filename::get_filename(bool extension) const
 {
-    if(!f_valid)
+    if(!is_valid())
     {
         return "";
     }
-    return f_name
-         + "_" + f_version_string
-         + (f_browser.isEmpty() ? "" : "_" + f_browser)
+    return f_name.get_name()
+         + "_" + f_version.get_version_string()
+         + (f_browser.get_name().isEmpty() ? "" : "_" + f_browser.get_name())
          + (extension ? f_extension : "");
 }
 
@@ -480,47 +997,25 @@ QString versioned_filename::get_filename(bool extension) const
  *
  * \return -2, -1, 0, or 1 depending on the order (or unordered status)
  */
-versioned_filename::compare_t versioned_filename::compare(versioned_filename const& rhs) const
+compare_t versioned_filename::compare(versioned_filename const& rhs) const
 {
-    if(!f_valid || !rhs.f_valid)
+    if(!is_valid())
     {
         return COMPARE_INVALID;
     }
 
-    if(f_name < rhs.f_name)
+    compare_t c(f_name.compare(rhs.f_name));
+    if(c != COMPARE_EQUAL)
     {
-        return COMPARE_SMALLER;
+        return c;
     }
-    if(f_name > rhs.f_name)
+    c = f_browser.compare(rhs.f_browser);
+    if(c != COMPARE_EQUAL)
     {
-        return COMPARE_LARGER;
-    }
-
-    if(f_browser < rhs.f_browser)
-    {
-        return COMPARE_SMALLER;
-    }
-    if(f_browser > rhs.f_browser)
-    {
-        return COMPARE_LARGER;
+        return c;
     }
 
-    int const max(std::max(f_version.size(), rhs.f_version.size()));
-    for(int i(0); i < max; ++i)
-    {
-        int l(i >=     f_version.size() ? 0 : static_cast<int>(    f_version[i]));
-        int r(i >= rhs.f_version.size() ? 0 : static_cast<int>(rhs.f_version[i]));
-        if(l < r)
-        {
-            return COMPARE_SMALLER;
-        }
-        if(l > r)
-        {
-            return COMPARE_LARGER;
-        }
-    }
-
-    return COMPARE_EQUAL;
+    return f_version.compare(rhs.f_version);
 }
 
 
@@ -640,5 +1135,396 @@ bool versioned_filename::operator >= (versioned_filename const& rhs) const
 }
 
 
+/** \brief Define a dependency from a string.
+ *
+ * This function is generally called to transform a dependency string
+ * in a name, a list of versions and operators, and a list of browsers.
+ *
+ * The format of the string is as follow in simplified yacc:
+ *
+ * \code
+ * dependency: name
+ *           | name versions
+ *           | name versions browsers
+ *           | name browsers
+ *
+ * name: NAME
+ *
+ * versions: '(' version_list ')'
+ *
+ * version_list: version_range
+ *             | version_list ',' version_range
+ *
+ * version_range: version
+ *              | version '<=' version
+ *              | version '<' version
+ *              | op version
+ *
+ * version: VERSION
+ *
+ * op: '='
+ *   | '!='
+ *   | '<'
+ *   | '<='
+ *   | '>'
+ *   | '>='
+ *
+ * browsers: name
+ *         | browser ',' name
+ * \endcode
+ */
+bool dependency::set_dependency(QString const& dependency_string)
+{
+    f_error.clear();
+
+    // trim spaces
+    QString const d(dependency_string.simplified());
+
+    // get the end of the name
+    int space_pos(d.indexOf(' '));
+    if(space_pos < 0)
+    {
+        space_pos = d.length();
+    }
+    int paren_pos(d.indexOf('('));
+    if(paren_pos < 0)
+    {
+        paren_pos = d.length();
+    }
+    int bracket_pos(d.indexOf('['));
+    if(bracket_pos < 0)
+    {
+        bracket_pos = d.length();
+    }
+    int pos(std::min(space_pos, std::min(paren_pos, bracket_pos)));
+    QString const dep_name(d.left(pos));
+    if(!validate_name(dep_name, f_error))
+    {
+        return false;
+    }
+    f_name.set_name(dep_name);
+
+    // skip the spaces (because of the simplied there should be 1 at most)
+    while(pos < d.length() && isspace(d.at(pos).unicode()))
+    {
+        ++pos;
+    }
+
+    // read list of versions and operators
+    if(pos < d.length() && d.at(pos) == QChar('('))
+    {
+        ++pos;
+        int end(d.indexOf(')', pos));
+        if(end == -1)
+        {
+            f_error = "version dependency syntax error, ')' not found";
+            return false;
+        }
+        QString const version_list(d.mid(pos, end - pos));
+        QStringList version_strings(version_list.split(',', QString::SkipEmptyParts));
+        int const max_versions(version_strings.size());
+        for(int i(0); i < max_versions; ++i)
+        {
+            QString const vonly(version_strings[i].trimmed());
+            if(vonly.isEmpty())
+            {
+                // this happens because of the trimmed()
+                continue;
+            }
+            version_operator vo;
+            QByteArray utf8(vonly.toUtf8());
+            char const *s(utf8.data());
+            char const *start(s);
+            for(; (*s >= '0' && *s <= '9') || *s == '.'; ++s);
+            if(s == start)
+            {
+                // we assume an operator at the start
+                for(; (*s < '0' || *s > '9') && *s != '\0'; ++s);
+                QString const op(QString::fromUtf8(start, s - start).trimmed());
+                if(!vo.set_operator_string(op))
+                {
+                    f_error = vo.get_error();
+                    return false;
+                }
+                // skip spaces after the operator
+                for(; isspace(*s); ++s);
+                start = s;
+                for(; (*s >= '0' && *s <= '9') || *s == '.'; ++s);
+            }
+
+            // got a version, verify it
+            QString const version_string(QString::fromUtf8(start, s - start));
+            version v;
+            if(!v.set_version_string(version_string))
+            {
+                f_error = v.get_error();
+                return false;
+            }
+            for(; isspace(*s); ++s);
+            if(*s != '\0')
+            {
+                // not end of the version, check for an operator
+                if(vo.get_operator() != OPERATOR_UNORDERED)
+                {
+                    f_error = "a version specification in a dependency can only include one operator, two found in \"" + vonly + "\" (missing ',' or ')' maybe?)";
+                    return false;
+                }
+                // we assume an operator in between two versions
+                // (i.e. version <= version)
+                start = s;
+                for(; (*s < '0' || *s > '9') && *s != '\0'; ++s);
+                QString const op(QString::fromUtf8(start, s - start).trimmed());
+                if(!vo.set_operator_string(op))
+                {
+                    f_error = vo.get_error();
+                    return false;
+                }
+                operator_t const range_op(vo.get_operator());
+                switch(range_op)
+                {
+                case OPERATOR_UNORDERED:
+                case OPERATOR_EQUAL:
+                case OPERATOR_EXCEPT:
+                    f_error = "unsupported operator \"" + QString(vo.get_operator_string()) + "\" for a range";
+                    return false;
+
+                default:
+                    // otherwise we're good
+                    break;
+
+                }
+                // skip spaces after the operator
+                for(; isspace(*s); ++s);
+                start = s;
+                for(; (*s >= '0' && *s <= '9') || *s == '.'; ++s);
+                if(*s != '\0')
+                {
+                    f_error = "a version range can have two versions separated by an operator, \"" + vonly + "\" is not valid";
+                    return false;
+                }
+                QString const rhs_version(QString::fromUtf8(start, s - start));
+                version rhs_v;
+                if(!rhs_v.set_version_string(rhs_version))
+                {
+                    f_error = rhs_v.get_error();
+                    return false;
+                }
+                switch(range_op)
+                {
+                case OPERATOR_EARLIER:
+                    vo.set_operator(OPERATOR_LATER);
+                    v.set_operator(vo);
+                    f_versions.push_back(v);
+                    vo.set_operator(OPERATOR_EARLIER);
+                    rhs_v.set_operator(vo);
+                    f_versions.push_back(rhs_v);
+                    if(v.compare(rhs_v) >= COMPARE_EQUAL)
+                    {
+                        f_error = "versions are not in the correct order in range \"" + vonly + "\" since " + v.get_version_string() + " >= " + rhs_v.get_version_string();
+                        return false;
+                    }
+                    break;
+
+                case OPERATOR_EARLIER_OR_EQUAL:
+                    vo.set_operator(OPERATOR_LATER_OR_EQUAL);
+                    v.set_operator(vo);
+                    f_versions.push_back(v);
+                    vo.set_operator(OPERATOR_EARLIER_OR_EQUAL);
+                    rhs_v.set_operator(vo);
+                    f_versions.push_back(rhs_v);
+                    if(v.compare(rhs_v) >= COMPARE_EQUAL)
+                    {
+                        f_error = "versions are not in the correct order in range \"" + vonly + "\" since " + v.get_version_string() + " >= " + rhs_v.get_version_string();
+                        return false;
+                    }
+                    break;
+
+                case OPERATOR_LATER:
+                    vo.set_operator(OPERATOR_LATER);
+                    rhs_v.set_operator(vo);
+                    f_versions.push_back(rhs_v);
+                    vo.set_operator(OPERATOR_EARLIER);
+                    v.set_operator(vo);
+                    f_versions.push_back(v);
+                    if(v.compare(rhs_v) <= COMPARE_EQUAL)
+                    {
+                        f_error = "versions are not in the correct order in range \"" + vonly + "\" since " + v.get_version_string() + " <= " + rhs_v.get_version_string();
+                        return false;
+                    }
+                    break;
+
+                case OPERATOR_LATER_OR_EQUAL:
+                    vo.set_operator(OPERATOR_LATER_OR_EQUAL);
+                    rhs_v.set_operator(vo);
+                    f_versions.push_back(rhs_v);
+                    vo.set_operator(OPERATOR_EARLIER_OR_EQUAL);
+                    v.set_operator(vo);
+                    f_versions.push_back(v);
+                    if(v.compare(rhs_v) <= COMPARE_EQUAL)
+                    {
+                        f_error = "versions are not in the correct order in range \"" + vonly + "\" since " + v.get_version_string() + " <= " + rhs_v.get_version_string();
+                        return false;
+                    }
+                    break;
+
+                default:
+                    throw snap_logic_exception("unexpected operators in this second switch(range_op) statement");
+
+                }
+            }
+            else
+            {
+                if(vo.get_operator() == OPERATOR_UNORDERED)
+                {
+                    // default operator is '>='
+                    vo.set_operator(OPERATOR_LATER_OR_EQUAL);
+                }
+                v.set_operator(vo);
+                f_versions.push_back(v);
+            }
+        }
+
+        // skip the version including the ')'
+        pos = end + 1;
+
+        // skip the spaces (because of the simplied there should be 1 at most)
+        while(pos < d.length() && isspace(d.at(pos).unicode()))
+        {
+            ++pos;
+        }
+    }
+
+    // read list of browsers
+    if(pos < d.length() && d.at(pos) == '[')
+    {
+        ++pos;
+        int end(d.indexOf(']'));
+        if(end == -1)
+        {
+            // we could just emit some kind of a warning but then we may not
+            // be able to support additional features later...
+            f_error = "Invalid browser dependency list, the list of browsers must end with a ']'";
+            return false;
+        }
+        QString const browsers(d.mid(pos, end - pos));
+        QStringList const browser_list(browsers.split(',', QString::SkipEmptyParts));
+        int const max(browser_list.size());
+        for(int i(0); i < max; ++i)
+        {
+            QString const bn(browser_list[i].trimmed());
+            if(bn.isEmpty())
+            {
+                // this happens because of the trimmed()
+                continue;
+            }
+            if(!validate_name(bn, f_error))
+            {
+                return false;
+            }
+            name browser;
+            browser.set_name(bn);
+            f_browsers.push_back(browser);
+        }
+
+        pos = end + 1;
+
+        // skip the spaces (because of the simplied there should be none here)
+        while(pos < d.length() && isspace(d.at(pos).unicode()))
+        {
+            ++pos;
+        }
+    }
+
+    if(pos != d.length())
+    {
+        f_error = "left over data at the end of the dependency string \"" + dependency_string + "\"";
+        return false;
+    }
+
+    return true;
+}
+
+
+/** \brief Get the canonicalized dependency string.
+ *
+ * When you set the dependency string with set_dependency() the string
+ * may miss some spaces or include additional spaces, some versions may
+ * end with ".0" or some numbers start with 0 (i.e. "5.03") and
+ * additional commas may be found in lists of versions and browsers.
+ *
+ * This function returned a fully cleaned up string with the dependency
+ * information as intended by the specification.
+ */
+QString dependency::get_dependency_string() const
+{
+    QString dep(f_name.get_name());
+
+    int const max_versions(f_versions.count());
+    if(max_versions > 0)
+    {
+        dep += " (" + f_versions[0].get_opversion_string();
+        for(int i(1); i < max_versions; ++i)
+        {
+            dep += ", " + f_versions[i].get_opversion_string();
+        }
+        dep += ")";
+    }
+
+    int const max_browsers(f_browsers.count());
+    if(max_browsers > 0)
+    {
+        dep += " [" + f_browsers[0].get_name();
+        for(int i(1); i < max_browsers; ++i)
+        {
+            dep += ", " + f_browsers[i].get_name();
+        }
+        dep += "]";
+    }
+
+    return dep;
+}
+
+
+/** \brief Check the validity of a dependency declaration.
+ *
+ * This function retrieves the validity of the dependency.
+ *
+ * This includes the validity of the dependency object itself, the name,
+ * all the versions, and all the browser names.
+ *
+ * \return true if all the information is considered valid.
+ */
+bool dependency::is_valid() const
+{
+    if(!f_error.isEmpty() || !f_name.is_valid())
+    {
+        return false;
+    }
+
+    // loop through all the versions
+    int const max_versions(f_versions.size());
+    for(int i(0); i < max_versions; ++i)
+    {
+        if(!f_versions[i].is_valid())
+        {
+            return false;
+        }
+    }
+
+    // loop through all the browsers
+    int const max_browsers(f_browsers.size());
+    for(int i(0); i < max_browsers; ++i)
+    {
+        if(!f_browsers[i].is_valid())
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+
+} // namespace snap_version
 } // namespace snap
 // vim: ts=4 sw=4 et

@@ -23,6 +23,7 @@
 #include "dom_util.h"
 #include "snap_magic.h"
 #include "snap_image.h"
+#include "snap_version.h"
 #include <iostream>
 #include <openssl/md5.h>
 #pragma GCC diagnostic push
@@ -52,14 +53,17 @@ char const *get_name(name_t name)
     case SNAP_NAME_CONTENT_ATTACHMENT:
         return "content::attachment";
 
-    case SNAP_NAME_CONTENT_ATTACHMENT_PATH_END:
-        return "path";
+    case SNAP_NAME_CONTENT_ATTACHMENT_DEPENDENCY:
+        return "content::attachment::dependency";
 
     case SNAP_NAME_CONTENT_ATTACHMENT_FILENAME:
         return "content::attachment::filename";
 
     case SNAP_NAME_CONTENT_ATTACHMENT_MIME_TYPE:
         return "content::attachment::mime_type";
+
+    case SNAP_NAME_CONTENT_ATTACHMENT_PATH_END:
+        return "path";
 
     case SNAP_NAME_CONTENT_BODY:
         return "content::body";
@@ -1411,6 +1415,47 @@ void attachment_file::set_update_time(int64_t time)
 }
 
 
+/** \brief Set the dependencies of this attachment.
+ *
+ * Attachments can be given dependencies, with versions, and specific
+ * browsers. This is particularly useful for JS and CSS files as in
+ * this way we can server exactly what is necessary.
+ *
+ * One dependency looks like a name, one or two versions with an operator
+ * (usually \< to define a range), and a browser name. The versions are
+ * written between parenthesis and the browser name between square brackets:
+ *
+ * \code
+ * <attachment name> ...
+ *    ... (<version>) ...
+ *    ... (<op> <version>) ...
+ *    ... (<version> <op> <version>) ...
+ *    ... (<version>, <version>, ...) ...
+ *    ... (<op> <version>, <op> <version>, ...) ...
+ *       ... [<browser>]
+ *       ... [<browser>, <browser>, ...]
+ * \endcode
+ *
+ * When two versions are used, the operator must be \<. It defines a range
+ * and any versions defined between the two versions are considered valid.
+ * The supported operators are =, \<, \<=, \>, \>=, !=, and ,. The comma
+ * can be used to define a set of versions.
+ *
+ * Each attachment name must be defined only once.
+ *
+ * Attachments that are given dependencies are also added to a special
+ * list so they can be found instantly. This is important since when a page
+ * says to insert a JavaScript file, all its dependencies have to be added
+ * too and that can be done automatically using these dependencies.
+ *
+ * \param[in] dependencies  The dependencies of this attachment.
+ */
+void attachment_file::set_dependencies(dependency_list_t& dependencies)
+{
+    f_dependencies = dependencies;
+}
+
+
 /** \brief Set the name of the field the attachment comes from.
  *
  * This function is used by the load_attachment() function to set the
@@ -1716,6 +1761,20 @@ int64_t attachment_file::get_creation_time() const
 int64_t attachment_file::get_update_time() const
 {
     return f_update_time;
+}
+
+
+/** \brief Retrieve the list of dependencies of an attachment.
+ *
+ * The list of dependencies on an attachment are set with the
+ * set_dependencies() function. These are used to determine which files are
+ * required in a completely automated way.
+ *
+ * \return The list of dependency of this attachment.
+ */
+dependency_list_t const& attachment_file::get_dependencies() const
+{
+    return f_dependencies;
 }
 
 
@@ -2331,7 +2390,7 @@ bool content::create_attachment_impl(attachment_file const& file)
                 // to a new file (i.e. the current md5 points to a
                 // different file)
                 //
-                // TODO: nothing should be just dropped in our system,
+                // TODO: nothing should just be dropped in our system,
                 //       instead it should be moved to some form of
                 //       trashcan; in this case we'd use a new name
                 //       for the reference although if the whole row
@@ -2375,6 +2434,70 @@ bool content::create_attachment_impl(attachment_file const& file)
     // XXX we could also save the modification and creation times, but the
     //     likelihood that these exist is so small that I'll skip at this
     //     time; we do save them in the files table
+
+    {
+        dependency_list_t const& deps(file.get_dependencies());
+        QMap<QString, bool> found;
+        int const max(deps.size());
+        for(int i(0); i < max; ++i)
+        {
+            snap_version::dependency d;
+            if(!d.set_dependency(deps[i]))
+            {
+                // simply invalid...
+                SNAP_LOG_ERROR("Dependency \"")(deps[i])("\" is not valid. We cannot add it to the database.");;
+            }
+            else
+            {
+                QString const dependency_name(d.get_name());
+                if(found.contains(dependency_name))
+                {
+                    // not unique
+                    SNAP_LOG_ERROR("Dependency \"")(deps[i])("\" was specified more than once. We cannot safely add the same dependency (same name) more than once.");;
+                }
+                else
+                {
+                    // save the canonicalized version of the dependency in the database
+                    found[dependency_name] = true;
+                    attachment_row->cell(get_name(SNAP_NAME_CONTENT_ATTACHMENT_DEPENDENCY) + ("::" + dependency_name))->setValue(d.get_dependency_string());
+                }
+            }
+        }
+    }
+
+    // We depend on the JavaScript plugin so we have to do some of its
+    // work here...
+    if(attachment_cpath.startsWith("js/"))
+    {
+        // All javascripts my be added to a list so their dependencies
+        // functions as expected.
+        snap_version::versioned_filename js_filename(".js");
+        js_filename.set_filename(filename);
+        QSharedPointer<QtCassandra::QCassandraRow> dependencies_row(files_table->row(javascript::get_name(javascript::SNAP_NAME_JAVASCRIPT_ROW)));
+        // the name is formatted to allow us to quickly find the files
+        // we're interested; in that we put the name first, then the
+        // browser, and finally the version which is saved as integers
+        QByteArray jskey;
+        jskey.append(js_filename.get_name());
+        QString const browser(js_filename.get_browser());
+        if(browser.isEmpty())
+        {
+            jskey.append("_any");
+        }
+        else
+        {
+            jskey.append('_');
+            jskey.append(browser);
+        }
+        jskey.append('_');
+        snap_version::version_numbers_vector_t const& version(js_filename.get_version());
+        int const max(version.size());
+        for(int i(0); i < max; ++i)
+        {
+            QtCassandra::appendUInt32Value(jskey, version[i]);
+        }
+        dependencies_row->cell(jskey)->setValue(md5);
+    }
 
     // mark that attachment as final (i.e. cannot create children below an attachment)
     signed char final(1);
@@ -3099,11 +3222,30 @@ void content::add_xml(const QString& plugin_name)
                 {
                     throw content_exception_invalid_content_xml("all <attachment> tags supplied to add_xml() must include a valid \"type\" attribute");
                 }
+
                 // XXX Should we prevent filenames that do not represent
                 //     a resource? If not a resource, changes that it is not
                 //     accessible to the server are high unless the file was
                 //     installed in a shared location (/usr/share/snapwebsites/...)
-                ca.f_filename = element.text();
+                QDomElement path_element(child.firstChildElement("path"));
+                if(element.isNull())
+                {
+                    throw content_exception_invalid_content_xml("all <attachment> tags supplied to add_xml() must include a valid <paht> child tag");
+                }
+                ca.f_filename = path_element.text();
+
+                // there can be any number of dependencies
+                // syntax is defined in the JavaScript plugin, something
+                // like Debian "Depend" field:
+                //
+                //   <name> ( '(' (<version> <operator>)* <version> ')' )?
+                //
+                QDomElement dependency_element(child.firstChildElement("dependency"));
+                while(!dependency_element.isNull())
+                {
+                    ca.f_dependencies.push_back(dependency_element.text());
+                    dependency_element = dependency_element.nextSiblingElement("dependency");
+                }
 
                 ca.f_path = path;
 
@@ -3558,6 +3700,7 @@ void content::on_save_content()
             file.set_attachment_type(a->f_type);
             file.set_creation_time(f_snap->get_start_date());
             file.set_update_time(f_snap->get_start_date());
+            file.set_dependencies(a->f_dependencies);
 
             // post file fields
             file.set_file_name(a->f_field_name);

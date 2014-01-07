@@ -1,5 +1,5 @@
 // Snap Websites Server -- JavaScript WYSIWYG editor
-// Copyright (C) 2013  Made to Order Software Corp.
+// Copyright (C) 2013-2014  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -176,8 +176,7 @@ void editor::initial_update(int64_t variables_timestamp)
 void editor::content_update(int64_t variables_timestamp)
 {
     (void)variables_timestamp;
-
-    content::content::instance()->add_xml(get_name(SNAP_NAME_EDITOR));
+    content::content::instance()->add_xml(get_plugin_name());
 }
 
 

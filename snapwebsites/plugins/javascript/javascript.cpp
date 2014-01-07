@@ -29,6 +29,7 @@
 
 #include "javascript.h"
 #include "plugins.h"
+#include "snap_version.h"
 #include "not_reached.h"
 #include <QScriptEngine>
 #include <QScriptProgram>
@@ -70,6 +71,9 @@ char const *get_name(name_t name)
     case SNAP_NAME_JAVASCRIPT_MINIMIZED_COMPRESSED:
         return "javascript::minimized::compressed";
 
+    case SNAP_NAME_JAVASCRIPT_ROW:
+        return "javascripts";
+
     default:
         // invalid index
         throw snap_logic_exception("invalid SNAP_NAME_JAVASCRIPT_...");
@@ -79,345 +83,8 @@ char const *get_name(name_t name)
 }
 
 
-/** \brief Retrieve the name and version of a JavaScript filename.
- *
- * This function takes a filename and extracts the name and version.
- * This is particularly useful to then user to compare versions and
- * sort them. The version is cut in a set of integers saved in a
- * vector.
- *
- * \important
- * The constructor does NOT throw. If the filename is considered
- * invalid, it sets the reason() and the valid() flag remains false.
- *
- * \param[in] filename  The name of the file to convert.
- * \param[in] extension  The expected extension (".js" for JavaScript files).
- */
-javascript_filename::javascript_filename(QString const& source_filename, QString const& extension)
-    //: f_valid(false) -- auto-init
-    //, f_error("") -- auto-init
-    : f_filename(source_filename)
-    //, f_name("") -- auto-init
-    //, f_version() -- auto-init
-{
-    // the extension must be .js
-    if(!f_filename.endsWith(extension))
-    {
-        f_error = "a file uploaded under /js must have the .js extension, in lowercase. \"" + source_filename + "\" is not valid.";
-        return;
-    }
-
-    // this is expected to be a JavaScript filename
-    // but it may contain a path that we completely ignore here
-    int const last_slash(f_filename.lastIndexOf('/'));
-    if(last_slash != -1)
-    {
-        // remove the path and the extension at the same time (faster)
-        f_filename = f_filename.mid(last_slash + 1, f_filename.length() - last_slash - 1 - 3);
-    }
-    else
-    {
-        // remove the extension
-        f_filename = f_filename.left(f_filename.length() - 3);
-    }
-
-    // size of the filename
-    int const max(f_filename.size());
-    if(max < 4)
-    {
-        // having this test here simplifies a few things in the following code
-        //
-        // name cannot be less than 4 characters since:
-        //    <name>_<version>
-        // with <name> being at least 2 characters, we get 4 minimum
-        f_error = "a JavaScript filename is expected to be at least 4 characters without its \".js\" extension. \"" + source_filename + "\" is not valid.";
-        return;
-    }
-
-    // make sure that the name starts with a letter ([a-z])
-    ushort c(f_filename.at(0).unicode());
-    if(c < 'a' || c > 'z')
-    {
-        // name cannot start with dash (-) or a digit ([0-9])
-        f_error = "a JavaScript filename must start with a letter [a-z]. \"" + source_filename + "\" is not valid.";
-        return;
-    }
-
-    // first we read the name
-    int i(1); // <- 1 because we just checked 0 and it's valid
-    for(;; ++i)
-    {
-        if(i >= max)
-        {
-            f_error = "A JavaScript filename must include a valid name and version; version is missing. \"" + source_filename + "\" is not valid.";
-            return;
-        }
-
-        c = f_filename.at(i).unicode();
-
-        // name ends with a '_'
-        if(c == '_')
-        {
-            // name/version separator
-            if(i < 2)
-            {
-                // if i < 2 then the name is missing or too short
-                f_error = "A JavaScript name, before the underscore (_), must be at least 2 characters. \"" + source_filename + "\" is not valid.";
-                return;
-            }
-            if(f_filename.at(i - 1).unicode() == '-')
-            {
-                // name cannot end with a dash (-)
-                f_error = "A JavaScript name cannot end with a dash (-). \"" + source_filename + "\" is not valid.";
-                return;
-            }
-            f_name = f_filename.left(i);
-            break;
-        }
-
-        if(c == '-')
-        {
-            if(f_filename.at(i - 1).unicode() == '-')
-            {
-                f_error = "A JavaScript name cannot include two dashes (--) one after another. \"" + source_filename + "\" is not valid.";
-                return;
-            }
-        }
-        else if((c < '0' || c > '9')
-             && (c < 'a' || c > 'z'))
-        {
-            // name cannot start with a digit
-            // name can only include [a-z0-9] and dash (-)
-            f_error = "A JavaScript name can only include letters (a-z), digits (0-9), or dashes (-). \"" + source_filename + "\" is not valid.";
-            return;
-        }
-    }
-
-    if(i == max)
-    {
-        f_error = "A JavaScript version is required after the name. \"" + source_filename + "\" is not valid.";
-        return;
-    }
-
-    bool digit(true);
-    int value(0); // note: initialization not required for value (avoid warnings)
-    // start with ++i to skip the '_'
-    for(++i; i < max; ++i)
-    {
-        c = f_filename.at(i).unicode();
-
-        // version
-        if(digit)
-        {
-            if(c < '0' || c > '9')
-            {
-                // versions must start with a digit
-                f_error = "A JavaScript version number is expected at the start and after each period. \"" + source_filename + "\" is not valid.";
-                return;
-            }
-            digit = false;
-            value = c - '0';
-        }
-        else
-        {
-            if(c == '.')
-            {
-                f_version.push_back(value);
-                digit = true;
-            }
-            else
-            {
-                // Debian versions also accept colon (:), dash (-),
-                // letters (a-z), and tilde (~) which we refuse here
-                if(c < '0' || c > '9')
-                {
-                    f_error = "A JavaScript version number only accepts digits (0-9) and periods (.). \"" + source_filename + "\" is not valid.";
-                    return;
-                }
-                value = value * 10 + c - '0';
-            }
-        }
-    }
-    // no need to save the last value if zero (that's the default)
-    if(value != 0)
-    {
-        f_version.push_back(value);
-    }
-
-    // if digit is true we last got a period
-    if(digit)
-    {
-        // version cannot end with a period (.)
-        f_error = "a JavaScript version cannot end with a period. \"" + source_filename + "\" is not valid.";
-        return;
-    }
-}
 
 
-/** \brief Compare two javascript_filename's against each others.
- *
- * This function first makes sure that both filenames are considered
- * valid, if not, the function returns -2.
- *
- * Assuming the two filenames are valid, the function returns:
- *
- * \li -1 if this filename is considered to appear before rhs
- * \li 0 if both filenames are considered equal
- * \li 1 if this filename is considered to appear after rhs
- *
- * \param[in] rhs  The right hand side to compare against this filename.
- *
- * \return -2, -1, 0, or 1 depending on the order (or unordered status)
- */
-int javascript_filename::compare(javascript_filename const& rhs) const
-{
-    if(!f_valid || !rhs.f_valid)
-    {
-        return -2;
-    }
-
-    if(f_name < rhs.f_name)
-    {
-        return -1;
-    }
-    if(f_name > rhs.f_name)
-    {
-        return 1;
-    }
-
-    int const max(std::max(f_version.size(), rhs.f_version.size()));
-    for(int i(0); i < max; ++i)
-    {
-        int l(i >=     f_version.size() ? 0 : static_cast<int>(    f_version[i]));
-        int r(i >= rhs.f_version.size() ? 0 : static_cast<int>(rhs.f_version[i]));
-        if(l < r)
-        {
-            return -1;
-        }
-        if(l > r)
-        {
-            return 1;
-        }
-    }
-
-    return 0;
-}
-
-
-/** \brief Compare two filenames for equality.
- *
- * This function returns true if both filenames are considered equal
- * (i.e. if the compare() function returns 0.)
- *
- * Note that if one or both filenames are considered unordered, the
- * function always returns false.
- *
- * \param[in] rhs  The other filename to compare against.
- *
- * \return true if both filenames are considered equal.
- */
-bool javascript_filename::operator == (javascript_filename const& rhs) const
-{
-    int r(compare(rhs));
-    return r == 0;
-}
-
-
-/** \brief Compare two filenames for differences.
- *
- * This function returns true if both filenames are not considered equal
- * (i.e. if the compare() function returns -1 or 1.)
- *
- * Note that if one or both filenames are considered unordered, the
- * function always returns false.
- *
- * \param[in] rhs  The other filename to compare against.
- *
- * \return true if both filenames are considered different.
- */
-bool javascript_filename::operator != (javascript_filename const& rhs) const
-{
-    int r(compare(rhs));
-    return r == -1 || r == 1;
-}
-
-
-/** \brief Compare two filenames for inequality.
- *
- * This function returns true if this filename is considered to appear before
- * \p rhs filename (i.e. if the compare() function returns -1.)
- *
- * Note that if one or both filenames are considered unordered, the
- * function always returns false.
- *
- * \param[in] rhs  The other filename to compare against.
- *
- * \return true if both filenames are considered inequal.
- */
-bool javascript_filename::operator <  (javascript_filename const& rhs) const
-{
-    int r(compare(rhs));
-    return r == -1;
-}
-
-
-/** \brief Compare two filenames for inequality.
- *
- * This function returns true if this filename is considered to appear before
- * \p rhs filename or both are equal (i.e. if the compare() function
- * returns -1 or 0.)
- *
- * Note that if one or both filenames are considered unordered, the
- * function always returns false.
- *
- * \param[in] rhs  The other filename to compare against.
- *
- * \return true if both filenames are considered inequal.
- */
-bool javascript_filename::operator <= (javascript_filename const& rhs) const
-{
-    int r(compare(rhs));
-    return r == -1 || r == 0;
-}
-
-
-/** \brief Compare two filenames for inequality.
- *
- * This function returns true if this filename is considered to appear after
- * \p rhs filename (i.e. if the compare() function returns 1.)
- *
- * Note that if one or both filenames are considered unordered, the
- * function always returns false.
- *
- * \param[in] rhs  The other filename to compare against.
- *
- * \return true if both filenames are considered inequal.
- */
-bool javascript_filename::operator >  (javascript_filename const& rhs) const
-{
-    int r(compare(rhs));
-    return r > 0;
-}
-
-
-/** \brief Compare two filenames for inequality.
- *
- * This function returns true if this filename is considered to appear before
- * \p rhs filename or both are equal (i.e. if the compare() function
- * returns 0 or 1.)
- *
- * Note that if one or both filenames are considered unordered, the
- * function always returns false.
- *
- * \param[in] rhs  The other filename to compare against.
- *
- * \return true if both filenames are considered inequal.
- */
-bool javascript_filename::operator >= (javascript_filename const& rhs) const
-{
-    int r(compare(rhs));
-    return r >= 0;
-}
 
 
 
@@ -999,11 +666,11 @@ void javascript::on_check_attachment_security(snap_child::post_file_t const& fil
     QString cpath(file.get_filename());
     if(cpath.startsWith("js/") || cpath == "js")
     {
-        javascript_filename js_filename(file.get_filename(), ".js");
-        if(!js_filename.valid())
+        snap_version::versioned_filename js_filename(".js");
+        if(!js_filename.set_filename(file.get_filename()))
         {
             // not considered valid
-            secure.not_permitted(js_filename.error());
+            secure.not_permitted(js_filename.get_error());
             return;
         }
     }

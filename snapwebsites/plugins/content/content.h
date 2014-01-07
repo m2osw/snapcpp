@@ -28,10 +28,13 @@ namespace content
 {
 
 
-enum name_t {
+enum name_t
+{
     SNAP_NAME_CONTENT_ACCEPTED,
     SNAP_NAME_CONTENT_ATTACHMENT,
+    SNAP_NAME_CONTENT_ATTACHMENT_DEPENDENCY,
     SNAP_NAME_CONTENT_ATTACHMENT_FILENAME,
+    SNAP_NAME_CONTENT_ATTACHMENT_JAVASCRIPTS,
     SNAP_NAME_CONTENT_ATTACHMENT_MIME_TYPE,
     SNAP_NAME_CONTENT_ATTACHMENT_PATH_END,
     SNAP_NAME_CONTENT_BODY,
@@ -249,6 +252,9 @@ field_search create_field_search(char const *filename, char const *func, int lin
 #define FIELD_SEARCH    snap::content::create_field_search(__FILE__, __func__, __LINE__, f_snap)
 
 
+
+typedef QVector<QString>            dependency_list_t;
+
 class attachment_file
 {
 public:
@@ -262,6 +268,7 @@ public:
     void                            set_attachment_type(QString const& type);
     void                            set_creation_time(int64_t time);
     void                            set_update_time(int64_t time);
+    void                            set_dependencies(dependency_list_t& dependencies);
 
     void                            set_file_name(QString const& name);
     void                            set_file_filename(QString const& filename);
@@ -283,6 +290,7 @@ public:
     QString const&                  get_attachment_type() const;
     int64_t                         get_creation_time() const;
     int64_t                         get_update_time() const;
+    dependency_list_t const&        get_dependencies() const;
     QString const&                  get_name() const;
 
 private:
@@ -297,6 +305,7 @@ private:
     mutable QString                 f_name;
     int64_t                         f_creation_time;
     int64_t                         f_update_time;
+    dependency_list_t               f_dependencies;
 };
 
 
@@ -328,6 +337,7 @@ public:
         QString             f_type;
         QString             f_path;
         QString             f_filename;
+        dependency_list_t   f_dependencies;
     };
 
     typedef controlled_vars::limited_auto_init<param_type_t, PARAM_TYPE_STRING, PARAM_TYPE_INT64, PARAM_TYPE_STRING> safe_param_type_t;

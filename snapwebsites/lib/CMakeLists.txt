@@ -10,7 +10,7 @@
 #      See the CMake documentation.
 #
 # License:
-#      Copyright (c) 2011-2013 Made to Order Software Corp.
+#      Copyright (c) 2011-2014 Made to Order Software Corp.
 #
 #      http://snapwebsites.org/
 #      contact@m2osw.com
@@ -92,6 +92,7 @@ add_library( ${PROJECT_NAME} SHARED
     snap_thread.cpp         # a C++ thread implementation
     snap_uri.cpp            # URI handling
     snap_utf8.cpp           # UTF-8 functions
+    snap_version.cpp        # extract name, version, browser info from a filename
     snapwebsites.cpp        # server
     tcp_client_server.cpp   # low level TCP/IP that works
     udp_client_server.cpp   # low level UDP/IP that works

@@ -25,17 +25,15 @@
 //
 //   java -jar .../google-js-closure-compiler/compiler.jar \
 //        --warning_level VERBOSE \
+//        --js_output_file /de/vnull \
 //        tests/jquery-for-closure.js \
 //        plugins/content/content_0.0.1.js \
-//        plugins/editor/editor_0.0.1.js \
-//        --js_output_file /de/vnull \
-//        2>&1 | less -S
+//        plugins/editor/editor_0.0.1.js
 //
 // WARNING: output of that command is garbage as far as we're concerned
 //          only the warnings are of interest.
 //
 
-var snapwebsites = {};
 
 /** \brief Snap Editor constructor.
  *

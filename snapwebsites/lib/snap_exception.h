@@ -1,5 +1,5 @@
 // Snap Websites Server -- base exception of the Snap! library
-// Copyright (C) 2011-2012  Made to Order Software Corp.
+// Copyright (C) 2011-2014  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -27,28 +27,28 @@ class snap_exception : public std::runtime_error
 {
 public:
     // no sub-name
-    snap_exception(const char *what_msg) : runtime_error("Snap! Exception: " + std::string(what_msg)) {}
+    snap_exception(const char *what_msg)        : runtime_error("Snap! Exception: " + std::string(what_msg)) {}
     snap_exception(const std::string& what_msg) : runtime_error("Snap! Exception: " + what_msg) {}
-    snap_exception(const QString& what_msg) : runtime_error(("Snap! Exception: " + what_msg).toStdString()) {}
+    snap_exception(const QString& what_msg)     : runtime_error(("Snap! Exception: " + what_msg).toUtf8().data()) {}
 
     // with a sub-name
-    snap_exception(const char *subname, const char *what_msg) : runtime_error("Snap! Exception: " + (subname + std::string(what_msg))) {}
-    snap_exception(const char *subname, const std::string& what_msg) : runtime_error("Snap! Exception: " + (subname + what_msg)) {}
-    snap_exception(const char *subname, const QString& what_msg) : runtime_error(("Snap! Exception: " + (subname + what_msg)).toStdString()) {}
+    snap_exception(const char *subname, const char *what_msg)        : runtime_error(std::string("Snap! Exception:") + subname + ": " + what_msg) {}
+    snap_exception(const char *subname, const std::string& what_msg) : runtime_error(std::string("Snap! Exception:") + subname + ": " + what_msg) {}
+    snap_exception(const char *subname, const QString& what_msg)     : runtime_error(std::string("Snap! Exception:") + subname + ": " + what_msg.toUtf8().data()) {}
 };
 
 class snap_logic_exception : public std::logic_error
 {
 public:
     // no sub-name
-    snap_logic_exception(const char *what_msg) : logic_error("Snap! Exception: " + std::string(what_msg)) {}
+    snap_logic_exception(const char *what_msg)        : logic_error("Snap! Exception: " + std::string(what_msg)) {}
     snap_logic_exception(const std::string& what_msg) : logic_error("Snap! Exception: " + what_msg) {}
-    snap_logic_exception(const QString& what_msg) : logic_error(("Snap! Exception: " + what_msg).toStdString()) {}
+    snap_logic_exception(const QString& what_msg)     : logic_error(("Snap! Exception: " + what_msg).toUtf8().data()) {}
 
     // with a sub-name
-    snap_logic_exception(const char *subname, const char *what_msg) : logic_error("Snap! Exception: " + (subname + std::string(what_msg))) {}
-    snap_logic_exception(const char *subname, const std::string& what_msg) : logic_error("Snap! Exception: " + (subname + what_msg)) {}
-    snap_logic_exception(const char *subname, const QString& what_msg) : logic_error(("Snap! Exception: " + (subname + what_msg)).toStdString()) {}
+    snap_logic_exception(const char *subname, const char *what_msg)        : logic_error(std::string("Snap! Exception:") + subname + ": " + what_msg) {}
+    snap_logic_exception(const char *subname, const std::string& what_msg) : logic_error(std::string("Snap! Exception:") + subname + ": " + what_msg) {}
+    snap_logic_exception(const char *subname, const QString& what_msg)     : logic_error(std::string("Snap! Exception:") + subname + ": " + what_msg.toUtf8().data()) {}
 };
 
 } // namespace snap

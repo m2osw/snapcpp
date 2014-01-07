@@ -1,6 +1,6 @@
 <!--
 Snap Plugin - - snap editor plugin resources
-Copyright (C) 2013  Made to Order Software Corp.
+Copyright (C) 2013-2014  Made to Order Software Corp.
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -20,6 +20,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 <RCC version="1.0">
   <qresource prefix="/plugins/editor">
     <file>content.xml</file>
+  </qresource>
+  <qresource prefix="/js/editor">
+    <file>editor_0.0.1.js</file>
   </qresource>
 </RCC>
 <!--

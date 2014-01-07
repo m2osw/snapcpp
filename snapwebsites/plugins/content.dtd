@@ -35,10 +35,13 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
                to CDATA #REQUIRED
                mode CDATA "1:1">
 
-<!ELEMENT attachment (#PCDATA)>
+<!ELEMENT attachment (path, dependency*)>
 <!ATTLIST attachment name CDATA #REQUIRED
                      type CDATA #REQUIRED
                      owner CDATA #IMPLIED>
+
+<!ELEMENT path (#PCDATA)>
+<!ELEMENT dependency (#PCDATA)>
 
 <!-- HTML tags that are used in default values or background values
      we're not trying to replicate the whole HTML DTD, so we simply here -->
