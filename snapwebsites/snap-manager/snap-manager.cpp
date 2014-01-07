@@ -94,12 +94,6 @@ snap_manager::snap_manager(QWidget *snap_parent)
     b = getChild<QPushButton>(this, "snapStats");
     connect(b, SIGNAL(clicked()), this, SLOT(snapStats()));
 
-    // Cassandra Connect
-    b = getChild<QPushButton>(this, "cassandraConnect");
-    connect(b, SIGNAL(clicked()), this, SLOT(cassandraConnect()));
-    b = getChild<QPushButton>(this, "cassandraDisconnect");
-    connect(b, SIGNAL(clicked()), this, SLOT(cassandraDisconnect()));
-
     // Snap! Server Info
     QListWidget *console = getChild<QListWidget>(this, "snapServerConsole");
     console->addItem("snap::server version: " + QString(snap::server::version()));
@@ -460,8 +454,11 @@ void snap_manager::snapStats()
     }
 }
 
-void snap_manager::cassandraConnect()
+void snap_manager::on_f_cassandraConnectButton_clicked()
 {
+    f_cassandraConnectButton->setEnabled( false );
+    f_cassandraDisconnectButton->setEnabled( false );
+
     if(f_cassandra.isNull()) {
         f_cassandra = new QtCassandra::QCassandra;
     }
@@ -487,6 +484,7 @@ void snap_manager::cassandraConnect()
     // if old != new then disconnect
     if(f_cassandra_host == old_host && f_cassandra_port == old_port && f_cassandra->isConnected()) {
         // nothing changed, stay put
+        f_cassandraConnectButton->setEnabled( true );
         return;
     }
 
@@ -557,10 +555,15 @@ void snap_manager::cassandraConnect()
 
     // we just need to be connected for TAB_SITES
     f_tabs->setTabEnabled(TAB_SITES, true);
+
+    f_cassandraDisconnectButton->setEnabled( true );
 }
 
-void snap_manager::cassandraDisconnect()
+void snap_manager::on_f_cassandraDisconnectButton_clicked()
 {
+    f_cassandraConnectButton->setEnabled( false );
+    f_cassandraDisconnectButton->setEnabled( false );
+
     // disconnect by deleting the object altogether
     delete f_cassandra;
 
@@ -604,6 +607,8 @@ void snap_manager::cassandraDisconnect()
     f_sites_new->setEnabled(false);
     f_sites_save->setEnabled(false);
     f_sites_delete->setEnabled(false);
+
+    f_cassandraConnectButton->setEnabled( true );
 }
 
 void snap_manager::reset_domains_index()

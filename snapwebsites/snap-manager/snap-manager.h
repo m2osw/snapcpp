@@ -45,8 +45,8 @@ private slots:
     void decode_utf8();
     void snapTest();
     void snapStats();
-    void cassandraConnect();
-    void cassandraDisconnect();
+    void on_f_cassandraConnectButton_clicked();
+    void on_f_cassandraDisconnectButton_clicked();
     void reset_domains_index();
     void reset_websites_index();
     void on_hostList_itemClicked(QListWidgetItem *item);
