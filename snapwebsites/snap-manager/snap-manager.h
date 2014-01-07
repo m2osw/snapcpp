@@ -69,6 +69,7 @@ private slots:
     void on_sitesFilter_clicked();
     void on_sitesList_itemClicked(QListWidgetItem *item);
     void quit();
+    void on_about_to_quit();
 
 private:
     enum tabs

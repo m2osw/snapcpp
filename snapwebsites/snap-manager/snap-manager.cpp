@@ -27,6 +27,7 @@
 #include <QMessageBox>
 #include <QCloseEvent>
 #include <QDebug>
+#include <QSettings>
 #include <libtld/tld.h>
 #include <stdio.h>
 
@@ -51,6 +52,15 @@ snap_manager::snap_manager(QWidget *snap_parent)
     : QMainWindow(snap_parent)
 {
     setupUi(this);
+
+    QSettings settings( this );
+    restoreGeometry( settings.value( "geometry", saveGeometry() ).toByteArray() );
+    restoreState   ( settings.value( "state"   , saveState()    ).toByteArray() );
+    //
+    const QVariant cassandra_host( settings.value( "cassandra_host", "127.0.0.1" ) );
+    const QVariant cassandra_port( settings.value( "cassandra_port", 4004        ) );
+    snapServerHost->setText( cassandra_host.toString() );
+    snapServerPort->setText( cassandra_port.toString() );
 
     // Help
     QAction *a = getChild<QAction>(this, "actionSnap_Manager_Help");
@@ -181,10 +191,22 @@ snap_manager::snap_manager(QWidget *snap_parent)
     f_sites_parameter_type->addItem("Floating Point (32 bit)");
     f_sites_parameter_type->addItem("Floating Point (64 bit)");
     f_sites_parameter_type->setCurrentIndex(1);
+
+    connect( qApp, SIGNAL(aboutToQuit()), this, SLOT(on_about_to_quit()) );
 }
 
 snap_manager::~snap_manager()
 {
+}
+
+
+void snap_manager::on_about_to_quit()
+{
+    QSettings settings( this );
+    settings.setValue( "cassandra_host", snapServerHost->text() );
+    settings.setValue( "cassandra_port", snapServerPort->text() );
+    settings.setValue( "geometry",       saveGeometry()         );
+    settings.setValue( "state",          saveState()            );
 }
 
 
@@ -1638,6 +1660,10 @@ void snap_manager::on_websiteDelete_clicked()
 
 bool snap_manager::sitesChanged()
 {
+#if 0
+    // TODO: this always fails, so we need to fix this problem!
+    // f_sites_org_parameter_* are never set.
+    //
     // if something changed we want to warn the user before going further
     if(f_sites_org_parameter_name != f_sites_parameter_name->text()
     || f_sites_org_parameter_value != f_sites_parameter_value->text()
@@ -1650,6 +1676,7 @@ bool snap_manager::sitesChanged()
             return false;
         }
     }
+#endif
 
     return true;
 }
@@ -1812,9 +1839,14 @@ void snap_manager::quit()
 int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
-    app.setApplicationVersion(SNAPWEBSITES_VERSION_STRING);
+    app.setApplicationName   ( "snap-manager"              );
+    app.setApplicationVersion( SNAPWEBSITES_VERSION_STRING );
+    app.setOrganizationDomain( "snapwebsites.org"          );
+    app.setOrganizationName  ( "M2OSW"                     );
+
     snap_manager win;
     win.show();
+
     return app.exec();
 }
 
