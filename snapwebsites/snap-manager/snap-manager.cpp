@@ -57,10 +57,10 @@ snap_manager::snap_manager(QWidget *snap_parent)
     restoreGeometry( settings.value( "geometry", saveGeometry() ).toByteArray() );
     restoreState   ( settings.value( "state"   , saveState()    ).toByteArray() );
     //
-    const QVariant cassandra_host( settings.value( "cassandra_host", "127.0.0.1" ) );
-    const QVariant cassandra_port( settings.value( "cassandra_port", 4004        ) );
-    snapServerHost->setText( cassandra_host.toString() );
-    snapServerPort->setText( cassandra_port.toString() );
+    cassandraHost->setText  ( settings.value( "cassandra_host", "127.0.0.1" ).toString() );
+    cassandraPort->setText  ( settings.value( "cassandra_port", 4004        ).toString() );
+    snapServerHost->setText ( settings.value( "snap_host",      "localhost" ).toString() );
+    snapServerPort->setText ( settings.value( "snap_port",      "9160"      ).toString() );
 
     // Help
     QAction *a = getChild<QAction>(this, "actionSnap_Manager_Help");
@@ -203,8 +203,10 @@ snap_manager::~snap_manager()
 void snap_manager::on_about_to_quit()
 {
     QSettings settings( this );
-    settings.setValue( "cassandra_host", snapServerHost->text() );
-    settings.setValue( "cassandra_port", snapServerPort->text() );
+    settings.setValue( "cassandra_host", cassandraHost->text()  );
+    settings.setValue( "cassandra_port", cassandraPort->text()  );
+    settings.setValue( "snap_host",      snapServerHost->text() );
+    settings.setValue( "snap_port",      snapServerPort->text() );
     settings.setValue( "geometry",       saveGeometry()         );
     settings.setValue( "state",          saveState()            );
 }
