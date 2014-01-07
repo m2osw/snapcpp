@@ -1,0 +1,14 @@
+[Desktop Entry]
+Comment=Manage host, domains and websites for Snap! Websites.
+Encoding=UTF-8
+Exec=/usr/bin/snap-manager
+GenericName=Snap Manager
+Icon=/usr/share/pixmaps/snapmanager.png
+Name=Snap Manager
+Categories=Application;Qt4;Web;
+StartupNotify=true
+Terminal=false
+Type=Application
+X-DCOP-ServiceType=
+X-KDE-SubstituteUID=false
+X-KDE-Username=
