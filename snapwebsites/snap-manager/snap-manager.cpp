@@ -186,7 +186,7 @@ snap_manager::snap_manager(QWidget *snap_parent)
     f_sites_parameter_type->addItem("Floating Point (64 bit)");
     f_sites_parameter_type->setCurrentIndex(1);
 
-    connect( qApp, SIGNAL(aboutToQuit()), this, SLOT(on_about_to_quit()) );
+    connect( qApp, SIGNAL(aboutToQuit()), this, SLOT(OnAboutToQuit()) );
 }
 
 snap_manager::~snap_manager()
@@ -194,7 +194,7 @@ snap_manager::~snap_manager()
 }
 
 
-void snap_manager::on_about_to_quit()
+void snap_manager::OnAboutToQuit()
 {
     QSettings settings( this );
     settings.setValue( "cassandra_host", cassandraHost->text()  );
@@ -1127,7 +1127,11 @@ void snap_manager::on_domainNew_clicked()
     f_domain_org_name = ""; // not editing, this is new
     f_domain_name->setText("");
     f_domain_org_rules = "";
-    f_domain_rules->setText("");
+    f_domain_rules->setText(
+            "main {\n"
+            "\trequired host = \"www\\.\"\n;"
+            "};\n"
+        );
 
     domainWithSelection();
     f_domain_delete->setEnabled(false);
@@ -1494,6 +1498,12 @@ void snap_manager::on_websiteNew_clicked()
     f_website_name->setText("");
     f_website_org_rules = "";
     f_website_rules->setText("");
+    f_website_rules->setText(
+            "main {\n"
+            "\tprotocol = \"http\"\n;"
+            "\tport = \"80\";\n"
+            "};\n"
+        );
 
     websiteWithSelection();
     f_website_delete->setEnabled(false);

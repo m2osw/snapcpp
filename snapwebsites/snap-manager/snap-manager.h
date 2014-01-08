@@ -49,7 +49,7 @@ private slots:
     void on_f_cassandraDisconnectButton_clicked();
     void reset_domains_index();
     void reset_websites_index();
-    void on_about_to_quit();
+    void OnAboutToQuit();
     void on_hostList_itemClicked(QListWidgetItem *item);
     void on_hostFilter_clicked();
     void on_hostNew_clicked();
