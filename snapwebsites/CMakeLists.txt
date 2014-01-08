@@ -133,7 +133,4 @@ install(
         share/snapwebsites/layouts
 )
 
-install( FILES snapmanager.desktop  DESTINATION share/applications )
-install( FILES snap-medium-icon.png DESTINATION share/pixmaps/ RENAME snapmanager.png )
-
 # vim: ts=4 sw=4 et nocindent

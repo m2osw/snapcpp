@@ -101,8 +101,8 @@ target_link_libraries( ${PROJECT_NAME}
     dl
 )
 
-install(
-    TARGETS snap-manager RUNTIME DESTINATION bin
-)
+install( TARGETS snap-manager RUNTIME DESTINATION bin )
+install( FILES snapmanager.desktop  DESTINATION share/applications )
+install( FILES snap-medium-icon.png DESTINATION share/pixmaps/ RENAME snapmanager.png )
 
-# vim: ts=4 sw=4 et
+# vim: ts=4 sw=4 et nocindent
