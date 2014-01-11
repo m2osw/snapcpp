@@ -119,7 +119,7 @@ foreach( var_idx RANGE 0 ${whole_range} ${arg_count} )
 		OUTPUT ${lint_file}
 		COMMAND ${BASH} ${lint_script} ${xml_file} ${lint_file} ${dtd_file}
 		WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-		DEPENDS ${xml_file}
+		DEPENDS ${xml_file} ${dtd_file}
 		COMMENT "running xmllint on ${xml_file}"
 	)
 	list( APPEND lint_file_list ${lint_file} )
