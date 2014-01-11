@@ -36,17 +36,22 @@
 #      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
-
 ##
 project(cassview)
 
 include_directories(
-    "${CMAKE_CURRENT_SOURCE_DIR}"
+	"${CMAKE_CURRENT_SOURCE_DIR}"
+	"${CMAKE_CURRENT_BINARY_DIR}"
 )
 
+QT4_WRAP_UI(UI_FILES
+	MainWindow.ui
+)
 
 add_executable(${PROJECT_NAME}
+	MainWindow.cpp
     main.cpp
+	${UI_FILES}
 )
 
 # while developing you may need to set LD_LIBRARY_PATH
