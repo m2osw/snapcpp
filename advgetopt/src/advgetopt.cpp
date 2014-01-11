@@ -1085,53 +1085,21 @@ std::string getopt::assemble_options( status_t status, std::string& default_arg_
 
                 }
 
-#if 0
-                if(status == no_error_nobr)
+                // Output argument string with help
+                //
+                ss << "   ";
+                std::string options( opt_ss.str() );
+                if( options.size() < 30 )
                 {
-#endif
-                    // in this case the user did not want any newlines
-                    // in the output (important for help2man tool)
-                    ss << "   " << opt_ss.str() << "   " << f_options[i].f_help << std::endl;
-#if 0
+                    ss << options << std::setw( 30 - options.size() ) << " ";
                 }
                 else
                 {
-                    // TODO: WTH does this code do?! I've remarked it out for now because I can't figure it out...
-                    p = strlen(buf);
-                    bool nl(p >= 23);
-                    if(!nl)
-                    {
-                        for(; p < 25; ++p)
-                        {
-                            buf[p] = ' ';
-                        }
-                        buf[p] = '\0';
-                    }
-                    printf("   %s%s", buf, nl ? "\n" : "");
-
-                    p = strlen(h);
-                    int l(1);
-                    for(; p > 0; p -= l, h += l)
-                    {
-                        if(h[0] == ' ')
-                        {
-                            l = 1;
-                            continue;
-                        }
-                        l = std::min(static_cast<int>(p), nl ? 71 : 51);
-                        while(l > 0 && h[l] != ' ' && h[l] != '\0')
-                        {
-                            --l;
-                        }
-                        if(nl)
-                        {
-                            printf("        ");
-                        }
-                        printf("%.*s\n", l, h);
-                        nl = true;
-                    }
+                    options.resize(30);
+                    ss << options;
                 }
-#endif
+                //
+                ss << f_options[i].f_help << std::endl;
             }
         }
     }
