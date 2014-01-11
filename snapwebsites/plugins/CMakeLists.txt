@@ -54,7 +54,12 @@ file( APPEND ${lint_script} "${XMLLINT} --dtdvalid $3 --output $2 $1 && exit 0 |
 #
 function( snap_validate_xml XML_FILE DTD_FILE )
 	get_filename_component( FULL_XML_PATH ${XML_FILE} ABSOLUTE )
-	set_property( GLOBAL APPEND PROPERTY XML_FILE_LIST "${FULL_XML_PATH}" "${DTD_FILE}" "${CMAKE_CURRENT_BINARY_DIR}" )
+	if( EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${DTD_FILE}" )
+		set( DTD_PATH "${CMAKE_CURRENT_SOURCE_DIR}/${DTD_FILE}" )
+	else()
+		set( DTD_PATH "${snapwebsites_plugins_SOURCE_DIR}/${DTD_FILE}" )
+	endif()
+	set_property( GLOBAL APPEND PROPERTY XML_FILE_LIST "${FULL_XML_PATH}" "${DTD_PATH}" "${CMAKE_CURRENT_BINARY_DIR}" )
 endfunction()
 
 
@@ -105,11 +110,10 @@ math( EXPR whole_range "${range} - 1" )
 foreach( var_idx RANGE 0 ${whole_range} ${arg_count} )
 	list( GET XML_FILE_LIST ${var_idx} xml_file )
 	math( EXPR next_idx "${var_idx} + 1" )
-	list( GET XML_FILE_LIST ${next_idx} base_dtd_file )
+	list( GET XML_FILE_LIST ${next_idx} dtd_file )
 	math( EXPR next_idx "${next_idx} + 1" )
 	list( GET XML_FILE_LIST ${next_idx} binary_dir )
 	#
-	set( dtd_file  "${snapwebsites_plugins_SOURCE_DIR}/${base_dtd_file}" )
 	get_filename_component( base_xml_file ${xml_file} NAME )
 	set( lint_file "${binary_dir}/${base_xml_file}.lint" )
 	#
