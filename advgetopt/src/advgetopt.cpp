@@ -38,6 +38,9 @@
 #include    <string.h>
 
 #include    <fstream>
+#include		<iostream>
+#include		<iomanip>
+#include    <sstream>
 
 
 /** \brief The advgetopt environment to parse command line options.
@@ -988,85 +991,58 @@ std::string getopt::get_string(const std::string& name, int idx) const
 }
 
 
-/** \brief Print the tool usage and then exit the program.
+/** \brief Assemble the cmdline arguments.
  *
- * This function prints the usage of this tool and then calls exit(1).
- * In case of our tests, the exit(1) can be transformed in a throw that
- * we can easily capture.
+ * Assembles the command line arguments into a string and returns
+ * the string.
  *
- * \todo
- * Change the format string with a message option. As far as I know the
- * wpkg_output does not use the getopt classes so we could use that.
- *
- * \param[in] status  The status when calling this function.
- * \param[in] msg  A C-like string format (with %s, %d, etc.).
  */
-void getopt::usage(status_t status, const char *msg, ...)
+std::string getopt::assemble_options( status_t status, std::string& default_arg_help ) const
 {
-    va_list ap;
-    va_start(ap, msg);
+    std::stringstream ss;
+
     unsigned char errflag(0);
     const bool no_error_status = status == no_error || status == no_error_nobr;
-    if(!no_error_status)
+    if( !no_error_status )
     {
         errflag = GETOPT_FLAG_SHOW_USAGE_ON_ERROR;
-        switch(status)
-        {
-        // other cases are eliminated by the test before this if() block
-        //case no_error:
-        //case no_error_nobr:
-
-        case warning:
-            printf("warning:%s: ", f_program_name.c_str());
-            break;
-
-        case fatal:
-            printf("fatal error:%s: ", f_program_name.c_str());
-            break;
-
-        default: //case error:
-            printf("error:%s: ", f_program_name.c_str());
-            break;
-
-        }
-        vprintf(msg, ap);
-        printf(".\n");
     }
-    for(int i(0); f_options[i].f_arg_mode != end_of_options; ++i)
+
+    for( int i(0); f_options[i].f_arg_mode != end_of_options; ++i )
     {
         // ignore entries with a NULL pointer
         // ignore entries representing an alias
         // only display error marked entries if error status
         if(f_options[i].f_help
-        && (f_options[i].f_flags & advgetopt::getopt::GETOPT_FLAG_ALIAS) == 0
-        && (((f_options[i].f_flags & errflag) == 0) ^ !no_error_status))
+            && (f_options[i].f_flags & advgetopt::getopt::GETOPT_FLAG_ALIAS) == 0
+            && (((f_options[i].f_flags & errflag) == 0) ^ !no_error_status))
         {
-            if(f_options[i].f_arg_mode == help_argument)
+            if( f_options[i].f_arg_mode == help_argument )
             {
-                printf("%s\n", f_options[i].f_help);
+                ss << f_options[i].f_help << std::endl;
             }
             else
             {
-                char buf[256];
-                buf[sizeof(buf) - 1] = '\0';
+                std::stringstream opt_ss;
                 if(f_options[i].f_opt != '\0' && f_options[i].f_name != NULL)
                 {
                     // both options!
-                    snprintf(buf, sizeof(buf), "--%s or -%c", f_options[i].f_name, f_options[i].f_opt);
+                    opt_ss << "--" << f_options[i].f_name << " or -" << f_options[i].f_opt;
                 }
                 else if(f_options[i].f_opt != '\0')
                 {
-                    snprintf(buf, sizeof(buf), "-%c", f_options[i].f_opt);
+                    opt_ss << "-" << f_options[i].f_opt;
                 }
                 else if(f_options[i].f_name != NULL)
                 {
-                    snprintf(buf, sizeof(buf), "--%s", f_options[i].f_name);
+                    opt_ss << "--" << f_options[i].f_name;
                 }
                 else
                 {
-                    throw getopt_exception_invalid("an option has help but no option name");
+                    //throw getopt_exception_invalid("an option has help but no option name");
+                    default_arg_help = f_options[i].f_help;
+                    continue;
                 }
-                size_t p(strlen(buf));
                 switch(f_options[i].f_arg_mode)
                 {
                 case no_argument:
@@ -1074,38 +1050,34 @@ void getopt::usage(status_t status, const char *msg, ...)
 
                 case required_argument:
                 case required_long:
-                    snprintf(buf + p, sizeof(buf) - p, " <arg>");
+                    opt_ss << " <arg>";
                     break;
 
                 case optional_argument:
                 case optional_long:
-                    snprintf(buf + p, sizeof(buf) - p, " [<arg>]");
+                    opt_ss << " [<arg>]";
                     break;
 
                 case required_multiple_argument:
                 case required_multiple_long:
-                    snprintf(buf + p, sizeof(buf) - p, " <arg> {<arg>}");
+                    opt_ss << " <arg> {<arg>}";
                     break;
 
                 case optional_multiple_argument:
                 case optional_multiple_long:
-                    snprintf(buf + p, sizeof(buf) - p, " {<arg>}");
+                    opt_ss << " {<arg>}";
                     break;
 
                 case default_argument:
                     // we want to mark the flag as optional
-                    memmove(buf + 1, buf, sizeof(buf) - 1);
-                    buf[0] = '[';
-                    ++p;
-                    snprintf(buf + p, sizeof(buf) - p, "] <arg>");
+                    opt_ss.str( "[" + opt_ss.str() );
+                    opt_ss << "] <arg>";
                     break;
 
                 case default_multiple_argument:
                     // we want to mark the flag as optional
-                    memmove(buf + 1, buf, sizeof(buf) - 1);
-                    buf[0] = '[';
-                    ++p;
-                    snprintf(buf + p, sizeof(buf) - p, "] {<arg>}");
+                    opt_ss.str( "[" + opt_ss.str() );
+                    opt_ss << "] {<arg>}";
                     break;
 
                 default:
@@ -1113,15 +1085,18 @@ void getopt::usage(status_t status, const char *msg, ...)
 
                 }
 
-                const char *h(f_options[i].f_help);
+#if 0
                 if(status == no_error_nobr)
                 {
+#endif
                     // in this case the user did not want any newlines
                     // in the output (important for help2man tool)
-                    printf("   %s   %s\n", buf, h);
+                    ss << "   " << opt_ss.str() << "   " << f_options[i].f_help << std::endl;
+#if 0
                 }
                 else
                 {
+                    // TODO: WTH does this code do?! I've remarked it out for now because I can't figure it out...
                     p = strlen(buf);
                     bool nl(p >= 23);
                     if(!nl)
@@ -1156,11 +1131,88 @@ void getopt::usage(status_t status, const char *msg, ...)
                         nl = true;
                     }
                 }
+#endif
             }
         }
     }
+
+    return ss.str();
+}
+
+
+/** \brief Print the tool usage and then exit the program.
+ *
+ * This function prints the usage of this tool and then calls exit(1).
+ * In case of our tests, the exit(1) can be transformed in a throw that
+ * we can easily capture.
+ *
+ * \todo
+ * Change the format string with a message option. As far as I know the
+ * wpkg_output does not use the getopt classes so we could use that.
+ *
+ * \param[in] status  The status when calling this function.
+ * \param[in] msg  A C-like string format (with %s, %d, etc.).
+ */
+void getopt::usage(status_t status, const char *msg, ...)
+{
+    std::string default_arg_help;
+    std::string options( assemble_options( status, default_arg_help ) );
+
+    va_list ap;
+    va_start(ap, msg);
+    unsigned char errflag(0);
+    const bool no_error_status = status == no_error || status == no_error_nobr;
+    if( !no_error_status )
+    {
+        errflag = GETOPT_FLAG_SHOW_USAGE_ON_ERROR;
+        switch(status)
+        {
+        // other cases are eliminated by the test before this if() block
+        //case no_error:
+        //case no_error_nobr:
+
+        case warning:
+            printf("warning:%s: ", f_program_name.c_str());
+            break;
+
+        case fatal:
+            printf("fatal error:%s: ", f_program_name.c_str());
+            break;
+
+        default: //case error:
+            printf("error:%s: ", f_program_name.c_str());
+            break;
+
+        }
+        vprintf(msg, ap);
+        printf(".\n");
+    }
+
+    std::cout << std::endl << "usage: " << f_program_name;
+    //
+    if( !options.empty() )
+    {
+        std::cout << " [options]";
+    }
+
+    if( !default_arg_help.empty() )
+    {
+        std::cout << " " << default_arg_help;
+    }
+
+    if( options.empty() )
+    {
+        std::cout << std::endl;
+    }
+    else
+    {
+        std::cout << std::endl << "options:" << std::endl;
+        std::cout << options;
+    }
+
     // A little flush helps greatly under MS-Windows
-    fflush(stdout);
+    //
+    std::cout << std::flush;
 #ifdef ADVGETOPT_THROW_FOR_EXIT
     throw getopt_exception_exiting("usage was called, throwing an exception instead of calling exit(1)...");
 #else

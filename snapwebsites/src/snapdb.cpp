@@ -51,28 +51,10 @@ namespace
     {
         {
             '\0',
-            advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
-            NULL,
-            NULL,
-            "Usage: snapdb [--opts] [table [row]]",
-            advgetopt::getopt::help_argument
-        },
-        // no args
-        {
-            '\0',
             0,
             NULL,
             NULL,
             "without arguments, all tables are outputted for the current context.",
-            advgetopt::getopt::help_argument
-        },
-        // OPTIONS
-        {
-            '\0',
-            0,
-            NULL,
-            NULL,
-            "options:",
             advgetopt::getopt::help_argument
         },
         {

@@ -79,23 +79,6 @@ namespace
     {
         {
             '\0',
-            advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
-            NULL,
-            NULL,
-            "Usage: snap.cgi [-<opt>]",
-            advgetopt::getopt::help_argument
-        },
-        // OPTIONS
-        {
-            '\0',
-            0,
-            NULL,
-            NULL,
-            "options:",
-            advgetopt::getopt::help_argument
-        },
-        {
-            '\0',
             advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_CONFIGURATION_FILE,
             "snapserver",
             NULL,
