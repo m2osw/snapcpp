@@ -46,10 +46,12 @@ include_directories(
 
 QT4_WRAP_UI(UI_FILES
 	MainWindow.ui
+	SettingsDialog.ui
 )
 
 add_executable(${PROJECT_NAME}
 	MainWindow.cpp
+	SettingsDialog.cpp
     main.cpp
 	${UI_FILES}
 )
