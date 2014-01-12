@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>520</width>
+    <width>290</width>
     <height>365</height>
    </rect>
   </property>
@@ -22,25 +22,25 @@
      <layout class="QHBoxLayout" name="horizontalLayout">
       <item>
        <layout class="QFormLayout" name="formLayout">
+        <property name="fieldGrowthPolicy">
+         <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+        </property>
         <item row="0" column="0">
          <widget class="QLabel" name="label">
           <property name="text">
-           <string>Hostname/ip address:</string>
+           <string>Enter &quot;host:port&quot;:</string>
           </property>
          </widget>
         </item>
         <item row="0" column="1">
-         <widget class="QLineEdit" name="lineEdit"/>
-        </item>
-        <item row="1" column="0">
-         <widget class="QLabel" name="label_2">
+         <widget class="QLineEdit" name="lineEdit">
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Enter the hostname and the port number of the Cassandra server you wish to access. Valid entries are:&lt;/p&gt;&lt;p&gt;hostname:port&lt;/p&gt;&lt;p&gt;ipaddress:port&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;Examples:&lt;/p&gt;&lt;p&gt;127.0.0.1:9160&lt;/p&gt;&lt;p&gt;localhost:9160&lt;/p&gt;&lt;p&gt;myserver:9160&lt;/p&gt;&lt;p&gt;123.45.678.910:9160&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
           <property name="text">
-           <string>Port number:</string>
+           <string>127.0.0.1:9160</string>
           </property>
          </widget>
-        </item>
-        <item row="1" column="1">
-         <widget class="QLineEdit" name="lineEdit_2"/>
         </item>
        </layout>
       </item>
@@ -54,7 +54,11 @@
      </property>
      <layout class="QHBoxLayout" name="horizontalLayout_2">
       <item>
-       <widget class="QListView" name="f_context"/>
+       <widget class="QListView" name="f_context">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Select the context you wish to access here. You must first enter a valid host:port above.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+       </widget>
       </item>
      </layout>
     </widget>

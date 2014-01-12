@@ -1,14 +1,16 @@
 #include "SettingsDialog.h"
-#include "ui_SettingsDialog.h"
 
-SettingsDialog::SettingsDialog(QWidget *parent) :
-    QDialog(parent),
-    ui(new Ui::SettingsDialog)
+SettingsDialog::SettingsDialog(QWidget *p)
+    : QDialog(p)
 {
-    ui->setupUi(this);
+    setupUi( this );
 }
 
 SettingsDialog::~SettingsDialog()
 {
-    delete ui;
+}
+
+void SettingsDialog::on_lineEdit_editingFinished()
+{
+    // TODO: Add code which refreshes the context list.
 }

@@ -1,13 +1,12 @@
-#ifndef MAINWINDOW_H
-#define MAINWINDOW_H
+#pragma once
+
+#include "ui_MainWindow.h"
 
 #include <QMainWindow>
 
-namespace Ui {
-class MainWindow;
-}
-
-class MainWindow : public QMainWindow
+class MainWindow
+        : public QMainWindow
+        , Ui::MainWindow
 {
     Q_OBJECT
 
@@ -16,7 +15,5 @@ public:
     ~MainWindow();
 
 private:
-    Ui::MainWindow *ui;
 };
 
-#endif // MAINWINDOW_H
