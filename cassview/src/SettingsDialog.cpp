@@ -54,6 +54,8 @@ SettingsDialog::SettingsDialog(QWidget *p)
     f_buttonBox->button( QDialogButtonBox::Ok )->setEnabled( true );
 
     f_context->setModel( &f_model );
+
+    updateContextList();
 }
 
 
@@ -95,7 +97,7 @@ void SettingsDialog::updateContextList()
     }
 
     f_server = full_server_name.left( colon_pos );
-    f_port   = full_server_name.right( colon_pos );
+    f_port   = full_server_name.mid ( colon_pos+1 );
 
     QCassandra     cassandra;
     if( !cassandra.connect( f_server.toString(), f_port.toInt() ) )

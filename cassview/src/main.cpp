@@ -37,10 +37,24 @@
 
 #include "qt4.h"
 
+#include "MainWindow.h"
+
 using namespace QtCassandra;
 
-int main(int /*argc*/, char * /*argv*/[])
+int main( int argc, char * argv[] )
 {
+    QApplication app(argc, argv);
+    app.setApplicationName    ( "cassview"         );
+    app.setApplicationVersion ( "0.0.1"            );
+    app.setOrganizationDomain ( "snapwebsites.org" );
+    app.setOrganizationName   ( "M2OSW"            );
+
+    MainWindow win;
+    win.show();
+
+    return app.exec();
+
+#if 0
     QCassandra     cassandra;
 
     //cassandra.connect( "localhost", 9160, true );
@@ -80,7 +94,6 @@ int main(int /*argc*/, char * /*argv*/[])
                     });
             });
 
-#if 0
     QSharedPointer<QtCassandra::QCassandraContext> context = cassandra.context("browse_test");
 	//cassandra["browse_test"]["my_table"]["1"]["name"] = "This is my name";
     QSharedPointer<QtCassandra::QCassandraTable> table = context->table("my_table");
