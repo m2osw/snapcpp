@@ -50,6 +50,7 @@ QT4_WRAP_UI(UI_FILES
 )
 
 add_executable(${PROJECT_NAME}
+	qt4.h
 	MainWindow.cpp
 	SettingsDialog.cpp
     main.cpp
