@@ -2973,8 +2973,8 @@ SNAP_LOG_DEBUG("attaching ")(file.get_file().get_filename())(", attachment_key =
                             working_version = working_version.left(pos);
                         }
                         bool ok;
-                        branch_revision_t b(working_version.toLong(&ok, 10));
-                        if(!ok || static_cast<int32_t>(b) < 0)
+                        branch_revision_t b(working_version.toULong(&ok, 10));
+                        if(!ok)
                         {
                             // make sure to unlock because the die() function does
                             // not return!
@@ -2997,7 +2997,7 @@ SNAP_LOG_DEBUG("attaching ")(file.get_file().get_filename())(", attachment_key =
                         current_string = current_string.left(pos);
                     }
                     bool ok;
-                    long b(current_string.toLong(&ok, 10));
+                    branch_revision_t b(current_string.toULong(&ok, 10));
                     if(!ok)
                     {
                         // make sure to unlock because the die() function does
