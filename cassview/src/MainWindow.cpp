@@ -20,6 +20,7 @@ MainWindow::MainWindow(QWidget *p)
     qDebug() << "Working on Cassandra Protocol Version" << f_cassandra.protocolVersion();
 
     f_tables->setModel( &f_tableModel );
+    f_rows->setModel( &f_rowModel );
     FillTableList();
 
     connect( qApp, SIGNAL(aboutToQuit()), this, SLOT(OnAboutToQuit()) );
@@ -85,4 +86,30 @@ void MainWindow::on_action_Settings_triggered()
     {
         FillTableList();
     }
+}
+
+void MainWindow::on_f_tables_clicked(const QModelIndex &index)
+{
+    f_rowModel.setStringList( QStringList() );
+
+    const QString context( f_contextEdit->text() );
+    QStringList tablesList( f_tableModel.stringList() );
+    QSharedPointer<QCassandraContext> qcontext( f_cassandra.findContext(context) );
+    QSharedPointer<QCassandraTable> table( qcontext->table( tablesList[index.row()] ));
+
+    QCassandraRowPredicate rowp;
+    //rowp.setStartRowName("");
+    //rowp.setEndRowName("");
+    //rowp.setCount(10); // 100 is the default
+    table->readRows( rowp );
+    QStringList list;
+    const QCassandraRows& rows = table->rows();
+    std::for_each( rows.begin(), rows.end(),
+                   [&list]( const QSharedPointer<QCassandraRow>& row )
+    {
+        qDebug() << "\t\trow_name = " << row->rowName();
+        list << row->rowName();
+    });
+
+    f_rowModel.setStringList( list );
 }

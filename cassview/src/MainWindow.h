@@ -19,9 +19,12 @@ private slots:
     void on_action_Settings_triggered();
     void OnAboutToQuit();
 
+    void on_f_tables_clicked(const QModelIndex &index);
+
 private:
     QtCassandra::QCassandra  	f_cassandra;
     QStringListModel			f_tableModel;
+    QStringListModel			f_rowModel;
 
     void			FillTableList();
 };
