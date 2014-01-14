@@ -2871,7 +2871,7 @@ SNAP_LOG_DEBUG("attaching ")(file.get_file().get_filename())(", attachment_key =
             }
         }
 
-        uint32_t branch_number(UNDEFINED_BRANCH);
+        branch_revision_t branch_number(UNDEFINED_BRANCH);
 
         if(!file_exists)
         {
@@ -2908,7 +2908,7 @@ SNAP_LOG_DEBUG("attaching ")(file.get_file().get_filename())(", attachment_key =
             {
                 // force a default to make sure that we are using the right value
                 revision = "1.0"; // should become "1.0" with code below
-                branch_number = 1;
+                branch_number = USER_FIRST_BRANCH;
                 content_table->row(attachment_key)->cell(get_name(SNAP_NAME_CONTENT_ATTACHMENT_REVISION_CONTROL_LAST_BRANCH))->setValue(branch_number);
                 content_table->row(attachment_key)->cell(get_name(SNAP_NAME_CONTENT_ATTACHMENT_REVISION_CONTROL_CURRENT_WORKING_VERSION))->setValue(revision);
             }
@@ -2920,12 +2920,23 @@ SNAP_LOG_DEBUG("attaching ")(file.get_file().get_filename())(", attachment_key =
                     .arg(branch_number));
 
             // increase revision if one exists, otherwise we keep the default (0)
-            uint32_t revision_number(0);
+            branch_revision_t revision_number(FIRST_REVISION);
             QtCassandra::QCassandraValue revision_value(attachment_row->cell(revision_key)->value());
             if(!revision_value.nullValue())
             {
                 // it exists, increase it
-                revision_number = revision_value.uint32Value() + 1;
+                revision_number = revision_value.uint32Value();
+                if(revision_number < MAX_BRANCH_NUMBER)
+                {
+                    ++revision_number;
+                }
+                // else -- probably need to warn the user we reached 4 billion
+                //         revisions (this is assuming we delete old revisions
+                //         in the meantime, but even if you make 10 changes a
+                //         day and say it makes use of 20 revision numbers each
+                //         time, it would still take... over half a million
+                //         YEARS to reach that many revisions in that one
+                //         branch...)
             }
             content_table->row(attachment_key)->cell(revision_key)->setValue(revision_number);
 
@@ -2962,8 +2973,8 @@ SNAP_LOG_DEBUG("attaching ")(file.get_file().get_filename())(", attachment_key =
                             working_version = working_version.left(pos);
                         }
                         bool ok;
-                        long b(working_version.toLong(&ok, 10));
-                        if(!ok)
+                        branch_revision_t b(working_version.toLong(&ok, 10));
+                        if(!ok || static_cast<int32_t>(b) < 0)
                         {
                             // make sure to unlock because the die() function does
                             // not return!

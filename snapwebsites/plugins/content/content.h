@@ -327,7 +327,13 @@ private:
 class content : public plugins::plugin, public path::path_execute, public layout::layout_content, public javascript::javascript_dynamic_plugin
 {
 public:
-    static uint32_t const UNDEFINED_BRANCH = static_cast<uint32_t>(-1);
+    typedef uint32_t                branch_revision_t;
+    static branch_revision_t const  UNDEFINED_BRANCH = static_cast<branch_revision_t>(-1);
+    static branch_revision_t const  SYSTEM_BRANCH = static_cast<branch_revision_t>(0);
+    static branch_revision_t const  USER_FIRST_BRANCH = static_cast<branch_revision_t>(1);
+    static branch_revision_t const  FIRST_REVISION = static_cast<branch_revision_t>(0);
+    static branch_revision_t const  MAX_BRANCH_NUMBER = static_cast<branch_revision_t>(-2); // 0xFFFF:FFFE (because -1 is reserved)
+
     enum param_type_t
     {
         PARAM_TYPE_STRING,
