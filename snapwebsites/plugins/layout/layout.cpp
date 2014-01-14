@@ -22,8 +22,10 @@
 #include "log.h"
 #include "qdomreceiver.h"
 #include "qhtmlserializer.h"
+#include "qstring_stream.h"
 //#include "qdomnodemodel.h" -- at this point the DOM Node Model seems bogus.
 #include "not_reached.h"
+
 #include <iostream>
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
@@ -32,6 +34,8 @@
 #include <QFile>
 #include <QXmlResultItems>
 #pragma GCC diagnostic pop
+
+#include "poison.h"
 
 
 SNAP_PLUGIN_START(layout, 1, 0)
@@ -49,14 +53,26 @@ const char *get_name(name_t name)
 {
     switch(name)
     {
+    case SNAP_NAME_LAYOUT_ADMIN_LAYOUTS:
+        return "admin/layouts";
+
+    case SNAP_NAME_LAYOUT_BOX:
+        return "layout::box";
+
+    case SNAP_NAME_LAYOUT_BOXES:
+        return "layout::boxes";
+
+    case SNAP_NAME_LAYOUT_CONTENT:
+        return "content";
+
+    case SNAP_NAME_LAYOUT_LAYOUT:
+        return "layout::layout";
+
     case SNAP_NAME_LAYOUT_TABLE:
         return "layout";
 
     case SNAP_NAME_LAYOUT_THEME:
         return "layout::theme";
-
-    case SNAP_NAME_LAYOUT_LAYOUT:
-        return "layout::layout";
 
     default:
         // invalid index
@@ -123,7 +139,7 @@ layout *layout::instance()
 QString layout::description() const
 {
     return "Determine the layout for a given content and generate the output"
-            " for that layout.";
+          " for that layout.";
 }
 
 
@@ -144,10 +160,11 @@ int64_t layout::do_update(int64_t last_updated)
     SNAP_PLUGIN_UPDATE_INIT();
 
     SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, initial_update);
-    SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, content_update);
+    //SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, content_update); -- content depends on JavaScript so we cannot do a content update here
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
+
 
 /** \brief First update to run for the layout plugin.
  *
@@ -163,20 +180,6 @@ void layout::initial_update(int64_t variables_timestamp)
 }
 #pragma GCC diagnostic pop
 
-/** \brief Update the database with our layout references.
- *
- * Send our layout to the database so the system can find us when a
- * user references our pages.
- *
- * \param[in] variables_timestamp  The timestamp for all the variables added to the database by this update (in micro-seconds).
- */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-void layout::content_update(int64_t variables_timestamp)
-{
-    content::content::instance()->add_xml("layout");
-}
-#pragma GCC diagnostic pop
 
 /** \brief Initialize the layout table.
  *
@@ -191,6 +194,7 @@ QSharedPointer<QtCassandra::QCassandraTable> layout::get_layout_table()
 {
     return f_snap->create_table(get_name(SNAP_NAME_LAYOUT_TABLE), "Layouts table.");
 }
+
 
 /** \brief Retrieve the name of a theme or layout.
  *
@@ -328,6 +332,46 @@ QString layout::apply_layout(const QString& cpath, layout_content *content_plugi
  */
 QDomDocument layout::create_body(const QString& cpath, layout_content *content_plugin, const QString& ctemplate)
 {
+    class error_callback : public permission_error_callback
+    {
+    public:
+        error_callback(snap_child *snap)
+            : f_snap(snap)
+            //, f_error(false) -- auto-init
+        {
+        }
+
+        virtual void on_error(snap_child::http_code_t err_code, QString const& err_name, QString const& err_description, QString const& err_details)
+        {
+            // log the error so users know something happened
+            SNAP_LOG_ERROR("error #")(static_cast<int>(err_code))(":")(err_name)(": ")(err_description)(" -- ")(err_details);
+            f_error = true;
+        }
+
+        virtual void on_redirect(
+                /* message::set_error() */ QString const& err_name, QString const& err_description, QString const& err_details, bool err_security,
+                /* snap_child::page_redirect() */ QString const& path, snap_child::http_code_t http_code)
+        {
+            (void)err_security;
+            SNAP_LOG_ERROR("error #")(static_cast<int>(http_code))(":")(err_name)(": ")(err_description)(" -- ")(err_details)(" (path: ")(path);
+            f_error = true;
+        }
+
+        void clear_error()
+        {
+            f_error = false;
+        }
+
+        bool has_error() const
+        {
+            return f_error;
+        }
+
+    private:
+        zpsnap_child_t              f_snap;
+        controlled_vars::fbool_t    f_error;
+    } box_error_callback(f_snap);
+
     // Retrieve the theme and layout for this path
     // XXX should the ctemplate ever be used to retrieve the layout?
     QString layout_name(get_layout(cpath, get_name(SNAP_NAME_LAYOUT_LAYOUT)));
@@ -338,17 +382,103 @@ QDomDocument layout::create_body(const QString& cpath, layout_content *content_p
 //       until we can get the theme system working right...
 layout_name = "bare";
 
+    bool const filter_exists(plugins::exists("filter"));
+    QSharedPointer<QtCassandra::QCassandraTable> layout_table(get_layout_table());
+
+    plugin *p(dynamic_cast<plugin *>(content_plugin));
+
+    // now we want to transform the XML to HTML or some other format
+    QString xsl;
+    if(layout_name != "default")
+    {
+        // try to load the layout from the database, if not found
+        // we'll switch to the default layout instead
+        QtCassandra::QCassandraValue layout_value(layout_table->row(layout_name)->cell(QString("body"))->value());
+        if(layout_value.nullValue())
+        {
+            // note that a layout cannot be empty so the test is correct
+            layout_name = "default";
+        }
+        else
+        {
+            xsl = layout_value.stringValue();
+        }
+    }
+    if(layout_name == "default")
+    {
+        QFile file(":/xsl/layout/default-body-parser.xsl");
+        if(!file.open(QIODevice::ReadOnly))
+        {
+            f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR,
+                    "Layout Unavailable",
+                    "Somehow no website layout was accessible, not even the internal default.",
+                    "layout::create_body() could not open default-body-parser.xsl resource file.");
+            NOTREACHED();
+        }
+        QByteArray data(file.readAll());
+        xsl = QString::fromUtf8(data.data(), data.size());
+    }
+    // TODO: once we got the XSL file we need to handle all the xsl:include
+    //       and xsl:import as QXmlQuery does not support those XSLT features
+    //       which are important for us because we want to allow for
+    //       "internal" features (i.e. avoid duplicating all the code used
+    //       to build the <head> tag, for example.)
+    //
+    // http://www.w3.org/TR/xslt#section-Combining-Stylesheets
+
+    // check whether the layout was defined in this website database
+    QSharedPointer<QtCassandra::QCassandraTable> content_table(content::content::instance()->get_content_table());
+    QString const site_key(f_snap->get_site_key_with_slash());
+    QString const layout_key(site_key + get_name(SNAP_NAME_LAYOUT_ADMIN_LAYOUTS) + "/" + layout_name);
+    // TODO: we'll need to manage updates which is probably going to be done
+    //       from the snap_child::update_plugins() with the user of a message
+    //       which should be caught by this plugin...
+    if(!content_table->exists(layout_key)
+    || !content_table->row(layout_key)->exists(get_name(SNAP_NAME_LAYOUT_BOXES)))
+    {
+        // this layout is missing, create necessary basic info
+        // (later users can edit those settings)
+        if(!layout_table->row(layout_name)->exists(get_name(SNAP_NAME_LAYOUT_CONTENT)))
+        {
+            f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR,
+                    "Layout Unavailable",
+                    "Layout \"" + layout_name + "\" content.xml file is missing.",
+                    "layout::create_body() could not find the content.xml file in the layout table.");
+            NOTREACHED();
+        }
+        QString const xml_content(layout_table->row(layout_name)->cell(get_name(SNAP_NAME_LAYOUT_CONTENT))->value().stringValue());
+        QDomDocument dom;
+        if(!dom.setContent(xml_content, false))
+        {
+            f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR,
+                    "Layout Unavailable",
+                    "Layout \"" + layout_name + "\" content.xml file could not be loaded.",
+                    "layout::create_body() could not load the content.xml file from the layout table.");
+            NOTREACHED();
+        }
+        content::content::instance()->add_xml_document(dom, p == NULL ? "content" : p->get_plugin_name());
+        f_snap->finish_update();
+        if(!content_table->row(layout_key)->exists(get_name(SNAP_NAME_LAYOUT_BOXES)))
+        {
+            f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR,
+                    "Layout Unavailable",
+                    "Layout \"" + layout_name + "\" content.xml file does not define the layout::boxes entry for this layout.",
+                    "layout::create_body() the content.xml did not define \"" + layout_key + "/layout::boxes\" as expected.");
+            NOTREACHED();
+        }
+    }
+
     // Initialize the XML document tree
     // More is done in the generate_header_content_impl() function
     QDomDocument doc("snap");
     QDomElement root = doc.createElement("snap");
-    doc.appendChild(root);
-    QDomElement head(doc.createElement("head"));
-    plugin *p(dynamic_cast<plugin *>(content_plugin));
+    root.setAttribute("path", cpath);
     if(p != NULL)
     {
-        head.setAttribute("owner", p->get_plugin_name());
+        root.setAttribute("owner", p->get_plugin_name());
     }
+    doc.appendChild(root);
+    QDomElement head(doc.createElement("head"));
     root.appendChild(head);
     QDomElement metadata(doc.createElement("metadata"));
     head.appendChild(metadata);
@@ -356,121 +486,171 @@ layout_name = "bare";
     root.appendChild(page);
     QDomElement body(doc.createElement("body"));
     page.appendChild(body);
-    QVector<QDomElement> boxes;
 
 #ifdef DEBUG
-printf("got in layout...\n");
+std::cerr << "got in layout... cpath = [" << cpath << "]\n";
 #endif
+    // other plugins generate defaults
     generate_header_content(this, cpath, head, metadata, ctemplate);
+
+    // concerned (owner) plugin generates content
     content_plugin->on_generate_main_content(this, cpath, page, body, ctemplate);
+
+    // add boxes content
+    // if the "boxes" entry doesn't exist yet then we can create it now
+    // (i.e. we're creating a parent if the "boxes" element is not present;
+    //       although we should not get called recursively, this makes things
+    //       safer!)
+    if(page.firstChildElement("boxes").isNull())
+    {
+        // the list of boxes is defined in the database under
+        //    admin/layouts/<layout_name>
+        // as one row name per box; for example, the left box would appears as:
+        //    admin/layouts/<layout_name>/layout::box::left/layout::boxes
+        QDomElement boxes = doc.createElement("boxes");
+        page.appendChild(boxes);
+        // TODO -- 
+        content::field_search::search_result_t box_names;
+        FIELD_SEARCH
+            (content::field_search::COMMAND_MODE, content::field_search::SEARCH_MODE_EACH)
+            (content::field_search::COMMAND_PATH, get_name(SNAP_NAME_LAYOUT_ADMIN_LAYOUTS) + ("/" + layout_name))
+            (content::field_search::COMMAND_FIELD_NAME, get_name(SNAP_NAME_LAYOUT_BOXES))
+            (content::field_search::COMMAND_SELF)
+            (content::field_search::COMMAND_RESULT, box_names)
+
+            // retrieve names of all the boxes
+            ;
+        int const max_names(box_names.size());
+        if(max_names != 0)
+        {
+            if(max_names != 1)
+            {
+                throw snap_logic_exception("expected zero or one entry from a COMMAND_SELF");
+            }
+            QStringList names(box_names[0].stringValue().split(","));
+            QVector<QDomElement> dom_boxes;
+            int const max_boxes(names.size());
+            for(int i(0); i < max_boxes; ++i)
+            {
+                names[i] = names[i].trimmed();
+                QDomElement box(doc.createElement(names[i]));
+                boxes.appendChild(box);
+                dom_boxes.push_back(box); // will be the same offset as names[...]
+            }
+#ifdef DEBUG
+            if(dom_boxes.size() != max_boxes)
+            {
+                throw snap_logic_exception("somehow the 'DOM boxes' and 'names' vectors do not have the same size.");
+            }
+#endif
+            for(int i(0); i < max_boxes; ++i)
+            {
+                links::link_info info(content::get_name(content::SNAP_NAME_CONTENT_CHILDREN), false, site_key + get_name(SNAP_NAME_LAYOUT_ADMIN_LAYOUTS) + "/" + layout_name + "/" + names[i]);
+                QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
+                links::link_info child_info;
+                while(link_ctxt->next_link(child_info))
+                {
+                    QString child_cpath(child_info.key().mid(site_key.length()));
+                    box_error_callback.clear_error();
+                    plugin *box_plugin(path::path::instance()->get_plugin(child_cpath, box_error_callback));
+                    if(!box_error_callback.has_error() && box_plugin)
+                    {
+                        layout_boxes *lb(dynamic_cast<layout_boxes *>(box_plugin));
+                        if(lb != NULL)
+                        {
+                            // put each box in a filter tag because we have to
+                            // specify a different owner and path for each
+                            QDomElement filter_box(doc.createElement("filter"));
+                            filter_box.setAttribute("path", child_cpath); // not the full key
+                            filter_box.setAttribute("owner", box_plugin->get_plugin_name());
+                            dom_boxes[i].appendChild(filter_box);
+                            lb->on_generate_boxes_content(this, cpath, child_cpath, page, filter_box, ctemplate);
+                        }
+                        else
+                        {
+                            // if this happens a plugin offers a box but not
+                            // the handler
+                            f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR,
+                                    "Plugin Missing",
+                                    "Plugin \"" + box_plugin->get_plugin_name() + "\" does not know how to handle a box assigned to it.",
+                                    "layout::create_body() the plugin does not derive from layout::layout_boxes.");
+                            NOTREACHED();
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // other plugins are allowed to modify the content if so they wish
     generate_page_content(this, cpath, page, body, ctemplate);
+//std::cout << "Prepared XML is [" << doc.toString() << "]\n";
 
     // TODO: the filtering needs to be a lot more generic!
     //       plus the owner of the page should be able to select the
     //       filters he wants to apply agains the page content
     //       (i.e. ultimately we want to have some sort of filter
     //       tagging capability)
-    if(plugins::exists("filter"))
+    if(filter_exists)
     {
         // replace all tokens if filtering is available
         filter::filter::instance()->on_token_filter(cpath, doc);
     }
-    
-    //box = QDomElement();
-    //f_boxes.push_back(box);
-    // TODO: get the box owner then call the on_generate_box_content() of
-    //       that plugin; this is the best way to handle boxes
-    //plugin->on_generate_box_content(this, path, box);
 
-//printf("Generated XML is [%s]\n", doc.toString().toUtf8().data());
+//std::cout << "Generated XML is [" << doc.toString() << "]\n";
 
-    QSharedPointer<QtCassandra::QCassandraTable> layout_table(get_layout_table());
-
-    // now we want to transform the XML to HTML or some other format
-    {
-        QXmlQuery q(QXmlQuery::XSLT20);
+    // Somehow binding crashes everything at this point?! (Qt 4.8.1)
+    QXmlQuery q(QXmlQuery::XSLT20);
 #if 0
-        QDomNodeModel m(q.namePool(), doc);
-        QXmlNodeModelIndex x(m.fromDomNode(doc.documentElement()));
-        QXmlItem i(x);
-        q.setFocus(i);
+    QDomNodeModel m(q.namePool(), doc);
+    QXmlNodeModelIndex x(m.fromDomNode(doc.documentElement()));
+    QXmlItem i(x);
+    q.setFocus(i);
 #else
-        q.setFocus(doc.toString());
+    q.setFocus(doc.toString());
 #endif
-        QString xsl;
-        if(layout_name != "default")
-        {
-            // try to load the layout from the database, if not found
-            // we'll switch to the default layout instead
-            QtCassandra::QCassandraValue layout_value(layout_table->row(layout_name)->cell(QString("body"))->value());
-            if(layout_value.nullValue())
-            {
-                // note that a layout cannot be empty so the test is correct
-                layout_name = "default";
-            }
-            else
-            {
-                xsl = layout_value.stringValue();
-            }
-        }
-        if(layout_name == "default")
-        {
-            QFile file(":/xsl/layout/default-body-parser.xsl");
-            if(!file.open(QIODevice::ReadOnly))
-            {
-                f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR,
-                        "Layout Unavailable",
-                        "Somehow no website layout was accessible, not even the internal default.",
-                        "layout::create_body() could not open default-body-parser.xsl resource file.");
-                NOTREACHED();
-            }
-            QByteArray data(file.readAll());
-            xsl = QString::fromUtf8(data.data(), data.size());
-        }
-        // Somehow binding crashes everything at this point?! (Qt 4.8.1)
-        q.setQuery(xsl);
+    q.setQuery(xsl);
 #if 0
-        QXmlResultItems results;
-        q.evaluateTo(&results);
-        
-        QXmlItem item(results.next());
-        while(!item.isNull())
+    QXmlResultItems results;
+    q.evaluateTo(&results);
+    
+    QXmlItem item(results.next());
+    while(!item.isNull())
+    {
+        if(item.isNode())
         {
-            if(item.isNode())
-            {
-                //printf("Got a node!\n");
-                QXmlNodeModelIndex node_index(item.toNodeModelIndex());
-                QDomNode node(m.toDomNode(node_index));
-                printf("Got a node! [%s]\n", node.localName()/*ownerDocument().toString()*/.toUtf8().data());
-            }
-            item = results.next();
+            //printf("Got a node!\n");
+            QXmlNodeModelIndex node_index(item.toNodeModelIndex());
+            QDomNode node(m.toDomNode(node_index));
+            printf("Got a node! [%s]\n", node.localName()/*ownerDocument().toString()*/.toUtf8().data());
         }
+        item = results.next();
+    }
 #elif 1
-        // this should be faster since we keep the data in a DOM
-        QDomDocument doc_output("body");
-        QDomReceiver receiver(q.namePool(), doc_output);
-        q.evaluateTo(&receiver);
-        body.appendChild(doc.importNode(doc_output.documentElement(), true));
+    // this should be faster since we keep the data in a DOM
+    QDomDocument doc_output("body");
+    QDomReceiver receiver(q.namePool(), doc_output);
+    q.evaluateTo(&receiver);
+    body.appendChild(doc.importNode(doc_output.documentElement(), true));
 //printf("Body HTML is [%s]\n", doc_output.toString().toUtf8().data());
 #else
-        //QDomDocument doc_body("body");
-        //doc_body.setContent(get_content_parameter(path, get_name(SNAP_NAME_CONTENT_BODY)).stringValue(), true, NULL, NULL, NULL);
-        //QDomElement content_tag(doc.createElement("content"));
-        //body.appendChild(content_tag);
-        //content_tag.appendChild(doc.importNode(doc_body.documentElement(), true));
+    //QDomDocument doc_body("body");
+    //doc_body.setContent(get_content_parameter(path, get_name(SNAP_NAME_CONTENT_BODY) <<-- that would be wrong now).stringValue(), true, NULL, NULL, NULL);
+    //QDomElement content_tag(doc.createElement("content"));
+    //body.appendChild(content_tag);
+    //content_tag.appendChild(doc.importNode(doc_body.documentElement(), true));
 
-        // TODO: look into getting XML as output
-        QString out;
-        q.evaluateTo(&out);
-        //QDomElement output(doc.createElement("output"));
-        //body.appendChild(output);
-        //QDomText text(doc.createTextNode(out));
-        //output.appendChild(text);
-        QDomDocument doc_output("body");
-        doc_output.setContent(out, true, NULL, NULL, NULL);
-        body.appendChild(doc.importNode(doc_output.documentElement(), true));
+    // TODO: look into getting XML as output
+    QString out;
+    q.evaluateTo(&out);
+    //QDomElement output(doc.createElement("output"));
+    //body.appendChild(output);
+    //QDomText text(doc.createTextNode(out));
+    //output.appendChild(text);
+    QDomDocument doc_output("body");
+    doc_output.setContent(out, true, NULL, NULL, NULL);
+    body.appendChild(doc.importNode(doc_output.documentElement(), true));
 #endif
-    }
 
     return doc;
 }
@@ -502,10 +682,6 @@ QString layout::apply_theme(QDomDocument doc, const QString& cpath, layout_conte
 // until we can get the theme system working right...
 theme_name = "bare";
 
-    // finally apply the theme XSLT to the final XML
-    // the output is what we want to return
-    QXmlQuery q(QXmlQuery::XSLT20);
-    q.setFocus(doc.toString());
     //QFile xsl(":/xsl/layout/default-theme-parser.xsl");
     //if(!xsl.open(QIODevice::ReadOnly))
     //{
@@ -544,6 +720,18 @@ theme_name = "bare";
         QByteArray data(file.readAll());
         xsl = QString::fromUtf8(data.data(), data.size());
     }
+    // TODO: once we got the XSL file we need to handle all the xsl:include
+    //       and xsl:import as QXmlQuery does not support those XSLT features
+    //       which are important for us because we want to allow for
+    //       "internal" features (i.e. avoid duplicating all the code used
+    //       to build the <head> tag, for example.)
+    //
+    // http://www.w3.org/TR/xslt#section-Combining-Stylesheets
+
+    // finally apply the theme XSLT to the final XML
+    // the output is what we want to return
+    QXmlQuery q(QXmlQuery::XSLT20);
+    q.setFocus(doc.toString());
     q.setQuery(xsl);
 
     QBuffer output;
@@ -586,8 +774,8 @@ theme_name = "bare";
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 bool layout::generate_header_content_impl(layout *l, QString const& cpath, QDomElement& header, QDomElement& metadata, QString const& ctemplate)
 {
-    int p(cpath.lastIndexOf('/'));
-    QString base(f_snap->get_site_key_with_slash() + (p == -1 ? "" : cpath.left(p)));
+    int const p(cpath.lastIndexOf('/'));
+    QString const base(f_snap->get_site_key_with_slash() + (p == -1 ? "" : cpath.left(p)));
 
     FIELD_SEARCH
         (content::field_search::COMMAND_ELEMENT, metadata)
@@ -702,7 +890,141 @@ bool layout::generate_page_content_impl(layout *l, const QString& path, QDomElem
 //}
 
 
-
+/* sample XML file for a default Snap! website home page --
+<!DOCTYPE snap>
+<snap>
+ <head path="" owner="content">
+  <metadata>
+   <desc type="website_uri">
+    <data>http://csnap.m2osw.com/</data>
+   </desc>
+   <desc type="base_uri">
+    <data>http://csnap.m2osw.com/</data>
+   </desc>
+   <desc type="page_uri">
+    <data>http://csnap.m2osw.com/</data>
+   </desc>
+   <desc type="name">
+    <data>Website Name</data>
+   </desc>
+   <desc type="remote_ip">
+    <data>162.226.130.121</data>
+   </desc>
+   <desc type="shorturl">
+    <data>http://csnap.m2osw.com/s/4</data>
+   </desc>
+  </metadata>
+ </head>
+ <page>
+  <body>
+   <titles>
+    <title>Home Page</title>
+   </titles>
+   <content>
+    <p>Welcome to your new Snap! C++ website.</p>
+    <p>
+     <a href="/login">Log In Now!</a>
+    </p>
+   </content>
+   <created>2014-01-09</created>
+   <modified>2014-01-09</modified>
+   <updated>2014-01-09</updated>
+   <image>
+    <shortcut width="16" height="16" type="image/x-icon" href="http://csnap.m2osw.com/favicon.ico"/>
+   </image>
+   <bookmarks>
+    <link title="Search" rel="search" type="text/html" href="http://csnap.m2osw.com/search"/>
+   </bookmarks>
+  </body>
+  <boxes>
+   <left>
+    <filter path="admin/layouts/bare/left/login" owner="users">
+     <titles>
+      <title>User Login</title>
+     </titles>
+     <content>
+      <p>The login box is showing!</p>
+      <div class="form-wrapper">
+       <div class="snap-form">
+        <form onkeypress="javascript:if((event.which&amp;&amp;event.which==13)||(event.keyCode&amp;&amp;event.keyCode==13))fire_event(login_34,'click');" method="post" accept-charset="utf-8" id="form_34" autocomplete="off">
+         <input type="hidden" value=" " id="form__iehack" name="form__iehack"/>
+         <input type="hidden" value="3673b0558e8ad92c" id="form_session" name="form_session"/>
+         <div class="form-item fieldset">
+          <fieldset class="" id="log_info_34">
+           <legend title="Enter your log in information below then click the Log In button." accesskey="l">Log In Form</legend>
+           <div class="field-set-content">
+            <div class="form-help fieldset-help" style="display: none;">This form allows you to log in your Snap! website. Enter your log in name and password and then click on Log In to get a log in session.</div>
+            <div class="form-item line-edit ">
+             <label title="Enter your email address to log in your Snap! Website account." class="line-edit-label" for="email_34">
+              <span class="line-edit-label-span">Email:</span>
+              <span class="form-item-required">*</span>
+              <input title="Enter your email address to log in your Snap! Website account." class=" line-edit-input " alt="Enter the email address you used to register with Snap! All the Snap! Websites run by Made to Order Software Corp. allow you to use the same log in credentials." size="20" maxlength="60" accesskey="e" type="text" id="email_34" name="email" tabindex="1"/>
+             </label>
+             <div class="form-help line-edit-help" style="display: none;">Enter the email address you used to register with Snap! All the Snap! Websites run by Made to Order Software Corp. allow you to use the same log in credentials.</div>
+            </div>
+            <div class="form-item password ">
+             <label title="Enter your password, if you forgot your password, just the link below to request a change." class="password-label" for="password_34">
+              <span class="password-label-span">Password:</span>
+              <span class="form-item-required">*</span>
+              <input title="Enter your password, if you forgot your password, just the link below to request a change." class="password-input " alt="Enter the password you used while registering with Snap! Your password is the same for all the Snap! Websites run by Made to Order Software Corp." size="25" maxlength="256" accesskey="p" type="password" id="password_34" name="password" tabindex="2"/>
+             </label>
+             <div class="form-help password-help" style="display: none;">Enter the password you used while registering with Snap! Your password is the same for all the Snap! Websites run by Made to Order Software Corp.</div>
+            </div>
+            <div class="form-item link">
+             <a title="Forgot your password? Click on this link to request Snap! to send you a link to change it with a new one." class="link " accesskey="f" href="/forgot-password" id="forgot_password_34" tabindex="6">Forgot Password</a>
+             <div class="form-help link-help" style="display: none;">You use so many websites with an account... and each one has to have a different password! So it can be easy to forget the password for a given website. We store passwords in a one way encryption mechanism (i.e. we cannot decrypt it) so if you forget it, we can only offer you to replace it. This is done using the form this link sends you to.</div>
+            </div>
+            <div class="form-item link">
+             <a title="No account yet? Register your own Snap! account now." class="link " accesskey="u" href="/register" id="register_34" tabindex="5">Register</a>
+             <div class="form-help link-help" style="display: none;">To log in a Snap! account, you first have to register an account. Click on this link if you don't already have an account. If you are not sure, you can always try the <strong>Forgot Password</strong> link. It will tell you whether we know your email address.</div>
+            </div>
+            <div class="form-item checkbox">
+             <label title="Select this checkbox to let your browser record a long time cookie. This way you can come back to your Snap! account(s) without having to log back in everytime." class="checkbox-label" for="remember_34">
+              <input title="Select this checkbox to let your browser record a long time cookie. This way you can come back to your Snap! account(s) without having to log back in everytime." class="checkbox-input remember-me-checkbox" alt="By checking this box you agree to have Snap! save a full session cookie which let you come back to your website over and over again. By not selecting the checkbox, you still get a cookie, but it will only last 2 hours unless your use your website constantly." accesskey="m" type="checkbox" checked="checked" id="remember_34" name="remember" tabindex="3"/>
+              <script type="text/javascript">remember_34.checked="checked";</script>
+              <span class="checkbox-label-span">Remember Me</span>
+             </label>
+             <div class="form-help checkbox-help" style="display: none;">By checking this box you agree to have Snap! save a full session cookie which let you come back to your website over and over again. By not selecting the checkbox, you still get a cookie, but it will only last 2 hours unless your use your website constantly.</div>
+            </div>
+            <div class="form-item submit">
+             <input title="Well... we may want to rename this one if we use it as the alternate text of widgets..." class="submit-input my-button-class" alt="Long description that goes in the help box, for example." size="25" accesskey="s" type="submit" value="Log In" disabled="disabled" id="login_34" name="login" tabindex="4"/>
+             <div class="form-help submit-help" style="display: none;">Long description that goes in the help box, for example.</div>
+            </div>
+            <div class="form-item link">
+             <a title="Click here to return to the home page" class="link my-cancel-class" accesskey="c" href="/" id="cancel_34" tabindex="7">Cancel</a>
+             <div class="form-help link-help" style="display: none;">Long description that goes in the help box explaining why you'd want to click Cancel.</div>
+            </div>
+           </div>
+          </fieldset>
+         </div>
+         <script type="text/javascript">email_34.focus();email_34.select();</script>
+         <script type="text/javascript">function auto_reset_34(){form_34.reset();}window.setInterval(auto_reset_34,1.8E6);</script>
+         <script type="text/javascript">
+              function fire_event(element, event_type)
+              {
+                if(element.fireEvent)
+                {
+                  element.fireEvent('on' + event_type);
+                }
+                else
+                {
+                  var event = document.createEvent('Events');
+                  event.initEvent(event_type, true, false);
+                  element.dispatchEvent(event);
+                }
+              }
+            </script>
+        </form>
+        <script type="text/javascript">login_34.disabled="";</script>
+       </div>
+      </div>
+     </content>
+    </filter>
+   </left>
+  </boxes>
+ </page>
+</snap>
+*/
 
 SNAP_PLUGIN_END()
 

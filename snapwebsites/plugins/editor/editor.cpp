@@ -1,5 +1,5 @@
 // Snap Websites Server -- JavaScript WYSIWYG editor
-// Copyright (C) 2013  Made to Order Software Corp.
+// Copyright (C) 2013-2014  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,19 +17,8 @@
 
 #include "editor.h"
 #include "not_reached.h"
-//#include "log.h"
-//#include "mkgmtime.h"
-//#include "snap_magic.h"
-//#include "qdomxpath.h"
-//#include "quoted_printable.h"
-//#include "../content/content.h"
-//#include "../users/users.h"
-//#include "process.h"
-//#include <QtCassandra/QCassandraValue.h>
-//#include <QtSerialization/QSerializationComposite.h>
-//#include <QtSerialization/QSerializationFieldString.h>
-//#include <QtSerialization/QSerializationFieldTag.h>
-//#include <iostream>
+#include "log.h"
+#include <iostream>
 #include "poison.h"
 
 
@@ -147,7 +136,7 @@ int64_t editor::do_update(int64_t last_updated)
     SNAP_PLUGIN_UPDATE_INIT();
 
     SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, initial_update);
-    SNAP_PLUGIN_UPDATE(2013, 11, 18, 1, 5, 0, content_update);
+    SNAP_PLUGIN_UPDATE(2014, 1, 12, 3, 18, 20, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -176,8 +165,7 @@ void editor::initial_update(int64_t variables_timestamp)
 void editor::content_update(int64_t variables_timestamp)
 {
     (void)variables_timestamp;
-
-    content::content::instance()->add_xml(get_name(SNAP_NAME_EDITOR));
+    content::content::instance()->add_xml(get_plugin_name());
 }
 
 
@@ -221,21 +209,23 @@ void editor::on_generate_main_content(layout::layout *l, QString const& path, QD
 void editor::on_generate_header_content(layout::layout *l, QString const& path, QDomElement& header, QDomElement& metadata, QString const& ctemplate)
 {
     // but we also have email specific parameters we want to add
-    QDomDocument doc(header.ownerDocument());
+    //QDomDocument doc(header.ownerDocument());
 
-    {
-        QDomElement editor_tag(doc.createElement("editor"));
-        metadata.appendChild(editor_tag);
+    //{
+    //    QDomElement editor_tag(doc.createElement("editor"));
+    //    metadata.appendChild(editor_tag);
 
-        // define a set of dynamic parameters as defined by the user
-        {
-            QDomElement param(doc.createElement("parameter"));
-            param.setAttribute("name", "param-name");
-            editor_tag.appendChild(param);
-            QDomText param_text(doc.createTextNode("param-value"));
-            param.appendChild(param_text);
-        }
-    }
+    //    // define a set of dynamic parameters as defined by the user
+    //    {
+    //        QDomElement param(doc.createElement("parameter"));
+    //        param.setAttribute("name", "param-name");
+    //        editor_tag.appendChild(param);
+    //        QDomText param_text(doc.createTextNode("param-value"));
+    //        param.appendChild(param_text);
+    //    }
+    //}
+
+    content::content::instance()->add_javascript(l, path, header, metadata, "editor");
 }
 #pragma GCC diagnostic pop
 

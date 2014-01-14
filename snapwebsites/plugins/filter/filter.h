@@ -1,5 +1,5 @@
 // Snap Websites Server -- filter
-// Copyright (C) 2011-2013  Made to Order Software Corp.
+// Copyright (C) 2011-2014  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -249,7 +249,7 @@ public:
     void                on_xss_filter(QDomNode& node, QString const& accepted_tags, QString const& accepted_attributes);
     void                on_token_filter(QString const& cpath, QDomDocument& xml);
 
-    SNAP_SIGNAL(replace_token, (filter *f, QString const& cpath, QDomDocument& xml, token_info_t& token), (f, cpath, xml, token));
+    SNAP_SIGNAL(replace_token, (filter *f, QString const& cpath, QString const& plugin_owner, QDomDocument& xml, token_info_t& token), (f, cpath, plugin_owner, xml, token));
 
 private:
     snap_child *    f_snap;

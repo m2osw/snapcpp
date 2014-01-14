@@ -313,9 +313,9 @@ void snapdb::display()
     if(!f_row.isEmpty() && f_table == "files")
     {
         // these rows make use of MD5 sums so we have to convert them
-        if(f_row == "new")
+        if(f_row == "new" || f_row == "javascripts")
         {
-            f_row_key = "new";
+            f_row_key = f_row.toAscii();
         }
         else
         {
@@ -366,9 +366,9 @@ void snapdb::display()
             {
                 // these are raw MD5 keys
                 QByteArray key((*r)->rowKey());
-                if(key == "new")
+                if(key.size() != 16)
                 {
-                    std::cout << "new";
+                    std::cout << key.data();
                 }
                 else
                 {
@@ -468,6 +468,36 @@ void snapdb::display()
                         n += hex;
                     }
                 }
+                else if(f_table == "files" && f_row == "javascripts")
+                {
+                    // this row name is "<name>"_"<browser>"_<version as integers>
+                    QByteArray key((*c)->columnKey());
+                    int const max(key.size());
+                    int sep(0);
+                    int i(0);
+                    for(; i < max && sep < 2; ++i)
+                    {
+                        if(key[i] == '_')
+                        {
+                            ++sep;
+                        }
+                        n += key[i];
+                    }
+                    // now we have to add the version
+                    bool first(true);
+                    for(; i + 3 < max; i += 4)
+                    {
+                        if(first)
+                        {
+                            first = false;
+                        }
+                        else
+                        {
+                            n += ".";
+                        }
+                        n += QString("%1").arg(QtCassandra::uint32Value(key, i));
+                    }
+                }
                 else if((f_table == "users"    && f_row == "*index_row*")
                      || (f_table == "shorturl" && f_row.endsWith("/*index_row*"))
                 )
@@ -544,7 +574,9 @@ void snapdb::display()
                     float value((*c)->value().floatValue());
                     v = QString("%1").arg(value);
                 }
-                else if(n == "content::files::image_height"
+                else if(n == "content::attachment::revision_control::last_branch"
+                     || n.startsWith("content::attachment::revision_control::last_revision::")
+                     || n == "content::files::image_height"
                      || n == "content::files::image_width"
                      || n == "content::files::size"
                      || n == "content::files::size::compressed"
@@ -562,15 +594,14 @@ void snapdb::display()
                      || n == "favicon::sitewide"
                      || n == "content::files::compressor"
                      || n.startsWith("content::files::reference::")
-                     || f_table == "files" && f_row == "new"
+                     || (f_table == "files" && f_row == "new")
                 )
                 {
                     // 8 bit value
                     // cast to integer so arg() doesn't take it as a character
                     v = QString("%1").arg(static_cast<int>((*c)->value().unsignedCharValue()));
                 }
-                else if(n == "content::attachment"
-                     || n == "sessions::random"
+                else if(n == "sessions::random"
                      || n == "users::password::salt"
                      || n == "users::password"
                 )
@@ -601,6 +632,19 @@ void snapdb::display()
                     if(buf.size() > max)
                     {
                         v += "...";
+                    }
+                }
+                else if((n.startsWith("content::attachment::") && n[21] >= '0' && n[21] <= '9' && !n.mid(22).contains("::"))
+                     || (f_table == "files" && f_row == "javascripts")
+                )
+                {
+                    // md5 in binary
+                    const QByteArray& buf((*c)->value().binaryValue());
+                    int const max(buf.size());
+                    v += "(md5) ";
+                    for(int i(0); i < max; ++i)
+                    {
+                        v += QString("%1").arg(static_cast<int>(static_cast<unsigned char>(buf.at(i))), 2, 16, QChar('0'));
                     }
                 }
                 else if(n == "content::files::secure")

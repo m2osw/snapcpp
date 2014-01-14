@@ -88,10 +88,13 @@ namespace QtCassandra
  * \li After the first read returned and if the number of rows returned
  * was equal to the limit, then call the readRows() function again. The
  * QCassandraRowPredicate was updated in order to read the next count
- * items.
+ * items. Note that rows are cumulated on each readRows(). If you already
+ * worked on the previous rows, you probably want to deleted them from
+ * memory using the table->clearCache() function before the next readRows()
+ * call.
  *
- * Note that the last readRows() may return 0 as the number of rows
- * read.
+ * Note that the last readRows() is expected to return 0 as the number of
+ * rows read.
  *
  * \warning
  * The setWrap() call is not overly compatible with a RandomPartitioner. You
@@ -111,13 +114,13 @@ namespace QtCassandra
  *   // we need to clear the cache or we cannot distinguish between
  *   // existing and new rows... (we may want to return a list of the
  *   // matching rows in the readRows() function.)
- *   table.clearCache();
- *   int c = table.readRows(rowp);
+ *   table->clearCache();
+ *   int c = table->readRows(rowp);
  *   if(c == 0) {
  *     break;
  *   }
  *   // handle the result
- *   const QCassandraRows& r(table.rows());
+ *   QCassandraRows const& r(table.rows());
  *   ...
  *   if(c < 100) { // your setLimit() parameter
  *     // if smaller than your limit you're done!

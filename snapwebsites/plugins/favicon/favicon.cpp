@@ -247,17 +247,46 @@ bool favicon::on_path_execute(QString const& cpath)
         return true;
     }
 
-    QSharedPointer<QtCassandra::QCassandraTable> content_table(content::content::instance()->get_content_table());
-    QString const site_key(f_snap->get_site_key_with_slash());
-    QString const key(site_key + cpath);
-    if(content_table->exists(key))
+    // check whether there is a current attachment in this cpath with a
+    // favicon.ico file; this works because we are the owner of the
+    // attachment (opposed to some other plugin)
+    content::field_search::search_result_t result;
+    FIELD_SEARCH
+        (content::field_search::COMMAND_MODE, content::field_search::SEARCH_MODE_EACH)
+        (content::field_search::COMMAND_PATH, cpath)
+
+        // attachments have an indirection (revision control)
+        // TBD at this point I do not think we ever would want the current
+        //     working version since we cannot directly edit this attachment
+        (content::field_search::COMMAND_FIELD_NAME, content::get_name(content::SNAP_NAME_CONTENT_ATTACHMENT_REVISION_CONTROL_CURRENT))
+        (content::field_search::COMMAND_SELF)
+        (content::field_search::COMMAND_IF_NOT_FOUND, 1)
+            (content::field_search::COMMAND_LAST_RESULT_TO_VAR, content::get_name(content::SNAP_NAME_CONTENT_VARIABLE_REVISION))
+            (content::field_search::COMMAND_FIELD_NAME_WITH_VARS, content::get_name(content::SNAP_NAME_CONTENT_ATTACHMENT_REVISION_FILENAME_WITH_VAR))
+            (content::field_search::COMMAND_SELF)
+            (content::field_search::COMMAND_RESULT, result)
+        (content::field_search::COMMAND_LABEL, 1)
+
+        // generate
+        ;
+
+    if(!result.isEmpty())
     {
-        if(content_table->row(key)->exists(content::get_name(content::SNAP_NAME_CONTENT_ATTACHMENT_FILENAME)))
-        {
-            output(cpath);
-            return true;
-        }
+        output(cpath);
+        return true;
     }
+
+    //QSharedPointer<QtCassandra::QCassandraTable> content_table(content::content::instance()->get_content_table());
+    //QString const site_key(f_snap->get_site_key_with_slash());
+    //QString const key(site_key + cpath);
+    //if(content_table->exists(key))
+    //{
+    //    if(content_table->row(key)->exists(content::get_name(content::SNAP_NAME_CONTENT_ATTACHMENT_FILENAME)))
+    //    {
+    //        output(cpath);
+    //        return true;
+    //    }
+    //}
 
     // not too sure right now whether we'd have a true here (most
     // certainly though)
@@ -323,9 +352,9 @@ void favicon::output(QString const& cpath)
         {
             // try the site wide settings for an attachment
             FIELD_SEARCH
-                // /admin/settings/favicon/@favicon::icon::path
+                // /admin/settings/favicon/content::attachment::favicon::icon::path
                 (content::field_search::COMMAND_MODE, content::field_search::SEARCH_MODE_EACH)
-                (content::field_search::COMMAND_FIELD_NAME, QString(content::get_name(content::SNAP_NAME_CONTENT_ATTACHMENT)) + "::" + get_name(SNAP_NAME_FAVICON_ICON_PATH))
+                (content::field_search::COMMAND_FIELD_NAME, QString("%1::%2").arg(content::get_name(content::SNAP_NAME_CONTENT_ATTACHMENT)).arg(get_name(SNAP_NAME_FAVICON_ICON_PATH)))
                 (content::field_search::COMMAND_PATH, get_name(SNAP_NAME_FAVICON_SETTINGS))
                 (content::field_search::COMMAND_SELF)
                 (content::field_search::COMMAND_RESULT, result)

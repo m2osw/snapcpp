@@ -24,12 +24,14 @@
 #include "../content/content.h"
 #include "../users/users.h"
 #include "process.h"
+
 #include <libtld/tld.h>
 #include <QtCassandra/QCassandraValue.h>
 #include <QtSerialization/QSerializationComposite.h>
 #include <QtSerialization/QSerializationFieldString.h>
 #include <QtSerialization/QSerializationFieldTag.h>
 #include <iostream>
+
 #include "poison.h"
 
 
@@ -1285,7 +1287,7 @@ void sendmail::on_bootstrap(snap_child *snap)
     f_snap = snap;
 
     SNAP_LISTEN(sendmail, "server", server, register_backend_action, _1);
-    SNAP_LISTEN(sendmail, "filter", filter::filter, replace_token, _1, _2, _3, _4);
+    SNAP_LISTEN(sendmail, "filter", filter::filter, replace_token, _1, _2, _3, _4, _5);
 }
 
 
@@ -2183,7 +2185,7 @@ void sendmail::sendemail(const QString& key, const QString& unique_key)
         // the date must be specified in English only which prevents us from
         // using the strftime() or QDateTime functions which are affected by
         // the current locale of the server
-        headers["Date"] = f_snap->date_to_string(time(NULL), snap_child::DATE_FORMAT_EMAIL);
+        headers["Date"] = f_snap->date_to_string(time(NULL) * 1000000, snap_child::DATE_FORMAT_EMAIL);
     }
     if(!headers.contains("Message-ID"))
     {
@@ -2468,7 +2470,7 @@ void sendmail::on_generate_main_content(layout::layout *l, const QString& path, 
  */
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
-void sendmail::on_replace_token(filter::filter *f, QString const& cpath, QDomDocument& xml, filter::filter::token_info_t& token)
+void sendmail::on_replace_token(filter::filter *f, QString const& cpath, QString const& plugin_owner, QDomDocument& xml, filter::filter::token_info_t& token)
 {
     if(!token.is_namespace("sendmail::"))
     {

@@ -28,24 +28,36 @@ namespace content
 {
 
 
-enum name_t {
+enum name_t
+{
     SNAP_NAME_CONTENT_ACCEPTED,
     SNAP_NAME_CONTENT_ATTACHMENT,
-    SNAP_NAME_CONTENT_ATTACHMENT_FILENAME,
-    SNAP_NAME_CONTENT_ATTACHMENT_MIME_TYPE,
+    //SNAP_NAME_CONTENT_ATTACHMENT_FILENAME,
+    SNAP_NAME_CONTENT_ATTACHMENT_JAVASCRIPTS,
+    //SNAP_NAME_CONTENT_ATTACHMENT_MIME_TYPE,
     SNAP_NAME_CONTENT_ATTACHMENT_PATH_END,
+    SNAP_NAME_CONTENT_ATTACHMENT_REVISION_CONTROL_LAST_BRANCH,
+    SNAP_NAME_CONTENT_ATTACHMENT_REVISION_CONTROL_LAST_REVISION,
+    SNAP_NAME_CONTENT_ATTACHMENT_REVISION_CONTROL_CURRENT,
+    SNAP_NAME_CONTENT_ATTACHMENT_REVISION_CONTROL_CURRENT_WORKING_VERSION,
+    SNAP_NAME_CONTENT_ATTACHMENT_REVISION_FILENAME,
+    SNAP_NAME_CONTENT_ATTACHMENT_REVISION_FILENAME_WITH_VAR,
+    SNAP_NAME_CONTENT_ATTACHMENT_REVISION_MIME_TYPE,
     SNAP_NAME_CONTENT_BODY,
+    SNAP_NAME_CONTENT_BRANCH,
     SNAP_NAME_CONTENT_CHILDREN,
     SNAP_NAME_CONTENT_COMPRESSOR_UNCOMPRESSED,
     SNAP_NAME_CONTENT_CONTENT_TYPES,
     SNAP_NAME_CONTENT_CONTENT_TYPES_NAME,
     SNAP_NAME_CONTENT_COPYRIGHTED,
     SNAP_NAME_CONTENT_CREATED,
+    SNAP_NAME_CONTENT_CURRENT_VERSION,
     SNAP_NAME_CONTENT_FILES_COMPRESSOR,
     SNAP_NAME_CONTENT_FILES_CREATED,
     SNAP_NAME_CONTENT_FILES_CREATION_TIME,
     SNAP_NAME_CONTENT_FILES_DATA,
     SNAP_NAME_CONTENT_FILES_DATA_COMPRESSED,
+    SNAP_NAME_CONTENT_FILES_DEPENDENCY,
     SNAP_NAME_CONTENT_FILES_FILENAME,
     SNAP_NAME_CONTENT_FILES_IMAGE_HEIGHT,
     SNAP_NAME_CONTENT_FILES_IMAGE_WIDTH,
@@ -67,13 +79,15 @@ enum name_t {
     SNAP_NAME_CONTENT_MODIFIED,
     SNAP_NAME_CONTENT_PAGE_TYPE,
     SNAP_NAME_CONTENT_PARENT,
+    SNAP_NAME_CONTENT_REVISION,
     SNAP_NAME_CONTENT_SHORT_TITLE,
     SNAP_NAME_CONTENT_SINCE,
     SNAP_NAME_CONTENT_SUBMITTED,
     SNAP_NAME_CONTENT_TABLE,         // Cassandra Table used for content (pages, comments, tags, vocabularies, etc.)
     SNAP_NAME_CONTENT_TITLE,
     SNAP_NAME_CONTENT_UNTIL,
-    SNAP_NAME_CONTENT_UPDATED
+    SNAP_NAME_CONTENT_UPDATED,
+    SNAP_NAME_CONTENT_VARIABLE_REVISION
 };
 char const *get_name(name_t name) __attribute__ ((const));
 
@@ -154,6 +168,7 @@ public:
 
         // retrieve from Cassandra
         COMMAND_FIELD_NAME,             // + field name
+        COMMAND_FIELD_NAME_WITH_VARS,   // + field name
         COMMAND_MODE,                   // + mode (int)
 
         COMMAND_SELF,                   // no parameters
@@ -171,6 +186,7 @@ public:
         COMMAND_PARENT_ELEMENT,         // no parameters
         COMMAND_ELEMENT_ATTR,           // + QDomElement
         COMMAND_RESULT,                 // + search_result_t
+        COMMAND_LAST_RESULT_TO_VAR,     // + var name
         COMMAND_SAVE,                   // + child name
         COMMAND_SAVE_INT64,             // + child name
         COMMAND_SAVE_INT64_DATE,        // + child name
@@ -195,6 +211,7 @@ public:
     typedef controlled_vars::limited_auto_init<mode_t, SEARCH_MODE_FIRST, SEARCH_MODE_PATHS, SEARCH_MODE_FIRST> safe_mode_t;
 
     typedef QVector<QtCassandra::QCassandraValue> search_result_t;
+    typedef QMap<QString, QString> variables_t;
 
     class cmd_info_t
     {
@@ -249,6 +266,9 @@ field_search create_field_search(char const *filename, char const *func, int lin
 #define FIELD_SEARCH    snap::content::create_field_search(__FILE__, __func__, __LINE__, f_snap)
 
 
+
+typedef QVector<QString>            dependency_list_t;
+
 class attachment_file
 {
 public:
@@ -262,6 +282,7 @@ public:
     void                            set_attachment_type(QString const& type);
     void                            set_creation_time(int64_t time);
     void                            set_update_time(int64_t time);
+    void                            set_dependencies(dependency_list_t& dependencies);
 
     void                            set_file_name(QString const& name);
     void                            set_file_filename(QString const& filename);
@@ -283,6 +304,7 @@ public:
     QString const&                  get_attachment_type() const;
     int64_t                         get_creation_time() const;
     int64_t                         get_update_time() const;
+    dependency_list_t const&        get_dependencies() const;
     QString const&                  get_name() const;
 
 private:
@@ -297,6 +319,7 @@ private:
     mutable QString                 f_name;
     int64_t                         f_creation_time;
     int64_t                         f_update_time;
+    dependency_list_t               f_dependencies;
 };
 
 
@@ -304,6 +327,13 @@ private:
 class content : public plugins::plugin, public path::path_execute, public layout::layout_content, public javascript::javascript_dynamic_plugin
 {
 public:
+    typedef uint32_t                branch_revision_t;
+    static branch_revision_t const  UNDEFINED_BRANCH = static_cast<branch_revision_t>(-1);
+    static branch_revision_t const  SYSTEM_BRANCH = static_cast<branch_revision_t>(0);
+    static branch_revision_t const  USER_FIRST_BRANCH = static_cast<branch_revision_t>(1);
+    static branch_revision_t const  FIRST_REVISION = static_cast<branch_revision_t>(0);
+    static branch_revision_t const  MAX_BRANCH_NUMBER = static_cast<branch_revision_t>(-2); // 0xFFFF:FFFE (because -1 is reserved)
+
     enum param_type_t
     {
         PARAM_TYPE_STRING,
@@ -317,7 +347,7 @@ public:
         // WARNING: these are saved in the database which is why we directly
         //          assign values DO NOT CHANGE THE VALUES
         CONTENT_SECURE_UNDEFINED = -1,  // not checked yet
-        CONTENT_SECURE_UNSECURE = 0,    // a plugin said it was not safe to use
+        CONTENT_SECURE_INSECURE = 0,    // a plugin said it was not safe to use
         CONTENT_SECURE_SECURE = 1       // all plugins are go!
     };
 
@@ -327,7 +357,9 @@ public:
         QString             f_field_name;
         QString             f_type;
         QString             f_path;
+        QString             f_mime_type;
         QString             f_filename;
+        dependency_list_t   f_dependencies;
     };
 
     typedef controlled_vars::limited_auto_init<param_type_t, PARAM_TYPE_STRING, PARAM_TYPE_INT64, PARAM_TYPE_STRING> safe_param_type_t;
@@ -361,6 +393,7 @@ public:
 
     // add content for addition to the database
     void                add_xml(QString const& plugin_name);
+    void                add_xml_document(QDomDocument& dom, QString const& plugin_name);
     void                add_content(QString const& path, QString const& plugin_owner);
     void                add_param(QString const& path, QString const& name, QString const& data);
     void                set_param_overwrite(QString const& path, const QString& name, bool overwrite);
@@ -369,6 +402,7 @@ public:
     void                add_attachment(QString const& path, content_attachment const& attachment);
     static void         insert_html_string_to_xml_doc(QDomElement child, QString const& xml);
     bool                load_attachment(QString const& key, attachment_file& file, bool load_data = true);
+    void                add_javascript(layout::layout *l, QString const& path, QDomElement& header, QDomElement& metadata, QString const& name);
 
     virtual int         js_property_count() const;
     virtual QVariant    js_property_get(QString const& name) const;
@@ -397,14 +431,22 @@ private:
 
     struct content_block
     {
-        QString                             f_path;
-        QString                             f_owner;
-        content_params_t                    f_params;
-        content_links_t                     f_links;
-        content_attachments_t               f_attachments;
-        controlled_vars::fbool_t            f_saved;
+        QString                     f_path;
+        QString                     f_owner;
+        content_params_t            f_params;
+        content_links_t             f_links;
+        content_attachments_t       f_attachments;
+        controlled_vars::fbool_t    f_saved;
     };
     typedef QMap<QString, content_block>    content_block_map_t;
+
+    struct javascript_ref_t
+    {
+        //QByteArray                  f_md5;
+        QString                     f_name;
+        QString                     f_filename;
+    };
+    typedef QVector<javascript_ref_t> javascript_ref_map_t;
 
     void initial_update(int64_t variables_timestamp);
     void content_update(int64_t variables_timestamp);
@@ -415,6 +457,8 @@ private:
     content_block_map_t                             f_blocks;
     controlled_vars::zint32_t                       f_file_index;
     controlled_vars::fbool_t                        f_updating;
+    QMap<QString, bool>                             f_added_javascripts;
+    javascript_ref_map_t                            f_javascripts;
 };
 
 class content_box_execute

@@ -307,6 +307,7 @@ QString link_info::data() const
     return "key=" + f_key + "\nname=" + f_name;
 }
 
+
 /** \brief Parse a string of key & name back to a link info.
  *
  * This function is the inverse of the data() function. It takes

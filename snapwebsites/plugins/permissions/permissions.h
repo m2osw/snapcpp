@@ -119,7 +119,7 @@ public:
 
     void                    on_bootstrap(snap_child *snap);
     virtual void            on_generate_main_content(layout::layout *l, QString const& path, QDomElement& page, QDomElement& body, QString const& ctemplate);
-    void                    on_validate_action(QString const& path, QString const& action);
+    void                    on_validate_action(QString const& path, QString const& action, permission_error_callback& err_callback);
     void                    on_access_allowed(QString const& user_path, QString const& path, QString const& action, QString const& login_status, server::permission_flag& result);
     void                    on_register_backend_action(server::backend_action_map_t& actions);
     virtual void            on_backend_action(QString const& action);

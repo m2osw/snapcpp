@@ -208,18 +208,31 @@ bool load(const QString& plugin_path, plugin_ptr_t server, const QStringList& li
  * A valid plugin name is a string of letters (A-Z or a-z), digits (0-9),
  * and the underscore (_), dash (-), and period (.). Although the name
  * cannot start or end with a dash or a period.
+ *
+ * \todo
+ * At this time this function prints errors out in stderr. This may
+ * change later and errors will be sent to the logger. However, we
+ * need to verify that the logger is ready when this function gets
+ * called.
+ *
+ * \param[in] name  The name to verify.
+ *
+ * \return true if the name is considered valid.
  */
 bool verify_plugin_name(const QString& name)
 {
-	if(name.isEmpty()) {
+	if(name.isEmpty())
+	{
 		std::cerr << "error: an empty plugin name is not valid." << std::endl;
 		return false;
 	}
-	for(QString::const_iterator p(name.begin()); p != name.end(); ++p) {
+	for(QString::const_iterator p(name.begin()); p != name.end(); ++p)
+	{
 		if((*p < 'a' || *p > 'z')
 		&& (*p < 'A' || *p > 'Z')
 		&& (*p < '0' || *p > '9')
-		&& *p != '_' && *p != '-' && *p != '.') {
+		&& *p != '_' && *p != '-' && *p != '.')
+		{
 			std::cerr << "error: plugin name \"" << name.toUtf8().data()
 					<< "\" includes forbidden characters." << std::endl;
 			return false;
@@ -227,7 +240,8 @@ bool verify_plugin_name(const QString& name)
 	}
 	// Note: we know that name is not empty
 	QChar first(name[0]);
-	if(first == '.' || first == '-') {
+	if(first == '.' || first == '-')
+	{
 		std::cerr << "error: plugin name \"" << name.toUtf8().data()
 				<< "\" cannot start with a period (.) or dash (-)."
 				<< std::endl;
@@ -235,7 +249,8 @@ bool verify_plugin_name(const QString& name)
 	}
 	// Note: we know that name is not empty
 	QChar last(name[name.length() - 1]);
-	if(last == '.' || last == '-') {
+	if(last == '.' || last == '-')
+	{
 		std::cerr << "error: plugin name \"" << name.toUtf8().data()
 				<< "\" cannot end with a period (.) or dash (-)."
 				<< std::endl;

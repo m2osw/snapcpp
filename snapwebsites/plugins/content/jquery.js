@@ -1,12 +1,15 @@
 /*!
- * jQuery JavaScript Library v1.10.2
+ * Name: jquery
+ * Version: 1.10.2
+ * Browsers: all
+ * Description: jQuery JavaScript Library v1.10.2
  * http://jquery.com/
  *
  * Includes Sizzle.js
  * http://sizzlejs.com/
  *
- * Copyright 2005, 2013 jQuery Foundation, Inc. and other contributors
- * Released under the MIT license
+ * Copyright: Copyright 2005, 2013 jQuery Foundation, Inc. and other contributors
+ * License: Released under the MIT license
  * http://jquery.org/license
  *
  * Date: 2013-07-03T13:48Z

@@ -1,5 +1,5 @@
 // Snap Websites Server -- form handling
-// Copyright (C) 2011-2013  Made to Order Software Corp.
+// Copyright (C) 2011-2014  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -75,7 +75,7 @@ public:
 
     void                        on_bootstrap(::snap::snap_child *snap);
     void                        on_process_post(QString const& uri_path);
-    void                        on_replace_token(filter::filter *f, QString const& cpath, QDomDocument& xml, filter::filter::token_info_t& token);
+    void                        on_replace_token(filter::filter *f, QString const& cpath, QString const& plugin_owner, QDomDocument& xml, filter::filter::token_info_t& token);
 
     SNAP_SIGNAL(tweak_form, (form *f, QString const& cpath, QDomDocument form_doc), (f, cpath, form_doc));
     SNAP_SIGNAL(form_element, (form *f), (f));

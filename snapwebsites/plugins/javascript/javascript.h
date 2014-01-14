@@ -28,7 +28,8 @@ namespace javascript
 enum name_t
 {
     SNAP_NAME_JAVASCRIPT_MINIMIZED,
-    SNAP_NAME_JAVASCRIPT_MINIMIZED_COMPRESSED
+    SNAP_NAME_JAVASCRIPT_MINIMIZED_COMPRESSED,
+    SNAP_NAME_JAVASCRIPT_ROW
 };
 char const *get_name(name_t name) __attribute__ ((const));
 
@@ -46,35 +47,6 @@ public:
     virtual QVariant    js_property_get(int index) const = 0;
 };
 
-
-class javascript_filename
-{
-public:
-    typedef QVector<controlled_vars::zuint32_t> version_t;
-
-                        javascript_filename(QString const& filename, QString const& extension);
-
-    bool                valid() const { return f_valid; }
-    QString             error() const { return f_error; }
-    QString             filename() const { return f_filename; }
-    QString             name() const { return f_name; }
-    version_t           version() const { return f_version; }
-
-    int                 compare(javascript_filename const& rhs) const;
-    bool                operator == (javascript_filename const& rhs) const;
-    bool                operator != (javascript_filename const& rhs) const;
-    bool                operator <  (javascript_filename const& rhs) const;
-    bool                operator <= (javascript_filename const& rhs) const;
-    bool                operator >  (javascript_filename const& rhs) const;
-    bool                operator >= (javascript_filename const& rhs) const;
-
-private:
-    controlled_vars::fbool_t    f_valid;
-    QString                     f_error;
-    QString                     f_filename;
-    QString                     f_name;
-    version_t                   f_version;
-};
 
 
 class javascript : public plugins::plugin

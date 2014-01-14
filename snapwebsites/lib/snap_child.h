@@ -67,6 +67,7 @@ public:
 
 
 
+class permission_error_callback;
 class server;
 
 
@@ -256,7 +257,7 @@ public:
     QString                     get_unique_number();
     QSharedPointer<QtCassandra::QCassandraTable> create_table(const QString& table_name, const QString& comment);
     void                        new_content();
-    void                        verify_permissions();
+    void                        verify_permissions(QString const& path, permission_error_callback& err_callback);
     QString                     default_action(QString uri_path);
     void                        process_post();
     static void                 canonicalize_path(QString& path);
@@ -278,6 +279,7 @@ public:
     void                        page_redirect(QString const& path, http_code_t http_code = HTTP_CODE_MOVED_PERMANENTLY, QString const& reason_brief = "Moved", QString const& reason = "This page has moved");
     void                        die(http_code_t err_code, QString err_name, QString const& err_description, QString const& err_details);
     static void                 define_http_name(http_code_t http_code, QString& http_name);
+    void                        finish_update();
 
     void                        output(QByteArray const& data);
     void                        output(QString const& data);

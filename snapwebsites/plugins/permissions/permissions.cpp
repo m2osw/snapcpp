@@ -583,7 +583,7 @@ for(int i(0); i < f_user_rights.size(); ++i)
 {
     std::cout << "  [" << f_user_rights[i] << "]" << std::endl;
 }
-std::cout << "final PLUGINS:" << std::endl;
+std::cout << "final PLUGIN PERMISSIONS:" << std::endl;
 for(req_sets_t::const_iterator pp(f_plugin_permissions.begin());
         pp != f_plugin_permissions.end();
         ++pp)
@@ -668,7 +668,7 @@ void permissions::on_bootstrap(snap_child *snap)
 {
     f_snap = snap;
 
-    SNAP_LISTEN(permissions, "server", server, validate_action, _1, _2);
+    SNAP_LISTEN(permissions, "server", server, validate_action, _1, _2, _3);
     SNAP_LISTEN(permissions, "server", server, access_allowed, _1, _2, _3, _4, _5);
     SNAP_LISTEN(permissions, "server", server, register_backend_action, _1);
 }
@@ -1094,12 +1094,15 @@ void permissions::on_generate_main_content(layout::layout *l, const QString& pat
  * makes use of "a=edit" as one of the query variables.
  *
  * \param[in] path  The path the user wants to access.
- * \param[in,out] action  The action to be taken, the function may redefine it.
+ * \param[in] action  The action to be taken, the function may redefine it.
+ * \param[in] callback  Call functions on errors.
  */
-void permissions::on_validate_action(QString const& path, QString const& action)
+void permissions::on_validate_action(QString const& path, QString const& action, permission_error_callback& err_callback)
 {
     if(action.isEmpty())
     {
+        // always emit this error, that's a programmer bug, not a standard
+        // user problem that can happen so do not use the err_callback
         f_snap->die(snap_child::HTTP_CODE_ACCESS_DENIED,
                 "Access Denied",
                 "You are not authorized to access our website.",
@@ -1146,49 +1149,53 @@ void permissions::on_validate_action(QString const& path, QString const& action)
                 {
                     // spammers are expected to have enough rights to access
                     // the home page so we try to redirect them there
-                    messages::messages::instance()->set_error(
+                    err_callback.on_redirect(
+                        // message
                         "Access Denied",
                         "The page you were trying to access (" + path + ") requires more privileges.",
                         "spammer trying to \"" + action + "\" on page \"" + path + "\".",
-                        false
-                    );
-                    f_snap->page_redirect("/", snap_child::HTTP_CODE_ACCESS_DENIED);
+                        false,
+                        // redirect
+                        "/",
+                        snap_child::HTTP_CODE_ACCESS_DENIED);
                 }
                 else
                 {
                     // if user does not even have access to the home page...
-                    f_snap->die(snap_child::HTTP_CODE_ACCESS_DENIED,
+                    err_callback.on_error(snap_child::HTTP_CODE_ACCESS_DENIED,
                             "Access Denied",
                             "You are not authorized to access our website.",
                             "spammer trying to \"" + action + "\" on page \"" + path + "\" with unsufficient rights.");
                 }
-                NOTREACHED();
+                return;
             }
 
             if(path == "/login")
             {
                 // An IP, Agent, etc. based test could get us here...
-                f_snap->die(snap_child::HTTP_CODE_ACCESS_DENIED,
+                err_callback.on_error(snap_child::HTTP_CODE_ACCESS_DENIED,
                         "Access Denied",
                         action != "view"
                             ? "You are not authorized to access the login page with action " + action
                             : "Somehow you are not authorized to access the login page.",
                         "user trying to \"" + action + "\" on page \"" + path + "\" with unsufficient rights.");
-                NOTREACHED();
+                return;
             }
 
             // user is anonymous, there is hope, he may have access once
             // logged in
             // TODO all redirects need to also include a valid action!
             users_plugin->attach_to_session(get_name(users::SNAP_NAME_USERS_LOGIN_REFERRER), path);
-            messages::messages::instance()->set_error(
+            err_callback.on_redirect(
+                // message
                 "Unauthorized",
                 "The page you were trying to access (" + path
                         + ") requires more privileges. If you think you have such, try to log in first.",
                 "user trying to \"" + action + "\" on page \"" + path + "\" when not logged in.",
-                false
-            );
-            f_snap->page_redirect("login", snap_child::HTTP_CODE_UNAUTHORIZED);
+                false,
+                // redirect
+                "login",
+                snap_child::HTTP_CODE_UNAUTHORIZED);
         }
         else
         {
@@ -1201,25 +1208,27 @@ void permissions::on_validate_action(QString const& path, QString const& action)
                     // only he were recently logged in (with the last 3h or
                     // whatever the administrator set that to.)
                     users_plugin->attach_to_session(get_name(users::SNAP_NAME_USERS_LOGIN_REFERRER), path);
-                    messages::messages::instance()->set_error(
+                    err_callback.on_redirect(
+                        // message
                         "Unauthorized",
                         "The page you were trying to access (" + path
                                 + ") requires you to verify your credentials. Please log in again and the system will send you back there.",
                         "user trying to \"" + action + "\" on page \"" + path + "\" when not recently logged in.",
-                        false
-                    );
-                    f_snap->page_redirect("verify-credentials", snap_child::HTTP_CODE_UNAUTHORIZED);
-                    NOTREACHED();
+                        false,
+                        // redirect
+                        "verify-credentials",
+                        snap_child::HTTP_CODE_UNAUTHORIZED);
+                    return;
                 }
             }
             // user is already logged in; no redirect even once we support
             // the double password feature
-            f_snap->die(snap_child::HTTP_CODE_ACCESS_DENIED,
+            err_callback.on_error(snap_child::HTTP_CODE_ACCESS_DENIED,
                     "Access Denied",
                     "You are not authorized to apply this action (" + action + ") to this page (" + path + ").",
                     "user trying to \"" + action + "\" on page \"" + path + "\" with unsufficient rights.");
         }
-        NOTREACHED();
+        return;
     }
 }
 

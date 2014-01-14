@@ -18,6 +18,7 @@
 #include "path.h"
 #include "not_reached.h"
 #include "../content/content.h"
+#include "../messages/messages.h"
 #include <iostream>
 
 
@@ -59,7 +60,7 @@ char const * const g_undefined = "undefined";
 path::path()
     //: f_snap(NULL) -- auto-init
     : f_primary_owner(g_undefined)
-    //, f_path_plugin() -- auto-init
+    //, f_path_plugin() -- not initialized
 {
 }
 
@@ -128,19 +129,9 @@ void path::on_init()
 }
 
 
-/** \brief Analyze the URL and execute the corresponding callback.
- *
- * This function looks for the page that needs to be displayed
- * from the URL information.
- *
- * \todo
- * Should we also test with case insensitive paths? (i.e. if all
- * else failed) Or should we make sure URL is all lowercase and
- * thus always make it case insensitive?
- *
- * \param[in] uri_path  The path received from the HTTP server.
- */
-void path::on_execute(QString const& uri_path)
+
+
+plugins::plugin *path::get_plugin(QString const& uri_path, permission_error_callback& err_callback)
 {
     // get the name of the plugin that owns this URL 
     QString cpath(uri_path);
@@ -148,9 +139,10 @@ void path::on_execute(QString const& uri_path)
     QString const key(f_snap->get_site_key_with_slash() + cpath);
     QString owner;
     dynamic_path_plugin_t path_plugin;
-    // TODO: remove direct dependency on the content pluing
+    // TODO: remove direct dependency on the content plugin
     QSharedPointer<QtCassandra::QCassandraTable> content_table(content::content::instance()->get_content_table());
-    bool const page_exists(content_table->exists(key));
+    bool const page_exists(content_table->exists(key)
+                        && content_table->row(key)->exists(content::get_name(content::SNAP_NAME_CONTENT_MODIFIED)));
     if(page_exists)
     {
         // this should work so we go ahead and set the Last-Modified field in the header
@@ -158,20 +150,28 @@ void path::on_execute(QString const& uri_path)
         owner = content_table->row(key)->cell(QString(get_name(SNAP_NAME_PATH_PRIMARY_OWNER)))->value().stringValue();
         if(value.nullValue() || owner.isEmpty())
         {
-            f_snap->die(snap_child::HTTP_CODE_NOT_FOUND,
+            err_callback.on_error(snap_child::HTTP_CODE_NOT_FOUND,
                         "Invalid Page",
                         "An internal error occured and this page cannot properly be displayed at this time.",
-                        QString("User tried to access page \"%1\" but it does not look valid (value null? %2, owner null? %3)")
+                        QString("User tried to access page \"%1\" but it does not look valid (null value? %2, empty owner? %3)")
                                 .arg(key).arg(static_cast<int>(value.nullValue())).arg(static_cast<int>(owner.isEmpty())));
-            NOTREACHED();
+            return NULL;
         }
-        // ddd, dd MMM yyyy hh:mm:ss +0000
-        uint64_t const last_modified(value.int64Value());
-        f_snap->set_header("Last-Modified", f_snap->date_to_string(last_modified, snap_child::DATE_FORMAT_HTTP));
+        f_last_modified = value.int64Value();
 
         // get the primary owner (plugin name) and retrieve the plugin pointer
 //std::cerr << "Execute [" << key.toUtf8().data() << "] with plugin [" << owner.toUtf8().data() << "]\n";
         path_plugin = plugins::get_plugin(owner);
+        if(!path_plugin)
+        {
+            // if the plugin cannot be found then either it was mispelled
+            // or the plugin is not currently installed...
+            f_snap->die(snap_child::HTTP_CODE_NOT_FOUND,
+                        "Plugin Missing",
+                        "This page is not currently available as its plugin is not currently installed.",
+                        "User tried to access page \"" + cpath + "\" but its plugin (" + owner + ") does not exist (not installed? mispelled?)");
+            NOTREACHED();
+        }
     }
     else
     {
@@ -186,6 +186,73 @@ void path::on_execute(QString const& uri_path)
         path_plugin = f_path_plugin;
         f_primary_owner = g_undefined; // reset to a value considered invalid
     }
+
+    if(path_plugin)
+    {
+        // got a valid plugin, verify that the user has permission
+        f_snap->verify_permissions(cpath, err_callback);
+    }
+
+    return path_plugin.get();
+}
+
+
+/** \brief Analyze the URL and execute the corresponding callback.
+ *
+ * This function looks for the page that needs to be displayed
+ * from the URL information.
+ *
+ * \todo
+ * Should we also test with case insensitive paths? (i.e. if all
+ * else failed) Or should we make sure URL is all lowercase and
+ * thus always make it case insensitive?
+ *
+ * \param[in] uri_path  The path received from the HTTP server.
+ */
+void path::on_execute(QString const& uri_path)
+{
+    class error_callback : public permission_error_callback
+    {
+    public:
+        error_callback(snap_child *snap)
+            : f_snap(snap)
+        {
+        }
+
+        void on_error(snap_child::http_code_t err_code, QString const& err_name, QString const& err_description, QString const& err_details)
+        {
+            f_snap->die(err_code, err_name, err_description, err_details);
+            NOTREACHED();
+        }
+
+        void on_redirect(
+                /* message::set_error() */ QString const& err_name, QString const& err_description, QString const& err_details, bool err_security,
+                /* snap_child::page_redirect() */ QString const& path, snap_child::http_code_t http_code)
+        {
+            // TODO: remove this message dependency
+            messages::messages::instance()->set_error(err_name, err_description, err_details, err_security);
+            f_snap->page_redirect(path, http_code, err_description, err_details);
+            NOTREACHED();
+        }
+
+    private:
+        zpsnap_child_t      f_snap;
+    } main_page_error_callback(f_snap);
+
+    dynamic_path_plugin_t path_plugin(get_plugin(uri_path, main_page_error_callback));
+
+    // The last modification date is saved in the get_plugin()
+    // It's a bit ugly but that way we test there that the page is valid and
+    // we avoid having to search that information again to define the
+    // corresponding header. However, it cannot be done in the get_plugin()
+    // function since it may be called for other pages than the main page.
+    //
+    // ddd, dd MMM yyyy hh:mm:ss +0000
+    if(0 != f_last_modified)
+    {
+        f_snap->set_header("Last-Modified", f_snap->date_to_string(f_last_modified, snap_child::DATE_FORMAT_HTTP));
+    }
+
     // if a plugin pointer was defined we expect that the dynamic_cast<> will
     // always work, however path_plugin may be NULL
     path_execute *pe(dynamic_cast<path_execute *>(path_plugin.get()));
@@ -194,16 +261,20 @@ void path::on_execute(QString const& uri_path)
         // not found, give a chance to some plugins to do something with the
         // current data (i.e. auto-search, internally redirect to a nice
         // Page Not Found page, etc.)
+        QString cpath(uri_path);
+        snap_child::canonicalize_path(cpath);
         page_not_found(this, cpath);
         if(f_snap->empty_output())
         {
             // no page_not_found() plugin support...
-            if(page_exists)
+            if(path_plugin)
             {
+                // if the page exists then
+                QString const owner(path_plugin->get_plugin_name());
                 f_snap->die(snap_child::HTTP_CODE_NOT_FOUND,
                             "Plugin Missing",
                             "This page is not currently available as its plugin is not currently installed.",
-                            "User tried to access page \"" + cpath + "\" but its plugin (" + owner + ") refused it");
+                            "User tried to access page \"" + cpath + "\" but its plugin (" + owner + ") does not yet implement the path_execute");
             }
             else
             {
@@ -217,11 +288,7 @@ void path::on_execute(QString const& uri_path)
     }
     else
     {
-        // found it, execute the path for real
-
-        // get the action, if no action is defined, then use the default
-        // which  is "view" unless we are POSTing
-        f_snap->verify_permissions();
+        // execute the path for real
 
         // if the user POSTed something, manage that content first, the
         // effect is often to redirect the user in which case we want to
@@ -230,6 +297,8 @@ void path::on_execute(QString const& uri_path)
         // return the "form results".)
         f_snap->process_post();
 
+        QString cpath(uri_path);
+        snap_child::canonicalize_path(cpath);
         if(!pe->on_path_execute(cpath))
         {
             // TODO (TBD):
@@ -239,7 +308,7 @@ void path::on_execute(QString const& uri_path)
             f_snap->die(snap_child::HTTP_CODE_NOT_FOUND,
                     "Page Not Present",
                     "Somehow this page is not currently available.",
-                    "User tried to access page \"" + cpath + "\" but its plugin (" + owner + ") refused it");
+                    "User tried to access page \"" + cpath + "\" but its plugin (" + path_plugin->get_plugin_name() + ") refused it");
             NOTREACHED();
         }
     }

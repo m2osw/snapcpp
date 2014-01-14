@@ -23,12 +23,17 @@
 #include "dom_util.h"
 #include "snap_magic.h"
 #include "snap_image.h"
+#include "snap_version.h"
+#include <QtCassandra/QCassandraLock.h>
+
 #include <iostream>
 #include <openssl/md5.h>
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
 #include <QFile>
+#include <QUuid>
 #pragma GCC diagnostic pop
+
 #include "poison.h"
 
 
@@ -45,24 +50,51 @@ SNAP_PLUGIN_START(content, 1, 0)
  */
 char const *get_name(name_t name)
 {
+    // Note: <branch>.<revision> are actually replaced by a full version
+    //       when dealing with JavaScript and CSS files (Version: field)
     switch(name) {
     case SNAP_NAME_CONTENT_ACCEPTED:
         return "content::accepted";
 
     case SNAP_NAME_CONTENT_ATTACHMENT:
-        return "content::attachment";
+        return "content::attachment"; // also ::<branch>.<revision> in the attachment row
+                                      // also ::<plugin>::<field>::path in the parent of an attachment row
+
+    //case SNAP_NAME_CONTENT_ATTACHMENT_FILENAME:
+    //    return "content::attachment::filename";
+
+    case SNAP_NAME_CONTENT_ATTACHMENT_REVISION_FILENAME_WITH_VAR:
+        return "content::attachment::${revision}::filename";
+
+    case SNAP_NAME_CONTENT_ATTACHMENT_REVISION_FILENAME:
+        return "filename"; // content::attachment::<branch>.<revision>::filename
+
+    //case SNAP_NAME_CONTENT_ATTACHMENT_MIME_TYPE:
+    //    return "content::attachment::mime_type";
+
+    case SNAP_NAME_CONTENT_ATTACHMENT_REVISION_MIME_TYPE:
+        return "mime_type"; // content::attachment::<branch>.<revision>::mime_type
 
     case SNAP_NAME_CONTENT_ATTACHMENT_PATH_END:
         return "path";
 
-    case SNAP_NAME_CONTENT_ATTACHMENT_FILENAME:
-        return "content::attachment::filename";
+    case SNAP_NAME_CONTENT_ATTACHMENT_REVISION_CONTROL_LAST_BRANCH: // largest branch number
+        return "content::attachment::revision_control::last_branch";
 
-    case SNAP_NAME_CONTENT_ATTACHMENT_MIME_TYPE:
-        return "content::attachment::mime_type";
+    case SNAP_NAME_CONTENT_ATTACHMENT_REVISION_CONTROL_LAST_REVISION: // largest revision number, one per branch
+        return "content::attachment::revision_control::last_revision"; // ::<branch number>
+
+    case SNAP_NAME_CONTENT_ATTACHMENT_REVISION_CONTROL_CURRENT: // currently displayed to visitors
+        return "content::attachment::revision_control::current";
+
+    case SNAP_NAME_CONTENT_ATTACHMENT_REVISION_CONTROL_CURRENT_WORKING_VERSION: // currently displayed to editors
+        return "content::attachment::revision_control::current_working_version";
 
     case SNAP_NAME_CONTENT_BODY:
         return "content::body";
+
+    case SNAP_NAME_CONTENT_BRANCH:
+        return "content::branch";
 
     case SNAP_NAME_CONTENT_CHILDREN:
         return "content::children";
@@ -82,6 +114,20 @@ char const *get_name(name_t name)
     case SNAP_NAME_CONTENT_CREATED:
         return "content::created";
 
+    // We'll redo that better using a sub-function to handle revision control
+    // on specific fields (here "content", for attachment "content::attachment")
+    //case SNAP_NAME_CONTENT_REVISION_CONTROL_LATEST_BRANCH: // largest branch number
+    //    return "content::revision_control::last_branch";
+
+    //case SNAP_NAME_CONTENT_REVISION_CONTROL_LATEST_REVISION: // largest revision number, one per branch
+    //    return "content::revision_control::last_branch"; // ::<branch number>
+
+    //case SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT: // currently displayed to visitors
+    //    return "content::revision_control::current";
+
+    //case SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_VERSION: // currently displayed to editors
+    //    return "content::revision_control::current_working_version";
+
     case SNAP_NAME_CONTENT_FILES_COMPRESSOR:
         return "content::files::compressor";
 
@@ -96,6 +142,9 @@ char const *get_name(name_t name)
 
     case SNAP_NAME_CONTENT_FILES_DATA_COMPRESSED:
         return "content::files::data::compressed";
+
+    case SNAP_NAME_CONTENT_FILES_DEPENDENCY:
+        return "content::files::dependency";
 
     case SNAP_NAME_CONTENT_FILES_FILENAME:
         return "content::files::filename";
@@ -160,6 +209,9 @@ char const *get_name(name_t name)
     case SNAP_NAME_CONTENT_PARENT:
         return "content::parent";
 
+    case SNAP_NAME_CONTENT_REVISION:
+        return "content::revision";
+
     case SNAP_NAME_CONTENT_SHORT_TITLE:
         return "content::short_title";
 
@@ -181,6 +233,9 @@ char const *get_name(name_t name)
     case SNAP_NAME_CONTENT_UPDATED:
         return "content::updated";
 
+    case SNAP_NAME_CONTENT_VARIABLE_REVISION:
+        return "revision";
+
     default:
         // invalid index
         throw snap_logic_exception("invalid SNAP_NAME_CONTENT_...");
@@ -188,6 +243,25 @@ char const *get_name(name_t name)
     }
     NOTREACHED();
 }
+
+
+
+namespace
+{
+
+char const *css_js_extensions[] =
+{
+    // longer first
+    ".min.css",
+    ".org.css",
+    ".min.js",
+    ".org.js",
+    ".css",
+    ".js",
+    NULL
+};
+
+} // no name namespace
 
 
 /** \class field_search
@@ -718,6 +792,44 @@ void field_search::run()
             f_field_name = field_name;
         }
 
+        void cmd_field_name_with_vars(QString const& field_name)
+        {
+            if(field_name.isEmpty())
+            {
+                throw content_exception_invalid_sequence("COMMAND_FIELD_NAME_WITH_VARS cannot be set to an empty string");
+            }
+            f_field_name.clear();
+            QByteArray name(field_name.toUtf8());
+            for(char const *n(name.data()); *n != '\0'; ++n)
+            {
+                if(*n == '$')
+                {
+                    if(n[1] != '{')
+                    {
+                        throw content_exception_invalid_sequence(QString("COMMAND_FIELD_NAME_WITH_VARS variable name \"%1\" must be enclosed in { and }.").arg(field_name));
+                    }
+                    QString varname;
+                    for(n += 2; *n != '}'; ++n)
+                    {
+                        if(*n == '\0')
+                        {
+                            throw content_exception_invalid_sequence(QString("COMMAND_FIELD_NAME_WITH_VARS variable \"%1\" not ending with }.").arg(field_name));
+                        }
+                        varname += *n;
+                    }
+                    if(!f_variables.contains(varname))
+                    {
+                        throw content_exception_invalid_sequence(QString("COMMAND_FIELD_NAME_WITH_VARS variable \"%1\" is not defined.").arg(varname));
+                    }
+                    f_field_name += f_variables[varname];
+                }
+                else
+                {
+                    f_field_name += *n;
+                }
+            }
+        }
+
         void cmd_self(QString const& self)
         {
             // verify that a field name is defined
@@ -773,31 +885,51 @@ void field_search::run()
                 return;
             }
 
+            QString match;
+
+            // last part is dynamic?
+            // (later we could support * within the path and not just at the
+            // very end...)
+            if(f_self.endsWith("::*"))
+            {
+                int const pos = f_self.lastIndexOf('/');
+                if(pos == -1)
+                {
+                    throw content_exception_invalid_name("f_self is expected to always include at least one slash, \"" + f_self + "\" does not");
+                }
+                // the match is everything except the '*'
+                match = f_self.left(f_self.length() - 1);
+                f_self = f_self.left(pos);
+            }
+
             QStringList children;
             children += f_self;
 
-            for(int i(0); i < children.size(); ++i)
+            for(int i(0); i < children.size(); ++i, --depth)
             {
                 // first loop through all the children of self for f_field_name
+                // and if depth is larger than 1, repeat the process with those children
                 links::link_info info(get_name(SNAP_NAME_CONTENT_CHILDREN), false, children[i]);
                 QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
                 links::link_info child_info;
                 while(link_ctxt->next_link(child_info))
                 {
                     QString const child(child_info.key());
-                    cmd_self(child);
-                    if(!f_result.isEmpty() && SEARCH_MODE_FIRST == f_mode)
+                    if(match.isEmpty() || child.startsWith(match))
                     {
-                        return;
-                    }
+                        cmd_self(child);
+                        if(!f_result.isEmpty() && SEARCH_MODE_FIRST == f_mode)
+                        {
+                            return;
+                        }
 
-                    if(depth >= 2)
-                    {
-                        // record this child as its children will have to be tested
-                        children += child;
+                        if(depth >= 2)
+                        {
+                            // record this child as its children will have to be tested
+                            children += child;
+                        }
                     }
                 }
-                --depth;
             }
         }
 
@@ -920,6 +1052,17 @@ void field_search::run()
         void cmd_result(search_result_t& result)
         {
             result = f_result;
+        }
+
+        void cmd_last_result_to_var(QString const& varname)
+        {
+            if(f_result.isEmpty())
+            {
+                throw content_exception_invalid_sequence(QString("no result to save in variable \"%1\"").arg(varname));
+            }
+            QtCassandra::QCassandraValue value(f_result.last());
+            f_result.pop_back();
+            f_variables[varname] = value.stringValue();
         }
 
         void cmd_save(QString const& child_name)
@@ -1060,6 +1203,10 @@ void field_search::run()
                     cmd_field_name(f_program[i].get_string());
                     break;
 
+                case COMMAND_FIELD_NAME_WITH_VARS:
+                    cmd_field_name_with_vars(f_program[i].get_string());
+                    break;
+
                 case COMMAND_SELF:
                     cmd_self(f_self);
                     break;
@@ -1106,6 +1253,10 @@ void field_search::run()
 
                 case COMMAND_RESULT:
                     cmd_result(*f_program[i].get_result());
+                    break;
+
+                case COMMAND_LAST_RESULT_TO_VAR:
+                    cmd_last_result_to_var(f_program[i].get_string());
                     break;
 
                 case COMMAND_SAVE:
@@ -1169,6 +1320,7 @@ void field_search::run()
         controlled_vars::fbool_t                        f_found_self;
         controlled_vars::fbool_t                        f_saved;
         field_search::search_result_t                   f_result;
+        field_search::variables_t                       f_variables;
     } search(f_filename, f_function, f_line, f_snap, f_program);
 
     search.run();
@@ -1408,6 +1560,47 @@ void attachment_file::set_creation_time(int64_t time)
 void attachment_file::set_update_time(int64_t time)
 {
     f_update_time = time;
+}
+
+
+/** \brief Set the dependencies of this attachment.
+ *
+ * Attachments can be given dependencies, with versions, and specific
+ * browsers. This is particularly useful for JS and CSS files as in
+ * this way we can server exactly what is necessary.
+ *
+ * One dependency looks like a name, one or two versions with an operator
+ * (usually \< to define a range), and a browser name. The versions are
+ * written between parenthesis and the browser name between square brackets:
+ *
+ * \code
+ * <attachment name> ...
+ *    ... (<version>) ...
+ *    ... (<op> <version>) ...
+ *    ... (<version> <op> <version>) ...
+ *    ... (<version>, <version>, ...) ...
+ *    ... (<op> <version>, <op> <version>, ...) ...
+ *       ... [<browser>]
+ *       ... [<browser>, <browser>, ...]
+ * \endcode
+ *
+ * When two versions are used, the operator must be \<. It defines a range
+ * and any versions defined between the two versions are considered valid.
+ * The supported operators are =, \<, \<=, \>, \>=, !=, and ,. The comma
+ * can be used to define a set of versions.
+ *
+ * Each attachment name must be defined only once.
+ *
+ * Attachments that are given dependencies are also added to a special
+ * list so they can be found instantly. This is important since when a page
+ * says to insert a JavaScript file, all its dependencies have to be added
+ * too and that can be done automatically using these dependencies.
+ *
+ * \param[in] dependencies  The dependencies of this attachment.
+ */
+void attachment_file::set_dependencies(dependency_list_t& dependencies)
+{
+    f_dependencies = dependencies;
 }
 
 
@@ -1719,6 +1912,20 @@ int64_t attachment_file::get_update_time() const
 }
 
 
+/** \brief Retrieve the list of dependencies of an attachment.
+ *
+ * The list of dependencies on an attachment are set with the
+ * set_dependencies() function. These are used to determine which files are
+ * required in a completely automated way.
+ *
+ * \return The list of dependency of this attachment.
+ */
+dependency_list_t const& attachment_file::get_dependencies() const
+{
+    return f_dependencies;
+}
+
+
 /** \brief Generate the full field name.
  *
  * The name of the field in the parent page in the content is defined
@@ -1749,6 +1956,7 @@ int64_t attachment_file::get_update_time() const
  */
 QString const& attachment_file::get_name() const
 {
+    // this name appears in the PARENT of the attachment
     if(f_name.isEmpty())
     {
         if(f_multiple)
@@ -2013,6 +2221,59 @@ QSharedPointer<QtCassandra::QCassandraTable> content::get_files_table()
  */
 bool content::on_path_execute(const QString& cpath)
 {
+    // TODO: we probably do not want to check for attachment to send if the
+    //       action is not "view"...
+    QSharedPointer<QtCassandra::QCassandraTable> content_table(get_content_table());
+    QString const site_key(f_snap->get_site_key_with_slash());
+    QString const key(site_key + cpath);
+    if(content_table->exists(key)
+    && content_table->row(key)->exists(get_name(SNAP_NAME_CONTENT_ATTACHMENT_REVISION_CONTROL_CURRENT)))
+    {
+        QSharedPointer<QtCassandra::QCassandraRow> row(content_table->row(key));
+        QtCassandra::QCassandraValue revision_value(row->cell(get_name(SNAP_NAME_CONTENT_ATTACHMENT_REVISION_CONTROL_CURRENT))->value());
+        if(!revision_value.nullValue())
+        {
+            QString revision(revision_value.stringValue());
+            QString revision_key(QString("%1::%2").arg(get_name(SNAP_NAME_CONTENT_ATTACHMENT)).arg(revision));
+//std::cerr << "revision key [" << revision << "] [" << revision_key << "]\n";
+            if(row->exists(revision_key))
+            {
+                QtCassandra::QCassandraValue attachment_key(row->cell(revision_key)->value());
+                if(!attachment_key.nullValue())
+                {
+                    QSharedPointer<QtCassandra::QCassandraTable> files_table(get_files_table());
+                    if(!files_table->exists(attachment_key.binaryValue())
+                    || !files_table->row(attachment_key.binaryValue())->exists(get_name(SNAP_NAME_CONTENT_FILES_DATA)))
+                    {
+                        // somehow the file data is not available
+                        f_snap->die(snap_child::HTTP_CODE_NOT_FOUND, "Attachment Not Found",
+                                "The attachment \"" + cpath + "\" was not found.",
+                                QString("Could not find field \"%1\" of the file \"%2\".")
+                                        .arg(get_name(SNAP_NAME_CONTENT_FILES_DATA))
+                                        .arg(QString::fromAscii(attachment_key.binaryValue().toHex())));
+                        NOTREACHED();
+                    }
+
+                    QSharedPointer<QtCassandra::QCassandraRow> file_row(files_table->row(attachment_key.binaryValue()));
+
+                    //int pos(cpath.lastIndexOf('/'));
+                    //QString basename(cpath.mid(pos + 1));
+                    //f_snap->set_header("Content-Disposition", "attachment; filename=" + basename);
+
+                    //f_snap->set_header("Content-Transfer-Encoding", "binary");
+
+                    // this is an attachment, output it as such
+                    QtCassandra::QCassandraValue attachment_mime_type(file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_MIME_TYPE))->value());
+                    f_snap->set_header("Content-Type", attachment_mime_type.stringValue());
+
+                    QtCassandra::QCassandraValue data(file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_DATA))->value());
+                    f_snap->output(data.binaryValue());
+                    return true;
+                }
+            }
+        }
+    }
+
     f_snap->output(layout::layout::instance()->apply_layout(cpath, this));
 
     return true;
@@ -2059,6 +2320,35 @@ bool content::create_content_impl(QString const& path, QString const& owner, QSt
     QString const site_key(f_snap->get_site_key_with_slash());
     QString const key(site_key + path);
 
+    if(!path.isEmpty())
+    {
+        // parent path is the path without the last "/..." part
+        QString parent_path;
+        int const pos(path.lastIndexOf('/'));
+        if(pos != -1)
+        {
+            QString parent_key(site_key + path.left(pos));
+            QSharedPointer<QtCassandra::QCassandraRow> parent_row(content_table->row(parent_key));
+            if(parent_row->exists(get_name(SNAP_NAME_CONTENT_FINAL)))
+            {
+                QtCassandra::QCassandraValue final_value(parent_row->cell(get_name(SNAP_NAME_CONTENT_FINAL))->value());
+                if(final_value.nullValue())
+                {
+                    if(final_value.signedCharValue())
+                    {
+                        // the user was trying to add content under a final leaf
+                        f_snap->die(snap_child::HTTP_CODE_FORBIDDEN, "Final Parent",
+                                QString("Page \"%1\" cannot be added under \"%2\" as that parent page is marked as final.")
+                                            .arg(key).arg(parent_key),
+                                "The parent row does not allow for further children.");
+                        NOTREACHED();
+                    }
+                }
+            }
+        }
+    }
+
+    // create the row
     QString const primary_owner(path::get_name(path::SNAP_NAME_PATH_PRIMARY_OWNER));
     QSharedPointer<QtCassandra::QCassandraRow> row(content_table->row(key));
     if(row->exists(primary_owner))
@@ -2124,7 +2414,7 @@ bool content::create_content_impl(QString const& path, QString const& owner, QSt
  * specified file, owner, and type.
  *
  * This function prepares the file and sends a create_content() event
- * first.
+ * to create the actual content entry if it did not yet exist.
  *
  * Note that the MIME type of the file is generated using the magic
  * database. The \p attachment_type parameter is the one saved in the
@@ -2135,8 +2425,8 @@ bool content::create_content_impl(QString const& path, QString const& owner, QSt
  * It is important to understand that we only save each file only ONCE
  * in the database. This is accomplished by create_attachment() by computing
  * the MD5 sum of the file and then checking whether the file was
- * previously already loaded. If so, then the existing copy is used
- * (even if it was uploaded by someone else.)
+ * previously loaded. If so, then the existing copy is used
+ * (even if it was uploaded by someone else on another website!)
  *
  * Possible cases when creating an attachment:
  *
@@ -2147,6 +2437,64 @@ bool content::create_content_impl(QString const& path, QString const& owner, QSt
  *     and we can check whether it was already attached to that very
  *     same page; if so then we have nothing else to do (files have
  *     links of all the pages were they are attachments)
+ *
+ * \li When adding a JavaScript or CSS file, the version and browser
+ *     information also gets checked; it is extracted from the file itself
+ *     and used to version the file in the database (in the content row);
+ *     note that each version of a JavaScript or CSS file ends up in
+ *     the database (just like with a tool such as SVN or git).
+ *
+ * \warning
+ * Since most files are versions (branch/revision numbers, etc.) you have
+ * to realize that the function manages multiple filenames. There is one
+ * filename which is \em bare and one filename which is versioned. The
+ * bare filename is used as the attachment name. The versioned filename
+ * is used as the attachment filename (in the files table.)
+ *
+ * \code
+ *  // access the file as "editor.js" on the website
+ *  http://snapwebsites.org/js/editor/editor.js
+ *
+ *  // saved the file as editor_1.2.3.js in files
+ *  files["editor_1.2.3.js"]
+ * \endcode
+ *
+ * This is particularly confusing because the server is capable of
+ * recognizing a plethora of filenames that all resolve to the same
+ * file in the files table only "tweaked" as required internally.
+ * Tweaked here means reformatted as requested.
+ *
+ * \code
+ *  // minimized version 1.2.3, current User Agent
+ *  http://snapwebsites.org/js/editor/editor_1.2.3.min.js
+ *
+ *  // original version, compressed, current User Agent
+ *  http://snapwebsites.org/js/editor/editor_1.2.3.org.js.gz
+ *
+ *  // specifically the version for Internet Explorer
+ *  http://snapwebsites.org/js/editor/editor_1.2.3_ie.min.js
+ *
+ *  // the same with query strings
+ *  http://snapwebsites.org/js/editor/editor.js?v=1.2.3&b=ie&e=min
+ *
+ *  // for images, you upload a JPEG and you can access it as a PNG...
+ *  http://snapwebsites.org/some/page/image.png
+ *
+ *  // for images, you upload a 300x900 page, and access it as a 100x300 image
+ *  http://snapwebsites.org/some/page/image.png?d=100x300
+ * \endcode
+ *
+ * The supported fields are:
+ *
+ * \li \<name> -- the name of the file
+ * \li [v=] \<version> -- a specific version of the file (if not specified, get
+ *                   latest)
+ * \li [b=] \<browser> -- a specific version for that browser
+ * \li [e=] \<encoding> -- a specific encoding, in most cases a compression,
+ *                         for a JavaScript/CSS file "minimize" is also
+ *                         understood (i.e. min,gz or org,bz2); this can be
+ *                         used to convert an image to another format
+ * \li [d=] \<width>x<height> -- dimensions for an image
  *
  * \param[in] file  The file to save in the Cassandra database.
  */
@@ -2160,6 +2508,11 @@ bool content::create_attachment_impl(attachment_file const& file)
         return false;
     }
 
+    // TODO: uploading compressed files is a problem if we are to match the
+    //       proper MD5 of the file; we will want to check and decompress
+    //       files so we only save the decompressed version MD5 and not the
+    //       compressed MD5 (otherwise we end up with TWO files.)
+
     // verify that the row specified by file::get_cpath() exists
     QSharedPointer<QtCassandra::QCassandraTable> content_table(get_content_table());
     QString const site_key(f_snap->get_site_key_with_slash());
@@ -2167,34 +2520,182 @@ bool content::create_attachment_impl(attachment_file const& file)
     if(!content_table->exists(key))
     {
         // the parent row does not even exist yet...
+        SNAP_LOG_ERROR("user attempted to create an attachment in page \"")(key)("\" that doesn't exist");
         return false;
     }
-    QSharedPointer<QtCassandra::QCassandraRow> parent_row(content_table->row(key));
-
-    snap_child::post_file_t const& post_file(file.get_file());
 
     // create the path to the new attachment itself
-    QString filename(post_file.get_filename());
-    int const last_slash(filename.lastIndexOf('/'));
+    snap_child::post_file_t const& post_file(file.get_file());
+    QString attachment_filename(post_file.get_filename());
+    int const last_slash(attachment_filename.lastIndexOf('/'));
     if(last_slash != -1)
     {
-        filename = filename.mid(last_slash + 1);
+        attachment_filename = attachment_filename.mid(last_slash + 1);
     }
-    QString const attachment_cpath(file.get_cpath() + "/" + filename);
-    QString const attachment_key(site_key + attachment_cpath);
 
+    QSharedPointer<QtCassandra::QCassandraRow> parent_row(content_table->row(key));
+    if(parent_row->exists(get_name(SNAP_NAME_CONTENT_FINAL)))
+    {
+        QtCassandra::QCassandraValue final_value(parent_row->cell(get_name(SNAP_NAME_CONTENT_FINAL))->value());
+        if(final_value.nullValue())
+        {
+            if(final_value.signedCharValue())
+            {
+                // the user was trying to add content under a final leaf
+                f_snap->die(snap_child::HTTP_CODE_FORBIDDEN, "Final Parent",
+                        QString("The attachment \"%1\" cannot be added under \"%2\" as this page is marked as final.")
+                                    .arg(attachment_filename).arg(key),
+                        "The parent row does not allow for further children.");
+                NOTREACHED();
+            }
+        }
+    }
+
+    snap_version::quick_find_version_in_source fv;
+    QString revision; // there is no default
+    QString extension;
+
+    // if JavaScript or CSS, add the version to the filename before
+    // going forward (unless the version is already there, of course)
+    if(file.get_cpath().startsWith("js/")
+    || file.get_cpath().startsWith("css/"))
+    {
+        // TODO: In this case, really, we probably should only accept
+        //       filenames without anything specified although the version
+        //       is fine if it matches what is defined in the file...
+        //       However, if the name includes .min. (minimized) then we've
+        //       got a problem because the non-minimized version would not
+        //       match properly. This being said, a version that is
+        //       pre-minimized can be uploaded as long as the .org. is not
+        //       used to see a non-minimized version.
+        //       Similarly, if the file being uploaded is already compressed
+        //       we should decompress it because the MD5 will be "wrong"
+        //       otherwise
+        //
+        // find the extension of the filename
+        extension = snap_version::find_extension(attachment_filename, css_js_extensions);
+#ifdef DEBUG
+        if(extension.isEmpty())
+        {
+            throw snap_logic_exception("versioned file extension not found in css_js_extensions, please update the table or the condition at the beginning of this block");
+        }
+#endif
+
+        if(!fv.find_version(post_file.get_data().data(), post_file.get_size()))
+        {
+            f_snap->die(snap_child::HTTP_CODE_FORBIDDEN, "Invalid File",
+                    "The attachment \"" + attachment_filename + "\" does not include a valid C-like comment at the start. The comment must at least include a <a href=\"See http://snapwebsites.org/implementation/feature-requirements/attachments-core\">Version field</a>.",
+                    "The content of this file is not valid for a JavaScript or CSS file (version requied).");
+            NOTREACHED();
+        }
+
+        if(attachment_filename.contains("_"))
+        {
+            // if there is a "_" then we have a file such as
+            //
+            //   <name>_<version>.js
+            // or
+            //   <name>_<version>_<browser>.js
+            //
+            snap_version::versioned_filename js_filename(extension);
+            if(!js_filename.set_filename(attachment_filename))
+            {
+                f_snap->die(snap_child::HTTP_CODE_FORBIDDEN, "Invalid Filename",
+                        "The attachment \"" + attachment_filename + "\" has an invalid name and must be rejected. " + js_filename.get_error(),
+                        "The name is not considered valid for a versioned file.");
+                NOTREACHED();
+            }
+            if(fv.get_version_string() != js_filename.get_version_string())
+            {
+                f_snap->die(snap_child::HTTP_CODE_FORBIDDEN, "Versions Mismatch",
+                        QString("The attachment \"%1\" version (%2) is not the same as the version inside the file (%3).")
+                            .arg(attachment_filename)
+                            .arg(js_filename.get_version_string())
+                            .arg(fv.get_version_string()),
+                        "The name is not considered valid for a versioned file.");
+                NOTREACHED();
+            }
+            // TBD can we verify the browser defined in the filename
+            //     against Browsers field found in the file?
+
+            // remove the version and browser information from the filename
+            attachment_filename = js_filename.get_name() + extension;
+
+            if(fv.get_name().isEmpty())
+            {
+                fv.set_name(js_filename.get_name());
+            }
+        }
+        else
+        {
+            // in this case the name is just <name> and must be
+            //
+            //    [a-z][-a-z0-9]*[a-z0-9]
+            //
+            // get the filename without the extension
+            QString fn(attachment_filename.left(attachment_filename.length() - extension.length()));
+SNAP_LOG_DEBUG("attaching ")(file.get_file().get_filename())(", validate name = ")(fn);
+            QString errmsg;
+            if(!snap_version::validate_name(fn, errmsg))
+            {
+                // unacceptable filename
+                f_snap->die(snap_child::HTTP_CODE_FORBIDDEN, "Invalid Filename",
+                        "The attachment \"" + attachment_filename + "\" has an invalid name and must be rejected. " + errmsg,
+                        "The name is not considered valid for a versioned file.");
+                NOTREACHED();
+            }
+
+            if(fv.get_name().isEmpty())
+            {
+                fv.set_name(fn);
+            }
+        }
+
+        // the filename is now just <name> (in case it had a version and/or
+        // browser indication on entry.)
+
+        revision = fv.get_version_string();
+#ifdef DEBUG
+        if(revision.isEmpty())
+        {
+            // we already checked for errors while parsing the file so we
+            // should never reach here if the version is empty
+            throw snap_logic_exception("the version of a JavaScript or CSS file just cannot be empty here");
+        }
+#endif
+
+        // in the attachment, save the filename with the version so that way
+        // it is easier to see which is which there
+    }
+    else
+    {
+        // for other attachments, there could be a language specified as
+        // in .en.jpg. In that case we want to get the filename without
+        // the language and mark that file as "en"
+
+        // TODO: actually implement the language extraction capability
+    }
+
+    // path in the content table, the attachment_filename is the simple
+    // name without version, language, or encoding
+    QString const attachment_cpath(file.get_cpath() + "/" + attachment_filename);
+    QString const attachment_key(site_key + attachment_cpath);
+    QSharedPointer<QtCassandra::QCassandraRow> attachment_row;
+
+SNAP_LOG_DEBUG("attaching ")(file.get_file().get_filename())(", attachment_key = ")(attachment_key);
+    // this name is "content::attachment::<plugin owner>::<field name>::path"
     QString const name(file.get_name());
 
     // compute the MD5 sum of the file
     // TBD should we forbid the saving of empty files?
     unsigned char md[MD5_DIGEST_LENGTH];
     MD5(reinterpret_cast<unsigned char const *>(post_file.get_data().data()), post_file.get_size(), md);
-    QByteArray md5(reinterpret_cast<char const *>(md), sizeof(md));
+    QByteArray const md5(reinterpret_cast<char const *>(md), sizeof(md));
 
     // check whether the file already exists in the database
-    QSharedPointer<QtCassandra::QCassandraRow> attachment_row;
     QSharedPointer<QtCassandra::QCassandraTable> files_table(get_files_table());
-    if(!files_table->exists(md5))
+    bool file_exists(files_table->exists(md5));
+    if(!file_exists)
     {
         // the file does not exist yet, add it
         //
@@ -2214,7 +2715,7 @@ bool content::create_attachment_impl(attachment_file const& file)
         // creation/modification dates... close to impossible!)
         //
         // 2. link back to the row where the file is saved in the content table
-        file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_FILENAME))->setValue(filename);
+        file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_FILENAME))->setValue(attachment_filename);
 
         // 3. save the computed MIME type
         file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_MIME_TYPE))->setValue(post_file.get_mime_type());
@@ -2262,6 +2763,39 @@ bool content::create_attachment_impl(attachment_file const& file)
         file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_SECURE))->setValue(sflag);
         file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_SECURE_LAST_CHECK))->setValue(static_cast<int64_t>(0));
         file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_SECURITY_REASON))->setValue(QString());
+
+        // 12. save dependencies
+        {
+            // dependencies will always be the same for all websites so we
+            // save them here too
+            dependency_list_t const& deps(file.get_dependencies());
+            QMap<QString, bool> found;
+            int const max(deps.size());
+            for(int i(0); i < max; ++i)
+            {
+                snap_version::dependency d;
+                if(!d.set_dependency(deps[i]))
+                {
+                    // simply invalid...
+                    SNAP_LOG_ERROR("Dependency \"")(deps[i])("\" is not valid. We cannot add it to the database.");;
+                }
+                else
+                {
+                    QString const dependency_name(d.get_name());
+                    if(found.contains(dependency_name))
+                    {
+                        // not unique
+                        SNAP_LOG_ERROR("Dependency \"")(deps[i])("\" was specified more than once. We cannot safely add the same dependency (same name) more than once. Please merge both definitions or delete one of them.");;
+                    }
+                    else
+                    {
+                        // save the canonicalized version of the dependency in the database
+                        found[dependency_name] = true;
+                        file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_DEPENDENCY) + ("::" + dependency_name))->setValue(d.get_dependency_string());
+                    }
+                }
+            }
+        }
     }
 // for test purposes to check a file over and over again
 //files_table->row(get_name(SNAP_NAME_CONTENT_FILES_NEW))->cell(md5)->setValue(true);
@@ -2271,7 +2805,236 @@ bool content::create_attachment_impl(attachment_file const& file)
     signed char ref(1);
     files_table->row(md5)->cell(get_name(SNAP_NAME_CONTENT_FILES_REFERENCE) + ("::" + attachment_key))->setValue(ref);
 
-    // if the field exists and that attach is unique (i.e. supports only
+    // this is the new content row, that is, it may still be empty but we
+    // have to test several things before we can call create_content()...
+    attachment_row = content_table->row(attachment_key);
+
+    // if the revision is still empty then we're dealing with a file
+    // which is neither a JavaScript nor a CSS file
+    if(revision.isEmpty())
+    {
+        // TODO: allow editing of any branch, not just the working
+        //       branch... (use "?branch=123"...)
+        //
+        // TODO: we probably want to reuse a lot of this code for other
+        //       fields and there is no reason it wouldn't work seemlessly
+        //       with any field as long as we name them properly (i.e.
+        //       <plugin>::<field>::revision_control::<this-or-that>)
+
+        if(file_exists)
+        {
+            // we're looking for it in the list of revision present in
+            // the content; at this point we suppose it's not there
+            file_exists = false;
+
+            // the file already exists, it could very well be that the
+            // file had an existing revision in this attachment row so
+            // search for all existing revisions (need a better way to
+            // instantly find those!)
+            QtCassandra::QCassandraColumnRangePredicate revision_column_predicate;
+            QString const start_col(QString("%1::").arg(get_name(SNAP_NAME_CONTENT_ATTACHMENT)));
+            revision_column_predicate.setStartColumnName(start_col);
+            revision_column_predicate.setEndColumnName(start_col + ";");
+            revision_column_predicate.setCount(100);
+            revision_column_predicate.setIndex(); // behave like an index
+            for(;;)
+            {
+                attachment_row->clearCache();
+                attachment_row->readCells(revision_column_predicate);
+                const QtCassandra::QCassandraCells& revision_cells(attachment_row->cells());
+                if(revision_cells.isEmpty())
+                {
+                    break;
+                }
+                // handle one batch
+                for(QtCassandra::QCassandraCells::const_iterator rc(revision_cells.begin());
+                        rc != revision_cells.end();
+                        ++rc)
+                {
+                    // get the email from the database
+                    // we expect empty values once in a while because a dropCell() is
+                    // not exactly instantaneous in Cassandra
+                    QSharedPointer<QtCassandra::QCassandraCell> revision_cell(*rc);
+                    if(!revision_cell->value().nullValue())
+                    {
+                        if(revision_cell->value().binaryValue() == md5)
+                        {
+                            // found it!
+                            file_exists = true; // avoid generation of a new revision!
+                            int const length(strlen(get_name(SNAP_NAME_CONTENT_ATTACHMENT)) + 2); // this can be optimized at compile time!
+                            revision = revision_cell->columnName().mid(length);
+                            content_table->row(attachment_key)->cell(get_name(SNAP_NAME_CONTENT_ATTACHMENT_REVISION_CONTROL_CURRENT_WORKING_VERSION))->setValue(revision);
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        branch_revision_t branch_number(UNDEFINED_BRANCH);
+
+        if(!file_exists)
+        {
+            // make sure to work atomically to create the first revision
+            // if it does not exist yet and atomically increase the revision
+            QtCassandra::QCassandraLock lock(f_snap->get_context(), key);
+
+            if(content_table->exists(attachment_key)
+            && content_table->row(attachment_key)->exists(get_name(SNAP_NAME_CONTENT_ATTACHMENT_REVISION_CONTROL_CURRENT_WORKING_VERSION)))
+            {
+                // the branch does not changes automatically so we can just read it like this
+                QString working_version(content_table->row(attachment_key)->cell(get_name(SNAP_NAME_CONTENT_ATTACHMENT_REVISION_CONTROL_CURRENT_WORKING_VERSION))->value().stringValue());
+                int const pos(working_version.indexOf('.'));
+                if(pos > 0)
+                {
+                    working_version = working_version.left(pos);
+                }
+                bool ok;
+                long b(working_version.toLong(&ok, 10));
+                if(!ok)
+                {
+                    // make sure to unlock because the die() function does
+                    // not return!
+                    lock.unlock();
+
+                    f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR, "Invalid Revision Control",
+                            "The revision control \"" + working_version + "\" does not look valid.",
+                            "The version does not seem to start with a valid decimal number.");
+                    NOTREACHED();
+                }
+                branch_number = b;
+            }
+            else
+            {
+                // force a default to make sure that we are using the right value
+                revision = "1.0"; // should become "1.0" with code below
+                branch_number = USER_FIRST_BRANCH;
+                content_table->row(attachment_key)->cell(get_name(SNAP_NAME_CONTENT_ATTACHMENT_REVISION_CONTROL_LAST_BRANCH))->setValue(branch_number);
+                content_table->row(attachment_key)->cell(get_name(SNAP_NAME_CONTENT_ATTACHMENT_REVISION_CONTROL_CURRENT_WORKING_VERSION))->setValue(revision);
+            }
+
+            // (revision ends with the branch number since each branch has a
+            // different revision number)
+            QString revision_key(QString("%1::%2")
+                    .arg(get_name(SNAP_NAME_CONTENT_ATTACHMENT_REVISION_CONTROL_LAST_REVISION))
+                    .arg(branch_number));
+
+            // increase revision if one exists, otherwise we keep the default (0)
+            branch_revision_t revision_number(FIRST_REVISION);
+            QtCassandra::QCassandraValue revision_value(attachment_row->cell(revision_key)->value());
+            if(!revision_value.nullValue())
+            {
+                // it exists, increase it
+                revision_number = revision_value.uint32Value();
+                if(revision_number < MAX_BRANCH_NUMBER)
+                {
+                    ++revision_number;
+                }
+                // else -- probably need to warn the user we reached 4 billion
+                //         revisions (this is assuming we delete old revisions
+                //         in the meantime, but even if you make 10 changes a
+                //         day and say it makes use of 20 revision numbers each
+                //         time, it would still take... over half a million
+                //         YEARS to reach that many revisions in that one
+                //         branch...)
+            }
+            content_table->row(attachment_key)->cell(revision_key)->setValue(revision_number);
+
+            revision = QString("%1.%2").arg(branch_number).arg(revision_number);
+
+            // TODO: this is probably wrong, that is, it works and shows the
+            //       last working version but the user may want to keep
+            //       a previous version at this point...
+            attachment_row->cell(get_name(SNAP_NAME_CONTENT_ATTACHMENT_REVISION_CONTROL_CURRENT_WORKING_VERSION))->setValue(revision);
+        }
+
+        {
+            // now update the current revision
+            QtCassandra::QCassandraLock lock(f_snap->get_context(), key);
+
+            QString current_string(attachment_row->cell(get_name(SNAP_NAME_CONTENT_ATTACHMENT_REVISION_CONTROL_CURRENT))->value().stringValue());
+            if(current_string.isEmpty())
+            {
+                // not there yet, just create it
+                attachment_row->cell(get_name(SNAP_NAME_CONTENT_ATTACHMENT_REVISION_CONTROL_CURRENT))->setValue(revision);
+            }
+            else
+            {
+                if(branch_number == UNDEFINED_BRANCH)
+                {
+                    if(content_table->exists(attachment_key)
+                    && content_table->row(attachment_key)->exists(get_name(SNAP_NAME_CONTENT_ATTACHMENT_REVISION_CONTROL_CURRENT_WORKING_VERSION)))
+                    {
+                        // the branch does not changes automatically so we can just read it like this
+                        QString working_version(content_table->row(attachment_key)->cell(get_name(SNAP_NAME_CONTENT_ATTACHMENT_REVISION_CONTROL_CURRENT_WORKING_VERSION))->value().stringValue());
+                        int const pos(working_version.indexOf('.'));
+                        if(pos > 0)
+                        {
+                            working_version = working_version.left(pos);
+                        }
+                        bool ok;
+                        branch_revision_t b(working_version.toULong(&ok, 10));
+                        if(!ok)
+                        {
+                            // make sure to unlock because the die() function does
+                            // not return!
+                            lock.unlock();
+
+                            f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR, "Invalid Revision Control",
+                                    "The revision control \"" + working_version + "\" does not look valid.",
+                                    "The version does not seem to start with a valid decimal number.");
+                            NOTREACHED();
+                        }
+                        branch_number = b;
+                    }
+                }
+
+                {
+                    // verify that the branch is the same, if so update
+                    int const pos(current_string.indexOf('.'));
+                    if(pos > 0)
+                    {
+                        current_string = current_string.left(pos);
+                    }
+                    bool ok;
+                    branch_revision_t b(current_string.toULong(&ok, 10));
+                    if(!ok)
+                    {
+                        // make sure to unlock because the die() function does
+                        // not return!
+                        lock.unlock();
+
+                        f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR, "Invalid Revision Control",
+                                "The revision control \"" + current_string + "\" does not look valid.",
+                                "The version does not seem to start with a valid decimal number.");
+                        NOTREACHED();
+                    }
+                    if(branch_number == b)
+                    {
+                        // TODO: same problem as with the working version, we may
+                        //       want to test that the revision that was shown
+                        //       was the last before updating
+                        //
+                        // same branch, update the output
+                        attachment_row->cell(get_name(SNAP_NAME_CONTENT_ATTACHMENT_REVISION_CONTROL_CURRENT))->setValue(revision);
+                    }
+                }
+            }
+        }
+    }
+    else
+    {
+        // for JavaScript and CSS files we have it simple for now but
+        // this is probably somewhat wrong... (remember that for JS/CSS files
+        // we do not generate a revision number, we use the file version
+        // instead.)
+        attachment_row->cell(get_name(SNAP_NAME_CONTENT_ATTACHMENT_REVISION_CONTROL_CURRENT))->setValue(revision);
+        attachment_row->cell(get_name(SNAP_NAME_CONTENT_ATTACHMENT_REVISION_CONTROL_CURRENT_WORKING_VERSION))->setValue(revision);
+    }
+
+    QString const attachment_cell_key(QString("%1::%2").arg(get_name(SNAP_NAME_CONTENT_ATTACHMENT)).arg(revision));
+
+    // if the field exists and that attachment is unique (i.e. supports only
     // one single file), then we want to delete the existing page unless
     // the user uploaded a file with the exact same filename
     if(content_table->exists(attachment_key))
@@ -2303,11 +3066,10 @@ bool content::create_attachment_impl(attachment_file const& file)
             }
         }
 
-        attachment_row = content_table->row(attachment_key);
-        if(attachment_row->exists(get_name(SNAP_NAME_CONTENT_ATTACHMENT)))
+        if(attachment_row->exists(attachment_cell_key))
         {
             // the MD5 is saved in there, get it and compare
-            QtCassandra::QCassandraValue existing_ref(attachment_row->cell(get_name(SNAP_NAME_CONTENT_ATTACHMENT))->value());
+            QtCassandra::QCassandraValue existing_ref(attachment_row->cell(attachment_cell_key)->value());
             if(!existing_ref.nullValue())
             {
                 if(existing_ref.binaryValue() == md5)
@@ -2331,7 +3093,7 @@ bool content::create_attachment_impl(attachment_file const& file)
                 // to a new file (i.e. the current md5 points to a
                 // different file)
                 //
-                // TODO: nothing should be just dropped in our system,
+                // TODO: nothing should just be dropped in our system,
                 //       instead it should be moved to some form of
                 //       trashcan; in this case we'd use a new name
                 //       for the reference although if the whole row
@@ -2359,26 +3121,59 @@ bool content::create_attachment_impl(attachment_file const& file)
     // if it is already filename it won't hurt too much to set it again
     parent_row->cell(name)->setValue(attachment_key);
 
-    // get the attachment row anew, just in case it was not taken yet
-    attachment_row = content_table->row(attachment_key);
+    // mark all attachments as final (i.e. cannot create children below an attachment)
+    signed char final(1);
+    attachment_row->cell(get_name(SNAP_NAME_CONTENT_FINAL))->setValue(final);
 
     // in this case 'post' represents the filename as sent by the
     // user, the binary data is in the corresponding file
-    attachment_row->cell(get_name(SNAP_NAME_CONTENT_ATTACHMENT_FILENAME))->setValue(filename);
+    attachment_row->cell(QString("%1::%2").arg(attachment_cell_key).arg(get_name(SNAP_NAME_CONTENT_ATTACHMENT_REVISION_FILENAME)))->setValue(attachment_filename);
 
     // save the file reference
-    attachment_row->cell(get_name(SNAP_NAME_CONTENT_ATTACHMENT))->setValue(md5);
+    attachment_row->cell(attachment_cell_key)->setValue(md5);
 
     // save the MIME type (this is the one returned by the magic library)
-    attachment_row->cell(get_name(SNAP_NAME_CONTENT_ATTACHMENT_MIME_TYPE))->setValue(post_file.get_mime_type());
+    attachment_row->cell(QString("%1::%2").arg(attachment_cell_key).arg(get_name(SNAP_NAME_CONTENT_ATTACHMENT_REVISION_MIME_TYPE)))->setValue(post_file.get_mime_type());
 
     // XXX we could also save the modification and creation times, but the
     //     likelihood that these exist is so small that I'll skip at this
     //     time; we do save them in the files table
 
-    // mark that attachment as final (i.e. cannot create children below an attachment)
-    signed char final(1);
-    attachment_row->cell(get_name(SNAP_NAME_CONTENT_FINAL))->setValue(final);
+    // We depend on the JavaScript plugin so we have to do some of its
+    // work here...
+    if(attachment_cpath.startsWith("js/")
+    || attachment_cpath.startsWith("css/"))
+    {
+        // JavaScripts get added to a list so their dependencies
+        // can be found "instantaneously".
+        //snap_version::versioned_filename js_filename(".js");
+        //js_filename.set_filename(attachment_filename);
+        // the name is formatted to allow us to quickly find the files
+        // we're interested; in that we put the name first, then the
+        // browser, and finally the version which is saved as integers
+        snap_version::name_vector_t browsers(fv.get_browsers());
+        int const bmax(browsers.size());
+        bool all(bmax == 1 && browsers[0].get_name() == "all");
+        for(int i(0); i < bmax; ++i)
+        {
+            QByteArray jskey;
+            jskey.append(fv.get_name());
+            jskey.append('_');
+            jskey.append(browsers[i].get_name());
+            jskey.append('_');
+            snap_version::version_numbers_vector_t const& version(fv.get_version());
+            int const vmax(version.size());
+            for(int v(0); v < vmax; ++v)
+            {
+                QtCassandra::appendUInt32Value(jskey, version[v]);
+            }
+            files_table->row(javascript::get_name(javascript::SNAP_NAME_JAVASCRIPT_ROW))->cell(jskey)->setValue(md5);
+            if(!all)
+            {
+                // TODO: need to parse the script for this specific browser
+            }
+        }
+    }
 
     return true;
 }
@@ -2405,7 +3200,18 @@ bool content::load_attachment(QString const& key, attachment_file& file, bool lo
     }
     QSharedPointer<QtCassandra::QCassandraRow> attachment_row(content_table->row(key));
 
-    QtCassandra::QCassandraValue md5_value(attachment_row->cell(get_name(SNAP_NAME_CONTENT_ATTACHMENT))->value());
+    // TODO: select the WORKING_VERSION if the user is logged in and can
+    //       edit this attachment
+    QtCassandra::QCassandraValue revision_value(attachment_row->cell(get_name(SNAP_NAME_CONTENT_ATTACHMENT_REVISION_CONTROL_CURRENT))->value());
+    if(revision_value.nullValue())
+    {
+        // no current attachment
+        return false;
+    }
+
+    QtCassandra::QCassandraValue md5_value(attachment_row->cell(QString("%1::%2")
+            .arg(get_name(SNAP_NAME_CONTENT_ATTACHMENT))
+            .arg(revision_value.stringValue()))->value());
 
     QSharedPointer<QtCassandra::QCassandraTable> files_table(get_files_table());
     if(!files_table->exists(md5_value.binaryValue()))
@@ -2851,6 +3657,20 @@ void content::add_xml(const QString& plugin_name)
         // invalid XML
         throw content_exception_invalid_content_xml("add_xml() cannot read the XML of content file: \"" + filename + "\"");
     }
+    add_xml_document(dom, plugin_name);
+}
+
+/** \brief Add data to the database using a DOM.
+ *
+ * This function is called by the add_xml() function after a DOM was loaded.
+ * It can be called by other functions which load content XML data from
+ * a place other than the resources.
+ *
+ * \param[in] dom  The DOM to add to the content system.
+ * \param[in] plugin_name  The name of the plugin loading this data.
+ */
+void content::add_xml_document(QDomDocument& dom, const QString& plugin_name)
+{
     QDomNodeList content_nodes(dom.elementsByTagName("content"));
     int const max(content_nodes.size());
     for(int i(0); i < max; ++i)
@@ -3099,11 +3919,36 @@ void content::add_xml(const QString& plugin_name)
                 {
                     throw content_exception_invalid_content_xml("all <attachment> tags supplied to add_xml() must include a valid \"type\" attribute");
                 }
+
                 // XXX Should we prevent filenames that do not represent
                 //     a resource? If not a resource, changes that it is not
                 //     accessible to the server are high unless the file was
                 //     installed in a shared location (/usr/share/snapwebsites/...)
-                ca.f_filename = element.text();
+                QDomElement path_element(child.firstChildElement("path"));
+                if(path_element.isNull())
+                {
+                    throw content_exception_invalid_content_xml("all <attachment> tags supplied to add_xml() must include a valid <paht> child tag");
+                }
+                ca.f_filename = path_element.text();
+
+                QDomElement mime_type_element(child.firstChildElement("mime-type"));
+                if(!mime_type_element.isNull())
+                {
+                    ca.f_mime_type = mime_type_element.text();
+                }
+
+                // there can be any number of dependencies
+                // syntax is defined in the JavaScript plugin, something
+                // like Debian "Depend" field:
+                //
+                //   <name> ( '(' (<version> <operator>)* <version> ')' )?
+                //
+                QDomElement dependency_element(child.firstChildElement("dependency"));
+                while(!dependency_element.isNull())
+                {
+                    ca.f_dependencies.push_back(dependency_element.text());
+                    dependency_element = dependency_element.nextSiblingElement("dependency");
+                }
 
                 ca.f_path = path;
 
@@ -3558,6 +4403,7 @@ void content::on_save_content()
             file.set_attachment_type(a->f_type);
             file.set_creation_time(f_snap->get_start_date());
             file.set_update_time(f_snap->get_start_date());
+            file.set_dependencies(a->f_dependencies);
 
             // post file fields
             file.set_file_name(a->f_field_name);
@@ -3597,6 +4443,13 @@ void content::on_save_content()
                     file.set_file_image_height(buffer->get_height());
                     file.set_file_mime_type(buffer->get_mime_type());
                 }
+            }
+
+            // user forces the MIME type (important for many files such as
+            // JavaScript which otherwise come out with really funky types)
+            if(!a->f_mime_type.isEmpty())
+            {
+                file.set_file_mime_type(a->f_mime_type);
             }
 
             // ready, create the attachment
@@ -3792,7 +4645,7 @@ void content::on_backend_process()
                                     check_attachment_security(file, secure, false);
 
                                     // always save the secure flag
-                                    signed char const sflag(secure.allowed() ? CONTENT_SECURE_SECURE : CONTENT_SECURE_UNSECURE);
+                                    signed char const sflag(secure.allowed() ? CONTENT_SECURE_SECURE : CONTENT_SECURE_INSECURE);
                                     file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_SECURE))->setValue(sflag);
                                     file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_SECURE_LAST_CHECK))->setValue(f_snap->get_start_date());
                                     file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_SECURITY_REASON))->setValue(secure.reason());
@@ -3877,6 +4730,221 @@ bool content::process_attachment_impl(QByteArray const& file_key, attachment_fil
     javascript::javascript::instance()->on_process_attachment(files_table, file_key, file.get_file());
 
     return true;
+}
+
+
+/** \brief Add a javascript to the page.
+ *
+ * This function adds a javascript and all of its dependencies to the page.
+ * If the script was already added, either immediately or as a dependency
+ * of another script, then nothing more happens.
+ *
+ * \param[in] l  The layout concerned.
+ * \param[in] path  The path receiving the javascript.
+ * \param[in] header  The XML header receiving the javascript.
+ * \param[in] metadata  The metadata tag in the XML receiving the javascript.
+ * \param[in] name  The name of the script.
+ */
+void content::add_javascript(layout::layout *l, QString const& path, QDomElement& header, QDomElement& metadata, QString const& name)
+{
+    if(f_added_javascripts.contains(name))
+    {
+        // already added, we're done
+        return;
+    }
+    f_added_javascripts[name] = true;
+
+    QSharedPointer<QtCassandra::QCassandraTable> files_table(get_files_table());
+    if(!files_table->exists(javascript::get_name(javascript::SNAP_NAME_JAVASCRIPT_ROW)))
+    {
+        // absolutely no JavaScripts available!
+        f_snap->die(snap_child::HTTP_CODE_NOT_FOUND, "JavaScript Not Found",
+                "JavaScript \"" + name + "\" could not be read for inclusion in your HTML page.",
+                "A JavaScript was requested in the \"files\" table before it was inserted under /js/...");
+        NOTREACHED();
+    }
+    QSharedPointer<QtCassandra::QCassandraRow> javascript_row(files_table->row(javascript::get_name(javascript::SNAP_NAME_JAVASCRIPT_ROW)));
+
+    // TODO: at this point I read all the entries with "name_..."
+    //       we'll want to first check with the user's browser and
+    //       then check with "any" as the browser name if no specific
+    //       script if found
+    //
+    //       Also the following loop does NOT handle dependencies in
+    //       a full tree to determine what would be best; instead it
+    //       makes uses of the latest and if a file does not match
+    //       the whole process fails even if by not using the latest
+    //       it would have worked
+    QtCassandra::QCassandraColumnRangePredicate column_predicate;
+    column_predicate.setCount(10); // small because we area really only interested by the first 1 unless marked as insecure
+    column_predicate.setIndex(); // behave like an index
+    QString const start_name(name + "_");
+    column_predicate.setStartColumnName(start_name + QtCassandra::QCassandraColumnPredicate::last_char);
+    column_predicate.setEndColumnName(start_name);
+    column_predicate.setReversed(); // read the last first
+    for(;;)
+    {
+        javascript_row->clearCache();
+        javascript_row->readCells(column_predicate);
+        const QtCassandra::QCassandraCells& cells(javascript_row->cells());
+        if(cells.isEmpty())
+        {
+            break;
+        }
+        // handle one batch
+        for(QtCassandra::QCassandraCells::const_iterator c(cells.begin());
+                c != cells.end();
+                ++c)
+        {
+            // get the email from the database
+            // we expect empty values once in a while because a dropCell() is
+            // not exactly instantaneous in Cassandra
+            QSharedPointer<QtCassandra::QCassandraCell> cell(*c);
+            QtCassandra::QCassandraValue const file_md5(cell->value());
+            if(file_md5.nullValue())
+            {
+                // cell is invalid?
+                SNAP_LOG_ERROR("invalid JavaScript MD5 for \"")(name)("\", it is empty");
+                continue;
+            }
+            QByteArray const key(file_md5.binaryValue());
+            if(!files_table->exists(key))
+            {
+                // file does not exist?!
+                // TODO: we probably want to report that problem
+                SNAP_LOG_ERROR("JavaScript for \"")(name)("\" could not be found with its MD5");
+                continue;
+            }
+            QSharedPointer<QtCassandra::QCassandraRow> row(files_table->row(key));
+            if(!row->exists(get_name(SNAP_NAME_CONTENT_FILES_SECURE)))
+            {
+                // secure field missing?! (file was probably deleted)
+                SNAP_LOG_ERROR("file referenced as JavaScript \"")(name)("\" does not have a ")(get_name(SNAP_NAME_CONTENT_FILES_SECURE))(" field");
+                continue;
+            }
+            QtCassandra::QCassandraValue const secure(row->cell(get_name(SNAP_NAME_CONTENT_FILES_SECURE))->value());
+            if(secure.nullValue())
+            {
+                // secure field missing?!
+                SNAP_LOG_ERROR("file referenced as JavaScript \"")(name)("\" has an empty ")(get_name(SNAP_NAME_CONTENT_FILES_SECURE))(" field");
+                continue;
+            }
+            signed char const sflag(secure.signedCharValue());
+            if(sflag == CONTENT_SECURE_INSECURE)
+            {
+                // not secure
+#ifdef DEBUG
+                SNAP_LOG_DEBUG("JavaScript named \"")(name)("\" is marked as being insecure");
+#endif
+                continue;
+            }
+
+            // we want to get the full URI to the script
+            // (WARNING: the filename is only the name used for the very first
+            //           upload the very first time that file is loaded and
+            //           different websites may have used different filenames)
+            //
+            // TODO: allow for remote paths by checking a flag in the file
+            //       saying "remote" (i.e. to use Google Store and alike)
+            QtCassandra::QCassandraColumnRangePredicate references_column_predicate;
+            references_column_predicate.setCount(1);
+            references_column_predicate.setIndex(); // behave like an index
+            QString const site_key(f_snap->get_site_key_with_slash());
+            QString const start_ref(QString("%1::%2").arg(get_name(SNAP_NAME_CONTENT_FILES_REFERENCE)).arg(site_key));
+            references_column_predicate.setStartColumnName(start_ref);
+            references_column_predicate.setEndColumnName(start_ref + QtCassandra::QCassandraColumnPredicate::last_char);
+
+            row->clearCache();
+            row->readCells(references_column_predicate);
+            QtCassandra::QCassandraCells const& ref_cells(row->cells());
+            if(ref_cells.isEmpty())
+            {
+                SNAP_LOG_ERROR("file referenced as JavaScript \"")(name)("\" has not reference back to ")(site_key);
+                continue;
+            }
+            // the key of this cell is the path we want to use to the file
+            QSharedPointer<QtCassandra::QCassandraCell> ref_cell(*ref_cells.begin());
+            QtCassandra::QCassandraValue const ref_string(ref_cell->value());
+            if(ref_string.nullValue()) // bool true cannot be empty
+            {
+                SNAP_LOG_ERROR("file referenced as JavaScript \"")(name)("\" has an invalid reference back to ")(site_key)(" (empty)");
+                continue;
+            }
+
+            // file exists and is considered secure
+
+            // we want to first add all dependencies since they need to
+            // be included first, so there is another sub-loop for that
+            // note that all of those must be loaded first but the order
+            // we read them as does not matter
+            QtCassandra::QCassandraColumnRangePredicate dependencies_column_predicate;
+            dependencies_column_predicate.setCount(100);
+            dependencies_column_predicate.setIndex(); // behave like an index
+            QString start_dep(QString("%1::").arg(get_name(SNAP_NAME_CONTENT_FILES_DEPENDENCY)));
+            dependencies_column_predicate.setStartColumnName(start_dep);
+            dependencies_column_predicate.setEndColumnName(start_dep + QtCassandra::QCassandraColumnPredicate::last_char);
+            for(;;)
+            {
+                row->clearCache();
+                row->readCells(dependencies_column_predicate);
+                const QtCassandra::QCassandraCells& dep_cells(row->cells());
+                if(dep_cells.isEmpty())
+                {
+                    break;
+                }
+                // handle one batch
+                for(QtCassandra::QCassandraCells::const_iterator dc(dep_cells.begin());
+                        dc != dep_cells.end();
+                        ++dc)
+                {
+                    // get the email from the database
+                    // we expect empty values once in a while because a dropCell() is
+                    // not exactly instantaneous in Cassandra
+                    QSharedPointer<QtCassandra::QCassandraCell> dep_cell(*dc);
+                    QtCassandra::QCassandraValue const dep_string(dep_cell->value());
+                    if(!dep_string.nullValue())
+                    {
+                        snap_version::dependency dep;
+                        if(dep.set_dependency(dep_string.stringValue()))
+                        {
+                            // TODO: add version and browser tests
+                            QString const& dep_name(dep.get_name());
+                            add_javascript(l, path, header, metadata, dep_name);
+                        }
+                        // else TBD -- we checked when saving that darn string
+                        //             so failures should not happen here
+                    }
+                    // else TBD -- error if empty? (should not happen...)
+                }
+            }
+
+            // TBD: At this point we get a bare name, no version, no browser.
+            //      This means the loader will pick the latest available
+            //      version with the User Agent match. This may not always
+            //      be desirable though.
+#ifdef DEBUG
+std::cerr << "Adding JavaScript [" << name << "] [" << ref_cell->columnName().mid(start_ref.length() - 1) << "]\n";
+#endif
+            QDomDocument doc(header.ownerDocument());
+            QDomNode javascript_tag(metadata.firstChildElement("javascript"));
+            if(javascript_tag.isNull())
+            {
+                javascript_tag = doc.createElement("javascript");
+                metadata.appendChild(javascript_tag);
+            }
+            QDomElement script_tag(doc.createElement("script"));
+            script_tag.setAttribute("src", ref_cell->columnName().mid(start_ref.length() - 1));
+            script_tag.setAttribute("type", "text/javascript");
+            script_tag.setAttribute("charset", "utf-8");
+            javascript_tag.appendChild(script_tag);
+            return; // we're done since we found our script and added it
+        }
+    }
+
+    f_snap->die(snap_child::HTTP_CODE_NOT_FOUND, "JavaScript Not Found",
+            "JavaScript \"" + name + "\" was not found. Was it installed?",
+            "The named JavaScript was not found in the \"javascripts\" row of the \"files\" table.");
+    NOTREACHED();
 }
 
 

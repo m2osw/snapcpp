@@ -67,6 +67,13 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     </param>
 	<link name="permissions::administer" to="permissions::administer" mode="*:*">/types/permissions/rights/administer/website</link>
   </content>
+  <content path="/admin/layouts">
+    <param name="content::title">List of Installed Layouts</param>
+    <param name="content::body">
+      <![CDATA[<p>This page lists all the installed layouts. Other layouts can be added using ... TBD</p>]]>
+    </param>
+    <param name="layout::boxes">left</param>
+  </content>
   <content path="/admin/page">
     <param name="content::title">Page Settings</param>
     <param name="content::body" overwrite="yes">
@@ -209,6 +216,15 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <![CDATA[<p>Right given to public attachments so anonymous visitors can see them.</p>]]>
     </param>
   </content>
+  <!-- system defined images; user's images will generally appear as attachment of the page where they are added -->
+  <content path="/images">
+    <param name="content::title">Images</param>
+    <param name="content::body">
+      <![CDATA[<p>Different images offered with Snap! Mostly used to make the system function as expected.</p>]]>
+    </param>
+    <link name="permissions::view" to="permissions::view" mode="*:*">/types/permissions/rights/view/attachment/public</link>
+    <link name="permissions::administer" to="permissions::administer" mode="*:*">/types/permissions/rights/administer/info</link>
+  </content>
   <!-- the content plugin depends on the JavaScript plugin so it cannot define a content.xml file -->
   <content path="/js">
     <param name="content::title">JavaScripts</param>
@@ -224,7 +240,16 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <![CDATA[<p>System or Global JavaScripts such as the jQuery library.</p>]]>
     </param>
     <link name="permissions::administer" to="permissions::administer" mode="*:*">/types/permissions/rights/administer/info</link>
-    <attachment name="jquery" type="attachment/public">:/js/content/jquery_1.10.2.js</attachment>
+    <attachment name="jquery" type="attachment/public">
+      <path>:/js/content/jquery.js</path>
+      <mime-type>text/javascript</mime-type>
+      <!-- jquery has no dependencies -->
+    </attachment>
+    <attachment name="content" type="attachment/public">
+      <path>:/js/content/content.js</path>
+      <mime-type>text/javascript</mime-type>
+      <dependency>jquery (&gt;= 1.10.2)</dependency>
+    </attachment>
   </content>
   <!-- the content plugin depends on the path plugin so it cannot defined a content.xml file -->
   <content path="/admin/settings/path">
