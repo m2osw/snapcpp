@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!--
-Snap Websites Server == layout database setup
-Copyright (C) 2011-2012  Made to Order Software Corp.
+Snap Websites Server == content plugin database setup
+Copyright (C) 2011-2014  Made to Order Software Corp.
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -18,6 +18,14 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 -->
 <snap-tree>
+  <!-- the content grows as things are added to the site, at first it handles the root though -->
+  <content path="/admin/layouts/bare">
+    <param name="content::title">Left Side Box</param>
+    <param name="content::body">
+      <![CDATA[<p>The bare layout is the default used internally by Snap! If you data works in the Bare layout, it should work in any layout.</p>]]>
+    </param>
+    <param name="layout::boxes">left</param>
+  </content>
 </snap-tree>
 <!-- vim: ts=2 sw=2 et syntax=xml
 -->
