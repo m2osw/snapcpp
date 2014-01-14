@@ -1,6 +1,6 @@
 /*
  * Name: editor
- * Version: 0.0.1.13
+ * Version: 0.0.1.15
  * Browsers: all
  * Copyright: Copyright 2013-2014 (c) Made to Order Software Corporation  All rights reverved.
  * License: GPL 2.0
@@ -133,6 +133,8 @@ snapwebsites.Editor.prototype = {
     ],
     toolbarAutoVisible: true,
 
+    _unloadCalled: false,
+    _unloadTimeoutID: -1,
     _toolbarTimeoutID: -1,
     _bottomToolbar: false,
     _toolbar: null,
@@ -150,18 +152,27 @@ snapwebsites.Editor.prototype = {
 
     _saveData: function(mode)
     {
-        var i;
+        var i, obj = [], edit_area;
         for(i = 1; i <= snapwebsites.EditorInstance._lastId; ++i)
         {
             if(snapwebsites.EditorInstance._modified[i])
             {
                 // verify one last time whether it was indeed modified
-                if(snapwebsites.EditorInstance._originalData[i] != jQuery("#editor-area-" + i).html())
+                edit_area = jQuery("#editor-area-" + i);
+                if(snapwebsites.EditorInstance._originalData[i] != edit_area.html())
                 {
-                    return "You made changes to the page! Click Cancel to avoid closing the window and Save first.";
+                    name = edit_area.parent().attr("field_name");
+                    obj[name] = edit_area.html();
                 }
             }
         }
+        jQuery.ajax({
+            type: "POST",
+            url: "/",
+            data: obj,
+            success: success,
+            dataType: dataType
+        });
     },
 
     // if anything was modified, show this save dialog
@@ -942,26 +953,26 @@ console.log("just modified!!!");
 
     _unload: function()
     {
-        var i, obj = [], edit_area;
-        for(i = 1; i <= snapwebsites.EditorInstance._lastId; ++i)
-        {
-            if(snapwebsites.EditorInstance._modified[i])
+        $(window).bind("beforeunload",function(){
+            if(!snapwebsites.EditorInstance._unloadCalled)
             {
-                // verify one last time whether it was indeed modified
-                edit_area = jQuery("#editor-area-" + i);
-                if(snapwebsites.EditorInstance._originalData[i] != edit_area.html())
+                var i;
+                for(i = 1; i <= snapwebsites.EditorInstance._lastId; ++i)
                 {
-                    name = edit_area.parent().attr("field_name");
-                    obj[name] = edit_area.html();
+                    if(snapwebsites.EditorInstance._modified[i])
+                    {
+                        // verify one last time whether it was indeed modified
+                        if(snapwebsites.EditorInstance._originalData[i] != jQuery("#editor-area-" + i).html())
+                        {
+                            snapwebsites.EditorInstance._unloadCalled = true;
+                            snapwebsites.EditorInstance._unloadTimeoutID = setTimeout(function(){
+                                snapwebsites.EditorInstance._unloadCalled = false;
+                            },20);
+                            return "You made changes to the page! Click Cancel to avoid closing the window and Save first.";
+                        }
+                    }
                 }
             }
-        }
-        jQuery.ajax({
-            type: "POST",
-            url: "/",
-            data: obj,
-            success: success,
-            dataType: dataType
         });
     },
 
