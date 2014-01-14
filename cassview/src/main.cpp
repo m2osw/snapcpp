@@ -38,6 +38,7 @@
 #include "qt4.h"
 
 #include "MainWindow.h"
+#include "SettingsDialog.h"
 
 using namespace QtCassandra;
 
@@ -48,6 +49,16 @@ int main( int argc, char * argv[] )
     app.setApplicationVersion ( "0.0.1"            );
     app.setOrganizationDomain ( "snapwebsites.org" );
     app.setOrganizationName   ( "M2OSW"            );
+
+    QSettings settings;
+    if( !settings.contains( "cassandra_host") )
+    {
+        SettingsDialog dlg;
+        if( dlg.exec() != QDialog::Accepted )
+        {
+            return 1;
+        }
+    }
 
     MainWindow win;
     win.show();

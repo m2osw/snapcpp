@@ -47,13 +47,15 @@ SettingsDialog::SettingsDialog(QWidget *p)
     setupUi( this );
 
     QSettings settings( this );
-    restoreGeometry( settings.value( "geometry", saveGeometry() ).toByteArray() );
-    f_server = settings.value( "cassandra_host", "127.0.0.1" );
-    f_port   = settings.value( "cassandra_port", "9160" );
+    restoreGeometry( settings.value( "settings_geometry", saveGeometry() ).toByteArray() );
+    f_server  = settings.value( "cassandra_host", "127.0.0.1" );
+    f_port    = settings.value( "cassandra_port", "9160" );
+    f_context = settings.value( "context" );
     f_cassandraServerEdit->setText( QString("%1:%2").arg(f_server.toString()).arg(f_port.toInt()) );
     f_buttonBox->button( QDialogButtonBox::Ok )->setEnabled( true );
 
-    f_context->setModel( &f_model );
+    f_contextList->setModel( &f_model );
+	f_contextList->setSelectionMode( QListView::SingleSelection );
 
     updateContextList();
 }
@@ -62,24 +64,7 @@ SettingsDialog::SettingsDialog(QWidget *p)
 SettingsDialog::~SettingsDialog()
 {
     QSettings settings( this );
-    settings.setValue( "cassandra_host", f_server );
-    settings.setValue( "cassandra_port", f_port   );
-    settings.setValue( "geometry",       saveGeometry() );
-}
-
-
-#if 0
-void SettingsDialog::closeEvent( QCloseEvent * e )
-{
-    event->accept();
-}
-#endif
-
-
-
-void SettingsDialog::on_lineEdit_editingFinished()
-{
-    updateContextList();
+    settings.setValue( "settings_geometry",   saveGeometry()	);
 }
 
 
@@ -106,8 +91,8 @@ void SettingsDialog::updateContextList()
         return;
     }
 
-    qDebug() << "Working on Cassandra Cluster Named" << cassandra.clusterName();
-    qDebug() << "Working on Cassandra Protocol Version" << cassandra.protocolVersion();
+    //qDebug() << "Working on Cassandra Cluster Named" << cassandra.clusterName();
+    //qDebug() << "Working on Cassandra Protocol Version" << cassandra.protocolVersion();
 
     const QCassandraContexts& context_list = cassandra.contexts();
     QList<QString> keys = context_list.keys();
@@ -121,5 +106,46 @@ void SettingsDialog::updateContextList()
 
     f_model.setStringList( context_key_list );
 
+    const int idx = context_key_list.indexOf( f_context.toString() );
+    if( idx != -1 )
+	{
+        QModelIndex model_index( f_model.index( idx ) );
+        QItemSelectionModel* select( f_contextList->selectionModel() );
+		Q_ASSERT(select);
+		select->select( model_index, QItemSelectionModel::Select );
+	}
+
     f_buttonBox->button( QDialogButtonBox::Ok )->setEnabled( true );
+}
+
+
+void SettingsDialog::on_f_cassandraServerEdit_lostFocus()
+{
+    updateContextList();
+}
+
+
+void SettingsDialog::on_f_contextList_clicked(const QModelIndex &index)
+{
+    f_context = f_model.stringList()[index.row()];
+}
+
+
+void SettingsDialog::on_SettingsDialog_accepted()
+{
+}
+
+void SettingsDialog::on_f_buttonBox_accepted()
+{
+    accept();
+    //
+    QSettings settings( this );
+    settings.setValue( "cassandra_host", f_server  );
+    settings.setValue( "cassandra_port", f_port    );
+    settings.setValue( "context",        f_context );
+}
+
+void SettingsDialog::on_f_buttonBox_rejected()
+{
+    reject();
 }
