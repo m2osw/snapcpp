@@ -52,23 +52,6 @@ namespace
     const advgetopt::getopt::option g_snaplayout_options[] =
     {
         {
-            '\0',
-            advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
-            NULL,
-            NULL,
-            "Usage: snaplayout [--opts] layout-file1.xsl layout-file2.xsl ... layout-fileN.xsl",
-            advgetopt::getopt::help_argument
-        },
-        // OPTIONS
-        {
-            '\0',
-            0,
-            NULL,
-            NULL,
-            "options:",
-            advgetopt::getopt::help_argument
-        },
-        {
             '?',
             advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
             "help",
@@ -97,7 +80,7 @@ namespace
             advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
             NULL,
             NULL,
-            NULL,
+            "layout-file1.xsl layout-file2.xsl ... layout-fileN.xsl",
             advgetopt::getopt::default_multiple_argument
         },
         {

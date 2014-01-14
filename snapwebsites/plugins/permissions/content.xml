@@ -220,6 +220,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="content::body">
       <![CDATA[<p>The very first user created in Snap! is assigned to the root group. This user can do anything in the entire set of websites.</p>]]>
     </param>
+    <link name="permissions::administer" to="permissions::administer" mode="*:*">/types/permissions/rights/administer</link>
   </content>
   <content path="/types/permissions/groups/root/administrator">
     <param name="content::title">Administrator Group</param>

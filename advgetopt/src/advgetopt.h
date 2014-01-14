@@ -83,7 +83,7 @@ public:
     enum status_t
     {
         no_error,
-        no_error_nobr,
+        no_error_nobr,	// What does this do?!
         warning,
         error,
         fatal
@@ -147,6 +147,7 @@ private:
     void parse_arguments(int argc, char *argv[], const option *opts, int def_opt, std::map<char, int> opt_by_short_name, std::map<std::string, int> opt_by_long_name, bool only_environment_variable);
     void add_options(const option *opt, int& i, int argc, char **argv);
     void add_option(const option *opt, const char *value);
+    std::string assemble_options( status_t status, std::string& default_arg_help ) const;
 
     std::string         f_program_fullname;
     std::string         f_program_name;

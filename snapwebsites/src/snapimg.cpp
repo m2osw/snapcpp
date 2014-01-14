@@ -42,23 +42,6 @@
 advgetopt::getopt::option const g_options[] =
 {
     {
-        '\0',
-        advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
-        NULL,
-        NULL,
-        "Usage: snapimg [-<opt>] <image file> ...",
-        advgetopt::getopt::help_argument
-    },
-    // OPTIONS
-    {
-        '\0',
-        0,
-        NULL,
-        NULL,
-        "options:",
-        advgetopt::getopt::help_argument
-    },
-    {
         'h',
         advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
         "help",

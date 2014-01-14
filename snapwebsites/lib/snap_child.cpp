@@ -387,6 +387,7 @@ void snap_child::backend()
         if(table.isNull())
         {
             // the whole table is still empty
+            SNAP_LOG_ERROR("The 'sites' table is empty or nonexistent! Likely you have not set up the domains and websites tables, either. Exiting!");
             return;
         }
 

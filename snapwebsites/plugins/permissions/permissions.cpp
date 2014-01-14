@@ -565,6 +565,10 @@ bool permissions::sets_t::allowed() const
     if(f_user_rights.isEmpty()
     || f_plugin_permissions.isEmpty())
     {
+#ifdef DEBUG
+        std::cout << "f_user_rights.size()=" << f_user_rights.size() << ", f_plugin_permissions.size() = " << f_plugin_permissions.size() << std::endl;
+        std::cout << "sets are not allowed!" << std::endl;
+#endif
         // if the plugins added nothing, there are no rights to compare
         // or worst, the user have no rights at all (Should not happen,
         // although someone could add a plugin testing something such as
@@ -609,7 +613,9 @@ for(req_sets_t::const_iterator pp(f_plugin_permissions.begin());
             // maps it may not be any faster
             for(int j(0); j < max; ++j)
             {
-                if(i->startsWith(f_user_rights[j]))
+                const QString& plugin_permission ( *i               );
+                const QString& user_right        ( f_user_rights[j] );
+                if( plugin_permission.startsWith(user_right) )
                 {
                     //break 2;
                     goto next_plugin;

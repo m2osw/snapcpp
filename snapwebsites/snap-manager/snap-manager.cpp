@@ -27,6 +27,7 @@
 #include <QMessageBox>
 #include <QCloseEvent>
 #include <QDebug>
+#include <QSettings>
 #include <libtld/tld.h>
 #include <stdio.h>
 
@@ -51,6 +52,15 @@ snap_manager::snap_manager(QWidget *snap_parent)
     : QMainWindow(snap_parent)
 {
     setupUi(this);
+
+    QSettings settings( this );
+    restoreGeometry( settings.value( "geometry", saveGeometry() ).toByteArray() );
+    restoreState   ( settings.value( "state"   , saveState()    ).toByteArray() );
+    //
+    cassandraHost->setText  ( settings.value( "cassandra_host", "127.0.0.1" ).toString() );
+    cassandraPort->setText  ( settings.value( "cassandra_port", 4004        ).toString() );
+    snapServerHost->setText ( settings.value( "snap_host",      "localhost" ).toString() );
+    snapServerPort->setText ( settings.value( "snap_port",      "9160"      ).toString() );
 
     // Help
     QAction *a = getChild<QAction>(this, "actionSnap_Manager_Help");
@@ -83,12 +93,6 @@ snap_manager::snap_manager(QWidget *snap_parent)
     connect(b, SIGNAL(clicked()), this, SLOT(snapTest()));
     b = getChild<QPushButton>(this, "snapStats");
     connect(b, SIGNAL(clicked()), this, SLOT(snapStats()));
-
-    // Cassandra Connect
-    b = getChild<QPushButton>(this, "cassandraConnect");
-    connect(b, SIGNAL(clicked()), this, SLOT(cassandraConnect()));
-    b = getChild<QPushButton>(this, "cassandraDisconnect");
-    connect(b, SIGNAL(clicked()), this, SLOT(cassandraDisconnect()));
 
     // Snap! Server Info
     QListWidget *console = getChild<QListWidget>(this, "snapServerConsole");
@@ -181,10 +185,24 @@ snap_manager::snap_manager(QWidget *snap_parent)
     f_sites_parameter_type->addItem("Floating Point (32 bit)");
     f_sites_parameter_type->addItem("Floating Point (64 bit)");
     f_sites_parameter_type->setCurrentIndex(1);
+
+    connect( qApp, SIGNAL(aboutToQuit()), this, SLOT(OnAboutToQuit()) );
 }
 
 snap_manager::~snap_manager()
 {
+}
+
+
+void snap_manager::OnAboutToQuit()
+{
+    QSettings settings( this );
+    settings.setValue( "cassandra_host", cassandraHost->text()  );
+    settings.setValue( "cassandra_port", cassandraPort->text()  );
+    settings.setValue( "snap_host",      snapServerHost->text() );
+    settings.setValue( "snap_port",      snapServerPort->text() );
+    settings.setValue( "geometry",       saveGeometry()         );
+    settings.setValue( "state",          saveState()            );
 }
 
 
@@ -436,8 +454,11 @@ void snap_manager::snapStats()
     }
 }
 
-void snap_manager::cassandraConnect()
+void snap_manager::on_f_cassandraConnectButton_clicked()
 {
+    f_cassandraConnectButton->setEnabled( false );
+    f_cassandraDisconnectButton->setEnabled( false );
+
     if(f_cassandra.isNull()) {
         f_cassandra = new QtCassandra::QCassandra;
     }
@@ -463,6 +484,7 @@ void snap_manager::cassandraConnect()
     // if old != new then disconnect
     if(f_cassandra_host == old_host && f_cassandra_port == old_port && f_cassandra->isConnected()) {
         // nothing changed, stay put
+        f_cassandraConnectButton->setEnabled( true );
         return;
     }
 
@@ -533,10 +555,15 @@ void snap_manager::cassandraConnect()
 
     // we just need to be connected for TAB_SITES
     f_tabs->setTabEnabled(TAB_SITES, true);
+
+    f_cassandraDisconnectButton->setEnabled( true );
 }
 
-void snap_manager::cassandraDisconnect()
+void snap_manager::on_f_cassandraDisconnectButton_clicked()
 {
+    f_cassandraConnectButton->setEnabled( false );
+    f_cassandraDisconnectButton->setEnabled( false );
+
     // disconnect by deleting the object altogether
     delete f_cassandra;
 
@@ -580,6 +607,8 @@ void snap_manager::cassandraDisconnect()
     f_sites_new->setEnabled(false);
     f_sites_save->setEnabled(false);
     f_sites_delete->setEnabled(false);
+
+    f_cassandraConnectButton->setEnabled( true );
 }
 
 void snap_manager::reset_domains_index()
@@ -1098,7 +1127,11 @@ void snap_manager::on_domainNew_clicked()
     f_domain_org_name = ""; // not editing, this is new
     f_domain_name->setText("");
     f_domain_org_rules = "";
-    f_domain_rules->setText("");
+    f_domain_rules->setText(
+            "main {\n"
+            "\trequired host = \"www\\.\"\n;"
+            "};\n"
+        );
 
     domainWithSelection();
     f_domain_delete->setEnabled(false);
@@ -1465,6 +1498,12 @@ void snap_manager::on_websiteNew_clicked()
     f_website_name->setText("");
     f_website_org_rules = "";
     f_website_rules->setText("");
+    f_website_rules->setText(
+            "main {\n"
+            "\tprotocol = \"http\"\n;"
+            "\tport = \"80\";\n"
+            "};\n"
+        );
 
     websiteWithSelection();
     f_website_delete->setEnabled(false);
@@ -1638,6 +1677,10 @@ void snap_manager::on_websiteDelete_clicked()
 
 bool snap_manager::sitesChanged()
 {
+#if 0
+    // TODO: this always fails, so we need to fix this problem!
+    // f_sites_org_parameter_* are never set.
+    //
     // if something changed we want to warn the user before going further
     if(f_sites_org_parameter_name != f_sites_parameter_name->text()
     || f_sites_org_parameter_value != f_sites_parameter_value->text()
@@ -1650,6 +1693,7 @@ bool snap_manager::sitesChanged()
             return false;
         }
     }
+#endif
 
     return true;
 }
@@ -1812,9 +1856,14 @@ void snap_manager::quit()
 int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
-    app.setApplicationVersion(SNAPWEBSITES_VERSION_STRING);
+    app.setApplicationName   ( "snap-manager"              );
+    app.setApplicationVersion( SNAPWEBSITES_VERSION_STRING );
+    app.setOrganizationDomain( "snapwebsites.org"          );
+    app.setOrganizationName  ( "M2OSW"                     );
+
     snap_manager win;
     win.show();
+
     return app.exec();
 }
 
