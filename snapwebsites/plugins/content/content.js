@@ -1,5 +1,6 @@
 /*
- *
+ * Version: 0.0.1
+ * Browsers: all
  */
 
 /** \brief Defines the snapwebsites namespace in the JavaScript environment.

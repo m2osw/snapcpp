@@ -3,6 +3,11 @@
 # Run with sudo as in:
 #   sudo sh snap.sh
 #
+# Please check image snapwebsites/doc/snapwebsites-cluster-setup.png
+# for an idea of a complete installation cluster; everything can be
+# setup on a single computer, but the power of the Snap! CMS is to run
+# on any number of computers to really make it FAST.
+#
 
 ##
 ## Apache2 installation
@@ -16,6 +21,7 @@ fi
 ##
 ## Cassandra sources (no PPA at this point)
 ##
+# Cassandra should only be installed on Cassandra nodes
 add-apt-repository 'deb http://www.apache.org/dist/cassandra/debian 20x main'
 # Ad this point the source generates an error in 13.10
 #add-apt-repository 'deb-src http://www.apache.org/dist/cassandra/debian 20x main'
@@ -27,6 +33,8 @@ gpg --export --armor 2B5C1B00 | sudo apt-key add -
 ##
 ## Snap! CMS PPA
 ##
+# snapcgi should be installed along Apache2 so on the front end computers
+# snapserver should only be installed on Snap! Server nodes
 add-apt-repository ppa:snapcpp/ppa
 
 ##

@@ -404,7 +404,7 @@ void snap_child::backend()
                 // we reached the end of the whole table
                 break;
             }
-            const QtCassandra::QCassandraRows& r(table->rows());
+            QtCassandra::QCassandraRows const& r(table->rows());
             for(QtCassandra::QCassandraRows::const_iterator o(r.begin());
                     o != r.end(); ++o)
             {
@@ -3415,6 +3415,12 @@ void snap_child::init_plugins()
  * tricks. A clear signal sent via a command line tool or directly
  * from a website could be a lot more effective.
  *
+ * \todo
+ * This mechanism updates the plugins but not the layouts. It would be
+ * useful to have a way here to detect that layouts changed. (well...
+ * maybe in a different function, but within the snap_child or maybe
+ * in the layout plugin as it capture the do_update().)
+ *
  * \param[in] list_of_plugins  The list of plugin names that were loaded
  * for this run.
  */
@@ -3488,7 +3494,28 @@ void snap_child::update_plugins(const QStringList& list_of_plugins)
             set_site_parameter(core_plugin_threshold, new_plugin_threshold);
         }
     }
+    finish_update();
+}
 
+/** \brief After adding content, call this function to save it.
+ *
+ * When we add content with the add_xml() and add_xml_dom() functions,
+ * the snap_child object records the fact and is then capable of knowing
+ * that it needs to be saved.
+ *
+ * All the adds are expected to be called before the data gets saved
+ * which allows us to not have to know in which order the XML files need
+ * to be to add all of their contents at once. In other words, the save
+ * function will automatically be capable of figuring out the right order
+ * if it has all the data, hence this function getting called last.
+ *
+ * \note
+ * This was separated so the layouts can be added at any time since we
+ * do not activate all the layouts automatically in all of our users'
+ * websites.
+ */
+void snap_child::finish_update()
+{
     // if content was prepared for the database, save it now
     if(f_new_content)
     {
@@ -3820,8 +3847,12 @@ void snap_child::execute()
  * sent to the log in page after saving the current path as the place
  * to come back after logging in. If the user is already logged in,
  * then an Access Denied error is generated.
+ *
+ * \param[in] path  The path which permissions are being checked.
+ * \param[in] err_callback  An object with on_error() and on_redirect()
+ *                          functions.
  */
-void snap_child::verify_permissions()
+void snap_child::verify_permissions(QString const& path, permission_error_callback& err_callback)
 {
     QString qs_action(f_server->get_parameter("qs_action"));
     QString action;
@@ -3833,17 +3864,17 @@ void snap_child::verify_permissions()
     if(action.isEmpty())
     {
         // use the default
-        action = default_action(f_uri.path());
+        action = default_action(path);
     }
+
+    // save the action found in the URI so that way any plugin can access
+    // that information at any point, not just the verify_rights() function
+    f_uri.set_query_option(qs_action, action);
 
     // only actions that are defined in the permission types are
     // allowed, anything else is funky action from a hacker or
     // whatnot and we just die with an error in that case
-    f_server->validate_action(f_uri.path(), action);
-
-    // save the found action in the URI so that way any plugin can access that
-    // information at any point, not just the verify_rights() function
-    f_uri.set_query_option(qs_action, action);
+    f_server->validate_action(path, action, err_callback);
 }
 
 

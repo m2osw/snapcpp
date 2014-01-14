@@ -1,4 +1,22 @@
 <?xml version="1.0"?>
+<!--
+Snap Websites Server == bare layout theme setup
+Copyright (C) 2014  Made to Order Software Corp.
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+-->
 <!-- to install: snaplayout bare-theme-parser.xsl -->
 <xsl:stylesheet version="2.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
                               xmlns:xs="http://www.w3.org/2001/XMLSchema"
@@ -459,6 +477,8 @@
           <xsl:variable name="content" select="data"/>
           <meta name="{$name}" content="{$content}"/>
         </xsl:for-each>
+        <!-- JavaScripts -->
+        <xsl:copy-of select="head/metadata/javascript/*"/>
     <style>
     body, div
     {
@@ -533,6 +553,12 @@
     .error input
     {
       color: #ff0000;
+    }
+    .left .box input.line-edit-input,
+    .left .box input.password-input
+    {
+      display: block;
+      width: 150px;
     }
     </style>
       </head>
@@ -611,22 +637,40 @@
         </div>
         <div class="inner-page">
           <div class="left">
-            <div class="box">
-              <p>Below is a form you can use to log in. Good luck!</p>
-            </div>
+            <xsl:for-each select="/snap/page/boxes/left">
+              <div class="box">
+                <!-- copy nodes under left -->
+                <h2 class="box-title"><xsl:choose>
+                <xsl:when test="descendant::node()/titles/short-title">
+                  <xsl:value-of select="*/titles/short-title"/>
+                </xsl:when>
+                <xsl:otherwise>
+                  <xsl:value-of select="*/titles/title"/>
+                </xsl:otherwise>
+                </xsl:choose></h2>
+                <div class="box-content">
+                  <xsl:copy-of select="descendant::node()/content/node()/*"/>
+                </div>
+              </div>
+            </xsl:for-each>
           </div>
           <div class="content">
-            <h2><xsl:choose>
+            <!--  contenteditable="true" -->
+            <div class="page-title snap-editor"><div class="editor-tooltip">
+                <a class="activate-editor" href="#">Edit</a> the page title.
+              </div><div class="editor-content"><h2><xsl:choose>
                 <xsl:when test="/snap/page/body/titles/long-title">
                   <xsl:value-of select="/snap/page/body/titles/long-title"/>
                 </xsl:when>
                 <xsl:otherwise>
                   <xsl:value-of select="/snap/page/body/titles/title"/>
                 </xsl:otherwise>
-            </xsl:choose></h2>
-            <div class="body">
+            </xsl:choose></h2></div></div>
+            <div class="body snap-editor"><div class="editor-tooltip">
+              <a class="activate-editor" href="#">Edit</a> the page content.
+            </div><div class="editor-content">
               <xsl:copy-of select="output/*"/>
-            </div>
+            </div></div>
           </div>
           <div class="clear-both"></div>
         </div>

@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <!--
-Snap Websites Server == content plugin database setup
+Snap Websites Server == white layout database setup
 Copyright (C) 2014  Made to Order Software Corp.
 
 This program is free software; you can redistribute it and/or modify
@@ -17,7 +17,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 -->
-<snap-tree>
+<snap-tree content-modified="2014-01-08 19:36:25">
   <!-- the content grows as things are added to the site, at first it handles the root though -->
   <content path="/admin/layouts/white">
     <param name="content::title">White Layout</param>

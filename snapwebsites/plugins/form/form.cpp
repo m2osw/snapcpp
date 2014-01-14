@@ -1,5 +1,5 @@
 // Snap Websites Server -- form handling
-// Copyright (C) 2012-2013  Made to Order Software Corp.
+// Copyright (C) 2012-2014  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,17 +17,20 @@
 
 #include "form.h"
 #include "../content/content.h"
+#include "../messages/messages.h"
 #include "not_reached.h"
 #include "qdomreceiver.h"
 #include "qdomxpath.h"
+#include "qstring_stream.h"
 #include "log.h"
-#include "../messages/messages.h"
+
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
 #include <QXmlQuery>
 #include <QFile>
 #include <QFileInfo>
 #pragma GCC diagnostic pop
+
 #include "poison.h"
 
 
@@ -133,7 +136,7 @@ void form::on_bootstrap(::snap::snap_child *snap)
     f_snap = snap;
 
     SNAP_LISTEN(form, "server", server, process_post, _1);
-    SNAP_LISTEN(form, "filter", filter::filter, replace_token, _1, _2, _3, _4);
+    SNAP_LISTEN(form, "filter", filter::filter, replace_token, _1, _2, _3, _4, _5);
 }
 
 
@@ -1839,7 +1842,7 @@ bool form::parse_width_height(QString const& size, int& width, int& height)
  */
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
-void form::on_replace_token(filter::filter *f, QString const& cpath, QDomDocument& xml, filter::filter::token_info_t& token)
+void form::on_replace_token(filter::filter *f, QString const& cpath, QString const& plugin_owner, QDomDocument& xml, filter::filter::token_info_t& token)
 {
     // a form::... token?
     if(!token.is_namespace("form::"))
@@ -1850,17 +1853,6 @@ void form::on_replace_token(filter::filter *f, QString const& cpath, QDomDocumen
     QString const site_key(f_snap->get_site_key_with_slash());
     QDomDocument form_doc;
     QString source;
-    QString plugin_owner;
-
-    QDomElement head(xml.documentElement().firstChildElement("head"));
-    if(!head.isNull())
-    {
-        QString name(head.attribute("owner"));
-        if(!name.isNull())
-        {
-            plugin_owner = name;
-        }
-    }
 
     bool const resource(token.is_token(get_name(SNAP_NAME_FORM_RESOURCE)));
     bool const settings(token.is_token(get_name(SNAP_NAME_FORM_SETTINGS)));
@@ -1945,7 +1937,7 @@ void form::on_replace_token(filter::filter *f, QString const& cpath, QDomDocumen
     {
         token.f_error = true;
         token.f_replacement = "<span class=\"filter-error\"><span class=\"filter-error-word\">ERROR:</span> Could not determine a valid resource path.</span>";
-        SNAP_LOG_ERROR("form::on_replace_token() could not determine a valid resource path.");
+        SNAP_LOG_ERROR("form::on_replace_token() could not determine a valid resource path (empty) for token \"")(token.f_name)("\" and owner \"")(plugin_owner)("\".");
         return;
     }
 

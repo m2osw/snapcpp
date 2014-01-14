@@ -19,6 +19,7 @@
 #include "../content/content.h"
 #include "../messages/messages.h"
 #include "../sendmail/sendmail.h"
+#include "qstring_stream.h"
 #include "not_reached.h"
 #include "log.h"
 
@@ -365,7 +366,7 @@ void users::on_bootstrap(::snap::snap_child *snap)
     SNAP_LISTEN(users, "path", path::path, can_handle_dynamic_path, _1, _2);
     SNAP_LISTEN(users, "layout", layout::layout, generate_header_content, _1, _2, _3, _4, _5);
     SNAP_LISTEN(users, "layout", layout::layout, generate_page_content, _1, _2, _3, _4, _5);
-    //SNAP_LISTEN(users, "filter", filter::filter, replace_token, _1, _2, _3, _4);
+    //SNAP_LISTEN(users, "filter", filter::filter, replace_token, _1, _2, _3, _4, _5);
 
     f_info.reset(new sessions::sessions::session_info);
 }
@@ -703,6 +704,26 @@ void users::on_generate_main_content(layout::layout *l, QString const& cpath, QD
 
     // any other user page is just like regular content
     content::content::instance()->on_generate_main_content(l, cpath, page, body, ctemplate);
+}
+
+void users::on_generate_boxes_content(layout::layout *l, QString const& page_cpath, QString const& cpath, QDomElement& page, QDomElement& box, QString const& ctemplate)
+{
+//std::cerr << "GOT TO USER BOXES!!! [" << cpath << "]\n";
+    if(cpath.endsWith("/login"))
+    {
+        // do not display the login box on the login page
+
+// DEBUG -- at this point there are conflicts with more than 1 form on a page, so I only allow that form on the home page
+if(page_cpath != "") return;
+
+        if(page_cpath == "login"
+        || page_cpath == "register")
+        {
+            return;
+        }
+    }
+
+    content::content::instance()->on_generate_main_content(l, cpath, page, box, ctemplate);
 }
 
 
@@ -2960,7 +2981,7 @@ void users::encrypt_password(const QString& digest, const QString& password, con
  * \param[in] xml  The XML document used with the layout.
  * \param[in] token  The token object, with the token name and optional parameters.
  */
-//void users::on_replace_token(filter::filter *f, QString const& cpath, QDomDocument& xml, filter::filter::token_info_t& token)
+//void users::on_replace_token(filter::filter *f, QString const& cpath, QString const& plugin_owner, QDomDocument& xml, filter::filter::token_info_t& token)
 //{
 //    if(!token.is_namespace("users::"))
 //    {

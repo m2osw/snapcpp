@@ -6,7 +6,7 @@
  *      Save layout files in the Snap database.
  *
  * License:
- *      Copyright (c) 2012 Made to Order Software Corp.
+ *      Copyright (c) 2012-2014 Made to Order Software Corp.
  * 
  *      http://snapwebsites.org/
  *      contact@m2osw.com
@@ -127,7 +127,8 @@ public:
 
     void usage();
     void add_files();
-    void load_xsl_info(QDomDocument& doc, const QString& filename, QString& layout_name, QString& layout_area, time_t& layout_modified);
+    void load_xml_info(QDomDocument& doc, QString const& filename, QString& layout_name, time_t& layout_modified);
+    void load_xsl_info(QDomDocument& doc, QString const& filename, QString& layout_name, QString& layout_area, time_t& layout_modified);
 
 private:
     typedef std::shared_ptr<advgetopt::getopt>    getopt_ptr_t;
@@ -172,7 +173,89 @@ void snap_layout::usage()
     exit(1);
 }
 
-void snap_layout::load_xsl_info(QDomDocument& doc, const QString& filename, QString& layout_name, QString& layout_area, time_t& layout_modified)
+void snap_layout::load_xml_info(QDomDocument& doc, QString const& filename, QString& content_name, time_t& content_modified)
+{
+    content_name.clear();
+    content_modified = 0;
+
+    QDomElement snap_tree(doc.documentElement());
+    if(snap_tree.isNull())
+    {
+        std::cerr << "error: the XML document does not have a root element, failed handling \"" << filename << "\"" << std::endl;
+        exit(1);
+    }
+    QString content_modified_date(snap_tree.attribute("content-modified", "0"));
+
+    QDomNodeList content(snap_tree.elementsByTagName("content"));
+    int max(content.size());
+    for(int idx(0); idx < max; ++idx)
+    {
+        // all should be elements... but still verify
+        QDomNode p(content.at(idx));
+        if(!p.isElement())
+        {
+            continue;
+        }
+        QDomElement e(p.toElement());
+        if(e.isNull())
+        {
+            continue;
+        }
+        QString const path(e.attribute("path", ""));
+        if(path.isEmpty())
+        {
+            // this is probably an error
+            continue;
+        }
+        if(path.startsWith("/admin/layouts/"))
+        {
+            int pos(path.indexOf('/', 15));
+           // int const end(path.indexOf('/', pos + 1));
+            if(pos < 0)
+            {
+                pos = path.length();
+            }
+            QString name(path.mid(15, pos - 15));
+            if(name.isEmpty())
+            {
+                std::cerr << "error: the XML document seems to have an invalid path in \"" << filename << "\"" << std::endl;
+                exit(1);
+            }
+            if(content_name.isEmpty())
+            {
+                content_name = name;
+            }
+            else if(content_name != name)
+            {
+                std::cerr << "error: the XML document includes two different entries with layout paths that differ: \""
+                          << content_name << "\" and \"" << name << "\" in \"" << filename << "\"" << std::endl;
+                exit(1);
+            }
+        }
+    }
+
+    if(content_name.isEmpty())
+    {
+        std::cerr << "error: the XML document is missing a path to a layout in \"" << filename << "\"" << std::endl;
+        exit(1);
+    }
+    if(content_modified_date.isEmpty())
+    {
+        std::cerr << "error: the XML document is missing its content-modified attribute in your XML document \"" << filename << "\"" << std::endl;
+        exit(1);
+    }
+
+    // now convert the date, we expect a very specific format
+    QDateTime t(QDateTime::fromString(content_modified_date, "yyyy-MM-dd HH:mm:ss"));
+    if(!t.isValid())
+    {
+        std::cerr << "error: the date \"" << content_modified_date << "\" doesn't seem valid in \"" << filename << "\", the expected format is \"yyyy-MM-dd HH:mm:ss\"" << std::endl;
+        exit(1);
+    }
+    content_modified = t.toTime_t();
+}
+
+void snap_layout::load_xsl_info(QDomDocument& doc, QString const& filename, QString& layout_name, QString& layout_area, time_t& layout_modified)
 {
     layout_name.clear();
     layout_area.clear();
@@ -201,8 +284,6 @@ void snap_layout::load_xsl_info(QDomDocument& doc, const QString& filename, QStr
         // we'll throw away! but that way we don't have to
         // duplicate the code plus this process is not run
         // by the server
-        QString buffer;
-        QTextStream data(&buffer);
 		QDomNodeList children(e.childNodes());
         if(children.size() != 1)
         {
@@ -210,6 +291,9 @@ void snap_layout::load_xsl_info(QDomDocument& doc, const QString& filename, QStr
             continue;
         }
 		QDomNode n(children.at(0));
+
+        QString buffer;
+        QTextStream data(&buffer);
         n.save(data, 0);
 
         // verify the name
@@ -229,7 +313,7 @@ void snap_layout::load_xsl_info(QDomDocument& doc, const QString& filename, QStr
         }
         else if(name == "layout-modified")
         {
-            // that's to make sure we don't overwrite with an older version
+            // that's to make sure we don't overwrite a newer version
             layout_modified_date = buffer;
         }
     }
@@ -296,69 +380,99 @@ void snap_layout::add_files()
     {
         QString filename(*it);
         int e(filename.lastIndexOf("."));
-        if(e == -1 || filename.mid(e) != ".xsl")
+        if(e == -1)
         {
-            std::cerr << "error: file \"" << filename << "\" must be an XSLT file (end with .xsl extension.)" << std::endl;
+            std::cerr << "error: file \"" << filename << "\" must be an XML file (end with the .xml or .xsl extension.)" << std::endl;
             exit(1);
         }
-        QFile xsl(filename);
-        if(!xsl.open(QIODevice::ReadOnly))
+        QFile xml(filename);
+        QString row_name; // == <layout name>
+        QString cell_name; // == <layout_area>  or 'content'
+        if(filename.mid(e) == ".xml") // expects the content.xml file
         {
-            std::cerr << "error: file \"" << filename << "\" could not be opened for reading." << std::endl;
-            exit(1);
-        }
-        QDomDocument doc("stylesheet");
-        QString error_msg;
-        int error_line, error_column;
-        if(!doc.setContent(&xsl, true, &error_msg, &error_line, &error_column))
-        {
-            std::cerr << "error: file \"" << filename << "\" parsing failed";
-            std::cerr << "detail " << error_line << "[" << error_column << "]: " << error_msg << std::endl;
-            exit(1);
-        }
-        QString layout_name;
-        QString layout_area;
-        time_t layout_modified;
-        load_xsl_info(doc, filename, layout_name, layout_area, layout_modified);
-
-        if(table->exists(layout_name))
-        {
-            // the row already exists, try getting the area
-            QCassandraValue existing(table->row(layout_name)->cell(layout_area)->value());
-            if(!existing.nullValue())
+            // the cell name is always "content" in this case
+            cell_name = "content";
+            if(!xml.open(QIODevice::ReadOnly))
             {
-                QDomDocument existing_doc("stylesheet");
-                if(!existing_doc.setContent(existing.stringValue(), true, &error_msg, &error_line, &error_column))
+                std::cerr << "error: XML file \"" << filename << "\" could not be opened for reading." << std::endl;
+                exit(1);
+            }
+            QDomDocument doc("content");
+            QString error_msg;
+            int error_line, error_column;
+            if(!doc.setContent(&xml, false, &error_msg, &error_line, &error_column))
+            {
+                std::cerr << "error: file \"" << filename << "\" parsing failed";
+                std::cerr << "detail " << error_line << "[" << error_column << "]: " << error_msg << std::endl;
+                exit(1);
+            }
+            time_t layout_modified;
+            load_xml_info(doc, filename, row_name, layout_modified);
+        }
+        else if(filename.mid(e) == ".xsl") // expects the body or theme XSLT files
+        {
+            if(!xml.open(QIODevice::ReadOnly))
+            {
+                std::cerr << "error: XSTL file \"" << filename << "\" could not be opened for reading." << std::endl;
+                exit(1);
+            }
+            QDomDocument doc("stylesheet");
+            QString error_msg;
+            int error_line, error_column;
+            if(!doc.setContent(&xml, true, &error_msg, &error_line, &error_column))
+            {
+                std::cerr << "error: file \"" << filename << "\" parsing failed";
+                std::cerr << "detail " << error_line << "[" << error_column << "]: " << error_msg << std::endl;
+                exit(1);
+            }
+            time_t layout_modified;
+            load_xsl_info(doc, filename, row_name, cell_name, layout_modified);
+
+            if(table->exists(row_name))
+            {
+                // the row already exists, try getting the area
+                QCassandraValue existing(table->row(row_name)->cell(cell_name)->value());
+                if(!existing.nullValue())
                 {
-                    std::cerr << "warning: existing XSLT data parsing failed, it will get replaced";
-                    std::cerr << ", detail " << error_line << "[" << error_column << "]: " << error_msg << std::endl;
-                    // it failed so we want to replace it with a valid XSLT document instead!
-                }
-                else
-                {
-                    QString existing_layout_name;
-                    QString existing_layout_area;
-                    time_t existing_layout_modified;
-                    load_xsl_info(existing_doc, "<existing XSLT data>", existing_layout_name, existing_layout_area, existing_layout_modified);
-                    // layout_name == existing_layout_name && layout_area == existing_layout_area
-                    // (since we found that data at that location in the database!)
-                    if(layout_modified < existing_layout_modified)
+                    QDomDocument existing_doc("stylesheet");
+                    if(!existing_doc.setContent(existing.stringValue(), true, &error_msg, &error_line, &error_column))
                     {
-                        // we refuse older versions
-                        // (if necessary we could add a command line option to force such though)
-                        std::cerr << "error: existing XSLT data was created more recently than the one specified on the command line: \"" << filename << "\"." << std::endl;
+                        std::cerr << "warning: existing XSLT data parsing failed, it will get replaced";
+                        std::cerr << ", detail " << error_line << "[" << error_column << "]: " << error_msg << std::endl;
+                        // it failed so we want to replace it with a valid XSLT document instead!
                     }
-                    else if(layout_modified == existing_layout_modified)
+                    else
                     {
-                        // we accept the exact same date but emit a warning
-                        std::cerr << "warning: existing XSLT data has the same date, replacing with content of file \"" << filename << "\"." << std::endl;
+                        QString existing_layout_name;
+                        QString existing_layout_area;
+                        time_t existing_layout_modified;
+                        load_xsl_info(existing_doc, "<existing XSLT data>", existing_layout_name, existing_layout_area, existing_layout_modified);
+                        // row_name == existing_layout_name && cell_name == existing_layout_area
+                        // (since we found that data at that location in the database!)
+                        if(layout_modified < existing_layout_modified)
+                        {
+                            // we refuse older versions
+                            // (if necessary we could add a command line option to force such though)
+                            std::cerr << "error: existing XSLT data was created more recently than the one specified on the command line: \"" << filename << "\"." << std::endl;
+                            exit(1);
+                        }
+                        else if(layout_modified == existing_layout_modified)
+                        {
+                            // we accept the exact same date but emit a warning
+                            std::cerr << "warning: existing XSLT data has the same date, replacing with content of file \"" << filename << "\"." << std::endl;
+                        }
                     }
                 }
             }
         }
-        xsl.reset();
-        QByteArray value(xsl.readAll());
-        table->row(layout_name)->cell(layout_area)->setValue(value);
+        else
+        {
+            std::cerr << "error: file \"" << filename << "\" must be an XML file (end with the .xml or .xsl extension.)" << std::endl;
+            exit(1);
+        }
+        xml.reset();
+        QByteArray value(xml.readAll());
+        table->row(row_name)->cell(cell_name)->setValue(value);
     }
 }
 

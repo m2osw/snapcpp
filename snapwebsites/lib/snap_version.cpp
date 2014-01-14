@@ -17,6 +17,7 @@
 
 #include "snap_version.h"
 #include "qstring_stream.h"
+#include "not_reached.h"
 #include <iostream>
 #include <QStringList>
 #include "poison.h"
@@ -43,6 +44,52 @@ char const *g_operators = "\0\0\0"  // OPERATOR_UNORDERED
                           ">\0\0"   // OPERATOR_LATER
                           "<=\0"    // OPERATOR_EARLIER_OR_EQUAL
                           ">=\0";   // OPERATOR_LATER_OR_EQUAL
+}
+
+
+/** \brief Find the extension used from a list of extension.
+ *
+ * This function checks the end of the \p filename for a match with one
+ * of the specified extensions and returns the extension that matches.
+ *
+ * Note that the list of extensions MUST be sorted from the longest
+ * extension first to the shortest last.
+ *
+ * The extensions are all expected
+ *
+ * \param[in] filename  The name of the file to check.
+ * \param[in] extensions  A NULL terminated array of extensions.
+ *
+ * \return The pointer of the extensions that matched or NULL.
+ */
+char const *find_extension(QString const& filename, char const **extensions)
+{
+#ifdef DEBUG
+    // we expect at least one extensions in the list
+    size_t length(strlen(extensions[0]));
+#endif
+    do
+    {
+#ifdef DEBUG
+        size_t const l(strlen(*extensions));
+        if(l > length)
+        {
+            throw snap_logic_exception(QString("Extension \"%1\" is longer than the previous extension \"%2\".")
+                    .arg(*extensions).arg(extensions[-1]));
+        }
+        length = l;
+#endif
+        if(filename.endsWith(*extensions))
+        {
+            return *extensions;
+        }
+
+        // not that one, move on
+        ++extensions;
+    }
+    while(*extensions != NULL);
+
+    return NULL;
 }
 
 
@@ -393,6 +440,10 @@ bool name::set_name(QString const& name_string)
  * \li COMPARE_EQUAL -- if this is equal \p rhs
  * \li COMPARE_LARGER -- if this is larger than \p rhs
  *
+ * The special name "any" is viewed as a pattern that matches any
+ * name. This comparing "any" against, say, "editor" returns
+ * COMPARE_EQUAL. "any" can appear in this name or the rhs name.
+ *
  * \param[in] rhs  The right hand side name to compare with.
  *
  * \return one of the COMPARE_... values (-2, -1, 0, 1).
@@ -402,6 +453,11 @@ compare_t name::compare(name const& rhs) const
     if(!is_valid() || !rhs.is_valid())
     {
         return COMPARE_INVALID;
+    }
+
+    if(f_name == "any" || rhs.f_name == "any")
+    {
+        return COMPARE_EQUAL;
     }
 
     if(f_name < rhs.f_name)
@@ -1514,6 +1570,307 @@ bool dependency::is_valid() const
     // loop through all the browsers
     int const max_browsers(f_browsers.size());
     for(int i(0); i < max_browsers; ++i)
+    {
+        if(!f_browsers[i].is_valid())
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+
+/** \brief Function to quickly find the Version and Browsers fields.
+ *
+ * This function initializes the Quick Find Version in Source object
+ * with a pointer to the input data and the size of the buffer.
+ *
+ * The find_version() function is expected to be called afterward to
+ * get the Version and Browsers fields. The validity of those fields
+ * is also getting checked when found. The Browsers field is optional,
+ * however the Version field is mandatory.
+ *
+ * The source is expected to be UTF-8.
+ */
+quick_find_version_in_source::quick_find_version_in_source()
+    : f_data(NULL)
+    , f_end(NULL)
+    //, f_version("") -- auto-init
+    //, f_browsers("") -- auto-init
+{
+}
+
+
+/** \brief Search for the Version and other fields.
+ *
+ * This function reads the file. It must start with a C-like comment (a.
+ * slash (/) and an asterisk (*)).
+ *
+ * The C-like comment can include any number of fields. On a line you want
+ * to include a field name, a colon, followed by a value. For example, the
+ * version field is defined as:
+ *
+ * Version: 1.2.3
+ *
+ * And the browsers field is defined as a list of browser names:
+ *
+ * Browsers: ie, firefox, opera
+ *
+ * The list of browsers is used to select code using a C-like preprocessor
+ * in the .js and .css files. That allows us to not have to use tricks to
+ * support different browsers with very similar but different enough code
+ * for different browsers.
+ *
+ * \param[in] data  The pointer to the string to be parsed.
+ * \param[in] size  The size (number of bytes) of the string to be parsed.
+ *
+ * \return true if the function succeeded, false otherwise and an error is
+ *         set which can be retrieved with get_error()
+ */
+bool quick_find_version_in_source::find_version(char const *data, int const size)
+{
+    class field_t
+    {
+    public:
+        field_t(char const *name)
+            : f_name(name)
+            , f_length(strlen(f_name))
+        {
+        }
+
+        bool check(QString const& line, QString& value)
+        {
+            // find the field name if available
+
+            // skip spaces at the beginning of the line
+            int const max(line.length());
+            int pos;
+            for(pos = 0; pos < max; ++pos)
+            {
+                if(!isspace(line.at(pos).unicode()))
+                {
+                    break;
+                }
+            }
+
+            // C-like comments most often have " * " at the start of the line
+            if(line.at(pos).unicode() == '*')
+            {
+                // skip spaces after the '*'
+                for(++pos; pos < max; ++pos)
+                {
+                    if(!isspace(line.at(pos).unicode()))
+                    {
+                        break;
+                    }
+                }
+            }
+
+            // compare with the name of this field
+            char const *n(f_name);
+            for(; pos < max && *n != '\0'; ++pos, ++n)
+            {
+                int c(line.at(pos).unicode());
+                if(c >= 'a' && c <= 'z')
+                {
+                    // uppercase
+                    c &= 0x5F;
+                }
+                if(c != *n)
+                {
+                    // no equal...
+                    return false;
+                }
+            }
+
+            // make sure there is a colon after the name
+            if(pos >= max
+            || line.at(pos).unicode() != ':')
+            {
+                return false;
+            }
+
+            // got a field, save it in value
+            value = line.mid(pos + 1).simplified();
+
+            return true;
+        }
+
+    private:
+        char const *    f_name;
+        int             f_length;
+    };
+
+    f_data = data;
+    f_end = data + size;
+
+    QString l(get_line());
+    if(!l.startsWith("/*"))
+    {
+        // C comment must appear first
+        f_error = "file does not start with a C-like comment";
+        return false;
+    }
+
+    // note: field names are case insensitive
+    field_t field_name("NAME");
+    field_t field_version("VERSION");
+    field_t field_browsers("BROWSERS");
+    field_t field_description("DESCRIPTION");
+    for(;;)
+    {
+        QString value;
+        if(field_name.check(l, value))
+        {
+            if(!f_name.get_name().isEmpty())
+            {
+                f_error = "name field cannot be defined more than once";
+                return false;
+            }
+            if(!f_name.set_name(value))
+            {
+                f_error = f_name.get_error();
+                return false;
+            }
+        }
+        else if(field_version.check(l, value))
+        {
+            if(!f_version.get_version_string().isEmpty())
+            {
+                // more than one Version field
+                f_error = "version field cannot be defined more than once";
+                return false;
+            }
+            if(!f_version.set_version_string(value))
+            {
+                f_error = f_version.get_error();
+                return false;
+            }
+        }
+        else if(field_browsers.check(l, value))
+        {
+            if(!f_browsers.isEmpty())
+            {
+                // more than one Browsers field
+                f_error = "browser field cannot be defined more than once";
+                return false;
+            }
+            QStringList browser_list(value.split(','));
+            int const max(browser_list.size());
+            for(int i(0); i < max; ++i)
+            {
+                name browser;
+                if(!browser.set_name(browser_list[i].trimmed()))
+                {
+                    f_error = browser.get_error();
+                    return false;
+                }
+                f_browsers.push_back(browser);
+            }
+        }
+        else if(field_description.check(l, value))
+        {
+            if(!f_description.isEmpty())
+            {
+                // more than one Browsers field
+                f_error = "description field cannot be defined more than once";
+                return false;
+            }
+            // description can be anything
+            f_description = value;
+        }
+        if(l.contains("*/"))
+        {
+            // stop with the end of the comment
+            // return true only if the version was specified
+            bool result(!f_version.get_version_string().isEmpty());
+            if(result && f_browsers.isEmpty())
+            {
+                // always have some browsers, "all" if nothing else
+                name browser;
+                browser.set_name("all");
+                f_browsers.push_back(browser);
+            }
+            return result;
+        }
+        l = get_line();
+    }
+}
+
+
+/** \brief Get one character from the input file.
+ *
+ * This function reads one byte from the file and returns it.
+ *
+ * \return The next character or EOF at the end of the file.
+ */
+int quick_find_version_in_source::getc()
+{
+    if(f_data >= f_end)
+    {
+        return EOF;
+    }
+    // note: UTF-8 can be ignored because what we're interested
+    //       in is using ASCII only
+    return *f_data++;
+}
+
+
+/** \brief Get a line of text.
+ *
+ * This function reads the next line. Empty lines are skipped and not
+ * returned unless the end of the file is reached. In that case, the
+ * function returns anyway.
+ *
+ * \return The line just read or an empty string if the end of the line.
+ */
+QString quick_find_version_in_source::get_line()
+{
+    int c(0);
+    for(;;)
+    {
+        std::string raw;
+        for(;;)
+        {
+            c = getc();
+            if(c == '\n' || c == '\r' || c == EOF)
+            {
+                break;
+            }
+            raw += c;
+        }
+        // we need to support UTF-8 properly for descriptions
+        QString line(QString::fromUtf8(raw.c_str()).trimmed());
+        if(!line.isEmpty() || c == EOF)
+        {
+            // do not return empty line unless we reached the
+            // end of the file
+            return line;
+        }
+    }
+    NOTREACHED();
+    return "";
+}
+
+
+/** \brief Check whether the object is valid.
+ *
+ * This function returns true if all the data in this object is valid.
+ */
+bool quick_find_version_in_source::is_valid() const
+{
+    // first check internal values
+    if(!f_error.isEmpty()
+    || !f_name.is_valid()
+    || !f_version.is_valid())
+    {
+        return false;
+    }
+
+    // check each browser name
+    int const max(f_browsers.size());
+    for(int i(0); i < max; ++i)
     {
         if(!f_browsers[i].is_valid())
         {

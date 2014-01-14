@@ -73,6 +73,16 @@ public:
 };
 
 
+class permission_error_callback
+{
+public:
+    virtual                 ~permission_error_callback() {}
+
+    virtual void            on_error(snap_child::http_code_t err_code, QString const& err_name, QString const& err_description, QString const& err_details) = 0;
+    virtual void            on_redirect(QString const& err_name, QString const& err_description, QString const& err_details, bool err_security, QString const& path, snap_child::http_code_t http_code) = 0;
+};
+
+
 class server : public plugins::plugin
 {
 public:
@@ -145,7 +155,7 @@ public:
     SNAP_SIGNAL(register_backend_action, (backend_action_map_t& actions), (actions));
     SNAP_SIGNAL(backend_process, (), ());
     SNAP_SIGNAL(save_content, (), ());
-    SNAP_SIGNAL(validate_action, (QString const& path, QString const& action), (path, action));
+    SNAP_SIGNAL(validate_action, (QString const& path, QString const& action, permission_error_callback& err_callback), (path, action, err_callback));
     SNAP_SIGNAL(access_allowed, (QString const& user_path, QString const& path, QString const& action, QString const& login_status, permission_flag& result), (user_path, path, action, login_status, result));
     SNAP_SIGNAL(xss_filter, (QDomNode& node,
                              QString const& accepted_tags,

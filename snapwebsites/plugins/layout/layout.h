@@ -1,5 +1,5 @@
 // Snap Websites Server -- layout management
-// Copyright (C) 2011-2013  Made to Order Software Corp.
+// Copyright (C) 2011-2014  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -26,19 +26,33 @@ namespace layout
 
 enum name_t
 {
+    SNAP_NAME_LAYOUT_ADMIN_LAYOUTS,
+    SNAP_NAME_LAYOUT_BOX,
+    SNAP_NAME_LAYOUT_BOXES,
+    SNAP_NAME_LAYOUT_CONTENT,
+    SNAP_NAME_LAYOUT_LAYOUT,
     SNAP_NAME_LAYOUT_TABLE,
-    SNAP_NAME_LAYOUT_THEME,
-    SNAP_NAME_LAYOUT_LAYOUT
+    SNAP_NAME_LAYOUT_THEME
 };
 char const *get_name(name_t name) __attribute__ ((const));
 
 
 class layout;
+
+
 class layout_content
 {
 public:
     virtual ~layout_content() {} // ensure proper virtual tables
     virtual void on_generate_main_content(layout *l, QString const& path, QDomElement& page, QDomElement& body, QString const& ctemplate) = 0;
+};
+
+
+class layout_boxes
+{
+public:
+    virtual ~layout_boxes() {} // ensure proper virtual tables
+    virtual void on_generate_boxes_content(layout *l, QString const& page_cpath, QString const& cpath, QDomElement& page, QDomElement& boxes, QString const& ctemplate) = 0;
 };
 
 

@@ -31,11 +31,14 @@
 #include "plugins.h"
 #include "snap_version.h"
 #include "not_reached.h"
+
 #include <QScriptEngine>
 #include <QScriptProgram>
 #include <QScriptClass>
 #include <QScriptClassPropertyIterator>
 #include <QSharedPointer>
+
+#include "poison.h"
 
 
 SNAP_PLUGIN_START(javascript, 1, 0)

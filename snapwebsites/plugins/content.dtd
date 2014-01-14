@@ -17,6 +17,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 -->
 <!ELEMENT snap-tree (content)*>
+<!ATTLIST snap-tree content-modified CDATA #IMPLIED>
 
 <!ENTITY % html-data "(#PCDATA|b|i|u|em|strong|a|img|div|p)*" >
 
@@ -35,12 +36,14 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
                to CDATA #REQUIRED
                mode CDATA "1:1">
 
-<!ELEMENT attachment (path, dependency*)>
+<!-- path is mandatory -->
+<!ELEMENT attachment (path, mime-type?, dependency*)>
 <!ATTLIST attachment name CDATA #REQUIRED
                      type CDATA #REQUIRED
                      owner CDATA #IMPLIED>
 
 <!ELEMENT path (#PCDATA)>
+<!ELEMENT mime-type (#PCDATA)>
 <!ELEMENT dependency (#PCDATA)>
 
 <!-- HTML tags that are used in default values or background values

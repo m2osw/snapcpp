@@ -566,9 +566,9 @@ void messages::set_http_error(snap_child::http_code_t err_code, QString err_name
  * that requires the end user to make changes to a form. The function can be
  * called any number of times as it cumulates any number of messages.
  *
- * \param[in] warning_name  The name of the error such as "Value Too Small".
- * \param[in] warning_description  HTML message about the problem.
- * \param[in] warning_details  Server side text message with details that are logged only.
+ * \param[in] err_name  The name of the error such as "Value Too Small".
+ * \param[in] err_description  HTML message about the problem.
+ * \param[in] err_details  Server side text message with details that are logged only.
  * \param[in] err_security  Whether this message is considered a security related message.
  *
  * \sa set_http_error()

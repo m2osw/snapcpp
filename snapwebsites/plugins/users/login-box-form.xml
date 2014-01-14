@@ -1,6 +1,24 @@
 <?xml version="1.0"?>
-<snap-form session_id="user/1" owner="users">
-  <auto-reset minutes="5"/>
+<!--
+Snap Websites Server == login box form
+Copyright (C) 2014  Made to Order Software Corp.
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+-->
+<snap-form session_id="user/2" owner="users">
+  <auto-reset minutes="30"/>
   <focus refid="email"/>
   <default-button refid="login"/>
   <taborder>
@@ -10,11 +28,9 @@
     <tabindex refid="login"/>
     <tabindex refid="register"/>
     <tabindex refid="forgot_password"/>
-    <tabindex refid="cancel"/>
   </taborder>
   <accesskeys>
     <!-- by keeping those in alphabetical order you'll avoid problems (duplicates) -->
-    <key refid="cancel">c</key><!-- default cancelation is expected to be [Shift-]Alt-C -->
     <key refid="email">e</key>
     <key refid="forgot_password">f</key>
     <key refid="log_info">l</key>
@@ -36,11 +52,10 @@
       <widgetpriority refid="register"/>
       <widgetpriority refid="remember"/>
       <widgetpriority refid="login"/>
-      <widgetpriority refid="cancel"/>
     </widgetorder>
     <widget id="email" type="line-edit">
       <label>Email</label>
-      <background-value>name@example.com</background-value>
+      <background-value>email</background-value>
       <tooltip>Enter your email address to log in your Snap! Website account.</tooltip>
       <sizes>
         <min>6</min>
@@ -55,7 +70,7 @@
     </widget>
     <widget id="password" type="password" secret="secret">
       <label>Password</label>
-      <background-value>*** your top secret password ***</background-value>
+      <background-value>password</background-value>
       <tooltip>Enter your password, if you forgot your password, just the link below to request a change.</tooltip>
       <sizes>
         <min>10</min>
@@ -93,13 +108,6 @@
       </sizes>
       <help>Long description that goes in the help box, for example.</help>
       <value>Log In</value>
-    </widget>
-    <widget id="cancel" type="link">
-      <label>Cancel</label>
-      <tooltip>Click here to return to the home page</tooltip>
-      <classes>my-cancel-class</classes>
-      <help>Long description that goes in the help box explaining why you'd want to click Cancel.</help>
-      <value>/</value>
     </widget>
   </widget>
 </snap-form>

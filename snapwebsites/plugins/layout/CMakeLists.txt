@@ -10,7 +10,7 @@
 #      See the CMake documentation.
 #
 # License:
-#      Copyright (c) 2012-2013 Made to Order Software Corp.
+#      Copyright (c) 2012-2014 Made to Order Software Corp.
 #
 #      http://snapwebsites.org/
 #      contact@m2osw.com
@@ -51,13 +51,13 @@ QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC
     layout.qrc
 )
 
-snap_validate_xml( content.xml content.dtd )
 
 add_library(layout SHARED
     layout.cpp
     ${SNAP_MANAGER_MOC_CXX}
     ${SNAP_MANAGER_RESOURCES_RCC}
-    content.xml
+    default-body-parser.xsl
+    default-theme-parser.xsl
 )
 
 target_link_libraries( layout ${QT_LIBRARIES} )

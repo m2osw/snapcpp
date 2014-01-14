@@ -1,4 +1,4 @@
-// Snap Websites Servers -- handle versions and dependencies
+// Snap Websites Server -- handle versions and dependencies
 // Copyright (C) 2014  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
@@ -69,6 +69,7 @@ enum operator_t
 typedef controlled_vars::limited_auto_init<operator_t, OPERATOR_UNORDERED, OPERATOR_LATER_OR_EQUAL, OPERATOR_UNORDERED> safe_operator_t;
 
 
+char const *find_extension(QString const& filename, char const **extensions);
 bool validate_name(QString const& name, QString& error);
 bool validate_version(QString const& version_string, version_numbers_vector_t& version, QString& error);
 bool validate_operator(QString const& operator_string, operator_t& op, QString& error);
@@ -188,6 +189,38 @@ private:
     name                        f_name;
     version_vector_t            f_versions;
     name_vector_t               f_browsers;
+};
+
+
+class quick_find_version_in_source
+{
+public:
+                                quick_find_version_in_source();
+
+    bool                        find_version(char const *data, int const size);
+
+    void                        set_name(QString const& name) { f_name.set_name(name); }
+    QString const&              get_name() const { return f_name.get_name(); }
+    QString const&              get_version_string() const { return f_version.get_version_string(); } // this was canonicalized
+    version_numbers_vector_t const& get_version() const { return f_version.get_version(); }
+    name_vector_t const&        get_browsers() const { return f_browsers; }
+    QString const&              get_description() const { return f_description; }
+    bool                        is_defined() const { return f_data != NULL; }
+    bool                        is_valid() const;
+    QString const&              get_error() const { return f_error; }
+
+private:
+    int                         getc();
+    QString                     get_line();
+
+    char const *                f_data;
+    char const *                f_end;
+
+    name                        f_name;
+    version                     f_version;
+    name_vector_t               f_browsers;
+    QString                     f_error;
+    QString                     f_description;
 };
 
 

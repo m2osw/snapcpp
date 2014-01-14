@@ -1,5 +1,9 @@
 /*
- *
+ * Name: editor
+ * Version: 0.0.1.13
+ * Browsers: all
+ * Copyright: Copyright 2013-2014 (c) Made to Order Software Corporation  All rights reverved.
+ * License: GPL 2.0
  */
 
 // This editor is based on the execCommand() function available in the
@@ -45,14 +49,42 @@
  */
 snapwebsites.Editor = function()
 {
-    this._init();
 };
 
 snapwebsites.Editor.prototype = {
     constructor: snapwebsites.Editor,
-    modified: false,
-    toolbarStyle: "#toolbar{border:1px solid black;-moz-border-radius:5px;-webkit-border-radius:5px;border-radius:5px;padding:5px;float:left;display:none;position:absolute;z-index:1;background:white;}#toolbar div.button{float:left;}#toolbar div.button img{display:block;padding:0 5px;}#toolbar .horizontal-separator{clear:both;height:3px;margin:19px 0 0;float:none;width:100%}",
+    editorStyle: "#toolbar{border:1px solid black;-moz-border-radius:5px;-webkit-border-radius:5px;border-radius:5px;padding:5px;float:left;display:none;position:absolute;z-index:1;background:white;}#toolbar div.group{float:left;width:4px;height:16px;margin:5px;background:url(/images/editor/buttons.png) no-repeat 0 0;}#toolbar div.button{float:left;width:16px;height:16px;padding:5px;border:1px solid white;}#toolbar div.button:hover{background-color:#e0f0ff;border:1px solid #a0d0ff;border-radius:5px;}#toolbar div.button .image{display:block;width:16px;height:16px;}#toolbar .horizontal-separator{clear:both;height:3px;margin:19px 0 0;float:none;width:100%}"
+                 +".button.bold .image{background:url(/images/editor/buttons.png) no-repeat -4px 0;}"
+                 +".button.italic .image{background:url(/images/editor/buttons.png) no-repeat -132px 0;}"
+                 +".button.underline .image{background:url(/images/editor/buttons.png) no-repeat -292px 0;}"
+                 +".button.strikeThrough .image{background:url(/images/editor/buttons.png) no-repeat -244px 0;}"
+                 +".button.removeFormat .image{background:url(/images/editor/buttons.png) no-repeat -228px 0;}"
+                 +".button.subscript .image{background:url(/images/editor/buttons.png) no-repeat -260px 0;}"
+                 +".button.superscript .image{background:url(/images/editor/buttons.png) no-repeat -276px 0;}"
+                 +".button.createLink .image{background:url(/images/editor/buttons.png) no-repeat -20px 0;}"
+                 +".button.unlink .image{background:url(/images/editor/buttons.png) no-repeat -308px 0;}"
+                 +".button.insertUnorderedList .image{background:url(/images/editor/buttons.png) no-repeat -116px 0;}"
+                 +".button.insertOrderedList .image{background:url(/images/editor/buttons.png) no-repeat -100px 0;}"
+                 +".button.outdent .image{background:url(/images/editor/buttons.png) no-repeat -212px 0;}"
+                 +".button.indent .image{background:url(/images/editor/buttons.png) no-repeat -52px 0;}"
+                 +".button.formatBlock .image{background:url(/images/editor/buttons.png) no-repeat -36px 0;}"
+                 +".button.insertHorizontalRule .image{background:url(/images/editor/buttons.png) no-repeat -84px 0;}"
+                 +".button.insertFieldset .image{background:url(/images/editor/buttons.png) no-repeat -68px 0;}"
+                 +".button.justifyLeft .image{background:url(/images/editor/buttons.png) no-repeat -180px 0;}"
+                 +".button.justifyCenter .image{background:url(/images/editor/buttons.png) no-repeat -148px 0;}"
+                 +".button.justifyRight .image{background:url(/images/editor/buttons.png) no-repeat -196px 0;}"
+                 +".button.justifyFull .image{background:url(/images/editor/buttons.png) no-repeat -164px 0;}"
+                 +".snap-editor:hover{box-shadow:inset 0 0 0 3px rgba(64, 192, 64, 0.5);}"
+                 +".editor-tooltip{display:none;padding:10px;position:absolute;z-index:1;border:1px solid black;border-radius:7px;background:#f0fff0;color:#0f000f;}"
+                 ,
     // TODO: support for translations
+    //
+    // WARNING: Some controls cannot be used under different browsers
+    //          (especially Internet Explorer which does not care much
+    //          whether you try to capture those controls.)
+    //
+    //    . Ctrl-O -- open a new URL
+    //
     toolbarButtons: [
         ["bold", "Bold (Ctrl-B)", 0x42],
         ["italic", "Italic (Ctrl-I)", 0x49],
@@ -107,20 +139,90 @@ snapwebsites.Editor.prototype = {
     _toolbarVisible: false,
     _height: -1,
     _activeElement: null,
-    _saveData: null,
+    _lastId: 0,
+    _originalData: [],
+    _modified: [],
     _linkDialogPopup: null,
     _savedTextRange: null,
     _savedRange: null,
     _msie: false,
     _keys: [],
 
+    _saveData: function(mode)
+    {
+        var i;
+        for(i = 1; i <= snapwebsites.EditorInstance._lastId; ++i)
+        {
+            if(snapwebsites.EditorInstance._modified[i])
+            {
+                // verify one last time whether it was indeed modified
+                if(snapwebsites.EditorInstance._originalData[i] != jQuery("#editor-area-" + i).html())
+                {
+                    return "You made changes to the page! Click Cancel to avoid closing the window and Save first.";
+                }
+            }
+        }
+    },
+
+    // if anything was modified, show this save dialog
+    // this includes some branching capabilities:
+    //
+    //    * Publish -- save a new revision in current branch
+    //    * Save -- create a new branch
+    //    * Save Draft -- make sure a draft is saved (1 draft per user per page)
+    //
+    // However, the branch the user decided to edit (i.e. with the query string
+    // ...?a=edit&revision=1.2) needs to be taken in account as well.
+    //
+    _saveDialog: function()
+    {
+        if(!this._saveDialogPopup)
+        {
+            var html = "<style>#snap_editor_save_dialog{border:1px solid black;border-radius:7px;background-color:#fff8f0;padding:10px;position:fixed;top:10px;z-index:1;width:150px;}#snap_editor_save_dialog .title{text-align:center;}#snap_editor_save_dialog .button{border:1px solid black;border-radius:5px;background-color:#b0e8a0;display:block;padding:10px;margin:10px;font-weight:bold;text-align:center;font-variant:small-caps;text-decoration:none;}#snap_editor_save_dialog .description{font-size:80%;font-style:italic;}</style>"
+                    + "<div id='snap_editor_save_dialog'>"
+                    + "<h3 class='title'>Editor</h3>"
+                    + "<div id='snap_editor_save_dialog_page'>"
+                    + "<p class='description'>You made changes to your page. Make sure to save your modifications.</p>"
+                    // this is wrong at this point because the current branch
+                    // management is more complicated...
+                    // (i.e. if you are editing a new branch that is not
+                    //       public then Publish would make that branch
+                    //       public and the Save would make that !)
+                    + "<p><a class='button' id='snap_editor_publish' href='#'>Publish</a></p>"
+                    + "<p><a class='button' id='snap_editor_save' href='#'>Save</a></p>"
+                    + "<p><a class='button' id='snap_editor_save_new_branch' href='#'>Save New Branch</a></p>"
+                    + "<p><a class='button' id='snap_editor_save_draft' href='#'>Save Draft</a></p>"
+                    + "</div></div>"
+            jQuery(html).appendTo("body");
+            this._saveDialogPopup = jQuery("#snap_editor_save_dialog");
+            this._saveDialogPopup.css("left", jQuery(window).outerWidth(true) - 190);
+            jQuery("#snap_editor_publish")
+                .click(function(){
+                    alert("Publish!");
+                });
+            jQuery("#snap_editor_save")
+                .click(function(){
+                    alert("Save!");
+                });
+            jQuery("#snap_editor_save_new_branch")
+                .click(function(){
+                    alert("Save New Branch!");
+                });
+            jQuery("#snap_editor_save_draft")
+                .click(function(){
+                    alert("Save draft...");
+                });
+        }
+        this._saveDialogPopup.fadeIn(300);
+    },
+
     _linkDialog: function(idx)
     {
         if(!this._linkDialogPopup)
         {
-            var html = "<style>#linkDialog{display:none;position:absolute;z-index:2;float:left;background:#f0f0ae;padding:0;border:1px solid black;-moz-border-bottom-right-radius:10px;-webkit-border-bottom-right-radius:10px;border-bottom-right-radius:10px;-moz-border-bottom-left-radius:10px;-webkit-border-bottom-left-radius:10px;border-bottom-left-radius:10px;}#snap_editor_link_page{margin:0;padding:10px;}#linkDialog div.line{clear:both;padding:5px 3px;}#linkDialog label.limited{display:block;float:left;width:80px;}#linkDialog input{display:block;float:left;width:150px;}#darkenPage{position:fixed;z-index:1;left:0;top:0;width:100%;height:100%;background-color:black;opacity:0.2;filter:alpha(opacity=20);}#linkDialog div.title{background:black;color:white;font-weight:bold;padding:5px;}</style>"
+            var html = "<style>#snap_editor_link_dialog{display:none;position:absolute;z-index:2;float:left;background:#f0f0ae;padding:0;border:1px solid black;-moz-border-bottom-right-radius:10px;-webkit-border-bottom-right-radius:10px;border-bottom-right-radius:10px;-moz-border-bottom-left-radius:10px;-webkit-border-bottom-left-radius:10px;border-bottom-left-radius:10px;}#snap_editor_link_page{margin:0;padding:10px;}#snap_editor_link_dialog div.line{clear:both;padding:5px 3px;}#snap_editor_link_dialog label.limited{display:block;float:left;width:80px;}#snap_editor_link_dialog input{display:block;float:left;width:150px;}#darkenPage{position:fixed;z-index:1;left:0;top:0;width:100%;height:100%;background-color:black;opacity:0.2;filter:alpha(opacity=20);}#snap_editor_link_dialog div.title{background:black;color:white;font-weight:bold;padding:5px;}</style>"
                     + "<div id='darkenPage'></div>"
-                    + "<div id='linkDialog'>"
+                    + "<div id='snap_editor_link_dialog'>"
                     + "<div class='title'>Link Administration</div>"
                     + "<div id='snap_editor_link_page'>"
                     + "<div class='line'><label class='limited' for='snap_editor_link_text'>Text:</label> <input id='snap_editor_link_text' name='text' title='Enter the text representing the link. If none, the link will appear as itself.'/></div>"
@@ -130,8 +232,8 @@ snapwebsites.Editor.prototype = {
                     + "<div class='line'><label class='limited'>&nbsp;</label><input id='snap_editor_link_ok' type='button' value='OK' title='Click to save your changes.'/></div>"
                     + "<div style='clear:both;padding:0;'></div></div></div>";
             jQuery(html).appendTo("body");
-            this._linkDialogPopup = jQuery("#linkDialog");
-            jQuery("#linkDialog #snap_editor_link_ok")
+            this._linkDialogPopup = jQuery("#snap_editor_link_dialog");
+            jQuery("#snap_editor_link_dialog #snap_editor_link_ok")
                 .click(function(){
                     snapwebsites.EditorInstance._linkDialogPopup.fadeOut(150);
                     jQuery("#darkenPage").fadeOut(150);
@@ -277,6 +379,139 @@ snapwebsites.Editor.prototype = {
             return range.toString();
         }
     },
+
+//pasteHtmlAtCaret: function(html, selectPastedContent)
+//{
+//    var sel, range;
+//    if(window.getSelection)
+//    {
+//        // IE9 and non-IE
+//        sel = window.getSelection();
+//        if(sel.getRangeAt && sel.rangeCount)
+//        {
+//            range = sel.getRangeAt(0);
+//            range.deleteContents();
+//
+//            // Range.createContextualFragment() would be useful here but is
+//            // only relatively recently standardized and is not supported in
+//            // some browsers (IE9, for one)
+//            var el = document.createElement("div");
+//            el.innerHTML = html;
+//            var frag = document.createDocumentFragment(), node, lastNode;
+//            while((node = el.firstChild))
+//            {
+//                lastNode = frag.appendChild(node);
+//            }
+//            var firstNode = frag.firstChild;
+//            range.insertNode(frag);
+//
+//            // Preserve the selection
+//            if(lastNode)
+//            {
+//                range = range.cloneRange();
+//                range.setStartAfter(lastNode);
+//                if(selectPastedContent)
+//                {
+//                    range.setStartBefore(firstNode);
+//                }
+//                else
+//                {
+//                    range.collapse(true);
+//                }
+//                sel.removeAllRanges();
+//                sel.addRange(range);
+//            }
+//        }
+//    }
+//    else if((sel = document.selection) && sel.type != "Control")
+//    {
+//        // IE < 9
+//        var originalRange = sel.createRange();
+//        originalRange.collapse(true);
+//        sel.createRange().pasteHTML(html);
+//        if(selectPastedContent)
+//        {
+//            range = sel.createRange();
+//            range.setEndPoint("StartToStart", originalRange);
+//            range.select();
+//        }
+//    }
+//},
+
+    _findFirstVisibleTextNode: function(p)
+    {
+        var textNodes, nonWhitespaceMatcher = /\S/;
+
+        function __findFirstVisibleTextNode(p)
+        {
+            var i, max, result, child;
+
+            // text node?
+            if(p.nodeType == 3) // Node.TEXT_NODE == 3
+            {
+                return p;
+            }
+
+            max = p.childNodes.length;
+            for(i = 0; i < max; ++i)
+            {
+                child = p.childNodes[i];
+
+                // verify visibility first (avoid walking the tree of hidden nodes)
+//console.log("node " + child + " has display = [" + jQuery(child).css("display") + "]");
+//                if(jQuery(child).css("display") == "none")
+//                {
+//                    return result;
+//                }
+
+                result = __findFirstVisibleTextNode(child);
+                if(result)
+                {
+                    return result;
+                }
+            }
+        }
+
+        return __findFirstVisibleTextNode(p);
+    },
+
+//    resetSelectionText: function()
+//    {
+//        var range, selection;
+//        if(document.selection)
+//        {
+//            range = document.selection.createRange();
+//            range.moveStart("character", 0);
+//            range.moveEnd("character", 0);
+//            range.select();
+//            return;
+//        }
+//
+//console.log("active is ["+this._activeElement+"]");
+//        var elem=this._findFirstVisibleTextNode(this._activeElement);//jQuery(this._activeElement).filter(":visible:text:first");
+//console.log("first elem = ["+this._activeElement+"/"+jQuery(elem).length+"] asis:["+elem+"] text:["+elem.nodeValue+"] node:["+jQuery(elem).prop("nodeType")+"]");
+////jQuery(this._activeElement).find("*").filter(":visible").each(function(i,e){
+////console.log(" + child = ["+this+"] ["+jQuery(this).prop("tagName")+"] node:["+jQuery(this).prop("nodeType")+"]");
+////});
+//
+//        range = document.createRange();//Create a range (a range is a like the selection but invisible)
+//        range.selectNodeContents(elem);//this._activeElement);//Select the entire contents of the element with the range
+//        //range.collapse(true);//collapse the range to the end point. false means collapse to end rather than the start
+//        selection = window.getSelection();//get the selection object (allows you to change selection)
+//        selection.removeAllRanges();//remove any selections already made
+//        selection.addRange(range);//make the range you have just created the visible selection
+//        return;
+//
+//
+//        var sel = window.getSelection();
+//        if(sel.getRangeAt)
+//        {
+//            range = sel.getRangeAt(0);
+//console.log('Current position: ['+range.startOffset+'] inside ['+jQuery(range.startContainer).attr("class")+']');
+//            range.setStart(this._activeElement, 0);
+//            range.setEnd(this._activeElement, 0);
+//        }
+//    },
 
     _trimSelectionText: function()
     {
@@ -440,6 +675,9 @@ snapwebsites.Editor.prototype = {
 
     _toggleToolbar: function(force)
     {
+        var sel = window.getSelection();
+        var range = sel.getRangeAt(0);
+
         if(force === true || force === false)
         {
             this._toolbarVisible = force;
@@ -480,6 +718,7 @@ snapwebsites.Editor.prototype = {
         }
 
         // require better selection for a link? (i.e. full link)
+console.log("command "+idx+" "+this.toolbarButtons[idx][2]+"!!!");
         if(this.toolbarButtons[idx][2] & 0x20000)
         {
             this._trimSelectionText();
@@ -555,7 +794,7 @@ snapwebsites.Editor.prototype = {
         // IE?
         this._msie = /msie/.exec(navigator.userAgent.toLowerCase());
 
-        var html = "<style>" + this.toolbarStyle + "</style><div id=\"toolbar\">";
+        var html = "<style>" + this.editorStyle + "</style><div id=\"toolbar\">";
         var originalName, isGroup;
         var idx, max = this.toolbarButtons.length;
         for(idx = 0; idx < max; ++idx)
@@ -594,18 +833,16 @@ snapwebsites.Editor.prototype = {
                     else
                     {
                         // vertical separator, show a small vertical bar
-                        html += "<div class=\"button\" onclick='snapwebsites.EditorInstance._refocus();'><img alt=\"Vertical Separator\" src=\"buttons/group.png\"/></div>";
+                        html += "<div class=\"group\" onclick='snapwebsites.EditorInstance._refocus();'></div>";
                     }
                 }
                 else
                 {
-                    // Buttons look like this:
-                    //<div class="button"><img onclick='snapwebsites.EditorInstance._command("bold")' alt="Bold (Ctrl-B)" title="Bold (Ctrl-B)" src="buttons/bold.png"/></div>
-                    html += "<div class=\"button\"><img onclick='javascript:snapwebsites.EditorInstance._refocus();snapwebsites.EditorInstance._command(\""
-                            + idx + "\");' alt=\""
-                            + this.toolbarButtons[idx][1] + "\" title=\""
-                            + this.toolbarButtons[idx][1] + "\" src=\"buttons/"
-                            + originalName + ".png\"/></div>";
+                    // Buttons
+                    html += "<div unselectable=\"on\" class=\"button " + originalName
+                            + "\" onclick='javascript:snapwebsites.EditorInstance._refocus();snapwebsites.EditorInstance._command("
+                            + idx + ");' title=\"" + this.toolbarButtons[idx][1] + "\">"
+                            + "<span class=\"image\"></span></div>";
                 }
             }
         }
@@ -616,33 +853,55 @@ snapwebsites.Editor.prototype = {
         // TODO: a click on the toolbar in a location that is not a button
         //       loses the active element selection
         this._toolbar.click(function(e){snapwebsites.EditorInstance._refocus();e.preventDefault();});
+        this._toolbar.mousedown(function(e){snapwebsites.EditorInstance._cancel_toolbar_hide();e.preventDefault();});
     },
 
     _checkModified: function()
     {
-        if(!this.modified)
+        if(!this._modified[this._activeElement.objId])
         {
-            var newData = jQuery(this).html();
-            if(this._saveData != newData)
+            this._modified[this._activeElement.objId] = this._originalData[this._activeElement.objId] != jQuery(this._activeElement).html();
+            if(this._modified[this._activeElement.objId])
             {
-                this._saveData = newData;
-                this.modified = true;
 console.log("just modified!!!");
+                this._saveDialog();
             }
+        }
+    },
+
+    _cancel_toolbar_hide: function()
+    {
+        if(snapwebsites.EditorInstance._toolbarTimeoutID != -1)
+        {
+            // prevent hiding of the toolbar
+            clearTimeout(snapwebsites.EditorInstance._toolbarTimeoutID);
         }
     },
 
     _attach: function()
     {
+        jQuery(".snap-editor").children(".editor-tooltip").children(".activate-editor").click(function(){
+            jQuery(this).parent().parent().mouseleave().off("mouseenter mouseleave")
+                    .children(".editor-content").attr("contenteditable", "true").focus();
+        });
+
         jQuery(".snap-editor")
+            .hover(function(){// in
+                jQuery(this).children(".editor-tooltip").fadeIn(150);
+            },function(){// out
+                jQuery(this).children(".editor-tooltip").fadeOut(150);
+            });
+
+        jQuery(".snap-editor .editor-content")
+            .each(function(){
+                this.objId = ++snapwebsites.EditorInstance._lastId;
+                jQuery(this).attr("id", "editor-area-" + this.objId);
+                snapwebsites.EditorInstance._originalData[this.objId] = jQuery(this).html();
+                snapwebsites.EditorInstance._modified[this.objId] = false;
+            })
             .focus(function(){
                 snapwebsites.EditorInstance._activeElement = this;
-                if(snapwebsites.EditorInstance._toolbarTimeoutID != -1)
-                {
-                    // prevent hiding of the toolbar
-                    clearTimeout(snapwebsites.EditorInstance._toolbarTimeoutID);
-                }
-                snapwebsites.EditorInstance._saveData = jQuery(this).html();
+                snapwebsites.EditorInstance._cancel_toolbar_hide();
                 if(snapwebsites.EditorInstance.toolbarAutoVisible)
                 {
                     snapwebsites.EditorInstance._toggleToolbar(true);
@@ -665,7 +924,7 @@ console.log("just modified!!!");
                     }
                 }
             })
-            .bind("keyup bind cut copy paste",function(){
+            .on("keyup bind cut copy paste",function(){
                 if(snapwebsites.EditorInstance._bottomToolbar)
                 {
                     var newHeight = jQuery(this).outerHeight();
@@ -683,17 +942,30 @@ console.log("just modified!!!");
 
     _unload: function()
     {
-        jQuery(window)
-            .bind('beforeunload', function(){
-                if(snapwebsites.EditorInstance.modified)
+        var i, obj = [], edit_area;
+        for(i = 1; i <= snapwebsites.EditorInstance._lastId; ++i)
+        {
+            if(snapwebsites.EditorInstance._modified[i])
+            {
+                // verify one last time whether it was indeed modified
+                edit_area = jQuery("#editor-area-" + i);
+                if(snapwebsites.EditorInstance._originalData[i] != edit_area.html())
                 {
-                    return "You made changes to the page! Click Cancel to avoid closing the window and Save first.";
+                    name = edit_area.parent().attr("field_name");
+                    obj[name] = edit_area.html();
                 }
-            })
-        ;
+            }
+        }
+        jQuery.ajax({
+            type: "POST",
+            url: "/",
+            data: obj,
+            success: success,
+            dataType: dataType
+        });
     },
 
-    _init: function()
+    init: function()
     {
         this._createToolbar();
         this._attach();
@@ -702,5 +974,5 @@ console.log("just modified!!!");
 };
 
 // auto-initialize
-jQuery(document).ready(function(){snapwebsites.EditorInstance = new snapwebsites.Editor();});
+jQuery(document).ready(function(){snapwebsites.EditorInstance = new snapwebsites.Editor();snapwebsites.EditorInstance.init();});
 // vim: ts=4 sw=4 et

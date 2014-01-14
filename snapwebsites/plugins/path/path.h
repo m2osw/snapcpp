@@ -25,7 +25,8 @@ namespace snap
 namespace path
 {
 
-enum name_t {
+enum name_t
+{
 	SNAP_NAME_PATH_PRIMARY_OWNER
 };
 const char *get_name(name_t name) __attribute__ ((const));
@@ -35,32 +36,27 @@ class path_execute
 {
 public:
 	virtual ~path_execute() {} // ensure proper virtual tables
-	virtual bool on_path_execute(const QString& url) = 0;
+	virtual bool on_path_execute(QString const& url) = 0;
 };
 
 class path : public plugins::plugin
 {
 public:
-	path();
-	~path();
+						path();
+						~path();
 
 	static path *		instance();
 	virtual QString		description() const;
 
-	//void add_path(const QString& primary_owner,
-	//			  const QString& path,
-	//			  int64_t timestamp = SNAP_UNIX_TIMESTAMP(2000, 1, 1, 0, 0, 0) * 1000000);
-	//			  // timestamp defaults to Jan 1, 2000 at midnight UTC
-	//			  // and is defined in milliseconds (978307200)
+	void				on_bootstrap(::snap::snap_child *snap);
+	void				on_init();
+	void				on_execute(QString const& uri_path);
+	plugin *			get_plugin(QString const& uri_path, permission_error_callback& err_callback);
 
-	void on_bootstrap(::snap::snap_child *snap);
-	void on_init();
-	void on_execute(const QString& uri_path);
+	SNAP_SIGNAL(can_handle_dynamic_path, (path *path_plugin, QString const& cpath), (path_plugin, cpath));
+	SNAP_SIGNAL(page_not_found, (path *path_plugin, QString const& cpath), (path_plugin, cpath));
 
-	SNAP_SIGNAL(can_handle_dynamic_path, (path *path_plugin, const QString& cpath), (path_plugin, cpath));
-	SNAP_SIGNAL(page_not_found, (path *path_plugin, const QString& cpath), (path_plugin, cpath));
-
-	void handle_dynamic_path(plugins::plugin *p);
+	void 				handle_dynamic_path(plugins::plugin *p);
 
 private:
 	typedef controlled_vars::ptr_no_init<plugins::plugin> dynamic_path_plugin_t;
@@ -68,6 +64,7 @@ private:
 	zpsnap_child_t									f_snap;
 	QString											f_primary_owner;
 	dynamic_path_plugin_t							f_path_plugin;
+	controlled_vars::zint64_t						f_last_modified;
 };
 
 } // namespace path

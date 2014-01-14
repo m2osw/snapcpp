@@ -1,5 +1,5 @@
 // Snap Websites Server -- users handling
-// Copyright (C) 2012-2013  Made to Order Software Corp.
+// Copyright (C) 2012-2014  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -110,13 +110,13 @@ public:
 
 
 
-class users : public plugins::plugin, public path::path_execute, public layout::layout_content, public form::form_post
+class users : public plugins::plugin, public path::path_execute, public layout::layout_content, public layout::layout_boxes, public form::form_post
 {
 public:
     static const sessions::sessions::session_info::session_id_t USERS_SESSION_ID_LOG_IN = 1;                    // login-form.xml
-    static const sessions::sessions::session_info::session_id_t USERS_SESSION_ID_LOG_IN_BLOCK = 2;
+    static const sessions::sessions::session_info::session_id_t USERS_SESSION_ID_LOG_IN_BOX = 2;                // login-box-form.xml
     static const sessions::sessions::session_info::session_id_t USERS_SESSION_ID_REGISTER = 3;                  // register-form.xml
-    static const sessions::sessions::session_info::session_id_t USERS_SESSION_ID_REGISTER_BLOCK = 4;
+    static const sessions::sessions::session_info::session_id_t USERS_SESSION_ID_REGISTER_BOX = 4;
     static const sessions::sessions::session_info::session_id_t USERS_SESSION_ID_FORGOT_PASSWORD = 5;           // forgot-password-form.xml
     static const sessions::sessions::session_info::session_id_t USERS_SESSION_ID_VERIFY = 6;                    // verify-form.xml
     static const sessions::sessions::session_info::session_id_t USERS_SESSION_ID_LOG_IN_SESSION = 7;
@@ -141,6 +141,7 @@ public:
     void                    on_can_handle_dynamic_path(path::path *path_plugin, QString const& cpath);
     void                    on_generate_header_content(layout::layout *l, QString const& path, QDomElement& hader, QDomElement& metadata, QString const& ctemplate);
     virtual void            on_generate_main_content(layout::layout *l, QString const& path, QDomElement& page, QDomElement& body, QString const& ctemplate);
+    virtual void            on_generate_boxes_content(layout::layout *l, QString const& page_path, QString const& path, QDomElement& page, QDomElement& boxes, QString const& ctemplate);
     void                    on_generate_page_content(layout::layout *l, QString const& path, QDomElement& page, QDomElement& body, QString const& ctemplate);
     bool                    on_path_execute(QString const& cpath);
     void                    on_process_cookies();

@@ -1411,17 +1411,59 @@ bool server::xss_filter_impl(QDomNode& /*node*/,
  * then the event calls die() at some point and returns.
  *
  * \param[in] path  The path being validated.
- * \param[in,out] action  The action being performed against \p path.
+ * \param[in] action  The action being performed against \p path.
+ * \param[in] callback  Call functions on errors.
  *
  * \return true if the event has to carry on.
  */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-bool server::validate_action_impl(QString const& path, QString const& action)
+bool server::validate_action_impl(QString const& path, QString const& action, permission_error_callback& callback)
 {
+    (void) path;
+    (void) action;
+    (void) callback;
     return true;
 }
-#pragma GCC diagnostic pop
+
+/** \fn permission_error_callback::on_error(snap_child::http_code_t err_code, QString const& err_name, QString const& err_description, QString const& err_details)
+ * \brief Generate an error.
+ *
+ * This function is called if an error is generated. If so then the function
+ * should mark the permission as not available for that user.
+ *
+ * This function accepts the same parameters as the snap_child::die()
+ * function.
+ *
+ * This implementation of the function does not returned. However, it cannot
+ * expect that all implementations would not return (to the contrary!)
+ *
+ * \param[in] err_code  The error code such as 501 or 503.
+ * \param[in] err_name  The name of the error such as "Service Not Available".
+ * \param[in] err_description  HTML message about the problem.
+ * \param[in] err_details  Server side text message with details that are logged only.
+ */
+
+
+/** \fn permission_error_callback::on_redirect(QString const& err_name, QString const& err_description, QString const& err_details, bool err_security, QString const& path, snap_child::http_code_t http_code)
+ * \brief Generate a message and redirect the user.
+ *
+ * This function is called if an error is generated, but an error that can
+ * be "fixed" (in most cases by having the user log in or enter his
+ * credentials for a higher level of security on the website.)
+ *
+ * This function accepts the same parameters as the message::set_error()
+ * function followed by the same parameters as the snap_child::redirect()
+ * function.
+ *
+ * This implementation of the function does not returned. However, it cannot
+ * expect that all implementations would not return (to the contrary!)
+ *
+ * \param[in] err_name  The name of the error such as "Value Too Small".
+ * \param[in] err_description  HTML message about the problem.
+ * \param[in] err_details  Server side text message with details that are logged only.
+ * \param[in] err_security  Whether this message is considered a security related message.
+ * \param[in] path  The path where the user is being redirected.
+ * \param[in] http_code  The code to use while redirecting the user.
+ */
 
 
 /** \brief Check whether a user has permission to access a page.

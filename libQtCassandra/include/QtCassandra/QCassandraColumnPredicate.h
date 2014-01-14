@@ -61,9 +61,12 @@ public:
     virtual ~QCassandraColumnPredicate();
 
     // The name predicates can have any character from \0 to \uFFFD
-    // (although in full Unicode, you may want to use \U7FFFFFFD but at this
-    // point I limit the code to \uFFFD because Qt uses UCS-2)
-    // TBD: is Qt really UCS-2 or UTF-16? Because we could use 0xFFFFD in UTF-16!
+    // (although in full Unicode, you may want to use \U10FFFD but at this
+    // point I limit the code to \uFFFD because QChar uses a ushort)
+    //
+    // Note: Qt strings use UTF-16, but in a QChar, I'm not too sure we
+    //       can put a value more than 0xFFFF... so we'd need the last_char
+    //       to be a QString to support the max. character in Unicode!
     static const QChar first_char;
     static const QChar last_char;
 

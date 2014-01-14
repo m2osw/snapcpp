@@ -103,6 +103,7 @@ add_subdirectory(lib)           # Common code which is too specialized to create
 add_subdirectory(plugins)       # Plug-ins (i.e. modular functionality)
 add_subdirectory(src)           # Actual Snap! Websites server
 add_subdirectory(snap-manager)  # Snap Manager to work on Cassandra data from a constrained UI
+add_subdirectory(layouts)       # Layouts offered along Core
 add_subdirectory(tests)         # Tests to run against the server
 add_subdirectory(doc)           # API Documentation
 

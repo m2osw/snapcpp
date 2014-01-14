@@ -22,8 +22,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <file>content.xml</file>
   </qresource>
   <qresource prefix="/js/content">
-    <file>jquery_1.10.2.js</file>
-    <file>content_0.0.1.js</file>
+    <file>jquery.js</file>
+    <file>content.js</file>
   </qresource>
 </RCC>
 <!--

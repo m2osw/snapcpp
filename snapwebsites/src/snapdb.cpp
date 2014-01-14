@@ -600,7 +600,9 @@ void snapdb::display()
                     float value((*c)->value().floatValue());
                     v = QString("%1").arg(value);
                 }
-                else if(n == "content::files::image_height"
+                else if(n == "content::attachment::revision_control::last_branch"
+                     || n.startsWith("content::attachment::revision_control::last_revision::")
+                     || n == "content::files::image_height"
                      || n == "content::files::image_width"
                      || n == "content::files::size"
                      || n == "content::files::size::compressed"
@@ -658,7 +660,7 @@ void snapdb::display()
                         v += "...";
                     }
                 }
-                else if(n == "content::attachment"
+                else if((n.startsWith("content::attachment::") && n[21] >= '0' && n[21] <= '9' && !n.mid(22).contains("::"))
                      || (f_table == "files" && f_row == "javascripts")
                 )
                 {

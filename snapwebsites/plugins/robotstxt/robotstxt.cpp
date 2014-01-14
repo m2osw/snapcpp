@@ -338,8 +338,8 @@ void robotstxt::define_robots(const QString& path)
         {
 // linking [http://csnap.m2osw.com/] / [http://csnap.m2osw.com/types/taxonomy/system/robotstxt/noindex]
 // <link name="noindex" to="noindex" mode="1:*">/types/taxonomy/system/robotstxt/noindex</link>
-            links::link_info xml_sitemap_info("robotstxt::noindex", false, site_key + path);
-            QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(xml_sitemap_info));
+            links::link_info robots_info("robotstxt::noindex", false, site_key + path);
+            QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(robots_info));
             links::link_info robots_txt;
             if(link_ctxt->next_link(robots_txt))
             {
@@ -347,8 +347,8 @@ void robotstxt::define_robots(const QString& path)
             }
         }
         {
-            links::link_info xml_sitemap_info("robotstxt::nofollow", false, site_key + path);
-            QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(xml_sitemap_info));
+            links::link_info robots_info("robotstxt::nofollow", false, site_key + path);
+            QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(robots_info));
             links::link_info robots_txt;
             if(link_ctxt->next_link(robots_txt))
             {
@@ -356,9 +356,8 @@ void robotstxt::define_robots(const QString& path)
             }
         }
         {
-            // TBD -- here I had this path "types/taxonomy/system/robotstxt/noarchive", but `path` seems correct...
-            links::link_info xml_sitemap_info("robotstxt::noarchive", false, site_key + path);
-            QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(xml_sitemap_info));
+            links::link_info robots_info("robotstxt::noarchive", false, site_key + path);
+            QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(robots_info));
             links::link_info robots_txt;
             if(link_ctxt->next_link(robots_txt))
             {

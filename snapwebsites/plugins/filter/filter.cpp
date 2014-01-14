@@ -1,5 +1,5 @@
 // Snap Websites Server -- filter
-// Copyright (C) 2011-2013  Made to Order Software Corp.
+// Copyright (C) 2011-2014  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -20,9 +20,12 @@
 #include "plugins.h"
 #include "qdomxpath.h"
 #include "../content/content.h"
+
 #include <iostream>
 #include <cctype>
 #include <QtCore/QDebug>
+
+#include "qstring_stream.h"
 
 
 SNAP_PLUGIN_START(filter, 1, 0)
@@ -276,7 +279,7 @@ void filter::on_xss_filter(QDomNode& node,
  */
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
-bool filter::replace_token_impl(filter *f, QString const& cpath, QDomDocument& xml, token_info_t& token)
+bool filter::replace_token_impl(filter *f, QString const& cpath, QString const& plugin_owner, QDomDocument& xml, token_info_t& token)
 {
     if(token.is_token("test"))
     {
@@ -384,14 +387,84 @@ bool filter::replace_token_impl(filter *f, QString const& cpath, QDomDocument& x
  */
 void filter::on_token_filter(QString const& cpath, QDomDocument& xml)
 {
+    class filter_state_t
+    {
+    public:
+        filter_state_t(QDomDocument doc, QString const& cpath)
+        {
+            state_t s;
+            s.f_node = doc;
+            s.f_owner = "filter";
+            s.f_path = cpath;
+            f_state.push_back(s);
+        }
+
+        void push(QDomElement e)
+        {
+            state_t s;
+            s.f_node = e;
+            s.f_owner = e.attribute("owner");
+            s.f_path = e.attribute("path");
+            // TBD error or default if f_owner is empty?
+            //     (f_path can be empty because the root cpath is "")
+            f_state.push_back(s);
+//std::cerr << "Push " << s.f_owner << ", path " << s.f_path << "\n";
+        }
+
+        void pop(QDomNode p)
+        {
+            if(f_state.isEmpty())
+            {
+                throw snap_logic_exception("filter state stack empty on a pop() call");
+            }
+
+            if(f_state.last().f_node == p)
+            {
+//std::cerr << "Pop " << f_state.last().f_owner << ", path " << f_state.last().f_path << "\n";
+                f_state.pop_back();
+            }
+        }
+
+        QString const& owner() const
+        {
+            if(f_state.isEmpty())
+            {
+                throw snap_logic_exception("filter state stack empty on an owner() call");
+            }
+
+            return f_state.last().f_owner;
+        }
+
+        QString const& path() const
+        {
+            if(f_state.isEmpty())
+            {
+                throw snap_logic_exception("filter state stack empty on a path() call");
+            }
+
+            return f_state.last().f_path;
+        }
+
+    private:
+        struct state_t
+        {
+            QDomNode        f_node;
+            QString         f_owner;
+            QString         f_path;
+        };
+
+        QVector<state_t>    f_state;
+    };
+
     class text_t
     {
     public:
         typedef ushort char_t;
 
-        text_t(filter *f, QString const& cpath, QDomDocument& xml, QString const& text)
+        text_t(filter *f, QString const& cpath, QString const& owner, QDomDocument& xml, QString const& text)
             : f_filter(f)
             , f_cpath(cpath)
+            , f_owner(owner)
             , f_xml(xml)
             , f_index(0)
             , f_extra_index(0)
@@ -552,7 +625,7 @@ void filter::on_token_filter(QString const& cpath, QDomDocument& xml)
 
             // valid input, now verify that it does exist in the current
             // installation
-            f_filter->replace_token(f_filter, f_cpath, f_xml, info);
+            f_filter->replace_token(f_filter, f_cpath, f_owner, f_xml, info);
             if(!info.f_found)
             {
                 // the token is not known, that's an error so we do not
@@ -740,6 +813,7 @@ void filter::on_token_filter(QString const& cpath, QDomDocument& xml)
 
         filter *        f_filter;
         QString         f_cpath;
+        QString         f_owner;
         QDomDocument    f_xml;
         int             f_index;
         int             f_extra_index;
@@ -751,9 +825,13 @@ void filter::on_token_filter(QString const& cpath, QDomDocument& xml)
         QString         f_token_name;
     };
 
+    filter_state_t state(xml, cpath);
+
     QDomNode n = xml.firstChild();
     while(!n.isNull())
     {
+        QVector<QDomNode> to_pop;
+
         // determine the next pointer so we can delete this node
         QDomNode parent = n.parentNode();
         QDomNode next = n.firstChild();
@@ -765,6 +843,7 @@ void filter::on_token_filter(QString const& cpath, QDomDocument& xml)
                 QDomNode p(parent);
                 do
                 {
+                    to_pop.push_back(p);
                     next = p.nextSibling();
                     p = p.parentNode();
                 }
@@ -780,10 +859,10 @@ void filter::on_token_filter(QString const& cpath, QDomDocument& xml)
             // this works too, although the final result is still plain text!
             // (it must be xslt that converts the contents of CDATA sections)
             QDomCDATASection cdata_section(n.toCDATASection());
-//printf("checking CDATA [%s]\n", cdata_section.data().toUtf8().data());
-            text_t t(this, cpath, xml, cdata_section.data());
+            text_t t(this, state.path(), state.owner(), xml, cdata_section.data());
             if(t.parse())
             {
+//std::cerr << "replace CDATA [" << cdata_section.data() << "]\n";
                 // replace the text with its contents
                 cdata_section.setData(t.result());
             }
@@ -791,10 +870,10 @@ void filter::on_token_filter(QString const& cpath, QDomDocument& xml)
         else if(n.isText())
         {
             QDomText text(n.toText());
-//printf("checking text [%s]\n", text.data().toUtf8().data());
-            text_t t(this, cpath, xml, text.data());
+            text_t t(this, state.path(), state.owner(), xml, text.data());
             if(t.parse())
             {
+//std::cerr << "replace text [" << text.data() << "]\n";
                 // replace the text with its contents
                 const QString& result(t.result());
                 if(result.contains('<'))
@@ -820,6 +899,33 @@ void filter::on_token_filter(QString const& cpath, QDomDocument& xml)
                     text.setData(result);
                 }
             }
+        }
+        else if(n.isElement())
+        {
+            QDomElement e(n.toElement());
+
+            QString const tag_name(e.tagName());
+			// TBD -- is it a problem to have hard coded tag names here?
+            if(tag_name == "snap" || tag_name == "filter")
+            {
+                // if the element has no children then we do
+                // not want to push anything because it won't
+                // get popped properly otherwise
+                QDomNode child = n.firstChild();
+                if(!child.isNull())
+                {
+                    state.push(e);
+                }
+            }
+        }
+
+        // we need to pop this one after handling or we get the
+        // wrong information in the tag before exiting a tag
+        // (also must be popped in order, i.e. FIFO)
+        int const pop_max(to_pop.size());
+        for(int i(0); i < pop_max; ++i)
+        {
+            state.pop(to_pop[i]);
         }
 
         // the rest is considered to be text
