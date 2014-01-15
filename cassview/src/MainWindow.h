@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ui_MainWindow.h"
+#include "TableModel.h"
 
 #include <QtCassandra/QCassandra.h>
 #include <QtGui>
@@ -20,14 +21,14 @@ private slots:
     void OnAboutToQuit();
     void on_f_tables_clicked(const QModelIndex &index);
     void on_f_contextCombo_currentIndexChanged(const QString &arg1);
-
     void on_f_rows_doubleClicked(const QModelIndex &);
 
 private:
     QtCassandra::QCassandra  	f_cassandra;
     QStringListModel			f_contextModel;
     QStringListModel			f_tableModel;
-    QStringListModel			f_rowModel;
+    //QStringListModel			f_rowModel;
+    TableModel				f_rowModel;
     QString					f_context;
 
     void		fillTableList();

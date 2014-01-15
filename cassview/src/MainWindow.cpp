@@ -90,12 +90,14 @@ void MainWindow::on_action_Settings_triggered()
 
 void MainWindow::on_f_tables_clicked(const QModelIndex &index)
 {
-    f_rowModel.setStringList( QStringList() );
-
     QStringList tablesList( f_tableModel.stringList() );
     QSharedPointer<QCassandraContext> qcontext( f_cassandra.findContext(f_context) );
     QSharedPointer<QCassandraTable> table( qcontext->table( tablesList[index.row()] ));
 
+    f_rowModel.setTable( table );
+
+#if 0
+    f_rowModel.setStringList( QStringList() );
     QCassandraRowPredicate rowp;
     //rowp.setStartRowName("");
     //rowp.setEndRowName("");
@@ -111,6 +113,7 @@ void MainWindow::on_f_tables_clicked(const QModelIndex &index)
     });
 
     f_rowModel.setStringList( list );
+#endif
 }
 
 

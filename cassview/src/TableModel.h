@@ -1,6 +1,6 @@
 #pragma once
 
-#include <QtCassandra/QCassandra.h>
+#include <QtCassandra/QCassandraTable.h>
 #include <QtGui>
 
 #include <memory>
@@ -13,7 +13,7 @@ class TableModel
 	public:
 		TableModel() {}
 
-		void setTable( QSharedPointer<QCassandraTable> t );
+        void setTable( QSharedPointer<QtCassandra::QCassandraTable> t );
 
 		Qt::ItemFlags	flags 		( const QModelIndex & index ) const;
 		QVariant		data 		( const QModelIndex & index, int role = Qt::DisplayRole ) const;
@@ -21,7 +21,7 @@ class TableModel
 		int 			rowCount   	( const QModelIndex & parent = QModelIndex() ) const;
 
 	private:
-		QSharedPointer<QCassandraTable>	f_table;
+        QSharedPointer<QtCassandra::QCassandraTable>	f_table;
 };
 
 

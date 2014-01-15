@@ -1,38 +1,60 @@
 #include "TableModel.h"
 
+using namespace QtCassandra;
 
 void TableModel::setTable( QSharedPointer<QCassandraTable> t )
 {
 	f_table = t;
+    reset();
+
+    QCassandraRowPredicate rowp;
+    //rowp.setStartRowName("");
+    //rowp.setEndRowName("");
+    //rowp.setCount(10); // 100 is the default
+    f_table->readRows( rowp );
 }
 
 
-Qt::ItemFlags TableModel::flags( const QModelIndex & index ) const
+Qt::ItemFlags TableModel::flags( const QModelIndex & /*idx*/ ) const
 {
 	return Qt::ItemIsEnabled | Qt::ItemIsSelectable;
 }
 
 
-QVariant TableModel::data( const QModelIndex & index, int role = Qt::DisplayRole ) const
+QVariant TableModel::data( const QModelIndex & idx, int role ) const
 {
-    QCassandraRowPredicate rowp;
-    f_table->readRows( rowp );
+    if( !f_table )
+    {
+        return QVariant();
+    }
+
+    if( role != Qt::DisplayRole && role != Qt::EditRole )
+    {
+        return QVariant();
+    }
+
     const QCassandraRows& rows = f_table->rows();
-	return rows[index->row()];
+    const QString row_name( (rows.begin()+idx.row()).value()->rowName() );
+    return row_name;
 }
 
 
-QVariant TableModel::headerData( int section, Qt::Orientation orientation, int role = Qt::DisplayRole ) const
+QVariant TableModel::headerData( int /*section*/, Qt::Orientation /*orientation*/, int /*role*/ ) const
 {
+	// TODO
+	return "Row Name";
 }
 
 
-int TableModel::rowCount( const QModelIndex & parent = QModelIndex() ) const
+int TableModel::rowCount( const QModelIndex & /*parent*/ ) const
 {
+    if( !f_table )
+    {
+        return 0;
+    }
+
+    const QCassandraRows& rows = f_table->rows();
+    return rows.size();
 }
-
-
-
-		//QSharedPointer<QCassandraTable>	f_table;
 
 

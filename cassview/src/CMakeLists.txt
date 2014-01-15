@@ -53,6 +53,7 @@ add_executable(${PROJECT_NAME}
 	qt4.h
 	MainWindow.cpp
 	SettingsDialog.cpp
+    TableModel.cpp
     main.cpp
 	${UI_FILES}
 )
