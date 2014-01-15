@@ -2,6 +2,17 @@
 # First time create a branch on your computer
 bzr branch lp:~snapcpp/snapcpp/snapwebsites
 
+# Update from the repository
+bzr update
 
-bzr push  lp:~snapcpp/snapcpp/snapwebsites
+# Push your changes to the repository
+bzr push lp:~snapcpp/snapcpp/snapwebsites
+
+# Click "Import Now" on the website
+# https://code.launchpad.net/~snapcpp/snapcpp/trunk
+# (this steps import the git data from SourceForge.net)
+
+# To start a "local" build (one that does not generate an "official" PPA package)
+bzr dailydeb --allow-fallback-to-native snapwebsites.recipe snapwebsites
+pbuilder-dist saucy build snapwebsites/snapwebsites_0.1.0+63.dsc
 
