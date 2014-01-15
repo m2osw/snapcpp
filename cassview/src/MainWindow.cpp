@@ -146,3 +146,8 @@ void MainWindow::on_f_contextCombo_currentIndexChanged(const QString &arg1)
 		fillTableList();
 	}
 }
+
+void MainWindow::on_f_rows_doubleClicked(const QModelIndex &/*index*/)
+{
+
+}

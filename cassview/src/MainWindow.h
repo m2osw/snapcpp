@@ -21,6 +21,8 @@ private slots:
     void on_f_tables_clicked(const QModelIndex &index);
     void on_f_contextCombo_currentIndexChanged(const QString &arg1);
 
+    void on_f_rows_doubleClicked(const QModelIndex &);
+
 private:
     QtCassandra::QCassandra  	f_cassandra;
     QStringListModel			f_contextModel;
