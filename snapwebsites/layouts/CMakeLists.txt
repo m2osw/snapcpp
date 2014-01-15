@@ -40,5 +40,15 @@ project(layout_dir)
 snap_validate_xml( body-content.xml content.dtd )
 snap_validate_xml( white-content.xml content.dtd )
 
+install(
+	FILES
+		bare-body-parser.xsl
+		bare-theme-parser.xsl
+		white-body-parser.xsl
+		white-theme-parser.xsl
+	DESTINATION
+		share/snapwebsites/layouts
+)
+
 
 # vim: ts=4 sw=4 et

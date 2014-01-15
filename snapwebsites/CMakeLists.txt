@@ -124,14 +124,4 @@ add_custom_target(snap_code_analysis
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
 )
 
-install(
-    FILES 
-        layouts/bare-body-parser.xsl
-        layouts/bare-theme-parser.xsl
-        layouts/white-body-parser.xsl
-        layouts/white-theme-parser.xsl
-    DESTINATION
-        share/snapwebsites/layouts
-)
-
 # vim: ts=4 sw=4 et nocindent
