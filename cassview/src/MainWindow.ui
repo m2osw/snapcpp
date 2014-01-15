@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>624</width>
-    <height>472</height>
+    <width>530</width>
+    <height>488</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -16,7 +16,7 @@
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout">
     <item>
-     <layout class="QHBoxLayout" name="horizontalLayout_3">
+     <layout class="QHBoxLayout" name="horizontalLayout_3" stretch="0,1">
       <item>
        <widget class="QLabel" name="label">
         <property name="text">
@@ -25,13 +25,15 @@
        </widget>
       </item>
       <item>
-       <widget class="QLineEdit" name="f_contextEdit">
-        <property name="enabled">
-         <bool>true</bool>
+       <widget class="QComboBox" name="f_contextCombo">
+        <property name="editable">
+         <bool>false</bool>
         </property>
-        <property name="readOnly">
-         <bool>true</bool>
-        </property>
+        <item>
+         <property name="text">
+          <string>snap_websites</string>
+         </property>
+        </item>
        </widget>
       </item>
      </layout>
@@ -71,7 +73,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>624</width>
+     <width>530</width>
      <height>25</height>
     </rect>
    </property>

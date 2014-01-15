@@ -50,14 +50,7 @@ SettingsDialog::SettingsDialog(QWidget *p)
     restoreGeometry( settings.value( "settings_geometry", saveGeometry() ).toByteArray() );
     f_server  = settings.value( "cassandra_host", "127.0.0.1" );
     f_port    = settings.value( "cassandra_port", "9160" );
-    f_context = settings.value( "context" );
-    f_cassandraServerEdit->setText( QString("%1:%2").arg(f_server.toString()).arg(f_port.toInt()) );
     f_buttonBox->button( QDialogButtonBox::Ok )->setEnabled( true );
-
-    f_contextList->setModel( &f_model );
-	f_contextList->setSelectionMode( QListView::SingleSelection );
-
-    updateContextList();
 }
 
 
@@ -68,22 +61,8 @@ SettingsDialog::~SettingsDialog()
 }
 
 
-void SettingsDialog::updateContextList()
+void SettingsDialog::on_f_buttonBox_accepted()
 {
-    f_model.setStringList( QStringList() );
-
-    const QString full_server_name( f_cassandraServerEdit->text() );
-    const int colon_pos = full_server_name.indexOf( ':' );
-    if( colon_pos == -1 )
-    {
-        QMessageBox::critical( this, tr("Error"), tr("Name must be in the form server:port") );
-        f_buttonBox->button( QDialogButtonBox::Ok )->setEnabled( false );
-        return;
-    }
-
-    f_server = full_server_name.left( colon_pos );
-    f_port   = full_server_name.mid ( colon_pos+1 );
-
     QCassandra     cassandra;
     if( !cassandra.connect( f_server.toString(), f_port.toInt() ) )
     {
@@ -91,61 +70,38 @@ void SettingsDialog::updateContextList()
         return;
     }
 
-    //qDebug() << "Working on Cassandra Cluster Named" << cassandra.clusterName();
-    //qDebug() << "Working on Cassandra Protocol Version" << cassandra.protocolVersion();
-
-    const QCassandraContexts& context_list = cassandra.contexts();
-    QList<QString> keys = context_list.keys();
-
-    QStringList context_key_list;
-    std::for_each( keys.begin(), keys.end(),
-                   [&context_key_list]( const QString& key )
-    {
-        context_key_list << key;
-    });
-
-    f_model.setStringList( context_key_list );
-
-    const int idx = context_key_list.indexOf( f_context.toString() );
-    if( idx != -1 )
-	{
-        QModelIndex model_index( f_model.index( idx ) );
-        QItemSelectionModel* select( f_contextList->selectionModel() );
-		Q_ASSERT(select);
-		select->select( model_index, QItemSelectionModel::Select );
-	}
-
-    f_buttonBox->button( QDialogButtonBox::Ok )->setEnabled( true );
-}
-
-
-void SettingsDialog::on_f_cassandraServerEdit_lostFocus()
-{
-    updateContextList();
-}
-
-
-void SettingsDialog::on_f_contextList_clicked(const QModelIndex &index)
-{
-    f_context = f_model.stringList()[index.row()];
-}
-
-
-void SettingsDialog::on_SettingsDialog_accepted()
-{
-}
-
-void SettingsDialog::on_f_buttonBox_accepted()
-{
-    accept();
-    //
     QSettings settings( this );
     settings.setValue( "cassandra_host", f_server  );
     settings.setValue( "cassandra_port", f_port    );
-    settings.setValue( "context",        f_context );
+
+    accept();
 }
 
 void SettingsDialog::on_f_buttonBox_rejected()
 {
     reject();
+}
+
+
+void SettingsDialog::closeEvent( QCloseEvent * e )
+{
+    // Closing the dialog by the "x" constitutes "reject."
+    //
+    e->accept();
+
+    reject();
+}
+
+
+void SettingsDialog::on_f_hostnameEdit_textEdited(const QString &arg1)
+{
+    f_server = arg1;
+    f_buttonBox->button( QDialogButtonBox::Ok )->setEnabled( true );
+}
+
+
+void SettingsDialog::on_f_portEdit_valueChanged(int arg1)
+{
+    f_port = arg1;
+    f_buttonBox->button( QDialogButtonBox::Ok )->setEnabled( true );
 }

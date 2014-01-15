@@ -96,6 +96,8 @@ include_directories(
     ${THRIFT_INCLUDE_DIR}
 )
 
+include( ${CMAKE_CURRENT_SOURCE_DIR}/xml.cmake )
+
 ##
 ## Compiling
 ##
@@ -107,6 +109,7 @@ add_subdirectory(layouts)       # Layouts offered along Core
 add_subdirectory(tests)         # Tests to run against the server
 add_subdirectory(doc)           # API Documentation
 
+include( ${CMAKE_CURRENT_SOURCE_DIR}/xml_target.cmake )
 
 ##
 ## Code Analysis
@@ -122,16 +125,6 @@ add_custom_target(snap_code_analysis
     # All of these are expected to work on source code so make sure we're
     # in the source code top directory
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-)
-
-install(
-    FILES 
-        layouts/bare-body-parser.xsl
-        layouts/bare-theme-parser.xsl
-        layouts/white-body-parser.xsl
-        layouts/white-theme-parser.xsl
-    DESTINATION
-        share/snapwebsites/layouts
 )
 
 # vim: ts=4 sw=4 et nocindent

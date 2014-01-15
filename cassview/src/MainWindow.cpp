@@ -11,6 +11,7 @@ MainWindow::MainWindow(QWidget *p)
     QSettings settings( this );
     restoreGeometry( settings.value( "geometry", saveGeometry() ).toByteArray() );
     restoreState   ( settings.value( "state"   , saveState()    ).toByteArray() );
+    f_context = settings.value("context", "snap_websites").toString();
 
     f_cassandra.connect( settings.value( "cassandra_host" ).toString()
                        , settings.value( "cassandra_port" ).toInt()
@@ -19,9 +20,11 @@ MainWindow::MainWindow(QWidget *p)
     qDebug() << "Working on Cassandra Cluster Named"    << f_cassandra.clusterName();
     qDebug() << "Working on Cassandra Protocol Version" << f_cassandra.protocolVersion();
 
+    f_contextCombo->setModel( &f_contextModel );
     f_tables->setModel( &f_tableModel );
     f_rows->setModel( &f_rowModel );
-    FillTableList();
+    updateContextList();
+    //fillTableList();
 
     connect( qApp, SIGNAL(aboutToQuit()), this, SLOT(OnAboutToQuit()) );
 }
@@ -35,20 +38,17 @@ MainWindow::~MainWindow()
 void MainWindow::OnAboutToQuit()
 {
     QSettings settings( this );
-    settings.setValue( "geometry", saveGeometry() );
-    settings.setValue( "state",    saveState()    );
+    settings.setValue( "geometry", saveGeometry()                );
+    settings.setValue( "state",    saveState()                   );
+    settings.setValue( "context",  f_contextCombo->currentText() );
 }
 
 
-void MainWindow::FillTableList()
+void MainWindow::fillTableList()
 {
-    QSettings settings( this );
-    const QString context( settings.value( "context" ).toString() );
-
-    f_contextEdit->setText( context );
     f_tableModel.setStringList( QStringList() );
 
-    QSharedPointer<QCassandraContext> qcontext( f_cassandra.findContext(context) );
+    QSharedPointer<QCassandraContext> qcontext( f_cassandra.findContext(f_context) );
 
     QStringList list;
     const QCassandraTables& tables = qcontext->tables();
@@ -84,7 +84,7 @@ void MainWindow::on_action_Settings_triggered()
     SettingsDialog dlg(this);
     if( dlg.exec() == QDialog::Accepted )
     {
-        FillTableList();
+        fillTableList();
     }
 }
 
@@ -92,9 +92,8 @@ void MainWindow::on_f_tables_clicked(const QModelIndex &index)
 {
     f_rowModel.setStringList( QStringList() );
 
-    const QString context( f_contextEdit->text() );
     QStringList tablesList( f_tableModel.stringList() );
-    QSharedPointer<QCassandraContext> qcontext( f_cassandra.findContext(context) );
+    QSharedPointer<QCassandraContext> qcontext( f_cassandra.findContext(f_context) );
     QSharedPointer<QCassandraTable> table( qcontext->table( tablesList[index.row()] ));
 
     QCassandraRowPredicate rowp;
@@ -112,4 +111,43 @@ void MainWindow::on_f_tables_clicked(const QModelIndex &index)
     });
 
     f_rowModel.setStringList( list );
+}
+
+
+void MainWindow::updateContextList()
+{
+    f_contextModel.setStringList( QStringList() );
+
+    const QCassandraContexts& context_list = f_cassandra.contexts();
+    QList<QString> keys = context_list.keys();
+
+    QStringList context_key_list;
+    std::for_each( keys.begin(), keys.end(),
+                   [&context_key_list]( const QString& key )
+    {
+        context_key_list << key;
+    });
+
+    f_contextModel.setStringList( context_key_list );
+
+    const int idx = f_contextCombo->findText( f_context );
+    if( idx != -1 )
+    {
+		f_contextCombo->setCurrentIndex( idx );
+    }
+}
+
+
+void MainWindow::on_f_contextCombo_currentIndexChanged(const QString &arg1)
+{
+    if( !arg1.isEmpty() )
+	{
+		f_context = arg1;
+		fillTableList();
+	}
+}
+
+void MainWindow::on_f_rows_doubleClicked(const QModelIndex &/*index*/)
+{
+
 }

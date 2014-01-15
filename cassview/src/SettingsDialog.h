@@ -14,21 +14,17 @@ public:
     explicit SettingsDialog(QWidget *parent = 0);
     ~SettingsDialog();
 
+protected:
+    void closeEvent( QCloseEvent * e );
+
 private slots:
-    void on_f_cassandraServerEdit_lostFocus();
-    void on_f_contextList_clicked(const QModelIndex &index);
-    void on_SettingsDialog_accepted();
-
     void on_f_buttonBox_accepted();
-
     void on_f_buttonBox_rejected();
+    void on_f_hostnameEdit_textEdited(const QString &arg1);
+    void on_f_portEdit_valueChanged(int arg1);
 
 private:
-    QStringListModel	f_model;
     QVariant			f_server;
     QVariant			f_port;
-    QVariant			f_context;
-
-    void updateContextList();
 };
 
