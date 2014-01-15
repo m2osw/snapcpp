@@ -1,0 +1,7 @@
+
+# First time create a branch on your computer
+bzr branch lp:~snapcpp/snapcpp/snapwebsites
+
+
+bzr push  lp:~snapcpp/snapcpp/snapwebsites
+
