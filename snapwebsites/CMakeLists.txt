@@ -96,6 +96,8 @@ include_directories(
     ${THRIFT_INCLUDE_DIR}
 )
 
+include( ${CMAKE_SOURCE_DIR}/xml.cmake )
+
 ##
 ## Compiling
 ##
@@ -107,6 +109,7 @@ add_subdirectory(layouts)       # Layouts offered along Core
 add_subdirectory(tests)         # Tests to run against the server
 add_subdirectory(doc)           # API Documentation
 
+include( ${CMAKE_SOURCE_DIR}/xml_target.cmake )
 
 ##
 ## Code Analysis
