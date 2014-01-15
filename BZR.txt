@@ -1,3 +1,17 @@
+# Click "Import Now" on the website
+#
+# https://code.launchpad.net/~snapcpp/snapcpp/trunk
+# (this step imports the git data from SourceForge.net)
+# Refresh the page to make sure it worked (usually takes a few minutes)
+
+#
+# The following instructions apply to the "snapwebsites" project.
+# However, if you make changes to any of the other projects,
+# you need to update each of those in a similar manner,
+# updating the changlogs in each to bump the version.
+# Just replace "snapwebsites" in the urls below with the project name.
+# Example: bzr branch lp:~snapcpp/snapcpp/advgetopt
+#
 
 # First time create a branch on your computer
 bzr branch lp:~snapcpp/snapcpp/snapwebsites
@@ -5,14 +19,29 @@ bzr branch lp:~snapcpp/snapcpp/snapwebsites
 # Update from the repository
 bzr update
 
+# Modify the changelog so lp will upload the source package
+# properly. Without bumping the version, the lp system views
+# that as the source package not changing.
+dch
+bzr commit
+
 # Push your changes to the repository
 bzr push lp:~snapcpp/snapcpp/snapwebsites
 
-# Click "Import Now" on the website
-# https://code.launchpad.net/~snapcpp/snapcpp/trunk
-# (this steps import the git data from SourceForge.net)
-
 # To start a "local" build (one that does not generate an "official" PPA package)
-bzr dailydeb --allow-fallback-to-native snapwebsites.recipe snapwebsites
+# The purpose of this is to make sure your changes don't break the build
+#
+# First, you create a dsc file for the project by using "bzr dailydeb".
+# NOTE: make sure you purge out the snapwebsites folder first.
+#
+rm -rf snapwebsites; bzr dailydeb --allow-fallback-to-native snapwebsites.recipe snapwebsites
+
+# Next, find the new dsc file in the snapwebsites folder. The "63" below is the
+# build number, which is automatically incremented for each build and is stored locally.
+#
 pbuilder-dist saucy build snapwebsites/snapwebsites_0.1.0+63.dsc
 
+# You can check your packages out in ~/pbuilder/saucy, to make sure they install properly.
+# You can also make a build for each release that ubuntu supports (for example, substitute
+# "quantal" for "saucy" above).
+#
