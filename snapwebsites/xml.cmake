@@ -8,7 +8,7 @@ set( XML_CMAKE TRUE )
 find_program( BASH    bash    /bin     )
 find_program( XMLLINT xmllint /usr/bin )
 #
-set( lint_script ${snapwebsites_plugins_BINARY_DIR}/dolint.sh )
+set( lint_script ${snapwebsites_BINARY_DIR}/dolint.sh )
 file( WRITE  ${lint_script} "#!${BASH}\n"                                                            )
 file( APPEND ${lint_script} "${XMLLINT} --dtdvalid $3 --output $2 $1 && exit 0 || (rm $2; exit 1)\n"             )
 #
