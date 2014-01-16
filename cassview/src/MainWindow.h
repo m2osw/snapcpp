@@ -28,9 +28,9 @@ private slots:
 private:
 	typedef QSharedPointer<QtCassandra::QCassandra> cassandra_t;
     cassandra_t  	f_cassandra;
-    CassandraModel	f_contextModel;
-    ContextModel	f_tableModel;
-    TableModel		f_rowModel;
+    CassandraModel	f_cassandraModel;
+    ContextModel	f_contextModel;
+    TableModel		f_tableModel;
     QString			f_context;
 
     void		fillTableList();

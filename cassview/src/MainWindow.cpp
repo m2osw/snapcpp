@@ -21,11 +21,11 @@ MainWindow::MainWindow(QWidget *p)
     qDebug() << "Working on Cassandra Cluster Named"    << f_cassandra->clusterName();
     qDebug() << "Working on Cassandra Protocol Version" << f_cassandra->protocolVersion();
 
-    f_contextCombo->setModel( &f_contextModel );
-    f_tables->setModel( &f_tableModel );
-    f_rows->setModel( &f_rowModel );
+    f_contextCombo->setModel( &f_cassandraModel );
+    f_tables->setModel( &f_contextModel );
+    f_rows->setModel( &f_tableModel );
 
-    f_contextModel.setCassandra( f_cassandra );
+    f_cassandraModel.setCassandra( f_cassandra );
     const int idx = f_contextCombo->findText( f_context );
     if( idx != -1 )
     {
@@ -53,7 +53,7 @@ void MainWindow::OnAboutToQuit()
 void MainWindow::fillTableList()
 {
     QSharedPointer<QCassandraContext> qcontext( f_cassandra->findContext(f_context) );
-	f_tableModel.setContext( qcontext );
+	f_contextModel.setContext( qcontext );
 }
 
 
@@ -68,11 +68,11 @@ void MainWindow::on_action_Settings_triggered()
 
 void MainWindow::on_f_tables_clicked(const QModelIndex &index)
 {
-    QString table_name( f_tableModel.data(index).toString() );
+    QString table_name( f_contextModel.data(index).toString() );
     QSharedPointer<QCassandraContext> qcontext( f_cassandra->findContext(f_context) );
     QSharedPointer<QCassandraTable> table( qcontext->findTable(table_name) );
 
-    f_rowModel.setTable( table );
+    f_tableModel.setTable( table );
 }
 
 
