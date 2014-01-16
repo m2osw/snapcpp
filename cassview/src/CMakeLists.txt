@@ -50,11 +50,13 @@ QT4_WRAP_UI(UI_FILES
 )
 
 add_executable(${PROJECT_NAME}
-	qt4.h
+    CassandraModel.cpp
+	ContextModel.cpp
 	MainWindow.cpp
+	main.cpp
 	SettingsDialog.cpp
     TableModel.cpp
-    main.cpp
+	qt4.h
 	${UI_FILES}
 )
 

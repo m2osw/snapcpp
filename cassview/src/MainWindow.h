@@ -1,6 +1,8 @@
 #pragma once
 
 #include "ui_MainWindow.h"
+#include "CassandraModel.h"
+#include "ContextModel.h"
 #include "TableModel.h"
 
 #include <QtCassandra/QCassandra.h>
@@ -24,14 +26,13 @@ private slots:
     void on_f_rows_doubleClicked(const QModelIndex &);
 
 private:
-    QtCassandra::QCassandra  	f_cassandra;
-    QStringListModel			f_contextModel;
-    QStringListModel			f_tableModel;
-    //QStringListModel			f_rowModel;
-    TableModel				f_rowModel;
-    QString					f_context;
+	typedef QSharedPointer<QtCassandra::QCassandra> cassandra_t;
+    cassandra_t  	f_cassandra;
+    CassandraModel	f_contextModel;
+    ContextModel	f_tableModel;
+    TableModel		f_rowModel;
+    QString			f_context;
 
     void		fillTableList();
-    void		updateContextList();
 };
 
