@@ -78,9 +78,10 @@ include_directories(
 
 # Create a configure script
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.in ${CMAKE_CURRENT_BINARY_DIR}/config.h)
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/include/QtCassandra/QCassandra.h.in ${CMAKE_CURRENT_BINARY_DIR}/include/QtCassandra/QCassandra.h)
+#configure_file(${CMAKE_CURRENT_SOURCE_DIR}/include/QtCassandra/QCassandra.h.in ${CMAKE_CURRENT_BINARY_DIR}/include/QtCassandra/QCassandra.h)
 
 add_subdirectory(thrift-gencpp-cassandra)
+add_subdirectory(include)
 add_subdirectory(src)
 add_subdirectory(tools)
 add_subdirectory(tests)
