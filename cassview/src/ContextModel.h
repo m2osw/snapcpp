@@ -13,7 +13,7 @@ class ContextModel
 	public:
 		ContextModel() {}
 
-        void setContext( QSharedPointer<QtCassandra::QCassandraContext> c );
+        void setContext( QtCassandra::QCassandraContext::pointer_t c );
 
 		Qt::ItemFlags	flags 		( const QModelIndex & index ) const;
 		QVariant		data 		( const QModelIndex & index, int role = Qt::DisplayRole ) const;
@@ -21,7 +21,7 @@ class ContextModel
 		int 			rowCount   	( const QModelIndex & parent = QModelIndex() ) const;
 
 	private:
-        QSharedPointer<QtCassandra::QCassandraContext>	f_context;
+        QtCassandra::QCassandraContext::pointer_t	f_context;
 };
 
 

@@ -13,7 +13,7 @@ class CassandraModel
 	public:
 		CassandraModel() {}
 
-        void setCassandra( QSharedPointer<QtCassandra::QCassandra> c );
+        void setCassandra( QtCassandra::QCassandra::pointer_t c );
 
 		Qt::ItemFlags	flags 		( const QModelIndex & index ) const;
 		QVariant		data 		( const QModelIndex & index, int role = Qt::DisplayRole ) const;
@@ -21,7 +21,7 @@ class CassandraModel
 		int 			rowCount   	( const QModelIndex & parent = QModelIndex() ) const;
 
 	private:
-        QSharedPointer<QtCassandra::QCassandra>	f_cassandra;
+        QtCassandra::QCassandra::pointer_t	f_cassandra;
 };
 
 

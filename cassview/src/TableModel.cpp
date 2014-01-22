@@ -4,7 +4,7 @@
 
 using namespace QtCassandra;
 
-void TableModel::setTable( QSharedPointer<QCassandraTable> t )
+void TableModel::setTable( QCassandraTable::pointer_t t )
 {
 	f_table = t;
 
@@ -145,10 +145,10 @@ QModelIndex TableModel::index( int row, int column, const QModelIndex &prnt ) co
     if( prnt.isValid() )
     {
         const auto& the_column(( the_row->cells().begin()+column  ).value());
-        return createIndex( row, column, the_column.data() );
+        return createIndex( row, column, the_column.get() );
     }
 
-    return createIndex( row, 0, the_row.data() );
+    return createIndex( row, 0, the_row.get() );
 }
 
 
@@ -165,7 +165,7 @@ QModelIndex TableModel::parent( const QModelIndex &idx ) const
 	}
 
 	QCassandraCell* cell( static_cast<QCassandraCell*>(idx.internalPointer()) );
-    return createIndex( idx.row(), 0, cell->parent().data() );
+    return createIndex( idx.row(), 0, cell->parent()->data() );
 }
 
 

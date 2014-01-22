@@ -26,7 +26,7 @@ private slots:
     void on_f_rows_doubleClicked(const QModelIndex &);
 
 private:
-	typedef QSharedPointer<QtCassandra::QCassandra> cassandra_t;
+	typedef QtCassandra::QCassandra::pointer_t cassandra_t;
     cassandra_t  	f_cassandra;
     CassandraModel	f_cassandraModel;
     ContextModel	f_contextModel;

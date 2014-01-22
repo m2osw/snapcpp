@@ -13,7 +13,7 @@ class TableModel
 	public:
 		TableModel() {}
 
-        void setTable( QSharedPointer<QtCassandra::QCassandraTable> t );
+        void setTable( QtCassandra::QCassandraTable::pointer_t t );
 
         // Read only access
         //
@@ -33,7 +33,7 @@ class TableModel
         QModelIndex parent ( const QModelIndex & index ) const;
 
 	private:
-        QSharedPointer<QtCassandra::QCassandraTable>	f_table;
+        QtCassandra::QCassandraTable::pointer_t	f_table;
 };
 
 // vim: ts=4 sw=4 noet

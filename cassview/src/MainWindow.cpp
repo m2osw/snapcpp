@@ -52,7 +52,7 @@ void MainWindow::OnAboutToQuit()
 
 void MainWindow::fillTableList()
 {
-    QSharedPointer<QCassandraContext> qcontext( f_cassandra->findContext(f_context) );
+    QCassandraContext::pointer_t qcontext( f_cassandra->findContext(f_context) );
 	f_contextModel.setContext( qcontext );
 }
 
@@ -69,8 +69,8 @@ void MainWindow::on_action_Settings_triggered()
 void MainWindow::on_f_tables_clicked(const QModelIndex &index)
 {
     QString table_name( f_contextModel.data(index).toString() );
-    QSharedPointer<QCassandraContext> qcontext( f_cassandra->findContext(f_context) );
-    QSharedPointer<QCassandraTable> table( qcontext->findTable(table_name) );
+    QCassandraContext::pointer_t qcontext( f_cassandra->findContext(f_context) );
+    QCassandraTable::pointer_t table( qcontext->findTable(table_name) );
 
     f_tableModel.setTable( table );
 }
