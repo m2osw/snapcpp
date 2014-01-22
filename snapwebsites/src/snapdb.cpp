@@ -263,7 +263,7 @@ void snapdb::info()
 void snapdb::drop_tables(bool all)
 {
     f_cassandra.connect(f_host, f_port);
-    QSharedPointer<QCassandraContext> context(f_cassandra.context(f_context));
+    QCassandraContext::pointer_t context(f_cassandra.context(f_context));
 
     // there are re-created when we connect and refilled when
     // we access a page; obviously this is VERY dangerous on
@@ -308,7 +308,7 @@ char hex_to_dec(ushort c)
 void snapdb::display()
 {
     f_cassandra.connect(f_host, f_port);
-    QSharedPointer<QCassandraContext> context(f_cassandra.context(f_context));
+    QCassandraContext::pointer_t context(f_cassandra.context(f_context));
 
     if(!f_row.isEmpty() && f_table == "files")
     {
@@ -348,8 +348,8 @@ void snapdb::display()
     else if(f_row.isEmpty())
     {
         // list of rows in that table
-        QSharedPointer<QCassandraTable> table(context->findTable(f_table));
-        if(table.isNull())
+        QCassandraTable::pointer_t table(context->findTable(f_table));
+        if(!table)
         {
             std::cerr << "error: table \"" << f_table << "\" not found." << std::endl;
             exit(1);
@@ -390,8 +390,8 @@ void snapdb::display()
     else if(f_row.endsWith("%"))
     {
         // list of rows in that table
-        QSharedPointer<QCassandraTable> table(context->findTable(f_table));
-        if(table.isNull())
+        QCassandraTable::pointer_t table(context->findTable(f_table));
+        if(!table)
         {
             std::cerr << "error: table \"" << f_table << "\" not found." << std::endl;
             exit(1);
@@ -428,8 +428,8 @@ void snapdb::display()
     else
     {
         // display all the columns of a row
-        QSharedPointer<QCassandraTable> table(context->findTable(f_table));
-        if(table.isNull())
+        QCassandraTable::pointer_t table(context->findTable(f_table));
+        if(!table)
         {
             std::cerr << "error: table \"" << f_table << "\" not found." << std::endl;
             exit(1);
@@ -439,7 +439,7 @@ void snapdb::display()
             std::cerr << "error: row \"" << f_row << "\" not found in table \"" << f_table << "\"." << std::endl;
             exit(1);
         }
-        QSharedPointer<QCassandraRow> row(table->row(f_row_key));
+        QCassandraRow::pointer_t row(table->row(f_row_key));
         QCassandraColumnRangePredicate column_predicate;
         column_predicate.setCount(f_count);
         column_predicate.setIndex();

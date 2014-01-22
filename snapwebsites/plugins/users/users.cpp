@@ -342,7 +342,7 @@ void users::content_update(int64_t variables_timestamp)
  *
  * \return The pointer to the users table.
  */
-QSharedPointer<QtCassandra::QCassandraTable> users::get_users_table()
+QtCassandra::QCassandraTable::pointer_t users::get_users_table()
 {
     return f_snap->create_table(get_name(SNAP_NAME_USERS_TABLE), "Global users table.");
 }
@@ -482,7 +482,7 @@ void users::on_process_cookies()
             // not authenticated user?
             if(!key.isEmpty())
             {
-                QSharedPointer<QtCassandra::QCassandraTable> users_table(get_users_table());
+                QtCassandra::QCassandraTable::pointer_t users_table(get_users_table());
                 if(users_table->exists(key))
                 {
                     // this is a valid user email address!
@@ -495,7 +495,7 @@ void users::on_process_cookies()
                         // we right away cancel the session
                         f_info->set_object_path("/user/");
 
-                        QSharedPointer<QtCassandra::QCassandraRow> row(users_table->row(key));
+                        QtCassandra::QCassandraRow::pointer_t row(users_table->row(key));
 
                         // Save the date when the user logged out
                         QtCassandra::QCassandraValue value;
@@ -733,12 +733,12 @@ void users::on_generate_header_content(layout::layout *l, QString const& path, Q
 {
     QDomDocument doc(header.ownerDocument());
 
-    QSharedPointer<QtCassandra::QCassandraTable> users_table(get_users_table());
+    QtCassandra::QCassandraTable::pointer_t users_table(get_users_table());
 
     // retrieve the row for that user
     if(!f_user_key.isEmpty() && users_table->exists(f_user_key))
     {
-        QSharedPointer<QtCassandra::QCassandraRow> user_row(users_table->row(f_user_key));
+        QtCassandra::QCassandraRow::pointer_t user_row(users_table->row(f_user_key));
 
         {   // snap/head/metadata/desc[type=users::email]/data
             QDomElement desc(doc.createElement("desc"));
@@ -789,10 +789,10 @@ void users::on_generate_page_content(layout::layout *l, QString const& path, QDo
     QDomDocument doc(page.ownerDocument());
 
     // retrieve the author
-    QSharedPointer<QtCassandra::QCassandraTable> content_table(content::content::instance()->get_content_table());
+    QtCassandra::QCassandraTable::pointer_t content_table(content::content::instance()->get_content_table());
     const QString site_key(f_snap->get_site_key_with_slash());
     const QString page_key(site_key + path);
-    QSharedPointer<QtCassandra::QCassandraRow> content_row(content_table->row(page_key));
+    QtCassandra::QCassandraRow::pointer_t content_row(content_table->row(page_key));
     const QString link_name(get_name(SNAP_NAME_USERS_AUTHOR));
     links::link_info author_info(get_name(SNAP_NAME_USERS_AUTHOR), true, page_key);
     QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(author_info));
@@ -804,7 +804,7 @@ void users::on_generate_page_content(layout::layout *l, QString const& path, QDo
         // all we want to offer here is the author details defined in the
         // /user/... location although we may want access to his email
         // address too (to display to an admin for example)
-        QSharedPointer<QtCassandra::QCassandraRow> author_row(content_table->row(author_key));
+        QtCassandra::QCassandraRow::pointer_t author_row(content_table->row(author_key));
 
         {   // snap/page/body/author[type=users::name]/data
             QtCassandra::QCassandraValue value(author_row->cell(get_name(SNAP_NAME_USERS_USERNAME))->value());
@@ -834,13 +834,13 @@ void users::on_create_content(QString const& path, QString const& owner, QString
 {
     if(!f_user_key.isEmpty())
     {
-        //QSharedPointer<QtCassandra::QCassandraTable> content_table(content::content::instance()->get_content_table());
-        //QSharedPointer<QtCassandra::QCassandraRow> row(content_table->row(key));
+        //QtCassandra::QCassandraTable::pointer_t content_table(content::content::instance()->get_content_table());
+        //QtCassandra::QCassandraRow::pointer_t row(content_table->row(key));
 
         //const QString primary_owner(path::get_name(path::SNAP_NAME_PATH_PRIMARY_OWNER));
         //row->cell(primary_owner)->setValue(owner);
 
-        QSharedPointer<QtCassandra::QCassandraTable> users_table(get_users_table());
+        QtCassandra::QCassandraTable::pointer_t users_table(get_users_table());
         if(users_table->exists(f_user_key))
         {
             QtCassandra::QCassandraValue value(users_table->row(f_user_key)->cell(get_name(SNAP_NAME_USERS_IDENTIFIER))->value());
@@ -928,7 +928,7 @@ void users::show_user(layout::layout *l, const QString& cpath, QDomElement& page
             f_snap->page_redirect("login", snap_child::HTTP_CODE_SEE_OTHER);
             NOTREACHED();
         }
-        QSharedPointer<QtCassandra::QCassandraTable> users_table(get_users_table());
+        QtCassandra::QCassandraTable::pointer_t users_table(get_users_table());
         if(!users_table->exists(f_user_key))
         {
             // This should never happen... we checked that account when the
@@ -988,7 +988,7 @@ void users::show_user(layout::layout *l, const QString& cpath, QDomElement& page
         // verify that the identifier indeed represents a user
         const QString site_key(f_snap->get_site_key_with_slash());
         const QString user_key(site_key + get_name(SNAP_NAME_USERS_PATH) + "/" + user_id);
-        QSharedPointer<QtCassandra::QCassandraTable> content_table(content::content::instance()->get_content_table());
+        QtCassandra::QCassandraTable::pointer_t content_table(content::content::instance()->get_content_table());
         if(!content_table->exists(user_key))
         {
             f_snap->die(snap_child::HTTP_CODE_NOT_FOUND,
@@ -1117,7 +1117,7 @@ void users::logout_user(layout::layout *l, QString cpath, QDomElement& page, QDo
         // path (i.e. logout/fantom from the fantom plugin could be used to
         // display a different greating because the user was kicked out by
         // magic...); if it does not exist, force "logout" as the default
-        QSharedPointer<QtCassandra::QCassandraTable> content_table(content::content::instance()->get_content_table());
+        QtCassandra::QCassandraTable::pointer_t content_table(content::content::instance()->get_content_table());
         if(!content_table->exists(cpath))
         {
             cpath = "logout";
@@ -1276,7 +1276,7 @@ void users::verify_user(const QString& cpath)
     // it looks like the session is valid, get the user email and verify
     // that the account exists in the database
     QString email(path.mid(6));
-    QSharedPointer<QtCassandra::QCassandraTable> users_table(get_users_table());
+    QtCassandra::QCassandraTable::pointer_t users_table(get_users_table());
     if(!users_table->exists(email))
     {
         // This should never happen...
@@ -1292,7 +1292,7 @@ void users::verify_user(const QString& cpath)
         return;
     }
 
-    QSharedPointer<QtCassandra::QCassandraRow> row(users_table->row(email));
+    QtCassandra::QCassandraRow::pointer_t row(users_table->row(email));
     const QtCassandra::QCassandraValue user_identifier(row->cell(get_name(SNAP_NAME_USERS_IDENTIFIER))->value());
     if(user_identifier.nullValue())
     {
@@ -1428,7 +1428,7 @@ void users::verify_password(const QString& cpath)
     // it looks like the session is valid, get the user email and verify
     // that the account exists in the database
     const QString email(path.mid(6));
-    QSharedPointer<QtCassandra::QCassandraTable> users_table(get_users_table());
+    QtCassandra::QCassandraTable::pointer_t users_table(get_users_table());
     if(!users_table->exists(email))
     {
         // This should never happen...
@@ -1443,7 +1443,7 @@ void users::verify_password(const QString& cpath)
         NOTREACHED();
     }
 
-    QSharedPointer<QtCassandra::QCassandraRow> row(users_table->row(email));
+    QtCassandra::QCassandraRow::pointer_t row(users_table->row(email));
     const QtCassandra::QCassandraValue user_identifier(row->cell(get_name(SNAP_NAME_USERS_IDENTIFIER))->value());
     if(user_identifier.nullValue())
     {
@@ -1594,8 +1594,8 @@ void users::on_process_post(QString const& cpath, sessions::sessions::session_in
 void users::process_login_form(login_mode_t login_mode)
 {
     QString details;
-    QSharedPointer<QtCassandra::QCassandraTable> users_table(get_users_table());
-    QSharedPointer<QtCassandra::QCassandraTable> content_table(content::content::instance()->get_content_table());
+    QtCassandra::QCassandraTable::pointer_t users_table(get_users_table());
+    QtCassandra::QCassandraTable::pointer_t content_table(content::content::instance()->get_content_table());
 
     bool validation_required(false);
 
@@ -1618,7 +1618,7 @@ void users::process_login_form(login_mode_t login_mode)
 
     if(users_table->exists(key))
     {
-        QSharedPointer<QtCassandra::QCassandraRow> row(users_table->row(key));
+        QtCassandra::QCassandraRow::pointer_t row(users_table->row(key));
 
         QtCassandra::QCassandraValue value;
 
@@ -1886,10 +1886,10 @@ void users::process_forgot_password_form()
     QString details;
 
     // check to make sure that a user with that email address exists
-    QSharedPointer<QtCassandra::QCassandraTable> users_table(get_users_table());
+    QtCassandra::QCassandraTable::pointer_t users_table(get_users_table());
     if(users_table->exists(email))
     {
-        QSharedPointer<QtCassandra::QCassandraRow> row(users_table->row(email));
+        QtCassandra::QCassandraRow::pointer_t row(users_table->row(email));
 
         // existing users have a unique identifier
         // necessary to create the user key below
@@ -2014,10 +2014,10 @@ void users::process_replace_password_form()
     QString details;
 
     // replace the password assuming we can find that user information
-    QSharedPointer<QtCassandra::QCassandraTable> users_table(get_users_table());
+    QtCassandra::QCassandraTable::pointer_t users_table(get_users_table());
     if(users_table->exists(f_user_changing_password_key))
     {
-        QSharedPointer<QtCassandra::QCassandraRow> row(users_table->row(f_user_changing_password_key));
+        QtCassandra::QCassandraRow::pointer_t row(users_table->row(f_user_changing_password_key));
 
         // existing users have a unique identifier
         // necessary to create the user key below
@@ -2156,11 +2156,11 @@ void users::process_password_form()
     QString details;
 
     // replace the password assuming we can find that user information
-    QSharedPointer<QtCassandra::QCassandraTable> users_table(get_users_table());
+    QtCassandra::QCassandraTable::pointer_t users_table(get_users_table());
     if(users_table->exists(f_user_key))
     {
         // We're good, save the new password and remove that link
-        QSharedPointer<QtCassandra::QCassandraRow> row(users_table->row(f_user_key));
+        QtCassandra::QCassandraRow::pointer_t row(users_table->row(f_user_key));
 
         // existing users have a unique identifier
         // necessary to create the user key below
@@ -2334,10 +2334,10 @@ void users::process_verify_resend_form()
     QString details;
 
     // check to make sure that a user with that email address exists
-    QSharedPointer<QtCassandra::QCassandraTable> users_table(get_users_table());
+    QtCassandra::QCassandraTable::pointer_t users_table(get_users_table());
     if(users_table->exists(email))
     {
-        QSharedPointer<QtCassandra::QCassandraRow> row(users_table->row(email));
+        QtCassandra::QCassandraRow::pointer_t row(users_table->row(email));
 
         // existing users have a unique identifier
         // necessary to create the user key below
@@ -2494,7 +2494,7 @@ QString users::get_user_path() const
 {
     if(!f_user_key.isEmpty())
     {
-        QSharedPointer<QtCassandra::QCassandraTable> users_table(const_cast<users *>(this)->get_users_table());
+        QtCassandra::QCassandraTable::pointer_t users_table(const_cast<users *>(this)->get_users_table());
         if(users_table->exists(f_user_key))
         {
             const QtCassandra::QCassandraValue value(users_table->row(f_user_key)->cell(get_name(SNAP_NAME_USERS_IDENTIFIER))->value());
@@ -2548,9 +2548,9 @@ bool users::register_user(const QString& email, const QString& password)
         encrypt_password(digest.stringValue(), password, salt, hash);
     }
 
-    QSharedPointer<QtCassandra::QCassandraTable> users_table(get_users_table());
+    QtCassandra::QCassandraTable::pointer_t users_table(get_users_table());
     QString key(email);
-    QSharedPointer<QtCassandra::QCassandraRow> row(users_table->row(key));
+    QtCassandra::QCassandraRow::pointer_t row(users_table->row(key));
 
     QtCassandra::QCassandraValue value;
     value.setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
@@ -2569,7 +2569,7 @@ bool users::register_user(const QString& email, const QString& password)
 
         // TODO: we have to look at all the possible email addresses
         const char *email_key(get_name(SNAP_NAME_USERS_ORIGINAL_EMAIL));
-        QSharedPointer<QtCassandra::QCassandraCell> cell(row->cell(email_key));
+        QtCassandra::QCassandraCell::pointer_t cell(row->cell(email_key));
         cell->setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
         QtCassandra::QCassandraValue email_data(cell->value());
         if(!email_data.nullValue())
@@ -2590,8 +2590,8 @@ bool users::register_user(const QString& email, const QString& password)
         // we can safely do a read-increment-write cycle.
         if(users_table->exists(id_key))
         {
-            QSharedPointer<QtCassandra::QCassandraRow> id_row(users_table->row(id_key));
-            QSharedPointer<QtCassandra::QCassandraCell> id_cell(id_row->cell(identifier_key));
+            QtCassandra::QCassandraRow::pointer_t id_row(users_table->row(id_key));
+            QtCassandra::QCassandraCell::pointer_t id_cell(id_row->cell(identifier_key));
             id_cell->setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
             QtCassandra::QCassandraValue current_identifier(id_cell->value());
             if(current_identifier.nullValue())
@@ -3006,7 +3006,7 @@ void users::encrypt_password(const QString& digest, const QString& password, con
 bool users::user_is_a_spammer()
 {
     // TODO implement the actual test
-    QSharedPointer<QtCassandra::QCassandraTable> users_table(get_users_table());
+    QtCassandra::QCassandraTable::pointer_t users_table(get_users_table());
     char const * const black_list(get_name(SNAP_NAME_USERS_BLACK_LIST));
     if(users_table->exists(black_list))
     {
@@ -3014,7 +3014,7 @@ bool users::user_is_a_spammer()
         // TODO canonicalize the IP address as an IPv6 so it matches whatever
         //      the system we're on
         QString const ip(f_snap->snapenv("REMOTE_ADDR"));
-        QSharedPointer<QtCassandra::QCassandraRow> row(users_table->row(black_list));
+        QtCassandra::QCassandraRow::pointer_t row(users_table->row(black_list));
         if(row->exists(ip))
         {
             // "unfortunately" this user is marked as a spammer

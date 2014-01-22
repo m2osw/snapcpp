@@ -331,10 +331,10 @@ void snap_layout::add_files()
         exit(1);
     }
 
-    QSharedPointer<QCassandraContext> context(f_cassandra.context("snap_websites"));
+    QCassandraContext::pointer_t context(f_cassandra.context("snap_websites"));
 
-    QSharedPointer<QCassandraTable> table(context->findTable("layout"));
-    if(table.isNull())
+    QCassandraTable::pointer_t table(context->findTable("layout"));
+    if(!table)
     {
         // TODO: look into whether we could make use of the
         //       server::create_table() function

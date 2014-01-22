@@ -208,7 +208,7 @@ QtCassandra::QCassandraValue taxonomy::find_type_with(const QString& cpath, cons
 		return not_found;
 	}
 	//QString type_key(site_key + type_path.stringValue());
-	QSharedPointer<QtCassandra::QCassandraTable> content_table(content::content::instance()->get_content_table());
+	QtCassandra::QCassandraTable::pointer_t content_table(content::content::instance()->get_content_table());
 	for(;;)
 	{
 		if(!content_table->exists(type_key))
@@ -216,7 +216,7 @@ QtCassandra::QCassandraValue taxonomy::find_type_with(const QString& cpath, cons
 			// TODO: should this be an error instead? all the types should exist!
 			return not_found;
 		}
-		QSharedPointer<QtCassandra::QCassandraRow> row(content_table->row(type_key));
+		QtCassandra::QCassandraRow::pointer_t row(content_table->row(type_key));
 
 		// check for the key, if it exists we found what the user is
 		// looking for!

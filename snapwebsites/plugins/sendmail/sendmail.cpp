@@ -1442,7 +1442,7 @@ void sendmail::content_update(int64_t variables_timestamp)
  *
  * \return The pointer to the users table.
  */
-QSharedPointer<QtCassandra::QCassandraTable> sendmail::get_emails_table()
+QtCassandra::QCassandraTable::pointer_t sendmail::get_emails_table()
 {
     return f_snap->create_table(get_name(SNAP_NAME_SENDMAIL_EMAILS_TABLE), "E-Mails table.");
 }
@@ -1519,7 +1519,7 @@ void sendmail::post_email(const email& e)
     copy.set_site_key(f_snap->get_site_key());
     QString key(f_snap->get_unique_number());
     copy.set_email_key(key);
-    QSharedPointer<QtCassandra::QCassandraTable> table(get_emails_table());
+    QtCassandra::QCassandraTable::pointer_t table(get_emails_table());
     QtCassandra::QCassandraValue value;
     QString data(copy.serialize());
     value.setStringValue(data);
@@ -1662,8 +1662,8 @@ void sendmail::on_backend_action(const QString& action)
  */
 void sendmail::process_emails()
 {
-    QSharedPointer<QtCassandra::QCassandraTable> table(get_emails_table());
-    QSharedPointer<QtCassandra::QCassandraRow> row(table->row(get_name(SNAP_NAME_SENDMAIL_NEW)));
+    QtCassandra::QCassandraTable::pointer_t table(get_emails_table());
+    QtCassandra::QCassandraRow::pointer_t row(table->row(get_name(SNAP_NAME_SENDMAIL_NEW)));
     QtCassandra::QCassandraColumnRangePredicate column_predicate;
     column_predicate.setCount(100); // should this be a parameter?
     column_predicate.setIndex(); // behave like an index
@@ -1684,7 +1684,7 @@ void sendmail::process_emails()
             // get the email from the database
             // we expect empty values once in a while because a dropCell() is
             // not exactly instantaneous in Cassandra
-            QSharedPointer<QtCassandra::QCassandraCell> cell(*c);
+            QtCassandra::QCassandraCell::pointer_t cell(*c);
             const QtCassandra::QCassandraValue value(cell->value());
             if(!value.nullValue())
             {
@@ -1726,8 +1726,8 @@ void sendmail::attach_email(const email& e)
         return;
     }
 
-    QSharedPointer<QtCassandra::QCassandraTable> table(get_emails_table());
-    QSharedPointer<QtCassandra::QCassandraRow> lists(table->row(get_name(SNAP_NAME_SENDMAIL_LISTS)));
+    QtCassandra::QCassandraTable::pointer_t table(get_emails_table());
+    QtCassandra::QCassandraRow::pointer_t lists(table->row(get_name(SNAP_NAME_SENDMAIL_LISTS)));
 
     // read all the emails
     const QString& site_key(e.get_site_key());
@@ -1805,10 +1805,10 @@ void sendmail::attach_user_email(const email& e)
     //      (it may be easier to implement events to send emails
     //      from anyway and use that from the user plugin and avoid
     //      the sendmail reference in the user plugin)
-    QSharedPointer<QtCassandra::QCassandraTable> table(get_emails_table());
+    QtCassandra::QCassandraTable::pointer_t table(get_emails_table());
     users::users *users_plugin(users::users::instance());
     const char *email_key(users::get_name(users::SNAP_NAME_USERS_ORIGINAL_EMAIL));
-    QSharedPointer<QtCassandra::QCassandraTable> users_table(users_plugin->get_users_table());
+    QtCassandra::QCassandraTable::pointer_t users_table(users_plugin->get_users_table());
 
     // TBD: would we need to have a lock to test whether the user
     //      exists? since we're not about to add it ourselves, I
@@ -1826,8 +1826,8 @@ void sendmail::attach_user_email(const email& e)
         throw sendmail_exception_invalid_argument("To: field does not include at least one email");
     }
     QString key(m.f_email_only.c_str());
-    QSharedPointer<QtCassandra::QCassandraRow> row(table->row(key));
-    QSharedPointer<QtCassandra::QCassandraCell> cell(row->cell(email_key));
+    QtCassandra::QCassandraRow::pointer_t row(table->row(key));
+    QtCassandra::QCassandraCell::pointer_t cell(row->cell(email_key));
     cell->setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
     QtCassandra::QCassandraValue email_data(cell->value());
     if(email_data.nullValue())
@@ -1940,9 +1940,9 @@ void sendmail::attach_user_email(const email& e)
  */
 void sendmail::run_emails()
 {
-    QSharedPointer<QtCassandra::QCassandraTable> table(get_emails_table());
+    QtCassandra::QCassandraTable::pointer_t table(get_emails_table());
     const char *index(get_name(SNAP_NAME_SENDMAIL_INDEX));
-    QSharedPointer<QtCassandra::QCassandraRow> row(table->row(index));
+    QtCassandra::QCassandraRow::pointer_t row(table->row(index));
     QtCassandra::QCassandraColumnRangePredicate column_predicate;
     column_predicate.setStartColumnName("0");
     // we use +1 otherwise immediate emails are sent 5 min. later!
@@ -1968,7 +1968,7 @@ void sendmail::run_emails()
             // get the email from the database
             // we expect empty values once in a while because a dropCell() is
             // not exactly instantaneous in Cassandra
-            QSharedPointer<QtCassandra::QCassandraCell> cell(*c);
+            QtCassandra::QCassandraCell::pointer_t cell(*c);
             const QtCassandra::QCassandraValue value(cell->value());
             const QString column_key(cell->columnKey());
             const QString key(column_key.mid(18));
@@ -2006,7 +2006,7 @@ void sendmail::run_emails()
  */
 void sendmail::sendemail(const QString& key, const QString& unique_key)
 {
-    QSharedPointer<QtCassandra::QCassandraTable> table(get_emails_table());
+    QtCassandra::QCassandraTable::pointer_t table(get_emails_table());
     QtCassandra::QCassandraValue sent_value(table->row(key)->cell(unique_key + "::" + get_name(SNAP_NAME_SENDMAIL_SENDING_STATUS))->value());
     //if(sent_value.stringValue() != get_name(SNAP_NAME_SENDMAIL_STATUS_NEW))
     if(sent_value.stringValue() == get_name(SNAP_NAME_SENDMAIL_STATUS_SENT))

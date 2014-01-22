@@ -196,9 +196,9 @@ void shorturl::content_update(int64_t variables_timestamp)
  *
  * \return The pointer to the shorturl table.
  */
-QSharedPointer<QtCassandra::QCassandraTable> shorturl::get_shorturl_table()
+QtCassandra::QCassandraTable::pointer_t shorturl::get_shorturl_table()
 {
-    if(f_shorturl_table.isNull())
+    if(!f_shorturl_table)
     {
         f_shorturl_table = f_snap->create_table(get_name(SNAP_NAME_SHORTURL_TABLE), "Short URL management table.");
     }
@@ -253,7 +253,7 @@ void shorturl::on_generate_main_content(layout::layout *l, const QString& cpath,
         int64_t const identifier(cpath.mid(2).toLongLong(&ok, 36));
         if(ok)
         {
-            QSharedPointer<QtCassandra::QCassandraTable> shorturl_table(get_shorturl_table());
+            QtCassandra::QCassandraTable::pointer_t shorturl_table(get_shorturl_table());
             QString const index(f_snap->get_website_key() + "/" + get_name(SNAP_NAME_SHORTURL_INDEX_ROW));
             QtCassandra::QCassandraValue identifier_value;
             identifier_value.setInt64Value(identifier);
@@ -337,7 +337,7 @@ void shorturl::on_create_content(QString const& path, QString const& owner, QStr
 
     // TODO change to support a per content type short URL scheme
 
-    QSharedPointer<QtCassandra::QCassandraTable> shorturl_table(get_shorturl_table());
+    QtCassandra::QCassandraTable::pointer_t shorturl_table(get_shorturl_table());
 
     // first generate a site wide unique identifier for that page
     int64_t identifier(0);
@@ -355,8 +355,8 @@ void shorturl::on_create_content(QString const& path, QString const& owner, QStr
         // we can safely do a read-increment-write cycle.
         if(shorturl_table->exists(id_key))
         {
-            QSharedPointer<QtCassandra::QCassandraRow> id_row(shorturl_table->row(id_key));
-            QSharedPointer<QtCassandra::QCassandraCell> id_cell(id_row->cell(identifier_key));
+            QtCassandra::QCassandraRow::pointer_t id_row(shorturl_table->row(id_key));
+            QtCassandra::QCassandraCell::pointer_t id_cell(id_row->cell(identifier_key));
             id_cell->setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
             QtCassandra::QCassandraValue current_identifier(id_cell->value());
             if(current_identifier.nullValue())
@@ -392,8 +392,8 @@ void shorturl::on_create_content(QString const& path, QString const& owner, QStr
     QString const site_key(f_snap->get_site_key_with_slash());
     QString const key(site_key + path);
 
-    QSharedPointer<QtCassandra::QCassandraTable> content_table(content::content::instance()->get_content_table());
-    QSharedPointer<QtCassandra::QCassandraRow> row(content_table->row(key));
+    QtCassandra::QCassandraTable::pointer_t content_table(content::content::instance()->get_content_table());
+    QtCassandra::QCassandraRow::pointer_t row(content_table->row(key));
 
     row->cell(identifier_key)->setValue(new_identifier);
 
