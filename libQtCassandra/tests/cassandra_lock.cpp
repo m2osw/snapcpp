@@ -51,8 +51,8 @@
 
 int main(int argc, char *argv[])
 {
-    QtCassandra::QCassandra     cassandra;
-    qDebug() << "+ libQtCassandra version" << cassandra.version();
+    QtCassandra::QCassandra::pointer_t cassandra( QtCassandra::QCassandra::create() );
+    qDebug() << "+ libQtCassandra version" << cassandra->version();
 
     int process_count(0);
     int repeat(0);
@@ -165,15 +165,15 @@ int main(int argc, char *argv[])
     if(replication_factor > 0) {
         // each child must have a separate connection, so we have a specific
         // connection for the context handling
-        cassandra.connect(host);
-        QString name = cassandra.clusterName();
+        cassandra->connect(host);
+        QString name = cassandra->clusterName();
         qDebug() << "+ Cassandra Cluster Name is" << name;
         qDebug() << "+ Creating context with replication factor set to" << replication_factor;
 
-        QtCassandra::QCassandraContext::pointer_t context(cassandra.context("qt_cassandra_test_lock"));
+        QtCassandra::QCassandraContext::pointer_t context(cassandra->context("qt_cassandra_test_lock"));
         try {
             context->drop();
-            cassandra.synchronizeSchemaVersions();
+            cassandra->synchronizeSchemaVersions();
         }
         catch(...) {
             // ignore error, the context probably doesn't exist yet
@@ -206,19 +206,19 @@ int main(int argc, char *argv[])
             throw;
         }
         // attempt a synchronization so when we quit we can immediately use the context
-        cassandra.synchronizeSchemaVersions();
+        cassandra->synchronizeSchemaVersions();
         exit(0);
     }
 
     if(check_result > 0) {
         if(check_result == 1) {
             // check the whole database for unique entries
-            cassandra.connect(host);
-            QString name = cassandra.clusterName();
+            cassandra->connect(host);
+            QString name = cassandra->clusterName();
             qDebug() << "+ Cassandra Cluster Name is" << name;
             qDebug() << "+ Verifying test table" << replication_factor;
 
-            QtCassandra::QCassandraContext::pointer_t context(cassandra.context("qt_cassandra_test_lock"));
+            QtCassandra::QCassandraContext::pointer_t context(cassandra->context("qt_cassandra_test_lock"));
             if(!context) {
                 qDebug() << "warning: could not find the context, did you run the test yet?";
                 exit(1);
@@ -268,12 +268,12 @@ int main(int argc, char *argv[])
         else if(check_result == 2) {
             // truncate the table so we can start a new clean test
             // without having to delete everything
-            cassandra.connect(host);
-            QString name = cassandra.clusterName();
+            cassandra->connect(host);
+            QString name = cassandra->clusterName();
             qDebug() << "+ Cassandra Cluster Name is" << name;
             qDebug() << "+ Truncating the test table";
 
-            QtCassandra::QCassandraContext::pointer_t context(cassandra.context("qt_cassandra_test_lock"));
+            QtCassandra::QCassandraContext::pointer_t context(cassandra->context("qt_cassandra_test_lock"));
             if(!context) {
                 qDebug() << "error: could not retreive the qt_cassandra_test_lock context, did you run once with -c?";
                 exit(1);
@@ -290,12 +290,12 @@ int main(int argc, char *argv[])
             exit(1);
         }
 
-        cassandra.connect(host);
-        QString name = cassandra.clusterName();
+        cassandra->connect(host);
+        QString name = cassandra->clusterName();
         qDebug() << "+ Cassandra Cluster Name is" << name;
         qDebug() << "+" << (mode == 1 ? "Adding" : "Removing") << computer_name << "to the lock table";
 
-        QtCassandra::QCassandraContext::pointer_t context(cassandra.context("qt_cassandra_test_lock"));
+        QtCassandra::QCassandraContext::pointer_t context(cassandra->context("qt_cassandra_test_lock"));
         if(!context) {
             qDebug() << "error: could not retrive the qt_cassandra_test_lock context, did you run once with -c?";
             exit(1);
@@ -335,10 +335,10 @@ int main(int argc, char *argv[])
     }
 
     // the child connects to Cassandra
-    cassandra.connect(host);
-    QString name = cassandra.clusterName();
+    cassandra->connect(host);
+    QString name = cassandra->clusterName();
     qDebug() << "+ Cassandra Cluster Name is" << name << "for child" << getpid();
-    QtCassandra::QCassandraContext::pointer_t context(cassandra.context("qt_cassandra_test_lock"));
+    QtCassandra::QCassandraContext::pointer_t context(cassandra->context("qt_cassandra_test_lock"));
     if(!context) {
         qDebug() << "error: could not retrive the qt_cassandra_test_lock context, did you run once with -c?";
         exit(1);

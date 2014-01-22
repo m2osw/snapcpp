@@ -44,7 +44,7 @@
 
 int main(int argc, char *argv[])
 {
-    QtCassandra::QCassandra     cassandra;
+    QtCassandra::QCassandra::pointer_t cassandra( QtCassandra::QCassandra::create() );
 
     const char *host("localhost");
     for(int i(1); i < argc; ++i) {
@@ -62,14 +62,14 @@ int main(int argc, char *argv[])
         }
     }
 
-    cassandra.connect(host);
-    qDebug() << "Working on Cassandra Cluster Named" << cassandra.clusterName();
-    qDebug() << "Working on Cassandra Protocol Version" << cassandra.protocolVersion();
+    cassandra->connect(host);
+    qDebug() << "Working on Cassandra Cluster Named" << cassandra->clusterName();
+    qDebug() << "Working on Cassandra Protocol Version" << cassandra->protocolVersion();
 
-    QtCassandra::QCassandraContext::pointer_t context(cassandra.context("qt_cassandra_test_ct"));
+    QtCassandra::QCassandraContext::pointer_t context(cassandra->context("qt_cassandra_test_ct"));
     try {
         context->drop();
-        cassandra.synchronizeSchemaVersions();
+        cassandra->synchronizeSchemaVersions();
     }
     catch(...) {
         // ignore errors, this happens when the context doesn't exist yet
@@ -97,7 +97,7 @@ int main(int argc, char *argv[])
 
     try {
         context->create();
-        cassandra.synchronizeSchemaVersions();
+        cassandra->synchronizeSchemaVersions();
         qDebug() << "Context and its table were created!";
     }
     catch(org::apache::cassandra::InvalidRequestException& e) {
@@ -113,9 +113,10 @@ int main(int argc, char *argv[])
     QtCassandra::QCassandraRow::composite_column_names_t names1;
     names1.push_back(a1);
     names1.push_back(a2);
-    cassandra["qt_cassandra_test_ct"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")].compositeCell(names1) = value1;
-    cassandra["qt_cassandra_test_ct"]["qt_cassandra_test_table"].clearCache();
-    QtCassandra::QCassandraValue v1 = cassandra["qt_cassandra_test_ct"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")].compositeCell(names1);
+    QtCassandra::QCassandra& cass( *cassandra );
+    cass["qt_cassandra_test_ct"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")].compositeCell(names1) = value1;
+    cass["qt_cassandra_test_ct"]["qt_cassandra_test_table"].clearCache();
+    QtCassandra::QCassandraValue v1 = cass["qt_cassandra_test_ct"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")].compositeCell(names1);
     qDebug() << "Read -1005 value back as:" << v1.int32Value();
 
     QtCassandra::QCassandraValue value2(5678);
@@ -124,9 +125,9 @@ int main(int argc, char *argv[])
     QtCassandra::QCassandraRow::composite_column_names_t names2;
     names2.push_back(a3);
     names2.push_back(a4);
-    cassandra["qt_cassandra_test_ct"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")].compositeCell(names2) = value2;
-    cassandra["qt_cassandra_test_ct"]["qt_cassandra_test_table"].clearCache();
-    QtCassandra::QCassandraValue v2 = cassandra["qt_cassandra_test_ct"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")].compositeCell(names2);
+    cass["qt_cassandra_test_ct"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")].compositeCell(names2) = value2;
+    cass["qt_cassandra_test_ct"]["qt_cassandra_test_table"].clearCache();
+    QtCassandra::QCassandraValue v2 = cass["qt_cassandra_test_ct"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")].compositeCell(names2);
     qDebug() << "Read 5678 value back as:" << v2.int32Value();
 
     QtCassandra::QCassandraValue value3(8080);
@@ -135,21 +136,21 @@ int main(int argc, char *argv[])
     QtCassandra::QCassandraRow::composite_column_names_t names3;
     names3.push_back(a5);
     names3.push_back(a6);
-    cassandra["qt_cassandra_test_ct"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")].compositeCell(names3) = value3;
-    cassandra["qt_cassandra_test_ct"]["qt_cassandra_test_table"].clearCache();
-    QtCassandra::QCassandraValue v3 = cassandra["qt_cassandra_test_ct"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")].compositeCell(names3);
+    cass["qt_cassandra_test_ct"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")].compositeCell(names3) = value3;
+    cass["qt_cassandra_test_ct"]["qt_cassandra_test_table"].clearCache();
+    QtCassandra::QCassandraValue v3 = cass["qt_cassandra_test_ct"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")].compositeCell(names3);
     qDebug() << "Read 8080 value back as:" << v3.int32Value();
 
-    cassandra["qt_cassandra_test_ct"]["qt_cassandra_test_table"].clearCache();
-    QtCassandra::QCassandraValue v1_2 = cassandra["qt_cassandra_test_ct"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")].compositeCell(names1);
+    cass["qt_cassandra_test_ct"]["qt_cassandra_test_table"].clearCache();
+    QtCassandra::QCassandraValue v1_2 = cass["qt_cassandra_test_ct"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")].compositeCell(names1);
     qDebug() << "Read -1005 value again as:" << v1_2.int32Value();
 
-    cassandra["qt_cassandra_test_ct"]["qt_cassandra_test_table"].clearCache();
-    QtCassandra::QCassandraValue v2_2 = cassandra["qt_cassandra_test_ct"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")].compositeCell(names2);
+    cass["qt_cassandra_test_ct"]["qt_cassandra_test_table"].clearCache();
+    QtCassandra::QCassandraValue v2_2 = cass["qt_cassandra_test_ct"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")].compositeCell(names2);
     qDebug() << "Read 5678 value again as:" << v2_2.int32Value();
 
     context->drop();
-    cassandra.synchronizeSchemaVersions();
+    cassandra->synchronizeSchemaVersions();
 
     exit(0);
 }

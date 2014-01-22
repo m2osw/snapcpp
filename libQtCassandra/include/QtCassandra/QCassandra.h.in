@@ -70,7 +70,7 @@ class QCassandraPrivate;
 // Handling of the transport and CassandraClient objects
 class QCassandra
     : public QObject
-    //, public std::enable_shared_from_this<QCassandra>
+    , public std::enable_shared_from_this<QCassandra>
 {
 public:
     static const uint32_t SCHEMA_SYNCHRONIZATION_USE_DEFAULT = 0;
@@ -78,7 +78,7 @@ public:
     typedef controlled_vars::auto_init<uint32_t, SCHEMA_SYNCHRONIZATION_USE_DEFAULT> schema_synchronization_timeout_t;
     typedef std::shared_ptr<QCassandra> pointer_t;
 
-    QCassandra();
+    static pointer_t create();
     virtual ~QCassandra();
 
     static int versionMajor();
@@ -115,6 +115,8 @@ public:
     static int64_t timeofday();
 
 private:
+    QCassandra();
+
     //QCassandraContext::pointer_t currentContext() const;
     void setCurrentContext(QCassandraContext::pointer_t c);
     void clearCurrentContextIf(const QCassandraContext& c);

@@ -285,7 +285,7 @@ class QCassandraContextPrivate : public org::apache::cassandra::KsDef {};
  * \sa QCassandra::context()
  * \sa QCassandra::synchronizeSchemaVersions()
  */
-QCassandraContext::QCassandraContext(QCassandra* cassandra, const QString& context_name)
+QCassandraContext::QCassandraContext(QCassandra::pointer_t cassandra, const QString& context_name)
     : f_private(new QCassandraContextPrivate),
       f_cassandra(cassandra),
       //f_options() -- auto-init
@@ -1277,7 +1277,7 @@ void QCassandraContext::synchronizeSchemaVersions()
  */
 void QCassandraContext::unparent()
 {
-    f_cassandra = 0;
+    f_cassandra.reset();
     clearCache();
 }
 
