@@ -832,7 +832,7 @@ void sessions::content_update(int64_t variables_timestamp)
  *
  * \return The pointer to the sessions table.
  */
-QSharedPointer<QtCassandra::QCassandraTable> sessions::get_sessions_table()
+QtCassandra::QCassandraTable::pointer_t sessions::get_sessions_table()
 {
     return f_snap->create_table(get_name(SNAP_NAME_SESSIONS_TABLE), "Sessions table.");
 }
@@ -1080,8 +1080,8 @@ void sessions::save_session(session_info& info, bool new_random)
         throw sessions_exception_invalid_range(QString("the session computed ttl %1 is out of bounds (save_session)").arg(ttl));
     }
 
-    QSharedPointer<QtCassandra::QCassandraTable> table(get_sessions_table());
-    QSharedPointer<QtCassandra::QCassandraRow> row(table->row(key));
+    QtCassandra::QCassandraTable::pointer_t table(get_sessions_table());
+    QtCassandra::QCassandraRow::pointer_t row(table->row(key));
 
     QtCassandra::QCassandraValue value;
     value.setTtl(static_cast<int32_t>(ttl));
@@ -1175,7 +1175,7 @@ void sessions::load_session(const QString& session_key, session_info& info, bool
 
     QString key(f_snap->get_website_key() + "/" + session_key);
 
-    QSharedPointer<QtCassandra::QCassandraTable> table(get_sessions_table());
+    QtCassandra::QCassandraTable::pointer_t table(get_sessions_table());
     if(!table->exists(key))
     {
         // if the key doesn't exist it was either tempered with
@@ -1184,7 +1184,7 @@ void sessions::load_session(const QString& session_key, session_info& info, bool
         return;
     }
 
-    QSharedPointer<QtCassandra::QCassandraRow> row(table->row(key));
+    QtCassandra::QCassandraRow::pointer_t row(table->row(key));
     if(!row)
     {
         // XXX
@@ -1334,13 +1334,13 @@ void sessions::attach_to_session(const session_info& info, const QString& name, 
 {
     QString key(f_snap->get_website_key() + "/" + info.get_session_key());
 
-    QSharedPointer<QtCassandra::QCassandraTable> table(get_sessions_table());
+    QtCassandra::QCassandraTable::pointer_t table(get_sessions_table());
     if(!table->exists(key))
     {
         return;
     }
 
-    QSharedPointer<QtCassandra::QCassandraRow> row(table->row(key));
+    QtCassandra::QCassandraRow::pointer_t row(table->row(key));
     if(!row)
     {
         return;
@@ -1385,13 +1385,13 @@ QString sessions::detach_from_session(const session_info& info, const QString& n
 {
     QString key(f_snap->get_website_key() + "/" + info.get_session_key());
 
-    QSharedPointer<QtCassandra::QCassandraTable> table(get_sessions_table());
+    QtCassandra::QCassandraTable::pointer_t table(get_sessions_table());
     if(!table->exists(key))
     {
         return "";
     }
 
-    QSharedPointer<QtCassandra::QCassandraRow> row(table->row(key));
+    QtCassandra::QCassandraRow::pointer_t row(table->row(key));
     if(!row)
     {
         return "";
@@ -1422,13 +1422,13 @@ QString sessions::get_from_session(const session_info& info, const QString& name
 {
     QString key(f_snap->get_website_key() + "/" + info.get_session_key());
 
-    QSharedPointer<QtCassandra::QCassandraTable> table(get_sessions_table());
+    QtCassandra::QCassandraTable::pointer_t table(get_sessions_table());
     if(!table->exists(key))
     {
         return "";
     }
 
-    QSharedPointer<QtCassandra::QCassandraRow> row(table->row(key));
+    QtCassandra::QCassandraRow::pointer_t row(table->row(key));
     if(!row)
     {
         return "";

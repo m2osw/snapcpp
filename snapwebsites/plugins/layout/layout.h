@@ -65,7 +65,7 @@ public:
     static layout *     instance();
     virtual QString     description() const;
     virtual int64_t     do_update(int64_t last_updated);
-    QSharedPointer<QtCassandra::QCassandraTable> get_layout_table();
+    QtCassandra::QCassandraTable::pointer_t get_layout_table();
 
     void                on_bootstrap(snap_child *snap);
 
@@ -83,8 +83,8 @@ private:
     void content_update(int64_t variables_timestamp);
     bool parse_layout_rules(const QString& script, QByteArray& result);
 
-    zpsnap_child_t                                  f_snap;
-    QSharedPointer<QtCassandra::QCassandraTable>    f_content_table;
+    zpsnap_child_t                             f_snap;
+    QtCassandra::QCassandraTable::pointer_t    f_content_table;
 };
 
 class layout_box_execute

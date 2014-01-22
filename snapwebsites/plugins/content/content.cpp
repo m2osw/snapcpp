@@ -1315,7 +1315,7 @@ void field_search::run()
         QString                                         f_site_key;
         QString                                         f_field_name;
         QString                                         f_self;
-        QSharedPointer<QtCassandra::QCassandraTable>    f_content_table;
+        QtCassandra::QCassandraTable::pointer_t    f_content_table;
         QDomElement                                     f_element;
         controlled_vars::fbool_t                        f_found_self;
         controlled_vars::fbool_t                        f_saved;
@@ -2167,9 +2167,9 @@ void content::content_update(int64_t variables_timestamp)
  *
  * \return The pointer to the content table.
  */
-QSharedPointer<QtCassandra::QCassandraTable> content::get_content_table()
+QtCassandra::QCassandraTable::pointer_t content::get_content_table()
 {
-    if(f_content_table.isNull())
+    if(!f_content_table)
     {
         f_content_table = f_snap->create_table(get_name(SNAP_NAME_CONTENT_TABLE), "Website content table.");
     }
@@ -2196,9 +2196,9 @@ QSharedPointer<QtCassandra::QCassandraTable> content::get_content_table()
  *
  * \return The pointer to the files table.
  */
-QSharedPointer<QtCassandra::QCassandraTable> content::get_files_table()
+QtCassandra::QCassandraTable::pointer_t content::get_files_table()
 {
-    if(f_files_table.isNull())
+    if(!f_files_table)
     {
         f_files_table = f_snap->create_table(get_name(SNAP_NAME_CONTENT_FILES_TABLE), "List of all the files ever uploaded to all the websites.");
     }
@@ -2223,13 +2223,13 @@ bool content::on_path_execute(const QString& cpath)
 {
     // TODO: we probably do not want to check for attachment to send if the
     //       action is not "view"...
-    QSharedPointer<QtCassandra::QCassandraTable> content_table(get_content_table());
+    QtCassandra::QCassandraTable::pointer_t content_table(get_content_table());
     QString const site_key(f_snap->get_site_key_with_slash());
     QString const key(site_key + cpath);
     if(content_table->exists(key)
     && content_table->row(key)->exists(get_name(SNAP_NAME_CONTENT_ATTACHMENT_REVISION_CONTROL_CURRENT)))
     {
-        QSharedPointer<QtCassandra::QCassandraRow> row(content_table->row(key));
+        QtCassandra::QCassandraRow::pointer_t row(content_table->row(key));
         QtCassandra::QCassandraValue revision_value(row->cell(get_name(SNAP_NAME_CONTENT_ATTACHMENT_REVISION_CONTROL_CURRENT))->value());
         if(!revision_value.nullValue())
         {
@@ -2241,7 +2241,7 @@ bool content::on_path_execute(const QString& cpath)
                 QtCassandra::QCassandraValue attachment_key(row->cell(revision_key)->value());
                 if(!attachment_key.nullValue())
                 {
-                    QSharedPointer<QtCassandra::QCassandraTable> files_table(get_files_table());
+                    QtCassandra::QCassandraTable::pointer_t files_table(get_files_table());
                     if(!files_table->exists(attachment_key.binaryValue())
                     || !files_table->row(attachment_key.binaryValue())->exists(get_name(SNAP_NAME_CONTENT_FILES_DATA)))
                     {
@@ -2254,7 +2254,7 @@ bool content::on_path_execute(const QString& cpath)
                         NOTREACHED();
                     }
 
-                    QSharedPointer<QtCassandra::QCassandraRow> file_row(files_table->row(attachment_key.binaryValue()));
+                    QtCassandra::QCassandraRow::pointer_t file_row(files_table->row(attachment_key.binaryValue()));
 
                     //int pos(cpath.lastIndexOf('/'));
                     //QString basename(cpath.mid(pos + 1));
@@ -2316,7 +2316,7 @@ bool content::on_path_execute(const QString& cpath)
  */
 bool content::create_content_impl(QString const& path, QString const& owner, QString const& type)
 {
-    QSharedPointer<QtCassandra::QCassandraTable> content_table(get_content_table());
+    QtCassandra::QCassandraTable::pointer_t content_table(get_content_table());
     QString const site_key(f_snap->get_site_key_with_slash());
     QString const key(site_key + path);
 
@@ -2328,7 +2328,7 @@ bool content::create_content_impl(QString const& path, QString const& owner, QSt
         if(pos != -1)
         {
             QString parent_key(site_key + path.left(pos));
-            QSharedPointer<QtCassandra::QCassandraRow> parent_row(content_table->row(parent_key));
+            QtCassandra::QCassandraRow::pointer_t parent_row(content_table->row(parent_key));
             if(parent_row->exists(get_name(SNAP_NAME_CONTENT_FINAL)))
             {
                 QtCassandra::QCassandraValue final_value(parent_row->cell(get_name(SNAP_NAME_CONTENT_FINAL))->value());
@@ -2350,7 +2350,7 @@ bool content::create_content_impl(QString const& path, QString const& owner, QSt
 
     // create the row
     QString const primary_owner(path::get_name(path::SNAP_NAME_PATH_PRIMARY_OWNER));
-    QSharedPointer<QtCassandra::QCassandraRow> row(content_table->row(key));
+    QtCassandra::QCassandraRow::pointer_t row(content_table->row(key));
     if(row->exists(primary_owner))
     {
         // the row already exists, this is considered created.
@@ -2514,7 +2514,7 @@ bool content::create_attachment_impl(attachment_file const& file)
     //       compressed MD5 (otherwise we end up with TWO files.)
 
     // verify that the row specified by file::get_cpath() exists
-    QSharedPointer<QtCassandra::QCassandraTable> content_table(get_content_table());
+    QtCassandra::QCassandraTable::pointer_t content_table(get_content_table());
     QString const site_key(f_snap->get_site_key_with_slash());
     QString const key(site_key + file.get_cpath());
     if(!content_table->exists(key))
@@ -2533,7 +2533,7 @@ bool content::create_attachment_impl(attachment_file const& file)
         attachment_filename = attachment_filename.mid(last_slash + 1);
     }
 
-    QSharedPointer<QtCassandra::QCassandraRow> parent_row(content_table->row(key));
+    QtCassandra::QCassandraRow::pointer_t parent_row(content_table->row(key));
     if(parent_row->exists(get_name(SNAP_NAME_CONTENT_FINAL)))
     {
         QtCassandra::QCassandraValue final_value(parent_row->cell(get_name(SNAP_NAME_CONTENT_FINAL))->value());
@@ -2680,7 +2680,7 @@ SNAP_LOG_DEBUG("attaching ")(file.get_file().get_filename())(", validate name = 
     // name without version, language, or encoding
     QString const attachment_cpath(file.get_cpath() + "/" + attachment_filename);
     QString const attachment_key(site_key + attachment_cpath);
-    QSharedPointer<QtCassandra::QCassandraRow> attachment_row;
+    QtCassandra::QCassandraRow::pointer_t attachment_row;
 
 SNAP_LOG_DEBUG("attaching ")(file.get_file().get_filename())(", attachment_key = ")(attachment_key);
     // this name is "content::attachment::<plugin owner>::<field name>::path"
@@ -2693,7 +2693,7 @@ SNAP_LOG_DEBUG("attaching ")(file.get_file().get_filename())(", attachment_key =
     QByteArray const md5(reinterpret_cast<char const *>(md), sizeof(md));
 
     // check whether the file already exists in the database
-    QSharedPointer<QtCassandra::QCassandraTable> files_table(get_files_table());
+    QtCassandra::QCassandraTable::pointer_t files_table(get_files_table());
     bool file_exists(files_table->exists(md5));
     if(!file_exists)
     {
@@ -2704,7 +2704,7 @@ SNAP_LOG_DEBUG("attaching ")(file.get_file().get_filename())(", attachment_key =
         files_table->row(md5)->cell(get_name(SNAP_NAME_CONTENT_FILES_DATA))->setValue(post_file.get_data());
         files_table->row(get_name(SNAP_NAME_CONTENT_FILES_NEW))->cell(md5)->setValue(true);
 
-        QSharedPointer<QtCassandra::QCassandraRow> file_row(files_table->row(md5));
+        QtCassandra::QCassandraRow::pointer_t file_row(files_table->row(md5));
 
         file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_COMPRESSOR))->setValue(get_name(SNAP_NAME_CONTENT_COMPRESSOR_UNCOMPRESSED));
         file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_SIZE))->setValue(static_cast<int32_t>(post_file.get_size()));
@@ -2854,7 +2854,7 @@ SNAP_LOG_DEBUG("attaching ")(file.get_file().get_filename())(", attachment_key =
                     // get the email from the database
                     // we expect empty values once in a while because a dropCell() is
                     // not exactly instantaneous in Cassandra
-                    QSharedPointer<QtCassandra::QCassandraCell> revision_cell(*rc);
+                    QtCassandra::QCassandraCell::pointer_t revision_cell(*rc);
                     if(!revision_cell->value().nullValue())
                     {
                         if(revision_cell->value().binaryValue() == md5)
@@ -3192,13 +3192,13 @@ SNAP_LOG_DEBUG("attaching ")(file.get_file().get_filename())(", attachment_key =
  */
 bool content::load_attachment(QString const& key, attachment_file& file, bool load_data)
 {
-    QSharedPointer<QtCassandra::QCassandraTable> content_table(get_content_table());
+    QtCassandra::QCassandraTable::pointer_t content_table(get_content_table());
     if(!content_table->exists(key))
     {
         // the parent row does not even exist yet...
         return false;
     }
-    QSharedPointer<QtCassandra::QCassandraRow> attachment_row(content_table->row(key));
+    QtCassandra::QCassandraRow::pointer_t attachment_row(content_table->row(key));
 
     // TODO: select the WORKING_VERSION if the user is logged in and can
     //       edit this attachment
@@ -3213,13 +3213,13 @@ bool content::load_attachment(QString const& key, attachment_file& file, bool lo
             .arg(get_name(SNAP_NAME_CONTENT_ATTACHMENT))
             .arg(revision_value.stringValue()))->value());
 
-    QSharedPointer<QtCassandra::QCassandraTable> files_table(get_files_table());
+    QtCassandra::QCassandraTable::pointer_t files_table(get_files_table());
     if(!files_table->exists(md5_value.binaryValue()))
     {
         // file not available?!
         return false;
     }
-    QSharedPointer<QtCassandra::QCassandraRow> file_row(files_table->row(md5_value.binaryValue()));
+    QtCassandra::QCassandraRow::pointer_t file_row(files_table->row(md5_value.binaryValue()));
 
     if(!file_row->exists(get_name(SNAP_NAME_CONTENT_FILES_DATA)))
     {
@@ -3333,7 +3333,7 @@ bool content::load_attachment(QString const& key, attachment_file& file, bool lo
  */
 bool content::modified_content_impl(QString const& path, bool updated)
 {
-    QSharedPointer<QtCassandra::QCassandraTable> content_table(get_content_table());
+    QtCassandra::QCassandraTable::pointer_t content_table(get_content_table());
     QString const site_key(f_snap->get_site_key_with_slash());
     QString const key(site_key + path);
 
@@ -3343,7 +3343,7 @@ bool content::modified_content_impl(QString const& path, bool updated)
         SNAP_LOG_WARNING("Page \"")(key)("\" does not exist. We cannot do anything about it being modified.");;
         return false;
     }
-    QSharedPointer<QtCassandra::QCassandraRow> row(content_table->row(key));
+    QtCassandra::QCassandraRow::pointer_t row(content_table->row(key));
 
     uint64_t const start_date(f_snap->get_uri().option("start_date").toLongLong());
     if(updated)
@@ -3583,7 +3583,7 @@ QtCassandra::QCassandraValue content::get_content_parameter(QString path, const 
     //    return value;
     //}
 
-    QSharedPointer<QtCassandra::QCassandraTable> content_table(get_content_table());
+    QtCassandra::QCassandraTable::pointer_t content_table(get_content_table());
 
     QString key(f_snap->get_site_key_with_slash() + path);
 //printf("get content for [%s] . [%s]\n", key.toUtf8().data(), param_name.toUtf8().data());
@@ -4265,7 +4265,7 @@ void content::on_save_content()
     }
 
     QString const site_key(f_snap->get_site_key_with_slash());
-    QSharedPointer<QtCassandra::QCassandraTable> content_table(get_content_table());
+    QtCassandra::QCassandraTable::pointer_t content_table(get_content_table());
     for(content_block_map_t::iterator d(f_blocks.begin());
             d != f_blocks.end(); ++d)
     {
@@ -4568,8 +4568,8 @@ QVariant content::js_property_get(int index) const
  */
 void content::on_backend_process()
 {
-    QSharedPointer<QtCassandra::QCassandraTable> files_table(get_files_table());
-    QSharedPointer<QtCassandra::QCassandraRow> new_row(files_table->row(get_name(SNAP_NAME_CONTENT_FILES_NEW)));
+    QtCassandra::QCassandraTable::pointer_t files_table(get_files_table());
+    QtCassandra::QCassandraRow::pointer_t new_row(files_table->row(get_name(SNAP_NAME_CONTENT_FILES_NEW)));
     QtCassandra::QCassandraColumnRangePredicate column_predicate;
     column_predicate.setCount(100); // should this be a parameter?
     column_predicate.setIndex(); // behave like an index
@@ -4590,12 +4590,12 @@ void content::on_backend_process()
             // get the email from the database
             // we expect empty values once in a while because a dropCell() is
             // not exactly instantaneous in Cassandra
-            QSharedPointer<QtCassandra::QCassandraCell> new_cell(*nc);
+            QtCassandra::QCassandraCell::pointer_t new_cell(*nc);
             if(!new_cell->value().nullValue())
             {
                 QByteArray file_key(new_cell->columnKey());
 
-                QSharedPointer<QtCassandra::QCassandraRow> file_row(files_table->row(file_key));
+                QtCassandra::QCassandraRow::pointer_t file_row(files_table->row(file_key));
                 QtCassandra::QCassandraColumnRangePredicate reference_column_predicate;
                 reference_column_predicate.setStartColumnName(get_name(SNAP_NAME_CONTENT_FILES_REFERENCE));
                 reference_column_predicate.setEndColumnName(get_name(SNAP_NAME_CONTENT_FILES_REFERENCE) + QString(";"));
@@ -4620,7 +4620,7 @@ void content::on_backend_process()
                         // get the email from the database
                         // we expect empty values once in a while because a dropCell() is
                         // not exactly instantaneous in Cassandra
-                        QSharedPointer<QtCassandra::QCassandraCell> content_cell(*cc);
+                        QtCassandra::QCassandraCell::pointer_t content_cell(*cc);
                         if(!content_cell->value().nullValue())
                         {
                             QByteArray attachment_key(content_cell->columnKey().data() + (strlen(get_name(SNAP_NAME_CONTENT_FILES_REFERENCE)) + 2),
@@ -4710,8 +4710,8 @@ bool content::check_attachment_security_impl(attachment_file const& file, server
  */
 bool content::process_attachment_impl(QByteArray const& file_key, attachment_file const& file)
 {
-    QSharedPointer<QtCassandra::QCassandraTable> files_table(get_files_table());
-    QSharedPointer<QtCassandra::QCassandraRow> file_row(files_table->row(file_key));
+    QtCassandra::QCassandraTable::pointer_t files_table(get_files_table());
+    QtCassandra::QCassandraRow::pointer_t file_row(files_table->row(file_key));
     if(!file_row->exists(get_name(SNAP_NAME_CONTENT_FILES_DATA_COMPRESSED)))
     {
         QString compressor_name("gzip");
@@ -4754,7 +4754,7 @@ void content::add_javascript(layout::layout *l, QString const& path, QDomElement
     }
     f_added_javascripts[name] = true;
 
-    QSharedPointer<QtCassandra::QCassandraTable> files_table(get_files_table());
+    QtCassandra::QCassandraTable::pointer_t files_table(get_files_table());
     if(!files_table->exists(javascript::get_name(javascript::SNAP_NAME_JAVASCRIPT_ROW)))
     {
         // absolutely no JavaScripts available!
@@ -4763,7 +4763,7 @@ void content::add_javascript(layout::layout *l, QString const& path, QDomElement
                 "A JavaScript was requested in the \"files\" table before it was inserted under /js/...");
         NOTREACHED();
     }
-    QSharedPointer<QtCassandra::QCassandraRow> javascript_row(files_table->row(javascript::get_name(javascript::SNAP_NAME_JAVASCRIPT_ROW)));
+    QtCassandra::QCassandraRow::pointer_t javascript_row(files_table->row(javascript::get_name(javascript::SNAP_NAME_JAVASCRIPT_ROW)));
 
     // TODO: at this point I read all the entries with "name_..."
     //       we'll want to first check with the user's browser and
@@ -4799,7 +4799,7 @@ void content::add_javascript(layout::layout *l, QString const& path, QDomElement
             // get the email from the database
             // we expect empty values once in a while because a dropCell() is
             // not exactly instantaneous in Cassandra
-            QSharedPointer<QtCassandra::QCassandraCell> cell(*c);
+            QtCassandra::QCassandraCell::pointer_t cell(*c);
             QtCassandra::QCassandraValue const file_md5(cell->value());
             if(file_md5.nullValue())
             {
@@ -4815,7 +4815,7 @@ void content::add_javascript(layout::layout *l, QString const& path, QDomElement
                 SNAP_LOG_ERROR("JavaScript for \"")(name)("\" could not be found with its MD5");
                 continue;
             }
-            QSharedPointer<QtCassandra::QCassandraRow> row(files_table->row(key));
+            QtCassandra::QCassandraRow::pointer_t row(files_table->row(key));
             if(!row->exists(get_name(SNAP_NAME_CONTENT_FILES_SECURE)))
             {
                 // secure field missing?! (file was probably deleted)
@@ -4863,7 +4863,7 @@ void content::add_javascript(layout::layout *l, QString const& path, QDomElement
                 continue;
             }
             // the key of this cell is the path we want to use to the file
-            QSharedPointer<QtCassandra::QCassandraCell> ref_cell(*ref_cells.begin());
+            QtCassandra::QCassandraCell::pointer_t ref_cell(*ref_cells.begin());
             QtCassandra::QCassandraValue const ref_string(ref_cell->value());
             if(ref_string.nullValue()) // bool true cannot be empty
             {
@@ -4900,7 +4900,7 @@ void content::add_javascript(layout::layout *l, QString const& path, QDomElement
                     // get the email from the database
                     // we expect empty values once in a while because a dropCell() is
                     // not exactly instantaneous in Cassandra
-                    QSharedPointer<QtCassandra::QCassandraCell> dep_cell(*dc);
+                    QtCassandra::QCassandraCell::pointer_t dep_cell(*dc);
                     QtCassandra::QCassandraValue const dep_string(dep_cell->value());
                     if(!dep_string.nullValue())
                     {

@@ -134,7 +134,7 @@ public:
     static users *          instance();
     virtual QString         description() const;
     virtual int64_t         do_update(int64_t last_updated);
-    QSharedPointer<QtCassandra::QCassandraTable> get_users_table();
+    QtCassandra::QCassandraTable::pointer_t get_users_table();
 
     void                    on_bootstrap(::snap::snap_child *snap);
     void                    on_init();

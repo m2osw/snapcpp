@@ -190,7 +190,7 @@ void layout::initial_update(int64_t variables_timestamp)
  *
  * \return The shared pointer to the layout table.
  */
-QSharedPointer<QtCassandra::QCassandraTable> layout::get_layout_table()
+QtCassandra::QCassandraTable::pointer_t layout::get_layout_table()
 {
     return f_snap->create_table(get_name(SNAP_NAME_LAYOUT_TABLE), "Layouts table.");
 }
@@ -383,7 +383,7 @@ QDomDocument layout::create_body(const QString& cpath, layout_content *content_p
 layout_name = "bare";
 
     bool const filter_exists(plugins::exists("filter"));
-    QSharedPointer<QtCassandra::QCassandraTable> layout_table(get_layout_table());
+    QtCassandra::QCassandraTable::pointer_t layout_table(get_layout_table());
 
     plugin *p(dynamic_cast<plugin *>(content_plugin));
 
@@ -427,7 +427,7 @@ layout_name = "bare";
     // http://www.w3.org/TR/xslt#section-Combining-Stylesheets
 
     // check whether the layout was defined in this website database
-    QSharedPointer<QtCassandra::QCassandraTable> content_table(content::content::instance()->get_content_table());
+    QtCassandra::QCassandraTable::pointer_t content_table(content::content::instance()->get_content_table());
     QString const site_key(f_snap->get_site_key_with_slash());
     QString const layout_key(site_key + get_name(SNAP_NAME_LAYOUT_ADMIN_LAYOUTS) + "/" + layout_name);
     // TODO: we'll need to manage updates which is probably going to be done
@@ -694,7 +694,7 @@ theme_name = "bare";
     {
         // try to load the layout from the database, if not found
         // we'll switch to the default layout instead
-        QSharedPointer<QtCassandra::QCassandraTable> layout_table(get_layout_table());
+        QtCassandra::QCassandraTable::pointer_t layout_table(get_layout_table());
         QtCassandra::QCassandraValue theme_value(layout_table->row(theme_name)->cell(QString("theme"))->value());
         if(theme_value.nullValue())
         {

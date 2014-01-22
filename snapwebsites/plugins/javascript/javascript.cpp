@@ -604,7 +604,7 @@ QVariant javascript::evaluate_script(const QString& script)
  * \param[in] file_key  The row where the file is saved in \p files_table.
  * \param[in] file  The file to be processed.
  */
-void javascript::on_process_attachment(QSharedPointer<QtCassandra::QCassandraTable> files_table, QByteArray const& file_key, snap_child::post_file_t const& file)
+void javascript::on_process_attachment(QtCassandra::QCassandraTable::pointer_t files_table, QByteArray const& file_key, snap_child::post_file_t const& file)
 {
     // TODO: got to write the minimizer if I cannot find one in C/C++
     (void)files_table;

@@ -135,7 +135,7 @@ private:
 
     zpsnap_child_t                                  f_snap;
     link_info                                       f_info;
-    QSharedPointer<QtCassandra::QCassandraRow>      f_row;
+    QtCassandra::QCassandraRow::pointer_t      f_row;
     QtCassandra::QCassandraColumnRangePredicate     f_column_predicate;
     QtCassandra::QCassandraCells::const_iterator    f_cell_iterator;
     QString                                         f_link;
@@ -150,7 +150,7 @@ public:
     static links *      instance();
     virtual QString     description() const;
     virtual int64_t     do_update(int64_t last_updated);
-    QSharedPointer<QtCassandra::QCassandraTable> get_links_table();
+    QtCassandra::QCassandraTable::pointer_t get_links_table();
 
     void                on_bootstrap(::snap::snap_child *snap);
 
@@ -165,8 +165,8 @@ private:
     void                init_tables();
 
     zpsnap_child_t                                  f_snap;
-    QSharedPointer<QtCassandra::QCassandraTable>    f_links_table;
-    QSharedPointer<QtCassandra::QCassandraTable>    f_content_table;
+    QtCassandra::QCassandraTable::pointer_t    f_links_table;
+    QtCassandra::QCassandraTable::pointer_t    f_content_table;
 };
 
 } // namespace links

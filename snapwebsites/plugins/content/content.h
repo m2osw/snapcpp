@@ -370,8 +370,8 @@ public:
     static content *    instance();
     virtual QString     description() const;
     virtual int64_t     do_update(int64_t last_updated);
-    QSharedPointer<QtCassandra::QCassandraTable> get_content_table();
-    QSharedPointer<QtCassandra::QCassandraTable> get_files_table();
+    QtCassandra::QCassandraTable::pointer_t get_content_table();
+    QtCassandra::QCassandraTable::pointer_t get_files_table();
     QtCassandra::QCassandraValue get_content_parameter(QString path, QString const& name);
 
     void                on_bootstrap(snap_child *snap);
@@ -451,14 +451,14 @@ private:
     void initial_update(int64_t variables_timestamp);
     void content_update(int64_t variables_timestamp);
 
-    zpsnap_child_t                                  f_snap;
-    QSharedPointer<QtCassandra::QCassandraTable>    f_content_table;
-    QSharedPointer<QtCassandra::QCassandraTable>    f_files_table;
-    content_block_map_t                             f_blocks;
-    controlled_vars::zint32_t                       f_file_index;
-    controlled_vars::fbool_t                        f_updating;
-    QMap<QString, bool>                             f_added_javascripts;
-    javascript_ref_map_t                            f_javascripts;
+    zpsnap_child_t                             f_snap;
+    QtCassandra::QCassandraTable::pointer_t    f_content_table;
+    QtCassandra::QCassandraTable::pointer_t    f_files_table;
+    content_block_map_t                        f_blocks;
+    controlled_vars::zint32_t                  f_file_index;
+    controlled_vars::fbool_t                   f_updating;
+    QMap<QString, bool>                        f_added_javascripts;
+    javascript_ref_map_t                       f_javascripts;
 };
 
 class content_box_execute

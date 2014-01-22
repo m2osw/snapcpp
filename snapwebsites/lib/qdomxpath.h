@@ -20,7 +20,6 @@
 #pragma GCC diagnostic ignored "-Wold-style-cast"
 #include <QDomNode>
 #include <QString>
-#include <QSharedPointer>
 #include <QMap>
 #include <QVector>
 #pragma GCC diagnostic pop

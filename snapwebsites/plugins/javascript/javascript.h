@@ -60,7 +60,7 @@ public:
     virtual int64_t     do_update(int64_t last_updated);
 
     void                on_bootstrap(snap_child *snap);
-    void                on_process_attachment(QSharedPointer<QtCassandra::QCassandraTable> files_table, QByteArray const& key, snap_child::post_file_t const& file);
+    void                on_process_attachment(QtCassandra::QCassandraTable::pointer_t files_table, QByteArray const& key, snap_child::post_file_t const& file);
     void                on_check_attachment_security(snap_child::post_file_t const& file, server::permission_flag& secure, bool const fast);
 
     void                register_dynamic_plugin(javascript_dynamic_plugin *p);

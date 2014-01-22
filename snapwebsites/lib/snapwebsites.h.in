@@ -133,8 +133,8 @@ public:
     void prepare_qtapp( int argc, char *argv[] );
     void close_qtapp();
     void prepare_cassandra();
-    //QSharedPointer<QtCassandra::QCassandra> get_cassandra();
-    QSharedPointer<QtCassandra::QCassandraTable> create_table(QSharedPointer<QtCassandra::QCassandraContext> context, QString table_name, QString comment);
+    //QtCassandra::QCassandra::pointer_t get_cassandra();
+    QtCassandra::QCassandraTable::pointer_t create_table(QtCassandra::QCassandraContext::pointer_t context, QString table_name, QString comment);
     void detach();
     void listen();
     void backend();
@@ -182,7 +182,7 @@ private:
     parameter_map_t                         f_parameters;
     QString                                 f_cassandra_host;
     controlled_vars::zint32_t               f_cassandra_port;
-    //QSharedPointer<QtCassandra::QCassandra> f_cassandra;
+    //QtCassandra::QCassandra::pointer_t f_cassandra;
 
     controlled_vars::zuint64_t              f_connections_count;
     snap_child_vector_t                     f_children_running;

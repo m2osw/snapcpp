@@ -27,6 +27,7 @@
 #include <QPointer>
 #include <QDomDocument>
 #include <QBuffer>
+#include <QSharedPointer>
 #include <QtCassandra/QCassandra.h>
 #include <QtCassandra/QCassandraContext.h>
 
@@ -243,7 +244,7 @@ public:
     QString                     get_server_parameter(QString const& name);
     QtCassandra::QCassandraValue get_site_parameter(QString const& name);
     void                        set_site_parameter(QString const& name, QtCassandra::QCassandraValue const& value);
-    QSharedPointer<QtCassandra::QCassandraContext> get_context() { return f_context; }
+    QtCassandra::QCassandraContext::pointer_t get_context() { return f_context; }
     QString const&              get_domain_key() const { return f_domain_key; }
     QString const&              get_website_key() const { return f_website_key; }
     QString const&              get_site_key() const { return f_site_key; }
@@ -255,7 +256,7 @@ public:
     bool                        has_header(QString const& name) const;
     QString                     get_header(QString const& name) const;
     QString                     get_unique_number();
-    QSharedPointer<QtCassandra::QCassandraTable> create_table(const QString& table_name, const QString& comment);
+    QtCassandra::QCassandraTable::pointer_t create_table(const QString& table_name, const QString& comment);
     void                        new_content();
     void                        verify_permissions(QString const& path, permission_error_callback& err_callback);
     QString                     default_action(QString uri_path);
@@ -323,8 +324,8 @@ private:
     controlled_vars::mint64_t           f_start_date; // time request arrived
     server_pointer_t                    f_server;
     QPointer<QtCassandra::QCassandra>   f_cassandra;
-    QSharedPointer<QtCassandra::QCassandraContext>  f_context;
-    QSharedPointer<QtCassandra::QCassandraTable>    f_site_table;
+    QtCassandra::QCassandraContext::pointer_t  f_context;
+    QtCassandra::QCassandraTable::pointer_t    f_site_table;
     controlled_vars::fbool_t            f_new_content;
     controlled_vars::fbool_t            f_is_child;
     controlled_vars::fbool_t            f_is_being_initialized;

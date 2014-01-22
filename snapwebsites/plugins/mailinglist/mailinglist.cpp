@@ -133,7 +133,7 @@ QString mailinglist::list::next()
         }
     }
 
-    QtCassandra::QCassandraValue value(*f_c);
+    QtCassandra::QCassandraValue value(*(*f_c));
     ++f_c;
     // TODO: write a loop so we properly handle the case of an empty
     //       entry (although it should not happen, we never know!)
@@ -272,7 +272,7 @@ void mailinglist::content_update(int64_t variables_timestamp)
  *
  * \return The pointer to the users table.
  */
-QSharedPointer<QtCassandra::QCassandraTable> mailinglist::get_mailinglist_table()
+QtCassandra::QCassandraTable::pointer_t mailinglist::get_mailinglist_table()
 {
     return f_snap->create_table(get_name(SNAP_NAME_MAILINGLIST_TABLE), "Mailing list table.");
 }
@@ -342,7 +342,7 @@ void mailinglist::on_name_to_list(const QString& name, QSharedPointer<list>& ema
     if(!emails)
     {
         // first make sure that the row exists, if not that's not a maillist
-        QSharedPointer<QtCassandra::QCassandraTable> table(get_mailinglist_table());
+        QtCassandra::QCassandraTable::pointer_t table(get_mailinglist_table());
         if(table->exists(name))
         {
             emails = QSharedPointer<list>(new list(this, name));

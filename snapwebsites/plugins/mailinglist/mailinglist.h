@@ -59,8 +59,8 @@ public:
     private:
         mailinglist *                                   f_parent;
         const QString                                   f_name;
-        QSharedPointer<QtCassandra::QCassandraTable>    f_table;
-        QSharedPointer<QtCassandra::QCassandraRow>      f_row;
+        QtCassandra::QCassandraTable::pointer_t    f_table;
+        QtCassandra::QCassandraRow::pointer_t      f_row;
         QtCassandra::QCassandraColumnRangePredicate     f_column_predicate;
         QtCassandra::QCassandraCells                    f_cells;
         QtCassandra::QCassandraCells::const_iterator    f_c;
@@ -73,7 +73,7 @@ public:
     static mailinglist *instance();
     virtual QString     description() const;
     virtual int64_t     do_update(int64_t last_updated);
-    QSharedPointer<QtCassandra::QCassandraTable> get_mailinglist_table();
+    QtCassandra::QCassandraTable::pointer_t get_mailinglist_table();
 
     void                on_bootstrap(snap_child *snap);
     void                on_name_to_list(const QString& name, QSharedPointer<list>& emails);

@@ -140,7 +140,7 @@ plugins::plugin *path::get_plugin(QString const& uri_path, permission_error_call
     QString owner;
     dynamic_path_plugin_t path_plugin;
     // TODO: remove direct dependency on the content plugin
-    QSharedPointer<QtCassandra::QCassandraTable> content_table(content::content::instance()->get_content_table());
+    QtCassandra::QCassandraTable::pointer_t content_table(content::content::instance()->get_content_table());
     bool const page_exists(content_table->exists(key)
                         && content_table->row(key)->exists(content::get_name(content::SNAP_NAME_CONTENT_MODIFIED)));
     if(page_exists)

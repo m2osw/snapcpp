@@ -276,7 +276,7 @@ void form::auto_fill_form(QDomDocument xml_form)
     QString const cpath(snap_form.attribute("path"));
 
     // make sure that row exists
-    QSharedPointer<QtCassandra::QCassandraTable> content_table(content::content::instance()->get_content_table());
+    QtCassandra::QCassandraTable::pointer_t content_table(content::content::instance()->get_content_table());
     QString const site_key(f_snap->get_site_key_with_slash());
     QString const key(site_key + cpath);
     if(!content_table->exists(key))
@@ -285,7 +285,7 @@ void form::auto_fill_form(QDomDocument xml_form)
         // in auto-save mode!?
         return;
     }
-    QSharedPointer<QtCassandra::QCassandraRow> row(content_table->row(key));
+    QtCassandra::QCassandraRow::pointer_t row(content_table->row(key));
 
     // if we have an auto-save, then we can auto-load too
     // otherwise only let the user plugin take care of the auto-fill
@@ -669,7 +669,7 @@ QDomDocument const form::load_form(QString const& cpath, QString const& source, 
     else if(csource.startsWith("http://") || csource.startsWith("https://"))
     {
         // 3.2 from Cassandra
-        QSharedPointer<QtCassandra::QCassandraTable> content_table(content::content::instance()->get_content_table());
+        QtCassandra::QCassandraTable::pointer_t content_table(content::content::instance()->get_content_table());
         if(!content_table->exists(csource))
         {
             g_cached_form[csource].f_error = "<span class=\"filter-error\"><span class=\"filter-error-word\">ERROR:</span> Form \""
@@ -677,7 +677,7 @@ QDomDocument const form::load_form(QString const& cpath, QString const& source, 
             SNAP_LOG_ERROR("form::load_form() could not load \"" + csource + "\" from the database.");
             return g_cached_form[csource].f_doc;
         }
-        QSharedPointer<QtCassandra::QCassandraRow> row(content_table->row(csource));
+        QtCassandra::QCassandraRow::pointer_t row(content_table->row(csource));
         if(!row->exists(get_name(SNAP_NAME_FORM_FORM)))
         {
             g_cached_form[csource].f_error = "<span class=\"filter-error\"><span class=\"filter-error-word\">ERROR:</span> No form defined at \""
@@ -685,7 +685,7 @@ QDomDocument const form::load_form(QString const& cpath, QString const& source, 
             SNAP_LOG_ERROR("form::load_form() could not find a form at \"" + csource + "\".");
             return g_cached_form[csource].f_doc;
         }
-        QtCassandra::QCassandraValue form_xml(row->cell(get_name(SNAP_NAME_FORM_FORM)));
+        QtCassandra::QCassandraValue form_xml(*row->cell(get_name(SNAP_NAME_FORM_FORM)));
         if(!g_cached_form[csource].f_doc.setContent(form_xml.binaryValue(), true))
         {
             g_cached_form[csource].f_error = "<span class=\"filter-error\"><span class=\"filter-error-word\">ERROR:</span> Form \""
@@ -1043,7 +1043,7 @@ void form::on_process_post(const QString& uri_path)
 void form::auto_save_form(QString const& owner, QString const& cpath, auto_save_types_t const& auto_save_type, QDomDocument xml_form)
 {
     content::content *content_plugin(content::content::instance());
-    QSharedPointer<QtCassandra::QCassandraTable> content_table(content_plugin->get_content_table());
+    QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
     QString const site_key(f_snap->get_site_key_with_slash());
     QString const key(site_key + cpath);
     if(!content_table->exists(key))
@@ -1052,7 +1052,7 @@ void form::auto_save_form(QString const& owner, QString const& cpath, auto_save_
         // in auto-save mode!?
         return;
     }
-    QSharedPointer<QtCassandra::QCassandraRow> row(content_table->row(key));
+    QtCassandra::QCassandraRow::pointer_t row(content_table->row(key));
 
     for(snap_child::environment_map_t::const_iterator it(auto_save_type.begin());
             it != auto_save_type.end();
@@ -2071,14 +2071,14 @@ void form::on_replace_token(filter::filter *f, QString const& cpath, QString con
  */
 QString form::get_source(QString const& owner, QString const& cpath)
 {
-    QSharedPointer<QtCassandra::QCassandraTable> content_table(content::content::instance()->get_content_table());
+    QtCassandra::QCassandraTable::pointer_t content_table(content::content::instance()->get_content_table());
     QString const site_key(f_snap->get_site_key_with_slash());
     QString const key(site_key + cpath);
     if(!content_table->exists(key))
     {
         return "";
     }
-    QSharedPointer<QtCassandra::QCassandraRow> row(content_table->row(key));
+    QtCassandra::QCassandraRow::pointer_t row(content_table->row(key));
     if(!row->exists(get_name(SNAP_NAME_FORM_SOURCE)))
     {
         return "";

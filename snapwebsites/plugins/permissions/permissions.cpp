@@ -819,14 +819,14 @@ bool permissions::get_user_rights_impl(permissions *perms, sets_t& sets)
                 user_key = f_snap->get_site_key_with_slash() + user_key;
 
                 // add all the groups the user is a member of
-                QSharedPointer<QtCassandra::QCassandraTable> content_table(content::content::instance()->get_content_table());
+                QtCassandra::QCassandraTable::pointer_t content_table(content::content::instance()->get_content_table());
                 if(!content_table->exists(user_key))
                 {
                     // that user is gone, this will generate a 500 by Apache
                     throw permissions_exception_invalid_path("could not access user \"" + user_key + "\"");
                 }
 
-                //QSharedPointer<QtCassandra::QCassandraRow> row(content_table->row(user_key));
+                //QtCassandra::QCassandraRow::pointer_t row(content_table->row(user_key));
 
                 // should this one NOT be offered to returning users?
                 sets.add_user_right(user_key);
@@ -964,7 +964,7 @@ bool permissions::get_plugin_permissions_impl(permissions *perms, sets_t& sets)
     // content plugin feature in the permissions
     //
     // this very page may be assigned direct permissions
-    QSharedPointer<QtCassandra::QCassandraTable> content_table(content::content::instance()->get_content_table());
+    QtCassandra::QCassandraTable::pointer_t content_table(content::content::instance()->get_content_table());
     QString const site_key(f_snap->get_site_key_with_slash());
     QString key(site_key + path);
     if(!content_table->exists(key))
@@ -991,7 +991,7 @@ bool permissions::get_plugin_permissions_impl(permissions *perms, sets_t& sets)
                 break;
             }
         }
-        QSharedPointer<QtCassandra::QCassandraRow> row(content_table->row(key));
+        QtCassandra::QCassandraRow::pointer_t row(content_table->row(key));
         char const *dynamic(get_name(SNAP_NAME_PERMISSIONS_DYNAMIC));
         if(!row->exists(dynamic))
         {
@@ -1266,7 +1266,7 @@ void permissions::on_validate_action(QString const& path, QString const& action,
 void permissions::on_access_allowed(QString const& user_path, QString const& path, QString const& action, QString const& login_status, server::permission_flag& result)
 {
     // check that the action is defined in the database (i.e. valid)
-    QSharedPointer<QtCassandra::QCassandraTable> content_table(content::content::instance()->get_content_table());
+    QtCassandra::QCassandraTable::pointer_t content_table(content::content::instance()->get_content_table());
     QString const site_key(f_snap->get_site_key_with_slash());
     QString const key(site_key + get_name(SNAP_NAME_PERMISSIONS_ACTION_PATH) + ("/" + action));
     if(!content_table->exists(key))
@@ -1351,13 +1351,13 @@ void permissions::add_user_rights(QString const& group, sets_t& sets)
  */
 void permissions::recursive_add_user_rights(QString const& group, sets_t& sets)
 {
-    QSharedPointer<QtCassandra::QCassandraTable> content_table(content::content::instance()->get_content_table());
+    QtCassandra::QCassandraTable::pointer_t content_table(content::content::instance()->get_content_table());
     if(!content_table->exists(group))
     {
         throw permissions_exception_invalid_group_name("caller is trying to access group \"" + group + "\"");
     }
 
-    QSharedPointer<QtCassandra::QCassandraRow> row(content_table->row(group));
+    QtCassandra::QCassandraRow::pointer_t row(content_table->row(group));
 
     // get the rights at this level
     {
@@ -1436,13 +1436,13 @@ void permissions::add_plugin_permissions(QString const& plugin_name, QString con
  */
 void permissions::recursive_add_plugin_permissions(QString const& plugin_name, QString const& group, sets_t& sets)
 {
-    QSharedPointer<QtCassandra::QCassandraTable> content_table(content::content::instance()->get_content_table());
+    QtCassandra::QCassandraTable::pointer_t content_table(content::content::instance()->get_content_table());
     if(!content_table->exists(group))
     {
         throw permissions_exception_invalid_group_name("caller is trying to access group \"" + group + "\"");
     }
 
-    QSharedPointer<QtCassandra::QCassandraRow> row(content_table->row(group));
+    QtCassandra::QCassandraRow::pointer_t row(content_table->row(group));
 
     // get the rights at this level
     {
@@ -1518,8 +1518,8 @@ void permissions::on_backend_action(QString const& action)
     if(action == get_name(SNAP_NAME_PERMISSIONS_MAKE_ROOT))
     {
         // make specified user root
-        QSharedPointer<QtCassandra::QCassandraTable> user_table(users::users::instance()->get_users_table());
-        if(user_table.isNull())
+        QtCassandra::QCassandraTable::pointer_t user_table(users::users::instance()->get_users_table());
+        if(!user_table)
         {
             std::cerr << "error: table \"users\" not found." << std::endl;
             exit(1);
@@ -1530,7 +1530,7 @@ void permissions::on_backend_action(QString const& action)
             std::cerr << "error: user \"" << email.toStdString() << "\" not found." << std::endl;
             exit(1);
         }
-        QSharedPointer<QtCassandra::QCassandraRow> user_row(user_table->row(email));
+        QtCassandra::QCassandraRow::pointer_t user_row(user_table->row(email));
         if(!user_row->exists(users::get_name(users::SNAP_NAME_USERS_IDENTIFIER)))
         {
             std::cerr << "error: user \"" << email.toStdString() << "\" was not given an identifier." << std::endl;
