@@ -42,6 +42,7 @@
 #include <QByteArray>
 #include <QVector>
 #include <QObject>
+#include <memory>
 
 namespace QtCassandra
 {
@@ -57,6 +58,8 @@ typedef controlled_vars::limited_auto_init<int32_t, 1, INT_MAX, 100> cassandra_c
 class QCassandraColumnPredicate //: public QObject -- predicates are copyable and not named
 {
 public:
+    typedef std::shared_ptr<QCassandraColumnPredicate> pointer_t;
+
     QCassandraColumnPredicate();
     virtual ~QCassandraColumnPredicate();
 
@@ -85,6 +88,7 @@ private:
 class QCassandraColumnNamePredicate : public QCassandraColumnPredicate
 {
 public:
+    typedef std::shared_ptr<QCassandraColumnNamePredicate> pointer_t;
     typedef QVector<QByteArray> QCassandraColumnKeys;
 
     QCassandraColumnNamePredicate();
@@ -104,6 +108,7 @@ private:
 class QCassandraColumnRangePredicate : public QCassandraColumnPredicate
 {
 public:
+    typedef std::shared_ptr<QCassandraColumnRangePredicate> pointer_t;
     QCassandraColumnRangePredicate();
 
     QString startColumnName() const;

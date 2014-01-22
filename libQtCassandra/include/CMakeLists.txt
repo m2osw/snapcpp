@@ -39,3 +39,15 @@ configure_file(
 		${PROJECT_BINARY_DIR}/QtCassandra/QCassandra.h
 		)
 
+install(
+	DIRECTORY QtCassandra
+	DESTINATION include
+	FILES_MATCHING PATTERN *.h
+	PATTERN .svn EXCLUDE
+)
+install(
+	FILES ${PROJECT_BINARY_DIR}/QtCassandra/QCassandra.h
+	DESTINATION include/QtCassandra/
+)
+
+# vim: ts=4 sw=4 et

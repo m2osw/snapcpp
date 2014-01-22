@@ -38,7 +38,7 @@
 #define QCASSANDRA_ROW_PREDICATE_H
 
 #include "QCassandraColumnPredicate.h"
-#include <QSharedPointer>
+#include <memory>
 
 namespace QtCassandra
 {
@@ -69,8 +69,8 @@ public:
     bool wrap() const;
     void setWrap(bool wrap = true);
 
-    QSharedPointer<QCassandraColumnPredicate> columnPredicate() const;
-    void setColumnPredicate(QSharedPointer<QCassandraColumnPredicate> column_predicate);
+    QCassandraColumnPredicate::pointer_t columnPredicate() const;
+    void setColumnPredicate(QCassandraColumnPredicate::pointer_t column_predicate);
 
 private:
     virtual void toPredicate(void *data) const;
@@ -84,7 +84,7 @@ private:
     cassandra_count_t                           f_count;
     controlled_vars::zbool_t                    f_wrap; // i.e. KeyRange tokens versus keys
     controlled_vars::zbool_t                    f_exclude; // whether f_start_row is excluded
-    QSharedPointer<QCassandraColumnPredicate>   f_column_predicate;
+    QCassandraColumnPredicate::pointer_t   f_column_predicate;
 };
 
 } // namespace QtCassandra

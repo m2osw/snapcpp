@@ -103,7 +103,7 @@ void add_host()
     // initialize the database
     QtCassandra::QCassandra cassandra;
     cassandra.connect(g_host);
-    QSharedPointer<QtCassandra::QCassandraContext> context(cassandra.context(g_context_name));
+    QtCassandra::QCassandraContext::pointer_t context(cassandra.context(g_context_name));
     if(!context) {
         fprintf(stderr, "error: could not retrieve the \"%s\" context from this Cassandra cluster.\n", g_context_name);
         exit(1);
@@ -129,7 +129,7 @@ void remove_host()
     // initialize the database
     QtCassandra::QCassandra cassandra;
     cassandra.connect(g_host);
-    QSharedPointer<QtCassandra::QCassandraContext> context(cassandra.context(g_context_name));
+    QtCassandra::QCassandraContext::pointer_t context(cassandra.context(g_context_name));
     if(!context) {
         fprintf(stderr, "error: could not retrieve the \"%s\" context from this Cassandra cluster.\n", g_context_name);
         exit(1);
@@ -155,15 +155,15 @@ void list_hosts()
     // initialize the database
     QtCassandra::QCassandra cassandra;
     cassandra.connect(g_host);
-    QSharedPointer<QtCassandra::QCassandraContext> context(cassandra.context(g_context_name));
+    QtCassandra::QCassandraContext::pointer_t context(cassandra.context(g_context_name));
     if(!context) {
         fprintf(stderr, "error: could not retrieve the \"%s\" context from this Cassandra cluster.\n", g_context_name);
         exit(1);
     }
 
-    QSharedPointer<QtCassandra::QCassandraTable> locks_table(context->table(context->lockTableName()));
-    QSharedPointer<QtCassandra::QCassandraRow> hosts(locks_table->row("hosts"));
-    if(hosts.isNull()) {
+    QtCassandra::QCassandraTable::pointer_t locks_table(context->table(context->lockTableName()));
+    QtCassandra::QCassandraRow::pointer_t hosts(locks_table->row("hosts"));
+    if(!hosts) {
         fprintf(stderr, "warning: there are no computer host names defined in this context.\n");
     }
     else {

@@ -125,7 +125,7 @@ namespace QtCassandra
  * \param[in] table  The parent table of this row.
  * \param[in] row_key  The key of this row.
  */
-QCassandraRow::QCassandraRow(QCassandraTable *table, const QByteArray& row_key)
+QCassandraRow::QCassandraRow(QCassandraTable::pointer_t table, const QByteArray& row_key)
     : f_table(table),
       f_key(row_key)
       //f_cells() -- auto-init
@@ -202,10 +202,10 @@ const QByteArray& QCassandraRow::rowKey() const
  */
 int QCassandraRow::cellCount(const QCassandraColumnPredicate& column_predicate)
 {
-    if(f_table == NULL) {
+    if(!f_table.lock()) {
         throw std::runtime_error("row was dropped and is not attached to a table anymore");
     }
-    return f_table->getCellCount(f_key, column_predicate);
+    return f_table.lock()->getCellCount(f_key, column_predicate);
 }
 
 /** \brief Read the cells as defined by a default column predicate.
@@ -240,11 +240,11 @@ int QCassandraRow::cellCount(const QCassandraColumnPredicate& column_predicate)
  */
 uint32_t QCassandraRow::readCells()
 {
-    if(f_table == NULL) {
+    if(!f_table.lock()) {
         throw std::runtime_error("row was dropped and is not attached to a table anymore");
     }
     QCassandraColumnPredicate column_predicate;
-    return f_table->getColumnSlice(f_key, column_predicate);
+    return f_table.lock()->getColumnSlice(f_key, column_predicate);
 }
 
 /** \brief Read the cells as defined by the predicate.
@@ -272,10 +272,10 @@ uint32_t QCassandraRow::readCells()
  */
 uint32_t QCassandraRow::readCells(QCassandraColumnPredicate& column_predicate)
 {
-    if(f_table == NULL) {
+    if(!f_table.lock()) {
         throw std::runtime_error("row was dropped and is not attached to a table anymore");
     }
-    return f_table->getColumnSlice(f_key, column_predicate);
+    return f_table.lock()->getColumnSlice(f_key, column_predicate);
 }
 
 /** \brief Retrieve a cell from the row.
@@ -294,7 +294,7 @@ uint32_t QCassandraRow::readCells(QCassandraColumnPredicate& column_predicate)
  *
  * \return A shared pointer to the cell.
  */
-QSharedPointer<QCassandraCell> QCassandraRow::cell(const char *column_name)
+QCassandraCell::pointer_t QCassandraRow::cell(const char *column_name)
 {
     return cell(QByteArray::fromRawData(column_name, qstrlen(column_name)));
 }
@@ -316,7 +316,7 @@ QSharedPointer<QCassandraCell> QCassandraRow::cell(const char *column_name)
  *
  * \return A shared pointer to the cell.
  */
-QSharedPointer<QCassandraCell> QCassandraRow::cell(const wchar_t *column_name)
+QCassandraCell::pointer_t QCassandraRow::cell(const wchar_t *column_name)
 {
     return cell(QString::fromWCharArray(column_name, (column_name ? wcslen(column_name) : 0)));
 }
@@ -337,7 +337,7 @@ QSharedPointer<QCassandraCell> QCassandraRow::cell(const wchar_t *column_name)
  *
  * \return A shared pointer to the cell.
  */
-QSharedPointer<QCassandraCell> QCassandraRow::cell(const QString& column_name)
+QCassandraCell::pointer_t QCassandraRow::cell(const QString& column_name)
 {
     return cell(column_name.toUtf8());
 }
@@ -357,7 +357,7 @@ QSharedPointer<QCassandraCell> QCassandraRow::cell(const QString& column_name)
  *
  * \return A shared pointer to the cell.
  */
-QSharedPointer<QCassandraCell> QCassandraRow::cell(const QUuid& column_uuid)
+QCassandraCell::pointer_t QCassandraRow::cell(const QUuid& column_uuid)
 {
     return cell(column_uuid.toRfc4122());
 }
@@ -385,7 +385,7 @@ QSharedPointer<QCassandraCell> QCassandraRow::cell(const QUuid& column_uuid)
  * \sa compositeCell()
  * \sa compositeCell() const
  */
-QSharedPointer<QCassandraCell> QCassandraRow::cell(const QByteArray& column_key)
+QCassandraCell::pointer_t QCassandraRow::cell(const QByteArray& column_key)
 {
     // column already exists?
     QCassandraCells::iterator ci(f_cells.find(column_key));
@@ -394,7 +394,7 @@ QSharedPointer<QCassandraCell> QCassandraRow::cell(const QByteArray& column_key)
     }
 
     // this is a new column, allocate it
-    QSharedPointer<QCassandraCell> c(new QCassandraCell(this, column_key));
+    QCassandraCell::pointer_t c(new QCassandraCell(shared_from_this(), column_key));
     f_cells.insert(column_key, c);
     return c;
 }
@@ -520,7 +520,7 @@ const QCassandraCell& QCassandraRow::compositeCell(const composite_column_names_
  * \sa cell()
  * \sa exists()
  */
-QSharedPointer<QCassandraCell> QCassandraRow::findCell(const char *column_name) const
+QCassandraCell::pointer_t QCassandraRow::findCell(const char *column_name) const
 {
     return findCell(QByteArray(column_name, qstrlen(column_name)));
 }
@@ -547,7 +547,7 @@ QSharedPointer<QCassandraCell> QCassandraRow::findCell(const char *column_name) 
  * \sa cell()
  * \sa exists()
  */
-QSharedPointer<QCassandraCell> QCassandraRow::findCell(const wchar_t *column_name) const
+QCassandraCell::pointer_t QCassandraRow::findCell(const wchar_t *column_name) const
 {
     return findCell(QString::fromWCharArray(column_name, (column_name ? wcslen(column_name) : 0)));
 }
@@ -573,7 +573,7 @@ QSharedPointer<QCassandraCell> QCassandraRow::findCell(const wchar_t *column_nam
  * \sa cell()
  * \sa exists()
  */
-QSharedPointer<QCassandraCell> QCassandraRow::findCell(const QString& column_name) const
+QCassandraCell::pointer_t QCassandraRow::findCell(const QString& column_name) const
 {
     return findCell(column_name.toUtf8());
 }
@@ -599,7 +599,7 @@ QSharedPointer<QCassandraCell> QCassandraRow::findCell(const QString& column_nam
  * \sa cell()
  * \sa exists()
  */
-QSharedPointer<QCassandraCell> QCassandraRow::findCell(const QUuid& column_uuid) const
+QCassandraCell::pointer_t QCassandraRow::findCell(const QUuid& column_uuid) const
 {
     return findCell(column_uuid.toRfc4122());
 }
@@ -624,11 +624,11 @@ QSharedPointer<QCassandraCell> QCassandraRow::findCell(const QUuid& column_uuid)
  * \sa cell()
  * \sa exists()
  */
-QSharedPointer<QCassandraCell> QCassandraRow::findCell(const QByteArray& column_key) const
+QCassandraCell::pointer_t QCassandraRow::findCell(const QByteArray& column_key) const
 {
     QCassandraCells::const_iterator ci(f_cells.find(column_key));
     if(ci == f_cells.end()) {
-        QSharedPointer<QCassandraCell> null;
+        QCassandraCell::pointer_t null;
         return null;
     }
     return *ci;
@@ -729,7 +729,7 @@ bool QCassandraRow::exists(const QUuid& column_uuid) const
  */
 bool QCassandraRow::exists(const QByteArray& column_key) const
 {
-    if(f_table == NULL) {
+    if(!f_table.lock()) {
         throw std::runtime_error("row was dropped and is not attached to a table anymore");
     }
     QCassandraCells::const_iterator ci(f_cells.find(column_key));
@@ -741,7 +741,7 @@ bool QCassandraRow::exists(const QByteArray& column_key) const
     // try reading this cell
     QCassandraValue value;
     try {
-        if(!f_table->getValue(f_key, column_key, value)) {
+        if(!f_table.lock()->getValue(f_key, column_key, value)) {
             return false;
         }
     }
@@ -750,7 +750,7 @@ bool QCassandraRow::exists(const QByteArray& column_key) const
         return false;
     }
 
-    QSharedPointer<QCassandraCell> c(const_cast<QCassandraRow *>(this)->cell(column_key));
+    QCassandraCell::pointer_t c(const_cast<QCassandraRow *>(this)->cell(column_key));
     c->setValue(value);
 
     return true;
@@ -773,7 +773,7 @@ bool QCassandraRow::exists(const QByteArray& column_key) const
  */
 QCassandraCell& QCassandraRow::operator [] (const char *column_name)
 {
-    return *cell(column_name).data();
+    return *cell(column_name);
 }
 
 /** \brief Retrieve a cell from the row.
@@ -793,7 +793,7 @@ QCassandraCell& QCassandraRow::operator [] (const char *column_name)
  */
 QCassandraCell& QCassandraRow::operator [] (const wchar_t *column_name)
 {
-    return *cell(column_name).data();
+    return *cell(column_name);
 }
 
 /** \brief Retrieve a cell from the row.
@@ -813,7 +813,7 @@ QCassandraCell& QCassandraRow::operator [] (const wchar_t *column_name)
  */
 QCassandraCell& QCassandraRow::operator [] (const QString& column_name)
 {
-    return *cell(column_name).data();
+    return *cell(column_name);
 }
 
 /** \brief Retrieve a cell from the row.
@@ -833,7 +833,7 @@ QCassandraCell& QCassandraRow::operator [] (const QString& column_name)
  */
 QCassandraCell& QCassandraRow::operator [] (const QUuid& column_uuid)
 {
-    return *cell(column_uuid).data();
+    return *cell(column_uuid);
 }
 
 /** \brief Retrieve a cell from the row.
@@ -852,7 +852,7 @@ QCassandraCell& QCassandraRow::operator [] (const QUuid& column_uuid)
  */
 QCassandraCell& QCassandraRow::operator [] (const QByteArray& column_key)
 {
-    return *cell(column_key).data();
+    return *cell(column_key);
 }
 
 /** \brief Retrieve a cell from the row.
@@ -966,8 +966,8 @@ const QCassandraCell& QCassandraRow::operator [] (const QUuid& column_uuid) cons
  */
 const QCassandraCell& QCassandraRow::operator [] (const QByteArray& column_key) const
 {
-    const QCassandraCell *p_cell = findCell(column_key).data();
-    if(p_cell == NULL) {
+    QCassandraCell::pointer_t p_cell( findCell(column_key) );
+    if( !p_cell ) {
         throw std::runtime_error("named column while retrieving a cell was not found, cannot return a reference");
     }
 
@@ -1087,7 +1087,7 @@ void QCassandraRow::dropCell(const QUuid& column_uuid, QCassandraValue::timestam
  * default you can retrieve the cell and set the consistency level as follow:
  *
  * \code
- *     QSharedPointer<QCassandraCell> c(f_row->cell(f_cell));
+ *     QCassandraCell::pointer_t c(f_row->cell(f_cell));
  *     c->setConsistencyLevel(CONSISTENCY_LEVEL_QUORUM);
  * \endcode
  *
@@ -1117,14 +1117,14 @@ void QCassandraRow::dropCell(const QUuid& column_uuid, QCassandraValue::timestam
  */
 void QCassandraRow::dropCell(const QByteArray& column_key, QCassandraValue::timestamp_mode_t mode, int64_t timestamp)
 {
-    if(f_table == NULL) {
+    if(!f_table.lock()) {
         throw std::runtime_error("row was dropped and is not attached to a table anymore");
     }
     if(QCassandraValue::TIMESTAMP_MODE_AUTO != mode && QCassandraValue::TIMESTAMP_MODE_DEFINED != mode) {
         throw std::runtime_error("invalid timestamp mode in dropCell()");
     }
 
-    QSharedPointer<QCassandraCell> c(cell(column_key));
+    QCassandraCell::pointer_t c(cell(column_key));
 
     // default to the timestamp of the value (which is most certainly
     // what people want in 99.9% of the cases.)
@@ -1134,7 +1134,7 @@ void QCassandraRow::dropCell(const QByteArray& column_key, QCassandraValue::time
         // value was assigned or not... (not from the mode that is)
         timestamp = c->timestamp();
     }
-    f_table->remove(f_key, column_key, timestamp, c->consistencyLevel());
+    f_table.lock()->remove(f_key, column_key, timestamp, c->consistencyLevel());
     f_cells.remove(column_key);
     c->unparent();
 }
@@ -1149,10 +1149,10 @@ void QCassandraRow::dropCell(const QByteArray& column_key, QCassandraValue::time
  */
 void QCassandraRow::insertValue(const QByteArray& column_key, const QCassandraValue& value)
 {
-    if(f_table == NULL) {
+    if(!f_table.lock()) {
         throw std::runtime_error("row was dropped and is not attached to a table anymore");
     }
-    f_table->insertValue(f_key, column_key, value);
+    f_table.lock()->insertValue(f_key, column_key, value);
 }
 
 /** \brief Get a cell value from Cassandra.
@@ -1169,10 +1169,10 @@ void QCassandraRow::insertValue(const QByteArray& column_key, const QCassandraVa
  */
 bool QCassandraRow::getValue(const QByteArray& column_key, QCassandraValue& value)
 {
-    if(f_table == NULL) {
+    if(!f_table.lock()) {
         throw std::runtime_error("row was dropped and is not attached to a table anymore");
     }
-    return f_table->getValue(f_key, column_key, value);
+    return f_table.lock()->getValue(f_key, column_key, value);
 }
 
 /** \brief Add a value to a Cassandra counter.
@@ -1188,10 +1188,10 @@ bool QCassandraRow::getValue(const QByteArray& column_key, QCassandraValue& valu
  */
 void QCassandraRow::addValue(const QByteArray& column_key, int64_t value)
 {
-    if(f_table == NULL) {
+    if(!f_table.lock()) {
         throw std::runtime_error("row was dropped and is not attached to a table anymore (addValue)");
     }
-    return f_table->addValue(f_key, column_key, value);
+    return f_table.lock()->addValue(f_key, column_key, value);
 }
 
 /** \brief This internal function marks the row as unusable.
@@ -1206,7 +1206,7 @@ void QCassandraRow::addValue(const QByteArray& column_key, int64_t value)
  */
 void QCassandraRow::unparent()
 {
-    f_table = NULL;
+    f_table.reset();
     clearCache();
 }
 

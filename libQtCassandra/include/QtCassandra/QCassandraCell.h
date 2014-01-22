@@ -39,6 +39,7 @@
 #include "QCassandraValue.h"
 #include <QObject>
 #include <QMap>
+#include <memory>
 
 
 namespace QtCassandra
@@ -47,9 +48,13 @@ namespace QtCassandra
 class QCassandraRow;
 
 // Cassandra Cell
-class QCassandraCell : public QObject
+class QCassandraCell
+    : public QObject
+    , public std::enable_shared_from_this<QCassandraCell>
 {
 public:
+    typedef std::shared_ptr<QCassandraCell> pointer_t;
+
     virtual ~QCassandraCell();
 
     QString columnName() const;
@@ -78,21 +83,21 @@ public:
     void setTimestamp(int64_t timestamp);
 
 private:
-    QCassandraCell(QCassandraRow *row, const QByteArray& column_key);
+    QCassandraCell(std::shared_ptr<QCassandraRow> row, const QByteArray& column_key);
     void assignValue(const QCassandraValue& value);
     void unparent();
 
     friend class QCassandraRow;
     friend class QCassandraTable;
 
-    QCassandraRow *                     f_row;
+    std::weak_ptr<QCassandraRow>        f_row;
     QByteArray                          f_key;
     mutable controlled_vars::fbool_t    f_cached;
     QCassandraValue                     f_value;
 };
 
 // array of rows
-typedef QMap<QByteArray, QSharedPointer<QCassandraCell> > QCassandraCells;
+typedef QMap<QByteArray, QCassandraCell::pointer_t> QCassandraCells;
 
 
 

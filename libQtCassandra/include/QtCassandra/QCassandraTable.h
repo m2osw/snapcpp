@@ -42,6 +42,7 @@
 #include <QPointer>
 // GNU does not officially offer cstdint yet
 #include <stdint.h>
+#include <memory>
 
 namespace QtCassandra
 {
@@ -51,9 +52,13 @@ class QCassandraContext;
 
 
 // Cassandra Column Family (org::apache::cassandra::CfDef)
-class QCassandraTable : public QObject
+class QCassandraTable
+    : public QObject
+    , public std::enable_shared_from_this<QCassandraTable>
 {
 public:
+    typedef std::shared_ptr<QCassandraTable> pointer_t;
+
     virtual ~QCassandraTable();
 
     // context name
@@ -99,7 +104,7 @@ public:
     QString subcomparatorType() const;
 
     // columns information (specific)
-    QSharedPointer<QCassandraColumnDefinition> columnDefinition(const QString& column_name);
+    QCassandraColumnDefinition::pointer_t columnDefinition(const QString& column_name);
     const QCassandraColumnDefinitions& columnDefinitions() const;
 
     // cache handling
@@ -205,18 +210,18 @@ public:
     // row handling
     uint32_t readRows(QCassandraRowPredicate& row_predicate);
 
-    QSharedPointer<QCassandraRow> row(const char *row_name);
-    QSharedPointer<QCassandraRow> row(const wchar_t *row_name);
-    QSharedPointer<QCassandraRow> row(const QString& row_name);
-    QSharedPointer<QCassandraRow> row(const QUuid& row_uuid);
-    QSharedPointer<QCassandraRow> row(const QByteArray& row_key);
+    QCassandraRow::pointer_t row(const char *row_name);
+    QCassandraRow::pointer_t row(const wchar_t *row_name);
+    QCassandraRow::pointer_t row(const QString& row_name);
+    QCassandraRow::pointer_t row(const QUuid& row_uuid);
+    QCassandraRow::pointer_t row(const QByteArray& row_key);
     const QCassandraRows& rows() const;
 
-    QSharedPointer<QCassandraRow> findRow(const char *row_name) const;
-    QSharedPointer<QCassandraRow> findRow(const wchar_t *row_name) const;
-    QSharedPointer<QCassandraRow> findRow(const QString& row_name) const;
-    QSharedPointer<QCassandraRow> findRow(const QUuid& row_uuid) const;
-    QSharedPointer<QCassandraRow> findRow(const QByteArray& row_key) const;
+    QCassandraRow::pointer_t findRow(const char *row_name) const;
+    QCassandraRow::pointer_t findRow(const wchar_t *row_name) const;
+    QCassandraRow::pointer_t findRow(const QString& row_name) const;
+    QCassandraRow::pointer_t findRow(const QUuid& row_uuid) const;
+    QCassandraRow::pointer_t findRow(const QByteArray& row_key) const;
     bool exists(const char *row_name) const;
     bool exists(const wchar_t *row_name) const;
     bool exists(const QString& row_name) const;
@@ -240,7 +245,7 @@ public:
     void dropRow(const QByteArray& row_key, QCassandraValue::timestamp_mode_t mode = QCassandraValue::TIMESTAMP_MODE_AUTO, int64_t timestamp = 0, consistency_level_t consistency_level = CONSISTENCY_LEVEL_ALL);
 
 private:
-    QCassandraTable(QCassandraContext *context, const QString& table_name);
+    QCassandraTable(std::shared_ptr<QCassandraContext> context, const QString& table_name);
 
     void setFromCassandra();
     void parseTableDefinition(const void *data);
@@ -264,12 +269,12 @@ private:
     // f_context is a parent that has a strong shared pointer over us so it
     // cannot disappear before we do, thus only a bare pointer is enough here
     // (there isn't a need to use a QWeakPointer or QPointer either)
-    QCassandraContext *                         f_context;
+    std::weak_ptr<QCassandraContext>            f_context;
     QCassandraColumnDefinitions                 f_column_definitions;
     QCassandraRows                              f_rows;
 };
 // list of table definitions mapped against their name (see tableName())
-typedef QMap<QString, QSharedPointer<QCassandraTable> > QCassandraTables;
+typedef QMap<QString, QCassandraTable::pointer_t > QCassandraTables;
 
 
 

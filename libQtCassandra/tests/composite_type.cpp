@@ -66,7 +66,7 @@ int main(int argc, char *argv[])
     qDebug() << "Working on Cassandra Cluster Named" << cassandra.clusterName();
     qDebug() << "Working on Cassandra Protocol Version" << cassandra.protocolVersion();
 
-    QSharedPointer<QtCassandra::QCassandraContext> context(cassandra.context("qt_cassandra_test_ct"));
+    QtCassandra::QCassandraContext::pointer_t context(cassandra.context("qt_cassandra_test_ct"));
     try {
         context->drop();
         cassandra.synchronizeSchemaVersions();
@@ -79,7 +79,7 @@ int main(int argc, char *argv[])
     //context->setDurableWrites(false); // by default this is 'true'
     context->setReplicationFactor(1); // by default this is undefined
 
-    QSharedPointer<QtCassandra::QCassandraTable> table(context->table("qt_cassandra_test_table"));
+    QtCassandra::QCassandraTable::pointer_t table(context->table("qt_cassandra_test_table"));
     //table->setComment("Our test table.");
     table->setColumnType("Standard"); // Standard or Super
     table->setKeyValidationClass("BytesType");

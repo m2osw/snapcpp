@@ -89,15 +89,5 @@ endif()
 install(
     TARGETS QtCassandra LIBRARY DESTINATION lib
 )
-install(
-    DIRECTORY ${libQtCassandra_SOURCE_DIR}/include/QtCassandra
-    DESTINATION include
-    FILES_MATCHING PATTERN *.h
-    PATTERN .svn EXCLUDE
-)
-install(
-    FILES ${libQtCassandra_BINARY_DIR}/include/QtCassandra/QCassandra.h
-    DESTINATION include/QtCassandra/
-)
 
 # vim: ts=4 sw=4 et

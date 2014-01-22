@@ -170,7 +170,7 @@ int main(int argc, char *argv[])
         qDebug() << "+ Cassandra Cluster Name is" << name;
         qDebug() << "+ Creating context with replication factor set to" << replication_factor;
 
-        QSharedPointer<QtCassandra::QCassandraContext> context(cassandra.context("qt_cassandra_test_lock"));
+        QtCassandra::QCassandraContext::pointer_t context(cassandra.context("qt_cassandra_test_lock"));
         try {
             context->drop();
             cassandra.synchronizeSchemaVersions();
@@ -182,7 +182,7 @@ int main(int argc, char *argv[])
         //context->setDurableWrites(false); // by default this is 'true'
         context->setReplicationFactor(replication_factor); // by default this is undefined
 
-        QSharedPointer<QtCassandra::QCassandraTable> table(context->table("qt_cassandra_test_table"));
+        QtCassandra::QCassandraTable::pointer_t table(context->table("qt_cassandra_test_table"));
         //table->setComment("Our test table.");
         table->setColumnType("Standard"); // Standard or Super
         table->setKeyValidationClass("BytesType");
@@ -218,13 +218,13 @@ int main(int argc, char *argv[])
             qDebug() << "+ Cassandra Cluster Name is" << name;
             qDebug() << "+ Verifying test table" << replication_factor;
 
-            QSharedPointer<QtCassandra::QCassandraContext> context(cassandra.context("qt_cassandra_test_lock"));
+            QtCassandra::QCassandraContext::pointer_t context(cassandra.context("qt_cassandra_test_lock"));
             if(!context) {
                 qDebug() << "warning: could not find the context, did you run the test yet?";
                 exit(1);
             }
-            QSharedPointer<QtCassandra::QCassandraTable> table(context->table("qt_cassandra_test_table"));
-            QSharedPointer<QtCassandra::QCassandraColumnRangePredicate> col_predicate(new QtCassandra::QCassandraColumnRangePredicate);
+            QtCassandra::QCassandraTable::pointer_t table(context->table("qt_cassandra_test_table"));
+            QtCassandra::QCassandraColumnRangePredicate::pointer_t col_predicate(new QtCassandra::QCassandraColumnRangePredicate);
             col_predicate->setStartColumnName("unique");
             col_predicate->setEndColumnName("uo");
             QtCassandra::QCassandraRowPredicate row_predicate;
@@ -273,12 +273,12 @@ int main(int argc, char *argv[])
             qDebug() << "+ Cassandra Cluster Name is" << name;
             qDebug() << "+ Truncating the test table";
 
-            QSharedPointer<QtCassandra::QCassandraContext> context(cassandra.context("qt_cassandra_test_lock"));
+            QtCassandra::QCassandraContext::pointer_t context(cassandra.context("qt_cassandra_test_lock"));
             if(!context) {
                 qDebug() << "error: could not retreive the qt_cassandra_test_lock context, did you run once with -c?";
                 exit(1);
             }
-            QSharedPointer<QtCassandra::QCassandraTable> table(context->table("qt_cassandra_test_table"));
+            QtCassandra::QCassandraTable::pointer_t table(context->table("qt_cassandra_test_table"));
             table->truncate();
         }
         exit(0);
@@ -295,7 +295,7 @@ int main(int argc, char *argv[])
         qDebug() << "+ Cassandra Cluster Name is" << name;
         qDebug() << "+" << (mode == 1 ? "Adding" : "Removing") << computer_name << "to the lock table";
 
-        QSharedPointer<QtCassandra::QCassandraContext> context(cassandra.context("qt_cassandra_test_lock"));
+        QtCassandra::QCassandraContext::pointer_t context(cassandra.context("qt_cassandra_test_lock"));
         if(!context) {
             qDebug() << "error: could not retrive the qt_cassandra_test_lock context, did you run once with -c?";
             exit(1);
@@ -338,7 +338,7 @@ int main(int argc, char *argv[])
     cassandra.connect(host);
     QString name = cassandra.clusterName();
     qDebug() << "+ Cassandra Cluster Name is" << name << "for child" << getpid();
-    QSharedPointer<QtCassandra::QCassandraContext> context(cassandra.context("qt_cassandra_test_lock"));
+    QtCassandra::QCassandraContext::pointer_t context(cassandra.context("qt_cassandra_test_lock"));
     if(!context) {
         qDebug() << "error: could not retrive the qt_cassandra_test_lock context, did you run once with -c?";
         exit(1);
@@ -347,7 +347,7 @@ int main(int argc, char *argv[])
         context->setHostName(computer_name);
     }
 
-    QSharedPointer<QtCassandra::QCassandraTable> table(context->table("qt_cassandra_test_table"));
+    QtCassandra::QCassandraTable::pointer_t table(context->table("qt_cassandra_test_table"));
     if(!table) {
         qDebug() << "error: could not retrive the qt_cassandra_test_table, did you run once with -c?";
         exit(1);
@@ -362,7 +362,7 @@ int main(int argc, char *argv[])
             QtCassandra::appendUInt64Value(key, now);
             // acquire the lock; if it fails it will throw
             QtCassandra::QCassandraLock lock(context, key, consistency_level);
-            QSharedPointer<QtCassandra::QCassandraCell> cell(table->row(key)->cell("winner"));
+            QtCassandra::QCassandraCell::pointer_t cell(table->row(key)->cell("winner"));
             cell->setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
             QtCassandra::QCassandraValue winner(cell->value());
             if(winner.nullValue()) {

@@ -78,7 +78,7 @@ int main(int argc, char *argv[])
 
     qDebug() << "+ Initialization";
     qDebug() << "++ Got an old context?";
-    QSharedPointer<QtCassandra::QCassandraContext> oldctxt(cassandra.findContext("qt_cassandra_test_large_rw"));
+    QtCassandra::QCassandraContext::pointer_t oldctxt(cassandra.findContext("qt_cassandra_test_large_rw"));
     if(oldctxt) {
         qDebug() << "++ Drop the old context";
         cassandra.dropContext("qt_cassandra_test_large_rw");
@@ -94,12 +94,12 @@ int main(int argc, char *argv[])
         exit(0);
     }
     qDebug() << "++ Setup new context...";
-    QSharedPointer<QtCassandra::QCassandraContext> context(cassandra.context("qt_cassandra_test_large_rw"));
+    QtCassandra::QCassandraContext::pointer_t context(cassandra.context("qt_cassandra_test_large_rw"));
     context->setStrategyClass("SimpleStrategy"); // default is LocalStrategy
     //context->setDurableWrites(false); // by default this is 'true'
     context->setReplicationFactor(2); // by default this is undefined
 
-    QSharedPointer<QtCassandra::QCassandraTable> table(context->table("qt_cassandra_test_table"));
+    QtCassandra::QCassandraTable::pointer_t table(context->table("qt_cassandra_test_table"));
     //table->setComment("Our test table.");
     table->setColumnType("Standard"); // Standard or Super
     table->setKeyValidationClass("BytesType");
@@ -185,7 +185,7 @@ int main(int argc, char *argv[])
     fflush(stdout);
 
     // now read the data
-    QSharedPointer<QtCassandra::QCassandraColumnNamePredicate> column_predicate(new QtCassandra::QCassandraColumnNamePredicate);
+    QtCassandra::QCassandraColumnNamePredicate::pointer_t column_predicate(new QtCassandra::QCassandraColumnNamePredicate);
     column_predicate->addColumnName("value");
     QtCassandra::QCassandraRowPredicate row_predicate;
     row_predicate.setColumnPredicate(column_predicate);

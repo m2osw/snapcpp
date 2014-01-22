@@ -78,7 +78,6 @@ include_directories(
 
 # Create a configure script
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.in ${CMAKE_CURRENT_BINARY_DIR}/config.h)
-#configure_file(${CMAKE_CURRENT_SOURCE_DIR}/include/QtCassandra/QCassandra.h.in ${CMAKE_CURRENT_BINARY_DIR}/include/QtCassandra/QCassandra.h)
 
 add_subdirectory(thrift-gencpp-cassandra)
 add_subdirectory(include)
@@ -86,32 +85,5 @@ add_subdirectory(src)
 add_subdirectory(tools)
 add_subdirectory(tests)
 add_subdirectory(doc)
-
-#install( FILES
-#        INSTALL.txt LICENSE.txt README.txt
-#        DESTINATION share/doc/libqtcassandra
-#       )
-#
-#set(CPACK_PACKAGE_NAME "libQtCassandra")
-#set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "libQtCassandra -- a Qt extension to access the Cassandra server")
-#set(CPACK_PACKAGE_VENDOR "Made to Order Software Corporation")
-#set(CPACK_PACKAGE_CONTACT "alexis@m2osw.com")
-#set(CPACK_RESOURCE_FILE_LICENSE "${libQtCassandra_SOURCE_DIR}/LICENSE.txt")
-#set(CPACK_GENERATOR "TGZ" "DEB")
-#set(CPACK_SOURCE_GENERATOR "TGZ")
-#set(CPACK_SOURCE_IGNORE_FILES "/CVS/;/work-files/;/.svn/;.swp$;.*~;cscope.*;/tmp/;BUILD;Build;build")
-#set(CPACK_PACKAGE_VERSION "${LIBQTCASSANDRA_VERSION_MAJOR}.${LIBQTCASSANDRA_VERSION_MINOR}.${LIBQTCASSANDRA_VERSION_PATCH}")
-#set(CPACK_PACKAGE_VERSION_MAJOR "${LIBQTCASSANDRA_VERSION_MAJOR}")
-#set(CPACK_PACKAGE_VERSION_MINOR "${LIBQTCASSANDRA_VERSION_MINOR}")
-#set(CPACK_PACKAGE_VERSION_PATCH "${LIBQTCASSANDRA_VERSION_PATCH}")
-#set(CPACK_SOURCE_PACKAGE_FILE_NAME "libQtCassandra-${LIBQTCASSANDRA_VERSION_MAJOR}.${LIBQTCASSANDRA_VERSION_MINOR}.${LIBQTCASSANDRA_VERSION_PATCH}")
-#set(CPACK_PACKAGE_EXECUTABLES "libQtCassandra.so")
-#set(CPACK_DEBIAN_PACKAGE_SECTION "libs")
-#set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "http://snapwebsites.org/project/libqtcassandra")
-#set(CPACK_DEBIAN_PACKAGE_ENHANCES "libqtcore4") # need to add "cassandra/thrift" once available
-## I'm not too sure how we can add this one... components?
-## See http://www.vtk.org/Wiki/CMake:Component_Install_With_CPack
-##set(CPACK_DEBIAN_PACKAGE_DEV_DEPENDENCIES "cmake libqtcore4-dev thrift-dev")
-#include(CPack)
 
 # vim: ts=4 sw=4 et

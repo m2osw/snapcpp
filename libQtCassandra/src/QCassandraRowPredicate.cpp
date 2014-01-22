@@ -498,7 +498,7 @@ void QCassandraRowPredicate::setWrap(bool val)
  *
  * \sa setColumnPredicate()
  */
-QSharedPointer<QCassandraColumnPredicate> QCassandraRowPredicate::columnPredicate() const
+QCassandraColumnPredicate::pointer_t QCassandraRowPredicate::columnPredicate() const
 {
     return f_column_predicate;
 }
@@ -519,7 +519,7 @@ QSharedPointer<QCassandraColumnPredicate> QCassandraRowPredicate::columnPredicat
  *
  * \sa columnPredicate()
  */
-void QCassandraRowPredicate::setColumnPredicate(QSharedPointer<QCassandraColumnPredicate> column_predicate)
+void QCassandraRowPredicate::setColumnPredicate(QCassandraColumnPredicate::pointer_t column_predicate)
 {
     f_column_predicate = column_predicate;
 }

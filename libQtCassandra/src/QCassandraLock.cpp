@@ -499,7 +499,7 @@ CONTROLLED_VARS_STATIC_ASSERT(sizeof(pid_t) <= sizeof(uint32_t));
  * \param[in] object_name  The name of the object to be locked as a QString.
  * \param[in] consistency_level  The level to use for the lock, defaults to QUORUM.
  */
-QCassandraLock::QCassandraLock(QSharedPointer<QCassandraContext> context, const QString& object_name, cassandra_consistency_level_t consistency_level)
+QCassandraLock::QCassandraLock(QCassandraContext::pointer_t context, const QString& object_name, cassandra_consistency_level_t consistency_level)
     : f_context(context),
       //f_table(NULL) -- auto-init
       //f_object_name() -- auto-init
@@ -508,7 +508,7 @@ QCassandraLock::QCassandraLock(QSharedPointer<QCassandraContext> context, const 
       f_consistency(consistency_level)
 {
     // make sure user gives us a context
-    if(context.isNull()) {
+    if(!context) {
         throw std::logic_error("the context pointer cannot be NULL when calling QCassandraLock constructor");
     }
 
@@ -550,7 +550,7 @@ QCassandraLock::QCassandraLock(QSharedPointer<QCassandraContext> context, const 
  * \sa lock()
  * \sa unlock()
  */
-QCassandraLock::QCassandraLock(QSharedPointer<QCassandraContext> context, const QByteArray& object_name, cassandra_consistency_level_t consistency_level)
+QCassandraLock::QCassandraLock(QCassandraContext::pointer_t context, const QByteArray& object_name, cassandra_consistency_level_t consistency_level)
     : f_context(context),
       //f_table(NULL) -- auto-init
       //f_object_name() -- auto-init
@@ -558,7 +558,7 @@ QCassandraLock::QCassandraLock(QSharedPointer<QCassandraContext> context, const 
       f_consistency(consistency_level)
 {
     // make sure user gives us a context
-    if(context.isNull()) {
+    if(!context) {
         throw std::logic_error("the context pointer cannot be NULL when calling QCassandraLock constructor");
     }
 
@@ -574,8 +574,8 @@ QCassandraLock::QCassandraLock(QSharedPointer<QCassandraContext> context, const 
 void QCassandraLock::internal_init(const QByteArray& object_name)
 {
     // get the table
-    QSharedPointer<QCassandraTable> table(f_context->lockTable());
-    if(table.isNull()) {
+    QCassandraTable::pointer_t table(f_context->lockTable());
+    if(!table) {
         // table doesn't exist yet, it cannot even remotely work
         throw std::runtime_error("the lock table doesn't exist yet; you must create a lock table and add your computer hosts to the table before you can use a lock; see QCassandraContext::addLockHost()");
     }
@@ -657,7 +657,7 @@ bool QCassandraLock::lock(const QByteArray& object_name)
     class autoDrop
     {
     public:
-        autoDrop(const QSharedPointer<QCassandraRow> row, const QByteArray& cell, const cassandra_consistency_level_t consistency_level)
+        autoDrop(const QCassandraRow::pointer_t row, const QByteArray& cell, const cassandra_consistency_level_t consistency_level)
             : f_row(row),
               f_cell(cell),
               f_consistency(consistency_level)
@@ -671,23 +671,23 @@ bool QCassandraLock::lock(const QByteArray& object_name)
 
         void cancelDrop()
         {
-            f_row.clear();
+            f_row.reset();
         }
 
         void dropNow()
         {
             if(f_row) {
-                QSharedPointer<QCassandraCell> c(f_row->cell(f_cell));
+                QCassandraCell::pointer_t c(f_row->cell(f_cell));
                 c->setConsistencyLevel(f_consistency);
                 f_row->dropCell(f_cell, QCassandraValue::TIMESTAMP_MODE_DEFINED, QCassandra::timeofday());
-                f_row.clear();
+                f_row.reset();
             }
         }
 
     private:
-        QSharedPointer<QCassandraRow>   f_row;
-        QByteArray                      f_cell;
-        consistency_level_t             f_consistency;
+        QCassandraRow::pointer_t   f_row;
+        QByteArray                 f_cell;
+        consistency_level_t        f_consistency;
     };
 
     class timeoutCheck
@@ -730,12 +730,12 @@ bool QCassandraLock::lock(const QByteArray& object_name)
     // although the row of host names should not change very often at
     // all we still have to re-read it from Cassandra each time, to
     // make 100% sure we're in order
-    QSharedPointer<QCassandraRow> hosts_row(f_table->row(hosts_key));
+    QCassandraRow::pointer_t hosts_row(f_table->row(hosts_key));
     hosts_row->clearCache();
 
     // get our identifier
     QString host_name(f_context->hostName());
-    QSharedPointer<QCassandraCell> cell_host_id(hosts_row->cell(host_name));
+    QCassandraCell::pointer_t cell_host_id(hosts_row->cell(host_name));
     cell_host_id->setConsistencyLevel(f_consistency);
     QCassandraValue my_host_id(cell_host_id->value());
     if(my_host_id.nullValue()) {
@@ -749,7 +749,7 @@ bool QCassandraLock::lock(const QByteArray& object_name)
     appendUInt32Value(my_id, pid);
 
     // mark us as entering (entering[i] = true)
-    QSharedPointer<QCassandraRow> entering_row(f_table->row("entering::" + f_object_name));
+    QCassandraRow::pointer_t entering_row(f_table->row("entering::" + f_object_name));
     entering_row->clearCache();
     autoDrop auto_drop_entering(entering_row, my_id, f_consistency);
     QCassandraValue boolean;
@@ -760,7 +760,7 @@ bool QCassandraLock::lock(const QByteArray& object_name)
     // get the row specific to that object (that way we don't have to lock
     // everyone each time we want to have a lock; although you can obtain
     // such a feat by using an object name such as "global")
-    QSharedPointer<QCassandraRow> tickets_row(f_table->row("tickets::" + f_object_name));
+    QCassandraRow::pointer_t tickets_row(f_table->row("tickets::" + f_object_name));
     tickets_row->clearCache(); // make sure we have a clean slate
 
     // for all the QCassandraRow::cellCounts() calls
@@ -860,7 +860,7 @@ bool QCassandraLock::lock(const QByteArray& object_name)
             //          however, the column names are still fully available
             entering_row->clearCache();
             // WARNING: at this point the row::exists() has a bug!
-            QSharedPointer<QCassandraCell> entering_cell(entering_row->cell(jentering_key));
+            QCassandraCell::pointer_t entering_cell(entering_row->cell(jentering_key));
             entering_cell->setConsistencyLevel(f_consistency);
             QCassandraValue e(entering_cell->value());
             if(e.nullValue()) {
@@ -923,7 +923,7 @@ bool QCassandraLock::lock(const QByteArray& object_name)
             //          however, the column names are still fully available
             tickets_row->clearCache();
             // WARNING: at this point the row::exists() has a bug!
-            QSharedPointer<QCassandraCell> ticket_cell(tickets_row->cell(jticket_key));
+            QCassandraCell::pointer_t ticket_cell(tickets_row->cell(jticket_key));
             ticket_cell->setConsistencyLevel(f_consistency);
             QCassandraValue t(ticket_cell->value());
             if(t.nullValue()) {
@@ -959,8 +959,8 @@ void QCassandraLock::unlock()
     }
 
     // delete the lock
-    QSharedPointer<QCassandraRow> r(f_table->row("tickets::" + f_object_name));
-    QSharedPointer<QCassandraCell> c(r->cell(f_ticket_id));
+    QCassandraRow::pointer_t r(f_table->row("tickets::" + f_object_name));
+    QCassandraCell::pointer_t c(r->cell(f_ticket_id));
     c->setConsistencyLevel(f_consistency);
     r->dropCell(f_ticket_id, QCassandraValue::TIMESTAMP_MODE_DEFINED, QCassandra::timeofday());
 

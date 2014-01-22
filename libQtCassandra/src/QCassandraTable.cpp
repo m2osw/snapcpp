@@ -177,7 +177,7 @@ class QCassandraTablePrivate : public org::apache::cassandra::CfDef {};
  * \param[in] context  The context where this table definition is created.
  * \param[in] table_name  The name of the table definition being created.
  */
-QCassandraTable::QCassandraTable(QCassandraContext *context, const QString& table_name)
+QCassandraTable::QCassandraTable(QCassandraContext::pointer_t context, const QString& table_name)
     : //f_from_cassandra(false) -- auto-init
       f_private(new QCassandraTablePrivate),
       f_context(context)
@@ -739,14 +739,14 @@ QString QCassandraTable::subcomparatorType() const
  * This function is used to retrieve a column definition by name.
  * If the column doesn't exist, it gets created.
  *
- * You can test whether the result is null with the isNull() function
- * of the QSharedPointer class.
+ * You can test whether the result is null with the operator bool() function
+ * of the std::shared_ptr<> class.
  *
  * \param[in] column_name  The name of the column definition to retrieve.
  *
  * \return A shared pointer to the table found or a null shared pointer.
  */
-QSharedPointer<QCassandraColumnDefinition> QCassandraTable::columnDefinition(const QString& column_name)
+QCassandraColumnDefinition::pointer_t QCassandraTable::columnDefinition(const QString& column_name)
 {
     // column already exists?
     QCassandraColumnDefinitions::iterator ci(f_column_definitions.find(column_name));
@@ -755,7 +755,7 @@ QSharedPointer<QCassandraColumnDefinition> QCassandraTable::columnDefinition(con
     }
 
     // this is a new column, allocate it
-    QSharedPointer<QCassandraColumnDefinition> c(new QCassandraColumnDefinition(this, column_name));
+    QCassandraColumnDefinition::pointer_t c(new QCassandraColumnDefinition(shared_from_this(), column_name));
     f_column_definitions.insert(column_name, c);
     return c;
 }
@@ -2239,7 +2239,7 @@ void QCassandraTable::parseTableDefinition(const void *data)
     f_column_definitions.clear();
     for(std::vector<org::apache::cassandra::ColumnDef>::const_iterator
                 col = cf->column_metadata.begin(); col != cf->column_metadata.end(); ++col) {
-        QSharedPointer<QCassandraColumnDefinition> column_definition(columnDefinition(col->name.c_str()));
+        QCassandraColumnDefinition::pointer_t column_definition(columnDefinition(col->name.c_str()));
         const org::apache::cassandra::ColumnDef& column_def(*col);
         column_definition->parseColumnDefinition(&column_def);
     }
@@ -2302,7 +2302,7 @@ void QCassandraTable::prepareTableDefinition(void *data) const
  * Creating a new QCassandraTable:
  *
  * \code
- * QSharedPointer<QtCassandra::QCassandraTable> table(context->table("qt_cassandra_test_table"));
+ * QtCassandra::QCassandraTable::pointer_t table(context->table("qt_cassandra_test_table"));
  * table->setComment("Our test table.");
  * table->setColumnType("Standard"); // Standard or Super
  * table->setKeyValidationClass("BytesType");
@@ -2336,10 +2336,10 @@ void QCassandraTable::prepareTableDefinition(void *data) const
  */
 void QCassandraTable::create()
 {
-    if(f_context == NULL) {
+    if(!f_context.lock()) {
         throw std::runtime_error("this table was dropped and is not attached to a context anymore");
     }
-    f_context->createTable(this);
+    f_context.lock()->createTable(this);
     f_from_cassandra = true;
 
     // TBD: Should we then call describe_keyspace() on our Context
@@ -2368,7 +2368,7 @@ void QCassandraTable::create()
  */
 void QCassandraTable::update()
 {
-    if(f_context == NULL) {
+    if(!f_context.lock()) {
         throw std::runtime_error("table was dropped and is not attached to a context anymore");
     }
     if(!f_from_cassandra) {
@@ -2376,7 +2376,7 @@ void QCassandraTable::update()
         throw std::runtime_error("table is not defined in Cassandra, it cannot be updated there");
     }
 
-    f_context->updateTable(this);
+    f_context.lock()->updateTable(this);
 
     // TBD: Should we then call describe_keyspace() on our Context
     //      to make sure we've got the right data (defaults) in this
@@ -2419,11 +2419,11 @@ void QCassandraTable::clearCache()
  */
 void QCassandraTable::truncate()
 {
-    if(f_context == NULL) {
+    if(!f_context.lock()) {
         throw std::runtime_error("table was dropped and is not attached to a context anymore");
     }
     if(f_from_cassandra) {
-        f_context->truncateTable(this);
+        f_context.lock()->truncateTable(this);
     }
 
     // delete the memory cache too
@@ -2471,11 +2471,11 @@ void QCassandraTable::truncate()
  */
 uint32_t QCassandraTable::readRows(QCassandraRowPredicate& row_predicate)
 {
-    if(f_context == NULL) {
+    if(!f_context.lock()) {
         throw std::runtime_error("table was dropped and is not attached to a context anymore");
     }
     if(f_from_cassandra) {
-        return f_context->getRowSlices(*this, row_predicate);
+        return f_context.lock()->getRowSlices(*this, row_predicate);
     }
     return 0;
 }
@@ -2496,7 +2496,7 @@ uint32_t QCassandraTable::readRows(QCassandraRowPredicate& row_predicate)
  *
  * \return A shared pointer to the matching row or a null pointer.
  */
-QSharedPointer<QCassandraRow> QCassandraTable::row(const char *row_name)
+QCassandraRow::pointer_t QCassandraTable::row(const char *row_name)
 {
     return row(QByteArray::fromRawData(row_name, qstrlen(row_name)));
 }
@@ -2519,7 +2519,7 @@ QSharedPointer<QCassandraRow> QCassandraTable::row(const char *row_name)
  *
  * \return A shared pointer to the matching row or a null pointer.
  */
-QSharedPointer<QCassandraRow> QCassandraTable::row(const wchar_t *row_name)
+QCassandraRow::pointer_t QCassandraTable::row(const wchar_t *row_name)
 {
     return row(QString::fromWCharArray(row_name, (row_name ? wcslen(row_name) : 0)).toUtf8());
 }
@@ -2538,7 +2538,7 @@ QSharedPointer<QCassandraRow> QCassandraTable::row(const wchar_t *row_name)
  *
  * \return A shared pointer to the matching row or a null pointer.
  */
-QSharedPointer<QCassandraRow> QCassandraTable::row(const QString& row_name)
+QCassandraRow::pointer_t QCassandraTable::row(const QString& row_name)
 {
     return row(row_name.toUtf8());
 }
@@ -2558,7 +2558,7 @@ QSharedPointer<QCassandraRow> QCassandraTable::row(const QString& row_name)
  *
  * \return A shared pointer to the matching row or a null pointer.
  */
-QSharedPointer<QCassandraRow> QCassandraTable::row(const QUuid& row_uuid)
+QCassandraRow::pointer_t QCassandraTable::row(const QUuid& row_uuid)
 {
     return row(row_uuid.toRfc4122());
 }
@@ -2577,7 +2577,7 @@ QSharedPointer<QCassandraRow> QCassandraTable::row(const QUuid& row_uuid)
  *
  * \return A shared pointer to the matching row or a null pointer.
  */
-QSharedPointer<QCassandraRow> QCassandraTable::row(const QByteArray& row_key)
+QCassandraRow::pointer_t QCassandraTable::row(const QByteArray& row_key)
 {
     // row already exists?
     QCassandraRows::iterator ri(f_rows.find(row_key));
@@ -2586,7 +2586,7 @@ QSharedPointer<QCassandraRow> QCassandraTable::row(const QByteArray& row_key)
     }
 
     // this is a new row, allocate it
-    QSharedPointer<QCassandraRow> c(new QCassandraRow(this, row_key));
+    QCassandraRow::pointer_t c(new QCassandraRow(shared_from_this(), row_key));
     f_rows.insert(row_key, c);
     return c;
 }
@@ -2609,7 +2609,7 @@ const QCassandraRows& QCassandraTable::rows() const
 /** \brief Search for a row.
  *
  * This function searches for a row. If it doesn't exist, then a NULL
- * pointer is returned (use the .isNull() function on the shared pointer.)
+ * pointer is returned (use the operator bool() function on the shared pointer.)
  *
  * The function can be used to check whether a given row was already created
  * in memory without actually creating it.
@@ -2623,12 +2623,12 @@ const QCassandraRows& QCassandraTable::rows() const
  *
  * \param[in] row_name  The name of the row to check for.
  *
- * \return A shared pointer to the row, may be NULL (isNull() returning true)
+ * \return A shared pointer to the row, may be NULL (operator bool() returning true)
  *
  * \sa exists()
  * \sa row()
  */
-QSharedPointer<QCassandraRow> QCassandraTable::findRow(const char *row_name) const
+QCassandraRow::pointer_t QCassandraTable::findRow(const char *row_name) const
 {
     return findRow(QByteArray::fromRawData(row_name, qstrlen(row_name)));
 }
@@ -2636,7 +2636,7 @@ QSharedPointer<QCassandraRow> QCassandraTable::findRow(const char *row_name) con
 /** \brief Search for a row.
  *
  * This function searches for a row. If it doesn't exist, then a NULL
- * pointer is returned (use the .isNull() function on the shared pointer.)
+ * pointer is returned (use the operator bool() function on the shared pointer.)
  *
  * The function can be used to check whether a given row was already created
  * in memory without actually creating it.
@@ -2652,12 +2652,12 @@ QSharedPointer<QCassandraRow> QCassandraTable::findRow(const char *row_name) con
  *
  * \param[in] row_name  The name of the row to check for.
  *
- * \return A shared pointer to the row, may be NULL (isNull() returning true)
+ * \return A shared pointer to the row, may be NULL (operator bool() returning true)
  *
  * \sa exists()
  * \sa row()
  */
-QSharedPointer<QCassandraRow> QCassandraTable::findRow(const wchar_t *row_name) const
+QCassandraRow::pointer_t QCassandraTable::findRow(const wchar_t *row_name) const
 {
     return findRow(QString::fromWCharArray(row_name, (row_name ? wcslen(row_name) : 0)));
 }
@@ -2665,7 +2665,7 @@ QSharedPointer<QCassandraRow> QCassandraTable::findRow(const wchar_t *row_name) 
 /** \brief Search for a row.
  *
  * This function searches for a row. If it doesn't exist, then a NULL
- * pointer is returned (use the .isNull() function on the shared pointer.)
+ * pointer is returned (use the operator bool() function on the shared pointer.)
  *
  * The function can be used to check whether a given row was already created
  * in memory without actually creating it.
@@ -2679,12 +2679,12 @@ QSharedPointer<QCassandraRow> QCassandraTable::findRow(const wchar_t *row_name) 
  *
  * \param[in] row_name  The name of the row to check for.
  *
- * \return A shared pointer to the row, may be NULL (isNull() returning true)
+ * \return A shared pointer to the row, may be NULL (operator bool() returning true)
  *
  * \sa exists()
  * \sa row()
  */
-QSharedPointer<QCassandraRow> QCassandraTable::findRow(const QString& row_name) const
+QCassandraRow::pointer_t QCassandraTable::findRow(const QString& row_name) const
 {
     return findRow(row_name.toUtf8());
 }
@@ -2692,7 +2692,7 @@ QSharedPointer<QCassandraRow> QCassandraTable::findRow(const QString& row_name) 
 /** \brief Search for a row.
  *
  * This function searches for a row. If it doesn't exist, then a NULL
- * pointer is returned (use the .isNull() function on the shared pointer.)
+ * pointer is returned (use the operator bool() function on the shared pointer.)
  *
  * The function can be used to check whether a given row was already created
  * in memory without actually creating it.
@@ -2706,12 +2706,12 @@ QSharedPointer<QCassandraRow> QCassandraTable::findRow(const QString& row_name) 
  *
  * \param[in] row_uuid  The uuid of the row to check for.
  *
- * \return A shared pointer to the row, may be NULL (isNull() returning true)
+ * \return A shared pointer to the row, may be NULL (operator bool() returning true)
  *
  * \sa exists()
  * \sa row()
  */
-QSharedPointer<QCassandraRow> QCassandraTable::findRow(const QUuid& row_uuid) const
+QCassandraRow::pointer_t QCassandraTable::findRow(const QUuid& row_uuid) const
 {
     return findRow(row_uuid.toRfc4122());
 }
@@ -2719,7 +2719,7 @@ QSharedPointer<QCassandraRow> QCassandraTable::findRow(const QUuid& row_uuid) co
 /** \brief Search for a row.
  *
  * This function searches for a row. If it doesn't exist, then a NULL
- * pointer is returned (use the .isNull() function on the shared pointer.)
+ * pointer is returned (use the operator bool() function on the shared pointer.)
  *
  * The function can be used to check whether a given row was already created
  * in memory without actually creating it.
@@ -2733,16 +2733,16 @@ QSharedPointer<QCassandraRow> QCassandraTable::findRow(const QUuid& row_uuid) co
  *
  * \param[in] row_key  The binary key of the row to search for.
  *
- * \return A shared pointer to the row, may be NULL (isNull() returning true)
+ * \return A shared pointer to the row, may be NULL (operator bool() returning true)
  *
  * \sa exists()
  * \sa row()
  */
-QSharedPointer<QCassandraRow> QCassandraTable::findRow(const QByteArray& row_key) const
+QCassandraRow::pointer_t QCassandraTable::findRow(const QByteArray& row_key) const
 {
     QCassandraRows::iterator ri(f_rows.find(row_key));
     if(ri == f_rows.end()) {
-        QSharedPointer<QCassandraRow> null;
+        QCassandraRow::pointer_t null;
         return null;
     }
     return *ri;
@@ -2849,7 +2849,7 @@ bool QCassandraTable::exists(const QByteArray& row_key) const
     row_predicate.setEndRowKey(row_key);
 
     // define a key range that is quite unlikely to match any column
-    QSharedPointer<QCassandraColumnRangePredicate> column_predicate(new QCassandraColumnRangePredicate);
+    QCassandraColumnRangePredicate::pointer_t column_predicate(new QCassandraColumnRangePredicate);
     QByteArray key;
     setInt32Value(key, 0x00000000);
     column_predicate->setStartColumnKey(key);
@@ -2877,7 +2877,7 @@ bool QCassandraTable::exists(const QByteArray& row_key) const
 QCassandraRow& QCassandraTable::operator [] (const char *row_name)
 {
     // in this case we may create the row and that's fine!
-    return *row(row_name).data();
+    return *row(row_name);
 }
 
 /** \brief Retrieve a table row.
@@ -2897,7 +2897,7 @@ QCassandraRow& QCassandraTable::operator [] (const char *row_name)
 QCassandraRow& QCassandraTable::operator [] (const wchar_t *row_name)
 {
     // in this case we may create the row and that's fine!
-    return *row(row_name).data();
+    return *row(row_name);
 }
 
 /** \brief Retrieve a table row.
@@ -2916,7 +2916,7 @@ QCassandraRow& QCassandraTable::operator [] (const wchar_t *row_name)
 QCassandraRow& QCassandraTable::operator [] (const QString& row_name)
 {
     // in this case we may create the row and that's fine!
-    return *row(row_name).data();
+    return *row(row_name);
 }
 
 /** \brief Retrieve a table row.
@@ -2935,7 +2935,7 @@ QCassandraRow& QCassandraTable::operator [] (const QString& row_name)
 QCassandraRow& QCassandraTable::operator [] (const QUuid& row_uuid)
 {
     // in this case we may create the row and that's fine!
-    return *row(row_uuid).data();
+    return *row(row_uuid);
 }
 
 /** \brief Retrieve a table row.
@@ -2954,7 +2954,7 @@ QCassandraRow& QCassandraTable::operator [] (const QUuid& row_uuid)
 QCassandraRow& QCassandraTable::operator[] (const QByteArray& row_key)
 {
     // in this case we may create the row and that's fine!
-    return *row(row_key).data();
+    return *row(row_key);
 }
 
 /** \brief Retrieve a table row.
@@ -2978,8 +2978,8 @@ QCassandraRow& QCassandraTable::operator[] (const QByteArray& row_key)
  */
 const QCassandraRow& QCassandraTable::operator[] (const char *row_name) const
 {
-    const QCassandraRow *p_row(findRow(row_name).data());
-    if(p_row == NULL) {
+    const QCassandraRow::pointer_t p_row(findRow(row_name));
+    if(!p_row) {
         throw std::runtime_error("row does not exist so it cannot be read from");
     }
     return *p_row;
@@ -3006,8 +3006,8 @@ const QCassandraRow& QCassandraTable::operator[] (const char *row_name) const
  */
 const QCassandraRow& QCassandraTable::operator[] (const wchar_t *row_name) const
 {
-    const QCassandraRow *p_row(findRow(row_name).data());
-    if(p_row == NULL) {
+    const QCassandraRow::pointer_t p_row(findRow(row_name));
+    if( !p_row ) {
         throw std::runtime_error("row does not exist so it cannot be read from");
     }
     return *p_row;
@@ -3033,8 +3033,8 @@ const QCassandraRow& QCassandraTable::operator[] (const wchar_t *row_name) const
  */
 const QCassandraRow& QCassandraTable::operator[] (const QString& row_name) const
 {
-    const QCassandraRow *p_row(findRow(row_name).data());
-    if(p_row == NULL) {
+    const QCassandraRow::pointer_t p_row(findRow(row_name));
+    if( !p_row ) {
         throw std::runtime_error("row does not exist so it cannot be read from");
     }
     return *p_row;
@@ -3060,8 +3060,8 @@ const QCassandraRow& QCassandraTable::operator[] (const QString& row_name) const
  */
 const QCassandraRow& QCassandraTable::operator[] (const QUuid& row_uuid) const
 {
-    const QCassandraRow *p_row(findRow(row_uuid).data());
-    if(p_row == NULL) {
+    const QCassandraRow::pointer_t p_row(findRow(row_uuid));
+    if(!p_row) {
         throw std::runtime_error("row does not exist so it cannot be read from");
     }
     return *p_row;
@@ -3087,8 +3087,8 @@ const QCassandraRow& QCassandraTable::operator[] (const QUuid& row_uuid) const
  */
 const QCassandraRow& QCassandraTable::operator[] (const QByteArray& row_key) const
 {
-    const QCassandraRow *p_row(findRow(row_key).data());
-    if(p_row == NULL) {
+    const QCassandraRow::pointer_t p_row(findRow(row_key));
+    if(!p_row) {
         throw std::runtime_error("row does not exist so it cannot be read from");
     }
     return *p_row;
@@ -3232,7 +3232,7 @@ void QCassandraTable::dropRow(const QByteArray& row_key, QCassandraValue::timest
     QByteArray empty_key;
     remove(row_key, empty_key, timestamp, consistency_level);
 
-    QSharedPointer<QCassandraRow> r(row(row_key));
+    QCassandraRow::pointer_t r(row(row_key));
     r->unparent();
 
     f_rows.remove(row_key);
@@ -3249,14 +3249,14 @@ void QCassandraTable::dropRow(const QByteArray& row_key, QCassandraValue::timest
  */
 void QCassandraTable::insertValue(const QByteArray& row_key, const QByteArray& column_key, const QCassandraValue& value)
 {
-    if(f_context == NULL) {
+    if(!f_context.lock()) {
         throw std::runtime_error("table was dropped and is not attached to a context anymore");
     }
     if(f_from_cassandra) {
         if(f_private->default_validation_class == "CounterColumnType") {
             // we cannot "set" a counter, but we can simulate that function
             QCassandraValue v;
-            f_context->getCounter(tableName(), row_key, column_key, v);
+            f_context.lock()->getCounter(tableName(), row_key, column_key, v);
             // new value = user value - current value
             int64_t add(-v.int64Value());
             switch(value.size()) {
@@ -3284,10 +3284,10 @@ void QCassandraTable::insertValue(const QByteArray& row_key, const QByteArray& c
                 throw std::runtime_error("value has an invalid size for a counter value");
 
             }
-            f_context->addValue(tableName(), row_key, column_key, add);
+            f_context.lock()->addValue(tableName(), row_key, column_key, add);
         }
         else {
-            f_context->insertValue(tableName(), row_key, column_key, value);
+            f_context.lock()->insertValue(tableName(), row_key, column_key, value);
         }
     }
 }
@@ -3308,15 +3308,15 @@ void QCassandraTable::insertValue(const QByteArray& row_key, const QByteArray& c
  */
 bool QCassandraTable::getValue(const QByteArray& row_key, const QByteArray& column_key, QCassandraValue& value)
 {
-    if(f_context == NULL) {
+    if(!f_context.lock()) {
         throw std::runtime_error("table was dropped and is not attached to a context anymore");
     }
     if(f_from_cassandra) {
         if(f_private->default_validation_class == "CounterColumnType") {
-            return f_context->getCounter(tableName(), row_key, column_key, value);
+            return f_context.lock()->getCounter(tableName(), row_key, column_key, value);
         }
         else {
-            return f_context->getValue(tableName(), row_key, column_key, value);
+            return f_context.lock()->getValue(tableName(), row_key, column_key, value);
         }
     }
     return false;
@@ -3338,11 +3338,11 @@ void QCassandraTable::addValue(const QByteArray& row_key, const QByteArray& colu
     if(f_private->default_validation_class != "CounterColumnType") {
         throw std::runtime_error("the add() function and operators cannot be used on a standard table, only on tables defined as counters");
     }
-    if(f_context == NULL) {
+    if(!f_context.lock()) {
         throw std::runtime_error("table was dropped and is not attached to a context anymore");
     }
     if(f_from_cassandra) {
-        f_context->addValue(tableName(), row_key, column_key, value);
+        f_context.lock()->addValue(tableName(), row_key, column_key, value);
     }
     // else -- we don't currently handle in memory counters!?
 }
@@ -3362,8 +3362,8 @@ void QCassandraTable::addValue(const QByteArray& row_key, const QByteArray& colu
  */
 void QCassandraTable::assignRow(const QByteArray& row_key, const QByteArray& column_key, const QCassandraValue& value)
 {
-    QSharedPointer<QCassandraRow> r(row(row_key));
-    QSharedPointer<QCassandraCell> c(r->cell(column_key));
+    QCassandraRow::pointer_t r(row(row_key));
+    QCassandraCell::pointer_t c(r->cell(column_key));
     c->assignValue(value); // assign the value to the cell so we avoid re-reading it
 }
 
@@ -3379,11 +3379,11 @@ void QCassandraTable::assignRow(const QByteArray& row_key, const QByteArray& col
  */
 int32_t QCassandraTable::getCellCount(const QByteArray& row_key, const QCassandraColumnPredicate& column_predicate)
 {
-    if(f_context == NULL) {
+    if(!f_context.lock()) {
         throw std::runtime_error("table was dropped and is not attached to a context anymore");
     }
     if(f_from_cassandra) {
-        return f_context->getCellCount(tableName(), row_key, column_predicate);
+        return f_context.lock()->getCellCount(tableName(), row_key, column_predicate);
     }
 
     // return the count from the memory cache
@@ -3407,11 +3407,11 @@ int32_t QCassandraTable::getCellCount(const QByteArray& row_key, const QCassandr
  */
 uint32_t QCassandraTable::getColumnSlice(const QByteArray& row_key, QCassandraColumnPredicate& column_predicate)
 {
-    if(f_context == NULL) {
+    if(!f_context.lock()) {
         throw std::runtime_error("table was dropped and is not attached to a context anymore");
     }
     if(f_from_cassandra) {
-        return f_context->getColumnSlice(*this, row_key, column_predicate);
+        return f_context.lock()->getColumnSlice(*this, row_key, column_predicate);
     }
     return 0;
 }
@@ -3428,11 +3428,11 @@ uint32_t QCassandraTable::getColumnSlice(const QByteArray& row_key, QCassandraCo
  */
 void QCassandraTable::remove(const QByteArray& row_key, const QByteArray& column_key, int64_t timestamp, consistency_level_t consistency_level)
 {
-    if(f_context == NULL) {
+    if(!f_context.lock()) {
         throw std::runtime_error("table was dropped and is not attached to a context anymore");
     }
     if(f_from_cassandra) {
-        f_context->remove(tableName(), row_key, column_key, timestamp, consistency_level);
+        f_context.lock()->remove(tableName(), row_key, column_key, timestamp, consistency_level);
     }
 }
 
@@ -3449,7 +3449,7 @@ void QCassandraTable::remove(const QByteArray& row_key, const QByteArray& column
  */
 void QCassandraTable::unparent()
 {
-    f_context = NULL;
+    f_context.reset();
     clearCache();
 }
 
