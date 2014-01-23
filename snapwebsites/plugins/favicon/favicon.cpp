@@ -18,8 +18,11 @@
 #include "favicon.h"
 #include "../messages/messages.h"
 #include "../permissions/permissions.h"
+#include "../output/output.h"
 #include "not_reached.h"
+
 #include <QFile>
+
 #include "poison.h"
 
 
@@ -231,19 +234,19 @@ void favicon::content_update(int64_t variables_timestamp)
  * Note that the path was canonicalized by the path plugin and thus it does
  * not require any further corrections.
  *
- * \param[in] cpath  The canonicalized path being managed.
+ * \param[in,out] ipath  The canonicalized path being managed.
  *
  * \return true if the content is properly generated, false otherwise.
  */
-bool favicon::on_path_execute(QString const& cpath)
+bool favicon::on_path_execute(content::path_info_t& ipath)
 {
     // favicon.ico happens all the time so it is much faster to test here
     // like this...
-    if(cpath == "favicon.ico" || cpath == "default-favicon.ico" || cpath.endsWith("/favicon.ico"))
+    if(ipath.get_cpath() == "favicon.ico" || ipath.get_cpath() == "default-favicon.ico" || ipath.get_cpath().endsWith("/favicon.ico"))
     {
         // got to use the master favorite icon or a page specific icon
         // either way we search using the get_icon() function
-        output(cpath);
+        output(ipath);
         return true;
     }
 
@@ -253,7 +256,7 @@ bool favicon::on_path_execute(QString const& cpath)
     content::field_search::search_result_t result;
     FIELD_SEARCH
         (content::field_search::COMMAND_MODE, content::field_search::SEARCH_MODE_EACH)
-        (content::field_search::COMMAND_PATH, cpath)
+        (content::field_search::COMMAND_PATH, ipath.get_cpath())
 
         // attachments have an indirection (revision control)
         // TBD at this point I do not think we ever would want the current
@@ -272,7 +275,7 @@ bool favicon::on_path_execute(QString const& cpath)
 
     if(!result.isEmpty())
     {
-        output(cpath);
+        output(ipath);
         return true;
     }
 
@@ -283,34 +286,33 @@ bool favicon::on_path_execute(QString const& cpath)
     //{
     //    if(content_table->row(key)->exists(content::get_name(content::SNAP_NAME_CONTENT_ATTACHMENT_FILENAME)))
     //    {
-    //        output(cpath);
+    //        output(ipath);
     //        return true;
     //    }
     //}
 
     // not too sure right now whether we'd have a true here (most
     // certainly though)
-    f_snap->output(layout::layout::instance()->apply_layout(cpath, this));
+    f_snap->output(layout::layout::instance()->apply_layout(ipath, this));
 
     return true;
 }
 
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
 void favicon::on_process_post(QString const& cpath, sessions::sessions::session_info const& info)
 {
+    (void) info;
     if(cpath == "admin/settings/favicon"
     && f_snap->postfile_exists("icon"))
     {
         snap_child::post_file_t const& file(f_snap->postfile("icon"));
-        QString const site_key(f_snap->get_site_key_with_slash());
         QString filename(file.get_filename());
         int last_slash(filename.lastIndexOf('/'));
         if(last_slash != -1)
         {
             filename = filename.mid(last_slash + 1);
         }
+        QString const site_key(f_snap->get_site_key_with_slash());
         QString const key(site_key + cpath + "/" + filename);
         QString const destination_key(site_key + "types/permissions/rights/administer/website/info");
         QString const link_name(permissions::get_name(permissions::SNAP_NAME_PERMISSIONS_ADMINISTER));
@@ -321,24 +323,23 @@ void favicon::on_process_post(QString const& cpath, sessions::sessions::session_
         links::links::instance()->create_link(source, destination);
     }
 }
-#pragma GCC diagnostic pop
 
 
-void favicon::output(QString const& cpath)
+void favicon::output(content::path_info_t& ipath)
 {
     QByteArray image;
     content::field_search::search_result_t result;
 
     // check for a favicon.ico on this very page and then its type tree
-    bool const default_icon(cpath == "default-favicon.ico");
+    bool const default_icon(ipath.get_cpath() == "default-favicon.ico");
     if(!default_icon)
     {
         // if the user tried with the default "favicon.ico" then it cannot
         // be an attachment at the top so
-        int const pos(cpath.indexOf('/'));
+        int const pos(ipath.get_cpath().indexOf('/'));
         if(pos > 0)
         {
-            QString sub_path(cpath.left(pos));
+            QString sub_path(ipath.get_cpath().left(pos));
             f_snap->canonicalize_path(sub_path);
             get_icon(sub_path, result, true);
         }
@@ -424,15 +425,15 @@ void favicon::output(QString const& cpath)
  * to generate the final output.
  *
  * \param[in] l  The layout pointer.
- * \param[in] path  The path being managed.
+ * \param[in,out] ipath  The path being managed.
  * \param[in,out] page  The page being generated.
  * \param[in,out] body  The body being generated.
  * \param[in] ctemplate  The path to a template page in case cpath is not defined.
  */
-void favicon::on_generate_main_content(layout::layout *l, const QString& cpath, QDomElement& page, QDomElement& body, const QString& ctemplate)
+void favicon::on_generate_main_content(layout::layout *l, content::path_info_t& ipath, QDomElement& page, QDomElement& body, const QString& ctemplate)
 {
     // our settings pages are like any standard pages
-    content::content::instance()->on_generate_main_content(l, cpath, page, body, ctemplate);
+    output::output::instance()->on_generate_main_content(l, ipath, page, body, ctemplate);
 }
 
 
@@ -442,18 +443,18 @@ void favicon::on_generate_main_content(layout::layout *l, const QString& cpath, 
  * by default.
  *
  * \param[in] l  The layout pointer.
- * \param[in] cpath  The path being managed.
+ * \param[in,out] ipath  The path being managed.
  * \param[in,out] page  The page being generated.
  * \param[in,out] body  The body being generated.
  * \param[in] ctemplate  The path to a template if cpath does not exist.
  */
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
-void favicon::on_generate_page_content(layout::layout *l, QString const& cpath, QDomElement& page, QDomElement& body, QString const& ctemplate)
+void favicon::on_generate_page_content(layout::layout *l, content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate)
 {
     content::field_search::search_result_t result;
 
-    get_icon(cpath, result, false);
+    get_icon(ipath.get_cpath(), result, false);
 
     // add the favicon.ico name at the end of the path we've found
     QString icon_path;
@@ -529,16 +530,18 @@ void favicon::get_icon(QString const& cpath, content::field_search::search_resul
  * This function checks that cpath matches the favicon introducer which
  * is "/s/" by default.
  *
- * \param[in] path_plugin  A pointer to the path plugin.
- * \param[in] cpath  The path being handled dynamically.
+ * \param[in,out] ipath  The path being handled dynamically.
+ * \param[in,out] plugin_info  If you understand that cpath, set yourself here.
  */
-void favicon::on_can_handle_dynamic_path(path::path *path_plugin, const QString& cpath)
+void favicon::on_can_handle_dynamic_path(content::path_info_t& ipath, path::dynamic_plugin_t& plugin_info)
 {
     // for favicon.ico we already know since it is defined in the content.xml
-    if(cpath.endsWith("/favicon.ico") || cpath == "favicon.ico" || cpath == "default-favicon.ico")
+    if(ipath.get_cpath().endsWith("/favicon.ico")
+    || ipath.get_cpath() == "favicon.ico"
+    || ipath.get_cpath() == "default-favicon.ico")
     {
         // tell the path plugin that this is ours
-        path_plugin->handle_dynamic_path(this);
+        plugin_info.set_plugin(this);
     }
 }
 

@@ -269,6 +269,7 @@ void snapdb::drop_tables(bool all)
     // we access a page; obviously this is VERY dangerous on
     // a live system!
     context->dropTable("content");
+    context->dropTable("data");
     context->dropTable("emails");
     context->dropTable("files");
     context->dropTable("layout");
@@ -580,6 +581,14 @@ void snapdb::display()
                      || n == "content::files::image_width"
                      || n == "content::files::size"
                      || n == "content::files::size::compressed"
+                     || n == "content::revision_control::current_branch"
+                     || n == "content::revision_control::current_working_branch"
+                     || n == "content::revision_control::last_branch"
+                     || n == "content::revision_control::attachment::last_branch"
+                     || n.startsWith("content::revision_control::current_revision::")
+                     || n.startsWith("content::revision_control::current_working_revision::")
+                     || n.startsWith("content::revision_control::last_revision::")
+                     || n.startsWith("content::revision_control::attachment::last_revision::")
                      || n == "sitemapxml::count"
                      || n == "sessions::id"
                      || n == "sessions::time_to_live"

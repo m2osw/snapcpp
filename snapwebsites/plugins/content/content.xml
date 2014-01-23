@@ -20,9 +20,13 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 <snap-tree>
   <!-- the content grows as things are added to the site, at first it handles the root though -->
   <content path="/">
-    <param name="content::title">Home Page</param>
-    <param name="content::body" overwrite="yes">
+    <param name="content::title" revision="revision">Home Page</param>
+    <param name="content::title" revision="revision" lang="fr">Page d'acceuil</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>Welcome to your new Snap! C++ website.</p><p><a href="/login">Log In Now!</a></p>]]>
+    </param>
+    <param name="content::body" revision="revision" lang="fr">
+      <![CDATA[<p>Bienvenue sur le nouveau site web Snap! C++.</p><p><a href="/login">Connectez-vous!</a></p>]]>
     </param>
     <param name="sitemapxml::frequency">always</param>
     <!--param name="layout::theme" force-namespace="no">plugins.content.modified&gt;10?"large_theme":"small_theme";</param-->
@@ -31,8 +35,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <link name="sitemapxml::include" to="sitemapxml::include" mode="1:*">/types/taxonomy/system/sitemapxml/include</link>
   </content>
   <content path="/privacy-policy">
-    <param name="content::title">Privacy Policy</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">Privacy Policy</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>Snap! Websites save your IP address and make use of a cookie to track all your movement all the time.</p><p>Also we do not generally use that information, it is checked by our robots to see whether you are spamming or hacking our systems.</p>]]>
     </param>
     <param name="sitemapxml::priority" type="float">0.2</param>
@@ -42,8 +46,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <link name="sitemapxml::include" to="sitemapxml::include" mode="1:*">/types/taxonomy/system/sitemapxml/include</link>
   </content>
   <content path="/terms-and-conditions">
-    <param name="content::title">Terms and Conditions</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">Terms and Conditions</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>Our terms: do not spam or attempt to hack us. Otherwise, feel right at home and enjoy our Snap! Websites.</p>]]>
     </param>
     <param name="sitemapxml::priority" type="float">0.15</param>
@@ -53,37 +57,37 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <link name="sitemapxml::include" to="sitemapxml::include" mode="1:*">/types/taxonomy/system/sitemapxml/include</link>
   </content>
   <content path="/admin">
-    <param name="content::title">Admin</param>
-    <param name="content::body" overwrite="yes">
+    <param name="content::title" revision="revision">Admin</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>Administration pages are all listed here.</p>]]>
     </param>
     <link name="content::page_type" to="content::page_type" mode="1:*">/types/taxonomy/system/content-types/administration-page</link>
 	<link name="permissions::administer" to="permissions::administer" mode="*:*">/types/permissions/rights/administer/website</link>
   </content>
   <content path="/admin/settings">
-    <param name="content::title">Settings</param>
-    <param name="content::body" overwrite="yes">
+    <param name="content::title" revision="revision">Settings</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>Settings of all the currently installed plugins.</p>]]>
     </param>
 	<link name="permissions::administer" to="permissions::administer" mode="*:*">/types/permissions/rights/administer/website</link>
   </content>
   <content path="/admin/layouts">
-    <param name="content::title">List of Installed Layouts</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">List of Installed Layouts</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>This page lists all the installed layouts. Other layouts can be added using ... TBD</p>]]>
     </param>
     <param name="layout::boxes">left</param>
   </content>
   <content path="/admin/page">
-    <param name="content::title">Page Settings</param>
-    <param name="content::body" overwrite="yes">
+    <param name="content::title" revision="revision">Page Settings</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>Some plugins offer templates that can be used to create pages quickly. These are found here.</p>]]>
     </param>
   </content>
   <content path="/types/taxonomy/system/content-types">
     <param name="taxonomy::name">content_types</param>
-    <param name="content::title">Content Types</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">Content Types</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>All your pages of content are linked against a type defined within the content-types. This represents the type of page that page is. The system defines Page and Administration Page as internal types.</p>]]>
     </param>
     <param name="layout::theme">"type_theme";</param>
@@ -96,37 +100,37 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   </content>
   <content path="/types/taxonomy/system/content-types/administration-page">
     <param name="taxonomy::name">content::administration_page</param>
-    <param name="content::title">Administration Page</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">Administration Page</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>Internal pages created by plugins to manage your website are considered administration pages.</p>]]>
     </param>
   </content>
   <content path="/types/taxonomy/system/content-types/page">
-    <param name="content::title">Page Content Type</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">Page Content Type</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>By default pages you create are of this type. You can change the type of your pages in order to group them differently, give them a different look or environment, etc.</p>]]>
     </param>
     <link name="permissions::view" to="permissions::view" mode="*:*">/types/permissions/rights/view</link>
   </content>
   <content path="/types/taxonomy/system/content-types/page/public">
-    <param name="content::title">Public Page Content Type</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">Public Page Content Type</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>Public pages can be viewed by anyone including anonymous users.</p>]]>
     </param>
     <link name="permissions::view" to="permissions::view" mode="*:*">/types/permissions/rights/view/page/public</link>
     <link name="permissions::administer" to="permissions::administer" mode="*:*">/types/permissions/rights/administer</link>
   </content>
   <content path="/types/taxonomy/system/content-types/page/private">
-    <param name="content::title">Private Page Content Type</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">Private Page Content Type</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>Private pages can be viewed by users who registered an account and are logged in, recently or not.</p>]]>
     </param>
     <link name="permissions::view" to="permissions::view" mode="*:*">/types/permissions/rights/view/page/private</link>
     <link name="permissions::administer" to="permissions::administer" mode="*:*">/types/permissions/rights/administer</link>
   </content>
   <content path="/types/taxonomy/system/content-types/page/secure">
-    <param name="content::title">Secure Page Content Type</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">Secure Page Content Type</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>Secure pages can be viewed by users who registered an account and recently logged in.</p>]]>
     </param>
     <link name="permissions::view" to="permissions::view" mode="*:*">/types/permissions/rights/view/page/private</link>
@@ -134,92 +138,92 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   </content>
   <content path="/types/taxonomy/system/content-types/system-page">
     <param name="taxonomy::name">content::system_page</param>
-    <param name="content::title">System Page</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">System Page</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>These pages are created by the system on startup. This is the default type of all the pages of content generated from content.xml files when they do not otherwise specify a page type.</p>]]>
     </param>
   </content>
   <content path="/types/taxonomy/system/content-types/attachment">
-    <param name="content::title">Attachment Type</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">Attachment Type</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>This type represents an attachment. You may have public or private attachments.</p>]]>
     </param>
     <link name="permissions::view" to="permissions::view" mode="*:*">/types/permissions/rights/view</link>
   </content>
   <content path="/types/taxonomy/system/content-types/attachment/public">
-    <param name="content::title">Public Attachment Type</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">Public Attachment Type</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>Public attachment can be downloaded by your users.</p>]]>
     </param>
     <link name="permissions::view" to="permissions::view" mode="*:*">/types/permissions/rights/view/attachment/public</link>
     <link name="permissions::administer" to="permissions::administer" mode="*:*">/types/permissions/rights/administer</link>
   </content>
   <content path="/types/taxonomy/system/content-types/attachment/private">
-    <param name="content::title">Private Attachment Type</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">Private Attachment Type</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>Private attachment can be downloaded by logged in users.</p>]]>
     </param>
     <link name="permissions::view" to="permissions::view" mode="*:*">/types/permissions/rights/view/attachment/private</link>
     <link name="permissions::administer" to="permissions::administer" mode="*:*">/types/permissions/rights/administer</link>
   </content>
   <content path="/types/permissions/rights/view/page">
-    <param name="content::title">View Page Right</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">View Page Right</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>View a page of content.</p><p>This right is used to mark editable pages (i.e. HTML body).</p>]]>
     </param>
   </content>
   <content path="/types/permissions/rights/view/page/private">
-    <param name="content::title">Private Page Right</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">Private Page Right</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>Right given to private pages so registered users can see them.</p>]]>
     </param>
   </content>
   <content path="/types/permissions/rights/view/page/public">
-    <param name="content::title">Public Page Right</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">Public Page Right</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>Right given to public pages so anonymous visitors can see them.</p>]]>
     </param>
   </content>
   <content path="/types/permissions/rights/view/page/for-spammers">
-    <param name="content::title">Restricted View Page Right (For Spammers)</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">Restricted View Page Right (For Spammers)</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>View one of the few pages that a spammer can view.</p><p>We offer the spammers to see our home page, our privacy policy, and our terms and conditions. This right is for those few pages.</p>]]>
     </param>
   </content>
   <content path="/types/permissions/rights/view/system-page">
-    <param name="content::title">View System Page Right</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">View System Page Right</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>View system pages.</p><p>This right is used to mark public pages that are managed by the system.</p>]]>
     </param>
   </content>
   <content path="/types/permissions/rights/view/attachment">
-    <param name="content::title">View Page Right</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">View Page Right</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>View an attachment.</p><p>This right is used to mark attachments.</p>]]>
     </param>
   </content>
   <content path="/types/permissions/rights/view/attachment/public">
-    <param name="content::title">Public Attachment Right</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">Public Attachment Right</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>Right given to public attachments so visitors can see them.</p>]]>
     </param>
   </content>
   <content path="/types/permissions/rights/view/attachment/private">
-    <param name="content::title">Private Attachment Right</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">Private Attachment Right</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>Right given to private attachments so registered users can see them.</p>]]>
     </param>
   </content>
   <content path="/types/permissions/rights/view/page/public">
-    <param name="content::title">Public Page Right</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">Public Page Right</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>Right given to public attachments so anonymous visitors can see them.</p>]]>
     </param>
   </content>
   <!-- system defined images; user's images will generally appear as attachment of the page where they are added -->
   <content path="/images">
-    <param name="content::title">Images</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">Images</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>Different images offered with Snap! Mostly used to make the system function as expected.</p>]]>
     </param>
     <link name="permissions::view" to="permissions::view" mode="*:*">/types/permissions/rights/view/attachment/public</link>
@@ -227,16 +231,16 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   </content>
   <!-- the content plugin depends on the JavaScript plugin so it cannot define a content.xml file -->
   <content path="/js">
-    <param name="content::title">JavaScripts</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">JavaScripts</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>All our JavaScripts are installed under /js.</p>]]>
     </param>
     <link name="permissions::administer" to="permissions::administer" mode="*:*">/types/permissions/rights/administer/info</link>
   </content>
   <content path="/js/snap">
     <!-- System JavaScript are the global scripts that are not really specific to one plugin -->
-    <param name="content::title">System JavaScripts</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">System JavaScripts</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>System or Global JavaScripts such as the jQuery library.</p>]]>
     </param>
     <link name="permissions::administer" to="permissions::administer" mode="*:*">/types/permissions/rights/administer/info</link>
@@ -253,8 +257,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   </content>
   <!-- the content plugin depends on the path plugin so it cannot defined a content.xml file -->
   <content path="/admin/settings/path">
-    <param name="content::title">Path Settings</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">Path Settings</param>
+    <param name="content::body" revision="revision">
       <!-- we want to support stuff like pathauto, remap, redirect, etc. -->
       <![CDATA[<p>Administer your path environment.</p>]]>
     </param>

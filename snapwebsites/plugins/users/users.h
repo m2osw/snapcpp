@@ -14,8 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-#ifndef SNAP_USERS_H
-#define SNAP_USERS_H
+#pragma once
 
 #include "../form/form.h"
 #include "../sitemapxml/sitemapxml.h"
@@ -41,6 +40,7 @@ enum name_t
     SNAP_NAME_USERS_IDENTIFIER,
     SNAP_NAME_USERS_ID_ROW,
     SNAP_NAME_USERS_INDEX_ROW,
+    SNAP_NAME_USERS_LOCALES,
     SNAP_NAME_USERS_LOGIN_IP,
     SNAP_NAME_USERS_LOGIN_ON,
     SNAP_NAME_USERS_LOGIN_REFERRER,
@@ -138,16 +138,17 @@ public:
 
     void                    on_bootstrap(::snap::snap_child *snap);
     void                    on_init();
-    void                    on_can_handle_dynamic_path(path::path *path_plugin, QString const& cpath);
-    void                    on_generate_header_content(layout::layout *l, QString const& path, QDomElement& hader, QDomElement& metadata, QString const& ctemplate);
-    virtual void            on_generate_main_content(layout::layout *l, QString const& path, QDomElement& page, QDomElement& body, QString const& ctemplate);
-    virtual void            on_generate_boxes_content(layout::layout *l, QString const& page_path, QString const& path, QDomElement& page, QDomElement& boxes, QString const& ctemplate);
-    void                    on_generate_page_content(layout::layout *l, QString const& path, QDomElement& page, QDomElement& body, QString const& ctemplate);
-    bool                    on_path_execute(QString const& cpath);
+    void                    on_can_handle_dynamic_path(content::path_info_t& ipath, path::dynamic_plugin_t& plugin_info);
+    void                    on_generate_header_content(layout::layout *l, content::path_info_t& path, QDomElement& hader, QDomElement& metadata, QString const& ctemplate);
+    virtual void            on_generate_main_content(layout::layout *l, content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate);
+    virtual void            on_generate_boxes_content(layout::layout *l, content::path_info_t& page_ipath, content::path_info_t& ipath, QDomElement& page, QDomElement& boxes, QString const& ctemplate);
+    void                    on_generate_page_content(layout::layout *l, content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate);
+    bool                    on_path_execute(content::path_info_t& ipath);
     void                    on_process_cookies();
     void                    on_attach_to_session();
     void                    on_detach_from_session();
-    void                    on_create_content(QString const& path, QString const& owner, QString const& type);
+    void                    on_define_locales(QString& locales);
+    void                    on_create_content(content::path_info_t& path, QString const& owner, QString const& type, snap_version::version_number_t branch_number);
     void                    on_improve_signature(QString const& path, QString& signature);
 
     virtual void            on_process_post(QString const& cpath, sessions::sessions::session_info const& info);
@@ -169,9 +170,9 @@ private:
     };
     void                    initial_update(int64_t variables_timestamp);
     void                    content_update(int64_t variables_timestamp);
-    void                    show_user(layout::layout *l, QString const& cpath, QDomElement& page, QDomElement& body);
+    void                    show_user(layout::layout *l, content::path_info_t& cpath, QDomElement& page, QDomElement& body);
     void                    prepare_login_form();
-    void                    logout_user(layout::layout *l, QString cpath, QDomElement& page, QDomElement& body);
+    void                    logout_user(layout::layout *l, content::path_info_t& cpath, QDomElement& page, QDomElement& body);
     void                    prepare_basic_anonymous_form();
     void                    prepare_forgot_password_form();
     void                    prepare_password_form();
@@ -190,7 +191,7 @@ private:
     void                    process_replace_password_form();
     void                    prepare_replace_password_form(QDomElement& body);
     void                    verify_email(QString const& email);
-    void                    verify_password(QString const& cpath);
+    void                    verify_password(content::path_info_t& cpath);
     void                    forgot_password_email(QString const& email);
 
     zpsnap_child_t              f_snap;
@@ -202,6 +203,4 @@ private:
 
 } // namespace users
 } // namespace snap
-#endif
-// SNAP_USERS_H
 // vim: ts=4 sw=4 et

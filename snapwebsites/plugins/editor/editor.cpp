@@ -16,9 +16,12 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "editor.h"
+#include "../output/output.h"
 #include "not_reached.h"
 #include "log.h"
+
 #include <iostream>
+
 #include "poison.h"
 
 
@@ -135,23 +138,9 @@ int64_t editor::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, initial_update);
     SNAP_PLUGIN_UPDATE(2014, 1, 14, 1, 58, 30, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
-}
-
-
-/** \brief First update to run for the content plugin.
- *
- * This function is the first update for the content plugin. It installs
- * the initial index page.
- *
- * \param[in] variables_timestamp  The timestamp for all the variables added to the database by this update (in micro-seconds).
- */
-void editor::initial_update(int64_t variables_timestamp)
-{
-    (void)variables_timestamp;
 }
 
 
@@ -164,7 +153,8 @@ void editor::initial_update(int64_t variables_timestamp)
  */
 void editor::content_update(int64_t variables_timestamp)
 {
-    (void)variables_timestamp;
+    static_cast<void>(variables_timestamp);
+
     content::content::instance()->add_xml(get_plugin_name());
 }
 
@@ -176,15 +166,15 @@ void editor::content_update(int64_t variables_timestamp)
  *
  *
  * \param[in] l  The layout pointer.
- * \param[in] path  The path being managed.
+ * \param[in,out] ipath  The path being managed.
  * \param[in,out] page  The page being generated.
  * \param[in,out] body  The body being generated.
  * \param[in] ctemplate  The template in case path does not exist.
  */
-void editor::on_generate_main_content(layout::layout *l, QString const& path, QDomElement& page, QDomElement& body, QString const& ctemplate)
+void editor::on_generate_main_content(layout::layout *l, content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate)
 {
     // a regular page
-    content::content::instance()->on_generate_main_content(l, path, page, body, ctemplate);
+    output::output::instance()->on_generate_main_content(l, ipath, page, body, ctemplate);
 }
 
 
@@ -204,10 +194,11 @@ void editor::on_generate_main_content(layout::layout *l, QString const& path, QD
  * \param[in,out] metadata  The metadata being generated.
  * \param[in] ctemplate  The template in case path does not exist.
  */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-void editor::on_generate_header_content(layout::layout *l, QString const& path, QDomElement& header, QDomElement& metadata, QString const& ctemplate)
+void editor::on_generate_header_content(layout::layout *l, content::path_info_t& ipath, QDomElement& header, QDomElement& metadata, QString const& ctemplate)
 {
+    static_cast<void>(l);
+    static_cast<void>(ctemplate);
+
     // but we also have email specific parameters we want to add
     //QDomDocument doc(header.ownerDocument());
 
@@ -225,9 +216,8 @@ void editor::on_generate_header_content(layout::layout *l, QString const& path, 
     //    }
     //}
 
-    content::content::instance()->add_javascript(l, path, header, metadata, "editor");
+    content::content::instance()->add_javascript(ipath, header, metadata, "editor");
 }
-#pragma GCC diagnostic pop
 
 
 SNAP_PLUGIN_END()

@@ -19,8 +19,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 -->
 <snap-tree>
   <content path="/admin/settings/sessions">
-    <param name="content::title">Sessions Settings</param>
-    <param name="content::body" overwrite="yes">
+    <param name="content::title" revision="revision">Sessions Settings</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>Settings of the system sessions.</p>]]>
     </param>
   </content>

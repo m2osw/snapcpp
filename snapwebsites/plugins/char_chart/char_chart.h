@@ -1,5 +1,5 @@
 // Snap Websites Server -- char chart header
-// Copyright (C) 2012-2013  Made to Order Software Corp.
+// Copyright (C) 2012-2014  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,8 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-#ifndef SNAP_CHAR_CHART_H
-#define SNAP_CHAR_CHART_H
+#pragma once
 
 #include "../sitemapxml/sitemapxml.h"
 
@@ -35,10 +34,10 @@ public:
     virtual int64_t     do_update(int64_t last_updated);
 
     void                on_bootstrap(::snap::snap_child *snap);
-    void                on_can_handle_dynamic_path(path::path *path_plugin, const QString& cpath);
+    void                on_can_handle_dynamic_path(content::path_info_t& ipath, path::dynamic_plugin_t& plugin_info);
     void                on_generate_sitemapxml(sitemapxml::sitemapxml *sitemap);
-    virtual void        on_generate_main_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body, const QString& ctemplate);
-    bool                on_path_execute(const QString& cpath);
+    virtual void        on_generate_main_content(layout::layout *l, content::path_info_t& path, QDomElement& page, QDomElement& body, const QString& ctemplate);
+    bool                on_path_execute(content::path_info_t& cpath);
 
 private:
     void                initial_update(int64_t variables_timestamp);
@@ -49,6 +48,4 @@ private:
 
 } // namespace char_chart
 } // namespace snap
-#endif
-// SNAP_CHAR_CHART_H
 // vim: ts=4 sw=4 et

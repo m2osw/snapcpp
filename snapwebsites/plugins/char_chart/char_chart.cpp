@@ -1,5 +1,5 @@
 // Snap Websites Server -- display a character map
-// Copyright (C) 2012-2013  Made to Order Software Corp.
+// Copyright (C) 2012-2014  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -16,7 +16,6 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "char_chart.h"
-#include "../content/content.h"
 #include <iostream>
 #include <QDebug>
 
@@ -153,13 +152,14 @@ void char_chart::content_update(int64_t variables_timestamp)
  *
  * \param[in] path_plugin  A pointer to the path plugin.
  * \param[in] cpath  The path being handled dynamically.
+ * \param[in,out] plugin_info  If you understand that cpath, set yourself here.
  */
-void char_chart::on_can_handle_dynamic_path(path::path *path_plugin, const QString& cpath)
+void char_chart::on_can_handle_dynamic_path(content::path_info_t& ipath, path::dynamic_plugin_t& plugin_info)
 {
-    if(cpath.startsWith("char-chart/"))
+    if(ipath.get_cpath().startsWith("char-chart/"))
     {
         // tell the path plugin that this is ours
-        path_plugin->handle_dynamic_path(this);
+        plugin_info.set_plugin(this);
     }
 }
 
@@ -170,9 +170,9 @@ void char_chart::on_can_handle_dynamic_path(path::path *path_plugin, const QStri
  *
  * \param[in] cpath  The canonalized path.
  */
-bool char_chart::on_path_execute(const QString& cpath)
+bool char_chart::on_path_execute(content::path_info_t& ipath)
 {
-    f_snap->output(layout::layout::instance()->apply_layout(cpath, this));
+    f_snap->output(layout::layout::instance()->apply_layout(ipath, this));
 
     return true;
 }
@@ -180,22 +180,22 @@ bool char_chart::on_path_execute(const QString& cpath)
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
-void char_chart::on_generate_main_content(layout::layout *l, const QString& cpath, QDomElement& page, QDomElement& body, const QString& ctemplate)
+void char_chart::on_generate_main_content(layout::layout *l, content::path_info_t& ipath, QDomElement& page, QDomElement& body, const QString& ctemplate)
 {
     QDomDocument doc(page.ownerDocument());
 
-    QString value(cpath.mid(11));
+    QString value(ipath.get_cpath().mid(11));
     if(value.length() < 1)
     {
         // problem
-        return;// false;
+        return;
     }
     bool ok;
     int chart_page(value.toInt(&ok, 16));
     if(!ok)
     {
         // invalid hex
-        return;// false;
+        return;
     }
     // change to a page
     int c(chart_page << 8);

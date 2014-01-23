@@ -16,12 +16,16 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "links.h"
-#include "log.h"
-#include "../path/path.h"
+
 #include "../content/content.h"
+
+#include "log.h"
 #include "not_reached.h"
+
 #include <iostream>
+
 #include <QtCore/QDebug>
+
 #include "poison.h"
 
 
@@ -54,6 +58,7 @@ char const *get_name(name_t name)
     NOTREACHED();
 }
 
+
 /** \fn link_info::link_info(const QString new_name, bool unique, const QString new_key);
  * \brief Create a link descriptor.
  *
@@ -71,6 +76,7 @@ char const *get_name(name_t name)
  * \sa set_name()
  * \sa set_key()
  */
+
 
 /** \fn void link_info::set_name(QString& new_name, bool unique);
  * \brief Set the name of the column to use for the link.
@@ -99,6 +105,7 @@ char const *get_name(name_t name)
  * \sa is_unique()
  */
 
+
 /** \fn void link_info::set_key(QString& new_key)
  * \brief Set the key (row name) where the link is to be saved.
  *
@@ -119,6 +126,7 @@ char const *get_name(name_t name)
  * \sa key()
  */
 
+
 /** \fn bool link_info::is_unique() const
  * \brief Check whether this link is marked as unique.
  *
@@ -132,6 +140,7 @@ char const *get_name(name_t name)
  * \sa set_name()
  */
 
+
 /** \fn const QString& link_info::name() const
  * \brief Retrieve the name of the link.
  *
@@ -144,6 +153,7 @@ char const *get_name(name_t name)
  * \sa set_name()
  */
 
+
 /** \fn const QString& link_info::key() const
  * \brief Retrieve the key of the link.
  *
@@ -155,6 +165,7 @@ char const *get_name(name_t name)
  * \sa set_key()
  */
 
+
 /** \var controlled_vars::zbool_t link_info::f_unique;
  * \brief Unique (one) or not (many) links.
  *
@@ -165,6 +176,7 @@ char const *get_name(name_t name)
  * \sa set_name() const
  */
 
+
 /** \var QString link_info::f_name;
  * \brief The name of the column.
  *
@@ -174,6 +186,7 @@ char const *get_name(name_t name)
  * \sa set_name()
  */
 
+
 /** \var QString link_info::f_key;
  * \brief The key of this link.
  *
@@ -182,6 +195,7 @@ char const *get_name(name_t name)
  *
  * \sa set_key()
  */
+
 
 /** \brief Verify that the name is valid.
  *
@@ -355,7 +369,7 @@ link_context::link_context(::snap::snap_child *snap, const link_info& info)
     //, f_column_predicate() -- auto-init
     //, f_link() -- auto-init
 {
-    // if the link is unique, it only appears in the content
+    // if the link is unique, it only appears in the data table
     // and we don't need the context per se, so we just read
     // the info and keep it in the context for retrieval;
     // if not unique, then we read the first 1,000 links and
@@ -364,17 +378,17 @@ link_context::link_context(::snap::snap_child *snap, const link_info& info)
     {
         // TODO: we have to somehow remove this content dependency (circular
         //       dependency)
-        QSharedPointer<QtCassandra::QCassandraTable> table(content::content::instance()->get_content_table());
-        if(table.isNull())
+        QSharedPointer<QtCassandra::QCassandraTable> data_table(content::content::instance()->get_data_table());
+        if(data_table.isNull())
         {
             // the table does not exist?!
-            throw links_exception_missing_content_table("could not get the content table");
+            throw links_exception_missing_data_table("could not get the data table");
         }
         // f_row remains null (isNull() returns true)
         //QSharedPointer<QtCassandra::QCassandraRow> row(table->row(f_info.key()));
         QString const links_namespace(get_name(SNAP_NAME_LINKS_NAMESPACE));
 //printf("links: content read row key [%s] cell [%s]\n", f_info.key().toUtf8().data(), (links_namespace + "::" + f_info.name()).toUtf8().data());
-        QtCassandra::QCassandraValue link(table->row(f_info.key())->cell(links_namespace + "::" + f_info.name())->value());
+        QtCassandra::QCassandraValue link(data_table->row(f_info.row_key())->cell(links_namespace + "::" + f_info.name())->value());
         if(!link.nullValue())
         {
             f_link = link.stringValue();
@@ -385,14 +399,14 @@ link_context::link_context(::snap::snap_child *snap, const link_info& info)
         // since we're loading these links from the links index we do
         // not need to specify the column names in the column predicate
         // it will automatically read all the data from that row
-        QSharedPointer<QtCassandra::QCassandraTable> table(links::links::instance()->get_links_table());
-        if(table.isNull())
+        QSharedPointer<QtCassandra::QCassandraTable> links_table(links::links::instance()->get_links_table());
+        if(links_table.isNull())
         {
             // the table does not exist?!
             // (since the links is a core plugin, that should not happen)
             throw links_exception_missing_links_table("could not find the links table");
         }
-        f_row = table->row(f_info.key());
+        f_row = links_table->row(f_info.row_key());
         // WARNING: Here the column names are the keys, not the link names...
         // TBD: should we give the caller the means to change this 1,000 count?
         f_column_predicate.setCount(1000);
@@ -517,7 +531,7 @@ bool link_context::next_link(link_info& info)
 links::links()
     //: f_snap(NULL) -- auto-init
     //, f_links_table() -- auto-init
-    //, f_content_table() -- auto-init
+    //, f_data_table() -- auto-init
 {
 }
 
@@ -619,19 +633,29 @@ void links::initial_update(int64_t variables_timestamp)
 #pragma GCC diagnostic pop
 
 
-/** \brief Initialize the content table.
+/** \brief Initialize the links table.
  *
- * This function creates the content table if it doesn't exist yet. Otherwise
- * it simple initializes the f_content_table variable member.
+ * This function creates the links table if it doesn't exist yet. Otherwise
+ * it simple initializes the f_data_table variable member.
  *
  * If the function is not able to create the table an exception is raised.
  *
- * \return The pointer to the content table.
+ * \return The pointer to the links table.
  */
 QSharedPointer<QtCassandra::QCassandraTable> links::get_links_table()
 {
-    // create an index so we can search by content
-    return f_snap->create_table(get_name(SNAP_NAME_LINKS_TABLE), "Links index table.");
+    // retrieve links index table if not there yet
+    if(f_links_table.isNull())
+    {
+        QSharedPointer<QtCassandra::QCassandraTable> table(f_snap->create_table(get_name(SNAP_NAME_LINKS_TABLE), "Links index table."));
+        if(table.isNull())
+        {
+            // the table does not exist?!
+            throw links_exception_missing_links_table("could not find the links table");
+        }
+        f_links_table = table;
+    }
+    return f_links_table;
 }
 
 
@@ -643,28 +667,19 @@ QSharedPointer<QtCassandra::QCassandraTable> links::get_links_table()
 void links::init_tables()
 {
     // retrieve links index table if not there yet
-    if(f_links_table.isNull())
-    {
-        QSharedPointer<QtCassandra::QCassandraTable> table(get_links_table());
-        if(table.isNull())
-        {
-            // the table does not exist?!
-            throw links_exception_missing_links_table("could not find the links table");
-        }
-        f_links_table = table;
-    }
+    get_links_table();
 
     // retrieve content table if not there yet
-    if(f_content_table.isNull())
+    if(f_data_table.isNull())
     {
-        // TODO remove this circular dependency
-        QSharedPointer<QtCassandra::QCassandraTable> table(content::content::instance()->get_content_table());
+        // TODO remove this circular dependency on content plugin
+        QSharedPointer<QtCassandra::QCassandraTable> table(content::content::instance()->get_data_table());
         if(table.isNull())
         {
-            // links cannot work if the content table doesn't already exist
-            throw links_exception_missing_content_table("could not get the content table");
+            // links cannot work if the data table doesn't already exist
+            throw links_exception_missing_data_table("could not get the data table");
         }
-        f_content_table = table;
+        f_data_table = table;
     }
 }
 
@@ -711,8 +726,8 @@ void links::init_tables()
  * \code
  * link table[source key][destination key] = source column number;
  * link table[destination key][source key] = destination column number;
- * content table[source key][source name + source column number] = destination key;
- * content table[destination key][destination name + destination column number] = source key;
+ * data table[source key][source name + source column number] = destination key;
+ * data table[destination key][destination name + destination column number] = source key;
  * \endcode
  *
  * If the source name is unique, then no link table entry for the source is
@@ -724,7 +739,7 @@ void links::init_tables()
  *
  * The link table is used as an index and for unique entries it is not required
  * since we already know where that data is
- * (i.e. the data saved in content table[source key][source name .*] for the
+ * (i.e. the data saved in data table[source key][source name .*] for the
  * source is the destination and we know exactly where it is.)
  *
  * \note
@@ -755,14 +770,14 @@ void links::create_link(const link_info& src, const link_info& dst)
     {
         src_col += "-";
         // not unique, first check whether it was already created
-        QtCassandra::QCassandraValue value(f_links_table->row(src.key())->cell(dst.key())->value());
+        QtCassandra::QCassandraValue value(f_links_table->row(src.row_key())->cell(dst.key())->value());
         if(value.nullValue())
         {
             // it does not exist, create a unique number
             QString no(f_snap->get_unique_number());
             src_col += no;
             // save in the index table
-            (*f_links_table)[src.key()][dst.key()] = QtCassandra::QCassandraValue(src_col);
+            (*f_links_table)[src.row_key()][dst.key()] = QtCassandra::QCassandraValue(src_col);
         }
         else
         {
@@ -776,14 +791,14 @@ void links::create_link(const link_info& src, const link_info& dst)
     {
         dst_col += "-";
         // not unique, first check whether it was already created
-        QtCassandra::QCassandraValue value(f_links_table->row(dst.key())->cell(src.key())->value());
+        QtCassandra::QCassandraValue value(f_links_table->row(dst.row_key())->cell(src.key())->value());
         if(value.nullValue())
         {
             // it does not exist, create a unique number
             QString no(f_snap->get_unique_number());
             dst_col += no;
             // save in the index table
-            (*f_links_table)[dst.key()][src.key()] = QtCassandra::QCassandraValue(dst_col);
+            (*f_links_table)[dst.row_key()][src.key()] = QtCassandra::QCassandraValue(dst_col);
         }
         else
         {
@@ -798,8 +813,8 @@ void links::create_link(const link_info& src, const link_info& dst)
     //dst_data = "key=" + src.key() + "\nname=" + src.name();
 
     // save the links in the rows
-    (*f_content_table)[src.key()][src_col] = dst.data(); // save dst in src
-    (*f_content_table)[dst.key()][dst_col] = src.data(); // save src in dst
+    (*f_data_table)[src.row_key()][src_col] = dst.data(); // save dst in src
+    (*f_data_table)[dst.row_key()][dst_col] = src.data(); // save src in dst
 }
 
 
@@ -865,7 +880,7 @@ void links::delete_link(const link_info& info)
 
     init_tables();
 
-    if(!f_content_table->exists(info.key()))
+    if(!f_data_table->exists(info.row_key()))
     {
         // probably not an error if a link does not exist at all...
         return;
@@ -874,7 +889,7 @@ void links::delete_link(const link_info& info)
     // note: we consider the content row defined in the info structure
     //       to be the source; obviously, as a result, the other one will
     //       be the destination
-    QSharedPointer<QtCassandra::QCassandraRow> src_row(f_content_table->row(info.key()));
+    QSharedPointer<QtCassandra::QCassandraRow> src_row(f_data_table->row(info.row_key()));
 
     // check if the link is defined as is (i.e. this info represents
     // a unique link, a "1")
@@ -893,13 +908,13 @@ void links::delete_link(const link_info& info)
         // destination and can delete it too
         link_info destination;
         destination.from_data(link.stringValue());
-        if(!f_content_table->exists(destination.key()))
+        if(!f_data_table->exists(destination.row_key()))
         {
             SNAP_LOG_WARNING("links::delete_link() could not find the destination link for \"")
-                        (destination.key())("\" (destination row missing in content).");
+                        (destination.row_key())("\" (destination row missing in data table).");
             return;
         }
-        QSharedPointer<QtCassandra::QCassandraRow> dst_row(f_content_table->row(destination.key()));
+        QSharedPointer<QtCassandra::QCassandraRow> dst_row(f_data_table->row(destination.row_key()));
 
         // to delete the link on the other side, we have to test whether
         // it is unique (1:1) or multiple (1:*)
@@ -913,22 +928,22 @@ void links::delete_link(const link_info& info)
         {
             // with a multiple link we have to use the links table to find the
             // exact destination
-            if(!f_links_table->exists(destination.key()))
+            if(!f_links_table->exists(destination.row_key()))
             {
                 // if the unique name does not exist,
                 // then the multi-name must exist...
                 SNAP_LOG_WARNING("links::delete_link() could not find the destination link for \"")
-                            (destination.key())("\" (destination row missing in links).");
+                            (destination.row_key())("\" (destination row missing in links).");
                 return;
             }
-            QSharedPointer<QtCassandra::QCassandraRow> dst_multi_row(f_links_table->row(destination.key()));
+            QSharedPointer<QtCassandra::QCassandraRow> dst_multi_row(f_links_table->row(destination.row_key()));
             if(!dst_multi_row->exists(info.key()))
             {
                 // the destination does not exist anywhere!?
                 // (this could happen in case the server crashes or something
                 // of the sort...)
                 SNAP_LOG_WARNING("links::delete_link() could not find the destination link for \"")
-                            (destination.key())(" / ")
+                            (destination.row_key())(" / ")
                             (info.key())("\" (cell missing in links).");
                 return;
             }
@@ -956,8 +971,8 @@ void links::delete_link(const link_info& info)
                 // killed at the wrong time or another computer was deleting
                 // under our feet
                 SNAP_LOG_WARNING("links::delete_link() could not find the destination link for \"")
-                            (destination.key())(" / ")
-                            (dest_cell_multi_name)("\" (destination cell missing in content).");
+                            (destination.row_key())(" / ")
+                            (dest_cell_multi_name)("\" (destination cell missing in data table).");
                 return;
             }
         }
@@ -970,7 +985,7 @@ void links::delete_link(const link_info& info)
 
         // here we get the row, we do not delete it yet because we need
         // to go through the whole list first
-        QSharedPointer<QtCassandra::QCassandraRow> row(f_links_table->row(info.key()));
+        QSharedPointer<QtCassandra::QCassandraRow> row(f_links_table->row(info.row_key()));
         QtCassandra::QCassandraColumnRangePredicate column_predicate;
         column_predicate.setCount(1000);
         column_predicate.setIndex(); // behave like an index
@@ -989,16 +1004,16 @@ void links::delete_link(const link_info& info)
             //for(auto cell_iterator : cells)
             {
                 QString key(QString::fromUtf8(cell_iterator.key()));
-                if(!f_content_table->exists(key))
+                if(!f_data_table->exists(key))
                 {
                     // probably not an error if a link does not exist at all...
                     SNAP_LOG_WARNING("links::delete_link() could not find the destination link for \"")
                                 (key)(" / ")
-                                (unique_link_name)("\" (destination row missing in content.");
+                                (unique_link_name)("\" (destination row missing in data table.");
                 }
                 else
                 {
-                    QSharedPointer<QtCassandra::QCassandraRow> dst_row(f_content_table->row(key));
+                    QSharedPointer<QtCassandra::QCassandraRow> dst_row(f_data_table->row(key));
                     //const QString unique_link_name(links_namespace + "::" + info.name());
                     if(dst_row->exists(unique_link_name))
                     {
@@ -1039,7 +1054,7 @@ void links::delete_link(const link_info& info)
         }
 
         // finally we can delete this row
-        f_links_table->dropRow(info.key());
+        f_links_table->dropRow(info.row_key());
     }
 }
 

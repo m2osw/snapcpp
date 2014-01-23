@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!--
 Snap Websites Server == mailinglist database setup
-Copyright (C) 2013  Made to Order Software Corp.
+Copyright (C) 2013-2014  Made to Order Software Corp.
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -19,14 +19,14 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 -->
 <snap-tree>
   <content path="/admin/settings/mailinglist">
-    <param name="content::title">Mailing List Administration</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">Mailing List Administration</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>Administration of your mailing lists.</p>]]>
     </param>
   </content>
   <content path="/types/mailinglist/status">
-    <param name="content::title">Mailing List Status</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">Mailing List Status</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>Different statuses used by mailing lists. These statuses are managed internally only.</p>]]>
     </param>
     <link name="permissions::administer" to="permissions::administer" mode="*:*">/types/permissions/rights/administer</link>

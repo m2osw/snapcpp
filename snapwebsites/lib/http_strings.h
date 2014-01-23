@@ -1,5 +1,5 @@
 // Snap Servers -- HTTP string handling (splitting, etc.)
-// Copyright (C) 2011-2013  Made to Order Software Corp.
+// Copyright (C) 2013-2014  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,8 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-#ifndef HTTP_STRINGS_H
-#define HTTP_STRINGS_H
+#pragma once
 
 #include <QString>
 #include <QVector>
@@ -41,13 +40,13 @@ public:
         {
         }
 
-        part_t(const QString& name, float level)
+        part_t(QString const& name, float level)
             : f_name(name)
             , f_level(level)
         {
         }
 
-        const QString& get_name() const
+        QString const& get_name() const
         {
             return f_name;
         }
@@ -55,6 +54,16 @@ public:
         float get_level() const
         {
             return f_level;
+        }
+
+        /** \brief Operator used to sort elements.
+         *
+         * This oeprator overload is used by the different sort
+         * algorithm that we can apply against this type.
+         */
+        bool operator < (part_t const& rhs) const
+        {
+            return f_level < rhs.f_level;
         }
 
     private:
@@ -66,19 +75,17 @@ public:
 
                         WeightedHttpString(const QString& str);
 
-    const QString&      get_string() const { return f_str; }
+    QString const&      get_string() const { return f_str; }
     float               get_level(const QString& name);
-    const part_vector_t get_parts() const { return f_parts; }
+    part_vector_t const get_parts() const { return f_parts; }
 
 private:
     QString             f_str;
-    part_vector_t       f_parts;
+    part_vector_t       f_parts; // do NOT use a map, we want to keep them in order
 };
 
 
 
 } // namespace http_strings
 } // namespace snap
-#endif
-// HTTP_STRINGS_H
 // vim: ts=4 sw=4 et

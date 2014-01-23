@@ -14,8 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-#ifndef SNAP_FROM_H
-#define SNAP_FROM_H
+#pragma once
 
 #include "../sessions/sessions.h"
 #include "../filter/filter.h"
@@ -100,7 +99,7 @@ public:
 private:
     typedef QMap<QString, QString> auto_save_types_t;
 
-    void                        auto_save_form(QString const& owner, QString const& cpath, auto_save_types_t const& auto_save_type, QDomDocument xml_form);
+    void                        auto_save_form(QString const& owner, content::path_info_t& cpath, auto_save_types_t const& auto_save_type, QDomDocument xml_form);
     void                        auto_fill_form(QDomDocument xml_form);
 
     zpsnap_child_t              f_snap;
@@ -113,6 +112,4 @@ private:
 
 } // namespace form
 } // namespace snap
-#endif
-// SNAP_FORM_H
 // vim: ts=4 sw=4 et

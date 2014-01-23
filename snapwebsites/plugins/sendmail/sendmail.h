@@ -14,8 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-#ifndef SNAP_SENDMAIL_H
-#define SNAP_SENDMAIL_H
+#pragma once
 
 #include "../sessions/sessions.h"
 #include "../filter/filter.h"
@@ -192,8 +191,7 @@ public:
     void                on_bootstrap(snap_child *snap);
     void                on_register_backend_action(snap::server::backend_action_map_t& actions);
     virtual void        on_backend_action(QString const& action);
-    virtual void        on_generate_main_content(layout::layout *l, QString const& path, QDomElement& page, QDomElement& body, QString const& ctemplate);
-    //void              on_generate_page_content(layout::layout *l, QString const& path, QDomElement& page, QDomElement& body, QString const& ctemplate);
+    virtual void        on_generate_main_content(layout::layout *l, content::path_info_t& path, QDomElement& page, QDomElement& body, QString const& ctemplate);
     void                on_replace_token(filter::filter *f, QString const& cpath, QString const& plugin_owner, QDomDocument& xml, filter::filter::token_info_t& token);
 
     void                post_email(email const& e);
@@ -216,6 +214,4 @@ private:
 
 } // namespace sendmail
 } // namespace snap
-#endif
-// SNAP_SENDMAIL_H
 // vim: ts=4 sw=4 et

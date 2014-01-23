@@ -795,6 +795,10 @@ void form::on_process_post(const QString& uri_path)
 {
     messages::messages *messages(messages::messages::instance());
 
+    content::path_info_t ipath;
+    ipath.set_path(uri_path);
+    ipath.set_main_page(true);
+
     // First we verify the session information
     // <input id="form_session" name="form_session" type="hidden" value="{$form_session}"/>
     sessions::sessions::session_info info;
@@ -825,15 +829,13 @@ void form::on_process_post(const QString& uri_path)
     }
 
     // verify that one of the paths is valid
-    QString cpath(uri_path);
-    snap_child::canonicalize_path(cpath);
-    if((info.get_page_path() != cpath && info.get_object_path() != cpath)
+    if((info.get_page_path() != ipath.get_cpath() && info.get_object_path() != ipath.get_cpath())
     || info.get_user_agent() != f_snap->snapenv(snap::get_name(SNAP_NAME_CORE_HTTP_USER_AGENT)))
     {
         // the path was tempered with?
         f_snap->die(snap_child::HTTP_CODE_NOT_ACCEPTABLE, "Not Acceptable",
                 "The POST request does not correspond to the form it was defined for.",
-                "User POSTed a request against form \"" + cpath + "\" with an incompatible page ("
+                "User POSTed a request against form \"" + ipath.get_cpath() + "\" with an incompatible page ("
                         + info.get_page_path() + ") or object (" + info.get_object_path() + ") path.");
         NOTREACHED();
     }
@@ -853,19 +855,19 @@ void form::on_process_post(const QString& uri_path)
     QDomDocument xml_form;
 
     // first try to load the form directly from the page (form::source)
-    QString source(get_source(owner, cpath));
+    QString source(get_source(owner, ipath.get_cpath()));
     if(source.isEmpty())
     {
         // the programmer forgot to derive from form_post?!
-        throw snap_logic_exception(QString("could not find a valid source for a form in \"%1\".").arg(cpath));
+        throw snap_logic_exception(QString("could not find a valid source for a form in \"%1\".").arg(ipath.get_cpath()));
     }
 
     QString error;
-    xml_form = load_form(cpath, source, error);
+    xml_form = load_form(ipath.get_cpath(), source, error);
     if(xml_form.isNull())
     {
         // programmer mispelled the path?
-        throw form_exception_invalid_form_xml(QString("path \"%1\" does not correspond to a valid XML form").arg(cpath));
+        throw form_exception_invalid_form_xml(QString("path \"%1\" does not correspond to a valid XML form").arg(ipath.get_cpath()));
     }
 
     // clearly mark that this form has post values (i.e. do not
@@ -943,7 +945,7 @@ void form::on_process_post(const QString& uri_path)
         info.set_session_type(sessions::sessions::session_info::SESSION_INFO_VALID);
         int errcnt(messages->get_error_count());
         int warncnt(messages->get_warning_count());
-        validate_post_for_widget(cpath, info, widget, widget_name, widget_type, is_secret);
+        validate_post_for_widget(ipath.get_cpath(), info, widget, widget_name, widget_type, is_secret);
         if(info.get_session_type() != sessions::sessions::session_info::SESSION_INFO_VALID)
         {
             // it was not valid so mark the widgets as errorneous (i.e. so we
@@ -1008,7 +1010,7 @@ void form::on_process_post(const QString& uri_path)
     if(!auto_save_str.isEmpty())
     {
         // in this case the form plugin just saves the data as is in the page
-        auto_save_form(owner, cpath, auto_save_type, xml_form);
+        auto_save_form(owner, ipath, auto_save_type, xml_form);
 
         // after the auto-save, we also call the plugin on_process_post()
         // if available and in case the plugin wants to do a little more
@@ -1024,7 +1026,7 @@ void form::on_process_post(const QString& uri_path)
     }
     if(fp != NULL)
     {
-        fp->on_process_post(cpath, info);
+        fp->on_process_post(ipath.get_cpath(), info);
     }
 }
 
@@ -1040,12 +1042,12 @@ void form::on_process_post(const QString& uri_path)
  * \param[in] auto_save_type  The type of this cell in the database.
  * \param[in] xml_form  The form that's being saved.
  */
-void form::auto_save_form(QString const& owner, QString const& cpath, auto_save_types_t const& auto_save_type, QDomDocument xml_form)
+void form::auto_save_form(QString const& owner, content::path_info_t& ipath, auto_save_types_t const& auto_save_type, QDomDocument xml_form)
 {
     content::content *content_plugin(content::content::instance());
     QSharedPointer<QtCassandra::QCassandraTable> content_table(content_plugin->get_content_table());
-    QString const site_key(f_snap->get_site_key_with_slash());
-    QString const key(site_key + cpath);
+    //QString const site_key(f_snap->get_site_key_with_slash());
+    QString const key(ipath.get_key());
     if(!content_table->exists(key))
     {
         // the row does not exist yet... the form should not even be
@@ -1134,11 +1136,14 @@ void form::auto_save_form(QString const& owner, QString const& cpath, auto_save_
                 // save the file in the database
                 content::attachment_file attachment(f_snap, f_snap->postfile(id));
                 attachment.set_multiple(multiple);
-                attachment.set_cpath(cpath);
+                attachment.set_cpath(ipath.get_cpath());
                 attachment.set_field_name(id);
                 attachment.set_attachment_owner(attachment_owner);
                 attachment.set_attachment_type(attachment_type);
-                content_plugin->create_attachment(attachment);
+                // TODO: define the locale in some ways...
+                //       (use ipath.get_locale()?)
+                snap_version::version_number_t branch(content_plugin->get_current_user_branch(ipath.get_cpath(), content_plugin->get_plugin_name(), "", true));
+                content_plugin->create_attachment(attachment, branch, "");
             }
         }
         else if(type == "string")
@@ -1151,7 +1156,7 @@ void form::auto_save_form(QString const& owner, QString const& cpath, auto_save_
 
     // let the world know that we modified this page
     // this is not an update since the form itself was not modified
-    content_plugin->modified_content(cpath, false);
+    content_plugin->modified_content(ipath);
 }
 
 

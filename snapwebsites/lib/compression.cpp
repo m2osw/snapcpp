@@ -1,5 +1,5 @@
 // Snap Websites Server -- compress (decompress) data
-// Copyright (C) 2013  Made to Order Software Corp.
+// Copyright (C) 2013-2014  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -16,8 +16,12 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "compression.h"
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
 #include <zlib.h>
 #include <QMap>
+#pragma GCC diagnostic pop
 
 namespace snap
 {
@@ -285,7 +289,10 @@ public:
         // deflateInit2 expects the input to be defined
         strm.avail_in = input.size();
         strm.next_in = const_cast<Bytef *>(reinterpret_cast<const Bytef *>(input.data()));
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
         int ret(deflateInit2(&strm, zlib_level, Z_DEFLATED, 15 + 16, 9, Z_DEFAULT_STRATEGY));
+#pragma GCC diagnostic pop
         if(ret != Z_OK)
         {
             // compression failed, return input as is
@@ -344,7 +351,10 @@ public:
         // inflateInit2 expects the input to be defined
         strm.avail_in = input.size();
         strm.next_in = const_cast<Bytef *>(reinterpret_cast<const Bytef *>(input.data()));
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
         int ret(inflateInit2(&strm, 15 + 16));
+#pragma GCC diagnostic pop
         if(ret != Z_OK)
         {
             // compression failed, return input as is
@@ -417,7 +427,10 @@ public:
         // deflateInit2 expects the input to be defined
         strm.avail_in = input.size();
         strm.next_in = const_cast<Bytef *>(reinterpret_cast<const Bytef *>(input.data()));
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
         int ret(deflateInit2(&strm, zlib_level, Z_DEFLATED, 15, 9, Z_DEFAULT_STRATEGY));
+#pragma GCC diagnostic pop
         if(ret != Z_OK)
         {
             // compression failed, return input as is

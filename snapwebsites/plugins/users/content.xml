@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!--
 Snap Websites Server == users database setup
-Copyright (C) 2012-2013  Made to Order Software Corp.
+Copyright (C) 2012-2014  Made to Order Software Corp.
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -19,8 +19,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 -->
 <snap-tree>
   <content path="/login">
-    <param name="content::title">User Log In</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">User Log In</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>Enter your email address and password to log in.</p>[form::source]]]>
     </param>
     <link name="content::page_type" to="content::page_type" mode="1:*">/types/taxonomy/system/content-types/page/public</link>
@@ -30,8 +30,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="form::source">login-form</param>
   </content>
   <content path="/verify-credentials">
-    <param name="content::title">User Credentials Verification</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">User Credentials Verification</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>Please re-enter your email address and password before to continue. Most administrative and user profile interactions require a full log in which last only 3 hours, hence this verification process.</p>[form::source]]]>
     </param>
     <link name="content::page_type" to="content::page_type" mode="1:*">/types/taxonomy/system/content-types/page/public</link>
@@ -41,8 +41,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="form::source">verify-credentials-form</param>
   </content>
   <content path="/forgot-password">
-    <param name="content::title">Forgot Password</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">Forgot Password</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>Enter your email address and we'll send you a link to change your password.</p>[form::source]]]>
     </param>
     <link name="content::page_type" to="content::page_type" mode="1:*">/types/taxonomy/system/content-types/page/public</link>
@@ -51,19 +51,19 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="form::source">forgot-password-form</param>
   </content>
   <content path="/new-password">
-    <param name="content::title">New Password Verification</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">New Password Verification</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>Enter the verification code we sent you to change your password.</p>[form::source]]]>
     </param>
     <link name="content::page_type" to="content::page_type" mode="1:*">/types/taxonomy/system/content-types/page/public</link>
     <link name="robotstxt::noindex" to="robotstxt::noindex" mode="1:*">/types/taxonomy/system/robotstxt/noindex</link>
     <link name="robotstxt::nofollow" to="robotstxt::nofollow" mode="1:*">/types/taxonomy/system/robotstxt/nofollow</link>
     <param name="form::source">new-password-form</param>
-    <param name="permissions::dynamic" type="int8">1</param>
+    <param name="permissions::dynamic" type="int8" revision="global">1</param>
   </content>
   <content path="/register">
-    <param name="content::title">Register</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">Register</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>Enter your email address and a password to register.</p>[form::source]]]>
     </param>
     <link name="content::page_type" to="content::page_type" mode="1:*">/types/taxonomy/system/content-types/page/public</link>
@@ -73,8 +73,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="form::source">register-form</param>
   </content>
   <content path="/verify/resend">
-    <param name="content::title">Resend the Verification Email</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">Resend the Verification Email</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>Did not receive the verification email? This form let you resend it to your email address.</p>[form::source]]]>
     </param>
     <link name="content::page_type" to="content::page_type" mode="1:*">/types/taxonomy/system/content-types/page/public</link>
@@ -83,11 +83,11 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="form::source">resend-email-form</param>
   </content>
   <content path="/verify">
-    <param name="content::title">Verify an Email</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">Verify an Email</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>We want to make sure that (1) you entered the correct email address, and (2) that you are indeed who you say your are. You'll receive an email very shortly and this form let you enter the code included in the email. The email also has a link which may be easier to follow to finish your registration.</p>[form::source]]]>
     </param>
-    <param name="permissions::dynamic" type="int8">1</param>
+    <param name="permissions::dynamic" type="int8" revision="global">1</param>
     <link name="content::page_type" to="content::page_type" mode="1:*">/types/taxonomy/system/content-types/page/public</link>
     <link name="robotstxt::noindex" to="robotstxt::noindex" mode="1:*">/types/taxonomy/system/robotstxt/noindex</link>
     <link name="robotstxt::nofollow" to="robotstxt::nofollow" mode="1:*">/types/taxonomy/system/robotstxt/nofollow</link>
@@ -95,8 +95,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="form::source">verify-form</param>
   </content>
   <content path="/logout">
-    <param name="content::title">Logout</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">Logout</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>Thank you for visiting our website. See you again soon.</p><p>Got back to the <a href="/">home page</a>.</p>]]>
     </param>
     <link name="robotstxt::noindex" to="robotstxt::noindex" mode="1:*">/types/taxonomy/system/robotstxt/noindex</link>
@@ -105,31 +105,31 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <link name="content::page_type" to="content::page_type" mode="1:*">/types/taxonomy/system/content-types/page/public</link>
   </content>
   <content path="/user">
-    <param name="content::title">User</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">User</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>List of users on your Snap! Website.</p>]]>
     </param>
     <link name="permissions::administrer" to="permissions::administrer" mode="*:*">/types/permissions/rights/administer</link>
     <link name="sitemapxml::include" to="sitemapxml::include" mode="1:*">/types/taxonomy/system/sitemapxml/include</link>
   </content>
   <content path="/user/me">
-    <param name="content::title">User Profile</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">User Profile</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>This entry is a placeholder. You should never see it live on your website. It is used to simplify permission assignment.</p>]]>
     </param>
     <link name="permissions::view" to="permissions::view" mode="*:*">/types/permissions/rights/view/page/private</link>
   </content>
   <content path="/user/password">
-    <param name="content::title">Change Your Password</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">Change Your Password</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>Please enter your old password once and then enter your new password twice.</p>[form::source]]]>
     </param>
     <link name="permissions::view" to="permissions::view" mode="*:*">/types/permissions/rights/view/page/private</link>
     <param name="form::source">password-form</param>
   </content>
   <content path="/user/password/replace">
-    <param name="content::title">Replace Your Password</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">Replace Your Password</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>Please enter your new password twice and click Save.</p>[form::source]]]>
     </param>
     <link name="content::page_type" to="content::page_type" mode="1:*">/types/taxonomy/system/content-types/page/public</link>
@@ -137,109 +137,109 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   </content>
   <content path="/admin/email/users/verify">
     <!-- email sent when users register so we can ask them to verify their email address -->
-    <param name="content::title">Please verify your email address</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">Please verify your email address</param>
+    <param name="content::body" revision="revision">
         <![CDATA[<p class="email_date" style="text-align: right;">Sent on [sendmail::date]</p><p class="welcome">Welcome to your Snap! C++ website.</p><p class="process-to-complete">In order to complete the creation of your new account, please click on the following link:</p><blockquote>[sendmail::verify_link("Click here to validate your email address")]</blockquote><p>If you have a problem clicking on this link, your verification code is:</p><blockquote><code>[select("/snap/page/body/sendmail/parameters/param[@name='users::verify_email']/@value")]</code></blockquote><p class="thank-you">Thank you.</p><p>To unsubscribe click here: [sendmail::unsubscribe_link("Unsubscribe from Snap! emails")].<p style="text-align: center;">Copyright [year] (c) by Made to Order Software Corporation -- All Rights Reserved</p>]]>
     </param>
   </content>
   <content path="/admin/email/users/forgot-password">
     <!-- email sent when users forgot their password -->
-    <param name="content::title">Please follow the link below to change your password</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">Please follow the link below to change your password</param>
+    <param name="content::body" revision="revision">
         <![CDATA[<p class="email_date" style="text-align: right;">Sent on [sendmail::date]</p><p class="welcome">It looks like you required the system to allow you to change your password. If this wasn't you, please reply to this email so we can make sure that everything is A-Okay.</p><p class="process-to-complete">In order to change your password, please click on the following link:</p><blockquote>[sendmail::forgot_password_link("Click here to change your password.")]</blockquote><p>You will be asked to change your password immediately. Once you save your password, you will automatically be logged in.</p><p>If you have a problem clicking on this link, your verification code is: <code>[select("/snap/page/body/sendmail/parameters/param[@name='users::forgot_password_email']/@value")]</code></p><p class="thank-you">Thank you.</p><p>To unsubscribe click here: [sendmail::unsubscribe_link("Unsubscribe from Snap! emails")].<p style="text-align: center;">Copyright [year] (c) by Made to Order Software Corporation -- All Rights Reserved</p>]]>
     </param>
   </content>
   <content path="/admin/page/users">
-    <param name="content::title">Users Templates</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">Users Templates</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>Templates for user pages.</p>]]>
     </param>
   </content>
   <content path="/admin/page/users/profile">
-    <param name="content::title">[user-name]</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">[user-name]</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>User profile stuff...</p><p>This will be composed of tags to show the data that the administrator deems useful.</p>]]>
     </param>
   </content>
   <content path="/types/users">
-    <param name="content::title">Users</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">Users</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>All users are defined as children of this type. Any other content should never be assigned this type.</p>]]>
     </param>
     <link name="permissions::administer" to="permissions::administer" mode="*:*">/types/permissions/rights/administer</link>
   </content>
   <content path="/types/users/auto">
-    <param name="content::title">Automatic Users</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">Automatic Users</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>Users who just do not register, but participate (i.e. post a comment) and include their email address, get added to the system. These users automatically get an account tagged as automatic. This means they never registered and can still do so at a later time. Such an account is otherwise used to let those users define their email preferences (i.e. never email me, email at most once a month, etc.)</p>]]>
     </param>
   </content>
   <content path="/types/users/new">
     <!-- if not linked to new then the user was confirmed -->
-    <param name="content::title">New Users</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">New Users</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>Users who just registered are put in this list. They get moved to the full list once they confirmed their email address.</p>]]>
     </param>
   </content>
   <content path="/types/users/password">
-    <param name="content::title">Change Password</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">Change Password</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>When a user request a password change, this tag is added to his account (unless the account is "auto", "new", or "blocked"). This allows the log in process to force the user to go to ones profile and change the password.</p>]]>
     </param>
   </content>
   <content path="/types/users/blocked">
-    <param name="content::title">Blocked Users</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">Blocked Users</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>Users who get blocked for whatever reason are moved under this folder. Keeping these user accounts may be mandatory (i.e. user purchased something on your site) and it is useful to prevent users with that same email addresses from re-registering.</p>]]>
     </param>
   </content>
   <content path="/types/taxonomy/system/content-types/user-page">
     <param name="taxonomy::name">users::user_page</param>
-    <param name="content::title">User Content Type</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">User Content Type</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>This page type represents a user page. These pages have a different set of permissions which allows website owners to completely hide their list of registered users.</p>]]>
     </param>
   </content>
   <content path="/types/taxonomy/system/users">
-    <param name="content::title">User Tags</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">User Tags</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>Set of tags used to label users on your site. These tags are considered free form so additional tags can be created.</p>]]>
     </param>
     <link name="permissions::administer" to="permissions::administer" mode="*:*">/types/permissions/rights/administer/taxonomy</link>
   </content>
   <content path="/types/taxonomy/system/users/spammer">
-    <param name="content::title">Spammer User</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">Spammer User</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>This user posted spam on my website.</p>]]>
     </param>
   </content>
   <content path="/types/taxonomy/system/users/hacker">
-    <param name="content::title">Hacker User</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">Hacker User</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>This user tried to gain access or otherwise illegally tried to access my website.</p>]]>
     </param>
   </content>
   <content path="/types/taxonomy/system/users/impolite">
-    <param name="content::title">Impolite User</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">Impolite User</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>User has been quite impolite and as marked as such.</p>]]>
     </param>
   </content>
   <content path="/types/taxonomy/system/users/offensive">
-    <param name="content::title">Offensive User</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">Offensive User</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>User is offensive when using our website (write profanity.)</p>]]>
     </param>
   </content>
   <content path="/types/permissions/rights/administer/user">
-    <param name="content::title">Administer Users Right</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">Administer Users Right</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>Administer users on your website.</p><p>This is the main right allowing someone to administer all the users.</p>]]>
     </param>
   </content>
   <content path="/types/permissions/rights/administer/user/register">
-    <param name="content::title">Allow User to Register</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">Allow User to Register</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>This right allows a user to register on your website. It has to be assigned to visitors in order for visitors to be able to register an account on your website.</p>]]>
     </param>
   </content>

@@ -69,6 +69,10 @@ if( NOT CMAKE_MODULE_PATH )
     set( CMAKE_MODULE_PATH ${CMAKE_DIRECTORY_PATH}/snapCMakeModules/Modules )
     message( "Found snapCMakeModules in ${CMAKE_MODULE_PATH}" )
 endif()
+# These are the 3 extra warnings that did not make it in the modules
+# -Wold-style-cast -Wstrict-overflow=5 -Wnoexcept
+set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wold-style-cast -Wstrict-overflow=5 -Wnoexcept" )
+
 find_package( AdvGetOpt        REQUIRED )
 find_package( ControlledVars   REQUIRED )
 find_package( LibTLD           REQUIRED )

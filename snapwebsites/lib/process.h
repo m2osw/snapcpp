@@ -14,8 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-#ifndef SNAP_PROCESS_H
-#define SNAP_PROCESS_H
+#pragma once
 
 #include "snap_exception.h"
 #include "snap_thread.h"
@@ -93,8 +92,8 @@ public:
 
 private:
     // prevent copies
-    process(const process& rhs);
-    process& operator = (const process& rhs);
+                                process(const process& rhs) = delete;
+                                process& operator = (const process& rhs) = delete;
 
     const QString               f_name;
     zmode_t                     f_mode;
@@ -109,6 +108,4 @@ private:
 };
 
 } // namespace snap
-#endif
-// SNAP_PROCESS_H
 // vim: ts=4 sw=4 et

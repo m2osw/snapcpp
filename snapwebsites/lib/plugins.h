@@ -14,8 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-#ifndef SNAP_PLUGINS_H
-#define SNAP_PLUGINS_H
+#pragma once
 
 #include <QString>
 #include <QStringList>
@@ -55,13 +54,13 @@ public:
 class plugin
 {
 public:
-    plugin();
-    virtual ~plugin() {}
+                                        plugin();
+    virtual                             ~plugin() {}
 
-    QString get_plugin_name() const;
-    int64_t last_modification() const;
-    virtual QString description() const = 0;
-    virtual int64_t do_update(int64_t last_updated);
+    QString                             get_plugin_name() const;
+    int64_t                             last_modification() const;
+    virtual QString                     description() const = 0;
+    virtual int64_t                     do_update(int64_t last_updated);
 
 private:
     const QString                        f_name;
@@ -344,6 +343,4 @@ bool verify_plugin_name(const QString& name);
 
 } // namespace plugins
 } // namespace snap
-#endif
-// SNAP_PLUGINS_H
 // vim: ts=4 sw=4 et

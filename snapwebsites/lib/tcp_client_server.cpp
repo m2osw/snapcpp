@@ -1,5 +1,5 @@
 // TCP Client & Server -- classes to ease handling sockets
-// Copyright (C) 2012-2013  Made to Order Software Corp.
+// Copyright (C) 2012-2014  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -16,9 +16,12 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "tcp_client_server.h"
+
+#include <sstream>
 #include <string.h>
 #include <unistd.h>
 #include <netdb.h>
+
 #include "poison.h"
 
 namespace tcp_client_server
@@ -111,19 +114,22 @@ tcp_client::tcp_client(const std::string& addr, int port)
         throw tcp_client_server_parameter_error("an empty address is not valid for a client socket");
     }
 
-    char decimal_port[16];
-    snprintf(decimal_port, sizeof(decimal_port), "%d", f_port);
-    decimal_port[sizeof(decimal_port) / sizeof(decimal_port[0]) - 1] = '\0';
+    //char decimal_port[16];
+    std::stringstream decimal_port;
+    decimal_port << f_port;
+    //snprintf(decimal_port, sizeof(decimal_port), "%d", f_port);
+    //decimal_port[sizeof(decimal_port) / sizeof(decimal_port[0]) - 1] = '\0';
     struct addrinfo hints;
     memset(&hints, 0, sizeof(hints));
     hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_protocol = IPPROTO_TCP;
     addrinfo_t addr_info;
-    int r(getaddrinfo(addr.c_str(), decimal_port, &hints, &addr_info.f_addrinfo));
+    std::string port_str(decimal_port.str());
+    int r(getaddrinfo(addr.c_str(), port_str.c_str(), &hints, &addr_info.f_addrinfo));
     if(r != 0 || addr_info.f_addrinfo == NULL)
     {
-        throw tcp_client_server_runtime_error("invalid address or port: \"" + addr + ":" + decimal_port + "\"");
+        throw tcp_client_server_runtime_error("invalid address or port: \"" + addr + ":" + port_str + "\"");
     }
 
     f_socket = socket(addr_info.f_addrinfo->ai_family, SOCK_STREAM, IPPROTO_TCP);
@@ -287,19 +293,22 @@ tcp_server::tcp_server(const std::string& addr, int port, int max_connections, b
         throw tcp_client_server_parameter_error("invalid port for a client socket");
     }
 
-    char decimal_port[16];
-    snprintf(decimal_port, sizeof(decimal_port), "%d", f_port);
-    decimal_port[sizeof(decimal_port) / sizeof(decimal_port[0]) - 1] = '\0';
+    //char decimal_port[16];
+    std::stringstream decimal_port;
+    decimal_port << f_port;
+    //snprintf(decimal_port, sizeof(decimal_port), "%d", f_port);
+    //decimal_port[sizeof(decimal_port) / sizeof(decimal_port[0]) - 1] = '\0';
     struct addrinfo hints;
     memset(&hints, 0, sizeof(hints));
     hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_protocol = IPPROTO_TCP;
     addrinfo_t addr_info;
-    int r(getaddrinfo(addr.c_str(), decimal_port, &hints, &addr_info.f_addrinfo));
+    std::string port_str(decimal_port.str());
+    int r(getaddrinfo(addr.c_str(), port_str.c_str(), &hints, &addr_info.f_addrinfo));
     if(r != 0 || addr_info.f_addrinfo == NULL)
     {
-        throw tcp_client_server_runtime_error("invalid address or port: \"" + addr + ":" + decimal_port + "\"");
+        throw tcp_client_server_runtime_error("invalid address or port: \"" + addr + ":" + port_str + "\"");
     }
 
     f_socket = socket(addr_info.f_addrinfo->ai_family, SOCK_STREAM, IPPROTO_TCP);

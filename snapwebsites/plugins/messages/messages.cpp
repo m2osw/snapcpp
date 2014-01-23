@@ -1,5 +1,5 @@
 // Snap Websites Server -- manage messages (record, display)
-// Copyright (C) 2013  Made to Order Software Corp.
+// Copyright (C) 2013-2014  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -16,16 +16,20 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "messages.h"
-//#include "plugins.h"
+
+#include "../output/output.h"
+#include "../users/users.h"
+
 #include "log.h"
 #include "not_reached.h"
-#include "../content/content.h"
-#include "../users/users.h"
-//#include <QtCassandra/QCassandraValue.h>
+
 #include <QtSerialization/QSerializationComposite.h>
 #include <QtSerialization/QSerializationFieldString.h>
 #include <QtSerialization/QSerializationFieldBasicTypes.h>
+
 #include <iostream>
+
+#include "poison.h"
 
 
 SNAP_PLUGIN_START(messages, 1, 0)
@@ -360,11 +364,11 @@ void messages::content_update(int64_t variables_timestamp)
  * \param[in] page  The page element being generated.
  * \param[in] body  The body element being generated.
  */
-void messages::on_generate_main_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body, const QString& ctemplate)
+void messages::on_generate_main_content(layout::layout *l, content::path_info_t& ipath, QDomElement& page, QDomElement& body, const QString& ctemplate)
 {
     // generate the settings form for messages (i.e. show/hide debug, etc.)
     // TODO: actually implement this properly
-    content::content::instance()->on_generate_main_content(l, path, page, body, ctemplate);
+    output::output::instance()->on_generate_main_content(l, ipath, page, body, ctemplate);
 }
 
 
@@ -380,7 +384,7 @@ void messages::on_generate_main_content(layout::layout *l, const QString& path, 
  */
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
-void messages::on_generate_page_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body, const QString& ctemplate)
+void messages::on_generate_page_content(layout::layout *l, content::path_info_t& ipath, QDomElement& page, QDomElement& body, const QString& ctemplate)
 {
     // go through the list of messages and append them to the body
     const int max(f_messages.count());
@@ -475,6 +479,8 @@ void messages::on_attach_to_session()
 {
     if(!f_messages.isEmpty())
     {
+        // TODO: remove dependency on users plugin
+        //       (this one could be done by users plugin directly)
         const QString data(serialize());
         users::users::instance()->attach_to_session(get_name(SNAP_NAME_MESSAGES_MESSAGES), data);
         f_messages.clear();
@@ -490,6 +496,8 @@ void messages::on_attach_to_session()
  */
 void messages::on_detach_from_session()
 {
+    // TODO: remove dependency on users plugin
+    //       (this one could be done by users plugin directly)
     QString data(users::users::instance()->detach_from_session(get_name(SNAP_NAME_MESSAGES_MESSAGES)));
     if(!data.isEmpty())
     {

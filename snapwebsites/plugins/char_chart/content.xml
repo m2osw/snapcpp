@@ -20,7 +20,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 <snap-tree>
   <content path="/char-chart">
     <link name="content::page_type" to="content::page_type" mode="1:*">/types/taxonomy/system/content-types/page/public</link>
-    <param name="permissions::dynamic" type="int8">1</param>
+    <param name="permissions::dynamic" type="int8" revision="global">1</param>
   </content>
 </snap-tree>
 <!-- vim: ts=2 sw=2 et syntax=xml

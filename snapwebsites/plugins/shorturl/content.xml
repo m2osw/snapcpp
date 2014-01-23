@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!--
 Snap Websites Server == shorturl plugin database setup
-Copyright (C) 2013  Made to Order Software Corp.
+Copyright (C) 2013-2014  Made to Order Software Corp.
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -23,24 +23,24 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <link name="shorturl::no_shorturl" to="shorturl::no_shorturl" mode="1:*">/types/taxonomy/system/robotstxt/nofollow</link>
   </content>
   <content path="/s">
-    <param name="content::title">Short URL Parent Page</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">Short URL Parent Page</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>This path is used by the Short URL plugin. When detected by the plugin, it takes the number and redirects the user to the full path page. TODO: add a list of the last 10 public pages that were added to the website.</p>]]>
     </param>
-    <param name="permissions::dynamic" type="int8">1</param>
+    <param name="permissions::dynamic" type="int8" revision="global">1</param>
     <link name="content::page_type" to="content::page_type" mode="1:*">/types/taxonomy/system/content-types/page/public</link>
     <link name="shorturl::no_shorturl" to="shorturl::no_shorturl" mode="1:*">/types/taxonomy/system/robotstxt/nofollow</link>
     <link name="robotstxt::noindex" to="robotstxt::noindex" mode="1:*">/types/taxonomy/system/robotstxt/noindex</link>
   </content>
   <content path="/types/taxonomy/system/shorturl">
-    <param name="content::title">Short URL Tags</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">Short URL Tags</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>Different tags for the Short URL environment.</p>]]>
     </param>
   </content>
   <content path="/types/taxonomy/system/shorturl/no_shorturl">
-    <param name="content::title">Short URL: Prevent Short URL</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">Short URL: Prevent Short URL</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>When a page is tagged with this tag, then no Short URL is generated for it. This is the default on the home page.</p>]]>
     </param>
   </content>

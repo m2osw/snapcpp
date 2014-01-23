@@ -14,10 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-#ifndef SNAP_EDITOR_H
-#define SNAP_EDITOR_H
+#pragma once
 
-#include "../content/content.h"
+#include "../layout/layout.h"
 
 namespace snap
 {
@@ -69,11 +68,10 @@ public:
 
     void                on_bootstrap(snap_child *snap);
     void                on_register_backend_action(snap::server::backend_action_map_t& actions);
-    void                on_generate_header_content(layout::layout *l, QString const& path, QDomElement& header, QDomElement& metadata, QString const& ctemplate);
-    virtual void        on_generate_main_content(layout::layout *l, QString const& path, QDomElement& page, QDomElement& body, QString const& ctemplate);
+    void                on_generate_header_content(layout::layout *l, content::path_info_t& path, QDomElement& header, QDomElement& metadata, QString const& ctemplate);
+    virtual void        on_generate_main_content(layout::layout *l, content::path_info_t& path, QDomElement& page, QDomElement& body, QString const& ctemplate);
 
 private:
-    void                initial_update(int64_t variables_timestamp);
     void                content_update(int64_t variables_timestamp);
 
     zpsnap_child_t      f_snap;
@@ -81,6 +79,4 @@ private:
 
 } // namespace editor
 } // namespace snap
-#endif
-// SNAP_EDITOR_H
 // vim: ts=4 sw=4 et

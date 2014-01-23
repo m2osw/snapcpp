@@ -1,5 +1,5 @@
 // Snap Websites Server -- search capability
-// Copyright (C) 2012-2013  Made to Order Software Corp.
+// Copyright (C) 2012-2014  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,8 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-#ifndef SNAP_SEARCH_H
-#define SNAP_SEARCH_H
+#pragma once
 
 #include "../layout/layout.h"
 
@@ -24,36 +23,35 @@ namespace snap
 namespace search
 {
 
-enum name_t {
-	SNAP_NAME_SEARCH_STATUS
+enum name_t
+{
+    SNAP_NAME_SEARCH_STATUS
 };
-const char *get_name(name_t name) __attribute__ ((const));
+char const *get_name(name_t name) __attribute__ ((const));
 
 
 
 class search : public plugins::plugin
 {
 public:
-	search();
-	~search();
+                            search();
+                            ~search();
 
-	static search *		instance();
-	virtual QString		description() const;
-	virtual int64_t		do_update(int64_t last_updated);
+    static search *         instance();
+    virtual QString         description() const;
+    virtual int64_t         do_update(int64_t last_updated);
 
-	void				on_bootstrap(::snap::snap_child *snap);
-	void				on_improve_signature(const QString& path, QString& signature);
-	void				on_generate_page_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body);
+    void                    on_bootstrap(::snap::snap_child *snap);
+    void                    on_improve_signature(QString const& path, QString& signature);
+    void                    on_generate_page_content(layout::layout *l, content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate);
 
 private:
-	void initial_update(int64_t variables_timestamp);
-	void content_update(int64_t variables_timestamp);
+    void                    initial_update(int64_t variables_timestamp);
+    void                    content_update(int64_t variables_timestamp);
 
-	zpsnap_child_t									f_snap;
+    zpsnap_child_t          f_snap;
 };
 
 } // namespace search
 } // namespace snap
-#endif
-// SNAP_SEARCH_H
-// vim: ts=4 sw=4
+// vim: ts=4 sw=4 et

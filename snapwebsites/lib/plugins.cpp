@@ -73,6 +73,7 @@ bool load(const QString& plugin_path, plugin_ptr_t server, const QStringList& li
 {
 // Doug;
 // "This defeats the purpose of a shared_ptr, but this is because all plugins are treated as barepointers. This needs to be fixed in another iteration..."
+//
 // Alexis:
 // "I do not think we want to have shared pointer of plugins for several reasons:
 //    1. plugins are allocated in a way that makes it complicated to handle

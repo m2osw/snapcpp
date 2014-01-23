@@ -14,8 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-#ifndef SNAP_SNAPWEBSITES_H
-#define SNAP_SNAPWEBSITES_H
+#pragma once
 
 #include "snap_child.h"
 #include "plugins.h"
@@ -93,23 +92,6 @@ public:
         virtual void    on_backend_action(QString const& action) = 0;
     };
 
-    class permission_flag
-    {
-    public:
-                        permission_flag() {}
-        bool            allowed() const { return f_allowed; }
-        QString const&  reason() const { return f_reason; }
-        void            not_permitted(QString const& reason = "");
-
-    private:
-        // prevent copies or a user could reset the flag!
-                        permission_flag(permission_flag const& rhs);
-                        permission_flag& operator = (permission_flag const& rhs);
-
-        controlled_vars::tbool_t    f_allowed;
-        QString                     f_reason;
-    };
-
     typedef QMap<QString, backend_action *> backend_action_map_t;
     typedef std::shared_ptr<server>         pointer_t;
 
@@ -150,13 +132,12 @@ public:
     SNAP_SIGNAL(process_cookies, (), ());
     SNAP_SIGNAL(attach_to_session, (), ());
     SNAP_SIGNAL(detach_from_session, (), ());
+    SNAP_SIGNAL(define_locales, (QString& locales), (locales));
     SNAP_SIGNAL(process_post, (QString const& url), (url));
     SNAP_SIGNAL(execute, (QString const& url), (url));
     SNAP_SIGNAL(register_backend_action, (backend_action_map_t& actions), (actions));
     SNAP_SIGNAL(backend_process, (), ());
     SNAP_SIGNAL(save_content, (), ());
-    SNAP_SIGNAL(validate_action, (QString const& path, QString const& action, permission_error_callback& err_callback), (path, action, err_callback));
-    SNAP_SIGNAL(access_allowed, (QString const& user_path, QString const& path, QString const& action, QString const& login_status, permission_flag& result), (user_path, path, action, login_status, result));
     SNAP_SIGNAL(xss_filter, (QDomNode& node,
                              QString const& accepted_tags,
                              QString const& accepted_attributes),
@@ -192,6 +173,4 @@ private:
 };
 
 } // namespace snap
-#endif
-// SNAP_SNAPWEBSITES_H
 // vim: ts=4 sw=4 et

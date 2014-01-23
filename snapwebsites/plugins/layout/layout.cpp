@@ -18,6 +18,7 @@
 #include "layout.h"
 #include "../filter/filter.h"
 #include "../content/content.h"
+#include "../javascript/javascript.h"
 #include "../taxonomy/taxonomy.h"
 #include "log.h"
 #include "qdomreceiver.h"
@@ -201,13 +202,13 @@ QSharedPointer<QtCassandra::QCassandraTable> layout::get_layout_table()
  * This function checks for the name of a theme or layout in the current object
  * or the specified type and its parent.
  *
- * \param[in] cpath  The path to the content to process.
+ * \param[in] ipath  The path to the content to process.
  * \param[in] column_name  The name of the column to search (layout::theme or layout::layout)
  */
-QString layout::get_layout(const QString& cpath, const QString& column_name)
+QString layout::get_layout(content::path_info_t& ipath, const QString& column_name)
 {
     // get the full key
-    QString key(f_snap->get_site_key_with_slash() + cpath);
+    QString key(ipath.get_key());
 
     // get the content table first
     QtCassandra::QCassandraValue layout_value(content::content::instance()->get_content_table()->row(key)->cell(column_name)->value());
@@ -215,7 +216,7 @@ QString layout::get_layout(const QString& cpath, const QString& column_name)
     {
         // that very content doesn't define a layout, check its type(s)
         layout_value = taxonomy::taxonomy::instance()->find_type_with(
-            cpath,
+            ipath.get_cpath(),
             content::get_name(content::SNAP_NAME_CONTENT_PAGE_TYPE),
             column_name,
             content::get_name(content::SNAP_NAME_CONTENT_CONTENT_TYPES_NAME)
@@ -249,6 +250,7 @@ QString layout::get_layout(const QString& cpath, const QString& column_name)
     QString layout_name;
     if(run_script)
     {
+        // TODO: remove dependency on JS with an event on this one!
         QVariant v(javascript::javascript::instance()->evaluate_script(layout_script));
         layout_name = v.toString();
     }
@@ -267,6 +269,7 @@ QString layout::get_layout(const QString& cpath, const QString& column_name)
 
     return layout_name;
 }
+
 
 /** \brief Apply the layout to the content defined at \p cpath.
  *
@@ -288,16 +291,16 @@ QString layout::get_layout(const QString& cpath, const QString& column_name)
  * to be used to create a page. The apply_theme() will then layout the
  * result in a page.
  *
- * \param[in] cpath  The canonalized path of content to be laid out.
+ * \param[in] ipath  The canonalized path of content to be laid out.
  * \param[in] content_plugin  The plugin that will generate the content of the page.
  * \param[in] ctemplate  The path to the template is used to get default data.
  *
  * \return The result is the output of the layout applied to the data in cpath.
  */
-QString layout::apply_layout(const QString& cpath, layout_content *content_plugin, const QString& ctemplate)
+QString layout::apply_layout(content::path_info_t& ipath, layout_content *content_plugin, const QString& ctemplate)
 {
-    QDomDocument doc(create_body(cpath, content_plugin, ctemplate));
-    return apply_theme(doc, cpath, content_plugin);
+    QDomDocument doc(create_body(ipath, content_plugin, ctemplate));
+    return apply_theme(doc, ipath, content_plugin);
 }
 
 
@@ -324,14 +327,17 @@ QString layout::apply_layout(const QString& cpath, layout_content *content_plugi
  * not otherwise defined in the cpath cell. By default ctemplate is set
  * to the empty string which means it does not get used.
  *
- * \param[in] cpath  The path being dealt with.
+ * \param[in,out] ipath  The path being dealt with.
  * \param[in] content_plugin  The plugin handling the content (body/title in general.)
  * \param[in] ctemplate  The path to the template is used to get default data.
  *
  * \return The resulting body in an XML document.
  */
-QDomDocument layout::create_body(const QString& cpath, layout_content *content_plugin, const QString& ctemplate)
+QDomDocument layout::create_body(content::path_info_t& ipath, layout_content *content_plugin, const QString& ctemplate)
 {
+#ifdef DEBUG
+std::cerr << "create body in layout\n";
+#endif
     class error_callback : public permission_error_callback
     {
     public:
@@ -374,12 +380,14 @@ QDomDocument layout::create_body(const QString& cpath, layout_content *content_p
 
     // Retrieve the theme and layout for this path
     // XXX should the ctemplate ever be used to retrieve the layout?
-    QString layout_name(get_layout(cpath, get_name(SNAP_NAME_LAYOUT_LAYOUT)));
+    QString layout_name(get_layout(ipath, get_name(SNAP_NAME_LAYOUT_LAYOUT)));
 
 //printf("Got theme / layout name = [%s] / [%s] (path=%s)\n", theme_name.toUtf8().data(), layout_name.toUtf8().data(), cpath.toUtf8().data());
 
 // TODO: fix the default layout selection!?
 //       until we can get the theme system working right...
+//       actually the theme system works, but we need to have something
+//       to allow us to select said theme
 layout_name = "bare";
 
     bool const filter_exists(plugins::exists("filter"));
@@ -472,7 +480,7 @@ layout_name = "bare";
     // More is done in the generate_header_content_impl() function
     QDomDocument doc("snap");
     QDomElement root = doc.createElement("snap");
-    root.setAttribute("path", cpath);
+    root.setAttribute("path", ipath.get_cpath());
     if(p != NULL)
     {
         root.setAttribute("owner", p->get_plugin_name());
@@ -488,13 +496,14 @@ layout_name = "bare";
     page.appendChild(body);
 
 #ifdef DEBUG
-std::cerr << "got in layout... cpath = [" << cpath << "]\n";
+std::cerr << "got in layout... cpath = [" << ipath.get_cpath() << "]\n";
 #endif
     // other plugins generate defaults
-    generate_header_content(this, cpath, head, metadata, ctemplate);
+    generate_header_content(this, ipath, head, metadata, ctemplate);
 
     // concerned (owner) plugin generates content
-    content_plugin->on_generate_main_content(this, cpath, page, body, ctemplate);
+    content_plugin->on_generate_main_content(this, ipath, page, body, ctemplate);
+//std::cout << "Header + Main XML is [" << doc.toString() << "]\n";
 
     // add boxes content
     // if the "boxes" entry doesn't exist yet then we can create it now
@@ -552,7 +561,9 @@ std::cerr << "got in layout... cpath = [" << cpath << "]\n";
                 {
                     QString child_cpath(child_info.key().mid(site_key.length()));
                     box_error_callback.clear_error();
-                    plugin *box_plugin(path::path::instance()->get_plugin(child_cpath, box_error_callback));
+                    content::path_info_t box_ipath;
+                    box_ipath.set_path(child_cpath);
+                    plugin *box_plugin(content::content::instance()->get_plugin(box_ipath, box_error_callback));
                     if(!box_error_callback.has_error() && box_plugin)
                     {
                         layout_boxes *lb(dynamic_cast<layout_boxes *>(box_plugin));
@@ -564,7 +575,7 @@ std::cerr << "got in layout... cpath = [" << cpath << "]\n";
                             filter_box.setAttribute("path", child_cpath); // not the full key
                             filter_box.setAttribute("owner", box_plugin->get_plugin_name());
                             dom_boxes[i].appendChild(filter_box);
-                            lb->on_generate_boxes_content(this, cpath, child_cpath, page, filter_box, ctemplate);
+                            lb->on_generate_boxes_content(this, ipath, box_ipath, page, filter_box, ctemplate);
                         }
                         else
                         {
@@ -583,7 +594,7 @@ std::cerr << "got in layout... cpath = [" << cpath << "]\n";
     }
 
     // other plugins are allowed to modify the content if so they wish
-    generate_page_content(this, cpath, page, body, ctemplate);
+    generate_page_content(this, ipath, page, body, ctemplate);
 //std::cout << "Prepared XML is [" << doc.toString() << "]\n";
 
     // TODO: the filtering needs to be a lot more generic!
@@ -594,7 +605,7 @@ std::cerr << "got in layout... cpath = [" << cpath << "]\n";
     if(filter_exists)
     {
         // replace all tokens if filtering is available
-        filter::filter::instance()->on_token_filter(cpath, doc);
+        filter::filter::instance()->on_token_filter(ipath.get_cpath(), doc);
     }
 
 //std::cout << "Generated XML is [" << doc.toString() << "]\n";
@@ -673,13 +684,15 @@ std::cerr << "got in layout... cpath = [" << cpath << "]\n";
  *
  * \return The XML document themed in the form of a string.
  */
-QString layout::apply_theme(QDomDocument doc, const QString& cpath, layout_content *content_plugin)
+QString layout::apply_theme(QDomDocument doc, content::path_info_t& ipath, layout_content *content_plugin)
 {
     (void)content_plugin; // not yet used
 
-    QString theme_name(get_layout(cpath, get_name(SNAP_NAME_LAYOUT_THEME)));
+    QString theme_name(get_layout(ipath, get_name(SNAP_NAME_LAYOUT_THEME)));
 
-// until we can get the theme system working right...
+// TODO: until we can get the theme system working right...
+//       actually the theme system works, but we need to have something
+//       to allow us to select said theme
 theme_name = "bare";
 
     //QFile xsl(":/xsl/layout/default-theme-parser.xsl");
@@ -772,10 +785,10 @@ theme_name = "bare";
  */
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
-bool layout::generate_header_content_impl(layout *l, QString const& cpath, QDomElement& header, QDomElement& metadata, QString const& ctemplate)
+bool layout::generate_header_content_impl(layout *l, content::path_info_t& ipath, QDomElement& header, QDomElement& metadata, QString const& ctemplate)
 {
-    int const p(cpath.lastIndexOf('/'));
-    QString const base(f_snap->get_site_key_with_slash() + (p == -1 ? "" : cpath.left(p)));
+    int const p(ipath.get_cpath().lastIndexOf('/'));
+    QString const base(f_snap->get_site_key_with_slash() + (p == -1 ? "" : ipath.get_cpath().left(p)));
 
     FIELD_SEARCH
         (content::field_search::COMMAND_ELEMENT, metadata)
@@ -790,7 +803,7 @@ bool layout::generate_header_content_impl(layout *l, QString const& cpath, QDomE
         (content::field_search::COMMAND_SAVE, "desc[type=base_uri]/data")
 
         // snap/head/metadata/desc[type=page_uri]/data
-        (content::field_search::COMMAND_DEFAULT_VALUE, f_snap->get_site_key_with_slash() + cpath)
+        (content::field_search::COMMAND_DEFAULT_VALUE, f_snap->get_site_key_with_slash() + ipath.get_cpath())
         (content::field_search::COMMAND_SAVE, "desc[type=page_uri]/data")
 
         // snap/head/metadata/desc[type=template_uri]/data
@@ -851,7 +864,7 @@ bool layout::generate_header_content_impl(layout *l, QString const& cpath, QDomE
  */
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
-bool layout::generate_page_content_impl(layout *l, const QString& path, QDomElement& page, QDomElement& body, const QString& ctemplate)
+bool layout::generate_page_content_impl(layout *l, content::path_info_t& path, QDomElement& page, QDomElement& body, QString const& ctemplate)
 {
     return true;
 }

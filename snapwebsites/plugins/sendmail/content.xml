@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!--
 Snap Websites Server == sendmail database setup
-Copyright (C) 2013  Made to Order Software Corp.
+Copyright (C) 2013-2014  Made to Order Software Corp.
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -19,29 +19,29 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 -->
 <snap-tree>
   <content path="/admin/email">
-    <param name="content::title">e-Mail</param>
-    <param name="content::body" overwrite="yes">
+    <param name="content::title" revision="revision">e-Mail</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>Different emails that different plugins send to users.</p>]]>
     </param>
     <link name="permissions::administer" to="permissions::administer" mode="*:*">/types/permissions/rights/administer/sendmail</link>
   </content>
   <content path="/types/sendmail">
-    <param name="content::title">Sendmail Statuses</param>
-    <param name="content::body" overwrite="yes">
+    <param name="content::title" revision="revision">Sendmail Statuses</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>Different tags used for emails managed by the sendmail plugin.</p>]]>
     </param>
     <link name="permissions::administer" to="permissions::administer" mode="*:*">/types/permissions/rights/administer/sendmail</link>
   </content>
   <content path="/types/sendmail/status">
     <!-- this is currently two direct values in two cells... -->
-    <param name="content::title">Sendmail Status</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">Sendmail Status</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>The current status of an email.</p>]]>
     </param>
   </content>
   <content path="/types/permissions/rights/administer/sendmail">
-    <param name="content::title">Sendmail Right</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">Sendmail Right</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>Rights to access the different emails that the system sends to users (i.e. the email subject and body).</p>]]>
     </param>
   </content>

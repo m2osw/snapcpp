@@ -54,7 +54,20 @@ enum compare_t : signed int
     COMPARE_LARGER = 1
 };
 
-typedef QVector<controlled_vars::zuint32_t> version_numbers_vector_t;
+typedef uint32_t basic_version_number_t;
+enum special_version_t : basic_version_number_t
+{
+    SPECIAL_VERSION_INVALID           = static_cast<basic_version_number_t>(-2),
+    SPECIAL_VERSION_UNDEFINED         = static_cast<basic_version_number_t>(-1),
+    SPECIAL_VERSION_MIN               = 0,
+    SPECIAL_VERSION_SYSTEM_BRANCH     = 0,
+    SPECIAL_VERSION_USER_FIRST_BRANCH = 1,
+    SPECIAL_VERSION_FIRST_REVISION    = 0,
+    SPECIAL_VERSION_MAX_BRANCH_NUMBER = static_cast<basic_version_number_t>(-3),
+    SPECIAL_VERSION_MAX               = static_cast<basic_version_number_t>(-1)
+};
+typedef controlled_vars::limited_auto_init<basic_version_number_t, SPECIAL_VERSION_MIN, SPECIAL_VERSION_MAX, SPECIAL_VERSION_UNDEFINED> version_number_t;
+typedef QVector<version_number_t> version_numbers_vector_t;
 
 enum operator_t
 {

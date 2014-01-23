@@ -272,31 +272,6 @@ std::shared_ptr<QCoreApplication> g_application;
 std::shared_ptr<server> server::f_instance;
 
 
-/** \brief Set the permission and reason for refusal.
- *
- * This function marks the permission flag as not permitted (i.e. it
- * sets it to false.) The default value of the permission flag is
- * true. Note that once this function was called once it is not possible
- * to set the flag back to true.
- *
- * \param[in] new_reason  The reason for the refusal, can be set to "".
- */
-void server::permission_flag::not_permitted(QString const& new_reason)
-{
-    f_allowed = false;
-
-    if(!new_reason.isEmpty())
-    {
-        if(!f_reason.isEmpty())
-        {
-            f_reason += "\n";
-        }
-        // TBD: should we prevent "\n" in "new_reason"?
-        f_reason += new_reason;
-    }
-}
-
-
 /** \brief Return the server version.
  *
  * This function can be used to verify that the server version is
@@ -1292,6 +1267,26 @@ bool server::detach_from_session_impl()
 }
 
 
+/** \brief Give plugins a chance to define the acceptable page locales.
+ *
+ * This signal is used whenever the user tries to access a page and
+ * the language and/or country was not already defined as a sub-domain,
+ * a path segment, or an option (a GET variable, also called a query string
+ * variable.)
+ *
+ * This function requests the plugins to define a list of
+ * \<language>_\<country> pairs separated by commas.
+ *
+ * \param[in,out] locales  The variable receiving the locales.
+ *
+ * \return true if the signal should be processed by users.
+ */
+bool server::define_locales_impl(QString& locales)
+{
+    return true;
+}
+
+
 /** \brief Process a POST request at the specified URL.
  *
  * This function readies the process_post signal.
@@ -1387,26 +1382,6 @@ bool server::xss_filter_impl(QDomNode& /*node*/,
 }
 
 
-/** \brief Validate the user action.
- *
- * This function validates the user action. If invalid or if that means
- * the user does not have enough rights to access the specified path,
- * then the event calls die() at some point and returns.
- *
- * \param[in] path  The path being validated.
- * \param[in] action  The action being performed against \p path.
- * \param[in] callback  Call functions on errors.
- *
- * \return true if the event has to carry on.
- */
-bool server::validate_action_impl(QString const& path, QString const& action, permission_error_callback& callback)
-{
-    (void) path;
-    (void) action;
-    (void) callback;
-    return true;
-}
-
 /** \fn permission_error_callback::on_error(snap_child::http_code_t err_code, QString const& err_name, QString const& err_description, QString const& err_details)
  * \brief Generate an error.
  *
@@ -1447,31 +1422,6 @@ bool server::validate_action_impl(QString const& path, QString const& action, pe
  * \param[in] path  The path where the user is being redirected.
  * \param[in] http_code  The code to use while redirecting the user.
  */
-
-
-/** \brief Check whether a user has permission to access a page.
- *
- * This event is sent to all plugins that want to check for permissions.
- * In general, just the permissions plugin does that work, but other
- * plugins can also check. The result is true by default and if any
- * plugin decides that the page is not accessible, the result is set
- * to false. A plugin is not allowed to set the flag back to false.
- *
- * \param[in] user_path  The path to the user being checked.
- * \param[in] path  The path being checked.
- * \param[in] action  The action being checked.
- * \param[in] login_status  The status the user is in.
- * \param[in,out] result  The returned result.
- *
- * \return true if the signal should be propagated.
- */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-bool server::access_allowed_impl(QString const& user_path, QString const& path, QString const& action, QString const& login_status, permission_flag& result)
-{
-    return result.allowed();
-}
-#pragma GCC diagnostic pop
 
 
 /** \brief Improve the die() signature to add at the bottom of pages.

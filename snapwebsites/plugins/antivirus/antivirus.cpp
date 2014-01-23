@@ -17,9 +17,9 @@
 
 #include "antivirus.h"
 #include "process.h"
-//#include "../messages/messages.h"
-//#include "../permissions/permissions.h"
+#include "../output/output.h"
 #include "not_reached.h"
+
 #include "poison.h"
 
 
@@ -193,14 +193,14 @@ void antivirus::content_update(int64_t variables_timestamp)
  * \param[in,out] body  The body being generated.
  * \param[in] ctemplate  The path to a template page in case cpath is not defined.
  */
-void antivirus::on_generate_main_content(layout::layout *l, const QString& cpath, QDomElement& page, QDomElement& body, const QString& ctemplate)
+void antivirus::on_generate_main_content(layout::layout *l, content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate)
 {
     // our settings pages are like any standard pages
-    content::content::instance()->on_generate_main_content(l, cpath, page, body, ctemplate);
+    output::output::instance()->on_generate_main_content(l, ipath, page, body, ctemplate);
 }
 
 
-void antivirus::on_check_attachment_security(content::attachment_file const& file, server::permission_flag& secure, bool const fast)
+void antivirus::on_check_attachment_security(content::attachment_file const& file, content::permission_flag& secure, bool const fast)
 {
     if(fast)
     {

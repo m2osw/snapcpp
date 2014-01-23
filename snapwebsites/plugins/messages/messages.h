@@ -1,5 +1,5 @@
 // Snap Websites Server -- manage debug, info, warning, error messages
-// Copyright (C) 2013  Made to Order Software Corp.
+// Copyright (C) 2013-2014  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,8 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-#ifndef SNAP_MESSAGES_H
-#define SNAP_MESSAGES_H
+#pragma once
 
 #include "../layout/layout.h"
 #include <controlled_vars/controlled_vars_limited_need_init.h>
@@ -84,8 +83,8 @@ public:
     virtual int64_t     do_update(int64_t last_updated);
 
     void                on_bootstrap(snap_child *snap);
-    virtual void        on_generate_main_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body, const QString& ctemplate);
-    void                on_generate_page_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body, const QString& ctemplate);
+    virtual void        on_generate_main_content(layout::layout *l, content::path_info_t& path, QDomElement& page, QDomElement& body, const QString& ctemplate);
+    void                on_generate_page_content(layout::layout *l, content::path_info_t& path, QDomElement& page, QDomElement& body, const QString& ctemplate);
     void                on_attach_to_session();
     void                on_detach_from_session();
 
@@ -115,6 +114,4 @@ private:
 
 } // namespace messages
 } // namespace snap
-#endif
-// SNAP_MESSAGES_H
 // vim: ts=4 sw=4 et

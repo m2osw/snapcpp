@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!--
 Snap Websites Server == robots.txt database setup
-Copyright (C) 2011-2012  Made to Order Software Corp.
+Copyright (C) 2011-2014  Made to Order Software Corp.
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -19,52 +19,52 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 -->
 <snap-tree>
   <content path="/admin/settings/filter">
-    <param name="content::title">Filter Manager</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">Filter Manager</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>Manage the website Filters. Filters are an important part of your website. They allow you to let others post content safely.</p>]]>
     </param>
   </content>
   <content path="/types/filter">
-    <param name="content::title">Filter Types</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">Filter Types</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>Set of filters that are used to tweak the data saved in a page.</p>]]>
     </param>
   </content>
   <content path="/types/filter/category">
-    <param name="content::title">Filter Category</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">Filter Category</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>Different filters are expected to be used at different types in the processing of the data. Categories define that information and more.</p>]]>
     </param>
   </content>
   <content path="/types/filter/category/dynamic">
-    <param name="content::title">Filter Category</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">Filter Category</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>A dynamic filter is run before the data gets through the theme layout. This way dynamic content can be transformed before it is sent to the users.</p>]]>
     </param>
   </content>
   <content path="/types/filter/category/on-post">
     <param name="taxonomy::name">on_post</param>
-    <param name="content::title">Filter Category</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">Filter Category</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>Different filters are expected to be used at different types in the processing of the data. Categories define that information and more.</p>]]>
     </param>
   </content>
   <content path="/types/filter/processing">
-    <param name="content::title">Processing Filters</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">Processing Filters</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>Set of filters that process content data.</p>]]>
     </param>
   </content>
   <content path="/types/filter/processing/token">
-    <param name="content::title">Token Filter</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">Token Filter</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>Filter HTML data and replace tokens (names and functions written between square brackets) when dynamic content. This is most often called a field in a word processor.</p>]]>
     </param>
     <link name="category" to="category" mode="1:*">/types/filter/category/dynamic</link>
   </content>
   <content path="/types/filter/processing/xss">
-    <param name="content::title">XSS Filter</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">XSS Filter</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>Filter HTML data and remove unwanted tags such as &lt;script&gt; tags and attributes such as style="..." attributes.</p>]]>
     </param>
     <link name="category" to="category" mode="1:*">/types/filter/category/on-post</link>

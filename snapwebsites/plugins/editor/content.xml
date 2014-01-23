@@ -19,16 +19,16 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 -->
 <snap-tree>
   <content path="/admin/settings/editor">
-    <param name="content::title">WYSIWYG Editor</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">WYSIWYG Editor</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>Change your WYSIWYG editor behavior.</p>]]>
     </param>
     <link name="permissions::administer" to="permissions::administer" mode="*:*">/types/permissions/rights/administer/info</link>
   </content>
   <content path="/js/editor">
     <!-- JavaScript code for the inline WYSIWYG editor -->
-    <param name="content::title">Editor Source</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">Editor Source</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>JavaScript code for the Snap! WYSIWYG Editor.</p>]]>
     </param>
     <link name="permissions::administer" to="permissions::administer" mode="*:*">/types/permissions/rights/administer/info</link>
@@ -39,8 +39,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     </attachment>
   </content>
   <content path="/images/editor">
-    <param name="content::title">Editor Images</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">Editor Images</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>Images used by the editor plugin.</p>]]>
     </param>
     <link name="permissions::view" to="permissions::view" mode="*:*">/types/permissions/rights/view/attachment/public</link>

@@ -120,6 +120,9 @@ javascript::~javascript()
 void javascript::on_bootstrap(snap_child *snap)
 {
     f_snap = snap;
+
+    SNAP_LISTEN(javascript, "content", content::content, check_attachment_security, _1, _2, _3);
+    SNAP_LISTEN(javascript, "content", content::content, process_attachment, _1, _2);
 }
 
 
@@ -600,14 +603,12 @@ QVariant javascript::evaluate_script(const QString& script)
  * The JavaScript plugin cannot depend on the content plugin (because
  * the layout depends on JavaScript and content depends on layout)
  *
- * \param[in] files_table  The table where the file is saved at \p file_key.
  * \param[in] file_key  The row where the file is saved in \p files_table.
  * \param[in] file  The file to be processed.
  */
-void javascript::on_process_attachment(QSharedPointer<QtCassandra::QCassandraTable> files_table, QByteArray const& file_key, snap_child::post_file_t const& file)
+void javascript::on_process_attachment(QByteArray const& file_key, content::attachment_file const& file)
 {
     // TODO: got to write the minimizer if I cannot find one in C/C++
-    (void)files_table;
     (void)file_key;
     (void)file;
 }
@@ -663,14 +664,14 @@ void javascript::on_process_attachment(QSharedPointer<QtCassandra::QCassandraTab
  * \param[in,out] secure  Whether the file is considered secure.
  * \param[in] fast  Whether it is the fast check (true) or not (false).
  */
-void javascript::on_check_attachment_security(snap_child::post_file_t const& file, server::permission_flag& secure, bool const fast)
+void javascript::on_check_attachment_security(content::attachment_file const& file, content::permission_flag& secure, bool const fast)
 {
     // always check the filename, just in case
-    QString cpath(file.get_filename());
+    QString cpath(file.get_file().get_filename());
     if(cpath.startsWith("js/") || cpath == "js")
     {
         snap_version::versioned_filename js_filename(".js");
-        if(!js_filename.set_filename(file.get_filename()))
+        if(!js_filename.set_filename(file.get_file().get_filename()))
         {
             // not considered valid
             secure.not_permitted(js_filename.get_error());
@@ -686,6 +687,8 @@ void javascript::on_check_attachment_security(snap_child::post_file_t const& fil
         // specification with scripts such as jQuery, Sizzle, etc.)
     }
 }
+
+
 
 
 SNAP_PLUGIN_END()

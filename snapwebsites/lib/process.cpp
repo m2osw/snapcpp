@@ -521,6 +521,8 @@ int process::run()
             {
                 int status;
                 waitpid(f_child, &status, 0);
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
                 if(WIFEXITED(status))
                 {
                     f_exit = WEXITSTATUS(status);
@@ -529,6 +531,7 @@ int process::run()
                 {
                     f_exit = -1;
                 }
+#pragma GCC diagnostic pop
             }
             f_child = -1;
             return f_exit;

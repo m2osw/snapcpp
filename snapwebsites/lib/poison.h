@@ -14,12 +14,17 @@
 // You should have received a copy of the GNU General Public License
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-#ifndef SNAP_POISON_H
-#define SNAP_POISON_H
+#pragma once
 
 // list of functions we 100% forbid in the Snap! C++ environment
+
+// strcat() is really bad, use QString or std::string
 #pragma GCC poison strcat strncat wcscat wcsncat
 
-#endif
-// SNAP_POISON_H
+// printf() is generally okay, but std::cerr/cout, sstream are safer
+#pragma GCC poison printf   fprintf   sprintf   snprintf \
+                   vprintf  vfprintf  vsprintf  vsnprintf \
+                   wprintf  fwprintf  swprintf  snwprintf \
+                   vwprintf vfwprintf vswprintf vswnprintf
+
 // vim: ts=4 sw=4 et

@@ -1,5 +1,5 @@
 // Snap Websites Server -- user defined HTML & HTTP headers
-// Copyright (C) 2013  Made to Order Software Corp.
+// Copyright (C) 2013-2014  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -16,8 +16,9 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "header.h"
-#include "../content/content.h"
+#include "../output/output.h"
 #include "not_reached.h"
+
 #include "poison.h"
 
 
@@ -174,22 +175,22 @@ void header::content_update(int64_t variables_timestamp)
  * Note that the path was canonicalized by the path plugin and thus it does
  * not require any further corrections.
  *
- * \param[in] cpath  The canonicalized path being managed.
+ * \param[in,out] ipath  The canonicalized path being managed.
  *
  * \return true if the content is properly generated, false otherwise.
  */
-bool header::on_path_execute(const QString& cpath)
+bool header::on_path_execute(content::path_info_t& ipath)
 {
-    f_snap->output(layout::layout::instance()->apply_layout(cpath, this));
+    f_snap->output(layout::layout::instance()->apply_layout(ipath, this));
 
     return true;
 }
 
 
-void header::on_generate_main_content(layout::layout *l, const QString& cpath, QDomElement& page, QDomElement& body, const QString& ctemplate)
+void header::on_generate_main_content(layout::layout *l, content::path_info_t& ipath, QDomElement& page, QDomElement& body, const QString& ctemplate)
 {
 	// a type is just like a regular page
-	content::content::instance()->on_generate_main_content(l, cpath, page, body, ctemplate);
+	output::output::instance()->on_generate_main_content(l, ipath, page, body, ctemplate);
 }
 
 
@@ -199,14 +200,14 @@ void header::on_generate_main_content(layout::layout *l, const QString& cpath, Q
  * by default.
  *
  * \param[in] l  The layout pointer.
- * \param[in] path  The path being managed.
+ * \param[in,out] ipath  The path being managed.
  * \param[in,out] header_dom  The header being generated.
  * \param[in,out] metadata  The metada being generated.
  * \param[in] ctemplate  The template path if one was specified.
  */
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
-void header::on_generate_header_content(layout::layout *l, QString const& path, QDomElement& header_dom, QDomElement& metadata, QString const& ctemplate)
+void header::on_generate_header_content(layout::layout *l, content::path_info_t& ipath, QDomElement& header_dom, QDomElement& metadata, QString const& ctemplate)
 {
     QDomDocument doc(header_dom.ownerDocument());
 
@@ -219,7 +220,7 @@ void header::on_generate_header_content(layout::layout *l, QString const& path, 
     {   // snap/head/metadata/generator
         QDomElement created(doc.createElement("generator"));
         metadata.appendChild(created);
-        QtCassandra::QCassandraValue generator(content_plugin->get_content_parameter(path, get_name(SNAP_NAME_HEADER_GENERATOR)));
+        QtCassandra::QCassandraValue generator(content_plugin->get_content_parameter(ipath.get_cpath(), get_name(SNAP_NAME_HEADER_GENERATOR)));
         if(!generator.nullValue())
         {
             // also save that one as a header

@@ -1,5 +1,5 @@
 // Snap Websites Server -- manage sessions for users, forms, etc.
-// Copyright (C) 2012-2013  Made to Order Software Corp.
+// Copyright (C) 2012-2014  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,8 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-#ifndef SNAP_SESSIONS_H
-#define SNAP_SESSIONS_H
+#pragma once
 
 #include "../layout/layout.h"
 
@@ -156,7 +155,7 @@ public:
     virtual int64_t         do_update(int64_t last_updated);
 
     void                    on_bootstrap(snap_child *snap);
-    virtual void            on_generate_main_content(layout::layout *l, QString const& path, QDomElement& page, QDomElement& body, QString const& ctemplate);
+    virtual void            on_generate_main_content(layout::layout *l, content::path_info_t& path, QDomElement& page, QDomElement& body, QString const& ctemplate);
 
     QString                 create_session(session_info& info);
     void                    save_session(session_info& info, bool new_random);
@@ -178,6 +177,4 @@ private:
 
 } // namespace sessions
 } // namespace snap
-#endif
-// SNAP_SESSIONS_H
 // vim: ts=4 sw=4 et

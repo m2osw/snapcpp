@@ -16,10 +16,15 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "path.h"
-#include "not_reached.h"
-#include "../content/content.h"
+
 #include "../messages/messages.h"
+
+#include "not_reached.h"
+
 #include <iostream>
+
+#include "poison.h"
+
 
 
 SNAP_PLUGIN_START(path, 1, 0)
@@ -33,25 +38,74 @@ SNAP_PLUGIN_START(path, 1, 0)
  *
  * \return A pointer to the name.
  */
-char const *get_name(name_t name)
+//char const *get_name(name_t name)
+//{
+//    // Note: <branch>.<revision> are actually replaced by a full version
+//    //       when dealing with JavaScript and CSS files (Version: field)
+//    switch(name) {
+//    case SNAP_NAME_CONTENT_PRIMARY_OWNER:
+//        return "path::primary_owner";
+//
+//    default:
+//        // invalid index
+//        throw snap_logic_exception("invalid SNAP_NAME_PATH_...");
+//
+//    }
+//    NOTREACHED();
+//}
+
+
+
+
+
+
+
+/** \brief Called by plugins that can handle dynamic paths.
+ *
+ * Some plugins handle a very large number of paths in a fully
+ * dynamic manner, which means that they can generate the data
+ * for any one of those paths in a way that is extremely fast
+ * without the need of creating millions of entries in the
+ * database.
+ *
+ * These plugins are given a chance to handle a path whenever
+ * the content plugin calls the can_handle_dynamic_path() signal.
+ * At that point, a plugin can respond by calling this function
+ * with itself.
+ *
+ * For example, a plugin that displays a date in different formats
+ * could be programmed to understand the special path:
+ *
+ * \code
+ * /formatted-date/YYYYMMDD/FMT
+ * \endcode
+ *
+ * which could be a request to the system to format the date
+ * YYYY-MM-DD using format FMT.
+ *
+ * \param[in] p  The plugin that can handle the path specified in the signal.
+ */
+void dynamic_plugin_t::set_plugin(plugins::plugin *p)
 {
-    switch(name)
+//std::cerr << "handle_dynamic_path(" << p->get_plugin_name() << ")\n";
+    if(f_plugin != NULL)
     {
-    case SNAP_NAME_PATH_PRIMARY_OWNER:
-        return "path::primary_owner";
-
-    default:
-        // invalid index
-        throw snap_logic_exception("invalid SNAP_NAME_PATH_...");
-
+        // two different plugins are fighting for the same path
+        // we'll have to enhance our error to give the user a way to choose
+        // the plugin one wants to use for this request...
+        content::content::instance()->get_snap()->die(snap_child::HTTP_CODE_MULTIPLE_CHOICE,
+                    "Multiple Choices",
+                    "This page references multiple plugins and the server does not currently have means of choosing one over the other.",
+                    "User tried to access dynamic page but more than one plugin says it owns the resource, primary is \""
+                            + f_plugin->get_plugin_name() + "\", second request by \"" + p->get_plugin_name());
+        NOTREACHED();
     }
-    NOTREACHED();
+
+    f_plugin = p;
 }
 
-namespace
-{
-char const * const g_undefined = "undefined";
-}
+
+
 
 /** \brief Initialize the path plugin.
  *
@@ -59,10 +113,9 @@ char const * const g_undefined = "undefined";
  */
 path::path()
     //: f_snap(NULL) -- auto-init
-    : f_primary_owner(g_undefined)
-    //, f_path_plugin() -- not initialized
 {
 }
+
 
 /** \brief Destroy the path plugin.
  *
@@ -115,61 +168,56 @@ void path::on_bootstrap(::snap::snap_child *snap)
 {
     f_snap = snap;
 
-    SNAP_LISTEN0(path, "server", server, init);
     SNAP_LISTEN(path, "server", server, execute, _1);
 }
 
 
-/** \brief Initialize the path plugin.
+/** \brief Retrieve the plugin corresponding to a path.
  *
- * At this point this function does nothing.
+ * This function searches for the plugin that is to be used to handle the
+ * given path.
+ *
+ * \param[in,out] ipath  The path to be probed.
+ * \param[in,out] err_callback  Interface implementation to call on errors.
+ *
+ * \return A pointer to the plugin that owns this path.
  */
-void path::on_init()
-{
-}
-
-
-
-
-plugins::plugin *path::get_plugin(QString const& uri_path, permission_error_callback& err_callback)
+plugins::plugin *path::get_plugin(content::path_info_t& ipath, permission_error_callback& err_callback)
 {
     // get the name of the plugin that owns this URL 
-    QString cpath(uri_path);
-    snap_child::canonicalize_path(cpath);
-    QString const key(f_snap->get_site_key_with_slash() + cpath);
-    QString owner;
-    dynamic_path_plugin_t path_plugin;
-    // TODO: remove direct dependency on the content plugin
+    plugins::plugin *owner_plugin(NULL);
+
     QSharedPointer<QtCassandra::QCassandraTable> content_table(content::content::instance()->get_content_table());
-    bool const page_exists(content_table->exists(key)
-                        && content_table->row(key)->exists(content::get_name(content::SNAP_NAME_CONTENT_MODIFIED)));
-    if(page_exists)
+    if(content_table->exists(ipath.get_key())
+    && content_table->row(ipath.get_key())->exists(content::get_name(content::SNAP_NAME_CONTENT_PRIMARY_OWNER)))
     {
-        // this should work so we go ahead and set the Last-Modified field in the header
-        QtCassandra::QCassandraValue value(content_table->row(key)->cell(QString(content::get_name(content::SNAP_NAME_CONTENT_MODIFIED)))->value());
-        owner = content_table->row(key)->cell(QString(get_name(SNAP_NAME_PATH_PRIMARY_OWNER)))->value().stringValue();
+        // get the modified date so we can setup the Last-Modified HTTP header field
+        // it is also a way to determine that a path is valid
+        QSharedPointer<QtCassandra::QCassandraTable> data_table(content::content::instance()->get_data_table());
+        QtCassandra::QCassandraValue value(data_table->row(ipath.get_branch_key())->cell(content::get_name(content::SNAP_NAME_CONTENT_MODIFIED))->value());
+        QString owner = content_table->row(ipath.get_key())->cell(QString(content::get_name(content::SNAP_NAME_CONTENT_PRIMARY_OWNER)))->value().stringValue();
         if(value.nullValue() || owner.isEmpty())
         {
             err_callback.on_error(snap_child::HTTP_CODE_NOT_FOUND,
                         "Invalid Page",
                         "An internal error occured and this page cannot properly be displayed at this time.",
                         QString("User tried to access page \"%1\" but it does not look valid (null value? %2, empty owner? %3)")
-                                .arg(key).arg(static_cast<int>(value.nullValue())).arg(static_cast<int>(owner.isEmpty())));
+                                .arg(ipath.get_key()).arg(static_cast<int>(value.nullValue())).arg(static_cast<int>(owner.isEmpty())));
             return NULL;
         }
         f_last_modified = value.int64Value();
 
         // get the primary owner (plugin name) and retrieve the plugin pointer
-//std::cerr << "Execute [" << key.toUtf8().data() << "] with plugin [" << owner.toUtf8().data() << "]\n";
-        path_plugin = plugins::get_plugin(owner);
-        if(!path_plugin)
+//std::cerr << "Execute [" << ipath.get_key() << "] with plugin [" << owner << "]\n";
+        owner_plugin = plugins::get_plugin(owner);
+        if(owner_plugin == NULL)
         {
             // if the plugin cannot be found then either it was mispelled
             // or the plugin is not currently installed...
             f_snap->die(snap_child::HTTP_CODE_NOT_FOUND,
                         "Plugin Missing",
                         "This page is not currently available as its plugin is not currently installed.",
-                        "User tried to access page \"" + cpath + "\" but its plugin (" + owner + ") does not exist (not installed? mispelled?)");
+                        "User tried to access page \"" + ipath.get_cpath() + "\" but its plugin (" + owner + ") does not exist (not installed? mispelled?)");
             NOTREACHED();
         }
     }
@@ -178,22 +226,129 @@ plugins::plugin *path::get_plugin(QString const& uri_path, permission_error_call
         // this key doesn't exist as is in the database, but...
         // it may be a dynamically defined path, check for a
         // plugin that would have defined such a path
-//printf("Testing for page dynamically [%s]\n", cpath.toUtf8().data());
-        f_primary_owner = g_undefined;
-        f_path_plugin.reset();
-        can_handle_dynamic_path(this, cpath);
-        owner = f_primary_owner;
-        path_plugin = f_path_plugin;
-        f_primary_owner = g_undefined; // reset to a value considered invalid
+//std::cerr << "Testing for page dynamically [" << ipath.get_cpath() << "]\n");
+        dynamic_plugin_t dp;
+        can_handle_dynamic_path(ipath, dp);
+        owner_plugin = dp.get_plugin();
     }
 
-    if(path_plugin)
+    if(owner_plugin != NULL)
     {
         // got a valid plugin, verify that the user has permission
-        f_snap->verify_permissions(cpath, err_callback);
+        verify_permissions(ipath, err_callback);
     }
 
-    return path_plugin.get();
+    return owner_plugin;
+}
+
+
+/** \brief Verify for permissions.
+ *
+ * This function calculates the permissions of the user to access the
+ * specified path with the specified action. If the result is that the
+ * current user does not have permission to access the page, then the
+ * function checks whether the user is logged in. If not, he gets
+ * sent to the log in page after saving the current path as the place
+ * to come back after logging in. If the user is already logged in,
+ * then an Access Denied error is generated.
+ *
+ * \param[in,out] ipath  The path which permissions are being checked.
+ * \param[in,out] err_callback  An object with on_error() and on_redirect()
+ *                              functions.
+ */
+void path::verify_permissions(content::path_info_t& ipath, permission_error_callback& err_callback)
+{
+    QString qs_action(f_snap->get_server_parameter("qs_action"));
+    QString action;
+    snap_uri const& uri(f_snap->get_uri());
+    if(uri.has_query_option(qs_action))
+    {
+        // the user specified an action
+        action = uri.query_option(qs_action);
+    }
+    if(action.isEmpty())
+    {
+        // use the default
+        action = default_action(ipath);
+    }
+
+    // save the action found in the URI so that way any plugin can access
+    // that information at any point, not just the verify_rights() function
+    f_snap->set_action(action);
+
+    // only actions that are defined in the permission types are
+    // allowed, anything else is funky action from a hacker or
+    // whatnot and we just die with an error in that case
+    validate_action(ipath, action, err_callback);
+}
+
+
+/** \brief Check whether a user has permission to access a page.
+ *
+ * This event is sent to all plugins that want to check for permissions.
+ * In general, just the permissions plugin does that work, but other
+ * plugins can also check. The result is true by default and if any
+ * plugin decides that the page is not accessible, the result is set
+ * to false. A plugin is not allowed to set the flag back to false.
+ *
+ * \param[in] user_path  The path to the user being checked.
+ * \param[in,out] path  The path being checked.
+ * \param[in] action  The action being checked.
+ * \param[in] login_status  The status the user is in.
+ * \param[in,out] result  The returned result.
+ *
+ * \return true if the signal should be propagated.
+ */
+bool path::access_allowed_impl(QString const& user_path, content::path_info_t& ipath, QString const& action, QString const& login_status, content::permission_flag& result)
+{
+    (void) user_path;
+    (void) ipath;
+    (void) action;
+    (void) login_status;
+    return result.allowed();
+}
+
+
+/** \brief Validate the user action.
+ *
+ * This function validates the user action. If invalid or if that means
+ * the user does not have enough rights to access the specified path,
+ * then the event calls die() at some point and returns.
+ *
+ * \param[in,out] ipath  The path being validated.
+ * \param[in] action  The action being performed against \p path.
+ * \param[in,out] err_callback  Call functions on errors.
+ *
+ * \return true if the event has to carry on.
+ */
+bool path::validate_action_impl(content::path_info_t& ipath, QString const& action, permission_error_callback& err_callback)
+{
+    (void) ipath;
+    (void) action;
+    (void) err_callback;
+    return true;
+}
+
+/** \brief Dynamically compute the default action.
+ *
+ * Depending on the path and method (GET, POST, DELETE, PUT...) the system
+ * reacts with a default action.
+ */
+QString path::default_action(content::path_info_t& ipath)
+{
+    if(f_snap->has_post())
+    {
+        // this could also be "edit" or "create"...
+        // but "administer" is more restrictive at this point
+        return "administer";
+    }
+
+    if(ipath.get_cpath() == "admin" || ipath.get_cpath().startsWith("admin/"))
+    {
+        return "administer";
+    }
+
+    return "view";
 }
 
 
@@ -239,7 +394,15 @@ void path::on_execute(QString const& uri_path)
         zpsnap_child_t      f_snap;
     } main_page_error_callback(f_snap);
 
-    dynamic_path_plugin_t path_plugin(get_plugin(uri_path, main_page_error_callback));
+    content::path_info_t ipath;
+    ipath.set_path(uri_path);
+    ipath.set_main_page(true);
+#ifdef DEBUG
+std::cerr << "path::on_execute(\"" << uri_path << "\") -> [" << ipath.get_cpath() << "] [" << ipath.get_branch() << "] [" << ipath.get_revision() << "]\n";
+#endif
+
+    f_last_modified = 0;
+    plugins::plugin *path_plugin(get_plugin(ipath, main_page_error_callback));
 
     // The last modification date is saved in the get_plugin()
     // It's a bit ugly but that way we test there that the page is valid and
@@ -255,33 +418,31 @@ void path::on_execute(QString const& uri_path)
 
     // if a plugin pointer was defined we expect that the dynamic_cast<> will
     // always work, however path_plugin may be NULL
-    path_execute *pe(dynamic_cast<path_execute *>(path_plugin.get()));
+    path_execute *pe(dynamic_cast<path_execute *>(path_plugin));
     if(pe == NULL)
     {
         // not found, give a chance to some plugins to do something with the
         // current data (i.e. auto-search, internally redirect to a nice
         // Page Not Found page, etc.)
-        QString cpath(uri_path);
-        snap_child::canonicalize_path(cpath);
-        page_not_found(this, cpath);
+        page_not_found(ipath);
         if(f_snap->empty_output())
         {
             // no page_not_found() plugin support...
-            if(path_plugin)
+            if(path_plugin != NULL)
             {
                 // if the page exists then
                 QString const owner(path_plugin->get_plugin_name());
                 f_snap->die(snap_child::HTTP_CODE_NOT_FOUND,
                             "Plugin Missing",
                             "This page is not currently available as its plugin is not currently installed.",
-                            "User tried to access page \"" + cpath + "\" but its plugin (" + owner + ") does not yet implement the path_execute");
+                            "User tried to access page \"" + ipath.get_cpath() + "\" but its plugin (" + owner + ") does not yet implement the path_execute");
             }
             else
             {
                 f_snap->die(snap_child::HTTP_CODE_NOT_FOUND,
                             "Page Not Found",
                             "This page does not exist on this website.",
-                            "User tried to access page \"" + cpath + "\" and no dynamic path handling happened");
+                            "User tried to access page \"" + ipath.get_cpath() + "\" and no dynamic path handling happened");
             }
             NOTREACHED();
         }
@@ -297,9 +458,7 @@ void path::on_execute(QString const& uri_path)
         // return the "form results".)
         f_snap->process_post();
 
-        QString cpath(uri_path);
-        snap_child::canonicalize_path(cpath);
-        if(!pe->on_path_execute(cpath))
+        if(!pe->on_path_execute(ipath))
         {
             // TODO (TBD):
             // page_not_found() not called here because the page exists
@@ -308,7 +467,7 @@ void path::on_execute(QString const& uri_path)
             f_snap->die(snap_child::HTTP_CODE_NOT_FOUND,
                     "Page Not Present",
                     "Somehow this page is not currently available.",
-                    "User tried to access page \"" + cpath + "\" but its plugin (" + path_plugin->get_plugin_name() + ") refused it");
+                    "User tried to access page \"" + ipath.get_cpath() + "\" but its plugin (" + path_plugin->get_plugin_name() + ") refused it");
             NOTREACHED();
         }
     }
@@ -321,11 +480,16 @@ void path::on_execute(QString const& uri_path)
  * offer another way to handle a path than checking the database (which
  * has priority and thus this function never gets called if that happens.)
  *
- * \param[in] path_plugin  The path plugin.
- * \param[in] cpath  The canonicalized path to be checked
+ * \param[in] ipath  The canonicalized path to be checked.
+ * \param[in.out] plugin_info  Will hold the plugin that can handle this
+ *                             dynamic path.
+ *
+ * \return true if the signal is to be propagated to all the other plugins.
  */
-bool path::can_handle_dynamic_path_impl(path * /*path_plugin*/, const QString& /*cpath*/)
+bool path::can_handle_dynamic_path_impl(content::path_info_t& ipath, dynamic_plugin_t& plugin_info)
 {
+    (void) ipath;
+    (void) plugin_info;
     return true;
 }
 
@@ -339,57 +503,12 @@ bool path::can_handle_dynamic_path_impl(path * /*path_plugin*/, const QString& /
  * If no other plugin transforms the result then a standard, plain text
  * 404 will be presented to the user.
  *
- * \param[in] path_plugin  The path plugin.
- * \param[in] cpath  The canonicalized path to be checked
+ * \param[in] ipath  The canonicalized path that generated a page not found.
  */
-bool path::page_not_found_impl(path * /*path_plugin*/, const QString& /*cpath*/)
+bool path::page_not_found_impl(content::path_info_t& ipath)
 {
+    (void) ipath;
     return true;
-}
-
-
-/** \brief Called by plugins that can handle dynamic paths.
- *
- * Some plugins handle a very large number of paths in a fully
- * dynamic manner, which means that they can generate the data
- * for any one of those paths in a way that is extremely fast
- * without the need of creating millions of entries in the
- * database.
- *
- * These plugins are given a chance to handle a path whenever
- * the path plugin calls the can_handle_dynamic_path() signal.
- * At that point, a plugin can respond by calling this function
- * with itself.
- *
- * For example, a plugin that displays a date in different formats
- * could be programmed to understand the special path
- *
- * /formatted-date/YYYYMMDD/FMT
- *
- * which means format the date YYYY-MM-DD using the format FMT.
- *
- * \param[in] p  The plugin that can handle this dynamic path.
- */
-void path::handle_dynamic_path(plugins::plugin *p)
-{
-//printf("handle_dynamic_path(%s)\n", plugin_name.toUtf8().data());
-    if(f_primary_owner == g_undefined)
-    {
-        f_primary_owner = p->get_plugin_name();
-        f_path_plugin = p;
-    }
-    else
-    {
-        // two different plugins are fighting for the same path
-        // we'll have to enhance our error to give the user a way to choose
-        // the plugin one wants to use for this request...
-        f_snap->die(snap_child::HTTP_CODE_MULTIPLE_CHOICE,
-                    "Multiple Choices",
-                    "This page references multiple plugins and the server does not currently have means of choosing one over the other.",
-                    "User tried to access dynamic page but more than one plugin says it owns the resource, primary is \""
-                            + f_primary_owner + "\", second request by \"" + p->get_plugin_name() + " \"[" + g_undefined + "]");
-        NOTREACHED();
-    }
 }
 
 

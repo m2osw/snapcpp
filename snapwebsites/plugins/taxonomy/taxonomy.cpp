@@ -1,5 +1,5 @@
 // Snap Websites Server -- manage types
-// Copyright (C) 2012  Made to Order Software Corp.
+// Copyright (C) 2012-2014  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -16,9 +16,13 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "taxonomy.h"
-#include "../content/content.h"
+
+#include "../output/output.h"
+
 #include "not_reached.h"
+
 #include <iostream>
+
 #include <QtCore/QDebug>
 
 
@@ -37,17 +41,17 @@ SNAP_PLUGIN_START(taxonomy, 1, 0)
  */
 const char *get_name(name_t name)
 {
-	switch(name)
-	{
-	case SNAP_NAME_TAXONOMY_NAME:
-		return "taxonomy::name";
+    switch(name)
+    {
+    case SNAP_NAME_TAXONOMY_NAME:
+        return "taxonomy::name";
 
-	default:
-		// invalid index
-		throw snap_logic_exception("invalid SNAP_NAME_TAXONOMY_...");
+    default:
+        // invalid index
+        throw snap_logic_exception("invalid SNAP_NAME_TAXONOMY_...");
 
-	}
-	NOTREACHED();
+    }
+    NOTREACHED();
 }
 
 
@@ -56,7 +60,7 @@ const char *get_name(name_t name)
  * This function is used to initialize the taxonomy plugin object.
  */
 taxonomy::taxonomy()
-	//: f_snap(NULL) -- auto-init
+    //: f_snap(NULL) -- auto-init
 {
 }
 
@@ -77,7 +81,7 @@ taxonomy::~taxonomy()
  */
 void taxonomy::on_bootstrap(::snap::snap_child *snap)
 {
-	f_snap = snap;
+    f_snap = snap;
 }
 
 /** \brief Get a pointer to the taxonomy plugin.
@@ -91,7 +95,7 @@ void taxonomy::on_bootstrap(::snap::snap_child *snap)
  */
 taxonomy *taxonomy::instance()
 {
-	return g_plugin_taxonomy_factory.instance();
+    return g_plugin_taxonomy_factory.instance();
 }
 
 /** \brief Return the description of this plugin.
@@ -105,10 +109,10 @@ taxonomy *taxonomy::instance()
  */
 QString taxonomy::description() const
 {
-	return "This plugin manages the different types on your website."
-		" Types include categories, tags, permissions, etc."
-		" Some of these types are locked so the system continues to"
-		" work, however, all can be edited by the user in some way.";
+    return "This plugin manages the different types on your website."
+        " Types include categories, tags, permissions, etc."
+        " Some of these types are locked so the system continues to"
+        " work, however, all can be edited by the user in some way.";
 }
 
 /** \brief Check whether updates are necessary.
@@ -125,12 +129,12 @@ QString taxonomy::description() const
  */
 int64_t taxonomy::do_update(int64_t last_updated)
 {
-	SNAP_PLUGIN_UPDATE_INIT();
+    SNAP_PLUGIN_UPDATE_INIT();
 
-	SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, initial_update);
-	SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, content_update);
+    SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, initial_update);
+    SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, content_update);
 
-	SNAP_PLUGIN_UPDATE_EXIT();
+    SNAP_PLUGIN_UPDATE_EXIT();
 }
 
 /** \brief First update to run for the taxonomy plugin.
@@ -164,7 +168,7 @@ void taxonomy::initial_update(int64_t variables_timestamp)
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 void taxonomy::content_update(int64_t variables_timestamp)
 {
-	content::content::instance()->add_xml("taxonomy");
+    content::content::instance()->add_xml("taxonomy");
 }
 #pragma GCC diagnostic pop
 
@@ -186,83 +190,83 @@ void taxonomy::content_update(int64_t variables_timestamp)
  */
 QtCassandra::QCassandraValue taxonomy::find_type_with(const QString& cpath, const QString& taxonomy_name, const QString& col_name, const QString& limit_name)
 {
-	QtCassandra::QCassandraValue not_found;
-	QString site_key(f_snap->get_site_key_with_slash());
-	QString content_key(site_key + cpath);
-	// get link taxonomy_name from cpath
-	links::link_info type_info(taxonomy_name, true, content_key);
-	QSharedPointer<links::link_context> type_ctxt(links::links::instance()->new_link_context(type_info));
-	links::link_info link_type;
-	if(!type_ctxt->next_link(link_type))
-	{
-		// this should never happen because we should always have a parent
-		// up until limit_name is found
-		return not_found;
-	}
-	QString type_key(link_type.key());
+    QtCassandra::QCassandraValue not_found;
+    QString site_key(f_snap->get_site_key_with_slash());
+    QString content_key(site_key + cpath);
+    // get link taxonomy_name from cpath
+    links::link_info type_info(taxonomy_name, true, content_key);
+    QSharedPointer<links::link_context> type_ctxt(links::links::instance()->new_link_context(type_info));
+    links::link_info link_type;
+    if(!type_ctxt->next_link(link_type))
+    {
+        // this should never happen because we should always have a parent
+        // up until limit_name is found
+        return not_found;
+    }
+    QString type_key(link_type.key());
 
-	//QtCassandra::QCassandraValue type_path(content::content::instance()->get_content_table()->row(content_key)->cell(taxonomy_name)->value());
-	//if(type_path.nullValue())
-	if(type_key.isEmpty())
-	{
-		return not_found;
-	}
-	//QString type_key(site_key + type_path.stringValue());
-	QSharedPointer<QtCassandra::QCassandraTable> content_table(content::content::instance()->get_content_table());
-	for(;;)
-	{
-		if(!content_table->exists(type_key))
-		{
-			// TODO: should this be an error instead? all the types should exist!
-			return not_found;
-		}
-		QSharedPointer<QtCassandra::QCassandraRow> row(content_table->row(type_key));
+    //QtCassandra::QCassandraValue type_path(content::content::instance()->get_content_table()->row(content_key)->cell(taxonomy_name)->value());
+    //if(type_path.nullValue())
+    if(type_key.isEmpty())
+    {
+        return not_found;
+    }
+    //QString type_key(site_key + type_path.stringValue());
+    QSharedPointer<QtCassandra::QCassandraTable> content_table(content::content::instance()->get_content_table());
+    for(;;)
+    {
+        if(!content_table->exists(type_key))
+        {
+            // TODO: should this be an error instead? all the types should exist!
+            return not_found;
+        }
+        QSharedPointer<QtCassandra::QCassandraRow> row(content_table->row(type_key));
 
-		// check for the key, if it exists we found what the user is
-		// looking for!
-		QtCassandra::QCassandraValue result(row->cell(col_name)->value());
-		if(!result.nullValue())
-		{
-			return result;
-		}
-		// have we reached the limit
-		QtCassandra::QCassandraValue limit(row->cell(QString(get_name(SNAP_NAME_TAXONOMY_NAME)))->value());
-		if(!limit.nullValue() && limit.stringValue() == limit_name)
-		{
-			// we reached the limit and have not found a result
-			return not_found;
-		}
-		// get the parent
-		links::link_info info(content::get_name(content::SNAP_NAME_CONTENT_PARENT), true, type_key);
-		QSharedPointer<links::link_context> ctxt(links::links::instance()->new_link_context(info));
-		links::link_info link_info;
-		if(!ctxt->next_link(link_info))
-		{
-			// this should never happen because we should always have a parent
-			// up until limit_name is found
-			return not_found;
-		}
-		type_key = link_info.key();
-	}
-	NOTREACHED();
+        // check for the key, if it exists we found what the user is
+        // looking for!
+        QtCassandra::QCassandraValue result(row->cell(col_name)->value());
+        if(!result.nullValue())
+        {
+            return result;
+        }
+        // have we reached the limit
+        QtCassandra::QCassandraValue limit(row->cell(QString(get_name(SNAP_NAME_TAXONOMY_NAME)))->value());
+        if(!limit.nullValue() && limit.stringValue() == limit_name)
+        {
+            // we reached the limit and have not found a result
+            return not_found;
+        }
+        // get the parent
+        links::link_info info(content::get_name(content::SNAP_NAME_CONTENT_PARENT), true, type_key);
+        QSharedPointer<links::link_context> ctxt(links::links::instance()->new_link_context(info));
+        links::link_info link_info;
+        if(!ctxt->next_link(link_info))
+        {
+            // this should never happen because we should always have a parent
+            // up until limit_name is found
+            return not_found;
+        }
+        type_key = link_info.key();
+    }
+    NOTREACHED();
 }
 
 
-bool taxonomy::on_path_execute(const QString& cpath)
+bool taxonomy::on_path_execute(content::path_info_t& ipath)
 {
-	f_snap->output(layout::layout::instance()->apply_layout(cpath, this));
+    f_snap->output(layout::layout::instance()->apply_layout(ipath, this));
 
-	return true;
+    return true;
 }
 
 
-void taxonomy::on_generate_main_content(layout::layout *l, const QString& cpath, QDomElement& page, QDomElement& body, const QString& ctemplate)
+void taxonomy::on_generate_main_content(layout::layout *l, content::path_info_t& ipath, QDomElement& page, QDomElement& body, const QString& ctemplate)
 {
-	// a type is just like a regular page
-	content::content::instance()->on_generate_main_content(l, cpath, page, body, ctemplate);
+    // a type is just like a regular page
+    output::output::instance()->on_generate_main_content(l, ipath, page, body, ctemplate);
 }
 
 
 SNAP_PLUGIN_END()
 
-// vim: ts=4 sw=4
+// vim: ts=4 sw=4 et

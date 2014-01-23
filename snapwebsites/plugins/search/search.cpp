@@ -1,5 +1,5 @@
 // Snap Websites Server -- search capability
-// Copyright (C) 2012-2013  Made to Order Software Corp.
+// Copyright (C) 2012-2014  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -75,7 +75,7 @@ void search::on_bootstrap(::snap::snap_child *snap)
 	f_snap = snap;
 
 	SNAP_LISTEN(search, "server", server, improve_signature, _1, _2);
-	SNAP_LISTEN(search, "layout", layout::layout, generate_page_content, _1, _2, _3, _4);
+	SNAP_LISTEN(search, "layout", layout::layout, generate_page_content, _1, _2, _3, _4, _5);
 }
 
 /** \brief Get a pointer to the search plugin.
@@ -185,13 +185,14 @@ void search::on_improve_signature(QString const& path, QString& signature)
  * for it (ha! ha!)
  *
  * \param[in] l  The layout pointer.
- * \param[in] path  The path being managed.
+ * \param[in,out] ipath  The path being managed.
  * \param[in,out] page  The page being generated.
  * \param[in,out] body  The body being generated.
+ * \param[in] ctemplate  A path used in case ipath is not defined.
  */
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
-void search::on_generate_page_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body)
+void search::on_generate_page_content(layout::layout *l, content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate)
 {
 	QDomDocument doc(page.ownerDocument());
 
@@ -202,7 +203,6 @@ void search::on_generate_page_content(layout::layout *l, const QString& path, QD
 	link.setAttribute("rel", "search");
 	link.setAttribute("title", "Search"); // TODO: translate
 	link.setAttribute("type", "text/html");
-	QString query(path);
 	link.setAttribute("href", f_snap->get_site_key_with_slash() + "search");
 	bookmarks.appendChild(link);
 }

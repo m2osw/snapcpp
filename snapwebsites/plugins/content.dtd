@@ -27,8 +27,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 <!ELEMENT param %html-data;>
 <!ATTLIST param name CDATA #REQUIRED
+                lang CDATA "en"
                 overwrite (yes|no) "no"
                 force-namespace (yes|no) "yes"
+                revision (global|branch|revision) "branch"
                 type (binary|float|int8|string) "string">
 
 <!ELEMENT link (#PCDATA)>
@@ -61,11 +63,14 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 <!ELEMENT img EMPTY>
 <!ATTLIST img src CDATA #REQUIRED
-	      width CDATA #IMPLIED
-	      height CDATA #IMPLIED
-	      title CDATA #IMPLIED
-	      alt CDATA #IMPLIED
-	      type CDATA #IMPLIED>
+              width CDATA #IMPLIED
+              height CDATA #IMPLIED
+              title CDATA #IMPLIED
+              alt CDATA #IMPLIED
+              type CDATA #IMPLIED>
 
 <!ELEMENT div %html-data;>
 <!ELEMENT p %html-data;>
+
+<!-- vim: ts=4 sw=4 et
+-->

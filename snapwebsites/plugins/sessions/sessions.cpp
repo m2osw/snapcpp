@@ -1,5 +1,5 @@
 // Snap Websites Server -- manage sessions for users, forms, etc.
-// Copyright (C) 2012-2013  Made to Order Software Corp.
+// Copyright (C) 2012-2014  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -32,12 +32,18 @@
  */
 
 #include "sessions.h"
+
+#include "../output/output.h"
+
 #include "plugins.h"
 #include "not_reached.h"
-#include "../content/content.h"
+
 #include <QtCassandra/QCassandraValue.h>
-#include <openssl/rand.h>
+
 #include <iostream>
+
+#include <openssl/rand.h>
+
 #include "poison.h"
 
 
@@ -809,13 +815,11 @@ int64_t sessions::do_update(int64_t last_updated)
  *
  * \param[in] variables_timestamp  The timestamp for all the variables added to the database by this update (in micro-seconds).
  */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
 void sessions::content_update(int64_t variables_timestamp)
 {
+    (void) variables_timestamp;
     content::content::instance()->add_xml(get_plugin_name());
 }
-#pragma GCC diagnostic pop
 
 
 /** \brief Initialize the sessions table.
@@ -860,12 +864,12 @@ bool sessions::generate_sessions_impl(sessions * /*r*/)
  * \param[in] page  The page element being generated.
  * \param[in] body  The body element being generated.
  */
-void sessions::on_generate_main_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body, const QString& ctemplate)
+void sessions::on_generate_main_content(layout::layout *l, content::path_info_t& ipath, QDomElement& page, QDomElement& body, const QString& ctemplate)
 {
     // generate the statistics in the body then call the content generator
     // (how do we do that at this point? do we assume that the backend takes
     // care of it?)
-    content::content::instance()->on_generate_main_content(l, path, page, body, ctemplate);
+    output::output::instance()->on_generate_main_content(l, ipath, page, body, ctemplate);
 }
 
 

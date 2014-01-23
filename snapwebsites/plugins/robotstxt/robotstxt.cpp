@@ -1,5 +1,5 @@
 // Snap Websites Server -- robots.txt
-// Copyright (C) 2011-2013  Made to Order Software Corp.
+// Copyright (C) 2011-2014  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -154,14 +154,13 @@ void robotstxt::content_update(int64_t variables_timestamp)
  * This function ensures that the URL is robots.txt and if so write
  * the robots.txt file content in the QBuffer of the path.
  *
- * \param[in] p  The plugin path pointer.
- * \param[in] url  The URL being managed.
+ * \param[in] ipath  The URL being managed.
  *
  * \return true if the robots.txt file is properly generated, false otherwise.
  */
-bool robotstxt::on_path_execute(const QString& url)
+bool robotstxt::on_path_execute(content::path_info_t& ipath)
 {
-    if(url == "robots.txt")
+    if(ipath.get_cpath() == "robots.txt")
     {
         generate_robotstxt(this);
         output();
@@ -326,19 +325,19 @@ void robotstxt::add_robots_txt_field(const QString& value,
  * I probably use some kind of default. Not that the noindex has the exact
  * same problem.
  *
- * \param[in] path  The path of the page for which links are checked to determine the robots setup.
+ * \param[in,out] ipath  The path of the page for which links are checked to determine the robots setup.
  */
-void robotstxt::define_robots(const QString& path)
+void robotstxt::define_robots(content::path_info_t& ipath)
 {
-    if(path != f_robots_path)
+    if(ipath.get_key() != f_robots_path)
     {
         // Define the X-Robots HTTP header
         QStringList robots;
-        QString site_key(f_snap->get_site_key_with_slash());
         {
 // linking [http://csnap.m2osw.com/] / [http://csnap.m2osw.com/types/taxonomy/system/robotstxt/noindex]
 // <link name="noindex" to="noindex" mode="1:*">/types/taxonomy/system/robotstxt/noindex</link>
-            links::link_info robots_info("robotstxt::noindex", false, site_key + path);
+            links::link_info robots_info("robotstxt::noindex", false, ipath.get_key());
+            robots_info.set_branch(ipath.get_branch());
             QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(robots_info));
             links::link_info robots_txt;
             if(link_ctxt->next_link(robots_txt))
@@ -347,7 +346,8 @@ void robotstxt::define_robots(const QString& path)
             }
         }
         {
-            links::link_info robots_info("robotstxt::nofollow", false, site_key + path);
+            links::link_info robots_info("robotstxt::nofollow", false, ipath.get_key());
+            robots_info.set_branch(ipath.get_branch());
             QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(robots_info));
             links::link_info robots_txt;
             if(link_ctxt->next_link(robots_txt))
@@ -356,7 +356,8 @@ void robotstxt::define_robots(const QString& path)
             }
         }
         {
-            links::link_info robots_info("robotstxt::noarchive", false, site_key + path);
+            links::link_info robots_info("robotstxt::noarchive", false, ipath.get_key());
+            robots_info.set_branch(ipath.get_branch());
             QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(robots_info));
             links::link_info robots_txt;
             if(link_ctxt->next_link(robots_txt))
@@ -367,7 +368,7 @@ void robotstxt::define_robots(const QString& path)
         // TODO: add the search engine specific tags
 
         f_robots_cache = robots.join(",");
-        f_robots_path = path;
+        f_robots_path = ipath.get_key();
     }
 }
 
@@ -380,15 +381,16 @@ void robotstxt::define_robots(const QString& path)
  * tell it.
  *
  * \param[in] l  The layout being worked on.
- * \param[in] path  The path concerned by this request.
- * \param[in] header  The HTML header element.
- * \param[in] metadata  The XML metadata used with the XSLT parser.
+ * \param[in,out] ipath  The path concerned by this request.
+ * \param[in,out] header  The HTML header element.
+ * \param[in,out] metadata  The XML metadata used with the XSLT parser.
+ * \param[in] ctemplate  Another path in case ipath is missing parameters.
  */
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
-void robotstxt::on_generate_header_content(layout::layout *l, const QString& path, QDomElement& header, QDomElement& metadata, const QString& ctemplate)
+void robotstxt::on_generate_header_content(layout::layout *l, content::path_info_t& ipath, QDomElement& header, QDomElement& metadata, const QString& ctemplate)
 {
-    define_robots(path);
+    define_robots(ipath);
     if(!f_robots_cache.isEmpty())
     {
         f_snap->set_header("X-Robots", f_robots_cache);
@@ -411,7 +413,7 @@ void robotstxt::on_generate_header_content(layout::layout *l, const QString& pat
  */
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
-void robotstxt::on_generate_main_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body, const QString& ctemplate)
+void robotstxt::on_generate_main_content(layout::layout *l, content::path_info_t& path, QDomElement& page, QDomElement& body, const QString& ctemplate)
 {
 }
 #pragma GCC diagnostic pop
@@ -423,17 +425,17 @@ void robotstxt::on_generate_main_content(layout::layout *l, const QString& path,
  * by default.
  *
  * \param[in] l  The layout pointer.
- * \param[in] path  The path being managed.
+ * \param[in,out] ipath  The path being managed.
  * \param[in,out] page  The page being generated.
  * \param[in,out] body  The body being generated.
  */
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
-void robotstxt::on_generate_page_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body, const QString& ctemplate)
+void robotstxt::on_generate_page_content(layout::layout *l, content::path_info_t& ipath, QDomElement& page, QDomElement& body, const QString& ctemplate)
 {
     QDomDocument doc(page.ownerDocument());
 
-    define_robots(path);
+    define_robots(ipath);
     if(!f_robots_cache.isEmpty())
     {
         QDomElement created_root(doc.createElement("robots"));

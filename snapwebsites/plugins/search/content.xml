@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!--
 Snap Websites Server == search database setup
-Copyright (C) 2011-2012  Made to Order Software Corp.
+Copyright (C) 2011-2014  Made to Order Software Corp.
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -19,39 +19,39 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 -->
 <snap-tree>
   <content path="/search">
-    <param name="content::title">Search</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">Search</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>Enter what you want to search on our website: (add the search form...)</p>]]>
     </param>
     <link name="search::ignore" to="search::ignore" mode="1:*">/types/taxonomy/system/search/status/ignore</link>
   </content>
   <content path="/admin/settings/search">
-    <param name="content::title">Search Settings</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">Search Settings</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>Define what your users are allowed to find on your website.</p>]]>
     </param>
   </content>
   <content path="/types/taxonomy/system/search">
-    <param name="content::title">Search Taxonomy</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">Search Taxonomy</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>Set of terms used by the search plugin.</p>]]>
     </param>
   </content>
   <content path="/types/taxonomy/system/search/status">
-    <param name="content::title">Search Status</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">Search Status</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>Set of status used to mark a page for search or not. A page without a search status does not get indexed.</p>]]>
     </param>
   </content>
   <content path="/types/taxonomy/system/search/status/index">
-    <param name="content::title">Search Status: Index</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">Search Status: Index</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>This page is to be indexed.</p>]]>
     </param>
   </content>
   <content path="/types/taxonomy/system/search/status/ignore">
-    <param name="content::title">Search Status: Ignore</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">Search Status: Ignore</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>This page is to be ignore by the search plugin.</p>]]>
     </param>
   </content>

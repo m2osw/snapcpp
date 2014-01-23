@@ -1,5 +1,5 @@
 // Snap Websites Server -- URI canonalization
-// Copyright (C) 2011-2012  Made to Order Software Corp.
+// Copyright (C) 2011-2014  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -16,15 +16,19 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "snap_uri.h"
-#include <libtld/tld.h>
+#include "qstring_stream.h"
+
 #include <QtSerialization/QSerializationComposite.h>
 #include <QtSerialization/QSerializationFieldBasicTypes.h>
 #include <QtSerialization/QSerializationFieldString.h>
 #include <QtSerialization/QSerializationFieldTag.h>
+
+#include <iostream>
+
+#include <libtld/tld.h>
 #include <netdb.h>
 #include <QBuffer>
 
-#include <QDebug>
 #include "poison.h"
 
 
@@ -1099,7 +1103,7 @@ void snap_uri::set_path(QString uri_path)
     }
 
     // the input was valid, save the new result
-    f_path = p;
+    f_path.swap(p);
 }
 
 /** \brief Return the full path.
@@ -1773,7 +1777,7 @@ QString snap_uri::urldecode(const QString& uri, bool relax)
                 if(!relax)
                 {
 #ifdef DEBUG
-fprintf(stderr, "url decode?! [%s]\n", uri.toUtf8().data());
+std::cerr << "url decode?! [" << uri << "]\n";
 #endif
                     throw snap_uri_exception_invalid_uri();
                 }
@@ -1799,7 +1803,7 @@ fprintf(stderr, "url decode?! [%s]\n", uri.toUtf8().data());
                 if(!relax)
                 {
 #ifdef DEBUG
-fprintf(stderr, "url decode?! [%s] (2)\n", uri.toUtf8().data());
+std::cerr << "url decode?! [" << uri << "] (2)\n";
 #endif
                     throw snap_uri_exception_invalid_uri();
                 }
@@ -1826,7 +1830,7 @@ fprintf(stderr, "url decode?! [%s] (2)\n", uri.toUtf8().data());
         else
         {
 #ifdef DEBUG
-fprintf(stderr, "url decode?! [%s] (3)\n", uri.toUtf8().data());
+std::cerr << "url decode?! [" << uri << "] (3)\n";
 #endif
             throw snap_uri_exception_invalid_uri();
         }

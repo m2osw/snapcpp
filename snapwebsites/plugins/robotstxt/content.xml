@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!--
 Snap Websites Server == robots.txt database setup
-Copyright (C) 2011-2013  Made to Order Software Corp.
+Copyright (C) 2011-2014  Made to Order Software Corp.
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -20,48 +20,48 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 <snap-tree>
   <!-- files that are 100% dynamically generated are defined here, but they do not get a title and body -->
   <content path="/robots.txt">
-    <param name="content::final" type="int8">1</param>
+    <param name="content::final" type="int8" revision="global">1</param>
     <link name="content::page_type" to="content::page_type" mode="1:*">/types/taxonomy/system/content-types/page/public</link>
   </content>
   <content path="/admin/settings/robotstxt">
-    <param name="content::title">robots.txt settings</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">robots.txt settings</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>Edit the settings used to generate the robots.txt file.</p>]]>
     </param>
   </content>
   <content path="/types/taxonomy/system/robotstxt">
-    <param name="content::title">Robots Tags</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">Robots Tags</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>Set of tags used to determine how public pages should be presented to robots.</p>]]>
     </param>
   </content>
   <content path="/types/taxonomy/system/robotstxt/noindex">
-    <param name="content::title">Robots: No Index</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">Robots: No Index</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>Request that this page not be indexed by robots. Although there is no guarantee, doing so should prevent search engines from showing this page in their results.</p>]]>
     </param>
   </content>
   <content path="/types/taxonomy/system/robotstxt/nofollow">
-    <param name="content::title">Robots: No Follow</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">Robots: No Follow</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>Request that search engines view all the links on that page as nofollow links.</p>]]>
     </param>
   </content>
   <content path="/types/taxonomy/system/robotstxt/noarchive">
-    <param name="content::title">Robots: No Archive</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">Robots: No Archive</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>Request that search engines do not archive this page in their cache.</p>]]>
     </param>
   </content>
   <content path="/types/taxonomy/system/robotstxt/noodp">
-    <param name="content::title">Robots: No Open Directory Project</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">Robots: No Open Directory Project</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>Prevent the Open Directory Project from indexing this page.</p>]]>
     </param>
   </content>
   <content path="/types/taxonomy/system/robotstxt/nosnippet">
-    <param name="content::title">Robots: No Snippet</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">Robots: No Snippet</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>Prevent caching even of the snippet (small description of the page shown by search engines.)</p>]]>
     </param>
   </content>
@@ -69,14 +69,14 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
             google, Slurp, msnbot
        yet there are the following special entries too -->
   <content path="/types/taxonomy/system/robotstxt/nogooglebot">
-    <param name="content::title">Robots: No Google Bot</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">Robots: No Google Bot</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>Prevent the Google robots from accessing this page.</p>]]>
     </param>
   </content>
   <content path="/types/taxonomy/system/robotstxt/noydir">
-    <param name="content::title">Robots: No Yahoo! Directory</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">Robots: No Yahoo! Directory</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>Prevent the Yahoo! robots from accessing this page.</p>]]>
     </param>
   </content>

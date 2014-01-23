@@ -1,3 +1,4 @@
+#define SNAP_NO_FORK
 // Snap Websites Server -- snap websites serving children
 // Copyright (C) 2011-2014  Made to Order Software Corp.
 //
@@ -28,7 +29,11 @@
 #include "mkgmtime.h"
 #include "snap_magic.h"
 #include "compression.h"
+#include "qstring_stream.h"
+
+#include <sstream>
 #include <memory>
+
 #include <wait.h>
 #include <errno.h>
 #include <libtld/tld.h>
@@ -38,9 +43,10 @@
 #include <QDateTime>
 #include <QtSerialization/QSerialization.h>
 #include <QCoreApplication>
+
 #include "poison.h"
-#include "qstring_stream.h"
-#include <sstream>
+
+
 
 namespace snap
 {
@@ -109,6 +115,2148 @@ signed char const g_timezone_adjust[26] =
     /* Y */ 12,
     /* Z */ 0, // Zulu time is zero
 };
+
+
+
+// valid language names
+// a full language definition is xx_YY where xx is the two letter name
+// of a language and YY is a two letter name of a country; we also support
+// 3 letter language names, and full country names (for now)
+snap_child::language_name_t const g_language_names[] =
+{
+    {
+        "Abkhaz",
+        u8"\u0430\u04A7\u0441\u0443\u0430 \u0431\u044B\u0437\u0448\u04D9\u0430, \u0430\u04A7\u0441\u0448\u04D9\u0430",
+        { 'a', 'b', '\0' },
+        ",abk,abks,"
+    },
+    {
+        "Afar",
+        u8"Afaraf",
+        { 'a', 'a', '\0' },
+        ",aar,aars,"
+    },
+    {
+        "Afrikaans",
+        u8"Afrikaans",
+        { 'a', 'f', '\0' },
+        ",afr,afrs,"
+    },
+    {
+        "Akan",
+        u8"Akan",
+        { 'a', 'k', '\0' },
+        ",aka,"
+    },
+    {
+        "Albanian",
+        u8"gjuha shqipe",
+        { 's', 'q', '\0' },
+        ",sqi,alb,"
+    },
+    {
+        "Amharic",
+        u8"\u12A0\u121B\u122D\u129B",
+        { 'a', 'm', '\0' },
+        ",amh,"
+    },
+    {
+        "Arabic",
+        u8"\u0627\u0644\u0639\u0631\u0628\u064A\u0629",
+        { 'a', 'r', '\0' },
+        ",ara,"
+    },
+    {
+        "Aragonese",
+        u8"aragon\u00E9s",
+        { 'a', 'n', '\0' },
+        ",arg,"
+    },
+    {
+        "Armenian",
+        u8"\u0540\u0561\u0575\u0565\u0580\u0565\u0576",
+        { 'h', 'y', '\0' },
+        ",hye,arm,"
+    },
+    {
+        "Assamese",
+        u8"\u0985\u09B8\u09AE\u09C0\u09AF\u09BC\u09BE",
+        { 'a', 's', '\0' },
+        ",asm,"
+    },
+    {
+        "Avaric",
+        u8"\u0430\u0432\u0430\u0440 \u043C\u0430\u0446\u04C0, \u043C\u0430\u0433\u04C0\u0430\u0440\u0443\u043B \u043C\u0430\u0446\u04C0",
+        { 'a', 'v', '\0' },
+        ",ava,"
+    },
+    {
+        "Avestan",
+        u8"avesta",
+        { 'a', 'e', '\0' },
+        ",ave,"
+    },
+    {
+        "Aymara",
+        u8"aymar aru",
+        { 'a', 'y', '\0' },
+        ",aym,"
+    },
+    {
+        "Azerbaijani",
+        u8"az\u0259rbaycan dili",
+        { 'a', 'z', '\0' },
+        ",aze,"
+    },
+    {
+        "Bambara",
+        u8"bamanankan",
+        { 'b', 'm', '\0' },
+        ",bam,"
+    },
+    {
+        "Bashkir",
+        u8"\u0431\u0430\u0448\u04A1\u043E\u0440\u0442 \u0442\u0435\u043B\u0435",
+        { 'b', 'a', '\0' },
+        ",bak,"
+    },
+    {
+        "Basque",
+        u8"euskara",
+        { 'e', 'u', '\0' },
+        ",eus,baq,"
+    },
+    {
+        "Belarusian",
+        u8"\u0431\u0435\u043B\u0430\u0440\u0443\u0441\u043A\u0430\u044F \u043C\u043E\u0432\u0430",
+        { 'b', 'e', '\0' },
+        ",bel,"
+    },
+    {
+        "Bengali",
+        u8"\u09AC\u09BE\u0982\u09B2\u09BE",
+        { 'b', 'n', '\0' },
+        ",ben,"
+    },
+    {
+        "Bihari",
+        u8"\u092D\u094B\u091C\u092A\u0941\u0930\u0940",
+        { 'b', 'h', '\0' },
+        ",bih,"
+    },
+    {
+        "Bislama",
+        u8"Bislama",
+        { 'b', 'i', '\0' },
+        ",bis,"
+    },
+    {
+        "Bosnian",
+        u8"bosanski jezik",
+        { 'b', 's', '\0' },
+        ",bos,boss,"
+    },
+    {
+        "Breton",
+        u8"brezhoneg",
+        { 'b', 'r', '\0' },
+        ",bre,"
+    },
+    {
+        "Bulgarian",
+        u8"\u0431\u044A\u043B\u0433\u0430\u0440\u0441\u043A\u0438 \u0435\u0437\u0438\u043A",
+        { 'b', 'g', '\0' },
+        ",bul,buls,"
+    },
+    {
+        "Burmese",
+        u8"\u1017\u1019\u102C\u1005\u102C",
+        { 'm', 'y', '\0' },
+        ",mya,bur,"
+    },
+    {
+        "Catalan; Valencian",
+        u8"catal\u00E0, valanci\u00E0",
+        { 'c', 'a', '\0' },
+        ",cat,"
+    },
+    {
+        "Chamorro",
+        u8"Chamoru",
+        { 'c', 'h', '\0' },
+        ",cha,"
+    },
+    {
+        "Chechen",
+        u8"\u043D\u043E\u0445\u0447\u0438\u0439\u043D \u043C\u043E\u0442\u0442",
+        { 'c', 'e', '\0' },
+        ",che,"
+    },
+    {
+        "Chichewa; Chewa; Nyanja",
+        u8"chiChe\u0175a, chinyanja",
+        { 'n', 'y', '\0' },
+        ",nya,"
+    },
+    {
+        "Chinese",
+        u8"\u4E2D\u6587 (Zh\u014Dngw\u00E9n), \u6C49\u8BED, \u6F22\u8A9E",
+        { 'z', 'h', '\0' },
+        ",zho,chi,"
+    },
+    {
+        "Chuvash",
+        u8"\u0447\u04D1\u0432\u0430\u0448 \u0447\u04D7\u043B\u0445\u0438",
+        { 'c', 'v', '\0' },
+        ",chv,"
+    },
+    {
+        "Cornish",
+        u8"Kernewek",
+        { 'k', 'w', '\0' },
+        ",cor,"
+    },
+    {
+        "Corsican",
+        u8"corsu, lingua corsa",
+        { 'c', 'o', '\0' },
+        ",cos,"
+    },
+    {
+        "Cree",
+        u8"\u14C0\u1426\u1403\u152D\u140D\u140F\u1423",
+        { 'c', 'r', '\0' },
+        ",cre,"
+    },
+    {
+        "Croatian",
+        u8"hrvatski jezik",
+        { 'h', 'r', '\0' },
+        ",hrv,"
+    },
+    {
+        "Czech",
+        u8"\u010De\u0161tina, \u010Desk\u00FD jazyk",
+        { 'c', 's', '\0' },
+        ",ces,cze,"
+    },
+    {
+        "Danish",
+        u8"dansk",
+        { 'd', 'a', '\0' },
+        ",dan,"
+    },
+    {
+        "Divehi; Dhivehi; Maldivian",
+        u8"\u078B\u07A8\u0788\u07AC\u0780\u07A8",
+        { 'd', 'v', '\0' },
+        ",div,"
+    },
+    {
+        "Dutch",
+        u8"Nederlands, Vlaams",
+        { 'n', 'l', '\0' },
+        ",nld,dut,"
+    },
+    {
+        "Dzongkha",
+        u8"\u0F62\u0FAB\u0F7C\u0F44\u0F0B\u0F41",
+        { 'd', 'z', '\0' },
+        ",dzo,"
+    },
+    {
+        "English",
+        u8"English",
+        { 'e', 'n', '\0' },
+        ",eng,engs,"
+    },
+    {
+        "Esperanto",
+        u8"Esperanto",
+        { 'e', 'o', '\0' },
+        ",epo,"
+    },
+    {
+        "Estonian",
+        u8"eesti, eesti keel",
+        { 'e', 't', '\0' },
+        ",est,"
+    },
+    {
+        "Ewe",
+        u8"E\u028Begbe",
+        { 'e', 'e', '\0' },
+        ",ewe,"
+    },
+    {
+        "Faroese",
+        u8"f\u00F8royskt",
+        { 'f', 'o', '\0' },
+        ",fao,"
+    },
+    {
+        "Fijian",
+        u8"vosa Vakaviti",
+        { 'f', 'j', '\0' },
+        ",fij,"
+    },
+    {
+        "Finnish",
+        u8"suomi, suomen kieli",
+        { 'f', 'i', '\0' },
+        ",fin,"
+    },
+    {
+        "French",
+        u8"fran\u00E7ais, langue fran\u00E7aise",
+        { 'f', 'r', '\0' },
+        ",fra,fras,"
+    },
+    {
+        "Fula; Fulah; Pulaar; Pular",
+        u8"Fulfulde, Pulaar, Pular",
+        { 'f', 'f', '\0' },
+        ",ful,"
+    },
+    {
+        "Galician",
+        u8"galego",
+        { 'g', 'l', '\0' },
+        ",glg,"
+    },
+    {
+        "Georgian",
+        u8"\u10E5\u10D0\u10E0\u10D7\u10E3\u10DA\u10D8",
+        { 'k', 'a', '\0' },
+        ",kat,geo,"
+    },
+    {
+        "German",
+        u8"Deutsch",
+        { 'd', 'e', '\0' },
+        ",deu,ger,deus,"
+    },
+    {
+        "Greek, Modern",
+        u8"\u03B5\u03BB\u03BB\u03B7\u03BD\u03B9\u03BA\u03AC",
+        { 'e', 'l', '\0' },
+        ",ell,gre,ells,"
+    },
+    {
+        u8"Guaran\u00ED",
+        u8"Ava\u00F1e'\u1EBD",
+        { 'g', 'n', '\0' },
+        ",grn,"
+    },
+    {
+        "Gujarati",
+        u8"\u0A97\u0AC1\u0A9C\u0AB0\u0ABE\u0AA4\u0AC0",
+        { 'g', 'u', '\0' },
+        ",guj,"
+    },
+    {
+        "Haitian; Haitian Creole",
+        u8"Krey\u00F2l ayisyen",
+        { 'h', 't', '\0' },
+        ",hat,"
+    },
+    {
+        "Hausa",
+        u8"Hause, \u0647\u064E\u0648\u064F\u0633\u064E",
+        { 'h', 'a', '\0' },
+        ",hau,"
+    },
+    {
+        "Hebrew (modern)",
+        u8"\u05E2\u05D1\u05E8\u05D9\u05EA",
+        { 'h', 'e', '\0' },
+        ",heb,"
+    },
+    {
+        "Herero",
+        u8"Otjiherero",
+        { 'h', 'z', '\0' },
+        ",her,"
+    },
+    {
+        "Hindi",
+        u8"\u0939\u093F\u0928\u094D\u0926\u0940, \u0939\u093F\u0902\u0926\u0940",
+        { 'h', 'i', '\0' },
+        ",hin,"
+    },
+    {
+        "Hiri Motu",
+        u8"Hiri Motu",
+        { 'h', 'o', '\0' },
+        ",hmo,"
+    },
+    {
+        "Hungarian",
+        u8"magyar",
+        { 'h', 'u', '\0' },
+        ",hun,"
+    },
+    {
+        "Interlingua",
+        u8"Interlingua",
+        { 'i', 'a', '\0' },
+        ",ina,"
+    },
+    {
+        "Indonesian",
+        u8"Bahasa Indonesia",
+        { 'i', 'd', '\0' },
+        ",ind,"
+    },
+    {
+        "Interlingue",
+        u8"Interlingue",
+        { 'i', 'e', '\0' },
+        ",ile,"
+    },
+    {
+        "Irish",
+        u8"Gaeilge",
+        { 'g', 'a', '\0' },
+        ",gle,"
+    },
+    {
+        "Igbo",
+        u8"As\u1E85s\u1E85 Igbo",
+        { 'i', 'g', '\0' },
+        ",ibo,"
+    },
+    {
+        "Inupiaq",
+        u8"I\u00F1upiaq, I\u00F1upiatun",
+        { 'i', 'k', '\0' },
+        ",ipk,"
+    },
+    {
+        "Ido",
+        u8"Ido",
+        { 'i', 'o', '\0' },
+        ",ido,"
+    },
+    {
+        "Icelandic",
+        u8"\u00CDslenska",
+        { 'i', 's', '\0' },
+        ",isl,ice,"
+    },
+    {
+        "Italian",
+        u8"italiano",
+        { 'i', 't', '\0' },
+        ",ita,itas,"
+    },
+    {
+        "Inuktitut",
+        u8"\u1403\u14C4\u1483\u144E\u1450\u1466",
+        { 'i', 'u', '\0' },
+        ",iku,"
+    },
+    {
+        "Japanese",
+        u8"\u65E5\u672C\u8A9E (\u306B\u307B\u3093\u3054)",
+        { 'j', 'a', '\0' },
+        ",jpn,"
+    },
+    {
+        "Javanese",
+        u8"basa Jawa",
+        { 'j', 'v', '\0' },
+        ",jav,"
+    },
+    {
+        "Kalaallisut, Greenlandic",
+        u8"kalaallisut, kalaallit oqaasii",
+        { 'k', 'l', '\0' },
+        ",kal,"
+    },
+    {
+        "Kannada",
+        u8"\u0C95\u0CA8\u0CCD\u0CA8\u0CA1",
+        { 'k', 'n', '\0' },
+        ",kan,"
+    },
+    {
+        "Kanuri",
+        u8"Kanuri",
+        { 'k', 'r', '\0' },
+        ",kau,"
+    },
+    {
+        "Kashmiri",
+        u8"\u0915\u0936\u094D\u092E\u0940\u0930\u0940, \u0643\u0634\u0645\u064A\u0631\u064A",
+        { 'k', 's', '\0' },
+        ",kas,"
+    },
+    {
+        "Kazakh",
+        u8"\u049B\u0430\u0437\u0430\u049B \u0442\u0456\u043B\u0456",
+        { 'k', 'k', '\0' },
+        ",kaz,"
+    },
+    {
+        "Khmer",
+        u8"\u1781\u17D2\u1798\u17C2\u179A, \u1781\u17C1\u1798\u179A\u1797\u17B6\u179F\u17B6, \u1797\u17B6\u179F\u17B6\u1781\u17D2\u1798\u17C2\u179A",
+        { 'k', 'm', '\0' },
+        ",khm,"
+    },
+    {
+        "Kikuyu, Gikuyu",
+        u8"G\u0129k\u0169y\u0169",
+        { 'k', 'i', '\0' },
+        ",kik,"
+    },
+    {
+        "Kinyarwanda",
+        u8"Ikinyarwanda",
+        { 'r', 'w', '\0' },
+        ",kin,"
+    },
+    {
+        "Kyrgyz",
+        u8"\u041A\u044B\u0440\u0433\u044B\u0437\u0447\u0430, \u041A\u044B\u0440\u0433\u044B\u0437 \u0442\u0438\u043B\u0438",
+        { 'k', 'y', '\0' },
+        ",kir,"
+    },
+    {
+        "Komi",
+        u8"\u043A\u043E\u043C\u0438 \u043A\u044B\u0432",
+        { 'k', 'v', '\0' },
+        ",kom,"
+    },
+    {
+        "Kongo",
+        u8"KiKongo",
+        { 'k', 'g', '\0' },
+        ",kon,"
+    },
+    {
+        "Korean",
+        u8"\uD55C\uAD6D\uC5B4 (\u97D3\u570B\u8A9E), \uC870\uC120\uC5B4 (\u671D\u9BAE\u8A9E)",
+        { 'k', 'o', '\0' },
+        ",kor,"
+    },
+    {
+        "Kurdish",
+        u8"Kurd\u00EE, \u0643\u0648\u0631\u062F\u06CC",
+        { 'k', 'u', '\0' },
+        ",kur,"
+    },
+    {
+        "Kwanyama, Kuanyama",
+        u8"Kuanyama",
+        { 'k', 'j', '\0' },
+        ",kua,"
+    },
+    {
+        "Latin",
+        u8"latine, lingua latina",
+        { 'l', 'a', '\0' },
+        ",lat,lats,"
+    },
+    {
+        "Luxembourgish, Letzeburgesch",
+        u8"L\u00EBtzebuergesch",
+        { 'l', 'b', '\0' },
+        ",ltz,"
+    },
+    {
+        "Ganda",
+        u8"Luganda",
+        { 'l', 'g', '\0' },
+        ",lug,"
+    },
+    {
+        "Limburgish, Limburgan, Limburger",
+        u8"Limburgs",
+        { 'l', 'i', '\0' },
+        ",lim,"
+    },
+    {
+        "Lingala",
+        u8"Ling\u00E1la",
+        { 'l', 'n', '\0' },
+        ",lin,"
+    },
+    {
+        "Lao",
+        u8"\u0E9E\u0EB2\u0EAA\u0EB2\u0EA5\u0EB2\u0EA7",
+        { 'l', 'o', '\0' },
+        ",lao,"
+    },
+    {
+        "Lithuanian",
+        u8"lietuvi\u0173 kalba",
+        { 'l', 't', '\0' },
+        ",lit,"
+    },
+    {
+        "Luba-Katanga",
+        u8"Tshiluba",
+        { 'l', 'u', '\0' },
+        ",lub,"
+    },
+    {
+        "Latvian",
+        u8"latvie\u0161u valoda",
+        { 'l', 'v', '\0' },
+        ",lav,"
+    },
+    {
+        "Manx",
+        u8"Gaelg, Gailck",
+        { 'g', 'v', '\0' },
+        ",glv,"
+    },
+    {
+        "Macedonian",
+        u8"\u043C\u0430\u043A\u0435\u0434\u043E\u043D\u0441\u043A\u0438 \u0458\u0430\u0437\u0438\u043A",
+        { 'm', 'k', '\0' },
+        ",mkd,mac,"
+    },
+    {
+        "Malagasy",
+        u8"fiteny malagasy",
+        { 'm', 'g', '\0' },
+        ",mlg,"
+    },
+    {
+        "Malay",
+        u8"bahasa Melayu, \u0628\u0647\u0627\u0633 \u0645\u0644\u0627\u064A\u0648",
+        { 'm', 's', '\0' },
+        ",msa,may,"
+    },
+    {
+        "Malayalam",
+        u8"\u0D2E\u0D32\u0D2F\u0D3E\u0D33\u0D02",
+        { 'm', 'l', '\0' },
+        ",mal,"
+    },
+    {
+        "Maltese",
+        u8"Malti",
+        { 'm', 't', '\0' },
+        ",mlt,"
+    },
+    {
+        u8"M\u0101ori",
+        u8"te reo M\u0101ori",
+        { 'm', 'i', '\0' },
+        ",mri,mao,"
+    },
+    {
+        u8"Marathi (Mar\u0101\u1E6Dh\u012B)",
+        u8"\u092E\u0930\u093E\u0920\u0940",
+        { 'm', 'r', '\0' },
+        ",mar,"
+    },
+    {
+        "Marshallese",
+        u8"Kajin M\u0327aje\u013C",
+        { 'm', 'h', '\0' },
+        ",mah,"
+    },
+    {
+        "Mongolian",
+        u8"\u043C\u043E\u043D\u0433\u043E\u043B",
+        { 'm', 'n', '\0' },
+        ",mon,"
+    },
+    {
+        "Nauru",
+        u8"Ekakair\u0169 Naoero",
+        { 'n', 'a', '\0' },
+        ",nau,"
+    },
+    {
+        "Navajo, Navaho",
+        u8"Din\u00E9 bizaad, Din\u00E9k\u02BCeh\u01F0\u00ED",
+        { 'n', 'v', '\0' },
+        ",nav,"
+    },
+    {
+        "Norwegian Bokm\u00E5l",
+        u8"Norsk bokm\u00E5l",
+        { 'n', 'b', '\0' },
+        ",nob,"
+    },
+    {
+        "North Ndebele",
+        u8"isiNdebele",
+        { 'n', 'd', '\0' },
+        ",nde,"
+    },
+    {
+        "Nepali",
+        u8"\u0928\u0947\u092A\u093E\u0932\u0940",
+        { 'n', 'e', '\0' },
+        ",nep,"
+    },
+    {
+        "Ndonga",
+        u8"Owambo",
+        { 'n', 'g', '\0' },
+        ",ndo,"
+    },
+    {
+        "Norwegian Nynorsk",
+        u8"Norsk nynorsk",
+        { 'n', 'n', '\0' },
+        ",nno,"
+    },
+    {
+        "Norwegian",
+        u8"Norsk",
+        { 'n', 'o', '\0' },
+        ",nor,"
+    },
+    {
+        "Nuosu",
+        u8"\uA188\uA320\uA4BF Nuosuhxop",
+        { 'i', 'i', '\0' },
+        ",iii,"
+    },
+    {
+        "South Ndebele",
+        u8"isiNdebele",
+        { 'n', 'r', '\0' },
+        ",nbl,"
+    },
+    {
+        "Occitan",
+        u8"occitan, lenga d'\u00F2c",
+        { 'o', 'c', '\0' },
+        ",oci,"
+    },
+    {
+        "Ojibwe, Ojibwa",
+        u8"\u140A\u14C2\u1511\u14C8\u142F\u14A7\u140E\u14D0",
+        { 'o', 'j', '\0' },
+        ",oji,"
+    },
+    {
+        "Old Church Slavonic, Church Slavic, Church Slavonic, Old Bulgarian, Old Slavonic",
+        u8"\u0469\u0437\u044B\u043A\u044A \u0441\u043B\u043E\u0432\u0463\u043D\u044C\u0441\u043A\u044A",
+        { 'c', 'u', '\0' },
+        ",chu,"
+    },
+    {
+        "Oromo",
+        u8"Afaan Oromoo",
+        { 'o', 'm', '\0' },
+        ",orm,"
+    },
+    {
+        "Oriya",
+        u8"\u0B13\u0B21\u0B3C\u0B3F\u0B06",
+        { 'o', 'r', '\0' },
+        ",ori,"
+    },
+    {
+        "Ossetian, Ossetic",
+        u8"\u0438\u0440\u043E\u043D \u00E6\u0432\u0437\u0430\u0433",
+        { 'o', 's', '\0' },
+        ",oss,"
+    },
+    {
+        "Panjabi, Punjabi",
+        u8"\u0A2A\u0A70\u0A1C\u0A3E\u0A2C\u0A40, \u067E\u0646\u062C\u0627\u0628\u06CC",
+        { 'p', 'a', '\0' },
+        ",pan,"
+    },
+    {
+        "P\u0101li",
+        u8"\u092A\u093E\u0934\u093F",
+        { 'p', 'i', '\0' },
+        ",pli,"
+    },
+    {
+        "Persian (Farsi)",
+        u8"\u0641\u0627\u0631\u0633\u06CC",
+        { 'f', 'a', '\0' },
+        ",fas,per,"
+    },
+    {
+        "Polish",
+        u8"j\u0119zyk polski, polszczyzna",
+        { 'p', 'l', '\0' },
+        ",pol,pols,"
+    },
+    {
+        "Pashto, Pushto",
+        u8"\u067E\u069A\u062A\u0648",
+        { 'p', 's', '\0' },
+        ",pus,"
+    },
+    {
+        "Portuguese",
+        u8"portugu\u00EAs",
+        { 'p', 't', '\0' },
+        ",por,"
+    },
+    {
+        "Quechua",
+        u8"Runa Simi, Kichwa",
+        { 'q', 'u', '\0' },
+        ",que,"
+    },
+    {
+        "Romansh",
+        u8"rumantsch grischun",
+        { 'r', 'm', '\0' },
+        ",roh,"
+    },
+    {
+        "Kirundi",
+        u8"Ikirundi",
+        { 'r', 'n', '\0' },
+        ",run,"
+    },
+    {
+        "Romanian",
+        u8"limba rom\u00E2n\u0103",
+        { 'r', 'o', '\0' },
+        ",ron,rum,"
+    },
+    {
+        "Russian",
+        u8"\u0440\u0443\u0441\u0441\u043A\u0438\u0439 \u044F\u0437\u044B\u043A",
+        { 'r', 'u', '\0' },
+        ",rus,"
+    },
+    {
+        "Sanskrit (Sa\u1E41sk\u1E5Bta)",
+        u8"\u0938\u0902\u0938\u094D\u0915\u0943\u0924\u092E\u094D",
+        { 's', 'a', '\0' },
+        ",san,"
+    },
+    {
+        "Sardinian",
+        u8"sardu",
+        { 's', 'c', '\0' },
+        ",srd,"
+    },
+    {
+        "Sindhi",
+        u8"\u0938\u093F\u0928\u094D\u0927\u0940, \u0633\u0646\u068C\u064A\u060C \u0633\u0646\u062F\u06BE\u06CC",
+        { 's', 'd', '\0' },
+        ",snd,"
+    },
+    {
+        "Northern Sami",
+        u8"Davvis\u00E1megiella",
+        { 's', 'e', '\0' },
+        ",sme,"
+    },
+    {
+        "Samoan",
+        u8"gagana fa'a Samoa",
+        { 's', 'm', '\0' },
+        ",smo,"
+    },
+    {
+        "Sango",
+        u8"y\u00E2ng\u00E2 t\u00EE s\u00E3ng\u00F6",
+        { 's', 'g', '\0' },
+        ",sag,"
+    },
+    {
+        "Serbian",
+        u8"\u0441\u0440\u043F\u0441\u043A\u0438 \u0458\u0435\u0437\u0438\u043A",
+        { 's', 'r', '\0' },
+        ",srp,"
+    },
+    {
+        "Scottish Gaelic; Gaelic",
+        u8"G\u00E0idhlig",
+        { 'g', 'd', '\0' },
+        ",gla,"
+    },
+    {
+        "Shona",
+        u8"chiShona",
+        { 's', 'n', '\0' },
+        ",sna,"
+    },
+    {
+        "Sinhala, Sinhalese",
+        u8"\u0DC3\u0DD2\u0D82\u0DC4\u0DBD",
+        { 's', 'i', '\0' },
+        ",sin,"
+    },
+    {
+        "Slovak",
+        u8"sloven\u010Dina, slovensk\u00FD jazyk",
+        { 's', 'k', '\0' },
+        ",slk,slo,"
+    },
+    {
+        "Slovene",
+        u8"slovenski jezik, sloven\u0161\u010Dina",
+        { 's', 'l', '\0' },
+        ",slv,"
+    },
+    {
+        "Somali",
+        u8"Soomaaliga, af Soomaali",
+        { 's', 'o', '\0' },
+        ",som,"
+    },
+    {
+        "Southern Sotho",
+        u8"Sesotho",
+        { 's', 't', '\0' },
+        ",sot,"
+    },
+    {
+        "South Azerbaijani",
+        u8"\u062A\u0648\u0631\u06A9\u062C\u0647",
+        { 'a', 'z', '\0' },
+        ",azb,"
+    },
+    {
+        "Spanish; Castilian",
+        u8"espa\u00F1ol, castellano",
+        { 'e', 's', '\0' },
+        ",spa,"
+    },
+    {
+        "Sundanese",
+        u8"Basa Sunda",
+        { 's', 'u', '\0' },
+        ",sun,"
+    },
+    {
+        "Swahili",
+        u8"Kiswahili",
+        { 's', 'w', '\0' },
+        ",swa,"
+    },
+    {
+        "Swati",
+        u8"SiSwati",
+        { 's', 's', '\0' },
+        ",ssw,"
+    },
+    {
+        "Swedish",
+        u8"Svenska",
+        { 's', 'v', '\0' },
+        ",swe,"
+    },
+    {
+        "Tamil",
+        u8"\u0BA4\u0BAE\u0BBF\u0BB4\u0BCD",
+        { 't', 'a', '\0' },
+        ",tam,"
+    },
+    {
+        "Telugu",
+        u8"\u0C24\u0C46\u0C32\u0C41\u0C17\u0C41",
+        { 't', 'e', '\0' },
+        ",tel,"
+    },
+    {
+        "Tajik",
+        u8"\u0442\u043E\u04B7\u0438\u043A\u04E3, to\u011Fik\u012B, \u062A\u0627\u062C\u06CC\u06A9\u06CC",
+        { 't', 'g', '\0' },
+        ",tgk,"
+    },
+    {
+        "Thai",
+        u8"\u0E44\u0E17\u0E22",
+        { 't', 'h', '\0' },
+        ",tha,"
+    },
+    {
+        "Tigrinya",
+        u8"\u1275\u130D\u122D\u129B",
+        { 't', 'i', '\0' },
+        ",tir,"
+    },
+    {
+        "Tibetan Standard, Tibetan, Central",
+        u8"\u0F56\u0F7C\u0F51\u0F0B\u0F61\u0F72\u0F42",
+        { 'b', 'o', '\0' },
+        ",bod,tib,"
+    },
+    {
+        "Turkmen",
+        u8"T\u00FCrkmen, \u0422\u04AF\u0440\u043A\u043C\u0435\u043D",
+        { 't', 'k', '\0' },
+        ",tuk,"
+    },
+    {
+        "Tagalog",
+        u8"Wikang Tagalog, \u170F\u1712\u1703\u1705\u1714 \u1706\u1704\u170E\u1713\u1704\u1714",
+        { 't', 'l', '\0' },
+        ",tgl,"
+    },
+    {
+        "Tswana",
+        u8"Setswana",
+        { 't', 'n', '\0' },
+        ",tsn,"
+    },
+    {
+        "Tonga (Tonga Islands)",
+        u8"faka Tonga",
+        { 't', 'o', '\0' },
+        ",ton,"
+    },
+    {
+        "Turkish",
+        u8"T\u00FCrk\u00E7e",
+        { 't', 'r', '\0' },
+        ",tur,"
+    },
+    {
+        "Tsonga",
+        u8"Xitsonga",
+        { 't', 's', '\0' },
+        ",tso,"
+    },
+    {
+        "Tatar",
+        u8"\u0442\u0430\u0442\u0430\u0440 \u0442\u0435\u043B\u0435, tatar tele",
+        { 't', 't', '\0' },
+        ",tat,"
+    },
+    {
+        "Twi",
+        u8"Twi",
+        { 't', 'w', '\0' },
+        ",twi,"
+    },
+    {
+        "Tahitian",
+        u8"Reo Tahiti",
+        { 't', 'y', '\0' },
+        ",tah,"
+    },
+    {
+        "Uyghur, Uighur",
+        u8"Uy\u01A3urq\u0259, \u0626\u06C7\u064A\u063A\u06C7\u0631\u0686\u06D5",
+        { 'u', 'g', '\0' },
+        ",uig,"
+    },
+    {
+        "Ukrainian",
+        u8"\u0443\u043A\u0440\u0430\u0457\u043D\u0441\u044C\u043A\u0430 \u043C\u043E\u0432\u0430",
+        { 'u', 'k', '\0' },
+        ",ukr,"
+    },
+    {
+        "Urdu",
+        u8"\u0627\u0631\u062F\u0648",
+        { 'u', 'r', '\0' },
+        ",urd,"
+    },
+    {
+        "Uzbek",
+        u8"O\u2018zbek, \u040E\u0437\u0431\u0435\u043A, \u0623\u06C7\u0632\u0628\u06D0\u0643",
+        { 'u', 'z', '\0' },
+        ",uzb,"
+    },
+    {
+        "Venda",
+        u8"Tshiven\u1E13a",
+        { 'v', 'e', '\0' },
+        ",ven,"
+    },
+    {
+        "Vietnamese",
+        u8"Ti\u1EBFng Vi\u1EC7t",
+        { 'v', 'i', '\0' },
+        ",vie,"
+    },
+    {
+        "Volap\u00FCk",
+        u8"Volap\u00FCk",
+        { 'v', 'o', '\0' },
+        ",vol,"
+    },
+    {
+        "Walloon",
+        u8"walon",
+        { 'w', 'a', '\0' },
+        ",wln,"
+    },
+    {
+        "Welsh",
+        u8"Cymraeg",
+        { 'c', 'y', '\0' },
+        ",cym,wel,"
+    },
+    {
+        "Wolof",
+        u8"Wollof",
+        { 'w', 'o', '\0' },
+        ",wol,"
+    },
+    {
+        "Western Frisian",
+        u8"Frysk",
+        { 'f', 'y', '\0' },
+        ",fry,"
+    },
+    {
+        "Xhosa",
+        u8"isiXhosa",
+        { 'x', 'o', '\0' },
+        ",xho,"
+    },
+    {
+        "Undefined",
+        u8"undefined",
+        { 'x', 'x', '\0' },
+        ",,"
+    },
+    {
+        "Yiddish",
+        u8"\u05D9\u05D9\u05B4\u05D3\u05D9\u05E9",
+        { 'y', 'i', '\0' },
+        ",yid,"
+    },
+    {
+        "Yoruba",
+        u8"Yor\u00F9b\u00E1",
+        { 'y', 'o', '\0' },
+        ",yor,"
+    },
+    {
+        "Zhuang, Chuang",
+        u8"Sa\u026F cue\u014B\u0185, Saw cuengh",
+        { 'z', 'a', '\0' },
+        ",zha,"
+    },
+    {
+        "Zulu",
+        u8"isiZulu",
+        { 'z', 'u', '\0' },
+        ",zul,"
+    },
+    {
+        NULL,
+        NULL,
+        { '\0', '\0', '\0' },
+        NULL
+    }
+};
+
+// this is the list of 2 letter country names
+snap_child::country_name_t const g_country_names[] =
+{
+    {
+        { 'A', 'D', '\0' },
+        "Andorra"
+    },
+    {
+        { 'A', 'E', '\0' },
+        "United Arab Emirates"
+    },
+    {
+        { 'A', 'F', '\0' },
+        "Afghanistan"
+    },
+    {
+        { 'A', 'G', '\0' },
+        "Antigua and Barbuda"
+    },
+    {
+        { 'A', 'I', '\0' },
+        "Anguilla"
+    },
+    {
+        { 'A', 'L', '\0' },
+        "Albania"
+    },
+    {
+        { 'A', 'M', '\0' },
+        "Armenia"
+    },
+    {
+        { 'A', 'O', '\0' },
+        "Angola"
+    },
+    {
+        { 'A', 'Q', '\0' },
+        "Antarctica"
+    },
+    {
+        { 'A', 'R', '\0' },
+        "Argentina"
+    },
+    {
+        { 'A', 'S', '\0' },
+        "American Samoa"
+    },
+    {
+        { 'A', 'T', '\0' },
+        "Austria"
+    },
+    {
+        { 'A', 'U', '\0' },
+        "Australia"
+    },
+    {
+        { 'A', 'W', '\0' },
+        "Aruba"
+    },
+    {
+        { 'A', 'X', '\0' },
+        u8"\00C5land Islands"
+    },
+    {
+        { 'A', 'Z', '\0' },
+        "Azerbaijan"
+    },
+    {
+        { 'B', 'A', '\0' },
+        "Bosnia and Herzegovina"
+    },
+    {
+        { 'B', 'B', '\0' },
+        "Barbados"
+    },
+    {
+        { 'B', 'D', '\0' },
+        "Bangladesh"
+    },
+    {
+        { 'B', 'E', '\0' },
+        "Belgium"
+    },
+    {
+        { 'B', 'F', '\0' },
+        "Burkina Faso"
+    },
+    {
+        { 'B', 'G', '\0' },
+        "Bulgaria"
+    },
+    {
+        { 'B', 'H', '\0' },
+        "Bahrain"
+    },
+    {
+        { 'B', 'I', '\0' },
+        "Burundi"
+    },
+    {
+        { 'B', 'J', '\0' },
+        "Benin"
+    },
+    {
+        { 'B', 'L', '\0' },
+        u8"Saint Barth\u00E9lemy"
+    },
+    {
+        { 'B', 'M', '\0' },
+        "Bermuda"
+    },
+    {
+        { 'B', 'N', '\0' },
+        "Brunei Darussalam"
+    },
+    {
+        { 'B', 'O', '\0' },
+        "Bolivia, Plurinational State of"
+    },
+    {
+        { 'B', 'Q', '\0' },
+        "Bonaire, Sint Eustatius and Saba"
+    },
+    {
+        { 'B', 'R', '\0' },
+        "Brazil"
+    },
+    {
+        { 'B', 'S', '\0' },
+        "Bahamas"
+    },
+    {
+        { 'B', 'T', '\0' },
+        "Bhutan"
+    },
+    {
+        { 'B', 'V', '\0' },
+        "Bouvet Island"
+    },
+    {
+        { 'B', 'W', '\0' },
+        "Botswana"
+    },
+    {
+        { 'B', 'Y', '\0' },
+        "Belarus"
+    },
+    {
+        { 'B', 'Z', '\0' },
+        "Belize"
+    },
+    {
+        { 'C', 'A', '\0' },
+        "Canada"
+    },
+    {
+        { 'C', 'C', '\0' },
+        "Cocos (Keeling) Islands"
+    },
+    {
+        { 'C', 'D', '\0' },
+        "Congo, the Democratic Republic of the"
+    },
+    {
+        { 'C', 'F', '\0' },
+        "Central African Republic"
+    },
+    {
+        { 'C', 'G', '\0' },
+        "Congo"
+    },
+    {
+        { 'C', 'H', '\0' },
+        "Switzerland"
+    },
+    {
+        { 'C', 'I', '\0' },
+        "C\u00F4te d'Ivoire"
+    },
+    {
+        { 'C', 'K', '\0' },
+        "Cook Islands"
+    },
+    {
+        { 'C', 'L', '\0' },
+        "Chile"
+    },
+    {
+        { 'C', 'M', '\0' },
+        "Cameroon"
+    },
+    {
+        { 'C', 'N', '\0' },
+        "China"
+    },
+    {
+        { 'C', 'O', '\0' },
+        "Colombia"
+    },
+    {
+        { 'C', 'R', '\0' },
+        "Costa Rica"
+    },
+    {
+        { 'C', 'U', '\0' },
+        "Cuba"
+    },
+    {
+        { 'C', 'V', '\0' },
+        "Cape Verde"
+    },
+    {
+        { 'C', 'W', '\0' },
+        "Cura\u00E7ao"
+    },
+    {
+        { 'C', 'X', '\0' },
+        "Christmas Island"
+    },
+    {
+        { 'X', 'Y', '\0' },
+        "Cyprus"
+    },
+    {
+        { 'C', 'Z', '\0' },
+        "Czech Republic"
+    },
+    {
+        { 'D', 'E', '\0' },
+        "Germany"
+    },
+    {
+        { 'D', 'J', '\0' },
+        "Djibouti"
+    },
+    {
+        { 'D', 'K', '\0' },
+        "Denmark"
+    },
+    {
+        { 'D', 'M', '\0' },
+        "Dominica"
+    },
+    {
+        { 'D', 'O', '\0' },
+        "Dominican Republic"
+    },
+    {
+        { 'D', 'Z', '\0' },
+        "Algeria"
+    },
+    {
+        { 'E', 'C', '\0' },
+        "Ecuador"
+    },
+    {
+        { 'E', 'E', '\0' },
+        "Estonia"
+    },
+    {
+        { 'E', 'G', '\0' },
+        "Egypt"
+    },
+    {
+        { 'E', 'H', '\0' },
+        "Western Sahara"
+    },
+    {
+        { 'E', 'R', '\0' },
+        "Eritrea"
+    },
+    {
+        { 'E', 'S', '\0' },
+        "Spain"
+    },
+    {
+        { 'E', 'T', '\0' },
+        "Ethiopia"
+    },
+    {
+        { 'F', 'I', '\0' },
+        "Finland"
+    },
+    {
+        { 'F', 'J', '\0' },
+        "Fiji"
+    },
+    {
+        { 'F', 'K', '\0' },
+        "Falkland Islands (Malvinas)"
+    },
+    {
+        { 'F', 'M', '\0' },
+        "Micronesia, Federated States of"
+    },
+    {
+        { 'F', 'O', '\0' },
+        "Faroe Islands"
+    },
+    {
+        { 'F', 'R', '\0' },
+        "France"
+    },
+    {
+        { 'G', 'A', '\0' },
+        "Gabon"
+    },
+    {
+        { 'G', 'B', '\0' },
+        "United Kingdom"
+    },
+    {
+        { 'G', 'D', '\0' },
+        "Grenada"
+    },
+    {
+        { 'G', 'E', '\0' },
+        "Georgia"
+    },
+    {
+        { 'G', 'F', '\0' },
+        "French Guiana"
+    },
+    {
+        { 'G', 'G', '\0' },
+        "Guernsey"
+    },
+    {
+        { 'G', 'H', '\0' },
+        "Ghana"
+    },
+    {
+        { 'G', 'I', '\0' },
+        "Gibraltar"
+    },
+    {
+        { 'G', 'L', '\0' },
+        "Greenland"
+    },
+    {
+        { 'G', 'M', '\0' },
+        "Gambia"
+    },
+    {
+        { 'G', 'N', '\0' },
+        "Guinea"
+    },
+    {
+        { 'G', 'P', '\0' },
+        "Guadeloupe"
+    },
+    {
+        { 'G', 'Q', '\0' },
+        "Equatorial Guinea"
+    },
+    {
+        { 'G', 'R', '\0' },
+        "Greece"
+    },
+    {
+        { 'G', 'S', '\0' },
+        "South Georgia and the South Sandwich Islands"
+    },
+    {
+        { 'G', 'T', '\0' },
+        "Guatemala"
+    },
+    {
+        { 'G', 'U', '\0' },
+        "Guam"
+    },
+    {
+        { 'G', 'W', '\0' },
+        "Guinea-Bissau"
+    },
+    {
+        { 'G', 'Y', '\0' },
+        "Guyana"
+    },
+    {
+        { 'H', 'K', '\0' },
+        "Hong Kong"
+    },
+    {
+        { 'H', 'M', '\0' },
+        "Heard Island and McDonald Islands"
+    },
+    {
+        { 'H', 'N', '\0' },
+        "Honduras"
+    },
+    {
+        { 'H', 'R', '\0' },
+        "Croatia"
+    },
+    {
+        { 'H', 'T', '\0' },
+        "Haiti"
+    },
+    {
+        { 'H', 'U', '\0' },
+        "Hungary"
+    },
+    {
+        { 'I', 'D', '\0' },
+        "Indonesia"
+    },
+    {
+        { 'I', 'E', '\0' },
+        "Ireland"
+    },
+    {
+        { 'I', 'L', '\0' },
+        "Israel"
+    },
+    {
+        { 'I', 'M', '\0' },
+        "Isle of Man"
+    },
+    {
+        { 'I', 'N', '\0' },
+        "India"
+    },
+    {
+        { 'I', 'O', '\0' },
+        "British Indian Ocean Territory"
+    },
+    {
+        { 'I', 'Q', '\0' },
+        "Iraq"
+    },
+    {
+        { 'I', 'R', '\0' },
+        "Iran, Islamic Republic of"
+    },
+    {
+        { 'I', 'S', '\0' },
+        "Iceland"
+    },
+    {
+        { 'I', 'T', '\0' },
+        "Italy"
+    },
+    {
+        { 'J', 'E', '\0' },
+        "Jersey"
+    },
+    {
+        { 'J', 'M', '\0' },
+        "Jamaica"
+    },
+    {
+        { 'J', 'O', '\0' },
+        "Jordan"
+    },
+    {
+        { 'J', 'P', '\0' },
+        "Japan"
+    },
+    {
+        { 'K', 'E', '\0' },
+        "Kenya"
+    },
+    {
+        { 'K', 'G', '\0' },
+        "Kyrgyzstan"
+    },
+    {
+        { 'K', 'H', '\0' },
+        "Cambodia"
+    },
+    {
+        { 'K', 'I', '\0' },
+        "Kiribati"
+    },
+    {
+        { 'K', 'M', '\0' },
+        "Comoros"
+    },
+    {
+        { 'K', 'N', '\0' },
+        "Saint Kitts and Nevis"
+    },
+    {
+        { 'K', 'P', '\0' },
+        "Korea, Democratic People's Republic of"
+    },
+    {
+        { 'K', 'R', '\0' },
+        "Korea, Republic of"
+    },
+    {
+        { 'K', 'W', '\0' },
+        "Kuwait"
+    },
+    {
+        { 'K', 'Y', '\0' },
+        "Cayman Islands"
+    },
+    {
+        { 'K', 'Z', '\0' },
+        "Kazakhstan"
+    },
+    {
+        { 'L', 'A', '\0' },
+        "Lao People's Democratic Republic"
+    },
+    {
+        { 'L', 'B', '\0' },
+        "Lebanon"
+    },
+    {
+        { 'L', 'C', '\0' },
+        "Saint Lucia"
+    },
+    {
+        { 'L', 'I', '\0' },
+        "Liechtenstein"
+    },
+    {
+        { 'L', 'K', '\0' },
+        "Sri Lanka"
+    },
+    {
+        { 'L', 'R', '\0' },
+        "Liberia"
+    },
+    {
+        { 'L', 'S', '\0' },
+        "Lesotho"
+    },
+    {
+        { 'L', 'T', '\0' },
+        "Lithuania"
+    },
+    {
+        { 'L', 'U', '\0' },
+        "Luxembourg"
+    },
+    {
+        { 'L', 'V', '\0' },
+        "Latvia"
+    },
+    {
+        { 'L', 'Y', '\0' },
+        "Libya"
+    },
+    {
+        { 'M', 'A', '\0' },
+        "Morocco"
+    },
+    {
+        { 'M', 'C', '\0' },
+        "Monaco"
+    },
+    {
+        { 'M', 'D', '\0' },
+        "Moldova, Republic of"
+    },
+    {
+        { 'M', 'E', '\0' },
+        "Montenegro"
+    },
+    {
+        { 'M', 'F', '\0' },
+        "Saint Martin (French part)"
+    },
+    {
+        { 'M', 'G', '\0' },
+        "Madagascar"
+    },
+    {
+        { 'M', 'H', '\0' },
+        "Marshall Islands"
+    },
+    {
+        { 'M', 'K', '\0' },
+        "Macedonia, the former Yugoslav Republic of"
+    },
+    {
+        { 'M', 'L', '\0' },
+        "Mali"
+    },
+    {
+        { 'M', 'M', '\0' },
+        "Myanmar"
+    },
+    {
+        { 'M', 'N', '\0' },
+        "Mongolia"
+    },
+    {
+        { 'M', 'O', '\0' },
+        "Macao"
+    },
+    {
+        { 'M', 'P', '\0' },
+        "Northern Mariana Islands"
+    },
+    {
+        { 'M', 'Q', '\0' },
+        "Martinique"
+    },
+    {
+        { 'M', 'R', '\0' },
+        "Mauritania"
+    },
+    {
+        { 'M', 'D', '\0' },
+        "Montserrat"
+    },
+    {
+        { 'M', 'T', '\0' },
+        "Malta"
+    },
+    {
+        { 'M', 'U', '\0' },
+        "Mauritius"
+    },
+    {
+        { 'M', 'V', '\0' },
+        "Maldives"
+    },
+    {
+        { 'M', 'W', '\0' },
+        "Malawi"
+    },
+    {
+        { 'M', 'X', '\0' },
+        "Mexico"
+    },
+    {
+        { 'M', 'Y', '\0' },
+        "Malaysia"
+    },
+    {
+        { 'M', 'Z', '\0' },
+        "Mozambique"
+    },
+    {
+        { 'N', 'A', '\0' },
+        "Namibia"
+    },
+    {
+        { 'N', 'C', '\0' },
+        "New Caledonia"
+    },
+    {
+        { 'N', 'E', '\0' },
+        "Niger"
+    },
+    {
+        { 'N', 'F', '\0' },
+        "Norfolk Island"
+    },
+    {
+        { 'N', 'G', '\0' },
+        "Nigeria"
+    },
+    {
+        { 'N', 'I', '\0' },
+        "Nicaragua"
+    },
+    {
+        { 'N', 'L', '\0' },
+        "Netherlands"
+    },
+    {
+        { 'N', 'O', '\0' },
+        "Norway"
+    },
+    {
+        { 'N', 'P', '\0' },
+        "Nepal"
+    },
+    {
+        { 'N', 'R', '\0' },
+        "Nauru"
+    },
+    {
+        { 'N', 'U', '\0' },
+        "Niue"
+    },
+    {
+        { 'N', 'Z', '\0' },
+        "New Zealand"
+    },
+    {
+        { 'O', 'M', '\0' },
+        "Oman"
+    },
+    {
+        { 'P', 'A', '\0' },
+        "Panama"
+    },
+    {
+        { 'P', 'E', '\0' },
+        "Peru"
+    },
+    {
+        { 'P', 'F', '\0' },
+        "French Polynesia"
+    },
+    {
+        { 'P', 'G', '\0' },
+        "Papua New Guinea"
+    },
+    {
+        { 'P', 'H', '\0' },
+        "Philippines"
+    },
+    {
+        { 'P', 'K', '\0' },
+        "Pakistan"
+    },
+    {
+        { 'P', 'L', '\0' },
+        "Poland"
+    },
+    {
+        { 'P', 'M', '\0' },
+        "Saint Pierre and Miquelon"
+    },
+    {
+        { 'P', 'N', '\0' },
+        "Pitcairn"
+    },
+    {
+        { 'P', 'R', '\0' },
+        "Puerto Rico"
+    },
+    {
+        { 'P', 'S', '\0' },
+        "Palestine, State of"
+    },
+    {
+        { 'P', 'T', '\0' },
+        "Portugal"
+    },
+    {
+        { 'P', 'W', '\0' },
+        "Palau"
+    },
+    {
+        { 'P', 'Y', '\0' },
+        "Paraguay"
+    },
+    {
+        { 'Q', 'A', '\0' },
+        "Qatar"
+    },
+    {
+        { 'R', 'E', '\0' },
+        "R\u00E9union"
+    },
+    {
+        { 'R', 'O', '\0' },
+        "Romania"
+    },
+    {
+        { 'R', 'S', '\0' },
+        "Serbia"
+    },
+    {
+        { 'R', 'U', '\0' },
+        "Russian Federation"
+    },
+    {
+        { 'R', 'W', '\0' },
+        "Rwanda"
+    },
+    {
+        { 'S', 'A', '\0' },
+        "Saudi Arabia"
+    },
+    {
+        { 'S', 'B', '\0' },
+        "Solomon Islands"
+    },
+    {
+        { 'S', 'C', '\0' },
+        "Seychelles"
+    },
+    {
+        { 'S', 'D', '\0' },
+        "Sudan"
+    },
+    {
+        { 'S', 'E', '\0' },
+        "Sweden"
+    },
+    {
+        { 'S', 'G', '\0' },
+        "Singapore"
+    },
+    {
+        { 'S', 'H', '\0' },
+        "Saint Helena, Ascension and Tristan da Cunha"
+    },
+    {
+        { 'S', 'I', '\0' },
+        "Slovenia"
+    },
+    {
+        { 'S', 'J', '\0' },
+        "Svalbard and Jan Mayen"
+    },
+    {
+        { 'S', 'K', '\0' },
+        "Slovakia"
+    },
+    {
+        { 'S', 'L', '\0' },
+        "Sierra Leone"
+    },
+    {
+        { 'S', 'M', '\0' },
+        "San Marino"
+    },
+    {
+        { 'S', 'N', '\0' },
+        "Senegal"
+    },
+    {
+        { 'S', 'O', '\0' },
+        "Somalia"
+    },
+    {
+        { 'S', 'R', '\0' },
+        "Suriname"
+    },
+    {
+        { 'S', 'S', '\0' },
+        "South Sudan"
+    },
+    {
+        { 'S', 'T', '\0' },
+        "Sao Tome and Principe"
+    },
+    {
+        { 'S', 'V', '\0' },
+        "El Salvador"
+    },
+    {
+        { 'S', 'X', '\0' },
+        "Sint Maarten (Dutch part)"
+    },
+    {
+        { 'S', 'Y', '\0' },
+        "Syrian Arab Republic"
+    },
+    {
+        { 'S', 'Z', '\0' },
+        "Swaziland"
+    },
+    {
+        { 'T', 'C', '\0' },
+        "Turks and Caicos Islands"
+    },
+    {
+        { 'T', 'D', '\0' },
+        "Chad"
+    },
+    {
+        { 'T', 'F', '\0' },
+        "French Southern Territories"
+    },
+    {
+        { 'T', 'G', '\0' },
+        "Togo"
+    },
+    {
+        { 'T', 'H', '\0' },
+        "Thailand"
+    },
+    {
+        { 'T', 'J', '\0' },
+        "Tajikistan"
+    },
+    {
+        { 'T', 'K', '\0' },
+        "Tokelau"
+    },
+    {
+        { 'T', 'L', '\0' },
+        "Timor-Leste"
+    },
+    {
+        { 'T', 'M', '\0' },
+        "Turkmenistan"
+    },
+    {
+        { 'T', 'N', '\0' },
+        "Tunisia"
+    },
+    {
+        { 'T', 'O', '\0' },
+        "Tonga"
+    },
+    {
+        { 'T', 'R', '\0' },
+        "Turkey"
+    },
+    {
+        { 'T', 'T', '\0' },
+        "Trinidad and Tobago"
+    },
+    {
+        { 'T', 'V', '\0' },
+        "Tuvalu"
+    },
+    {
+        { 'T', 'W', '\0' },
+        "Taiwan, Province of China"
+    },
+    {
+        { 'T', 'Z', '\0' },
+        "Tanzania, United Republic of"
+    },
+    {
+        { 'U', 'A', '\0' },
+        "Ukraine"
+    },
+    {
+        { 'U', 'G', '\0' },
+        "Uganda"
+    },
+    {
+        { 'U', 'M', '\0' },
+        "United States Minor Outlying Islands"
+    },
+    {
+        { 'U', 'S', '\0' },
+        "United States"
+    },
+    {
+        { 'U', 'Y', '\0' },
+        "Uruguay"
+    },
+    {
+        { 'U', 'Z', '\0' },
+        "Uzbekistan"
+    },
+    {
+        { 'V', 'A', '\0' },
+        "Holy See (Vatican City State)"
+    },
+    {
+        { 'V', 'C', '\0' },
+        "Saint Vincent and the Grenadines"
+    },
+    {
+        { 'V', 'E', '\0' },
+        "Venezuela, Bolivarian Republic of"
+    },
+    {
+        { 'V', 'G', '\0' },
+        "Virgin Islands, British"
+    },
+    {
+        { 'V', 'I', '\0' },
+        "Virgin Islands, U.S."
+    },
+    {
+        { 'V', 'N', '\0' },
+        "Viet Nam"
+    },
+    {
+        { 'V', 'U', '\0' },
+        "Vanuatu"
+    },
+    {
+        { 'W', 'F', '\0' },
+        "Wallis and Futuna"
+    },
+    {
+        { 'W', 'S', '\0' },
+        "Samoa"
+    },
+    {
+        { 'Y', 'E', '\0' },
+        "Yemen"
+    },
+    {
+        { 'Y', 'T', '\0' },
+        "Mayotte"
+    },
+    {
+        { 'Z', 'A', '\0' },
+        "South Africa"
+    },
+    {
+        { 'Z', 'M', '\0' },
+        "Zambia"
+    },
+    {
+        { 'Z', 'W', '\0' },
+        "Zimbabwe"
+    },
+    {
+        { 'Z', 'Z', '\0' },
+        "Unknown" // unknown, invalid, undefined
+    },
+    {
+        { '\0', '\0', '\0' },
+        NULL
+    }
+};
+
 
 } // no name namespace
 
@@ -311,6 +2459,8 @@ bool snap_child::process(int socket)
         return true;
     }
 
+    f_ready = false;
+
     // on fork() we lose the configuration so we have to reload it
     logging::reconfigure();
 
@@ -342,6 +2492,8 @@ bool snap_child::process(int socket)
 
     // start the plugins and there initialization
     init_plugins();
+
+    canonicalize_options();    // find the language, branch, and revision specified by the user
 
     // finally, "execute" the page being accessed
     if(!f_is_being_initialized)
@@ -487,6 +2639,8 @@ void snap_child::process_backend_uri(const QString& uri)
     f_uri.set_option("start_date", QString("%1").arg(f_start_date));
 
     init_plugins();
+
+    canonicalize_options();
 
     QString action(f_server->get_parameter("__BACKEND_ACTION"));
     if(!action.isEmpty())
@@ -869,11 +3023,8 @@ void snap_child::read_environment()
                         }
                     }
 #ifdef DEBUG
-fprintf(stderr, " f_files[\"%s\"] = \"...\" (Filename: \"%s\" MIME: %s, size: %d)\n",
-        f_name.toUtf8().data(),
-        filename.toUtf8().data(),
-        file.get_mime_type().toUtf8().data(),
-        f_post_content.size());
+std::cerr << " f_files[\"" << f_name << "\"] = \"...\" (Filename: \"" << filename
+    << "\" MIME: " << file.get_mime_type() << ", size: " << f_post_content.size() << ")\n";
 #endif
                 }
             }
@@ -1580,6 +3731,23 @@ const snap_uri& snap_child::get_uri() const
 }
 
 
+/** \brief Define the action.
+ *
+ * This function is used to save the action being used to check the
+ * main page. The actions are defined in the database. These are
+ * "view", "edit", "delete", "administer", etc.
+ *
+ * Any action can be set, the permission plugin verifies that it exists
+ * and that the user has permissions before actually apply the action.
+ *
+ * \param[in] action  The action used to check the page.
+ */
+void snap_child::set_action(QString const& action)
+{
+    f_uri.set_query_option(f_server->get_parameter("qs_action"), action);
+}
+
+
 /** \brief Connect to the Cassandra database system.
  *
  * This function connects to the Cassandra database system and
@@ -1741,6 +3909,7 @@ void snap_child::canonicalize_domain()
                 if(var->get_required())
                 {
                     // required, use default if empty
+                    // TODO -- test that one, it seems that && should be used, not ||
                     if(sub_domain_value.isEmpty()
                     || var->get_type() == domain_variable::DOMAIN_VARIABLE_TYPE_WEBSITE)
                     {
@@ -2083,6 +4252,528 @@ void snap_child::canonicalize_website()
 }
 
 
+/** \brief Determine the language, branch, revision, and compression.
+ *
+ * This function takes parameters as specified by the client and determines
+ * the language, branch, revision, and compression that are to be used to
+ * select the data to be returned to the client.
+ *
+ * In most cases visitors can only see the branch and revision that are
+ * marked as current. Editors can see all branches and revisions. Everyone
+ * can view any language, and translators (who are editors as well) can
+ * create new pages in a the languages they were assigned.
+ *
+ * The compression information is canonicalized here so we do not have to
+ * do it over and over again. It initializes the f_compressions vector
+ * with the very first entry privileged, as the favored entry. The last
+ * entry may be the special value COMPRESSION_INVALID in which case the
+ * 406 error (HTTP_CODE_NOT_ACCEPTABLE) should be generated.
+ *
+ * \todo
+ * The user may select a preferred language in his account. That has
+ * to be used before the browser information. However, the options
+ * (domain, path, or GET variable,) still have higher priority.
+ * Unfortunately, although plugins are already initialized, whether
+ * the user is logged in is not yet known so we cannot check from
+ * this function.
+ */
+void snap_child::canonicalize_options()
+{
+    // *** LANGUAGE / COUNTRY ***
+    // first take care of the language
+
+    // transform the language specified by the browser in an array
+    http_strings::WeightedHttpString languages(snapenv("HTTP_ACCEPT_LANGUAGE"));
+    http_strings::WeightedHttpString::part_vector_t browser_languages(languages.get_parts());
+    if(!browser_languages.isEmpty())
+    {
+        qStableSort(browser_languages);
+        int const max(browser_languages.size());
+        for(int i(0); i < max; ++i)
+        {
+            QString browser_lang(browser_languages[0].get_name());
+            QString browser_country;
+            if(verify_locale(browser_lang, browser_country, false))
+            {
+                // only keep those that are considered valid (they all should
+                // be, but in case a hacker or strange client access our
+                // systems...)
+                locale_info_t l;
+                l.set_language(browser_lang);
+                l.set_country(browser_country);
+                f_browser_locales.push_back(l);
+                // added in order
+            }
+            // else -- browser sent us something we don't understand
+        }
+    }
+
+    QString const qs_lang(f_server->get_parameter("qs_lang"));
+    QString lang(f_uri.query_option(qs_lang));
+    QString country;
+
+    if(!lang.isEmpty())
+    {
+        // user specified locale
+        verify_locale(lang, country, true);
+    }
+    //else
+    //{
+    //    // the lang option in the URI is defined from:
+    //    //
+    //    //   1. a sub-domain name
+    //    //   2. a section in the path
+    //    //   3. a query string parameter
+    //    //
+    //    // and that's it, but we also want to support another set of
+    //    // languages: the ones defined by the browser variable named:
+    //    //          HTTP_ACCEPT_LANGUAGE
+    //    //
+    //    // the problem we have here is that the browser variable defines
+    //    // a set of supported languages and all have a right to be used
+    //    // in a visitor's request, example:
+    //    //
+    //    //   HTTP_ACCEPT_LANGUAGE=en-us,en;q=0.8,fr-fr;q=0.5,fr;q=0.3
+    //    //
+    //    if(!f_browser_locales.isEmpty())
+    //    {
+    //        // language and country already broken up
+    //        lang = f_browser_locales[0].get_language();
+    //        country = f_browser_locales[0].get_country();
+    //    }
+    //    else
+    //    {
+    //        lang = "xx";
+    //    }
+    //}
+
+    // *** BRANCH / REVISION ***
+    // now take care of the branch and revision
+
+    // current or current working branch (working_branch=1)
+    QString const qs_working_branch(f_server->get_parameter("qs_working_branch"));
+    QString const working_branch_entry(f_uri.query_option(qs_working_branch));
+    bool const working_branch(!working_branch_entry.isEmpty());
+
+    // branch (branch=<branch>)
+    QString const qs_branch(f_server->get_parameter("qs_branch"));
+    QString branch(f_uri.query_option(qs_branch));
+
+    // rev (rev=<branch>.<revision>)
+    QString const qs_rev(f_server->get_parameter("qs_rev"));
+    QString rev(f_uri.query_option(qs_rev));
+
+    // revision (revision=<revision>)
+    QString const qs_revision(f_server->get_parameter("qs_revision"));
+    QString revision(f_uri.query_option(qs_revision));
+
+    if(branch.isEmpty() && revision.isEmpty())
+    {
+        if(!rev.isEmpty())
+        {
+            QStringList r(rev.split('.'));
+            branch = r[0];
+            int const size(r.size());
+            if(size != 1)
+            {
+                if(size == 2)
+                {
+                    branch = r[0];
+                    revision = r[1];
+                }
+                else
+                {
+                    // refuse branch/revision + rev definitions together
+                    die(HTTP_CODE_BAD_REQUEST, "Invalid Revision",
+                            QString("The revision (%1) is not valid. It is expected to be a branch number, a period (.), and a revision number.").arg(rev),
+                            "We found a number of period other than 1 or 2.");
+                    NOTREACHED();
+                }
+            }
+        }
+        // else use the default
+    }
+    else if(!rev.isEmpty())
+    {
+        // refuse branch/revision + rev definitions together
+        die(HTTP_CODE_BAD_REQUEST, "Invalid Revision",
+                "You defined a rev parameter along a branch and/or revision, which is not supported. Remove one or the other to access your page.",
+                QString("We only accept a branch+revision (%1.%2) or a rev (%3).").arg(branch).arg(revision).arg(rev));
+        NOTREACHED();
+    }
+
+    snap_version::version_number_t branch_value(static_cast<snap_version::basic_version_number_t>(snap_version::SPECIAL_VERSION_UNDEFINED));
+    snap_version::version_number_t revision_value(static_cast<snap_version::basic_version_number_t>(snap_version::SPECIAL_VERSION_UNDEFINED));
+    if(!branch.isEmpty())
+    {
+        // now verify that both are formed of digits only
+        bool ok;
+        branch_value = branch.toInt(&ok, 10);
+        if(!ok)
+        {
+            // if defined the branch needs to be a valid decimal number
+            die(HTTP_CODE_BAD_REQUEST, "Invalid Branch",
+                    QString("Branch number \"%1\" is invalid. Only digits are expected.").arg(branch),
+                    "The user did not give us a number as the branch number.");
+            NOTREACHED();
+        }
+    }
+    if(!revision.isEmpty())
+    {
+        bool ok;
+        revision_value = revision.toInt(&ok, 10);
+        if(!ok)
+        {
+            // if defined the revision needs to be a valid decimal number
+            die(HTTP_CODE_BAD_REQUEST, "Invalid Revision",
+                    QString("Revision number \"%1\" is invalid. Only digits are expected.").arg(revision),
+                    "The user did not give us a number as the revision number.");
+            NOTREACHED();
+        }
+    }
+
+    // *** COMPRESSION ***
+    //
+    // compression is called "Encoding" in the HTTP reference
+    http_strings::WeightedHttpString encodings(snapenv("HTTP_ACCEPT_ENCODING"));
+
+    // server defined compression is named "*" (i.e. server chooses)
+    // so first we check for gzip because we support that compression
+    // and that's our favorite for now (will change later with sdpy
+    // support...)
+    compression_vector_t compressions;
+    bool got_gzip(false);
+    float gzip_level(std::max(std::max(encodings.get_level("gzip"), encodings.get_level("x-gzip")), encodings.get_level("*")));
+    float deflate_level(encodings.get_level("deflate"));
+    if(gzip_level > 0.0f && gzip_level >= deflate_level)
+    {
+        compressions.push_back(COMPRESSION_GZIP);
+        got_gzip = true;
+    }
+
+    // now check all the other encodings and add them
+    http_strings::WeightedHttpString::part_vector_t browser_compressions(encodings.get_parts());
+    qStableSort(browser_compressions);
+    int const max(browser_compressions.size());
+    for(int i(0); i < max; ++i)
+    {
+        QString encoding_name(browser_compressions[i].get_name());
+        if(browser_compressions[i].get_level() == 0)
+        {
+            if(encoding_name == "identity")
+            {
+                // if you reach this entry, generate a 406!
+                // this means the user will not accept uncompressed data
+                compressions.push_back(COMPRESSION_INVALID);
+            }
+        }
+        else
+        {
+            if(encoding_name == "gzip"
+            || encoding_name == "x-gzip"
+            || encoding_name == "*")
+            {
+                // since we support multiple name we make use of a
+                // flag to avoid adding gzip more than once
+                if(!got_gzip)
+                {
+                    compressions.push_back(COMPRESSION_GZIP);
+                    got_gzip = true;
+                }
+            }
+            else if(encoding_name == "deflate")
+            {
+                compressions.push_back(COMPRESSION_DEFLATE);
+            }
+            else if(encoding_name == "bz2")
+            {
+                // not yet implemented though...
+                compressions.push_back(COMPRESSION_BZ2);
+            }
+            else if(encoding_name == "sdch")
+            {
+                // not yet implemented though...
+                compressions.push_back(COMPRESSION_SDCH);
+            }
+            else if(encoding_name == "identity")
+            {
+                // identity is acceptable
+                compressions.push_back(COMPRESSION_IDENTITY);
+            }
+            // else -- we do not support yet...
+        }
+    }
+
+    // *** SAVE RESULTS ***
+    f_language = lang;
+    f_country = country;
+    //f_language_key = f_language;
+    //if(!f_country.isEmpty())
+    //{
+    //    f_language_key += "_";
+    //    f_language_key += f_country;
+    //}
+
+    f_working_branch = working_branch;
+    f_branch = branch_value;
+    f_revision = revision_value;
+    f_revision_key = QString("%1.%2").arg(f_branch).arg(f_revision);
+
+    f_compressions.swap(compressions);
+}
+
+
+/** \brief Verify the locale defined in \p lang.
+ *
+ * This function cuts the \p lang string in two strings: the language
+ * name and one country.
+ *
+ * In most cases, when you call this function the language  parameter
+ * (\p lang) includes the entire locale such as: de_DE or am-BY. It is
+ * not mandatory so the country can also be define in which case it
+ * should not appear in the \p lang parameter.
+ */
+bool snap_child::verify_locale(QString& lang, QString& country, bool generate_errors)
+{
+    // search for a '-' or '_' separator as in:
+    //
+    //    fr-ca   (browser locale)
+    //    en_US   (Unix environment locale)
+    //
+    // initialize with 'ptr - 1' so we can ++ on entry of the while loop
+    QChar const *s(lang.data() - 1);
+    ushort c;
+    do
+    {
+        ++s;
+        c = s->unicode();
+    }
+    while(c != '\0' && c != '-' && c != '_');
+
+    // if not '\0' then we have a country specified
+    if(c != '\0')
+    {
+        if(!country.isEmpty())
+        {
+            if(generate_errors)
+            {
+                // we do not accept entries such as "br-" or "ru_"
+                die(HTTP_CODE_BAD_REQUEST, "Country Defined Twice",
+                        QString("Country is defined twice.").arg(lang).arg(c),
+                        "This one may be a programmer mistake. The country parameter was not an empty string on entry of this function.");
+                NOTREACHED();
+            }
+            return false;
+        }
+        int pos(s - lang.data());
+        country = lang.mid(pos + 1);
+        lang = lang.left(pos);
+        if(lang.isEmpty())
+        {
+            if(generate_errors)
+            {
+                // we do not accept entries such as "-br" or "_RU"
+                die(HTTP_CODE_NOT_FOUND, "Language Not Found",
+                        QString("Language in the locale specification \"%1\" is not defined which is not supported.").arg(lang),
+                        "Prevented user from accessing the website with no language specified, even though he specified a language entry.");
+                NOTREACHED();
+            }
+            return false;
+        }
+        if(country.isEmpty())
+        {
+            if(generate_errors)
+            {
+                // we do not accept entries such as "br-" or "ru_"
+                die(HTTP_CODE_NOT_FOUND, "Country Not Found",
+                        QString("Country in the locale specification \"%1\" is not defined. Remove '%2' if you do not want to include a country.").arg(lang).arg(c),
+                        "Prevented user from accessing the website with no country specified, even though he specified a country entry.");
+                NOTREACHED();
+            }
+            return false;
+        }
+    }
+
+    if(lang.isEmpty())
+    {
+        // use the default
+        lang = "xx";
+    }
+    else
+    {
+        if(!verify_language_name(lang))
+        {
+            if(generate_errors)
+            {
+                // language is not valid; generate an error
+                die(HTTP_CODE_NOT_FOUND, "Language Not Found",
+                        QString("Language in the locale specification \"%1\" is not currently considered a known or valid language name.").arg(lang),
+                        "Prevented user from accessing the website with an invalid language.");
+                NOTREACHED();
+            }
+            return false;
+        }
+    }
+
+    // country can be empty, that's fine; in most cases we recommend users
+    // to not use the country name in their language
+    if(!country.isEmpty())
+    {
+        if(country.contains('.'))
+        {
+            if(generate_errors)
+            {
+                // charset not supported here for now
+                die(HTTP_CODE_NOT_FOUND, "Country Not Found",
+                        QString("Locale specification \"%1\" seems to include a charset which is not legal at this time.").arg(lang),
+                        "Prevented user from accessing the website because a charset was specified with the language.");
+                NOTREACHED();
+            }
+            return false;
+        }
+        if(!verify_country_name(country))
+        {
+            if(generate_errors)
+            {
+                // abbreviation not found
+                die(HTTP_CODE_NOT_FOUND, "Country Not Found",
+                        QString("Country in locale specification \"%1\" does not look like a valid country name.").arg(lang),
+                        "Prevented user from accessing the website with an invalid country.");
+                NOTREACHED();
+            }
+            return false;
+        }
+    }
+
+    return true;
+}
+
+/** \brief Verify that a name is a language name.
+ *
+ * This function checks whether \p lang is a valid language name. If so
+ * then the function returns true and \p lang is set to the corresponding
+ * 2 letter abbreviation for that country.
+ *
+ * Note that calling the function with an empty string will make it
+ * return false.
+ *
+ * \warning
+ * The input string is changed even if the language is not found.
+ *
+ * \param[in,out] lang  The language being checked.
+ *
+ * \return true if the language is valid, false in all other cases.
+ */
+bool snap_child::verify_language_name(QString& lang)
+{
+    // TODO: make use of a fully optimized search with a binary search like
+    //       capability (i.e. a switch on a per character basis in a
+    //       sub-function generated using the language table)
+    lang = lang.toLower();
+    if(lang.length() == 2)
+    {
+        // we get the unicode value even though in the loop we compare
+        // against ASCII; if l0 or l1 are characters outside of the ASCII
+        // character set, then the loop will fail, simply
+        ushort const l0(lang[0].unicode());
+        ushort const l1(lang[1].unicode());
+        for(language_name_t const *l(g_language_names); l->f_short_name[0]; ++l)
+        {
+            if(l0 == l->f_short_name[0]
+            && l1 == l->f_short_name[1])
+            {
+                // got it!
+                return true;
+            }
+        }
+    }
+    else
+    {
+        // TBD: do we really want to support long names?
+        QString lang_with_commas("," + lang + ",");
+        QByteArray lang_with_commas_buffer(lang_with_commas.toUtf8());
+        char const *lwc(lang_with_commas_buffer.data());
+        for(language_name_t const *l(g_language_names); l->f_language; ++l)
+        {
+            // the multi-name is already semi-optimize so we test it too
+            // TBD -- this should maybe not be checked at all
+            if(strstr(l->f_other_names, lwc) != NULL)
+            {
+                lang = l->f_short_name;
+                return true;
+            }
+        }
+    }
+
+    // not found
+    return false;
+}
+
+
+/** \brief Verify that a name is a country name.
+ *
+ * This function checks whether \p country is a valid country name. If so
+ * then the function returns true and \p country is set to the corresponding
+ * 2 letter abbreviation for that country.
+ *
+ * Note that calling the function with an empty string will make it
+ * return false.
+ *
+ * \warning
+ * The input string is changed even if the country is not found.
+ *
+ * \param[in,out] lang  The language being checked.
+ *
+ * \return true if the language is valid, false in all other cases.
+ */
+bool snap_child::verify_country_name(QString& country)
+{
+    country = country.toUpper();
+    if(country.length() == 2)
+    {
+        // check abbreviations only
+        ushort const c0 = country[0].unicode();
+        ushort const c1 = country[1].unicode();
+        for(country_name_t const *c(g_country_names); c->f_abbreviation[0]; ++c)
+        {
+            if(c0 == c->f_abbreviation[0] && c1 == c->f_abbreviation[1])
+            {
+                // found it!
+                return true;
+            }
+        }
+    }
+    else
+    {
+        // check full names only
+        //
+        // TODO: this could be fully optimized with a set of switch
+        //       statements and the full country name should be checked
+        //       without the part after the comma, then in full with the
+        //       part after the comma put in the front of the other
+        //       part; i.e. "Bolivia, Plurinational State of" should
+        //       be checked as any one of the following four entries:
+        //
+        //           BO  (abbreviation)
+        //           Bolivia
+        //           Plurinational State of Bolivia
+        //           Bolivia, Plurinational State of
+        //
+        // TBD -- I'm not so sure we really want to support full names
+        for(country_name_t const *c(g_country_names); c->f_abbreviation[0]; ++c)
+        {
+            if(QString(c->f_name).toUpper() == country)
+            {
+                country = c->f_abbreviation;
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+
 /** \brief Check whether a site needs to be redirected.
  *
  * This function verifies the site we just discovered to see whether
@@ -2226,34 +4917,6 @@ void snap_child::page_redirect(QString const& path, http_code_t http_code, QStri
 void snap_child::attach_to_session()
 {
     f_server->attach_to_session();
-}
-
-
-/** \brief Check whether access is permitted.
- *
- * This function checks whether \p user_path can perform \p action on
- * \p path. If the action can be performed this function returns true,
- * otherwise it returns false.
- *
- * The function makes use of an action such as "view". The action is
- * very important to verify whether a user has permission to do something
- * or not.
- *
- * The anonymous user is represented by an empty path and not "user"
- * as in the session.
- *
- * \param[in] user_path  The path to the user account in the content table.
- * \param[in] path  The path to check for permissions.
- * \param[in] action  The action being checked.
- * \param[in] login_status  The user status to be checked.
- *
- * \return true if the specified user has permission.
- */
-bool snap_child::access_allowed(QString const& user_path, QString const& path, QString const& action, QString const& login_status)
-{
-    server::permission_flag result;
-    f_server->access_allowed(user_path, path, action, login_status, result);
-    return result.allowed();
 }
 
 
@@ -3670,7 +6333,7 @@ void snap_child::execute()
     //    // if the Upgrade header was specified check whether it includes
     //    // HTTP/1.1 as one of the supported protocols
     //    // Note: we may want to make use of the http_string::WeightedHttpString
-    //    //       object to part that client parameter
+    //    //       object to split that client parameter
     //    if(snapenv("?REQUEST_UPGRADE?").simplified().replace(QRegExp("[ \t]?,[ \t]?"), ",").toLower().split(',', QString::SkipEmptyParts).contains("HTTP/1.1"))
     //    {
     //        set_header("Status", "HTTP/1.1 101 Switching Protocols");
@@ -3733,7 +6396,10 @@ void snap_child::execute()
     f_server->process_cookies();
 
     // let plugins detach whatever data they attached to the user session
+    // (note: nothing to do with the fork() which was called a while back)
     f_server->detach_from_session();
+
+    f_ready = true;
 
     // generate the output
     //
@@ -3757,6 +6423,11 @@ void snap_child::execute()
     // Handling the compression has to be done before defining the
     // Content-Length header since that represents the compressed
     // data and not the full length
+
+    // TODO make use of the pre-canonicalized compression information
+    //      (but also look into the identity handling... at this point
+    //      we do not generate a 406 if identity is defined and set to
+    //      zero if another compression is available...)
 
     // TODO when downloading a file (an attachment) that's already
     //      compressed we need to specify the compression of the output
@@ -3839,71 +6510,6 @@ void snap_child::execute()
 }
 
 
-/** \brief Verify for permissions.
- *
- * This function calculates the permissions of the user to access the
- * specified path with the specified action. If the result is that the
- * current user does not have permission to access the page, then the
- * function checks whether the user is logged in. If not, he gets
- * sent to the log in page after saving the current path as the place
- * to come back after logging in. If the user is already logged in,
- * then an Access Denied error is generated.
- *
- * \param[in] path  The path which permissions are being checked.
- * \param[in] err_callback  An object with on_error() and on_redirect()
- *                          functions.
- */
-void snap_child::verify_permissions(QString const& path, permission_error_callback& err_callback)
-{
-    QString qs_action(f_server->get_parameter("qs_action"));
-    QString action;
-    if(f_uri.has_query_option(qs_action))
-    {
-        // the user specified an action
-        action = f_uri.query_option(qs_action);
-    }
-    if(action.isEmpty())
-    {
-        // use the default
-        action = default_action(path);
-    }
-
-    // save the action found in the URI so that way any plugin can access
-    // that information at any point, not just the verify_rights() function
-    f_uri.set_query_option(qs_action, action);
-
-    // only actions that are defined in the permission types are
-    // allowed, anything else is funky action from a hacker or
-    // whatnot and we just die with an error in that case
-    f_server->validate_action(path, action, err_callback);
-}
-
-
-/** \brief Dynamically compute the default action.
- *
- * Depending on the path and method (GET, POST, DELETE, PUT...) the system
- * reacts with a default action.
- */
-QString snap_child::default_action(QString uri_path)
-{
-    if(f_has_post)
-    {
-        // this could also be "edit" or "create"...
-        // but "administer" is more restrictive at this point
-        return "administer";
-    }
-
-    canonicalize_path(uri_path);
-
-    if(uri_path == "admin" || uri_path.startsWith("admin/"))
-    {
-        return "administer";
-    }
-
-    return "view";
-}
-
-
 /** \brief Process the post if there was one.
  *
  * This function processes the post, as in checks all the validity of
@@ -3919,6 +6525,277 @@ void snap_child::process_post()
     {
         f_server->process_post(f_uri.path());
     }
+}
+
+
+/** \brief Get the language defined by the user or browser.
+ *
+ * This function retrieves the language to be used in this
+ * request:
+ *
+ * \li the user defined language (sub-domain, path, or a GET variable)
+ * \li the preferred language of that user (user account)
+ * \li the language that the browser sent (as a last resort.)
+ *
+ * The user preferred language requires the user to be logged in. This
+ * call only works 100% correctly only if made the f_server->execute()
+ * call started (f_ready is true in snap_child).
+ *
+ * The language information is expected to be used to return the
+ * proper content of a page. However, you probably want to use the
+ * get_language_key() function instead as it will properly concatenate
+ * the language and the country exactly as required.
+ *
+ * If no language were defined, this function returns the "default"
+ * (as in neutral) language which is "xx". This may be returned if
+ * the function is called to early and no browser defaults were
+ * found in the request.
+ *
+ * \note
+ * The test to know whether the user has a preferred language selection
+ * is done in this function because the canonicalize_options() function
+ * runs too soon for such that query to function then (i.e. the plugins
+ * are defined, but the process_cookies() signal was not yet sent.)
+ *
+ * \return The language (2 letter canonicalized language name.)
+ */
+QString snap_child::get_language()
+{
+    // was the language defined as a sub-domain, a path segment, or
+    // a query string parameter? if so f_language is not empty
+    if(f_language.isEmpty())
+    {
+        get_plugins_locales();
+        if(!f_plugins_locales.isEmpty())
+        {
+            // a plugin defined a language
+            f_language = f_plugins_locales[0].get_language();
+            f_country = f_plugins_locales[0].get_country();
+        }
+        else if(!f_browser_locales.isEmpty())
+        {
+            // use client locale defined by the browser
+            f_language = f_browser_locales[0].get_language();
+            f_country = f_browser_locales[0].get_country();
+        }
+        else
+        {
+            // no language defined, use the default in that case
+            f_language = "xx";
+        }
+    }
+
+    return f_language;
+}
+
+
+/** \brief Get the name of the country.
+ *
+ * This function returns the name of the country linked with the language
+ * that the user requested. For example, in the locale "en_US" the country
+ * code is US. This is what this function returns.
+ *
+ * In most cases this function is only used internally when getting the
+ * language key. You should not make use of this information as meaning
+ * that the user is from that country.
+ *
+ * \warning
+ * You should always call get_language() FIRST because it will define
+ * the country if the language was not defined as a sub-domain, a path
+ * segment, or a query string parameter.
+ *
+ * \return The country (2 letter canonicalized country name.)
+ *
+ * \sa get_language()
+ * \sa get_language_key()
+ */
+QString snap_child::get_country() const
+{
+    return f_country;
+}
+
+
+/** \brief The "language" (or locale) the user or browser defined.
+ *
+ * This function returns the language and country merged as a one key.
+ * The name of the language and the name of the country are always
+ * exactly 2 characters. The language name is in lowercase and the
+ * country is in uppercase. The two names are separated by an
+ * underscore (_).
+ *
+ * For example, English in the USA would be returned as: "en_US".
+ * German in Germany is defined as "de_DE".
+ *
+ * \return The language key or "locale" for this request.
+ */
+QString snap_child::get_language_key()
+{
+    if(f_language_key.isEmpty())
+    {
+        f_language_key = get_language();
+        QString country(get_country());
+        if(!country.isEmpty())
+        {
+            f_language_key += '_';
+            f_language_key += country;
+        }
+    }
+    return f_language_key;
+}
+
+
+/** \brief Get the list of locales defined by plugins.
+ *
+ * At this point the main plugin defining locales to be used is the users
+ * plugin which offers the user to edit a set his settings and as one
+ * of the entries offers the user to enter one or more locales.
+ *
+ * The array of user locales is properly defined only if the f_ready
+ * flag is true. Otherwise it won't be proper since the user won't already
+ * be logged in.
+ *
+ * \return An array of locales.
+ */
+snap_child::locale_info_vector_t const& snap_child::get_plugins_locales()
+{
+    if(f_plugins_locales.isEmpty())
+    {
+        if(!f_ready)
+        {
+            // I do not think this happens, but just in case warn myself
+            SNAP_LOG_WARNING("get_browser_locales() called before f_ready was set to true");
+        }
+
+        // retrieve the locales from all the plugins
+        // we expect a string of locales defined as weighted HTTP strings
+        // remember that without a proper weight the algorithm uses 1.0
+        QString locales;
+        f_server->define_locales(locales);
+        if(!locales.isEmpty())
+        {
+            http_strings::WeightedHttpString language_country(locales);
+            http_strings::WeightedHttpString::part_vector_t plugins_languages(language_country.get_parts());
+            if(!plugins_languages.isEmpty())
+            {
+                qStableSort(plugins_languages);
+                int const max(plugins_languages.size());
+                for(int i(0); i < max; ++i)
+                {
+                    QString plugins_lang(plugins_languages[0].get_name());
+                    QString plugins_country;
+                    if(verify_locale(plugins_lang, plugins_country, false))
+                    {
+                        // only keep those that are considered valid (they all should
+                        // be, but in case a hacker or strange client access our
+                        // systems...)
+                        locale_info_t l;
+                        l.set_language(plugins_lang);
+                        l.set_country(plugins_country);
+                        f_plugins_locales.push_back(l);
+                        // added in order
+                    }
+                    else
+                    {
+                        // plugin sent us something we don't understand
+                        SNAP_LOG_WARNING(QString("plugin locale \"%1\" does not look like a legal locale").arg(plugins_languages[0].get_name()));
+                    }
+                }
+            }
+        }
+    }
+
+    return f_plugins_locales;
+}
+
+
+/** \brief Retrieve the list of locales as defined in the browser.
+ *
+ * This function returns the array of locales as defined in the user's
+ * browser. This is considered the fallback in case the user did not
+ * force a language in his request (sub-domain, path segment, or query
+ * string parameter.)
+ *
+ * \return A constant reference to the browser locales.
+ */
+snap_child::locale_info_vector_t const& snap_child::get_browser_locales() const
+{
+    return f_browser_locales;
+}
+
+
+/** \brief Check whether the current (false) or current working (true) branch should be used.
+ *
+ * This function returns true if the user requested the working branch.
+ *
+ * \return true if the current working branch should be used.
+ */
+bool snap_child::get_working_branch() const
+{
+    return f_working_branch;
+}
+
+
+/** \brief Retrieve the branch number to be accessed.
+ *
+ * This function returns SPECIAL_VERSION_UNDEFINED (which is -1) if the
+ * branch was not defined by the user.
+ */
+snap_version::version_number_t snap_child::get_branch() const
+{
+    return f_branch;
+}
+
+
+/** \brief Get the revision number that the user defined.
+ *
+ * This function returns zero if the user has not set the revision.
+ * Note that zero is also a valid revision.
+ */
+snap_version::version_number_t snap_child::get_revision() const
+{
+    return f_revision;
+}
+
+
+/** \brief Retrieve the full revision key.
+ *
+ * The branch and revision numbers combined with a period as the separator
+ * represents the revision key of this request.
+ *
+ * Note that if the user did not specify a revision, then the string
+ * returned is just the branch. If no branch and no revision were
+ * specified, then the key is empty and the default for that page is to
+ * be used.
+ *
+ * \return A string defined as "\<branch>.\<revision>".
+ */
+QString snap_child::get_revision_key() const
+{
+    return f_revision_key;
+}
+
+
+/** \brief Get compression information.
+ *
+ * This function retrieves a reference to the array of compressions accepted
+ * by the client. This can be used by plugins that generate the output
+ * directly and the snap_child functions won't get a chance to compress
+ * the data later or for such a plugin to let the snap_child object
+ * know that the data is pre-compressed (i.e. when we pre-compress data
+ * with gzip we can just return that data, it means we read less from
+ * the database and we may have compressed that data on a backend
+ * server leaving the front end running full speed.)
+ *
+ * The array may end with COMPRESSION_INVALID in which case one of the
+ * compressions defined before MUST have been a match. If not, then the
+ * file cannot be returned to the user and a 406 error
+ * (HTTP_CODE_NOT_ACCEPTABLE) should be returned to the client.
+ *
+ * \return The array of compressions expected by the client, preferred first.
+ */
+snap_child::compression_vector_t snap_child::get_compression() const
+{
+    return f_compressions;
 }
 
 
@@ -4416,6 +7293,43 @@ time_t snap_child::string_to_date(QString const& date)
     // let's make time
     parser.f_time_info.tm_year -= 1900;
     return mkgmtime(&parser.f_time_info);
+}
+
+
+/** \brief Get a list of all language names.
+ *
+ * This function returns the current list of language names as defined
+ * in ISO639 and similar documents.
+ *
+ * The table returned ends with a NULL entry. You may use it in this
+ * way:
+ *
+ * \code
+ * for(snap_child::language_name_t const *l(snap_child::get_languages()); l->f_name; ++l)
+ * \endcode
+ *
+ * See also https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes
+ *
+ * \return A pointer to the table of languages.
+ */
+snap_child::language_name_t const *snap_child::get_languages()
+{
+    return g_language_names;
+}
+
+
+/** \brief Get a list of all country names.
+ *
+ * This function returns the current list of country names as defined in
+ * ISO3166 and similar documents.
+ *
+ * See also https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2
+ *
+ * \return A pointer to the table of countries.
+ */
+snap_child::country_name_t const *snap_child::get_countries()
+{
+    return g_country_names;
 }
 
 

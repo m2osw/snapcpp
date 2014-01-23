@@ -15,20 +15,40 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+/** \file
+ * \brief Users handling.
+ *
+ * This plugin handles the users which includes:
+ *
+ * \li The log in screen.
+ * \li The log out feature and thank you page.
+ * \li The registration.
+ * \li The verification of an email to register.
+ * \li The request for a new password.
+ * \li The verification of an email to change a forgotten password.
+ *
+ * It is also responsible for creating new user accounts, blocking accounts,
+ * etc.
+ */
+
 #include "users.h"
-#include "../content/content.h"
+
+#include "../output/output.h"
 #include "../messages/messages.h"
 #include "../sendmail/sendmail.h"
+
 #include "qstring_stream.h"
 #include "not_reached.h"
 #include "log.h"
 
 #include <iostream>
-#include <QFile>
+
+#include <QtCassandra/QCassandraLock.h>
+
 #include <openssl/evp.h>
 #include <openssl/rand.h>
 #include <boost/static_assert.hpp>
-#include <QtCassandra/QCassandraLock.h>
+#include <QFile>
 
 #include "poison.h"
 
@@ -103,6 +123,9 @@ const char *get_name(name_t name)
 
     case SNAP_NAME_USERS_INDEX_ROW:
         return "*index_row*";
+
+    case SNAP_NAME_USERS_LOCALES:
+        return "users::locales";
 
     case SNAP_NAME_USERS_LOGIN_IP:
         return "users::login_ip";
@@ -361,8 +384,9 @@ void users::on_bootstrap(::snap::snap_child *snap)
     SNAP_LISTEN0(users, "server", server, process_cookies);
     SNAP_LISTEN0(users, "server", server, attach_to_session);
     SNAP_LISTEN0(users, "server", server, detach_from_session);
+    SNAP_LISTEN(users, "server", server, define_locales, _1);
 	SNAP_LISTEN(users, "server", server, improve_signature, _1, _2);
-    SNAP_LISTEN(users, "content", content::content, create_content, _1, _2, _3);
+    SNAP_LISTEN(users, "content", content::content, create_content, _1, _2, _3, _4);
     SNAP_LISTEN(users, "path", path::path, can_handle_dynamic_path, _1, _2);
     SNAP_LISTEN(users, "layout", layout::layout, generate_header_content, _1, _2, _3, _4, _5);
     SNAP_LISTEN(users, "layout", layout::layout, generate_page_content, _1, _2, _3, _4, _5);
@@ -601,24 +625,25 @@ void users::on_process_cookies()
  *
  * \param[in] path_plugin  A pointer to the path plugin.
  * \param[in] cpath  The path being handled dynamically.
+ * \param[in,out] plugin_info  If you understand that cpath, set yourself here.
  */
-void users::on_can_handle_dynamic_path(path::path *path_plugin, QString const& cpath)
+void users::on_can_handle_dynamic_path(content::path_info_t& ipath, path::dynamic_plugin_t& plugin_info)
 {
-    if(cpath == "user"                      // list of (public) users
-    || cpath.left(5) == "user/"             // show a user profile (user/ is followed by the user identifier or some edit page such as user/password)
-    || cpath == "profile"                   // the logged in user profile
-    || cpath == "login"                     // form to log user in
-    || cpath == "logout"                    // log user out
-    || cpath == "register"                  // form to let new users register
-    || cpath == "verify-credentials"        // re-log user in
-    || cpath == "verify"                    // verification form so the user can enter his code
-    || cpath.left(7) == "verify/"           // link to verify user's email; and verify/resend form
-    || cpath == "forgot-password"           // form for users to reset their password
-    || cpath == "new-password"              // form for users to enter their forgotten password verification code
-    || cpath.left(13) == "new-password/")   // form for users to enter their forgotten password verification code
+    if(ipath.get_cpath() == "user"                      // list of (public) users
+    || ipath.get_cpath().left(5) == "user/"             // show a user profile (user/ is followed by the user identifier or some edit page such as user/password)
+    || ipath.get_cpath() == "profile"                   // the logged in user profile
+    || ipath.get_cpath() == "login"                     // form to log user in
+    || ipath.get_cpath() == "logout"                    // log user out
+    || ipath.get_cpath() == "register"                  // form to let new users register
+    || ipath.get_cpath() == "verify-credentials"        // re-log user in
+    || ipath.get_cpath() == "verify"                    // verification form so the user can enter his code
+    || ipath.get_cpath().left(7) == "verify/"           // link to verify user's email; and verify/resend form
+    || ipath.get_cpath() == "forgot-password"           // form for users to reset their password
+    || ipath.get_cpath() == "new-password"              // form for users to enter their forgotten password verification code
+    || ipath.get_cpath().left(13) == "new-password/")   // form for users to enter their forgotten password verification code
     {
         // tell the path plugin that this is ours
-        path_plugin->handle_dynamic_path(this);
+        plugin_info.set_plugin(this);
     }
 }
 
@@ -629,107 +654,109 @@ void users::on_can_handle_dynamic_path(path::path *path_plugin, QString const& c
  *
  * \param[in] cpath  The canonalized path.
  */
-bool users::on_path_execute(QString const& cpath)
+bool users::on_path_execute(content::path_info_t& ipath)
 {
-    f_snap->output(layout::layout::instance()->apply_layout(cpath, this));
+    f_snap->output(layout::layout::instance()->apply_layout(ipath, this));
 
     return true;
 }
 
 
-void users::on_generate_main_content(layout::layout *l, QString const& cpath, QDomElement& page, QDomElement& body, QString const& ctemplate)
+void users::on_generate_main_content(layout::layout *l, content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate)
 {
-    if(cpath == "user")
+    if(ipath.get_cpath() == "user")
     {
         // TODO: write user listing
         //list_users(body);
         return;
     }
-    else if(cpath == "user/password/replace")
+    else if(ipath.get_cpath() == "user/password/replace")
     {
         // this is a very special form that is accessible by users who
         // requested to change the password with the "forgot password"
         prepare_replace_password_form(body);
     }
-    else if(cpath.left(5) == "user/")
+    else if(ipath.get_cpath().left(5) == "user/")
     {
-        show_user(l, cpath, page, body);
+        show_user(l, ipath, page, body);
         return;
     }
-    //else if(cpath == "profile")
+    //else if(ipath.get_cpath() == "profile")
     //{
     //    // TODO: write user profile editor
     //    //       this is /user, /user/###, and /user/me at this point
     //    //user_profile(body);
     //    return;
     //}
-    else if(cpath == "login")
+    else if(ipath.get_cpath() == "login")
     {
         prepare_login_form();
     }
-    else if(cpath == "verify-credentials")
+    else if(ipath.get_cpath() == "verify-credentials")
     {
         prepare_verify_credentials_form();
     }
-    else if(cpath == "logout")
+    else if(ipath.get_cpath() == "logout")
     {
         // closing current session if any and show the logout page
-        logout_user(l, cpath, page, body);
+        logout_user(l, ipath, page, body);
         return;
     }
-    else if(cpath == "register"
-         || cpath == "verify"
-         || cpath == "verify/resend")
+    else if(ipath.get_cpath() == "register"
+         || ipath.get_cpath() == "verify"
+         || ipath.get_cpath() == "verify/resend")
     {
         prepare_basic_anonymous_form();
     }
-    else if(cpath.left(7) == "verify/")
+    else if(ipath.get_cpath().left(7) == "verify/")
     {
-        verify_user(cpath);
+        verify_user(ipath.get_cpath());
         return;
     }
-    else if(cpath == "forgot-password")
+    else if(ipath.get_cpath() == "forgot-password")
     {
         prepare_forgot_password_form();
     }
-    else if(cpath == "new-password")
+    else if(ipath.get_cpath() == "new-password")
     {
         prepare_new_password_form();
     }
-    else if(cpath.left(13) == "new-password/")
+    else if(ipath.get_cpath().left(13) == "new-password/")
     {
-        verify_password(cpath);
+        verify_password(ipath);
         return;
     }
 
     // any other user page is just like regular content
-    content::content::instance()->on_generate_main_content(l, cpath, page, body, ctemplate);
+    output::output::instance()->on_generate_main_content(l, ipath, page, body, ctemplate);
 }
 
-void users::on_generate_boxes_content(layout::layout *l, QString const& page_cpath, QString const& cpath, QDomElement& page, QDomElement& box, QString const& ctemplate)
+
+
+void users::on_generate_boxes_content(layout::layout *l, content::path_info_t& page_cpath, content::path_info_t& ipath, QDomElement& page, QDomElement& box, QString const& ctemplate)
 {
-//std::cerr << "GOT TO USER BOXES!!! [" << cpath << "]\n";
-    if(cpath.endsWith("/login"))
+//std::cerr << "GOT TO USER BOXES!!! [" << ipath.get_key() << "]\n";
+    if(ipath.get_cpath().endsWith("/login"))
     {
         // do not display the login box on the login page
 
 // DEBUG -- at this point there are conflicts with more than 1 form on a page, so I only allow that form on the home page
-if(page_cpath != "") return;
+if(page_cpath.get_cpath() != "") return;
 
-        if(page_cpath == "login"
-        || page_cpath == "register")
+        if(page_cpath.get_cpath() == "login"
+        || page_cpath.get_cpath() == "register")
         {
             return;
         }
     }
 
-    content::content::instance()->on_generate_main_content(l, cpath, page, box, ctemplate);
+    output::output::instance()->on_generate_main_content(l, ipath, page, box, ctemplate);
 }
 
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
-void users::on_generate_header_content(layout::layout *l, QString const& path, QDomElement& header, QDomElement& metadata, QString const& ctemplate)
+void users::on_generate_header_content(layout::layout *l, content::path_info_t& ipath, QDomElement& header, QDomElement& metadata, QString const& ctemplate)
 {
     QDomDocument doc(header.ownerDocument());
 
@@ -784,14 +811,16 @@ void users::on_generate_header_content(layout::layout *l, QString const& path, Q
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
-void users::on_generate_page_content(layout::layout *l, QString const& path, QDomElement& page, QDomElement& body, QString const& ctemplate)
+void users::on_generate_page_content(layout::layout *l, content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate)
 {
+    // TODO: convert using field_search
     QDomDocument doc(page.ownerDocument());
 
-    // retrieve the author
+    // retrieve the authors
+    // TODO: add support to retrieve the "author" who last modified this
+    //       page (i.e. user reference in the last revision)
     QSharedPointer<QtCassandra::QCassandraTable> content_table(content::content::instance()->get_content_table());
-    const QString site_key(f_snap->get_site_key_with_slash());
-    const QString page_key(site_key + path);
+    const QString page_key(ipath.get_key());
     QSharedPointer<QtCassandra::QCassandraRow> content_row(content_table->row(page_key));
     const QString link_name(get_name(SNAP_NAME_USERS_AUTHOR));
     links::link_info author_info(get_name(SNAP_NAME_USERS_AUTHOR), true, page_key);
@@ -830,7 +859,7 @@ void users::on_generate_page_content(layout::layout *l, QString const& path, QDo
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
-void users::on_create_content(QString const& path, QString const& owner, QString const& type)
+void users::on_create_content(content::path_info_t& ipath, QString const& owner, QString const& type, snap_version::version_number_t branch_number)
 {
     if(!f_user_key.isEmpty())
     {
@@ -848,15 +877,14 @@ void users::on_create_content(QString const& path, QString const& owner, QString
             {
                 int64_t const identifier(value.int64Value());
                 QString const site_key(f_snap->get_site_key_with_slash());
-                QString const user_key(site_key + get_name(SNAP_NAME_USERS_PATH) + QString("/%1").arg(identifier));
-                QString const key(site_key + path);
+                QString const user_key(QString("%1%2/%3").arg(site_key).arg(get_name(SNAP_NAME_USERS_PATH)).arg(identifier));
 
                 QString const link_name(get_name(SNAP_NAME_USERS_AUTHOR));
                 bool const source_unique(true);
-                links::link_info source(link_name, source_unique, key);
+                links::link_info source(link_name, source_unique, ipath.get_key(), branch_number);
                 QString const link_to(get_name(SNAP_NAME_USERS_AUTHORED_PAGES));
                 bool const destination_multi(false);
-                links::link_info destination(link_to, destination_multi, user_key);
+                links::link_info destination(link_to, destination_multi, user_key, branch_number);
                 links::links::instance()->create_link(source, destination);
             }
         }
@@ -906,11 +934,11 @@ void users::prepare_replace_password_form(QDomElement& body)
  * see his profile. The administrators can see any profile. Otherwise
  * only public profiles and the user own profile are accessible.
  */
-void users::show_user(layout::layout *l, const QString& cpath, QDomElement& page, QDomElement& body)
+void users::show_user(layout::layout *l, content::path_info_t& ipath, QDomElement& page, QDomElement& body)
 {
-    QString user_path(cpath);
+    QString user_path(ipath.get_cpath());
     int64_t identifier(0);
-    QString user_id(cpath.mid(5));
+    QString user_id(user_path.mid(5));
     if(user_id == "me" || user_id == "password")
     {
         // retrieve the logged in user identifier
@@ -964,7 +992,7 @@ void users::show_user(layout::layout *l, const QString& cpath, QDomElement& page
         {
             // user is editing his password
             prepare_password_form();
-            content::content::instance()->on_generate_main_content(l, cpath, page, body, "");
+            output::output::instance()->on_generate_main_content(l, ipath, page, body, "");
             return;
         }
 
@@ -1005,7 +1033,9 @@ void users::show_user(layout::layout *l, const QString& cpath, QDomElement& page
     // generate the user profile
         // TODO: write user profile viewer (i.e. we need to make use of the identifier here!)
         // WARNING: using a path such as "admin/.../profile" returns all the content of that profile
-    content::content::instance()->on_generate_main_content(l, user_path, page, body, "admin/users/page/profile");
+    content::path_info_t user_ipath;
+    user_ipath.set_path(user_path);
+    output::output::instance()->on_generate_main_content(l, user_ipath, page, body, "admin/users/page/profile");
 }
 
 
@@ -1103,27 +1133,27 @@ void users::prepare_verify_credentials_form()
  * This function calls the on_generate_main_content() of the content plugin.
  *
  * \param[in] l  The layout concerned to generated this page.
- * \param[in] cpath  The path being processed (logout[/...]).
- * \param[in] page  The page XML data.
- * \param[in] body  The body XML data.
+ * \param[in,out] cpath  The path being processed (logout[/...]).
+ * \param[in,out] page  The page XML data.
+ * \param[in,out] body  The body XML data.
  */
-void users::logout_user(layout::layout *l, QString cpath, QDomElement& page, QDomElement& body)
+void users::logout_user(layout::layout *l, content::path_info_t& ipath, QDomElement& page, QDomElement& body)
 {
     // generate the body
     // we already logged the user out in the on_process_cookies() function
-    if(cpath != "logout" && cpath != "logout/")
+    if(ipath.get_cpath() != "logout" && ipath.get_cpath() != "logout/")
     {
         // make sure the page exists if the user was sent to antoher plugin
         // path (i.e. logout/fantom from the fantom plugin could be used to
         // display a different greating because the user was kicked out by
-        // magic...); if it does not exist, force "logout" as the default
+        // spirits...); if it does not exist, force "logout" as the default
         QSharedPointer<QtCassandra::QCassandraTable> content_table(content::content::instance()->get_content_table());
-        if(!content_table->exists(cpath))
+        if(!content_table->exists(ipath.get_key()))
         {
-            cpath = "logout";
+            ipath.set_path("logout");
         }
     }
-    content::content::instance()->on_generate_main_content(l, cpath, page, body, "");
+    output::output::instance()->on_generate_main_content(l, ipath, page, body, "");
 }
 
 
@@ -1378,9 +1408,9 @@ void users::verify_user(const QString& cpath)
  * This function verifies a password verification code that is sent to
  * the user whenever he says he forgot his password.
  *
- * \param[in] cpath  The path used to access this page.
+ * \param[in] ipath  The path used to access this page.
  */
-void users::verify_password(const QString& cpath)
+void users::verify_password(content::path_info_t& ipath)
 {
     if(!f_user_key.isEmpty())
     {
@@ -1392,7 +1422,7 @@ void users::verify_password(const QString& cpath)
         NOTREACHED();
     }
 
-    QString session_id(cpath.mid(13));
+    QString session_id(ipath.get_cpath().mid(13));
 
     sessions::sessions::session_info info;
     sessions::sessions *session(sessions::sessions::instance());
@@ -1982,7 +2012,9 @@ void users::process_forgot_password_form()
 void users::process_new_password_form()
 {
     const QString session_id(f_snap->postenv("verification_code"));
-    verify_password("new-password/" + session_id);
+    content::path_info_t ipath;
+    ipath.set_path("new-password/" + session_id);
+    verify_password(ipath);
 }
 
 
@@ -2026,11 +2058,11 @@ void users::process_replace_password_form()
         {
             int64_t const identifier(user_identifier.int64Value());
             QString const site_key(f_snap->get_site_key_with_slash());
-            QString const user_path(get_name(SNAP_NAME_USERS_PATH) + QString("/%1").arg(identifier));
-            QString const user_key(site_key + user_path);
+            content::path_info_t user_ipath;
+            user_ipath.set_path(QString("%1/%2").arg(get_name(SNAP_NAME_USERS_PATH)).arg(identifier));
 
             // verify the status of this user
-            links::link_info user_status_info(get_name(SNAP_NAME_USERS_STATUS), true, user_key);
+            links::link_info user_status_info(get_name(SNAP_NAME_USERS_STATUS), true, user_ipath.get_key());
             QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(user_status_info));
             links::link_info status_info;
             if(link_ctxt->next_link(status_info))
@@ -2085,7 +2117,7 @@ void users::process_replace_password_form()
 
                     f_user_changing_password_key.clear();
 
-                    content::content::instance()->modified_content(user_path, false);
+                    content::content::instance()->modified_content(user_ipath);
 
                     // once we sent the new code, we can send the user back
                     // to the verify form
@@ -2169,11 +2201,12 @@ void users::process_password_form()
         {
             int64_t const identifier(user_identifier.int64Value());
             QString const site_key(f_snap->get_site_key_with_slash());
-            QString const user_path(get_name(SNAP_NAME_USERS_PATH) + QString("/%1").arg(identifier));
-            QString const user_key(site_key + user_path);
+            content::path_info_t user_ipath;
+            user_ipath.set_path(QString("%1/%2").arg(get_name(SNAP_NAME_USERS_PATH)).arg(identifier));
+            //QString const user_key(site_key + user_path);
 
             // verify the status of this user
-            links::link_info user_status_info(get_name(SNAP_NAME_USERS_STATUS), true, user_key);
+            links::link_info user_status_info(get_name(SNAP_NAME_USERS_STATUS), true, user_ipath.get_key());
             QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(user_status_info));
             bool delete_password_status(false);
             links::link_info status_info;
@@ -2258,7 +2291,7 @@ void users::process_password_form()
                     links::links::instance()->delete_link(status_info);
                 }
 
-                content::content::instance()->modified_content(user_path, false);
+                content::content::instance()->modified_content(user_ipath);
 
                 // once we sent the new code, we can send the user back
                 // to the verify form
@@ -2650,8 +2683,11 @@ bool users::register_user(const QString& email, const QString& password)
     // (nothing else should be create at the path until now)
     QString user_path(get_name(SNAP_NAME_USERS_PATH));
     const QString site_key(f_snap->get_site_key_with_slash());
-    QString user_key(user_path + QString("/%1").arg(identifier));
-    content::content::instance()->create_content(user_key, get_plugin_name(), "user-page");
+    content::path_info_t user_ipath;
+    user_ipath.set_path(QString("%1/%2").arg(user_path).arg(identifier));
+    content::content *content_plugin(content::content::instance());
+    snap_version::version_number_t branch(content_plugin->get_current_user_branch(user_path, content_plugin->get_plugin_name(), "", true));
+    content_plugin->create_content(user_ipath, get_plugin_name(), "user-page", branch);
 
     // The "public" user account (i.e. in the content table) is limited
     // to the identifier at this point
@@ -2661,7 +2697,7 @@ bool users::register_user(const QString& email, const QString& password)
     // the destination URL is defined in the <link> content
     const QString link_name(get_name(SNAP_NAME_USERS_STATUS));
     const bool source_unique(true);
-    links::link_info source(link_name, source_unique, site_key + user_key);
+    links::link_info source(link_name, source_unique, user_ipath.get_key());
     const QString link_to(get_name(SNAP_NAME_USERS_STATUS));
     const bool destination_unique(false);
     QString destination_key(site_key + get_name(SNAP_NAME_USERS_NEW_PATH));
@@ -2822,6 +2858,8 @@ void users::on_attach_to_session()
     {
         sessions::sessions::instance()->attach_to_session(*f_info, get_name(SNAP_NAME_USERS_CHANGING_PASSWORD_KEY), f_user_changing_password_key);
     }
+
+    // TODO: move messages dependency here
 }
 
 
@@ -2837,6 +2875,40 @@ void users::on_detach_from_session()
     // between several different forms before it gets deleted; the concerned
     // functions will clear() the variable when done with it
     f_user_changing_password_key = sessions::sessions::instance()->get_from_session(*f_info, get_name(SNAP_NAME_USERS_CHANGING_PASSWORD_KEY));
+
+    // TODO: move messages dependency here
+}
+
+
+/** \brief Get the user selected language if user did that.
+ *
+ * The user can select the language in which he will see most of the
+ * website (assuming most was translated.)
+ *
+ * \param[in,out] locales  Locales as defined by the user.
+ */
+void users::on_define_locales(QString& locales)
+{
+    if(!f_user_key.isEmpty())
+    {
+        QSharedPointer<QtCassandra::QCassandraTable> users_table(get_users_table());
+        if(users_table->exists(f_user_key))
+        {
+            QtCassandra::QCassandraValue const value(users_table->row(f_user_key)->cell(get_name(SNAP_NAME_USERS_LOCALES))->value());
+            if(!value.nullValue())
+            {
+                if(locales.isEmpty())
+                {
+                    locales = value.stringValue();
+                }
+                else
+                {
+                    locales += ',';
+                    locales += value.stringValue();
+                }
+            }
+        }
+    }
 }
 
 

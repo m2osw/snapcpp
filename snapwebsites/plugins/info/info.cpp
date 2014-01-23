@@ -1,5 +1,5 @@
 // Snap Websites Server -- info plugin to control the core settings
-// Copyright (C) 2013  Made to Order Software Corp.
+// Copyright (C) 2013-2014  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -18,7 +18,9 @@
 #include "info.h"
 #include "../messages/messages.h"
 #include "../users/users.h"
+#include "../output/output.h"
 #include "not_reached.h"
+
 #include "poison.h"
 
 
@@ -105,7 +107,6 @@ void info::on_bootstrap(snap_child *snap)
 	SNAP_LISTEN(info, "server", server, improve_signature, _1, _2);
     //SNAP_LISTEN(info, "layout", layout::layout, generate_header_content, _1, _2, _3, _4, _5);
     //SNAP_LISTEN(info, "layout", layout::layout, generate_page_content, _1, _2, _3, _4, _5);
-    //SNAP_LISTEN(info, "path", path::path, can_handle_dynamic_path, _1, _2);
 }
 
 
@@ -170,12 +171,10 @@ int64_t info::do_update(int64_t last_updated)
  *
  * \param[in] variables_timestamp  The timestamp for all the variables added to the database by this update (in micro-seconds).
  */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
 void info::initial_update(int64_t variables_timestamp)
 {
+    (void) variables_timestamp;
 }
-#pragma GCC diagnostic pop
 
 
 /** \brief Update the database with our info references.
@@ -185,13 +184,11 @@ void info::initial_update(int64_t variables_timestamp)
  *
  * \param[in] variables_timestamp  The timestamp for all the variables added to the database by this update (in micro-seconds).
  */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
 void info::content_update(int64_t variables_timestamp)
 {
+    (void) variables_timestamp;
     content::content::instance()->add_xml(get_plugin_name());
 }
-#pragma GCC diagnostic pop
 
 
 /** \brief Execute a page: generate the complete output of that page.
@@ -203,116 +200,16 @@ void info::content_update(int64_t variables_timestamp)
  * Note that the path was canonicalized by the path plugin and thus it does
  * not require any further corrections.
  *
- * \param[in] cpath  The canonicalized path being managed.
+ * \param[in] ipath  The canonicalized path being managed.
  *
  * \return true if the content is properly generated, false otherwise.
  */
-bool info::on_path_execute(QString const& cpath)
+bool info::on_path_execute(content::path_info_t& ipath)
 {
-    f_snap->output(layout::layout::instance()->apply_layout(cpath, this));
+    f_snap->output(layout::layout::instance()->apply_layout(ipath, this));
 
     return true;
 }
-
-
-//void favicon::output(QString const& cpath)
-//{
-//    QByteArray image;
-//    content::field_search::search_result_t result;
-//
-//    // check for a favicon.ico on this very page and then its type tree
-//    bool const default_icon(cpath == "default-favicon.ico");
-//    if(!default_icon)
-//    {
-//        QString sub_path(cpath.left(cpath.length() - (sizeof("favicon.ico") - 1)));
-//        f_snap->canonicalize_path(sub_path);
-//        get_icon(sub_path, result, true);
-//    }
-//
-//    if(result.isEmpty())
-//    {
-//        // try the site wide parameter core::favicon
-//        QtCassandra::QCassandraValue image_value;
-//        if(!default_icon)
-//        {
-//            // try the site wide settings for an attachment
-//            FIELD_SEARCH
-//                // /admin/settings/favicon/@favicon::icon::path
-//                (content::field_search::COMMAND_MODE, content::field_search::SEARCH_MODE_EACH)
-//                (content::field_search::COMMAND_FIELD_NAME, get_name(SNAP_NAME_FAVICON_ICON_PATH))
-//                (content::field_search::COMMAND_PATH, get_name(SNAP_NAME_FAVICON_SETTINGS))
-//                (content::field_search::COMMAND_SELF)
-//                (content::field_search::COMMAND_RESULT, result)
-//
-//                // generate
-//                ;
-//
-//            if(!result.isEmpty())
-//            {
-//                // we got the path to the row with the icon data
-//                QtCassandra::QCassandraValue path_value(result[0]);
-//                if(!path_value.nullValue())
-//                {
-//                    QString icon_key(path_value.stringValue());
-//                    QString const site_key(f_snap->get_site_key_with_slash());
-//                    if(icon_key.startsWith(site_key))
-//                    {
-//                        icon_key.remove(0, site_key.length());
-//                    }
-//                    FIELD_SEARCH
-//                        // Use the path from the previous search
-//                        // /admin/settings/favicon/<filename>.ico/@favicon::icon
-//                        (content::field_search::COMMAND_MODE, content::field_search::SEARCH_MODE_EACH)
-//                        (content::field_search::COMMAND_FIELD_NAME, get_name(SNAP_NAME_FAVICON_ICON))
-//                        (content::field_search::COMMAND_PATH, icon_key)
-//                        (content::field_search::COMMAND_SELF)
-//                        (content::field_search::COMMAND_RESULT, result)
-//
-//                        // generate
-//                        ;
-//
-//                    if(!result.isEmpty())
-//                    {
-//                        image_value = result[0];
-//                    }
-//                }
-//            }
-//        }
-//
-//        if(image_value.nullValue())
-//        {
-//            // last resort we use the version saved in our resources
-//            QFile file(":/plugins/favicon/snap-favicon.ico");
-//            if(!file.open(QIODevice::ReadOnly))
-//            {
-//                f_snap->die(snap_child::HTTP_CODE_NOT_FOUND, "Icon Not Found",
-//                        "This website does not have a favorite icon.",
-//                        "Could not load the default resource favicon \":/plugins/favicon/snap-favicon.ico\".");
-//                NOTREACHED();
-//            }
-//            image = file.readAll();
-//        }
-//        else
-//        {
-//            image = image_value.binaryValue();
-//        }
-//    }
-//    else
-//    {
-//        image = result[0].binaryValue();
-//    }
-//
-//    // Note: since IE v11.x PNG and GIF are supported.
-//    //       support varies between browsers
-//    //
-//    // we know that this image is an ICO, although if someone changes
-//    // it to something else (PNG, GIF...) the agent could fail
-//    // the newer media type is image/vnd.microsoft.icon
-//    // the old media type was image/x-icon
-//    f_snap->set_header("Content-Type", "image/vnd.microsoft.icon");
-//
-//    f_snap->output(image);
-//}
 
 
 /** \brief Generate the page main content.
@@ -333,13 +230,13 @@ bool info::on_path_execute(QString const& cpath)
  * \param[in,out] page  The page being generated.
  * \param[in,out] body  The body being generated.
  */
-void info::on_generate_main_content(layout::layout *l, const QString& cpath, QDomElement& page, QDomElement& body, const QString& ctemplate)
+void info::on_generate_main_content(layout::layout *l, content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate)
 {
 #ifdef DEBUG
-printf("*** info main content...\n");
+std::cerr << "*** info main content...\n";
 #endif
     // our settings pages are like any standard pages
-    content::content::instance()->on_generate_main_content(l, cpath, page, body, ctemplate);
+    output::output::instance()->on_generate_main_content(l, ipath, page, body, ctemplate);
 }
 
 

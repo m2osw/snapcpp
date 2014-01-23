@@ -1,5 +1,5 @@
 // Snap Websites Server -- manage permissions for users, forms, etc.
-// Copyright (C) 2013  Made to Order Software Corp.
+// Copyright (C) 2013-2014  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,8 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-#ifndef SNAP_PERMISSIONS_H
-#define SNAP_PERMISSIONS_H
+#pragma once
 
 #include "../layout/layout.h"
 #include <QSet>
@@ -84,30 +83,30 @@ public:
         typedef QVector<QString>        set_t;
         typedef QMap<QString, set_t>    req_sets_t;
 
-                            sets_t(QString const& user_path, QString const& path, QString const& action, QString const& login_status);
+                                sets_t(QString const& user_path, content::path_info_t& ipath, QString const& action, QString const& login_status);
 
-        void                set_login_status(QString const& status);
-        QString const&      get_login_status() const;
+        void                    set_login_status(QString const& status);
+        QString const&          get_login_status() const;
                        
-        QString const&      get_user_path() const;
-        QString const&      get_path() const;
-        QString const&      get_action() const;
+        QString const&          get_user_path() const;
+        content::path_info_t&   get_ipath() const;
+        QString const&          get_action() const;
 
-        void                add_user_right(QString right);
-        int                 get_user_rights_count() const;
+        void                    add_user_right(QString right);
+        int                     get_user_rights_count() const;
 
-        void                add_plugin_permission(QString const& plugin, QString right);
+        void                    add_plugin_permission(QString const& plugin, QString right);
 
-        bool                is_root() const;
-        bool                allowed() const;
+        bool                    is_root() const;
+        bool                    allowed() const;
 
     private:
-        QString             f_user_path;
-        QString             f_path;
-        QString             f_action;
-        QString             f_login_status;
-        set_t               f_user_rights;
-        req_sets_t          f_plugin_permissions;
+        QString                 f_user_path;
+        content::path_info_t&   f_ipath;
+        QString                 f_action;
+        QString                 f_login_status;
+        set_t                   f_user_rights;
+        req_sets_t              f_plugin_permissions;
     };
 
                             permissions();
@@ -118,9 +117,9 @@ public:
     virtual int64_t         do_update(int64_t last_updated);
 
     void                    on_bootstrap(snap_child *snap);
-    virtual void            on_generate_main_content(layout::layout *l, QString const& path, QDomElement& page, QDomElement& body, QString const& ctemplate);
-    void                    on_validate_action(QString const& path, QString const& action, permission_error_callback& err_callback);
-    void                    on_access_allowed(QString const& user_path, QString const& path, QString const& action, QString const& login_status, server::permission_flag& result);
+    virtual void            on_generate_main_content(layout::layout *l, content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate);
+    void                    on_validate_action(content::path_info_t& path, QString const& action, permission_error_callback& err_callback);
+    void                    on_access_allowed(QString const& user_path, content::path_info_t& ipath, QString const& action, QString const& login_status, content::permission_flag& result);
     void                    on_register_backend_action(server::backend_action_map_t& actions);
     virtual void            on_backend_action(QString const& action);
 
@@ -140,6 +139,4 @@ private:
 
 } // namespace permissions
 } // namespace snap
-#endif
-// SNAP_PERMISSIONS_H
 // vim: ts=4 sw=4 et

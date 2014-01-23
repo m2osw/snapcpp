@@ -17,7 +17,7 @@
 #ifndef SNAP_LAYOUT_H
 #define SNAP_LAYOUT_H
 
-#include "snapwebsites.h"
+#include "../content/content.h"
 
 namespace snap
 {
@@ -44,7 +44,7 @@ class layout_content
 {
 public:
     virtual ~layout_content() {} // ensure proper virtual tables
-    virtual void on_generate_main_content(layout *l, QString const& path, QDomElement& page, QDomElement& body, QString const& ctemplate) = 0;
+    virtual void on_generate_main_content(layout *l, content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate) = 0;
 };
 
 
@@ -52,7 +52,7 @@ class layout_boxes
 {
 public:
     virtual ~layout_boxes() {} // ensure proper virtual tables
-    virtual void on_generate_boxes_content(layout *l, QString const& page_cpath, QString const& cpath, QDomElement& page, QDomElement& boxes, QString const& ctemplate) = 0;
+    virtual void on_generate_boxes_content(layout *l, content::path_info_t& page_ipath, content::path_info_t& ipath, QDomElement& page, QDomElement& boxes, QString const& ctemplate) = 0;
 };
 
 
@@ -69,14 +69,14 @@ public:
 
     void                on_bootstrap(snap_child *snap);
 
-    QString             get_layout(const QString& cpath, const QString& column_name);
-    QString             apply_layout(const QString& cpath, layout_content *plugin, const QString& ctemplate = "");
-    QDomDocument        create_body(const QString& cpath, layout_content *content_plugin, const QString& ctemplate = "");
-    QString             apply_theme(QDomDocument doc, const QString& cpath, layout_content *content_plugin);
+    QString             get_layout(content::path_info_t& ipath, const QString& column_name);
+    QString             apply_layout(content::path_info_t& ipath, layout_content *plugin, const QString& ctemplate = "");
+    QDomDocument        create_body(content::path_info_t& ipath, layout_content *content_plugin, const QString& ctemplate = "");
+    QString             apply_theme(QDomDocument doc, content::path_info_t& cpath, layout_content *content_plugin);
 
-    SNAP_SIGNAL(generate_header_content, (layout *l, const QString& path, QDomElement& header, QDomElement& metadata, const QString& ctemplate), (l, path, header, metadata, ctemplate));
-    SNAP_SIGNAL(generate_page_content, (layout *l, const QString& path, QDomElement& page, QDomElement& body, const QString& ctemplate), (l, path, page, body, ctemplate));
-    //SNAP_SIGNAL(generate_box_content, (layout *l, const QString& path, QDomElement& box), (l, path, box));
+    SNAP_SIGNAL(generate_header_content, (layout *l, content::path_info_t& path, QDomElement& header, QDomElement& metadata, const QString& ctemplate), (l, path, header, metadata, ctemplate));
+    SNAP_SIGNAL(generate_page_content, (layout *l, content::path_info_t& path, QDomElement& page, QDomElement& body, const QString& ctemplate), (l, path, page, body, ctemplate));
+    //SNAP_SIGNAL(generate_box_content, (layout *l, content::path_info_t& path, QDomElement& box), (l, path, box));
 
 private:
     void initial_update(int64_t variables_timestamp);

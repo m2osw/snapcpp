@@ -24,6 +24,8 @@
 #include "snap_magic.h"
 #include "snap_image.h"
 #include "snap_version.h"
+//#include "../messages/messages.h" -- we may want to have 2 plugins: a low level messages and a high level output_messages
+
 #include <QtCassandra/QCassandraLock.h>
 
 #include <iostream>
@@ -59,9 +61,13 @@ char const *get_name(name_t name)
     case SNAP_NAME_CONTENT_ATTACHMENT:
         return "content::attachment"; // also ::<branch>.<revision> in the attachment row
                                       // also ::<plugin>::<field>::path in the parent of an attachment row
+                                      //   or ::<plugin>::<field>::<count>::path in the parent of an attachment row for multi-files attachment handling
 
     //case SNAP_NAME_CONTENT_ATTACHMENT_FILENAME:
     //    return "content::attachment::filename";
+
+    case SNAP_NAME_CONTENT_ATTACHMENT_OWNER:
+        return "attachment";
 
     case SNAP_NAME_CONTENT_ATTACHMENT_REVISION_FILENAME_WITH_VAR:
         return "content::attachment::${revision}::filename";
@@ -78,17 +84,17 @@ char const *get_name(name_t name)
     case SNAP_NAME_CONTENT_ATTACHMENT_PATH_END:
         return "path";
 
-    case SNAP_NAME_CONTENT_ATTACHMENT_REVISION_CONTROL_LAST_BRANCH: // largest branch number
-        return "content::attachment::revision_control::last_branch";
+    //case SNAP_NAME_CONTENT_ATTACHMENT_REVISION_CONTROL_LAST_BRANCH: // largest branch number
+    //    return "content::attachment::revision_control::last_branch";
 
-    case SNAP_NAME_CONTENT_ATTACHMENT_REVISION_CONTROL_LAST_REVISION: // largest revision number, one per branch
-        return "content::attachment::revision_control::last_revision"; // ::<branch number>
+    //case SNAP_NAME_CONTENT_ATTACHMENT_REVISION_CONTROL_LAST_REVISION: // largest revision number, one per branch
+    //    return "content::attachment::revision_control::last_revision"; // ::<branch number>
 
-    case SNAP_NAME_CONTENT_ATTACHMENT_REVISION_CONTROL_CURRENT: // currently displayed to visitors
-        return "content::attachment::revision_control::current";
+    //case SNAP_NAME_CONTENT_ATTACHMENT_REVISION_CONTROL_CURRENT: // currently displayed to visitors
+    //    return "content::attachment::revision_control::current";
 
-    case SNAP_NAME_CONTENT_ATTACHMENT_REVISION_CONTROL_CURRENT_WORKING_VERSION: // currently displayed to editors
-        return "content::attachment::revision_control::current_working_version";
+    //case SNAP_NAME_CONTENT_ATTACHMENT_REVISION_CONTROL_CURRENT_WORKING_VERSION: // currently displayed to editors
+    //    return "content::attachment::revision_control::current_working_version";
 
     case SNAP_NAME_CONTENT_BODY:
         return "content::body";
@@ -114,19 +120,8 @@ char const *get_name(name_t name)
     case SNAP_NAME_CONTENT_CREATED:
         return "content::created";
 
-    // We'll redo that better using a sub-function to handle revision control
-    // on specific fields (here "content", for attachment "content::attachment")
-    //case SNAP_NAME_CONTENT_REVISION_CONTROL_LATEST_BRANCH: // largest branch number
-    //    return "content::revision_control::last_branch";
-
-    //case SNAP_NAME_CONTENT_REVISION_CONTROL_LATEST_REVISION: // largest revision number, one per branch
-    //    return "content::revision_control::last_branch"; // ::<branch number>
-
-    //case SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT: // currently displayed to visitors
-    //    return "content::revision_control::current";
-
-    //case SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_VERSION: // currently displayed to editors
-    //    return "content::revision_control::current_working_version";
+    case SNAP_NAME_CONTENT_DATA_TABLE:
+        return "data";
 
     case SNAP_NAME_CONTENT_FILES_COMPRESSOR:
         return "content::files::compressor";
@@ -209,8 +204,41 @@ char const *get_name(name_t name)
     case SNAP_NAME_CONTENT_PARENT:
         return "content::parent";
 
-    case SNAP_NAME_CONTENT_REVISION:
-        return "content::revision";
+    case SNAP_NAME_CONTENT_PRIMARY_OWNER:
+        return "content::primary_owner";
+
+    case SNAP_NAME_CONTENT_REVISION_CONTROL: // content::revision_control::<owner>::...
+        return "content::revision_control";
+
+    case SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_BRANCH: // content::revision_control::<owner>::current_branch [uint32_t]
+        return "current_branch";
+
+    case SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_BRANCH_KEY: // content::revision_control::<owner>::current_branch_key [string]
+        return "current_branch_key";
+
+    case SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_REVISION: // content::revision_control::<owner>::current_revision::<branch>::<locale> [uint32_t]
+        return "current_revision";
+
+    case SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_REVISION_KEY: // content::revision_control::<owner>::current_revision_key::<branch>::<locale> [string]
+        return "current_revision_key";
+
+    case SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_BRANCH: // content::revision_control::<owner>::current_working_branch [uint32_t]
+        return "current_working_branch";
+
+    case SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_BRANCH_KEY: // content::revision_control::<owner>::current_working_branch_key [string]
+        return "current_working_branch_key";
+
+    case SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_REVISION: // content::revision_control::<owner>::current_working_revision::<branch>::<locale> [uint32_t]
+        return "current_working_revision";
+
+    case SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_REVISION_KEY: // content::revision_control::<owner>::current_working_revision_key::<branch>::<locale> [string]
+        return "current_working_revision_key";
+
+    case SNAP_NAME_CONTENT_REVISION_CONTROL_LAST_BRANCH: // content::revision_control::<owner>::last_branch [uint32_t]
+        return "last_branch";
+
+    case SNAP_NAME_CONTENT_REVISION_CONTROL_LAST_REVISION: // content::revision_control::<owner>::last_revision::<branch>::<locale> [uint32_t]
+        return "last_revision";
 
     case SNAP_NAME_CONTENT_SHORT_TITLE:
         return "content::short_title";
@@ -331,7 +359,7 @@ char const *css_js_extensions[] =
  * example, if we had a search depth of 3, we would end up searching
  * K after J, not between I and J.
  *
- * Since the opt_info_t object is like a mini program, it is possible
+ * Since the cmd_info_t object is like a mini program, it is possible
  * to do things such as change the name of the field being sought as
  * the different parts of the tree are searched. So a parameter named
  * "created" in SELF, could change to "modified" when searching the
@@ -344,7 +372,7 @@ char const *css_js_extensions[] =
  * other valid default):
  *
  * \code
- * QStringList result(opt_info_t()
+ * QStringList result(cmd_info_t()
  *      (PARAMETER_OPTION_FIELD_NAME, "modified")
  *      (PARAMETER_OPTION_SELF, path)
  *      (PARAMETER_OPTION_FIELD_NAME, "updated")
@@ -354,7 +382,7 @@ char const *css_js_extensions[] =
  *      .run(PARAMETER_OPTION_MODE_FIRST)); // run
  * \endcode
  *
- * In this example notice that we just lose the opt_info_t object. It is
+ * In this example notice that we just lose the cmd_info_t object. It is
  * temporarily created on the stack, initialized, used to gather the
  * first match, then return a list of strings our of which we expect
  * either nothing (empty list) or one entry (the first parameter found.)
@@ -380,22 +408,24 @@ field_search::cmd_info_t::cmd_info_t()
     //, f_value() -- auto-init
     //, f_element() -- auto-init
     //, f_result(NULL) -- auto-init
+    //, f_path_info() -- auto-init
 {
 }
 
 
-/** \brief Initialize an opt_info_t object.
+/** \brief Initialize an cmd_info_t object.
  *
- * This function initializes the opt_info_t. Note that the parameters
+ * This function initializes the cmd_info_t. Note that the parameters
  * cannot be changed later (read-only.)
  *
  * \param[in] cmd  The search instruction (i.e. SELF, PARENTS, etc.)
  */
 field_search::cmd_info_t::cmd_info_t(command_t cmd)
-    : f_cmd(static_cast<int>(cmd)) // XXX fix cast
+    : f_cmd(static_cast<int>(cmd)) // FIXME fix cast
     //, f_value(str_value)
     //, f_element() -- auto-init
     //, f_result(NULL) -- auto-init
+    //, f_path_info() -- auto-init
 {
     switch(cmd)
     {
@@ -411,19 +441,20 @@ field_search::cmd_info_t::cmd_info_t(command_t cmd)
 }
 
 
-/** \brief Initialize an opt_info_t object.
+/** \brief Initialize an cmd_info_t object.
  *
- * This function initializes the opt_info_t. Note that the parameters
+ * This function initializes the cmd_info_t. Note that the parameters
  * cannot be changed later (read-only.)
  *
  * \param[in] opt  The search instruction (i.e. SELF, PARENTS, etc.)
  * \param[in] str_value  The string value attached to that instruction.
  */
 field_search::cmd_info_t::cmd_info_t(command_t cmd, QString const& str_value)
-    : f_cmd(static_cast<int>(cmd)) // XXX fix cast
+    : f_cmd(static_cast<int>(cmd)) // FIXME fix cast
     , f_value(str_value)
     //, f_element() -- auto-init
     //, f_result(NULL) -- auto-init
+    //, f_path_info() -- auto-init
 {
     switch(cmd)
     {
@@ -449,9 +480,9 @@ field_search::cmd_info_t::cmd_info_t(command_t cmd, QString const& str_value)
 }
 
 
-/** \brief Initialize an opt_info_t object.
+/** \brief Initialize an cmd_info_t object.
  *
- * This function initializes the opt_info_t. Note that the parameters
+ * This function initializes the cmd_info_t. Note that the parameters
  * cannot be changed later (read-only.)
  *
  * \param[in] opt  The search instruction (i.e. SELF, PARENTS, etc.)
@@ -462,6 +493,7 @@ field_search::cmd_info_t::cmd_info_t(command_t cmd, int64_t int_value)
     , f_value(int_value)
     //, f_element() -- auto-init
     //, f_result(NULL) -- auto-init
+    //, f_path_info() -- auto-init
 {
     switch(cmd)
     {
@@ -482,9 +514,9 @@ field_search::cmd_info_t::cmd_info_t(command_t cmd, int64_t int_value)
 }
 
 
-/** \brief Initialize an opt_info_t object.
+/** \brief Initialize an cmd_info_t object.
  *
- * This function initializes the opt_info_t. Note that the parameters
+ * This function initializes the cmd_info_t. Note that the parameters
  * cannot be changed later (read-only.)
  *
  * \param[in] opt  The search instruction (i.e. SELF, PARENTS, etc.)
@@ -495,6 +527,7 @@ field_search::cmd_info_t::cmd_info_t(command_t cmd, QtCassandra::QCassandraValue
     , f_value(value)
     //, f_element() -- auto-init
     //, f_result(NULL) -- auto-init
+    //, f_path_info() -- auto-init
 {
     switch(cmd)
     {
@@ -509,9 +542,9 @@ field_search::cmd_info_t::cmd_info_t(command_t cmd, QtCassandra::QCassandraValue
 }
 
 
-/** \brief Initialize an opt_info_t object.
+/** \brief Initialize an cmd_info_t object.
  *
- * This function initializes the opt_info_t. Note that the parameters
+ * This function initializes the cmd_info_t. Note that the parameters
  * cannot be changed later (read-only.)
  *
  * \param[in] opt  The search instruction (i.e. SELF, PARENTS, etc.)
@@ -522,6 +555,7 @@ field_search::cmd_info_t::cmd_info_t(command_t cmd, QDomElement element)
     //, f_value() -- auto-init
     , f_element(element)
     //, f_result(NULL) -- auto-init
+    //, f_path_info() -- auto-init
 {
     switch(cmd)
     {
@@ -535,9 +569,9 @@ field_search::cmd_info_t::cmd_info_t(command_t cmd, QDomElement element)
 }
 
 
-/** \brief Initialize an opt_info_t object.
+/** \brief Initialize an cmd_info_t object.
  *
- * This function initializes the opt_info_t. Note that the parameters
+ * This function initializes the cmd_info_t. Note that the parameters
  * cannot be changed later (read-only.)
  *
  * \param[in] opt  The search instruction (i.e. SELF, PARENTS, etc.)
@@ -548,6 +582,7 @@ field_search::cmd_info_t::cmd_info_t(command_t cmd, search_result_t& result)
     //, f_value() -- auto-init
     //, f_element(element)
     , f_result(&result)
+    //, f_path_info() -- auto-init
 {
     switch(cmd)
     {
@@ -556,6 +591,35 @@ field_search::cmd_info_t::cmd_info_t(command_t cmd, search_result_t& result)
 
     default:
         throw content_exception_type_mismatch(QString("invalid parameter option (command %1) for a search_result_t").arg(static_cast<int>(cmd)));
+
+    }
+}
+
+
+/** \brief Initialize an cmd_info_t object.
+ *
+ * This function initializes the cmd_info_t. Note that the parameters
+ * cannot be changed later (read-only.)
+ *
+ * \param[in] opt  The search instruction (i.e. COMMAND_PATH_INFO, etc.)
+ * \param[in] ipath  A full defined path to a page.
+ */
+field_search::cmd_info_t::cmd_info_t(command_t cmd, path_info_t const& ipath)
+    : f_cmd(static_cast<int>(cmd)) // XXX fix cast
+    //, f_value() -- auto-init
+    //, f_element() -- auto-init
+    //, f_result(NULL) -- auto-init
+    , f_path_info(ipath)
+{
+    switch(cmd)
+    {
+    case COMMAND_PATH_INFO_GLOBAL:
+    case COMMAND_PATH_INFO_BRANCH:
+    case COMMAND_PATH_INFO_REVISION:
+        break;
+
+    default:
+        throw content_exception_type_mismatch(QString("invalid parameter option (command %1) for an ipath (%2)").arg(static_cast<int>(cmd)).arg(ipath.get_cpath()));
 
     }
 }
@@ -735,13 +799,32 @@ field_search& field_search::operator () (command_t cmd, QDomElement element)
  * \li COMMAND_RESULT
  *
  * \param[in] cmd  The command.
- * \param[in] element  The element attached to that command.
+ * \param[in] result  The result attached to that command.
  *
  * \return A reference to the field_search so further () can be used.
  */
 field_search& field_search::operator () (command_t cmd, search_result_t& result)
 {
     field_search::cmd_info_t inst(cmd, result);
+    f_program.push_back(inst);
+    return *this;
+}
+
+
+/** \brief Add a command with a search_result_t reference.
+ *
+ * The following commands support the result reference:
+ *
+ * \li COMMAND_RESULT
+ *
+ * \param[in] cmd  The command.
+ * \param[in] ipath  The ipath attached to that command.
+ *
+ * \return A reference to the field_search so further () can be used.
+ */
+field_search& field_search::operator () (command_t cmd, path_info_t& ipath)
+{
+    field_search::cmd_info_t inst(cmd, ipath);
     f_program.push_back(inst);
     return *this;
 }
@@ -764,23 +847,25 @@ void field_search::run()
     struct auto_search
     {
         auto_search(char const *filename, char const *func, int line, snap_child *snap, cmd_info_vector_t& program)
-            : f_filename(filename)
+            : f_content_plugin(content::content::instance())
+            , f_filename(filename)
             , f_function(func)
             , f_line(line)
             , f_snap(snap)
             , f_program(program)
             //, f_mode(SEARCH_MODE_FIRST) -- auto-init
             , f_site_key(f_snap->get_site_key_with_slash())
+            , f_revision_owner(f_content_plugin->get_plugin_name())
             //, f_field_name("") -- auto-init
             //, f_self("") -- auto-init
-            , f_content_table(content::content::instance()->get_content_table())
+            , f_current_table(f_content_plugin->get_content_table())
+            //, f_element() -- auto-init
+            //, f_found_self(false) -- auto-init
+            //, f_saved(false) -- auto-init
             //, f_result() -- auto-init
+            //, f_variables() -- auto-init
+            //, f_path_info() -- auto-init
         {
-        }
-
-        void cmd_mode(int64_t mode)
-        {
-            f_mode = static_cast<int>(mode); // XXX fix, should be a cast to mode_t
         }
 
         void cmd_field_name(QString const& field_name)
@@ -830,6 +915,62 @@ void field_search::run()
             }
         }
 
+        void cmd_mode(int64_t mode)
+        {
+            f_mode = static_cast<int>(mode); // XXX fix, should be a cast to mode_t
+        }
+
+        void cmd_branch_owner(QString const& owner)
+        {
+            if(owner.isEmpty())
+            {
+                throw content_exception_invalid_sequence("COMMAND_BRANCH_OWNER cannot be set to an empty string");
+            }
+            f_path_info.set_owner(owner);
+        }
+
+        void cmd_branch_path(int64_t main_page)
+        {
+            // retrieve the path from this cell:
+            //   content::revision_control::<owner>::current_branch_key
+            f_path_info.set_path(f_self);
+            f_path_info.set_main_page(main_page != 0);
+std::cerr << "the branch key is [" << f_path_info.get_branch_key() << "]\n";
+            cmd_path(f_path_info.get_branch_key());
+
+            // make sure the current table is the data table
+            f_current_table = f_content_plugin->get_data_table();
+        }
+
+        void cmd_revision_path(int64_t main_page)
+        {
+            // retrieve the path from this cell:
+            //   content::revision_control::<owner>::current_revision_key::<branch>::<locale>
+            f_path_info.set_path(f_self);
+            f_path_info.set_main_page(main_page != 0);
+std::cerr << "the revision key is [" << f_path_info.get_revision_key() << "]\n";
+            cmd_path(f_path_info.get_revision_key());
+
+            // make sure the current table is the data table
+            f_current_table = f_content_plugin->get_data_table();
+        }
+
+        void cmd_table(QString const& name)
+        {
+            if(name == "content")
+            {
+                f_current_table = f_content_plugin->get_content_table();
+            }
+            else if(name == "data")
+            {
+                f_current_table = f_content_plugin->get_data_table();
+            }
+            else
+            {
+                throw content_exception_invalid_sequence("COMMAND_TABLE expected the name of the table to access: \"content\" or \"data\"");
+            }
+        }
+
         void cmd_self(QString const& self)
         {
             // verify that a field name is defined
@@ -838,8 +979,8 @@ void field_search::run()
                 throw content_exception_invalid_sequence("the field_search cannot check COMMAND_SELF without first being given a COMMAND_FIELD_NAME");
             }
 
-            if(f_content_table->exists(self)
-            && f_content_table->row(self)->exists(f_field_name))
+            if(f_current_table->exists(self)
+            && f_current_table->row(self)->exists(f_field_name))
             {
                 f_found_self = true;
 
@@ -852,7 +993,7 @@ void field_search::run()
                 else
                 {
                     // save the value
-                    f_result.push_back(f_content_table->row(self)->cell(f_field_name)->value());
+                    f_result.push_back(f_current_table->row(self)->cell(f_field_name)->value());
                 }
             }
         }
@@ -869,6 +1010,31 @@ void field_search::run()
                 // path does not yet include the site key
                 f_snap->canonicalize_path(f_self);
                 f_self = f_site_key + f_self;
+            }
+        }
+
+        void cmd_path_info(path_info_t const& ipath, content::param_revision_t mode)
+        {
+            switch(mode)
+            {
+            case content::PARAM_REVISION_GLOBAL:
+                cmd_path(ipath.get_cpath());
+                f_current_table = f_content_plugin->get_content_table();
+                break;
+
+            case content::PARAM_REVISION_BRANCH:
+                cmd_path(ipath.get_branch_key());
+                f_current_table = f_content_plugin->get_data_table();
+                break;
+
+            case content::PARAM_REVISION_REVISION:
+                cmd_path(ipath.get_revision_key());
+                f_current_table = f_content_plugin->get_data_table();
+                break;
+
+            default:
+                throw snap_logic_exception(QString("invalid mode (%1) in cmd_path_info.").arg(static_cast<int>(mode)));
+
             }
         }
 
@@ -1195,10 +1361,6 @@ void field_search::run()
                     cmd_reset(false);
                     break;
 
-                case COMMAND_MODE:
-                    cmd_mode(f_program[i].get_int64());
-                    break;
-
                 case COMMAND_FIELD_NAME:
                     cmd_field_name(f_program[i].get_string());
                     break;
@@ -1207,12 +1369,44 @@ void field_search::run()
                     cmd_field_name_with_vars(f_program[i].get_string());
                     break;
 
+                case COMMAND_MODE:
+                    cmd_mode(f_program[i].get_int64());
+                    break;
+
+                case COMMAND_BRANCH_OWNER:
+                    cmd_branch_owner(f_program[i].get_string());
+                    break;
+
+                case COMMAND_BRANCH_PATH:
+                    cmd_branch_path(f_program[i].get_int64());
+                    break;
+
+                case COMMAND_REVISION_PATH:
+                    cmd_revision_path(f_program[i].get_int64());
+                    break;
+
+                case COMMAND_TABLE:
+                    cmd_table(f_program[i].get_string());
+                    break;
+
                 case COMMAND_SELF:
                     cmd_self(f_self);
                     break;
 
                 case COMMAND_PATH:
                     cmd_path(f_program[i].get_string());
+                    break;
+
+                case COMMAND_PATH_INFO_GLOBAL:
+                    cmd_path_info(f_program[i].get_ipath(), content::PARAM_REVISION_GLOBAL);
+                    break;
+
+                case COMMAND_PATH_INFO_BRANCH:
+                    cmd_path_info(f_program[i].get_ipath(), content::PARAM_REVISION_BRANCH);
+                    break;
+
+                case COMMAND_PATH_INFO_REVISION:
+                    cmd_path_info(f_program[i].get_ipath(), content::PARAM_REVISION_REVISION);
                     break;
 
                 case COMMAND_CHILDREN:
@@ -1306,21 +1500,24 @@ void field_search::run()
             }
         }
 
+        content *                                       f_content_plugin;
         char const *                                    f_filename;
         char const *                                    f_function;
         int                                             f_line;
         zpsnap_child_t                                  f_snap;
         cmd_info_vector_t&                              f_program;
         safe_mode_t                                     f_mode;
-        QString                                         f_site_key;
+        QString const                                   f_site_key;
+        QString                                         f_revision_owner;
         QString                                         f_field_name;
         QString                                         f_self;
-        QSharedPointer<QtCassandra::QCassandraTable>    f_content_table;
+        QSharedPointer<QtCassandra::QCassandraTable>    f_current_table;
         QDomElement                                     f_element;
         controlled_vars::fbool_t                        f_found_self;
         controlled_vars::fbool_t                        f_saved;
         field_search::search_result_t                   f_result;
         field_search::variables_t                       f_variables;
+        path_info_t                                     f_path_info;
     } search(f_filename, f_function, f_line, f_snap, f_program);
 
     search.run();
@@ -1988,6 +2185,265 @@ QString const& attachment_file::get_name() const
 
 
 
+path_info_t::path_info_t()
+    : f_content_plugin(content::content::instance())
+    , f_snap(f_content_plugin->get_snap())
+    //, f_cpath("") -- auto-init
+    //, f_key("") -- auto-init
+    , f_owner(f_content_plugin->get_plugin_name())
+    //, f_main_page(false) -- auto-init
+    //, f_branch(snap_version::SPECIAL_VERSION_UNDEFINED) -- auto-init
+    //, f_revision(snap_version::SPECIAL_VERSION_UNDEFINED) -- auto-init
+    //, f_locale("") -- auto-init
+    //, f_branch_key("") -- auto-init
+    //, f_revision_key("") -- auto-init
+    //, f_parameters() -- auto-init
+{
+}
+
+
+void path_info_t::set_path(QString const& path)
+{
+    if(path != f_cpath && path != f_key)
+    {
+        QString const& site_key(f_snap->get_site_key_with_slash());
+        if(path.startsWith(site_key))
+        {
+            // already canonicalized
+            f_key = path;
+            f_cpath = path.mid(site_key.length());
+        }
+        else
+        {
+            // may require canonicalization
+            f_cpath = path;
+            f_snap->canonicalize_path(f_cpath);
+            f_key = f_snap->get_site_key_with_slash() + f_cpath;
+        }
+
+        // the other info becomes invalid
+        clear();
+    }
+}
+
+
+void path_info_t::set_owner(QString const& owner)
+{
+    if(f_owner != owner)
+    {
+        clear();
+    }
+    f_owner = owner;
+}
+
+
+void path_info_t::set_main_page(bool main_page)
+{
+    // Note: we could check with f_snap->get_uri() except that in some
+    //       situations we may want to have main_page set to true even
+    //       though the path is not the URI path used to access the site
+    if(f_main_page != main_page)
+    {
+        clear();
+    }
+    f_main_page = main_page;
+}
+
+
+void path_info_t::set_parameter(QString const& name, QString const& value)
+{
+    f_parameters[name] = value;
+}
+
+
+snap_child *path_info_t::get_snap() const
+{
+    return f_snap;
+}
+
+
+QString path_info_t::get_key() const
+{
+    return f_key;
+}
+
+
+QString path_info_t::get_cpath() const
+{
+    return f_cpath;
+}
+
+
+QString path_info_t::get_owner() const
+{
+    return f_owner;
+}
+
+
+QString path_info_t::get_parameter(QString const& name) const
+{
+    return f_parameters.contains(name) ? f_parameters[name] : "";
+}
+
+
+bool path_info_t::get_working_branch() const
+{
+    return f_main_page ? f_snap->get_working_branch() : false;
+}
+
+
+snap_version::version_number_t path_info_t::get_branch() const
+{
+    if(snap_version::SPECIAL_VERSION_UNDEFINED == f_branch)
+    {
+        // FIXME cast
+        f_branch = f_main_page
+                    ? static_cast<snap_version::basic_version_number_t>(f_snap->get_branch())
+                    : static_cast<snap_version::basic_version_number_t>(snap_version::SPECIAL_VERSION_UNDEFINED);
+
+        if(snap_version::SPECIAL_VERSION_UNDEFINED == f_branch)
+        {
+            f_branch = f_content_plugin->get_current_branch(f_key, f_owner, get_working_branch());
+        }
+        f_branch_key = f_content_plugin->generate_branch_key(f_key, f_branch);
+    }
+
+    return f_branch;
+}
+
+
+snap_version::version_number_t path_info_t::get_revision() const
+{
+    if(snap_version::SPECIAL_VERSION_UNDEFINED == f_revision)
+    {
+        // check all available revisions and return the first valid one,
+        // however, if the user specified a revision (as we get with the
+        // f_snap->get_revision() function) then we use that one no matter
+        // what... if f_revision is defined and f_revision_key is empty
+        // that means we have an invalid user revision and it will get caught
+        // at some point.
+
+        // reset values
+        f_revision = f_main_page
+                    ? static_cast<snap_version::basic_version_number_t>(f_snap->get_revision())
+                    : static_cast<snap_version::basic_version_number_t>(snap_version::SPECIAL_VERSION_UNDEFINED);
+
+        f_locale = f_snap->get_language_key();
+        f_revision_key.clear();
+
+        if(snap_version::SPECIAL_VERSION_UNDEFINED == f_revision)
+        {
+            // try with the full locale
+            f_revision = f_content_plugin->get_current_revision(f_key, f_owner, f_locale, get_working_branch());
+            if(snap_version::SPECIAL_VERSION_UNDEFINED == f_revision && f_locale.length() == 5)
+            {
+                // try without the country
+                f_locale = f_locale.left(2);
+                f_revision = f_content_plugin->get_current_revision(f_key, f_owner, f_locale, get_working_branch());
+            }
+            if(snap_version::SPECIAL_VERSION_UNDEFINED == f_revision)
+            {
+                // try with the neutral language
+                f_locale = "xx";
+                f_revision = f_content_plugin->get_current_revision(f_key, f_owner, f_locale, get_working_branch());
+            }
+            if(snap_version::SPECIAL_VERSION_UNDEFINED == f_revision)
+            {
+                // try without a language
+                f_locale.clear();
+                f_revision = f_content_plugin->get_current_revision(f_key, f_owner, f_locale, get_working_branch());
+            }
+        }
+
+        // name of the field in the content table of that page
+        QString field(f_content_plugin->generate_revision_key(f_key, get_branch(), f_revision, f_locale));
+        QSharedPointer<QtCassandra::QCassandraTable> content_table(f_content_plugin->get_content_table());
+        if(content_table->exists(f_key)
+        && content_table->row(f_key)->exists(field))
+        {
+            QtCassandra::QCassandraValue value(content_table->row(f_key)->cell(field)->value());
+            f_revision_key = value.stringValue();
+        }
+        // else -- no default revision...
+    }
+
+    return f_revision;
+}
+
+
+QString path_info_t::get_locale() const
+{
+    if(snap_version::SPECIAL_VERSION_UNDEFINED == f_revision)
+    {
+        get_revision();
+    }
+    return f_locale;
+}
+
+
+QString path_info_t::get_branch_key() const
+{
+    if(snap_version::SPECIAL_VERSION_UNDEFINED == f_branch)
+    {
+        get_branch();
+    }
+    return f_branch_key;
+}
+
+
+QString path_info_t::get_revision_key() const
+{
+    if(snap_version::SPECIAL_VERSION_UNDEFINED == f_revision)
+    {
+        get_revision();
+    }
+    return f_revision_key;
+}
+
+
+void path_info_t::clear()
+{
+    f_branch = static_cast<snap_version::basic_version_number_t>(snap_version::SPECIAL_VERSION_UNDEFINED); // FIXME cast
+    f_revision = static_cast<snap_version::basic_version_number_t>(snap_version::SPECIAL_VERSION_UNDEFINED); // FIXME cast
+    f_locale.clear();
+    f_branch_key.clear();
+    f_revision_key.clear();
+    f_parameters.clear();
+}
+
+
+
+
+
+/** \brief Set the permission and reason for refusal.
+ *
+ * This function marks the permission flag as not permitted (i.e. it
+ * sets it to false.) The default value of the permission flag is
+ * true. Note that once this function was called once it is not possible
+ * to set the flag back to true.
+ *
+ * \param[in] new_reason  The reason for the refusal, can be set to "".
+ */
+void permission_flag::not_permitted(QString const& new_reason)
+{
+    f_allowed = false;
+
+    if(!new_reason.isEmpty())
+    {
+        if(!f_reason.isEmpty())
+        {
+            f_reason += "\n";
+        }
+        // TBD: should we prevent "\n" in "new_reason"?
+        f_reason += new_reason;
+    }
+}
+
+
+
+
+
+
 /** \brief Useful function that transforms a QString to XML.
  *
  * When inserting a string in the XML document when that string may include
@@ -2060,12 +2516,6 @@ void content::on_bootstrap(snap_child *snap)
 
     SNAP_LISTEN0(content, "server", server, save_content);
     SNAP_LISTEN0(content, "server", server, backend_process);
-    SNAP_LISTEN(content, "layout", layout::layout, generate_page_content, _1, _2, _3, _4, _5);
-
-    if(plugins::exists("javascript"))
-    {
-        javascript::javascript::instance()->register_dynamic_plugin(this);
-    }
 }
 
 
@@ -2135,6 +2585,7 @@ void content::initial_update(int64_t variables_timestamp)
 {
     (void)variables_timestamp;
     get_content_table();
+    get_data_table();
     get_files_table();
 }
 
@@ -2177,6 +2628,86 @@ QSharedPointer<QtCassandra::QCassandraTable> content::get_content_table()
 }
 
 
+/** \brief Initialize the data table.
+ *
+ * This function creates the data table if it doesn't exist yet. Otherwise
+ * it simple initializes the f_data_table variable member.
+ *
+ * If the function is not able to create the table an exception is raised.
+ *
+ * The data table is the one that includes the actual content of the
+ * websites. It is referenced from the content table for each branch and
+ * revision.
+ *
+ * The data table is similar to the content table in that it looks like a
+ * tree although it includes one row per revision.
+ *
+ * So the key is defined as one of the following:
+ *
+ * \code
+ * // specific to a branch, but not to a revision
+ * // the special entry "xx" represents the "neutral" or "default" language
+ * <site-key>/<path>#branch/<language>/<branch>
+ *
+ * // specific to a branch and a revision
+ * <site-key>/<path>#revision/<language>/<branch>.<revision>
+ *
+ * // a draft specific to a branch and user
+ * // (drafts are never specific to a revision)
+ * <site-key>/<path>#draft/<user>/<language>/<branch>
+ *
+ * // for attachments, for each specific version of the attachment
+ * <site-key>/<path>#attachment/<version>
+ * \codeend
+ *
+ * The content table is created as a set of revision references. These
+ * are defined as:
+ *
+ * \code
+ * // if undefined, use "xx" by default
+ * // on view use the language defined by the user for that request if defined
+ * content::default_language = <language>
+ *
+ * // the revision shown to visitors (people who cannot edit the page)
+ * content::revision_control::current = <branch>.<revision>
+ * content::attachment::revision_control::current = <branch>.<revision>
+ *
+ * // the revision being worked on (so the user can work on branch 2
+ * // while branch 1 remains curent)
+ * content::revision_control::current_working_version = <branch>.<revision>
+ * content::attachment::revision_control::current_working_version = <branch>.<revision>
+ *
+ * // last branch created (used whenever you create a new branch)
+ * content::revision_control::<language>::last_branch
+ * content::attachment::revision_control::<language>::last_branch
+ *
+ * // last revision created in a specific branch (used whenever you create a new revision)
+ * content::revision_control::<language>::last_revision::<branch number>
+ * content::attachment::revision_control::<language>::last_revision::<branch number>
+ * \endcode
+ *
+ * Note that for attachment we do use a language, most often "xx", but there
+ * are pictures created with text on them and thus you have to have a
+ * different version for each language for pictures too.
+ *
+ * Note that \<language> never represents a programming language here. So if
+ * an attachment is a JavaScript file, the language can be set to "en" if
+ * it includes messages in English, but it is expected that all JavaScript
+ * files be assigned language "xx". This also applies to CSS files which are
+ * likely to all be set to "xx".
+ *
+ * \return The pointer to the content table.
+ */
+QSharedPointer<QtCassandra::QCassandraTable> content::get_data_table()
+{
+    if(f_data_table.isNull())
+    {
+        f_data_table = f_snap->create_table(get_name(SNAP_NAME_CONTENT_DATA_TABLE), "Website data table.");
+    }
+    return f_data_table;
+}
+
+
 /** \brief Initialize the files table.
  *
  * This function creates the files table if it doesn't exist yet. Otherwise
@@ -2206,77 +2737,906 @@ QSharedPointer<QtCassandra::QCassandraTable> content::get_files_table()
 }
 
 
-/** \brief Execute a page: generate the complete output of that page.
+/** \brief Retrieve the snap_child pointer.
  *
- * This function displays the page that the user is trying to view. It is
- * supposed that the page permissions were already checked and thus that
- * its contents can be displayed to the current user.
+ * This function returns the snap_child object pointer. It is generally used
+ * internally by sub-classes to gain access to the outside world.
  *
- * Note that the path was canonicalized by the path plugin and thus it does
- * not require any further corrections.
- *
- * \param[in] cpath  The canonicalized path being managed.
- *
- * \return true if the content is properly generated, false otherwise.
+ * \return A pointer to the snap_child running this process.
  */
-bool content::on_path_execute(const QString& cpath)
+snap_child *content::get_snap()
 {
-    // TODO: we probably do not want to check for attachment to send if the
-    //       action is not "view"...
-    QSharedPointer<QtCassandra::QCassandraTable> content_table(get_content_table());
-    QString const site_key(f_snap->get_site_key_with_slash());
-    QString const key(site_key + cpath);
-    if(content_table->exists(key)
-    && content_table->row(key)->exists(get_name(SNAP_NAME_CONTENT_ATTACHMENT_REVISION_CONTROL_CURRENT)))
+    return f_snap;
+}
+
+
+/** \brief Call if a revision control version is found to be invalid.
+ *
+ * While dealing with revision control information, this function may
+ * be called if a branch or revision number if found to be incorrect.
+ *
+ * \note
+ * Debug code should not call this function. Instead it should
+ * throw an error which is much more effective to talk to programmers.
+ *
+ * \param[in] version  The version that generated the error.
+ */
+void content::invalid_revision_control(QString const& version)
+{
+    f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR, "Invalid Revision Control",
+            "The revision control \"" + version + "\" does not look valid.",
+            "The version does not seem to start with a valid decimal number.");
+    NOTREACHED();
+}
+
+
+/** \brief Generate a base key used with revision handling.
+ *
+ * This function generates the base key which is composed of the
+ * SNAP_NAME_CONTENT_REVISION_CONTROL string (content::revision_control)
+ * and the owner.
+ *
+ * note that the owner is not added to the key if defined as "content"
+ * which is the default. The owner string should always be defined using
+ * the plugin name as in:
+ *
+ * \code
+ * content::content *content_plugin(content::content::instance());
+ * content_plugin->get_revision_base_key(content_plugin->get_plugin_name());
+ * \endcode
+ *
+ * \param[in] owner  The name of the plugin that owns this specific revision.
+ */
+QString content::get_revision_base_key(QString const& owner)
+{
+    if(owner.isEmpty())
     {
-        QSharedPointer<QtCassandra::QCassandraRow> row(content_table->row(key));
-        QtCassandra::QCassandraValue revision_value(row->cell(get_name(SNAP_NAME_CONTENT_ATTACHMENT_REVISION_CONTROL_CURRENT))->value());
-        if(!revision_value.nullValue())
+        throw content_exception_invalid_name("the owner of the get_data_version() cannot be the empty string");
+    }
+
+    QString base_key(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL));
+    if(owner != "content")
+    {
+        base_key += "::";
+        base_key += owner;
+    }
+
+    return base_key;
+}
+
+
+/** \brief Get the current branch.
+ *
+ * This function retrieves the current branch for data defined in a page.
+ * The current branch is determined using the key of the page being
+ * accessed.
+ *
+ * The owner is expected to be the name of the plugin creating this
+ * revision. By default it should be set to "content". The owner string
+ * should always be defined using the plugin name as in:
+ *
+ * \code
+ * content::content *content_plugin(content::content::instance());
+ * content_plugin->get_revision_base_key(content_plugin->get_plugin_name());
+ * \endcode
+ *
+ * \note
+ * The current branch number may not be the last branch number. The system
+ * automatically forces branch 1 to become current when created. However,
+ * the system does not set the newest branch as current when the user creates
+ * a new branch. This way a new branch remains hidden until the user decides
+ * that it should become current.
+ *
+ * \param[in] key  The key of the page concerned.
+ * \param[in] owner  The plugin that owns this revision data.
+ * \param[in] working_branch  Whether the working branch (true) or the current
+ *                            branch (false) is used.
+ *
+ * \return The current revision number.
+ */
+snap_version::version_number_t content::get_current_branch(QString const& key, QString const& owner, bool working_branch)
+{
+    QString base_key(get_revision_base_key(owner));
+    QString current_branch_key(QString("%1::%2").arg(base_key).arg(get_name(working_branch
+                                ? SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_BRANCH
+                                : SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_BRANCH)));
+    QSharedPointer<QtCassandra::QCassandraTable> content_table(get_content_table());
+    if(content_table->exists(key)
+    && content_table->row(key)->exists(current_branch_key))
+    {
+        return content_table->row(key)->cell(current_branch_key)->value().uint32Value();
+    }
+
+    return snap_version::SPECIAL_VERSION_UNDEFINED;
+}
+
+
+/** \brief Retrieve the current branch or create a new one.
+ *
+ * This function retrieves the current user branch which means it returns
+ * the current branch as is unless it is undefined or is set to the
+ * system branch. In those two cases the function creates a new branch.
+ *
+ * The function does not change the current branch information.
+ *
+ * \param[in] key  The key of the page concerned.
+ * \param[in] owner  The owner, in most cases the name of the content plugin.
+ * \param[in] locale  The locale to create the first revision of that branch.
+ * \param[in] working_branch  Whether the working branch (true) or the current
+ *                            branch (false) is used.
+ *
+ * \sa get_current_branch()
+ * \sa get_new_branch()
+ */
+snap_version::version_number_t content::get_current_user_branch(QString const& key, QString const& owner, QString const& locale, bool working_branch)
+{
+    snap_version::version_number_t branch(get_current_branch(key, owner, working_branch));
+    if(snap_version::SPECIAL_VERSION_UNDEFINED == branch
+    || snap_version::SPECIAL_VERSION_SYSTEM_BRANCH == branch)
+    {
+        // not a valid user branch, first check whether there is a latest
+        // user branch, if so, put the new data on the newest branch
+        QSharedPointer<QtCassandra::QCassandraTable> content_table(get_content_table());
+
+        // get the last branch number
+        QString const base_key(get_revision_base_key(owner));
+        QString const last_branch_key(QString("%1::%2").arg(base_key).arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL_LAST_BRANCH)));
+        QtCassandra::QCassandraValue branch_value(content_table->row(key)->cell(last_branch_key)->value());
+        if(!branch_value.nullValue())
         {
-            QString revision(revision_value.stringValue());
-            QString revision_key(QString("%1::%2").arg(get_name(SNAP_NAME_CONTENT_ATTACHMENT)).arg(revision));
-//std::cerr << "revision key [" << revision << "] [" << revision_key << "]\n";
-            if(row->exists(revision_key))
-            {
-                QtCassandra::QCassandraValue attachment_key(row->cell(revision_key)->value());
-                if(!attachment_key.nullValue())
-                {
-                    QSharedPointer<QtCassandra::QCassandraTable> files_table(get_files_table());
-                    if(!files_table->exists(attachment_key.binaryValue())
-                    || !files_table->row(attachment_key.binaryValue())->exists(get_name(SNAP_NAME_CONTENT_FILES_DATA)))
-                    {
-                        // somehow the file data is not available
-                        f_snap->die(snap_child::HTTP_CODE_NOT_FOUND, "Attachment Not Found",
-                                "The attachment \"" + cpath + "\" was not found.",
-                                QString("Could not find field \"%1\" of the file \"%2\".")
-                                        .arg(get_name(SNAP_NAME_CONTENT_FILES_DATA))
-                                        .arg(QString::fromAscii(attachment_key.binaryValue().toHex())));
-                        NOTREACHED();
-                    }
+            // a branch exists, although it may still be a system branch
+            branch = branch_value.uint32Value();
+        }
 
-                    QSharedPointer<QtCassandra::QCassandraRow> file_row(files_table->row(attachment_key.binaryValue()));
-
-                    //int pos(cpath.lastIndexOf('/'));
-                    //QString basename(cpath.mid(pos + 1));
-                    //f_snap->set_header("Content-Disposition", "attachment; filename=" + basename);
-
-                    //f_snap->set_header("Content-Transfer-Encoding", "binary");
-
-                    // this is an attachment, output it as such
-                    QtCassandra::QCassandraValue attachment_mime_type(file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_MIME_TYPE))->value());
-                    f_snap->set_header("Content-Type", attachment_mime_type.stringValue());
-
-                    QtCassandra::QCassandraValue data(file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_DATA))->value());
-                    f_snap->output(data.binaryValue());
-                    return true;
-                }
-            }
+        if(snap_version::SPECIAL_VERSION_UNDEFINED == branch
+        || snap_version::SPECIAL_VERSION_SYSTEM_BRANCH == branch)
+        {
+            // well... no user branch exists yet, create one
+            return get_new_branch(key, owner, locale);
         }
     }
 
-    f_snap->output(layout::layout::instance()->apply_layout(cpath, this));
+    return branch;
+}
 
-    return true;
+
+/** \brief Get the current revision.
+ *
+ * This function retrieves the current revision for data defined in a page.
+ * The current branch is determined using the get_current_branch()
+ * function with the same key, owner, and working_branch parameters.
+ *
+ * The owner is expected to be the name of the plugin creating this
+ * revision. By default it should be set to "content". The owner string
+ * should always be defined using the plugin name as in:
+ *
+ * \code
+ * content::content *content_plugin(content::content::instance());
+ * content_plugin->get_revision_base_key(content_plugin->get_plugin_name());
+ * \endcode
+ *
+ * \note
+ * The current revision number may have been changed by an editor to a
+ * number other than the last revision number.
+ *
+ * \param[in] key  The key of the page concerned.
+ * \param[in] owner  The plugin that owns this revision data.
+ * \param[in] locale  The language and country information.
+ * \param[in] working_branch  Whether the working branch (true) or the current
+ *                            branch (false) is used.
+ *
+ * \return The current revision number.
+ */
+snap_version::version_number_t content::get_current_revision(QString const& key, QString const& owner, QString const& locale, bool working_branch)
+{
+    QString const base_key(get_revision_base_key(owner));
+    snap_version::version_number_t const branch(get_current_branch(key, owner, working_branch));
+    QString revision_key(QString("%1::%2::%3")
+            .arg(base_key)
+            .arg(get_name(working_branch
+                    ? SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_REVISION
+                    : SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_REVISION))
+            .arg(branch));
+    if(!locale.isEmpty())
+    {
+        revision_key += "::" + locale;
+    }
+    QSharedPointer<QtCassandra::QCassandraTable> content_table(get_content_table());
+    if(content_table->exists(key)
+    && content_table->row(key)->exists(revision_key))
+    {
+        return content_table->row(key)->cell(revision_key)->value().uint32Value();
+    }
+
+    return snap_version::SPECIAL_VERSION_UNDEFINED;
+}
+
+
+/** \brief Generate a new branch number and return it.
+ *
+ * This function generates a new branch number and returns it. This is used
+ * each time the user requests to create a new branch.
+ *
+ * In most cases a user will create a new branch when he wants to be able to
+ * continue to update the current branch until he is done with the new branch
+ * of that page. This way the new branch can be written and moderated and
+ * scheduled for publication on a future date without distrubing what visitors
+ * see when they visit that page.
+ *
+ * The locale is used to generate the first revision of that branch. In most
+ * cases this allows you to use revision 0 without having to request a new
+ * revision by calling the get_new_revision() function (i.e. an early
+ * optimization.) If empty, then no translations will be available for that
+ * revision and no locale is added to the field name. This is different from
+ * setting the locale to "xx" which still allows translation only this one
+ * entry is considered neutral in terms of language.
+ *
+ * The owner is expected to be the name of the plugin creating this
+ * revision. By default it should be set to "content". The owner string
+ * should always be defined using the plugin name as in:
+ *
+ * \code
+ * content::content *content_plugin(content::content::instance());
+ * content_plugin->get_revision_base_key(content_plugin->get_plugin_name());
+ * \endcode
+ *
+ * \note
+ * Branch zero (0) is never created using this function. If no branch
+ * exists this function returns one (1) anyway. This is because branch
+ * zero (0) is reserved and used by the system when it saves the parameters
+ * found in the content.xml file.
+ *
+ * \param[in] key  The key of the page concerned.
+ * \param[in] owner  The plugin requesting this new revision.
+ * \param[in] locale  The locale used for this revision.
+ *
+ * \return The new branch number.
+ */
+snap_version::version_number_t content::get_new_branch(QString const& key, QString const& owner, QString const& locale)
+{
+    QSharedPointer<QtCassandra::QCassandraTable> content_table(get_content_table());
+
+    // get the last branch number
+    QString const base_key(get_revision_base_key(owner));
+    QString const last_branch_key(QString("%1::%2").arg(base_key).arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL_LAST_BRANCH)));
+
+    // increase revision if one exists, otherwise we keep the default (0)
+    snap_version::version_number_t branch(static_cast<snap_version::basic_version_number_t>(snap_version::SPECIAL_VERSION_USER_FIRST_BRANCH));
+
+    QtCassandra::QCassandraLock lock(f_snap->get_context(), key);
+
+    QtCassandra::QCassandraValue branch_value(content_table->row(key)->cell(last_branch_key)->value());
+    if(!branch_value.nullValue())
+    {
+        // it exists, increase it
+        branch = branch_value.uint32Value();
+        if(snap_version::SPECIAL_VERSION_MAX_BRANCH_NUMBER > branch)
+        {
+            ++branch;
+        }
+        // else -- probably need to warn the user we reached 4 billion
+        //         branches (this is pretty much impossible without either
+        //         hacking the database or having a robot that generates
+        //         many branches every day.)
+    }
+    content_table->row(key)->cell(last_branch_key)->setValue(static_cast<snap_version::basic_version_number_t>(branch));
+
+    QString last_revision_key(QString("%1::%2::%3").arg(base_key).arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL_LAST_REVISION)).arg(branch));
+    if(!locale.isEmpty())
+    {
+        last_revision_key += "::" + locale;
+    }
+    content_table->row(key)->cell(last_revision_key)->setValue(static_cast<snap_version::basic_version_number_t>(snap_version::SPECIAL_VERSION_FIRST_REVISION));
+
+    // unlock ASAP
+    lock.unlock();
+
+    return branch;
+}
+
+
+/** \brief Generate a new revision number and return it.
+ *
+ * This function generates a new revision number and returns it. This is used
+ * each time the system or a user saves a new revision of content to a page.
+ *
+ * The function takes in the branch in which the new revision is to be
+ * generated which means the locale needs to also be specified. However,
+ * it is possible to set the locale parameter to the empty string in which
+ * case the data being revisioned cannot be translated. Note that this is
+ * different from setting the value to "xx" since in that case it means
+ * that specific entry is neutral whereas using the empty string prevents
+ * translations altogether (because the language/country are not taken
+ * in account.)
+ *
+ * The owner is expected to be the name of the plugin creating this
+ * revision. By default it should be set to "content". The owner string
+ * should always be defined using the plugin name as in:
+ *
+ * \code
+ * content::content *content_plugin(content::content::instance());
+ * content_plugin->get_revision_base_key(content_plugin->get_plugin_name());
+ * \endcode
+ *
+ * \note
+ * In debug mode the branch number is verified for validity. It has to
+ * be an existing branch.
+ *
+ * \note
+ * This function may return zero (0) if the concerned locale did not
+ * yet exist for this page.
+ *
+ * \param[in] key  The key of the page concerned.
+ * \param[in] owner  The plugin requesting this new revision.
+ * \param[in] branch  The branch for which this new revision is being created.
+ * \param[in] locale  The locale used for this revision.
+ *
+ * \return The new revision number.
+ */
+snap_version::version_number_t content::get_new_revision(QString const& key, QString const& owner, snap_version::version_number_t branch, QString const& locale)
+{
+    QSharedPointer<QtCassandra::QCassandraTable> content_table(get_content_table());
+
+    // define the key
+    QString const base_key(get_revision_base_key(owner));
+    QString last_revision_key(QString("%1::%2::%3").arg(base_key).arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL_LAST_REVISION)).arg(branch));
+    if(!locale.isEmpty())
+    {
+        last_revision_key += "::" + locale;
+    }
+
+    // increase revision if one exists, otherwise we keep the default (0)
+    snap_version::version_number_t revision(static_cast<snap_version::basic_version_number_t>(snap_version::SPECIAL_VERSION_FIRST_REVISION));
+
+    QtCassandra::QCassandraLock lock(f_snap->get_context(), key);
+
+#ifdef DEBUG
+    // verify correctness of branch
+    QString const last_branch_key(QString("%1::%2").arg(base_key).arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL_LAST_BRANCH)));
+    QtCassandra::QCassandraValue branch_value(content_table->row(key)->cell(last_branch_key)->value());
+    if(branch_value.nullValue())
+    {
+        // this happens for branch zero (internal data from content.xml files)
+        if(0 != branch)
+        {
+            // the branch has to exist
+            throw snap_logic_exception("trying to create a new revision without a last branch defined");
+        }
+    }
+    else if(branch > branch_value.uint32Value())
+    {
+        // the 'branch' parameter cannot be larger than the last branch allocated
+        throw snap_logic_exception(QString("trying to create a new revision for branch %1 which does not exist (last branch is %2)")
+                    .arg(branch).arg(branch_value.uint32Value()));
+    }
+#endif
+
+    QtCassandra::QCassandraValue revision_value(content_table->row(key)->cell(last_revision_key)->value());
+    if(!revision_value.nullValue())
+    {
+        // it exists, increase it
+        revision = revision_value.uint32Value();
+        if(snap_version::SPECIAL_VERSION_MAX_BRANCH_NUMBER > revision)
+        {
+            ++revision;
+        }
+        // else -- probably need to warn the user we reached 4 billion
+        //         revisions (this is assuming we delete old revisions
+        //         in the meantime, but even if you make 10 changes a
+        //         day and say it makes use of 20 revision numbers each
+        //         time, it would still take... over half a million
+        //         YEARS to reach that many revisions in that one
+        //         branch...)
+    }
+    content_table->row(key)->cell(last_revision_key)->setValue(static_cast<snap_version::basic_version_number_t>(revision));
+
+    // unlock ASAP
+    lock.unlock();
+
+    return revision;
+}
+
+
+/** \brief Generate a key from a branch, revision, and locale.
+ *
+ * This function transforms a page key and a branch number in a key that
+ * is to be used to access the user information in the data table.
+ *
+ * The branch is used as is in the key because it is very unlikely that
+ * can cause a problem as all the other extended keys do not start with
+ * a number.
+ *
+ * \param[in] key  The key of the page being worked on.
+ * \param[in] owner  The owner of that branch.
+ *
+ * \return A string representing the end of the key
+ */
+QString content::get_branch_key(QString const& key, QString const& owner, bool working_branch)
+{
+    // key in the content table
+    QString const base_key(get_revision_base_key(owner));
+    QString const current_key(QString("%1::%2")
+                .arg(base_key)
+                .arg(get_name(working_branch
+                        ? SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_BRANCH_KEY
+                        : SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_BRANCH_KEY)));
+
+    // get the data key from the content table
+    QSharedPointer<QtCassandra::QCassandraTable> content_table(get_content_table());
+    QtCassandra::QCassandraValue const value(content_table->row(key)->cell(current_key)->value());
+    return value.stringValue();
+}
+
+
+/** \brief Generate the key to use in the data table for a branch.
+ *
+ * This function generates the key of the row used in the data table
+ * to access branch specific data, whatever the revision.
+ *
+ * \param[in] key  The key to the page concerned.
+ * \param[in] branch  The number of the new current branch.
+ *
+ * \return This function returns a copy of the current branch key.
+ */
+QString content::generate_branch_key(QString const& key, snap_version::version_number_t branch)
+{
+    return QString("%1#%2").arg(key).arg(branch);
+}
+
+
+/** \brief Set the current (working) branch key.
+ *
+ * This function is used to mark that \p branch is now the current branch or
+ * the current working branch.
+ *
+ * The current branch is the one shown to your anonymous visitors. By default
+ * only editors can see the other branches and revisions.
+ *
+ * The owner is expected to be the name of the plugin creating this
+ * revision. By default it should be set to "content". The owner string
+ * should always be defined using the plugin name as in:
+ *
+ * \code
+ * content::content *content_plugin(content::content::instance());
+ * content_plugin->get_revision_base_key(content_plugin->get_plugin_name());
+ * \endcode
+ *
+ * \param[in] key  The key to the page concerned.
+ * \param[in] owner  The name of the plugin that owns this revision.
+ * \param[in] branch  The number of the new current branch.
+ * \param[in] working_branch  Update the current working branch (true) or the current branch (false).
+ *
+ * \return This function returns a copy of the current branch key.
+ */
+QString content::set_branch_key(QString const& key, QString const& owner, snap_version::version_number_t branch, bool working_branch)
+{
+    // key in the data table
+    QString const current_branch_key(generate_branch_key(key, branch));
+
+    // key in the content table
+    QString const base_key(get_revision_base_key(owner));
+    QString const current_key(QString("%1::%2")
+                .arg(base_key)
+                .arg(get_name(working_branch
+                        ? SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_BRANCH_KEY
+                        : SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_BRANCH_KEY)));
+
+    // save the data key in the content table
+    QSharedPointer<QtCassandra::QCassandraTable> content_table(get_content_table());
+    content_table->row(key)->cell(current_key)->setValue(current_branch_key);
+    return current_branch_key;
+}
+
+
+/** \brief Initialize the system branch for a specific key.
+ *
+ * This function initializes all the branch values for the specified
+ * path. This is used by the system to initialize a system branch.
+ *
+ * \todo
+ * We have to initialize branches and a similar function for user content
+ * will be necessary. User content starts with branch 1. I'm not entirely
+ * sure anything more is required than having a way to specify the branch
+ * on the call...
+ *
+ * \param[in] key  The path of the page concerned.
+ * \param[in] locale  The locale used to generate the first revision.
+ */
+void content::initialize_branch(QString const& key, QString const& locale)
+{
+    QString const base_key(get_revision_base_key(get_plugin_name()));
+    QSharedPointer<QtCassandra::QCassandraTable> content_table(get_content_table());
+
+    // *** BRANCH ***
+    snap_version::version_number_t branch_number(static_cast<snap_version::basic_version_number_t>(snap_version::SPECIAL_VERSION_SYSTEM_BRANCH));
+    {
+        // Last branch
+        QString const last_branch_key(QString("%1::%2").arg(base_key).arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL_LAST_BRANCH)));
+        QtCassandra::QCassandraValue branch_value(content_table->row(key)->cell(last_branch_key)->value());
+        if(branch_value.nullValue())
+        {
+            // last branch does not exist yet, create it with zero (0)
+            content_table->row(key)->cell(last_branch_key)->setValue(static_cast<snap_version::basic_version_number_t>(branch_number));
+        }
+        else
+        {
+            branch_number = branch_value.uint32Value();
+        }
+    }
+
+    {
+        QString const current_branch_key(QString("%1::%2")
+                .arg(base_key).arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_BRANCH)));
+        QtCassandra::QCassandraValue branch_value(content_table->row(key)->cell(current_branch_key)->value());
+        if(branch_value.nullValue())
+        {
+            content_table->row(key)->cell(current_branch_key)->setValue(static_cast<snap_version::basic_version_number_t>(branch_number));
+        }
+    }
+
+    {
+        QString const current_branch_key(QString("%1::%2")
+                .arg(base_key).arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_BRANCH)));
+        QtCassandra::QCassandraValue branch_value(content_table->row(key)->cell(current_branch_key)->value());
+        if(branch_value.nullValue())
+        {
+            content_table->row(key)->cell(current_branch_key)->setValue(static_cast<snap_version::basic_version_number_t>(branch_number));
+        }
+    }
+
+    {
+        // Current branch key
+        QString const current_branch_key(get_branch_key(key, get_plugin_name(), false));
+        if(current_branch_key.isEmpty())
+        {
+            // there is no branch yet, create one
+            set_branch_key(key, get_plugin_name(), branch_number, false);
+        }
+    }
+
+    {
+        // Current working branch key
+        QString const current_branch_key(get_branch_key(key, get_plugin_name(), true));
+        if(current_branch_key.isEmpty())
+        {
+            // there is no branch yet, create one
+            set_branch_key(key, get_plugin_name(), branch_number, true);
+        }
+    }
+
+    // TBD: The revision is automatically updated as required so we do not
+    //      have to initialize it.
+
+    // *** REVISION ***
+    //QString const nslocale(locale.isEmpty() ? "" : "::" + locale);
+    //snap_version::version_number_t revision_number(static_cast<snap_version::basic_version_number_t>(snap_version::SPECIAL_VERSION_FIRST_REVISION));
+    //{
+    //    // Last revision
+    //    QString const last_revision_key(QString("%1::%2::%3%4")
+    //            .arg(base_key).arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL_LAST_REVISION))
+    //            .arg(branch_number).arg(nslocale));
+    //    QtCassandra::QCassandraValue revision_value(content_table->row(key)->cell(last_revision_key)->value());
+    //    if(revision_value.nullValue())
+    //    {
+    //        // last branch does not exist yet, create it with zero (0)
+    //        content_table->row(key)->cell(last_revision_key)->setValue(static_cast<snap_version::basic_version_number_t>(revision_number));
+    //    }
+    //    else
+    //    {
+    //        revision_number = revision_value.uint32Value();
+    //    }
+    //}
+
+    //{
+    //    QString const current_revision_key(QString("%1::%2::%3%4")
+    //            .arg(base_key).arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_REVISION))
+    //            .arg(branch_number).arg(nslocale));
+    //    QtCassandra::QCassandraValue revision_value(content_table->row(key)->cell(current_revision_key)->value());
+    //    if(revision_value.nullValue())
+    //    {
+    //        content_table->row(key)->cell(current_revision_key)->setValue(static_cast<snap_version::basic_version_number_t>(revision_number));
+    //    }
+    //}
+
+    //{
+    //    QString const current_revision_key(QString("%1::%2::%3%4")
+    //            .arg(base_key).arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_REVISION))
+    //            .arg(branch_number).arg(nslocale));
+    //    QtCassandra::QCassandraValue revision_value(content_table->row(key)->cell(current_revision_key)->value());
+    //    if(revision_value.nullValue())
+    //    {
+    //        content_table->row(key)->cell(current_revision_key)->setValue(static_cast<snap_version::basic_version_number_t>(revision_number));
+    //    }
+    //}
+
+    //{
+    //    // Current revision key
+    //    QString const current_revision_key(get_revision_key(key, get_plugin_name(), branch_number, locale, false));
+    //    if(current_revision_key.isEmpty())
+    //    {
+    //        // there is no branch yet, create one
+    //        set_revision_key(key, get_plugin_name(), branch_number, revision_number, locale, false);
+    //    }
+    //}
+
+    //{
+    //    // Current working revision key
+    //    QString const current_revision_key(get_revision_key(key, get_plugin_name(), branch_number, locale, true));
+    //    if(current_revision_key.isEmpty())
+    //    {
+    //        // there is no branch yet, create one
+    //        set_revision_key(key, get_plugin_name(), branch_number, revision_number, locale, true);
+    //    }
+    //}
+}
+
+
+/** \brief Generate a key from a branch, revision, and locale.
+ *
+ * This function transforms a page key, a branch number, a revision number,
+ * and a locale (\<language> or \<language>_\<country>) to a key that
+ * is to be used to access the user information in the data table.
+ *
+ * \param[in] key  The key of the page being worked on.
+ * \param[in] owner  The name of the plugin that owns this revision.
+ * \param[in] branch  The concerned branch.
+ * \param[in] locale  The language and country information.
+ * \param[in] working_branch  The current branch (false) or the current working branch (true).
+ *
+ * \return A string representing the end of the key
+ */
+QString content::get_revision_key(QString const& key, QString const& owner, snap_version::version_number_t branch, QString const& locale, bool working_branch)
+{
+    // key in the content table
+    QString const base_key(get_revision_base_key(owner));
+    QString current_key(QString("%1::%2::%3")
+                .arg(base_key)
+                .arg(get_name(working_branch
+                        ? SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_REVISION_KEY
+                        : SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_REVISION_KEY))
+                .arg(branch));
+    if(!locale.isEmpty())
+    {
+        current_key += "::" + locale;
+    }
+
+    // get the data key from the content table
+    QSharedPointer<QtCassandra::QCassandraTable> content_table(get_content_table());
+    QtCassandra::QCassandraValue const value(content_table->row(key)->cell(current_key)->value());
+    return value.stringValue();
+}
+
+
+/** \brief Generate the data table key from different parameters.
+ *
+ * This function generates a data table key using the path to the data
+ * (key), the branch and revision, and the locale (language and country).
+ * The locale parameter is not mandatory. If empty, then no locale is
+ * added to the key. This is legal for any data that cannot be translated.
+ *
+ * The resulting key looks like:
+ *
+ * \code
+ * <path>#<language>_<country>/<branch>.<revision>
+ * \endcode
+ *
+ * The the language and country being optional. If language is not specified
+ * then no country can be specified. The slash is not added when no language
+ * is specified.
+ *
+ * \param[in] key  The key to the page concerned.
+ * \param[in] branch  The branch this revision is being saved for.
+ * \param[in] revision  The new revision number.
+ * \param[in] locale  The language and country information.
+ *
+ * \return The revision key as used in the data table.
+ */
+QString content::generate_revision_key(QString const& key, snap_version::version_number_t branch, snap_version::version_number_t revision, QString const& locale)
+{
+    if(locale.isEmpty())
+    {
+        return QString("%1#%2.%3").arg(key).arg(branch).arg(revision);
+    }
+
+    return QString("%1#%2/%3.%4").arg(key).arg(locale).arg(branch).arg(revision);
+}
+
+
+/** \brief Generate the data table key from different parameters.
+ *
+ * This function generates a data table key using the path to the data
+ * (key), a predefined revision, and the locale (language and country).
+ * The locale parameter is not mandatory. If empty, then no locale is
+ * added to the key. This is legal for any data that cannot be translated.
+ *
+ * This function is used whenever your revision number is managed by
+ * you and not by the content system. For example the JavaScript and
+ * CSS attachment files are read for a Version field. That version may
+ * use a different scheme than the normal system version limited to
+ * a branch and a revision number. (Although our system is still
+ * limited to only numbers, so a version such as 3.5.7b is not supported
+ * as is.)
+ *
+ * The resulting key looks like:
+ *
+ * \code
+ * <path>#<language>_<country>/<revision>
+ * \endcode
+ *
+ * The the language and country being optional. If language is not specified
+ * then no country can be specified. The slash is not added when no language
+ * is specified.
+ *
+ * \param[in] key  The key to the page concerned.
+ * \param[in] revision  The new branch and revision as a string.
+ * \param[in] locale  The language and country information.
+ *
+ * \return The revision key as used in the data table.
+ */
+QString content::generate_revision_key(QString const& key, QString const& revision, QString const& locale)
+{
+    if(locale.isEmpty())
+    {
+        return QString("%1#%2").arg(key).arg(revision);
+    }
+
+    return QString("%1#%2/%3").arg(key).arg(locale).arg(revision);
+}
+
+
+/** \brief Save the revision as current.
+ *
+ * This function saves the specified \p revision as the current revision.
+ * The function takes a set of parameters necessary to generate the
+ * key of the current revision.
+ *
+ * \param[in] key  The page concerned.
+ * \param[in] owner  The owner of the revision, "content" in most cases.
+ * \param[in] branch  The branch which current revision is being set.
+ * \param[in] revision  The revision being set as current.
+ * \param[in] locale  The locale (\<language>_\<country>) or an empty string.
+ * \param[in] working_branch  Whether this is the current branch (true)
+ *                            or current working branch (false).
+ */
+void content::set_current_revision(QString const& key, QString const& owner, snap_version::version_number_t branch, snap_version::version_number_t revision, QString const& locale, bool working_branch)
+{
+    // key in the content table
+    QString const base_key(get_revision_base_key(owner));
+    QString current_key(QString("%1::%2::%3")
+                .arg(base_key)
+                .arg(get_name(working_branch
+                        ? SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_REVISION
+                        : SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_REVISION))
+                .arg(branch));
+    if(!locale.isEmpty())
+    {
+        current_key += "::" + locale;
+    }
+
+    // get the data key from the content table
+    QSharedPointer<QtCassandra::QCassandraTable> content_table(get_content_table());
+    content_table->row(key)->cell(current_key)->setValue(static_cast<snap_version::basic_version_number_t>(revision));
+}
+
+
+/** \brief Set the current (working) revision key.
+ *
+ * This function saves the current revision key or current working revision
+ * key in the database as a string. This is the string used when people access
+ * the data (read-only mode).
+ *
+ * This function is often called when creating a new revision key as the
+ * user, in most cases, will want the latest revision to become the current
+ * revision.
+ *
+ * The owner is expected to be the name of the plugin creating this
+ * revision. By default it should be set to "content". The owner string
+ * should always be defined using the plugin name as in:
+ *
+ * \code
+ * content::content *content_plugin(content::content::instance());
+ * content_plugin->get_revision_base_key(content_plugin->get_plugin_name());
+ * \endcode
+ *
+ * You may call the generate_revision_key() function to regenerate the
+ * revision key without saving it in the database too.
+ *
+ * \param[in] key  The key to the page concerned.
+ * \param[in] owner  The owner of the page, usually "content".
+ * \param[in] branch  The branch this revision is being saved for.
+ * \param[in] revision  The new revision number.
+ * \param[in] locale  The language and country information.
+ * \param[in] working_branch  The current branch (false) or the current working branch (true).
+ *
+ * \return This function returns a copy of the revision key just computed.
+ */
+QString content::set_revision_key(QString const& key, QString const& owner, snap_version::version_number_t branch, snap_version::version_number_t revision, QString const& locale, bool working_branch)
+{
+    // key in the data table
+    QString const current_revision_key(generate_revision_key(key, branch, revision, locale));
+
+    // key in the content table
+    QString const base_key(get_revision_base_key(owner));
+    QString current_key(QString("%1::%2::%3")
+                .arg(base_key)
+                .arg(get_name(working_branch
+                        ? SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_REVISION_KEY
+                        : SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_REVISION_KEY))
+                .arg(branch));
+    if(!locale.isEmpty())
+    {
+        current_key += "::" + locale;
+    }
+
+    // save the data key in the content table
+    QSharedPointer<QtCassandra::QCassandraTable> content_table(get_content_table());
+    content_table->row(key)->cell(current_key)->setValue(current_revision_key);
+    return current_revision_key;
+}
+
+
+/** \brief Save a revision key from a revision string.
+ *
+ * This function is used when the branching mechanism is used with a scheme
+ * that does not follow the internal \<branch>.\<revision> scheme. For example
+ * a JavaScript source must define a version and that version most often will
+ * have 2 or 3 numbers ([0-9]+) separated by periods (.). These are handled
+ * with this function.
+ *
+ * You may call the generate_revision_key() function to regenerate the
+ * revision key without saving it in the database too.
+ *
+ * \param[in] key  The key to the page concerned.
+ * \param[in] owner  The owner of the page, usually "content".
+ * \param[in] revision  The new revision string.
+ * \param[in] locale  The language and country information.
+ * \param[in] working_branch  The current branch (false) or the current working branch (true).
+ *
+ * \return A copy of the current revision key saved in the database.
+ */
+QString content::set_revision_key(QString const& key, QString const& owner, QString const& revision, QString const& locale, bool working_branch)
+{
+    // key in the data table
+    QString const current_revision_key(generate_revision_key(key, revision, locale));
+
+    // key in the content table
+    QString const base_key(get_revision_base_key(owner));
+    QString current_key(QString("%1::%2")
+                .arg(base_key)
+                .arg(get_name(working_branch
+                        ? SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_REVISION_KEY
+                        : SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_REVISION_KEY)));
+    if(!locale.isEmpty())
+    {
+        current_key += "::" + locale;
+    }
+
+    // save the data key in the content table
+    QSharedPointer<QtCassandra::QCassandraTable> content_table(get_content_table());
+    content_table->row(key)->cell(current_key)->setValue(current_revision_key);
+    return current_revision_key;
+}
+
+
+/** \brief Generate a key from a branch and user identifier.
+ *
+ * This function creates a key from the page key, a branch number, and a
+ * user identifier. These keys are used to save drafts. Drafts are not
+ * revisioned, however, they are assigned to specific users and the system
+ * can detect whether a draft is older than the latest revision of a branch.
+ *
+ * \todo
+ * Move to the user plugin?
+ *
+ * \param[in] key  The key of the page being handled.
+ * \param[in] branch  The branch this draft is linked with.
+ * \param[in] identifier  The user identifier.
+ *
+ * \return The key to the user branch.
+ */
+QString content::get_user_key(QString const& key, snap_version::version_number_t branch, int64_t identifier)
+{
+    return QString("%1#user/%2/%3").arg(key).arg(identifier).arg(branch);
 }
 
 
@@ -2308,48 +3668,27 @@ bool content::on_path_execute(const QString& cpath)
  * We force you in this way so any plugin can test the type without
  * having to frantically test all sorts of cases.
  *
+ * The create function always generates  a new revision. If the specified
+ * branch exists, then the latest revision + 1 is used. Otherwise, revision
+ * zero (0) is used. When the system creates content it always uses
+ * SPECIAL_VERSION_SYSTEM_BRANCH as the branch number (which is zero).
+ *
  * \param[in] path  The path of the new page.
  * \param[in] owner  The name of the plugin that is to own this page.
  * \param[in] type  The type of page.
+ * \param[in] branch_number  The branch where the data is to be created.
  *
  * \return true if the signal is to be propagated.
  */
-bool content::create_content_impl(QString const& path, QString const& owner, QString const& type)
+bool content::create_content_impl(path_info_t& ipath, QString const& owner, QString const& type, snap_version::version_number_t const branch_number)
 {
     QSharedPointer<QtCassandra::QCassandraTable> content_table(get_content_table());
+    QSharedPointer<QtCassandra::QCassandraTable> data_table(get_data_table());
     QString const site_key(f_snap->get_site_key_with_slash());
-    QString const key(site_key + path);
-
-    if(!path.isEmpty())
-    {
-        // parent path is the path without the last "/..." part
-        QString parent_path;
-        int const pos(path.lastIndexOf('/'));
-        if(pos != -1)
-        {
-            QString parent_key(site_key + path.left(pos));
-            QSharedPointer<QtCassandra::QCassandraRow> parent_row(content_table->row(parent_key));
-            if(parent_row->exists(get_name(SNAP_NAME_CONTENT_FINAL)))
-            {
-                QtCassandra::QCassandraValue final_value(parent_row->cell(get_name(SNAP_NAME_CONTENT_FINAL))->value());
-                if(final_value.nullValue())
-                {
-                    if(final_value.signedCharValue())
-                    {
-                        // the user was trying to add content under a final leaf
-                        f_snap->die(snap_child::HTTP_CODE_FORBIDDEN, "Final Parent",
-                                QString("Page \"%1\" cannot be added under \"%2\" as that parent page is marked as final.")
-                                            .arg(key).arg(parent_key),
-                                "The parent row does not allow for further children.");
-                        NOTREACHED();
-                    }
-                }
-            }
-        }
-    }
+    QString const key(ipath.get_key());
 
     // create the row
-    QString const primary_owner(path::get_name(path::SNAP_NAME_PATH_PRIMARY_OWNER));
+    QString const primary_owner(get_name(SNAP_NAME_CONTENT_PRIMARY_OWNER));
     QSharedPointer<QtCassandra::QCassandraRow> row(content_table->row(key));
     if(row->exists(primary_owner))
     {
@@ -2362,14 +3701,47 @@ bool content::create_content_impl(QString const& path, QString const& owner, QSt
         return f_updating;
     }
 
+    // note: we do not need to test whether the home page ("") allows
+    //       for children; if not we'd have a big problem!
+    if(!ipath.get_cpath().isEmpty())
+    {
+        // parent path is the path without the last "/..." part
+        QString parent_path;
+        int const pos(ipath.get_cpath().lastIndexOf('/'));
+        if(pos != -1)
+        {
+            QString parent_key(site_key + ipath.get_cpath().left(pos));
+            QSharedPointer<QtCassandra::QCassandraRow> parent_row(content_table->row(parent_key));
+            if(parent_row->exists(get_name(SNAP_NAME_CONTENT_FINAL)))
+            {
+                QtCassandra::QCassandraValue final_value(parent_row->cell(get_name(SNAP_NAME_CONTENT_FINAL))->value());
+                if(!final_value.nullValue())
+                {
+                    if(final_value.signedCharValue())
+                    {
+                        // the user was trying to add content under a final leaf
+                        f_snap->die(snap_child::HTTP_CODE_FORBIDDEN, "Final Parent",
+                                QString("Page \"%1\" cannot be added under \"%2\" since \"%2\" is marked as final.")
+                                            .arg(key).arg(parent_key),
+                                "The parent row does not allow for further children.");
+                        NOTREACHED();
+                    }
+                }
+            }
+        }
+    }
+
     // save the owner
     row->cell(primary_owner)->setValue(owner);
 
     // add the different basic content dates setup
-    uint64_t const start_date(f_snap->get_uri().option("start_date").toLongLong());
+    uint64_t const start_date(f_snap->get_start_date());
     row->cell(QString(get_name(SNAP_NAME_CONTENT_CREATED)))->setValue(start_date);
-    row->cell(QString(get_name(SNAP_NAME_CONTENT_UPDATED)))->setValue(start_date);
-    row->cell(QString(get_name(SNAP_NAME_CONTENT_MODIFIED)))->setValue(start_date);
+
+    QString const branch_key(generate_branch_key(key, branch_number));
+    QSharedPointer<QtCassandra::QCassandraRow> data_row(data_table->row(branch_key));
+    data_row->cell(QString(get_name(SNAP_NAME_CONTENT_CREATED)))->setValue(start_date);
+    data_row->cell(QString(get_name(SNAP_NAME_CONTENT_MODIFIED)))->setValue(start_date);
 
     // link the page to its type (very important for permissions)
     {
@@ -2381,14 +3753,16 @@ bool content::create_content_impl(QString const& path, QString const& owner, QSt
         QString const link_to(get_name(SNAP_NAME_CONTENT_PAGE_TYPE));
         bool const source_unique(true);
         bool const destination_unique(false);
-        links::link_info source(link_name, source_unique, key);
-        links::link_info destination(link_to, destination_unique, destination_key);
+        links::link_info source(link_name, source_unique, key, branch_number);
+        links::link_info destination(link_to, destination_unique, destination_key, branch_number);
         links::links::instance()->create_link(source, destination);
     }
 
     // link this entry to its parent automatically
     // first we need to remove the site key from the path
-    QStringList parts(path.split('/', QString::SkipEmptyParts));
+    snap_version::version_number_t child_branch(branch_number);
+    snap_version::version_number_t parent_branch;
+    QStringList parts(ipath.get_cpath().split('/', QString::SkipEmptyParts));
     while(parts.count() > 0)
     {
         QString src(parts.join("/"));
@@ -2396,12 +3770,19 @@ bool content::create_content_impl(QString const& path, QString const& owner, QSt
         parts.pop_back();
         QString dst(parts.join("/"));
         dst = site_key + dst;
-        links::link_info source(get_name(SNAP_NAME_CONTENT_PARENT), true, src);
-        links::link_info destination(get_name(SNAP_NAME_CONTENT_CHILDREN), false, dst);
+
+        // TBD: 3rd parameter should be true or false?
+        parent_branch = get_current_branch(dst, get_plugin_name(), true);
+
+        // TBD: is the use of the system branch always correct here?
+        links::link_info source(get_name(SNAP_NAME_CONTENT_PARENT), true, src, child_branch);
+        links::link_info destination(get_name(SNAP_NAME_CONTENT_CHILDREN), false, dst, parent_branch);
 // TODO only repeat if the parent did not exist, otherwise we assume the
 //      parent created its own parent/children link already.
 //printf("parent/children [%s]/[%s]\n", src.toUtf8().data(), dst.toUtf8().data());
         links::links::instance()->create_link(source, destination);
+
+        child_branch = parent_branch;
     }
 
     return true;
@@ -2498,10 +3879,10 @@ bool content::create_content_impl(QString const& path, QString const& owner, QSt
  *
  * \param[in] file  The file to save in the Cassandra database.
  */
-bool content::create_attachment_impl(attachment_file const& file)
+bool content::create_attachment_impl(attachment_file const& file, snap_version::version_number_t branch_number, QString const& locale)
 {
     // quick check for security reasons so we can avoid unwanted uploads
-    server::permission_flag secure;
+    permission_flag secure;
     check_attachment_security(file, secure, true);
     if(!secure.allowed())
     {
@@ -2659,7 +4040,7 @@ SNAP_LOG_DEBUG("attaching ")(file.get_file().get_filename())(", validate name = 
         if(revision.isEmpty())
         {
             // we already checked for errors while parsing the file so we
-            // should never reach here if the version is empty
+            // should never reach here if the version is empty in the file
             throw snap_logic_exception("the version of a JavaScript or CSS file just cannot be empty here");
         }
 #endif
@@ -2808,6 +4189,7 @@ SNAP_LOG_DEBUG("attaching ")(file.get_file().get_filename())(", attachment_key =
     // this is the new content row, that is, it may still be empty but we
     // have to test several things before we can call create_content()...
     attachment_row = content_table->row(attachment_key);
+    QString const attachment_owner(get_name(SNAP_NAME_CONTENT_ATTACHMENT_OWNER));
 
     // if the revision is still empty then we're dealing with a file
     // which is neither a JavaScript nor a CSS file
@@ -2815,11 +4197,8 @@ SNAP_LOG_DEBUG("attaching ")(file.get_file().get_filename())(", attachment_key =
     {
         // TODO: allow editing of any branch, not just the working
         //       branch... (use "?branch=123"...)
-        //
-        // TODO: we probably want to reuse a lot of this code for other
-        //       fields and there is no reason it wouldn't work seemlessly
-        //       with any field as long as we name them properly (i.e.
-        //       <plugin>::<field>::revision_control::<this-or-that>)
+
+        snap_version::version_number_t revision_number(static_cast<snap_version::basic_version_number_t>(snap_version::SPECIAL_VERSION_UNDEFINED));
 
         if(file_exists)
         {
@@ -2861,7 +4240,7 @@ SNAP_LOG_DEBUG("attaching ")(file.get_file().get_filename())(", attachment_key =
                         {
                             // found it!
                             file_exists = true; // avoid generation of a new revision!
-                            int const length(strlen(get_name(SNAP_NAME_CONTENT_ATTACHMENT)) + 2); // this can be optimized at compile time!
+                            int const length(strlen(get_name(SNAP_NAME_CONTENT_ATTACHMENT)) + 2); // this one line can be optimized at compile time!
                             revision = revision_cell->columnName().mid(length);
                             content_table->row(attachment_key)->cell(get_name(SNAP_NAME_CONTENT_ATTACHMENT_REVISION_CONTROL_CURRENT_WORKING_VERSION))->setValue(revision);
                             break;
@@ -2871,156 +4250,39 @@ SNAP_LOG_DEBUG("attaching ")(file.get_file().get_filename())(", attachment_key =
             }
         }
 
-        branch_revision_t branch_number(UNDEFINED_BRANCH);
-
         if(!file_exists)
         {
-            // make sure to work atomically to create the first revision
-            // if it does not exist yet and atomically increase the revision
-            QtCassandra::QCassandraLock lock(f_snap->get_context(), key);
-
-            if(content_table->exists(attachment_key)
-            && content_table->row(attachment_key)->exists(get_name(SNAP_NAME_CONTENT_ATTACHMENT_REVISION_CONTROL_CURRENT_WORKING_VERSION)))
+            // TODO system defined attachments should not be given a branch
+            //      using get_new_branch(), instead they should use zero (0)
+            branch_number = get_current_branch(attachment_key, attachment_owner, true);
+            if(snap_version::SPECIAL_VERSION_UNDEFINED == branch_number)
             {
-                // the branch does not changes automatically so we can just read it like this
-                QString working_version(content_table->row(attachment_key)->cell(get_name(SNAP_NAME_CONTENT_ATTACHMENT_REVISION_CONTROL_CURRENT_WORKING_VERSION))->value().stringValue());
-                int const pos(working_version.indexOf('.'));
-                if(pos > 0)
-                {
-                    working_version = working_version.left(pos);
-                }
-                bool ok;
-                long b(working_version.toLong(&ok, 10));
-                if(!ok)
-                {
-                    // make sure to unlock because the die() function does
-                    // not return!
-                    lock.unlock();
-
-                    f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR, "Invalid Revision Control",
-                            "The revision control \"" + working_version + "\" does not look valid.",
-                            "The version does not seem to start with a valid decimal number.");
-                    NOTREACHED();
-                }
-                branch_number = b;
+                branch_number = get_new_branch(attachment_key, attachment_owner, locale);
+                set_branch_key(attachment_key, attachment_owner, branch_number, true);
+                // new branches automatically get a revision of zero (0)
+                revision_number = static_cast<snap_version::basic_version_number_t>(snap_version::SPECIAL_VERSION_FIRST_REVISION);
             }
             else
             {
-                // force a default to make sure that we are using the right value
-                revision = "1.0"; // should become "1.0" with code below
-                branch_number = USER_FIRST_BRANCH;
-                content_table->row(attachment_key)->cell(get_name(SNAP_NAME_CONTENT_ATTACHMENT_REVISION_CONTROL_LAST_BRANCH))->setValue(branch_number);
-                content_table->row(attachment_key)->cell(get_name(SNAP_NAME_CONTENT_ATTACHMENT_REVISION_CONTROL_CURRENT_WORKING_VERSION))->setValue(revision);
+                revision_number = get_new_revision(attachment_key, attachment_owner, branch_number, locale);
             }
-
-            // (revision ends with the branch number since each branch has a
-            // different revision number)
-            QString revision_key(QString("%1::%2")
-                    .arg(get_name(SNAP_NAME_CONTENT_ATTACHMENT_REVISION_CONTROL_LAST_REVISION))
-                    .arg(branch_number));
-
-            // increase revision if one exists, otherwise we keep the default (0)
-            branch_revision_t revision_number(FIRST_REVISION);
-            QtCassandra::QCassandraValue revision_value(attachment_row->cell(revision_key)->value());
-            if(!revision_value.nullValue())
-            {
-                // it exists, increase it
-                revision_number = revision_value.uint32Value();
-                if(revision_number < MAX_BRANCH_NUMBER)
-                {
-                    ++revision_number;
-                }
-                // else -- probably need to warn the user we reached 4 billion
-                //         revisions (this is assuming we delete old revisions
-                //         in the meantime, but even if you make 10 changes a
-                //         day and say it makes use of 20 revision numbers each
-                //         time, it would still take... over half a million
-                //         YEARS to reach that many revisions in that one
-                //         branch...)
-            }
-            content_table->row(attachment_key)->cell(revision_key)->setValue(revision_number);
-
-            revision = QString("%1.%2").arg(branch_number).arg(revision_number);
 
             // TODO: this is probably wrong, that is, it works and shows the
             //       last working version but the user may want to keep
             //       a previous version at this point...
-            attachment_row->cell(get_name(SNAP_NAME_CONTENT_ATTACHMENT_REVISION_CONTROL_CURRENT_WORKING_VERSION))->setValue(revision);
+            set_revision_key(attachment_key, attachment_owner, branch_number, revision_number, locale, true);
+
+            revision = QString("%1.%2").arg(branch_number).arg(revision_number);
         }
 
+        if(snap_version::SPECIAL_VERSION_UNDEFINED == branch_number
+        || snap_version::SPECIAL_VERSION_UNDEFINED == revision_number)
         {
-            // now update the current revision
-            QtCassandra::QCassandraLock lock(f_snap->get_context(), key);
-
-            QString current_string(attachment_row->cell(get_name(SNAP_NAME_CONTENT_ATTACHMENT_REVISION_CONTROL_CURRENT))->value().stringValue());
-            if(current_string.isEmpty())
-            {
-                // not there yet, just create it
-                attachment_row->cell(get_name(SNAP_NAME_CONTENT_ATTACHMENT_REVISION_CONTROL_CURRENT))->setValue(revision);
-            }
-            else
-            {
-                if(branch_number == UNDEFINED_BRANCH)
-                {
-                    if(content_table->exists(attachment_key)
-                    && content_table->row(attachment_key)->exists(get_name(SNAP_NAME_CONTENT_ATTACHMENT_REVISION_CONTROL_CURRENT_WORKING_VERSION)))
-                    {
-                        // the branch does not changes automatically so we can just read it like this
-                        QString working_version(content_table->row(attachment_key)->cell(get_name(SNAP_NAME_CONTENT_ATTACHMENT_REVISION_CONTROL_CURRENT_WORKING_VERSION))->value().stringValue());
-                        int const pos(working_version.indexOf('.'));
-                        if(pos > 0)
-                        {
-                            working_version = working_version.left(pos);
-                        }
-                        bool ok;
-                        branch_revision_t b(working_version.toULong(&ok, 10));
-                        if(!ok)
-                        {
-                            // make sure to unlock because the die() function does
-                            // not return!
-                            lock.unlock();
-
-                            f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR, "Invalid Revision Control",
-                                    "The revision control \"" + working_version + "\" does not look valid.",
-                                    "The version does not seem to start with a valid decimal number.");
-                            NOTREACHED();
-                        }
-                        branch_number = b;
-                    }
-                }
-
-                {
-                    // verify that the branch is the same, if so update
-                    int const pos(current_string.indexOf('.'));
-                    if(pos > 0)
-                    {
-                        current_string = current_string.left(pos);
-                    }
-                    bool ok;
-                    branch_revision_t b(current_string.toULong(&ok, 10));
-                    if(!ok)
-                    {
-                        // make sure to unlock because the die() function does
-                        // not return!
-                        lock.unlock();
-
-                        f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR, "Invalid Revision Control",
-                                "The revision control \"" + current_string + "\" does not look valid.",
-                                "The version does not seem to start with a valid decimal number.");
-                        NOTREACHED();
-                    }
-                    if(branch_number == b)
-                    {
-                        // TODO: same problem as with the working version, we may
-                        //       want to test that the revision that was shown
-                        //       was the last before updating
-                        //
-                        // same branch, update the output
-                        attachment_row->cell(get_name(SNAP_NAME_CONTENT_ATTACHMENT_REVISION_CONTROL_CURRENT))->setValue(revision);
-                    }
-                }
-            }
+            throw snap_logic_exception(QString("the branch (%1) and/or revision (%2) numbers are still undefined").arg(branch_number).arg(revision_number));
         }
+
+        set_branch_key(attachment_key, attachment_owner, branch_number, false);
+        set_revision_key(attachment_key, attachment_owner, branch_number, revision_number, locale, false);
     }
     else
     {
@@ -3028,11 +4290,18 @@ SNAP_LOG_DEBUG("attaching ")(file.get_file().get_filename())(", attachment_key =
         // this is probably somewhat wrong... (remember that for JS/CSS files
         // we do not generate a revision number, we use the file version
         // instead.)
-        attachment_row->cell(get_name(SNAP_NAME_CONTENT_ATTACHMENT_REVISION_CONTROL_CURRENT))->setValue(revision);
-        attachment_row->cell(get_name(SNAP_NAME_CONTENT_ATTACHMENT_REVISION_CONTROL_CURRENT_WORKING_VERSION))->setValue(revision);
+        set_revision_key(attachment_key, attachment_owner, revision, locale, true);
+        set_revision_key(attachment_key, attachment_owner, revision, locale, false);
+        //attachment_row->cell(get_name(SNAP_NAME_CONTENT_ATTACHMENT_REVISION_CONTROL_CURRENT))->setValue(revision);
+        //attachment_row->cell(get_name(SNAP_NAME_CONTENT_ATTACHMENT_REVISION_CONTROL_CURRENT_WORKING_VERSION))->setValue(revision);
     }
 
     QString const attachment_cell_key(QString("%1::%2").arg(get_name(SNAP_NAME_CONTENT_ATTACHMENT)).arg(revision));
+
+    // TODO: how do I define the branch.revision here?
+    //       we have the revision string that we need to pass along...
+    path_info_t apath;
+    apath.set_path(attachment_cpath);
 
     // if the field exists and that attachment is unique (i.e. supports only
     // one single file), then we want to delete the existing page unless
@@ -3079,9 +4348,7 @@ SNAP_LOG_DEBUG("attaching ")(file.get_file().get_filename())(", attachment_key =
                     //       may not be there anymore)
                     parent_row->cell(name)->setValue(attachment_key);
 
-                    // TBD -- should the 'updated' flag really be true since there is
-                    //        no visible change to talk about?
-                    modified_content(attachment_cpath, true);
+                    modified_content(apath);
 
                     // TBD -- should it be true here to let the other plugins
                     //        do their own work?
@@ -3116,7 +4383,7 @@ SNAP_LOG_DEBUG("attaching ")(file.get_file().get_filename())(", attachment_key =
 
     // yes that path may already exists, no worries since the create_content()
     // function checks that and returns quickly if it does exist
-    create_content(attachment_cpath, file.get_attachment_owner(), file.get_attachment_type());
+    create_content(apath, file.get_attachment_owner(), file.get_attachment_type(), branch_number);
 
     // if it is already filename it won't hurt too much to set it again
     parent_row->cell(name)->setValue(attachment_key);
@@ -3139,6 +4406,8 @@ SNAP_LOG_DEBUG("attaching ")(file.get_file().get_filename())(", attachment_key =
     //     likelihood that these exist is so small that I'll skip at this
     //     time; we do save them in the files table
 
+    // TODO: create an even for this last part because it requires JavaScript
+    //       or CSS support which is not part of the base content plugin.
     // We depend on the JavaScript plugin so we have to do some of its
     // work here...
     if(attachment_cpath.startsWith("js/")
@@ -3167,7 +4436,8 @@ SNAP_LOG_DEBUG("attaching ")(file.get_file().get_filename())(", attachment_key =
             {
                 QtCassandra::appendUInt32Value(jskey, version[v]);
             }
-            files_table->row(javascript::get_name(javascript::SNAP_NAME_JAVASCRIPT_ROW))->cell(jskey)->setValue(md5);
+            // TODO: find a proper way to access the JS plugin...
+            files_table->row("javascripts"/*javascript::get_name(javascript::SNAP_NAME_JAVASCRIPT_ROW)*/)->cell(jskey)->setValue(md5);
             if(!all)
             {
                 // TODO: need to parse the script for this specific browser
@@ -3323,20 +4593,14 @@ bool content::load_attachment(QString const& key, attachment_file& file, bool lo
  * The function returns false and generates a warning (in your log) in the
  * event the process cannot find the specified path.
  *
- * \param[in] path  The path to the page being udpated.
- * \param[in] updated  Set to true if a user visible piece of content was
- *                     modified (i.e. title, body...); meta data changes
- *                     are not reported here and updated should be false
- *                     for those.
+ * \param[in,out] path  The path to the page being udpated.
  *
  * \return true if the event should be propagated.
  */
-bool content::modified_content_impl(QString const& path, bool updated)
+bool content::modified_content_impl(path_info_t& ipath)
 {
     QSharedPointer<QtCassandra::QCassandraTable> content_table(get_content_table());
-    QString const site_key(f_snap->get_site_key_with_slash());
-    QString const key(site_key + path);
-
+    QString const key(ipath.get_branch_key());
     if(!content_table->exists(key))
     {
         // the row doesn't exist?!
@@ -3345,206 +4609,11 @@ bool content::modified_content_impl(QString const& path, bool updated)
     }
     QSharedPointer<QtCassandra::QCassandraRow> row(content_table->row(key));
 
-    uint64_t const start_date(f_snap->get_uri().option("start_date").toLongLong());
-    if(updated)
-    {
-        row->cell(QString(get_name(SNAP_NAME_CONTENT_UPDATED)))->setValue(start_date);
-    }
+    uint64_t const start_date(f_snap->get_start_date());
     row->cell(QString(get_name(SNAP_NAME_CONTENT_MODIFIED)))->setValue(start_date);
 
     return true;
 }
-
-
-/** \brief Generate the page main content.
- *
- * This function generates the main content of the page. Other
- * plugins will also have the event called if they subscribed and
- * thus will be given a chance to add their own content to the
- * main page. This part is the one that (in most cases) appears
- * as the main content on the page although the content of some
- * columns may be interleaved with this content.
- *
- * Note that this is NOT the HTML output. It is the <page> tag of
- * the snap XML file format. The theme layout XSLT will be used
- * to generate the final output.
- *
- * \param[in] l  The layout pointer.
- * \param[in] path  The path being managed.
- * \param[in,out] page  The page being generated.
- * \param[in,out] body  The body being generated.
- */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-void content::on_generate_main_content(layout::layout *l, QString const& cpath, QDomElement& page, QDomElement& body, QString const& ctemplate)
-{
-    // if the content is the main page then define the titles and body here
-    FIELD_SEARCH
-        (field_search::COMMAND_MODE, field_search::SEARCH_MODE_EACH)
-        (field_search::COMMAND_ELEMENT, body)
-        (field_search::COMMAND_PATH, cpath)
-
-        // /snap/page/body/titles
-        (field_search::COMMAND_CHILD_ELEMENT, "titles")
-        // /snap/page/body/titles/title
-        (field_search::COMMAND_FIELD_NAME, get_name(SNAP_NAME_CONTENT_TITLE))
-        (field_search::COMMAND_SELF)
-        (field_search::COMMAND_IF_FOUND, 1)
-            (field_search::COMMAND_PATH, ctemplate)
-            (field_search::COMMAND_SELF)
-            (field_search::COMMAND_PATH, cpath)
-        (field_search::COMMAND_LABEL, 1)
-        (field_search::COMMAND_SAVE, "title")
-        // /snap/page/body/titles/short-title
-        (field_search::COMMAND_FIELD_NAME, get_name(SNAP_NAME_CONTENT_SHORT_TITLE))
-        (field_search::COMMAND_SELF)
-        (field_search::COMMAND_IF_FOUND, 2)
-            (field_search::COMMAND_PATH, ctemplate)
-            (field_search::COMMAND_SELF)
-            (field_search::COMMAND_PATH, cpath)
-        (field_search::COMMAND_LABEL, 2)
-        (field_search::COMMAND_SAVE, "short-title")
-        // /snap/page/body/titles/long-title
-        (field_search::COMMAND_FIELD_NAME, get_name(SNAP_NAME_CONTENT_LONG_TITLE))
-        (field_search::COMMAND_SELF)
-        (field_search::COMMAND_IF_FOUND, 3)
-            (field_search::COMMAND_PATH, ctemplate)
-            (field_search::COMMAND_SELF)
-            (field_search::COMMAND_PATH, cpath)
-        (field_search::COMMAND_LABEL, 3)
-        (field_search::COMMAND_SAVE, "long-title")
-        (field_search::COMMAND_PARENT_ELEMENT)
-
-        // /snap/page/body/content
-        (field_search::COMMAND_FIELD_NAME, get_name(SNAP_NAME_CONTENT_BODY))
-        (field_search::COMMAND_SELF)
-        (field_search::COMMAND_IF_FOUND, 10)
-            (field_search::COMMAND_PATH, ctemplate)
-            (field_search::COMMAND_SELF)
-            //(field_search::COMMAND_PATH, cpath) -- uncomment if we go on
-        (field_search::COMMAND_LABEL, 10)
-        (field_search::COMMAND_SAVE_XML, "content")
-
-        // generate!
-        ;
-}
-#pragma GCC diagnostic pop
-
-
-/** \brief Generate the page common content.
- *
- * This function generates some content that is expected in a page
- * by default.
- *
- * \param[in] l  The layout pointer.
- * \param[in] cpath  The path being managed.
- * \param[in,out] page  The page being generated.
- * \param[in,out] body  The body being generated.
- * \param[in] ctemplate  The body being generated.
- */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-void content::on_generate_page_content(layout::layout *l, const QString& cpath, QDomElement& page, QDomElement& body, const QString& ctemplate)
-{
-    // create information mainly used in the HTML <head> tag
-    QString up;
-    int const p(cpath.lastIndexOf('/'));
-    if(p == -1)
-    {
-        // in this case it is an equivalent to top
-        up = f_snap->get_site_key();
-    }
-    else
-    {
-        up = f_snap->get_site_key_with_slash() + cpath.mid(0, p);
-    }
-
-    FIELD_SEARCH
-        (field_search::COMMAND_MODE, field_search::SEARCH_MODE_EACH)
-        (field_search::COMMAND_ELEMENT, body)
-        (field_search::COMMAND_PATH, cpath)
-
-        // /snap/page/body/created
-        (field_search::COMMAND_FIELD_NAME, get_name(SNAP_NAME_CONTENT_CREATED))
-        (field_search::COMMAND_SELF)
-        (field_search::COMMAND_SAVE_INT64_DATE, "created")
-        (field_search::COMMAND_WARNING, "field missing")
-
-        // /snap/page/body/modified
-        // XXX should it be mandatory or just use "created" as the default?
-        (field_search::COMMAND_FIELD_NAME, get_name(SNAP_NAME_CONTENT_MODIFIED))
-        (field_search::COMMAND_SELF)
-        (field_search::COMMAND_SAVE_INT64_DATE, "modified")
-        (field_search::COMMAND_WARNING, "field missing")
-
-        // /snap/page/body/updated
-        // XXX should it be mandatory or just use "created" as the default?
-        (field_search::COMMAND_FIELD_NAME, get_name(SNAP_NAME_CONTENT_UPDATED))
-        (field_search::COMMAND_SELF)
-        (field_search::COMMAND_SAVE_INT64_DATE, "updated")
-        (field_search::COMMAND_WARNING, "field missing")
-
-        // /snap/page/body/accepted
-        (field_search::COMMAND_FIELD_NAME, get_name(SNAP_NAME_CONTENT_ACCEPTED))
-        (field_search::COMMAND_SELF)
-        (field_search::COMMAND_SAVE_INT64_DATE, "accepted")
-
-        // /snap/page/body/submitted
-        (field_search::COMMAND_FIELD_NAME, get_name(SNAP_NAME_CONTENT_SUBMITTED))
-        (field_search::COMMAND_SELF)
-        (field_search::COMMAND_SAVE_INT64_DATE, "submitted")
-
-        // /snap/page/body/since
-        (field_search::COMMAND_FIELD_NAME, get_name(SNAP_NAME_CONTENT_SINCE))
-        (field_search::COMMAND_SELF)
-        (field_search::COMMAND_SAVE_INT64_DATE, "since")
-
-        // /snap/page/body/until
-        (field_search::COMMAND_FIELD_NAME, get_name(SNAP_NAME_CONTENT_UNTIL))
-        (field_search::COMMAND_SELF)
-        (field_search::COMMAND_SAVE_INT64_DATE, "until")
-
-        // /snap/page/body/copyrighted
-        (field_search::COMMAND_FIELD_NAME, get_name(SNAP_NAME_CONTENT_COPYRIGHTED))
-        (field_search::COMMAND_SELF)
-        (field_search::COMMAND_SAVE_INT64_DATE, "copyrighted")
-
-        // /snap/page/body/issued
-        (field_search::COMMAND_FIELD_NAME, get_name(SNAP_NAME_CONTENT_ISSUED))
-        (field_search::COMMAND_SELF)
-        (field_search::COMMAND_SAVE_INT64_DATE, "issued")
-
-        // /snap/page/body/navigation/link[@rel="top"][@title="Index"][@href="<site key>"]
-        // /snap/page/body/navigation/link[@rel="up"][@title="Up"][@href="<path/..>"]
-        (field_search::COMMAND_DEFAULT_VALUE_OR_NULL, cpath)
-        (field_search::COMMAND_IF_NOT_FOUND, 1)
-            //(field_search::COMMAND_RESET) -- uncomment if we go on with other things
-            (field_search::COMMAND_CHILD_ELEMENT, "navigation")
-
-            // Index
-            (field_search::COMMAND_CHILD_ELEMENT, "link")
-            (field_search::COMMAND_ELEMENT_ATTR, "rel=top")
-            (field_search::COMMAND_ELEMENT_ATTR, "title=Index") // TODO: translate
-            (field_search::COMMAND_ELEMENT_ATTR, "href=" + f_snap->get_site_key())
-            (field_search::COMMAND_PARENT_ELEMENT)
-
-            // Up
-            (field_search::COMMAND_CHILD_ELEMENT, "link")
-            (field_search::COMMAND_ELEMENT_ATTR, "rel=up")
-            (field_search::COMMAND_ELEMENT_ATTR, "title=Up") // TODO: translate
-            (field_search::COMMAND_ELEMENT_ATTR, "href=" + up)
-            //(field_search::COMMAND_PARENT_ELEMENT) -- uncomment if we go on with other things
-
-            //(field_search::COMMAND_PARENT_ELEMENT) -- uncomment if we go on with other things
-        (field_search::COMMAND_LABEL, 1)
-
-        // generate!
-        ;
-
-//QDomDocument doc(page.ownerDocument());
-//printf("content XML [%s]\n", doc.toString().toUtf8().data());
-}
-#pragma GCC diagnostic pop
 
 
 /** \brief Retreive a content page parameter.
@@ -3792,8 +4861,32 @@ void content::add_xml_document(QDomDocument& dom, const QString& plugin_name)
                     }
                 }
 
+                param_revision_t revision_type(PARAM_REVISION_BRANCH);
+                QString const revision_name(element.attribute("revision", "branch"));
+                if(revision_name == "global")
+                {
+                    revision_type = PARAM_REVISION_GLOBAL;
+                }
+                else if(revision_name == "revision")
+                {
+                    revision_type = PARAM_REVISION_REVISION;
+                }
+                else if(revision_name != "branch")
+                {
+                    throw content_exception_invalid_content_xml(QString("<param> tag used an invalid \"revision\" attribute (%1); we expected \"global\", \"branch\", or \"revision\".").arg(revision_name));
+                }
+
+                QString locale(element.attribute("lang", "en"));
+                QString country;
+                f_snap->verify_locale(locale, country, true);
+                if(!country.isEmpty())
+                {
+                    locale += '_';
+                    locale += country;
+                }
+
                 // add the resulting parameter
-                add_param(key, fullname, buffer);
+                add_param(key, fullname, revision_type, locale, buffer);
 
                 // check whether we allow overwrites
                 if(element.attribute("overwrite") == "yes")
@@ -3891,8 +4984,8 @@ void content::add_xml_document(QDomDocument& dom, const QString& plugin_name)
                 QString destination_path(element.text());
                 f_snap->canonicalize_path(destination_path);
                 QString destination_key(f_snap->get_site_key_with_slash() + destination_path);
-                links::link_info source(link_name, source_unique, key);
-                links::link_info destination(link_to, destination_unique, destination_key);
+                links::link_info source(link_name, source_unique, key, snap_version::SPECIAL_VERSION_SYSTEM_BRANCH);
+                links::link_info destination(link_to, destination_unique, destination_key, snap_version::SPECIAL_VERSION_SYSTEM_BRANCH);
                 add_link(key, source, destination);
             }
             // <attachment name=... type=... [owner=...]> resource path to file </link>
@@ -3965,8 +5058,8 @@ void content::add_xml_document(QDomDocument& dom, const QString& plugin_name)
                     ? "types/taxonomy/system/content-types/administration-page"
                     : "types/taxonomy/system/content-types/system-page");
             QString const destination_key(f_snap->get_site_key_with_slash() + destination_path);
-            links::link_info source(link_name, source_unique, key);
-            links::link_info destination(link_to, destination_unique, destination_key);
+            links::link_info source(link_name, source_unique, key, snap_version::SPECIAL_VERSION_SYSTEM_BRANCH);
+            links::link_info destination(link_to, destination_unique, destination_key, snap_version::SPECIAL_VERSION_SYSTEM_BRANCH);
             add_link(key, source, destination);
         }
     }
@@ -4052,13 +5145,15 @@ void content::add_content(const QString& path, const QString& plugin_owner)
  *
  * \param[in] path  The path of this parameter (i.e. /types/taxonomy)
  * \param[in] name  The name of this parameter (i.e. "Website Taxonomy")
+ * \param[in] revision  The type of revision for this parameter (i.e. global, branch, revision)
+ * \param[in] locale  The locale (\<language>_\<country>) for this data.
  * \param[in] data  The data of this parameter.
  *
  * \sa add_param()
  * \sa add_link()
  * \sa on_save_content()
  */
-void content::add_param(const QString& path, const QString& name, const QString& data)
+void content::add_param(QString const& path, QString const& name, param_revision_t revision_type, QString const& locale, QString const& data)
 {
     content_block_map_t::iterator b(f_blocks.find(path));
     if(b == f_blocks.end())
@@ -4071,17 +5166,27 @@ void content::add_param(const QString& path, const QString& name, const QString&
     {
         content_param param;
         param.f_name = name;
-        param.f_data = data;
+        param.f_data[locale] = data;
+        param.f_revision_type = revision_type;
         b->f_params.insert(name, param);
     }
     else
     {
+        // revision types cannot change between entries
+        // (duplicates happen often when you have multiple languages)
+        if(p->f_revision_type != revision_type)
+        {
+            throw content_exception_unexpected_revision_type(QString("the revision type cannot be different between locales; got %1 the first time and now %2")
+                        .arg(static_cast<snap_version::basic_version_number_t>(p->f_revision_type))
+                        .arg(static_cast<snap_version::basic_version_number_t>(revision_type)));
+        }
+
         // replace the data
         // TBD: should we generate an error because if defined by several
         //      different plugins then we cannot ensure which one is going
         //      to make it to the database! At the same time, we cannot
         //      know whether we're overwriting a default value.
-        p->f_data = data;
+        p->f_data[locale] = data;
     }
 }
 
@@ -4266,13 +5371,14 @@ void content::on_save_content()
 
     QString const site_key(f_snap->get_site_key_with_slash());
     QSharedPointer<QtCassandra::QCassandraTable> content_table(get_content_table());
+    QSharedPointer<QtCassandra::QCassandraTable> data_table(get_data_table());
     for(content_block_map_t::iterator d(f_blocks.begin());
             d != f_blocks.end(); ++d)
     {
         // now do the actual save
         // connect this entry to the corresponding plugin
         // (unless that field is already defined!)
-        QString primary_owner(path::get_name(path::SNAP_NAME_PATH_PRIMARY_OWNER));
+        QString primary_owner(get_name(SNAP_NAME_CONTENT_PRIMARY_OWNER));
         if(content_table->row(d->f_path)->cell(primary_owner)->value().nullValue())
         {
             content_table->row(d->f_path)->cell(primary_owner)->setValue(d->f_owner);
@@ -4282,70 +5388,148 @@ void content::on_save_content()
         //}
 
         // make sure we have our different basic content dates setup
-        uint64_t start_date(f_snap->get_uri().option("start_date").toLongLong());
+        uint64_t start_date(f_snap->get_start_date());
         if(content_table->row(d->f_path)->cell(QString(get_name(SNAP_NAME_CONTENT_CREATED)))->value().nullValue())
         {
             // do not overwrite the created date
             content_table->row(d->f_path)->cell(QString(get_name(SNAP_NAME_CONTENT_CREATED)))->setValue(start_date);
         }
-        if(content_table->row(d->f_path)->cell(QString(get_name(SNAP_NAME_CONTENT_UPDATED)))->value().nullValue())
+        //if(content_table->row(d->f_path)->cell(QString(get_name(SNAP_NAME_CONTENT_UPDATED)))->value().nullValue())
+        //{
+        //    // updated changes only because of a user action (i.e. Save)
+        //    content_table->row(d->f_path)->cell(QString(get_name(SNAP_NAME_CONTENT_UPDATED)))->setValue(start_date);
+        //}
+        //// always overwrite the modified date
+        //content_table->row(d->f_path)->cell(QString(get_name(SNAP_NAME_CONTENT_MODIFIED)))->setValue(start_date);
+
+        // TODO: fix the locale... actually the revision for English is
+        //       the default and many we do not have to create the revision
+        //       field? At the same time, we could call this function with
+        //       all the locales defined in the parameters.
+        //
+        //       Note:
+        //       The first reason for adding this initialization is in link
+        //       with a problem I had and that problem is now resolved. This
+        //       does not mean it shouldn't be done, however, the revision
+        //       is problematic because it needs to be incremented each time
+        //       we do an update when at this point it won't be.
+        initialize_branch(d->f_path, "en");
+
+        // TODO: add support to specify the "revision owner" of the parameter
+        QString const branch_key(QString("%1#%2").arg(d->f_path).arg(static_cast<snap_version::basic_version_number_t>(snap_version::SPECIAL_VERSION_SYSTEM_BRANCH)));
+
+        // do not overwrite the created date
+        if(data_table->row(branch_key)->cell(QString(get_name(SNAP_NAME_CONTENT_CREATED)))->value().nullValue())
         {
-            // updated changes only because of a user action (i.e. Save)
-            content_table->row(d->f_path)->cell(QString(get_name(SNAP_NAME_CONTENT_UPDATED)))->setValue(start_date);
+            data_table->row(branch_key)->cell(QString(get_name(SNAP_NAME_CONTENT_CREATED)))->setValue(start_date);
         }
         // always overwrite the modified date
-        content_table->row(d->f_path)->cell(QString(get_name(SNAP_NAME_CONTENT_MODIFIED)))->setValue(start_date);
+        data_table->row(branch_key)->cell(QString(get_name(SNAP_NAME_CONTENT_MODIFIED)))->setValue(start_date);
 
         // save the parameters (i.e. cells of data defined by the developer)
+        bool use_new_revision(true);
         for(content_params_t::iterator p(d->f_params.begin());
                 p != d->f_params.end(); ++p)
         {
-            // make sure no parameter is defined as path::primary_owner
+            // make sure no parameter is defined as content::primary_owner
             // because we are 100% in control of that one!
             // (we may want to add more as time passes)
             if(p->f_name == primary_owner)
             {
-                throw content_exception_invalid_content_xml("content::on_save_content() cannot accept a parameter named \"path::primary_owner\" as it is reserved");
+                throw content_exception_invalid_content_xml("content::on_save_content() cannot accept a parameter named \"content::primary_owner\" as it is reserved");
             }
 
-            // we just saved the path::primary_owner so the row exists now
-            //if(content_table->exists(d->f_block.f_path)) ...
-
-            // unless the developer said to overwrite the data, skip
-            // the save if the data alerady exists
-            if(p->f_overwrite
-            || content_table->row(d->f_path)->cell(p->f_name)->value().nullValue())
+            for(QMap<QString, QString>::const_iterator data(p->f_data.begin());
+                    data != p->f_data.end(); ++data)
             {
-                bool ok(true);
-                switch(p->f_type)
+                QString const locale(data.key());
+
+                // define the key and table affected
+                QSharedPointer<QtCassandra::QCassandraTable> param_table;
+                QString row_key;
+                switch(p->f_revision_type)
                 {
-                case PARAM_TYPE_STRING:
-                    content_table->row(d->f_path)->cell(p->f_name)->setValue(p->f_data);
+                case PARAM_REVISION_GLOBAL:
+                    // in the content table
+                    param_table = content_table;
+                    row_key = d->f_path;
                     break;
 
-                case PARAM_TYPE_FLOAT:
+                case PARAM_REVISION_BRANCH:
+                    // path + "#0" in the data table
+                    param_table = data_table;
+                    row_key = branch_key;
+                    break;
+
+                case PARAM_REVISION_REVISION:
+                    if(p->f_overwrite)
                     {
-                    float const v(p->f_data.toFloat(&ok));
-                    content_table->row(d->f_path)->cell(p->f_name)->setValue(v);
+                        throw snap_logic_exception("the overwrite=\"yes\" flag cannot be used along revision=\"revision\"");
                     }
-                    break;
 
-                case PARAM_TYPE_INT8:
+                    // path + "#0.<revision>" in the data table
+                    param_table = data_table;
+                    if(!use_new_revision)
                     {
-                    int const v(p->f_data.toInt(&ok));
-                    ok = ok && v >= -128 && v <= 127; // verify overflows
-                    content_table->row(d->f_path)->cell(p->f_name)->setValue(static_cast<signed char>(v));
+                        row_key = get_revision_key(d->f_path, get_plugin_name(), snap_version::SPECIAL_VERSION_SYSTEM_BRANCH, locale, false);
                     }
-                    break;
+                    // else row_key.clear(); -- I think it is faster to test the flag again
+                    if(use_new_revision || row_key.isEmpty())
+                    {
+                        // the revision does not exist yet, create it
+                        snap_version::version_number_t revision_number(get_new_revision(d->f_path, get_plugin_name(), snap_version::SPECIAL_VERSION_SYSTEM_BRANCH, locale));
+                        set_current_revision(d->f_path, get_plugin_name(), snap_version::SPECIAL_VERSION_SYSTEM_BRANCH, revision_number, locale, false);
+                        set_current_revision(d->f_path, get_plugin_name(), snap_version::SPECIAL_VERSION_SYSTEM_BRANCH, revision_number, locale, true);
+                        set_revision_key(d->f_path, get_plugin_name(), snap_version::SPECIAL_VERSION_SYSTEM_BRANCH, revision_number, locale, false);
+                        row_key = set_revision_key(d->f_path, get_plugin_name(), snap_version::SPECIAL_VERSION_SYSTEM_BRANCH, revision_number, locale, true);
+                        use_new_revision = false;
 
-                case PARAM_TYPE_INT64:
-                    content_table->row(d->f_path)->cell(p->f_name)->setValue(static_cast<int64_t>(p->f_data.toLongLong(&ok)));
+                        // mark when the row was created
+                        data_table->row(row_key)->cell(QString(get_name(SNAP_NAME_CONTENT_CREATED)))->setValue(start_date);
+                    }
                     break;
 
                 }
-                if(!ok)
+
+                // we just saved the content::primary_owner so the row exists now
+                //if(content_table->exists(d->f_path)) ...
+
+                // unless the developer said to overwrite the data, skip
+                // the save if the data alerady exists
+                if(p->f_overwrite
+                || param_table->row(row_key)->cell(p->f_name)->value().nullValue())
                 {
-                    throw content_exception_invalid_content_xml(QString("content::on_save_content() tried to convert %1 to a number and failed.").arg(p->f_data));
+                    bool ok(true);
+                    switch(p->f_type)
+                    {
+                    case PARAM_TYPE_STRING:
+                        param_table->row(row_key)->cell(p->f_name)->setValue(*data);
+                        break;
+
+                    case PARAM_TYPE_FLOAT:
+                        {
+                        float const v(data->toFloat(&ok));
+                        param_table->row(row_key)->cell(p->f_name)->setValue(v);
+                        }
+                        break;
+
+                    case PARAM_TYPE_INT8:
+                        {
+                        int const v(data->toInt(&ok));
+                        ok = ok && v >= -128 && v <= 127; // verify overflows
+                        param_table->row(row_key)->cell(p->f_name)->setValue(static_cast<signed char>(v));
+                        }
+                        break;
+
+                    case PARAM_TYPE_INT64:
+                        param_table->row(row_key)->cell(p->f_name)->setValue(static_cast<int64_t>(data->toLongLong(&ok)));
+                        break;
+
+                    }
+                    if(!ok)
+                    {
+                        throw content_exception_invalid_content_xml(QString("content::on_save_content() tried to convert %1 to a number and failed.").arg(*data));
+                    }
                 }
             }
         }
@@ -4361,8 +5545,8 @@ void content::on_save_content()
             parts.pop_back();
             QString dst(parts.join("/"));
             dst = site_key + dst;
-            links::link_info source(get_name(SNAP_NAME_CONTENT_PARENT), true, src);
-            links::link_info destination(get_name(SNAP_NAME_CONTENT_CHILDREN), false, dst);
+            links::link_info source(get_name(SNAP_NAME_CONTENT_PARENT), true, src, snap_version::SPECIAL_VERSION_SYSTEM_BRANCH);
+            links::link_info destination(get_name(SNAP_NAME_CONTENT_CHILDREN), false, dst, snap_version::SPECIAL_VERSION_SYSTEM_BRANCH);
 // TODO only repeat if the parent did not exist, otherwise we assume the
 //      parent created its own parent/children link already.
 //printf("parent/children [%s]/[%s]\n", src.toUtf8().data(), dst.toUtf8().data());
@@ -4453,14 +5637,14 @@ void content::on_save_content()
             }
 
             // ready, create the attachment
-            create_attachment(file);
+            create_attachment(file, snap_version::SPECIAL_VERSION_SYSTEM_BRANCH, "");
 
             // here the data buffer gets freed!
         }
     }
 
     // allow other plugins to add their own stuff dynamically
-    // (note that this is working only comme-ci comme-ca since all
+    // (this mechanism is working only comme-ci comme-ca since all
     // the other plugins should anyway have workable defaults; however,
     // once in a while, defaults are not enough; for example the shorturl
     // needs to generate a shorturl, there is no real default other than:
@@ -4473,8 +5657,10 @@ void content::on_save_content()
         QString path(d->f_path);
         if(path.startsWith(site_key))
         {
-            path = path.mid(site_key.length());
-            create_content(path, d->f_owner, type.stringValue());
+            path_info_t ipath;
+            ipath.set_path(path);
+            //path = path.mid(site_key.length());
+            create_content(ipath, d->f_owner, type.stringValue(), snap_version::SPECIAL_VERSION_SYSTEM_BRANCH);
         }
         // else -- if the path doesn't start with site_key we've got a problem
     }
@@ -4484,41 +5670,6 @@ void content::on_save_content()
     f_blocks.clear();
 }
 
-
-int content::js_property_count() const
-{
-    return 1;
-}
-
-
-QVariant content::js_property_get(const QString& name) const
-{
-    if(name == "modified")
-    {
-        return "content::modified";
-    }
-    return QVariant();
-}
-
-
-QString content::js_property_name(int index) const
-{
-	if(index == 0)
-	{
-		return "modified";
-	}
-	return "";
-}
-
-
-QVariant content::js_property_get(int index) const
-{
-    if(index == 0)
-    {
-        return "content::modified";
-    }
-    return QVariant();
-}
 
 
 
@@ -4602,7 +5753,7 @@ void content::on_backend_process()
                 reference_column_predicate.setCount(100);
                 reference_column_predicate.setIndex(); // behave like an index
                 bool first(true); // load the image only once for now
-                server::permission_flag secure;
+                permission_flag secure;
                 for(;;)
                 {
                     file_row->clearCache();
@@ -4690,12 +5841,8 @@ void content::on_backend_process()
  *
  * \return true if the check shall continue, false otherwise.
  */
-bool content::check_attachment_security_impl(attachment_file const& file, server::permission_flag& secure, bool const fast)
+bool content::check_attachment_security_impl(attachment_file const& file, permission_flag& secure, bool const fast)
 {
-    // we depend on javascript so it cannot connect to our events
-    // therefore we call the function directly
-    javascript::javascript::instance()->on_check_attachment_security(file.get_file(), secure, fast);
-
     return true;
 }
 
@@ -4720,15 +5867,6 @@ bool content::process_attachment_impl(QByteArray const& file_key, attachment_fil
         file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_SIZE_COMPRESSED))->setValue(compressed_file.size());
     }
 
-    // TODO: actually the JS plugin cannot save in the files table
-    //       unless we pass files_table to it; so we'll have to update
-    //       this call for the plugin!
-    //
-    // The JavaScript plugin does not know about us (content plugin),
-    // however, we know about it so we can ask it to do this job
-    // by calling it directly
-    javascript::javascript::instance()->on_process_attachment(files_table, file_key, file.get_file());
-
     return true;
 }
 
@@ -4739,14 +5877,20 @@ bool content::process_attachment_impl(QByteArray const& file_key, attachment_fil
  * If the script was already added, either immediately or as a dependency
  * of another script, then nothing more happens.
  *
+ * \todo
+ * Now that the JavaScript plugin depends on content we want to
+ * move this function to that plugin.
+ *
  * \param[in] l  The layout concerned.
  * \param[in] path  The path receiving the javascript.
  * \param[in] header  The XML header receiving the javascript.
  * \param[in] metadata  The metadata tag in the XML receiving the javascript.
  * \param[in] name  The name of the script.
  */
-void content::add_javascript(layout::layout *l, QString const& path, QDomElement& header, QDomElement& metadata, QString const& name)
+void content::add_javascript(path_info_t& ipath, QDomElement& header, QDomElement& metadata, QString const& name)
 {
+    // TODO: move to the javascript plugin since it now can include the
+    //       content plugin
     if(f_added_javascripts.contains(name))
     {
         // already added, we're done
@@ -4755,7 +5899,7 @@ void content::add_javascript(layout::layout *l, QString const& path, QDomElement
     f_added_javascripts[name] = true;
 
     QSharedPointer<QtCassandra::QCassandraTable> files_table(get_files_table());
-    if(!files_table->exists(javascript::get_name(javascript::SNAP_NAME_JAVASCRIPT_ROW)))
+    if(!files_table->exists("javascripts"/*javascript::get_name(javascript::SNAP_NAME_JAVASCRIPT_ROW)*/))
     {
         // absolutely no JavaScripts available!
         f_snap->die(snap_child::HTTP_CODE_NOT_FOUND, "JavaScript Not Found",
@@ -4763,7 +5907,7 @@ void content::add_javascript(layout::layout *l, QString const& path, QDomElement
                 "A JavaScript was requested in the \"files\" table before it was inserted under /js/...");
         NOTREACHED();
     }
-    QSharedPointer<QtCassandra::QCassandraRow> javascript_row(files_table->row(javascript::get_name(javascript::SNAP_NAME_JAVASCRIPT_ROW)));
+    QSharedPointer<QtCassandra::QCassandraRow> javascript_row(files_table->row("javascripts"/*javascript::get_name(javascript::SNAP_NAME_JAVASCRIPT_ROW)*/));
 
     // TODO: at this point I read all the entries with "name_..."
     //       we'll want to first check with the user's browser and
@@ -4909,7 +6053,7 @@ void content::add_javascript(layout::layout *l, QString const& path, QDomElement
                         {
                             // TODO: add version and browser tests
                             QString const& dep_name(dep.get_name());
-                            add_javascript(l, path, header, metadata, dep_name);
+                            add_javascript(ipath, header, metadata, dep_name);
                         }
                         // else TBD -- we checked when saving that darn string
                         //             so failures should not happen here

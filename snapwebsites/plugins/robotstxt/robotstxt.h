@@ -1,5 +1,5 @@
 // Snap Websites Server -- robots.txt
-// Copyright (C) 2011-2013  Made to Order Software Corp.
+// Copyright (C) 2011-2014  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,8 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-#ifndef SNAP_ROBOTSTXT_H
-#define SNAP_ROBOTSTXT_H
+#pragma once
 
 #include "../layout/layout.h"
 #include "../path/path.h"
@@ -66,10 +65,10 @@ public:
     virtual int64_t     do_update(int64_t last_updated);
 
     void                on_bootstrap(snap_child *snap);
-    virtual bool        on_path_execute(const QString& url);
-    void                on_generate_header_content(layout::layout *l, const QString& path, QDomElement& header, QDomElement& metadata, const QString& ctemplate);
-    virtual void        on_generate_main_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body, const QString& ctemplate);
-    void                on_generate_page_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body, const QString& ctemplate);
+    virtual bool        on_path_execute(content::path_info_t& url);
+    void                on_generate_header_content(layout::layout *l, content::path_info_t& path, QDomElement& header, QDomElement& metadata, const QString& ctemplate);
+    virtual void        on_generate_main_content(layout::layout *l, content::path_info_t& path, QDomElement& page, QDomElement& body, const QString& ctemplate);
+    void                on_generate_page_content(layout::layout *l, content::path_info_t& path, QDomElement& page, QDomElement& body, const QString& ctemplate);
 
     SNAP_SIGNAL(generate_robotstxt, (robotstxt *r), (r));
 
@@ -83,7 +82,7 @@ public:
 private:
     void initial_update(int64_t variables_timestamp);
     void content_update(int64_t variables_timestamp);
-    void define_robots(const QString& path);
+    void define_robots(content::path_info_t& path);
 
     struct robots_field_t
     {
@@ -102,6 +101,4 @@ private:
 
 } // namespace robotstxt
 } // namespace snap
-#endif
-// SNAP_ROBOTSTXT_H
 // vim: ts=4 sw=4 et

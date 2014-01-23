@@ -14,13 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-#ifndef SNAP_CONTENT_H
-#define SNAP_CONTENT_H
+#pragma once
 
-#include "../layout/layout.h"
-#include "../javascript/javascript.h"
 #include "../links/links.h"
-#include "../path/path.h"
+#include <controlled_vars/controlled_vars_ptr_no_init.h>
 
 namespace snap
 {
@@ -35,6 +32,7 @@ enum name_t
     //SNAP_NAME_CONTENT_ATTACHMENT_FILENAME,
     SNAP_NAME_CONTENT_ATTACHMENT_JAVASCRIPTS,
     //SNAP_NAME_CONTENT_ATTACHMENT_MIME_TYPE,
+    SNAP_NAME_CONTENT_ATTACHMENT_OWNER,
     SNAP_NAME_CONTENT_ATTACHMENT_PATH_END,
     SNAP_NAME_CONTENT_ATTACHMENT_REVISION_CONTROL_LAST_BRANCH,
     SNAP_NAME_CONTENT_ATTACHMENT_REVISION_CONTROL_LAST_REVISION,
@@ -52,6 +50,7 @@ enum name_t
     SNAP_NAME_CONTENT_COPYRIGHTED,
     SNAP_NAME_CONTENT_CREATED,
     SNAP_NAME_CONTENT_CURRENT_VERSION,
+    SNAP_NAME_CONTENT_DATA_TABLE,
     SNAP_NAME_CONTENT_FILES_COMPRESSOR,
     SNAP_NAME_CONTENT_FILES_CREATED,
     SNAP_NAME_CONTENT_FILES_CREATION_TIME,
@@ -79,7 +78,18 @@ enum name_t
     SNAP_NAME_CONTENT_MODIFIED,
     SNAP_NAME_CONTENT_PAGE_TYPE,
     SNAP_NAME_CONTENT_PARENT,
-    SNAP_NAME_CONTENT_REVISION,
+    SNAP_NAME_CONTENT_PRIMARY_OWNER,
+    SNAP_NAME_CONTENT_REVISION_CONTROL,
+    SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_BRANCH,
+    SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_BRANCH_KEY,
+    SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_REVISION,
+    SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_REVISION_KEY,
+    SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_BRANCH,
+    SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_BRANCH_KEY,
+    SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_REVISION,
+    SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_REVISION_KEY,
+    SNAP_NAME_CONTENT_REVISION_CONTROL_LAST_BRANCH,
+    SNAP_NAME_CONTENT_REVISION_CONTROL_LAST_REVISION,
     SNAP_NAME_CONTENT_SHORT_TITLE,
     SNAP_NAME_CONTENT_SINCE,
     SNAP_NAME_CONTENT_SUBMITTED,
@@ -156,7 +166,66 @@ public:
     content_exception_invalid_name(QString const& what_msg) : content_exception(what_msg) {}
 };
 
+class content_exception_unexpected_revision_type : public content_exception
+{
+public:
+    content_exception_unexpected_revision_type(char const *what_msg) : content_exception(what_msg) {}
+    content_exception_unexpected_revision_type(std::string const& what_msg) : content_exception(what_msg) {}
+    content_exception_unexpected_revision_type(QString const& what_msg) : content_exception(what_msg) {}
+};
 
+
+
+
+class content;
+
+class path_info_t
+{
+public:
+                                    path_info_t();
+
+    void                            set_path(QString const& path);
+    void                            set_owner(QString const& owner);
+    void                            set_main_page(bool main_page);
+    void                            set_parameter(QString const& name, QString const& value);
+
+    snap_child *                    get_snap() const;
+    QString                         get_key() const;
+    QString                         get_cpath() const;
+    QString                         get_owner() const;
+    bool                            get_main_page() const;
+    QString                         get_parameter(QString const& name) const;
+
+    bool                            get_working_branch() const;
+    snap_version::version_number_t  get_branch() const;
+    snap_version::version_number_t  get_revision() const;
+    QString                         get_locale() const;
+    QString                         get_branch_key() const;
+    QString                         get_revision_key() const;
+
+private:
+    typedef QMap<QString, QString>  parameters_t;
+
+    void                            clear();
+
+    // auto-initialized
+    content *                       f_content_plugin;
+    zpsnap_child_t                  f_snap;
+
+    // user specified
+    QString                         f_cpath;
+    QString                         f_key;
+    QString                         f_owner;
+    controlled_vars::fbool_t        f_main_page;
+    parameters_t                    f_parameters;
+
+    // generated internally
+    mutable snap_version::version_number_t  f_branch;
+    mutable snap_version::version_number_t  f_revision;
+    mutable QString                         f_locale;
+    mutable QString                         f_branch_key;
+    mutable QString                         f_revision_key;
+};
 
 
 class field_search
@@ -170,9 +239,16 @@ public:
         COMMAND_FIELD_NAME,             // + field name
         COMMAND_FIELD_NAME_WITH_VARS,   // + field name
         COMMAND_MODE,                   // + mode (int)
+        COMMAND_BRANCH_OWNER,           // + plugin name
+        COMMAND_BRANCH_PATH,            // + true if main page, false otherwise
+        COMMAND_REVISION_PATH,          // + true if main page, false otherwise
 
+        COMMAND_TABLE,                  // + table name
         COMMAND_SELF,                   // no parameters
         COMMAND_PATH,                   // + path
+        COMMAND_PATH_INFO_GLOBAL,       // + path_info_t
+        COMMAND_PATH_INFO_BRANCH,       // + path_info_t
+        COMMAND_PATH_INFO_REVISION,     // + path_info_t
         COMMAND_CHILDREN,               // + depth (int)
         COMMAND_PARENTS,                // + path (limit)
         COMMAND_LINK,                   // + link name
@@ -223,6 +299,7 @@ public:
                             cmd_info_t(command_t cmd, QtCassandra::QCassandraValue& value);
                             cmd_info_t(command_t cmd, QDomElement element);
                             cmd_info_t(command_t cmd, search_result_t& result);
+                            cmd_info_t(command_t cmd, path_info_t const& ipath);
 
         command_t           get_command() const { return f_cmd; }
         QString const       get_string()  const { return f_value.stringValue(); }
@@ -231,12 +308,14 @@ public:
         QtCassandra::QCassandraValue const& get_value() const { return f_value; }
         QDomElement         get_element() const { return f_element; }
         search_result_t *   get_result() const { return f_result; }
+        path_info_t const & get_ipath() const { return f_path_info; }
 
     private:
         safe_command_t                  f_cmd;
         QtCassandra::QCassandraValue    f_value;
         QDomElement                     f_element;
         controlled_vars::ptr_auto_init<search_result_t> f_result;
+        path_info_t                     f_path_info;
     };
     typedef QVector<cmd_info_t> cmd_info_vector_t;
 
@@ -250,6 +329,7 @@ public:
     field_search&       operator () (command_t cmd, QtCassandra::QCassandraValue value);
     field_search&       operator () (command_t cmd, QDomElement element);
     field_search&       operator () (command_t cmd, search_result_t& result);
+    field_search&       operator () (command_t cmd, path_info_t& ipath);
 
 private:
     void                run();
@@ -323,17 +403,31 @@ private:
 };
 
 
-
-class content : public plugins::plugin, public path::path_execute, public layout::layout_content, public javascript::javascript_dynamic_plugin
+class permission_flag
 {
 public:
-    typedef uint32_t                branch_revision_t;
-    static branch_revision_t const  UNDEFINED_BRANCH = static_cast<branch_revision_t>(-1);
-    static branch_revision_t const  SYSTEM_BRANCH = static_cast<branch_revision_t>(0);
-    static branch_revision_t const  USER_FIRST_BRANCH = static_cast<branch_revision_t>(1);
-    static branch_revision_t const  FIRST_REVISION = static_cast<branch_revision_t>(0);
-    static branch_revision_t const  MAX_BRANCH_NUMBER = static_cast<branch_revision_t>(-2); // 0xFFFF:FFFE (because -1 is reserved)
+                    permission_flag() {}
+    bool            allowed() const { return f_allowed; }
+    QString const&  reason() const { return f_reason; }
+    void            not_permitted(QString const& reason = "");
 
+private:
+    // prevent copies or a user could reset the flag!
+                    permission_flag(permission_flag const& rhs) = delete;
+                    permission_flag& operator = (permission_flag const& rhs) = delete;
+
+    controlled_vars::tbool_t    f_allowed;
+    QString                     f_reason;
+};
+
+
+
+
+
+
+class content : public plugins::plugin
+{
+public:
     enum param_type_t
     {
         PARAM_TYPE_STRING,
@@ -364,57 +458,84 @@ public:
 
     typedef controlled_vars::limited_auto_init<param_type_t, PARAM_TYPE_STRING, PARAM_TYPE_INT64, PARAM_TYPE_STRING> safe_param_type_t;
 
+    enum param_revision_t
+    {
+        PARAM_REVISION_GLOBAL,
+        PARAM_REVISION_BRANCH,
+        PARAM_REVISION_REVISION
+    };
+
                         content();
-                        ~content();
+    virtual             ~content();
 
     static content *    instance();
     virtual QString     description() const;
     virtual int64_t     do_update(int64_t last_updated);
     QSharedPointer<QtCassandra::QCassandraTable> get_content_table();
     QSharedPointer<QtCassandra::QCassandraTable> get_files_table();
+    QSharedPointer<QtCassandra::QCassandraTable> get_data_table();
     QtCassandra::QCassandraValue get_content_parameter(QString path, QString const& name);
+    plugin *            get_plugin(path_info_t& ipath, permission_error_callback& err_callback);
+
+    // revision control
+    snap_child *        get_snap();
+    void                invalid_revision_control(QString const& version);
+    QString             get_revision_base_key(QString const& owner);
+    snap_version::version_number_t get_current_branch(QString const& key, QString const& owner, bool working_branch);
+    snap_version::version_number_t get_current_user_branch(QString const& key, QString const& owner, QString const& locale, bool working_branch);
+    snap_version::version_number_t get_current_revision(QString const& key, QString const& owner, QString const& locale, bool working_branch);
+    snap_version::version_number_t get_new_branch(QString const& key, QString const& owner, QString const& locale);
+    snap_version::version_number_t get_new_revision(QString const& key, QString const& owner, snap_version::version_number_t branch, QString const& locale);
+    QString             get_branch_key(QString const& key, QString const& owner, bool working_branch);
+    void                initialize_branch(QString const& key, QString const& locale);
+    QString             generate_branch_key(QString const& key, snap_version::version_number_t branch);
+    QString             set_branch_key(QString const& key, QString const& owner, snap_version::version_number_t branch, bool working_branch);
+    QString             get_revision_key(QString const& key, QString const& owner, snap_version::version_number_t branch, QString const& locale, bool working_branch);
+    QString             generate_revision_key(QString const& key, snap_version::version_number_t branch, snap_version::version_number_t revision, QString const& locale);
+    QString             generate_revision_key(QString const& key, QString const& revision, QString const& locale);
+    void                set_current_revision(QString const& key, QString const& owner, snap_version::version_number_t branch, snap_version::version_number_t revision, QString const& locale, bool working_branch);
+    QString             set_revision_key(QString const& key, QString const& owner, snap_version::version_number_t branch, snap_version::version_number_t revision, QString const& locale, bool working_branch);
+    QString             set_revision_key(QString const& key, QString const& owner, QString const& revision, QString const& locale, bool working_branch);
+    path_info_t         get_path_info(QString const& cpath, QString const& owner, bool main_page);
+    QString             get_user_key(QString const& key, snap_version::version_number_t branch, int64_t identifier);
 
     void                on_bootstrap(snap_child *snap);
-    virtual bool        on_path_execute(QString const& url);
+    void                on_execute(QString const& uri_path);
+    //virtual bool        on_path_execute(path_info_t& ipath);
     void                on_save_content();
-    void                on_create_content(QString const& path);
-    virtual void        on_generate_main_content(layout::layout *l, QString const& path, QDomElement& page, QDomElement& body, QString const& ctemplate);
-    void                on_generate_page_content(layout::layout *l, QString const& path, QDomElement& page, QDomElement& body, QString const& ctemplate);
+    //virtual void        on_generate_main_content(layout::layout *l, QString const& path, QDomElement& page, QDomElement& body, QString const& ctemplate);
+    //void                on_generate_page_content(layout::layout *l, QString const& path, QDomElement& page, QDomElement& body, QString const& ctemplate);
     void                on_backend_process();
 
-    SNAP_SIGNAL(new_content, (QString const& path), (path));
-    SNAP_SIGNAL(create_content, (QString const& path, QString const& owner, QString const& type), (path, owner, type));
-    SNAP_SIGNAL(create_attachment, (attachment_file const& file), (file));
-    SNAP_SIGNAL(modified_content, (QString const& path, bool updated), (path, updated));
-    SNAP_SIGNAL(check_attachment_security, (attachment_file const& file, server::permission_flag& secure, bool const fast), (file, secure, fast));
+    SNAP_SIGNAL(new_content, (path_info_t& path), (path));
+    SNAP_SIGNAL(create_content, (path_info_t& path, QString const& owner, QString const& type, snap_version::version_number_t branch_number), (path, owner, type, branch_number));
+    SNAP_SIGNAL(create_attachment, (attachment_file const& file, snap_version::version_number_t branch_number, QString const& locale), (file, branch_number, locale));
+    SNAP_SIGNAL(modified_content, (path_info_t& path), (path));
+    SNAP_SIGNAL(check_attachment_security, (attachment_file const& file, permission_flag& secure, bool const fast), (file, secure, fast));
     SNAP_SIGNAL(process_attachment, (QByteArray const& key, attachment_file const& file), (key, file));
 
-    void                output() const;
+    //void                output() const;
 
     // add content for addition to the database
     void                add_xml(QString const& plugin_name);
     void                add_xml_document(QDomDocument& dom, QString const& plugin_name);
     void                add_content(QString const& path, QString const& plugin_owner);
-    void                add_param(QString const& path, QString const& name, QString const& data);
+    void                add_param(QString const& path, QString const& name, param_revision_t revision_type, QString const& locale, QString const& data);
     void                set_param_overwrite(QString const& path, const QString& name, bool overwrite);
     void                set_param_type(QString const& path, const QString& name, param_type_t param_type);
     void                add_link(QString const& path, links::link_info const& source, links::link_info const& destination);
     void                add_attachment(QString const& path, content_attachment const& attachment);
     static void         insert_html_string_to_xml_doc(QDomElement child, QString const& xml);
     bool                load_attachment(QString const& key, attachment_file& file, bool load_data = true);
-    void                add_javascript(layout::layout *l, QString const& path, QDomElement& header, QDomElement& metadata, QString const& name);
-
-    virtual int         js_property_count() const;
-    virtual QVariant    js_property_get(QString const& name) const;
-    virtual QString     js_property_name(int index) const;
-    virtual QVariant    js_property_get(int index) const;
+    void                add_javascript(path_info_t& path, QDomElement& header, QDomElement& metadata, QString const& name);
 
 private:
     // from the <param> tags
     struct content_param
     {
         QString                     f_name;
-        QString                     f_data;
+        QMap<QString, QString>      f_data; // [locale] = <html>
+        param_revision_t            f_revision_type;
         controlled_vars::fbool_t    f_overwrite;
         safe_param_type_t           f_type;
     };
@@ -453,24 +574,24 @@ private:
 
     zpsnap_child_t                                  f_snap;
     QSharedPointer<QtCassandra::QCassandraTable>    f_content_table;
+    QSharedPointer<QtCassandra::QCassandraTable>    f_data_table;
     QSharedPointer<QtCassandra::QCassandraTable>    f_files_table;
     content_block_map_t                             f_blocks;
     controlled_vars::zint32_t                       f_file_index;
     controlled_vars::fbool_t                        f_updating;
     QMap<QString, bool>                             f_added_javascripts;
     javascript_ref_map_t                            f_javascripts;
+    controlled_vars::zint64_t                       f_last_modified;
 };
 
-class content_box_execute
-{
-public:
-    virtual             ~content_box_execute() {} // ensure proper virtual tables
-    virtual bool        on_content_box_execute(content *c, QString const& path, QDomElement& box) = 0;
-};
+//class content_box_execute
+//{
+//public:
+//    virtual             ~content_box_execute() {} // ensure proper virtual tables
+//    virtual bool        on_content_box_execute(content *c, QString const& path, QDomElement& box) = 0;
+//};
 
 
 } // namespace content
 } // namespace snap
-#endif
-// SNAP_CONTENT_H
 // vim: ts=4 sw=4 et

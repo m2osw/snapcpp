@@ -1,5 +1,5 @@
 // Snap Websites Server -- advanced parser
-// Copyright (C) 2011-2013  Made to Order Software Corp.
+// Copyright (C) 2011-2014  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -16,9 +16,12 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "snap_parser.h"
-#include <stdio.h>
+#include "qstring_stream.h"
+
+#include <iostream>
 #include <QList>
 #include <QPointer>
+
 #include "poison.h"
 
 namespace snap
@@ -1373,7 +1376,7 @@ struct parser_state
 
     ~parser_state()
     {
-//fprintf(stderr, "destructor! %p\n", this);
+//std::cerr << "destructor! " << this << "\n";
         clear();
     }
 
@@ -1508,21 +1511,21 @@ struct parser_state
 #ifdef DEBUG
     static void display_array(const state_array_t& a)
     {
-        fprintf(stderr, "+++ ARRAY (%d items)\n", a.size());
+        std::cerr << "+++ ARRAY (" << a.size() << " items)\n";
         for(state_array_t::const_iterator it(a.begin()); it != a.end(); ++it) {
             parser_state *state(*it);
-            //fprintf(stderr, "  state = %p\n", state); // for crash
-            fprintf(stderr, "  current: %s\n", state->toString().toUtf8().data());
+            //std::cerr << "  state = " << state << "\n"; // for crash
+            std::cerr << "  current: " << state->toString() << "\n";
             for(state_array_t::const_iterator r(state->f_add_on_reduce.begin()); r != state->f_add_on_reduce.end(); ++r) {
                 parser_state *s(*r);
-                fprintf(stderr, "      add on reduce: %s\n", s->toString().toUtf8().data());
+                std::cerr << "      add on reduce: " << s->toString() << "\n";
             }
             while(state->f_parent != NULL) {
                 state = state->f_parent;
-                fprintf(stderr, "    parent: %s\n", state->toString().toUtf8().data());
+                std::cerr << "    parent: " << state->toString() << "\n";
             }
         }
-        fprintf(stderr, "---\n");
+        std::cerr << "---\n";
     }
 #endif
 
@@ -1635,7 +1638,7 @@ bool grammar::parse(lexer& input, choices& start)
         // we're working on the 'check' vector which is
         // a copy of the current vector so the current
         // vector can change in size
-//fprintf(stderr, "=================================================================\n");
+//std::cerr << "=================================================================\n";
 //parser_state::display_array(current);
 
         uint32_t line(input.line());

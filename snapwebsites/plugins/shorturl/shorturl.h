@@ -1,5 +1,5 @@
 // Snap Websites Server -- shorturl management (smaller URLs for all pages)
-// Copyright (C) 2013  Made to Order Software Corp.
+// Copyright (C) 2013-2014  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,8 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-#ifndef SNAP_SHORTURL_H
-#define SNAP_SHORTURL_H
+#pragma once
 
 #include "../sessions/sessions.h"
 #include "../path/path.h"
@@ -64,11 +63,11 @@ public:
     QSharedPointer<QtCassandra::QCassandraTable> get_shorturl_table();
 
     void                on_bootstrap(snap_child *snap);
-    virtual bool        on_path_execute(const QString& url);
-    virtual void        on_generate_main_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body, const QString& ctemplate);
-    void                on_generate_header_content(layout::layout *l, const QString& path, QDomElement& header, QDomElement& metadata, const QString& ctemplate);
-    void                on_create_content(const QString& path, const QString& owner, const QString& type);
-    void                on_can_handle_dynamic_path(path::path *path_plugin, const QString& cpath);
+    virtual bool        on_path_execute(content::path_info_t& ipath);
+    virtual void        on_generate_main_content(layout::layout *l, content::path_info_t& path, QDomElement& page, QDomElement& body, const QString& ctemplate);
+    void                on_generate_header_content(layout::layout *l, content::path_info_t& path, QDomElement& header, QDomElement& metadata, const QString& ctemplate);
+    void                on_create_content(content::path_info_t& path, const QString& owner, const QString& type);
+    void                on_can_handle_dynamic_path(content::path_info_t& ipath, path::dynamic_plugin_t& plugin_info);
 
 private:
     void initial_update(int64_t variables_timestamp);
@@ -81,6 +80,4 @@ private:
 
 } // namespace shorturl
 } // namespace snap
-#endif
-// SNAP_SHORTURL_H
 // vim: ts=4 sw=4 et

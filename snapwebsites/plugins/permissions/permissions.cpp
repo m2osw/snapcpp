@@ -1,5 +1,5 @@
 // Snap Websites Server -- manage permissions for users, forms, etc.
-// Copyright (C) 2013  Made to Order Software Corp.
+// Copyright (C) 2013-2014  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -16,14 +16,19 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "permissions.h"
-#include "plugins.h"
-#include "not_reached.h"
-#include "../content/content.h"
+
+#include "../output/output.h"
 #include "../users/users.h"
 #include "../messages/messages.h"
-#include <QtCassandra/QCassandraValue.h>
-#include <openssl/rand.h>
+
+#include "plugins.h"
+#include "not_reached.h"
 #include "qstring_stream.h"
+
+#include <QtCassandra/QCassandraValue.h>
+
+#include <openssl/rand.h>
+
 #include "poison.h"
 
 
@@ -194,12 +199,14 @@ char const *get_name(name_t name)
  * The constructor saves the path and action in the object. These two
  * parameters are read-only parameters.
  *
- * \param[in] path  The path being queried.
+ * \param[in] user_path  The path to the user.
+ * \param[in,out] path  The path being queried.
  * \param[in] action  The action being used in this query.
+ * \param[in] login_status  The state of the log in of this user.
  */
-permissions::sets_t::sets_t(const QString& user_path, const QString& path, const QString& action, const QString& login_status)
+permissions::sets_t::sets_t(const QString& user_path, content::path_info_t& ipath, const QString& action, const QString& login_status)
     : f_user_path(user_path)
-    , f_path(path)
+    , f_ipath(ipath)
     , f_action(action)
     , f_login_status(login_status)
     //, f_user_rights() -- auto-init
@@ -284,9 +291,9 @@ const QString& permissions::sets_t::get_user_path() const
  *
  * \return The path being checked against user's rights.
  */
-const QString& permissions::sets_t::get_path() const
+content::path_info_t& permissions::sets_t::get_ipath() const
 {
-    return f_path;
+    return f_ipath;
 }
 
 
@@ -668,8 +675,8 @@ void permissions::on_bootstrap(snap_child *snap)
 {
     f_snap = snap;
 
-    SNAP_LISTEN(permissions, "server", server, validate_action, _1, _2, _3);
-    SNAP_LISTEN(permissions, "server", server, access_allowed, _1, _2, _3, _4, _5);
+    SNAP_LISTEN(permissions, "path", path::path, validate_action, _1, _2, _3);
+    SNAP_LISTEN(permissions, "path", path::path, access_allowed, _1, _2, _3, _4, _5);
     SNAP_LISTEN(permissions, "server", server, register_backend_action, _1);
 }
 
@@ -735,13 +742,11 @@ int64_t permissions::do_update(int64_t last_updated)
  *
  * \param[in] variables_timestamp  The timestamp for all the variables added to the database by this update (in micro-seconds).
  */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
 void permissions::content_update(int64_t variables_timestamp)
 {
+    (void) variables_timestamp;
     content::content::instance()->add_xml(get_plugin_name());
 }
-#pragma GCC diagnostic pop
 
 
 /** \brief Implementation of the get_user_rights signal.
@@ -931,19 +936,20 @@ bool permissions::get_user_rights_impl(permissions *perms, sets_t& sets)
  *
  * \return true if the signal has to be sent to other plugins.
  */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
 bool permissions::get_plugin_permissions_impl(permissions *perms, sets_t& sets)
 {
+    static_cast<void>(perms);
+
     // the user plugin cannot include the permissions (since the
     // permissions includes the user plugin) so we implement this
     // user plugin feature in the permissions
-    QString const path(sets.get_path());
-    if(path.left(5) == "user/")
+    content::path_info_t& ipath(sets.get_ipath());
+    if(ipath.get_cpath().left(5) == "user/")
     {
-        QString const user_id(path.mid(5));
+        QString const user_id(ipath.get_cpath().mid(5));
+        QByteArray id_str(user_id.toUtf8());
         char const *s;
-        for(s = user_id.toUtf8().data(); *s != '\0'; ++s)
+        for(s = id_str.data(); *s != '\0'; ++s)
         {
             if(*s < '0' || *s > '9')
             {
@@ -953,8 +959,7 @@ bool permissions::get_plugin_permissions_impl(permissions *perms, sets_t& sets)
         }
         if(*s != '\0')
         {
-            QString const site_key(f_snap->get_site_key_with_slash());
-            sets.add_plugin_permission(content::content::instance()->get_plugin_name(), site_key + path);
+            sets.add_plugin_permission(content::content::instance()->get_plugin_name(), ipath.get_key());
             //"types/permissions/rights/view/page/private"
         }
     }
@@ -966,14 +971,14 @@ bool permissions::get_plugin_permissions_impl(permissions *perms, sets_t& sets)
     // this very page may be assigned direct permissions
     QSharedPointer<QtCassandra::QCassandraTable> content_table(content::content::instance()->get_content_table());
     QString const site_key(f_snap->get_site_key_with_slash());
-    QString key(site_key + path);
+    QString key(ipath.get_key());
     if(!content_table->exists(key))
     {
         // if that page does not exist, it may be dynamic, try to go up
         // until we have one name in the path then check that the page
         // allows such, if so, we have a chance, otherwise no rights
         // from here... (as an example see /verify in plugins/users/content.xml)
-        QStringList parts(path.split('/'));
+        QStringList parts(ipath.get_cpath().split('/'));
         int depth(0);
         for(;;)
         {
@@ -1007,10 +1012,12 @@ bool permissions::get_plugin_permissions_impl(permissions *perms, sets_t& sets)
         }
     }
 
+    content::path_info_t page_ipath;
+    page_ipath.set_path(key);
     QString const link_start_name("permissions::" + sets.get_action());
     {
         // check local links for this action
-        links::link_info info(link_start_name, false, key);
+        links::link_info info(link_start_name, false, key, page_ipath.get_branch());
         QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
         links::link_info right_info;
         while(link_ctxt->next_link(right_info))
@@ -1024,7 +1031,7 @@ bool permissions::get_plugin_permissions_impl(permissions *perms, sets_t& sets)
         // get the content type (content::page_type) and then retrieve
         // the rights directly from that type
         QString const link_name(get_name(content::SNAP_NAME_CONTENT_PAGE_TYPE));
-        links::link_info info(link_name, true, key);
+        links::link_info info(link_name, true, key, page_ipath.get_branch());
         QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
         links::link_info content_type_info;
         if(link_ctxt->next_link(content_type_info)) // use if() since it is unique on this end
@@ -1060,7 +1067,6 @@ bool permissions::get_plugin_permissions_impl(permissions *perms, sets_t& sets)
 
     return true;
 }
-#pragma GCC diagnostic pop
 
 
 /** \brief Generate the actual content of the statistics page.
@@ -1069,14 +1075,14 @@ bool permissions::get_plugin_permissions_impl(permissions *perms, sets_t& sets)
  * permissions plugin.
  *
  * \param[in] l  The layout used to generate this page.
- * \param[in] path  The path to this page.
- * \param[in] page  The page element being generated.
- * \param[in] body  The body element being generated.
+ * \param[in,out] ipath  The path to this page.
+ * \param[in,out] page  The page element being generated.
+ * \param[in,out] body  The body element being generated.
  */
-void permissions::on_generate_main_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body, const QString& ctemplate)
+void permissions::on_generate_main_content(layout::layout *l, content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate)
 {
     // show the permission pages as information (many of these are read-only)
-    content::content::instance()->on_generate_main_content(l, path, page, body, ctemplate);
+    output::output::instance()->on_generate_main_content(l, ipath, page, body, ctemplate);
 }
 
 
@@ -1093,11 +1099,11 @@ void permissions::on_generate_main_content(layout::layout *l, const QString& pat
  * default that variable is "a". So a user who wants to edit a page
  * makes use of "a=edit" as one of the query variables.
  *
- * \param[in] path  The path the user wants to access.
+ * \param[in,out] ipath  The path the user wants to access.
  * \param[in] action  The action to be taken, the function may redefine it.
- * \param[in] callback  Call functions on errors.
+ * \param[in,out] callback  Call functions on errors.
  */
-void permissions::on_validate_action(QString const& path, QString const& action, permission_error_callback& err_callback)
+void permissions::on_validate_action(content::path_info_t& ipath, QString const& action, permission_error_callback& err_callback)
 {
     if(action.isEmpty())
     {
@@ -1105,8 +1111,8 @@ void permissions::on_validate_action(QString const& path, QString const& action,
         // user problem that can happen so do not use the err_callback
         f_snap->die(snap_child::HTTP_CODE_ACCESS_DENIED,
                 "Access Denied",
-                "You are not authorized to access our website.",
-                "programmer checking permission access with an empty action on page \"" + path + "\".");
+                "You are not authorized to access our website in this way.",
+                "programmer checking permission access with an empty action on page \"" + ipath.get_key() + "\".");
         NOTREACHED();
     }
 
@@ -1116,8 +1122,6 @@ void permissions::on_validate_action(QString const& path, QString const& action,
     {
         user_path.clear();
     }
-    QString key(path);
-    f_snap->canonicalize_path(key); // remove the starting slash
     QString login_status(get_name(SNAP_NAME_PERMISSIONS_LOGIN_STATUS_SPAMMER));
     if(!users_plugin->user_is_a_spammer())
     {
@@ -1136,8 +1140,9 @@ void permissions::on_validate_action(QString const& path, QString const& action,
             login_status = get_name(SNAP_NAME_PERMISSIONS_LOGIN_STATUS_RETURNING_REGISTERED);
         }
     }
-    bool const allowed(f_snap->access_allowed(user_path, key, action, login_status));
-    if(!allowed)
+    content::permission_flag allowed;
+    path::path::instance()->access_allowed(user_path, ipath, action, login_status, allowed);
+    if(!allowed.allowed())
     {
         if(users_plugin->get_user_key().isEmpty())
         {
@@ -1145,15 +1150,15 @@ void permissions::on_validate_action(QString const& path, QString const& action,
             if(users_plugin->user_is_a_spammer())
             {
                 // force a redirect on error not from the home page
-                if(path != "/")
+                if(ipath.get_cpath() != "")
                 {
                     // spammers are expected to have enough rights to access
                     // the home page so we try to redirect them there
                     err_callback.on_redirect(
                         // message
                         "Access Denied",
-                        "The page you were trying to access (" + path + ") requires more privileges.",
-                        "spammer trying to \"" + action + "\" on page \"" + path + "\".",
+                        "The page you were trying to access (" + ipath.get_cpath() + ") requires more privileges.",
+                        "spammer trying to \"" + action + "\" on page \"" + ipath.get_cpath() + "\".",
                         false,
                         // redirect
                         "/",
@@ -1165,12 +1170,12 @@ void permissions::on_validate_action(QString const& path, QString const& action,
                     err_callback.on_error(snap_child::HTTP_CODE_ACCESS_DENIED,
                             "Access Denied",
                             "You are not authorized to access our website.",
-                            "spammer trying to \"" + action + "\" on page \"" + path + "\" with unsufficient rights.");
+                            "spammer trying to \"" + action + "\" on page \"" + ipath.get_cpath() + "\" with unsufficient rights.");
                 }
                 return;
             }
 
-            if(path == "/login")
+            if(ipath.get_cpath() == "login")
             {
                 // An IP, Agent, etc. based test could get us here...
                 err_callback.on_error(snap_child::HTTP_CODE_ACCESS_DENIED,
@@ -1178,20 +1183,20 @@ void permissions::on_validate_action(QString const& path, QString const& action,
                         action != "view"
                             ? "You are not authorized to access the login page with action " + action
                             : "Somehow you are not authorized to access the login page.",
-                        "user trying to \"" + action + "\" on page \"" + path + "\" with unsufficient rights.");
+                        "user trying to \"" + action + "\" on page \"" + ipath.get_cpath() + "\" with unsufficient rights.");
                 return;
             }
 
             // user is anonymous, there is hope, he may have access once
             // logged in
             // TODO all redirects need to also include a valid action!
-            users_plugin->attach_to_session(get_name(users::SNAP_NAME_USERS_LOGIN_REFERRER), path);
+            users_plugin->attach_to_session(get_name(users::SNAP_NAME_USERS_LOGIN_REFERRER), ipath.get_cpath());
             err_callback.on_redirect(
                 // message
                 "Unauthorized",
-                "The page you were trying to access (" + path
+                "The page you were trying to access (" + ipath.get_cpath()
                         + ") requires more privileges. If you think you have such, try to log in first.",
-                "user trying to \"" + action + "\" on page \"" + path + "\" when not logged in.",
+                "user trying to \"" + action + "\" on page \"" + ipath.get_cpath() + "\" when not logged in.",
                 false,
                 // redirect
                 "login",
@@ -1201,19 +1206,21 @@ void permissions::on_validate_action(QString const& path, QString const& action,
         {
             if(login_status == get_name(SNAP_NAME_PERMISSIONS_LOGIN_STATUS_RETURNING_REGISTERED))
             {
-                bool const allowed_if_logged_in(f_snap->access_allowed(user_path, key, action, get_name(SNAP_NAME_PERMISSIONS_LOGIN_STATUS_REGISTERED)));
-                if(allowed_if_logged_in)
+                // allowed if logged in
+                content::permission_flag allowed_if_logged_in;
+                path::path::instance()->access_allowed(user_path, ipath, action, get_name(SNAP_NAME_PERMISSIONS_LOGIN_STATUS_REGISTERED), allowed_if_logged_in);
+                if(allowed_if_logged_in.allowed())
                 {
                     // ah! the user is not allowed here but he would be if
                     // only he were recently logged in (with the last 3h or
                     // whatever the administrator set that to.)
-                    users_plugin->attach_to_session(get_name(users::SNAP_NAME_USERS_LOGIN_REFERRER), path);
+                    users_plugin->attach_to_session(get_name(users::SNAP_NAME_USERS_LOGIN_REFERRER), ipath.get_cpath());
                     err_callback.on_redirect(
                         // message
                         "Unauthorized",
-                        "The page you were trying to access (" + path
+                        "The page you were trying to access (" + ipath.get_cpath()
                                 + ") requires you to verify your credentials. Please log in again and the system will send you back there.",
-                        "user trying to \"" + action + "\" on page \"" + path + "\" when not recently logged in.",
+                        "user trying to \"" + action + "\" on page \"" + ipath.get_cpath() + "\" when not recently logged in.",
                         false,
                         // redirect
                         "verify-credentials",
@@ -1225,8 +1232,8 @@ void permissions::on_validate_action(QString const& path, QString const& action,
             // the double password feature
             err_callback.on_error(snap_child::HTTP_CODE_ACCESS_DENIED,
                     "Access Denied",
-                    "You are not authorized to apply this action (" + action + ") to this page (" + path + ").",
-                    "user trying to \"" + action + "\" on page \"" + path + "\" with unsufficient rights.");
+                    "You are not authorized to apply this action (" + action + ") to this page (" + ipath.get_key() + ").",
+                    "user trying to \"" + action + "\" on page \"" + ipath.get_key() + "\" with unsufficient rights.");
         }
         return;
     }
@@ -1258,12 +1265,12 @@ void permissions::on_validate_action(QString const& path, QString const& action,
  * won't even be able to read the page.
  *
  * \param[in] user_path  The user trying to acccess the specified path.
- * \param[in] path  The path that the user is trying to access.
+ * \param[in] cpath  The path that the user is trying to access.
  * \param[in] action  The action that the user is trying to perform.
  * \param[in] login_status  The supposed status for that user.
  * \param[in] result  The result of the test.
  */
-void permissions::on_access_allowed(QString const& user_path, QString const& path, QString const& action, QString const& login_status, server::permission_flag& result)
+void permissions::on_access_allowed(QString const& user_path, content::path_info_t& ipath, QString const& action, QString const& login_status, content::permission_flag& result)
 {
     // check that the action is defined in the database (i.e. valid)
     QSharedPointer<QtCassandra::QCassandraTable> content_table(content::content::instance()->get_content_table());
@@ -1271,23 +1278,26 @@ void permissions::on_access_allowed(QString const& user_path, QString const& pat
     QString const key(site_key + get_name(SNAP_NAME_PERMISSIONS_ACTION_PATH) + ("/" + action));
     if(!content_table->exists(key))
     {
-        // TODO it is rather easy to arrive here so we need to test whether
+        // TODO it is rather easy to get here so we need to test whether
         //      the same IP does it over and over again and block them if so
         f_snap->die(snap_child::HTTP_CODE_ACCESS_DENIED,
                 "Unknown Action",
                 "The action you are trying to performed is not known.",
-                "permissions::on_validate_action() was used with action \"" + action + "\".");
+                "permissions::on_access_allowed() was used with action \"" + action + "\".");
         NOTREACHED();
     }
 
+    // TODO: page_info is what needs to be passed around, not just the path
+    //content::page_info const& page_info(content::content::instance()->get_selected_revision_key(ipath.get_cpath(), content::content::instance()->get_plugin_name(), true));
+
     // setup a sets object which will hold all the user's sets
-    sets_t sets(user_path, path, action, login_status);
+    sets_t sets(user_path, ipath, action, login_status);
 
     // first we get the user rights for that action because that's a lot
     // smaller and if empty we do not have to get anything else
     // (intersection of an empty set with anything else is the empty set)
 #ifdef DEBUG
-    std::cout << "retrieving USER rights... [" << sets.get_action() << "] [" << sets.get_login_status() << "] [" << path << "]" << std::endl;
+    std::cout << "retrieving USER rights... [" << sets.get_action() << "] [" << sets.get_login_status() << "] [" << ipath.get_cpath() << "]" << std::endl;
 #endif
     get_user_rights(this, sets);
     if(sets.get_user_rights_count() != 0)
@@ -1359,15 +1369,18 @@ void permissions::recursive_add_user_rights(QString const& group, sets_t& sets)
 
     QSharedPointer<QtCassandra::QCassandraRow> row(content_table->row(group));
 
+    content::path_info_t group_ipath;
+    group_ipath.set_path(group);
+
     // get the rights at this level
     {
         QString const link_start_name("permissions::" + sets.get_action());
-        links::link_info info(link_start_name, false, group);
+        links::link_info info(link_start_name, false, group_ipath.get_key(), group_ipath.get_branch());
         QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
         links::link_info right_info;
         while(link_ctxt->next_link(right_info))
         {
-            // an author is attached to this page
+            // a user right is attached to this page
             QString const right_key(right_info.key());
             sets.add_user_right(right_key);
         }
@@ -1376,12 +1389,12 @@ void permissions::recursive_add_user_rights(QString const& group, sets_t& sets)
     // get all the children and do a recursive call with them all
     {
         QString const children_name("content::children");
-        links::link_info info(children_name, false, group);
+        links::link_info info(children_name, false, group_ipath.get_key(), group_ipath.get_branch());
         QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
         links::link_info right_info;
         while(link_ctxt->next_link(right_info))
         {
-            // an author is attached to this page
+            // a user right is attached to this page
             const QString child_key(right_info.key());
             recursive_add_user_rights(child_key, sets);
         }

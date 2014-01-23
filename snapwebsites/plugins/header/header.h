@@ -14,11 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-#ifndef SNAP_HEADER_H
-#define SNAP_HEADER_H
+#pragma once
 
-#include "../layout/layout.h"
 #include "../path/path.h"
+#include "../layout/layout.h"
 
 namespace snap
 {
@@ -56,10 +55,10 @@ public:
     virtual int64_t     do_update(int64_t last_updated);
 
     void                on_bootstrap(snap_child *snap);
-    virtual bool        on_path_execute(QString const& url);
-    virtual void        on_generate_main_content(layout::layout *l, QString const& path, QDomElement& page, QDomElement& body, QString const& ctemplate);
-    void                on_generate_header_content(layout::layout *l, QString const& path, QDomElement& header, QDomElement& metadata, QString const& ctemplate);
-    //void                on_generate_page_content(layout::layout *l, QString const& path, QDomElement& page, QDomElement& body, QString const& ctemplate);
+    virtual bool        on_path_execute(content::path_info_t& ipath);
+    virtual void        on_generate_main_content(layout::layout *l, content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate);
+    void                on_generate_header_content(layout::layout *l, content::path_info_t& ipath, QDomElement& header_dom, QDomElement& metadata, QString const& ctemplate);
+    //void                on_generate_page_content(layout::layout *l, content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate);
 
 private:
     void initial_update(int64_t variables_timestamp);
@@ -71,6 +70,4 @@ private:
 
 } // namespace header
 } // namespace snap
-#endif
-// SNAP_HEADER_H
 // vim: ts=4 sw=4 et

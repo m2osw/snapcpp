@@ -14,11 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-#ifndef SNAP_JAVASCRIPT_H
-#define SNAP_JAVASCRIPT_H
+#pragma once
 
-#include "../links/links.h"
-#include "../path/path.h"
+#include "../content/content.h"
 
 namespace snap
 {
@@ -60,8 +58,8 @@ public:
     virtual int64_t     do_update(int64_t last_updated);
 
     void                on_bootstrap(snap_child *snap);
-    void                on_process_attachment(QSharedPointer<QtCassandra::QCassandraTable> files_table, QByteArray const& key, snap_child::post_file_t const& file);
-    void                on_check_attachment_security(snap_child::post_file_t const& file, server::permission_flag& secure, bool const fast);
+    void                on_process_attachment(QByteArray const& key, content::attachment_file const& file);
+    void                on_check_attachment_security(content::attachment_file const& file, content::permission_flag& secure, bool const fast);
 
     void                register_dynamic_plugin(javascript_dynamic_plugin *p);
 
@@ -82,6 +80,4 @@ private:
 
 } // namespace javascript
 } // namespace snap
-#endif
-// SNAP_JAVSCRIPT_H
 // vim: ts=4 sw=4 et

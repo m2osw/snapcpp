@@ -1,5 +1,5 @@
 // Snap Manager -- snap database manager to work on Cassandra's tables
-// Copyright (C) 2011-2012  Made to Order Software Corp.
+// Copyright (C) 2011-2013  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -88,7 +88,7 @@ snap_manager::snap_manager(QWidget *snap_parent)
     f_tabs->setTabEnabled(TAB_WEBSITES, false);
     f_tabs->setTabEnabled(TAB_SITES, false);
 
-    // Snap! Server Connect
+    // Snap! Server Test and Statistics
     QPushButton *b = getChild<QPushButton>(this, "snapTest");
     connect(b, SIGNAL(clicked()), this, SLOT(snapTest()));
     b = getChild<QPushButton>(this, "snapStats");
@@ -459,7 +459,8 @@ void snap_manager::on_f_cassandraConnectButton_clicked()
     f_cassandraConnectButton->setEnabled( false );
     f_cassandraDisconnectButton->setEnabled( false );
 
-    if(f_cassandra.isNull()) {
+    if(f_cassandra.isNull())
+    {
         f_cassandra = new QtCassandra::QCassandra;
     }
 
@@ -470,21 +471,25 @@ void snap_manager::on_f_cassandraConnectButton_clicked()
     // retrieve the current values
     QLineEdit *l = getChild<QLineEdit>(this, "cassandraHost");
     f_cassandra_host = l->text();
-    if(f_cassandra_host.isEmpty()) {
+    if(f_cassandra_host.isEmpty())
+    {
         f_cassandra_host = "localhost";
     }
     l = getChild<QLineEdit>(this, "cassandraPort");
-    if(l->text().isEmpty()) {
+    if(l->text().isEmpty())
+    {
         f_cassandra_port = 9160;
     }
-    else {
+    else
+    {
         f_cassandra_port = l->text().toInt();
     }
 
     // if old != new then disconnect
-    if(f_cassandra_host == old_host && f_cassandra_port == old_port && f_cassandra->isConnected()) {
+    if(f_cassandra_host == old_host && f_cassandra_port == old_port && f_cassandra->isConnected())
+    {
         // nothing changed, stay put
-        f_cassandraConnectButton->setEnabled( true );
+        on_f_cassandraDisconnectButton_clicked();
         return;
     }
 
@@ -501,11 +506,16 @@ void snap_manager::on_f_cassandraConnectButton_clicked()
     // reconnect with the new info
     // note: the disconnect does nothing if not already connected
     f_cassandra->disconnect();
-    if(!f_cassandra->connect(f_cassandra_host, f_cassandra_port)) {
+    if(!f_cassandra->connect(f_cassandra_host, f_cassandra_port))
+    {
         // did not work...
         console->addItem("Not connected.");
         QMessageBox msg(QMessageBox::Critical, "Connection to Cassandra", "Snap! Manager was not able to connect to your Cassandra Cluster. Please verify that it is up and running and accessible (no firewall) from this computer.", QMessageBox::Ok, this);
         msg.exec();
+
+        // give user a chance to try again with another IP or
+        // possibly to start the Cassandra server
+        on_f_cassandraDisconnectButton_clicked();
         return;
     }
 
@@ -523,6 +533,10 @@ void snap_manager::on_f_cassandraConnectButton_clicked()
         console->addItem("The \"" + context_name + "\" context is not defined.");
         QMessageBox msg(QMessageBox::Critical, "Connection to Cassandra", "Snap! Manager was able to connect to your Cassandra Cluster but it does not include a \"" + context_name + "\" context. The Snap! Server creates the necessary context and tables, have you run it?", QMessageBox::Ok, this);
         msg.exec();
+
+        // give user a chance to try again with another IP or
+        // possibly to start the Cassandra server
+        on_f_cassandraDisconnectButton_clicked();
         return;
     }
 
@@ -538,6 +552,10 @@ void snap_manager::on_f_cassandraConnectButton_clicked()
             console->addItem("The \"" + table_name + "\" table is not defined.");
             QMessageBox msg(QMessageBox::Critical, "Connection to Cassandra", "Snap! Manager was able to connect to your Cassandra Cluster but it does not include a \"" + table_name + "\" table. The Snap! Server creates the necessary context and tables, have you run it?", QMessageBox::Ok, this);
             msg.exec();
+
+            // give user a chance to try again with another IP or
+            // possibly to start the Cassandra server
+            on_f_cassandraDisconnectButton_clicked();
             return;
         }
     }

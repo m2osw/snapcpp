@@ -1,5 +1,5 @@
 // Snap Websites Servers -- snap websites child process hanlding
-// Copyright (C) 2011-2013  Made to Order Software Corp.
+// Copyright (C) 2011-2014  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -22,15 +22,15 @@
 
 inline std::ostream& operator << ( std::ostream& str, const QString& qstr )
 {
-	str << qstr.toUtf8().data();
-	return str;
+    str << qstr.toUtf8().data();
+    return str;
 }
 
 
 inline std::ostream& operator << ( std::ostream& str, const QStringRef& qstr )
 {
-	str << qstr.toString();
-	return str;
+    str << qstr.toString();
+    return str;
 }
 
 

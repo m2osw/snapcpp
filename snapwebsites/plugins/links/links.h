@@ -1,5 +1,5 @@
 // Snap Websites Server -- links
-// Copyright (C) 2012-2013  Made to Order Software Corp.
+// Copyright (C) 2012-2014  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,8 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-#ifndef SNAP_LINKS_H
-#define SNAP_LINKS_H
+#pragma once
 
 #include "snapwebsites.h"
 
@@ -24,51 +23,52 @@ namespace snap
 namespace links
 {
 
-enum name_t {
-    SNAP_NAME_LINKS_TABLE,         // Cassandra Table used for content (pages, comments, tags, vocabularies, etc.)
+enum name_t
+{
+    SNAP_NAME_LINKS_TABLE,         // Cassandra Table used for links
     SNAP_NAME_LINKS_NAMESPACE
 };
-const char *get_name(name_t name) __attribute__ ((const));
+char const *get_name(name_t name) __attribute__ ((const));
 
 
 class links_exception : public snap_exception
 {
 public:
-    links_exception(const char *what_msg) : snap_exception("Links: " + std::string(what_msg)) {}
-    links_exception(const std::string& what_msg) : snap_exception("Links: " + what_msg) {}
-    links_exception(const QString& what_msg) : snap_exception("Links: " + what_msg) {}
+    links_exception(char const *what_msg) : snap_exception("Links: " + std::string(what_msg)) {}
+    links_exception(std::string const& what_msg) : snap_exception("Links: " + what_msg) {}
+    links_exception(QString const& what_msg) : snap_exception("Links: " + what_msg) {}
 };
 
 class links_exception_missing_links_table : public links_exception
 {
 public:
-    links_exception_missing_links_table(const char *what_msg) : links_exception(what_msg) {}
-    links_exception_missing_links_table(const std::string& what_msg) : links_exception(what_msg) {}
-    links_exception_missing_links_table(const QString& what_msg) : links_exception(what_msg) {}
+    links_exception_missing_links_table(char const *what_msg) : links_exception(what_msg) {}
+    links_exception_missing_links_table(std::string const& what_msg) : links_exception(what_msg) {}
+    links_exception_missing_links_table(QString const& what_msg) : links_exception(what_msg) {}
 };
 
-class links_exception_missing_content_table : public links_exception
+class links_exception_missing_data_table : public links_exception
 {
 public:
-    links_exception_missing_content_table(const char *what_msg) : links_exception(what_msg) {}
-    links_exception_missing_content_table(const std::string& what_msg) : links_exception(what_msg) {}
-    links_exception_missing_content_table(const QString& what_msg) : links_exception(what_msg) {}
+    links_exception_missing_data_table(char const *what_msg) : links_exception(what_msg) {}
+    links_exception_missing_data_table(std::string const& what_msg) : links_exception(what_msg) {}
+    links_exception_missing_data_table(QString const& what_msg) : links_exception(what_msg) {}
 };
 
 class links_exception_invalid_name : public links_exception
 {
 public:
-    links_exception_invalid_name(const char *what_msg) : links_exception(what_msg) {}
-    links_exception_invalid_name(const std::string& what_msg) : links_exception(what_msg) {}
-    links_exception_invalid_name(const QString& what_msg) : links_exception(what_msg) {}
+    links_exception_invalid_name(char const *what_msg) : links_exception(what_msg) {}
+    links_exception_invalid_name(std::string const& what_msg) : links_exception(what_msg) {}
+    links_exception_invalid_name(QString const& what_msg) : links_exception(what_msg) {}
 };
 
 class links_exception_invalid_db_data : public links_exception
 {
 public:
-    links_exception_invalid_db_data(const char *what_msg) : links_exception(what_msg) {}
-    links_exception_invalid_db_data(const std::string& what_msg) : links_exception(what_msg) {}
-    links_exception_invalid_db_data(const QString& what_msg) : links_exception(what_msg) {}
+    links_exception_invalid_db_data(char const *what_msg) : links_exception(what_msg) {}
+    links_exception_invalid_db_data(std::string const& what_msg) : links_exception(what_msg) {}
+    links_exception_invalid_db_data(QString const& what_msg) : links_exception(what_msg) {}
 };
 
 
@@ -76,10 +76,11 @@ public:
 class link_info
 {
 public:
-    link_info(const QString& new_name = "", bool unique = false, const QString& new_key = "")
+    link_info(QString const& new_name = "", bool unique = false, QString const& new_key = "", snap_version::version_number_t branch_number = static_cast<snap_version::basic_version_number_t>(snap_version::SPECIAL_VERSION_UNDEFINED))
         : f_unique(unique)
         , f_name(new_name)
         , f_key(new_key)
+        , f_branch(branch_number)
     {
         // empty is valid on construction
         if(!new_name.isEmpty())
@@ -88,39 +89,57 @@ public:
         }
     }
 
-    void set_name(const QString& new_name, bool unique = false)
+    void set_name(QString const& new_name, bool unique = false)
     {
         verify_name(new_name);
         f_unique = unique;
         f_name = new_name;
     }
-    void set_key(const QString& new_key)
+    void set_key(QString const& new_key)
     {
         f_key = new_key;
+    }
+    void set_branch(snap_version::version_number_t branch_number)
+    {
+        f_branch = branch_number;
     }
 
     bool is_unique() const
     {
         return f_unique;
     }
-    const QString& name() const
+    QString const& name() const
     {
         return f_name;
     }
-    const QString& key() const
+    QString const& key() const
     {
         return f_key;
     }
+    QString row_key() const
+    {
+        if(f_branch == snap_version::SPECIAL_VERSION_INVALID
+        || f_branch == snap_version::SPECIAL_VERSION_UNDEFINED)
+        {
+            throw snap_logic_exception("the row_key() was requested with the branch still undefined");
+        }
+        return QString("%1#%2").arg(f_key).arg(f_branch);
+    }
+    snap_version::version_number_t branch() const
+    {
+        return f_branch;
+    }
 
     QString data() const;
-    void from_data(const QString& db_data);
+    void from_data(QString const& db_data);
 
-    static void verify_name(const QString& name);
+    static void verify_name(QString const& name);
 
 private:
-    controlled_vars::fbool_t    f_unique;
-    QString                     f_name;
-    QString                     f_key;
+    controlled_vars::fbool_t        f_unique;
+    QString                         f_name;
+    QString                         f_key;
+    snap_version::version_number_t  f_branch;
 };
 
 class link_context
@@ -131,7 +150,7 @@ public:
 private:
     friend class links;
 
-    link_context(::snap::snap_child *snap, const link_info& info);
+    link_context(::snap::snap_child *snap, link_info const& info);
 
     zpsnap_child_t                                  f_snap;
     link_info                                       f_info;
@@ -155,10 +174,10 @@ public:
     void                on_bootstrap(::snap::snap_child *snap);
 
     // should those be events?
-    void                create_link(const link_info& src, const link_info& dst);
-    void                delete_link(const link_info& info);
+    void                create_link(link_info const& src, link_info const& dst);
+    void                delete_link(link_info const& info);
 
-    QSharedPointer<link_context> new_link_context(const link_info& info);
+    QSharedPointer<link_context> new_link_context(link_info const& info);
 
 private:
     void                initial_update(int64_t variables_timestamp);
@@ -166,11 +185,9 @@ private:
 
     zpsnap_child_t                                  f_snap;
     QSharedPointer<QtCassandra::QCassandraTable>    f_links_table;
-    QSharedPointer<QtCassandra::QCassandraTable>    f_content_table;
+    QSharedPointer<QtCassandra::QCassandraTable>    f_data_table;
 };
 
 } // namespace links
 } // namespace snap
-#endif
-// SNAP_LINKS_H
 // vim: ts=4 sw=4 et

@@ -14,12 +14,12 @@
 // You should have received a copy of the GNU General Public License
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-#ifndef SNAP_SNAPCHILD_H
-#define SNAP_SNAPCHILD_H
+#pragma once
 
 #include "snap_uri.h"
 #include "snap_signals.h"
 #include "snap_exception.h"
+#include "snap_version.h"
 #include "http_cookie.h"
 #include "udp_client_server.h"
 #include <stdlib.h>
@@ -74,15 +74,6 @@ class server;
 class snap_child
 {
 public:
-    enum date_format_t
-    {
-        DATE_FORMAT_SHORT,
-        DATE_FORMAT_LONG,
-        DATE_FORMAT_TIME,
-        DATE_FORMAT_EMAIL,
-        DATE_FORMAT_HTTP
-    };
-
     enum http_code_t
     {
         // a couple of internal codes used here and there (never sent to user)
@@ -170,6 +161,16 @@ public:
         HTTP_CODE_NETWORK_READ_TIMEOUT_ERROR = 598,
         HTTP_CODE_NETWORK_CONNECT_TIMEOUT_ERROR = 599
     };
+
+    enum date_format_t
+    {
+        DATE_FORMAT_SHORT,
+        DATE_FORMAT_LONG,
+        DATE_FORMAT_TIME,
+        DATE_FORMAT_EMAIL,
+        DATE_FORMAT_HTTP
+    };
+
     enum status_t
     {
         SNAP_CHILD_STATUS_READY,
@@ -223,11 +224,53 @@ public:
     // map indexed by filename
     typedef QMap<QString, post_file_t> post_file_map_t;
 
+    struct language_name_t
+    {
+        char const *    f_language;         // full English name of the language
+        char const *    f_native;           // full Native name of the language
+        char const      f_short_name[3];    // expected name (xx); must be 2 characters
+        char const *    f_other_names;      // 3 or 4 letter names separated by commas; if NULL no extras
+    };
+
+    struct country_name_t
+    {
+        char const      f_abbreviation[3];  // must be 2 characters
+        char const *    f_name;
+    };
+
+    class locale_info_t
+    {
+    public:
+        void            set_language(QString const& language) { f_language = language; }
+        void            set_country(QString const& country) { f_country = country; }
+
+        QString const&  get_language() const { return f_language; }
+        QString const&  get_country() const { return f_country; }
+
+    private:
+        QString         f_language;
+        QString         f_country;
+    };
+    typedef QVector<locale_info_t> locale_info_vector_t;
+
     typedef int header_mode_t;
     static header_mode_t const HEADER_MODE_NO_ERROR     = 0x0001;
     static header_mode_t const HEADER_MODE_REDIRECT     = 0x0002;
     static header_mode_t const HEADER_MODE_ERROR        = 0x0004;
     static header_mode_t const HEADER_MODE_EVERYWHERE   = 0xFFFF;
+
+    enum compression_t
+    {
+        COMPRESSION_INVALID = -2,
+        COMPRESSION_UNDEFINED = -1,
+        COMPRESSION_IDENTITY = 0,   // no compression
+        COMPRESSION_GZIP,
+        COMPRESSION_DEFLATE,        // zlib without the gzip magic numbers
+        COMPRESSION_BZ2,
+        COMPRESSION_SDCH
+    };
+    typedef controlled_vars::limited_auto_init<compression_t, COMPRESSION_INVALID, COMPRESSION_DEFLATE, COMPRESSION_UNDEFINED> safe_compression_t;
+    typedef QVector<safe_compression_t> compression_vector_t;
 
                                 snap_child(server_pointer_t s);
                                 ~snap_child();
@@ -237,6 +280,8 @@ public:
     status_t                    check_status();
 
     snap_uri const&             get_uri() const;
+    bool                        has_post() const { return f_has_post; }
+    void                        set_action(QString const& action);
 
     void                        exit(int code);
     bool                        is_debug() const;
@@ -260,9 +305,24 @@ public:
     void                        verify_permissions(QString const& path, permission_error_callback& err_callback);
     QString                     default_action(QString uri_path);
     void                        process_post();
+    QString                     get_language();
+    QString                     get_country() const;
+    QString                     get_language_key();
+    locale_info_vector_t const& get_plugins_locales();
+    locale_info_vector_t const& get_browser_locales() const;
+    bool                        get_working_branch() const;
+    snap_version::version_number_t get_branch() const;
+    snap_version::version_number_t get_revision() const;
+    QString                     get_revision_key() const; // <branch>.<revision> as a string (pre-defined)
+    compression_vector_t        get_compression() const;
     static void                 canonicalize_path(QString& path);
     static QString              date_to_string(int64_t v, date_format_t date_format = DATE_FORMAT_SHORT);
     static time_t               string_to_date(QString const& date);
+    bool                        verify_locale(QString& lang, QString& country, bool generate_errors);
+    static bool                 verify_language_name(QString& lang);
+    static bool                 verify_country_name(QString& country);
+    static language_name_t const *get_languages();
+    static country_name_t const *get_countries();
 
     QString                     snapenv(QString const& name) const;
     bool                        postenv_exists(QString const& name) const;
@@ -309,6 +369,7 @@ private:
     void                        connect_cassandra();
     void                        canonicalize_domain();
     void                        canonicalize_website();
+    void                        canonicalize_options();
     void                        site_redirect();
     void                        init_plugins();
     void                        update_plugins(QStringList const& list_of_plugins);
@@ -328,6 +389,7 @@ private:
     controlled_vars::fbool_t            f_new_content;
     controlled_vars::fbool_t            f_is_child;
     controlled_vars::fbool_t            f_is_being_initialized;
+    controlled_vars::fbool_t            f_ready; // becomes true just before the f_server->execute() call
     pid_t                               f_child_pid;
     int                                 f_socket;
     environment_map_t                   f_env;
@@ -345,11 +407,20 @@ private:
     QBuffer                             f_output;
     header_map_t                        f_header;
     cookie_map_t                        f_cookies;
+    QString                             f_language;
+    QString                             f_country;
+    QString                             f_language_key;
+    controlled_vars::fbool_t            f_plugins_locales_was_not_ready;
+    locale_info_vector_t                f_plugins_locales;
+    locale_info_vector_t                f_browser_locales;
+    controlled_vars::fbool_t            f_working_branch;
+    snap_version::version_number_t      f_branch;
+    snap_version::version_number_t      f_revision;
+    QString                             f_revision_key;
+    compression_vector_t                f_compressions;
 };
 
 typedef std::vector<snap_child *> snap_child_vector_t;
 
 } // namespace snap
-#endif
-// SNAP_SNAPCHILD_H
 // vim: ts=4 sw=4 et

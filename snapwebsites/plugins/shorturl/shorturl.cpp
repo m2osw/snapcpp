@@ -1,5 +1,5 @@
 // Snap Websites Server -- short URL handling
-// Copyright (C) 2013  Made to Order Software Corp.
+// Copyright (C) 2013-2014  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -16,10 +16,14 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "shorturl.h"
-#include "../content/content.h"
+
+#include "../output/output.h"
 #include "../messages/messages.h"
+
 #include "not_reached.h"
+
 #include <QtCassandra/QCassandraLock.h>
+
 #include "poison.h"
 
 
@@ -215,13 +219,13 @@ QSharedPointer<QtCassandra::QCassandraTable> shorturl::get_shorturl_table()
  * Note that the path was canonicalized by the path plugin and thus it does
  * not require any further corrections.
  *
- * \param[in] cpath  The canonicalized path being managed.
+ * \param[in,out] ipath  The canonicalized path being managed.
  *
  * \return true if the content is properly generated, false otherwise.
  */
-bool shorturl::on_path_execute(const QString& cpath)
+bool shorturl::on_path_execute(content::path_info_t& ipath)
 {
-    f_snap->output(layout::layout::instance()->apply_layout(cpath, this));
+    f_snap->output(layout::layout::instance()->apply_layout(ipath, this));
 
     return true;
 }
@@ -241,16 +245,17 @@ bool shorturl::on_path_execute(const QString& cpath)
  * to generate the final output.
  *
  * \param[in] l  The layout pointer.
- * \param[in] path  The path being managed.
+ * \param[in,out] ipath  The path being managed.
  * \param[in,out] page  The page being generated.
  * \param[in,out] body  The body being generated.
+ * \param[in] ctemplate  The fallback path in case ipath does not have a value.
  */
-void shorturl::on_generate_main_content(layout::layout *l, const QString& cpath, QDomElement& page, QDomElement& body, const QString& ctemplate)
+void shorturl::on_generate_main_content(layout::layout *l, content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate)
 {
-    if(cpath.startsWith("s/"))
+    if(ipath.get_cpath().startsWith("s/"))
     {
         bool ok;
-        int64_t const identifier(cpath.mid(2).toLongLong(&ok, 36));
+        int64_t const identifier(ipath.get_cpath().mid(2).toLongLong(&ok, 36));
         if(ok)
         {
             QSharedPointer<QtCassandra::QCassandraTable> shorturl_table(get_shorturl_table());
@@ -264,19 +269,23 @@ void shorturl::on_generate_main_content(layout::layout *l, const QString& cpath,
                 // TODO: the HTTP link header should not use the set_header()
                 //       because we may have many links and they should all
                 //       appear in one "Link: ..." line
-                QString http_link("<" + cpath + ">; rel=shorturl");
+                QString http_link("<" + ipath.get_cpath() + ">; rel=shorturl");
                 f_snap->set_header(get_name(SNAP_NAME_SHORTURL_HTTP_LINK), http_link, snap_child::HEADER_MODE_REDIRECT);
                 f_snap->page_redirect(url.stringValue(), snap_child::HTTP_CODE_FOUND);
                 NOTREACHED();
             }
         }
         // else -- warn or something?
-        content::content::instance()->on_generate_main_content(l, "s", page, body, ctemplate);
+
+        // TODO: make some form of copy from ipath first?
+        content::path_info_t shortcut_path;
+        shortcut_path.set_path("s");
+        output::output::instance()->on_generate_main_content(l, shortcut_path, page, body, ctemplate);
     }
     else
     {
         // a type is just like a regular page
-        content::content::instance()->on_generate_main_content(l, cpath, page, body, ctemplate);
+        output::output::instance()->on_generate_main_content(l, ipath, page, body, ctemplate);
     }
 }
 
@@ -295,14 +304,14 @@ void shorturl::on_generate_main_content(layout::layout *l, const QString& cpath,
  */
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
-void shorturl::on_generate_header_content(layout::layout *l, const QString& cpath, QDomElement& header, QDomElement& metadata, const QString& ctemplate)
+void shorturl::on_generate_header_content(layout::layout *l, content::path_info_t& ipath, QDomElement& header, QDomElement& metadata, const QString& ctemplate)
 {
     content::field_search::search_result_t result;
 
     FIELD_SEARCH
         (content::field_search::COMMAND_MODE, content::field_search::SEARCH_MODE_EACH)
         (content::field_search::COMMAND_ELEMENT, metadata)
-        (content::field_search::COMMAND_PATH, cpath)
+        (content::field_search::COMMAND_PATH_INFO_GLOBAL, ipath)
 
         // /snap/head/metadata/desc[@type="shorturl"]/data
         (content::field_search::COMMAND_FIELD_NAME, get_name(SNAP_NAME_SHORTURL_URL))
@@ -324,10 +333,10 @@ void shorturl::on_generate_header_content(layout::layout *l, const QString& cpat
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
-void shorturl::on_create_content(QString const& path, QString const& owner, QString const& type)
+void shorturl::on_create_content(content::path_info_t& ipath, QString const& owner, QString const& type)
 {
     // do not ever create short URLs for admin pages
-    if(path == "admin" || path.startsWith("admin/"))
+    if(ipath.get_cpath() == "admin" || ipath.get_cpath().startsWith("admin/"))
     {
         return;
     }
@@ -389,8 +398,7 @@ void shorturl::on_create_content(QString const& path, QString const& owner, QStr
         // the lock automatically goes away here
     }
 
-    QString const site_key(f_snap->get_site_key_with_slash());
-    QString const key(site_key + path);
+    QString const key(ipath.get_key());
 
     QSharedPointer<QtCassandra::QCassandraTable> content_table(content::content::instance()->get_content_table());
     QSharedPointer<QtCassandra::QCassandraRow> row(content_table->row(key));
@@ -403,7 +411,8 @@ void shorturl::on_create_content(QString const& path, QString const& owner, QStr
     uint64_t const start_date(f_snap->get_uri().option("start_date").toLongLong());
     row->cell(get_name(SNAP_NAME_SHORTURL_DATE))->setValue(start_date);
 
-    // TODO allow the user to change the number parameters
+    // TODO allow the user to change the "%1" number parameters
+    QString const site_key(f_snap->get_site_key_with_slash());
     QString const shorturl_url(site_key + QString("s/%1").arg(identifier, 0, 36, QChar('0')));
     QtCassandra::QCassandraValue shorturl_value(shorturl_url);
     row->cell(get_name(SNAP_NAME_SHORTURL_URL))->setValue(shorturl_value);
@@ -421,15 +430,15 @@ void shorturl::on_create_content(QString const& path, QString const& owner, QStr
  * This function checks that cpath matches the shorturl introducer which
  * is "/s/" by default.
  *
- * \param[in] path_plugin  A pointer to the path plugin.
- * \param[in] cpath  The path being handled dynamically.
+ * \param[in,out] ipath  The path being handled dynamically.
+ * \param[in,out] plugin_info  If you understand that cpath, set yourself here.
  */
-void shorturl::on_can_handle_dynamic_path(path::path *path_plugin, const QString& cpath)
+void shorturl::on_can_handle_dynamic_path(content::path_info_t& ipath, path::dynamic_plugin_t& plugin_info)
 {
-    if(cpath.left(2) == "s/")
+    if(ipath.get_cpath().left(2) == "s/")
     {
         // tell the path plugin that this is ours
-        path_plugin->handle_dynamic_path(this);
+        plugin_info.set_plugin(this);
     }
 }
 

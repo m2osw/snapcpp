@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!--
 Snap Websites Server == antivirus plugin database setup
-Copyright (C) 2013  Made to Order Software Corp.
+Copyright (C) 2013-2014  Made to Order Software Corp.
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -19,8 +19,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 -->
 <snap-tree>
   <content path="/admin/settings/antivirus">
-    <param name="content::title">Anti-Virus Settings</param>
-    <param name="content::body">[form::source]</param>
+    <param name="content::title" revision="revision">Anti-Virus Settings</param>
+    <param name="content::body" revision="revision">[form::source]</param>
     <param name="form::source">settings</param>
     <link name="permissions::administer" to="permissions::administer" mode="*:*">/types/permissions/rights/administer/website/info</link>
   </content>

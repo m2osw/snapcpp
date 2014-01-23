@@ -1,5 +1,5 @@
 // Snap Websites Server -- different feed handlers (RSS, PubSubHubHub, etc.)
-// Copyright (C) 2013  Made to Order Software Corp.
+// Copyright (C) 2013-2014  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -100,7 +100,7 @@ void feed::on_bootstrap(snap_child *snap)
 
     SNAP_LISTEN(feed, "layout", layout::layout, generate_header_content, _1, _2, _3, _4, _5);
     SNAP_LISTEN(feed, "content", content::content, create_content, _1, _2, _3);
-    SNAP_LISTEN(feed, "path", path::path, can_handle_dynamic_path, _1, _2);
+    SNAP_LISTEN(feed, "path", path::path, can_handle_dynamic_path, _1, _2, _3);
 }
 
 /** \brief Get a pointer to the feed plugin.
@@ -406,15 +406,15 @@ void feed::on_create_content(QString const& path, QString const& owner, QString 
  * This function checks that cpath matches the feed introducer which
  * is "/s/" by default.
  *
- * \param[in] path_plugin  A pointer to the path plugin.
  * \param[in] cpath  The path being handled dynamically.
+ * \param[in,out] plugin_info  If you understand that cpath, set yourself here.
  */
-void feed::on_can_handle_dynamic_path(path::path *path_plugin, const QString& cpath)
+void feed::on_can_handle_dynamic_path(const QString& cpath, path::dynamic_plugin_t& plugin_info)
 {
     if(cpath.left(2) == "s/")
     {
         // tell the path plugin that this is ours
-        path_plugin->handle_dynamic_path(this);
+        plugin_info.set_plugin(this);
     }
 }
 

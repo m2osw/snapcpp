@@ -1,5 +1,5 @@
 // Snap Websites Server -- Sitemap XML
-// Copyright (C) 2011-2012  Made to Order Software Corp.
+// Copyright (C) 2011-2014  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -16,13 +16,16 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "sitemapxml.h"
+
+#include "../permissions/permissions.h"
+
 #include "plugins.h"
 #include "log.h"
 #include "qdomnodemodel.h"
 #include "not_reached.h"
-#include "../content/content.h"
-#include "../permissions/permissions.h"
+
 #include <iostream>
+
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
 #include <QXmlQuery>
@@ -447,11 +450,13 @@ void sitemapxml::on_generate_robotstxt(robotstxt::robotstxt *r)
  * avoid this problem, we need to keep track of who reads what and
  * keep a copy of the old sitemaps for a little while.
  *
- * \param[in] url  The URL path used to access this page.
+ * \param[in] ipath  The URL path used to access this page.
+ *
+ * \return true if the sitemap.xml file is properly generated, false otherwise.
  */
-bool sitemapxml::on_path_execute(const QString& url)
+bool sitemapxml::on_path_execute(content::path_info_t& ipath)
 {
-    if(url == "sitemap.xsl")
+    if(ipath.get_cpath() == "sitemap.xsl")
     {
         // this is the XSL file used to transform the XML sitemap to HTML
         // and thus make it human readable (outside of the text version)
@@ -491,7 +496,7 @@ bool sitemapxml::on_path_execute(const QString& url)
     if(1 == count)
     {
         // special case when there is just one file
-        if(url != "sitemap.xml" && url != "sitemap.txt")
+        if(ipath.get_cpath() != "sitemap.xml" && ipath.get_cpath() != "sitemap.txt")
         {
             // wrong filename!
             return false;
@@ -509,7 +514,7 @@ bool sitemapxml::on_path_execute(const QString& url)
 
         // there are "many" files, that's handled differently than 1 file
         QRegExp re("sitemap([0-9]*).xml");
-        if(!re.exactMatch(url))
+        if(!re.exactMatch(ipath.get_cpath()))
         {
             // invalid filename for a sitemap
             return false;
@@ -524,7 +529,6 @@ bool sitemapxml::on_path_execute(const QString& url)
         }
         else
         {
-
             if(sitemap_number.size() != 2)
             {
                 // invalid filename?! (this case should never happen)
@@ -540,7 +544,7 @@ bool sitemapxml::on_path_execute(const QString& url)
             }
 
             // send the requested sitemap
-            sitemap_data = f_snap->get_site_parameter("sitemapxml::" + url);
+            sitemap_data = f_snap->get_site_parameter("sitemapxml::" + ipath.get_cpath());
         }
     }
 

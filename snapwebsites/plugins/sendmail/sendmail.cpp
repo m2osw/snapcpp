@@ -16,20 +16,25 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "sendmail.h"
+
+#include "../output/output.h"
+#include "../users/users.h"
+
 #include "log.h"
 #include "mkgmtime.h"
 #include "snap_magic.h"
 #include "qdomxpath.h"
 #include "quoted_printable.h"
-#include "../content/content.h"
-#include "../users/users.h"
 #include "process.h"
+#include "snap_pipe.h"
 
 #include <libtld/tld.h>
 #include <QtCassandra/QCassandraValue.h>
 #include <QtSerialization/QSerializationComposite.h>
 #include <QtSerialization/QSerializationFieldString.h>
 #include <QtSerialization/QSerializationFieldTag.h>
+
+#include <fstream>
 #include <iostream>
 
 #include "poison.h"
@@ -2043,7 +2048,9 @@ void sendmail::sendemail(const QString& key, const QString& unique_key)
         //      with links back to the website (for images, CSS...) to
         //      embed, use the sub-attachment feature
 
-        const QString html_body(layout::layout::instance()->apply_layout(path, this));
+        content::path_info_t ipath;
+        ipath.set_path(path);
+        const QString html_body(layout::layout::instance()->apply_layout(ipath, this));
 
         // the output only includes valid ASCII (controls + ' ' to '~')
         const std::string encoded_body = quoted_printable::encode(html_body.toUtf8().data(), quoted_printable::QUOTED_PRINTABLE_FLAG_LFONLY);
@@ -2138,20 +2145,10 @@ void sendmail::sendemail(const QString& key, const QString& unique_key)
     cmd += " ";
     cmd += m.f_email_only.c_str();
 
-    // TODO: put the FILE pointer in an RAII class!!!
-    //       we're looping forever so it would leak quite a bit if not properly
-    //       closed with a pclose().
-    FILE *f(popen(cmd.toUtf8().data(), "w"));
+    // XXX: capture the throw in case the pipe cannot be created?
+    snap_pipe spipe(cmd, snap_pipe::PIPE_MODE_IN);
+    std::ostream f(&spipe);
 
-    // To debug, you may set *f to stdout, but make sure to not pclose(f);
-    // once done with it!
-    //FILE *f(stdout);
-
-    if(f == NULL)
-    {
-        // TODO: register the error
-        return;
-    }
     // convert email data to text and send that to the sendmail command line
     email::header_map_t headers(f_email.get_all_headers());
     const bool body_only(max == 1 && plain_text.isEmpty());
@@ -2230,20 +2227,25 @@ void sendmail::sendemail(const QString& key, const QString& unique_key)
                                             it != headers.end();
                                             ++it)
     {
-        fprintf(f, "%s: %s\n", it.key().toUtf8().data(), it.value().toUtf8().data());
+        f << it.key() << ": " << it.value() << std::endl;
+        //fprintf(f, "%s: %s\n", it.key().toUtf8().data(), it.value().toUtf8().data());
     }
-    fprintf(f, "X-Generated-By: Snap! Websites C++ v" SNAPWEBSITES_VERSION_STRING " (http://snapwebsites.org/)\n"
-               "X-Mailer: Snap! Websites C++ v" SNAPWEBSITES_VERSION_STRING " (http://snapwebsites.org/)\n");
+    f << "X-Generated-By: Snap! Websites C++ v" SNAPWEBSITES_VERSION_STRING " (http://snapwebsites.org/)" << std::endl
+      << "X-Mailer: Snap! Websites C++ v" SNAPWEBSITES_VERSION_STRING " (http://snapwebsites.org/)" << std::endl;
+    //fprintf(f, "X-Generated-By: Snap! Websites C++ v" SNAPWEBSITES_VERSION_STRING " (http://snapwebsites.org/)\n"
+    //           "X-Mailer: Snap! Websites C++ v" SNAPWEBSITES_VERSION_STRING " (http://snapwebsites.org/)\n");
 
     // one empty line before the contents
-    fprintf(f, "\n");
+    f << std::endl;
+    //fprintf(f, "\n");
 
     if(body_only)
     {
         // in this case we only have one entry, probably HTML, and thus we
         // can avoid the multi-part headers and attachments
         email::email_attachment attachment(f_email.get_attachment(0));
-        fprintf(f, "%s\n", attachment.get_data().data());
+        f << attachment.get_data().data() << std::endl;
+        //fprintf(f, "%s\n", attachment.get_data().data());
     }
     else
     {
@@ -2251,35 +2253,50 @@ void sendmail::sendemail(const QString& key, const QString& unique_key)
         if(!plain_text.isEmpty())
         {
             // if we have plain text then we have alternatives
-            fprintf(f, "--%s\n", boundary.toUtf8().data());
-            fprintf(f, "Content-Type: multipart/alternative;\n  boundary=\"%s.msg\"\n\n", boundary.toUtf8().data());
-
-            fprintf(f, "--%s.msg\n", boundary.toUtf8().data());
-            fprintf(f, "Content-Type: text/plain; charset=\"utf-8\"\n");
+            f << "--" << boundary << std::endl
+              << "Content-Type: multipart/alternative;" << std::endl
+              << "boundary=\"" << boundary << ".msg\"" << std::endl
+              << std::endl
+              << "--" << boundary << ".msg" << std::endl
+              << "Content-Type: text/plain; charset=\"utf-8\"" << std::endl
+              << "Content-Transfer-Encoding: quoted-printable" << std::endl
+              << "Content-Description: Mail message body" << std::endl
+              << std::endl
+              << quoted_printable::encode(plain_text.toUtf8().data()) << std::endl;
+            //fprintf(f, "--%s\n", boundary.toUtf8().data());
+            //fprintf(f, "Content-Type: multipart/alternative;\n  boundary=\"%s.msg\"\n\n", boundary.toUtf8().data());
+            //fprintf(f, "--%s.msg\n", boundary.toUtf8().data());
+            //fprintf(f, "Content-Type: text/plain; charset=\"utf-8\"\n");
             //fprintf(f, "MIME-Version: 1.0\n"); -- only show this one in the main header
-            fprintf(f, "Content-Transfer-Encoding: quoted-printable\n");
-            fprintf(f, "Content-Description: Mail message body\n");
-            fprintf(f, "\n");
-            fprintf(f, "%s\n", quoted_printable::encode(plain_text.toUtf8().data()).c_str());
+            //fprintf(f, "Content-Transfer-Encoding: quoted-printable\n");
+            //fprintf(f, "Content-Description: Mail message body\n");
+            //fprintf(f, "\n");
+            //fprintf(f, "%s\n", quoted_printable::encode(plain_text.toUtf8().data()).c_str());
             if(i < max)
             {
                 // now include the HTML
                 email::email_attachment html_attachment(f_email.get_attachment(0));
-                fprintf(f, "--%s.msg\n", boundary.toUtf8().data());
+                f << "--" << boundary << ".msg" << std::endl;
+                //fprintf(f, "--%s.msg\n", boundary.toUtf8().data());
                 email::header_map_t attachment_headers(html_attachment.get_all_headers());
                 for(email::header_map_t::const_iterator it(attachment_headers.begin());
                                                         it != attachment_headers.end();
                                                         ++it)
                 {
-                    fprintf(f, "%s: %s\n", it.key().toUtf8().data(), it.value().toUtf8().data());
+                    f << it.key() << ": " << it.value() << std::endl;
+                    //fprintf(f, "%s: %s\n", it.key().toUtf8().data(), it.value().toUtf8().data());
                 }
 
                 // one empty line before the contents
-                fprintf(f, "\n");
+                f << std::endl;
+                //fprintf(f, "\n");
 
                 // here the data is already be encoded
-                fprintf(f, "%s\n", html_attachment.get_data().data());
-                fprintf(f, "--%s.msg--\n\n", boundary.toUtf8().data());
+                f << html_attachment.get_data().data() << std::endl
+                  << "--" << boundary << ".msg" << std::endl
+                  << std::endl;
+                //fprintf(f, "%s\n", html_attachment.get_data().data());
+                //fprintf(f, "--%s.msg--\n\n", boundary.toUtf8().data());
 
                 // we used "attachment" 0, so print the others starting at 1
                 i = 1;
@@ -2291,28 +2308,38 @@ void sendmail::sendemail(const QString& key, const QString& unique_key)
         for(; i < max; ++i)
         {
             email::email_attachment attachment(f_email.get_attachment(i));
-            fprintf(f, "--%s\n", boundary.toUtf8().data());
+            f << "--" << boundary << std::endl;
+            //fprintf(f, "--%s\n", boundary.toUtf8().data());
             email::header_map_t attachment_headers(attachment.get_all_headers());
             for(email::header_map_t::const_iterator it(attachment_headers.begin());
                                                     it != attachment_headers.end();
                                                     ++it)
             {
-                fprintf(f, "%s: %s\n", it.key().toUtf8().data(), it.value().toUtf8().data());
+                f << it.key() << ": " << it.value() << std::endl;
+                //fprintf(f, "%s: %s\n", it.key().toUtf8().data(), it.value().toUtf8().data());
             }
 
             // one empty line before the contents
-            fprintf(f, "\n");
+            f << std::endl;
+            //fprintf(f, "\n");
 
             // here the data is already be encoded
-            fprintf(f, "%s\n", attachment.get_data().data());
+            f << attachment.get_data().data() << std::endl;
+            //fprintf(f, "%s\n", attachment.get_data().data());
         }
-        fprintf(f, "--%s--\n", boundary.toUtf8().data());
+        f << "--" << boundary << "--" << std::endl;
+        //fprintf(f, "--%s--\n", boundary.toUtf8().data());
     }
 
     // end the message
-    fprintf(f, "\n");
-    fprintf(f, ".\n");
-    pclose(f);
+    f << std::endl
+      << "." << std::endl;
+    //fprintf(f, "\n");
+    //fprintf(f, ".\n");
+
+    // TODO: check the returned value of pclose().
+    // close pipe as soon as we're done writing to it
+    spipe.close_pipe();
 
     // now it is marked as fully sent
     sending_value.setStringValue(get_name(SNAP_NAME_SENDMAIL_STATUS_SENT));
@@ -2332,10 +2359,10 @@ void sendmail::sendemail(const QString& key, const QString& unique_key)
  * \param[in,out] page  The page being generated.
  * \param[in,out] body  The body being generated.
  */
-void sendmail::on_generate_main_content(layout::layout *l, const QString& path, QDomElement& page, QDomElement& body, const QString& ctemplate)
+void sendmail::on_generate_main_content(layout::layout *l, content::path_info_t& ipath, QDomElement& page, QDomElement& body, const QString& ctemplate)
 {
     // by default an email is just like a regular page
-    content::content::instance()->on_generate_main_content(l, path, page, body, ctemplate);
+    output::output::instance()->on_generate_main_content(l, ipath, page, body, ctemplate);
 
     // but we also have email specific parameters we want to add
     QDomDocument doc(page.ownerDocument());
