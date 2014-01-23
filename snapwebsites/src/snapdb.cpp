@@ -154,7 +154,7 @@ public:
 private:
     typedef std::shared_ptr<advgetopt::getopt>    getopt_ptr_t;
 
-    QCassandra                      f_cassandra;
+    QCassandra::pointer_t           f_cassandra;
     QString                         f_host;
     controlled_vars::mint32_t       f_port;
     controlled_vars::mint32_t       f_count;
@@ -166,8 +166,8 @@ private:
 };
 
 snapdb::snapdb(int argc, char *argv[])
-    //: f_cassandra() -- auto-init
-    : f_host("localhost") // default
+    : f_cassandra( QCassandra::create() )
+    , f_host("localhost") // default
     , f_port(9160) //default
     , f_count(100)
     , f_context("snap_websites")
@@ -245,11 +245,11 @@ void snapdb::usage(advgetopt::getopt::status_t status)
 
 void snapdb::info()
 {
-    f_cassandra.connect(f_host, f_port);
-    if(f_cassandra.isConnected())
+    f_cassandra->connect(f_host, f_port);
+    if(f_cassandra->isConnected())
     {
-        std::cout << "Working on Cassandra Cluster Named \""    << f_cassandra.clusterName()     << "\"." << std::endl;
-        std::cout << "Working on Cassandra Protocol Version \"" << f_cassandra.protocolVersion() << "\"." << std::endl;
+        std::cout << "Working on Cassandra Cluster Named \""    << f_cassandra->clusterName()     << "\"." << std::endl;
+        std::cout << "Working on Cassandra Protocol Version \"" << f_cassandra->protocolVersion() << "\"." << std::endl;
         exit(0);
     }
     else
@@ -262,8 +262,8 @@ void snapdb::info()
 
 void snapdb::drop_tables(bool all)
 {
-    f_cassandra.connect(f_host, f_port);
-    QCassandraContext::pointer_t context(f_cassandra.context(f_context));
+    f_cassandra->connect(f_host, f_port);
+    QCassandraContext::pointer_t context(f_cassandra->context(f_context));
 
     // there are re-created when we connect and refilled when
     // we access a page; obviously this is VERY dangerous on
@@ -307,8 +307,8 @@ char hex_to_dec(ushort c)
 
 void snapdb::display()
 {
-    f_cassandra.connect(f_host, f_port);
-    QCassandraContext::pointer_t context(f_cassandra.context(f_context));
+    f_cassandra->connect(f_host, f_port);
+    QCassandraContext::pointer_t context(f_cassandra->context(f_context));
 
     if(!f_row.isEmpty() && f_table == "files")
     {

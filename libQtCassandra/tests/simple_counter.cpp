@@ -44,7 +44,7 @@
 
 int main(int argc, char *argv[])
 {
-    QtCassandra::QCassandra     cassandra;
+    QtCassandra::QCassandra::pointer_t cassandra( QtCassandra::QCassandra::create() );
     int                         err(0);
 
     const char *host("localhost");
@@ -63,14 +63,14 @@ int main(int argc, char *argv[])
         }
     }
 
-    cassandra.connect(host);
-    qDebug() << "Working on Cassandra Cluster Named" << cassandra.clusterName();
-    qDebug() << "Working on Cassandra Protocol Version" << cassandra.protocolVersion();
+    cassandra->connect(host);
+    qDebug() << "Working on Cassandra Cluster Named" << cassandra->clusterName();
+    qDebug() << "Working on Cassandra Protocol Version" << cassandra->protocolVersion();
 
-    QtCassandra::QCassandraContext::pointer_t context(cassandra.context("qt_cassandra_test_sc"));
+    QtCassandra::QCassandraContext::pointer_t context(cassandra->context("qt_cassandra_test_sc"));
     try {
         context->drop();
-        cassandra.synchronizeSchemaVersions();
+        cassandra->synchronizeSchemaVersions();
     }
     catch(...) {
         // ignore errors, this happens when the context doesn't exist yet
@@ -98,7 +98,7 @@ int main(int argc, char *argv[])
 
     try {
         context->create();
-        cassandra.synchronizeSchemaVersions();
+        cassandra->synchronizeSchemaVersions();
         qDebug() << "Context and its table were created!";
     }
     catch(org::apache::cassandra::InvalidRequestException& e) {
@@ -108,57 +108,57 @@ int main(int argc, char *argv[])
 
     //try ...  // by default the rest should not generate an exception
     // now that it's created, we can access it with the [] operator
-    cassandra["qt_cassandra_test_sc"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")][QString("size")] = 8;
+    (*cassandra)["qt_cassandra_test_sc"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")][QString("size")] = 8;
     // In order to be able to read the value as a 64 bit value we clear the
     // cache that just saved the number 8 in an 'int' which is likely 32 bits
-    cassandra["qt_cassandra_test_sc"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")][QString("size")].clearCache();
-    qDebug() << "Size of counter should be 8, it is" << cassandra["qt_cassandra_test_sc"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")][QString("size")].value().size();
-    qDebug() << "Read value should be 8, it is" << cassandra["qt_cassandra_test_sc"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")][QString("size")].value().int64Value();
-    cassandra["qt_cassandra_test_sc"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")][QString("size")].clearCache();
-    if(cassandra["qt_cassandra_test_sc"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")][QString("size")].value().int64Value() != 8) {
+    (*cassandra)["qt_cassandra_test_sc"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")][QString("size")].clearCache();
+    qDebug() << "Size of counter should be 8, it is" << (*cassandra)["qt_cassandra_test_sc"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")][QString("size")].value().size();
+    qDebug() << "Read value should be 8, it is" << (*cassandra)["qt_cassandra_test_sc"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")][QString("size")].value().int64Value();
+    (*cassandra)["qt_cassandra_test_sc"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")][QString("size")].clearCache();
+    if((*cassandra)["qt_cassandra_test_sc"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")][QString("size")].value().int64Value() != 8) {
         ++err;
     }
 
-    cassandra["qt_cassandra_test_sc"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")][QString("size")]++;
-    qDebug() << "Size of counter should be 8, it is" << cassandra["qt_cassandra_test_sc"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")][QString("size")].value().size();
-    qDebug() << "Read value should be 9, it is" << cassandra["qt_cassandra_test_sc"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")][QString("size")].value().int64Value();
-    cassandra["qt_cassandra_test_sc"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")][QString("size")].clearCache();
-    if(cassandra["qt_cassandra_test_sc"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")][QString("size")].value().int64Value() != 9) {
+    (*cassandra)["qt_cassandra_test_sc"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")][QString("size")]++;
+    qDebug() << "Size of counter should be 8, it is" << (*cassandra)["qt_cassandra_test_sc"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")][QString("size")].value().size();
+    qDebug() << "Read value should be 9, it is" << (*cassandra)["qt_cassandra_test_sc"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")][QString("size")].value().int64Value();
+    (*cassandra)["qt_cassandra_test_sc"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")][QString("size")].clearCache();
+    if((*cassandra)["qt_cassandra_test_sc"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")][QString("size")].value().int64Value() != 9) {
         ++err;
     }
 
-    cassandra["qt_cassandra_test_sc"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")][QString("size")] -= 10;
-    qDebug() << "Size of counter should be 8, it is" << cassandra["qt_cassandra_test_sc"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")][QString("size")].value().size();
-    qDebug() << "Read value should be -1, it is" << cassandra["qt_cassandra_test_sc"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")][QString("size")].value().int64Value();
-    cassandra["qt_cassandra_test_sc"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")][QString("size")].clearCache();
-    if(cassandra["qt_cassandra_test_sc"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")][QString("size")].value().int64Value() != -1) {
+    (*cassandra)["qt_cassandra_test_sc"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")][QString("size")] -= 10;
+    qDebug() << "Size of counter should be 8, it is" << (*cassandra)["qt_cassandra_test_sc"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")][QString("size")].value().size();
+    qDebug() << "Read value should be -1, it is" << (*cassandra)["qt_cassandra_test_sc"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")][QString("size")].value().int64Value();
+    (*cassandra)["qt_cassandra_test_sc"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")][QString("size")].clearCache();
+    if((*cassandra)["qt_cassandra_test_sc"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")][QString("size")].value().int64Value() != -1) {
         ++err;
     }
 
-    cassandra["qt_cassandra_test_sc"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")][QString("size")]++;
-    qDebug() << "Size of counter should be 8, it is" << cassandra["qt_cassandra_test_sc"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")][QString("size")].value().size();
-    qDebug() << "Read value should be 0, it is" << cassandra["qt_cassandra_test_sc"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")][QString("size")].value().int64Value();
-    cassandra["qt_cassandra_test_sc"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")][QString("size")].clearCache();
-    if(cassandra["qt_cassandra_test_sc"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")][QString("size")].value().int64Value() != 0) {
+    (*cassandra)["qt_cassandra_test_sc"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")][QString("size")]++;
+    qDebug() << "Size of counter should be 8, it is" << (*cassandra)["qt_cassandra_test_sc"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")][QString("size")].value().size();
+    qDebug() << "Read value should be 0, it is" << (*cassandra)["qt_cassandra_test_sc"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")][QString("size")].value().int64Value();
+    (*cassandra)["qt_cassandra_test_sc"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")][QString("size")].clearCache();
+    if((*cassandra)["qt_cassandra_test_sc"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")][QString("size")].value().int64Value() != 0) {
         ++err;
     }
 
     // test for overflow, Java like C/C++ does not generate errors on overflows
-    cassandra["qt_cassandra_test_sc"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")][QString("size")] += 0x3FFFFFFFFFFFFFFF;
-    cassandra["qt_cassandra_test_sc"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")][QString("size")] += 0x3FFFFFFFFFFFFFFF;
-    cassandra["qt_cassandra_test_sc"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")][QString("size")] += 0x3FFFFFFFFFFFFFFF;
-    qDebug() << "Size of counter should be 8, it is" << cassandra["qt_cassandra_test_sc"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")][QString("size")].value().size();
-    qDebug() << "Read value should be -4611686018427387907, it is" << cassandra["qt_cassandra_test_sc"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")][QString("size")].value().int64Value();
-    cassandra["qt_cassandra_test_sc"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")][QString("size")].clearCache();
+    (*cassandra)["qt_cassandra_test_sc"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")][QString("size")] += 0x3FFFFFFFFFFFFFFF;
+    (*cassandra)["qt_cassandra_test_sc"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")][QString("size")] += 0x3FFFFFFFFFFFFFFF;
+    (*cassandra)["qt_cassandra_test_sc"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")][QString("size")] += 0x3FFFFFFFFFFFFFFF;
+    qDebug() << "Size of counter should be 8, it is" << (*cassandra)["qt_cassandra_test_sc"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")][QString("size")].value().size();
+    qDebug() << "Read value should be -4611686018427387907, it is" << (*cassandra)["qt_cassandra_test_sc"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")][QString("size")].value().int64Value();
+    (*cassandra)["qt_cassandra_test_sc"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")][QString("size")].clearCache();
 #pragma GCC push
 #pragma GCC diagnostic ignored "-Wsign-compare"
-    if(cassandra["qt_cassandra_test_sc"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")][QString("size")].value().int64Value() != 0xBFFFFFFFFFFFFFFD) {
+    if((*cassandra)["qt_cassandra_test_sc"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")][QString("size")].value().int64Value() != 0xBFFFFFFFFFFFFFFD) {
         ++err;
     }
 #pragma GCC pop
 
     context->drop();
-    cassandra.synchronizeSchemaVersions();
+    cassandra->synchronizeSchemaVersions();
 
     exit(err == 0 ? 0 : 1);
 }

@@ -962,6 +962,20 @@ QCassandra::QCassandra()
     // just saved in a variable member
 }
 
+
+/** \brief Create the QCassandra instance.
+ *
+ * This factory creates a new object wrapped in a shared pointer. The contructor
+ * is private, so this must be used.
+ *
+ * \sa QCassandra()
+ */
+QCassandra::pointer_t QCassandra::create()
+{
+    return pointer_t( new QCassandra );
+}
+
+
 /** \brief Cleanup the Cassandra object.
  *
  * This function cleans up the QCassandra object.
@@ -1264,7 +1278,7 @@ QCassandraContext::pointer_t QCassandra::context(const QString& context_name)
     }
 
     // otherwise create a new one
-    QCassandraContext::pointer_t c(new QCassandraContext(this, context_name));
+    QCassandraContext::pointer_t c(new QCassandraContext(shared_from_this(), context_name));
     f_contexts.insert(context_name, c);
     return c;
 }

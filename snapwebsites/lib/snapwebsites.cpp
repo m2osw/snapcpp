@@ -869,21 +869,21 @@ void server::prepare_cassandra()
         SNAP_LOG_FATAL("invalid cassandra_port, a port must be between 1 and 65535, ")(f_cassandra_port)(" is not.");
         exit(1);
     }
-    QtCassandra::QCassandra cassandra;
-    if(!cassandra.connect(f_cassandra_host, f_cassandra_port))
+    QtCassandra::QCassandra::pointer_t cassandra( QtCassandra::QCassandra::create() );
+    if(!cassandra->connect(f_cassandra_host, f_cassandra_port))
     {
         SNAP_LOG_FATAL("the connection to the Cassandra server failed (")(f_cassandra_host)(":")(f_cassandra_port)(").");
         exit(1);
     }
     // we need to read all the contexts in order to make sure the
     // findContext() works
-    cassandra.contexts();
+    cassandra->contexts();
     QString context_name(snap::get_name(snap::SNAP_NAME_CONTEXT));
-    QtCassandra::QCassandraContext::pointer_t context(cassandra.findContext(context_name));
+    QtCassandra::QCassandraContext::pointer_t context(cassandra->findContext(context_name));
     if(!context)
     {
         // create the context since it doesn't exist yet
-        context = cassandra.context(context_name);
+        context = cassandra->context(context_name);
         context->setStrategyClass("org.apache.cassandra.locator.SimpleStrategy");
         context->setReplicationFactor(1);
         context->create();

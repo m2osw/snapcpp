@@ -109,8 +109,8 @@ int main(int argc, char *argv[])
     // always somewhat different "random" values
     srand(time(NULL));
 
-    QtCassandra::QCassandra     cassandra;
-    qDebug() << "+ libQtCassandra version" << cassandra.version();
+    QtCassandra::QCassandra::pointer_t cassandra( QtCassandra::QCassandra::create() );
+    qDebug() << "+ libQtCassandra version" << cassandra->version();
 
     const char *host("localhost");
     for(int i(1); i < argc; ++i) {
@@ -2406,8 +2406,8 @@ int main(int argc, char *argv[])
 
 
     // now test with a cell in the Cassandra database
-    cassandra.connect(host);
-    QString name = cassandra.clusterName();
+    cassandra->connect(host);
+    QString name = cassandra->clusterName();
     qDebug() << "+ Cassandra Cluster Name is" << name;
 
 

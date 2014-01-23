@@ -101,9 +101,9 @@ void add_host()
     }
 
     // initialize the database
-    QtCassandra::QCassandra cassandra;
-    cassandra.connect(g_host);
-    QtCassandra::QCassandraContext::pointer_t context(cassandra.context(g_context_name));
+    QtCassandra::QCassandra::pointer_t cassandra( QtCassandra::QCassandra::create() );
+    cassandra->connect(g_host);
+    QtCassandra::QCassandraContext::pointer_t context(cassandra->context(g_context_name));
     if(!context) {
         fprintf(stderr, "error: could not retrieve the \"%s\" context from this Cassandra cluster.\n", g_context_name);
         exit(1);
@@ -127,9 +127,9 @@ void remove_host()
     }
 
     // initialize the database
-    QtCassandra::QCassandra cassandra;
-    cassandra.connect(g_host);
-    QtCassandra::QCassandraContext::pointer_t context(cassandra.context(g_context_name));
+    QtCassandra::QCassandra::pointer_t cassandra( QtCassandra::QCassandra::create() );
+    cassandra->connect(g_host);
+    QtCassandra::QCassandraContext::pointer_t context(cassandra->context(g_context_name));
     if(!context) {
         fprintf(stderr, "error: could not retrieve the \"%s\" context from this Cassandra cluster.\n", g_context_name);
         exit(1);
@@ -153,9 +153,9 @@ void list_hosts()
     }
 
     // initialize the database
-    QtCassandra::QCassandra cassandra;
-    cassandra.connect(g_host);
-    QtCassandra::QCassandraContext::pointer_t context(cassandra.context(g_context_name));
+    QtCassandra::QCassandra::pointer_t cassandra( QtCassandra::QCassandra::create() );
+    cassandra->connect(g_host);
+    QtCassandra::QCassandraContext::pointer_t context(cassandra->context(g_context_name));
     if(!context) {
         fprintf(stderr, "error: could not retrieve the \"%s\" context from this Cassandra cluster.\n", g_context_name);
         exit(1);

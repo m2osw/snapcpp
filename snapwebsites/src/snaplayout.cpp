@@ -116,7 +116,7 @@ public:
 private:
     typedef std::shared_ptr<advgetopt::getopt>    getopt_ptr_t;
 
-    QCassandra                      f_cassandra;
+    QCassandra::pointer_t           f_cassandra;
     typedef QVector<QString>        string_array_t;
     string_array_t                  f_layouts;
     QString                         f_host;
@@ -125,11 +125,11 @@ private:
 };
 
 snap_layout::snap_layout(int argc, char *argv[])
-    //: f_cassandra() -- auto-init
+    : f_cassandra( QCassandra::create() )
     //, f_layouts() -- auto-init
     //, f_host -- auto-init
     //, f_port -- auto-init
-    : f_opt( new advgetopt::getopt( argc, argv, g_snaplayout_options, g_configuration_files, NULL ) )
+    , f_opt( new advgetopt::getopt( argc, argv, g_snaplayout_options, g_configuration_files, NULL ) )
 {
     if( f_opt->is_defined( "help" ) )
     {
@@ -319,8 +319,8 @@ void snap_layout::load_xsl_info(QDomDocument& doc, QString const& filename, QStr
 
 void snap_layout::add_files()
 {
-    f_cassandra.connect(f_host, f_port);
-    if( !f_cassandra.isConnected() )
+    f_cassandra->connect(f_host, f_port);
+    if( !f_cassandra->isConnected() )
     {
         std::cerr << "Error connecting to cassandra server on host='"
             << f_host
@@ -331,7 +331,7 @@ void snap_layout::add_files()
         exit(1);
     }
 
-    QCassandraContext::pointer_t context(f_cassandra.context("snap_websites"));
+    QCassandraContext::pointer_t context(f_cassandra->context("snap_websites"));
 
     QCassandraTable::pointer_t table(context->findTable("layout"));
     if(!table)

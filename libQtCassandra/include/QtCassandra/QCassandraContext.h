@@ -117,7 +117,7 @@ private:
     typedef controlled_vars::auto_init<int32_t, 60> lock_ttl_t;
 
     void makeCurrent();
-    QCassandraContext(QCassandra* cassandra, const QString& context_name);
+    QCassandraContext(std::shared_ptr<QCassandra> cassandra, const QString& context_name);
 
     // internal functions
     void parseContextDefinition(const void *data);
@@ -149,7 +149,7 @@ private:
     // Also, it cannot be a shared_ptr unless you make a restriction that
     // all instances must be allocated on the heap. Thus is the deficiency of
     // std::enabled_shared_from_this<>.
-    QCassandra*								  f_cassandra;
+    std::shared_ptr<QCassandra>				   f_cassandra;
     QCassandraContextOptions                    f_options;
     QCassandraTables                            f_tables;
     QString                                     f_host_name;

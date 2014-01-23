@@ -459,8 +459,8 @@ void snap_manager::on_f_cassandraConnectButton_clicked()
     f_cassandraConnectButton->setEnabled( false );
     f_cassandraDisconnectButton->setEnabled( false );
 
-    if(f_cassandra.isNull()) {
-        f_cassandra = new QtCassandra::QCassandra;
+    if(!f_cassandra) {
+        f_cassandra = QtCassandra::QCassandra::create();
     }
 
     // save the old values
@@ -565,7 +565,7 @@ void snap_manager::on_f_cassandraDisconnectButton_clicked()
     f_cassandraDisconnectButton->setEnabled( false );
 
     // disconnect by deleting the object altogether
-    delete f_cassandra;
+    f_cassandra.reset();
 
     QListWidget *console = getChild<QListWidget>(this, "cassandraConsole");
     console->clear();

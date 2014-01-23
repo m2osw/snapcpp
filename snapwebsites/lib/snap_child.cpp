@@ -1589,14 +1589,14 @@ const snap_uri& snap_child::get_uri() const
 void snap_child::connect_cassandra()
 {
     // Cassandra already exists?
-    if(!f_cassandra.isNull())
+    if(f_cassandra)
     {
         die(HTTP_CODE_SERVICE_UNAVAILABLE, "", "Our database is being initialized more than once.", "The connect_cassandra() function cannot be called more than once.");
         NOTREACHED();
     }
 
     // connect to Cassandra
-    f_cassandra = new QtCassandra::QCassandra;
+    f_cassandra = QtCassandra::QCassandra::create();
     if(!f_cassandra->connect(f_server->cassandra_host(), f_server->cassandra_port()))
     {
         die(HTTP_CODE_SERVICE_UNAVAILABLE, "", "Our database system is temporarilly unavailable.", "Could not connect to Cassandra");
@@ -2773,7 +2773,7 @@ void snap_child::die(http_code_t err_code, QString err_name, const QString& err_
         // Generate the signature
         QString signature;
         const QString site_key(get_site_key());
-        if(!f_cassandra.isNull())
+        if(f_cassandra)
         {
             // TODO: the description could also come from a user defined page
             //       so that way it can get translated (only for some
