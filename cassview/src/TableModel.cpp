@@ -12,8 +12,30 @@ void TableModel::setTable( QCassandraTable::pointer_t t )
     f_rowp.setEndRowName("");
     f_rowp.setCount(f_rowCount); // 100 is the default
     f_rowsRemaining = f_table->readRows( f_rowp );
+    f_pos = 0;
 
     reset();
+}
+
+
+bool TableModel::canFetchMore(const QModelIndex & /* index */) const
+{
+    return f_rowsRemaining >= f_rowCount;
+}
+
+
+void TableModel::fetchMore(const QModelIndex & /* index */)
+{
+    f_table->clearCache();
+    f_rowsRemaining = f_table->readRows( f_rowp );
+
+    const int itemsToFetch( qMin(f_rowCount, f_rowsRemaining) );
+
+    beginInsertRows( QModelIndex(), f_pos, f_pos+itemsToFetch-1 );
+
+    f_pos += itemsToFetch;
+
+    endInsertRows();
 }
 
 
@@ -186,32 +208,6 @@ bool TableModel::hasChildren( const QModelIndex & prnt ) const
     }
 
     return prnt.internalId() == 0;
-}
-
-
-bool TableModel::canFetchMore(const QModelIndex & /* index */) const
-{
-    return f_rowsRemaining >= f_rowCount;
-}
-
-
-void TableModel::fetchMore(const QModelIndex & /* index */)
-{
-    f_table->clearCache();
-    f_rowsRemaining = f_table->readRows( f_rowp );
-
-    const QCassandraRows& rows = f_table->rows();
-    return rows.size();
-    //int remainder = rows.size() - fileCount;
-    int itemsToFetch = qMin(f_rowCount, f_rowsRemaining);
-
-    beginInsertRows(QModelIndex(), fileCount, fileCount+itemsToFetch-1);
-
-    fileCount += itemsToFetch;
-
-    endInsertRows();
-
-    emit numberPopulated(itemsToFetch);
 }
 
 
