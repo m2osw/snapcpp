@@ -13,7 +13,7 @@ MainWindow::MainWindow(QWidget *p)
     restoreState   ( settings.value( "state"   , saveState()    ).toByteArray() );
     f_context = settings.value("context", "snap_websites").toString();
 
-    f_cassandra = static_cast<cassandra_t>(new QCassandra);
+    f_cassandra = QCassandra::create();
     f_cassandra->connect( settings.value( "cassandra_host" ).toString()
                         , settings.value( "cassandra_port" ).toInt()
                         );

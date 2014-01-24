@@ -8,11 +8,10 @@ void TableModel::setTable( QCassandraTable::pointer_t t )
 {
 	f_table = t;
 
-    QCassandraRowPredicate rowp;
-    //rowp.setStartRowName("");
-    //rowp.setEndRowName("");
-    //rowp.setCount(10); // 100 is the default
-    f_table->readRows( rowp );
+    f_rowp.setStartRowName("");
+    f_rowp.setEndRowName("");
+    f_rowp.setCount(f_rowCount); // 100 is the default
+    f_rowsRemaining = f_table->readRows( f_rowp );
 
     reset();
 }
@@ -91,9 +90,14 @@ QVariant TableModel::data( const QModelIndex & idx, int role ) const
 		return QVariant();
 	}
 
-	const auto& rows = f_table->rows();
-	const QString row_name( (rows.begin()+idx.row()).value()->rowName() );
-	return row_name;
+    if( idx.column() == 0 )
+    {
+        const auto& rows = f_table->rows();
+        const QString row_name( (rows.begin()+idx.row()).value()->rowName() );
+        return row_name;
+    }
+
+    return QVariant();
 }
 
 
@@ -114,17 +118,20 @@ int TableModel::rowCount( const QModelIndex &prnt ) const
 }
 
 
-int TableModel::columnCount( const QModelIndex &prnt ) const
+int TableModel::columnCount( const QModelIndex &/*prnt*/ ) const
 {
     if( !f_table )
     {
         return 0;
     }
 
+#if 0
     if( !prnt.isValid() )
     {
+        std::cout << "prnt is not valid!" << std::endl;
         return 1;
     }
+#endif
 
     const auto& rows( f_table->rows() );
     if( rows.size() == 0 )
@@ -140,15 +147,15 @@ int TableModel::columnCount( const QModelIndex &prnt ) const
 
 QModelIndex TableModel::index( int row, int column, const QModelIndex &prnt ) const
 {
-    const auto& the_row(( f_table->rows().begin()+row ).value());
+    //const auto& the_row(( f_table->rows().begin()+row ).value());
     //
     if( prnt.isValid() )
     {
-        const auto& the_column(( the_row->cells().begin()+column  ).value());
-        return createIndex( row, column, the_column.get() );
+        //const auto& the_column(( the_row->cells().begin()+column  ).value());
+        return createIndex( row, column, 1 ); //the_column.get() );
     }
 
-    return createIndex( row, 0, the_row.get() );
+    return createIndex( row, column, 0 ); //the_row.get() );
 }
 
 
@@ -159,13 +166,52 @@ QModelIndex TableModel::parent( const QModelIndex &idx ) const
 		return QModelIndex();
 	}
 
-    if( idx.internalPointer() == 0 )
+    if( idx.internalId() == 0 )
 	{
         return QModelIndex();
 	}
 
-	QCassandraCell* cell( static_cast<QCassandraCell*>(idx.internalPointer()) );
-    return createIndex( idx.row(), 0, cell->parent()->data() );
+    //QCassandraCell* cell( static_cast<QCassandraCell*>(idx.internalPointer()) );
+    //const auto& the_row    (( f_table->rows() .begin()+row     ).value());
+    //const auto& the_column (( the_row->cells().begin()+column  ).value());
+    return createIndex( idx.row(), 0, 0 );
+}
+
+
+bool TableModel::hasChildren( const QModelIndex & prnt ) const
+{
+    if( !prnt.isValid() )
+    {
+        return true;
+    }
+
+    return prnt.internalId() == 0;
+}
+
+
+bool TableModel::canFetchMore(const QModelIndex & /* index */) const
+{
+    return f_rowsRemaining >= f_rowCount;
+}
+
+
+void TableModel::fetchMore(const QModelIndex & /* index */)
+{
+    f_table->clearCache();
+    f_rowsRemaining = f_table->readRows( f_rowp );
+
+    const QCassandraRows& rows = f_table->rows();
+    return rows.size();
+    //int remainder = rows.size() - fileCount;
+    int itemsToFetch = qMin(f_rowCount, f_rowsRemaining);
+
+    beginInsertRows(QModelIndex(), fileCount, fileCount+itemsToFetch-1);
+
+    fileCount += itemsToFetch;
+
+    endInsertRows();
+
+    emit numberPopulated(itemsToFetch);
 }
 
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QtCassandra/QCassandraTable.h>
+#include <QtCassandra/QCassandraRowPredicate.h>
 #include <QtGui>
 
 #include <memory>
@@ -11,7 +12,7 @@ class TableModel
 	Q_OBJECT
 
 	public:
-		TableModel() {}
+        TableModel() : f_rowCount(100), f_rowsRemaining(0) {}
 
         void setTable( QtCassandra::QCassandraTable::pointer_t t );
 
@@ -31,9 +32,13 @@ class TableModel
         int         columnCount( const QModelIndex & parent = QModelIndex() ) const;
         QModelIndex index ( int row, int column, const QModelIndex & parent = QModelIndex() ) const;
         QModelIndex parent ( const QModelIndex & index ) const;
+        bool			hasChildren ( const QModelIndex & parent = QModelIndex() ) const;
 
 	private:
         QtCassandra::QCassandraTable::pointer_t	f_table;
+        QtCassandra::QCassandraRowPredicate		f_rowp;
+        int f_rowCount;
+        int f_rowsRemaining;
 };
 
 // vim: ts=4 sw=4 noet
