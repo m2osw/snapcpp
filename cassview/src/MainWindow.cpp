@@ -24,6 +24,7 @@ MainWindow::MainWindow(QWidget *p)
     f_contextCombo->setModel( &f_cassandraModel );
     f_tables->setModel( &f_contextModel );
     f_rows->setModel( &f_tableModel );
+	f_cells->setModel( &f_rowModel );
 
     f_cassandraModel.setCassandra( f_cassandra );
     const int idx = f_contextCombo->findText( f_context );
@@ -31,6 +32,8 @@ MainWindow::MainWindow(QWidget *p)
     {
         f_contextCombo->setCurrentIndex( idx );
     }
+
+    f_tables->setCurrentIndex( 0 );
 
     connect( qApp, SIGNAL(aboutToQuit()), this, SLOT(OnAboutToQuit()) );
 }
@@ -66,9 +69,8 @@ void MainWindow::on_action_Settings_triggered()
     }
 }
 
-void MainWindow::on_f_tables_clicked(const QModelIndex &index)
+void MainWindow::on_f_tables_currentIndexChanged(const QString &table_name)
 {
-    QString table_name( f_contextModel.data(index).toString() );
     QCassandraContext::pointer_t qcontext( f_cassandra->findContext(f_context) );
     QCassandraTable::pointer_t table( qcontext->findTable(table_name) );
 
@@ -85,7 +87,13 @@ void MainWindow::on_f_contextCombo_currentIndexChanged(const QString &arg1)
 	}
 }
 
-void MainWindow::on_f_rows_doubleClicked(const QModelIndex &/*index*/)
-{
 
+void MainWindow::on_f_rows_clicked(const QModelIndex &index)
+{
+    QString row_name( f_tableModel.data(index).toString() );
+
+    QCassandraContext::pointer_t qcontext( f_cassandra->findContext(f_context) );
+    QCassandraRow::pointer_t row( f_tableModel.getTable()->findRow(row_name) );
+
+    f_rowModel.setRow( row );
 }

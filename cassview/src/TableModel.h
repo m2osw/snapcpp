@@ -14,6 +14,7 @@ class TableModel
 	public:
         TableModel() : f_rowCount(100), f_rowsRemaining(0), f_pos(0) {}
 
+		QtCassandra::QCassandraTable::pointer_t getTable() const;
         void setTable( QtCassandra::QCassandraTable::pointer_t t );
 
         // Read only access

@@ -4,6 +4,13 @@
 
 using namespace QtCassandra;
 
+
+QCassandraTable::pointer_t TableModel::getTable() const
+{
+	return f_table;
+}
+
+
 void TableModel::setTable( QCassandraTable::pointer_t t )
 {
 	f_table = t;
@@ -32,10 +39,9 @@ void TableModel::fetchMore(const QModelIndex & /* index */)
     const int itemsToFetch( qMin(f_rowCount, f_rowsRemaining) );
 
     beginInsertRows( QModelIndex(), f_pos, f_pos+itemsToFetch-1 );
+    endInsertRows();
 
     f_pos += itemsToFetch;
-
-    endInsertRows();
 }
 
 
