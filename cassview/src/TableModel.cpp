@@ -15,11 +15,14 @@ void TableModel::setTable( QCassandraTable::pointer_t t )
 {
 	f_table = t;
 
-    f_rowp.setStartRowName("");
-    f_rowp.setEndRowName("");
-    f_rowp.setCount(f_rowCount); // 100 is the default
-    f_rowsRemaining = f_table->readRows( f_rowp );
-    f_pos = 0;
+    if( f_table )
+    {
+        f_rowp.setStartRowName("");
+        f_rowp.setEndRowName("");
+        f_rowp.setCount(f_rowCount); // 100 is the default
+        f_rowsRemaining = f_table->readRows( f_rowp );
+        f_pos = 0;
+    }
 
     reset();
 }
@@ -33,6 +36,8 @@ bool TableModel::canFetchMore(const QModelIndex & /* index */) const
 
 void TableModel::fetchMore(const QModelIndex & /* index */)
 {
+    if( !f_table ) return;
+
     f_table->clearCache();
     f_rowsRemaining = f_table->readRows( f_rowp );
 

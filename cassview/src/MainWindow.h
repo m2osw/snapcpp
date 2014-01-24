@@ -24,7 +24,7 @@ private slots:
     void OnAboutToQuit();
     void on_f_tables_currentIndexChanged(const QString &table_name);
     void on_f_contextCombo_currentIndexChanged(const QString &arg1);
-    void on_f_rows_clicked(const QModelIndex &index);
+    void onCurrentChanged( const QModelIndex & current, const QModelIndex & /*previous*/ );
 
 private:
 	typedef QtCassandra::QCassandra::pointer_t cassandra_t;
@@ -36,5 +36,6 @@ private:
     QString			f_context;
 
     void		fillTableList();
+    void        changeRow(const QModelIndex &index);
 };
 
