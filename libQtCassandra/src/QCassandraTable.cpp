@@ -2336,10 +2336,12 @@ void QCassandraTable::prepareTableDefinition(void *data) const
  */
 void QCassandraTable::create()
 {
-    if(!f_context.lock()) {
+    auto context( f_context.lock() );
+    if(!context)
+    {
         throw std::runtime_error("this table was dropped and is not attached to a context anymore");
     }
-    f_context.lock()->createTable(this);
+    context->createTable(this);
     f_from_cassandra = true;
 
     // TBD: Should we then call describe_keyspace() on our Context
@@ -2368,7 +2370,9 @@ void QCassandraTable::create()
  */
 void QCassandraTable::update()
 {
-    if(!f_context.lock()) {
+    auto context( f_context.lock() );
+    if(!context)
+    {
         throw std::runtime_error("table was dropped and is not attached to a context anymore");
     }
     if(!f_from_cassandra) {
@@ -2376,7 +2380,7 @@ void QCassandraTable::update()
         throw std::runtime_error("table is not defined in Cassandra, it cannot be updated there");
     }
 
-    f_context.lock()->updateTable(this);
+    context->updateTable(this);
 
     // TBD: Should we then call describe_keyspace() on our Context
     //      to make sure we've got the right data (defaults) in this
@@ -2419,11 +2423,13 @@ void QCassandraTable::clearCache()
  */
 void QCassandraTable::truncate()
 {
-    if(!f_context.lock()) {
+    auto context( f_context.lock() );
+    if(!context)
+    {
         throw std::runtime_error("table was dropped and is not attached to a context anymore");
     }
     if(f_from_cassandra) {
-        f_context.lock()->truncateTable(this);
+        context->truncateTable(this);
     }
 
     // delete the memory cache too
@@ -2471,11 +2477,13 @@ void QCassandraTable::truncate()
  */
 uint32_t QCassandraTable::readRows(QCassandraRowPredicate& row_predicate)
 {
-    if(!f_context.lock()) {
+    auto context( f_context.lock() );
+    if(!context)
+    {
         throw std::runtime_error("table was dropped and is not attached to a context anymore");
     }
     if(f_from_cassandra) {
-        return f_context.lock()->getRowSlices(*this, row_predicate);
+        return context->getRowSlices(*this, row_predicate);
     }
     return 0;
 }
@@ -3238,6 +3246,17 @@ void QCassandraTable::dropRow(const QByteArray& row_key, QCassandraValue::timest
     f_rows.remove(row_key);
 }
 
+
+/** \brief Get the pointer to the parent object.
+ *
+ * \return Shared pointer to the cassandra object.
+ */
+QCassandraContext::pointer_t QCassandraTable::parentContext() const
+{
+    return f_context.lock();
+}
+
+
 /** \brief Save a cell value that changed.
  *
  * This function calls the context insertValue() function to save the new value that
@@ -3249,14 +3268,16 @@ void QCassandraTable::dropRow(const QByteArray& row_key, QCassandraValue::timest
  */
 void QCassandraTable::insertValue(const QByteArray& row_key, const QByteArray& column_key, const QCassandraValue& value)
 {
-    if(!f_context.lock()) {
+    auto context( f_context.lock() );
+    if(!context)
+    {
         throw std::runtime_error("table was dropped and is not attached to a context anymore");
     }
     if(f_from_cassandra) {
         if(f_private->default_validation_class == "CounterColumnType") {
             // we cannot "set" a counter, but we can simulate that function
             QCassandraValue v;
-            f_context.lock()->getCounter(tableName(), row_key, column_key, v);
+            context->getCounter(tableName(), row_key, column_key, v);
             // new value = user value - current value
             int64_t add(-v.int64Value());
             switch(value.size()) {
@@ -3284,10 +3305,10 @@ void QCassandraTable::insertValue(const QByteArray& row_key, const QByteArray& c
                 throw std::runtime_error("value has an invalid size for a counter value");
 
             }
-            f_context.lock()->addValue(tableName(), row_key, column_key, add);
+            context->addValue(tableName(), row_key, column_key, add);
         }
         else {
-            f_context.lock()->insertValue(tableName(), row_key, column_key, value);
+            context->insertValue(tableName(), row_key, column_key, value);
         }
     }
 }
@@ -3308,15 +3329,17 @@ void QCassandraTable::insertValue(const QByteArray& row_key, const QByteArray& c
  */
 bool QCassandraTable::getValue(const QByteArray& row_key, const QByteArray& column_key, QCassandraValue& value)
 {
-    if(!f_context.lock()) {
+    auto context( f_context.lock() );
+    if(!context)
+    {
         throw std::runtime_error("table was dropped and is not attached to a context anymore");
     }
     if(f_from_cassandra) {
         if(f_private->default_validation_class == "CounterColumnType") {
-            return f_context.lock()->getCounter(tableName(), row_key, column_key, value);
+            return context->getCounter(tableName(), row_key, column_key, value);
         }
         else {
-            return f_context.lock()->getValue(tableName(), row_key, column_key, value);
+            return context->getValue(tableName(), row_key, column_key, value);
         }
     }
     return false;
@@ -3338,11 +3361,13 @@ void QCassandraTable::addValue(const QByteArray& row_key, const QByteArray& colu
     if(f_private->default_validation_class != "CounterColumnType") {
         throw std::runtime_error("the add() function and operators cannot be used on a standard table, only on tables defined as counters");
     }
-    if(!f_context.lock()) {
+    auto context( f_context.lock() );
+    if(!context)
+    {
         throw std::runtime_error("table was dropped and is not attached to a context anymore");
     }
     if(f_from_cassandra) {
-        f_context.lock()->addValue(tableName(), row_key, column_key, value);
+        context->addValue(tableName(), row_key, column_key, value);
     }
     // else -- we don't currently handle in memory counters!?
 }
@@ -3379,11 +3404,13 @@ void QCassandraTable::assignRow(const QByteArray& row_key, const QByteArray& col
  */
 int32_t QCassandraTable::getCellCount(const QByteArray& row_key, const QCassandraColumnPredicate& column_predicate)
 {
-    if(!f_context.lock()) {
+    auto context( f_context.lock() );
+    if(!context)
+    {
         throw std::runtime_error("table was dropped and is not attached to a context anymore");
     }
     if(f_from_cassandra) {
-        return f_context.lock()->getCellCount(tableName(), row_key, column_predicate);
+        return context->getCellCount(tableName(), row_key, column_predicate);
     }
 
     // return the count from the memory cache
@@ -3407,11 +3434,13 @@ int32_t QCassandraTable::getCellCount(const QByteArray& row_key, const QCassandr
  */
 uint32_t QCassandraTable::getColumnSlice(const QByteArray& row_key, QCassandraColumnPredicate& column_predicate)
 {
-    if(!f_context.lock()) {
+    auto context( f_context.lock() );
+    if(!context)
+    {
         throw std::runtime_error("table was dropped and is not attached to a context anymore");
     }
     if(f_from_cassandra) {
-        return f_context.lock()->getColumnSlice(*this, row_key, column_predicate);
+        return context->getColumnSlice(*this, row_key, column_predicate);
     }
     return 0;
 }
@@ -3428,11 +3457,13 @@ uint32_t QCassandraTable::getColumnSlice(const QByteArray& row_key, QCassandraCo
  */
 void QCassandraTable::remove(const QByteArray& row_key, const QByteArray& column_key, int64_t timestamp, consistency_level_t consistency_level)
 {
-    if(!f_context.lock()) {
+    auto context( f_context.lock() );
+    if(!context)
+    {
         throw std::runtime_error("table was dropped and is not attached to a context anymore");
     }
     if(f_from_cassandra) {
-        f_context.lock()->remove(tableName(), row_key, column_key, timestamp, consistency_level);
+        context->remove(tableName(), row_key, column_key, timestamp, consistency_level);
     }
 }
 

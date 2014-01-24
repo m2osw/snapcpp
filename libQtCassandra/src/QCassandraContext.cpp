@@ -1464,6 +1464,7 @@ void QCassandraContext::setHostName(const QString& host_name)
     f_host_name = host_name;
 }
 
+
 /** \brief Get the name of the host using this instance.
  *
  * This function returns the name of the host using this QCassandraContext.
@@ -1477,6 +1478,17 @@ QString QCassandraContext::hostName() const
     f_lock_accessed = true;
     return f_host_name;
 }
+
+
+/** \brief Get the pointer to the parent object.
+ *
+ * \return Shared pointer to the cassandra object.
+ */
+QCassandra::pointer_t QCassandraContext::parentCassandra() const
+{
+    return f_cassandra;
+}
+
 
 /** \brief Set the name of the lock table in this context.
  *

@@ -102,6 +102,8 @@ public:
     void dropCell(const QUuid& column_name, QCassandraValue::timestamp_mode_t mode = QCassandraValue::TIMESTAMP_MODE_AUTO, int64_t timestamp = 0);
     void dropCell(const QByteArray& column_key, QCassandraValue::timestamp_mode_t mode = QCassandraValue::TIMESTAMP_MODE_AUTO, int64_t timestamp = 0);
 
+    std::shared_ptr<QCassandraTable> parentTable() const;
+
 private:
     QCassandraRow(std::shared_ptr<QCassandraTable> table, const QByteArray& row_key);
 

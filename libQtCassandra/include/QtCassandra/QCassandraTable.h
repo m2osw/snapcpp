@@ -244,6 +244,8 @@ public:
     void dropRow(const QUuid& row_uuid, QCassandraValue::timestamp_mode_t mode = QCassandraValue::TIMESTAMP_MODE_AUTO, int64_t timestamp = 0, consistency_level_t consistency_level = CONSISTENCY_LEVEL_ALL);
     void dropRow(const QByteArray& row_key, QCassandraValue::timestamp_mode_t mode = QCassandraValue::TIMESTAMP_MODE_AUTO, int64_t timestamp = 0, consistency_level_t consistency_level = CONSISTENCY_LEVEL_ALL);
 
+    std::shared_ptr<QCassandraContext> parentContext() const;
+
 private:
     QCassandraTable(std::shared_ptr<QCassandraContext> context, const QString& table_name);
 

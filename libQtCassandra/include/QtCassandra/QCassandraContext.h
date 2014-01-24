@@ -112,6 +112,8 @@ public:
     void setHostName(const QString& host_name);
     QString hostName() const;
 
+    std::shared_ptr<QCassandra> parentCassandra() const;
+
 private:
     typedef controlled_vars::auto_init<int32_t, 5> lock_timeout_t;
     typedef controlled_vars::auto_init<int32_t, 60> lock_ttl_t;

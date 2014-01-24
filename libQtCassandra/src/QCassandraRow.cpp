@@ -202,10 +202,12 @@ const QByteArray& QCassandraRow::rowKey() const
  */
 int QCassandraRow::cellCount(const QCassandraColumnPredicate& column_predicate)
 {
-    if(!f_table.lock()) {
+    auto table( f_table.lock() );
+    if(!table)
+    {
         throw std::runtime_error("row was dropped and is not attached to a table anymore");
     }
-    return f_table.lock()->getCellCount(f_key, column_predicate);
+    return table->getCellCount(f_key, column_predicate);
 }
 
 /** \brief Read the cells as defined by a default column predicate.
@@ -240,11 +242,13 @@ int QCassandraRow::cellCount(const QCassandraColumnPredicate& column_predicate)
  */
 uint32_t QCassandraRow::readCells()
 {
-    if(!f_table.lock()) {
+    auto table( f_table.lock() );
+    if(!table)
+    {
         throw std::runtime_error("row was dropped and is not attached to a table anymore");
     }
     QCassandraColumnPredicate column_predicate;
-    return f_table.lock()->getColumnSlice(f_key, column_predicate);
+    return table->getColumnSlice(f_key, column_predicate);
 }
 
 /** \brief Read the cells as defined by the predicate.
@@ -272,10 +276,12 @@ uint32_t QCassandraRow::readCells()
  */
 uint32_t QCassandraRow::readCells(QCassandraColumnPredicate& column_predicate)
 {
-    if(!f_table.lock()) {
+    auto table( f_table.lock() );
+    if(!table)
+    {
         throw std::runtime_error("row was dropped and is not attached to a table anymore");
     }
-    return f_table.lock()->getColumnSlice(f_key, column_predicate);
+    return table->getColumnSlice(f_key, column_predicate);
 }
 
 /** \brief Retrieve a cell from the row.
@@ -729,7 +735,9 @@ bool QCassandraRow::exists(const QUuid& column_uuid) const
  */
 bool QCassandraRow::exists(const QByteArray& column_key) const
 {
-    if(!f_table.lock()) {
+    auto table( f_table.lock() );
+    if(!table)
+    {
         throw std::runtime_error("row was dropped and is not attached to a table anymore");
     }
     QCassandraCells::const_iterator ci(f_cells.find(column_key));
@@ -741,7 +749,7 @@ bool QCassandraRow::exists(const QByteArray& column_key) const
     // try reading this cell
     QCassandraValue value;
     try {
-        if(!f_table.lock()->getValue(f_key, column_key, value)) {
+        if(!table->getValue(f_key, column_key, value)) {
             return false;
         }
     }
@@ -1117,7 +1125,9 @@ void QCassandraRow::dropCell(const QUuid& column_uuid, QCassandraValue::timestam
  */
 void QCassandraRow::dropCell(const QByteArray& column_key, QCassandraValue::timestamp_mode_t mode, int64_t timestamp)
 {
-    if(!f_table.lock()) {
+    auto table( f_table.lock() );
+    if(!table)
+    {
         throw std::runtime_error("row was dropped and is not attached to a table anymore");
     }
     if(QCassandraValue::TIMESTAMP_MODE_AUTO != mode && QCassandraValue::TIMESTAMP_MODE_DEFINED != mode) {
@@ -1134,10 +1144,21 @@ void QCassandraRow::dropCell(const QByteArray& column_key, QCassandraValue::time
         // value was assigned or not... (not from the mode that is)
         timestamp = c->timestamp();
     }
-    f_table.lock()->remove(f_key, column_key, timestamp, c->consistencyLevel());
+    table->remove(f_key, column_key, timestamp, c->consistencyLevel());
     f_cells.remove(column_key);
     c->unparent();
 }
+
+
+/** \brief Get the pointer to the parent object.
+ *
+ * \return Shared pointer to the table object with owns this object.
+ */
+QCassandraTable::pointer_t QCassandraRow::parentTable() const
+{
+    return f_table.lock();
+}
+
 
 /** \brief Save a cell value that changed.
  *
@@ -1149,10 +1170,12 @@ void QCassandraRow::dropCell(const QByteArray& column_key, QCassandraValue::time
  */
 void QCassandraRow::insertValue(const QByteArray& column_key, const QCassandraValue& value)
 {
-    if(!f_table.lock()) {
+    auto table( f_table.lock() );
+    if(!table)
+    {
         throw std::runtime_error("row was dropped and is not attached to a table anymore");
     }
-    f_table.lock()->insertValue(f_key, column_key, value);
+    table->insertValue(f_key, column_key, value);
 }
 
 /** \brief Get a cell value from Cassandra.
@@ -1169,10 +1192,12 @@ void QCassandraRow::insertValue(const QByteArray& column_key, const QCassandraVa
  */
 bool QCassandraRow::getValue(const QByteArray& column_key, QCassandraValue& value)
 {
-    if(!f_table.lock()) {
+    auto table( f_table.lock() );
+    if(!table)
+    {
         throw std::runtime_error("row was dropped and is not attached to a table anymore");
     }
-    return f_table.lock()->getValue(f_key, column_key, value);
+    return table->getValue(f_key, column_key, value);
 }
 
 /** \brief Add a value to a Cassandra counter.
@@ -1188,10 +1213,12 @@ bool QCassandraRow::getValue(const QByteArray& column_key, QCassandraValue& valu
  */
 void QCassandraRow::addValue(const QByteArray& column_key, int64_t value)
 {
-    if(!f_table.lock()) {
-        throw std::runtime_error("row was dropped and is not attached to a table anymore (addValue)");
+    auto table( f_table.lock() );
+    if(!table)
+    {
+        throw std::runtime_error("row was dropped and is not attached to a table anymore");
     }
-    return f_table.lock()->addValue(f_key, column_key, value);
+    return table->addValue(f_key, column_key, value);
 }
 
 /** \brief This internal function marks the row as unusable.
