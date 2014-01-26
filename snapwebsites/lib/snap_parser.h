@@ -1,5 +1,5 @@
 // Snap Websites Server -- advanced parser
-// Copyright (C) 2011-2012  Made to Order Software Corp.
+// Copyright (C) 2011-2014  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,14 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-#ifndef SNAP_PARSER_H
-#define SNAP_PARSER_H
+#pragma once
+
+#include <controlled_vars/controlled_vars_auto_init.h>
+#include <controlled_vars/controlled_vars_limited_auto_init.h>
 
 #include <QVariant>
 #include <QVector>
 #include <QSharedPointer>
-#include <controlled_vars/controlled_vars_auto_init.h>
-#include <controlled_vars/controlled_vars_limited_auto_init.h>
 
 namespace snap {
 namespace parser {
@@ -366,7 +366,4 @@ private:
 
 } // namespace parser
 } // namespace snap
-
-#endif
-// SNAP_PARSER_H
 // vim: ts=4 sw=4

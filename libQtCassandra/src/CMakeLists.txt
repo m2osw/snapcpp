@@ -40,6 +40,18 @@ get_property( THRIFT_HEADER_FILES GLOBAL PROPERTY thrift-gencpp-cassandra_HEADER
 get_property( THRIFT_SOURCE_FILES GLOBAL PROPERTY thrift-gencpp-cassandra_SOURCE_FILES )
 
 add_library(${PROJECT_NAME} SHARED
+    ${libQtCassandra_includes_SOURCE_DIR}/QtCassandra/QCassandraCell.h
+    ${libQtCassandra_includes_SOURCE_DIR}/QtCassandra/QCassandraColumnDefinition.h
+    ${libQtCassandra_includes_SOURCE_DIR}/QtCassandra/QCassandraColumnPredicate.h
+    ${libQtCassandra_includes_SOURCE_DIR}/QtCassandra/QCassandraConsistencyLevel.h
+    ${libQtCassandra_includes_SOURCE_DIR}/QtCassandra/QCassandraContext.h
+    ${libQtCassandra_includes_SOURCE_DIR}/QtCassandra/QCassandraLock.h
+    ${libQtCassandra_includes_SOURCE_DIR}/QtCassandra/QCassandraRow.h
+    ${libQtCassandra_includes_SOURCE_DIR}/QtCassandra/QCassandraRowPredicate.h
+    ${libQtCassandra_includes_SOURCE_DIR}/QtCassandra/QCassandraTable.h
+    ${libQtCassandra_includes_SOURCE_DIR}/QtCassandra/QCassandraValue.h
+    ${libQtCassandra_includes_SOURCE_DIR}/QtCassandra/QCassandra.h.in
+    ${libQtCassandra_includes_BINARY_DIR}/QtCassandra/QCassandra.h
     QCassandra.cpp
     QCassandraPrivate.cpp
     QCassandraContext.cpp
@@ -76,16 +88,6 @@ endif()
 
 install(
     TARGETS QtCassandra LIBRARY DESTINATION lib
-)
-install(
-    DIRECTORY ${libQtCassandra_SOURCE_DIR}/include/QtCassandra
-    DESTINATION include
-    FILES_MATCHING PATTERN *.h
-    PATTERN .svn EXCLUDE
-)
-install(
-    FILES ${libQtCassandra_BINARY_DIR}/include/QtCassandra/QCassandra.h
-    DESTINATION include/QtCassandra/
 )
 
 # vim: ts=4 sw=4 et

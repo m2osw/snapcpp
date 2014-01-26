@@ -39,6 +39,8 @@
 #include "QCassandraTable.h"
 #include "QCassandraColumnPredicate.h"
 
+#include <memory>
+
 namespace QtCassandra
 {
 
@@ -46,13 +48,16 @@ class QCassandraContextPrivate;
 class QCassandra;
 
 // Cassandra KsDef object
-class QCassandraContext : public QObject
+class QCassandraContext
+    : public QObject
+    , public std::enable_shared_from_this<QCassandraContext>
 {
 public:
-    typedef QMap<QString, QString>      QCassandraContextOptions;
-    typedef unsigned short              host_identifier_t;
-    static const host_identifier_t      NULL_HOST_ID = 0;
-    static const host_identifier_t      LARGEST_HOST_ID = 10000;
+    typedef std::shared_ptr<QCassandraContext>  pointer_t;
+    typedef QMap<QString, QString>              QCassandraContextOptions;
+    typedef unsigned short                      host_identifier_t;
+    static const host_identifier_t              NULL_HOST_ID = 0;
+    static const host_identifier_t              LARGEST_HOST_ID = 10000;
 
     virtual ~QCassandraContext();
 
@@ -68,10 +73,10 @@ public:
     void eraseDescriptionOption(const QString& option);
 
     // tables
-    QSharedPointer<QCassandraTable> table(const QString& table_name);
+    QCassandraTable::pointer_t table(const QString& table_name);
     const QCassandraTables& tables() const;
 
-    QSharedPointer<QCassandraTable> findTable(const QString& table_name) const;
+    QCassandraTable::pointer_t findTable(const QString& table_name) const;
     QCassandraTable& operator[] (const QString& table_name);
     const QCassandraTable& operator[] (const QString& table_name) const;
 
@@ -94,7 +99,7 @@ public:
 
     // locks
     QString lockHostsKey() const;
-    QSharedPointer<QCassandraTable> lockTable();
+    QCassandraTable::pointer_t lockTable();
     void addLockHost(const QString& host_name);
     void removeLockHost(const QString& host_name);
     void setLockTableName(const QString& lock_table_name);
@@ -107,12 +112,14 @@ public:
     void setHostName(const QString& host_name);
     QString hostName() const;
 
+    std::shared_ptr<QCassandra> parentCassandra() const;
+
 private:
     typedef controlled_vars::auto_init<int32_t, 5> lock_timeout_t;
     typedef controlled_vars::auto_init<int32_t, 60> lock_ttl_t;
 
     void makeCurrent();
-    QCassandraContext(QCassandra *cassandra, const QString& context_name);
+    QCassandraContext(std::shared_ptr<QCassandra> cassandra, const QString& context_name);
 
     // internal functions
     void parseContextDefinition(const void *data);
@@ -141,7 +148,10 @@ private:
     // f_cassandra is a parent that has a strong shared pointer over us so it
     // cannot disappear before we do, thus only a bare pointer is enough here
     // (there isn't a need to use a QWeakPointer or QPointer either)
-    QCassandra *                                f_cassandra;
+    // Also, it cannot be a shared_ptr unless you make a restriction that
+    // all instances must be allocated on the heap. Thus is the deficiency of
+    // std::enabled_shared_from_this<>.
+    std::shared_ptr<QCassandra>				   f_cassandra;
     QCassandraContextOptions                    f_options;
     QCassandraTables                            f_tables;
     QString                                     f_host_name;
@@ -151,7 +161,7 @@ private:
     lock_ttl_t                                  f_lock_ttl;
 };
 
-typedef QMap<QString, QSharedPointer<QCassandraContext> > QCassandraContexts;
+typedef QMap<QString, QCassandraContext::pointer_t> QCassandraContexts;
 
 
 } // namespace QtCassandra

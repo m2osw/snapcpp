@@ -40,7 +40,7 @@
 #include <controlled_vars/controlled_vars_limited_auto_init.h>
 #include <QString>
 #include <QByteArray>
-#include <QSharedPointer>
+#include <memory>
 #include <stdint.h>
 
 
@@ -592,7 +592,7 @@ private:
 
     // prevent share pointer assignments (i.e. output of
     // row->cell() instead of row->cell()->value())
-    template<class T> QCassandraValue& operator = (QSharedPointer<T>);
+    template<class T> QCassandraValue& operator = (std::shared_ptr<T>);
 
     friend class QCassandraPrivate;
 

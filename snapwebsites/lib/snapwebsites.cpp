@@ -16,6 +16,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "snapwebsites.h"
+
 #include "plugins.h"
 #include "signal.h"
 #include "log.h"
@@ -38,6 +39,7 @@
 #include <signal.h>
 
 #include "poison.h"
+
 
 /** \file
  * \brief This file represents the Snap! Server.
@@ -845,21 +847,21 @@ void server::prepare_cassandra()
         SNAP_LOG_FATAL("invalid cassandra_port, a port must be between 1 and 65535, ")(f_cassandra_port)(" is not.");
         exit(1);
     }
-    QtCassandra::QCassandra cassandra;
-    if(!cassandra.connect(f_cassandra_host, f_cassandra_port))
+    QtCassandra::QCassandra::pointer_t cassandra( QtCassandra::QCassandra::create() );
+    if(!cassandra->connect(f_cassandra_host, f_cassandra_port))
     {
         SNAP_LOG_FATAL("the connection to the Cassandra server failed (")(f_cassandra_host)(":")(f_cassandra_port)(").");
         exit(1);
     }
     // we need to read all the contexts in order to make sure the
     // findContext() works
-    cassandra.contexts();
+    cassandra->contexts();
     QString context_name(snap::get_name(snap::SNAP_NAME_CONTEXT));
-    QSharedPointer<QtCassandra::QCassandraContext> context(cassandra.findContext(context_name));
-    if(context.isNull())
+    QtCassandra::QCassandraContext::pointer_t context(cassandra->findContext(context_name));
+    if(!context)
     {
         // create the context since it doesn't exist yet
-        context = cassandra.context(context_name);
+        context = cassandra->context(context_name);
         context->setStrategyClass("org.apache.cassandra.locator.SimpleStrategy");
         context->setReplicationFactor(1);
         context->create();
@@ -890,27 +892,6 @@ void server::prepare_cassandra()
 }
 
 
-// XXX -- would this ever be necessary here?
-/** \brief Get the QCassandra pointer.
- *
- * This function retrieves the QCassandra pointer from the server.
- */
-//QSharedPointer<QtCassandra::QCassandra> server::get_cassandra()
-//{
-//    if(f_cassandra.isNull())
-//    {
-//        f_cassandra = QSharedPointer<QtCassandra::QCassandra>(new QtCassandra::QCassandra);
-//        if(!f_cassandra->connect(f_cassandra_host, f_cassandra_port))
-//        {
-//            SNAP_LOG_FATAL("the connection to the Cassandra server failed (")(f_cassandra_host)(":")(f_cassandra_port)(")");
-//            exit(1);
-//        }
-//    }
-//
-//    return f_cassandra;
-//}
-
-
 /** \brief Create a table in the specified context.
  *
  * The function checks whether the named table exists, if not it creates it with
@@ -924,11 +905,11 @@ void server::prepare_cassandra()
  * \param[in] table_name  The name of the new table, if it exists, nothing happens.
  * \param[in] comment  A comment about the new table.
  */
-QSharedPointer<QtCassandra::QCassandraTable> server::create_table(QSharedPointer<QtCassandra::QCassandraContext> context, QString table_name, QString comment)
+QtCassandra::QCassandraTable::pointer_t server::create_table(QtCassandra::QCassandraContext::pointer_t context, QString table_name, QString comment)
 {
     // does table exist?
-    QSharedPointer<QtCassandra::QCassandraTable> table(context->findTable(table_name));
-    if(table.isNull())
+    QtCassandra::QCassandraTable::pointer_t table(context->findTable(table_name));
+    if(!table)
     {
         // table is not there yet, create it
         table = context->table(table_name);

@@ -42,6 +42,8 @@
 #pragma GCC pop
 #include <stdexcept>
 
+#include <QtCassandra/QCassandraTable.h>
+
 namespace QtCassandra
 {
 
@@ -147,7 +149,7 @@ class QCassandraColumnDefinitionPrivate : public org::apache::cassandra::ColumnD
  * \param[in] table  The table this column is part of.
  * \param[in] column_name  The name of the column.
  */
-QCassandraColumnDefinition::QCassandraColumnDefinition(QCassandraTable *table, const QString& column_name)
+QCassandraColumnDefinition::QCassandraColumnDefinition(QCassandraTable::pointer_t table, const QString& column_name)
     : f_private(new QCassandraColumnDefinitionPrivate),
       f_table(table)
 {

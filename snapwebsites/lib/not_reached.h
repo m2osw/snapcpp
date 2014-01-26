@@ -1,5 +1,5 @@
 // Snap Websites Server -- check that code could not be reached
-// Copyright (C) 2011-2012  Made to Order Software Corp.
+// Copyright (C) 2011-2014  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,8 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-#ifndef SNAP_NOT_REACHED_H
-#define SNAP_NOT_REACHED_H
+#pragma once
 
 #include <iostream>
 #include <stdlib.h>
@@ -24,11 +23,10 @@ namespace snap {
 
 __attribute__ ((noreturn)) inline void NOTREACHED()
 {
+	// TODO: add call to print stack trace
 	std::cerr << "NOTREACHED called, process will abort." << std::endl;
 	abort();
 }
 
 } // namespace snap
-#endif
-// SNAP_NOT_REACHED_H
 // vim: ts=4 sw=4

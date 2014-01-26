@@ -16,11 +16,14 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
-#include <QString>
-#include <QStringList>
+#include <controlled_vars/controlled_vars_auto_init.h>
+
 #include <stdexcept>
 #include <memory>
-#include <controlled_vars/controlled_vars_auto_init.h>
+
+#include <QString>
+#include <QStringList>
+
 
 namespace snap
 {

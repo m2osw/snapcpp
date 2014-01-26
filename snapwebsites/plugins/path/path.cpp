@@ -187,14 +187,12 @@ plugins::plugin *path::get_plugin(content::path_info_t& ipath, permission_error_
     // get the name of the plugin that owns this URL 
     plugins::plugin *owner_plugin(NULL);
 
-    QSharedPointer<QtCassandra::QCassandraTable> content_table(content::content::instance()->get_content_table());
+    QtCassandra::QCassandraTable::pointer_t content_table(content::content::instance()->get_content_table());
     if(content_table->exists(ipath.get_key())
     && content_table->row(ipath.get_key())->exists(content::get_name(content::SNAP_NAME_CONTENT_PRIMARY_OWNER)))
     {
         // get the modified date so we can setup the Last-Modified HTTP header field
         // it is also a way to determine that a path is valid
-        //QSharedPointer<QtCassandra::QCassandraTable> data_table(content::content::instance()->get_data_table());
-        //QtCassandra::QCassandraValue value(data_table->row(ipath.get_branch_key())->cell(content::get_name(content::SNAP_NAME_CONTENT_MODIFIED))->value());
         QtCassandra::QCassandraValue value(content_table->row(ipath.get_key())->cell(content::get_name(content::SNAP_NAME_CONTENT_CREATED))->value());
         QString owner = content_table->row(ipath.get_key())->cell(QString(content::get_name(content::SNAP_NAME_CONTENT_PRIMARY_OWNER)))->value().stringValue();
         if(value.nullValue() || owner.isEmpty())

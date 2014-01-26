@@ -1,5 +1,5 @@
 // Snap Websites Servers -- generate a DOM from the output of an XML Query
-// Copyright (C) 2013  Made to Order Software Corp.
+// Copyright (C) 2013-2014  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -16,16 +16,16 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #ifndef _QXMLXPATH_H
 #define _QXMLXPATH_H
+
+#include <stdexcept>
+
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
 #include <QDomNode>
 #include <QString>
-#include <QSharedPointer>
 #include <QMap>
 #include <QVector>
 #pragma GCC diagnostic pop
-#include <stdexcept>
-
 
 
 class QDomXPathException : public std::runtime_error

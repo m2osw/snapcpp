@@ -1,5 +1,5 @@
 // Snap Websites Server -- path canonalization
-// Copyright (C) 2011-2012  Made to Order Software Corp.
+// Copyright (C) 2011-2014  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,16 +14,17 @@
 // You should have received a copy of the GNU General Public License
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-#ifndef SNAP_URI_H
-#define SNAP_URI_H
+#pragma once
 
 #include "snap_parser.h"
-#include <QString>
-#include <QStringList>
-#include <QMap>
+
 #include <QtSerialization/QSerializationReader.h>
 #include <QtSerialization/QSerializationFieldTag.h>
 #include <QtSerialization/QSerializationWriter.h>
+
+#include <QString>
+#include <QStringList>
+#include <QMap>
 
 namespace snap
 {
@@ -872,6 +873,4 @@ private:
 
 
 } // namespace snap
-#endif
-//#ifndef SNAP_URI_H
 // vim: ts=4 sw=4

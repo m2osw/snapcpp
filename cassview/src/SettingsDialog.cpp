@@ -63,8 +63,8 @@ SettingsDialog::~SettingsDialog()
 
 void SettingsDialog::on_f_buttonBox_accepted()
 {
-    QCassandra     cassandra;
-    if( !cassandra.connect( f_server.toString(), f_port.toInt() ) )
+	QCassandra::pointer_t     cassandra( QCassandra::create() );
+    if( !cassandra->connect( f_server.toString(), f_port.toInt() ) )
     {
         QMessageBox::critical( this, tr("Error"), tr("Cannot connect to cassandra server!") );
         return;

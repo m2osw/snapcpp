@@ -670,7 +670,7 @@ bool QCassandraColumnRangePredicate::index() const
  * \code
  *      // define the row
  *      ...
- *      QSharedPointer<QtCassandra::QCassandraRow> row(table->row(key));
+ *      QtCassandra::QCassandraRow::pointer_t row(table->row(key));
  *      ...
  *      // read all the columns with a name that start
  *      // with "links", 10000 at a time

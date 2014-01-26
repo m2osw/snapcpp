@@ -18,13 +18,16 @@
 
 #include "snap_exception.h"
 #include "snap_thread.h"
-#include <QString>
-#include <QStringList>
-#include <QVector>
+
 #include <controlled_vars/controlled_vars_auto_init.h>
 #include <controlled_vars/controlled_vars_limited_auto_init.h>
 #include <controlled_vars/controlled_vars_ptr_auto_init.h>
+
 #include <map>
+
+#include <QString>
+#include <QStringList>
+#include <QVector>
 
 namespace snap
 {

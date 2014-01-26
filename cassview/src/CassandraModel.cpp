@@ -3,7 +3,7 @@
 using namespace QtCassandra;
 
 
-void CassandraModel::setCassandra( QSharedPointer<QCassandra> c )
+void CassandraModel::setCassandra( QCassandra::pointer_t c )
 {
 	f_cassandra = c;
     reset();

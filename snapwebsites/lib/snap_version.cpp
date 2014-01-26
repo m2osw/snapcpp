@@ -16,10 +16,14 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "snap_version.h"
+
 #include "qstring_stream.h"
 #include "not_reached.h"
+
 #include <iostream>
+
 #include <QStringList>
+
 #include "poison.h"
 
 namespace snap

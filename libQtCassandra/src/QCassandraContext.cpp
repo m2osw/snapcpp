@@ -285,7 +285,7 @@ class QCassandraContextPrivate : public org::apache::cassandra::KsDef {};
  * \sa QCassandra::context()
  * \sa QCassandra::synchronizeSchemaVersions()
  */
-QCassandraContext::QCassandraContext(QCassandra *cassandra, const QString& context_name)
+QCassandraContext::QCassandraContext(QCassandra::pointer_t cassandra, const QString& context_name)
     : f_private(new QCassandraContextPrivate),
       f_cassandra(cassandra),
       //f_options() -- auto-init
@@ -484,13 +484,13 @@ void QCassandraContext::eraseDescriptionOption(const QString& option)
  * actually create the context and its table in the Cassandra cluster.
  *
  * You can test whether the result is null with the isNull() function
- * of the QSharedPointer class.
+ * of the std::shared_ptr<> class.
  *
  * \param[in] table_name  The name of the table to retrieve.
  *
  * \return A shared pointer to the table definition found or a null shared pointer.
  */
-QSharedPointer<QCassandraTable> QCassandraContext::table(const QString& table_name)
+QCassandraTable::pointer_t QCassandraContext::table(const QString& table_name)
 {
     // table already exists?
     QCassandraTables::iterator ti(f_tables.find(table_name));
@@ -499,7 +499,7 @@ QSharedPointer<QCassandraTable> QCassandraContext::table(const QString& table_na
     }
 
     // this is a new table, allocate it
-    QSharedPointer<QCassandraTable> t(new QCassandraTable(this, table_name));
+    QCassandraTable::pointer_t t(new QCassandraTable(shared_from_this(), table_name));
     f_tables.insert(table_name, t);
     return t;
 }
@@ -522,7 +522,7 @@ const QCassandraTables& QCassandraContext::tables() const
  *
  * This function searches for a table. If it exists, its shared pointer is
  * returned. Otherwise, it returns a NULL pointer (i.e. the
- * QSharedPointer::isNull() function returns true.)
+ * std::shared_ptr<>::operator bool() function returns true.)
  *
  * \note
  * Since the system reads the list of existing tables when it starts, this
@@ -532,11 +532,11 @@ const QCassandraTables& QCassandraContext::tables() const
  *
  * \return A shared pointer to the table.
  */
-QSharedPointer<QCassandraTable> QCassandraContext::findTable(const QString& table_name) const
+QCassandraTable::pointer_t QCassandraContext::findTable(const QString& table_name) const
 {
     QCassandraTables::const_iterator it(f_tables.find(table_name));
     if(it == f_tables.end()) {
-        QSharedPointer<QCassandraTable> null;
+        QCassandraTable::pointer_t null;
         return null;
     }
     return *it;
@@ -562,8 +562,8 @@ QSharedPointer<QCassandraTable> QCassandraContext::findTable(const QString& tabl
  */
 QCassandraTable& QCassandraContext::operator [] (const QString& table_name)
 {
-    QCassandraTable *ptable = findTable(table_name).data();
-    if(ptable == NULL) {
+    QCassandraTable::pointer_t ptable( findTable(table_name) );
+    if( !ptable ) {
         throw std::runtime_error("named table was not found, cannot return a reference");
     }
 
@@ -590,8 +590,8 @@ QCassandraTable& QCassandraContext::operator [] (const QString& table_name)
  */
 const QCassandraTable& QCassandraContext::operator [] (const QString& table_name) const
 {
-    const QCassandraTable *ptable(findTable(table_name).data());
-    if(ptable == NULL) {
+    const QCassandraTable::pointer_t ptable( findTable(table_name) );
+    if( !ptable ) {
         throw std::runtime_error("named table was not found, cannot return a reference");
     }
 
@@ -762,7 +762,7 @@ void QCassandraContext::parseContextDefinition(const void *data)
     f_tables.clear();
     for(std::vector<org::apache::cassandra::CfDef>::const_iterator
                 cf = ks->cf_defs.begin(); cf != ks->cf_defs.end(); ++cf) {
-        QSharedPointer<QCassandraTable> t(table(cf->name.c_str()));
+        QCassandraTable::pointer_t t(table(cf->name.c_str()));
         const org::apache::cassandra::CfDef& cf_def = *cf;
         t->parseTableDefinition(&cf_def);
     }
@@ -837,7 +837,7 @@ void QCassandraContext::prepareContextDefinition(void *data) const
  */
 void QCassandraContext::makeCurrent()
 {
-    if(f_cassandra == NULL) {
+    if(!f_cassandra) {
         throw std::runtime_error("this context was dropped and is not attached to a cassandra cluster anymore");
     }
 
@@ -845,7 +845,7 @@ void QCassandraContext::makeCurrent()
     // get that is to retrieve it using our name... (somewhat slow
     // but I don't see a cleaner way to do it without generating a
     // pointer reference loop.)
-    QSharedPointer<QCassandraContext> me(f_cassandra->context(f_private->name.c_str()));
+    QCassandraContext::pointer_t me(f_cassandra->context(f_private->name.c_str()));
     f_cassandra->setCurrentContext(me);
 }
 
@@ -890,7 +890,7 @@ void QCassandraContext::makeCurrent()
  */
 void QCassandraContext::create()
 {
-    if(f_cassandra == NULL) {
+    if(!f_cassandra) {
         throw std::runtime_error("this context was dropped and is not attached to a cassandra cluster anymore");
     }
 
@@ -924,7 +924,7 @@ void QCassandraContext::create()
  */
 void QCassandraContext::update()
 {
-    if(f_cassandra == NULL) {
+    if(!f_cassandra) {
         throw std::runtime_error("this context was dropped and is not attached to a cassandra cluster anymore");
     }
 
@@ -957,7 +957,7 @@ void QCassandraContext::update()
  */
 void QCassandraContext::drop()
 {
-    if(f_cassandra == NULL) {
+    if( !f_cassandra ) {
         throw std::runtime_error("this context was dropped and is not attached to a cassandra cluster anymore");
     }
 
@@ -988,7 +988,7 @@ void QCassandraContext::dropTable(const QString& table_name)
 {
     if(f_tables.find(table_name) != f_tables.end()) {
         // keep a shared pointer on the table
-        QSharedPointer<QCassandraTable> t(table(table_name));
+        QCassandraTable::pointer_t t(table(table_name));
 
         // remove from the Cassandra database
         makeCurrent();
@@ -1262,7 +1262,7 @@ void QCassandraContext::clearCache()
  */
 void QCassandraContext::synchronizeSchemaVersions()
 {
-    if(f_cassandra != NULL) {
+    if(f_cassandra) {
         f_cassandra->synchronizeSchemaVersions();
     }
 }
@@ -1277,7 +1277,7 @@ void QCassandraContext::synchronizeSchemaVersions()
  */
 void QCassandraContext::unparent()
 {
-    f_cassandra = NULL;
+    f_cassandra.reset();
     clearCache();
 }
 
@@ -1311,7 +1311,7 @@ QString QCassandraContext::lockHostsKey() const
  *
  * \return The function returns a pointer to the Cassandra table.
  */
-QSharedPointer<QCassandraTable> QCassandraContext::lockTable()
+QCassandraTable::pointer_t QCassandraContext::lockTable()
 {
     // check whether the table exists
     const QString& table_name(lockTableName());
@@ -1320,7 +1320,7 @@ QSharedPointer<QCassandraTable> QCassandraContext::lockTable()
     }
 
     // TODO: determine what the best parameters are for a session table
-    QSharedPointer<QCassandraTable> lock_table(table(table_name));
+    QCassandraTable::pointer_t lock_table(table(table_name));
     lock_table->setColumnType("Standard");
     lock_table->setKeyValidationClass("BytesType");
     lock_table->setDefaultValidationClass("BytesType");
@@ -1369,8 +1369,8 @@ QSharedPointer<QCassandraTable> QCassandraContext::lockTable()
  */
 void QCassandraContext::addLockHost(const QString& host_name)
 {
-    QSharedPointer<QCassandraTable> locks_table(lockTable());
-    QSharedPointer<QCassandraRow> hosts_row(locks_table->row(lockHostsKey()));
+    QCassandraTable::pointer_t locks_table(lockTable());
+    QCassandraRow::pointer_t hosts_row(locks_table->row(lockHostsKey()));
     hosts_row->clearCache(); // make sure we have a clean slate
     int hosts_count(hosts_row->cellCount());
     QCassandraColumnRangePredicate hosts_predicate;
@@ -1432,9 +1432,9 @@ void QCassandraContext::addLockHost(const QString& host_name)
  */
 void QCassandraContext::removeLockHost(const QString& host_name)
 {
-    QSharedPointer<QCassandraTable> locks_table(table(f_lock_table_name));
-    QSharedPointer<QCassandraRow> row(locks_table->row(lockHostsKey()));
-    QSharedPointer<QCassandraCell> c(row->cell(host_name));
+    QCassandraTable::pointer_t locks_table(table(f_lock_table_name));
+    QCassandraRow::pointer_t row(locks_table->row(lockHostsKey()));
+    QCassandraCell::pointer_t c(row->cell(host_name));
     c->setConsistencyLevel(CONSISTENCY_LEVEL_QUORUM);
     row->dropCell(host_name, QCassandraValue::TIMESTAMP_MODE_DEFINED, QCassandra::timeofday());
 }
@@ -1464,6 +1464,7 @@ void QCassandraContext::setHostName(const QString& host_name)
     f_host_name = host_name;
 }
 
+
 /** \brief Get the name of the host using this instance.
  *
  * This function returns the name of the host using this QCassandraContext.
@@ -1477,6 +1478,17 @@ QString QCassandraContext::hostName() const
     f_lock_accessed = true;
     return f_host_name;
 }
+
+
+/** \brief Get the pointer to the parent object.
+ *
+ * \return Shared pointer to the cassandra object.
+ */
+QCassandra::pointer_t QCassandraContext::parentCassandra() const
+{
+    return f_cassandra;
+}
+
 
 /** \brief Set the name of the lock table in this context.
  *

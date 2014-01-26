@@ -44,7 +44,7 @@
 
 int main(int argc, char *argv[])
 {
-    QtCassandra::QCassandra     cassandra;
+    QtCassandra::QCassandra::pointer_t cassandra( QtCassandra::QCassandra::create() );
 
     const char *host("localhost");
     for(int i(1); i < argc; ++i) {
@@ -62,13 +62,13 @@ int main(int argc, char *argv[])
         }
     }
 
-    cassandra.connect(host);
-    qDebug() << "Working on Cassandra Cluster Named" << cassandra.clusterName();
+    cassandra->connect(host);
+    qDebug() << "Working on Cassandra Cluster Named" << cassandra->clusterName();
 
-    QSharedPointer<QtCassandra::QCassandraContext> context(cassandra.context("qt_cassandra_test_context"));
+    QtCassandra::QCassandraContext::pointer_t context(cassandra->context("qt_cassandra_test_context"));
     try {
         context->drop();
-        cassandra.synchronizeSchemaVersions();
+        cassandra->synchronizeSchemaVersions();
     }
     catch(...) {
         // ignore errors, this happens when the context doesn't exist yet
@@ -78,7 +78,7 @@ int main(int argc, char *argv[])
     //context->setDurableWrites(false); // by default this is 'true'
     context->setReplicationFactor(1); // by default this is undefined
 
-    QSharedPointer<QtCassandra::QCassandraTable> table(context->table("qt_cassandra_test_table"));
+    QtCassandra::QCassandraTable::pointer_t table(context->table("qt_cassandra_test_table"));
     //table->setComment("Our test table.");
     table->setColumnType("Standard"); // Standard or Super
     table->setKeyValidationClass("BytesType");
@@ -96,15 +96,15 @@ int main(int argc, char *argv[])
     // Column definitions can be used to make sure the content is valid.
     // It is also required if you want to index on such and such column
     // using the internal Cassandra indexing mechanism.
-    QSharedPointer<QtCassandra::QCassandraColumnDefinition> column1(table->columnDefinition("qt_cassandra_test_column1"));
+    QtCassandra::QCassandraColumnDefinition::pointer_t column1(table->columnDefinition("qt_cassandra_test_column1"));
     column1->setValidationClass("UTF8Type");
 
-    QSharedPointer<QtCassandra::QCassandraColumnDefinition> column2(table->columnDefinition("qt_cassandra_test_column2"));
+    QtCassandra::QCassandraColumnDefinition::pointer_t column2(table->columnDefinition("qt_cassandra_test_column2"));
     column2->setValidationClass("IntegerType");
 
     try {
         context->create();
-        cassandra.synchronizeSchemaVersions();
+        cassandra->synchronizeSchemaVersions();
         qDebug() << "Done!";
     }
     catch(org::apache::cassandra::InvalidRequestException& e) {
@@ -112,10 +112,10 @@ int main(int argc, char *argv[])
     }
 
     // now that it's created, we can access it with the [] operator
-    //QtCassandra::QCassandraTable& t(cassandra["qt_cassandra_test_context"]["qt_cassandra_test_table"]);
+    //QtCassandra::QCassandraTable& t((*cassandra)["qt_cassandra_test_context"]["qt_cassandra_test_table"]);
 
     context->drop();
-    cassandra.synchronizeSchemaVersions();
+    cassandra->synchronizeSchemaVersions();
 
     return 0;
 }

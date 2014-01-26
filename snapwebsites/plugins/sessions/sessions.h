@@ -171,7 +171,7 @@ public:
 private:
     void content_update(int64_t variables_timestamp);
 
-    QSharedPointer<QtCassandra::QCassandraTable> get_sessions_table();
+    QtCassandra::QCassandraTable::pointer_t get_sessions_table();
 
     zpsnap_child_t          f_snap;
 };

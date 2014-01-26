@@ -39,7 +39,6 @@
 #include <QObject>
 #include <QString>
 #include <QMap>
-#include <QSharedPointer>
 #include <memory>
 
 namespace QtCassandra
@@ -53,7 +52,8 @@ class QCassandraColumnDefinitionPrivate;
 class QCassandraColumnDefinition : public QObject
 {
 public:
-    typedef QMap<QString, QString>      QCassandraIndexOptions;
+    typedef std::shared_ptr<QCassandraColumnDefinition> pointer_t;
+    typedef QMap<QString, QString>                      QCassandraIndexOptions;
 
     enum index_type_t {
         INDEX_TYPE_UNKNOWN = -2,
@@ -85,7 +85,7 @@ public:
     void eraseIndexOption(const QString& option);
 
 private:
-    QCassandraColumnDefinition(QCassandraTable *table, const QString& name);
+    QCassandraColumnDefinition(std::shared_ptr<QCassandraTable> table, const QString& name);
 
     void parseColumnDefinition(const void *data);
     void prepareColumnDefinition(void *data) const;
@@ -97,12 +97,12 @@ private:
     // f_table is a parent that has a strong shared pointer over us so it
     // cannot disappear before we do, thus only a bare pointer is enough here
     // (there isn't a need to use a QWeakPointer or QPointer either)
-    QCassandraTable *                                   f_table;
+    std::shared_ptr<QCassandraTable>                    f_table;
     QCassandraIndexOptions                              f_index_options;
 };
 
 // array of column definitions
-typedef QMap<QString, QSharedPointer<QCassandraColumnDefinition> > QCassandraColumnDefinitions;
+typedef QMap<QString, QCassandraColumnDefinition::pointer_t > QCassandraColumnDefinitions;
 
 
 

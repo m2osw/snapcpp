@@ -39,6 +39,7 @@
 #include "QCassandraCell.h"
 #include "QCassandraColumnPredicate.h"
 #include <QUuid>
+#include <memory>
 
 namespace QtCassandra
 {
@@ -46,10 +47,13 @@ namespace QtCassandra
 class QCassandraTable;
 
 // Cassandra Row
-class QCassandraRow : public QObject
+class QCassandraRow
+    : public QObject
+    , public std::enable_shared_from_this<QCassandraRow>
 {
 public:
-    typedef QVector<QCassandraValue> composite_column_names_t;
+    typedef std::shared_ptr<QCassandraRow>  pointer_t;
+    typedef QVector<QCassandraValue>        composite_column_names_t;
 
     virtual ~QCassandraRow();
 
@@ -60,20 +64,20 @@ public:
     uint32_t readCells();
     uint32_t readCells(QCassandraColumnPredicate& column_predicate);
 
-    QSharedPointer<QCassandraCell> cell(const char *column_name);
-    QSharedPointer<QCassandraCell> cell(const wchar_t *column_name);
-    QSharedPointer<QCassandraCell> cell(const QString& column_name);
-    QSharedPointer<QCassandraCell> cell(const QUuid& column_name);
-    QSharedPointer<QCassandraCell> cell(const QByteArray& column_key);
+    QCassandraCell::pointer_t cell(const char *column_name);
+    QCassandraCell::pointer_t cell(const wchar_t *column_name);
+    QCassandraCell::pointer_t cell(const QString& column_name);
+    QCassandraCell::pointer_t cell(const QUuid& column_name);
+    QCassandraCell::pointer_t cell(const QByteArray& column_key);
     const QCassandraCells& cells() const;
     QCassandraCell& compositeCell(const composite_column_names_t& composite_names);
     const QCassandraCell& compositeCell(const composite_column_names_t& composite_names) const;
 
-    QSharedPointer<QCassandraCell> findCell(const char *column_name) const;
-    QSharedPointer<QCassandraCell> findCell(const wchar_t *column_name) const;
-    QSharedPointer<QCassandraCell> findCell(const QString& column_name) const;
-    QSharedPointer<QCassandraCell> findCell(const QUuid& column_name) const;
-    QSharedPointer<QCassandraCell> findCell(const QByteArray& column_key) const;
+    QCassandraCell::pointer_t findCell(const char *column_name) const;
+    QCassandraCell::pointer_t findCell(const wchar_t *column_name) const;
+    QCassandraCell::pointer_t findCell(const QString& column_name) const;
+    QCassandraCell::pointer_t findCell(const QUuid& column_name) const;
+    QCassandraCell::pointer_t findCell(const QByteArray& column_key) const;
     bool exists(const char *column_name) const;
     bool exists(const wchar_t *column_name) const;
     bool exists(const QString& column_name) const;
@@ -98,8 +102,10 @@ public:
     void dropCell(const QUuid& column_name, QCassandraValue::timestamp_mode_t mode = QCassandraValue::TIMESTAMP_MODE_AUTO, int64_t timestamp = 0);
     void dropCell(const QByteArray& column_key, QCassandraValue::timestamp_mode_t mode = QCassandraValue::TIMESTAMP_MODE_AUTO, int64_t timestamp = 0);
 
+    std::shared_ptr<QCassandraTable> parentTable() const;
+
 private:
-    QCassandraRow(QCassandraTable *table, const QByteArray& row_key);
+    QCassandraRow(std::shared_ptr<QCassandraTable> table, const QByteArray& row_key);
 
     void insertValue(const QByteArray& column_key, const QCassandraValue& value);
     bool getValue(const QByteArray& column_key, QCassandraValue& value);
@@ -112,13 +118,13 @@ private:
     // f_table is a parent that has a strong shared pointer over us so it
     // cannot disappear before we do, thus only a bare pointer is enough here
     // (there isn't a need to use a QWeakPointer or QPointer either)
-    QCassandraTable *       f_table;
-    QByteArray              f_key;
-    QCassandraCells         f_cells;
+    std::weak_ptr<QCassandraTable> f_table;
+    QByteArray                     f_key;
+    QCassandraCells                f_cells;
 };
 
 // array of rows
-typedef QMap<QByteArray, QSharedPointer<QCassandraRow> > QCassandraRows;
+typedef QMap<QByteArray, QCassandraRow::pointer_t > QCassandraRows;
 
 
 

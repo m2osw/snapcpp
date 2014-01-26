@@ -18,11 +18,16 @@
 #define SNAP_VERSION_H
 
 #include "snap_exception.h"
+
+#include "qstring_stream.h"
+
 #include <controlled_vars/controlled_vars_auto_init.h>
 #include <controlled_vars/controlled_vars_limited_auto_init.h>
+
+//#include <iostream>
+
 #include <QVector>
-#include <qstring_stream.h>
-#include <iostream>
+
 
 namespace snap
 {

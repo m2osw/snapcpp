@@ -185,14 +185,14 @@ bool output::on_path_execute(content::path_info_t& ipath)
     content::path_info_t attachment_ipath;
     attachment_ipath.set_path(ipath.get_cpath());
     //attachment_ipath.set_owner(content::get_name(content::SNAP_NAME_CONTENT_ATTACHMENT_OWNER));
-    QSharedPointer<QtCassandra::QCassandraTable> data_table(content::content::instance()->get_data_table());
+    QtCassandra::QCassandraTable::pointer_t data_table(content::content::instance()->get_data_table());
     if(data_table->exists(ipath.get_revision_key())
     && data_table->row(ipath.get_revision_key())->exists(content::get_name(content::SNAP_NAME_CONTENT_ATTACHMENT)))
     {
         QtCassandra::QCassandraValue attachment_key(data_table->row(ipath.get_revision_key())->cell(content::get_name(content::SNAP_NAME_CONTENT_ATTACHMENT))->value());
         if(!attachment_key.nullValue())
         {
-            QSharedPointer<QtCassandra::QCassandraTable> files_table(content::content::instance()->get_files_table());
+            QtCassandra::QCassandraTable::pointer_t files_table(content::content::instance()->get_files_table());
             if(!files_table->exists(attachment_key.binaryValue())
             || !files_table->row(attachment_key.binaryValue())->exists(content::get_name(content::SNAP_NAME_CONTENT_FILES_DATA)))
             {
@@ -205,7 +205,7 @@ bool output::on_path_execute(content::path_info_t& ipath)
                 NOTREACHED();
             }
 
-            QSharedPointer<QtCassandra::QCassandraRow> file_row(files_table->row(attachment_key.binaryValue()));
+            QtCassandra::QCassandraRow::pointer_t file_row(files_table->row(attachment_key.binaryValue()));
 
             //int pos(cpath.lastIndexOf('/'));
             //QString basename(cpath.mid(pos + 1));

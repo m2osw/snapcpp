@@ -1,11 +1,8 @@
-#
-# File:
-#      src/CMakeLists.txt
+# Text:
+#      CMakeLists.txt
 #
 # Description:
-#      The Snap! Websites Server. The server is the main() of the Snap!
-#      environment. Most everything is however defined in the
-#      libsnapwebsites.so library (see lib/*).
+#      Defines the header conversion.
 #
 # Documentation:
 #      See the CMake documentation.
@@ -35,40 +32,22 @@
 #      TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 #      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
+project( libQtCassandra_includes )
 
-##
-project(cassview)
-
-include_directories(
-	"${CMAKE_CURRENT_SOURCE_DIR}"
-	"${CMAKE_CURRENT_BINARY_DIR}"
-)
-
-QT4_WRAP_UI(UI_FILES
-	MainWindow.ui
-	SettingsDialog.ui
-)
-
-add_executable(${PROJECT_NAME}
-    CassandraModel.cpp
-	ContextModel.cpp
-	MainWindow.cpp
-	main.cpp
-    RowModel.cpp
-    SettingsDialog.cpp
-    TableModel.cpp
-	qt4.h
-	${UI_FILES}
-)
-
-# while developing you may need to set LD_LIBRARY_PATH
-target_link_libraries(${PROJECT_NAME}
-    ${QTCASSANDRA_LIBRARIES}
-    ${QT_LIBRARIES}
-)
+configure_file(
+		QtCassandra/QCassandra.h.in
+		${PROJECT_BINARY_DIR}/QtCassandra/QCassandra.h
+		)
 
 install(
-    TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin
+	DIRECTORY QtCassandra
+	DESTINATION include
+	FILES_MATCHING PATTERN *.h
+	PATTERN .svn EXCLUDE
+)
+install(
+	FILES ${PROJECT_BINARY_DIR}/QtCassandra/QCassandra.h
+	DESTINATION include/QtCassandra/
 )
 
 # vim: ts=4 sw=4 et

@@ -1,5 +1,5 @@
 // Snap Websites Server -- XML DOM utilities
-// Copyright (C) 2012  Made to Order Software Corp.
+// Copyright (C) 2012-2014  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,8 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-#ifndef SNAP_DOM_UTIL_H
-#define SNAP_DOM_UTIL_H
+#pragma once
 #include <QDomElement>
 
 namespace snap
@@ -23,10 +22,9 @@ namespace snap
 namespace dom_util
 {
 
-bool get_tag(const QString& tag_name, QDomElement& element, QDomElement& tag, bool create = true);
+bool get_tag(QString const& tag_name, QDomElement& element, QDomElement& tag, bool create = true);
 
-}	// namespace dom_util
-}	// namespace snap
+}  // namespace dom_util
+}  // namespace snap
 
-#endif
-// #ifndef SNAP_DOM_UTIL_H
+// vim: ts=4 sw=4 et

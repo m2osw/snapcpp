@@ -39,6 +39,8 @@
 
 #include "QtCassandra/QCassandraContext.h"
 
+#include <memory>
+
 namespace QtCassandra
 {
 
@@ -66,14 +68,17 @@ class QCassandraPrivate;
 
 
 // Handling of the transport and CassandraClient objects
-class QCassandra : public QObject
+class QCassandra
+    : public QObject
+    , public std::enable_shared_from_this<QCassandra>
 {
 public:
     static const uint32_t SCHEMA_SYNCHRONIZATION_USE_DEFAULT = 0;
     static const uint32_t SCHEMA_SYNCHRONIZATION_DEFAULT = 60;
     typedef controlled_vars::auto_init<uint32_t, SCHEMA_SYNCHRONIZATION_USE_DEFAULT> schema_synchronization_timeout_t;
+    typedef std::shared_ptr<QCassandra> pointer_t;
 
-    QCassandra();
+    static pointer_t create();
     virtual ~QCassandra();
 
     static int versionMajor();
@@ -93,10 +98,10 @@ public:
     const QString& snitch() const;
 
     // context functions (the database [Cassandra keyspace])
-    QSharedPointer<QCassandraContext> context(const QString& context_name);
+    QCassandraContext::pointer_t context(const QString& context_name);
     const QCassandraContexts& contexts() const;
 
-    QSharedPointer<QCassandraContext> findContext(const QString& context_name) const;
+    QCassandraContext::pointer_t findContext(const QString& context_name) const;
     QCassandraContext& operator[] (const QString& context_name);
     const QCassandraContext& operator[] (const QString& context_name) const;
 
@@ -110,8 +115,10 @@ public:
     static int64_t timeofday();
 
 private:
-    //QSharedPointer<QCassandraContext> currentContext() const;
-    void setCurrentContext(QSharedPointer<QCassandraContext> c);
+    QCassandra();
+
+    //QCassandraContext::pointer_t currentContext() const;
+    void setCurrentContext(QCassandraContext::pointer_t c);
     void clearCurrentContextIf(const QCassandraContext& c);
     QCassandraPrivate *getPrivate();
 
@@ -119,7 +126,7 @@ private:
     friend class QCassandraContext;
 
     std::auto_ptr<QCassandraPrivate>        f_private;
-    QSharedPointer<QCassandraContext>       f_current_context;
+    QCassandraContext::pointer_t            f_current_context;
     mutable controlled_vars::zbool_t        f_contexts_read;
     QCassandraContexts                      f_contexts;
     QString                                 f_cluster_name;

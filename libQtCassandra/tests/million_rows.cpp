@@ -50,7 +50,7 @@
 
 int main(int argc, char *argv[])
 {
-    QtCassandra::QCassandra     cassandra;
+    QtCassandra::QCassandra::pointer_t cassandra( QtCassandra::QCassandra::create() );
 
     bool drop(false);
     const char *host("localhost");
@@ -72,18 +72,18 @@ int main(int argc, char *argv[])
         }
     }
 
-    cassandra.connect(host);
-    qDebug() << "Working on Cassandra Cluster Named" << cassandra.clusterName();
-    qDebug() << "Working on Cassandra Protocol Version" << cassandra.protocolVersion();
+    cassandra->connect(host);
+    qDebug() << "Working on Cassandra Cluster Named" << cassandra->clusterName();
+    qDebug() << "Working on Cassandra Protocol Version" << cassandra->protocolVersion();
 
     qDebug() << "+ Initialization";
     qDebug() << "++ Got an old context?";
-    QSharedPointer<QtCassandra::QCassandraContext> oldctxt(cassandra.findContext("qt_cassandra_test_large_rw"));
+    QtCassandra::QCassandraContext::pointer_t oldctxt(cassandra->findContext("qt_cassandra_test_large_rw"));
     if(oldctxt) {
         qDebug() << "++ Drop the old context";
-        cassandra.dropContext("qt_cassandra_test_large_rw");
+        cassandra->dropContext("qt_cassandra_test_large_rw");
         qDebug() << "++ Synchronize after the drop";
-        cassandra.synchronizeSchemaVersions();
+        cassandra->synchronizeSchemaVersions();
         if(drop) {
             // just do the drop and it succeeded
             exit(0);
@@ -94,12 +94,12 @@ int main(int argc, char *argv[])
         exit(0);
     }
     qDebug() << "++ Setup new context...";
-    QSharedPointer<QtCassandra::QCassandraContext> context(cassandra.context("qt_cassandra_test_large_rw"));
+    QtCassandra::QCassandraContext::pointer_t context(cassandra->context("qt_cassandra_test_large_rw"));
     context->setStrategyClass("SimpleStrategy"); // default is LocalStrategy
     //context->setDurableWrites(false); // by default this is 'true'
     context->setReplicationFactor(2); // by default this is undefined
 
-    QSharedPointer<QtCassandra::QCassandraTable> table(context->table("qt_cassandra_test_table"));
+    QtCassandra::QCassandraTable::pointer_t table(context->table("qt_cassandra_test_table"));
     //table->setComment("Our test table.");
     table->setColumnType("Standard"); // Standard or Super
     table->setKeyValidationClass("BytesType");
@@ -118,7 +118,7 @@ int main(int argc, char *argv[])
     try {
         context->create();
         qDebug() << "++ Synchronize new context...";
-        cassandra.synchronizeSchemaVersions();
+        cassandra->synchronizeSchemaVersions();
         qDebug() << "++ Context and its table were created!";
     }
     catch(org::apache::cassandra::InvalidRequestException& e) {
@@ -143,7 +143,7 @@ int main(int argc, char *argv[])
 //qDebug() << "Save row" << row << "with" << r;
         for(int retry(5); retry > 0; --retry) {
             try {
-                cassandra["qt_cassandra_test_large_rw"]["qt_cassandra_test_table"][row]["value"] = value;
+                (*cassandra)["qt_cassandra_test_large_rw"]["qt_cassandra_test_table"][row]["value"] = value;
                 retry = 0;
             }
             catch(const org::apache::cassandra::TimedOutException& e) {
@@ -162,11 +162,11 @@ int main(int argc, char *argv[])
                 sleep(1);
             }
         }
-        //cassandra.synchronizeSchemaVersions();
+        //cassandra->synchronizeSchemaVersions();
 
         // clear the cache once in a while so the 'count' rows don't stay in memory
         if(i % 100 == 0) {
-            cassandra["qt_cassandra_test_large_rw"]["qt_cassandra_test_table"].clearCache();
+            (*cassandra)["qt_cassandra_test_large_rw"]["qt_cassandra_test_table"].clearCache();
         }
         if((i % 5000) == 0) {
             printf(".");
@@ -185,7 +185,7 @@ int main(int argc, char *argv[])
     fflush(stdout);
 
     // now read the data
-    QSharedPointer<QtCassandra::QCassandraColumnNamePredicate> column_predicate(new QtCassandra::QCassandraColumnNamePredicate);
+    QtCassandra::QCassandraColumnNamePredicate::pointer_t column_predicate(new QtCassandra::QCassandraColumnNamePredicate);
     column_predicate->addColumnName("value");
     QtCassandra::QCassandraRowPredicate row_predicate;
     row_predicate.setColumnPredicate(column_predicate);

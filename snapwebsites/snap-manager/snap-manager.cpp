@@ -459,9 +459,9 @@ void snap_manager::on_f_cassandraConnectButton_clicked()
     f_cassandraConnectButton->setEnabled( false );
     f_cassandraDisconnectButton->setEnabled( false );
 
-    if(f_cassandra.isNull())
+    if(!f_cassandra)
     {
-        f_cassandra = new QtCassandra::QCassandra;
+        f_cassandra = QtCassandra::QCassandra::create();
     }
 
     // save the old values
@@ -527,7 +527,7 @@ void snap_manager::on_f_cassandraConnectButton_clicked()
     f_cassandra->contexts();
     QString context_name(snap::get_name(snap::SNAP_NAME_CONTEXT));
     f_context = f_cassandra->findContext(context_name);
-    if(f_context.isNull())
+    if(!f_context)
     {
         // we connected to the database, but it is not properly initialized
         console->addItem("The \"" + context_name + "\" context is not defined.");
@@ -545,8 +545,8 @@ void snap_manager::on_f_cassandraConnectButton_clicked()
     for(int i = 0; i < 2; ++i)
     {
         QString table_name(snap::get_name(names[i]));
-        QSharedPointer<QtCassandra::QCassandraTable> table(f_context->findTable(table_name));
-        if(table.isNull())
+        QtCassandra::QCassandraTable::pointer_t table(f_context->findTable(table_name));
+        if(!table)
         {
             // we connected to the database, but it is not properly initialized
             console->addItem("The \"" + table_name + "\" table is not defined.");
@@ -583,7 +583,7 @@ void snap_manager::on_f_cassandraDisconnectButton_clicked()
     f_cassandraDisconnectButton->setEnabled( false );
 
     // disconnect by deleting the object altogether
-    delete f_cassandra;
+    f_cassandra.reset();
 
     QListWidget *console = getChild<QListWidget>(this, "cassandraConsole");
     console->clear();
@@ -633,7 +633,7 @@ void snap_manager::reset_domains_index()
 {
     // get the table and delete the index row if it exists
     QString domain_table_name(snap::get_name(snap::SNAP_NAME_DOMAINS));
-    QSharedPointer<QtCassandra::QCassandraTable> table(f_context->findTable(domain_table_name));
+    QtCassandra::QCassandraTable::pointer_t table(f_context->findTable(domain_table_name));
     QString row_index_name(snap::get_name(snap::SNAP_NAME_INDEX)); // "*index*"
     if(table->exists(row_index_name)) {
         // if the index exists, drop it so we can restart from scratch
@@ -642,7 +642,7 @@ void snap_manager::reset_domains_index()
 
     // go through all the domain rows
     int count(0);
-    QSharedPointer<QtCassandra::QCassandraColumnNamePredicate> column_predicate(new QtCassandra::QCassandraColumnNamePredicate);
+    QtCassandra::QCassandraColumnNamePredicate::pointer_t column_predicate(new QtCassandra::QCassandraColumnNamePredicate);
     column_predicate->addColumnName("core::rules"); // get one column to avoid getting all!
     QtCassandra::QCassandraRowPredicate row_predicate;
     row_predicate.setColumnPredicate(column_predicate);
@@ -670,11 +670,11 @@ void snap_manager::reset_domains_index()
 void snap_manager::reset_websites_index()
 {
     QString domain_table_name(snap::get_name(snap::SNAP_NAME_DOMAINS));
-    QSharedPointer<QtCassandra::QCassandraTable> domain_table(f_context->findTable(domain_table_name));
+    QtCassandra::QCassandraTable::pointer_t domain_table(f_context->findTable(domain_table_name));
 
     // get the table and delete the index row if it exists
     QString table_name(snap::get_name(snap::SNAP_NAME_WEBSITES));
-    QSharedPointer<QtCassandra::QCassandraTable> table(f_context->findTable(table_name));
+    QtCassandra::QCassandraTable::pointer_t table(f_context->findTable(table_name));
     QString row_index_name(snap::get_name(snap::SNAP_NAME_INDEX)); // "*index*"
     if(table->exists(row_index_name)) {
         // if the index exists, drop it so we can restart from scratch
@@ -683,7 +683,7 @@ void snap_manager::reset_websites_index()
 
     // go through all the website rows
     int count(0);
-    QSharedPointer<QtCassandra::QCassandraColumnNamePredicate> column_predicate(new QtCassandra::QCassandraColumnNamePredicate);
+    QtCassandra::QCassandraColumnNamePredicate::pointer_t column_predicate(new QtCassandra::QCassandraColumnNamePredicate);
     column_predicate->addColumnName("core::rules"); // get one column to avoid getting all!
     QtCassandra::QCassandraRowPredicate row_predicate;
     row_predicate.setColumnPredicate(column_predicate);
@@ -741,15 +741,15 @@ void snap_manager::loadHosts()
     f_host_list->clear();
 
     QString table_name(f_context->lockTableName());
-    QSharedPointer<QtCassandra::QCassandraTable> table(f_context->findTable(table_name));
-    if( table.isNull() )
+    QtCassandra::QCassandraTable::pointer_t table(f_context->findTable(table_name));
+    if( !table )
     {
         QString msg( tr("The table '%1' was not found in the current context. Are you sure the context is set up correctly?").arg(table_name) );
         QMessageBox::critical( this, tr("Error!"), msg );
         return;
     }
 
-    QSharedPointer<QtCassandra::QCassandraRow> row(table->row(f_context->lockHostsKey()));
+    QtCassandra::QCassandraRow::pointer_t row(table->row(f_context->lockHostsKey()));
 
     QtCassandra::QCassandraColumnRangePredicate hosts_predicate;
     QString filter(f_host_filter_string->text());
@@ -979,8 +979,8 @@ void snap_manager::loadDomains()
     f_domain_list->clear();
 
     QString table_name(snap::get_name(snap::SNAP_NAME_DOMAINS));
-    QSharedPointer<QtCassandra::QCassandraTable> table(f_context->findTable(table_name));
-    if( table.isNull() )
+    QtCassandra::QCassandraTable::pointer_t table(f_context->findTable(table_name));
+    if( !table )
     {
         QString msg( tr("The table '%1' was not found in the current context. Are you sure the context is set up correctly?").arg(table_name) );
         QMessageBox::critical( this, tr("Error!"), msg );
@@ -994,7 +994,7 @@ void snap_manager::loadDomains()
         // so that's it!
         //return; -- if we're connected we need to run the whole thing anyway
     }
-    QSharedPointer<QtCassandra::QCassandraRow> row(table->row(row_index_name));
+    QtCassandra::QCassandraRow::pointer_t row(table->row(row_index_name));
 
     QtCassandra::QCassandraColumnRangePredicate domain_predicate;
     QString filter(f_domain_filter_string->text());
@@ -1114,8 +1114,8 @@ void snap_manager::on_domainList_itemClicked(QListWidgetItem *item)
 
     // IMPORTANT: note that f_domain_org_name changed to the item->text() value
     QString table_name(snap::get_name(snap::SNAP_NAME_DOMAINS));
-    QSharedPointer<QtCassandra::QCassandraTable> table(f_context->findTable(table_name));
-    QSharedPointer<QtCassandra::QCassandraRow> row(table->row(f_domain_org_name));
+    QtCassandra::QCassandraTable::pointer_t table(f_context->findTable(table_name));
+    QtCassandra::QCassandraRow::pointer_t row(table->row(f_domain_org_name));
     if(row->exists(QString("core::original_rules")))
     {
         QtCassandra::QCassandraValue rules((*table)[f_domain_org_name][QString("core::original_rules")]);
@@ -1211,7 +1211,7 @@ void snap_manager::on_domainSave_clicked()
         }
 
         QString table_name(snap::get_name(snap::SNAP_NAME_DOMAINS));
-        QSharedPointer<QtCassandra::QCassandraTable> table(f_context->findTable(table_name));
+        QtCassandra::QCassandraTable::pointer_t table(f_context->findTable(table_name));
 
         if(name != f_domain_org_name)
         {
@@ -1220,7 +1220,7 @@ void snap_manager::on_domainSave_clicked()
             if(table->exists(name))
             {
                 // got the row, check whether the "core::original_rules" exists
-                QSharedPointer<QtCassandra::QCassandraRow> row(table->row(name));
+                QtCassandra::QCassandraRow::pointer_t row(table->row(name));
                 if(row->exists(QString("core::original_rules")))
                 {
                     if(f_domain_org_name.isEmpty())
@@ -1307,10 +1307,10 @@ void snap_manager::on_domainDelete_clicked()
     // delete all the sub-domains
     {
         QString table_name(snap::get_name(snap::SNAP_NAME_WEBSITES));
-        QSharedPointer<QtCassandra::QCassandraTable> table(f_context->findTable(table_name));
+        QtCassandra::QCassandraTable::pointer_t table(f_context->findTable(table_name));
         if(table->exists(row_index_name))
         {
-            QSharedPointer<QtCassandra::QCassandraRow> row(table->row(row_index_name));
+            QtCassandra::QCassandraRow::pointer_t row(table->row(row_index_name));
 
             // Use a predicate to limit the list to the websites defined for that
             // domain the start is the domain followed by :: (m2osw.com::) and
@@ -1352,11 +1352,11 @@ void snap_manager::on_domainDelete_clicked()
     // remove from the list of domains
     {
         QString table_name(snap::get_name(snap::SNAP_NAME_DOMAINS));
-        QSharedPointer<QtCassandra::QCassandraTable> table(f_context->findTable(table_name));
+        QtCassandra::QCassandraTable::pointer_t table(f_context->findTable(table_name));
         table->dropRow(name);
 
         // remove from the index too
-        QSharedPointer<QtCassandra::QCassandraRow> row(table->findRow(row_index_name));
+        QtCassandra::QCassandraRow::pointer_t row(table->findRow(row_index_name));
         if(row)
         {
             row->dropCell(f_domain_name->text(), QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
@@ -1388,7 +1388,7 @@ void snap_manager::loadWebsites()
     // we just checked to know whether the table existed so it cannot fail here
     f_website_list->clear();
     QString table_name(snap::get_name(snap::SNAP_NAME_WEBSITES));
-    QSharedPointer<QtCassandra::QCassandraTable> table(f_context->findTable(table_name));
+    QtCassandra::QCassandraTable::pointer_t table(f_context->findTable(table_name));
     QString row_index_name(snap::get_name(snap::SNAP_NAME_INDEX)); // "*index*"
     if(!table->exists(row_index_name))
     {
@@ -1396,7 +1396,7 @@ void snap_manager::loadWebsites()
         // so that's it!
         return;
     }
-    QSharedPointer<QtCassandra::QCassandraRow> row(table->row(row_index_name));
+    QtCassandra::QCassandraRow::pointer_t row(table->row(row_index_name));
 
     // Use a predicate to limit the list to the websites defined for that domain
     // the start is the plain domain (m2osw.com) and the end is defined such as
@@ -1487,8 +1487,8 @@ void snap_manager::on_websiteList_itemClicked(QListWidgetItem *item)
 
     // IMPORTANT: note that f_website_org_name changed to the item->text() value
     QString table_name(snap::get_name(snap::SNAP_NAME_WEBSITES));
-    QSharedPointer<QtCassandra::QCassandraTable> table(f_context->findTable(table_name));
-    QSharedPointer<QtCassandra::QCassandraRow> row(table->row(f_website_org_name));
+    QtCassandra::QCassandraTable::pointer_t table(f_context->findTable(table_name));
+    QtCassandra::QCassandraRow::pointer_t row(table->row(f_website_org_name));
     if(row->exists(QString("core::original_rules"))) {
         QtCassandra::QCassandraValue rules((*table)[f_website_org_name][QString("core::original_rules")]);
         f_website_org_rules = rules.stringValue();
@@ -1591,14 +1591,14 @@ void snap_manager::on_websiteSave_clicked()
         }
 
         QString table_name(snap::get_name(snap::SNAP_NAME_WEBSITES));
-        QSharedPointer<QtCassandra::QCassandraTable> table(f_context->findTable(table_name));
+        QtCassandra::QCassandraTable::pointer_t table(f_context->findTable(table_name));
 
         if(name != f_website_org_name) {
             // user is creating a new entry or changing the name of an existing
             // entry, so we want to prevent overwriting an existing entry
             if(table->exists(name)) {
                 // got the row, check whether the "core::original_rules" exists
-                QSharedPointer<QtCassandra::QCassandraRow> row(table->row(name));
+                QtCassandra::QCassandraRow::pointer_t row(table->row(name));
                 if(row->exists(QString("core::original_rules"))) {
                     if(f_website_org_name.isEmpty()) {
                         QMessageBox msg(QMessageBox::Critical, "Full Domain Name already defined", "You asked to create a new Full Domain Name and yet you specified a Full Domain Name that is already defined in the database. Please change the Full Domain Name or Cancel and then edit the existing website entry.", QMessageBox::Ok, this);
@@ -1667,11 +1667,11 @@ void snap_manager::on_websiteDelete_clicked()
     }
 
     QString table_name(snap::get_name(snap::SNAP_NAME_WEBSITES));
-    QSharedPointer<QtCassandra::QCassandraTable> table(f_context->findTable(table_name));
+    QtCassandra::QCassandraTable::pointer_t table(f_context->findTable(table_name));
     table->dropRow(name);
 
     QString row_index_name(snap::get_name(snap::SNAP_NAME_INDEX)); // "*index*"
-    QSharedPointer<QtCassandra::QCassandraRow> row(table->findRow(row_index_name));
+    QtCassandra::QCassandraRow::pointer_t row(table->findRow(row_index_name));
     if(row)
     {
         row->dropCell(f_domain_org_name + "::" + name);
@@ -1727,8 +1727,8 @@ void snap_manager::loadSites()
     //QString row_index_name(snap::get_name(snap::SNAP_NAME_INDEX)); // "*index*"
 
     QString table_name(snap::get_name(snap::SNAP_NAME_SITES));
-    QSharedPointer<QtCassandra::QCassandraTable> table(f_context->findTable(table_name));
-    if(!table.isNull())
+    QtCassandra::QCassandraTable::pointer_t table(f_context->findTable(table_name));
+    if(table)
     {
         // if the table does not exist yet skip this part!
         // this is possible until you access an actual website; although we
@@ -1810,8 +1810,8 @@ void snap_manager::on_sitesList_itemClicked(QListWidgetItem *item)
 
     // IMPORTANT: note that f_sites_org_name changed to the item->text() value
     QString table_name(snap::get_name(snap::SNAP_NAME_SITES));
-    QSharedPointer<QtCassandra::QCassandraTable> table(f_context->findTable(table_name));
-    QSharedPointer<QtCassandra::QCassandraRow> row(table->row(f_sites_org_name));
+    QtCassandra::QCassandraTable::pointer_t table(f_context->findTable(table_name));
+    QtCassandra::QCassandraRow::pointer_t row(table->row(f_sites_org_name));
     QtCassandra::QCassandraColumnRangePredicate parameters_predicate;
     parameters_predicate.setCount(1000); // that should be sufficient for 99% of the websites out there
     row->clearCache();

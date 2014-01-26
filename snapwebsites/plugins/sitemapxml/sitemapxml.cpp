@@ -598,8 +598,8 @@ bool sitemapxml::on_path_execute(content::path_info_t& ipath)
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 bool sitemapxml::generate_sitemapxml_impl(sitemapxml *r)
 {
-    QSharedPointer<QtCassandra::QCassandraTable> content_table(content::content::instance()->get_content_table());
-    if(content_table.isNull())
+    QtCassandra::QCassandraTable::pointer_t content_table(content::content::instance()->get_content_table());
+    if(!content_table)
     {
         // the table does not exist?!
         // (since the content is a core plugin, that should not happen)
@@ -815,7 +815,7 @@ void sitemapxml::on_backend_process()
     f_snap->set_site_parameter(get_name(SNAP_NAME_SITEMAPXML_SITEMAP_XML), doc.toString());
 
     //QString content_table_name(snap::get_name(snap::SNAP_NAME_CONTENT));
-    QSharedPointer<QtCassandra::QCassandraTable> content_table(content::content::instance()->get_content_table());
+    QtCassandra::QCassandraTable::pointer_t content_table(content::content::instance()->get_content_table());
     // we also save updated because the user doesn't directly interact with this
     // data and thus content::updated would otherwise never be changed
     QString content_updated(content::get_name(content::SNAP_NAME_CONTENT_UPDATED));

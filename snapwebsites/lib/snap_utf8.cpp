@@ -1,5 +1,5 @@
 // Snap Websites Server -- some basic UTF-8 handling
-// Copyright (C) 2011-2013  Made to Order Software Corp.
+// Copyright (C) 2011-2014  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -16,6 +16,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "snap_utf8.h"
+
 
 namespace snap
 {
@@ -39,7 +40,7 @@ namespace snap
  */
 bool is_valid_ascii(char const *string)
 {
-    if(string != NULL)
+    if(string != nullptr)
     {
         for(unsigned char const *s(reinterpret_cast<unsigned char const *>(string)); *s != '\0'; ++s)
         {
@@ -97,7 +98,7 @@ bool is_valid_ascii(char const *string)
  */
 bool is_valid_utf8(const char * string)
 {
-    if(string == NULL)
+    if(string == nullptr)
     {
         // empty strings are considered valid
         return true;

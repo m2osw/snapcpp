@@ -2554,8 +2554,8 @@ void snap_child::backend()
     else
     {
         QString table_name(get_name(SNAP_NAME_SITES));
-        QSharedPointer<QtCassandra::QCassandraTable> table(f_context->findTable(table_name));
-        if(table.isNull())
+        QtCassandra::QCassandraTable::pointer_t table(f_context->findTable(table_name));
+        if(!table)
         {
             // the whole table is still empty
             SNAP_LOG_ERROR("The 'sites' table is empty or nonexistent! Likely you have not set up the domains and websites tables, either. Exiting!");
@@ -2563,7 +2563,7 @@ void snap_child::backend()
         }
 
         // if a site exists then it has a "core::last_updated" entry
-        QSharedPointer<QtCassandra::QCassandraColumnNamePredicate> column_predicate(new QtCassandra::QCassandraColumnNamePredicate);
+        QtCassandra::QCassandraColumnNamePredicate::pointer_t column_predicate(new QtCassandra::QCassandraColumnNamePredicate);
         column_predicate->addColumnName(get_name(SNAP_NAME_CORE_LAST_UPDATED));
         QtCassandra::QCassandraRowPredicate row_predicate;
         row_predicate.setColumnPredicate(column_predicate);
@@ -3778,14 +3778,14 @@ void snap_child::set_action(QString const& action)
 void snap_child::connect_cassandra()
 {
     // Cassandra already exists?
-    if(!f_cassandra.isNull())
+    if(f_cassandra)
     {
         die(HTTP_CODE_SERVICE_UNAVAILABLE, "", "Our database is being initialized more than once.", "The connect_cassandra() function cannot be called more than once.");
         NOTREACHED();
     }
 
     // connect to Cassandra
-    f_cassandra = new QtCassandra::QCassandra;
+    f_cassandra = QtCassandra::QCassandra::create();
     if(!f_cassandra->connect(f_server->cassandra_host(), f_server->cassandra_port()))
     {
         die(HTTP_CODE_SERVICE_UNAVAILABLE, "", "Our database system is temporarilly unavailable.", "Could not connect to Cassandra");
@@ -3796,7 +3796,7 @@ void snap_child::connect_cassandra()
     f_cassandra->contexts();
     QString context_name(get_name(SNAP_NAME_CONTEXT));
     f_context = f_cassandra->findContext(context_name);
-    if(f_context.isNull())
+    if(!f_context)
     {
         // we connected to the database, but it is not properly initialized!?
         die(HTTP_CODE_SERVICE_UNAVAILABLE, "", "Our database system does not seem to be properly installed.", "The child process connected to Cassandra but it could not find the \"" + context_name + "\" context.");
@@ -3816,7 +3816,7 @@ void snap_child::connect_cassandra()
  * \param[in] table_name  The name of the table to create.
  * \param[in] comment  The comment to attach to the table.
  */
-QSharedPointer<QtCassandra::QCassandraTable> snap_child::create_table(const QString& table_name, const QString& comment)
+QtCassandra::QCassandraTable::pointer_t snap_child::create_table(const QString& table_name, const QString& comment)
 {
     return f_server->create_table(f_context, table_name, comment);
 }
@@ -3841,7 +3841,7 @@ void snap_child::canonicalize_domain()
 {
     // retrieve domain table
     QString table_name(get_name(SNAP_NAME_DOMAINS));
-    QSharedPointer<QtCassandra::QCassandraTable> table(f_context->table(table_name));
+    QtCassandra::QCassandraTable::pointer_t table(f_context->table(table_name));
 
     // row for that domain exists?
     f_domain_key = f_uri.domain() + f_uri.top_level_domain();
@@ -4016,7 +4016,7 @@ void snap_child::canonicalize_website()
 {
     // retrieve website table
     QString table_name(get_name(SNAP_NAME_WEBSITES));
-    QSharedPointer<QtCassandra::QCassandraTable> table(f_context->table(table_name));
+    QtCassandra::QCassandraTable::pointer_t table(f_context->table(table_name));
 
     // row for that website exists?
     if(!table->exists(f_website_key))
@@ -4819,7 +4819,7 @@ void snap_child::site_redirect()
     // TBD -- should we also redirect the f_domain_key and f_website_key?
 
     // the site table is the old one, we want to switch to the new one
-    f_site_table.clear();
+    f_site_table.reset();
 }
 
 
@@ -5225,11 +5225,11 @@ QString snap_child::get_server_parameter(QString const& name)
 QtCassandra::QCassandraValue snap_child::get_site_parameter(const QString& name)
 {
     // retrieve site table if not there yet
-    if(f_site_table.isNull())
+    if(!f_site_table)
     {
         QString table_name(get_name(SNAP_NAME_SITES));
-        QSharedPointer<QtCassandra::QCassandraTable> table(f_context->findTable(table_name));
-        if(table.isNull())
+        QtCassandra::QCassandraTable::pointer_t table(f_context->findTable(table_name));
+        if(!table)
         {
             // the whole table is still empty
             QtCassandra::QCassandraValue value;
@@ -5244,7 +5244,7 @@ QtCassandra::QCassandraValue snap_child::get_site_parameter(const QString& name)
         QtCassandra::QCassandraValue value;
         return value;
     }
-    QSharedPointer<QtCassandra::QCassandraRow> row(f_site_table->row(f_site_key));
+    QtCassandra::QCassandraRow::pointer_t row(f_site_table->row(f_site_key));
     if(!row->exists(name))
     {
         // an empty value is considered to be a null value
@@ -5273,10 +5273,10 @@ QtCassandra::QCassandraValue snap_child::get_site_parameter(const QString& name)
 void snap_child::set_site_parameter(const QString& name, const QtCassandra::QCassandraValue& value)
 {
     // retrieve site table if not there yet
-    if(f_site_table.isNull())
+    if(!f_site_table)
     {
         QString table_name(get_name(SNAP_NAME_SITES));
-        QSharedPointer<QtCassandra::QCassandraTable> table(f_context->table(table_name));
+        QtCassandra::QCassandraTable::pointer_t table(f_context->table(table_name));
         table->setComment("List of sites with their global parameters.");
         table->setColumnType("Standard"); // Standard or Super
         table->setKeyValidationClass("BytesType");
@@ -5457,7 +5457,7 @@ void snap_child::die(http_code_t err_code, QString err_name, const QString& err_
         // Generate the signature
         QString signature;
         const QString site_key(get_site_key());
-        if(!f_cassandra.isNull())
+        if(f_cassandra)
         {
             // TODO: the description could also come from a user defined page
             //       so that way it can get translated (only for some

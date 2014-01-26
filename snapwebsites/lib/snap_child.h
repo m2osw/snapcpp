@@ -22,13 +22,15 @@
 #include "snap_version.h"
 #include "http_cookie.h"
 #include "udp_client_server.h"
-#include <stdlib.h>
+
 #include <controlled_vars/controlled_vars_need_init.h>
-#include <QPointer>
-#include <QDomDocument>
-#include <QBuffer>
+
 #include <QtCassandra/QCassandra.h>
 #include <QtCassandra/QCassandraContext.h>
+
+#include <stdlib.h>
+
+#include <QBuffer>
 
 namespace snap
 {
@@ -289,7 +291,7 @@ public:
     QString                     get_server_parameter(QString const& name);
     QtCassandra::QCassandraValue get_site_parameter(QString const& name);
     void                        set_site_parameter(QString const& name, QtCassandra::QCassandraValue const& value);
-    QSharedPointer<QtCassandra::QCassandraContext> get_context() { return f_context; }
+    QtCassandra::QCassandraContext::pointer_t get_context() { return f_context; }
     QString const&              get_domain_key() const { return f_domain_key; }
     QString const&              get_website_key() const { return f_website_key; }
     QString const&              get_site_key() const { return f_site_key; }
@@ -301,7 +303,7 @@ public:
     bool                        has_header(QString const& name) const;
     QString                     get_header(QString const& name) const;
     QString                     get_unique_number();
-    QSharedPointer<QtCassandra::QCassandraTable> create_table(const QString& table_name, const QString& comment);
+    QtCassandra::QCassandraTable::pointer_t create_table(const QString& table_name, const QString& comment);
     void                        new_content();
     void                        verify_permissions(QString const& path, permission_error_callback& err_callback);
     QString                     default_action(QString uri_path);
@@ -382,43 +384,43 @@ private:
     void                        output_headers(header_mode_t modes);
     void                        output_cookies();
 
-    controlled_vars::mint64_t           f_start_date; // time request arrived
-    server_pointer_t                    f_server;
-    QPointer<QtCassandra::QCassandra>   f_cassandra;
-    QSharedPointer<QtCassandra::QCassandraContext>  f_context;
-    QSharedPointer<QtCassandra::QCassandraTable>    f_site_table;
-    controlled_vars::fbool_t            f_new_content;
-    controlled_vars::fbool_t            f_is_child;
-    controlled_vars::fbool_t            f_is_being_initialized;
-    controlled_vars::fbool_t            f_ready; // becomes true just before the f_server->execute() call
-    pid_t                               f_child_pid;
-    int                                 f_socket;
-    environment_map_t                   f_env;
-    environment_map_t                   f_post;
-    post_file_map_t                     f_files;
-    environment_map_t                   f_browser_cookies;
-    controlled_vars::fbool_t            f_has_post;
-    mutable controlled_vars::fbool_t    f_fixed_server_protocol;
-    snap_uri                            f_uri;
-    QString                             f_domain_key;
-    QString                             f_website_key;
-    QString                             f_site_key;
-    QString                             f_site_key_with_slash;
-    QString                             f_original_site_key;
-    QBuffer                             f_output;
-    header_map_t                        f_header;
-    cookie_map_t                        f_cookies;
-    QString                             f_language;
-    QString                             f_country;
-    QString                             f_language_key;
-    controlled_vars::fbool_t            f_plugins_locales_was_not_ready;
-    locale_info_vector_t                f_plugins_locales;
-    locale_info_vector_t                f_browser_locales;
-    controlled_vars::fbool_t            f_working_branch;
-    snap_version::version_number_t      f_branch;
-    snap_version::version_number_t      f_revision;
-    QString                             f_revision_key;
-    compression_vector_t                f_compressions;
+    controlled_vars::mint64_t                   f_start_date; // time request arrived
+    server_pointer_t                            f_server;
+    QtCassandra::QCassandra::pointer_t          f_cassandra;
+    QtCassandra::QCassandraContext::pointer_t   f_context;
+    QtCassandra::QCassandraTable::pointer_t     f_site_table;
+    controlled_vars::fbool_t                    f_new_content;
+    controlled_vars::fbool_t                    f_is_child;
+    controlled_vars::fbool_t                    f_is_being_initialized;
+    controlled_vars::fbool_t                    f_ready; // becomes true just before the f_server->execute() call
+    pid_t                                       f_child_pid;
+    int                                         f_socket;
+    environment_map_t                           f_env;
+    environment_map_t                           f_post;
+    post_file_map_t                             f_files;
+    environment_map_t                           f_browser_cookies;
+    controlled_vars::fbool_t                    f_has_post;
+    mutable controlled_vars::fbool_t            f_fixed_server_protocol;
+    snap_uri                                    f_uri;
+    QString                                     f_domain_key;
+    QString                                     f_website_key;
+    QString                                     f_site_key;
+    QString                                     f_site_key_with_slash;
+    QString                                     f_original_site_key;
+    QBuffer                                     f_output;
+    header_map_t                                f_header;
+    cookie_map_t                                f_cookies;
+    QString                                     f_language;
+    QString                                     f_country;
+    QString                                     f_language_key;
+    controlled_vars::fbool_t                    f_plugins_locales_was_not_ready;
+    locale_info_vector_t                        f_plugins_locales;
+    locale_info_vector_t                        f_browser_locales;
+    controlled_vars::fbool_t                    f_working_branch;
+    snap_version::version_number_t              f_branch;
+    snap_version::version_number_t              f_revision;
+    QString                                     f_revision_key;
+    compression_vector_t                        f_compressions;
 };
 
 typedef std::vector<snap_child *> snap_child_vector_t;

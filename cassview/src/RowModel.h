@@ -1,19 +1,19 @@
 #pragma once
 
-#include <QtCassandra/QCassandra.h>
+#include <QtCassandra/QCassandraRow.h>
 #include <QtGui>
 
 #include <memory>
 
-class CassandraModel
+class RowModel
 	: public QAbstractListModel
 {
 	Q_OBJECT
 
 	public:
-		CassandraModel() {}
+		RowModel() {}
 
-        void setCassandra( QtCassandra::QCassandra::pointer_t c );
+        void setRow( QtCassandra::QCassandraRow::pointer_t c );
 
 		Qt::ItemFlags	flags 		( const QModelIndex & index ) const;
 		QVariant		data 		( const QModelIndex & index, int role = Qt::DisplayRole ) const;
@@ -21,7 +21,7 @@ class CassandraModel
 		int 			rowCount   	( const QModelIndex & parent = QModelIndex() ) const;
 
 	private:
-        QtCassandra::QCassandra::pointer_t	f_cassandra;
+        QtCassandra::QCassandraRow::pointer_t	f_row;
 };
 
 

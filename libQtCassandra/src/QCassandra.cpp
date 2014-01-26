@@ -962,6 +962,20 @@ QCassandra::QCassandra()
     // just saved in a variable member
 }
 
+
+/** \brief Create the QCassandra instance.
+ *
+ * This factory creates a new object wrapped in a shared pointer. The contructor
+ * is private, so this must be used.
+ *
+ * \sa QCassandra()
+ */
+QCassandra::pointer_t QCassandra::create()
+{
+    return pointer_t( new QCassandra );
+}
+
+
 /** \brief Cleanup the Cassandra object.
  *
  * This function cleans up the QCassandra object.
@@ -1037,7 +1051,7 @@ bool QCassandra::connect(const QString& host, const int port, const QString& pas
 void QCassandra::disconnect()
 {
     f_private->disconnect();
-    f_current_context.clear();
+    f_current_context.reset();
     f_contexts_read = false;
     f_contexts.clear();
     f_cluster_name = "";
@@ -1252,7 +1266,7 @@ const QString& QCassandra::snitch() const
  *
  * \return A shared pointer to a cassandra context.
  */
-QSharedPointer<QCassandraContext> QCassandra::context(const QString& context_name)
+QCassandraContext::pointer_t QCassandra::context(const QString& context_name)
 {
     // get the list of existing contexts
     const QCassandraContexts& cs = contexts();
@@ -1264,7 +1278,7 @@ QSharedPointer<QCassandraContext> QCassandra::context(const QString& context_nam
     }
 
     // otherwise create a new one
-    QSharedPointer<QCassandraContext> c(new QCassandraContext(this, context_name));
+    QCassandraContext::pointer_t c(new QCassandraContext(shared_from_this(), context_name));
     f_contexts.insert(context_name, c);
     return c;
 }
@@ -1302,7 +1316,7 @@ QSharedPointer<QCassandraContext> QCassandra::context(const QString& context_nam
  * \sa currentContext()
  * \sa QCassandraContext::makeCurrent()
  */
-void QCassandra::setCurrentContext(QSharedPointer<QCassandraContext> c)
+void QCassandra::setCurrentContext(QCassandraContext::pointer_t c)
 {
     // emit the change only if not the same context
     if(f_current_context != c) {
@@ -1322,8 +1336,8 @@ void QCassandra::setCurrentContext(QSharedPointer<QCassandraContext> c)
  */
 void QCassandra::clearCurrentContextIf(const QCassandraContext& c)
 {
-    if(f_current_context == &c) {
-        f_current_context.clear();
+    if(f_current_context.get() == &c) {
+        f_current_context.reset();
     }
 }
 
@@ -1376,11 +1390,11 @@ const QCassandraContexts& QCassandra::contexts() const
  * \sa contexts()
  * \sa QCassandraContext::create()
  */
-QSharedPointer<QCassandraContext> QCassandra::findContext(const QString& context_name) const
+QCassandraContext::pointer_t QCassandra::findContext(const QString& context_name) const
 {
     QCassandraContexts::const_iterator ci(contexts().find(context_name));
     if(ci == f_contexts.end()) {
-        QSharedPointer<QCassandraContext> null;
+        QCassandraContext::pointer_t null;
         return null;
     }
     return *ci;
@@ -1406,8 +1420,8 @@ QSharedPointer<QCassandraContext> QCassandra::findContext(const QString& context
  */
 QCassandraContext& QCassandra::operator [] (const QString& context_name)
 {
-    QCassandraContext *context_obj = findContext(context_name).data();
-    if(context_obj == NULL) {
+    QCassandraContext::pointer_t context_obj( findContext(context_name) );
+    if( !context_obj ) {
         throw std::runtime_error("named context was not found, cannot return a reference");
     }
 
@@ -1434,8 +1448,8 @@ QCassandraContext& QCassandra::operator [] (const QString& context_name)
  */
 const QCassandraContext& QCassandra::operator [] (const QString& context_name) const
 {
-    const QCassandraContext *context_obj = findContext(context_name).data();
-    if(context_obj == NULL) {
+    const QCassandraContext::pointer_t context_obj( findContext(context_name) );
+    if( !context_obj ) {
         throw std::runtime_error("named context was not found, cannot return a reference");
     }
 
@@ -1467,7 +1481,7 @@ const QCassandraContext& QCassandra::operator [] (const QString& context_name) c
  */
 void QCassandra::dropContext(const QString& context_name)
 {
-    QSharedPointer<QCassandraContext> c(context(context_name));
+    QCassandraContext::pointer_t c(context(context_name));
 
     // first do the context drop in Cassandra
     c->drop();

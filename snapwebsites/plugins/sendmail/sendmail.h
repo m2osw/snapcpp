@@ -183,10 +183,10 @@ public:
     sendmail();
     ~sendmail();
 
-    static sendmail *   instance();
-    virtual QString     description() const;
-    virtual int64_t     do_update(int64_t last_updated);
-    QSharedPointer<QtCassandra::QCassandraTable> get_emails_table();
+    static sendmail *                       instance();
+    virtual QString                         description() const;
+    virtual int64_t                         do_update(int64_t last_updated);
+    QtCassandra::QCassandraTable::pointer_t get_emails_table();
 
     void                on_bootstrap(snap_child *snap);
     void                on_register_backend_action(snap::server::backend_action_map_t& actions);

@@ -16,13 +16,18 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "process.h"
+
 #include "snap_thread.h"
 #include "log.h"
+
+#include <controlled_vars/controlled_vars_ptr_need_init.h>
+
 #include <stdio.h>
 #include <unistd.h>
 #include <sys/wait.h>
-#include <controlled_vars/controlled_vars_ptr_need_init.h>
+
 #include "poison.h"
+
 
 extern char **environ;
 

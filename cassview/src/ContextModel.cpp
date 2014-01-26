@@ -3,7 +3,7 @@
 using namespace QtCassandra;
 
 
-void ContextModel::setContext( QSharedPointer<QCassandraContext> c )
+void ContextModel::setContext( QCassandraContext::pointer_t c )
 {
 	f_context = c;
     reset();

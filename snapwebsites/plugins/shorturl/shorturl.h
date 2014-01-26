@@ -60,7 +60,7 @@ public:
     static shorturl *   instance();
     virtual QString     description() const;
     virtual int64_t     do_update(int64_t last_updated);
-    QSharedPointer<QtCassandra::QCassandraTable> get_shorturl_table();
+    QtCassandra::QCassandraTable::pointer_t get_shorturl_table();
 
     void                on_bootstrap(snap_child *snap);
     virtual bool        on_path_execute(content::path_info_t& ipath);
@@ -73,8 +73,8 @@ private:
     void initial_update(int64_t variables_timestamp);
     void content_update(int64_t variables_timestamp);
 
-    zpsnap_child_t                                  f_snap;
-    QSharedPointer<QtCassandra::QCassandraTable>    f_shorturl_table;
+    zpsnap_child_t                          f_snap;
+    QtCassandra::QCassandraTable::pointer_t f_shorturl_table;
 };
 
 

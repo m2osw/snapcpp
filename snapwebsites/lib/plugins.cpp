@@ -16,14 +16,19 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "plugins.h"
+
+#include <iostream>
+
 #include <dlfcn.h>
 #include <glob.h>
 #include <sys/stat.h>
-#include <iostream>
+
 #include <QDir>
 #include <QMap>
 #include <QFileInfo>
+
 #include "poison.h"
+
 
 namespace snap
 {

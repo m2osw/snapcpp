@@ -206,7 +206,7 @@ QtCassandra::QCassandraValue taxonomy::find_type_with(content::path_info_t& ipat
     {
         return not_found;
     }
-    QSharedPointer<QtCassandra::QCassandraTable> content_table(content::content::instance()->get_content_table());
+    QtCassandra::QCassandraTable::pointer_t content_table(content::content::instance()->get_content_table());
     for(;;)
     {
         // TODO: determine whether the type should be checked in the branch instead of global area.
@@ -218,7 +218,7 @@ QtCassandra::QCassandraValue taxonomy::find_type_with(content::path_info_t& ipat
             // TODO: should this be an error instead? all the types should exist!
             return not_found;
         }
-        QSharedPointer<QtCassandra::QCassandraRow> row(content_table->row(type_key));
+        QtCassandra::QCassandraRow::pointer_t row(content_table->row(type_key));
 
         // check for the key, if it exists we found what the user is
         // looking for!

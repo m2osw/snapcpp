@@ -574,7 +574,7 @@ void QCassandraPrivate::contexts() const
 
     for(std::vector<org::apache::cassandra::KsDef>::const_iterator
                     ks(keyspaces.begin()); ks != keyspaces.end(); ++ks) {
-        QSharedPointer<QCassandraContext> c(f_parent->context(ks->name.c_str()));
+        QCassandraContext::pointer_t c(f_parent->context(ks->name.c_str()));
         const org::apache::cassandra::KsDef& ks_def = *ks;
         c->parseContextDefinition(&ks_def);
     }
@@ -1102,7 +1102,7 @@ uint32_t QCassandraPrivate::getRowSlices(QCassandraTable& table, QCassandraRowPr
     column_parent.__set_column_family(table.tableName().toUtf8().data());
     // no super column support here
 
-    QSharedPointer<QCassandraColumnPredicate> column_predicate(row_predicate.columnPredicate());
+    QCassandraColumnPredicate::pointer_t column_predicate(row_predicate.columnPredicate());
     org::apache::cassandra::SlicePredicate slice_predicate;
     column_predicate->toPredicate(&slice_predicate);
 

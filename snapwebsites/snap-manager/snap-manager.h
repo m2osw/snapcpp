@@ -167,10 +167,10 @@ private:
     int                             f_snap_port;
 
     // cassandra data
-    QString                         f_cassandra_host;
-    int                             f_cassandra_port;
-    QPointer<QtCassandra::QCassandra>               f_cassandra;
-    QSharedPointer<QtCassandra::QCassandraContext>  f_context;
+    QString                                     f_cassandra_host;
+    int                                         f_cassandra_port;
+    QtCassandra::QCassandra::pointer_t          f_cassandra;
+    QtCassandra::QCassandraContext::pointer_t   f_context;
 };
 
 

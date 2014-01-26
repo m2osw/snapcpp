@@ -1,5 +1,5 @@
 // Snap Websites Servers -- signals
-// Copyright (C) 2011-2013  Made to Order Software Corp.
+// Copyright (C) 2011-2014  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,8 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-#ifndef SNAP_SIGNALS_H
-#define SNAP_SIGNALS_H
+#pragma once
 
 #include <boost/signals2.hpp>
 
@@ -48,6 +47,4 @@
 
 
 
-#endif
-// SNAP_SIGNALS_H
 // vim: ts=4 sw=4

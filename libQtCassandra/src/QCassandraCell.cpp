@@ -123,7 +123,7 @@ namespace QtCassandra
  * \param[in] row  The parent row of this cell.
  * \param[in] column_key  The binary key of this cell.
  */
-QCassandraCell::QCassandraCell(QCassandraRow *row, const QByteArray& column_key)
+QCassandraCell::QCassandraCell(QCassandraRow::pointer_t row, const QByteArray& column_key)
     : f_row(row)
     , f_key(column_key)
     //, f_cached(false) -- auto-init
@@ -205,11 +205,14 @@ const QByteArray& QCassandraCell::columnKey() const
  */
 const QCassandraValue& QCassandraCell::value() const
 {
-    if(!f_cached) {
-        if(f_row == NULL) {
+    if(!f_cached)
+    {
+        auto row( f_row.lock() );
+        if( !row )
+        {
             throw std::runtime_error("this cell was dropped, it cannot be used anymore.");
         }
-        f_row->getValue(f_key, const_cast<QCassandraValue&>(f_value));
+        row->getValue(f_key, const_cast<QCassandraValue&>(f_value));
         f_cached = true;
     }
 //printf("reading [%s]\n", f_key.data());
@@ -238,14 +241,17 @@ const QCassandraValue& QCassandraCell::value() const
  */
 void QCassandraCell::setValue(const QCassandraValue& val)
 {
-    if(!f_cached || f_value != val) {
-        if(f_row == NULL) {
+    if(!f_cached || f_value != val)
+    {
+        auto row( f_row.lock() );
+        if( !row )
+        {
             throw std::runtime_error("this cell was dropped, it cannot be used anymore.");
         }
         // TODO: if the cell represents a counter, it should be resized
         //       to a 64 bit value to work in all places
         f_value = val;
-        f_row->insertValue(f_key, f_value);
+        row->insertValue(f_key, f_value);
     }
     f_cached = true;
 }
@@ -389,7 +395,7 @@ void QCassandraCell::add(int64_t val)
         f_cached = true;
     }
 
-    f_row->addValue(f_key, val);
+    f_row.lock()->addValue(f_key, val);
 }
 
 /** \brief Add to a counter.
@@ -566,7 +572,7 @@ void QCassandraCell::clearCache()
  */
 void QCassandraCell::unparent()
 {
-    f_row = NULL;
+    f_row.reset();
     clearCache();
 }
 
@@ -638,6 +644,17 @@ void QCassandraCell::setTimestamp(int64_t val)
 {
     f_value.setTimestamp(val);
 }
+
+
+/** \brief Get the pointer to the parent object.
+ *
+ * \return Shared pointer to the cassandra object.
+ */
+QCassandraRow::pointer_t QCassandraCell::parentRow() const
+{
+    return f_row.lock();
+}
+
 
 } // namespace QtCassandra
 // vim: ts=4 sw=4 et

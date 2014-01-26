@@ -40,9 +40,9 @@
 
 int main(int argc, char *argv[])
 {
-    QtCassandra::QCassandra     cassandra;
+    QtCassandra::QCassandra::pointer_t cassandra( QtCassandra::QCassandra::create() );
 
-    qDebug() << "+ libQtCassandra version" << cassandra.version();
+    qDebug() << "+ libQtCassandra version" << cassandra->version();
 
     const char *host("localhost");
     for(int i(1); i < argc; ++i) {
@@ -60,11 +60,11 @@ int main(int argc, char *argv[])
         }
     }
 
-    cassandra.connect(host);
-    QString name = cassandra.clusterName();
+    cassandra->connect(host);
+    QString name = cassandra->clusterName();
     qDebug() << "+ Cassandra Cluster Name is" << name;
 
-    const QtCassandra::QCassandraContexts& contexts = cassandra.contexts();
+    const QtCassandra::QCassandraContexts& contexts = cassandra->contexts();
     for(QtCassandra::QCassandraContexts::const_iterator
             c = contexts.begin(); c != contexts.end(); ++c)
     {

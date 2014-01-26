@@ -485,9 +485,9 @@ public:
     static content *    instance();
     virtual QString     description() const;
     virtual int64_t     do_update(int64_t last_updated);
-    QSharedPointer<QtCassandra::QCassandraTable> get_content_table();
-    QSharedPointer<QtCassandra::QCassandraTable> get_files_table();
-    QSharedPointer<QtCassandra::QCassandraTable> get_data_table();
+    QtCassandra::QCassandraTable::pointer_t get_content_table();
+    QtCassandra::QCassandraTable::pointer_t get_files_table();
+    QtCassandra::QCassandraTable::pointer_t get_data_table();
     QtCassandra::QCassandraValue get_content_parameter(path_info_t& path, QString const& name, param_revision_t revision_type);
     plugin *            get_plugin(path_info_t& ipath, permission_error_callback& err_callback);
 
@@ -591,15 +591,14 @@ private:
     void content_update(int64_t variables_timestamp);
 
     zpsnap_child_t                                  f_snap;
-    QSharedPointer<QtCassandra::QCassandraTable>    f_content_table;
-    QSharedPointer<QtCassandra::QCassandraTable>    f_data_table;
-    QSharedPointer<QtCassandra::QCassandraTable>    f_files_table;
+    QtCassandra::QCassandraTable::pointer_t         f_content_table;
+    QtCassandra::QCassandraTable::pointer_t         f_data_table;
+    QtCassandra::QCassandraTable::pointer_t         f_files_table;
     content_block_map_t                             f_blocks;
     controlled_vars::zint32_t                       f_file_index;
     controlled_vars::fbool_t                        f_updating;
     QMap<QString, bool>                             f_added_javascripts;
     javascript_ref_map_t                            f_javascripts;
-    controlled_vars::zint64_t                       f_last_modified;
 };
 
 //class content_box_execute
