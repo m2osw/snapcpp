@@ -81,7 +81,7 @@ char const *get_name(name_t name)
  * This function is used to initialize the info plugin object.
  */
 info::info()
-    //: f_snap(NULL) -- auto-init
+    //: f_snap(nullptr) -- auto-init
 {
 }
 
@@ -303,6 +303,8 @@ std::cerr << "*** info main content...\n";
  */
 void info::on_process_form_post(content::path_info_t& ipath, sessions::sessions::session_info const& session_info)
 {
+    static_cast<void>(session_info);
+
     if(ipath.get_cpath() != "admin/settings/info")
     {
         // this should not happen because invalid paths will not pass the

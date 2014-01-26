@@ -502,7 +502,7 @@ public:
     snap_version::version_number_t get_new_branch(QString const& key, QString const& owner, QString const& locale);
     snap_version::version_number_t get_new_revision(QString const& key, QString const& owner, snap_version::version_number_t branch, QString const& locale);
     QString             get_branch_key(QString const& key, QString const& owner, bool working_branch);
-    void                initialize_branch(QString const& key, QString const& locale);
+    void                initialize_branch(QString const& key);
     QString             generate_branch_key(QString const& key, snap_version::version_number_t branch);
     void                set_branch(QString const& key, QString const& owner, snap_version::version_number_t branch, bool working_branch);
     QString             set_branch_key(QString const& key, QString const& owner, snap_version::version_number_t branch, bool working_branch);

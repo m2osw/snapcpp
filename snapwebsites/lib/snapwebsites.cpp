@@ -203,7 +203,7 @@ namespace
             'a',
             advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE,
             "action",
-            NULL,
+            nullptr,
             "Specify a server action.",
             advgetopt::getopt::optional_argument
         },
@@ -211,7 +211,7 @@ namespace
             '\0',
             0,
             "add-host",
-            NULL,
+            nullptr,
             "Add a host to the lock table. Remember that you cannot safely do that while any one of the servers are running.",
             advgetopt::getopt::optional_argument
         },
@@ -227,7 +227,7 @@ namespace
             'd',
             advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE,
             "debug",
-            NULL,
+            nullptr,
             "Keeps the server in the foreground (default is to detact and background), and display the log to the stdout.",
             advgetopt::getopt::no_argument
         },
@@ -235,7 +235,7 @@ namespace
             'h',
             advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
             "help",
-            NULL,
+            nullptr,
             "Show usage and exit.",
             advgetopt::getopt::no_argument
         },
@@ -243,16 +243,16 @@ namespace
             'p',
             advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE,
             "param",
-            NULL,
+            nullptr,
             "Define one or more server parameters on the command line (-p name=value).",
             advgetopt::getopt::required_multiple_argument
         },
         {
             '\0',
             0,
-            NULL,
-            NULL,
-            NULL,
+            nullptr,
+            nullptr,
+            nullptr,
             advgetopt::getopt::end_of_options
         }
     };
@@ -1052,7 +1052,7 @@ void server::listen()
         sigset_t set;
         sigemptyset(&set);
         sigaddset(&set, SIGCHLD);
-        sigprocmask(SIG_BLOCK, &set, NULL);
+        sigprocmask(SIG_BLOCK, &set, nullptr);
     }
     for(;;)
     {
@@ -1265,6 +1265,8 @@ bool server::detach_from_session_impl()
  */
 bool server::define_locales_impl(QString& locales)
 {
+    static_cast<void>(locales);
+
     return true;
 }
 

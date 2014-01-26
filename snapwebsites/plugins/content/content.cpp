@@ -295,7 +295,7 @@ char const *js_extensions[] =
     ".min.js",
     ".org.js",
     ".js",
-    NULL
+    nullptr
 };
 
 char const *css_extensions[] =
@@ -304,7 +304,7 @@ char const *css_extensions[] =
     ".min.css",
     ".org.css",
     ".css",
-    NULL
+    nullptr
 };
 
 } // no name namespace
@@ -425,7 +425,7 @@ field_search::cmd_info_t::cmd_info_t()
     //: f_cmd(COMMAND_UNKNOWN) -- auto-init
     //, f_value() -- auto-init
     //, f_element() -- auto-init
-    //, f_result(NULL) -- auto-init
+    //, f_result(nullptr) -- auto-init
     //, f_path_info() -- auto-init
 {
 }
@@ -442,7 +442,7 @@ field_search::cmd_info_t::cmd_info_t(command_t cmd)
     : f_cmd(static_cast<int>(cmd)) // FIXME fix cast
     //, f_value(str_value)
     //, f_element() -- auto-init
-    //, f_result(NULL) -- auto-init
+    //, f_result(nullptr) -- auto-init
     //, f_path_info() -- auto-init
 {
     switch(cmd)
@@ -471,7 +471,7 @@ field_search::cmd_info_t::cmd_info_t(command_t cmd, QString const& str_value)
     : f_cmd(static_cast<int>(cmd)) // FIXME fix cast
     , f_value(str_value)
     //, f_element() -- auto-init
-    //, f_result(NULL) -- auto-init
+    //, f_result(nullptr) -- auto-init
     //, f_path_info() -- auto-init
 {
     switch(cmd)
@@ -510,7 +510,7 @@ field_search::cmd_info_t::cmd_info_t(command_t cmd, int64_t int_value)
     : f_cmd(static_cast<int>(cmd)) // XXX fix cast
     , f_value(int_value)
     //, f_element() -- auto-init
-    //, f_result(NULL) -- auto-init
+    //, f_result(nullptr) -- auto-init
     //, f_path_info() -- auto-init
 {
     switch(cmd)
@@ -544,7 +544,7 @@ field_search::cmd_info_t::cmd_info_t(command_t cmd, QtCassandra::QCassandraValue
     : f_cmd(static_cast<int>(cmd)) // XXX fix cast
     , f_value(value)
     //, f_element() -- auto-init
-    //, f_result(NULL) -- auto-init
+    //, f_result(nullptr) -- auto-init
     //, f_path_info() -- auto-init
 {
     switch(cmd)
@@ -572,7 +572,7 @@ field_search::cmd_info_t::cmd_info_t(command_t cmd, QDomElement element)
     : f_cmd(static_cast<int>(cmd)) // XXX fix cast
     //, f_value() -- auto-init
     , f_element(element)
-    //, f_result(NULL) -- auto-init
+    //, f_result(nullptr) -- auto-init
     //, f_path_info() -- auto-init
 {
     switch(cmd)
@@ -626,7 +626,7 @@ field_search::cmd_info_t::cmd_info_t(command_t cmd, path_info_t const& ipath)
     : f_cmd(static_cast<int>(cmd)) // XXX fix cast
     //, f_value() -- auto-init
     //, f_element() -- auto-init
-    //, f_result(NULL) -- auto-init
+    //, f_result(nullptr) -- auto-init
     , f_path_info(ipath)
 {
     switch(cmd)
@@ -2622,7 +2622,7 @@ void content::insert_html_string_to_xml_doc(QDomElement child, QString const& xm
     if(xml.contains('<'))
     {
         QDomDocument xml_doc("wrapper");
-        xml_doc.setContent("<wrapper>" + xml + "</wrapper>", true, NULL, NULL, NULL);
+        xml_doc.setContent("<wrapper>" + xml + "</wrapper>", true, nullptr, nullptr, nullptr);
 
         // copy the result in a fragment of our document
         QDomDocumentFragment frag(child.ownerDocument().createDocumentFragment());
@@ -2652,7 +2652,7 @@ void content::insert_html_string_to_xml_doc(QDomElement child, QString const& xm
  * This function is used to initialize the content plugin object.
  */
 content::content()
-    //: f_snap(NULL) -- auto-init
+    //: f_snap(nullptr) -- auto-init
 {
 }
 
@@ -3474,9 +3474,8 @@ QString content::set_branch_key(QString const& key, QString const& owner, snap_v
  * on the call...
  *
  * \param[in] key  The path of the page concerned.
- * \param[in] locale  The locale used to generate the first revision.
  */
-void content::initialize_branch(QString const& key, QString const& locale)
+void content::initialize_branch(QString const& key)
 {
     QString const base_key(get_revision_base_key(get_plugin_name()));
     QtCassandra::QCassandraTable::pointer_t content_table(get_content_table());
@@ -3537,71 +3536,6 @@ void content::initialize_branch(QString const& key, QString const& locale)
             set_branch_key(key, get_plugin_name(), branch_number, true);
         }
     }
-
-    // TBD: The revision is automatically updated as required so we do not
-    //      have to initialize it.
-
-    // *** REVISION ***
-    //QString const nslocale(locale.isEmpty() ? "" : "::" + locale);
-    //snap_version::version_number_t revision_number(static_cast<snap_version::basic_version_number_t>(snap_version::SPECIAL_VERSION_FIRST_REVISION));
-    //{
-    //    // Last revision
-    //    QString const last_revision_key(QString("%1::%2::%3%4")
-    //            .arg(base_key).arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL_LAST_REVISION))
-    //            .arg(branch_number).arg(nslocale));
-    //    QtCassandra::QCassandraValue revision_value(content_table->row(key)->cell(last_revision_key)->value());
-    //    if(revision_value.nullValue())
-    //    {
-    //        // last branch does not exist yet, create it with zero (0)
-    //        content_table->row(key)->cell(last_revision_key)->setValue(static_cast<snap_version::basic_version_number_t>(revision_number));
-    //    }
-    //    else
-    //    {
-    //        revision_number = revision_value.uint32Value();
-    //    }
-    //}
-
-    //{
-    //    QString const current_revision_key(QString("%1::%2::%3%4")
-    //            .arg(base_key).arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_REVISION))
-    //            .arg(branch_number).arg(nslocale));
-    //    QtCassandra::QCassandraValue revision_value(content_table->row(key)->cell(current_revision_key)->value());
-    //    if(revision_value.nullValue())
-    //    {
-    //        content_table->row(key)->cell(current_revision_key)->setValue(static_cast<snap_version::basic_version_number_t>(revision_number));
-    //    }
-    //}
-
-    //{
-    //    QString const current_revision_key(QString("%1::%2::%3%4")
-    //            .arg(base_key).arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_REVISION))
-    //            .arg(branch_number).arg(nslocale));
-    //    QtCassandra::QCassandraValue revision_value(content_table->row(key)->cell(current_revision_key)->value());
-    //    if(revision_value.nullValue())
-    //    {
-    //        content_table->row(key)->cell(current_revision_key)->setValue(static_cast<snap_version::basic_version_number_t>(revision_number));
-    //    }
-    //}
-
-    //{
-    //    // Current revision key
-    //    QString const current_revision_key(get_revision_key(key, get_plugin_name(), branch_number, locale, false));
-    //    if(current_revision_key.isEmpty())
-    //    {
-    //        // there is no branch yet, create one
-    //        set_revision_key(key, get_plugin_name(), branch_number, revision_number, locale, false);
-    //    }
-    //}
-
-    //{
-    //    // Current working revision key
-    //    QString const current_revision_key(get_revision_key(key, get_plugin_name(), branch_number, locale, true));
-    //    if(current_revision_key.isEmpty())
-    //    {
-    //        // there is no branch yet, create one
-    //        set_revision_key(key, get_plugin_name(), branch_number, revision_number, locale, true);
-    //    }
-    //}
 }
 
 
@@ -5731,7 +5665,7 @@ void content::on_save_content()
         //       does not mean it shouldn't be done, however, the revision
         //       is problematic because it needs to be incremented each time
         //       we do an update when at this point it won't be.
-        initialize_branch(d->f_path, "en");
+        initialize_branch(d->f_path);
 
         // TODO: add support to specify the "revision owner" of the parameter
         QString const branch_key(QString("%1#%2").arg(d->f_path).arg(static_cast<snap_version::basic_version_number_t>(snap_version::SPECIAL_VERSION_SYSTEM_BRANCH)));
@@ -6162,6 +6096,10 @@ void content::on_backend_process()
  */
 bool content::check_attachment_security_impl(attachment_file const& file, permission_flag& secure, bool const fast)
 {
+    static_cast<void>(file);
+    static_cast<void>(secure);
+    static_cast<void>(fast);
+
     return true;
 }
 
