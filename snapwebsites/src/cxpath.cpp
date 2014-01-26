@@ -249,6 +249,7 @@ void cxpath_execute()
         fprintf(stderr, "error: an I/O error occured while reading the program file \"%s\".\n", program_filename.c_str());
         exit(1);
     }
+    fclose(f);
 
     const bool keep_namespace(g_opt->is_defined("namespace"));
     const bool disassemble(g_opt->is_defined("disassemble"));
@@ -314,6 +315,7 @@ void cxpath_disassemble()
         fprintf(stderr, "error: an I/O error occured while reading the program file \"%s\".\n", program_filename.c_str());
         exit(1);
     }
+    fclose(f);
 
     QDomXPath dom_xpath;
     dom_xpath.setProgram(program, true);

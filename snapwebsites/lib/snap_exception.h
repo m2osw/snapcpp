@@ -23,7 +23,17 @@
 namespace snap
 {
 
-class snap_exception : public std::runtime_error
+class snap_exception_base
+{
+public:
+                    snap_exception_base();
+
+    static void     set_debug(bool const debug);
+};
+
+
+
+class snap_exception : public std::runtime_error, public snap_exception_base
 {
 public:
     // no sub-name
@@ -37,7 +47,8 @@ public:
     snap_exception(const char *subname, const QString& what_msg)     : runtime_error(std::string("Snap! Exception:") + subname + ": " + what_msg.toUtf8().data()) {}
 };
 
-class snap_logic_exception : public std::logic_error
+
+class snap_logic_exception : public std::logic_error, public snap_exception_base
 {
 public:
     // no sub-name
@@ -50,6 +61,7 @@ public:
     snap_logic_exception(const char *subname, const std::string& what_msg) : logic_error(std::string("Snap! Exception:") + subname + ": " + what_msg) {}
     snap_logic_exception(const char *subname, const QString& what_msg)     : logic_error(std::string("Snap! Exception:") + subname + ": " + what_msg.toUtf8().data()) {}
 };
+
 
 } // namespace snap
 #endif

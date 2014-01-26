@@ -21,16 +21,16 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 <snap-tree content-modified="2014-01-08 19:36:39">
   <!-- the content grows as things are added to the site, at first it handles the root though -->
   <content path="/admin/layouts/bare">
-    <param name="content::title">Bare Layout</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">Bare Layout</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>The bare layout is the default used internally by Snap!</p>
                <p><small>Reminder: If your data works in the Bare layout, it should work in any layout.</small></p>]]>
     </param>
     <param name="layout::boxes">left</param>
   </content>
   <content path="/admin/layouts/bare/left">
-    <param name="content::title">Left Boxes</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">Left Boxes</param>
+    <param name="content::body" revision="revision">
       <![CDATA[<p>This box is shown on the left side of the content.</p>]]>
     </param>
   </content>
@@ -39,8 +39,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       this is a default box as a proof of concept
       once we can edit this data it will be much less useful
     -->
-    <param name="content::title">User Login</param>
-    <param name="content::body">
+    <param name="content::title" revision="revision">User Login</param>
+    <param name="content::body" revision="revision">
       <![CDATA[[form::source]]]>
     </param>
     <param name="form::source">login-box-form</param>

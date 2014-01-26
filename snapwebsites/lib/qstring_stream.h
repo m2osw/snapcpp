@@ -20,9 +20,16 @@
 #include <QString>
 #include <iostream>
 
+inline std::ostream& operator << ( std::ostream& str, const QByteArray& qarray )
+{
+    str << qarray.data();
+    return str;
+}
+
+
 inline std::ostream& operator << ( std::ostream& str, const QString& qstr )
 {
-    str << qstr.toUtf8().data();
+    str << qstr.toUtf8();
     return str;
 }
 
@@ -34,26 +41,39 @@ inline std::ostream& operator << ( std::ostream& str, const QStringRef& qstr )
 }
 
 
-inline std::string operator +( const std::string& str, const QString& qstr )
+inline std::string operator + ( const std::string& str, const QByteArray& qarray )
 {
-    return str + qstr.toUtf8().data();
+    return str + qarray.data();
 }
 
 
-inline std::string operator +( const std::string& str, const QStringRef& qstr )
+inline std::string operator + ( const std::string& str, const QString& qstr )
+{
+    return str + qstr.toUtf8();
+}
+
+
+inline std::string operator + ( const std::string& str, const QStringRef& qstr )
 {
     return str + qstr.toString();
 }
 
 
-inline std::string& operator +=( std::string& str, const QString& qstr )
+inline std::string& operator += ( std::string& str, const QByteArray& qarray )
+{
+    str = str + qarray;
+    return str;
+}
+
+
+inline std::string& operator += ( std::string& str, const QString& qstr )
 {
     str = str + qstr;
     return str;
 }
 
 
-inline std::string& operator +=( std::string& str, const QStringRef& qstr )
+inline std::string& operator += ( std::string& str, const QStringRef& qstr )
 {
     str = str + qstr;
     return str;

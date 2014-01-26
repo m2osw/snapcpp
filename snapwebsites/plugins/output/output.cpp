@@ -142,23 +142,9 @@ int64_t output::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, initial_update);
     SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
-}
-
-
-/** \brief First update to run for the content plugin.
- *
- * This function is the first update for the content plugin. It installs
- * the initial index page.
- *
- * \param[in] variables_timestamp  The timestamp for all the variables added to the database by this update (in micro-seconds).
- */
-void output::initial_update(int64_t variables_timestamp)
-{
-    (void)variables_timestamp;
 }
 
 
@@ -185,60 +171,55 @@ void output::content_update(int64_t variables_timestamp)
  * Note that the path was canonicalized by the path plugin and thus it does
  * not require any further corrections.
  *
- * \param[in] cpath  The canonicalized path being managed.
+ * \param[in,out] ipath  The canonicalized path being managed.
  *
  * \return true if the content is properly generated, false otherwise.
  */
 bool output::on_path_execute(content::path_info_t& ipath)
 {
-    // TODO: we probably do not want to check for attachment to send if the
+    // TODO: we probably do not want to check for attachments to send if the
     //       action is not "view"...
-    QSharedPointer<QtCassandra::QCassandraTable> content_table(content::content::instance()->get_content_table());
-    if(content_table->exists(ipath.get_key())
-    && content_table->row(ipath.get_key())->exists(content::get_name(content::SNAP_NAME_CONTENT_ATTACHMENT_REVISION_CONTROL_CURRENT)))
+
+    // on entry ipath is defined with the "output" as the owner
+    // we want to test the same with "attachment" as the owner
+    content::path_info_t attachment_ipath;
+    attachment_ipath.set_path(ipath.get_cpath());
+    //attachment_ipath.set_owner(content::get_name(content::SNAP_NAME_CONTENT_ATTACHMENT_OWNER));
+    QSharedPointer<QtCassandra::QCassandraTable> data_table(content::content::instance()->get_data_table());
+    if(data_table->exists(ipath.get_revision_key())
+    && data_table->row(ipath.get_revision_key())->exists(content::get_name(content::SNAP_NAME_CONTENT_ATTACHMENT)))
     {
-        QSharedPointer<QtCassandra::QCassandraRow> row(content_table->row(ipath.get_key()));
-        QtCassandra::QCassandraValue revision_value(row->cell(content::get_name(content::SNAP_NAME_CONTENT_ATTACHMENT_REVISION_CONTROL_CURRENT))->value());
-        if(!revision_value.nullValue())
+        QtCassandra::QCassandraValue attachment_key(data_table->row(ipath.get_revision_key())->cell(content::get_name(content::SNAP_NAME_CONTENT_ATTACHMENT))->value());
+        if(!attachment_key.nullValue())
         {
-            QString revision(revision_value.stringValue());
-            QString revision_key(QString("%1::%2").arg(content::get_name(content::SNAP_NAME_CONTENT_ATTACHMENT)).arg(revision));
-//std::cerr << "revision key [" << revision << "] [" << revision_key << "]\n";
-            if(row->exists(revision_key))
+            QSharedPointer<QtCassandra::QCassandraTable> files_table(content::content::instance()->get_files_table());
+            if(!files_table->exists(attachment_key.binaryValue())
+            || !files_table->row(attachment_key.binaryValue())->exists(content::get_name(content::SNAP_NAME_CONTENT_FILES_DATA)))
             {
-                QtCassandra::QCassandraValue attachment_key(row->cell(revision_key)->value());
-                if(!attachment_key.nullValue())
-                {
-                    QSharedPointer<QtCassandra::QCassandraTable> files_table(content::content::instance()->get_files_table());
-                    if(!files_table->exists(attachment_key.binaryValue())
-                    || !files_table->row(attachment_key.binaryValue())->exists(content::get_name(content::SNAP_NAME_CONTENT_FILES_DATA)))
-                    {
-                        // somehow the file data is not available
-                        f_snap->die(snap_child::HTTP_CODE_NOT_FOUND, "Attachment Not Found",
-                                "The attachment \"" + ipath.get_key() + "\" was not found.",
-                                QString("Could not find field \"%1\" of the file \"%2\".")
-                                        .arg(content::get_name(content::SNAP_NAME_CONTENT_FILES_DATA))
-                                        .arg(QString::fromAscii(attachment_key.binaryValue().toHex())));
-                        NOTREACHED();
-                    }
-
-                    QSharedPointer<QtCassandra::QCassandraRow> file_row(files_table->row(attachment_key.binaryValue()));
-
-                    //int pos(cpath.lastIndexOf('/'));
-                    //QString basename(cpath.mid(pos + 1));
-                    //f_snap->set_header("Content-Disposition", "attachment; filename=" + basename);
-
-                    //f_snap->set_header("Content-Transfer-Encoding", "binary");
-
-                    // this is an attachment, output it as such
-                    QtCassandra::QCassandraValue attachment_mime_type(file_row->cell(content::get_name(content::SNAP_NAME_CONTENT_FILES_MIME_TYPE))->value());
-                    f_snap->set_header("Content-Type", attachment_mime_type.stringValue());
-
-                    QtCassandra::QCassandraValue data(file_row->cell(content::get_name(content::SNAP_NAME_CONTENT_FILES_DATA))->value());
-                    f_snap->output(data.binaryValue());
-                    return true;
-                }
+                // somehow the file data is not available
+                f_snap->die(snap_child::HTTP_CODE_NOT_FOUND, "Attachment Not Found",
+                        "The attachment \"" + ipath.get_key() + "\" was not found.",
+                        QString("Could not find field \"%1\" of file \"%2\".")
+                                .arg(content::get_name(content::SNAP_NAME_CONTENT_FILES_DATA))
+                                .arg(QString::fromAscii(attachment_key.binaryValue().toHex())));
+                NOTREACHED();
             }
+
+            QSharedPointer<QtCassandra::QCassandraRow> file_row(files_table->row(attachment_key.binaryValue()));
+
+            //int pos(cpath.lastIndexOf('/'));
+            //QString basename(cpath.mid(pos + 1));
+            //f_snap->set_header("Content-Disposition", "attachment; filename=" + basename);
+
+            //f_snap->set_header("Content-Transfer-Encoding", "binary");
+
+            // this is an attachment, output it as such
+            QtCassandra::QCassandraValue attachment_mime_type(file_row->cell(content::get_name(content::SNAP_NAME_CONTENT_FILES_MIME_TYPE))->value());
+            f_snap->set_header("Content-Type", attachment_mime_type.stringValue());
+
+            QtCassandra::QCassandraValue data(file_row->cell(content::get_name(content::SNAP_NAME_CONTENT_FILES_DATA))->value());
+            f_snap->output(data.binaryValue());
+            return true;
         }
     }
 

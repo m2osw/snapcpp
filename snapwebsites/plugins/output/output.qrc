@@ -18,8 +18,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 -->
 <!DOCTYPE RCC>
 <RCC version="1.0">
-  <qresource prefix="/plugins/content">
+  <qresource prefix="/plugins/output">
     <file>content.xml</file>
+  </qresource>
+  <qresource prefix="/js/output">
+    <file>jquery.js</file>
+    <file>output.js</file>
   </qresource>
 </RCC>
 <!--

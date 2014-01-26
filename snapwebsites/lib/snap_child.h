@@ -198,6 +198,7 @@ public:
 
         QString                     get_name() const { return f_name; }
         QString                     get_filename() const { return f_filename; }
+        QString                     get_basename() const;
         QString                     get_original_mime_type() const { return f_original_mime_type; }
         QString                     get_mime_type() const { return f_mime_type; }
         time_t                      get_creation_time() const { return f_creation_time; }

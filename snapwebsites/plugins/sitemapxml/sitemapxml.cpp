@@ -606,8 +606,9 @@ bool sitemapxml::generate_sitemapxml_impl(sitemapxml *r)
         throw sitemapxml_exception_missing_table("could not get the content table");
     }
 
-    QString site_key(f_snap->get_site_key_with_slash());
-    links::link_info xml_sitemap_info("sitemapxml::include", false, site_key + "types/taxonomy/system/sitemapxml/include");
+    content::path_info_t ipath;
+    ipath.set_path("types/taxonomy/system/sitemapxml/include");
+    links::link_info xml_sitemap_info("sitemapxml::include", false, ipath.get_key(), ipath.get_branch());
     QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(xml_sitemap_info));
     links::link_info xml_sitemap;
     while(link_ctxt->next_link(xml_sitemap))
@@ -616,6 +617,7 @@ bool sitemapxml::generate_sitemapxml_impl(sitemapxml *r)
 //printf("Found key [%s]\n", page_key.toUtf8().data());
 
         // anonymous user has access to that page??
+        QString const site_key(f_snap->get_site_key_with_slash());
         bool allowed(false);
         if(page_key.startsWith(site_key))
         {

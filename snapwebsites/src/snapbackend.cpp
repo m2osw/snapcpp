@@ -1,5 +1,5 @@
 // Snap Websites Server -- snap websites backend tool
-// Copyright (C) 2011-2013  Made to Order Software Corp.
+// Copyright (C) 2011-2014  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -41,7 +41,7 @@ int main(int argc, char *argv[])
     // listen to connections
     s->backend();
 
-    // exit via the server so the server can clean itself up cleanly
+    // exit via the server so the server can clean itself up properly
     s->exit(0);
     snap::NOTREACHED();
 

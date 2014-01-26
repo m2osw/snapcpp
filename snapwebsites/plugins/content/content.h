@@ -29,18 +29,17 @@ enum name_t
 {
     SNAP_NAME_CONTENT_ACCEPTED,
     SNAP_NAME_CONTENT_ATTACHMENT,
-    //SNAP_NAME_CONTENT_ATTACHMENT_FILENAME,
+    SNAP_NAME_CONTENT_ATTACHMENT_FILENAME,
     SNAP_NAME_CONTENT_ATTACHMENT_JAVASCRIPTS,
-    //SNAP_NAME_CONTENT_ATTACHMENT_MIME_TYPE,
-    SNAP_NAME_CONTENT_ATTACHMENT_OWNER,
+    SNAP_NAME_CONTENT_ATTACHMENT_MIME_TYPE,
+    //SNAP_NAME_CONTENT_ATTACHMENT_OWNER,
     SNAP_NAME_CONTENT_ATTACHMENT_PATH_END,
-    SNAP_NAME_CONTENT_ATTACHMENT_REVISION_CONTROL_LAST_BRANCH,
-    SNAP_NAME_CONTENT_ATTACHMENT_REVISION_CONTROL_LAST_REVISION,
-    SNAP_NAME_CONTENT_ATTACHMENT_REVISION_CONTROL_CURRENT,
-    SNAP_NAME_CONTENT_ATTACHMENT_REVISION_CONTROL_CURRENT_WORKING_VERSION,
-    SNAP_NAME_CONTENT_ATTACHMENT_REVISION_FILENAME,
-    SNAP_NAME_CONTENT_ATTACHMENT_REVISION_FILENAME_WITH_VAR,
-    SNAP_NAME_CONTENT_ATTACHMENT_REVISION_MIME_TYPE,
+    SNAP_NAME_CONTENT_ATTACHMENT_REFERENCE,
+    //SNAP_NAME_CONTENT_ATTACHMENT_REVISION_CONTROL_LAST_BRANCH,
+    //SNAP_NAME_CONTENT_ATTACHMENT_REVISION_CONTROL_LAST_REVISION,
+    //SNAP_NAME_CONTENT_ATTACHMENT_REVISION_CONTROL_CURRENT,
+    //SNAP_NAME_CONTENT_ATTACHMENT_REVISION_CONTROL_CURRENT_WORKING_VERSION,
+    //SNAP_NAME_CONTENT_ATTACHMENT_REVISION_FILENAME_WITH_VAR,
     SNAP_NAME_CONTENT_BODY,
     SNAP_NAME_CONTENT_BRANCH,
     SNAP_NAME_CONTENT_CHILDREN,
@@ -76,6 +75,8 @@ enum name_t
     SNAP_NAME_CONTENT_ISSUED,
     SNAP_NAME_CONTENT_LONG_TITLE,
     SNAP_NAME_CONTENT_MODIFIED,
+    SNAP_NAME_CONTENT_OUTPUT,
+    SNAP_NAME_CONTENT_OWNER,
     SNAP_NAME_CONTENT_PAGE_TYPE,
     SNAP_NAME_CONTENT_PARENT,
     SNAP_NAME_CONTENT_PRIMARY_OWNER,
@@ -94,6 +95,7 @@ enum name_t
     SNAP_NAME_CONTENT_SINCE,
     SNAP_NAME_CONTENT_SUBMITTED,
     SNAP_NAME_CONTENT_TABLE,         // Cassandra Table used for content (pages, comments, tags, vocabularies, etc.)
+    SNAP_NAME_CONTENT_TAG,
     SNAP_NAME_CONTENT_TITLE,
     SNAP_NAME_CONTENT_UNTIL,
     SNAP_NAME_CONTENT_UPDATED,
@@ -185,23 +187,32 @@ public:
                                     path_info_t();
 
     void                            set_path(QString const& path);
+    void                            set_real_path(QString const& path);
     void                            set_owner(QString const& owner);
     void                            set_main_page(bool main_page);
     void                            set_parameter(QString const& name, QString const& value);
 
+    void                            force_branch(snap_version::version_number_t branch);
+    void                            force_revision(snap_version::version_number_t revision);
+    void                            force_extended_revision(QString const& revision);
+    void                            force_locale(QString const& locale);
+
     snap_child *                    get_snap() const;
     QString                         get_key() const;
+    QString                         get_real_key() const;
     QString                         get_cpath() const;
+    QString                         get_real_cpath() const;
     QString                         get_owner() const;
     bool                            get_main_page() const;
     QString                         get_parameter(QString const& name) const;
 
     bool                            get_working_branch() const;
-    snap_version::version_number_t  get_branch() const;
+    snap_version::version_number_t  get_branch(bool create_new_if_required = false, QString const& locale = "") const;
     snap_version::version_number_t  get_revision() const;
     QString                         get_locale() const;
     QString                         get_branch_key() const;
     QString                         get_revision_key() const;
+    QString                         get_extended_revision() const;
 
 private:
     typedef QMap<QString, QString>  parameters_t;
@@ -213,8 +224,10 @@ private:
     zpsnap_child_t                  f_snap;
 
     // user specified
-    QString                         f_cpath;
     QString                         f_key;
+    QString                         f_real_key;
+    QString                         f_cpath;
+    QString                         f_real_cpath;
     QString                         f_owner;
     controlled_vars::fbool_t        f_main_page;
     parameters_t                    f_parameters;
@@ -222,6 +235,7 @@ private:
     // generated internally
     mutable snap_version::version_number_t  f_branch;
     mutable snap_version::version_number_t  f_revision;
+    QString                                 f_revision_string;
     mutable QString                         f_locale;
     mutable QString                         f_branch_key;
     mutable QString                         f_revision_key;
@@ -474,7 +488,7 @@ public:
     QSharedPointer<QtCassandra::QCassandraTable> get_content_table();
     QSharedPointer<QtCassandra::QCassandraTable> get_files_table();
     QSharedPointer<QtCassandra::QCassandraTable> get_data_table();
-    QtCassandra::QCassandraValue get_content_parameter(QString path, QString const& name);
+    QtCassandra::QCassandraValue get_content_parameter(path_info_t& path, QString const& name, param_revision_t revision_type);
     plugin *            get_plugin(path_info_t& ipath, permission_error_callback& err_callback);
 
     // revision control
@@ -483,19 +497,21 @@ public:
     QString             get_revision_base_key(QString const& owner);
     snap_version::version_number_t get_current_branch(QString const& key, QString const& owner, bool working_branch);
     snap_version::version_number_t get_current_user_branch(QString const& key, QString const& owner, QString const& locale, bool working_branch);
+    snap_version::version_number_t get_current_revision(QString const& key, QString const& owner, snap_version::version_number_t const branch, QString const& locale, bool working_branch);
     snap_version::version_number_t get_current_revision(QString const& key, QString const& owner, QString const& locale, bool working_branch);
     snap_version::version_number_t get_new_branch(QString const& key, QString const& owner, QString const& locale);
     snap_version::version_number_t get_new_revision(QString const& key, QString const& owner, snap_version::version_number_t branch, QString const& locale);
     QString             get_branch_key(QString const& key, QString const& owner, bool working_branch);
     void                initialize_branch(QString const& key, QString const& locale);
     QString             generate_branch_key(QString const& key, snap_version::version_number_t branch);
+    void                set_branch(QString const& key, QString const& owner, snap_version::version_number_t branch, bool working_branch);
     QString             set_branch_key(QString const& key, QString const& owner, snap_version::version_number_t branch, bool working_branch);
     QString             get_revision_key(QString const& key, QString const& owner, snap_version::version_number_t branch, QString const& locale, bool working_branch);
     QString             generate_revision_key(QString const& key, snap_version::version_number_t branch, snap_version::version_number_t revision, QString const& locale);
     QString             generate_revision_key(QString const& key, QString const& revision, QString const& locale);
     void                set_current_revision(QString const& key, QString const& owner, snap_version::version_number_t branch, snap_version::version_number_t revision, QString const& locale, bool working_branch);
     QString             set_revision_key(QString const& key, QString const& owner, snap_version::version_number_t branch, snap_version::version_number_t revision, QString const& locale, bool working_branch);
-    QString             set_revision_key(QString const& key, QString const& owner, QString const& revision, QString const& locale, bool working_branch);
+    QString             set_revision_key(QString const& key, QString const& owner, snap_version::version_number_t branch, QString const& revision, QString const& locale, bool working_branch);
     path_info_t         get_path_info(QString const& cpath, QString const& owner, bool main_page);
     QString             get_user_key(QString const& key, snap_version::version_number_t branch, int64_t identifier);
 
@@ -508,7 +524,7 @@ public:
     void                on_backend_process();
 
     SNAP_SIGNAL(new_content, (path_info_t& path), (path));
-    SNAP_SIGNAL(create_content, (path_info_t& path, QString const& owner, QString const& type, snap_version::version_number_t branch_number), (path, owner, type, branch_number));
+    SNAP_SIGNAL(create_content, (path_info_t& path, QString const& owner, QString const& type), (path, owner, type));
     SNAP_SIGNAL(create_attachment, (attachment_file const& file, snap_version::version_number_t branch_number, QString const& locale), (file, branch_number, locale));
     SNAP_SIGNAL(modified_content, (path_info_t& path), (path));
     SNAP_SIGNAL(check_attachment_security, (attachment_file const& file, permission_flag& secure, bool const fast), (file, secure, fast));
@@ -528,6 +544,8 @@ public:
     static void         insert_html_string_to_xml_doc(QDomElement child, QString const& xml);
     bool                load_attachment(QString const& key, attachment_file& file, bool load_data = true);
     void                add_javascript(path_info_t& path, QDomElement& header, QDomElement& metadata, QString const& name);
+
+    bool                is_final(QString const& key);
 
 private:
     // from the <param> tags

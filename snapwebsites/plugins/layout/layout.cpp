@@ -16,10 +16,12 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "layout.h"
+
 #include "../filter/filter.h"
 #include "../content/content.h"
 #include "../javascript/javascript.h"
 #include "../taxonomy/taxonomy.h"
+
 #include "log.h"
 #include "qdomreceiver.h"
 #include "qhtmlserializer.h"
@@ -28,6 +30,7 @@
 #include "not_reached.h"
 
 #include <iostream>
+
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
 #include <QXmlQuery>
@@ -207,16 +210,13 @@ QSharedPointer<QtCassandra::QCassandraTable> layout::get_layout_table()
  */
 QString layout::get_layout(content::path_info_t& ipath, const QString& column_name)
 {
-    // get the full key
-    QString key(ipath.get_key());
-
     // get the content table first
-    QtCassandra::QCassandraValue layout_value(content::content::instance()->get_content_table()->row(key)->cell(column_name)->value());
+    QtCassandra::QCassandraValue layout_value(content::content::instance()->get_content_table()->row(ipath.get_key())->cell(column_name)->value());
     if(layout_value.nullValue())
     {
         // that very content doesn't define a layout, check its type(s)
         layout_value = taxonomy::taxonomy::instance()->find_type_with(
-            ipath.get_cpath(),
+            ipath,
             content::get_name(content::SNAP_NAME_CONTENT_PAGE_TYPE),
             column_name,
             content::get_name(content::SNAP_NAME_CONTENT_CONTENT_TYPES_NAME)
@@ -435,14 +435,14 @@ layout_name = "bare";
     // http://www.w3.org/TR/xslt#section-Combining-Stylesheets
 
     // check whether the layout was defined in this website database
-    QSharedPointer<QtCassandra::QCassandraTable> content_table(content::content::instance()->get_content_table());
-    QString const site_key(f_snap->get_site_key_with_slash());
-    QString const layout_key(site_key + get_name(SNAP_NAME_LAYOUT_ADMIN_LAYOUTS) + "/" + layout_name);
+    QSharedPointer<QtCassandra::QCassandraTable> data_table(content::content::instance()->get_data_table());
+    content::path_info_t layout_ipath;
+    layout_ipath.set_path(QString("%1/%2").arg(get_name(SNAP_NAME_LAYOUT_ADMIN_LAYOUTS)).arg(layout_name));
     // TODO: we'll need to manage updates which is probably going to be done
     //       from the snap_child::update_plugins() with the user of a message
     //       which should be caught by this plugin...
-    if(!content_table->exists(layout_key)
-    || !content_table->row(layout_key)->exists(get_name(SNAP_NAME_LAYOUT_BOXES)))
+    if(!data_table->exists(layout_ipath.get_branch_key())
+    || !data_table->row(layout_ipath.get_branch_key())->exists(get_name(SNAP_NAME_LAYOUT_BOXES)))
     {
         // this layout is missing, create necessary basic info
         // (later users can edit those settings)
@@ -464,14 +464,14 @@ layout_name = "bare";
                     "layout::create_body() could not load the content.xml file from the layout table.");
             NOTREACHED();
         }
-        content::content::instance()->add_xml_document(dom, p == NULL ? "content" : p->get_plugin_name());
+        content::content::instance()->add_xml_document(dom, p == NULL ? content::get_name(content::SNAP_NAME_CONTENT_OUTPUT) : p->get_plugin_name());
         f_snap->finish_update();
-        if(!content_table->row(layout_key)->exists(get_name(SNAP_NAME_LAYOUT_BOXES)))
+        if(!data_table->row(layout_ipath.get_branch_key())->exists(get_name(SNAP_NAME_LAYOUT_BOXES)))
         {
             f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR,
                     "Layout Unavailable",
                     "Layout \"" + layout_name + "\" content.xml file does not define the layout::boxes entry for this layout.",
-                    "layout::create_body() the content.xml did not define \"" + layout_key + "/layout::boxes\" as expected.");
+                    "layout::create_body() the content.xml did not define \"" + layout_ipath.get_branch_key() + "->[layout::boxes]\" as expected.");
             NOTREACHED();
         }
     }
@@ -554,15 +554,16 @@ std::cerr << "got in layout... cpath = [" << ipath.get_cpath() << "]\n";
 #endif
             for(int i(0); i < max_boxes; ++i)
             {
-                links::link_info info(content::get_name(content::SNAP_NAME_CONTENT_CHILDREN), false, site_key + get_name(SNAP_NAME_LAYOUT_ADMIN_LAYOUTS) + "/" + layout_name + "/" + names[i]);
+                content::path_info_t ichild;
+                ichild.set_path(QString("%1/%2/%3").arg(get_name(SNAP_NAME_LAYOUT_ADMIN_LAYOUTS)).arg(layout_name).arg(names[i]));
+                links::link_info info(content::get_name(content::SNAP_NAME_CONTENT_CHILDREN), false, ichild.get_key(), ichild.get_branch());
                 QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
                 links::link_info child_info;
                 while(link_ctxt->next_link(child_info))
                 {
-                    QString child_cpath(child_info.key().mid(site_key.length()));
                     box_error_callback.clear_error();
                     content::path_info_t box_ipath;
-                    box_ipath.set_path(child_cpath);
+                    box_ipath.set_path(child_info.key());
                     plugin *box_plugin(content::content::instance()->get_plugin(box_ipath, box_error_callback));
                     if(!box_error_callback.has_error() && box_plugin)
                     {
@@ -572,7 +573,7 @@ std::cerr << "got in layout... cpath = [" << ipath.get_cpath() << "]\n";
                             // put each box in a filter tag because we have to
                             // specify a different owner and path for each
                             QDomElement filter_box(doc.createElement("filter"));
-                            filter_box.setAttribute("path", child_cpath); // not the full key
+                            filter_box.setAttribute("path", box_ipath.get_cpath()); // not the full key
                             filter_box.setAttribute("owner", box_plugin->get_plugin_name());
                             dom_boxes[i].appendChild(filter_box);
                             lb->on_generate_boxes_content(this, ipath, box_ipath, page, filter_box, ctemplate);
@@ -605,7 +606,7 @@ std::cerr << "got in layout... cpath = [" << ipath.get_cpath() << "]\n";
     if(filter_exists)
     {
         // replace all tokens if filtering is available
-        filter::filter::instance()->on_token_filter(ipath.get_cpath(), doc);
+        filter::filter::instance()->on_token_filter(ipath, doc);
     }
 
 //std::cout << "Generated XML is [" << doc.toString() << "]\n";

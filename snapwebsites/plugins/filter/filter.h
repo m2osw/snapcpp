@@ -14,11 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-#ifndef SNAP_FILTER_H
-#define SNAP_FILTER_H
+#pragma once
 
-#include "snap_child.h"
-#include "plugins.h"
+#include "../content/content.h"
+
 #include "not_reached.h"
 
 namespace snap
@@ -247,9 +246,9 @@ public:
 
     void                on_bootstrap(::snap::snap_child *snap);
     void                on_xss_filter(QDomNode& node, QString const& accepted_tags, QString const& accepted_attributes);
-    void                on_token_filter(QString const& cpath, QDomDocument& xml);
+    void                on_token_filter(content::path_info_t& ipath, QDomDocument& xml);
 
-    SNAP_SIGNAL(replace_token, (filter *f, QString const& cpath, QString const& plugin_owner, QDomDocument& xml, token_info_t& token), (f, cpath, plugin_owner, xml, token));
+    SNAP_SIGNAL(replace_token, (content::path_info_t& ipath, QString const& plugin_owner, QDomDocument& xml, token_info_t& token), (ipath, plugin_owner, xml, token));
 
 private:
     snap_child *    f_snap;
@@ -257,6 +256,4 @@ private:
 
 } // namespace filter
 } // namespace snap
-#endif
-// SNAP_FILTER_H
 // vim: ts=4 sw=4 et

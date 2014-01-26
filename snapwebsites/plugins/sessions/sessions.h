@@ -104,6 +104,7 @@ public:
         void set_session_random(int32_t random);
         void set_plugin_owner(QString const& plugin_owner);
         void set_page_path(QString const& page_path);
+        void set_page_path(content::path_info_t& page_ipath);
         void set_object_path(QString const& object_path);
         void set_user_agent(QString const& user_agent);
         void set_time_to_live(int32_t time_to_live);

@@ -1,5 +1,5 @@
 // Snap Websites Server -- manage mailing lists for other systems
-// Copyright (C) 2013  Made to Order Software Corp.
+// Copyright (C) 2013-2014  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -16,17 +16,12 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "mailinglist.h"
-//#include "plugins.h"
-//#include "log.h"
-#include "not_reached.h"
+
 #include "../content/content.h"
-//#include <QtCassandra/QCassandraValue.h>
-//#include <QtSerialization/QSerializationComposite.h>
-//#include <QtSerialization/QSerializationFieldBasicTypes.h>
-//#include <QtSerialization/QSerializationFieldString.h>
-//#include <QtSerialization/QSerializationFieldTag.h>
-//#include <iostream>
-//#include <magic.h>
+
+#include "not_reached.h"
+
+#include "poison.h"
 
 
 SNAP_PLUGIN_START(mailinglist, 1, 0)

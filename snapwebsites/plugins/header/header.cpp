@@ -220,7 +220,7 @@ void header::on_generate_header_content(layout::layout *l, content::path_info_t&
     {   // snap/head/metadata/generator
         QDomElement created(doc.createElement("generator"));
         metadata.appendChild(created);
-        QtCassandra::QCassandraValue generator(content_plugin->get_content_parameter(ipath.get_cpath(), get_name(SNAP_NAME_HEADER_GENERATOR)));
+        QtCassandra::QCassandraValue generator(content_plugin->get_content_parameter(ipath, get_name(SNAP_NAME_HEADER_GENERATOR), content::content::PARAM_REVISION_BRANCH));
         if(!generator.nullValue())
         {
             // also save that one as a header

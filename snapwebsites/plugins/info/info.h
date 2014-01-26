@@ -65,7 +65,7 @@ public:
     virtual int64_t         do_update(int64_t last_updated);
 
     void                    on_bootstrap(snap_child *snap);
-    virtual void            on_process_post(QString const& cpath, sessions::sessions::session_info const& session_info);
+    virtual void            on_process_form_post(content::path_info_t& ipath, sessions::sessions::session_info const& session_info);
     virtual bool            on_path_execute(content::path_info_t& ipath);
     virtual void            on_generate_main_content(layout::layout *l, content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate);
     //void                    on_generate_header_content(layout::layout *l, QString const& path, QDomElement& header, QDomElement& metadata, QString const& ctemplate);

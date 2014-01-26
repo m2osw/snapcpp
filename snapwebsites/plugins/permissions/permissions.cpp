@@ -821,20 +821,22 @@ bool permissions::get_user_rights_impl(permissions *perms, sets_t& sets)
             }
             else
             {
-                user_key = f_snap->get_site_key_with_slash() + user_key;
+                content::path_info_t user_ipath;
+                user_ipath.set_path(user_key);
+                //user_key = f_snap->get_site_key_with_slash() + user_key;
 
                 // add all the groups the user is a member of
                 QSharedPointer<QtCassandra::QCassandraTable> content_table(content::content::instance()->get_content_table());
-                if(!content_table->exists(user_key))
+                if(!content_table->exists(user_ipath.get_key()))
                 {
                     // that user is gone, this will generate a 500 by Apache
-                    throw permissions_exception_invalid_path("could not access user \"" + user_key + "\"");
+                    throw permissions_exception_invalid_path("could not access user \"" + user_ipath.get_key() + "\"");
                 }
 
                 //QSharedPointer<QtCassandra::QCassandraRow> row(content_table->row(user_key));
 
                 // should this one NOT be offered to returning users?
-                sets.add_user_right(user_key);
+                sets.add_user_right(user_ipath.get_key());
 
                 if(login_status == get_name(SNAP_NAME_PERMISSIONS_LOGIN_STATUS_REGISTERED))
                 {
@@ -845,7 +847,7 @@ bool permissions::get_user_rights_impl(permissions *perms, sets_t& sets)
                     // add assigned groups
                     {
                         QString const link_start_name(get_name(SNAP_NAME_PERMISSIONS_GROUP));
-                        links::link_info info(link_start_name, false, user_key);
+                        links::link_info info(link_start_name, false, user_ipath.get_key(), user_ipath.get_branch());
                         QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
                         links::link_info right_info;
                         while(link_ctxt->next_link(right_info))
@@ -858,7 +860,7 @@ bool permissions::get_user_rights_impl(permissions *perms, sets_t& sets)
                     // we can also assign permissions directly to a user so get those too
                     {
                         QString const link_start_name(get_name(SNAP_NAME_PERMISSIONS_NAMESPACE) + ("::" + sets.get_action()));
-                        links::link_info info(link_start_name, false, user_key);
+                        links::link_info info(link_start_name, false, user_ipath.get_key(), user_ipath.get_branch());
                         QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
                         links::link_info right_info;
                         while(link_ctxt->next_link(right_info))
@@ -880,7 +882,7 @@ bool permissions::get_user_rights_impl(permissions *perms, sets_t& sets)
                     // by groups limited to returning registered users, not the logged in registered user
                     {
                         QString const link_start_name(get_name(SNAP_NAME_PERMISSIONS_GROUP_RETURNING_REGISTERED_USER));
-                        links::link_info info(link_start_name, false, user_key);
+                        links::link_info info(link_start_name, false, user_ipath.get_key(), user_ipath.get_branch());
                         QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
                         links::link_info right_info;
                         while(link_ctxt->next_link(right_info))
@@ -1010,6 +1012,7 @@ bool permissions::get_plugin_permissions_impl(permissions *perms, sets_t& sets)
             // page is too deep to be allowed
             return true;
         }
+        ipath.set_real_path(key);
     }
 
     content::path_info_t page_ipath;
@@ -1036,11 +1039,12 @@ bool permissions::get_plugin_permissions_impl(permissions *perms, sets_t& sets)
         links::link_info content_type_info;
         if(link_ctxt->next_link(content_type_info)) // use if() since it is unique on this end
         {
-            QString const content_type_key(content_type_info.key());
+            content::path_info_t tpath;
+            tpath.set_path(content_type_info.key());
 
             {
                 // read from the content type now
-                links::link_info perm_info(link_start_name, false, content_type_key);
+                links::link_info perm_info(link_start_name, false, tpath.get_key(), tpath.get_branch());
                 link_ctxt = links::links::instance()->new_link_context(perm_info);
                 links::link_info right_info;
                 while(link_ctxt->next_link(right_info))
@@ -1053,7 +1057,7 @@ bool permissions::get_plugin_permissions_impl(permissions *perms, sets_t& sets)
             {
                 // finally, check if there are groups defined for this content type
                 // groups here function the same way as user groups
-                links::link_info perm_info("permissions::groups", false, content_type_key);
+                links::link_info perm_info("permissions::groups", false, tpath.get_key(), tpath.get_branch());
                 link_ctxt = links::links::instance()->new_link_context(perm_info);
                 links::link_info right_info;
                 while(link_ctxt->next_link(right_info))
@@ -1455,12 +1459,13 @@ void permissions::recursive_add_plugin_permissions(QString const& plugin_name, Q
         throw permissions_exception_invalid_group_name("caller is trying to access group \"" + group + "\"");
     }
 
-    QSharedPointer<QtCassandra::QCassandraRow> row(content_table->row(group));
+    content::path_info_t ipath;
+    ipath.set_path(group);
 
     // get the rights at this level
     {
         QString const link_start_name("permissions::" + sets.get_action());
-        links::link_info info(link_start_name, false, group);
+        links::link_info info(link_start_name, false, ipath.get_key(), ipath.get_branch());
         QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
         links::link_info right_info;
         while(link_ctxt->next_link(right_info))
@@ -1474,7 +1479,7 @@ void permissions::recursive_add_plugin_permissions(QString const& plugin_name, Q
     // get all the children and do a recursive call with them all
     {
         QString const children_name("content::children");
-        links::link_info info(children_name, false, group);
+        links::link_info info(children_name, false, ipath.get_key(), ipath.get_branch());
         QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
         links::link_info right_info;
         while(link_ctxt->next_link(right_info))
@@ -1558,15 +1563,17 @@ void permissions::on_backend_action(QString const& action)
         int64_t const identifier(identifier_value.int64Value());
 
         QString const site_key(f_snap->get_site_key_with_slash());
-        QString const user_key(site_key + users::get_name(users::SNAP_NAME_USERS_PATH) + QString("/%1").arg(identifier));
-        QString const key(site_key + get_name(SNAP_NAME_PERMISSIONS_GROUPS_PATH) + "/root");
+        content::path_info_t user_ipath;
+        user_ipath.set_path(QString("%1/%2").arg(users::get_name(users::SNAP_NAME_USERS_PATH)).arg(identifier));
+        content::path_info_t dpath;
+        dpath.set_path(QString("%1/root").arg(get_name(SNAP_NAME_PERMISSIONS_GROUPS_PATH)));
 
         QString const link_name(get_name(SNAP_NAME_PERMISSIONS_GROUP));
         bool const source_multi(false);
-        links::link_info source(link_name, source_multi, user_key);
+        links::link_info source(link_name, source_multi, user_ipath.get_key(), user_ipath.get_branch());
         QString const link_to(get_name(SNAP_NAME_PERMISSIONS_GROUP));
         bool const destination_multi(false);
-        links::link_info destination(link_to, destination_multi, key);
+        links::link_info destination(link_to, destination_multi, dpath.get_key(), dpath.get_branch());
         links::links::instance()->create_link(source, destination);
     }
 }

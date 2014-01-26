@@ -55,6 +55,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
         <max>152x152</max>
       </sizes>
       <filters>
+        <!-- the list of supported formats for the icon is very limited -->
         <extensions>ico,png,apng,jpg,jpeg,svg</extensions>
       </filters>
       <help>Click <b>Browse...</b> to select a file or drag and drop your favorite icon to replace the current one.</help>

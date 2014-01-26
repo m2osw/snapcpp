@@ -336,7 +336,7 @@ void robotstxt::define_robots(content::path_info_t& ipath)
         {
 // linking [http://csnap.m2osw.com/] / [http://csnap.m2osw.com/types/taxonomy/system/robotstxt/noindex]
 // <link name="noindex" to="noindex" mode="1:*">/types/taxonomy/system/robotstxt/noindex</link>
-            links::link_info robots_info("robotstxt::noindex", false, ipath.get_key());
+            links::link_info robots_info("robotstxt::noindex", false, ipath.get_key(), ipath.get_branch());
             robots_info.set_branch(ipath.get_branch());
             QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(robots_info));
             links::link_info robots_txt;
@@ -346,7 +346,7 @@ void robotstxt::define_robots(content::path_info_t& ipath)
             }
         }
         {
-            links::link_info robots_info("robotstxt::nofollow", false, ipath.get_key());
+            links::link_info robots_info("robotstxt::nofollow", false, ipath.get_key(), ipath.get_branch());
             robots_info.set_branch(ipath.get_branch());
             QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(robots_info));
             links::link_info robots_txt;
@@ -356,7 +356,7 @@ void robotstxt::define_robots(content::path_info_t& ipath)
             }
         }
         {
-            links::link_info robots_info("robotstxt::noarchive", false, ipath.get_key());
+            links::link_info robots_info("robotstxt::noarchive", false, ipath.get_key(), ipath.get_branch());
             robots_info.set_branch(ipath.get_branch());
             QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(robots_info));
             links::link_info robots_txt;

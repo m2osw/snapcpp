@@ -1,4 +1,3 @@
-#define SNAP_NO_FORK
 // Snap Websites Server -- snap websites serving children
 // Copyright (C) 2011-2014  Made to Order Software Corp.
 //
@@ -15,6 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+
+//#define SNAP_NO_FORK
 
 #include "snap_child.h"
 #include "snap_uri.h"
@@ -2290,6 +2291,24 @@ void snap_child::post_file_t::set_data(QByteArray const& data)
 }
 
 
+/** \brief Retrieve the basename.
+ *
+ * This function returns the filename without any path.
+ * The extension is not removed.
+ *
+ * \return The filename without a path
+ */
+QString snap_child::post_file_t::get_basename() const
+{
+    int const last_slash(f_filename.lastIndexOf('/'));
+    if(last_slash >= 0)
+    {
+        return f_filename.mid(last_slash + 1);
+    }
+    return f_filename;
+}
+
+
 /** \brief Get the size of the buffer.
  *
  * This function retrieves the real size of the data buffer.
@@ -2641,6 +2660,8 @@ void snap_child::process_backend_uri(const QString& uri)
     init_plugins();
 
     canonicalize_options();
+
+    f_ready = true;
 
     QString action(f_server->get_parameter("__BACKEND_ACTION"));
     if(!action.isEmpty())
@@ -4289,9 +4310,9 @@ void snap_child::canonicalize_options()
     {
         qStableSort(browser_languages);
         int const max(browser_languages.size());
-        for(int i(0); i < max; ++i)
+        for(int i(max - 1); i >= 0; --i)
         {
-            QString browser_lang(browser_languages[0].get_name());
+            QString browser_lang(browser_languages[i].get_name());
             QString browser_country;
             if(verify_locale(browser_lang, browser_country, false))
             {
@@ -5009,7 +5030,7 @@ QString snap_child::postenv(const QString& name, const QString& default_value) c
 }
 
 
-/** \brief Check whether a file from the POST is defined.
+/** \brief Check whether a file from the POST request is defined.
  *
  * This function is expected to be called to verify that a file was
  * indeed uploaded for the named widget.
@@ -6663,7 +6684,7 @@ snap_child::locale_info_vector_t const& snap_child::get_plugins_locales()
         if(!f_ready)
         {
             // I do not think this happens, but just in case warn myself
-            SNAP_LOG_WARNING("get_browser_locales() called before f_ready was set to true");
+            SNAP_LOG_WARNING("get_plugins_locales() called before f_ready was set to true");
         }
 
         // retrieve the locales from all the plugins

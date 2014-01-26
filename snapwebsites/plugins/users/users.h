@@ -148,10 +148,10 @@ public:
     void                    on_attach_to_session();
     void                    on_detach_from_session();
     void                    on_define_locales(QString& locales);
-    void                    on_create_content(content::path_info_t& path, QString const& owner, QString const& type, snap_version::version_number_t branch_number);
+    void                    on_create_content(content::path_info_t& path, QString const& owner, QString const& type);
     void                    on_improve_signature(QString const& path, QString& signature);
 
-    virtual void            on_process_post(QString const& cpath, sessions::sessions::session_info const& info);
+    virtual void            on_process_form_post(content::path_info_t& ipath, sessions::sessions::session_info const& session_info);
 
     QString                 get_user_cookie_name();
     QString                 get_user_key() const;
@@ -182,7 +182,7 @@ private:
     void                    process_register_form();
     void                    create_password_salt(QByteArray& salt);
     void                    encrypt_password(QString const& digest, QString const& password, QByteArray const& salt, QByteArray& hash);
-    void                    verify_user(QString const& cpath);
+    void                    verify_user(content::path_info_t& ipath);
     void                    process_verify_form();
     void                    process_verify_resend_form();
     void                    process_forgot_password_form();

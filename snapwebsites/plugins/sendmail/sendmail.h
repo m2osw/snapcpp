@@ -192,7 +192,7 @@ public:
     void                on_register_backend_action(snap::server::backend_action_map_t& actions);
     virtual void        on_backend_action(QString const& action);
     virtual void        on_generate_main_content(layout::layout *l, content::path_info_t& path, QDomElement& page, QDomElement& body, QString const& ctemplate);
-    void                on_replace_token(filter::filter *f, QString const& cpath, QString const& plugin_owner, QDomDocument& xml, filter::filter::token_info_t& token);
+    void                on_replace_token(content::path_info_t& cpath, QString const& plugin_owner, QDomDocument& xml, filter::filter::token_info_t& token);
 
     void                post_email(email const& e);
     QString             default_from() const;

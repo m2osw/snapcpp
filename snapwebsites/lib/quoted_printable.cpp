@@ -1,5 +1,5 @@
 // Snap Websites Servers -- quote a string so it is only ASCII (for emails)
-// Copyright (C) 2013  Made to Order Software Corp.
+// Copyright (C) 2013-2014  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -179,6 +179,8 @@ std::string encode(const std::string& input, int flags)
                 return (f_flags & QUOTED_PRINTABLE_FLAG_EDBIC) != 0;
 
             default:
+                // note: the following won't match ' ' and '~' which are
+                //       already captured by other cases
                 return !(c >= ' ' && c <= '~');
 
             }
@@ -201,9 +203,24 @@ std::string encode(const std::string& input, int flags)
 
         void add_string(const char *s)
         {
+            bool const lone_periods((f_flags & QUOTED_PRINTABLE_FLAG_NO_LONE_PERIOD) != 0);
             // reset the buffer, just in case
             f_buffer = '\0';
-            while(*s) add_char(*s++);
+            for(; *s; ++s)
+            {
+                if(lone_periods
+                && *s == '.'
+                && (s[1] == '\r' || s[1] == '\n' || s[1] == '\0')
+                && (f_line == 0 || f_line >= 75))
+                {
+                    // special case of a lone period at the start of a line
+                    add_hex('.');
+                }
+                else
+                {
+                    add_char(*s);
+                }
+            }
 
             // at the end we may still have a space or tab to add
             if(f_buffer != '\0')

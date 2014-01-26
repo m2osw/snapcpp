@@ -310,106 +310,15 @@ void feed::on_generate_header_content(layout::layout *l, const QString& cpath, Q
 }
 
 
-void feed::on_create_content(QString const& path, QString const& owner, QString const& type)
-{
-    // do not ever create short URLs for admin pages
-    if(path == "admin" || path.startsWith("admin/"))
-    {
-        return;
-    }
-
-    // XXX do not generate a feed if the existing URL is less than
-    //     a certain size?
-
-    // TODO change to support a per content type short URL scheme
-
-    QSharedPointer<QtCassandra::QCassandraTable> feed(get_feed());
-
-    // first generate a site wide unique identifier for that page
-    int64_t identifier(0);
-    QString const id_key(f_snap->get_website_key() + "/" + get_name(SNAP_NAME_SHORTURL_ID_ROW));
-    QString const identifier_key(get_name(SNAP_NAME_SHORTURL_IDENTIFIER));
-    QtCassandra::QCassandraValue new_identifier;
-    new_identifier.setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
-
-    {
-        QtCassandra::QCassandraLock lock(f_snap->get_context(), QString("feed"));
-
-        // In order to register the user in the contents we want a
-        // unique identifier for each user, for that purpose we use
-        // a special row in the users table and since we have a lock
-        // we can safely do a read-increment-write cycle.
-        if(feed->exists(id_key))
-        {
-            QSharedPointer<QtCassandra::QCassandraRow> id_row(feed->row(id_key));
-            QSharedPointer<QtCassandra::QCassandraCell> id_cell(id_row->cell(identifier_key));
-            id_cell->setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
-            QtCassandra::QCassandraValue current_identifier(id_cell->value());
-            if(current_identifier.nullValue())
-            {
-                // this means no user can register until this value gets
-                // fixed somehow!
-                messages::messages::instance()->set_error(
-                    "Failed Creating Feed Unique Identifier",
-                    "Somehow the Feed plugin could not create a unique identifier for your new page.",
-                    "feed::on_create_content() could not load the *id_row* identifier, the row exists but the cell did not make it ("
-                                 + id_key + "/" + identifier_key + ").",
-                    false
-                );
-                return;
-            }
-            identifier = current_identifier.int64Value();
-        }
-
-        // XXX -- we could support a randomize too?
-        // Note: generally, public URL shorteners will randomize this number
-        //       so no two pages have the same number and they do not appear
-        //       in sequence; here we do not need to do that because the
-        //       website anyway denies access to all the pages that are to
-        //       be hidden from preying eyes
-        ++identifier;
-
-        new_identifier.setInt64Value(identifier);
-        feed->row(id_key)->cell(identifier_key)->setValue(new_identifier);
-
-        // the lock automatically goes away here
-    }
-
-    QString const site_key(f_snap->get_site_key_with_slash());
-    QString const key(site_key + path);
-
-    QSharedPointer<QtCassandra::QCassandraTable> content_table(content::content::instance()->get_content_table());
-    QSharedPointer<QtCassandra::QCassandraRow> row(content_table->row(key));
-
-    row->cell(identifier_key)->setValue(new_identifier);
-
-    // save the date when the feed is generated so if the user changes
-    // the parameters we can regenerate only those that were generated before
-    // the date of the change
-    uint64_t const start_date(f_snap->get_uri().option("start_date").toLongLong());
-    row->cell(get_name(SNAP_NAME_SHORTURL_DATE))->setValue(start_date);
-
-    // TODO allow the user to change the number parameters
-    QString const feed(site_key + QString("s/%1").arg(identifier, 0, 36, QChar('0')));
-    QtCassandra::QCassandraValue feed(feed);
-    row->cell(get_name(SNAP_NAME_SHORTURL_URL))->setValue(feed);
-
-    // create an index entry so we can find the entry and redirect the user
-    // as required
-    QString const index(f_snap->get_website_key() + "/" + get_name(SNAP_NAME_SHORTURL_INDEX_ROW));
-    feed->row(index)->cell(new_identifier.binaryValue())->setValue(key);
-}
-
-
 /** \brief Check whether \p cpath matches our introducer.
  *
  * This function checks that cpath matches the feed introducer which
  * is "/s/" by default.
  *
- * \param[in] cpath  The path being handled dynamically.
+ * \param[in,out] ipath  The path being handled dynamically.
  * \param[in,out] plugin_info  If you understand that cpath, set yourself here.
  */
-void feed::on_can_handle_dynamic_path(const QString& cpath, path::dynamic_plugin_t& plugin_info)
+void feed::on_can_handle_dynamic_path(content::path_info_t& ipath, path::dynamic_plugin_t& plugin_info)
 {
     if(cpath.left(2) == "s/")
     {

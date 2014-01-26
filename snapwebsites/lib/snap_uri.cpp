@@ -1782,7 +1782,7 @@ std::cerr << "url decode?! [" << uri << "]\n";
                     throw snap_uri_exception_invalid_uri();
                 }
                 // use the % as is
-                utf8 += c;
+                utf8 += '%';
                 --u;
                 continue;
             }

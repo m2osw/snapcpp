@@ -319,6 +319,23 @@ void sessions::session_info::set_page_path(QString const& page_path)
 }
 
 
+/** \brief The path to the page where this session identifier is used.
+ *
+ * This is just a helper function which accepts a content path_info_t
+ * object instead of a string. It just retrieves the cpath from the
+ * object.
+ *
+ * \param[in,out] page_ipath  The path representing the page in question for this session.
+ *
+ * \sa get_page_path()
+ * \sa set_object_path()
+ */
+void sessions::session_info::set_page_path(content::path_info_t& page_ipath)
+{
+    f_page_path = page_ipath.get_cpath();
+}
+
+
 /** \brief The path of the object displaying this content.
  *
  * This path represents the object being displayed. For example, the smaller user

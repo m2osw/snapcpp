@@ -1,5 +1,5 @@
 // Snap Websites Servers -- quote a string so it is only ASCII (for emails)
-// Copyright (C) 2013  Made to Order Software Corp.
+// Copyright (C) 2013-2014  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,21 +14,19 @@
 // You should have received a copy of the GNU General Public License
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-#ifndef QUOTED_PRINTABLE_H
-#define QUOTED_PRINTABLE_H
+#pragma once
 
 #include    <string>
 
 namespace quoted_printable
 {
-const int QUOTED_PRINTABLE_FLAG_BINARY  = 0x0001;
-const int QUOTED_PRINTABLE_FLAG_EDBIC   = 0x0002;
-const int QUOTED_PRINTABLE_FLAG_LFONLY  = 0x0004; // many sendmail(1) do not like \r\n somehow
+int const QUOTED_PRINTABLE_FLAG_BINARY         = 0x0001;
+int const QUOTED_PRINTABLE_FLAG_EDBIC          = 0x0002;
+int const QUOTED_PRINTABLE_FLAG_LFONLY         = 0x0004; // many sendmail(1) do not like \r\n somehow
+int const QUOTED_PRINTABLE_FLAG_NO_LONE_PERIOD = 0x0008; // many sendmail(1) do not like \r\n somehow
 
-std::string encode(const std::string& text, int flags = 0);
-std::string decode(const std::string& text);
+std::string encode(std::string const& text, int flags = 0);
+std::string decode(std::string const& text);
 }
 
-#endif
-// #ifndef QUOTED_PRINTABLE_H
 // vim: ts=4 sw=4 et

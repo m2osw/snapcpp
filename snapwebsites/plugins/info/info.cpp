@@ -298,18 +298,16 @@ std::cerr << "*** info main content...\n";
  * cannot be auto-saved (although they kind of could, some parameters
  * are expected in the site information table instead.)
  *
- * \param[in] cpath  The path the user is accessing now.
- * \param[in] info  The user session being processed.
+ * \param[in] ipath  The path the user is accessing now.
+ * \param[in] session_info  The user session being processed.
  */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-void info::on_process_post(QString const& cpath, sessions::sessions::session_info const& session_info)
+void info::on_process_form_post(content::path_info_t& ipath, sessions::sessions::session_info const& session_info)
 {
-    if(cpath != "admin/settings/info")
+    if(ipath.get_cpath() != "admin/settings/info")
     {
         // this should not happen because invalid paths will not pass the
         // session validation process
-        throw info_exception_invalid_path("info::on_process_post() was called with an unsupported path: \"" + cpath + "\"");
+        throw info_exception_invalid_path("info::on_process_form_post() was called with an unsupported path: \"" + ipath.get_cpath() + "\"");
     }
 
     QtCassandra::QCassandraValue value;

@@ -16,8 +16,10 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "antivirus.h"
-#include "process.h"
+
 #include "../output/output.h"
+
+#include "process.h"
 #include "not_reached.h"
 
 #include "poison.h"
@@ -140,23 +142,9 @@ int64_t antivirus::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, initial_update);
     SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
-}
-
-
-/** \brief First update to run for the antivirus plugin.
- *
- * This function is the first update for the antivirus plugin. It installs
- * the initial index page.
- *
- * \param[in] variables_timestamp  The timestamp for all the variables added to the database by this update (in micro-seconds).
- */
-void antivirus::initial_update(int64_t variables_timestamp)
-{
-    (void)variables_timestamp;
 }
 
 
@@ -188,7 +176,7 @@ void antivirus::content_update(int64_t variables_timestamp)
  * to generate the final output.
  *
  * \param[in] l  The layout pointer.
- * \param[in] path  The path being managed.
+ * \param[in,out] ipath  The path being managed.
  * \param[in,out] page  The page being generated.
  * \param[in,out] body  The body being generated.
  * \param[in] ctemplate  The path to a template page in case cpath is not defined.

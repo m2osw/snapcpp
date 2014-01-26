@@ -125,24 +125,11 @@ int64_t search::do_update(int64_t last_updated)
 {
 	SNAP_PLUGIN_UPDATE_INIT();
 
-	SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, initial_update);
 	SNAP_PLUGIN_UPDATE(2012, 11, 3, 3, 58, 54, content_update);
 
 	SNAP_PLUGIN_UPDATE_EXIT();
 }
 
-/** \brief First update to run for the search plugin.
- *
- * Do nothing at this point.
- *
- * \param[in] variables_timestamp  The timestamp for all the variables added to the database by this update (in micro-seconds).
- */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-void search::initial_update(int64_t variables_timestamp)
-{
-}
-#pragma GCC diagnostic pop
 
 /** \brief Update the database with our search references.
  *
@@ -173,8 +160,12 @@ void search::on_improve_signature(QString const& path, QString& signature)
 	QString query(path);
 	query.replace('/', ' ');
 	query = query.simplified();
-	query.replace(" ", "%20");
-	signature += " <a href=\"/search?search=" + query + "\">Search Our Website</a>";
+	// the query should never be empty since the home page should always work...
+	if(!query.isEmpty())
+	{
+		query.replace(" ", "%20");
+		signature += " <a href=\"/search?search=" + query + "\">Search Our Website</a>";
+	}
 }
 
 

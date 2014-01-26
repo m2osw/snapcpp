@@ -58,7 +58,6 @@ public:
     virtual bool        on_path_execute(const QString& url);
     virtual void        on_generate_main_content(layout::layout *l, content::path_info_t& ipath, QDomElement& page, QDomElement& body, const QString& ctemplate);
     void                on_generate_header_content(layout::layout *l, content::path_info_t& ipath, QDomElement& header, QDomElement& metadata, const QString& ctemplate);
-    void                on_create_content(content::path_info_t& path, const QString& owner, const QString& type);
     void                on_can_handle_dynamic_path(content::path_info_t& cpath, path::plugin_info_t& plugin_info);
 
 private:

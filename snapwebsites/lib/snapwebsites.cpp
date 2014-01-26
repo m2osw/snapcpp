@@ -503,6 +503,9 @@ void server::config(int argc, char *argv[])
     //
     f_servername = argv[0];
 
+    f_debug = f_opt->is_defined( "debug" );
+    snap_exception::set_debug(f_debug);
+
     // initialize the syslog() interface
     openlog("snapserver", LOG_NDELAY | LOG_PID, LOG_DAEMON);
 
@@ -567,16 +570,14 @@ void server::config(int argc, char *argv[])
             help = true;
         }
     }
-    //
-    f_config = f_opt->get_string( "config" ).c_str();
-    //
-    f_debug = f_opt->is_defined( "debug" );
 
     if( help || f_opt->is_defined( "help" ) )
     {
         usage();
         exit(1);
     }
+
+    f_config = f_opt->get_string( "config" ).c_str();
 
     // read the configuration file now
     QFile c;

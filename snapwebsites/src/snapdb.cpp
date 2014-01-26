@@ -457,22 +457,31 @@ void snapdb::display()
                         c != cells.end();
                         ++c)
             {
+                QByteArray const key((*c)->columnKey());
                 QString n;
                 if(f_table == "files" && f_row == "new")
                 {
                     // TODO write a function to convert MD5, SHA1, etc.
-                    QByteArray key((*c)->columnKey());
                     int const max(key.size());
                     for(int i(0); i < max; ++i)
                     {
-                        QString hex(QString("%1").arg(key[i] & 255, 2, 16, QChar('0')));
+                        QString const hex(QString("%1").arg(key[i] & 255, 2, 16, QChar('0')));
+                        n += hex;
+                    }
+                }
+                if(f_table == "data" && key.startsWith("content::attachment::reference::"))
+                {
+                    n = "content::attachment::reference::";
+                    int const max(key.size());
+                    for(int i(32); i < max; ++i)
+                    {
+                        QString const hex(QString("%1").arg(key[i] & 255, 2, 16, QChar('0')));
                         n += hex;
                     }
                 }
                 else if(f_table == "files" && f_row == "javascripts")
                 {
                     // this row name is "<name>"_"<browser>"_<version as integers>
-                    QByteArray key((*c)->columnKey());
                     int const max(key.size());
                     int sep(0);
                     int i(0);
@@ -505,7 +514,7 @@ void snapdb::display()
                 {
                     // special case where the column key is a 64 bit integer
                     //const QByteArray& name((*c)->columnKey());
-                    QtCassandra::QCassandraValue identifier((*c)->columnKey());
+                    QtCassandra::QCassandraValue const identifier((*c)->columnKey());
                     n = QString("%1").arg(identifier.int64Value());
                 }
                 else
@@ -523,6 +532,8 @@ void snapdb::display()
                 }
                 else if(n == "content::created"
                      || n == "content::files::created"
+                     || n == "content::files::creation_time"
+                     || n == "content::files::modification_time"
                      || n == "content::files::secure::last_check"
                      || n == "content::files::updated"
                      || n == "content::modified"
@@ -532,6 +543,7 @@ void snapdb::display()
                      || n == "sessions::date"
                      || n == "shorturl::date"
                      || n == "users::created_time"
+                     || n == "users::forgot_password_on"
                      || n == "users::login_on"
                      || n == "users::logout_on"
                      || n == "users::previous_login_on"
@@ -575,16 +587,21 @@ void snapdb::display()
                     float value((*c)->value().floatValue());
                     v = QString("%1").arg(value);
                 }
-                else if(n == "content::attachment::revision_control::last_branch"
+                else if(n.startsWith("content::attachment::reference::")
+                     || n == "content::attachment::revision_control::last_branch"
                      || n.startsWith("content::attachment::revision_control::last_revision::")
                      || n == "content::files::image_height"
                      || n == "content::files::image_width"
                      || n == "content::files::size"
                      || n == "content::files::size::compressed"
+                     || n == "content::revision_control::attachment::current_branch"
+                     || n == "content::revision_control::attachment::current_working_branch"
                      || n == "content::revision_control::current_branch"
                      || n == "content::revision_control::current_working_branch"
                      || n == "content::revision_control::last_branch"
                      || n == "content::revision_control::attachment::last_branch"
+                     || n.startsWith("content::revision_control::attachment::current_revision::")
+                     || n.startsWith("content::revision_control::attachment::current_working_revision::")
                      || n.startsWith("content::revision_control::current_revision::")
                      || n.startsWith("content::revision_control::current_working_revision::")
                      || n.startsWith("content::revision_control::last_revision::")
@@ -643,7 +660,7 @@ void snapdb::display()
                         v += "...";
                     }
                 }
-                else if((n.startsWith("content::attachment::") && n[21] >= '0' && n[21] <= '9' && !n.mid(22).contains("::"))
+                else if((f_table == "data" && n == "content::attachment")
                      || (f_table == "files" && f_row == "javascripts")
                 )
                 {

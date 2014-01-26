@@ -1292,7 +1292,7 @@ void sendmail::on_bootstrap(snap_child *snap)
     f_snap = snap;
 
     SNAP_LISTEN(sendmail, "server", server, register_backend_action, _1);
-    SNAP_LISTEN(sendmail, "filter", filter::filter, replace_token, _1, _2, _3, _4, _5);
+    SNAP_LISTEN(sendmail, "filter", filter::filter, replace_token, _1, _2, _3, _4);
 }
 
 
@@ -2053,7 +2053,7 @@ void sendmail::sendemail(const QString& key, const QString& unique_key)
         const QString html_body(layout::layout::instance()->apply_layout(ipath, this));
 
         // the output only includes valid ASCII (controls + ' ' to '~')
-        const std::string encoded_body = quoted_printable::encode(html_body.toUtf8().data(), quoted_printable::QUOTED_PRINTABLE_FLAG_LFONLY);
+        const std::string encoded_body = quoted_printable::encode(html_body.toUtf8().data(), quoted_printable::QUOTED_PRINTABLE_FLAG_LFONLY | quoted_printable::QUOTED_PRINTABLE_FLAG_NO_LONE_PERIOD);
 
         email::email_attachment html_body_attachment;
         QByteArray body_data;
@@ -2068,7 +2068,7 @@ void sendmail::sendemail(const QString& key, const QString& unique_key)
         {
             // TODO: apply safety filters on the subject
             content::content *c(content::content::instance());
-            f_email.set_subject(c->get_content_parameter(path, get_name(content::SNAP_NAME_CONTENT_TITLE)).stringValue());
+            f_email.set_subject(c->get_content_parameter(ipath, content::get_name(content::SNAP_NAME_CONTENT_TITLE), c->PARAM_REVISION_REVISION).stringValue());
         }
     }
 
@@ -2255,14 +2255,15 @@ void sendmail::sendemail(const QString& key, const QString& unique_key)
             // if we have plain text then we have alternatives
             f << "--" << boundary << std::endl
               << "Content-Type: multipart/alternative;" << std::endl
-              << "boundary=\"" << boundary << ".msg\"" << std::endl
+              << "  boundary=\"" << boundary << ".msg\"" << std::endl
               << std::endl
               << "--" << boundary << ".msg" << std::endl
               << "Content-Type: text/plain; charset=\"utf-8\"" << std::endl
+              //<< "MIME-Version: 1.0" << std::endl -- only show this one in the main header
               << "Content-Transfer-Encoding: quoted-printable" << std::endl
               << "Content-Description: Mail message body" << std::endl
               << std::endl
-              << quoted_printable::encode(plain_text.toUtf8().data()) << std::endl;
+              << quoted_printable::encode(plain_text.toUtf8().data(), quoted_printable::QUOTED_PRINTABLE_FLAG_NO_LONE_PERIOD) << std::endl;
             //fprintf(f, "--%s\n", boundary.toUtf8().data());
             //fprintf(f, "Content-Type: multipart/alternative;\n  boundary=\"%s.msg\"\n\n", boundary.toUtf8().data());
             //fprintf(f, "--%s.msg\n", boundary.toUtf8().data());
@@ -2271,7 +2272,7 @@ void sendmail::sendemail(const QString& key, const QString& unique_key)
             //fprintf(f, "Content-Transfer-Encoding: quoted-printable\n");
             //fprintf(f, "Content-Description: Mail message body\n");
             //fprintf(f, "\n");
-            //fprintf(f, "%s\n", quoted_printable::encode(plain_text.toUtf8().data()).c_str());
+            //fprintf(f, "%s\n", quoted_printable::encode(plain_text.toUtf8().data(), quoted_printable::QUOTED_PRINTABLE_FLAG_NO_LONE_PERIOD).c_str());
             if(i < max)
             {
                 // now include the HTML
@@ -2288,13 +2289,12 @@ void sendmail::sendemail(const QString& key, const QString& unique_key)
                 }
 
                 // one empty line before the contents
-                f << std::endl;
-                //fprintf(f, "\n");
-
                 // here the data is already be encoded
-                f << html_attachment.get_data().data() << std::endl
-                  << "--" << boundary << ".msg" << std::endl
+                f << std::endl
+                  << html_attachment.get_data().data() << std::endl
+                  << "--" << boundary << ".msg--" << std::endl
                   << std::endl;
+                //fprintf(f, "\n");
                 //fprintf(f, "%s\n", html_attachment.get_data().data());
                 //fprintf(f, "--%s.msg--\n\n", boundary.toUtf8().data());
 
@@ -2490,15 +2490,16 @@ void sendmail::on_generate_main_content(layout::layout *l, content::path_info_t&
  * \li [sendmail::priority]
  * \li [sendmail::parameter(name="parameter name")]
  *
- * \param[in] f  The filter object.
- * \param[in] cpath  The path to the page being worked on.
- * \param[in] xml  The XML document used with the layout.
- * \param[in] token  The token object, with the token name and optional parameters.
+ * \param[in,out] ipath  The path to the page being worked on.
+ * \param[in] plugin_owner  The owner of this ipath content.
+ * \param[in,out] xml  The XML document used with the layout.
+ * \param[in,out] token  The token object, with the token name and optional parameters.
  */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-void sendmail::on_replace_token(filter::filter *f, QString const& cpath, QString const& plugin_owner, QDomDocument& xml, filter::filter::token_info_t& token)
+void sendmail::on_replace_token(content::path_info_t& ipath, QString const& plugin_owner, QDomDocument& xml, filter::filter::token_info_t& token)
 {
+    (void) ipath;
+    (void) plugin_owner;
+
     if(!token.is_namespace("sendmail::"))
     {
         return;
@@ -2642,7 +2643,6 @@ void sendmail::on_replace_token(filter::filter *f, QString const& cpath, QString
         }
     }
 }
-#pragma GCC diagnostic pop
 
 
 SNAP_PLUGIN_END()

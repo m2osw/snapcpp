@@ -61,15 +61,14 @@ public:
     virtual bool            on_path_execute(content::path_info_t& url);
     virtual void            on_generate_main_content(layout::layout *l, content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate);
     void                    on_generate_page_content(layout::layout *l, content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate);
-    void                    on_create_content(content::path_info_t& path, QString const& owner, QString const& type);
     void                    on_can_handle_dynamic_path(content::path_info_t& ipath, path::dynamic_plugin_t& plugin_info);
-    virtual void            on_process_post(QString const& cpath, sessions::sessions::session_info const& info);
+    virtual void            on_process_form_post(content::path_info_t& ipath, sessions::sessions::session_info const& session_info);
 
 private:
     void                    initial_update(int64_t variables_timestamp);
     void                    content_update(int64_t variables_timestamp);
     void                    output(content::path_info_t& ipath);
-    void                    get_icon(QString const& cpath, content::field_search::search_result_t& result, bool image);
+    void                    get_icon(content::path_info_t& cpath, content::field_search::search_result_t& result);
 
     zpsnap_child_t          f_snap;
 };

@@ -19,7 +19,6 @@
 #include "snapwebsites.h"
 #include "plugins.h"
 #include "qdomxpath.h"
-#include "../content/content.h"
 
 #include <iostream>
 #include <cctype>
@@ -272,15 +271,16 @@ void filter::on_xss_filter(QDomNode& node,
  * \li [version] -- version of the Snap! C++ server
  * \li [year] -- the 4-digit year when the request started
  *
- * \param[in] f  The filter object.
- * \param[in] cpath  The canonicalized path linked with this XML document.
+ * \param[in,out] ipath  The canonicalized path linked with this XML document.
+ * \param[in] plugin_owner  The plugin owning this ipath content.
  * \param[in,out] xml  The XML document where tokens are being replaced.
  * \param[in,out] token  The token object, with the token name and optional parameters.
  */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-bool filter::replace_token_impl(filter *f, QString const& cpath, QString const& plugin_owner, QDomDocument& xml, token_info_t& token)
+bool filter::replace_token_impl(content::path_info_t& ipath, QString const& plugin_owner, QDomDocument& xml, token_info_t& token)
 {
+    (void) ipath;
+    (void) plugin_owner;
+
     if(token.is_token("test"))
     {
         token.f_replacement = "<span style=\"font-weight: bold;\">The Test Token Worked</span>";
@@ -358,7 +358,6 @@ bool filter::replace_token_impl(filter *f, QString const& cpath, QString const& 
 
     return true;
 }
-#pragma GCC diagnostic pop
 
 
 /** \brief Read all the XML text and replace its tokens.
@@ -382,20 +381,21 @@ bool filter::replace_token_impl(filter *f, QString const& cpath, QString const& 
  * is allowed after the opening square bracket ([). Spaces are ignored and
  * are not required.
  *
- * \param[in] cpath  The canonicalized path being processed.
+ * \param[in,out] ipath  The canonicalized path being processed.
  * \param[in,out] xml  The XML document to filter.
  */
-void filter::on_token_filter(QString const& cpath, QDomDocument& xml)
+void filter::on_token_filter(content::path_info_t& ipath, QDomDocument& xml)
 {
     class filter_state_t
     {
     public:
-        filter_state_t(QDomDocument doc, QString const& cpath)
+        filter_state_t(QDomDocument doc, content::path_info_t& path)
+            //: f_state() -- auto-init
         {
             state_t s;
             s.f_node = doc;
             s.f_owner = "filter";
-            s.f_path = cpath;
+            s.f_ipath = path;
             f_state.push_back(s);
         }
 
@@ -404,11 +404,11 @@ void filter::on_token_filter(QString const& cpath, QDomDocument& xml)
             state_t s;
             s.f_node = e;
             s.f_owner = e.attribute("owner");
-            s.f_path = e.attribute("path");
+            s.f_ipath.set_path(e.attribute("path"));
             // TBD error or default if f_owner is empty?
-            //     (f_path can be empty because the root cpath is "")
+            //     (f_ipath can be empty because the root cpath is "")
             f_state.push_back(s);
-//std::cerr << "Push " << s.f_owner << ", path " << s.f_path << "\n";
+//std::cerr << "Push " << s.f_owner << ", path " << s.f_ipath << "\n";
         }
 
         void pop(QDomNode p)
@@ -420,7 +420,7 @@ void filter::on_token_filter(QString const& cpath, QDomDocument& xml)
 
             if(f_state.last().f_node == p)
             {
-//std::cerr << "Pop " << f_state.last().f_owner << ", path " << f_state.last().f_path << "\n";
+//std::cerr << "Pop " << f_state.last().f_owner << ", path " << f_state.last().f_ipath << "\n";
                 f_state.pop_back();
             }
         }
@@ -435,22 +435,22 @@ void filter::on_token_filter(QString const& cpath, QDomDocument& xml)
             return f_state.last().f_owner;
         }
 
-        QString const& path() const
+        content::path_info_t& ipath() const
         {
             if(f_state.isEmpty())
             {
                 throw snap_logic_exception("filter state stack empty on a path() call");
             }
 
-            return f_state.last().f_path;
+            return const_cast<content::path_info_t&>(f_state.last().f_ipath);
         }
 
     private:
         struct state_t
         {
-            QDomNode        f_node;
-            QString         f_owner;
-            QString         f_path;
+            QDomNode                f_node;
+            QString                 f_owner;
+            content::path_info_t    f_ipath;
         };
 
         QVector<state_t>    f_state;
@@ -461,9 +461,9 @@ void filter::on_token_filter(QString const& cpath, QDomDocument& xml)
     public:
         typedef ushort char_t;
 
-        text_t(filter *f, QString const& cpath, QString const& owner, QDomDocument& xml, QString const& text)
+        text_t(filter *f, content::path_info_t& ipath, QString const& owner, QDomDocument& xml, QString const& text)
             : f_filter(f)
-            , f_cpath(cpath)
+            , f_ipath(ipath)
             , f_owner(owner)
             , f_xml(xml)
             , f_index(0)
@@ -625,7 +625,7 @@ void filter::on_token_filter(QString const& cpath, QDomDocument& xml)
 
             // valid input, now verify that it does exist in the current
             // installation
-            f_filter->replace_token(f_filter, f_cpath, f_owner, f_xml, info);
+            f_filter->replace_token(f_ipath, f_owner, f_xml, info);
             if(!info.f_found)
             {
                 // the token is not known, that's an error so we do not
@@ -811,21 +811,21 @@ void filter::on_token_filter(QString const& cpath, QDomDocument& xml)
             }
         }
 
-        filter *        f_filter;
-        QString         f_cpath;
-        QString         f_owner;
-        QDomDocument    f_xml;
-        int             f_index;
-        int             f_extra_index;
-        QString         f_text;
-        QString         f_result;
-        QString         f_token;
-        QString         f_replacement;
-        QString         f_extra_input;
-        QString         f_token_name;
+        filter *                    f_filter;
+        content::path_info_t        f_ipath;
+        QString                     f_owner;
+        QDomDocument                f_xml;
+        controlled_vars::mint32_t   f_index;
+        controlled_vars::mint32_t   f_extra_index;
+        QString                     f_text;
+        QString                     f_result;
+        QString                     f_token;
+        QString                     f_replacement;
+        QString                     f_extra_input;
+        QString                     f_token_name;
     };
 
-    filter_state_t state(xml, cpath);
+    filter_state_t state(xml, ipath);
 
     QDomNode n = xml.firstChild();
     while(!n.isNull())
@@ -859,7 +859,7 @@ void filter::on_token_filter(QString const& cpath, QDomDocument& xml)
             // this works too, although the final result is still plain text!
             // (it must be xslt that converts the contents of CDATA sections)
             QDomCDATASection cdata_section(n.toCDATASection());
-            text_t t(this, state.path(), state.owner(), xml, cdata_section.data());
+            text_t t(this, state.ipath(), state.owner(), xml, cdata_section.data());
             if(t.parse())
             {
 //std::cerr << "replace CDATA [" << cdata_section.data() << "]\n";
@@ -870,7 +870,7 @@ void filter::on_token_filter(QString const& cpath, QDomDocument& xml)
         else if(n.isText())
         {
             QDomText text(n.toText());
-            text_t t(this, state.path(), state.owner(), xml, text.data());
+            text_t t(this, state.ipath(), state.owner(), xml, text.data());
             if(t.parse())
             {
 //std::cerr << "replace text [" << text.data() << "]\n";

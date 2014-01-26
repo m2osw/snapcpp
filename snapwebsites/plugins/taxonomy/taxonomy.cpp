@@ -1,4 +1,4 @@
-// Snap Websites Server -- manage types
+// Snap Websites Server -- manage taxonomy types
 // Copyright (C) 2012-2014  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
@@ -181,20 +181,18 @@ void taxonomy::content_update(int64_t variables_timestamp)
  * If the limit is not found, then an error is generated because it should
  * always exist (i.e. at least a system type that the user cannot edit.)
  *
- * \param[in] cpath  The content where we start.
+ * \param[in] ipath  The content where we start.
  * \param[in] taxonomy_name  The name of the link to the taxonomy to use for the search.
  * \param[in] col_name  The name of the column to search.
  * \param[in] limit_name  The title at which was stop the search.
  *
  * \return The value found in the Cassandra database.
  */
-QtCassandra::QCassandraValue taxonomy::find_type_with(const QString& cpath, const QString& taxonomy_name, const QString& col_name, const QString& limit_name)
+QtCassandra::QCassandraValue taxonomy::find_type_with(content::path_info_t& ipath, const QString& taxonomy_name, const QString& col_name, const QString& limit_name)
 {
     QtCassandra::QCassandraValue not_found;
-    QString site_key(f_snap->get_site_key_with_slash());
-    QString content_key(site_key + cpath);
-    // get link taxonomy_name from cpath
-    links::link_info type_info(taxonomy_name, true, content_key);
+    // get link taxonomy_name from ipath
+    links::link_info type_info(taxonomy_name, true, ipath.get_key(), ipath.get_branch());
     QSharedPointer<links::link_context> type_ctxt(links::links::instance()->new_link_context(type_info));
     links::link_info link_type;
     if(!type_ctxt->next_link(link_type))
@@ -204,17 +202,17 @@ QtCassandra::QCassandraValue taxonomy::find_type_with(const QString& cpath, cons
         return not_found;
     }
     QString type_key(link_type.key());
-
-    //QtCassandra::QCassandraValue type_path(content::content::instance()->get_content_table()->row(content_key)->cell(taxonomy_name)->value());
-    //if(type_path.nullValue())
     if(type_key.isEmpty())
     {
         return not_found;
     }
-    //QString type_key(site_key + type_path.stringValue());
     QSharedPointer<QtCassandra::QCassandraTable> content_table(content::content::instance()->get_content_table());
     for(;;)
     {
+        // TODO: determine whether the type should be checked in the branch instead of global area.
+        content::path_info_t tpath;
+        tpath.set_path(type_key);
+
         if(!content_table->exists(type_key))
         {
             // TODO: should this be an error instead? all the types should exist!
@@ -237,7 +235,7 @@ QtCassandra::QCassandraValue taxonomy::find_type_with(const QString& cpath, cons
             return not_found;
         }
         // get the parent
-        links::link_info info(content::get_name(content::SNAP_NAME_CONTENT_PARENT), true, type_key);
+        links::link_info info(content::get_name(content::SNAP_NAME_CONTENT_PARENT), true, tpath.get_key(), tpath.get_branch());
         QSharedPointer<links::link_context> ctxt(links::links::instance()->new_link_context(info));
         links::link_info link_info;
         if(!ctxt->next_link(link_info))

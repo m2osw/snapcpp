@@ -136,7 +136,7 @@ void form::on_bootstrap(::snap::snap_child *snap)
     f_snap = snap;
 
     SNAP_LISTEN(form, "server", server, process_post, _1);
-    SNAP_LISTEN(form, "filter", filter::filter, replace_token, _1, _2, _3, _4, _5);
+    SNAP_LISTEN(form, "filter", filter::filter, replace_token, _1, _2, _3, _4);
 }
 
 
@@ -608,7 +608,7 @@ void form::add_form_elements(QString& filename)
  *
  * \return The document (may be empty if the load fails)
  */
-QDomDocument const form::load_form(QString const& cpath, QString const& source, QString& error)
+QDomDocument const form::load_form(content::path_info_t& ipath, QString const& source, QString& error)
 {
     // forms are cached as static variables so calling the function more
     // than once for the exact same form simply returns the exact same
@@ -711,13 +711,13 @@ QDomDocument const form::load_form(QString const& cpath, QString const& source, 
     }
 
     // 4. save the page path and source path in the document
-    g_cached_form[csource].f_doc.documentElement().setAttribute("path", cpath);
+    g_cached_form[csource].f_doc.documentElement().setAttribute("path", ipath.get_cpath());
     g_cached_form[csource].f_doc.documentElement().setAttribute("src", csource);
 
     // 5. broadcast the fact that this form was loaded
     //
     // form was loaded, give other plugins means to modify it
-    tweak_form(this, cpath, g_cached_form[csource].f_doc);
+    tweak_form(this, ipath, g_cached_form[csource].f_doc);
 
     // 6. return to caller
     return g_cached_form[csource].f_doc;
@@ -734,18 +734,19 @@ QDomDocument const form::load_form(QString const& cpath, QString const& source, 
  * at the time we receive the post are.
  *
  * \param[in] f  The form plugin pointer.
- * \param[in] cpath  The path of the page this form is attached to.
- * \param[in] form_doc  The XML form in a DOM.
+ * \param[in,out] ipath  The path of the page this form is attached to.
+ * \param[in,out] form_doc  The XML form in a DOM.
  *
  * \return This function returns true if other signals are to be processed.
  */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-bool form::tweak_form_impl(form *f, QString const& cpath, QDomDocument form_doc)
+bool form::tweak_form_impl(form *f, content::path_info_t& ipath, QDomDocument form_doc)
 {
+    (void) f;
+    (void) ipath;
+    (void) form_doc;
+
     return true;
 }
-#pragma GCC diagnostic pop
 
 
 /** \typedef auto_save_types_t
@@ -802,7 +803,7 @@ void form::on_process_post(const QString& uri_path)
     // First we verify the session information
     // <input id="form_session" name="form_session" type="hidden" value="{$form_session}"/>
     sessions::sessions::session_info info;
-    QString form_session(f_snap->postenv("form_session"));
+    QString const form_session(f_snap->postenv("form_session"));
     sessions::sessions::instance()->load_session(form_session, info);
     switch(info.get_session_type())
     {
@@ -855,7 +856,7 @@ void form::on_process_post(const QString& uri_path)
     QDomDocument xml_form;
 
     // first try to load the form directly from the page (form::source)
-    QString source(get_source(owner, ipath.get_cpath()));
+    QString source(get_source(owner, ipath));
     if(source.isEmpty())
     {
         // the programmer forgot to derive from form_post?!
@@ -863,7 +864,7 @@ void form::on_process_post(const QString& uri_path)
     }
 
     QString error;
-    xml_form = load_form(ipath.get_cpath(), source, error);
+    xml_form = load_form(ipath, source, error);
     if(xml_form.isNull())
     {
         // programmer mispelled the path?
@@ -945,7 +946,7 @@ void form::on_process_post(const QString& uri_path)
         info.set_session_type(sessions::sessions::session_info::SESSION_INFO_VALID);
         int errcnt(messages->get_error_count());
         int warncnt(messages->get_warning_count());
-        validate_post_for_widget(ipath.get_cpath(), info, widget, widget_name, widget_type, is_secret);
+        validate_post_for_widget(ipath, info, widget, widget_name, widget_type, is_secret);
         if(info.get_session_type() != sessions::sessions::session_info::SESSION_INFO_VALID)
         {
             // it was not valid so mark the widgets as errorneous (i.e. so we
@@ -1012,7 +1013,7 @@ void form::on_process_post(const QString& uri_path)
         // in this case the form plugin just saves the data as is in the page
         auto_save_form(owner, ipath, auto_save_type, xml_form);
 
-        // after the auto-save, we also call the plugin on_process_post()
+        // after the auto-save, we also call the plugin on_process_form_post()
         // if available and in case the plugin wants to do a little more
         // work (i.e. mark something else out of date...)
     }
@@ -1026,7 +1027,7 @@ void form::on_process_post(const QString& uri_path)
     }
     if(fp != NULL)
     {
-        fp->on_process_post(ipath.get_cpath(), info);
+        fp->on_process_form_post(ipath, info);
     }
 }
 
@@ -1312,9 +1313,9 @@ int form::count_html_lines(const QString& html)
  */
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
-bool form::validate_post_for_widget_impl(const QString& cpath, sessions::sessions::session_info& info,
-                                         const QDomElement& widget, const QString& widget_name,
-                                         const QString& widget_type, bool is_secret)
+bool form::validate_post_for_widget_impl(content::path_info_t& ipath, sessions::sessions::session_info& info,
+                                         QDomElement const& widget, QString const& widget_name,
+                                         QString const& widget_type, bool is_secret)
 {
     messages::messages *messages(messages::messages::instance());
 
@@ -1511,7 +1512,11 @@ bool form::validate_post_for_widget_impl(const QString& cpath, sessions::session
 
     // check whether the field is required, in case of a checkbox required
     // means that the user selects the checkbox ("on")
-    if(widget_type == "line-edit" || widget_type == "password" || widget_type == "checkbox")
+    if(widget_type == "line-edit"
+    || widget_type == "password"
+    || widget_type == "checkbox"
+    || widget_type == "file"
+    || widget_type == "image")
     {
         QDomElement required(widget.firstChildElement("required"));
         if(!required.isNull())
@@ -1519,35 +1524,43 @@ bool form::validate_post_for_widget_impl(const QString& cpath, sessions::session
             QString const required_text(required.text());
             if(required_text == "required")
             {
-                // not an additional error if the minimum error was
-                // already generated
-                if(!has_minimum && value.isEmpty())
+                if(widget_type == "file"
+                || widget_type == "image")
                 {
-                    QString const label(widget.firstChildElement("label").text());
-                    messages->set_error(
-                            "Value is Invalid",
-                            "\"" + label + "\" is a required field.",
-                            "no data entered in widget \"" + widget_name + "\" by user",
-                            false
-                        );
-                    info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
-                }
-            }
-            else if(required_text == "defined")
-            {
-                if(!f_snap->postfile_exists(widget_name))
-                {
-                    QDomElement root(widget.ownerDocument().documentElement());
-                    QString const name(root.attribute("owner") + "::" + widget_name + "::path");
-                    QtCassandra::QCassandraValue cassandra_value(content::content::instance()->get_content_parameter(cpath, name));
-                    if(cassandra_value.nullValue())
+                    if(!f_snap->postfile_exists(widget_name)) // TBD <- this test is not logical if widget_type cannot be a FILE type...
                     {
-                        // not defined!
+                        QDomElement root(widget.ownerDocument().documentElement());
+                        QString const name(QString("%1::%2::%3::%4")
+                                .arg(content::get_name(content::SNAP_NAME_CONTENT_ATTACHMENT))
+                                .arg(root.attribute("owner"))
+                                .arg(widget_name)
+                                .arg(content::get_name(content::SNAP_NAME_CONTENT_ATTACHMENT_PATH_END)));
+                        QtCassandra::QCassandraValue cassandra_value(content::content::instance()->get_content_parameter(ipath, name, content::content::PARAM_REVISION_GLOBAL));
+                        if(cassandra_value.nullValue())
+                        {
+                            // not defined!
+                            QString const label(widget.firstChildElement("label").text());
+                            messages->set_error(
+                                    "Value is Invalid",
+                                    "\"" + label + "\" is a required field.",
+                                    "no data entered by user in widget \"" + widget_name + "\"",
+                                    false
+                                );
+                            info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                        }
+                    }
+                }
+                else
+                {
+                    // not an additional error if the minimum error was
+                    // already generated
+                    if(!has_minimum && value.isEmpty())
+                    {
                         QString const label(widget.firstChildElement("label").text());
                         messages->set_error(
                                 "Value is Invalid",
                                 "\"" + label + "\" is a required field.",
-                                "no data entered by user in widget \"" + widget_name + "\"",
+                                "no data entered in widget \"" + widget_name + "\" by user",
                                 false
                             );
                         info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
@@ -1840,15 +1853,15 @@ bool form::parse_width_height(QString const& size, int& width, int& height)
  * \li [form::resource(path="\<resource path>")]
  * \li [form::settings]
  *
- * \param[in] f  The filter object.
- * \param[in] cpath  The path to the page being worked on.
- * \param[in] xml  The XML document used with the layout.
+ * \param[in,out] ipath  The path to the page being worked on.
+ * \param[in] plugin_owner  The plugin owner of the ipath data.
+ * \param[in,out] xml  The XML document used with the layout.
  * \param[in,out] token  The token object, with the token name and optional parameters.
  */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-void form::on_replace_token(filter::filter *f, QString const& cpath, QString const& plugin_owner, QDomDocument& xml, filter::filter::token_info_t& token)
+void form::on_replace_token(content::path_info_t& ipath, QString const& plugin_owner, QDomDocument& xml, filter::filter::token_info_t& token)
 {
+    (void) xml;
+
     // a form::... token?
     if(!token.is_namespace("form::"))
     {
@@ -1892,7 +1905,7 @@ void form::on_replace_token(filter::filter *f, QString const& cpath, QString con
     else if(token.is_token(get_name(SNAP_NAME_FORM_SOURCE)))
     {
         // path to form comes from the database
-        source = get_source(plugin_owner, cpath);
+        source = get_source(plugin_owner, ipath);
     }
     else if(token.is_token(get_name(SNAP_NAME_FORM_PATH)))
     {
@@ -1913,7 +1926,7 @@ void form::on_replace_token(filter::filter *f, QString const& cpath, QString con
                     // WARNING: DO NOT MOVE THE CANONALIZATION BEFORE THE IF()
                     //          it removes the '/' at the start!
                     f_snap->canonicalize_path(source);
-                    source = site_key + cpath + "/" + source;
+                    source = ipath.get_key() + "/" + source;
                 }
                 else if(!includes_site_key)
                 {
@@ -1962,7 +1975,7 @@ void form::on_replace_token(filter::filter *f, QString const& cpath, QString con
     {
         // 0. load the form from resources or Cassandra
         QString error;
-        form_doc = load_form(cpath, source, error);
+        form_doc = load_form(ipath, source, error);
         if(!error.isEmpty())
         {
             token.f_error = true;
@@ -2048,7 +2061,7 @@ void form::on_replace_token(filter::filter *f, QString const& cpath, QString con
         //
         // If not empty then it was already defined in the previous step
         // (when retrieving the form:: from the page)
-        info.set_page_path(cpath);
+        info.set_page_path(ipath);
 
         // 6. Run the XSLT against the form and save the result
         //
@@ -2057,7 +2070,6 @@ void form::on_replace_token(filter::filter *f, QString const& cpath, QString con
 //printf("form is [%s] (%d), %d\n", token.f_replacement.toUtf8().data(), static_cast<int>(token.f_error), static_cast<int>(token.f_found));
     }
 }
-#pragma GCC diagnostic pop
 
 
 /** \brief Retrieve the path to the form of the specified page.
@@ -2070,20 +2082,19 @@ void form::on_replace_token(filter::filter *f, QString const& cpath, QString con
  * settings so the user does not even have to derive from the form_post
  * interface.
  *
- * \param[in] cpath  The page of which we want to take the default form.
+ * \param[in] owner  The name of the plugin owner.
+ * \param[in,out] ipath  The page of which we want to take the default form.
  *
  * \return The path to the form.
  */
-QString form::get_source(QString const& owner, QString const& cpath)
+QString form::get_source(QString const& owner, content::path_info_t& ipath)
 {
-    QSharedPointer<QtCassandra::QCassandraTable> content_table(content::content::instance()->get_content_table());
-    QString const site_key(f_snap->get_site_key_with_slash());
-    QString const key(site_key + cpath);
-    if(!content_table->exists(key))
+    QSharedPointer<QtCassandra::QCassandraTable> data_table(content::content::instance()->get_data_table());
+    if(!data_table->exists(ipath.get_branch_key()))
     {
         return "";
     }
-    QSharedPointer<QtCassandra::QCassandraRow> row(content_table->row(key));
+    QSharedPointer<QtCassandra::QCassandraRow> row(data_table->row(ipath.get_branch_key()));
     if(!row->exists(get_name(SNAP_NAME_FORM_SOURCE)))
     {
         return "";

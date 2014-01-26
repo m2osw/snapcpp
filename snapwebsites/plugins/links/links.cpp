@@ -17,6 +17,8 @@
 
 #include "links.h"
 
+// TODO: remove dependency on content (because content includes links...)
+//       it may be that content and links should be merged (yuck!) TBD
 #include "../content/content.h"
 
 #include "log.h"
@@ -441,56 +443,63 @@ bool link_context::next_link(link_info& info)
         }
         info.from_data(f_link);
         f_link.clear();
-        return true;
     }
-
-    QString links_namespace(get_name(SNAP_NAME_LINKS_NAMESPACE));
-    links_namespace += "::";
-    QString name(f_info.name());
-    if(!name.isEmpty())
+    else
     {
-        name = links_namespace + name;
-    }
-    int const namespace_len(links_namespace.length());
-    for(;;)
-    {
-        const QtCassandra::QCassandraCells& cells(f_row->cells());
-        if(f_cell_iterator == cells.end())
+        QString links_namespace(get_name(SNAP_NAME_LINKS_NAMESPACE));
+        links_namespace += "::";
+        QString name(f_info.name());
+        if(!name.isEmpty())
         {
-            // no more cells available in the cells, try to read more
-            f_row->clearCache();
-            f_row->readCells(f_column_predicate);
-            f_cell_iterator = cells.begin();
+            name = links_namespace + name;
+        }
+        int const namespace_len(links_namespace.length());
+        for(;;)
+        {
+            const QtCassandra::QCassandraCells& cells(f_row->cells());
             if(f_cell_iterator == cells.end())
             {
-                // no more cells available
-                return false;
+                // no more cells available in the cells, try to read more
+                f_row->clearCache();
+                f_row->readCells(f_column_predicate);
+                f_cell_iterator = cells.begin();
+                if(f_cell_iterator == cells.end())
+                {
+                    // no more cells available
+                    return false;
+                }
+            }
+
+            // the result is at the current iterator
+            // note that from the links table we only get keys, no names
+            // which doesn't matter as the name is f_info.name() anyway
+            QString const link_key(QString::fromUtf8(f_cell_iterator.key()));
+            QString link_name(f_cell_iterator.value()->value().stringValue());
+            if(!link_name.startsWith(links_namespace))
+            {
+                throw links_exception_invalid_name("link name \"" + link_name + "\" does not start with \"links::\"");
+            }
+
+            ++f_cell_iterator;
+
+            if(name.isEmpty() || name == link_name.left(name.length()))
+            {
+                // when the name is empty, everything matches
+                // otherwise make sure that the name starts as defined in the
+                // input name (f_info)
+                int const dash_pos(link_name.indexOf('-'));
+                info.set_name(link_name.mid(namespace_len, dash_pos - namespace_len));
+                info.set_key(link_key);
+                break;
             }
         }
-
-        // the result is at the current iterator
-        // note that from the links table we only get keys, no names
-        // which doesn't matter as the name is f_info.name() anyway
-        QString const link_key(QString::fromUtf8(f_cell_iterator.key()));
-        QString link_name(f_cell_iterator.value()->value().stringValue());
-        if(!link_name.startsWith(links_namespace))
-        {
-            throw links_exception_invalid_name("link name \"" + link_name + "\" does not start with \"links::\"");
-        }
-
-        ++f_cell_iterator;
-
-        if(name.isEmpty() || name == link_name.left(name.length()))
-        {
-            // when the name is empty, everything matches
-            // otherwise make sure that the name starts as defined in the
-            // input name (f_info)
-            int const dash_pos(link_name.indexOf('-'));
-            info.set_name(link_name.mid(namespace_len, dash_pos - namespace_len));
-            info.set_key(link_key);
-            break;
-        }
     }
+
+    // in this case we do not know what the branch should be... read it
+    // from the database
+    content::path_info_t ipath;
+    ipath.set_path(info.key());
+    info.set_branch(ipath.get_branch());
 
     return true;
 }
@@ -872,7 +881,7 @@ QSharedPointer<link_context> links::new_link_context(const link_info& info)
  *
  * \param[in] info  The key and name of the link to be deleted.
  */
-void links::delete_link(const link_info& info)
+void links::delete_link(link_info const& info)
 {
     // here I assume that the is_unique() could be misleading
     // this way we can avoid all sorts of pitfalls where someone
@@ -894,8 +903,8 @@ void links::delete_link(const link_info& info)
     // check if the link is defined as is (i.e. this info represents
     // a unique link, a "1")
 
-    const QString links_namespace(get_name(SNAP_NAME_LINKS_NAMESPACE));
-    const QString unique_link_name(links_namespace + "::" + info.name());
+    QString const links_namespace(get_name(SNAP_NAME_LINKS_NAMESPACE));
+    QString const unique_link_name(links_namespace + "::" + info.name());
     if(src_row->exists(unique_link_name))
     {
         // we're here, this means it was a "1,1" or "1,*" link
@@ -908,6 +917,7 @@ void links::delete_link(const link_info& info)
         // destination and can delete it too
         link_info destination;
         destination.from_data(link.stringValue());
+        destination.set_branch(info.branch());
         if(!f_data_table->exists(destination.row_key()))
         {
             SNAP_LOG_WARNING("links::delete_link() could not find the destination link for \"")

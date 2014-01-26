@@ -57,13 +57,14 @@ enum compare_t : signed int
 typedef uint32_t basic_version_number_t;
 enum special_version_t : basic_version_number_t
 {
+    SPECIAL_VERSION_EXTENDED          = static_cast<basic_version_number_t>(-3), // revision of .js/.css may be more than one number
     SPECIAL_VERSION_INVALID           = static_cast<basic_version_number_t>(-2),
     SPECIAL_VERSION_UNDEFINED         = static_cast<basic_version_number_t>(-1),
     SPECIAL_VERSION_MIN               = 0,
     SPECIAL_VERSION_SYSTEM_BRANCH     = 0,
     SPECIAL_VERSION_USER_FIRST_BRANCH = 1,
     SPECIAL_VERSION_FIRST_REVISION    = 0,
-    SPECIAL_VERSION_MAX_BRANCH_NUMBER = static_cast<basic_version_number_t>(-3),
+    SPECIAL_VERSION_MAX_BRANCH_NUMBER = static_cast<basic_version_number_t>(-4),
     SPECIAL_VERSION_MAX               = static_cast<basic_version_number_t>(-1)
 };
 typedef controlled_vars::limited_auto_init<basic_version_number_t, SPECIAL_VERSION_MIN, SPECIAL_VERSION_MAX, SPECIAL_VERSION_UNDEFINED> version_number_t;
@@ -215,6 +216,7 @@ public:
     void                        set_name(QString const& name) { f_name.set_name(name); }
     QString const&              get_name() const { return f_name.get_name(); }
     QString const&              get_version_string() const { return f_version.get_version_string(); } // this was canonicalized
+    version_number_t            get_branch() const { if(f_version.get_version().empty()) return SPECIAL_VERSION_UNDEFINED; else return f_version.get_version()[0]; }
     version_numbers_vector_t const& get_version() const { return f_version.get_version(); }
     name_vector_t const&        get_browsers() const { return f_browsers; }
     QString const&              get_description() const { return f_description; }

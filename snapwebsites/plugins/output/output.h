@@ -133,7 +133,6 @@ public:
     virtual QVariant    js_property_get(int index) const;
 
 private:
-    void                initial_update(int64_t variables_timestamp);
     void                content_update(int64_t variables_timestamp);
 
     zpsnap_child_t      f_snap;

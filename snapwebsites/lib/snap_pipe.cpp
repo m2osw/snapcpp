@@ -16,9 +16,10 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "snap_pipe.h"
-//#include <unistd.h>
-//#include <sys/wait.h>
-//#include <controlled_vars/controlled_vars_ptr_need_init.h>
+
+#include "qstring_stream.h"
+
+#include <iostream>
 
 #include "poison.h"
 
@@ -43,7 +44,7 @@ snap_pipe::snap_pipe(QString const& command, mode_t mode)
 
 snap_pipe::~snap_pipe()
 {
-    // make sure the f_file gets closed
+    // make sure f_file gets closed
     close_pipe();
 }
 
@@ -65,14 +66,14 @@ int snap_pipe::close_pipe()
     int r(-1);
     if(f_file)
     {
-        if(ferror(f_file))
+        if(ferror(f_file.get()))
         {
             // must return -1 on error
-            pclose(f_file);
+            pclose(f_file.get());
         }
         else
         {
-            r = pclose(f_file);
+            r = pclose(f_file.get());
         }
         f_file.reset();
     }

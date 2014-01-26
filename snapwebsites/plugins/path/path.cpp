@@ -193,8 +193,9 @@ plugins::plugin *path::get_plugin(content::path_info_t& ipath, permission_error_
     {
         // get the modified date so we can setup the Last-Modified HTTP header field
         // it is also a way to determine that a path is valid
-        QSharedPointer<QtCassandra::QCassandraTable> data_table(content::content::instance()->get_data_table());
-        QtCassandra::QCassandraValue value(data_table->row(ipath.get_branch_key())->cell(content::get_name(content::SNAP_NAME_CONTENT_MODIFIED))->value());
+        //QSharedPointer<QtCassandra::QCassandraTable> data_table(content::content::instance()->get_data_table());
+        //QtCassandra::QCassandraValue value(data_table->row(ipath.get_branch_key())->cell(content::get_name(content::SNAP_NAME_CONTENT_MODIFIED))->value());
+        QtCassandra::QCassandraValue value(content_table->row(ipath.get_key())->cell(content::get_name(content::SNAP_NAME_CONTENT_CREATED))->value());
         QString owner = content_table->row(ipath.get_key())->cell(QString(content::get_name(content::SNAP_NAME_CONTENT_PRIMARY_OWNER)))->value().stringValue();
         if(value.nullValue() || owner.isEmpty())
         {
@@ -202,9 +203,12 @@ plugins::plugin *path::get_plugin(content::path_info_t& ipath, permission_error_
                         "Invalid Page",
                         "An internal error occured and this page cannot properly be displayed at this time.",
                         QString("User tried to access page \"%1\" but it does not look valid (null value? %2, empty owner? %3)")
-                                .arg(ipath.get_key()).arg(static_cast<int>(value.nullValue())).arg(static_cast<int>(owner.isEmpty())));
+                                .arg(ipath.get_key())
+                                .arg(static_cast<int>(value.nullValue()))
+                                .arg(static_cast<int>(owner.isEmpty())));
             return NULL;
         }
+		// TODO: this is not correct anymore! (we're getting the creation date, not last mod.)
         f_last_modified = value.int64Value();
 
         // get the primary owner (plugin name) and retrieve the plugin pointer

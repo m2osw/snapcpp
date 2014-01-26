@@ -23,6 +23,11 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <link name="content::page_type" to="content::page_type" mode="1:*">/types/taxonomy/system/content-types/page/public</link>
     <link name="permissions::view" to="permissions::view" mode="*:*">/types/permissions/rights/view/page/for-spammers</link>
   </content>
+  <content path="/default-favicon.ico">
+    <param name="content::final" type="int8" revision="global">1</param>
+    <link name="content::page_type" to="content::page_type" mode="1:*">/types/taxonomy/system/content-types/page/public</link>
+    <link name="permissions::view" to="permissions::view" mode="*:*">/types/permissions/rights/view/page/public</link>
+  </content>
   <content path="/admin/settings/favicon">
     <param name="content::title" revision="revision">Favorite Icon Settings (favicon.ico)</param>
     <param name="content::body" revision="revision">[form::source]</param>

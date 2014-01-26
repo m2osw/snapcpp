@@ -18,6 +18,7 @@
 
 #include "snapwebsites.h"
 
+
 namespace snap
 {
 namespace links
@@ -76,7 +77,15 @@ public:
 class link_info
 {
 public:
-    link_info(QString const& new_name = "", bool unique = false, QString const& new_key = "", snap_version::version_number_t branch_number = static_cast<snap_version::basic_version_number_t>(snap_version::SPECIAL_VERSION_UNDEFINED))
+    link_info()
+        //: f_unique(false)
+        //, f_name("")
+        //, f_key("")
+        //, f_branch(snap_version::SPECIAL_VERSION_UNDEFINED)
+    {
+    }
+
+    link_info(QString const& new_name, bool unique, QString const& new_key, snap_version::version_number_t branch_number)
         : f_unique(unique)
         , f_name(new_name)
         , f_key(new_key)
@@ -119,9 +128,10 @@ public:
     QString row_key() const
     {
         if(f_branch == snap_version::SPECIAL_VERSION_INVALID
-        || f_branch == snap_version::SPECIAL_VERSION_UNDEFINED)
+        || f_branch == snap_version::SPECIAL_VERSION_UNDEFINED
+        || f_branch == snap_version::SPECIAL_VERSION_EXTENDED)
         {
-            throw snap_logic_exception("the row_key() was requested with the branch still undefined");
+            throw snap_logic_exception("row_key() was requested with the branch still undefined");
         }
         return QString("%1#%2").arg(f_key).arg(f_branch);
     }

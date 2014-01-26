@@ -19,7 +19,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 -->
 <snap-tree>
   <!-- we prevent shorturl's on the home page -->
-  <content path="/" owner="content">
+  <content path="/" owner="output">
     <link name="shorturl::no_shorturl" to="shorturl::no_shorturl" mode="1:*">/types/taxonomy/system/robotstxt/nofollow</link>
   </content>
   <content path="/s">
