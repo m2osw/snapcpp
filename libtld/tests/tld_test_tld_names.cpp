@@ -151,6 +151,7 @@ void test_load()
             }
         }
     }
+    fclose(f);
     if(verbose)
     {
         printf("Found %d TLDs in the input file.\n", static_cast<int>(tlds.size()));

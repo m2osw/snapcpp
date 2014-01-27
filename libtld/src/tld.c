@@ -550,8 +550,6 @@ enum tld_result tld(const char *uri, struct tld_info *info)
         return TLD_RESULT_NULL;
     }
 
-    /* Note: We never free the pointer, not necessary since we
-     *         just quit once we're done; it is released then. */
     level_ptr = malloc(sizeof(const char *) * tld_max_level);
 
     while(*end != '\0')
@@ -577,6 +575,7 @@ enum tld_result tld(const char *uri, struct tld_info *info)
             if(level >= 2 && level_ptr[level - 2] + 1 == level_ptr[level - 1])
             {
                 /* two periods one after another */
+                free(level_ptr);
                 return TLD_RESULT_BAD_URI;
             }
         }
@@ -586,6 +585,7 @@ enum tld_result tld(const char *uri, struct tld_info *info)
     if(level == 0)
     {
         /* no TLD */
+        free(level_ptr);
         return TLD_RESULT_NO_TLD;
     }
 
@@ -596,6 +596,7 @@ enum tld_result tld(const char *uri, struct tld_info *info)
     if(r == -1)
     {
         /* unknown */
+        free(level_ptr);
         return TLD_RESULT_NOT_FOUND;
     }
 
@@ -649,6 +650,8 @@ enum tld_result tld(const char *uri, struct tld_info *info)
     info->f_country = tld_descriptions[p].f_country;
     info->f_tld = level_ptr[level];
     info->f_offset = (int) (level_ptr[level] - uri);
+
+    free(level_ptr);
 
     return result;
 }
