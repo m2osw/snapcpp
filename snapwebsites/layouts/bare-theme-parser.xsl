@@ -24,7 +24,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
                               xmlns:snap="snap:snap">
   <xsl:param name="layout-name">bare</xsl:param>
   <xsl:param name="layout-area">theme</xsl:param>
-  <xsl:param name="layout-modified">2013-11-29 03:41:37</xsl:param>
+  <xsl:param name="layout-modified">2014-01-28 14:13:27</xsl:param>
   <xsl:param name="year" select="year-from-date(current-date())"/>
   <xsl:param name="use_dcterms">yes</xsl:param>
   <!-- get the website URI (i.e. URI without any folder other than the website base folder) -->
@@ -479,88 +479,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
         </xsl:for-each>
         <!-- JavaScripts -->
         <xsl:copy-of select="head/metadata/javascript/*"/>
-    <style>
-    body, div
-    {
-      padding: 0;
-      margin: 0;
-    }
-    body
-    {
-      font-family: sans-serif;
-    }
-    .page
-    {
-      width: 1000px;
-      margin: 0 auto;
-    }
-    .header
-    {
-      height: 65px;
-      border-bottom: 1px solid #666666;
-      margin-bottom: 20px;
-    }
-    .header h1
-    {
-      text-align: center;
-      font-size: 250%;
-      padding-top: 10px;
-    }
-    .left
-    {
-      float: left;
-      padding-right: 10px;
-      width: 239px;
-      min-height: 350px;
-      border-right: 1px solid #666666;
-    }
-    .content
-    {
-      float: left;
-      width: 730px;
-      padding: 10px;
-    }
-    div.user-messages
-    {
-      border: 1px solid #550000;
-      background-color: #fff0f0;
-      padding: 0 10px;
-      margin-bottom: 20px;
-    }
-    div.message h3
-    {
-      color: #770033;
-    }
-    .clear-both
-    {
-      clear: both;
-    }
-    .inner-page
-    {
-    }
-    .content .body
-    {
-    }
-    .footer
-    {
-      margin-top: 20px;
-      padding: 10px;
-      border-top: 1px solid #666666;
-      text-align: center;
-      color: #888888;
-      font-size: 80%;
-    }
-    .error input
-    {
-      color: #ff0000;
-    }
-    .left .box input.line-edit-input,
-    .left .box input.password-input
-    {
-      display: block;
-      width: 150px;
-    }
-    </style>
+        <link rel="stylesheet" type="text/css" href="/css/bare/style.css"/>
       </head>
       <xsl:apply-templates select="page/body"/>
     </html>

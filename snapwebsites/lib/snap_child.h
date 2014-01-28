@@ -336,6 +336,7 @@ public:
     bool                        cookie_is_defined(QString const& name) const;
     QString                     cookie(QString const& name) const;
     void                        attach_to_session();
+    bool                        load_file(post_file_t& file);
     bool                        access_allowed(QString const& user_path, QString const& path, QString const& action, QString const& login_status);
     QString                     snap_url(QString const& url) const;
     // TODO translations? (not too important though)

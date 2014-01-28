@@ -36,9 +36,10 @@ snap_validate_xml( white-content.xml content.dtd )
 
 install(
     FILES
+        bare-content.xml
         bare-body-parser.xsl
         bare-theme-parser.xsl
-        bare-content.xml
+        bare-style.css
         white-body-parser.xsl
         white-theme-parser.xsl
         white-content.xml

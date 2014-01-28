@@ -114,7 +114,10 @@ layout::~layout()
 void layout::on_bootstrap(snap_child *snap)
 {
     f_snap = snap;
+
+    SNAP_LISTEN(layout, "server", server, load_file, _1, _2);
 }
+
 
 /** \brief Get a pointer to the layout plugin.
  *
@@ -870,6 +873,61 @@ bool layout::generate_page_content_impl(layout *l, content::path_info_t& path, Q
     return true;
 }
 #pragma GCC diagnostic pop
+
+
+/** \brief Load a file.
+ *
+ * This function is used to load a file. As additional plugins are added
+ * additional protocols can be supported.
+ *
+ * The file information defaults are kept as is as much as possible. If
+ * a plugin returns a file, though, it is advised that any information
+ * available to the plugin be set in the file object.
+ *
+ * The base load_file() function (i.e. this very function) supports the
+ * file system protocol (file:) and the Qt resources protocol (qrc:).
+ * Including the "file:" protocol is not required. Also, the Qt resources
+ * can be indicated simply by adding a colon at the beginning of the
+ * filename (":/such/as/this/name").
+ *
+ * \param[in,out] file  The file name and content.
+ * \param[in,out] found  Whether the file was found.
+ *
+ * \return true if the signal is to be propagated to all the plugins.
+ */
+void layout::on_load_file(snap_child::post_file_t& file, bool& found)
+{
+    QString filename(file.get_filename());
+    if(filename.startsWith("layout:"))     // Read a layout file
+    {
+        // remove the protocol
+        int i(7);
+        for(; i < filename.length() && filename[i] == '/'; ++i);
+        filename = filename.mid(i);
+        QStringList parts(filename.split('/'));
+        if(parts.size() != 2)
+        {
+            // wrong number of parts...
+            SNAP_LOG_ERROR("layout load_file() called with an invalid path: \"")(filename)("\"");
+            return;
+        }
+        if(parts[1].endsWith(".css"))
+        {
+            parts[1] = parts[1].left(parts[1].length() - 4);
+        }
+        QtCassandra::QCassandraTable::pointer_t layout_table(get_layout_table());
+        if(layout_table->exists(parts[0])
+        && layout_table->row(parts[0])->exists(QString(parts[1])))
+        {
+            QtCassandra::QCassandraValue layout_value(layout_table->row(parts[0])->cell(QString(parts[1]))->value());
+
+            file.set_filename(filename);
+            file.set_data(layout_value.binaryValue());
+            found = true;
+            // return false since we already "found" the file
+        }
+    }
+}
 
 
 

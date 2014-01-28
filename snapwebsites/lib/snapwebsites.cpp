@@ -1435,13 +1435,73 @@ bool server::xss_filter_impl(QDomNode& /*node*/,
  *
  * \return true if the signal has to be sent to other plugins.
  */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
 bool server::improve_signature_impl(const QString& path, QString& signature)
 {
+    (void) path;
+    (void) signature;
+
     return true;
 }
-#pragma GCC diagnostic pop
+
+
+/** \brief Load a file.
+ *
+ * This function is used to load a file. As additional plugins are added
+ * additional protocols can be supported.
+ *
+ * The file information defaults are kept as is as much as possible. If
+ * a plugin returns a file, though, it is advised that any information
+ * available to the plugin be set in the file object.
+ *
+ * The base load_file() function (i.e. this very function) supports the
+ * file system protocol (file:) and the Qt resources protocol (qrc:).
+ * Including the "file:" protocol is not required. Also, the Qt resources
+ * can be indicated simply by adding a colon at the beginning of the
+ * filename (":/such/as/this/name").
+ *
+ * \param[in,out] file  The file name and content.
+ * \param[in,out] found  Whether the file was found.
+ *
+ * \return true if the signal is to be propagated to all the plugins.
+ */
+bool server::load_file_impl(snap_child::post_file_t& file, bool& found)
+{
+    QString filename(file.get_filename());
+
+    found = false;
+
+    int const colon_pos(filename.indexOf(':'));
+    int const slash_pos(filename.indexOf('/'));
+    if(colon_pos <= 0                    // no protocol
+    || colon_pos > slash_pos            // no protocol
+    || filename.startsWith("file:")     // file protocol
+    || filename.startsWith("qrc:"))     // Qt resource protocol
+    {
+        if(filename.startsWith("file:"))
+        {
+            // remove the protocol
+            filename = filename.mid(5);
+        }
+        else if(filename.startsWith("qrc:"))
+        {
+            // remove the protocol, but keep the colon
+            filename = filename.mid(3);
+        }
+        QFile f(filename);
+        if(!f.open(QIODevice::ReadOnly))
+        {
+            // file not found...
+            return false;
+        }
+        file.set_filename(filename);
+        file.set_data(f.readAll());
+        found = true;
+        // return false since we already "found" the file
+        return false;
+    }
+
+    return true;
+}
 
 
 /** \brief Send a PING message to the specified UDP server.
