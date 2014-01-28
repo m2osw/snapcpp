@@ -67,32 +67,35 @@ QT4_ADD_RESOURCES(SNAP_LIBRARY_RESOURCES_RCC
 )
 
 add_library( ${PROJECT_NAME} SHARED
-    compression.cpp         # Compress/decompress data
-    dom_util.cpp            # DOM utilities
-    http_cookie.cpp         # HTTP cookie, server side
-    http_strings.cpp        # parse HTTP strings (Accept strings in particular)
-    log.cpp                 # log4cplus support
-    mkgmtime.c              # mktime() with a UTC time
-    plugins.cpp             # plugins loader and list
-    process.cpp             # run a process optionally with pipes
-    qdomnodemodel.cpp       # Qt extension to support XSLT
-    qdomreceiver.cpp        # Qt extension to output XSLT as XML
-    qdomxpath.cpp           # Qt extension to query a XML DOM with X-Path
-    qhtmlserializer.cpp     # Qt extension to output HTML as a string
-    quoted_printable.cpp    # to encode / decode data using the quoted printable format
-    snap_child.cpp          # requests processing
-    snap_exception.cpp      # exception stack backtrack
-    snap_image.cpp          # image handling
-    snap_magic.cpp          # support for MIME type
-    snap_parser.cpp         # lexer/parser for all our script like entries
-    snap_pipe.cpp           # RAII popen()/pclose() class
-    snap_thread.cpp         # a C++ thread implementation
-    snap_uri.cpp            # URI handling
-    snap_utf8.cpp           # UTF-8 functions
-    snap_version.cpp        # extract name, version, browser info from a filename
-    snapwebsites.cpp        # server
-    tcp_client_server.cpp   # low level TCP/IP that works
-    udp_client_server.cpp   # low level UDP/IP that works
+    compression.cpp                             # Compress/decompress data
+    dom_util.cpp                                # DOM utilities
+    http_cookie.cpp                             # HTTP cookie, server side
+    http_strings.cpp                            # parse HTTP strings (Accept strings in particular)
+    log.cpp                                     # log4cplus support
+    mkgmtime.c                                  # mktime() with a UTC time
+    plugins.cpp                                 # plugins loader and list
+    process.cpp                                 # run a process optionally with pipes
+    qdomnodemodel.cpp                           # Qt extension to support XSLT
+    qdomreceiver.cpp                            # Qt extension to output XSLT as XML
+    qdomxpath.cpp                               # Qt extension to query a XML DOM with X-Path
+    qhtmlserializer.cpp                         # Qt extension to output HTML as a string
+	qstring_stream.h                            # Stream QString objects property to ostream objects.
+    quoted_printable.cpp                        # to encode / decode data using the quoted printable format
+    snap_child.cpp                              # requests processing
+    snap_exception.cpp                          # exception stack backtrack
+    snap_image.cpp                              # image handling
+    snap_magic.cpp                              # support for MIME type
+    snap_parser.cpp                             # lexer/parser for all our script like entries
+    snap_pipe.cpp                               # RAII popen()/pclose() class
+    snap_thread.cpp                             # a C++ thread implementation
+    snap_uri.cpp                                # URI handling
+    snap_utf8.cpp                               # UTF-8 functions
+    snap_version.cpp                            # extract name, version, browser info from a filename
+	snapwebsites.h.in                           # Header for server class (pre-parsed)
+    ${CMAKE_CURRENT_BINARY_DIR}/snapwebsites.h  # binary output of header file (generated)
+	snapwebsites.cpp                            # server
+    tcp_client_server.cpp                       # low level TCP/IP that works
+    udp_client_server.cpp                       # low level UDP/IP that works
 )
 
 target_link_libraries( ${PROJECT_NAME}

@@ -149,6 +149,11 @@ public:
     void usage(advgetopt::getopt::status_t status);
     void info();
     void drop_tables(bool all);
+    void convert_row_key();
+    void display_tables();
+    void display_rows();
+    void display_rows_wildcard();
+    void display_columns();
     void display();
 
 private:
@@ -306,10 +311,10 @@ char hex_to_dec(ushort c)
     exit(1);
 }
 
-void snapdb::display()
+
+void snapdb::convert_row_key()
 {
-    f_cassandra->connect(f_host, f_port);
-    QCassandraContext::pointer_t context(f_cassandra->context(f_context));
+    f_row_key.clear();
 
     if(!f_row.isEmpty() && f_table == "files")
     {
@@ -334,376 +339,416 @@ void snapdb::display()
     {
         f_row_key = f_row.toAscii();
     }
+}
 
-    if(f_table.isEmpty())
+
+void snapdb::display_tables()
+{
+    QCassandraContext::pointer_t context(f_cassandra->context(f_context));
+
+    // list of all the tables
+    const QCassandraTables& tables(context->tables());
+    for(QCassandraTables::const_iterator t(tables.begin());
+        t != tables.end();
+        ++t)
     {
-        // list of all the tables
-        const QCassandraTables& tables(context->tables());
-        for(QCassandraTables::const_iterator t(tables.begin());
-                    t != tables.end();
-                    ++t)
-        {
-            std::cout << (*t)->tableName() << std::endl;
-        }
+        std::cout << (*t)->tableName() << std::endl;
     }
-    else if(f_row.isEmpty())
+}
+
+
+void snapdb::display_rows()
+{
+    QCassandraContext::pointer_t context(f_cassandra->context(f_context));
+
+    // list of rows in that table
+    QCassandraTable::pointer_t table(context->findTable(f_table));
+    if(!table)
     {
-        // list of rows in that table
-        QCassandraTable::pointer_t table(context->findTable(f_table));
-        if(!table)
+        std::cerr << "error: table \"" << f_table << "\" not found." << std::endl;
+        exit(1);
+    }
+    QCassandraRowPredicate row_predicate;
+    row_predicate.setCount(f_count);
+    table->readRows(row_predicate);
+    const QCassandraRows& rows(table->rows());
+    for(QCassandraRows::const_iterator r(rows.begin());
+        r != rows.end();
+        ++r)
+    {
+        if(f_table == "files")
         {
-            std::cerr << "error: table \"" << f_table << "\" not found." << std::endl;
-            exit(1);
-        }
-        QCassandraRowPredicate row_predicate;
-        row_predicate.setCount(f_count);
-        table->readRows(row_predicate);
-        const QCassandraRows& rows(table->rows());
-        for(QCassandraRows::const_iterator r(rows.begin());
-                    r != rows.end();
-                    ++r)
-        {
-            if(f_table == "files")
+            // these are raw MD5 keys
+            QByteArray key((*r)->rowKey());
+            if(key.size() != 16)
             {
-                // these are raw MD5 keys
-                QByteArray key((*r)->rowKey());
-                if(key.size() != 16)
-                {
-                    std::cout << key.data();
-                }
-                else
-                {
-                    int const max(key.size());
-                    for(int i(0); i < max; ++i)
-                    {
-                        QString hex(QString("%1").arg(key[i] & 255, 2, 16, QChar('0')));
-                        std::cout << hex;
-                    }
-                }
-                std::cout << std::endl;
+                std::cout << key.data();
             }
             else
             {
-                std::cout << (*r)->rowName().toUtf8().data() << std::endl;
+                int const max(key.size());
+                for(int i(0); i < max; ++i)
+                {
+                    QString hex(QString("%1").arg(key[i] & 255, 2, 16, QChar('0')));
+                    std::cout << hex;
+                }
+            }
+            std::cout << std::endl;
+        }
+        else
+        {
+            std::cout << (*r)->rowName().toUtf8().data() << std::endl;
+        }
+    }
+}
+
+
+void snapdb::display_rows_wildcard()
+{
+    QCassandraContext::pointer_t context(f_cassandra->context(f_context));
+
+    // list of rows in that table
+    QCassandraTable::pointer_t table(context->findTable(f_table));
+    if(!table)
+    {
+        std::cerr << "error: table \"" << f_table << "\" not found." << std::endl;
+        exit(1);
+    }
+    QCassandraRowPredicate row_predicate;
+    QString row_start(f_row.left(f_row.length() - 1));
+    // remember that the start/end on row doesn't work in "alphabetical"
+    // order so we cannot use it here...
+    //row_predicate.setStartRowName(row_start);
+    //row_predicate.setEndRowName(row_start + QCassandraColumnPredicate::first_char);
+    row_predicate.setCount(f_count);
+    for(;;)
+    {
+        table->clearCache();
+        table->readRows(row_predicate);
+        const QCassandraRows& rows(table->rows());
+        if(rows.isEmpty())
+        {
+            break;
+        }
+        for(QCassandraRows::const_iterator r(rows.begin());
+            r != rows.end();
+            ++r)
+        {
+            QString name((*r)->rowName());
+            if(name.length() >= row_start.length()
+                    && row_start == name.mid(0, row_start.length()))
+            {
+                std::cout << name << std::endl;
             }
         }
     }
-    else if(f_row.endsWith("%"))
+}
+
+
+void snapdb::display_columns()
+{
+    QCassandraContext::pointer_t context(f_cassandra->context(f_context));
+
+    // display all the columns of a row
+    QCassandraTable::pointer_t table(context->findTable(f_table));
+    if(!table)
     {
-        // list of rows in that table
-        QCassandraTable::pointer_t table(context->findTable(f_table));
-        if(!table)
-        {
-            std::cerr << "error: table \"" << f_table << "\" not found." << std::endl;
-            exit(1);
-        }
-        QCassandraRowPredicate row_predicate;
-        QString row_start(f_row.left(f_row.length() - 1));
-        // remember that the start/end on row doesn't work in "alphabetical"
-        // order so we cannot use it here...
-        //row_predicate.setStartRowName(row_start);
-        //row_predicate.setEndRowName(row_start + QCassandraColumnPredicate::first_char);
-        row_predicate.setCount(f_count);
-        for(;;)
-        {
-            table->clearCache();
-            table->readRows(row_predicate);
-            const QCassandraRows& rows(table->rows());
-            if(rows.isEmpty())
-            {
-                break;
-            }
-            for(QCassandraRows::const_iterator r(rows.begin());
-                        r != rows.end();
-                        ++r)
-            {
-                QString name((*r)->rowName());
-                if(name.length() >= row_start.length()
-                && row_start == name.mid(0, row_start.length()))
-                {
-                    std::cout << name << std::endl;
-                }
-            }
-        }
+        std::cerr << "error: table \"" << f_table << "\" not found." << std::endl;
+        exit(1);
     }
-    else
+    if(!table->exists(f_row_key))
     {
-        // display all the columns of a row
-        QCassandraTable::pointer_t table(context->findTable(f_table));
-        if(!table)
+        std::cerr << "error: row \"" << f_row << "\" not found in table \"" << f_table << "\"." << std::endl;
+        exit(1);
+    }
+    QCassandraRow::pointer_t row(table->row(f_row_key));
+    QCassandraColumnRangePredicate column_predicate;
+    column_predicate.setCount(f_count);
+    column_predicate.setIndex();
+    for(;;)
+    {
+        row->clearCache();
+        row->readCells(column_predicate);
+        const QCassandraCells& cells(row->cells());
+        if(cells.isEmpty())
         {
-            std::cerr << "error: table \"" << f_table << "\" not found." << std::endl;
-            exit(1);
+            break;
         }
-        if(!table->exists(f_row_key))
+        for(QCassandraCells::const_iterator c(cells.begin());
+            c != cells.end();
+            ++c)
         {
-            std::cerr << "error: row \"" << f_row << "\" not found in table \"" << f_table << "\"." << std::endl;
-            exit(1);
-        }
-        QCassandraRow::pointer_t row(table->row(f_row_key));
-        QCassandraColumnRangePredicate column_predicate;
-        column_predicate.setCount(f_count);
-        column_predicate.setIndex();
-        for(;;)
-        {
-            row->clearCache();
-            row->readCells(column_predicate);
-            const QCassandraCells& cells(row->cells());
-            if(cells.isEmpty())
+            QByteArray const key((*c)->columnKey());
+            QString n;
+            if(f_table == "files" && f_row == "new")
             {
-                break;
+                // TODO write a function to convert MD5, SHA1, etc.
+                int const max(key.size());
+                for(int i(0); i < max; ++i)
+                {
+                    QString const hex(QString("%1").arg(key[i] & 255, 2, 16, QChar('0')));
+                    n += hex;
+                }
             }
-            for(QCassandraCells::const_iterator c(cells.begin());
-                        c != cells.end();
-                        ++c)
+            if(f_table == "data" && key.startsWith("content::attachment::reference::"))
             {
-                QByteArray const key((*c)->columnKey());
-                QString n;
-                if(f_table == "files" && f_row == "new")
+                n = "content::attachment::reference::";
+                int const max(key.size());
+                for(int i(32); i < max; ++i)
                 {
-                    // TODO write a function to convert MD5, SHA1, etc.
-                    int const max(key.size());
-                    for(int i(0); i < max; ++i)
+                    QString const hex(QString("%1").arg(key[i] & 255, 2, 16, QChar('0')));
+                    n += hex;
+                }
+            }
+            else if(f_table == "files" && f_row == "javascripts")
+            {
+                // this row name is "<name>"_"<browser>"_<version as integers>
+                int const max(key.size());
+                int sep(0);
+                int i(0);
+                for(; i < max && sep < 2; ++i)
+                {
+                    if(key[i] == '_')
                     {
-                        QString const hex(QString("%1").arg(key[i] & 255, 2, 16, QChar('0')));
-                        n += hex;
+                        ++sep;
                     }
+                    n += key[i];
                 }
-                if(f_table == "data" && key.startsWith("content::attachment::reference::"))
+                // now we have to add the version
+                bool first(true);
+                for(; i + 3 < max; i += 4)
                 {
-                    n = "content::attachment::reference::";
-                    int const max(key.size());
-                    for(int i(32); i < max; ++i)
+                    if(first)
                     {
-                        QString const hex(QString("%1").arg(key[i] & 255, 2, 16, QChar('0')));
-                        n += hex;
-                    }
-                }
-                else if(f_table == "files" && f_row == "javascripts")
-                {
-                    // this row name is "<name>"_"<browser>"_<version as integers>
-                    int const max(key.size());
-                    int sep(0);
-                    int i(0);
-                    for(; i < max && sep < 2; ++i)
-                    {
-                        if(key[i] == '_')
-                        {
-                            ++sep;
-                        }
-                        n += key[i];
-                    }
-                    // now we have to add the version
-                    bool first(true);
-                    for(; i + 3 < max; i += 4)
-                    {
-                        if(first)
-                        {
-                            first = false;
-                        }
-                        else
-                        {
-                            n += ".";
-                        }
-                        n += QString("%1").arg(QtCassandra::uint32Value(key, i));
-                    }
-                }
-                else if((f_table == "users"    && f_row == "*index_row*")
-                     || (f_table == "shorturl" && f_row.endsWith("/*index_row*"))
-                )
-                {
-                    // special case where the column key is a 64 bit integer
-                    //const QByteArray& name((*c)->columnKey());
-                    QtCassandra::QCassandraValue const identifier((*c)->columnKey());
-                    n = QString("%1").arg(identifier.int64Value());
-                }
-                else
-                {
-                    n = (*c)->columnName();
-                }
-                QString v;
-                if(n == "users::identifier"
-                || n == "permissions::dynamic"
-                || n == "shorturl::identifier"
-                )
-                {
-                    // 64 bit value
-                    v = QString("%1").arg((*c)->value().uint64Value());
-                }
-                else if(n == "content::created"
-                     || n == "content::files::created"
-                     || n == "content::files::creation_time"
-                     || n == "content::files::modification_time"
-                     || n == "content::files::secure::last_check"
-                     || n == "content::files::updated"
-                     || n == "content::modified"
-                     || n == "content::updated"
-                     || n.left(18) == "core::last_updated"
-                     || n == "core::plugin_threshold"
-                     || n == "sessions::date"
-                     || n == "shorturl::date"
-                     || n == "users::created_time"
-                     || n == "users::forgot_password_on"
-                     || n == "users::login_on"
-                     || n == "users::logout_on"
-                     || n == "users::previous_login_on"
-                     || n == "users::start_date"
-                     || n == "users::verified_on"
-                )
-                {
-                    // 64 bit value (microseconds)
-                    uint64_t time((*c)->value().uint64Value());
-                    if(time == 0)
-                    {
-                        v = "time not set (0)";
+                        first = false;
                     }
                     else
                     {
-                        char buf[64];
-                        struct tm t;
-                        time_t seconds(time / 1000000);
-                        gmtime_r(&seconds, &t);
-                        strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &t);
-                        v = QString("%1.%2 (%3)").arg(buf).arg(time % 1000000, 6, 10, QChar('0')).arg(time);
+                        n += ".";
                     }
+                    n += QString("%1").arg(QtCassandra::uint32Value(key, i));
                 }
-                else if(n == "sessions::login_limit"
-                     || n == "sessions::time_limit"
-                )
+            }
+            else if((f_table == "users"    && f_row == "*index_row*")
+                    || (f_table == "shorturl" && f_row.endsWith("/*index_row*"))
+                    )
+            {
+                // special case where the column key is a 64 bit integer
+                //const QByteArray& name((*c)->columnKey());
+                QtCassandra::QCassandraValue const identifier((*c)->columnKey());
+                n = QString("%1").arg(identifier.int64Value());
+            }
+            else
+            {
+                n = (*c)->columnName();
+            }
+            QString v;
+            if(n == "users::identifier"
+                    || n == "permissions::dynamic"
+                    || n == "shorturl::identifier"
+                    )
+            {
+                // 64 bit value
+                v = QString("%1").arg((*c)->value().uint64Value());
+            }
+            else if(n == "content::created"
+                    || n == "content::files::created"
+                    || n == "content::files::creation_time"
+                    || n == "content::files::modification_time"
+                    || n == "content::files::secure::last_check"
+                    || n == "content::files::updated"
+                    || n == "content::modified"
+                    || n == "content::updated"
+                    || n.left(18) == "core::last_updated"
+                    || n == "core::plugin_threshold"
+                    || n == "sessions::date"
+                    || n == "shorturl::date"
+                    || n == "users::created_time"
+                    || n == "users::forgot_password_on"
+                    || n == "users::login_on"
+                    || n == "users::logout_on"
+                    || n == "users::previous_login_on"
+                    || n == "users::start_date"
+                    || n == "users::verified_on"
+                    )
+            {
+                // 64 bit value (microseconds)
+                uint64_t time((*c)->value().uint64Value());
+                if(time == 0)
                 {
-                    // 64 bit value (seconds)
-                    uint64_t time((*c)->value().uint64Value());
-                    char buf[64];
-                    struct tm t;
-                    time_t seconds(time);
-                    gmtime_r(&seconds, &t);
-                    strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &t);
-                    v = QString("%1 (%2)").arg(buf).arg(time);
-                }
-                else if(n == "sitemapxml::priority"
-                )
-                {
-                    // 32 bit float
-                    float value((*c)->value().floatValue());
-                    v = QString("%1").arg(value);
-                }
-                else if(n.startsWith("content::attachment::reference::")
-                     || n == "content::attachment::revision_control::last_branch"
-                     || n.startsWith("content::attachment::revision_control::last_revision::")
-                     || n == "content::files::image_height"
-                     || n == "content::files::image_width"
-                     || n == "content::files::size"
-                     || n == "content::files::size::compressed"
-                     || n == "content::revision_control::attachment::current_branch"
-                     || n == "content::revision_control::attachment::current_working_branch"
-                     || n == "content::revision_control::current_branch"
-                     || n == "content::revision_control::current_working_branch"
-                     || n == "content::revision_control::last_branch"
-                     || n == "content::revision_control::attachment::last_branch"
-                     || n.startsWith("content::revision_control::attachment::current_revision::")
-                     || n.startsWith("content::revision_control::attachment::current_working_revision::")
-                     || n.startsWith("content::revision_control::current_revision::")
-                     || n.startsWith("content::revision_control::current_working_revision::")
-                     || n.startsWith("content::revision_control::last_revision::")
-                     || n.startsWith("content::revision_control::attachment::last_revision::")
-                     || n == "sitemapxml::count"
-                     || n == "sessions::id"
-                     || n == "sessions::time_to_live"
-                     || (f_table == "libQtCassandraLockTable" && f_row == "hosts")
-                )
-                {
-                    // 32 bit value
-                    v = QString("%1").arg((*c)->value().uint32Value());
-                }
-                else if(n == "sessions::used_up"
-                     || n == "content::final"
-                     || n == "favicon::sitewide"
-                     || n == "content::files::compressor"
-                     || n.startsWith("content::files::reference::")
-                     || (f_table == "files" && f_row == "new")
-                )
-                {
-                    // 8 bit value
-                    // cast to integer so arg() doesn't take it as a character
-                    v = QString("%1").arg(static_cast<int>((*c)->value().unsignedCharValue()));
-                }
-                else if(n == "sessions::random"
-                     || n == "users::password::salt"
-                     || n == "users::password"
-                )
-                {
-                    // n bit binary value
-                    const QByteArray& buf((*c)->value().binaryValue());
-                    int const max(buf.size());
-                    v += "(hex) ";
-                    for(int i(0); i < max; ++i)
-                    {
-                        v += QString("%1 ").arg(static_cast<int>(static_cast<unsigned char>(buf.at(i))), 2, 16, QChar('0'));
-                    }
-                }
-                else if(n == "favicon::icon"
-                     || n == "content::files::data"
-                     || n == "content::files::data::compressed"
-                )
-                {
-                    // n bit binary value
-                    // same as previous only this can be huge so we limit it
-                    const QByteArray& buf((*c)->value().binaryValue());
-                    int const max(std::min(64, buf.size()));
-                    v += "(hex) ";
-                    for(int i(0); i < max; ++i)
-                    {
-                        v += QString("%1 ").arg(static_cast<int>(static_cast<unsigned char>(buf.at(i))), 2, 16, QChar('0'));
-                    }
-                    if(buf.size() > max)
-                    {
-                        v += "...";
-                    }
-                }
-                else if((f_table == "data" && n == "content::attachment")
-                     || (f_table == "files" && f_row == "javascripts")
-                )
-                {
-                    // md5 in binary
-                    const QByteArray& buf((*c)->value().binaryValue());
-                    int const max(buf.size());
-                    v += "(md5) ";
-                    for(int i(0); i < max; ++i)
-                    {
-                        v += QString("%1").arg(static_cast<int>(static_cast<unsigned char>(buf.at(i))), 2, 16, QChar('0'));
-                    }
-                }
-                else if(n == "content::files::secure")
-                {
-                    switch((*c)->value().signedCharValue())
-                    {
-                    case -1:
-                        v = "not checked (-1)";
-                        break;
-
-                    case 0:
-                        v = "not secure (0)";
-                        break;
-
-                    case 1:
-                        v = "secure (1)";
-                        break;
-
-                    default:
-                        v = QString("unknown secure status (%1)").arg((*c)->value().signedCharValue());
-                        break;
-
-                    }
+                    v = "time not set (0)";
                 }
                 else
                 {
-                    // all others viewed as strings
-                    v = (*c)->value().stringValue().replace("\n", "\\n");
+                    char buf[64];
+                    struct tm t;
+                    time_t seconds(time / 1000000);
+                    gmtime_r(&seconds, &t);
+                    strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &t);
+                    v = QString("%1.%2 (%3)").arg(buf).arg(time % 1000000, 6, 10, QChar('0')).arg(time);
                 }
-                //
-                std::cout << n << " = " << v << std::endl;
             }
+            else if(n == "sessions::login_limit"
+                    || n == "sessions::time_limit"
+                    )
+            {
+                // 64 bit value (seconds)
+                uint64_t time((*c)->value().uint64Value());
+                char buf[64];
+                struct tm t;
+                time_t seconds(time);
+                gmtime_r(&seconds, &t);
+                strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &t);
+                v = QString("%1 (%2)").arg(buf).arg(time);
+            }
+            else if(n == "sitemapxml::priority"
+                    )
+            {
+                // 32 bit float
+                float value((*c)->value().floatValue());
+                v = QString("%1").arg(value);
+            }
+            else if(n.startsWith("content::attachment::reference::")
+                    || n == "content::attachment::revision_control::last_branch"
+                    || n.startsWith("content::attachment::revision_control::last_revision::")
+                    || n == "content::files::image_height"
+                    || n == "content::files::image_width"
+                    || n == "content::files::size"
+                    || n == "content::files::size::compressed"
+                    || n == "content::revision_control::attachment::current_branch"
+                    || n == "content::revision_control::attachment::current_working_branch"
+                    || n == "content::revision_control::current_branch"
+                    || n == "content::revision_control::current_working_branch"
+                    || n == "content::revision_control::last_branch"
+                    || n == "content::revision_control::attachment::last_branch"
+                    || n.startsWith("content::revision_control::attachment::current_revision::")
+                    || n.startsWith("content::revision_control::attachment::current_working_revision::")
+                    || n.startsWith("content::revision_control::current_revision::")
+                    || n.startsWith("content::revision_control::current_working_revision::")
+                    || n.startsWith("content::revision_control::last_revision::")
+                    || n.startsWith("content::revision_control::attachment::last_revision::")
+                    || n == "sitemapxml::count"
+                    || n == "sessions::id"
+                    || n == "sessions::time_to_live"
+                    || (f_table == "libQtCassandraLockTable" && f_row == "hosts")
+                    )
+            {
+                // 32 bit value
+                v = QString("%1").arg((*c)->value().uint32Value());
+            }
+            else if(n == "sessions::used_up"
+                    || n == "content::final"
+                    || n == "favicon::sitewide"
+                    || n == "content::files::compressor"
+                    || n.startsWith("content::files::reference::")
+                    || (f_table == "files" && f_row == "new")
+                    )
+            {
+                // 8 bit value
+                // cast to integer so arg() doesn't take it as a character
+                v = QString("%1").arg(static_cast<int>((*c)->value().unsignedCharValue()));
+            }
+            else if(n == "sessions::random"
+                    || n == "users::password::salt"
+                    || n == "users::password"
+                    )
+            {
+                // n bit binary value
+                const QByteArray& buf((*c)->value().binaryValue());
+                int const max(buf.size());
+                v += "(hex) ";
+                for(int i(0); i < max; ++i)
+                {
+                    v += QString("%1 ").arg(static_cast<int>(static_cast<unsigned char>(buf.at(i))), 2, 16, QChar('0'));
+                }
+            }
+            else if(n == "favicon::icon"
+                    || n == "content::files::data"
+                    || n == "content::files::data::compressed"
+                    )
+            {
+                // n bit binary value
+                // same as previous only this can be huge so we limit it
+                const QByteArray& buf((*c)->value().binaryValue());
+                int const max(std::min(64, buf.size()));
+                v += "(hex) ";
+                for(int i(0); i < max; ++i)
+                {
+                    v += QString("%1 ").arg(static_cast<int>(static_cast<unsigned char>(buf.at(i))), 2, 16, QChar('0'));
+                }
+                if(buf.size() > max)
+                {
+                    v += "...";
+                }
+            }
+            else if((f_table == "data" && n == "content::attachment")
+                    || (f_table == "files" && f_row == "javascripts")
+                    )
+            {
+                // md5 in binary
+                const QByteArray& buf((*c)->value().binaryValue());
+                int const max(buf.size());
+                v += "(md5) ";
+                for(int i(0); i < max; ++i)
+                {
+                    v += QString("%1").arg(static_cast<int>(static_cast<unsigned char>(buf.at(i))), 2, 16, QChar('0'));
+                }
+            }
+            else if(n == "content::files::secure")
+            {
+                switch((*c)->value().signedCharValue())
+                {
+                case -1:
+                    v = "not checked (-1)";
+                    break;
+
+                case 0:
+                    v = "not secure (0)";
+                    break;
+
+                case 1:
+                    v = "secure (1)";
+                    break;
+
+                default:
+                    v = QString("unknown secure status (%1)").arg((*c)->value().signedCharValue());
+                    break;
+
+                }
+            }
+            else
+            {
+                // all others viewed as strings
+                v = (*c)->value().stringValue().replace("\n", "\\n");
+            }
+            //
+            std::cout << n << " = " << v << std::endl;
         }
+    }
+}
+
+
+void snapdb::display()
+{
+    f_cassandra->connect(f_host, f_port);
+
+    convert_row_key();
+
+    if(f_table.isEmpty())
+    {
+        display_tables();
+    }
+    else if(f_row.isEmpty())
+    {
+        display_rows();
+    }
+    else if(f_row.endsWith("%"))
+    {
+        display_rows_wildcard();
+    }
+    else
+    {
+        display_columns();
     }
 }
 
