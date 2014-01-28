@@ -1,7 +1,10 @@
 #pragma once
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wctor-dtor-privacy"
 #include <QtCassandra/QCassandra.h>
 #include <QtGui>
+#pragma GCC diagnostic pop
 
 #include <memory>
 
