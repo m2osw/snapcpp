@@ -77,6 +77,14 @@ namespace
             "port on the host to which to connect [default=9160]",
             advgetopt::getopt::optional_argument
         },
+        { // at least until we have a way to edit the theme from the website
+            't',
+            advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
+            "set-theme",
+            NULL,
+            "set-theme",
+            advgetopt::getopt::no_argument, // expect 3 params as filenames
+        },
         {
             '\0',
             advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
@@ -112,10 +120,12 @@ public:
     snap_layout(int argc, char *argv[]);
 
     void usage();
+    void run();
     void add_files();
     void load_xml_info(QDomDocument& doc, QString const& filename, QString& layout_name, time_t& layout_modified);
     void load_xsl_info(QDomDocument& doc, QString const& filename, QString& layout_name, QString& layout_area, time_t& layout_modified);
     void load_css(QString const& filename, QString& row_name);
+    void set_theme();
 
 private:
     typedef std::shared_ptr<advgetopt::getopt>    getopt_ptr_t;
@@ -254,7 +264,7 @@ void snap_layout::load_xsl_info(QDomDocument& doc, QString const& filename, QStr
 
     QString layout_modified_date;
 
-    QDomNodeList params(doc.elementsByTagNameNS("http://www.w3.org/1999/XSL/Transform", "param"));
+    QDomNodeList params(doc.elementsByTagNameNS("http://www.w3.org/1999/XSL/Transform", "variable"));
     int max(params.size());
     for(int idx(0); idx < max; ++idx)
     {
@@ -275,13 +285,13 @@ void snap_layout::load_xsl_info(QDomDocument& doc, QString const& filename, QStr
         // we'll throw away! but that way we don't have to
         // duplicate the code plus this process is not run
         // by the server
-		QDomNodeList children(e.childNodes());
+        QDomNodeList children(e.childNodes());
         if(children.size() != 1)
         {
             // that's most certainly the wrong name?
             continue;
         }
-		QDomNode n(children.at(0));
+        QDomNode n(children.at(0));
 
         QString buffer;
         QTextStream data(&buffer);
@@ -377,22 +387,22 @@ void snap_layout::add_files()
         // TODO: look into whether we could make use of the
         //       server::create_table() function
         //
-		// table is not there yet, create it
-		table = context->table("layout");
-		table->setComment("Table of layouts");
-		table->setColumnType("Standard"); // Standard or Super
-		table->setKeyValidationClass("BytesType");
-		table->setDefaultValidationClass("BytesType");
-		table->setComparatorType("BytesType");
-		table->setKeyCacheSavePeriodInSeconds(14400);
-		table->setMemtableFlushAfterMins(60);
-		//table->setMemtableThroughputInMb(247);
-		//table->setMemtableOperationsInMillions(1.1578125);
-		table->setGcGraceSeconds(864000);
-		table->setMinCompactionThreshold(4);
-		table->setMaxCompactionThreshold(22);
-		table->setReplicateOnWrite(1);
-		table->create();
+        // table is not there yet, create it
+        table = context->table("layout");
+        table->setComment("Table of layouts");
+        table->setColumnType("Standard"); // Standard or Super
+        table->setKeyValidationClass("BytesType");
+        table->setDefaultValidationClass("BytesType");
+        table->setComparatorType("BytesType");
+        table->setKeyCacheSavePeriodInSeconds(14400);
+        table->setMemtableFlushAfterMins(60);
+        //table->setMemtableThroughputInMb(247);
+        //table->setMemtableOperationsInMillions(1.1578125);
+        table->setGcGraceSeconds(864000);
+        table->setMinCompactionThreshold(4);
+        table->setMaxCompactionThreshold(22);
+        table->setReplicateOnWrite(1);
+        table->create();
     }
 
     for(string_array_t::const_iterator it(f_layouts.begin());
@@ -510,13 +520,104 @@ void snap_layout::add_files()
 }
 
 
+void snap_layout::set_theme()
+{
+    if(f_layouts.size() != 3)
+    {
+        std::cerr << "error: the --set-theme command expects exactly three arguments." << std::endl;
+        exit(1);
+    }
+
+    // the theme for the entire website is set at the top of the
+    // page type structure .../types/taxonomy/system/content-types
+    f_cassandra->connect(f_host, f_port);
+    if( !f_cassandra->isConnected() )
+    {
+        std::cerr << "error: connecting to cassandra server on host='"
+            << f_host
+            << "', port="
+            << f_port
+            << "!"
+            << std::endl;
+        exit(1);
+    }
+
+    QCassandraContext::pointer_t context(f_cassandra->context("snap_websites"));
+
+    QCassandraTable::pointer_t table(context->findTable("content"));
+    if(!table)
+    {
+        std::cerr << "Content table not found. You must run the server once before we can setup the theme." << std::endl;
+        exit(1);
+    }
+
+    QString uri(f_layouts[0]);
+    QString field(f_layouts[1]);
+    QString theme(f_layouts[2]);
+
+    if(!uri.endsWith("/"))
+    {
+        uri += "/";
+    }
+
+    if(field == "layout")
+    {
+        field = "layout::layout";
+    }
+    else if(field == "theme")
+    {
+        field = "layout::theme";
+    }
+    else
+    {
+        std::cerr << "the name of the field must be \"layout\" or \"theme\"." << std::endl;
+        exit(1);
+    }
+
+    QString const key(QString("%1types/taxonomy/system/content-types").arg(uri));
+    if(!table->exists(key))
+    {
+        std::cerr << "content-types not found for domain \"" << uri << "\"." << std::endl;
+        exit(1);
+    }
+
+    if(theme.isEmpty())
+    {
+        // remove the theme definition
+        table->row(key)->dropCell(field, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+    }
+    else
+    {
+        // remember that the layout specification is a JavaScript script
+        // and not just plain text
+        //
+        // TODO: add a test so we can transform a simple string to a valid
+        //       JavaScript string
+        table->row(key)->cell(field)->setValue(theme);
+    }
+}
+
+
+void snap_layout::run()
+{
+    if( f_opt->is_defined( "set-theme" ) )
+    {
+        set_theme();
+    }
+    else
+    {
+        add_files();
+    }
+}
+
+
 
 
 int main(int argc, char *argv[])
 {
     snap_layout     s(argc, argv);
 
-    s.add_files();
+    s.run();
 
     return 0;
 }

@@ -51,8 +51,11 @@ add_library(layout SHARED
     layout.cpp
     ${SNAP_MANAGER_MOC_CXX}
     ${SNAP_MANAGER_RESOURCES_RCC}
-    default-body-parser.xsl
-    default-theme-parser.xsl
+    layout/functions.xsl
+    layout/html-header.xsl
+    layout/user-messages.xsl
+    layout/default-body-parser.xsl
+    layout/default-theme-parser.xsl
 )
 
 target_link_libraries( layout ${QT_LIBRARIES} )

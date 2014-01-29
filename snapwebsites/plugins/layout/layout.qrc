@@ -20,9 +20,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 <RCC version="1.0">
   <qresource prefix="/plugins/layout">
   </qresource>
-  <qresource prefix="/xsl/layout">
-    <file>default-body-parser.xsl</file>
-    <file>default-theme-parser.xsl</file>
+  <qresource prefix="/xsl">
+    <file>layout/functions.xsl</file>
+    <file>layout/html-header.xsl</file>
+    <file>layout/user-messages.xsl</file>
+    <file>layout/default-body-parser.xsl</file>
+    <file>layout/default-theme-parser.xsl</file>
   </qresource>
 </RCC>
 <!--

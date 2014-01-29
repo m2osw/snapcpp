@@ -4985,6 +4985,7 @@ void content::add_xml(const QString& plugin_name)
     add_xml_document(dom, plugin_name);
 }
 
+
 /** \brief Add data to the database using a DOM.
  *
  * This function is called by the add_xml() function after a DOM was loaded.

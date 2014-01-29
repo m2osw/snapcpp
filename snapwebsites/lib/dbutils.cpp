@@ -1,5 +1,5 @@
 // Snap Websites Server -- manage sessions for users, forms, etc.
-// Copyright (C) 2013-2014  Made to Order Software Corp.
+// Copyright (C) 2012-2014  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -26,28 +26,28 @@ namespace snap
 
 namespace
 {
-	char hex_to_dec(ushort c)
-	{
-		if(c >= '0' && c <= '9')
-		{
-			return c - '0';
-		}
-		if(c >= 'a' && c <= 'f')
-		{
-			return c - 'a' + 10;
-		}
-		if(c >= 'A' && c <= 'F')
-		{
-			return c - 'A' + 10;
-		}
+    char hex_to_dec(ushort c)
+    {
+        if(c >= '0' && c <= '9')
+        {
+            return c - '0';
+        }
+        if(c >= 'a' && c <= 'f')
+        {
+            return c - 'a' + 10;
+        }
+        if(c >= 'A' && c <= 'F')
+        {
+            return c - 'A' + 10;
+        }
         throw snap_exception( "error: invalid hexadecimal digit, it cannot be converted." );
     }
 }
 
 
 dbutils::dbutils( const QString& table_name, const QString& row_name )
-	: f_tableName(table_name)
-	, f_rowName(row_name)
+    : f_tableName(table_name)
+    , f_rowName(row_name)
 {
 }
 

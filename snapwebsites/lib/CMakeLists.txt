@@ -81,7 +81,7 @@ add_library( ${PROJECT_NAME} SHARED
     qdomreceiver.cpp                            # Qt extension to output XSLT as XML
     qdomxpath.cpp                               # Qt extension to query a XML DOM with X-Path
     qhtmlserializer.cpp                         # Qt extension to output HTML as a string
-	qstring_stream.h                            # Stream QString objects property to ostream objects.
+    qstring_stream.h                            # Stream QString objects property to ostream objects.
     quoted_printable.cpp                        # to encode / decode data using the quoted printable format
     snap_child.cpp                              # requests processing
     snap_exception.cpp                          # exception stack backtrack
@@ -93,9 +93,9 @@ add_library( ${PROJECT_NAME} SHARED
     snap_uri.cpp                                # URI handling
     snap_utf8.cpp                               # UTF-8 functions
     snap_version.cpp                            # extract name, version, browser info from a filename
-	snapwebsites.h.in                           # Header for server class (pre-parsed)
+    snapwebsites.h.in                           # Header for server class (pre-parsed)
     ${CMAKE_CURRENT_BINARY_DIR}/snapwebsites.h  # binary output of header file (generated)
-	snapwebsites.cpp                            # server
+    snapwebsites.cpp                            # server
     tcp_client_server.cpp                       # low level TCP/IP that works
     udp_client_server.cpp                       # low level UDP/IP that works
 )

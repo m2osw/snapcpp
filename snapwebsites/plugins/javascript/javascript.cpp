@@ -215,13 +215,13 @@ void javascript::register_dynamic_plugin(javascript_dynamic_plugin *p)
 class javascript_dynamic_plugin_iterator : public QScriptClassPropertyIterator
 {
 public:
-    javascript_dynamic_plugin_iterator(javascript *js, QScriptEngine *engine, const QScriptValue& object_value, javascript_dynamic_plugin *plugin)
-        : QScriptClassPropertyIterator::QScriptClassPropertyIterator(object_value),
-          f_javascript(js),
-          f_engine(engine),
-          f_pos(-1),
-          f_object(object_value),
-          f_plugin(plugin)
+    javascript_dynamic_plugin_iterator(javascript *js, QScriptEngine *engine, QScriptValue const& object_value, javascript_dynamic_plugin *plugin)
+        : QScriptClassPropertyIterator::QScriptClassPropertyIterator(object_value)
+        , f_javascript(js)
+        , f_engine(engine)
+        , f_pos(-1)
+        , f_object(object_value)
+        , f_plugin(plugin)
     {
     }
 
@@ -284,10 +284,10 @@ public:
 
 private:
     javascript *                f_javascript;
-    QScriptEngine *                f_engine;
-    controlled_vars::mint32_t    f_pos;
+    QScriptEngine *             f_engine;
+    controlled_vars::mint32_t   f_pos;
     QScriptValue                f_object;
-    javascript_dynamic_plugin *    f_plugin;
+    javascript_dynamic_plugin * f_plugin;
 };
 
 
@@ -328,20 +328,20 @@ public:
         return dynamic_cast<plugins::plugin *>(f_plugin)->get_plugin_name();
     }
 
-    virtual QScriptClassPropertyIterator *newIterator(const QScriptValue& object)
+    virtual QScriptClassPropertyIterator *newIterator(QScriptValue const& object)
     {
         return new javascript_dynamic_plugin_iterator(f_javascript, engine(), object, f_plugin);
     }
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
-    virtual QScriptValue property(const QScriptValue& object, const QScriptString& object_name, uint id)
+    virtual QScriptValue property(QScriptValue const& object, QScriptString const& object_name, uint id)
     {
         QScriptValue result(f_plugin->js_property_get(object_name).toString());
         return result;
     }
 
-    virtual QScriptValue::PropertyFlags propertyFlags(const QScriptValue& object, const QScriptString& property_name, uint id)
+    virtual QScriptValue::PropertyFlags propertyFlags(QScriptValue const& object, QScriptString const& property_name, uint id)
     {
         // at some point we may want to allow read/write/delete...
         return QScriptValue::ReadOnly | QScriptValue::Undeletable | QScriptValue::KeepExistingFlags;
@@ -356,21 +356,21 @@ public:
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
-    virtual QueryFlags queryProperty(const QScriptValue& object, const QScriptString& property_name, QueryFlags flags, uint * id)
+    virtual QueryFlags queryProperty(QScriptValue const& object, QScriptString const& property_name, QueryFlags flags, uint * id)
     {
         return QScriptClass::HandlesReadAccess;
     }
 
-    virtual void setProperty(QScriptValue& object, const QScriptString& property_name, uint id, const QScriptValue& value)
+    virtual void setProperty(QScriptValue& object, QScriptString const& property_name, uint id, QScriptValue const& value)
     {
-//printf("setProperty() called... not implemented yet\n");
+//std::cerr << "setProperty() called... not implemented yet\n";
         throw std::runtime_error("setProperty() not implemented yet");
     }
 #pragma GCC diagnostic pop
 
 private:
     javascript *                f_javascript;
-    javascript_dynamic_plugin *    f_plugin;
+    javascript_dynamic_plugin * f_plugin;
 };
 
 
@@ -456,8 +456,8 @@ public:
 
 private:
     javascript *                f_javascript;
-    QScriptEngine *                f_engine;
-    controlled_vars::mint32_t    f_pos;
+    QScriptEngine *             f_engine;
+    controlled_vars::mint32_t   f_pos;
     QScriptValue                f_object;
 };
 
@@ -498,12 +498,12 @@ public:
         return "plugins";
     }
 
-    virtual QScriptClassPropertyIterator *newIterator(const QScriptValue& object)
+    virtual QScriptClassPropertyIterator *newIterator(QScriptValue const& object)
     {
         return new javascript_plugins_iterator(f_javascript, engine(), object);
     }
 
-    virtual QScriptValue property(const QScriptValue& object, const QScriptString& object_name, uint id)
+    virtual QScriptValue property(QScriptValue const& object, QScriptString const& object_name, uint id)
     {
         QString temp_name(object_name);
         if(f_dynamic_plugins.contains(temp_name))
@@ -511,7 +511,7 @@ public:
             QScriptValue plugin_object(engine()->newObject(f_dynamic_plugins[temp_name].data()));
             return plugin_object;
         }
-        int max(f_javascript->f_dynamic_plugins.size());
+        int const max(f_javascript->f_dynamic_plugins.size());
         for(int i(0); i < max; ++i)
         {
             if(dynamic_cast<plugins::plugin *>(f_javascript->f_dynamic_plugins[i])->get_plugin_name() == temp_name)
@@ -550,7 +550,7 @@ public:
 
     virtual void setProperty(QScriptValue& object, const QScriptString& property_name, uint id, const QScriptValue& value)
     {
-//printf("setProperty() called... not implemented yet\n");
+//std::cerr << "setProperty() called... not implemented yet\n";
         throw std::runtime_error("setProperty() not implemented yet");
     }
 #pragma GCC diagnostic pop
@@ -575,9 +575,9 @@ private:
  *
  * \return The result in a QVariant.
  */
-QVariant javascript::evaluate_script(const QString& script)
+QVariant javascript::evaluate_script(QString const& script)
 {
-//printf("evaluating JS [%s]\n", script.toUtf8().data());
+//std::cerr << "evaluating JS [" << script << "]\n";
     QScriptProgram program(script);
     QScriptEngine engine;
     plugins_class plugins(this, &engine);
@@ -585,10 +585,16 @@ QVariant javascript::evaluate_script(const QString& script)
     engine.globalObject().setProperty("plugins", plugins_object);
 //printf("object name = [%s] (%d)\n", plugins_object.scriptClass()->name().toUtf8().data(), plugins_object.isObject());
     QScriptValue value(engine.evaluate(program));
+    QVariant variant(value.toVariant());
+    if(value.isError())
+    {
+// this happens if the script is not correct and it cannot be executed
+std::cerr << "javascript: value says it's an error!\n";
+    }
     if(engine.hasUncaughtException())
     {
-//QScriptValue e(engine.uncaughtException());
-//printf("result = %d (%d) -> [%s]\n", engine.hasUncaughtException(), e.isError(), e.toString().toUtf8().data() );
+QScriptValue e(engine.uncaughtException());
+std::cerr << "javascript: result = " << engine.hasUncaughtException() << ", e = " << e.isError() << ", s = \"" << e.toString() << "\"\n";
     }
     return value.toVariant();
 }

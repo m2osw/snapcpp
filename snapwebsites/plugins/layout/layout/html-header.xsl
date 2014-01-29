@@ -21,8 +21,88 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 															xmlns:xs="http://www.w3.org/2001/XMLSchema"
 															xmlns:fn="http://www.w3.org/2005/xpath-functions"
 															xmlns:snap="snap:snap">
+
+	<!-- *** INTERNAL TEMPLATES *** -->
+
+	<!-- handle the shortcut link -->
+  <xsl:template name="shortcut-link">
+    <xsl:param name="type"/>
+    <xsl:param name="href"/>
+    <xsl:param name="width"/>
+    <xsl:param name="height"/>
+    <xsl:if test="$width &lt;= 16 and $height &lt;= 16">
+      <!--
+          the proper (per spec.) rel token is rel="icon", and the type
+          is "image/vnd.microsoft.icon"; however, these are only supported
+          in IE 11+ and since that's still the majority of people who use
+          that broken system better support its quirks...
+      -->
+      <!-- link rel="icon" type="image/vnd.microsoft.icon" href="{$href}"/ -->
+      <link rel="shortcut icon" type="{$type}" href="{$href}"/>
+    </xsl:if>
+    <xsl:if test="$width &gt; 16 and $height &gt; 16">
+      <link rel="apple-touch-icon" type="{$type}" sizes="{concat($width, 'x', $height)}" href="{$href}"/>
+    </xsl:if>
+  </xsl:template>
+
+	<!-- handle one bookmark link -->
+  <xsl:template name="bookmark-link">
+    <xsl:param name="rel"/>
+    <xsl:param name="href"/>
+    <xsl:param name="title"/>
+    <xsl:choose>
+      <xsl:when test="$title">
+        <link rel="{$rel}" type="text/html" title="{$title}" href="{$href}"/>
+      </xsl:when>
+      <xsl:otherwise>
+        <link rel="{$rel}" type="text/html" href="{$href}"/>
+      </xsl:otherwise>
+    </xsl:choose>
+  </xsl:template>
+
+	<!-- handle one table of content link -->
+  <xsl:template name="toc-link">
+    <xsl:param name="rel"/>
+    <xsl:param name="href"/>
+    <xsl:param name="title"/>
+    <link rel="{$rel}" type="text/html" title="{$title}" href="{$href}"/>
+  </xsl:template>
+
+	<!-- handle one alternate language -->
+  <xsl:template name="alternate-language">
+    <xsl:param name="mode"/>
+    <xsl:param name="lang"/>
+    <xsl:param name="title"/>
+    <xsl:choose>
+      <xsl:when test="$mode = 'sub-domain'">
+        <link rel="alternate" type="text/html" title="{$title}" hreflang="{$lang}" href="{concat($protocol, '://', $lang, '.', $domain, '/', $full_path)}"/>
+      </xsl:when>
+      <xsl:when test="$mode = 'extension'">
+        <link rel="alternate" type="text/html" title="{$title}" hreflang="{$lang}" href="{concat($page_uri, '.', $lang)}"/>
+      </xsl:when>
+      <xsl:otherwise><!-- mode = 'path' -->
+        <link rel="alternate" type="text/html" title="{$title}" hreflang="{$lang}" href="{concat($website_uri, $lang, '/', $path, $page)}"/>
+      </xsl:otherwise>
+    </xsl:choose>
+    <meta property="og:locale:alternate" content="{$lang}"/>
+  </xsl:template>
+
+	<!-- handle one alternate format -->
+  <xsl:template name="alternate-format">
+    <xsl:param name="format"/>
+    <xsl:param name="type"/>
+    <xsl:param name="title"/>
+    <link rel="alternate" type="{$type}" title="{$title}" href="{concat($page_uri, '.', $format)}"/>
+  </xsl:template>
+
+
+	<!-- *** PUBLIC HEADER TEMPLATE *** -->
+
 	<xsl:template name="snap:html-header">
+
+		<!-- force UTF-8 encoding (at the very beginning to avoid a IE6 bug -->
 		<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+
 		<!-- title is required, no need to test its presence -->
 		<xsl:variable name="title" select="page/body/titles/title"/>
 		<xsl:variable name="site_name" select="head/metadata/desc[@type='name']/data"/>
@@ -30,23 +110,28 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 		<meta property="og:title" content="{$title}"/>
 		<meta property="og:site_name" content="{$site_name}"/>
 		<meta property="og:type" content="website"/>
+
 		<!-- generator -->
 		<link rel="bookmark" type="text/html" title="Generator" href="http://snapwebsites.org/"/>
 		<meta name="generator" content="Snap! Websites"/>
+
 		<!-- canonical (must be complete so we do not try to snap:prepend-base()) -->
 		<xsl:if test="$page_uri != ''">
 			<link rel="canonical" type="text/html" title="Canonical URI" href="{$page_uri}"/>
 			<meta property="og:url" content="{$page_uri}"/>
 		</xsl:if>
+
 		<!-- shorturl == this is where we could test having or not having a plugin could dynamically change the XSL templates -->
 		<xsl:variable name="shorturl" select="head/metadata/desc[@type='shorturl']/data"/>
 		<xsl:if test="$shorturl != ''">
 			<link rel="shorturl" type="text/html" title="Short URL" href="{$shorturl}"/>
 		</xsl:if>
+
 		<!-- include dcterms? -->
 		<xsl:if test="$use_dcterms = 'yes'">
 			<link rel="schema.dcterms" href="http://purl.org/dc/terms/"/>
 		</xsl:if>
+
 		<!-- short description (abstract) -->
 		<xsl:if test="page/body/abstract != ''">
 			<xsl:variable name="abstract" select="page/body/abstract"/>
@@ -55,6 +140,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 				<meta name="dcterms.abstract" content="{$abstract}"/>
 			</xsl:if>
 		</xsl:if>
+
 		<!-- long description (description) -->
 		<xsl:if test="page/body/description != ''">
 			<xsl:variable name="description" select="page/body/description"/>
@@ -64,6 +150,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 				<meta name="dcterms.description" content="{$description}"/>
 			</xsl:if>
 		</xsl:if>
+
 		<!-- copyright (by owner) / license / provenance -->
 		<xsl:if test="page/body/owner != ''">
 			<xsl:variable name="owner" select="page/body/owner"/>
@@ -105,6 +192,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 				</xsl:if>
 			</xsl:if>
 		</xsl:if>
+
 		<!-- publisher -->
 		<xsl:if test="$use_dcterms = 'yes'">
 			<xsl:if test="page/body/publisher != ''">
@@ -120,6 +208,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 				</xsl:choose>
 			</xsl:if>
 		</xsl:if>
+
 		<!-- location (including dcterms.coverage) -->
 		<xsl:if test="page/body/location/postal-code != ''">
 			<xsl:variable name="zipcode" select="page/body/location/postal-code"/>
@@ -161,6 +250,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 				</xsl:choose>
 			</xsl:if>
 		</xsl:if>
+
 		<!-- author (one tag per author) -->
 		<xsl:for-each select="page/body/author">
 			<xsl:variable name="author" select="."/>
@@ -173,6 +263,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 				<link rel="author" type="text/html" title="{$author}" href="{snap:prepend-base($website_uri, $base_uri, $href)}"/>
 			</xsl:if>
 		</xsl:for-each>
+
 		<!-- contributor (one tag per contributor) -->
 		<xsl:for-each select="page/body/contributor">
 			<xsl:variable name="contributor" select="."/>
@@ -184,6 +275,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 				<link rel="contributor" type="text/html" title="{$contributor}" href="{snap:prepend-base($website_uri, $base_uri, $href)}"/>
 			</xsl:if>
 		</xsl:for-each>
+
 		<!-- language (if not defined in source, no meta tag) -->
 		<xsl:if test="page/body/lang != ''">
 			<xsl:variable name="language" select="page/body/lang"/>
@@ -193,6 +285,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 				<meta name="dcterms.language" content="{$language}"/>
 			</xsl:if>
 		</xsl:if>
+
 		<!-- dates -->
 		<xsl:choose>
 			<xsl:when test="page/body/modified">
@@ -259,6 +352,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 			<xsl:variable name="changefreq" select="page/body/robots/changefreq"/>
 			<meta name="revisit-after" content="{$changefreq}"/>
 		</xsl:if>
+
 		<!-- medium -->
 		<xsl:if test="$use_dcterms = 'yes'">
 			<xsl:if test="page/body/medium != ''">
@@ -266,6 +360,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 				<meta name="dcterms.medium" content="{$medium}"/>
 			</xsl:if>
 		</xsl:if>
+
 		<!-- identifier -->
 		<xsl:if test="$use_dcterms = 'yes'">
 			<xsl:if test="page/body/identifier != ''">
@@ -273,6 +368,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 				<meta name="dcterms.identifier" content="{$identifier}"/>
 			</xsl:if>
 		</xsl:if>
+
 		<!-- instructions -->
 		<xsl:if test="$use_dcterms = 'yes' and page/body/instructions">
 			<xsl:variable name="instructions" select="page/body/instructions"/>
@@ -286,6 +382,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 				</xsl:otherwise>
 			</xsl:choose>
 		</xsl:if>
+
 		<!-- permission -->
 		<xsl:if test="$use_dcterms = 'yes' and page/body/permission">
 			<xsl:variable name="permission" select="page/body/permission"/>
@@ -299,6 +396,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 				</xsl:otherwise>
 			</xsl:choose>
 		</xsl:if>
+
 		<!-- shortcut icon -->
 		<xsl:for-each select="page/body/image/shortcut">
 			<xsl:call-template name="shortcut-link">
@@ -308,6 +406,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 				<xsl:with-param name="height" select="@height"/>
 			</xsl:call-template>
 		</xsl:for-each>
+
 		<!-- main image -->
 		<xsl:if test="page/body/image">
 			<xsl:variable name="image_id" select="page/body/image/@idref"/>
@@ -318,6 +417,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 				<meta property="og:image" content="{snap:prepend-base($website_uri, $base_uri, $src)}"/>
 			</xsl:for-each>
 		</xsl:if>
+
 		<!-- navigation -->
 		<xsl:if test="page/body/navigation[@href]">
 			<xsl:variable name="sitemap" select="page/body/navigation/@href"/>
@@ -332,6 +432,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 			<xsl:variable name="href" select="@href"/>
 			<link rel="{$rel}" type="text/html" href="{$href}"/>
 		</xsl:for-each>
+
 		<!-- bookmarks -->
 		<xsl:for-each select="page/body/bookmarks/link">
 			<xsl:call-template name="bookmark-link">
@@ -344,6 +445,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 			<xsl:variable name="sitemap" select="page/body/navigation/@href"/>
 			<link rel="sitemap" type="text/html" title="Sitemap" href="{$sitemap}"/>
 		</xsl:if>
+
 		<!-- table of contents -->
 		<xsl:for-each select="page/body/toc/entry">
 			<xsl:call-template name="toc-link">
@@ -352,6 +454,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 				<xsl:with-param name="title" select="."/>
 			</xsl:call-template>
 		</xsl:for-each>
+
 		<!-- translations -->
 		<xsl:if test="page/body/translations">
 			<xsl:variable name="mode" select="page/body/translations/@mode"/>
@@ -363,6 +466,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 				</xsl:call-template>
 			</xsl:for-each>
 		</xsl:if>
+
 		<!-- formats -->
 		<xsl:for-each select="page/body/formats/f">
 			<xsl:call-template name="alternate-format">
@@ -371,14 +475,17 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 				<xsl:with-param name="title" select="."/>
 			</xsl:call-template>
 		</xsl:for-each>
+
 		<!-- apply user defined meta tags -->
 		<xsl:for-each select="head/metadata/desc[@type='user']">
 			<xsl:variable name="name" select="@name"/>
 			<xsl:variable name="content" select="data"/>
 			<meta name="{$name}" content="{$content}"/>
 		</xsl:for-each>
+
 		<!-- JavaScripts -->
 		<xsl:copy-of select="head/metadata/javascript/*"/>
+
 	</xsl:template>
 </xsl:stylesheet>
 <!-- vim: ts=2 sw=2

@@ -166,26 +166,10 @@ int64_t layout::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, initial_update);
-    //SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, content_update); -- content depends on JavaScript so we cannot do a content update here
+    //SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, content_update); -- defined in output/content.xml at this time
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
-
-
-/** \brief First update to run for the layout plugin.
- *
- * This function is the first update for the layout plugin. It installs
- * the initial index page.
- *
- * \param[in] variables_timestamp  The timestamp for all the variables added to the database by this update (in micro-seconds).
- */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-void layout::initial_update(int64_t variables_timestamp)
-{
-}
-#pragma GCC diagnostic pop
 
 
 /** \brief Initialize the layout table.
@@ -211,7 +195,7 @@ QtCassandra::QCassandraTable::pointer_t layout::get_layout_table()
  * \param[in] ipath  The path to the content to process.
  * \param[in] column_name  The name of the column to search (layout::theme or layout::layout)
  */
-QString layout::get_layout(content::path_info_t& ipath, const QString& column_name)
+QString layout::get_layout(content::path_info_t& ipath, QString const& column_name)
 {
     // get the content table first
     QtCassandra::QCassandraValue layout_value(content::content::instance()->get_content_table()->row(ipath.get_key())->cell(column_name)->value());
@@ -237,7 +221,8 @@ QString layout::get_layout(content::path_info_t& ipath, const QString& column_na
     && (layout_script.endsWith("\"") || layout_script.endsWith("\";")))
     {
         run_script = false;
-        for(const char *s(layout_script.toUtf8().data() + 1); *s != '\0'; ++s)
+        QByteArray utf8(layout_script.toUtf8());
+        for(char const *s(utf8.data() + 1); *s != '\0'; ++s)
         {
             if((*s < 'a' || *s > 'z')
             && (*s < 'A' || *s > 'Z')
@@ -254,6 +239,7 @@ QString layout::get_layout(content::path_info_t& ipath, const QString& column_na
     if(run_script)
     {
         // TODO: remove dependency on JS with an event on this one!
+        //       (TBD: as far as I know this is okay now)
         QVariant v(javascript::javascript::instance()->evaluate_script(layout_script));
         layout_name = v.toString();
     }
@@ -268,6 +254,12 @@ QString layout::get_layout(content::path_info_t& ipath, const QString& column_na
         {
             layout_name = layout_script.mid(1, layout_script.length() - 2);
         }
+    }
+
+    if(layout_name.isEmpty())
+    {
+        // looks like the script failed...
+        layout_name = "default";
     }
 
     return layout_name;
@@ -300,7 +292,7 @@ QString layout::get_layout(content::path_info_t& ipath, const QString& column_na
  *
  * \return The result is the output of the layout applied to the data in cpath.
  */
-QString layout::apply_layout(content::path_info_t& ipath, layout_content *content_plugin, const QString& ctemplate)
+QString layout::apply_layout(content::path_info_t& ipath, layout_content *content_plugin, QString const& ctemplate)
 {
     QDomDocument doc(create_body(ipath, content_plugin, ctemplate));
     return apply_theme(doc, ipath, content_plugin);
@@ -336,7 +328,7 @@ QString layout::apply_layout(content::path_info_t& ipath, layout_content *conten
  *
  * \return The resulting body in an XML document.
  */
-QDomDocument layout::create_body(content::path_info_t& ipath, layout_content *content_plugin, const QString& ctemplate)
+QDomDocument layout::create_body(content::path_info_t& ipath, layout_content *content_plugin, QString const& ctemplate)
 {
 #ifdef DEBUG
 std::cerr << "create body in layout\n";
@@ -385,13 +377,13 @@ std::cerr << "create body in layout\n";
     // XXX should the ctemplate ever be used to retrieve the layout?
     QString layout_name(get_layout(ipath, get_name(SNAP_NAME_LAYOUT_LAYOUT)));
 
-//printf("Got theme / layout name = [%s] / [%s] (path=%s)\n", theme_name.toUtf8().data(), layout_name.toUtf8().data(), cpath.toUtf8().data());
+//std::cerr << "Got theme / layout name = [" << layout_name << "] (key=" << ipath.get_key() << ")\n";
 
 // TODO: fix the default layout selection!?
 //       until we can get the theme system working right...
 //       actually the theme system works, but we need to have something
 //       to allow us to select said theme
-layout_name = "bare";
+//layout_name = "bare";
 
     bool const filter_exists(plugins::exists("filter"));
     QtCassandra::QCassandraTable::pointer_t layout_table(get_layout_table());
@@ -429,13 +421,7 @@ layout_name = "bare";
         QByteArray data(file.readAll());
         xsl = QString::fromUtf8(data.data(), data.size());
     }
-    // TODO: once we got the XSL file we need to handle all the xsl:include
-    //       and xsl:import as QXmlQuery does not support those XSLT features
-    //       which are important for us because we want to allow for
-    //       "internal" features (i.e. avoid duplicating all the code used
-    //       to build the <head> tag, for example.)
-    //
-    // http://www.w3.org/TR/xslt#section-Combining-Stylesheets
+    replace_includes(xsl);
 
     // check whether the layout was defined in this website database
     QtCassandra::QCassandraTable::pointer_t data_table(content::content::instance()->get_data_table());
@@ -697,7 +683,7 @@ QString layout::apply_theme(QDomDocument doc, content::path_info_t& ipath, layou
 // TODO: until we can get the theme system working right...
 //       actually the theme system works, but we need to have something
 //       to allow us to select said theme
-theme_name = "bare";
+//theme_name = "bare";
 
     //QFile xsl(":/xsl/layout/default-theme-parser.xsl");
     //if(!xsl.open(QIODevice::ReadOnly))
@@ -737,13 +723,7 @@ theme_name = "bare";
         QByteArray data(file.readAll());
         xsl = QString::fromUtf8(data.data(), data.size());
     }
-    // TODO: once we got the XSL file we need to handle all the xsl:include
-    //       and xsl:import as QXmlQuery does not support those XSLT features
-    //       which are important for us because we want to allow for
-    //       "internal" features (i.e. avoid duplicating all the code used
-    //       to build the <head> tag, for example.)
-    //
-    // http://www.w3.org/TR/xslt#section-Combining-Stylesheets
+    replace_includes(xsl);
 
     // finally apply the theme XSLT to the final XML
     // the output is what we want to return
@@ -761,6 +741,112 @@ theme_name = "bare";
     // HTML5 DOCTYPE is just "html" as follow!
     return "<!DOCTYPE html>" + out;
 }
+
+
+/** \brief Search the XSLT document and replace include/import tags.
+ *
+ * This function searches the XSLT document for tags that look like
+ * \<xsl:include ...> and \<xsl:import ...>.
+ *
+ * \todo
+ * At this point the xsl:import is not really properly supported because
+ * the documentation imposes a definition priority which we're not
+ * imposing. (i.e. any definition in the main document remains the one
+ * in place even after an xsl:import of the same definition.) It would
+ * probably be possible to support that feature, but at this point we
+ * simply recommand that you only use xsl:include at the top of your XSLT
+ * documents.
+ *
+ * \todo
+ * To avoid transforming the document to a DOM, we do the parsing "manually".
+ * This means the XML may be completely wrong. Especially, the include
+ * and import tags could be in a sub-tag which would be considered wrong.
+ * We expect, at some point, to have a valid XSLT lint parser which will
+ * verify the files at compile time. That means the following code can
+ * already be considered valid.
+ *
+ * \todo
+ * This is a TBD: at this point the function generates an error log on
+ * invalid input data. Since we expect the files to be correct (as mentioned
+ * in another todo) we should never get errors here. Because of that I
+ * think that just and only an error log is enough here. Otherwise we may
+ * want to have them as messages instead.
+ *
+ * Source: http://www.w3.org/TR/xslt#section-Combining-Stylesheets
+ */
+void layout::replace_includes(QString& xsl)
+{
+    // use a sub-function so we can apply the xsl:include and xsl:import
+    // with the exact same code instead of copy & paste.
+    class replace_t
+    {
+    public:
+        static void replace(snap_child *snap, QString const& tag, QString& xsl)
+        {
+            // the xsl:include is recursive, what gets included may itself
+            // include some more sub-data
+            int const len(tag.length());
+            for(int start(xsl.indexOf(tag)); start >= 0; start = xsl.indexOf(tag, start))
+            {
+                // get the end position of the tag
+                int const end(xsl.indexOf(">", start + len));
+                if(end < 0)
+                {
+                    SNAP_LOG_ERROR("an ")(tag)(" .../> tag is missing the '>' (byte position: ")(start)(")");
+                    break;
+                }
+                QString attributes(xsl.mid(start + len, end - start - len));
+                int const href_start(attributes.indexOf("href="));
+                if(href_start < 0 || href_start + 7 >= attributes.length())
+                {
+                    SNAP_LOG_ERROR(tag)(" tag missing a valid href=... attribute (")(attributes)(")");
+                    break;
+                }
+                ushort const quote(attributes[href_start + 5].unicode());
+                if(quote != '\'' && quote != '"') // href value is note quoted?! (not valid XML)
+                {
+                    SNAP_LOG_ERROR("the href=... attribute of an ")(tag)(" .../> does not seem to be quoted as expected in XML (")(attributes)(")");
+                    break;
+                }
+                int const href_end(attributes.indexOf(quote, href_start + 6));
+                if(href_end < 0)
+                {
+                    SNAP_LOG_ERROR("the href=... attribute of an ")(tag)(" .../> does not seem to end with a similar quote as expected in XML (")(attributes)(")");
+                    break;
+                }
+                QString uri(attributes.mid(href_start + 6, href_end - href_start - 6));
+                if(!uri.contains(':')
+                && !uri.contains('/'))
+                {
+                    uri = QString(":/xsl/layout/%1.xsl").arg(uri);
+                }
+
+                // load the file in memory
+                snap_child::post_file_t file;
+                file.set_filename(uri);
+                if(!snap->load_file(file))
+                {
+                    SNAP_LOG_ERROR("xsl tag ")(tag)(" href=\"")(uri)("\" .../> did not reference a known file (file could not be loaded).");
+                    // the include string below will be empty
+                }
+                QString include(QString::fromUtf8(file.get_data(), file.get_size()));
+
+                // grab the content within the <xsl:stylesheet> root tag
+                int const open_stylesheet_start(include.indexOf("<xsl:stylesheet"));
+                int const open_stylesheet_end(include.indexOf(">", open_stylesheet_start + 15));
+                int const close_stylesheet_start(include.lastIndexOf("</xsl:stylesheet"));
+                include = include.mid(open_stylesheet_end + 1, close_stylesheet_start - open_stylesheet_end - 1);
+
+                // replace the <xsl:include ...> tag
+                xsl.replace(start, end - start + 1, include);
+            }
+        }
+    };
+    replace_t::replace(f_snap, "<xsl:include", xsl);
+    replace_t::replace(f_snap, "<xsl:import", xsl);
+//std::cerr << "include [" << xsl << "]\n";
+}
+
 
 /** \brief Generate the header of the content.
  *

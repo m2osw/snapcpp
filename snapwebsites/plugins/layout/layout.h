@@ -73,15 +73,14 @@ public:
     QString             apply_layout(content::path_info_t& ipath, layout_content *plugin, const QString& ctemplate = "");
     QDomDocument        create_body(content::path_info_t& ipath, layout_content *content_plugin, const QString& ctemplate = "");
     QString             apply_theme(QDomDocument doc, content::path_info_t& cpath, layout_content *content_plugin);
+    void                replace_includes(QString& xsl);
 
     SNAP_SIGNAL(generate_header_content, (layout *l, content::path_info_t& path, QDomElement& header, QDomElement& metadata, const QString& ctemplate), (l, path, header, metadata, ctemplate));
     SNAP_SIGNAL(generate_page_content, (layout *l, content::path_info_t& path, QDomElement& page, QDomElement& body, const QString& ctemplate), (l, path, page, body, ctemplate));
     //SNAP_SIGNAL(generate_box_content, (layout *l, content::path_info_t& path, QDomElement& box), (l, path, box));
 
 private:
-    void initial_update(int64_t variables_timestamp);
-    void content_update(int64_t variables_timestamp);
-    bool parse_layout_rules(const QString& script, QByteArray& result);
+    //void content_update(int64_t variables_timestamp);
 
     zpsnap_child_t                             f_snap;
     QtCassandra::QCassandraTable::pointer_t    f_content_table;

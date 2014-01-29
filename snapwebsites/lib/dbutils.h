@@ -1,5 +1,5 @@
 // Snap Websites Server -- manage sessions for users, forms, etc.
-// Copyright (C) 2013-2014  Made to Order Software Corp.
+// Copyright (C) 2012-2014  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -29,19 +29,19 @@ namespace snap
 class dbutils
 {
 public:
-	dbutils( const QString& table_name, const QString& row_name );
+    dbutils( const QString& table_name, const QString& row_name );
 
-	static QString byte_to_hex  ( const char byte );
-	static QString key_to_string( const QByteArray& key );
+    static QString byte_to_hex  ( const char byte );
+    static QString key_to_string( const QByteArray& key );
 
-	QByteArray get_row_key() const;
+    QByteArray get_row_key() const;
     QString    get_column_name ( QtCassandra::QCassandraCell::pointer_t c ) const;
     QString    get_column_value( QtCassandra::QCassandraCell::pointer_t c ) const;
     QString    get_row_name( QtCassandra::QCassandraRow::pointer_t p_r ) const;
 
 private:
-	QString f_tableName;
-	QString f_rowName;
+    QString f_tableName;
+    QString f_rowName;
 };
 
 }
