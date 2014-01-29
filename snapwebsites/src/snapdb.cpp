@@ -172,6 +172,7 @@ private:
     void display_tables() const;
     void display_rows() const;
     void display_rows_wildcard() const;
+    QString get_column_name( QCassandraCell::pointer_t c ) const;
     void display_columns() const;
 };
 
@@ -473,9 +474,71 @@ void snapdb::display_rows_wildcard() const
 }
 
 
-void snapdb::display_columns() const
+QString snapdb::get_column_name( QCassandraCell::pointer_t c ) const
 {
     const QString content_attachment_reference( "content::attachment::reference::" );
+
+    const QByteArray key( c->columnKey() );
+
+    QString name;
+    if(f_table == "files" && f_row == "new")
+    {
+        name = key_to_string( key );
+    }
+    if(f_table == "data" && (key.startsWith(content_attachment_reference.toAscii())) )
+    {
+        name = content_attachment_reference;
+        name += key_to_string( key.mid( content_attachment_reference.length()+1 ) );
+    }
+    else if(f_table == "files" && f_row == "javascripts")
+    {
+        // this row name is "<name>"_"<browser>"_<version as integers>
+        int const max(key.size());
+        int sep(0);
+        int i(0);
+        for(; i < max && sep < 2; ++i)
+        {
+            if(key[i] == '_')
+            {
+                ++sep;
+            }
+            name += key[i];
+        }
+        // now we have to add the version
+        bool first(true);
+        for(; i + 3 < max; i += 4)
+        {
+            if(first)
+            {
+                first = false;
+            }
+            else
+            {
+                name += ".";
+            }
+            name += QString("%1").arg(QtCassandra::uint32Value(key, i));
+        }
+    }
+    else if((f_table == "users"    && f_row == "*index_row*")
+            || (f_table == "shorturl" && f_row.endsWith("/*index_row*"))
+           )
+    {
+        // special case where the column key is a 64 bit integer
+        //const QByteArray& name(c->columnKey());
+        QtCassandra::QCassandraValue const identifier(c->columnKey());
+        name = QString("%1").arg(identifier.int64Value());
+    }
+    else
+    {
+        name = c->columnName();
+    }
+
+    return name;
+}
+
+
+void snapdb::display_columns() const
+{
     QCassandraContext::pointer_t context(f_cassandra->context(f_context));
 
     // display all the columns of a row
@@ -505,59 +568,8 @@ void snapdb::display_columns() const
         }
         for( auto c : cells )
         {
-            QByteArray const key(c->columnKey());
-            QString n;
-            if(f_table == "files" && f_row == "new")
-            {
-                n = key_to_string( key );
-            }
-            if(f_table == "data" && (key.startsWith(content_attachment_reference.toAscii())) )
-            {
-                n = content_attachment_reference;
-                n += key_to_string( key.mid( content_attachment_reference.length()+1 ) );
-            }
-            else if(f_table == "files" && f_row == "javascripts")
-            {
-                // this row name is "<name>"_"<browser>"_<version as integers>
-                int const max(key.size());
-                int sep(0);
-                int i(0);
-                for(; i < max && sep < 2; ++i)
-                {
-                    if(key[i] == '_')
-                    {
-                        ++sep;
-                    }
-                    n += key[i];
-                }
-                // now we have to add the version
-                bool first(true);
-                for(; i + 3 < max; i += 4)
-                {
-                    if(first)
-                    {
-                        first = false;
-                    }
-                    else
-                    {
-                        n += ".";
-                    }
-                    n += QString("%1").arg(QtCassandra::uint32Value(key, i));
-                }
-            }
-            else if((f_table == "users"    && f_row == "*index_row*")
-                    || (f_table == "shorturl" && f_row.endsWith("/*index_row*"))
-                    )
-            {
-                // special case where the column key is a 64 bit integer
-                //const QByteArray& name(c->columnKey());
-                QtCassandra::QCassandraValue const identifier(c->columnKey());
-                n = QString("%1").arg(identifier.int64Value());
-            }
-            else
-            {
-                n = c->columnName();
-            }
+            const QString n( get_column_name( c ) );
+
             QString v;
             if(n == "users::identifier"
                     || n == "permissions::dynamic"
