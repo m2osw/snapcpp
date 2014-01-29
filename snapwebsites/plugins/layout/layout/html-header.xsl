@@ -1,0 +1,385 @@
+<?xml version="1.0"?>
+<!--
+Snap Websites Server == system messages XSLT templates
+Copyright (C) 2011-2014  Made to Order Software Corp.
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+-->
+<xsl:stylesheet version="2.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+															xmlns:xs="http://www.w3.org/2001/XMLSchema"
+															xmlns:fn="http://www.w3.org/2005/xpath-functions"
+															xmlns:snap="snap:snap">
+	<xsl:template name="snap:html-header">
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+		<!-- title is required, no need to test its presence -->
+		<xsl:variable name="title" select="page/body/titles/title"/>
+		<xsl:variable name="site_name" select="head/metadata/desc[@type='name']/data"/>
+		<title><xsl:value-of select="$title"/> | <xsl:value-of select="$site_name"/></title>
+		<meta property="og:title" content="{$title}"/>
+		<meta property="og:site_name" content="{$site_name}"/>
+		<meta property="og:type" content="website"/>
+		<!-- generator -->
+		<link rel="bookmark" type="text/html" title="Generator" href="http://snapwebsites.org/"/>
+		<meta name="generator" content="Snap! Websites"/>
+		<!-- canonical (must be complete so we do not try to snap:prepend-base()) -->
+		<xsl:if test="$page_uri != ''">
+			<link rel="canonical" type="text/html" title="Canonical URI" href="{$page_uri}"/>
+			<meta property="og:url" content="{$page_uri}"/>
+		</xsl:if>
+		<!-- shorturl == this is where we could test having or not having a plugin could dynamically change the XSL templates -->
+		<xsl:variable name="shorturl" select="head/metadata/desc[@type='shorturl']/data"/>
+		<xsl:if test="$shorturl != ''">
+			<link rel="shorturl" type="text/html" title="Short URL" href="{$shorturl}"/>
+		</xsl:if>
+		<!-- include dcterms? -->
+		<xsl:if test="$use_dcterms = 'yes'">
+			<link rel="schema.dcterms" href="http://purl.org/dc/terms/"/>
+		</xsl:if>
+		<!-- short description (abstract) -->
+		<xsl:if test="page/body/abstract != ''">
+			<xsl:variable name="abstract" select="page/body/abstract"/>
+			<meta name="abstract" content="{$abstract}"/>
+			<xsl:if test="$use_dcterms = 'yes'">
+				<meta name="dcterms.abstract" content="{$abstract}"/>
+			</xsl:if>
+		</xsl:if>
+		<!-- long description (description) -->
+		<xsl:if test="page/body/description != ''">
+			<xsl:variable name="description" select="page/body/description"/>
+			<meta name="description" content="{$description}"/>
+			<meta property="og:description" content="{$description}"/>
+			<xsl:if test="$use_dcterms = 'yes'">
+				<meta name="dcterms.description" content="{$description}"/>
+			</xsl:if>
+		</xsl:if>
+		<!-- copyright (by owner) / license / provenance -->
+		<xsl:if test="page/body/owner != ''">
+			<xsl:variable name="owner" select="page/body/owner"/>
+			<meta name="copyright" content="Copyright © {$year_range} by {$owner}"/>
+			<xsl:if test="$use_dcterms = 'yes'">
+				<meta name="dcterms.rights" content="Copyright © {$year_range} by {$owner}"/>
+				<xsl:choose>
+					<xsl:when test="page/body/owner[@href] != ''">
+						<xsl:variable name="href" select="page/body/owner/@href"/>
+						<link rel="dcterms.rightsHolder" type="text/html" title="{$owner}" href="{snap:prepend-base($website_uri, $base_uri, $href)}"/>
+					</xsl:when>
+					<xsl:otherwise>
+						<meta name="dcterms.rightsHolder" content="{$owner}"/>
+					</xsl:otherwise>
+				</xsl:choose>
+				<xsl:if test="page/body/license != ''">
+					<xsl:variable name="license" select="page/body/license"/>
+					<xsl:choose>
+						<xsl:when test="page/body/license[@href] != ''">
+							<xsl:variable name="href" select="page/body/license/@href"/>
+							<link rel="dcterms.license" type="text/html" title="{$license}" href="{snap:prepend-base($website_uri, $base_uri, $href)}"/>
+						</xsl:when>
+						<xsl:otherwise>
+							<meta name="dcterms.license" content="{$license}"/>
+						</xsl:otherwise>
+					</xsl:choose>
+				</xsl:if>
+				<xsl:if test="page/body/provenance != ''">
+					<xsl:variable name="provenance" select="page/body/provenance"/>
+					<xsl:choose>
+						<xsl:when test="page/body/provenance[@href] != ''">
+							<xsl:variable name="href" select="page/body/provenance/@href"/>
+							<link rel="dcterms.provenance" type="text/html" title="{$provenance}" href="{snap:prepend-base($website_uri, $base_uri, $href)}"/>
+						</xsl:when>
+						<xsl:otherwise>
+							<meta name="dcterms.provenance" content="{$provenance}"/>
+						</xsl:otherwise>
+					</xsl:choose>
+				</xsl:if>
+			</xsl:if>
+		</xsl:if>
+		<!-- publisher -->
+		<xsl:if test="$use_dcterms = 'yes'">
+			<xsl:if test="page/body/publisher != ''">
+				<xsl:variable name="publisher" select="page/body/publisher"/>
+				<xsl:choose>
+					<xsl:when test="page/body/publisher[@href] != ''">
+						<xsl:variable name="href" select="page/body/publisher/@href"/>
+						<link rel="dcterms.publisher" type="text/html" title="{$publisher}" href="{snap:prepend-base($website_uri, $base_uri, $href)}"/>
+					</xsl:when>
+					<xsl:otherwise>
+						<meta name="dcterms.publisher" content="{$publisher}"/>
+					</xsl:otherwise>
+				</xsl:choose>
+			</xsl:if>
+		</xsl:if>
+		<!-- location (including dcterms.coverage) -->
+		<xsl:if test="page/body/location/postal-code != ''">
+			<xsl:variable name="zipcode" select="page/body/location/postal-code"/>
+			<meta name="zipcode" content="{$zipcode}"/>
+		</xsl:if>
+		<xsl:if test="page/body/location/city != ''">
+			<xsl:variable name="city" select="page/body/location/city"/>
+			<meta name="city" content="{$city}"/>
+		</xsl:if>
+		<xsl:if test="page/body/location/country != ''">
+			<xsl:variable name="country" select="page/body/location/country"/>
+			<meta name="country" content="{$country}"/>
+		</xsl:if>
+		<xsl:if test="$use_dcterms = 'yes'">
+			<!-- jurisdiction -->
+			<xsl:if test="page/body/location/jurisdiction != ''">
+				<xsl:variable name="jurisdiction" select="page/body/location/jurisdiction"/>
+				<xsl:choose>
+					<xsl:when test="page/body/location/jurisdiction[@href] != ''">
+						<xsl:variable name="href" select="page/body/location/jurisdiction/@href"/>
+						<link rel="dcterms.coverage" type="text/html" title="{$jurisdiction}" href="{snap:prepend-base($website_uri, $base_uri, $href)}"/>
+					</xsl:when>
+					<xsl:otherwise>
+						<meta name="dcterms.coverage" content="{$jurisdiction}"/>
+					</xsl:otherwise>
+				</xsl:choose>
+			</xsl:if>
+			<!-- longitude,latitude -->
+			<xsl:if test="page/body/location/longlat != ''">
+				<xsl:variable name="longlat" select="page/body/location/longlat"/>
+				<xsl:choose>
+					<xsl:when test="page/body/location/longlat[@href] != ''">
+						<xsl:variable name="href" select="page/body/location/longlat/@href"/>
+						<link rel="dcterms.spacial" type="text/html" title="{$longlat}" href="{snap:prepend-base($website_uri, $base_uri, $href)}"/>
+					</xsl:when>
+					<xsl:otherwise>
+						<meta name="dcterms.spacial" content="{$longlat}"/>
+					</xsl:otherwise>
+				</xsl:choose>
+			</xsl:if>
+		</xsl:if>
+		<!-- author (one tag per author) -->
+		<xsl:for-each select="page/body/author">
+			<xsl:variable name="author" select="."/>
+			<meta name="author" content="{$author}"/>
+			<xsl:if test="$use_dcterms = 'yes'">
+				<meta name="dcterms.creator" content="{$author}"/>
+			</xsl:if>
+			<xsl:if test="@href">
+				<xsl:variable name="href" select="@href"/>
+				<link rel="author" type="text/html" title="{$author}" href="{snap:prepend-base($website_uri, $base_uri, $href)}"/>
+			</xsl:if>
+		</xsl:for-each>
+		<!-- contributor (one tag per contributor) -->
+		<xsl:for-each select="page/body/contributor">
+			<xsl:variable name="contributor" select="."/>
+			<xsl:if test="$use_dcterms = 'yes'">
+				<meta name="dcterms.contributor" content="{$contributor}"/>
+			</xsl:if>
+			<xsl:if test="@href">
+				<xsl:variable name="href" select="@href"/>
+				<link rel="contributor" type="text/html" title="{$contributor}" href="{snap:prepend-base($website_uri, $base_uri, $href)}"/>
+			</xsl:if>
+		</xsl:for-each>
+		<!-- language (if not defined in source, no meta tag) -->
+		<xsl:if test="page/body/lang != ''">
+			<xsl:variable name="language" select="page/body/lang"/>
+			<meta name="language" content="{$language}"/>
+			<meta property="og:locale" content="{$language}"/>
+			<xsl:if test="$use_dcterms = 'yes'">
+				<meta name="dcterms.language" content="{$language}"/>
+			</xsl:if>
+		</xsl:if>
+		<!-- dates -->
+		<xsl:choose>
+			<xsl:when test="page/body/modified">
+				<xsl:variable name="modified" select="page/body/modified"/>
+				<meta name="date" content="{$modified}"/>
+				<xsl:if test="$use_dcterms = 'yes'">
+					<meta name="dcterms.date" content="{$modified}"/>
+				</xsl:if>
+			</xsl:when>
+			<xsl:when test="page/body/updated">
+				<xsl:variable name="updated" select="page/body/updated"/>
+				<meta name="date" content="{$updated}"/>
+				<xsl:if test="$use_dcterms = 'yes'">
+					<meta name="dcterms.date" content="{$updated}"/>
+				</xsl:if>
+			</xsl:when>
+			<xsl:when test="page/body/created">
+				<xsl:variable name="created" select="page/body/created"/>
+				<meta name="date" content="{$created}"/>
+				<xsl:if test="$use_dcterms = 'yes'">
+					<meta name="dcterms.date" content="{$created}"/>
+				</xsl:if>
+			</xsl:when>
+		</xsl:choose>
+		<xsl:if test="$use_dcterms = 'yes' and page/body/created != ''">
+			<xsl:variable name="created" select="page/body/created"/>
+			<meta name="dcterms.created" content="{$created}"/>
+		</xsl:if>
+		<xsl:if test="$use_dcterms = 'yes' and page/body/since != '' and page/body/until != ''">
+			<xsl:variable name="since" select="page/body/since"/>
+			<xsl:variable name="until" select="page/body/until"/>
+			<xsl:if test="xs:dateTime($since) lt xs:dateTime($until)">
+				<meta name="dcterms.valid" content="{$since} {$until}"/>
+				<xsl:variable name="extent" select="days-from-duration(xs:dateTime($until) - xs:dateTime($since))"/>
+				<xsl:choose>
+					<xsl:when test="$extent &lt;= 0"></xsl:when>
+					<xsl:when test="$extent = 1"><meta name="dcterms.extent" content="1 day"/></xsl:when>
+					<xsl:otherwise><meta name="dcterms.extent" content="{$extent} days"/></xsl:otherwise>
+				</xsl:choose>
+			</xsl:if>
+		</xsl:if>
+		<xsl:if test="$use_dcterms = 'yes' and page/body/issued != ''">
+			<xsl:variable name="issued" select="page/body/issued"/>
+			<meta name="dcterms.issued" content="{$issued}"/>
+		</xsl:if>
+		<xsl:if test="$use_dcterms = 'yes' and page/body/accepted != ''">
+			<xsl:variable name="accepted" select="page/body/accepted"/>
+			<meta name="dcterms.dateAccepted" content="{$accepted}"/>
+		</xsl:if>
+		<xsl:if test="$use_dcterms = 'yes' and page/body/copyrighted != ''">
+			<xsl:variable name="copyrighted" select="page/body/copyrighted"/>
+			<meta name="dcterms.dateCopyrighted" content="{$copyrighted}"/>
+		</xsl:if>
+		<xsl:if test="$use_dcterms = 'yes' and page/body/submitted != ''">
+			<xsl:variable name="submitted" select="page/body/submitted"/>
+			<meta name="dcterms.dateSubmitted" content="{$submitted}"/>
+		</xsl:if>
+		<!-- robots -->
+		<xsl:if test="page/body/robots/tracking">
+			<xsl:variable name="tracking" select="page/body/robots/tracking"/>
+			<meta name="robots" content="{$tracking}"/>
+		</xsl:if>
+		<xsl:if test="page/body/robots/changefreq">
+			<xsl:variable name="changefreq" select="page/body/robots/changefreq"/>
+			<meta name="revisit-after" content="{$changefreq}"/>
+		</xsl:if>
+		<!-- medium -->
+		<xsl:if test="$use_dcterms = 'yes'">
+			<xsl:if test="page/body/medium != ''">
+				<xsl:variable name="medium" select="page/body/medium"/>
+				<meta name="dcterms.medium" content="{$medium}"/>
+			</xsl:if>
+		</xsl:if>
+		<!-- identifier -->
+		<xsl:if test="$use_dcterms = 'yes'">
+			<xsl:if test="page/body/identifier != ''">
+				<xsl:variable name="identifier" select="page/body/identifier"/>
+				<meta name="dcterms.identifier" content="{$identifier}"/>
+			</xsl:if>
+		</xsl:if>
+		<!-- instructions -->
+		<xsl:if test="$use_dcterms = 'yes' and page/body/instructions">
+			<xsl:variable name="instructions" select="page/body/instructions"/>
+			<xsl:choose>
+				<xsl:when test="page/body/instructions/@href">
+					<xsl:variable name="href" select="page/body/instructions/@href"/>
+					<link rel="dcterms.instructionalMethod" type="text/html" title="{$instructions}" href="{snap:prepend-base($website_uri, $base_uri, $href)}"/>
+				</xsl:when>
+				<xsl:otherwise>
+					<meta name="dcterms.instructionalMethod" content="{$instructions}"/>
+				</xsl:otherwise>
+			</xsl:choose>
+		</xsl:if>
+		<!-- permission -->
+		<xsl:if test="$use_dcterms = 'yes' and page/body/permission">
+			<xsl:variable name="permission" select="page/body/permission"/>
+			<xsl:choose>
+				<xsl:when test="page/body/permission/@href">
+					<xsl:variable name="href" select="page/body/permission/@href"/>
+					<link rel="dcterms.accessRights" type="text/html" title="{$permission}" href="{snap:prepend-base($website_uri, $base_uri, $href)}"/>
+				</xsl:when>
+				<xsl:otherwise>
+					<meta name="dcterms.accessRights" content="{$permission}"/>
+				</xsl:otherwise>
+			</xsl:choose>
+		</xsl:if>
+		<!-- shortcut icon -->
+		<xsl:for-each select="page/body/image/shortcut">
+			<xsl:call-template name="shortcut-link">
+				<xsl:with-param name="type" select="@type"/>
+				<xsl:with-param name="href" select="@href"/>
+				<xsl:with-param name="width" select="@width"/>
+				<xsl:with-param name="height" select="@height"/>
+			</xsl:call-template>
+		</xsl:for-each>
+		<!-- main image -->
+		<xsl:if test="page/body/image">
+			<xsl:variable name="image_id" select="page/body/image/@idref"/>
+			<!-- should it be content or output? -->
+			<xsl:for-each select="page/body/content/descendant::img[@id=$image_id][1]">
+				<!-- note: we expect just one entry, we still use [1] to make sure -->
+				<xsl:variable name="src" select="@src"/>
+				<meta property="og:image" content="{snap:prepend-base($website_uri, $base_uri, $src)}"/>
+			</xsl:for-each>
+		</xsl:if>
+		<!-- navigation -->
+		<xsl:if test="page/body/navigation[@href]">
+			<xsl:variable name="sitemap" select="page/body/navigation/@href"/>
+			<link rel="sitemap" type="text/html" title="Sitemap" href="{$sitemap}"/>
+		</xsl:if>
+		<xsl:if test="page/body/toc[@href]">
+			<xsl:variable name="toc" select="page/body/toc/@href"/>
+			<link rel="toc" type="text/html" title="toc" href="{$toc}"/>
+		</xsl:if>
+		<xsl:for-each select="page/body/navigation/link">
+			<xsl:variable name="rel" select="@rel"/>
+			<xsl:variable name="href" select="@href"/>
+			<link rel="{$rel}" type="text/html" href="{$href}"/>
+		</xsl:for-each>
+		<!-- bookmarks -->
+		<xsl:for-each select="page/body/bookmarks/link">
+			<xsl:call-template name="bookmark-link">
+				<xsl:with-param name="rel" select="@rel"/>
+				<xsl:with-param name="href" select="@href"/>
+				<xsl:with-param name="title" select="@title"/>
+			</xsl:call-template>
+		</xsl:for-each>
+		<xsl:if test="page/body/bookmarks[@href]">
+			<xsl:variable name="sitemap" select="page/body/navigation/@href"/>
+			<link rel="sitemap" type="text/html" title="Sitemap" href="{$sitemap}"/>
+		</xsl:if>
+		<!-- table of contents -->
+		<xsl:for-each select="page/body/toc/entry">
+			<xsl:call-template name="toc-link">
+				<xsl:with-param name="rel" select="@element"/>
+				<xsl:with-param name="href" select="@href"/>
+				<xsl:with-param name="title" select="."/>
+			</xsl:call-template>
+		</xsl:for-each>
+		<!-- translations -->
+		<xsl:if test="page/body/translations">
+			<xsl:variable name="mode" select="page/body/translations/@mode"/>
+			<xsl:for-each select="page/body/translations/l">
+				<xsl:call-template name="alternate-language">
+					<xsl:with-param name="mode" select="$mode"/>
+					<xsl:with-param name="lang" select="@lang"/>
+					<xsl:with-param name="title" select="."/>
+				</xsl:call-template>
+			</xsl:for-each>
+		</xsl:if>
+		<!-- formats -->
+		<xsl:for-each select="page/body/formats/f">
+			<xsl:call-template name="alternate-format">
+				<xsl:with-param name="format" select="@format"/>
+				<xsl:with-param name="type" select="@type"/>
+				<xsl:with-param name="title" select="."/>
+			</xsl:call-template>
+		</xsl:for-each>
+		<!-- apply user defined meta tags -->
+		<xsl:for-each select="head/metadata/desc[@type='user']">
+			<xsl:variable name="name" select="@name"/>
+			<xsl:variable name="content" select="data"/>
+			<meta name="{$name}" content="{$content}"/>
+		</xsl:for-each>
+		<!-- JavaScripts -->
+		<xsl:copy-of select="head/metadata/javascript/*"/>
+	</xsl:template>
+</xsl:stylesheet>
+<!-- vim: ts=2 sw=2
+-->
