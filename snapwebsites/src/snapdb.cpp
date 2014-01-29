@@ -41,6 +41,7 @@
 #include <advgetopt/advgetopt.h>
 #include <algorithm>
 #include <iostream>
+#include <sstream>
 #include "qstring_stream.h"
 
 namespace
@@ -149,11 +150,6 @@ public:
     void usage(advgetopt::getopt::status_t status);
     void info();
     void drop_tables(bool all);
-    void convert_row_key();
-    void display_tables();
-    void display_rows();
-    void display_rows_wildcard();
-    void display_columns();
     void display();
 
 private:
@@ -168,6 +164,15 @@ private:
     QString                         f_row;
     QByteArray                      f_row_key;
     getopt_ptr_t                    f_opt;
+
+    void convert_row_key();
+    QString byte_to_hex( const char byte ) const;
+    QString key_to_string( const QByteArray& key ) const;
+    void translate_row( std::stringstream& ss, QCassandraRow::pointer_t p_r ) const;
+    void display_tables() const;
+    void display_rows() const;
+    void display_rows_wildcard() const;
+    void display_columns() const;
 };
 
 snapdb::snapdb(int argc, char *argv[])
@@ -342,7 +347,7 @@ void snapdb::convert_row_key()
 }
 
 
-void snapdb::display_tables()
+void snapdb::display_tables() const
 {
     QCassandraContext::pointer_t context(f_cassandra->context(f_context));
 
@@ -357,7 +362,49 @@ void snapdb::display_tables()
 }
 
 
-void snapdb::display_rows()
+QString snapdb::byte_to_hex( const char byte ) const
+{
+    const QString hex(QString("%1").arg(byte & 255, 2, 16, QChar('0')));
+    return hex;
+}
+
+
+QString snapdb::key_to_string( const QByteArray& key ) const
+{
+    QString ret;
+    int const max(key.size());
+    for(int i(0); i < max; ++i)
+    {
+        ret += byte_to_hex( key[i] );
+    }
+    return ret;
+}
+
+
+void snapdb::translate_row( std::stringstream& ss, QCassandraRow::pointer_t p_r ) const
+{
+    if(f_table == "files")
+    {
+        // these are raw MD5 keys
+        QByteArray key(p_r->rowKey());
+        if(key.size() == 16)
+        {
+            ss << key_to_string( key );
+        }
+        else
+        {
+            ss << key;
+        }
+        ss << std::endl;
+    }
+    else
+    {
+        ss << p_r->rowName() << std::endl;
+    }
+}
+
+
+void snapdb::display_rows() const
 {
     QCassandraContext::pointer_t context(f_cassandra->context(f_context));
 
@@ -368,42 +415,22 @@ void snapdb::display_rows()
         std::cerr << "error: table \"" << f_table << "\" not found." << std::endl;
         exit(1);
     }
+
+    std::stringstream ss;
     QCassandraRowPredicate row_predicate;
     row_predicate.setCount(f_count);
     table->readRows(row_predicate);
     const QCassandraRows& rows(table->rows());
-    for(QCassandraRows::const_iterator r(rows.begin());
-        r != rows.end();
-        ++r)
+    for( auto p_r : rows )
     {
-        if(f_table == "files")
-        {
-            // these are raw MD5 keys
-            QByteArray key((*r)->rowKey());
-            if(key.size() != 16)
-            {
-                std::cout << key.data();
-            }
-            else
-            {
-                int const max(key.size());
-                for(int i(0); i < max; ++i)
-                {
-                    QString hex(QString("%1").arg(key[i] & 255, 2, 16, QChar('0')));
-                    std::cout << hex;
-                }
-            }
-            std::cout << std::endl;
-        }
-        else
-        {
-            std::cout << (*r)->rowName().toUtf8().data() << std::endl;
-        }
+        translate_row( ss, p_r );
     }
+
+    std::cout << ss.str();
 }
 
 
-void snapdb::display_rows_wildcard()
+void snapdb::display_rows_wildcard() const
 {
     QCassandraContext::pointer_t context(f_cassandra->context(f_context));
 
@@ -421,6 +448,7 @@ void snapdb::display_rows_wildcard()
     //row_predicate.setStartRowName(row_start);
     //row_predicate.setEndRowName(row_start + QCassandraColumnPredicate::first_char);
     row_predicate.setCount(f_count);
+    std::stringstream ss;
     for(;;)
     {
         table->clearCache();
@@ -430,23 +458,24 @@ void snapdb::display_rows_wildcard()
         {
             break;
         }
-        for(QCassandraRows::const_iterator r(rows.begin());
-            r != rows.end();
-            ++r)
+        for( auto p_r : rows )
         {
-            QString name((*r)->rowName());
+            const QString name(p_r->rowName());
             if(name.length() >= row_start.length()
                     && row_start == name.mid(0, row_start.length()))
             {
-                std::cout << name << std::endl;
+                ss << name << std::endl;
             }
         }
     }
+
+    std::cout << ss.str();
 }
 
 
-void snapdb::display_columns()
+void snapdb::display_columns() const
 {
+    const QString content_attachment_reference( "content::attachment::reference::" );
     QCassandraContext::pointer_t context(f_cassandra->context(f_context));
 
     // display all the columns of a row
@@ -474,31 +503,18 @@ void snapdb::display_columns()
         {
             break;
         }
-        for(QCassandraCells::const_iterator c(cells.begin());
-            c != cells.end();
-            ++c)
+        for( auto c : cells )
         {
-            QByteArray const key((*c)->columnKey());
+            QByteArray const key(c->columnKey());
             QString n;
             if(f_table == "files" && f_row == "new")
             {
-                // TODO write a function to convert MD5, SHA1, etc.
-                int const max(key.size());
-                for(int i(0); i < max; ++i)
-                {
-                    QString const hex(QString("%1").arg(key[i] & 255, 2, 16, QChar('0')));
-                    n += hex;
-                }
+                n = key_to_string( key );
             }
-            if(f_table == "data" && key.startsWith("content::attachment::reference::"))
+            if(f_table == "data" && (key.startsWith(content_attachment_reference.toAscii())) )
             {
-                n = "content::attachment::reference::";
-                int const max(key.size());
-                for(int i(32); i < max; ++i)
-                {
-                    QString const hex(QString("%1").arg(key[i] & 255, 2, 16, QChar('0')));
-                    n += hex;
-                }
+                n = content_attachment_reference;
+                n += key_to_string( key.mid( content_attachment_reference.length()+1 ) );
             }
             else if(f_table == "files" && f_row == "javascripts")
             {
@@ -534,13 +550,13 @@ void snapdb::display_columns()
                     )
             {
                 // special case where the column key is a 64 bit integer
-                //const QByteArray& name((*c)->columnKey());
-                QtCassandra::QCassandraValue const identifier((*c)->columnKey());
+                //const QByteArray& name(c->columnKey());
+                QtCassandra::QCassandraValue const identifier(c->columnKey());
                 n = QString("%1").arg(identifier.int64Value());
             }
             else
             {
-                n = (*c)->columnName();
+                n = c->columnName();
             }
             QString v;
             if(n == "users::identifier"
@@ -549,7 +565,7 @@ void snapdb::display_columns()
                     )
             {
                 // 64 bit value
-                v = QString("%1").arg((*c)->value().uint64Value());
+                v = QString("%1").arg(c->value().uint64Value());
             }
             else if(n == "content::created"
                     || n == "content::files::created"
@@ -573,7 +589,7 @@ void snapdb::display_columns()
                     )
             {
                 // 64 bit value (microseconds)
-                uint64_t time((*c)->value().uint64Value());
+                uint64_t time(c->value().uint64Value());
                 if(time == 0)
                 {
                     v = "time not set (0)";
@@ -593,7 +609,7 @@ void snapdb::display_columns()
                     )
             {
                 // 64 bit value (seconds)
-                uint64_t time((*c)->value().uint64Value());
+                uint64_t time(c->value().uint64Value());
                 char buf[64];
                 struct tm t;
                 time_t seconds(time);
@@ -605,7 +621,7 @@ void snapdb::display_columns()
                     )
             {
                 // 32 bit float
-                float value((*c)->value().floatValue());
+                float value(c->value().floatValue());
                 v = QString("%1").arg(value);
             }
             else if(n.startsWith("content::attachment::reference::")
@@ -634,7 +650,7 @@ void snapdb::display_columns()
                     )
             {
                 // 32 bit value
-                v = QString("%1").arg((*c)->value().uint32Value());
+                v = QString("%1").arg(c->value().uint32Value());
             }
             else if(n == "sessions::used_up"
                     || n == "content::final"
@@ -646,7 +662,7 @@ void snapdb::display_columns()
             {
                 // 8 bit value
                 // cast to integer so arg() doesn't take it as a character
-                v = QString("%1").arg(static_cast<int>((*c)->value().unsignedCharValue()));
+                v = QString("%1").arg(static_cast<int>(c->value().unsignedCharValue()));
             }
             else if(n == "sessions::random"
                     || n == "users::password::salt"
@@ -654,12 +670,12 @@ void snapdb::display_columns()
                     )
             {
                 // n bit binary value
-                const QByteArray& buf((*c)->value().binaryValue());
+                const QByteArray& buf(c->value().binaryValue());
                 int const max(buf.size());
                 v += "(hex) ";
                 for(int i(0); i < max; ++i)
                 {
-                    v += QString("%1 ").arg(static_cast<int>(static_cast<unsigned char>(buf.at(i))), 2, 16, QChar('0'));
+                    v += byte_to_hex(buf[i]) + " ";
                 }
             }
             else if(n == "favicon::icon"
@@ -669,12 +685,12 @@ void snapdb::display_columns()
             {
                 // n bit binary value
                 // same as previous only this can be huge so we limit it
-                const QByteArray& buf((*c)->value().binaryValue());
+                const QByteArray& buf(c->value().binaryValue());
                 int const max(std::min(64, buf.size()));
                 v += "(hex) ";
                 for(int i(0); i < max; ++i)
                 {
-                    v += QString("%1 ").arg(static_cast<int>(static_cast<unsigned char>(buf.at(i))), 2, 16, QChar('0'));
+                    v += byte_to_hex(buf[i]) + " ";
                 }
                 if(buf.size() > max)
                 {
@@ -686,17 +702,17 @@ void snapdb::display_columns()
                     )
             {
                 // md5 in binary
-                const QByteArray& buf((*c)->value().binaryValue());
+                const QByteArray& buf(c->value().binaryValue());
                 int const max(buf.size());
                 v += "(md5) ";
                 for(int i(0); i < max; ++i)
                 {
-                    v += QString("%1").arg(static_cast<int>(static_cast<unsigned char>(buf.at(i))), 2, 16, QChar('0'));
+                    v += byte_to_hex(buf[i]);
                 }
             }
             else if(n == "content::files::secure")
             {
-                switch((*c)->value().signedCharValue())
+                switch(c->value().signedCharValue())
                 {
                 case -1:
                     v = "not checked (-1)";
@@ -711,7 +727,7 @@ void snapdb::display_columns()
                     break;
 
                 default:
-                    v = QString("unknown secure status (%1)").arg((*c)->value().signedCharValue());
+                    v = QString("unknown secure status (%1)").arg(c->value().signedCharValue());
                     break;
 
                 }
@@ -719,7 +735,7 @@ void snapdb::display_columns()
             else
             {
                 // all others viewed as strings
-                v = (*c)->value().stringValue().replace("\n", "\\n");
+                v = c->value().stringValue().replace("\n", "\\n");
             }
             //
             std::cout << n << " = " << v << std::endl;
