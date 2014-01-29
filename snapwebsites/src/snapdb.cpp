@@ -162,20 +162,35 @@ private:
     QString                         f_context;
     QString                         f_table;
     QString                         f_row;
-    QByteArray                      f_row_key;
     getopt_ptr_t                    f_opt;
 
-    void convert_row_key();
-    QString byte_to_hex( const char byte ) const;
-    QString key_to_string( const QByteArray& key ) const;
-    void translate_row( std::stringstream& ss, QCassandraRow::pointer_t p_r ) const;
+    class dbutils
+    {
+    public:
+        dbutils( const QString& table_name, const QString& row_name )
+            : f_tableName(table_name)
+            , f_rowName(row_name)
+        {}
+
+        static QString byte_to_hex  ( const char byte );
+        static QString key_to_string( const QByteArray& key );
+
+        QByteArray get_row_key() const;
+        QString    get_column_name ( QCassandraCell::pointer_t c ) const;
+        QString    get_column_value( QCassandraCell::pointer_t c ) const;
+        QString    get_row_name( QCassandraRow::pointer_t p_r ) const;
+
+    private:
+        QString f_tableName;
+        QString f_rowName;
+    };
+
     void display_tables() const;
     void display_rows() const;
     void display_rows_wildcard() const;
-    QString get_column_name ( QCassandraCell::pointer_t c ) const;
-    QString get_column_value( QCassandraCell::pointer_t c ) const;
     void display_columns() const;
 };
+
 
 snapdb::snapdb(int argc, char *argv[])
     : f_cassandra( QCassandra::create() )
@@ -318,34 +333,79 @@ char hex_to_dec(ushort c)
     exit(1);
 }
 
-
-void snapdb::convert_row_key()
+QByteArray snapdb::dbutils::get_row_key() const
 {
-    f_row_key.clear();
+    QByteArray row_key;
 
-    if(!f_row.isEmpty() && f_table == "files")
+    if(!f_rowName.isEmpty() && f_tableName == "files")
     {
         // these rows make use of MD5 sums so we have to convert them
-        if(f_row == "new" || f_row == "javascripts")
+        if(f_rowName == "new" || f_rowName == "javascripts")
         {
-            f_row_key = f_row.toAscii();
+            row_key = f_rowName.toAscii();
         }
         else
         {
-            QByteArray str(f_row.toUtf8());
+            QByteArray str(f_rowName.toUtf8());
             char const *s(str.data());
             while(s[0] != '\0' && s[1] != '\0')
             {
                 char c((hex_to_dec(s[0]) << 4) | hex_to_dec(s[1]));
-                f_row_key.append(c);
+                row_key.append(c);
                 s += 2;
             }
         }
     }
     else
     {
-        f_row_key = f_row.toAscii();
+        row_key = f_rowName.toAscii();
     }
+
+    return row_key;
+}
+
+
+QString snapdb::dbutils::byte_to_hex( const char byte )
+{
+    const QString hex(QString("%1").arg(byte & 255, 2, 16, QChar('0')));
+    return hex;
+}
+
+
+QString snapdb::dbutils::key_to_string( const QByteArray& key )
+{
+    QString ret;
+    int const max(key.size());
+    for(int i(0); i < max; ++i)
+    {
+        ret += byte_to_hex( key[i] );
+    }
+    return ret;
+}
+
+
+QString snapdb::dbutils::get_row_name( QCassandraRow::pointer_t p_r ) const
+{
+    QString ret;
+    if(f_tableName == "files")
+    {
+        // these are raw MD5 keys
+        QByteArray key(p_r->rowKey());
+        if(key.size() == 16)
+        {
+            ret = key_to_string( key );
+        }
+        else
+        {
+            ret = key;
+        }
+    }
+    else
+    {
+        ret = p_r->rowName();
+    }
+
+    return ret;
 }
 
 
@@ -364,48 +424,6 @@ void snapdb::display_tables() const
 }
 
 
-QString snapdb::byte_to_hex( const char byte ) const
-{
-    const QString hex(QString("%1").arg(byte & 255, 2, 16, QChar('0')));
-    return hex;
-}
-
-
-QString snapdb::key_to_string( const QByteArray& key ) const
-{
-    QString ret;
-    int const max(key.size());
-    for(int i(0); i < max; ++i)
-    {
-        ret += byte_to_hex( key[i] );
-    }
-    return ret;
-}
-
-
-void snapdb::translate_row( std::stringstream& ss, QCassandraRow::pointer_t p_r ) const
-{
-    if(f_table == "files")
-    {
-        // these are raw MD5 keys
-        QByteArray key(p_r->rowKey());
-        if(key.size() == 16)
-        {
-            ss << key_to_string( key );
-        }
-        else
-        {
-            ss << key;
-        }
-        ss << std::endl;
-    }
-    else
-    {
-        ss << p_r->rowName() << std::endl;
-    }
-}
-
-
 void snapdb::display_rows() const
 {
     QCassandraContext::pointer_t context(f_cassandra->context(f_context));
@@ -418,17 +436,15 @@ void snapdb::display_rows() const
         exit(1);
     }
 
-    std::stringstream ss;
+    dbutils du( f_table, f_row );
     QCassandraRowPredicate row_predicate;
     row_predicate.setCount(f_count);
     table->readRows(row_predicate);
     const QCassandraRows& rows(table->rows());
     for( auto p_r : rows )
     {
-        translate_row( ss, p_r );
+        std::cout << du.get_row_name( p_r ) << std::endl;
     }
-
-    std::cout << ss.str();
 }
 
 
@@ -475,23 +491,23 @@ void snapdb::display_rows_wildcard() const
 }
 
 
-QString snapdb::get_column_name( QCassandraCell::pointer_t c ) const
+QString snapdb::dbutils::get_column_name( QCassandraCell::pointer_t c ) const
 {
     const QString content_attachment_reference( "content::attachment::reference::" );
 
     const QByteArray key( c->columnKey() );
 
     QString name;
-    if(f_table == "files" && f_row == "new")
+    if(f_tableName == "files" && f_rowName == "new")
     {
         name = key_to_string( key );
     }
-    if(f_table == "data" && (key.startsWith(content_attachment_reference.toAscii())) )
+    if(f_tableName == "data" && (key.startsWith(content_attachment_reference.toAscii())) )
     {
         name = content_attachment_reference;
         name += key_to_string( key.mid( content_attachment_reference.length()+1 ) );
     }
-    else if(f_table == "files" && f_row == "javascripts")
+    else if(f_tableName == "files" && f_rowName == "javascripts")
     {
         // this row name is "<name>"_"<browser>"_<version as integers>
         int const max(key.size());
@@ -520,8 +536,8 @@ QString snapdb::get_column_name( QCassandraCell::pointer_t c ) const
             name += QString("%1").arg(QtCassandra::uint32Value(key, i));
         }
     }
-    else if((f_table == "users"    && f_row == "*index_row*")
-            || (f_table == "shorturl" && f_row.endsWith("/*index_row*"))
+    else if((f_tableName == "users"    && f_rowName == "*index_row*")
+            || (f_tableName == "shorturl" && f_rowName.endsWith("/*index_row*"))
            )
     {
         // special case where the column key is a 64 bit integer
@@ -538,7 +554,7 @@ QString snapdb::get_column_name( QCassandraCell::pointer_t c ) const
 }
 
 
-QString snapdb::get_column_value( QCassandraCell::pointer_t c ) const
+QString snapdb::dbutils::get_column_value( QCassandraCell::pointer_t c ) const
 {
     const QString n( get_column_name( c ) );
 
@@ -630,7 +646,7 @@ QString snapdb::get_column_value( QCassandraCell::pointer_t c ) const
             || n == "sitemapxml::count"
             || n == "sessions::id"
             || n == "sessions::time_to_live"
-            || (f_table == "libQtCassandraLockTable" && f_row == "hosts")
+            || (f_tableName == "libQtCassandraLockTable" && f_rowName == "hosts")
             )
     {
         // 32 bit value
@@ -641,7 +657,7 @@ QString snapdb::get_column_value( QCassandraCell::pointer_t c ) const
             || n == "favicon::sitewide"
             || n == "content::files::compressor"
             || n.startsWith("content::files::reference::")
-            || (f_table == "files" && f_row == "new")
+            || (f_tableName == "files" && f_rowName == "new")
             )
     {
         // 8 bit value
@@ -681,8 +697,8 @@ QString snapdb::get_column_value( QCassandraCell::pointer_t c ) const
             v += "...";
         }
     }
-    else if((f_table == "data" && n == "content::attachment")
-            || (f_table == "files" && f_row == "javascripts")
+    else if((f_tableName == "data" && n == "content::attachment")
+            || (f_tableName == "files" && f_rowName == "javascripts")
             )
     {
         // md5 in binary
@@ -737,12 +753,15 @@ void snapdb::display_columns() const
         std::cerr << "error: table \"" << f_table << "\" not found." << std::endl;
         exit(1);
     }
-    if(!table->exists(f_row_key))
+    dbutils du( f_table, f_row );
+    const QByteArray row_key( du.get_row_key() );
+    if(!table->exists(row_key))
     {
         std::cerr << "error: row \"" << f_row << "\" not found in table \"" << f_table << "\"." << std::endl;
         exit(1);
     }
-    QCassandraRow::pointer_t row(table->row(f_row_key));
+
+    QCassandraRow::pointer_t row(table->row(row_key));
     QCassandraColumnRangePredicate column_predicate;
     column_predicate.setCount(f_count);
     column_predicate.setIndex();
@@ -757,7 +776,7 @@ void snapdb::display_columns() const
         }
         for( auto c : cells )
         {
-            std::cout << get_column_value( c ) << std::endl;
+            std::cout << du.get_column_value( c ) << std::endl;
         }
     }
 }
@@ -766,8 +785,6 @@ void snapdb::display_columns() const
 void snapdb::display()
 {
     f_cassandra->connect(f_host, f_port);
-
-    convert_row_key();
 
     if(f_table.isEmpty())
     {
