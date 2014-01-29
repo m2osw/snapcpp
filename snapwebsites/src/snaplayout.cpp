@@ -31,19 +31,21 @@
  *      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+#include "snap_version.h"
+#include "qstring_stream.h"
+
 #include <advgetopt/advgetopt.h>
-#include <QtCassandra/QCassandra.h>
-#include <algorithm>
 #include <controlled_vars/controlled_vars_need_init.h>
+#include <QtCassandra/QCassandra.h>
+
+#include <algorithm>
+
 #include <QDomDocument>
 #include <QDomElement>
 #include <QDateTime>
 #include <QFile>
 #include <QTextStream>
 
-// snap library
-//
-#include "qstring_stream.h"
 
 namespace
 {
@@ -97,6 +99,7 @@ namespace
 
 using namespace QtCassandra;
 
+
 /** \brief A class for easy access to all resources.
  *
  * This class is just so we use resource in an object oriented
@@ -112,6 +115,7 @@ public:
     void add_files();
     void load_xml_info(QDomDocument& doc, QString const& filename, QString& layout_name, time_t& layout_modified);
     void load_xsl_info(QDomDocument& doc, QString const& filename, QString& layout_name, QString& layout_area, time_t& layout_modified);
+    void load_css(QString const& filename, QString& row_name);
 
 private:
     typedef std::shared_ptr<advgetopt::getopt>    getopt_ptr_t;
@@ -123,6 +127,7 @@ private:
     controlled_vars::zint32_t       f_port;
     getopt_ptr_t                    f_opt;
 };
+
 
 snap_layout::snap_layout(int argc, char *argv[])
     : f_cassandra( QCassandra::create() )
@@ -150,11 +155,13 @@ snap_layout::snap_layout(int argc, char *argv[])
     }
 }
 
+
 void snap_layout::usage()
 {
     f_opt->usage( advgetopt::getopt::no_error, "snaplayout" );
     exit(1);
 }
+
 
 void snap_layout::load_xml_info(QDomDocument& doc, QString const& filename, QString& content_name, time_t& content_modified)
 {
@@ -238,6 +245,7 @@ void snap_layout::load_xml_info(QDomDocument& doc, QString const& filename, QStr
     content_modified = t.toTime_t();
 }
 
+
 void snap_layout::load_xsl_info(QDomDocument& doc, QString const& filename, QString& layout_name, QString& layout_area, time_t& layout_modified)
 {
     layout_name.clear();
@@ -317,6 +325,36 @@ void snap_layout::load_xsl_info(QDomDocument& doc, QString const& filename, QStr
     layout_modified = t.toTime_t();
 }
 
+
+void snap_layout::load_css(QString const& filename, QString& row_name)
+{
+    // TODO: once we have a CSS compressor, use it to verify that the
+    //       data is valid; but save the full thing because we want
+    //       the original in the database
+    QFile css(filename);
+    if(!css.open(QIODevice::ReadOnly))
+    {
+        std::cerr << "error: could not open file named \"" << filename << "\"" << std::endl;
+        exit(1);
+    }
+    QByteArray value(css.readAll());
+    snap::snap_version::quick_find_version_in_source fv;
+    if(!fv.find_version(value.data(), value.size()))
+    {
+        std::cerr << "error: the CSS file \"" << filename << "\" does not include a valid introducer comment." << std::endl;
+        exit(1);
+    }
+    // valid comment, but we need to have a name which is not mandatory
+    // in the find_version() function.
+    row_name = fv.get_name();
+    if(row_name.isEmpty())
+    {
+        std::cerr << "error: the CSS file \"" << filename << "\" does not define the Name: field. We cannot know where to save it." << std::endl;
+        exit(1);
+    }
+}
+
+
 void snap_layout::add_files()
 {
     f_cassandra->connect(f_host, f_port);
@@ -371,7 +409,8 @@ void snap_layout::add_files()
         QFile xml(filename);
         QString row_name; // == <layout name>
         QString cell_name; // == <layout_area>  or 'content'
-        if(filename.mid(e) == ".xml") // expects the content.xml file
+        QString const extension(filename.mid(e));
+        if(extension == ".xml") // expects the content.xml file
         {
             // the cell name is always "content" in this case
             cell_name = "content";
@@ -392,7 +431,18 @@ void snap_layout::add_files()
             time_t layout_modified;
             load_xml_info(doc, filename, row_name, layout_modified);
         }
-        else if(filename.mid(e) == ".xsl") // expects the body or theme XSLT files
+        else if(extension == ".css") // expects the style.css file
+        {
+            // the cell name is always "style" in this case
+            cell_name = "style";
+            if(!xml.open(QIODevice::ReadOnly))
+            {
+                std::cerr << "error: CSS file \"" << filename << "\" could not be opened for reading." << std::endl;
+                exit(1);
+            }
+            load_css(filename, row_name);
+        }
+        else if(extension == ".xsl") // expects the body or theme XSLT files
         {
             if(!xml.open(QIODevice::ReadOnly))
             {

@@ -67,6 +67,7 @@ public:
     QtCassandra::QCassandraTable::pointer_t get_layout_table();
 
     void                on_bootstrap(snap_child *snap);
+    void                on_load_file(snap_child::post_file_t& file, bool& found);
 
     QString             get_layout(content::path_info_t& ipath, const QString& column_name);
     QString             apply_layout(content::path_info_t& ipath, layout_content *plugin, const QString& ctemplate = "");

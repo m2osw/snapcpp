@@ -193,11 +193,14 @@ add_executable(${PROJECT_NAME}
 )
 
 target_link_libraries(${PROJECT_NAME}
+    libsnapwebsites
 	${ADVGETOPT_LIBRARIES}
 	${QTCASSANDRA_LIBRARIES}
+    ${QTSERIALIZATION_LIBRARIES}
     ${QT_LIBRARIES}
     ${THRIFT_LIBRARIES}
     ${LIBTLD_LIBRARIES}
+    dl
 )
 
 install(

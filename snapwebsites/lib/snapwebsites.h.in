@@ -60,17 +60,17 @@ char const *get_name(name_t name) __attribute__ ((const));
 class snapwebsites_exception : public snap_exception
 {
 public:
-    snapwebsites_exception(char const *whatmsg) : snap_exception("snap_thread", whatmsg) {}
+    snapwebsites_exception(char const *       whatmsg) : snap_exception("snap_thread", whatmsg) {}
     snapwebsites_exception(std::string const& whatmsg) : snap_exception("snap_thread", whatmsg) {}
-    snapwebsites_exception(QString const& whatmsg) : snap_exception("snap_thread", whatmsg) {}
+    snapwebsites_exception(QString const&     whatmsg) : snap_exception("snap_thread", whatmsg) {}
 };
 
 class snapwebsites_exception_invalid_parameters : public snapwebsites_exception
 {
 public:
-    snapwebsites_exception_invalid_parameters(char const *whatmsg) : snapwebsites_exception(whatmsg) {}
+    snapwebsites_exception_invalid_parameters(char const *       whatmsg) : snapwebsites_exception(whatmsg) {}
     snapwebsites_exception_invalid_parameters(std::string const& whatmsg) : snapwebsites_exception(whatmsg) {}
-    snapwebsites_exception_invalid_parameters(QString const& whatmsg) : snapwebsites_exception(whatmsg) {}
+    snapwebsites_exception_invalid_parameters(QString const&     whatmsg) : snapwebsites_exception(whatmsg) {}
 };
 
 
@@ -82,6 +82,8 @@ public:
     virtual void            on_error(snap_child::http_code_t err_code, QString const& err_name, QString const& err_description, QString const& err_details) = 0;
     virtual void            on_redirect(QString const& err_name, QString const& err_description, QString const& err_details, bool err_security, QString const& path, snap_child::http_code_t http_code) = 0;
 };
+
+
 
 
 class server : public plugins::plugin
@@ -145,6 +147,7 @@ public:
                             (node, accepted_tags, accepted_attributes));
     SNAP_SIGNAL(improve_signature, (QString const& path, QString& signature),
                                    (path, signature));
+    SNAP_SIGNAL(load_file, (snap_child::post_file_t& file, bool& found), (file, found));
 
 private:
     typedef QMap<QString, QString>                parameter_map_t;

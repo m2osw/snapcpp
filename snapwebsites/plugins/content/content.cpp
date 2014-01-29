@@ -4600,6 +4600,10 @@ SNAP_LOG_DEBUG("attaching ")(file.get_file().get_filename())(", attachment_key =
     // save the MIME type (this is the one returned by the magic library)
     revision_attachment_row->cell(get_name(SNAP_NAME_CONTENT_ATTACHMENT_MIME_TYPE))->setValue(post_file.get_mime_type());
 
+    // the date when it was created
+    uint64_t start_date(f_snap->get_start_date());
+    revision_attachment_row->cell(get_name(SNAP_NAME_CONTENT_CREATED))->setValue(start_date);
+
     // XXX we could also save the modification and creation times, but the
     //     likelihood that these exist is so small that I'll skip at this
     //     time; we do save them in the files table
@@ -5853,17 +5857,10 @@ void content::on_save_content()
             ++f_file_index; // this is more of a random number here!
             file.set_file_index(f_file_index);
 
-            { // so QFile gets destroyed as soon as we're done with it
-                QFile file_attachment(a->f_filename);
-                if(!file_attachment.open(QIODevice::ReadOnly))
-                {
-                    f_snap->die(snap_child::HTTP_CODE_NOT_FOUND, "Attachment Not Found",
-                            "The attachment \"" + a->f_filename + "\" could not be read for installation in your Snap! website.",
-                            "Could not open the file to read the attachment.");
-                    NOTREACHED();
-                }
-                file.set_file_data(file_attachment.readAll());
-            }
+            snap_child::post_file_t f;
+            f.set_filename(a->f_filename);
+            f_snap->load_file(f);
+            file.set_file_data(f.get_data());
 
             // for images, also check the dimensions and if available
             // save them in there because that's useful for the <img>

@@ -4941,6 +4941,25 @@ void snap_child::attach_to_session()
 }
 
 
+/** \brief Load a file.
+ *
+ * This signal is sent to all the plugins so one can load the file as
+ * defined in the file filename.
+ *
+ * The function returns true if the file was loaded successfully.
+ *
+ * \param[in,out] file  The file that is to be loaded.
+ *
+ * \return true if the file was found, false otherwise.
+ */
+bool snap_child::load_file(post_file_t& file)
+{
+    bool found(false);
+    f_server->load_file(file, found);
+    return found;
+}
+
+
 /** \brief Retrieve an environment variable.
  *
  * This function can be used to read an environment variable. It will make
