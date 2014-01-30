@@ -1,5 +1,9 @@
 #include "TableModel.h"
 
+#include <snapwebsites/dbutils.h>
+
+#include <QtCassandra/QCassandraContext.h>
+
 #include <iostream>
 
 using namespace QtCassandra;
@@ -105,32 +109,22 @@ QVariant TableModel::data( const QModelIndex & idx, int role ) const
         return QVariant();
     }
 
-    if( idx.parent().isValid() )
-	{
-		const auto& rows( f_table->rows() );
-		const auto& row( *(rows.begin() + idx.row()) );
-		Q_ASSERT(row);
+    const auto& rows = f_table->rows();
 
-		const auto cells( row->cells() );
-		if( idx.column() < cells.size() )
-		{
-			const auto& iter( cells.begin() + idx.column() );
-			Q_ASSERT(iter != cells.end());
-			const auto& cell( *iter );
-			return cell->value().stringValue();
-		}
-
-		return QVariant();
-	}
-
-    if( idx.column() == 0 )
+    QCassandraContext::pointer_t context( f_table->parentContext() );
+    const auto row( (rows.begin()+idx.row()).value() );
+    QString ret_name;
+    if( context->contextName() == "snap_websites" )
     {
-        const auto& rows = f_table->rows();
-        const QString row_name( (rows.begin()+idx.row()).value()->rowName() );
-        return row_name;
+        snap::dbutils du( f_table->tableName(), "" );
+        ret_name = du.get_row_name( row );
     }
-
-    return QVariant();
+    else
+    {
+        ret_name = row->rowName();
+    }
+    //
+    return ret_name;
 }
 
 
@@ -151,6 +145,7 @@ int TableModel::rowCount( const QModelIndex &prnt ) const
 }
 
 
+#if 0
 int TableModel::columnCount( const QModelIndex &/*prnt*/ ) const
 {
     if( !f_table )
@@ -220,6 +215,7 @@ bool TableModel::hasChildren( const QModelIndex & prnt ) const
 
     return prnt.internalId() == 0;
 }
+#endif
 
 
 // vim: ts=4 sw=4 noet
