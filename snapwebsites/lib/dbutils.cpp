@@ -139,7 +139,7 @@ QString dbutils::get_column_name( QCassandraCell::pointer_t c ) const
     {
         name = key_to_string( key );
     }
-    if(f_tableName == "data" && (key.startsWith(content_attachment_reference.toAscii())) )
+    else if(f_tableName == "data" && (key.startsWith(content_attachment_reference.toAscii())) )
     {
         name = content_attachment_reference;
         name += key_to_string( key.mid( content_attachment_reference.length()+1 ) );

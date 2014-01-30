@@ -98,6 +98,9 @@ void MainWindow::changeRow(const QModelIndex &index)
 {
     const QByteArray row_key( f_tableModel.data(index, Qt::UserRole).toByteArray() );
 
+    //snap::dbutils du( f_table, f_row );
+    //const QByteArray row_key( du.get_row_key() );
+
     //QCassandraContext::pointer_t qcontext( f_cassandra->findContext(f_context) );
     QCassandraRow::pointer_t row( f_tableModel.getTable()->findRow(row_key) );
 
