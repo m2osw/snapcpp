@@ -1,4 +1,6 @@
 #include "RowModel.h"
+#include <snapwebsites/dbutils.h>
+#include <QtCassandra/QCassandraContext.h>
 
 using namespace QtCassandra;
 
@@ -28,9 +30,18 @@ QVariant RowModel::data( const QModelIndex & idx, int role ) const
         return QVariant();
     }
 
+    QCassandraContext::pointer_t context( f_row->parentTable()->parentContext() );
     const QCassandraCells& cell_list = f_row->cells();
-    const QString row_name( (cell_list.begin()+idx.row()).value()->value().stringValue() ); //TODO: rules
-    return row_name;
+    const auto cell( (cell_list.begin()+idx.row()).value() );
+
+    if( context->contextName() == "snap_websites" )
+    {
+        snap::dbutils du( f_row->parentTable()->tableName(), f_row->rowName() );
+        return du.get_column_value( cell );
+    }
+
+    const auto value( cell->value() );
+    return value.stringValue();
 }
 
 

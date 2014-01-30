@@ -104,27 +104,33 @@ QVariant TableModel::data( const QModelIndex & idx, int role ) const
         return QVariant();
     }
 
-    if( role != Qt::DisplayRole && role != Qt::EditRole )
+    if( role == Qt::DisplayRole || role == Qt::EditRole )
     {
-        return QVariant();
+        QCassandraContext::pointer_t context( f_table->parentContext() );
+        const auto& rows = f_table->rows();
+        const auto row( (rows.begin()+idx.row()).value() );
+        QString ret_name;
+        if( context->contextName() == "snap_websites" )
+        {
+            snap::dbutils du( f_table->tableName(), "" );
+            ret_name = du.get_row_name( row );
+        }
+        else
+        {
+            ret_name = row->rowName();
+        }
+        //
+        return ret_name;
     }
 
-    const auto& rows = f_table->rows();
+    if( role == Qt::UserRole )
+    {
+        const auto& rows = f_table->rows();
+        const auto row( (rows.begin()+idx.row()).value() );
+        return row->rowKey();
+    }
 
-    QCassandraContext::pointer_t context( f_table->parentContext() );
-    const auto row( (rows.begin()+idx.row()).value() );
-    QString ret_name;
-    if( context->contextName() == "snap_websites" )
-    {
-        snap::dbutils du( f_table->tableName(), "" );
-        ret_name = du.get_row_name( row );
-    }
-    else
-    {
-        ret_name = row->rowName();
-    }
-    //
-    return ret_name;
+    return QVariant();
 }
 
 
