@@ -21,6 +21,7 @@
 #include "snap-manager-decode-utf8.h"
 #include "snapwebsites.h"
 #include "snap_uri.h"
+#include "dbutils.h"
 #include "../plugins/content/content.h"
 #include <QHostAddress>
 #include <QApplication>
@@ -1819,13 +1820,14 @@ void snap_manager::on_sitesList_itemClicked(QListWidgetItem *item)
     f_sites_parameters->setRowCount(count);
     const QtCassandra::QCassandraCells& parameters(row->cells());
     int row_pos(0);
-    for(QtCassandra::QCassandraCells::const_iterator c(parameters.begin());
+    snap::dbutils du( table_name, f_sites_org_name );
+    for( QtCassandra::QCassandraCells::const_iterator c(parameters.begin());
             c != parameters.end(); ++c, ++row_pos)
     {
         QTableWidgetItem *param_name(new QTableWidgetItem(QString(c.key())));
         f_sites_parameters->setItem(row_pos, 0, param_name);
-        // TODO: value needs to be typed...
-        QTableWidgetItem *param_value(new QTableWidgetItem(c.value()->value().stringValue()));
+
+        QTableWidgetItem *param_value( new QTableWidgetItem( du.get_column_value( c.value() ) ) );
         f_sites_parameters->setItem(row_pos, 1, param_value);
     }
 
