@@ -96,10 +96,13 @@ void MainWindow::on_f_contextCombo_currentIndexChanged(const QString &arg1)
 
 void MainWindow::changeRow(const QModelIndex &index)
 {
-    QString row_name( f_tableModel.data(index).toString() );
+    const QByteArray row_key( f_tableModel.data(index, Qt::UserRole).toByteArray() );
 
-    QCassandraContext::pointer_t qcontext( f_cassandra->findContext(f_context) );
-    QCassandraRow::pointer_t row( f_tableModel.getTable()->findRow(row_name) );
+    //snap::dbutils du( f_table, f_row );
+    //const QByteArray row_key( du.get_row_key() );
+
+    //QCassandraContext::pointer_t qcontext( f_cassandra->findContext(f_context) );
+    QCassandraRow::pointer_t row( f_tableModel.getTable()->findRow(row_key) );
 
     f_rowModel.setRow( row );
 }

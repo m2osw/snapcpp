@@ -37,7 +37,7 @@
 
 set(CASSVIEW_VERSION_MAJOR 0)
 set(CASSVIEW_VERSION_MINOR 0)
-set(CASSVIEW_VERSION_PATCH 1)
+set(CASSVIEW_VERSION_PATCH 2)
 
 cmake_minimum_required(VERSION 2.8)
 project(cassview-project)
@@ -59,6 +59,7 @@ endif()
 find_package( SnapCMakeModules REQUIRED )
 find_package( SnapDoxygen      REQUIRED )
 find_package( QtCassandra      REQUIRED )
+find_package( SnapWebsites     REQUIRED )
 
 find_package( Qt4 4.8.1 REQUIRED QtCore QtNetwork QtGui )
 include( ${QT_USE_FILE} )
@@ -70,6 +71,7 @@ include_directories(
     "${QTCASSANDRA_INCLUDE_DIRS}"
     "${CMAKE_BINARY_DIR}"
     "${QT_INCLUDES}"
+    "${SNAPWEBSITES_INCLUDE_DIRS}"
 )
 
 # Create a configure script

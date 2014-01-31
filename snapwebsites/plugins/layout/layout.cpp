@@ -165,6 +165,8 @@ QString layout::description() const
  *
  * \return The UTC Unix date of the last update of this plugin.
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 int64_t layout::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
@@ -179,6 +181,7 @@ int64_t layout::do_update(int64_t last_updated)
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
+#pragma GCC diagnostic pop
 
 
 /** \brief Update layouts as required.

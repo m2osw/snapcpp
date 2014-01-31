@@ -7,7 +7,7 @@
 #include <memory>
 
 class TableModel
-    : public QAbstractItemModel
+    : public QAbstractListModel
 {
 	Q_OBJECT
 
@@ -28,12 +28,14 @@ class TableModel
         //
         //bool 		    setData     ( const QModelIndex & index, const QVariant & value, int role = Qt::EditRole );
 
+#if 0
         // Required for items with columns.
         //
         int         columnCount( const QModelIndex & parent = QModelIndex() ) const;
         QModelIndex index ( int row, int column, const QModelIndex & parent = QModelIndex() ) const;
         QModelIndex parent ( const QModelIndex & index ) const;
         bool			hasChildren ( const QModelIndex & parent = QModelIndex() ) const;
+#endif
 
         // Fecth more
         bool canFetchMore ( const QModelIndex & /* index */ ) const;

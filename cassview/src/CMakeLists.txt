@@ -65,6 +65,7 @@ add_executable(${PROJECT_NAME}
 target_link_libraries(${PROJECT_NAME}
     ${QTCASSANDRA_LIBRARIES}
     ${QT_LIBRARIES}
+    ${SNAPWEBSITES_LIBRARIES}
 )
 
 install(
