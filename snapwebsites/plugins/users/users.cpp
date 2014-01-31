@@ -319,6 +319,7 @@ int64_t users::do_update(int64_t last_updated)
     SNAP_PLUGIN_UPDATE_EXIT();
 }
 
+
 /** \brief First update to run for the users plugin.
  *
  * This function is the first update for the users plugin. It installs

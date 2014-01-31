@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!--
 Snap Websites Server == form database setup
-Copyright (C) 2012-2013  Made to Order Software Corp.
+Copyright (C) 2014  Made to Order Software Corp.
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -18,6 +18,19 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 -->
 <snap-tree>
+  <content path="/js/form">
+    <!-- JavaScript code for the enhanced Snap! forms -->
+    <param name="content::title" revision="revision">Enhanced Snap! Forms</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>JavaScript code for the Enhanced Snap! Forms.</p>]]>
+    </param>
+    <link name="permissions::administer" to="permissions::administer" mode="*:*">/types/permissions/rights/administer/info</link>
+    <attachment name="form" type="attachment/public" owner="output">
+      <path>:/js/form/form.js</path>
+      <mime-type>text/javascript</mime-type>
+      <dependency>output (&gt;= 0.0.1)</dependency>
+    </attachment>
+  </content>
 </snap-tree>
 <!-- vim: ts=2 sw=2 et syntax=xml
 -->

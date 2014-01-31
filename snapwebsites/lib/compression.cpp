@@ -17,6 +17,8 @@
 
 #include "compression.h"
 
+#include <controlled_vars/controlled_vars_auto_init.h>
+
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
 #include <zlib.h>
@@ -31,12 +33,19 @@ namespace compression
 namespace
 {
 typedef QMap<QString, compressor_t *>   compressor_map_t;
+typedef QMap<QString, archiver_t *>   archiver_map_t;
 
 // IMPORTANT NOTE:
-// This list only makes use of bare pointer for many good reasons.
-// (i.e. all compressors are defined statitcally)
+// This list only makes use of bare pointers for many good reasons.
+// (i.e. all compressors are defined statitcally, not allocated)
 // Do not try to change it! Thank you.
 compressor_map_t *g_compressors;
+
+// IMPORTANT NOTE:
+// This list only makes use of bare pointers for many good reasons.
+// (i.e. all archivers are defined statitcally, not allocated)
+// Do not try to change it! Thank you.
+archiver_map_t *g_archivers;
 
 int bound_level(int level, int min, int max)
 {
@@ -56,7 +65,7 @@ int bound_level(int level, int min, int max)
  * Using the name "best" for the compressor will test with all available
  * compressions and return the smallest result whatever it is.
  */
-const char *compressor_t::BEST_COMPRESSION = "best";
+char const *compressor_t::BEST_COMPRESSION = "best";
 
 
 /** \brief Special compressor name returned in some cases.
@@ -69,7 +78,7 @@ const char *compressor_t::BEST_COMPRESSION = "best";
  * You should always verify whether the compression worked by testing
  * the compressor_name variable on return.
  */
-const char *compressor_t::NO_COMPRESSION = "none";
+char const *compressor_t::NO_COMPRESSION = "none";
 
 
 /** \brief Register the compressor.
@@ -81,8 +90,10 @@ const char *compressor_t::NO_COMPRESSION = "none";
  *
  * This function registers the compressor in the internal list of
  * compressors and then returns.
+ *
+ * \param[in] name  The name of the compressor.
  */
-compressor_t::compressor_t(const char *name)
+compressor_t::compressor_t(char const *name)
 {
     if(g_compressors == NULL)
     {
@@ -103,16 +114,18 @@ compressor_t::~compressor_t()
     // TBD we probably don't need this code...
     //     it is rather slow so why waste our time on exit?
     //for(compressor_map_t::iterator
-    //        it(g_compressors.begin());
-    //        it != g_compressors.end();
+    //        it(g_compressors->begin());
+    //        it != g_compressors->end();
     //        ++it)
     //{
     //    if(*it == this)
     //    {
-    //        g_compressors.erase(it);
+    //        g_compressors->erase(it);
     //        break;
     //    }
     //}
+    //delete g_compressors;
+    //g_compressors = NULL;
 }
 
 
@@ -168,7 +181,7 @@ QStringList compressor_list()
  */
 QByteArray compress(QString& compressor_name, const QByteArray& input, level_t level, bool text)
 {
-    // nothing to compress if empty
+    // nothing to compress if empty or too small a level
     if(input.size() == 0 || level < 5)
     {
 #ifdef DEBUG
@@ -267,6 +280,15 @@ QByteArray decompress(QString& compressor_name, const QByteArray& input)
 }
 
 
+/** \brief Implementation of the GZip compressor.
+ *
+ * This class defines the gzip compressor which compresses and decompresses
+ * data using the gzip file format.
+ *
+ * \note
+ * This implementation makes use of the zlib library to do all the
+ * compression and decompression work.
+ */
 class gzip_t : public compressor_t
 {
 public:
@@ -274,7 +296,7 @@ public:
     {
     }
 
-    virtual const char *get_name() const
+    virtual char const *get_name() const
     {
         return "gzip";
     }
@@ -400,7 +422,7 @@ public:
         return result;
     }
 
-} gzip; // create statically
+} g_gzip; // create statically
 
 
 class deflate_t : public compressor_t
@@ -415,10 +437,10 @@ public:
         return "deflate";
     }
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-    virtual QByteArray compress(const QByteArray& input, level_t level, bool text)
+    virtual QByteArray compress(QByteArray const& input, level_t level, bool text)
     {
+        static_cast<void>(text);
+
         // transform the 0 to 100 level to the standard 1 to 9 in zlib
         int zlib_level(bound_level((level * 2 + 25) / 25, Z_BEST_SPEED, Z_BEST_COMPRESSION));
         // initialize the zlib stream
@@ -461,17 +483,445 @@ public:
 
     virtual bool compatible(const QByteArray& input) const
     {
+        static_cast<void>(input);
+
         // there is no magic header in this one...
         return false;
     }
 
     virtual QByteArray decompress(const QByteArray& input)
     {
-        throw std::runtime_error("the deflate decompress() function is not yet implemented, mainly because it is not accessible via the compression::decompress() function.");
-    }
-#pragma GCC pop
+        static_cast<void>(input);
 
-} deflate; // create statically
+        throw compression_exception_not_implemented("the deflate decompress() function is not yet implemented, mainly because it is not accessible via the compression::decompress() function.");
+    }
+
+} g_deflate; // create statically
+
+
+
+
+
+
+void archiver_t::file_t::set_type(type_t type)
+{
+    f_type = static_cast<int>(type);    // FIXME cast
+}
+
+
+void archiver_t::file_t::set_data(QByteArray const& data)
+{
+    f_data = data;
+}
+
+
+void archiver_t::file_t::set_filename(QString const& filename)
+{
+    f_filename = filename;
+}
+
+
+void archiver_t::file_t::set_user(QString const& user, uid_t uid)
+{
+    f_user = user;
+    f_uid = uid;
+}
+
+
+void archiver_t::file_t::set_group(QString const& group, gid_t gid)
+{
+    f_group = group;
+    f_gid = gid;
+}
+
+
+void archiver_t::file_t::set_mode(mode_t mode)
+{
+    f_mode = mode;
+}
+
+
+void archiver_t::file_t::set_mtime(time_t mtime)
+{
+    f_mtime = mtime;
+}
+
+
+archiver_t::file_t::type_t archiver_t::file_t::get_type() const
+{
+    return f_type;
+}
+
+
+QByteArray const& archiver_t::file_t::get_data() const
+{
+    return f_data;
+}
+
+
+QString const& archiver_t::file_t::get_filename() const
+{
+    return f_filename;
+}
+
+
+QString const& archiver_t::file_t::get_user() const
+{
+    return f_user;
+}
+
+
+QString const& archiver_t::file_t::get_group() const
+{
+    return f_group;
+}
+
+
+uid_t archiver_t::file_t::get_uid() const
+{
+    return f_uid;
+}
+
+
+gid_t archiver_t::file_t::get_gid() const
+{
+    return f_gid;
+}
+
+
+mode_t archiver_t::file_t::get_mode() const
+{
+    return f_mode;
+}
+
+
+time_t archiver_t::file_t::get_mtime() const
+{
+    return f_mtime;
+}
+
+
+archiver_t::archiver_t(char const *name)
+    //: f_archive() -- auto-init
+{
+    if(g_archivers == NULL)
+    {
+        g_archivers = new archiver_map_t;
+    }
+    (*g_archivers)[name] = this;
+}
+
+
+archiver_t::~archiver_t()
+{
+    // TBD we probably don't need this code...
+    //     it is rather slow so why waste our time on exit?
+    //for(archiver_map_t::iterator
+    //        it(g_archivers->begin());
+    //        it != g_archivers->end();
+    //        ++it)
+    //{
+    //    if(*it == this)
+    //    {
+    //        g_archivers->erase(it);
+    //        break;
+    //    }
+    //}
+    //delete g_archivers;
+    //g_archivers = NULL;
+}
+
+
+void archiver_t::set_archive(QByteArray const& input)
+{
+    f_archive = input;
+}
+
+
+QByteArray archiver_t::get_archive() const
+{
+    return f_archive;
+}
+
+
+
+class tar : public archiver_t
+{
+public:
+    tar()
+        : archiver_t("tar")
+        //, f_pos(0) -- auto-init
+    {
+    }
+
+    virtual char const *get_name() const
+    {
+        return "tar";
+    }
+
+    virtual void append_file(file_t const& file)
+    {
+        QByteArray utf8;
+
+        // INITIALIZE HEADER
+        std::vector<char> header;
+        header.resize(512, 0);
+        std::string const ustar("ustar ");
+        std::copy(ustar.begin(), ustar.end(), header.begin() + 257);
+        header[263] = ' '; // version " \0"
+        header[264] = '\0';
+
+        // FILENAME
+        QString fn(file.get_filename());
+        int l(fn.length());
+        if(l > 100)
+        {
+            // TODO: add support for longer filenames
+            throw compression_exception_not_compatible("this file cannot be added to a tar archive at this point (filename too long)");
+        }
+        utf8 = fn.toUtf8();
+        std::copy(utf8.data(), utf8.data() + utf8.size(), header.begin());
+
+        // MODE, UID, GID, MTIME
+        append_int(&header[100], file.get_mode(),   7, 8, '0');
+        append_int(&header[108], file.get_uid(),    7, 8, '0');
+        append_int(&header[116], file.get_gid(),    7, 8, '0');
+        append_int(&header[136], file.get_mtime(), 11, 8, '0');
+
+        // USER/GROUP NAMES
+        utf8 = file.get_user().toUtf8();
+        if(utf8.length() > 32)
+        {
+            throw compression_exception_not_compatible("this file cannot be added to a tar archive at this point (user name too long)");
+        }
+        std::copy(utf8.data(), utf8.data() + utf8.size(), header.begin() + 265);
+
+        utf8 = file.get_group().toUtf8();
+        if(utf8.length() > 32)
+        {
+            throw compression_exception_not_compatible("this file cannot be added to a tar archive at this point (group name too long)");
+        }
+        std::copy(utf8.data(), utf8.data() + utf8.size(), header.begin() + 265);
+
+        // TYPE, SIZE
+        switch(file.get_type())
+        {
+        case file_t::FILE_TYPE_REGULAR:
+            header[156] = '0'; // regular (tar type)
+            append_int(&header[124], file.get_data().size(), 11, 8, '0');
+            break;
+
+        case file_t::FILE_TYPE_DIRECTORY:
+            // needs to be zero in ASCII
+            header[156] = '5'; // directory (tar type)
+            append_int(&header[124], 0, 11, 8, '0');
+            break;
+
+        //default: ... we could throw but here the compile fails if we
+        //             are missing some types
+        }
+
+        uint32_t checksum(tar_check_sum(&header[0]));
+        if(checksum > 32767)
+        {
+            // no null in this case (very rare if at all possible)
+            append_int(&header[148], checksum, 7, 8, '0');
+        }
+        else
+        {
+            append_int(&header[148], checksum, 6, 8, '0');
+        }
+        header[155] = ' ';
+
+        f_archive.append(&header[0], header.size());
+
+        switch(file.get_type())
+        {
+        case file_t::FILE_TYPE_REGULAR:
+            f_archive.append(file.get_data());
+            {
+                // padding to next 512 bytes
+                uint32_t size(file.get_data().size());
+                size &= 511;
+                if(size != 0)
+                {
+                    std::vector<char> pad;
+                    pad.resize(512 - size, 0);
+                    f_archive.append(&pad[0], pad.size());
+                }
+            }
+            break;
+
+        default:
+            // no data for that type
+            break;
+
+        }
+    }
+
+    virtual bool next_file(file_t& file) const
+    {
+        // any more files?
+        // (make sure there is at least a header for now)
+        if(f_pos + 512 > f_archive.size())
+        {
+            return false;
+        }
+
+        // read the header
+        std::vector<char> header;
+        std::copy(f_archive.data() + f_pos, f_archive.data() + f_pos + 512, &header[0]);
+
+        // MAGIC
+        if(header[257] != 'u' || header[258] != 's' || header[259] != 't' || header[260] != 'a'
+        || header[261] != 'r' || (header[262] != ' ' && header[262] != '\0'))
+        {
+            // if no MAGIC we may have empty blocks (which are legal at the
+            // end of the file)
+            for(int i(0); i < 512; ++i)
+            {
+                if(header[i] != '\0')
+                {
+                    throw compression_exception_not_compatible(QString("ustar magic code missing at position %1").arg(f_pos));
+                }
+            }
+            f_pos += 512;
+            // TODO: test all the following blocks as they all should be null
+            //       (as you cannot find an empty block within the tarball)
+            return false;
+        }
+
+        uint32_t const file_checksum(read_int(&header[148], 8, 8));
+        uint32_t const comp_checksum(tar_check_sum(&header[0]));
+        if(file_checksum != comp_checksum)
+        {
+            throw compression_exception_not_compatible(QString("ustar checksum code does not match what was expected"));
+        }
+
+        QString filename(QString::fromUtf8(&header[0], strnlen(&header[0], 100)));
+        if(header[345] != '\0')
+        {
+            // this one has a prefix (long filename)
+            QString prefix(QString::fromUtf8(&header[345], strnlen(&header[345], 155)));
+            if(prefix.endsWith("/"))
+            {
+                // I think this case is considered a bug in a tarball...
+                filename = prefix + filename;
+            }
+            else
+            {
+                filename = prefix + "/" + filename;
+            }
+        }
+        file.set_filename(filename);
+
+        switch(header[156])
+        {
+        case '\0':
+        case '0':
+            file.set_type(file_t::FILE_TYPE_REGULAR);
+            break;
+
+        case '5':
+            file.set_type(file_t::FILE_TYPE_DIRECTORY);
+            break;
+
+
+        default:
+            throw compression_exception_not_supported("file in tarball not supported (we accept regular and directory files only)");
+
+        }
+
+        file.set_mode (read_int(&header[100],  8, 8));
+        file.set_mtime(read_int(&header[136], 12, 8));
+
+        uid_t uid(read_int(&header[108],  8, 8));
+        file.set_user (QString::fromUtf8(&header[265], 32), uid);
+
+        gid_t gid(read_int(&header[116],  8, 8));
+        file.set_group(QString::fromUtf8(&header[297], 32), gid);
+
+        f_pos += 512;
+
+        if(file.get_type() == file_t::FILE_TYPE_REGULAR)
+        {
+            uint32_t size(read_int(&header[124], 12, 8));
+            int total_size((size + 511) & -512);
+            if(f_pos + total_size > f_archive.size())
+            {
+                throw compression_exception_not_supported("file data not available (archive too small)");
+            }
+            QByteArray data;
+            data.append(f_archive.data() + f_pos, size);
+            file.set_data(data);
+
+            f_pos += total_size;
+        }
+
+        return true;
+    }
+
+    virtual void rewind_file()
+    {
+        f_pos = 0;
+    }
+
+private:
+    void append_int(char *header, int value, int length, int base, char fill)
+    {
+        // save the number (minimum 1 digit)
+        do
+        {
+            // base is 8 or 10
+            header[length] = static_cast<char>((value % base) + '0');
+            value /= base;
+            --length;
+        }
+        while(length > 0 && value != 0);
+
+        // fill the left side with 'fill'
+        while(length > 0)
+        {
+            header[length] = fill;
+            --length;
+        }
+    }
+
+    uint32_t read_int(char const *header, int length, int base) const
+    {
+        // TODO: add tests
+        uint32_t result(0);
+        for(; length > 0 && *header != '\0' && *header != ' '; --length, ++header)
+        {
+            result = result * base + (*header - '0');
+        }
+        return result;
+    }
+
+    uint32_t tar_check_sum(char const *s) const
+    {
+        uint32_t result = 8 * ' '; // the checksum field
+
+        // name + mode + uid + gid + size + mtime = 148 bytes
+        for(int n = 148; n > 0; --n, ++s)
+        {
+            result += *s;
+        }
+
+        s += 8; // skip the checksum field
+
+        // everything after the checksum is another 356 bytes
+        for(int n = 356; n > 0; --n, ++s)
+        {
+            result += *s;
+        }
+
+        return result;
+    }
+
+    mutable controlled_vars::zint32_t   f_pos;
+} g_tar; // declare statically
+
 
 
 } // namespace snap

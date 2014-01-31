@@ -15,6 +15,8 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+//#define SHOW_RIGHTS
+
 #include "permissions.h"
 
 #include "../output/output.h"
@@ -363,7 +365,9 @@ void permissions::sets_t::add_user_right(QString right)
             {
                 // we're done, that right is already here
 #ifdef DEBUG
+#ifdef SHOW_RIGHTS
                 std::cout << "  USER RIGHT -> [" << right << "] (ignore, better already there)" << std::endl;
+#endif
 #endif
                 return;
             }
@@ -388,7 +392,9 @@ void permissions::sets_t::add_user_right(QString right)
                     }
                 }
 #ifdef DEBUG
+#ifdef SHOW_RIGHTS
                 std::cout << "  USER RIGHT -> [" << right << "] (shrunk)" << std::endl;
+#endif
 #endif
                 return;
             }
@@ -399,7 +405,9 @@ void permissions::sets_t::add_user_right(QString right)
             {
                 // that's exactly the same, no need to have it twice
 #ifdef DEBUG
+#ifdef SHOW_RIGHTS
                 std::cout << "  USER RIGHT -> [" << right << "] (already present)" << std::endl;
+#endif
 #endif
                 return;
             }
@@ -409,7 +417,9 @@ void permissions::sets_t::add_user_right(QString right)
     // this one was not there yet, just append
     f_user_rights.push_back(right);
 #ifdef DEBUG
+#ifdef SHOW_RIGHTS
     std::cout << "  USER RIGHT -> [" << right << "] (add)" << std::endl;
+#endif
 #endif
 }
 
@@ -477,7 +487,9 @@ void permissions::sets_t::add_plugin_permission(const QString& plugin, QString r
     if(!f_plugin_permissions.contains(plugin))
     {
 #ifdef DEBUG
+#ifdef SHOW_RIGHTS
         std::cout << "  PLUGIN [" << plugin << "] PERMISSION -> [" << right << "] (add, new plugin)" << std::endl;
+#endif
 #endif
         f_plugin_permissions[plugin].push_back(right);
         return;
@@ -496,7 +508,9 @@ void permissions::sets_t::add_plugin_permission(const QString& plugin, QString r
             {
                 // the new right is generally considered easier to get
 #ifdef DEBUG
+#ifdef SHOW_RIGHTS
                 std::cout << "  PLUGIN [" << plugin << "] PERMISSION -> [" << set[i] << "] (REMOVING)" << std::endl;
+#endif
 #endif
                 set.remove(i);
                 continue;
@@ -508,7 +522,9 @@ void permissions::sets_t::add_plugin_permission(const QString& plugin, QString r
             {
                 // this new right is harder to get, ignore it
 #ifdef DEBUG
+#ifdef SHOW_RIGHTS
                 std::cout << "  PLUGIN [" << plugin << "] PERMISSION -> [" << right << "] (skipped)" << std::endl;
+#endif
 #endif
                 return;
             }
@@ -519,7 +535,9 @@ void permissions::sets_t::add_plugin_permission(const QString& plugin, QString r
             {
                 // that's exactly the same, no need to have it twice
 #ifdef DEBUG
+#ifdef SHOW_RIGHTS
                 std::cout << "  PLUGIN [" << right << "] PERMISSION -> [" << right << "] (already present)" << std::endl;
+#endif
 #endif
                 return;
             }
@@ -530,7 +548,9 @@ void permissions::sets_t::add_plugin_permission(const QString& plugin, QString r
     // this one was not there yet, just append
     set.push_back(right);
 #ifdef DEBUG
+#ifdef SHOW_RIGHTS
     std::cout << "  PLUGIN [" << plugin << "] PERMISSION -> [" << right << "] (add right)" << std::endl;
+#endif
 #endif
 }
 
@@ -573,8 +593,10 @@ bool permissions::sets_t::allowed() const
     || f_plugin_permissions.isEmpty())
     {
 #ifdef DEBUG
+#ifdef SHOW_RIGHTS
         std::cout << "f_user_rights.size()=" << f_user_rights.size() << ", f_plugin_permissions.size() = " << f_plugin_permissions.size() << std::endl;
         std::cout << "sets are not allowed!" << std::endl;
+#endif
 #endif
         // if the plugins added nothing, there are no rights to compare
         // or worst, the user have no rights at all (Should not happen,
@@ -585,6 +607,7 @@ bool permissions::sets_t::allowed() const
     }
 
 #ifdef DEBUG
+#ifdef SHOW_RIGHTS
 std::cout << "final USER RIGHTS:" << std::endl;
 for(int i(0); i < f_user_rights.size(); ++i)
 {
@@ -601,6 +624,7 @@ for(req_sets_t::const_iterator pp(f_plugin_permissions.begin());
         std::cout << "    [" << (*pp)[j] << "]" << std::endl;
     }
 }
+#endif
 #endif
 
     int const max(f_user_rights.size());
@@ -632,14 +656,18 @@ for(req_sets_t::const_iterator pp(f_plugin_permissions.begin());
         // XXX add a log to determine the name of the plugin that
         //     failed the user?
 #ifdef DEBUG
+#ifdef SHOW_RIGHTS
         std::cout << "  failed, no match for [" << pp.key() << "]" << std::endl;
+#endif
 #endif
         return false;
 next_plugin:;
     }
 
 #ifdef DEBUG
+#ifdef SHOW_RIGHTS
     std::cout << "  allowed!!!" << std::endl;
+#endif
 #endif
     return true;
 }
@@ -1301,7 +1329,9 @@ void permissions::on_access_allowed(QString const& user_path, content::path_info
     // smaller and if empty we do not have to get anything else
     // (intersection of an empty set with anything else is the empty set)
 #ifdef DEBUG
+#ifdef SHOW_RIGHTS
     std::cout << "retrieving USER rights... [" << sets.get_action() << "] [" << sets.get_login_status() << "] [" << ipath.get_cpath() << "]" << std::endl;
+#endif
 #endif
     get_user_rights(this, sets);
     if(sets.get_user_rights_count() != 0)
@@ -1311,11 +1341,15 @@ void permissions::on_access_allowed(QString const& user_path, content::path_info
             return;
         }
 #ifdef DEBUG
+#ifdef SHOW_RIGHTS
         std::cout << "retrieving PLUGIN permissions... [" << sets.get_action() << "]" << std::endl;
+#endif
 #endif
         get_plugin_permissions(this, sets);
 #ifdef DEBUG
+#ifdef SHOW_RIGHTS
         std::cout << "now compute the intersection!" << std::endl;
+#endif
 #endif
         if(sets.allowed())
         {

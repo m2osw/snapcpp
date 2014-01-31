@@ -103,7 +103,7 @@
     <input type="text">
       <xsl:attribute name="id"><xsl:value-of select="$name"/>_<xsl:value-of select="$unique_id"/></xsl:attribute>
       <xsl:attribute name="name"><xsl:value-of select="$name"/></xsl:attribute>
-      <xsl:attribute name="class"> line-edit-input <xsl:value-of select="classes"/></xsl:attribute>
+      <xsl:attribute name="class">line-edit-input <xsl:value-of select="classes"/> <xsl:value-of select="$name"/></xsl:attribute>
       <xsl:if test="/snap-form/taborder/tabindex[@refid=$name]/position() != 0">
         <xsl:attribute name="tabindex"><xsl:value-of select="/snap-form/taborder/tabindex[@refid=$name]/count(preceding-sibling::tabindex) + 1"/></xsl:attribute>
       </xsl:if>
@@ -112,6 +112,10 @@
       </xsl:if>
       <xsl:if test="tooltip != ''">
         <xsl:attribute name="title"><xsl:value-of select="tooltip"/></xsl:attribute>
+      </xsl:if>
+      <xsl:if test="background-value != ''">
+        <!-- jQuery expects "data-<name>" -->
+        <xsl:attribute name="data-background-value"><xsl:value-of select="background-value"/></xsl:attribute>
       </xsl:if>
       <xsl:if test="help != ''">
         <!-- we use the help for the alternate because blind people will not see that text otherwise -->
@@ -181,6 +185,10 @@
       <xsl:if test="tooltip != ''">
         <xsl:attribute name="title"><xsl:value-of select="tooltip"/></xsl:attribute>
       </xsl:if>
+      <xsl:if test="background-value != ''">
+        <!-- jQuery expects "data-<name>" -->
+        <xsl:attribute name="data-background-value"><xsl:value-of select="background-value"/></xsl:attribute>
+      </xsl:if>
       <xsl:if test="help != ''">
         <!-- we use the help for the alternate because blind people will not see that text otherwise -->
         <xsl:attribute name="alt"><xsl:value-of select="help"/></xsl:attribute>
@@ -232,7 +240,7 @@
     <input type="checkbox">
       <xsl:attribute name="id"><xsl:value-of select="$name"/>_<xsl:value-of select="$unique_id"/></xsl:attribute>
       <xsl:attribute name="name"><xsl:value-of select="$name"/></xsl:attribute>
-      <xsl:attribute name="class">checkbox-input <xsl:value-of select="classes"/></xsl:attribute>
+      <xsl:attribute name="class">checkbox-input <xsl:value-of select="classes"/> <xsl:value-of select="$name"/></xsl:attribute>
       <xsl:if test="/snap-form/taborder/tabindex[@refid=$name]/position() != 0">
         <xsl:attribute name="tabindex"><xsl:value-of select="/snap-form/taborder/tabindex[@refid=$name]/count(preceding-sibling::tabindex) + 1"/></xsl:attribute>
       </xsl:if>
@@ -257,7 +265,7 @@
     <script type="text/javascript"><xsl:value-of select="$name"/>_<xsl:value-of select="$unique_id"/>.checked="<xsl:value-of select="$checked_status"/>";</script>
   </xsl:template>
   <xsl:template match="widget[@type='checkbox']">
-    <div class="form-item checkbox">
+    <div class="form-item checkbox {@id}">
       <xsl:choose>
         <xsl:when test="label != ''">
           <label class="checkbox-label">
@@ -424,7 +432,7 @@
     <xsl:param name="name" select="@id"/>
     <a>
       <xsl:attribute name="id"><xsl:value-of select="$name"/>_<xsl:value-of select="$unique_id"/></xsl:attribute>
-      <xsl:attribute name="class">link <xsl:value-of select="classes"/></xsl:attribute>
+      <xsl:attribute name="class">link <xsl:value-of select="classes"/> <xsl:value-of select="$name"/></xsl:attribute>
       <xsl:attribute name="href"><xsl:value-of select="value"/></xsl:attribute>
       <xsl:if test="/snap-form/taborder/tabindex[@refid=$name]/position() != 0">
         <xsl:attribute name="tabindex"><xsl:value-of select="/snap-form/taborder/tabindex[@refid=$name]/count(preceding-sibling::tabindex) + 1"/></xsl:attribute>
@@ -442,7 +450,7 @@
     <xsl:param name="name" select="@id"/>
     <span>
       <xsl:attribute name="id"><xsl:value-of select="$name"/>_<xsl:value-of select="$unique_id"/></xsl:attribute>
-      <xsl:attribute name="class">disabled-link <xsl:value-of select="classes"/></xsl:attribute>
+      <xsl:attribute name="class">disabled-link <xsl:value-of select="classes"/> <xsl:value-of select="$name"/></xsl:attribute>
       <xsl:if test="tooltip != ''">
         <xsl:attribute name="title"><xsl:value-of select="tooltip"/></xsl:attribute>
       </xsl:if>
@@ -450,7 +458,7 @@
     </span>
   </xsl:template>
   <xsl:template match="widget[@type='link']">
-    <div class="form-item link">
+    <div class="form-item link {@id}">
       <xsl:choose>
         <xsl:when test="state = 'disabled'">
           <xsl:call-template name="snap:disabled_link">

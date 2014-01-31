@@ -72,6 +72,9 @@ const char *get_name(name_t name)
     case SNAP_NAME_LAYOUT_LAYOUT:
         return "layout::layout";
 
+    case SNAP_NAME_LAYOUT_REFERENCE:
+        return "layout::reference";
+
     case SNAP_NAME_LAYOUT_TABLE:
         return "layout";
 
@@ -168,7 +171,72 @@ int64_t layout::do_update(int64_t last_updated)
 
     //SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, content_update); -- defined in output/content.xml at this time
 
+    int64_t const last_layout_update(do_layout_updates(last_updated));
+    if(last_layout_update > last_plugin_update)
+    {
+        last_plugin_update = last_layout_update;
+    }
+
     SNAP_PLUGIN_UPDATE_EXIT();
+}
+
+
+/** \brief Update layouts as required.
+ *
+ * This function goes through the list of updated layouts that are installed
+ * on this website.
+ *
+ * Whenever you update a layout file, all references are reset to zero. This
+ * function searches such references and if zero, do the update and then set
+ * the reference to one.
+ *
+ * \param[in] last_updated  The UTC Unix date when the website was last updated (in micro seconds).
+ *
+ * \return The date when we last updated a layout.
+ */
+int64_t layout::do_layout_updates(int64_t const last_updated)
+{
+    QtCassandra::QCassandraTable::pointer_t content_table(content::content::instance()->get_content_table());
+    QtCassandra::QCassandraTable::pointer_t layout_table(get_layout_table());
+
+    QString const site_key(f_snap->get_site_key_with_slash());
+    QString const base_key(site_key + get_name(SNAP_NAME_LAYOUT_ADMIN_LAYOUTS) + "/");
+
+    int64_t new_last_updated(last_updated);
+    content::path_info_t types_ipath;
+    types_ipath.set_path("types/taxonomy/system/content-types/layout-page");
+    if(!content_table->exists(types_ipath.get_key()))
+    {
+        // this is likely to happen on first initialization
+        return last_updated;
+    }
+    links::link_info info(content::get_name(content::SNAP_NAME_CONTENT_PAGE_TYPE), false, types_ipath.get_key(), types_ipath.get_branch());
+    QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
+    links::link_info layout_info;
+    while(link_ctxt->next_link(layout_info))
+    {
+        QString layout_key(layout_info.key());
+        if(layout_key.startsWith(base_key))
+        {
+            QString name(layout_key.mid(base_key.length()));
+            int const pos(name.indexOf('/'));
+            if(pos < 0)
+            {
+                // 'name' is now the name of a layout
+
+                // define limit with the original last_updated because
+                // the order in which we read the layouts has nothing to
+                // do with the order in which they were last updated
+                int64_t limit(install_layout(name, last_updated));
+                if(limit > new_last_updated)
+                {
+                    new_last_updated = limit;
+                }
+            }
+        }
+    }
+
+    return new_last_updated;
 }
 
 
@@ -424,46 +492,7 @@ std::cerr << "create body in layout\n";
     replace_includes(xsl);
 
     // check whether the layout was defined in this website database
-    QtCassandra::QCassandraTable::pointer_t data_table(content::content::instance()->get_data_table());
-    content::path_info_t layout_ipath;
-    layout_ipath.set_path(QString("%1/%2").arg(get_name(SNAP_NAME_LAYOUT_ADMIN_LAYOUTS)).arg(layout_name));
-    // TODO: we'll need to manage updates which is probably going to be done
-    //       from the snap_child::update_plugins() with the user of a message
-    //       which should be caught by this plugin...
-    if(!data_table->exists(layout_ipath.get_branch_key())
-    || !data_table->row(layout_ipath.get_branch_key())->exists(get_name(SNAP_NAME_LAYOUT_BOXES)))
-    {
-        // this layout is missing, create necessary basic info
-        // (later users can edit those settings)
-        if(!layout_table->row(layout_name)->exists(get_name(SNAP_NAME_LAYOUT_CONTENT)))
-        {
-            f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR,
-                    "Layout Unavailable",
-                    "Layout \"" + layout_name + "\" content.xml file is missing.",
-                    "layout::create_body() could not find the content.xml file in the layout table.");
-            NOTREACHED();
-        }
-        QString const xml_content(layout_table->row(layout_name)->cell(get_name(SNAP_NAME_LAYOUT_CONTENT))->value().stringValue());
-        QDomDocument dom;
-        if(!dom.setContent(xml_content, false))
-        {
-            f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR,
-                    "Layout Unavailable",
-                    "Layout \"" + layout_name + "\" content.xml file could not be loaded.",
-                    "layout::create_body() could not load the content.xml file from the layout table.");
-            NOTREACHED();
-        }
-        content::content::instance()->add_xml_document(dom, p == NULL ? content::get_name(content::SNAP_NAME_CONTENT_OUTPUT) : p->get_plugin_name());
-        f_snap->finish_update();
-        if(!data_table->row(layout_ipath.get_branch_key())->exists(get_name(SNAP_NAME_LAYOUT_BOXES)))
-        {
-            f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR,
-                    "Layout Unavailable",
-                    "Layout \"" + layout_name + "\" content.xml file does not define the layout::boxes entry for this layout.",
-                    "layout::create_body() the content.xml did not define \"" + layout_ipath.get_branch_key() + "->[layout::boxes]\" as expected.");
-            NOTREACHED();
-        }
-    }
+    install_layout(layout_name, 0);
 
     // Initialize the XML document tree
     // More is done in the generate_header_content_impl() function
@@ -501,17 +530,21 @@ std::cerr << "got in layout... cpath = [" << ipath.get_cpath() << "]\n";
     //       safer!)
     if(page.firstChildElement("boxes").isNull())
     {
-        // the list of boxes is defined in the database under
-        //    admin/layouts/<layout_name>
+        // the list of boxes is defined in the database under (GLOBAL)
+        //    admin/layouts/<layout_name>[layout::boxes]
         // as one row name per box; for example, the left box would appears as:
-        //    admin/layouts/<layout_name>/layout::box::left/layout::boxes
+        //    admin/layouts/<layout_name>/left
         QDomElement boxes = doc.createElement("boxes");
         page.appendChild(boxes);
-        // TODO -- 
+        // TODO -- check for boxes starting in the current page, then the
+        //         type and finally the layout
+        content::path_info_t boxes_ipath;
+        boxes_ipath.set_path(QString("%1/%2").arg(get_name(SNAP_NAME_LAYOUT_ADMIN_LAYOUTS)).arg(layout_name));
+
         content::field_search::search_result_t box_names;
         FIELD_SEARCH
             (content::field_search::COMMAND_MODE, content::field_search::SEARCH_MODE_EACH)
-            (content::field_search::COMMAND_PATH, get_name(SNAP_NAME_LAYOUT_ADMIN_LAYOUTS) + ("/" + layout_name))
+            (content::field_search::COMMAND_PATH_INFO_BRANCH, boxes_ipath)
             (content::field_search::COMMAND_FIELD_NAME, get_name(SNAP_NAME_LAYOUT_BOXES))
             (content::field_search::COMMAND_SELF)
             (content::field_search::COMMAND_RESULT, box_names)
@@ -553,7 +586,7 @@ std::cerr << "got in layout... cpath = [" << ipath.get_cpath() << "]\n";
                     box_error_callback.clear_error();
                     content::path_info_t box_ipath;
                     box_ipath.set_path(child_info.key());
-                    plugin *box_plugin(content::content::instance()->get_plugin(box_ipath, box_error_callback));
+                    plugin *box_plugin(path::path::instance()->get_plugin(box_ipath, box_error_callback));
                     if(!box_error_callback.has_error() && box_plugin)
                     {
                         layout_boxes *lb(dynamic_cast<layout_boxes *>(box_plugin));
@@ -845,6 +878,107 @@ void layout::replace_includes(QString& xsl)
     replace_t::replace(f_snap, "<xsl:include", xsl);
     replace_t::replace(f_snap, "<xsl:import", xsl);
 //std::cerr << "include [" << xsl << "]\n";
+}
+
+
+/** \brief Install a layout.
+ *
+ * This function installs a layout. The function first checks whether the
+ * layout was already installed. If so, it runs the content.xml only if
+ * the layout was updated.
+ *
+ * \param[in] layout_name  The name of the layout to install.
+ * \param[in,out] last_updated  The date when the layout was last updated.
+ *                              If zero, do not check for updates.
+ */
+int64_t layout::install_layout(QString const& layout_name, int64_t const last_updated)
+{
+    content::content *content_plugin(content::content::instance());
+    QtCassandra::QCassandraTable::pointer_t layout_table(get_layout_table());
+    QtCassandra::QCassandraTable::pointer_t data_table(content_plugin->get_data_table());
+
+    QtCassandra::QCassandraValue last_updated_value(layout_table->row(layout_name)->cell(get_name(SNAP_NAME_CORE_LAST_UPDATED))->value());
+
+    content::path_info_t layout_ipath;
+    layout_ipath.set_path(QString("%1/%2").arg(get_name(SNAP_NAME_LAYOUT_ADMIN_LAYOUTS)).arg(layout_name));
+    if(data_table->exists(layout_ipath.get_branch_key())
+    && data_table->row(layout_ipath.get_branch_key())->exists(get_name(SNAP_NAME_LAYOUT_BOXES)))
+    {
+        // The layout is already installed
+        if(last_updated == 0)
+        {
+            // do not check for updates
+            return 0;
+        }
+        // caller wants us to check for updates
+
+        // the value should never be null in a properly installed layout
+        if(!last_updated_value.nullValue())
+        {
+            int64_t const last_install(last_updated_value.int64Value());
+            if(last_install <= last_updated)
+            {
+                // we're good already
+                return last_updated;
+            }
+        }
+    }
+
+    // this layout is missing, create necessary basic info
+    // (later users can edit those settings)
+    if(!layout_table->row(layout_name)->exists(get_name(SNAP_NAME_LAYOUT_CONTENT)))
+    {
+        f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR,
+                "Layout Unavailable",
+                "Layout \"" + layout_name + "\" content.xml file is missing.",
+                "layout::create_body() could not find the content.xml file in the layout table.");
+        NOTREACHED();
+    }
+
+    QString const xml_content(layout_table->row(layout_name)->cell(get_name(SNAP_NAME_LAYOUT_CONTENT))->value().stringValue());
+    QDomDocument dom;
+    if(!dom.setContent(xml_content, false))
+    {
+        f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR,
+                "Layout Unavailable",
+                "Layout \"" + layout_name + "\" content.xml file could not be loaded.",
+                "layout::create_body() could not load the content.xml file from the layout table.");
+        NOTREACHED();
+    }
+
+    // XXX: it seems to me that the owner should not depend on p
+    //      because at this point we cannot really know what p is
+    //      and it should probably not be initialized with a plugin
+    //      that we don't know anything about...
+    //content_plugin->add_xml_document(dom, p == NULL ? content::get_name(content::SNAP_NAME_CONTENT_OUTPUT) : p->get_plugin_name());
+    content_plugin->add_xml_document(dom, content::get_name(content::SNAP_NAME_CONTENT_OUTPUT));
+    f_snap->finish_update();
+    if(!data_table->row(layout_ipath.get_branch_key())->exists(get_name(SNAP_NAME_LAYOUT_BOXES)))
+    {
+        f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR,
+                "Layout Unavailable",
+                "Layout \"" + layout_name + "\" content.xml file does not define the layout::boxes entry for this layout.",
+                "layout::create_body() the content.xml did not define \"" + layout_ipath.get_branch_key() + "->[layout::boxes]\" as expected.");
+        NOTREACHED();
+    }
+
+    // create a reference back to us from the layout
+    // that way we know who uses what (although a layout may not be in use
+    // anymore after a while and the reference won't be removed...)
+    QString const reference(QString("%1::%2").arg(get_name(SNAP_NAME_LAYOUT_REFERENCE)).arg(layout_ipath.get_key()));
+    int64_t const start_date(f_snap->get_start_date());
+    QtCassandra::QCassandraValue value;
+    value.setInt64Value(start_date);
+    value.setTimestamp(start_date);
+    layout_table->row(layout_name)->cell(reference)->setValue(value);
+
+    // the last updated value should never be empty
+    if(!last_updated_value.nullValue())
+    {
+        return last_updated_value.int64Value();
+    }
+
+    return last_updated;
 }
 
 

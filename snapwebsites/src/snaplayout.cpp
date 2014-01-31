@@ -32,6 +32,8 @@
  */
 
 #include "snap_version.h"
+#include "snap_image.h"
+#include "snapwebsites.h"
 #include "qstring_stream.h"
 
 #include <advgetopt/advgetopt.h>
@@ -39,6 +41,8 @@
 #include <QtCassandra/QCassandra.h>
 
 #include <algorithm>
+
+#include <sys/stat.h>
 
 #include <QDomDocument>
 #include <QDomElement>
@@ -125,6 +129,7 @@ public:
     void load_xml_info(QDomDocument& doc, QString const& filename, QString& layout_name, time_t& layout_modified);
     void load_xsl_info(QDomDocument& doc, QString const& filename, QString& layout_name, QString& layout_area, time_t& layout_modified);
     void load_css(QString const& filename, QString& row_name);
+    void load_image(QString const& filename, QString& row_name);
     void set_theme();
 
 private:
@@ -344,7 +349,7 @@ void snap_layout::load_css(QString const& filename, QString& row_name)
     QFile css(filename);
     if(!css.open(QIODevice::ReadOnly))
     {
-        std::cerr << "error: could not open file named \"" << filename << "\"" << std::endl;
+        std::cerr << "error: could not open CSS file named \"" << filename << "\"" << std::endl;
         exit(1);
     }
     QByteArray value(css.readAll());
@@ -360,6 +365,39 @@ void snap_layout::load_css(QString const& filename, QString& row_name)
     if(row_name.isEmpty())
     {
         std::cerr << "error: the CSS file \"" << filename << "\" does not define the Name: field. We cannot know where to save it." << std::endl;
+        exit(1);
+    }
+}
+
+
+void snap_layout::load_image(QString const& filename, QString& row_name)
+{
+    row_name = filename;
+    int pos(row_name.lastIndexOf('/'));
+    if(pos < 0)
+    {
+        std::cerr << "error: the image file does not include the name of the theme." << std::endl;
+        exit(1);
+    }
+    row_name = row_name.mid(0, pos);
+    pos = row_name.lastIndexOf('/');
+    if(pos >= 0)
+    {
+        row_name = row_name.mid(pos + 1);
+    }
+
+    // check that we recognize that image file format
+    QFile image(filename);
+    if(!image.open(QIODevice::ReadOnly))
+    {
+        std::cerr << "error: could not open image file named \"" << filename << "\"" << std::endl;
+        exit(1);
+    }
+    QByteArray data(image.readAll());
+    snap::snap_image img;
+    if(!img.get_info(data))
+    {
+        std::cerr << "error: \"image\" file named \"" << filename << "\" does not use a recognized image file format." << std::endl;
         exit(1);
     }
 }
@@ -405,6 +443,8 @@ void snap_layout::add_files()
         table->create();
     }
 
+    typedef QMap<QString, time_t> mtimes_t;
+    mtimes_t mtimes;
     for(string_array_t::const_iterator it(f_layouts.begin());
                                        it != f_layouts.end();
                                        ++it)
@@ -451,6 +491,22 @@ void snap_layout::add_files()
                 exit(1);
             }
             load_css(filename, row_name);
+        }
+        else if(extension == ".png" || extension == ".gif"
+             || extension == ".jpg" || extension == ".jpeg") // expects images
+        {
+            cell_name = filename;
+            int const pos(cell_name.lastIndexOf('/'));
+            if(pos >= 0)
+            {
+                cell_name = cell_name.mid(pos + 1);
+            }
+            if(!xml.open(QIODevice::ReadOnly))
+            {
+                std::cerr << "error: image file \"" << filename << "\" could not be opened for reading." << std::endl;
+                exit(1);
+            }
+            load_image(filename, row_name);
         }
         else if(extension == ".xsl") // expects the body or theme XSLT files
         {
@@ -516,6 +572,29 @@ void snap_layout::add_files()
         xml.reset();
         QByteArray value(xml.readAll());
         table->row(row_name)->cell(cell_name)->setValue(value);
+
+        // retrieve last modification time
+        struct stat s;
+        if(stat(filename.toUtf8().data(), &s) == 0)
+        {
+            if(!mtimes.contains(row_name)
+            || mtimes[row_name] < s.st_mtime)
+            {
+                mtimes[row_name] = s.st_mtime;
+            }
+        }
+    }
+
+    for(mtimes_t::const_iterator i(mtimes.begin()); i != mtimes.end(); ++i)
+    {
+        // mtimes holds times in seconds, convert to microseconds
+        int64_t last_updated(i.value() * 1000000);
+        QtCassandra::QCassandraValue existing_last_updated(table->row(i.key())->cell(snap::get_name(snap::SNAP_NAME_CORE_LAST_UPDATED))->value());
+        if(existing_last_updated.nullValue()
+        || existing_last_updated.int64Value() < last_updated)
+        {
+            table->row(i.key())->cell(snap::get_name(snap::SNAP_NAME_CORE_LAST_UPDATED))->setValue(last_updated);
+        }
     }
 }
 

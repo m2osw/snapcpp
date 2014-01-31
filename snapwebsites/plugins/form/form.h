@@ -71,10 +71,12 @@ public:
     static form *               instance();
     virtual QString             description() const;
     QSharedPointer<QtCassandra::QCassandraTable> get_form_table();
+    virtual int64_t             do_update(int64_t last_updated);
 
     void                        on_bootstrap(::snap::snap_child *snap);
     void                        on_process_post(QString const& uri_path);
     void                        on_replace_token(content::path_info_t& ipath, QString const& plugin_owner, QDomDocument& xml, filter::filter::token_info_t& token);
+    void                        on_generate_header_content(layout::layout *l, content::path_info_t& ipath, QDomElement& header, QDomElement& metadata, QString const& ctemplate);
 
     SNAP_SIGNAL(tweak_form, (form *f, content::path_info_t& ipath, QDomDocument form_doc), (f, ipath, form_doc));
     SNAP_SIGNAL(form_element, (form *f), (f));
@@ -99,6 +101,7 @@ public:
 private:
     typedef QMap<QString, QString> auto_save_types_t;
 
+    void                        content_update(int64_t variables_timestamp);
     void                        auto_save_form(QString const& owner, content::path_info_t& ipath, auto_save_types_t const& auto_save_type, QDomDocument xml_form);
     void                        auto_fill_form(QDomDocument xml_form);
 

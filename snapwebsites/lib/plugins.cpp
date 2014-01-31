@@ -315,9 +315,9 @@ void register_plugin(const QString& name, plugin *p)
  * This function initializes the plugin with its filename.
  */
 plugin::plugin()
-	: f_name(g_next_register_name),
-	  f_filename(g_next_register_filename)
-	  //f_last_modification(0) -- auto-init
+	: f_name(g_next_register_name)
+	, f_filename(g_next_register_filename)
+	//, f_last_modification(0) -- auto-init
 {
 }
 

@@ -16,14 +16,55 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
+#include "snap_exception.h"
+
 #include <controlled_vars/controlled_vars_limited_auto_init.h>
+
 #include <QString>
 #include <QStringList>
+
+#include <unistd.h>
+
 
 namespace snap
 {
 namespace compression
 {
+
+class compression_exception : public snap_exception
+{
+public:
+    compression_exception(char const *       whatmsg) : snap_exception("snap_child", whatmsg) {}
+    compression_exception(std::string const& whatmsg) : snap_exception("snap_child", whatmsg) {}
+    compression_exception(QString const&     whatmsg) : snap_exception("snap_child", whatmsg) {}
+};
+
+class compression_exception_not_implemented : public compression_exception
+{
+public:
+    compression_exception_not_implemented(char const *       whatmsg) : compression_exception(whatmsg) {}
+    compression_exception_not_implemented(std::string const& whatmsg) : compression_exception(whatmsg) {}
+    compression_exception_not_implemented(QString const&     whatmsg) : compression_exception(whatmsg) {}
+};
+
+class compression_exception_not_supported : public compression_exception
+{
+public:
+    compression_exception_not_supported(char const *       whatmsg) : compression_exception(whatmsg) {}
+    compression_exception_not_supported(std::string const& whatmsg) : compression_exception(whatmsg) {}
+    compression_exception_not_supported(QString const&     whatmsg) : compression_exception(whatmsg) {}
+};
+
+class compression_exception_not_compatible : public compression_exception
+{
+public:
+    compression_exception_not_compatible(char const *       whatmsg) : compression_exception(whatmsg) {}
+    compression_exception_not_compatible(std::string const& whatmsg) : compression_exception(whatmsg) {}
+    compression_exception_not_compatible(QString const&     whatmsg) : compression_exception(whatmsg) {}
+};
+
+
+
 
 // compression level is a percent (a number from 0 to 100)
 typedef controlled_vars::limited_auto_init<int, 0, 100, 50> level_t;
@@ -32,21 +73,80 @@ typedef controlled_vars::limited_auto_init<int, 0, 100, 50> level_t;
 class compressor_t
 {
 public:
-    static const char * BEST_COMPRESSION;
-    static const char * NO_COMPRESSION;
+    static char const * BEST_COMPRESSION;
+    static char const * NO_COMPRESSION;
 
-                        compressor_t(const char *name);
+                        compressor_t(char const *name);
     virtual             ~compressor_t();
-    virtual const char *get_name() const = 0;
-    virtual QByteArray  compress(const QByteArray& input, level_t level, bool text) = 0;
-    virtual bool        compatible(const QByteArray& input) const = 0;
-    virtual QByteArray  decompress(const QByteArray& input) = 0;
+    virtual char const *get_name() const = 0;
+    virtual QByteArray  compress(QByteArray const& input, level_t level, bool text) = 0;
+    virtual bool        compatible(QByteArray const& input) const = 0;
+    virtual QByteArray  decompress(QByteArray const& input) = 0;
 };
 
-void register_compressor(compressor_t *compressor_name);
+class archiver_t
+{
+public:
+    class file_t
+    {
+    public:
+        enum type_t
+        {
+            FILE_TYPE_REGULAR,
+            FILE_TYPE_DIRECTORY
+        };
+        typedef controlled_vars::limited_auto_init<type_t, FILE_TYPE_REGULAR, FILE_TYPE_DIRECTORY, FILE_TYPE_REGULAR> safe_type_t;
+
+        void                set_type(type_t type);
+        void                set_data(QByteArray const& data);
+        void                set_filename(QString const& filename);
+        void                set_user(QString const& user, uid_t uid);
+        void                set_group(QString const& group, gid_t gid);
+        void                set_mode(mode_t mode);
+        void                set_mtime(time_t mtime);
+
+        type_t              get_type() const;
+        QByteArray const&   get_data() const;
+        QString const&      get_filename() const;
+        QString const&      get_user() const;
+        QString const&      get_group() const;
+        uid_t               get_uid() const;
+        gid_t               get_gid() const;
+        mode_t              get_mode() const;
+        time_t              get_mtime() const;
+
+    private:
+        safe_type_t         f_type;
+        QByteArray          f_data;
+        QString             f_filename;
+        QString             f_user;
+        QString             f_group;
+        uid_t               f_uid;
+        gid_t               f_gid;
+        mode_t              f_mode;
+        time_t              f_mtime;
+    };
+
+                        archiver_t(char const *name);
+    virtual             ~archiver_t();
+    void                set_archive(QByteArray const& input);
+    QByteArray          get_archive() const;
+    virtual char const *get_name() const = 0;
+    virtual void        append_file(file_t const& file) = 0;
+    virtual bool        next_file(file_t& file) const = 0;
+    virtual void        rewind_file() = 0;
+
+protected:
+    QByteArray          f_archive;
+};
+
+//void register_compressor(compressor_t *compressor_name); -- automatic at this point
 QStringList compressor_list();
-QByteArray compress(QString& compressor_name, const QByteArray& input, level_t level, bool text);
-QByteArray decompress(QString& compressor_name, const QByteArray& input);
+QByteArray compress(QString& compressor_name, QByteArray const& input, level_t level, bool text);
+QByteArray decompress(QString& compressor_name, QByteArray const& input);
+
+QStringList archiver_list();
+archiver_t *get_archiver(QString const& archiver_name);
 
 } // namespace snap
 } // namespace compression

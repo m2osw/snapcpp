@@ -137,6 +137,48 @@ void form::on_bootstrap(::snap::snap_child *snap)
 
     SNAP_LISTEN(form, "server", server, process_post, _1);
     SNAP_LISTEN(form, "filter", filter::filter, replace_token, _1, _2, _3, _4);
+    SNAP_LISTEN(form, "layout", layout::layout, generate_header_content, _1, _2, _3, _4, _5);
+}
+
+
+/** \brief Check whether updates are necessary.
+ *
+ * This function updates the database when a newer version is installed
+ * and the corresponding updates where not run.
+ *
+ * This works for newly installed plugins and older plugins that were
+ * updated.
+ *
+ * \param[in] last_updated  The UTC Unix date when the website was last
+ *                          updated (in micro seconds).
+ *
+ * \return The UTC Unix date of the last update of this plugin.
+ */
+int64_t form::do_update(int64_t last_updated)
+{
+    SNAP_PLUGIN_UPDATE_INIT();
+
+    //SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, initial_update);
+    SNAP_PLUGIN_UPDATE(2014, 1, 31, 0, 23, 0, content_update);
+
+    SNAP_PLUGIN_UPDATE_EXIT();
+}
+
+
+/** \brief Update the form plugin content.
+ *
+ * This function updates the contents in the database using the
+ * system update settings found in the resources.
+ *
+ * \param[in] variables_timestamp  The timestamp for all the variables added
+ *                                 to the database by this update
+ *                                 (in micro-seconds).
+ */
+void form::content_update(int64_t variables_timestamp)
+{
+    static_cast<void>(variables_timestamp);
+
+    content::content::instance()->add_xml(get_plugin_name());
 }
 
 
@@ -2120,6 +2162,30 @@ QString form::get_source(QString const& owner, content::path_info_t& ipath)
 
     return source;
 }
+
+
+/** \brief Setup for forms.
+ *
+ * The forms make use of some JavaScript code and this function is used to
+ * insert it if the page includes one or more forms.
+ *
+ * \param[in] l  The layout pointer.
+ * \param[in] path  The path being managed.
+ * \param[in,out] header  The header being generated.
+ * \param[in,out] metadata  The metadata being generated.
+ * \param[in] ctemplate  The template in case path does not exist.
+ */
+void form::on_generate_header_content(layout::layout *l, content::path_info_t& ipath, QDomElement& header, QDomElement& metadata, QString const& ctemplate)
+{
+    static_cast<void>(l);
+    static_cast<void>(ctemplate);
+
+    //if(f_form_initialized) -- unfortunately that flag is set to true later...
+    {
+        content::content::instance()->add_javascript(ipath, header, metadata, "form");
+    }
+}
+
 
 
 SNAP_PLUGIN_END()

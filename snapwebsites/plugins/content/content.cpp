@@ -3894,7 +3894,7 @@ bool content::create_content_impl(path_info_t& ipath, QString const& owner, QStr
     row->cell(primary_owner)->setValue(owner);
 
     // add the different basic content dates setup
-    uint64_t const start_date(f_snap->get_start_date());
+    int64_t const start_date(f_snap->get_start_date());
     row->cell(get_name(SNAP_NAME_CONTENT_CREATED))->setValue(start_date);
 
     snap_version::version_number_t const branch_number(ipath.get_branch());
@@ -4581,7 +4581,7 @@ SNAP_LOG_DEBUG("attaching ")(file.get_file().get_filename())(", attachment_key =
 
     // yes that path may already exists, no worries since the create_content()
     // function checks that and returns quickly if it does exist
-    create_content(attachment_ipath, file.get_attachment_owner(), file.get_attachment_type());//, branch_number, locale);
+    create_content(attachment_ipath, file.get_attachment_owner(), file.get_attachment_type());
 
     // if it is already filename it won't hurt too much to set it again
     parent_row->cell(name)->setValue(attachment_ipath.get_key());
@@ -4601,7 +4601,7 @@ SNAP_LOG_DEBUG("attaching ")(file.get_file().get_filename())(", attachment_key =
     revision_attachment_row->cell(get_name(SNAP_NAME_CONTENT_ATTACHMENT_MIME_TYPE))->setValue(post_file.get_mime_type());
 
     // the date when it was created
-    uint64_t start_date(f_snap->get_start_date());
+    int64_t const start_date(f_snap->get_start_date());
     revision_attachment_row->cell(get_name(SNAP_NAME_CONTENT_CREATED))->setValue(start_date);
 
     // XXX we could also save the modification and creation times, but the
@@ -4839,7 +4839,7 @@ bool content::modified_content_impl(path_info_t& ipath)
     }
     QtCassandra::QCassandraRow::pointer_t row(content_table->row(key));
 
-    uint64_t const start_date(f_snap->get_start_date());
+    int64_t const start_date(f_snap->get_start_date());
     row->cell(QString(get_name(SNAP_NAME_CONTENT_MODIFIED)))->setValue(start_date);
 
     return true;
@@ -5196,7 +5196,7 @@ void content::add_xml_document(QDomDocument& dom, const QString& plugin_name)
                     // force the owner in the link name
                     link_name = plugin_name + "::" + link_name;
                 }
-                if(link_name == "content::page_type")
+                if(link_name == get_name(SNAP_NAME_CONTENT_PAGE_TYPE))
                 {
                     found_content_type = true;
                 }
@@ -5307,13 +5307,33 @@ void content::add_xml_document(QDomDocument& dom, const QString& plugin_name)
         }
         if(!found_content_type)
         {
-            QString const link_name("content::page_type");
-            QString const link_to("content::page_page");
+            QString const link_name(get_name(SNAP_NAME_CONTENT_PAGE_TYPE));
+            QString const link_to(get_name(SNAP_NAME_CONTENT_PAGE_TYPE));
             bool const source_unique(true);
             bool const destination_unique(false);
-            QString const destination_path(path.left(6) == "admin/"
-                    ? "types/taxonomy/system/content-types/administration-page"
-                    : "types/taxonomy/system/content-types/system-page");
+            QString destination_path;
+            if(path.left(14) == "admin/layouts/")
+            {
+                // make sure that this is the root of that layout and
+                // not an attachment or sub-page
+                QString const base(path.mid(14));
+                int const pos(base.indexOf('/'));
+                if(pos < 0)
+                {
+                    destination_path = "types/taxonomy/system/content-types/layout-page";
+                }
+            }
+            if(destination_path.isEmpty())
+            {
+                if(path.left(6) == "admin/")
+                {
+                    destination_path = "types/taxonomy/system/content-types/administration-page";
+                }
+                else
+                {
+                    destination_path = "types/taxonomy/system/content-types/system-page";
+                }
+            }
             QString const destination_key(f_snap->get_site_key_with_slash() + destination_path);
             links::link_info source(link_name, source_unique, key, snap_version::SPECIAL_VERSION_SYSTEM_BRANCH);
             links::link_info destination(link_to, destination_unique, destination_key, snap_version::SPECIAL_VERSION_SYSTEM_BRANCH);
@@ -5645,7 +5665,7 @@ void content::on_save_content()
         //}
 
         // make sure we have our different basic content dates setup
-        uint64_t start_date(f_snap->get_start_date());
+        int64_t const start_date(f_snap->get_start_date());
         if(content_table->row(d->f_path)->cell(QString(get_name(SNAP_NAME_CONTENT_CREATED)))->value().nullValue())
         {
             // do not overwrite the created date
@@ -5911,7 +5931,7 @@ void content::on_save_content()
         {
             //path = path.mid(site_key.length());
             // TODO: we may want to have a better way to choose the language
-            create_content(ipath, d->f_owner, type.stringValue());//, snap_version::SPECIAL_VERSION_SYSTEM_BRANCH, "en");
+            create_content(ipath, d->f_owner, type.stringValue());
         }
         // else -- if the path doesn't start with site_key we've got a problem
     }

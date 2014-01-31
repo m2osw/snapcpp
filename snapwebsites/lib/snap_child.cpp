@@ -6115,18 +6115,25 @@ void snap_child::init_plugins()
  * \todo
  * We may want to look into a way to "install" a plugin which would have
  * the side effect of setting a flag requesting an update instead of
- * relying on the plugin .so file modification date and some of such
+ * relying on the plugin .so file modification date and other such
  * tricks. A clear signal sent via a command line tool or directly
  * from a website could be a lot more effective.
  *
  * \todo
- * This mechanism updates the plugins but not the layouts. It would be
- * useful to have a way here to detect that layouts changed. (well...
- * maybe in a different function, but within the snap_child or maybe
- * in the layout plugin as it capture the do_update().)
+ * The current implementation makes use of a "plugin threshold" which
+ * is wrong because when you update plugin A with a threshold P, then
+ * later update plugin B with a threshold Q and Q < P, plugin B does
+ * not get updated (we'd have to test to prove this, but from what I
+ * can see in the algorithm that specific case is not assume to happen
+ * because we're expected to upgrade all the plugins at the same time
+ * which unfortunately is never the case if you keep the server running
+ * while upgrading your installation--which is not really recommended,
+ * but I'm sure we'll be doing that all the time...) At this point I
+ * removed the test so whether Q = P, Q < P or Q > P has no more
+ * effect on the update process.
  *
  * \param[in] list_of_plugins  The list of plugin names that were loaded
- * for this run.
+ *                             for this run.
  */
 void snap_child::update_plugins(const QStringList& list_of_plugins)
 {
@@ -6139,7 +6146,7 @@ void snap_child::update_plugins(const QStringList& list_of_plugins)
         // use an "old" date (631152000)
         last_updated.setInt64Value(SNAP_UNIX_TIMESTAMP(1990, 1, 1, 0, 0, 0) * 1000000LL);
     }
-    int64_t last_update_timestamp(last_updated.int64Value());
+    int64_t const last_update_timestamp(last_updated.int64Value());
     // 10 min. elapsed since last update?
     if(is_debug() // force update in debug mode so we don't have to wait 10 min.!
     || f_start_date - static_cast<int64_t>(last_update_timestamp) > static_cast<int64_t>(10 * 60 * 1000000))
@@ -6154,7 +6161,7 @@ void snap_child::update_plugins(const QStringList& list_of_plugins)
             // same old date...
             threshold.setInt64Value(SNAP_UNIX_TIMESTAMP(1990, 1, 1, 0, 0, 0) * 1000000LL);
         }
-        int64_t plugin_threshold(threshold.int64Value());
+        int64_t const plugin_threshold(threshold.int64Value());
         int64_t new_plugin_threshold(plugin_threshold);
 
         // first run through the plugins to know whether one or more
@@ -6165,7 +6172,19 @@ void snap_child::update_plugins(const QStringList& list_of_plugins)
         {
             QString plugin_name(*it);
             plugins::plugin *p(plugins::get_plugin(plugin_name));
-            if(p != NULL && p->last_modification() > plugin_threshold)
+            // TODO: Verify whether I'm correct here, but the plugin_threshold
+            //       is not actually a valid test here... The fact is that the
+            //       last modification time of a plugin may end up being less
+            //       than the plugin_threshold on an installation target; this
+            //       is because you may first install plugin A with
+            //       modification time P, run this function, and later (and
+            //       remember that we only need 1 second different here...)
+            //       we install plugin B with modification Q with Q < P. At
+            //       that point B is considered updated with such a test!
+            //       Instead we only make use of the plugin specific last
+            //       updated value which is checked inside the do_update()
+            //       function itself.
+            if(p != NULL) // && p->last_modification() > plugin_threshold)
             {
                 // the plugin changed, we want to call do_update() on it!
                 if(p->last_modification() > new_plugin_threshold)

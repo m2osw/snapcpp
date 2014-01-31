@@ -105,6 +105,13 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <![CDATA[<p>Internal pages created by plugins to manage your website are considered administration pages.</p>]]>
     </param>
   </content>
+  <content path="/types/taxonomy/system/content-types/layout-page">
+    <param name="taxonomy::name">content::layout_page</param>
+    <param name="content::title" revision="revision">Layout Page</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>Internal pages created whenever you install a layout on your website. These are used to manage said layouts.</p>]]>
+    </param>
+  </content>
   <content path="/types/taxonomy/system/content-types/page">
     <param name="content::title" revision="revision">Page Content Type</param>
     <param name="content::body" revision="revision">

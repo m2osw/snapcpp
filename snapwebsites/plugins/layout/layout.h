@@ -30,6 +30,7 @@ enum name_t
     SNAP_NAME_LAYOUT_BOXES,
     SNAP_NAME_LAYOUT_CONTENT,
     SNAP_NAME_LAYOUT_LAYOUT,
+    SNAP_NAME_LAYOUT_REFERENCE,
     SNAP_NAME_LAYOUT_TABLE,
     SNAP_NAME_LAYOUT_THEME
 };
@@ -74,6 +75,7 @@ public:
     QDomDocument        create_body(content::path_info_t& ipath, layout_content *content_plugin, const QString& ctemplate = "");
     QString             apply_theme(QDomDocument doc, content::path_info_t& cpath, layout_content *content_plugin);
     void                replace_includes(QString& xsl);
+    int64_t             install_layout(QString const& layout_name, int64_t const last_updated);
 
     SNAP_SIGNAL(generate_header_content, (layout *l, content::path_info_t& path, QDomElement& header, QDomElement& metadata, const QString& ctemplate), (l, path, header, metadata, ctemplate));
     SNAP_SIGNAL(generate_page_content, (layout *l, content::path_info_t& path, QDomElement& page, QDomElement& body, const QString& ctemplate), (l, path, page, body, ctemplate));
@@ -81,6 +83,7 @@ public:
 
 private:
     //void content_update(int64_t variables_timestamp);
+    int64_t do_layout_updates(int64_t const last_updated);
 
     zpsnap_child_t                             f_snap;
     QtCassandra::QCassandraTable::pointer_t    f_content_table;

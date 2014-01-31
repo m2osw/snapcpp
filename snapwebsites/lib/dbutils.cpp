@@ -130,9 +130,9 @@ QString dbutils::get_row_name( QCassandraRow::pointer_t p_r ) const
 
 QString dbutils::get_column_name( QCassandraCell::pointer_t c ) const
 {
-    const QString content_attachment_reference( "content::attachment::reference::" );
+    QString const content_attachment_reference( "content::attachment::reference::" );
 
-    const QByteArray key( c->columnKey() );
+    QByteArray const key( c->columnKey() );
 
     QString name;
     if(f_tableName == "files" && f_rowName == "new")
@@ -174,8 +174,7 @@ QString dbutils::get_column_name( QCassandraCell::pointer_t c ) const
         }
     }
     else if((f_tableName == "users"    && f_rowName == "*index_row*")
-            || (f_tableName == "shorturl" && f_rowName.endsWith("/*index_row*"))
-           )
+         || (f_tableName == "shorturl" && f_rowName.endsWith("/*index_row*")))
     {
         // special case where the column key is a 64 bit integer
         //const QByteArray& name(c->columnKey());
@@ -193,37 +192,37 @@ QString dbutils::get_column_name( QCassandraCell::pointer_t c ) const
 
 QString dbutils::get_column_value( QCassandraCell::pointer_t c ) const
 {
-    const QString n( get_column_name( c ) );
+    QString const n( get_column_name( c ) );
 
     QString v;
     if(n == "users::identifier"
-            || n == "permissions::dynamic"
-            || n == "shorturl::identifier"
-            )
+    || n == "permissions::dynamic"
+    || n == "shorturl::identifier"
+    )
     {
         // 64 bit value
         v = QString("%1").arg(c->value().uint64Value());
     }
     else if(n == "content::created"
-            || n == "content::files::created"
-            || n == "content::files::creation_time"
-            || n == "content::files::modification_time"
-            || n == "content::files::secure::last_check"
-            || n == "content::files::updated"
-            || n == "content::modified"
-            || n == "content::updated"
-            || n.left(18) == "core::last_updated"
-            || n == "core::plugin_threshold"
-            || n == "sessions::date"
-            || n == "shorturl::date"
-            || n == "users::created_time"
-            || n == "users::forgot_password_on"
-            || n == "users::login_on"
-            || n == "users::logout_on"
-            || n == "users::previous_login_on"
-            || n == "users::start_date"
-            || n == "users::verified_on"
-            )
+         || n == "content::files::created"
+         || n == "content::files::creation_time"
+         || n == "content::files::modification_time"
+         || n == "content::files::secure::last_check"
+         || n == "content::files::updated"
+         || n == "content::modified"
+         || n == "content::updated"
+         || n.left(18) == "core::last_updated"
+         || n == "core::plugin_threshold"
+         || n == "sessions::date"
+         || n == "shorturl::date"
+         || n == "users::created_time"
+         || n == "users::forgot_password_on"
+         || n == "users::login_on"
+         || n == "users::logout_on"
+         || n == "users::previous_login_on"
+         || n == "users::start_date"
+         || n == "users::verified_on"
+         )
     {
         // 64 bit value (microseconds)
         uint64_t time(c->value().uint64Value());
@@ -242,8 +241,8 @@ QString dbutils::get_column_value( QCassandraCell::pointer_t c ) const
         }
     }
     else if(n == "sessions::login_limit"
-            || n == "sessions::time_limit"
-            )
+         || n == "sessions::time_limit"
+         )
     {
         // 64 bit value (seconds)
         uint64_t time(c->value().uint64Value());
@@ -255,56 +254,56 @@ QString dbutils::get_column_value( QCassandraCell::pointer_t c ) const
         v = QString("%1 (%2)").arg(buf).arg(time);
     }
     else if(n == "sitemapxml::priority"
-            )
+         )
     {
         // 32 bit float
         float value(c->value().floatValue());
         v = QString("%1").arg(value);
     }
     else if(n.startsWith("content::attachment::reference::")
-            || n == "content::attachment::revision_control::last_branch"
-            || n.startsWith("content::attachment::revision_control::last_revision::")
-            || n == "content::files::image_height"
-            || n == "content::files::image_width"
-            || n == "content::files::size"
-            || n == "content::files::size::compressed"
-            || n == "content::revision_control::attachment::current_branch"
-            || n == "content::revision_control::attachment::current_working_branch"
-            || n == "content::revision_control::current_branch"
-            || n == "content::revision_control::current_working_branch"
-            || n == "content::revision_control::last_branch"
-            || n == "content::revision_control::attachment::last_branch"
-            || n.startsWith("content::revision_control::attachment::current_revision::")
-            || n.startsWith("content::revision_control::attachment::current_working_revision::")
-            || n.startsWith("content::revision_control::current_revision::")
-            || n.startsWith("content::revision_control::current_working_revision::")
-            || n.startsWith("content::revision_control::last_revision::")
-            || n.startsWith("content::revision_control::attachment::last_revision::")
-            || n == "sitemapxml::count"
-            || n == "sessions::id"
-            || n == "sessions::time_to_live"
-            || (f_tableName == "libQtCassandraLockTable" && f_rowName == "hosts")
-            )
+         || n == "content::attachment::revision_control::last_branch"
+         || n.startsWith("content::attachment::revision_control::last_revision::")
+         || n == "content::files::image_height"
+         || n == "content::files::image_width"
+         || n == "content::files::size"
+         || n == "content::files::size::compressed"
+         || n == "content::revision_control::attachment::current_branch"
+         || n == "content::revision_control::attachment::current_working_branch"
+         || n == "content::revision_control::current_branch"
+         || n == "content::revision_control::current_working_branch"
+         || n == "content::revision_control::last_branch"
+         || n == "content::revision_control::attachment::last_branch"
+         || n.startsWith("content::revision_control::attachment::current_revision::")
+         || n.startsWith("content::revision_control::attachment::current_working_revision::")
+         || n.startsWith("content::revision_control::current_revision::")
+         || n.startsWith("content::revision_control::current_working_revision::")
+         || n.startsWith("content::revision_control::last_revision::")
+         || n.startsWith("content::revision_control::attachment::last_revision::")
+         || n == "sitemapxml::count"
+         || n == "sessions::id"
+         || n == "sessions::time_to_live"
+         || (f_tableName == "libQtCassandraLockTable" && f_rowName == "hosts")
+         )
     {
         // 32 bit value
         v = QString("%1").arg(c->value().uint32Value());
     }
     else if(n == "sessions::used_up"
-            || n == "content::final"
-            || n == "favicon::sitewide"
-            || n == "content::files::compressor"
-            || n.startsWith("content::files::reference::")
-            || (f_tableName == "files" && f_rowName == "new")
-            )
+         || n == "content::final"
+         || n == "favicon::sitewide"
+         || n == "content::files::compressor"
+         || n.startsWith("content::files::reference::")
+         || (f_tableName == "files" && f_rowName == "new")
+         )
     {
         // 8 bit value
         // cast to integer so arg() doesn't take it as a character
         v = QString("%1").arg(static_cast<int>(c->value().unsignedCharValue()));
     }
     else if(n == "sessions::random"
-            || n == "users::password::salt"
-            || n == "users::password"
-            )
+         || n == "users::password::salt"
+         || n == "users::password"
+         )
     {
         // n bit binary value
         const QByteArray& buf(c->value().binaryValue());
@@ -316,9 +315,10 @@ QString dbutils::get_column_value( QCassandraCell::pointer_t c ) const
         }
     }
     else if(n == "favicon::icon"
-            || n == "content::files::data"
-            || n == "content::files::data::compressed"
-            )
+         || n == "content::files::data"
+         || n == "content::files::data::compressed"
+         || f_tableName == "layout"
+         )
     {
         // n bit binary value
         // same as previous only this can be huge so we limit it
@@ -335,8 +335,8 @@ QString dbutils::get_column_value( QCassandraCell::pointer_t c ) const
         }
     }
     else if((f_tableName == "data" && n == "content::attachment")
-            || (f_tableName == "files" && f_rowName == "javascripts")
-            )
+         || (f_tableName == "files" && f_rowName == "javascripts")
+         )
     {
         // md5 in binary
         const QByteArray& buf(c->value().binaryValue());
