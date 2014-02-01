@@ -23,6 +23,12 @@ ${BUILDDIR}/snaplayout ${LAYOUTDIR}/white/body-parser.xsl
 ${BUILDDIR}/snaplayout ${LAYOUTDIR}/white/theme-parser.xsl
 ${BUILDDIR}/snapserver -d -c ${SOURCEDIR}/src/snapserver.conf --add-host
 
+# To setup the bare theme
+# (but we cannot run it at this point yet because the database was not
+# fully initialized to support such.)
+#${BUILDDIR}/snaplayout --set-theme http://www.example.com layout '"bare";'
+#${BUILDDIR}/snaplayout --set-theme http://www.example.com theme '"bare";'
+
 echo
 echo "Done!"
 echo
