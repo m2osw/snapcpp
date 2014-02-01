@@ -103,6 +103,24 @@ QString dbutils::key_to_string( const QByteArray& key )
 }
 
 
+QByteArray dbutils::string_to_key( const QString& str )
+{
+    QByteArray ret;
+    QStringList numList( str.split(' ') );
+
+    for( auto str_num : numList )
+    {
+        bool ok( false );
+        ret.push_back( static_cast<char>( num.toInt( &ok, 16 ) ) );
+        if( !ok )
+        {
+            throw snap_exception( "Cannot convert to num! Not base 16." );
+        }
+    }
+    return ret;
+}
+
+
 QString dbutils::get_row_name( QCassandraRow::pointer_t p_r ) const
 {
     QString ret;
@@ -187,6 +205,128 @@ QString dbutils::get_column_name( QCassandraCell::pointer_t c ) const
     }
 
     return name;
+}
+
+
+dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) const
+{
+    QString const n( get_column_name( c ) );
+
+    if(n == "users::identifier"
+    || n == "permissions::dynamic"
+    || n == "shorturl::identifier"
+    )
+    {
+        return CT_uint64_value;
+    }
+    else if(n == "content::created"
+         || n == "content::files::created"
+         || n == "content::files::creation_time"
+         || n == "content::files::modification_time"
+         || n == "content::files::secure::last_check"
+         || n == "content::files::updated"
+         || n == "content::modified"
+         || n == "content::updated"
+         || n.left(18) == "core::last_updated"
+         || n == "core::plugin_threshold"
+         || n == "sessions::date"
+         || n == "shorturl::date"
+         || n == "users::created_time"
+         || n == "users::forgot_password_on"
+         || n == "users::login_on"
+         || n == "users::logout_on"
+         || n == "users::previous_login_on"
+         || n == "users::start_date"
+         || n == "users::verified_on"
+         )
+    {
+        // 64 bit value (microseconds)
+        return CT_time_microseconds;
+    }
+    else if(n == "sessions::login_limit"
+         || n == "sessions::time_limit"
+         )
+    {
+        // 64 bit value (seconds)
+        return CT_time_seconds;
+    }
+    else if(n == "sitemapxml::priority"
+         )
+    {
+        // 32 bit float
+        return CT_float32_value;
+    }
+    else if(n.startsWith("content::attachment::reference::")
+         || n == "content::attachment::revision_control::last_branch"
+         || n.startsWith("content::attachment::revision_control::last_revision::")
+         || n == "content::files::image_height"
+         || n == "content::files::image_width"
+         || n == "content::files::size"
+         || n == "content::files::size::compressed"
+         || n == "content::revision_control::attachment::current_branch"
+         || n == "content::revision_control::attachment::current_working_branch"
+         || n == "content::revision_control::current_branch"
+         || n == "content::revision_control::current_working_branch"
+         || n == "content::revision_control::last_branch"
+         || n == "content::revision_control::attachment::last_branch"
+         || n.startsWith("content::revision_control::attachment::current_revision::")
+         || n.startsWith("content::revision_control::attachment::current_working_revision::")
+         || n.startsWith("content::revision_control::current_revision::")
+         || n.startsWith("content::revision_control::current_working_revision::")
+         || n.startsWith("content::revision_control::last_revision::")
+         || n.startsWith("content::revision_control::attachment::last_revision::")
+         || n == "sitemapxml::count"
+         || n == "sessions::id"
+         || n == "sessions::time_to_live"
+         || (f_tableName == "libQtCassandraLockTable" && f_rowName == "hosts")
+         )
+    {
+        return CT_uint32_value;
+    }
+    else if(n == "sessions::used_up"
+         || n == "content::final"
+         || n == "favicon::sitewide"
+         || n == "content::files::compressor"
+         || n.startsWith("content::files::reference::")
+         || (f_tableName == "files" && f_rowName == "new")
+         )
+    {
+        // 8 bit value
+        // cast to integer so arg() doesn't take it as a character
+        return CT_uint8_value;
+    }
+    else if(n == "sessions::random"
+         || n == "users::password::salt"
+         || n == "users::password"
+         )
+    {
+        // n bit binary value
+        return CT_hexarray_value;
+    }
+    else if(n == "favicon::icon"
+         || n == "content::files::data"
+         || n == "content::files::data::compressed"
+         || f_tableName == "layout"
+         )
+    {
+        // n bit binary value
+        // same as previous only this can be huge so we limit it
+        return CT_hexarray_limited_value;
+    }
+    else if((f_tableName == "data" && n == "content::attachment")
+         || (f_tableName == "files" && f_rowName == "javascripts")
+         )
+    {
+        // md5 in binary
+        return CT_md5array_value;
+    }
+    else if(n == "content::files::secure")
+    {
+        return CT_secure_value;
+    }
+
+    // all others viewed as strings
+    return CT_string_value;
 }
 
 

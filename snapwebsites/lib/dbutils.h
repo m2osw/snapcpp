@@ -31,8 +31,9 @@ class dbutils
 public:
     dbutils( const QString& table_name, const QString& row_name );
 
-    static QString byte_to_hex  ( const char byte );
-    static QString key_to_string( const QByteArray& key );
+    static QString    byte_to_hex   ( const char        byte );
+    static QString    key_to_string ( const QByteArray& key  );
+    static QByteArray string_to_key ( const QString&    str  );
 
     QByteArray get_row_key() const;
     QString    get_column_name ( QtCassandra::QCassandraCell::pointer_t c ) const;
@@ -40,6 +41,23 @@ public:
     QString    get_row_name( QtCassandra::QCassandraRow::pointer_t p_r ) const;
 
 private:
+    typedef enum column_type_t
+    {
+        CT_uint64_value,
+        CT_time_microseconds,
+        CT_time_seconds,
+        CT_float32_value,
+        CT_uint32_value,
+        CT_uint8_value,
+        CT_hexarray_value,
+        CT_hexarray_limited_value,
+        CT_md5array_value,
+        CT_secure_value,
+        CT_string_value
+    };
+
+    column_type_t get_column_type( QCassandraCell::pointer_t c ) const;
+
     QString f_tableName;
     QString f_rowName;
 };
