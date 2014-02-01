@@ -12,6 +12,6 @@ PORT=9160
 LAYOUTDIR=/usr/share/snapwebsites/layouts
 snapdb --host ${HOSTNAME} --port ${PORT} --drop-tables
 snaplayout --host ${HOSTNAME} --port ${PORT} \
-	${LAYOUTDIR}/bare-content.xml ${LAYOUTDIR}/bare-body-parser.xsl ${LAYOUTDIR}/bare-theme-parser.xsl ${LAYOUTDIR}/bare-style.css \
-	${LAYOUTDIR}/white-content.xml ${LAYOUTDIR}/white-body-parser.xsl ${LAYOUTDIR}/white-theme-parser.xsl
+	${LAYOUTDIR}/bare/content.xml ${LAYOUTDIR}/bare/body-parser.xsl ${LAYOUTDIR}/bare/theme-parser.xsl ${LAYOUTDIR}/bare/style.css \
+	${LAYOUTDIR}/white/content.xml ${LAYOUTDIR}/white/body-parser.xsl ${LAYOUTDIR}/white/theme-parser.xsl
 snapserver -d --add-host -p cassandra_host=${HOSTNAME} cassandra_port=${PORT}

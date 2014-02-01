@@ -27,10 +27,10 @@ public:
     virtual QVector<QXmlName> namespaceBindings(const QXmlNodeModelIndex& n) const;
     virtual QVector<QXmlNodeModelIndex> nodesByIdref(const QXmlName& idref) const;
     virtual QXmlNodeModelIndex root(const QXmlNodeModelIndex& n) const;
-    virtual QString	stringValue(const QXmlNodeModelIndex& n) const;
+    virtual QString stringValue(const QXmlNodeModelIndex& n) const;
     virtual QVariant typedValue(const QXmlNodeModelIndex& node) const;
 
-    //virtual QSourceLocation	sourceLocation(const QXmlNodeModelIndex& index) const; -- this is not yet virtual
+    //virtual QSourceLocation sourceLocation(const QXmlNodeModelIndex& index) const; -- this is not yet virtual
 
     QXmlNodeModelIndex fromDomNode(const QDomNode& n) const;
     QDomNode toDomNode(const QXmlNodeModelIndex& ni) const;

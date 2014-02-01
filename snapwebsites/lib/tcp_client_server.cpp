@@ -317,7 +317,7 @@ tcp_server::tcp_server(const std::string& addr, int port, int max_connections, b
         throw tcp_client_server_runtime_error("could not create socket for client");
     }
 
-	// this should be optional as reusing an address for TCP/IP is not 100% safe
+    // this should be optional as reusing an address for TCP/IP is not 100% safe
     if(reuse_addr)
     {
         // try to mark the socket address as immediately reusable
@@ -327,8 +327,8 @@ tcp_server::tcp_server(const std::string& addr, int port, int max_connections, b
         setsockopt(f_socket, SOL_SOCKET, SO_REUSEADDR, &optval, optlen);
     }
 
-	if(bind(f_socket, addr_info.f_addrinfo->ai_addr, addr_info.f_addrinfo->ai_addrlen) < 0)
-	{
+    if(bind(f_socket, addr_info.f_addrinfo->ai_addr, addr_info.f_addrinfo->ai_addrlen) < 0)
+    {
         throw tcp_client_server_runtime_error("could not bind the socket to \"" + f_addr + "\"");
     }
 

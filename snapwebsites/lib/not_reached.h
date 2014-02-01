@@ -23,10 +23,10 @@ namespace snap {
 
 __attribute__ ((noreturn)) inline void NOTREACHED()
 {
-	// TODO: add call to print stack trace
-	std::cerr << "NOTREACHED called, process will abort." << std::endl;
-	abort();
+    // TODO: add call to print stack trace
+    std::cerr << "NOTREACHED called, process will abort." << std::endl;
+    abort();
 }
 
 } // namespace snap
-// vim: ts=4 sw=4
+// vim: ts=4 sw=4 et

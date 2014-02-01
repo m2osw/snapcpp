@@ -1,5 +1,5 @@
 // Snap Manager -- snap database manager encode/decode dialog
-// Copyright (C) 2011-2012  Made to Order Software Corp.
+// Copyright (C) 2011-2014  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,31 +14,28 @@
 // You should have received a copy of the GNU General Public License
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-#ifndef SNAP_MANAGER_DECODE_UTF8_H
-#define SNAP_MANAGER_DECODE_UTF8_H
+#pragma once
 
 #include "ui_snap-manager-decode-utf8-dialog.h"
 #include <QPointer>
 
 class snap_manager_decode_utf8 : public QDialog, public Ui_decodeUtf8SnapManager
 {
-	Q_OBJECT
+    Q_OBJECT
 
 public:
-	snap_manager_decode_utf8(QWidget *parent);
-	virtual ~snap_manager_decode_utf8();
+    snap_manager_decode_utf8(QWidget *parent);
+    virtual ~snap_manager_decode_utf8();
 
 private slots:
-	void on_clear_clicked();
-	void on_decode_clicked();
-	void on_encode_clicked();
-	void on_close_clicked();
+    void on_clear_clicked();
+    void on_decode_clicked();
+    void on_encode_clicked();
+    void on_close_clicked();
 
 private:
-	QPointer<QTextEdit>			f_data;
+    QPointer<QTextEdit>     f_data;
 };
 
 
-#endif
-// SNAP_MANAGER_DECODE_UTF8_H
-// vim: ts=4 sw=4
+// vim: ts=4 sw=4 et

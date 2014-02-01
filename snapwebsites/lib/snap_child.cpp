@@ -2945,9 +2945,9 @@ void snap_child::read_environment()
                 NOTREACHED();
             }
             // retrieve all the parameters, then keep those we want to keep
-            int const max(disposition.size());
+            int const max_strings(disposition.size());
             environment_map_t params;
-            for(int i(1); i < max; ++i)
+            for(int i(1); i < max_strings; ++i)
             {
                 // each parameter is name=<value>
                 QStringList nv(disposition[i].split('='));
@@ -3215,8 +3215,8 @@ std::cerr << " f_files[\"" << f_name << "\"] = \"...\" (Filename: \"" << filenam
             // 1. Get the main boundary from the CONTENT_TYPE
             QStringList content_info(f_env["CONTENT_TYPE"].split(';'));
             QString boundary;
-            int const max(content_info.size());
-            for(int i(1); i < max; ++i)
+            int const max_strings(content_info.size());
+            for(int i(1); i < max_strings; ++i)
             {
                 QString param(content_info[i].trimmed());
                 if(param.startsWith("boundary="))
@@ -3292,8 +3292,8 @@ std::cerr << " f_files[\"" << f_name << "\"] = \"...\" (Filename: \"" << filenam
                 {
                     // special case
                     QStringList cookies(f_value.split(';', QString::SkipEmptyParts));
-                    int max(cookies.size());
-                    for(int i(0); i < max; ++i)
+                    int const max_strings(cookies.size());
+                    for(int i(0); i < max_strings; ++i)
                     {
                         QString name_value(cookies[i]);
                         QStringList nv(name_value.trimmed().split('=', QString::SkipEmptyParts));
@@ -3885,8 +3885,8 @@ void snap_child::canonicalize_domain()
     {
         sub_domains += ".";
     }
-    int max(r.size());
-    for(int i = 0; i < max; ++i)
+    int const max_rules(r.size());
+    for(int i = 0; i < max_rules; ++i)
     {
         QSharedPointer<domain_info> info(r[i]);
 
@@ -4055,8 +4055,8 @@ void snap_child::canonicalize_website()
 
     // we check decoded paths
     QString uri_path(f_uri.path(false));
-    int max(r.size());
-    for(int i = 0; i < max; ++i)
+    int const max_rules(r.size());
+    for(int i = 0; i < max_rules; ++i)
     {
         QSharedPointer<website_info> info(r[i]);
 
@@ -4309,8 +4309,8 @@ void snap_child::canonicalize_options()
     if(!browser_languages.isEmpty())
     {
         qStableSort(browser_languages);
-        int const max(browser_languages.size());
-        for(int i(max - 1); i >= 0; --i)
+        int const max_languages(browser_languages.size());
+        for(int i(max_languages - 1); i >= 0; --i)
         {
             QString browser_lang(browser_languages[i].get_name());
             QString browser_country;
@@ -4475,8 +4475,8 @@ void snap_child::canonicalize_options()
     // now check all the other encodings and add them
     http_strings::WeightedHttpString::part_vector_t browser_compressions(encodings.get_parts());
     qStableSort(browser_compressions);
-    int const max(browser_compressions.size());
-    for(int i(0); i < max; ++i)
+    int const max_compressions(browser_compressions.size());
+    for(int i(0); i < max_compressions; ++i)
     {
         QString encoding_name(browser_compressions[i].get_name());
         if(browser_compressions[i].get_level() == 0)
@@ -5737,9 +5737,9 @@ void snap_child::set_header(QString const& name, QString const& value, header_mo
         std::vector<wchar_t> ws;
         ws.resize(value.length());
         value.toWCharArray(&ws[0]);
-        int max(value.length());
+        int const max_length(value.length());
         wchar_t lc(L'\0');
-        for(int p(0); p < max; ++p)
+        for(int p(0); p < max_length; ++p)
         {
             wchar_t wc(ws[p]);
             if((wc < 0x20 || wc == 127) && wc != L'\r' && wc != L'\n' && wc != L'\t')
@@ -5750,8 +5750,8 @@ void snap_child::set_header(QString const& name, QString const& value, header_mo
             // we MUST have a space or tab after a newline
             if(wc == L'\r' || wc == L'\n')
             {
-                // if p + 1 == max then the user supplied the ending "\r\n"
-                if(p + 1 < max)
+                // if p + 1 == max_length then the user supplied the ending "\r\n"
+                if(p + 1 < max_length)
                 {
                     if(ws[p] != L' ' && ws[p] != L'\t' && ws[p] != L'\r' && ws[p] != L'\n')
                     {
@@ -6737,8 +6737,8 @@ snap_child::locale_info_vector_t const& snap_child::get_plugins_locales()
             if(!plugins_languages.isEmpty())
             {
                 qStableSort(plugins_languages);
-                int const max(plugins_languages.size());
-                for(int i(0); i < max; ++i)
+                int const max_languages(plugins_languages.size());
+                for(int i(0); i < max_languages; ++i)
                 {
                     QString plugins_lang(plugins_languages[0].get_name());
                     QString plugins_country;
@@ -7117,7 +7117,7 @@ time_t snap_child::string_to_date(QString const& date)
             return true;
         }
 
-        bool integer(int min_len, int max_len, int min, int max, int& result)
+        bool integer(int min_len, int max_len, int min_value, int max_value, int& result)
         {
             int count(0);
             for(; *f_s >= '0' && *f_s <= '9'; ++f_s, ++count)
@@ -7125,7 +7125,7 @@ time_t snap_child::string_to_date(QString const& date)
                 result = result * 10 + *f_s - '0';
             }
             if(count < min_len || count > max_len
-            || result < min || result > max)
+            || result < min_value || result > max_value)
             {
                 return false;
             }

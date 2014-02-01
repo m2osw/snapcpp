@@ -14,13 +14,13 @@ SOURCEDIR=.
 BUILDDIR=../BUILD/snapwebsites/src
 LAYOUTDIR=${SOURCEDIR}/layouts
 ${BUILDDIR}/snapdb --drop-tables
-${BUILDDIR}/snaplayout ${LAYOUTDIR}/bare-content.xml
-${BUILDDIR}/snaplayout ${LAYOUTDIR}/bare-body-parser.xsl
-${BUILDDIR}/snaplayout ${LAYOUTDIR}/bare-theme-parser.xsl
-${BUILDDIR}/snaplayout ${LAYOUTDIR}/bare-style.css
-${BUILDDIR}/snaplayout ${LAYOUTDIR}/white-content.xml
-${BUILDDIR}/snaplayout ${LAYOUTDIR}/white-body-parser.xsl
-${BUILDDIR}/snaplayout ${LAYOUTDIR}/white-theme-parser.xsl
+${BUILDDIR}/snaplayout ${LAYOUTDIR}/bare/content.xml
+${BUILDDIR}/snaplayout ${LAYOUTDIR}/bare/body-parser.xsl
+${BUILDDIR}/snaplayout ${LAYOUTDIR}/bare/theme-parser.xsl
+${BUILDDIR}/snaplayout ${LAYOUTDIR}/bare/style.css
+${BUILDDIR}/snaplayout ${LAYOUTDIR}/white/content.xml
+${BUILDDIR}/snaplayout ${LAYOUTDIR}/white/body-parser.xsl
+${BUILDDIR}/snaplayout ${LAYOUTDIR}/white/theme-parser.xsl
 ${BUILDDIR}/snapserver -d -c ${SOURCEDIR}/src/snapserver.conf --add-host
 
 echo

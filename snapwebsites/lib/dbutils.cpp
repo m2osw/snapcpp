@@ -94,8 +94,8 @@ QString dbutils::byte_to_hex( const char byte )
 QString dbutils::key_to_string( const QByteArray& key )
 {
     QString ret;
-    int const max(key.size());
-    for(int i(0); i < max; ++i)
+    int const max_length(key.size());
+    for(int i(0); i < max_length; ++i)
     {
         ret += byte_to_hex( key[i] );
     }
@@ -147,10 +147,10 @@ QString dbutils::get_column_name( QCassandraCell::pointer_t c ) const
     else if(f_tableName == "files" && f_rowName == "javascripts")
     {
         // this row name is "<name>"_"<browser>"_<version as integers>
-        int const max(key.size());
+        int const max_length(key.size());
         int sep(0);
         int i(0);
-        for(; i < max && sep < 2; ++i)
+        for(; i < max_length && sep < 2; ++i)
         {
             if(key[i] == '_')
             {
@@ -160,7 +160,7 @@ QString dbutils::get_column_name( QCassandraCell::pointer_t c ) const
         }
         // now we have to add the version
         bool first(true);
-        for(; i + 3 < max; i += 4)
+        for(; i + 3 < max_length; i += 4)
         {
             if(first)
             {
@@ -307,9 +307,9 @@ QString dbutils::get_column_value( QCassandraCell::pointer_t c ) const
     {
         // n bit binary value
         const QByteArray& buf(c->value().binaryValue());
-        int const max(buf.size());
+        int const max_length(buf.size());
         v += "(hex) ";
-        for(int i(0); i < max; ++i)
+        for(int i(0); i < max_length; ++i)
         {
             v += byte_to_hex(buf[i]) + " ";
         }
@@ -323,13 +323,13 @@ QString dbutils::get_column_value( QCassandraCell::pointer_t c ) const
         // n bit binary value
         // same as previous only this can be huge so we limit it
         const QByteArray& buf(c->value().binaryValue());
-        int const max(std::min(64, buf.size()));
+        int const max_length(std::min(64, buf.size()));
         v += "(hex) ";
-        for(int i(0); i < max; ++i)
+        for(int i(0); i < max_length; ++i)
         {
             v += byte_to_hex(buf[i]) + " ";
         }
-        if(buf.size() > max)
+        if(buf.size() > max_length)
         {
             v += "...";
         }
@@ -340,9 +340,9 @@ QString dbutils::get_column_value( QCassandraCell::pointer_t c ) const
     {
         // md5 in binary
         const QByteArray& buf(c->value().binaryValue());
-        int const max(buf.size());
+        int const max_length(buf.size());
         v += "(md5) ";
-        for(int i(0); i < max; ++i)
+        for(int i(0); i < max_length; ++i)
         {
             v += byte_to_hex(buf[i]);
         }

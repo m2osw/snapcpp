@@ -1,9 +1,9 @@
 #
 # File:
-#      plugins/content/CMakeLists.txt
+#      layouts/white/CMakeLists.txt
 #
 # Description:
-#      Manage layouts.
+#      Manage white white layout.
 #
 # Documentation:
 #      See the CMake documentation.
@@ -29,10 +29,19 @@
 #      Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 
-project(layout_dir)
+project(white_layout)
 
-add_subdirectory(bare)
-add_subdirectory(white)
+snap_validate_xml( content.xml content.dtd )
+
+# TODO: install as a tarball instead
+install(
+    FILES
+        content.xml
+        body-parser.xsl
+        theme-parser.xsl
+    DESTINATION
+        share/snapwebsites/layouts/white
+)
 
 
 # vim: ts=4 sw=4 et

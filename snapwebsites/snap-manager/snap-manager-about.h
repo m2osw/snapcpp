@@ -1,5 +1,5 @@
 // Snap Manager -- snap database manager About Box
-// Copyright (C) 2011  Made to Order Software Corp.
+// Copyright (C) 2011-2014  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,30 +14,27 @@
 // You should have received a copy of the GNU General Public License
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-#ifndef SNAP_MANAGER_ABOUT_H
-#define SNAP_MANAGER_ABOUT_H
+#pragma once
 
 #include "ui_snap-manager-aboutbox.h"
 
 class snap_manager_about : public QDialog, public Ui_aboutSnapManager
 {
-	Q_OBJECT
+    Q_OBJECT
 
 public:
-	snap_manager_about(QWidget *parent);
-	virtual ~snap_manager_about();
+    snap_manager_about(QWidget *parent);
+    virtual ~snap_manager_about();
 
 private slots:
-	void clicked();
+    void clicked();
 
 signals:
-	void click_now();
+    void click_now();
 
 private:
-	void random();
+    void random();
 };
 
 
-#endif
-// SNAP_MANAGER_ABOUT_H
-// vim: ts=4 sw=4
+// vim: ts=4 sw=4 et

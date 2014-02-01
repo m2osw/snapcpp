@@ -905,7 +905,7 @@ void filter::on_token_filter(content::path_info_t& ipath, QDomDocument& xml)
             QDomElement e(n.toElement());
 
             QString const tag_name(e.tagName());
-			// TBD -- is it a problem to have hard coded tag names here?
+            // TBD -- is it a problem to have hard coded tag names here?
             if(tag_name == "snap" || tag_name == "filter")
             {
                 // if the element has no children then we do

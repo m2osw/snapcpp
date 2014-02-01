@@ -1,5 +1,5 @@
-// Snap Websites Server -- debug
-// Copyright (C) 2011-2014  Made to Order Software Corp.
+// Snap Websites Servers -- to avoid Boost warnings in analysis
+// Copyright (C) 2014  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -16,7 +16,4 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
-// Set to 1 to get debug and 0 to avoid debug
-#define SNAP_DEBUG   1
-
-// vim: ts=4 sw=4 et
+#define SNAP_PREVENT_MACRO_SUBSTITUTION

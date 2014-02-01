@@ -87,7 +87,7 @@ public:
     mode_t                      get_mode() const;
 
 protected:
-	virtual int_type overflow(int_type c);
+    virtual int_type overflow(int_type c);
     virtual int_type underflow();
 
 private:

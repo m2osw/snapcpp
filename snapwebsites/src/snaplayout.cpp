@@ -192,8 +192,8 @@ void snap_layout::load_xml_info(QDomDocument& doc, QString const& filename, QStr
     QString content_modified_date(snap_tree.attribute("content-modified", "0"));
 
     QDomNodeList content(snap_tree.elementsByTagName("content"));
-    int max(content.size());
-    for(int idx(0); idx < max; ++idx)
+    int const max_nodes(content.size());
+    for(int idx(0); idx < max_nodes; ++idx)
     {
         // all should be elements... but still verify
         QDomNode p(content.at(idx));
@@ -270,8 +270,8 @@ void snap_layout::load_xsl_info(QDomDocument& doc, QString const& filename, QStr
     QString layout_modified_date;
 
     QDomNodeList params(doc.elementsByTagNameNS("http://www.w3.org/1999/XSL/Transform", "variable"));
-    int max(params.size());
-    for(int idx(0); idx < max; ++idx)
+    int const max_nodes(params.size());
+    for(int idx(0); idx < max_nodes; ++idx)
     {
         // all should be elements... but still verify
         QDomNode p(params.at(idx));
