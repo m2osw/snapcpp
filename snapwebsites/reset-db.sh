@@ -12,6 +12,13 @@ PORT=9160
 LAYOUTDIR=/usr/share/snapwebsites/layouts
 snapdb --host ${HOSTNAME} --port ${PORT} --drop-tables
 snaplayout --host ${HOSTNAME} --port ${PORT} \
-	${LAYOUTDIR}/bare-content.xml ${LAYOUTDIR}/bare-body-parser.xsl ${LAYOUTDIR}/bare-theme-parser.xsl ${LAYOUTDIR}/bare-style.css \
-	${LAYOUTDIR}/white-content.xml ${LAYOUTDIR}/white-body-parser.xsl ${LAYOUTDIR}/white-theme-parser.xsl
+	${LAYOUTDIR}/bare/content.xml ${LAYOUTDIR}/bare/body-parser.xsl ${LAYOUTDIR}/bare/theme-parser.xsl ${LAYOUTDIR}/bare/style.css \
+	${LAYOUTDIR}/white/content.xml ${LAYOUTDIR}/white/body-parser.xsl ${LAYOUTDIR}/white/theme-parser.xsl
 snapserver -d --add-host -p cassandra_host=${HOSTNAME} cassandra_port=${PORT}
+
+# To setup the bare theme until the default theme works as expected
+# (but we cannot run it at this point yet because the database was not
+# fully initialized to support such.)
+#${BUILDDIR}/snaplayout --set-theme http://www.example.com layout '"bare";'
+#${BUILDDIR}/snaplayout --set-theme http://www.example.com theme '"bare";'
+

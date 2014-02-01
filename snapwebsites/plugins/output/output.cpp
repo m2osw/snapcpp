@@ -463,11 +463,11 @@ QVariant output::js_property_get(const QString& name) const
 
 QString output::js_property_name(int index) const
 {
-	if(index == 0)
-	{
-		return "modified";
-	}
-	return "";
+    if(index == 0)
+    {
+        return "modified";
+    }
+    return "";
 }
 
 

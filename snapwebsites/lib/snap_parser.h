@@ -33,20 +33,20 @@ class snap_parser_unexpected_token : public std::exception {};
 
 
 enum token_t {
-	TOKEN_ID_NONE_ENUM = 0,		// "not a token" (also end of input)
+    TOKEN_ID_NONE_ENUM = 0,     // "not a token" (also end of input)
 
-	TOKEN_ID_INTEGER_ENUM,
-	TOKEN_ID_FLOAT_ENUM,
-	TOKEN_ID_IDENTIFIER_ENUM,
-	TOKEN_ID_KEYWORD_ENUM,
-	TOKEN_ID_STRING_ENUM,
-	TOKEN_ID_LITERAL_ENUM,		// literal character(s)
+    TOKEN_ID_INTEGER_ENUM,
+    TOKEN_ID_FLOAT_ENUM,
+    TOKEN_ID_IDENTIFIER_ENUM,
+    TOKEN_ID_KEYWORD_ENUM,
+    TOKEN_ID_STRING_ENUM,
+    TOKEN_ID_LITERAL_ENUM,      // literal character(s)
 
-	TOKEN_ID_EMPTY_ENUM,		// special empty token
-	TOKEN_ID_CHOICES_ENUM,		// pointer to a choices object
-	TOKEN_ID_RULES_ENUM,		// pointer to a choices object (see rules operator |() )
-	TOKEN_ID_NODE_ENUM,			// pointer to a node object
-	TOKEN_ID_ERROR_ENUM			// an error occured
+    TOKEN_ID_EMPTY_ENUM,        // special empty token
+    TOKEN_ID_CHOICES_ENUM,      // pointer to a choices object
+    TOKEN_ID_RULES_ENUM,        // pointer to a choices object (see rules operator |() )
+    TOKEN_ID_NODE_ENUM,         // pointer to a node object
+    TOKEN_ID_ERROR_ENUM         // an error occured
 };
 
 struct token_id { token_id(token_t t) : f_type(t) {} operator token_t () const { return f_type; } private: token_t f_type; };
@@ -74,84 +74,84 @@ extern token_id_empty_def TOKEN_ID_EMPTY;
 class token
 {
 public:
-	token(token_t id = TOKEN_ID_NONE) : f_id(id) {}
-	token(const token& t) : f_id(t.f_id), f_value(t.f_value) {}
-	token& operator = (const token& t)
-	{
-		if(this != &t) {
-			f_id = t.f_id;
-			f_value = t.f_value;
-		}
-		return *this;
-	}
-	// polymorphic type so user data works as expected
-	virtual ~token() {}
+    token(token_t id = TOKEN_ID_NONE) : f_id(id) {}
+    token(const token& t) : f_id(t.f_id), f_value(t.f_value) {}
+    token& operator = (const token& t)
+    {
+        if(this != &t) {
+            f_id = t.f_id;
+            f_value = t.f_value;
+        }
+        return *this;
+    }
+    // polymorphic type so user data works as expected
+    virtual ~token() {}
 
-	void set_id(token_t id) { f_id = id; }
-	token_t get_id() const { return f_id; }
+    void set_id(token_t id) { f_id = id; }
+    token_t get_id() const { return f_id; }
 
-	void set_value(const QVariant& value) { f_value = value; }
-	QVariant get_value() const { return f_value; }
+    void set_value(const QVariant& value) { f_value = value; }
+    QVariant get_value() const { return f_value; }
 
 private:
-	token_t			f_id;
-	QVariant		f_value;
+    token_t         f_id;
+    QVariant        f_value;
 };
-typedef QVector<QSharedPointer<token> >	vector_token_t;
+typedef QVector<QSharedPointer<token> >    vector_token_t;
 
 class keyword;
 
 class lexer
 {
 public:
-	enum lexer_error_t {
-		LEXER_ERROR_NONE,
+    enum lexer_error_t {
+        LEXER_ERROR_NONE,
 
-		LEXER_ERROR_INVALID_STRING,
-		LEXER_ERROR_INVALID_C_COMMENT,
-		LEXER_ERROR_INVALID_NUMBER,
+        LEXER_ERROR_INVALID_STRING,
+        LEXER_ERROR_INVALID_C_COMMENT,
+        LEXER_ERROR_INVALID_NUMBER,
 
-		LEXER_ERROR_max
-	};
+        LEXER_ERROR_max
+    };
 
-					lexer() { f_pos = f_input.begin(); }
-	bool			eoi() const { return f_pos == f_input.end(); }
-	uint32_t		line() const { return f_line; }
-	void			set_input(const QString& input);
-	void			add_keyword(keyword& k);
-	token			next_token();
-	lexer_error_t	get_error_code() const { return f_error_code; }
-	QString			get_error_message() const { return f_error_message; }
-	uint32_t		get_error_line() const { return f_error_line; }
+                    lexer() { f_pos = f_input.begin(); }
+    bool            eoi() const { return f_pos == f_input.end(); }
+    uint32_t        line() const { return f_line; }
+    void            set_input(const QString& input);
+    void            add_keyword(keyword& k);
+    token           next_token();
+    lexer_error_t   get_error_code() const { return f_error_code; }
+    QString         get_error_message() const { return f_error_message; }
+    uint32_t        get_error_line() const { return f_error_line; }
 
 private:
-	// list of keywords / identifiers
-	typedef QMap<QString, int> keywords_map_t;
+    // list of keywords / identifiers
+    typedef QMap<QString, int> keywords_map_t;
 
-	QString						f_input;
-	QString::const_iterator		f_pos;
-	controlled_vars::zuint32_t	f_line;
-	keywords_map_t				f_keywords;
-	typedef controlled_vars::limited_auto_init<lexer_error_t, LEXER_ERROR_NONE, static_cast<lexer_error_t>(LEXER_ERROR_max - 1), LEXER_ERROR_NONE> controlled_error_t;
-	controlled_error_t			f_error_code;
-	QString						f_error_message;
-	controlled_vars::zuint32_t	f_error_line;
+    QString                         f_input;
+    QString::const_iterator         f_pos;
+    controlled_vars::zuint32_t      f_line;
+    keywords_map_t                  f_keywords;
+    typedef controlled_vars::limited_auto_init<lexer_error_t, LEXER_ERROR_NONE, static_cast<lexer_error_t>(LEXER_ERROR_max - 1), LEXER_ERROR_NONE> controlled_error_t;
+    controlled_error_t              f_error_code;
+    QString                         f_error_message;
+    controlled_vars::zuint32_t      f_error_line;
 };
 
 class keyword
 {
 public:
-	keyword() : f_number(0) {}
-	keyword(lexer& parent, const QString& keyword_identifier, int index_number = 0);
+    keyword() : f_number(0) {}
+    keyword(lexer& parent, const QString& keyword_identifier, int index_number = 0);
 
-	QString identifier() const { return f_identifier; }
-	int number() const { return f_number; }
+    QString identifier() const { return f_identifier; }
+    int number() const { return f_number; }
 
 private:
-	static int	g_next_number;
+    static int  g_next_number;
 
-	int			f_number;
-	QString		f_identifier;
+    int         f_number;
+    QString     f_identifier;
 };
 
 class choices;
@@ -160,85 +160,85 @@ class token_node;
 class rule
 {
 public:
-	typedef void (*reducer_t)(const rule& r, QSharedPointer<token_node>& t);
+    typedef void (*reducer_t)(const rule& r, QSharedPointer<token_node>& t);
 
-	rule() : f_parent(NULL), f_reducer(NULL) {}
-	rule(choices& c);
-	rule(const rule& r);
+    rule() : f_parent(NULL), f_reducer(NULL) {}
+    rule(choices& c);
+    rule(const rule& r);
 
-	void add_rules(choices& c); // choices of rules
-	void add_choices(choices& c); // sub-rule
-	void add_token(token_t token); // any value accepted
-	void add_literal(const QString& value);
-	void add_keyword(const keyword& k);
-	void set_reducer(reducer_t reducer)
-	{
-		f_reducer = reducer;
-	}
+    void add_rules(choices& c); // choices of rules
+    void add_choices(choices& c); // sub-rule
+    void add_token(token_t token); // any value accepted
+    void add_literal(const QString& value);
+    void add_keyword(const keyword& k);
+    void set_reducer(reducer_t reducer)
+    {
+        f_reducer = reducer;
+    }
 
-	int count() const { return f_tokens.count(); }
+    int count() const { return f_tokens.count(); }
 
-	class rule_ref
-	{
-	public:
-		rule_ref(const rule *r, int position)
-			: f_rule(r), f_position(position)
-		{
-		}
-		rule_ref(const rule_ref& ref)
-			: f_rule(ref.f_rule), f_position(ref.f_position)
-		{
-		}
+    class rule_ref
+    {
+    public:
+        rule_ref(const rule *r, int position)
+            : f_rule(r), f_position(position)
+        {
+        }
+        rule_ref(const rule_ref& ref)
+            : f_rule(ref.f_rule), f_position(ref.f_position)
+        {
+        }
 
-		token get_token() const { return f_rule->f_tokens[f_position].f_token; }
-		QString get_value() const { return f_rule->f_tokens[f_position].f_value; }
-		keyword get_keyword() const { return f_rule->f_tokens[f_position].f_keyword; }
-		choices& get_choices() const { return *f_rule->f_tokens[f_position].f_choices; }
+        token get_token() const { return f_rule->f_tokens[f_position].f_token; }
+        QString get_value() const { return f_rule->f_tokens[f_position].f_value; }
+        keyword get_keyword() const { return f_rule->f_tokens[f_position].f_keyword; }
+        choices& get_choices() const { return *f_rule->f_tokens[f_position].f_choices; }
 
-	private:
-		const rule *f_rule;
-		int			f_position;
-	};
+    private:
+        const rule *f_rule;
+        int         f_position;
+    };
 
-	const rule_ref operator [] (int position) const
-	{
-		return rule_ref(this, position);
-	}
+    const rule_ref operator [] (int position) const
+    {
+        return rule_ref(this, position);
+    }
 
-	void reduce(QSharedPointer<token_node> n) const
-	{
-		if(f_reducer != NULL) {
-			f_reducer(*this, n);
-		}
-	}
+    void reduce(QSharedPointer<token_node> n) const
+    {
+        if(f_reducer != NULL) {
+            f_reducer(*this, n);
+        }
+    }
 
-	rule& operator >> (const token_id& token);
-	rule& operator >> (const QString& literal);
-	rule& operator >> (const char *literal);
-	rule& operator >> (const keyword& k);
-	rule& operator >> (choices& c);
-	rule& operator >= (rule::reducer_t function);
+    rule& operator >> (const token_id& token);
+    rule& operator >> (const QString& literal);
+    rule& operator >> (const char *literal);
+    rule& operator >> (const keyword& k);
+    rule& operator >> (choices& c);
+    rule& operator >= (rule::reducer_t function);
 
-	QString to_string() const;
+    QString to_string() const;
 
 private:
-	struct rule_data_t {
-		rule_data_t();
-		rule_data_t(const rule_data_t& s);
-		rule_data_t(choices& c);
-		rule_data_t(token_t token);
-		rule_data_t(const QString& value); // i.e. literal
-		rule_data_t(const keyword& k);
+    struct rule_data_t {
+        rule_data_t();
+        rule_data_t(const rule_data_t& s);
+        rule_data_t(choices& c);
+        rule_data_t(token_t token);
+        rule_data_t(const QString& value); // i.e. literal
+        rule_data_t(const keyword& k);
 
-		token_t		f_token;
-		QString		f_value;	// required value if not empty
-		keyword		f_keyword;	// the keyword
-		choices *	f_choices;	// sub-rule if not null & token TOKEN_ID_CHOICES_ENUM
-	};
+        token_t             f_token;
+        QString             f_value;    // required value if not empty
+        keyword             f_keyword;    // the keyword
+        choices *           f_choices;    // sub-rule if not null & token TOKEN_ID_CHOICES_ENUM
+    };
 
-	choices *				f_parent;
-	QVector<rule_data_t>	f_tokens;
-	reducer_t				f_reducer;
+    choices *               f_parent;
+    QVector<rule_data_t>    f_tokens;
+    reducer_t               f_reducer;
 };
 // these have to be defined as friends of the class to enable
 // all possible cases
@@ -276,37 +276,37 @@ class grammar;
 class choices
 {
 public:
-	choices(grammar *parent, const char *choice_name = "");
-	~choices();
+    choices(grammar *parent, const char *choice_name = "");
+    ~choices();
 
-	const QString& name() const { return f_name; }
-	int count() { return f_rules.count(); }
-	void clear();
+    const QString& name() const { return f_name; }
+    int count() { return f_rules.count(); }
+    void clear();
 
-	choices& operator = (const choices& rhs);
+    choices& operator = (const choices& rhs);
 
-	choices& operator >>= (const token_id& token);
-	choices& operator >>= (const QString& literal);
-	choices& operator >>= (const keyword& k);
-	choices& operator >>= (choices& rhs);
-	choices& operator >>= (rule& rhs);
+    choices& operator >>= (const token_id& token);
+    choices& operator >>= (const QString& literal);
+    choices& operator >>= (const keyword& k);
+    choices& operator >>= (choices& rhs);
+    choices& operator >>= (rule& rhs);
 
-	rule& operator | (rule& r);
+    rule& operator | (rule& r);
 
-	void add_rule(rule& r);
-	const rule& operator [] (int rule) const
-	{
-		return *f_rules[rule];
-	}
+    void add_rule(rule& r);
+    const rule& operator [] (int rule) const
+    {
+        return *f_rules[rule];
+    }
 
-	// for debug purposes
-	QString to_string() const;
+    // for debug purposes
+    QString to_string() const;
 
 private:
-	QString				f_name;
-	QVector<rule *>		f_rules;
+    QString                f_name;
+    QVector<rule *>        f_rules;
 };
-typedef QVector<choices *>			choices_array_t;
+typedef QVector<choices *>            choices_array_t;
 
 
 // base class that parsers derive from to create user data to be
@@ -315,7 +315,7 @@ typedef QVector<choices *>			choices_array_t;
 class parser_user_data
 {
 public:
-	virtual ~parser_user_data() {}
+    virtual ~parser_user_data() {}
 
 private:
 };
@@ -327,43 +327,43 @@ class token_node : public token
 {
 // Q_OBJECT is not used because we don't have signals, slots or properties
 public:
-	token_node() : token(TOKEN_ID_NODE_ENUM) {}
+    token_node() : token(TOKEN_ID_NODE_ENUM) {}
 
-	void add_token(token& t) { f_tokens.push_back(QSharedPointer<token>(new token(t))); }
-	void add_node(QSharedPointer<token_node> n) { f_tokens.push_back(n); }
-	vector_token_t& tokens() { return f_tokens; }
-	size_t size() const { return f_tokens.size(); }
-	QSharedPointer<token> operator [] (int index) { return f_tokens[index]; }
-	const QSharedPointer<token> operator [] (int index) const { return f_tokens[index]; }
-	void set_line(uint32_t line) { f_line = line; }
-	uint32_t get_line() const { return f_line; }
+    void add_token(token& t) { f_tokens.push_back(QSharedPointer<token>(new token(t))); }
+    void add_node(QSharedPointer<token_node> n) { f_tokens.push_back(n); }
+    vector_token_t& tokens() { return f_tokens; }
+    size_t size() const { return f_tokens.size(); }
+    QSharedPointer<token> operator [] (int index) { return f_tokens[index]; }
+    const QSharedPointer<token> operator [] (int index) const { return f_tokens[index]; }
+    void set_line(uint32_t line) { f_line = line; }
+    uint32_t get_line() const { return f_line; }
 
-	void set_user_data(QSharedPointer<parser_user_data> data) { f_user_data = data; }
-	QSharedPointer<parser_user_data> get_user_data() const { return f_user_data; }
+    void set_user_data(QSharedPointer<parser_user_data> data) { f_user_data = data; }
+    QSharedPointer<parser_user_data> get_user_data() const { return f_user_data; }
 
 private:
-	controlled_vars::zint32_t			f_line;
-	vector_token_t						f_tokens;
-	QSharedPointer<parser_user_data>	f_user_data;
+    controlled_vars::zint32_t           f_line;
+    vector_token_t                      f_tokens;
+    QSharedPointer<parser_user_data>    f_user_data;
 };
 
 class grammar
 {
 public:
-	grammar();
+    grammar();
 
-	void add_choices(choices& c);
+    void                        add_choices(choices& c);
 
-	bool parse(lexer& input, choices& start);
-	QSharedPointer<token_node> get_result() const { return f_result; }
+    bool                        parse(lexer& input, choices& start);
+    QSharedPointer<token_node>  get_result() const { return f_result; }
 
 private:
-	choices_array_t				f_choices;
-	QSharedPointer<token_node>	f_result;
+    choices_array_t             f_choices;
+    QSharedPointer<token_node>  f_result;
 };
 
 
 
 } // namespace parser
 } // namespace snap
-// vim: ts=4 sw=4
+// vim: ts=4 sw=4 et

@@ -1,5 +1,5 @@
 // Snap Manager -- snap database manager Help Window
-// Copyright (C) 2011  Made to Order Software Corp.
+// Copyright (C) 2011-2014  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -19,9 +19,9 @@
 #include <stdio.h>
 
 snap_manager_help::snap_manager_help(QWidget *snap_parent)
-	: QMainWindow(snap_parent)
+    : QMainWindow(snap_parent)
 {
-	setupUi(this);
+    setupUi(this);
 }
 
 snap_manager_help::~snap_manager_help()
@@ -30,4 +30,4 @@ snap_manager_help::~snap_manager_help()
 
 
 
-// vim: ts=4 sw=4
+// vim: ts=4 sw=4 et

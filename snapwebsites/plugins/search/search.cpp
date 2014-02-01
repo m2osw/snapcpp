@@ -34,16 +34,16 @@ SNAP_PLUGIN_START(search, 1, 0)
  */
 const char *get_name(name_t name)
 {
-	switch(name) {
-	case SNAP_NAME_SEARCH_STATUS:
-		return "search::status";
+    switch(name) {
+    case SNAP_NAME_SEARCH_STATUS:
+        return "search::status";
 
-	default:
-		// invalid index
-		throw snap_logic_exception("invalid SNAP_NAME_SEARCH_...");
+    default:
+        // invalid index
+        throw snap_logic_exception("invalid SNAP_NAME_SEARCH_...");
 
-	}
-	NOTREACHED();
+    }
+    NOTREACHED();
 }
 
 
@@ -52,7 +52,7 @@ const char *get_name(name_t name)
  * This function initializes the search plugin.
  */
 search::search()
-	//: f_snap(NULL) -- auto-init
+    //: f_snap(NULL) -- auto-init
 {
 }
 
@@ -72,10 +72,10 @@ search::~search()
  */
 void search::on_bootstrap(::snap::snap_child *snap)
 {
-	f_snap = snap;
+    f_snap = snap;
 
-	SNAP_LISTEN(search, "server", server, improve_signature, _1, _2);
-	SNAP_LISTEN(search, "layout", layout::layout, generate_page_content, _1, _2, _3, _4, _5);
+    SNAP_LISTEN(search, "server", server, improve_signature, _1, _2);
+    SNAP_LISTEN(search, "layout", layout::layout, generate_page_content, _1, _2, _3, _4, _5);
 }
 
 /** \brief Get a pointer to the search plugin.
@@ -89,7 +89,7 @@ void search::on_bootstrap(::snap::snap_child *snap)
  */
 search *search::instance()
 {
-	return g_plugin_search_factory.instance();
+    return g_plugin_search_factory.instance();
 }
 
 
@@ -104,8 +104,8 @@ search *search::instance()
  */
 QString search::description() const
 {
-	return "The search plugin index your website public pages in order to"
-		" allow your users to search its content.";
+    return "The search plugin index your website public pages in order to"
+        " allow your users to search its content.";
 }
 
 
@@ -123,11 +123,11 @@ QString search::description() const
  */
 int64_t search::do_update(int64_t last_updated)
 {
-	SNAP_PLUGIN_UPDATE_INIT();
+    SNAP_PLUGIN_UPDATE_INIT();
 
-	SNAP_PLUGIN_UPDATE(2012, 11, 3, 3, 58, 54, content_update);
+    SNAP_PLUGIN_UPDATE(2012, 11, 3, 3, 58, 54, content_update);
 
-	SNAP_PLUGIN_UPDATE_EXIT();
+    SNAP_PLUGIN_UPDATE_EXIT();
 }
 
 
@@ -141,7 +141,7 @@ int64_t search::do_update(int64_t last_updated)
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 void search::content_update(int64_t variables_timestamp)
 {
-	content::content::instance()->add_xml("search");
+    content::content::instance()->add_xml("search");
 }
 #pragma GCC diagnostic pop
 
@@ -155,17 +155,17 @@ void search::content_update(int64_t variables_timestamp)
  */
 void search::on_improve_signature(QString const& path, QString& signature)
 {
-	// TODO: we probably want translations? (in which case we
-	//       want the signature to be in an XML document.)
-	QString query(path);
-	query.replace('/', ' ');
-	query = query.simplified();
-	// the query should never be empty since the home page should always work...
-	if(!query.isEmpty())
-	{
-		query.replace(" ", "%20");
-		signature += " <a href=\"/search?search=" + query + "\">Search Our Website</a>";
-	}
+    // TODO: we probably want translations? (in which case we
+    //       want the signature to be in an XML document.)
+    QString query(path);
+    query.replace('/', ' ');
+    query = query.simplified();
+    // the query should never be empty since the home page should always work...
+    if(!query.isEmpty())
+    {
+        query.replace(" ", "%20");
+        signature += " <a href=\"/search?search=" + query + "\">Search Our Website</a>";
+    }
 }
 
 
@@ -185,17 +185,17 @@ void search::on_improve_signature(QString const& path, QString& signature)
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 void search::on_generate_page_content(layout::layout *l, content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate)
 {
-	QDomDocument doc(page.ownerDocument());
+    QDomDocument doc(page.ownerDocument());
 
-	QDomElement bookmarks;
-	dom_util::get_tag("bookmarks", body, bookmarks);
+    QDomElement bookmarks;
+    dom_util::get_tag("bookmarks", body, bookmarks);
 
-	QDomElement link(doc.createElement("link"));
-	link.setAttribute("rel", "search");
-	link.setAttribute("title", "Search"); // TODO: translate
-	link.setAttribute("type", "text/html");
-	link.setAttribute("href", f_snap->get_site_key_with_slash() + "search");
-	bookmarks.appendChild(link);
+    QDomElement link(doc.createElement("link"));
+    link.setAttribute("rel", "search");
+    link.setAttribute("title", "Search"); // TODO: translate
+    link.setAttribute("type", "text/html");
+    link.setAttribute("href", f_snap->get_site_key_with_slash() + "search");
+    bookmarks.appendChild(link);
 }
 #pragma GCC diagnostic pop
 
@@ -203,4 +203,4 @@ void search::on_generate_page_content(layout::layout *l, content::path_info_t& i
 
 SNAP_PLUGIN_END()
 
-// vim: ts=4 sw=4
+// vim: ts=4 sw=4 et

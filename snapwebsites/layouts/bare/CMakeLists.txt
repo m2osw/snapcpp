@@ -1,9 +1,9 @@
 #
 # File:
-#      plugins/header/CMakeLists.txt
+#      layouts/bare/CMakeLists.txt
 #
 # Description:
-#      Let the user manage what appears in the HTTP and HTML headers.
+#      Manage the bare layout.
 #
 # Documentation:
 #      See the CMake documentation.
@@ -29,45 +29,20 @@
 #      Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 
-project(plugin_header)
+project(bare_layout)
 
-find_package( Qt4 4.8.1 QUIET REQUIRED QtCore )
-include( ${QT_USE_FILE} )
-add_definitions( ${QT_DEFINITIONS} )
+snap_validate_xml( content.xml  content.dtd )
 
-include_directories(
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CONTROLLEDVARS_INCLUDE_DIRS}
-    ${QT_INCLUDES}
-)
-
-QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC
-    header.qrc
-)
-
-snap_validate_xml( content.xml content.dtd )
-
-add_library(header SHARED
-    header.cpp
-    ${SNAP_MANAGER_MOC_CXX}
-    ${SNAP_MANAGER_RESOURCES_RCC}
-    content.xml
-)
-
-target_link_libraries( header ${QT_LIBRARIES} )
-
-get_property( 3RDPARTY_INCLUDED GLOBAL PROPERTY 3RDPARTY_INCLUDED )
-if( 3RDPARTY_INCLUDED )
-    add_dependencies( header make_controlled_vars_headers )
-endif()
-
+# TODO: install as a tarball instead
 install(
-    TARGETS header LIBRARY DESTINATION ${PLUGIN_INSTALL_DIR}
+    FILES
+        content.xml
+        body-parser.xsl
+        theme-parser.xsl
+        style.css
+    DESTINATION
+        share/snapwebsites/layouts/bare
 )
-install(
-    DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/
-    DESTINATION include/snapwebsites/plugins/header
-    FILES_MATCHING PATTERN "*.h"
-)
+
 
 # vim: ts=4 sw=4 et

@@ -41,44 +41,44 @@ namespace dom_util
  */
 bool get_tag(const QString& tag_name, QDomElement& element, QDomElement& tag, bool create)
 {
-	QDomNodeList all_tags(element.elementsByTagName(tag_name));
-	switch(all_tags.count())
-	{
-	case 0:
-		if(create)
-		{
-			// missing, create a new one and retrieve it back out
-			tag = element.ownerDocument().createElement(tag_name);
-			element.appendChild(tag);
-		}
-		else
-		{
-			return false;
-		}
-		break;
+    QDomNodeList all_tags(element.elementsByTagName(tag_name));
+    switch(all_tags.count())
+    {
+    case 0:
+        if(create)
+        {
+            // missing, create a new one and retrieve it back out
+            tag = element.ownerDocument().createElement(tag_name);
+            element.appendChild(tag);
+        }
+        else
+        {
+            return false;
+        }
+        break;
 
-	case 1:
-		// we have it already!
-		{
-			QDomNode node(all_tags.at(0));
-			if(!node.isElement())
-			{
-				return false;
-			}
-			tag = node.toElement();
-		}
-		break;
+    case 1:
+        // we have it already!
+        {
+            QDomNode node(all_tags.at(0));
+            if(!node.isElement())
+            {
+                return false;
+            }
+            tag = node.toElement();
+        }
+        break;
 
-	default:
-		// we've got a problem here
-		return false;
+    default:
+        // we've got a problem here
+        return false;
 
-	}
+    }
 
-	return true;
+    return true;
 }
 
 
-}	// namespace dom_util
-}	// namespace snap
-// vim: ts=4 sw=4
+}    // namespace dom_util
+}    // namespace snap
+// vim: ts=4 sw=4 et

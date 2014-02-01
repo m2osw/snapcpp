@@ -68,5 +68,10 @@ endif()
 install(
     TARGETS layout LIBRARY DESTINATION ${PLUGIN_INSTALL_DIR}
 )
+FILE(GLOB HEADER_FILES "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
+install(
+    FILES ${HEADER_FILES}
+    DESTINATION include/snapwebsites/plugins/layout
+)
 
 # vim: ts=4 sw=4 et

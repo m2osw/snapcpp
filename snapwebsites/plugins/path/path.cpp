@@ -206,7 +206,7 @@ plugins::plugin *path::get_plugin(content::path_info_t& ipath, permission_error_
                                 .arg(static_cast<int>(owner.isEmpty())));
             return NULL;
         }
-		// TODO: this is not correct anymore! (we're getting the creation date, not last mod.)
+        // TODO: this is not correct anymore! (we're getting the creation date, not last mod.)
         f_last_modified = value.int64Value();
 
         // get the primary owner (plugin name) and retrieve the plugin pointer

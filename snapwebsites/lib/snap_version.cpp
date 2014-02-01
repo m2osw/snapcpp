@@ -19,6 +19,7 @@
 
 #include "qstring_stream.h"
 #include "not_reached.h"
+#include "minmax.h"
 
 #include <iostream>
 
@@ -131,8 +132,8 @@ bool validate_name(QString const& name, QString& error)
     error.clear();
 
     // length constraint
-    int const max(name.length());
-    if(max < 2)
+    int const max_length(name.length());
+    if(max_length < 2)
     {
         error = "the name or browser in a versioned filename must be at least two characters. \"" + name + "\" is not valid.";
         return false;
@@ -146,7 +147,7 @@ bool validate_name(QString const& name, QString& error)
         error = "the name or browser of a versioned filename must start with a letter [a-z]. \"" + name + "\" is not valid.";
         return false;
     }
-    if(name.at(max - 1).unicode() == '-')
+    if(name.at(max_length - 1).unicode() == '-')
     {
         // name cannot end with a dash (-)
         error = "A versioned name or browser cannot end with a dash (-). \"" + name + "\" is not valid.";
@@ -154,7 +155,7 @@ bool validate_name(QString const& name, QString& error)
     }
 
     // start with 1 because we just checked character 0 and it's valid
-    for(int i(1); i < max; ++i)
+    for(int i(1); i < max_length; ++i)
     {
         c = name.at(i).unicode();
 
@@ -242,19 +243,19 @@ bool validate_version(QString const& version_string, version_numbers_vector_t& v
 {
     version.clear();
 
-    int const max(version_string.length());
-    if(max < 1)
+    int const max_length(version_string.length());
+    if(max_length < 1)
     {
         error = "The version in a versioned filename is required after the name. \"" + version_string + "\" is not valid.";
         return false;
     }
-    if(version_string.at(max - 1).unicode() == '.')
+    if(version_string.at(max_length - 1).unicode() == '.')
     {
         error = "The version in a versioned filename cannot end with a period. \"" + version_string + "\" is not valid.";
         return false;
     }
 
-    for(int i(0); i < max;)
+    for(int i(0); i < max_length;)
     {
         // force the version to have a digit at the start
         // and after each period
@@ -266,7 +267,7 @@ bool validate_version(QString const& version_string, version_numbers_vector_t& v
         }
         int value(c - '0');
         // start with ++i because we just checked character 'i'
-        for(++i; i < max;)
+        for(++i; i < max_length;)
         {
             c = version_string.at(i).unicode();
             ++i;
@@ -277,7 +278,7 @@ bool validate_version(QString const& version_string, version_numbers_vector_t& v
                     error = "The version of a versioned filename is expected to be composed of numbers and periods (.) only. \"" + version_string + "\" is not valid.";
                     return false;
                 }
-                if(i == max)
+                if(i == max_length)
                 {
                     throw snap_logic_exception("The version_string was already checked for an ending '.' and yet we reached that case later in the function.");
                 }
@@ -574,8 +575,8 @@ QString const& version::get_version_string() const
     {
         // create the version string
         f_version_string = QString("%1").arg(static_cast<int>(f_version[0]));
-        int const max(f_version.size());
-        for(int i(1); i < max; ++i)
+        int const max_size(f_version.size());
+        for(int i(1); i < max_size; ++i)
         {
             f_version_string += QString(".%1").arg(static_cast<int>(f_version[i]));
         }
@@ -646,8 +647,8 @@ compare_t version::compare(version const& rhs) const
         return COMPARE_INVALID;
     }
 
-    int const max(std::max(f_version.size(), rhs.f_version.size()));
-    for(int i(0); i < max; ++i)
+    int const max_size(std::max SNAP_PREVENT_MACRO_SUBSTITUTION (f_version.size(), rhs.f_version.size()));
+    for(int i(0); i < max_size; ++i)
     {
         int l(i >=     f_version.size() ? 0 : static_cast<int>(    f_version[i]));
         int r(i >= rhs.f_version.size() ? 0 : static_cast<int>(rhs.f_version[i]));
@@ -877,7 +878,7 @@ bool versioned_filename::set_filename(QString const& filename)
         return false;
     }
 
-    int const max(filename.length() - f_extension.length());
+    int const max_length(filename.length() - f_extension.length());
 
     int start(filename.lastIndexOf('/'));
     if(start == -1)
@@ -891,20 +892,20 @@ bool versioned_filename::set_filename(QString const& filename)
 
     // now break the name in two or three parts: <name> and <version> [<browser>]
     int p1(filename.indexOf('_', start));
-    if(p1 == -1 || p1 > max)
+    if(p1 == -1 || p1 > max_length)
     {
         f_error = "a versioned filename is expected to include an underscore (_) as the name and version separator. \"" + filename + "\" is not valid.";
         return false;
     }
     // and check whether the <browser> part is specified
     int p2(filename.indexOf('_', p1 + 1));
-    if(p2 > max || p2 == -1)
+    if(p2 > max_length || p2 == -1)
     {
-        p2 = max;
+        p2 = max_length;
     }
     else
     {
-        if(p2 + 1 >= max)
+        if(p2 + 1 >= max_length)
         {
             f_error = "a browser name must be specified in a versioned filename if you include two underscores (_). \"" + filename + "\" is not valid.";
             return false;
@@ -929,10 +930,10 @@ bool versioned_filename::set_filename(QString const& filename)
 
     // browser
     QString browser;
-    if(p2 < max)
+    if(p2 < max_length)
     {
         // validate only if not empty (since it is optional empty is okay)
-        browser = filename.mid(p2 + 1, max - p2 - 1);
+        browser = filename.mid(p2 + 1, max_length - p2 - 1);
         if(!validate_name(browser, f_error))
         {
             return false;
@@ -1256,7 +1257,7 @@ bool dependency::set_dependency(QString const& dependency_string)
     {
         bracket_pos = d.length();
     }
-    int pos(std::min(space_pos, std::min(paren_pos, bracket_pos)));
+    int pos(std::min SNAP_PREVENT_MACRO_SUBSTITUTION (space_pos, std::min SNAP_PREVENT_MACRO_SUBSTITUTION (paren_pos, bracket_pos)));
     QString const dep_name(d.left(pos));
     if(!validate_name(dep_name, f_error))
     {
@@ -1468,8 +1469,8 @@ bool dependency::set_dependency(QString const& dependency_string)
         }
         QString const browsers(d.mid(pos, end - pos));
         QStringList const browser_list(browsers.split(',', QString::SkipEmptyParts));
-        int const max(browser_list.size());
-        for(int i(0); i < max; ++i)
+        int const max_size(browser_list.size());
+        for(int i(0); i < max_size; ++i)
         {
             QString const bn(browser_list[i].trimmed());
             if(bn.isEmpty())
@@ -1648,9 +1649,9 @@ bool quick_find_version_in_source::find_version(char const *data, int const size
             // find the field name if available
 
             // skip spaces at the beginning of the line
-            int const max(line.length());
+            int const max_length(line.length());
             int pos;
-            for(pos = 0; pos < max; ++pos)
+            for(pos = 0; pos < max_length; ++pos)
             {
                 if(!isspace(line.at(pos).unicode()))
                 {
@@ -1662,7 +1663,7 @@ bool quick_find_version_in_source::find_version(char const *data, int const size
             if(line.at(pos).unicode() == '*')
             {
                 // skip spaces after the '*'
-                for(++pos; pos < max; ++pos)
+                for(++pos; pos < max_length; ++pos)
                 {
                     if(!isspace(line.at(pos).unicode()))
                     {
@@ -1673,7 +1674,7 @@ bool quick_find_version_in_source::find_version(char const *data, int const size
 
             // compare with the name of this field
             char const *n(f_name);
-            for(; pos < max && *n != '\0'; ++pos, ++n)
+            for(; pos < max_length && *n != '\0'; ++pos, ++n)
             {
                 int c(line.at(pos).unicode());
                 if(c >= 'a' && c <= 'z')
@@ -1689,7 +1690,7 @@ bool quick_find_version_in_source::find_version(char const *data, int const size
             }
 
             // make sure there is a colon after the name
-            if(pos >= max
+            if(pos >= max_length
             || line.at(pos).unicode() != ':')
             {
                 return false;
@@ -1761,8 +1762,8 @@ bool quick_find_version_in_source::find_version(char const *data, int const size
                 return false;
             }
             QStringList browser_list(value.split(','));
-            int const max(browser_list.size());
-            for(int i(0); i < max; ++i)
+            int const max_size(browser_list.size());
+            for(int i(0); i < max_size; ++i)
             {
                 name browser;
                 if(!browser.set_name(browser_list[i].trimmed()))
@@ -1873,8 +1874,8 @@ bool quick_find_version_in_source::is_valid() const
     }
 
     // check each browser name
-    int const max(f_browsers.size());
-    for(int i(0); i < max; ++i)
+    int const max_size(f_browsers.size());
+    for(int i(0); i < max_size; ++i)
     {
         if(!f_browsers[i].is_valid())
         {

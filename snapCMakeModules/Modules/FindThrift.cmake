@@ -1,7 +1,7 @@
 # File:         FindThrift.cmake
 # Object:       Look for the thrift module.
 #
-# Copyright:    Copyright (c) 2011-2013 Made to Order Software Corp.
+# Copyright:    Copyright (c) 2011-2014 Made to Order Software Corp.
 #               All Rights Reserved.
 #
 # http://snapwebsites.org/

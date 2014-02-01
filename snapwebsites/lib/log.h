@@ -25,52 +25,52 @@ namespace logging
 
 enum log_level_t
 {
-	LOG_LEVEL_OFF,
-	LOG_LEVEL_FATAL,
-	LOG_LEVEL_ERROR,
-	LOG_LEVEL_WARNING,
-	LOG_LEVEL_INFO,
-	LOG_LEVEL_DEBUG,
-	LOG_LEVEL_TRACE
+    LOG_LEVEL_OFF,
+    LOG_LEVEL_FATAL,
+    LOG_LEVEL_ERROR,
+    LOG_LEVEL_WARNING,
+    LOG_LEVEL_INFO,
+    LOG_LEVEL_DEBUG,
+    LOG_LEVEL_TRACE
 };
 
 enum log_security_t
 {
-	LOG_SECURITY_NONE,
-	LOG_SECURITY_SECURE
+    LOG_SECURITY_NONE,
+    LOG_SECURITY_SECURE
 };
 
 class logger
 {
 public:
-	logger(log_level_t log_level, const char *file = NULL, const char *func = NULL, int line = -1);
-	~logger();
+    logger(log_level_t log_level, const char *file = NULL, const char *func = NULL, int line = -1);
+    ~logger();
 
-	logger& operator () (const log_security_t v);
-	logger& operator () (const char *s);
-	logger& operator () (const wchar_t *s);
-	logger& operator () (const QString& s);
-	logger& operator () (const char v);
-	logger& operator () (const signed char v);
-	logger& operator () (const unsigned char v);
-	logger& operator () (const signed short v);
-	logger& operator () (const unsigned short v);
-	logger& operator () (const signed int v);
-	logger& operator () (const unsigned int v);
-	logger& operator () (const signed long v);
-	logger& operator () (const unsigned long v);
-	logger& operator () (const signed long long v);
-	logger& operator () (const unsigned long long v);
-	logger& operator () (const float v);
-	logger& operator () (const double v);
+    logger& operator () (const log_security_t v);
+    logger& operator () (const char *s);
+    logger& operator () (const wchar_t *s);
+    logger& operator () (const QString& s);
+    logger& operator () (const char v);
+    logger& operator () (const signed char v);
+    logger& operator () (const unsigned char v);
+    logger& operator () (const signed short v);
+    logger& operator () (const unsigned short v);
+    logger& operator () (const signed int v);
+    logger& operator () (const unsigned int v);
+    logger& operator () (const signed long v);
+    logger& operator () (const unsigned long v);
+    logger& operator () (const signed long long v);
+    logger& operator () (const unsigned long long v);
+    logger& operator () (const float v);
+    logger& operator () (const double v);
 
 private:
-	log_level_t		f_log_level;
-	const char *	f_file;
-	const char *	f_func;
-	int				f_line;
-	log_security_t	f_security;
-	QString			f_message;
+    log_level_t     f_log_level;
+    const char *    f_file;
+    const char *    f_func;
+    int             f_line;
+    log_security_t  f_security;
+    QString         f_message;
 };
 
 void configure(QString filename);
@@ -84,13 +84,13 @@ logger info   (const char *file = NULL, const char *func = NULL, int line = -1);
 logger debug  (const char *file = NULL, const char *func = NULL, int line = -1);
 logger trace  (const char *file = NULL, const char *func = NULL, int line = -1);
 
-#define	SNAP_LOG_FATAL 		snap::logging::fatal  (__FILE__, __func__, __LINE__)
-#define	SNAP_LOG_ERROR 		snap::logging::error  (__FILE__, __func__, __LINE__)
-#define	SNAP_LOG_WARNING 	snap::logging::warning(__FILE__, __func__, __LINE__)
-#define	SNAP_LOG_INFO 		snap::logging::info   (__FILE__, __func__, __LINE__)
-#define	SNAP_LOG_DEBUG 		snap::logging::debug  (__FILE__, __func__, __LINE__)
-#define	SNAP_LOG_TRACE		snap::logging::trace  (__FILE__, __func__, __LINE__)
+#define    SNAP_LOG_FATAL       snap::logging::fatal  (__FILE__, __func__, __LINE__)
+#define    SNAP_LOG_ERROR       snap::logging::error  (__FILE__, __func__, __LINE__)
+#define    SNAP_LOG_WARNING     snap::logging::warning(__FILE__, __func__, __LINE__)
+#define    SNAP_LOG_INFO        snap::logging::info   (__FILE__, __func__, __LINE__)
+#define    SNAP_LOG_DEBUG       snap::logging::debug  (__FILE__, __func__, __LINE__)
+#define    SNAP_LOG_TRACE       snap::logging::trace  (__FILE__, __func__, __LINE__)
 
 } // namespace logging
 } // namespace snap
-// vim: ts=4 sw=4
+// vim: ts=4 sw=4 et

@@ -31,21 +31,8 @@
 
 project(layout_dir)
 
-snap_validate_xml( bare-content.xml  content.dtd )
-snap_validate_xml( white-content.xml content.dtd )
-
-install(
-    FILES
-        bare-content.xml
-        bare-body-parser.xsl
-        bare-theme-parser.xsl
-        bare-style.css
-        white-body-parser.xsl
-        white-theme-parser.xsl
-        white-content.xml
-    DESTINATION
-        share/snapwebsites/layouts
-)
+add_subdirectory(bare)
+add_subdirectory(white)
 
 
 # vim: ts=4 sw=4 et

@@ -189,8 +189,8 @@ bool header::on_path_execute(content::path_info_t& ipath)
 
 void header::on_generate_main_content(layout::layout *l, content::path_info_t& ipath, QDomElement& page, QDomElement& body, const QString& ctemplate)
 {
-	// a type is just like a regular page
-	output::output::instance()->on_generate_main_content(l, ipath, page, body, ctemplate);
+    // a type is just like a regular page
+    output::output::instance()->on_generate_main_content(l, ipath, page, body, ctemplate);
 }
 
 

@@ -48,22 +48,27 @@ QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC
 
 snap_validate_xml( content.xml content.dtd )
 
-add_library(${PROJECT_NAME} SHARED
+add_library(mailinglist SHARED
     mailinglist.cpp
     ${SNAP_MANAGER_MOC_CXX}
     ${SNAP_MANAGER_RESOURCES_RCC}
     content.xml
 )
 
-target_link_libraries( ${PROJECT_NAME} ${QT_LIBRARIES} )
+target_link_libraries( mailinglist ${QT_LIBRARIES} )
 
 get_property( 3RDPARTY_INCLUDED GLOBAL PROPERTY 3RDPARTY_INCLUDED )
 if( 3RDPARTY_INCLUDED )
-    add_dependencies( ${PROJECT_NAME} make_controlled_vars_headers )
+    add_dependencies( mailinglist make_controlled_vars_headers )
 endif()
 
 install(
-    TARGETS ${PROJECT_NAME} LIBRARY DESTINATION ${PLUGIN_INSTALL_DIR}
+    TARGETS mailinglist LIBRARY DESTINATION ${PLUGIN_INSTALL_DIR}
+)
+install(
+    DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/
+    DESTINATION include/snapwebsites/plugins/mailinglist
+    FILES_MATCHING PATTERN "*.h"
 )
 
 # vim: ts=4 sw=4 et

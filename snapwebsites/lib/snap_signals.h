@@ -38,13 +38,13 @@
  * \param[in] parameters  A list of parameters written between parenthesis.
  * \param[in] variables  List the variable names as they appear in the parameters, written between parenthesis.
  */
-#define	SNAP_SIGNAL(name, parameters, variables) \
-	typedef boost::signals2::signal<void parameters> signal_##name; \
-	boost::signals2::connection signal_listen_##name(const signal_##name::slot_type& slot) \
-	   { return f_signal_##name.connect(slot); } \
-	private: signal_##name f_signal_##name; bool name##_impl parameters; \
-	public: void name parameters { if(name##_impl variables) f_signal_##name variables; }
+#define    SNAP_SIGNAL(name, parameters, variables) \
+    typedef boost::signals2::signal<void parameters> signal_##name; \
+    boost::signals2::connection signal_listen_##name(const signal_##name::slot_type& slot) \
+       { return f_signal_##name.connect(slot); } \
+    private: signal_##name f_signal_##name; bool name##_impl parameters; \
+    public: void name parameters { if(name##_impl variables) f_signal_##name variables; }
 
 
 
-// vim: ts=4 sw=4
+// vim: ts=4 sw=4 et

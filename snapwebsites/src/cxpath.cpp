@@ -6,7 +6,7 @@
  *      Compile an XPath to binary byte code.
  *
  * License:
- *      Copyright (c) 2013 Made to Order Software Corp.
+ *      Copyright (c) 2013-2014 Made to Order Software Corp.
  * 
  *      http://snapwebsites.org/
  *      contact@m2osw.com
@@ -285,9 +285,9 @@ void cxpath_execute()
 
         if(g_results)
         {
-            const int max(result.size());
-            printf("This XPath returned %d nodes\n", max);
-            for(int j(0); j < max; ++j)
+            int const max_nodes(result.size());
+            printf("This XPath returned %d nodes\n", max_nodes);
+            for(int j(0); j < max_nodes; ++j)
             {
                 display_node(j, result[j]);
             }

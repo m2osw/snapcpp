@@ -104,7 +104,7 @@ void info::on_bootstrap(snap_child *snap)
 {
     f_snap = snap;
 
-	SNAP_LISTEN(info, "server", server, improve_signature, _1, _2);
+    SNAP_LISTEN(info, "server", server, improve_signature, _1, _2);
     //SNAP_LISTEN(info, "layout", layout::layout, generate_header_content, _1, _2, _3, _4, _5);
     //SNAP_LISTEN(info, "layout", layout::layout, generate_page_content, _1, _2, _3, _4, _5);
 }

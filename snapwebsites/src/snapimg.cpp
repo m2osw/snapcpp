@@ -76,8 +76,8 @@ void image_info()
 {
     QTextCodec::setCodecForLocale(QTextCodec::codecForName("UTF-8"));
 
-    size_t const max(g_opt->size("filename"));
-    for(size_t idx(0); idx < max; ++idx)
+    size_t const max_length(g_opt->size("filename"));
+    for(size_t idx(0); idx < max_length; ++idx)
     {
         QString filename(QString::fromUtf8(g_opt->get_string("filename", static_cast<int>(idx)).c_str()));
         QFile file(filename);

@@ -64,9 +64,6 @@ if( NOT CMAKE_MODULE_PATH )
     set( CMAKE_MODULE_PATH ${CMAKE_DIRECTORY_PATH}/snapCMakeModules/Modules )
     message( "Found snapCMakeModules in ${CMAKE_MODULE_PATH}" )
 endif()
-# These are the 3 extra warnings that did not make it in the modules
-# -Wold-style-cast -Wstrict-overflow=5 -Wnoexcept
-set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wold-style-cast -Wstrict-overflow=5 -Wnoexcept" )
 
 find_package( AdvGetOpt        REQUIRED )
 find_package( ControlledVars   REQUIRED )
@@ -80,6 +77,9 @@ find_package( Thrift           REQUIRED )
 if( "${CMAKE_BUILD_TYPE}" STREQUAL "Debug" )
     add_definitions( -DDEBUG -DCONTROLLED_VARS_DEBUG )
 endif()
+# These are the 3 extra warnings that did not make it in the modules
+# -Wold-style-cast -Wstrict-overflow=5 -Wnoexcept
+set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wold-style-cast -Wstrict-overflow=5 -Wnoexcept" )
 
 include_directories( 
     ${PROJECT_SOURCE_DIR}
@@ -115,11 +115,14 @@ include( ${CMAKE_CURRENT_SOURCE_DIR}/xml_target.cmake )
 ##
 add_custom_target(snap_code_analysis
     # Count things and report potential problems with different classes
-    COMMAND echo "cccc -- output ${PROJECT_BINARY_DIR}/cccc"
-    COMMAND cccc --lang=c++ --outdir=${PROJECT_BINARY_DIR}/cccc lib/*.cpp lib/*.h lib/*.h.in src/*.cpp plugins/*/*.cpp plugins/*/*.h snap-manager/*.cpp snap-manager/*.h
+    COMMAND echo "cccc -- output directory ${PROJECT_BINARY_DIR}/cccc -- and errors saved in ${PROJECT_BINARY_DIR}/cccc.output"
+    COMMAND cccc --lang=c++ --html_outfile=${PROJECT_BINARY_DIR}/cccc/index.html --outdir=${PROJECT_BINARY_DIR}/cccc lib/*.cpp lib/*.h lib/*.h.in src/*.cpp plugins/*/*.cpp plugins/*/*.h snap-manager/*.cpp snap-manager/*.h >${PROJECT_BINARY_DIR}/cccc.output 2>&1
     # Boost inspect tool that reports different problems
     COMMAND echo "inspect -- output ${PROJECT_BINARY_DIR}/inspect.html"
-    COMMAND inspect -crlf -path_name -ascii -minmax -unnamed >"${PROJECT_BINARY_DIR}/inspect.html"
+    COMMAND inspect -tab -crlf -path_name -ascii -minmax -unnamed >"${PROJECT_BINARY_DIR}/inspect.html"
+    # Static analysis of the code
+    COMMAND echo "cppcheck -- output ${PROJECT_BINARY_DIR}/cppcheck.out"
+    COMMAND cppcheck lib plugins snap-manager src tests >"${PROJECT_BINARY_DIR}/cppcheck.out" 2>&1
 
     # All of these are expected to work on source code so make sure we're
     # in the source code top directory

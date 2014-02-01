@@ -76,6 +76,29 @@ namespace snap
 
 namespace
 {
+
+// list of plugins that we cannot do without
+char const *g_minimum_plugins[] =
+{
+    "content",
+    "editor",
+    "filter",
+    "form",
+    "info",
+    "layout",
+    "links",
+    //"lists", -- once available...
+    "messages",
+    "output",
+    "path",
+    "permissions",
+    "sendmail",
+    "sessions",
+    "taxonomy",
+    "users",
+    nullptr
+};
+
 char const *g_week_day_name[] =
 {
     "Sunday", "Monday", "Tuesday", "Wedneday", "Thursday", "Friday", "Saturday"
@@ -1242,10 +1265,10 @@ snap_child::language_name_t const g_language_names[] =
         ",zul,"
     },
     {
-        NULL,
-        NULL,
+        nullptr,
+        nullptr,
         { '\0', '\0', '\0' },
-        NULL
+        nullptr
     }
 };
 
@@ -2254,7 +2277,7 @@ snap_child::country_name_t const g_country_names[] =
     },
     {
         { '\0', '\0', '\0' },
-        NULL
+        nullptr
     }
 };
 
@@ -2410,7 +2433,7 @@ snap_child::~snap_child()
 void snap_child::init_start_date()
 {
     struct timeval tv;
-    gettimeofday(&tv, NULL);
+    gettimeofday(&tv, nullptr);
     f_start_date = static_cast<int64_t>(tv.tv_sec) * static_cast<int64_t>(1000000)
                  + static_cast<int64_t>(tv.tv_usec);
 }
@@ -2945,9 +2968,9 @@ void snap_child::read_environment()
                 NOTREACHED();
             }
             // retrieve all the parameters, then keep those we want to keep
-            int const max(disposition.size());
+            int const max_strings(disposition.size());
             environment_map_t params;
-            for(int i(1); i < max; ++i)
+            for(int i(1); i < max_strings; ++i)
             {
                 // each parameter is name=<value>
                 QStringList nv(disposition[i].split('='));
@@ -3215,8 +3238,8 @@ std::cerr << " f_files[\"" << f_name << "\"] = \"...\" (Filename: \"" << filenam
             // 1. Get the main boundary from the CONTENT_TYPE
             QStringList content_info(f_env["CONTENT_TYPE"].split(';'));
             QString boundary;
-            int const max(content_info.size());
-            for(int i(1); i < max; ++i)
+            int const max_strings(content_info.size());
+            for(int i(1); i < max_strings; ++i)
             {
                 QString param(content_info[i].trimmed());
                 if(param.startsWith("boundary="))
@@ -3292,8 +3315,8 @@ std::cerr << " f_files[\"" << f_name << "\"] = \"...\" (Filename: \"" << filenam
                 {
                     // special case
                     QStringList cookies(f_value.split(';', QString::SkipEmptyParts));
-                    int max(cookies.size());
-                    for(int i(0); i < max; ++i)
+                    int const max_strings(cookies.size());
+                    for(int i(0); i < max_strings; ++i)
                     {
                         QString name_value(cookies[i]);
                         QStringList nv(name_value.trimmed().split('=', QString::SkipEmptyParts));
@@ -3885,8 +3908,8 @@ void snap_child::canonicalize_domain()
     {
         sub_domains += ".";
     }
-    int max(r.size());
-    for(int i = 0; i < max; ++i)
+    int const max_rules(r.size());
+    for(int i = 0; i < max_rules; ++i)
     {
         QSharedPointer<domain_info> info(r[i]);
 
@@ -4055,8 +4078,8 @@ void snap_child::canonicalize_website()
 
     // we check decoded paths
     QString uri_path(f_uri.path(false));
-    int max(r.size());
-    for(int i = 0; i < max; ++i)
+    int const max_rules(r.size());
+    for(int i = 0; i < max_rules; ++i)
     {
         QSharedPointer<website_info> info(r[i]);
 
@@ -4309,8 +4332,8 @@ void snap_child::canonicalize_options()
     if(!browser_languages.isEmpty())
     {
         qStableSort(browser_languages);
-        int const max(browser_languages.size());
-        for(int i(max - 1); i >= 0; --i)
+        int const max_languages(browser_languages.size());
+        for(int i(max_languages - 1); i >= 0; --i)
         {
             QString browser_lang(browser_languages[i].get_name());
             QString browser_country;
@@ -4475,8 +4498,8 @@ void snap_child::canonicalize_options()
     // now check all the other encodings and add them
     http_strings::WeightedHttpString::part_vector_t browser_compressions(encodings.get_parts());
     qStableSort(browser_compressions);
-    int const max(browser_compressions.size());
-    for(int i(0); i < max; ++i)
+    int const max_compressions(browser_compressions.size());
+    for(int i(0); i < max_compressions; ++i)
     {
         QString encoding_name(browser_compressions[i].get_name());
         if(browser_compressions[i].get_level() == 0)
@@ -4718,7 +4741,7 @@ bool snap_child::verify_language_name(QString& lang)
         {
             // the multi-name is already semi-optimize so we test it too
             // TBD -- this should maybe not be checked at all
-            if(strstr(l->f_other_names, lwc) != NULL)
+            if(strstr(l->f_other_names, lwc) != nullptr)
             {
                 lang = l->f_short_name;
                 return true;
@@ -5737,9 +5760,9 @@ void snap_child::set_header(QString const& name, QString const& value, header_mo
         std::vector<wchar_t> ws;
         ws.resize(value.length());
         value.toWCharArray(&ws[0]);
-        int max(value.length());
+        int const max_length(value.length());
         wchar_t lc(L'\0');
-        for(int p(0); p < max; ++p)
+        for(int p(0); p < max_length; ++p)
         {
             wchar_t wc(ws[p]);
             if((wc < 0x20 || wc == 127) && wc != L'\r' && wc != L'\n' && wc != L'\t')
@@ -5750,8 +5773,8 @@ void snap_child::set_header(QString const& name, QString const& value, header_mo
             // we MUST have a space or tab after a newline
             if(wc == L'\r' || wc == L'\n')
             {
-                // if p + 1 == max then the user supplied the ending "\r\n"
-                if(p + 1 < max)
+                // if p + 1 == max_length then the user supplied the ending "\r\n"
+                if(p + 1 < max_length)
                 {
                     if(ws[p] != L' ' && ws[p] != L'\t' && ws[p] != L'\r' && ws[p] != L'\n')
                     {
@@ -6058,8 +6081,11 @@ void snap_child::init_plugins()
         site_plugins = f_server->get_parameter("default_plugins");
     }
     QStringList list_of_plugins(site_plugins.split(","));
+
+    // clean up the list
     for(int i(0); i < list_of_plugins.length(); ++i)
     {
+        list_of_plugins[i] = list_of_plugins[i].trimmed();
         if(list_of_plugins.at(i).isEmpty())
         {
             list_of_plugins.removeAt(i);
@@ -6068,18 +6094,11 @@ void snap_child::init_plugins()
     }
 
     // ensure a certain minimum number of plugins
-    static const char *minimum_plugins[] =
+    for(int i(0); g_minimum_plugins[i] != nullptr; ++i)
     {
-        "path",
-        "filter",
-        "robotstxt",
-        NULL
-    };
-    for(int i(0); minimum_plugins[i] != NULL; ++i)
-    {
-        if(!list_of_plugins.contains(minimum_plugins[i]))
+        if(!list_of_plugins.contains(g_minimum_plugins[i]))
         {
-            list_of_plugins << minimum_plugins[i];
+            list_of_plugins << g_minimum_plugins[i];
         }
     }
 
@@ -6089,8 +6108,10 @@ void snap_child::init_plugins()
         die(HTTP_CODE_SERVICE_UNAVAILABLE, "Plugin Unavailable", "Server encountered problems with its plugins.", "An error occured loading the server plugins.");
         NOTREACHED();
     }
+    // at this point each plugin was allocated through their factory
+    // but they are not really usable yet because we did not initialize them
 
-    // now boot the plugin system
+    // now boot the plugin system (send signals)
     f_server->bootstrap(this);
     f_server->init();
 
@@ -6184,7 +6205,7 @@ void snap_child::update_plugins(const QStringList& list_of_plugins)
             //       Instead we only make use of the plugin specific last
             //       updated value which is checked inside the do_update()
             //       function itself.
-            if(p != NULL) // && p->last_modification() > plugin_threshold)
+            if(p != nullptr) // && p->last_modification() > plugin_threshold)
             {
                 // the plugin changed, we want to call do_update() on it!
                 if(p->last_modification() > new_plugin_threshold)
@@ -6737,8 +6758,8 @@ snap_child::locale_info_vector_t const& snap_child::get_plugins_locales()
             if(!plugins_languages.isEmpty())
             {
                 qStableSort(plugins_languages);
-                int const max(plugins_languages.size());
-                for(int i(0); i < max; ++i)
+                int const max_languages(plugins_languages.size());
+                for(int i(0); i < max_languages; ++i)
                 {
                     QString plugins_lang(plugins_languages[0].get_name());
                     QString plugins_country;
@@ -7117,7 +7138,7 @@ time_t snap_child::string_to_date(QString const& date)
             return true;
         }
 
-        bool integer(int min_len, int max_len, int min, int max, int& result)
+        bool integer(int min_len, int max_len, int min_value, int max_value, int& result)
         {
             int count(0);
             for(; *f_s >= '0' && *f_s <= '9'; ++f_s, ++count)
@@ -7125,7 +7146,7 @@ time_t snap_child::string_to_date(QString const& date)
                 result = result * 10 + *f_s - '0';
             }
             if(count < min_len || count > max_len
-            || result < min || result > max)
+            || result < min_value || result > max_value)
             {
                 return false;
             }
@@ -7360,7 +7381,7 @@ time_t snap_child::string_to_date(QString const& date)
  * This function returns the current list of language names as defined
  * in ISO639 and similar documents.
  *
- * The table returned ends with a NULL entry. You may use it in this
+ * The table returned ends with a nullptr entry. You may use it in this
  * way:
  *
  * \code

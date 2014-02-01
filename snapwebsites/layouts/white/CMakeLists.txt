@@ -1,10 +1,9 @@
 #
 # File:
-#      plugins/messages/CMakeLists.txt
+#      layouts/white/CMakeLists.txt
 #
 # Description:
-#      Accumulate and display messages. This includes informational messages
-#      as well as warnings, errors, debug messages.
+#      Manage white white layout.
 #
 # Documentation:
 #      See the CMake documentation.
@@ -30,45 +29,19 @@
 #      Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 
-project(plugin_messages)
-
-find_package( Qt4 4.8.1 QUIET REQUIRED QtCore )
-include( ${QT_USE_FILE} )
-add_definitions( ${QT_DEFINITIONS} )
-
-include_directories(
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CONTROLLEDVARS_INCLUDE_DIRS}
-    ${QT_INCLUDES}
-)
-
-QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC
-    messages.qrc
-)
+project(white_layout)
 
 snap_validate_xml( content.xml content.dtd )
 
-add_library(messages SHARED
-    messages.cpp
-    ${SNAP_MANAGER_MOC_CXX}
-    ${SNAP_MANAGER_RESOURCES_RCC}
-    content.xml
-)
-
-target_link_libraries( messages ${QT_LIBRARIES} )
-
-get_property( 3RDPARTY_INCLUDED GLOBAL PROPERTY 3RDPARTY_INCLUDED )
-if( 3RDPARTY_INCLUDED )
-    add_dependencies( messages make_controlled_vars_headers )
-endif()
-
+# TODO: install as a tarball instead
 install(
-    TARGETS messages LIBRARY DESTINATION ${PLUGIN_INSTALL_DIR}
+    FILES
+        content.xml
+        body-parser.xsl
+        theme-parser.xsl
+    DESTINATION
+        share/snapwebsites/layouts/white
 )
-install(
-    DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/
-    DESTINATION include/snapwebsites/plugins/messages
-    FILES_MATCHING PATTERN "*.h"
-)
+
 
 # vim: ts=4 sw=4 et

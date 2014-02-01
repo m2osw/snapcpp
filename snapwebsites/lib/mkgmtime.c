@@ -26,7 +26,7 @@
 
 /*
  * mktime.c
- * Original Author:	G. Haley
+ * Original Author:  G. Haley
  *
  * Converts the broken-down time, expressed as local time, in the structure
  * pointed to by tim_p into a calendar time value. The original values of the
@@ -36,7 +36,7 @@
  * time. Returns the specified calendar time. If the calendar time can not be
  * represented, returns the value (time_t) -1.
  *
- * Modifications:	Fixed tm_isdst usage - 27 August 2008 Craig Howland.
+ * Modifications:  Fixed tm_isdst usage - 27 August 2008 Craig Howland.
  */
 
 #include <stdlib.h>
@@ -69,10 +69,10 @@ static void validate_structure(struct tm *tim_p)
       res = div (tim_p->tm_sec, 60);
       tim_p->tm_min += res.quot;
       if ((tim_p->tm_sec = res.rem) < 0)
-	{
-	  tim_p->tm_sec += 60;
-	  --tim_p->tm_min;
-	}
+        {
+          tim_p->tm_sec += 60;
+          --tim_p->tm_min;
+        }
     }
 
   if (tim_p->tm_min < 0 || tim_p->tm_min > 59)
@@ -80,9 +80,9 @@ static void validate_structure(struct tm *tim_p)
       res = div (tim_p->tm_min, 60);
       tim_p->tm_hour += res.quot;
       if ((tim_p->tm_min = res.rem) < 0)
-	{
-	  tim_p->tm_min += 60;
-	  --tim_p->tm_hour;
+        {
+          tim_p->tm_min += 60;
+          --tim_p->tm_hour;
         }
     }
 
@@ -91,9 +91,9 @@ static void validate_structure(struct tm *tim_p)
       res = div (tim_p->tm_hour, 24);
       tim_p->tm_mday += res.quot;
       if ((tim_p->tm_hour = res.rem) < 0)
-	{
-	  tim_p->tm_hour += 24;
-	  --tim_p->tm_mday;
+        {
+          tim_p->tm_hour += 24;
+          --tim_p->tm_mday;
         }
     }
 
@@ -103,8 +103,8 @@ static void validate_structure(struct tm *tim_p)
       tim_p->tm_year += res.quot;
       if ((tim_p->tm_mon = res.rem) < 0)
         {
-	  tim_p->tm_mon += 12;
-	  --tim_p->tm_year;
+          tim_p->tm_mon += 12;
+          --tim_p->tm_year;
         }
     }
 
@@ -114,32 +114,32 @@ static void validate_structure(struct tm *tim_p)
   if (tim_p->tm_mday <= 0)
     {
       while (tim_p->tm_mday <= 0)
-	{
-	  if (--tim_p->tm_mon == -1)
-	    {
-	      tim_p->tm_year--;
-	      tim_p->tm_mon = 11;
-	      days_in_feb =
-		((_DAYS_IN_YEAR (tim_p->tm_year) == 366) ?
-		 29 : 28);
-	    }
-	  tim_p->tm_mday += _DAYS_IN_MONTH (tim_p->tm_mon);
-	}
+        {
+          if (--tim_p->tm_mon == -1)
+            {
+              tim_p->tm_year--;
+              tim_p->tm_mon = 11;
+              days_in_feb =
+                ((_DAYS_IN_YEAR (tim_p->tm_year) == 366) ?
+                 29 : 28);
+            }
+          tim_p->tm_mday += _DAYS_IN_MONTH (tim_p->tm_mon);
+        }
     }
   else
     {
       while (tim_p->tm_mday > _DAYS_IN_MONTH (tim_p->tm_mon))
-	{
-	  tim_p->tm_mday -= _DAYS_IN_MONTH (tim_p->tm_mon);
-	  if (++tim_p->tm_mon == 12)
-	    {
-	      tim_p->tm_year++;
-	      tim_p->tm_mon = 0;
-	      days_in_feb =
-		((_DAYS_IN_YEAR (tim_p->tm_year) == 366) ?
-		 29 : 28);
-	    }
-	}
+        {
+          tim_p->tm_mday -= _DAYS_IN_MONTH (tim_p->tm_mon);
+          if (++tim_p->tm_mon == 12)
+            {
+              tim_p->tm_year++;
+              tim_p->tm_mon = 0;
+              days_in_feb =
+                ((_DAYS_IN_YEAR (tim_p->tm_year) == 366) ?
+                 29 : 28);
+            }
+        }
     }
 }
 
@@ -175,12 +175,12 @@ time_t mkgmtime(struct tm *tim_p)
   if (tim_p->tm_year > 70)
     {
       for (year = 70; year < tim_p->tm_year; year++)
-	days += _DAYS_IN_YEAR (year);
+        days += _DAYS_IN_YEAR (year);
     }
   else if (tim_p->tm_year < 70)
     {
       for (year = 69; year > tim_p->tm_year; year--)
-	days -= _DAYS_IN_YEAR (year);
+        days -= _DAYS_IN_YEAR (year);
       days -= _DAYS_IN_YEAR (year);
     }
 
@@ -201,43 +201,43 @@ time_t mkgmtime(struct tm *tim_p)
  //   {
  //     int y = tim_p->tm_year + YEAR_BASE;
  //     if (y == tz->__tzyear || __tzcalc_limits (y))
-	//{
-	//  /* calculate start of dst in dst local time and 
-	//     start of std in both std local time and dst local time */
+        //{
+        //  /* calculate start of dst in dst local time and 
+        //     start of std in both std local time and dst local time */
  //         time_t startdst_dst = tz->__tzrule[0].change
-	//    - (time_t) tz->__tzrule[1].offset;
-	//  time_t startstd_dst = tz->__tzrule[1].change
-	//    - (time_t) tz->__tzrule[1].offset;
-	//  time_t startstd_std = tz->__tzrule[1].change
-	//    - (time_t) tz->__tzrule[0].offset;
-	//  /* if the time is in the overlap between dst and std local times */
-	//  if (tim >= startstd_std && tim < startstd_dst)
-	//    ; /* we let user decide or leave as -1 */
+        //    - (time_t) tz->__tzrule[1].offset;
+        //  time_t startstd_dst = tz->__tzrule[1].change
+        //    - (time_t) tz->__tzrule[1].offset;
+        //  time_t startstd_std = tz->__tzrule[1].change
+        //    - (time_t) tz->__tzrule[0].offset;
+        //  /* if the time is in the overlap between dst and std local times */
+        //  if (tim >= startstd_std && tim < startstd_dst)
+        //    ; /* we let user decide or leave as -1 */
  //         else
-	//    {
-	//      isdst = (tz->__tznorth
-	//	       ? (tim >= startdst_dst && tim < startstd_std)
-	//	       : (tim >= startdst_dst || tim < startstd_std));
- //	      /* if user committed and was wrong, perform correction, but not
- //	       * if the user has given a negative value (which
- //	       * asks mktime() to determine if DST is in effect or not) */
- //	      if (tm_isdst >= 0  &&  (isdst ^ tm_isdst) == 1)
-	//	{
-	//	  /* we either subtract or add the difference between
-	//	     time zone offsets, depending on which way the user got it
-	//	     wrong. The diff is typically one hour, or 3600 seconds,
-	//	     and should fit in a 16-bit int, even though offset
-	//	     is a long to accomodate 12 hours. */
-	//	  int diff = (int) (tz->__tzrule[0].offset
-	//			    - tz->__tzrule[1].offset);
-	//	  if (!isdst)
-	//	    diff = -diff;
-	//	  tim_p->tm_sec += diff;
-	//	  validate_structure (tim_p);
-	//	  tim += diff;  /* we also need to correct our current time calculation */
-	//	}
-	//    }
-	//}
+        //    {
+        //      isdst = (tz->__tznorth
+        //               ? (tim >= startdst_dst && tim < startstd_std)
+        //               : (tim >= startdst_dst || tim < startstd_std));
+ //              /* if user committed and was wrong, perform correction, but not
+ //               * if the user has given a negative value (which
+ //               * asks mktime() to determine if DST is in effect or not) */
+ //              if (tm_isdst >= 0  &&  (isdst ^ tm_isdst) == 1)
+        //        {
+        //          /* we either subtract or add the difference between
+        //             time zone offsets, depending on which way the user got it
+        //             wrong. The diff is typically one hour, or 3600 seconds,
+        //             and should fit in a 16-bit int, even though offset
+        //             is a long to accomodate 12 hours. */
+        //          int diff = (int) (tz->__tzrule[0].offset
+        //                            - tz->__tzrule[1].offset);
+        //          if (!isdst)
+        //            diff = -diff;
+        //          tim_p->tm_sec += diff;
+        //          validate_structure (tim_p);
+        //          tim += diff;  /* we also need to correct our current time calculation */
+        //        }
+        //    }
+        //}
  //   }
 
   //screw this also 
@@ -253,3 +253,5 @@ time_t mkgmtime(struct tm *tim_p)
 
   return tim;
 }
+
+// vim: ts=2 sw=2 et
