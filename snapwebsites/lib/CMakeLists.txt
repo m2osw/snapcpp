@@ -124,7 +124,10 @@ install(
     DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/
     DESTINATION include/snapwebsites
     FILES_MATCHING PATTERN "*.h"
-    PATTERN .svn EXCLUDE
+)
+install(
+    FILES ${CMAKE_CURRENT_BINARY_DIR}/snapwebsites.h
+    DESTINATION include/snapwebsites
 )
 
 # At this time we suppose that all the plugins are compiled

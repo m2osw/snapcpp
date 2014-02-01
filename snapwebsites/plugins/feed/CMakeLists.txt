@@ -1,6 +1,6 @@
 #
 # File:
-#      plugins/shorturl/CMakeLists.txt
+#      plugins/feed/CMakeLists.txt
 #
 # Description:
 #      Generate a short URL for each page. The module is capable of generate
@@ -65,6 +65,11 @@ endif()
 
 install(
     TARGETS shorturl LIBRARY DESTINATION ${PLUGIN_INSTALL_DIR}
+)
+install(
+    DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/
+    DESTINATION include/snapwebsites/plugins/feed
+    FILES_MATCHING PATTERN "*.h"
 )
 
 # vim: ts=4 sw=4 et

@@ -45,9 +45,9 @@ char const *get_name(name_t name) __attribute__ ((const));
 class sessions_exception : public snap_exception
 {
 public:
-    sessions_exception(const char *what_msg) : snap_exception("Sessions: " + std::string(what_msg)) {}
-    sessions_exception(const std::string& what_msg) : snap_exception("Sessions: " + what_msg) {}
-    sessions_exception(const QString& what_msg) : snap_exception("Sessions: " + what_msg.toStdString()) {}
+    sessions_exception(char const *       what_msg) : snap_exception("Sessions: " + std::string(what_msg)) {}
+    sessions_exception(std::string const& what_msg) : snap_exception("Sessions: " + what_msg) {}
+    sessions_exception(QString const&     what_msg) : snap_exception("Sessions: " + what_msg.toStdString()) {}
 };
 
 class sessions_exception_invalid_parameter : public sessions_exception

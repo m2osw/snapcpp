@@ -70,5 +70,10 @@ endif()
 install(
     TARGETS editor LIBRARY DESTINATION ${PLUGIN_INSTALL_DIR}
 )
+install(
+    DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/
+    DESTINATION include/snapwebsites/plugins/editor
+    FILES_MATCHING PATTERN "*.h"
+)
 
 # vim: ts=4 sw=4 et

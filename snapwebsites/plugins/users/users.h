@@ -168,7 +168,6 @@ private:
         LOGIN_MODE_FULL,
         LOGIN_MODE_VERIFICATION
     };
-    void                    initial_update(int64_t variables_timestamp);
     void                    content_update(int64_t variables_timestamp);
     void                    show_user(layout::layout *l, content::path_info_t& cpath, QDomElement& page, QDomElement& body);
     void                    prepare_login_form();

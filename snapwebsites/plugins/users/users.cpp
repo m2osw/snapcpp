@@ -248,11 +248,11 @@ const char *get_name(name_t name)
  * This function initializes the users plugin.
  */
 users::users()
-    //: f_snap(NULL) -- auto-init
+    //: f_snap(nullptr) -- auto-init
     //, f_user_key("") -- auto-init
     //, f_user_logged_in(false) -- auto-init
     //, f_user_changing_password_key("") -- auto-init
-    //, f_info(NULL) -- auto-init
+    //, f_info(nullptr) -- auto-init
 {
 }
 
@@ -313,28 +313,11 @@ int64_t users::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, initial_update);
     SNAP_PLUGIN_UPDATE(2014, 1, 31, 17, 11, 40, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
 
-
-/** \brief First update to run for the users plugin.
- *
- * This function is the first update for the users plugin. It installs
- * the initial data required by the users plugin.
- *
- * \param[in] variables_timestamp  The timestamp for all the variables added
- *                                 to the database by this update
- *                                 (in micro-seconds).
- */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-void users::initial_update(int64_t variables_timestamp)
-{
-}
-#pragma GCC diagnostic pop
 
 /** \brief Update the users plugin content.
  *
@@ -345,13 +328,12 @@ void users::initial_update(int64_t variables_timestamp)
  *                                 to the database by this update
  *                                 (in micro-seconds).
  */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
 void users::content_update(int64_t variables_timestamp)
 {
+    static_cast<void>(variables_timestamp);
     content::content::instance()->add_xml(get_plugin_name());
 }
-#pragma GCC diagnostic pop
+
 
 /** \brief Initialize the users table.
  *
@@ -2996,7 +2978,7 @@ void users::encrypt_password(const QString& digest, const QString& password, con
     // retrieve the digest we want to use
     // (TODO: allows website owners to change this value)
     const EVP_MD *md(EVP_get_digestbyname(digest.toUtf8().data()));
-    if(md == NULL)
+    if(md == nullptr)
     {
         throw users_exception_digest_not_available("the specified digest could not be found");
     }
@@ -3004,7 +2986,7 @@ void users::encrypt_password(const QString& digest, const QString& password, con
     // initialize the digest context
     EVP_MD_CTX mdctx;
     EVP_MD_CTX_init(&mdctx);
-    if(EVP_DigestInit_ex(&mdctx, md, NULL) != 1)
+    if(EVP_DigestInit_ex(&mdctx, md, nullptr) != 1)
     {
         throw users_exception_encryption_failed("EVP_DigestInit_ex() failed digest initialization");
     }

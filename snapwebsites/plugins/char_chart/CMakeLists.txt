@@ -1,6 +1,6 @@
 #
 # File:
-#      plugins/links/CMakeLists.txt
+#      plugins/char_chart/CMakeLists.txt
 #
 # Description:
 #      Plugin used to dynamically generate charts of characters.
@@ -63,6 +63,11 @@ endif()
 
 install(
     TARGETS char_chart LIBRARY DESTINATION ${PLUGIN_INSTALL_DIR}
+)
+install(
+    DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/
+    DESTINATION include/snapwebsites/plugins/char_chart
+    FILES_MATCHING PATTERN "*.h"
 )
 
 # vim: ts=4 sw=4 et
