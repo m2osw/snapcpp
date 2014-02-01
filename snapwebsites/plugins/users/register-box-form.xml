@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <!--
-Snap Websites Server == settings form
+Snap Websites Server == register form
 Copyright (C) 2013-2014  Made to Order Software Corp.
 
 This program is free software; you can redistribute it and/or modify
@@ -17,43 +17,40 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 -->
-<snap-form name="shorturl__settings" session_id="1" owner="shorturl">
-  <auto-reset minutes="120"/>
+<snap-form name="users__register_box" session_id="user/4" owner="users">
+  <auto-reset minutes="30"/>
   <focus refid="email"/>
-  <default-button refid="save"/>
+  <default-button refid="register"/>
   <taborder>
     <tabindex refid="email"/>
     <tabindex refid="password"/>
     <tabindex refid="confirm_password"/>
-    <tabindex refid="save"/>
     <tabindex refid="login"/>
-    <tabindex refid="cancel"/>
+    <tabindex refid="register"/>
   </taborder>
   <accesskeys>
     <!-- by keeping those in alphabetical order you'll avoid problems (duplicates) -->
-    <key refid="cancel">c</key><!-- default cancelation is expected to be [Shift-]Alt-C -->
     <key refid="email">e</key>
     <key refid="login">l</key>
     <key refid="password">p</key>
     <key refid="confirm_password">q</key>
-    <key refid="save">s</key><!-- default submit is expected to be [Shift-]Alt-S -->
+    <key refid="register">s</key><!-- default submit is expected to be [Shift-]Alt-S -->
   </accesskeys>
-  <widget id="shorturl_settings" type="fieldset">
-    <label>Short URL Settings</label>
-    <tooltip>Whenever you want to share a URL, having a short one usually makes it a lot simpler!</tooltip>
+  <widget id="registration_info" type="fieldset">
+    <label>Registration Information</label>
+    <tooltip>We only ask you for your email address and a password to register on our website.</tooltip>
     <help>The registration form let you enter the necessary information to create an account on the Snap! System. Note that you will then be able to use your website on all Snap! websites running at Made to Order Software Corporation.</help>
     <widgetorder>
       <!-- used if order is tweaked (i.e. plugins add widgets) -->
       <widgetpriority refid="email"/>
       <widgetpriority refid="password"/>
       <widgetpriority refid="confirm_password"/>
-      <widgetpriority refid="save"/>
       <widgetpriority refid="login"/>
-      <widgetpriority refid="cancel"/>
+      <widgetpriority refid="register"/>
     </widgetorder>
     <widget id="email" type="line-edit">
       <label>Email</label>
-      <background-value>name@example.com</background-value>
+      <background-value>email</background-value>
       <tooltip>Enter your email address to register for a Snap! Website account. It must be a currently valid email address.</tooltip>
       <sizes>
         <min>6</min>
@@ -68,7 +65,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     </widget>
     <widget id="password" type="password" secret="secret">
       <label>Password</label>
-      <background-value>*** top secret password ***</background-value>
+      <background-value>password</background-value>
       <tooltip>Enter your Snap! password. Do not forget that you are expected to use a different password on each website where you create an account.</tooltip>
       <sizes>
         <min>10</min>
@@ -80,7 +77,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     </widget>
     <widget id="confirm_password" type="password" secret="secret" duplicate-of="password">
       <label>Confirm Password</label>
-      <background-value>*** repeat your password ***</background-value>
+      <background-value>password confirmation</background-value>
       <tooltip>Enter your Snap! password again to make sure you did not mistype it.</tooltip>
       <sizes>
         <min>10</min>
@@ -90,7 +87,13 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <required>required</required>
       <help>This box requires you to re-enter your Snap! password in order to make sure you typed it properly.</help>
     </widget>
-    <widget id="save" type="submit">
+    <widget id="login" type="link">
+      <label>Log In</label>
+      <tooltip>Click here to return to the log in page</tooltip>
+      <help>You already have an account? Click this link to go to the log in page instead.</help>
+      <value>/login</value>
+    </widget>
+    <widget id="register" type="submit">
       <label>Register</label>
       <tooltip>Once you entered your information click here to register.</tooltip>
       <sizes>
@@ -98,18 +101,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       </sizes>
       <help>Please enter all the required information before clicking on the Register button. Note that you will be able to edit your account information once you confirmed your email.</help>
       <value>Register</value>
-    </widget>
-    <widget id="login" type="link">
-      <label>Log In</label>
-      <tooltip>Click here to return to the log in page</tooltip>
-      <help>You already have an account? Click this link to go to the log in page instead.</help>
-      <value>/login</value>
-    </widget>
-    <widget id="cancel" type="link">
-      <label>Cancel</label>
-      <tooltip>Click here to return to the home page</tooltip>
-      <help>Changed your mind? Click on this Cancel link to return to the home page.</help>
-      <value>/</value>
     </widget>
   </widget>
 </snap-form>

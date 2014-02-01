@@ -3,10 +3,9 @@
                               xmlns:xs="http://www.w3.org/2001/XMLSchema"
                               xmlns:fn="http://www.w3.org/2005/xpath-functions"
                               xmlns:snap="http://snapwebsites.info/snap-functions">
-  <xsl:param name="form-name">core</xsl:param>
-  <xsl:param name="form-modified">2012-11-14 03:44:54</xsl:param>
-  <xsl:param name="year" select="year-from-date(current-date())"/>
-  <xsl:param name="unique_id" select="34"/>
+  <xsl:variable name="form-name">core</xsl:variable>
+  <xsl:variable name="form-modified">2012-11-14 03:44:54</xsl:variable>
+  <xsl:variable name="year" select="year-from-date(current-date())"/>
 
   <xsl:template name="snap:parse-widget">
     <xsl:param name="refid" select="@refid"/>
@@ -61,7 +60,7 @@
       <xsl:if test="label != ''">
         <legend>
           <xsl:if test="/snap-form/taborder/tabindex[@refid=$name]/position() != 0">
-            <xsl:attribute name="tabindex"><xsl:value-of select="/snap-form/taborder/tabindex[@refid=$name]/count(preceding-sibling::tabindex) + 1"/></xsl:attribute>
+            <xsl:attribute name="tabindex"><xsl:value-of select="/snap-form/taborder/tabindex[@refid=$name]/count(preceding-sibling::tabindex) + 1 + $tabindex_base"/></xsl:attribute>
           </xsl:if>
           <xsl:if test="/snap-form/accesskeys/key[@refid=$name] != ''">
             <xsl:attribute name="accesskey"><xsl:value-of select="/snap-form/accesskeys/key[@refid=$name]"/></xsl:attribute>
@@ -105,7 +104,7 @@
       <xsl:attribute name="name"><xsl:value-of select="$name"/></xsl:attribute>
       <xsl:attribute name="class">line-edit-input <xsl:value-of select="classes"/> <xsl:value-of select="$name"/></xsl:attribute>
       <xsl:if test="/snap-form/taborder/tabindex[@refid=$name]/position() != 0">
-        <xsl:attribute name="tabindex"><xsl:value-of select="/snap-form/taborder/tabindex[@refid=$name]/count(preceding-sibling::tabindex) + 1"/></xsl:attribute>
+        <xsl:attribute name="tabindex"><xsl:value-of select="/snap-form/taborder/tabindex[@refid=$name]/count(preceding-sibling::tabindex) + 1 + $tabindex_base"/></xsl:attribute>
       </xsl:if>
       <xsl:if test="/snap-form/accesskeys/key[@refid=$name] != ''">
         <xsl:attribute name="accesskey"><xsl:value-of select="/snap-form/accesskeys/key[@refid=$name]"/></xsl:attribute>
@@ -172,7 +171,7 @@
       <xsl:attribute name="name"><xsl:value-of select="$name"/></xsl:attribute>
       <xsl:attribute name="class">password-input <xsl:value-of select="classes"/></xsl:attribute>
       <xsl:if test="/snap-form/taborder/tabindex[@refid=$name]/position() != 0">
-        <xsl:attribute name="tabindex"><xsl:value-of select="/snap-form/taborder/tabindex[@refid=$name]/count(preceding-sibling::tabindex) + 1"/></xsl:attribute>
+        <xsl:attribute name="tabindex"><xsl:value-of select="/snap-form/taborder/tabindex[@refid=$name]/count(preceding-sibling::tabindex) + 1 + $tabindex_base"/></xsl:attribute>
       </xsl:if>
       <xsl:if test="/snap-form/accesskeys/key[@refid=$name] != ''">
         <xsl:attribute name="accesskey"><xsl:value-of select="/snap-form/accesskeys/key[@refid=$name]"/></xsl:attribute>
@@ -242,7 +241,7 @@
       <xsl:attribute name="name"><xsl:value-of select="$name"/></xsl:attribute>
       <xsl:attribute name="class">checkbox-input <xsl:value-of select="classes"/> <xsl:value-of select="$name"/></xsl:attribute>
       <xsl:if test="/snap-form/taborder/tabindex[@refid=$name]/position() != 0">
-        <xsl:attribute name="tabindex"><xsl:value-of select="/snap-form/taborder/tabindex[@refid=$name]/count(preceding-sibling::tabindex) + 1"/></xsl:attribute>
+        <xsl:attribute name="tabindex"><xsl:value-of select="/snap-form/taborder/tabindex[@refid=$name]/count(preceding-sibling::tabindex) + 1 + $tabindex_base"/></xsl:attribute>
       </xsl:if>
       <xsl:if test="/snap-form/accesskeys/key[@refid=$name] != ''">
         <xsl:attribute name="accesskey"><xsl:value-of select="/snap-form/accesskeys/key[@refid=$name]"/></xsl:attribute>
@@ -298,7 +297,7 @@
       <xsl:attribute name="class">file <xsl:value-of select="classes"/></xsl:attribute>
       <xsl:attribute name="name"><xsl:value-of select="$name"/></xsl:attribute>
       <xsl:if test="/snap-form/taborder/tabindex[@refid=$name]/position() != 0">
-        <xsl:attribute name="tabindex"><xsl:value-of select="/snap-form/taborder/tabindex[@refid=$name]/count(preceding-sibling::tabindex) + 1"/></xsl:attribute>
+        <xsl:attribute name="tabindex"><xsl:value-of select="/snap-form/taborder/tabindex[@refid=$name]/count(preceding-sibling::tabindex) + 1 + $tabindex_base"/></xsl:attribute>
       </xsl:if>
       <xsl:if test="/snap-form/accesskeys/key[@refid=$name] != ''">
         <xsl:attribute name="accesskey"><xsl:value-of select="/snap-form/accesskeys/key[@refid=$name]"/></xsl:attribute>
@@ -354,7 +353,7 @@
       <xsl:attribute name="name"><xsl:value-of select="$name"/></xsl:attribute>
       <xsl:attribute name="class">file <xsl:value-of select="classes"/></xsl:attribute>
       <xsl:if test="/snap-form/taborder/tabindex[@refid=$name]/position() != 0">
-        <xsl:attribute name="tabindex"><xsl:value-of select="/snap-form/taborder/tabindex[@refid=$name]/count(preceding-sibling::tabindex) + 1"/></xsl:attribute>
+        <xsl:attribute name="tabindex"><xsl:value-of select="/snap-form/taborder/tabindex[@refid=$name]/count(preceding-sibling::tabindex) + 1 + $tabindex_base"/></xsl:attribute>
       </xsl:if>
       <xsl:if test="/snap-form/accesskeys/key[@refid=$name] != ''">
         <xsl:attribute name="accesskey"><xsl:value-of select="/snap-form/accesskeys/key[@refid=$name]"/></xsl:attribute>
@@ -401,7 +400,7 @@
       <xsl:attribute name="name"><xsl:value-of select="$name"/></xsl:attribute>
       <xsl:attribute name="class">submit-input <xsl:value-of select="classes"/> <xsl:value-of select="$default_button"/></xsl:attribute>
       <xsl:if test="/snap-form/taborder/tabindex[@refid=$name]/position() != 0">
-        <xsl:attribute name="tabindex"><xsl:value-of select="/snap-form/taborder/tabindex[@refid=$name]/count(preceding-sibling::tabindex) + 1"/></xsl:attribute>
+        <xsl:attribute name="tabindex"><xsl:value-of select="/snap-form/taborder/tabindex[@refid=$name]/count(preceding-sibling::tabindex) + 1 + $tabindex_base"/></xsl:attribute>
       </xsl:if>
       <xsl:if test="/snap-form/accesskeys/key[@refid=$name] != ''">
         <xsl:attribute name="accesskey"><xsl:value-of select="/snap-form/accesskeys/key[@refid=$name]"/></xsl:attribute>
@@ -435,7 +434,7 @@
       <xsl:attribute name="class">link <xsl:value-of select="classes"/> <xsl:value-of select="$name"/></xsl:attribute>
       <xsl:attribute name="href"><xsl:value-of select="value"/></xsl:attribute>
       <xsl:if test="/snap-form/taborder/tabindex[@refid=$name]/position() != 0">
-        <xsl:attribute name="tabindex"><xsl:value-of select="/snap-form/taborder/tabindex[@refid=$name]/count(preceding-sibling::tabindex) + 1"/></xsl:attribute>
+        <xsl:attribute name="tabindex"><xsl:value-of select="/snap-form/taborder/tabindex[@refid=$name]/count(preceding-sibling::tabindex) + 1 + $tabindex_base"/></xsl:attribute>
       </xsl:if>
       <xsl:if test="/snap-form/accesskeys/key[@refid=$name] != ''">
         <xsl:attribute name="accesskey"><xsl:value-of select="/snap-form/accesskeys/key[@refid=$name]"/></xsl:attribute>
@@ -482,7 +481,8 @@
                the form process removes it when used with a [form::...] token.
     -->
     <div class="form-wrapper">
-      <div class="snap-form">
+      <div>
+        <xsl:attribute name="class">snap-form <xsl:value-of select="@name"/></xsl:attribute>
         <form id="form_{$unique_id}" method="post" accept-charset="utf-8">
           <xsl:if test="(@safe = 'safe') or (auto-reset) or ((//widget)[@type='safe-password'])">
             <xsl:attribute name="autocomplete">off</xsl:attribute>

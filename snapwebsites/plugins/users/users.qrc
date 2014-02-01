@@ -27,6 +27,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <file>login-form.xml</file>
     <file>new-password-form.xml</file>
     <file>password-form.xml</file>
+    <file>register-box-form.xml</file>
     <file>register-form.xml</file>
     <file>replace-password-form.xml</file>
     <file>resend-email-form.xml</file>

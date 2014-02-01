@@ -159,7 +159,7 @@ int64_t form::do_update(int64_t last_updated)
     SNAP_PLUGIN_UPDATE_INIT();
 
     //SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, initial_update);
-    SNAP_PLUGIN_UPDATE(2014, 1, 31, 0, 23, 0, content_update);
+    SNAP_PLUGIN_UPDATE(2014, 1, 31, 17, 10, 0, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -198,6 +198,9 @@ void form::content_update(int64_t variables_timestamp)
  */
 QDomDocument form::form_to_html(sessions::sessions::session_info& info, QDomDocument& xml_form)
 {
+    static int64_t unique_id(0);
+    static int tabindex_base(0);
+
     QDomDocument doc_output("body");
     if(!f_form_initialized)
     {
@@ -267,9 +270,17 @@ QDomDocument form::form_to_html(sessions::sessions::session_info& info, QDomDocu
     q.setFocus(xml_form.toString());
     // somehow the bind works here...
     q.bindVariable("form_session", QVariant(sessions::sessions::instance()->create_session(info)));
+    ++unique_id;
+    q.bindVariable("unique_id", QVariant(QString("%1").arg(unique_id)));
+    q.bindVariable("tabindex_base", QVariant(tabindex_base));
     q.setQuery(f_form_elements_string);
     QDomReceiver receiver(q.namePool(), doc_output);
     q.evaluateTo(&receiver);
+
+    // the count includes all the widgets even though that do not make
+    // use of the tab index so we'll get some gaps, but that's a very
+    // small price to pay for this cool feature
+    tabindex_base += xml_form.elementsByTagName("widget").size();
 
     return doc_output;
 }
@@ -2024,6 +2035,7 @@ void form::on_replace_token(content::path_info_t& ipath, QString const& plugin_o
             token.f_replacement = error;
             return;
         }
+        QDomElement snap_form(form_doc.documentElement());
 
         // 1. Initialize session
         //
@@ -2040,7 +2052,6 @@ void form::on_replace_token(content::path_info_t& ipath, QString const& plugin_o
         // only have one form; the session information also may starts with
         // "user/" or "form/" or "secure/" and those define the level of
         // complexity for the session identifier; the default is "form/"
-        QDomElement snap_form(form_doc.documentElement());
         QString session_id_str(snap_form.attribute("session_id", "1"));
         if(session_id_str.startsWith("form/"))
         {
