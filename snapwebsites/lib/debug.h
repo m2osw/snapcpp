@@ -17,6 +17,6 @@
 #pragma once
 
 // Set to 1 to get debug and 0 to avoid debug
-#define SNAP_DEBUG		1
+#define SNAP_DEBUG   1
 
-// vim: ts=4 sw=4
+// vim: ts=4 sw=4 et
