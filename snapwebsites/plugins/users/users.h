@@ -116,7 +116,7 @@ public:
     static const sessions::sessions::session_info::session_id_t USERS_SESSION_ID_LOG_IN = 1;                    // login-form.xml
     static const sessions::sessions::session_info::session_id_t USERS_SESSION_ID_LOG_IN_BOX = 2;                // login-box-form.xml
     static const sessions::sessions::session_info::session_id_t USERS_SESSION_ID_REGISTER = 3;                  // register-form.xml
-    static const sessions::sessions::session_info::session_id_t USERS_SESSION_ID_REGISTER_BOX = 4;
+    static const sessions::sessions::session_info::session_id_t USERS_SESSION_ID_REGISTER_BOX = 4;              // register-box-form.xml
     static const sessions::sessions::session_info::session_id_t USERS_SESSION_ID_FORGOT_PASSWORD = 5;           // forgot-password-form.xml
     static const sessions::sessions::session_info::session_id_t USERS_SESSION_ID_VERIFY = 6;                    // verify-form.xml
     static const sessions::sessions::session_info::session_id_t USERS_SESSION_ID_LOG_IN_SESSION = 7;
