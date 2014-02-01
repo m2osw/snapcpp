@@ -76,6 +76,29 @@ namespace snap
 
 namespace
 {
+
+// list of plugins that we cannot do without
+char const *g_minimum_plugins[] =
+{
+    "content",
+    "editor",
+    "filter",
+    "form",
+    "info",
+    "layout",
+    "links",
+    //"lists", -- once available...
+    "messages",
+    "output",
+    "path",
+    "permissions",
+    "sendmail",
+    "sessions",
+    "taxonomy",
+    "users",
+    nullptr
+};
+
 char const *g_week_day_name[] =
 {
     "Sunday", "Monday", "Tuesday", "Wedneday", "Thursday", "Friday", "Saturday"
@@ -1242,10 +1265,10 @@ snap_child::language_name_t const g_language_names[] =
         ",zul,"
     },
     {
-        NULL,
-        NULL,
+        nullptr,
+        nullptr,
         { '\0', '\0', '\0' },
-        NULL
+        nullptr
     }
 };
 
@@ -2254,7 +2277,7 @@ snap_child::country_name_t const g_country_names[] =
     },
     {
         { '\0', '\0', '\0' },
-        NULL
+        nullptr
     }
 };
 
@@ -2410,7 +2433,7 @@ snap_child::~snap_child()
 void snap_child::init_start_date()
 {
     struct timeval tv;
-    gettimeofday(&tv, NULL);
+    gettimeofday(&tv, nullptr);
     f_start_date = static_cast<int64_t>(tv.tv_sec) * static_cast<int64_t>(1000000)
                  + static_cast<int64_t>(tv.tv_usec);
 }
@@ -4718,7 +4741,7 @@ bool snap_child::verify_language_name(QString& lang)
         {
             // the multi-name is already semi-optimize so we test it too
             // TBD -- this should maybe not be checked at all
-            if(strstr(l->f_other_names, lwc) != NULL)
+            if(strstr(l->f_other_names, lwc) != nullptr)
             {
                 lang = l->f_short_name;
                 return true;
@@ -6058,8 +6081,11 @@ void snap_child::init_plugins()
         site_plugins = f_server->get_parameter("default_plugins");
     }
     QStringList list_of_plugins(site_plugins.split(","));
+
+    // clean up the list
     for(int i(0); i < list_of_plugins.length(); ++i)
     {
+        list_of_plugins[i] = list_of_plugins[i].trimmed();
         if(list_of_plugins.at(i).isEmpty())
         {
             list_of_plugins.removeAt(i);
@@ -6068,18 +6094,11 @@ void snap_child::init_plugins()
     }
 
     // ensure a certain minimum number of plugins
-    static const char *minimum_plugins[] =
+    for(int i(0); g_minimum_plugins[i] != nullptr; ++i)
     {
-        "path",
-        "filter",
-        "robotstxt",
-        NULL
-    };
-    for(int i(0); minimum_plugins[i] != NULL; ++i)
-    {
-        if(!list_of_plugins.contains(minimum_plugins[i]))
+        if(!list_of_plugins.contains(g_minimum_plugins[i]))
         {
-            list_of_plugins << minimum_plugins[i];
+            list_of_plugins << g_minimum_plugins[i];
         }
     }
 
@@ -6089,8 +6108,10 @@ void snap_child::init_plugins()
         die(HTTP_CODE_SERVICE_UNAVAILABLE, "Plugin Unavailable", "Server encountered problems with its plugins.", "An error occured loading the server plugins.");
         NOTREACHED();
     }
+    // at this point each plugin was allocated through their factory
+    // but they are not really usable yet because we did not initialize them
 
-    // now boot the plugin system
+    // now boot the plugin system (send signals)
     f_server->bootstrap(this);
     f_server->init();
 
@@ -6184,7 +6205,7 @@ void snap_child::update_plugins(const QStringList& list_of_plugins)
             //       Instead we only make use of the plugin specific last
             //       updated value which is checked inside the do_update()
             //       function itself.
-            if(p != NULL) // && p->last_modification() > plugin_threshold)
+            if(p != nullptr) // && p->last_modification() > plugin_threshold)
             {
                 // the plugin changed, we want to call do_update() on it!
                 if(p->last_modification() > new_plugin_threshold)
@@ -7360,7 +7381,7 @@ time_t snap_child::string_to_date(QString const& date)
  * This function returns the current list of language names as defined
  * in ISO639 and similar documents.
  *
- * The table returned ends with a NULL entry. You may use it in this
+ * The table returned ends with a nullptr entry. You may use it in this
  * way:
  *
  * \code
