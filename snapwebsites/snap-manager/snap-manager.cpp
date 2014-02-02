@@ -21,6 +21,7 @@
 #include "snap-manager-decode-utf8.h"
 #include "snapwebsites.h"
 #include "snap_uri.h"
+#include "tcp_client_server.h"
 #include "dbutils.h"
 #include "../plugins/content/content.h"
 #include <QHostAddress>
@@ -38,7 +39,8 @@ template<class T>
 T *getChild(QWidget *parent, const char *name)
 {
     T *w = parent->findChild<T *>(name);
-    if(w == NULL) {
+    if(w == nullptr)
+    {
             QString error(QString("Can't find the widget: %1.").arg(name));
             QMessageBox msg(QMessageBox::Critical, "Internal Error", error, QMessageBox::Ok, parent);
             msg.exec();
@@ -58,10 +60,10 @@ snap_manager::snap_manager(QWidget *snap_parent)
     restoreGeometry( settings.value( "geometry", saveGeometry() ).toByteArray() );
     restoreState   ( settings.value( "state"   , saveState()    ).toByteArray() );
     //
-    cassandraHost->setText  ( settings.value( "cassandra_host", "127.0.0.1" ).toString() );
-    cassandraPort->setText  ( settings.value( "cassandra_port", 4004        ).toString() );
+    cassandraHost->setText  ( settings.value( "cassandra_host", "localhost" ).toString() );
+    cassandraPort->setText  ( settings.value( "cassandra_port", "9160"      ).toString() );
     snapServerHost->setText ( settings.value( "snap_host",      "localhost" ).toString() );
-    snapServerPort->setText ( settings.value( "snap_port",      "9160"      ).toString() );
+    snapServerPort->setText ( settings.value( "snap_port",      "4004"      ).toString() );
 
     // Help
     QAction *a = getChild<QAction>(this, "actionSnap_Manager_Help");
@@ -209,7 +211,8 @@ void snap_manager::OnAboutToQuit()
 
 void snap_manager::about()
 {
-    if(f_about == NULL) {
+    if(f_about == nullptr)
+    {
         f_about = new snap_manager_about(this);
     }
     f_about->show();
@@ -217,7 +220,8 @@ void snap_manager::about()
 
 void snap_manager::help()
 {
-    if(f_help == NULL) {
+    if(f_help == nullptr)
+    {
         f_help = new snap_manager_help(this);
     }
     f_help->show();
@@ -225,7 +229,8 @@ void snap_manager::help()
 
 void snap_manager::decode_utf8()
 {
-    if(f_decode_utf8 == NULL) {
+    if(f_decode_utf8 == nullptr)
+    {
         f_decode_utf8 = new snap_manager_decode_utf8(this);
     }
     f_decode_utf8->show();
@@ -236,14 +241,17 @@ void snap_manager::snapTest()
     // retrieve the current values
     QLineEdit *l = getChild<QLineEdit>(this, "snapServerHost");
     f_snap_host = l->text();
-    if(f_snap_host.isEmpty()) {
+    if(f_snap_host.isEmpty())
+    {
         f_snap_host = "localhost";
     }
     l = getChild<QLineEdit>(this, "snapServerPort");
-    if(l->text().isEmpty()) {
+    if(l->text().isEmpty())
+    {
         f_snap_port = 4004;
     }
-    else {
+    else
+    {
         f_snap_port = l->text().toInt();
     }
 
@@ -255,18 +263,21 @@ void snap_manager::snapTest()
 
     // reconnect with the new info
     // note: the disconnect does nothing if not already connected
-    QHostAddress addr(f_snap_host);
-    QTcpSocket socket;
-    socket.connectToHost(addr, f_snap_port);
-    if(!socket.waitForConnected()) {
-        // did not work...
-        console->addItem("Not connected.");
-        QMessageBox msg(QMessageBox::Critical, "Connection to Snap! Server", "Snap! Manager was not able to connect to your Snap! Server. Please verify that it is up and running and accessible (no firewall) from this computer.", QMessageBox::Ok, this);
-        msg.exec();
-        return;
-    }
+    tcp_client_server::tcp_client socket(f_snap_host.toUtf8().data(), f_snap_port);
+    //QHostAddress addr(f_snap_host);
+    //QTcpSocket socket;
+    //socket.connectToHost(addr, f_snap_port);
+    //if(!socket.waitForConnected())
+    //{
+    //    // did not work...
+    //    console->addItem("Not connected.");
+    //    QMessageBox msg(QMessageBox::Critical, "Connection to Snap! Server", "Snap! Manager was not able to connect to your Snap! Server. Please verify that it is up and running and accessible (no firewall) from this computer.", QMessageBox::Ok, this);
+    //    msg.exec();
+    //    return;
+    //}
     // send the #INFO command
-    if(socket.write("#INFO\n", 6) != 6) {
+    if(socket.write("#INFO\n", 6) != 6)
+    {
         console->addItem("Unknown state.");
         QMessageBox msg(QMessageBox::Critical, "Connection to Snap! Server", "Snap! Manager was not able to communicate with the Snap! Server (write error).", QMessageBox::Ok, this);
         msg.exec();
@@ -275,17 +286,20 @@ void snap_manager::snapTest()
 
     // read the results of the #INFO command
     bool started(false);
-    if(!socket.waitForReadyRead()) {
-        console->addItem("Unknown state.");
-        QMessageBox msg(QMessageBox::Critical, "Connection to Snap! Server", "Snap! Manager connection did not last, cannot read from it. Socket error: " + QString::number(static_cast<int>(socket.error())), QMessageBox::Ok, this);
-        msg.exec();
-        return;
-    }
-    for(;;) {
+    //if(!socket.waitForReadyRead())
+    //{
+    //    console->addItem("Unknown state.");
+    //    QMessageBox msg(QMessageBox::Critical, "Connection to Snap! Server", "Snap! Manager connection did not last, cannot read from it. Socket error: " + QString::number(static_cast<int>(socket.error())), QMessageBox::Ok, this);
+    //    msg.exec();
+    //    return;
+    //}
+    for(;;)
+    {
         // versions are expected to be relatively small so 256 chars per line is enough
-        char buf[256];
-        int r = socket.readLine(buf, sizeof(buf));
-        if(r <= 0) {
+        std::string buf;
+        int r(socket.read_line(buf));
+        if(r <= 0)
+        {
             // note that r == 0 is not an error but it should not happen
             // (i.e. I/O is blocking so we should not return too soon.)
             console->addItem("Unknown state.");
@@ -293,8 +307,10 @@ void snap_manager::snapTest()
             msg.exec();
             return;
         }
-        if(!started) {
-            if(strcmp(buf, "#START\n") != 0) {
+        if(!started)
+        {
+            if(buf != "#START")
+            {
                 console->addItem("Connected with an invalid status.");
                 QMessageBox msg(QMessageBox::Critical, "Connection to Snap! Server", "Snap! Manager was able to communicate with the Snap! Server but got unexpected protocol data.", QMessageBox::Ok, this);
                 msg.exec();
@@ -302,52 +318,67 @@ void snap_manager::snapTest()
             }
             started = true;
         }
-        else if(strcmp(buf, "#END\n") == 0) {
+        else if(buf == "#END")
+        {
             // got the #END mark, we're done
             break;
         }
-        else {
-            char *v = strchr(buf, '=');
-            if(v == NULL) {
+        else
+        {
+            QString const line(QString::fromUtf8(buf.c_str(), buf.length()));
+            int const equal_pos(line.indexOf('='));
+            if(equal_pos <= 0)
+            {
+                // zero is an error too since `name` would be empty
                 console->addItem("Connected with an invalid status.");
                 QMessageBox msg(QMessageBox::Critical, "Connection to Snap! Server", "Snap! Manager was able to communicate with the Snap! Server but got unexpected variable data.", QMessageBox::Ok, this);
                 msg.exec();
                 return;
             }
-            QString name(QString::fromAscii(buf, v - buf));
-            QString value(v + 1);
-            value = value.trimmed();
-            if(name == "VERSION") {
+            QString const name(line.left(equal_pos));
+            QString const value(line.mid(equal_pos + 1).trimmed());
+            if(name == "VERSION")
+            {
                 console->addItem("Live Snap Server v" + value);
             }
-            else if(name == "OS") {
+            else if(name == "OS")
+            {
                 console->addItem("Operating System: " + value);
             }
-            else if(name == "QT") {
+            else if(name == "QT")
+            {
                 console->addItem("Snap Server compiled with Qt v" + value);
             }
-            else if(name == "RUNTIME_QT") {
+            else if(name == "RUNTIME_QT")
+            {
                 console->addItem("Snap Server running with Qt v" + value);
             }
-            else if(name == "LIBTLD") {
+            else if(name == "LIBTLD")
+            {
                 console->addItem("Snap Server compiled with libtld v" + value);
             }
-            else if(name == "RUNTIME_LIBTLD") {
+            else if(name == "RUNTIME_LIBTLD")
+            {
                 console->addItem("Snap Server running with libtld v" + value);
             }
-            else if(name == "LIBQTCASSANDRA") {
+            else if(name == "LIBQTCASSANDRA")
+            {
                 console->addItem("Snap Server compiled with libQtCassandra v" + value);
             }
-            else if(name == "RUNTIME_LIBQTCASSANDRA") {
+            else if(name == "RUNTIME_LIBQTCASSANDRA")
+            {
                 console->addItem("Snap Server running with libQtCassandra v" + value);
             }
-            else if(name == "LIBQTSERIALIZATION") {
+            else if(name == "LIBQTSERIALIZATION")
+            {
                 console->addItem("Snap Server compiled with libQtSerialization v" + value);
             }
-            else if(name == "RUNTIME_LIBQTSERIALIZATION") {
+            else if(name == "RUNTIME_LIBQTSERIALIZATION")
+            {
                 console->addItem("Snap Server running with libQtSerialization v" + value);
             }
-            else {
+            else
+            {
                 console->addItem("Unknown variable: " + name + "=" + value);
             }
         }
@@ -359,14 +390,17 @@ void snap_manager::snapStats()
     // retrieve the current values
     QLineEdit *l = getChild<QLineEdit>(this, "snapServerHost");
     f_snap_host = l->text();
-    if(f_snap_host.isEmpty()) {
+    if(f_snap_host.isEmpty())
+    {
         f_snap_host = "localhost";
     }
     l = getChild<QLineEdit>(this, "snapServerPort");
-    if(l->text().isEmpty()) {
+    if(l->text().isEmpty())
+    {
         f_snap_port = 4004;
     }
-    else {
+    else
+    {
         f_snap_port = l->text().toInt();
     }
 
@@ -378,18 +412,21 @@ void snap_manager::snapStats()
 
     // reconnect with the new info
     // note: the disconnect does nothing if not already connected
-    QHostAddress addr(f_snap_host);
-    QTcpSocket socket;
-    socket.connectToHost(addr, f_snap_port);
-    if(!socket.waitForConnected()) {
-        // did not work...
-        console->addItem("Not connected.");
-        QMessageBox msg(QMessageBox::Critical, "Connection to Snap! Server", "Snap! Manager was not able to connect to your Snap! Server. Please verify that it is up and running and accessible (no firewall) from this computer.", QMessageBox::Ok, this);
-        msg.exec();
-        return;
-    }
+    tcp_client_server::tcp_client socket(f_snap_host.toUtf8().data(), f_snap_port);
+    //QHostAddress addr(f_snap_host);
+    //QTcpSocket socket;
+    //socket.connectToHost(addr, f_snap_port);
+    //if(!socket.waitForConnected())
+    //{
+    //    // did not work...
+    //    console->addItem("Not connected.");
+    //    QMessageBox msg(QMessageBox::Critical, "Connection to Snap! Server", "Snap! Manager was not able to connect to your Snap! Server. Please verify that it is up and running and accessible (no firewall) from this computer.", QMessageBox::Ok, this);
+    //    msg.exec();
+    //    return;
+    //}
     // send the #STATS command
-    if(socket.write("#STATS\n", 7) != 7) {
+    if(socket.write("#STATS\n", 7) != 7)
+    {
         console->addItem("Unknown state.");
         QMessageBox msg(QMessageBox::Critical, "Connection to Snap! Server", "Snap! Manager was not able to communicate with the Snap! Server (write error).", QMessageBox::Ok, this);
         msg.exec();
@@ -398,17 +435,20 @@ void snap_manager::snapStats()
 
     // read the results of the #INFO command
     bool started(false);
-    if(!socket.waitForReadyRead()) {
-        console->addItem("Unknown state.");
-        QMessageBox msg(QMessageBox::Critical, "Connection to Snap! Server", "Snap! Manager connection did not last, cannot read from it. Socket error: " + QString::number(static_cast<int>(socket.error())), QMessageBox::Ok, this);
-        msg.exec();
-        return;
-    }
-    for(;;) {
+    //if(!socket.waitForReadyRead())
+    //{
+    //    console->addItem("Unknown state.");
+    //    QMessageBox msg(QMessageBox::Critical, "Connection to Snap! Server", "Snap! Manager connection did not last, cannot read from it. Socket error: " + QString::number(static_cast<int>(socket.error())), QMessageBox::Ok, this);
+    //    msg.exec();
+    //    return;
+    //}
+    for(;;)
+    {
         // versions are expected to be relatively small so 256 chars per line is enough
-        char buf[256];
-        int r = socket.readLine(buf, sizeof(buf));
-        if(r <= 0) {
+        std::string buf;
+        int r(socket.read_line(buf));
+        if(r <= 0)
+        {
             // note that r == 0 is not an error but it should not happen
             // (i.e. I/O is blocking so we should not return too soon.)
             console->addItem("Unknown state.");
@@ -416,8 +456,10 @@ void snap_manager::snapStats()
             msg.exec();
             return;
         }
-        if(!started) {
-            if(strcmp(buf, "#START\n") != 0) {
+        if(!started)
+        {
+            if(buf != "#START")
+            {
                 console->addItem("Connected with an invalid status.");
                 QMessageBox msg(QMessageBox::Critical, "Connection to Snap! Server", "Snap! Manager was able to communicate with the Snap! Server but got unexpected protocol data.", QMessageBox::Ok, this);
                 msg.exec();
@@ -425,30 +467,37 @@ void snap_manager::snapStats()
             }
             started = true;
         }
-        else if(strcmp(buf, "#END\n") == 0) {
+        else if(buf == "#END")
+        {
             // got the #END mark, we're done
             break;
         }
-        else {
-            char *v = strchr(buf, '=');
-            if(v == NULL) {
+        else
+        {
+            QString const line(QString::fromUtf8(buf.c_str(), buf.length()));
+            int const equal_pos(line.indexOf('='));
+            if(equal_pos <= 0)
+            {
+                // zero is an error too since `name` would be empty
                 console->addItem("Connected with an invalid status.");
                 QMessageBox msg(QMessageBox::Critical, "Connection to Snap! Server", "Snap! Manager was able to communicate with the Snap! Server but got unexpected variable data.", QMessageBox::Ok, this);
                 msg.exec();
                 return;
             }
-            QString name(QString::fromAscii(buf, v - buf));
-            QString value(v + 1);
-            value = value.trimmed();
-            if(name == "VERSION") {
+            QString const name(line.left(equal_pos));
+            QString const value(line.mid(equal_pos + 1).trimmed());
+            if(name == "VERSION")
+            {
                 console->addItem("Live Snap Server v" + value);
                 // add an empty line before the stats
                 console->addItem(" ");
             }
-            else if(name == "CONNECTIONS_COUNT") {
+            else if(name == "CONNECTIONS_COUNT")
+            {
                 console->addItem("Connections: " + value);
             }
-            else {
+            else
+            {
                 console->addItem("Unknown variable: " + name + "=" + value);
             }
         }
@@ -636,7 +685,8 @@ void snap_manager::reset_domains_index()
     QString domain_table_name(snap::get_name(snap::SNAP_NAME_DOMAINS));
     QtCassandra::QCassandraTable::pointer_t table(f_context->findTable(domain_table_name));
     QString row_index_name(snap::get_name(snap::SNAP_NAME_INDEX)); // "*index*"
-    if(table->exists(row_index_name)) {
+    if(table->exists(row_index_name))
+    {
         // if the index exists, drop it so we can restart from scratch
         table->dropRow(row_index_name);
     }
@@ -647,10 +697,12 @@ void snap_manager::reset_domains_index()
     column_predicate->addColumnName("core::rules"); // get one column to avoid getting all!
     QtCassandra::QCassandraRowPredicate row_predicate;
     row_predicate.setColumnPredicate(column_predicate);
-    for(;;) {
+    for(;;)
+    {
         table->clearCache();
         uint32_t max(table->readRows(row_predicate));
-        if(max == 0) {
+        if(max == 0)
+        {
             break;
         }
         const QtCassandra::QCassandraRows& rows(table->rows());
@@ -677,7 +729,8 @@ void snap_manager::reset_websites_index()
     QString table_name(snap::get_name(snap::SNAP_NAME_WEBSITES));
     QtCassandra::QCassandraTable::pointer_t table(f_context->findTable(table_name));
     QString row_index_name(snap::get_name(snap::SNAP_NAME_INDEX)); // "*index*"
-    if(table->exists(row_index_name)) {
+    if(table->exists(row_index_name))
+    {
         // if the index exists, drop it so we can restart from scratch
         table->dropRow(row_index_name);
     }
@@ -688,15 +741,18 @@ void snap_manager::reset_websites_index()
     column_predicate->addColumnName("core::rules"); // get one column to avoid getting all!
     QtCassandra::QCassandraRowPredicate row_predicate;
     row_predicate.setColumnPredicate(column_predicate);
-    for(;;) {
+    for(;;)
+    {
         table->clearCache();
         uint32_t max(table->readRows(row_predicate));
-        if(max == 0) {
+        if(max == 0)
+        {
             break;
         }
         const QtCassandra::QCassandraRows& rows(table->rows());
         for(QtCassandra::QCassandraRows::const_iterator o(rows.begin());
-                o != rows.end(); ++o) {
+                o != rows.end(); ++o)
+        {
             // we do not care about the cells, what's important is the name
             // of the domain and of this row
             QByteArray row_key(o.key());
@@ -705,23 +761,28 @@ void snap_manager::reset_websites_index()
             tld_info info;
             const char *d = row_key.data();
             r = tld(d, &info);
-            if(r != TLD_RESULT_SUCCESS) {
+            if(r != TLD_RESULT_SUCCESS)
+            {
                 QMessageBox msg(QMessageBox::Critical, "Invalid TLD in Domain Name", "The TLD of this domain: \"" + website_name + "\" is not valid. This entry will be skipped.", QMessageBox::Ok, this);
                 msg.exec();
                 continue; // ignore entry
             }
             const char *domain = d; // by default assume no sub-domain
-            for(; d < info.f_tld; ++d) {
-                if(*d == '.') {
+            for(; d < info.f_tld; ++d)
+            {
+                if(*d == '.')
+                {
                     domain = d + 1;
                 }
             }
             // check that the domain still exists, if not, offer the user
             // to delete that entry, it won't be used (or even accessible)
-            if(!domain_table->exists(QString(domain))) {
+            if(!domain_table->exists(QString(domain)))
+            {
                 QMessageBox msg(QMessageBox::Critical, "Unknown Domain Name", "The domain for website: \"" + website_name + "\" is not defined. You won't be able to access this entry unless you create that domain. Should I delete that entry?", QMessageBox::Yes | QMessageBox::No, this);
                 int choice(msg.exec());
-                if(choice == QMessageBox::Yes) {
+                if(choice == QMessageBox::Yes)
+                {
                     table->dropRow(row_key);
                     continue;
                 }
@@ -1051,7 +1112,8 @@ void snap_manager::domainWithSelection()
     // may change in between...
     bool enable_websites = f_domain_org_name != "";
     f_tabs->setTabEnabled(TAB_WEBSITES, enable_websites);
-    if(enable_websites) {
+    if(enable_websites)
+    {
         // TODO: call that function when the tab is clicked instead!
         loadWebsites();
     }
@@ -1477,7 +1539,8 @@ bool snap_manager::websiteChanged()
 void snap_manager::on_websiteList_itemClicked(QListWidgetItem *item)
 {
     // check whether the current info was modified
-    if(!websiteChanged()) {
+    if(!websiteChanged())
+    {
         // user canceled his action
         // TODO: we need to reset the item selection...
         return;
@@ -1490,11 +1553,13 @@ void snap_manager::on_websiteList_itemClicked(QListWidgetItem *item)
     QString table_name(snap::get_name(snap::SNAP_NAME_WEBSITES));
     QtCassandra::QCassandraTable::pointer_t table(f_context->findTable(table_name));
     QtCassandra::QCassandraRow::pointer_t row(table->row(f_website_org_name));
-    if(row->exists(QString("core::original_rules"))) {
+    if(row->exists(QString("core::original_rules")))
+    {
         QtCassandra::QCassandraValue rules((*table)[f_website_org_name][QString("core::original_rules")]);
         f_website_org_rules = rules.stringValue();
     }
-    else {
+    else
+    {
         // this case happens after a delete (i.e. the row still exist but is empty)
         f_website_org_rules = "";
     }
@@ -1506,7 +1571,8 @@ void snap_manager::on_websiteList_itemClicked(QListWidgetItem *item)
 void snap_manager::on_websiteNew_clicked()
 {
     // check whether the current info was modified
-    if(!websiteChanged()) {
+    if(!websiteChanged())
+    {
         // user canceled his action
         return;
     }
@@ -1556,13 +1622,16 @@ void snap_manager::on_websiteSave_clicked()
         //    in the right index)
         //
         bool valid(false);
-        if(name.length() > f_domain_org_name.length()) {
+        if(name.length() > f_domain_org_name.length())
+        {
             QString domain(name.mid(name.length() - 1 - f_domain_org_name.length()));
-            if(domain == "." + f_domain_org_name) {
+            if(domain == "." + f_domain_org_name)
+            {
                 valid = true;
             }
         }
-        if(!valid) {
+        if(!valid)
+        {
             QMessageBox msg(QMessageBox::Critical, "Invalid Domain Name", "The full domain name of a website must end with the exact domain name of the website you are editing.", QMessageBox::Ok, this);
             msg.exec();
             return;
@@ -1576,7 +1645,8 @@ void snap_manager::on_websiteSave_clicked()
         QByteArray str(name.toUtf8());
         const char *d = str.data();
         r = tld(d, &info);
-        if(r != TLD_RESULT_SUCCESS) {
+        if(r != TLD_RESULT_SUCCESS)
+        {
             QMessageBox msg(QMessageBox::Critical, "Invalid TLD in Full Domain Name", "The TLD must be a known TLD. The tld() function could not determine the TLD of this full domain name. Please check the full domain name and make the necessary adjustments.", QMessageBox::Ok, this);
             msg.exec();
             return;
@@ -1585,7 +1655,8 @@ void snap_manager::on_websiteSave_clicked()
         // full domain name is considered valid for now
         snap::snap_uri_rules website_rules;
         QByteArray compiled_rules;
-        if(!website_rules.parse_website_rules(rules, compiled_rules)) {
+        if(!website_rules.parse_website_rules(rules, compiled_rules))
+        {
             QMessageBox msg(QMessageBox::Critical, "Invalid Website Rules", "An error was detected in your website rules: " + website_rules.errmsg(), QMessageBox::Ok, this);
             msg.exec();
             return;
@@ -1594,18 +1665,23 @@ void snap_manager::on_websiteSave_clicked()
         QString table_name(snap::get_name(snap::SNAP_NAME_WEBSITES));
         QtCassandra::QCassandraTable::pointer_t table(f_context->findTable(table_name));
 
-        if(name != f_website_org_name) {
+        if(name != f_website_org_name)
+        {
             // user is creating a new entry or changing the name of an existing
             // entry, so we want to prevent overwriting an existing entry
-            if(table->exists(name)) {
+            if(table->exists(name))
+            {
                 // got the row, check whether the "core::original_rules" exists
                 QtCassandra::QCassandraRow::pointer_t row(table->row(name));
-                if(row->exists(QString("core::original_rules"))) {
-                    if(f_website_org_name.isEmpty()) {
+                if(row->exists(QString("core::original_rules")))
+                {
+                    if(f_website_org_name.isEmpty())
+                    {
                         QMessageBox msg(QMessageBox::Critical, "Full Domain Name already defined", "You asked to create a new Full Domain Name and yet you specified a Full Domain Name that is already defined in the database. Please change the Full Domain Name or Cancel and then edit the existing website entry.", QMessageBox::Ok, this);
                         msg.exec();
                     }
-                    else {
+                    else
+                    {
                         QMessageBox msg(QMessageBox::Critical, "Full Domain Name already defined", "You attempted to rename a Full Domain Name and yet you specified a Full Domain Name that is already defined in the database. Please change the Full Domain Name or Cancel and then edit the existing website entry.", QMessageBox::Ok, this);
                         msg.exec();
                     }
@@ -1623,7 +1699,8 @@ void snap_manager::on_websiteSave_clicked()
         (*table)[name][QString("core::rules")] = QtCassandra::QCassandraValue(compiled_rules);
 
         // the data is now in the database, add it to the table too
-        if(f_website_org_name == "") {
+        if(f_website_org_name == "")
+        {
             f_website_list->addItem(name);
 
             // make sure we select that item too
@@ -1645,7 +1722,8 @@ void snap_manager::on_websiteSave_clicked()
 void snap_manager::on_websiteCancel_clicked()
 {
     // check whether the current info was modified
-    if(!websiteChanged()) {
+    if(!websiteChanged())
+    {
         // user canceled his action
         return;
     }
