@@ -88,7 +88,7 @@ add_executable(snap-manager
 
 # while developing you may need to set LD_LIBRARY_PATH
 target_link_libraries( ${PROJECT_NAME}
-    libsnapwebsites
+    snapwebsites
     ${QTCASSANDRA_LIBRARIES}
     ${QT_LIBRARIES}
     ${THRIFT_LIBRARIES}

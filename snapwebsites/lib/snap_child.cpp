@@ -6103,7 +6103,7 @@ void snap_child::init_plugins()
     }
 
     // load the plugins
-    if(!snap::plugins::load(f_server->get_parameter("plugins"), std::static_pointer_cast<snap::plugins::plugin>(f_server), list_of_plugins))
+    if(!snap::plugins::load(f_server->get_parameter("plugins_path"), std::static_pointer_cast<snap::plugins::plugin>(f_server), list_of_plugins))
     {
         die(HTTP_CODE_SERVICE_UNAVAILABLE, "Plugin Unavailable", "Server encountered problems with its plugins.", "An error occured loading the server plugins.");
         NOTREACHED();

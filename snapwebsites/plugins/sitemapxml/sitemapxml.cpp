@@ -22,6 +22,7 @@
 #include "plugins.h"
 #include "log.h"
 #include "qdomnodemodel.h"
+#include "qxmlmessagehandler.h"
 #include "not_reached.h"
 
 #include <iostream>
@@ -560,6 +561,8 @@ bool sitemapxml::on_path_execute(content::path_info_t& ipath)
             return false;
         }
         QXmlQuery q(QXmlQuery::XSLT20);
+        QMessageHandler msg;
+        q.setMessageHandler(&msg);
         QDomNodeModel m(q.namePool(), d);
         QXmlNodeModelIndex x(m.fromDomNode(d.documentElement()));
         QXmlItem i(x);

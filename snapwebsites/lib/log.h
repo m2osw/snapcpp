@@ -43,31 +43,31 @@ enum log_security_t
 class logger
 {
 public:
-    logger(log_level_t log_level, const char *file = NULL, const char *func = NULL, int line = -1);
+    logger(log_level_t log_level, char const *file = NULL, char const *func = NULL, int line = -1);
     ~logger();
 
-    logger& operator () (const log_security_t v);
-    logger& operator () (const char *s);
-    logger& operator () (const wchar_t *s);
-    logger& operator () (const QString& s);
-    logger& operator () (const char v);
-    logger& operator () (const signed char v);
-    logger& operator () (const unsigned char v);
-    logger& operator () (const signed short v);
-    logger& operator () (const unsigned short v);
-    logger& operator () (const signed int v);
-    logger& operator () (const unsigned int v);
-    logger& operator () (const signed long v);
-    logger& operator () (const unsigned long v);
-    logger& operator () (const signed long long v);
-    logger& operator () (const unsigned long long v);
-    logger& operator () (const float v);
-    logger& operator () (const double v);
+    logger& operator () (log_security_t const v);
+    logger& operator () (char const *s);
+    logger& operator () (wchar_t const *s);
+    logger& operator () (QString const& s);
+    logger& operator () (char const v);
+    logger& operator () (signed char const v);
+    logger& operator () (unsigned char const v);
+    logger& operator () (signed short const v);
+    logger& operator () (unsigned short const v);
+    logger& operator () (signed int const v);
+    logger& operator () (unsigned int const v);
+    logger& operator () (signed long const v);
+    logger& operator () (unsigned long const v);
+    logger& operator () (signed long long const v);
+    logger& operator () (unsigned long long const v);
+    logger& operator () (float const v);
+    logger& operator () (double const v);
 
 private:
     log_level_t     f_log_level;
-    const char *    f_file;
-    const char *    f_func;
+    char const *    f_file;
+    char const *    f_func;
     int             f_line;
     log_security_t  f_security;
     QString         f_message;
@@ -77,12 +77,12 @@ void configure(QString filename);
 void reconfigure();
 bool is_configured();
 
-logger fatal  (const char *file = NULL, const char *func = NULL, int line = -1);
-logger error  (const char *file = NULL, const char *func = NULL, int line = -1);
-logger warning(const char *file = NULL, const char *func = NULL, int line = -1);
-logger info   (const char *file = NULL, const char *func = NULL, int line = -1);
-logger debug  (const char *file = NULL, const char *func = NULL, int line = -1);
-logger trace  (const char *file = NULL, const char *func = NULL, int line = -1);
+logger fatal  (char const *file = NULL, char const *func = NULL, int line = -1);
+logger error  (char const *file = NULL, char const *func = NULL, int line = -1);
+logger warning(char const *file = NULL, char const *func = NULL, int line = -1);
+logger info   (char const *file = NULL, char const *func = NULL, int line = -1);
+logger debug  (char const *file = NULL, char const *func = NULL, int line = -1);
+logger trace  (char const *file = NULL, char const *func = NULL, int line = -1);
 
 #define    SNAP_LOG_FATAL       snap::logging::fatal  (__FILE__, __func__, __LINE__)
 #define    SNAP_LOG_ERROR       snap::logging::error  (__FILE__, __func__, __LINE__)

@@ -25,6 +25,7 @@
 #include "log.h"
 #include "qdomreceiver.h"
 #include "qhtmlserializer.h"
+#include "qxmlmessagehandler.h"
 #include "qstring_stream.h"
 //#include "qdomnodemodel.h" -- at this point the DOM Node Model seems bogus.
 #include "not_reached.h"
@@ -95,7 +96,7 @@ const char *get_name(name_t name)
  * This function is used to initialize the layout plugin object.
  */
 layout::layout()
-    //: f_snap(NULL) -- auto-init
+    //: f_snap(nullptr) -- auto-init
 {
 }
 
@@ -502,7 +503,7 @@ std::cerr << "create body in layout\n";
     QDomDocument doc("snap");
     QDomElement root = doc.createElement("snap");
     root.setAttribute("path", ipath.get_cpath());
-    if(p != NULL)
+    if(p != nullptr)
     {
         root.setAttribute("owner", p->get_plugin_name());
     }
@@ -593,7 +594,7 @@ std::cerr << "got in layout... cpath = [" << ipath.get_cpath() << "]\n";
                     if(!box_error_callback.has_error() && box_plugin)
                     {
                         layout_boxes *lb(dynamic_cast<layout_boxes *>(box_plugin));
-                        if(lb != NULL)
+                        if(lb != nullptr)
                         {
                             // put each box in a filter tag because we have to
                             // specify a different owner and path for each
@@ -638,6 +639,8 @@ std::cerr << "got in layout... cpath = [" << ipath.get_cpath() << "]\n";
 
     // Somehow binding crashes everything at this point?! (Qt 4.8.1)
     QXmlQuery q(QXmlQuery::XSLT20);
+    QMessageHandler msg;
+    q.setMessageHandler(&msg);
 #if 0
     QDomNodeModel m(q.namePool(), doc);
     QXmlNodeModelIndex x(m.fromDomNode(doc.documentElement()));
@@ -672,7 +675,7 @@ std::cerr << "got in layout... cpath = [" << ipath.get_cpath() << "]\n";
 //printf("Body HTML is [%s]\n", doc_output.toString().toUtf8().data());
 #else
     //QDomDocument doc_body("body");
-    //doc_body.setContent(get_content_parameter(path, get_name(SNAP_NAME_CONTENT_BODY) <<-- that would be wrong now).stringValue(), true, NULL, NULL, NULL);
+    //doc_body.setContent(get_content_parameter(path, get_name(SNAP_NAME_CONTENT_BODY) <<-- that would be wrong now).stringValue(), true, nullptr, nullptr, nullptr);
     //QDomElement content_tag(doc.createElement("content"));
     //body.appendChild(content_tag);
     //content_tag.appendChild(doc.importNode(doc_body.documentElement(), true));
@@ -685,7 +688,7 @@ std::cerr << "got in layout... cpath = [" << ipath.get_cpath() << "]\n";
     //QDomText text(doc.createTextNode(out));
     //output.appendChild(text);
     QDomDocument doc_output("body");
-    doc_output.setContent(out, true, NULL, NULL, NULL);
+    doc_output.setContent(out, true, nullptr, nullptr, nullptr);
     body.appendChild(doc.importNode(doc_output.documentElement(), true));
 #endif
 
@@ -764,6 +767,8 @@ QString layout::apply_theme(QDomDocument doc, content::path_info_t& ipath, layou
     // finally apply the theme XSLT to the final XML
     // the output is what we want to return
     QXmlQuery q(QXmlQuery::XSLT20);
+    QMessageHandler msg;
+    q.setMessageHandler(&msg);
     q.setFocus(doc.toString());
     q.setQuery(xsl);
 
@@ -953,7 +958,7 @@ int64_t layout::install_layout(QString const& layout_name, int64_t const last_up
     //      because at this point we cannot really know what p is
     //      and it should probably not be initialized with a plugin
     //      that we don't know anything about...
-    //content_plugin->add_xml_document(dom, p == NULL ? content::get_name(content::SNAP_NAME_CONTENT_OUTPUT) : p->get_plugin_name());
+    //content_plugin->add_xml_document(dom, p == nullptr ? content::get_name(content::SNAP_NAME_CONTENT_OUTPUT) : p->get_plugin_name());
     content_plugin->add_xml_document(dom, content::get_name(content::SNAP_NAME_CONTENT_OUTPUT));
     f_snap->finish_update();
     if(!data_table->row(layout_ipath.get_branch_key())->exists(get_name(SNAP_NAME_LAYOUT_BOXES)))

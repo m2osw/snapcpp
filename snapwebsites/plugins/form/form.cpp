@@ -16,11 +16,14 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "form.h"
+
 #include "../content/content.h"
 #include "../messages/messages.h"
+
 #include "not_reached.h"
 #include "qdomreceiver.h"
 #include "qdomxpath.h"
+#include "qxmlmessagehandler.h"
 #include "qstring_stream.h"
 #include "log.h"
 
@@ -159,7 +162,7 @@ int64_t form::do_update(int64_t last_updated)
     SNAP_PLUGIN_UPDATE_INIT();
 
     //SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, initial_update);
-    SNAP_PLUGIN_UPDATE(2014, 1, 31, 17, 10, 0, content_update);
+    SNAP_PLUGIN_UPDATE(2014, 2, 0, 58, 10, 0, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -267,6 +270,8 @@ QDomDocument form::form_to_html(sessions::sessions::session_info& info, QDomDocu
     auto_fill_form(xml_form);
 
     QXmlQuery q(QXmlQuery::XSLT20);
+    QMessageHandler msg;
+    q.setMessageHandler(&msg);
     q.setFocus(xml_form.toString());
     // somehow the bind works here...
     q.bindVariable("form_session", QVariant(sessions::sessions::instance()->create_session(info)));

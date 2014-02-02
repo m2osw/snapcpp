@@ -52,7 +52,7 @@ cmake_minimum_required(VERSION 2.8)
 #   -Wsign-conversion  -- unsigned int a; int b; a = b; or b = a;
 #   -Wmissing-declarations  -- we often create local functions without first declaring them
 
-project( snapwebsites )
+project( snapwebsites_project )
 
 ## Include support modules
 ##

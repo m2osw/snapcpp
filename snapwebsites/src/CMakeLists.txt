@@ -70,7 +70,7 @@ add_executable(${PROJECT_NAME}
 
 # while developing you may need to set LD_LIBRARY_PATH
 target_link_libraries(${PROJECT_NAME}
-    libsnapwebsites
+    snapwebsites
     ${QTCASSANDRA_LIBRARIES}
     ${QTSERIALIZATION_LIBRARIES}
     ${QT_LIBRARIES}
@@ -95,7 +95,7 @@ add_executable(${PROJECT_NAME}
 
 # while developing you may need to set LD_LIBRARY_PATH
 target_link_libraries(${PROJECT_NAME}
-    libsnapwebsites
+    snapwebsites
     ${QTCASSANDRA_LIBRARIES}
     ${QTSERIALIZATION_LIBRARIES}
     ${QT_LIBRARIES}
@@ -115,18 +115,18 @@ install(
 project(snapcgi)
 
 include_directories(
-    ${libsnapwebsites_SOURCE_DIR}
+    ${snapwebsites_SOURCE_DIR}
     )
 
 add_executable(${PROJECT_NAME}
     snap.cpp
-    ${libsnapwebsites_SOURCE_DIR}/tcp_client_server.cpp
+    ${snapwebsites_SOURCE_DIR}/tcp_client_server.cpp
 )
 
 set_property( TARGET ${PROJECT_NAME} PROPERTY OUTPUT_NAME snap.cgi )
 
 target_link_libraries(${PROJECT_NAME}
-    libsnapwebsites
+    snapwebsites
     ${ADVGETOPT_LIBRARIES}
     ${QT_LIBRARIES}
 )
@@ -147,7 +147,7 @@ add_executable(${PROJECT_NAME}
 
 # while developing you may need to set LD_LIBRARY_PATH
 target_link_libraries(${PROJECT_NAME}
-    libsnapwebsites
+    snapwebsites
     ${ADVGETOPT_LIBRARIES}
     ${QTCASSANDRA_LIBRARIES}
     ${QT_LIBRARIES}
@@ -171,7 +171,7 @@ add_executable(${PROJECT_NAME}
 
 # while developing you may need to set LD_LIBRARY_PATH
 target_link_libraries(${PROJECT_NAME}
-    libsnapwebsites
+    snapwebsites
     ${QTCASSANDRA_LIBRARIES}
     ${QT_LIBRARIES}
     ${THRIFT_LIBRARIES}
@@ -194,7 +194,7 @@ add_executable(${PROJECT_NAME}
 )
 
 target_link_libraries(${PROJECT_NAME}
-    libsnapwebsites
+    snapwebsites
 	${ADVGETOPT_LIBRARIES}
 	${QTCASSANDRA_LIBRARIES}
     ${QTSERIALIZATION_LIBRARIES}
@@ -219,7 +219,7 @@ add_executable(${PROJECT_NAME}
 )
 
 target_link_libraries(${PROJECT_NAME}
-    libsnapwebsites
+    snapwebsites
     ${QTCASSANDRA_LIBRARIES}
     ${QT_LIBRARIES}
     ${THRIFT_LIBRARIES}
@@ -242,7 +242,7 @@ add_executable(${PROJECT_NAME}
 )
 
 target_link_libraries(${PROJECT_NAME}
-    libsnapwebsites
+    snapwebsites
     ${QTCASSANDRA_LIBRARIES}
     ${QT_LIBRARIES}
     ${THRIFT_LIBRARIES}
