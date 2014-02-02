@@ -481,6 +481,138 @@ QString dbutils::get_column_value( QCassandraCell::pointer_t c ) const
 }
 
 
+void dbutils::set_column_value( QCassandraCell::pointer_t c, const QString& v )
+{
+    QCassandraValue cvalue;
+    //
+    switch( get_column_type( c ) )
+    {
+        case CT_uint64_value:
+        {
+            cvalue.setUInt64Value( static_cast<uint64_t>(v.toULongLong()) );
+        }
+        break;
+
+        case CT_time_microseconds:
+        case CT_time_seconds:
+        {
+            // String will be of the form: "%Y-%m-%d %H:%M:%S"
+            //
+            const QStringList datetime_split ( v.split(' ') );
+            const QStringList date_split     ( datetime_split[0].split('-') );
+            const QStringList time_split     ( datetime_split[1].split(':') );
+            //
+            tm to;
+            to.tm_sec  = time_split[2].toInt();
+            to.tm_min  = time_split[1].toInt();
+            to.tm_hour = time_split[0].toInt();
+            to.tm_yday = date_split[2].toInt();
+            to.tm_mon  = date_split[1].toInt();
+            to.tm_year = date_split[0].toInt();
+            //
+            const time_t tt( mktime( &to ) );
+            cvalue.setUInt64Value( tt );
+        }
+        break;
+
+        case CT_float32_value:
+        {
+            cvalue.setFloatValue( v.toFloat() );
+        }
+        break;
+
+        case CT_uint32_value:
+        {
+            cvalue.setUInt32Value( v.toULong() );
+        }
+        break;
+
+        case CT_uint8_value:
+        {
+            cvalue.setUnsignedCharValue( v.toUInt() );
+        }
+        break;
+
+        case CT_hexarray_value:
+        {
+            // n bit binary value
+            const QByteArray& buf(c->value().binaryValue());
+            int const max_length(buf.size());
+            v += "(hex) ";
+            for(int i(0); i < max_length; ++i)
+            {
+                v += byte_to_hex(buf[i]) + " ";
+            }
+        }
+        break;
+
+        case CT_hexarray_limited_value:
+        {
+            // n bit binary value
+            // same as previous only this can be huge so we limit it
+            const QByteArray& buf(c->value().binaryValue());
+            int const max_length(std::min(64, buf.size()));
+            v += "(hex) ";
+            for(int i(0); i < max_length; ++i)
+            {
+                v += byte_to_hex(buf[i]) + " ";
+            }
+            if(buf.size() > max_length)
+            {
+                v += "...";
+            }
+        }
+        break;
+
+        case CT_md5array_value:
+        {
+            // md5 in binary
+            const QByteArray& buf(c->value().binaryValue());
+            int const max_length(buf.size());
+            v += "(md5) ";
+            for(int i(0); i < max_length; ++i)
+            {
+                v += byte_to_hex(buf[i]);
+            }
+        }
+        break;
+
+        case CT_secure_value:
+        {
+            switch(c->value().signedCharValue())
+            {
+            case -1:
+                v = "not checked (-1)";
+                break;
+
+            case 0:
+                v = "not secure (0)";
+                break;
+
+            case 1:
+                v = "secure (1)";
+                break;
+
+            default:
+                v = QString("unknown secure status (%1)").arg(c->value().signedCharValue());
+                break;
+
+            }
+        }
+        break;
+
+        case CT_string_value:
+        {
+            // all others viewed as strings
+            v = c->value().stringValue().replace("\n", "\\n");
+        }
+        break;
+    }
+
+    c->setValue( cvalue );
+}
+
+
 }
 // namespace snap
 
