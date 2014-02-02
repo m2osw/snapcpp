@@ -34,6 +34,8 @@ QMessageHandler::QMessageHandler(QObject *parent_object)
 }
 
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 void QMessageHandler::handleMessage(QtMsgType type, QString const & description, QUrl const & identifier, QSourceLocation const & sourceLocation)
 {
     QDomDocument doc("description");
@@ -90,6 +92,7 @@ void QMessageHandler::handleMessage(QtMsgType type, QString const & description,
         } // print log
     }
 }
+#pragma GCC diagnostic pop
 
 
 } // namespace snap

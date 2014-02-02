@@ -318,6 +318,7 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
     }
     else if((f_tableName == "data" && n == "content::attachment")
          || (f_tableName == "files" && f_rowName == "javascripts")
+         || (f_tableName == "files" && f_rowName == "css")
          )
     {
         // md5 in binary
@@ -335,192 +336,150 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
 
 QString dbutils::get_column_value( QCassandraCell::pointer_t c ) const
 {
-    QString const n( get_column_name( c ) );
-
     QString v;
-    if(n == "users::identifier"
-    || n == "permissions::dynamic"
-    || n == "shorturl::identifier"
-    )
+    switch( get_column_type( c ) )
     {
-        // 64 bit value
-        v = QString("%1").arg(c->value().uint64Value());
-    }
-    else if(n == "content::created"
-         || n == "content::files::created"
-         || n == "content::files::creation_time"
-         || n == "content::files::modification_time"
-         || n == "content::files::secure::last_check"
-         || n == "content::files::updated"
-         || n == "content::modified"
-         || n == "content::updated"
-         || n.left(18) == "core::last_updated"
-         || n == "core::plugin_threshold"
-         || n == "sessions::date"
-         || n == "shorturl::date"
-         || n == "users::created_time"
-         || n == "users::forgot_password_on"
-         || n == "users::login_on"
-         || n == "users::logout_on"
-         || n == "users::previous_login_on"
-         || n == "users::start_date"
-         || n == "users::verified_on"
-         )
-    {
-        // 64 bit value (microseconds)
-        uint64_t time(c->value().uint64Value());
-        if(time == 0)
+        case CT_uint64_value:
         {
-            v = "time not set (0)";
+            v = QString("%1").arg(c->value().uint64Value());
         }
-        else
+        break;
+
+        case CT_time_microseconds:
         {
+            // 64 bit value (microseconds)
+            uint64_t time(c->value().uint64Value());
+            if(time == 0)
+            {
+                v = "time not set (0)";
+            }
+            else
+            {
+                char buf[64];
+                struct tm t;
+                time_t seconds(time / 1000000);
+                gmtime_r(&seconds, &t);
+                strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &t);
+                v = QString("%1.%2 (%3)").arg(buf).arg(time % 1000000, 6, 10, QChar('0')).arg(time);
+            }
+        }
+        break;
+
+        case CT_time_seconds:
+        {
+            // 64 bit value (seconds)
+            uint64_t time(c->value().uint64Value());
             char buf[64];
             struct tm t;
-            time_t seconds(time / 1000000);
+            time_t seconds(time);
             gmtime_r(&seconds, &t);
             strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &t);
-            v = QString("%1.%2 (%3)").arg(buf).arg(time % 1000000, 6, 10, QChar('0')).arg(time);
+            v = QString("%1 (%2)").arg(buf).arg(time);
         }
-    }
-    else if(n == "sessions::login_limit"
-         || n == "sessions::time_limit"
-         )
-    {
-        // 64 bit value (seconds)
-        uint64_t time(c->value().uint64Value());
-        char buf[64];
-        struct tm t;
-        time_t seconds(time);
-        gmtime_r(&seconds, &t);
-        strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &t);
-        v = QString("%1 (%2)").arg(buf).arg(time);
-    }
-    else if(n == "sitemapxml::priority"
-         )
-    {
-        // 32 bit float
-        float value(c->value().floatValue());
-        v = QString("%1").arg(value);
-    }
-    else if(n.startsWith("content::attachment::reference::")
-         || n == "content::attachment::revision_control::last_branch"
-         || n.startsWith("content::attachment::revision_control::last_revision::")
-         || n == "content::files::image_height"
-         || n == "content::files::image_width"
-         || n == "content::files::size"
-         || n == "content::files::size::compressed"
-         || n == "content::revision_control::attachment::current_branch"
-         || n == "content::revision_control::attachment::current_working_branch"
-         || n == "content::revision_control::current_branch"
-         || n == "content::revision_control::current_working_branch"
-         || n == "content::revision_control::last_branch"
-         || n == "content::revision_control::attachment::last_branch"
-         || n.startsWith("content::revision_control::attachment::current_revision::")
-         || n.startsWith("content::revision_control::attachment::current_working_revision::")
-         || n.startsWith("content::revision_control::current_revision::")
-         || n.startsWith("content::revision_control::current_working_revision::")
-         || n.startsWith("content::revision_control::last_revision::")
-         || n.startsWith("content::revision_control::attachment::last_revision::")
-         || n == "sitemapxml::count"
-         || n == "sessions::id"
-         || n == "sessions::time_to_live"
-         || (f_tableName == "libQtCassandraLockTable" && f_rowName == "hosts")
-         )
-    {
-        // 32 bit value
-        v = QString("%1").arg(c->value().uint32Value());
-    }
-    else if(n == "sessions::used_up"
-         || n == "content::final"
-         || n == "favicon::sitewide"
-         || n == "content::files::compressor"
-         || n.startsWith("content::files::reference::")
-         || (f_tableName == "files" && f_rowName == "new")
-         )
-    {
-        // 8 bit value
-        // cast to integer so arg() doesn't take it as a character
-        v = QString("%1").arg(static_cast<int>(c->value().unsignedCharValue()));
-    }
-    else if(n == "sessions::random"
-         || n == "users::password::salt"
-         || n == "users::password"
-         )
-    {
-        // n bit binary value
-        const QByteArray& buf(c->value().binaryValue());
-        int const max_length(buf.size());
-        v += "(hex) ";
-        for(int i(0); i < max_length; ++i)
-        {
-            v += byte_to_hex(buf[i]) + " ";
-        }
-    }
-    else if(n == "favicon::icon"
-         || n == "content::files::data"
-         || n == "content::files::data::compressed"
-         || f_tableName == "layout"
-         )
-    {
-        // n bit binary value
-        // same as previous only this can be huge so we limit it
-        const QByteArray& buf(c->value().binaryValue());
-        int const max_length(std::min(64, buf.size()));
-        v += "(hex) ";
-        for(int i(0); i < max_length; ++i)
-        {
-            v += byte_to_hex(buf[i]) + " ";
-        }
-        if(buf.size() > max_length)
-        {
-            v += "...";
-        }
-    }
-    else if((f_tableName == "data" && n == "content::attachment")
-         || (f_tableName == "files" && f_rowName == "javascripts")
-         || (f_tableName == "files" && f_rowName == "css")
-         )
-    {
-        // md5 in binary
-        const QByteArray& buf(c->value().binaryValue());
-        int const max_length(buf.size());
-        v += "(md5) ";
-        for(int i(0); i < max_length; ++i)
-        {
-            v += byte_to_hex(buf[i]);
-        }
-    }
-    else if(n == "content::files::secure")
-    {
-        switch(c->value().signedCharValue())
-        {
-        case -1:
-            v = "not checked (-1)";
-            break;
+        break;
 
-        case 0:
-            v = "not secure (0)";
-            break;
-
-        case 1:
-            v = "secure (1)";
-            break;
-
-        default:
-            v = QString("unknown secure status (%1)").arg(c->value().signedCharValue());
-            break;
-
+        case CT_float32_value:
+        {
+            // 32 bit float
+            float value(c->value().floatValue());
+            v = QString("%1").arg(value);
         }
+        break;
+
+        case CT_uint32_value:
+        {
+            // 32 bit value
+            v = QString("%1").arg(c->value().uint32Value());
+        }
+        break;
+
+        case CT_uint8_value:
+        {
+            // 8 bit value
+            // cast to integer so arg() doesn't take it as a character
+            v = QString("%1").arg(static_cast<int>(c->value().unsignedCharValue()));
+        }
+        break;
+
+        case CT_hexarray_value:
+        {
+            // n bit binary value
+            const QByteArray& buf(c->value().binaryValue());
+            int const max_length(buf.size());
+            v += "(hex) ";
+            for(int i(0); i < max_length; ++i)
+            {
+                v += byte_to_hex(buf[i]) + " ";
+            }
+        }
+        break;
+
+        case CT_hexarray_limited_value:
+        {
+            // n bit binary value
+            // same as previous only this can be huge so we limit it
+            const QByteArray& buf(c->value().binaryValue());
+            int const max_length(std::min(64, buf.size()));
+            v += "(hex) ";
+            for(int i(0); i < max_length; ++i)
+            {
+                v += byte_to_hex(buf[i]) + " ";
+            }
+            if(buf.size() > max_length)
+            {
+                v += "...";
+            }
+        }
+        break;
+
+        case CT_md5array_value:
+        {
+            // md5 in binary
+            const QByteArray& buf(c->value().binaryValue());
+            int const max_length(buf.size());
+            v += "(md5) ";
+            for(int i(0); i < max_length; ++i)
+            {
+                v += byte_to_hex(buf[i]);
+            }
+        }
+        break;
+
+        case CT_secure_value:
+        {
+            switch(c->value().signedCharValue())
+            {
+            case -1:
+                v = "not checked (-1)";
+                break;
+
+            case 0:
+                v = "not secure (0)";
+                break;
+
+            case 1:
+                v = "secure (1)";
+                break;
+
+            default:
+                v = QString("unknown secure status (%1)").arg(c->value().signedCharValue());
+                break;
+
+            }
+        }
+        break;
+
+        case CT_string_value:
+        {
+            // all others viewed as strings
+            v = c->value().stringValue().replace("\n", "\\n");
+        }
+        break;
     }
-    else
-    {
-        // all others viewed as strings
-        v = c->value().stringValue().replace("\n", "\\n");
-    }
-    //
-    return n + " = " + v;
+
+    return get_column_name(c) + " = " + v;
 }
+
 
 }
 // namespace snap
