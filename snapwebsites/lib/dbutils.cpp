@@ -534,77 +534,47 @@ void dbutils::set_column_value( QCassandraCell::pointer_t c, const QString& v )
         break;
 
         case CT_hexarray_value:
-        {
-            // n bit binary value
-            const QByteArray& buf(c->value().binaryValue());
-            int const max_length(buf.size());
-            v += "(hex) ";
-            for(int i(0); i < max_length; ++i)
-            {
-                v += byte_to_hex(buf[i]) + " ";
-            }
-        }
-        break;
-
         case CT_hexarray_limited_value:
         {
-            // n bit binary value
-            // same as previous only this can be huge so we limit it
-            const QByteArray& buf(c->value().binaryValue());
-            int const max_length(std::min(64, buf.size()));
-            v += "(hex) ";
-            for(int i(0); i < max_length; ++i)
-            {
-                v += byte_to_hex(buf[i]) + " ";
-            }
-            if(buf.size() > max_length)
-            {
-                v += "...";
-            }
+            cvalue.setBinaryValue( string_to_key( v ) );
         }
         break;
 
         case CT_md5array_value:
         {
-            // md5 in binary
-            const QByteArray& buf(c->value().binaryValue());
-            int const max_length(buf.size());
-            v += "(md5) ";
-            for(int i(0); i < max_length; ++i)
-            {
-                v += byte_to_hex(buf[i]);
-            }
+            QString xv( v );
+            xv.remove("(md5) ");
+            cvalue.setBinaryValue( string_to_key( xv ) );
         }
         break;
 
         case CT_secure_value:
         {
-            switch(c->value().signedCharValue())
+            signed char cv;
+            if( v == "not checked (-1)" )
             {
-            case -1:
-                v = "not checked (-1)";
-                break;
-
-            case 0:
-                v = "not secure (0)";
-                break;
-
-            case 1:
-                v = "secure (1)";
-                break;
-
-            default:
-                v = QString("unknown secure status (%1)").arg(c->value().signedCharValue());
-                break;
-
+                cv = -1;
             }
+            else if( v == "not secure (0)" )
+            {
+                cv = 0;
+            }
+            else if( v == "secure (1)" )
+            {
+                cv = 1;
+            }
+            else
+            {
+                throw snap_exception( "error: unknown secure value! Must be -1, 0 or 1!" );
+            }
+            cvalue.setSignedCharValue( cv );
         }
         break;
 
         case CT_string_value:
         {
             // all others viewed as strings
-            v = c->value().stringValue().replace("\n", "\\n");
+            cvalue.setStringValue( v );
         }
         break;
     }
