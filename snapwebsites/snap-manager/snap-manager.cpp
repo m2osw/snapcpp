@@ -264,17 +264,6 @@ void snap_manager::snapTest()
     // reconnect with the new info
     // note: the disconnect does nothing if not already connected
     tcp_client_server::tcp_client socket(f_snap_host.toUtf8().data(), f_snap_port);
-    //QHostAddress addr(f_snap_host);
-    //QTcpSocket socket;
-    //socket.connectToHost(addr, f_snap_port);
-    //if(!socket.waitForConnected())
-    //{
-    //    // did not work...
-    //    console->addItem("Not connected.");
-    //    QMessageBox msg(QMessageBox::Critical, "Connection to Snap! Server", "Snap! Manager was not able to connect to your Snap! Server. Please verify that it is up and running and accessible (no firewall) from this computer.", QMessageBox::Ok, this);
-    //    msg.exec();
-    //    return;
-    //}
     // send the #INFO command
     if(socket.write("#INFO\n", 6) != 6)
     {
@@ -286,13 +275,6 @@ void snap_manager::snapTest()
 
     // read the results of the #INFO command
     bool started(false);
-    //if(!socket.waitForReadyRead())
-    //{
-    //    console->addItem("Unknown state.");
-    //    QMessageBox msg(QMessageBox::Critical, "Connection to Snap! Server", "Snap! Manager connection did not last, cannot read from it. Socket error: " + QString::number(static_cast<int>(socket.error())), QMessageBox::Ok, this);
-    //    msg.exec();
-    //    return;
-    //}
     for(;;)
     {
         // versions are expected to be relatively small so 256 chars per line is enough
@@ -413,17 +395,6 @@ void snap_manager::snapStats()
     // reconnect with the new info
     // note: the disconnect does nothing if not already connected
     tcp_client_server::tcp_client socket(f_snap_host.toUtf8().data(), f_snap_port);
-    //QHostAddress addr(f_snap_host);
-    //QTcpSocket socket;
-    //socket.connectToHost(addr, f_snap_port);
-    //if(!socket.waitForConnected())
-    //{
-    //    // did not work...
-    //    console->addItem("Not connected.");
-    //    QMessageBox msg(QMessageBox::Critical, "Connection to Snap! Server", "Snap! Manager was not able to connect to your Snap! Server. Please verify that it is up and running and accessible (no firewall) from this computer.", QMessageBox::Ok, this);
-    //    msg.exec();
-    //    return;
-    //}
     // send the #STATS command
     if(socket.write("#STATS\n", 7) != 7)
     {
@@ -433,15 +404,8 @@ void snap_manager::snapStats()
         return;
     }
 
-    // read the results of the #INFO command
+    // read the results of the #STATS command
     bool started(false);
-    //if(!socket.waitForReadyRead())
-    //{
-    //    console->addItem("Unknown state.");
-    //    QMessageBox msg(QMessageBox::Critical, "Connection to Snap! Server", "Snap! Manager connection did not last, cannot read from it. Socket error: " + QString::number(static_cast<int>(socket.error())), QMessageBox::Ok, this);
-    //    msg.exec();
-    //    return;
-    //}
     for(;;)
     {
         // versions are expected to be relatively small so 256 chars per line is enough
