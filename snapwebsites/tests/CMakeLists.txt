@@ -57,7 +57,7 @@ add_executable(test_snap_cgi
 add_dependencies( test_snap_cgi test_prereqs )
 # while developing you may need to set LD_LIBRARY_PATH
 target_link_libraries(test_snap_cgi
-    #libsnapwebsites
+    #snapwebsites
     #QtCassandra
     #QtCore
     #QtXml
@@ -72,7 +72,7 @@ add_executable(test_snap_parser
 )
 add_dependencies( test_snap_parser test_prereqs )
 target_link_libraries(test_snap_parser
-    libsnapwebsites
+    snapwebsites
     ${QTCASSANDRA_LIBRARIES}
     ${LIBTLD_LIBRARIES}
     ${QT_LIBRARIES}
@@ -92,7 +92,7 @@ add_executable(test_snap_udp_message
 )
 add_dependencies( test_snap_udp_message test_prereqs )
 target_link_libraries(test_snap_udp_message
-    libsnapwebsites
+    snapwebsites
     ${QTCASSANDRA_LIBRARIES}
     ${LIBTLD_LIBRARIES}
     ${QT_LIBRARIES}
@@ -106,7 +106,7 @@ add_executable(test_quoted_printable
 )
 add_dependencies( test_quoted_printable test_prereqs )
 target_link_libraries(test_quoted_printable
-    libsnapwebsites
+    snapwebsites
     ${QTCASSANDRA_LIBRARIES}
     ${LIBTLD_LIBRARIES}
     ${QT_LIBRARIES}
@@ -120,7 +120,7 @@ add_executable(test_snap_child_date_parser
 )
 add_dependencies( test_snap_child_date_parser test_prereqs )
 target_link_libraries(test_snap_child_date_parser
-    libsnapwebsites
+    snapwebsites
     ${QTCASSANDRA_LIBRARIES}
     ${LIBTLD_LIBRARIES}
     ${QT_LIBRARIES}
@@ -135,7 +135,7 @@ add_executable( test_snap_version
 )
 add_dependencies( test_snap_version test_prereqs )
 target_link_libraries(test_snap_version
-    libsnapwebsites
+    snapwebsites
     ${QTCASSANDRA_LIBRARIES}
     ${LIBTLD_LIBRARIES}
     ${QT_LIBRARIES}

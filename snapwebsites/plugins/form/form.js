@@ -1,6 +1,6 @@
 /*
  * Name: form
- * Version: 0.0.1.6
+ * Version: 0.0.1.7
  * Browsers: all
  * Copyright: Copyright 2012-2014 (c) Made to Order Software Corporation  All rights reverved.
  * License: GPL 2.0
@@ -66,10 +66,10 @@ snapwebsites.Form.prototype = {
     init: function()
     {
         jQuery("input[type='text']:not([data-background-value='']),input[type='password']:not([data-background-value=''])")
-            .focus(function(){snapwebsites.FormInstance.prototype._focus(this);})
-            .change(function(){snapwebsites.FormInstance.prototype._change(this);})
-            .blur(function(){snapwebsites.FormInstance.prototype._blur(this);})
-            .each(function(i,e){snapwebsites.FormInstance.prototype._blur(e);});
+            .focus(function(){snapwebsites.FormInstance._focus(this);})
+            .change(function(){snapwebsites.FormInstance._change(this);})
+            .blur(function(){snapwebsites.FormInstance._blur(this);})
+            .each(function(i,e){snapwebsites.FormInstance._blur(e);});
     }
 };
 

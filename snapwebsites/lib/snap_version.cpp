@@ -150,7 +150,7 @@ bool validate_name(QString const& name, QString& error)
     if(name.at(max_length - 1).unicode() == '-')
     {
         // name cannot end with a dash (-)
-        error = "A versioned name or browser cannot end with a dash (-). \"" + name + "\" is not valid.";
+        error = "a versioned name or browser cannot end with a dash (-). \"" + name + "\" is not valid.";
         return false;
     }
 
@@ -165,7 +165,7 @@ bool validate_name(QString const& name, QString& error)
             // the -1 is safe because we start the loop at 1
             if(name.at(i - 1).unicode() == '-')
             {
-                error = "A name or browser versioned filename cannot include two dashes (--) one after another. \"" + name + "\" is not valid.";
+                error = "a name or browser versioned filename cannot include two dashes (--) one after another. \"" + name + "\" is not valid.";
                 return false;
             }
         }
@@ -173,7 +173,7 @@ bool validate_name(QString const& name, QString& error)
              && (c < 'a' || c > 'z'))
         {
             // name can only include [a-z0-9] and dashes (-)
-            error = "A name or browser versioned filename can only include letters (a-z), digits (0-9), or dashes (-). \"" + name + "\" is not valid.";
+            error = "a name or browser versioned filename can only include letters (a-z), digits (0-9), or dashes (-). \"" + name + "\" is not valid.";
             return false;
         }
     }

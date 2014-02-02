@@ -59,7 +59,7 @@ QByteArray dbutils::get_row_key() const
     if(!f_rowName.isEmpty() && f_tableName == "files")
     {
         // these rows make use of MD5 sums so we have to convert them
-        if(f_rowName == "new" || f_rowName == "javascripts")
+        if(f_rowName == "new" || f_rowName == "javascripts" || f_rowName == "css")
         {
             row_key = f_rowName.toAscii();
         }
@@ -144,7 +144,8 @@ QString dbutils::get_column_name( QCassandraCell::pointer_t c ) const
         name = content_attachment_reference;
         name += key_to_string( key.mid( content_attachment_reference.length()+1 ) );
     }
-    else if(f_tableName == "files" && f_rowName == "javascripts")
+    else if((f_tableName == "files" && f_rowName == "javascripts")
+         || (f_tableName == "files" && f_rowName == "css"))
     {
         // this row name is "<name>"_"<browser>"_<version as integers>
         int const max_length(key.size());
@@ -336,6 +337,7 @@ QString dbutils::get_column_value( QCassandraCell::pointer_t c ) const
     }
     else if((f_tableName == "data" && n == "content::attachment")
          || (f_tableName == "files" && f_rowName == "javascripts")
+         || (f_tableName == "files" && f_rowName == "css")
          )
     {
         // md5 in binary

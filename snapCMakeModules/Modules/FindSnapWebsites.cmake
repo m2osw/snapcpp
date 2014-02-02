@@ -11,7 +11,7 @@ find_path( SNAPWEBSITES_INCLUDE_DIR snapwebsites/snap_version.h
 		   PATHS $ENV{SNAPWEBSITES_INCLUDE_DIR}
 		   PATH_SUFFIXES snapwebsites
 		 )
-find_library( SNAPWEBSITES_LIBRARY libsnapwebsites
+find_library( SNAPWEBSITES_LIBRARY snapwebsites
 			PATHS $ENV{SNAPWEBSITES_LIBRARY}
 		 )
 mark_as_advanced( SNAPWEBSITES_INCLUDE_DIR SNAPWEBSITES_LIBRARY )

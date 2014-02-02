@@ -18,6 +18,7 @@
 #include "plugins.h"
 
 #include <iostream>
+#include <qstring_stream.h>
 
 #include <dlfcn.h>
 #include <glob.h>
@@ -64,17 +65,21 @@ QStringList list_all(const QString& plugin_path)
  * Someone who wants to remove a plugin simply deletes it or its
  * softlink at least.
  *
- * \todo
- * If the boost filesystem offers a way to glob on files, then make use
- * of it to read the folder files.
+ * \warning
+ * This function CANNOT use a glob to read all the plugins in a directory.
+ * At this point we assume that each website will use more or less of
+ * the installed plugins and thus loading them all is not the right way of
+ * handling the loading. Thus we now get a \p list_of_plugins parameter
+ * with the name of the plugins we want to dlopen().
  *
- * \param[in] plugin_path  The path to the directory with the plugins.
+ * \param[in] plugin_paths  The colon (:) separated list of paths to
+ *                          directories with plugins.
  * \param[in] server  A pointer to the server to register it as a plugin.
  * \param[in] list_of_plugins  The list of plugins to load.
  *
  * \return true if all the modules were loaded.
  */
-bool load(const QString& plugin_path, plugin_ptr_t server, const QStringList& list_of_plugins)
+bool load(const QString& plugin_paths, plugin_ptr_t server, const QStringList& list_of_plugins)
 {
 // Doug;
 // "This defeats the purpose of a shared_ptr, but this is because all plugins are treated as barepointers. This needs to be fixed in another iteration..."
@@ -121,19 +126,16 @@ bool load(const QString& plugin_path, plugin_ptr_t server, const QStringList& li
 #pragma message("Please restore the plugin pointer to a non-shared pointer. (see detailed reason above this message)")
     g_plugins.insert("server", server.get());
 
-    QString path(plugin_path);
-    //if(glob(path.toUtf8().data(), GLOB_ERR | GLOB_NOSORT, nullptr, &g) != 0) {
-    //    std::cerr << "error: cannot read plugins directory \"" << plugin_path.toUtf8().data() << "\"." << std::endl;
-    //    return false;
-    //}
+    QStringList const paths(plugin_paths.split(':'));
 
     bool good = true;
     for(QStringList::const_iterator it(list_of_plugins.begin());
                                     it != list_of_plugins.end();
                                     ++it)
     {
-        QString name(*it);
-        if(name == "server") {
+        QString const name(*it);
+        if(name == "server")
+        {
             // the Snap server is already added to the list under that name!
             std::cerr << "error: a plugin cannot be called \"server\"." << std::endl;
             good = false;
@@ -142,13 +144,15 @@ bool load(const QString& plugin_path, plugin_ptr_t server, const QStringList& li
         // in case we get multiple calls to this function we must make sure that
         // all plugins have a distinct name (i.e. a plugin factory could call
         // this function to load sub-plugins!)
-        if(exists(name)) {
+        if(exists(name))
+        {
             std::cerr << "error: two plugins cannot be named the same, found \""
                             << name.toUtf8().data() << "\" twice." << std::endl;
             good = false;
             continue;
         }
-        if(!verify_plugin_name(name)) {
+        if(!verify_plugin_name(name))
+        {
             good = false;
             continue;
         }
@@ -157,32 +161,14 @@ bool load(const QString& plugin_path, plugin_ptr_t server, const QStringList& li
         //
         // First, check the proper installation place:
         //
-        QString filename( path + "/" + name + ".so" );
-        if(!QFile::exists(filename)) {
-            //
-            // If not found, see if it has a "lib" at the front of the file:
-            //
-            filename = path + "/lib" + name + ".so";
-            if(!QFile::exists(filename)) {
-                //
-                // If not found, see if it lives under a named folder:
-                //
-                filename = path + "/" + name + "/" + name + ".so";
-                if(!QFile::exists(filename)) {
-                    //
-                    // Last test: check plugin names starting with "lib" in named folder:
-                    //
-                    filename = path + "/" + name + "/lib" + name + ".so";
-                    if( !QFile::exists(filename)) {
-                        std::cerr << "error: plugin named \"" << name.toUtf8().data()
-                            << "\" (" << filename.toUtf8().data()
-                            << ") not found in the plugin directory."
-                            << std::endl;
-                        good = false;
-                        continue;
-                    }
-                }
-            }
+        QString const filename(find_plugin_filename(paths, name));
+        if(filename.isEmpty())
+        {
+            std::cerr << "error: plugin named \"" << name << "\" ("
+                << filename << ") not found in the plugin directory."
+                << std::endl;
+            good = false;
+            continue;
         }
 
         // load the plugin; the plugin will register itself
@@ -190,11 +176,11 @@ bool load(const QString& plugin_path, plugin_ptr_t server, const QStringList& li
         g_next_register_filename = filename;
         // TODO: Use RTLD_NOW instead of RTLD_LAZY in DEBUG mode
         //         so we discover missing symbols
-        void *h(dlopen(filename.toUtf8().data(), RTLD_LAZY | RTLD_GLOBAL));
+        void const * const h(dlopen(filename.toUtf8().data(), RTLD_LAZY | RTLD_GLOBAL));
         if(h == nullptr)
         {
-            int e(errno);
-            std::cerr << "error: cannot load plugin file \"" << filename.toUtf8().data() << "\" (errno: " << e << ", " << dlerror() << ")" << std::endl;
+            int const e(errno);
+            std::cerr << "error: cannot load plugin file \"" << filename << "\" (errno: " << e << ", " << dlerror() << ")" << std::endl;
             good = false;
             continue;
         }
@@ -204,6 +190,76 @@ bool load(const QString& plugin_path, plugin_ptr_t server, const QStringList& li
     }
 
     return good;
+}
+
+
+/** \brief Try to find the plugin using the list of paths.
+ *
+ * This function searches for a plugin in each one of the specified
+ * paths and as:
+ *
+ * \code
+ *    <path>/<name>.so
+ *    <path>/lib<name>.so
+ *    <path>/<name>/<name>.so
+ *    <path>/<name>/lib<name>.so
+ * \endcode
+ *
+ * \todo
+ * We may change the naming convention to make use of the ${PROJECT_NAME}
+ * in the CMakeLists.txt files. In that case we'd end up with names
+ * that include the work plugin as in:
+ *
+ * \code
+ *    <path>/libplugin_<name>.so
+ * \endcode
+ *
+ * \param[in] plugin_paths  The list of paths to check with.
+ * \param[in] name  The name of the plugin being searched.
+ *
+ * \return The full path and filename of the plugin or empty if not found.
+ */
+QString find_plugin_filename(QStringList const& plugin_paths, QString const& name)
+{
+    int const max_paths(plugin_paths.size());
+    for(int i(0); i < max_paths; ++i)
+    {
+        QString const path(plugin_paths[i]);
+        QString filename(QString("%1/%2.so").arg(path).arg(name));
+        if(QFile::exists(filename))
+        {
+            return filename;
+        }
+
+        //
+        // If not found, see if it has a "lib" at the front of the file:
+        //
+        filename = QString("%1/lib%2.so").arg(path).arg(name);
+        if(QFile::exists(filename))
+        {
+            return filename;
+        }
+
+        //
+        // If not found, see if it lives under a named folder:
+        //
+        filename = QString("%1/%2/%2.so").arg(path).arg(name);
+        if(QFile::exists(filename))
+        {
+            return filename;
+        }
+
+        //
+        // Last test: check plugin names starting with "lib" in named folder:
+        //
+        filename = QString("%1/%2/lib%2.so").arg(path).arg(name);
+        if(QFile::exists(filename))
+        {
+            return filename;
+        }
+    }
+
+    return "";
 }
 
 
@@ -225,7 +281,7 @@ bool load(const QString& plugin_path, plugin_ptr_t server, const QStringList& li
  *
  * \return true if the name is considered valid.
  */
-bool verify_plugin_name(const QString& name)
+bool verify_plugin_name(QString const& name)
 {
     if(name.isEmpty())
     {
@@ -239,7 +295,7 @@ bool verify_plugin_name(const QString& name)
         && (*p < '0' || *p > '9')
         && *p != '_' && *p != '-' && *p != '.')
         {
-            std::cerr << "error: plugin name \"" << name.toUtf8().data()
+            std::cerr << "error: plugin name \"" << name
                     << "\" includes forbidden characters." << std::endl;
             return false;
         }
@@ -248,7 +304,7 @@ bool verify_plugin_name(const QString& name)
     QChar first(name[0]);
     if(first == '.' || first == '-')
     {
-        std::cerr << "error: plugin name \"" << name.toUtf8().data()
+        std::cerr << "error: plugin name \"" << name
                 << "\" cannot start with a period (.) or dash (-)."
                 << std::endl;
         return false;
@@ -257,7 +313,7 @@ bool verify_plugin_name(const QString& name)
     QChar last(name[name.length() - 1]);
     if(last == '.' || last == '-')
     {
-        std::cerr << "error: plugin name \"" << name.toUtf8().data()
+        std::cerr << "error: plugin name \"" << name
                 << "\" cannot end with a period (.) or dash (-)."
                 << std::endl;
         return false;
@@ -276,7 +332,7 @@ bool verify_plugin_name(const QString& name)
  *
  * \return true if the plugin is loaded, false otherwise.
  */
-bool exists(const QString& name)
+bool exists(QString const& name)
 {
     return g_plugins.contains(name);
 }
@@ -293,7 +349,7 @@ bool exists(const QString& name)
  * \param[in] name  The name of the plugin being added.
  * \param[in] p  A pointer to the plugin being added.
  */
-void register_plugin(const QString& name, plugin *p)
+void register_plugin(QString const& name, plugin *p)
 {
     if(name.isEmpty()) {
         throw plugin_exception("plugin name missing when registering... expected \"" + name + "\".");
@@ -346,10 +402,12 @@ QString plugin::get_plugin_name() const
  */
 int64_t plugin::last_modification() const
 {
-    if(0 == f_last_modification) {
+    if(0 == f_last_modification)
+    {
         // read the info only once
         struct stat s;
-        if(stat(f_filename.toUtf8().data(), &s) == 0) {
+        if(stat(f_filename.toUtf8().data(), &s) == 0)
+        {
             // should we make use of the usec mtime when available?
             f_last_modification = static_cast<int64_t>(s.st_mtime * 1000000LL);
         }

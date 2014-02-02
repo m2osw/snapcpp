@@ -30,7 +30,7 @@
 #      Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 
-project(libsnapwebsites)
+project(snapwebsites)
 
 # Put the version in the header file
 configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/snapwebsites.h.in ${CMAKE_CURRENT_BINARY_DIR}/snapwebsites.h )
@@ -83,6 +83,7 @@ add_library( ${PROJECT_NAME} SHARED
     qhtmlserializer.cpp                         # Qt extension to output HTML as a string
     qstring_stream.h                            # Stream QString objects property to ostream objects.
     quoted_printable.cpp                        # to encode / decode data using the quoted printable format
+    qxmlmessagehandler.cpp                      # Qt extension for us to capture the QXmlQuery messages
     snap_child.cpp                              # requests processing
     snap_exception.cpp                          # exception stack backtrack
     snap_image.cpp                              # image handling
@@ -118,7 +119,7 @@ set_target_properties( ${PROJECT_NAME} PROPERTIES
 )
 
 install(
-    TARGETS libsnapwebsites LIBRARY DESTINATION lib
+    TARGETS ${PROJECT_NAME} LIBRARY DESTINATION lib
 )
 install(
     DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/

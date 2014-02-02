@@ -75,6 +75,7 @@ typedef std::shared_ptr<plugin> plugin_ptr_t;
 
 QStringList list_all(const QString& plugin_path);
 bool load(const QString& plugin_path, plugin_ptr_t server, const QStringList& list_of_plugins);
+QString find_plugin_filename(QStringList const& plugin_paths, QString const& name);
 bool exists(const QString& name);
 void register_plugin(const QString& name, plugin *p);
 plugin *get_plugin(const QString& name);

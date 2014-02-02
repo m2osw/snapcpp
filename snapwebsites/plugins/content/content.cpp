@@ -4638,7 +4638,7 @@ SNAP_LOG_DEBUG("attaching ")(file.get_file().get_filename())(", attachment_key =
                 QtCassandra::appendUInt32Value(jskey, version[v]);
             }
             // TODO: find a proper way to access the JS plugin...
-            files_table->row("javascripts"/*javascript::get_name(javascript::SNAP_NAME_JAVASCRIPT_ROW)*/)->cell(jskey)->setValue(md5);
+            files_table->row(is_css ? "css" : "javascripts"/*javascript::get_name(javascript::SNAP_NAME_JAVASCRIPT_ROW)*/)->cell(jskey)->setValue(md5);
             if(!all)
             {
                 // TODO: need to parse the script for this specific browser

@@ -16,10 +16,15 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "http_cookie.h"
+
 #include "snapwebsites.h"
-#include <sys/time.h>
+
 #include <QtCassandra/QCassandra.h>
+
+#include <sys/time.h>
+
 #include "poison.h"
+
 
 namespace snap
 {
