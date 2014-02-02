@@ -41,7 +41,7 @@ public:
     QString    get_row_name( QtCassandra::QCassandraRow::pointer_t p_r ) const;
 
 private:
-    typedef enum column_type_t
+    typedef enum
     {
         CT_uint64_value,
         CT_time_microseconds,
@@ -54,9 +54,9 @@ private:
         CT_md5array_value,
         CT_secure_value,
         CT_string_value
-    };
+    } column_type_t;
 
-    column_type_t get_column_type( QCassandraCell::pointer_t c ) const;
+    column_type_t get_column_type( QtCassandra::QCassandraCell::pointer_t c ) const;
 
     QString f_tableName;
     QString f_rowName;

@@ -19,6 +19,8 @@
 #include "dbutils.h"
 #include "snap_exception.h"
 
+#include <QStringList>
+
 using namespace QtCassandra;
 
 namespace snap
@@ -111,7 +113,7 @@ QByteArray dbutils::string_to_key( const QString& str )
     for( auto str_num : numList )
     {
         bool ok( false );
-        ret.push_back( static_cast<char>( num.toInt( &ok, 16 ) ) );
+        ret.push_back( static_cast<char>( str_num.toInt( &ok, 16 ) ) );
         if( !ok )
         {
             throw snap_exception( "Cannot convert to num! Not base 16." );
