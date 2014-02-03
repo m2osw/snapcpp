@@ -18,6 +18,7 @@
 #include "tcp_client_server.h"
 
 #include <sstream>
+
 #include <string.h>
 #include <unistd.h>
 #include <netdb.h>
@@ -36,12 +37,12 @@ namespace tcp_client_server
 class addrinfo_t
 {
 public:
-    /** \brief Initialize the structure pointer to NULL.
+    /** \brief Initialize the structure pointer to nullptr.
      *
-     * The constructor ensures that the pointer is NULL.
+     * The constructor ensures that the pointer is nullptr.
      */
     addrinfo_t()
-        : f_addrinfo(NULL)
+        : f_addrinfo(nullptr)
     {
     }
 
@@ -54,7 +55,7 @@ public:
      */
     ~addrinfo_t()
     {
-        if(f_addrinfo != NULL)
+        if(f_addrinfo != nullptr)
         {
             freeaddrinfo(f_addrinfo);
         }
@@ -127,7 +128,7 @@ tcp_client::tcp_client(const std::string& addr, int port)
     addrinfo_t addr_info;
     std::string port_str(decimal_port.str());
     int r(getaddrinfo(addr.c_str(), port_str.c_str(), &hints, &addr_info.f_addrinfo));
-    if(r != 0 || addr_info.f_addrinfo == NULL)
+    if(r != 0 || addr_info.f_addrinfo == nullptr)
     {
         throw tcp_client_server_runtime_error("invalid address or port: \"" + addr + ":" + port_str + "\"");
     }
@@ -201,7 +202,8 @@ std::string tcp_client::get_addr() const
  * returns. The function returns early if the server closes the connection.
  *
  * If your socket is blocking, \p size should be exactly what you are
- * expected or this function will block forever.
+ * expecting or this function will block forever or until the server
+ * closes the connection.
  *
  * The function returns -1 if an error occurs. The error is available in
  * errno as expected in the POSIX interface.
@@ -215,6 +217,43 @@ int tcp_client::read(char *buf, size_t size)
 {
     return ::read(f_socket, buf, size);
 }
+
+
+/** \brief Read one line.
+ *
+ * This function reads one line from the current location up to the next
+ * '\n' character. We do not have any special handling of the '\r'
+ * character.
+ *
+ * The function may return 0 in which case the server closed the connection.
+ *
+ * \param[out] line  The resulting line read from the server.
+ *
+ * \return The number of bytes read from the socket, or -1 on errors.
+ *         If the function returns 0 or more, then the \p line parameter
+ *         represents the characters read on the network.
+ */
+int tcp_client::read_line(std::string& line)
+{
+    line.clear();
+    int len(0);
+    for(;;)
+    {
+        char c;
+        int r(read(&c, sizeof(c)));
+        if(r <= 0)
+        {
+            return 0;
+        }
+        if(c == '\n')
+        {
+            return len;
+        }
+        ++len;
+        line += c;
+    }
+}
+
 
 /** \brief Write data to the socket.
  *
@@ -306,7 +345,7 @@ tcp_server::tcp_server(const std::string& addr, int port, int max_connections, b
     addrinfo_t addr_info;
     std::string port_str(decimal_port.str());
     int r(getaddrinfo(addr.c_str(), port_str.c_str(), &hints, &addr_info.f_addrinfo));
-    if(r != 0 || addr_info.f_addrinfo == NULL)
+    if(r != 0 || addr_info.f_addrinfo == nullptr)
     {
         throw tcp_client_server_runtime_error("invalid address or port: \"" + addr + ":" + port_str + "\"");
     }
