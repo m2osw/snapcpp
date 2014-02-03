@@ -37,7 +37,7 @@
 
 set(CASSVIEW_VERSION_MAJOR 0)
 set(CASSVIEW_VERSION_MINOR 0)
-set(CASSVIEW_VERSION_PATCH 2)
+set(CASSVIEW_VERSION_PATCH 3)
 
 cmake_minimum_required(VERSION 2.8)
 project(cassview-project)
