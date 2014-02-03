@@ -20,6 +20,8 @@ public:
     ~MainWindow();
 
 private slots:
+    void onCellsModelReset();
+    //void onCellsDataChanged( const QModelIndex & topLeft, const QModelIndex & bottomRight );
     void on_action_Settings_triggered();
     void OnAboutToQuit();
     void on_f_tables_currentIndexChanged(const QString &table_name);

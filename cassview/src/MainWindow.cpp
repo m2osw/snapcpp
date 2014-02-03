@@ -25,6 +25,7 @@ MainWindow::MainWindow(QWidget *p)
     f_tables->setModel( &f_contextModel );
     f_rows->setModel( &f_tableModel );
 	f_cells->setModel( &f_rowModel );
+    //f_cells->resizeColumnsToContents();
 
     f_cassandraModel.setCassandra( f_cassandra );
     const int idx = f_contextCombo->findText( f_context );
@@ -37,6 +38,8 @@ MainWindow::MainWindow(QWidget *p)
 
     connect( f_rows->selectionModel(), SIGNAL(currentChanged(QModelIndex,QModelIndex)),
              this, SLOT(onCurrentChanged(QModelIndex,QModelIndex)) );
+    connect( &f_rowModel, SIGNAL(modelReset()),
+             this, SLOT(onCellsModelReset()) );
     connect( qApp, SIGNAL(aboutToQuit()), this, SLOT(OnAboutToQuit()) );
 }
 
@@ -62,6 +65,13 @@ void MainWindow::fillTableList()
 
     QCassandraContext::pointer_t qcontext( f_cassandra->findContext(f_context) );
 	f_contextModel.setContext( qcontext );
+}
+
+
+//void MainWindow::onCellsDataChanged( const QModelIndex &, const QModelIndex & )
+void MainWindow::onCellsModelReset()
+{
+    f_cells->resizeColumnsToContents();
 }
 
 
