@@ -477,7 +477,7 @@ QString dbutils::get_column_value( QCassandraCell::pointer_t c ) const
         break;
     }
 
-    return get_column_name(c) + " = " + v;
+    return v;
 }
 
 
