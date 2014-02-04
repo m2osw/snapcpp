@@ -373,7 +373,7 @@ void users::on_bootstrap(::snap::snap_child *snap)
     SNAP_LISTEN(users, "path", path::path, can_handle_dynamic_path, _1, _2);
     SNAP_LISTEN(users, "layout", layout::layout, generate_header_content, _1, _2, _3, _4, _5);
     SNAP_LISTEN(users, "layout", layout::layout, generate_page_content, _1, _2, _3, _4, _5);
-    //SNAP_LISTEN(users, "filter", filter::filter, replace_token, _1, _2, _3, _4);
+    SNAP_LISTEN(users, "filter", filter::filter, replace_token, _1, _2, _3, _4);
 
     f_info.reset(new sessions::sessions::session_info);
 }
@@ -724,7 +724,7 @@ void users::on_generate_boxes_content(layout::layout *l, content::path_info_t& p
         // do not display the login box on the login page
 
 // DEBUG -- at this point there are conflicts with more than 1 form on a page, so I only allow that form on the home page
-if(page_cpath.get_cpath() != "") return;
+//if(page_cpath.get_cpath() != "") return;
 
         if(page_cpath.get_cpath() == "login"
         || page_cpath.get_cpath() == "register")
@@ -3033,20 +3033,57 @@ void users::encrypt_password(const QString& digest, const QString& password, con
  *
  * The supported tokens are:
  *
- * \li ...
+ * \li users::email -- the user email as is
+ * \li users::email_anchor -- the user email as an anchor (mailto:)
+ * \li users::since -- the date and time when the user registered
  *
  * \param[in,out] ipath  The path to the page being worked on.
  * \param[in] plugin_owner  The plugin that owns this ipath content.
  * \param[in,out] xml  The XML document used with the layout.
  * \param[in,out] token  The token object, with the token name and optional parameters.
  */
-//void users::on_replace_token(content::path_info_t& ipath, QString const& plugin_owner, QDomDocument& xml, filter::filter::token_info_t& token)
-//{
-//    if(!token.is_namespace("users::"))
-//    {
-//        return;
-//    }
-//}
+void users::on_replace_token(content::path_info_t& ipath, QString const& plugin_owner, QDomDocument& xml, filter::filter::token_info_t& token)
+{
+    if(!token.is_namespace("users::")
+    || f_user_key.isEmpty())
+    {
+        // not a user replacement token
+        // or user not logged in
+        return;
+    }
+
+    QtCassandra::QCassandraTable::pointer_t users_table(get_users_table());
+    if(!users_table->exists(f_user_key))
+    {
+        // cannot find user...
+        return;
+    }
+
+    if(token.is_token("users::email"))
+    {
+        token.f_replacement = f_user_key;
+    }
+    else if(token.is_token("users::email_anchor"))
+    {
+        // TODO: replace f_user_key with the user first/last names when
+        //       available and authorized
+        token.f_replacement = "<a href=\"mailto:" + f_user_key + "\">" + f_user_key + "</a>";
+    }
+    else if(token.is_token("users::since"))
+    {
+        // make sure that the user created and verified his account
+        QtCassandra::QCassandraValue const verified_on(users_table->row(f_user_key)->cell(get_name(SNAP_NAME_USERS_VERIFIED_ON))->value());
+        if(!verified_on.nullValue())
+        {
+            QtCassandra::QCassandraValue const value(users_table->row(f_user_key)->cell(get_name(SNAP_NAME_USERS_CREATED_TIME))->value());
+            int64_t date(value.int64Value());
+            token.f_replacement = QString("%1 %2")
+                    .arg(f_snap->date_to_string(date, f_snap->DATE_FORMAT_SHORT))
+                    .arg(f_snap->date_to_string(date, f_snap->DATE_FORMAT_TIME));
+        }
+        // else use was not yet verified
+    }
+}
 
 
 /** \brief Determine whether the current user is considered to be a spammer.
