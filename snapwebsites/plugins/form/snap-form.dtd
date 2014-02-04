@@ -20,7 +20,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 <!ATTLIST snap-form name CDATA #REQUIRED
                     session_id CDATA #REQUIRED
                     owner CDATA #REQUIRED
-                    auto-save (auto-save) #IMPLIED>
+                    auto-save (auto-save) #IMPLIED
+                    processor CDATA #IMPLIED>
 
 <!ENTITY % html-data "(#PCDATA|b|i|u|em|strong|a|img|p|div)*" >
 

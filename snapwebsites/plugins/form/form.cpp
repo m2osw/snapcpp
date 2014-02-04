@@ -276,6 +276,7 @@ QDomDocument form::form_to_html(sessions::sessions::session_info& info, QDomDocu
     // somehow the bind works here...
     q.bindVariable("form_session", QVariant(sessions::sessions::instance()->create_session(info)));
     ++unique_id;
+    q.bindVariable("action", QVariant(info.get_page_path()));
     q.bindVariable("unique_id", QVariant(QString("%1").arg(unique_id)));
     q.bindVariable("tabindex_base", QVariant(tabindex_base));
     q.setQuery(f_form_elements_string);
@@ -1085,7 +1086,18 @@ void form::on_process_post(const QString& uri_path)
     }
     if(fp != NULL)
     {
-        fp->on_process_form_post(ipath, info);
+        QString const processor(root.attribute("processor", ""));
+        if(!processor.isEmpty())
+        {
+            content::path_info_t processor_ipath;
+            processor_ipath.set_path(processor);
+            processor_ipath.set_main_page(true);
+            fp->on_process_form_post(processor_ipath, info);
+        }
+        else
+        {
+            fp->on_process_form_post(ipath, info);
+        }
     }
 }
 
@@ -2012,7 +2024,7 @@ void form::on_replace_token(content::path_info_t& ipath, QString const& plugin_o
     if(source.isEmpty())
     {
         token.f_error = true;
-        token.f_replacement = "<span class=\"filter-error\"><span class=\"filter-error-word\">ERROR:</span> Could not determine a valid resource path.</span>";
+        token.f_replacement = "<span class=\"filter-error\"><span class=\"filter-error-word\">error:</span> Could not determine a valid resource path.</span>";
         SNAP_LOG_ERROR("form::on_replace_token() could not determine a valid resource path (empty) for token \"")(token.f_name)("\" and owner \"")(plugin_owner)("\".");
         return;
     }
@@ -2022,111 +2034,108 @@ void form::on_replace_token(content::path_info_t& ipath, QString const& plugin_o
     if(plugin_owner.isEmpty())
     {
         token.f_error = true;
-        token.f_replacement = "<span class=\"filter-error\"><span class=\"filter-error-word\">ERROR:</span> Resource \"" + source + "\" could not determine the plugin owner.</span>";
+        token.f_replacement = "<span class=\"filter-error\"><span class=\"filter-error-word\">error:</span> Resource \"" + source + "\" could not determine the plugin owner.</span>";
         SNAP_LOG_ERROR("form::on_replace_token() could not determine the plugin owner for \"" + source + "\" resource file.");
         return;
     }
 
     // if we get here and source is not empty then a form was loaded
     // successfully
-    if(!source.isEmpty())
+    // 0. load the form from resources or Cassandra
+    QString error;
+    form_doc = load_form(ipath, source, error);
+    if(!error.isEmpty())
     {
-        // 0. load the form from resources or Cassandra
-        QString error;
-        form_doc = load_form(ipath, source, error);
-        if(!error.isEmpty())
-        {
-            token.f_error = true;
-            token.f_replacement = error;
-            return;
-        }
-        QDomElement snap_form(form_doc.documentElement());
+        token.f_error = true;
+        token.f_replacement = error;
+        return;
+    }
+    QDomElement snap_form(form_doc.documentElement());
 
-        // 1. Initialize session
-        //
-        // initialize the session information
-        sessions::sessions::session_info info;
-        info.set_session_type(info.SESSION_INFO_FORM);
-        //info.set_object_path(); -- form sessions are based on paths only, no objects
-        info.set_user_agent(f_snap->snapenv(snap::get_name(SNAP_NAME_CORE_HTTP_USER_AGENT)));
+    // 1. Initialize session
+    //
+    // initialize the session information
+    sessions::sessions::session_info info;
+    info.set_session_type(info.SESSION_INFO_FORM);
+    //info.set_object_path(); -- form sessions are based on paths only, no objects
+    info.set_user_agent(f_snap->snapenv(snap::get_name(SNAP_NAME_CORE_HTTP_USER_AGENT)));
 
-        // 2. Get session identifier and optionally the type
-        //
-        // retrieve the identifier for this session so one can verify when
-        // processing the POST; we default to 1 for all those plugins that
-        // only have one form; the session information also may starts with
-        // "user/" or "form/" or "secure/" and those define the level of
-        // complexity for the session identifier; the default is "form/"
-        QString session_id_str(snap_form.attribute("session_id", "1"));
-        if(session_id_str.startsWith("form/"))
-        {
-            // this is the default, we still need to remove the prefix
-            session_id_str = session_id_str.mid(5);
-        }
-        else if(session_id_str.startsWith("user/"))
-        {
-            session_id_str = session_id_str.mid(5);
-            info.set_session_type(info.SESSION_INFO_USER);
-        }
-        else if(session_id_str.startsWith("secure/"))
-        {
-            session_id_str = session_id_str.mid(7);
-            info.set_session_type(info.SESSION_INFO_SECURE);
-        }
-        bool ok(false);
-        info.set_session_id(session_id_str.toInt(&ok));
-        if(!ok)
-        {
-            token.f_error = true;
-            token.f_replacement = "<span class=\"filter-error\"><span class=\"filter-error-word\">ERROR:</span> Session identifier \"" + session_id_str + "\" is not a valid decimal number.</span>";
-            SNAP_LOG_ERROR("form::on_replace_token() could not parse \"" + session_id_str + "\" as a session identifier.");
-            return;
-        }
+    // 2. Get session identifier and optionally the type
+    //
+    // retrieve the identifier for this session so one can verify when
+    // processing the POST; we default to 1 for all those plugins that
+    // only have one form; the session information also may starts with
+    // "user/" or "form/" or "secure/" and those define the level of
+    // complexity for the session identifier; the default is "form/"
+    QString session_id_str(snap_form.attribute("session_id", "1"));
+    if(session_id_str.startsWith("form/"))
+    {
+        // this is the default, we still need to remove the prefix
+        session_id_str = session_id_str.mid(5);
+    }
+    else if(session_id_str.startsWith("user/"))
+    {
+        session_id_str = session_id_str.mid(5);
+        info.set_session_type(info.SESSION_INFO_USER);
+    }
+    else if(session_id_str.startsWith("secure/"))
+    {
+        session_id_str = session_id_str.mid(7);
+        info.set_session_type(info.SESSION_INFO_SECURE);
+    }
+    bool ok(false);
+    info.set_session_id(session_id_str.toInt(&ok));
+    if(!ok)
+    {
+        token.f_error = true;
+        token.f_replacement = "<span class=\"filter-error\"><span class=\"filter-error-word\">ERROR:</span> Session identifier \"" + session_id_str + "\" is not a valid decimal number.</span>";
+        SNAP_LOG_ERROR("form::on_replace_token() could not parse \"" + session_id_str + "\" as a session identifier.");
+        return;
+    }
 
-        // 3. Get form timeout
-        //
-        // The timeout defaults to 1h (in minutes)
-        int timeout(60);
-        QDomElement auto_reset(form_doc.firstChildElement("auto-reset"));
-        if(!auto_reset.isNull())
+    // 3. Get form timeout
+    //
+    // The timeout defaults to 1h (in minutes)
+    int timeout(60);
+    QDomElement auto_reset(form_doc.firstChildElement("auto-reset"));
+    if(!auto_reset.isNull())
+    {
+        QString const minutes(auto_reset.attribute("minutes"));
+        if(!minutes.isEmpty())
         {
-            QString const minutes(auto_reset.attribute("minutes"));
-            if(!minutes.isEmpty())
+            timeout = minutes.toInt(&ok);
+            if(!ok)
             {
-                timeout = minutes.toInt(&ok);
-                if(!ok)
-                {
-                    token.f_error = true;
-                    token.f_replacement = "<span class=\"filter-error\"><span class=\"filter-error-word\">ERROR:</span> Session auto-reset minutes attribute (" + minutes + ") is not a valid decimal number.</span>";
-                    SNAP_LOG_ERROR("form::on_replace_token() could not parse \"" + minutes + "\" as a timeout in minutes.");
-                    return;
-                }
+                token.f_error = true;
+                token.f_replacement = "<span class=\"filter-error\"><span class=\"filter-error-word\">ERROR:</span> Session auto-reset minutes attribute (" + minutes + ") is not a valid decimal number.</span>";
+                SNAP_LOG_ERROR("form::on_replace_token() could not parse \"" + minutes + "\" as a timeout in minutes.");
+                return;
             }
         }
-        info.set_time_to_live(timeout * 60);  // time to live is in seconds, timeout is in minutes
-
-        // 4. Define the owner of the form
-        //
-        // In many cases the owner is not defined in the form in which
-        // case it comes from the page; however, if defined in the form
-        // then it is viewed as authoritative
-        QString const owner(snap_form.attribute("owner", plugin_owner));
-        // if(owner != plugin_owner) -- what would that test mean?
-        // I think the owner in a form is authoritative, period.
-        info.set_plugin_owner(owner);
-
-        // 5. Define the path of the form from the XML document
-        //
-        // If not empty then it was already defined in the previous step
-        // (when retrieving the form:: from the page)
-        info.set_page_path(ipath);
-
-        // 6. Run the XSLT against the form and save the result
-        //
-        QDomDocument result(form_to_html(info, form_doc));
-        token.f_replacement = result.toString();
-//printf("form is [%s] (%d), %d\n", token.f_replacement.toUtf8().data(), static_cast<int>(token.f_error), static_cast<int>(token.f_found));
     }
+    info.set_time_to_live(timeout * 60);  // time to live is in seconds, timeout is in minutes
+
+    // 4. Define the owner of the form
+    //
+    // In many cases the owner is not defined in the form in which
+    // case it comes from the page; however, if defined in the form
+    // then it is viewed as authoritative
+    QString const owner(snap_form.attribute("owner", plugin_owner));
+    // if(owner != plugin_owner) -- what would that test mean?
+    // I think the owner in a form is authoritative, period.
+    info.set_plugin_owner(owner);
+
+    // 5. Define the path of the form from the XML document
+    //
+    // If not empty then it was already defined in the previous step
+    // (when retrieving the form:: from the page)
+    info.set_page_path(ipath);
+
+    // 6. Run the XSLT against the form and save the result
+    //
+    QDomDocument result(form_to_html(info, form_doc));
+    token.f_replacement = result.toString();
+//printf("form is [%s] (%d), %d\n", token.f_replacement.toUtf8().data(), static_cast<int>(token.f_error), static_cast<int>(token.f_found));
 }
 
 

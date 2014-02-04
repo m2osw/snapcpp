@@ -99,3 +99,8 @@ div.message h3
 	display: block;
 	width: 150px;
 }
+
+.input-with-background-value
+{
+	color: #888888;
+}
