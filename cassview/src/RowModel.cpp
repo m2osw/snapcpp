@@ -54,7 +54,7 @@ QVariant RowModel::data( const QModelIndex & idx, int role ) const
             switch( idx.column() )
             {
                 case 0: return du.get_column_name ( cell );
-                case 1: return du.get_column_value( cell );
+                case 1: return du.get_column_value( cell, role == Qt::DisplayRole /*display_only*/ );
             }
 
             Q_ASSERT(false);

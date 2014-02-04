@@ -334,10 +334,10 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
 }
 
 
-QString dbutils::get_column_value( QCassandraCell::pointer_t c ) const
+QString dbutils::get_column_value( QCassandraCell::pointer_t c, const bool display_only ) const
 {
     QString v;
-    switch( get_column_type( c ) )
+    switch( column_type_t ct = get_column_type( c ) )
     {
         case CT_uint64_value:
         {
@@ -374,7 +374,9 @@ QString dbutils::get_column_value( QCassandraCell::pointer_t c ) const
             time_t seconds(time);
             gmtime_r(&seconds, &t);
             strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &t);
-            v = QString("%1 (%2)").arg(buf).arg(time);
+            v = display_only
+              ? QString("%1 (%2)").arg(buf).arg(time)
+              : QString("%1").arg(buf);
         }
         break;
 
@@ -402,30 +404,21 @@ QString dbutils::get_column_value( QCassandraCell::pointer_t c ) const
         break;
 
         case CT_hexarray_value:
-        {
-            // n bit binary value
-            const QByteArray& buf(c->value().binaryValue());
-            int const max_length(buf.size());
-            v += "(hex) ";
-            for(int i(0); i < max_length; ++i)
-            {
-                v += byte_to_hex(buf[i]) + " ";
-            }
-        }
-        break;
-
         case CT_hexarray_limited_value:
         {
             // n bit binary value
-            // same as previous only this can be huge so we limit it
+            bool const display_limited( display_only && (ct == CT_hexarray_limited_value) );
             const QByteArray& buf(c->value().binaryValue());
-            int const max_length(std::min(64, buf.size()));
-            v += "(hex) ";
+            int const max_length( display_limited? std::min(64, buf.size()): buf.size() );
+            if( display_only )
+            {
+                v += "(hex) ";
+            }
             for(int i(0); i < max_length; ++i)
             {
                 v += byte_to_hex(buf[i]) + " ";
             }
-            if(buf.size() > max_length)
+            if( display_limited && (buf.size() > max_length) )
             {
                 v += "...";
             }
@@ -437,7 +430,10 @@ QString dbutils::get_column_value( QCassandraCell::pointer_t c ) const
             // md5 in binary
             const QByteArray& buf(c->value().binaryValue());
             int const max_length(buf.size());
-            v += "(md5) ";
+            if( display_only )
+            {
+                v += "(md5) ";
+            }
             for(int i(0); i < max_length; ++i)
             {
                 v += byte_to_hex(buf[i]);
@@ -472,7 +468,14 @@ QString dbutils::get_column_value( QCassandraCell::pointer_t c ) const
         case CT_string_value:
         {
             // all others viewed as strings
-            v = c->value().stringValue().replace("\n", "\\n");
+            if( display_only )
+            {
+                v = c->value().stringValue().replace("\n", "\\n");
+            }
+            else
+            {
+                v = c->value().stringValue();
+            }
         }
         break;
     }
@@ -542,24 +545,22 @@ void dbutils::set_column_value( QCassandraCell::pointer_t c, const QString& v )
 
         case CT_md5array_value:
         {
-            QString xv( v );
-            xv.remove("(md5) ");
-            cvalue.setBinaryValue( string_to_key( xv ) );
+            cvalue.setBinaryValue( string_to_key( v ) );
         }
         break;
 
         case CT_secure_value:
         {
             signed char cv;
-            if( v == "not checked (-1)" )
+            if( v == "not checked (-1)" || v == "-1" )
             {
                 cv = -1;
             }
-            else if( v == "not secure (0)" )
+            else if( v == "not secure (0)" || v == "0" )
             {
                 cv = 0;
             }
-            else if( v == "secure (1)" )
+            else if( v == "secure (1)" || v == "1" )
             {
                 cv = 1;
             }

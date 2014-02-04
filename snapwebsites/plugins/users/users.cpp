@@ -3042,6 +3042,8 @@ void users::encrypt_password(const QString& digest, const QString& password, con
  * \param[in,out] xml  The XML document used with the layout.
  * \param[in,out] token  The token object, with the token name and optional parameters.
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 void users::on_replace_token(content::path_info_t& ipath, QString const& plugin_owner, QDomDocument& xml, filter::filter::token_info_t& token)
 {
     if(!token.is_namespace("users::")
@@ -3084,6 +3086,7 @@ void users::on_replace_token(content::path_info_t& ipath, QString const& plugin_
         // else use was not yet verified
     }
 }
+#pragma GCC diagnostic pop
 
 
 /** \brief Determine whether the current user is considered to be a spammer.

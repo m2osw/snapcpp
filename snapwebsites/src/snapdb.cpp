@@ -417,7 +417,7 @@ void snapdb::display_columns() const
         }
         for( auto c : cells )
         {
-            std::cout << du.get_column_name(c) << " = " << du.get_column_value(c) << std::endl;
+            std::cout << du.get_column_name(c) << " = " << du.get_column_value( c, true /*display_only*/ ) << std::endl;
         }
     }
 }

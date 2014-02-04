@@ -39,7 +39,7 @@ public:
     QString    get_row_name( QtCassandra::QCassandraRow::pointer_t p_r ) const;
 
     QString    get_column_name ( QtCassandra::QCassandraCell::pointer_t c ) const;
-    QString    get_column_value( QtCassandra::QCassandraCell::pointer_t c ) const;
+    QString    get_column_value( QtCassandra::QCassandraCell::pointer_t c, const bool display_only = false ) const;
     void       set_column_value( QtCassandra::QCassandraCell::pointer_t c, const QString& v );
 
 private:
