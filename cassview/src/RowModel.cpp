@@ -1,6 +1,7 @@
 #include "RowModel.h"
 #include <snapwebsites/dbutils.h>
 #include <QtCassandra/QCassandraContext.h>
+#include <iostream>
 
 using namespace QtCassandra;
 
@@ -41,25 +42,34 @@ QVariant RowModel::data( const QModelIndex & idx, int role ) const
         return QVariant();
     }
 
-    QCassandraContext::pointer_t context( f_row->parentTable()->parentContext() );
-    const QCassandraCells& cell_list = f_row->cells();
-    const auto cell( (cell_list.begin()+idx.row()).value() );
-
-    if( context->contextName() == "snap_websites" )
+    try
     {
-        snap::dbutils du( f_row->parentTable()->tableName(), f_row->rowName() );
-        switch( idx.column() )
+        QCassandraContext::pointer_t context( f_row->parentTable()->parentContext() );
+        const QCassandraCells& cell_list = f_row->cells();
+        const auto cell( (cell_list.begin()+idx.row()).value() );
+
+        if( context->contextName() == "snap_websites" )
         {
-            case 0: return du.get_column_name ( cell );
-            case 1: return du.get_column_value( cell );
+            snap::dbutils du( f_row->parentTable()->tableName(), f_row->rowName() );
+            switch( idx.column() )
+            {
+                case 0: return du.get_column_name ( cell );
+                case 1: return du.get_column_value( cell );
+            }
+
+            Q_ASSERT(false);
+            return QVariant();
         }
 
-        Q_ASSERT(false);
-        return QVariant();
+        const auto value( idx.column() == 0? cell->columnName(): cell->value() );
+        return value.stringValue();
+    }
+    catch( const std::exception& x )
+    {
+        std::cerr << "Exception caught! [" << x.what() << "]" << std::endl;
     }
 
-    const auto value( idx.column() == 0? cell->columnName(): cell->value() );
-    return value.stringValue();
+    return QVariant();
 }
 
 
@@ -87,8 +97,17 @@ int RowModel::rowCount( const QModelIndex & /*parent*/ ) const
         return 0;
     }
 
-    const QCassandraCells& cell_list = f_row->cells();
-    return cell_list.size();
+    try
+    {
+        const QCassandraCells& cell_list = f_row->cells();
+        return cell_list.size();
+    }
+    catch( const std::exception& x )
+    {
+        std::cerr << "Exception caught! [" << x.what() << "]" << std::endl;
+    }
+
+    return 0;
 }
 
 
@@ -110,25 +129,34 @@ bool RowModel::setData( const QModelIndex & idx, const QVariant & value, int rol
         return false;
     }
 
-    QCassandraContext::pointer_t context( f_row->parentTable()->parentContext() );
-    const QCassandraCells& cell_list = f_row->cells();
-    const auto cell( (cell_list.begin()+idx.row()).value() );
-
-    if( context->contextName() == "snap_websites" )
+    try
     {
-        snap::dbutils du( f_row->parentTable()->tableName(), f_row->rowName() );
-        du.set_column_value( cell, value.toString() );
+        QCassandraContext::pointer_t context( f_row->parentTable()->parentContext() );
+        const QCassandraCells& cell_list = f_row->cells();
+        const auto cell( (cell_list.begin()+idx.row()).value() );
+
+        if( context->contextName() == "snap_websites" )
+        {
+            snap::dbutils du( f_row->parentTable()->tableName(), f_row->rowName() );
+            du.set_column_value( cell, value.toString() );
+        }
+        else
+        {
+            QCassandraValue v;
+            v.setStringValue( value.toString() );
+            cell->setValue( v );
+        }
+
+        Q_EMIT dataChanged( idx, idx );
+
+        return true;
     }
-    else
+    catch( const std::exception& x )
     {
-        QCassandraValue v;
-        v.setStringValue( value.toString() );
-        cell->setValue( v );
+        std::cerr << "Exception caught! [" << x.what() << "]" << std::endl;
     }
 
-    Q_EMIT dataChanged( idx, idx );
-
-    return true;
+    return false;
 }
 
 

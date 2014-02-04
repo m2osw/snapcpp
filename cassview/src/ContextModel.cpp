@@ -1,5 +1,7 @@
 #include "ContextModel.h"
 
+#include <iostream>
+
 using namespace QtCassandra;
 
 
@@ -28,9 +30,18 @@ QVariant ContextModel::data( const QModelIndex & idx, int role ) const
         return QVariant();
     }
 
-    const QCassandraTables& table_list = f_context->tables();
-    const QString table_name( (table_list.begin()+idx.row()).value()->tableName() );
-    return table_name;
+    try
+    {
+        const QCassandraTables& table_list = f_context->tables();
+        const QString table_name( (table_list.begin()+idx.row()).value()->tableName() );
+        return table_name;
+    }
+    catch( const std::exception& x )
+    {
+        std::cerr << "Exception caught! [" << x.what() << "]" << std::endl;
+    }
+
+    return QVariant();
 }
 
 
@@ -48,8 +59,17 @@ int ContextModel::rowCount( const QModelIndex & /*parent*/ ) const
         return 0;
     }
 
-    const QCassandraTables& row_list = f_context->tables();
-    return row_list.size();
+    try
+    {
+        const QCassandraTables& row_list = f_context->tables();
+        return row_list.size();
+    }
+    catch( const std::exception& x )
+    {
+        std::cerr << "Exception caught! [" << x.what() << "]" << std::endl;
+    }
+
+    return 0;
 }
 
 

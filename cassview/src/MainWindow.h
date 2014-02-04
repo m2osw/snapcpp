@@ -21,12 +21,13 @@ public:
 
 private slots:
     void onCellsModelReset();
-    //void onCellsDataChanged( const QModelIndex & topLeft, const QModelIndex & bottomRight );
     void on_action_Settings_triggered();
-    void OnAboutToQuit();
+    void onAboutToQuit();
     void on_f_tables_currentIndexChanged(const QString &table_name);
     void on_f_contextCombo_currentIndexChanged(const QString &arg1);
     void onCurrentChanged( const QModelIndex & current, const QModelIndex & /*previous*/ );
+    void on_action_About_triggered();
+    void on_action_AboutQt_triggered();
 
 private:
 	typedef QtCassandra::QCassandra::pointer_t cassandra_t;

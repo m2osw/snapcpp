@@ -40,11 +40,16 @@ set(CASSVIEW_VERSION_MINOR 0)
 set(CASSVIEW_VERSION_PATCH 3)
 
 cmake_minimum_required(VERSION 2.8)
+
 project(cassview-project)
 
 set( CMAKE_AUTOMOC TRUE )
 
-add_definitions( -std=c++0x )
+if( NOT MSVC )
+    add_definitions( -std=c++0x )
+endif()
+
+add_definitions( -DCASSVIEW_VERSION=\"${CASSVIEW_VERSION_MAJOR}.${CASSVIEW_VERSION_MINOR}.${CASSVIEW_VERSION_PATCH}\" )
 
 ## Include support modules
 ##
