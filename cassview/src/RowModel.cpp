@@ -51,6 +51,7 @@ QVariant RowModel::data( const QModelIndex & idx, int role ) const
         if( context->contextName() == "snap_websites" )
         {
             snap::dbutils du( f_row->parentTable()->tableName(), f_row->rowName() );
+            du.set_display_len( 24 );
             switch( idx.column() )
             {
                 case 0: return du.get_column_name ( cell );

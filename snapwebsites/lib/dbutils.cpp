@@ -5,6 +5,7 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; either version 2 of the License, or
 // (at your option) any later version.
+
 //
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -50,6 +51,7 @@ namespace
 dbutils::dbutils( const QString& table_name, const QString& row_name )
     : f_tableName(table_name)
     , f_rowName(row_name)
+    , f_displayLen(64)
 {
 }
 
@@ -120,6 +122,17 @@ QByteArray dbutils::string_to_key( const QString& str )
         }
     }
     return ret;
+}
+
+int dbutils::get_display_len() const
+{
+    return f_displayLen;
+}
+
+
+void dbutils::set_display_len( const int val )
+{
+    f_displayLen = val;
 }
 
 
@@ -409,7 +422,7 @@ QString dbutils::get_column_value( QCassandraCell::pointer_t c, const bool displ
             // n bit binary value
             bool const display_limited( display_only && (ct == CT_hexarray_limited_value) );
             const QByteArray& buf(c->value().binaryValue());
-            int const max_length( display_limited? std::min(64, buf.size()): buf.size() );
+            int const max_length( display_limited? std::min(f_displayLen, buf.size()): buf.size() );
             if( display_only )
             {
                 v += "(hex) ";

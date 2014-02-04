@@ -35,6 +35,9 @@ public:
     static QString    key_to_string ( const QByteArray& key  );
     static QByteArray string_to_key ( const QString&    str  );
 
+    int        get_display_len() const;
+    void       set_display_len( const int val );
+
     QByteArray get_row_key() const;
     QString    get_row_name( QtCassandra::QCassandraRow::pointer_t p_r ) const;
 
@@ -62,6 +65,7 @@ private:
 
     QString f_tableName;
     QString f_rowName;
+    int     f_displayLen;
 };
 
 }
