@@ -1,0 +1,17 @@
+libqtserialization (0.1.0-1) quantal; urgency=high
+
+  * Took out incorrect INSTALL.txt call out.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Mon, 09 Dec 2013 17:03:29 -0800
+
+libqtserialization (0.1.0+1) quantal; urgency=low
+
+  * Auto build.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Mon, 09 Dec 2013 16:55:49 -0800
+
+libqtserialization (0.1.0) quantal; urgency=low
+
+  * Initial release
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Wed, 27 Nov 2013 10:36:35 -0800

@@ -1,0 +1,10 @@
+usr/bin/cxpath
+usr/bin/snapbackend
+usr/bin/snapdb
+usr/bin/snapimg
+usr/bin/snaplayout
+usr/bin/snapserver
+usr/bin/snapsignal
+usr/share/snapwebsites/layouts/*
+src/src/log.conf etc/snapwebsites/
+src/src/snapserver.conf etc/snapwebsites/

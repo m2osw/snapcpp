@@ -1,0 +1,59 @@
+Source: googlerank
+Priority: extra
+Maintainer: R. Douglas Barbieri <doug@dooglio.net>
+Build-Depends: debhelper, cmake, libqt4-dev (>= 4.8.1),
+    doxygen, graphviz,
+    snapcmakemodules, libcontrolledvars-dev
+Standards-Version: 3.9.4
+Section: libs
+Homepage: http://snapwebsites.org/project/google-page-rank
+Vcs-Git: git://git.code.sf.net/p/snapcpp/code
+Vcs-Browser: http://sourceforge.net/p/snapcpp/code/ci/master/tree/googlerank
+
+Package: libgooglerank-dev
+Section: libdevel
+Architecture: any
+Depends: libgooglerank (= ${binary:Version}), ${misc:Depends}
+Description: Library to query for the Google Page Rank of any public page.
+ The Google Page Rank project is a library allows you to query for the
+ Google Page Rank of any public page. Where the rank is a decimal number. This number may be negative if the rank is
+ either not defined or an error occured while retrieving the information from
+ Google. The library works well with Qt applications. It offers one class named
+ QGooglePageRank which is used to send a request to Google. The request may
+ take some time so you can connect() to the googlePageRank() signal instead of
+ waiting for the answer. In a Qt environment, this works asynchroneously in a
+ seamless manner. Detailed information can be found in the library reference:
+ http://snapwebsites.org/project/references
+ This package contains the header files and static/shared libraries.
+
+Package: libgooglerank
+Section: libs
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Library to query for the Google Page Rank of any public page.
+ The Google Page Rank project is a library allows you to query for the
+ Google Page Rank of any public page. Where the rank is a decimal number. This number may be negative if the rank is
+ either not defined or an error occured while retrieving the information from
+ Google. The library works well with Qt applications. It offers one class named
+ QGooglePageRank which is used to send a request to Google. The request may
+ take some time so you can connect() to the googlePageRank() signal instead of
+ waiting for the answer. In a Qt environment, this works asynchroneously in a
+ seamless manner. Detailed information can be found in the library reference:
+ http://snapwebsites.org/project/references
+ This is the runtime package.
+
+Package: googlerank
+Section: web
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Command line tool to query for the Google Page Rank of any public page.
+ The Google Page Rank project contains a tool that allows you to query for the
+ Google Page Rank of any public page. The command line tool can be used to
+ query a page with the following syntax: googlerank [-r] [-t] '<url>'. The
+ result is output in your console as: "<url> <rank>" Where the rank is a
+ decimal number. This number may be negative if the rank is either not defined
+ or an error occured while retrieving the information from Google.  Detailed
+ information can be found in the library reference:
+ http://snapwebsites.org/project/references
+
+# vim: ts=4 sw=4 et

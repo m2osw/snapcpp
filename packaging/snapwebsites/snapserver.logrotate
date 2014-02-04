@@ -1,0 +1,13 @@
+/var/log/snapwebsites/snapserver.log {
+        weekly
+        missingok
+        rotate 5
+        prerotate
+                service snapwebsites stop
+        endscript
+        postrotate
+                service snapwebsites start
+        endscript
+        compress
+        notifempty
+}

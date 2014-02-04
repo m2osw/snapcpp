@@ -1,0 +1,14 @@
+googlerank (1.0.0ubuntu1) quantal; urgency=high
+
+  * Now properly installs library file info into the dev and runtime packages.
+  * Added SOVERSION/VERSION cmake properties, which were lacking.
+  * Now installs pagerank tool into /usr/bin.
+  * Added doxygen and graphviz to source package dependencies.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Fri, 06 Dec 2013 12:35:33 -0800
+
+googlerank (1.0.0) quantal; urgency=low
+
+  * Initial release
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Tue, 26 Nov 2013 13:55:42 -0800

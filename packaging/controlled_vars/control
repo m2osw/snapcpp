@@ -1,0 +1,46 @@
+Source: controlledvars
+Priority: extra
+Maintainer: R. Douglas Barbieri <doug@dooglio.net>
+Build-Depends: debhelper, cmake, snapcmakemodules
+Standards-Version: 3.9.4
+Section: libs
+Homepage: http://snapwebsites.org/project/controlled-vars
+Vcs-Git: git://git.code.sf.net/p/snapcpp/code
+Vcs-Browser: http://sourceforge.net/p/snapcpp/code/ci/master/tree/controlled_vars/
+
+Package: libcontrolledvars-dev
+Section: libdevel
+Architecture: any
+Depends: libcontrolledvars (= ${binary:Version}), ${misc:Depends}
+Description: Never forget to initialize your C++ variables!
+ The controlled_vars.h and other header files are C++ templates, that gives you
+ the ability to control the initialization of your basic C types (i.e. char,
+ int, long long, etc.)
+ Especially, it allows you to avoid forgetting the initialization of variable
+ members since these variables cannot be initialized where declared1. Classes
+ are here to help you and they do a great job at this, even for basic types
+ such as char, int, and long variables. Really! My main C++ bugs came from
+ forgetting the initialization of variable members and this is the reason why I
+ created these headers.
+ Controlled Variables can actually be used anywhere you declare a basic type
+ variable without immediately initializing it (and limited controlled variables
+ anywhere a bounded value is used.)
+
+Package: libcontrolledvars
+Section: libs
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Never forget to initialize your C++ variables!
+ The controlled_vars.h and other header files are C++ templates, that gives you
+ the ability to control the initialization of your basic C types (i.e. char,
+ int, long long, etc.)
+ Especially, it allows you to avoid forgetting the initialization of variable
+ members since these variables cannot be initialized where declared1. Classes
+ are here to help you and they do a great job at this, even for basic types
+ such as char, int, and long variables. Really! My main C++ bugs came from
+ forgetting the initialization of variable members and this is the reason why I
+ created these headers.
+ Controlled Variables can actually be used anywhere you declare a basic type
+ variable without immediately initializing it (and limited controlled variables
+ anywhere a bounded value is used.)
+
