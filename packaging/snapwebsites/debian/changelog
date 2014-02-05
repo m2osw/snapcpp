@@ -1,0 +1,310 @@
+snapwebsites (0.1.0-39) saucy; urgency=high
+
+  * Added a filter so we can show user info in blocks.
+  * Added a flag for display vs edit [dbutils].
+  * Added display len for hex output [dbutils].
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Tue, 04 Feb 2014 16:11:10 -0800
+
+snapwebsites (0.1.0-38) saucy; urgency=high
+
+  * A couple updates so we get plugin headers in the distribution folder.
+  * Fixed the name of the mailinglist plugin.
+  * Trying to get the Finball Inc. site to work! 8-)
+  * Switch Snap Manager QTcpSocket with our tcp_client_server so it works.
+  * Now supports editable column values using dbutils.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Mon, 03 Feb 2014 12:33:57 -0800
+
+snapwebsites (0.1.0-37) saucy; urgency=high
+
+  * Added dbutils class which encapsulates the code that translates data
+  depending on the table/row names.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Thu, 30 Jan 2014 15:06:36 -0800
+
+snapwebsites (0.1.0-36) saucy; urgency=high
+
+  * Added support for branch, revision, locale (adapted content table for the
+    purpose by adding a new table called data.)
+  * Fixed many bugs along the way (getting a cell instead of a value...)
+  * Fixed the registration process in terms of permissions.
+  * Code / header clean up.
+  * Added a new class snap_pipe to handle pipes.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 26 Jan 2014 01:59:17 -0800
+
+snapwebsites (0.1.0-35) saucy; urgency=high
+
+  * Correcting one more error where dolint is created.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Tue, 14 Jan 2014 23:41:59 -0800
+
+snapwebsites (0.1.0-34) saucy; urgency=high
+
+  * Fixed error in CMakeLists.txt file. Now look under
+  CMAKE_CURRENT_SOURCE_DIR for local modules.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Tue, 14 Jan 2014 23:18:04 -0800
+
+snapwebsites (0.1.0-33) saucy; urgency=high
+
+  * Added layouts XML files to the installation.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Tue, 14 Jan 2014 22:57:28 -0800
+
+snapwebsites (0.1.0-33) saucy; urgency=high
+
+  * Added Snap! Editor.
+  * Added boxes (got the log in box on the home page).
+  * JavaScript attachment can now be downloaded as expected.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Tue, 14 Jan 2014 10:51:17 -0800
+
+snapwebsites (0.1.0-32) saucy; urgency=high
+
+  * Snapmanager now retains the cassandra server in addition to the snap
+    server info.
+  * Cannot click Disconnect when disconnected, and similar for connected.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Tue, 07 Jan 2014 13:21:01 -0800
+
+snapwebsites (0.1.0-31) saucy; urgency=high
+
+  * Snap-manager icon and desktop were not installed into the proper place!
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Tue, 07 Jan 2014 10:09:00 -0800
+
+snapwebsites (0.1.0-30) saucy; urgency=high
+
+  * Forgot desktop and image files in git! Try another build...
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Tue, 07 Jan 2014 07:26:58 -0800
+
+snapwebsites (0.1.0-29) saucy; urgency=high
+
+  * Fixed error when snapcgi is installed, /var/log/snapwebsites must be
+    created first otherwise the postinst fails when trying to touch the cgi
+    logfile.
+  * Added desktop and png images to snapmanager package.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Mon, 06 Jan 2014 22:26:47 -0800
+
+snapwebsites (0.1.0-28) saucy; urgency=high
+
+  * "adduser" is required for snapserver postinst, so added to the control
+    file as a prereq.
+  * snap.cgi log touch code moved to new snapcgi.postinst script.
+  * init script backgrounds correctly using --background switch.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Mon, 06 Jan 2014 14:24:12 -0800
+
+snapwebsites (0.1.0-27) saucy; urgency=high
+
+  * Now always using the "-d" option for snapserver and snapbackend. It seems
+    that the postinst scripts don't like that and cause the package
+    installation to hang indefinitely.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Mon, 06 Jan 2014 13:31:14 -0800
+
+snapwebsites (0.1.0-26) saucy; urgency=high
+
+  * Names in init script were wrong.
+  * Stop in init script wasn't working correctly. Needed a TERM signal, not 0.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Sun, 05 Jan 2014 13:02:18 -0800
+
+snapwebsites (0.1.0-25) saucy; urgency=high
+
+  * Redirect output from daemons to /dev/null, since that only makes sense for
+    the -d option and running from console not in background.
+  * Broke up the snapwebsites package into component parts, and created new
+    packages to handle the development dist (libsnapwebsites*).
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Sat, 04 Jan 2014 10:53:44 -0800
+
+snapwebsites (0.1.0-24) saucy; urgency=high
+
+  * Package version bump. 
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Fri, 03 Jan 2014 15:35:36 -0800
+
+snapwebsites (0.1.0-23) saucy; urgency=high
+
+  * Condensed the purge debconf question into one template, a choice.
+  * Fixed script error (elif requires "else").
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Fri, 03 Jan 2014 11:30:27 -0800
+
+snapwebsites (0.1.0-22) saucy; urgency=high
+
+  * Defaults to "No" for purge of db on postrm.
+  * The database purge has to happen with prerm, not postrm (since snapdb
+    has been removed at that point).
+  * Added extra question to allow the user to select full purge, or partial.
+  * Added test for debconf config (in case it's not installed).
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Fri, 03 Jan 2014 01:04:14 -0800
+
+snapwebsites (0.1.0-21) saucy; urgency=high
+
+  * Added postrm file.
+  * Now add snapwebsites user, and run the daemons under that user.
+  * logrotate now works with /var/log/snapwebsites folder.
+  * Make sure the log files have the proper user set, and proper permissions
+    on postinst.
+  * Added database purge option when the package is purged.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Thu, 02 Jan 2014 16:24:27 -0800
+
+snapwebsites (0.1.0-20) saucy; urgency=high
+
+  * Output user debugging information only if a debug build. This quiets down
+    the release build.
+  * snaplayout now supports --host/--port parameters.
+  * Other misc fixes.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Tue, 31 Dec 2013 11:14:49 -0800
+
+snapwebsites (0.1.0-19) saucy; urgency=high
+
+  * Converted snapdb to use advgetopt.
+  * Now snapserver init script actually terminates the server properly.
+  * Added snapbackend start in init script and default.
+  * Fixed uri port bug in snapbackend.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Mon, 30 Dec 2013 21:33:59 -0800
+
+snapwebsites (0.1.0-18) saucy; urgency=high
+
+  * Added layouts.
+  * Postinst creates /var/log/snapcgi.log, so it's writable by www-data.
+  * Added snapcgi log support.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Fri, 27 Dec 2013 11:39:35 -0800
+
+snapwebsites (0.1.0-17) saucy; urgency=high
+
+  * Added logrotate.
+
+ -- R. Douglas Barbieri <doug@kosh>  Fri, 27 Dec 2013 00:04:25 -0800
+
+snapwebsites (0.1.0-16) saucy; urgency=high
+
+  * Added configuration files to package install.
+
+ -- R. Douglas Barbieri <doug@kosh>  Thu, 26 Dec 2013 22:53:47 -0800
+
+snapwebsites (0.1.0-15) saucy; urgency=high
+
+  * Forgot iostream include.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Thu, 26 Dec 2013 22:32:17 -0800
+
+snapwebsites (0.1.0-14) quantal; urgency=high
+
+  * Took out PROJECT_NAME requirement. Also, lint_script is created every
+    time.
+  * Now xml files validate against proper DTD files.
+  * Enhanced the DTD so it includes classes, required, and a few other
+    elements and attributes as expected.
+  * Fixed all the forms that had some invalid XML!
+  * Implemented the auto-fill feature so default values can be specified from
+    the Cassandra database (and all automatically!)
+  * Fixed the use of the sitemap modification time in the chart: we need
+    seconds in there! 
+  * Changed the permissions checking so the user plugin can check them for the
+    /user path as it attempts to put it in the sitemap.xml file.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Thu, 26 Dec 2013 21:13:42 -0800
+
+snapwebsites (0.1.0-13) quantal; urgency=high
+
+  * Requires libxml2-utils for xmllint.
+  * The init script was incorrectly trying to start "snapwebsites" but should
+    have been trying to start "snapserver."
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Thu, 19 Dec 2013 17:16:25 -0800
+
+snapwebsites (0.1.0-12) quantal; urgency=high
+
+  * Fixed problem with init.d script not being started/stopped.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Thu, 19 Dec 2013 16:54:41 -0800
+
+snapwebsites (0.1.0-11) quantal; urgency=high
+
+  * https://sourceforge.net/p/snapcpp/code/ci/74c430d4dd0fbccc3cdb30aa910aabed3316f8a6/
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Wed, 18 Dec 2013 08:34:13 -0800
+
+snapwebsites (0.1.0-10) quantal; urgency=high
+
+  * https://sourceforge.net/p/snapcpp/code/ci/49560bedf34b7ef5bc40768b4165be20b6ea2687/
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Tue, 17 Dec 2013 07:41:27 -0800
+
+snapwebsites (0.1.0-9) quantal; urgency=high
+
+  * doc-base is now installed with the -doc package.
+  * The -doc package now recommends the base package.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Mon, 16 Dec 2013 12:00:28 -0800
+
+snapwebsites (0.1.0-8) quantal; urgency=high
+
+  * Now compiles under saucy with 4.8. Cleared up the unused-parameters
+    warnings with pragmas.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Sun, 15 Dec 2013 10:45:36 -0800
+
+snapwebsites (0.1.0-7) quantal; urgency=high
+
+  * Repaired controlled_vars and process.h--both build under g++ >= 4.8.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Sat, 14 Dec 2013 15:32:27 -0800
+
+snapwebsites (0.1.0-6) quantal; urgency=high
+
+  * Bumping the version again so launchpad will upload the tarball. I wish
+    this could be overridden...
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Sat, 14 Dec 2013 10:29:56 -0800
+
+snapwebsites (0.1.0-5) quantal; urgency=high
+
+  * Now builds under i386.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Fri, 13 Dec 2013 23:41:42 -0800
+
+snapwebsites (0.1.0-4) quantal; urgency=high
+
+  * Fixed build errors for saucy and quantal.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Thu, 12 Dec 2013 22:46:01 -0800
+
+snapwebsites (0.1.0-3) quantal; urgency=high
+
+  * Updating to Cassandra 2.0.3.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Wed, 11 Dec 2013 12:38:00 -0800
+
+snapwebsites (0.1.0-2) quantal; urgency=high
+
+  * Added other source-package dependencies.
+  * Added INSTALL.txt.
+  * Added cassandra as Recommends.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Tue, 10 Dec 2013 12:13:38 -0800
+
+snapwebsites (0.1.0-1) quantal; urgency=low
+
+  * Added log4cplus package dep.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Tue, 10 Dec 2013 12:13:38 -0800
+
+snapwebsites (0.1.0) quantal; urgency=high
+
+  * Initial release of packaging.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Wed, 20 Nov 2013 08:49:55 -0800

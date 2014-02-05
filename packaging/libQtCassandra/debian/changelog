@@ -1,0 +1,18 @@
+libqtcassandra (0.5.0-2) quantal; urgency=low
+
+  * Changed all shared pointer with std::share_ptr<> so we can use weak
+    pointers properly.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Sun, 26 Jan 2014 14:29:29 -0800
+
+libqtcassandra (0.5.0-1) quantal; urgency=high
+
+  * Fixed broken package because of the info file, which was not needed.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Mon, 09 Dec 2013 23:44:10 -0800
+
+libqtcassandra (0.5.0) quantal; urgency=high
+
+  * Initial release of packaging.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Mon, 25 Nov 2013 17:17:29 -0800

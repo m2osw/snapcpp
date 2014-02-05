@@ -1,0 +1,41 @@
+#!/bin/sh -e
+
+#DEBHELPER#
+
+# Source debconf library.
+. /usr/share/debconf/confmodule
+
+if [ "$1" = "configure" ]
+then
+	# add snapwebsites user and group of not there already
+	#
+	if ! getent group snapwebsites >/dev/null; then
+		addgroup --system snapwebsites
+	fi
+	#
+	if ! getent passwd snapwebsites >/dev/null; then
+		adduser --quiet \
+			--system \
+			--ingroup snapwebsites \
+			--quiet \
+			--disabled-login \
+			--disabled-password \
+			--home /var/lib/snapwebsites \
+			--no-create-home \
+			-gecos "Snapwebsites installation" \
+			snapwebsites
+	fi
+
+	# make the snapwebsites log folder
+	#
+	SNAPLOGDIR=/var/log/snapwebsites
+	mkdir -p ${SNAPLOGDIR}
+	chown snapwebsites.snapwebsites ${SNAPLOGDIR}
+
+	# we need a place to write data not directly stored in the cassandra db
+	#
+	mkdir -p /var/lib/snapwebsites
+	chown snapwebsites.snapwebsites /var/lib/snapwebsites
+fi
+
+# vim: ts=4 sw=4 et nocindent

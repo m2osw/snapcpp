@@ -1,0 +1,7 @@
+/var/log/snapwebsites/snapcgi.log {
+        weekly
+        missingok
+        rotate 5
+        compress
+        notifempty
+}

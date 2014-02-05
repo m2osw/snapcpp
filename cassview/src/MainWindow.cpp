@@ -1,5 +1,10 @@
 #include "MainWindow.h"
 #include "SettingsDialog.h"
+#include "AboutDialog.h"
+
+#include <QMessageBox>
+
+#include <iostream>
 
 using namespace QtCassandra;
 
@@ -25,7 +30,6 @@ MainWindow::MainWindow(QWidget *p)
     f_tables->setModel( &f_contextModel );
     f_rows->setModel( &f_tableModel );
 	f_cells->setModel( &f_rowModel );
-    //f_cells->resizeColumnsToContents();
 
     f_cassandraModel.setCassandra( f_cassandra );
     const int idx = f_contextCombo->findText( f_context );
@@ -36,11 +40,14 @@ MainWindow::MainWindow(QWidget *p)
 
     f_tables->setCurrentIndex( 0 );
 
+    f_mainSplitter->setStretchFactor( 0, 0 );
+    f_mainSplitter->setStretchFactor( 1, 1 );
+
     connect( f_rows->selectionModel(), SIGNAL(currentChanged(QModelIndex,QModelIndex)),
              this, SLOT(onCurrentChanged(QModelIndex,QModelIndex)) );
     connect( &f_rowModel, SIGNAL(modelReset()),
              this, SLOT(onCellsModelReset()) );
-    connect( qApp, SIGNAL(aboutToQuit()), this, SLOT(OnAboutToQuit()) );
+    connect( qApp, SIGNAL(aboutToQuit()), this, SLOT(onAboutToQuit()) );
 }
 
 
@@ -49,7 +56,7 @@ MainWindow::~MainWindow()
 }
 
 
-void MainWindow::OnAboutToQuit()
+void MainWindow::onAboutToQuit()
 {
     QSettings settings( this );
     settings.setValue( "geometry", saveGeometry()                );
@@ -68,7 +75,6 @@ void MainWindow::fillTableList()
 }
 
 
-//void MainWindow::onCellsDataChanged( const QModelIndex &, const QModelIndex & )
 void MainWindow::onCellsModelReset()
 {
     f_cells->resizeColumnsToContents();
@@ -77,41 +83,59 @@ void MainWindow::onCellsModelReset()
 
 void MainWindow::on_action_Settings_triggered()
 {
-    SettingsDialog dlg(this);
-    if( dlg.exec() == QDialog::Accepted )
+    try
     {
-        fillTableList();
+        SettingsDialog dlg(this);
+        if( dlg.exec() == QDialog::Accepted )
+        {
+            fillTableList();
+        }
+    }
+    catch( const std::exception& p_x )
+    {
+        std::cerr << "Exception caught! [" << p_x.what() << "]" << std::endl;
     }
 }
 
+
 void MainWindow::on_f_tables_currentIndexChanged(const QString &table_name)
 {
-    f_rowModel.setRow( QCassandraRow::pointer_t() );
-
-    QCassandraContext::pointer_t qcontext( f_cassandra->findContext(f_context) );
-    QCassandraTable::pointer_t table( qcontext->findTable(table_name) );
-    f_tableModel.setTable( table );
+    try
+    {
+        f_rowModel.setRow( QCassandraRow::pointer_t() );
+        QCassandraContext::pointer_t qcontext( f_cassandra->findContext(f_context) );
+        QCassandraTable::pointer_t table( qcontext->findTable(table_name) );
+        f_tableModel.setTable( table );
+    }
+    catch( const std::exception& p_x )
+    {
+        std::cerr << "Exception caught! [" << p_x.what() << "]" << std::endl;
+    }
 }
 
 
 void MainWindow::on_f_contextCombo_currentIndexChanged(const QString &arg1)
 {
-    if( !arg1.isEmpty() )
-	{
-		f_context = arg1;
-		fillTableList();
-	}
+    if( arg1.isEmpty() )
+    {
+        return;
+    }
+
+    try
+    {
+        f_context = arg1;
+        fillTableList();
+    }
+    catch( const std::exception& p_x )
+    {
+        std::cerr << "Exception caught! [" << p_x.what() << "]" << std::endl;
+    }
 }
 
 
 void MainWindow::changeRow(const QModelIndex &index)
 {
     const QByteArray row_key( f_tableModel.data(index, Qt::UserRole).toByteArray() );
-
-    //snap::dbutils du( f_table, f_row );
-    //const QByteArray row_key( du.get_row_key() );
-
-    //QCassandraContext::pointer_t qcontext( f_cassandra->findContext(f_context) );
     QCassandraRow::pointer_t row( f_tableModel.getTable()->findRow(row_key) );
 
     f_rowModel.setRow( row );
@@ -120,6 +144,24 @@ void MainWindow::changeRow(const QModelIndex &index)
 
 void MainWindow::onCurrentChanged( const QModelIndex & current, const QModelIndex & /*previous*/ )
 {
-    changeRow( current );
+    try
+    {
+        changeRow( current );
+    }
+    catch( const std::exception& p_x )
+    {
+        std::cerr << "Exception caught! [" << p_x.what() << "]" << std::endl;
+    }
 }
 
+
+void MainWindow::on_action_About_triggered()
+{
+    AboutDialog dlg( this );
+    dlg.exec();
+}
+
+void MainWindow::on_action_AboutQt_triggered()
+{
+    QMessageBox::aboutQt( this );
+}

@@ -1,0 +1,28 @@
+Source: cassview
+Priority: extra
+Maintainer: R. Douglas Barbieri <doug@dooglio.net>
+Build-Depends: debhelper, cmake,
+    libqt4-dev (>= 4.8.3), libqtwebkit-dev, doxygen, graphviz,
+    snapcmakemodules, libqtcassandra-dev, libcontrolledvars-dev,
+    libsnapwebsites-dev 
+Standards-Version: 3.9.4
+Section: libs
+Homepage: http://www.snapwebsites.org/
+Vcs-Git: git://git.code.sf.net/p/snapcpp/code
+Vcs-Bzr: lp:snapcpp
+Vcs-Browser: http://sourceforge.net/p/snapcpp/code/ci/master/tree/cassview
+
+Package: cassview
+Section: admin
+Architecture: any
+Depends: ${misc:Depends}
+Recommends: cassandra (>= 2.0.3)
+Suggests: snapserver (>= 0.1.0)
+Description: GUI tool to maintain your cassandra database. Optimized for snapwebsites.
+ This graphical tool allows the user to view and edit a cassandra database. It is optimized
+ for a snapwebsites database, and understands the business rules for transforming the
+ internals to readable views.
+ .
+ This package contains the GUI binary.
+
+# vim: ts=4 sw=4 et

@@ -45,11 +45,17 @@ include_directories(
 )
 
 QT4_WRAP_UI(UI_FILES
+	AboutDialog.ui
 	MainWindow.ui
 	SettingsDialog.ui
 )
 
+QT4_ADD_RESOURCES(RES_FILES
+	resources.qrc
+)
+
 add_executable(${PROJECT_NAME}
+	AboutDialog.cpp
     CassandraModel.cpp
 	ContextModel.cpp
 	MainWindow.cpp
@@ -59,6 +65,7 @@ add_executable(${PROJECT_NAME}
     TableModel.cpp
 	qt4.h
 	${UI_FILES}
+	${RES_FILES}
 )
 
 # while developing you may need to set LD_LIBRARY_PATH

@@ -1,0 +1,35 @@
+#!/bin/sh -e
+
+if [ -e /usr/share/debconf/confmodule ]
+then
+	# Source debconf library.
+	. /usr/share/debconf/confmodule
+
+	if [ "$1" = "remove" ]
+	then
+		# Ask if the user wishes to purge the database
+		#
+		db_input critical snapwebsites/purge_database || true
+		db_go
+		#
+		db_get snapwebsites/purge_database
+		if [ "$RET" = "Yes" ]
+		then
+			/usr/bin/snapdb --drop-all-tables
+		elif [ "$RET" = "Full" ]
+		then
+			/usr/bin/snapdb --drop-tables
+		else
+			echo "Purge of database skipped..."
+		fi
+		#
+		# Forget what option the user chose so it will be reset the next time.
+		# Hey, it's a dangerous question!
+		#
+		db_purge
+	fi
+fi
+
+#DEBHELPER#
+
+# vim: ts=4 sw=4 noet nocindent

@@ -1,5 +1,7 @@
 #include "CassandraModel.h"
 
+#include <iostream>
+
 using namespace QtCassandra;
 
 
@@ -28,9 +30,18 @@ QVariant CassandraModel::data( const QModelIndex & idx, int role ) const
         return QVariant();
     }
 
-    const QCassandraContexts& context_list = f_cassandra->contexts();
-    const QString context_name( (context_list.begin()+idx.row()).value()->contextName() );
-    return context_name;
+    try
+    {
+        const QCassandraContexts& context_list = f_cassandra->contexts();
+        const QString context_name( (context_list.begin()+idx.row()).value()->contextName() );
+        return context_name;
+    }
+    catch( const std::exception& x )
+    {
+        std::cerr << "Exception caught! [" << x.what() << "]" << std::endl;
+    }
+
+    return QVariant();
 }
 
 
@@ -48,8 +59,17 @@ int CassandraModel::rowCount( const QModelIndex & /*parent*/ ) const
         return 0;
     }
 
-    const QCassandraContexts& context_list = f_cassandra->contexts();
-    return context_list.size();
+    try
+    {
+        const QCassandraContexts& context_list = f_cassandra->contexts();
+        return context_list.size();
+    }
+    catch( const std::exception& x )
+    {
+        std::cerr << "Exception caught! [" << x.what() << "]" << std::endl;
+    }
+
+    return 0;
 }
 
 

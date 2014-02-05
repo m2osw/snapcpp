@@ -1,0 +1,41 @@
+cassview (0.0.4-1) saucy; urgency=high
+
+  * Proper versioning, plus nice about dialog and icons.
+  * Added a flag for display vs edit, so that way large blobs don't take a
+  long time to load.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Tue, 04 Feb 2014 16:13:47 -0800
+
+cassview (0.0.3-1) saucy; urgency=high
+
+  * Modified the RowModel to be a table-based model (but not item-based, so no parent nodes).
+  * Has two columns: name and value. Name is read-only, value is editable.
+  * View has changed to a table view, and the columns automatically adjust when the model is reset (reloaded).
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Mon, 03 Feb 2014 12:39:08 -0800
+
+cassview (0.0.2-2) saucy; urgency=high
+
+  * Forgot to include libsnapwebsites-dev in the control file.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Fri, 31 Jan 2014 09:28:48 -0800
+
+cassview (0.0.2-1) saucy; urgency=low
+
+  * Added proper, read-only support for snap_websites db, with proper
+  translation.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Thu, 30 Jan 2014 15:11:21 -0800
+
+cassview (0.0.1-1) saucy; urgency=high
+
+  * Repaired build error with builds on raring and lower. Qt4 had a strange
+  warning that was causing the build to crash.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Tue, 28 Jan 2014 10:27:27 -0800
+
+cassview (0.0.1) saucy; urgency=high
+
+  * Initial release of packaging.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Mon, 27 Jan 2014 10:26:21 -0800
