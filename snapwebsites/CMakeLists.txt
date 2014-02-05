@@ -95,6 +95,8 @@ include_directories(
     ${THRIFT_INCLUDE_DIR}
 )
 
+set( DTD_SOURCE_PATH "${snapwebsites_plugins_SOURCE_DIR}" CACHE PATH "Location of the default DTD files." )
+
 include( ${CMAKE_CURRENT_SOURCE_DIR}/xml.cmake )
 
 ##
