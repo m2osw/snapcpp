@@ -1,3 +1,11 @@
+snapwebsites (0.1.0-39) saucy; urgency=high
+
+  * Added a filter so we can show user info in blocks.
+  * Added a flag for display vs edit [dbutils].
+  * Added display len for hex output [dbutils].
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Tue, 04 Feb 2014 16:11:10 -0800
+
 snapwebsites (0.1.0-38) saucy; urgency=high
 
   * A couple updates so we get plugin headers in the distribution folder.

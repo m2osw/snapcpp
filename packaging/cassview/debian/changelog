@@ -1,3 +1,11 @@
+cassview (0.0.4-1) saucy; urgency=high
+
+  * Proper versioning, plus nice about dialog and icons.
+  * Added a flag for display vs edit, so that way large blobs don't take a
+  long time to load.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Tue, 04 Feb 2014 16:13:47 -0800
+
 cassview (0.0.3-1) saucy; urgency=high
 
   * Modified the RowModel to be a table-based model (but not item-based, so no parent nodes).
