@@ -72,7 +72,5 @@ find_package_handle_standard_args(
     CMAKE_CXX_FLAGS_RELEASE
 )
 
-include( SnapXmlLint )
-
 # vim: ts=4 sw=4 expandtab
 
