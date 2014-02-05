@@ -86,7 +86,6 @@ ConfigureMakeProject(
 #
 ConfigureMakeProject( PROJECT_NAME snapCMakeModules )
 ConfigureMakeProject( PROJECT_NAME advgetopt       DEPENDS snapCMakeModules controlled_vars )
-ConfigureMakeProject( PROJECT_NAME cassview        DEPENDS snapCMakeModules libQtCassandra )
 ConfigureMakeProject( PROJECT_NAME controlled_vars DEPENDS snapCMakeModules )
 ConfigureMakeProject( PROJECT_NAME iplock          )
 ConfigureMakeProject( PROJECT_NAME googlerank      DEPENDS snapCMakeModules controlled_vars )
@@ -107,6 +106,15 @@ ConfigureMakeProject( PROJECT_NAME snapwebsites
             -DQTSERIALIZATION_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include/QtSerialization
             -DLIBTLD_LIBRARY:PATH=${CMAKE_BINARY_DIR}/dist/lib/libtld.so
         DEPENDS advgetopt libQtCassandra libQtSerialization libtld
+        )
+ConfigureMakeProject( PROJECT_NAME cassview
+        CONFIG_ARGS
+            -DTHRIFT_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
+            -DQTSERIALIZATION_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include/QtSerialization
+            -DLIBTLD_LIBRARY:PATH=${CMAKE_BINARY_DIR}/dist/lib/libtld.so
+            -DSNAPWEBSITES_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
+            -DSNAPWEBSITES_LIBRARY:PATH=${CMAKE_BINARY_DIR}/dist/lib/libsnapwebsites.so
+        DEPENDS snapwebsites
         )
 
 get_property( BUILD_TARGETS GLOBAL PROPERTY BUILD_TARGETS )
