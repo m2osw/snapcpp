@@ -17,9 +17,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 ################################################################################
 
-if( NOT DEFINED XML_CMAKE )
-set( XML_CMAKE TRUE )
-
+if( NOT DEFINED SNAP_XML_LINT )
+set( SNAP_XML_LINT TRUE )
 
 ################################################################################
 # Handle linting the xml files...
@@ -27,7 +26,7 @@ set( XML_CMAKE TRUE )
 find_program( BASH    bash    /bin     )
 find_program( XMLLINT xmllint /usr/bin )
 #
-set( lint_script ${snapwebsites_project_BINARY_DIR}/dolint.sh )
+set( lint_script ${CMAKE_CURRENT_BINARY_DIR}/dolint.sh )
 file( WRITE  ${lint_script} "#!${BASH}\n"                                                            )
 file( APPEND ${lint_script} "${XMLLINT} --dtdvalid $3 --output $2 $1 && exit 0 || (rm $2; exit 1)\n" )
 #
@@ -99,7 +98,6 @@ macro( snap_build_xml_targets )
         DEPENDS ${lint_file_list}
     )
 endmacro()
-
 
 endif()
 
