@@ -216,7 +216,7 @@ void editor::on_generate_header_content(layout::layout *l, content::path_info_t&
     //    }
     //}
 
-    content::content::instance()->add_javascript(ipath, header, metadata, "editor");
+    content::content::instance()->add_javascript(ipath, header.ownerDocument(), "editor");
 }
 
 

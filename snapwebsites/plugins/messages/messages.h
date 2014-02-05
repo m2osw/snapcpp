@@ -16,7 +16,8 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
-#include "../layout/layout.h"
+#include "snapwebsites.h"
+
 #include <controlled_vars/controlled_vars_limited_need_init.h>
 
 namespace snap
@@ -24,9 +25,31 @@ namespace snap
 namespace messages
 {
 
-class messages_exception : public snap_exception {};
-class messages_exception_invalid_field_name : public messages_exception {};
-class messages_exception_already_defined : public messages_exception {};
+class messages_exception : public snap_exception
+{
+public:
+    messages_exception(char const *       what_msg) : snap_exception("Messages: " + std::string(what_msg)) {}
+    messages_exception(std::string const& what_msg) : snap_exception("Messages: " + what_msg) {}
+    messages_exception(QString const&     what_msg) : snap_exception("Messages: " + what_msg.toStdString()) {}
+};
+
+class messages_exception_invalid_field_name : public messages_exception
+{
+public:
+    messages_exception_invalid_field_name(char const *       what_msg) : messages_exception(what_msg) {}
+    messages_exception_invalid_field_name(std::string const& what_msg) : messages_exception(what_msg) {}
+    messages_exception_invalid_field_name(QString const&     what_msg) : messages_exception(what_msg) {}
+};
+
+class messages_exception_already_defined : public messages_exception
+{
+public:
+    messages_exception_already_defined(char const *       what_msg) : messages_exception(what_msg) {}
+    messages_exception_already_defined(std::string const& what_msg) : messages_exception(what_msg) {}
+    messages_exception_already_defined(QString const&     what_msg) : messages_exception(what_msg) {}
+};
+
+
 
 enum name_t
 {
@@ -36,7 +59,7 @@ enum name_t
 const char *get_name(name_t name) __attribute__ ((const));
 
 
-class messages : public plugins::plugin, public layout::layout_content, public QtSerialization::QSerializationObject
+class messages : public plugins::plugin, public QtSerialization::QSerializationObject
 {
 public:
     static const int MESSAGES_MAJOR_VERSION = 1;
@@ -83,10 +106,6 @@ public:
     virtual int64_t     do_update(int64_t last_updated);
 
     void                on_bootstrap(snap_child *snap);
-    virtual void        on_generate_main_content(layout::layout *l, content::path_info_t& path, QDomElement& page, QDomElement& body, const QString& ctemplate);
-    void                on_generate_page_content(layout::layout *l, content::path_info_t& path, QDomElement& page, QDomElement& body, const QString& ctemplate);
-    void                on_attach_to_session();
-    void                on_detach_from_session();
 
     void                set_http_error(snap_child::http_code_t err_code, QString err_name, const QString& err_description, const QString& err_details, bool err_security);
     void                set_error(QString err_name, const QString& err_description, const QString& err_details, bool err_security);
@@ -94,11 +113,14 @@ public:
     void                set_info(QString info_name, const QString& info_description);
     void                set_debug(QString debug_name, const QString& debug_description);
 
-    const message&      get_last_message() const;
+    void                clear_messages();
+    message const&      get_message(int idx) const;
+    message const&      get_last_message() const;
+    int                 get_message_count() const;
     int                 get_error_count() const;
     int                 get_warning_count() const;
 
-    // internal functions used to save the data serialized
+    // "internal" functions used to save the data serialized
     void                unserialize(const QString& data);
     virtual void        readTag(const QString& name, QtSerialization::QReader& r);
     QString             serialize() const;

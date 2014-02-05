@@ -1,6 +1,6 @@
 /*
  * Name: form
- * Version: 0.0.1.7
+ * Version: 0.0.1.12
  * Browsers: all
  * Copyright: Copyright 2012-2014 (c) Made to Order Software Corporation  All rights reverved.
  * License: GPL 2.0
@@ -25,10 +25,10 @@ snapwebsites.Form.prototype = {
     _focus: function(widget)
     {
         // TODO: ameliorate with 2 colors until change() happens
-        if(jQuery(widget).val() === jQuery(widget).data("background-value")
-        && !jQuery(widget).data("editor"))
+        if(jQuery(widget).val() === jQuery(widget).data('background-value')
+        && !jQuery(widget).data('editor'))
         {
-            jQuery(widget).val("");
+            jQuery(widget).val('');
         }
 
         // we force the removal of the class
@@ -59,6 +59,37 @@ snapwebsites.Form.prototype = {
                 {
                     jQuery(widget).attr('type', 'text');
                 }
+            }
+        }
+    },
+
+    get_val: function(widget)
+    {
+        if(jQuery(widget).hasClass('input-with-background-value'))
+        {
+            return '';
+        }
+        return jQuery(widget).val();
+    },
+
+    set_val: function(widget, value)
+    {
+        if(value || jQuery(widget).is(":focus"))
+        {
+            if(jQuery(widget).hasClass('password-input'))
+            {
+                jQuery(widget).attr('type', 'password');
+            }
+            jQuery(widget).val(value)
+                .removeClass('input-with-background-value');
+        }
+        else
+        {
+            jQuery(widget).val(jQuery(widget).data("background-value"))
+                .addClass('input-with-background-value');
+            if(jQuery(widget).hasClass('password-input'))
+            {
+                jQuery(widget).attr('type', 'text');
             }
         }
     },

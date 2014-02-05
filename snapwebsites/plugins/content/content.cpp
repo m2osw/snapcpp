@@ -6157,11 +6157,10 @@ bool content::process_attachment_impl(QByteArray const& file_key, attachment_fil
  * move this function to that plugin.
  *
  * \param[in,out] ipath  The path receiving the javascript.
- * \param[in,out] header  The XML header receiving the javascript.
- * \param[in,out] metadata  The metadata tag in the XML receiving the javascript.
+ * \param[in,out] doc  The XML document receiving the javascript.
  * \param[in] name  The name of the script.
  */
-void content::add_javascript(path_info_t& ipath, QDomElement& header, QDomElement& metadata, QString const& name)
+void content::add_javascript(path_info_t& ipath, QDomDocument doc, QString const& name)
 {
     // TODO: move to the javascript plugin since it now can include the
     //       content plugin
@@ -6327,7 +6326,7 @@ void content::add_javascript(path_info_t& ipath, QDomElement& header, QDomElemen
                         {
                             // TODO: add version and browser tests
                             QString const& dep_name(dep.get_name());
-                            add_javascript(ipath, header, metadata, dep_name);
+                            add_javascript(ipath, doc, dep_name);
                         }
                         // else TBD -- we checked when saving that darn string
                         //             so failures should not happen here
@@ -6343,12 +6342,12 @@ void content::add_javascript(path_info_t& ipath, QDomElement& header, QDomElemen
 #ifdef DEBUG
 std::cerr << "Adding JavaScript [" << name << "] [" << ref_cell->columnName().mid(start_ref.length() - 1) << "]\n";
 #endif
-            QDomDocument doc(header.ownerDocument());
-            QDomNode javascript_tag(metadata.firstChildElement("javascript"));
+            QDomNodeList metadata(doc.elementsByTagName("metadata"));
+            QDomNode javascript_tag(metadata.at(0).firstChildElement("javascript"));
             if(javascript_tag.isNull())
             {
                 javascript_tag = doc.createElement("javascript");
-                metadata.appendChild(javascript_tag);
+                metadata.at(0).appendChild(javascript_tag);
             }
             QDomElement script_tag(doc.createElement("script"));
             script_tag.setAttribute("src", ref_cell->columnName().mid(start_ref.length() - 1));

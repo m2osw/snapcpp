@@ -260,18 +260,21 @@ plugins::plugin *path::get_plugin(content::path_info_t& ipath, permission_error_
  */
 void path::verify_permissions(content::path_info_t& ipath, permission_error_callback& err_callback)
 {
-    QString qs_action(f_snap->get_server_parameter("qs_action"));
-    QString action;
-    snap_uri const& uri(f_snap->get_uri());
-    if(uri.has_query_option(qs_action))
-    {
-        // the user specified an action
-        action = uri.query_option(qs_action);
-    }
+    QString action(ipath.get_parameter("action"));
     if(action.isEmpty())
     {
-        // use the default
-        action = default_action(ipath);
+        QString const qs_action(f_snap->get_server_parameter("qs_action"));
+        snap_uri const& uri(f_snap->get_uri());
+        if(uri.has_query_option(qs_action))
+        {
+            // the user specified an action
+            action = uri.query_option(qs_action);
+        }
+        if(action.isEmpty())
+        {
+            // use the default
+            action = default_action(ipath);
+        }
     }
 
     // save the action found in the URI so that way any plugin can access
