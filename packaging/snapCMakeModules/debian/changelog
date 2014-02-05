@@ -1,3 +1,9 @@
+snapcmakemodules (1.0.2) UNRELEASED; urgency=low
+
+  * Added SnapXmlLint.cmake.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Wed, 05 Feb 2014 14:54:54 -0800
+
 snapcmakemodules (1.0.1) saucy; urgency=high
 
   * Added support for libsnapwebsites.
