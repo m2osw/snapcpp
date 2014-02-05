@@ -166,6 +166,9 @@ const char *get_name(name_t name)
     case SNAP_NAME_USERS_PATH:
         return "user";
 
+    case SNAP_NAME_USERS_PICTURE:
+        return "users::picture";
+
     case SNAP_NAME_USERS_PREVIOUS_LOGIN_IP:
         return "users::previous_login_ip";
 
@@ -313,7 +316,7 @@ int64_t users::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2014, 1, 31, 17, 11, 40, content_update);
+    SNAP_PLUGIN_UPDATE(2014, 2, 4, 21, 28, 40, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -3064,11 +3067,22 @@ void users::on_replace_token(content::path_info_t& ipath, QString const& plugin_
     static_cast<void>(plugin_owner);
     static_cast<void>(xml);
 
-    if(!token.is_namespace("users::")
-    || f_user_key.isEmpty())
+    if(!token.is_namespace("users::"))
     {
-        // not a user replacement token
-        // or user not logged in
+        // not a users plugin token
+        return;
+    }
+
+    bool const users_picture(token.is_token("users::picture"));
+    if(users_picture)
+    {
+        // setup as the default image by default
+        token.f_replacement = "<img src=\"/images/users/default-user-image.png\" alt=\"Default user picture\" width=\"32\" height=\"32\"/>";
+    }
+
+    if(f_user_key.isEmpty())
+    {
+        // user not logged in
         return;
     }
 
@@ -3082,26 +3096,48 @@ void users::on_replace_token(content::path_info_t& ipath, QString const& plugin_
     if(token.is_token("users::email"))
     {
         token.f_replacement = f_user_key;
+        return;
     }
-    else if(token.is_token("users::email_anchor"))
+
+    if(token.is_token("users::email_anchor"))
     {
         // TODO: replace f_user_key with the user first/last names when
         //       available and authorized
         token.f_replacement = "<a href=\"mailto:" + f_user_key + "\">" + f_user_key + "</a>";
+        return;
     }
-    else if(token.is_token("users::since"))
+
+    // anything else requires the user to be verified
+    QtCassandra::QCassandraValue const verified_on(users_table->row(f_user_key)->cell(get_name(SNAP_NAME_USERS_VERIFIED_ON))->value());
+    if(verified_on.nullValue())
+    {
+        // not verified yet
+        return;
+    }
+
+    if(token.is_token("users::since"))
     {
         // make sure that the user created and verified his account
-        QtCassandra::QCassandraValue const verified_on(users_table->row(f_user_key)->cell(get_name(SNAP_NAME_USERS_VERIFIED_ON))->value());
-        if(!verified_on.nullValue())
-        {
-            QtCassandra::QCassandraValue const value(users_table->row(f_user_key)->cell(get_name(SNAP_NAME_USERS_CREATED_TIME))->value());
-            int64_t date(value.int64Value());
-            token.f_replacement = QString("%1 %2")
-                    .arg(f_snap->date_to_string(date, f_snap->DATE_FORMAT_SHORT))
-                    .arg(f_snap->date_to_string(date, f_snap->DATE_FORMAT_TIME));
-        }
+        QtCassandra::QCassandraValue const value(users_table->row(f_user_key)->cell(get_name(SNAP_NAME_USERS_CREATED_TIME))->value());
+        int64_t date(value.int64Value());
+        token.f_replacement = QString("%1 %2")
+                .arg(f_snap->date_to_string(date, f_snap->DATE_FORMAT_SHORT))
+                .arg(f_snap->date_to_string(date, f_snap->DATE_FORMAT_TIME));
         // else use was not yet verified
+        return;
+    }
+
+    if(token.is_token("users::picture"))
+    {
+        // make sure that the user created and verified his account
+        QtCassandra::QCassandraValue const value(users_table->row(f_user_key)->cell(get_name(SNAP_NAME_USERS_PICTURE))->value());
+        if(!value.nullValue())
+        {
+            // TBD: not sure right now how we'll offer those
+            //      probably with a special path that tells us
+            //      to go look in the users' table
+            token.f_replacement = QString("<img src=\"...\"/>");
+        }
     }
 }
 
