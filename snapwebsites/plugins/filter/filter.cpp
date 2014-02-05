@@ -16,15 +16,14 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "filter.h"
-#include "snapwebsites.h"
-#include "plugins.h"
+
 #include "qdomxpath.h"
+#include "qstring_stream.h"
 
 #include <iostream>
 #include <cctype>
-#include <QtCore/QDebug>
 
-#include "qstring_stream.h"
+#include "poison.h"
 
 
 SNAP_PLUGIN_START(filter, 1, 0)
@@ -34,7 +33,7 @@ SNAP_PLUGIN_START(filter, 1, 0)
  * This function is used to initialize the filter plugin object.
  */
 filter::filter()
-    : f_snap(NULL)
+    : f_snap(nullptr)
 {
 //std::cerr << " - Created filter!\n";
 }
@@ -880,7 +879,7 @@ void filter::on_token_filter(content::path_info_t& ipath, QDomDocument& xml)
                 {
                     // the tokens added HTML... replace the whole text node
                     QDomDocument doc_text("snap");
-                    doc_text.setContent("<text>" + result + "</text>", true, NULL, NULL, NULL);
+                    doc_text.setContent("<text>" + result + "</text>", true, nullptr, nullptr, nullptr);
                     QDomDocumentFragment frag(xml.createDocumentFragment());
                     frag.appendChild(xml.importNode(doc_text.documentElement(), true));
                     QDomNodeList children(frag.firstChild().childNodes());

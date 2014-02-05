@@ -25,6 +25,22 @@ namespace snap
 namespace filter
 {
 
+class filter_exception : public snap_exception
+{
+public:
+    filter_exception(char const *       what_msg) : snap_exception("filter", what_msg) {}
+    filter_exception(std::string const& what_msg) : snap_exception("filter", what_msg) {}
+    filter_exception(QString const&     what_msg) : snap_exception("filter", what_msg) {}
+};
+
+class filter_exception_invalid_arguement : public filter_exception
+{
+public:
+    filter_exception_invalid_arguement(char const *       what_msg) : filter_exception(what_msg) {}
+    filter_exception_invalid_arguement(std::string const& what_msg) : filter_exception(what_msg) {}
+    filter_exception_invalid_arguement(QString const&     what_msg) : filter_exception(what_msg) {}
+};
+
 class filter : public plugins::plugin
 {
 public:
@@ -60,16 +76,16 @@ public:
             f_value = "";
         }
 
-        bool operator == (const parameter_t& rhs) const
+        bool operator == (parameter_t const& rhs) const
         {
             return f_name == rhs.f_name;
         }
-        bool operator < (const parameter_t& rhs) const
+        bool operator < (parameter_t const& rhs) const
         {
             return f_name < rhs.f_name;
         }
 
-        static const char *token_name(token_t type)
+        static char const *token_name(token_t type)
         {
             switch(type)
             {
@@ -108,16 +124,16 @@ public:
         controlled_vars::fbool_t    f_error;
         QString                     f_replacement;
 
-        bool is_namespace(const char *name)
+        bool is_namespace(char const *name)
         {
             return f_name.startsWith(name);
         }
 
-        bool is_token(const char *name)
+        bool is_token(char const *name)
         {
             // in a way, once marked as found a token is viewed as used up
             // and thus it doesn't match anymore; same with errors
-            bool result(!f_found && !f_error && f_name == name);
+            bool const result(!f_found && !f_error && f_name == name);
             if(result)
             {
                 f_found = true;
@@ -129,11 +145,13 @@ public:
         {
             if(min < 0 || max < -1)
             {
-                throw std::runtime_error("detected a minimum and/or maximum smaller than zero in token_info_t::args()");
+                throw filter_exception_invalid_arguement(QString("detected a minimum (%1) or maximum (%2) smaller than zero in token_info_t::args()")
+                                .arg(min).arg(max));
             }
             if(min > max && max != -1)
             {
-                throw std::runtime_error("detected a minimum larger than the maximum in token_info_t::args()");
+                throw filter_exception_invalid_arguement(QString("detected a minimum (%1) larger than the maximum (%2) in token_info_t::args()")
+                                .arg(min).arg(max));
             }
             const int size(f_parameters.size());
             const bool valid(size >= min && (max == -1 || size <= max));
@@ -203,7 +221,7 @@ public:
                 if(it == f_parameters.end() && position == -1)
                 {
                     f_error = true;
-                    f_replacement = "<span class=\"filter-error\"><span class=\"filter-error-word\">ERROR:</span> " + name + " is missing from the list of parameters, you may need to name your parameters.</span>";
+                    f_replacement = "<span class=\"filter-error\"><span class=\"filter-error-word\">error:</span> " + name + " is missing from the list of parameters, you may need to name your parameters.</span>";
                     return null;
                 }
             }
@@ -217,13 +235,13 @@ public:
             if(it == f_parameters.end())
             {
                 f_error = true;
-                f_replacement = "<span class=\"filter-error\"><span class=\"filter-error-word\">ERROR:</span> parameter \"" + name + "\" (position: " + QString("%1").arg(position) + ") was not found in the list.</span>";
+                f_replacement = "<span class=\"filter-error\"><span class=\"filter-error-word\">error:</span> parameter \"" + name + "\" (position: " + QString("%1").arg(position) + ") was not found in the list.</span>";
                 return null;
             }
             if(type != TOK_UNDEFINED && it->f_type != type)
             {
                 f_error = true;
-                f_replacement = "<span class=\"filter-error\"><span class=\"filter-error-word\">ERROR:</span> parameter \"" + name + "\" (position: " + QString("%1").arg(position) + ") is a " + parameter_t::token_name(it->f_type) + " not of the expected type: " + parameter_t::token_name(type) + ".</span>";
+                f_replacement = "<span class=\"filter-error\"><span class=\"filter-error-word\">error:</span> parameter \"" + name + "\" (position: " + QString("%1").arg(position) + ") is a " + parameter_t::token_name(it->f_type) + " not of the expected type: " + parameter_t::token_name(type) + ".</span>";
                 return null;
             }
             return *it;

@@ -199,6 +199,7 @@ void editor::on_generate_main_content(layout::layout *l, content::path_info_t& i
 void editor::on_generate_header_content(layout::layout *l, content::path_info_t& ipath, QDomElement& header, QDomElement& metadata, QString const& ctemplate)
 {
     static_cast<void>(l);
+    static_cast<void>(metadata);
     static_cast<void>(ctemplate);
 
     // but we also have email specific parameters we want to add
