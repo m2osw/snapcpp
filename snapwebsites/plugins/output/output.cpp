@@ -18,6 +18,8 @@
 #include "output.h"
 #include "not_reached.h"
 
+#include "../messages/messages.h"
+
 #include <iostream>
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
@@ -142,7 +144,7 @@ int64_t output::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, content_update);
+    SNAP_PLUGIN_UPDATE(2014, 2, 4, 16, 29, 30, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -157,7 +159,8 @@ int64_t output::do_update(int64_t last_updated)
  */
 void output::content_update(int64_t variables_timestamp)
 {
-    (void)variables_timestamp;
+    static_cast<void>(variables_timestamp);
+
     content::content::instance()->add_xml(get_plugin_name());
 }
 
@@ -325,7 +328,7 @@ void output::on_generate_main_content(layout::layout *l, content::path_info_t& i
  * \param[in,out] body  The body being generated.
  * \param[in] ctemplate  The body being generated.
  */
-void output::on_generate_page_content(layout::layout *l, content::path_info_t& ipath, QDomElement& page, QDomElement& body, const QString& ctemplate)
+void output::on_generate_page_content(layout::layout *l, content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate)
 {
     static_cast<void>(l);
     static_cast<void>(page);
@@ -438,6 +441,85 @@ void output::on_generate_page_content(layout::layout *l, content::path_info_t& i
 
 //QDomDocument doc(page.ownerDocument());
 //printf("content XML [%s]\n", doc.toString().toUtf8().data());
+
+    // go through the list of messages and append them to the body
+    //
+    // IMPORTANT NOTE: we handle the output of the messages in the output
+    //                 plugin because the messages cannot depend on the
+    //                 layout plugin (circular dependencies)
+    messages::messages *messages_plugin(messages::messages::instance());
+    int const max_messages(messages_plugin->get_message_count());
+    if(max_messages > 0)
+    {
+        QDomDocument doc(page.ownerDocument());
+
+        QDomElement messages_tag(doc.createElement("messages"));
+        int const errcnt(messages_plugin->get_error_count());
+        messages_tag.setAttribute("error-count", QString("%1").arg(errcnt));
+        messages_tag.setAttribute("warning-count", QString("%1").arg(messages_plugin->get_warning_count()));
+        body.appendChild(messages_tag);
+
+        for(int i(0); i < max_messages; ++i)
+        {
+            QString type;
+            messages::messages::message const& msg(messages_plugin->get_message(i));
+            switch(msg.get_type())
+            {
+            case messages::messages::message::MESSAGE_TYPE_ERROR:
+                type = "error";
+                break;
+
+            case messages::messages::message::MESSAGE_TYPE_WARNING:
+                type = "warning";
+                break;
+
+            case messages::messages::message::MESSAGE_TYPE_INFO:
+                type = "info";
+                break;
+
+            case messages::messages::message::MESSAGE_TYPE_DEBUG:
+                type = "debug";
+                break;
+
+            // no default, compiler knows if one missing
+            }
+            {
+                // create the message tag with its type
+                QDomElement msg_tag(doc.createElement("message"));
+                msg_tag.setAttribute("id", QString("messages_message_%1").arg(msg.get_id()));
+                msg_tag.setAttribute("type", type);
+                messages_tag.appendChild(msg_tag);
+
+                // there is always a title
+                {
+                    QDomDocument message_doc("snap");
+                    message_doc.setContent("<title><span class=\"message-title\">" + msg.get_title() + "</span></title>");
+                    QDomNode message_title(doc.importNode(message_doc.documentElement(), true));
+                    msg_tag.appendChild(message_title);
+                }
+
+                // don't create the body if empty
+                if(!msg.get_body().isEmpty())
+                {
+                    QDomDocument message_doc("snap");
+                    message_doc.setContent("<body><span class=\"message-body\">" + msg.get_body() + "</span></body>");
+                    QDomNode message_body(doc.importNode(message_doc.documentElement(), true));
+                    msg_tag.appendChild(message_body);
+                }
+            }
+        }
+        messages_plugin->clear_messages();
+
+        if(errcnt != 0)
+        {
+            // on errors generate a warning in the header
+            f_snap->set_header(messages::get_name(messages::SNAP_NAME_MESSAGES_WARNING_HEADER),
+                    QString("This page generated %1 error%2")
+                            .arg(errcnt).arg(errcnt == 1 ? "" : "s"));
+        }
+
+        content::content::instance()->add_javascript(ipath, page.ownerDocument(), "output");
+    }
 }
 
 

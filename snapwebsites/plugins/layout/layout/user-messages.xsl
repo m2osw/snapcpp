@@ -42,7 +42,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 	<!-- public template used to display all the user messages -->
 	<xsl:template name="snap:user-messages">
 		<xsl:if test="/snap/page/body/messages">
-			<div class="user-messages">
+			<div>
+				<xsl:attribute name="class">user-messages<xsl:if test="/snap/page/body/messages[@error-count != '0']"> error-messages</xsl:if><xsl:if test="/snap/page/body/messages[@warning-count != '0']"> warning-messages</xsl:if></xsl:attribute>
+				<div class="close-button"><img src="/images/snap/close-button.png"/></div>
 				<xsl:for-each select="/snap/page/body/messages/message">
 					<xsl:call-template name="snap:message">
 						<xsl:with-param name="type" select="@type"/>

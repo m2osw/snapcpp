@@ -590,6 +590,7 @@ std::cerr << "got in layout... cpath = [" << ipath.get_cpath() << "]\n";
                     box_error_callback.clear_error();
                     content::path_info_t box_ipath;
                     box_ipath.set_path(child_info.key());
+                    box_ipath.set_parameter("action", "view"); // we're always only viewing those blocks from here
                     plugin *box_plugin(path::path::instance()->get_plugin(box_ipath, box_error_callback));
                     if(!box_error_callback.has_error() && box_plugin)
                     {
@@ -636,6 +637,8 @@ std::cerr << "got in layout... cpath = [" << ipath.get_cpath() << "]\n";
     }
 
 //std::cout << "Generated XML is [" << doc.toString() << "]\n";
+
+    filtered_content(ipath, doc);
 
     // Somehow binding crashes everything at this point?! (Qt 4.8.1)
     QXmlQuery q(QXmlQuery::XSLT20);
@@ -1101,6 +1104,33 @@ bool layout::generate_page_content_impl(layout *l, content::path_info_t& path, Q
     return true;
 }
 #pragma GCC diagnostic pop
+
+
+/** \brief Generate the page main content.
+ *
+ * This function generates the main content of the page. Other
+ * plugins will also have the event called if they subscribed and
+ * thus will be given a chance to add their own content to the
+ * main page. This part is the one that (in most cases) appears
+ * as the main content on the page although the content of some
+ * areas may be interleaved with this content.
+ *
+ * Note that this is NOT the HTML output. It is the <page> tag of
+ * the snap XML file format. The theme layout XSLT will be used
+ * to generate the intermediate and final output.
+ *
+ * \param[in] ipath  The path being managed.
+ * \param[in,out] doc  The document that was just generated.
+ *
+ * \return true if the filtered content signal can proceed.
+ */
+bool layout::filtered_content_impl(content::path_info_t& ipath, QDomDocument& doc)
+{
+    static_cast<void>(ipath);
+    static_cast<void>(doc);
+
+    return true;
+}
 
 
 /** \brief Load a file.

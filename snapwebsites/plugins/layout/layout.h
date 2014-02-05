@@ -80,6 +80,7 @@ public:
     SNAP_SIGNAL(generate_header_content, (layout *l, content::path_info_t& path, QDomElement& header, QDomElement& metadata, const QString& ctemplate), (l, path, header, metadata, ctemplate));
     SNAP_SIGNAL(generate_page_content, (layout *l, content::path_info_t& path, QDomElement& page, QDomElement& body, const QString& ctemplate), (l, path, page, body, ctemplate));
     //SNAP_SIGNAL(generate_box_content, (layout *l, content::path_info_t& path, QDomElement& box), (l, path, box));
+    SNAP_SIGNAL(filtered_content, (content::path_info_t& path, QDomDocument& doc), (path, doc));
 
 private:
     //void content_update(int64_t variables_timestamp);

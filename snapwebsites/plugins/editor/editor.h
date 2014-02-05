@@ -26,17 +26,17 @@ namespace editor
 class editor_exception : public snap_exception
 {
 public:
-    editor_exception(char const *whatmsg) : snap_exception("editor", whatmsg) {}
+    editor_exception(char const *       what_msg) : snap_exception("editor", what_msg) {}
     editor_exception(std::string const& what_msg) : snap_exception("editor", what_msg) {}
-    editor_exception(QString const& whatmsg) : snap_exception("editor", whatmsg) {}
+    editor_exception(QString const&     what_msg) : snap_exception("editor", what_msg) {}
 };
 
 class editor_exception_invalid_argument : public editor_exception
 {
 public:
-    editor_exception_invalid_argument(char const *what_msg) : editor_exception(what_msg) {}
+    editor_exception_invalid_argument(char const *       what_msg) : editor_exception(what_msg) {}
     editor_exception_invalid_argument(std::string const& what_msg) : editor_exception(what_msg) {}
-    editor_exception_invalid_argument(QString const& what_msg) : editor_exception(what_msg) {}
+    editor_exception_invalid_argument(QString const&     what_msg) : editor_exception(what_msg) {}
 };
 
 //class editor_exception_too_many_levels : public editor_exception

@@ -76,7 +76,7 @@ public:
     void                        on_bootstrap(::snap::snap_child *snap);
     void                        on_process_post(QString const& uri_path);
     void                        on_replace_token(content::path_info_t& ipath, QString const& plugin_owner, QDomDocument& xml, filter::filter::token_info_t& token);
-    void                        on_generate_header_content(layout::layout *l, content::path_info_t& ipath, QDomElement& header, QDomElement& metadata, QString const& ctemplate);
+    void                        on_filtered_content(content::path_info_t& path, QDomDocument& doc);
 
     SNAP_SIGNAL(tweak_form, (form *f, content::path_info_t& ipath, QDomDocument form_doc), (f, ipath, form_doc));
     SNAP_SIGNAL(form_element, (form *f), (f));

@@ -2843,10 +2843,20 @@ void users::on_attach_to_session()
 {
     if(!f_user_changing_password_key.isEmpty())
     {
-        sessions::sessions::instance()->attach_to_session(*f_info, get_name(SNAP_NAME_USERS_CHANGING_PASSWORD_KEY), f_user_changing_password_key);
+        attach_to_session(get_name(SNAP_NAME_USERS_CHANGING_PASSWORD_KEY), f_user_changing_password_key);
     }
 
-    // TODO: move messages dependency here
+    // the messages handling is here because the messages plugin cannot have
+    // a dependency on the users plugin
+    messages::messages *messages_plugin(messages::messages::instance());
+    if(messages_plugin->get_message_count() > 0)
+    {
+        // note that if we lose those "website" messages,
+        // they will still be in our logs
+        QString const data(messages_plugin->serialize());
+        attach_to_session(messages::get_name(messages::SNAP_NAME_MESSAGES_MESSAGES), data);
+        messages_plugin->clear_messages();
+    }
 }
 
 
@@ -2861,9 +2871,15 @@ void users::on_detach_from_session()
     // here we do a get_from_session() because we may need the variable
     // between several different forms before it gets deleted; the concerned
     // functions will clear() the variable when done with it
-    f_user_changing_password_key = sessions::sessions::instance()->get_from_session(*f_info, get_name(SNAP_NAME_USERS_CHANGING_PASSWORD_KEY));
+    f_user_changing_password_key = detach_from_session(get_name(SNAP_NAME_USERS_CHANGING_PASSWORD_KEY));
 
-    // TODO: move messages dependency here
+    // the messages handling is here because the messages plugin cannot have
+    // a dependency on the users plugin
+    QString const data(detach_from_session(messages::get_name(messages::SNAP_NAME_MESSAGES_MESSAGES)));
+    if(!data.isEmpty())
+    {
+        messages::messages::instance()->unserialize(data);
+    }
 }
 
 

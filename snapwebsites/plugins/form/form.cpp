@@ -140,7 +140,7 @@ void form::on_bootstrap(::snap::snap_child *snap)
 
     SNAP_LISTEN(form, "server", server, process_post, _1);
     SNAP_LISTEN(form, "filter", filter::filter, replace_token, _1, _2, _3, _4);
-    SNAP_LISTEN(form, "layout", layout::layout, generate_header_content, _1, _2, _3, _4, _5);
+    SNAP_LISTEN(form, "layout", layout::layout, filtered_content, _1, _2);
 }
 
 
@@ -162,7 +162,7 @@ int64_t form::do_update(int64_t last_updated)
     SNAP_PLUGIN_UPDATE_INIT();
 
     //SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, initial_update);
-    SNAP_PLUGIN_UPDATE(2014, 2, 0, 58, 10, 0, content_update);
+    SNAP_PLUGIN_UPDATE(2014, 2, 4, 17, 52, 0, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -2194,20 +2194,16 @@ QString form::get_source(QString const& owner, content::path_info_t& ipath)
  * The forms make use of some JavaScript code and this function is used to
  * insert it if the page includes one or more forms.
  *
- * \param[in] l  The layout pointer.
- * \param[in] path  The path being managed.
- * \param[in,out] header  The header being generated.
- * \param[in,out] metadata  The metadata being generated.
- * \param[in] ctemplate  The template in case path does not exist.
+ * \param[in] ipath  The path being managed.
+ * \param[in,out] doc  The document that was generated.
  */
-void form::on_generate_header_content(layout::layout *l, content::path_info_t& ipath, QDomElement& header, QDomElement& metadata, QString const& ctemplate)
+void form::on_filtered_content(content::path_info_t& ipath, QDomDocument& doc)
 {
-    static_cast<void>(l);
-    static_cast<void>(ctemplate);
+    static_cast<void>(ipath);
 
-    //if(f_form_initialized) -- unfortunately that flag is set to true later...
+    if(f_form_initialized)
     {
-        content::content::instance()->add_javascript(ipath, header, metadata, "form");
+        content::content::instance()->add_javascript(ipath, doc, "form");
     }
 }
 

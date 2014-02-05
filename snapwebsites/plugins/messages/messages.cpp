@@ -278,10 +278,6 @@ messages::~messages()
 void messages::on_bootstrap(snap_child *snap)
 {
     f_snap = snap;
-
-    SNAP_LISTEN0(messages, "server", server, attach_to_session);
-    SNAP_LISTEN0(messages, "server", server, detach_from_session);
-    SNAP_LISTEN(messages, "layout", layout::layout, generate_page_content, _1, _2, _3, _4, _5);
 }
 
 
@@ -354,158 +350,6 @@ void messages::content_update(int64_t variables_timestamp)
 #pragma GCC diagnostic pop
 
 
-/** \brief Generate the actual content of the statistics page.
- *
- * This function generates the contents of the statistics page of the
- * messages plugin.
- *
- * \param[in] l  The layout used to generate this page.
- * \param[in] path  The path to this page.
- * \param[in] page  The page element being generated.
- * \param[in] body  The body element being generated.
- */
-void messages::on_generate_main_content(layout::layout *l, content::path_info_t& ipath, QDomElement& page, QDomElement& body, const QString& ctemplate)
-{
-    // generate the settings form for messages (i.e. show/hide debug, etc.)
-    // TODO: actually implement this properly
-    output::output::instance()->on_generate_main_content(l, ipath, page, body, ctemplate);
-}
-
-
-/** \brief Generate the page common content.
- *
- * This function adds the error messages to the body so we can display them to the
- * end user.
- *
- * \param[in] l  The layout pointer.
- * \param[in] path  The path being managed.
- * \param[in,out] page  The page being generated.
- * \param[in,out] body  The body being generated.
- */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-void messages::on_generate_page_content(layout::layout *l, content::path_info_t& ipath, QDomElement& page, QDomElement& body, const QString& ctemplate)
-{
-    // go through the list of messages and append them to the body
-    const int max(f_messages.count());
-    if(max > 0)
-    {
-        QDomDocument doc(page.ownerDocument());
-
-        QDomElement messages_tag(doc.createElement("messages"));
-        body.appendChild(messages_tag);
-
-        int errcnt(0);
-        for(int i(0); i < max; ++i)
-        {
-            QString type;
-            switch(f_messages[i].get_type())
-            {
-            case message::MESSAGE_TYPE_ERROR:
-                type = "error";
-                ++errcnt;
-                break;
-
-            case message::MESSAGE_TYPE_WARNING:
-                type = "warning";
-                break;
-
-            case message::MESSAGE_TYPE_INFO:
-                type = "info";
-                break;
-
-            case message::MESSAGE_TYPE_DEBUG:
-                type = "debug";
-                break;
-
-            }
-            {
-                // create the message tag with its type
-                QDomElement msg_tag(doc.createElement("message"));
-                msg_tag.setAttribute("id", QString("messages_message_%1").arg(f_messages[i].get_id()));
-                msg_tag.setAttribute("type", type);
-                messages_tag.appendChild(msg_tag);
-
-                // there is always a title
-                {
-                    QDomDocument message_doc("snap");
-                    message_doc.setContent("<title><span class=\"message-title\">" + f_messages[i].get_title() + "</span></title>");
-                    QDomNode message_title(doc.importNode(message_doc.documentElement(), true));
-                    msg_tag.appendChild(message_title);
-                }
-
-                // don't create the body if empty
-                if(!f_messages[i].get_body().isEmpty())
-                {
-                    QDomDocument message_doc("snap");
-                    message_doc.setContent("<body><span class=\"message-body\">" + f_messages[i].get_body() + "</span></body>");
-                    QDomNode message_body(doc.importNode(message_doc.documentElement(), true));
-                    msg_tag.appendChild(message_body);
-                }
-            }
-        }
-        f_messages.clear();
-
-        if(errcnt != 0)
-        {
-            // on errors generate a warning in the header
-            f_snap->set_header(get_name(SNAP_NAME_MESSAGES_WARNING_HEADER),
-                    QString("This page generated %1 error%2")
-                            .arg(errcnt).arg(errcnt == 1 ? "" : "s"));
-        }
-    }
-}
-#pragma GCC diagnostic pop
-
-
-/** \brief Save the messages to the current user session.
- *
- * This function is mostly likely called because of a redirect to save
- * data that would not otherwise make it between server accesses (sessions).
- *
- * In case you are to redirect a user, the messages will get lost because
- * they are only saved in memory (although the administrator can see them
- * in the logs too.) This function saves the current messages in the
- * user session with the hope that they can be restored after the redirect.
- *
- * This is useful even if you send users to another website. Once the user
- * comes back to your website, he will still see the error(s). Note that
- * the session and cookie used for that purpose have a relatively short time
- * to live (5 days at this time) and thus if the user does not come back
- * soon enough, the message will anyway be deleted. This problem will
- * likely be fixed at a later time.
- */
-void messages::on_attach_to_session()
-{
-    if(!f_messages.isEmpty())
-    {
-        // TODO: remove dependency on users plugin
-        //       (this one could be done by users plugin directly)
-        const QString data(serialize());
-        users::users::instance()->attach_to_session(get_name(SNAP_NAME_MESSAGES_MESSAGES), data);
-        f_messages.clear();
-    }
-}
-
-
-/** \brief Retrieve data that was attached to a session.
- *
- * This function is the opposite of the on_attach_to_session(). It is
- * called before the execute() to reinitialize objects that previously
- * saved data in the user session.
- */
-void messages::on_detach_from_session()
-{
-    // TODO: remove dependency on users plugin
-    //       (this one could be done by users plugin directly)
-    QString data(users::users::instance()->detach_from_session(get_name(SNAP_NAME_MESSAGES_MESSAGES)));
-    if(!data.isEmpty())
-    {
-        unserialize(data);
-    }
-}
-
-
 /** \brief Set an HTTP error on this page.
  *
  * This function is used to display an HTTP error message to the end user when
@@ -544,7 +388,7 @@ void messages::set_http_error(snap_child::http_code_t err_code, QString err_name
     // the error code must be valid (i.e. an actual HTTP error!)
     if(err_code < 400 || err_code > 599)
     {
-        throw std::logic_error("the set_http_error() function was called with an invalid error code number");
+        throw snap_logic_exception("the set_http_error() function was called with an invalid error code number");
     }
 
     // define a default error name if undefined
@@ -590,7 +434,7 @@ void messages::set_error(QString err_name, const QString& err_description, const
 
     if(err_name.isEmpty())
     {
-        throw std::runtime_error("The err_name parameter of the messages::set_error() function cannot be empty.");
+        throw snap_logic_exception("The err_name parameter of the messages::set_error() function cannot be empty.");
     }
 
     // log the error
@@ -627,7 +471,7 @@ void messages::set_warning(QString warning_name, const QString& warning_descript
 
     if(warning_name.isEmpty())
     {
-        throw std::runtime_error("The warning_name parameter of the messages::set_warning() function cannot be empty.");
+        throw snap_logic_exception("The warning_name parameter of the messages::set_warning() function cannot be empty.");
     }
 
     // log the warning
@@ -661,7 +505,7 @@ void messages::set_info(QString info_name, const QString& info_description)
 {
     if(info_name.isEmpty())
     {
-        throw std::runtime_error("The info_name parameter of the messages::set_info() function cannot be empty.");
+        throw snap_logic_exception("The info_name parameter of the messages::set_info() function cannot be empty.");
     }
 
     SNAP_LOG_INFO("(")(info_name)(": ")(info_description)(")");
@@ -694,7 +538,7 @@ void messages::set_debug(QString debug_name, const QString& debug_description)
 {
     if(debug_name.isEmpty())
     {
-        throw std::runtime_error("The debug_name parameter of the messages::set_debug() function cannot be empty.");
+        throw snap_logic_exception("The debug_name parameter of the messages::set_debug() function cannot be empty.");
     }
 
     SNAP_LOG_DEBUG("(")(debug_name)(": ")(debug_description)(")");
@@ -704,7 +548,22 @@ void messages::set_debug(QString debug_name, const QString& debug_description)
 }
 
 
-/** \brief Return the number of times error were generated.
+/** \brief Return the total number of messages.
+ *
+ * This function returns the total number of messages currently defined
+ * in the messages plugin.
+ *
+ * When no messages were generated, the system should not save anything.
+ *
+ * \return The error counter.
+ */
+int messages::get_message_count() const
+{
+    return f_messages.count();
+}
+
+
+/** \brief Return the number of times errors were generated.
  *
  * This function returns the counter that gets increased any time the
  * set_error() or set_http_error() functions are called.
@@ -734,20 +593,60 @@ int messages::get_warning_count() const
 }
 
 
+/** \brief Clear the list of messages.
+ *
+ * This function clears the list of messages. In general this is called only
+ * after the messages were either saved with serialize() or sent to the
+ * user in HTML form.
+ */
+void messages::clear_messages()
+{
+    f_messages.clear();
+}
+
+
 /** \brief Retrieve the last message and title.
  *
  * This function can be used to retrieve the last message that
  * was added to the message vector.
  *
- * \param[out] title  The title is copied in this variable.
+ * \exception snap_logic_exception
+ * The snap_logic_exception is raised if the function is called with an
+ * invalid index. The get_message_count() function can be used to know
+ * the upper limit (the lower limit is always zero).
  *
- * \return The body of the message is returned in this string.
+ * \param[in] idx  The index of the message to retrieve.
+ *
+ * \return The message is returned.
+ */
+const messages::message& messages::get_message(int idx) const
+{
+    if(idx < 0 || idx >= f_messages.size())
+    {
+        throw snap_logic_exception(QString("get_message() cannot be called with an index (%1) our of bounds (0..%2).").arg(idx).arg(f_messages.size()));
+    }
+    return f_messages[idx];
+}
+
+
+/** \brief Retrieve the last message and title.
+ *
+ * This function can be used to retrieve the last message that
+ * was added to the message vector.
+ *
+ * \exception snap_logic_exception
+ * The snap_logic_exception is raised if the function is called when no
+ * messages were previously added. To know whether some messages were
+ * added, one can use the get_message_count() function and check that
+ * it does not return zero.
+ *
+ * \return The message is returned.
  */
 const messages::message& messages::get_last_message() const
 {
     if(f_messages.isEmpty())
     {
-        throw std::runtime_error("get_last_message() cannot be called if no messages were added to the messages plugin.");
+        throw snap_logic_exception("get_last_message() cannot be called if no messages were added to the messages plugin.");
     }
     return f_messages.last();
 }
@@ -810,10 +709,11 @@ void messages::readTag(const QString& name, QtSerialization::QReader& r)
 
 /** \brief Serialize a list of messages to a writer.
  *
- * This function serialize the current list of messages so it can be
+ * This function serializes the current list of messages so it can be
  * saved in the database in the form of a string.
  *
- * \param[in,out] w  The writer where the data gets saved.
+ * You can clear the list of messages so that way it does not get
+ * saved in the session.
  *
  * \sa unserialize()
  */
