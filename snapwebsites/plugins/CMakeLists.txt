@@ -69,4 +69,9 @@ add_subdirectory(taxonomy)
 add_subdirectory(users)
 
 
+################################################################################
+# Install the default DTD files.
+#
+install( FILES content.dtd DESTINATION share/snapwebsites/dtd )
+
 # vim: ts=4 sw=4 nocindent

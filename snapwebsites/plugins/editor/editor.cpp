@@ -194,6 +194,8 @@ void editor::on_generate_main_content(layout::layout *l, content::path_info_t& i
  * \param[in,out] metadata  The metadata being generated.
  * \param[in] ctemplate  The template in case path does not exist.
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 void editor::on_generate_header_content(layout::layout *l, content::path_info_t& ipath, QDomElement& header, QDomElement& metadata, QString const& ctemplate)
 {
     static_cast<void>(l);
@@ -219,6 +221,7 @@ void editor::on_generate_header_content(layout::layout *l, content::path_info_t&
 
     content::content::instance()->add_javascript(ipath, header.ownerDocument(), "editor");
 }
+#pragma GCC diagnostic pop
 
 
 SNAP_PLUGIN_END()

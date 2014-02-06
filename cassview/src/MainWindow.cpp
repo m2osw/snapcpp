@@ -48,6 +48,8 @@ MainWindow::MainWindow(QWidget *p)
     connect( &f_rowModel, SIGNAL(modelReset()),
              this, SLOT(onCellsModelReset()) );
     connect( qApp, SIGNAL(aboutToQuit()), this, SLOT(onAboutToQuit()) );
+    connect( f_cells->horizontalHeader(), SIGNAL(sectionClicked(int)),
+             this, SLOT(onSectionClicked(int)));
 }
 
 
@@ -164,4 +166,10 @@ void MainWindow::on_action_About_triggered()
 void MainWindow::on_action_AboutQt_triggered()
 {
     QMessageBox::aboutQt( this );
+}
+
+
+void MainWindow::onSectionClicked( int section )
+{
+    f_cells->resizeColumnToContents( section );
 }

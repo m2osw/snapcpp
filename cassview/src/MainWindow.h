@@ -28,6 +28,7 @@ private slots:
     void onCurrentChanged( const QModelIndex & current, const QModelIndex & /*previous*/ );
     void on_action_About_triggered();
     void on_action_AboutQt_triggered();
+    void onSectionClicked( int section );
 
 private:
 	typedef QtCassandra::QCassandra::pointer_t cassandra_t;

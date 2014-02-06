@@ -23,3 +23,9 @@ include( FindPackageHandleStandardArgs )
 # handle the QUIETLY and REQUIRED arguments and set SNAPWEBSITES_FOUND to TRUE
 # if all listed variables are TRUE
 find_package_handle_standard_args( SnapWebsites DEFAULT_MSG SNAPWEBSITES_INCLUDE_DIR SNAPWEBSITES_LIBRARY )
+
+# Make sure default DTD files are pointed to...
+#
+set( DTD_SOURCE_PATH /usr/share/snapwebsites/dtd CACHE PATH "Default DTD source files." )
+#
+include( SnapXmlLint )

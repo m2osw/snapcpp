@@ -1,3 +1,9 @@
+snapwebsites (0.1.0-38) UNRELEASED; urgency=low
+
+  * Added dtd files to development package.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Wed, 05 Feb 2014 14:59:08 -0800
+
 snapwebsites (0.1.0-39) saucy; urgency=high
 
   * Added a filter so we can show user info in blocks.

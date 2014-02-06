@@ -95,7 +95,11 @@ include_directories(
     ${THRIFT_INCLUDE_DIR}
 )
 
-include( ${CMAKE_CURRENT_SOURCE_DIR}/xml.cmake )
+##
+## Include xmllint utilties
+##
+set( DTD_SOURCE_PATH "${snapwebsites_plugins_SOURCE_DIR}" CACHE PATH "Location of the default DTD files" )
+include( SnapXmlLint )
 
 ##
 ## Compiling
@@ -108,7 +112,10 @@ add_subdirectory(layouts)       # Layouts offered along Core
 add_subdirectory(tests)         # Tests to run against the server
 add_subdirectory(doc)           # API Documentation
 
-include( ${CMAKE_CURRENT_SOURCE_DIR}/xml_target.cmake )
+##
+## Analyse xml
+##
+snap_build_xml_targets()
 
 ##
 ## Code Analysis
