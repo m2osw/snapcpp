@@ -326,6 +326,8 @@ QString messages::description() const
  */
 int64_t messages::do_update(int64_t last_updated)
 {
+    static_cast<void>(last_updated);
+
     SNAP_PLUGIN_UPDATE_INIT();
 
     SNAP_PLUGIN_UPDATE_EXIT();
