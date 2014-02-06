@@ -26,7 +26,7 @@ set( SNAP_XML_LINT TRUE )
 find_program( BASH    bash    /bin     )
 find_program( XMLLINT xmllint /usr/bin )
 #
-set( lint_script ${CMAKE_CURRENT_BINARY_DIR}/dolint.sh )
+set( lint_script ${CMAKE_BINARY_DIR}/dolint.sh CACHE INTERNAL "XML lint script" FORCE )
 file( WRITE  ${lint_script} "#!${BASH}\n"                                                            )
 file( APPEND ${lint_script} "${XMLLINT} --dtdvalid $3 --output $2 $1 && exit 0 || (rm $2; exit 1)\n" )
 #
@@ -49,7 +49,7 @@ endfunction()
 # Call snap_build_xml_targets() after calling snap_validate_xml() above.
 #
 macro( snap_build_xml_targets )
-    set( arg_count 3 )
+	set( arg_count 3 )
     unset( lint_file_list )
     get_property( XML_FILE_LIST GLOBAL PROPERTY XML_FILE_LIST )
     list( LENGTH XML_FILE_LIST range )

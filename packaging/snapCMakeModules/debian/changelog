@@ -1,4 +1,11 @@
-snapcmakemodules (1.0.2) UNRELEASED; urgency=low
+snapcmakemodules (1.0.3) UNRELEASED; urgency=low
+
+  * Now puts dolint script into an INTERNAL variable so it will remain global,
+  and it now lives at the top of the binary tree.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Thu, 06 Feb 2014 10:43:05 -0800
+
+snapcmakemodules (1.0.2) saucy; urgency=low
 
   * Added SnapXmlLint.cmake.
 
