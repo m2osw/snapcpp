@@ -17,128 +17,115 @@
 #pragma once
 
 #include "../layout/layout.h"
-#include "../path/path.h"
-#include "../javascript/javascript.h"
-#include <controlled_vars/controlled_vars_ptr_no_init.h>
+
 
 namespace snap
 {
-namespace output
+namespace list
 {
 
 
-//enum name_t
-//{
-//    SNAP_NAME_CONTENT_ACCEPTED
-//};
-//char const *get_name(name_t name) __attribute__ ((const));
+enum name_t
+{
+    SNAP_NAME_LIST_SETUP
+};
+char const *get_name(name_t name) __attribute__ ((const));
 
 
-class output_exception : public snap_exception
+class list_exception : public snap_exception
 {
 public:
-    output_exception(char const *what_msg)        : snap_exception("Output: " + std::string(what_msg)) {}
-    output_exception(std::string const& what_msg) : snap_exception("Output: " + what_msg) {}
-    output_exception(QString const& what_msg)     : snap_exception("Output: " + what_msg.toStdString()) {}
+    list_exception(char const *what_msg)        : snap_exception("list", std::string(what_msg)) {}
+    list_exception(std::string const& what_msg) : snap_exception("list", what_msg) {}
+    list_exception(QString const& what_msg)     : snap_exception("list", what_msg.toStdString()) {}
 };
 
-class output_exception_invalid_content_xml : public output_exception
+class list_exception_invalid : public list_exception
 {
 public:
-    output_exception_invalid_content_xml(char const *what_msg)        : output_exception(what_msg) {}
-    output_exception_invalid_content_xml(std::string const& what_msg) : output_exception(what_msg) {}
-    output_exception_invalid_content_xml(QString const& what_msg)     : output_exception(what_msg) {}
+    list_exception_invalid(char const *what_msg)        : list_exception(what_msg) {}
+    list_exception_invalid(std::string const& what_msg) : list_exception(what_msg) {}
+    list_exception_invalid(QString const& what_msg)     : list_exception(what_msg) {}
 };
 
-//class content_exception_parameter_not_defined : public content_exception
-//{
-//public:
-//    content_exception_parameter_not_defined(char const *what_msg) : content_exception(what_msg) {}
-//    content_exception_parameter_not_defined(std::string const& what_msg) : content_exception(what_msg) {}
-//    content_exception_parameter_not_defined(QString const& what_msg) : content_exception(what_msg) {}
-//};
-//
-//class content_exception_content_already_defined : public content_exception
-//{
-//public:
-//    content_exception_content_already_defined(char const *what_msg) : content_exception(what_msg) {}
-//    content_exception_content_already_defined(std::string const& what_msg) : content_exception(what_msg) {}
-//    content_exception_content_already_defined(QString const& what_msg) : content_exception(what_msg) {}
-//};
-//
-//class content_exception_circular_dependencies : public content_exception
-//{
-//public:
-//    content_exception_circular_dependencies(char const *what_msg) : content_exception(what_msg) {}
-//    content_exception_circular_dependencies(std::string const& what_msg) : content_exception(what_msg) {}
-//    content_exception_circular_dependencies(QString const& what_msg) : content_exception(what_msg) {}
-//};
-//
-//class content_exception_type_mismatch : public content_exception
-//{
-//public:
-//    content_exception_type_mismatch(char const *what_msg) : content_exception(what_msg) {}
-//    content_exception_type_mismatch(std::string const& what_msg) : content_exception(what_msg) {}
-//    content_exception_type_mismatch(QString const& what_msg) : content_exception(what_msg) {}
-//};
-//
-//class content_exception_invalid_sequence : public content_exception
-//{
-//public:
-//    content_exception_invalid_sequence(char const *what_msg) : content_exception(what_msg) {}
-//    content_exception_invalid_sequence(std::string const& what_msg) : content_exception(what_msg) {}
-//    content_exception_invalid_sequence(QString const& what_msg) : content_exception(what_msg) {}
-//};
-//
-//class content_exception_invalid_name : public content_exception
-//{
-//public:
-//    content_exception_invalid_name(char const *what_msg) : content_exception(what_msg) {}
-//    content_exception_invalid_name(std::string const& what_msg) : content_exception(what_msg) {}
-//    content_exception_invalid_name(QString const& what_msg) : content_exception(what_msg) {}
-//};
-//
-//class content_exception_unexpected_revision_type : public content_exception
-//{
-//public:
-//    content_exception_unexpected_revision_type(char const *what_msg) : content_exception(what_msg) {}
-//    content_exception_unexpected_revision_type(std::string const& what_msg) : content_exception(what_msg) {}
-//    content_exception_unexpected_revision_type(QString const& what_msg) : content_exception(what_msg) {}
-//};
 
 
 
-
-
-
-class output : public plugins::plugin, public path::path_execute, public layout::layout_content, public javascript::javascript_dynamic_plugin
+class list_atom
 {
 public:
-                        output();
-                        ~output();
+    enum comparator_t
+    {
+        LIST_ATOM_COMPARATOR_STRING,                // load data as UTF-8 strings, make lowercase and compare
+        LIST_ATOM_COMPARATOR_STRING_WITH_CASE,      // load data as UTF-8 strings, and compare as is
+        LIST_ATOM_COMPARATOR_ANY_STRING,            // load data using dbutils, make lowercase and compare
+        LIST_ATOM_COMPARATOR_ANY_STRING_WITH_CASE,  // load data using dbutils, and compare as is
+        LIST_ATOM_COMPARATOR_INT8,                  // load data as int8_t and compare as is
+        LIST_ATOM_COMPARATOR_UINT8,                 // load data as uint8_t and compare as is
+        LIST_ATOM_COMPARATOR_INT16,                 // load data as int16_t and compare as is
+        LIST_ATOM_COMPARATOR_UINT16,                // load data as uint16_t and compare as is
+        LIST_ATOM_COMPARATOR_INT32,                 // load data as int32_t and compare as is
+        LIST_ATOM_COMPARATOR_UINT32,                // load data as uint32_t and compare as is
+        LIST_ATOM_COMPARATOR_INT64,                 // load data as int64_t and compare as is
+        LIST_ATOM_COMPARATOR_UINT64                 // load data as uint64_t and compare as is
+    };
+    typedef controlled_vars::limited_auto_init<comparator_t, LIST_ATOM_COMPARATOR_STRING, LIST_ATOM_COMPARATOR_UINT64, LIST_ATOM_COMPARATOR_STRING> safe_comparator_t;
 
-    static output *     instance();
+    void                        set_comparator(comparator_t comparator);
+    void                        set_column_name(QString const& name);
+    void                        set_descending(bool descending);
+
+    comparator_t                get_comparator() const;
+    QString const&              get_column_name() const;
+    bool                        get_descending() const;
+
+    // internal functions used to save the data serialized
+    // (you should only use the serialization of the list class)
+    void                        unserialize(QtSerialization::QReader& r);
+    virtual void                readTag(QString const& name, QtSerialization::QReader& r);
+    void                        serialize(QtSerialization::QWriter& w) const;
+
+private:
+    QString                     f_column_name;
+    controlled_vars::fbool_t    f_descending;
+    safe_comparator_t           f_comparator;
+};
+typedef QVector<list_atom> list_atom_vector_t;
+
+
+
+
+
+
+class list : public plugins::plugin, public layout::layout_content, public QtSerialization::QSerializationObject
+{
+public:
+    static int const LIST_ATOMS_MAJOR_VERSION = 1;
+    static int const LIST_ATOMS_MINOR_VERSION = 0;
+
+                        list();
+                        ~list();
+
+    static list *       instance();
     virtual QString     description() const;
     virtual int64_t     do_update(int64_t last_updated);
 
     void                on_bootstrap(snap_child *snap);
-    virtual bool        on_path_execute(content::path_info_t& ipath);
-    virtual void        on_generate_main_content(layout::layout *l, content::path_info_t& path, QDomElement& page, QDomElement& body, QString const& ctemplate);
-    void                on_generate_page_content(layout::layout *l, content::path_info_t& path, QDomElement& page, QDomElement& body, QString const& ctemplate);
+    virtual void        on_generate_main_content(content::path_info_t& path, QDomElement& page, QDomElement& body, QString const& ctemplate);
+    void                on_generate_page_content(content::path_info_t& path, QDomElement& page, QDomElement& body, QString const& ctemplate);
 
-    // dynamic javascript property support
-    virtual int         js_property_count() const;
-    virtual QVariant    js_property_get(QString const& name) const;
-    virtual QString     js_property_name(int index) const;
-    virtual QVariant    js_property_get(int index) const;
+    void                unserialize(QString const& data);
+    virtual void        readTag(QString const& name, QtSerialization::QReader& r);
+    QString             serialize() const;
 
 private:
     void                content_update(int64_t variables_timestamp);
 
     zpsnap_child_t      f_snap;
+    list_atom_vector_t  f_list_atoms;
 };
 
 
-} // namespace output
+} // namespace list
 } // namespace snap
 // vim: ts=4 sw=4 et

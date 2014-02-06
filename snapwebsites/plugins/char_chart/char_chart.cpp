@@ -180,7 +180,7 @@ bool char_chart::on_path_execute(content::path_info_t& ipath)
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
-void char_chart::on_generate_main_content(layout::layout *l, content::path_info_t& ipath, QDomElement& page, QDomElement& body, const QString& ctemplate)
+void char_chart::on_generate_main_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, const QString& ctemplate)
 {
     QDomDocument doc(page.ownerDocument());
 

@@ -521,10 +521,10 @@ std::cerr << "create body in layout\n";
 std::cerr << "got in layout... cpath = [" << ipath.get_cpath() << "]\n";
 #endif
     // other plugins generate defaults
-    generate_header_content(this, ipath, head, metadata, ctemplate);
+    generate_header_content(ipath, head, metadata, ctemplate);
 
     // concerned (owner) plugin generates content
-    content_plugin->on_generate_main_content(this, ipath, page, body, ctemplate);
+    content_plugin->on_generate_main_content(ipath, page, body, ctemplate);
 //std::cout << "Header + Main XML is [" << doc.toString() << "]\n";
 
     // add boxes content
@@ -603,7 +603,7 @@ std::cerr << "got in layout... cpath = [" << ipath.get_cpath() << "]\n";
                             filter_box.setAttribute("path", box_ipath.get_cpath()); // not the full key
                             filter_box.setAttribute("owner", box_plugin->get_plugin_name());
                             dom_boxes[i].appendChild(filter_box);
-                            lb->on_generate_boxes_content(this, ipath, box_ipath, page, filter_box, ctemplate);
+                            lb->on_generate_boxes_content(ipath, box_ipath, page, filter_box, ctemplate);
                         }
                         else
                         {
@@ -622,7 +622,7 @@ std::cerr << "got in layout... cpath = [" << ipath.get_cpath() << "]\n";
     }
 
     // other plugins are allowed to modify the content if so they wish
-    generate_page_content(this, ipath, page, body, ctemplate);
+    generate_page_content(ipath, page, body, ctemplate);
 //std::cout << "Prepared XML is [" << doc.toString() << "]\n";
 
     // TODO: the filtering needs to be a lot more generic!
@@ -1018,10 +1018,10 @@ int64_t layout::install_layout(QString const& layout_name, int64_t const last_up
  *
  * \return true if the signal should go on to all the other plugins.
  */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-bool layout::generate_header_content_impl(layout *l, content::path_info_t& ipath, QDomElement& header, QDomElement& metadata, QString const& ctemplate)
+bool layout::generate_header_content_impl(content::path_info_t& ipath, QDomElement& header, QDomElement& metadata, QString const& ctemplate)
 {
+    static_cast<void>(header);
+
     int const p(ipath.get_cpath().lastIndexOf('/'));
     QString const base(f_snap->get_site_key_with_slash() + (p == -1 ? "" : ipath.get_cpath().left(p)));
 
@@ -1069,10 +1069,10 @@ bool layout::generate_header_content_impl(layout *l, content::path_info_t& ipath
         // generate!
         ;
 
-//printf("layout stuff [%s]\n", header.ownerDocument().toString().toUtf8().data());
+//std::cerr << "layout stuff [" << header.ownerDocument().toString() << "]\n";
     return true;
 }
-#pragma GCC diagnostic pop
+
 
 /** \brief Generate the page main content.
  *
@@ -1087,8 +1087,7 @@ bool layout::generate_header_content_impl(layout *l, content::path_info_t& ipath
  * the snap XML file format. The theme layout XSLT will be used
  * to generate the intermediate and final output.
  *
- * \param[in] l  The layout pointer.
- * \param[in] path  The path being managed.
+ * \param[in] ipath  The path being managed.
  * \param[in] page_content  The main content of the page.
  * \param[in,out] page  The page being generated.
  * \param[in,out] body  The body being generated.
@@ -1097,13 +1096,15 @@ bool layout::generate_header_content_impl(layout *l, content::path_info_t& ipath
  *
  * \return true if the page content creation can proceed.
  */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-bool layout::generate_page_content_impl(layout *l, content::path_info_t& path, QDomElement& page, QDomElement& body, QString const& ctemplate)
+bool layout::generate_page_content_impl(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate)
 {
+    static_cast<void>(ipath);
+    static_cast<void>(page);
+    static_cast<void>(body);
+    static_cast<void>(ctemplate);
+
     return true;
 }
-#pragma GCC diagnostic pop
 
 
 /** \brief Generate the page main content.

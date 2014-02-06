@@ -59,8 +59,8 @@ public:
 
     void                    on_bootstrap(snap_child *snap);
     virtual bool            on_path_execute(content::path_info_t& url);
-    virtual void            on_generate_main_content(layout::layout *l, content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate);
-    void                    on_generate_page_content(layout::layout *l, content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate);
+    virtual void            on_generate_main_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate);
+    void                    on_generate_page_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate);
     void                    on_can_handle_dynamic_path(content::path_info_t& ipath, path::dynamic_plugin_t& plugin_info);
     virtual void            on_process_form_post(content::path_info_t& ipath, sessions::sessions::session_info const& session_info);
 

@@ -374,8 +374,8 @@ void users::on_bootstrap(::snap::snap_child *snap)
     SNAP_LISTEN(users, "server", server, improve_signature, _1, _2);
     SNAP_LISTEN(users, "content", content::content, create_content, _1, _2, _3);
     SNAP_LISTEN(users, "path", path::path, can_handle_dynamic_path, _1, _2);
-    SNAP_LISTEN(users, "layout", layout::layout, generate_header_content, _1, _2, _3, _4, _5);
-    SNAP_LISTEN(users, "layout", layout::layout, generate_page_content, _1, _2, _3, _4, _5);
+    SNAP_LISTEN(users, "layout", layout::layout, generate_header_content, _1, _2, _3, _4);
+    SNAP_LISTEN(users, "layout", layout::layout, generate_page_content, _1, _2, _3, _4);
     SNAP_LISTEN(users, "filter", filter::filter, replace_token, _1, _2, _3, _4);
 
     f_info.reset(new sessions::sessions::session_info);
@@ -685,7 +685,7 @@ bool users::on_path_execute(content::path_info_t& ipath)
 }
 
 
-void users::on_generate_main_content(layout::layout *l, content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate)
+void users::on_generate_main_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate)
 {
     if(ipath.get_cpath() == "user")
     {
@@ -701,7 +701,7 @@ void users::on_generate_main_content(layout::layout *l, content::path_info_t& ip
     }
     else if(ipath.get_cpath().left(5) == "user/")
     {
-        show_user(l, ipath, page, body);
+        show_user(ipath, page, body);
         return;
     }
     //else if(ipath.get_cpath() == "profile")
@@ -722,7 +722,7 @@ void users::on_generate_main_content(layout::layout *l, content::path_info_t& ip
     else if(ipath.get_cpath() == "logout")
     {
         // closing current session if any and show the logout page
-        logout_user(l, ipath, page, body);
+        logout_user(ipath, page, body);
         return;
     }
     else if(ipath.get_cpath() == "register"
@@ -741,12 +741,12 @@ void users::on_generate_main_content(layout::layout *l, content::path_info_t& ip
     }
 
     // any other user page is just like regular content
-    output::output::instance()->on_generate_main_content(l, ipath, page, body, ctemplate);
+    output::output::instance()->on_generate_main_content(ipath, page, body, ctemplate);
 }
 
 
 
-void users::on_generate_boxes_content(layout::layout *l, content::path_info_t& page_cpath, content::path_info_t& ipath, QDomElement& page, QDomElement& box, QString const& ctemplate)
+void users::on_generate_boxes_content(content::path_info_t& page_cpath, content::path_info_t& ipath, QDomElement& page, QDomElement& box, QString const& ctemplate)
 {
 //std::cerr << "GOT TO USER BOXES!!! [" << ipath.get_key() << "]\n";
     if(ipath.get_cpath().endsWith("/login"))
@@ -763,13 +763,13 @@ void users::on_generate_boxes_content(layout::layout *l, content::path_info_t& p
         }
     }
 
-    output::output::instance()->on_generate_main_content(l, ipath, page, box, ctemplate);
+    output::output::instance()->on_generate_main_content(ipath, page, box, ctemplate);
 }
 
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
-void users::on_generate_header_content(layout::layout *l, content::path_info_t& ipath, QDomElement& header, QDomElement& metadata, QString const& ctemplate)
+void users::on_generate_header_content(content::path_info_t& ipath, QDomElement& header, QDomElement& metadata, QString const& ctemplate)
 {
     QDomDocument doc(header.ownerDocument());
 
@@ -824,7 +824,7 @@ void users::on_generate_header_content(layout::layout *l, content::path_info_t& 
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
-void users::on_generate_page_content(layout::layout *l, content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate)
+void users::on_generate_page_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate)
 {
     // TODO: convert using field_search
     QDomDocument doc(page.ownerDocument());
@@ -939,7 +939,7 @@ void users::prepare_replace_password_form(QDomElement& body)
  * see his profile. The administrators can see any profile. Otherwise
  * only public profiles and the user own profile are accessible.
  */
-void users::show_user(layout::layout *l, content::path_info_t& ipath, QDomElement& page, QDomElement& body)
+void users::show_user(content::path_info_t& ipath, QDomElement& page, QDomElement& body)
 {
     QString user_path(ipath.get_cpath());
     int64_t identifier(0);
@@ -997,7 +997,7 @@ void users::show_user(layout::layout *l, content::path_info_t& ipath, QDomElemen
         {
             // user is editing his password
             prepare_password_form();
-            output::output::instance()->on_generate_main_content(l, ipath, page, body, "");
+            output::output::instance()->on_generate_main_content(ipath, page, body, "");
             return;
         }
 
@@ -1040,7 +1040,7 @@ void users::show_user(layout::layout *l, content::path_info_t& ipath, QDomElemen
         // WARNING: using a path such as "admin/.../profile" returns all the content of that profile
     content::path_info_t user_ipath;
     user_ipath.set_path(user_path);
-    output::output::instance()->on_generate_main_content(l, user_ipath, page, body, "admin/users/page/profile");
+    output::output::instance()->on_generate_main_content(user_ipath, page, body, "admin/users/page/profile");
 }
 
 
@@ -1137,12 +1137,11 @@ void users::prepare_verify_credentials_form()
  *
  * This function calls the on_generate_main_content() of the content plugin.
  *
- * \param[in] l  The layout concerned to generated this page.
  * \param[in,out] cpath  The path being processed (logout[/...]).
  * \param[in,out] page  The page XML data.
  * \param[in,out] body  The body XML data.
  */
-void users::logout_user(layout::layout *l, content::path_info_t& ipath, QDomElement& page, QDomElement& body)
+void users::logout_user(content::path_info_t& ipath, QDomElement& page, QDomElement& body)
 {
     // generate the body
     // we already logged the user out in the on_process_cookies() function
@@ -1158,7 +1157,7 @@ void users::logout_user(layout::layout *l, content::path_info_t& ipath, QDomElem
             ipath.set_path("logout");
         }
     }
-    output::output::instance()->on_generate_main_content(l, ipath, page, body, "");
+    output::output::instance()->on_generate_main_content(ipath, page, body, "");
 }
 
 

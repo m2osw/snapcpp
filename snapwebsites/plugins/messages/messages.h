@@ -28,9 +28,9 @@ namespace messages
 class messages_exception : public snap_exception
 {
 public:
-    messages_exception(char const *       what_msg) : snap_exception("Messages: " + std::string(what_msg)) {}
-    messages_exception(std::string const& what_msg) : snap_exception("Messages: " + what_msg) {}
-    messages_exception(QString const&     what_msg) : snap_exception("Messages: " + what_msg.toStdString()) {}
+    messages_exception(char const *       what_msg) : snap_exception("messages", what_msg) {}
+    messages_exception(std::string const& what_msg) : snap_exception("messages", what_msg) {}
+    messages_exception(QString const&     what_msg) : snap_exception("messages", what_msg) {}
 };
 
 class messages_exception_invalid_field_name : public messages_exception
@@ -56,14 +56,14 @@ enum name_t
     SNAP_NAME_MESSAGES_MESSAGES,
     SNAP_NAME_MESSAGES_WARNING_HEADER
 };
-const char *get_name(name_t name) __attribute__ ((const));
+char const *get_name(name_t name) __attribute__ ((const));
 
 
 class messages : public plugins::plugin, public QtSerialization::QSerializationObject
 {
 public:
-    static const int MESSAGES_MAJOR_VERSION = 1;
-    static const int MESSAGES_MINOR_VERSION = 0;
+    static int const MESSAGES_MAJOR_VERSION = 1;
+    static int const MESSAGES_MINOR_VERSION = 0;
 
     class message : public QtSerialization::QSerializationObject
     {
@@ -78,8 +78,8 @@ public:
         typedef controlled_vars::limited_need_init<message_type_enum_t, MESSAGE_TYPE_ERROR, MESSAGE_TYPE_DEBUG> message_type_t;
 
                             message();
-                            message(message_type_t t, const QString& title, const QString& body);
-                            message(const message& rhs);
+                            message(message_type_t t, QString const& title, QString const& body);
+                            message(message const& rhs);
 
         message_type_enum_t get_type() const;
         int                 get_id() const;
@@ -88,7 +88,7 @@ public:
 
         // internal functions used to save the data serialized
         void                unserialize(QtSerialization::QReader& r);
-        virtual void        readTag(const QString& name, QtSerialization::QReader& r);
+        virtual void        readTag(QString const& name, QtSerialization::QReader& r);
         void                serialize(QtSerialization::QWriter& w) const;
 
     private:
@@ -107,11 +107,11 @@ public:
 
     void                on_bootstrap(snap_child *snap);
 
-    void                set_http_error(snap_child::http_code_t err_code, QString err_name, const QString& err_description, const QString& err_details, bool err_security);
-    void                set_error(QString err_name, const QString& err_description, const QString& err_details, bool err_security);
-    void                set_warning(QString warning_name, const QString& warning_description, const QString& warning_details);
-    void                set_info(QString info_name, const QString& info_description);
-    void                set_debug(QString debug_name, const QString& debug_description);
+    void                set_http_error(snap_child::http_code_t err_code, QString err_name, QString const& err_description, QString const& err_details, bool err_security);
+    void                set_error(QString err_name, QString const& err_description, QString const& err_details, bool err_security);
+    void                set_warning(QString warning_name, QString const& warning_description, QString const& warning_details);
+    void                set_info(QString info_name, QString const& info_description);
+    void                set_debug(QString debug_name, QString const& debug_description);
 
     void                clear_messages();
     message const&      get_message(int idx) const;
@@ -121,13 +121,11 @@ public:
     int                 get_warning_count() const;
 
     // "internal" functions used to save the data serialized
-    void                unserialize(const QString& data);
-    virtual void        readTag(const QString& name, QtSerialization::QReader& r);
+    void                unserialize(QString const& data);
+    virtual void        readTag(QString const& name, QtSerialization::QReader& r);
     QString             serialize() const;
 
 private:
-    void content_update(int64_t variables_timestamp);
-
     zpsnap_child_t              f_snap;
     QVector<message>            f_messages;
     controlled_vars::zint32_t   f_error_count;

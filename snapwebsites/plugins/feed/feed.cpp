@@ -239,7 +239,7 @@ bool feed::on_path_execute(const QString& cpath)
  * \param[in,out] page  The page being generated.
  * \param[in,out] body  The body being generated.
  */
-void feed::on_generate_main_content(layout::layout *l, const QString& cpath, QDomElement& page, QDomElement& body, const QString& ctemplate)
+void feed::on_generate_main_content(const QString& cpath, QDomElement& page, QDomElement& body, const QString& ctemplate)
 {
     if(cpath.startsWith("s/"))
     {
@@ -262,12 +262,12 @@ void feed::on_generate_main_content(layout::layout *l, const QString& cpath, QDo
             }
         }
         // else -- warn or something?
-        content::content::instance()->on_generate_main_content(l, "s", page, body, ctemplate);
+        content::content::instance()->on_generate_main_content("s", page, body, ctemplate);
     }
     else
     {
         // a type is just like a regular page
-        content::content::instance()->on_generate_main_content(l, cpath, page, body, ctemplate);
+        content::content::instance()->on_generate_main_content(cpath, page, body, ctemplate);
     }
 }
 
@@ -284,8 +284,10 @@ void feed::on_generate_main_content(layout::layout *l, const QString& cpath, QDo
  * \param[in,out] body  The body being generated.
  * \param[in] ctemplate  The path to a template if cpath does not exist.
  */
-void feed::on_generate_header_content(layout::layout *l, const QString& cpath, QDomElement& header, QDomElement& metadata, const QString& ctemplate)
+void feed::on_generate_header_content(const QString& cpath, QDomElement& header, QDomElement& metadata, const QString& ctemplate)
 {
+	static_cast<void>(header);
+
     content::field_search::search_result_t result;
 
     FIELD_SEARCH

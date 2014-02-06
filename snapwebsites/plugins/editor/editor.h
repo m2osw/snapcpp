@@ -68,8 +68,8 @@ public:
 
     void                on_bootstrap(snap_child *snap);
     void                on_register_backend_action(snap::server::backend_action_map_t& actions);
-    void                on_generate_header_content(layout::layout *l, content::path_info_t& path, QDomElement& header, QDomElement& metadata, QString const& ctemplate);
-    virtual void        on_generate_main_content(layout::layout *l, content::path_info_t& path, QDomElement& page, QDomElement& body, QString const& ctemplate);
+    void                on_generate_header_content(content::path_info_t& path, QDomElement& header, QDomElement& metadata, QString const& ctemplate);
+    virtual void        on_generate_main_content(content::path_info_t& path, QDomElement& page, QDomElement& body, QString const& ctemplate);
 
 private:
     void                content_update(int64_t variables_timestamp);

@@ -230,13 +230,13 @@ bool info::on_path_execute(content::path_info_t& ipath)
  * \param[in,out] page  The page being generated.
  * \param[in,out] body  The body being generated.
  */
-void info::on_generate_main_content(layout::layout *l, content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate)
+void info::on_generate_main_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate)
 {
 #ifdef DEBUG
 std::cerr << "*** info main content...\n";
 #endif
     // our settings pages are like any standard pages
-    output::output::instance()->on_generate_main_content(l, ipath, page, body, ctemplate);
+    output::output::instance()->on_generate_main_content(ipath, page, body, ctemplate);
 }
 
 

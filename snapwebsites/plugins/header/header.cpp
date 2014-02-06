@@ -78,7 +78,7 @@ void header::on_bootstrap(snap_child *snap)
 {
     f_snap = snap;
 
-    SNAP_LISTEN(header, "layout", layout::layout, generate_header_content, _1, _2, _3, _4, _5);
+    SNAP_LISTEN(header, "layout", layout::layout, generate_header_content, _1, _2, _3, _4);
 }
 
 /** \brief Get a pointer to the header plugin.
@@ -187,10 +187,10 @@ bool header::on_path_execute(content::path_info_t& ipath)
 }
 
 
-void header::on_generate_main_content(layout::layout *l, content::path_info_t& ipath, QDomElement& page, QDomElement& body, const QString& ctemplate)
+void header::on_generate_main_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, const QString& ctemplate)
 {
     // a type is just like a regular page
-    output::output::instance()->on_generate_main_content(l, ipath, page, body, ctemplate);
+    output::output::instance()->on_generate_main_content(ipath, page, body, ctemplate);
 }
 
 
@@ -199,7 +199,6 @@ void header::on_generate_main_content(layout::layout *l, content::path_info_t& i
  * This function generates some meta data headers that is expected in a page
  * by default.
  *
- * \param[in] l  The layout pointer.
  * \param[in,out] ipath  The path being managed.
  * \param[in,out] header_dom  The header being generated.
  * \param[in,out] metadata  The metada being generated.
@@ -207,7 +206,7 @@ void header::on_generate_main_content(layout::layout *l, content::path_info_t& i
  */
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
-void header::on_generate_header_content(layout::layout *l, content::path_info_t& ipath, QDomElement& header_dom, QDomElement& metadata, QString const& ctemplate)
+void header::on_generate_header_content(content::path_info_t& ipath, QDomElement& header_dom, QDomElement& metadata, QString const& ctemplate)
 {
     QDomDocument doc(header_dom.ownerDocument());
 

@@ -156,7 +156,7 @@ public:
     virtual int64_t         do_update(int64_t last_updated);
 
     void                    on_bootstrap(snap_child *snap);
-    virtual void            on_generate_main_content(layout::layout *l, content::path_info_t& path, QDomElement& page, QDomElement& body, QString const& ctemplate);
+    virtual void            on_generate_main_content(content::path_info_t& path, QDomElement& page, QDomElement& body, QString const& ctemplate);
 
     QString                 create_session(session_info& info);
     void                    save_session(session_info& info, bool new_random);

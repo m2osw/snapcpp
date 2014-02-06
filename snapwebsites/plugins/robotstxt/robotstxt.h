@@ -66,9 +66,9 @@ public:
 
     void                on_bootstrap(snap_child *snap);
     virtual bool        on_path_execute(content::path_info_t& url);
-    void                on_generate_header_content(layout::layout *l, content::path_info_t& path, QDomElement& header, QDomElement& metadata, const QString& ctemplate);
-    virtual void        on_generate_main_content(layout::layout *l, content::path_info_t& path, QDomElement& page, QDomElement& body, const QString& ctemplate);
-    void                on_generate_page_content(layout::layout *l, content::path_info_t& path, QDomElement& page, QDomElement& body, const QString& ctemplate);
+    void                on_generate_header_content(content::path_info_t& path, QDomElement& header, QDomElement& metadata, const QString& ctemplate);
+    virtual void        on_generate_main_content(content::path_info_t& path, QDomElement& page, QDomElement& body, const QString& ctemplate);
+    void                on_generate_page_content(content::path_info_t& path, QDomElement& page, QDomElement& body, const QString& ctemplate);
 
     SNAP_SIGNAL(generate_robotstxt, (robotstxt *r), (r));
 

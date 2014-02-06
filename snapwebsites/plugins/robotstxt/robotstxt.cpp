@@ -59,8 +59,8 @@ void robotstxt::on_bootstrap(snap_child *snap)
 {
     f_snap = snap;
 
-    SNAP_LISTEN(robotstxt, "layout", layout::layout, generate_header_content, _1, _2, _3, _4, _5);
-    SNAP_LISTEN(robotstxt, "layout", layout::layout, generate_page_content, _1, _2, _3, _4, _5);
+    SNAP_LISTEN(robotstxt, "layout", layout::layout, generate_header_content, _1, _2, _3, _4);
+    SNAP_LISTEN(robotstxt, "layout", layout::layout, generate_page_content, _1, _2, _3, _4);
 }
 
 
@@ -380,7 +380,6 @@ void robotstxt::define_robots(content::path_info_t& ipath)
  * to increase changes that the robots understand what we're trying to
  * tell it.
  *
- * \param[in] l  The layout being worked on.
  * \param[in,out] ipath  The path concerned by this request.
  * \param[in,out] header  The HTML header element.
  * \param[in,out] metadata  The XML metadata used with the XSLT parser.
@@ -388,7 +387,7 @@ void robotstxt::define_robots(content::path_info_t& ipath)
  */
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
-void robotstxt::on_generate_header_content(layout::layout *l, content::path_info_t& ipath, QDomElement& header, QDomElement& metadata, const QString& ctemplate)
+void robotstxt::on_generate_header_content(content::path_info_t& ipath, QDomElement& header, QDomElement& metadata, const QString& ctemplate)
 {
     define_robots(ipath);
     if(!f_robots_cache.isEmpty())
@@ -406,14 +405,17 @@ void robotstxt::on_generate_header_content(layout::layout *l, content::path_info
  *
  * In case of the robots.txt file, we use a lower level function
  *
- * \param[in] l  Layout generating the main content.
+ * \todo
+ * Check whether this function is required (i.e. we may not need to derive
+ * from the layout interface? do we?)
+ *
  * \param[in] path  The path being managed.
  * \param[in,out] page  The page being generated.
  * \param[in,out] body  The body being generated.
  */
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
-void robotstxt::on_generate_main_content(layout::layout *l, content::path_info_t& path, QDomElement& page, QDomElement& body, const QString& ctemplate)
+void robotstxt::on_generate_main_content(content::path_info_t& path, QDomElement& page, QDomElement& body, const QString& ctemplate)
 {
 }
 #pragma GCC diagnostic pop
@@ -424,15 +426,14 @@ void robotstxt::on_generate_main_content(layout::layout *l, content::path_info_t
  * This function generates some content that is expected in a page
  * by default.
  *
- * \param[in] l  The layout pointer.
  * \param[in,out] ipath  The path being managed.
  * \param[in,out] page  The page being generated.
  * \param[in,out] body  The body being generated.
  */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-void robotstxt::on_generate_page_content(layout::layout *l, content::path_info_t& ipath, QDomElement& page, QDomElement& body, const QString& ctemplate)
+void robotstxt::on_generate_page_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, const QString& ctemplate)
 {
+    static_cast<void>(ctemplate);
+
     QDomDocument doc(page.ownerDocument());
 
     define_robots(ipath);
@@ -446,7 +447,6 @@ void robotstxt::on_generate_page_content(layout::layout *l, content::path_info_t
         created.appendChild(text);
     }
 }
-#pragma GCC diagnostic pop
 
 
 

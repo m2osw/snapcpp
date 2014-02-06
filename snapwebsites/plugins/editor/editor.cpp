@@ -84,8 +84,8 @@ void editor::on_bootstrap(snap_child *snap)
 {
     f_snap = snap;
 
-    SNAP_LISTEN(editor, "layout", layout::layout, generate_header_content, _1, _2, _3, _4, _5);
-    //SNAP_LISTEN(editor, "layout", layout::layout, generate_page_content, _1, _2, _3, _4, _5);
+    SNAP_LISTEN(editor, "layout", layout::layout, generate_header_content, _1, _2, _3, _4);
+    //SNAP_LISTEN(editor, "layout", layout::layout, generate_page_content, _1, _2, _3, _4);
 }
 
 
@@ -165,16 +165,15 @@ void editor::content_update(int64_t variables_timestamp)
  * and body XML documents.
  *
  *
- * \param[in] l  The layout pointer.
  * \param[in,out] ipath  The path being managed.
  * \param[in,out] page  The page being generated.
  * \param[in,out] body  The body being generated.
  * \param[in] ctemplate  The template in case path does not exist.
  */
-void editor::on_generate_main_content(layout::layout *l, content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate)
+void editor::on_generate_main_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate)
 {
     // a regular page
-    output::output::instance()->on_generate_main_content(l, ipath, page, body, ctemplate);
+    output::output::instance()->on_generate_main_content(ipath, page, body, ctemplate);
 }
 
 
@@ -188,17 +187,13 @@ void editor::on_generate_main_content(layout::layout *l, content::path_info_t& i
  * Look for a way to generate the editor data only if necessary (too
  * complex for now.)
  *
- * \param[in] l  The layout pointer.
  * \param[in] path  The path being managed.
  * \param[in,out] header  The header being generated.
  * \param[in,out] metadata  The metadata being generated.
  * \param[in] ctemplate  The template in case path does not exist.
  */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-void editor::on_generate_header_content(layout::layout *l, content::path_info_t& ipath, QDomElement& header, QDomElement& metadata, QString const& ctemplate)
+void editor::on_generate_header_content(content::path_info_t& ipath, QDomElement& header, QDomElement& metadata, QString const& ctemplate)
 {
-    static_cast<void>(l);
     static_cast<void>(metadata);
     static_cast<void>(ctemplate);
 
@@ -221,7 +216,6 @@ void editor::on_generate_header_content(layout::layout *l, content::path_info_t&
 
     content::content::instance()->add_javascript(ipath, header.ownerDocument(), "editor");
 }
-#pragma GCC diagnostic pop
 
 
 SNAP_PLUGIN_END()

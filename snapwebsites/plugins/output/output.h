@@ -37,74 +37,19 @@ namespace output
 class output_exception : public snap_exception
 {
 public:
-    output_exception(char const *what_msg)        : snap_exception("Output: " + std::string(what_msg)) {}
-    output_exception(std::string const& what_msg) : snap_exception("Output: " + what_msg) {}
-    output_exception(QString const& what_msg)     : snap_exception("Output: " + what_msg.toStdString()) {}
+    output_exception(char const *       what_msg) : snap_exception("output", what_msg) {}
+    output_exception(std::string const& what_msg) : snap_exception("output", what_msg) {}
+    output_exception(QString const&     what_msg) : snap_exception("output", what_msg) {}
 };
 
 class output_exception_invalid_content_xml : public output_exception
 {
 public:
-    output_exception_invalid_content_xml(char const *what_msg)        : output_exception(what_msg) {}
+    output_exception_invalid_content_xml(char const *       what_msg) : output_exception(what_msg) {}
     output_exception_invalid_content_xml(std::string const& what_msg) : output_exception(what_msg) {}
-    output_exception_invalid_content_xml(QString const& what_msg)     : output_exception(what_msg) {}
+    output_exception_invalid_content_xml(QString const&     what_msg) : output_exception(what_msg) {}
 };
 
-//class content_exception_parameter_not_defined : public content_exception
-//{
-//public:
-//    content_exception_parameter_not_defined(char const *what_msg) : content_exception(what_msg) {}
-//    content_exception_parameter_not_defined(std::string const& what_msg) : content_exception(what_msg) {}
-//    content_exception_parameter_not_defined(QString const& what_msg) : content_exception(what_msg) {}
-//};
-//
-//class content_exception_content_already_defined : public content_exception
-//{
-//public:
-//    content_exception_content_already_defined(char const *what_msg) : content_exception(what_msg) {}
-//    content_exception_content_already_defined(std::string const& what_msg) : content_exception(what_msg) {}
-//    content_exception_content_already_defined(QString const& what_msg) : content_exception(what_msg) {}
-//};
-//
-//class content_exception_circular_dependencies : public content_exception
-//{
-//public:
-//    content_exception_circular_dependencies(char const *what_msg) : content_exception(what_msg) {}
-//    content_exception_circular_dependencies(std::string const& what_msg) : content_exception(what_msg) {}
-//    content_exception_circular_dependencies(QString const& what_msg) : content_exception(what_msg) {}
-//};
-//
-//class content_exception_type_mismatch : public content_exception
-//{
-//public:
-//    content_exception_type_mismatch(char const *what_msg) : content_exception(what_msg) {}
-//    content_exception_type_mismatch(std::string const& what_msg) : content_exception(what_msg) {}
-//    content_exception_type_mismatch(QString const& what_msg) : content_exception(what_msg) {}
-//};
-//
-//class content_exception_invalid_sequence : public content_exception
-//{
-//public:
-//    content_exception_invalid_sequence(char const *what_msg) : content_exception(what_msg) {}
-//    content_exception_invalid_sequence(std::string const& what_msg) : content_exception(what_msg) {}
-//    content_exception_invalid_sequence(QString const& what_msg) : content_exception(what_msg) {}
-//};
-//
-//class content_exception_invalid_name : public content_exception
-//{
-//public:
-//    content_exception_invalid_name(char const *what_msg) : content_exception(what_msg) {}
-//    content_exception_invalid_name(std::string const& what_msg) : content_exception(what_msg) {}
-//    content_exception_invalid_name(QString const& what_msg) : content_exception(what_msg) {}
-//};
-//
-//class content_exception_unexpected_revision_type : public content_exception
-//{
-//public:
-//    content_exception_unexpected_revision_type(char const *what_msg) : content_exception(what_msg) {}
-//    content_exception_unexpected_revision_type(std::string const& what_msg) : content_exception(what_msg) {}
-//    content_exception_unexpected_revision_type(QString const& what_msg) : content_exception(what_msg) {}
-//};
 
 
 
@@ -123,8 +68,8 @@ public:
 
     void                on_bootstrap(snap_child *snap);
     virtual bool        on_path_execute(content::path_info_t& ipath);
-    virtual void        on_generate_main_content(layout::layout *l, content::path_info_t& path, QDomElement& page, QDomElement& body, QString const& ctemplate);
-    void                on_generate_page_content(layout::layout *l, content::path_info_t& path, QDomElement& page, QDomElement& body, QString const& ctemplate);
+    virtual void        on_generate_main_content(content::path_info_t& path, QDomElement& page, QDomElement& body, QString const& ctemplate);
+    void                on_generate_page_content(content::path_info_t& path, QDomElement& page, QDomElement& body, QString const& ctemplate);
 
     // dynamic javascript property support
     virtual int         js_property_count() const;

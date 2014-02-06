@@ -17,7 +17,7 @@
 
 #include "content.h"
 
-//#include "../messages/messages.h" -- we may want to have 2 plugins: a low level messages and a high level output_messages
+//#include "../messages/messages.h" -- we now have 2 levels (messages and output) so we could include messages.h here
 
 #include "plugins.h"
 #include "log.h"

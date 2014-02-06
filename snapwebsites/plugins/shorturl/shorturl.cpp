@@ -102,7 +102,7 @@ void shorturl::on_bootstrap(snap_child *snap)
 {
     f_snap = snap;
 
-    SNAP_LISTEN(shorturl, "layout", layout::layout, generate_header_content, _1, _2, _3, _4, _5);
+    SNAP_LISTEN(shorturl, "layout", layout::layout, generate_header_content, _1, _2, _3, _4);
     SNAP_LISTEN(shorturl, "content", content::content, create_content, _1, _2, _3);
     SNAP_LISTEN(shorturl, "path", path::path, can_handle_dynamic_path, _1, _2);
 }
@@ -244,13 +244,12 @@ bool shorturl::on_path_execute(content::path_info_t& ipath)
  * the snap XML file format. The theme layout XSLT will be used
  * to generate the final output.
  *
- * \param[in] l  The layout pointer.
  * \param[in,out] ipath  The path being managed.
  * \param[in,out] page  The page being generated.
  * \param[in,out] body  The body being generated.
  * \param[in] ctemplate  The fallback path in case ipath does not have a value.
  */
-void shorturl::on_generate_main_content(layout::layout *l, content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate)
+void shorturl::on_generate_main_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate)
 {
     if(ipath.get_cpath().startsWith("s/"))
     {
@@ -280,12 +279,12 @@ void shorturl::on_generate_main_content(layout::layout *l, content::path_info_t&
         // TODO: make some form of copy from ipath first?
         content::path_info_t shortcut_path;
         shortcut_path.set_path("s");
-        output::output::instance()->on_generate_main_content(l, shortcut_path, page, body, ctemplate);
+        output::output::instance()->on_generate_main_content(shortcut_path, page, body, ctemplate);
     }
     else
     {
         // a type is just like a regular page
-        output::output::instance()->on_generate_main_content(l, ipath, page, body, ctemplate);
+        output::output::instance()->on_generate_main_content(ipath, page, body, ctemplate);
     }
 }
 
@@ -296,7 +295,6 @@ void shorturl::on_generate_main_content(layout::layout *l, content::path_info_t&
  * This function generates some content that is expected in a page
  * by default.
  *
- * \param[in] l  The layout pointer.
  * \param[in] cpath  The path being managed.
  * \param[in,out] page  The page being generated.
  * \param[in,out] body  The body being generated.
@@ -304,7 +302,7 @@ void shorturl::on_generate_main_content(layout::layout *l, content::path_info_t&
  */
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
-void shorturl::on_generate_header_content(layout::layout *l, content::path_info_t& ipath, QDomElement& header, QDomElement& metadata, const QString& ctemplate)
+void shorturl::on_generate_header_content(content::path_info_t& ipath, QDomElement& header, QDomElement& metadata, const QString& ctemplate)
 {
     content::field_search::search_result_t result;
 

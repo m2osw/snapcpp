@@ -75,7 +75,7 @@ void search::on_bootstrap(::snap::snap_child *snap)
     f_snap = snap;
 
     SNAP_LISTEN(search, "server", server, improve_signature, _1, _2);
-    SNAP_LISTEN(search, "layout", layout::layout, generate_page_content, _1, _2, _3, _4, _5);
+    SNAP_LISTEN(search, "layout", layout::layout, generate_page_content, _1, _2, _3, _4);
 }
 
 /** \brief Get a pointer to the search plugin.
@@ -105,7 +105,7 @@ search *search::instance()
 QString search::description() const
 {
     return "The search plugin index your website public pages in order to"
-        " allow your users to search its content.";
+          " allow your users to search its content.";
 }
 
 
@@ -137,13 +137,12 @@ int64_t search::do_update(int64_t last_updated)
  *
  * \param[in] variables_timestamp  The timestamp for all the variables added to the database by this update (in micro-seconds).
  */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
 void search::content_update(int64_t variables_timestamp)
 {
+    static_cast<void>(variables_timestamp);
+
     content::content::instance()->add_xml("search");
 }
-#pragma GCC diagnostic pop
 
 
 /** \brief Improves the error signature.
@@ -175,7 +174,6 @@ void search::on_improve_signature(QString const& path, QString& signature)
  * browsers such as Mozilla can go to our search page without having to search
  * for it (ha! ha!)
  *
- * \param[in] l  The layout pointer.
  * \param[in,out] ipath  The path being managed.
  * \param[in,out] page  The page being generated.
  * \param[in,out] body  The body being generated.
@@ -183,7 +181,7 @@ void search::on_improve_signature(QString const& path, QString& signature)
  */
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
-void search::on_generate_page_content(layout::layout *l, content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate)
+void search::on_generate_page_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate)
 {
     QDomDocument doc(page.ownerDocument());
 

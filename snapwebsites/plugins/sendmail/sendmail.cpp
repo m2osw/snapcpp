@@ -2354,15 +2354,14 @@ void sendmail::sendemail(const QString& key, const QString& unique_key)
  * the user added to the email object before calling the post_email()
  * function.
  *
- * \param[in] l  The layout pointer.
  * \param[in] path  The path being managed.
  * \param[in,out] page  The page being generated.
  * \param[in,out] body  The body being generated.
  */
-void sendmail::on_generate_main_content(layout::layout *l, content::path_info_t& ipath, QDomElement& page, QDomElement& body, const QString& ctemplate)
+void sendmail::on_generate_main_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, const QString& ctemplate)
 {
     // by default an email is just like a regular page
-    output::output::instance()->on_generate_main_content(l, ipath, page, body, ctemplate);
+    output::output::instance()->on_generate_main_content(ipath, page, body, ctemplate);
 
     // but we also have email specific parameters we want to add
     QDomDocument doc(page.ownerDocument());

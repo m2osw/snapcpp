@@ -17,8 +17,8 @@
 
 #include "messages.h"
 
-#include "../output/output.h"
-#include "../users/users.h"
+//#include "../output/output.h"
+//#include "../users/users.h"
 
 #include "log.h"
 #include "not_reached.h"
@@ -328,26 +328,8 @@ int64_t messages::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2013, 1, 1, 2, 5, 0, content_update);
-
     SNAP_PLUGIN_UPDATE_EXIT();
 }
-
-
-/** \brief Update the content with our references.
- *
- * Send our content to the database so the system can find us when a
- * user references our pages.
- *
- * \param[in] variables_timestamp  The timestamp for all the variables added to the database by this update (in micro-seconds).
- */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-void messages::content_update(int64_t variables_timestamp)
-{
-    content::content::instance()->add_xml("messages");
-}
-#pragma GCC diagnostic pop
 
 
 /** \brief Set an HTTP error on this page.
@@ -655,14 +637,13 @@ const messages::message& messages::get_last_message() const
 /** \brief Unserialize a set of messages.
  *
  * This function unserializes a message that was serialized using
- * the serialize() function. This is considered an internal function as it
- * is called by the unserialize() function of the messages object.
+ * the serialize() function.
  *
- * \param[in] r  The reader used to read the input data.
+ * \param[in] data  The data to unserialize.
  *
  * \sa serialize()
  */
-void messages::unserialize(const QString& data)
+void messages::unserialize(QString const& data)
 {
     // QBuffer takes a non-const QByteArray so we have to create a copy
     QByteArray non_const_data(data.toUtf8().data());
@@ -684,7 +665,7 @@ void messages::unserialize(const QString& data)
  * \param[in] name  The name of the tag being read.
  * \param[in] r  The reader used to read the input data.
  */
-void messages::readTag(const QString& name, QtSerialization::QReader& r)
+void messages::readTag(QString const& name, QtSerialization::QReader& r)
 {
     if(name == "messages")
     {

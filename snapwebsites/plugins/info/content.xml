@@ -30,6 +30,13 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <![CDATA[<p>Administer basic information on the website.</p><p>This right gives the user access to all basic information available on the website.</p>]]>
     </param>
   </content>
+  <!-- handle the messages settings because messages is too low level for having a form of its own -->
+  <content path="/admin/settings/messages">
+    <param name="content::title" revision="revision">Messages Administration</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>Settings on how to handle your website messages (errors, information, debug).</p>]]>
+    </param>
+  </content>
 </snap-tree>
 <!-- vim: ts=2 sw=2 et syntax=xml
 -->

@@ -18,6 +18,7 @@
 
 #include "../sessions/sessions.h"
 #include "../filter/filter.h"
+
 #include "qcaseinsensitivestring.h"
 
 namespace snap
@@ -28,25 +29,25 @@ namespace sendmail
 class sendmail_exception : public snap_exception
 {
 public:
-    sendmail_exception(char const *whatmsg) : snap_exception("sendmail", whatmsg) {}
+    sendmail_exception(char const *       what_msg) : snap_exception("sendmail", what_msg) {}
     sendmail_exception(std::string const& what_msg) : snap_exception("sendmail", what_msg) {}
-    sendmail_exception(QString const& whatmsg) : snap_exception("sendmail", whatmsg) {}
+    sendmail_exception(QString const&     what_msg) : snap_exception("sendmail", what_msg) {}
 };
 
 class sendmail_exception_invalid_argument : public sendmail_exception
 {
 public:
-    sendmail_exception_invalid_argument(char const *what_msg) : sendmail_exception(what_msg) {}
+    sendmail_exception_invalid_argument(char const *       what_msg) : sendmail_exception(what_msg) {}
     sendmail_exception_invalid_argument(std::string const& what_msg) : sendmail_exception(what_msg) {}
-    sendmail_exception_invalid_argument(QString const& what_msg) : sendmail_exception(what_msg) {}
+    sendmail_exception_invalid_argument(QString const&     what_msg) : sendmail_exception(what_msg) {}
 };
 
 class sendmail_exception_too_many_levels : public sendmail_exception
 {
 public:
-    sendmail_exception_too_many_levels(char const *what_msg) : sendmail_exception(what_msg) {}
+    sendmail_exception_too_many_levels(char const *       what_msg) : sendmail_exception(what_msg) {}
     sendmail_exception_too_many_levels(std::string const& what_msg) : sendmail_exception(what_msg) {}
-    sendmail_exception_too_many_levels(QString const& what_msg) : sendmail_exception(what_msg) {}
+    sendmail_exception_too_many_levels(QString const&     what_msg) : sendmail_exception(what_msg) {}
 };
 
 
@@ -191,7 +192,7 @@ public:
     void                on_bootstrap(snap_child *snap);
     void                on_register_backend_action(snap::server::backend_action_map_t& actions);
     virtual void        on_backend_action(QString const& action);
-    virtual void        on_generate_main_content(layout::layout *l, content::path_info_t& path, QDomElement& page, QDomElement& body, QString const& ctemplate);
+    virtual void        on_generate_main_content(content::path_info_t& path, QDomElement& page, QDomElement& body, QString const& ctemplate);
     void                on_replace_token(content::path_info_t& cpath, QString const& plugin_owner, QDomDocument& xml, filter::filter::token_info_t& token);
 
     void                post_email(email const& e);

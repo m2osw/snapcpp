@@ -143,10 +143,10 @@ public:
     void                    on_bootstrap(::snap::snap_child *snap);
     void                    on_init();
     void                    on_can_handle_dynamic_path(content::path_info_t& ipath, path::dynamic_plugin_t& plugin_info);
-    void                    on_generate_header_content(layout::layout *l, content::path_info_t& path, QDomElement& hader, QDomElement& metadata, QString const& ctemplate);
-    virtual void            on_generate_main_content(layout::layout *l, content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate);
-    virtual void            on_generate_boxes_content(layout::layout *l, content::path_info_t& page_ipath, content::path_info_t& ipath, QDomElement& page, QDomElement& boxes, QString const& ctemplate);
-    void                    on_generate_page_content(layout::layout *l, content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate);
+    void                    on_generate_header_content(content::path_info_t& path, QDomElement& hader, QDomElement& metadata, QString const& ctemplate);
+    virtual void            on_generate_main_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate);
+    virtual void            on_generate_boxes_content(content::path_info_t& page_ipath, content::path_info_t& ipath, QDomElement& page, QDomElement& boxes, QString const& ctemplate);
+    void                    on_generate_page_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate);
     bool                    on_path_execute(content::path_info_t& ipath);
     void                    on_process_cookies();
     void                    on_attach_to_session();
@@ -174,9 +174,9 @@ private:
         LOGIN_MODE_VERIFICATION
     };
     void                    content_update(int64_t variables_timestamp);
-    void                    show_user(layout::layout *l, content::path_info_t& cpath, QDomElement& page, QDomElement& body);
+    void                    show_user(content::path_info_t& cpath, QDomElement& page, QDomElement& body);
     void                    prepare_login_form();
-    void                    logout_user(layout::layout *l, content::path_info_t& cpath, QDomElement& page, QDomElement& body);
+    void                    logout_user(content::path_info_t& cpath, QDomElement& page, QDomElement& body);
     void                    prepare_basic_anonymous_form();
     void                    prepare_forgot_password_form();
     void                    prepare_password_form();

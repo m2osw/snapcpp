@@ -36,7 +36,7 @@ public:
     void                on_bootstrap(::snap::snap_child *snap);
     void                on_can_handle_dynamic_path(content::path_info_t& ipath, path::dynamic_plugin_t& plugin_info);
     void                on_generate_sitemapxml(sitemapxml::sitemapxml *sitemap);
-    virtual void        on_generate_main_content(layout::layout *l, content::path_info_t& path, QDomElement& page, QDomElement& body, const QString& ctemplate);
+    virtual void        on_generate_main_content(content::path_info_t& path, QDomElement& page, QDomElement& body, const QString& ctemplate);
     bool                on_path_execute(content::path_info_t& cpath);
 
 private:

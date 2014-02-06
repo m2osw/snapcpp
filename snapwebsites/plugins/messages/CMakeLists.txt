@@ -46,13 +46,11 @@ QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC
     messages.qrc
 )
 
-snap_validate_xml( content.xml content.dtd )
 
 add_library(messages SHARED
     messages.cpp
     ${SNAP_MANAGER_MOC_CXX}
     ${SNAP_MANAGER_RESOURCES_RCC}
-    content.xml
 )
 
 target_link_libraries( messages ${QT_LIBRARIES} )

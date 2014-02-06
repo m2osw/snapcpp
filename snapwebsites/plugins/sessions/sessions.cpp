@@ -876,17 +876,16 @@ bool sessions::generate_sessions_impl(sessions * /*r*/)
  * This function generates the contents of the statistics page of the
  * sessions plugin.
  *
- * \param[in] l  The layout used to generate this page.
  * \param[in] path  The path to this page.
  * \param[in] page  The page element being generated.
  * \param[in] body  The body element being generated.
  */
-void sessions::on_generate_main_content(layout::layout *l, content::path_info_t& ipath, QDomElement& page, QDomElement& body, const QString& ctemplate)
+void sessions::on_generate_main_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, const QString& ctemplate)
 {
     // generate the statistics in the body then call the content generator
     // (how do we do that at this point? do we assume that the backend takes
     // care of it?)
-    output::output::instance()->on_generate_main_content(l, ipath, page, body, ctemplate);
+    output::output::instance()->on_generate_main_content(ipath, page, body, ctemplate);
 }
 
 

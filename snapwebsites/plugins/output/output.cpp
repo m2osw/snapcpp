@@ -23,12 +23,6 @@
 
 #include <iostream>
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wold-style-cast"
-#include <QFile>
-#include <QUuid>
-#pragma GCC diagnostic pop
-
 #include "poison.h"
 
 
@@ -65,28 +59,28 @@ SNAP_PLUGIN_START(output, 1, 0)
 
 
 
-/** \brief Initialize the content plugin.
+/** \brief Initialize the output plugin.
  *
- * This function is used to initialize the content plugin object.
+ * This function is used to initialize the output plugin object.
  */
 output::output()
-    //: f_snap(NULL) -- auto-init
+    //: f_snap(nullptr) -- auto-init
 {
 }
 
 
-/** \brief Clean up the content plugin.
+/** \brief Clean up the output plugin.
  *
- * Ensure the content object is clean before it is gone.
+ * Ensure the output object is clean before it is gone.
  */
 output::~output()
 {
 }
 
 
-/** \brief Initialize the content.
+/** \brief Initialize the output.
  *
- * This function terminates the initialization of the content plugin
+ * This function terminates the initialization of the output plugin
  * by registering for different events.
  *
  * \param[in] snap  The child handling this request.
@@ -95,18 +89,18 @@ void output::on_bootstrap(snap_child *snap)
 {
     f_snap = snap;
 
-    SNAP_LISTEN(output, "layout", layout::layout, generate_page_content, _1, _2, _3, _4, _5);
+    SNAP_LISTEN(output, "layout", layout::layout, generate_page_content, _1, _2, _3, _4);
 }
 
 
-/** \brief Get a pointer to the content plugin.
+/** \brief Get a pointer to the output plugin.
  *
- * This function returns an instance pointer to the content plugin.
+ * This function returns an instance pointer to the output plugin.
  *
  * Note that you cannot assume that the pointer will be valid until the
  * bootstrap event is called.
  *
- * \return A pointer to the content plugin.
+ * \return A pointer to the output plugin.
  */
 output *output::instance()
 {
@@ -236,7 +230,7 @@ bool output::on_path_execute(content::path_info_t& ipath)
 
 /** \brief Generate the page main content.
  *
- * This function generates the main content of the page. Other
+ * This function generates the main output of the page. Other
  * plugins will also have the event called if they subscribed and
  * thus will be given a chance to add their own content to the
  * main page. This part is the one that (in most cases) appears
@@ -247,15 +241,13 @@ bool output::on_path_execute(content::path_info_t& ipath)
  * the snap XML file format. The theme layout XSLT will be used
  * to generate the final output.
  *
- * \param[in] l  The layout pointer.
  * \param[in,out] ipath  The path being managed.
  * \param[in,out] page  The page being generated.
  * \param[in,out] body  The body being generated.
  * \param[in] ctemplate  A fallback path in case ipath is not satisfactory.
  */
-void output::on_generate_main_content(layout::layout *l, content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate)
+void output::on_generate_main_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate)
 {
-    static_cast<void>(l);
     static_cast<void>(page);
 
     // if the content is the main page then define the titles and body here
@@ -324,15 +316,13 @@ void output::on_generate_main_content(layout::layout *l, content::path_info_t& i
  * This function generates some content that is expected in a page
  * by default.
  *
- * \param[in] l  The layout pointer.
  * \param[in,out] ipath  The path being managed.
  * \param[in,out] page  The page being generated.
  * \param[in,out] body  The body being generated.
  * \param[in] ctemplate  The body being generated.
  */
-void output::on_generate_page_content(layout::layout *l, content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate)
+void output::on_generate_page_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate)
 {
-    static_cast<void>(l);
     static_cast<void>(page);
     static_cast<void>(ctemplate);
 

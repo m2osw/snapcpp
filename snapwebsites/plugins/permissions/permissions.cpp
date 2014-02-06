@@ -1106,15 +1106,19 @@ bool permissions::get_plugin_permissions_impl(permissions *perms, sets_t& sets)
  * This function generates the contents of the statistics page of the
  * permissions plugin.
  *
- * \param[in] l  The layout used to generate this page.
+ * \todo
+ * TBD -- Determine whether this function is really necessary in such a
+ * low level plugin (plus this means a dependency to the layout plugin
+ * which is probably incorrect here.)
+ *
  * \param[in,out] ipath  The path to this page.
  * \param[in,out] page  The page element being generated.
  * \param[in,out] body  The body element being generated.
  */
-void permissions::on_generate_main_content(layout::layout *l, content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate)
+void permissions::on_generate_main_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate)
 {
     // show the permission pages as information (many of these are read-only)
-    output::output::instance()->on_generate_main_content(l, ipath, page, body, ctemplate);
+    output::output::instance()->on_generate_main_content(ipath, page, body, ctemplate);
 }
 
 
