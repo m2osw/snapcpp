@@ -1,6 +1,7 @@
-snapwebsites (0.1.0-38) UNRELEASED; urgency=low
+snapwebsites (0.1.0-40) UNRELEASED; urgency=low
 
   * Added dtd files to development package.
+  * Fixed a couple things with forms.
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Wed, 05 Feb 2014 14:59:08 -0800
 
