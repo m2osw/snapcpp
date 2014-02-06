@@ -112,6 +112,8 @@ void list_atom::unserialize(QtSerialization::QReader& r)
 
 void list_atom::readTag(QString const& name, QtSerialization::QReader& r)
 {
+    static_cast<void>(name);
+    static_cast<void>(r);
 }
 
 
