@@ -2569,6 +2569,9 @@ void snap_child::backend()
 
     connect_cassandra();
 
+    // define a User-Agent for all backends (should that be a parameter?)
+    f_env[snap::get_name(SNAP_NAME_CORE_HTTP_USER_AGENT)] = "Snap! Backend";
+
     QString uri(f_server->get_parameter("__BACKEND_URI"));
     if(!uri.isEmpty())
     {
@@ -4999,7 +5002,7 @@ bool snap_child::load_file(post_file_t& file)
  *
  * \return The value of the specified variable.
  */
-QString snap_child::snapenv(const QString& name) const
+QString snap_child::snapenv(QString const& name) const
 {
     if(name == "SERVER_PROTOCOL")
     {
@@ -5007,7 +5010,8 @@ QString snap_child::snapenv(const QString& name) const
         if(false == f_fixed_server_protocol)
         {
             f_fixed_server_protocol = true;
-            // Drupal does the following, can the SERVER_PROTOCOL really be wrong?
+            // Drupal does the following
+            // TBD can the SERVER_PROTOCOL really be wrong?
             if(f_env.count("SERVER_PROTOCOL") != 1)
             {
                 // if undefined, set a default protocol

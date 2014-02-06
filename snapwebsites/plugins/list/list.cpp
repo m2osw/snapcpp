@@ -1,4 +1,4 @@
-// Snap Websites Server -- handle the basic display of the website content
+// Snap Websites Server -- advanced handling of lists
 // Copyright (C) 2011-2014  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
@@ -15,7 +15,7 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "output.h"
+#include "list.h"
 
 #include "../messages/messages.h"
 

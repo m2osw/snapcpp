@@ -615,6 +615,16 @@ void users::on_process_cookies()
  */
 void users::on_can_handle_dynamic_path(content::path_info_t& ipath, path::dynamic_plugin_t& plugin_info)
 {
+    //
+    // WARNING:
+    //
+    //    DO NOT PROCESS ANYTHING HERE!
+    //
+    //    At this point we do not know whether the user has the right
+    //    permissions yet.
+    //
+    //    See users::on_path_execute() instead.
+    //
     if(ipath.get_cpath() == "user"                      // list of (public) users
     || ipath.get_cpath().left(5) == "user/"             // show a user profile (user/ is followed by the user identifier or some edit page such as user/password)
     || ipath.get_cpath() == "profile"                   // the logged in user profile
@@ -636,12 +646,39 @@ void users::on_can_handle_dynamic_path(content::path_info_t& ipath, path::dynami
 
 /** \brief Execute the specified path.
  *
- * This is a dynamic page.
+ * This is a dynamic page which the users plugin knows how to handle.
+ *
+ * This function never returns if the "page" is just a verification
+ * process which redirects the user (i.e. "verify/<id>", and
+ * "new-password/<id>" at this time.)
+ *
+ * Other paths may also redirect the user in case the path is not
+ * currently supported (mainly because the user does not have
+ * permission.)
  *
  * \param[in] cpath  The canonalized path.
+ *
+ * \return true if the processing worked as expected, false if the page
+ *         cannot be created ("Page Not Present" results on false)
  */
 bool users::on_path_execute(content::path_info_t& ipath)
 {
+    // handle the few that do some work and redirect immediately
+    // (although it could be in the on_generate_main_content()
+    // it is a big waste of time to start building a page when
+    // we know we'll redirect the user anyway)
+    if(ipath.get_cpath().left(7) == "verify/"
+    && ipath.get_cpath() != "verify/resend")
+    {
+        verify_user(ipath);
+        NOTREACHED();
+    }
+    else if(ipath.get_cpath().left(13) == "new-password/")
+    {
+        verify_password(ipath);
+        NOTREACHED();
+    }
+
     f_snap->output(layout::layout::instance()->apply_layout(ipath, this));
 
     return true;
@@ -694,11 +731,6 @@ void users::on_generate_main_content(layout::layout *l, content::path_info_t& ip
     {
         prepare_basic_anonymous_form();
     }
-    else if(ipath.get_cpath().left(7) == "verify/")
-    {
-        verify_user(ipath);
-        return;
-    }
     else if(ipath.get_cpath() == "forgot-password")
     {
         prepare_forgot_password_form();
@@ -706,11 +738,6 @@ void users::on_generate_main_content(layout::layout *l, content::path_info_t& ip
     else if(ipath.get_cpath() == "new-password")
     {
         prepare_new_password_form();
-    }
-    else if(ipath.get_cpath().left(13) == "new-password/")
-    {
-        verify_password(ipath);
-        return;
     }
 
     // any other user page is just like regular content

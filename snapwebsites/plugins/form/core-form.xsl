@@ -483,7 +483,7 @@
     <div class="form-wrapper">
       <div>
         <xsl:attribute name="class">snap-form <xsl:value-of select="@name"/></xsl:attribute>
-        <form id="form_{$unique_id}" method="post" accept-charset="utf-8" action="{$action}">
+        <form id="form_{$unique_id}" method="post" accept-charset="utf-8" action="/{$action}">
           <xsl:if test="(@safe = 'safe') or (auto-reset) or ((//widget)[@type='safe-password'])">
             <xsl:attribute name="autocomplete">off</xsl:attribute>
           </xsl:if>

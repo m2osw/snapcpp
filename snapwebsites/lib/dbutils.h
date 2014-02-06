@@ -53,6 +53,7 @@ private:
         CT_time_seconds,
         CT_float32_value,
         CT_uint32_value,
+        CT_int8_value,
         CT_uint8_value,
         CT_hexarray_value,
         CT_hexarray_limited_value,

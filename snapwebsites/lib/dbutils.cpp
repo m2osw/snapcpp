@@ -19,8 +19,14 @@
 
 #include "dbutils.h"
 #include "snap_exception.h"
+#include "qstring_stream.h"
+
+#include <iostream>
 
 #include <QStringList>
+
+#include "poison.h"
+
 
 using namespace QtCassandra;
 
@@ -229,7 +235,6 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
     QString const n( get_column_name( c ) );
 
     if(n == "users::identifier"
-    || n == "permissions::dynamic"
     || n == "shorturl::identifier"
     )
     {
@@ -307,9 +312,16 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
          || (f_tableName == "files" && f_rowName == "new")
          )
     {
-        // 8 bit value
+        // unsigned 8 bit value
         // cast to integer so arg() doesn't take it as a character
         return CT_uint8_value;
+    }
+    else if(n == "permissions::dynamic"
+         )
+    {
+        // signed 8 bit value
+        // cast to integer so arg() doesn't take it as a character
+        return CT_int8_value;
     }
     else if(n == "sessions::random"
          || n == "users::password::salt"
@@ -350,147 +362,166 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
 QString dbutils::get_column_value( QCassandraCell::pointer_t c, const bool display_only ) const
 {
     QString v;
-    switch( column_type_t ct = get_column_type( c ) )
+    try
     {
-        case CT_uint64_value:
+        switch( column_type_t ct = get_column_type( c ) )
         {
-            v = QString("%1").arg(c->value().uint64Value());
-        }
-        break;
-
-        case CT_time_microseconds:
-        {
-            // 64 bit value (microseconds)
-            uint64_t time(c->value().uint64Value());
-            if(time == 0)
+            case CT_uint64_value:
             {
-                v = "time not set (0)";
+                v = QString("%1").arg(c->value().uint64Value());
             }
-            else
+            break;
+
+            case CT_time_microseconds:
             {
+                // 64 bit value (microseconds)
+                uint64_t time(c->value().uint64Value());
+                if(time == 0)
+                {
+                    v = "time not set (0)";
+                }
+                else
+                {
+                    char buf[64];
+                    struct tm t;
+                    time_t seconds(time / 1000000);
+                    gmtime_r(&seconds, &t);
+                    strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &t);
+                    v = QString("%1.%2 (%3)").arg(buf).arg(time % 1000000, 6, 10, QChar('0')).arg(time);
+                }
+            }
+            break;
+
+            case CT_time_seconds:
+            {
+                // 64 bit value (seconds)
+                uint64_t time(c->value().uint64Value());
                 char buf[64];
                 struct tm t;
-                time_t seconds(time / 1000000);
+                time_t seconds(time);
                 gmtime_r(&seconds, &t);
                 strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &t);
-                v = QString("%1.%2 (%3)").arg(buf).arg(time % 1000000, 6, 10, QChar('0')).arg(time);
+                v = display_only
+                  ? QString("%1 (%2)").arg(buf).arg(time)
+                  : QString("%1").arg(buf);
             }
-        }
-        break;
+            break;
 
-        case CT_time_seconds:
-        {
-            // 64 bit value (seconds)
-            uint64_t time(c->value().uint64Value());
-            char buf[64];
-            struct tm t;
-            time_t seconds(time);
-            gmtime_r(&seconds, &t);
-            strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &t);
-            v = display_only
-              ? QString("%1 (%2)").arg(buf).arg(time)
-              : QString("%1").arg(buf);
-        }
-        break;
-
-        case CT_float32_value:
-        {
-            // 32 bit float
-            float value(c->value().floatValue());
-            v = QString("%1").arg(value);
-        }
-        break;
-
-        case CT_uint32_value:
-        {
-            // 32 bit value
-            v = QString("%1").arg(c->value().uint32Value());
-        }
-        break;
-
-        case CT_uint8_value:
-        {
-            // 8 bit value
-            // cast to integer so arg() doesn't take it as a character
-            v = QString("%1").arg(static_cast<int>(c->value().unsignedCharValue()));
-        }
-        break;
-
-        case CT_hexarray_value:
-        case CT_hexarray_limited_value:
-        {
-            // n bit binary value
-            bool const display_limited( display_only && (ct == CT_hexarray_limited_value) );
-            const QByteArray& buf(c->value().binaryValue());
-            int const max_length( display_limited? std::min(f_displayLen, buf.size()): buf.size() );
-            if( display_only )
+            case CT_float32_value:
             {
-                v += "(hex) ";
+                // 32 bit float
+                float value(c->value().floatValue());
+                v = QString("%1").arg(value);
             }
-            for(int i(0); i < max_length; ++i)
+            break;
+
+            case CT_uint32_value:
             {
-                v += byte_to_hex(buf[i]) + " ";
+                // 32 bit value
+                v = QString("%1").arg(c->value().uint32Value());
             }
-            if( display_limited && (buf.size() > max_length) )
+            break;
+
+            case CT_int8_value:
             {
-                v += "...";
+                // signed 8 bit value
+                // cast to integer so arg() doesn't take it as a character
+                v = QString("%1").arg(static_cast<int>(c->value().signedCharValue()));
             }
+            break;
+
+            case CT_uint8_value:
+            {
+                // unsigned 8 bit value
+                // cast to integer so arg() doesn't take it as a character
+                v = QString("%1").arg(static_cast<int>(c->value().unsignedCharValue()));
+            }
+            break;
+
+            case CT_hexarray_value:
+            case CT_hexarray_limited_value:
+            {
+                // n bit binary value
+                bool const display_limited( display_only && (ct == CT_hexarray_limited_value) );
+                const QByteArray& buf(c->value().binaryValue());
+                int const max_length( display_limited? std::min(f_displayLen, buf.size()): buf.size() );
+                if( display_only )
+                {
+                    v += "(hex) ";
+                }
+                for(int i(0); i < max_length; ++i)
+                {
+                    v += byte_to_hex(buf[i]) + " ";
+                }
+                if( display_limited && (buf.size() > max_length) )
+                {
+                    v += "...";
+                }
+            }
+            break;
+
+            case CT_md5array_value:
+            {
+                // md5 in binary
+                const QByteArray& buf(c->value().binaryValue());
+                int const max_length(buf.size());
+                if( display_only )
+                {
+                    v += "(md5) ";
+                }
+                for(int i(0); i < max_length; ++i)
+                {
+                    v += byte_to_hex(buf[i]);
+                }
+            }
+            break;
+
+            case CT_secure_value:
+            {
+                switch(c->value().signedCharValue())
+                {
+                case -1:
+                    v = "not checked (-1)";
+                    break;
+
+                case 0:
+                    v = "not secure (0)";
+                    break;
+
+                case 1:
+                    v = "secure (1)";
+                    break;
+
+                default:
+                    v = QString("unknown secure status (%1)").arg(c->value().signedCharValue());
+                    break;
+
+                }
+            }
+            break;
+
+            case CT_string_value:
+            {
+                // all others viewed as strings
+                if( display_only )
+                {
+                    v = c->value().stringValue().replace("\n", "\\n");
+                }
+                else
+                {
+                    v = c->value().stringValue();
+                }
+            }
+            break;
+
         }
-        break;
-
-        case CT_md5array_value:
-        {
-            // md5 in binary
-            const QByteArray& buf(c->value().binaryValue());
-            int const max_length(buf.size());
-            if( display_only )
-            {
-                v += "(md5) ";
-            }
-            for(int i(0); i < max_length; ++i)
-            {
-                v += byte_to_hex(buf[i]);
-            }
-        }
-        break;
-
-        case CT_secure_value:
-        {
-            switch(c->value().signedCharValue())
-            {
-            case -1:
-                v = "not checked (-1)";
-                break;
-
-            case 0:
-                v = "not secure (0)";
-                break;
-
-            case 1:
-                v = "secure (1)";
-                break;
-
-            default:
-                v = QString("unknown secure status (%1)").arg(c->value().signedCharValue());
-                break;
-
-            }
-        }
-        break;
-
-        case CT_string_value:
-        {
-            // all others viewed as strings
-            if( display_only )
-            {
-                v = c->value().stringValue().replace("\n", "\\n");
-            }
-            else
-            {
-                v = c->value().stringValue();
-            }
-        }
-        break;
+    }
+    catch(std::runtime_error const& e)
+    {
+        std::cerr << "error: caught a runtime exception dealing with \"" << get_column_name(c) << "\" (" << e.what() << ")\n";
+        // TBD: just rethrow?
+        //throw;
+        v = "ERROR DETECTED";
     }
 
     return v;
@@ -540,6 +571,12 @@ void dbutils::set_column_value( QCassandraCell::pointer_t c, const QString& v )
         case CT_uint32_value:
         {
             cvalue.setUInt32Value( v.toULong() );
+        }
+        break;
+
+        case CT_int8_value:
+        {
+            cvalue.setSignedCharValue( v.toInt() );
         }
         break;
 

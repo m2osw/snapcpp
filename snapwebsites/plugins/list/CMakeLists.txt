@@ -1,16 +1,17 @@
 #
 # File:
-#      plugins/output/CMakeLists.txt
+#      plugins/list/CMakeLists.txt
 #
 # Description:
-#      Generate the output of a page. This plugin takes what the content
-#      plugin manages and transforms it in HTML or some other format.
+#      Manage lists of pages. This plugin is used to generate lists of
+#      pages based on different criteria such as the title of the page,
+#      the creation date, the author of the page, etc.
 #
 # Documentation:
 #      See the CMake documentation.
 #
 # License:
-#      Copyright (c) 2011-2014 Made to Order Software Corp.
+#      Copyright (c) 2014 Made to Order Software Corp.
 #
 #      http://snapwebsites.org/
 #      contact@m2osw.com
@@ -30,7 +31,7 @@
 #      Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 
-project(plugin_output)
+project(plugin_list)
 
 find_package( Qt4 4.8.1 QUIET REQUIRED QtCore )
 include( ${QT_USE_FILE} )
@@ -43,34 +44,31 @@ include_directories(
 )
 
 QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC
-    output.qrc
+    list.qrc
 )
 
 snap_validate_xml( content.xml content.dtd )
 
-add_library(output SHARED
-    output.cpp
+add_library(list SHARED
+    list.cpp
     ${SNAP_MANAGER_MOC_CXX}
     ${SNAP_MANAGER_RESOURCES_RCC}
     content.xml
-    close-button.png
-    jquery.js
-    output.js
 )
 
-target_link_libraries( output ${QT_LIBRARIES} )
+target_link_libraries( list ${QT_LIBRARIES} )
 
 get_property( 3RDPARTY_INCLUDED GLOBAL PROPERTY 3RDPARTY_INCLUDED )
 if( 3RDPARTY_INCLUDED )
-    add_dependencies( output make_controlled_vars_headers )
+    add_dependencies( list make_controlled_vars_headers )
 endif()
 
 install(
-    TARGETS output LIBRARY DESTINATION ${PLUGIN_INSTALL_DIR}
+    TARGETS list LIBRARY DESTINATION ${PLUGIN_INSTALL_DIR}
 )
 install(
     DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/
-    DESTINATION include/snapwebsites/plugins/output
+    DESTINATION include/snapwebsites/plugins/list
     FILES_MATCHING PATTERN "*.h"
 )
 

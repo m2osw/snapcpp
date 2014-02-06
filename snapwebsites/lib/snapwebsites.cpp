@@ -1119,6 +1119,7 @@ void server::process_connection(int socket)
 
         // and tell the user about a problem without telling much...
         // (see the logs for more info.)
+        // TBD Translation?
         std::string err("Status: HTTP/1.1 503 Service Unavailable\n"
                       "Expires: Sun, 19 Nov 1978 05:00:00 GMT\n"
                       "Content-type: text/html\n"
