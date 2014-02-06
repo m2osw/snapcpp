@@ -96,12 +96,6 @@ include_directories(
 )
 
 ##
-## Include xmllint utilties
-##
-set( DTD_SOURCE_PATH "${snapwebsites_plugins_SOURCE_DIR}" CACHE PATH "Location of the default DTD files" )
-include( SnapXmlLint )
-
-##
 ## Compiling
 ##
 add_subdirectory(lib)           # Common code which is too specialized to create a separate library

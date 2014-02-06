@@ -38,6 +38,12 @@ project( snapwebsites_plugins )
 set( PLUGIN_INSTALL_DIR lib/snapwebsites/plugins )
 
 
+##
+## Include xmllint utilties
+##
+set( DTD_SOURCE_PATH "${snapwebsites_plugins_SOURCE_DIR}" CACHE PATH "Location of the default DTD files" )
+include( SnapXmlLint )
+
 ################################################################################
 # Keep the plugins in alphabetical order for ease of management
 #
