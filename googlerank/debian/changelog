@@ -1,3 +1,9 @@
+googlerank (1.0.1) saucy; urgency=high
+
+  * Bumping version for fresh build at ppa.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Thu, 06 Feb 2014 14:21:08 -0800
+
 googlerank (1.0.0ubuntu1) quantal; urgency=high
 
   * Now properly installs library file info into the dev and runtime packages.

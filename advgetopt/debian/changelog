@@ -1,3 +1,9 @@
+advgetopt (1.0.1-1) saucy; urgency=high
+
+  * Bumping to new version so lp will accept a new upload.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Thu, 06 Feb 2014 13:44:08 -0800
+
 advgetopt (1.0.0-3) saucy; urgency=high
 
   * Now you can have help for default arguments, and the program name shows

@@ -1,4 +1,4 @@
-snapcmakemodules (1.0.3) UNRELEASED; urgency=low
+snapcmakemodules (1.0.3) saucy; urgency=high
 
   * Now puts dolint script into an INTERNAL variable so it will remain global,
   and it now lives at the top of the binary tree.

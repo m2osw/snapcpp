@@ -1,3 +1,9 @@
+libqtcassandra (0.5.1) saucy; urgency=high
+
+  * Bump to upload new version to PPA.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Thu, 06 Feb 2014 14:33:17 -0800
+
 libqtcassandra (0.5.0-2) quantal; urgency=low
 
   * Changed all shared pointer with std::share_ptr<> so we can use weak

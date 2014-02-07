@@ -1,3 +1,9 @@
+cassview (0.0.5) saucy; urgency=high
+
+  * Bump for new build at the PPA site.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Thu, 06 Feb 2014 19:47:02 -0800
+
 cassview (0.0.4-1) saucy; urgency=high
 
   * Proper versioning, plus nice about dialog and icons.

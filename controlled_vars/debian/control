@@ -2,16 +2,16 @@ Source: controlledvars
 Priority: extra
 Maintainer: R. Douglas Barbieri <doug@dooglio.net>
 Build-Depends: debhelper, cmake, snapcmakemodules
-Standards-Version: 3.9.3
+Standards-Version: 3.9.4
 Section: libs
 Homepage: http://snapwebsites.org/project/controlled-vars
 Vcs-Git: git://git.code.sf.net/p/snapcpp/code
 Vcs-Browser: http://sourceforge.net/p/snapcpp/code/ci/master/tree/controlled_vars/
 
-Package: controlledvars-dev
+Package: libcontrolledvars-dev
 Section: libdevel
 Architecture: any
-Depends: controlledvars (= ${binary:Version})
+Depends: libcontrolledvars (= ${binary:Version}), ${misc:Depends}
 Description: Never forget to initialize your C++ variables!
  The controlled_vars.h and other header files are C++ templates, that gives you
  the ability to control the initialization of your basic C types (i.e. char,
@@ -26,7 +26,7 @@ Description: Never forget to initialize your C++ variables!
  variable without immediately initializing it (and limited controlled variables
  anywhere a bounded value is used.)
 
-Package: controlledvars
+Package: libcontrolledvars
 Section: libs
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}

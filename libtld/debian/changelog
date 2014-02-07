@@ -1,3 +1,9 @@
+libtld (1.4.5) saucy; urgency=high
+
+  * Bump for upload to PPA.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Thu, 06 Feb 2014 14:41:10 -0800
+
 libtld (1.4.4) quantal; urgency=low
 
   * Free the allocated memory as otherwise expected.
