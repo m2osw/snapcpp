@@ -877,7 +877,7 @@ private:
             value /= base;
             --length;
         }
-        while(length > 0 && value != 0);
+        while((length > 0) && (value != 0));
 
         // fill the left side with 'fill'
         while(length > 0)

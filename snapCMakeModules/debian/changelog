@@ -1,3 +1,9 @@
+snapcmakemodules (1.0.4) saucy; urgency=high
+
+  * Added "-fwrapv" to defeat the overflow warnings.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Fri, 07 Feb 2014 08:36:13 -0800
+
 snapcmakemodules (1.0.3) saucy; urgency=high
 
   * Now puts dolint script into an INTERNAL variable so it will remain global,

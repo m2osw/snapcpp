@@ -6,5 +6,5 @@ usr/bin/snaplayout
 usr/bin/snapserver
 usr/bin/snapsignal
 usr/share/snapwebsites/layouts/*
-src/src/log.conf etc/snapwebsites/
-src/src/snapserver.conf etc/snapwebsites/
+src/log.conf etc/snapwebsites/
+src/snapserver.conf etc/snapwebsites/
