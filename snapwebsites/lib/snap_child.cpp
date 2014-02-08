@@ -7144,6 +7144,7 @@ time_t snap_child::string_to_date(QString const& date)
 
         bool integer(int min_len, int max_len, int min_value, int max_value, int& result)
         {
+            result = 0;
             int count(0);
             for(; *f_s >= '0' && *f_s <= '9'; ++f_s, ++count)
             {
