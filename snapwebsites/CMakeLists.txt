@@ -79,7 +79,8 @@ if( "${CMAKE_BUILD_TYPE}" STREQUAL "Debug" )
 endif()
 # These are the 3 extra warnings that did not make it in the modules
 # -Wold-style-cast -Wstrict-overflow=5 -Wnoexcept
-set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wold-style-cast -Wstrict-overflow=5 -Wnoexcept" )
+set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wold-style-cast -Wstrict-overflow=5 -Wnoexcept -fwrapv" )
+set( CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -fwrapv" )
 
 include_directories( 
     ${PROJECT_SOURCE_DIR}
