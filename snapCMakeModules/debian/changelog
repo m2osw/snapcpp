@@ -1,3 +1,9 @@
+snapcmakemodules (1.0.5~saucy) saucy; urgency=high
+
+  * Took out "-fwrapv" and increased strict-overflow to 5.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Fri, 07 Feb 2014 15:39:07 -0800
+
 snapcmakemodules (1.0.4) saucy; urgency=high
 
   * Added "-fwrapv" to defeat the overflow warnings.

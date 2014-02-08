@@ -1,3 +1,9 @@
+snapwebsites (0.1.3~saucy) saucy; urgency=high
+
+  * Added -fwrapv to this project to prevent fatal warning-as-error.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Fri, 07 Feb 2014 16:53:04 -0800
+
 snapwebsites (0.1.2~saucy) saucy; urgency=high
 
   * Now installs snap-form.dtd.
