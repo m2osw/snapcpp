@@ -6107,9 +6107,26 @@ void snap_child::init_plugins()
     }
 
     // load the plugins
-    if(!snap::plugins::load(f_server->get_parameter("plugins_path"), std::static_pointer_cast<snap::plugins::plugin>(f_server), list_of_plugins))
+    const QString plugins_path( f_server->get_parameter("plugins_path") );
+    if( plugins_path.isEmpty() )
     {
-        die(HTTP_CODE_SERVICE_UNAVAILABLE, "Plugin Unavailable", "Server encountered problems with its plugins.", "An error occured loading the server plugins.");
+        // Sanity check
+        //
+        die( HTTP_CODE_SERVICE_UNAVAILABLE
+           , "Plugin path not configured"
+           , "Server cannot find any plugins because the path is not properly configured."
+           , "An error occured loading the server plugins."
+           );
+        NOTREACHED();
+    }
+
+    if(!snap::plugins::load(plugins_path, std::static_pointer_cast<snap::plugins::plugin>(f_server), list_of_plugins))
+    {
+        die( HTTP_CODE_SERVICE_UNAVAILABLE
+           , "Plugin Unavailable"
+           , "Server encountered problems with its plugins."
+           , "An error occured loading the server plugins."
+           );
         NOTREACHED();
     }
     // at this point each plugin was allocated through their factory
