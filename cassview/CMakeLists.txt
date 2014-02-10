@@ -37,7 +37,7 @@
 
 set(CASSVIEW_VERSION_MAJOR 0)
 set(CASSVIEW_VERSION_MINOR 0)
-set(CASSVIEW_VERSION_PATCH 5)
+set(CASSVIEW_VERSION_PATCH 6)
 
 cmake_minimum_required(VERSION 2.8)
 
@@ -79,34 +79,10 @@ include_directories(
     "${SNAPWEBSITES_INCLUDE_DIRS}"
 )
 
-# Create a configure script
-#configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.in ${CMAKE_CURRENT_BINARY_DIR}/config.h)
-#configure_file(${CMAKE_CURRENT_SOURCE_DIR}/include/QtCassandra/QCassandra.h.in ${CMAKE_CURRENT_BINARY_DIR}/include/QtCassandra/QCassandra.h)
-
 add_subdirectory(src)
 #add_subdirectory(tests)
 #add_subdirectory(doc)
 
-#set(CPACK_PACKAGE_NAME "cassview")
-#set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "cassview -- a Qt based-application for browsing a Cassandra database.")
-#set(CPACK_PACKAGE_VENDOR "Made to Order Software Corporation")
-#set(CPACK_PACKAGE_CONTACT "doug@m2osw.com")
-#set(CPACK_RESOURCE_FILE_LICENSE "${${PROJECT_NAME}_SOURCE_DIR}/LICENSE.txt")
-#set(CPACK_GENERATOR "TGZ" "DEB")
-#set(CPACK_SOURCE_GENERATOR "TGZ")
-#set(CPACK_SOURCE_IGNORE_FILES "/CVS/;/work-files/;/.svn/;.swp$;.*~;cscope.*;/tmp/;BUILD;Build;build")
-#set(CPACK_PACKAGE_VERSION "${CASSVIEW_VERSION_MAJOR}.${CASSVIEW_VERSION_MINOR}.${CASSVIEW_VERSION_PATCH}")
-#set(CPACK_PACKAGE_VERSION_MAJOR "${CASSVIEW_VERSION_MAJOR}")
-#set(CPACK_PACKAGE_VERSION_MINOR "${CASSVIEW_VERSION_MINOR}")
-#set(CPACK_PACKAGE_VERSION_PATCH "${CASSVIEW_VERSION_PATCH}")
-#set(CPACK_SOURCE_PACKAGE_FILE_NAME "cassview-${CASSVIEW_VERSION_MAJOR}.${CASSVIEW_VERSION_MINOR}.${CASSVIEW_VERSION_PATCH}")
-#set(CPACK_PACKAGE_EXECUTABLES "cassview")
-#set(CPACK_DEBIAN_PACKAGE_SECTION "libs")
-#set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "http://snapwebsites.org/project/cassview")
-#set(CPACK_DEBIAN_PACKAGE_ENHANCES "libqtcore4") # need to add "cassandra/thrift" once available
-## I'm not too sure how we can add this one... components?
-## See http://www.vtk.org/Wiki/CMake:Component_Install_With_CPack
-##set(CPACK_DEBIAN_PACKAGE_DEV_DEPENDENCIES "cmake libqtcore4-dev thrift-dev")
-#include(CPack)
+install( FILES cassview.desktop DESTINATION share/applications )
 
 # vim: ts=4 sw=4 et
