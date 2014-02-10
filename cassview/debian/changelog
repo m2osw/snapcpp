@@ -1,3 +1,9 @@
+cassview (0.0.5ubuntu1) saucy; urgency=high
+
+  * Bump for new build at the PPA site.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Mon, 10 Feb 2014 07:04:17 -0800
+
 cassview (0.0.5) saucy; urgency=high
 
   * Bump for new build at the PPA site.
