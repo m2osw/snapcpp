@@ -1,4 +1,4 @@
-cassview (0.0.5ubuntu1) saucy; urgency=high
+cassview (0.0.5ubuntu1~saucy) saucy; urgency=high
 
   * Bump for new build at the PPA site.
 
