@@ -20,6 +20,7 @@ public:
     ~MainWindow();
 
 private slots:
+    void onShowContextMenu( const QPoint& pos );
     void onCellsModelReset();
     void on_action_Settings_triggered();
     void onAboutToQuit();
@@ -29,6 +30,8 @@ private slots:
     void on_action_About_triggered();
     void on_action_AboutQt_triggered();
     void onSectionClicked( int section );
+    void on_action_InsertColumn_triggered();
+    void on_action_DeleteColumns_triggered();
 
 private:
 	typedef QtCassandra::QCassandra::pointer_t cassandra_t;

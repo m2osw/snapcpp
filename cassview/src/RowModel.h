@@ -26,6 +26,11 @@ class RowModel
         bool            setData       ( const QModelIndex & index, const QVariant & value, int role = Qt::EditRole );
         bool            setHeaderData ( int section, Qt::Orientation orientation, const QVariant & value, int role = Qt::EditRole );
 
+        // Resizable methods
+        //
+        bool insertRows ( int row, int count, const QModelIndex & parent = QModelIndex() );
+        bool removeRows ( int row, int count, const QModelIndex & parent = QModelIndex() );
+
     private:
         QtCassandra::QCassandraRow::pointer_t   f_row;
 };

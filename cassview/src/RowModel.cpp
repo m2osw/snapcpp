@@ -1,5 +1,6 @@
 #include "RowModel.h"
 #include <snapwebsites/dbutils.h>
+#include <QtCassandra/QCassandra.h>
 #include <QtCassandra/QCassandraContext.h>
 #include <iostream>
 
@@ -31,7 +32,7 @@ QVariant RowModel::data( const QModelIndex & idx, int role ) const
         return QVariant();
     }
 
-    if( role != Qt::DisplayRole && role != Qt::EditRole )
+    if( role != Qt::DisplayRole && role != Qt::EditRole && role != Qt::UserRole )
     {
         return QVariant();
     }
@@ -44,10 +45,15 @@ QVariant RowModel::data( const QModelIndex & idx, int role ) const
 
     try
     {
-        QCassandraContext::pointer_t context( f_row->parentTable()->parentContext() );
         const QCassandraCells& cell_list = f_row->cells();
         const auto cell( (cell_list.begin()+idx.row()).value() );
 
+        if( role == Qt::UserRole )
+        {
+            return cell->columnKey();
+        }
+
+        QCassandraContext::pointer_t context( f_row->parentTable()->parentContext() );
         if( context->contextName() == "snap_websites" )
         {
             snap::dbutils du( f_row->parentTable()->tableName(), f_row->rowName() );
@@ -132,10 +138,15 @@ bool RowModel::setData( const QModelIndex & idx, const QVariant & value, int rol
 
     try
     {
-        QCassandraContext::pointer_t context( f_row->parentTable()->parentContext() );
+#if 0
         const QCassandraCells& cell_list = f_row->cells();
         const auto cell( (cell_list.begin()+idx.row()).value() );
+#else
+        QByteArray key( data( idx, Qt::UserRole ).toByteArray() );
+        const auto cell( f_row->findCell(key) );
+#endif
 
+        QCassandraContext::pointer_t context( f_row->parentTable()->parentContext() );
         if( context->contextName() == "snap_websites" )
         {
             snap::dbutils du( f_row->parentTable()->tableName(), f_row->rowName() );
@@ -164,6 +175,65 @@ bool RowModel::setData( const QModelIndex & idx, const QVariant & value, int rol
 bool RowModel::setHeaderData( int /*section*/, Qt::Orientation /*orientation*/, const QVariant & /*value*/, int /*role*/ )
 {
     return false;
+}
+
+
+bool RowModel::insertRows ( int /*row*/, int /*count*/, const QModelIndex & parent_index )
+{
+    QCassandraContext::pointer_t context( f_row->parentTable()->parentContext() );
+    Q_ASSERT(context);
+
+    bool retval( true );
+    beginInsertRows( parent_index, rowCount(), 1 );
+    try
+    {
+        auto key( (*f_row)["New Column"].columnKey() );
+        auto cell( f_row->findCell( key ) );
+        cell->setTimestamp( QCassandraValue::TIMESTAMP_MODE_AUTO );
+
+        if( context->contextName() == "snap_websites" )
+        {
+            snap::dbutils du( f_row->parentTable()->tableName(), f_row->rowName() );
+            du.set_column_value( cell, "New Value" );
+        }
+        else
+        {
+            QCassandraValue v;
+            v.setStringValue( "New Value" );
+            cell->setValue( v );
+        }
+    }
+    catch( const std::exception& x )
+    {
+        std::cerr << "Exception caught! [" << x.what() << "]" << std::endl;
+        retval = false;
+    }
+    endInsertRows();
+    return retval;
+}
+
+
+bool RowModel::removeRows ( int row, int count, const QModelIndex & )
+{
+    // Make a list of the keys we will drop
+    //
+    QList<QByteArray> key_list;
+    for( int idx = 0; idx < count; ++idx )
+    {
+        const QByteArray key( data( index(idx + row, 0), Qt::UserRole ).toByteArray() );
+        key_list << key;
+    }
+
+    // Drop each key
+    //
+    for( auto key : key_list )
+    {
+        f_row->dropCell( key, QCassandra::timeofday() );
+    }
+
+    reset();
+
+    return true;
 }
 
 

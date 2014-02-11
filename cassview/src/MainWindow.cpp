@@ -43,6 +43,10 @@ MainWindow::MainWindow(QWidget *p)
     f_mainSplitter->setStretchFactor( 0, 0 );
     f_mainSplitter->setStretchFactor( 1, 1 );
 
+    f_cells->setContextMenuPolicy( Qt::CustomContextMenu );
+
+    connect( f_cells, SIGNAL(customContextMenuRequested(const QPoint&)),
+             this, SLOT(onShowContextMenu(const QPoint&)) );
     connect( f_rows->selectionModel(), SIGNAL(currentChanged(QModelIndex,QModelIndex)),
              this, SLOT(onCurrentChanged(QModelIndex,QModelIndex)) );
     connect( &f_rowModel, SIGNAL(modelReset()),
@@ -74,6 +78,17 @@ void MainWindow::fillTableList()
 
     QCassandraContext::pointer_t qcontext( f_cassandra->findContext(f_context) );
 	f_contextModel.setContext( qcontext );
+}
+
+
+void MainWindow::onShowContextMenu( const QPoint& mouse_pos )
+{
+    QPoint global_pos( f_cells->mapToGlobal(mouse_pos) );
+
+    QMenu menu( this );
+    menu.addAction( action_InsertColumn );
+    menu.addAction( action_DeleteColumns );
+    menu.exec(global_pos);
 }
 
 
@@ -173,3 +188,16 @@ void MainWindow::onSectionClicked( int section )
 {
     f_cells->resizeColumnToContents( section );
 }
+
+
+void MainWindow::on_action_InsertColumn_triggered()
+{
+    QMessageBox::information( this, "insert column", "insert column" );
+}
+
+
+void MainWindow::on_action_DeleteColumns_triggered()
+{
+    QMessageBox::information( this, "delete columns", "delete columns" );
+}
+

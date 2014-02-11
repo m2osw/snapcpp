@@ -139,7 +139,23 @@
     <addaction name="action_About"/>
     <addaction name="action_AboutQt"/>
    </widget>
+   <widget class="QMenu" name="menu_Column">
+    <property name="title">
+     <string>&amp;Column</string>
+    </property>
+    <addaction name="action_InsertColumn"/>
+    <addaction name="action_DeleteColumns"/>
+   </widget>
+   <widget class="QMenu" name="menu_Row">
+    <property name="title">
+     <string>&amp;Row</string>
+    </property>
+    <addaction name="action_InsertRow"/>
+    <addaction name="action_DeleteRows"/>
+   </widget>
    <addaction name="menu_File"/>
+   <addaction name="menu_Row"/>
+   <addaction name="menu_Column"/>
    <addaction name="menu_Helpo"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
@@ -167,6 +183,38 @@
   <action name="action_AboutQt">
    <property name="text">
     <string>About &amp;Qt</string>
+   </property>
+  </action>
+  <action name="action_InsertColumn">
+   <property name="text">
+    <string>&amp;Insert Column</string>
+   </property>
+   <property name="toolTip">
+    <string>Insert new column into the current row.</string>
+   </property>
+  </action>
+  <action name="action_DeleteColumns">
+   <property name="text">
+    <string>&amp;Delete Columns</string>
+   </property>
+   <property name="toolTip">
+    <string>Delete selected columns in the current row.</string>
+   </property>
+  </action>
+  <action name="action_InsertRow">
+   <property name="text">
+    <string>&amp;Insert Row</string>
+   </property>
+   <property name="toolTip">
+    <string>Insert new row into current table.</string>
+   </property>
+  </action>
+  <action name="action_DeleteRows">
+   <property name="text">
+    <string>&amp;Delete Rows</string>
+   </property>
+   <property name="toolTip">
+    <string>Delete selected rows in current table.</string>
    </property>
   </action>
  </widget>
