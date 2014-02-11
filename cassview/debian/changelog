@@ -1,3 +1,9 @@
+cassview (0.0.8~saucy) UNRELEASED; urgency=high
+
+  * Improved InputDialog, better error support, save splitter state. 
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Tue, 11 Feb 2014 07:58:39 -0800
+
 cassview (0.0.7~saucy) saucy; urgency=high
 
   * Now allows adding and removal of columns in any row.
