@@ -42,6 +42,7 @@ private:
     RowModel        f_rowModel;
     QString         f_context;
 
+    void        connectCassandra();
     void        fillTableList();
     void        changeRow(const QModelIndex &index);
 };

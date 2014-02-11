@@ -22,12 +22,7 @@ MainWindow::MainWindow(QWidget *p)
     f_context = settings.value("context", "snap_websites").toString();
 
     f_cassandra = QCassandra::create();
-    f_cassandra->connect( settings.value( "cassandra_host" ).toString()
-                        , settings.value( "cassandra_port" ).toInt()
-                        );
-
-    qDebug() << "Working on Cassandra Cluster Named"    << f_cassandra->clusterName();
-    qDebug() << "Working on Cassandra Protocol Version" << f_cassandra->protocolVersion();
+    connectCassandra();
 
     f_contextCombo->setModel( &f_cassandraModel );
     f_tables->setModel( &f_contextModel );
@@ -65,6 +60,18 @@ MainWindow::MainWindow(QWidget *p)
 
 MainWindow::~MainWindow()
 {
+}
+
+
+void MainWindow::connectCassandra()
+{
+    QSettings settings;
+    f_cassandra->connect( settings.value( "cassandra_host" ).toString()
+                        , settings.value( "cassandra_port" ).toInt()
+                        );
+
+    qDebug() << "Working on Cassandra Cluster Named"    << f_cassandra->clusterName();
+    qDebug() << "Working on Cassandra Protocol Version" << f_cassandra->protocolVersion();
 }
 
 
@@ -118,6 +125,7 @@ void MainWindow::on_action_Settings_triggered()
         SettingsDialog dlg(this);
         if( dlg.exec() == QDialog::Accepted )
         {
+            connectCassandra();
             fillTableList();
         }
     }
