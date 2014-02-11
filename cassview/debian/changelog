@@ -1,3 +1,9 @@
+cassview (0.0.7~saucy) saucy; urgency=high
+
+  * Now allows adding and removal of columns in any row.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Mon, 10 Feb 2014 19:17:17 -0800
+
 cassview (0.0.6~saucy) saucy; urgency=high
 
   * Added application icon.
