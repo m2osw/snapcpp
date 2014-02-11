@@ -45,10 +45,13 @@ MainWindow::MainWindow(QWidget *p)
 
     f_cells->setContextMenuPolicy( Qt::CustomContextMenu );
 
+    action_InsertColumn->setEnabled( false );
+    action_DeleteColumns->setEnabled( false );
+
     connect( f_cells, SIGNAL(customContextMenuRequested(const QPoint&)),
              this, SLOT(onShowContextMenu(const QPoint&)) );
     connect( f_rows->selectionModel(), SIGNAL(currentChanged(QModelIndex,QModelIndex)),
-             this, SLOT(onCurrentChanged(QModelIndex,QModelIndex)) );
+             this, SLOT(onRowsCurrentChanged(QModelIndex,QModelIndex)) );
     connect( &f_rowModel, SIGNAL(modelReset()),
              this, SLOT(onCellsModelReset()) );
     connect( qApp, SIGNAL(aboutToQuit()), this, SLOT(onAboutToQuit()) );
@@ -83,6 +86,12 @@ void MainWindow::fillTableList()
 
 void MainWindow::onShowContextMenu( const QPoint& mouse_pos )
 {
+    if( !f_rows->selectionModel()->hasSelection() )
+    {
+        // Do nothing, as something must be selected in the rows!
+        return;
+    }
+
     QPoint global_pos( f_cells->mapToGlobal(mouse_pos) );
 
     QMenu menu( this );
@@ -156,10 +165,13 @@ void MainWindow::changeRow(const QModelIndex &index)
     QCassandraRow::pointer_t row( f_tableModel.getTable()->findRow(row_key) );
 
     f_rowModel.setRow( row );
+
+    action_InsertColumn->setEnabled( true );
+    action_DeleteColumns->setEnabled( true );
 }
 
 
-void MainWindow::onCurrentChanged( const QModelIndex & current, const QModelIndex & /*previous*/ )
+void MainWindow::onRowsCurrentChanged( const QModelIndex & current, const QModelIndex & /*previous*/ )
 {
     try
     {
@@ -192,12 +204,21 @@ void MainWindow::onSectionClicked( int section )
 
 void MainWindow::on_action_InsertColumn_triggered()
 {
-    QMessageBox::information( this, "insert column", "insert column" );
+    f_rowModel.insertRows( 0, 0 );  // Always inserts just one row
 }
 
 
 void MainWindow::on_action_DeleteColumns_triggered()
 {
-    QMessageBox::information( this, "delete columns", "delete columns" );
+    try
+    {
+        const QModelIndexList selectedItems( f_cells->selectionModel()->selectedRows() );
+        f_rowModel.removeRows( selectedItems[0].row(), selectedItems.size() );
+    }
+    catch( const std::exception& p_x )
+    {
+        std::cerr << "Exception caught! [" << p_x.what() << "]" << std::endl;
+    }
 }
 
+// vim: ts=4 sw=4 et syntax=cpp.doxygen

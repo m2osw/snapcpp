@@ -46,6 +46,7 @@ include_directories(
 
 QT4_WRAP_UI(UI_FILES
 	AboutDialog.ui
+	InputDialog.ui
 	MainWindow.ui
 	SettingsDialog.ui
 )
@@ -58,6 +59,7 @@ add_executable(${PROJECT_NAME}
 	AboutDialog.cpp
     CassandraModel.cpp
 	ContextModel.cpp
+	InputDialog.cpp
 	MainWindow.cpp
 	main.cpp
     RowModel.cpp

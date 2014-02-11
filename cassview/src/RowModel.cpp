@@ -1,7 +1,9 @@
 #include "RowModel.h"
+#include "InputDialog.h"
 #include <snapwebsites/dbutils.h>
 #include <QtCassandra/QCassandra.h>
 #include <QtCassandra/QCassandraContext.h>
+#include <QMessageBox>
 #include <iostream>
 
 using namespace QtCassandra;
@@ -180,41 +182,64 @@ bool RowModel::setHeaderData( int /*section*/, Qt::Orientation /*orientation*/, 
 
 bool RowModel::insertRows ( int /*row*/, int /*count*/, const QModelIndex & parent_index )
 {
-    QCassandraContext::pointer_t context( f_row->parentTable()->parentContext() );
-    Q_ASSERT(context);
-
     bool retval( true );
-    beginInsertRows( parent_index, rowCount(), 1 );
     try
     {
-        auto key( (*f_row)["New Column"].columnKey() );
-        auto cell( f_row->findCell( key ) );
-        cell->setTimestamp( QCassandraValue::TIMESTAMP_MODE_AUTO );
+        InputDialog dlg;
+        dlg.f_inputLabel->setText( tr("Enter Column Name:") );
+        dlg.f_inputEdit->setText( tr("New Column") );
+        if( dlg.exec() == QDialog::Accepted )
+        {
+            beginInsertRows( parent_index, rowCount(), 1 );
+            const QString col_name( dlg.f_inputEdit->text() );
+            auto key( (*f_row)[col_name].columnKey() );
+            auto cell( f_row->findCell( key ) );
+            cell->setTimestamp( QCassandraValue::TIMESTAMP_MODE_AUTO );
 
-        if( context->contextName() == "snap_websites" )
-        {
-            snap::dbutils du( f_row->parentTable()->tableName(), f_row->rowName() );
-            du.set_column_value( cell, "New Value" );
-        }
-        else
-        {
-            QCassandraValue v;
-            v.setStringValue( "New Value" );
-            cell->setValue( v );
+            QCassandraContext::pointer_t context( f_row->parentTable()->parentContext() );
+            Q_ASSERT(context);
+            if( context->contextName() == "snap_websites" )
+            {
+                snap::dbutils du( f_row->parentTable()->tableName(), f_row->rowName() );
+                du.set_column_value( cell, "New Value" );
+            }
+            else
+            {
+                QCassandraValue v;
+                v.setStringValue( "New Value" );
+                cell->setValue( v );
+            }
+            endInsertRows();
+            reset();
         }
     }
     catch( const std::exception& x )
     {
+        endInsertRows();
         std::cerr << "Exception caught! [" << x.what() << "]" << std::endl;
         retval = false;
     }
-    endInsertRows();
     return retval;
 }
 
 
 bool RowModel::removeRows ( int row, int count, const QModelIndex & )
 {
+    QMessageBox::StandardButton result
+            = QMessageBox::warning( 0
+            , tr("Warning!")
+            , tr("Warning!\nYou are about to remove %1 columns from row '%2', in table '%3'.\nThis cannot be undone!")
+              .arg(count)
+              .arg(f_row->rowName())
+              .arg(f_row->parentTable()->tableName())
+            , QMessageBox::Ok | QMessageBox::Cancel
+            );
+
+    if( result != QMessageBox::Ok )
+    {
+        return false;
+    }
+
     // Make a list of the keys we will drop
     //
     QList<QByteArray> key_list;
@@ -228,7 +253,7 @@ bool RowModel::removeRows ( int row, int count, const QModelIndex & )
     //
     for( auto key : key_list )
     {
-        f_row->dropCell( key, QCassandra::timeofday() );
+        f_row->dropCell( key ); //, QCassandra::timeofday() );
     }
 
     reset();
