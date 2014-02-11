@@ -192,6 +192,9 @@
    <property name="toolTip">
     <string>Insert new column into the current row.</string>
    </property>
+   <property name="shortcut">
+    <string>Ctrl+I</string>
+   </property>
   </action>
   <action name="action_DeleteColumns">
    <property name="text">
@@ -199,6 +202,9 @@
    </property>
    <property name="toolTip">
     <string>Delete selected columns in the current row.</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+X</string>
    </property>
   </action>
   <action name="action_InsertRow">

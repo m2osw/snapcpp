@@ -1,10 +1,13 @@
 #include "RowModel.h"
 #include "InputDialog.h"
 #include <snapwebsites/dbutils.h>
+#include <snapwebsites/qstring_stream.h>
 #include <QtCassandra/QCassandra.h>
 #include <QtCassandra/QCassandraContext.h>
 #include <QMessageBox>
+#include <QSettings>
 #include <iostream>
+#include <sstream>
 
 using namespace QtCassandra;
 
@@ -24,6 +27,21 @@ Qt::ItemFlags RowModel::flags( const QModelIndex & idx ) const
         f |= Qt::ItemIsEditable;
     }
     return f;
+}
+
+
+namespace
+{
+    void displayError( const std::exception& except )
+    {
+        std::stringstream ss;
+        ss << QObject::tr("QtCassandra exception caught!") << "\n[" << except.what() << "]";
+        std::cerr << ss.str() << std::endl;
+        QMessageBox::critical( QApplication::activeWindow()
+                , QObject::tr("Error")
+                , ss.str().c_str()
+                );
+    }
 }
 
 
@@ -73,9 +91,9 @@ QVariant RowModel::data( const QModelIndex & idx, int role ) const
         const auto value( idx.column() == 0? cell->columnName(): cell->value() );
         return value.stringValue();
     }
-    catch( const std::exception& x )
+    catch( const std::exception& except )
     {
-        std::cerr << "Exception caught! [" << x.what() << "]" << std::endl;
+        displayError( except );
     }
 
     return QVariant();
@@ -111,9 +129,9 @@ int RowModel::rowCount( const QModelIndex & /*parent*/ ) const
         const QCassandraCells& cell_list = f_row->cells();
         return cell_list.size();
     }
-    catch( const std::exception& x )
+    catch( const std::exception& except )
     {
-        std::cerr << "Exception caught! [" << x.what() << "]" << std::endl;
+        displayError( except );
     }
 
     return 0;
@@ -140,13 +158,8 @@ bool RowModel::setData( const QModelIndex & idx, const QVariant & value, int rol
 
     try
     {
-#if 0
-        const QCassandraCells& cell_list = f_row->cells();
-        const auto cell( (cell_list.begin()+idx.row()).value() );
-#else
         QByteArray key( data( idx, Qt::UserRole ).toByteArray() );
         const auto cell( f_row->findCell(key) );
-#endif
 
         QCassandraContext::pointer_t context( f_row->parentTable()->parentContext() );
         if( context->contextName() == "snap_websites" )
@@ -165,9 +178,9 @@ bool RowModel::setData( const QModelIndex & idx, const QVariant & value, int rol
 
         return true;
     }
-    catch( const std::exception& x )
+    catch( const std::exception& except )
     {
-        std::cerr << "Exception caught! [" << x.what() << "]" << std::endl;
+        displayError( except );
     }
 
     return false;
@@ -185,11 +198,18 @@ bool RowModel::insertRows ( int /*row*/, int /*count*/, const QModelIndex & pare
     bool retval( true );
     try
     {
+        QSettings settings;
+        const QString edit_key( "InputDialog/EditValue" );
+        //
         InputDialog dlg;
         dlg.f_inputLabel->setText( tr("Enter Column Name:") );
-        dlg.f_inputEdit->setText( tr("New Column") );
+        dlg.f_inputEdit->setText( settings.value( edit_key, tr("New Column") ).toString() );
+        dlg.f_inputEdit->selectAll();
+        //
         if( dlg.exec() == QDialog::Accepted )
         {
+            settings.setValue( edit_key, dlg.f_inputEdit->text() );
+
             beginInsertRows( parent_index, rowCount(), 1 );
             const QString col_name( dlg.f_inputEdit->text() );
             auto key( (*f_row)[col_name].columnKey() );
@@ -213,10 +233,10 @@ bool RowModel::insertRows ( int /*row*/, int /*count*/, const QModelIndex & pare
             reset();
         }
     }
-    catch( const std::exception& x )
+    catch( const std::exception& except )
     {
         endInsertRows();
-        std::cerr << "Exception caught! [" << x.what() << "]" << std::endl;
+        displayError( except );
         retval = false;
     }
     return retval;
@@ -226,7 +246,7 @@ bool RowModel::insertRows ( int /*row*/, int /*count*/, const QModelIndex & pare
 bool RowModel::removeRows ( int row, int count, const QModelIndex & )
 {
     QMessageBox::StandardButton result
-            = QMessageBox::warning( 0
+            = QMessageBox::warning( QApplication::activeWindow()
             , tr("Warning!")
             , tr("Warning!\nYou are about to remove %1 columns from row '%2', in table '%3'.\nThis cannot be undone!")
               .arg(count)
@@ -240,25 +260,34 @@ bool RowModel::removeRows ( int row, int count, const QModelIndex & )
         return false;
     }
 
-    // Make a list of the keys we will drop
-    //
-    QList<QByteArray> key_list;
-    for( int idx = 0; idx < count; ++idx )
+    try
     {
-        const QByteArray key( data( index(idx + row, 0), Qt::UserRole ).toByteArray() );
-        key_list << key;
+        // Make a list of the keys we will drop
+        //
+        QList<QByteArray> key_list;
+        for( int idx = 0; idx < count; ++idx )
+        {
+            const QByteArray key( data( index(idx + row, 0), Qt::UserRole ).toByteArray() );
+            key_list << key;
+        }
+
+        // Drop each key
+        //
+        for( auto key : key_list )
+        {
+            f_row->dropCell( key );
+        }
+
+        reset();
+
+        return true;
+    }
+    catch( const std::exception& except )
+    {
+        displayError( except );
     }
 
-    // Drop each key
-    //
-    for( auto key : key_list )
-    {
-        f_row->dropCell( key ); //, QCassandra::timeofday() );
-    }
-
-    reset();
-
-    return true;
+    return false;
 }
 
 

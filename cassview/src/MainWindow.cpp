@@ -16,6 +16,9 @@ MainWindow::MainWindow(QWidget *p)
     QSettings settings( this );
     restoreGeometry( settings.value( "geometry", saveGeometry() ).toByteArray() );
     restoreState   ( settings.value( "state"   , saveState()    ).toByteArray() );
+
+    f_mainSplitter->restoreState( settings.value( "splitterState", f_mainSplitter->saveState() ).toByteArray() );
+
     f_context = settings.value("context", "snap_websites").toString();
 
     f_cassandra = QCassandra::create();
@@ -68,9 +71,10 @@ MainWindow::~MainWindow()
 void MainWindow::onAboutToQuit()
 {
     QSettings settings( this );
-    settings.setValue( "geometry", saveGeometry()                );
-    settings.setValue( "state",    saveState()                   );
-    settings.setValue( "context",  f_contextCombo->currentText() );
+    settings.setValue( "geometry",      saveGeometry()                );
+    settings.setValue( "state",         saveState()                   );
+    settings.setValue( "splitterState", f_mainSplitter->saveState()   );
+    settings.setValue( "context",       f_contextCombo->currentText() );
 }
 
 
@@ -213,7 +217,10 @@ void MainWindow::on_action_DeleteColumns_triggered()
     try
     {
         const QModelIndexList selectedItems( f_cells->selectionModel()->selectedRows() );
-        f_rowModel.removeRows( selectedItems[0].row(), selectedItems.size() );
+        if( !selectedItems.isEmpty() )
+        {
+            f_rowModel.removeRows( selectedItems[0].row(), selectedItems.size() );
+        }
     }
     catch( const std::exception& p_x )
     {
