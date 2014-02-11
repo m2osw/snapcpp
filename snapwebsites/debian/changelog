@@ -1,7 +1,8 @@
-snapwebsites (0.1.5ubuntu1~saucy) UNRELEASED; urgency=high
+snapwebsites (0.1.6~saucy) saucy; urgency=high
 
   * Logrotate for snapserver was incorrect: now restarts snapserver (instead
   of snapwebsites).
+  * Added crontab for snapbackend.
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Tue, 11 Feb 2014 08:37:17 -0800
 

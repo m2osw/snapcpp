@@ -1,6 +1,8 @@
-cassview (0.0.8~saucy) UNRELEASED; urgency=high
+cassview (0.0.8~saucy) saucy; urgency=high
 
   * Improved InputDialog, better error support, save splitter state. 
+  * Repaired error with SettingsDialog, so the server information can be
+  changed and it persists and connects properly.
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Tue, 11 Feb 2014 07:58:39 -0800
 
