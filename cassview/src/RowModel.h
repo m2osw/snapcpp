@@ -13,7 +13,8 @@ class RowModel
     public:
         RowModel() {}
 
-        void setRow( QtCassandra::QCassandraRow::pointer_t c );
+        QtCassandra::QCassandraRow::pointer_t   getRow() const;
+        void                                    setRow( QtCassandra::QCassandraRow::pointer_t c );
 
         Qt::ItemFlags   flags       ( const QModelIndex & index ) const;
         QVariant        data        ( const QModelIndex & index, int role = Qt::DisplayRole ) const;

@@ -227,7 +227,20 @@ void MainWindow::on_action_DeleteColumns_triggered()
         const QModelIndexList selectedItems( f_cells->selectionModel()->selectedRows() );
         if( !selectedItems.isEmpty() )
         {
-            f_rowModel.removeRows( selectedItems[0].row(), selectedItems.size() );
+            auto row( f_rowModel.getRow() );
+            QMessageBox::StandardButton result
+                    = QMessageBox::warning( QApplication::activeWindow()
+                    , tr("Warning!")
+                    , tr("Warning!\nYou are about to remove %1 columns from row '%2', in table '%3'.\nThis cannot be undone!")
+                      .arg(selectedItems.size())
+                      .arg(row->rowName())
+                      .arg(row->parentTable()->tableName())
+                    , QMessageBox::Ok | QMessageBox::Cancel
+                    );
+            if( result == QMessageBox::Ok )
+            {
+                f_rowModel.removeRows( selectedItems[0].row(), selectedItems.size() );
+            }
         }
     }
     catch( const std::exception& p_x )

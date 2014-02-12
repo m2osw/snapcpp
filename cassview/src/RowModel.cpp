@@ -19,6 +19,12 @@ void RowModel::setRow( QCassandraRow::pointer_t c )
 }
 
 
+QCassandraRow::pointer_t RowModel::getRow() const
+{
+    return f_row;
+}
+
+
 Qt::ItemFlags RowModel::flags( const QModelIndex & idx ) const
 {
     Qt::ItemFlags f = Qt::ItemIsEnabled | Qt::ItemIsSelectable;
@@ -245,21 +251,6 @@ bool RowModel::insertRows ( int /*row*/, int /*count*/, const QModelIndex & pare
 
 bool RowModel::removeRows ( int row, int count, const QModelIndex & )
 {
-    QMessageBox::StandardButton result
-            = QMessageBox::warning( QApplication::activeWindow()
-            , tr("Warning!")
-            , tr("Warning!\nYou are about to remove %1 columns from row '%2', in table '%3'.\nThis cannot be undone!")
-              .arg(count)
-              .arg(f_row->rowName())
-              .arg(f_row->parentTable()->tableName())
-            , QMessageBox::Ok | QMessageBox::Cancel
-            );
-
-    if( result != QMessageBox::Ok )
-    {
-        return false;
-    }
-
     try
     {
         // Make a list of the keys we will drop
