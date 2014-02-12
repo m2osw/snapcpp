@@ -84,6 +84,8 @@ add_library( ${PROJECT_NAME} SHARED
     qstring_stream.h                            # Stream QString objects property to ostream objects.
     quoted_printable.cpp                        # to encode / decode data using the quoted printable format
     qxmlmessagehandler.cpp                      # Qt extension for us to capture the QXmlQuery messages
+    row_model.h                                 # libQtCassandra row model for use with
+    row_model.cpp                               #    a QTableView object.
     snap_child.cpp                              # requests processing
     snap_exception.cpp                          # exception stack backtrack
     snap_image.cpp                              # image handling
@@ -98,6 +100,8 @@ add_library( ${PROJECT_NAME} SHARED
     ${CMAKE_CURRENT_BINARY_DIR}/snapwebsites.h  # binary output of header file (generated)
     snapwebsites.cpp                            # server
     tcp_client_server.cpp                       # low level TCP/IP that works
+    table_model.h                               # libQtCassandra table model for use with
+    table_model.cpp                             #    a QListView object.
     udp_client_server.cpp                       # low level UDP/IP that works
 )
 

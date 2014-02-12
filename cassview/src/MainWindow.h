@@ -3,8 +3,9 @@
 #include "ui_MainWindow.h"
 #include "CassandraModel.h"
 #include "ContextModel.h"
-#include "TableModel.h"
-#include "RowModel.h"
+
+#include <snapwebsites/table_model.h>
+#include <snapwebsites/row_model.h>
 
 #include <QtCassandra/QCassandra.h>
 #include <QtGui>
@@ -35,12 +36,12 @@ private slots:
 
 private:
     typedef QtCassandra::QCassandra::pointer_t cassandra_t;
-    cassandra_t     f_cassandra;
-    CassandraModel  f_cassandraModel;
-    ContextModel    f_contextModel;
-    TableModel      f_tableModel;
-    RowModel        f_rowModel;
-    QString         f_context;
+    cassandra_t       f_cassandra;
+    CassandraModel    f_cassandraModel;
+    ContextModel      f_contextModel;
+    snap::table_model f_tableModel;
+    snap::row_model   f_rowModel;
+    QString           f_context;
 
     void        connectCassandra();
     void        fillTableList();

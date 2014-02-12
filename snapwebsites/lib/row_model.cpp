@@ -1,32 +1,47 @@
-#include "RowModel.h"
-#include "InputDialog.h"
-#include <snapwebsites/dbutils.h>
-#include <snapwebsites/qstring_stream.h>
+//===============================================================================
+// Copyright (c) 2005-2013 by Made to Order Software Corporation
+// 
+// All Rights Reserved.
+// 
+// The source code in this file ("Source Code") is provided by Made to Order Software Corporation
+// to you under the terms of the GNU General Public License, version 2.0
+// ("GPL").  Terms of the GPL can be found in doc/GPL-license.txt in this distribution.
+// 
+// By copying, modifying or distributing this software, you acknowledge
+// that you have read and understood your obligations described above,
+// and agree to abide by those obligations.
+// 
+// ALL SOURCE CODE IN THIS DISTRIBUTION IS PROVIDED "AS IS." THE AUTHOR MAKES NO
+// WARRANTIES, EXPRESS, IMPLIED OR OTHERWISE, REGARDING ITS ACCURACY,
+// COMPLETENESS OR PERFORMANCE.
+//===============================================================================
+
+#include "row_model.h"
+#include "dbutils.h"
+#include "qstring_stream.h"
+
 #include <QtCassandra/QCassandra.h>
 #include <QtCassandra/QCassandraContext.h>
-#include <QMessageBox>
-#include <QSettings>
-#include <iostream>
-#include <sstream>
-#include "DisplayException.h"
 
 using namespace QtCassandra;
 
+namespace snap
+{
 
-void RowModel::setRow( QCassandraRow::pointer_t c )
+void row_model::setRow( QCassandraRow::pointer_t c )
 {
     f_row = c;
     reset();
 }
 
 
-QCassandraRow::pointer_t RowModel::getRow() const
+QCassandraRow::pointer_t row_model::getRow() const
 {
     return f_row;
 }
 
 
-Qt::ItemFlags RowModel::flags( const QModelIndex & idx ) const
+Qt::ItemFlags row_model::flags( const QModelIndex & idx ) const
 {
     Qt::ItemFlags f = Qt::ItemIsEnabled | Qt::ItemIsSelectable;
     if( idx.column() == 1 )
@@ -37,17 +52,13 @@ Qt::ItemFlags RowModel::flags( const QModelIndex & idx ) const
 }
 
 
-namespace
+void row_model::displayError( const std::exception& except, const QString& message )
 {
-    void displayError( const std::exception& except, const QString& message )
-    {
-        DisplayException de( except.what(), QObject::tr("Error"), message );
-        de.displayError();
-    }
+    emit exceptionCaught( except.what(), message );
 }
 
 
-QVariant RowModel::data( const QModelIndex & idx, int role ) const
+QVariant row_model::data( const QModelIndex & idx, int role ) const
 {
     if( !f_row )
     {
@@ -102,7 +113,7 @@ QVariant RowModel::data( const QModelIndex & idx, int role ) const
 }
 
 
-QVariant RowModel::headerData( int section, Qt::Orientation orientation, int role ) const
+QVariant row_model::headerData( int section, Qt::Orientation orientation, int role ) const
 {
     if( role != Qt::DisplayRole || orientation != Qt::Horizontal )
     {
@@ -119,7 +130,7 @@ QVariant RowModel::headerData( int section, Qt::Orientation orientation, int rol
 }
 
 
-int RowModel::rowCount( const QModelIndex & /*parent*/ ) const
+int row_model::rowCount( const QModelIndex & /*parent*/ ) const
 {
     if( !f_row )
     {
@@ -140,13 +151,13 @@ int RowModel::rowCount( const QModelIndex & /*parent*/ ) const
 }
 
 
-int RowModel::columnCount( const QModelIndex & /*parent*/ ) const
+int row_model::columnCount( const QModelIndex & /*parent*/ ) const
 {
     return 2;
 }
 
 
-bool RowModel::setData( const QModelIndex & idx, const QVariant & value, int role )
+bool row_model::setData( const QModelIndex & idx, const QVariant & value, int role )
 {
     if( !f_row )
     {
@@ -189,51 +200,46 @@ bool RowModel::setData( const QModelIndex & idx, const QVariant & value, int rol
 }
 
 
-bool RowModel::setHeaderData( int /*section*/, Qt::Orientation /*orientation*/, const QVariant & /*value*/, int /*role*/ )
+bool row_model::setHeaderData( int /*section*/, Qt::Orientation /*orientation*/, const QVariant & /*value*/, int /*role*/ )
 {
     return false;
 }
 
 
-bool RowModel::insertRows ( int /*row*/, int /*count*/, const QModelIndex & parent_index )
+bool row_model::insertNewRow( const QString& new_name, const QString& new_value )
+{
+    f_newName  = new_name;
+    f_newValue = new_value;
+
+    insertRows( 0, 0 );
+}
+
+
+bool row_model::insertRows ( int /*row*/, int /*count*/, const QModelIndex & parent_index )
 {
     bool retval( true );
     try
     {
-        QSettings settings;
-        const QString edit_key( "InputDialog/EditValue" );
-        //
-        InputDialog dlg;
-        dlg.f_inputLabel->setText( tr("Enter Column Name:") );
-        dlg.f_inputEdit->setText( settings.value( edit_key, tr("New Column") ).toString() );
-        dlg.f_inputEdit->selectAll();
-        //
-        if( dlg.exec() == QDialog::Accepted )
+        beginInsertRows( parent_index, rowCount(), 1 );
+        auto key( (*f_row)[f_newName].columnKey() );
+        auto cell( f_row->findCell( key ) );
+        cell->setTimestamp( QCassandraValue::TIMESTAMP_MODE_AUTO );
+
+        QCassandraContext::pointer_t context( f_row->parentTable()->parentContext() );
+        Q_ASSERT(context);
+        if( context->contextName() == "snap_websites" )
         {
-            settings.setValue( edit_key, dlg.f_inputEdit->text() );
-
-            beginInsertRows( parent_index, rowCount(), 1 );
-            const QString col_name( dlg.f_inputEdit->text() );
-            auto key( (*f_row)[col_name].columnKey() );
-            auto cell( f_row->findCell( key ) );
-            cell->setTimestamp( QCassandraValue::TIMESTAMP_MODE_AUTO );
-
-            QCassandraContext::pointer_t context( f_row->parentTable()->parentContext() );
-            Q_ASSERT(context);
-            if( context->contextName() == "snap_websites" )
-            {
-                snap::dbutils du( f_row->parentTable()->tableName(), f_row->rowName() );
-                du.set_column_value( cell, "New Value" );
-            }
-            else
-            {
-                QCassandraValue v;
-                v.setStringValue( "New Value" );
-                cell->setValue( v );
-            }
-            endInsertRows();
-            reset();
+            snap::dbutils du( f_row->parentTable()->tableName(), f_row->rowName() );
+            du.set_column_value( cell, f_newValue );
         }
+        else
+        {
+            QCassandraValue v;
+            v.setStringValue( f_newValue );
+            cell->setValue( v );
+        }
+        endInsertRows();
+        reset();
     }
     catch( const std::exception& except )
     {
@@ -245,7 +251,7 @@ bool RowModel::insertRows ( int /*row*/, int /*count*/, const QModelIndex & pare
 }
 
 
-bool RowModel::removeRows ( int row, int count, const QModelIndex & )
+bool row_model::removeRows ( int row, int count, const QModelIndex & )
 {
     try
     {
@@ -276,6 +282,9 @@ bool RowModel::removeRows ( int row, int count, const QModelIndex & )
 
     return false;
 }
+
+}
+// namespace snap
 
 
 // vim: ts=4 sw=4 et syntax=cpp.doxygen
