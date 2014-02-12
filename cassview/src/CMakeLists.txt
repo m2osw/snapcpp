@@ -59,6 +59,8 @@ add_executable(${PROJECT_NAME}
 	AboutDialog.cpp
     CassandraModel.cpp
 	ContextModel.cpp
+	DisplayException.h
+	DisplayException.cpp
 	InputDialog.cpp
 	MainWindow.cpp
 	main.cpp

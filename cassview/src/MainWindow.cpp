@@ -1,6 +1,7 @@
 #include "MainWindow.h"
 #include "SettingsDialog.h"
 #include "AboutDialog.h"
+#include "DisplayException.h"
 
 #include <QMessageBox>
 
@@ -63,15 +64,38 @@ MainWindow::~MainWindow()
 }
 
 
+namespace
+{
+    void displayError( const std::exception& except, const QString& caption, const QString& message )
+    {
+        DisplayException de( except.what(), caption, message );
+        de.displayError();
+    }
+}
+
+
 void MainWindow::connectCassandra()
 {
     QSettings settings;
-    f_cassandra->connect( settings.value( "cassandra_host" ).toString()
-                        , settings.value( "cassandra_port" ).toInt()
-                        );
-
-    qDebug() << "Working on Cassandra Cluster Named"    << f_cassandra->clusterName();
-    qDebug() << "Working on Cassandra Protocol Version" << f_cassandra->protocolVersion();
+    const QString host( settings.value( "cassandra_host" ).toString() );
+    const int     port( settings.value( "cassandra_port" ).toInt()    );
+    try
+    {
+        f_cassandra->connect( host, port );
+        //
+        qDebug() << "Working on Cassandra Cluster Named"    << f_cassandra->clusterName();
+        qDebug() << "Working on Cassandra Protocol Version" << f_cassandra->protocolVersion();
+    }
+    catch( const std::exception& except )
+    {
+        displayError( except
+                    , tr("Connection Error")
+                    , tr("Cannot connect to Cassandra server at '%1:%2'! Please check your connection information in the settings.")
+                      .arg(host)
+                      .arg(port)
+                    );
+        on_action_Settings_triggered();
+    }
 }
 
 
@@ -92,6 +116,12 @@ void MainWindow::fillTableList()
 
     QCassandraContext::pointer_t qcontext( f_cassandra->findContext(f_context) );
 	f_contextModel.setContext( qcontext );
+
+    const int idx = f_contextCombo->findText( f_context );
+    if( idx != -1 )
+    {
+        f_contextCombo->setCurrentIndex( idx );
+    }
 }
 
 
@@ -129,9 +159,12 @@ void MainWindow::on_action_Settings_triggered()
             fillTableList();
         }
     }
-    catch( const std::exception& p_x )
+    catch( const std::exception& except )
     {
-        std::cerr << "Exception caught! [" << p_x.what() << "]" << std::endl;
+        displayError( except
+                    , tr("Connection Error")
+                    , tr("Error connecting to the server!")
+                    );
     }
 }
 
@@ -145,9 +178,12 @@ void MainWindow::on_f_tables_currentIndexChanged(const QString &table_name)
         QCassandraTable::pointer_t table( qcontext->findTable(table_name) );
         f_tableModel.setTable( table );
     }
-    catch( const std::exception& p_x )
+    catch( const std::exception& except )
     {
-        std::cerr << "Exception caught! [" << p_x.what() << "]" << std::endl;
+        displayError( except
+                    , tr("Connection Error")
+                    , tr("Error connecting to the server!")
+                    );
     }
 }
 
@@ -164,9 +200,12 @@ void MainWindow::on_f_contextCombo_currentIndexChanged(const QString &arg1)
         f_context = arg1;
         fillTableList();
     }
-    catch( const std::exception& p_x )
+    catch( const std::exception& except )
     {
-        std::cerr << "Exception caught! [" << p_x.what() << "]" << std::endl;
+        displayError( except
+                    , tr("Connection Error")
+                    , tr("Error connecting to the server!")
+                    );
     }
 }
 
@@ -189,9 +228,12 @@ void MainWindow::onRowsCurrentChanged( const QModelIndex & current, const QModel
     {
         changeRow( current );
     }
-    catch( const std::exception& p_x )
+    catch( const std::exception& except )
     {
-        std::cerr << "Exception caught! [" << p_x.what() << "]" << std::endl;
+        displayError( except
+                    , tr("Connection Error")
+                    , tr("Error connecting to the server!")
+                    );
     }
 }
 
@@ -243,9 +285,12 @@ void MainWindow::on_action_DeleteColumns_triggered()
             }
         }
     }
-    catch( const std::exception& p_x )
+    catch( const std::exception& except )
     {
-        std::cerr << "Exception caught! [" << p_x.what() << "]" << std::endl;
+        displayError( except
+                    , tr("Connection Error")
+                    , tr("Error connecting to the server!")
+                    );
     }
 }
 

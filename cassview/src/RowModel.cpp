@@ -8,6 +8,7 @@
 #include <QSettings>
 #include <iostream>
 #include <sstream>
+#include "DisplayException.h"
 
 using namespace QtCassandra;
 
@@ -38,15 +39,10 @@ Qt::ItemFlags RowModel::flags( const QModelIndex & idx ) const
 
 namespace
 {
-    void displayError( const std::exception& except )
+    void displayError( const std::exception& except, const QString& message )
     {
-        std::stringstream ss;
-        ss << QObject::tr("QtCassandra exception caught!") << "\n[" << except.what() << "]";
-        std::cerr << ss.str() << std::endl;
-        QMessageBox::critical( QApplication::activeWindow()
-                , QObject::tr("Error")
-                , ss.str().c_str()
-                );
+        DisplayException de( except.what(), QObject::tr("Error"), message );
+        de.displayError();
     }
 }
 
@@ -99,7 +95,7 @@ QVariant RowModel::data( const QModelIndex & idx, int role ) const
     }
     catch( const std::exception& except )
     {
-        displayError( except );
+        displayError( except, tr("Cannot read data from database.") );
     }
 
     return QVariant();
@@ -137,7 +133,7 @@ int RowModel::rowCount( const QModelIndex & /*parent*/ ) const
     }
     catch( const std::exception& except )
     {
-        displayError( except );
+        displayError( except, tr("Cannot obtain row count from database.") );
     }
 
     return 0;
@@ -186,7 +182,7 @@ bool RowModel::setData( const QModelIndex & idx, const QVariant & value, int rol
     }
     catch( const std::exception& except )
     {
-        displayError( except );
+        displayError( except, tr("Cannot write data to database.") );
     }
 
     return false;
@@ -242,7 +238,7 @@ bool RowModel::insertRows ( int /*row*/, int /*count*/, const QModelIndex & pare
     catch( const std::exception& except )
     {
         endInsertRows();
-        displayError( except );
+        displayError( except, tr("Cannot add rows to database.") );
         retval = false;
     }
     return retval;
@@ -275,7 +271,7 @@ bool RowModel::removeRows ( int row, int count, const QModelIndex & )
     }
     catch( const std::exception& except )
     {
-        displayError( except );
+        displayError( except, tr("Cannot remove rows to database.") );
     }
 
     return false;
