@@ -1,7 +1,8 @@
-snapwebsites (0.1.7) UNRELEASED; urgency=high
+snapwebsites (0.1.7~saucy) saucy; urgency=high
 
   * Added prompt to snapdb when dropping the tables. A command line switch
   allows this to be bypassed.
+  * Added row and table models to allow easy access for GUI apps and views.
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Tue, 11 Feb 2014 17:45:17 -0800
 
