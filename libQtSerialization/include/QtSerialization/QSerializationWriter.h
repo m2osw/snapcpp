@@ -60,7 +60,7 @@ public:
     static const int ENCODE_QUOTE = 0x00000001;
     static const int ENCODE_DOUBLE_QUOTE = 0x00000002;
 
-    QWriter(QIODevice& stream, const QString& name, quint16 major_version, quint16 minot_version);
+    QWriter(QIODevice& stream, const QString& name, quint16 major_version, quint16 minor_version);
     virtual ~QWriter();
 
     void writeStartTag(const QString& name);
