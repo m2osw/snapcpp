@@ -64,9 +64,7 @@ add_executable(${PROJECT_NAME}
 	InputDialog.cpp
 	MainWindow.cpp
 	main.cpp
-    RowModel.cpp
     SettingsDialog.cpp
-    TableModel.cpp
 	qt4.h
 	${UI_FILES}
 	${RES_FILES}
