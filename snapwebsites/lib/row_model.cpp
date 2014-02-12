@@ -52,7 +52,7 @@ Qt::ItemFlags row_model::flags( const QModelIndex & idx ) const
 }
 
 
-void row_model::displayError( const std::exception& except, const QString& message )
+void row_model::displayError( const std::exception& except, const QString& message ) const
 {
     emit exceptionCaught( except.what(), message );
 }
@@ -211,7 +211,7 @@ bool row_model::insertNewRow( const QString& new_name, const QString& new_value 
     f_newName  = new_name;
     f_newValue = new_value;
 
-    insertRows( 0, 0 );
+    return insertRows( 0, 0 );
 }
 
 

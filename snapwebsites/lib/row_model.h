@@ -58,14 +58,14 @@ class row_model
         bool removeRows ( int row, int count, const QModelIndex & parent = QModelIndex() );
 
     signals:
-        void exceptionCaught( const QString& what, const QString& message );
+        void exceptionCaught( const QString& what, const QString& message ) const;
 
     private:
         QtCassandra::QCassandraRow::pointer_t   f_row;
         QString f_newName;
         QString f_newValue;
 
-        void displayError( const std::exception& except, const QString& message );
+        void displayError( const std::exception& except, const QString& message ) const;
 };
 
 }
