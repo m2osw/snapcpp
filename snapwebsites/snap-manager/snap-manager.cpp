@@ -161,7 +161,7 @@ snap_manager::snap_manager(QWidget *snap_parent)
     f_sites_list = getChild<QListWidget>(this, "sitesList");
     //connect(f_sites_list, SIGNAL(itemClicked()), this, SLOT(on_sitesList_itemClicked()));
     f_sites_name = getChild<QLineEdit>(this, "sitesDomainName");
-    f_sites_parameters = getChild<QTableWidget>(this, "sitesParameters");
+    f_sites_parameters = getChild<QTableView>(this, "sitesParameters");
     f_sites_parameter_name = getChild<QLineEdit>(this, "sitesParameterName");
     f_sites_parameter_value = getChild<QLineEdit>(this, "sitesParameterValue");
     f_sites_parameter_type = getChild<QComboBox>(this, "sitesParameterType");
@@ -172,11 +172,15 @@ snap_manager::snap_manager(QWidget *snap_parent)
     f_sites_delete = getChild<QPushButton>(this, "sitesDelete");
     //connect(f_sites_delete, SIGNAL(clicked()), this, SLOT(on_sitesDelete_clicked()));
 
+#if 0
     f_sites_parameters->setColumnCount(2);
     QStringList labels;
     labels += QString("Name");
     labels += QString("Value");
     f_sites_parameters->setHorizontalHeaderLabels(labels);
+#else
+    f_sites_parameters->setModel( &f_row_model );
+#endif
 
     f_sites_parameter_type->addItem("Null");
     f_sites_parameter_type->addItem("String"); // this is the default
@@ -1849,12 +1853,13 @@ void snap_manager::on_sitesList_itemClicked(QListWidgetItem *item)
 
     f_sites_org_name = item->text();
     f_sites_name->setText(f_sites_org_name);
-    f_sites_parameters->clearContents();
+    //f_sites_parameters->clearContents();
 
     // IMPORTANT: note that f_sites_org_name changed to the item->text() value
     QString table_name(snap::get_name(snap::SNAP_NAME_SITES));
     QtCassandra::QCassandraTable::pointer_t table(f_context->findTable(table_name));
-    QtCassandra::QCassandraRow::pointer_t row(table->row(f_sites_org_name));
+    QtCassandra::QCassandraRow::pointer_t   row  (table->row(f_sites_org_name));
+#if 0
     QtCassandra::QCassandraColumnRangePredicate parameters_predicate;
     parameters_predicate.setCount(1000); // that should be sufficient for 99% of the websites out there
     row->clearCache();
@@ -1872,8 +1877,12 @@ void snap_manager::on_sitesList_itemClicked(QListWidgetItem *item)
         QTableWidgetItem *param_value( new QTableWidgetItem( du.get_column_value( c.value() ) ) );
         f_sites_parameters->setItem(row_pos, 1, param_value);
     }
+#else
+    f_row_model.setRow( row );
+#endif
 
     f_sites_parameters->setEnabled(true);
+    f_sites_parameters->resizeColumnsToContents();
 }
 
 void snap_manager::closeEvent(QCloseEvent *close_event)

@@ -18,6 +18,7 @@
 #define SNAP_MANAGER_H
 
 #include "snapwebsites.h"
+#include "row_model.h"
 #include <boost/shared_ptr.hpp>
 #include <QtCore/QMap>
 #include <QtCore/QPointer>
@@ -146,12 +147,13 @@ private:
     QPointer<QPushButton>           f_website_delete;
 
     // snap site parameters
+    snap::row_model                 f_row_model;
     QString                         f_sites_org_name;
     QPointer<QPushButton>           f_sites_filter;
     QPointer<QLineEdit>             f_sites_filter_string;
     QPointer<QListWidget>           f_sites_list;
     QPointer<QLineEdit>             f_sites_name;
-    QPointer<QTableWidget>          f_sites_parameters;
+    QPointer<QTableView>            f_sites_parameters;
     QString                         f_sites_org_parameter_name;
     QPointer<QLineEdit>             f_sites_parameter_name;
     QString                         f_sites_org_parameter_value;
