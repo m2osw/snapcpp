@@ -1,3 +1,9 @@
+cassview (0.0.11~saucy) UNRELEASED; urgency=high
+
+  * Added host button and window title.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Thu, 13 Feb 2014 09:39:31 -0800
+
 cassview (0.0.10ubuntu1~saucy) saucy; urgency=high
 
   * Bump for build on PPA.
