@@ -3,8 +3,8 @@ Priority: extra
 Maintainer: R. Douglas Barbieri <doug@dooglio.net>
 Build-Depends: debhelper, cmake,
     libqt4-dev (>= 4.8.3), libqtwebkit-dev, doxygen, graphviz,
-    snapcmakemodules, libqtcassandra-dev, libcontrolledvars-dev,
-    libsnapwebsites-dev 
+    snapcmakemodules (>= 1.0.5), libqtcassandra-dev (>= 0.5.1), libcontrolledvars-dev (>= 1.3.6),
+    libsnapwebsites-dev (>= 0.1.8)
 Standards-Version: 3.9.4
 Section: libs
 Homepage: http://www.snapwebsites.org/
