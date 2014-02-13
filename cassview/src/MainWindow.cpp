@@ -87,6 +87,10 @@ void MainWindow::connectCassandra()
         //
         qDebug() << "Working on Cassandra Cluster Named"    << f_cassandra->clusterName();
         qDebug() << "Working on Cassandra Protocol Version" << f_cassandra->protocolVersion();
+
+        const QString hostname( tr("%1:%2").arg(host).arg(port) );
+        setWindowTitle( tr("Cassandra View [%1]").arg(hostname) );
+        f_connectionBtn->setText( hostname );
     }
     catch( const std::exception& except )
     {
@@ -308,5 +312,12 @@ void MainWindow::on_action_DeleteColumns_triggered()
                     );
     }
 }
+
+
+void MainWindow::on_f_connectionBtn_clicked()
+{
+    on_action_Settings_triggered();
+}
+
 
 // vim: ts=4 sw=4 et syntax=cpp.doxygen

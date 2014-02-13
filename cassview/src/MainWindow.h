@@ -33,6 +33,7 @@ private slots:
     void onSectionClicked( int section );
     void on_action_InsertColumn_triggered();
     void on_action_DeleteColumns_triggered();
+    void on_f_connectionBtn_clicked();
 
 private:
     typedef QtCassandra::QCassandra::pointer_t cassandra_t;
