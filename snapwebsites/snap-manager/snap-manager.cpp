@@ -155,13 +155,17 @@ snap_manager::snap_manager(QWidget *snap_parent)
     //connect(f_website_delete, SIGNAL(clicked()), this, SLOT(on_websiteDelete_clicked()));
 
     // get sites friends that are going to be used here and there
+    //
     f_sites_filter = getChild<QPushButton>(this, "sitesFilter");
     //connect(f_sites_filter, SIGNAL(itemClicked()), this, SLOT(on_sitesFilter_clicked()));
     f_sites_filter_string = getChild<QLineEdit>(this, "sitesFilterString");
-    f_sites_list = getChild<QListWidget>(this, "sitesList");
-    //connect(f_sites_list, SIGNAL(itemClicked()), this, SLOT(on_sitesList_itemClicked()));
+    f_sites_list = getChild<QListView>(this, "sitesList");
+    f_sites_list->setModel( &f_table_model );
+    connect( f_sites_list->selectionModel(), SIGNAL(currentChanged(QModelIndex,QModelIndex)),
+             this, SLOT(onSitesListCurrentChanged(QModelIndex,QModelIndex)) );
     f_sites_name = getChild<QLineEdit>(this, "sitesDomainName");
     f_sites_parameters = getChild<QTableView>(this, "sitesParameters");
+    f_sites_parameters->setModel( &f_row_model );
     f_sites_parameter_name = getChild<QLineEdit>(this, "sitesParameterName");
     f_sites_parameter_value = getChild<QLineEdit>(this, "sitesParameterValue");
     f_sites_parameter_type = getChild<QComboBox>(this, "sitesParameterType");
@@ -171,16 +175,6 @@ snap_manager::snap_manager(QWidget *snap_parent)
     //connect(f_sites_save, SIGNAL(clicked()), this, SLOT(on_sitesSave_clicked()));
     f_sites_delete = getChild<QPushButton>(this, "sitesDelete");
     //connect(f_sites_delete, SIGNAL(clicked()), this, SLOT(on_sitesDelete_clicked()));
-
-#if 0
-    f_sites_parameters->setColumnCount(2);
-    QStringList labels;
-    labels += QString("Name");
-    labels += QString("Value");
-    f_sites_parameters->setHorizontalHeaderLabels(labels);
-#else
-    f_sites_parameters->setModel( &f_row_model );
-#endif
 
     f_sites_parameter_type->addItem("Null");
     f_sites_parameter_type->addItem("String"); // this is the default
@@ -1767,7 +1761,6 @@ void snap_manager::loadSites()
 {
     // we just checked to know whether the table existed so it cannot fail here
     // however the index table could be missing...
-    f_sites_list->clear();
 
     // TBD: we would need to have an "*index*" so we can cleanly search for
     //      the list of sites; so at this point we ignore the filter info
@@ -1775,27 +1768,7 @@ void snap_manager::loadSites()
 
     QString table_name(snap::get_name(snap::SNAP_NAME_SITES));
     QtCassandra::QCassandraTable::pointer_t table(f_context->findTable(table_name));
-    if(table)
-    {
-        // if the table does not exist yet skip this part!
-        // this is possible until you access an actual website; although we
-        // will change the behavior at some point it is still that way now
-
-        // without a filter the rows will be disorganized, although until you
-        // have more than 100 it should look good
-        QtCassandra::QCassandraRowPredicate row_predicate;
-        table->clearCache();
-        table->readRows(row_predicate);
-        const QtCassandra::QCassandraRows& rows(table->rows());
-
-        for(QtCassandra::QCassandraRows::const_iterator it(rows.begin());
-            it != rows.end();
-            ++it)
-        {
-            // the row key is actually the name of the concern domain
-            f_sites_list->addItem(it.key());
-        }
-    }
+    f_table_model.setTable( table ); // Can be null, in which case it will blank out the view
 
     // at first some of the entries are disabled
     // until a select is made or New is clicked
@@ -1830,10 +1803,11 @@ void snap_manager::on_sitesFilter_clicked()
     }
 }
 
-void snap_manager::on_sitesList_itemClicked(QListWidgetItem *item)
+void snap_manager::onSitesListCurrentChanged( QModelIndex current, QModelIndex /*previous*/)
 {
     // same site? if so, skip on it
-    if(f_sites_org_name == item->text() && !f_sites_org_name.isEmpty())
+    const QString text( f_table_model.data(current).toString() );
+    if(f_sites_org_name == text && !f_sites_org_name.isEmpty())
     {
         return;
     }
@@ -1843,43 +1817,27 @@ void snap_manager::on_sitesList_itemClicked(QListWidgetItem *item)
     {
         // user canceled his action
         // TODO: we need to reset the item selection...
-        QList<QListWidgetItem *> items(f_sites_list->findItems(f_sites_org_name, Qt::MatchExactly));
-        if(items.count() > 0)
+        f_sites_list->selectionModel()->reset();
+        for( int row = 0; row < f_table_model.rowCount(); ++row )
         {
-            f_sites_list->setCurrentItem(items[0]);
+            QModelIndex idx( f_table_model.index( row ) );
+            if( f_table_model.data(idx).toString() == f_sites_org_name )
+            {
+                f_sites_list->selectionModel()->select( idx, QItemSelectionModel::Select );
+                break;
+            }
         }
         return;
     }
 
-    f_sites_org_name = item->text();
+    f_sites_org_name = text;
     f_sites_name->setText(f_sites_org_name);
-    //f_sites_parameters->clearContents();
 
     // IMPORTANT: note that f_sites_org_name changed to the item->text() value
     QString table_name(snap::get_name(snap::SNAP_NAME_SITES));
     QtCassandra::QCassandraTable::pointer_t table(f_context->findTable(table_name));
     QtCassandra::QCassandraRow::pointer_t   row  (table->row(f_sites_org_name));
-#if 0
-    QtCassandra::QCassandraColumnRangePredicate parameters_predicate;
-    parameters_predicate.setCount(1000); // that should be sufficient for 99% of the websites out there
-    row->clearCache();
-    uint32_t count(row->readCells(parameters_predicate));
-    f_sites_parameters->setRowCount(count);
-    const QtCassandra::QCassandraCells& parameters(row->cells());
-    int row_pos(0);
-    snap::dbutils du( table_name, f_sites_org_name );
-    for( QtCassandra::QCassandraCells::const_iterator c(parameters.begin());
-            c != parameters.end(); ++c, ++row_pos)
-    {
-        QTableWidgetItem *param_name(new QTableWidgetItem(QString(c.key())));
-        f_sites_parameters->setItem(row_pos, 0, param_name);
-
-        QTableWidgetItem *param_value( new QTableWidgetItem( du.get_column_value( c.value() ) ) );
-        f_sites_parameters->setItem(row_pos, 1, param_value);
-    }
-#else
     f_row_model.setRow( row );
-#endif
 
     f_sites_parameters->setEnabled(true);
     f_sites_parameters->resizeColumnsToContents();

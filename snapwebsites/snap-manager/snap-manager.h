@@ -19,6 +19,7 @@
 
 #include "snapwebsites.h"
 #include "row_model.h"
+#include "table_model.h"
 #include <boost/shared_ptr.hpp>
 #include <QtCore/QMap>
 #include <QtCore/QPointer>
@@ -69,7 +70,8 @@ private slots:
     void on_websiteCancel_clicked();
     void on_websiteDelete_clicked();
     void on_sitesFilter_clicked();
-    void on_sitesList_itemClicked(QListWidgetItem *item);
+    //void on_sitesList_itemClicked(QListWidgetItem *item);
+    void onSitesListCurrentChanged( QModelIndex current, QModelIndex previous);
     void quit();
 
 private:
@@ -147,11 +149,12 @@ private:
     QPointer<QPushButton>           f_website_delete;
 
     // snap site parameters
+    snap::table_model               f_table_model;
     snap::row_model                 f_row_model;
     QString                         f_sites_org_name;
     QPointer<QPushButton>           f_sites_filter;
     QPointer<QLineEdit>             f_sites_filter_string;
-    QPointer<QListWidget>           f_sites_list;
+    QPointer<QListView>             f_sites_list;
     QPointer<QLineEdit>             f_sites_name;
     QPointer<QTableView>            f_sites_parameters;
     QString                         f_sites_org_parameter_name;
