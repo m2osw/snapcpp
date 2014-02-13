@@ -1,4 +1,4 @@
-cassview (0.0.11~saucy) UNRELEASED; urgency=high
+cassview (0.0.11~saucy) saucy; urgency=high
 
   * Added host button and window title.
 
