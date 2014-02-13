@@ -1,3 +1,3 @@
-usr/bin/snap.cgi
+usr/lib/cgi-bin/snap.cgi
 src/snapcgi.conf etc/snapwebsites/
 src/snapcgilog.conf etc/snapwebsites/
