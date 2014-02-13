@@ -1,6 +1,7 @@
 snapwebsites (0.1.8~saucy) saucy; urgency=high
 
   * snap-manager now allows editing of sites columns.
+  * snap-manager uses table-model for display of available sites.
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Wed, 12 Feb 2014 16:54:38 -0800
 
