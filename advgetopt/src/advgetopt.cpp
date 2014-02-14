@@ -1024,6 +1024,20 @@ std::string getopt::assemble_options( status_t status, std::string& default_arg_
             else
             {
                 std::stringstream opt_ss;
+
+                switch(f_options[i].f_arg_mode)
+                {
+                case default_argument:
+                case default_multiple_argument:
+                    // we want to mark the flag as optional
+                    opt_ss << "[";
+                    break;
+
+                default:
+                    break;
+
+                }
+
                 if(f_options[i].f_opt != '\0' && f_options[i].f_name != NULL)
                 {
                     // both options!
@@ -1069,14 +1083,12 @@ std::string getopt::assemble_options( status_t status, std::string& default_arg_
                     break;
 
                 case default_argument:
-                    // we want to mark the flag as optional
-                    opt_ss.str( "[" + opt_ss.str() );
+                    // we mark the flag as optional
                     opt_ss << "] <arg>";
                     break;
 
                 case default_multiple_argument:
-                    // we want to mark the flag as optional
-                    opt_ss.str( "[" + opt_ss.str() );
+                    // we mark the flag as optional
                     opt_ss << "] {<arg>}";
                     break;
 
