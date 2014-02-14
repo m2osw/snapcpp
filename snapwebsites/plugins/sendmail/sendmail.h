@@ -89,7 +89,7 @@ enum name_t
 const char *get_name(name_t name) __attribute__ ((const));
 
 
-class sendmail : public plugins::plugin, public snap::server::backend_action, public layout::layout_content
+class sendmail : public plugins::plugin, public server::backend_action, public layout::layout_content
 {
 public:
     static const sessions::sessions::session_info::session_id_t SENDMAIL_SESSION_ID_MESSAGE = 1;
@@ -190,7 +190,7 @@ public:
     QtCassandra::QCassandraTable::pointer_t get_emails_table();
 
     void                on_bootstrap(snap_child *snap);
-    void                on_register_backend_action(snap::server::backend_action_map_t& actions);
+    void                on_register_backend_action(server::backend_action_map_t& actions);
     virtual void        on_backend_action(QString const& action);
     virtual void        on_generate_main_content(content::path_info_t& path, QDomElement& page, QDomElement& body, QString const& ctemplate);
     void                on_replace_token(content::path_info_t& cpath, QString const& plugin_owner, QDomDocument& xml, filter::filter::token_info_t& token);

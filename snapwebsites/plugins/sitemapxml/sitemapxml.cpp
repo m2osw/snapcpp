@@ -36,6 +36,8 @@
 #include <QDomProcessingInstruction>
 #pragma GCC diagnostic pop
 
+#include "poison.h"
+
 
 SNAP_PLUGIN_START(sitemapxml, 1, 0)
 
@@ -830,8 +832,9 @@ void sitemapxml::on_backend_process()
     QString sitemap_txt(site_key + "sitemap.txt");
     content_table->row(sitemap_txt)->cell(content_updated)->setValue(start_date);
     content_table->row(sitemap_txt)->cell(content_modified)->setValue(start_date);
+
 #ifdef DEBUG
-printf("Updating [%s]\n", sitemap_xml.toUtf8().data());
+std::cerr << "Updating [" << sitemap_xml << "]\n";
 #endif
 }
 

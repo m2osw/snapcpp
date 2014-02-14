@@ -59,7 +59,8 @@ char const *get_name(name_t name)
 {
     // Note: <branch>.<revision> are actually replaced by a full version
     //       when dealing with JavaScript and CSS files (Version: field)
-    switch(name) {
+    switch(name)
+    {
     case SNAP_NAME_CONTENT_ACCEPTED:
         return "content::accepted";
 
@@ -6193,7 +6194,7 @@ void content::add_javascript(path_info_t& ipath, QDomDocument doc, QString const
     //       the whole process fails even if by not using the latest
     //       it would have worked
     QtCassandra::QCassandraColumnRangePredicate column_predicate;
-    column_predicate.setCount(10); // small because we area really only interested by the first 1 unless marked as insecure
+    column_predicate.setCount(10); // small because we are really only interested by the first 1 unless marked as insecure
     column_predicate.setIndex(); // behave like an index
     QString const start_name(name + "_");
     column_predicate.setStartColumnName(start_name + QtCassandra::QCassandraColumnPredicate::last_char);

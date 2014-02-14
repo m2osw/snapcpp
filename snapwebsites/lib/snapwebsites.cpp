@@ -250,6 +250,14 @@ namespace
         {
             '\0',
             0,
+            "filename",
+            nullptr,
+            nullptr, // hidden argument in --help screen
+            advgetopt::getopt::default_multiple_argument
+        },
+        {
+            '\0',
+            0,
             nullptr,
             nullptr,
             nullptr,
@@ -540,25 +548,32 @@ void server::config(int argc, char *argv[])
         }
     }
 
-    if( f_opt->is_defined( "action" ) )
+    if( f_opt->is_defined( "filename" ) )
     {
-        const std::string action( f_opt->get_string("action" ) );
+        std::string const filename(f_opt->get_string("filename"));
         if( f_backend )
         {
-            if(f_parameters.find("__BACKEND_ACTION") == f_parameters.end())
+            f_parameters["__BACKEND_URI"] = filename.c_str();
+        }
+        else
+        {
+            // If not backend, "--filename" is not currently useful.
+            //
+            if(f_debug)
             {
-                f_parameters["__BACKEND_ACTION"] = action.c_str();
+                std::cerr << "fatal error: unexpected standalone parameter \"" << filename << "\", server not started. (in server::config())" << std::endl;
             }
-            else
-            {
-                // with the advgetopt this should never occur
-                if(f_debug)
-                {
-                    std::cerr << "fatal error: unexpected parameter \"--action "<< action << "\", at most one action can be specified, backend not started. (in server::config())" << std::endl;
-                }
-                syslog( LOG_CRIT, "unexpected parameter \"--action %s\", at most one action can be specified, backend not started. (in server::config())", action.c_str() );
-                help = true;
-            }
+            syslog( LOG_CRIT, "unexpected standalone parameter \"%s\", server not started. (in server::config())", filename.c_str() );
+            help = true;
+        }
+    }
+
+    if( f_opt->is_defined( "action" ) )
+    {
+        std::string const action(f_opt->get_string("action"));
+        if( f_backend )
+        {
+            f_parameters["__BACKEND_ACTION"] = action.c_str();
         }
         else
         {

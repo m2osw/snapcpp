@@ -75,7 +75,10 @@ find_package( SnapDoxygen      REQUIRED )
 find_package( Thrift           REQUIRED )
 
 if( "${CMAKE_BUILD_TYPE}" STREQUAL "Debug" )
+    message("Debug is in effect for snapwebsites!")
     add_definitions( -DDEBUG -DCONTROLLED_VARS_DEBUG )
+else()
+    message("Debug is turned OFF")
 endif()
 # These are the 3 extra warnings that did not make it in the modules
 # -Wold-style-cast -Wstrict-overflow=5 -Wnoexcept

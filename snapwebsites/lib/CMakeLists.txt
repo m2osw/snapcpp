@@ -86,6 +86,7 @@ add_library( ${PROJECT_NAME} SHARED
     qxmlmessagehandler.cpp                      # Qt extension for us to capture the QXmlQuery messages
     snap_child.cpp                              # requests processing
     snap_exception.cpp                          # exception stack backtrack
+    snap_expr.cpp                               # snap C-like expression compiler and execution environment
     snap_image.cpp                              # image handling
     snap_magic.cpp                              # support for MIME type
     snap_parser.cpp                             # lexer/parser for all our script like entries

@@ -39,7 +39,8 @@ SNAP_PLUGIN_START(output, 1, 0)
  */
 //char const *get_name(name_t name)
 //{
-//    switch(name) {
+//    switch(name)
+//    {
 //    case SNAP_NAME_OUTPUT_ACCEPTED:
 //        return "output::accepted";
 //
