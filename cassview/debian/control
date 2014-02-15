@@ -15,7 +15,7 @@ Vcs-Browser: http://sourceforge.net/p/snapcpp/code/ci/master/tree/cassview
 Package: cassview
 Section: admin
 Architecture: any
-Depends: ${misc:Depends}
+Depends: ${shlibs:Depends}, ${misc:Depends}
 Recommends: cassandra (>= 2.0.3)
 Suggests: snapserver (>= 0.1.0)
 Description: GUI tool to maintain your cassandra database. Optimized for snapwebsites.

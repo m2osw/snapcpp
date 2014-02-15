@@ -1,3 +1,10 @@
+cassview (0.0.13~saucy) saucy; urgency=high
+
+  * Forgot to put in shlibs dependencies into the control file! Now the
+  package should bring in the appropriate dependencies.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Fri, 14 Feb 2014 16:04:42 -0800
+
 cassview (0.0.11~saucy) saucy; urgency=high
 
   * Added host button and window title.
