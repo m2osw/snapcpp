@@ -86,7 +86,7 @@ namespace
             advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
             "set-theme",
             NULL,
-            "set-theme",
+            "usage: --set-theme URL [theme|layout] ['\"layout_name\";']'",
             advgetopt::getopt::no_argument, // expect 3 params as filenames
         },
         {
@@ -161,8 +161,17 @@ snap_layout::snap_layout(int argc, char *argv[])
     //
     if( !f_opt->is_defined( "--" ) )
     {
-        std::cerr << "one or more layout files are required!" << std::endl;
-        usage();
+        if( f_opt->is_defined( "set-theme" ) )
+        {
+            std::cerr << "usage: snaplayout --set-theme URL [theme|layout] ['\"layout_name\";']'" << std::endl;
+            std::cerr << "note: if layout_name is not specified, the theme/layout is deleted from the database." << std::endl;
+            exit(1);
+        }
+        else
+        {
+            std::cerr << "one or more layout files are required!" << std::endl;
+            usage();
+        }
     }
     for( int idx(0); idx < f_opt->size( "--" ); ++idx )
     {
@@ -601,9 +610,9 @@ void snap_layout::add_files()
 
 void snap_layout::set_theme()
 {
-    if(f_layouts.size() != 3)
+    if( (f_layouts.size() != 2) && (f_layouts.size() != 3) )
     {
-        std::cerr << "error: the --set-theme command expects exactly three arguments." << std::endl;
+        std::cerr << "error: the --set-theme command expects 2 or 3 arguments." << std::endl;
         exit(1);
     }
 
@@ -632,7 +641,7 @@ void snap_layout::set_theme()
 
     QString uri(f_layouts[0]);
     QString field(f_layouts[1]);
-    QString theme(f_layouts[2]);
+    const QString theme( f_layouts.size() == 3? f_layouts[2]: QString() );
 
     if(!uri.endsWith("/"))
     {
