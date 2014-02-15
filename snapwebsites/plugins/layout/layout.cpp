@@ -931,7 +931,7 @@ int64_t layout::install_layout(QString const& layout_name, int64_t const last_up
         f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR,
                 "Layout Unavailable",
                 "Layout \"" + layout_name + "\" content.xml file is missing.",
-                "layout::create_body() could not find the content.xml file in the layout table.");
+                "layout::install_layout() could not find the content.xml file in the layout table.");
         NOTREACHED();
     }
 
@@ -942,7 +942,7 @@ int64_t layout::install_layout(QString const& layout_name, int64_t const last_up
         f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR,
                 "Layout Unavailable",
                 "Layout \"" + layout_name + "\" content.xml file could not be loaded.",
-                "layout::create_body() could not load the content.xml file from the layout table.");
+                "layout::install_layout() could not load the content.xml file from the layout table.");
         NOTREACHED();
     }
 
@@ -958,7 +958,7 @@ int64_t layout::install_layout(QString const& layout_name, int64_t const last_up
         f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR,
                 "Layout Unavailable",
                 "Layout \"" + layout_name + "\" content.xml file does not define the layout::boxes entry for this layout.",
-                "layout::create_body() the content.xml did not define \"" + layout_ipath.get_branch_key() + "->[layout::boxes]\" as expected.");
+                "layout::install_layout() the content.xml did not define \"" + layout_ipath.get_branch_key() + "->[layout::boxes]\" as expected.");
         NOTREACHED();
     }
 
