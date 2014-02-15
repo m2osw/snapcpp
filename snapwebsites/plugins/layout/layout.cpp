@@ -711,8 +711,10 @@ std::cerr << "got in layout... cpath = [" << ipath.get_cpath() << "]\n";
  * document.
  *
  * \param[in] doc  The XML document to theme.
- * \param[in] cpath  The path of the document being themed.
- * \param[in] content_plugin  The
+ * \param[in] ipath  The path of the document being themed.
+ * \param[in] content_plugin  The layout content of the plugin (not yet used).
+ *
+ * \todo Make use of the content_plugin.
  *
  * \return The XML document themed in the form of a string.
  */
@@ -720,22 +722,23 @@ QString layout::apply_theme(QDomDocument doc, content::path_info_t& ipath, layou
 {
     (void)content_plugin; // not yet used
 
-    QString theme_name(get_layout(ipath, get_name(SNAP_NAME_LAYOUT_THEME)));
-
-// TODO: until we can get the theme system working right...
-//       actually the theme system works, but we need to have something
-//       to allow us to select said theme
-//theme_name = "bare";
-
-    //QFile xsl(":/xsl/layout/default-theme-parser.xsl");
-    //if(!xsl.open(QIODevice::ReadOnly))
-    //{
-    //    SNAP_LOG_FATAL("layout::apply_theme() could not open default-theme-parser.xsl resource file.");
-    //    // TODO: I don't think we just want to return here?
-    //    return "theme parser not available";
-    //}
+    QString theme_name( get_layout(ipath, get_name(SNAP_NAME_LAYOUT_THEME)) );
     QString xsl;
-    if(theme_name != "default")
+    if(theme_name == "default")
+    {
+        QFile file(":/xsl/layout/default-theme-parser.xsl");
+        if(!file.open(QIODevice::ReadOnly))
+        {
+            f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR,
+                "Layout Unavailable",
+                "Somehow no website layout was accessible, not even the internal default.",
+                "layout::apply_theme() could not open default-theme-parser.xsl resource file.");
+            NOTREACHED();
+        }
+        QByteArray data(file.readAll());
+        xsl = QString::fromUtf8(data.data(), data.size());
+    }
+    else
     {
         // try to load the layout from the database, if not found
         // we'll switch to the default layout instead
@@ -750,20 +753,6 @@ QString layout::apply_theme(QDomDocument doc, content::path_info_t& ipath, layou
         {
             xsl = theme_value.stringValue();
         }
-    }
-    if(theme_name == "default")
-    {
-        QFile file(":/xsl/layout/default-theme-parser.xsl");
-        if(!file.open(QIODevice::ReadOnly))
-        {
-            f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR,
-                "Layout Unavailable",
-                "Somehow no website layout was accessible, not even the internal default.",
-                "layout::apply_theme() could not open default-theme-parser.xsl resource file.");
-            NOTREACHED();
-        }
-        QByteArray data(file.readAll());
-        xsl = QString::fromUtf8(data.data(), data.size());
     }
     replace_includes(xsl);
 
