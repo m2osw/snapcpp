@@ -724,8 +724,38 @@ QString layout::apply_theme(QDomDocument doc, content::path_info_t& ipath, layou
 
     QString theme_name( get_layout(ipath, get_name(SNAP_NAME_LAYOUT_THEME)) );
     QString xsl;
-    if(theme_name == "default")
+
+    // If theme_name is not default, attempt to obtain the
+    // selected theme from the layout table.
+    //
+    if( theme_name != "default" )
     {
+        // try to load the layout from the database, if not found
+        // we'll switch to the default layout instead
+        QtCassandra::QCassandraTable::pointer_t layout_table(get_layout_table());
+        QtCassandra::QCassandraValue theme_value(layout_table->row(theme_name)->cell(QString("theme"))->value());
+        if(theme_value.nullValue())
+        {
+            // If no theme selected, then default to the "default" theme."
+            //
+            // note: a layout cannot be empty so the test is correct
+            //
+            theme_name = "default";
+        }
+        else
+        {
+            // Use the selected theme.
+            //
+            xsl = theme_value.stringValue();
+        }
+    }
+
+    // Fallback to the default theme if none was set properly above.
+    //
+    if( theme_name == "default" )
+    {
+        // Grab the XSL from the Qt4 compiled-in resources.
+        //
         QFile file(":/xsl/layout/default-theme-parser.xsl");
         if(!file.open(QIODevice::ReadOnly))
         {
@@ -738,22 +768,7 @@ QString layout::apply_theme(QDomDocument doc, content::path_info_t& ipath, layou
         QByteArray data(file.readAll());
         xsl = QString::fromUtf8(data.data(), data.size());
     }
-    else
-    {
-        // try to load the layout from the database, if not found
-        // we'll switch to the default layout instead
-        QtCassandra::QCassandraTable::pointer_t layout_table(get_layout_table());
-        QtCassandra::QCassandraValue theme_value(layout_table->row(theme_name)->cell(QString("theme"))->value());
-        if(theme_value.nullValue())
-        {
-            // note that a layout cannot be empty so the test is correct
-            theme_name = "default";
-        }
-        else
-        {
-            xsl = theme_value.stringValue();
-        }
-    }
+
     replace_includes(xsl);
 
     // finally apply the theme XSLT to the final XML
