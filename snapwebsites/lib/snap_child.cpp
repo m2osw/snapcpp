@@ -6036,7 +6036,7 @@ QString snap_child::get_unique_number()
 
     quint64 c(0);
     {
-        QString name(lock_path + "/counter.u64");
+        const QString name(lock_path + "/counter.u64");
         QLockFile counter(name);
         if(!counter.open(QIODevice::ReadWrite))
         {
