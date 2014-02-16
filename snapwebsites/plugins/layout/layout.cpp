@@ -231,7 +231,7 @@ int64_t layout::do_layout_updates(int64_t const last_updated)
                 // define limit with the original last_updated because
                 // the order in which we read the layouts has nothing to
                 // do with the order in which they were last updated
-                int64_t limit(install_layout(name, last_updated));
+                int64_t const limit(install_layout(name, last_updated));
                 if(limit > new_last_updated)
                 {
                     new_last_updated = limit;
@@ -905,6 +905,7 @@ void layout::replace_includes(QString& xsl)
  * \param[in] layout_name  The name of the layout to install.
  * \param[in,out] last_updated  The date when the layout was last updated.
  *                              If zero, do not check for updates.
+ * \return last updated timestamp
  */
 int64_t layout::install_layout(QString const& layout_name, int64_t const last_updated)
 {
@@ -941,16 +942,35 @@ int64_t layout::install_layout(QString const& layout_name, int64_t const last_up
 
     // this layout is missing, create necessary basic info
     // (later users can edit those settings)
-    if(!layout_table->row(layout_name)->exists(get_name(SNAP_NAME_LAYOUT_CONTENT)))
+    //
+    QString xml_content;
+    if( layout_name == "default" )
     {
-        f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR,
-                "Layout Unavailable",
-                "Layout \"" + layout_name + "\" content.xml file is missing.",
-                "layout::install_layout() could not find the content.xml file in the layout table.");
-        NOTREACHED();
+        QFile file(":/xml/layout/content.xml");
+        if(!file.open(QIODevice::ReadOnly))
+        {
+            f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR,
+                    "Layout Unavailable",
+                    "Could not read content.xml from the resources.",
+                    "layout::install_layout() could not open content.xml resource file.");
+            NOTREACHED();
+        }
+        QByteArray data(file.readAll());
+        xml_content = QString::fromUtf8(data.data(), data.size());
+    }
+    else
+    {
+        if( !layout_table->row(layout_name)->exists(get_name(SNAP_NAME_LAYOUT_CONTENT)))
+        {
+            f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR,
+                        "Layout Unavailable",
+                        "Layout \"" + layout_name + "\" content.xml file is missing.",
+                        "layout::install_layout() could not find the content.xml file in the layout table.");
+            NOTREACHED();
+        }
+        xml_content = (layout_table->row(layout_name)->cell(get_name(SNAP_NAME_LAYOUT_CONTENT))->value().stringValue());
     }
 
-    QString const xml_content(layout_table->row(layout_name)->cell(get_name(SNAP_NAME_LAYOUT_CONTENT))->value().stringValue());
     QDomDocument dom;
     if(!dom.setContent(xml_content, false))
     {
@@ -959,6 +979,15 @@ int64_t layout::install_layout(QString const& layout_name, int64_t const last_up
                 "Layout \"" + layout_name + "\" content.xml file could not be loaded.",
                 "layout::install_layout() could not load the content.xml file from the layout table.");
         NOTREACHED();
+    }
+
+    if( layout_name == "default" )
+    {
+        // Timestamp doesn't make any sense for the default layout, which is essentially builtin.
+        // So let's go with the value passed in as an argument.
+        //
+#pragma message "Alexis: verify this is an accepitable return value, please."
+        return last_updated;
     }
 
     // XXX: it seems to me that the owner should not depend on p
