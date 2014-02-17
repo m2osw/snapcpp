@@ -1,7 +1,18 @@
+snapwebsites (0.1.9~saucyubuntu1) UNRELEASED; urgency=low
+
+  * Added the list plugin which generates lists of pages based on a
+    C-like expression that can be very simple or very complex.
+  * Added a snapexpr tool, mainly to test the C-like expression code.
+  * Added a type for pages used for emails.
+  * Fixed the links plugin so it supports several multiple to multiple
+    links (*:*) as expected.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Mon, 17 Feb 2014 15:43:48 -0800
+
 snapwebsites (0.1.9~saucy) saucy; urgency=high
 
   * Adds in the basic layouts into the database if no "layout" table present
-  on postinst.
+    on postinst.
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Thu, 13 Feb 2014 14:14:57 -0800
 
