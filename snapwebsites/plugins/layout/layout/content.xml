@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <!--
-Snap Websites Server == bare layout database setup
+Snap Websites Server == default layout database setup
 Copyright (C) 2014  Made to Order Software Corp.
 
 This program is free software; you can redistribute it and/or modify
@@ -17,24 +17,24 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 -->
-<!-- to install: snaplayout bare-content.xml -->
+<!-- to install: snaplayout default-content.xml -->
 <snap-tree content-modified="2014-01-08 19:36:39">
   <!-- the content grows as things are added to the site, at first it handles the root though -->
-  <content path="/admin/layouts/bare">
-    <param name="content::title" revision="revision">Bare Layout</param>
+  <content path="/admin/layouts/default">
+    <param name="content::title" revision="revision">Default Layout</param>
     <param name="content::body" revision="revision">
-      <![CDATA[<p>The bare layout is the default used internally by Snap!</p>
-               <p><small>Reminder: If your data works in the Bare layout, it should work in any layout.</small></p>]]>
+      <![CDATA[<p>The default layout is the default used internally by Snap!</p>
+               <p><small>Reminder: If your data works in the Default layout, it should work in any layout.</small></p>]]>
     </param>
     <param name="layout::boxes">left</param>
   </content>
-  <content path="/admin/layouts/bare/left">
+  <content path="/admin/layouts/default/left">
     <param name="content::title" revision="revision">Left Boxes</param>
     <param name="content::body" revision="revision">
       <![CDATA[<p>This box is shown on the left side of the content.</p>]]>
     </param>
   </content>
-  <content path="/admin/layouts/bare/left/login" owner="users">
+  <content path="/admin/layouts/default/left/login" owner="users">
     <!--
       this is a default box as a proof of concept
       once we can edit this data it will be much less useful
@@ -47,14 +47,14 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <link name="content::page_type" to="content::page_type" mode="1:*">/types/taxonomy/system/content-types/page/public</link>
     <link name="permissions::administer" to="permissions::administer" mode="*:*">/types/permissions/rights/administer/user/register</link>
   </content>
-  <content path="/css/bare">
-    <param name="content::title" revision="revision">CSS for the Bare Theme</param>
+  <content path="/css/default">
+    <param name="content::title" revision="revision">CSS for the Default Theme</param>
     <param name="content::body" revision="revision">
-      <![CDATA[<p>The cascading style sheets of the bare theme.</p>]]>
+      <![CDATA[<p>The cascading style sheets of the default theme.</p>]]>
     </param>
     <link name="permissions::administer" to="permissions::administer" mode="*:*">/types/permissions/rights/administer/info</link>
     <attachment name="style" type="attachment/public" owner="output">
-      <path>layout:/bare/style.css</path>
+      <path>layout:/default/style.css</path>
       <mime-type>text/css</mime-type>
     </attachment>
   </content>
