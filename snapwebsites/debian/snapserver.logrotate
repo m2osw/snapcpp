@@ -3,10 +3,10 @@
         missingok
         rotate 5
         prerotate
-                service snapwebsites stop
+                service snapserver stop
         endscript
         postrotate
-                service snapwebsites start
+                service snapserver start
         endscript
         compress
         notifempty

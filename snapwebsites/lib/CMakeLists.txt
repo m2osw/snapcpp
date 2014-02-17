@@ -32,6 +32,8 @@
 
 project(snapwebsites)
 
+set( CMAKE_AUTOMOC TRUE )
+
 # Put the version in the header file
 configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/snapwebsites.h.in ${CMAKE_CURRENT_BINARY_DIR}/snapwebsites.h )
 
@@ -84,7 +86,8 @@ add_library( ${PROJECT_NAME} SHARED
     qstring_stream.h                            # Stream QString objects property to ostream objects.
     quoted_printable.cpp                        # to encode / decode data using the quoted printable format
     qxmlmessagehandler.cpp                      # Qt extension for us to capture the QXmlQuery messages
-    snap_child.cpp                              # requests processing
+	row_model.cpp                               #  libQtCassandra row model for use with a QTableView object.
+	snap_child.cpp                              # requests processing
     snap_exception.cpp                          # exception stack backtrack
     snap_expr.cpp                               # snap C-like expression compiler and execution environment
     snap_image.cpp                              # image handling
@@ -99,7 +102,8 @@ add_library( ${PROJECT_NAME} SHARED
     ${CMAKE_CURRENT_BINARY_DIR}/snapwebsites.h  # binary output of header file (generated)
     snapwebsites.cpp                            # server
     tcp_client_server.cpp                       # low level TCP/IP that works
-    udp_client_server.cpp                       # low level UDP/IP that works
+	table_model.cpp                             # libQtCassandra table model for use with a QListView object.
+	udp_client_server.cpp                       # low level UDP/IP that works
 )
 
 target_link_libraries( ${PROJECT_NAME}

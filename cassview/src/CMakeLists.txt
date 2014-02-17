@@ -46,6 +46,7 @@ include_directories(
 
 QT4_WRAP_UI(UI_FILES
 	AboutDialog.ui
+	InputDialog.ui
 	MainWindow.ui
 	SettingsDialog.ui
 )
@@ -58,11 +59,12 @@ add_executable(${PROJECT_NAME}
 	AboutDialog.cpp
     CassandraModel.cpp
 	ContextModel.cpp
+	DisplayException.h
+	DisplayException.cpp
+	InputDialog.cpp
 	MainWindow.cpp
 	main.cpp
-    RowModel.cpp
     SettingsDialog.cpp
-    TableModel.cpp
 	qt4.h
 	${UI_FILES}
 	${RES_FILES}
@@ -77,6 +79,12 @@ target_link_libraries(${PROJECT_NAME}
 
 install(
     TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin
+)
+
+install(
+    FILES snap-medium-icon.png
+    DESTINATION share/pixmaps
+    RENAME cassview.png
 )
 
 # vim: ts=4 sw=4 et

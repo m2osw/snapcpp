@@ -45,10 +45,11 @@ using namespace QtCassandra;
 int main( int argc, char * argv[] )
 {
     QApplication app(argc, argv);
-    app.setApplicationName    ( "cassview"         );
-    app.setApplicationVersion ( "CASSVIEW_VERSION" );
-    app.setOrganizationDomain ( "snapwebsites.org" );
-    app.setOrganizationName   ( "M2OSW"            );
+    app.setApplicationName    ( "cassview"           );
+    app.setApplicationVersion ( CASSVIEW_VERSION     );
+    app.setOrganizationDomain ( "snapwebsites.org"   );
+    app.setOrganizationName   ( "M2OSW"              );
+    app.setWindowIcon         ( QIcon(":icons/icon") );
 
     QSettings settings;
     if( !settings.contains( "cassandra_host") )

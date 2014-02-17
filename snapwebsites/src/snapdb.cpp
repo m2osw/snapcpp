@@ -99,6 +99,14 @@ namespace
         {
             '\0',
             advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
+            "yes-i-know-what-im-doing",
+            NULL,
+            "Force the dropping of tables, without warning and stdin prompt. Only use this if you know what you're doing!",
+            advgetopt::getopt::no_argument
+        },
+        {
+            '\0',
+            advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
             "host",
             NULL,
             "host IP address or name (defaults to localhost)",
@@ -170,11 +178,34 @@ private:
     QString                         f_row;
     getopt_ptr_t                    f_opt;
 
+    bool confirm_drop_check() const;
     void display_tables() const;
     void display_rows() const;
     void display_rows_wildcard() const;
     void display_columns() const;
 };
+
+
+bool snapdb::confirm_drop_check() const
+{
+    if( f_opt->is_defined("yes-i-know-what-im-doing") )
+    {
+        return true;
+    }
+
+    std::cout << "WARNING! This will drop vital tables from the database and is IRREVERSABLE!\n"
+              << "Make sure you know what you are doing, and have appropriate backups before proceeding!\n"
+              << "Are you sure you want to do this? (type in 'Yes I know what I'm doing' and press ENTER): "
+              ;
+    std::string input;
+    std::getline( std::cin, input );
+    const bool confirm( (input == "Yes I know what I'm doing") );
+    if( !confirm )
+    {
+        std::cerr << "Not dropping tables, so exiting." << std::endl;
+    }
+    return confirm;
+}
 
 
 snapdb::snapdb(int argc, char *argv[])
@@ -217,13 +248,21 @@ snapdb::snapdb(int argc, char *argv[])
     }
     if( f_opt->is_defined( "drop-tables" ) )
     {
-        drop_tables(false);
-        exit(0);
+        if( confirm_drop_check() )
+        {
+            drop_tables(false);
+            exit(0);
+        }
+        exit(1);
     }
     if( f_opt->is_defined( "drop-all-tables" ) )
     {
-        drop_tables(true);
-        exit(0);
+        if( confirm_drop_check() )
+        {
+            drop_tables(true);
+            exit(0);
+        }
+        exit(1);
     }
 
     // finally check for parameters

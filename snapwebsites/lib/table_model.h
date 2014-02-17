@@ -1,18 +1,38 @@
+// Copyright (C) 2014  Made to Order Software Corp.
+//
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation; either version 2 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+//
 #pragma once
 
 #include <QtCassandra/QCassandraTable.h>
 #include <QtCassandra/QCassandraRowPredicate.h>
-#include <QtGui>
+#include <QAbstractListModel>
+#include <QModelIndex>
 
 #include <memory>
 
-class TableModel
+namespace snap
+{
+
+class table_model
     : public QAbstractListModel
 {
     Q_OBJECT
 
     public:
-        TableModel() : f_rowCount(100), f_rowsRemaining(0), f_pos(0) {}
+        table_model() : f_rowCount(100), f_rowsRemaining(0), f_pos(0) {}
 
         QtCassandra::QCassandraTable::pointer_t getTable() const;
         void setTable( QtCassandra::QCassandraTable::pointer_t t );
@@ -36,5 +56,8 @@ class TableModel
         int f_rowsRemaining;
         int f_pos;
 };
+
+}
+// namespace snap
 
 // vim: ts=4 sw=4 et

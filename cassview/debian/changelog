@@ -1,3 +1,60 @@
+cassview (0.0.13~saucy) saucy; urgency=high
+
+  * Forgot to put in shlibs dependencies into the control file! Now the
+  package should bring in the appropriate dependencies.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Fri, 14 Feb 2014 16:04:42 -0800
+
+cassview (0.0.11~saucy) saucy; urgency=high
+
+  * Added host button and window title.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Thu, 13 Feb 2014 09:39:31 -0800
+
+cassview (0.0.10ubuntu1~saucy) saucy; urgency=high
+
+  * Bump for build on PPA.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Wed, 12 Feb 2014 16:14:20 -0800
+
+cassview (0.0.10~saucy) saucy; urgency=high
+
+  * Moved RowModel and TableModel into snapwebsites library.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Wed, 12 Feb 2014 15:03:53 -0800
+
+cassview (0.0.9~saucy) saucy; urgency=high
+
+  * Now all exceptions are displayed in a QMessageBox.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Wed, 12 Feb 2014 11:48:17 -0800
+
+cassview (0.0.8~saucy) saucy; urgency=high
+
+  * Improved InputDialog, better error support, save splitter state. 
+  * Repaired error with SettingsDialog, so the server information can be
+  changed and it persists and connects properly.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Tue, 11 Feb 2014 07:58:39 -0800
+
+cassview (0.0.7~saucy) saucy; urgency=high
+
+  * Now allows adding and removal of columns in any row.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Mon, 10 Feb 2014 19:17:17 -0800
+
+cassview (0.0.6~saucy) saucy; urgency=high
+
+  * Added application icon.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Mon, 10 Feb 2014 08:26:22 -0800
+
+cassview (0.0.5ubuntu1~saucy) saucy; urgency=high
+
+  * Bump for new build at the PPA site.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Mon, 10 Feb 2014 07:04:17 -0800
+
 cassview (0.0.5) saucy; urgency=high
 
   * Bump for new build at the PPA site.

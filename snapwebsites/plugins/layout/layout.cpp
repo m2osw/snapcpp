@@ -230,7 +230,7 @@ int64_t layout::do_layout_updates(int64_t const last_updated)
                 // define limit with the original last_updated because
                 // the order in which we read the layouts has nothing to
                 // do with the order in which they were last updated
-                int64_t limit(install_layout(name, last_updated));
+                int64_t const limit(install_layout(name, last_updated));
                 if(limit > new_last_updated)
                 {
                     new_last_updated = limit;
@@ -710,8 +710,10 @@ std::cerr << "got in layout... cpath = [" << ipath.get_cpath() << "]\n";
  * document.
  *
  * \param[in] doc  The XML document to theme.
- * \param[in] cpath  The path of the document being themed.
- * \param[in] content_plugin  The
+ * \param[in] ipath  The path of the document being themed.
+ * \param[in] content_plugin  The layout content of the plugin (not yet used).
+ *
+ * \todo Make use of the content_plugin.
  *
  * \return The XML document themed in the form of a string.
  */
@@ -719,22 +721,13 @@ QString layout::apply_theme(QDomDocument doc, content::path_info_t& ipath, layou
 {
     (void)content_plugin; // not yet used
 
-    QString theme_name(get_layout(ipath, get_name(SNAP_NAME_LAYOUT_THEME)));
-
-// TODO: until we can get the theme system working right...
-//       actually the theme system works, but we need to have something
-//       to allow us to select said theme
-//theme_name = "bare";
-
-    //QFile xsl(":/xsl/layout/default-theme-parser.xsl");
-    //if(!xsl.open(QIODevice::ReadOnly))
-    //{
-    //    SNAP_LOG_FATAL("layout::apply_theme() could not open default-theme-parser.xsl resource file.");
-    //    // TODO: I don't think we just want to return here?
-    //    return "theme parser not available";
-    //}
+    QString theme_name( get_layout(ipath, get_name(SNAP_NAME_LAYOUT_THEME)) );
     QString xsl;
-    if(theme_name != "default")
+
+    // If theme_name is not default, attempt to obtain the
+    // selected theme from the layout table.
+    //
+    if( theme_name != "default" )
     {
         // try to load the layout from the database, if not found
         // we'll switch to the default layout instead
@@ -742,16 +735,26 @@ QString layout::apply_theme(QDomDocument doc, content::path_info_t& ipath, layou
         QtCassandra::QCassandraValue theme_value(layout_table->row(theme_name)->cell(QString("theme"))->value());
         if(theme_value.nullValue())
         {
-            // note that a layout cannot be empty so the test is correct
+            // If no theme selected, then default to the "default" theme."
+            //
+            // note: a layout cannot be empty so the test is correct
+            //
             theme_name = "default";
         }
         else
         {
+            // Use the selected theme.
+            //
             xsl = theme_value.stringValue();
         }
     }
-    if(theme_name == "default")
+
+    // Fallback to the default theme if none was set properly above.
+    //
+    if( theme_name == "default" )
     {
+        // Grab the XSL from the Qt4 compiled-in resources.
+        //
         QFile file(":/xsl/layout/default-theme-parser.xsl");
         if(!file.open(QIODevice::ReadOnly))
         {
@@ -764,6 +767,7 @@ QString layout::apply_theme(QDomDocument doc, content::path_info_t& ipath, layou
         QByteArray data(file.readAll());
         xsl = QString::fromUtf8(data.data(), data.size());
     }
+
     replace_includes(xsl);
 
     // finally apply the theme XSLT to the final XML
@@ -900,6 +904,7 @@ void layout::replace_includes(QString& xsl)
  * \param[in] layout_name  The name of the layout to install.
  * \param[in,out] last_updated  The date when the layout was last updated.
  *                              If zero, do not check for updates.
+ * \return last updated timestamp
  */
 int64_t layout::install_layout(QString const& layout_name, int64_t const last_updated)
 {
@@ -936,24 +941,52 @@ int64_t layout::install_layout(QString const& layout_name, int64_t const last_up
 
     // this layout is missing, create necessary basic info
     // (later users can edit those settings)
-    if(!layout_table->row(layout_name)->exists(get_name(SNAP_NAME_LAYOUT_CONTENT)))
+    //
+    QString xml_content;
+    if( layout_name == "default" )
     {
-        f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR,
-                "Layout Unavailable",
-                "Layout \"" + layout_name + "\" content.xml file is missing.",
-                "layout::create_body() could not find the content.xml file in the layout table.");
-        NOTREACHED();
+        QFile file(":/xml/layout/content.xml");
+        if(!file.open(QIODevice::ReadOnly))
+        {
+            f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR,
+                    "Layout Unavailable",
+                    "Could not read content.xml from the resources.",
+                    "layout::install_layout() could not open content.xml resource file.");
+            NOTREACHED();
+        }
+        QByteArray data(file.readAll());
+        xml_content = QString::fromUtf8(data.data(), data.size());
+    }
+    else
+    {
+        if( !layout_table->row(layout_name)->exists(get_name(SNAP_NAME_LAYOUT_CONTENT)))
+        {
+            f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR,
+                        "Layout Unavailable",
+                        "Layout \"" + layout_name + "\" content.xml file is missing.",
+                        "layout::install_layout() could not find the content.xml file in the layout table.");
+            NOTREACHED();
+        }
+        xml_content = (layout_table->row(layout_name)->cell(get_name(SNAP_NAME_LAYOUT_CONTENT))->value().stringValue());
     }
 
-    QString const xml_content(layout_table->row(layout_name)->cell(get_name(SNAP_NAME_LAYOUT_CONTENT))->value().stringValue());
     QDomDocument dom;
     if(!dom.setContent(xml_content, false))
     {
         f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR,
                 "Layout Unavailable",
                 "Layout \"" + layout_name + "\" content.xml file could not be loaded.",
-                "layout::create_body() could not load the content.xml file from the layout table.");
+                "layout::install_layout() could not load the content.xml file from the layout table.");
         NOTREACHED();
+    }
+
+    if( layout_name == "default" )
+    {
+        // Timestamp doesn't make any sense for the default layout, which is essentially builtin.
+        // So let's go with the value passed in as an argument.
+        //
+#pragma message "Alexis: verify this is an accepitable return value, please."
+        return last_updated;
     }
 
     // XXX: it seems to me that the owner should not depend on p
@@ -968,7 +1001,7 @@ int64_t layout::install_layout(QString const& layout_name, int64_t const last_up
         f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR,
                 "Layout Unavailable",
                 "Layout \"" + layout_name + "\" content.xml file does not define the layout::boxes entry for this layout.",
-                "layout::create_body() the content.xml did not define \"" + layout_ipath.get_branch_key() + "->[layout::boxes]\" as expected.");
+                "layout::install_layout() the content.xml did not define \"" + layout_ipath.get_branch_key() + "->[layout::boxes]\" as expected.");
         NOTREACHED();
     }
 
