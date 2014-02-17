@@ -67,7 +67,7 @@ void convertData(T& field, const QString& data);
  * \param[in] data  The data to convert and save in \p field.
  */
 template<>
-void convertData<bool>(bool& field, const QString& data)
+inline void convertData<bool>(bool& field, const QString& data)
 {
     field = data.toInt() != 0;
 }
@@ -81,7 +81,7 @@ void convertData<bool>(bool& field, const QString& data)
  * \param[in] data  The data to convert and save in \p field.
  */
 template<>
-void convertData<qint8>(qint8& field, const QString& data)
+inline void convertData<qint8>(qint8& field, const QString& data)
 {
     field = data.toShort();
 }
@@ -95,7 +95,7 @@ void convertData<qint8>(qint8& field, const QString& data)
  * \param[in] data  The data to convert and save in \p field.
  */
 template<>
-void convertData<quint8>(quint8& field, const QString& data)
+inline void convertData<quint8>(quint8& field, const QString& data)
 {
     field = data.toUShort();
 }
@@ -109,7 +109,7 @@ void convertData<quint8>(quint8& field, const QString& data)
  * \param[in] data  The data to convert and save in \p field.
  */
 template<>
-void convertData<qint16>(qint16& field, const QString& data)
+inline void convertData<qint16>(qint16& field, const QString& data)
 {
     field = data.toShort();
 }
@@ -123,7 +123,7 @@ void convertData<qint16>(qint16& field, const QString& data)
  * \param[in] data  The data to convert and save in \p field.
  */
 template<>
-void convertData<quint16>(quint16& field, const QString& data)
+inline void convertData<quint16>(quint16& field, const QString& data)
 {
     field = data.toUShort();
 }
@@ -137,7 +137,7 @@ void convertData<quint16>(quint16& field, const QString& data)
  * \param[in] data  The data to convert and save in \p field.
  */
 template<>
-void convertData<qint32>(qint32& field, const QString& data)
+inline void convertData<qint32>(qint32& field, const QString& data)
 {
     field = data.toInt();
 }
@@ -151,7 +151,7 @@ void convertData<qint32>(qint32& field, const QString& data)
  * \param[in] data  The data to convert and save in \p field.
  */
 template<>
-void convertData<quint32>(quint32& field, const QString& data)
+inline void convertData<quint32>(quint32& field, const QString& data)
 {
     field = data.toUInt();
 }
@@ -165,7 +165,7 @@ void convertData<quint32>(quint32& field, const QString& data)
  * \param[in] data  The data to convert and save in \p field.
  */
 template<>
-void convertData<qint64>(qint64& field, const QString& data)
+inline void convertData<qint64>(qint64& field, const QString& data)
 {
     field = data.toLongLong();
 }
@@ -179,7 +179,7 @@ void convertData<qint64>(qint64& field, const QString& data)
  * \param[in] data  The data to convert and save in \p field.
  */
 template<>
-void convertData<quint64>(quint64& field, const QString& data)
+inline void convertData<quint64>(quint64& field, const QString& data)
 {
     field = data.toULongLong();
 }
@@ -193,7 +193,7 @@ void convertData<quint64>(quint64& field, const QString& data)
  * \param[in] data  The data to convert and save in \p field.
  */
 template<>
-void convertData<float>(float& field, const QString& data)
+inline void convertData<float>(float& field, const QString& data)
 {
     field = data.toFloat();
 }
@@ -207,7 +207,7 @@ void convertData<float>(float& field, const QString& data)
  * \param[in] data  The data to convert and save in \p field.
  */
 template<>
-void convertData<double>(double& field, const QString& data)
+inline void convertData<double>(double& field, const QString& data)
 {
     field = data.toDouble();
 }

@@ -89,6 +89,7 @@ add_library( ${PROJECT_NAME} SHARED
 	row_model.cpp                               #  libQtCassandra row model for use with a QTableView object.
 	snap_child.cpp                              # requests processing
     snap_exception.cpp                          # exception stack backtrack
+    snap_expr.cpp                               # snap C-like expression compiler and execution environment
     snap_image.cpp                              # image handling
     snap_magic.cpp                              # support for MIME type
     snap_parser.cpp                             # lexer/parser for all our script like entries

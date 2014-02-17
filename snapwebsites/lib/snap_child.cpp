@@ -24,6 +24,7 @@
 #include "plugins.h"
 #include "snap_image.h"
 #include "snap_utf8.h"
+#include "snap_expr.h"
 #include "log.h"
 #include "qlockfile.h"
 #include "http_strings.h"
@@ -31,6 +32,8 @@
 #include "snap_magic.h"
 #include "compression.h"
 #include "qstring_stream.h"
+
+#include <QtSerialization/QSerialization.h>
 
 #include <sstream>
 #include <memory>
@@ -41,8 +44,8 @@
 #include <stdio.h>
 #include <sys/time.h>
 #include <sys/socket.h>
+
 #include <QDateTime>
-#include <QtSerialization/QSerialization.h>
 #include <QCoreApplication>
 
 #include "poison.h"
@@ -2606,7 +2609,7 @@ void snap_child::backend()
             for(QtCassandra::QCassandraRows::const_iterator o(r.begin());
                     o != r.end(); ++o)
             {
-                QString key(QString::fromUtf8(o.key().data()));
+                QString const key(QString::fromUtf8(o.key().data()));
                 process_backend_uri(key);
             }
         }
@@ -2637,7 +2640,7 @@ void snap_child::backend()
  *
  * \param[in] uri  The URI of the site to be checked.
  */
-void snap_child::process_backend_uri(const QString& uri)
+void snap_child::process_backend_uri(QString const& uri)
 {
     // create a child process so the data between sites doesn't get
     // shared (also the Cassandra data would remain in memory increasing
@@ -2689,11 +2692,18 @@ void snap_child::process_backend_uri(const QString& uri)
 
     f_ready = true;
 
-    QString action(f_server->get_parameter("__BACKEND_ACTION"));
+    QString const action(f_server->get_parameter("__BACKEND_ACTION"));
     if(!action.isEmpty())
     {
         server::backend_action_map_t actions;
         f_server->register_backend_action(actions);
+#ifdef DEBUG
+        if(actions.contains("list"))
+        {
+            throw snap_logic_exception(QString("plugin \"%1\" makes use of an action named \"list\" which is reserved to the system")
+                                                .arg(dynamic_cast<plugins::plugin *>(actions["list"])->get_plugin_name()));
+        }
+#endif
         if(actions.contains(action))
         {
             // this is a valid action, execute the corresponding function!
@@ -2705,7 +2715,7 @@ void snap_child::process_backend_uri(const QString& uri)
             // we add a "list" entry so it appears in the right place
             class fake : public server::backend_action
             {
-                virtual void on_backend_action(const QString& /*action*/)
+                virtual void on_backend_action(QString const& /*action*/)
                 {
                 }
             };
@@ -2713,12 +2723,12 @@ void snap_child::process_backend_uri(const QString& uri)
             actions["list"] = &foo;
             for(server::backend_action_map_t::const_iterator it(actions.begin()); it != actions.end(); ++it)
             {
-                std::cout << it.key().toUtf8().data() << std::endl;
+                std::cout << it.key() << std::endl;
             }
         }
         else
         {
-            std::cerr << "error: unknown action \"" << action.toUtf8().data() << "\"" << std::endl;
+            std::cerr << "error: unknown action \"" << action << "\"" << std::endl;
             exit(1);
         }
     }
@@ -3820,7 +3830,7 @@ void snap_child::connect_cassandra()
 
     // select the Snap! context
     f_cassandra->contexts();
-    QString context_name(get_name(SNAP_NAME_CONTEXT));
+    QString const context_name(get_name(SNAP_NAME_CONTEXT));
     f_context = f_cassandra->findContext(context_name);
     if(!f_context)
     {
@@ -3829,6 +3839,11 @@ void snap_child::connect_cassandra()
         NOTREACHED();
     }
     f_context->setHostName(f_server->get_parameter("server_name"));
+
+    // TBD -- that really the right place for this?
+    //        (in this way it is done once for any plugin using
+    //        the snap expression system)
+    snap_expr::expr::set_cassandra_context(f_context);
 }
 
 

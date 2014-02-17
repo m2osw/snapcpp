@@ -372,6 +372,7 @@ void users::on_bootstrap(::snap::snap_child *snap)
     SNAP_LISTEN0(users, "server", server, detach_from_session);
     SNAP_LISTEN(users, "server", server, define_locales, _1);
     SNAP_LISTEN(users, "server", server, improve_signature, _1, _2);
+    SNAP_LISTEN(users, "server", server, cell_is_secure, _1, _2, _3, _4);
     SNAP_LISTEN(users, "content", content::content, create_content, _1, _2, _3);
     SNAP_LISTEN(users, "path", path::path, can_handle_dynamic_path, _1, _2);
     SNAP_LISTEN(users, "layout", layout::layout, generate_header_content, _1, _2, _3, _4);
@@ -3239,6 +3240,43 @@ void users::on_improve_signature(QString const& path, QString& signature)
 
         // TODO: translate
         signature += " <a href=\"/" + link + "\">My Account</a>";
+    }
+}
+
+
+/** \brief Check whether the cell can securily be used in a script.
+ *
+ * This signal is sent by the cell() function of snap_expr objects.
+ * The plugin receiving the signal can check the table, row, and cell
+ * names and mark that specific cell as secure. This will prevent the
+ * script writer from accessing that specific cell.
+ *
+ * This is used, for example, to protect the user password. Even though
+ * the password is encrypted, allowing an end user to get a copy of
+ * the encrypted password would dearly simplify the work of a hacker in
+ * finding the unencrypted password.
+ *
+ * The \p secure flag is used to mark the cell as secure. Simply call
+ * the mark_as_secure() function to do so.
+ *
+ * \param[in] table  The table being accessed.
+ * \param[in] row  The row being accessed.
+ * \param[in] cell  The cell being accessed.
+ * \param[in] secure  Whether the cell is secure.
+ *
+ * \return This function returns true in case the signal needs to proceed.
+ */
+void users::on_cell_is_secure(QString const& table, QString const& row, QString const& cell, server::secure_field_flag_t& secure)
+{
+    if(table == get_name(SNAP_NAME_USERS_TABLE))
+    {
+        if(cell == get_name(SNAP_NAME_USERS_PASSWORD)
+        && cell == get_name(SNAP_NAME_USERS_PASSWORD_DIGEST)
+        && cell == get_name(SNAP_NAME_USERS_PASSWORD_SALT))
+        {
+            // password is considered secure
+            secure.mark_as_secure();
+        }
     }
 }
 

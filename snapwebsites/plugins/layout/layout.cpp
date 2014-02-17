@@ -18,7 +18,6 @@
 #include "layout.h"
 
 #include "../filter/filter.h"
-#include "../content/content.h"
 #include "../javascript/javascript.h"
 #include "../taxonomy/taxonomy.h"
 

@@ -39,7 +39,8 @@ SNAP_PLUGIN_START(output, 1, 0)
  */
 //char const *get_name(name_t name)
 //{
-//    switch(name) {
+//    switch(name)
+//    {
 //    case SNAP_NAME_OUTPUT_ACCEPTED:
 //        return "output::accepted";
 //
@@ -140,7 +141,7 @@ int64_t output::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2014, 2, 4, 16, 29, 30, content_update);
+    SNAP_PLUGIN_UPDATE(2014, 2, 16, 1, 46, 30, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }

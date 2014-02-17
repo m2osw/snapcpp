@@ -32,7 +32,8 @@
 namespace snap
 {
 
-enum name_t {
+enum name_t
+{
     SNAP_NAME_SERVER,           // The name of the Snap! Server
     SNAP_NAME_CONTEXT,          // Cassandra Keyspace
     SNAP_NAME_INDEX,            // Row used for the domains & websites index
@@ -96,6 +97,26 @@ public:
         virtual void    on_backend_action(QString const& action) = 0;
     };
 
+    class secure_field_flag_t
+    {
+    public:
+                        secure_field_flag_t()
+                            //: f_secure(false) -- auto-init
+                        {
+                        }
+
+        bool            is_secure() const { return f_secure; }
+        void            mark_as_secure() { f_secure = true; }
+
+    private:
+        // prevent copies or a user could reset the flag!
+                        secure_field_flag_t(secure_field_flag_t const& rhs) = delete;
+                        secure_field_flag_t& operator = (secure_field_flag_t const& rhs) = delete;
+
+        controlled_vars::fbool_t    f_secure;
+    };
+
+
     typedef QMap<QString, backend_action *> backend_action_map_t;
     typedef std::shared_ptr<server>         pointer_t;
 
@@ -148,6 +169,7 @@ public:
     SNAP_SIGNAL(improve_signature, (QString const& path, QString& signature),
                                    (path, signature));
     SNAP_SIGNAL(load_file, (snap_child::post_file_t& file, bool& found), (file, found));
+    SNAP_SIGNAL(cell_is_secure, (QString const& table, QString const& row, QString const& cell, secure_field_flag_t& secure), (table, row, cell, secure));
 
 private:
     typedef QMap<QString, QString>                parameter_map_t;
@@ -158,8 +180,6 @@ private:
 
     static pointer_t                        f_instance;
 
-    //controlled_vars::zint32_t               f_argc;
-    //const char **                           f_argv;
     std::string                             f_servername;
     controlled_vars::fbool_t                f_debug;
     controlled_vars::fbool_t                f_backend;

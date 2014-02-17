@@ -155,6 +155,7 @@ public:
     void                    on_create_content(content::path_info_t& path, QString const& owner, QString const& type);
     void                    on_improve_signature(QString const& path, QString& signature);
     void                    on_replace_token(content::path_info_t& ipath, QString const& plugin_owner, QDomDocument& xml, filter::filter::token_info_t& token);
+    void                    on_cell_is_secure(QString const& table, QString const& row, QString const& cell, server::secure_field_flag_t& secure);
 
     virtual void            on_process_form_post(content::path_info_t& ipath, sessions::sessions::session_info const& session_info);
 

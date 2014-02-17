@@ -1997,8 +1997,8 @@ void domain_rules::readTag(const QString& name, QtSerialization::QReader& r)
 void domain_rules::write(QtSerialization::QWriter& w) const
 {
     QtSerialization::QWriter::QTag tag(w, "domain_rules");
-    int max(f_info.size());
-    for(int i(0); i < max; ++i)
+    int max_info(f_info.size());
+    for(int i(0); i < max_info; ++i)
     {
         f_info[i]->write(w);
     }
@@ -2020,8 +2020,10 @@ using namespace parser;
  * \param[in] r  The rule that generated the callback.
  * \param[in] t  The token node holding the data parsed so far.
  */
-void domain_set_qualified_name(const rule& /*r*/, QSharedPointer<token_node>& t)
+void domain_set_qualified_name(const rule& r, QSharedPointer<token_node>& t)
 {
+    static_cast<void>(r);
+
     QSharedPointer<parser::token_node> n(qSharedPointerDynamicCast<token_node, token>((*t)[0]));
     (*t)[0]->set_value((*n)[0]->get_value().toString() + "::" + (*t)[2]->get_value().toString());
 }
@@ -2037,8 +2039,10 @@ void domain_set_qualified_name(const rule& /*r*/, QSharedPointer<token_node>& t)
  * \param[in] r  The rule that generated the callback.
  * \param[in] t  The token node holding the data parsed so far.
  */
-void domain_set_standard_var(const rule& /*r*/, QSharedPointer<token_node>& t)
+void domain_set_standard_var(const rule& r, QSharedPointer<token_node>& t)
 {
+    static_cast<void>(r);
+
     // get the node where the qualified name is defined
     QSharedPointer<token_node> n(qSharedPointerDynamicCast<token_node, token>((*t)[0]));
 
@@ -2057,8 +2061,10 @@ void domain_set_standard_var(const rule& /*r*/, QSharedPointer<token_node>& t)
  * \param[in] r  The rule that generated the callback.
  * \param[in] t  The token node holding the data parsed so far.
  */
-void domain_set_website_var(const rule& /*r*/, QSharedPointer<token_node>& t)
+void domain_set_website_var(const rule& r, QSharedPointer<token_node>& t)
 {
+    static_cast<void>(r);
+
     QSharedPointer<token_node> n(qSharedPointerDynamicCast<token_node, token>((*t)[0]));
     QSharedPointer<domain_variable> v(new domain_variable(domain_variable::DOMAIN_VARIABLE_TYPE_WEBSITE, (*n)[0]->get_value().toString(), (*t)[4]->get_value().toString()));
     v->set_default((*t)[6]->get_value().toString());
@@ -2081,8 +2087,10 @@ void domain_set_website_var(const rule& /*r*/, QSharedPointer<token_node>& t)
  * \param[in] r  The rule that generated the callback.
  * \param[in] t  The token node holding the data parsed so far.
  */
-void domain_set_flag_var(const rule& /*r*/, QSharedPointer<token_node>& t)
+void domain_set_flag_var(const rule& r, QSharedPointer<token_node>& t)
 {
+    static_cast<void>(r);
+
     QSharedPointer<token_node> n(qSharedPointerDynamicCast<token_node, token>((*t)[0]));
     QSharedPointer<token_node> o(qSharedPointerDynamicCast<token_node, token>((*t)[5]));
 
@@ -2112,8 +2120,10 @@ void domain_set_flag_var(const rule& /*r*/, QSharedPointer<token_node>& t)
  * \param[in] r  The rule that generated the callback.
  * \param[in] t  The token node holding the data parsed so far.
  */
-void domain_set_var_required(const rule& /*r*/, QSharedPointer<token_node>& t)
+void domain_set_var_required(const rule& r, QSharedPointer<token_node>& t)
 {
+    static_cast<void>(r);
+
     QSharedPointer<token_node> n(qSharedPointerDynamicCast<token_node, token>((*t)[1]));
     QSharedPointer<domain_variable> v(qSharedPointerDynamicCast<domain_variable, parser_user_data>(n->get_user_data()));
     v->set_required();
@@ -2129,8 +2139,10 @@ void domain_set_var_required(const rule& /*r*/, QSharedPointer<token_node>& t)
  * \param[in] r  The rule that generated the callback.
  * \param[in] t  The token node holding the data parsed so far.
  */
-void domain_set_var_optional(const rule& /*r*/, QSharedPointer<token_node>& t)
+void domain_set_var_optional(const rule& r, QSharedPointer<token_node>& t)
 {
+    static_cast<void>(r);
+
     QSharedPointer<token_node> n(qSharedPointerDynamicCast<token_node, token>((*t)[1]));
     QSharedPointer<domain_variable> v(qSharedPointerDynamicCast<domain_variable, parser_user_data>(n->get_user_data()));
     v->set_required(false);
@@ -2147,8 +2159,10 @@ void domain_set_var_optional(const rule& /*r*/, QSharedPointer<token_node>& t)
  * \param[in] r  The rule that generated the callback.
  * \param[in] t  The token node holding the data parsed so far.
  */
-void domain_set_new_domain_list(const rule& /*r*/, QSharedPointer<token_node>& t)
+void domain_set_new_domain_list(const rule& r, QSharedPointer<token_node>& t)
 {
+    static_cast<void>(r);
+
     QSharedPointer<token_node> n(qSharedPointerDynamicCast<token_node, token>((*t)[0]));
     QSharedPointer<domain_variable> v(qSharedPointerDynamicCast<domain_variable, parser_user_data>(n->get_user_data()));
     QSharedPointer<domain_info> info(new domain_info);
@@ -2166,8 +2180,10 @@ void domain_set_new_domain_list(const rule& /*r*/, QSharedPointer<token_node>& t
  * \param[in] r  The rule that generated the callback.
  * \param[in] t  The token node holding the data parsed so far.
  */
-void domain_set_add_domain_list(const rule& /*r*/, QSharedPointer<token_node>& t)
+void domain_set_add_domain_list(const rule& r, QSharedPointer<token_node>& t)
 {
+    static_cast<void>(r);
+
     QSharedPointer<token_node> nl(qSharedPointerDynamicCast<token_node, token>((*t)[0]));
     QSharedPointer<token_node> nr(qSharedPointerDynamicCast<token_node, token>((*t)[1]));
     QSharedPointer<domain_info> info(qSharedPointerDynamicCast<domain_info, parser_user_data>(nl->get_user_data()));
@@ -2186,8 +2202,10 @@ void domain_set_add_domain_list(const rule& /*r*/, QSharedPointer<token_node>& t
  * \param[in] r  The rule that generated the callback.
  * \param[in] t  The token node holding the data parsed so far.
  */
-void domain_set_rule(const rule& /*r*/, QSharedPointer<token_node>& t)
+void domain_set_rule(const rule& r, QSharedPointer<token_node>& t)
 {
+    static_cast<void>(r);
+
     QSharedPointer<token_node> n(qSharedPointerDynamicCast<token_node, token>((*t)[2]));
     QSharedPointer<domain_info> info(qSharedPointerDynamicCast<domain_info, parser_user_data>(n->get_user_data()));
     info->set_name((*t)[0]->get_value().toString());
@@ -2204,8 +2222,10 @@ void domain_set_rule(const rule& /*r*/, QSharedPointer<token_node>& t)
  * \param[in] r  The rule that generated the callback.
  * \param[in] t  The token node holding the data parsed so far.
  */
-void domain_set_new_rule_list(const rule& /*r*/, QSharedPointer<token_node>& t)
+void domain_set_new_rule_list(const rule& r, QSharedPointer<token_node>& t)
 {
+    static_cast<void>(r);
+
     QSharedPointer<token_node> n(qSharedPointerDynamicCast<token_node, token>((*t)[0]));
     QSharedPointer<domain_info> info(qSharedPointerDynamicCast<domain_info, parser_user_data>(n->get_user_data()));
     QSharedPointer<domain_rules> rules(new domain_rules);
@@ -2223,8 +2243,10 @@ void domain_set_new_rule_list(const rule& /*r*/, QSharedPointer<token_node>& t)
  * \param[in] r  The rule that generated the callback.
  * \param[in] t  The token node holding the data parsed so far.
  */
-void domain_set_add_rule_list(const rule& /*r*/, QSharedPointer<token_node>& t)
+void domain_set_add_rule_list(const rule& r, QSharedPointer<token_node>& t)
 {
+    static_cast<void>(r);
+
     QSharedPointer<token_node> nl(qSharedPointerDynamicCast<token_node, token>((*t)[0]));
     QSharedPointer<token_node> nr(qSharedPointerDynamicCast<token_node, token>((*t)[1]));
     QSharedPointer<domain_rules> rules(qSharedPointerDynamicCast<domain_rules, parser_user_data>(nl->get_user_data()));
@@ -2240,8 +2262,10 @@ void domain_set_add_rule_list(const rule& /*r*/, QSharedPointer<token_node>& t)
  * \param[in] r  The rule that generated the callback.
  * \param[in] t  The token node holding the data parsed so far.
  */
-void domain_set_start_result(const rule& /*r*/, QSharedPointer<token_node>& t)
+void domain_set_start_result(const rule& r, QSharedPointer<token_node>& t)
 {
+    static_cast<void>(r);
+
     QSharedPointer<token_node> n(qSharedPointerDynamicCast<token_node, token>((*t)[0]));
     // we don't need the dynamic cast since we don't need to access the rules
     t->set_user_data(n->get_user_data());
@@ -2594,8 +2618,10 @@ void website_rules::write(QtSerialization::QWriter& w) const
  * \param[in] r  The rule that generated the callback.
  * \param[in] t  The token node holding the data parsed so far.
  */
-void website_set_qualified_name(const rule& /*r*/, QSharedPointer<token_node>& t)
+void website_set_qualified_name(const rule& r, QSharedPointer<token_node>& t)
 {
+    static_cast<void>(r);
+
     QSharedPointer<parser::token_node> n(qSharedPointerDynamicCast<token_node, token>((*t)[0]));
     (*t)[0]->set_value((*n)[0]->get_value().toString() + "::" + (*t)[2]->get_value().toString());
 }
@@ -2611,8 +2637,10 @@ void website_set_qualified_name(const rule& /*r*/, QSharedPointer<token_node>& t
  * \param[in] r  The rule that generated the callback.
  * \param[in] t  The token node holding the data parsed so far.
  */
-void website_set_standard_var(const rule& /*r*/, QSharedPointer<token_node>& t)
+void website_set_standard_var(const rule& r, QSharedPointer<token_node>& t)
 {
+    static_cast<void>(r);
+
     // get the node where the qualified name is defined
     QSharedPointer<token_node> n(qSharedPointerDynamicCast<token_node, token>((*t)[0]));
 
@@ -2631,8 +2659,10 @@ void website_set_standard_var(const rule& /*r*/, QSharedPointer<token_node>& t)
  * \param[in] r  The rule that generated the callback.
  * \param[in] t  The token node holding the data parsed so far.
  */
-void website_set_website_var(const rule& /*r*/, QSharedPointer<token_node>& t)
+void website_set_website_var(const rule& r, QSharedPointer<token_node>& t)
 {
+    static_cast<void>(r);
+
     QSharedPointer<token_node> n(qSharedPointerDynamicCast<token_node, token>((*t)[0]));
     QSharedPointer<website_variable> v(new website_variable(website_variable::WEBSITE_VARIABLE_TYPE_WEBSITE, (*n)[0]->get_value().toString(), (*t)[4]->get_value().toString()));
     v->set_default((*t)[6]->get_value().toString());
@@ -2655,8 +2685,10 @@ void website_set_website_var(const rule& /*r*/, QSharedPointer<token_node>& t)
  * \param[in] r  The rule that generated the callback.
  * \param[in] t  The token node holding the data parsed so far.
  */
-void website_set_flag_var(const rule& /*r*/, QSharedPointer<token_node>& t)
+void website_set_flag_var(const rule& r, QSharedPointer<token_node>& t)
 {
+    static_cast<void>(r);
+
     QSharedPointer<token_node> n(qSharedPointerDynamicCast<token_node, token>((*t)[0]));
     QSharedPointer<token_node> o(qSharedPointerDynamicCast<token_node, token>((*t)[5]));
 
@@ -2686,8 +2718,10 @@ void website_set_flag_var(const rule& /*r*/, QSharedPointer<token_node>& t)
  * \param[in] r  The rule that generated the callback.
  * \param[in] t  The token node holding the data parsed so far.
  */
-void website_set_var_required(const rule& /*r*/, QSharedPointer<token_node>& t)
+void website_set_var_required(const rule& r, QSharedPointer<token_node>& t)
 {
+    static_cast<void>(r);
+
     QSharedPointer<token_node> n(qSharedPointerDynamicCast<token_node, token>((*t)[1]));
     QSharedPointer<website_variable> v(qSharedPointerDynamicCast<website_variable, parser_user_data>(n->get_user_data()));
     v->set_required();
@@ -2703,8 +2737,10 @@ void website_set_var_required(const rule& /*r*/, QSharedPointer<token_node>& t)
  * \param[in] r  The rule that generated the callback.
  * \param[in] t  The token node holding the data parsed so far.
  */
-void website_set_var_optional(const rule& /*r*/, QSharedPointer<token_node>& t)
+void website_set_var_optional(const rule& r, QSharedPointer<token_node>& t)
 {
+    static_cast<void>(r);
+
     QSharedPointer<token_node> n(qSharedPointerDynamicCast<token_node, token>((*t)[1]));
     QSharedPointer<website_variable> v(qSharedPointerDynamicCast<website_variable, parser_user_data>(n->get_user_data()));
     v->set_required(false);
@@ -2720,8 +2756,10 @@ void website_set_var_optional(const rule& /*r*/, QSharedPointer<token_node>& t)
  * \param[in] r  The rule that generated the callback.
  * \param[in] t  The token node holding the data parsed so far.
  */
-void website_set_var_path(const rule& /*r*/, QSharedPointer<token_node>& t)
+void website_set_var_path(const rule& r, QSharedPointer<token_node>& t)
 {
+    static_cast<void>(r);
+
     if(t->size() == 1)
     {
         QSharedPointer<token_node> n(qSharedPointerDynamicCast<token_node, token>((*t)[0]));
@@ -2747,8 +2785,10 @@ void website_set_var_path(const rule& /*r*/, QSharedPointer<token_node>& t)
  * \param[in] r  The rule that generated the callback.
  * \param[in] t  The token node holding the data parsed so far.
  */
-void website_set_var_port(const rule& /*r*/, QSharedPointer<token_node>& t)
+void website_set_var_port(const rule& r, QSharedPointer<token_node>& t)
 {
+    static_cast<void>(r);
+
     QSharedPointer<website_variable> v(new website_variable(website_variable::WEBSITE_VARIABLE_TYPE_STANDARD,
             "port", (*t)[2]->get_value().toString()));
     v->set_part(website_variable::WEBSITE_VARIABLE_PART_PORT);
@@ -2765,8 +2805,10 @@ void website_set_var_port(const rule& /*r*/, QSharedPointer<token_node>& t)
  * \param[in] r  The rule that generated the callback.
  * \param[in] t  The token node holding the data parsed so far.
  */
-void website_set_var_query(const rule& /*r*/, QSharedPointer<token_node>& t)
+void website_set_var_query(const rule& r, QSharedPointer<token_node>& t)
 {
+    static_cast<void>(r);
+
     QSharedPointer<token_node> n(qSharedPointerDynamicCast<token_node, token>((*t)[1]));
     QSharedPointer<website_variable> v(qSharedPointerDynamicCast<website_variable, parser_user_data>(n->get_user_data()));
     v->set_part(website_variable::WEBSITE_VARIABLE_PART_QUERY);
@@ -2782,8 +2824,10 @@ void website_set_var_query(const rule& /*r*/, QSharedPointer<token_node>& t)
  * \param[in] r  The rule that generated the callback.
  * \param[in] t  The token node holding the data parsed so far.
  */
-void website_set_var_protocol(const rule& /*r*/, QSharedPointer<token_node>& t)
+void website_set_var_protocol(const rule& r, QSharedPointer<token_node>& t)
 {
+    static_cast<void>(r);
+
     //QSharedPointer<token_node> n(qSharedPointerDynamicCast<token_node, token>((*t)[1]));
     QSharedPointer<website_variable> v(new website_variable(website_variable::WEBSITE_VARIABLE_TYPE_STANDARD,
             "protocol", (*t)[2]->get_value().toString()));
@@ -2799,8 +2843,10 @@ void website_set_var_protocol(const rule& /*r*/, QSharedPointer<token_node>& t)
  * \param[in] r  The rule that generated the callback.
  * \param[in] t  The token node holding the data parsed so far.
  */
-void website_set_variable_rule(const rule& /*r*/, QSharedPointer<token_node>& t)
+void website_set_variable_rule(const rule& r, QSharedPointer<token_node>& t)
 {
+    static_cast<void>(r);
+
     QSharedPointer<token_node> n(qSharedPointerDynamicCast<token_node, token>((*t)[0]));
     // we don't need the dynamic cast since we don't need to access the variables
     t->set_user_data(n->get_user_data());
@@ -2816,8 +2862,10 @@ void website_set_variable_rule(const rule& /*r*/, QSharedPointer<token_node>& t)
  * \param[in] r  The rule that generated the callback.
  * \param[in] t  The token node holding the data parsed so far.
  */
-void website_set_new_website_list(const rule& /*r*/, QSharedPointer<token_node>& t)
+void website_set_new_website_list(const rule& r, QSharedPointer<token_node>& t)
 {
+    static_cast<void>(r);
+
     QSharedPointer<token_node> n(qSharedPointerDynamicCast<token_node, token>((*t)[0]));
     QSharedPointer<website_variable> v(qSharedPointerDynamicCast<website_variable, parser_user_data>(n->get_user_data()));
     QSharedPointer<website_info> info(new website_info);
@@ -2835,8 +2883,10 @@ void website_set_new_website_list(const rule& /*r*/, QSharedPointer<token_node>&
  * \param[in] r  The rule that generated the callback.
  * \param[in] t  The token node holding the data parsed so far.
  */
-void website_set_add_website_list(const rule& /*r*/, QSharedPointer<token_node>& t)
+void website_set_add_website_list(const rule& r, QSharedPointer<token_node>& t)
 {
+    static_cast<void>(r);
+
     QSharedPointer<token_node> nl(qSharedPointerDynamicCast<token_node, token>((*t)[0]));
     QSharedPointer<token_node> nr(qSharedPointerDynamicCast<token_node, token>((*t)[1]));
     QSharedPointer<website_info> info(qSharedPointerDynamicCast<website_info, parser_user_data>(nl->get_user_data()));
@@ -2855,8 +2905,10 @@ void website_set_add_website_list(const rule& /*r*/, QSharedPointer<token_node>&
  * \param[in] r  The rule that generated the callback.
  * \param[in] t  The token node holding the data parsed so far.
  */
-void website_set_rule(const rule& /*r*/, QSharedPointer<token_node>& t)
+void website_set_rule(const rule& r, QSharedPointer<token_node>& t)
 {
+    static_cast<void>(r);
+
     QSharedPointer<token_node> n(qSharedPointerDynamicCast<token_node, token>((*t)[2]));
     QSharedPointer<website_info> info(qSharedPointerDynamicCast<website_info, parser_user_data>(n->get_user_data()));
     info->set_name((*t)[0]->get_value().toString());
@@ -2873,8 +2925,10 @@ void website_set_rule(const rule& /*r*/, QSharedPointer<token_node>& t)
  * \param[in] r  The rule that generated the callback.
  * \param[in] t  The token node holding the data parsed so far.
  */
-void website_set_new_rule_list(const rule& /*r*/, QSharedPointer<token_node>& t)
+void website_set_new_rule_list(const rule& r, QSharedPointer<token_node>& t)
 {
+    static_cast<void>(r);
+
     QSharedPointer<token_node> n(qSharedPointerDynamicCast<token_node, token>((*t)[0]));
     QSharedPointer<website_info> info(qSharedPointerDynamicCast<website_info, parser_user_data>(n->get_user_data()));
     QSharedPointer<website_rules> rules(new website_rules);
@@ -2892,8 +2946,10 @@ void website_set_new_rule_list(const rule& /*r*/, QSharedPointer<token_node>& t)
  * \param[in] r  The rule that generated the callback.
  * \param[in] t  The token node holding the data parsed so far.
  */
-void website_set_add_rule_list(const rule& /*r*/, QSharedPointer<token_node>& t)
+void website_set_add_rule_list(const rule& r, QSharedPointer<token_node>& t)
 {
+    static_cast<void>(r);
+
     QSharedPointer<token_node> nl(qSharedPointerDynamicCast<token_node, token>((*t)[0]));
     QSharedPointer<token_node> nr(qSharedPointerDynamicCast<token_node, token>((*t)[1]));
     QSharedPointer<website_rules> rules(qSharedPointerDynamicCast<website_rules, parser_user_data>(nl->get_user_data()));
@@ -2909,8 +2965,10 @@ void website_set_add_rule_list(const rule& /*r*/, QSharedPointer<token_node>& t)
  * \param[in] r  The rule that generated the callback.
  * \param[in] t  The token node holding the data parsed so far.
  */
-void website_set_start_result(const rule& /*r*/, QSharedPointer<token_node>& t)
+void website_set_start_result(const rule& r, QSharedPointer<token_node>& t)
 {
+    static_cast<void>(r);
+
     QSharedPointer<token_node> n(qSharedPointerDynamicCast<token_node, token>((*t)[0]));
     // we don't need the dynamic cast since we don't need to access the rules
     t->set_user_data(n->get_user_data());
@@ -2980,7 +3038,7 @@ void website_set_start_result(const rule& /*r*/, QSharedPointer<token_node>& t)
  *
  * \return true if the parser succeeds, false otherwise.
  */
-bool snap_uri_rules::parse_website_rules(const QString& script, QByteArray& result)
+bool snap_uri_rules::parse_website_rules(QString const& script, QByteArray& result)
 {
     // LEXER
 

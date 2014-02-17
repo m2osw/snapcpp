@@ -1,5 +1,5 @@
 // Snap Websites Server -- list management (sort criteria)
-// Copyright (C) 2011-2014  Made to Order Software Corp.
+// Copyright (C) 2014  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -18,6 +18,8 @@
 
 #include "../layout/layout.h"
 
+#include "snap_expr.h"
+
 
 namespace snap
 {
@@ -27,7 +29,21 @@ namespace list
 
 enum name_t
 {
-    SNAP_NAME_LIST_SETUP
+    SNAP_NAME_LIST_KEY,
+    SNAP_NAME_LIST_LAST_UPDATED,
+    SNAP_NAME_LIST_LINK,
+    SNAP_NAME_LIST_ORDERED_PAGES,
+    SNAP_NAME_LIST_ORIGINAL_ITEM_KEY_SCRIPT,
+    SNAP_NAME_LIST_ORIGINAL_TEST_SCRIPT,
+    SNAP_NAME_LIST_PAGELIST,
+    SNAP_NAME_LIST_SELECTOR,
+    SNAP_NAME_LIST_STANDALONE,
+    SNAP_NAME_LIST_STANDALONELIST,
+    SNAP_NAME_LIST_STOP,
+    SNAP_NAME_LIST_TABLE,
+    SNAP_NAME_LIST_ITEM_KEY_SCRIPT,
+    SNAP_NAME_LIST_TEST_SCRIPT,
+    SNAP_NAME_LIST_TYPE
 };
 char const *get_name(name_t name) __attribute__ ((const));
 
@@ -40,68 +56,42 @@ public:
     list_exception(QString const& what_msg)     : snap_exception("list", what_msg.toStdString()) {}
 };
 
-class list_exception_invalid : public list_exception
+class list_exception_unknown_function : public list_exception
 {
 public:
-    list_exception_invalid(char const *what_msg)        : list_exception(what_msg) {}
-    list_exception_invalid(std::string const& what_msg) : list_exception(what_msg) {}
-    list_exception_invalid(QString const& what_msg)     : list_exception(what_msg) {}
+    list_exception_unknown_function(char const *what_msg)        : list_exception(what_msg) {}
+    list_exception_unknown_function(std::string const& what_msg) : list_exception(what_msg) {}
+    list_exception_unknown_function(QString const& what_msg)     : list_exception(what_msg) {}
+};
+
+class list_exception_invalid_number_of_parameters : public list_exception
+{
+public:
+    list_exception_invalid_number_of_parameters(char const *what_msg)        : list_exception(what_msg) {}
+    list_exception_invalid_number_of_parameters(std::string const& what_msg) : list_exception(what_msg) {}
+    list_exception_invalid_number_of_parameters(QString const& what_msg)     : list_exception(what_msg) {}
+};
+
+class list_exception_invalid_parameter_type : public list_exception
+{
+public:
+    list_exception_invalid_parameter_type(char const *what_msg)        : list_exception(what_msg) {}
+    list_exception_invalid_parameter_type(std::string const& what_msg) : list_exception(what_msg) {}
+    list_exception_invalid_parameter_type(QString const& what_msg)     : list_exception(what_msg) {}
 };
 
 
 
 
-class list_atom
+
+
+
+
+
+class list : public plugins::plugin, public server::backend_action, public layout::layout_content
 {
 public:
-    enum comparator_t
-    {
-        LIST_ATOM_COMPARATOR_STRING,                // load data as UTF-8 strings, make lowercase and compare
-        LIST_ATOM_COMPARATOR_STRING_WITH_CASE,      // load data as UTF-8 strings, and compare as is
-        LIST_ATOM_COMPARATOR_ANY_STRING,            // load data using dbutils, make lowercase and compare
-        LIST_ATOM_COMPARATOR_ANY_STRING_WITH_CASE,  // load data using dbutils, and compare as is
-        LIST_ATOM_COMPARATOR_INT8,                  // load data as int8_t and compare as is
-        LIST_ATOM_COMPARATOR_UINT8,                 // load data as uint8_t and compare as is
-        LIST_ATOM_COMPARATOR_INT16,                 // load data as int16_t and compare as is
-        LIST_ATOM_COMPARATOR_UINT16,                // load data as uint16_t and compare as is
-        LIST_ATOM_COMPARATOR_INT32,                 // load data as int32_t and compare as is
-        LIST_ATOM_COMPARATOR_UINT32,                // load data as uint32_t and compare as is
-        LIST_ATOM_COMPARATOR_INT64,                 // load data as int64_t and compare as is
-        LIST_ATOM_COMPARATOR_UINT64                 // load data as uint64_t and compare as is
-    };
-    typedef controlled_vars::limited_auto_init<comparator_t, LIST_ATOM_COMPARATOR_STRING, LIST_ATOM_COMPARATOR_UINT64, LIST_ATOM_COMPARATOR_STRING> safe_comparator_t;
-
-    void                        set_comparator(comparator_t comparator);
-    void                        set_column_name(QString const& name);
-    void                        set_descending(bool descending);
-
-    comparator_t                get_comparator() const;
-    QString const&              get_column_name() const;
-    bool                        get_descending() const;
-
-    // internal functions used to save the data serialized
-    // (you should only use the serialization of the list class)
-    void                        unserialize(QtSerialization::QReader& r);
-    virtual void                readTag(QString const& name, QtSerialization::QReader& r);
-    void                        serialize(QtSerialization::QWriter& w) const;
-
-private:
-    QString                     f_column_name;
-    controlled_vars::fbool_t    f_descending;
-    safe_comparator_t           f_comparator;
-};
-typedef QVector<list_atom> list_atom_vector_t;
-
-
-
-
-
-
-class list : public plugins::plugin, public layout::layout_content, public QtSerialization::QSerializationObject
-{
-public:
-    static int const LIST_ATOMS_MAJOR_VERSION = 1;
-    static int const LIST_ATOMS_MINOR_VERSION = 0;
+    static int const LIST_PROCESSING_LATENCY = 10 * 1000000; // 10 seconds in micro-seconds
 
                         list();
                         ~list();
@@ -109,20 +99,29 @@ public:
     static list *       instance();
     virtual QString     description() const;
     virtual int64_t     do_update(int64_t last_updated);
+    QtCassandra::QCassandraTable::pointer_t get_list_table();
 
     void                on_bootstrap(snap_child *snap);
+    void                on_register_backend_action(server::backend_action_map_t& actions);
+    virtual void        on_backend_action(QString const& action);
+    void                on_backend_process();
     virtual void        on_generate_main_content(content::path_info_t& path, QDomElement& page, QDomElement& body, QString const& ctemplate);
     void                on_generate_page_content(content::path_info_t& path, QDomElement& page, QDomElement& body, QString const& ctemplate);
-
-    void                unserialize(QString const& data);
-    virtual void        readTag(QString const& name, QtSerialization::QReader& r);
-    QString             serialize() const;
+    void                on_create_content(content::path_info_t& ipath, QString const& owner, QString const& type);
+    void                on_modified_content(content::path_info_t& ipath);
 
 private:
+    void                initial_update(int64_t variables_timestamp);
     void                content_update(int64_t variables_timestamp);
+    int                 generate_all_lists(QString const& site_key);
+    int                 generate_all_lists_for_page(QString const& site_key, QString const& row_key);
+    bool                run_list_check(content::path_info_t& list_ipath, content::path_info_t& page_ipath);
+    QString             run_list_item_key(content::path_info_t& list_ipath, content::path_info_t& page_ipath);
 
-    zpsnap_child_t      f_snap;
-    list_atom_vector_t  f_list_atoms;
+    zpsnap_child_t                          f_snap;
+    QtCassandra::QCassandraTable::pointer_t f_list_table;
+    snap_expr::expr::expr_map_t             f_check_expressions;
+    snap_expr::expr::expr_map_t             f_item_key_expressions;
 };
 
 

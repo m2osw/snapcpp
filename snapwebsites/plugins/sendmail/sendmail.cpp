@@ -1599,6 +1599,13 @@ void sendmail::on_register_backend_action(server::backend_action_map_t& actions)
  * sent along the UDP signal. This means the UDP signals do not need
  * to be secure.
  *
+ * The server should be stopped with the snapsignal tool using the
+ * STOP event as follow:
+ *
+ * \code
+ * snapsignal -a sendmail STOP
+ * \endcode
+ *
  * \note
  * The \p action parameter is here because some plugins may
  * understand multiple actions in which case we need to know
@@ -1606,12 +1613,12 @@ void sendmail::on_register_backend_action(server::backend_action_map_t& actions)
  *
  * \param[in] action  The action this function is being called with.
  */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
 void sendmail::on_backend_action(const QString& action)
 {
+    static_cast<void>(action);
+
     QSharedPointer<udp_client_server::udp_server> udp_signals(f_snap->udp_get_server("sendmail_udp_signal"));
-    const char *stop(get_name(SNAP_NAME_SENDMAIL_STOP));
+    char const *stop(get_name(SNAP_NAME_SENDMAIL_STOP));
     for(;;)
     {
         // immediately process emails that are in the database and
@@ -1619,7 +1626,7 @@ void sendmail::on_backend_action(const QString& action)
         process_emails();
         run_emails();
         char buf[256];
-        int r(udp_signals->timed_recv(buf, sizeof(buf), 5 * 60 * 1000)); // wait for up to 5 minutes (x 60 seconds)
+        int const r(udp_signals->timed_recv(buf, sizeof(buf), 5 * 60 * 1000)); // wait for up to 5 minutes (x 60 seconds)
         if(r != -1 || errno != EAGAIN)
         {
             if(r < 1 || r >= static_cast<int>(sizeof(buf) - 1))
@@ -1643,7 +1650,6 @@ void sendmail::on_backend_action(const QString& action)
         }
     }
 }
-#pragma GCC diagnostic pop
 
 
 /** \brief Process all the emails received in Cassandra.

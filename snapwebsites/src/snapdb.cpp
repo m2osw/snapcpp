@@ -326,6 +326,7 @@ void snapdb::drop_tables(bool all)
     context->dropTable("layout");
     context->dropTable("libQtCassandraLockTable");
     context->dropTable("links");
+    context->dropTable("list");
     context->dropTable("shorturl");
     context->dropTable("sites");
     context->dropTable("sessions");

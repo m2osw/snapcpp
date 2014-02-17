@@ -16,6 +16,8 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
+#include "snap_exception.h"
+
 #include <controlled_vars/controlled_vars_auto_init.h>
 #include <controlled_vars/controlled_vars_limited_auto_init.h>
 
@@ -23,16 +25,49 @@
 #include <QVector>
 #include <QSharedPointer>
 
-namespace snap {
-namespace parser {
+namespace snap
+{
+namespace parser
+{
 
-class snap_parser_no_current_choices : public std::exception {};
-class snap_parser_state_has_children : public std::exception {};
-class snap_parser_unexpected_token : public std::exception {};
+class snap_parser_exception : public snap_exception
+{
+public:
+    snap_parser_exception(char const *       what_msg) : snap_exception("parser", what_msg) {}
+    snap_parser_exception(std::string const& what_msg) : snap_exception("parser", what_msg) {}
+    snap_parser_exception(QString const&     what_msg) : snap_exception("parser", what_msg) {}
+};
+
+class snap_parser_no_current_choices : public snap_parser_exception
+{
+public:
+    snap_parser_no_current_choices(char const *       what_msg) : snap_parser_exception(what_msg) {}
+    snap_parser_no_current_choices(std::string const& what_msg) : snap_parser_exception(what_msg) {}
+    snap_parser_no_current_choices(QString const&     what_msg) : snap_parser_exception(what_msg) {}
+};
+
+class snap_parser_state_has_children : public snap_parser_exception
+{
+public:
+    snap_parser_state_has_children(char const *       what_msg) : snap_parser_exception(what_msg) {}
+    snap_parser_state_has_children(std::string const& what_msg) : snap_parser_exception(what_msg) {}
+    snap_parser_state_has_children(QString const&     what_msg) : snap_parser_exception(what_msg) {}
+};
+
+class snap_parser_unexpected_token : public snap_parser_exception
+{
+public:
+    snap_parser_unexpected_token(char const *       what_msg) : snap_parser_exception(what_msg) {}
+    snap_parser_unexpected_token(std::string const& what_msg) : snap_parser_exception(what_msg) {}
+    snap_parser_unexpected_token(QString const&     what_msg) : snap_parser_exception(what_msg) {}
+};
 
 
 
-enum token_t {
+
+
+enum token_t
+{
     TOKEN_ID_NONE_ENUM = 0,     // "not a token" (also end of input)
 
     TOKEN_ID_INTEGER_ENUM,
@@ -50,23 +85,23 @@ enum token_t {
 };
 
 struct token_id { token_id(token_t t) : f_type(t) {} operator token_t () const { return f_type; } private: token_t f_type; };
-struct token_id_none_def : public token_id { token_id_none_def() : token_id(TOKEN_ID_NONE_ENUM) {} };
-struct token_id_integer_def : public token_id { token_id_integer_def() : token_id(TOKEN_ID_INTEGER_ENUM) {} };
-struct token_id_float_def : public token_id { token_id_float_def() : token_id(TOKEN_ID_FLOAT_ENUM) {} };
+struct token_id_none_def       : public token_id { token_id_none_def()       : token_id(TOKEN_ID_NONE_ENUM      ) {} };
+struct token_id_integer_def    : public token_id { token_id_integer_def()    : token_id(TOKEN_ID_INTEGER_ENUM   ) {} };
+struct token_id_float_def      : public token_id { token_id_float_def()      : token_id(TOKEN_ID_FLOAT_ENUM     ) {} };
 struct token_id_identifier_def : public token_id { token_id_identifier_def() : token_id(TOKEN_ID_IDENTIFIER_ENUM) {} };
-struct token_id_keyword_def : public token_id { token_id_keyword_def() : token_id(TOKEN_ID_KEYWORD_ENUM) {} };
-struct token_id_string_def : public token_id { token_id_string_def() : token_id(TOKEN_ID_STRING_ENUM) {} };
-struct token_id_literal_def : public token_id { token_id_literal_def() : token_id(TOKEN_ID_LITERAL_ENUM) {} };
-struct token_id_empty_def : public token_id { token_id_empty_def() : token_id(TOKEN_ID_EMPTY_ENUM) {} };
+struct token_id_keyword_def    : public token_id { token_id_keyword_def()    : token_id(TOKEN_ID_KEYWORD_ENUM   ) {} };
+struct token_id_string_def     : public token_id { token_id_string_def()     : token_id(TOKEN_ID_STRING_ENUM    ) {} };
+struct token_id_literal_def    : public token_id { token_id_literal_def()    : token_id(TOKEN_ID_LITERAL_ENUM   ) {} };
+struct token_id_empty_def      : public token_id { token_id_empty_def()      : token_id(TOKEN_ID_EMPTY_ENUM     ) {} };
 
-extern token_id_none_def TOKEN_ID_NONE;
-extern token_id_integer_def TOKEN_ID_INTEGER;
-extern token_id_float_def TOKEN_ID_FLOAT;
-extern token_id_identifier_def TOKEN_ID_IDENTIFIER;
-extern token_id_keyword_def TOKEN_ID_KEYWORD;
-extern token_id_string_def TOKEN_ID_STRING;
-extern token_id_literal_def TOKEN_ID_LITERAL;
-extern token_id_empty_def TOKEN_ID_EMPTY;
+extern token_id_none_def        TOKEN_ID_NONE;
+extern token_id_integer_def     TOKEN_ID_INTEGER;
+extern token_id_float_def       TOKEN_ID_FLOAT;
+extern token_id_identifier_def  TOKEN_ID_IDENTIFIER;
+extern token_id_keyword_def     TOKEN_ID_KEYWORD;
+extern token_id_string_def      TOKEN_ID_STRING;
+extern token_id_literal_def     TOKEN_ID_LITERAL;
+extern token_id_empty_def       TOKEN_ID_EMPTY;
 
 
 
@@ -75,10 +110,11 @@ class token
 {
 public:
     token(token_t id = TOKEN_ID_NONE) : f_id(id) {}
-    token(const token& t) : f_id(t.f_id), f_value(t.f_value) {}
-    token& operator = (const token& t)
+    token(token const& t) : f_id(t.f_id), f_value(t.f_value) {}
+    token& operator = (token const& t)
     {
-        if(this != &t) {
+        if(this != &t)
+        {
             f_id = t.f_id;
             f_value = t.f_value;
         }
@@ -90,8 +126,10 @@ public:
     void set_id(token_t id) { f_id = id; }
     token_t get_id() const { return f_id; }
 
-    void set_value(const QVariant& value) { f_value = value; }
+    void set_value(QVariant const& value) { f_value = value; }
     QVariant get_value() const { return f_value; }
+
+    QString to_string() const;
 
 private:
     token_t         f_id;
@@ -142,7 +180,7 @@ class keyword
 {
 public:
     keyword() : f_number(0) {}
-    keyword(lexer& parent, const QString& keyword_identifier, int index_number = 0);
+    keyword(lexer& parent, QString const& keyword_identifier, int index_number = 0);
 
     QString identifier() const { return f_identifier; }
     int number() const { return f_number; }
@@ -160,17 +198,17 @@ class token_node;
 class rule
 {
 public:
-    typedef void (*reducer_t)(const rule& r, QSharedPointer<token_node>& t);
+    typedef void (*reducer_t)(rule const& r, QSharedPointer<token_node>& t);
 
-    rule() : f_parent(NULL), f_reducer(NULL) {}
+    rule() : f_parent(nullptr), f_reducer(nullptr) {}
     rule(choices& c);
-    rule(const rule& r);
+    rule(rule const& r);
 
     void add_rules(choices& c); // choices of rules
     void add_choices(choices& c); // sub-rule
     void add_token(token_t token); // any value accepted
-    void add_literal(const QString& value);
-    void add_keyword(const keyword& k);
+    void add_literal(QString const& value);
+    void add_keyword(keyword const& k);
     void set_reducer(reducer_t reducer)
     {
         f_reducer = reducer;
@@ -181,11 +219,11 @@ public:
     class rule_ref
     {
     public:
-        rule_ref(const rule *r, int position)
+        rule_ref(rule const *r, int position)
             : f_rule(r), f_position(position)
         {
         }
-        rule_ref(const rule_ref& ref)
+        rule_ref(rule_ref const& ref)
             : f_rule(ref.f_rule), f_position(ref.f_position)
         {
         }
@@ -196,39 +234,41 @@ public:
         choices& get_choices() const { return *f_rule->f_tokens[f_position].f_choices; }
 
     private:
-        const rule *f_rule;
+        rule const *f_rule;
         int         f_position;
     };
 
-    const rule_ref operator [] (int position) const
+    rule_ref const operator [] (int position) const
     {
         return rule_ref(this, position);
     }
 
-    void reduce(QSharedPointer<token_node> n) const
+    void reduce(QSharedPointer<token_node>& n) const
     {
-        if(f_reducer != NULL) {
+        if(f_reducer != nullptr)
+        {
             f_reducer(*this, n);
         }
     }
 
-    rule& operator >> (const token_id& token);
-    rule& operator >> (const QString& literal);
-    rule& operator >> (const char *literal);
-    rule& operator >> (const keyword& k);
+    rule& operator >> (token_id const& token);
+    rule& operator >> (QString const& literal);
+    rule& operator >> (char const *literal);
+    rule& operator >> (keyword const& k);
     rule& operator >> (choices& c);
     rule& operator >= (rule::reducer_t function);
 
     QString to_string() const;
 
 private:
-    struct rule_data_t {
+    struct rule_data_t
+    {
         rule_data_t();
-        rule_data_t(const rule_data_t& s);
+        rule_data_t(rule_data_t const& s);
         rule_data_t(choices& c);
         rule_data_t(token_t token);
-        rule_data_t(const QString& value); // i.e. literal
-        rule_data_t(const keyword& k);
+        rule_data_t(QString const& value); // i.e. literal
+        rule_data_t(keyword const& k);
 
         token_t             f_token;
         QString             f_value;    // required value if not empty
@@ -242,59 +282,62 @@ private:
 };
 // these have to be defined as friends of the class to enable
 // all possible cases
-rule& operator >> (const token_id& token_left, const token_id& token_right);
-rule& operator >> (const token_id& token, const QString& literal);
-rule& operator >> (const token_id& token, const char *literal);
-rule& operator >> (const token_id& token, const keyword& k);
-rule& operator >> (const token_id& token, choices& c);
-rule& operator >> (const QString& literal, const token_id& token);
-rule& operator >> (const QString& literal_left, const QString& literal_right);
-rule& operator >> (const QString& literal, const keyword& k);
-rule& operator >> (const QString& literal, choices& c);
-rule& operator >> (const keyword& k, const token_id& token);
-rule& operator >> (const keyword& k, const QString& literal);
-rule& operator >> (const keyword& k_left, const keyword& k_right);
-rule& operator >> (const keyword& k, choices& c);
-rule& operator >> (choices& c, const token_id& token);
-rule& operator >> (choices& c, const QString& literal);
-rule& operator >> (choices& c, const keyword& k);
+rule& operator >> (token_id const& token_left, token_id const& token_right);
+rule& operator >> (token_id const& token, QString const& literal);
+rule& operator >> (token_id const& token, char const *literal);
+rule& operator >> (token_id const& token, keyword const& k);
+rule& operator >> (token_id const& token, choices& c);
+rule& operator >> (QString const& literal, token_id const& token);
+rule& operator >> (QString const& literal_left, QString const& literal_right);
+rule& operator >> (QString const& literal, keyword const& k);
+rule& operator >> (QString const& literal, choices& c);
+rule& operator >> (keyword const& k, token_id const& token);
+rule& operator >> (keyword const& k, QString const& literal);
+rule& operator >> (keyword const& k_left, keyword const& k_right);
+rule& operator >> (keyword const& k, choices& c);
+rule& operator >> (choices& c, token_id const& token);
+rule& operator >> (choices& c, QString const& literal);
+rule& operator >> (choices& c, keyword const& k);
 rule& operator >> (choices& c_left, choices& c_right);
+rule& operator >> (char const *literal, choices& c);
 
 // now a way to add a reducer function
-rule& operator >= (const token_id& token, rule::reducer_t function);
-rule& operator >= (const QString& literal, rule::reducer_t function);
-rule& operator >= (const keyword& k, rule::reducer_t function);
+rule& operator >= (token_id const& token, rule::reducer_t function);
+rule& operator >= (QString const& literal, rule::reducer_t function);
+rule& operator >= (keyword const& k, rule::reducer_t function);
 rule& operator >= (choices& c, rule::reducer_t function);
 
-rule& operator | (const token_id& token, rule& r_right);
+rule& operator | (token_id const& token, rule& r_right);
+rule& operator | (rule& r_left, token_id const& token);
+rule& operator | (rule& r_left, keyword const& k);
 rule& operator | (rule& r_left, rule& r_right);
 rule& operator | (rule& r, choices& c);
-
+// rule& operator | (choices& c, rule& r); -- defined in choices class
 
 class grammar;
 
 class choices
 {
 public:
-    choices(grammar *parent, const char *choice_name = "");
+    choices(grammar *parent, char const *choice_name = "");
     ~choices();
 
-    const QString& name() const { return f_name; }
+    QString const& name() const { return f_name; }
     int count() { return f_rules.count(); }
     void clear();
 
     choices& operator = (const choices& rhs);
 
-    choices& operator >>= (const token_id& token);
-    choices& operator >>= (const QString& literal);
-    choices& operator >>= (const keyword& k);
+    choices& operator >>= (token_id const& token);
+    choices& operator >>= (QString const& literal);
+    choices& operator >>= (keyword const& k);
     choices& operator >>= (choices& rhs);
     choices& operator >>= (rule& rhs);
 
     rule& operator | (rule& r);
 
     void add_rule(rule& r);
-    const rule& operator [] (int rule) const
+    rule const& operator [] (int rule) const
     {
         return *f_rules[rule];
     }
@@ -330,11 +373,11 @@ public:
     token_node() : token(TOKEN_ID_NODE_ENUM) {}
 
     void add_token(token& t) { f_tokens.push_back(QSharedPointer<token>(new token(t))); }
-    void add_node(QSharedPointer<token_node> n) { f_tokens.push_back(n); }
+    void add_node(QSharedPointer<token_node>& n) { f_tokens.push_back(n); }
     vector_token_t& tokens() { return f_tokens; }
     size_t size() const { return f_tokens.size(); }
     QSharedPointer<token> operator [] (int index) { return f_tokens[index]; }
-    const QSharedPointer<token> operator [] (int index) const { return f_tokens[index]; }
+    QSharedPointer<token> const operator [] (int index) const { return f_tokens[index]; }
     void set_line(uint32_t line) { f_line = line; }
     uint32_t get_line() const { return f_line; }
 

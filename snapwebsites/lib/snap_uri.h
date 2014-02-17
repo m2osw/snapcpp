@@ -490,7 +490,7 @@ public:
      *
      * \param[in] var  The variable to add to this domain.
      */
-    void add_var(QSharedPointer<domain_variable> var)
+    void add_var(QSharedPointer<domain_variable>& var)
     {
         f_vars.push_back(var);
     }
@@ -622,7 +622,7 @@ public:
      *
      * \param[in] info  The domain information to add to this object.
      */
-    void add_info(QSharedPointer<domain_info> info)
+    void add_info(QSharedPointer<domain_info>& info)
     {
         f_info.push_back(info);
     }
@@ -698,7 +698,7 @@ public:
     static const website_variable_part_t WEBSITE_VARIABLE_PART_PROTOCOL = 2;
     static const website_variable_part_t WEBSITE_VARIABLE_PART_QUERY = 3;
 
-    website_variable(website_variable_type_t type, const QString& name, const QString& value)
+    website_variable(website_variable_type_t type, QString const& name, QString const& value)
         : f_type(type),
           f_part(WEBSITE_VARIABLE_PART_PATH), // this is the obvious default here, we could define an UNDEFINED = -1 too?
           f_name(name),
@@ -724,27 +724,27 @@ public:
         return f_type;
     }
 
-    const QString& get_name() const
+    QString const& get_name() const
     {
         return f_name;
     }
 
-    const QString& get_value() const
+    QString const& get_value() const
     {
         return f_value;
     }
 
-    void set_value(const QString& value)
+    void set_value(QString const& value)
     {
         f_value = value;
     }
 
-    const QString& get_default() const
+    QString const& get_default() const
     {
         return f_default;
     }
 
-    void set_default(const QString& default_value)
+    void set_default(QString const& default_value)
     {
         switch(f_type) {
         case WEBSITE_VARIABLE_TYPE_WEBSITE:
@@ -793,11 +793,11 @@ public:
     void write(QtSerialization::QWriter& w) const;
 
 private:
-    website_variable_type_t        f_type;
-    website_variable_part_t        f_part;
-    QString                        f_name;
-    QString                        f_value;
-    QString                        f_default;
+    website_variable_type_t     f_type;
+    website_variable_part_t     f_part;
+    QString                     f_name;
+    QString                     f_value;
+    QString                     f_default;
     controlled_vars::zbool_t    f_required;
 };
 
@@ -805,7 +805,7 @@ private:
 class website_info : public parser::parser_user_data, public QtSerialization::QSerializationObject
 {
 public:
-    void add_var(QSharedPointer<website_variable> var)
+    void add_var(QSharedPointer<website_variable>& var)
     {
         f_vars.push_back(var);
     }
@@ -840,15 +840,15 @@ public:
     void write(QtSerialization::QWriter& w) const;
 
 private:
-    QString                                        f_name;
-    QVector<QSharedPointer<website_variable> >    f_vars;
+    QString                                     f_name;
+    QVector<QSharedPointer<website_variable> >  f_vars;
 };
 
 
 class website_rules : public parser::parser_user_data, public QtSerialization::QSerializationObject
 {
 public:
-    void add_info(QSharedPointer<website_info> info)
+    void add_info(QSharedPointer<website_info>& info)
     {
         f_info.push_back(info);
     }

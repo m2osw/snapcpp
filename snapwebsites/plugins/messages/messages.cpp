@@ -196,9 +196,9 @@ const QString& messages::message::get_body() const
 void messages::message::unserialize(QtSerialization::QReader& r)
 {
     QtSerialization::QComposite comp;
-    int32_t type;
+    int32_t type(MESSAGE_TYPE_ERROR);
     QtSerialization::QFieldInt32 tag_type(comp, "type", type);
-    int32_t id;
+    int32_t id(0);
     QtSerialization::QFieldInt32 tag_id(comp, "id", id);
     QtSerialization::QFieldString tag_title(comp, "title", f_title);
     QtSerialization::QFieldString tag_body(comp, "body", f_body);

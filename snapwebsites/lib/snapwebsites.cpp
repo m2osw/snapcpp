@@ -250,6 +250,14 @@ namespace
         {
             '\0',
             0,
+            "filename",
+            nullptr,
+            nullptr, // hidden argument in --help screen
+            advgetopt::getopt::default_multiple_argument
+        },
+        {
+            '\0',
+            0,
             nullptr,
             nullptr,
             nullptr,
@@ -540,25 +548,32 @@ void server::config(int argc, char *argv[])
         }
     }
 
-    if( f_opt->is_defined( "action" ) )
+    if( f_opt->is_defined( "filename" ) )
     {
-        const std::string action( f_opt->get_string("action" ) );
+        std::string const filename(f_opt->get_string("filename"));
         if( f_backend )
         {
-            if(f_parameters.find("__BACKEND_ACTION") == f_parameters.end())
+            f_parameters["__BACKEND_URI"] = filename.c_str();
+        }
+        else
+        {
+            // If not backend, "--filename" is not currently useful.
+            //
+            if(f_debug)
             {
-                f_parameters["__BACKEND_ACTION"] = action.c_str();
+                std::cerr << "fatal error: unexpected standalone parameter \"" << filename << "\", server not started. (in server::config())" << std::endl;
             }
-            else
-            {
-                // with the advgetopt this should never occur
-                if(f_debug)
-                {
-                    std::cerr << "fatal error: unexpected parameter \"--action "<< action << "\", at most one action can be specified, backend not started. (in server::config())" << std::endl;
-                }
-                syslog( LOG_CRIT, "unexpected parameter \"--action %s\", at most one action can be specified, backend not started. (in server::config())", action.c_str() );
-                help = true;
-            }
+            syslog( LOG_CRIT, "unexpected standalone parameter \"%s\", server not started. (in server::config())", filename.c_str() );
+            help = true;
+        }
+    }
+
+    if( f_opt->is_defined( "action" ) )
+    {
+        std::string const action(f_opt->get_string("action"));
+        if( f_backend )
+        {
+            f_parameters["__BACKEND_ACTION"] = action.c_str();
         }
         else
         {
@@ -1436,10 +1451,10 @@ bool server::xss_filter_impl(QDomNode& /*node*/,
  *
  * \return true if the signal has to be sent to other plugins.
  */
-bool server::improve_signature_impl(const QString& path, QString& signature)
+bool server::improve_signature_impl(QString const& path, QString& signature)
 {
-    (void) path;
-    (void) signature;
+    static_cast<void>(path);
+    static_cast<void>(signature);
 
     return true;
 }
@@ -1500,6 +1515,39 @@ bool server::load_file_impl(snap_child::post_file_t& file, bool& found)
         // return false since we already "found" the file
         return false;
     }
+
+    return true;
+}
+
+
+/** \brief Check whether the cell can securily be used in a script.
+ *
+ * This signal is sent by the cell() function of snap_expr objects.
+ * The plugin receiving the signal can check the table, row, and cell
+ * names and mark that specific cell as secure. This will prevent the
+ * script writer from accessing that specific cell.
+ *
+ * This is used, for example, to protect the user password. Even though
+ * the password is encrypted, allowing an end user to get a copy of
+ * the encrypted password would dearly simplify the work of a hacker in
+ * finding the unencrypted password.
+ *
+ * The \p secure flag is used to mark the cell as secure. Simply call
+ * the mark_as_secure() function to do so.
+ *
+ * \param[in] table  The table being accessed.
+ * \param[in] row  The row being accessed.
+ * \param[in] cell  The cell being accessed.
+ * \param[in] secure  Whether the cell is secure.
+ *
+ * \return This function returns true in case the signal needs to proceed.
+ */
+bool server::cell_is_secure_impl(QString const& table, QString const& row, QString const& cell, secure_field_flag_t& secure)
+{
+    static_cast<void>(table);
+    static_cast<void>(row);
+    static_cast<void>(cell);
+    static_cast<void>(secure);
 
     return true;
 }

@@ -40,6 +40,72 @@ token_id_string_def TOKEN_ID_STRING;
 token_id_literal_def TOKEN_ID_LITERAL;
 token_id_empty_def TOKEN_ID_EMPTY;
 
+
+
+QString token::to_string() const
+{
+    QString result;
+
+    switch(f_id)
+    {
+    case TOKEN_ID_NONE_ENUM:
+        result = "<no token>";
+        break;
+
+    case TOKEN_ID_INTEGER_ENUM:
+        result = QString("int<%1>").arg(f_value.toInt());
+        break;
+
+    case TOKEN_ID_FLOAT_ENUM:
+        result = QString("float<%1>").arg(f_value.toDouble());
+        break;
+
+    case TOKEN_ID_IDENTIFIER_ENUM:
+        result = QString("identifier<%1>").arg(f_value.toString());
+        break;
+
+    case TOKEN_ID_KEYWORD_ENUM:
+        result = QString("keyword<%1>").arg(f_value.toString());
+        break;
+
+    case TOKEN_ID_STRING_ENUM:
+        result = QString("string<%1>").arg(f_value.toString());
+        break;
+
+    case TOKEN_ID_LITERAL_ENUM:
+        result = QString("literal<%1>").arg(f_value.toString());
+        break;
+
+    case TOKEN_ID_EMPTY_ENUM:
+        result = "empty<>";
+        break;
+
+    case TOKEN_ID_CHOICES_ENUM:
+        result = QString("choices<...>");//.arg(f_value.toString());
+        break;
+
+    case TOKEN_ID_RULES_ENUM:
+        result += " /* INVALID -- TOKEN_ID_RULES!!! */ ";
+        break;
+
+    case TOKEN_ID_NODE_ENUM:
+        result += " /* INVALID -- TOKEN_ID_RULES!!! */ ";
+        break;
+
+    case TOKEN_ID_ERROR_ENUM:
+        result += " /* INVALID -- TOKEN_ID_ERROR!!! */ ";
+        break;
+
+    default:
+        result += " /* INVALID -- unknown token identifier!!! */ ";
+        break;
+
+    }
+
+    return result;
+}
+
+
 /** \brief Set the input string for the lexer.
  *
  * This lexer accepts a standard QString as input. It will be what gets parsed.
@@ -158,11 +224,13 @@ token lexer::next_token()
 restart:
 
     // we reached the end of input
-    if(f_pos == f_input.end()) {
+    if(f_pos == f_input.end())
+    {
         return result;
     }
 
-    switch(f_pos->unicode()) {
+    switch(f_pos->unicode())
+    {
     case '\n':
         ++f_pos;
         ++f_line;
@@ -171,7 +239,8 @@ restart:
     case '\r':
         ++f_pos;
         ++f_line;
-        if(f_pos != f_input.end() && *f_pos == '\n') {
+        if(f_pos != f_input.end() && *f_pos == '\n')
+        {
             // skip "\r\n" as one end of line
             ++f_pos;
         }
@@ -186,8 +255,10 @@ restart:
         result.set_id(TOKEN_ID_LITERAL_ENUM);
         result.set_value(*f_pos);
         ++f_pos;
-        if(f_pos != f_input.end()) {
-            switch(f_pos->unicode()) {
+        if(f_pos != f_input.end())
+        {
+            switch(f_pos->unicode())
+            {
             case '=': // add and assign
                 result.set_value("+=");
                 ++f_pos;
@@ -210,8 +281,10 @@ restart:
         result.set_id(TOKEN_ID_LITERAL_ENUM);
         result.set_value(*f_pos);
         ++f_pos;
-        if(f_pos != f_input.end()) {
-            switch(f_pos->unicode()) {
+        if(f_pos != f_input.end())
+        {
+            switch(f_pos->unicode())
+            {
             case '=': // subtract and assign
                 result.set_value("-=");
                 ++f_pos;
@@ -234,8 +307,10 @@ restart:
         result.set_id(TOKEN_ID_LITERAL_ENUM);
         result.set_value(*f_pos);
         ++f_pos;
-        if(f_pos != f_input.end()) {
-            switch(f_pos->unicode()) {
+        if(f_pos != f_input.end())
+        {
+            switch(f_pos->unicode())
+            {
             case '/': // invalid C comment end marker
                 // in this case we don't have to restart since we
                 // reached the end of the input
@@ -253,8 +328,10 @@ restart:
             case '*': // power
                 result.set_value("**");
                 ++f_pos;
-                if(f_pos != f_input.end()) {
-                    if(*f_pos == '=') {
+                if(f_pos != f_input.end())
+                {
+                    if(*f_pos == '=')
+                    {
                         // power and assign
                         result.set_value("**=");
                         ++f_pos;
@@ -274,11 +351,15 @@ restart:
         result.set_id(TOKEN_ID_LITERAL_ENUM);
         result.set_value(*f_pos);
         ++f_pos;
-        if(f_pos != f_input.end()) {
-            switch(f_pos->unicode()) {
+        if(f_pos != f_input.end())
+        {
+            switch(f_pos->unicode())
+            {
             case '/': // C++ comment -- skip up to eol
-                for(++f_pos; f_pos != f_input.end(); ++f_pos) {
-                    if(*f_pos == '\n' || *f_pos == '\r') {
+                for(++f_pos; f_pos != f_input.end(); ++f_pos)
+                {
+                    if(*f_pos == '\n' || *f_pos == '\r')
+                    {
                         goto restart;
                     }
                 }
@@ -288,8 +369,10 @@ restart:
                 break;
 
             case '*': // C comment -- skip up to */
-                for(++f_pos; f_pos != f_input.end(); ++f_pos) {
-                    if(f_pos + 1 != f_input.end() && *f_pos == '*' && f_pos[1] == '/') {
+                for(++f_pos; f_pos != f_input.end(); ++f_pos)
+                {
+                    if(f_pos + 1 != f_input.end() && *f_pos == '*' && f_pos[1] == '/')
+                    {
                         f_pos += 2;
                         goto restart;
                     }
@@ -318,8 +401,10 @@ restart:
         result.set_id(TOKEN_ID_LITERAL_ENUM);
         result.set_value(*f_pos);
         ++f_pos;
-        if(f_pos != f_input.end()) {
-            switch(f_pos->unicode()) {
+        if(f_pos != f_input.end())
+        {
+            switch(f_pos->unicode())
+            {
             case '=': // modulo and assign
                 result.set_value("%=");
                 ++f_pos;
@@ -337,8 +422,10 @@ restart:
         result.set_id(TOKEN_ID_LITERAL_ENUM);
         result.set_value(*f_pos);
         ++f_pos;
-        if(f_pos != f_input.end()) {
-            switch(f_pos->unicode()) {
+        if(f_pos != f_input.end())
+        {
+            switch(f_pos->unicode())
+            {
             case '=': // bitwise not and assign
                 result.set_value("~=");
                 ++f_pos;
@@ -356,8 +443,10 @@ restart:
         result.set_id(TOKEN_ID_LITERAL_ENUM);
         result.set_value(*f_pos);
         ++f_pos;
-        if(f_pos != f_input.end()) {
-            switch(f_pos->unicode()) {
+        if(f_pos != f_input.end())
+        {
+            switch(f_pos->unicode())
+            {
             case '=': // bitwise and & assign
                 result.set_value("&=");
                 ++f_pos;
@@ -366,8 +455,10 @@ restart:
             case '&': // logical and
                 result.set_value("&&");
                 ++f_pos;
-                if(f_pos != f_input.end()) {
-                    if(*f_pos == '=') {
+                if(f_pos != f_input.end())
+                {
+                    if(*f_pos == '=')
+                    {
                         // logical and & assign
                         result.set_value("&&=");
                         ++f_pos;
@@ -387,8 +478,10 @@ restart:
         result.set_id(TOKEN_ID_LITERAL_ENUM);
         result.set_value(*f_pos);
         ++f_pos;
-        if(f_pos != f_input.end()) {
-            switch(f_pos->unicode()) {
+        if(f_pos != f_input.end())
+        {
+            switch(f_pos->unicode())
+            {
             case '=': // bitwise or & assign
                 result.set_value("|=");
                 ++f_pos;
@@ -397,8 +490,10 @@ restart:
             case '|': // logical or
                 result.set_value("||");
                 ++f_pos;
-                if(f_pos != f_input.end()) {
-                    if(*f_pos == '=') {
+                if(f_pos != f_input.end())
+                {
+                    if(*f_pos == '=')
+                    {
                         // logical or and assign
                         result.set_value("||=");
                         ++f_pos;
@@ -418,8 +513,10 @@ restart:
         result.set_id(TOKEN_ID_LITERAL_ENUM);
         result.set_value(*f_pos);
         ++f_pos;
-        if(f_pos != f_input.end()) {
-            switch(f_pos->unicode()) {
+        if(f_pos != f_input.end())
+        {
+            switch(f_pos->unicode())
+            {
             case '=': // bitwise xor & assign
                 result.set_value("^=");
                 ++f_pos;
@@ -428,8 +525,10 @@ restart:
             case '^': // logical xor
                 result.set_value("^^");
                 ++f_pos;
-                if(f_pos != f_input.end()) {
-                    if(*f_pos == '=') {
+                if(f_pos != f_input.end())
+                {
+                    if(*f_pos == '=')
+                    {
                         // logical xor and assign
                         result.set_value("^^=");
                         ++f_pos;
@@ -449,13 +548,17 @@ restart:
         result.set_id(TOKEN_ID_LITERAL_ENUM);
         result.set_value(*f_pos);
         ++f_pos;
-        if(f_pos != f_input.end()) {
-            switch(f_pos->unicode()) {
+        if(f_pos != f_input.end())
+        {
+            switch(f_pos->unicode())
+            {
             case '=': // not equal
                 result.set_value("!=");
                 ++f_pos;
-                if(f_pos != f_input.end()) {
-                    if(*f_pos == '=') {
+                if(f_pos != f_input.end())
+                {
+                    if(*f_pos == '=')
+                    {
                         // exactly not equal (type checked)
                         result.set_value("!==");
                         ++f_pos;
@@ -485,8 +588,10 @@ restart:
         result.set_id(TOKEN_ID_LITERAL_ENUM);
         result.set_value(*f_pos);
         ++f_pos;
-        if(f_pos != f_input.end()) {
-            switch(f_pos->unicode()) {
+        if(f_pos != f_input.end())
+        {
+            switch(f_pos->unicode())
+            {
             case '=': // assign if left hand side not set
                 result.set_value("?=");
                 ++f_pos;
@@ -504,13 +609,17 @@ restart:
         result.set_id(TOKEN_ID_LITERAL_ENUM);
         result.set_value(*f_pos);
         ++f_pos;
-        if(f_pos != f_input.end()) {
-            switch(f_pos->unicode()) {
+        if(f_pos != f_input.end())
+        {
+            switch(f_pos->unicode())
+            {
             case '=': // equality check (compare)
                 result.set_value("==");
                 ++f_pos;
-                if(f_pos != f_input.end()) {
-                    if(*f_pos == '=') {
+                if(f_pos != f_input.end())
+                {
+                    if(*f_pos == '=')
+                    {
                         // exactly equal (type checked)
                         result.set_value("===");
                         ++f_pos;
@@ -530,8 +639,10 @@ restart:
         result.set_id(TOKEN_ID_LITERAL_ENUM);
         result.set_value(*f_pos);
         ++f_pos;
-        if(f_pos != f_input.end()) {
-            switch(f_pos->unicode()) {
+        if(f_pos != f_input.end())
+        {
+            switch(f_pos->unicode())
+            {
             case '=': // smaller or equal
                 result.set_value("<=");
                 ++f_pos;
@@ -540,8 +651,10 @@ restart:
             case '<': // shift left
                 result.set_value("<<");
                 ++f_pos;
-                if(f_pos != f_input.end()) {
-                    if(*f_pos == '=') {
+                if(f_pos != f_input.end())
+                {
+                    if(*f_pos == '=')
+                    {
                         // shift left and assign
                         result.set_value("<<=");
                         ++f_pos;
@@ -552,8 +665,10 @@ restart:
             case '?': // minimum
                 result.set_value("<?");
                 ++f_pos;
-                if(f_pos != f_input.end()) {
-                    if(*f_pos == '=') {
+                if(f_pos != f_input.end())
+                {
+                    if(*f_pos == '=')
+                    {
                         // minimum and assign
                         result.set_value("<?=");
                         ++f_pos;
@@ -573,8 +688,10 @@ restart:
         result.set_id(TOKEN_ID_LITERAL_ENUM);
         result.set_value(*f_pos);
         ++f_pos;
-        if(f_pos != f_input.end()) {
-            switch(f_pos->unicode()) {
+        if(f_pos != f_input.end())
+        {
+            switch(f_pos->unicode())
+            {
             case '=': // larger or equal
                 result.set_value(">=");
                 ++f_pos;
@@ -583,8 +700,10 @@ restart:
             case '>': // shift right
                 result.set_value(">>");
                 ++f_pos;
-                if(f_pos != f_input.end()) {
-                    switch(f_pos->unicode()) {
+                if(f_pos != f_input.end())
+                {
+                    switch(f_pos->unicode())
+                    {
                     case '=':
                         // shift right and assign
                         result.set_value(">>=");
@@ -595,8 +714,10 @@ restart:
                         // unsigned shift right
                         result.set_value(">>>");
                         ++f_pos;
-                        if(f_pos != f_input.end()) {
-                            if(*f_pos == '=') {
+                        if(f_pos != f_input.end())
+                        {
+                            if(*f_pos == '=')
+                            {
                                 // unsigned right shift and assign
                                 result.set_value(">>>=");
                                 ++f_pos;
@@ -615,8 +736,10 @@ restart:
             case '?': // maximum
                 result.set_value(">?");
                 ++f_pos;
-                if(f_pos != f_input.end()) {
-                    if(*f_pos == '=') {
+                if(f_pos != f_input.end())
+                {
+                    if(*f_pos == '=')
+                    {
                         // maximum and assign
                         result.set_value(">?=");
                         ++f_pos;
@@ -636,8 +759,10 @@ restart:
         result.set_id(TOKEN_ID_LITERAL_ENUM);
         result.set_value(*f_pos);
         ++f_pos;
-        if(f_pos != f_input.end()) {
-            switch(f_pos->unicode()) {
+        if(f_pos != f_input.end())
+        {
+            switch(f_pos->unicode())
+            {
             case '=': // required
                 result.set_value(":=");
                 ++f_pos;
@@ -660,27 +785,33 @@ restart:
         {
             ++f_pos;
             QString::const_iterator start(f_pos);
-            while(f_pos != f_input.end() && *f_pos != '"') {
-                if(*f_pos == '\n' || *f_pos == '\r') {
+            while(f_pos != f_input.end() && *f_pos != '"')
+            {
+                if(*f_pos == '\n' || *f_pos == '\r')
+                {
                     // strings cannot continue after the end of a line
                     break;
                 }
-                if(*f_pos == '\\') {
+                if(*f_pos == '\\')
+                {
                     ++f_pos;
-                    if(f_pos == f_input.end()) {
+                    if(f_pos == f_input.end())
+                    {
                         // this is an invalid backslash
                         break;
                     }
                 }
                 ++f_pos;
             }
-            if(f_pos == f_input.end()) {
+            if(f_pos == f_input.end())
+            {
                 f_error_code = static_cast<int>(LEXER_ERROR_INVALID_STRING);
                 f_error_message = "invalid string";
                 f_error_line = f_line;
                 result.set_id(TOKEN_ID_ERROR_ENUM);
             }
-            else {
+            else
+            {
                 result.set_id(TOKEN_ID_STRING_ENUM);
                 result.set_value(QString(start, f_pos - start));
                 ++f_pos; // skip the closing quote
@@ -693,20 +824,23 @@ restart:
         if(f_pos + 1 != f_input.end() && (f_pos[1] == 'x' || f_pos[1] == 'X')
         && f_pos + 2 != f_input.end() && ((f_pos[2] >= '0' && f_pos[2] <= '9')
                                     || (f_pos[2] >= 'a' && f_pos[2] <= 'f')
-                                    || (f_pos[2] >= 'A' && f_pos[2] <= 'F'))) {
+                                    || (f_pos[2] >= 'A' && f_pos[2] <= 'F')))
+        {
             bool ok;
             f_pos += 2; // skip the 0x or 0X
             QString::const_iterator start(f_pos);
             // parse number
             while(f_pos != f_input.end() && ((*f_pos >= '0' && *f_pos <= '9')
                     || (*f_pos >= 'a' && *f_pos <= 'f')
-                    || (*f_pos >= 'A' && *f_pos <= 'F'))) {
+                    || (*f_pos >= 'A' && *f_pos <= 'F')))
+            {
                 ++f_pos;
             }
             result.set_id(TOKEN_ID_INTEGER_ENUM);
             QString value(start, f_pos - start);
             result.set_value(value.toULongLong(&ok, 16));
-            if(!ok) {
+            if(!ok)
+            {
                 // as far as I know the only reason it can fail is because
                 // it is too large (since we parsed a valid number!)
                 f_error_code = static_cast<int>(LEXER_ERROR_INVALID_NUMBER);
@@ -732,15 +866,19 @@ restart:
             // TODO: test overflows
             QString::const_iterator start(f_pos);
             // number
-            do {
+            do
+            {
                 ++f_pos;
-            } while(f_pos != f_input.end() && *f_pos >= '0' && *f_pos <= '9');
-            if(*f_pos == '.') {
+            }
+            while(f_pos != f_input.end() && *f_pos >= '0' && *f_pos <= '9');
+            if(*f_pos == '.')
+            {
                 // skip the decimal point
                 ++f_pos;
 
                 // floating point
-                while(f_pos != f_input.end() && *f_pos >= '0' && *f_pos <= '9') {
+                while(f_pos != f_input.end() && *f_pos >= '0' && *f_pos <= '9')
+                {
                     ++f_pos;
                 }
                 // TODO: add exponent support
@@ -748,12 +886,14 @@ restart:
                 QString value(start, f_pos - start);
                 result.set_value(value.toDouble(&ok));
             }
-            else {
+            else
+            {
                 result.set_id(TOKEN_ID_INTEGER_ENUM);
                 QString value(start, f_pos - start);
                 result.set_value(value.toULongLong(&ok));
             }
-            if(!ok) {
+            if(!ok)
+            {
                 // as far as I know the only reason it can fail is because
                 // it is too large (since we parsed a valid number!)
                 f_error_code = static_cast<int>(LEXER_ERROR_INVALID_NUMBER);
@@ -768,7 +908,8 @@ restart:
         // TBD: add support for '$' for JavaScript?
         if((*f_pos >= 'a' && *f_pos <= 'z')
         || (*f_pos >= 'A' && *f_pos <= 'Z')
-        || *f_pos == '_') {
+        || *f_pos == '_')
+        {
             // identifier
             QString::const_iterator start(f_pos);
             ++f_pos;
@@ -776,20 +917,24 @@ restart:
                 && ((*f_pos >= 'a' && *f_pos <= 'z')
                     || (*f_pos >= 'A' && *f_pos <= 'Z')
                     || (*f_pos >= '0' && *f_pos <= '9')
-                    || *f_pos == '_')) {
+                    || *f_pos == '_'))
+            {
                 ++f_pos;
             }
             QString identifier(start, f_pos - start);
-            if(f_keywords.contains(identifier)) {
+            if(f_keywords.contains(identifier))
+            {
                 result.set_id(TOKEN_ID_KEYWORD_ENUM);
                 result.set_value(f_keywords[identifier]);
             }
-            else {
+            else
+            {
                 result.set_id(TOKEN_ID_IDENTIFIER_ENUM);
                 result.set_value(identifier);
             }
         }
-        else {
+        else
+        {
             // in all other cases return a QChar
             result.set_id(TOKEN_ID_LITERAL_ENUM);
             result.set_value(*f_pos);
@@ -798,6 +943,9 @@ restart:
         break;
 
     }
+
+// Only to help with debug sessions
+//std::cerr << "lexer result: " << result.to_string() << "\n";
 
     return result;
 }
@@ -811,8 +959,8 @@ void lexer::add_keyword(keyword& k)
 int    keyword::g_next_number = 0;
 
 keyword::keyword(lexer& parent, const QString& keyword_identifier, int index_number)
-    : f_number(index_number == 0 ? ++g_next_number : index_number),
-      f_identifier(keyword_identifier)
+    : f_number(index_number == 0 ? ++g_next_number : index_number)
+    , f_identifier(keyword_identifier)
 {
     parent.add_keyword(*this);
 }
@@ -820,58 +968,66 @@ keyword::keyword(lexer& parent, const QString& keyword_identifier, int index_num
 
 
 rule::rule_data_t::rule_data_t()
-    : f_token(TOKEN_ID_NONE_ENUM),
-      f_choices(NULL)
+    : f_token(TOKEN_ID_NONE_ENUM)
+    //, f_value("") -- auto-init
+    //, f_keyword() -- auto-init
+    , f_choices(nullptr)
 {
 }
 
-rule::rule_data_t::rule_data_t(const rule_data_t& s)
-    : f_token(s.f_token),
-      f_value(s.f_value),
-      f_keyword(s.f_keyword),
-      f_choices(s.f_choices)
+rule::rule_data_t::rule_data_t(rule_data_t const& s)
+    : f_token(s.f_token)
+    , f_value(s.f_value)
+    , f_keyword(s.f_keyword)
+    , f_choices(s.f_choices)
 {
 }
 
 rule::rule_data_t::rule_data_t(choices& c)
-    : f_token(TOKEN_ID_CHOICES_ENUM),
-      f_choices(&c)
+    : f_token(TOKEN_ID_CHOICES_ENUM)
+    //, f_value("") -- auto-init
+    //, f_keyword() -- auto-init
+    , f_choices(&c)
 {
 }
 
 rule::rule_data_t::rule_data_t(token_t token)
-    : f_token(token),
-      f_choices(NULL)
+    : f_token(token)
+    //, f_value("") -- auto-init
+    //, f_keyword() -- auto-init
+    , f_choices(nullptr)
 {
 }
 
 rule::rule_data_t::rule_data_t(const QString& value)
-    : f_token(TOKEN_ID_LITERAL_ENUM),
-      f_value(value),
-      f_choices(NULL)
+    : f_token(TOKEN_ID_LITERAL_ENUM)
+    , f_value(value)
+    //, f_keyword() -- auto-init
+    , f_choices(nullptr)
 {
 }
 
 rule::rule_data_t::rule_data_t(const keyword& k)
-    : f_token(TOKEN_ID_KEYWORD_ENUM),
-      f_keyword(k),
-      f_choices(NULL)
+    : f_token(TOKEN_ID_KEYWORD_ENUM)
+    //, f_value("") -- auto-init
+    , f_keyword(k)
+    , f_choices(nullptr)
 {
 }
 
 
 
 rule::rule(choices& c)
-    : f_parent(&c),
-      //f_tokens() -- auto-init
-      f_reducer(NULL)
+    : f_parent(&c)
+    //, f_tokens() -- auto-init
+    , f_reducer(nullptr)
 {
 }
 
 rule::rule(const rule& r)
-    : f_parent(r.f_parent),
-      f_tokens(r.f_tokens),
-      f_reducer(r.f_reducer)
+    : f_parent(r.f_parent)
+    , f_tokens(r.f_tokens)
+    , f_reducer(r.f_reducer)
 {
 }
 
@@ -914,13 +1070,13 @@ rule& rule::operator >> (const QString& literal)
     return *this;
 }
 
-rule& rule::operator >> (const char *literal)
+rule& rule::operator >> (char const *literal)
 {
     add_literal(literal);
     return *this;
 }
 
-rule& rule::operator >> (const keyword& k)
+rule& rule::operator >> (keyword const& k)
 {
     add_keyword(k);
     return *this;
@@ -938,7 +1094,7 @@ rule& rule::operator >= (rule::reducer_t function)
     return *this;
 }
 
-rule& operator >> (const token_id& token_left, const token_id& token_right)
+rule& operator >> (token_id const& token_left, token_id const& token_right)
 {
     rule *r(new rule);
     r->add_token(token_left);
@@ -946,7 +1102,7 @@ rule& operator >> (const token_id& token_left, const token_id& token_right)
     return *r;
 }
 
-rule& operator >> (const token_id& token, const QString& literal)
+rule& operator >> (token_id const& token, QString const& literal)
 {
     rule *r(new rule);
     r->add_token(token);
@@ -954,7 +1110,7 @@ rule& operator >> (const token_id& token, const QString& literal)
     return *r;
 }
 
-rule& operator >> (const token_id& token, const char *literal)
+rule& operator >> (token_id const& token, char const *literal)
 {
     rule *r(new rule);
     r->add_token(token);
@@ -962,7 +1118,7 @@ rule& operator >> (const token_id& token, const char *literal)
     return *r;
 }
 
-rule& operator >> (const token_id& token, const keyword& k)
+rule& operator >> (token_id const& token, keyword const& k)
 {
     rule *r(new rule);
     r->add_token(token);
@@ -970,7 +1126,7 @@ rule& operator >> (const token_id& token, const keyword& k)
     return *r;
 }
 
-rule& operator >> (const token_id& token, choices& c)
+rule& operator >> (token_id const& token, choices& c)
 {
     rule *r(new rule);
     r->add_token(token);
@@ -978,7 +1134,7 @@ rule& operator >> (const token_id& token, choices& c)
     return *r;
 }
 
-rule& operator >> (const QString& literal, const token_id& token)
+rule& operator >> (QString const& literal, token_id const& token)
 {
     rule *r(new rule);
     r->add_literal(literal);
@@ -986,7 +1142,7 @@ rule& operator >> (const QString& literal, const token_id& token)
     return *r;
 }
 
-rule& operator >> (const QString& literal_left, const QString& literal_right)
+rule& operator >> (QString const& literal_left, QString const& literal_right)
 {
     rule *r(new rule);
     r->add_literal(literal_left);
@@ -994,7 +1150,7 @@ rule& operator >> (const QString& literal_left, const QString& literal_right)
     return *r;
 }
 
-rule& operator >> (const QString& literal, const keyword& k)
+rule& operator >> (QString const& literal, keyword const& k)
 {
     rule *r(new rule);
     r->add_literal(literal);
@@ -1002,7 +1158,7 @@ rule& operator >> (const QString& literal, const keyword& k)
     return *r;
 }
 
-rule& operator >> (const QString& literal, choices& c)
+rule& operator >> (QString const& literal, choices& c)
 {
     rule *r(new rule);
     r->add_literal(literal);
@@ -1010,7 +1166,7 @@ rule& operator >> (const QString& literal, choices& c)
     return *r;
 }
 
-rule& operator >> (const keyword& k, const token_id& token)
+rule& operator >> (keyword const& k, token_id const& token)
 {
     rule *r(new rule);
     r->add_keyword(k);
@@ -1018,7 +1174,7 @@ rule& operator >> (const keyword& k, const token_id& token)
     return *r;
 }
 
-rule& operator >> (const keyword& k, const QString& literal)
+rule& operator >> (keyword const& k, QString const& literal)
 {
     rule *r(new rule);
     r->add_keyword(k);
@@ -1026,7 +1182,7 @@ rule& operator >> (const keyword& k, const QString& literal)
     return *r;
 }
 
-rule& operator >> (const keyword& k_left, const keyword& k_right)
+rule& operator >> (keyword const& k_left, keyword const& k_right)
 {
     rule *r(new rule);
     r->add_keyword(k_left);
@@ -1034,7 +1190,7 @@ rule& operator >> (const keyword& k_left, const keyword& k_right)
     return *r;
 }
 
-rule& operator >> (const keyword& k, choices& c)
+rule& operator >> (keyword const& k, choices& c)
 {
     rule *r(new rule);
     r->add_keyword(k);
@@ -1042,7 +1198,7 @@ rule& operator >> (const keyword& k, choices& c)
     return *r;
 }
 
-rule& operator >> (choices& c, const token_id& token)
+rule& operator >> (choices& c, token_id const& token)
 {
     rule *r(new rule);
     r->add_choices(c);
@@ -1050,7 +1206,7 @@ rule& operator >> (choices& c, const token_id& token)
     return *r;
 }
 
-rule& operator >> (choices& c, const QString& literal)
+rule& operator >> (choices& c, QString const& literal)
 {
     rule *r(new rule);
     r->add_choices(c);
@@ -1058,7 +1214,7 @@ rule& operator >> (choices& c, const QString& literal)
     return *r;
 }
 
-rule& operator >> (choices& c, const keyword& k)
+rule& operator >> (choices& c, keyword const& k)
 {
     rule *r(new rule);
     r->add_choices(c);
@@ -1074,7 +1230,15 @@ rule& operator >> (choices& c_left, choices& c_right)
     return *r;
 }
 
-rule& operator >= (const token_id& token, rule::reducer_t function)
+rule& operator >> (char const *literal, choices& c)
+{
+    rule *r(new rule);
+    r->add_literal(literal);
+    r->add_choices(c);
+    return *r;
+}
+
+rule& operator >= (token_id const& token, rule::reducer_t function)
 {
     rule *r(new rule);
     r->add_token(token);
@@ -1082,7 +1246,7 @@ rule& operator >= (const token_id& token, rule::reducer_t function)
     return *r;
 }
 
-rule& operator >= (const QString& literal, rule::reducer_t function)
+rule& operator >= (QString const& literal, rule::reducer_t function)
 {
     rule *r(new rule);
     r->add_literal(literal);
@@ -1090,7 +1254,7 @@ rule& operator >= (const QString& literal, rule::reducer_t function)
     return *r;
 }
 
-rule& operator >= (const keyword& k, rule::reducer_t function)
+rule& operator >= (keyword const& k, rule::reducer_t function)
 {
     rule *r(new rule);
     r->add_keyword(k);
@@ -1111,12 +1275,15 @@ QString rule::to_string() const
     QString        result;
 
     for(QVector<rule_data_t>::const_iterator ri = f_tokens.begin();
-                                            ri != f_tokens.end(); ++ri) {
-        if(ri != f_tokens.begin()) {
+                                            ri != f_tokens.end(); ++ri)
+    {
+        if(ri != f_tokens.begin())
+        {
             result += " ";
         }
         const rule_data_t& r(*ri);
-        switch(r.f_token) {
+        switch(r.f_token)
+        {
         case TOKEN_ID_NONE_ENUM:
             result += "\xA4";  // currency sign used as the EOI marker
             break;
@@ -1151,7 +1318,9 @@ QString rule::to_string() const
             break;
 
         case TOKEN_ID_CHOICES_ENUM:
-            result += r.f_choices->name();
+            // you can select the one with the pointer for debugging
+            //result += QString("[0x%1] %2").arg(reinterpret_cast<qulonglong>(r.f_choices), 0, 16).arg(r.f_choices->name());
+            result += QString("%2").arg(r.f_choices->name());
             break;
 
         case TOKEN_ID_NODE_ENUM:
@@ -1169,7 +1338,8 @@ QString rule::to_string() const
         }
     }
 
-    if(f_reducer != NULL) {
+    if(f_reducer != nullptr)
+    {
         // show that we have a reducer
         result += " { ... }";
     }
@@ -1184,7 +1354,8 @@ choices::choices(grammar *parent, const char *choice_name)
     : f_name(choice_name)
       //f_rules() -- auto-init
 {
-    if(parent != NULL) {
+    if(parent != nullptr)
+    {
         parent->add_choices(*this);
     }
 }
@@ -1196,8 +1367,9 @@ choices::~choices()
 
 void choices::clear()
 {
-    int max(f_rules.count());
-    for(int r = 0; r < max; ++r) {
+    int const max_rules(f_rules.count());
+    for(int r = 0; r < max_rules; ++r)
+    {
         delete f_rules[r];
     }
     f_rules.clear();
@@ -1206,14 +1378,16 @@ void choices::clear()
 
 choices& choices::operator = (const choices& rhs)
 {
-    if(this != &rhs) {
+    if(this != &rhs)
+    {
         //f_name -- not changed, rhs.f_name is probably "internal"
 
         clear();
 
         // copy rhs rules
-        int max(rhs.f_rules.count());
-        for(int r = 0; r < max; ++r) {
+        int const max_rules(rhs.f_rules.count());
+        for(int r = 0; r < max_rules; ++r)
+        {
             f_rules.push_back(new rule(*rhs.f_rules[r]));
         }
     }
@@ -1223,8 +1397,9 @@ choices& choices::operator = (const choices& rhs)
 
 choices& choices::operator >>= (choices& rhs)
 {
-    if(this == &rhs) {
-        throw std::runtime_error("a rule cannot just be represented as itself");
+    if(this == &rhs)
+    {
+        throw snap_logic_exception("a rule cannot just be represented as itself");
     }
 
     rule *r(new rule);
@@ -1237,17 +1412,19 @@ choices& choices::operator >>= (choices& rhs)
 choices& choices::operator >>= (rule& r)
 {
     // in this case there are no choices
-    if(r[0].get_token().get_id() == TOKEN_ID_RULES_ENUM) {
+    if(r[0].get_token().get_id() == TOKEN_ID_RULES_ENUM)
+    {
         this->operator = (r[0].get_choices());
     }
-    else {
+    else
+    {
         f_rules.push_back(&r);
     }
 
     return *this;
 }
 
-choices& choices::operator >>= (const token_id& token)
+choices& choices::operator >>= (token_id const& token)
 {
     rule *r = new rule;
     r->add_token(token);
@@ -1256,7 +1433,7 @@ choices& choices::operator >>= (const token_id& token)
     return *this;
 }
 
-choices& choices::operator >>= (const QString& literal)
+choices& choices::operator >>= (QString const& literal)
 {
     rule *r = new rule;
     r->add_literal(literal);
@@ -1265,7 +1442,7 @@ choices& choices::operator >>= (const QString& literal)
     return *this;
 }
 
-choices& choices::operator >>= (const keyword& k)
+choices& choices::operator >>= (keyword const& k)
 {
     rule *r = new rule;
     r->add_keyword(k);
@@ -1284,9 +1461,21 @@ rule& choices::operator | (rule& r)
     return *l | r;
 }
 
-rule& operator | (const token_id& token, rule& r_right)
+rule& operator | (rule& r_left, token_id const& token)
 {
-    choices *c(new choices(NULL, "internal"));
+    choices *c(new choices(nullptr, "internal"));
+    rule *r_right(new rule);
+    r_right->add_token(token);
+    c->add_rule(r_left);
+    c->add_rule(*r_right);
+    rule *r(new rule);
+    r->add_rules(*c);
+    return *r;
+}
+
+rule& operator | (token_id const& token, rule& r_right)
+{
+    choices *c(new choices(nullptr, "internal"));
     rule *r_left(new rule);
     r_left->add_token(token);
     c->add_rule(*r_left);
@@ -1296,15 +1485,28 @@ rule& operator | (const token_id& token, rule& r_right)
     return *r;
 }
 
+rule& operator | (rule& r_left, keyword const& k)
+{
+    choices *c(new choices(nullptr, "internal"));
+    rule *r_right(new rule);
+    r_right->add_keyword(k);
+    c->add_rule(r_left);
+    c->add_rule(*r_right);
+    rule *r(new rule);
+    r->add_rules(*c);
+    return *r;
+}
+
 rule& operator | (rule& r_left, rule& r_right)
 {
     // append to existing list?
-    if(r_left[0].get_token().get_id() == TOKEN_ID_RULES_ENUM) {
+    if(r_left[0].get_token().get_id() == TOKEN_ID_RULES_ENUM)
+    {
         r_left[0].get_choices().add_rule(r_right);
         return r_left;
     }
 
-    choices *c(new choices(NULL, "internal"));
+    choices *c(new choices(nullptr, "internal"));
     c->add_rule(r_left);
     c->add_rule(r_right);
     rule *r(new rule);
@@ -1329,14 +1531,18 @@ void choices::add_rule(rule& r)
 
 QString choices::to_string() const
 {
-    QString        result(f_name + ": ");
+    // you can select the one with the pointer for debugging
+    //QString result(QString("[0x%1] %2: ").arg(reinterpret_cast<qulonglong>(this), 0, 16).arg(f_name));
+    QString result(QString("%2: ").arg(f_name));
 
     for(QVector<rule *>::const_iterator ri = f_rules.begin();
-                                        ri != f_rules.end(); ++ri) {
-        if(ri != f_rules.begin()) {
+                                        ri != f_rules.end(); ++ri)
+    {
+        if(ri != f_rules.begin())
+        {
             result += "\n    | ";
         }
-        const rule *r(*ri);
+        rule const *r(*ri);
         result += r->to_string();
     }
 
@@ -1371,7 +1577,8 @@ struct parser_state
           //f_node() -- auto-init
           //f_add_on_reduce() -- auto-init
     {
-        if(parent != NULL) {
+        if(parent != nullptr)
+        {
             parent->f_children.push_back(this);
         }
     }
@@ -1384,35 +1591,40 @@ struct parser_state
 
     void clear()
     {
-        if(!f_children.empty()) {
-            throw std::runtime_error("clearing a state that has children is not allowed");
+        if(!f_children.empty())
+        {
+            throw snap_logic_exception("clearing a state that has children is not allowed");
         }
         // if we have a parent make sure we're removed from the list
         // of children of that parent
-        if(f_parent != NULL) {
-            int p = f_parent->f_children.indexOf(this);
-            if(p < 0) {
-                throw std::runtime_error("clearing a state with a parent that doesn't know about us is not allowed");
+        if(f_parent != nullptr)
+        {
+            int const p(f_parent->f_children.indexOf(this));
+            if(p < 0)
+            {
+                throw snap_logic_exception("clearing a state with a parent that doesn't know about us is not allowed");
             }
             f_parent->f_children.remove(p);
-            f_parent = NULL;
+            f_parent = nullptr;
         }
         // delete all the states to be executed on reduce
         // if they're still here, they can be removed
-        while(!f_add_on_reduce.empty()) {
+        while(!f_add_on_reduce.empty())
+        {
             delete f_add_on_reduce.last();
             f_add_on_reduce.pop_back();
         }
         // useful for debug purposes
-        f_choices = NULL;
+        f_choices = nullptr;
         f_rule = -1;
         f_position = -1;
     }
 
-    void reset(parser_state *parent, choices& c, int r)
+    void reset(parser_state *parent, choices& c, int const r)
     {
         f_parent = parent;
-        if(parent != NULL) {
+        if(parent != nullptr)
+        {
             parent->f_children.push_back(this);
         }
         f_choices = &c;
@@ -1422,13 +1634,15 @@ struct parser_state
         f_add_on_reduce.clear();
     }
 
-    static parser_state *alloc(state_array_t& free_states, parser_state *parent, choices& c, int r)
+    static parser_state *alloc(state_array_t& free_states, parser_state *parent, choices& c, int const r)
     {
         parser_state *state;
-        if(free_states.empty()) {
+        if(free_states.empty())
+        {
             state = new parser_state(parent, c, r);
         }
-        else {
+        else
+        {
             state = free_states.last();
             free_states.pop_back();
             state->reset(parent, c, r);
@@ -1438,14 +1652,23 @@ struct parser_state
 
     static void free(state_array_t& current, state_array_t& free_states, parser_state *s)
     {
+#ifdef DEBUG
+        if(s->f_lock)
+        {
+            throw snap_logic_exception("state that was not yet properly checked is getting deleted");
+        }
+#endif
+
         // recursively free all the children
-        while(!s->f_children.empty()) {
+        while(!s->f_children.empty())
+        {
             free(current, free_states, s->f_children.last());
             //s->f_children.pop_back(); -- automatic in clear()
         }
         s->clear();
-        int pos = current.indexOf(s);
-        if(pos != -1) {
+        int const pos(current.indexOf(s));
+        if(pos != -1)
+        {
             current.remove(pos);
         }
         free_states.push_back(s);
@@ -1456,7 +1679,8 @@ struct parser_state
         parser_state *state(alloc(free_states, source->f_parent, *source->f_choices, source->f_rule));
         state->f_line = source->f_line;
         state->f_position = source->f_position;
-        if(source->f_node != NULL) {
+        if(source->f_node != nullptr)
+        {
             state->f_node = QSharedPointer<token_node>(new token_node(*source->f_node));
         }
         state->copy_reduce_states(free_states, source->f_add_on_reduce);
@@ -1465,8 +1689,9 @@ struct parser_state
 
     void copy_reduce_states(state_array_t& free_states, state_array_t& add_on_reduce)
     {
-        int max = add_on_reduce.size();
-        for(int i = 0; i < max; ++i) {
+        int const max_reduce(add_on_reduce.size());
+        for(int i(0); i < max_reduce; ++i)
+        {
             // we need to set the correct parent in the copy
             // and it is faster to correct in the source before the copy
             f_add_on_reduce.push_back(copy(free_states, add_on_reduce[i]));
@@ -1475,15 +1700,18 @@ struct parser_state
 
     void add_token(token& t)
     {
-        if(f_node == NULL) {
+        if(f_node == nullptr)
+        {
             f_node = QSharedPointer<token_node>(new token_node);
             f_node->set_line(f_line);
         }
         f_node->add_token(t);
     }
+
     void add_node(QSharedPointer<token_node> n)
     {
-        if(f_node == NULL) {
+        if(f_node == nullptr)
+        {
             f_node = QSharedPointer<token_node>(new token_node);
             f_node->set_line(f_line);
         }
@@ -1494,9 +1722,17 @@ struct parser_state
     {
         QString result;
 
-        result = QString("0x%1-%2 [r:%3, p:%4/%5]").arg(reinterpret_cast<qulonglong>(this), 0, 16).arg(f_choices->name().toUtf8().data()).arg(f_rule).arg(f_position).arg((*f_choices)[f_rule].count());
-        if(f_parent != NULL) {
-            result += QString(" (parent 0x%5-%6)").arg(reinterpret_cast<qulonglong>(f_parent), 0, 16).arg(f_parent->f_choices->name().toUtf8().data());
+        result = QString("0x%1-%2 [r:%3, p:%4/%5]")
+                    .arg(reinterpret_cast<qulonglong>(this), 0, 16)
+                    .arg(f_choices->name())
+                    .arg(f_rule)
+                    .arg(f_position)
+                    .arg((*f_choices)[f_rule].count());
+        if(f_parent != nullptr)
+        {
+            result += QString(" (parent 0x%5-%6)")
+                    .arg(reinterpret_cast<qulonglong>(f_parent), 0, 16)
+                    .arg(f_parent->f_choices->name());
         }
 
         return result;
@@ -1514,33 +1750,49 @@ struct parser_state
     static void display_array(const state_array_t& a)
     {
         std::cerr << "+++ ARRAY (" << a.size() << " items)\n";
-        for(state_array_t::const_iterator it(a.begin()); it != a.end(); ++it) {
+        for(state_array_t::const_iterator it(a.begin()); it != a.end(); ++it)
+        {
             parser_state *state(*it);
             //std::cerr << "  state = " << state << "\n"; // for crash
             std::cerr << "  current: " << state->toString() << "\n";
-            for(state_array_t::const_iterator r(state->f_add_on_reduce.begin()); r != state->f_add_on_reduce.end(); ++r) {
+            for(state_array_t::const_iterator r(state->f_add_on_reduce.begin()); r != state->f_add_on_reduce.end(); ++r)
+            {
                 parser_state *s(*r);
                 std::cerr << "      add on reduce: " << s->toString() << "\n";
             }
-            while(state->f_parent != NULL) {
+            while(state->f_parent != nullptr)
+            {
                 state = state->f_parent;
                 std::cerr << "    parent: " << state->toString() << "\n";
             }
         }
         std::cerr << "---\n";
     }
+
+    void lock()
+    {
+        f_lock = true;
+    }
+
+    void unlock()
+    {
+        f_lock = false;
+    }
+
 #endif
 
-    int                                f_line;
-    parser_state *                    f_parent;
-    state_array_t                    f_children;
+    controlled_vars::fbool_t        f_lock;
 
-    choices *                        f_choices;
-    controlled_vars::zint32_t        f_rule;
-    controlled_vars::zint32_t        f_position;
+    int                             f_line;
+    parser_state *                  f_parent;
+    state_array_t                   f_children;
 
-    QSharedPointer<token_node>        f_node;
-    state_array_t                    f_add_on_reduce;
+    choices *                       f_choices;
+    controlled_vars::zint32_t       f_rule;
+    controlled_vars::zint32_t       f_position;
+
+    QSharedPointer<token_node>      f_node;
+    state_array_t                   f_add_on_reduce;
 };
 
 /** \brief Move to the next token in a rule.
@@ -1572,38 +1824,55 @@ struct parser_state
 void next_token(parser_state *state, state_array_t& current, state_array_t& free_states)
 {
     bool repeat;
-    do {
+    do
+    {
         repeat = false;
         // move forward to the next token in this rule
         ++state->f_position;
-        if(state->f_position >= (*state->f_choices)[state->f_rule].count()) {
-            if(state->f_position == (*state->f_choices)[state->f_rule].count()) {
+        if(state->f_position >= (*state->f_choices)[state->f_rule].count())
+        {
+            if(state->f_position == (*state->f_choices)[state->f_rule].count())
+            {
                 repeat = true;
+
                 // we reached the end of the rule, we can reduce it!
                 // call user function
+//std::cerr << "reduce -- " << state->f_choices->name() << ": " << (*state->f_choices)[state->f_rule].to_string() << "\n";
                 (*state->f_choices)[state->f_rule].reduce(state->f_node);
-                // put our node as the rule result in the parent
-                // add the recusive children in the current stack
-                //int max = state->f_add_on_reduce.size();
-                parser_state *p(state->f_parent);
-                int max = p->f_add_on_reduce.size();
-                for(int i = 0; i < max; ++i) {
-                    parser_state *s(parser_state::copy(free_states, p->f_add_on_reduce[i]));
-                    s->add_node(state->f_node);
-                    current.push_back(s);
-                    next_token(s, current, free_states);
+
+                // add the recursive children in the current stack
+                // check for recursive children (a: b | a ',' b)
+                int const max_choices(state->f_choices->count());
+                for(int i(0); i < max_choices; ++i)
+                {
+                    rule const& r((*state->f_choices)[i]);
+                    if(TOKEN_ID_CHOICES_ENUM == r[0].get_token().get_id()
+                    && state->f_choices == &r[0].get_choices())
+                    {
+                        parser_state *s(parser_state::alloc(free_states, state->f_parent, *state->f_choices, i));
+                        //parser_state *s(parser_state::copy(free_states, state));
+                        s->add_node(state->f_node);
+                        current.push_back(s);
+//std::cerr << "** sub-next_token (recursive) " << reinterpret_cast<void*>(s) << "\n";
+                        next_token(s, current, free_states); // we just reduced that one state!
+//std::cerr << "**\n";
+                    }
                 }
 
-                if(p->f_children.size() > 1) {
+                parser_state *p(state->f_parent);
+                if(p->f_children.size() > 1)
+                {
                     // the parent has several children which means we may get
                     // more than one reduce... to support that possibility
                     // duplicate the parent now
                     parser_state *new_parent(parser_state::copy(free_states, p));
                     p = new_parent;
+//std::cerr << "    copy " << reinterpret_cast<void*>(state) << " to " << reinterpret_cast<void*>(p) << "\n";
                 }
                 p->add_node(state->f_node);
 
                 // remove this state from the current set of rules
+//std::cerr << "XXX delete " << reinterpret_cast<void*>(state) << " (parent: " << reinterpret_cast<void*>(p) << ")\n";
                 parser_state::free(current, free_states, state);
 
                 // continue with the parent which will get its
@@ -1611,13 +1880,20 @@ void next_token(parser_state *state, state_array_t& current, state_array_t& free
                 state = p;
                 current.push_back(state);
             }
-            else {
+            else
+            {
                 // forget about that state; we're reducing it for the second time?!
+//std::cerr << ">>>>>>>>>>>>>>>>>>>> delete on > count (double reduce) " << reinterpret_cast<void*>(state) << "\n";
                 parser_state::free(current, free_states, state);
             }
         }
         // else -- the user is not finished with this state
-    } while(repeat);
+    }
+    while(repeat);
+//std::cerr << "next_token() returns with: " << (*state->f_choices)[state->f_rule].to_string() << "\n";
+
+//std::cerr << "NEXT TOKEN: =================================================================\n";
+//parser_state::display_array(current);
 }
 
 bool grammar::parse(lexer& input, choices& start)
@@ -1630,27 +1906,33 @@ bool grammar::parse(lexer& input, choices& start)
     // create the root rule
     choices root(this, "root");
     root >>= start >> TOKEN_ID_NONE;
-    parser_state *s = new parser_state(NULL, root, 0);
+    // TODO: all the state pointers leak if we throw...
+    parser_state *s = new parser_state(nullptr, root, 0);
     s->f_line = 1;
 
     state_array_t free_states;
     state_array_t current;
     current.push_back(s);
-    while(!current.empty()) {
+    while(!current.empty())
+    {
+        uint32_t const line(input.line());
+
         // we're working on the 'check' vector which is
         // a copy of the current vector so the current
         // vector can change in size
-//std::cerr << "=================================================================\n";
+#ifdef DEBUG
+//std::cerr << "B: ================================================================= (line: " << input.line() << ")\n";
 //parser_state::display_array(current);
+#endif
 
-        uint32_t line(input.line());
         bool retry;
-        //state_array_t new_states;
-        do {
+        do
+        {
             retry = false;
             state_array_t check(current);
             for(state_array_t::const_iterator it(check.begin());
-                            it != check.end(); ++it) {
+                            it != check.end(); ++it)
+            {
                 // it is a state, check whether the current entry
                 // is a token or a rule
                 parser_state *state(*it);
@@ -1659,65 +1941,86 @@ bool grammar::parse(lexer& input, choices& start)
 
                 // only take care of choices in this loop (terminators are
                 // handled in the next loop)
-                if(token_id == TOKEN_ID_CHOICES_ENUM) {
+                if(token_id == TOKEN_ID_CHOICES_ENUM)
+                {
                     // follow the choice by adding all of the rules it points to
                     choices *c(&ref.get_choices());
 
-                    int max = c->count();
-                    for(int r = 0; r < max; ++r) {
+                    int const max_choices(c->count());
+                    for(int r(0); r < max_choices; ++r)
+                    {
+                        rule::rule_ref const child_ref((*c)[r][0]);
 
-                        parser_state *child;
-                        if(free_states.empty()) {
-                            child = new parser_state(state, *c, r);
+                        // recursive?
+                        if(TOKEN_ID_CHOICES_ENUM == child_ref.get_token().get_id()
+                        && &child_ref.get_choices() == c)
+                        {
+                            // ignore recursive at this level, we take them
+                            // in account when reducing instead
+//std::cerr << "  SKIP RECURSIVE -- " << c->name() << "  --> " << (*c)[r].to_string() << "\n";
+                            continue;
                         }
-                        else {
-                            child = free_states.last();
-                            free_states.pop_back();
-                            child->reset(state, *c, r);
-                        }
+                        parser_state *child(parser_state::alloc(free_states, state, *c, r));
                         child->f_line = line;
+//std::cerr << "  " << c->name() << "  --> " << (*c)[r].to_string() << "\n";
 
                         // check whether this is recursive; very important
                         // to avoid infinite loop; recurvise rules are used
                         // only when the concern rule gets reduced
                         // the child position is always 0 here (it's a new child)
-                        controlled_vars::zbool_t recursive;
-                        const rule::rule_ref child_ref((*c)[r][0]);
-                        token_t child_token_id(child_ref.get_token().get_id());
-                        if(child_token_id == TOKEN_ID_CHOICES_ENUM) {
-                            // if the new child state starts with a 'choices'
-                            // and that's a 'choices' we already added
-                            // (including this very child,) then
-                            // that child is recursive
-                            choices *child_choices(&child_ref.get_choices());
-                            parser_state *p(child); // start from ourselves
-                            while(p != NULL) {
-                                if(child_choices == p->f_choices) {
-                                    if(p->f_parent == NULL) {
-                                        throw std::runtime_error("invalid recursion (root cannot be recursive)");
-                                    }
-                                    // p may be ourselves so we cannot put that
-                                    // there, use the parent instead
-                                    p->f_parent->f_add_on_reduce.push_back(child);
-                                    recursive = true;
-                                    break;
-                                }
-                                p = p->f_parent;
-                            }
-                        }
+                        controlled_vars::fbool_t recursive;
+//                        token_t const child_token_id(child_ref.get_token().get_id());
+//                        if(child_token_id == TOKEN_ID_CHOICES_ENUM)
+//                        {
+//                            // if the new child state starts with a 'choices'
+//                            // and that's a 'choices' we already added
+//                            // (including this very child,) then
+//                            // that child is recursive
+//                            choices *child_choices(&child_ref.get_choices());
+//std::cerr << "  --> follow choice " << c->name() << " with sub-choice " << child_choices->name() << "\n";
+//                            // start from ourselves
+//                            int i(0);
+//                            for(parser_state *p(child); p != nullptr && i < 2; p = p->f_parent, ++i)
+//                            {
+//                                if(child_choices == p->f_choices)
+//                                {
+//                                    if(p->f_parent == nullptr)
+//                                    {
+//                                        throw snap_logic_exception("invalid recursion (root cannot be recursive)");
+//                                    }
+//                                    // p may be ourselves so we cannot put that
+//                                    // there, use the parent instead
+//std::cerr << "  *** CHANGED TO REDUCE ***\n";
+//                                    p->f_parent->f_add_on_reduce.push_back(child);
+//                                    recursive = true;
+//                                    break;
+//                                }
+//
+//                                // cannot reduce any more than that if
+//                                // this rule is not at the end of list of
+//                                // choices
+//                                //if(p->f_position + 1 < (*p->f_choices)[p->f_rule].count())
+//                                //{
+//                                //    // TODO: this is not correct if the
+//                                //    //       following rule(s) support EMPTY
+//                                //    break;
+//                                //}
+//                            }
+//                        }
 
                         // if recursive it was already added to all the
-                        // states were it needs to be; otherwise we add it
+                        // states where it needs to be; otherwise we add it
                         // to the current stack
-                        if(!recursive) {
-                            //new_states.push_back(child);
+                        if(!recursive)
+                        {
                             current.push_back(child);
                         }
                     }
                     current.remove(current.indexOf(state));
                     retry = true;
                 }
-                else if(token_id == TOKEN_ID_EMPTY_ENUM) {
+                else if(token_id == TOKEN_ID_EMPTY_ENUM)
+                {
                     // we have to take care of empty rules here since anything
                     // coming after an empty rule has to be added to the list
                     // of rules here (it is very important because of the
@@ -1729,39 +2032,62 @@ bool grammar::parse(lexer& input, choices& start)
                 }
             }
         } while(retry);
+#ifdef DEBUG
+//std::cerr << "A: ================================================================= (line: " << input.line() << ")\n";
+//parser_state::display_array(current);
+#endif
 
         // get the first token
         token t(input.next_token());
+#ifdef DEBUG
+//std::cerr << ". token type: " << t.to_string() << " to try against \n";
+#endif
 
         state_array_t check(current);
+#ifdef DEBUG
+        // lock all those states to make sure we don't delete the wrong one
         for(state_array_t::const_iterator it(check.begin());
-                        it != check.end(); ++it) {
+                        it != check.end(); ++it)
+        {
+            (*it)->lock();
+        }
+#endif
+        for(state_array_t::const_iterator it(check.begin());
+                        it != check.end(); ++it)
+        {
             // it is a state, check whether the current entry
             // is a token or a rule
             parser_state *state(*it);
-            const rule::rule_ref ref((*state->f_choices)[state->f_rule][state->f_position]);
-            token_t token_id(ref.get_token().get_id());
+            rule::rule_ref const ref((*state->f_choices)[state->f_rule][state->f_position]);
+            token_t const token_id(ref.get_token().get_id());
             if(token_id == TOKEN_ID_CHOICES_ENUM
-            || token_id == TOKEN_ID_EMPTY_ENUM) {
-                throw std::runtime_error("this should never happen since the previous for() loop removed all of those!");
+            || token_id == TOKEN_ID_EMPTY_ENUM)
+            {
+                throw snap_logic_exception("this should never happen since the previous for() loop removed all of those!");
             }
-            else {
+            else
+            {
                 bool remove(false);
-                if(t.get_id() != token_id) {
+                if(t.get_id() != token_id)
+                {
                     remove = true;
                 }
-                else {
-                    switch(token_id) {
+                else
+                {
+                    switch(token_id)
+                    {
                     case TOKEN_ID_LITERAL_ENUM:
                         // a literal must match exactly
-                        if(t.get_value().toString() != ref.get_value()) {
+                        if(t.get_value().toString() != ref.get_value())
+                        {
                             remove = true;
                         }
                         break;
 
                     case TOKEN_ID_KEYWORD_ENUM:
                         // a keyword must match exactly
-                        if(t.get_value().toInt() != ref.get_keyword().number()) {
+                        if(t.get_value().toInt() != ref.get_keyword().number())
+                        {
                             remove = true;
                         }
                         break;
@@ -1781,17 +2107,25 @@ bool grammar::parse(lexer& input, choices& start)
 
                     default:
                         // at this point other tokens are rejected here
-                        throw snap_parser_unexpected_token();
+                        throw snap_parser_unexpected_token(QString("unexpected token %1").arg(static_cast<int>(token_id)));
 
                     }
                 }
-                if(remove) {
+#ifdef DEBUG
+                state->unlock();
+#endif
+                if(remove)
+                {
+//std::cerr << "<*> delete unmatched state: " << state->f_choices->name() << "\n";
                     parser_state::free(current, free_states, state);
                 }
-                else {
+                else
+                {
                     // save this token as it was accepted
                     state->add_token(t);
+//std::cerr << ">>> next token (IN)\n";
                     next_token(state, current, free_states);
+//std::cerr << ">>> next token (OUT)\n";
                 }
             }
         }

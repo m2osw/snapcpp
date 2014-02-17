@@ -35,41 +35,41 @@ char const *get_name(name_t name) __attribute__ ((const));
 class links_exception : public snap_exception
 {
 public:
-    links_exception(char const *what_msg) : snap_exception("Links: " + std::string(what_msg)) {}
-    links_exception(std::string const& what_msg) : snap_exception("Links: " + what_msg) {}
-    links_exception(QString const& what_msg) : snap_exception("Links: " + what_msg) {}
+    links_exception(char const *       what_msg) : snap_exception("links", what_msg) {}
+    links_exception(std::string const& what_msg) : snap_exception("links", what_msg) {}
+    links_exception(QString const&     what_msg) : snap_exception("links", what_msg) {}
 };
 
 class links_exception_missing_links_table : public links_exception
 {
 public:
-    links_exception_missing_links_table(char const *what_msg) : links_exception(what_msg) {}
+    links_exception_missing_links_table(char const *       what_msg) : links_exception(what_msg) {}
     links_exception_missing_links_table(std::string const& what_msg) : links_exception(what_msg) {}
-    links_exception_missing_links_table(QString const& what_msg) : links_exception(what_msg) {}
+    links_exception_missing_links_table(QString const&     what_msg) : links_exception(what_msg) {}
 };
 
 class links_exception_missing_data_table : public links_exception
 {
 public:
-    links_exception_missing_data_table(char const *what_msg) : links_exception(what_msg) {}
+    links_exception_missing_data_table(char const *       what_msg) : links_exception(what_msg) {}
     links_exception_missing_data_table(std::string const& what_msg) : links_exception(what_msg) {}
-    links_exception_missing_data_table(QString const& what_msg) : links_exception(what_msg) {}
+    links_exception_missing_data_table(QString const&     what_msg) : links_exception(what_msg) {}
 };
 
 class links_exception_invalid_name : public links_exception
 {
 public:
-    links_exception_invalid_name(char const *what_msg) : links_exception(what_msg) {}
+    links_exception_invalid_name(char const *       what_msg) : links_exception(what_msg) {}
     links_exception_invalid_name(std::string const& what_msg) : links_exception(what_msg) {}
-    links_exception_invalid_name(QString const& what_msg) : links_exception(what_msg) {}
+    links_exception_invalid_name(QString const&     what_msg) : links_exception(what_msg) {}
 };
 
 class links_exception_invalid_db_data : public links_exception
 {
 public:
-    links_exception_invalid_db_data(char const *what_msg) : links_exception(what_msg) {}
+    links_exception_invalid_db_data(char const *       what_msg) : links_exception(what_msg) {}
     links_exception_invalid_db_data(std::string const& what_msg) : links_exception(what_msg) {}
-    links_exception_invalid_db_data(QString const& what_msg) : links_exception(what_msg) {}
+    links_exception_invalid_db_data(QString const&     what_msg) : links_exception(what_msg) {}
 };
 
 
@@ -127,13 +127,35 @@ public:
     }
     QString row_key() const
     {
+        if(f_key.isEmpty())
+        {
+            throw snap_logic_exception("row_key() was requested with the key still undefined");
+        }
         if(f_branch == snap_version::SPECIAL_VERSION_INVALID
         || f_branch == snap_version::SPECIAL_VERSION_UNDEFINED
         || f_branch == snap_version::SPECIAL_VERSION_EXTENDED)
         {
             throw snap_logic_exception("row_key() was requested with the branch still undefined");
         }
-        return QString("%1#%2").arg(f_key).arg(f_branch);
+        return QString("%2#%3").arg(f_key).arg(f_branch);
+    }
+    QString link_key() const
+    {
+        if(f_name.isEmpty())
+        {
+            throw snap_logic_exception("link_key() was requested with the name still undefined");
+        }
+        if(f_key.isEmpty())
+        {
+            throw snap_logic_exception("link_key() was requested with the key still undefined");
+        }
+        if(f_branch == snap_version::SPECIAL_VERSION_INVALID
+        || f_branch == snap_version::SPECIAL_VERSION_UNDEFINED
+        || f_branch == snap_version::SPECIAL_VERSION_EXTENDED)
+        {
+            throw snap_logic_exception("link_key() was requested with the branch still undefined");
+        }
+        return QString("%1#%2/%3").arg(f_key).arg(f_branch).arg(f_name);
     }
     snap_version::version_number_t branch() const
     {
@@ -183,9 +205,10 @@ public:
 
     void                on_bootstrap(::snap::snap_child *snap);
 
-    // should those be events?
+    // TBD should those be events? (or create events?)
     void                create_link(link_info const& src, link_info const& dst);
     void                delete_link(link_info const& info);
+    void                delete_this_link(link_info const& source, link_info const& destination);
 
     QSharedPointer<link_context> new_link_context(link_info const& info);
 
