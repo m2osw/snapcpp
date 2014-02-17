@@ -2040,7 +2040,7 @@ void sendmail::sendemail(const QString& key, const QString& unique_key)
     f_email.unserialize(email_data.stringValue());
     f_email.add_header(get_name(SNAP_NAME_SENDMAIL_CONTENT_TYPE), "text/html; charset=\"utf-8\"");
 
-    const QString& path(f_email.get_email_path());
+    QString const& path(f_email.get_email_path());
     if(!path.isEmpty())
     {
         // TODO -- we need to setup an email layout used to send emails, not
@@ -2056,10 +2056,10 @@ void sendmail::sendemail(const QString& key, const QString& unique_key)
 
         content::path_info_t ipath;
         ipath.set_path(path);
-        const QString html_body(layout::layout::instance()->apply_layout(ipath, this));
+        QString const html_body(layout::layout::instance()->apply_layout(ipath, this));
 
         // the output only includes valid ASCII (controls + ' ' to '~')
-        const std::string encoded_body = quoted_printable::encode(html_body.toUtf8().data(), quoted_printable::QUOTED_PRINTABLE_FLAG_LFONLY | quoted_printable::QUOTED_PRINTABLE_FLAG_NO_LONE_PERIOD);
+        std::string const encoded_body(quoted_printable::encode(html_body.toUtf8().data(), quoted_printable::QUOTED_PRINTABLE_FLAG_LFONLY | quoted_printable::QUOTED_PRINTABLE_FLAG_NO_LONE_PERIOD));
 
         email::email_attachment html_body_attachment;
         QByteArray body_data;

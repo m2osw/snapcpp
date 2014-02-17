@@ -45,6 +45,13 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <![CDATA[<p>Rights to access the different emails that the system sends to users (i.e. the email subject and body).</p>]]>
     </param>
   </content>
+  <content path="/types/taxonomy/system/content-types/email">
+    <param name="taxonomy::name">sendmail::email_page</param>
+    <param name="content::title" revision="revision">Email Content Type</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>This page type is used to mark all the emails of your website. It is used to categorize the emails that get sent to clients. This allows you, for example, to mark the emails with a specific theme.</p>]]>
+    </param>
+  </content>
 </snap-tree>
 <!-- vim: ts=2 sw=2 et syntax=xml
 -->

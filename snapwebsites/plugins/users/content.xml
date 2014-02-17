@@ -158,6 +158,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="content::body" revision="revision">
         <![CDATA[<p class="email_date" style="text-align: right;">Sent on [sendmail::date]</p><p class="welcome">Welcome to your Snap! C++ website.</p><p class="process-to-complete">In order to complete the creation of your new account, please click on the following link:</p><blockquote>[sendmail::verify_link("Click here to validate your email address")]</blockquote><p>If you have a problem clicking on this link, your verification code is:</p><blockquote><code>[select("/snap/page/body/sendmail/parameters/param[@name='users::verify_email']/@value")]</code></blockquote><p class="thank-you">Thank you.</p><p>To unsubscribe click here: [sendmail::unsubscribe_link("Unsubscribe from Snap! emails")].<p style="text-align: center;">Copyright [year] (c) by Made to Order Software Corporation -- All Rights Reserved</p>]]>
     </param>
+    <link name="content::page_type" to="content::page_type" mode="1:*">/types/taxonomy/system/content-types/email</link>
   </content>
   <content path="/admin/email/users/forgot-password">
     <!-- email sent when users forgot their password -->
@@ -165,6 +166,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="content::body" revision="revision">
         <![CDATA[<p class="email_date" style="text-align: right;">Sent on [sendmail::date]</p><p class="welcome">It looks like you required the system to allow you to change your password. If this wasn't you, please reply to this email so we can make sure that everything is A-Okay.</p><p class="process-to-complete">In order to change your password, please click on the following link:</p><blockquote>[sendmail::forgot_password_link("Click here to change your password.")]</blockquote><p>You will be asked to change your password immediately. Once you save your password, you will automatically be logged in.</p><p>If you have a problem clicking on this link, your verification code is: <code>[select("/snap/page/body/sendmail/parameters/param[@name='users::forgot_password_email']/@value")]</code></p><p class="thank-you">Thank you.</p><p>To unsubscribe click here: [sendmail::unsubscribe_link("Unsubscribe from Snap! emails")].<p style="text-align: center;">Copyright [year] (c) by Made to Order Software Corporation -- All Rights Reserved</p>]]>
     </param>
+    <link name="content::page_type" to="content::page_type" mode="1:*">/types/taxonomy/system/content-types/email</link>
   </content>
   <content path="/admin/page/users">
     <param name="content::title" revision="revision">Users Templates</param>
