@@ -634,10 +634,13 @@ public:
         result.set_value(variable_t::EXPR_VARIABLE_TYPE_FLOAT, value);
     }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
     template<typename F>
     typename enable_if<!has_function<F>::has_floating_points>::type do_float(variable_t& result, double a, double b)
     {
     }
+#pragma GCC diagnostic pop
 
     template<typename F>
     typename enable_if<has_function<F>::has_bool_floating_points>::type do_float_to_bool(variable_t& result, double a, double b)
@@ -647,10 +650,13 @@ public:
         result.set_value(variable_t::EXPR_VARIABLE_TYPE_BOOL, value);
     }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
     template<typename F>
     typename enable_if<!has_function<F>::has_bool_floating_points>::type do_float_to_bool(variable_t& result, double a, double b)
     {
     }
+#pragma GCC diagnostic pop
 
     template<typename F>
     typename enable_if<has_function<F>::has_floating_points>::type do_double(variable_t& result, double a, double b)
@@ -660,10 +666,13 @@ public:
         result.set_value(variable_t::EXPR_VARIABLE_TYPE_DOUBLE, value);
     }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
     template<typename F>
     typename enable_if<!has_function<F>::has_floating_points>::type do_double(variable_t& result, double a, double b)
     {
     }
+#pragma GCC diagnostic pop
 
     template<typename F>
     typename enable_if<has_function<F>::has_bool_floating_points>::type do_double_to_bool(variable_t& result, double a, double b)
@@ -673,10 +682,13 @@ public:
         result.set_value(variable_t::EXPR_VARIABLE_TYPE_BOOL, value);
     }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
     template<typename F>
     typename enable_if<!has_function<F>::has_bool_floating_points>::type do_double_to_bool(variable_t& result, double a, double b)
     {
     }
+#pragma GCC diagnostic pop
 
     template<typename F>
     typename enable_if<has_function<F>::has_string_integer>::type do_string_integer(variable_t& result, QString const& a, int64_t b)
@@ -686,10 +698,13 @@ public:
         result.set_value(variable_t::EXPR_VARIABLE_TYPE_STRING, value);
     }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
     template<typename F>
     typename enable_if<!has_function<F>::has_string_integer>::type do_string_integer(variable_t& result, QString const& a, int64_t b)
     {
     }
+#pragma GCC diagnostic pop
 
     template<typename F>
     typename enable_if<has_function<F>::has_bool_string_integer>::type do_string_integer_to_bool(variable_t& result, QString const& a, int64_t b)
@@ -699,10 +714,13 @@ public:
         result.set_value(variable_t::EXPR_VARIABLE_TYPE_BOOL, value);
     }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
     template<typename F>
     typename enable_if<!has_function<F>::has_bool_string_integer>::type do_string_integer_to_bool(variable_t& result, QString const& a, int64_t b)
     {
     }
+#pragma GCC diagnostic pop
 
     template<typename F>
     typename enable_if<has_function<F>::has_strings>::type do_strings(variable_t& result, QString const& a, QString const& b)
@@ -712,10 +730,13 @@ public:
         result.set_value(variable_t::EXPR_VARIABLE_TYPE_STRING, value);
     }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
     template<typename F>
     typename enable_if<!has_function<F>::has_strings>::type do_strings(variable_t& result, QString const& a, QString const& b)
     {
     }
+#pragma GCC diagnostic pop
 
     template<typename F>
     typename enable_if<has_function<F>::has_bool_strings>::type do_strings_to_bool(variable_t& result, QString const& a, QString const& b)
@@ -725,10 +746,13 @@ public:
         result.set_value(variable_t::EXPR_VARIABLE_TYPE_BOOL, value);
     }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
     template<typename F>
     typename enable_if<!has_function<F>::has_bool_strings>::type do_strings_to_bool(variable_t& result, QString const& a, QString const& b)
     {
     }
+#pragma GCC diagnostic pop
 
     class op_multiply
     {
