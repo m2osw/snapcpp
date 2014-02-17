@@ -2647,6 +2647,8 @@ private:
             throw snap_logic_exception(QString("expr_node::execute() found an unary operator (%1) with a number of results which is not 1")
                     .arg(f_type).arg(sub_results.size()));
         }
+#else
+        static_cast<void>(sub_results);
 #endif
     }
 
@@ -2658,6 +2660,8 @@ private:
             throw snap_logic_exception(QString("expr_node::execute() found a binary operator (%1) with %2 results, expected exactly 2")
                     .arg(f_type).arg(sub_results.size()));
         }
+#else
+        static_cast<void>(sub_results);
 #endif
     }
 
