@@ -241,7 +241,7 @@ bool variable_t::is_true() const
 }
 
 
-bool variable_t::get_bool() const
+bool variable_t::get_bool(QString const& name) const
 {
     switch(get_type())
     {
@@ -249,14 +249,14 @@ bool variable_t::get_bool() const
         return get_value().boolValue();
 
     default:
-        throw snap_expr_exception_invalid_parameter_type("parameter must be a Boolean");
+        throw snap_expr_exception_invalid_parameter_type(QString("parameter for %1 must be a Boolean").arg(name));
 
     }
     NOTREACHED();
 }
 
 
-int64_t variable_t::get_integer() const
+int64_t variable_t::get_integer(QString const& name) const
 {
     switch(get_type())
     {
@@ -285,14 +285,14 @@ int64_t variable_t::get_integer() const
         return get_value().uint64Value();
 
     default:
-        throw snap_expr_exception_invalid_parameter_type("parameter must be an integer");
+        throw snap_expr_exception_invalid_parameter_type(QString("parameter for %1 must be an integer").arg(name));
 
     }
     NOTREACHED();
 }
 
 
-QString variable_t::get_string() const
+QString variable_t::get_string(QString const& name) const
 {
     switch(get_type())
     {
@@ -300,7 +300,7 @@ QString variable_t::get_string() const
         return get_value().stringValue();
 
     default:
-        throw snap_expr_exception_invalid_parameter_type("parameter must be a string");
+        throw snap_expr_exception_invalid_parameter_type(QString("parameter for %1 must be a string").arg(name));
 
     }
     NOTREACHED();
@@ -329,7 +329,8 @@ public:
 
     enum node_type_t
     {
-        NODE_TYPE_UNKNOWN, // used when loading
+        NODE_TYPE_UNKNOWN, // used when creating a node without a type
+        NODE_TYPE_LOADING, // used when loading
 
         // Operations
         NODE_TYPE_OPERATION_LIST, // comma operator
@@ -373,6 +374,8 @@ public:
     };
     typedef controlled_vars::limited_need_init<node_type_t, NODE_TYPE_UNKNOWN, NODE_TYPE_VARIABLE> safe_node_type_t;
 
+    static char const *type_names[NODE_TYPE_VARIABLE + 1];
+
     expr_node(node_type_t type)
         : f_type(static_cast<int>(type))        // FIXME cast
         , f_variable("")
@@ -413,6 +416,18 @@ public:
         f_children.push_back(child);
     }
 
+    void remove_child(int idx)
+    {
+        verify_children();
+        f_children.remove(idx);
+    }
+
+    void insert_child(int idx, expr_node_pointer_t child)
+    {
+        verify_children();
+        f_children.insert(idx, child);
+    }
+
     int children_size() const
     {
         verify_children();
@@ -430,23 +445,42 @@ public:
         return f_children[idx];
     }
 
+    static QSharedPointer<expr_node> load(QtSerialization::QReader& r)
+    {
+        // create a "root" used only to load the data
+        expr_node_pointer_t root(new expr_node(NODE_TYPE_LOADING));
+        root->read(r);
+#ifdef DEBUG
+        if(root->children_size() != 1)
+        {
+            throw snap_logic_exception(QString("expr_node::load() did not return exactly one child in the root node"));
+        }
+//std::cout << "--- Loaded result:\n" << root->get_child(0)->toString() << "---\n";
+#endif
+        return root->get_child(0);
+    }
+
     void read(QtSerialization::QReader& r)
     {
+        // read the data from the reader
         QtSerialization::QComposite comp;
-        qint32 type;
+        qint32 type(NODE_TYPE_LOADING);
         QtSerialization::QFieldInt32 node_type(comp, "type", type); // f_type is an enum...
         QtSerialization::QFieldString node_name(comp, "name", f_name);
-        qint64 value_int;
+        qint64 value_int(0);
         QtSerialization::QFieldInt64 node_int(comp, "int", value_int);
-        double value_dbl;
+        double value_dbl(0.0);
         QtSerialization::QFieldDouble node_flt(comp, "flt", value_dbl);
-        QString value_str;
+        QString value_str; // ("") -- default value
         QtSerialization::QFieldString node_str(comp, "str", value_str);
         QtSerialization::QFieldTag vars(comp, "node", this);
         r.read(comp);
         f_type = type;
         switch(f_type)
         {
+        case NODE_TYPE_UNKNOWN:
+            throw snap_logic_exception("expr_node::read() loaded a node of type: NODE_TYPE_UNKNOWN");
+
         case NODE_TYPE_LITERAL_BOOLEAN:
             f_variable.set_value(variable_t::EXPR_VARIABLE_TYPE_BOOL, static_cast<bool>(value_int));
             break;
@@ -474,11 +508,11 @@ public:
     {
         if(name == "node")
         {
-            // create a variable with an invalid name
-            expr_node_pointer_t child(new expr_node(NODE_TYPE_UNKNOWN));
+            // create a node
+            expr_node_pointer_t child(new expr_node(NODE_TYPE_LOADING));
             // read the data from the reader
             child->read(r);
-            // add to the variable vector
+            // add to the vector
             add_child(child);
         }
     }
@@ -496,6 +530,10 @@ public:
 
         switch(f_type)
         {
+        case NODE_TYPE_LITERAL_BOOLEAN:
+            QtSerialization::writeTag(w, "int", static_cast<qint64>(f_variable.get_value().boolValue()));
+            break;
+
         case NODE_TYPE_LITERAL_INTEGER:
             QtSerialization::writeTag(w, "int", static_cast<qint64>(f_variable.get_value().int64Value()));
             break;
@@ -535,7 +573,7 @@ public:
         template <typename U, U> struct type_check;
 
         // integers() is always available at this point
-        //template <typename C> static yes &test_integers(type_check<void(&)(int64_t, int64_t), C::integers> *);
+        //template <typename C> static yes &test_integers(type_check<int64_t(&)(int64_t, int64_t), C::integers> *);
         //template <typename C> static no  &test_integers(...);
 
         template <typename C> static yes &test_floating_points(type_check<double(&)(double, double), C::floating_points> *);
@@ -547,11 +585,28 @@ public:
         template <typename C> static yes &test_strings(type_check<QString(&)(QString const&, QString const&), C::strings> *);
         template <typename C> static no  &test_strings(...);
 
+        // integers() is always available at this point
+        //template <typename C> static yes &test_bool_integers(type_check<bool(&)(int64_t, int64_t), C::integers> *);
+        //template <typename C> static no  &test_bool_integers(...);
+
+        template <typename C> static yes &test_bool_floating_points(type_check<bool(&)(double, double), C::floating_points> *);
+        template <typename C> static no  &test_bool_floating_points(...);
+
+        template <typename C> static yes &test_bool_string_integer(type_check<bool(&)(QString const&, int64_t), C::string_integer> *);
+        template <typename C> static no  &test_bool_string_integer(...);
+
+        template <typename C> static yes &test_bool_strings(type_check<bool(&)(QString const&, QString const&), C::strings> *);
+        template <typename C> static no  &test_bool_strings(...);
+
     public:
         //static bool const has_integers        = sizeof(test_integers       <T>(nullptr)) == sizeof(yes);
         static bool const has_floating_points = sizeof(test_floating_points<T>(nullptr)) == sizeof(yes);
         static bool const has_string_integer  = sizeof(test_string_integer <T>(nullptr)) == sizeof(yes);
         static bool const has_strings         = sizeof(test_strings        <T>(nullptr)) == sizeof(yes);
+        //static bool const has_bool_integers        = sizeof(test_bool_integers       <T>(nullptr)) == sizeof(yes);
+        static bool const has_bool_floating_points = sizeof(test_bool_floating_points<T>(nullptr)) == sizeof(yes);
+        static bool const has_bool_string_integer  = sizeof(test_bool_string_integer <T>(nullptr)) == sizeof(yes);
+        static bool const has_bool_strings         = sizeof(test_bool_strings        <T>(nullptr)) == sizeof(yes);
     };
 #pragma GCC diagnostic pop
 
@@ -582,6 +637,19 @@ public:
     }
 
     template<typename F>
+    typename enable_if<has_function<F>::has_bool_floating_points>::type do_float_to_bool(variable_t& result, double a, double b)
+    {
+        QtCassandra::QCassandraValue value;
+        value.setBoolValue(F::floating_points(a, b));
+        result.set_value(variable_t::EXPR_VARIABLE_TYPE_BOOL, value);
+    }
+
+    template<typename F>
+    typename enable_if<!has_function<F>::has_bool_floating_points>::type do_float_to_bool(variable_t& result, double a, double b)
+    {
+    }
+
+    template<typename F>
     typename enable_if<has_function<F>::has_floating_points>::type do_double(variable_t& result, double a, double b)
     {
         QtCassandra::QCassandraValue value;
@@ -591,6 +659,19 @@ public:
 
     template<typename F>
     typename enable_if<!has_function<F>::has_floating_points>::type do_double(variable_t& result, double a, double b)
+    {
+    }
+
+    template<typename F>
+    typename enable_if<has_function<F>::has_bool_floating_points>::type do_double_to_bool(variable_t& result, double a, double b)
+    {
+        QtCassandra::QCassandraValue value;
+        value.setBoolValue(F::floating_points(a, b));
+        result.set_value(variable_t::EXPR_VARIABLE_TYPE_BOOL, value);
+    }
+
+    template<typename F>
+    typename enable_if<!has_function<F>::has_bool_floating_points>::type do_double_to_bool(variable_t& result, double a, double b)
     {
     }
 
@@ -608,6 +689,19 @@ public:
     }
 
     template<typename F>
+    typename enable_if<has_function<F>::has_bool_string_integer>::type do_string_integer_to_bool(variable_t& result, QString const& a, int64_t b)
+    {
+        QtCassandra::QCassandraValue value;
+        value.setBoolValue(F::string_integer(a, b));
+        result.set_value(variable_t::EXPR_VARIABLE_TYPE_BOOL, value);
+    }
+
+    template<typename F>
+    typename enable_if<!has_function<F>::has_bool_string_integer>::type do_string_integer_to_bool(variable_t& result, QString const& a, int64_t b)
+    {
+    }
+
+    template<typename F>
     typename enable_if<has_function<F>::has_strings>::type do_strings(variable_t& result, QString const& a, QString const& b)
     {
         QtCassandra::QCassandraValue value;
@@ -617,6 +711,19 @@ public:
 
     template<typename F>
     typename enable_if<!has_function<F>::has_strings>::type do_strings(variable_t& result, QString const& a, QString const& b)
+    {
+    }
+
+    template<typename F>
+    typename enable_if<has_function<F>::has_bool_strings>::type do_strings_to_bool(variable_t& result, QString const& a, QString const& b)
+    {
+        QtCassandra::QCassandraValue value;
+        value.setBoolValue(F::strings(a, b));
+        result.set_value(variable_t::EXPR_VARIABLE_TYPE_BOOL, value);
+    }
+
+    template<typename F>
+    typename enable_if<!has_function<F>::has_bool_strings>::type do_strings_to_bool(variable_t& result, QString const& a, QString const& b)
     {
     }
 
@@ -674,33 +781,33 @@ public:
     class op_less
     {
     public:
-        static int64_t integers(int64_t a, int64_t b) { return a < b; }
-        static int64_t floating_points(double a, double b) { return a < b; }
-        static int64_t strings(QString const& a, QString const& b) { return a < b; }
+        static bool integers(int64_t a, int64_t b) { return a < b; }
+        static bool floating_points(double a, double b) { return a < b; }
+        static bool strings(QString const& a, QString const& b) { return a < b; }
     };
 
     class op_less_or_equal
     {
     public:
-        static int64_t integers(int64_t a, int64_t b) { return a <= b; }
-        static int64_t floating_points(double a, double b) { return a <= b; }
-        static int64_t strings(QString const& a, QString const& b) { return a <= b; }
+        static bool integers(int64_t a, int64_t b) { return a <= b; }
+        static bool floating_points(double a, double b) { return a <= b; }
+        static bool strings(QString const& a, QString const& b) { return a <= b; }
     };
 
     class op_greater
     {
     public:
-        static int64_t integers(int64_t a, int64_t b) { return a > b; }
-        static int64_t floating_points(double a, double b) { return a > b; }
-        static int64_t strings(QString const& a, QString const& b) { return a > b; }
+        static bool integers(int64_t a, int64_t b) { return a > b; }
+        static bool floating_points(double a, double b) { return a > b; }
+        static bool strings(QString const& a, QString const& b) { return a > b; }
     };
 
     class op_greater_or_equal
     {
     public:
-        static int64_t integers(int64_t a, int64_t b) { return a >= b; }
-        static int64_t floating_points(double a, double b) { return a >= b; }
-        static int64_t strings(QString const& a, QString const& b) { return a >= b; }
+        static bool integers(int64_t a, int64_t b) { return a >= b; }
+        static bool floating_points(double a, double b) { return a >= b; }
+        static bool strings(QString const& a, QString const& b) { return a >= b; }
     };
 
     class op_minimum
@@ -722,17 +829,17 @@ public:
     class op_equal
     {
     public:
-        static int64_t integers(int64_t a, int64_t b) { return a == b; }
-        static int64_t floating_points(double a, double b) { return a == b; }
-        static int64_t strings(QString const& a, QString const& b) { return a == b; }
+        static bool integers(int64_t a, int64_t b) { return a == b; }
+        static bool floating_points(double a, double b) { return a == b; }
+        static bool strings(QString const& a, QString const& b) { return a == b; }
     };
 
     class op_not_equal
     {
     public:
-        static int64_t integers(int64_t a, int64_t b) { return a != b; }
-        static int64_t floating_points(double a, double b) { return a != b; }
-        static int64_t strings(QString const& a, QString const& b) { return a != b; }
+        static bool integers(int64_t a, int64_t b) { return a != b; }
+        static bool floating_points(double a, double b) { return a != b; }
+        static bool strings(QString const& a, QString const& b) { return a != b; }
     };
 
     class op_bitwise_and
@@ -756,19 +863,19 @@ public:
     class op_logical_and
     {
     public:
-        static int64_t integers(int64_t a, int64_t b) { return a && b; }
+        static bool integers(int64_t a, int64_t b) { return a && b; }
     };
 
     class op_logical_xor
     {
     public:
-        static int64_t integers(int64_t a, int64_t b) { return (a != 0) ^ (b != 0); }
+        static bool integers(int64_t a, int64_t b) { return (a != 0) ^ (b != 0); }
     };
 
     class op_logical_or
     {
     public:
-        static int64_t integers(int64_t a, int64_t b) { return a || b; }
+        static bool integers(int64_t a, int64_t b) { return a || b; }
     };
 
     void execute(variable_t& result, variable_t::variable_map_t& variables, functions_t& functions)
@@ -785,7 +892,8 @@ public:
         switch(f_type)
         {
         case NODE_TYPE_UNKNOWN:
-            throw snap_logic_exception("expr_node::execute() called with an incompatible result type: NODE_TYPE_UNKNOWN");
+        case NODE_TYPE_LOADING:
+            throw snap_logic_exception("expr_node::execute() called with an incompatible result type: NODE_TYPE_UNKNOWN or NODE_TYPE_LOADING");
 
         case NODE_TYPE_OPERATION_LIST:
             result = sub_results.last();
@@ -808,87 +916,87 @@ public:
             break;
 
         case NODE_TYPE_OPERATION_MULTIPLY:
-            binary_operation<op_multiply>("*", result, sub_results, false);
+            binary_operation<op_multiply>("*", result, sub_results);
             break;
 
         case NODE_TYPE_OPERATION_DIVIDE:
-            binary_operation<op_divide>("/", result, sub_results, false);
+            binary_operation<op_divide>("/", result, sub_results);
             break;
 
         case NODE_TYPE_OPERATION_MODULO:
-            binary_operation<op_modulo>("%", result, sub_results, false);
+            binary_operation<op_modulo>("%", result, sub_results);
             break;
 
         case NODE_TYPE_OPERATION_ADD:
-            binary_operation<op_add>("+", result, sub_results, false);
+            binary_operation<op_add>("+", result, sub_results);
             break;
 
         case NODE_TYPE_OPERATION_SUBTRACT:
-            binary_operation<op_subtract>("-", result, sub_results, false);
+            binary_operation<op_subtract>("-", result, sub_results);
             break;
 
         case NODE_TYPE_OPERATION_SHIFT_LEFT:
-            binary_operation<op_shift_left>("<<", result, sub_results, false);
+            binary_operation<op_shift_left>("<<", result, sub_results);
             break;
 
         case NODE_TYPE_OPERATION_SHIFT_RIGHT:
-            binary_operation<op_shift_right>(">>", result, sub_results, false);
+            binary_operation<op_shift_right>(">>", result, sub_results);
             break;
 
         case NODE_TYPE_OPERATION_LESS:
-            binary_operation<op_less>("<", result, sub_results, true);
+            bool_binary_operation<op_less>("<", result, sub_results);
             break;
 
         case NODE_TYPE_OPERATION_LESS_OR_EQUAL:
-            binary_operation<op_less_or_equal>("<=", result, sub_results, true);
+            bool_binary_operation<op_less_or_equal>("<=", result, sub_results);
             break;
 
         case NODE_TYPE_OPERATION_GREATER:
-            binary_operation<op_greater>(">", result, sub_results, true);
+            bool_binary_operation<op_greater>(">", result, sub_results);
             break;
 
         case NODE_TYPE_OPERATION_GREATER_OR_EQUAL:
-            binary_operation<op_greater_or_equal>(">=", result, sub_results, true);
+            bool_binary_operation<op_greater_or_equal>(">=", result, sub_results);
             break;
 
         case NODE_TYPE_OPERATION_MINIMUM:
-            binary_operation<op_minimum>("<?", result, sub_results, false);
+            binary_operation<op_minimum>("<?", result, sub_results);
             break;
 
         case NODE_TYPE_OPERATION_MAXIMUM:
-            binary_operation<op_maximum>(">?", result, sub_results, false);
+            binary_operation<op_maximum>(">?", result, sub_results);
             break;
 
         case NODE_TYPE_OPERATION_EQUAL:
-            binary_operation<op_equal>("==", result, sub_results, true);
+            bool_binary_operation<op_equal>("==", result, sub_results);
             break;
 
         case NODE_TYPE_OPERATION_NOT_EQUAL:
-            binary_operation<op_not_equal>("!=", result, sub_results, true);
+            bool_binary_operation<op_not_equal>("!=", result, sub_results);
             break;
 
         case NODE_TYPE_OPERATION_BITWISE_AND:
-            binary_operation<op_bitwise_and>("&", result, sub_results, false);
+            binary_operation<op_bitwise_and>("&", result, sub_results);
             break;
 
         case NODE_TYPE_OPERATION_BITWISE_XOR:
-            binary_operation<op_bitwise_xor>("^", result, sub_results, false);
+            binary_operation<op_bitwise_xor>("^", result, sub_results);
             break;
 
         case NODE_TYPE_OPERATION_BITWISE_OR:
-            binary_operation<op_bitwise_or>("|", result, sub_results, false);
+            binary_operation<op_bitwise_or>("|", result, sub_results);
             break;
 
         case NODE_TYPE_OPERATION_LOGICAL_AND:
-            binary_operation<op_logical_and>("&&", result, sub_results, true);
+            bool_binary_operation<op_logical_and>("&&", result, sub_results);
             break;
 
         case NODE_TYPE_OPERATION_LOGICAL_XOR:
-            binary_operation<op_logical_xor>("^^", result, sub_results, true);
+            bool_binary_operation<op_logical_xor>("^^", result, sub_results);
             break;
 
         case NODE_TYPE_OPERATION_LOGICAL_OR:
-            binary_operation<op_logical_or>("||", result, sub_results, true);
+            bool_binary_operation<op_logical_or>("||", result, sub_results);
             break;
 
         case NODE_TYPE_OPERATION_CONDITIONAL:
@@ -1106,9 +1214,9 @@ public:
         {
             throw snap_expr_exception_invalid_number_of_parameters("invalid number of parameters to call cell() expected exactly 3");
         }
-        QString const table_name(sub_results[0].get_string());
-        QString const row_name(sub_results[1].get_string());
-        QString const cell_name(sub_results[2].get_string());
+        QString const table_name(sub_results[0].get_string("cell(1)"));
+        QString const row_name(sub_results[1].get_string("cell(2)"));
+        QString const cell_name(sub_results[2].get_string("cell(3)"));
         QtCassandra::QCassandraValue value(g_context->table(table_name)->row(row_name)->cell(cell_name)->value());
         result.set_value(variable_t::EXPR_VARIABLE_TYPE_BINARY, value);
     }
@@ -1123,19 +1231,163 @@ public:
         {
             throw snap_expr_exception_invalid_number_of_parameters("invalid number of parameters to call cell_exists() expected exactly 3");
         }
-        QString const table_name(sub_results[0].get_string());
-        QString const row_name(sub_results[1].get_string());
-        QString const cell_name(sub_results[2].get_string());
+        QString const table_name(sub_results[0].get_string("cell_exist(1)"));
+        QString const row_name(sub_results[1].get_string("cell_exist(2)"));
+        QString const cell_name(sub_results[2].get_string("cell_exist(3)"));
         QtCassandra::QCassandraValue value;
         value.setBoolValue(g_context->table(table_name)->row(row_name)->exists(cell_name));
         result.set_value(variable_t::EXPR_VARIABLE_TYPE_BOOL, value);
+    }
+
+    static void call_int16(variable_t& result, variable_t::variable_vector_t const& sub_results)
+    {
+        if(sub_results.size() != 1)
+        {
+            throw snap_expr_exception_invalid_number_of_parameters("invalid number of parameters to call int16() expected exactly 1");
+        }
+        int16_t r(0);
+        QtCassandra::QCassandraValue const& v(sub_results[0].get_value());
+        switch(sub_results[0].get_type())
+        {
+        case variable_t::EXPR_VARIABLE_TYPE_NULL:
+            //r = 0; -- an "empty" number...
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_BOOL:
+            r = v.boolValue() ? 1 : 0;
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_INT8:
+            r = v.signedCharValue();
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_UINT8:
+            r = v.unsignedCharValue();
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_INT16:
+            r = v.int16Value();
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_UINT16:
+            r = v.uint16Value();
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_INT32:
+            r = static_cast<int16_t>(v.int32Value());
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_UINT32:
+            r = static_cast<int16_t>(v.uint32Value());
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_INT64:
+            r = static_cast<int16_t>(v.int64Value());
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_UINT64:
+            r = static_cast<int16_t>(v.uint64Value());
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_FLOAT:
+            r = static_cast<int16_t>(v.floatValue());
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_DOUBLE:
+            r = static_cast<int16_t>(v.doubleValue());
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_STRING:
+            r = static_cast<int16_t>(v.stringValue().toLongLong());
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_BINARY:
+            r = v.int16Value();
+            break;
+
+        }
+        QtCassandra::QCassandraValue value;
+        value.setInt16Value(r);
+        result.set_value(variable_t::EXPR_VARIABLE_TYPE_INT16, value);
+    }
+
+    static void call_int32(variable_t& result, variable_t::variable_vector_t const& sub_results)
+    {
+        if(sub_results.size() != 1)
+        {
+            throw snap_expr_exception_invalid_number_of_parameters("invalid number of parameters to call int32() expected exactly 1");
+        }
+        int32_t r(0);
+        QtCassandra::QCassandraValue const& v(sub_results[0].get_value());
+        switch(sub_results[0].get_type())
+        {
+        case variable_t::EXPR_VARIABLE_TYPE_NULL:
+            //r = 0; -- an "empty" number...
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_BOOL:
+            r = v.boolValue() ? 1 : 0;
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_INT8:
+            r = v.signedCharValue();
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_UINT8:
+            r = v.unsignedCharValue();
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_INT16:
+            r = v.int16Value();
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_UINT16:
+            r = v.uint16Value();
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_INT32:
+            r = v.int32Value();
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_UINT32:
+            r = v.uint32Value();
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_INT64:
+            r = static_cast<int32_t>(v.int64Value());
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_UINT64:
+            r = static_cast<int32_t>(v.uint64Value());
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_FLOAT:
+            r = static_cast<int32_t>(v.floatValue());
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_DOUBLE:
+            r = static_cast<int32_t>(v.doubleValue());
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_STRING:
+            r = static_cast<int32_t>(v.stringValue().toLongLong());
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_BINARY:
+            r = v.int32Value();
+            break;
+
+        }
+        QtCassandra::QCassandraValue value;
+        value.setInt32Value(r);
+        result.set_value(variable_t::EXPR_VARIABLE_TYPE_INT32, value);
     }
 
     static void call_int64(variable_t& result, variable_t::variable_vector_t const& sub_results)
     {
         if(sub_results.size() != 1)
         {
-            throw snap_expr_exception_invalid_number_of_parameters("invalid number of parameters to call string() expected exactly 1");
+            throw snap_expr_exception_invalid_number_of_parameters("invalid number of parameters to call int64() expected exactly 1");
         }
         int64_t r(0);
         QtCassandra::QCassandraValue const& v(sub_results[0].get_value());
@@ -1203,6 +1455,103 @@ public:
         result.set_value(variable_t::EXPR_VARIABLE_TYPE_INT64, value);
     }
 
+    static void call_int8(variable_t& result, variable_t::variable_vector_t const& sub_results)
+    {
+        if(sub_results.size() != 1)
+        {
+            throw snap_expr_exception_invalid_number_of_parameters("invalid number of parameters to call int8() expected exactly 1");
+        }
+        int8_t r(0);
+        QtCassandra::QCassandraValue const& v(sub_results[0].get_value());
+        switch(sub_results[0].get_type())
+        {
+        case variable_t::EXPR_VARIABLE_TYPE_NULL:
+            //r = 0; -- an "empty" number...
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_BOOL:
+            r = v.boolValue() ? 1 : 0;
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_INT8:
+            r = v.signedCharValue();
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_UINT8:
+            r = static_cast<int8_t>(v.unsignedCharValue());
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_INT16:
+            r = static_cast<int8_t>(v.int16Value());
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_UINT16:
+            r = static_cast<int8_t>(v.uint16Value());
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_INT32:
+            r = static_cast<int8_t>(v.int32Value());
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_UINT32:
+            r = static_cast<int8_t>(v.uint32Value());
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_INT64:
+            r = static_cast<int8_t>(v.int64Value());
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_UINT64:
+            r = static_cast<int8_t>(v.uint64Value());
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_FLOAT:
+            r = static_cast<int8_t>(v.floatValue());
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_DOUBLE:
+            r = static_cast<int8_t>(v.doubleValue());
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_STRING:
+            r = static_cast<int8_t>(v.stringValue().toLongLong());
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_BINARY:
+            r = v.signedCharValue();
+            break;
+
+        }
+        QtCassandra::QCassandraValue value;
+        value.setSignedCharValue(r);
+        result.set_value(variable_t::EXPR_VARIABLE_TYPE_INT8, value);
+    }
+
+    static void call_parent(variable_t& result, variable_t::variable_vector_t const& sub_results)
+    {
+        if(sub_results.size() != 1)
+        {
+            throw snap_expr_exception_invalid_number_of_parameters("invalid number of parameters to call parent() expected exactly 1");
+        }
+        QString path(sub_results[0].get_string("parent(1)"));
+        if(path.endsWith("/"))
+        {
+            path = path.left(path.length() - 1);
+        }
+        int pos(path.lastIndexOf('/'));
+        if(pos == -1)
+        {
+            path.clear();
+        }
+        else
+        {
+            path = path.mid(0, pos);
+        }
+        QtCassandra::QCassandraValue value;
+        value.setStringValue(path);
+        result.set_value(variable_t::EXPR_VARIABLE_TYPE_STRING, value);
+    }
+
     static void call_row_exists(variable_t& result, variable_t::variable_vector_t const& sub_results)
     {
         if(!g_context)
@@ -1213,8 +1562,8 @@ public:
         {
             throw snap_expr_exception_invalid_number_of_parameters("invalid number of parameters to call row_exists() expected exactly 2");
         }
-        QString const table_name(sub_results[0].get_string());
-        QString const row_name(sub_results[1].get_string());
+        QString const table_name(sub_results[0].get_string("row_exists(1)"));
+        QString const row_name(sub_results[1].get_string("row_exists(2)"));
         QtCassandra::QCassandraValue value;
         value.setBoolValue(g_context->table(table_name)->exists(row_name));
         result.set_value(variable_t::EXPR_VARIABLE_TYPE_BOOL, value);
@@ -1298,7 +1647,7 @@ public:
         {
             throw snap_expr_exception_invalid_number_of_parameters("invalid number of parameters to call strlen() expected exactly 1");
         }
-        QString const str(sub_results[0].get_string());
+        QString const str(sub_results[0].get_string("strlen(1)"));
         QtCassandra::QCassandraValue value;
         value.setInt64Value(str.length());
         result.set_value(variable_t::EXPR_VARIABLE_TYPE_INT64, value);
@@ -1311,12 +1660,12 @@ public:
         {
             throw snap_expr_exception_invalid_number_of_parameters("invalid number of parameters to call substr() expected 2 or 3");
         }
-        QString const str(sub_results[0].get_string());
-        int const start(sub_results[1].get_integer());
+        QString const str(sub_results[0].get_string("substr(1)"));
+        int const start(sub_results[1].get_integer("substr(2)"));
         QtCassandra::QCassandraValue value;
         if(size == 3)
         {
-            int const end(sub_results[2].get_integer());
+            int const end(sub_results[2].get_integer("substr(3)"));
             value.setStringValue(str.mid(start, end));
         }
         else
@@ -1336,10 +1685,298 @@ public:
         {
             throw snap_expr_exception_invalid_number_of_parameters("invalid number of parameters to call table_exists() expected exactly 1");
         }
-        QString const table_name(sub_results[0].get_string());
+        QString const table_name(sub_results[0].get_string("table_exists(1)"));
         QtCassandra::QCassandraValue value;
         value.setBoolValue(g_context->findTable(table_name) != nullptr);
         result.set_value(variable_t::EXPR_VARIABLE_TYPE_BOOL, value);
+    }
+
+    static void call_uint16(variable_t& result, variable_t::variable_vector_t const& sub_results)
+    {
+        if(sub_results.size() != 1)
+        {
+            throw snap_expr_exception_invalid_number_of_parameters("invalid number of parameters to call uint16() expected exactly 1");
+        }
+        uint16_t r(0);
+        QtCassandra::QCassandraValue const& v(sub_results[0].get_value());
+        switch(sub_results[0].get_type())
+        {
+        case variable_t::EXPR_VARIABLE_TYPE_NULL:
+            //r = 0; -- an "empty" number...
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_BOOL:
+            r = v.boolValue() ? 1 : 0;
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_INT8:
+            r = v.signedCharValue();
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_UINT8:
+            r = v.unsignedCharValue();
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_INT16:
+            r = v.int16Value();
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_UINT16:
+            r = v.uint16Value();
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_INT32:
+            r = static_cast<uint16_t>(v.int32Value());
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_UINT32:
+            r = static_cast<uint16_t>(v.uint32Value());
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_INT64:
+            r = static_cast<uint16_t>(v.int64Value());
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_UINT64:
+            r = static_cast<uint16_t>(v.uint64Value());
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_FLOAT:
+            r = static_cast<uint16_t>(v.floatValue());
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_DOUBLE:
+            r = static_cast<uint16_t>(v.doubleValue());
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_STRING:
+            r = static_cast<uint16_t>(v.stringValue().toLongLong());
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_BINARY:
+            r = v.uint16Value();
+            break;
+
+        }
+        QtCassandra::QCassandraValue value;
+        value.setUInt16Value(r);
+        result.set_value(variable_t::EXPR_VARIABLE_TYPE_UINT16, value);
+    }
+
+    static void call_uint32(variable_t& result, variable_t::variable_vector_t const& sub_results)
+    {
+        if(sub_results.size() != 1)
+        {
+            throw snap_expr_exception_invalid_number_of_parameters("invalid number of parameters to call uint32() expected exactly 1");
+        }
+        uint32_t r(0);
+        QtCassandra::QCassandraValue const& v(sub_results[0].get_value());
+        switch(sub_results[0].get_type())
+        {
+        case variable_t::EXPR_VARIABLE_TYPE_NULL:
+            //r = 0; -- an "empty" number...
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_BOOL:
+            r = v.boolValue() ? 1 : 0;
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_INT8:
+            r = v.signedCharValue();
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_UINT8:
+            r = v.unsignedCharValue();
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_INT16:
+            r = v.int16Value();
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_UINT16:
+            r = v.uint16Value();
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_INT32:
+            r = v.int32Value();
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_UINT32:
+            r = v.uint32Value();
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_INT64:
+            r = static_cast<uint32_t>(v.int64Value());
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_UINT64:
+            r = static_cast<uint32_t>(v.uint64Value());
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_FLOAT:
+            r = static_cast<uint32_t>(v.floatValue());
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_DOUBLE:
+            r = static_cast<uint32_t>(v.doubleValue());
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_STRING:
+            r = static_cast<uint32_t>(v.stringValue().toLongLong());
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_BINARY:
+            r = v.uint32Value();
+            break;
+
+        }
+        QtCassandra::QCassandraValue value;
+        value.setUInt32Value(r);
+        result.set_value(variable_t::EXPR_VARIABLE_TYPE_UINT32, value);
+    }
+
+    static void call_uint64(variable_t& result, variable_t::variable_vector_t const& sub_results)
+    {
+        if(sub_results.size() != 1)
+        {
+            throw snap_expr_exception_invalid_number_of_parameters("invalid number of parameters to call uint64() expected exactly 1");
+        }
+        uint64_t r(0);
+        QtCassandra::QCassandraValue const& v(sub_results[0].get_value());
+        switch(sub_results[0].get_type())
+        {
+        case variable_t::EXPR_VARIABLE_TYPE_NULL:
+            //r = 0; -- an "empty" number...
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_BOOL:
+            r = v.boolValue() ? 1 : 0;
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_INT8:
+            r = v.signedCharValue();
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_UINT8:
+            r = v.unsignedCharValue();
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_INT16:
+            r = v.int16Value();
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_UINT16:
+            r = v.uint16Value();
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_INT32:
+            r = v.int32Value();
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_UINT32:
+            r = v.uint32Value();
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_INT64:
+            r = v.int64Value();
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_UINT64:
+            r = v.uint64Value();
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_FLOAT:
+            r = v.floatValue();
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_DOUBLE:
+            r = v.doubleValue();
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_STRING:
+            r = v.stringValue().toLongLong();
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_BINARY:
+            r = v.int64Value();
+            break;
+
+        }
+        QtCassandra::QCassandraValue value;
+        value.setUInt64Value(r);
+        result.set_value(variable_t::EXPR_VARIABLE_TYPE_UINT64, value);
+    }
+
+    static void call_uint8(variable_t& result, variable_t::variable_vector_t const& sub_results)
+    {
+        if(sub_results.size() != 1)
+        {
+            throw snap_expr_exception_invalid_number_of_parameters("invalid number of parameters to call uint8() expected exactly 1");
+        }
+        uint8_t r(0);
+        QtCassandra::QCassandraValue const& v(sub_results[0].get_value());
+        switch(sub_results[0].get_type())
+        {
+        case variable_t::EXPR_VARIABLE_TYPE_NULL:
+            //r = 0; -- an "empty" number...
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_BOOL:
+            r = v.boolValue() ? 1 : 0;
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_INT8:
+            r = v.signedCharValue();
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_UINT8:
+            r = static_cast<uint8_t>(v.unsignedCharValue());
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_INT16:
+            r = static_cast<uint8_t>(v.int16Value());
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_UINT16:
+            r = static_cast<uint8_t>(v.uint16Value());
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_INT32:
+            r = static_cast<uint8_t>(v.int32Value());
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_UINT32:
+            r = static_cast<uint8_t>(v.uint32Value());
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_INT64:
+            r = static_cast<uint8_t>(v.int64Value());
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_UINT64:
+            r = static_cast<uint8_t>(v.uint64Value());
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_FLOAT:
+            r = static_cast<uint8_t>(v.floatValue());
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_DOUBLE:
+            r = static_cast<uint8_t>(v.doubleValue());
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_STRING:
+            r = static_cast<uint8_t>(v.stringValue().toLongLong());
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_BINARY:
+            r = v.unsignedCharValue();
+            break;
+
+        }
+        QtCassandra::QCassandraValue value;
+        value.setUnsignedCharValue(r);
+        result.set_value(variable_t::EXPR_VARIABLE_TYPE_UINT8, value);
     }
 
     void call_function(variable_t& result, variable_t::variable_vector_t const& sub_results, functions_t& functions)
@@ -1349,26 +1986,86 @@ public:
         {
             if(functions.get_has_internal_functions())
             {
-                throw snap_expr_exception_unknown_function(QString("unknown function \"%s\" in list execution environment").arg(f_name));
+                throw snap_expr_exception_unknown_function(QString("unknown function \"%1\" in list execution environment").arg(f_name));
             }
             functions.add_functions(internal_functions);
             f = functions.get_function(f_name);
             if(f == nullptr)
             {
-                throw snap_expr_exception_unknown_function(QString("unknown function \"%s\" in list execution environment").arg(f_name));
+                throw snap_expr_exception_unknown_function(QString("unknown function \"%1\" in list execution environment").arg(f_name));
             }
         }
         f(result, sub_results);
     }
 
+    bool get_variable_value(variable_t const& var, int64_t& integer, double& floating_point, QString& string, bool& signed_integer, bool& is_floating_point, bool& is_string_type)
+    {
+        switch(var.get_type())
+        {
+        case variable_t::EXPR_VARIABLE_TYPE_BOOL:
+            integer = static_cast<int64_t>(var.get_value().boolValue() != 0);
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_INT8:
+            integer = static_cast<int64_t>(var.get_value().signedCharValue());
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_UINT8:
+            signed_integer = false;
+            integer = static_cast<int64_t>(var.get_value().unsignedCharValue());
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_INT16:
+            integer = static_cast<int64_t>(var.get_value().int16Value());
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_UINT16:
+            signed_integer = false;
+            integer = static_cast<int64_t>(var.get_value().uint16Value());
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_INT32:
+            integer = static_cast<int64_t>(var.get_value().int32Value());
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_UINT32:
+            signed_integer = false;
+            integer = static_cast<int64_t>(var.get_value().uint32Value());
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_INT64:
+            integer = static_cast<int64_t>(var.get_value().int64Value());
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_UINT64:
+            signed_integer = false;
+            integer = static_cast<int64_t>(var.get_value().uint64Value());
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_DOUBLE:
+            is_floating_point = true;
+            floating_point = var.get_value().doubleValue();
+            break;
+
+        case variable_t::EXPR_VARIABLE_TYPE_STRING:
+            is_string_type = true;
+            string = var.get_value().stringValue();
+            break;
+
+        default:
+            return false;
+
+        }
+
+        return true;
+    }
+
     template<typename F>
-    void binary_operation(char const *op, variable_t& result, variable_t::variable_vector_t const& sub_results, bool return_bool)
+    void binary_operation(char const *op, variable_t& result, variable_t::variable_vector_t const& sub_results)
     {
         verify_binary(sub_results);
 
-        variable_t::variable_type_t type(
-                return_bool ? variable_t::EXPR_VARIABLE_TYPE_BOOL
-                            : std::max(sub_results[0].get_type(), sub_results[1].get_type()));  // FIXME cast
+        variable_t::variable_type_t type(std::max(sub_results[0].get_type(), sub_results[1].get_type()));  // FIXME cast
 
         bool lstring_type(false), rstring_type(false);
         bool lfloating_point(false), rfloating_point(false);
@@ -1377,125 +2074,8 @@ public:
         double lf(0.0), rf(0.0);
         int64_t li(0), ri(0);
 
-        bool valid(true);
-        switch(sub_results[0].get_type())
-        {
-        case variable_t::EXPR_VARIABLE_TYPE_BOOL:
-            li = static_cast<int64_t>(sub_results[0].get_value().boolValue() != 0);
-            break;
-
-        case variable_t::EXPR_VARIABLE_TYPE_INT8:
-            li = static_cast<int64_t>(sub_results[0].get_value().signedCharValue());
-            break;
-
-        case variable_t::EXPR_VARIABLE_TYPE_UINT8:
-            lsigned_value = false;
-            li = static_cast<int64_t>(sub_results[0].get_value().unsignedCharValue());
-            break;
-
-        case variable_t::EXPR_VARIABLE_TYPE_INT16:
-            li = static_cast<int64_t>(sub_results[0].get_value().int16Value());
-            break;
-
-        case variable_t::EXPR_VARIABLE_TYPE_UINT16:
-            lsigned_value = false;
-            li = static_cast<int64_t>(sub_results[0].get_value().uint16Value());
-            break;
-
-        case variable_t::EXPR_VARIABLE_TYPE_INT32:
-            li = static_cast<int64_t>(sub_results[0].get_value().int32Value());
-            break;
-
-        case variable_t::EXPR_VARIABLE_TYPE_UINT32:
-            lsigned_value = false;
-            li = static_cast<int64_t>(sub_results[0].get_value().uint32Value());
-            break;
-
-        case variable_t::EXPR_VARIABLE_TYPE_INT64:
-            li = static_cast<int64_t>(sub_results[0].get_value().int64Value());
-            break;
-
-        case variable_t::EXPR_VARIABLE_TYPE_UINT64:
-            lsigned_value = false;
-            li = static_cast<int64_t>(sub_results[0].get_value().uint64Value());
-            break;
-
-        case variable_t::EXPR_VARIABLE_TYPE_DOUBLE:
-            lfloating_point = true;
-            lf = sub_results[0].get_value().doubleValue();
-            break;
-
-        case variable_t::EXPR_VARIABLE_TYPE_STRING:
-            lstring_type = true;
-            ls = sub_results[0].get_value().stringValue();
-            break;
-
-        default:
-            valid = false;
-            break;
-
-        }
-
-        if(valid)
-        {
-            switch(sub_results[1].get_type())
-            {
-            case variable_t::EXPR_VARIABLE_TYPE_BOOL:
-                ri = static_cast<bool>(sub_results[1].get_value().boolValue() != 0);
-                break;
-
-            case variable_t::EXPR_VARIABLE_TYPE_INT8:
-                ri = static_cast<int64_t>(sub_results[1].get_value().signedCharValue());
-                break;
-
-            case variable_t::EXPR_VARIABLE_TYPE_UINT8:
-                rsigned_value = false;
-                ri = static_cast<int64_t>(sub_results[1].get_value().unsignedCharValue());
-                break;
-
-            case variable_t::EXPR_VARIABLE_TYPE_INT16:
-                ri = static_cast<int64_t>(sub_results[1].get_value().int16Value());
-                break;
-
-            case variable_t::EXPR_VARIABLE_TYPE_UINT16:
-                rsigned_value = false;
-                ri = static_cast<int64_t>(sub_results[1].get_value().uint16Value());
-                break;
-
-            case variable_t::EXPR_VARIABLE_TYPE_INT32:
-                ri = static_cast<int64_t>(sub_results[1].get_value().int32Value());
-                break;
-
-            case variable_t::EXPR_VARIABLE_TYPE_UINT32:
-                rsigned_value = false;
-                ri = static_cast<int64_t>(sub_results[1].get_value().uint32Value());
-                break;
-
-            case variable_t::EXPR_VARIABLE_TYPE_INT64:
-                ri = static_cast<int64_t>(sub_results[1].get_value().int64Value());
-                break;
-
-            case variable_t::EXPR_VARIABLE_TYPE_UINT64:
-                rsigned_value = false;
-                ri = static_cast<int64_t>(sub_results[1].get_value().uint64Value());
-                break;
-
-            case variable_t::EXPR_VARIABLE_TYPE_DOUBLE:
-                rfloating_point = true;
-                rf = sub_results[1].get_value().doubleValue();
-                break;
-
-            case variable_t::EXPR_VARIABLE_TYPE_STRING:
-                rstring_type = true;
-                rs = sub_results[1].get_value().stringValue();
-                break;
-
-            default:
-                valid = false;
-                break;
-
-            }
-        }
+        bool valid(get_variable_value(sub_results[0], li, lf, ls, lsigned_value, lfloating_point, lstring_type));
+        valid = valid && get_variable_value(sub_results[1], ri, rf, rs, rsigned_value, rfloating_point, rstring_type);
 
         if(valid)
         {
@@ -1617,6 +2197,143 @@ public:
                             .arg(op));
     }
 
+    template<typename F>
+    void bool_binary_operation(char const *op, variable_t& result, variable_t::variable_vector_t const& sub_results)
+    {
+        verify_binary(sub_results);
+
+        variable_t::variable_type_t type(std::max(sub_results[0].get_type(), sub_results[1].get_type()));  // FIXME cast
+
+        bool lstring_type(false), rstring_type(false);
+        bool lfloating_point(false), rfloating_point(false);
+        bool lsigned_value(true), rsigned_value(true);
+        QString ls, rs;
+        double lf(0.0), rf(0.0);
+        int64_t li(0), ri(0);
+
+        bool valid(get_variable_value(sub_results[0], li, lf, ls, lsigned_value, lfloating_point, lstring_type));
+        valid = valid && get_variable_value(sub_results[1], ri, rf, rs, rsigned_value, rfloating_point, rstring_type);
+
+        if(valid)
+        {
+            QtCassandra::QCassandraValue value;
+            switch(type)
+            {
+            case variable_t::EXPR_VARIABLE_TYPE_BOOL:
+                value.setBoolValue(F::integers(li, ri));
+                result.set_value(type, value);
+                return;
+
+            case variable_t::EXPR_VARIABLE_TYPE_INT8:
+                value.setBoolValue(F::integers(li, ri));
+                result.set_value(type, value);
+                return;
+
+            case variable_t::EXPR_VARIABLE_TYPE_UINT8:
+                value.setBoolValue(F::integers(li, ri));
+                result.set_value(type, value);
+                return;
+
+            case variable_t::EXPR_VARIABLE_TYPE_INT16:
+                value.setBoolValue(F::integers(li, ri));
+                result.set_value(type, value);
+                return;
+
+            case variable_t::EXPR_VARIABLE_TYPE_UINT16:
+                value.setBoolValue(F::integers(li, ri));
+                result.set_value(type, value);
+                return;
+
+            case variable_t::EXPR_VARIABLE_TYPE_INT32:
+                value.setBoolValue(F::integers(li, ri));
+                result.set_value(type, value);
+                return;
+
+            case variable_t::EXPR_VARIABLE_TYPE_UINT32:
+                value.setBoolValue(F::integers(li, ri));
+                result.set_value(type, value);
+                return;
+
+            case variable_t::EXPR_VARIABLE_TYPE_INT64:
+                value.setBoolValue(F::integers(li, ri));
+                result.set_value(type, value);
+                return;
+
+            case variable_t::EXPR_VARIABLE_TYPE_UINT64:
+                value.setBoolValue(F::integers(li, ri));
+                result.set_value(type, value);
+                return;
+
+            case variable_t::EXPR_VARIABLE_TYPE_FLOAT:
+                if(has_function<F>::has_bool_floating_points)
+                {
+                    if(!lfloating_point)
+                    {
+                        lf = lsigned_value ? li : static_cast<uint64_t>(li);
+                    }
+                    if(!rfloating_point)
+                    {
+                        rf = rsigned_value ? ri : static_cast<uint64_t>(ri);
+                    }
+                    do_float_to_bool<F>(result, lf, rf);
+                    return;
+                }
+                break;
+
+            case variable_t::EXPR_VARIABLE_TYPE_DOUBLE:
+                if(has_function<F>::has_bool_floating_points)
+                {
+                    if(!lfloating_point)
+                    {
+                        lf = lsigned_value ? li : static_cast<uint64_t>(li);
+                    }
+                    if(!rfloating_point)
+                    {
+                        rf = rsigned_value ? ri : static_cast<uint64_t>(ri);
+                    }
+                    do_double_to_bool<F>(result, lf, rf);
+                    return;
+                }
+                break;
+
+            case variable_t::EXPR_VARIABLE_TYPE_STRING:
+                if(has_function<F>::has_bool_strings)
+                {
+                    if(!lstring_type)
+                    {
+                        ls = QString("%1").arg(lfloating_point ? lf : (lsigned_value ? li : static_cast<uint64_t>(li)));
+                    }
+                    if(!rstring_type)
+                    {
+                        rs = QString("%1").arg(rfloating_point ? rf : (rsigned_value ? ri : static_cast<uint64_t>(ri)));
+                    }
+                    // do "string" + "string"
+                    do_strings_to_bool<F>(result, ls, rs);
+                    return;
+                }
+                else if(has_function<F>::has_bool_string_integer
+                     && variable_t::EXPR_VARIABLE_TYPE_STRING == sub_results[0].get_type()
+                     && !rfloating_point && !rstring_type)
+                {
+                    // very special case to support: "string" * 123
+                    do_string_integer_to_bool<F>(result, ls, ri);
+                    return;
+                }
+                break;
+
+            default:
+                // anything else is invalid at this point
+                break;
+
+            }
+        }
+
+        throw snap_logic_exception(QString("expr_node::binary_operation(\"%3\") called with incompatible sub_result types: %1 x %2")
+                            .arg(static_cast<int>(sub_results[0].get_type()))
+                            .arg(static_cast<int>(sub_results[1].get_type()))
+                            .arg(op));
+    }
+
     void conditional(variable_t& result, variable_t::variable_vector_t const& sub_results)
     {
 #ifdef DEBUG
@@ -1715,7 +2432,94 @@ public:
         }
     }
 
+
+    QString toString()
+    {
+        return internal_toString("");
+    }
+
+
 private:
+    QString internal_toString(QString indent)
+    {
+        // start with the type
+        QString result(QString("%1%2").arg(indent).arg(type_names[f_type]));
+
+        // add type specific data
+        switch(f_type)
+        {
+        case NODE_TYPE_UNKNOWN:
+        case NODE_TYPE_LOADING:
+        case NODE_TYPE_OPERATION_LIST:
+        case NODE_TYPE_OPERATION_LOGICAL_NOT:
+        case NODE_TYPE_OPERATION_BITWISE_NOT:
+        case NODE_TYPE_OPERATION_NEGATE:
+        case NODE_TYPE_OPERATION_MULTIPLY:
+        case NODE_TYPE_OPERATION_DIVIDE:
+        case NODE_TYPE_OPERATION_MODULO:
+        case NODE_TYPE_OPERATION_ADD:
+        case NODE_TYPE_OPERATION_SUBTRACT:
+        case NODE_TYPE_OPERATION_SHIFT_LEFT:
+        case NODE_TYPE_OPERATION_SHIFT_RIGHT:
+        case NODE_TYPE_OPERATION_LESS:
+        case NODE_TYPE_OPERATION_LESS_OR_EQUAL:
+        case NODE_TYPE_OPERATION_GREATER:
+        case NODE_TYPE_OPERATION_GREATER_OR_EQUAL:
+        case NODE_TYPE_OPERATION_MINIMUM:
+        case NODE_TYPE_OPERATION_MAXIMUM:
+        case NODE_TYPE_OPERATION_EQUAL:
+        case NODE_TYPE_OPERATION_NOT_EQUAL:
+        case NODE_TYPE_OPERATION_BITWISE_AND:
+        case NODE_TYPE_OPERATION_BITWISE_XOR:
+        case NODE_TYPE_OPERATION_BITWISE_OR:
+        case NODE_TYPE_OPERATION_LOGICAL_AND:
+        case NODE_TYPE_OPERATION_LOGICAL_XOR:
+        case NODE_TYPE_OPERATION_LOGICAL_OR:
+        case NODE_TYPE_OPERATION_CONDITIONAL:
+            break;
+
+        case NODE_TYPE_OPERATION_FUNCTION:
+            result += QString(" (function name: %1)").arg(f_name);
+            break;
+
+        case NODE_TYPE_OPERATION_ASSIGNMENT:
+        case NODE_TYPE_OPERATION_VARIABLE:
+            result += QString(" (variable name: %1)").arg(f_name);
+            break;
+
+        case NODE_TYPE_LITERAL_BOOLEAN:
+            result += QString(" (%1)").arg(f_variable.get_value().boolValue() ? "true" : "false");
+            break;
+
+        case NODE_TYPE_LITERAL_INTEGER:
+            result += QString(" (%1)").arg(f_variable.get_value().int64Value());
+            break;
+
+        case NODE_TYPE_LITERAL_FLOATING_POINT:
+            result += QString(" (%1)").arg(f_variable.get_value().doubleValue());
+            break;
+
+        case NODE_TYPE_LITERAL_STRING:
+            result += QString(" (%1)").arg(f_variable.get_value().stringValue());
+            break;
+
+        case NODE_TYPE_VARIABLE:
+            result += "a program cannot include variables";
+            break;
+
+        }
+        result += "\n";
+
+        // add the children
+        int const max_children(f_children.size());
+        for(int i(0); i < max_children; ++i)
+        {
+            result += f_children[i]->internal_toString(indent + "  ");
+        }
+
+        return result;
+    }
+
     void verify_variable() const
     {
 #ifdef DEBUG
@@ -1741,6 +2545,7 @@ private:
 #ifdef DEBUG
         switch(f_type)
         {
+        case NODE_TYPE_LOADING: // this happens while loading; the type is set afterward because of the recursion mechanism...
         case NODE_TYPE_OPERATION_LIST:
         case NODE_TYPE_OPERATION_LOGICAL_NOT:
         case NODE_TYPE_OPERATION_BITWISE_NOT:
@@ -1772,7 +2577,8 @@ private:
             break;
 
         default:
-            throw snap_logic_exception(QString("expr_node::add_child/children_size/get_child() called on a node which does not support children... (type: %1)").arg(f_type));
+            throw snap_logic_exception(QString("expr_node::add_child/children_size/get_child() called on a node which does not support children... (type: %1)")
+                    .arg(static_cast<int>(f_type)));
 
         }
 #endif
@@ -1783,7 +2589,8 @@ private:
 #ifdef DEBUG
         if(sub_results.size() != 1)
         {
-            throw snap_logic_exception(QString("expr_node::execute() found an unary operator (%1) with a number of result which is not 1").arg(f_type));
+            throw snap_logic_exception(QString("expr_node::execute() found an unary operator (%1) with a number of results which is not 1")
+                    .arg(f_type).arg(sub_results.size()));
         }
 #endif
     }
@@ -1793,7 +2600,8 @@ private:
 #ifdef DEBUG
         if(sub_results.size() != 2)
         {
-            throw snap_logic_exception(QString("expr_node::execute() found an binary operator (%1) with a number of result which is not 2").arg(f_type));
+            throw snap_logic_exception(QString("expr_node::execute() found a binary operator (%1) with %2 results, expected exactly 2")
+                    .arg(f_type).arg(sub_results.size()));
         }
 #endif
     }
@@ -1817,9 +2625,25 @@ functions_t::function_call_table_t const expr_node::internal_functions[] =
         "cell_exists",
         expr_node::call_cell_exists
     },
-    { // check whether a row exists in a table
+    { // cast to int16
+        "int16",
+        expr_node::call_int16
+    },
+    { // cast to int32
+        "int32",
+        expr_node::call_int32
+    },
+    { // cast to int64
         "int64",
         expr_node::call_int64
+    },
+    { // cast to int8
+        "int8",
+        expr_node::call_int8
+    },
+    { // retrieve the parent of a path (remove the last /foo name)
+        "parent",
+        expr_node::call_parent
     },
     { // check whether a row exists in a table
         "row_exists",
@@ -1841,11 +2665,69 @@ functions_t::function_call_table_t const expr_node::internal_functions[] =
         "table_exists",
         expr_node::call_table_exists
     },
+    { // cast to uint16
+        "uint16",
+        expr_node::call_uint16
+    },
+    { // cast to uint32
+        "uint32",
+        expr_node::call_uint32
+    },
+    { // cast to uint64
+        "uint64",
+        expr_node::call_uint64
+    },
+    { // cast to uint8
+        "uint8",
+        expr_node::call_uint8
+    },
     {
         nullptr,
         nullptr
     }
 };
+
+
+char const *expr_node::type_names[NODE_TYPE_VARIABLE + 1] =
+{
+    /* NODE_TYPE_UNKNOWN */ "Unknown",
+    /* NODE_TYPE_LOADING */ "Loading",
+    /* NODE_TYPE_OPERATION_LIST */ "Operator: ,",
+    /* NODE_TYPE_OPERATION_LOGICAL_NOT */ "Operator: !",
+    /* NODE_TYPE_OPERATION_BITWISE_NOT */ "Operator: ~",
+    /* NODE_TYPE_OPERATION_NEGATE */ "Operator: - (negate)",
+    /* NODE_TYPE_OPERATION_FUNCTION */ "Operator: function()",
+    /* NODE_TYPE_OPERATION_MULTIPLY */ "Operator: *",
+    /* NODE_TYPE_OPERATION_DIVIDE */ "Operator: /",
+    /* NODE_TYPE_OPERATION_MODULO */ "Operator: %",
+    /* NODE_TYPE_OPERATION_ADD */ "Operator: +",
+    /* NODE_TYPE_OPERATION_SUBTRACT */ "Operator: - (subtract)",
+    /* NODE_TYPE_OPERATION_SHIFT_LEFT */ "Operator: <<",
+    /* NODE_TYPE_OPERATION_SHIFT_RIGHT */ "Operator: >>",
+    /* NODE_TYPE_OPERATION_LESS */ "Operator: <",
+    /* NODE_TYPE_OPERATION_LESS_OR_EQUAL */ "Operator: <=",
+    /* NODE_TYPE_OPERATION_GREATER */ "Operator: >",
+    /* NODE_TYPE_OPERATION_GREATER_OR_EQUAL */ "Operator: >=",
+    /* NODE_TYPE_OPERATION_MINIMUM */ "Operator: <?",
+    /* NODE_TYPE_OPERATION_MAXIMUM */ "Operator: >?",
+    /* NODE_TYPE_OPERATION_EQUAL */ "Operator: ==",
+    /* NODE_TYPE_OPERATION_NOT_EQUAL */ "Operator: !=",
+    /* NODE_TYPE_OPERATION_BITWISE_AND */ "Operator: &",
+    /* NODE_TYPE_OPERATION_BITWISE_XOR */ "Operator: ^",
+    /* NODE_TYPE_OPERATION_BITWISE_OR */ "Operator: |",
+    /* NODE_TYPE_OPERATION_LOGICAL_AND */ "Operator: &&",
+    /* NODE_TYPE_OPERATION_LOGICAL_XOR */ "Operator: ^^",
+    /* NODE_TYPE_OPERATION_LOGICAL_OR */ "Operator: ||",
+    /* NODE_TYPE_OPERATION_CONDITIONAL */ "Operator: ?:",
+    /* NODE_TYPE_OPERATION_ASSIGNMENT */ "Operator: :=",
+    /* NODE_TYPE_OPERATION_VARIABLE */ "Operator: variable-name",
+    /* NODE_TYPE_LITERAL_BOOLEAN */ "Boolean",
+    /* NODE_TYPE_LITERAL_INTEGER */ "Integer",
+    /* NODE_TYPE_LITERAL_FLOATING_POINT */ "Floating Point",
+    /* NODE_TYPE_LITERAL_STRING */ "String",
+    /* NODE_TYPE_VARIABLE */ "Variable"
+};
+
 
 
 /** \brief Merge qualified names in one single identifier.
@@ -1960,6 +2842,32 @@ void list_expr_conditional(rule const& r, QSharedPointer<token_node>& t)
 }
 
 
+void list_expr_level_child(expr_node::expr_node_pointer_t n)
+{
+    int max_children(n->children_size());
+    for(int i(0); i < max_children; ++i)
+    {
+        expr_node::expr_node_pointer_t child(n->get_child(i));
+        if(child->get_type() == expr_node::NODE_TYPE_OPERATION_LIST)
+        {
+            n->remove_child(i);
+
+            // if the child is a list, first reduce it
+            list_expr_level_child(child);
+
+            // now add its children to use at this curent location
+            int const max_child_children(child->children_size());
+            for(int j(0); j < max_child_children; ++j, ++i)
+            {
+                n->insert_child(i, child->get_child(j));
+            }
+            max_children = n->children_size();
+            --i; // we're going to do ++i in the for()
+        }
+    }
+}
+
+
 void list_expr_list(rule const& r, QSharedPointer<token_node>& t)
 {
     static_cast<void>(r);
@@ -1970,13 +2878,17 @@ void list_expr_list(rule const& r, QSharedPointer<token_node>& t)
     QSharedPointer<token_node> n2(qSharedPointerDynamicCast<token_node, token>((*t)[2]));
     expr_node::expr_node_pointer_t i(qSharedPointerDynamicCast<expr_node, parser_user_data>(n2->get_user_data()));
 
-    if(l->get_type() == expr_node::NODE_TYPE_OPERATION_LIST)
-    {
-        // just add to the existing list
-        l->add_child(i);
-        t->set_user_data(l);
-    }
-    else
+    // This is very premature optimization and it is WRONG
+    // DO NOT OPTIMIZE HERE -- instead we have to optimize when
+    // expr_list is being reduced (in the unary and function expressions.)
+    // see the list_expr_level_child() function
+    //if(l->get_type() == expr_node::NODE_TYPE_OPERATION_LIST)
+    //{
+    //    // just add to the existing list
+    //    l->add_child(i);
+    //    t->set_user_data(l);
+    //}
+    //else
     {
         // not a list yet, create it
         expr_node::expr_node_pointer_t v(new expr_node(expr_node::NODE_TYPE_OPERATION_LIST));
@@ -2005,7 +2917,7 @@ void list_expr_function(rule const& r, QSharedPointer<token_node>& t)
 
     // the function name is a string
     QSharedPointer<token_node> n0(qSharedPointerDynamicCast<token_node, token>((*t)[0]));
-    QString const func_name((*n0)[0]->get_value().toString());//(*t)[0]->get_value().toString());
+    QString const func_name((*n0)[0]->get_value().toString());
 
     // at this point this node is an expr_list which only returns the
     // last item as a result, we want all the parameters when calling a
@@ -2018,6 +2930,7 @@ void list_expr_function(rule const& r, QSharedPointer<token_node>& t)
 
     if(l->get_type() == expr_node::NODE_TYPE_OPERATION_LIST)
     {
+        list_expr_level_child(l);
         int const max_children(l->children_size());
         for(int i(0); i < max_children; ++i)
         {
@@ -2109,6 +3022,20 @@ void list_expr_float(rule const& r, QSharedPointer<token_node>& t)
 }
 
 
+void list_expr_level_list(rule const& r, QSharedPointer<token_node>& t)
+{
+    static_cast<void>(r);
+
+    QSharedPointer<token_node> n0(qSharedPointerDynamicCast<token_node, token>((*t)[1]));
+    expr_node::expr_node_pointer_t n(qSharedPointerDynamicCast<expr_node, parser_user_data>(n0->get_user_data()));
+
+    list_expr_level_child(n);
+
+    // we completely ignore the + and (...) they served there purpose already
+    t->set_user_data(n);
+}
+
+
 void list_expr_variable(rule const& r, QSharedPointer<token_node>& t)
 {
     static_cast<void>(r);
@@ -2175,7 +3102,7 @@ void list_expr_copy_result(const rule& r, QSharedPointer<token_node>& t)
  *     | expr binary_operator expr
  *     | unary_operator expr
  *     | expr '?' expr ':' expr
- *     | qualified_identifier '(' expr_list ')'
+ *     | qualified_name '(' expr_list ')'
  *     | TOKEN_ID_IDENTIFIER
  *     | TOKEN_ID_STRING
  *     | TOKEN_ID_INTEGER
@@ -2183,8 +3110,8 @@ void list_expr_copy_result(const rule& r, QSharedPointer<token_node>& t)
  *     | 'true'
  *     | 'false'
  *
- * qualified_identifier: TOKEN_ID_IDENTIFIER
- *                     | qualified_identifier '::' TOKEN_ID_IDENTIFIER
+ * qualified_name: TOKEN_ID_IDENTIFIER
+ *                     | qualified_name '::' TOKEN_ID_IDENTIFIER
  *
  * expr_list: expr
  *          | expr_list ',' expr
@@ -2215,7 +3142,7 @@ void list_expr_copy_result(const rule& r, QSharedPointer<token_node>& t)
  * type the cell is. You may cast the content at a later time as in:
  *
  * \code
- * int32_t(cell(path, "stats::counter"))
+ * int32(cell(path, "stats::counter"))
  * \endcode
  *
  * To specify the table name, use a qualified name as in:
@@ -2262,7 +3189,6 @@ expr_node::expr_node_pointer_t compile_expression(QString const& script)
 
     // forward definitions
     choices expr(&g, "expr");
-    choices conditional_expr(&g, "conditional_expr");
 
     // expr_list
     choices expr_list(&g, "expr_list");
@@ -2283,7 +3209,7 @@ expr_node::expr_node_pointer_t compile_expression(QString const& script)
                  | "-" >> unary_expr
                                                     >= list_expr_negate
                  | "(" >> expr_list >> ")"
-                                                    >= list_expr_identity
+                                                    >= list_expr_level_list
                  | qualified_name >> "(" >> expr_list >> ")"
                                                     >= list_expr_function
                  | TOKEN_ID_IDENTIFIER
@@ -2336,17 +3262,17 @@ expr_node::expr_node_pointer_t compile_expression(QString const& script)
     choices relational_expr(&g, "relational_expr");
     relational_expr >>= shift_expr
                                                     >= list_expr_copy_result
-                   | relational_expr >> "<" >> shift_expr
+                      | relational_expr >> "<" >> shift_expr
                                                     >= list_expr_relational_less
-                   | relational_expr >> "<=" >> shift_expr
+                      | relational_expr >> "<=" >> shift_expr
                                                     >= list_expr_relational_less_or_equal
-                   | relational_expr >> ">" >> shift_expr
+                      | relational_expr >> ">" >> shift_expr
                                                     >= list_expr_relational_greater
-                   | relational_expr >> ">=" >> shift_expr
+                      | relational_expr >> ">=" >> shift_expr
                                                     >= list_expr_relational_greater_or_equal
-                   | relational_expr >> "<?" >> shift_expr
+                      | relational_expr >> "<?" >> shift_expr
                                                     >= list_expr_relational_minimum
-                   | relational_expr >> ">?" >> shift_expr
+                      | relational_expr >> ">?" >> shift_expr
                                                     >= list_expr_relational_maximum
     ;
 
@@ -2354,9 +3280,9 @@ expr_node::expr_node_pointer_t compile_expression(QString const& script)
     choices equality_expr(&g, "equality_expr");
     equality_expr >>= relational_expr
                                                     >= list_expr_copy_result
-                   | equality_expr >> "==" >> relational_expr
+                    | equality_expr >> "==" >> relational_expr
                                                     >= list_expr_equality_equal
-                   | equality_expr >> "!=" >> relational_expr
+                    | equality_expr >> "!=" >> relational_expr
                                                     >= list_expr_equality_not_equal
     ;
 
@@ -2409,10 +3335,12 @@ expr_node::expr_node_pointer_t compile_expression(QString const& script)
     ;
 
     // conditional_expr
+    // The C/C++ definition is somewhat different:
     // logical-OR-expression ? expression : conditional-expression
+    choices conditional_expr(&g, "conditional_expr");
     conditional_expr >>= logical_or_expr
                                                     >= list_expr_copy_result
-                      | conditional_expr >> "?" >> expr >> ":" >> logical_or_expr
+                       | conditional_expr >> "?" >> expr >> ":" >> logical_or_expr
                                                     >= list_expr_conditional
     ;
 
@@ -2477,7 +3405,7 @@ void expr::unserialize(QByteArray const& serialized_code)
     QBuffer archive(&non_const);
     archive.open(QIODevice::ReadOnly);
     QtSerialization::QReader r(archive);
-    static_cast<expr_node *>(&*f_program_tree)->read(r);
+    f_program_tree = expr_node::load(r);
 }
 
 

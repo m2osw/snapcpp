@@ -1599,6 +1599,13 @@ void sendmail::on_register_backend_action(server::backend_action_map_t& actions)
  * sent along the UDP signal. This means the UDP signals do not need
  * to be secure.
  *
+ * The server should be stopped with the snapsignal tool using the
+ * STOP event as follow:
+ *
+ * \code
+ * snapsignal -a sendmail STOP
+ * \endcode
+ *
  * \note
  * The \p action parameter is here because some plugins may
  * understand multiple actions in which case we need to know

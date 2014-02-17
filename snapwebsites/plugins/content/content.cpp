@@ -67,38 +67,17 @@ char const *get_name(name_t name)
     case SNAP_NAME_CONTENT_ATTACHMENT:
         return "content::attachment";
 
-    //case SNAP_NAME_CONTENT_ATTACHMENT_OWNER:
-    //    return "attachment";
-
     case SNAP_NAME_CONTENT_ATTACHMENT_REFERENCE:
         return "content::attachment::reference";
 
-    //case SNAP_NAME_CONTENT_ATTACHMENT_REVISION_FILENAME_WITH_VAR:
-    //    return "content::attachment::${revision}::filename";
-
     case SNAP_NAME_CONTENT_ATTACHMENT_FILENAME:
         return "content::attachment::filename";
-
-    //case SNAP_NAME_CONTENT_ATTACHMENT_MIME_TYPE:
-    //    return "content::attachment::mime_type";
 
     case SNAP_NAME_CONTENT_ATTACHMENT_MIME_TYPE:
         return "content::attachment::mime_type";
 
     case SNAP_NAME_CONTENT_ATTACHMENT_PATH_END:
         return "path";
-
-    //case SNAP_NAME_CONTENT_ATTACHMENT_REVISION_CONTROL_LAST_BRANCH: // largest branch number
-    //    return "content::attachment::revision_control::last_branch";
-
-    //case SNAP_NAME_CONTENT_ATTACHMENT_REVISION_CONTROL_LAST_REVISION: // largest revision number, one per branch
-    //    return "content::attachment::revision_control::last_revision"; // ::<branch number>
-
-    //case SNAP_NAME_CONTENT_ATTACHMENT_REVISION_CONTROL_CURRENT: // currently displayed to visitors
-    //    return "content::attachment::revision_control::current";
-
-    //case SNAP_NAME_CONTENT_ATTACHMENT_REVISION_CONTROL_CURRENT_WORKING_VERSION: // currently displayed to editors
-    //    return "content::attachment::revision_control::current_working_version";
 
     case SNAP_NAME_CONTENT_BODY:
         return "content::body";
@@ -3929,12 +3908,14 @@ bool content::create_content_impl(path_info_t& ipath, QString const& owner, QStr
         //      because if not it's certainly completely invalid (i.e. the
         //      programmer mistyped the type [again])
         QString const destination_key(site_key + "types/taxonomy/system/content-types/" + (type.isEmpty() ? "page" : type));
+        path_info_t destination_ipath;
+        destination_ipath.set_path(destination_key);
         QString const link_name(get_name(SNAP_NAME_CONTENT_PAGE_TYPE));
         QString const link_to(get_name(SNAP_NAME_CONTENT_PAGE_TYPE));
         bool const source_unique(true);
         bool const destination_unique(false);
         links::link_info source(link_name, source_unique, key, branch_number);
-        links::link_info destination(link_to, destination_unique, destination_key, branch_number);
+        links::link_info destination(link_to, destination_unique, destination_key, destination_ipath.get_branch());
         links::links::instance()->create_link(source, destination);
     }
 

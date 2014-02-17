@@ -35,41 +35,41 @@ char const *get_name(name_t name) __attribute__ ((const));
 class links_exception : public snap_exception
 {
 public:
-    links_exception(char const *what_msg) : snap_exception("Links: " + std::string(what_msg)) {}
-    links_exception(std::string const& what_msg) : snap_exception("Links: " + what_msg) {}
-    links_exception(QString const& what_msg) : snap_exception("Links: " + what_msg) {}
+    links_exception(char const *       what_msg) : snap_exception("links", what_msg) {}
+    links_exception(std::string const& what_msg) : snap_exception("links", what_msg) {}
+    links_exception(QString const&     what_msg) : snap_exception("links", what_msg) {}
 };
 
 class links_exception_missing_links_table : public links_exception
 {
 public:
-    links_exception_missing_links_table(char const *what_msg) : links_exception(what_msg) {}
+    links_exception_missing_links_table(char const *       what_msg) : links_exception(what_msg) {}
     links_exception_missing_links_table(std::string const& what_msg) : links_exception(what_msg) {}
-    links_exception_missing_links_table(QString const& what_msg) : links_exception(what_msg) {}
+    links_exception_missing_links_table(QString const&     what_msg) : links_exception(what_msg) {}
 };
 
 class links_exception_missing_data_table : public links_exception
 {
 public:
-    links_exception_missing_data_table(char const *what_msg) : links_exception(what_msg) {}
+    links_exception_missing_data_table(char const *       what_msg) : links_exception(what_msg) {}
     links_exception_missing_data_table(std::string const& what_msg) : links_exception(what_msg) {}
-    links_exception_missing_data_table(QString const& what_msg) : links_exception(what_msg) {}
+    links_exception_missing_data_table(QString const&     what_msg) : links_exception(what_msg) {}
 };
 
 class links_exception_invalid_name : public links_exception
 {
 public:
-    links_exception_invalid_name(char const *what_msg) : links_exception(what_msg) {}
+    links_exception_invalid_name(char const *       what_msg) : links_exception(what_msg) {}
     links_exception_invalid_name(std::string const& what_msg) : links_exception(what_msg) {}
-    links_exception_invalid_name(QString const& what_msg) : links_exception(what_msg) {}
+    links_exception_invalid_name(QString const&     what_msg) : links_exception(what_msg) {}
 };
 
 class links_exception_invalid_db_data : public links_exception
 {
 public:
-    links_exception_invalid_db_data(char const *what_msg) : links_exception(what_msg) {}
+    links_exception_invalid_db_data(char const *       what_msg) : links_exception(what_msg) {}
     links_exception_invalid_db_data(std::string const& what_msg) : links_exception(what_msg) {}
-    links_exception_invalid_db_data(QString const& what_msg) : links_exception(what_msg) {}
+    links_exception_invalid_db_data(QString const&     what_msg) : links_exception(what_msg) {}
 };
 
 
@@ -183,9 +183,10 @@ public:
 
     void                on_bootstrap(::snap::snap_child *snap);
 
-    // should those be events?
+    // TBD should those be events? (or create events?)
     void                create_link(link_info const& src, link_info const& dst);
     void                delete_link(link_info const& info);
+    void                delete_this_link(link_info const& source, link_info const& destination);
 
     QSharedPointer<link_context> new_link_context(link_info const& info);
 

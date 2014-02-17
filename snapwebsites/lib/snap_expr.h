@@ -115,9 +115,9 @@ public:
     void                                set_value(QString const& value);
     void                                set_value(QByteArray const& value);
 
-    bool                                get_bool() const;
-    int64_t                             get_integer() const;
-    QString                             get_string() const;
+    bool                                get_bool(QString const& name) const;
+    int64_t                             get_integer(QString const& name) const;
+    QString                             get_string(QString const& name) const;
 
     bool                                is_true() const;
 

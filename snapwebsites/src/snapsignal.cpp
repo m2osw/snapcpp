@@ -42,6 +42,11 @@ int main(int argc, char *argv[])
         // use sendmail UDP information
         s->udp_ping("sendmail_udp_signal", msg.toUtf8().data());
     }
+    else if(s->get_parameter("__BACKEND_ACTION") == "pagelist")
+    {
+        // use sendmail UDP information
+        s->udp_ping("pagelist_udp_signal", msg.toUtf8().data());
+    }
 
     // exit via the server so the server can clean itself up cleanly
     s->exit(0);

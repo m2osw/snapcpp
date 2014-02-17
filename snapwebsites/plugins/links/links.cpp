@@ -320,34 +320,41 @@ void link_info::verify_name(const QString& vname)
  */
 QString link_info::data() const
 {
-    return "key=" + f_key + "\nname=" + f_name;
+    return QString("key=%1\nname=%2\nbranch=%3").arg(f_key).arg(f_name).arg(f_branch);
 }
 
 
 /** \brief Parse a string of key & name back to a link info.
  *
  * This function is the inverse of the data() function. It takes
- * a string as input and defines the f_key and f_name parameters
- * from the data found in that string.
+ * a string as input and defines the f_key, f_name, and f_branch
+ * parameters from the data found in that string.
+ *
+ * The function doesn't return anything. Instead it saves the parameters
+ * to this link_info object.
+ *
+ * \param[in] db_data  The data to convert to the different parameters.
  *
  * \sa data()
  */
-void link_info::from_data(const QString& db_data)
+void link_info::from_data(QString const& db_data)
 {
     QStringList lines(db_data.split('\n'));
-    if(lines.count() != 2)
+    if(lines.count() != 3)
     {
-        throw links_exception_invalid_db_data("db_data is not exactly 2 lines");
+        throw links_exception_invalid_db_data("db_data is not exactly 3 lines");
     }
     QStringList key_data(lines[0].split('='));
     QStringList name_data(lines[1].split('='));
-    if(key_data.count() != 2 || name_data.count() != 2
-    || key_data[0] != "key" || name_data[0] != "name")
+    QStringList branch_data(lines[2].split('='));
+    if(key_data.count() != 2 || name_data.count() != 2 || branch_data.count() != 2
+    || key_data[0] != "key" || name_data[0] != "name" || branch_data[0] != "branch")
     {
-        throw links_exception_invalid_db_data("db_data variables are not key and name");
+        throw links_exception_invalid_db_data(QString("db_data variables in \"%1\" are not key, name, and branch").arg(db_data));
     }
     set_key(key_data[1]);
     set_name(name_data[1], f_unique);
+    set_branch(branch_data[1].toInt()); // TBD: verify that it is an integer?
 }
 
 
@@ -996,6 +1003,8 @@ void links::delete_link(link_info const& info)
         // to go through the whole list first
         QtCassandra::QCassandraRow::pointer_t row(f_links_table->row(info.row_key()));
         QtCassandra::QCassandraColumnRangePredicate column_predicate;
+        column_predicate.setStartColumnName(QString("%1::").arg(get_name(SNAP_NAME_LINKS_NAMESPACE)));
+        column_predicate.setEndColumnName(QString("%1;").arg(get_name(SNAP_NAME_LINKS_NAMESPACE)));
         column_predicate.setCount(1000);
         column_predicate.setIndex(); // behave like an index
         for(;;)
@@ -1003,16 +1012,16 @@ void links::delete_link(link_info const& info)
             // we MUST clear the cache in case we read the same list of links twice
             row->clearCache();
             row->readCells(column_predicate);
-            const QtCassandra::QCassandraCells& cells(row->cells());
+            QtCassandra::QCassandraCells const& cells(row->cells());
             if(cells.empty())
             {
                 // all columns read
                 break;
             }
             for(QtCassandra::QCassandraCells::const_iterator cell_iterator(cells.begin()); cell_iterator != cells.end(); ++cell_iterator)
-            //for(auto cell_iterator : cells)
+            //for(auto cell_iterator : cells) -- cannot use that one because we need the key
             {
-                QString key(QString::fromUtf8(cell_iterator.key()));
+                QString const key(QString::fromUtf8(cell_iterator.key()));
                 if(!f_data_table->exists(key))
                 {
                     // probably not an error if a link does not exist at all...
@@ -1068,6 +1077,67 @@ void links::delete_link(link_info const& info)
 }
 
 
+/** \brief Delete one specific link in a multi-linked list.
+ *
+ * If you need to delete one specific link in a multiple link to a
+ * multiple link (*:*) list, then you cannot call the delete_link()
+ * function because that would delete all the links on one or the
+ * other sides.
+ *
+ * This function resolves that problem, but it requires you to
+ * supply both sides of the link you want to delete (which you
+ * probably have anyway if you want to delete just that one
+ * link.)
+ *
+ * If one of \p source or \p destination have their unique flag
+ * set to true, then this function calls the delete_link()
+ * function since it will do exactly what needs to be done.
+ *
+ * \bug
+ * This function does not (yet) check whether you lied when calling
+ * it. If a link is not a multi-link, then the function fails deleting
+ * the link on one side. It should be possible to fix the problem
+ * and we'll look into that later.
+ *
+ * \param[in] source  The source link.
+ * \param[in] destination  The destination link.
+ */
+void links::delete_this_link(link_info const& source, link_info const& destination)
+{
+    if(source.is_unique())
+    {
+        delete_link(source);
+        return;
+    }
+
+    if(destination.is_unique())
+    {
+        delete_link(destination);
+        return;
+    }
+
+    init_tables();
+
+    // drop the source info
+    QString const src_row_key(source.row_key());
+    QtCassandra::QCassandraRow::pointer_t src_row(f_links_table->row(src_row_key));
+    if(src_row->exists(destination.key())) // should always be true
+    {
+        QString src_key(src_row->cell(destination.key())->value().stringValue());
+        src_row->dropCell(destination.key(), QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+        f_data_table->row(src_row_key)->dropCell(src_key, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+    }
+
+    // drop the destination info
+    QString const dst_row_key(destination.row_key());
+    QtCassandra::QCassandraRow::pointer_t dst_row(f_links_table->row(dst_row_key));
+    if(dst_row->exists(source.key())) // should always be true
+    {
+        QString dst_key(dst_row->cell(source.key())->value().stringValue());
+        dst_row->dropCell(source.key(), QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+        f_data_table->row(dst_row_key)->dropCell(dst_key, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+    }
+}
 
 
 SNAP_PLUGIN_END()

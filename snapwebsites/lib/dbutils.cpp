@@ -130,6 +130,7 @@ QByteArray dbutils::string_to_key( const QString& str )
     return ret;
 }
 
+
 int dbutils::get_display_len() const
 {
     return f_displayLen;
@@ -177,6 +178,16 @@ QString dbutils::get_column_name( QCassandraCell::pointer_t c ) const
     if(f_tableName == "files" && f_rowName == "new")
     {
         name = key_to_string( key );
+    }
+    else if(f_tableName == "list" && f_rowName != "*standalone*")
+    {
+        uint64_t time(QtCassandra::uint64Value(key, 0));
+        char buf[64];
+        struct tm t;
+        time_t const seconds(time / 1000000);
+        gmtime_r(&seconds, &t);
+        strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &t);
+        name = QString("%1.%2 (%3) %4").arg(buf).arg(time % 1000000, 6, 10, QChar('0')).arg(time).arg(QtCassandra::stringValue(key, sizeof(uint64_t)));
     }
     else if(f_tableName == "data" && (key.startsWith(content_attachment_reference.toAscii())) )
     {
@@ -317,6 +328,7 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
         return CT_uint8_value;
     }
     else if(n == "permissions::dynamic"
+         || (f_tableName == "list" && f_rowName != "*standalone*")
          )
     {
         // signed 8 bit value
@@ -384,7 +396,7 @@ QString dbutils::get_column_value( QCassandraCell::pointer_t c, const bool displ
                 {
                     char buf[64];
                     struct tm t;
-                    time_t seconds(time / 1000000);
+                    time_t const seconds(time / 1000000);
                     gmtime_r(&seconds, &t);
                     strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &t);
                     v = QString("%1.%2 (%3)").arg(buf).arg(time % 1000000, 6, 10, QChar('0')).arg(time);
@@ -398,7 +410,7 @@ QString dbutils::get_column_value( QCassandraCell::pointer_t c, const bool displ
                 uint64_t time(c->value().uint64Value());
                 char buf[64];
                 struct tm t;
-                time_t seconds(time);
+                time_t const seconds(time);
                 gmtime_r(&seconds, &t);
                 strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &t);
                 v = display_only

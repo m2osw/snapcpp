@@ -945,17 +945,7 @@ restart:
     }
 
 // Only to help with debug sessions
-//std::cerr << "lexer: result " << static_cast<int>(result.get_id()) << " -- value: ";
-//switch(result.get_id())
-//{
-//case TOKEN_ID_INTEGER_ENUM:
-//    std::cerr << result.get_value().toInt();
-//    break;
-//
-//default:
-//    std::cerr << "...to be implemented...";
-//}
-//std::cerr << "\n";
+//std::cerr << "lexer result: " << result.to_string() << "\n";
 
     return result;
 }

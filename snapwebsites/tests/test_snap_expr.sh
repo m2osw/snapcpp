@@ -12,6 +12,16 @@ else
 	verbose=false
 fi
 
+# Tests to search bug I finally found in the expression parser: the expr_list
+# would do an early optimization, the list has to be flatten once complete,
+# otherwise you get an invalid list.
+#snapexpr --host 127.0.0.1 -s '(1, 2, 3)' > ~/tmp/a.xml
+#snapexpr --host 127.0.0.1 -s 'strlen("test") * 3 '
+#snapexpr --host 127.0.0.1 -s '(branch := int32(cell("content", "foo", "content::revision_control::current_branch")),
+#	key := int32(cell("content", "foo", "content::revision_control::current_revision_key::" + branch + "::en")),
+#	cell("data", key, "content::title"))' > ~/tmp/a.xml
+#exit 1
+
 
 # WARNING: Do not use '@' in a string!
 TESTS=`cat <<'EOF'

@@ -19,6 +19,7 @@
 
 #include "not_reached.h"
 #include "snap_expr.h"
+#include "dbutils.h"
 
 #include <iostream>
 
@@ -42,8 +43,20 @@ char const *get_name(name_t name)
 {
     switch(name)
     {
+    case SNAP_NAME_LIST_ITEM_KEY_SCRIPT: // compiled
+        return "list::item_key_script";
+
+    case SNAP_NAME_LIST_KEY: // list of ordered pages
+        return "list::key"; // + "::<list uri>" (cell includes <item sort key>)
+
     case SNAP_NAME_LIST_LAST_UPDATED:
         return "list::last_updated";
+
+    case SNAP_NAME_LIST_LINK: // standard link between list and list items
+        return "list::link";
+
+    case SNAP_NAME_LIST_ORDERED_PAGES: // list of ordered pages
+        return "list::ordered_pages"; // + "::<item sort key>"
 
     case SNAP_NAME_LIST_ORIGINAL_ITEM_KEY_SCRIPT: // text format
         return "list::original_item_key_script";
@@ -69,9 +82,6 @@ char const *get_name(name_t name)
     case SNAP_NAME_LIST_TABLE:
         return "list";
 
-    case SNAP_NAME_LIST_ITEM_KEY_SCRIPT: // compiled
-        return "list::item_key_script";
-
     case SNAP_NAME_LIST_TEST_SCRIPT: // compiled
         return "list::test_script";
 
@@ -89,6 +99,58 @@ char const *get_name(name_t name)
 
 
 
+/** \class list
+ * \brief The list plugin to handle list of pages.
+ *
+ * The list plugin makes use of many references and links and thus it
+ * is documented here:
+ *
+ *
+ * 1) Pages that represent lists are all categorized under the following
+ *    system content type:
+ *
+ * \code
+ *     /types/taxonomy/system/list
+ * \endcode
+ *
+ * We use that list to find all the lists defined on a website so we can
+ * manage them all in our loops.
+ *
+ *
+ *
+ * 2) Items are linked to their list so that way when deleting an item
+ *    we can immediately remove that item from that list. Note that an
+ *    item may be part of many lists so it is a "multi" on both sides
+ *    ("*:*").
+ *
+ *
+ * 3) The list page includes links to all the items that are part of
+ *    the list. These links do not use the standard link capability
+ *    because the items are expected to be ordered and that is done
+ *    using the Cassandra sort capability, in other words, we need
+ *    to have a key which includes the sort parameters (i.e. an index).
+ *
+ * \code
+ *    list::items::<sort key>
+ * \endcode
+ *
+ * Important Note: This special link is double linked too, that is, the
+ * item page links back to the standard list too (more precisly, it knows
+ * of the special ordered key used in the list.) This is important to
+ * make sure we can manage lists properly. That is, if the expression
+ * used to calculate the key changes, then we could not instantly find
+ * the old key anymore (i.e. we'd have to check each item in the list
+ * to find the one that points to a given item... in a list with 1 million
+ * pages, it would be really slow.)
+ *
+ *
+ * Recap:
+ *
+ * \li Standard Link: List Page \<-\> /types/taxonomy/system/list
+ * \li Standard Link: List Page \<-\> Item Page
+ * \li Ordered List: List Page -\> Item Page,
+ *                   Item Page includes key used in List Page
+ */
 
 
 
@@ -370,8 +432,8 @@ void list::on_modified_content(content::path_info_t& ipath)
     QtCassandra::QCassandraTable::pointer_t list_table(get_list_table());
     int64_t const start_date(f_snap->get_start_date());
     QByteArray key;
-    key.append(start_date);
-    key.append(ipath.get_key());
+    QtCassandra::appendInt64Value(key, start_date);
+    QtCassandra::appendStringValue(key, ipath.get_key());
     bool const modified(true);
     list_table->row(site_key)->cell(key)->setValue(modified);
 }
@@ -414,6 +476,13 @@ void list::on_register_backend_action(server::backend_action_map_t& actions)
  * sent along the UDP signal. This means the UDP signals do not need
  * to be secure.
  *
+ * The server should be stopped with the snapsignal tool using the
+ * STOP event as follow:
+ *
+ * \code
+ * snapsignal -a pagelist STOP
+ * \endcode
+ *
  * \note
  * The \p action parameter is here because some plugins may
  * understand multiple actions in which case we need to know
@@ -426,7 +495,7 @@ void list::on_backend_action(QString const& action)
     QtCassandra::QCassandraTable::pointer_t list_table(get_list_table());
     if(action == get_name(SNAP_NAME_LIST_PAGELIST))
     {
-        QSharedPointer<udp_client_server::udp_server> udp_signals(f_snap->udp_get_server("sendmail_udp_signal"));
+        QSharedPointer<udp_client_server::udp_server> udp_signals(f_snap->udp_get_server("pagelist_udp_signal"));
         char const *stop(get_name(SNAP_NAME_LIST_STOP));
         // loop until stopped
         for(;;)
@@ -591,7 +660,7 @@ int list::generate_all_lists(QString const& site_key)
 
     list_row->clearCache();
     list_row->readCells(column_predicate);
-    const QtCassandra::QCassandraCells& cells(list_row->cells());
+    QtCassandra::QCassandraCells const& cells(list_row->cells());
     if(cells.isEmpty())
     {
         return 0;
@@ -613,14 +682,14 @@ int list::generate_all_lists(QString const& site_key)
 
         // the cell
         QtCassandra::QCassandraCell::pointer_t cell(*c);
-        // the key is start date and a string representing the row key
-        // in the content table
+        // the key starts with the "start date" and it is followed by a
+        // string representing the row key in the content table
         QByteArray const& key(cell->columnKey());
         int64_t const page_start_date(QtCassandra::int64Value(key, 0));
         if(page_start_date + LIST_PROCESSING_LATENCY < start_date)
         {
             QString const row_key(QtCassandra::stringValue(key, sizeof(int64_t)));
-            if(generate_all_lists_for_page(row_key) == 0)
+            if(generate_all_lists_for_page(site_key, row_key) == 0)
             {
                 did_work = 1;
             }
@@ -635,35 +704,132 @@ int list::generate_all_lists(QString const& site_key)
 }
 
 
-int list::generate_all_lists_for_page(QString const& site_key)
+int list::generate_all_lists_for_page(QString const& site_key, QString const& page_key)
 {
+    content::content *content_plugin(content::content::instance());
+    QtCassandra::QCassandraTable::pointer_t data_table(content_plugin->get_data_table());
+    content::path_info_t page_ipath;
+    page_ipath.set_path(page_key);
+    QtCassandra::QCassandraRow::pointer_t page_branch_row(data_table->row(page_ipath.get_branch_key()));
+
     int did_work(0);
 
+    QString const link_name(get_name(SNAP_NAME_LIST_LINK));
     content::path_info_t ipath;
-    ipath.set_path(site_key);
+    ipath.set_path(site_key + "types/taxonomy/system/list");
     links::link_info info(get_name(SNAP_NAME_LIST_TYPE), false, ipath.get_key(), ipath.get_branch());
     QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
     links::link_info child_info;
     while(link_ctxt->next_link(child_info))
     {
+        // Entries are defined with the following:
+        //
+        // SNAP_NAME_LIST_ITEM_KEY_SCRIPT
+        //    The script used to generate the item key used to sort items
+        //    of the list.
+        //
+        // SNAP_NAME_LIST_KEY
+        //    list::key::<list key>
+        //
+        //    The <list key> part is the the ipath.get_key() from the
+        //    list page. This way we can find the lists this item is a
+        //    part of.
+        //
+        // SNAP_NAME_LIST_ORDERED_PAGES
+        //    list::ordered_pages::<item key>
+        //
+        //    The <item key> part is defined using the
+        //    SNAP_NAME_LIST_ITEM_KEY_SCRIPT script. If not yet defined, use
+        //    SNAP_NAME_LIST_ORIGINAL_ITEM_KEY_SCRIPT to create the compiled
+        //    script. Note that this script may change under our feet so that
+        //    means we'd lose access to the reference. For this reason, the
+        //    reference is saved in the item under "list::key::<list key>".
+        //
+        // SNAP_NAME_LIST_ORIGINAL_ITEM_KEY_SCRIPT
+        //    This cell includes the original script used to compute the
+        //    item key. This script is compiled from the script in the
+        //    SNAP_NAME_LIST_ITEM_KEY_SCRIPT.
+        //
+        // SNAP_NAME_LIST_TYPE
+        //    The list type, used for the standard link of a list page to
+        //    the list content type.
+        //
+
         QString const key(child_info.key());
         content::path_info_t list_ipath;
         list_ipath.set_path(key);
-        //QtCassandra::QCassandraRow::pointer_t row(content_table->row(list_ipath.get_branch_key()));
-        bool const included(run_list_check(list_ipath));
-        QString const item_key(run_list_item_key(list_ipath));
+        QString const list_key_in_page(QString("%1::%2").arg(get_name(SNAP_NAME_LIST_KEY)).arg(list_ipath.get_key()));
+        QtCassandra::QCassandraRow::pointer_t list_row(data_table->row(list_ipath.get_branch_key()));
+        bool const included(run_list_check(list_ipath, page_ipath));
+        QString const new_item_key(run_list_item_key(list_ipath, page_ipath));
+        QString const new_item_key_full(QString("%1::%2").arg(get_name(SNAP_NAME_LIST_ORDERED_PAGES)).arg(new_item_key));
         if(included)
         {
             // the check script says to include this item in this list;
             // first we need to check to find under which key it was
             // included if it is already there because it may have
             // changed
+            if(page_branch_row->exists(list_key_in_page))
+            {
+                // check to see whether the current key changed
+                QtCassandra::QCassandraValue current_item_key(page_branch_row->cell(list_key_in_page)->value());
+                QString const current_item_key_full(QString("%1::%2").arg(get_name(SNAP_NAME_LIST_ORDERED_PAGES)).arg(current_item_key.stringValue()));
+                if(current_item_key_full != new_item_key_full)
+                {
+                    // it changed, we have to delete the old one and
+                    // create a new one
+                    list_row->dropCell(current_item_key_full, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+                    list_row->cell(new_item_key_full)->setValue(page_key);
+                    page_branch_row->cell(list_key_in_page)->setValue(new_item_key);
+
+                    did_work = 1;
+                }
+                // else -- nothing changed, we're done
+            }
+            else
+            {
+                // it doesn't exist yet, add it
+
+                // create a standard link between the list and the page item
+                QString const destination_key(page_key);
+                bool const source_unique(false);
+                bool const destination_unique(false);
+                links::link_info source(link_name, source_unique, list_ipath.get_key(), list_ipath.get_branch());
+                links::link_info destination(link_name, destination_unique, page_ipath.get_key(), page_ipath.get_branch());
+                links::links::instance()->create_link(source, destination);
+
+                // create the ordered list
+                list_row->cell(new_item_key_full)->setValue(page_key);
+
+                // save a back reference to the ordered list so we can
+                // quickly find it
+                page_branch_row->cell(list_key_in_page)->setValue(new_item_key);
+
+                did_work = 1;
+            }
         }
         else
         {
             // the check script says that this path is not included in this
-            // list; the item may be included from earlier so we have to
+            // list; the item may have been included earlier so we have to
             // make sure it gets removed if still there
+            if(page_branch_row->exists(list_key_in_page))
+            {
+                QtCassandra::QCassandraValue current_item_key(page_branch_row->cell(list_key_in_page)->value());
+                QString const current_item_key_full(QString("%1::%2").arg(get_name(SNAP_NAME_LIST_ORDERED_PAGES)).arg(current_item_key.stringValue()));
+
+                list_row->dropCell(current_item_key_full, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+                page_branch_row->dropCell(list_key_in_page, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+
+                QString const destination_key(page_key);
+                bool const source_unique(false);
+                bool const destination_unique(false);
+                links::link_info source(link_name, source_unique, list_ipath.get_key(), list_ipath.get_branch());
+                links::link_info destination(link_name, destination_unique, page_ipath.get_key(), page_ipath.get_branch());
+                links::links::instance()->delete_this_link(source, destination);
+
+                did_work = 1;
+            }
         }
     }
 
@@ -682,9 +848,9 @@ int list::generate_all_lists_for_page(QString const& site_key)
  *
  * \return true if the page is to be included.
  */
-bool list::run_list_check(content::path_info_t& ipath)
+bool list::run_list_check(content::path_info_t& list_ipath, content::path_info_t& page_ipath)
 {
-    QString const branch_key(ipath.get_branch_key());
+    QString const branch_key(list_ipath.get_branch_key());
     snap_expr::expr::expr_pointer_t e(nullptr);
     if(!f_check_expressions.contains(branch_key))
     {
@@ -734,11 +900,16 @@ bool list::run_list_check(content::path_info_t& ipath)
     // run the script with this path
     snap_expr::variable_t result;
     snap_expr::variable_t::variable_map_t variables;
-    snap_expr::variable_t var_path(ipath.get_cpath());
-    variables["path"] = var_path;
+    snap_expr::variable_t var_page("page");
+    var_page.set_value(page_ipath.get_cpath());
+    variables["page"] = var_page;
+    snap_expr::variable_t var_list("list");
+    var_list.set_value(list_ipath.get_cpath());
+    variables["list"] = var_list;
     snap_expr::functions_t functions;
     e->execute(result, variables, functions);
 
+std::cerr << "ran check! " << page_ipath.get_cpath() << " -> " << result.is_true() << "\n";
     return result.is_true();
 }
 
@@ -754,9 +925,9 @@ bool list::run_list_check(content::path_info_t& ipath)
  *
  * \return true if the page is to be included.
  */
-bool list::run_list_item_key(content::path_info_t& ipath)
+bool list::run_list_item_key(content::path_info_t& list_ipath, content::path_info_t& page_ipath)
 {
-    QString const branch_key(ipath.get_branch_key());
+    QString const branch_key(list_ipath.get_branch_key());
     snap_expr::expr::expr_pointer_t e(nullptr);
     if(!f_item_key_expressions.contains(branch_key))
     {
@@ -781,7 +952,7 @@ bool list::run_list_item_key(content::path_info_t& ipath)
 
                 // create a default script so we do not try to compile the
                 // broken script over and over again
-                if(!e->compile("---"))
+                if(!e->compile("\"---\""))
                 {
                     // TODO: generate a double error!
                     //       this should really not happen
@@ -806,8 +977,12 @@ bool list::run_list_item_key(content::path_info_t& ipath)
     // run the script with this path
     snap_expr::variable_t result;
     snap_expr::variable_t::variable_map_t variables;
-    snap_expr::variable_t var_path(ipath.get_cpath());
-    variables["path"] = var_path;
+    snap_expr::variable_t var_path("page");
+    var_path.set_value(page_ipath.get_cpath());
+    variables["page"] = var_path;
+    snap_expr::variable_t var_list("list");
+    var_list.set_value(list_ipath.get_cpath());
+    variables["list"] = var_list;
     snap_expr::functions_t functions;
     e->execute(result, variables, functions);
 

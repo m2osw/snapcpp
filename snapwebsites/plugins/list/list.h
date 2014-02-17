@@ -29,7 +29,10 @@ namespace list
 
 enum name_t
 {
+    SNAP_NAME_LIST_KEY,
     SNAP_NAME_LIST_LAST_UPDATED,
+    SNAP_NAME_LIST_LINK,
+    SNAP_NAME_LIST_ORDERED_PAGES,
     SNAP_NAME_LIST_ORIGINAL_ITEM_KEY_SCRIPT,
     SNAP_NAME_LIST_ORIGINAL_TEST_SCRIPT,
     SNAP_NAME_LIST_PAGELIST,
@@ -111,9 +114,9 @@ private:
     void                initial_update(int64_t variables_timestamp);
     void                content_update(int64_t variables_timestamp);
     int                 generate_all_lists(QString const& site_key);
-    int                 generate_all_lists_for_page(QString const& site_key);
-    bool                run_list_check(content::path_info_t& ipath);
-    bool                run_list_item_key(content::path_info_t& ipath);
+    int                 generate_all_lists_for_page(QString const& site_key, QString const& row_key);
+    bool                run_list_check(content::path_info_t& list_ipath, content::path_info_t& page_ipath);
+    bool                run_list_item_key(content::path_info_t& list_ipath, content::path_info_t& page_ipath);
 
     zpsnap_child_t                          f_snap;
     QtCassandra::QCassandraTable::pointer_t f_list_table;
