@@ -980,15 +980,6 @@ int64_t layout::install_layout(QString const& layout_name, int64_t const last_up
         NOTREACHED();
     }
 
-    if( layout_name == "default" )
-    {
-        // Timestamp doesn't make any sense for the default layout, which is essentially builtin.
-        // So let's go with the value passed in as an argument.
-        //
-#pragma message "Alexis: verify this is an accepitable return value, please."
-        return last_updated;
-    }
-
     // XXX: it seems to me that the owner should not depend on p
     //      because at this point we cannot really know what p is
     //      and it should probably not be initialized with a plugin
@@ -996,7 +987,7 @@ int64_t layout::install_layout(QString const& layout_name, int64_t const last_up
     //content_plugin->add_xml_document(dom, p == nullptr ? content::get_name(content::SNAP_NAME_CONTENT_OUTPUT) : p->get_plugin_name());
     content_plugin->add_xml_document(dom, content::get_name(content::SNAP_NAME_CONTENT_OUTPUT));
     f_snap->finish_update();
-    if(!data_table->row(layout_ipath.get_branch_key())->exists(get_name(SNAP_NAME_LAYOUT_BOXES)))
+    if( !data_table->row(layout_ipath.get_branch_key())->exists(get_name(SNAP_NAME_LAYOUT_BOXES)) )
     {
         f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR,
                 "Layout Unavailable",
