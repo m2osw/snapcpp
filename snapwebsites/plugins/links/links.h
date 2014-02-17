@@ -127,13 +127,35 @@ public:
     }
     QString row_key() const
     {
+        if(f_key.isEmpty())
+        {
+            throw snap_logic_exception("row_key() was requested with the key still undefined");
+        }
         if(f_branch == snap_version::SPECIAL_VERSION_INVALID
         || f_branch == snap_version::SPECIAL_VERSION_UNDEFINED
         || f_branch == snap_version::SPECIAL_VERSION_EXTENDED)
         {
             throw snap_logic_exception("row_key() was requested with the branch still undefined");
         }
-        return QString("%1#%2").arg(f_key).arg(f_branch);
+        return QString("%2#%3").arg(f_key).arg(f_branch);
+    }
+    QString link_key() const
+    {
+        if(f_name.isEmpty())
+        {
+            throw snap_logic_exception("link_key() was requested with the name still undefined");
+        }
+        if(f_key.isEmpty())
+        {
+            throw snap_logic_exception("link_key() was requested with the key still undefined");
+        }
+        if(f_branch == snap_version::SPECIAL_VERSION_INVALID
+        || f_branch == snap_version::SPECIAL_VERSION_UNDEFINED
+        || f_branch == snap_version::SPECIAL_VERSION_EXTENDED)
+        {
+            throw snap_logic_exception("link_key() was requested with the branch still undefined");
+        }
+        return QString("%1#%2/%3").arg(f_key).arg(f_branch).arg(f_name);
     }
     snap_version::version_number_t branch() const
     {

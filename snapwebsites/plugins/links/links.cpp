@@ -61,11 +61,12 @@ char const *get_name(name_t name)
 }
 
 
-/** \fn link_info::link_info(const QString new_name, bool unique, const QString new_key);
+/** \fn link_info::link_info(QString const& new_name, bool unique, QString const& new_key, snap_version::version_number_t branch_number);
  * \brief Create a link descriptor.
  *
- * Initialize the link information with a name and a key. See the set_name() and
- * set_key() descriptions for more information.
+ * Initialize the link information with a name, a key, and a branch number.
+ * See the set_name(), set_key(), and set_branch() functions for more
+ * information.
  *
  * Note that a key and a name are ultimately necessary. If not defined on
  * creation then you must call the set_name() and set_key() functions later
@@ -77,6 +78,7 @@ char const *get_name(name_t name)
  *
  * \sa set_name()
  * \sa set_key()
+ * \sa set_branch()
  */
 
 
@@ -246,7 +248,7 @@ void link_info::verify_name(const QString& vname)
 {
     // the namespace is really only for debug purposes
     // but at this time we'll keep it for security
-    const char *links_namespace(get_name(SNAP_NAME_LINKS_NAMESPACE));
+    char const *links_namespace(get_name(SNAP_NAME_LINKS_NAMESPACE));
     QString ns;
     ns.reserve(64);
     bool has_namespace(false);
@@ -284,7 +286,7 @@ void link_info::verify_name(const QString& vname)
             c = it->unicode();
             has_namespace = true;
         }
-        // colons are not acceptable here, we must have a valid character not
+        // colons are not acceptable here, we must have a valid character
         if((c < '0' || c > '9')
         && (c < 'A' || c > 'Z')
         && (c < 'a' || c > 'z')
@@ -302,7 +304,7 @@ void link_info::verify_name(const QString& vname)
 
     if(ns == links_namespace)
     {
-        throw links_exception_invalid_name("name \"" + vname + "\" is not acceptable, a name cannot end with \"links\"");
+        throw links_exception_invalid_name("name \"" + vname + "\" is not acceptable, a link name cannot end with \"links\"");
     }
 }
 
@@ -414,7 +416,7 @@ link_context::link_context(::snap::snap_child *snap, const link_info& info)
             // (since the links is a core plugin, that should not happen)
             throw links_exception_missing_links_table("could not find the links table");
         }
-        f_row = links_table->row(f_info.row_key());
+        f_row = links_table->row(f_info.link_key());
         // WARNING: Here the column names are the keys, not the link names...
         // TBD: should we give the caller the means to change this 1,000 count?
         f_column_predicate.setCount(1000);
@@ -785,14 +787,14 @@ void links::create_link(const link_info& src, const link_info& dst)
     {
         src_col += "-";
         // not unique, first check whether it was already created
-        QtCassandra::QCassandraValue value(f_links_table->row(src.row_key())->cell(dst.key())->value());
+        QtCassandra::QCassandraValue value(f_links_table->row(src.link_key())->cell(dst.key())->value());
         if(value.nullValue())
         {
             // it does not exist, create a unique number
             QString no(f_snap->get_unique_number());
             src_col += no;
             // save in the index table
-            (*f_links_table)[src.row_key()][dst.key()] = QtCassandra::QCassandraValue(src_col);
+            (*f_links_table)[src.link_key()][dst.key()] = QtCassandra::QCassandraValue(src_col);
         }
         else
         {
@@ -806,14 +808,14 @@ void links::create_link(const link_info& src, const link_info& dst)
     {
         dst_col += "-";
         // not unique, first check whether it was already created
-        QtCassandra::QCassandraValue value(f_links_table->row(dst.row_key())->cell(src.key())->value());
+        QtCassandra::QCassandraValue value(f_links_table->row(dst.link_key())->cell(src.key())->value());
         if(value.nullValue())
         {
             // it does not exist, create a unique number
             QString no(f_snap->get_unique_number());
             dst_col += no;
             // save in the index table
-            (*f_links_table)[dst.row_key()][src.key()] = QtCassandra::QCassandraValue(dst_col);
+            (*f_links_table)[dst.link_key()][src.key()] = QtCassandra::QCassandraValue(dst_col);
         }
         else
         {
@@ -944,7 +946,7 @@ void links::delete_link(link_info const& info)
         {
             // with a multiple link we have to use the links table to find the
             // exact destination
-            if(!f_links_table->exists(destination.row_key()))
+            if(!f_links_table->exists(destination.link_key()))
             {
                 // if the unique name does not exist,
                 // then the multi-name must exist...
@@ -952,7 +954,7 @@ void links::delete_link(link_info const& info)
                             (destination.row_key())("\" (destination row missing in links).");
                 return;
             }
-            QtCassandra::QCassandraRow::pointer_t dst_multi_row(f_links_table->row(destination.row_key()));
+            QtCassandra::QCassandraRow::pointer_t dst_multi_row(f_links_table->row(destination.link_key()));
             if(!dst_multi_row->exists(info.key()))
             {
                 // the destination does not exist anywhere!?
@@ -1001,7 +1003,7 @@ void links::delete_link(link_info const& info)
 
         // here we get the row, we do not delete it yet because we need
         // to go through the whole list first
-        QtCassandra::QCassandraRow::pointer_t row(f_links_table->row(info.row_key()));
+        QtCassandra::QCassandraRow::pointer_t row(f_links_table->row(info.link_key()));
         QtCassandra::QCassandraColumnRangePredicate column_predicate;
         column_predicate.setStartColumnName(QString("%1::").arg(get_name(SNAP_NAME_LINKS_NAMESPACE)));
         column_predicate.setEndColumnName(QString("%1;").arg(get_name(SNAP_NAME_LINKS_NAMESPACE)));
@@ -1032,7 +1034,6 @@ void links::delete_link(link_info const& info)
                 else
                 {
                     QtCassandra::QCassandraRow::pointer_t dst_row(f_data_table->row(key));
-                    //const QString unique_link_name(links_namespace + "::" + info.name());
                     if(dst_row->exists(unique_link_name))
                     {
                         // here we have a "*:1"
@@ -1040,17 +1041,28 @@ void links::delete_link(link_info const& info)
                     }
                     else
                     {
-                        if(!f_links_table->exists(key))
+                        // the key includes a branch, but no name, we need to
+                        // retrieve the name of that link and we just got the
+                        // cell with that information
+                        QString destination_name(cell_iterator.value()->value().stringValue());
+                        int const pos(destination_name.indexOf('-'));
+                        if(pos > 0)
+                        {
+                            // remove the unique number from the basic name
+                            destination_name.mid(0, pos);
+                        }
+                        QString const link_key(QString("%1/%2").arg(key).arg(destination_name));
+                        if(!f_links_table->exists(link_key))
                         {
                             SNAP_LOG_WARNING("links::delete_link() could not find the destination link for \"")
                                         (key)("\" (destination row missing in links).");
                         }
                         else
                         {
-                            QtCassandra::QCassandraRow::pointer_t link_row(f_links_table->row(key));
+                            QtCassandra::QCassandraRow::pointer_t link_row(f_links_table->row(link_key));
                             // here we have a "*:*" although note that we want to
                             // only delete one link in this destination
-                            const QString dest_cell_unique_name(links_namespace + "::" + cell_iterator.value()->value().stringValue());
+                            QString const dest_cell_unique_name(links_namespace + "::" + cell_iterator.value()->value().stringValue());
                             if(!link_row->exists(dest_cell_unique_name))
                             {
                                 // the destination does not exist anywhere!?
@@ -1072,7 +1084,7 @@ void links::delete_link(link_info const& info)
         }
 
         // finally we can delete this row
-        f_links_table->dropRow(info.row_key());
+        f_links_table->dropRow(info.link_key());
     }
 }
 
@@ -1119,23 +1131,21 @@ void links::delete_this_link(link_info const& source, link_info const& destinati
     init_tables();
 
     // drop the source info
-    QString const src_row_key(source.row_key());
-    QtCassandra::QCassandraRow::pointer_t src_row(f_links_table->row(src_row_key));
+    QtCassandra::QCassandraRow::pointer_t src_row(f_links_table->row(source.link_key()));
     if(src_row->exists(destination.key())) // should always be true
     {
         QString src_key(src_row->cell(destination.key())->value().stringValue());
         src_row->dropCell(destination.key(), QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
-        f_data_table->row(src_row_key)->dropCell(src_key, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+        f_data_table->row(source.row_key())->dropCell(src_key, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
     }
 
     // drop the destination info
-    QString const dst_row_key(destination.row_key());
-    QtCassandra::QCassandraRow::pointer_t dst_row(f_links_table->row(dst_row_key));
+    QtCassandra::QCassandraRow::pointer_t dst_row(f_links_table->row(destination.link_key()));
     if(dst_row->exists(source.key())) // should always be true
     {
         QString dst_key(dst_row->cell(source.key())->value().stringValue());
         dst_row->dropCell(source.key(), QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
-        f_data_table->row(dst_row_key)->dropCell(dst_key, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+        f_data_table->row(destination.row_key())->dropCell(dst_key, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
     }
 }
 
