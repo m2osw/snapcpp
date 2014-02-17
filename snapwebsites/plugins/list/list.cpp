@@ -400,7 +400,7 @@ void list::on_create_content(content::path_info_t& ipath, QString const& owner, 
     QString const branch_key(ipath.get_branch_key());
     if(data_table->row(branch_key)->exists(get_name(SNAP_NAME_LIST_ORIGINAL_TEST_SCRIPT)))
     {
-        QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_data_table());
+        QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
 
         // zero marks the list as brand new so we use a different
         // algorithm to check the data in that case (i.e. the list of
@@ -436,6 +436,15 @@ void list::on_modified_content(content::path_info_t& ipath)
     QtCassandra::appendStringValue(key, ipath.get_key());
     bool const modified(true);
     list_table->row(site_key)->cell(key)->setValue(modified);
+
+    // just in case the row changed, we delete the pre-compiled (cached)
+    // scripts (this could certainly be optimized but really the scripts
+    // are compiled so quickly that it won't matter.)
+    content::content *content_plugin(content::content::instance());
+    QtCassandra::QCassandraTable::pointer_t data_table(content_plugin->get_data_table());
+    QString const branch_key(ipath.get_branch_key());
+    data_table->row(branch_key)->dropCell(get_name(SNAP_NAME_LIST_TEST_SCRIPT), QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, start_date);
+    data_table->row(branch_key)->dropCell(get_name(SNAP_NAME_LIST_ITEM_KEY_SCRIPT), QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, start_date);
 }
 
 
@@ -527,6 +536,7 @@ void list::on_backend_action(QString const& action)
                         }
                     }
                 }
+//break; // to avoid looping (useful until I delete the entries in the list table)
             }
 
             // sleep till next PING (but max. 5 minutes)
@@ -765,6 +775,7 @@ int list::generate_all_lists_for_page(QString const& site_key, QString const& pa
         QString const new_item_key_full(QString("%1::%2").arg(get_name(SNAP_NAME_LIST_ORDERED_PAGES)).arg(new_item_key));
         if(included)
         {
+std::cerr << "include page [" << page_ipath.get_key() << "]\n";
             // the check script says to include this item in this list;
             // first we need to check to find under which key it was
             // included if it is already there because it may have
@@ -794,6 +805,10 @@ int list::generate_all_lists_for_page(QString const& site_key, QString const& pa
                 QString const destination_key(page_key);
                 bool const source_unique(false);
                 bool const destination_unique(false);
+// this is proper code to create a link, unfortunately it doesn't work yet
+// because it matches another link and it gets "merged"
+std::cerr << "inter link " << list_ipath.get_key() << " (branch: " << list_ipath.get_branch()
+              << ") with " << page_ipath.get_key() << " (branch: " << page_ipath.get_branch() << ")\n";
                 links::link_info source(link_name, source_unique, list_ipath.get_key(), list_ipath.get_branch());
                 links::link_info destination(link_name, destination_unique, page_ipath.get_key(), page_ipath.get_branch());
                 links::links::instance()->create_link(source, destination);
@@ -900,16 +915,18 @@ bool list::run_list_check(content::path_info_t& list_ipath, content::path_info_t
     // run the script with this path
     snap_expr::variable_t result;
     snap_expr::variable_t::variable_map_t variables;
+    snap_expr::variable_t var_path("path");
+    var_path.set_value(page_ipath.get_cpath());
+    variables["path"] = var_path;
     snap_expr::variable_t var_page("page");
-    var_page.set_value(page_ipath.get_cpath());
+    var_page.set_value(page_ipath.get_key());
     variables["page"] = var_page;
     snap_expr::variable_t var_list("list");
-    var_list.set_value(list_ipath.get_cpath());
+    var_list.set_value(list_ipath.get_key());
     variables["list"] = var_list;
     snap_expr::functions_t functions;
     e->execute(result, variables, functions);
 
-std::cerr << "ran check! " << page_ipath.get_cpath() << " -> " << result.is_true() << "\n";
     return result.is_true();
 }
 
@@ -923,9 +940,9 @@ std::cerr << "ran check! " << page_ipath.get_cpath() << " -> " << result.is_true
  *
  * \param[in,out] ipath  The ipath used to find the list.
  *
- * \return true if the page is to be included.
+ * \return The item key as a string.
  */
-bool list::run_list_item_key(content::path_info_t& list_ipath, content::path_info_t& page_ipath)
+QString list::run_list_item_key(content::path_info_t& list_ipath, content::path_info_t& page_ipath)
 {
     QString const branch_key(list_ipath.get_branch_key());
     snap_expr::expr::expr_pointer_t e(nullptr);
@@ -943,7 +960,7 @@ bool list::run_list_item_key(content::path_info_t& list_ipath, content::path_inf
             {
                 // no list here?!
                 // TODO: generate an error
-                return false;
+                return "";
             }
             if(!e->compile(script.stringValue()))
             {
@@ -957,7 +974,7 @@ bool list::run_list_item_key(content::path_info_t& list_ipath, content::path_inf
                     // TODO: generate a double error!
                     //       this should really not happen
                     //       because "0" is definitively a valid script
-                    return false;
+                    return "";
                 }
             }
             // save the result for next time
@@ -977,16 +994,19 @@ bool list::run_list_item_key(content::path_info_t& list_ipath, content::path_inf
     // run the script with this path
     snap_expr::variable_t result;
     snap_expr::variable_t::variable_map_t variables;
-    snap_expr::variable_t var_path("page");
+    snap_expr::variable_t var_path("path");
     var_path.set_value(page_ipath.get_cpath());
-    variables["page"] = var_path;
+    variables["path"] = var_path;
+    snap_expr::variable_t var_page("page");
+    var_page.set_value(page_ipath.get_key());
+    variables["page"] = var_page;
     snap_expr::variable_t var_list("list");
-    var_list.set_value(list_ipath.get_cpath());
+    var_list.set_value(list_ipath.get_key());
     variables["list"] = var_list;
     snap_expr::functions_t functions;
     e->execute(result, variables, functions);
 
-    return result.is_true();
+    return result.get_string("*result*");
 }
 
 

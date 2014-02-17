@@ -63,6 +63,16 @@ public:
     snap_expr_exception_invalid_parameter_type(QString const&     what_msg) : snap_expr_exception(what_msg) {}
 };
 
+class snap_expr_exception_not_accessible : public snap_expr_exception
+{
+public:
+    snap_expr_exception_not_accessible(char const *       what_msg) : snap_expr_exception(what_msg) {}
+    snap_expr_exception_not_accessible(std::string const& what_msg) : snap_expr_exception(what_msg) {}
+    snap_expr_exception_not_accessible(QString const&     what_msg) : snap_expr_exception(what_msg) {}
+};
+
+
+
 
 
 class variable_t

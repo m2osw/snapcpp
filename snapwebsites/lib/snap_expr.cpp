@@ -18,6 +18,7 @@
 #include "snap_expr.h"
 
 #include "snap_parser.h"
+#include "snapwebsites.h"
 #include "qstring_stream.h"
 #include "not_reached.h"
 
@@ -300,7 +301,9 @@ QString variable_t::get_string(QString const& name) const
         return get_value().stringValue();
 
     default:
-        throw snap_expr_exception_invalid_parameter_type(QString("parameter for %1 must be a string").arg(name));
+        throw snap_expr_exception_invalid_parameter_type(QString("parameter for %1 must be a string (got type %2 instead)")
+                            .arg(name)
+                            .arg(static_cast<int>(get_type())));
 
     }
     NOTREACHED();
@@ -881,12 +884,17 @@ public:
     void execute(variable_t& result, variable_t::variable_map_t& variables, functions_t& functions)
     {
         variable_t::variable_vector_t sub_results;
-        int const max_children(f_children.size());
-        for(int i(0); i < max_children; ++i)
+        if(NODE_TYPE_OPERATION_CONDITIONAL != f_type)
         {
-            variable_t cr;
-            f_children[i]->execute(cr, variables, functions);
-            sub_results.push_back(cr);
+            // we don't do that for conditionals because only the left
+            // or only the right shall be computed!
+            int const max_children(f_children.size());
+            for(int i(0); i < max_children; ++i)
+            {
+                variable_t cr;
+                f_children[i]->execute(cr, variables, functions);
+                sub_results.push_back(cr);
+            }
         }
 
         switch(f_type)
@@ -1000,7 +1008,7 @@ public:
             break;
 
         case NODE_TYPE_OPERATION_CONDITIONAL:
-            conditional(result, sub_results);
+            conditional(result, variables, functions);
             break;
 
         case NODE_TYPE_OPERATION_ASSIGNMENT:
@@ -1217,6 +1225,20 @@ public:
         QString const table_name(sub_results[0].get_string("cell(1)"));
         QString const row_name(sub_results[1].get_string("cell(2)"));
         QString const cell_name(sub_results[2].get_string("cell(3)"));
+//std::cerr << "cell(\"" << table_name << "\", \"" << row_name << "\", \"" << cell_name << "\")\n";
+
+        // verify whether reading the content is considered secure
+        server::secure_field_flag_t secure;
+        server::instance()->cell_is_secure(table_name, row_name, cell_name, secure);
+        if(secure.is_secure())
+        {
+            // TBD: should we just return a string with an error in it
+            //      instead of throwing?
+            throw snap_expr_exception_not_accessible(
+                    QString("cell() called with a set of parameters specifying a secure cell (table \"%1\", row \"%2\", cell \"%3\"); no data will be returned")
+                            .arg(table_name).arg(row_name).arg(cell_name));
+        }
+
         QtCassandra::QCassandraValue value(g_context->table(table_name)->row(row_name)->cell(cell_name)->value());
         result.set_value(variable_t::EXPR_VARIABLE_TYPE_BINARY, value);
     }
@@ -2334,80 +2356,89 @@ public:
                             .arg(op));
     }
 
-    void conditional(variable_t& result, variable_t::variable_vector_t const& sub_results)
+    void conditional(variable_t& result, variable_t::variable_map_t& variables, functions_t& functions)
     {
+        // IMPORTANT NOTE
+        //   we compute the results directly in conditional() to
+        //   avoid calculating f_children[1] and f_children[2]
 #ifdef DEBUG
-        if(sub_results.size() != 3)
+        if(f_children.size() != 3)
         {
             throw snap_logic_exception("expr_node::conditional() found a conditional operator with a number of results which is not 3");
         }
 #endif
+        // Note:
+        // we put the result of f_children[0] in 'result' even though this
+        // is not the result of the function, but it shouldn't matter, we'll
+        // either throw or compute f_children[1] or f_children[2] as required
+        f_children[0]->execute(result, variables, functions);
         bool r(false);
-        switch(sub_results[0].get_type())
+        switch(result.get_type())
         {
         case variable_t::EXPR_VARIABLE_TYPE_BOOL:
-            r = sub_results[0].get_value().signedCharValue() != 0;
+            r = result.get_value().signedCharValue() != 0;
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_INT8:
-            r = sub_results[0].get_value().signedCharValue() != 0;
+            r = result.get_value().signedCharValue() != 0;
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_UINT8:
-            r = sub_results[0].get_value().unsignedCharValue() != 0;
+            r = result.get_value().unsignedCharValue() != 0;
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_INT16:
-            r = sub_results[0].get_value().int16Value() != 0;
+            r = result.get_value().int16Value() != 0;
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_UINT16:
-            r = sub_results[0].get_value().uint16Value() != 0;
+            r = result.get_value().uint16Value() != 0;
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_INT32:
-            r = sub_results[0].get_value().int32Value() != 0;
+            r = result.get_value().int32Value() != 0;
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_UINT32:
-            r = sub_results[0].get_value().uint32Value() != 0;
+            r = result.get_value().uint32Value() != 0;
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_INT64:
-            r = sub_results[0].get_value().int64Value() != 0;
+            r = result.get_value().int64Value() != 0;
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_UINT64:
-            r = sub_results[0].get_value().uint64Value() != 0;
+            r = result.get_value().uint64Value() != 0;
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_FLOAT:
-            r = sub_results[0].get_value().floatValue() != 0.0f;
+            r = result.get_value().floatValue() != 0.0f;
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_DOUBLE:
-            r = sub_results[0].get_value().doubleValue() != 0.0;
+            r = result.get_value().doubleValue() != 0.0;
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_STRING:
-            r = sub_results[0].get_value().stringValue().length() != 0;
+            r = result.get_value().stringValue().length() != 0;
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_BINARY:
-            r = sub_results[0].get_value().binaryValue().size() != 0;
+            r = result.get_value().binaryValue().size() != 0;
             break;
 
         default:
-            throw snap_logic_exception(QString("expr_node::logical_not() called with an incompatible sub_result type: %1").arg(static_cast<int>(sub_results[0].get_type())));
+            throw snap_logic_exception(QString("expr_node::logical_not() called with an incompatible sub_result type: %1")
+                        .arg(static_cast<int>(result.get_type())));
 
         }
         if(r)
         {
-            result = sub_results[1];
+            f_children[1]->execute(result, variables, functions);
         }
         else
         {
-            result = sub_results[2];
+            f_children[2]->execute(result, variables, functions);
         }
     }
 

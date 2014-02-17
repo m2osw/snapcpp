@@ -283,6 +283,11 @@ int main(int argc, char *argv[])
         connect_cassandra();
     }
 
+    // XXX -- the expression may actually make use of signals that
+    //        different plugins may want to answer; this tool does
+    //        not load the plugins (yet); should we not? for instance
+    //        the secure fields are returned because the code does
+    //        not know whether the cell is considered secure
     int const max(g_opt->size("expression"));
     for(int i = 0; i < max; ++i)
     {

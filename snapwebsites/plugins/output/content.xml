@@ -65,11 +65,11 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <!-- get title of the page; we need to have functions that do that with one instruction! -->
     <param name="list::original_item_key_script" overwrite="yes">
       <![CDATA[(branch := int32(cell("content", page, "content::revision_control::current_branch")),
-                key := int32(cell("content", page, "content::revision_control::current_revision_key::" + branch + "::en")),
-                cell("data", key, "content::title"))]]>
+                key := string(cell("content", page, "content::revision_control::current_revision_key::" + branch + "::en")),
+                key ? string(cell("data", key, "content::title")) : "no title")]]>
     </param>
-    <param name="list::original_test_script">
-      <![CDATA[parent(page) == "admin"]]>
+    <param name="list::original_test_script" overwrite="yes">
+      <![CDATA[parent(path) == "admin"]]>
     </param>
     <param name="list::selector">children</param>
     <link name="content::page_type" to="content::page_type" mode="1:*">/types/taxonomy/system/content-types/administration-page</link>

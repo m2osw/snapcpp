@@ -261,6 +261,7 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
          || n == "content::updated"
          || n.left(18) == "core::last_updated"
          || n == "core::plugin_threshold"
+         || n == "list::last_updated"
          || n == "sessions::date"
          || n == "shorturl::date"
          || n == "users::created_time"

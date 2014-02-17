@@ -116,7 +116,7 @@ private:
     int                 generate_all_lists(QString const& site_key);
     int                 generate_all_lists_for_page(QString const& site_key, QString const& row_key);
     bool                run_list_check(content::path_info_t& list_ipath, content::path_info_t& page_ipath);
-    bool                run_list_item_key(content::path_info_t& list_ipath, content::path_info_t& page_ipath);
+    QString             run_list_item_key(content::path_info_t& list_ipath, content::path_info_t& page_ipath);
 
     zpsnap_child_t                          f_snap;
     QtCassandra::QCassandraTable::pointer_t f_list_table;
