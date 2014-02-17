@@ -65,8 +65,7 @@ namespace {
 inline void checkBufferSize(const uint64_t new_size)
 {
     if(new_size > BUFFER_MAX_SIZE) {
-        // Note: the size in the message is wrong if the BUFFER_MAX_SIZE gets changed
-        throw std::runtime_error("resulting value is more than 64Mb");
+        throw std::runtime_error(QString("resulting value is more than %1 bytes").arg(BUFFER_MAX_SIZE).toUtf8().data());
     }
 }
 
