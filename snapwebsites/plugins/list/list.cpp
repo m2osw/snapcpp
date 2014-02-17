@@ -536,7 +536,6 @@ void list::on_backend_action(QString const& action)
                         }
                     }
                 }
-//break; // to avoid looping (useful until I delete the entries in the list table)
             }
 
             // sleep till next PING (but max. 5 minutes)
@@ -703,6 +702,10 @@ int list::generate_all_lists(QString const& site_key)
             {
                 did_work = 1;
             }
+
+            // we handled that page for all the lists that we have on
+            // this website, so drop it now
+            list_row->dropCell(key, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
         }
     }
 
@@ -775,7 +778,6 @@ int list::generate_all_lists_for_page(QString const& site_key, QString const& pa
         QString const new_item_key_full(QString("%1::%2").arg(get_name(SNAP_NAME_LIST_ORDERED_PAGES)).arg(new_item_key));
         if(included)
         {
-std::cerr << "include page [" << page_ipath.get_key() << "]\n";
             // the check script says to include this item in this list;
             // first we need to check to find under which key it was
             // included if it is already there because it may have
@@ -805,10 +807,6 @@ std::cerr << "include page [" << page_ipath.get_key() << "]\n";
                 QString const destination_key(page_key);
                 bool const source_unique(false);
                 bool const destination_unique(false);
-// this is proper code to create a link, unfortunately it doesn't work yet
-// because it matches another link and it gets "merged"
-std::cerr << "inter link " << list_ipath.get_key() << " (branch: " << list_ipath.get_branch()
-              << ") with " << page_ipath.get_key() << " (branch: " << page_ipath.get_branch() << ")\n";
                 links::link_info source(link_name, source_unique, list_ipath.get_key(), list_ipath.get_branch());
                 links::link_info destination(link_name, destination_unique, page_ipath.get_key(), page_ipath.get_branch());
                 links::links::instance()->create_link(source, destination);
