@@ -1,4 +1,4 @@
-snapwebsites (0.1.10m2osw1~saucyubuntu1) UNRELEASED; urgency=low
+snapwebsites (0.1.10m2osw2~saucy) saucy; urgency=high
 
   * Improved init script to handle the backend processes cleanly. Now uses
   snapsignal to terminate on stop.
