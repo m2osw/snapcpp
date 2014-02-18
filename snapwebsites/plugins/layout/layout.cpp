@@ -53,7 +53,7 @@ SNAP_PLUGIN_START(layout, 1, 0)
  *
  * \return A pointer to the name.
  */
-const char *get_name(name_t name)
+char const *get_name(name_t name)
 {
     switch(name)
     {
@@ -165,8 +165,6 @@ QString layout::description() const
  *
  * \return The UTC Unix date of the last update of this plugin.
  */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
 int64_t layout::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
@@ -181,7 +179,6 @@ int64_t layout::do_update(int64_t last_updated)
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
-#pragma GCC diagnostic pop
 
 
 /** \brief Update layouts as required.
@@ -914,7 +911,7 @@ int64_t layout::install_layout(QString const& layout_name, int64_t const last_up
     QtCassandra::QCassandraTable::pointer_t layout_table(get_layout_table());
     QtCassandra::QCassandraTable::pointer_t data_table(content_plugin->get_data_table());
 
-    QtCassandra::QCassandraValue last_updated_value(layout_table->row(layout_name)->cell(get_name(SNAP_NAME_CORE_LAST_UPDATED))->value());
+    QtCassandra::QCassandraValue last_updated_value(layout_table->row(layout_name)->cell(snap::get_name(SNAP_NAME_CORE_LAST_UPDATED))->value());
 
     content::path_info_t layout_ipath;
     layout_ipath.set_path(QString("%1/%2").arg(get_name(SNAP_NAME_LAYOUT_ADMIN_LAYOUTS)).arg(layout_name));
@@ -969,7 +966,7 @@ int64_t layout::install_layout(QString const& layout_name, int64_t const last_up
                         "layout::install_layout() could not find the content.xml file in the layout table.");
             NOTREACHED();
         }
-        xml_content = (layout_table->row(layout_name)->cell(get_name(SNAP_NAME_LAYOUT_CONTENT))->value().stringValue());
+        xml_content = layout_table->row(layout_name)->cell(get_name(SNAP_NAME_LAYOUT_CONTENT))->value().stringValue();
     }
 
     QDomDocument dom;
@@ -1008,13 +1005,15 @@ int64_t layout::install_layout(QString const& layout_name, int64_t const last_up
     value.setTimestamp(start_date);
     layout_table->row(layout_name)->cell(reference)->setValue(value);
 
-    // the last updated value should never be empty
-    if(!last_updated_value.nullValue())
+    // the last updated value should never be empty, but that happens when
+    // we deal with the default theme
+    if(last_updated_value.nullValue())
     {
-        return last_updated_value.int64Value();
+        last_updated_value.setInt64Value(last_updated);
+        layout_table->row(layout_name)->cell(snap::get_name(SNAP_NAME_CORE_LAST_UPDATED))->setValue(last_updated_value);
     }
 
-    return last_updated;
+    return last_updated_value.int64Value();
 }
 
 
