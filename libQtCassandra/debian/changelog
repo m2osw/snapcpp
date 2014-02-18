@@ -1,3 +1,9 @@
+libqtcassandra (0.5.2) saucy; urgency=high
+
+  * Put the limit size of a buffer inside the throw raised when the limit is
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Mon, 17 Feb 2014 17:38:35 -0800
+
 libqtcassandra (0.5.1) saucy; urgency=high
 
   * Bump to upload new version to PPA.

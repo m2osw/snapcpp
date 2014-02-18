@@ -134,6 +134,7 @@ public:
     void usage();
     void setup_as_backend();
     bool is_debug() const { return f_debug; }
+    bool is_foreground() const { return f_foreground; }
     bool is_backend() const { return f_backend; }
     void config( int argc, char *argv[] );
     QString get_parameter(QString const& name) const;
@@ -184,6 +185,7 @@ private:
 
     std::string                             f_servername;
     controlled_vars::fbool_t                f_debug;
+    controlled_vars::fbool_t                f_foreground;
     controlled_vars::fbool_t                f_backend;
     QString                                 f_config;
     parameter_map_t                         f_parameters;
