@@ -11,7 +11,7 @@ HOSTNAME=127.0.0.1
 PORT=9160
 LAYOUTDIR=/usr/share/snapwebsites/layouts
 BINDIR=./src
-${BINDIR}/snapdb --host ${HOSTNAME} --port ${PORT} --drop-tables --yes-i-know-what-im-doing
+${BINDIR}/snapdb --host ${HOSTNAME} --port ${PORT} --drop-tables
 ${BINDIR}/snaplayout --host ${HOSTNAME} --port ${PORT} \
 	${LAYOUTDIR}/bare/content.xml ${LAYOUTDIR}/bare/body-parser.xsl ${LAYOUTDIR}/bare/theme-parser.xsl ${LAYOUTDIR}/bare/style.css \
 	${LAYOUTDIR}/white/content.xml ${LAYOUTDIR}/white/body-parser.xsl ${LAYOUTDIR}/white/theme-parser.xsl

@@ -22,6 +22,8 @@
 #include <execinfo.h>
 #include <unistd.h>
 
+#include "log.h"
+
 
 namespace snap
 {
@@ -46,14 +48,18 @@ snap_exception_base::snap_exception_base()
     if(g_debug)
     {
         std::cerr << "Callstack after exception:" << std::endl;
-        int const max_stack_length(20);
-
+        int const max_stack_length(1024);
         void *array[max_stack_length];
-        size_t size;
-        size = backtrace(array, max_stack_length);
-        backtrace_symbols_fd(array, size, STDERR_FILENO);
+        size_t const size = backtrace(array, max_stack_length);
 
-        // TODO: also send that to a log file
+        // Output to stderr
+        //
+        backtrace_symbols_fd( array, size, STDERR_FILENO );
+
+        // Output to log
+        char **stack_string = backtrace_symbols( array, size );
+        SNAP_LOG_DEBUG("snap_exception_base(): backtrace=")(*stack_string);
+        free( stack_string );
     }
 }
 
