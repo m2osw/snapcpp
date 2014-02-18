@@ -1,3 +1,10 @@
+snapwebsites (0.1.10m2osw1~saucyubuntu1) UNRELEASED; urgency=low
+
+  * Improved init script to handle the backend processes cleanly. Now uses
+  snapsignal to terminate on stop.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Mon, 17 Feb 2014 21:30:34 -0800
+
 snapwebsites (0.1.10m2osw1~saucy) saucy; urgency=high
 
   * Added pagelist background process to init script.

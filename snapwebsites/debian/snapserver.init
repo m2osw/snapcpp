@@ -70,7 +70,7 @@ start_daemon()
 	#	2>&1 > /dev/null \
 	#	|| return 1
 	bname=`basename $1`
-	start-stop-daemon --start --background --quiet --make-pidfile --pidfile /var/run/${bname}.pid --chuid ${USER} \
+	start-stop-daemon --start --background --make-pidfile --pidfile /var/run/${bname}.pid --chuid ${USER} \
 		--exec $1 -- --foreground $2 \
 		2>&1 > /dev/hull \
 		|| return 2
@@ -81,8 +81,8 @@ start_daemon()
 do_start()
 {
 	start_daemon "${SERVER}"  "${SERVER_ARGS}"  || return $?
-	start_daemon "${BACKEND}" "${BACKEND_SENDMAIL_ARGS}" || return $?
-	start_daemon "${BACKEND}" "${BACKEND_PAGELIST_ARGS}" || return $?
+	${BACKEND} ${BACKEND_SENDMAIL_ARGS}
+	${BACKEND} ${BACKEND_PAGELIST_ARGS}
 	return 0
 }
 
@@ -112,7 +112,8 @@ stop_daemon()
 do_stop()
 {
 	stop_daemon "${SERVER}"
-	stop_daemon "${BACKEND}"
+	/usr/bin/snapsignal -a sendmail STOP
+	/usr/bin/snapsignal -a pagelist STOP
 	return 0
 }
 
