@@ -23,14 +23,15 @@ USER=snapwebsites
 # snapserver
 #
 SERVER_NAME=snapserver
-SERVER=/usr/bin/snapserver		# Introduce the server's location here
-SERVER_ARGS=""    				# Additional arguments with which to run the daemon
+SERVER=/usr/bin/snapserver
+SERVER_ARGS=""
 
 # snapbackend
 #
+BACKEND=/usr/bin/snapbackend
 BACKEND_NAME=snapbackend
-BACKEND=/usr/bin/snapbackend	# Introduce the server's location here
-BACKEND_ARGS="-a sendmail"    	# Additional arguments with which to run the daemon
+BACKEND_SENDMAIL_ARGS="-a sendmail"
+BACKEND_PAGELIST_ARGS="-a pagelist"
 
 # Exit if the package is not installed
 [ -x $SERVER  ] || exit 0
@@ -45,8 +46,9 @@ then
         exit 0
 fi
 
-SERVER_ARGS="${SERVER_ARGS} ${SERVER_OPTS}"    # SERVER_OPTS  comes from /etc/default/snapserver
-BACKEND_ARGS="${BACKEND_ARGS} ${BACKEND_OPTS}" # BACKEND_OPTS comes from /etc/default/snapserver
+SERVER_ARGS="${SERVER_ARGS} ${SERVER_OPTS}"    					 # SERVER_OPTS  comes from /etc/default/snapserver
+BACKEND_SENDMAIL_ARGS="${BACKEND_SENDMAIL_ARGS} ${BACKEND_OPTS}" # BACKEND_OPTS comes from /etc/default/snapserver
+BACKEND_PAGELIST_ARGS="${BACKEND_PAGELIST_ARGS} ${BACKEND_OPTS}"
 
 # Load the VERBOSE setting and other rcS variables
 . /lib/init/vars.sh
@@ -69,7 +71,7 @@ start_daemon()
 	#	|| return 1
 	bname=`basename $1`
 	start-stop-daemon --start --background --quiet --make-pidfile --pidfile /var/run/${bname}.pid --chuid ${USER} \
-		--exec $1 -- -d $2 \
+		--exec $1 -- --foreground $2 \
 		2>&1 > /dev/hull \
 		|| return 2
 	return 0
@@ -79,7 +81,8 @@ start_daemon()
 do_start()
 {
 	start_daemon "${SERVER}"  "${SERVER_ARGS}"  || return $?
-	start_daemon "${BACKEND}" "${BACKEND_ARGS}" || return $?
+	start_daemon "${BACKEND}" "${BACKEND_SENDMAIL_ARGS}" || return $?
+	start_daemon "${BACKEND}" "${BACKEND_PAGELIST_ARGS}" || return $?
 	return 0
 }
 

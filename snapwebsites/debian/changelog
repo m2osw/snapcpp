@@ -1,4 +1,4 @@
-snapwebsites (0.1.9~saucyubuntu1) UNRELEASED; urgency=low
+snapwebsites (0.1.10~saucy) saucy; urgency=high
 
   * Added the list plugin which generates lists of pages based on a
     C-like expression that can be very simple or very complex.
@@ -6,6 +6,10 @@ snapwebsites (0.1.9~saucyubuntu1) UNRELEASED; urgency=low
   * Added a type for pages used for emails.
   * Fixed the links plugin so it supports several multiple to multiple
     links (*:*) as expected.
+  * Added pagelist background process to init script.
+  * Added --foreground switch to the server code, which is separate from the
+  --debug switch. Foreground just prevents the backgrounding, where debug puts
+  the log to the stdout.
 
  -- Alexis Wilke <alexis@m2osw.com>  Mon, 17 Feb 2014 15:43:48 -0800
 

@@ -1,3 +1,10 @@
+libqtserialization (0.1.2) saucy; urgency=high
+
+  * Fixed the template definitions as they need to NOT be defined as is in a
+  header file (i.e. their are full implementation so they require inline).
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Mon, 17 Feb 2014 17:27:12 -0800
+
 libqtserialization (0.1.1) saucy; urgency=high
 
   * Bump for PPA build.

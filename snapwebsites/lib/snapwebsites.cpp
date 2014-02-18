@@ -224,11 +224,19 @@ namespace
             advgetopt::getopt::optional_argument
         },
         {
+            'f',
+            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE,
+            "foreground",
+            nullptr,
+            "Keeps the server in the foreground (default is to detact and background).",
+            advgetopt::getopt::no_argument
+        },
+        {
             'd',
             advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE,
             "debug",
             nullptr,
-            "Keeps the server in the foreground (default is to detact and background), and display the log to the stdout.",
+            "Displays the log to the stdout. Also, implies the --foreground switch.",
             advgetopt::getopt::no_argument
         },
         {
@@ -505,6 +513,8 @@ void server::setup_as_backend()
  */
 void server::config(int argc, char *argv[])
 {
+    // Parse command-line options...
+    //
     f_opt.reset(
         new advgetopt::getopt( argc, argv, g_snapserver_options, g_configuration_files, "SNAPSERVER_OPTIONS" )
     );
@@ -513,6 +523,12 @@ void server::config(int argc, char *argv[])
     //
     f_servername = argv[0];
 
+    // Keep the server in the foreground?
+    //
+    f_foreground = f_opt->is_defined( "foreground" );
+
+    // Output log to stdout. Implies foreground mode.
+    //
     f_debug = f_opt->is_defined( "debug" );
     snap_exception::set_debug(f_debug);
 
@@ -946,13 +962,13 @@ QtCassandra::QCassandraTable::pointer_t server::create_table(QtCassandra::QCassa
     return table;
 }
 
-/** \brief Detach the server unless in debug mode.
+/** \brief Detach the server unless in foreground mode.
  *
- * This function detaches the server unless it is in debug mode.
+ * This function detaches the server unless it is in foreground mode.
  */
 void server::detach()
 {
-    if(f_debug)
+    if(f_foreground)
     {
         return;
     }
