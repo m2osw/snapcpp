@@ -2030,12 +2030,16 @@ public:
         functions_t::function_call_t f(functions.get_function(f_name));
         if(f == nullptr)
         {
-            if(functions.get_has_internal_functions())
+            // if we already initialized the internal functions,
+            // there is nothing more to do here
+            if(!functions.get_has_internal_functions())
             {
-                throw snap_expr_exception_unknown_function(QString("unknown function \"%1\" in list execution environment").arg(f_name));
+                // give a chance to plugins and other listeners to
+                // register functions
+                server::instance()->add_snap_expr_functions(functions);
+                functions.add_functions(internal_functions);
+                f = functions.get_function(f_name);
             }
-            functions.add_functions(internal_functions);
-            f = functions.get_function(f_name);
             if(f == nullptr)
             {
                 throw snap_expr_exception_unknown_function(QString("unknown function \"%1\" in list execution environment").arg(f_name));

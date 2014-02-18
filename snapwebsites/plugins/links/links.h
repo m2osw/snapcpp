@@ -204,6 +204,7 @@ public:
     QtCassandra::QCassandraTable::pointer_t get_links_table();
 
     void                on_bootstrap(::snap::snap_child *snap);
+    void                on_add_snap_expr_functions(snap_expr::functions_t& functions);
 
     // TBD should those be events? (or create events?)
     void                create_link(link_info const& src, link_info const& dst);

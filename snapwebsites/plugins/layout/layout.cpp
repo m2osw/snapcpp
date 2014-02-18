@@ -265,6 +265,8 @@ QtCassandra::QCassandraTable::pointer_t layout::get_layout_table()
  *
  * \param[in] ipath  The path to the content to process.
  * \param[in] column_name  The name of the column to search (layout::theme or layout::layout)
+ *
+ * \return The name of the layout, may be "default" if no other name was found.
  */
 QString layout::get_layout(content::path_info_t& ipath, QString const& column_name)
 {

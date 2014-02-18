@@ -201,7 +201,6 @@ public:
     SNAP_SIGNAL(filter_email, (email& e), (e));
 
 private:
-    void initial_update(int64_t variables_timestamp);
     void content_update(int64_t variables_timestamp);
     void process_emails();
     void attach_email(email const& e);

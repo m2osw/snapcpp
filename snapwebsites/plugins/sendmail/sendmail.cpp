@@ -1344,26 +1344,10 @@ int64_t sendmail::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, initial_update);
     SNAP_PLUGIN_UPDATE(2013, 11, 18, 1, 5, 0, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
-
-
-/** \brief First update to run for the content plugin.
- *
- * This function is the first update for the content plugin. It installs
- * the initial index page.
- *
- * \param[in] variables_timestamp  The timestamp for all the variables added to the database by this update (in micro-seconds).
- */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-void sendmail::initial_update(int64_t variables_timestamp)
-{
-}
-#pragma GCC diagnostic pop
 
 
 /** \brief Update the database with our content references.
@@ -1373,13 +1357,12 @@ void sendmail::initial_update(int64_t variables_timestamp)
  *
  * \param[in] variables_timestamp  The timestamp for all the variables added to the database by this update (in micro-seconds).
  */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
 void sendmail::content_update(int64_t variables_timestamp)
 {
-    content::content::instance()->add_xml(get_name(SNAP_NAME_SENDMAIL));
+    static_cast<void>(variables_timestamp);
+
+    content::content::instance()->add_xml(get_plugin_name());
 }
-#pragma GCC diagnostic pop
 
 
 /** \brief Initialize the emails table.

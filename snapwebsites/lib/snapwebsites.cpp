@@ -1553,6 +1553,21 @@ bool server::cell_is_secure_impl(QString const& table, QString const& row, QStri
 }
 
 
+/** \brief Give a change to different plugins to add functions for snap_expr.
+ *
+ * This function gives a chance to any plugin listening to this signal
+ * to add functions that the snap_expr can then make use of.
+ *
+ * \return true in case the signal is to be broadcast.
+ */
+bool server::add_snap_expr_functions_impl(snap_expr::functions_t& functions)
+{
+    static_cast<void>(functions);
+
+    return true;
+}
+
+
 /** \brief Send a PING message to the specified UDP server.
  *
  * This function sends a PING message (4 bytes) to the specified

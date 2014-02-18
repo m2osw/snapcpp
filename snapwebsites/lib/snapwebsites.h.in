@@ -17,6 +17,7 @@
 #pragma once
 
 #include "snap_child.h"
+#include "snap_expr.h"
 #include "plugins.h"
 
 #include <advgetopt/advgetopt.h>
@@ -170,6 +171,7 @@ public:
                                    (path, signature));
     SNAP_SIGNAL(load_file, (snap_child::post_file_t& file, bool& found), (file, found));
     SNAP_SIGNAL(cell_is_secure, (QString const& table, QString const& row, QString const& cell, secure_field_flag_t& secure), (table, row, cell, secure));
+    SNAP_SIGNAL(add_snap_expr_functions, (snap_expr::functions_t& functions), (functions));
 
 private:
     typedef QMap<QString, QString>                parameter_map_t;

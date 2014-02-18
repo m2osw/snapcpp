@@ -546,7 +546,7 @@ bool link_context::next_link(link_info& info)
  * This function is used to initialize the links plugin object.
  */
 links::links()
-    //: f_snap(NULL) -- auto-init
+    //: f_snap(nullptr) -- auto-init
     //, f_links_table() -- auto-init
     //, f_data_table() -- auto-init
 {
@@ -572,6 +572,8 @@ links::~links()
 void links::on_bootstrap(::snap::snap_child *snap)
 {
     f_snap = snap;
+
+    SNAP_LISTEN(links, "server", server, add_snap_expr_functions, _1);
 }
 
 
@@ -1149,6 +1151,53 @@ void links::delete_this_link(link_info const& source, link_info const& destinati
     }
 }
 
+
+// TBD maybe this should be a taxonomy function and not directly a links option?
+//     (it would remove some additional dependencies on the content plugin!)
+static void call_linked_to(snap_expr::variable_t& result, snap_expr::variable_t::variable_vector_t const& sub_results)
+{
+    if(sub_results.size() != 3)
+    {
+        throw snap_expr::snap_expr_exception_invalid_number_of_parameters("invalid number of parameters to call linked_to() expected exactly 3");
+    }
+    QString link_name(sub_results[0].get_string("linked_to(1)"));
+    QString page(sub_results[1].get_string("linked_to(2)"));
+    QString type_name(sub_results[2].get_string("linked_to(3)"));
+
+    content::path_info_t ipath;
+    ipath.set_path(page);
+    link_info link_context_info(link_name, true, ipath.get_key(), ipath.get_branch());
+    QSharedPointer<link_context> link_ctxt(links::instance()->new_link_context(link_context_info));
+    link_info result_info;
+    bool r(false);
+    if(link_ctxt->next_link(result_info))
+    {
+        QString const site_key(content::content::instance()->get_snap()->get_site_key_with_slash());
+        if(result_info.key() == site_key + type_name)
+        {
+            // is linked!
+            r = true;
+        }
+    }
+    result.set_value(r);
+}
+
+snap_expr::functions_t::function_call_table_t const links_functions[] =
+{
+    { // check whether a page is linked to a type
+        "linked_to",
+        call_linked_to
+    },
+    {
+        nullptr,
+        nullptr
+    }
+};
+
+void links::on_add_snap_expr_functions(snap_expr::functions_t& functions)
+{
+    functions.add_functions(links_functions);
+}
 
 SNAP_PLUGIN_END()
 
