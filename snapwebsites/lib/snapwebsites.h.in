@@ -177,6 +177,9 @@ private:
     typedef std::shared_ptr<advgetopt::getopt>    getopt_ptr_t;
 
     server();
+
+    static void sighandler( int sig );
+
     void process_connection(int socket);
 
     static pointer_t                        f_instance;

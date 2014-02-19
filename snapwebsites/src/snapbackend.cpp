@@ -16,35 +16,49 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "snapwebsites.h"
+#include "snap_exception.h"
+#include "log.h"
 #include "not_reached.h"
 
 
 int main(int argc, char *argv[])
 {
-    // create a server object
-    snap::server::pointer_t s( snap::server::instance() );
-    s->setup_as_backend();
+	try
+	{
+		// create a server object
+		snap::server::pointer_t s( snap::server::instance() );
+		s->setup_as_backend();
 
-    // parse the command line arguments
-    s->config(argc, argv);
+		// parse the command line arguments
+		s->config(argc, argv);
 
-    // if possible, detach the server
-    s->detach();
-    // Only the child (backend) process returns here
+		// if possible, detach the server
+		s->detach();
+		// Only the child (backend) process returns here
 
-    // now create the qt application instance
-    s->prepare_qtapp( argc, argv );
+		// now create the qt application instance
+		s->prepare_qtapp( argc, argv );
 
-    // prepare the database
-    s->prepare_cassandra();
+		// prepare the database
+		s->prepare_cassandra();
 
-    // listen to connections
-    s->backend();
+		// listen to connections
+		s->backend();
 
-    // exit via the server so the server can clean itself up properly
-    s->exit(0);
+		// exit via the server so the server can clean itself up properly
+		s->exit(0);
+	}
+    catch( const snap::snap_exception& except )
+    {
+        SNAP_LOG_FATAL("snap_child::process(): exception caught!")(except.what());
+    }
+    catch( ... )
+    {
+        SNAP_LOG_FATAL("snap_child::process(): unknown exception caught!");
+    }
+
+	exit(1);
     snap::NOTREACHED();
-
     return 0;
 }
 

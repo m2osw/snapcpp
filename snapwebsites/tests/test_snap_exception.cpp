@@ -29,7 +29,7 @@
 #include <QDir>
 
 
-int main(int /*argc*/, char */*argv*/[])
+int main(int /*argc*/, char * /*argv*/[])
 {
     const QString conf_file( QString("%1/test_snap_exception.conf").arg(QDir::currentPath()) );
     snap::logging::configure( conf_file.toAscii().data() );

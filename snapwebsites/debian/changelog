@@ -1,3 +1,12 @@
+snapwebsites (0.1.12~saucy) saucy; urgency=high
+
+  * Now catches exceptions in the child process and logs them.
+  * Catches signals and logs them too.
+  * Added catches in the main() functions of snapserver and snapbackend
+  binaries.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Wed, 19 Feb 2014 11:49:33 -0800
+
 snapwebsites (0.1.11~saucy) saucy; urgency=high
 
   * Exceptions are now logged in debug mode.
