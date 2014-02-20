@@ -28,10 +28,12 @@
 namespace snap
 {
 
+#if 0
 namespace
 {
 bool g_debug = false;
 }
+#endif
 
 
 /** \brief Initialize this Snap! exception.
@@ -41,29 +43,33 @@ bool g_debug = false;
  * debug purposes.
  *
  * \todo
- * Implement the stack trace to log.
+ * Implement a way to switch off debuging to the log file in a production build.
  */
 snap_exception_base::snap_exception_base()
 {
-    if(g_debug)
+    int const max_stack_length(1024);
+    void *array[max_stack_length];
+    size_t const size = backtrace(array, max_stack_length);
+
+    // Output to stderr
+    //
+#ifdef DEBUG
+    std::cerr << "Callstack after exception:" << std::endl;
+    backtrace_symbols_fd( array, size, STDERR_FILENO );
+#endif
+
+    // Output to log
+    char **stack_string_list = backtrace_symbols( array, size );
+    for( size_t idx = 0; idx < size; ++idx )
     {
-        std::cerr << "Callstack after exception:" << std::endl;
-        int const max_stack_length(1024);
-        void *array[max_stack_length];
-        size_t const size = backtrace(array, max_stack_length);
-
-        // Output to stderr
-        //
-        backtrace_symbols_fd( array, size, STDERR_FILENO );
-
-        // Output to log
-        char **stack_string = backtrace_symbols( array, size );
-        SNAP_LOG_DEBUG("snap_exception_base(): backtrace=")(*stack_string);
-        free( stack_string );
+        const char* stack_string( stack_string_list[idx] );
+        SNAP_LOG_ERROR("snap_exception_base(): backtrace=")(stack_string);
     }
+    free( stack_string_list );
 }
 
 
+#if 0
 /** \brief Set the debug flag.
  *
  * This function is used to set the debug flag used to know whether the
@@ -94,6 +100,7 @@ void snap_exception_base::set_debug(bool const debug)
 {
     g_debug = debug;
 }
+#endif
 
 
 } // namespace snap

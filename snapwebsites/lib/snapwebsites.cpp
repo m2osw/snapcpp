@@ -539,7 +539,7 @@ void server::config(int argc, char *argv[])
     // Output log to stdout. Implies foreground mode.
     //
     f_debug = f_opt->is_defined( "debug" );
-    snap_exception::set_debug(f_debug);
+    //snap_exception::set_debug(f_debug);
     if( f_debug )
     {
         // Foreground if debug
