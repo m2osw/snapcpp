@@ -71,7 +71,7 @@ start_daemon()
 	#	|| return 1
 	bname=`basename $1`
 	start-stop-daemon --start --background --make-pidfile --pidfile /var/run/${bname}.pid --chuid ${USER} \
-		--exec $1 -- --foreground $2 \
+		--exec $1 -- $2 \
 		2>&1 > /dev/hull \
 		|| return 2
 	return 0
@@ -99,7 +99,6 @@ stop_daemon()
 	# needed by services started subsequently.  A last resort is to
 	# sleep for some time.
 	bname=`basename $1`
-	#start-stop-daemon --stop --quiet --pidfile /var/run/${bname}.pid --oknodo --retry=TERM/5/KILL/5 --name ${bname}
 	start-stop-daemon --stop --quiet --oknodo --retry=TERM/5/KILL/5 --exec ${1}
 	[ "$?" = 2 ] && return 2
 

@@ -1,10 +1,15 @@
-snapwebsites (0.1.14~saucy) UNRELEASED; urgency=low
+snapwebsites (0.1.14~saucy) saucy; urgency=high
 
+  [ Alexis Wilke ]
   * Added the list and menu plugins.
   * Broke up the layout functions so some can be reused by other plugins.
   * Enhanced the default theme a little so it is more likely to be useful.
 
- -- Alexis Wilke <alexis@m2osw.com>  Thu, 20 Feb 2014 17:07:27 -0800
+  [ R. Douglas Barbieri ]
+  * Revamped the logging system, added better switches to control the output.
+  * Removed errand printing to stderr: everything goes to the logs now.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Thu, 20 Feb 2014 17:07:27 -0800
 
 snapwebsites (0.1.13~saucy) saucy; urgency=high
 
