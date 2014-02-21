@@ -32,6 +32,7 @@
 #include "snap_magic.h"
 #include "compression.h"
 #include "qstring_stream.h"
+#include "snap_exception.h"
 
 #include <QtSerialization/QSerialization.h>
 
@@ -44,6 +45,7 @@
 #include <stdio.h>
 #include <sys/time.h>
 #include <sys/socket.h>
+#include <signal.h>
 
 #include <QDateTime>
 #include <QCoreApplication>
@@ -2441,6 +2443,7 @@ void snap_child::init_start_date()
                  + static_cast<int64_t>(tv.tv_usec);
 }
 
+
 /** \brief Process a request from the Snap CGI tool.
  *
  * The process function accepts a socket that was just connected.
@@ -2504,53 +2507,67 @@ bool snap_child::process(int socket)
         return true;
     }
 
-    f_ready = false;
-
-    // on fork() we lose the configuration so we have to reload it
-    logging::reconfigure();
-
-    init_start_date();
-
-    // child process
-    f_is_child = true;
-    f_socket = socket;
-
-    read_environment();         // environment to QMap<>
-    setup_uri();                // the raw URI
-
-    // now we connect to the DB
-    // move all possible work that does not required the DB before
-    // this line so we avoid a network connection altogether
-    connect_cassandra();
-
-    canonicalize_domain();      // using the URI, find the domain core::rules and start the canonalization process
-    canonicalize_website();     // using the canonicalized domain, find the website core::rules and continue the canonalization process
-
-    // check whether this website has a redirect and apply it if necessary
-    // (not a full 301, just show site B instead of site A)
-    site_redirect();
-
-    // save the start date as a variable so all the plugins have access
-    // to it as any other variable (really we can do f_snap->get_start_date()
-    // now to directly get the int64 value.)
-    f_uri.set_option("start_date", QString("%1").arg(f_start_date));
-
-    // start the plugins and there initialization
-    init_plugins();
-
-    canonicalize_options();    // find the language, branch, and revision specified by the user
-
-    // finally, "execute" the page being accessed
-    if(!f_is_being_initialized)
+    try
     {
-        execute();
+        f_ready = false;
+
+        // on fork() we lose the configuration so we have to reload it
+        logging::reconfigure();
+
+        init_start_date();
+
+        // child process
+        f_is_child = true;
+        f_socket = socket;
+
+        read_environment();         // environment to QMap<>
+        setup_uri();                // the raw URI
+
+        // now we connect to the DB
+        // move all possible work that does not required the DB before
+        // this line so we avoid a network connection altogether
+        connect_cassandra();
+
+        canonicalize_domain();      // using the URI, find the domain core::rules and start the canonalization process
+        canonicalize_website();     // using the canonicalized domain, find the website core::rules and continue the canonalization process
+
+        // check whether this website has a redirect and apply it if necessary
+        // (not a full 301, just show site B instead of site A)
+        site_redirect();
+
+        // save the start date as a variable so all the plugins have access
+        // to it as any other variable (really we can do f_snap->get_start_date()
+        // now to directly get the int64 value.)
+        f_uri.set_option("start_date", QString("%1").arg(f_start_date));
+
+        // start the plugins and there initialization
+        init_plugins();
+
+        canonicalize_options();    // find the language, branch, and revision specified by the user
+
+        // finally, "execute" the page being accessed
+        if(!f_is_being_initialized)
+        {
+            execute();
+        }
+
+        // we could delete ourselves but really only the socket is an
+        // object that needs to get cleaned up properly and it is done
+        // in the exit() function.
+        //delete this;
+        exit(0);
+        NOTREACHED();
+    }
+    catch( const snap_exception& except )
+    {
+        SNAP_LOG_FATAL("snap_child::process(): exception caught!")(except.what());
+    }
+    catch( ... )
+    {
+        SNAP_LOG_FATAL("snap_child::process(): unknown exception caught!");
     }
 
-    // we could delete ourselves but really only the socket is an
-    // object that needs to get cleaned up properly and it is done
-    // in the exit() function.
-    //delete this;
-    exit(0);
+    exit(1);
     NOTREACHED();
     return false;
 }

@@ -123,7 +123,7 @@ bool load(const QString& plugin_paths, plugin_ptr_t server, const QStringList& l
 // "I want to leave this here for now until we address this issue. Hope you
 // understand..."
 //
-#pragma message("Please restore the plugin pointer to a non-shared pointer. (see detailed reason above this message)")
+//#pragma message("Please restore the plugin pointer to a non-shared pointer. (see detailed reason above this message)")
     g_plugins.insert("server", server.get());
 
     QStringList const paths(plugin_paths.split(':'));

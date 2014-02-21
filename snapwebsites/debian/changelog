@@ -1,3 +1,32 @@
+snapwebsites (0.1.13~saucy) saucy; urgency=high
+
+  * Improved logging for exceptions and stack dumps. Now always log stack
+  dumps.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Thu, 20 Feb 2014 12:58:17 -0800
+
+snapwebsites (0.1.12~saucy) saucy; urgency=high
+
+  * Now catches exceptions in the child process and logs them.
+  * Catches signals and logs them too.
+  * Added catches in the main() functions of snapserver and snapbackend
+  binaries.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Wed, 19 Feb 2014 11:49:33 -0800
+
+snapwebsites (0.1.11~saucy) saucy; urgency=high
+
+  * Exceptions are now logged in debug mode.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Tue, 18 Feb 2014 10:36:59 -0800
+
+snapwebsites (0.1.10m2osw2~saucy) saucy; urgency=high
+
+  * Improved init script to handle the backend processes cleanly. Now uses
+  snapsignal to terminate on stop.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Mon, 17 Feb 2014 21:30:34 -0800
+
 snapwebsites (0.1.10m2osw1~saucy) saucy; urgency=high
 
   * Added pagelist background process to init script.

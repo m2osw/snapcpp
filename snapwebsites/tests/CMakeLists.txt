@@ -144,4 +144,21 @@ target_link_libraries(test_snap_version
 )
 
 
+
+add_executable( test_snap_exception
+	test_snap_exception.cpp
+	test_snap_exception.conf
+)
+add_dependencies( test_snap_exception test_prereqs )
+target_link_libraries(test_snap_exception
+	snapwebsites
+	${QTCASSANDRA_LIBRARIES}
+	${LIBTLD_LIBRARIES}
+	${QT_LIBRARIES}
+	${THRIFT_LIBRARIES}
+	dl
+)
+file( INSTALL test_snap_exception.conf DESTINATION ${CMAKE_CURRENT_BINARY_DIR} )
+
+
 # vim: ts=4 sw=4 et

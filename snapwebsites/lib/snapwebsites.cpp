@@ -513,6 +513,15 @@ void server::setup_as_backend()
  */
 void server::config(int argc, char *argv[])
 {
+    // Stop on these signals, log them, then terminate.
+    //
+    signal( SIGSEGV, sighandler );
+    signal( SIGBUS,  sighandler );
+    signal( SIGFPE,  sighandler );
+    signal( SIGILL,  sighandler );
+    signal( SIGTERM, sighandler );
+    signal( SIGINT,  sighandler );
+
     // Parse command-line options...
     //
     f_opt.reset(
@@ -530,7 +539,13 @@ void server::config(int argc, char *argv[])
     // Output log to stdout. Implies foreground mode.
     //
     f_debug = f_opt->is_defined( "debug" );
-    snap_exception::set_debug(f_debug);
+    //snap_exception::set_debug(f_debug);
+    if( f_debug )
+    {
+        // Foreground if debug
+        //
+        f_foreground = true;
+    }
 
     // initialize the syslog() interface
     openlog("snapserver", LOG_NDELAY | LOG_PID, LOG_DAEMON);
@@ -1113,6 +1128,35 @@ void server::listen()
     }
 }
 
+
+/** \brief Handle caught signals
+ *
+ * Catch the signal, then log the signal, then terminate with 1 status.
+ */
+void server::sighandler( int sig )
+{
+    QString signame;
+    switch( sig )
+    {
+        case SIGSEGV : signame = "SIGSEGV"; break;
+        case SIGBUS  : signame = "SIGBUS";  break;
+        case SIGFPE  : signame = "SIGFPE";  break;
+        case SIGILL  : signame = "SIGILL";  break;
+        case SIGTERM : signame = "SIGTERM"; break;
+        case SIGINT  : signame = "SIGINT";  break;
+        default      : signame = "UNKNOWN";
+    }
+
+    if( f_instance->f_debug )
+    {
+        std::cerr << f_instance->f_servername << ": Signal caught! [" << signame << "]! Exiting..." << std::endl;
+    }
+
+    SNAP_LOG_FATAL("signal caught: ")(signame);
+    f_instance->exit(1);
+}
+
+
 /** \brief Process an incoming connection.
  *
  * This function processes an incoming connection from a client.
@@ -1311,7 +1355,7 @@ bool server::define_locales_impl(QString& locales)
  *
  * \param[in] url  The URL to process a POST from.
  *
- * \return true if the signal has to be sent to other plugins.
+ * \return true if the signal has to be/sign sent to other plugins.
  */
 bool server::process_post_impl(const QString& /*url*/)
 {
