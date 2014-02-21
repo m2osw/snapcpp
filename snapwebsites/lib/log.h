@@ -73,9 +73,12 @@ private:
     QString         f_message;
 };
 
-void configure(QString filename);
+void configureConsole  ();
+void configureLogfile  ( const QString& logfile  );
+void configureConffile ( const QString& filename );
 void reconfigure();
 bool is_configured();
+void setLogOutputLevel( log_level_t level );
 
 logger fatal  (char const *file = NULL, char const *func = NULL, int line = -1);
 logger error  (char const *file = NULL, char const *func = NULL, int line = -1);

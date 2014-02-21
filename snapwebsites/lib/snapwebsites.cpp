@@ -224,11 +224,11 @@ namespace
             advgetopt::getopt::optional_argument
         },
         {
-            'f',
+            'b',
             advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE,
-            "foreground",
+            "background",
             nullptr,
-            "Keeps the server in the foreground (default is to detact and background).",
+            "Detaches the server to the background (default is stay in the foreground).",
             advgetopt::getopt::no_argument
         },
         {
@@ -236,7 +236,31 @@ namespace
             advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE,
             "debug",
             nullptr,
-            "Displays the log to the stdout. Also, implies the --foreground switch.",
+            "Outputs debug logs to the logfile/stdout.",
+            advgetopt::getopt::no_argument
+        },
+        {
+            'f',
+            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE,
+            "logfile",
+            nullptr,
+            "Output log file to write to. Overrides the setting in the configuration file.",
+            advgetopt::getopt::optional_argument
+        },
+        {
+            'l',
+            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE,
+            "logconf",
+            nullptr,
+            "Log configuration file to read from. Overrides log_config in the configuration file.",
+            advgetopt::getopt::optional_argument
+        },
+        {
+            'n',
+            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE,
+            "no-log",
+            nullptr,
+            "Don't create a logfile, just output to the console.",
             advgetopt::getopt::no_argument
         },
         {
@@ -534,18 +558,12 @@ void server::config(int argc, char *argv[])
 
     // Keep the server in the foreground?
     //
-    f_foreground = f_opt->is_defined( "foreground" );
+    f_foreground = !f_opt->is_defined( "background" );
 
     // Output log to stdout. Implies foreground mode.
     //
     f_debug = f_opt->is_defined( "debug" );
     //snap_exception::set_debug(f_debug);
-    if( f_debug )
-    {
-        // Foreground if debug
-        //
-        f_foreground = true;
-    }
 
     // initialize the syslog() interface
     openlog("snapserver", LOG_NDELAY | LOG_PID, LOG_DAEMON);
@@ -751,12 +769,54 @@ void server::config(int argc, char *argv[])
         f_parameters["server_name"] = host;
     }
 
-    // finally we can initialize the log system
-    logging::configure(f_parameters["log_config"]);
+    // Finally we can initialize the log system
+    //
+    if( f_opt->is_defined( "no-log" ) )
+    {
+        // Override log_config and output only to the console
+        //
+        logging::configureConsole();
+    }
+    else if( f_opt->is_defined("logfile") )
+    {
+        // Override the output logfile specified in the configuration file.
+        //
+        logging::configureLogfile( f_opt->get_string( "logfile" ).c_str() );
+    }
+    else if( f_opt->is_defined("logconf") )
+    {
+        logging::configureConffile( f_opt->get_string( "logconf" ).c_str() );
+    }
+    else
+    {
+        // Read the log configuration file and use it to specify the appenders
+        // and log level.
+        //
+        const QString log_config( f_parameters["log_config"] );
+        if( log_config.isEmpty() )
+        {
+            // Must be specified in configuration!
+            //
+            throw snap_exception( "log_config has not been defined in the configuration file!" );
+            NOTREACHED();
+        }
 
-    // I really prevent to have an immediate message to let users know that
+        // Now configure the logging system according to the log configuration.
+        //
+        logging::configureConffile( f_parameters["log_config"] );
+    }
+
+    if( f_debug )
+    {
+        // Override output level and force it to be debug
+        //
+        logging::setLogOutputLevel( logging::LOG_LEVEL_DEBUG );
+    }
+
+    // I really want to prevent having an immediate message to let users know that
     // the server is starting; however, until we detach() ourselves the
     // process identifier is going to be wrong.
+    //
     SNAP_LOG_INFO("Snap v" SNAPWEBSITES_VERSION_STRING " on \"" + f_parameters["server_name"] + "\" started.");
 }
 
