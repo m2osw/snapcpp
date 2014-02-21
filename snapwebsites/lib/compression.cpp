@@ -186,7 +186,7 @@ QByteArray compress(QString& compressor_name, const QByteArray& input, level_t l
     if(input.size() == 0 || level < 5)
     {
 #ifdef DEBUG
-SNAP_LOG_TRACE("nothing to compress\n");
+SNAP_LOG_TRACE("nothing to compress");
 #endif
         compressor_name = compressor_t::NO_COMPRESSION;
         return input;
@@ -223,7 +223,7 @@ SNAP_LOG_TRACE("nothing to compress\n");
         // compressor is not available, return input as is...
         compressor_name = compressor_t::NO_COMPRESSION;
 #ifdef DEBUG
-SNAP_LOG_TRACE("compressor not found?!\n");
+SNAP_LOG_TRACE("compressor not found?!");
 #endif
         return input;
     }
@@ -234,7 +234,7 @@ SNAP_LOG_TRACE("compressor not found?!\n");
     {
         compressor_name = compressor_t::NO_COMPRESSION;
 #ifdef DEBUG
-SNAP_LOG_TRACE("compression is larger?!\n");
+SNAP_LOG_TRACE("compression is larger?!");
 #endif
         return input;
     }

@@ -99,14 +99,17 @@ void configureConsole()
     appender->setName(LOG4CPLUS_TEXT("console"));
     const log4cplus::tstring pattern( "%b:%L:%h: %m%n" );
     appender->setLayout( std::auto_ptr<log4cplus::Layout>( new log4cplus::PatternLayout(pattern)) );
-    log4cplus::Logger::getRoot().addAppender( appender );
-    setLogOutputLevel( LOG_LEVEL_INFO );
+    appender->setThreshold( log4cplus::INFO_LOG_LEVEL );
 
     g_log_config_filename.clear();
     g_log_output_filename.clear();
     g_logging_type    = console_logger;
     g_logger          = log4cplus::Logger::getInstance("snap");
     g_secure_logger   = log4cplus::Logger::getInstance("security");
+
+    g_logger.addAppender( appender );
+    g_secure_logger.addAppender( appender );
+    setLogOutputLevel( LOG_LEVEL_INFO );        // TODO: This is broken! For some reason log4cplus won't change the threshold level...
 }
 
 
@@ -147,14 +150,17 @@ void configureLogfile( const QString& logfile )
     appender->setName(LOG4CPLUS_TEXT("log_file"));
     const log4cplus::tstring pattern( "%d{%Y/%m/%d %H:%M:%S} %h Snap[%i]: %m (%b:%L)%n" );
     appender->setLayout( std::auto_ptr<log4cplus::Layout>( new log4cplus::PatternLayout(pattern)) );
-    log4cplus::Logger::getRoot().addAppender( appender );
-    setLogOutputLevel( LOG_LEVEL_INFO );
+    appender->setThreshold( log4cplus::INFO_LOG_LEVEL );
 
     g_log_config_filename.clear();
     g_log_output_filename = logfile;
     g_logging_type    = file_logger;
     g_logger            = log4cplus::Logger::getInstance("snap");
     g_secure_logger     = log4cplus::Logger::getInstance("security");
+
+    g_logger.addAppender( appender );
+    g_secure_logger.addAppender( appender );
+    setLogOutputLevel( LOG_LEVEL_INFO );        // TODO: This is broken! For some reason log4cplus won't change the threshold level...
 }
 
 
@@ -246,6 +252,12 @@ bool is_configured()
 }
 
 
+/* \brief Set the current logging threshold
+ *
+ * Tells log4cplus to limit the logging output to the specified threshold.
+ *
+ * \todo This is broken! For some reason log4cplus won't change the threshold level using this method.
+ */
 void setLogOutputLevel( log_level_t level )
 {
     log4cplus::LogLevel new_level;
@@ -282,6 +294,8 @@ void setLogOutputLevel( log_level_t level )
     }
 
     log4cplus::Logger::getRoot().setLogLevel( new_level );
+    g_logger.setLogLevel( new_level );
+    g_secure_logger.setLogLevel( new_level );
 }
 
 
