@@ -1,7 +1,15 @@
+snapwebsites (0.1.14~saucy) UNRELEASED; urgency=low
+
+  * Added the list and menu plugins.
+  * Broke up the layout functions so some can be reused by other plugins.
+  * Enhanced the default theme a little so it is more likely to be useful.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Thu, 20 Feb 2014 17:07:27 -0800
+
 snapwebsites (0.1.13~saucy) saucy; urgency=high
 
   * Improved logging for exceptions and stack dumps. Now always log stack
-  dumps.
+    dumps.
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Thu, 20 Feb 2014 12:58:17 -0800
 
@@ -10,7 +18,7 @@ snapwebsites (0.1.12~saucy) saucy; urgency=high
   * Now catches exceptions in the child process and logs them.
   * Catches signals and logs them too.
   * Added catches in the main() functions of snapserver and snapbackend
-  binaries.
+    binaries.
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Wed, 19 Feb 2014 11:49:33 -0800
 
@@ -23,7 +31,7 @@ snapwebsites (0.1.11~saucy) saucy; urgency=high
 snapwebsites (0.1.10m2osw2~saucy) saucy; urgency=high
 
   * Improved init script to handle the backend processes cleanly. Now uses
-  snapsignal to terminate on stop.
+    snapsignal to terminate on stop.
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Mon, 17 Feb 2014 21:30:34 -0800
 
@@ -31,13 +39,13 @@ snapwebsites (0.1.10m2osw1~saucy) saucy; urgency=high
 
   * Added pagelist background process to init script.
   * Added --foreground switch to the server code, which is separate from the
-  --debug switch. Foreground just prevents the backgrounding, where debug puts
-  the log to the stdout.
+    --debug switch. Foreground just prevents the backgrounding, where debug
+    puts the log to the stdout.
   * Bumped changelog for a release.
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Mon, 17 Feb 2014 17:46:44 -0800
 
-snapwebsites (0.1.10~saucy) UNRELEASED; urgency=high
+snapwebsites (0.1.10~saucy) saucy; urgency=high
 
   * Added the list plugin which generates lists of pages based on a
     C-like expression that can be very simple or very complex.
