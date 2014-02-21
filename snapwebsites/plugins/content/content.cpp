@@ -27,6 +27,7 @@
 #include "snap_magic.h"
 #include "snap_image.h"
 #include "snap_version.h"
+#include "qdomhelpers.h"
 
 #include <QtCassandra/QCassandraLock.h>
 
@@ -1308,7 +1309,7 @@ void field_search::run()
                 f_element.appendChild(child);
 
                 // parse the XML (XHTML) string
-                content::content::insert_html_string_to_xml_doc(child, f_result[0].stringValue());
+                snap_dom::insert_html_string_to_xml_doc(child, f_result[0].stringValue());
 
                 cmd_reset(true);
             }
@@ -2587,44 +2588,6 @@ void permission_flag::not_permitted(QString const& new_reason)
 
 
 
-/** \brief Useful function that transforms a QString to XML.
- *
- * When inserting a string in the XML document when that string may include
- * HTML code, call this function, it will first convert the string to XML
- * then insert the result as children of the \p child element.
- *
- * \param[in,out] child  DOM element receiving the result as children nodes.
- * \param[in] xml  The input XML string.
- */
-void content::insert_html_string_to_xml_doc(QDomElement child, QString const& xml)
-{
-    // parsing the XML can be slow, try to avoid that if possible
-    if(xml.contains('<'))
-    {
-        QDomDocument xml_doc("wrapper");
-        xml_doc.setContent("<wrapper>" + xml + "</wrapper>", true, nullptr, nullptr, nullptr);
-
-        // copy the result in a fragment of our document
-        QDomDocumentFragment frag(child.ownerDocument().createDocumentFragment());
-        frag.appendChild(child.ownerDocument().importNode(xml_doc.documentElement(), true));
-
-        // copy the fragment nodes at the right place
-        QDomNodeList children(frag.firstChild().childNodes());
-        QDomNode previous(children.at(0));
-        child.appendChild(children.at(0));
-        while(!children.isEmpty())
-        {
-            QDomNode l(children.at(0));
-            child.insertAfter(children.at(0), previous);
-            previous = l;
-        }
-    }
-    else
-    {
-        QDomText text(child.ownerDocument().createTextNode(xml));
-        child.appendChild(text);
-    }
-}
 
 
 /** \brief Initialize the content plugin.

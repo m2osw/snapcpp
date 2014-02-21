@@ -1647,6 +1647,121 @@ void server::udp_ping(const char *name, const char *message)
 }
 
 
+/** \brief Initializes a quiet error callback object.
+ *
+ * This function initializes an error callback object. It expects a pointer
+ * to the running snap_child.
+ *
+ * The \p log parameter is used to know whether the errors and redirects
+ * should be logged or not. In most cases it probably will be set to
+ * false to avoid large amounts of logs.
+ *
+ * \param[in] snap  The snap pointer.
+ * \param[in] log  The log flag, if true send all errors to the loggers.
+ */
+quiet_error_callback::quiet_error_callback(snap_child *snap, bool log)
+    : f_snap(snap)
+    , f_log(log)
+    //, f_error(false) -- auto-init
+{
+}
+
+
+/** \brief Generate an error.
+ *
+ * This function is called when the user is trying to view something that
+ * is not accessible. The system already checked to know whether the user
+ * could upgrade to a higher level of control and failed, so the user
+ * simply cannot access this page. Hence we do not try to redirect him to
+ * a log in screen, and instead generate an error.
+ *
+ * In this default implementation, we simply log the information (assuming
+ * the object was created with the log flag set to true) and mark the
+ * object as erroneous.
+ *
+ * \param[in] err_code  The HTTP code to be returned to the user.
+ * \param[in] err_name  The name of the error being generated.
+ * \param[in] err_description  A more complete description of the error.
+ * \param[in] err_details  The internal details about the error (for system administrators only).
+ */
+void quiet_error_callback::on_error(snap_child::http_code_t err_code, QString const& err_name, QString const& err_description, QString const& err_details)
+{
+    f_error = true;
+
+    if(f_log)
+    {
+        // log the error so users know something happened
+        SNAP_LOG_ERROR("error #")(static_cast<int>(err_code))(":")(err_name)(": ")(err_description)(" -- ")(err_details);
+    }
+}
+
+
+/** \brief Redirect the user so he can log in.
+ *
+ * In most cases this function is used to redirect the user to a log in page.
+ * It may be a log in screen to escalate the user to a new level so he can
+ * authorize changes requiring a higher level of control.
+ *
+ * In the base implementation, the error is logged (assuming the object was
+ * created with the log flag set to true) and the object is marked as
+ * erroneous, meaning that the object being checked will remain hidden.
+ *
+ * \param[in] err_name  The name of the error being generated.
+ * \param[in] err_description  A more complete description of the error.
+ * \param[in] err_details  The internal details about the error (for system administrators only).
+ * \param[in] err_security  Whether the error is a security error (cannot be displayed to the end user).
+ * \param[in] path  The path that generated the error.
+ * \param[in] http_code  The HTTP code to be returned to the user.
+ */
+void quiet_error_callback::on_redirect(
+        /* message::set_error() */ QString const& err_name, QString const& err_description, QString const& err_details, bool err_security,
+        /* snap_child::page_redirect() */ QString const& path, snap_child::http_code_t http_code)
+{
+    static_cast<void>(err_security);
+
+    f_error = true;
+    if(f_log)
+    {
+        SNAP_LOG_ERROR("error #")(static_cast<int>(http_code))(":")(err_name)(": ")(err_description)(" -- ")(err_details)(" (path: ")(path);
+    }
+}
+
+
+/** \brief Clear the error.
+ *
+ * This function clear the error flag.
+ *
+ * This class is often used in a loop such as the one used to generate all
+ * the boxes on a page. The same object can be reused to check
+ * wehther a box is accessible or not, however, the object needs to clear
+ * its state before you test another box or all the boxes after the first
+ * that's currently forbidden would get hidden.
+ */
+void quiet_error_callback::clear_error()
+{
+    f_error = false;
+}
+
+
+/** \brief Check whether an error occurred.
+ *
+ * This function returns true if one of the on_redirect() or on_error()
+ * function were called during the process. If so, then the page is
+ * protected.
+ *
+ * In most cases the redirect is used to send the user to the log in screen.
+ * If the user is on a page that proves he cannot have an account or is
+ * already logged in and he cannot increase his rights, then the on_error()
+ * function is used. So in effect, either function represents the same
+ * thing: the user cannot access the specified page.
+ *
+ * \return true if an error occurred and thus the page is not accessible.
+ */
+bool quiet_error_callback::has_error() const
+{
+    return f_error;
+}
+
 
 
 } // namespace snap

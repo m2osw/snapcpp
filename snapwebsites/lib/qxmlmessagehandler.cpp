@@ -89,6 +89,14 @@ void QMessageHandler::handleMessage(QtMsgType type, QString const & description,
                 l.operator () (location)(":");
             }
             l.operator () (" ")(description_string);
+            if(!f_xsl.isEmpty())
+            {
+#ifdef DEBUG
+                l.operator () (" Script:\n")(f_xsl);
+#else
+                l.operator () (" Beginning of the script involved:\n")(f_xsl.left(200));
+#endif
+            }
         } // print log
     }
 }

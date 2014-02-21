@@ -179,7 +179,7 @@ void filter::on_xss_filter(QDomNode& node,
             {
 //qDebug() << "removing tag: [" << name << "] (" << tags << ")\n";
                 // remove this tag, now there are two different type of
-                // removal: complete removal (i.e. <script>) and removal
+                // removals: complete removal (i.e. <script>) and removal
                 // of the tag, but not the children (i.e. <b>)
                 // the xmp and plaintext are browser extensions
                 if(name != "script" && name != "style" && name != "textarea"
@@ -821,7 +821,6 @@ void filter::on_token_filter(content::path_info_t& ipath, QDomDocument& xml)
         QString                     f_token;
         QString                     f_replacement;
         QString                     f_extra_input;
-        QString                     f_token_name;
     };
 
     filter_state_t state(xml, ipath);

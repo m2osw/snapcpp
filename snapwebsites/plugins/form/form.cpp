@@ -23,6 +23,7 @@
 #include "not_reached.h"
 #include "qdomreceiver.h"
 #include "qdomxpath.h"
+#include "qdomhelpers.h"
 #include "qxmlmessagehandler.h"
 #include "qstring_stream.h"
 #include "log.h"
@@ -513,7 +514,7 @@ void form::fill_value(QDomElement widget, QString const& value)
         }
     }
 
-    content::content::insert_html_string_to_xml_doc(value_tag, value);
+    snap_dom::insert_html_string_to_xml_doc(value_tag, value);
 }
 
 
@@ -1213,7 +1214,7 @@ void form::auto_save_form(QString const& owner, content::path_info_t& ipath, aut
                 attachment.set_attachment_type(attachment_type);
                 // TODO: define the locale in some ways...
                 //       (use ipath.get_locale()?)
-                snap_version::version_number_t branch(content_plugin->get_current_user_branch(ipath.get_cpath(), content_plugin->get_plugin_name(), "", true));
+                snap_version::version_number_t const branch(content_plugin->get_current_user_branch(ipath.get_key(), content_plugin->get_plugin_name(), "", true));
                 content_plugin->create_attachment(attachment, branch, "");
             }
         }
@@ -1915,7 +1916,7 @@ bool form::parse_width_height(QString const& size, int& width, int& height)
 
 /** \brief Replace a [form::...] token with a form.
  *
- * This function replaces the user tokens with their value.
+ * This function replaces the form tokens with their value.
  *
  * The supported tokens are:
  *
@@ -1930,7 +1931,7 @@ bool form::parse_width_height(QString const& size, int& width, int& height)
  */
 void form::on_replace_token(content::path_info_t& ipath, QString const& plugin_owner, QDomDocument& xml, filter::filter::token_info_t& token)
 {
-    (void) xml;
+    static_cast<void>(xml);
 
     // a form::... token?
     if(!token.is_namespace("form::"))

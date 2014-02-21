@@ -79,6 +79,7 @@ add_library( ${PROJECT_NAME} SHARED
     mkgmtime.c                                  # mktime() with a UTC time
     plugins.cpp                                 # plugins loader and list
     process.cpp                                 # run a process optionally with pipes
+    qdomhelpers.cpp                             # Qt extensions to help with the DOM
     qdomnodemodel.cpp                           # Qt extension to support XSLT
     qdomreceiver.cpp                            # Qt extension to output XSLT as XML
     qdomxpath.cpp                               # Qt extension to query a XML DOM with X-Path

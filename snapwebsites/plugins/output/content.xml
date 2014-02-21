@@ -116,6 +116,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="content::body" revision="revision">
       <![CDATA[<p>Internal pages created by plugins to manage your website are considered administration pages.</p>]]>
     </param>
+    <link name="permissions::view" to="permissions::view" mode="*:*">/types/permissions/rights/view/system-page</link>
   </content>
   <content path="/types/taxonomy/system/content-types/layout-page">
     <param name="taxonomy::name">content::layout_page</param>

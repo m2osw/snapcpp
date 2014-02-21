@@ -69,9 +69,12 @@ public:
     void                on_load_file(snap_child::post_file_t& file, bool& found);
 
     QString             get_layout(content::path_info_t& ipath, const QString& column_name);
+    QDomDocument        create_document(content::path_info_t& ipath, plugin *p);
     QString             apply_layout(content::path_info_t& ipath, layout_content *plugin, const QString& ctemplate = "");
-    QDomDocument        create_body(content::path_info_t& ipath, layout_content *content_plugin, const QString& ctemplate = "");
-    QString             apply_theme(QDomDocument doc, content::path_info_t& cpath, layout_content *content_plugin);
+    QString             define_layout(content::path_info_t& ipath, QString& layout_name);
+    void                create_body(QDomDocument& doc, content::path_info_t& ipath, QString const& xsl, layout_content *content_plugin, const QString& ctemplate = "", bool handle_boxes = false, QString const& layout_name = "");
+    QString             define_theme(content::path_info_t& ipath);
+    QString             apply_theme(QDomDocument doc, QString const& xsl);
     void                replace_includes(QString& xsl);
     int64_t             install_layout(QString const& layout_name, int64_t const last_updated);
 
@@ -82,7 +85,9 @@ public:
 
 private:
     //void content_update(int64_t variables_timestamp);
-    int64_t do_layout_updates(int64_t const last_updated);
+    int64_t             do_layout_updates(int64_t const last_updated);
+
+    void                generate_boxes(content::path_info_t& ipath, QString const& layout_name, QDomDocument doc);
 
     zpsnap_child_t                             f_snap;
     QtCassandra::QCassandraTable::pointer_t    f_content_table;

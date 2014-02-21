@@ -55,7 +55,7 @@ public:
         TOK_INVALID
     };
 
-    // TODO: change that in a class
+    // TODO: change that to a class with private vars...
     struct parameter_t
     {
         token_t                 f_type;
@@ -67,6 +67,11 @@ public:
             //, f_name("") -- auto-init
             //, f_value("") -- auto-init
         {
+        }
+
+        bool is_null() const
+        {
+            return f_type == TOK_UNDEFINED || f_type == TOK_INVALID;
         }
 
         void reset()
@@ -85,7 +90,7 @@ public:
             return f_name < rhs.f_name;
         }
 
-        static char const *token_name(token_t type)
+        static char const *type_name(token_t type)
         {
             switch(type)
             {
@@ -209,7 +214,31 @@ public:
             return valid;
         }
 
-        parameter_t get_arg(const QString& name, int position = -1, token_t type = TOK_UNDEFINED)
+        bool has_arg(QString const& name, int position = -1)
+        {
+            parameter_t null;
+            QVector<parameter_t>::const_iterator it(f_parameters.end());
+            if(!name.isEmpty())
+            {
+                parameter_t p;
+                p.f_name = name;
+                it = std::find(f_parameters.begin(), f_parameters.end(), p);
+                if(it == f_parameters.end() && position == -1)
+                {
+                    return false;
+                }
+            }
+            if(it == f_parameters.end() && position != -1)
+            {
+                if(position >= 0 && position < f_parameters.size())
+                {
+                    it = f_parameters.begin() + position;
+                }
+            }
+            return it != f_parameters.end();
+        }
+
+        parameter_t get_arg(QString const& name, int position = -1, token_t type = TOK_UNDEFINED)
         {
             parameter_t null;
             QVector<parameter_t>::const_iterator it(f_parameters.end());
@@ -241,7 +270,7 @@ public:
             if(type != TOK_UNDEFINED && it->f_type != type)
             {
                 f_error = true;
-                f_replacement = "<span class=\"filter-error\"><span class=\"filter-error-word\">error:</span> parameter \"" + name + "\" (position: " + QString("%1").arg(position) + ") is a " + parameter_t::token_name(it->f_type) + " not of the expected type: " + parameter_t::token_name(type) + ".</span>";
+                f_replacement = "<span class=\"filter-error\"><span class=\"filter-error-word\">error:</span> parameter \"" + name + "\" (position: " + QString("%1").arg(position) + ") is a " + parameter_t::type_name(it->f_type) + " not of the expected type: " + parameter_t::type_name(type) + ".</span>";
                 return null;
             }
             return *it;

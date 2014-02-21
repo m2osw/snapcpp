@@ -7103,32 +7103,26 @@ time_t snap_child::string_to_date(QString const& date)
             if(f_s[0] == 'j' && f_s[1] == 'a' && f_s[2] == 'n')
             {
                 f_time_info.tm_mon = 0;
-                f_s += 3;
             }
             else if(f_s[0] == 'f' && f_s[1] == 'e' && f_s[2] == 'b')
             {
                 f_time_info.tm_mon = 1;
-                f_s += 3;
             }
             else if(f_s[0] == 'm' && f_s[1] == 'a' && f_s[2] == 'r')
             {
                 f_time_info.tm_mon = 2;
-                f_s += 3;
             }
             else if(f_s[0] == 'a' && f_s[1] == 'p' && f_s[2] == 'r')
             {
                 f_time_info.tm_mon = 3;
-                f_s += 3;
             }
             else if(f_s[0] == 'm' && f_s[1] == 'a' && f_s[2] == 'y')
             {
                 f_time_info.tm_mon = 4;
-                f_s += 3;
             }
             else if(f_s[0] == 'j' && f_s[1] == 'u' && f_s[2] == 'n')
             {
                 f_time_info.tm_mon = 5;
-                f_s += 3;
             }
             else if(f_s[0] == 'j' && f_s[1] == 'u' && f_s[2] == 'l')
             {
@@ -7324,6 +7318,27 @@ time_t snap_child::string_to_date(QString const& date)
             return parse_timezone();
         }
 
+        bool parse_us()
+        {
+            skip_spaces();
+            if(!parse_month())
+            {
+                return false;
+            }
+            skip_spaces();
+            if(!integer(1, 2, 1, 31, f_time_info.tm_mday))
+            {
+                return false;
+            }
+            skip_spaces();
+            if(!integer(2, 4, 0, 3000, f_time_info.tm_year))
+            {
+                return false;
+            }
+            skip_spaces();
+            return parse_time();
+        }
+
         bool parse()
         {
             // week day (optional in RFC822)
@@ -7332,6 +7347,13 @@ time_t snap_child::string_to_date(QString const& date)
                 if(!parse_week_day())
                 {
                     // maybe that was the month, not the day
+                    // if the hours is last, we have a preprocessor date/time
+                    if(strlen(f_s) == 11 + 1 + 8
+                    && f_s[11 + 1 + 8 - 6] == ':'
+                    && f_s[11 + 1 + 8 - 3] == ':')
+                    {
+                        return parse_us();
+                    }
                     return parse_ansi();
                 }
 

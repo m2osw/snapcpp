@@ -25,6 +25,7 @@
 #include "qdomreceiver.h"
 #include "qhtmlserializer.h"
 #include "qxmlmessagehandler.h"
+#include "qdomhelpers.h"
 #include "qstring_stream.h"
 //#include "qdomnodemodel.h" -- at this point the DOM Node Model seems bogus.
 #include "not_reached.h"
@@ -364,10 +365,148 @@ QString layout::get_layout(content::path_info_t& ipath, QString const& column_na
  */
 QString layout::apply_layout(content::path_info_t& ipath, layout_content *content_plugin, QString const& ctemplate)
 {
-    QDomDocument doc(create_body(ipath, content_plugin, ctemplate));
-    return apply_theme(doc, ipath, content_plugin);
+    // First generate the body content (a large XML document)
+    QString layout_name;
+    QString const layout_xsl(define_layout(ipath, layout_name));
+    QDomDocument doc(create_document(ipath, dynamic_cast<plugin *>(content_plugin)));
+    create_body(doc, ipath, layout_xsl, content_plugin, ctemplate, true, layout_name);
+
+    // Then apply a theme to it
+    QString const theme_xsl(define_theme(ipath));
+    // HTML5 DOCTYPE is just "html" as follow
+    return "<!DOCTYPE html>" + apply_theme(doc, theme_xsl);
 }
 
+
+/** \brief Determine the layout XSL code and name.
+ *
+ * This function determines the layout XSL code and name given a content
+ * info path.
+ *
+ * \param[in] ipath  The canonalized path of content to be laid out.
+ * \param[out] layout_name  A QString to hold the resulting layout name.
+ *
+ * \return The XSL code in a string.
+ */
+QString layout::define_layout(content::path_info_t& ipath, QString& layout_name)
+{
+    // Retrieve the theme and layout for this path
+    // XXX should the ctemplate ever be used to retrieve the layout?
+    layout_name = get_layout(ipath, get_name(SNAP_NAME_LAYOUT_LAYOUT));
+
+//std::cerr << "Got theme / layout name = [" << layout_name << "] (key=" << ipath.get_key() << ")\n";
+
+// TODO: fix the default layout selection!?
+//       until we can get the theme system working right...
+//       actually the theme system works, but we need to have something
+//       to allow us to select said theme
+//       we now have some for of selector using the snaplayout tool
+//       (see the --set-theme command line option)
+//layout_name = "bare";
+
+    // now we want to transform the XML to HTML or some other format
+    QString xsl;
+    if(layout_name != "default")
+    {
+        // try to load the layout from the database, if not found
+        // we'll switch to the default layout instead
+        QtCassandra::QCassandraTable::pointer_t layout_table(get_layout_table());
+        QtCassandra::QCassandraValue layout_value(layout_table->row(layout_name)->cell(QString("body"))->value());
+        if(layout_value.nullValue())
+        {
+            // note that a layout cannot be empty so the test is correct
+            layout_name = "default";
+        }
+        else
+        {
+            xsl = layout_value.stringValue();
+        }
+    }
+    if(layout_name == "default")
+    {
+        QFile file(":/xsl/layout/default-body-parser.xsl");
+        if(!file.open(QIODevice::ReadOnly))
+        {
+            f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR,
+                    "Layout Unavailable",
+                    "Somehow no website layout was accessible, not even the internal default.",
+                    "layout::define_layout() could not open default-body-parser.xsl resource file.");
+            NOTREACHED();
+        }
+        QByteArray data(file.readAll());
+        if(data.size() == 0)
+        {
+            f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR,
+                    "Layout Unavailable",
+                    "Somehow no website layout was accessible, not even the internal default.",
+                    "layout::define_layout() could not read the default-body-parser.xsl resource file.");
+            NOTREACHED();
+        }
+        xsl = QString::fromUtf8(data.data(), data.size());
+    }
+
+    // replace <xsl:include ...> with other XSTL files (should be done
+    // by the parser, but Qt's parser doesn't support it yet)
+    replace_includes(xsl);
+
+    // check whether the layout was defined in this website database
+    install_layout(layout_name, 0);
+
+    return xsl;
+}
+
+
+/** \brief Create the layout XML document
+ *
+ * This function creates the basic layout XML document which is composed
+ * of a root, a header and a page. The following shows the tree that
+ * you get:
+ *
+ * \code
+ *   + snap (path=... owner=...)
+ *     + head
+ *       + metadata
+ *     + page
+ *       + body
+ * \endcode
+ *
+ * The root element, which is named "snap", is given the ipath as the
+ * path attribute, and the name of the plugin as the owner attribute.
+ *
+ * \param[in,out] ipath  The path to set in the snap tag.
+ * \param[in] content_plugin  The plugin whose name is added to the snap tag.
+ *
+ * \return A DOM document with the basic layout tree.
+ */
+QDomDocument layout::create_document(content::path_info_t& ipath, plugin *p)
+{
+    // Initialize the XML document tree
+    // More is done in the generate_header_content_impl() function
+    QDomDocument doc("snap");
+    QDomElement root = doc.createElement("snap");
+    root.setAttribute("path", ipath.get_cpath());
+
+    if(p != nullptr)
+    {
+        root.setAttribute("owner", p->get_plugin_name());
+    }
+
+    doc.appendChild(root);
+
+    // snap/head/metadata
+    QDomElement head(doc.createElement("head"));
+    root.appendChild(head);
+    QDomElement metadata(doc.createElement("metadata"));
+    head.appendChild(metadata);
+
+    // snap/page/body
+    QDomElement page(doc.createElement("page"));
+    root.appendChild(page);
+    QDomElement body(doc.createElement("body"));
+    page.appendChild(body);
+
+    return doc;
+}
 
 /** \brief Create the body XML data.
  *
@@ -392,136 +531,40 @@ QString layout::apply_layout(content::path_info_t& ipath, layout_content *conten
  * not otherwise defined in the cpath cell. By default ctemplate is set
  * to the empty string which means it does not get used.
  *
+ * \note
+ * You may want to call the replace_includes() function on your XSLT
+ * document before calling this function.
+ *
+ * \param[in,out] doc  The layout document being created.
  * \param[in,out] ipath  The path being dealt with.
+ * \param[in] xsl  The XSL of this body layout.
  * \param[in] content_plugin  The plugin handling the content (body/title in general.)
  * \param[in] ctemplate  The path to the template is used to get default data.
+ * \param[in] handle_boxes  Whether the boxes of this theme are to be handled.
+ * \param[in] layout_name  The name of the layout (only necessary if handle_boxes is true.)
  *
  * \return The resulting body in an XML document.
  */
-QDomDocument layout::create_body(content::path_info_t& ipath, layout_content *content_plugin, QString const& ctemplate)
+void layout::create_body(QDomDocument& doc, content::path_info_t& ipath, QString const& xsl, layout_content *content_plugin, QString const& ctemplate, bool handle_boxes, QString const& layout_name)
 {
 #ifdef DEBUG
 std::cerr << "create body in layout\n";
 #endif
-    class error_callback : public permission_error_callback
-    {
-    public:
-        error_callback(snap_child *snap)
-            : f_snap(snap)
-            //, f_error(false) -- auto-init
-        {
-        }
 
-        virtual void on_error(snap_child::http_code_t err_code, QString const& err_name, QString const& err_description, QString const& err_details)
-        {
-            // log the error so users know something happened
-            SNAP_LOG_ERROR("error #")(static_cast<int>(err_code))(":")(err_name)(": ")(err_description)(" -- ")(err_details);
-            f_error = true;
-        }
-
-        virtual void on_redirect(
-                /* message::set_error() */ QString const& err_name, QString const& err_description, QString const& err_details, bool err_security,
-                /* snap_child::page_redirect() */ QString const& path, snap_child::http_code_t http_code)
-        {
-            (void)err_security;
-            SNAP_LOG_ERROR("error #")(static_cast<int>(http_code))(":")(err_name)(": ")(err_description)(" -- ")(err_details)(" (path: ")(path);
-            f_error = true;
-        }
-
-        void clear_error()
-        {
-            f_error = false;
-        }
-
-        bool has_error() const
-        {
-            return f_error;
-        }
-
-    private:
-        zpsnap_child_t              f_snap;
-        controlled_vars::fbool_t    f_error;
-    } box_error_callback(f_snap);
-
-    // Retrieve the theme and layout for this path
-    // XXX should the ctemplate ever be used to retrieve the layout?
-    QString layout_name(get_layout(ipath, get_name(SNAP_NAME_LAYOUT_LAYOUT)));
-
-//std::cerr << "Got theme / layout name = [" << layout_name << "] (key=" << ipath.get_key() << ")\n";
-
-// TODO: fix the default layout selection!?
-//       until we can get the theme system working right...
-//       actually the theme system works, but we need to have something
-//       to allow us to select said theme
-//layout_name = "bare";
-
-    bool const filter_exists(plugins::exists("filter"));
-    QtCassandra::QCassandraTable::pointer_t layout_table(get_layout_table());
-
-    plugin *p(dynamic_cast<plugin *>(content_plugin));
-
-    // now we want to transform the XML to HTML or some other format
-    QString xsl;
-    if(layout_name != "default")
-    {
-        // try to load the layout from the database, if not found
-        // we'll switch to the default layout instead
-        QtCassandra::QCassandraValue layout_value(layout_table->row(layout_name)->cell(QString("body"))->value());
-        if(layout_value.nullValue())
-        {
-            // note that a layout cannot be empty so the test is correct
-            layout_name = "default";
-        }
-        else
-        {
-            xsl = layout_value.stringValue();
-        }
-    }
-    if(layout_name == "default")
-    {
-        QFile file(":/xsl/layout/default-body-parser.xsl");
-        if(!file.open(QIODevice::ReadOnly))
-        {
-            f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR,
-                    "Layout Unavailable",
-                    "Somehow no website layout was accessible, not even the internal default.",
-                    "layout::create_body() could not open default-body-parser.xsl resource file.");
-            NOTREACHED();
-        }
-        QByteArray data(file.readAll());
-        xsl = QString::fromUtf8(data.data(), data.size());
-    }
-    replace_includes(xsl);
-
-    // check whether the layout was defined in this website database
-    install_layout(layout_name, 0);
-
-    // Initialize the XML document tree
-    // More is done in the generate_header_content_impl() function
-    QDomDocument doc("snap");
-    QDomElement root = doc.createElement("snap");
-    root.setAttribute("path", ipath.get_cpath());
-    if(p != nullptr)
-    {
-        root.setAttribute("owner", p->get_plugin_name());
-    }
-    doc.appendChild(root);
-    QDomElement head(doc.createElement("head"));
-    root.appendChild(head);
-    QDomElement metadata(doc.createElement("metadata"));
-    head.appendChild(metadata);
-    QDomElement page(doc.createElement("page"));
-    root.appendChild(page);
-    QDomElement body(doc.createElement("body"));
-    page.appendChild(body);
 
 #ifdef DEBUG
 std::cerr << "got in layout... cpath = [" << ipath.get_cpath() << "]\n";
 #endif
     // other plugins generate defaults
-    generate_header_content(ipath, head, metadata, ctemplate);
+    {
+        QDomElement head(snap_dom::get_element(doc, "head"));
+        QDomElement metadata(snap_dom::get_element(doc, "metadata"));
+        generate_header_content(ipath, head, metadata, ctemplate);
+    }
 
     // concerned (owner) plugin generates content
+    QDomElement page(snap_dom::get_element(doc, "page"));
+    QDomElement body(snap_dom::get_element(doc, "body"));
     content_plugin->on_generate_main_content(ipath, page, body, ctemplate);
 //std::cout << "Header + Main XML is [" << doc.toString() << "]\n";
 
@@ -530,93 +573,9 @@ std::cerr << "got in layout... cpath = [" << ipath.get_cpath() << "]\n";
     // (i.e. we're creating a parent if the "boxes" element is not present;
     //       although we should not get called recursively, this makes things
     //       safer!)
-    if(page.firstChildElement("boxes").isNull())
+    if(handle_boxes && page.firstChildElement("boxes").isNull())
     {
-        // the list of boxes is defined in the database under (GLOBAL)
-        //    admin/layouts/<layout_name>[layout::boxes]
-        // as one row name per box; for example, the left box would appears as:
-        //    admin/layouts/<layout_name>/left
-        QDomElement boxes = doc.createElement("boxes");
-        page.appendChild(boxes);
-        // TODO -- check for boxes starting in the current page, then the
-        //         type and finally the layout
-        content::path_info_t boxes_ipath;
-        boxes_ipath.set_path(QString("%1/%2").arg(get_name(SNAP_NAME_LAYOUT_ADMIN_LAYOUTS)).arg(layout_name));
-
-        content::field_search::search_result_t box_names;
-        FIELD_SEARCH
-            (content::field_search::COMMAND_MODE, content::field_search::SEARCH_MODE_EACH)
-            (content::field_search::COMMAND_PATH_INFO_BRANCH, boxes_ipath)
-            (content::field_search::COMMAND_FIELD_NAME, get_name(SNAP_NAME_LAYOUT_BOXES))
-            (content::field_search::COMMAND_SELF)
-            (content::field_search::COMMAND_RESULT, box_names)
-
-            // retrieve names of all the boxes
-            ;
-        int const max_names(box_names.size());
-        if(max_names != 0)
-        {
-            if(max_names != 1)
-            {
-                throw snap_logic_exception("expected zero or one entry from a COMMAND_SELF");
-            }
-            QStringList names(box_names[0].stringValue().split(","));
-            QVector<QDomElement> dom_boxes;
-            int const max_boxes(names.size());
-            for(int i(0); i < max_boxes; ++i)
-            {
-                names[i] = names[i].trimmed();
-                QDomElement box(doc.createElement(names[i]));
-                boxes.appendChild(box);
-                dom_boxes.push_back(box); // will be the same offset as names[...]
-            }
-#ifdef DEBUG
-            if(dom_boxes.size() != max_boxes)
-            {
-                throw snap_logic_exception("somehow the 'DOM boxes' and 'names' vectors do not have the same size.");
-            }
-#endif
-            for(int i(0); i < max_boxes; ++i)
-            {
-                content::path_info_t ichild;
-                ichild.set_path(QString("%1/%2/%3").arg(get_name(SNAP_NAME_LAYOUT_ADMIN_LAYOUTS)).arg(layout_name).arg(names[i]));
-                links::link_info info(content::get_name(content::SNAP_NAME_CONTENT_CHILDREN), false, ichild.get_key(), ichild.get_branch());
-                QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
-                links::link_info child_info;
-                while(link_ctxt->next_link(child_info))
-                {
-                    box_error_callback.clear_error();
-                    content::path_info_t box_ipath;
-                    box_ipath.set_path(child_info.key());
-                    box_ipath.set_parameter("action", "view"); // we're always only viewing those blocks from here
-                    plugin *box_plugin(path::path::instance()->get_plugin(box_ipath, box_error_callback));
-                    if(!box_error_callback.has_error() && box_plugin)
-                    {
-                        layout_boxes *lb(dynamic_cast<layout_boxes *>(box_plugin));
-                        if(lb != nullptr)
-                        {
-                            // put each box in a filter tag because we have to
-                            // specify a different owner and path for each
-                            QDomElement filter_box(doc.createElement("filter"));
-                            filter_box.setAttribute("path", box_ipath.get_cpath()); // not the full key
-                            filter_box.setAttribute("owner", box_plugin->get_plugin_name());
-                            dom_boxes[i].appendChild(filter_box);
-                            lb->on_generate_boxes_content(ipath, box_ipath, page, filter_box, ctemplate);
-                        }
-                        else
-                        {
-                            // if this happens a plugin offers a box but not
-                            // the handler
-                            f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR,
-                                    "Plugin Missing",
-                                    "Plugin \"" + box_plugin->get_plugin_name() + "\" does not know how to handle a box assigned to it.",
-                                    "layout::create_body() the plugin does not derive from layout::layout_boxes.");
-                            NOTREACHED();
-                        }
-                    }
-                }
-            }
-        }
+        generate_boxes(ipath, layout_name, doc);
     }
 
     // other plugins are allowed to modify the content if so they wish
@@ -628,7 +587,7 @@ std::cerr << "got in layout... cpath = [" << ipath.get_cpath() << "]\n";
     //       filters he wants to apply agains the page content
     //       (i.e. ultimately we want to have some sort of filter
     //       tagging capability)
-    if(filter_exists)
+    if(plugins::exists("filter"))
     {
         // replace all tokens if filtering is available
         filter::filter::instance()->on_token_filter(ipath, doc);
@@ -641,6 +600,7 @@ std::cerr << "got in layout... cpath = [" << ipath.get_cpath() << "]\n";
     // Somehow binding crashes everything at this point?! (Qt 4.8.1)
     QXmlQuery q(QXmlQuery::XSLT20);
     QMessageHandler msg;
+    msg.set_xsl(xsl);
     q.setMessageHandler(&msg);
 #if 0
     QDomNodeModel m(q.namePool(), doc);
@@ -673,7 +633,7 @@ std::cerr << "got in layout... cpath = [" << ipath.get_cpath() << "]\n";
     QDomReceiver receiver(q.namePool(), doc_output);
     q.evaluateTo(&receiver);
     body.appendChild(doc.importNode(doc_output.documentElement(), true));
-//printf("Body HTML is [%s]\n", doc_output.toString().toUtf8().data());
+//std::cout << "Body HTML is [" << doc_output.toString() << "]\n";
 #else
     //QDomDocument doc_body("body");
     //doc_body.setContent(get_content_parameter(path, get_name(SNAP_NAME_CONTENT_BODY) <<-- that would be wrong now).stringValue(), true, nullptr, nullptr, nullptr);
@@ -692,8 +652,149 @@ std::cerr << "got in layout... cpath = [" << ipath.get_cpath() << "]\n";
     doc_output.setContent(out, true, nullptr, nullptr, nullptr);
     body.appendChild(doc.importNode(doc_output.documentElement(), true));
 #endif
+}
 
-    return doc;
+
+/** \brief Generate a list of boxes.
+ *
+ * This function handles the page boxes of a theme. This is generally only
+ * used for main pages. When creating a body, you may specify whether you
+ * want to also generate the boxes for that body.
+ *
+ * The function retrieves the boxes found in that theme and goes through
+ * the list and generates all the boxes that are accessible by the user.
+ *
+ * The list of boxes to display is taken from the page, the type of the
+ * page, or the layout (NOTE: the page and type are not yet implemented.)
+ * The name of the cell used to retrieve the layout boxes is simple:
+ * "layout::boxes". Note that these definitions are not cumulative. The
+ * first list of boxes we find is the one that gets used. Thus, the user
+ * can specialize the list of boxes to use on a per page or per type basis.
+ *
+ * The path used to find the layout list of boxes is:
+ *
+ * \code
+ * admin/layouts/<layout name>
+ * \endcode
+ *
+ * The boxes are defined inside the layout and are found by their name.
+ * The name of a box is limited to what is acceptable in a path (i.e.
+ * [-_a-z0-9]+). For example, a box named left would appear as:
+ *
+ * \code
+ * admin/layouts/<layout name>/left
+ * \endcode
+ *
+ * \param[in,out] ipath  The path being dealt with.
+ * \param[in] doc  The document we're working on.
+ * \param[in] layout_name  The name of the layout being worked on.
+ */
+void layout::generate_boxes(content::path_info_t& ipath, QString const& layout_name, QDomDocument doc)
+{
+    // the list of boxes is defined in the database under (GLOBAL)
+    //    admin/layouts/<layout_name>[layout::boxes]
+    // as one row name per box; for example, the left box would appears as:
+    //    admin/layouts/<layout_name>/left
+    QDomElement boxes(doc.createElement("boxes"));
+
+    QDomNodeList all_pages(doc.elementsByTagName("page"));
+    if(all_pages.isEmpty())
+    {
+        // this should never happen because we do explicitly create this
+        // <page> tag before calling this function
+        throw snap_logic_exception("<page> tag not found in the body DOM");
+    }
+    QDomElement page(all_pages.at(0).toElement());
+    if(page.isNull())
+    {
+        // we just got a tag, this is really impossible!?
+        throw snap_logic_exception("<page> tag not a DOM Element???");
+    }
+    page.appendChild(boxes);
+
+    // TODO -- check for boxes starting in the current page, then the
+    //         type and finally the layout; all of those are NOT
+    //         cumulative; at this point we only get the layout info
+    content::path_info_t boxes_ipath;
+    boxes_ipath.set_path(QString("%1/%2").arg(get_name(SNAP_NAME_LAYOUT_ADMIN_LAYOUTS)).arg(layout_name));
+
+    content::field_search::search_result_t box_names;
+    FIELD_SEARCH
+        (content::field_search::COMMAND_MODE, content::field_search::SEARCH_MODE_EACH)
+        (content::field_search::COMMAND_PATH_INFO_BRANCH, boxes_ipath)
+        (content::field_search::COMMAND_FIELD_NAME, get_name(SNAP_NAME_LAYOUT_BOXES))
+        (content::field_search::COMMAND_SELF)
+        (content::field_search::COMMAND_RESULT, box_names)
+
+        // retrieve names of all the boxes
+        ;
+    int const max_names(box_names.size());
+    if(max_names != 0)
+    {
+        if(max_names != 1)
+        {
+            throw snap_logic_exception("expected zero or one entry from a COMMAND_SELF");
+        }
+        QStringList names(box_names[0].stringValue().split(","));
+        QVector<QDomElement> dom_boxes;
+        int const max_boxes(names.size());
+        for(int i(0); i < max_boxes; ++i)
+        {
+            names[i] = names[i].trimmed();
+            QDomElement box(doc.createElement(names[i]));
+            boxes.appendChild(box);
+            dom_boxes.push_back(box); // will be the same offset as names[...]
+        }
+#ifdef DEBUG
+        if(dom_boxes.size() != max_boxes)
+        {
+            throw snap_logic_exception("somehow the 'DOM boxes' and 'names' vectors do not have the same size.");
+        }
+#endif
+        quiet_error_callback box_error_callback(f_snap, true); // TODO: set log parameter to false once we are happy about the results
+
+        for(int i(0); i < max_boxes; ++i)
+        {
+            content::path_info_t ichild;
+            ichild.set_path(QString("%1/%2/%3").arg(get_name(SNAP_NAME_LAYOUT_ADMIN_LAYOUTS)).arg(layout_name).arg(names[i]));
+            links::link_info info(content::get_name(content::SNAP_NAME_CONTENT_CHILDREN), false, ichild.get_key(), ichild.get_branch());
+            QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
+            links::link_info child_info;
+            while(link_ctxt->next_link(child_info))
+            {
+                box_error_callback.clear_error();
+                content::path_info_t box_ipath;
+                box_ipath.set_path(child_info.key());
+                box_ipath.set_parameter("action", "view"); // we're always only viewing those blocks from here
+                plugin *box_plugin(path::path::instance()->get_plugin(box_ipath, box_error_callback));
+                if(!box_error_callback.has_error() && box_plugin)
+                {
+                    layout_boxes *lb(dynamic_cast<layout_boxes *>(box_plugin));
+                    if(lb != nullptr)
+                    {
+                        // put each box in a filter tag because we have to
+                        // specify a different owner and path for each
+                        QDomElement filter_box(doc.createElement("filter"));
+                        filter_box.setAttribute("path", box_ipath.get_cpath()); // not the full key
+                        filter_box.setAttribute("owner", box_plugin->get_plugin_name());
+                        dom_boxes[i].appendChild(filter_box);
+//std::cerr << "handle box for " << box_plugin->get_plugin_name() << "\n";
+                        lb->on_generate_boxes_content(ipath, box_ipath, page, filter_box, "");
+                    }
+                    else
+                    {
+                        // if this happens a plugin offers a box but not
+                        // the handler
+                        f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR,
+                                "Plugin Missing",
+                                "Plugin \"" + box_plugin->get_plugin_name() + "\" does not know how to handle a box assigned to it.",
+                                "layout::create_body() the plugin does not derive from layout::layout_boxes.");
+                        NOTREACHED();
+                    }
+                }
+            }
+        }
+    }
 }
 
 
@@ -709,19 +810,49 @@ std::cerr << "got in layout... cpath = [" << ipath.get_cpath() << "]\n";
  * document.
  *
  * \param[in] doc  The XML document to theme.
- * \param[in] ipath  The path of the document being themed.
- * \param[in] content_plugin  The layout content of the plugin (not yet used).
- *
- * \todo Make use of the content_plugin.
+ * \param[in] xsl  The XSLT data to use to apply the theme.
  *
  * \return The XML document themed in the form of a string.
  */
-QString layout::apply_theme(QDomDocument doc, content::path_info_t& ipath, layout_content *content_plugin)
+QString layout::apply_theme(QDomDocument doc, QString const& xsl)
 {
-    (void)content_plugin; // not yet used
+    // finally apply the theme XSLT to the final XML
+    // the output is what we want to return
+    QXmlQuery q(QXmlQuery::XSLT20);
+    QMessageHandler msg;
+    msg.set_xsl(xsl);
+    q.setMessageHandler(&msg);
+    q.setFocus(doc.toString());
+    q.setQuery(xsl);
+
+    QBuffer output;
+    output.open(QBuffer::ReadWrite);
+    QHtmlSerializer html(q.namePool(), &output);
+    q.evaluateTo(&html);
+
+    QString out(QString::fromUtf8(output.data()));
+
+    return out;
+}
+
+
+/** \brief Search for the theme XSLT data.
+ *
+ * This function determines the name of the XSLT data depending on the
+ * specified path. The name may be indicated in the page, in the type
+ * of the page, or in the content-types (in which case it is the
+ * default for the entire website.) If not found in the database, it
+ * reverts to "default".
+ *
+ * \param[in,out] ipath  The path of the document being themed.
+ *
+ * \return The XSL data of the theme for this page.
+ */
+QString layout::define_theme(content::path_info_t& ipath)
+{
+    QString xsl;
 
     QString theme_name( get_layout(ipath, get_name(SNAP_NAME_LAYOUT_THEME)) );
-    QString xsl;
 
     // If theme_name is not default, attempt to obtain the
     // selected theme from the layout table.
@@ -760,32 +891,18 @@ QString layout::apply_theme(QDomDocument doc, content::path_info_t& ipath, layou
             f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR,
                 "Layout Unavailable",
                 "Somehow no website layout was accessible, not even the internal default.",
-                "layout::apply_theme() could not open default-theme-parser.xsl resource file.");
+                "layout::define_theme() could not open default-theme-parser.xsl resource file.");
             NOTREACHED();
         }
         QByteArray data(file.readAll());
         xsl = QString::fromUtf8(data.data(), data.size());
     }
 
+    // replace <xsl:include ...> with other XSTL files (should be done
+    // by the parser, but Qt's parser doesn't support it yet)
     replace_includes(xsl);
 
-    // finally apply the theme XSLT to the final XML
-    // the output is what we want to return
-    QXmlQuery q(QXmlQuery::XSLT20);
-    QMessageHandler msg;
-    q.setMessageHandler(&msg);
-    q.setFocus(doc.toString());
-    q.setQuery(xsl);
-
-    QBuffer output;
-    output.open(QBuffer::ReadWrite);
-    QHtmlSerializer html(q.namePool(), &output);
-    q.evaluateTo(&html);
-
-    QString out(QString::fromUtf8(output.data()));
-
-    // HTML5 DOCTYPE is just "html" as follow!
-    return "<!DOCTYPE html>" + out;
+    return xsl;
 }
 
 
@@ -911,7 +1028,21 @@ int64_t layout::install_layout(QString const& layout_name, int64_t const last_up
     QtCassandra::QCassandraTable::pointer_t layout_table(get_layout_table());
     QtCassandra::QCassandraTable::pointer_t data_table(content_plugin->get_data_table());
 
-    QtCassandra::QCassandraValue last_updated_value(layout_table->row(layout_name)->cell(snap::get_name(SNAP_NAME_CORE_LAST_UPDATED))->value());
+    QtCassandra::QCassandraValue last_updated_value;
+    if(layout_name == "default")
+    {
+        // the default theme doesn't get a new date and time without us
+        // having to read, parse, analyze the XML date, so instead we use
+        // this file date and time
+        QString const last_layout_update(__DATE__ " " __TIME__);
+
+        time_t last_update_of_default_theme(f_snap->string_to_date(last_layout_update));
+        last_updated_value.setInt64Value(last_update_of_default_theme * 1000000LL);
+    }
+    else
+    {
+        last_updated_value = layout_table->row(layout_name)->cell(snap::get_name(SNAP_NAME_CORE_LAST_UPDATED))->value();
+    }
 
     content::path_info_t layout_ipath;
     layout_ipath.set_path(QString("%1/%2").arg(get_name(SNAP_NAME_LAYOUT_ADMIN_LAYOUTS)).arg(layout_name));

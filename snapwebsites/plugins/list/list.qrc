@@ -18,11 +18,17 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 -->
 <!DOCTYPE RCC>
 <RCC version="1.0">
-  <qresource prefix="/plugins/list">
-    <file>content.xml</file>
+  <qresource prefix="/plugins">
+    <file>list/content.xml</file>
   </qresource>
-  <qresource prefix="/js/list">
-    <file>list.js</file>
+  <qresource prefix="/xsl">
+    <file>list/default-list-body.xsl</file>
+    <file>list/default-list-theme.xsl</file>
+    <file>list/default-item-body.xsl</file>
+    <file>list/default-item-theme.xsl</file>
+  </qresource>
+  <qresource prefix="/js">
+    <file>list/list.js</file>
   </qresource>
 </RCC>
 <!--

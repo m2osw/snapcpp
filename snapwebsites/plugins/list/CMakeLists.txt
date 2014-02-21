@@ -47,13 +47,18 @@ QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC
     list.qrc
 )
 
-snap_validate_xml( content.xml content.dtd )
+snap_validate_xml( list/content.xml content.dtd )
 
 add_library(list SHARED
     list.cpp
     ${SNAP_MANAGER_MOC_CXX}
     ${SNAP_MANAGER_RESOURCES_RCC}
-    content.xml
+    list/content.xml
+    list/list.js
+    list/default-list-body.xsl
+    list/default-list-theme.xsl
+    list/default-item-body.xsl
+    list/default-item-theme.xsl
 )
 
 target_link_libraries( list ${QT_LIBRARIES} )

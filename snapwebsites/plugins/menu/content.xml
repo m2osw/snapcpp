@@ -57,12 +57,13 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
                 key ? string(cell("data", key, "content::title")) : "no title")]]>
     </param>
     <param name="list::original_test_script" overwrite="yes">
-      <![CDATA[linked_to("menu::item", page, "types/taxonomy/system/menu/item/admin")]]>
+      <![CDATA[linked_to("menu::admin", page, "types/taxonomy/system/menu/item/admin")]]>
     </param>
     <param name="list::selector">children</param>
     <!--link name="content::page_type" to="content::page_type" mode="1:*">/types/taxonomy/system/content-types/administration-page</link-->
     <link name="list::type" to="list::type" mode="1:*">/types/taxonomy/system/list</link>
     <link name="permissions::administer" to="permissions::administer" mode="*:*">/types/permissions/rights/administer</link>
+    <link name="permissions::view" to="permissions::view" mode="*:*">/types/permissions/rights/view/page/private</link>
   </content>
 </snap-tree>
 <!-- vim: ts=2 sw=2 et syntax=xml

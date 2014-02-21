@@ -24,10 +24,14 @@ namespace snap
 class QMessageHandler : public QAbstractMessageHandler
 {
 public:
-    QMessageHandler(QObject *parent_object = nullptr);
+                        QMessageHandler(QObject *parent_object = nullptr);
+
+    void                set_xsl(QString const& xsl) { f_xsl = xsl; }
 
 protected:
-    virtual void handleMessage(QtMsgType type, QString const & description, QUrl const & identifier, QSourceLocation const & sourceLocation);
+    virtual void        handleMessage(QtMsgType type, QString const & description, QUrl const & identifier, QSourceLocation const & sourceLocation);
+
+    QString             f_xsl;
 };
 
 } // namespace snap

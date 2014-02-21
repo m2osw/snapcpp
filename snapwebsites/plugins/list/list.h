@@ -17,6 +17,7 @@
 #pragma once
 
 #include "../layout/layout.h"
+#include "../filter/filter.h"
 
 #include "snap_expr.h"
 
@@ -29,6 +30,7 @@ namespace list
 
 enum name_t
 {
+    SNAP_NAME_LIST_ITEM_KEY_SCRIPT,
     SNAP_NAME_LIST_KEY,
     SNAP_NAME_LIST_LAST_UPDATED,
     SNAP_NAME_LIST_LINK,
@@ -41,8 +43,8 @@ enum name_t
     SNAP_NAME_LIST_STANDALONELIST,
     SNAP_NAME_LIST_STOP,
     SNAP_NAME_LIST_TABLE,
-    SNAP_NAME_LIST_ITEM_KEY_SCRIPT,
     SNAP_NAME_LIST_TEST_SCRIPT,
+    SNAP_NAME_LIST_THEME,
     SNAP_NAME_LIST_TYPE
 };
 char const *get_name(name_t name) __attribute__ ((const));
@@ -83,15 +85,32 @@ public:
 
 
 
+class list_item_t
+{
+public:
+    void                set_sort_key(QByteArray const& sort_key) { f_sort_key = sort_key; }
+    void                set_uri(QString const& uri) { f_uri = uri; }
+
+    QByteArray const&   get_sort_key() const { return f_sort_key; }
+    QString const&      get_uri() const { return f_uri; }
+
+private:
+    QByteArray          f_sort_key;
+    QString             f_uri;
+};
+typedef QVector<list_item_t> list_item_vector_t;
 
 
 
 
 
-class list : public plugins::plugin, public server::backend_action, public layout::layout_content
+
+
+class list : public plugins::plugin, public server::backend_action, public layout::layout_content, public layout::layout_boxes
 {
 public:
     static int const LIST_PROCESSING_LATENCY = 10 * 1000000; // 10 seconds in micro-seconds
+    static int const LIST_MAXIMUM_ITEMS = 10000; // maximum number of items returned by read_list()
 
                         list();
                         ~list();
@@ -105,10 +124,14 @@ public:
     void                on_register_backend_action(server::backend_action_map_t& actions);
     virtual void        on_backend_action(QString const& action);
     void                on_backend_process();
-    virtual void        on_generate_main_content(content::path_info_t& path, QDomElement& page, QDomElement& body, QString const& ctemplate);
-    void                on_generate_page_content(content::path_info_t& path, QDomElement& page, QDomElement& body, QString const& ctemplate);
+    virtual void        on_generate_main_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate);
+    void                on_generate_page_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate);
     void                on_create_content(content::path_info_t& ipath, QString const& owner, QString const& type);
     void                on_modified_content(content::path_info_t& ipath);
+    void                on_replace_token(content::path_info_t& ipath, QString const& plugin_owner, QDomDocument& xml, filter::filter::token_info_t& token);
+    virtual void        on_generate_boxes_content(content::path_info_t& page_ipath, content::path_info_t& ipath, QDomElement& page, QDomElement& boxes, QString const& ctemplate);
+
+    list_item_vector_t  read_list(content::path_info_t const& ipath, int start, int count);
 
 private:
     void                initial_update(int64_t variables_timestamp);

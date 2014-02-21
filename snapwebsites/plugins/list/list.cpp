@@ -17,8 +17,12 @@
 
 #include "list.h"
 
+#include "../path/path.h"
+#include "../output/output.h"
+
 #include "not_reached.h"
 #include "snap_expr.h"
+#include "qdomhelpers.h"
 #include "dbutils.h"
 
 #include <iostream>
@@ -81,6 +85,9 @@ char const *get_name(name_t name)
 
     case SNAP_NAME_LIST_TABLE:
         return "list";
+
+    case SNAP_NAME_LIST_THEME: // filter function
+        return "list::theme";
 
     case SNAP_NAME_LIST_TEST_SCRIPT: // compiled
         return "list::test_script";
@@ -191,6 +198,7 @@ void list::on_bootstrap(snap_child *snap)
     SNAP_LISTEN(list, "layout", layout::layout, generate_page_content, _1, _2, _3, _4);
     SNAP_LISTEN(list, "content", content::content, create_content, _1, _2, _3);
     SNAP_LISTEN(list, "content", content::content, modified_content, _1);
+    SNAP_LISTEN(list, "filter", filter::filter, replace_token, _1, _2, _3, _4);
 }
 
 
@@ -243,7 +251,7 @@ int64_t list::do_update(int64_t last_updated)
     SNAP_PLUGIN_UPDATE_INIT();
 
     SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, initial_update);
-    SNAP_PLUGIN_UPDATE(2014, 2, 4, 16, 29, 30, content_update);
+    SNAP_PLUGIN_UPDATE(2014, 2, 20, 13, 41, 30, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -340,10 +348,7 @@ QtCassandra::QCassandraTable::pointer_t list::get_list_table()
  */
 void list::on_generate_main_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate)
 {
-    static_cast<void>(ipath);
-    static_cast<void>(page);
-    static_cast<void>(body);
-    static_cast<void>(ctemplate);
+    output::output::instance()->on_generate_main_content(ipath, page, body, ctemplate);
 }
 
 
@@ -445,6 +450,109 @@ void list::on_modified_content(content::path_info_t& ipath)
     QString const branch_key(ipath.get_branch_key());
     data_table->row(branch_key)->dropCell(get_name(SNAP_NAME_LIST_TEST_SCRIPT), QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, start_date);
     data_table->row(branch_key)->dropCell(get_name(SNAP_NAME_LIST_ITEM_KEY_SCRIPT), QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, start_date);
+}
+
+
+/** \brief Read a set of URIs from a list.
+ *
+ * This function reads a set of URIs from the list specified by \p ipath.
+ *
+ * The first item returned is defined by \p start. It is inclusive and the
+ * very first item is number 0.
+ *
+ * The maximum number of items returned is defined by \p count. The number
+ * may be set of -1 to returned as many items as there is available starting
+ * from \p start. However, the function limits all returns to 10,000 items
+ * so if the returned list is exactly 10,000 items, it is not unlikely that
+ * you did not get all the items after the \p start point.
+ *
+ * The items are sorted by key as done by Cassandra.
+ *
+ * The count parameter cannot be set to zero. The function throws if you do
+ * that.
+ *
+ * \todo
+ * Note that at this point this function reads ALL item item from 0 to start
+ * and throw them away. Later we'll add sub-indexes that will allow us to
+ * reach any item very quickly. The sub-index will be something like this:
+ *
+ * \code
+ *     list::index::100 = <key of the 100th item>
+ *     list::index::200 = <key of the 200th item>
+ *     ...
+ * \endcode
+ *
+ * That way we can go to item 230 be starting the list scan at the 200th item.
+ * We read the list::index:200 and us that key to start reading the list
+ * (i.e. in the column predicate would use that key as the start key.)
+ *
+ * \param[in,out] ipath  The path to the list to be read.
+ * \param[in] start  The first item to be returned.
+ * \param[in] count  The number of items to return.
+ *
+ * \return The list of items
+ */
+list_item_vector_t list::read_list(content::path_info_t const& ipath, int start, int count)
+{
+    list_item_vector_t result;
+
+    if(count == -1 || count > LIST_MAXIMUM_ITEMS)
+    {
+        count = LIST_MAXIMUM_ITEMS;
+    }
+    if(start < 0 || count <= 0)
+    {
+        throw snap_logic_exception(QString("list::read_list(ipath, %1, %2) called with invalid start and/or count values...")
+                    .arg(start).arg(count));
+    }
+
+    content::content *content_plugin(content::content::instance());
+    QtCassandra::QCassandraTable::pointer_t data_table(content_plugin->get_data_table());
+
+    QString const branch_key(ipath.get_branch_key());
+    QtCassandra::QCassandraRow::pointer_t list_row(data_table->row(branch_key));
+
+    char const *ordered_pages(get_name(SNAP_NAME_LIST_ORDERED_PAGES));
+    int const len(strlen(ordered_pages) + 2);
+
+    QtCassandra::QCassandraColumnRangePredicate column_predicate;
+    column_predicate.setStartColumnName(QString("%1::").arg(ordered_pages));
+    column_predicate.setEndColumnName(QString("%1;").arg(ordered_pages));
+    column_predicate.setCount(std::min(100, count)); // optimize the number of cells transferred
+    column_predicate.setIndex(); // behave like an index
+    for(;;)
+    {
+        // clear the cache before reading the next load
+        list_row->clearCache();
+        list_row->readCells(column_predicate);
+        QtCassandra::QCassandraCells const& cells(list_row->cells());
+        if(cells.empty())
+        {
+            // all columns read
+            break;
+        }
+        for(QtCassandra::QCassandraCells::const_iterator cell_iterator(cells.begin()); cell_iterator != cells.end(); ++cell_iterator)
+        {
+            if(start > 0)
+            {
+                --start;
+            }
+            else
+            {
+                // we keep the sort key in the item
+                list_item_t item;
+                item.set_sort_key(cell_iterator.key().mid(len));
+                item.set_uri(cell_iterator.value()->value().stringValue());
+                result.push_back(item);
+                if(result.size() == count)
+                {
+                    break;
+                }
+            }
+        }
+    }
+
+    return result;
 }
 
 
@@ -1005,6 +1113,251 @@ QString list::run_list_item_key(content::path_info_t& list_ipath, content::path_
     e->execute(result, variables, functions);
 
     return result.get_string("*result*");
+}
+
+
+/** \brief Replace a [list::...] token with the contents of a list.
+ *
+ * This function replaces the list tokens with themed lists.
+ *
+ * The supported tokens are:
+ *
+ * \li [list::theme(path="\<list path\>", theme="\<theme name\>", start="\<start\>", count="\<count\>")]
+ *
+ * Theme the list define at \<list path\> with the theme \<theme name\>.
+ * You may skip some items and start with item \<start\> instead of item 0.
+ * You may specified the number of items to display with \<count\>. Be
+ * careful because by default all the items are shown (Although there is a
+ * system limit which at this time is 10,000 that still a LARGE list!)
+ * The them name, start, and count paramters are all optional.
+ *
+ * \param[in,out] ipath  The path to the page being worked on.
+ * \param[in] plugin_owner  The plugin owner of the ipath data.
+ * \param[in,out] xml  The XML document used with the layout.
+ * \param[in,out] token  The token object, with the token name and optional parameters.
+ */
+void list::on_replace_token(content::path_info_t& ipath, QString const& plugin_owner, QDomDocument& xml, filter::filter::token_info_t& token)
+{
+    static_cast<void>(ipath);
+    static_cast<void>(plugin_owner);
+    static_cast<void>(xml);
+
+    // a list::... token?
+    if(!token.is_namespace("list::"))
+    {
+        return;
+    }
+
+    if(token.is_token(get_name(SNAP_NAME_LIST_THEME)))
+    {
+        // list::theme expects one to four parameters
+        if(!token.verify_args(1, 4))
+        {
+            return;
+        }
+
+        // Path
+        filter::filter::parameter_t path_param(token.get_arg("path", 0, filter::filter::TOK_STRING));
+        if(token.f_error)
+        {
+            return;
+        }
+        if(path_param.f_value.isEmpty())
+        {
+            token.f_error = true;
+            token.f_replacement = "<span class=\"filter-error\"><span class=\"filter-error-word\">ERROR:</span> list path (first parameter) of the list::theme() function cannot be an empty string.</span>";
+            return;
+        }
+
+        // Theme
+        QString theme("qrc:/xsl/list/default"); // default theming, simple <ul>{<li>...</li>}</ul> list
+        if(token.has_arg("theme", 1))
+        {
+            filter::filter::parameter_t theme_param(token.get_arg("theme", 1, filter::filter::TOK_STRING));
+            if(token.f_error)
+            {
+                return;
+            }
+            // if user uses "" ignore it
+            if(theme_param.f_value.endsWith(".xsl"))
+            {
+                theme_param.f_value = theme_param.f_value.left(theme_param.f_value.length() - 4);
+            }
+            if(!theme_param.f_value.isEmpty())
+            {
+                theme = theme_param.f_value;
+            }
+        }
+
+        // Start
+        int start(0); // start with very first item
+        if(token.has_arg("start", 2))
+        {
+            filter::filter::parameter_t start_param(token.get_arg("start", 2, filter::filter::TOK_INTEGER));
+            if(token.f_error)
+            {
+                return;
+            }
+            bool ok(false);
+            start = start_param.f_value.toInt(&ok, 10);
+            if(!ok)
+            {
+                token.f_error = true;
+                token.f_replacement = "<span class=\"filter-error\"><span class=\"filter-error-word\">ERROR:</span> list start (third parameter) of the list::theme() function must be a valid integer.</span>";
+                return;
+            }
+            if(start < 0)
+            {
+                token.f_error = true;
+                token.f_replacement = "<span class=\"filter-error\"><span class=\"filter-error-word\">ERROR:</span> list start (third parameter) of the list::theme() function must be a positive integer or zero.</span>";
+                return;
+            }
+        }
+
+        // Count
+        int count(-1); // all items
+        if(token.has_arg("count", 3))
+        {
+            filter::filter::parameter_t count_param(token.get_arg("count", 3, filter::filter::TOK_INTEGER));
+            if(token.f_error)
+            {
+                return;
+            }
+            bool ok(false);
+            count = count_param.f_value.toInt(&ok, 10);
+            if(!ok)
+            {
+                token.f_error = true;
+                token.f_replacement = "<span class=\"filter-error\"><span class=\"filter-error-word\">ERROR:</span> list count (forth parameter) of the list::theme() function must be a valid integer.</span>";
+                return;
+            }
+            if(count != -1 && count <= 0)
+            {
+                token.f_error = true;
+                token.f_replacement = "<span class=\"filter-error\"><span class=\"filter-error-word\">ERROR:</span> list count (forth parameter) of the list::theme() function must be a valid integer large than zero or -1.</span>";
+                return;
+            }
+        }
+
+        content::path_info_t list_ipath;
+        list_ipath.set_path(path_param.f_value);
+
+        quiet_error_callback list_error_callback(f_snap, true);
+        plugin *list_plugin(path::path::instance()->get_plugin(list_ipath, list_error_callback));
+        if(!list_error_callback.has_error() && list_plugin)
+        {
+            layout::layout_content *list_content(dynamic_cast<layout::layout_content *>(list_plugin));
+            if(list_content == nullptr)
+            {
+                f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR,
+                        "Plugin Missing",
+                        "Plugin \"" + list_plugin->get_plugin_name() + "\" does not know how to handle a list assigned to it.",
+                        "list::on_replace_token() the plugin does not derive from layout::layout_content.");
+                NOTREACHED();
+            }
+
+            // read the list of items
+            list_item_vector_t items(read_list(list_ipath, start, count));
+            snap_child::post_file_t f;
+
+            // Load the list body
+            f.set_filename(theme + "-list-body.xsl");
+            if(!f_snap->load_file(f) || f.get_size() == 0)
+            {
+                token.f_error = true;
+                token.f_replacement = QString("<span class=\"filter-error\"><span class=\"filter-error-word\">ERROR:</span> list theme (%1-list-body.xsl) could not be loaded.</span>")
+                                            .arg(theme);
+                return;
+            }
+            QString const list_body_xsl(QString::fromUtf8(f.get_data()));
+
+            // Load the list theme
+            f.set_filename(theme + "-list-theme.xsl");
+            if(!f_snap->load_file(f) || f.get_size() == 0)
+            {
+                token.f_error = true;
+                token.f_replacement = QString("<span class=\"filter-error\"><span class=\"filter-error-word\">ERROR:</span> list theme (%1-list-theme.xsl) could not be loaded.</span>")
+                                            .arg(theme);
+                return;
+            }
+            QString const list_theme_xsl(QString::fromUtf8(f.get_data()));
+
+            // Load the item body
+            f.set_filename(theme + "-item-body.xsl");
+            if(!f_snap->load_file(f) || f.get_size() == 0)
+            {
+                token.f_error = true;
+                token.f_replacement = QString("<span class=\"filter-error\"><span class=\"filter-error-word\">ERROR:</span> list theme (%1-item-theme.xsl) could not be loaded.</span>")
+                                            .arg(theme);
+                return;
+            }
+            QString const item_body_xsl(QString::fromUtf8(f.get_data()));
+
+            // Load the item theme
+            f.set_filename(theme + "-item-theme.xsl");
+            if(!f_snap->load_file(f) || f.get_size() == 0)
+            {
+                token.f_error = true;
+                token.f_replacement = QString("<span class=\"filter-error\"><span class=\"filter-error-word\">ERROR:</span> list theme (%1-item-theme.xsl) could not be loaded.</span>")
+                                            .arg(theme);
+                return;
+            }
+            QString const item_theme_xsl(QString::fromUtf8(f.get_data()));
+
+            layout::layout *layout_plugin(layout::layout::instance());
+            QDomDocument list_doc(layout_plugin->create_document(list_ipath, list_plugin));
+            layout_plugin->create_body(list_doc, list_ipath, list_body_xsl, list_content);
+
+            QDomElement body(snap_dom::get_element(list_doc, "body"));
+            QDomElement list_element(list_doc.createElement("list"));
+            body.appendChild(list_element);
+
+            // now theme the list
+            int const max_items(items.size());
+            for(int i(0), index(1); i < max_items; ++i)
+            {
+                list_error_callback.clear_error();
+                content::path_info_t item_ipath;
+                item_ipath.set_path(items[i].get_uri());
+                item_ipath.set_parameter("action", "view"); // at this point we only support viewing list items
+                plugin *item_plugin(path::path::instance()->get_plugin(item_ipath, list_error_callback));
+                if(!list_error_callback.has_error() && item_plugin)
+                {
+                    // put each box in a filter tag so that way we have
+                    // a different owner and path for each
+                    QDomDocument item_doc(layout_plugin->create_document(item_ipath, item_plugin));
+
+                    layout_plugin->create_body(item_doc, item_ipath, item_body_xsl, dynamic_cast<layout_content *>(item_plugin));
+//std::cerr << "source to be parsed [" << item_doc.toString() << "]\n";
+                    QDomElement item_body(snap_dom::get_element(item_doc, "body"));
+                    item_body.setAttribute("index", index);
+                    QString themed_item(layout_plugin->apply_theme(item_doc, item_theme_xsl));
+//std::cerr << "themed item [" << themed_item << "]\n";
+
+                    // add that result to the list document
+                    QDomElement item(list_doc.createElement("item"));
+                    list_element.appendChild(item);
+                    snap_dom::insert_html_string_to_xml_doc(item, themed_item);
+
+                    ++index; // index only counts items added to the output
+                }
+            }
+//std::cerr << "resulting XML [" << list_doc.toString() << "]\n";
+
+            // now theme the list as a whole
+            // we add a wrapper so we can use /node()/* in the final theme
+            token.f_replacement = layout_plugin->apply_theme(list_doc, list_theme_xsl);
+        }
+        // else list is not accessible (permission "problem")
+    }
+}
+
+
+void list::on_generate_boxes_content(content::path_info_t& page_cpath, content::path_info_t& ipath, QDomElement& page, QDomElement& box, QString const& ctemplate)
+{
+    static_cast<void>(page_cpath);
+
+    output::output::instance()->on_generate_main_content(ipath, page, box, ctemplate);
 }
 
 

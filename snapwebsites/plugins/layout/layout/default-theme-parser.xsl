@@ -1,4 +1,22 @@
 <?xml version="1.0"?>
+<!--
+Snap Websites Server == default theme layout setup
+Copyright (C) 2011-2014  Made to Order Software Corp.
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+-->
 <xsl:stylesheet version="2.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
 															xmlns:xs="http://www.w3.org/2001/XMLSchema"
 															xmlns:fn="http://www.w3.org/2005/xpath-functions"
@@ -30,11 +48,7 @@
 		</xsl:choose>
 	</xsl:variable>
 	<!-- get the base URI (i.e. parent URI to this page) -->
-	<xsl:variable name="base_uri" as="xs:string" select="snap/head/metadata/desc[@type='base_uri']/data">
-		<!--xsl:for-each select="snap">
-			<xsl:value-of select="head/metadata/desc[@type='base_uri']/data"/>
-		</xsl:for-each-->
-	</xsl:variable>
+	<xsl:variable name="base_uri" as="xs:string" select="snap/head/metadata/desc[@type='base_uri']/data"/>
 	<!-- compute the path from the main URI to this page -->
 	<xsl:variable name="path" as="xs:string">
 		<xsl:value-of select="substring-after($base_uri, $website_uri)"/>
@@ -452,6 +466,17 @@
 					<xsl:variable name="content" select="data"/>
 					<meta name="{$name}" content="{$content}"/>
 				</xsl:for-each>
+				<style>
+					div.column
+					{
+						float: left;
+					}
+					div.left
+					{
+						width: 360px;
+						padding-right: 10px;
+					}
+				</style>
 			</head>
 			<xsl:apply-templates select="page/body"/>
 		</html>
@@ -515,7 +540,35 @@
 	</xsl:template>
 	<xsl:template match="page/body">
 		<body>
-			<xsl:copy-of select="output/*"/>
+			<div class="column left">
+				<xsl:for-each select="/snap/page/boxes/left">
+					<div class="box">
+						<!-- copy nodes under left -->
+						<h2 class="box-title"><xsl:choose>
+						<xsl:when test="descendant::node()/titles/short-title">
+							<xsl:value-of select="*/titles/short-title"/>
+						</xsl:when>
+						<xsl:otherwise>
+							<xsl:value-of select="*/titles/title"/>
+						</xsl:otherwise>
+						</xsl:choose></h2>
+						<div class="box-content">
+							<xsl:copy-of select="descendant::node()/content/node()"/>
+						</div>
+					</div>
+				</xsl:for-each>
+			</div>
+			<div class="column content">
+				<div class="editor-content"><h2><xsl:choose>
+						<xsl:when test="/snap/page/body/titles/long-title">
+							<xsl:value-of select="/snap/page/body/titles/long-title"/>
+						</xsl:when>
+						<xsl:otherwise>
+							<xsl:value-of select="/snap/page/body/titles/title"/>
+						</xsl:otherwise>
+					</xsl:choose></h2></div>
+				<div class="editor-content"><xsl:copy-of select="output/*"/></div>
+			</div>
 		</body>
 	</xsl:template>
 	<xsl:template name="left">

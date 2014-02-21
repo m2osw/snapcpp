@@ -18,6 +18,7 @@
 #include "menu.h"
 
 #include "../content/content.h"
+#include "../output/output.h"
 
 #include "log.h"
 #include "not_reached.h"
@@ -119,7 +120,10 @@ menu *menu::instance()
  */
 QString menu::description() const
 {
-    return "This plugin generates lists of pages used to form a menu.";
+    return "This plugin generates lists of pages used to form a menu."
+          " It manages two different types of lists: automated lists,"
+          " using the list plugin, and manually created lists where"
+          " a user enters each item in the list.";
 }
 
 
@@ -160,6 +164,29 @@ void menu::content_update(int64_t variables_timestamp)
     content::content::instance()->add_xml(get_plugin_name());
 }
 
+
+/** \brief Generate the page main content.
+ *
+ * This function generates the main content of the page. Other
+ * plugins will also have the event called if they subscribed and
+ * thus will be given a chance to add their own content to the
+ * main page. This part is the one that (in most cases) appears
+ * as the main content on the page although the content of some
+ * columns may be interleaved with this content.
+ *
+ * Note that this is NOT the HTML output. It is the <page> tag of
+ * the snap XML file format. The theme layout XSLT will be used
+ * to generate the final output.
+ *
+ * \param[in,out] ipath  The path being managed.
+ * \param[in,out] page  The page being generated.
+ * \param[in,out] body  The body being generated.
+ * \param[in] ctemplate  A fallback path in case ipath is not satisfactory.
+ */
+void menu::on_generate_main_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate)
+{
+    output::output::instance()->on_generate_main_content(ipath, page, body, ctemplate);
+}
 
 
 SNAP_PLUGIN_END()

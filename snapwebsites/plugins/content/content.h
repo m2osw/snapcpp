@@ -536,7 +536,6 @@ public:
     void                set_param_type(QString const& path, const QString& name, param_type_t param_type);
     void                add_link(QString const& path, links::link_info const& source, links::link_info const& destination);
     void                add_attachment(QString const& path, content_attachment const& attachment);
-    static void         insert_html_string_to_xml_doc(QDomElement child, QString const& xml);
     bool                load_attachment(QString const& key, attachment_file& file, bool load_data = true);
     void                add_javascript(path_info_t& path, QDomDocument doc, QString const& name);
 

@@ -16,7 +16,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
-#include "snapwebsites.h"
+#include "../layout/layout.h"
 
 
 namespace snap
@@ -74,7 +74,7 @@ public:
 
 
 
-class menu : public plugins::plugin
+class menu : public plugins::plugin, public layout::layout_content
 {
 public:
                         menu();
@@ -85,6 +85,7 @@ public:
     virtual int64_t     do_update(int64_t last_updated);
 
     void                on_bootstrap(::snap::snap_child *snap);
+    virtual void        on_generate_main_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate);
 
 private:
     void                content_update(int64_t variables_timestamp);

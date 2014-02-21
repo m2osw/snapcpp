@@ -195,11 +195,11 @@ bool snapdb::confirm_drop_check() const
 
     std::cout << "WARNING! This will drop vital tables from the database and is IRREVERSABLE!\n"
               << "Make sure you know what you are doing, and have appropriate backups before proceeding!\n"
-              << "Are you sure you want to do this? (type in 'Yes I know what I'm doing' and press ENTER): "
+              << "Are you sure you want to do this? (type in \"Yes I know what I'm doing\" and press ENTER): "
               ;
     std::string input;
     std::getline( std::cin, input );
-    const bool confirm( (input == "Yes I know what I'm doing") );
+    bool const confirm( (input == "Yes I know what I'm doing") );
     if( !confirm )
     {
         std::cerr << "Not dropping tables, so exiting." << std::endl;

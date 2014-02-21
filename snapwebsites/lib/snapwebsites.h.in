@@ -85,6 +85,24 @@ public:
     virtual void            on_redirect(QString const& err_name, QString const& err_description, QString const& err_details, bool err_security, QString const& path, snap_child::http_code_t http_code) = 0;
 };
 
+// a simple specialization of the permission_error_callback that quiet
+// the errors so they don't get in the way
+class quiet_error_callback : public permission_error_callback
+{
+public:
+                    quiet_error_callback(snap_child *snap, bool log);
+
+    virtual void    on_error(snap_child::http_code_t err_code, QString const& err_name, QString const& err_description, QString const& err_details);
+    virtual void    on_redirect(QString const& err_name, QString const& err_description, QString const& err_details, bool err_security, QString const& path, snap_child::http_code_t http_code);
+
+    void            clear_error();
+    bool            has_error() const;
+
+private:
+    zpsnap_child_t              f_snap;
+    controlled_vars::mbool_t    f_log;
+    controlled_vars::fbool_t    f_error;
+};
 
 
 
@@ -152,7 +170,7 @@ public:
 
     unsigned long connections_count();
 
-    SNAP_SIGNAL(bootstrap, (::snap::snap_child *snap), (snap));
+    SNAP_SIGNAL(bootstrap, (snap_child *snap), (snap));
     SNAP_SIGNAL(init, (), ());
     SNAP_SIGNAL(update, (int64_t last_updated), (last_updated));
     SNAP_SIGNAL(process_cookies, (), ());

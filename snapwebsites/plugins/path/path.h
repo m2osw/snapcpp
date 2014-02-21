@@ -27,7 +27,7 @@ namespace path
 //{
 //    SNAP_NAME_PATH_PRIMARY_OWNER
 //};
-//const char *get_name(name_t name) __attribute__ ((const));
+//char const *get_name(name_t name) __attribute__ ((const));
 
 
 class dynamic_plugin_t

@@ -22,9 +22,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
                               xmlns:xs="http://www.w3.org/2001/XMLSchema"
                               xmlns:fn="http://www.w3.org/2005/xpath-functions"
                               xmlns:snap="snap:snap">
-	<!-- include system data -->
-	<xsl:include href="functions"/>
-	<xsl:include href="html-header"/>
+  <!-- include system data -->
+  <xsl:include href="functions"/>
+  <xsl:include href="html-header"/>
 
   <!-- some special variables to define the theme -->
   <xsl:variable name="layout-name">bare</xsl:variable>
@@ -71,7 +71,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
                 </xsl:otherwise>
                 </xsl:choose></h2>
                 <div class="box-content">
-                  <xsl:copy-of select="descendant::node()/content/node()/*"/>
+                  <xsl:copy-of select="descendant::node()/content/node()"/>
                 </div>
               </div>
             </xsl:for-each>

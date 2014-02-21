@@ -749,10 +749,20 @@ void users::on_generate_main_content(content::path_info_t& ipath, QDomElement& p
 
 void users::on_generate_boxes_content(content::path_info_t& page_cpath, content::path_info_t& ipath, QDomElement& page, QDomElement& box, QString const& ctemplate)
 {
+    if(!f_user_key.isEmpty())
+    {
+        if(ipath.get_cpath().endsWith("login")
+        || ipath.get_cpath().endsWith("register"))
+        {
+            return;
+        }
+    }
+
 //std::cerr << "GOT TO USER BOXES!!! [" << ipath.get_key() << "]\n";
     if(ipath.get_cpath().endsWith("/login"))
     {
         // do not display the login box on the login page
+        // or if the user is already logged in
 
 // DEBUG -- at this point there are conflicts with more than 1 form on a page, so I only allow that form on the home page
 //if(page_cpath.get_cpath() != "") return;
