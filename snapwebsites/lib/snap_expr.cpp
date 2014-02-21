@@ -21,6 +21,7 @@
 #include "snapwebsites.h"
 #include "qstring_stream.h"
 #include "not_reached.h"
+#include "log.h"
 
 #include <controlled_vars/controlled_vars_limited_need_init.h>
 
@@ -3427,10 +3428,9 @@ expr_node::expr_node_pointer_t compile_expression(QString const& script)
 
     if(!g.parse(lexer, expr))
     {
-        std::cerr << "error #" << static_cast<int>(lexer.get_error_code())
+        SNAP_LOG_ERROR() << "error #" << static_cast<int>(lexer.get_error_code())
                   << " on line " << lexer.get_error_line()
-                  << ": " << lexer.get_error_message()
-                  << std::endl;
+                  << ": " << lexer.get_error_message();
 
         expr_node::expr_node_pointer_t null;
         return null;

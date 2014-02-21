@@ -6285,7 +6285,7 @@ void content::add_javascript(path_info_t& ipath, QDomDocument doc, QString const
             //      version with the User Agent match. This may not always
             //      be desirable though.
 #ifdef DEBUG
-std::cerr << "Adding JavaScript [" << name << "] [" << ref_cell->columnName().mid(start_ref.length() - 1) << "]\n";
+SNAP_LOG_TRACE() << "Adding JavaScript [" << name << "] [" << ref_cell->columnName().mid(start_ref.length() - 1) << "]\n";
 #endif
             QDomNodeList metadata(doc.elementsByTagName("metadata"));
             QDomNode javascript_tag(metadata.at(0).firstChildElement("javascript"));

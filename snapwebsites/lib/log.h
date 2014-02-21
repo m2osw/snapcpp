@@ -46,6 +46,7 @@ public:
     logger(log_level_t log_level, char const *file = NULL, char const *func = NULL, int line = -1);
     ~logger();
 
+    logger& operator () ();
     logger& operator () (log_security_t const v);
     logger& operator () (char const *s);
     logger& operator () (wchar_t const *s);
@@ -63,6 +64,7 @@ public:
     logger& operator () (unsigned long long const v);
     logger& operator () (float const v);
     logger& operator () (double const v);
+    logger& operator () (bool const v);
 
 private:
     log_level_t     f_log_level;
@@ -79,6 +81,19 @@ void configureConffile ( const QString& filename );
 void reconfigure();
 bool is_configured();
 void setLogOutputLevel( log_level_t level );
+
+logger& operator << ( logger& logger, const QString&                    msg );
+logger& operator << ( logger& logger, const std::basic_string<char>&    msg );
+logger& operator << ( logger& logger, const std::basic_string<wchar_t>& msg );
+logger& operator << ( logger& logger, const char*                       msg );
+logger& operator << ( logger& logger, const wchar_t*                    msg );
+
+template <class T>
+logger& operator << ( logger& logger, const T& msg )
+{
+    logger( msg );
+    return logger;
+}
 
 logger fatal  (char const *file = NULL, char const *func = NULL, int line = -1);
 logger error  (char const *file = NULL, char const *func = NULL, int line = -1);

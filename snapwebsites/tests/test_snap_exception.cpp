@@ -25,26 +25,30 @@
 #include "snap_exception.h"
 #include "log.h"
 #include "qstring_stream.h"
+#include "not_reached.h"
+
 #include <iostream>
+
 #include <QDir>
 
 
 int main(int /*argc*/, char * /*argv*/[])
 {
-    const QString conf_file( QString("%1/test_snap_exception.conf").arg(QDir::currentPath()) );
-    snap::logging::configureConffile( conf_file.toAscii().data() );
-    //snap::snap_exception::set_debug( true );
+    snap::logging::configureConsole();
 
-    SNAP_LOG_INFO("test_snap_exception");
-
+    SNAP_LOG_INFO("test_snap_exception started!");
     try
     {
+        SNAP_LOG_INFO("Testing regular exception:");
         throw snap::snap_exception( "This is an exception!" );
+        snap::NOTREACHED();
     }
     catch( snap::snap_exception& except )
     {
-        std::cout << "Caught snap exception " << except.what() << std::endl;
+        SNAP_LOG_INFO() << "Caught snap exception [" << except.what() << "].";
     }
+
+    SNAP_LOG_INFO("test_snap_exception finished.");
 
     return 0;
 }

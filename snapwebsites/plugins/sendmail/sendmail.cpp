@@ -1615,7 +1615,7 @@ void sendmail::on_backend_action(const QString& action)
             if(r < 1 || r >= static_cast<int>(sizeof(buf) - 1))
             {
                 perror("udp_signals->timed_recv():");
-                std::cerr << "error: an error occured in the UDP recv() call, returned size: " << r << std::endl;
+                SNAP_LOG_FATAL() << "error: an error occured in the UDP recv() call, returned size: " << r;
                 exit(1);
             }
             buf[r] = '\0';

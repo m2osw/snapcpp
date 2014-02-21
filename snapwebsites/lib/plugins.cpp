@@ -29,6 +29,7 @@
 #include <QFileInfo>
 
 #include "poison.h"
+#include "log.h"
 
 
 namespace snap
@@ -136,8 +137,9 @@ bool load(const QString& plugin_paths, plugin_ptr_t server, const QStringList& l
         QString const name(*it);
         if(name == "server")
         {
+
             // the Snap server is already added to the list under that name!
-            std::cerr << "error: a plugin cannot be called \"server\"." << std::endl;
+            SNAP_LOG_ERROR() << "error: a plugin cannot be called \"server\".";
             good = false;
             continue;
         }
@@ -146,8 +148,8 @@ bool load(const QString& plugin_paths, plugin_ptr_t server, const QStringList& l
         // this function to load sub-plugins!)
         if(exists(name))
         {
-            std::cerr << "error: two plugins cannot be named the same, found \""
-                            << name.toUtf8().data() << "\" twice." << std::endl;
+            SNAP_LOG_ERROR() << "error: two plugins cannot be named the same, found \""
+                            << name.toUtf8().data() << "\" twice.";
             good = false;
             continue;
         }
@@ -164,9 +166,9 @@ bool load(const QString& plugin_paths, plugin_ptr_t server, const QStringList& l
         QString const filename(find_plugin_filename(paths, name));
         if(filename.isEmpty())
         {
-            std::cerr << "error: plugin named \"" << name << "\" ("
+            SNAP_LOG_ERROR() << "error: plugin named \"" << name << "\" ("
                 << filename << ") not found in the plugin directory."
-                << std::endl;
+               ;
             good = false;
             continue;
         }
@@ -180,13 +182,13 @@ bool load(const QString& plugin_paths, plugin_ptr_t server, const QStringList& l
         if(h == nullptr)
         {
             int const e(errno);
-            std::cerr << "error: cannot load plugin file \"" << filename << "\" (errno: " << e << ", " << dlerror() << ")" << std::endl;
+            SNAP_LOG_ERROR() << "error: cannot load plugin file \"" << filename << "\" (errno: " << e << ", " << dlerror() << ")";
             good = false;
             continue;
         }
         g_next_register_name.clear();
         g_next_register_filename.clear();
-//std::cerr << "note: registering plugin: \"" << name << "\"" << std::endl;
+//SNAP_LOG_ERROR() << "note: registering plugin: \"" << name << "\"";
     }
 
     return good;
@@ -285,7 +287,7 @@ bool verify_plugin_name(QString const& name)
 {
     if(name.isEmpty())
     {
-        std::cerr << "error: an empty plugin name is not valid." << std::endl;
+        SNAP_LOG_ERROR() << "error: an empty plugin name is not valid.";
         return false;
     }
     for(QString::const_iterator p(name.begin()); p != name.end(); ++p)
@@ -295,8 +297,8 @@ bool verify_plugin_name(QString const& name)
         && (*p < '0' || *p > '9')
         && *p != '_' && *p != '-' && *p != '.')
         {
-            std::cerr << "error: plugin name \"" << name
-                    << "\" includes forbidden characters." << std::endl;
+            SNAP_LOG_ERROR() << "error: plugin name \"" << name
+                    << "\" includes forbidden characters.";
             return false;
         }
     }
@@ -304,9 +306,9 @@ bool verify_plugin_name(QString const& name)
     QChar first(name[0]);
     if(first == '.' || first == '-')
     {
-        std::cerr << "error: plugin name \"" << name
+        SNAP_LOG_ERROR() << "error: plugin name \"" << name
                 << "\" cannot start with a period (.) or dash (-)."
-                << std::endl;
+               ;
         return false;
     }
     // Note: we know that name is not empty
@@ -315,7 +317,7 @@ bool verify_plugin_name(QString const& name)
     {
         std::cerr << "error: plugin name \"" << name
                 << "\" cannot end with a period (.) or dash (-)."
-                << std::endl;
+               ;
         return false;
     }
 

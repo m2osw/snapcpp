@@ -394,7 +394,7 @@ QString layout::define_layout(content::path_info_t& ipath, QString& layout_name)
     // XXX should the ctemplate ever be used to retrieve the layout?
     layout_name = get_layout(ipath, get_name(SNAP_NAME_LAYOUT_LAYOUT));
 
-//std::cerr << "Got theme / layout name = [" << layout_name << "] (key=" << ipath.get_key() << ")\n";
+//SNAP_LOG_TRACE() << "Got theme / layout name = [" << layout_name << "] (key=" << ipath.get_key() << ")\n";
 
 // TODO: fix the default layout selection!?
 //       until we can get the theme system working right...
@@ -548,12 +548,12 @@ QDomDocument layout::create_document(content::path_info_t& ipath, plugin *p)
 void layout::create_body(QDomDocument& doc, content::path_info_t& ipath, QString const& xsl, layout_content *content_plugin, QString const& ctemplate, bool handle_boxes, QString const& layout_name)
 {
 #ifdef DEBUG
-std::cerr << "create body in layout\n";
+SNAP_LOG_TRACE() << "create body in layout\n";
 #endif
 
 
 #ifdef DEBUG
-std::cerr << "got in layout... cpath = [" << ipath.get_cpath() << "]\n";
+SNAP_LOG_TRACE() << "got in layout... cpath = [" << ipath.get_cpath() << "]\n";
 #endif
     // other plugins generate defaults
     {
@@ -778,7 +778,7 @@ void layout::generate_boxes(content::path_info_t& ipath, QString const& layout_n
                         filter_box.setAttribute("path", box_ipath.get_cpath()); // not the full key
                         filter_box.setAttribute("owner", box_plugin->get_plugin_name());
                         dom_boxes[i].appendChild(filter_box);
-//std::cerr << "handle box for " << box_plugin->get_plugin_name() << "\n";
+//SNAP_LOG_TRACE() << "handle box for " << box_plugin->get_plugin_name() << "\n";
                         lb->on_generate_boxes_content(ipath, box_ipath, page, filter_box, "");
                     }
                     else
@@ -1007,7 +1007,7 @@ void layout::replace_includes(QString& xsl)
     };
     replace_t::replace(f_snap, "<xsl:include", xsl);
     replace_t::replace(f_snap, "<xsl:import", xsl);
-//std::cerr << "include [" << xsl << "]\n";
+//SNAP_LOG_TRACE() << "include [" << xsl << "]\n";
 }
 
 
@@ -1224,7 +1224,7 @@ bool layout::generate_header_content_impl(content::path_info_t& ipath, QDomEleme
         // generate!
         ;
 
-//std::cerr << "layout stuff [" << header.ownerDocument().toString() << "]\n";
+//SNAP_LOG_TRACE() << "layout stuff [" << header.ownerDocument().toString() << "]\n";
     return true;
 }
 

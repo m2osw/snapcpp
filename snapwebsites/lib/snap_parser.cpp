@@ -25,6 +25,7 @@
 #include <QPointer>
 
 #include "poison.h"
+#include "log.h"
 
 namespace snap
 {
@@ -1749,24 +1750,24 @@ struct parser_state
 #ifdef DEBUG
     static void display_array(const state_array_t& a)
     {
-        std::cerr << "+++ ARRAY (" << a.size() << " items)\n";
+        SNAP_LOG_TRACE() << "+++ ARRAY (" << a.size() << " items)\n";
         for(state_array_t::const_iterator it(a.begin()); it != a.end(); ++it)
         {
             parser_state *state(*it);
             //std::cerr << "  state = " << state << "\n"; // for crash
-            std::cerr << "  current: " << state->toString() << "\n";
+            SNAP_LOG_TRACE() << "  current: " << state->toString() << "\n";
             for(state_array_t::const_iterator r(state->f_add_on_reduce.begin()); r != state->f_add_on_reduce.end(); ++r)
             {
                 parser_state *s(*r);
-                std::cerr << "      add on reduce: " << s->toString() << "\n";
+                SNAP_LOG_TRACE() << "      add on reduce: " << s->toString() << "\n";
             }
             while(state->f_parent != nullptr)
             {
                 state = state->f_parent;
-                std::cerr << "    parent: " << state->toString() << "\n";
+                SNAP_LOG_TRACE() << "    parent: " << state->toString() << "\n";
             }
         }
-        std::cerr << "---\n";
+        SNAP_LOG_TRACE() << "---\n";
     }
 
     void lock()

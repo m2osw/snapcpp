@@ -18,6 +18,7 @@
 #include "compression.h"
 
 #include <controlled_vars/controlled_vars_auto_init.h>
+#include "log.h"
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
@@ -185,7 +186,7 @@ QByteArray compress(QString& compressor_name, const QByteArray& input, level_t l
     if(input.size() == 0 || level < 5)
     {
 #ifdef DEBUG
-printf("nothing to compress\n");
+SNAP_LOG_TRACE("nothing to compress\n");
 #endif
         compressor_name = compressor_t::NO_COMPRESSION;
         return input;
@@ -222,7 +223,7 @@ printf("nothing to compress\n");
         // compressor is not available, return input as is...
         compressor_name = compressor_t::NO_COMPRESSION;
 #ifdef DEBUG
-printf("compressor not found?!\n");
+SNAP_LOG_TRACE("compressor not found?!\n");
 #endif
         return input;
     }
@@ -233,7 +234,7 @@ printf("compressor not found?!\n");
     {
         compressor_name = compressor_t::NO_COMPRESSION;
 #ifdef DEBUG
-printf("compression is larger?!\n");
+SNAP_LOG_TRACE("compression is larger?!\n");
 #endif
         return input;
     }

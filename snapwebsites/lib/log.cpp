@@ -96,8 +96,9 @@ void configureConsole()
 
     log4cplus::SharedAppenderPtr
             appender(new log4cplus::ConsoleAppender());
-    appender->setName(LOG4CPLUS_TEXT("First"));
-    appender->setLayout( std::auto_ptr<log4cplus::Layout>( new log4cplus::TTCCLayout()) );
+    appender->setName(LOG4CPLUS_TEXT("console"));
+    const log4cplus::tstring pattern( "%b:%L:%h: %m%n" );
+    appender->setLayout( std::auto_ptr<log4cplus::Layout>( new log4cplus::PatternLayout(pattern)) );
     log4cplus::Logger::getRoot().addAppender( appender );
     setLogOutputLevel( LOG_LEVEL_INFO );
 
@@ -143,8 +144,9 @@ void configureLogfile( const QString& logfile )
 
     log4cplus::SharedAppenderPtr
             appender(new log4cplus::RollingFileAppender( logfile.toUtf8().data() ));
-    appender->setName(LOG4CPLUS_TEXT("First"));
-    appender->setLayout( std::auto_ptr<log4cplus::Layout>( new log4cplus::TTCCLayout()) );
+    appender->setName(LOG4CPLUS_TEXT("log_file"));
+    const log4cplus::tstring pattern( "%d{%Y/%m/%d %H:%M:%S} %h Snap[%i]: %m (%b:%L)%n" );
+    appender->setLayout( std::auto_ptr<log4cplus::Layout>( new log4cplus::PatternLayout(pattern)) );
     log4cplus::Logger::getRoot().addAppender( appender );
     setLogOutputLevel( LOG_LEVEL_INFO );
 
@@ -283,6 +285,41 @@ void setLogOutputLevel( log_level_t level )
 }
 
 
+logger& operator << ( logger& logger, const QString& msg )
+{
+    logger( msg );
+    return logger;
+}
+
+
+logger& operator << ( logger& logger, const std::basic_string<char>& msg )
+{
+    logger( msg.c_str() );
+    return logger;
+}
+
+
+logger& operator << ( logger& logger, const std::basic_string<wchar_t>& msg )
+{
+    logger( msg.c_str() );
+    return logger;
+}
+
+
+logger& operator << ( logger& logger, const char* msg )
+{
+    logger( msg );
+    return logger;
+}
+
+
+logger& operator << ( logger& logger, const wchar_t* msg )
+{
+    logger( msg );
+    return logger;
+}
+
+
 /** \brief Create a log object with the specified information.
  *
  * This function generates a log object that can be used to generate
@@ -410,6 +447,12 @@ logger::~logger()
     }
 }
 
+logger& logger::operator () ()
+{
+    // does nothing
+    return *this;
+}
+
 logger& logger::operator () (const log_security_t v)
 {
     f_security = v;
@@ -510,6 +553,12 @@ logger& logger::operator () (const float v)
 logger& logger::operator () (const double v)
 {
     f_message += QString("%1").arg(v);
+    return *this;
+}
+
+logger& logger::operator () (const bool v)
+{
+    f_message += QString("%1").arg(static_cast<int>(v));
     return *this;
 }
 

@@ -834,7 +834,7 @@ void sitemapxml::on_backend_process()
     content_table->row(sitemap_txt)->cell(content_modified)->setValue(start_date);
 
 #ifdef DEBUG
-std::cerr << "Updating [" << sitemap_xml << "]\n";
+SNAP_LOG_TRACE() << "Updating [" << sitemap_xml << "]\n";
 #endif
 }
 

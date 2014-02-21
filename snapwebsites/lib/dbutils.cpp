@@ -26,6 +26,7 @@
 #include <QStringList>
 
 #include "poison.h"
+#include "log.h"
 
 
 using namespace QtCassandra;
@@ -531,7 +532,7 @@ QString dbutils::get_column_value( QCassandraCell::pointer_t c, const bool displ
     }
     catch(std::runtime_error const& e)
     {
-        std::cerr << "error: caught a runtime exception dealing with \"" << get_column_name(c) << "\" (" << e.what() << ")\n";
+        SNAP_LOG_ERROR() << "error: caught a runtime exception dealing with \"" << get_column_name(c) << "\" (" << e.what() << ")";
         // TBD: just rethrow?
         //throw;
         v = "ERROR DETECTED";
