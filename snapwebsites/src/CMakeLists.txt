@@ -40,21 +40,6 @@ add_definitions( ${QT_DEFINITIONS} )
 
 
 #################################################################################
-## Config files
-##
-install(
-    FILES 
-        log.conf
-        snapserver.conf
-        snapcgi.conf
-        snapcgilog.conf
-        snap-apache2.conf
-    DESTINATION
-        share/snapwebsites/conf
-)
-
-
-#################################################################################
 ## The Snap! Server
 ##
 project(snapserver)
