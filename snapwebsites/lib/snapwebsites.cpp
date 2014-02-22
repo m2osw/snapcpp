@@ -791,12 +791,6 @@ void server::config(int argc, char *argv[])
         //
         logging::setLogOutputLevel( logging::LOG_LEVEL_DEBUG );
     }
-
-    // I really want to prevent having an immediate message to let users know that
-    // the server is starting; however, until we detach() ourselves the
-    // process identifier is going to be wrong.
-    //
-    SNAP_LOG_INFO("Snap v" SNAPWEBSITES_VERSION_STRING " on \"" + f_parameters["server_name"] + "\" started.");
 }
 
 
@@ -1131,6 +1125,9 @@ void server::listen()
 
     // initialize the server
     tcp_client_server::tcp_server s(host[0].toUtf8().data(), p, max_pending_connections, true, true);
+
+    // the server was successfully started
+    SNAP_LOG_INFO("Snap v" SNAPWEBSITES_VERSION_STRING " on \"" + f_parameters["server_name"] + "\" started.");
 
     // wait until we get killed
     {

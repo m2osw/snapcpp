@@ -10,6 +10,7 @@ snapwebsites (0.1.14~saucy) saucy; urgency=high
   * Added the list and menu plugins.
   * Broke up the layout functions so some can be reused by other plugins.
   * Enhanced the default theme a little so it is more likely to be useful.
+  * Added clamav as a dependency for antivirus to work.
 
   [ R. Douglas Barbieri ]
   * Revamped the logging system, added better switches to control the output.
