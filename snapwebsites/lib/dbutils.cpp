@@ -20,13 +20,13 @@
 #include "dbutils.h"
 #include "snap_exception.h"
 #include "qstring_stream.h"
+#include "log.h"
 
 #include <iostream>
 
 #include <QStringList>
 
 #include "poison.h"
-#include "log.h"
 
 
 using namespace QtCassandra;

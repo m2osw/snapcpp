@@ -24,13 +24,14 @@
 #include "snap_expr.h"
 #include "qdomhelpers.h"
 #include "dbutils.h"
+#include "log.h"
 
 #include <iostream>
 
 #include <sys/time.h>
 
 #include "poison.h"
-#include "log.h"
+
 
 SNAP_PLUGIN_START(list, 1, 0)
 

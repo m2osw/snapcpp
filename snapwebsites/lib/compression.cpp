@@ -17,14 +17,17 @@
 
 #include "compression.h"
 
-#include <controlled_vars/controlled_vars_auto_init.h>
 #include "log.h"
+
+#include <controlled_vars/controlled_vars_auto_init.h>
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
 #include <zlib.h>
 #include <QMap>
 #pragma GCC diagnostic pop
+
+#include "poison.h"
 
 namespace snap
 {

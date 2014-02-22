@@ -19,6 +19,8 @@
 #include "not_reached.h"
 #include "log.h"
 
+#include "poison.h"
+
 namespace snap
 {
 

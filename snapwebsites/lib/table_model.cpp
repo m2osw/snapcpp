@@ -26,6 +26,8 @@
 #include <iostream>
 #include <exception>
 
+#include "poison.h"
+
 using namespace QtCassandra;
 
 

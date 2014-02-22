@@ -16,8 +16,12 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "char_chart.h"
+
 #include <iostream>
+
 #include <QDebug>
+
+#include "poison.h"
 
 
 SNAP_PLUGIN_START(char_chart, 1, 0)

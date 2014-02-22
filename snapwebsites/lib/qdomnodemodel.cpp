@@ -36,8 +36,8 @@ Changes made by Alexis Wilke so the model works in Qt 4.8 and with Snap.
 #include <QVector>
 #include <QSourceLocation>
 #include <QVariant>
-
 #include <QDebug>
+
 #include "poison.h"
 
 class MyDomNode: public QDomNode

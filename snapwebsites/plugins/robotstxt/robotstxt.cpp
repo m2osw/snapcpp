@@ -16,9 +16,12 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "robotstxt.h"
+
 #include "../../lib/plugins.h"
 #include "../content/content.h"
+
 #include <iostream>
+
 #include "poison.h"
 
 

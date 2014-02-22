@@ -18,12 +18,15 @@
 #include "qdomxpath.h"
 
 #include <iostream>
+#include <iomanip>
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
 #include <QVector>
 #include <QMap>
 #pragma GCC diagnostic pop
+
+#include "poison.h"
 
 
 
@@ -6540,7 +6543,7 @@ void append_push_for_jump(const QString& label)
     }
     if(f_show_commands)
     {
-        printf("=== push for jump (%d)\n", f_program.size());
+        std::cout << "=== push for jump (" << f_program.size() << ")\n";
     }
     f_future_labels[label].push_back(f_program.size());
     append_push_integer(0x1111); // reserve 2 bytes for pc
@@ -6564,7 +6567,7 @@ void mark_with_label(const QString& label)
 
             if(f_show_commands)
             {
-                printf("# Fix offset -- ");
+                std::cout << "# Fix offset -- ";
                 disassemble_instruction(pc);
             }
         }
@@ -7586,19 +7589,19 @@ QDomXPath::node_vector_t apply(QDomXPath::node_vector_t& nodes)
 
 uint32_t disassemble_undefined_instruction(uint32_t pc)
 {
-    printf("***undefined instruction*** (%d)\n", f_program[pc - 1]);
+    std::cout << "***undefined instruction*** (" << f_program[pc - 1] << ")\n";
     return 1;
 }
 
 uint32_t disassemble_end(uint32_t pc)
 {
-    printf("end\n");
+    std::cout << "end\n";
     return 1;
 }
 
 uint32_t disassemble_call(uint32_t pc)
 {
-    printf("call\n");
+    std::cout << "call\n";
     return 1;
 }
 
@@ -7606,7 +7609,7 @@ uint32_t disassemble_small_function(uint32_t pc)
 {
     uint32_t size((f_program[pc + 0] << 8)
                  | f_program[pc + 1]);
-    printf("function (%d bytes)\n", size);
+    std::cout << "function (" << size << " bytes)\n";
     // we do not skip the function here, we only print the header
     // and the disassemble loop will print the contents
     // TODO what's missing is a way to mark the end of the function!
@@ -7619,7 +7622,7 @@ uint32_t disassemble_large_function(uint32_t pc)
                 | (f_program[pc + 1] << 16)
                 | (f_program[pc + 2] << 8)
                 |  f_program[pc + 3]);
-    printf("function (%d bytes)\n", size);
+    std::cout << "function (" << size << " bytes)\n";
     // we do not skip the function here, we only print the header
     // and the disassemble loop will print the contents
     // TODO what's missing is a way to mark the end of the function!
@@ -7628,145 +7631,145 @@ uint32_t disassemble_large_function(uint32_t pc)
 
 uint32_t disassemble_jump(uint32_t pc)
 {
-    printf("jump\n");
+    std::cout << "jump\n";
     return 1;
 }
 
 uint32_t disassemble_jump_if_true(uint32_t pc)
 {
-    printf("jump_if_true\n");
+    std::cout << "jump_if_true\n";
     return 1;
 }
 
 uint32_t disassemble_jump_if_false(uint32_t pc)
 {
-    printf("jump_if_false\n");
+    std::cout << "jump_if_false\n";
     return 1;
 }
 
 uint32_t disassemble_jump_if_zero(uint32_t pc)
 {
-    printf("jump_if_zero\n");
+    std::cout << "jump_if_zero\n";
     return 1;
 }
 
 uint32_t disassemble_return(uint32_t pc)
 {
-    printf("return\n");
+    std::cout << "return\n";
     return 1;
 }
 
 uint32_t disassemble_get_variable(uint32_t pc)
 {
-    printf("get_variable\n");
+    std::cout << "get_variable\n";
     return 1;
 }
 
 uint32_t disassemble_set_variable(uint32_t pc)
 {
-    printf("set_variable\n");
+    std::cout << "set_variable\n";
     return 1;
 }
 
 uint32_t disassemble_pop1(uint32_t pc)
 {
-    printf("pop 1\n");
+    std::cout << "pop 1\n";
     return 1;
 }
 
 uint32_t disassemble_pop2(uint32_t pc)
 {
-    printf("pop 2\n");
+    std::cout << "pop 2\n";
     return 1;
 }
 
 uint32_t disassemble_pop3(uint32_t pc)
 {
-    printf("pop 3\n");
+    std::cout << "pop 3\n";
     return 1;
 }
 
 uint32_t disassemble_pop4(uint32_t pc)
 {
-    printf("pop 4\n");
+    std::cout << "pop 4\n";
     return 1;
 }
 
 uint32_t disassemble_pop5(uint32_t pc)
 {
-    printf("pop 5\n");
+    std::cout << "pop 5\n";
     return 1;
 }
 
 uint32_t disassemble_duplicate1(uint32_t pc)
 {
-    printf("duplicate 1\n");
+    std::cout << "duplicate 1\n";
     return 1;
 }
 
 uint32_t disassemble_duplicate2(uint32_t pc)
 {
-    printf("duplicate 2\n");
+    std::cout << "duplicate 2\n";
     return 1;
 }
 
 uint32_t disassemble_duplicate3(uint32_t pc)
 {
-    printf("duplicate 3\n");
+    std::cout << "duplicate 3\n";
     return 1;
 }
 
 uint32_t disassemble_duplicate4(uint32_t pc)
 {
-    printf("duplicate 4\n");
+    std::cout << "duplicate 4\n";
     return 1;
 }
 
 uint32_t disassemble_duplicate5(uint32_t pc)
 {
-    printf("duplicate 5\n");
+    std::cout << "duplicate 5\n";
     return 1;
 }
 
 uint32_t disassemble_swap1(uint32_t pc)
 {
-    printf("swap 1, 2\n");
+    std::cout << "swap 1, 2\n";
     return 1;
 }
 
 uint32_t disassemble_swap2(uint32_t pc)
 {
-    printf("swap 1, 3\n");
+    std::cout << "swap 1, 3\n";
     return 1;
 }
 
 uint32_t disassemble_swap3(uint32_t pc)
 {
-    printf("swap 1, 4\n");
+    std::cout << "swap 1, 4\n";
     return 1;
 }
 
 uint32_t disassemble_swap4(uint32_t pc)
 {
-    printf("swap 1, 5\n");
+    std::cout << "swap 1, 5\n";
     return 1;
 }
 
 uint32_t disassemble_swap5(uint32_t pc)
 {
-    printf("swap 1, 6\n");
+    std::cout << "swap 1, 6\n";
     return 1;
 }
 
 uint32_t disassemble_swap2_3(uint32_t pc)
 {
-    printf("swap 2, 3\n");
+    std::cout << "swap 2, 3\n";
     return 1;
 }
 
 uint32_t disassemble_push_any_string(uint32_t pc)
 {
-    printf("push_string \"*\"\n");
+    std::cout << "push_string \"*\"\n";
     return 1;
 }
 
@@ -7792,43 +7795,43 @@ uint32_t disassemble_push_double(uint32_t pc)
                   | (static_cast<int64_t>(f_program[pc + 5]) << 16)
                   | (static_cast<int64_t>(f_program[pc + 6]) <<  8)
                   |  static_cast<int64_t>(f_program[pc + 7]);
-    printf("push_double %g\n", convert.f_dbl);
+    std::cout << "push_double " << convert.f_dbl << std::endl;
     return 9;
 }
 
 uint32_t disassemble_push_double_zero(uint32_t pc)
 {
-    printf("push_double_zero\n");
+    std::cout << "push_double_zero\n";
     return 1;
 }
 
 uint32_t disassemble_push_empty_node_set(uint32_t pc)
 {
-    printf("push_empty_node_set\n");
+    std::cout << "push_empty_node_set\n";
     return 1;
 }
 
 uint32_t disassemble_push_empty_set(uint32_t pc)
 {
-    printf("push_empty_set\n");
+    std::cout << "push_empty_set\n";
     return 1;
 }
 
 uint32_t disassemble_push_empty_string(uint32_t pc)
 {
-    printf("push_string \"\"\n");
+    std::cout << "push_string \"\"\n";
     return 1;
 }
 
 uint32_t disassemble_push_end_of_arguments(uint32_t pc)
 {
-    printf("push_end_of_arguments\n");
+    std::cout << "push_end_of_arguments\n";
     return 1;
 }
 
 uint32_t disassemble_push_false(uint32_t pc)
 {
-    printf("push_false\n");
+    std::cout << "push_false\n";
     return 1;
 }
 
@@ -7839,7 +7842,7 @@ uint32_t disassemble_push_large_string(uint32_t pc)
                   | (static_cast<uint32_t>(f_program[pc + 2]) <<  8)
                   |  static_cast<uint32_t>(f_program[pc + 3]);
     std::string str(reinterpret_cast<char *>(&f_program[pc + 4]), size);
-    printf("push_string \"%s\"\n", str.c_str());
+    std::cout << "push_string \"" << str << "\"" << std::endl;
     return 5 + size;
 }
 
@@ -7872,7 +7875,7 @@ uint32_t disassemble_push_medium_string(uint32_t pc)
     uint32_t size = (static_cast<uint32_t>(f_program[pc + 0]) << 8)
                   |  static_cast<uint32_t>(f_program[pc + 1]);
     std::string str(reinterpret_cast<char *>(&f_program[pc + 2]), size);
-    printf("push_string \"%s\"\n", str.c_str());
+    std::cout << "push_string \"" << str << "\"\n";
     return 3 + size;
 }
 
@@ -7915,254 +7918,255 @@ uint32_t disassemble_push_small_string(uint32_t pc)
 {
     uint32_t size = static_cast<uint32_t>(f_program[pc + 0]);
     std::string str(reinterpret_cast<char *>(&f_program[pc + 1]), size);
-    printf("push_string \"%s\"\n", str.c_str());
+    std::cout << "push_string \"" << str << "\"\n";
     return 2 + size;
 }
 
 uint32_t disassemble_push_true(uint32_t pc)
 {
-    printf("push_true\n");
+    std::cout << "push_true\n";
     return 1;
 }
 
 uint32_t disassemble_push_zero(uint32_t pc)
 {
-    printf("push_integer 0\n");
+    std::cout << "push_integer 0\n";
     return 1;
 }
 
 uint32_t disassemble_add(uint32_t pc)
 {
-    printf("add\n");
+    std::cout << "add\n";
     return 1;
 }
 
 uint32_t disassemble_and(uint32_t pc)
 {
-    printf("and\n");
+    std::cout << "and\n";
     return 1;
 }
 
 uint32_t disassemble_ceiling(uint32_t pc)
 {
-    printf("ceiling\n");
+    std::cout << "ceiling\n";
     return 1;
 }
 
 uint32_t disassemble_decrement(uint32_t pc)
 {
-    printf("decrement\n");
+    std::cout << "decrement\n";
     return 1;
 }
 
 uint32_t disassemble_divide(uint32_t pc)
 {
-    printf("divide\n");
+    std::cout << "divide\n";
     return 1;
 }
 
 uint32_t disassemble_equal(uint32_t pc)
 {
-    printf("equal\n");
+    std::cout << "equal\n";
     return 1;
 }
 
 uint32_t disassemble_floor(uint32_t pc)
 {
-    printf("floor\n");
+    std::cout << "floor\n";
     return 1;
 }
 
 uint32_t disassemble_greater_or_equal(uint32_t pc)
 {
-    printf("greater_or_equal\n");
+    std::cout << "greater_or_equal\n";
     return 1;
 }
 
 uint32_t disassemble_greater_than(uint32_t pc)
 {
-    printf("greater_than\n");
+    std::cout << "greater_than\n";
     return 1;
 }
 
 uint32_t disassemble_idivide(uint32_t pc)
 {
-    printf("idivide\n");
+    std::cout << "idivide\n";
     return 1;
 }
 
 uint32_t disassemble_increment(uint32_t pc)
 {
-    printf("increment\n");
+    std::cout << "increment\n";
     return 1;
 }
 
 uint32_t disassemble_less_or_equal(uint32_t pc)
 {
-    printf("less_or_equal\n");
+    std::cout << "less_or_equal\n";
     return 1;
 }
 
 uint32_t disassemble_less_than(uint32_t pc)
 {
-    printf("less_than\n");
+    std::cout << "less_than\n";
     return 1;
 }
 
 uint32_t disassemble_modulo(uint32_t pc)
 {
-    printf("modulo\n");
+    std::cout << "modulo\n";
     return 1;
 }
 
 uint32_t disassemble_multiply(uint32_t pc)
 {
-    printf("multiply\n");
+    std::cout << "multiply\n";
     return 1;
 }
 
 uint32_t disassemble_negate(uint32_t pc)
 {
-    printf("negate\n");
+    std::cout << "negate\n";
     return 1;
 }
 
 uint32_t disassemble_not(uint32_t pc)
 {
-    printf("not\n");
+    std::cout << "not\n";
     return 1;
 }
 
 uint32_t disassemble_not_equal(uint32_t pc)
 {
-    printf("not_equal\n");
+    std::cout << "not_equal\n";
     return 1;
 }
 
 uint32_t disassemble_or(uint32_t pc)
 {
-    printf("or\n");
+    std::cout << "or\n";
     return 1;
 }
 
 uint32_t disassemble_round(uint32_t pc)
 {
-    printf("round\n");
+    std::cout << "round\n";
     return 1;
 }
 
 uint32_t disassemble_string_length(uint32_t pc)
 {
-    printf("string_length\n");
+    std::cout << "string_length\n";
     return 1;
 }
 
 uint32_t disassemble_subtract(uint32_t pc)
 {
-    printf("subtract\n");
+    std::cout << "subtract\n";
     return 1;
 }
 
 uint32_t disassemble_axis(uint32_t pc)
 {
-    printf("axis\n");
+    std::cout << "axis\n";
     return 1;
 }
 
 uint32_t disassemble_root(uint32_t pc)
 {
-    printf("root\n");
+    std::cout << "root\n";
     return 1;
 }
 
 uint32_t disassemble_get_node_set(uint32_t pc)
 {
-    printf("get_node_set\n");
+    std::cout << "get_node_set\n";
     return 1;
 }
 
 uint32_t disassemble_set_node_set(uint32_t pc)
 {
-    printf("set_node_set\n");
+    std::cout << "set_node_set\n";
     return 1;
 }
 
 uint32_t disassemble_get_result(uint32_t pc)
 {
-    printf("get_result\n");
+    std::cout << "get_result\n";
     return 1;
 }
 
 uint32_t disassemble_set_result(uint32_t pc)
 {
-    printf("set_result\n");
+    std::cout << "set_result\n";
     return 1;
 }
 
 uint32_t disassemble_get_position(uint32_t pc)
 {
-    printf("get_position\n");
+    std::cout << "get_position\n";
     return 1;
 }
 
 uint32_t disassemble_set_position(uint32_t pc)
 {
-    printf("set_position\n");
+    std::cout << "set_position\n";
     return 1;
 }
 
 uint32_t disassemble_node_set_size(uint32_t pc)
 {
-    printf("node_set_size\n");
+    std::cout << "node_set_size\n";
     return 1;
 }
 
 uint32_t disassemble_merge_sets(uint32_t pc)
 {
-    printf("merge_sets\n");
+    std::cout << "merge_sets\n";
     return 1;
 }
 
 uint32_t disassemble_predicate(uint32_t pc)
 {
-    printf("predicate\n");
+    std::cout << "predicate\n";
     return 1;
 }
 
 uint32_t disassemble_create_node_context(uint32_t pc)
 {
-    printf("create_node_context\n");
+    std::cout << "create_node_context\n";
     return 1;
 }
 
 uint32_t disassemble_get_context_node(uint32_t pc)
 {
-    printf("get_context_node\n");
+    std::cout << "get_context_node\n";
     return 1;
 }
 
 uint32_t disassemble_next_context_node(uint32_t pc)
 {
-    printf("next_context_node\n");
+    std::cout << "next_context_node\n";
     return 1;
 }
 
 uint32_t disassemble_pop_context(uint32_t pc)
 {
-    printf("pop_context\n");
+    std::cout << "pop_context\n";
     return 1;
 }
+#pragma GCC diagnostic pop
 
 
 
 int disassemble_instruction(int pc)
 {
     // a small indentation
-    printf("%6d- ", pc);
+    std::ostream out(std::cout.rdbuf()); // copy so we don't mess up the manipulator in std::cout
+    out << std::setw(6) << pc << "- ";
     instruction_t inst(f_program[pc]);
     return (this->*g_disassemble_instructions[inst])(pc + 1);
 }
-#pragma GCC diagnostic pop
 
 
 void disassemble()

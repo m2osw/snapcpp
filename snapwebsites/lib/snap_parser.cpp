@@ -17,6 +17,7 @@
 
 #include "snap_parser.h"
 
+#include "log.h"
 #include "qstring_stream.h"
 
 #include <iostream>
@@ -25,7 +26,6 @@
 #include <QPointer>
 
 #include "poison.h"
-#include "log.h"
 
 namespace snap
 {

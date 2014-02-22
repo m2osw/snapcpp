@@ -23,6 +23,8 @@
 #include <QtCassandra/QCassandra.h>
 #include <QtCassandra/QCassandraContext.h>
 
+#include "poison.h"
+
 using namespace QtCassandra;
 
 namespace snap

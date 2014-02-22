@@ -20,11 +20,11 @@
 #include "../messages/messages.h"
 
 #include "not_reached.h"
+#include "log.h"
 
 #include <iostream>
 
 #include "poison.h"
-#include "log.h"
 
 
 SNAP_PLUGIN_START(path, 1, 0)

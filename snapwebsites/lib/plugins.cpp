@@ -16,6 +16,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "plugins.h"
+#include "log.h"
 
 #include <iostream>
 #include <qstring_stream.h>
@@ -29,7 +30,6 @@
 #include <QFileInfo>
 
 #include "poison.h"
-#include "log.h"
 
 
 namespace snap

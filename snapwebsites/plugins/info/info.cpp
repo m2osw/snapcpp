@@ -16,13 +16,15 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "info.h"
+
 #include "../messages/messages.h"
 #include "../users/users.h"
 #include "../output/output.h"
+
 #include "not_reached.h"
+#include "log.h"
 
 #include "poison.h"
-#include "log.h"
 
 SNAP_PLUGIN_START(info, 1, 0)
 

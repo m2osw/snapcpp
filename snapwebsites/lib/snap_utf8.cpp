@@ -17,6 +17,8 @@
 
 #include "snap_utf8.h"
 
+#include "poison.h"
+
 
 namespace snap
 {

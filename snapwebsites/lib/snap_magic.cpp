@@ -16,7 +16,10 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "snap_magic.h"
+
 #include <magic.h>
+
+#include "poison.h"
 
 namespace snap
 {

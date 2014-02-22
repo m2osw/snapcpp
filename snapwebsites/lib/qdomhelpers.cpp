@@ -17,6 +17,8 @@
 
 #include "qdomhelpers.h"
 
+#include "poison.h"
+
 namespace snap
 {
 namespace snap_dom
