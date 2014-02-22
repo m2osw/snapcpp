@@ -260,7 +260,7 @@ bool is_configured()
  */
 void setLogOutputLevel( log_level_t level )
 {
-    log4cplus::LogLevel new_level;
+    log4cplus::LogLevel new_level = log4cplus::OFF_LOG_LEVEL;
 
     switch(level)
     {
@@ -293,7 +293,6 @@ void setLogOutputLevel( log_level_t level )
         break;
     }
 
-    log4cplus::Logger::getRoot().setLogLevel( new_level );
     g_logger.setLogLevel( new_level );
     g_secure_logger.setLogLevel( new_level );
 }
