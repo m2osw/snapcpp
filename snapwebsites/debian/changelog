@@ -1,3 +1,14 @@
+snapwebsites (0.1.17~saucy) UNRELEASED; urgency=high
+
+  [ Alexis Wilke ]
+  *
+
+  [ R. Douglas Barbieri ]
+  * Updated the error in the init.d file: the snapbackend server requires
+  the "--background" flag.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Fri, 21 Feb 2014 17:58:23 -0800
+
 snapwebsites (0.1.16~saucy) saucy; urgency=high
 
   [Alexis Wilke ]
