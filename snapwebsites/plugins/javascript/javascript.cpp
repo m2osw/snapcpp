@@ -28,9 +28,11 @@
 // limits.
 
 #include "javascript.h"
+
 #include "plugins.h"
 #include "snap_version.h"
 #include "not_reached.h"
+#include "log.h"
 
 #include <QScriptEngine>
 #include <QScriptProgram>
@@ -39,7 +41,6 @@
 #include <QSharedPointer>
 
 #include "poison.h"
-#include "log.h"
 
 SNAP_PLUGIN_START(javascript, 1, 0)
 

@@ -26,13 +26,13 @@
 #include "plugins.h"
 #include "not_reached.h"
 #include "qstring_stream.h"
+#include "log.h"
 
 #include <QtCassandra/QCassandraValue.h>
 
 #include <openssl/rand.h>
 
 #include "poison.h"
-#include "log.h"
 
 SNAP_PLUGIN_START(permissions, 1, 0)
 

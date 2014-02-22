@@ -16,13 +16,15 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "snap_exception.h"
+#include "log.h"
 
 #include <iostream>
 
 #include <execinfo.h>
 #include <unistd.h>
 
-#include "log.h"
+#include "poison.h"
+
 
 
 namespace snap

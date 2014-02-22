@@ -17,6 +17,9 @@
 
 #include "log.h"
 
+#include "not_reached.h"
+#include "snap_exception.h"
+
 #include <syslog.h>
 
 #include <log4cplus/configurator.h>
@@ -26,9 +29,7 @@
 
 #include <QFileInfo>
 
-#include "not_reached.h"
 #include "poison.h"
-#include "snap_exception.h"
 
 namespace snap
 {

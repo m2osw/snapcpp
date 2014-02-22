@@ -25,6 +25,8 @@
 
 #include <unistd.h>
 
+#include "poison.h"
+
 
 namespace snap
 {

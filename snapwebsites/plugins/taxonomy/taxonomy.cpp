@@ -25,6 +25,8 @@
 
 #include <QtCore/QDebug>
 
+#include "poison.h"
+
 
 SNAP_PLUGIN_START(taxonomy, 1, 0)
 

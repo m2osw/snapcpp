@@ -16,10 +16,14 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "feed.h"
+
 #include "../content/content.h"
 #include "../messages/messages.h"
+
 #include "not_reached.h"
+
 #include <QtCassandra/QCassandraLock.h>
+
 #include "poison.h"
 
 

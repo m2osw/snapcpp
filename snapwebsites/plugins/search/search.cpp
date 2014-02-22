@@ -16,9 +16,13 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "search.h"
+
 #include "not_reached.h"
 #include "dom_util.h"
+
 #include "../content/content.h"
+
+#include "poison.h"
 
 
 SNAP_PLUGIN_START(search, 1, 0)

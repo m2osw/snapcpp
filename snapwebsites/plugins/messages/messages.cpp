@@ -17,9 +17,6 @@
 
 #include "messages.h"
 
-//#include "../output/output.h"
-//#include "../users/users.h"
-
 #include "log.h"
 #include "not_reached.h"
 

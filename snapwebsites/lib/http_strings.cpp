@@ -17,6 +17,8 @@
 
 #include "http_strings.h"
 
+#include "poison.h"
+
 namespace snap
 {
 namespace http_strings

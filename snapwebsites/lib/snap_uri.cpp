@@ -16,7 +16,9 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "snap_uri.h"
+
 #include "qstring_stream.h"
+#include "log.h"
 
 #include <QtSerialization/QSerializationComposite.h>
 #include <QtSerialization/QSerializationFieldBasicTypes.h>
@@ -30,7 +32,6 @@
 #include <QBuffer>
 
 #include "poison.h"
-#include "log.h"
 
 namespace QtSerialization {
 /** \brief Convert basic data from a string to a field of type qint8.
