@@ -1,7 +1,11 @@
-snapwebsites (0.1.16~saucy) UNRELEASED; urgency=high
+snapwebsites (0.1.16~saucy) saucy; urgency=high
 
   [Alexis Wilke ]
   * Added clamav as a dependency for antivirus to work.
+  
+  [R. Douglas Barbieri]
+  Moved config files, but didn't update the *.install files in the debian
+  directory.
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Fri, 21 Feb 2014 16:31:09 -0800
 
