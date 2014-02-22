@@ -39,7 +39,7 @@
 #include <QSharedPointer>
 
 #include "poison.h"
-
+#include "log.h"
 
 SNAP_PLUGIN_START(javascript, 1, 0)
 
@@ -363,7 +363,7 @@ public:
 
     virtual void setProperty(QScriptValue& object, QScriptString const& property_name, uint id, QScriptValue const& value)
     {
-//std::cerr << "setProperty() called... not implemented yet\n";
+//SNAP_LOG_TRACE() << "setProperty() called... not implemented yet\n";
         throw std::runtime_error("setProperty() not implemented yet");
     }
 #pragma GCC diagnostic pop
@@ -550,7 +550,7 @@ public:
 
     virtual void setProperty(QScriptValue& object, const QScriptString& property_name, uint id, const QScriptValue& value)
     {
-//std::cerr << "setProperty() called... not implemented yet\n";
+//SNAP_LOG_TRACE() << "setProperty() called... not implemented yet\n";
         throw std::runtime_error("setProperty() not implemented yet");
     }
 #pragma GCC diagnostic pop
@@ -577,7 +577,7 @@ private:
  */
 QVariant javascript::evaluate_script(QString const& script)
 {
-//std::cerr << "evaluating JS [" << script << "]\n";
+//SNAP_LOG_TRACE() << "evaluating JS [" << script << "]\n";
     QScriptProgram program(script);
     QScriptEngine engine;
     plugins_class plugins(this, &engine);
@@ -589,12 +589,12 @@ QVariant javascript::evaluate_script(QString const& script)
     if(value.isError())
     {
 // this happens if the script is not correct and it cannot be executed
-std::cerr << "javascript: value says it's an error!\n";
+SNAP_LOG_TRACE() << "javascript: value says it's an error!\n";
     }
     if(engine.hasUncaughtException())
     {
 QScriptValue e(engine.uncaughtException());
-std::cerr << "javascript: result = " << engine.hasUncaughtException() << ", e = " << e.isError() << ", s = \"" << e.toString() << "\"\n";
+SNAP_LOG_TRACE() << "javascript: result = " << engine.hasUncaughtException() << ", e = " << e.isError() << ", s = \"" << e.toString() << "\"\n";
     }
     return value.toVariant();
 }

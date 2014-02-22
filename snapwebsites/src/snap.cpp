@@ -128,7 +128,7 @@ snap_cgi::snap_cgi( int argc, char *argv[] )
     , f_address("0.0.0.0")
 {
     std::string logconfig(f_opt.get_string("logconfig"));
-    snap::logging::configure( logconfig.c_str() );
+    snap::logging::configureConffile( logconfig.c_str() );
 }
 
 snap_cgi::~snap_cgi()

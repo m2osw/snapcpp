@@ -21,22 +21,148 @@
 
 #include <log4cplus/configurator.h>
 #include <log4cplus/logger.h>
+#include <log4cplus/fileappender.h>
+#include <log4cplus/consoleappender.h>
 
 #include <QFileInfo>
 
+#include "not_reached.h"
 #include "poison.h"
+#include "snap_exception.h"
 
 namespace snap
 {
+
 namespace logging
 {
+
 namespace
 {
-QString g_log_config_filename;
-bool g_log_configured = false;
-log4cplus::Logger g_logger;
-log4cplus::Logger g_secure_logger;
-} // no name namespace
+    QString             g_log_config_filename;
+    QString             g_log_output_filename;
+    log4cplus::Logger   g_logger;
+    log4cplus::Logger   g_secure_logger;
+
+    typedef enum { unconfigured_logger, console_logger, file_logger, conffile_logger } logging_type_t;
+    logging_type_t      g_logging_type( unconfigured_logger );
+}
+// no name namespace
+
+
+
+/** \brief Unconfigure the logger and reset.
+ *
+ * This is an internal function which is here to prevent code duplication.
+ *
+ * \sa configure()
+ */
+void unconfigure()
+{
+    if(g_logging_type != unconfigured_logger )
+    {
+        // shutdown the previous version before re-configuring
+        // (this is done after a fork() call.)
+        log4cplus::Logger::shutdown();
+        g_logging_type = unconfigured_logger;
+    }
+}
+
+
+/** \brief Configure log4cplus system to the console.
+ *
+ * This function is the default called in case the user has not specified
+ * a configuration file to read.
+ *
+ * It sets up a default appender to the standard output.
+ *
+ * \note
+ * This function marks that the logger was configured. The other functions
+ * do not work (do nothing) until this happens. In case of the server,
+ * configure() is called from the server::config() function. If no configuration
+ * file is defined then the other functions will do nothing.
+ *
+ * \param[in] filename  The name of the configuration file.
+ *
+ * \sa fatal()
+ * \sa error()
+ * \sa warning()
+ * \sa info()
+ * \sa server::config()
+ * \sa unconfigure()
+ */
+void configureConsole()
+{
+    unconfigure();
+
+    log4cplus::SharedAppenderPtr
+            appender(new log4cplus::ConsoleAppender());
+    appender->setName(LOG4CPLUS_TEXT("console"));
+    const log4cplus::tstring pattern( "%b:%L:%h: %m%n" );
+    appender->setLayout( std::auto_ptr<log4cplus::Layout>( new log4cplus::PatternLayout(pattern)) );
+    appender->setThreshold( log4cplus::INFO_LOG_LEVEL );
+
+    g_log_config_filename.clear();
+    g_log_output_filename.clear();
+    g_logging_type    = console_logger;
+    g_logger          = log4cplus::Logger::getInstance("snap");
+    g_secure_logger   = log4cplus::Logger::getInstance("security");
+
+    g_logger.addAppender( appender );
+    g_secure_logger.addAppender( appender );
+    setLogOutputLevel( LOG_LEVEL_INFO );        // TODO: This is broken! For some reason log4cplus won't change the threshold level...
+}
+
+
+/** \brief Configure log4cplus system turning on the rolling file appender.
+ *
+ * This function is the default called in case the user has not specified
+ * a configuration file to read.
+ *
+ * It sets up a default appender to the standard lo
+ *
+ * \note
+ * This function marks that the logger was configured. The other functions
+ * do not work (do nothing) until this happens. In case of the server,
+ * configure() is called from the server::config() function. If no configuration
+ * file is defined then the other functions will do nothing.
+ *
+ * \param[in] filename  The name of the configuration file.
+ *
+ * \sa fatal()
+ * \sa error()
+ * \sa warning()
+ * \sa info()
+ * \sa server::config()
+ * \sa unconfigure()
+ */
+void configureLogfile( const QString& logfile )
+{
+    unconfigure();
+
+    if( logfile.isEmpty() )
+    {
+        throw snap_exception( "No output logfile specified!" );
+        NOTREACHED();
+    }
+
+    log4cplus::SharedAppenderPtr
+            appender(new log4cplus::RollingFileAppender( logfile.toUtf8().data() ));
+    appender->setName(LOG4CPLUS_TEXT("log_file"));
+    const log4cplus::tstring pattern( "%d{%Y/%m/%d %H:%M:%S} %h Snap[%i]: %m (%b:%L)%n" );
+    appender->setLayout( std::auto_ptr<log4cplus::Layout>( new log4cplus::PatternLayout(pattern)) );
+    appender->setThreshold( log4cplus::INFO_LOG_LEVEL );
+
+    g_log_config_filename.clear();
+    g_log_output_filename = logfile;
+    g_logging_type    = file_logger;
+    g_logger            = log4cplus::Logger::getInstance("snap");
+    g_secure_logger     = log4cplus::Logger::getInstance("security");
+
+    g_logger.addAppender( appender );
+    g_secure_logger.addAppender( appender );
+    setLogOutputLevel( LOG_LEVEL_INFO );        // TODO: This is broken! For some reason log4cplus won't change the threshold level...
+}
+
 
 /** \brief Configure from a log4cplus header file.
  *
@@ -60,36 +186,26 @@ log4cplus::Logger g_secure_logger;
  * \sa warning()
  * \sa info()
  * \sa server::config()
+ * \sa unconfigure()
  */
-void configure(QString filename)
+void configureConffile(const QString& filename)
 {
-    if(g_log_configured)
+    unconfigure();
+
+    QFileInfo info(filename);
+    if(!info.exists())
     {
-        // shutdown the previous version before re-configuring
-        // (this is done after a fork() call.)
-        log4cplus::Logger::shutdown();
-        g_log_configured = false;
+        throw snap_exception( QObject::tr("Cannot open logger configuration file [%1].").arg(filename) );
+        NOTREACHED();
     }
 
-    if(filename.isEmpty())
-    {
-        filename = "/etc/snapwebsites/log.conf";
-        QFileInfo info(filename);
-        if(!info.exists())
-        {
-            // if we are reconfiguring and we get this error (maybe someone
-            // called chdir() and a path is relative?) then the logger does
-            // not get reopened... what should we do?
-            return;
-        }
-    }
-
-    g_log_config_filename = filename;
-    g_log_configured = true;
+    g_log_config_filename   = filename;
+    g_logging_type          = conffile_logger;
     log4cplus::PropertyConfigurator::doConfigure(LOG4CPLUS_C_STR_TO_TSTRING(filename.toUtf8().data()));
-    g_logger = log4cplus::Logger::getInstance("snap");
-    g_secure_logger = log4cplus::Logger::getInstance("security");
+    g_logger                = log4cplus::Logger::getInstance("snap");
+    g_secure_logger         = log4cplus::Logger::getInstance("security");
 }
+
 
 /** \brief Ensure that the configuration is still in place.
  *
@@ -102,8 +218,26 @@ void configure(QString filename)
  */
 void reconfigure()
 {
-    configure(g_log_config_filename);
+    switch( g_logging_type )
+    {
+    case console_logger:
+        configureConsole();
+        break;
+
+    case file_logger:
+        configureLogfile( g_log_output_filename );
+        break;
+
+    case conffile_logger:
+        configureConffile( g_log_config_filename );
+        break;
+
+    default:
+        /* do nothing */
+        unconfigure();
+    }
 }
+
 
 /** \brief Return the current configuration status.
  *
@@ -114,8 +248,91 @@ void reconfigure()
  */
 bool is_configured()
 {
-    return g_log_configured;
+    return g_logging_type != unconfigured_logger;
 }
+
+
+/* \brief Set the current logging threshold
+ *
+ * Tells log4cplus to limit the logging output to the specified threshold.
+ *
+ * \todo This is broken! For some reason log4cplus won't change the threshold level using this method.
+ */
+void setLogOutputLevel( log_level_t level )
+{
+    log4cplus::LogLevel new_level;
+
+    switch(level)
+    {
+    case LOG_LEVEL_OFF:
+        new_level = log4cplus::OFF_LOG_LEVEL;
+        return;
+
+    case LOG_LEVEL_FATAL:
+        new_level = log4cplus::FATAL_LOG_LEVEL;
+        break;
+
+    case LOG_LEVEL_ERROR:
+        new_level = log4cplus::ERROR_LOG_LEVEL;
+        break;
+
+    case LOG_LEVEL_WARNING:
+        new_level = log4cplus::WARN_LOG_LEVEL;
+        break;
+
+    case LOG_LEVEL_INFO:
+        new_level = log4cplus::INFO_LOG_LEVEL;
+        break;
+
+    case LOG_LEVEL_DEBUG:
+        new_level = log4cplus::DEBUG_LOG_LEVEL;
+        break;
+
+    case LOG_LEVEL_TRACE:
+        new_level = log4cplus::TRACE_LOG_LEVEL;
+        break;
+    }
+
+    log4cplus::Logger::getRoot().setLogLevel( new_level );
+    g_logger.setLogLevel( new_level );
+    g_secure_logger.setLogLevel( new_level );
+}
+
+
+logger& operator << ( logger& logger, const QString& msg )
+{
+    logger( msg );
+    return logger;
+}
+
+
+logger& operator << ( logger& logger, const std::basic_string<char>& msg )
+{
+    logger( msg.c_str() );
+    return logger;
+}
+
+
+logger& operator << ( logger& logger, const std::basic_string<wchar_t>& msg )
+{
+    logger( msg.c_str() );
+    return logger;
+}
+
+
+logger& operator << ( logger& logger, const char* msg )
+{
+    logger( msg );
+    return logger;
+}
+
+
+logger& operator << ( logger& logger, const wchar_t* msg )
+{
+    logger( msg );
+    return logger;
+}
+
 
 /** \brief Create a log object with the specified information.
  *
@@ -202,10 +419,10 @@ logger::~logger()
     case LOG_LEVEL_TRACE:
         ll = log4cplus::TRACE_LOG_LEVEL;
         break;
-
     }
+
     // TBD: is the exists() call doing anything for us here?
-    if(!g_log_configured || !log4cplus::Logger::exists(f_security == LOG_SECURITY_SECURE ? "security" : "snap"))
+    if( (g_logging_type == unconfigured_logger) || !log4cplus::Logger::exists(f_security == LOG_SECURITY_SECURE ? "security" : "snap"))
     {
         // not even configured, return immediately
         if(sll != -1)
@@ -242,6 +459,12 @@ logger::~logger()
     {
         g_logger.log(ll, LOG4CPLUS_C_STR_TO_TSTRING(f_message.toUtf8().data()), f_file, f_line);
     }
+}
+
+logger& logger::operator () ()
+{
+    // does nothing
+    return *this;
 }
 
 logger& logger::operator () (const log_security_t v)
@@ -347,6 +570,12 @@ logger& logger::operator () (const double v)
     return *this;
 }
 
+logger& logger::operator () (const bool v)
+{
+    f_message += QString("%1").arg(static_cast<int>(v));
+    return *this;
+}
+
 logger fatal(const char *file, const char *func, int line)
 {
     logger l(LOG_LEVEL_FATAL, file, func, line);
@@ -389,6 +618,9 @@ logger trace(const char *file, const char *func, int line)
     return l;
 }
 
+
 } // namespace logging
+
 } // namespace snap
+
 // vim: ts=4 sw=4 et

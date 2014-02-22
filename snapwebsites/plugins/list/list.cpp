@@ -30,7 +30,7 @@
 #include <sys/time.h>
 
 #include "poison.h"
-
+#include "log.h"
 
 SNAP_PLUGIN_START(list, 1, 0)
 
@@ -654,7 +654,7 @@ void list::on_backend_action(QString const& action)
                 if(r < 1 || r >= static_cast<int>(sizeof(buf) - 1))
                 {
                     perror("udp_signals->timed_recv():");
-                    std::cerr << "error: an error occured in the UDP recv() call, returned size: " << r << std::endl;
+                    SNAP_LOG_FATAL() << "error: an error occured in the UDP recv() call, returned size: " << r;
                     exit(1);
                 }
                 buf[r] = '\0';

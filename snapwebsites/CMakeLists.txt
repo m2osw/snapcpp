@@ -35,7 +35,7 @@
 ##
 set(SNAPWEBSITES_VERSION_MAJOR 0)
 set(SNAPWEBSITES_VERSION_MINOR 1)
-set(SNAPWEBSITES_VERSION_PATCH 13)
+set(SNAPWEBSITES_VERSION_PATCH 14)
 
 cmake_minimum_required(VERSION 2.8)
 
@@ -109,6 +109,7 @@ add_subdirectory(snap-manager)  # Snap Manager to work on Cassandra data from a 
 add_subdirectory(layouts)       # Layouts offered along Core
 add_subdirectory(tests)         # Tests to run against the server
 add_subdirectory(doc)           # API Documentation
+add_subdirectory(conf)          # Configuration files and samples
 
 ##
 ## Analyse xml

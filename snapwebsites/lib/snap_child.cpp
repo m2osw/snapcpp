@@ -2745,7 +2745,7 @@ void snap_child::process_backend_uri(QString const& uri)
         }
         else
         {
-            std::cerr << "error: unknown action \"" << action << "\"" << std::endl;
+            SNAP_LOG_ERROR() << "error: unknown action \"" << action << "\"";
             exit(1);
         }
     }
@@ -3097,7 +3097,7 @@ void snap_child::read_environment()
                         }
                     }
 #ifdef DEBUG
-std::cerr << " f_files[\"" << f_name << "\"] = \"...\" (Filename: \"" << filename
+SNAP_LOG_ERROR() << " f_files[\"" << f_name << "\"] = \"...\" (Filename: \"" << filename
     << "\" MIME: " << file.get_mime_type() << ", size: " << f_post_content.size() << ")\n";
 #endif
                 }

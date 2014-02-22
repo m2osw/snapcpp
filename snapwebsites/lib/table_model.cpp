@@ -18,6 +18,7 @@
 
 #include "table_model.h"
 #include "dbutils.h"
+#include "log.h"
 
 #include <QtCassandra/QCassandraContext.h>
 #include <QVariant>
@@ -78,7 +79,7 @@ void table_model::fetchMore(const QModelIndex & /* index */)
     }
     catch( const std::exception& x )
     {
-        std::cerr << "Exception caught! [" << x.what() << "]" << std::endl;
+        SNAP_LOG_ERROR() << "Exception caught! [" << x.what() << "]";
     }
 }
 
@@ -120,7 +121,7 @@ QVariant table_model::headerData( int section, Qt::Orientation orientation, int 
     }
     catch( const std::exception& x )
     {
-        std::cerr << "Exception caught! [" << x.what() << "]" << std::endl;
+        SNAP_LOG_ERROR() << "Exception caught! [" << x.what() << "]";
     }
 
 	return QVariant();
@@ -164,7 +165,7 @@ QVariant table_model::data( const QModelIndex & idx, int role ) const
     }
     catch( const std::exception& x )
     {
-        std::cerr << "Exception caught! [" << x.what() << "]" << std::endl;
+        SNAP_LOG_ERROR() << "Exception caught! [" << x.what() << "]";
     }
 
     return QVariant();
@@ -190,7 +191,7 @@ int table_model::rowCount( const QModelIndex &prnt ) const
     }
     catch( const std::exception& x )
     {
-        std::cerr << "Exception caught! [" << x.what() << "]" << std::endl;
+        SNAP_LOG_ERROR() << "Exception caught! [" << x.what() << "]";
     }
 
     return 0;

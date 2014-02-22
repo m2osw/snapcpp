@@ -32,7 +32,7 @@
 #include <openssl/rand.h>
 
 #include "poison.h"
-
+#include "log.h"
 
 SNAP_PLUGIN_START(permissions, 1, 0)
 
@@ -1577,25 +1577,25 @@ void permissions::on_backend_action(QString const& action)
         QtCassandra::QCassandraTable::pointer_t user_table(users::users::instance()->get_users_table());
         if(!user_table)
         {
-            std::cerr << "error: table \"users\" not found." << std::endl;
+            SNAP_LOG_FATAL() << "error: table \"users\" not found.";
             exit(1);
         }
         QString const email(f_snap->get_server_parameter("ROOT_USER_EMAIL"));
         if(!user_table->exists(email))
         {
-            std::cerr << "error: user \"" << email.toStdString() << "\" not found." << std::endl;
+            SNAP_LOG_FATAL() << "error: user \"" << email.toStdString() << "\" not found.";
             exit(1);
         }
         QtCassandra::QCassandraRow::pointer_t user_row(user_table->row(email));
         if(!user_row->exists(users::get_name(users::SNAP_NAME_USERS_IDENTIFIER)))
         {
-            std::cerr << "error: user \"" << email.toStdString() << "\" was not given an identifier." << std::endl;
+            SNAP_LOG_FATAL() << "error: user \"" << email.toStdString() << "\" was not given an identifier.";
             exit(1);
         }
         QtCassandra::QCassandraValue identifier_value(user_row->cell(users::get_name(users::SNAP_NAME_USERS_IDENTIFIER))->value());
         if(identifier_value.nullValue() || identifier_value.size() != 8)
         {
-            std::cerr << "error: user \"" << email.toStdString() << "\" identifier could not be read." << std::endl;
+            SNAP_LOG_FATAL() << "error: user \"" << email.toStdString() << "\" identifier could not be read.";
             exit(1);
         }
         int64_t const identifier(identifier_value.int64Value());

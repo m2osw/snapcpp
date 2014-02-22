@@ -30,7 +30,7 @@
 #include <QBuffer>
 
 #include "poison.h"
-
+#include "log.h"
 
 namespace QtSerialization {
 /** \brief Convert basic data from a string to a field of type qint8.
@@ -1777,7 +1777,7 @@ QString snap_uri::urldecode(const QString& uri, bool relax)
                 if(!relax)
                 {
 #ifdef DEBUG
-std::cerr << "url decode?! [" << uri << "]\n";
+SNAP_LOG_TRACE() << "url decode?! [" << uri << "]\n";
 #endif
                     throw snap_uri_exception_invalid_uri();
                 }
@@ -1803,7 +1803,7 @@ std::cerr << "url decode?! [" << uri << "]\n";
                 if(!relax)
                 {
 #ifdef DEBUG
-std::cerr << "url decode?! [" << uri << "] (2)\n";
+SNAP_LOG_TRACE() << "url decode?! [" << uri << "] (2)\n";
 #endif
                     throw snap_uri_exception_invalid_uri();
                 }
@@ -1830,7 +1830,7 @@ std::cerr << "url decode?! [" << uri << "] (2)\n";
         else
         {
 #ifdef DEBUG
-std::cerr << "url decode?! [" << uri << "] (3)\n";
+SNAP_LOG_TRACE() << "url decode?! [" << uri << "] (3)\n";
 #endif
             throw snap_uri_exception_invalid_uri();
         }

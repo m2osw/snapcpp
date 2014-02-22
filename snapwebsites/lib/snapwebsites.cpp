@@ -224,11 +224,11 @@ namespace
             advgetopt::getopt::optional_argument
         },
         {
-            'f',
+            'b',
             advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE,
-            "foreground",
+            "background",
             nullptr,
-            "Keeps the server in the foreground (default is to detact and background).",
+            "Detaches the server to the background (default is stay in the foreground).",
             advgetopt::getopt::no_argument
         },
         {
@@ -236,7 +236,31 @@ namespace
             advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE,
             "debug",
             nullptr,
-            "Displays the log to the stdout. Also, implies the --foreground switch.",
+            "Outputs debug logs to the logfile/stdout.",
+            advgetopt::getopt::no_argument
+        },
+        {
+            'f',
+            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE,
+            "logfile",
+            nullptr,
+            "Output log file to write to. Overrides the setting in the configuration file.",
+            advgetopt::getopt::optional_argument
+        },
+        {
+            'l',
+            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE,
+            "logconf",
+            nullptr,
+            "Log configuration file to read from. Overrides log_config in the configuration file.",
+            advgetopt::getopt::optional_argument
+        },
+        {
+            'n',
+            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE,
+            "no-log",
+            nullptr,
+            "Don't create a logfile, just output to the console.",
             advgetopt::getopt::no_argument
         },
         {
@@ -534,18 +558,11 @@ void server::config(int argc, char *argv[])
 
     // Keep the server in the foreground?
     //
-    f_foreground = f_opt->is_defined( "foreground" );
+    f_foreground = !f_opt->is_defined( "background" );
 
     // Output log to stdout. Implies foreground mode.
     //
     f_debug = f_opt->is_defined( "debug" );
-    //snap_exception::set_debug(f_debug);
-    if( f_debug )
-    {
-        // Foreground if debug
-        //
-        f_foreground = true;
-    }
 
     // initialize the syslog() interface
     openlog("snapserver", LOG_NDELAY | LOG_PID, LOG_DAEMON);
@@ -562,10 +579,7 @@ void server::config(int argc, char *argv[])
             int const p(param.indexOf('='));
             if(p == -1)
             {
-                if(f_debug)
-                {
-                    std::cerr << "fatal error: unexpected parameter \"--param " << f_opt->get_string("param", idx) << "\". No '=' found in the parameter definition. (in server::config())" << std::endl;
-                }
+                SNAP_LOG_FATAL() << "fatal error: unexpected parameter \"--param " << f_opt->get_string("param", idx) << "\". No '=' found in the parameter definition. (in server::config())";
                 syslog(LOG_CRIT, "unexpected parameter \"--param %s\". No '=' found in the parameter definition. (in server::config())", f_opt->get_string("param", idx).c_str());
                 help = true;
             }
@@ -590,10 +604,7 @@ void server::config(int argc, char *argv[])
         {
             // If not backend, "--filename" is not currently useful.
             //
-            if(f_debug)
-            {
-                std::cerr << "fatal error: unexpected standalone parameter \"" << filename << "\", server not started. (in server::config())" << std::endl;
-            }
+            SNAP_LOG_FATAL() << "fatal error: unexpected standalone parameter \"" << filename << "\", server not started. (in server::config())";
             syslog( LOG_CRIT, "unexpected standalone parameter \"%s\", server not started. (in server::config())", filename.c_str() );
             help = true;
         }
@@ -610,10 +621,7 @@ void server::config(int argc, char *argv[])
         {
             // If not backend, "--action" doesn't make sense.
             //
-            if(f_debug)
-            {
-                std::cerr << "fatal error: unexpected command line option \"--action " << action << "\", server not started. (in server::config())" << std::endl;
-            }
+            SNAP_LOG_FATAL() << "fatal error: unexpected command line option \"--action " << action << "\", server not started. (in server::config())";
             syslog( LOG_CRIT, "unexpected command line option \"--action %s\", server not started. (in server::config())", action.c_str() );
             help = true;
         }
@@ -637,11 +645,8 @@ void server::config(int argc, char *argv[])
         // expect to have a configuration file... if we're here we could not
         // read it, unfortunately
         std::stringstream ss;
-        ss << "cannot read configuration file \"" << f_config.toUtf8().data() << "\"" << std::endl;
-        if(f_debug)
-        {
-            std::cerr << ss.str() << "." << std::endl;
-        }
+        ss << "cannot read configuration file \"" << f_config.toUtf8().data() << "\"";
+        SNAP_LOG_ERROR() << ss.str() << ".";
         syslog( LOG_CRIT, "%s, server not started. (in server::config())", ss.str().c_str() );
         exit(1);
     }
@@ -656,11 +661,8 @@ void server::config(int argc, char *argv[])
         if(len == 0 || (buf[len - 1] != '\n' && buf[len - 1] != '\r'))
         {
             std::stringstream ss;
-            ss << "line " << line << " in \"" << f_config.toUtf8().data() << "\" is too long" << std::endl;
-            if(f_debug)
-            {
-                std::cerr << ss.str() << "." << std::endl;
-            }
+            ss << "line " << line << " in \"" << f_config.toUtf8().data() << "\" is too long";
+            SNAP_LOG_ERROR() << ss.str() << ".";
             syslog( LOG_CRIT, "%s, server not started. (in server::config())", ss.str().c_str() );
             exit(1);
         }
@@ -696,11 +698,8 @@ void server::config(int argc, char *argv[])
         if(*v != '=')
         {
             std::stringstream ss;
-            ss << "invalid variable on line " << line << " in \"" << f_config.toUtf8().data() << "\", no equal sign found" << std::endl;
-            if(f_debug)
-            {
-                std::cerr << ss.str() << "." << std::endl;
-            }
+            ss << "invalid variable on line " << line << " in \"" << f_config.toUtf8().data() << "\", no equal sign found";
+            SNAP_LOG_ERROR() << ss.str() << ".";
             syslog( LOG_CRIT, "%s, server not started. (in server::config())", ss.str().c_str() );
             exit(1);
         }
@@ -725,11 +724,11 @@ void server::config(int argc, char *argv[])
         {
             f_parameters[n] = QString::fromUtf8(v);
         }
-        else if(f_debug)
+        else
         {
-            std::cerr << "warning: parameter \"" << n << "\" from the configuration file ("
+            SNAP_LOG_WARNING() << "warning: parameter \"" << n << "\" from the configuration file ("
                       << v << ") ignored as it was specified on the command line ("
-                      << f_parameters[n].toStdString() << ")." << std::endl;
+                      << f_parameters[n].toStdString() << ").";
         }
     }
 
@@ -741,22 +740,62 @@ void server::config(int argc, char *argv[])
         {
             std::stringstream ss;
             ss << "hostname is not available as the server name";
-            if(f_debug)
-            {
-                std::cerr << ss.str() << "." << std::endl;
-            }
+            SNAP_LOG_ERROR() << ss.str() << ".";
             syslog( LOG_CRIT, "%s, server not started. (in server::config())", ss.str().c_str() );
             exit(1);
         }
         f_parameters["server_name"] = host;
     }
 
-    // finally we can initialize the log system
-    logging::configure(f_parameters["log_config"]);
+    // Finally we can initialize the log system
+    //
+    if( f_opt->is_defined( "no-log" ) )
+    {
+        // Override log_config and output only to the console
+        //
+        logging::configureConsole();
+    }
+    else if( f_opt->is_defined("logfile") )
+    {
+        // Override the output logfile specified in the configuration file.
+        //
+        logging::configureLogfile( f_opt->get_string( "logfile" ).c_str() );
+    }
+    else if( f_opt->is_defined("logconf") )
+    {
+        logging::configureConffile( f_opt->get_string( "logconf" ).c_str() );
+    }
+    else
+    {
+        // Read the log configuration file and use it to specify the appenders
+        // and log level.
+        //
+        const QString log_config( f_parameters["log_config"] );
+        if( log_config.isEmpty() )
+        {
+            // Fall back to output to the console
+            //
+            logging::configureConsole();
+        }
+        else
+        {
+            // Configure the logging system according to the log configuration.
+            //
+            logging::configureConffile( f_parameters["log_config"] );
+        }
+    }
 
-    // I really prevent to have an immediate message to let users know that
+    if( f_debug )
+    {
+        // Override output level and force it to be debug
+        //
+        logging::setLogOutputLevel( logging::LOG_LEVEL_DEBUG );
+    }
+
+    // I really want to prevent having an immediate message to let users know that
     // the server is starting; however, until we detach() ourselves the
     // process identifier is going to be wrong.
+    //
     SNAP_LOG_INFO("Snap v" SNAPWEBSITES_VERSION_STRING " on \"" + f_parameters["server_name"] + "\" started.");
 }
 
@@ -1145,11 +1184,6 @@ void server::sighandler( int sig )
         case SIGTERM : signame = "SIGTERM"; break;
         case SIGINT  : signame = "SIGINT";  break;
         default      : signame = "UNKNOWN";
-    }
-
-    if( f_instance->f_debug )
-    {
-        std::cerr << f_instance->f_servername << ": Signal caught! [" << signame << "]! Exiting..." << std::endl;
     }
 
     SNAP_LOG_FATAL("signal caught: ")(signame);
