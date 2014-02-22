@@ -90,9 +90,11 @@ char const *g_minimum_plugins[] =
     "filter",
     "form",
     "info",
+    "javascript",
     "layout",
     "links",
-    //"lists", -- once available...
+    "list",
+    "menu",
     "messages",
     "output",
     "path",
