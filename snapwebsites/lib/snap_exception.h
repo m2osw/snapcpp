@@ -26,9 +26,9 @@ namespace snap
 class snap_exception_base
 {
 public:
-                    snap_exception_base();
+                snap_exception_base();
 
-    //static void     set_debug(bool const debug);
+    static void output_stack_trace();
 };
 
 

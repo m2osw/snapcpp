@@ -1184,6 +1184,7 @@ void server::sighandler( int sig )
     }
 
     SNAP_LOG_FATAL("signal caught: ")(signame);
+    snap_exception_base::output_stack_trace();
     f_instance->exit(1);
 }
 
