@@ -2540,6 +2540,8 @@ bool snap_child::process(int socket)
         // save the start date as a variable so all the plugins have access
         // to it as any other variable (really we can do f_snap->get_start_date()
         // now to directly get the int64 value.)
+        // TODO: make sure this is not used anywhere anymore and then remove
+        //       it; it is a lot faster to use f_snap->get_start_date()
         f_uri.set_option("start_date", QString("%1").arg(f_start_date));
 
         // start the plugins and there initialization
@@ -2560,9 +2562,15 @@ bool snap_child::process(int socket)
         exit(0);
         NOTREACHED();
     }
-    catch( const snap_exception& except )
+    catch( snap_exception const& except )
     {
         SNAP_LOG_FATAL("snap_child::process(): exception caught!")(except.what());
+    }
+    catch( std::exception const& std_except )
+    {
+        // the snap_logic_exception is no a snap_exception
+        // and other libraries may generate other exceptions
+        SNAP_LOG_FATAL("snap_child::process(): exception caught!")(std_except.what());
     }
     catch( ... )
     {
@@ -2703,6 +2711,8 @@ void snap_child::process_backend_uri(QString const& uri)
     // same as in normal server process -- should it change for each iteration?
     // (i.e. we're likely to run the backend process for each website of this
     // Cassandra instance!)
+    // TODO: make sure this is not used anywhere anymore and then remove
+    //       it; it is a lot faster to use f_snap->get_start_date()
     f_uri.set_option("start_date", QString("%1").arg(f_start_date));
 
     init_plugins();
@@ -4902,9 +4912,18 @@ void snap_child::site_redirect()
  *
  * The path may include a query string and an anchor.
  *
+ * \important
+ * The function does not return since after sending a redirect to a client
+ * there is nothing more you can do. So if you need to save some data, make
+ * sure to do it before this call. Note also that this function calls the
+ * attach_to_session() signal so any plugin that was not really done has a
+ * chance to save its data until the next connection arrives.
+ *
  * \param[in] path  The full URI or the local website path to redirect the
  *                  user browser to.
  * \param[in] http_code  The code used to send the redirect.
+ * \param[in] reason_brief  A brief explanation for the redirection.
+ * \param[in] reason  The long version of the explanation for the redirection.
  */
 void snap_child::page_redirect(QString const& path, http_code_t http_code, QString const& reason_brief, QString const& reason)
 {

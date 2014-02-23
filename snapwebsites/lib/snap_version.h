@@ -14,8 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-#ifndef SNAP_VERSION_H
-#define SNAP_VERSION_H
+#pragma once
 
 #include "snap_exception.h"
 
@@ -246,6 +245,4 @@ private:
 
 } // namespace snap_version
 } // namespace snap
-#endif
-// SNAP_VERSION_H
 // vim: ts=4 sw=4 et

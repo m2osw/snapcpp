@@ -1449,13 +1449,12 @@ QtCassandra::QCassandraTable::pointer_t sendmail::get_emails_table()
  *
  * \return true if the signal is to be propagated to all the other plugins.
  */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
 bool sendmail::filter_email_impl(email& e)
 {
+    static_cast<void>(e);
+
     return true;
 }
-#pragma GCC diagnostic pop
 
 
 /** \brief Post an email.

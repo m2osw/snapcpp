@@ -48,9 +48,20 @@ int main(int argc, char *argv[])
 		// exit via the server so the server can clean itself up properly
 		s->exit(0);
 	}
-    catch( const snap::snap_exception& except )
+	// TODO: at this point the logger fails if we get an exception
+	//       early... and we get no output at all (no std::cerr and
+	//       no logs.)
+    catch( snap::snap_exception const& except )
     {
+//std::cerr << "got an exception! " << except.what() << "\n";
         SNAP_LOG_FATAL("snap_child::process(): exception caught!")(except.what());
+    }
+    catch( std::exception const& std_except )
+    {
+        // the snap_logic_exception is no a snap_exception
+        // and other libraries may generate other exceptions
+//std::cerr << "got an exception! " << std_except.what() << "\n";
+        SNAP_LOG_FATAL("snap_child::process(): exception caught!")(std_except.what());
     }
     catch( ... )
     {

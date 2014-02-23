@@ -67,6 +67,9 @@ char const *get_name(name_t name)
     case SNAP_NAME_PERMISSIONS_DYNAMIC:
         return "permissions::dynamic";
 
+    case SNAP_NAME_PERMISSIONS_EDIT:
+        return "permissions::edit";
+
     case SNAP_NAME_PERMISSIONS_GROUP:
         return "permissions::group";
 

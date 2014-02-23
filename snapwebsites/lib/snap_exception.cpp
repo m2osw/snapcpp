@@ -49,16 +49,17 @@ bool g_debug = false;
  */
 snap_exception_base::snap_exception_base()
 {
-    int const max_stack_length(1024);
+    int const max_stack_length(20);
     void *array[max_stack_length];
     size_t const size = backtrace(array, max_stack_length);
 
     // Output to stderr
     //
-#ifdef DEBUG
-    std::cerr << "Callstack after exception:" << std::endl;
-    backtrace_symbols_fd( array, size, STDERR_FILENO );
-#endif
+// That writes it twice since the SNAP_LOG_...() function has console output too in debug mode...
+//#ifdef DEBUG
+//    std::cerr << "Callstack after exception:" << std::endl;
+//    backtrace_symbols_fd( array, std::min(20UL, size), STDERR_FILENO );
+//#endif
 
     // Output to log
     char **stack_string_list = backtrace_symbols( array, size );

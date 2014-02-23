@@ -482,7 +482,7 @@ bool link_context::next_link(link_info& info)
             // note that from the links table we only get keys, no names
             // which doesn't matter as the name is f_info.name() anyway
             QString const link_key(QString::fromUtf8(f_cell_iterator.key()));
-            QString link_name(f_cell_iterator.value()->value().stringValue());
+            QString const link_name(f_cell_iterator.value()->value().stringValue());
             if(!link_name.startsWith(links_namespace))
             {
                 throw links_exception_invalid_name("link name \"" + link_name + "\" does not start with \"links::\"");

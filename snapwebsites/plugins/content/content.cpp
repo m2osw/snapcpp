@@ -107,6 +107,9 @@ char const *get_name(name_t name)
     case SNAP_NAME_CONTENT_DATA_TABLE:
         return "data";
 
+    case SNAP_NAME_CONTENT_DESCRIPTION:
+        return "content::description";
+
     case SNAP_NAME_CONTENT_FILES_COMPRESSOR:
         return "content::files::compressor";
 
@@ -193,6 +196,9 @@ char const *get_name(name_t name)
 
     case SNAP_NAME_CONTENT_PARENT:
         return "content::parent";
+
+    case SNAP_NAME_CONTENT_PREVENT_DELETE:
+        return "content::prevent_delete";
 
     case SNAP_NAME_CONTENT_PRIMARY_OWNER:
         return "content::primary_owner";
@@ -3862,14 +3868,17 @@ bool content::create_content_impl(path_info_t& ipath, QString const& owner, QStr
 
     //QString const branch_key(generate_branch_key(key, branch_number));
     QtCassandra::QCassandraRow::pointer_t data_row(data_table->row(ipath.get_branch_key()));
-    data_row->cell(QString(get_name(SNAP_NAME_CONTENT_CREATED)))->setValue(start_date);
-    data_row->cell(QString(get_name(SNAP_NAME_CONTENT_MODIFIED)))->setValue(start_date);
+    data_row->cell(get_name(SNAP_NAME_CONTENT_CREATED))->setValue(start_date);
+    data_row->cell(get_name(SNAP_NAME_CONTENT_MODIFIED))->setValue(start_date);
 
     // link the page to its type (very important for permissions)
     {
-        // TODO we probably should test whether that content-types exists
+        // TODO We probably should test whether that content-types exists
         //      because if not it's certainly completely invalid (i.e. the
-        //      programmer mistyped the type [again])
+        //      programmer mistyped the type [again].)
+        //      However, we have to be very careful as the initialization
+        //      process may not be going in the right order and thus not
+        //      have created the type yet when this starts to happen.
         QString const destination_key(site_key + "types/taxonomy/system/content-types/" + (type.isEmpty() ? "page" : type));
         path_info_t destination_ipath;
         destination_ipath.set_path(destination_key);
@@ -4145,7 +4154,6 @@ bool content::create_attachment_impl(attachment_file const& file, snap_version::
             //
             // get the filename without the extension
             QString fn(attachment_filename.left(attachment_filename.length() - extension.length()));
-SNAP_LOG_DEBUG("attaching ")(file.get_file().get_filename())(", validate name = ")(fn);
             QString errmsg;
             if(!snap_version::validate_name(fn, errmsg))
             {
@@ -4204,8 +4212,9 @@ SNAP_LOG_DEBUG("attaching ")(file.get_file().get_filename())(", validate name = 
         attachment_ipath.force_extended_revision(revision);
     }
 
-
-SNAP_LOG_DEBUG("attaching ")(file.get_file().get_filename())(", attachment_key = ")(attachment_ipath.get_key());
+#ifdef DEBUG
+//SNAP_LOG_DEBUG("attaching ")(file.get_file().get_filename())(", attachment_key = ")(attachment_ipath.get_key());
+#endif
 
     // compute the MD5 sum of the file
     // TBD should we forbid the saving of empty files?
@@ -4978,6 +4987,7 @@ void content::add_xml_document(QDomDocument& dom, const QString& plugin_name)
 
         QDomNodeList children(content_element.childNodes());
         bool found_content_type(false);
+        bool found_prevent_delete(false);
         int const cmax(children.size());
         for(int c(0); c < cmax; ++c)
         {
@@ -4999,7 +5009,7 @@ void content::add_xml_document(QDomDocument& dom, const QString& plugin_name)
             QString tag_name(element.tagName());
             if(tag_name == "param")
             {
-                QString param_name(element.attribute("name"));
+                QString const param_name(element.attribute("name"));
                 if(param_name.isEmpty())
                 {
                     throw content_exception_invalid_content_xml("all <param> tags supplied to add_xml() must include a valid \"name\" attribute");
@@ -5061,6 +5071,11 @@ void content::add_xml_document(QDomDocument& dom, const QString& plugin_name)
                         // this is the default!
                         fullname = plugin_name + "::" + param_name;
                     }
+                }
+
+                if(fullname == get_name(SNAP_NAME_CONTENT_PREVENT_DELETE))
+                {
+                    found_prevent_delete = true;
                 }
 
                 param_revision_t revision_type(PARAM_REVISION_BRANCH);
@@ -5283,6 +5298,14 @@ void content::add_xml_document(QDomDocument& dom, const QString& plugin_name)
             links::link_info source(link_name, source_unique, key, snap_version::SPECIAL_VERSION_SYSTEM_BRANCH);
             links::link_info destination(link_to, destination_unique, destination_key, snap_version::SPECIAL_VERSION_SYSTEM_BRANCH);
             add_link(key, source, destination);
+        }
+        if(!found_prevent_delete)
+        {
+            // add the "content::prevent_delete" to 1 on all that do not
+            // set it to another value (1 byte value)
+            add_param(key, get_name(SNAP_NAME_CONTENT_PREVENT_DELETE), PARAM_REVISION_GLOBAL, "en", "1");
+            set_param_overwrite(key, get_name(SNAP_NAME_CONTENT_PREVENT_DELETE), true); // always overwrite
+            set_param_type(key, get_name(SNAP_NAME_CONTENT_PREVENT_DELETE), PARAM_TYPE_INT8);
         }
     }
 }
@@ -5634,7 +5657,8 @@ void content::on_save_content()
         //       with a problem I had and that problem is now resolved. This
         //       does not mean it shouldn't be done, however, the revision
         //       is problematic because it needs to be incremented each time
-        //       we do an update when at this point it won't be.
+        //       we do an update when at this point it won't be. (Although
+        //       it seems to work fine at this point...)
         initialize_branch(d->f_path);
 
         // TODO: add support to specify the "revision owner" of the parameter
@@ -5707,7 +5731,7 @@ void content::on_save_content()
                         use_new_revision = false;
 
                         // mark when the row was created
-                        data_table->row(row_key)->cell(QString(get_name(SNAP_NAME_CONTENT_CREATED)))->setValue(start_date);
+                        data_table->row(row_key)->cell(get_name(SNAP_NAME_CONTENT_CREATED))->setValue(start_date);
                     }
                     break;
 
@@ -5758,7 +5782,7 @@ void content::on_save_content()
 
         // link this entry to its parent automatically
         // first we need to remove the site key from the path
-        QString path(d->f_path.mid(site_key.length()));
+        QString const path(d->f_path.mid(site_key.length()));
         QStringList parts(path.split('/', QString::SkipEmptyParts));
         while(parts.count() > 0)
         {
@@ -5868,13 +5892,12 @@ void content::on_save_content()
     for(content_block_map_t::iterator d(f_blocks.begin());
             d != f_blocks.end(); ++d)
     {
-        QString path(d->f_path);
+        QString const path(d->f_path);
         path_info_t ipath;
         ipath.set_path(path);
         QtCassandra::QCassandraValue type(get_content_parameter(ipath, get_name(SNAP_NAME_CONTENT_PAGE_TYPE), PARAM_REVISION_BRANCH));
         if(path.startsWith(site_key))
         {
-            //path = path.mid(site_key.length());
             // TODO: we may want to have a better way to choose the language
             create_content(ipath, d->f_owner, type.stringValue());
         }
@@ -6285,7 +6308,7 @@ void content::add_javascript(path_info_t& ipath, QDomDocument doc, QString const
             //      version with the User Agent match. This may not always
             //      be desirable though.
 #ifdef DEBUG
-SNAP_LOG_TRACE() << "Adding JavaScript [" << name << "] [" << ref_cell->columnName().mid(start_ref.length() - 1) << "]\n";
+SNAP_LOG_TRACE() << "Adding JavaScript [" << name << "] [" << ref_cell->columnName().mid(start_ref.length() - 1) << "]";
 #endif
             QDomNodeList metadata(doc.elementsByTagName("metadata"));
             QDomNode javascript_tag(metadata.at(0).firstChildElement("javascript"));

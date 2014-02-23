@@ -51,6 +51,7 @@ QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC
 )
 
 snap_validate_xml( content.xml content.dtd )
+snap_validate_xml( new-draft.xml form/snap-form.dtd )
 
 
 add_library(editor SHARED
@@ -58,6 +59,7 @@ add_library(editor SHARED
     ${SNAP_MANAGER_MOC_CXX}
     ${SNAP_MANAGER_RESOURCES_RCC}
     content.xml
+    new-draft.xml
 )
 
 target_link_libraries( editor ${QT_LIBRARIES} )

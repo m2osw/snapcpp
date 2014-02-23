@@ -403,7 +403,7 @@ void path::on_execute(QString const& uri_path)
     ipath.set_path(uri_path);
     ipath.set_main_page(true);
 #ifdef DEBUG
-SNAP_LOG_TRACE() << "path::on_execute(\"" << uri_path << "\") -> [" << ipath.get_cpath() << "] [" << ipath.get_branch() << "] [" << ipath.get_revision() << "]\n";
+SNAP_LOG_TRACE() << "path::on_execute(\"" << uri_path << "\") -> [" << ipath.get_cpath() << "] [" << ipath.get_branch() << "] [" << ipath.get_revision() << "]";
 #endif
 
     f_last_modified = 0;

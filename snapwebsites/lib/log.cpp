@@ -127,7 +127,7 @@ void configureConsole()
  * configure() is called from the server::config() function. If no configuration
  * file is defined then the other functions will do nothing.
  *
- * \param[in] filename  The name of the configuration file.
+ * \param[in] logfile  The name of the configuration file.
  *
  * \sa fatal()
  * \sa error()
@@ -136,7 +136,7 @@ void configureConsole()
  * \sa server::config()
  * \sa unconfigure()
  */
-void configureLogfile( const QString& logfile )
+void configureLogfile( QString const& logfile )
 {
     unconfigure();
 
@@ -155,9 +155,9 @@ void configureLogfile( const QString& logfile )
 
     g_log_config_filename.clear();
     g_log_output_filename = logfile;
-    g_logging_type    = file_logger;
-    g_logger            = log4cplus::Logger::getInstance("snap");
-    g_secure_logger     = log4cplus::Logger::getInstance("security");
+    g_logging_type        = file_logger;
+    g_logger              = log4cplus::Logger::getInstance("snap");
+    g_secure_logger       = log4cplus::Logger::getInstance("security");
 
     g_logger.addAppender( appender );
     g_secure_logger.addAppender( appender );
@@ -189,7 +189,7 @@ void configureLogfile( const QString& logfile )
  * \sa server::config()
  * \sa unconfigure()
  */
-void configureConffile(const QString& filename)
+void configureConffile(QString const& filename)
 {
     unconfigure();
 

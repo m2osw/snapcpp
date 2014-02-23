@@ -128,18 +128,18 @@ private:
 
     // f_original is the unchanged source (from constructor or
     // last set_uri() call)
-    QString                        f_original;
-    QString                        f_protocol;
-    QString                        f_username;
-    QString                        f_password;
-    snap_uri_port_t                f_port;
-    QString                        f_domain;
-    QString                        f_top_level_domain;
-    QStringList                    f_sub_domains;
-    QStringList                    f_path;
-    snap_uri_options_t            f_options;
-    snap_uri_options_t            f_query_strings;
-    QString                        f_anchor;
+    QString                         f_original;
+    QString                         f_protocol;
+    QString                         f_username;
+    QString                         f_password;
+    snap_uri_port_t                 f_port;
+    QString                         f_domain;
+    QString                         f_top_level_domain;
+    QStringList                     f_sub_domains;
+    QStringList                     f_path;
+    snap_uri_options_t              f_options;
+    snap_uri_options_t              f_query_strings;
+    QString                         f_anchor;
 };
 
 

@@ -245,7 +245,7 @@ namespace
             "logfile",
             nullptr,
             "Output log file to write to. Overrides the setting in the configuration file.",
-            advgetopt::getopt::optional_argument
+            advgetopt::getopt::required_argument
         },
         {
             'l',
@@ -253,7 +253,7 @@ namespace
             "logconf",
             nullptr,
             "Log configuration file to read from. Overrides log_config in the configuration file.",
-            advgetopt::getopt::optional_argument
+            advgetopt::getopt::required_argument
         },
         {
             'n',

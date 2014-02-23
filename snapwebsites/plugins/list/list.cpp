@@ -72,7 +72,7 @@ char const *get_name(name_t name)
     case SNAP_NAME_LIST_PAGELIST: // --action pagelist
         return "pagelist";
 
-    case SNAP_NAME_LIST_SELECTOR: // all, public, children, type, ...
+    case SNAP_NAME_LIST_SELECTOR: // all, public, children, type=name, ...
         return "list::selector";
 
     case SNAP_NAME_LIST_STANDALONE: // when present in list table as a column name of a site row: signals a website managed as a standalone site

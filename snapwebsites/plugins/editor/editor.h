@@ -16,7 +16,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
-#include "../layout/layout.h"
+#include "../users/users.h"
 
 namespace snap
 {
@@ -39,23 +39,25 @@ public:
     editor_exception_invalid_argument(QString const&     what_msg) : editor_exception(what_msg) {}
 };
 
-//class editor_exception_too_many_levels : public editor_exception
-//{
-//public:
-//    editor_exception_too_many_levels(char const *what_msg) : editor_exception(what_msg) {}
-//    editor_exception_too_many_levels(std::string const& what_msg) : editor_exception(what_msg) {}
-//    editor_exception_too_many_levels(QString const& what_msg) : editor_exception(what_msg) {}
-//};
+class editor_exception_invalid_path : public editor_exception
+{
+public:
+    editor_exception_invalid_path(char const *       what_msg) : editor_exception(what_msg) {}
+    editor_exception_invalid_path(std::string const& what_msg) : editor_exception(what_msg) {}
+    editor_exception_invalid_path(QString const&     what_msg) : editor_exception(what_msg) {}
+};
+
 
 
 enum name_t
 {
-    SNAP_NAME_EDITOR,
+    SNAP_NAME_EDITOR_DRAFTS_PATH,
+    SNAP_NAME_EDITOR_PAGE_TYPE
 };
-const char *get_name(name_t name) __attribute__ ((const));
+char const *get_name(name_t name) __attribute__ ((const));
 
 
-class editor : public plugins::plugin, public layout::layout_content
+class editor : public plugins::plugin, public path::path_execute, public layout::layout_content, public form::form_post
 {
 public:
                         editor();
@@ -70,9 +72,16 @@ public:
     void                on_register_backend_action(snap::server::backend_action_map_t& actions);
     void                on_generate_header_content(content::path_info_t& path, QDomElement& header, QDomElement& metadata, QString const& ctemplate);
     virtual void        on_generate_main_content(content::path_info_t& path, QDomElement& page, QDomElement& body, QString const& ctemplate);
+    bool                on_path_execute(content::path_info_t& ipath);
+    void                on_can_handle_dynamic_path(content::path_info_t& ipath, path::dynamic_plugin_t& plugin_info);
+    virtual void        on_process_form_post(content::path_info_t& cpath, sessions::sessions::session_info const& info);
+    void                on_validate_post_for_widget(content::path_info_t& ipath, sessions::sessions::session_info& info,
+                                         QDomElement const& widget, QString const& widget_name,
+                                         QString const& widget_type, bool is_secret);
 
 private:
     void                content_update(int64_t variables_timestamp);
+    void                process_new_draft();
 
     zpsnap_child_t      f_snap;
 };

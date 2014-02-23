@@ -1,6 +1,6 @@
 /*
  * Name: editor
- * Version: 0.0.1.15
+ * Version: 0.0.1.18
  * Browsers: all
  * Copyright: Copyright 2013-2014 (c) Made to Order Software Corporation  All rights reverved.
  * License: GPL 2.0
@@ -891,6 +891,13 @@ console.log("just modified!!!");
 
     _attach: function()
     {
+        if(jQuery("body").hasClass("snap-editor-initialized"))
+        {
+            return;
+        }
+        jQuery("body").addClass("snap-editor-initialized");
+
+        jQuery("<div class='editor-tooltip'><a class='activate-editor' href='#'>Edit</a></div>").prependTo(".snap-editor");
         jQuery(".snap-editor").children(".editor-tooltip").children(".activate-editor").click(function(){
             jQuery(this).parent().parent().mouseleave().off("mouseenter mouseleave")
                     .children(".editor-content").attr("contenteditable", "true").focus();

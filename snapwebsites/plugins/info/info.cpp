@@ -234,9 +234,6 @@ bool info::on_path_execute(content::path_info_t& ipath)
  */
 void info::on_generate_main_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate)
 {
-#ifdef DEBUG
-SNAP_LOG_TRACE() << "*** info main content...\n";
-#endif
     // our settings pages are like any standard pages
     output::output::instance()->on_generate_main_content(ipath, page, body, ctemplate);
 }
