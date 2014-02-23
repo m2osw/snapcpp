@@ -1183,6 +1183,7 @@ void server::sighandler( int sig )
         default      : signame = "UNKNOWN";
     }
 
+    snap_exception_base::output_stack_trace();
     SNAP_LOG_FATAL("signal caught: ")(signame);
     f_instance->exit(1);
 }

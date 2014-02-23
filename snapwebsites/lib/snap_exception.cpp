@@ -40,14 +40,22 @@ bool g_debug = false;
 
 /** \brief Initialize this Snap! exception.
  *
- * This function checks whether the server was started in debug mode. If so,
- * then all Snap! exceptions get their stack trace printed in stderr for
- * debug purposes.
+ * Initialize the base exception class. Output a stack trace to the error log.
  *
- * \todo
- * Implement a way to switch off debuging to the log file in a production build.
+ * \sa output_stack_trace()
  */
 snap_exception_base::snap_exception_base()
+{
+    output_stack_trace();
+}
+
+
+/** \brief Output stack trace to log as an error.
+ *
+ * This static method outputs the current stack as a trace to the log. If
+ * compiled with DEBUG turned on, it will also output to the stderr.
+ */
+void snap_exception_base::output_stack_trace()
 {
     int const max_stack_length(20);
     void *array[max_stack_length];
