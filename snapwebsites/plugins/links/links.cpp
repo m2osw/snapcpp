@@ -75,6 +75,7 @@ char const *get_name(name_t name)
  * \param[in] new_name  The name of the key (column.)
  * \param[in] unique  Whether the link is unique (one to one, or one to many.)
  * \param[in] new_key  The key is the name of the row.
+ * \param[in] branch_number  The branch number where this link is to be saved.
  *
  * \sa set_name()
  * \sa set_key()
@@ -244,7 +245,7 @@ char const *get_name(name_t name)
  *
  * \param[in] vname  The name to be verified
  */
-void link_info::verify_name(const QString& vname)
+void link_info::verify_name(QString const& vname)
 {
     // the namespace is really only for debug purposes
     // but at this time we'll keep it for security

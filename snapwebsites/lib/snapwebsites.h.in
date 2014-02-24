@@ -155,7 +155,7 @@ public:
     bool is_foreground() const { return f_foreground; }
     bool is_backend() const { return f_backend; }
     void config( int argc, char *argv[] );
-    QString get_parameter(QString const& name) const;
+    QString get_parameter(QString const& param_name) const;
     void exit(int code);
     void prepare_qtapp( int argc, char *argv[] );
     void close_qtapp();

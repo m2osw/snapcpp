@@ -39,7 +39,7 @@ SNAP_PLUGIN_START(shorturl, 1, 0)
  *
  * \return A pointer to the name.
  */
-const char *get_name(name_t name)
+char const *get_name(name_t name)
 {
     switch(name) {
     case SNAP_NAME_SHORTURL_DATE:
@@ -240,7 +240,7 @@ bool shorturl::on_path_execute(content::path_info_t& ipath)
  * as the main content on the page although the content of some
  * columns may be interleaved with this content.
  *
- * Note that this is NOT the HTML output. It is the <page> tag of
+ * Note that this is NOT the HTML output. It is the \<page\> tag of
  * the snap XML file format. The theme layout XSLT will be used
  * to generate the final output.
  *
@@ -295,15 +295,16 @@ void shorturl::on_generate_main_content(content::path_info_t& ipath, QDomElement
  * This function generates some content that is expected in a page
  * by default.
  *
- * \param[in] cpath  The path being managed.
- * \param[in,out] page  The page being generated.
- * \param[in,out] body  The body being generated.
+ * \param[in,out] ipath  The path being managed.
+ * \param[in,out] header  The page being generated.
+ * \param[in,out] metadata  The body being generated.
  * \param[in] ctemplate  The path to a template if cpath does not exist.
  */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-void shorturl::on_generate_header_content(content::path_info_t& ipath, QDomElement& header, QDomElement& metadata, const QString& ctemplate)
+void shorturl::on_generate_header_content(content::path_info_t& ipath, QDomElement& header, QDomElement& metadata, QString const& ctemplate)
 {
+    static_cast<void>(header);
+    static_cast<void>(ctemplate);
+
     content::field_search::search_result_t result;
 
     FIELD_SEARCH
@@ -326,13 +327,13 @@ void shorturl::on_generate_header_content(content::path_info_t& ipath, QDomEleme
         f_snap->set_header(get_name(SNAP_NAME_SHORTURL_HTTP_LINK), http_link);
     }
 }
-#pragma GCC diagnostic pop
 
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
 void shorturl::on_create_content(content::path_info_t& ipath, QString const& owner, QString const& type)
 {
+    static_cast<void>(owner);
+    static_cast<void>(type);
+
     // do not ever create short URLs for admin pages
     if(ipath.get_cpath() == "admin" || ipath.get_cpath().startsWith("admin/"))
     {
@@ -420,7 +421,6 @@ void shorturl::on_create_content(content::path_info_t& ipath, QString const& own
     QString const index(f_snap->get_website_key() + "/" + get_name(SNAP_NAME_SHORTURL_INDEX_ROW));
     shorturl_table->row(index)->cell(new_identifier.binaryValue())->setValue(key);
 }
-#pragma GCC diagnostic pop
 
 
 /** \brief Check whether \p cpath matches our introducer.

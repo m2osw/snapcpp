@@ -29,7 +29,7 @@
 
 SNAP_PLUGIN_START(path, 1, 0)
 
-/** \brief Get a fixed path name.
+/* \brief Get a fixed path name.
  *
  * The path plugin makes use of different names in the database. This
  * function ensures that you get the right spelling for a given name.

@@ -130,7 +130,7 @@ int udp_client::get_port() const
 /** \brief Retrieve a copy of the address.
  *
  * This function returns a copy of the address as it was specified in the
- * constructor. This does not return a canonalized version of the address.
+ * constructor. This does not return a canonicalized version of the address.
  *
  * The address cannot be modified. If you need to send data on a different
  * address, create a new UDP client.
@@ -277,7 +277,7 @@ int udp_server::get_port() const
 /** \brief Return the address of this UDP server.
  *
  * This function returns a verbatim copy of the address as passed to the
- * constructor of the UDP server (i.e. it does not return the canonalized
+ * constructor of the UDP server (i.e. it does not return the canonicalized
  * version of the address.)
  *
  * \return The address as passed to the constructor.

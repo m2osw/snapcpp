@@ -357,7 +357,7 @@ QString layout::get_layout(content::path_info_t& ipath, QString const& column_na
  * to be used to create a page. The apply_theme() will then layout the
  * result in a page.
  *
- * \param[in] ipath  The canonalized path of content to be laid out.
+ * \param[in] ipath  The canonicalized path of content to be laid out.
  * \param[in] content_plugin  The plugin that will generate the content of the page.
  * \param[in] ctemplate  The path to the template is used to get default data.
  *
@@ -383,7 +383,7 @@ QString layout::apply_layout(content::path_info_t& ipath, layout_content *conten
  * This function determines the layout XSL code and name given a content
  * info path.
  *
- * \param[in] ipath  The canonalized path of content to be laid out.
+ * \param[in] ipath  The canonicalized path of content to be laid out.
  * \param[out] layout_name  A QString to hold the resulting layout name.
  *
  * \return The XSL code in a string.
@@ -478,7 +478,7 @@ QString layout::define_layout(content::path_info_t& ipath, QString& layout_name)
  *
  * \return A DOM document with the basic layout tree.
  */
-QDomDocument layout::create_document(content::path_info_t& ipath, plugin *p)
+QDomDocument layout::create_document(content::path_info_t& ipath, plugin *content_plugin)
 {
     // Initialize the XML document tree
     // More is done in the generate_header_content_impl() function
@@ -486,9 +486,9 @@ QDomDocument layout::create_document(content::path_info_t& ipath, plugin *p)
     QDomElement root = doc.createElement("snap");
     root.setAttribute("path", ipath.get_cpath());
 
-    if(p != nullptr)
+    if(content_plugin != nullptr)
     {
-        root.setAttribute("owner", p->get_plugin_name());
+        root.setAttribute("owner", content_plugin->get_plugin_name());
     }
 
     doc.appendChild(root);
@@ -1165,8 +1165,7 @@ int64_t layout::install_layout(QString const& layout_name, int64_t const last_up
  * f_snap->set_header("X-Robots", f_robots_cache);
  * \endcode
  *
- * \param[in] l  The layout pointer.
- * \param[in] path  The path being managed.
+ * \param[in,out] ipath  The path being managed.
  * \param[in,out] header  The header being generated.
  * \param[in,out] metadata  The metadata being generated.
  * \param[in] ctemplate  The template used to generate the page or "".

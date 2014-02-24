@@ -53,12 +53,13 @@ public:
     static feed *       instance();
     virtual QString     description() const;
     virtual int64_t     do_update(int64_t last_updated);
+    QSharedPointer<QtCassandra::QCassandraTable> get_feed_table();
 
     void                on_bootstrap(snap_child *snap);
-    virtual bool        on_path_execute(const QString& url);
-    virtual void        on_generate_main_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, const QString& ctemplate);
-    void                on_generate_header_content(content::path_info_t& ipath, QDomElement& header, QDomElement& metadata, const QString& ctemplate);
-    void                on_can_handle_dynamic_path(content::path_info_t& cpath, path::plugin_info_t& plugin_info);
+    virtual bool        on_path_execute(QString const& url);
+    virtual void        on_generate_main_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate);
+    void                on_generate_header_content(content::path_info_t& ipath, QDomElement& header, QDomElement& metadata, QString const& ctemplate);
+    void                on_can_handle_dynamic_path(content::path_info_t& ipath, path::plugin_info_t& plugin_info);
 
 private:
     void initial_update(int64_t variables_timestamp);

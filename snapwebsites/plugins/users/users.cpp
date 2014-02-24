@@ -610,8 +610,7 @@ void users::on_process_cookies()
  * pages where the referrer should not be a "weird" 3rd party
  * website.
  *
- * \param[in] path_plugin  A pointer to the path plugin.
- * \param[in] cpath  The path being handled dynamically.
+ * \param[in,out] ipath  The path being handled dynamically.
  * \param[in,out] plugin_info  If you understand that cpath, set yourself here.
  */
 void users::on_can_handle_dynamic_path(content::path_info_t& ipath, path::dynamic_plugin_t& plugin_info)
@@ -657,7 +656,7 @@ void users::on_can_handle_dynamic_path(content::path_info_t& ipath, path::dynami
  * currently supported (mainly because the user does not have
  * permission.)
  *
- * \param[in] cpath  The canonalized path.
+ * \param[in,out] ipath  The canonicalized path.
  *
  * \return true if the processing worked as expected, false if the page
  *         cannot be created ("Page Not Present" results on false)
@@ -1065,8 +1064,6 @@ void users::show_user(content::path_info_t& ipath, QDomElement& page, QDomElemen
  * The password can also be changed by requiring the system to send
  * an email. In that case, and if the user then remembers his old
  * password, then this form is hit on the following log in.
- *
- * \param[in] body  The body where we're to add the login form.
  */
 void users::prepare_password_form()
 {
@@ -1147,7 +1144,7 @@ void users::prepare_verify_credentials_form()
  *
  * This function calls the on_generate_main_content() of the content plugin.
  *
- * \param[in,out] cpath  The path being processed (logout[/...]).
+ * \param[in,out] ipath  The path being processed (logout[/...]).
  * \param[in,out] page  The page XML data.
  * \param[in,out] body  The body XML data.
  */
@@ -1201,9 +1198,6 @@ void users::prepare_basic_anonymous_form()
  * \todo
  * Add a question such as "what's your favority movie", "where were you
  * born", etc. so we can limit the number of people who use this form.
- *
- * \param[in] body  The body where we're to add the resend verification
- *                  email form.
  */
 void users::prepare_forgot_password_form()
 {
@@ -1229,9 +1223,6 @@ void users::prepare_forgot_password_form()
  *
  * This function verifies a verification code that was sent so the user
  * could change his password (i.e. an automatic log in mechanism.)
- *
- * \param[in] body  The body where we're to add the resend verification
- *                  email form.
  */
 void users::prepare_new_password_form()
 {
@@ -3238,6 +3229,7 @@ bool users::user_is_logged_in()
  * This function adds the user profile link to the brief signature of die()
  * errors. This is done only if the user is logged in.
  *
+ * \param[in] path  The path to the page that generated the error.
  * \param[in,out] signature  The HTML signature to improve.
  */
 void users::on_improve_signature(QString const& path, QString& signature)

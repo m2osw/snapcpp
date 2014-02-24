@@ -606,7 +606,7 @@ SNAP_LOG_TRACE() << "javascript: result = " << engine.hasUncaughtException() << 
  * As users upload new JavaScripts to the server, we want to have them
  * pre-minimized and compressed to serve them as fast as possible.
  *
- * \important
+ * \warning
  * The JavaScript plugin cannot depend on the content plugin (because
  * the layout depends on JavaScript and content depends on layout)
  *

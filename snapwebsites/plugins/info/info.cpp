@@ -223,14 +223,15 @@ bool info::on_path_execute(content::path_info_t& ipath)
  * as the main content on the page although the content of some
  * columns may be interleaved with this content.
  *
- * Note that this is NOT the HTML output. It is the <page> tag of
+ * Note that this is NOT the HTML output. It is the \<page\> tag of
  * the snap XML file format. The theme layout XSLT will be used
  * to generate the final output.
  *
- * \param[in] l  The layout pointer.
- * \param[in] path  The path being managed.
+ * \param[in,out] ipath  The path being managed.
  * \param[in,out] page  The page being generated.
  * \param[in,out] body  The body being generated.
+ * \param[in] ctemplate  A template used when the other parameters are
+ *                       not available.
  */
 void info::on_generate_main_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate)
 {
@@ -239,7 +240,7 @@ void info::on_generate_main_content(content::path_info_t& ipath, QDomElement& pa
 }
 
 
-/** \brief Generate the header common content.
+/* \brief Generate the header common content.
  *
  * This function generates some content that is expected in a page
  * by default.

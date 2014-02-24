@@ -122,10 +122,10 @@ char const *get_name(name_t name)
     case SNAP_NAME_INDEX: // name used for the domains and websites indexes
         return "*index*"; // this is a row name inside the domains/websites tables
 
-    case SNAP_NAME_DOMAINS: // domain/sub-domain canonalization
+    case SNAP_NAME_DOMAINS: // domain/sub-domain canonicalization
         return "domains";
 
-    case SNAP_NAME_WEBSITES: // remaining of URL canonalization
+    case SNAP_NAME_WEBSITES: // remaining of URL canonicalization
         return "websites";
 
     case SNAP_NAME_SITES: // website global settings
@@ -191,13 +191,13 @@ namespace
      * This variable is used as a list of configuration files. It may be
      * empty.
      */
-    const std::vector<std::string> g_configuration_files;
+    std::vector<std::string> const g_configuration_files;
 
     /** \brief Command line options.
      *
      * This table includes all the options supported by the server.
      */
-    const advgetopt::getopt::option g_snapserver_options[] =
+    advgetopt::getopt::option const g_snapserver_options[] =
     {
         {
             'a',
@@ -325,7 +325,7 @@ std::shared_ptr<server> server::f_instance;
  *
  * \return A pointer to a constant string representing the server version.
  */
-const char *server::version()
+char const *server::version()
 {
     return SNAPWEBSITES_VERSION_STRING;
 }
@@ -770,7 +770,7 @@ void server::config(int argc, char *argv[])
         // Read the log configuration file and use it to specify the appenders
         // and log level.
         //
-        const QString log_config( f_parameters["log_config"] );
+        QString const log_config( f_parameters["log_config"] );
         if( log_config.isEmpty() )
         {
             // Fall back to output to the console
@@ -828,7 +828,7 @@ void server::config(int argc, char *argv[])
  *
  * \return The value of the specified parameter.
  */
-QString server::get_parameter(const QString& param_name) const
+QString server::get_parameter(QString const& param_name) const
 {
     if(f_parameters.contains(param_name))
     {
@@ -1285,10 +1285,13 @@ unsigned long server::connections_count()
  *
  * \return true if the signal has to be sent to other plugins.
  */
-bool server::bootstrap_impl(snap_child * /*snap*/)
+bool server::bootstrap_impl(snap_child *snap)
 {
+    static_cast<void>(snap);
+
     return true;
 }
+
 
 /** \brief Initialize the Snap Websites server.
  *
@@ -1394,8 +1397,10 @@ bool server::define_locales_impl(QString& locales)
  *
  * \return true if the signal has to be/sign sent to other plugins.
  */
-bool server::process_post_impl(const QString& /*url*/)
+bool server::process_post_impl(QString const& url)
 {
+    static_cast<void>(url);
+
     return true;
 }
 
@@ -1410,8 +1415,10 @@ bool server::process_post_impl(const QString& /*url*/)
  *
  * \return true if the signal has to be sent to other plugins.
  */
-bool server::execute_impl(const QString& /*url*/)
+bool server::execute_impl(QString const& url)
 {
+    static_cast<void>(url);
+
     return true;
 }
 
@@ -1465,16 +1472,22 @@ bool server::save_content_impl()
  *
  * At this time, it does nothing.
  *
- * \param[in] node  The HTML node to check with XSS filters.
- * \param[in] acceptable_tags  The tags kept in the specified HTML. (i.e. "p a ul li")
- * \param[in] acceptable_attributes  The list of (not) acceptable attributes (i.e. "!styles")
+ * \param[in,out] node  The HTML node to check with XSS filters.
+ * \param[in] acceptable_tags  The tags kept in the specified HTML.
+ *                             (i.e. "p a ul li")
+ * \param[in] acceptable_attributes  The list of (not) acceptable attributes
+ *                                   (i.e. "!styles")
  *
  * \return true if the signal has to be sent to other plugins.
  */
-bool server::xss_filter_impl(QDomNode& /*node*/,
-                             const QString& /*acceptable_tags*/,
-                             const QString& /*accepted_attributes*/)
+bool server::xss_filter_impl(QDomNode& node,
+                             QString const& acceptable_tags,
+                             QString const& acceptable_attributes)
 {
+    static_cast<void>(node);
+    static_cast<void>(acceptable_tags);
+    static_cast<void>(acceptable_attributes);
+
     return true;
 }
 
@@ -1692,7 +1705,7 @@ bool server::add_snap_expr_functions_impl(snap_expr::functions_t& functions)
  * \param[in] name  The name of the configuration variable used to read the IP and port
  * \param[in] message  The message to send, "PING" by default.
  */
-void server::udp_ping(const char *name, const char *message)
+void server::udp_ping(char const *name, char const *message)
 {
     // TODO: we should have a common function to read and transform the
     //       parameter to a valid IP/Port pair (see below)

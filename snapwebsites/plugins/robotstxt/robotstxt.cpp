@@ -412,16 +412,19 @@ void robotstxt::on_generate_header_content(content::path_info_t& ipath, QDomElem
  * Check whether this function is required (i.e. we may not need to derive
  * from the layout interface? do we?)
  *
- * \param[in] path  The path being managed.
+ * \param[in,out] ipath  The path being managed.
  * \param[in,out] page  The page being generated.
  * \param[in,out] body  The body being generated.
+ * \param[in] ctemplate  The default template in case the main data
+ *                       doesn't exist yet.
  */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-void robotstxt::on_generate_main_content(content::path_info_t& path, QDomElement& page, QDomElement& body, const QString& ctemplate)
+void robotstxt::on_generate_main_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate)
 {
+    static_cast<void>(ipath);
+    static_cast<void>(page);
+    static_cast<void>(body);
+    static_cast<void>(ctemplate);
 }
-#pragma GCC diagnostic pop
 
 
 /** \brief Generate the page common content.
@@ -432,8 +435,10 @@ void robotstxt::on_generate_main_content(content::path_info_t& path, QDomElement
  * \param[in,out] ipath  The path being managed.
  * \param[in,out] page  The page being generated.
  * \param[in,out] body  The body being generated.
+ * \param[in] ctemplate  A default template in case the default is not
+ *                       available.
  */
-void robotstxt::on_generate_page_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, const QString& ctemplate)
+void robotstxt::on_generate_page_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate)
 {
     static_cast<void>(ctemplate);
 

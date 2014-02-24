@@ -154,6 +154,7 @@ void search::content_update(int64_t variables_timestamp)
  * This function adds the search page to the brief signature of die()
  * errors.
  *
+ * \param[in] path  The path to the page that generated the error.
  * \param[in,out] signature  The HTML signature to improve.
  */
 void search::on_improve_signature(QString const& path, QString& signature)

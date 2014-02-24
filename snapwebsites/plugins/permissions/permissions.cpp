@@ -118,7 +118,7 @@ char const *get_name(name_t name)
 }
 
 
-/** \class permissions::sets_t
+/** \class snap::permissions::permissions::sets_t
  * \brief Handle sets of permissions.
  *
  * The permissions are represented by sets. A permission set includes rights,
@@ -205,11 +205,11 @@ char const *get_name(name_t name)
  * parameters are read-only parameters.
  *
  * \param[in] user_path  The path to the user.
- * \param[in,out] path  The path being queried.
+ * \param[in,out] ipath  The path being queried.
  * \param[in] action  The action being used in this query.
  * \param[in] login_status  The state of the log in of this user.
  */
-permissions::sets_t::sets_t(const QString& user_path, content::path_info_t& ipath, const QString& action, const QString& login_status)
+permissions::sets_t::sets_t(QString const& user_path, content::path_info_t& ipath, QString const& action, QString const& login_status)
     : f_user_path(user_path)
     , f_ipath(ipath)
     , f_action(action)
@@ -1117,6 +1117,7 @@ bool permissions::get_plugin_permissions_impl(permissions *perms, sets_t& sets)
  * \param[in,out] ipath  The path to this page.
  * \param[in,out] page  The page element being generated.
  * \param[in,out] body  The body element being generated.
+ * \param[in] ctemplate  Template used for parameters that are otherwise missing.
  */
 void permissions::on_generate_main_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate)
 {
@@ -1140,7 +1141,7 @@ void permissions::on_generate_main_content(content::path_info_t& ipath, QDomElem
  *
  * \param[in,out] ipath  The path the user wants to access.
  * \param[in] action  The action to be taken, the function may redefine it.
- * \param[in,out] callback  Call functions on errors.
+ * \param[in,out] err_callback  Call functions on errors.
  */
 void permissions::on_validate_action(content::path_info_t& ipath, QString const& action, permission_error_callback& err_callback)
 {
@@ -1304,7 +1305,7 @@ void permissions::on_validate_action(content::path_info_t& ipath, QString const&
  * won't even be able to read the page.
  *
  * \param[in] user_path  The user trying to acccess the specified path.
- * \param[in] cpath  The path that the user is trying to access.
+ * \param[in,out] ipath  The path that the user is trying to access.
  * \param[in] action  The action that the user is trying to perform.
  * \param[in] login_status  The supposed status for that user.
  * \param[in] result  The result of the test.

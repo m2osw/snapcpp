@@ -451,7 +451,7 @@ field_search::cmd_info_t::cmd_info_t(command_t cmd)
  * This function initializes the cmd_info_t. Note that the parameters
  * cannot be changed later (read-only.)
  *
- * \param[in] opt  The search instruction (i.e. SELF, PARENTS, etc.)
+ * \param[in] cmd  The search instruction (i.e. SELF, PARENTS, etc.)
  * \param[in] str_value  The string value attached to that instruction.
  */
 field_search::cmd_info_t::cmd_info_t(command_t cmd, QString const& str_value)
@@ -490,7 +490,7 @@ field_search::cmd_info_t::cmd_info_t(command_t cmd, QString const& str_value)
  * This function initializes the cmd_info_t. Note that the parameters
  * cannot be changed later (read-only.)
  *
- * \param[in] opt  The search instruction (i.e. SELF, PARENTS, etc.)
+ * \param[in] cmd  The search instruction (i.e. SELF, PARENTS, etc.)
  * \param[in] int_value  The integer value attached to that instruction.
  */
 field_search::cmd_info_t::cmd_info_t(command_t cmd, int64_t int_value)
@@ -524,7 +524,7 @@ field_search::cmd_info_t::cmd_info_t(command_t cmd, int64_t int_value)
  * This function initializes the cmd_info_t. Note that the parameters
  * cannot be changed later (read-only.)
  *
- * \param[in] opt  The search instruction (i.e. SELF, PARENTS, etc.)
+ * \param[in] cmd  The search instruction (i.e. SELF, PARENTS, etc.)
  * \param[in] value  The value attached to that instruction.
  */
 field_search::cmd_info_t::cmd_info_t(command_t cmd, QtCassandra::QCassandraValue& value)
@@ -552,7 +552,7 @@ field_search::cmd_info_t::cmd_info_t(command_t cmd, QtCassandra::QCassandraValue
  * This function initializes the cmd_info_t. Note that the parameters
  * cannot be changed later (read-only.)
  *
- * \param[in] opt  The search instruction (i.e. SELF, PARENTS, etc.)
+ * \param[in] cmd  The search instruction (i.e. SELF, PARENTS, etc.)
  * \param[in] element  The value attached to that instruction.
  */
 field_search::cmd_info_t::cmd_info_t(command_t cmd, QDomElement element)
@@ -579,7 +579,7 @@ field_search::cmd_info_t::cmd_info_t(command_t cmd, QDomElement element)
  * This function initializes the cmd_info_t. Note that the parameters
  * cannot be changed later (read-only.)
  *
- * \param[in] opt  The search instruction (i.e. SELF, PARENTS, etc.)
+ * \param[in] cmd  The search instruction (i.e. SELF, PARENTS, etc.)
  * \param[in,out] result  The value attached to that instruction.
  */
 field_search::cmd_info_t::cmd_info_t(command_t cmd, search_result_t& result)
@@ -606,7 +606,7 @@ field_search::cmd_info_t::cmd_info_t(command_t cmd, search_result_t& result)
  * This function initializes the cmd_info_t. Note that the parameters
  * cannot be changed later (read-only.)
  *
- * \param[in] opt  The search instruction (i.e. COMMAND_PATH_INFO, etc.)
+ * \param[in] cmd  The search instruction (i.e. COMMAND_PATH_INFO, etc.)
  * \param[in] ipath  A full defined path to a page.
  */
 field_search::cmd_info_t::cmd_info_t(command_t cmd, path_info_t const& ipath)
@@ -2090,7 +2090,7 @@ QString const& attachment_file::get_attachment_type() const
  * the HTTP request as the creation date. The loader sets the date back in
  * the attachment.
  *
- * \param[in] time  The time when the attachment was added to the database.
+ * \return The time when the attachment was added to the database.
  *
  * \sa set_creation_time()
  */
@@ -2106,7 +2106,7 @@ int64_t attachment_file::get_creation_time() const
  * HTTP request as the modification date. The loader sets the date back in
  * the attachment.
  *
- * \param[in] time  The time when the attachment was last modified.
+ * \return The time when the attachment was last updated.
  *
  * \sa set_update_time()
  */
@@ -3031,7 +3031,8 @@ snap_version::version_number_t content::get_current_user_branch(QString const& k
  * number other than the last revision number.
  *
  * \param[in] key  The key of the page concerned.
- * \param[in] owner  The plugin that owns this revision data.
+ * \param[in] owner  The plugin that owns this data.
+ * \param[in] branch  The branch number.
  * \param[in] locale  The language and country information.
  * \param[in] working_branch  Whether the working branch (true) or the current
  *                            branch (false) is used.
@@ -3041,7 +3042,6 @@ snap_version::version_number_t content::get_current_user_branch(QString const& k
 snap_version::version_number_t content::get_current_revision(QString const& key, QString const& owner, snap_version::version_number_t const branch, QString const& locale, bool working_branch)
 {
     QString const base_key(get_revision_base_key(owner));
-    //snap_version::version_number_t const branch(get_current_branch(key, owner, working_branch));
     QString revision_key(QString("%1::%2::%3")
             .arg(base_key)
             .arg(get_name(working_branch
@@ -3303,8 +3303,9 @@ snap_version::version_number_t content::get_new_revision(QString const& key, QSt
  *
  * \param[in] key  The key of the page being worked on.
  * \param[in] owner  The owner of that branch.
+ * \param[in] working_branch  Whether we use the working branch or not.
  *
- * \return A string representing the end of the key
+ * \return A string representing the branch key in the data table.
  */
 QString content::get_branch_key(QString const& key, QString const& owner, bool working_branch)
 {
@@ -3705,9 +3706,11 @@ QString content::set_revision_key(QString const& key, QString const& owner, snap
  *
  * \param[in] key  The key to the page concerned.
  * \param[in] owner  The owner of the page, usually "content".
+ * \param[in] branch  The branch of the page.
  * \param[in] revision  The new revision string.
  * \param[in] locale  The language and country information.
- * \param[in] working_branch  The current branch (false) or the current working branch (true).
+ * \param[in] working_branch  The current branch (false) or the current
+ *                            working branch (true).
  *
  * \return A copy of the current revision key saved in the database.
  */
@@ -4803,7 +4806,7 @@ bool content::modified_content_impl(path_info_t& ipath)
 /** \brief Retreive a content page parameter.
  *
  * This function reads a column from the content of the page using the
- * content key as defined by the canonalization process. The function
+ * content key as defined by the canonicalization process. The function
  * cannot be called before the content::on_path_execute() function is
  * called and the key properly initialized.
  *
@@ -4826,7 +4829,7 @@ bool content::modified_content_impl(path_info_t& ipath)
  *
  * \return The content of the row as a Cassandra value.
  */
-QtCassandra::QCassandraValue content::get_content_parameter(path_info_t& ipath, const QString& param_name, param_revision_t revision)
+QtCassandra::QCassandraValue content::get_content_parameter(path_info_t& ipath, QString const& param_name, param_revision_t revision)
 {
     switch(revision)
     {
@@ -5388,9 +5391,13 @@ void content::add_content(const QString& path, const QString& plugin_owner)
  * add_content() is called (i.e. the block of data referenced by
  * \p path is not defined yet.)
  *
+ * \exception content_exception_unexpected_revision_type
+ * This exception is raised if the \p revision_type parameter is not
+ * equal to the revision_type that was used to create this page.
+ *
  * \param[in] path  The path of this parameter (i.e. /types/taxonomy)
  * \param[in] name  The name of this parameter (i.e. "Website Taxonomy")
- * \param[in] revision  The type of revision for this parameter (i.e. global, branch, revision)
+ * \param[in] revision_type  The type of revision for this parameter (i.e. global, branch, revision)
  * \param[in] locale  The locale (\<language>_\<country>) for this data.
  * \param[in] data  The data of this parameter.
  *
@@ -5486,11 +5493,11 @@ void content::set_param_overwrite(const QString& path, const QString& name, bool
  *
  * \param[in] path  The path of this parameter.
  * \param[in] name  The name of the parameter to modify.
- * \param[in] type  The new type for this parameter.
+ * \param[in] param_type  The new type for this parameter.
  *
  * \sa add_param()
  */
-void content::set_param_type(const QString& path, const QString& name, param_type_t param_type)
+void content::set_param_type(QString const& path, QString const& name, param_type_t param_type)
 {
     content_block_map_t::iterator b(f_blocks.find(path));
     if(b == f_blocks.end())
@@ -5941,7 +5948,7 @@ void content::on_save_content()
  * plugins such as the JavaScript plugin to send their compressed and
  * minimized version of the file instead of the source version.
  *
- * \important
+ * \warning
  * This function generates two signals: check_attachment_security()
  * and process_attachment(). If your plugin can check the file for
  * security reason, implement the check_attachment_security(). In
@@ -6244,7 +6251,7 @@ void content::add_javascript(path_info_t& ipath, QDomDocument doc, QString const
             QtCassandra::QCassandraCells const& ref_cells(row->cells());
             if(ref_cells.isEmpty())
             {
-                SNAP_LOG_ERROR("file referenced as JavaScript \"")(name)("\" has not reference back to ")(site_key);
+                SNAP_LOG_ERROR("file referenced as JavaScript \"")(name)("\" has no reference back to ")(site_key);
                 continue;
             }
             // the key of this cell is the path we want to use to the file

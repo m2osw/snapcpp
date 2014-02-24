@@ -69,7 +69,7 @@ public:
     void                on_load_file(snap_child::post_file_t& file, bool& found);
 
     QString             get_layout(content::path_info_t& ipath, const QString& column_name);
-    QDomDocument        create_document(content::path_info_t& ipath, plugin *p);
+    QDomDocument        create_document(content::path_info_t& ipath, plugin *content_plugin);
     QString             apply_layout(content::path_info_t& ipath, layout_content *plugin, const QString& ctemplate = "");
     QString             define_layout(content::path_info_t& ipath, QString& layout_name);
     void                create_body(QDomDocument& doc, content::path_info_t& ipath, QString const& xsl, layout_content *content_plugin, const QString& ctemplate = "", bool handle_boxes = false, QString const& layout_name = "");
