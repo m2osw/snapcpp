@@ -390,7 +390,7 @@ void favicon::output(content::path_info_t& ipath)
  * as the main content on the page although the content of some
  * columns may be interleaved with this content.
  *
- * Note that this is NOT the HTML output. It is the <page> tag of
+ * Note that this is NOT the HTML output. It is the \<page\> tag of
  * the snap XML file format. The theme layout XSLT will be used
  * to generate the final output.
  *
@@ -459,7 +459,7 @@ void favicon::on_generate_page_content(content::path_info_t& ipath, QDomElement&
  * found anywhere, then the default can be used (i.e. favicon.ico in the
  * root.)
  *
- * \param[in] cpath  The page for which we are searching the icon
+ * \param[in] ipath  The page for which we are searching the icon
  * \param[out] result  The result is saved in this array.
  */
 void favicon::get_icon(content::path_info_t& ipath, content::field_search::search_result_t& result)

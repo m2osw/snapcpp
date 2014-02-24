@@ -222,7 +222,7 @@ bool validate_name(QString const& name, QString& error)
  * <major-version>.<minor-version>[<patch>]
  * \endcode
  *
- * where <patch> is a letter, can easily be converted to a 1.2.3 type of
+ * where \<patch\> is a letter, can easily be converted to a 1.2.3 type of
  * version where the letters are numbered starting at 1 (if no patch letter,
  * use zero.)
  *
@@ -512,7 +512,7 @@ bool version::set_version_string(QString const& version_string)
  * numbers. The function canonicalize the version array by removing
  * any ending zeroes.
  *
- * \param[in] version  The value of the new version.
+ * \param[in] version_vector  The value of the new version.
  */
 void version::set_version(version_numbers_vector_t const& version_vector)
 {

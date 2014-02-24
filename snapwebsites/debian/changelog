@@ -1,11 +1,13 @@
 snapwebsites (0.1.17~saucy) UNRELEASED; urgency=high
 
   [ Alexis Wilke ]
-  *
+  * Worked on the documentation so it would actually generate it properly
+    with doxygen.
+  * Clean ups.
 
   [ R. Douglas Barbieri ]
   * Updated the error in the init.d file: the snapbackend server requires
-  the "--background" flag.
+    the "--background" flag.
   * Signal handler now emits stack trace.
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Fri, 21 Feb 2014 17:58:23 -0800

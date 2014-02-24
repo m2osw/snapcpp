@@ -78,6 +78,7 @@ namespace snap
  * At this point the output thread is not protected against exceptions.
  * However, it is likely to block the entire process if an exception occurs!
  *
+ * \param[in] p  A pointer to the process.
  * \param[in] output  The output just received by the last read() call.
  */
 

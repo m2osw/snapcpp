@@ -222,7 +222,7 @@ int tcp_client::read(char *buf, size_t size)
 /** \brief Read one line.
  *
  * This function reads one line from the current location up to the next
- * '\n' character. We do not have any special handling of the '\r'
+ * '\\n' character. We do not have any special handling of the '\\r'
  * character.
  *
  * The function may return 0 in which case the server closed the connection.
@@ -383,7 +383,7 @@ tcp_server::tcp_server(const std::string& addr, int port, int max_connections, b
  *
  * This function ensures that the server sockets get cleaned up.
  *
- * If the \pauto_close parameter was set to true in the constructor, then
+ * If the \p auto_close parameter was set to true in the constructor, then
  * the last accepter socket gets closed by this function.
  */
 tcp_server::~tcp_server()

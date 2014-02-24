@@ -569,8 +569,6 @@ int32_t sessions::session_info::get_session_random() const
  * This is used by the different low level functions to determine which
  * of the plugins is responsible to process a request.
  *
- * \param[in] plugin_owner  The name of the owner of that plugin.
- *
  * \sa set_plugin_owner()
  */
 QString const& sessions::session_info::get_plugin_owner() const
@@ -876,11 +874,13 @@ bool sessions::generate_sessions_impl(sessions * /*r*/)
  * This function generates the contents of the statistics page of the
  * sessions plugin.
  *
- * \param[in] path  The path to this page.
- * \param[in] page  The page element being generated.
- * \param[in] body  The body element being generated.
+ * \param[in,out] ipath  The path to this page.
+ * \param[in,out] page  The page element being generated.
+ * \param[in,out] body  The body element being generated.
+ * \param[in] ctemplate  The default data in case the main data is not yet
+ *                       available.
  */
-void sessions::on_generate_main_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, const QString& ctemplate)
+void sessions::on_generate_main_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate)
 {
     // generate the statistics in the body then call the content generator
     // (how do we do that at this point? do we assume that the backend takes
@@ -928,7 +928,7 @@ void sessions::on_generate_main_content(content::path_info_t& ipath, QDomElement
  * The function checks that the time the session will live is over 1
  * minute. Anything smaller than that and you get a throw.
  *
- * \bugs
+ * \bug
  * We are using the OpenSSL RAND_bytes() function that makes use of a
  * context to know which randomizer to use. We should look into forcing
  * a specific generator when called.
@@ -1188,7 +1188,7 @@ void sessions::save_session(session_info& info, bool new_random)
  * \param[out] info  The variable where the session variables get saved.
  * \param[in] use_once  Whether this session can be used more than once.
  */
-void sessions::load_session(const QString& session_key, session_info& info, bool use_once)
+void sessions::load_session(QString const& session_key, session_info& info, bool use_once)
 {
     // reset this info (although it is likely already brand new...)
     info = session_info();
@@ -1342,15 +1342,15 @@ void sessions::load_session(const QString& session_key, session_info& info, bool
  * time the user access the website so the data gets updated to TTL + 1
  * as expected.
  *
- * \param[in] session_key  The session key as defined when you called
- *                         create_session().
+ * \param[in] info  The session key as defined when you called
+ *                  create_session().
  * \param[in] name  The name of the cell where the data is saved.
  * \param[in] data  The data to save in this session.
  *
  * \sa detach_from_session()
  * \sa get_from_session()
  */
-void sessions::attach_to_session(const session_info& info, const QString& name, const QString& data)
+void sessions::attach_to_session(session_info const& info, QString const& name, QString const& data)
 {
     QString key(f_snap->get_website_key() + "/" + info.get_session_key());
 

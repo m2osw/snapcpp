@@ -154,8 +154,7 @@ void char_chart::content_update(int64_t variables_timestamp)
  * so we tell the path plugin that we're taking control to
  * manage this path.
  *
- * \param[in] path_plugin  A pointer to the path plugin.
- * \param[in] cpath  The path being handled dynamically.
+ * \param[in,out] ipath  The path being handled dynamically.
  * \param[in,out] plugin_info  If you understand that cpath, set yourself here.
  */
 void char_chart::on_can_handle_dynamic_path(content::path_info_t& ipath, path::dynamic_plugin_t& plugin_info)
@@ -172,7 +171,9 @@ void char_chart::on_can_handle_dynamic_path(content::path_info_t& ipath, path::d
  *
  * This is a dynamic page.
  *
- * \param[in] cpath  The canonalized path.
+ * \param[in,out] ipath  The canonicalized path.
+ *
+ * \return true if the function worked as expected, false otherwise.
  */
 bool char_chart::on_path_execute(content::path_info_t& ipath)
 {

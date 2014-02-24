@@ -39,7 +39,7 @@ SNAP_PLUGIN_START(feed, 1, 0)
  *
  * \return A pointer to the name.
  */
-const char *get_name(name_t name)
+char const *get_name(name_t name)
 {
     switch(name) {
     case SNAP_NAME_SHORTURL_DATE:
@@ -102,7 +102,7 @@ void feed::on_bootstrap(snap_child *snap)
 {
     f_snap = snap;
 
-    SNAP_LISTEN(feed, "layout", layout::layout, generate_header_content, _1, _2, _3, _4, _5);
+    SNAP_LISTEN(feed, "layout", layout::layout, generate_header_content, _1, _2, _3, _4);
     SNAP_LISTEN(feed, "content", content::content, create_content, _1, _2, _3);
     SNAP_LISTEN(feed, "path", path::path, can_handle_dynamic_path, _1, _2, _3);
 }
@@ -168,7 +168,7 @@ int64_t feed::do_update(int64_t last_updated)
  */
 void feed::initial_update(int64_t variables_timestamp)
 {
-    get_feed();
+    get_feed_table();
 }
 
 
@@ -194,7 +194,7 @@ void feed::content_update(int64_t variables_timestamp)
  *
  * \return The pointer to the feed table.
  */
-QSharedPointer<QtCassandra::QCassandraTable> feed::get_feed()
+QSharedPointer<QtCassandra::QCassandraTable> feed::get_feed_table()
 {
     if(f_feed.isNull())
     {
@@ -217,7 +217,7 @@ QSharedPointer<QtCassandra::QCassandraTable> feed::get_feed()
  *
  * \return true if the content is properly generated, false otherwise.
  */
-bool feed::on_path_execute(const QString& cpath)
+bool feed::on_path_execute(QString const& cpath)
 {
     f_snap->output(layout::layout::instance()->apply_layout(cpath, this));
 
@@ -234,16 +234,17 @@ bool feed::on_path_execute(const QString& cpath)
  * as the main content on the page although the content of some
  * columns may be interleaved with this content.
  *
- * Note that this is NOT the HTML output. It is the <page> tag of
+ * Note that this is NOT the HTML output. It is the \<page\> tag of
  * the snap XML file format. The theme layout XSLT will be used
  * to generate the final output.
  *
- * \param[in] l  The layout pointer.
- * \param[in] path  The path being managed.
+ * \param[in,out] ipath  The path being managed.
  * \param[in,out] page  The page being generated.
  * \param[in,out] body  The body being generated.
+ * \param[in] ctemplate  The template to use in case other parameters are
+ *                       not available.
  */
-void feed::on_generate_main_content(const QString& cpath, QDomElement& page, QDomElement& body, const QString& ctemplate)
+void feed::on_generate_main_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate)
 {
     if(cpath.startsWith("s/"))
     {
@@ -282,13 +283,12 @@ void feed::on_generate_main_content(const QString& cpath, QDomElement& page, QDo
  * This function generates some content that is expected in a page
  * by default.
  *
- * \param[in] l  The layout pointer.
- * \param[in] cpath  The path being managed.
- * \param[in,out] page  The page being generated.
- * \param[in,out] body  The body being generated.
+ * \param[in,out] ipath  The path being managed.
+ * \param[in,out] header  The header being generated.
+ * \param[in,out] metadata  The metadata being generated.
  * \param[in] ctemplate  The path to a template if cpath does not exist.
  */
-void feed::on_generate_header_content(const QString& cpath, QDomElement& header, QDomElement& metadata, const QString& ctemplate)
+void feed::on_generate_header_content(content::path_info_t& ipath, QDomElement& header, QDomElement& metadata, QString const& ctemplate)
 {
 	static_cast<void>(header);
 

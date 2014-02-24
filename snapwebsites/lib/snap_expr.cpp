@@ -3226,8 +3226,8 @@ void list_expr_copy_result(const rule& r, QSharedPointer<token_node>& t)
  *
  * Return the portion of the \<string> starting at \<start> and with at
  * most \<length> characters.
+ *
  * \param[in] script  The script to be compiled to binary code bytes.
- * \param[out] result  The resulting binary code of \p script.
  *
  * \return A pointer to the program tree or nullptr.
  */

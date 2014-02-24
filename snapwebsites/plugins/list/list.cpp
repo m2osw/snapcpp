@@ -338,7 +338,7 @@ QtCassandra::QCassandraTable::pointer_t list::get_list_table()
  * as the main content on the page although the content of some
  * columns may be interleaved with this content.
  *
- * Note that this is NOT the HTML output. It is the <page> tag of
+ * Note that this is NOT the HTML output. It is the \<page\> tag of
  * the snap XML file format. The theme layout XSLT will be used
  * to generate the final output.
  *
@@ -966,7 +966,8 @@ int list::generate_all_lists_for_page(QString const& site_key, QString const& pa
  * on a per branch basis. This function makes use of the branch
  * defined in the ipath.
  *
- * \param[in,out] ipath  The ipath used to find the list.
+ * \param[in,out] list_ipath  The ipath used to find the list.
+ * \param[in,out] page_ipath  The ipath used to find the page.
  *
  * \return true if the page is to be included.
  */
@@ -1045,7 +1046,8 @@ bool list::run_list_check(content::path_info_t& list_ipath, content::path_info_t
  * on a per branch basis. This function makes use of the branch
  * defined in the ipath.
  *
- * \param[in,out] ipath  The ipath used to find the list.
+ * \param[in,out] list_ipath  The ipath used to find the list.
+ * \param[in,out] page_ipath  The ipath used to find the page.
  *
  * \return The item key as a string.
  */

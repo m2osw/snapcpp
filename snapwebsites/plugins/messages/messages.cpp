@@ -93,7 +93,7 @@ messages::message::message()
  * \param[in] title  The "title" of the message, it cannot be empty.
  * \param[in] body  The body of the message, it may be empty.
  */
-messages::message::message(message_type_t t, const QString& title, const QString& body)
+messages::message::message(message_type_t t, QString const& title, QString const& body)
     : f_type(t)
     , f_id(++g_message_id)
     , f_title(title)
@@ -110,7 +110,7 @@ messages::message::message(message_type_t t, const QString& title, const QString
  *
  * \param[in] rhs  The message to copy.
  */
-messages::message::message(const message& rhs)
+messages::message::message(message const& rhs)
     : f_type(rhs.f_type)
     , f_id(rhs.f_id)
     , f_title(rhs.f_title)

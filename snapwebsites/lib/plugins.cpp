@@ -346,7 +346,10 @@ bool exists(QString const& name)
  * Do not attempt to call this function directly or you'll get an
  * exception.
  *
- * \exception 
+ * \exception plugin_exception
+ * If the name is empty, the name does not correspond to the plugin
+ * being loaded, or the plugin is being loaded for the second time,
+ * then this exception is raised.
  *
  * \param[in] name  The name of the plugin being added.
  * \param[in] p  A pointer to the plugin being added.

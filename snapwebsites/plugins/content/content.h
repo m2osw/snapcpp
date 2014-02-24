@@ -486,7 +486,7 @@ public:
     QtCassandra::QCassandraTable::pointer_t get_content_table();
     QtCassandra::QCassandraTable::pointer_t get_files_table();
     QtCassandra::QCassandraTable::pointer_t get_data_table();
-    QtCassandra::QCassandraValue get_content_parameter(path_info_t& path, QString const& name, param_revision_t revision_type);
+    QtCassandra::QCassandraValue get_content_parameter(path_info_t& path, QString const& param_name, param_revision_t revision_type);
 
     // revision control
     snap_child *        get_snap();

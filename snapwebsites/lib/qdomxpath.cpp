@@ -423,9 +423,38 @@ const QDomXPath::instruction_t  QDomXPath::VERSION_MINOR;
  * \endcode
  */
 
+
+/** \typedef QDomXPath::instruction_t
+ * \brief Instructions composed the program once the XPath is compiled.
+ *
+ * An XPath is composed of many elements. In order to make it easy to
+ * process an XPath against XML data, we compile the XPath to a byte
+ * code language, which is defined as a vector of bytes representing
+ * instructions, sizes, or immediate data.
+ *
+ * This works along an execution environment structure that keeps track
+ * of the data (list of nodes and current status in general.) The status
+ * uses a stack to handle expressions as with the forth language.
+ *
+ * We use a current state as well as the stack. The current state is
+ * always accessible (i.e. it is like having access to a variable.)
+ */
+
+
+/** \brief Implementation of the DOM based XPath.
+ *
+ * This class is used to implement the internals of the XPath based
+ * on a DOM. The class is an xpath 1.0 parser which makes use of a DOM
+ * as its source of content. This is different from the standard XPath
+ * implementation offered by Qt which only works on an XML stream.
+ *
+ * This implementation is specifically adapted for Snap! since Snap!
+ * works with DOMs.
+ */
 class QDomXPath::QDomXPathImpl
 {
 public:
+
 
 /** \brief The character type used by this class.
  *
@@ -872,7 +901,7 @@ public:
      *
      * All other types are lost after this call.
      *
-     * \param[in] b  The new integer value for this atomtic type.
+     * \param[in] integer  The new integer value for this atomtic type.
      */
     void setValue(const int64_t integer)
     {
@@ -1013,7 +1042,7 @@ public:
      *
      * All other types are lost after this call.
      *
-     * \param[in] b  The new double value for this atomtic type.
+     * \param[in] real  The new double value for this atomtic type.
      */
     void setValue(const double real)
     {
@@ -1575,11 +1604,13 @@ private:
     //context_t                   f_context;  // the current context
 };
 
+
 /** \brief An array of variants.
  *
  * The array of variants is especially useful as a function stack.
  */
 typedef QVector<variant_t>  variant_vector_t;
+
 
 /** \brief Current function being run.
  *
@@ -1684,21 +1715,6 @@ typedef uint32_t (QDomXPathImpl::*disassembly_function_t)(uint32_t pc);
  */
 static disassembly_function_t const g_disassemble_instructions[256];
 
-/** \typedef instruction_t
- * \brief Instructions composed the program once the XPath is compiled.
- *
- * An XPath is composed of many elements. In order to make it easy to
- * process an XPath against XML data, we compile the XPath to a byte
- * code language, which is defined as a vector of bytes representing
- * instructions, sizes, or immediate data.
- *
- * This works along an execution environment structure that keeps track
- * of the data (list of nodes and current status in general.) The status
- * uses a stack to handle expressions as with the forth language.
- *
- * We use a current state as well as the stack. The current state is
- * always accessible (i.e. it is like having access to a variable.)
- */
 
 static const QDomXPath::instruction_t      INST_END                        = 0x00;
 static const QDomXPath::instruction_t      INST_CALL                       = 0x01;
@@ -8820,6 +8836,7 @@ QDomXPath::QDomXPathImpl::disassembly_function_t const QDomXPath::QDomXPathImpl:
  * The following is 'UnionExpr' and corresponding children rules as
  * defined on the w3c website:
  *
+ * \code
  * Expr ::= OrExpr
  *
  * PrimaryExpr ::= VariableReference
@@ -9032,6 +9049,7 @@ QDomXPath::QDomXPathImpl::disassembly_function_t const QDomXPath::QDomXPathImpl:
  * Prefix ::= NCName
  *
  * LocalPart ::= NCName
+ * \endcode
  */
 
 
@@ -9296,7 +9314,7 @@ bool QDomXPath::hasVariable(const QString& name)
  * This function is used to retrieve the value of a variable bound with
  * the XPath.
  *
- * It is used internally with the $<QName> syntax. Note that if a function
+ * It is used internally with the $\<QName\> syntax. Note that if a function
  * is called, then that function's variables are checked first and will
  * shadow the main variables.
  *

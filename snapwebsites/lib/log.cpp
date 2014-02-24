@@ -82,8 +82,6 @@ void unconfigure()
  * configure() is called from the server::config() function. If no configuration
  * file is defined then the other functions will do nothing.
  *
- * \param[in] filename  The name of the configuration file.
- *
  * \sa fatal()
  * \sa error()
  * \sa warning()

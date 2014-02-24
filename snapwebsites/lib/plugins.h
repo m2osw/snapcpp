@@ -73,13 +73,13 @@ private:
 
 typedef std::shared_ptr<plugin> plugin_ptr_t;
 
-QStringList list_all(const QString& plugin_path);
-bool load(const QString& plugin_path, plugin_ptr_t server, const QStringList& list_of_plugins);
+QStringList list_all(QString const& plugin_path);
+bool load(QString const& plugin_path, plugin_ptr_t server, QStringList const& list_of_plugins);
 QString find_plugin_filename(QStringList const& plugin_paths, QString const& name);
-bool exists(const QString& name);
-void register_plugin(const QString& name, plugin *p);
-plugin *get_plugin(const QString& name);
-bool verify_plugin_name(const QString& name);
+bool exists(QString const& name);
+void register_plugin(QString const& name, plugin *p);
+plugin *get_plugin(QString const& name);
+bool verify_plugin_name(QString const& name);
 
 /** \brief Initialize a plugin by creating a mini-factory.
  *
@@ -193,7 +193,7 @@ bool verify_plugin_name(const QString& name);
  * \param[in] emitter_name  The name of the plugin emitting this signal.
  * \param[in] emitter_class  The class with qualifiers if necessary of the plugin emitting this signal.
  * \param[in] signal  The name of the signal to listen to.
- * \param[in] args...  The list of arguments to that signal.
+ * \param[in] args  The list of arguments to that signal.
  */
 #define SNAP_LISTEN(name, emitter_name, emitter_class, signal, args...) \
     if(::snap::plugins::exists(emitter_name)) \

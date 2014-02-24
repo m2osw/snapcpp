@@ -31,7 +31,7 @@
 class QDomXPathException : public std::runtime_error
 {
 public:
-    QDomXPathException(const std::string& err)
+    QDomXPathException(std::string const& err)
         : runtime_error(err)
     {
     }
@@ -40,7 +40,7 @@ public:
 class QDomXPathException_InternalError : public QDomXPathException
 {
 public:
-    QDomXPathException_InternalError(const std::string& err)
+    QDomXPathException_InternalError(std::string const& err)
         : QDomXPathException(err)
     {
     }
@@ -49,7 +49,7 @@ public:
 class QDomXPathException_UndefinedInstructionError : public QDomXPathException
 {
 public:
-    QDomXPathException_UndefinedInstructionError(const std::string& err)
+    QDomXPathException_UndefinedInstructionError(std::string const& err)
         : QDomXPathException(err)
     {
     }
@@ -58,7 +58,7 @@ public:
 class QDomXPathException_UnknownFunctionError : public QDomXPathException
 {
 public:
-    QDomXPathException_UnknownFunctionError(const std::string& err)
+    QDomXPathException_UnknownFunctionError(std::string const& err)
         : QDomXPathException(err)
     {
     }
@@ -67,7 +67,7 @@ public:
 class QDomXPathException_InvalidMagic : public QDomXPathException
 {
 public:
-    QDomXPathException_InvalidMagic(const std::string& err)
+    QDomXPathException_InvalidMagic(std::string const& err)
         : QDomXPathException(err)
     {
     }
@@ -76,7 +76,7 @@ public:
 class QDomXPathException_InvalidError : public QDomXPathException
 {
 public:
-    QDomXPathException_InvalidError(const std::string& err)
+    QDomXPathException_InvalidError(std::string const& err)
         : QDomXPathException(err)
     {
     }
@@ -85,7 +85,7 @@ public:
 class QDomXPathException_InvalidCharacter : public QDomXPathException
 {
 public:
-    QDomXPathException_InvalidCharacter(const std::string& err)
+    QDomXPathException_InvalidCharacter(std::string const& err)
         : QDomXPathException(err)
     {
     }
@@ -94,7 +94,7 @@ public:
 class QDomXPathException_InvalidString : public QDomXPathException
 {
 public:
-    QDomXPathException_InvalidString(const std::string& err)
+    QDomXPathException_InvalidString(std::string const& err)
         : QDomXPathException(err)
     {
     }
@@ -103,7 +103,7 @@ public:
 class QDomXPathException_TooManyUnget : public QDomXPathException
 {
 public:
-    QDomXPathException_TooManyUnget(const std::string& err)
+    QDomXPathException_TooManyUnget(std::string const& err)
         : QDomXPathException(err)
     {
     }
@@ -112,7 +112,7 @@ public:
 class QDomXPathException_SyntaxError : public QDomXPathException
 {
 public:
-    QDomXPathException_SyntaxError(const std::string& err)
+    QDomXPathException_SyntaxError(std::string const& err)
         : QDomXPathException(err)
     {
     }
@@ -121,7 +121,7 @@ public:
 class QDomXPathException_ExecutionTime : public QDomXPathException
 {
 public:
-    QDomXPathException_ExecutionTime(const std::string& err)
+    QDomXPathException_ExecutionTime(std::string const& err)
         : QDomXPathException(err)
     {
     }
@@ -130,7 +130,7 @@ public:
 class QDomXPathException_NotImplemented : public QDomXPathException_ExecutionTime
 {
 public:
-    QDomXPathException_NotImplemented(const std::string& err)
+    QDomXPathException_NotImplemented(std::string const& err)
         : QDomXPathException_ExecutionTime(err)
     {
     }
@@ -139,7 +139,7 @@ public:
 class QDomXPathException_OutOfRange : public QDomXPathException_ExecutionTime
 {
 public:
-    QDomXPathException_OutOfRange(const std::string& err)
+    QDomXPathException_OutOfRange(std::string const& err)
         : QDomXPathException_ExecutionTime(err)
     {
     }
@@ -148,7 +148,7 @@ public:
 class QDomXPathException_EmptyStack : public QDomXPathException_ExecutionTime
 {
 public:
-    QDomXPathException_EmptyStack(const std::string& err)
+    QDomXPathException_EmptyStack(std::string const& err)
         : QDomXPathException_ExecutionTime(err)
     {
     }
@@ -157,7 +157,7 @@ public:
 class QDomXPathException_EmptyContext : public QDomXPathException_ExecutionTime
 {
 public:
-    QDomXPathException_EmptyContext(const std::string& err)
+    QDomXPathException_EmptyContext(std::string const& err)
         : QDomXPathException_ExecutionTime(err)
     {
     }
@@ -166,7 +166,7 @@ public:
 class QDomXPathException_WrongType : public QDomXPathException_ExecutionTime
 {
 public:
-    QDomXPathException_WrongType(const std::string& err)
+    QDomXPathException_WrongType(std::string const& err)
         : QDomXPathException_ExecutionTime(err)
     {
     }
@@ -175,7 +175,7 @@ public:
 class QDomXPathException_UndefinedVariable : public QDomXPathException_ExecutionTime
 {
 public:
-    QDomXPathException_UndefinedVariable(const std::string& err)
+    QDomXPathException_UndefinedVariable(std::string const& err)
         : QDomXPathException_ExecutionTime(err)
     {
     }
@@ -191,21 +191,21 @@ public:
     typedef uint8_t                 instruction_t;
     typedef QVector<instruction_t>  program_t;
 
-    static const char *             MAGIC;
-    static const instruction_t      VERSION_MAJOR = 1;
-    static const instruction_t      VERSION_MINOR = 0;
+    static char const *             MAGIC;
+    static instruction_t const      VERSION_MAJOR = 1;
+    static instruction_t const      VERSION_MINOR = 0;
 
                                     QDomXPath();
                                     ~QDomXPath();
 
-    bool                            setXPath(const QString& xpath, bool show_commands = false);
+    bool                            setXPath(QString const& xpath, bool show_commands = false);
     QString                         getXPath() const;
-    void                            setProgram(const program_t& program, bool show_commands = false);
-    const program_t&                getProgram() const;
+    void                            setProgram(program_t const& program, bool show_commands = false);
+    program_t const&                getProgram() const;
 
-    void                            bindVariable(const QString& name, const QString& value);
-    bool                            hasVariable(const QString& name);
-    QString                         getVariable(const QString& name);
+    void                            bindVariable(QString const& name, QString const& value);
+    bool                            hasVariable(QString const& name);
+    QString                         getVariable(QString const& name);
 
     node_vector_t                   apply(QDomNode node) const;
     node_vector_t                   apply(node_vector_t node) const;

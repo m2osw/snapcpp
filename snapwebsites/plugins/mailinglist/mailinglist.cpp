@@ -63,11 +63,11 @@ const char *get_name(name_t name)
  * with the get_mailinglist_table() function.
  *
  * \param[in] parent  The mailinglist object initializing this list.
- * \param[in] name  The name of the list to attach to.
+ * \param[in] list_name  The name of the list to attach to.
  *
  * \sa get_mailinglist_table()
  */
-mailinglist::list::list(mailinglist *parent, const QString& list_name)
+mailinglist::list::list(mailinglist *parent, QString const& list_name)
     : f_parent(parent)
     , f_name(list_name)
     , f_table(f_parent->get_mailinglist_table())

@@ -197,7 +197,7 @@ void editor::on_generate_main_content(content::path_info_t& ipath, QDomElement& 
  * Look for a way to generate the editor data only if necessary (too
  * complex for now.)
  *
- * \param[in] path  The path being managed.
+ * \param[in,out] ipath  The path being managed.
  * \param[in,out] header  The header being generated.
  * \param[in,out] metadata  The metadata being generated.
  * \param[in] ctemplate  The template in case path does not exist.
@@ -228,7 +228,7 @@ void editor::on_generate_header_content(content::path_info_t& ipath, QDomElement
 }
 
 
-/** \brief Check whether \p cpath matches our introducers.
+/* \brief Check whether \p cpath matches our introducers.
  *
  * This function checks that cpath matches our introducer and if
  * so we tell the path plugin that we're taking control to
@@ -291,7 +291,7 @@ void editor::on_generate_header_content(content::path_info_t& ipath, QDomElement
  * currently supported (mainly because the user does not have
  * permission.)
  *
- * \param[in] cpath  The canonalized path.
+ * \param[in,out] ipath  The canonicalized path.
  *
  * \return true if the processing worked as expected, false if the page
  *         cannot be created ("Page Not Present" results on false)

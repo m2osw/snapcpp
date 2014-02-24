@@ -2530,8 +2530,8 @@ bool snap_child::process(int socket)
         // this line so we avoid a network connection altogether
         connect_cassandra();
 
-        canonicalize_domain();      // using the URI, find the domain core::rules and start the canonalization process
-        canonicalize_website();     // using the canonicalized domain, find the website core::rules and continue the canonalization process
+        canonicalize_domain();      // using the URI, find the domain core::rules and start the canonicalization process
+        canonicalize_website();     // using the canonicalized domain, find the website core::rules and continue the canonicalization process
 
         // check whether this website has a redirect and apply it if necessary
         // (not a full 301, just show site B instead of site A)
@@ -2836,26 +2836,26 @@ snap_child::status_t snap_child::check_status()
  * this point the script does not tweak that data.
  *
  * To make sure that the entire environment is sent, snap.cgi starts the
- * feed with "#START\n" and terminate it with "#END\n".
+ * feed with "\#START\\n" and terminate it with "\#END\\n".
  *
  * Note that unless we are receiving the Apache environment from the snap.cgi
  * tool, we do NOT return. This is important because when returning we start
  * generating a web page which is not what we want for the other instructions
- * such as the #INFO.
+ * such as the \#INFO.
  *
  * \section commands Understood Commands
  *
- * \li #START
+ * \li \#START
  *
  * Start passing the environment to the server.
  *
- * \li #INFO
+ * \li \#INFO
  *
  * Request for information about the server. The result is an environment
  * like variable/value pairs. Mainly versions are returned in that buffer.
- * Use the #STATS for statistics information.
+ * Use the \#STATS for statistics information.
  *
- * \li #STATS
+ * \li \#STATS
  *
  * Request for statistics about this server instance. The result is an
  * environment like variable/value pairs. This command generates values
@@ -3895,7 +3895,7 @@ QtCassandra::QCassandraTable::pointer_t snap_child::create_table(const QString& 
 /** \brief Canonalize the domain information.
  *
  * This function uses the URI to find the domain core::rules and
- * start the canonalization process.
+ * start the canonicalization process.
  *
  * The canonicalized domain is a domain name with sub-domains that
  * are required. All the optional sub-domains will be removed.
@@ -4049,12 +4049,12 @@ void snap_child::canonicalize_domain()
 }
 
 
-/** \brief Finish the canonalization process.
+/** \brief Finish the canonicalization process.
  *
  * The function reads the website core::rules and continue the parsing process
  * of the URI.
  *
- * The sub-domain and domain canonalization was accomplished in the previous
+ * The sub-domain and domain canonicalization was accomplished in the previous
  * process: canonicalize_domain(). This is not done again in the websites.
  *
  * This process includes the following checks:
@@ -4813,9 +4813,9 @@ bool snap_child::verify_language_name(QString& lang)
  * \warning
  * The input string is changed even if the country is not found.
  *
- * \param[in,out] lang  The language being checked.
+ * \param[in,out] country  The country being checked.
  *
- * \return true if the language is valid, false in all other cases.
+ * \return true if the country is valid, false in all other cases.
  */
 bool snap_child::verify_country_name(QString& country)
 {
@@ -4912,7 +4912,7 @@ void snap_child::site_redirect()
  *
  * The path may include a query string and an anchor.
  *
- * \important
+ * \warning
  * The function does not return since after sending a redirect to a client
  * there is nothing more you can do. So if you need to save some data, make
  * sure to do it before this call. Note also that this function calls the
@@ -6009,8 +6009,7 @@ void snap_child::output_headers(header_mode_t modes)
  * The same cookie can be redefined multiple times. Calling the function
  * again overwrites a previous call with the same "name" parameter.
  *
- * \param[in] name  The name of the cookie.
- * \param[in] cookie  The cookie value, expiration, etc.
+ * \param[in] cookie_info  The cookie value, expiration, etc.
  *
  * \sa cookie()
  * \sa cookie_is_defined()
@@ -6081,7 +6080,7 @@ void snap_child::output_cookies()
  * other server) so that way all the servers can communicate and make sure
  * that their name is indeed unique.
  *
- * \return A string with <server name>-<unique number>
+ * \return A string with \<server name\>-\<unique number\>
  */
 QString snap_child::get_unique_number()
 {

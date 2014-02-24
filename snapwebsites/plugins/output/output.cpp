@@ -29,7 +29,7 @@
 SNAP_PLUGIN_START(output, 1, 0)
 
 // using the SNAP_NAME_CONTENT_... for this one.
-/** \brief Get a fixed output name.
+/* \brief Get a fixed output name.
  *
  * The output plugin makes use of different names in the database. This
  * function ensures that you get the right spelling for a given name.
@@ -239,7 +239,7 @@ bool output::on_path_execute(content::path_info_t& ipath)
  * as the main content on the page although the content of some
  * columns may be interleaved with this content.
  *
- * Note that this is NOT the HTML output. It is the <page> tag of
+ * Note that this is NOT the HTML output. It is the \<page\> tag of
  * the snap XML file format. The theme layout XSLT will be used
  * to generate the final output.
  *
@@ -525,7 +525,7 @@ int output::js_property_count() const
 }
 
 
-QVariant output::js_property_get(const QString& name) const
+QVariant output::js_property_get(QString const& name) const
 {
     if(name == "modified")
     {

@@ -1,4 +1,4 @@
-// Snap Websites Server -- URI canonalization
+// Snap Websites Server -- URI canonicalization
 // Copyright (C) 2011-2014  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
@@ -786,7 +786,7 @@ QString const& snap_uri::protocol() const
  * \return true if the function succeeds, false otherwise
  */
 bool snap_uri::process_domain(QString const& full_domain_name,
-                QStringList& sub_domain_names, QString& domain_name, QString& tld)
+            QStringList& sub_domain_names, QString& domain_name, QString& tld)
 {
     // first we need to determine the TLD, we use the tld()
     // function from the libtld library for this purpose
@@ -871,7 +871,7 @@ bool snap_uri::process_domain(QString const& full_domain_name,
  * the doman name and the tld, then this exception is raised.
  *
  * \param[in] full_domain_name  A full domain name, without protocol, path,
- * query string or anchor.
+ *                              query string or anchor.
  */
 void snap_uri::set_domain(QString const& full_domain_name)
 {
