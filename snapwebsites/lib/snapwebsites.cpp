@@ -1172,18 +1172,23 @@ void server::listen()
 void server::sighandler( int sig )
 {
     QString signame;
+    bool output_stack_trace = true;
     switch( sig )
     {
         case SIGSEGV : signame = "SIGSEGV"; break;
         case SIGBUS  : signame = "SIGBUS";  break;
         case SIGFPE  : signame = "SIGFPE";  break;
         case SIGILL  : signame = "SIGILL";  break;
-        case SIGTERM : signame = "SIGTERM"; break;
-        case SIGINT  : signame = "SIGINT";  break;
+        case SIGTERM : signame = "SIGTERM"; output_stack_trace = false; break;
+        case SIGINT  : signame = "SIGINT";  output_stack_trace = false; break;
         default      : signame = "UNKNOWN";
     }
 
-    snap_exception_base::output_stack_trace();
+    if( output_stack_trace )
+    {
+        snap_exception_base::output_stack_trace();
+    }
+    //
     SNAP_LOG_FATAL("signal caught: ")(signame);
     f_instance->exit(1);
 }
