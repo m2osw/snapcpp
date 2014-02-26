@@ -95,7 +95,7 @@ add_library( ${PROJECT_NAME} SHARED
     snap_magic.cpp                              # support for MIME type
     snap_parser.cpp                             # lexer/parser for all our script like entries
     snap_pipe.cpp                               # RAII popen()/pclose() class
-	snap_stop_thread.cpp                        # Thread which listens on UDP and stops snapserver on request
+	snap_listen_thread.cpp                      # Thread which listens on UDP and allows snapsignal to direct snapserver
 	snap_thread.cpp                             # a C++ thread implementation
 	snap_uri.cpp                                # URI handling
     snap_utf8.cpp                               # UTF-8 functions

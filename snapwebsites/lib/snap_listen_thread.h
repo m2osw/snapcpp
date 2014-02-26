@@ -23,11 +23,11 @@
 namespace snap
 {
 
-class snap_stop_thread
+class snap_listen_thread
 	: public snap_thread::snap_runner
 {
 public:
-    snap_stop_thread();
+    snap_listen_thread();
 
 	virtual void run();
 

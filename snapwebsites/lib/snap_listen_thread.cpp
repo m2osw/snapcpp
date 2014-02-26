@@ -16,18 +16,18 @@
 // COMPLETENESS OR PERFORMANCE.
 //===============================================================================
 
-#include "snap_stop_thread.h"
+#include "snap_listen_thread.h"
 
 namespace snap
 {
 
-snap_stop_thread::snap_stop_thread()
-	: snap_runner("snap_stop_thread")
+snap_listen_thread::snap_listen_thread()
+    : snap_runner("snap_listen_thread")
 {
 }
 
 
-void snap_stop_thread::run()
+void snap_listen_thread::run()
 {
 }
 
