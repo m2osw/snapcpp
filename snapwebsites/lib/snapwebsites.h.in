@@ -23,6 +23,7 @@
 #include <advgetopt/advgetopt.h>
 
 #include <QDomDocument>
+#include <QThread>
 
 
 #define    SNAPWEBSITES_VERSION_MAJOR   @SNAPWEBSITES_VERSION_MAJOR@
@@ -201,6 +202,7 @@ private:
     static void sighandler( int sig );
 
     void process_connection(int socket);
+    void stop_thread_func();
 
     static pointer_t                        f_instance;
 
@@ -218,6 +220,8 @@ private:
     snap_child_vector_t                     f_children_waiting;
 
     getopt_ptr_t                            f_opt;
+
+    std::auto_ptr<QThread>                  f_stopThread;
 };
 
 } // namespace snap
