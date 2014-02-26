@@ -1041,6 +1041,67 @@ void server::detach()
     exit(0);
 }
 
+
+/** \brief Create a UDP server that receives udp_ping() messages.
+ *
+ * This static function is used to receive PING messages from the udp_ping()
+ * function. Other messages can also be sent such as RSET and STOP.
+ *
+ * The server is expected to be used with the recv() or timed_recv()
+ * functions to wait for a message and act accordingly. A server
+ * that makes use of these pings is expected to be waiting for some
+ * data which, once available requires additional processing. The
+ * server that handles the row data sends the PING to the server.
+ * For example, the sendmail plugin just saves the email data in
+ * the Cassandra database, then it sends a PING to the sendmail
+ * backend process. That backend process wakes up and actually
+ * processes the email by sending it to the mail server.
+ *
+ * \param[in] udp_addr_port  The IP addr and port ("addr:port") of the UDP server.
+ */
+server::udp_server_t server::udp_get_server( const QString& udp_addr_port )
+{
+    // TODO: we should have a common function to read and transform the
+    //       parameter to a valid IP/Port pair (see above)
+    //
+    QString addr, port;
+    int bracket( udp_addr_port.lastIndexOf("]") );
+    int p( udp_addr_port.lastIndexOf(":") );
+    if( (bracket != -1) && (p != -1) )
+    {
+        if(p > bracket)
+        {
+            // IPv6 port specification
+            addr = udp_addr_port.mid(0, bracket + 1); // include the ']'
+            port = udp_addr_port.mid(p + 1); // ignore the ':'
+        }
+        else
+        {
+            throw std::runtime_error("invalid [IPv6]:port specification, port missing for UDP ping");
+        }
+    }
+    else if(p != -1)
+    {
+        // IPv4 port specification
+        addr = udp_addr_port.mid(0, p); // ignore the ':'
+        port = udp_addr_port.mid(p + 1); // ignore the ':'
+    }
+    else
+    {
+        throw std::runtime_error("invalid IPv4:port specification, port missing for UDP ping");
+    }
+    //
+    udp_server_t server( new udp_client_server::udp_server(addr.toUtf8().data(), port.toInt()) );
+    if(server.isNull())
+    {
+        // this should not happen since std::badalloc is raised when allocation fails
+        // and the new operator will rethrow any exception that the constructor throws
+        throw std::runtime_error("server could not be allocated");
+    }
+    return server;
+}
+
+
 /** \brief Listen to incoming connections.
  *
  * This function loops over a listen waiting for connections to this
@@ -1123,6 +1184,17 @@ void server::listen()
         }
     }
 
+    // Listener thread
+    //
+    udp_server_t udp_signals( udp_get_server( get_parameter("snapserver_udp_signal") ) );
+    f_listen_runner.reset( new snap_listen_thread( udp_signals ) );
+    f_listen_thread.reset( new snap_thread("server::listen::thread", f_listen_runner.get() ) );
+    if( !f_listen_thread->start() )
+    {
+        SNAP_LOG_FATAL("cannot start listener thread!");
+        exit(1);
+    }
+
     // initialize the server
     tcp_client_server::tcp_server s(host[0].toUtf8().data(), p, max_pending_connections, true, true);
 
@@ -1155,11 +1227,26 @@ void server::listen()
         }
 
         // retrieve all the connections and process them
-        int socket(s.accept());
+        // timeout so we can check the listen thread runner
+        //
+        const int socket( s.accept( 500 /*1/2 sec*/ ) );
+
         // callee becomes the owner of socket
-        if(socket != -1)
+        if( socket == -2 )
         {
-            process_connection(socket);
+            switch( f_listen_runner->get_word() )
+            {
+            case snap_listen_thread::ServerStop:
+                return;
+
+            case snap_listen_thread::LogReset:
+                logging::reconfigure();
+                break;
+            }
+        }
+        else if( socket != -1 )
+        {
+            process_connection( socket );
         }
     }
 }

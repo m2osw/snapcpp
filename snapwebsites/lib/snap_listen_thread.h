@@ -19,6 +19,9 @@
 #pragma once
 
 #include "snap_thread.h"
+#include "udp_client_server.h"
+
+#include <QSharedPointer>
 
 namespace snap
 {
@@ -27,13 +30,19 @@ class snap_listen_thread
 	: public snap_thread::snap_runner
 {
 public:
-    snap_listen_thread();
+    typedef QSharedPointer<udp_client_server::udp_server> udp_server_t;
+
+    snap_listen_thread( udp_server_t udp_server );
 
 	virtual void run();
 
-private:
-    snap_thread::snap_mutex  f_mutex;
+    typedef enum { ServerStop, LogReset } word_t;
+    word_t get_word();
 
+private:
+    snap_thread::snap_mutex     f_mutex;
+    udp_server_t                f_server;
+    word_t                      f_word;
 };
 
 }
