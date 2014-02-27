@@ -108,10 +108,13 @@ public:
 
 private:
     advgetopt::getopt   f_opt;
+    typedef std::map<std::string,bool> map_t;
+    map_t f_optMap;
 
 	void usage();
-	void validate();
-	void start();
+    void validate();
+    void show_selected_servers() const;
+    void start();
 	void restart();
 	void stop();
 };
@@ -132,6 +135,7 @@ snap_init::snap_init( int argc, char *argv[] )
     }
 
 	validate();
+    show_selected_servers();
 
     const std::string command( f_opt.get_string("--") );
 	if( command == "start" )
@@ -156,12 +160,31 @@ snap_init::snap_init( int argc, char *argv[] )
 
 void snap_init::validate()
 {
-	const bool valid = ( f_opt.is_defined("server") || f_opt.is_defined("sendmail") || f_opt.is_defined("pagelist") );
+    f_optMap = { {"server",false}, {"sendmail",false}, {"pagelist",false} };
 
-	if( !valid )
+    for( auto& opt : f_optMap )
+    {
+        opt.second = f_opt.is_defined(opt.first);
+    }
+
+    if( std::find_if( f_optMap.begin(), f_optMap.end(), []( map_t::value_type& opt ) { return opt.second; } ) == f_optMap.end() )
 	{
-		throw snap::snap_exception("Must specify at least one --server, --sendmail or --pagelist");
+        throw std::invalid_argument("Must specify at least one --server, --sendmail or --pagelist");
 	}
+}
+
+
+void snap_init::show_selected_servers() const
+{
+    std::cout << "Enabled servers: ";
+    for( const auto& opt : f_optMap )
+    {
+        if( opt.second )
+        {
+            std::cout << "[" << opt.first << "] ";
+        }
+    }
+    std::cout << std::endl;
 }
 
 
@@ -186,7 +209,7 @@ void snap_init::stop()
 void snap_init::usage()
 {
     f_opt.usage( advgetopt::getopt::no_error, "snapinit" );
-	throw snap::snap_exception( "usage" );
+    throw std::invalid_argument( "usage" );
 }
 
 
@@ -201,12 +224,17 @@ int main(int argc, char *argv[])
 	}
     catch( snap::snap_exception const& except )
     {
-        SNAP_LOG_FATAL("snap_init: exception caught!")(except.what());
+        SNAP_LOG_FATAL("snap_init: snap_exception caught! ")(except.what());
 		retval = 1;
+    }
+    catch( std::invalid_argument const& std_except )
+    {
+        SNAP_LOG_FATAL("snap_init: invalid argument: ")(std_except.what());
+        retval = 1;
     }
     catch( std::exception const& std_except )
     {
-        SNAP_LOG_FATAL("snap_init: exception caught!")(std_except.what());
+        SNAP_LOG_FATAL("snap_init: std::exception caught! ")(std_except.what());
 		retval = 1;
     }
     catch( ... )
