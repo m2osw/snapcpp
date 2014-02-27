@@ -294,7 +294,7 @@ void snap_thread::snap_mutex::wait()
  * In other words, the mutex must be locked by the caller but only
  * one time.
  *
- * \excetion snap_thread_exception_mutex_failed_error
+ * \exception snap_thread_exception_mutex_failed_error
  * This exception is raised when the mutex wait function fails.
  *
  * \param[in] usec  The number of micro seconds to wait until you acquiring
@@ -458,7 +458,7 @@ void snap_thread::snap_mutex::signal()
  * This function locks the specified mutex and keep track of the lock
  * until the destructor is called.
  *
- * The mutex parameter cannot be a reference to a NULL pointer.
+ * The mutex parameter cannot be a reference to a nullptr pointer.
  *
  * \param[in] mutex  The Snap! mutex to lock.
  */
@@ -536,7 +536,7 @@ void snap_thread::snap_lock::unlock()
  */
 snap_thread::snap_runner::snap_runner(const QString& name)
     //: f_mutex() -- auto-init
-    //, f_thread(NULL) -- auto-init
+    //, f_thread(nullptr) -- auto-init
     : f_name(name)
 {
 }
@@ -608,7 +608,9 @@ bool snap_thread::snap_runner::continue_running() const
     return f_thread->is_stopping();
 }
 
-/** \func snap_thread::snap_runner::run();
+
+/** \fn snap_thread::snap_runner::run();
+ * \brief This virtual function represents the code run by the thread.
  *
  * The run() function is the one you have to implement in order to have
  * something to execute when the thread is started.
@@ -616,11 +618,14 @@ bool snap_thread::snap_runner::continue_running() const
  * To exit the thread, simply return from the run() function.
  */
 
+
 /** \brief Retrieve the thread controller linked to this runner.
  *
  * Each runner is assigned a thread controller whenever the snap_thread
  * is created (they get attached, in effect.) Once the snap_thread is
- * destroyed, the pointer goes back to NULL.
+ * destroyed, the pointer goes back to nullptr.
+ *
+ * \return A snap_thread pointer or nullptr.
  */
 snap_thread *snap_thread::snap_runner::get_thread() const
 {
@@ -639,6 +644,7 @@ snap_thread *snap_thread::snap_runner::get_thread() const
  * because otherwise the processes could lock up.
  */
 
+
 /** \brief Initialize the thread object.
  *
  * This function saves the name of the thread. The name is generally a
@@ -650,9 +656,9 @@ snap_thread *snap_thread::snap_runner::get_thread() const
  * this snap_thread controller. However, if it is already assigned a
  * thread controller, then the initialization of the snap_thread fails.
  * You may test whether a runner is already assigned a thread controller
- * by calling its get_thread() function and see that it is not NULL.
+ * by calling its get_thread() function and see that it is not nullptr.
  *
- * The pointer to the runner object cannot be NULL.
+ * The pointer to the runner object cannot be nullptr.
  *
  * \param[in] name  The name of the process.
  * \param[in] runner  The runner (the actual thread) to handle.
@@ -687,6 +693,7 @@ snap_thread::snap_thread(const QString& name, snap_runner *runner)
 
     f_runner->f_thread = this;
 }
+
 
 /** \brief Delete a thread object.
  *
@@ -767,7 +774,7 @@ void *func_internal_start(void *thread)
 {
     snap_thread *t = reinterpret_cast<snap_thread *>(thread);
     t->internal_run();
-    return NULL;
+    return nullptr;
 }
 
 /** \brief Run the thread process.

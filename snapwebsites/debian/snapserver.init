@@ -19,6 +19,7 @@ DESC=snapserver             	# Introduce a short description here
 NAME=snapserver             	# Introduce the short server's name here
 SCRIPTNAME=/etc/init.d/$NAME
 USER=snapwebsites
+SNAPSIGNAL=/usr/bin/snapsignal
 
 # snapserver
 #
@@ -70,7 +71,7 @@ start_daemon()
 	#	2>&1 > /dev/null \
 	#	|| return 1
 	bname=`basename $1`
-	start-stop-daemon --start --background --make-pidfile --pidfile /var/run/${bname}.pid --chuid ${USER} \
+	start-stop-daemon --start --background --chuid ${USER} \
 		--exec $1 -- $2 \
 		2>&1 > /dev/hull \
 		|| return 2
@@ -80,9 +81,9 @@ start_daemon()
 
 do_start()
 {
-	start_daemon "${SERVER}"  "${SERVER_ARGS}"  || return $?
-	${BACKEND} ${BACKEND_SENDMAIL_ARGS}
-	${BACKEND} ${BACKEND_PAGELIST_ARGS}
+	start_daemon "${SERVER}"  "${SERVER_ARGS}"           || return $?
+	"${BACKEND}" ${BACKEND_SENDMAIL_ARGS} || return $?
+	"${BACKEND}" ${BACKEND_PAGELIST_ARGS} || return $?
 	return 0
 }
 
@@ -110,9 +111,10 @@ stop_daemon()
 
 do_stop()
 {
-	stop_daemon "${SERVER}"
-	/usr/bin/snapsignal -a sendmail STOP
-	/usr/bin/snapsignal -a pagelist STOP
+	#stop_daemon "${SERVER}"
+	${SNAPSIGNAL} -a snapserver STOP
+	${SNAPSIGNAL} -a sendmail STOP
+	${SNAPSIGNAL} -a pagelist STOP
 	return 0
 }
 

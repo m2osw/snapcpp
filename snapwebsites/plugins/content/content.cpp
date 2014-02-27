@@ -107,6 +107,9 @@ char const *get_name(name_t name)
     case SNAP_NAME_CONTENT_DATA_TABLE:
         return "data";
 
+    case SNAP_NAME_CONTENT_DESCRIPTION:
+        return "content::description";
+
     case SNAP_NAME_CONTENT_FILES_COMPRESSOR:
         return "content::files::compressor";
 
@@ -193,6 +196,9 @@ char const *get_name(name_t name)
 
     case SNAP_NAME_CONTENT_PARENT:
         return "content::parent";
+
+    case SNAP_NAME_CONTENT_PREVENT_DELETE:
+        return "content::prevent_delete";
 
     case SNAP_NAME_CONTENT_PRIMARY_OWNER:
         return "content::primary_owner";
@@ -445,7 +451,7 @@ field_search::cmd_info_t::cmd_info_t(command_t cmd)
  * This function initializes the cmd_info_t. Note that the parameters
  * cannot be changed later (read-only.)
  *
- * \param[in] opt  The search instruction (i.e. SELF, PARENTS, etc.)
+ * \param[in] cmd  The search instruction (i.e. SELF, PARENTS, etc.)
  * \param[in] str_value  The string value attached to that instruction.
  */
 field_search::cmd_info_t::cmd_info_t(command_t cmd, QString const& str_value)
@@ -484,7 +490,7 @@ field_search::cmd_info_t::cmd_info_t(command_t cmd, QString const& str_value)
  * This function initializes the cmd_info_t. Note that the parameters
  * cannot be changed later (read-only.)
  *
- * \param[in] opt  The search instruction (i.e. SELF, PARENTS, etc.)
+ * \param[in] cmd  The search instruction (i.e. SELF, PARENTS, etc.)
  * \param[in] int_value  The integer value attached to that instruction.
  */
 field_search::cmd_info_t::cmd_info_t(command_t cmd, int64_t int_value)
@@ -518,7 +524,7 @@ field_search::cmd_info_t::cmd_info_t(command_t cmd, int64_t int_value)
  * This function initializes the cmd_info_t. Note that the parameters
  * cannot be changed later (read-only.)
  *
- * \param[in] opt  The search instruction (i.e. SELF, PARENTS, etc.)
+ * \param[in] cmd  The search instruction (i.e. SELF, PARENTS, etc.)
  * \param[in] value  The value attached to that instruction.
  */
 field_search::cmd_info_t::cmd_info_t(command_t cmd, QtCassandra::QCassandraValue& value)
@@ -546,7 +552,7 @@ field_search::cmd_info_t::cmd_info_t(command_t cmd, QtCassandra::QCassandraValue
  * This function initializes the cmd_info_t. Note that the parameters
  * cannot be changed later (read-only.)
  *
- * \param[in] opt  The search instruction (i.e. SELF, PARENTS, etc.)
+ * \param[in] cmd  The search instruction (i.e. SELF, PARENTS, etc.)
  * \param[in] element  The value attached to that instruction.
  */
 field_search::cmd_info_t::cmd_info_t(command_t cmd, QDomElement element)
@@ -573,7 +579,7 @@ field_search::cmd_info_t::cmd_info_t(command_t cmd, QDomElement element)
  * This function initializes the cmd_info_t. Note that the parameters
  * cannot be changed later (read-only.)
  *
- * \param[in] opt  The search instruction (i.e. SELF, PARENTS, etc.)
+ * \param[in] cmd  The search instruction (i.e. SELF, PARENTS, etc.)
  * \param[in,out] result  The value attached to that instruction.
  */
 field_search::cmd_info_t::cmd_info_t(command_t cmd, search_result_t& result)
@@ -600,7 +606,7 @@ field_search::cmd_info_t::cmd_info_t(command_t cmd, search_result_t& result)
  * This function initializes the cmd_info_t. Note that the parameters
  * cannot be changed later (read-only.)
  *
- * \param[in] opt  The search instruction (i.e. COMMAND_PATH_INFO, etc.)
+ * \param[in] cmd  The search instruction (i.e. COMMAND_PATH_INFO, etc.)
  * \param[in] ipath  A full defined path to a page.
  */
 field_search::cmd_info_t::cmd_info_t(command_t cmd, path_info_t const& ipath)
@@ -2084,7 +2090,7 @@ QString const& attachment_file::get_attachment_type() const
  * the HTTP request as the creation date. The loader sets the date back in
  * the attachment.
  *
- * \param[in] time  The time when the attachment was added to the database.
+ * \return The time when the attachment was added to the database.
  *
  * \sa set_creation_time()
  */
@@ -2100,7 +2106,7 @@ int64_t attachment_file::get_creation_time() const
  * HTTP request as the modification date. The loader sets the date back in
  * the attachment.
  *
- * \param[in] time  The time when the attachment was last modified.
+ * \return The time when the attachment was last updated.
  *
  * \sa set_update_time()
  */
@@ -3025,7 +3031,8 @@ snap_version::version_number_t content::get_current_user_branch(QString const& k
  * number other than the last revision number.
  *
  * \param[in] key  The key of the page concerned.
- * \param[in] owner  The plugin that owns this revision data.
+ * \param[in] owner  The plugin that owns this data.
+ * \param[in] branch  The branch number.
  * \param[in] locale  The language and country information.
  * \param[in] working_branch  Whether the working branch (true) or the current
  *                            branch (false) is used.
@@ -3035,7 +3042,6 @@ snap_version::version_number_t content::get_current_user_branch(QString const& k
 snap_version::version_number_t content::get_current_revision(QString const& key, QString const& owner, snap_version::version_number_t const branch, QString const& locale, bool working_branch)
 {
     QString const base_key(get_revision_base_key(owner));
-    //snap_version::version_number_t const branch(get_current_branch(key, owner, working_branch));
     QString revision_key(QString("%1::%2::%3")
             .arg(base_key)
             .arg(get_name(working_branch
@@ -3297,8 +3303,9 @@ snap_version::version_number_t content::get_new_revision(QString const& key, QSt
  *
  * \param[in] key  The key of the page being worked on.
  * \param[in] owner  The owner of that branch.
+ * \param[in] working_branch  Whether we use the working branch or not.
  *
- * \return A string representing the end of the key
+ * \return A string representing the branch key in the data table.
  */
 QString content::get_branch_key(QString const& key, QString const& owner, bool working_branch)
 {
@@ -3699,9 +3706,11 @@ QString content::set_revision_key(QString const& key, QString const& owner, snap
  *
  * \param[in] key  The key to the page concerned.
  * \param[in] owner  The owner of the page, usually "content".
+ * \param[in] branch  The branch of the page.
  * \param[in] revision  The new revision string.
  * \param[in] locale  The language and country information.
- * \param[in] working_branch  The current branch (false) or the current working branch (true).
+ * \param[in] working_branch  The current branch (false) or the current
+ *                            working branch (true).
  *
  * \return A copy of the current revision key saved in the database.
  */
@@ -3862,14 +3871,17 @@ bool content::create_content_impl(path_info_t& ipath, QString const& owner, QStr
 
     //QString const branch_key(generate_branch_key(key, branch_number));
     QtCassandra::QCassandraRow::pointer_t data_row(data_table->row(ipath.get_branch_key()));
-    data_row->cell(QString(get_name(SNAP_NAME_CONTENT_CREATED)))->setValue(start_date);
-    data_row->cell(QString(get_name(SNAP_NAME_CONTENT_MODIFIED)))->setValue(start_date);
+    data_row->cell(get_name(SNAP_NAME_CONTENT_CREATED))->setValue(start_date);
+    data_row->cell(get_name(SNAP_NAME_CONTENT_MODIFIED))->setValue(start_date);
 
     // link the page to its type (very important for permissions)
     {
-        // TODO we probably should test whether that content-types exists
+        // TODO We probably should test whether that content-types exists
         //      because if not it's certainly completely invalid (i.e. the
-        //      programmer mistyped the type [again])
+        //      programmer mistyped the type [again].)
+        //      However, we have to be very careful as the initialization
+        //      process may not be going in the right order and thus not
+        //      have created the type yet when this starts to happen.
         QString const destination_key(site_key + "types/taxonomy/system/content-types/" + (type.isEmpty() ? "page" : type));
         path_info_t destination_ipath;
         destination_ipath.set_path(destination_key);
@@ -4145,7 +4157,6 @@ bool content::create_attachment_impl(attachment_file const& file, snap_version::
             //
             // get the filename without the extension
             QString fn(attachment_filename.left(attachment_filename.length() - extension.length()));
-SNAP_LOG_DEBUG("attaching ")(file.get_file().get_filename())(", validate name = ")(fn);
             QString errmsg;
             if(!snap_version::validate_name(fn, errmsg))
             {
@@ -4204,8 +4215,9 @@ SNAP_LOG_DEBUG("attaching ")(file.get_file().get_filename())(", validate name = 
         attachment_ipath.force_extended_revision(revision);
     }
 
-
-SNAP_LOG_DEBUG("attaching ")(file.get_file().get_filename())(", attachment_key = ")(attachment_ipath.get_key());
+#ifdef DEBUG
+//SNAP_LOG_DEBUG("attaching ")(file.get_file().get_filename())(", attachment_key = ")(attachment_ipath.get_key());
+#endif
 
     // compute the MD5 sum of the file
     // TBD should we forbid the saving of empty files?
@@ -4794,7 +4806,7 @@ bool content::modified_content_impl(path_info_t& ipath)
 /** \brief Retreive a content page parameter.
  *
  * This function reads a column from the content of the page using the
- * content key as defined by the canonalization process. The function
+ * content key as defined by the canonicalization process. The function
  * cannot be called before the content::on_path_execute() function is
  * called and the key properly initialized.
  *
@@ -4817,7 +4829,7 @@ bool content::modified_content_impl(path_info_t& ipath)
  *
  * \return The content of the row as a Cassandra value.
  */
-QtCassandra::QCassandraValue content::get_content_parameter(path_info_t& ipath, const QString& param_name, param_revision_t revision)
+QtCassandra::QCassandraValue content::get_content_parameter(path_info_t& ipath, QString const& param_name, param_revision_t revision)
 {
     switch(revision)
     {
@@ -4978,6 +4990,7 @@ void content::add_xml_document(QDomDocument& dom, const QString& plugin_name)
 
         QDomNodeList children(content_element.childNodes());
         bool found_content_type(false);
+        bool found_prevent_delete(false);
         int const cmax(children.size());
         for(int c(0); c < cmax; ++c)
         {
@@ -4999,7 +5012,7 @@ void content::add_xml_document(QDomDocument& dom, const QString& plugin_name)
             QString tag_name(element.tagName());
             if(tag_name == "param")
             {
-                QString param_name(element.attribute("name"));
+                QString const param_name(element.attribute("name"));
                 if(param_name.isEmpty())
                 {
                     throw content_exception_invalid_content_xml("all <param> tags supplied to add_xml() must include a valid \"name\" attribute");
@@ -5061,6 +5074,11 @@ void content::add_xml_document(QDomDocument& dom, const QString& plugin_name)
                         // this is the default!
                         fullname = plugin_name + "::" + param_name;
                     }
+                }
+
+                if(fullname == get_name(SNAP_NAME_CONTENT_PREVENT_DELETE))
+                {
+                    found_prevent_delete = true;
                 }
 
                 param_revision_t revision_type(PARAM_REVISION_BRANCH);
@@ -5284,6 +5302,14 @@ void content::add_xml_document(QDomDocument& dom, const QString& plugin_name)
             links::link_info destination(link_to, destination_unique, destination_key, snap_version::SPECIAL_VERSION_SYSTEM_BRANCH);
             add_link(key, source, destination);
         }
+        if(!found_prevent_delete)
+        {
+            // add the "content::prevent_delete" to 1 on all that do not
+            // set it to another value (1 byte value)
+            add_param(key, get_name(SNAP_NAME_CONTENT_PREVENT_DELETE), PARAM_REVISION_GLOBAL, "en", "1");
+            set_param_overwrite(key, get_name(SNAP_NAME_CONTENT_PREVENT_DELETE), true); // always overwrite
+            set_param_type(key, get_name(SNAP_NAME_CONTENT_PREVENT_DELETE), PARAM_TYPE_INT8);
+        }
     }
 }
 
@@ -5365,9 +5391,13 @@ void content::add_content(const QString& path, const QString& plugin_owner)
  * add_content() is called (i.e. the block of data referenced by
  * \p path is not defined yet.)
  *
+ * \exception content_exception_unexpected_revision_type
+ * This exception is raised if the \p revision_type parameter is not
+ * equal to the revision_type that was used to create this page.
+ *
  * \param[in] path  The path of this parameter (i.e. /types/taxonomy)
  * \param[in] name  The name of this parameter (i.e. "Website Taxonomy")
- * \param[in] revision  The type of revision for this parameter (i.e. global, branch, revision)
+ * \param[in] revision_type  The type of revision for this parameter (i.e. global, branch, revision)
  * \param[in] locale  The locale (\<language>_\<country>) for this data.
  * \param[in] data  The data of this parameter.
  *
@@ -5463,11 +5493,11 @@ void content::set_param_overwrite(const QString& path, const QString& name, bool
  *
  * \param[in] path  The path of this parameter.
  * \param[in] name  The name of the parameter to modify.
- * \param[in] type  The new type for this parameter.
+ * \param[in] param_type  The new type for this parameter.
  *
  * \sa add_param()
  */
-void content::set_param_type(const QString& path, const QString& name, param_type_t param_type)
+void content::set_param_type(QString const& path, QString const& name, param_type_t param_type)
 {
     content_block_map_t::iterator b(f_blocks.find(path));
     if(b == f_blocks.end())
@@ -5634,7 +5664,8 @@ void content::on_save_content()
         //       with a problem I had and that problem is now resolved. This
         //       does not mean it shouldn't be done, however, the revision
         //       is problematic because it needs to be incremented each time
-        //       we do an update when at this point it won't be.
+        //       we do an update when at this point it won't be. (Although
+        //       it seems to work fine at this point...)
         initialize_branch(d->f_path);
 
         // TODO: add support to specify the "revision owner" of the parameter
@@ -5707,7 +5738,7 @@ void content::on_save_content()
                         use_new_revision = false;
 
                         // mark when the row was created
-                        data_table->row(row_key)->cell(QString(get_name(SNAP_NAME_CONTENT_CREATED)))->setValue(start_date);
+                        data_table->row(row_key)->cell(get_name(SNAP_NAME_CONTENT_CREATED))->setValue(start_date);
                     }
                     break;
 
@@ -5758,7 +5789,7 @@ void content::on_save_content()
 
         // link this entry to its parent automatically
         // first we need to remove the site key from the path
-        QString path(d->f_path.mid(site_key.length()));
+        QString const path(d->f_path.mid(site_key.length()));
         QStringList parts(path.split('/', QString::SkipEmptyParts));
         while(parts.count() > 0)
         {
@@ -5868,13 +5899,12 @@ void content::on_save_content()
     for(content_block_map_t::iterator d(f_blocks.begin());
             d != f_blocks.end(); ++d)
     {
-        QString path(d->f_path);
+        QString const path(d->f_path);
         path_info_t ipath;
         ipath.set_path(path);
         QtCassandra::QCassandraValue type(get_content_parameter(ipath, get_name(SNAP_NAME_CONTENT_PAGE_TYPE), PARAM_REVISION_BRANCH));
         if(path.startsWith(site_key))
         {
-            //path = path.mid(site_key.length());
             // TODO: we may want to have a better way to choose the language
             create_content(ipath, d->f_owner, type.stringValue());
         }
@@ -5918,7 +5948,7 @@ void content::on_save_content()
  * plugins such as the JavaScript plugin to send their compressed and
  * minimized version of the file instead of the source version.
  *
- * \important
+ * \warning
  * This function generates two signals: check_attachment_security()
  * and process_attachment(). If your plugin can check the file for
  * security reason, implement the check_attachment_security(). In
@@ -6221,7 +6251,7 @@ void content::add_javascript(path_info_t& ipath, QDomDocument doc, QString const
             QtCassandra::QCassandraCells const& ref_cells(row->cells());
             if(ref_cells.isEmpty())
             {
-                SNAP_LOG_ERROR("file referenced as JavaScript \"")(name)("\" has not reference back to ")(site_key);
+                SNAP_LOG_ERROR("file referenced as JavaScript \"")(name)("\" has no reference back to ")(site_key);
                 continue;
             }
             // the key of this cell is the path we want to use to the file
@@ -6285,7 +6315,7 @@ void content::add_javascript(path_info_t& ipath, QDomDocument doc, QString const
             //      version with the User Agent match. This may not always
             //      be desirable though.
 #ifdef DEBUG
-SNAP_LOG_TRACE() << "Adding JavaScript [" << name << "] [" << ref_cell->columnName().mid(start_ref.length() - 1) << "]\n";
+SNAP_LOG_TRACE() << "Adding JavaScript [" << name << "] [" << ref_cell->columnName().mid(start_ref.length() - 1) << "]";
 #endif
             QDomNodeList metadata(doc.elementsByTagName("metadata"));
             QDomNode javascript_tag(metadata.at(0).firstChildElement("javascript"));

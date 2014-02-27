@@ -129,13 +129,13 @@ void filter::on_bootstrap(::snap::snap_child *snap)
  * string no matter what. Therefore we do not need to filter for illegal
  * characters in this filter function. The output will always be correct.
  *
- * \param[in,out] text  The HTML to be filtered.
+ * \param[in,out] node  The HTML to be filtered.
  * \param[in] accepted_tags  The list of tags kept in the text.
  * \param[in] accepted_attributes  The list of attributes kept in the tags.
  */
 void filter::on_xss_filter(QDomNode& node,
-                           const QString& accepted_tags,
-                           const QString& accepted_attributes)
+                           QString const& accepted_tags,
+                           QString const& accepted_attributes)
 {
     // initialize the array of tags so it starts and ends with spaces
     // this allows for much faster searches (i.e. indexOf())

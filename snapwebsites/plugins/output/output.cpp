@@ -28,7 +28,8 @@
 
 SNAP_PLUGIN_START(output, 1, 0)
 
-/** \brief Get a fixed output name.
+// using the SNAP_NAME_CONTENT_... for this one.
+/* \brief Get a fixed output name.
  *
  * The output plugin makes use of different names in the database. This
  * function ensures that you get the right spelling for a given name.
@@ -141,7 +142,7 @@ int64_t output::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2014, 2, 20, 12, 58, 30, content_update);
+    SNAP_PLUGIN_UPDATE(2014, 2, 23, 13, 26, 30, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -238,7 +239,7 @@ bool output::on_path_execute(content::path_info_t& ipath)
  * as the main content on the page although the content of some
  * columns may be interleaved with this content.
  *
- * Note that this is NOT the HTML output. It is the <page> tag of
+ * Note that this is NOT the HTML output. It is the \<page\> tag of
  * the snap XML file format. The theme layout XSLT will be used
  * to generate the final output.
  *
@@ -256,15 +257,6 @@ void output::on_generate_main_content(content::path_info_t& ipath, QDomElement& 
         (content::field_search::COMMAND_MODE, content::field_search::SEARCH_MODE_EACH)
         (content::field_search::COMMAND_ELEMENT, body)
         (content::field_search::COMMAND_PATH_INFO_REVISION, ipath)
-
-        // switch to the current data
-        // TODO: we need to know which locale/branch.revision to use
-        // content::revision_control::<owner>::current_revision_key::<branch>::<locale>
-        //(content::field_search::COMMAND_REVISION_OWNER, get_plugin_name())
-        //(content::field_search::COMMAND_REVISION_PATH, static_cast<int64_t>(true))
-        //(content::field_search::COMMAND_FIELD_NAME, get_name(SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_REVISION_KEY))
-        //(content::field_search::COMMAND_SELF)
-        //(content::field_search::COMMAND_TABLE, "data")
 
         // /snap/page/body/titles
         (content::field_search::COMMAND_CHILD_ELEMENT, "titles")
@@ -303,9 +295,16 @@ void output::on_generate_main_content(content::path_info_t& ipath, QDomElement& 
         (content::field_search::COMMAND_IF_FOUND, 10)
             (content::field_search::COMMAND_PATH, ctemplate)
             (content::field_search::COMMAND_SELF)
-            //(content::field_search::COMMAND_PATH_INFO_REVISION, ipath) -- uncomment if we go on
+            (content::field_search::COMMAND_PATH_INFO_REVISION, ipath)
         (content::field_search::COMMAND_LABEL, 10)
         (content::field_search::COMMAND_SAVE_XML, "content")
+
+        // /snap/page/body/description
+        (content::field_search::COMMAND_FIELD_NAME, content::get_name(content::SNAP_NAME_CONTENT_DESCRIPTION))
+        (content::field_search::COMMAND_SELF)
+        // ignore ctemplate because descriptions should either not be there
+        // or be unique to be valid for SEO
+        (content::field_search::COMMAND_SAVE_XML, "description")
 
         // generate!
         ;
@@ -526,7 +525,7 @@ int output::js_property_count() const
 }
 
 
-QVariant output::js_property_get(const QString& name) const
+QVariant output::js_property_get(QString const& name) const
 {
     if(name == "modified")
     {

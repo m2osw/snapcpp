@@ -29,7 +29,7 @@
 
 SNAP_PLUGIN_START(path, 1, 0)
 
-/** \brief Get a fixed path name.
+/* \brief Get a fixed path name.
  *
  * The path plugin makes use of different names in the database. This
  * function ensures that you get the right spelling for a given name.
@@ -403,7 +403,7 @@ void path::on_execute(QString const& uri_path)
     ipath.set_path(uri_path);
     ipath.set_main_page(true);
 #ifdef DEBUG
-SNAP_LOG_TRACE() << "path::on_execute(\"" << uri_path << "\") -> [" << ipath.get_cpath() << "] [" << ipath.get_branch() << "] [" << ipath.get_revision() << "]\n";
+SNAP_LOG_TRACE() << "path::on_execute(\"" << uri_path << "\") -> [" << ipath.get_cpath() << "] [" << ipath.get_branch() << "] [" << ipath.get_revision() << "]";
 #endif
 
     f_last_modified = 0;

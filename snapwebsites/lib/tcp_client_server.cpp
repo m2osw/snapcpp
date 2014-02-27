@@ -222,7 +222,7 @@ int tcp_client::read(char *buf, size_t size)
 /** \brief Read one line.
  *
  * This function reads one line from the current location up to the next
- * '\n' character. We do not have any special handling of the '\r'
+ * '\\n' character. We do not have any special handling of the '\\r'
  * character.
  *
  * The function may return 0 in which case the server closed the connection.
@@ -383,7 +383,7 @@ tcp_server::tcp_server(const std::string& addr, int port, int max_connections, b
  *
  * This function ensures that the server sockets get cleaned up.
  *
- * If the \pauto_close parameter was set to true in the constructor, then
+ * If the \p auto_close parameter was set to true in the constructor, then
  * the last accepter socket gets closed by this function.
  */
 tcp_server::~tcp_server()
@@ -518,9 +518,11 @@ void tcp_server::keepalive(bool yes)
  * information immediately, otherwise it is cleaner to always block those
  * signals.)
  *
- * \return A client socket descriptor or -1 if an error occured.
+ * \param[in] max_wait_ms  The maximum number of milliseconds to wait for a message. If set to -1 (the default), accept() will block indefintely.
+ *
+ * \return A client socket descriptor or -1 if an error occured, -2 if timeout and max_wait is set.
  */
-int tcp_server::accept()
+int tcp_server::accept( const int max_wait_ms )
 {
     // auto-close?
     if(f_auto_close && f_accepted_socket != -1)
@@ -537,6 +539,35 @@ int tcp_server::accept()
         }
     }
     f_accepted_socket = -1;
+
+    if( max_wait_ms > -1 )
+    {
+        fd_set s;
+        //
+        FD_ZERO(&s);
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wold-style-cast"
+        FD_SET(f_socket, &s);
+    #pragma GCC diagnostic pop
+        //
+        struct timeval timeout;
+        timeout.tv_sec = max_wait_ms / 1000;
+        timeout.tv_usec = (max_wait_ms % 1000) * 1000;
+        int const retval = select(f_socket + 1, &s, NULL, &s, &timeout);
+        //
+        if( retval == -1 )
+        {
+            // error
+            //
+            return -1;
+        }
+        else if( retval == 0 )
+        {
+            // timeout
+            //
+            return -2;
+        }
+    }
 
     // accept the next connection
     socklen_t addr_len(sizeof(f_accepted_addr));

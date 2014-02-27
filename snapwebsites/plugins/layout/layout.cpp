@@ -357,7 +357,7 @@ QString layout::get_layout(content::path_info_t& ipath, QString const& column_na
  * to be used to create a page. The apply_theme() will then layout the
  * result in a page.
  *
- * \param[in] ipath  The canonalized path of content to be laid out.
+ * \param[in] ipath  The canonicalized path of content to be laid out.
  * \param[in] content_plugin  The plugin that will generate the content of the page.
  * \param[in] ctemplate  The path to the template is used to get default data.
  *
@@ -383,7 +383,7 @@ QString layout::apply_layout(content::path_info_t& ipath, layout_content *conten
  * This function determines the layout XSL code and name given a content
  * info path.
  *
- * \param[in] ipath  The canonalized path of content to be laid out.
+ * \param[in] ipath  The canonicalized path of content to be laid out.
  * \param[out] layout_name  A QString to hold the resulting layout name.
  *
  * \return The XSL code in a string.
@@ -394,7 +394,7 @@ QString layout::define_layout(content::path_info_t& ipath, QString& layout_name)
     // XXX should the ctemplate ever be used to retrieve the layout?
     layout_name = get_layout(ipath, get_name(SNAP_NAME_LAYOUT_LAYOUT));
 
-//SNAP_LOG_TRACE() << "Got theme / layout name = [" << layout_name << "] (key=" << ipath.get_key() << ")\n";
+//SNAP_LOG_TRACE() << "Got theme / layout name = [" << layout_name << "] (key=" << ipath.get_key() << ")";
 
 // TODO: fix the default layout selection!?
 //       until we can get the theme system working right...
@@ -478,7 +478,7 @@ QString layout::define_layout(content::path_info_t& ipath, QString& layout_name)
  *
  * \return A DOM document with the basic layout tree.
  */
-QDomDocument layout::create_document(content::path_info_t& ipath, plugin *p)
+QDomDocument layout::create_document(content::path_info_t& ipath, plugin *content_plugin)
 {
     // Initialize the XML document tree
     // More is done in the generate_header_content_impl() function
@@ -486,9 +486,9 @@ QDomDocument layout::create_document(content::path_info_t& ipath, plugin *p)
     QDomElement root = doc.createElement("snap");
     root.setAttribute("path", ipath.get_cpath());
 
-    if(p != nullptr)
+    if(content_plugin != nullptr)
     {
-        root.setAttribute("owner", p->get_plugin_name());
+        root.setAttribute("owner", content_plugin->get_plugin_name());
     }
 
     doc.appendChild(root);
@@ -548,12 +548,12 @@ QDomDocument layout::create_document(content::path_info_t& ipath, plugin *p)
 void layout::create_body(QDomDocument& doc, content::path_info_t& ipath, QString const& xsl, layout_content *content_plugin, QString const& ctemplate, bool handle_boxes, QString const& layout_name)
 {
 #ifdef DEBUG
-SNAP_LOG_TRACE() << "create body in layout\n";
+SNAP_LOG_TRACE() << "create body in layout";
 #endif
 
 
 #ifdef DEBUG
-SNAP_LOG_TRACE() << "got in layout... cpath = [" << ipath.get_cpath() << "]\n";
+SNAP_LOG_TRACE() << "got in layout... cpath = [" << ipath.get_cpath() << "]";
 #endif
     // other plugins generate defaults
     {
@@ -778,7 +778,7 @@ void layout::generate_boxes(content::path_info_t& ipath, QString const& layout_n
                         filter_box.setAttribute("path", box_ipath.get_cpath()); // not the full key
                         filter_box.setAttribute("owner", box_plugin->get_plugin_name());
                         dom_boxes[i].appendChild(filter_box);
-//SNAP_LOG_TRACE() << "handle box for " << box_plugin->get_plugin_name() << "\n";
+//SNAP_LOG_TRACE() << "handle box for " << box_plugin->get_plugin_name();
                         lb->on_generate_boxes_content(ipath, box_ipath, page, filter_box, "");
                     }
                     else
@@ -1007,7 +1007,7 @@ void layout::replace_includes(QString& xsl)
     };
     replace_t::replace(f_snap, "<xsl:include", xsl);
     replace_t::replace(f_snap, "<xsl:import", xsl);
-//SNAP_LOG_TRACE() << "include [" << xsl << "]\n";
+//SNAP_LOG_TRACE() << "include [" << xsl << "]";
 }
 
 
@@ -1165,8 +1165,7 @@ int64_t layout::install_layout(QString const& layout_name, int64_t const last_up
  * f_snap->set_header("X-Robots", f_robots_cache);
  * \endcode
  *
- * \param[in] l  The layout pointer.
- * \param[in] path  The path being managed.
+ * \param[in,out] ipath  The path being managed.
  * \param[in,out] header  The header being generated.
  * \param[in,out] metadata  The metadata being generated.
  * \param[in] ctemplate  The template used to generate the page or "".
@@ -1179,6 +1178,10 @@ bool layout::generate_header_content_impl(content::path_info_t& ipath, QDomEleme
 
     int const p(ipath.get_cpath().lastIndexOf('/'));
     QString const base(f_snap->get_site_key_with_slash() + (p == -1 ? "" : ipath.get_cpath().left(p)));
+
+    QString const qs_action(f_snap->get_server_parameter("qs_action"));
+    snap_uri const& uri(f_snap->get_uri());
+    QString const action(uri.query_option(qs_action));
 
     FIELD_SEARCH
         (content::field_search::COMMAND_ELEMENT, metadata)
@@ -1221,10 +1224,14 @@ bool layout::generate_header_content_impl(content::path_info_t& ipath, QDomEleme
         (content::field_search::COMMAND_DEFAULT_VALUE, f_snap->snapenv("REMOTE_ADDR"))
         (content::field_search::COMMAND_SAVE, "desc[type=remote_ip]/data")
 
+        // snap/head/metadata/desc[type=action]/data
+        (content::field_search::COMMAND_DEFAULT_VALUE, action)
+        (content::field_search::COMMAND_SAVE, "desc[type=action]/data")
+
         // generate!
         ;
 
-//SNAP_LOG_TRACE() << "layout stuff [" << header.ownerDocument().toString() << "]\n";
+//SNAP_LOG_TRACE() << "layout stuff [" << header.ownerDocument().toString() << "]";
     return true;
 }
 

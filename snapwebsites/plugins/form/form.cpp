@@ -320,7 +320,7 @@ QDomDocument form::form_to_html(sessions::sessions::session_info& info, QDomDocu
  * will use that signal since in most cases the defaults and the last
  * saved values come from the database.
  *
- * \important
+ * \warning
  * This function is NOT called if the form was just POSTed. This is because
  * the default values for all the fields are taken from what the user just
  * sent us and not the default or what's in the database.
@@ -441,7 +441,7 @@ void form::auto_fill_form(QDomDocument xml_form)
                             content::attachment_file attachment(f_snap);
                             if(content::content::instance()->load_attachment(value.stringValue(), attachment, false))
                             {
-                                snap_child::post_file_t const&  file(attachment.get_file());
+                                snap_child::post_file_t const& file(attachment.get_file());
                                 int width(file.get_image_width());
                                 int height(file.get_image_height());
                                 QString path(value.stringValue());
@@ -539,15 +539,19 @@ void form::fill_value(QDomElement widget, QString const& value)
  * \param[in] widget  The widget being worked on.
  * \param[in] id  The identifier (name) of the widget (id=... attribute).
  *
- * \return true if the signal is to be propagated.
+ * \return true if the signal is to be propagated to other plugins.
  */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
 bool form::fill_form_widget_impl(form *f, QString const& owner, QString const& cpath, QDomDocument xml_form, QDomElement widget, QString const& id)
 {
+    static_cast<void>(f);
+    static_cast<void>(owner);
+    static_cast<void>(cpath);
+    static_cast<void>(xml_form);
+    static_cast<void>(widget);
+    static_cast<void>(id);
+
     return true;
 }
-#pragma GCC diagnostic pop
 
 
 /** \brief Default implementation of the form element event.
@@ -662,7 +666,7 @@ void form::add_form_elements(QString& filename)
  * \li Resource paths that start with ":/" or "qrc:/".
  * \li "Cassandra" paths which start with "http://" or "https://".
  *
- * \param[in] cpath  The canonicalized path to page managing this form.
+ * \param[in,out] ipath  The canonicalized path to page managing this form.
  * \param[in] source  The path to the form to be loaded.
  * \param[out] error  The error while loading the form.
  *
@@ -809,7 +813,7 @@ bool form::tweak_form_impl(form *f, content::path_info_t& ipath, QDomDocument fo
 }
 
 
-/** \typedef auto_save_types_t
+/** \typedef form::auto_save_types_t
  * \brief Type used to save the type of the widget data for auto-save.
  *
  * This type defines the type of each widget content defined in
@@ -852,7 +856,7 @@ bool form::tweak_form_impl(form *f, content::path_info_t& ipath, QDomDocument fo
  *
  * \param[in] uri_path  The path received from the HTTP server.
  */
-void form::on_process_post(const QString& uri_path)
+void form::on_process_post(QString const& uri_path)
 {
     messages::messages *messages(messages::messages::instance());
 
@@ -902,7 +906,7 @@ void form::on_process_post(const QString& uri_path)
     }
 
     // get the owner of this form (plugin name)
-    const QString& owner(info.get_plugin_owner());
+    QString const& owner(info.get_plugin_owner());
     plugin * const p(plugins::get_plugin(owner));
     if(p == NULL)
     {
@@ -1024,7 +1028,7 @@ void form::on_process_post(const QString& uri_path)
                     false
                 );
             }
-            const messages::messages::message& msg(messages->get_last_message());
+            messages::messages::message const& msg(messages->get_last_message());
 
             // Add the following to the widget so we can display the
             // widget as having an error and show the error on request
@@ -1110,7 +1114,7 @@ void form::on_process_post(const QString& uri_path)
  * (Dynamic forms will be supported at a later time.)
  *
  * \param[in] owner  The name of the plugin that owns this form.
- * \param[in] cpath  The page where the data is to be saved.
+ * \param[in,out] ipath  The page where the data is to be saved.
  * \param[in] auto_save_type  The type of this cell in the database.
  * \param[in] xml_form  The form that's being saved.
  */
@@ -1248,7 +1252,7 @@ void form::auto_save_form(QString const& owner, content::path_info_t& ipath, aut
  *
  * \return The clipped value as required.
  */
-QString form::text_64max(const QString& text, bool is_secret)
+QString form::text_64max(QString const& text, bool is_secret)
 {
     if(is_secret && !text.isEmpty())
     {
@@ -1273,7 +1277,7 @@ QString form::text_64max(const QString& text, bool is_secret)
  *
  * \return The shorten HTML, although still 100% valid HTML.
  */
-QString form::html_64max(const QString& html, bool is_secret)
+QString form::html_64max(QString const& html, bool is_secret)
 {
     if(is_secret)
     {
@@ -1306,9 +1310,9 @@ QString form::html_64max(const QString& html, bool is_secret)
  *
  * \param[in] text  The text to count lines in.
  *
- * \return The number of new line characters (or \r\n) found in \p text.
+ * \return The number of new line characters (or \\r\\n) found in \p text.
  */
-int form::count_text_lines(const QString& text)
+int form::count_text_lines(QString const& text)
 {
     int lines(0);
 
@@ -1342,7 +1346,7 @@ int form::count_text_lines(const QString& text)
  *
  * \return The number of paragraphs in the HTML buffer.
  */
-int form::count_html_lines(const QString& html)
+int form::count_html_lines(QString const& html)
 {
     int lines(0);
 
@@ -1382,8 +1386,6 @@ int form::count_html_lines(const QString& html)
  * \param[in] widget_name  The name of the widget (i.e. the id="..." attribute value)
  * \param[in] widget_type  The type of the widget (i.e. the type="..." attribute value)
  */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
 bool form::validate_post_for_widget_impl(content::path_info_t& ipath, sessions::sessions::session_info& info,
                                          QDomElement const& widget, QString const& widget_name,
                                          QString const& widget_type, bool is_secret)
@@ -1834,7 +1836,6 @@ bool form::validate_post_for_widget_impl(content::path_info_t& ipath, sessions::
     // complimentary errors may be generated by other plugins
     return true;
 }
-#pragma GCC diagnostic pop
 
 
 /** \brief Parse dimensions (width by height).

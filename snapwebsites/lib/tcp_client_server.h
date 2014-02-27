@@ -79,7 +79,7 @@ public:
     bool                get_keepalive() const;
 
     void                keepalive(bool yes = true);
-    int                 accept();
+    int                 accept( const int max_wait_ms = -1 );
     int                 get_last_accepted_socket() const;
 
 private:

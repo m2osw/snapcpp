@@ -47,19 +47,22 @@ int main(int argc, char *argv[])
 
 		// exit via the server so the server can clean itself up properly
 		s->exit(0);
-	}
-    catch( const snap::snap_exception& except )
+        snap::NOTREACHED();
+    }
+    catch( snap::snap_exception const& except )
     {
-        SNAP_LOG_FATAL("snap_child::process(): exception caught!")(except.what());
+        SNAP_LOG_FATAL("snapserver: exception caught!")(except.what());
+    }
+    catch( std::exception const& std_except )
+    {
+        SNAP_LOG_FATAL("snapserver: exception caught!")(std_except.what());
     }
     catch( ... )
     {
-        SNAP_LOG_FATAL("snap_child::process(): unknown exception caught!");
+        SNAP_LOG_FATAL("snapserver: unknown exception caught!");
     }
 
-	exit(1);
-    snap::NOTREACHED();
-    return 0;
+    return 1;
 }
 
 // vim: ts=4 sw=4

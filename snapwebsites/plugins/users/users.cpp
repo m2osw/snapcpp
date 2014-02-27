@@ -610,8 +610,7 @@ void users::on_process_cookies()
  * pages where the referrer should not be a "weird" 3rd party
  * website.
  *
- * \param[in] path_plugin  A pointer to the path plugin.
- * \param[in] cpath  The path being handled dynamically.
+ * \param[in,out] ipath  The path being handled dynamically.
  * \param[in,out] plugin_info  If you understand that cpath, set yourself here.
  */
 void users::on_can_handle_dynamic_path(content::path_info_t& ipath, path::dynamic_plugin_t& plugin_info)
@@ -657,7 +656,7 @@ void users::on_can_handle_dynamic_path(content::path_info_t& ipath, path::dynami
  * currently supported (mainly because the user does not have
  * permission.)
  *
- * \param[in] cpath  The canonalized path.
+ * \param[in,out] ipath  The canonicalized path.
  *
  * \return true if the processing worked as expected, false if the page
  *         cannot be created ("Page Not Present" results on false)
@@ -778,10 +777,11 @@ void users::on_generate_boxes_content(content::path_info_t& page_cpath, content:
 }
 
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
 void users::on_generate_header_content(content::path_info_t& ipath, QDomElement& header, QDomElement& metadata, QString const& ctemplate)
 {
+    static_cast<void>(ipath);
+    static_cast<void>(ctemplate);
+
     QDomDocument doc(header.ownerDocument());
 
     QtCassandra::QCassandraTable::pointer_t users_table(get_users_table());
@@ -830,13 +830,12 @@ void users::on_generate_header_content(content::path_info_t& ipath, QDomElement&
         }
     }
 }
-#pragma GCC diagnostic pop
 
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
 void users::on_generate_page_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate)
 {
+    static_cast<void>(ctemplate);
+
     // TODO: convert using field_search
     QDomDocument doc(page.ownerDocument());
 
@@ -875,14 +874,14 @@ void users::on_generate_page_content(content::path_info_t& ipath, QDomElement& p
         //      add a link to the account
     }
 }
-#pragma GCC diagnostic pop
 
 
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
 void users::on_create_content(content::path_info_t& ipath, QString const& owner, QString const& type)
 {
+    static_cast<void>(owner);
+    static_cast<void>(type);
+
     if(!f_user_key.isEmpty())
     {
         QtCassandra::QCassandraTable::pointer_t users_table(get_users_table());
@@ -906,7 +905,6 @@ void users::on_create_content(content::path_info_t& ipath, QString const& owner,
         }
     }
 }
-#pragma GCC diagnostic pop
 
 
 /** \brief Let the user replace their password.
@@ -1066,8 +1064,6 @@ void users::show_user(content::path_info_t& ipath, QDomElement& page, QDomElemen
  * The password can also be changed by requiring the system to send
  * an email. In that case, and if the user then remembers his old
  * password, then this form is hit on the following log in.
- *
- * \param[in] body  The body where we're to add the login form.
  */
 void users::prepare_password_form()
 {
@@ -1148,7 +1144,7 @@ void users::prepare_verify_credentials_form()
  *
  * This function calls the on_generate_main_content() of the content plugin.
  *
- * \param[in,out] cpath  The path being processed (logout[/...]).
+ * \param[in,out] ipath  The path being processed (logout[/...]).
  * \param[in,out] page  The page XML data.
  * \param[in,out] body  The body XML data.
  */
@@ -1202,9 +1198,6 @@ void users::prepare_basic_anonymous_form()
  * \todo
  * Add a question such as "what's your favority movie", "where were you
  * born", etc. so we can limit the number of people who use this form.
- *
- * \param[in] body  The body where we're to add the resend verification
- *                  email form.
  */
 void users::prepare_forgot_password_form()
 {
@@ -1230,9 +1223,6 @@ void users::prepare_forgot_password_form()
  *
  * This function verifies a verification code that was sent so the user
  * could change his password (i.e. an automatic log in mechanism.)
- *
- * \param[in] body  The body where we're to add the resend verification
- *                  email form.
  */
 void users::prepare_new_password_form()
 {
@@ -1564,14 +1554,14 @@ void users::verify_password(content::path_info_t& ipath)
 /** \brief Process a post from one of the users forms.
  *
  * This function processes the post of a user form. The function uses the
- * \p cpath parameter in order to determine which form is being processed.
+ * \p ipath parameter in order to determine which form is being processed.
  *
- * \param[in] cpath  The path the user is accessing now.
+ * \param[in,out] ipath  The path the user is accessing now.
  * \param[in] session_info  The user session being processed.
  */
 void users::on_process_form_post(content::path_info_t& ipath, sessions::sessions::session_info const& session_info)
 {
-    (void) session_info;
+    static_cast<void>(session_info);
 
     QString const cpath(ipath.get_cpath());
     if(cpath == "login")
@@ -1964,11 +1954,11 @@ void users::process_forgot_password_form()
                 forgot_password_email(email);
 
                 // mark the user with the types/users/password tag
-                const QString link_name(get_name(SNAP_NAME_USERS_STATUS));
-                const bool source_unique(true);
+                QString const link_name(get_name(SNAP_NAME_USERS_STATUS));
+                bool const source_unique(true);
                 links::link_info source(link_name, source_unique, user_ipath.get_key(), user_ipath.get_branch());
-                const QString link_to(get_name(SNAP_NAME_USERS_STATUS));
-                const bool destination_unique(false);
+                QString const link_to(get_name(SNAP_NAME_USERS_STATUS));
+                bool const destination_unique(false);
                 content::path_info_t dpath;
                 dpath.set_path(get_name(SNAP_NAME_USERS_PASSWORD_PATH));
                 links::link_info destination(link_to, destination_unique, dpath.get_key(), dpath.get_branch());
@@ -2705,7 +2695,7 @@ bool users::register_user(const QString& email, const QString& password)
     content::path_info_t user_ipath;
     user_ipath.set_path(QString("%1/%2").arg(user_path).arg(identifier));
     content::content *content_plugin(content::content::instance());
-    snap_version::version_number_t branch_number(content_plugin->get_current_user_branch(user_ipath.get_key(), content_plugin->get_plugin_name(), "", true));
+    snap_version::version_number_t const branch_number(content_plugin->get_current_user_branch(user_ipath.get_key(), content_plugin->get_plugin_name(), "", true));
     user_ipath.force_branch(branch_number);
     // default revision when creating a new branch
     user_ipath.force_revision(static_cast<snap_version::basic_version_number_t>(snap_version::SPECIAL_VERSION_FIRST_REVISION));
@@ -3239,6 +3229,7 @@ bool users::user_is_logged_in()
  * This function adds the user profile link to the brief signature of die()
  * errors. This is done only if the user is logged in.
  *
+ * \param[in] path  The path to the page that generated the error.
  * \param[in,out] signature  The HTML signature to improve.
  */
 void users::on_improve_signature(QString const& path, QString& signature)

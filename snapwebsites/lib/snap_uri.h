@@ -1,4 +1,4 @@
-// Snap Websites Server -- path canonalization
+// Snap Websites Server -- path canonicalization
 // Copyright (C) 2011-2014  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
@@ -66,7 +66,7 @@ public:
     const QString& protocol() const;
 
     // domain & sub-domains handling
-    void set_domain(const QString& domain);
+    void set_domain(const QString& full_domain_name);
     QString full_domain() const;
     const QString& top_level_domain() const;
     const QString& domain() const;
@@ -123,23 +123,23 @@ public:
     static int protocol_to_port(const QString& uri_protocol);
 
 private:
-    bool process_domain(const QString& full_domain, QStringList& sub_domain_names,
-                                                QString& domain_name, QString& tld);
+    bool process_domain(const QString& full_domain_name,
+        QStringList& sub_domain_names, QString& domain_name, QString& tld);
 
     // f_original is the unchanged source (from constructor or
     // last set_uri() call)
-    QString                        f_original;
-    QString                        f_protocol;
-    QString                        f_username;
-    QString                        f_password;
-    snap_uri_port_t                f_port;
-    QString                        f_domain;
-    QString                        f_top_level_domain;
-    QStringList                    f_sub_domains;
-    QStringList                    f_path;
-    snap_uri_options_t            f_options;
-    snap_uri_options_t            f_query_strings;
-    QString                        f_anchor;
+    QString                         f_original;
+    QString                         f_protocol;
+    QString                         f_username;
+    QString                         f_password;
+    snap_uri_port_t                 f_port;
+    QString                         f_domain;
+    QString                         f_top_level_domain;
+    QStringList                     f_sub_domains;
+    QStringList                     f_path;
+    snap_uri_options_t              f_options;
+    snap_uri_options_t              f_query_strings;
+    QString                         f_anchor;
 };
 
 
@@ -207,7 +207,7 @@ public:
      *
      * This type defines a value which is a regular expression, exactly
      * the same as the standard variable. However, the result is always
-     * set to the default value (canonalization.)
+     * set to the default value (canonicalization.)
      */
     static const domain_variable_type_t DOMAIN_VARIABLE_TYPE_WEBSITE = 1;
         // WARNING: saved as a number in the database DO NOT CHANGE
@@ -215,7 +215,7 @@ public:
     /** \brief Flag variable with a default value.
      *
      * This value is used whenever a sub-domain entry is an option which
-     * means it does not participate to the website canonalization. Any
+     * means it does not participate to the website canonicalization. Any
      * matches are removed from the result.
      *
      * This flag defines a default. If there is no match, then use the

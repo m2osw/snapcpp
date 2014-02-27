@@ -122,10 +122,10 @@ char const *get_name(name_t name)
     case SNAP_NAME_INDEX: // name used for the domains and websites indexes
         return "*index*"; // this is a row name inside the domains/websites tables
 
-    case SNAP_NAME_DOMAINS: // domain/sub-domain canonalization
+    case SNAP_NAME_DOMAINS: // domain/sub-domain canonicalization
         return "domains";
 
-    case SNAP_NAME_WEBSITES: // remaining of URL canonalization
+    case SNAP_NAME_WEBSITES: // remaining of URL canonicalization
         return "websites";
 
     case SNAP_NAME_SITES: // website global settings
@@ -191,13 +191,13 @@ namespace
      * This variable is used as a list of configuration files. It may be
      * empty.
      */
-    const std::vector<std::string> g_configuration_files;
+    std::vector<std::string> const g_configuration_files;
 
     /** \brief Command line options.
      *
      * This table includes all the options supported by the server.
      */
-    const advgetopt::getopt::option g_snapserver_options[] =
+    advgetopt::getopt::option const g_snapserver_options[] =
     {
         {
             'a',
@@ -245,7 +245,7 @@ namespace
             "logfile",
             nullptr,
             "Output log file to write to. Overrides the setting in the configuration file.",
-            advgetopt::getopt::optional_argument
+            advgetopt::getopt::required_argument
         },
         {
             'l',
@@ -253,7 +253,7 @@ namespace
             "logconf",
             nullptr,
             "Log configuration file to read from. Overrides log_config in the configuration file.",
-            advgetopt::getopt::optional_argument
+            advgetopt::getopt::required_argument
         },
         {
             'n',
@@ -325,7 +325,7 @@ std::shared_ptr<server> server::f_instance;
  *
  * \return A pointer to a constant string representing the server version.
  */
-const char *server::version()
+char const *server::version()
 {
     return SNAPWEBSITES_VERSION_STRING;
 }
@@ -555,6 +555,11 @@ void server::config(int argc, char *argv[])
     // We want the servername for later.
     //
     f_servername = argv[0];
+    const std::string::size_type slash = f_servername.find_last_of( '/' );
+    if( slash != std::string::npos )
+    {
+        f_servername = f_servername.substr( slash+1 );
+    }
 
     // Keep the server in the foreground?
     //
@@ -770,7 +775,7 @@ void server::config(int argc, char *argv[])
         // Read the log configuration file and use it to specify the appenders
         // and log level.
         //
-        const QString log_config( f_parameters["log_config"] );
+        QString const log_config( f_parameters["log_config"] );
         if( log_config.isEmpty() )
         {
             // Fall back to output to the console
@@ -828,7 +833,7 @@ void server::config(int argc, char *argv[])
  *
  * \return The value of the specified parameter.
  */
-QString server::get_parameter(const QString& param_name) const
+QString server::get_parameter(QString const& param_name) const
 {
     if(f_parameters.contains(param_name))
     {
@@ -1041,6 +1046,67 @@ void server::detach()
     exit(0);
 }
 
+
+/** \brief Create a UDP server that receives udp_ping() messages.
+ *
+ * This static function is used to receive PING messages from the udp_ping()
+ * function. Other messages can also be sent such as RSET and STOP.
+ *
+ * The server is expected to be used with the recv() or timed_recv()
+ * functions to wait for a message and act accordingly. A server
+ * that makes use of these pings is expected to be waiting for some
+ * data which, once available requires additional processing. The
+ * server that handles the row data sends the PING to the server.
+ * For example, the sendmail plugin just saves the email data in
+ * the Cassandra database, then it sends a PING to the sendmail
+ * backend process. That backend process wakes up and actually
+ * processes the email by sending it to the mail server.
+ *
+ * \param[in] udp_addr_port  The IP addr and port ("addr:port") of the UDP server.
+ */
+server::udp_server_t server::udp_get_server( const QString& udp_addr_port )
+{
+    // TODO: we should have a common function to read and transform the
+    //       parameter to a valid IP/Port pair (see above)
+    //
+    QString addr, port;
+    int bracket( udp_addr_port.lastIndexOf("]") );
+    int p( udp_addr_port.lastIndexOf(":") );
+    if( (bracket != -1) && (p != -1) )
+    {
+        if(p > bracket)
+        {
+            // IPv6 port specification
+            addr = udp_addr_port.mid(0, bracket + 1); // include the ']'
+            port = udp_addr_port.mid(p + 1); // ignore the ':'
+        }
+        else
+        {
+            throw std::runtime_error("invalid [IPv6]:port specification, port missing for UDP ping");
+        }
+    }
+    else if(p != -1)
+    {
+        // IPv4 port specification
+        addr = udp_addr_port.mid(0, p); // ignore the ':'
+        port = udp_addr_port.mid(p + 1); // ignore the ':'
+    }
+    else
+    {
+        throw std::runtime_error("invalid IPv4:port specification, port missing for UDP ping");
+    }
+    //
+    udp_server_t server( new udp_client_server::udp_server(addr.toUtf8().data(), port.toInt()) );
+    if(server.isNull())
+    {
+        // this should not happen since std::badalloc is raised when allocation fails
+        // and the new operator will rethrow any exception that the constructor throws
+        throw std::runtime_error("server could not be allocated");
+    }
+    return server;
+}
+
+
 /** \brief Listen to incoming connections.
  *
  * This function loops over a listen waiting for connections to this
@@ -1123,6 +1189,17 @@ void server::listen()
         }
     }
 
+    // Listener thread
+    //
+    udp_server_t udp_signals( udp_get_server( get_parameter("snapserver_udp_signal") ) );
+    f_listen_runner.reset( new snap_listen_thread( udp_signals ) );
+    f_listen_thread.reset( new snap_thread("server::listen::thread", f_listen_runner.get() ) );
+    if( !f_listen_thread->start() )
+    {
+        SNAP_LOG_FATAL("cannot start listener thread!");
+        exit(1);
+    }
+
     // initialize the server
     tcp_client_server::tcp_server s(host[0].toUtf8().data(), p, max_pending_connections, true, true);
 
@@ -1155,11 +1232,35 @@ void server::listen()
         }
 
         // retrieve all the connections and process them
-        int socket(s.accept());
-        // callee becomes the owner of socket
-        if(socket != -1)
+        // timeout so we can check the listen thread runner
+        //
+        //const int socket( s.accept( 500 /*1/2 sec*/ ) );
+        int socket = -1;
+        while( (socket = s.accept( 1000 /*1 sec*/ )) == -2 )
         {
-            process_connection(socket);
+            switch( f_listen_runner->get_word() )
+            {
+            case snap_listen_thread::ServerStop:
+                SNAP_LOG_INFO("Stopping server.");
+                return;
+                break;
+
+            case snap_listen_thread::LogReset:
+                SNAP_LOG_INFO("Logging reconfiguration.");
+                logging::reconfigure();
+                f_listen_runner->reset_word();
+                break;
+
+            case snap_listen_thread::Waiting:
+                // go back and listen some more
+                break;
+            }
+        }
+
+        if( socket != -1 )
+        {
+            // callee becomes the owner of socket
+            process_connection( socket );
         }
     }
 }
@@ -1172,17 +1273,23 @@ void server::listen()
 void server::sighandler( int sig )
 {
     QString signame;
+    bool output_stack_trace = true;
     switch( sig )
     {
         case SIGSEGV : signame = "SIGSEGV"; break;
         case SIGBUS  : signame = "SIGBUS";  break;
         case SIGFPE  : signame = "SIGFPE";  break;
         case SIGILL  : signame = "SIGILL";  break;
-        case SIGTERM : signame = "SIGTERM"; break;
-        case SIGINT  : signame = "SIGINT";  break;
+        case SIGTERM : signame = "SIGTERM"; output_stack_trace = false; break;
+        case SIGINT  : signame = "SIGINT";  output_stack_trace = false; break;
         default      : signame = "UNKNOWN";
     }
 
+    if( output_stack_trace )
+    {
+        snap_exception_base::output_stack_trace();
+    }
+    //
     SNAP_LOG_FATAL("signal caught: ")(signame);
     f_instance->exit(1);
 }
@@ -1269,6 +1376,15 @@ unsigned long server::connections_count()
 }
 
 
+/** \brief Servername, taken from argv[0].
+ *
+ * This method returns the server name, taken from the first argument on the command line.
+ */
+std::string server::servername() const
+{
+    return f_servername;
+}
+
 /** \brief Implementation of the bootstrap signal.
  *
  * This function readies the bootstrap signal.
@@ -1279,10 +1395,13 @@ unsigned long server::connections_count()
  *
  * \return true if the signal has to be sent to other plugins.
  */
-bool server::bootstrap_impl(snap_child * /*snap*/)
+bool server::bootstrap_impl(snap_child *snap)
 {
+    static_cast<void>(snap);
+
     return true;
 }
+
 
 /** \brief Initialize the Snap Websites server.
  *
@@ -1388,8 +1507,10 @@ bool server::define_locales_impl(QString& locales)
  *
  * \return true if the signal has to be/sign sent to other plugins.
  */
-bool server::process_post_impl(const QString& /*url*/)
+bool server::process_post_impl(QString const& url)
 {
+    static_cast<void>(url);
+
     return true;
 }
 
@@ -1404,8 +1525,10 @@ bool server::process_post_impl(const QString& /*url*/)
  *
  * \return true if the signal has to be sent to other plugins.
  */
-bool server::execute_impl(const QString& /*url*/)
+bool server::execute_impl(QString const& url)
 {
+    static_cast<void>(url);
+
     return true;
 }
 
@@ -1459,16 +1582,22 @@ bool server::save_content_impl()
  *
  * At this time, it does nothing.
  *
- * \param[in] node  The HTML node to check with XSS filters.
- * \param[in] acceptable_tags  The tags kept in the specified HTML. (i.e. "p a ul li")
- * \param[in] acceptable_attributes  The list of (not) acceptable attributes (i.e. "!styles")
+ * \param[in,out] node  The HTML node to check with XSS filters.
+ * \param[in] acceptable_tags  The tags kept in the specified HTML.
+ *                             (i.e. "p a ul li")
+ * \param[in] acceptable_attributes  The list of (not) acceptable attributes
+ *                                   (i.e. "!styles")
  *
  * \return true if the signal has to be sent to other plugins.
  */
-bool server::xss_filter_impl(QDomNode& /*node*/,
-                             const QString& /*acceptable_tags*/,
-                             const QString& /*accepted_attributes*/)
+bool server::xss_filter_impl(QDomNode& node,
+                             QString const& acceptable_tags,
+                             QString const& acceptable_attributes)
 {
+    static_cast<void>(node);
+    static_cast<void>(acceptable_tags);
+    static_cast<void>(acceptable_attributes);
+
     return true;
 }
 
@@ -1686,7 +1815,7 @@ bool server::add_snap_expr_functions_impl(snap_expr::functions_t& functions)
  * \param[in] name  The name of the configuration variable used to read the IP and port
  * \param[in] message  The message to send, "PING" by default.
  */
-void server::udp_ping(const char *name, const char *message)
+void server::udp_ping(char const *name, char const *message)
 {
     // TODO: we should have a common function to read and transform the
     //       parameter to a valid IP/Port pair (see below)

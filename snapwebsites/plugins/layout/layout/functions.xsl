@@ -69,6 +69,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <xsl:value-of select="substring-after($page_uri, $base_uri)"/>
   </xsl:variable>
 
+  <!-- get the action -->
+  <xsl:variable name="action" as="xs:string" select="/snap/head/metadata/desc[@type='action']/data"/>
+
   <!-- get the year the page was created -->
   <xsl:variable name="year" select="year-from-date(current-date())"/>
   <xsl:variable name="created_year" select="year-from-date(/snap/page/body/created)"/>

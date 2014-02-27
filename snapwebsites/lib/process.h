@@ -72,7 +72,7 @@ public:
 
                                 process(const QString& name);
 
-    const QString&              get_name() const;
+    QString const&              get_name() const;
 
     // setup the process
     void                        set_mode(mode_t mode);

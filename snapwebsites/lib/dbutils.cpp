@@ -317,11 +317,11 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
     {
         return CT_uint32_value;
     }
-    else if(n == "sessions::used_up"
-         || n == "content::final"
-         || n == "favicon::sitewide"
+    else if(n == "content::final"
          || n == "content::files::compressor"
          || n.startsWith("content::files::reference::")
+         || n == "favicon::sitewide"
+         || n == "sessions::used_up"
          || (f_tableName == "files" && f_rowName == "new")
          )
     {
@@ -329,7 +329,8 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
         // cast to integer so arg() doesn't take it as a character
         return CT_uint8_value;
     }
-    else if(n == "permissions::dynamic"
+    else if(n == "content::prevent_delete"
+         || n == "permissions::dynamic"
          || (f_tableName == "list" && f_rowName != "*standalone*")
          )
     {

@@ -46,6 +46,7 @@ enum name_t
     SNAP_NAME_CONTENT_CREATED,
     SNAP_NAME_CONTENT_CURRENT_VERSION,
     SNAP_NAME_CONTENT_DATA_TABLE,
+    SNAP_NAME_CONTENT_DESCRIPTION,
     SNAP_NAME_CONTENT_FILES_COMPRESSOR,
     SNAP_NAME_CONTENT_FILES_CREATED,
     SNAP_NAME_CONTENT_FILES_CREATION_TIME,
@@ -75,6 +76,7 @@ enum name_t
     SNAP_NAME_CONTENT_OWNER,
     SNAP_NAME_CONTENT_PAGE_TYPE,
     SNAP_NAME_CONTENT_PARENT,
+    SNAP_NAME_CONTENT_PREVENT_DELETE,
     SNAP_NAME_CONTENT_PRIMARY_OWNER,
     SNAP_NAME_CONTENT_REVISION_CONTROL,
     SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_BRANCH,
@@ -484,7 +486,7 @@ public:
     QtCassandra::QCassandraTable::pointer_t get_content_table();
     QtCassandra::QCassandraTable::pointer_t get_files_table();
     QtCassandra::QCassandraTable::pointer_t get_data_table();
-    QtCassandra::QCassandraValue get_content_parameter(path_info_t& path, QString const& name, param_revision_t revision_type);
+    QtCassandra::QCassandraValue get_content_parameter(path_info_t& path, QString const& param_name, param_revision_t revision_type);
 
     // revision control
     snap_child *        get_snap();

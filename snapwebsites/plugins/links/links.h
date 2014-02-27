@@ -143,17 +143,17 @@ public:
     {
         if(f_name.isEmpty())
         {
-            throw snap_logic_exception("link_key() was requested with the name still undefined");
+            throw snap_logic_exception(QString("link_key() was requested with the name still undefined (key: \"%1\", branch: \"%2\"").arg(f_key).arg(f_branch));
         }
         if(f_key.isEmpty())
         {
-            throw snap_logic_exception("link_key() was requested with the key still undefined");
+            throw snap_logic_exception(QString("link_key() was requested with the key still undefined (name: \"%1\", branch: \"%2\"").arg(f_name).arg(f_branch));
         }
         if(f_branch == snap_version::SPECIAL_VERSION_INVALID
         || f_branch == snap_version::SPECIAL_VERSION_UNDEFINED
         || f_branch == snap_version::SPECIAL_VERSION_EXTENDED)
         {
-            throw snap_logic_exception("link_key() was requested with the branch still undefined");
+            throw snap_logic_exception(QString("link_key() was requested with the branch still undefined (name: \"%1\", key: \"%2\"").arg(f_name).arg(f_key));
         }
         return QString("%1#%2/%3").arg(f_key).arg(f_branch).arg(f_name);
     }
@@ -165,7 +165,7 @@ public:
     QString data() const;
     void from_data(QString const& db_data);
 
-    static void verify_name(QString const& name);
+    static void verify_name(QString const& vname);
 
 private:
     controlled_vars::fbool_t        f_unique;

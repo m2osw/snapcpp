@@ -206,7 +206,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     here we offer a default set of groups which are 100% based on a tree
     like scheme; the use of a tree is not required but it is often well
     adapted in this environment; remember that all rights assigned to
-    a deeper group is also given to a higher level group (i.e. if the
+    a deeper group are also given to a higher level group (i.e. if the
     editor can delete a page, so can the administrator)
   -->
   <content path="/types/permissions/groups">

@@ -1449,13 +1449,12 @@ QtCassandra::QCassandraTable::pointer_t sendmail::get_emails_table()
  *
  * \return true if the signal is to be propagated to all the other plugins.
  */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
 bool sendmail::filter_email_impl(email& e)
 {
+    static_cast<void>(e);
+
     return true;
 }
-#pragma GCC diagnostic pop
 
 
 /** \brief Post an email.
@@ -2343,11 +2342,13 @@ void sendmail::sendemail(const QString& key, const QString& unique_key)
  * the user added to the email object before calling the post_email()
  * function.
  *
- * \param[in] path  The path being managed.
+ * \param[in,out] ipath  The path being managed.
  * \param[in,out] page  The page being generated.
  * \param[in,out] body  The body being generated.
+ * \param[in] ctemplate  The default template in case the main data is not
+ *                       available.
  */
-void sendmail::on_generate_main_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, const QString& ctemplate)
+void sendmail::on_generate_main_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate)
 {
     // by default an email is just like a regular page
     output::output::instance()->on_generate_main_content(ipath, page, body, ctemplate);

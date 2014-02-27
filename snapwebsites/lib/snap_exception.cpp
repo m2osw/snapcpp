@@ -30,37 +30,38 @@
 namespace snap
 {
 
-#if 0
 namespace
 {
-bool g_debug = false;
+    // TODO: we can at some point put this into the configuration file.
+    //
+    const int STACK_TRACE_DEPTH = 20;
 }
-#endif
 
 
 /** \brief Initialize this Snap! exception.
  *
- * This function checks whether the server was started in debug mode. If so,
- * then all Snap! exceptions get their stack trace printed in stderr for
- * debug purposes.
+ * Initialize the base exception class. Output a stack trace to the error log.
  *
- * \todo
- * Implement a way to switch off debuging to the log file in a production build.
+ * \sa output_stack_trace()
  */
 snap_exception_base::snap_exception_base()
 {
-    int const max_stack_length(1024);
-    void *array[max_stack_length];
-    size_t const size = backtrace(array, max_stack_length);
+    output_stack_trace();
+}
 
-    // Output to stderr
-    //
-#ifdef DEBUG
-    std::cerr << "Callstack after exception:" << std::endl;
-    backtrace_symbols_fd( array, size, STDERR_FILENO );
-#endif
+
+/** \brief Output stack trace to log as an error.
+ *
+ * This static method outputs the current stack as a trace to the log. If
+ * compiled with DEBUG turned on, it will also output to the stderr.
+ */
+void snap_exception_base::output_stack_trace()
+{
+    void *array[STACK_TRACE_DEPTH];
+    size_t const size = backtrace( array, STACK_TRACE_DEPTH );
 
     // Output to log
+    //
     char **stack_string_list = backtrace_symbols( array, size );
     for( size_t idx = 0; idx < size; ++idx )
     {
@@ -69,40 +70,6 @@ snap_exception_base::snap_exception_base()
     }
     free( stack_string_list );
 }
-
-
-#if 0
-/** \brief Set the debug flag.
- *
- * This function is used to set the debug flag used to know whether the
- * stack should be printed out on a throw. By default, the stack does not
- * get printed.
- *
- * This makes use of the --debug (-d) command line flag used on the
- * command line of the server:
- *
- * \code
- *   snapserver -d
- * \endcode
- *
- * It is set just after the command line gets parsed, so very early on in
- * the process and it is not likely that an exception will be missed.
- *
- * \important
- * Note that at this point all Snap exceptions are printed in this way.
- * So to avoid problems, we strongly advise to always avoid exceptions
- * unless something important happened that cannot be fixed up. In other
- * words, if it is logical and safe to call die(), do that instead of
- * throwing an exception.
- *
- * \param[in] debug  Whether the server was started in debug mode (true)
- *                   or not (false).
- */
-void snap_exception_base::set_debug(bool const debug)
-{
-    g_debug = debug;
-}
-#endif
 
 
 } // namespace snap

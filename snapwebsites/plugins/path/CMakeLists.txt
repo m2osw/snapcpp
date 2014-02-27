@@ -6,7 +6,7 @@
 #      Plug-in used to handle the path to objects. This includes all the pages,
 #      administration screens, AJAX query paths, etc.
 #
-#      Note that this plug-in does not handle the canonalization and other
+#      Note that this plug-in does not handle the canonicalization and other
 #      handling of an incoming request. That's done in the libsnapwebsites.so
 #      library in the snap_path.cpp file instead.
 #

@@ -1,4 +1,4 @@
-// Snap Websites Server -- URI canonalization
+// Snap Websites Server -- URI canonicalization
 // Copyright (C) 2011-2014  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
@@ -302,11 +302,11 @@ bool snap_uri::set_uri(QString const& uri)
         {
             ++u;
         }
-        while(u->unicode() == '&');
+        while(!u->isNull() && u->unicode() == '&');
         const QChar *e(NULL);
-        for(s = u; !u->isNull() && u->unicode() != '#'; ++u)
+        for(s = u;; ++u)
         {
-            if(u->unicode() == '&')
+            if(u->isNull() || u->unicode() == '&' || u->unicode() == '#')
             {
                 if(e == NULL)
                 {
@@ -340,11 +340,18 @@ bool snap_uri::set_uri(QString const& uri)
                 query_strings[name] = urldecode(value);
 
                 // skip all the & and then reset s and e
-                do
+                if(!u->isNull())
                 {
-                    ++u;
+                    do
+                    {
+                        ++u;
+                    }
+                    while(u->unicode() == '&');
                 }
-                while(u->unicode() == '&');
+                if(u->isNull() || u->unicode() == '#')
+                {
+                    break;
+                }
                 s = u;
                 e = NULL;
             }
@@ -448,6 +455,7 @@ bool snap_uri::set_uri(QString const& uri)
     return true;
 }
 
+
 /** \brief Return the original URI used to define the Snap URI object.
  *
  * This function returns the original URI as defined when calling the
@@ -467,10 +475,11 @@ bool snap_uri::set_uri(QString const& uri)
  *
  * \return A constant reference to the original Snap URI.
  */
-const QString& snap_uri::get_original_uri() const
+QString const& snap_uri::get_original_uri() const
 {
     return f_original;
 }
+
 
 /** \brief Return the current URI define in this Snap URI object.
  *
@@ -486,7 +495,7 @@ const QString& snap_uri::get_original_uri() const
  *
  * \return The URI represented by this Snap URI object.
  */
-const QString snap_uri::get_uri(bool use_hash_bang) const
+QString const snap_uri::get_uri(bool use_hash_bang) const
 {
     QString uri(f_protocol);
 
@@ -553,6 +562,7 @@ const QString snap_uri::get_uri(bool use_hash_bang) const
     return uri;
 }
 
+
 /** \brief Retrieve a part by name.
  *
  * This function allows you to retrieve a part by name.
@@ -582,7 +592,7 @@ const QString snap_uri::get_uri(bool use_hash_bang) const
  *
  * \return The data representing this part as a string.
  */
-QString snap_uri::get_part(const QString& name, int part) const
+QString snap_uri::get_part(QString const& name, int part) const
 {
     if(name.isEmpty())
     {
@@ -720,6 +730,7 @@ QString snap_uri::get_part(const QString& name, int part) const
     return "";
 }
 
+
 /** \brief Change the protocol.
  *
  * This function is called to set the protocol.
@@ -730,7 +741,7 @@ QString snap_uri::get_part(const QString& name, int part) const
  *
  * \param[in] uri_protocol  The name of the protocol.
  */
-void snap_uri::set_protocol(const QString& uri_protocol)
+void snap_uri::set_protocol(QString const& uri_protocol)
 {
     if(uri_protocol.isEmpty())
     {
@@ -738,6 +749,7 @@ void snap_uri::set_protocol(const QString& uri_protocol)
     }
     f_protocol = uri_protocol;
 }
+
 
 /** \brief Retrieve a copy of the protocol.
  *
@@ -750,10 +762,11 @@ void snap_uri::set_protocol(const QString& uri_protocol)
  *
  * \return A constant reference to the protocol of this URI.
  */
-const QString& snap_uri::protocol() const
+QString const& snap_uri::protocol() const
 {
     return f_protocol;
 }
+
 
 /** \brief Process a domain name and break it up.
  *
@@ -772,8 +785,8 @@ const QString& snap_uri::protocol() const
  *
  * \return true if the function succeeds, false otherwise
  */
-bool snap_uri::process_domain(const QString& full_domain_name,
-                QStringList& sub_domain_names, QString& domain_name, QString& tld)
+bool snap_uri::process_domain(QString const& full_domain_name,
+            QStringList& sub_domain_names, QString& domain_name, QString& tld)
 {
     // first we need to determine the TLD, we use the tld()
     // function from the libtld library for this purpose
@@ -834,6 +847,7 @@ bool snap_uri::process_domain(const QString& full_domain_name,
     return true;
 }
 
+
 /** \brief Set the domain to 'domain'.
  *
  * This function changes the Snap URI to the specified full domain.
@@ -857,9 +871,9 @@ bool snap_uri::process_domain(const QString& full_domain_name,
  * the doman name and the tld, then this exception is raised.
  *
  * \param[in] full_domain_name  A full domain name, without protocol, path,
- * query string or anchor.
+ *                              query string or anchor.
  */
-void snap_uri::set_domain(const QString& full_domain_name)
+void snap_uri::set_domain(QString const& full_domain_name)
 {
     QStringList sub_domain_names;
     QString domain_name;
@@ -873,6 +887,7 @@ void snap_uri::set_domain(const QString& full_domain_name)
     f_top_level_domain = tld;
     f_sub_domains = sub_domain_names;
 }
+
 
 /** \brief Reconstruct the full domain from the broken down information
  *
@@ -902,10 +917,11 @@ QString snap_uri::full_domain() const
  *
  * \return The top level domain name of the Snap URI.
  */
-const QString& snap_uri::top_level_domain() const
+QString const& snap_uri::top_level_domain() const
 {
     return f_top_level_domain;
 }
+
 
 /** \brief Get the domain name by itself.
  *
@@ -915,10 +931,11 @@ const QString& snap_uri::top_level_domain() const
  *
  * \return The stripped down domain name.
  */
-const QString& snap_uri::domain() const
+QString const& snap_uri::domain() const
 {
     return f_domain;
 }
+
 
 /** \brief Return the concatenated list of sub-domains.
  *
@@ -932,6 +949,7 @@ QString snap_uri::sub_domains() const
     return f_sub_domains.join(".");
 }
 
+
 /** \brief Return the number of sub-domains defined.
  *
  * This function defines a set of sub-domains.
@@ -942,6 +960,7 @@ int snap_uri::sub_domain_count() const
 {
     return f_sub_domains.size();
 }
+
 
 /** \brief Return one of the sub-domain names.
  *
@@ -960,6 +979,7 @@ QString snap_uri::sub_domain(int part) const
     return f_sub_domains[part];
 }
 
+
 /** \brief Return the array of sub-domains.
  *
  * This function gives you a constant reference to all the sub-domains
@@ -971,10 +991,11 @@ QString snap_uri::sub_domain(int part) const
  *
  * \return A list of strings representing the sub-domains.
  */
-const QStringList& snap_uri::sub_domains_list() const
+QStringList const& snap_uri::sub_domains_list() const
 {
     return f_sub_domains;
 }
+
 
 /** \brief Set the port to the specified string.
  *
@@ -993,7 +1014,7 @@ const QStringList& snap_uri::sub_domains_list() const
  *
  * \param[in] port  The new port for this Snap URI object.
  */
-void snap_uri::set_port(const QString& port)
+void snap_uri::set_port(QString const& port)
 {
     bool ok;
     int p = port.toInt(&ok);
@@ -1003,6 +1024,7 @@ void snap_uri::set_port(const QString& port)
     }
     f_port = p;
 }
+
 
 /** \brief Set the port to the specified string.
  *
@@ -1028,6 +1050,7 @@ void snap_uri::set_port(int port)
     f_port = port;
 }
 
+
 /** \brief Retrieve the port number.
  *
  * This function returns the specific port used to access
@@ -1040,6 +1063,7 @@ int snap_uri::get_port() const
 {
     return f_port;
 }
+
 
 /** \brief Replace the current path.
  *
@@ -1107,6 +1131,7 @@ void snap_uri::set_path(QString uri_path)
     f_path.swap(p);
 }
 
+
 /** \brief Return the full path.
  *
  * This function returns the full concatenated path of the URI.
@@ -1157,6 +1182,7 @@ QString snap_uri::path(bool encoded) const
     return f_path.join("/");
 }
 
+
 /** \brief Retrieve the number of folder names defined in the path.
  *
  * This function returns the number of folder names defined in the
@@ -1172,6 +1198,7 @@ int snap_uri::path_count() const
 {
     return f_path.size();
 }
+
 
 /** \brief Get a folder name from the path.
  *
@@ -1208,6 +1235,7 @@ QString snap_uri::path_folder_name(int part) const
     return f_path[part];
 }
 
+
 /** \brief The array of folder names.
  *
  * This function returns a reference to the array used to hold the
@@ -1215,10 +1243,11 @@ QString snap_uri::path_folder_name(int part) const
  *
  * \return A constant reference to the list of string forming the path.
  */
-const QStringList& snap_uri::path_list() const
+QStringList const& snap_uri::path_list() const
 {
     return f_path;
 }
+
 
 /** \brief Set an option.
  *
@@ -1235,7 +1264,7 @@ const QStringList& snap_uri::path_list() const
  * \sa option();
  * \sa unset_option();
  */
-void snap_uri::set_option(const QString& name, const QString& value)
+void snap_uri::set_option(QString const& name, QString const& value)
 {
     if(value.isEmpty())
     {
@@ -1257,10 +1286,11 @@ void snap_uri::set_option(const QString& name, const QString& value)
  *
  * \sa set_option();
  */
-void snap_uri::unset_option(const QString& name)
+void snap_uri::unset_option(QString const& name)
 {
     f_options.remove(name);
 }
+
 
 /** \brief Retrieve the value of the named option.
  *
@@ -1275,7 +1305,7 @@ void snap_uri::unset_option(const QString& name)
  *
  * \sa set_option();
  */
-QString snap_uri::option(const QString& name) const
+QString snap_uri::option(QString const& name) const
 {
     if(f_options.contains(name))
     {
@@ -1283,6 +1313,7 @@ QString snap_uri::option(const QString& name) const
     }
     return "";
 }
+
 
 /** \brief Retrieve the number of currently defined options.
  *
@@ -1296,6 +1327,7 @@ int snap_uri::option_count() const
 {
     return f_options.size();
 }
+
 
 /** \brief Retrieve an option by index.
  *
@@ -1322,6 +1354,7 @@ QString snap_uri::option(int part, QString& name) const
     return it.value();
 }
 
+
 /** \brief Retrieve the map of options.
  *
  * This function returns the map of options so one can use the begin()
@@ -1332,10 +1365,11 @@ QString snap_uri::option(int part, QString& name) const
  *
  * \sa option();
  */
-const snap_uri::snap_uri_options_t& snap_uri::options_list() const
+snap_uri::snap_uri_options_t const& snap_uri::options_list() const
 {
     return f_options;
 }
+
 
 /** \brief Set a query string option.
  *
@@ -1349,7 +1383,7 @@ const snap_uri::snap_uri_options_t& snap_uri::options_list() const
  * \param[in] name  The name of the query string option.
  * \param[in] value  The value of the query string option.
  */
-void snap_uri::set_query_option(const QString& name, const QString& value)
+void snap_uri::set_query_option(QString const& name, QString const& value)
 {
     if(value.isEmpty())
     {
@@ -1361,6 +1395,7 @@ void snap_uri::set_query_option(const QString& name, const QString& value)
     }
 }
 
+
 /** \brief Unset the named query string option.
  *
  * This function ensures that the named query string option is deleted
@@ -1368,10 +1403,11 @@ void snap_uri::set_query_option(const QString& name, const QString& value)
  *
  * \param[in] name  The name of the option to delete.
  */
-void snap_uri::unset_query_option(const QString& name)
+void snap_uri::unset_query_option(QString const& name)
 {
     f_query_strings.remove(name);
 }
+
 
 /** \brief Set the query string.
  *
@@ -1387,7 +1423,7 @@ void snap_uri::unset_query_option(const QString& name)
  *
  * \param[in] uri_query_string  The query string to add to the existing data.
  */
-void snap_uri::set_query_string(const QString& uri_query_string)
+void snap_uri::set_query_string(QString const& uri_query_string)
 {
     QStringList value_pairs(uri_query_string.split('&', QString::SkipEmptyParts));
     for(QStringList::iterator it = value_pairs.begin();
@@ -1411,6 +1447,7 @@ void snap_uri::set_query_string(const QString& uri_query_string)
         }
     }
 }
+
 
 /** \brief Generate the query string.
  *
@@ -1443,6 +1480,7 @@ QString snap_uri::query_string() const
     }
     return result;
 }
+
 
 /** \brief Retrieve whether a query option is defined.
  *

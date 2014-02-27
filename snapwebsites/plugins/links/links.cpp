@@ -75,6 +75,7 @@ char const *get_name(name_t name)
  * \param[in] new_name  The name of the key (column.)
  * \param[in] unique  Whether the link is unique (one to one, or one to many.)
  * \param[in] new_key  The key is the name of the row.
+ * \param[in] branch_number  The branch number where this link is to be saved.
  *
  * \sa set_name()
  * \sa set_key()
@@ -244,7 +245,7 @@ char const *get_name(name_t name)
  *
  * \param[in] vname  The name to be verified
  */
-void link_info::verify_name(const QString& vname)
+void link_info::verify_name(QString const& vname)
 {
     // the namespace is really only for debug purposes
     // but at this time we'll keep it for security
@@ -482,7 +483,7 @@ bool link_context::next_link(link_info& info)
             // note that from the links table we only get keys, no names
             // which doesn't matter as the name is f_info.name() anyway
             QString const link_key(QString::fromUtf8(f_cell_iterator.key()));
-            QString link_name(f_cell_iterator.value()->value().stringValue());
+            QString const link_name(f_cell_iterator.value()->value().stringValue());
             if(!link_name.startsWith(links_namespace))
             {
                 throw links_exception_invalid_name("link name \"" + link_name + "\" does not start with \"links::\"");

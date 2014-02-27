@@ -19,6 +19,7 @@
 
 #include "not_reached.h"
 #include "snap_exception.h"
+#include "snapwebsites.h"
 
 #include <syslog.h>
 
@@ -82,8 +83,6 @@ void unconfigure()
  * configure() is called from the server::config() function. If no configuration
  * file is defined then the other functions will do nothing.
  *
- * \param[in] filename  The name of the configuration file.
- *
  * \sa fatal()
  * \sa error()
  * \sa warning()
@@ -98,7 +97,11 @@ void configureConsole()
     log4cplus::SharedAppenderPtr
             appender(new log4cplus::ConsoleAppender());
     appender->setName(LOG4CPLUS_TEXT("console"));
-    const log4cplus::tstring pattern( "%b:%L:%h: %m%n" );
+    const log4cplus::tstring pattern
+                ( server::instance()->servername().c_str()
+                + log4cplus::tstring(":%b:%L:%h: %m%n")
+                );
+    //const log4cplus::tstring pattern( "%b:%L:%h: %m%n" );
     appender->setLayout( std::auto_ptr<log4cplus::Layout>( new log4cplus::PatternLayout(pattern)) );
     appender->setThreshold( log4cplus::INFO_LOG_LEVEL );
 
@@ -127,7 +130,7 @@ void configureConsole()
  * configure() is called from the server::config() function. If no configuration
  * file is defined then the other functions will do nothing.
  *
- * \param[in] filename  The name of the configuration file.
+ * \param[in] logfile  The name of the configuration file.
  *
  * \sa fatal()
  * \sa error()
@@ -136,7 +139,7 @@ void configureConsole()
  * \sa server::config()
  * \sa unconfigure()
  */
-void configureLogfile( const QString& logfile )
+void configureLogfile( QString const& logfile )
 {
     unconfigure();
 
@@ -149,15 +152,19 @@ void configureLogfile( const QString& logfile )
     log4cplus::SharedAppenderPtr
             appender(new log4cplus::RollingFileAppender( logfile.toUtf8().data() ));
     appender->setName(LOG4CPLUS_TEXT("log_file"));
-    const log4cplus::tstring pattern( "%d{%Y/%m/%d %H:%M:%S} %h Snap[%i]: %m (%b:%L)%n" );
+    const log4cplus::tstring pattern
+                ( log4cplus::tstring("%d{%Y/%m/%d %H:%M:%S} %h ")
+                + server::instance()->servername().c_str()
+                + log4cplus::tstring("[%i]: %m (%b:%L)%n")
+                );
     appender->setLayout( std::auto_ptr<log4cplus::Layout>( new log4cplus::PatternLayout(pattern)) );
     appender->setThreshold( log4cplus::INFO_LOG_LEVEL );
 
     g_log_config_filename.clear();
     g_log_output_filename = logfile;
-    g_logging_type    = file_logger;
-    g_logger            = log4cplus::Logger::getInstance("snap");
-    g_secure_logger     = log4cplus::Logger::getInstance("security");
+    g_logging_type        = file_logger;
+    g_logger              = log4cplus::Logger::getInstance("snap");
+    g_secure_logger       = log4cplus::Logger::getInstance("security");
 
     g_logger.addAppender( appender );
     g_secure_logger.addAppender( appender );
@@ -189,7 +196,7 @@ void configureLogfile( const QString& logfile )
  * \sa server::config()
  * \sa unconfigure()
  */
-void configureConffile(const QString& filename)
+void configureConffile(QString const& filename)
 {
     unconfigure();
 
