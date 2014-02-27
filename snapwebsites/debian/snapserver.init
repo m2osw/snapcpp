@@ -82,8 +82,8 @@ start_daemon()
 do_start()
 {
 	start_daemon "${SERVER}"  "${SERVER_ARGS}"           || return $?
-	start_daemon "${BACKEND}" "${BACKEND_SENDMAIL_ARGS}" || return $?
-	start_daemon "${BACKEND}" "${BACKEND_PAGELIST_ARGS}" || return $?
+	"${BACKEND}" ${BACKEND_SENDMAIL_ARGS} || return $?
+	"${BACKEND}" ${BACKEND_PAGELIST_ARGS} || return $?
 	return 0
 }
 

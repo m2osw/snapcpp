@@ -1,5 +1,6 @@
 /var/log/snapwebsites/snapserver.log {
         weekly
+		su snapwebsites snapwebsites
         missingok
         rotate 5
         postrotate

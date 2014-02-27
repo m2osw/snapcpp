@@ -1,3 +1,10 @@
+snapwebsites (0.1.17m2osw1~saucy) saucy; urgency=high
+
+  * Fixed init script problem.
+  * Logrotate now assumes snapwebsites as user/group.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Wed, 26 Feb 2014 19:10:48 -0800
+
 snapwebsites (0.1.17~saucy) saucy; urgency=high
 
   [ Alexis Wilke ]
