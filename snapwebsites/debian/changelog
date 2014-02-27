@@ -1,4 +1,4 @@
-snapwebsites (0.1.17~saucy) UNRELEASED; urgency=high
+snapwebsites (0.1.17~saucy) saucy; urgency=high
 
   [ Alexis Wilke ]
   * Worked on the documentation so it would actually generate it properly
