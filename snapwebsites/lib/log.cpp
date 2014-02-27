@@ -294,6 +294,7 @@ void setLogOutputLevel( log_level_t level )
         break;
     }
 
+    log4cplus::Logger::getRoot().setLogLevel( new_level );
     g_logger.setLogLevel( new_level );
     g_secure_logger.setLogLevel( new_level );
 }
