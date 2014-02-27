@@ -9,6 +9,9 @@ snapwebsites (0.1.17~saucy) UNRELEASED; urgency=high
   * Updated the error in the init.d file: the snapbackend server requires
     the "--background" flag.
   * Signal handler now emits stack trace, but only for fatal error signals.
+  * snapsignal can now be used to stop the server and reconfigure the logger.
+  * The init.d script now uses snapsignal to stop the services.
+  * Logrotate now no longer stops the server--it now uses snapsignal NLOG.
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Fri, 21 Feb 2014 17:58:23 -0800
 
