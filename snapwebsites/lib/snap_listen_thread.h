@@ -36,8 +36,10 @@ public:
 
 	virtual void run();
 
-    typedef enum { ServerStop, LogReset } word_t;
+    typedef enum { Waiting, ServerStop, LogReset } word_t;
+
     word_t get_word();
+    void reset_word();
 
 private:
     snap_thread::snap_mutex     f_mutex;

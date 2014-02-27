@@ -34,6 +34,7 @@ namespace snap
 snap_listen_thread::snap_listen_thread( udp_server_t udp_server )
     : snap_runner("snap_listen_thread")
     , f_server(udp_server)
+    , f_word(Waiting)
 {
 }
 
@@ -45,45 +46,50 @@ snap_listen_thread::word_t snap_listen_thread::get_word()
 }
 
 
+void snap_listen_thread::reset_word()
+{
+    snap_thread::snap_lock lock( f_mutex );
+    f_word = Waiting;
+}
+
+
 void snap_listen_thread::run()
 {
     while( true )
     {
         // sleep till next PING (but max. 5 minutes)
+        //
         std::vector<char> buf;
-        buf.resize( BUFSIZE, '\0' );
+        buf.resize( BUFSIZE+1, '\0' );
         const int r = f_server->timed_recv( &buf[0], buf.size(), TIMEOUT );
-        if(r != -1 || errno != EAGAIN)
+        if( r > -1 )
         {
-            if(r < 1 || r >= static_cast<int>(buf.size() - 1))
-            {
-                perror("f_server->timed_recv():");
-                SNAP_LOG_FATAL() << "error: an error occured in the UDP recv() call, returned size: " << r;
-                exit(1);
-            }
+            buf.resize( r+1 );
             buf.shrink_to_fit();
             std::string word;
-            word.resize( buf.size() );
+            word.resize( r );
             std::copy( buf.begin(), buf.end(), word.begin() );
-
+            //
             if( word == "STOP" )
             {
                 // clean STOP
                 //
                 snap_thread::snap_lock lock( f_mutex );
+                SNAP_LOG_TRACE("STOP");
                 f_word = ServerStop;
                 break;
             }
-            else if( word == "NLOG ")
+            else if( word == "NLOG")
             {
                 // reset the logs
                 //
                 snap_thread::snap_lock lock( f_mutex );
+                SNAP_LOG_TRACE("NLOG");
                 f_word = LogReset;
             }
             else
             {
-                SNAP_LOG_WARNING() << "snap_listen_thread received an unknown word [" << word << "]";
+                SNAP_LOG_WARNING() << "snap_listen_thread received an unknown word '" << word << "'";
             }
         }
     }

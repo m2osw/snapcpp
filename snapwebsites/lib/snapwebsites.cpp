@@ -1229,23 +1229,32 @@ void server::listen()
         // retrieve all the connections and process them
         // timeout so we can check the listen thread runner
         //
-        const int socket( s.accept( 500 /*1/2 sec*/ ) );
-
-        // callee becomes the owner of socket
-        if( socket == -2 )
+        //const int socket( s.accept( 500 /*1/2 sec*/ ) );
+        int socket = -1;
+        while( (socket = s.accept( 1000 /*1 sec*/ )) == -2 )
         {
             switch( f_listen_runner->get_word() )
             {
             case snap_listen_thread::ServerStop:
+                SNAP_LOG_INFO("Stopping server.");
                 return;
+                break;
 
             case snap_listen_thread::LogReset:
+                SNAP_LOG_INFO("Logging reconfiguration.");
                 logging::reconfigure();
+                f_listen_runner->reset_word();
+                break;
+
+            case snap_listen_thread::Waiting:
+                // go back and listen some more
                 break;
             }
         }
-        else if( socket != -1 )
+
+        if( socket != -1 )
         {
+            // callee becomes the owner of socket
             process_connection( socket );
         }
     }
