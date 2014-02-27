@@ -171,6 +171,8 @@ public:
 
     unsigned long connections_count();
 
+    std::string servername() const;
+
     typedef QSharedPointer<udp_client_server::udp_server> udp_server_t;
     static udp_server_t udp_get_server( const QString& udp_addr_port );
 

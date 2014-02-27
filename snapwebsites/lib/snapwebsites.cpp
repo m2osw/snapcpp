@@ -555,6 +555,11 @@ void server::config(int argc, char *argv[])
     // We want the servername for later.
     //
     f_servername = argv[0];
+    const std::string::size_type slash = f_servername.find_last_of( '/' );
+    if( slash != std::string::npos )
+    {
+        f_servername = f_servername.substr( slash+1 );
+    }
 
     // Keep the server in the foreground?
     //
@@ -1370,6 +1375,15 @@ unsigned long server::connections_count()
     return f_connections_count;
 }
 
+
+/** \brief Servername, taken from argv[0].
+ *
+ * This method returns the server name, taken from the first argument on the command line.
+ */
+std::string server::servername() const
+{
+    return f_servername;
+}
 
 /** \brief Implementation of the bootstrap signal.
  *
