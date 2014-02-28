@@ -261,7 +261,7 @@ void snap_init::create_server_process()
 {
     process_t p( new snap::process( "process::server" ) );
     p->set_mode( snap::process::PROCESS_MODE_INOUT );
-    p->set_command( (f_opt.get_string("path") + "/snapserver").c_str() );
+    p->set_command( (f_opt.get_string("binary_path") + "/snapserver").c_str() );
     p->add_argument("-c");
     p->add_argument( f_opt.get_string("config_file").c_str() );
     p->run( false /*wait*/ );
@@ -274,7 +274,7 @@ void snap_init::create_backend_process( const QString& name )
 {
     process_t p( new snap::process( "process::backend::" + name) );
     p->set_mode( snap::process::PROCESS_MODE_INOUT );
-    p->set_command( (f_opt.get_string("path") + "/snapbackend").c_str() );
+    p->set_command( (f_opt.get_string("binary_path") + "/snapbackend").c_str() );
     p->add_argument("-c");
     p->add_argument( f_opt.get_string("config_file").c_str() );
     p->add_argument("-a");
