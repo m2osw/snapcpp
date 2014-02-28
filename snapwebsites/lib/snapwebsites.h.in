@@ -174,7 +174,8 @@ public:
     std::string servername() const;
 
     typedef QSharedPointer<udp_client_server::udp_server> udp_server_t;
-    static udp_server_t udp_get_server( const QString& udp_addr_port );
+    static udp_server_t udp_get_server ( const QString& udp_addr_port );
+    static void         udp_ping_server( const QString& udp_addr_port, char const *message = "PING" );
 
     SNAP_SIGNAL(bootstrap, (snap_child *snap), (snap));
     SNAP_SIGNAL(init, (), ());

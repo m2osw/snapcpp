@@ -1107,6 +1107,66 @@ server::udp_server_t server::udp_get_server( const QString& udp_addr_port )
 }
 
 
+/** \brief Send a PING message to the specified UDP server.
+ *
+ * This function sends a PING message (4 bytes) to the specified
+ * UDP server. This is used after you saved data in the Cassandra
+ * cluster to wake up a background process which can then "slowly"
+ * process the data further.
+ *
+ * Remember that UDP is not reliable so we do not in any way
+ * guarantee that this goes anywhere. The function returns no
+ * feedback at all. We do not wait for a reply since at the time
+ * we send the message the listening server may be busy. The
+ * idea of this ping is just to make sure that if the server is
+ * sleeping at that time, it wakes up sooner rather than later
+ * so it can immediately start processing the data we just added
+ * to Cassandra.
+ *
+ * The \p message is expected to be a NUL terminated string. The
+ * NUL is not sent across. At this point most of our servers
+ * accept a PING message to wake up and start working on new
+ * data.
+ *
+ * The \p name parameter is the name of a variable in the server
+ * configuration file.
+ *
+ * \param[in] udp_addr_port  The server:port string to connect to.
+ * \param[in] message        The message to send, "PING" by default.
+ */
+void server::udp_ping_server( const QString& udp_addr_port, char const *message )
+{
+    QString addr, port;
+    int bracket(udp_addr_port.lastIndexOf("]"));
+    int p(udp_addr_port.lastIndexOf(":"));
+    if(bracket != -1 && p != -1)
+    {
+        if(p > bracket)
+        {
+            // IPv6 port specification
+            addr = udp_addr_port.mid(0, bracket + 1); // include the ']'
+            port = udp_addr_port.mid(p + 1); // ignore the ':'
+        }
+        else
+        {
+            throw snapwebsites_exception_invalid_parameters("invalid [IPv6]:port specification, port missing for UDP ping");
+        }
+    }
+    else if(p != -1)
+    {
+        // IPv4 port specification
+        addr = udp_addr_port.mid(0, p); // ignore the ':'
+        port = udp_addr_port.mid(p + 1); // ignore the ':'
+    }
+    else
+    {
+        throw snapwebsites_exception_invalid_parameters("invalid IPv4:port specification, port missing for UDP ping");
+    }
+    udp_client_server::udp_client client(addr.toUtf8().data(), port.toInt());
+    client.send(message, strlen(message)); // we do not send the '\0'
+}
+
+
 /** \brief Listen to incoming connections.
  *
  * This function loops over a listen waiting for connections to this
@@ -1814,12 +1874,13 @@ bool server::add_snap_expr_functions_impl(snap_expr::functions_t& functions)
  *
  * \param[in] name  The name of the configuration variable used to read the IP and port
  * \param[in] message  The message to send, "PING" by default.
+ *
+ * \sa udp_ping_server()
  */
 void server::udp_ping(char const *name, char const *message)
 {
-    // TODO: we should have a common function to read and transform the
-    //       parameter to a valid IP/Port pair (see below)
-    QString udp_addr_port(get_parameter(name));
+    udp_ping_server( get_parameter(name), message );
+#if 0
     QString addr, port;
     int bracket(udp_addr_port.lastIndexOf("]"));
     int p(udp_addr_port.lastIndexOf(":"));
@@ -1848,6 +1909,7 @@ void server::udp_ping(char const *name, char const *message)
     }
     udp_client_server::udp_client client(addr.toUtf8().data(), port.toInt());
     client.send(message, strlen(message)); // we do not send the '\0'
+#endif
 }
 
 

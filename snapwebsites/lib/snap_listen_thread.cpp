@@ -59,38 +59,32 @@ void snap_listen_thread::run()
     {
         // sleep till next PING (but max. 5 minutes)
         //
-        std::vector<char> buf;
-        buf.resize( BUFSIZE+1, '\0' );
-        const int r = f_server->timed_recv( &buf[0], buf.size(), TIMEOUT );
-        if( r > -1 )
+        const std::string word( f_server->timed_recv( BUFSIZE, TIMEOUT ) );
+        if( word.empty() )
         {
-            buf.resize( r+1 );
-            buf.shrink_to_fit();
-            std::string word;
-            word.resize( r );
-            std::copy( buf.begin(), buf.end(), word.begin() );
+            continue;
+        }
+
+        if( word == "STOP" )
+        {
+            // clean STOP
             //
-            if( word == "STOP" )
-            {
-                // clean STOP
-                //
-                snap_thread::snap_lock lock( f_mutex );
-                SNAP_LOG_TRACE("STOP");
-                f_word = ServerStop;
-                break;
-            }
-            else if( word == "NLOG")
-            {
-                // reset the logs
-                //
-                snap_thread::snap_lock lock( f_mutex );
-                SNAP_LOG_TRACE("NLOG");
-                f_word = LogReset;
-            }
-            else
-            {
-                SNAP_LOG_WARNING() << "snap_listen_thread received an unknown word '" << word << "'";
-            }
+            snap_thread::snap_lock lock( f_mutex );
+            SNAP_LOG_TRACE("STOP");
+            f_word = ServerStop;
+            break;
+        }
+        else if( word == "NLOG")
+        {
+            // reset the logs
+            //
+            snap_thread::snap_lock lock( f_mutex );
+            SNAP_LOG_TRACE("NLOG");
+            f_word = LogReset;
+        }
+        else
+        {
+            SNAP_LOG_WARNING() << "snap_listen_thread received an unknown word '" << word << "'";
         }
     }
 }

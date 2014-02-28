@@ -82,7 +82,9 @@ public:
     void                        add_argument(const QString& arg);
     void                        add_environ(const QString& name, const QString& value);
 
-    int                         run();
+    int                         run( const bool wait = true );
+    bool                        is_running() const;
+    void                        kill();
 
     // what is sent to the command stdin
     void                        set_input(QString const& input);
@@ -108,6 +110,7 @@ private:
     controlled_vars::fbool_t    f_forced_environment;
     zpprocess_output_callback_t f_output_callback;
     snap_thread::snap_mutex     f_mutex;
+    int                         f_pid;
 };
 
 } // namespace snap

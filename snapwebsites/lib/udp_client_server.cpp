@@ -21,6 +21,8 @@
 #include <string.h>
 #include <unistd.h>
 
+#include <vector>
+
 #include "poison.h"
 
 
@@ -355,6 +357,50 @@ int udp_server::timed_recv(char *msg, size_t max_size, int max_wait_ms)
     // our socket has no data
     errno = EAGAIN;
     return -1;
+}
+
+
+/** \brief Wait for data to come in, but return a std::string.
+ *
+ * This function waits for a given amount of time for data to come in. If
+ * no data comes in after max_wait_ms, the function returns with -1 and
+ * errno set to EAGAIN.
+ *
+ * The socket is expected to be a blocking socket (the default,) although
+ * it is possible to setup the socket as non-blocking if necessary for
+ * some other reason.
+ *
+ * This function blocks for a maximum amount of time as defined by
+ * max_wait_ms. It may return sooner with an error or a message.
+ *
+ * \param[in] max_wait_ms  The maximum number of milliseconds to wait for a message.
+ *
+ * \return received string. NULL if error.
+ *
+ * \sa timed_recv()
+ */
+std::string udp_server::timed_recv( const int bufsize, const int max_wait_ms )
+{
+    std::vector<char> buf;
+    buf.resize( bufsize+1, '\0' );
+    const int r = timed_recv( &buf[0], buf.size(), max_wait_ms );
+    if( r <= -1 )
+    {
+        // Timed out, so return empty string.
+        //
+        return std::string();
+    }
+
+    // Resize the buffer, then convert to std string
+    //
+    buf.resize( r+1 );
+    buf.shrink_to_fit();
+
+    std::string word;
+    word.resize( r );
+    std::copy( buf.begin(), buf.end(), word.begin() );
+
+    return word;
 }
 
 
