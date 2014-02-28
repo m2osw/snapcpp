@@ -24,20 +24,21 @@
 #include "snapwebsites.h"
 #include "snap_exception.h"
 #include "log.h"
-#include "process.h"
 #include "snap_thread.h"
 #include "not_reached.h"
 
 #include <unistd.h>
+#include <sys/wait.h>
 
 #include <exception>
 #include <map>
 #include <memory>
+#include <sstream>
 #include <vector>
 
 #include <advgetopt/advgetopt.h>
 
-#include <QSharedMemory>
+#include <QFile>
 
 namespace
 {
@@ -92,9 +93,25 @@ namespace
         {
             'c',
             advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
-            "config_file",
+            "config",
             "/etc/snapwebsites/snapserver.conf",
             "Configuration file to pass into servers.",
+            advgetopt::getopt::optional_argument
+        },
+        {
+            'l',
+            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
+            "logfile",
+            "/var/log/snapwebsites/snapinit.log",
+            "Full path to the snapinit logfile",
+            advgetopt::getopt::optional_argument
+        },
+        {
+            'n',
+            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
+            "nolog",
+            nullptr,
+            "Only output to the console, not the log.",
             advgetopt::getopt::optional_argument
         },
         {
@@ -124,28 +141,132 @@ namespace
     };
 
 
-    const char* UDP_SERVER = "127.0.0.1:4100";
-    const int BUFSIZE = 256;
-    const int TIMEOUT = 1000;
+    const char* UDP_SERVER   = "127.0.0.1:4100";
+    const int   BUFSIZE      = 256;
+    const int   TIMEOUT      = 1000;
+    const char* SNAPINIT_KEY = "snapinit-1846faf6-a02a-11e3-884b-206a8a420cb5";
 }
 //namespace
+
+class process
+{
+public:
+    typedef std::shared_ptr<process> pointer_t;
+
+    process( const QString& command, const QStringList& arglist )
+        : f_command(command)
+        , f_arglist(arglist)
+        , f_pid(0)
+        , f_exit(0)
+        , f_startcount(0)
+    {
+    }
+
+    bool run();
+    bool is_running();
+    void kill();
+    int  startcount() const { return f_startcount; }
+
+private:
+    QString     f_command;
+    QStringList f_arglist;
+    int         f_pid;
+    int         f_exit;
+    int         f_startcount;
+};
+
+
+bool process::run()
+{
+    f_startcount++;
+    f_pid = fork();
+    if( f_pid == 0 )
+    {
+        // child
+        //
+        std::string cmd(f_command.toUtf8().data());
+        std::vector<std::string> args;
+        std::vector<const char *> args_p;
+        args.push_back( cmd.c_str() );
+        for( auto arg : f_arglist )
+        {
+            args.push_back(arg.toUtf8().data());
+            args_p.push_back(args.rbegin()->c_str());
+        }
+        args_p.push_back(NULL);
+
+        execv(
+            cmd.c_str(),
+            const_cast<char * const *>(&args_p[0])
+        );
+
+        SNAP_LOG_FATAL("Child process \"") << cmd << " " << f_arglist.join(" ") << "\" failed to start!";
+        exit(1);
+    }
+
+    sleep(1);
+    return is_running();
+}
+
+
+bool process::is_running()
+{
+    if( f_pid == 0 )
+    {
+        return false;
+    }
+
+    int status = 0;
+    const int pid = waitpid( f_pid, &status, WNOHANG );
+    if( pid == 0 )
+    {
+        return true;
+    }
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+    if(WIFEXITED(status))
+    {
+        f_exit = WEXITSTATUS(status);
+    }
+    else
+    {
+        SNAP_LOG_FATAL() << "Command [" << f_command << "] terminated with error [" << WEXITSTATUS(status) << "]";
+        f_exit = -1;
+    }
+#pragma GCC diagnostic pop
+    f_pid = 0;
+
+    return false;
+}
+
+
+void process::kill()
+{
+    if( f_pid != 0 )
+    {
+        ::kill( f_pid, SIGTERM );
+        f_pid = 0;
+    }
+}
 
 
 class snap_init
 {
 public:
     snap_init( int argc, char *argv[] );
-    ~snap_init() {}
+    ~snap_init();
 
-	static bool is_running();
+    void run_processes();
+    bool is_running();
 
 private:
     advgetopt::getopt   f_opt;
     typedef std::map<std::string,bool> map_t;
-    map_t f_opt_map;
+    map_t       f_opt_map;
+    QFile       f_lock_file;
 
-    typedef std::shared_ptr<snap::process> process_t;
-    typedef std::vector<process_t> process_list_t;
+    typedef std::vector<process::pointer_t> process_list_t;
     process_list_t f_process_list;
 
 	void usage();
@@ -161,36 +282,28 @@ private:
 };
 
 
-bool snap_init::is_running()
-{
-    // Attempt to create shared memory segment--if created, then there is another instance running...
-    //  
-    QSharedMemory sm("snap_init-1846faf6-a02a-11e3-884b-206a8a420cb5");
-#ifdef DEBUG
-    std::cout << "Native key=" << sm.nativeKey().toStdString() << std::endl;
-#endif
-    if( sm.create( 1, QSharedMemory::ReadOnly ) ) 
-    {   
-        return false;
-    }   
-
-	if( sm.error() != QSharedMemory::AlreadyExists )
-	{   
-		SNAP_LOG_FATAL() << "Cannot create shared memory!";
-        throw std::runtime_error("Cannot create shared memory!");
-	}   
-	if( sm.isAttached() )
-	{
-		sm.detach();
-	}
-
-	return true;
-}
-
-
 
 snap_init::snap_init( int argc, char *argv[] )
     : f_opt(argc, argv, g_snapinit_options, g_configuration_files, "SNAPINIT_OPTIONS")
+    , f_lock_file( QString("/tmp/%1").arg(SNAPINIT_KEY) )
+{
+    if( f_opt.is_defined( "nolog" ) )
+    {
+        snap::logging::configureConsole();
+    }
+    else
+    {
+        snap::logging::configureLogfile( f_opt.get_string("logfile").c_str() );
+    }
+}
+
+
+snap_init::~snap_init()
+{
+}
+
+
+void snap_init::run_processes()
 {
     if( f_opt.is_defined( "help" ) )
     {
@@ -199,31 +312,37 @@ snap_init::snap_init( int argc, char *argv[] )
     //
     if( !f_opt.is_defined( "--" ) )
     {
-		SNAP_LOG_ERROR() << "A command is required!";
-		usage();
+        SNAP_LOG_ERROR() << "A command is required!";
+        usage();
     }
 
-	validate();
+    validate();
     show_selected_servers();
 
     const std::string command( f_opt.get_string("--") );
-	if( command == "start" )
-	{
-		start();
-	}
-	else if( command == "stop" )
-	{
-		stop();
-	}
-	else if( command == "restart" )
-	{
-		restart();
-	}
-	else
-	{
-		SNAP_LOG_ERROR() << "Command '" << command << "' not recognized!";
-		usage();
-	}
+    if( command == "start" )
+    {
+        start();
+    }
+    else if( command == "stop" )
+    {
+        stop();
+    }
+    else if( command == "restart" )
+    {
+        restart();
+    }
+    else
+    {
+        SNAP_LOG_ERROR() << "Command '" << command << "' not recognized!";
+        usage();
+    }
+}
+
+
+bool snap_init::is_running()
+{
+    return f_lock_file.exists();
 }
 
 
@@ -245,42 +364,39 @@ void snap_init::validate()
 
 void snap_init::show_selected_servers() const
 {
-    std::cout << "Enabled servers: ";
+    std::stringstream ss;
+    ss << "Enabled servers: ";
+    //
     for( const auto& opt : f_opt_map )
     {
         if( opt.second )
         {
-            std::cout << "[" << opt.first << "] ";
+            ss << "[" << opt.first << "] ";
         }
     }
-    std::cout << std::endl;
+    //
+    SNAP_LOG_INFO() << ss.str();
 }
 
 
 void snap_init::create_server_process()
 {
-    process_t p( new snap::process( "process::server" ) );
-    p->set_mode( snap::process::PROCESS_MODE_INOUT );
-    p->set_command( (f_opt.get_string("binary_path") + "/snapserver").c_str() );
-    p->add_argument("-c");
-    p->add_argument( f_opt.get_string("config_file").c_str() );
-    p->run( false /*wait*/ );
-
+    const QString command( (f_opt.get_string("binary_path") + "/snapserver").c_str() );
+    QStringList arglist;
+    arglist << "-c" << f_opt.get_string("config").c_str();
+    process::pointer_t p( new process( command, arglist ) );
+    p->run();
     f_process_list.push_back( p );
 }
 
 
 void snap_init::create_backend_process( const QString& name )
 {
-    process_t p( new snap::process( "process::backend::" + name) );
-    p->set_mode( snap::process::PROCESS_MODE_INOUT );
-    p->set_command( (f_opt.get_string("binary_path") + "/snapbackend").c_str() );
-    p->add_argument("-c");
-    p->add_argument( f_opt.get_string("config_file").c_str() );
-    p->add_argument("-a");
-    p->add_argument( name );
-    p->run( false /*wait*/ );
-
+    const QString command( (f_opt.get_string("binary_path") + "/snapbackend").c_str() );
+    QStringList arglist;
+    arglist << "-c" << f_opt.get_string("config").c_str() << "-a" << name;
+    process::pointer_t p( new process( command, arglist ) );
+    p->run();
     f_process_list.push_back( p );
 }
 
@@ -291,8 +407,11 @@ void snap_init::monitor_processes()
     {
         if( !p->is_running() )
         {
+            // TODO: need some kind of count and a timer to disable
+            // processes that just won't run
+            //
             // Restart process
-            p->run( false /*wait*/ );
+            p->run();
         }
     }
 }
@@ -310,7 +429,7 @@ void snap_init::terminate_processes()
 void snap_init::start()
 {
 	SNAP_LOG_INFO() << "Start servers";
-	if( snap_init::is_running() )
+    if( is_running() )
 	{
         throw std::runtime_error("snap_init is already running!");
 	}
@@ -321,6 +440,7 @@ void snap_init::start()
     const int pid = fork();
     if( pid == 0 )
     {
+        f_lock_file.open( QFile::ReadWrite );
         for( auto opt : f_opt_map )
         {
             if( !opt.second ) continue;
@@ -348,6 +468,11 @@ void snap_init::start()
                 break;
             }
         }
+
+        f_lock_file.close();
+        f_lock_file.remove();
+
+        SNAP_LOG_INFO("Normal shutdown.");
     }
     else
     {
@@ -359,7 +484,7 @@ void snap_init::start()
 void snap_init::restart()
 {
 	SNAP_LOG_INFO() << "Restart servers";
-	if( snap_init::is_running() )
+    if( is_running() )
 	{
 		stop();
 	}
@@ -371,7 +496,7 @@ void snap_init::restart()
 void snap_init::stop()
 {
 	SNAP_LOG_INFO() << "Stop servers";
-	if( !snap_init::is_running() )
+    if( !is_running() )
 	{
         throw std::runtime_error("snap_init is not running!");
 	}
@@ -393,8 +518,8 @@ int main(int argc, char *argv[])
 
 	try
 	{
-		snap::logging::configureConsole();
 		snap_init init( argc, argv );
+        init.run_processes();
 	}
     catch( snap::snap_exception const& except )
     {
