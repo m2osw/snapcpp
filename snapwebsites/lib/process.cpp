@@ -329,7 +329,7 @@ void process::add_environ(const QString& name, const QString& value)
  * \return The exit code of hte child process (0 to 255)
  *         or -1 if an error occurs
  */
-int process::run( const bool wait_until_done )
+int process::run()
 {
     class raii_pipe
     {
@@ -517,23 +517,16 @@ int process::run( const bool wait_until_done )
         {
             // in this case f_child should already be zero, if not we're
             // throwing or exiting with -1 anyway
-            wait( true /*wait_until_done*/ );
+            wait();
         }
 
-        int wait( const bool wait_until_done )
+        int wait()
         {
             // TODO: use wait4() to get usage and save that usage in the log
             if(f_child > 0)
             {
                 int status;
-                const int pid = waitpid(  f_child, &status,
-                                    wait_until_done
-                                    ? 0
-                                    : WNOHANG );
-                if( pid == 0 )
-                {
-                    return -2;
-                }
+                waitpid( f_child, &status, 0 );
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
                 if(WIFEXITED(status))
@@ -656,143 +649,111 @@ int process::run( const bool wait_until_done )
             close(inout.f_pipes[3]);
             inout.f_pipes[3] = -1;
 
-            int r = 0;
-            if( wait_until_done )
+            class in_t : public snap_thread::snap_runner
             {
-                class in_t : public snap_thread::snap_runner
+            public:
+                in_t(const QByteArray& input, int& pipe)
+                    : snap_runner("process::in")
+                    , f_input(input)
+                    , f_pipe(pipe)
                 {
-                public:
-                    in_t(const QByteArray& input, int& pipe)
-                        : snap_runner("process::in")
-                        , f_input(input)
-                        , f_pipe(pipe)
-                    {
-                    }
-
-                    virtual void run()
-                    {
-                        // TODO: this is not handling the interactive case
-                        //       in the interactive case, additional input
-                        //       may be added as we receive new output
-                        //
-                        //       more or less, this means making the data buffer
-                        //       a copy of any extra input before returning
-                        QByteArray data(f_input);
-                        if(write(f_pipe, data.data(), data.size()) != data.size())
-                        {
-                            // what do we do here? (i.e. we're in a thread)
-                        }
-
-                        // TODO:
-                        // the only way to wake up the other side is to close
-                        // once we are done writing data--this won't help in
-                        // case we want some interactive support... (i.e. write
-                        // in the pipe depending on what the output is)
-                        close(f_pipe);
-                        f_pipe = -1;
-                    }
-
-                    const QByteArray&  f_input;
-                    int&            f_pipe;
-                } in(f_input, inout.f_pipes[1]);
-                snap_thread in_thread("process::in::thread", &in);
-                if(!in_thread.start())
-                {
-                    return -1;
                 }
 
-                class out_t : public snap_thread::snap_runner
+                virtual void run()
                 {
-                public:
-                    out_t(QByteArray& output)
-                        : snap_runner("process::out")
-                        , f_output(output)
+                    // TODO: this is not handling the interactive case
+                    //       in the interactive case, additional input
+                    //       may be added as we receive new output
+                    //
+                    //       more or less, this means making the data buffer
+                    //       a copy of any extra input before returning
+                    QByteArray data(f_input);
+                    if(write(f_pipe, data.data(), data.size()) != data.size())
                     {
+                        // what do we do here? (i.e. we're in a thread)
                     }
 
-                    virtual void run()
-                    {
-                        // TODO: we need to support the interactive capability
-                        //       at some point, which means making the pipe a
-                        //       non-blocking call which we wait on with a
-                        //       select() and send the output to the callback
-                        //       as soon as available instead of loading as
-                        //       much as possible first (i.e. no buffering)
-                        //       later we could have a line based handler which
-                        //       calls the output_available() whenever a new
-                        //       line of data, delimited by new line (\r or \n)
-                        //       characters, is read (semi-buffering)
-                        for(;;)
-                        {
-                            char buf[4096];
-                            ssize_t l(read(f_pipe, buf, sizeof(buf)));
-                            if(l <= 0)
-                            {
-                                //if(l < 0) ... manage error?
-                                break;
-                            }
-                            QByteArray output(buf, l);
-                            f_output.append(output);
-                            if(f_callback)
-                            {
-                                f_callback->output_available(f_process, output);
-                            }
-                        }
-                    }
-
-                    QByteArray&                 f_output;
-                    int                         f_pipe;
-                    process_output_callback *   f_callback;
-                    process *                   f_process;
-                } out(f_output);
-                out.f_pipe = inout.f_pipes[2];
-                out.f_callback = f_output_callback;
-                out.f_process = this;
-                snap_thread out_thread("process::out::thread", &out);
-                if(!out_thread.start())
-                {
-                    return -1;
+                    // TODO:
+                    // the only way to wake up the other side is to close
+                    // once we are done writing data--this won't help in
+                    // case we want some interactive support... (i.e. write
+                    // in the pipe depending on what the output is)
+                    close(f_pipe);
+                    f_pipe = -1;
                 }
 
-                // wait for the child process first
-                r = child.wait( true /*wait_until_done*/ );
-                //
-                // then wait on the two threads
-                in_thread.stop();
-                out_thread.stop();
-            }
-            else
+                const QByteArray&  f_input;
+                int&            f_pipe;
+            } in(f_input, inout.f_pipes[1]);
+            snap_thread in_thread("process::in::thread", &in);
+            if(!in_thread.start())
             {
-                r = child.wait( false /*wait_until_done*/ );
-                f_pid = child.get_pid();
+                return -1;
             }
+
+            class out_t : public snap_thread::snap_runner
+            {
+            public:
+                out_t(QByteArray& output)
+                    : snap_runner("process::out")
+                    , f_output(output)
+                {
+                }
+
+                virtual void run()
+                {
+                    // TODO: we need to support the interactive capability
+                    //       at some point, which means making the pipe a
+                    //       non-blocking call which we wait on with a
+                    //       select() and send the output to the callback
+                    //       as soon as available instead of loading as
+                    //       much as possible first (i.e. no buffering)
+                    //       later we could have a line based handler which
+                    //       calls the output_available() whenever a new
+                    //       line of data, delimited by new line (\r or \n)
+                    //       characters, is read (semi-buffering)
+                    for(;;)
+                    {
+                        char buf[4096];
+                        ssize_t l(read(f_pipe, buf, sizeof(buf)));
+                        if(l <= 0)
+                        {
+                            //if(l < 0) ... manage error?
+                            break;
+                        }
+                        QByteArray output(buf, l);
+                        f_output.append(output);
+                        if(f_callback)
+                        {
+                            f_callback->output_available(f_process, output);
+                        }
+                    }
+                }
+
+                QByteArray&                 f_output;
+                int                         f_pipe;
+                process_output_callback *   f_callback;
+                process *                   f_process;
+            } out(f_output);
+            out.f_pipe = inout.f_pipes[2];
+            out.f_callback = f_output_callback;
+            out.f_process = this;
+            snap_thread out_thread("process::out::thread", &out);
+            if(!out_thread.start())
+            {
+                return -1;
+            }
+
+            // wait for the child process first
+            int r( child.wait() );
+            //
+            // then wait on the two threads
+            in_thread.stop();
+            out_thread.stop();
 
             return r;
         }
     }
-}
-
-
-/** \brief Check if process is still running.
- *
- * \return true if process is still running in background.
- */
-bool process::is_running() const
-{
-    int status;
-    const int pid = waitpid( f_pid, &status, WNOHANG );
-    return pid == 0;
-}
-
-
-void process::kill()
-{
-    if( f_pid > 0 )
-    {
-        ::kill( f_pid, SIGTERM );
-    }
-    //
-    f_pid = 0;
 }
 
 

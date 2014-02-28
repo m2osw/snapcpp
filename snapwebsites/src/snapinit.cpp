@@ -59,11 +59,19 @@ namespace
     advgetopt::getopt::option const g_snapinit_options[] =
     {
         {
+            'a',
+            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
+            "all",
+            nullptr,
+            "All services.",
+            advgetopt::getopt::no_argument
+        },
+        {
             's',
             advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
             "server",
             nullptr,
-            "Start and keep snapserver running.",
+            "snapserver service.",
             advgetopt::getopt::no_argument
         },
         {
@@ -71,7 +79,7 @@ namespace
             advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
             "sendmail",
             nullptr,
-            "Start and keep sendmail backend running.",
+            "snapbackend sendmail service.",
             advgetopt::getopt::no_argument
         },
         {
@@ -79,7 +87,7 @@ namespace
             advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
             "pagelist",
             nullptr,
-            "Start and keep pagelist backend running.",
+            "snapbackend pagelist service.",
             advgetopt::getopt::no_argument
         },
         {
@@ -112,6 +120,14 @@ namespace
             "nolog",
             nullptr,
             "Only output to the console, not the log.",
+            advgetopt::getopt::optional_argument
+        },
+        {
+            'd',
+            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
+            "detach",
+            nullptr,
+            "Background the init server.",
             advgetopt::getopt::optional_argument
         },
         {
@@ -231,10 +247,19 @@ bool process::is_running()
     }
     else
     {
-        SNAP_LOG_FATAL() << "Command [" << f_command << "] terminated with error [" << WEXITSTATUS(status) << "]";
         f_exit = -1;
     }
 #pragma GCC diagnostic pop
+
+    if( pid == -1 )
+    {
+        SNAP_LOG_ERROR() << "Command [" << f_command << "] terminated abnormally with exit code [" << f_exit << "]";
+    }
+    else
+    {
+        SNAP_LOG_INFO() << "Command [" << f_command << "] terminated normally with exit code [" << f_exit << "]";
+    }
+
     f_pid = 0;
 
     return false;
@@ -274,6 +299,7 @@ private:
     void show_selected_servers() const;
     void create_server_process();
     void create_backend_process( const QString& name );
+    void start_processes();
     void monitor_processes();
     void terminate_processes();
     void start();
@@ -350,14 +376,24 @@ void snap_init::validate()
 {
     f_opt_map = { {"server",false}, {"sendmail",false}, {"pagelist",false} };
 
-    for( auto& opt : f_opt_map )
+    if( f_opt.is_defined("all") )
     {
-        opt.second = f_opt.is_defined(opt.first);
+        for( auto& opt : f_opt_map )
+        {
+            opt.second = true;
+        }
+    }
+    else
+    {
+        for( auto& opt : f_opt_map )
+        {
+            opt.second = f_opt.is_defined(opt.first);
+        }
     }
 
     if( std::find_if( f_opt_map.begin(), f_opt_map.end(), []( map_t::value_type& opt ) { return opt.second; } ) == f_opt_map.end() )
-	{
-        throw std::invalid_argument("Must specify at least one --server, --sendmail or --pagelist");
+    {
+        throw std::invalid_argument("Must specify at least one --all, --server, --sendmail or --pagelist");
 	}
 }
 
@@ -383,7 +419,8 @@ void snap_init::create_server_process()
 {
     const QString command( (f_opt.get_string("binary_path") + "/snapserver").c_str() );
     QStringList arglist;
-    arglist << "-c" << f_opt.get_string("config").c_str();
+    arglist << command << "-c" << f_opt.get_string("config").c_str();
+    SNAP_LOG_TRACE() << "command " << command << ", arglist=" << arglist.join(" ");
     process::pointer_t p( new process( command, arglist ) );
     p->run();
     f_process_list.push_back( p );
@@ -394,7 +431,7 @@ void snap_init::create_backend_process( const QString& name )
 {
     const QString command( (f_opt.get_string("binary_path") + "/snapbackend").c_str() );
     QStringList arglist;
-    arglist << "-c" << f_opt.get_string("config").c_str() << "-a" << name;
+    arglist << command << "-c" << f_opt.get_string("config").c_str() << "-a" << name;
     process::pointer_t p( new process( command, arglist ) );
     p->run();
     f_process_list.push_back( p );
@@ -426,6 +463,44 @@ void snap_init::terminate_processes()
 }
 
 
+void snap_init::start_processes()
+{
+    f_lock_file.open( QFile::ReadWrite );
+    for( auto opt : f_opt_map )
+    {
+        if( !opt.second ) continue;
+        //
+        if( opt.first == "server" )
+        {
+            create_server_process();
+        }
+        else
+        {
+            create_backend_process( opt.first.c_str() );
+        }
+    }
+
+    snap::server::udp_server_t udp_signals( snap::server::udp_get_server( UDP_SERVER ) );
+    //
+    while( true )
+    {
+        monitor_processes();
+        //
+        const std::string word( udp_signals->timed_recv( BUFSIZE, TIMEOUT ) );
+        if( word == "STOP" )
+        {
+            terminate_processes();
+            break;
+        }
+    }
+
+    f_lock_file.close();
+    f_lock_file.remove();
+
+    SNAP_LOG_INFO("Normal shutdown.");
+}
+
+
 void snap_init::start()
 {
 	SNAP_LOG_INFO() << "Start servers";
@@ -434,49 +509,26 @@ void snap_init::start()
         throw std::runtime_error("snap_init is already running!");
 	}
 
-	// fork(), then stay resident
-	// Listen for STOP command on UDP port.
-
-    const int pid = fork();
-    if( pid == 0 )
+    if( f_opt.is_defined("detach") )
     {
-        f_lock_file.open( QFile::ReadWrite );
-        for( auto opt : f_opt_map )
-        {
-            if( !opt.second ) continue;
-            //
-            if( opt.first == "server" )
-            {
-                create_server_process();
-            }
-            else
-            {
-                create_backend_process( opt.first.c_str() );
-            }
-        }
-
-        snap::server::udp_server_t udp_signals( snap::server::udp_get_server( UDP_SERVER ) );
+        // fork(), then stay resident
+        // Listen for STOP command on UDP port.
         //
-        while( true )
+        const int pid = fork();
+        if( pid == 0 )
         {
-            monitor_processes();
-            //
-            const std::string word( udp_signals->timed_recv( BUFSIZE, TIMEOUT ) );
-            if( word == "STOP" )
-            {
-                terminate_processes();
-                break;
-            }
+            start_processes();
         }
-
-        f_lock_file.close();
-        f_lock_file.remove();
-
-        SNAP_LOG_INFO("Normal shutdown.");
+        else
+        {
+            SNAP_LOG_INFO("Process started successfully!");
+        }
     }
     else
     {
-        SNAP_LOG_INFO("Process started successfully!");
+        // Keep in foreground
+        //
+        start_processes();
     }
 }
 

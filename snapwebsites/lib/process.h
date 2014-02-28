@@ -82,9 +82,7 @@ public:
     void                        add_argument(const QString& arg);
     void                        add_environ(const QString& name, const QString& value);
 
-    int                         run( const bool wait = true );
-    bool                        is_running() const;
-    void                        kill();
+    int                         run();
 
     // what is sent to the command stdin
     void                        set_input(QString const& input);
