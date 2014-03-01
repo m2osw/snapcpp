@@ -121,7 +121,7 @@ namespace
             "nolog",
             nullptr,
             "Only output to the console, not the log.",
-            advgetopt::getopt::optional_argument
+            advgetopt::getopt::no_argument
         },
         {
             'd',
@@ -129,7 +129,7 @@ namespace
             "detach",
             nullptr,
             "Background the init server.",
-            advgetopt::getopt::optional_argument
+            advgetopt::getopt::no_argument
         },
         {
             '\0',
@@ -424,25 +424,31 @@ void snap_init::validate()
 {
     f_opt_map = { {"server",false}, {"sendmail",false}, {"pagelist",false} };
 
-    if( f_opt.is_defined("all") )
+    for( auto& opt : f_opt_map )
     {
-        for( auto& opt : f_opt_map )
-        {
-            opt.second = true;
-        }
-    }
-    else
-    {
-        for( auto& opt : f_opt_map )
-        {
-            opt.second = f_opt.is_defined(opt.first);
-        }
+        opt.second = f_opt.is_defined("all")
+                   ? true
+                   : f_opt.is_defined(opt.first);
     }
 
-    if( std::find_if( f_opt_map.begin(), f_opt_map.end(), []( map_t::value_type& opt ) { return opt.second; } ) == f_opt_map.end() )
-	{
+    const std::string command( f_opt.get_string("--") );
+
+    if( ((command == "start") || (command == "restart"))
+            && std::find_if( f_opt_map.begin(), f_opt_map.end(), []( map_t::value_type& opt ) { return opt.second; } ) == f_opt_map.end() )
+    {
         throw std::invalid_argument("Must specify at least one --all, --server, --sendmail or --pagelist");
-	}
+    }
+    else if( command == "stop" )
+    {
+        if( f_opt.is_defined("detach") )
+        {
+            SNAP_LOG_WARNING("The --detach option is ignored with the 'stop' command.");
+        }
+        if( std::find_if( f_opt_map.begin(), f_opt_map.end(), []( map_t::value_type& opt ) { return opt.second; } ) != f_opt_map.end() )
+        {
+            SNAP_LOG_WARNING("--all, --server, --sendmail and --pagelist are ignored with the 'stop' command.");
+        }
+    }
 }
 
 
