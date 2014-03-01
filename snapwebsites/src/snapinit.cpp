@@ -596,6 +596,14 @@ void snap_init::stop()
 	}
 
     snap::server::udp_ping_server( UDP_SERVER, "STOP" );
+
+    do
+    {
+        // We wait until the remote process removes the lockfile...
+        //
+        sleep(1);
+    }
+    while( f_lock_file.exists() );
 }
 
 
