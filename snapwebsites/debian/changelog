@@ -1,10 +1,10 @@
-snapwebsites (0.1.21~saucy) UNRELEASED; urgency=high
-
-  [Alexis Wilke]
-  * 
+snapwebsites (0.1.21~saucy) saucy; urgency=high
 
   [R. Douglas Barbieri]
-  *
+  * Quiet down children of snapinit, reopening stderr, stdout and stdin to
+  /dev/null.
+  * Now snapserver waits until Cassandra server is running, instead of exiting
+  immediately on error. The wait interval and count are configurable.
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Sat, 01 Mar 2014 09:00:40 -0800
 
