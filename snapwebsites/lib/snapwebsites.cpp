@@ -657,7 +657,7 @@ void server::config(int argc, char *argv[])
     {
         // make sure the last byte is '\0'
         buf[sizeof(buf) - 1] = '\0';
-        int len = strlen(buf);
+        int len(static_cast<int>(strlen(buf)));
         if(len == 0 || (buf[len - 1] != '\n' && buf[len - 1] != '\r'))
         {
             std::stringstream ss;
@@ -1124,7 +1124,7 @@ void server::listen()
     }
 
     // initialize the server
-    tcp_client_server::tcp_server s(host[0].toUtf8().data(), p, max_pending_connections, true, true);
+    tcp_client_server::tcp_server s(host[0].toUtf8().data(), static_cast<int>(p), static_cast<int>(max_pending_connections), true, true);
 
     // the server was successfully started
     SNAP_LOG_INFO("Snap v" SNAPWEBSITES_VERSION_STRING " on \"" + f_parameters["server_name"] + "\" started.");

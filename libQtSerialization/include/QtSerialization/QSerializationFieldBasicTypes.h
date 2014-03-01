@@ -83,7 +83,7 @@ inline void convertData<bool>(bool& field, const QString& data)
 template<>
 inline void convertData<qint8>(qint8& field, const QString& data)
 {
-    field = data.toShort();
+    field = static_cast<qint8>(data.toShort());
 }
 
 /** \brief Convert basic data from a string to a field of type quint8.
@@ -97,7 +97,7 @@ inline void convertData<qint8>(qint8& field, const QString& data)
 template<>
 inline void convertData<quint8>(quint8& field, const QString& data)
 {
-    field = data.toUShort();
+    field = static_cast<quint8>(data.toUShort());
 }
 
 /** \brief Convert basic data from a string to a field of type qint16.

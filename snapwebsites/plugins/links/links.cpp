@@ -295,7 +295,7 @@ void link_info::verify_name(QString const& vname)
         {
             throw links_exception_invalid_name("name \"" + vname + "\" is not acceptable, character '" + QChar(c) + "' is not valid");
         }
-        ns += c;
+        ns += QChar(c);
     }
     if(!has_namespace)
     {

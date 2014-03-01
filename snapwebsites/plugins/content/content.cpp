@@ -1274,7 +1274,8 @@ void field_search::run()
                 }
                 QDomElement last_child(doc.createElement(children[0]));
                 parent.appendChild(last_child);
-                QDomText text(doc.createTextNode(f_result[0].stringValue()));
+                QString const string(f_result[0].stringValue());
+                QDomText text(doc.createTextNode(string));
                 last_child.appendChild(text);
                 cmd_reset(true);
             }
@@ -2504,8 +2505,8 @@ QString path_info_t::get_revision_key() const
     {
         if(snap_version::SPECIAL_VERSION_EXTENDED == f_revision)
         {
-            // if f_revision is set to extended then the branch is defined
-            // already, no need to call get_branch()
+            // if f_revision is set to extended then the branch is already
+            // defined, no need to call get_branch()
             f_revision_key = f_content_plugin->generate_revision_key(f_key, f_revision_string, f_locale);
         }
         else
@@ -2521,8 +2522,8 @@ QString path_info_t::get_revision_key() const
             QString field(QString("%1::%2::%3")
                         .arg(base_key)
                         .arg(get_name(get_working_branch()
-                                ? SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_REVISION_KEY
-                                : SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_REVISION_KEY))
+                                ? SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_REVISION_KEY
+                                : SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_REVISION_KEY))
                         .arg(f_branch));
             if(!f_locale.isEmpty())
             {
@@ -2906,7 +2907,8 @@ QString content::get_revision_base_key(QString const& owner)
     }
 
     QString base_key(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL));
-    if(owner != get_name(SNAP_NAME_CONTENT_OWNER))
+    if(owner != get_name(SNAP_NAME_CONTENT_OWNER)
+    && owner != get_name(SNAP_NAME_CONTENT_OUTPUT))
     {
         base_key += "::";
         base_key += owner;
@@ -3212,13 +3214,26 @@ snap_version::version_number_t content::get_new_branch(QString const& key, QStri
  * translations altogether (because the language/country are not taken
  * in account.)
  *
+ * The \p repeat parameter is used to determine whether the data is expected
+ * to be copied from the previous revision if there is one. Note that at this
+ * time no data gets automatically copied if you create a new revision for a
+ * new language. We will most certainly change that later so we can copy the
+ * data from a default language such as "xx" or "en"...
+ *
+ * Note that the repeated data includes the date when the entry gets created.
+ * The entry is adjusted to use the start date of the child process, which
+ * means that you do not have to re-update the creation time of the revision
+ * after this call. However, this function does NOT update the branch last
+ * modification time. To do so, make sure to call the content_modified()
+ * function once you are done with your changes.
+ *
  * The owner is expected to be the name of the plugin creating this
- * revision. By default it should be set to "content". The owner string
+ * revision. By default it should be set to "output". The owner string
  * should always be defined using the plugin name as in:
  *
  * \code
- * content::content *content_plugin(content::content::instance());
- * content_plugin->get_revision_base_key(content_plugin->get_plugin_name());
+ * output::output *output_plugin(output::output::instance());
+ * output_plugin->get_revision_base_key(output_plugin->get_plugin_name());
  * \endcode
  *
  * \note
@@ -3229,14 +3244,24 @@ snap_version::version_number_t content::get_new_branch(QString const& key, QStri
  * This function may return zero (0) if the concerned locale did not
  * yet exist for this page.
  *
+ * \todo
+ * We may want to create a class that allows us to define a set of the new
+ * fields so instead of copying we can immediately save the new value. Right
+ * now we're going to write the same field twice (once here in the repeat
+ * to save the old value and once by the caller to save the new value.)
+ *
  * \param[in] key  The key of the page concerned.
  * \param[in] owner  The plugin requesting this new revision.
  * \param[in] branch  The branch for which this new revision is being created.
  * \param[in] locale  The locale used for this revision.
+ * \param[in] repeat  Whether the existing data should be duplicated in the
+ *                    new revision.
  *
  * \return The new revision number.
  */
-snap_version::version_number_t content::get_new_revision(QString const& key, QString const& owner, snap_version::version_number_t branch, QString const& locale)
+snap_version::version_number_t content::get_new_revision(QString const& key,
+                QString const& owner, snap_version::version_number_t branch,
+                QString const& locale, bool repeat)
 {
     QtCassandra::QCassandraTable::pointer_t content_table(get_content_table());
 
@@ -3247,9 +3272,15 @@ snap_version::version_number_t content::get_new_revision(QString const& key, QSt
     {
         last_revision_key += "::" + locale;
     }
+    QString current_revision_key(QString("%1::%2::%3").arg(base_key).arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_REVISION)).arg(branch));
+    if(!locale.isEmpty())
+    {
+        current_revision_key += "::" + locale;
+    }
 
     // increase revision if one exists, otherwise we keep the default (0)
     snap_version::version_number_t revision(static_cast<snap_version::basic_version_number_t>(snap_version::SPECIAL_VERSION_FIRST_REVISION));
+    snap_version::version_number_t previous_revision(revision);
 
     QtCassandra::QCassandraLock lock(f_snap->get_context(), key);
 
@@ -3265,6 +3296,17 @@ snap_version::version_number_t content::get_new_revision(QString const& key, QSt
                     .arg(branch).arg(branch_value.uint32Value()));
     }
 #endif
+
+    // copy from the current revision at this point
+    // (the editor WILL tell us to copy from a specific revisions at some
+    // point... it is important because if user A edits revision X, and user
+    // B creates a new revision Y in the meantime, we may still want to copy
+    // revision X at the time A saves his changes.)
+    QtCassandra::QCassandraValue current_revision_value(content_table->row(key)->cell(last_revision_key)->value());
+    if(!current_revision_value.nullValue())
+    {
+        previous_revision = current_revision_value.uint32Value();
+    }
 
     QtCassandra::QCassandraValue revision_value(content_table->row(key)->cell(last_revision_key)->value());
     if(!revision_value.nullValue())
@@ -3284,6 +3326,59 @@ snap_version::version_number_t content::get_new_revision(QString const& key, QSt
         //         branch...)
     }
     content_table->row(key)->cell(last_revision_key)->setValue(static_cast<snap_version::basic_version_number_t>(revision));
+
+    // TBD: should the repeat be done before or after the lock?
+    //      it seems to me that since the next call will now generate a
+    //      new revision, it is semi-safe (problem is that the newer
+    //      version may miss some of the fields...)
+    //      also the caller will lose the lock too!
+
+    if(repeat
+    && revision != static_cast<snap_version::basic_version_number_t>(snap_version::SPECIAL_VERSION_FIRST_REVISION)
+    && previous_revision != revision)
+    {
+        // get two revision keys like:
+        // http://csnap.m2osw.com/verify-credentials#en/0.0
+        QString const previous_revision_key(generate_revision_key(key, branch, previous_revision, locale));
+        QString const revision_key(generate_revision_key(key, branch, revision, locale));
+        QtCassandra::QCassandraTable::pointer_t data_table(get_data_table());
+        QtCassandra::QCassandraRow::pointer_t previous_row(data_table->row(previous_revision_key));
+        QtCassandra::QCassandraRow::pointer_t new_row(data_table->row(revision_key));
+        QtCassandra::QCassandraColumnRangePredicate column_predicate;
+        column_predicate.setCount(1000); // we have to copy everything also it is likely very small (i.e. 10 fields...)
+        column_predicate.setIndex(); // behave like an index
+        for(;;)
+        {
+            previous_row->clearCache();
+            previous_row->readCells(column_predicate);
+            const QtCassandra::QCassandraCells& previous_cells(previous_row->cells());
+            if(previous_cells.isEmpty())
+            {
+                // done
+                break;
+            }
+            // handle one batch
+            for(QtCassandra::QCassandraCells::const_iterator nc(previous_cells.begin());
+                    nc != previous_cells.end();
+                    ++nc)
+            {
+                QtCassandra::QCassandraCell::pointer_t previous_cell(*nc);
+                QByteArray cell_key(previous_cell->columnKey());
+                if(cell_key == get_name(SNAP_NAME_CONTENT_CREATED))
+                {
+                    // one special case (so far) where we can immediately fix
+                    // the value
+                    QtCassandra::QCassandraValue created;
+                    created.setInt64Value(f_snap->get_start_date());
+                    new_row->cell(cell_key)->setValue(created);
+                }
+                else
+                {
+                    new_row->cell(cell_key)->setValue(previous_cell->value());
+                }
+            }
+        }
+    }
 
     // unlock ASAP
     lock.unlock();
@@ -3510,8 +3605,8 @@ QString content::get_revision_key(QString const& key, QString const& owner, snap
     QString current_key(QString("%1::%2::%3")
                 .arg(base_key)
                 .arg(get_name(working_branch
-                        ? SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_REVISION_KEY
-                        : SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_REVISION_KEY))
+                        ? SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_REVISION_KEY
+                        : SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_REVISION_KEY))
                 .arg(branch));
     if(!locale.isEmpty())
     {
@@ -3678,8 +3773,8 @@ QString content::set_revision_key(QString const& key, QString const& owner, snap
     QString current_key(QString("%1::%2::%3")
                 .arg(base_key)
                 .arg(get_name(working_branch
-                        ? SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_REVISION_KEY
-                        : SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_REVISION_KEY))
+                        ? SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_REVISION_KEY
+                        : SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_REVISION_KEY))
                 .arg(branch));
     if(!locale.isEmpty())
     {
@@ -3724,8 +3819,8 @@ QString content::set_revision_key(QString const& key, QString const& owner, snap
     QString current_key(QString("%1::%2::%3")
                 .arg(base_key)
                 .arg(get_name(working_branch
-                        ? SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_REVISION_KEY
-                        : SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_REVISION_KEY))
+                        ? SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_REVISION_KEY
+                        : SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_REVISION_KEY))
                 .arg(branch));
     if(!locale.isEmpty())
     {
@@ -4402,7 +4497,7 @@ bool content::create_attachment_impl(attachment_file const& file, snap_version::
             }
             else
             {
-                revision_number = get_new_revision(attachment_ipath.get_key(), attachment_owner, branch_number, locale);
+                revision_number = get_new_revision(attachment_ipath.get_key(), attachment_owner, branch_number, locale, true);
             }
             attachment_ipath.force_revision(revision_number);
         }
@@ -4780,21 +4875,21 @@ bool content::load_attachment(QString const& key, attachment_file& file, bool lo
  * The function returns false and generates a warning (in your log) in the
  * event the process cannot find the specified path.
  *
- * \param[in,out] path  The path to the page being udpated.
+ * \param[in,out] ipath  The path to the page being udpated.
  *
  * \return true if the event should be propagated.
  */
 bool content::modified_content_impl(path_info_t& ipath)
 {
-    QtCassandra::QCassandraTable::pointer_t content_table(get_content_table());
+    QtCassandra::QCassandraTable::pointer_t data_table(get_data_table());
     QString const key(ipath.get_branch_key());
-    if(!content_table->exists(key))
+    if(!data_table->exists(key))
     {
         // the row doesn't exist?!
         SNAP_LOG_WARNING("Page \"")(key)("\" does not exist. We cannot do anything about it being modified.");;
         return false;
     }
-    QtCassandra::QCassandraRow::pointer_t row(content_table->row(key));
+    QtCassandra::QCassandraRow::pointer_t row(data_table->row(key));
 
     int64_t const start_date(f_snap->get_start_date());
     row->cell(QString(get_name(SNAP_NAME_CONTENT_MODIFIED)))->setValue(start_date);
@@ -5730,7 +5825,7 @@ void content::on_save_content()
                     if(use_new_revision || row_key.isEmpty())
                     {
                         // the revision does not exist yet, create it
-                        snap_version::version_number_t revision_number(get_new_revision(d->f_path, get_plugin_name(), snap_version::SPECIAL_VERSION_SYSTEM_BRANCH, locale));
+                        snap_version::version_number_t revision_number(get_new_revision(d->f_path, get_plugin_name(), snap_version::SPECIAL_VERSION_SYSTEM_BRANCH, locale, true));
                         set_current_revision(d->f_path, get_plugin_name(), snap_version::SPECIAL_VERSION_SYSTEM_BRANCH, revision_number, locale, false);
                         set_current_revision(d->f_path, get_plugin_name(), snap_version::SPECIAL_VERSION_SYSTEM_BRANCH, revision_number, locale, true);
                         set_revision_key(d->f_path, get_plugin_name(), snap_version::SPECIAL_VERSION_SYSTEM_BRANCH, revision_number, locale, false);
@@ -6021,7 +6116,7 @@ void content::on_backend_process()
                         if(!content_cell->value().nullValue())
                         {
                             QByteArray attachment_key(content_cell->columnKey().data() + (strlen(get_name(SNAP_NAME_CONTENT_FILES_REFERENCE)) + 2),
-                                                      content_cell->columnKey().size() - (strlen(get_name(SNAP_NAME_CONTENT_FILES_REFERENCE)) + 2));
+                                     static_cast<int>(content_cell->columnKey().size() - (strlen(get_name(SNAP_NAME_CONTENT_FILES_REFERENCE)) + 2)));
 
                             if(first)
                             {

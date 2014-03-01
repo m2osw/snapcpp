@@ -59,7 +59,7 @@ void snap_exception_base::output_stack_trace()
 {
     int const max_stack_length(20);
     void *array[max_stack_length];
-    size_t const size = backtrace(array, max_stack_length);
+    int const size = backtrace(array, max_stack_length);
 
     // Output to stderr
     //
@@ -71,7 +71,7 @@ void snap_exception_base::output_stack_trace()
 
     // Output to log
     char **stack_string_list = backtrace_symbols( array, size );
-    for( size_t idx = 0; idx < size; ++idx )
+    for( int idx = 0; idx < size; ++idx )
     {
         const char* stack_string( stack_string_list[idx] );
         SNAP_LOG_ERROR("snap_exception_base(): backtrace=")(stack_string);

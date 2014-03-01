@@ -284,6 +284,7 @@ public:
 
     snap_uri const&             get_uri() const;
     bool                        has_post() const { return f_has_post; }
+    QString                     get_action() const;
     void                        set_action(QString const& action);
 
     void                        exit(int code);
@@ -326,6 +327,7 @@ public:
     static bool                 verify_country_name(QString& country);
     static language_name_t const *get_languages();
     static country_name_t const *get_countries();
+    static bool                 tag_is_inline(char const *tag, int length);
 
     QString                     snapenv(QString const& name) const;
     bool                        postenv_exists(QString const& name) const;

@@ -1,3 +1,5 @@
+# Test with the following command:
+#  make -f plugins/dependencies.txt <plugin name>
 
 # Core is the library (the server class is a plugin)
 core:	; @echo $@

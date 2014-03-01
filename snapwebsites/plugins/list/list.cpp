@@ -514,7 +514,7 @@ list_item_vector_t list::read_list(content::path_info_t const& ipath, int start,
     QtCassandra::QCassandraRow::pointer_t list_row(data_table->row(branch_key));
 
     char const *ordered_pages(get_name(SNAP_NAME_LIST_ORDERED_PAGES));
-    int const len(strlen(ordered_pages) + 2);
+    int const len(static_cast<int>(strlen(ordered_pages) + 2));
 
     QtCassandra::QCassandraColumnRangePredicate column_predicate;
     column_predicate.setStartColumnName(QString("%1::").arg(ordered_pages));

@@ -1,4 +1,4 @@
-// Snap Websites Servers -- handle messages for QXmlQuery
+// Snap Websites Servers -- some support for floating points
 // Copyright (C) 2014  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
@@ -16,25 +16,14 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
-#include <QAbstractMessageHandler>
-
 namespace snap
 {
 
-class QMessageHandler : public QAbstractMessageHandler
-{
-public:
-                        QMessageHandler(QObject *parent_object = nullptr);
+bool compare_floats(float a, float b);
+bool compare_floats(double a, double b);
 
-    void                set_xsl(QString const& xsl) { f_xsl = xsl; }
-    void                set_doc(QString const& doc) { f_doc = doc; }
-
-protected:
-    virtual void        handleMessage(QtMsgType type, QString const & description, QUrl const & identifier, QSourceLocation const & sourceLocation);
-
-    QString             f_xsl;
-    QString             f_doc;
-};
+bool compare_floats(double a, float b);
+bool compare_floats(float a, double b);
 
 } // namespace snap
 // vim: ts=4 sw=4 et

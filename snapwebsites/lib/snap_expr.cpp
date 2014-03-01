@@ -229,10 +229,16 @@ bool variable_t::is_true() const
         return f_value.int32Value() != 0;
 
     case EXPR_VARIABLE_TYPE_FLOAT:
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
         return f_value.floatValue() != 0.0f;
+#pragma GCC diagnostic pop
 
     case EXPR_VARIABLE_TYPE_DOUBLE:
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
         return f_value.doubleValue() != 0.0;
+#pragma GCC diagnostic pop
 
     case EXPR_VARIABLE_TYPE_STRING:
     case EXPR_VARIABLE_TYPE_BINARY:
@@ -631,7 +637,7 @@ public:
     typename enable_if<has_function<F>::has_floating_points>::type do_float(variable_t& result, double a, double b)
     {
         QtCassandra::QCassandraValue value;
-        value.setFloatValue(F::floating_points(a, b));
+        value.setFloatValue(static_cast<float>(F::floating_points(a, b)));
         result.set_value(variable_t::EXPR_VARIABLE_TYPE_FLOAT, value);
     }
 
@@ -858,16 +864,28 @@ public:
     {
     public:
         static bool integers(int64_t a, int64_t b) { return a == b; }
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+        // TBD -- users should not compare floating points with == and !=
+        //        can we do something about it here? (i.e. emit a warning
+        //        in debug mode?)
         static bool floating_points(double a, double b) { return a == b; }
         static bool strings(QString const& a, QString const& b) { return a == b; }
+#pragma GCC diagnostic pop
     };
 
     class op_not_equal
     {
     public:
         static bool integers(int64_t a, int64_t b) { return a != b; }
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+        // TBD -- users should not compare floating points with == and !=
+        //        can we do something about it here? (i.e. emit a warning
+        //        in debug mode?)
         static bool floating_points(double a, double b) { return a != b; }
         static bool strings(QString const& a, QString const& b) { return a != b; }
+#pragma GCC diagnostic pop
     };
 
     class op_bitwise_and
@@ -1110,11 +1128,17 @@ public:
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_FLOAT:
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
             value.setBoolValue(sub_results[0].get_value().floatValue() == 0.0f);
+#pragma GCC diagnostic pop
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_DOUBLE:
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
             value.setBoolValue(sub_results[0].get_value().doubleValue() == 0.0);
+#pragma GCC diagnostic pop
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_STRING:
@@ -1143,19 +1167,19 @@ public:
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_INT8:
-            value.setSignedCharValue(~sub_results[0].get_value().signedCharValue());
+            value.setSignedCharValue(static_cast<signed char>(~sub_results[0].get_value().signedCharValue()));
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_UINT8:
-            value.setUnsignedCharValue(~sub_results[0].get_value().unsignedCharValue());
+            value.setUnsignedCharValue(static_cast<unsigned char>(~sub_results[0].get_value().unsignedCharValue()));
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_INT16:
-            value.setInt16Value(~sub_results[0].get_value().int16Value());
+            value.setInt16Value(static_cast<int16_t>(~sub_results[0].get_value().int16Value()));
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_UINT16:
-            value.setUInt16Value(~sub_results[0].get_value().uint16Value());
+            value.setUInt16Value(static_cast<uint16_t>(~sub_results[0].get_value().uint16Value()));
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_INT32:
@@ -1191,19 +1215,19 @@ public:
         switch(sub_results[0].get_type())
         {
         case variable_t::EXPR_VARIABLE_TYPE_INT8:
-            value.setSignedCharValue(-sub_results[0].get_value().signedCharValue());
+            value.setSignedCharValue(static_cast<signed char>(-sub_results[0].get_value().signedCharValue()));
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_UINT8:
-            value.setUnsignedCharValue(-sub_results[0].get_value().unsignedCharValue());
+            value.setUnsignedCharValue(static_cast<unsigned char>(-sub_results[0].get_value().unsignedCharValue()));
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_INT16:
-            value.setInt16Value(-sub_results[0].get_value().int16Value());
+            value.setInt16Value(static_cast<int16_t>(-sub_results[0].get_value().int16Value()));
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_UINT16:
-            value.setUInt16Value(-sub_results[0].get_value().uint16Value());
+            value.setUInt16Value(static_cast<uint16_t>(-sub_results[0].get_value().uint16Value()));
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_INT32:
@@ -1481,11 +1505,11 @@ public:
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_FLOAT:
-            r = v.floatValue();
+            r = static_cast<int64_t>(v.floatValue());
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_DOUBLE:
-            r = v.doubleValue();
+            r = static_cast<int64_t>(v.doubleValue());
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_STRING:
@@ -1708,11 +1732,11 @@ public:
             throw snap_expr_exception_invalid_number_of_parameters("invalid number of parameters to call substr() expected 2 or 3");
         }
         QString const str(sub_results[0].get_string("substr(1)"));
-        int const start(sub_results[1].get_integer("substr(2)"));
+        int const start(static_cast<int>(sub_results[1].get_integer("substr(2)")));
         QtCassandra::QCassandraValue value;
         if(size == 3)
         {
-            int const end(sub_results[2].get_integer("substr(3)"));
+            int const end(static_cast<int>(sub_results[2].get_integer("substr(3)")));
             value.setStringValue(str.mid(start, end));
         }
         else
@@ -1933,11 +1957,11 @@ public:
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_FLOAT:
-            r = v.floatValue();
+            r = static_cast<int64_t>(v.floatValue());
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_DOUBLE:
-            r = v.doubleValue();
+            r = static_cast<int64_t>(v.doubleValue());
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_STRING:
@@ -2139,32 +2163,32 @@ public:
                 return;
 
             case variable_t::EXPR_VARIABLE_TYPE_INT8:
-                value.setSignedCharValue(F::integers(li, ri));
+                value.setSignedCharValue(static_cast<signed char>(F::integers(li, ri)));
                 result.set_value(type, value);
                 return;
 
             case variable_t::EXPR_VARIABLE_TYPE_UINT8:
-                value.setUnsignedCharValue(F::integers(li, ri));
+                value.setUnsignedCharValue(static_cast<unsigned char>(F::integers(li, ri)));
                 result.set_value(type, value);
                 return;
 
             case variable_t::EXPR_VARIABLE_TYPE_INT16:
-                value.setInt16Value(F::integers(li, ri));
+                value.setInt16Value(static_cast<int16_t>(F::integers(li, ri)));
                 result.set_value(type, value);
                 return;
 
             case variable_t::EXPR_VARIABLE_TYPE_UINT16:
-                value.setUInt16Value(F::integers(li, ri));
+                value.setUInt16Value(static_cast<uint16_t>(F::integers(li, ri)));
                 result.set_value(type, value);
                 return;
 
             case variable_t::EXPR_VARIABLE_TYPE_INT32:
-                value.setInt32Value(F::integers(li, ri));
+                value.setInt32Value(static_cast<int32_t>(F::integers(li, ri)));
                 result.set_value(type, value);
                 return;
 
             case variable_t::EXPR_VARIABLE_TYPE_UINT32:
-                value.setUInt32Value(F::integers(li, ri));
+                value.setUInt32Value(static_cast<uint32_t>(F::integers(li, ri)));
                 result.set_value(type, value);
                 return;
 
@@ -2183,11 +2207,11 @@ public:
                 {
                     if(!lfloating_point)
                     {
-                        lf = lsigned_value ? li : static_cast<uint64_t>(li);
+                        lf = static_cast<double>(lsigned_value ? li : static_cast<uint64_t>(li));
                     }
                     if(!rfloating_point)
                     {
-                        rf = rsigned_value ? ri : static_cast<uint64_t>(ri);
+                        rf = static_cast<double>(rsigned_value ? ri : static_cast<uint64_t>(ri));
                     }
                     do_float<F>(result, lf, rf);
                     return;
@@ -2199,11 +2223,11 @@ public:
                 {
                     if(!lfloating_point)
                     {
-                        lf = lsigned_value ? li : static_cast<uint64_t>(li);
+                        lf = static_cast<double>(lsigned_value ? li : static_cast<uint64_t>(li));
                     }
                     if(!rfloating_point)
                     {
-                        rf = rsigned_value ? ri : static_cast<uint64_t>(ri);
+                        rf = static_cast<double>(rsigned_value ? ri : static_cast<uint64_t>(ri));
                     }
                     do_double<F>(result, lf, rf);
                     return;
@@ -2215,11 +2239,11 @@ public:
                 {
                     if(!lstring_type)
                     {
-                        ls = QString("%1").arg(lfloating_point ? lf : (lsigned_value ? li : static_cast<uint64_t>(li)));
+                        ls = QString("%1").arg(lfloating_point ? lf : static_cast<double>(lsigned_value ? li : static_cast<uint64_t>(li)));
                     }
                     if(!rstring_type)
                     {
-                        rs = QString("%1").arg(rfloating_point ? rf : (rsigned_value ? ri : static_cast<uint64_t>(ri)));
+                        rs = QString("%1").arg(rfloating_point ? rf : static_cast<double>(rsigned_value ? ri : static_cast<uint64_t>(ri)));
                     }
                     // do "string" + "string"
                     do_strings<F>(result, ls, rs);
@@ -2320,11 +2344,11 @@ public:
                 {
                     if(!lfloating_point)
                     {
-                        lf = lsigned_value ? li : static_cast<uint64_t>(li);
+                        lf = static_cast<double>(lsigned_value ? li : static_cast<uint64_t>(li));
                     }
                     if(!rfloating_point)
                     {
-                        rf = rsigned_value ? ri : static_cast<uint64_t>(ri);
+                        rf = static_cast<double>(rsigned_value ? ri : static_cast<uint64_t>(ri));
                     }
                     do_float_to_bool<F>(result, lf, rf);
                     return;
@@ -2336,11 +2360,11 @@ public:
                 {
                     if(!lfloating_point)
                     {
-                        lf = lsigned_value ? li : static_cast<uint64_t>(li);
+                        lf = static_cast<double>(lsigned_value ? li : static_cast<uint64_t>(li));
                     }
                     if(!rfloating_point)
                     {
-                        rf = rsigned_value ? ri : static_cast<uint64_t>(ri);
+                        rf = static_cast<double>(rsigned_value ? ri : static_cast<uint64_t>(ri));
                     }
                     do_double_to_bool<F>(result, lf, rf);
                     return;
@@ -2352,11 +2376,11 @@ public:
                 {
                     if(!lstring_type)
                     {
-                        ls = QString("%1").arg(lfloating_point ? lf : (lsigned_value ? li : static_cast<uint64_t>(li)));
+                        ls = QString("%1").arg(lfloating_point ? lf : static_cast<double>(lsigned_value ? li : static_cast<uint64_t>(li)));
                     }
                     if(!rstring_type)
                     {
-                        rs = QString("%1").arg(rfloating_point ? rf : (rsigned_value ? ri : static_cast<uint64_t>(ri)));
+                        rs = QString("%1").arg(rfloating_point ? rf : static_cast<double>(rsigned_value ? ri : static_cast<uint64_t>(ri)));
                     }
                     // do "string" + "string"
                     do_strings_to_bool<F>(result, ls, rs);
@@ -2441,11 +2465,17 @@ public:
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_FLOAT:
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
             r = result.get_value().floatValue() != 0.0f;
+#pragma GCC diagnostic pop
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_DOUBLE:
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
             r = result.get_value().doubleValue() != 0.0;
+#pragma GCC diagnostic pop
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_STRING:

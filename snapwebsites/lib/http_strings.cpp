@@ -48,7 +48,7 @@ WeightedHttpString::WeightedHttpString(const QString& str)
         {
             ++s;
         }
-        QString name(QString::fromUtf8(v, s - v));
+        QString name(QString::fromUtf8(v, static_cast<int>(s - v)));
         name = name.simplified();
         // an authoritative document at the IANA clearly says that
         // the default level (quality value) is 1.0f.
@@ -63,7 +63,7 @@ WeightedHttpString::WeightedHttpString(const QString& str)
             {
                 ++s;
             }
-            QString param_name(QString::fromUtf8(v, s - v));
+            QString param_name(QString::fromUtf8(v, static_cast<int>(s - v)));
             param_name = param_name.simplified();
             QString param_value;
             if(*s == '=')
@@ -74,7 +74,7 @@ WeightedHttpString::WeightedHttpString(const QString& str)
                 {
                     ++s;
                 }
-                param_value = QString::fromUtf8(v, s - v);
+                param_value = QString::fromUtf8(v, static_cast<int>(s - v));
                 param_value = param_value.trimmed();
             }
             if(param_name == "q")

@@ -60,6 +60,18 @@ char const *get_name(name_t name) __attribute__ ((const));
 class editor : public plugins::plugin, public path::path_execute, public layout::layout_content, public form::form_post
 {
 public:
+    static int const    EDITOR_SESSION_ID_EDIT = 1;
+
+    enum save_mode_t
+    {
+        EDITOR_SAVE_MODE_UNKNOWN = -1,
+        EDITOR_SAVE_MODE_DRAFT,
+        EDITOR_SAVE_MODE_PUBLISH,
+        EDITOR_SAVE_MODE_SAVE,
+        EDITOR_SAVE_MODE_NEW_BRANCH,
+        EDITOR_SAVE_MODE_AUTO_DRAFT
+    };
+
                         editor();
                         ~editor();
 
@@ -78,10 +90,16 @@ public:
     void                on_validate_post_for_widget(content::path_info_t& ipath, sessions::sessions::session_info& info,
                                          QDomElement const& widget, QString const& widget_name,
                                          QString const& widget_type, bool is_secret);
+    void                on_process_post(QString const& uri_path);
+
+    static save_mode_t  string_to_save_mode(QString const& mode);
+
+    SNAP_SIGNAL(save_editor_fields, (content::path_info_t& ipath, QtCassandra::QCassandraRow::pointer_t row), (ipath, row));
 
 private:
     void                content_update(int64_t variables_timestamp);
     void                process_new_draft();
+    void                editor_save(content::path_info_t& ipath);
 
     zpsnap_child_t      f_snap;
 };

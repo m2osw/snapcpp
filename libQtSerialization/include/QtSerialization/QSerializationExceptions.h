@@ -124,6 +124,33 @@ public:
     }
 };
 
+/** \brief A value is not yet defined.
+ *
+ * Right after initialization, a certain number of values may not yet be
+ * defined (because there are no good defaults for them.) Trying to retrieve
+ * these values generate this exception.
+ *
+ * \sa QFieldTag
+ */
+class QExceptionNotDefined : public QException
+{
+public:
+    /** \brief The exception constructor.
+     *
+     * This constructor initialize the exception with a what_msg string
+     * describing the exception in more details.
+     *
+     * The string is expected to be a static string although it
+     * doesn't have to be.
+     *
+     * \param[in] what_msg  Details about the exception.
+     */
+	QExceptionNotDefined(const char *what_msg)
+        : QException(what_msg)
+    {
+    }
+};
+
 /** \brief Each field in a given composite must have a unique name.
  *
  * It is not possible to define more than one field with the same

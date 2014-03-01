@@ -17,7 +17,6 @@
 
 #include "robotstxt.h"
 
-#include "../../lib/plugins.h"
 #include "../content/content.h"
 
 #include <iostream>

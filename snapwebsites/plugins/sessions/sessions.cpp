@@ -137,7 +137,7 @@ char const *get_name(name_t name)
  * \li time limit -- 0 (not limited), limit (set in seconds) of when the
  *                   session goes out of date; this is an exact date when
  *                   live, but always reset all sessions at midnight the
- *                   session expires (i.e. you may give a session 1h to no
+ *                   session expires (i.e. you may give a session 1h no
  *                   matter what)
  */
 sessions::session_info::session_info()

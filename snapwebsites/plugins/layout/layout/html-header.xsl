@@ -483,6 +483,11 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 			<meta name="{$name}" content="{$content}"/>
 		</xsl:for-each>
 
+		<!-- editor may add a session ID that we stick in a meta tag -->
+		<xsl:if test="head/metadata/editor/session">
+			<meta name="editor_session" content="{head/metadata/editor/session}"/>
+		</xsl:if>
+
 		<!-- JavaScripts -->
 		<xsl:copy-of select="head/metadata/javascript/*"/>
 

@@ -64,46 +64,11 @@ namespace QtSerialization
  */
 
 
-/** \fn quint16 QReader::~QReader();
+/** \fn QReader::~QReader();
  * \brief The destructor ensures everything is cleaned up as expected.
  *
  * At this time the destructor of the reader does nothing. It is there
  * to make sure that virtual functions work as expected.
- */
-
-
-/** \fn quint16 QReader::file_format_version() const;
- * \brief Retrieve the file format as it was saved in the stream.
- *
- * This function returns the file format ('f' attribute of the \<r> tag)
- * that was used when creating the serialized data. This represents the
- * FILE_FORMAT_VERSION variable of the library used to save the serialized
- * data. It may be different from the current library version or the version
- * of the library you used to compile your software.
- *
- * \return The file format version as it was saved in your serialized data.
- */
-
-
-/** \fn quint16 QReader::major_version() const;
- * \brief Retrieve the major file version.
- *
- * This function returns the 'v' parameter of the \<r> tag. This is the
- * version you used to call the QWriter constructor. You may use that
- * information to tweak your data forward as required.
- *
- * \return The major version as it was saved in your serialized data.
- */
-
-
-/** \fn quint16 QReader::minor_version() const;
- * \brief Retrieve the minor file version.
- *
- * This function returns the 'm' parameter of the \<r> tag. This is the
- * version you used to call the QWriter constructor. You may use that
- * information to tweak your data forward as required.
- *
- * \return The minor version as it was saved in your serialized data.
  */
 
 
@@ -221,6 +186,63 @@ QReader::QReader(QIODevice& stream)
       //f_attr_n -- auto-init (empty)
 {
 }
+
+
+/** \brief Retrieve the file format as it was saved in the stream.
+ *
+ * This function returns the file format ('f' attribute of the \<r> tag)
+ * that was used when creating the serialized data. This represents the
+ * FILE_FORMAT_VERSION variable of the library used to save the serialized
+ * data. It may be different from the current library version or the version
+ * of the library you used to compile your software.
+ *
+ * \return The file format version as it was saved in your serialized data.
+ */
+quint16 QReader::file_format_version() const
+{
+    if(f_file_format_version == -1)
+    {
+        throw QExceptionNotDefined("file format version is not defined");
+    }
+    return static_cast<quint16>(f_file_format_version);
+}
+
+
+/** \brief Retrieve the major file version.
+ *
+ * This function returns the 'v' parameter of the \<r> tag. This is the
+ * version you used to call the QWriter constructor. You may use that
+ * information to tweak your data forward as required.
+ *
+ * \return The major version as it was saved in your serialized data.
+ */
+quint16 QReader::major_version() const
+{
+    if(f_major_version == -1)
+    {
+        throw QExceptionNotDefined("major version is not defined");
+    }
+    return f_major_version;
+}
+
+
+/** \brief Retrieve the minor file version.
+ *
+ * This function returns the 'm' parameter of the \<r> tag. This is the
+ * version you used to call the QWriter constructor. You may use that
+ * information to tweak your data forward as required.
+ *
+ * \return The minor version as it was saved in your serialized data.
+ */
+quint16 QReader::minor_version() const
+{
+    if(f_minor_version == -1)
+    {
+        throw QExceptionNotDefined("minor version is not defined");
+    }
+    return f_minor_version;
+}
+
 
 /** \brief Read this component and any sub-component.
  *

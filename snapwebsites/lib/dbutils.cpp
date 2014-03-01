@@ -40,15 +40,15 @@ namespace
     {
         if(c >= '0' && c <= '9')
         {
-            return c - '0';
+            return static_cast<char>(c - '0');
         }
         if(c >= 'a' && c <= 'f')
         {
-            return c - 'a' + 10;
+            return static_cast<char>(c - 'a' + 10);
         }
         if(c >= 'A' && c <= 'F')
         {
-            return c - 'A' + 10;
+            return static_cast<char>(c - 'A' + 10);
         }
         throw snap_exception( "error: invalid hexadecimal digit, it cannot be converted." );
     }
@@ -80,7 +80,7 @@ QByteArray dbutils::get_row_key() const
             char const *s(str.data());
             while(s[0] != '\0' && s[1] != '\0')
             {
-                char c((hex_to_dec(s[0]) << 4) | hex_to_dec(s[1]));
+                char c(static_cast<char>((hex_to_dec(s[0]) << 4) | hex_to_dec(s[1])));
                 row_key.append(c);
                 s += 2;
             }
@@ -585,19 +585,19 @@ void dbutils::set_column_value( QCassandraCell::pointer_t c, const QString& v )
 
         case CT_uint32_value:
         {
-            cvalue.setUInt32Value( v.toULong() );
+            cvalue.setUInt32Value( static_cast<uint32_t>(v.toULong()) );
         }
         break;
 
         case CT_int8_value:
         {
-            cvalue.setSignedCharValue( v.toInt() );
+            cvalue.setSignedCharValue( static_cast<signed char>(v.toInt()) );
         }
         break;
 
         case CT_uint8_value:
         {
-            cvalue.setUnsignedCharValue( v.toUInt() );
+            cvalue.setUnsignedCharValue( static_cast<unsigned char>(v.toUInt()) );
         }
         break;
 

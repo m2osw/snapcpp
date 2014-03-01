@@ -2564,13 +2564,13 @@ bool snap_child::process(int socket)
     }
     catch( snap_exception const& except )
     {
-        SNAP_LOG_FATAL("snap_child::process(): exception caught!")(except.what());
+        SNAP_LOG_FATAL("snap_child::process(): exception caught: ")(except.what());
     }
     catch( std::exception const& std_except )
     {
         // the snap_logic_exception is no a snap_exception
         // and other libraries may generate other exceptions
-        SNAP_LOG_FATAL("snap_child::process(): exception caught!")(std_except.what());
+        SNAP_LOG_FATAL("snap_child::process(): exception caught: ")(std_except.what())(" (there are mainly two kinds of exceptions happening here: Snap logic errors and Cassandra exceptions that are thrown by thrift)");
     }
     catch( ... )
     {
@@ -3513,7 +3513,7 @@ void snap_child::mark_for_initialization()
  * \param[in] data  The data pointer.
  * \param[in] size  The number of bytes to write from data.
  */
-void snap_child::write(const char *data, ssize_t size)
+void snap_child::write(char const *data, ssize_t size)
 {
     if(f_socket == -1)
     {
@@ -3538,7 +3538,7 @@ void snap_child::write(const char *data, ssize_t size)
  *
  * \param[in] str  The string to write to the socket.
  */
-void snap_child::write(const char *str)
+void snap_child::write(char const *str)
 {
     write(str, strlen(str));
 }
@@ -3551,7 +3551,7 @@ void snap_child::write(const char *str)
  *
  * \param[in] str  The QString to write to the socket.
  */
-void snap_child::write(const QString& str)
+void snap_child::write(QString const& str)
 {
     QByteArray a(str.toUtf8());
     write(a.data(), a.size());
@@ -3814,6 +3814,24 @@ void snap_child::setup_uri()
 const snap_uri& snap_child::get_uri() const
 {
     return f_uri;
+}
+
+
+/** \brief Retrieve the current action.
+ *
+ * This function is used to retrieve the action defined in the query string.
+ * This value is changed with what will be used just before the permission
+ * verification process starts.
+ *
+ * Trying to retrieve the action too soon may give you an invalid value.
+ * Note that if you are generating the page contents, then you are past
+ * the verification process so this action value was corrected as required.
+ *
+ * \return  The name of the action used to check this page.
+ */
+QString snap_child::get_action() const
+{
+    return f_uri.query_option(f_server->get_parameter("qs_action"));
 }
 
 
@@ -4549,7 +4567,10 @@ void snap_child::canonicalize_options()
     for(int i(0); i < max_compressions; ++i)
     {
         QString encoding_name(browser_compressions[i].get_name());
-        if(browser_compressions[i].get_level() == 0)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+        if(browser_compressions[i].get_level() == 0.0f)
+#pragma GCC diagnostic pop
         {
             if(encoding_name == "identity")
             {
@@ -4656,7 +4677,7 @@ bool snap_child::verify_locale(QString& lang, QString& country, bool generate_er
             }
             return false;
         }
-        int pos(s - lang.data());
+        int pos(static_cast<int>(s - lang.data()));
         country = lang.mid(pos + 1);
         lang = lang.left(pos);
         if(lang.isEmpty())
@@ -6624,7 +6645,10 @@ void snap_child::execute()
     {
         // This 406 is in the spec. (RFC2616) but frankly?!
         float identity_level(encodings.get_level("identity"));
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
         if(identity_level == 0.0f)
+#pragma GCC diagnostic pop
         {
             die(HTTP_CODE_NOT_ACCEPTABLE, "No Acceptable Compression Encoding",
                 "Your client requested a compression that we do not offer and it does not accept content without compression.",
@@ -7598,6 +7622,227 @@ QSharedPointer<udp_client_server::udp_server> snap_child::udp_get_server(const c
         throw std::runtime_error("server could not be allocated");
     }
     return server;
+}
+
+
+/** \brief Check a tag
+ *
+ * This function determines whether the input named tag is an inline tag.
+ * Note that CSS can transform an inline tag in a block so the result of
+ * this function are only relatively correct.
+ *
+ * The function returns true for what is considered neutral tags. For example,
+ * the \<map\> and \<script\> tags are viewed as neutral. They do not affect
+ * the output just by their presence in the flow. (Although a script may
+ * affect the flow at run time by writing to it.)
+ *
+ * \param[in] tag   The name of the tag in a C-string.
+ * \param[in] length  Use -1 if \p tag is null terminated, otherwise the length of the string.
+ *
+ * \return true if the tag is considered to be inline by default.
+ */
+bool snap_child::tag_is_inline(char const *tag, int length)
+{
+    if(tag == NULL)
+    {
+        throw snap_logic_exception("tag_is_inline() cannot be called with NULL as the tag pointer");
+    }
+
+    if(length < 0)
+    {
+        length = static_cast<int>(strlen(tag));
+    }
+
+    switch(tag[0])
+    {
+    case 'a':
+        // <a>, <abbr>, <acronym>, <area>
+        if(length == 1
+        || strncmp(tag + 1, "bbr", length) == 0
+        || strncmp(tag + 1, "cronym", length) == 0   // deprecated in HTML 5
+        || strncmp(tag + 1, "rea", length) == 0)
+        {
+            return true;
+        }
+        break;
+
+    case 'b':
+        // <b>, <basefont>, <bb>, <bdi>, <bdo>, <bgsound>, <big>, <blink>, <br>, <button>
+        if(length == 1
+        || strncmp(tag + 1, "asefont", length) == 0      // <basefont> deprecated in HTML 4.01
+        || (length == 2 && (tag[1] == 'b' || tag[1] == 'r'))
+        || strncmp(tag + 1, "di", length) == 0
+        || strncmp(tag + 1, "do", length) == 0
+        || strncmp(tag + 1, "ig", length) == 0           // <big> deprecated in HTML 5
+        || strncmp(tag + 1, "gsound", length) == 0       // <bgsound> deprecated in HTML 5
+        || strncmp(tag + 1, "link", length) == 0         // <blink> deprecated in HTML 5
+        || strncmp(tag + 1, "utton", length) == 0)
+        {
+            return true;
+        }
+        break;
+
+    case 'c':
+        // <cite>, <code>, <command>
+        if(strncmp(tag + 1, "ite", length) == 0
+        || strncmp(tag + 1, "ode", length) == 0
+        || strncmp(tag + 1, "ommand", length) == 0)
+        {
+            return true;
+        }
+        break;
+
+    case 'd':
+        // <data>, <del>, <dfn>
+        if(strncmp(tag + 1, "ata", length) == 0
+        || strncmp(tag + 1, "el", length) == 0
+        || strncmp(tag + 1, "fn", length) == 0)
+        {
+            return true;
+        }
+        break;
+
+    case 'e':
+        // <em>
+        if(length == 2 && tag[1] == 'm')
+        {
+            return true;
+        }
+        break;
+
+    case 'f':
+        // <font>
+        if(strncmp(tag + 1, "ont", length) == 0)         // <font> deprecated in HTML 4.01
+        {
+            return true;
+        }
+        break;
+
+    case 'i':
+        // <i>, <img>, <ins>, <isindex>
+        if(tag[1] == '\0'
+        || strncmp(tag + 1, "mg", length) == 0
+        || strncmp(tag + 1, "ns", length) == 0
+        || strncmp(tag + 1, "sindex", length) == 0)      // <isindex> deprecated in HTML 4.01
+        {
+            return true;
+        }
+        break;
+
+    case 'k':
+        // <kbd>
+        if(tag[1] == 'b' && tag[2] == 'd' && tag[3] == '\0')
+        {
+            return true;
+        }
+        break;
+
+    case 'l':
+        // <label>
+        if(strncmp(tag + 1, "abel", length) == 0)
+        {
+            return true;
+        }
+        break;
+
+    case 'm':
+        // <map>, <mark>, <meter>
+        if((tag[1] == 'a' && tag[2] == 'p' && tag[3] == '\0')
+        || strncmp(tag + 1, "ark", length) == 0
+        || strncmp(tag + 1, "eter", length) == 0)
+        {
+            return true;
+        }
+        break;
+
+    case 'n':
+        // <nobr>
+        if(strncmp(tag + 1, "obr", length) == 0)     // <nobr> deprecated in HTML 5
+        {
+            return true;
+        }
+        break;
+
+    case 'p':
+        // <progress>
+        if(strncmp(tag + 1, "rogress", length) == 0)
+        {
+            return true;
+        }
+        break;
+
+    case 'q':
+        // <q>
+        if(tag[1] == '\0')
+        {
+            return true;
+        }
+        break;
+
+    case 'r':
+        // <rb>, <rp>, <rt>, <rtc>, <ruby>
+        if(((tag[1] == 'b' || tag[1] == 'p' || tag[1] == 't') && tag[2] == '\0')
+        || (tag[1] == 't' || tag[2] == 'c' || tag[3] == '\0')
+        || strncmp(tag + 1, "uby", length) == 0)
+        {
+            return true;
+        }
+        break;
+
+    case 's':
+        // <s>, <samp>, <script>, <select>, <small>, <span>, <strike>, <strong>, <style>, <sub>, <sup>
+        if(length == 1                              // <s> deprecated in HTML 4.01
+        || strncmp(tag + 1, "amp", length) == 0
+        || strncmp(tag + 1, "cript", length) == 0
+        || strncmp(tag + 1, "elect", length) == 0
+        || strncmp(tag + 1, "mall", length) == 0
+        || strncmp(tag + 1, "pan", length) == 0
+        || strncmp(tag + 1, "trike", length) == 0   // <strike> depreacated in HTML 4.01
+        || strncmp(tag + 1, "trong", length) == 0
+        || strncmp(tag + 1, "tyle", length) == 0
+        || strncmp(tag + 1, "ub", length) == 0
+        || strncmp(tag + 1, "up", length) == 0)
+        {
+            return true;
+        }
+        break;
+
+    case 't':
+        // <time>, <tt>
+        if(strncmp(tag + 1, "ime", length) == 0
+        || (length == 2 && tag[1] == 't'))      // <tt> deprecated in HTML 5
+        {
+            return true;
+        }
+        break;
+
+    case 'u':
+        // <u>
+        if(length == 1)                  // <u> deprecated in HTML 4.01
+        {
+            return true;
+        }
+        break;
+
+    case 'v':
+        // <var>
+        if(length == 3 && tag[1] == 'a' && tag[2] == 'r')
+        {
+            return true;
+        }
+        break;
+
+    case 'w':
+        // <wbr>
+        if(length == 3 && tag[1] == 'b' && tag[2] == 'r')  // somehow <wbr> is marked as obsolete in HTML 5... TBD
+        {
+            return true;
+        }
+        break;
+
+    }
+
+    return false;
 }
 
 

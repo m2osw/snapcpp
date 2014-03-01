@@ -814,7 +814,7 @@ restart:
             else
             {
                 result.set_id(TOKEN_ID_STRING_ENUM);
-                result.set_value(QString(start, f_pos - start));
+                result.set_value(QString(start, static_cast<int>(f_pos - start)));
                 ++f_pos; // skip the closing quote
             }
         }
@@ -838,7 +838,7 @@ restart:
                 ++f_pos;
             }
             result.set_id(TOKEN_ID_INTEGER_ENUM);
-            QString value(start, f_pos - start);
+            QString value(start, static_cast<int>(f_pos - start));
             result.set_value(value.toULongLong(&ok, 16));
             if(!ok)
             {
@@ -884,13 +884,13 @@ restart:
                 }
                 // TODO: add exponent support
                 result.set_id(TOKEN_ID_FLOAT_ENUM);
-                QString value(start, f_pos - start);
+                QString value(start, static_cast<int>(f_pos - start));
                 result.set_value(value.toDouble(&ok));
             }
             else
             {
                 result.set_id(TOKEN_ID_INTEGER_ENUM);
-                QString value(start, f_pos - start);
+                QString value(start, static_cast<int>(f_pos - start));
                 result.set_value(value.toULongLong(&ok));
             }
             if(!ok)
@@ -922,7 +922,7 @@ restart:
             {
                 ++f_pos;
             }
-            QString identifier(start, f_pos - start);
+            QString identifier(start, static_cast<int>(f_pos - start));
             if(f_keywords.contains(identifier))
             {
                 result.set_id(TOKEN_ID_KEYWORD_ENUM);

@@ -21,6 +21,7 @@
 #include <log.h>
 
 #include <QDomDocument>
+#include <QFile>
 
 #include <iostream>
 
@@ -90,11 +91,29 @@ void QMessageHandler::handleMessage(QtMsgType type, QString const & description,
             {
                 l.operator () (location)(":");
             }
+            if(sourceLocation.line() != 0)
+            {
+                l.operator () ("line #")(sourceLocation.line())(":");
+            }
+            if(sourceLocation.column() != 0)
+            {
+                l.operator () ("column #")(sourceLocation.column())(":");
+            }
             l.operator () (" ")(description_string);
             if(!f_xsl.isEmpty())
             {
 #ifdef DEBUG
                 l.operator () (" Script:\n")(f_xsl);
+                static int count(0);
+                QFile file_xsl(QString("/tmp/error%1-query.xsl").arg(count));
+                file_xsl.open(QIODevice::WriteOnly);
+                file_xsl.write(f_xsl.toUtf8());
+                file_xsl.close();
+                QFile file_xml(QString("/tmp/error%1-document.xml").arg(count));
+                file_xml.open(QIODevice::WriteOnly);
+                file_xml.write(f_doc.toUtf8());
+                file_xml.close();
+                ++count;
 #else
                 l.operator () (" Beginning of the script involved:\n")(f_xsl.left(200));
 #endif

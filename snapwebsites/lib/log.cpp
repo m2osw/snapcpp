@@ -417,6 +417,7 @@ logger::~logger()
     case LOG_LEVEL_TRACE:
         ll = log4cplus::TRACE_LOG_LEVEL;
         break;
+
     }
 
     // TBD: is the exists() call doing anything for us here?

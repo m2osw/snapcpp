@@ -215,7 +215,7 @@ std::string tcp_client::get_addr() const
  */
 int tcp_client::read(char *buf, size_t size)
 {
-    return ::read(f_socket, buf, size);
+    return static_cast<int>(::read(f_socket, buf, size));
 }
 
 
@@ -278,7 +278,7 @@ int tcp_client::read_line(std::string& line)
  */
 int tcp_client::write(const char *buf, size_t size)
 {
-    return ::write(f_socket, buf, size);
+    return static_cast<int>(::write(f_socket, buf, size));
 }
 
 

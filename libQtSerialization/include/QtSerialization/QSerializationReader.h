@@ -53,9 +53,9 @@ public:
 
     void read(QComposite& composite);
 
-    quint16 file_format_version() const { return f_file_format_version; }
-    quint16 major_version() const { return f_major_version; }
-    quint16 minor_version() const { return f_minor_version; }
+    quint16 file_format_version() const;
+    quint16 major_version() const;
+    quint16 minor_version() const;
 
     int tag() const { return f_tag; }
     bool closingTag() const { return f_closing; }

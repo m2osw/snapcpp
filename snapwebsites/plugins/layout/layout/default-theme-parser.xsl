@@ -107,7 +107,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 				</div>
 				<div class="column content">
 					<div class="squeezed">
-						<div><xsl:attribute name="class"><xsl:if test="$action = 'edit'">snap-editor</xsl:if></xsl:attribute><div class="editor-content"><h2><xsl:choose>
+						<div><div><xsl:attribute name="class"><xsl:if test="$action = 'edit'">snap-editor</xsl:if></xsl:attribute>
+						     <xsl:attribute name="field_name">title</xsl:attribute><h2 class="editor-content"><xsl:choose>
 								<xsl:when test="/snap/page/body/titles/long-title">
 									<xsl:value-of select="/snap/page/body/titles/long-title"/>
 								</xsl:when>
@@ -115,7 +116,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 									<xsl:value-of select="/snap/page/body/titles/title"/>
 								</xsl:otherwise>
 							</xsl:choose></h2></div></div>
-						<div><xsl:attribute name="class"><xsl:if test="$action = 'edit'">snap-editor</xsl:if></xsl:attribute><div class="editor-content"><xsl:copy-of select="output/node()"/></div></div>
+						<xsl:copy-of select="output/node()"/>
 					</div>
 				</div>
 				<div style="clear: both;"></div>

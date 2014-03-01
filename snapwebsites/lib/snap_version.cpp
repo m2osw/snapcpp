@@ -1301,7 +1301,7 @@ bool dependency::set_dependency(QString const& dependency_string)
             {
                 // we assume an operator at the start
                 for(; (*s < '0' || *s > '9') && *s != '\0'; ++s);
-                QString const op(QString::fromUtf8(start, s - start).trimmed());
+                QString const op(QString::fromUtf8(start, static_cast<int>(s - start)).trimmed());
                 if(!vo.set_operator_string(op))
                 {
                     f_error = vo.get_error();
@@ -1314,7 +1314,7 @@ bool dependency::set_dependency(QString const& dependency_string)
             }
 
             // got a version, verify it
-            QString const version_string(QString::fromUtf8(start, s - start));
+            QString const version_string(QString::fromUtf8(start, static_cast<int>(s - start)));
             version v;
             if(!v.set_version_string(version_string))
             {
@@ -1334,7 +1334,7 @@ bool dependency::set_dependency(QString const& dependency_string)
                 // (i.e. version <= version)
                 start = s;
                 for(; (*s < '0' || *s > '9') && *s != '\0'; ++s);
-                QString const op(QString::fromUtf8(start, s - start).trimmed());
+                QString const op(QString::fromUtf8(start, static_cast<int>(s - start)).trimmed());
                 if(!vo.set_operator_string(op))
                 {
                     f_error = vo.get_error();
@@ -1363,7 +1363,7 @@ bool dependency::set_dependency(QString const& dependency_string)
                     f_error = "a version range can have two versions separated by an operator, \"" + vonly + "\" is not valid";
                     return false;
                 }
-                QString const rhs_version(QString::fromUtf8(start, s - start));
+                QString const rhs_version(QString::fromUtf8(start, static_cast<int>(s - start)));
                 version rhs_v;
                 if(!rhs_v.set_version_string(rhs_version))
                 {
@@ -1640,7 +1640,6 @@ bool quick_find_version_in_source::find_version(char const *data, int const size
     public:
         field_t(char const *name)
             : f_name(name)
-            , f_length(strlen(f_name))
         {
         }
 
@@ -1704,7 +1703,6 @@ bool quick_find_version_in_source::find_version(char const *data, int const size
 
     private:
         char const *    f_name;
-        int             f_length;
     };
 
     f_data = data;
@@ -1843,7 +1841,7 @@ QString quick_find_version_in_source::get_line()
             {
                 break;
             }
-            raw += c;
+            raw += static_cast<char>(c);
         }
         // we need to support UTF-8 properly for descriptions
         QString line(QString::fromUtf8(raw.c_str()).trimmed());

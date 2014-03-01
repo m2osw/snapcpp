@@ -17,10 +17,10 @@
 
 #include "search.h"
 
+#include "../content/content.h"
+
 #include "not_reached.h"
 #include "dom_util.h"
-
-#include "../content/content.h"
 
 #include "poison.h"
 

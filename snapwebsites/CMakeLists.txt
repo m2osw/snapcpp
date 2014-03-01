@@ -80,9 +80,11 @@ if( "${CMAKE_BUILD_TYPE}" STREQUAL "Debug" )
 else()
     message("Debug is turned OFF")
 endif()
-# These are the 3 extra warnings that did not make it in the modules
-# -Wold-style-cast -Wstrict-overflow=5 -Wnoexcept
-set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wold-style-cast -Wstrict-overflow=5 -Wnoexcept -fwrapv" )
+# A few extra warnings specifically for snapwebsites libraries and tools
+# You can also play with -Weffc++ although we are definitively not compliant
+# (especially we do not define all the auto-initialized variables!)
+# -Wconversion -- would be nice, a few things are still not cooperating with that one
+set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wold-style-cast -Wnoexcept" )
 set( CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -fwrapv" )
 
 include_directories( 
@@ -118,6 +120,10 @@ snap_build_xml_targets()
 
 ##
 ## Code Analysis
+##
+## TODO:
+## Look into a way to compile everything using the -Weffc++ flag because that
+## gives us many interesting warnings;
 ##
 add_custom_target(snap_code_analysis
     # Count things and report potential problems with different classes

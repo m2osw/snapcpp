@@ -33,7 +33,7 @@ SNAP_PLUGIN_START(filter, 1, 0)
  * This function is used to initialize the filter plugin object.
  */
 filter::filter()
-    : f_snap(nullptr)
+    //: f_snap(nullptr) -- auto-init
 {
 //std::cerr << " - Created filter!\n";
 }
@@ -460,8 +460,9 @@ void filter::on_token_filter(content::path_info_t& ipath, QDomDocument& xml)
     public:
         typedef ushort char_t;
 
-        text_t(filter *f, content::path_info_t& ipath, QString const& owner, QDomDocument& xml, QString const& text)
-            : f_filter(f)
+        text_t(snap_child *snap, filter *f, content::path_info_t& ipath, QString const& owner, QDomDocument& xml, QString const& text)
+            : f_snap(snap)
+            , f_filter(f)
             , f_ipath(ipath)
             , f_owner(owner)
             , f_xml(xml)
@@ -498,14 +499,14 @@ void filter::on_token_filter(content::path_info_t& ipath, QDomDocument& xml)
                 }
                 else
                 {
-                    f_result += c;
+                    f_result += QChar(c);
                 }
             }
 
             return changed;
         }
 
-        const QString& result() const
+        QString const& result() const
         {
             return f_result;
         }
@@ -570,6 +571,7 @@ void filter::on_token_filter(content::path_info_t& ipath, QDomDocument& xml)
 
                                     }
                                     t = get_token(tok);
+                                    f_token += tok;
                                 }
                             }
                             break;
@@ -581,6 +583,7 @@ void filter::on_token_filter(content::path_info_t& ipath, QDomDocument& xml)
                         case TOK_INTEGER:
                         case TOK_REAL:
                             t = get_token(tok);
+                            f_token += tok;
                             break;
 
                         default:
@@ -631,7 +634,48 @@ void filter::on_token_filter(content::path_info_t& ipath, QDomDocument& xml)
                 // replace anything
                 return false;
             }
-            ungets(info.f_replacement);
+            if(f_snap->get_action() == "edit")
+            {
+                // if the editor is turned on, then we want to mark all
+                // fields as such so the editor is aware of them
+                QByteArray utf8(info.f_replacement.toUtf8());
+                bool use_span(true);
+                for(char const *s(utf8.data()); *s != '\0'; ++s)
+                {
+                    if(*s == '<')
+                    {
+                        ++s;
+                        if((*s >= 'a' && *s <= 'z')
+                        || (*s >= 'A' && *s <= 'Z'))
+                        {
+                            char const *start(s);
+                            for(++s; (*s >= 'a' && *s <= 'z') || (*s >= 'A' && *s <= 'Z'); ++s);
+                            int const len(static_cast<int>(s - start));
+                            use_span = f_snap->tag_is_inline(utf8.data(), len);
+                            if(!use_span)
+                            {
+                                break;
+                            }
+                        }
+                    }
+                }
+                if(use_span)
+                {
+                    info.f_replacement = QString("<span class=\"filter-token\" token=\"%1\">%2</span>")
+                            .arg(f_token)
+                            .arg(info.f_replacement);
+                }
+                else
+                {
+                    info.f_replacement = QString("<div class=\"filter-token\" token=\"%1\">%2</div>")
+                            .arg(f_token)
+                            .arg(info.f_replacement);
+                }
+            }
+            else
+            {
+                ungets(info.f_replacement);
+            }
 
             return true;
         }
@@ -653,24 +697,24 @@ void filter::on_token_filter(content::path_info_t& ipath, QDomDocument& xml)
                     }
                     f_token = save_token;
                 }
-                else if(c != ' ' || ~skip_spaces)
+                else if(c != ' ' || !skip_spaces)
                 {
                     break;
                 }
                 else
                 {
                     // the space is needed in case the whole thing fails
-                    f_token += c;
+                    f_token += QChar(c);
                 }
             }
-            tok = c;
+            tok = QChar(c);
             switch(c)
             {
             case '"':
             case '\'':
                 {
                     char_t quote(c);
-                    tok = quote;
+                    tok = QChar(quote);
                     do
                     {
                         c = getc();
@@ -678,7 +722,7 @@ void filter::on_token_filter(content::path_info_t& ipath, QDomDocument& xml)
                         {
                             return TOK_INVALID;
                         }
-                        tok += c;
+                        tok += QChar(c);
                         if(c == '\\')
                         {
                             c = getc();
@@ -686,13 +730,13 @@ void filter::on_token_filter(content::path_info_t& ipath, QDomDocument& xml)
                             {
                                 return TOK_INVALID;
                             }
-                            tok += c;
+                            tok += QChar(c);
                             // ignore quotes if escaped
                             c = '\0';
                         }
                     }
                     while(c != quote);
-                    tok = tok.mid(0, tok.size() - 1) + quote;
+                    tok = tok.mid(0, tok.size() - 1) + QChar(quote);
                 }
                 return TOK_STRING;
 
@@ -709,17 +753,17 @@ void filter::on_token_filter(content::path_info_t& ipath, QDomDocument& xml)
                 c = getc();
                 while(c >= '0' && c <= '9')
                 {
-                    tok += c;
+                    tok += QChar(c);
                     c = getc();
                 }
             case '.':
                 if(c == '.')
                 {
-                    tok += c;
+                    tok += QChar(c);
                     c = getc();
                     while(c >= '0' && c <= '9')
                     {
-                        tok += c;
+                        tok += QChar(c);
                         c = getc();
                     }
                     ungetc(c);
@@ -747,7 +791,7 @@ void filter::on_token_filter(content::path_info_t& ipath, QDomDocument& xml)
                        || (c >= '0' && c <= '9')
                        || c == '_' || c == ':')
                     {
-                        tok += c;
+                        tok += QChar(c);
                         c = getc();
                     }
                     ungetc(c);
@@ -758,7 +802,7 @@ void filter::on_token_filter(content::path_info_t& ipath, QDomDocument& xml)
             }
         }
 
-        void ungets(const QString& s)
+        void ungets(QString const& s)
         {
             f_extra_input.remove(0, f_extra_index);
             f_extra_input.insert(0, s);
@@ -796,11 +840,11 @@ void filter::on_token_filter(content::path_info_t& ipath, QDomDocument& xml)
                     return wc;
                 }
                 f_extra_index = 0;
-                f_extra_input = "";
+                f_extra_input.clear();
             }
             if(f_index >= f_text.size())
             {
-                return '\0';
+                return static_cast<char_t>('\0');
             }
             else
             {
@@ -810,6 +854,7 @@ void filter::on_token_filter(content::path_info_t& ipath, QDomDocument& xml)
             }
         }
 
+        snap_child *                f_snap;
         filter *                    f_filter;
         content::path_info_t        f_ipath;
         QString                     f_owner;
@@ -857,7 +902,7 @@ void filter::on_token_filter(content::path_info_t& ipath, QDomDocument& xml)
             // this works too, although the final result is still plain text!
             // (it must be xslt that converts the contents of CDATA sections)
             QDomCDATASection cdata_section(n.toCDATASection());
-            text_t t(this, state.ipath(), state.owner(), xml, cdata_section.data());
+            text_t t(f_snap, this, state.ipath(), state.owner(), xml, cdata_section.data());
             if(t.parse())
             {
 //std::cerr << "replace CDATA [" << cdata_section.data() << "]\n";
@@ -868,12 +913,12 @@ void filter::on_token_filter(content::path_info_t& ipath, QDomDocument& xml)
         else if(n.isText())
         {
             QDomText text(n.toText());
-            text_t t(this, state.ipath(), state.owner(), xml, text.data());
+            text_t t(f_snap, this, state.ipath(), state.owner(), xml, text.data());
             if(t.parse())
             {
 //std::cerr << "replace text [" << text.data() << "]\n";
                 // replace the text with its contents
-                const QString& result(t.result());
+                QString const& result(t.result());
                 if(result.contains('<'))
                 {
                     // the tokens added HTML... replace the whole text node
@@ -882,7 +927,7 @@ void filter::on_token_filter(content::path_info_t& ipath, QDomDocument& xml)
                     QDomDocumentFragment frag(xml.createDocumentFragment());
                     frag.appendChild(xml.importNode(doc_text.documentElement(), true));
                     QDomNodeList children(frag.firstChild().childNodes());
-                    const int max(children.size());
+                    int const max(children.size());
                     QDomNode previous(n);
                     for(int i(0); i < max; ++i)
                     {

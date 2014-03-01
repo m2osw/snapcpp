@@ -17,8 +17,11 @@
 
 #include "qdomxpath.h"
 
+#include "floats.h"
+
 #include <iostream>
 #include <iomanip>
+#include <limits>
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
@@ -808,10 +811,13 @@ public:
             return f_integer != 0;
 
         case ATOMIC_TYPE_SINGLE:
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
             return f_single != 0.0f;
 
         case ATOMIC_TYPE_DOUBLE:
             return f_double != 0.0;
+#pragma GCC diagnostic pop
 
         case ATOMIC_TYPE_STRING:
             // TODO -- I think this is totally wrong; if I'm correct it
@@ -2171,7 +2177,7 @@ void func_calculate_sum_or_average(variant_vector_t& arguments, bool sum_only)
             if(integer)
             {
                 isum += arg.getIntegerValue();
-                dsum = isum;
+                dsum = static_cast<double>(isum);
                 ++count;
                 break;
             }
@@ -2261,7 +2267,7 @@ void func_calculate_min_or_max(variant_vector_t& arguments, bool min)
                     iresult = v;
                     first = false;
                 }
-                dresult = iresult;
+                dresult = static_cast<double>(iresult);
                 break;
             }
         //case atomic_type_t::ATOMIC_TYPE_DECIMAL:
@@ -2487,7 +2493,7 @@ void inst_jump()
     }
 #endif
     variant_t pc(pop_variant_data());
-    f_functions.back().f_pc = pc.getIntegerValue();
+    f_functions.back().f_pc = static_cast<uint32_t>(pc.getIntegerValue());
 }
 
 
@@ -2510,7 +2516,7 @@ void inst_jump_if_true()
     variant_t boolean(pop_variant_data());
     if(boolean.getBooleanValue())
     {
-        f_functions.back().f_pc = pc.getIntegerValue();
+        f_functions.back().f_pc = static_cast<uint32_t>(pc.getIntegerValue());
     }
 }
 
@@ -2534,7 +2540,7 @@ void inst_jump_if_false()
     variant_t boolean(pop_variant_data());
     if(!boolean.getBooleanValue())
     {
-        f_functions.back().f_pc = pc.getIntegerValue();
+        f_functions.back().f_pc = static_cast<uint32_t>(pc.getIntegerValue());
     }
 }
 
@@ -2558,7 +2564,7 @@ void inst_jump_if_zero()
     variant_t object(pop_variant_data());
     if(object.getIntegerValue(true) == 0)
     {
-        f_functions.back().f_pc = pc.getIntegerValue();
+        f_functions.back().f_pc = static_cast<uint32_t>(pc.getIntegerValue());
     }
 }
 
@@ -3173,8 +3179,8 @@ void inst_push_medium_string()
     int64_t length((static_cast<int>(get_next_program_byte()) << 8)
                   | static_cast<int>(get_next_program_byte()));
     variant_t value;
-    value.atomic_value_t::setValue(QString::fromUtf8(reinterpret_cast<char *>(f_program.data() + f_functions.back().f_pc), length));
-    f_functions.back().f_pc += length;
+    value.atomic_value_t::setValue(QString::fromUtf8(reinterpret_cast<char *>(f_program.data() + f_functions.back().f_pc), static_cast<int>(length)));
+    f_functions.back().f_pc += static_cast<uint32_t>(length);
     f_functions.back().f_stack.push_back(value);
 }
 
@@ -3203,8 +3209,8 @@ void inst_push_large_string()
                  | (static_cast<int>(get_next_program_byte()) << 8)
                  |  static_cast<int>(get_next_program_byte()));
     variant_t value;
-    value.atomic_value_t::setValue(QString::fromUtf8(reinterpret_cast<char *>(f_program.data() + f_functions.back().f_pc), length));
-    f_functions.back().f_pc += length;
+    value.atomic_value_t::setValue(QString::fromUtf8(reinterpret_cast<char *>(f_program.data() + f_functions.back().f_pc), static_cast<int>(length)));
+    f_functions.back().f_pc += static_cast<uint32_t>(length);
     f_functions.back().f_stack.push_back(value);
 }
 
@@ -4172,7 +4178,7 @@ void inst_equal()
     case atomic_value_t::ATOMIC_TYPE_SINGLE | (atomic_value_t::ATOMIC_TYPE_INTEGER << 16):
     case atomic_value_t::ATOMIC_TYPE_INTEGER | (atomic_value_t::ATOMIC_TYPE_SINGLE << 16):
     case atomic_value_t::ATOMIC_TYPE_SINGLE | (atomic_value_t::ATOMIC_TYPE_SINGLE << 16):
-        result.atomic_value_t::setValue(lhs.atomic_value_t::getSingleValue(true) == rhs.atomic_value_t::getSingleValue(true));
+        result.atomic_value_t::setValue(snap::compare_floats(lhs.atomic_value_t::getSingleValue(true), rhs.atomic_value_t::getSingleValue(true)));
         break;
 
     case atomic_value_t::ATOMIC_TYPE_DOUBLE | (atomic_value_t::ATOMIC_TYPE_INTEGER << 16):
@@ -4180,7 +4186,7 @@ void inst_equal()
     case atomic_value_t::ATOMIC_TYPE_SINGLE | (atomic_value_t::ATOMIC_TYPE_DOUBLE << 16):
     case atomic_value_t::ATOMIC_TYPE_DOUBLE | (atomic_value_t::ATOMIC_TYPE_SINGLE << 16):
     case atomic_value_t::ATOMIC_TYPE_DOUBLE | (atomic_value_t::ATOMIC_TYPE_DOUBLE << 16):
-        result.atomic_value_t::setValue(lhs.atomic_value_t::getDoubleValue(true) == rhs.atomic_value_t::getDoubleValue(true));
+        result.atomic_value_t::setValue(snap::compare_floats(lhs.atomic_value_t::getDoubleValue(true), rhs.atomic_value_t::getDoubleValue(true)));
         break;
 
     case atomic_value_t::ATOMIC_TYPE_STRING | (atomic_value_t::ATOMIC_TYPE_STRING << 16):
@@ -4256,7 +4262,7 @@ void inst_not_equal()
     case atomic_value_t::ATOMIC_TYPE_SINGLE | (atomic_value_t::ATOMIC_TYPE_INTEGER << 16):
     case atomic_value_t::ATOMIC_TYPE_INTEGER | (atomic_value_t::ATOMIC_TYPE_SINGLE << 16):
     case atomic_value_t::ATOMIC_TYPE_SINGLE | (atomic_value_t::ATOMIC_TYPE_SINGLE << 16):
-        result.atomic_value_t::setValue(lhs.getSingleValue(true) != rhs.getSingleValue(true));
+        result.atomic_value_t::setValue(snap::compare_floats(lhs.getSingleValue(true), rhs.getSingleValue(true)));
         break;
 
     case atomic_value_t::ATOMIC_TYPE_DOUBLE | (atomic_value_t::ATOMIC_TYPE_INTEGER << 16):
@@ -4264,7 +4270,7 @@ void inst_not_equal()
     case atomic_value_t::ATOMIC_TYPE_SINGLE | (atomic_value_t::ATOMIC_TYPE_DOUBLE << 16):
     case atomic_value_t::ATOMIC_TYPE_DOUBLE | (atomic_value_t::ATOMIC_TYPE_SINGLE << 16):
     case atomic_value_t::ATOMIC_TYPE_DOUBLE | (atomic_value_t::ATOMIC_TYPE_DOUBLE << 16):
-        result.atomic_value_t::setValue(lhs.getDoubleValue(true) != rhs.getDoubleValue(true));
+        result.atomic_value_t::setValue(snap::compare_floats(lhs.getDoubleValue(true), rhs.getDoubleValue(true)));
         break;
 
     case atomic_value_t::ATOMIC_TYPE_STRING | (atomic_value_t::ATOMIC_TYPE_STRING << 16):
@@ -4646,7 +4652,7 @@ void inst_set_position()
         throw QDomXPathException_WrongType("the 'set_position' operator cannot be used with anything else than an integer as its first operand");
     }
     contexts_not_empty();
-    int p(position.getIntegerValue());
+    int p(static_cast<int>(position.getIntegerValue()));
     if(p < 1 || p > f_functions.back().f_contexts.back().f_nodes.size())
     {
         throw QDomXPathException_OutOfRange("the new position in 'set_position' is out of range");
@@ -5763,7 +5769,7 @@ bool get_token()
             f_last_token.reset();
             return f_last_token;
         }
-        f_last_token.f_string += c;
+        f_last_token.f_string += QChar(c);
         switch(c)
         {
         case '(':
@@ -5795,7 +5801,7 @@ bool get_token()
             if(c == ':')
             {
                 f_last_token.f_token = token_t::TOK_DOUBLE_COLON;
-                f_last_token.f_string += c;
+                f_last_token.f_string += QChar(c);
             }
             else
             {
@@ -5809,7 +5815,7 @@ bool get_token()
             if(c == '/')
             {
                 f_last_token.f_token = token_t::TOK_DOUBLE_SLASH;
-                f_last_token.f_string += c;
+                f_last_token.f_string += QChar(c);
             }
             else
             {
@@ -5843,7 +5849,7 @@ bool get_token()
             if(c == '=')
             {
                 f_last_token.f_token = token_t::TOK_NOT_EQUAL;
-                f_last_token.f_string += c;
+                f_last_token.f_string += QChar(c);
             }
             else
             {
@@ -5856,7 +5862,7 @@ bool get_token()
             if(c == '=')
             {
                 f_last_token.f_token = token_t::TOK_LESS_OR_EQUAL;
-                f_last_token.f_string += c;
+                f_last_token.f_string += QChar(c);
             }
             else
             {
@@ -5870,7 +5876,7 @@ bool get_token()
             if(c == '=')
             {
                 f_last_token.f_token = token_t::TOK_GREATER_OR_EQUAL;
-                f_last_token.f_string += c;
+                f_last_token.f_string += QChar(c);
             }
             else
             {
@@ -5909,7 +5915,7 @@ bool get_token()
                             break;
                         }
                     }
-                    f_last_token.f_string += c;
+                    f_last_token.f_string += QChar(c);
                 }
             }
             break;
@@ -5933,7 +5939,7 @@ bool get_token()
                 {
                     break;
                 }
-                f_last_token.f_string += c;
+                f_last_token.f_string += QChar(c);
                 f_last_token.f_integer = f_last_token.f_integer * 10 + c - '0';
             }
             if(c != '.')
@@ -5941,7 +5947,7 @@ bool get_token()
                 ungetc(c);
                 break;
             }
-            f_last_token.f_string += c;
+            f_last_token.f_string += QChar(c);
             f_last_token.f_real = static_cast<double>(f_last_token.f_integer);
         case '.':
             c = getc();
@@ -5950,7 +5956,7 @@ bool get_token()
                 if(c == '.')
                 {
                     f_last_token.f_token = token_t::TOK_DOUBLE_DOT;
-                    f_last_token.f_string += c;
+                    f_last_token.f_string += QChar(c);
                     break;
                 }
                 else if(c < '0' || c > '9')
@@ -5970,7 +5976,7 @@ bool get_token()
                     {
                         break;
                     }
-                    f_last_token.f_string += c;
+                    f_last_token.f_string += QChar(c);
                     frac /= 10.0;
                     f_last_token.f_real += (c - '0') * frac;
                     c = getc();
@@ -6029,7 +6035,7 @@ bool get_token()
                         ungetc(c);
                         break;
                     }
-                    f_last_token.f_string += c;
+                    f_last_token.f_string += QChar(c);
                 }
                 // at this point we return an NCNAME
                 // (NC means No Colon)
@@ -6412,11 +6418,14 @@ void append_push_integer(const int64_t integer)
     }
 }
 
-void append_push_double(const double real)
+void append_push_double(double const real)
 {
     int offset(f_program.size());
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
     if(real == 0.0)
+#pragma GCC diagnostic pop
     {
         add_to_program(INST_PUSH_DOUBLE_ZERO);
     }

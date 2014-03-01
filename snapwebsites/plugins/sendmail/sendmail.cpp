@@ -2045,7 +2045,7 @@ void sendmail::sendemail(const QString& key, const QString& unique_key)
 
         email::email_attachment html_body_attachment;
         QByteArray body_data;
-        body_data.append(encoded_body.c_str(), encoded_body.length());
+        body_data.append(encoded_body.c_str(), static_cast<int>(encoded_body.length()));
         html_body_attachment.set_data(body_data, "text/html; charset=\"utf-8\"");
         html_body_attachment.add_header(get_name(SNAP_NAME_SENDMAIL_CONTENT_TRANSFER_ENCODING), "quoted-printable");
         f_email.set_body_attachment(html_body_attachment);
@@ -2159,7 +2159,7 @@ void sendmail::sendemail(const QString& key, const QString& unique_key)
         boundary = "=Snap.Websites=";
         for(int i(0); i < 20; ++i)
         {
-            int c(rand() % (sizeof(allowed) - 1));
+            int c(static_cast<int>(rand() % (sizeof(allowed) - 1)));
             boundary += allowed[c];
         }
         headers["Content-Type"] = "multipart/mixed;\n  boundary=\"" + boundary + "\"";

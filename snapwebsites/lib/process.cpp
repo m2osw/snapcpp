@@ -721,7 +721,7 @@ int process::run()
                             //if(l < 0) ... manage error?
                             break;
                         }
-                        QByteArray output(buf, l);
+                        QByteArray output(buf, static_cast<int>(l));
                         f_output.append(output);
                         if(f_callback)
                         {

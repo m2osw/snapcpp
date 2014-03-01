@@ -233,7 +233,7 @@ bool snap_cgi::verify()
 
 int snap_cgi::process()
 {
-    const std::string request_method( getenv("REQUEST_METHOD") );
+    std::string const request_method( getenv("REQUEST_METHOD") );
 #ifdef DEBUG
     SNAP_LOG_DEBUG("processing request_method=")(request_method.c_str());
 
@@ -299,6 +299,9 @@ int snap_cgi::process()
                 {
                     return error("504 Gateway Timeout", ("error while writing POST variable \"" + var + "\" to the child process.").c_str());
                 }
+#ifdef DEBUG
+                SNAP_LOG_DEBUG("wrote var=")(var.c_str());
+#endif
                 if(c == EOF)
                 {
                     // this was the last variable
@@ -311,9 +314,6 @@ int snap_cgi::process()
                 var += c;
             }
         }
-#ifdef DEBUG
-        SNAP_LOG_DEBUG("wrote var=")(var.c_str());
-#endif
     }
 #ifdef DEBUG
     SNAP_LOG_DEBUG("writing #END");
@@ -338,9 +338,9 @@ int snap_cgi::process()
         int r(socket.read(buf, sizeof(buf)));
         if(r > 0)
         {
-#ifdef DEBUG
-            SNAP_LOG_DEBUG("writing buf=")(buf);
-#endif
+//#ifdef DEBUG
+//            SNAP_LOG_DEBUG("writing buf=")(buf);
+//#endif
             if(fwrite(buf, r, 1, stdout) != 1)
             {
                 // there is not point in calling error() from here because

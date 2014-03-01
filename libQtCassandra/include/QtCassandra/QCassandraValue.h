@@ -180,8 +180,8 @@ inline int16_t int16Value(const QByteArray& array, const int index = 0)
     || static_cast<unsigned int>(index + 2) > static_cast<unsigned int>(array.size())) {
         throw std::runtime_error("buffer too small for this int16Value");
     }
-    return (static_cast<int16_t>(static_cast<unsigned char>(array.at(index + 0))) << 8)
-         | static_cast<int16_t>(static_cast<unsigned char>(array.at(index + 1)));
+    return static_cast<int16_t>((static_cast<unsigned char>(array.at(index + 0)) << 8)
+                               | static_cast<unsigned char>(array.at(index + 1)));
 }
 
 inline void appendUInt16Value(QByteArray& array, const uint16_t value)
@@ -200,8 +200,8 @@ inline uint16_t uint16Value(const QByteArray& array, const int index = 0)
     || static_cast<unsigned int>(index + 2) > static_cast<unsigned int>(array.size())) {
         throw std::runtime_error("buffer too small for this uint16Value");
     }
-    return (static_cast<uint16_t>(static_cast<unsigned char>(array.at(index + 0))) << 8)
-         | static_cast<uint16_t>(static_cast<unsigned char>(array.at(index + 1)));
+    return static_cast<uint16_t>((static_cast<unsigned char>(array.at(index + 0)) << 8)
+                                | static_cast<unsigned char>(array.at(index + 1)));
 }
 
 // Int32

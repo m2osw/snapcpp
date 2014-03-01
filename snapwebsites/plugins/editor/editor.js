@@ -1,6 +1,6 @@
 /*
  * Name: editor
- * Version: 0.0.1.18
+ * Version: 0.0.1.36
  * Browsers: all
  * Copyright: Copyright 2013-2014 (c) Made to Order Software Corporation  All rights reverved.
  * License: GPL 2.0
@@ -25,17 +25,28 @@
 // Source: https://developers.google.com/closure/compiler/docs/error-ref
 // Source: http://www.jslint.com/
 //
-// Command line one can use to verify the editor:
+// Command line one can use to verify the editor (jquery-for-closure.js
+// may not yet be complete):
 //
 //   java -jar .../google-js-closure-compiler/compiler.jar \
 //        --warning_level VERBOSE \
-//        --js_output_file /de/vnull \
+//        --js_output_file /dev/null \
 //        tests/jquery-for-closure.js \
-//        plugins/content/content_0.0.1.js \
-//        plugins/editor/editor_0.0.1.js
+//        plugins/output/output.js \
+//        plugins/editor/editor.js
 //
 // WARNING: output of that command is garbage as far as we're concerned
 //          only the warnings are of interest.
+//
+// To test the compression of the script by the Google closure compiler
+// (i.e. generate the .min. version) use the following parameters:
+//
+//   java -jar .../google-js-closure-compiler/compiler.jar \
+//        --js_output_file editor.min.js
+//        plugins/editor/editor.js
+//
+// Remember that the bare output of the closure compiler is not compatible
+// with Snap!
 //
 
 
@@ -53,7 +64,12 @@ snapwebsites.Editor = function()
 
 snapwebsites.Editor.prototype = {
     constructor: snapwebsites.Editor,
-    editorStyle: "#toolbar{border:1px solid black;-moz-border-radius:5px;-webkit-border-radius:5px;border-radius:5px;padding:5px;float:left;display:none;position:absolute;z-index:1;background:white;}#toolbar div.group{float:left;width:4px;height:16px;margin:5px;background:url(/images/editor/buttons.png) no-repeat 0 0;}#toolbar div.button{float:left;width:16px;height:16px;padding:5px;border:1px solid white;}#toolbar div.button:hover{background-color:#e0f0ff;border:1px solid #a0d0ff;border-radius:5px;}#toolbar div.button .image{display:block;width:16px;height:16px;}#toolbar .horizontal-separator{clear:both;height:3px;margin:19px 0 0;float:none;width:100%}"
+    editorStyle: "#toolbar{border:1px solid black;-moz-border-radius:5px;-webkit-border-radius:5px;border-radius:5px;padding:5px;float:left;display:none;position:absolute;z-index:1;background:white;}"
+                 +"#toolbar div.group{float:left;width:4px;height:16px;margin:5px;background:url(/images/editor/buttons.png) no-repeat 0 0;}"
+                 +"#toolbar div.button{float:left;width:16px;height:16px;padding:5px;border:1px solid white;}"
+                 +"#toolbar div.button:hover{background-color:#e0f0ff;border:1px solid #a0d0ff;border-radius:5px;}"
+                 +"#toolbar div.button .image{display:block;width:16px;height:16px;}"
+                 +"#toolbar .horizontal-separator{clear:both;height:3px;margin:19px 0 0;float:none;width:100%}"
                  +".button.bold .image{background:url(/images/editor/buttons.png) no-repeat -4px 0;}"
                  +".button.italic .image{background:url(/images/editor/buttons.png) no-repeat -132px 0;}"
                  +".button.underline .image{background:url(/images/editor/buttons.png) no-repeat -292px 0;}"
@@ -76,10 +92,11 @@ snapwebsites.Editor.prototype = {
                  +".button.justifyFull .image{background:url(/images/editor/buttons.png) no-repeat -164px 0;}"
                  +".snap-editor:hover{box-shadow:inset 0 0 0 3px rgba(64, 192, 64, 0.5);}"
                  +".editor-tooltip{display:none;padding:10px;position:absolute;z-index:1;border:1px solid black;border-radius:7px;background:#f0fff0;color:#0f000f;}"
+                 +".snap-editor [contenteditable=\"true\"] .filter-token{background-color:#e0e0e0;}"
                  ,
     // TODO: support for translations
     //
-    // WARNING: Some controls cannot be used under different browsers
+    // WARNING: Some control keys cannot be used under different browsers
     //          (especially Internet Explorer which does not care much
     //          whether you try to capture those controls.)
     //
@@ -152,7 +169,7 @@ snapwebsites.Editor.prototype = {
 
     _saveData: function(mode)
     {
-        var i, obj = [], edit_area;
+        var i, obj = {}, saved = [], edit_area, url, name;
         for(i = 1; i <= snapwebsites.EditorInstance._lastId; ++i)
         {
             if(snapwebsites.EditorInstance._modified[i])
@@ -163,16 +180,53 @@ snapwebsites.Editor.prototype = {
                 {
                     name = edit_area.parent().attr("field_name");
                     obj[name] = edit_area.html();
+                    saved.push(i);
                 }
             }
         }
-        jQuery.ajax({
-            type: "POST",
-            url: "/",
-            data: obj,
-            success: success,
-            dataType: dataType
-        });
+        // this test is not 100% correct for the Publish or Create Branch
+        // buttons...
+        if(name) // if name is defined we have at least one field defined
+        {
+            obj["editor_save_mode"] = mode;
+            obj["editor_session"] = jQuery("meta[name='editor_session']").attr("content");
+            url = jQuery("link[rel='canonical']").attr("href");
+            url = url ? url : "/";
+            jQuery.ajax(url, {
+                type: "POST",
+                processData: true,
+                data: obj,//"test=with+this&instead=of+the+array",//obj,
+                //processData: true,
+                error: function(jqxhr, result_status, error_msg){
+                    alert("An error occured while posting AJAX (status: " + result_status + " / error: " + error_msg + ")");
+                },
+                success: function(data, result_status, jqxhr){
+                    var i;
+
+//console.log(jqxhr);
+                    if(jqxhr.status == 200)
+                    {
+                        alert("The AJAX succeeded (" + result_status + ")");
+                        // success! so it was saved and now that's the new
+                        // original value and next "Save" doesn't do anything
+                        for(j = 0; j < saved.length; j++)
+                        {
+                            i = saved[j];
+                            // WARNING: DO NOT COPY edit_area.html() BECAUSE IT MAY
+                            //          HAVE CHANGED SINCE THE SAVE HAPPENED
+                            edit_area = jQuery("#editor-area-" + i);
+                            name = edit_area.parent().attr("field_name");
+                            snapwebsites.EditorInstance._originalData[i] = obj[name];
+                        }
+                    }
+                    else
+                    {
+                        alert("The server replied with an error while posting AJAX (status: " + result_status + " / error: " + error_msg + ")");
+                    }
+                },
+                dataType: "xml"
+            });
+        }
     },
 
     // if anything was modified, show this save dialog
@@ -221,7 +275,7 @@ snapwebsites.Editor.prototype = {
                 });
             jQuery("#snap_editor_save_draft")
                 .click(function(){
-                    alert("Save draft...");
+                    snapwebsites.EditorInstance._saveData("draft");
                 });
         }
         this._saveDialogPopup.fadeIn(300);
@@ -700,9 +754,9 @@ snapwebsites.Editor.prototype = {
         if(this._toolbarVisible)
         {
             this._toolbar.fadeIn(300);
-            this._height = jQuery(snapwebsites.EditorInstance._activeElement).height();
+            this._height = jQuery(snapwebsites.EditorInstance._activeElement).parents('.snap-editor').height();
             var toolbarHeight = this._toolbar.outerHeight();
-            var pos = jQuery(snapwebsites.EditorInstance._activeElement).position();
+            var pos = jQuery(snapwebsites.EditorInstance._activeElement).parents('.snap-editor').position();
             this._bottomToolbar = pos.top < toolbarHeight + 5;
             if(this._bottomToolbar)
             {
@@ -874,7 +928,6 @@ console.log("command "+idx+" "+this.toolbarButtons[idx][2]+"!!!");
             this._modified[this._activeElement.objId] = this._originalData[this._activeElement.objId] != jQuery(this._activeElement).html();
             if(this._modified[this._activeElement.objId])
             {
-console.log("just modified!!!");
                 this._saveDialog();
             }
         }
@@ -960,7 +1013,7 @@ console.log("just modified!!!");
 
     _unload: function()
     {
-        $(window).bind("beforeunload",function(){
+        jQuery(window).bind("beforeunload",function(){
             if(!snapwebsites.EditorInstance._unloadCalled)
             {
                 var i;

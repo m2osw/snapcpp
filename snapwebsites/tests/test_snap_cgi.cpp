@@ -140,7 +140,7 @@ void parse_url(const char *url)
     if(slash == NULL) {
         slash = url + strlen(url);
     }
-    int len = slash - url;
+    int len(static_cast<int>(slash - url));
     if(len == 0) {
         fprintf(stderr, "error: could not determine domain name, got 3 or more / after the protocol or domain name is missing?\n");
         exit(1);
@@ -275,7 +275,7 @@ int main(int argc, char *argv[])
 
     static const char id_chars[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
     std::string uniq;
-    srand(time(NULL));
+    srand(static_cast<unsigned int>(time(nullptr)));
     for(int i(0); i < 24; ++i) {
         uniq += id_chars[rand() % (sizeof(id_chars) - 1)];
     }

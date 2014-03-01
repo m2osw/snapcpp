@@ -2803,7 +2803,7 @@ void users::forgot_password_email(const QString& email)
     info.set_object_path("/user/" + email);
     info.set_user_agent(f_snap->snapenv(snap::get_name(SNAP_NAME_CORE_HTTP_USER_AGENT)));
     info.set_time_to_live(3600 * 8);  // 8 hours
-    QString session(sessions::sessions::instance()->create_session(info));
+    QString const session(sessions::sessions::instance()->create_session(info));
     e.add_parameter(get_name(SNAP_NAME_USERS_FORGOT_PASSWORD_EMAIL), session);
 
     // send the email

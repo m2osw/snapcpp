@@ -46,9 +46,9 @@ std::string encode(const std::string& input, int flags)
             c &= 15;
             if(c >= 0 && c <= 9)
             {
-                return c + '0';
+                return static_cast<char>(c + '0');
             }
-            return c + 'A' - 10;
+            return static_cast<char>(c + 'A' - 10);
         }
 
         void add_byte(char c)

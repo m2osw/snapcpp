@@ -601,6 +601,7 @@ SNAP_LOG_TRACE() << "got in layout... cpath = [" << ipath.get_cpath() << "]";
     QXmlQuery q(QXmlQuery::XSLT20);
     QMessageHandler msg;
     msg.set_xsl(xsl);
+    msg.set_doc(doc.toString());
     q.setMessageHandler(&msg);
 #if 0
     QDomNodeModel m(q.namePool(), doc);

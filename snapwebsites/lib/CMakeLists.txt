@@ -73,6 +73,7 @@ add_library( ${PROJECT_NAME} SHARED
     dbutils.h                                   # Utilities to help convert coded table and row names
     dbutils.cpp                                 # and column data.
     dom_util.cpp                                # DOM utilities
+    floats.cpp                                  # Floats helper functions
     http_cookie.cpp                             # HTTP cookie, server side
     http_strings.cpp                            # parse HTTP strings (Accept strings in particular)
     log.cpp                                     # log4cplus support

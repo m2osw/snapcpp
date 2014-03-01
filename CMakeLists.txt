@@ -105,6 +105,7 @@ ConfigureMakeProject( PROJECT_NAME snapwebsites
             -DTHRIFT_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
             -DQTSERIALIZATION_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include/QtSerialization
             -DLIBTLD_LIBRARY:PATH=${CMAKE_BINARY_DIR}/dist/lib/libtld.so
+            -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
         DEPENDS advgetopt libQtCassandra libQtSerialization libtld
         )
 ConfigureMakeProject( PROJECT_NAME cassview

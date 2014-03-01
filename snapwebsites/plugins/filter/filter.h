@@ -298,7 +298,7 @@ public:
     SNAP_SIGNAL(replace_token, (content::path_info_t& ipath, QString const& plugin_owner, QDomDocument& xml, token_info_t& token), (ipath, plugin_owner, xml, token));
 
 private:
-    snap_child *    f_snap;
+    zpsnap_child_t      f_snap;
 };
 
 } // namespace filter

@@ -34,7 +34,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 		<output lang="{$lang}">
 			<div id="content">
 				<xsl:call-template name="snap:user-messages"/>
-				<xsl:copy-of select="page/body/content/node()"/>
+				<div><xsl:attribute name="class"><xsl:if test="$action = 'edit'">snap-editor</xsl:if></xsl:attribute>
+					 <xsl:attribute name="field_name">body</xsl:attribute><div class="editor-content"><xsl:copy-of select="page/body/content/node()"/></div></div>
 			</div>
 		</output>
 	</xsl:template>

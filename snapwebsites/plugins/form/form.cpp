@@ -568,13 +568,12 @@ bool form::fill_form_widget_impl(form *f, QString const& owner, QString const& c
  *
  * \return true if the core form XSL file was successfully loaded.
  */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
 bool form::form_element_impl(form *f)
 {
+    static_cast<void>(f);
+
     return true;
 }
-#pragma GCC diagnostic pop
 
 
 /** \brief Add the templates and parameters defined in 'add'.
@@ -858,6 +857,14 @@ bool form::tweak_form_impl(form *f, content::path_info_t& ipath, QDomDocument fo
  */
 void form::on_process_post(QString const& uri_path)
 {
+    QString const form_session(f_snap->postenv("form_session"));
+    if(form_session.isEmpty())
+    {
+        // if the form_session variable does not exist, do not consider this
+        // POST as a Form POST; it could be an Editor POST or another plugin
+        return;
+    }
+
     messages::messages *messages(messages::messages::instance());
 
     content::path_info_t ipath;
@@ -867,7 +874,6 @@ void form::on_process_post(QString const& uri_path)
     // First we verify the session information
     // <input id="form_session" name="form_session" type="hidden" value="{$form_session}"/>
     sessions::sessions::session_info info;
-    QString const form_session(f_snap->postenv("form_session"));
     sessions::sessions::instance()->load_session(form_session, info);
     switch(info.get_session_type())
     {
@@ -889,7 +895,7 @@ void form::on_process_post(QString const& uri_path)
         return;
 
     default:
-        throw snap_logic_exception("load_session() returned an unexpected SESSION_INFO_... value");
+        throw snap_logic_exception("load_session() returned an unexpected SESSION_INFO_... value in form::on_process_post()");
 
     }
 
@@ -920,7 +926,7 @@ void form::on_process_post(QString const& uri_path)
     QDomDocument xml_form;
 
     // first try to load the form directly from the page (form::source)
-    QString source(get_source(owner, ipath));
+    QString const source(get_source(owner, ipath));
     if(source.isEmpty())
     {
         // the programmer forgot to derive from form_post?!

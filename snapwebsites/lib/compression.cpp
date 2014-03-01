@@ -345,7 +345,7 @@ public:
         // TODO check the size of the input buffer, if really large
         //      (256Kb?) then break this up in multiple iterations
         QByteArray result;
-        result.resize(deflateBound(&strm, strm.avail_in));
+        result.resize(static_cast<int>(deflateBound(&strm, strm.avail_in)));
         strm.avail_out = result.size();
         strm.next_out = reinterpret_cast<Bytef *>(result.data());
 
@@ -411,7 +411,7 @@ public:
         // TODO check the size of the input buffer, if really large
         //      (256Kb?) then break this up in multiple iterations
         QByteArray result;
-        result.resize(uncompressed_size);
+        result.resize(static_cast<int>(uncompressed_size));
         strm.avail_out = result.size();
         strm.next_out = reinterpret_cast<Bytef *>(result.data());
 
@@ -468,7 +468,7 @@ public:
         // TODO check the size of the input buffer, if really large
         //      (256Kb?) then break this up in multiple iterations
         QByteArray result;
-        result.resize(deflateBound(&strm, strm.avail_in));
+        result.resize(static_cast<int>(deflateBound(&strm, strm.avail_in)));
         strm.avail_out = result.size();
         strm.next_out = reinterpret_cast<Bytef *>(result.data());
 
@@ -690,7 +690,7 @@ public:
         append_int(&header[100], file.get_mode(),   7, 8, '0');
         append_int(&header[108], file.get_uid(),    7, 8, '0');
         append_int(&header[116], file.get_gid(),    7, 8, '0');
-        append_int(&header[136], file.get_mtime(), 11, 8, '0');
+        append_int(&header[136], static_cast<int>(file.get_mtime()), 11, 8, '0');
 
         // USER/GROUP NAMES
         utf8 = file.get_user().toUtf8();
@@ -737,7 +737,7 @@ public:
         }
         header[155] = ' ';
 
-        f_archive.append(&header[0], header.size());
+        f_archive.append(&header[0], static_cast<int>(header.size()));
 
         switch(file.get_type())
         {
@@ -751,7 +751,7 @@ public:
                 {
                     std::vector<char> pad;
                     pad.resize(512 - size, 0);
-                    f_archive.append(&pad[0], pad.size());
+                    f_archive.append(&pad[0], static_cast<int>(pad.size()));
                 }
             }
             break;
@@ -802,11 +802,11 @@ public:
             throw compression_exception_not_compatible(QString("ustar checksum code does not match what was expected"));
         }
 
-        QString filename(QString::fromUtf8(&header[0], strnlen(&header[0], 100)));
+        QString filename(QString::fromUtf8(&header[0], static_cast<int>(strnlen(&header[0], 100))));
         if(header[345] != '\0')
         {
             // this one has a prefix (long filename)
-            QString prefix(QString::fromUtf8(&header[345], strnlen(&header[345], 155)));
+            QString prefix(QString::fromUtf8(&header[345], static_cast<int>(strnlen(&header[345], 155))));
             if(prefix.endsWith("/"))
             {
                 // I think this case is considered a bug in a tarball...

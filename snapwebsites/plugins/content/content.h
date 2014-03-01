@@ -497,7 +497,7 @@ public:
     snap_version::version_number_t get_current_revision(QString const& key, QString const& owner, snap_version::version_number_t const branch, QString const& locale, bool working_branch);
     snap_version::version_number_t get_current_revision(QString const& key, QString const& owner, QString const& locale, bool working_branch);
     snap_version::version_number_t get_new_branch(QString const& key, QString const& owner, QString const& locale);
-    snap_version::version_number_t get_new_revision(QString const& key, QString const& owner, snap_version::version_number_t branch, QString const& locale);
+    snap_version::version_number_t get_new_revision(QString const& key, QString const& owner, snap_version::version_number_t branch, QString const& locale, bool repeat);
     QString             get_branch_key(QString const& key, QString const& owner, bool working_branch);
     void                initialize_branch(QString const& key);
     QString             generate_branch_key(QString const& key, snap_version::version_number_t branch);
@@ -523,7 +523,7 @@ public:
     SNAP_SIGNAL(new_content, (path_info_t& path), (path));
     SNAP_SIGNAL(create_content, (path_info_t& path, QString const& owner, QString const& type), (path, owner, type));
     SNAP_SIGNAL(create_attachment, (attachment_file const& file, snap_version::version_number_t branch_number, QString const& locale), (file, branch_number, locale));
-    SNAP_SIGNAL(modified_content, (path_info_t& path), (path));
+    SNAP_SIGNAL(modified_content, (path_info_t& ipath), (ipath));
     SNAP_SIGNAL(check_attachment_security, (attachment_file const& file, permission_flag& secure, bool const fast), (file, secure, fast));
     SNAP_SIGNAL(process_attachment, (QByteArray const& key, attachment_file const& file), (key, file));
 

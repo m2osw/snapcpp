@@ -143,7 +143,7 @@ bool snap_uri::set_uri(QString const& uri)
         // protocol is not followed by :// or is an empty string
         return false;
     }
-    QString uri_protocol(s, u - s);
+    QString uri_protocol(s, static_cast<int>(u - s));
 
     // skip the ://
     u += 3;
@@ -207,17 +207,17 @@ bool snap_uri::set_uri(QString const& uri)
     {
         // if(at == NULL) -- missing '@'? this is not possible since we just
         //                   turned colon1 to colon2 if no '@' was defined
-        username.insert(0, s, colon1 - s);
+        username.insert(0, s, static_cast<int>(colon1 - s));
         s = colon1 + 1;
     }
     if(at != NULL)
     {
-        password.insert(0, s, at - s);
+        password.insert(0, s, static_cast<int>(at - s));
         s = at + 1;
     }
     if(colon2 != NULL)
     {
-        full_domain_name.insert(0, s, colon2 - s);
+        full_domain_name.insert(0, s, static_cast<int>(colon2 - s));
         const QChar *p(colon2 + 1);
         if(p == u)
         {
@@ -243,7 +243,7 @@ bool snap_uri::set_uri(QString const& uri)
     }
     else
     {
-        full_domain_name.insert(0, s, u - s);
+        full_domain_name.insert(0, s, static_cast<int>(u - s));
     }
 
     // verify that there is a domain
@@ -280,7 +280,7 @@ bool snap_uri::set_uri(QString const& uri)
                 // encode right here since we have separate strings
                 if(s != u)
                 {
-                    uri_path << urldecode(QString(s, u - s));
+                    uri_path << urldecode(QString(s, static_cast<int>(u - s)));
                 }
                 // skip the '/'
                 ++u;
@@ -290,7 +290,7 @@ bool snap_uri::set_uri(QString const& uri)
         if(s != u)
         {
             // last path that doesn't end with '/'
-            uri_path << urldecode(QString(s, u - s));
+            uri_path << urldecode(QString(s, static_cast<int>(u - s)));
         }
     }
 
@@ -314,7 +314,7 @@ bool snap_uri::set_uri(QString const& uri)
                     // ...&name&...
                     e = u;
                 }
-                QString name(s, e - s);
+                QString name(s, static_cast<int>(e - s));
                 if(name.isEmpty())
                 {
                     // this is a very special case!!!
@@ -329,7 +329,7 @@ bool snap_uri::set_uri(QString const& uri)
                 QString value;
                 if(e != u)
                 {
-                    value = QString::fromRawData(e + 1, u - e - 1);
+                    value = QString::fromRawData(e + 1, static_cast<int>(u - e - 1));
                 }
                 name = urldecode(name);
                 if(query_strings.contains(name))
@@ -384,7 +384,7 @@ bool snap_uri::set_uri(QString const& uri)
                     // encode right here since we have separate strings
                     if(s != u)
                     {
-                        uri_path << urldecode(QString(s, u - s));
+                        uri_path << urldecode(QString(s, static_cast<int>(u - s)));
                     }
                     // skip the '/'
                     ++u;
@@ -394,7 +394,7 @@ bool snap_uri::set_uri(QString const& uri)
             if(s != u)
             {
                 // last path that doesn't end with '/'
-                uri_path << urldecode(QString(s, u - s));
+                uri_path << urldecode(QString(s, static_cast<int>(u - s)));
             }
         }
         else
@@ -808,7 +808,7 @@ bool snap_uri::process_domain(QString const& full_domain_name,
     tld = urldecode(info.f_tld);
 
     // search where the domain name starts
-    const char *compute_domain_name(fd + info.f_offset);
+    char const *compute_domain_name(fd + info.f_offset);
     while(compute_domain_name > fd)
     {
         --compute_domain_name;
@@ -818,7 +818,7 @@ bool snap_uri::process_domain(QString const& full_domain_name,
             break;
         }
     }
-    domain_name = urldecode(QString::fromLatin1(compute_domain_name, info.f_tld - compute_domain_name));
+    domain_name = urldecode(QString::fromLatin1(compute_domain_name, static_cast<int>(info.f_tld - compute_domain_name)));
 
     // now cut the remainder on each period, these are the sub-domains
     // there may be none if there are no other periods in the full name
@@ -827,7 +827,7 @@ bool snap_uri::process_domain(QString const& full_domain_name,
         // forget the period
         --compute_domain_name;
     }
-    QString all_sub_domains(QString::fromLatin1(fd, compute_domain_name - fd));
+    QString all_sub_domains(QString::fromLatin1(fd, static_cast<int>(compute_domain_name - fd)));
     sub_domain_names = all_sub_domains.split('.');
 
     // verify that all the sub-domains are valid (i.e. no "..")
@@ -1801,15 +1801,15 @@ QString snap_uri::urldecode(const QString& uri, bool relax)
             char c;
             if(u[0] >= '0' && u[0] <= '9')
             {
-                c = (u[0] - '0') * 16;
+                c = static_cast<char>((u[0] - '0') * 16);
             }
             else if(u[0] >= 'A' && u[0] <= 'F')
             {
-                c = (u[0] - ('A' - 10)) * 16;
+                c = static_cast<char>((u[0] - ('A' - 10)) * 16);
             }
             else if(u[0] >= 'a' && u[0] <= 'f')
             {
-                c = (u[0] - ('a' - 10)) * 16;
+                c = static_cast<char>((u[0] - ('a' - 10)) * 16);
             }
             else
             {
@@ -1827,15 +1827,15 @@ SNAP_LOG_TRACE() << "url decode?! [" << uri << "]\n";
             }
             if(u[1] >= '0' && u[1] <= '9')
             {
-                c += u[1] - '0';
+                c = static_cast<char>(c + u[1] - '0');
             }
             else if(u[1] >= 'A' && u[1] <= 'F')
             {
-                c += u[1] - ('A' - 10);
+                c = static_cast<char>(c + u[1] - ('A' - 10));
             }
             else if(u[1] >= 'a' && u[1] <= 'f')
             {
-                c += u[1] - ('a' - 10);
+                c = static_cast<char>(c + u[1] - ('a' - 10));
             }
             else
             {

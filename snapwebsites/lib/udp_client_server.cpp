@@ -161,7 +161,7 @@ std::string udp_client::get_addr() const
  */
 int udp_client::send(const char *msg, size_t size)
 {
-    return sendto(f_socket, msg, size, 0, f_addrinfo->ai_addr, f_addrinfo->ai_addrlen);
+    return static_cast<int>(sendto(f_socket, msg, size, 0, f_addrinfo->ai_addr, f_addrinfo->ai_addrlen));
 }
 
 
@@ -307,7 +307,7 @@ std::string udp_server::get_addr() const
  */
 int udp_server::recv(char *msg, size_t max_size)
 {
-    return ::recv(f_socket, msg, max_size, 0);
+    return static_cast<int>(::recv(f_socket, msg, max_size, 0));
 }
 
 /** \brief Wait for data to come in.
@@ -349,7 +349,7 @@ int udp_server::timed_recv(char *msg, size_t max_size, int max_wait_ms)
     if(retval > 0)
     {
         // our socket has data
-        return ::recv(f_socket, msg, max_size, 0);
+        return static_cast<int>(::recv(f_socket, msg, max_size, 0));
     }
 
     // our socket has no data

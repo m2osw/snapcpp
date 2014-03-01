@@ -19,7 +19,8 @@
 // list of functions we 100% forbid in the Snap! C++ environment
 
 // strcat() is really bad, use QString or std::string
-#pragma GCC poison strcat strncat wcscat wcsncat
+// also forget about strcpy()
+#pragma GCC poison strcat strncat wcscat wcsncat strcpy
 
 // printf() is generally okay, but std::cerr/cout, sstream are safer
 #pragma GCC poison printf   fprintf   sprintf   snprintf \
