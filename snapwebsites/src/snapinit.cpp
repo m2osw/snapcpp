@@ -307,7 +307,10 @@ void process::kill()
     if( f_pid != 0 )
     {
         const QString command( QString("%1/snapsignal -c %2 -a %3 STOP").arg(f_path).arg(f_config).arg(f_name) );
+#pragma GCC push
+#pragma GCC diagnostic ignored "-Wunused-result"
         system( command.toUtf8().data() );
+#pragma GCC pop
 
         // Wait for process to end
         //
