@@ -27,6 +27,7 @@
 #include "snap_thread.h"
 #include "not_reached.h"
 
+#include <stdlib.h>
 #include <unistd.h>
 #include <sys/wait.h>
 
@@ -169,26 +170,45 @@ class process
 public:
     typedef std::shared_ptr<process> pointer_t;
 
-    process( const QString& command, const QStringList& arglist )
-        : f_command(command)
-        , f_arglist(arglist)
+    typedef enum { Server, Backend } type_t;
+
+    process( const QString& name )
+        : f_type(Backend)
+        , f_name(name)
         , f_pid(0)
         , f_exit(0)
         , f_startcount(0)
     {
     }
 
+    process()
+        : f_type(Server)
+        , f_name("snapserver")
+        , f_pid(0)
+        , f_exit(0)
+        , f_startcount(0)
+    {
+    }
+
+    void set_path( const QString& path )     { f_path = path; }
+    void set_config( const QString& config ) { f_config = config; }
+
     bool run();
     bool is_running();
     void kill();
     int  startcount() const { return f_startcount; }
+    type_t type() const { return f_type; }
 
 private:
-    QString     f_command;
-    QStringList f_arglist;
-    int         f_pid;
-    int         f_exit;
-    int         f_startcount;
+    type_t   f_type;
+    QString  f_path;
+    QString  f_config;
+    QString  f_name;
+    int      f_pid;
+    int      f_exit;
+    int      f_startcount;
+
+    void handle_status( const int pid, const int status );
 };
 
 
@@ -200,28 +220,65 @@ bool process::run()
     {
         // child
         //
-        std::string cmd(f_command.toUtf8().data());
+        const QString cmd( QString("%1/%2").arg(f_path).arg( (f_type == Server)? "snapserver": "snapbackend") );
+        QStringList qargs;
+        qargs << cmd
+              << "-c" << f_config;
+        //
+        if( f_type == Backend )
+        {
+            qargs << "-a" << f_name;
+        }
+
         std::vector<std::string> args;
         std::vector<const char *> args_p;
-        args.push_back( cmd.c_str() );
-        for( auto arg : f_arglist )
+        //
+        for( auto arg : qargs )
         {
             args.push_back(arg.toUtf8().data());
             args_p.push_back(args.rbegin()->c_str());
         }
+        //
         args_p.push_back(NULL);
 
         execv(
-            cmd.c_str(),
+            cmd.toUtf8().data(),
             const_cast<char * const *>(&args_p[0])
         );
 
-        SNAP_LOG_FATAL("Child process \"") << cmd << " " << f_arglist.join(" ") << "\" failed to start!";
+        SNAP_LOG_FATAL("Child process \"") << qargs.join(" ") << "\" failed to start!";
         exit(1);
     }
 
     sleep(1);
     return is_running();
+}
+
+
+void process::handle_status( const int pid, const int status )
+{
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+    if(WIFEXITED(status))
+    {
+        f_exit = WEXITSTATUS(status);
+    }
+    else
+    {
+        f_exit = -1;
+    }
+#pragma GCC diagnostic pop
+
+    if( pid == -1 )
+    {
+        SNAP_LOG_ERROR() << "Command [" << f_name << "] terminated abnormally with exit code [" << f_exit << "]";
+    }
+    else
+    {
+        SNAP_LOG_INFO() << "Command [" << f_name << "] terminated normally with exit code [" << f_exit << "]";
+    }
+
+    f_pid = 0;
 }
 
 
@@ -239,28 +296,7 @@ bool process::is_running()
         return true;
     }
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wold-style-cast"
-    if(WIFEXITED(status))
-    {
-        f_exit = WEXITSTATUS(status);
-    }
-    else
-    {
-        f_exit = -1;
-    }
-#pragma GCC diagnostic pop
-
-    if( pid == -1 )
-    {
-        SNAP_LOG_ERROR() << "Command [" << f_command << "] terminated abnormally with exit code [" << f_exit << "]";
-    }
-    else
-    {
-        SNAP_LOG_INFO() << "Command [" << f_command << "] terminated normally with exit code [" << f_exit << "]";
-    }
-
-    f_pid = 0;
+    handle_status( pid, status );
 
     return false;
 }
@@ -270,7 +306,16 @@ void process::kill()
 {
     if( f_pid != 0 )
     {
-        ::kill( f_pid, SIGTERM );
+        const QString command( QString("%1/snapsignal -c %2 -a %3 STOP").arg(f_path).arg(f_config).arg(f_name) );
+        system( command.toUtf8().data() );
+
+        // Wait for process to end
+        //
+        int status;
+        const int pid = waitpid( f_pid, &status, 0 );
+
+        handle_status( pid, status );
+
         f_pid = 0;
     }
 }
@@ -392,7 +437,7 @@ void snap_init::validate()
     }
 
     if( std::find_if( f_opt_map.begin(), f_opt_map.end(), []( map_t::value_type& opt ) { return opt.second; } ) == f_opt_map.end() )
-    {
+	{
         throw std::invalid_argument("Must specify at least one --all, --server, --sendmail or --pagelist");
 	}
 }
@@ -417,11 +462,9 @@ void snap_init::show_selected_servers() const
 
 void snap_init::create_server_process()
 {
-    const QString command( (f_opt.get_string("binary_path") + "/snapserver").c_str() );
-    QStringList arglist;
-    arglist << command << "-c" << f_opt.get_string("config").c_str();
-    SNAP_LOG_TRACE() << "command " << command << ", arglist=" << arglist.join(" ");
-    process::pointer_t p( new process( command, arglist ) );
+    process::pointer_t p( new process() );
+    p->set_path( f_opt.get_string("binary_path").c_str() );
+    p->set_config( f_opt.get_string("config").c_str() );
     p->run();
     f_process_list.push_back( p );
 }
@@ -429,10 +472,9 @@ void snap_init::create_server_process()
 
 void snap_init::create_backend_process( const QString& name )
 {
-    const QString command( (f_opt.get_string("binary_path") + "/snapbackend").c_str() );
-    QStringList arglist;
-    arglist << command << "-c" << f_opt.get_string("config").c_str() << "-a" << name;
-    process::pointer_t p( new process( command, arglist ) );
+    process::pointer_t p( new process( name ) );
+    p->set_path( f_opt.get_string("binary_path").c_str() );
+    p->set_config( f_opt.get_string("config").c_str() );
     p->run();
     f_process_list.push_back( p );
 }
