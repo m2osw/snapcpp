@@ -1,10 +1,6 @@
-snapwebsites (0.1.22~saucy) UNRELEASED; urgency=high
+snapwebsites (0.1.22~saucy) saucy; urgency=high
 
-  [R. Douglas Barbieri]
-  * 
-
-  [Alexis Wilke]
-  *
+  * Fixed unused-result error which prevented the build from occuring on lp.
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Sat, 01 Mar 2014 13:53:57 -0800
 

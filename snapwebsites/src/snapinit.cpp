@@ -243,6 +243,8 @@ bool process::run()
 
         // Quiet up the console by redirecting these from/to /dev/null
         //
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-result"
         freopen( "/dev/null", "r", stdin  );
         freopen( "/dev/null", "w", stdout );
         freopen( "/dev/null", "w", stderr );
@@ -253,6 +255,7 @@ bool process::run()
             cmd.toUtf8().data(),
             const_cast<char * const *>(&args_p[0])
         );
+#pragma GCC diagnostic pop
 
         SNAP_LOG_FATAL("Child process \"") << qargs.join(" ") << "\" failed to start!";
         exit(1);
