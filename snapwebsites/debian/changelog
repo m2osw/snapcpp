@@ -12,9 +12,12 @@ snapwebsites (0.1.21~saucy) saucy; urgency=high
 
   [R. Douglas Barbieri]
   * Quiet down children of snapinit, reopening stderr, stdout and stdin to
-  /dev/null.
+    /dev/null.
   * Now snapserver waits until Cassandra server is running, instead of exiting
-  immediately on error. The wait interval and count are configurable.
+    immediately on error. The wait interval and count are configurable.
+
+  [Alexis Wilke]
+  * Started adding support for creating pages.
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Sat, 01 Mar 2014 09:00:40 -0800
 
@@ -42,7 +45,7 @@ snapwebsites (0.1.18~saucy) saucy; urgency=high
   * Config logs will now reflect "snapserver".
   * Improved parameter handing and validation.
   * Added snapinit, which manages all of the snap-services on a particular
-  server (for example, snapserver and snapbackend).
+    server (for example, snapserver and snapbackend).
   * The init.d script now uses snapinit to manage all running processes.
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Fri, 28 Feb 2014 17:55:41 -0800
