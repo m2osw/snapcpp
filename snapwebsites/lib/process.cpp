@@ -526,7 +526,7 @@ int process::run()
             if(f_child > 0)
             {
                 int status;
-                waitpid(f_child, &status, 0);
+                waitpid( f_child, &status, 0 );
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
                 if(WIFEXITED(status))
@@ -745,18 +745,14 @@ int process::run()
             }
 
             // wait for the child process first
-//printf("waiting child...\n");
-            int r(child.wait());
-
+            int r( child.wait() );
+            //
             // then wait on the two threads
-//printf("waiting in_t...\n");
             in_thread.stop();
-//printf("waiting out_t...\n");
             out_thread.stop();
 
             return r;
         }
-
     }
 }
 

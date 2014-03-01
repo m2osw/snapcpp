@@ -355,7 +355,9 @@ public:
     bool                        empty_output() const;
 
     void                        udp_ping(char const *name, char const *message = "PING");
-    QSharedPointer<udp_client_server::udp_server> udp_get_server(char const *name);
+
+    typedef QSharedPointer<udp_client_server::udp_server> udp_server_t;
+    udp_server_t                udp_get_server( char const *name );
 
 private:
     struct http_header_t

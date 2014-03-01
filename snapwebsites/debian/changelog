@@ -1,4 +1,46 @@
-snapwebsites (0.1.17~saucy) UNRELEASED; urgency=high
+snapwebsites (0.1.20~saucy) UNRELEASED; urgency=high
+
+  [ Alexis Wilke ]
+  *
+
+  [ R. Douglas Barbieri ]
+  * Now examine the return value of system(), and error if it cannot run.
+  * Improved snapinit switch validation.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Fri, 28 Feb 2014 19:11:32 -0800
+
+snapwebsites (0.1.19~saucy) saucy; urgency=high
+
+  * Fixed build error with system(). warn-used-result was on.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Fri, 28 Feb 2014 18:49:03 -0800
+
+snapwebsites (0.1.18~saucy) saucy; urgency=high
+
+  [R. Douglas Barbieri]
+  * Config logs will now reflect "snapserver".
+  * Improved parameter handing and validation.
+  * Added snapinit, which manages all of the snap-services on a particular
+  server (for example, snapserver and snapbackend).
+  * The init.d script now uses snapinit to manage all running processes.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Fri, 28 Feb 2014 17:55:41 -0800
+
+snapwebsites (0.1.17m2osw2~saucy) saucy; urgency=high
+
+  * The snapbackend processes must background, so the --background flag is
+  required.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Wed, 26 Feb 2014 22:57:29 -0800
+
+snapwebsites (0.1.17m2osw1~saucy) saucy; urgency=high
+
+  * Fixed init script problem.
+  * Logrotate now assumes snapwebsites as user/group.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Wed, 26 Feb 2014 19:10:48 -0800
+
+snapwebsites (0.1.17~saucy) saucy; urgency=high
 
   [ Alexis Wilke ]
   * Worked on the documentation so it would actually generate it properly
@@ -8,7 +50,10 @@ snapwebsites (0.1.17~saucy) UNRELEASED; urgency=high
   [ R. Douglas Barbieri ]
   * Updated the error in the init.d file: the snapbackend server requires
     the "--background" flag.
-  * Signal handler now emits stack trace.
+  * Signal handler now emits stack trace, but only for fatal error signals.
+  * snapsignal can now be used to stop the server and reconfigure the logger.
+  * The init.d script now uses snapsignal to stop the services.
+  * Logrotate now no longer stops the server--it now uses snapsignal NLOG.
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Fri, 21 Feb 2014 17:58:23 -0800
 

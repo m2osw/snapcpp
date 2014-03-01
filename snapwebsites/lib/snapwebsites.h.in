@@ -19,6 +19,7 @@
 #include "snap_child.h"
 #include "snap_expr.h"
 #include "plugins.h"
+#include "snap_listen_thread.h"
 
 #include <advgetopt/advgetopt.h>
 
@@ -170,6 +171,12 @@ public:
 
     unsigned long connections_count();
 
+    std::string servername() const;
+
+    typedef QSharedPointer<udp_client_server::udp_server> udp_server_t;
+    static udp_server_t udp_get_server ( const QString& udp_addr_port );
+    static void         udp_ping_server( const QString& udp_addr_port, char const *message = "PING" );
+
     SNAP_SIGNAL(bootstrap, (snap_child *snap), (snap));
     SNAP_SIGNAL(init, (), ());
     SNAP_SIGNAL(update, (int64_t last_updated), (last_updated));
@@ -201,6 +208,7 @@ private:
     static void sighandler( int sig );
 
     void process_connection(int socket);
+    void stop_thread_func();
 
     static pointer_t                        f_instance;
 
@@ -218,6 +226,9 @@ private:
     snap_child_vector_t                     f_children_waiting;
 
     getopt_ptr_t                            f_opt;
+
+    std::auto_ptr<snap_listen_thread>       f_listen_runner;
+    std::auto_ptr<snap_thread>              f_listen_thread;
 };
 
 } // namespace snap

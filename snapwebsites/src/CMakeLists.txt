@@ -263,4 +263,30 @@ install(
 )
 
 
+#################################################################################
+## Snap Initalization Server
+##
+## This server reads in a configuration file and keeps specified services running.
+## When signaled, it will terminate those services cleanly.
+##
+project(snapinit)
+
+add_executable(${PROJECT_NAME}
+    snapinit.cpp
+)
+
+target_link_libraries(${PROJECT_NAME}
+    snapwebsites
+    ${QTCASSANDRA_LIBRARIES}
+    ${QT_LIBRARIES}
+    ${THRIFT_LIBRARIES}
+    ${LIBTLD_LIBRARIES}
+    ${QTSERIALIZATION_LIBRARIES}
+)
+
+install(
+    TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin
+)
+
+
 # vim: ts=4 sw=4 et

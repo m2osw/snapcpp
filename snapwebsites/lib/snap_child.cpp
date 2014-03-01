@@ -7583,11 +7583,13 @@ void snap_child::udp_ping(const char *name, const char *message)
  *
  * \param[in] name  The name of the configuration variable used to read the IP and port
  */
-QSharedPointer<udp_client_server::udp_server> snap_child::udp_get_server(const char *name)
+snap_child::udp_server_t snap_child::udp_get_server( const char *name )
 {
-    // TODO: we should have a common function to read and transform the
-    //       parameter to a valid IP/Port pair (see above)
-    QString udp_addr_port(f_server->get_parameter(name));
+    Q_ASSERT(name);
+
+    return server::udp_get_server( f_server->get_parameter(name) );
+
+#if 0
     QString addr, port;
     int bracket(udp_addr_port.lastIndexOf("]"));
     int p(udp_addr_port.lastIndexOf(":"));
@@ -7622,6 +7624,7 @@ QSharedPointer<udp_client_server::udp_server> snap_child::udp_get_server(const c
         throw std::runtime_error("server could not be allocated");
     }
     return server;
+#endif
 }
 
 

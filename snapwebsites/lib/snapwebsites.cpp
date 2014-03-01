@@ -555,6 +555,11 @@ void server::config(int argc, char *argv[])
     // We want the servername for later.
     //
     f_servername = argv[0];
+    const std::string::size_type slash = f_servername.find_last_of( '/' );
+    if( slash != std::string::npos )
+    {
+        f_servername = f_servername.substr( slash+1 );
+    }
 
     // Keep the server in the foreground?
     //
@@ -1041,6 +1046,127 @@ void server::detach()
     exit(0);
 }
 
+
+/** \brief Create a UDP server that receives udp_ping() messages.
+ *
+ * This static function is used to receive PING messages from the udp_ping()
+ * function. Other messages can also be sent such as RSET and STOP.
+ *
+ * The server is expected to be used with the recv() or timed_recv()
+ * functions to wait for a message and act accordingly. A server
+ * that makes use of these pings is expected to be waiting for some
+ * data which, once available requires additional processing. The
+ * server that handles the row data sends the PING to the server.
+ * For example, the sendmail plugin just saves the email data in
+ * the Cassandra database, then it sends a PING to the sendmail
+ * backend process. That backend process wakes up and actually
+ * processes the email by sending it to the mail server.
+ *
+ * \param[in] udp_addr_port  The IP addr and port ("addr:port") of the UDP server.
+ */
+server::udp_server_t server::udp_get_server( const QString& udp_addr_port )
+{
+    // TODO: we should have a common function to read and transform the
+    //       parameter to a valid IP/Port pair (see above)
+    //
+    QString addr, port;
+    int bracket( udp_addr_port.lastIndexOf("]") );
+    int p( udp_addr_port.lastIndexOf(":") );
+    if( (bracket != -1) && (p != -1) )
+    {
+        if(p > bracket)
+        {
+            // IPv6 port specification
+            addr = udp_addr_port.mid(0, bracket + 1); // include the ']'
+            port = udp_addr_port.mid(p + 1); // ignore the ':'
+        }
+        else
+        {
+            throw std::runtime_error("invalid [IPv6]:port specification, port missing for UDP ping");
+        }
+    }
+    else if(p != -1)
+    {
+        // IPv4 port specification
+        addr = udp_addr_port.mid(0, p); // ignore the ':'
+        port = udp_addr_port.mid(p + 1); // ignore the ':'
+    }
+    else
+    {
+        throw std::runtime_error("invalid IPv4:port specification, port missing for UDP ping");
+    }
+    //
+    udp_server_t server( new udp_client_server::udp_server(addr.toUtf8().data(), port.toInt()) );
+    if(server.isNull())
+    {
+        // this should not happen since std::badalloc is raised when allocation fails
+        // and the new operator will rethrow any exception that the constructor throws
+        throw std::runtime_error("server could not be allocated");
+    }
+    return server;
+}
+
+
+/** \brief Send a PING message to the specified UDP server.
+ *
+ * This function sends a PING message (4 bytes) to the specified
+ * UDP server. This is used after you saved data in the Cassandra
+ * cluster to wake up a background process which can then "slowly"
+ * process the data further.
+ *
+ * Remember that UDP is not reliable so we do not in any way
+ * guarantee that this goes anywhere. The function returns no
+ * feedback at all. We do not wait for a reply since at the time
+ * we send the message the listening server may be busy. The
+ * idea of this ping is just to make sure that if the server is
+ * sleeping at that time, it wakes up sooner rather than later
+ * so it can immediately start processing the data we just added
+ * to Cassandra.
+ *
+ * The \p message is expected to be a NUL terminated string. The
+ * NUL is not sent across. At this point most of our servers
+ * accept a PING message to wake up and start working on new
+ * data.
+ *
+ * The \p name parameter is the name of a variable in the server
+ * configuration file.
+ *
+ * \param[in] udp_addr_port  The server:port string to connect to.
+ * \param[in] message        The message to send, "PING" by default.
+ */
+void server::udp_ping_server( const QString& udp_addr_port, char const *message )
+{
+    QString addr, port;
+    int bracket(udp_addr_port.lastIndexOf("]"));
+    int p(udp_addr_port.lastIndexOf(":"));
+    if(bracket != -1 && p != -1)
+    {
+        if(p > bracket)
+        {
+            // IPv6 port specification
+            addr = udp_addr_port.mid(0, bracket + 1); // include the ']'
+            port = udp_addr_port.mid(p + 1); // ignore the ':'
+        }
+        else
+        {
+            throw snapwebsites_exception_invalid_parameters("invalid [IPv6]:port specification, port missing for UDP ping");
+        }
+    }
+    else if(p != -1)
+    {
+        // IPv4 port specification
+        addr = udp_addr_port.mid(0, p); // ignore the ':'
+        port = udp_addr_port.mid(p + 1); // ignore the ':'
+    }
+    else
+    {
+        throw snapwebsites_exception_invalid_parameters("invalid IPv4:port specification, port missing for UDP ping");
+    }
+    udp_client_server::udp_client client(addr.toUtf8().data(), port.toInt());
+    client.send(message, strlen(message)); // we do not send the '\0'
+}
+
+
 /** \brief Listen to incoming connections.
  *
  * This function loops over a listen waiting for connections to this
@@ -1123,6 +1249,17 @@ void server::listen()
         }
     }
 
+    // Listener thread
+    //
+    udp_server_t udp_signals( udp_get_server( get_parameter("snapserver_udp_signal") ) );
+    f_listen_runner.reset( new snap_listen_thread( udp_signals ) );
+    f_listen_thread.reset( new snap_thread("server::listen::thread", f_listen_runner.get() ) );
+    if( !f_listen_thread->start() )
+    {
+        SNAP_LOG_FATAL("cannot start listener thread!");
+        exit(1);
+    }
+
     // initialize the server
     tcp_client_server::tcp_server s(host[0].toUtf8().data(), static_cast<int>(p), static_cast<int>(max_pending_connections), true, true);
 
@@ -1155,11 +1292,35 @@ void server::listen()
         }
 
         // retrieve all the connections and process them
-        int socket(s.accept());
-        // callee becomes the owner of socket
-        if(socket != -1)
+        // timeout so we can check the listen thread runner
+        //
+        //const int socket( s.accept( 500 /*1/2 sec*/ ) );
+        int socket = -1;
+        while( (socket = s.accept( 1000 /*1 sec*/ )) == -2 )
         {
-            process_connection(socket);
+            switch( f_listen_runner->get_word() )
+            {
+            case snap_listen_thread::ServerStop:
+                SNAP_LOG_INFO("Stopping server.");
+                return;
+                break;
+
+            case snap_listen_thread::LogReset:
+                SNAP_LOG_INFO("Logging reconfiguration.");
+                logging::reconfigure();
+                f_listen_runner->reset_word();
+                break;
+
+            case snap_listen_thread::Waiting:
+                // go back and listen some more
+                break;
+            }
+        }
+
+        if( socket != -1 )
+        {
+            // callee becomes the owner of socket
+            process_connection( socket );
         }
     }
 }
@@ -1172,18 +1333,23 @@ void server::listen()
 void server::sighandler( int sig )
 {
     QString signame;
+    bool output_stack_trace = true;
     switch( sig )
     {
         case SIGSEGV : signame = "SIGSEGV"; break;
         case SIGBUS  : signame = "SIGBUS";  break;
         case SIGFPE  : signame = "SIGFPE";  break;
         case SIGILL  : signame = "SIGILL";  break;
-        case SIGTERM : signame = "SIGTERM"; break;
-        case SIGINT  : signame = "SIGINT";  break;
+        case SIGTERM : signame = "SIGTERM"; output_stack_trace = false; break;
+        case SIGINT  : signame = "SIGINT";  output_stack_trace = false; break;
         default      : signame = "UNKNOWN";
     }
 
-    snap_exception_base::output_stack_trace();
+    if( output_stack_trace )
+    {
+        snap_exception_base::output_stack_trace();
+    }
+    //
     SNAP_LOG_FATAL("signal caught: ")(signame);
     f_instance->exit(1);
 }
@@ -1269,6 +1435,15 @@ unsigned long server::connections_count()
     return f_connections_count;
 }
 
+
+/** \brief Servername, taken from argv[0].
+ *
+ * This method returns the server name, taken from the first argument on the command line.
+ */
+std::string server::servername() const
+{
+    return f_servername;
+}
 
 /** \brief Implementation of the bootstrap signal.
  *
@@ -1699,12 +1874,13 @@ bool server::add_snap_expr_functions_impl(snap_expr::functions_t& functions)
  *
  * \param[in] name  The name of the configuration variable used to read the IP and port
  * \param[in] message  The message to send, "PING" by default.
+ *
+ * \sa udp_ping_server()
  */
 void server::udp_ping(char const *name, char const *message)
 {
-    // TODO: we should have a common function to read and transform the
-    //       parameter to a valid IP/Port pair (see below)
-    QString udp_addr_port(get_parameter(name));
+    udp_ping_server( get_parameter(name), message );
+#if 0
     QString addr, port;
     int bracket(udp_addr_port.lastIndexOf("]"));
     int p(udp_addr_port.lastIndexOf(":"));
@@ -1733,6 +1909,7 @@ void server::udp_ping(char const *name, char const *message)
     }
     udp_client_server::udp_client client(addr.toUtf8().data(), port.toInt());
     client.send(message, strlen(message)); // we do not send the '\0'
+#endif
 }
 
 

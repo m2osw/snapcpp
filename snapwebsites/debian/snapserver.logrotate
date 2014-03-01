@@ -1,12 +1,10 @@
 /var/log/snapwebsites/snapserver.log {
         weekly
+		su snapwebsites snapwebsites
         missingok
         rotate 5
-        prerotate
-                service snapserver stop
-        endscript
         postrotate
-                service snapserver start
+                /usr/bin/snapsignal -a snapserver NLOG
         endscript
         compress
         notifempty

@@ -19,6 +19,7 @@
 
 #include "not_reached.h"
 #include "snap_exception.h"
+#include "snapwebsites.h"
 
 #include <syslog.h>
 
@@ -96,7 +97,11 @@ void configureConsole()
     log4cplus::SharedAppenderPtr
             appender(new log4cplus::ConsoleAppender());
     appender->setName(LOG4CPLUS_TEXT("console"));
-    const log4cplus::tstring pattern( "%b:%L:%h: %m%n" );
+    const log4cplus::tstring pattern
+                ( server::instance()->servername().c_str()
+                + log4cplus::tstring(":%b:%L:%h: %m%n")
+                );
+    //const log4cplus::tstring pattern( "%b:%L:%h: %m%n" );
     appender->setLayout( std::auto_ptr<log4cplus::Layout>( new log4cplus::PatternLayout(pattern)) );
     appender->setThreshold( log4cplus::INFO_LOG_LEVEL );
 
@@ -147,7 +152,11 @@ void configureLogfile( QString const& logfile )
     log4cplus::SharedAppenderPtr
             appender(new log4cplus::RollingFileAppender( logfile.toUtf8().data() ));
     appender->setName(LOG4CPLUS_TEXT("log_file"));
-    const log4cplus::tstring pattern( "%d{%Y/%m/%d %H:%M:%S} %h Snap[%i]: %m (%b:%L)%n" );
+    const log4cplus::tstring pattern
+                ( log4cplus::tstring("%d{%Y/%m/%d %H:%M:%S} %h ")
+                + server::instance()->servername().c_str()
+                + log4cplus::tstring("[%i]: %m (%b:%L)%n")
+                );
     appender->setLayout( std::auto_ptr<log4cplus::Layout>( new log4cplus::PatternLayout(pattern)) );
     appender->setThreshold( log4cplus::INFO_LOG_LEVEL );
 
@@ -292,6 +301,7 @@ void setLogOutputLevel( log_level_t level )
         break;
     }
 
+    log4cplus::Logger::getRoot().setLogLevel( new_level );
     g_logger.setLogLevel( new_level );
     g_secure_logger.setLogLevel( new_level );
 }

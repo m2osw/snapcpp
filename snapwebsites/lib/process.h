@@ -108,6 +108,7 @@ private:
     controlled_vars::fbool_t    f_forced_environment;
     zpprocess_output_callback_t f_output_callback;
     snap_thread::snap_mutex     f_mutex;
+    int                         f_pid;
 };
 
 } // namespace snap
