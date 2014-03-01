@@ -1,3 +1,14 @@
+snapwebsites (0.1.18~saucy) saucy; urgency=high
+
+  [R. Douglas Barbieri]
+  * Config logs will now reflect "snapserver".
+  * Improved parameter handing and validation.
+  * Added snapinit, which manages all of the snap-services on a particular
+  server (for example, snapserver and snapbackend).
+  * The init.d script now uses snapinit to manage all running processes.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Fri, 28 Feb 2014 17:55:41 -0800
+
 snapwebsites (0.1.17m2osw2~saucy) saucy; urgency=high
 
   * The snapbackend processes must background, so the --background flag is
