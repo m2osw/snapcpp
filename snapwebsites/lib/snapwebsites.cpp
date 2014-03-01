@@ -309,9 +309,9 @@ std::shared_ptr<QCoreApplication> g_application;
 
 /** \brief Server instance.
  *
- * The f_instance variable holds the current server instance.
+ * The g_instance variable holds the current server instance.
  */
-std::shared_ptr<server> server::f_instance;
+std::shared_ptr<server> server::g_instance;
 
 
 /** \brief Return the server version.
@@ -395,11 +395,11 @@ int server::version_patch()
  */
 server::pointer_t server::instance()
 {
-    if( !f_instance )
+    if( !g_instance )
     {
-        f_instance.reset( new server );
+        g_instance.reset( new server );
     }
-    return f_instance;
+    return g_instance;
 }
 
 
@@ -557,7 +557,7 @@ void server::config(int argc, char *argv[])
     // We want the servername for later.
     //
     f_servername = argv[0];
-    const std::string::size_type slash = f_servername.find_last_of( '/' );
+    std::string::size_type const slash = f_servername.find_last_of( '/' );
     if( slash != std::string::npos )
     {
         f_servername = f_servername.substr( slash+1 );
@@ -1380,7 +1380,7 @@ void server::sighandler( int sig )
     }
     //
     SNAP_LOG_FATAL("signal caught: ")(signame);
-    f_instance->exit(1);
+    g_instance->exit(1);
 }
 
 
@@ -1401,7 +1401,7 @@ void server::process_connection(int socket)
 
     if(f_children_waiting.empty())
     {
-        child = new snap_child(f_instance);
+        child = new snap_child(g_instance);
     }
     else
     {
@@ -1448,7 +1448,7 @@ void server::process_connection(int socket)
  */
 void server::backend()
 {
-    snap_child child(f_instance);
+    snap_child child(g_instance);
     child.backend();
 }
 

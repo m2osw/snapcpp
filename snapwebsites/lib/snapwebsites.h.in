@@ -210,7 +210,7 @@ private:
     void process_connection(int socket);
     void stop_thread_func();
 
-    static pointer_t                        f_instance;
+    static pointer_t                        g_instance;
 
     std::string                             f_servername;
     controlled_vars::fbool_t                f_debug;
