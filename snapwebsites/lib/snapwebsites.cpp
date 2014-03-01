@@ -945,11 +945,16 @@ void server::prepare_cassandra()
     int timeout = wait_max_tries;
     while( !cassandra->connect(f_cassandra_host, f_cassandra_port) )
     {
-        SNAP_LOG_WARNING()
-               << "The connection to the Cassandra server failed ("
-               << f_cassandra_host << ":" << f_cassandra_port << "). "
-               << "Try again in " << wait_interval << " secs.";
-        sleep( wait_interval );
+        // if timeout is 1 we're about to call exit(1) so we're not going
+        // to retry once more
+        if(timeout != 1)
+        {
+            SNAP_LOG_WARNING()
+                   << "The connection to the Cassandra server failed ("
+                   << f_cassandra_host << ":" << f_cassandra_port << "). "
+                   << "Try again in " << wait_interval << " secs.";
+            sleep( wait_interval );
+        }
         //
         if( timeout > 0 )
         {
