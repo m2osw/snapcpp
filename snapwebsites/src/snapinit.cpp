@@ -307,18 +307,18 @@ void process::kill()
     if( f_pid != 0 )
     {
         const QString command( QString("%1/snapsignal -c %2 -a %3 STOP").arg(f_path).arg(f_config).arg(f_name) );
-#pragma GCC push
-#pragma GCC diagnostic ignored "-Wunused-result"
-        system( command.toUtf8().data() );
-#pragma GCC pop
+        const int retval = system( command.toUtf8().data() );
+        if( retval == -1 )
+        {
+            SNAP_LOG_ERROR() << "Cannot execute command '" << command << "', so " << f_name << " has not been halted!";
+            return;
+        }
 
-        // Wait for process to end
+        // Wait for process to end, then set f_exit status appropriately.
         //
         int status;
         const int pid = waitpid( f_pid, &status, 0 );
-
         handle_status( pid, status );
-
         f_pid = 0;
     }
 }
