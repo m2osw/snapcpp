@@ -1,10 +1,11 @@
 snapwebsites (0.1.20~saucy) UNRELEASED; urgency=high
 
-  [ R. Douglas Barbieri]
-  * Now examine the return value of system(), and error if it cannot run.
-
   [ Alexis Wilke ]
   *
+
+  [ R. Douglas Barbieri ]
+  * Now examine the return value of system(), and error if it cannot run.
+  * Improved snapinit switch validation.
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Fri, 28 Feb 2014 19:11:32 -0800
 
