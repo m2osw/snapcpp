@@ -1,4 +1,4 @@
-snapwebsites (0.1.20~saucy) UNRELEASED; urgency=high
+snapwebsites (0.1.20~saucy) saucy; urgency=high
 
   [ Alexis Wilke ]
   * Implemented Save/Save Draft buttons in "bare" theme.
