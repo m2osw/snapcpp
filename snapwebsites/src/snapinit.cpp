@@ -241,9 +241,14 @@ bool process::run()
         //
         args_p.push_back(NULL);
 
-        fclose( stderr );
-        fclose( stdout );
+        // Quiet up the console by redirecting these from/to /dev/null
+        //
+        freopen( "/dev/null", "r", stdin  );
+        freopen( "/dev/null", "w", stdout );
+        freopen( "/dev/null", "w", stderr );
 
+        // Execute the child processes
+        //
         execv(
             cmd.toUtf8().data(),
             const_cast<char * const *>(&args_p[0])
