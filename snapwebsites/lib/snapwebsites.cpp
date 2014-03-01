@@ -444,11 +444,13 @@ server::server()
 {
     // default parameters -- we may want to have a separate function and
     //                       maybe some clear separate variables?
-    f_parameters["listen"] = "0.0.0.0:4004";
-    f_parameters["plugins"] = "/usr/lib/snapwebsites/plugins";
-    f_parameters["qs_path"] = "q";
-    f_parameters["qs_action"] = "a";
-    f_parameters["server_name"] = "";
+    f_parameters["listen"]         = "0.0.0.0:4004";
+    f_parameters["plugins"]        = "/usr/lib/snapwebsites/plugins";
+    f_parameters["qs_path"]        = "q";
+    f_parameters["qs_action"]      = "a";
+    f_parameters["server_name"]    = "";
+    f_parameters["wait_interval"]  = "5";  // default: 1 second
+    f_parameters["wait_max_tries"] = "-1"; // default: indefinite wait
 }
 
 
@@ -931,11 +933,33 @@ void server::prepare_cassandra()
         SNAP_LOG_FATAL("invalid cassandra_port, a port must be between 1 and 65535, ")(f_cassandra_port)(" is not.");
         exit(1);
     }
+
+    // TODO:
+    // We must stay "alive" waiting for the cassandra server to come up.
+    // This will take entries into the configuration file: check interval, and max_tries.
+    //
+    const int wait_interval  = f_parameters["wait_interval"].toInt();
+    const int wait_max_tries = f_parameters["wait_max_tries"].toInt();
     QtCassandra::QCassandra::pointer_t cassandra( QtCassandra::QCassandra::create() );
-    if(!cassandra->connect(f_cassandra_host, f_cassandra_port))
+    Q_ASSERT(cassandra);
+    int timeout = wait_max_tries;
+    while( !cassandra->connect(f_cassandra_host, f_cassandra_port) )
     {
-        SNAP_LOG_FATAL("the connection to the Cassandra server failed (")(f_cassandra_host)(":")(f_cassandra_port)(").");
-        exit(1);
+        SNAP_LOG_WARNING()
+               << "The connection to the Cassandra server failed ("
+               << f_cassandra_host << ":" << f_cassandra_port << "). "
+               << "Try again in " << wait_interval << " secs.";
+        sleep( wait_interval );
+        //
+        if( timeout > 0 )
+        {
+            if( --timeout <= 0 )
+            {
+                SNAP_LOG_FATAL() << "TIMEOUT: Could not connect to remote Cassandra server at ("
+                                 << f_cassandra_host << ":" << f_cassandra_port << ")!";
+                exit(1);
+            }
+        }
     }
     // we need to read all the contexts in order to make sure the
     // findContext() works

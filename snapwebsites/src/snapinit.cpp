@@ -241,6 +241,9 @@ bool process::run()
         //
         args_p.push_back(NULL);
 
+        fclose( stderr );
+        fclose( stdout );
+
         execv(
             cmd.toUtf8().data(),
             const_cast<char * const *>(&args_p[0])
