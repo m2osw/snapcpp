@@ -1,7 +1,8 @@
 snapwebsites (0.1.20~saucy) UNRELEASED; urgency=high
 
   [ Alexis Wilke ]
-  *
+  * Implemented Save/Save Draft buttons in "bare" theme.
+  * Bug fixes in exception handling and other areas.
 
   [ R. Douglas Barbieri ]
   * Now examine the return value of system(), and error if it cannot run.
