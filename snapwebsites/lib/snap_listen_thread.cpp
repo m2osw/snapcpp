@@ -34,7 +34,6 @@ namespace snap
 snap_listen_thread::snap_listen_thread( udp_server_t udp_server )
     : snap_runner("snap_listen_thread")
     , f_server(udp_server)
-    , f_word(Waiting)
 {
 }
 
@@ -42,14 +41,15 @@ snap_listen_thread::snap_listen_thread( udp_server_t udp_server )
 snap_listen_thread::word_t snap_listen_thread::get_word()
 {
     snap_thread::snap_lock lock( f_mutex );
-    return f_word;
-}
 
+    if( f_word_list.empty() )
+    {
+        return Waiting;
+    }
 
-void snap_listen_thread::reset_word()
-{
-    snap_thread::snap_lock lock( f_mutex );
-    f_word = Waiting;
+    const word_t front_word( f_word_list.front() );
+    f_word_list.pop_front();
+    return front_word;
 }
 
 
@@ -71,7 +71,7 @@ void snap_listen_thread::run()
             //
             snap_thread::snap_lock lock( f_mutex );
             SNAP_LOG_TRACE("STOP");
-            f_word = ServerStop;
+            f_word_list.push_back( ServerStop );
             break;
         }
         else if( word == "NLOG")
@@ -80,7 +80,7 @@ void snap_listen_thread::run()
             //
             snap_thread::snap_lock lock( f_mutex );
             SNAP_LOG_TRACE("NLOG");
-            f_word = LogReset;
+            f_word_list.push_back( LogReset );
         }
         else
         {

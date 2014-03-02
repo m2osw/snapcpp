@@ -21,6 +21,8 @@
 #include "snap_thread.h"
 #include "udp_client_server.h"
 
+#include <list>
+
 #include <QSharedPointer>
 
 namespace snap
@@ -37,14 +39,14 @@ public:
 	virtual void run();
 
     typedef enum { Waiting, ServerStop, LogReset } word_t;
-
     word_t get_word();
-    void reset_word();
 
 private:
     snap_thread::snap_mutex     f_mutex;
     udp_server_t                f_server;
-    word_t                      f_word;
+
+    typedef std::list<word_t>   word_list_t;
+    word_list_t                 f_word_list;
 };
 
 }

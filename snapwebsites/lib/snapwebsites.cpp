@@ -1337,7 +1337,6 @@ void server::listen()
             case snap_listen_thread::LogReset:
                 SNAP_LOG_INFO("Logging reconfiguration.");
                 logging::reconfigure();
-                f_listen_runner->reset_word();
                 break;
 
             case snap_listen_thread::Waiting:
