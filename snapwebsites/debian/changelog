@@ -4,7 +4,7 @@ snapwebsites (0.1.23~saucy) UNRELEASED; urgency=high
   * 
 
   [R. Douglas Barbieri]
-  *
+  * snap_listen_thread now uses a FIFO for external messages (STOP,NLOG).
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Sat, 01 Mar 2014 14:49:20 -0800
 
