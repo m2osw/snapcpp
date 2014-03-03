@@ -694,12 +694,12 @@ void snap_init::sighandler( int sig )
     if( user_terminated )
     {
         instance->terminate_processes();
-        SNAP_LOG_FATAL("Fatal signal caught: ")(signame);
+        SNAP_LOG_INFO("User signal caught: ")(signame);
     }
     else
     {
         snap::snap_exception_base::output_stack_trace();
-        SNAP_LOG_INFO("User signal caught: ")(signame);
+        SNAP_LOG_FATAL("Fatal signal caught: ")(signame);
     }
 
     // Make sure the lock file has been removed
