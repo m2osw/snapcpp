@@ -1,3 +1,13 @@
+snapwebsites (0.1.24~saucy) UNRELEASED; urgency=high
+
+  [R. Douglas Barbieri]
+  * 
+
+  [Alexis Wilke]
+  *
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Mon, 03 Mar 2014 09:58:24 -0800
+
 snapwebsites (0.1.23~saucy) saucy; urgency=high
 
   * snap_listen_thread now uses a FIFO for external messages (STOP,NLOG).
