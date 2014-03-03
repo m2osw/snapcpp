@@ -315,22 +315,26 @@ bool process::is_running()
 
 void process::kill()
 {
-    if( f_pid != 0 )
+    if( f_pid == 0 )
     {
-        const QString command( QString("%1/snapsignal -c %2 -a %3 STOP").arg(f_path).arg(f_config).arg(f_name) );
-        const int retval = system( command.toUtf8().data() );
-        if( retval == -1 )
-        {
-            SNAP_LOG_ERROR() << "Cannot execute command '" << command << "', so " << f_name << " has not been halted!";
-            return;
-        }
+        // Do nothing if no process running...
+        return;
+    }
 
-        // Wait for process to end, then set f_exit status appropriately.
-        //
-        int status;
-        const int pid = waitpid( f_pid, &status, 0 );
-        handle_status( pid, status );
-        f_pid = 0;
+    const QString command( QString("%1/snapsignal -c %2 -a %3 STOP").arg(f_path).arg(f_config).arg(f_name) );
+    const int retval = system( command.toUtf8().data() );
+    if( retval == -1 )
+    {
+        SNAP_LOG_ERROR() << "Cannot execute command '" << command << "', so " << f_name << " has not been halted!";
+        return;
+    }
+
+    // Wait for process to end, then set f_exit status appropriately.
+    // TODO: implement a timeout, and a force-kill option...
+    //
+    while( is_running() )
+    {
+        usleep( 100000 );
     }
 }
 
@@ -338,13 +342,19 @@ void process::kill()
 class snap_init
 {
 public:
-    snap_init( int argc, char *argv[] );
+    typedef std::shared_ptr<snap_init> pointer_t;
+
+    static void create_instance( int argc, char * argv[] );
+    static pointer_t instance();
     ~snap_init();
 
     void run_processes();
     bool is_running();
 
+    static void sighandler( int sig );
+
 private:
+    static pointer_t    f_instance;
     advgetopt::getopt   f_opt;
     typedef std::map<std::string,bool> map_t;
     map_t       f_opt_map;
@@ -352,6 +362,8 @@ private:
 
     typedef std::vector<process::pointer_t> process_list_t;
     process_list_t f_process_list;
+
+    snap_init( int argc, char *argv[] );
 
 	void usage();
     void validate();
@@ -364,8 +376,11 @@ private:
     void start();
 	void restart();
 	void stop();
+    void remove_lock();
 };
 
+
+snap_init::pointer_t snap_init::f_instance;
 
 
 snap_init::snap_init( int argc, char *argv[] )
@@ -385,6 +400,23 @@ snap_init::snap_init( int argc, char *argv[] )
 
 snap_init::~snap_init()
 {
+}
+
+
+void snap_init::create_instance( int argc, char * argv[] )
+{
+    f_instance.reset( new snap_init( argc, argv ) );
+    Q_ASSERT(f_instance);
+}
+
+
+snap_init::pointer_t snap_init::instance()
+{
+    if( !f_instance )
+    {
+        throw std::invalid_argument( "snap_init instance must be created with create_instance()!" );
+    }
+    return f_instance;
 }
 
 
@@ -556,8 +588,7 @@ void snap_init::start_processes()
         }
     }
 
-    f_lock_file.close();
-    f_lock_file.remove();
+    remove_lock();
 
     SNAP_LOG_INFO("Normal shutdown.");
 }
@@ -634,15 +665,77 @@ void snap_init::usage()
 }
 
 
+void snap_init::remove_lock()
+{
+    if( f_lock_file.isOpen() )
+    {
+        f_lock_file.close();
+        f_lock_file.remove();
+    }
+}
+
+
+void snap_init::sighandler( int sig )
+{
+    QString signame;
+    bool user_terminated = false;
+    switch( sig )
+    {
+        case SIGSEGV : signame = "SIGSEGV"; break;
+        case SIGBUS  : signame = "SIGBUS";  break;
+        case SIGFPE  : signame = "SIGFPE";  break;
+        case SIGILL  : signame = "SIGILL";  break;
+        case SIGTERM : signame = "SIGTERM"; user_terminated = true; break;
+        case SIGINT  : signame = "SIGINT";  user_terminated = true; break;
+        default      : signame = "UNKNOWN";
+    }
+
+    snap_init::pointer_t instance( snap_init::instance() );
+    if( user_terminated )
+    {
+        instance->terminate_processes();
+        SNAP_LOG_FATAL("Fatal signal caught: ")(signame);
+    }
+    else
+    {
+        snap::snap_exception_base::output_stack_trace();
+        SNAP_LOG_INFO("User signal caught: ")(signame);
+    }
+
+    // Make sure the lock file has been removed
+    //
+    instance->remove_lock();
+
+    // Exit with error status
+    //
+    exit( 1 );
+}
+
+
 int main(int argc, char *argv[])
 {
 	int retval = 0;
 
 	try
-	{
-		snap_init init( argc, argv );
-        init.run_processes();
-	}
+    {
+        // First, create the static snap_init object
+        //
+        snap_init::create_instance( argc, argv );
+
+        // Stop on these signals, log them, then terminate.
+        //
+        signal( SIGSEGV, snap_init::sighandler );
+        signal( SIGBUS,  snap_init::sighandler );
+        signal( SIGFPE,  snap_init::sighandler );
+        signal( SIGILL,  snap_init::sighandler );
+        signal( SIGTERM, snap_init::sighandler );
+        signal( SIGINT,  snap_init::sighandler );
+
+        // Now run our processes!
+        //
+        snap_init::pointer_t init( snap_init::instance() );
+        init->run_processes();
+    }
     catch( snap::snap_exception const& except )
     {
         SNAP_LOG_FATAL("snap_init: snap_exception caught! ")(except.what());
