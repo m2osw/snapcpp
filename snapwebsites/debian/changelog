@@ -1,10 +1,8 @@
-snapwebsites (0.1.23~saucy) UNRELEASED; urgency=high
+snapwebsites (0.1.23~saucy) saucy; urgency=high
 
-  [Alexis Wilke]
-  * 
-
-  [R. Douglas Barbieri]
   * snap_listen_thread now uses a FIFO for external messages (STOP,NLOG).
+  * snapinit now listens to signals, and removes the lock file. SIGINT and
+  SIGTERM now terminate the processes. This adds a more graceful exit.
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Sat, 01 Mar 2014 14:49:20 -0800
 
