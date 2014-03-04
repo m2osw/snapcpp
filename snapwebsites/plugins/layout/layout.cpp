@@ -61,6 +61,9 @@ char const *get_name(name_t name)
     case SNAP_NAME_LAYOUT_ADMIN_LAYOUTS:
         return "admin/layouts";
 
+    case SNAP_NAME_LAYOUT_BODY_XSL:
+        return "body";
+
     case SNAP_NAME_LAYOUT_BOX:
         return "layout::box";
 
@@ -82,6 +85,9 @@ char const *get_name(name_t name)
     case SNAP_NAME_LAYOUT_THEME:
         return "layout::theme";
 
+    case SNAP_NAME_LAYOUT_THEME_XSL:
+        return "theme";
+
     default:
         // invalid index
         throw snap_logic_exception("invalid SNAP_NAME_LAYOUT_...");
@@ -100,6 +106,7 @@ layout::layout()
 {
 }
 
+
 /** \brief Clean up the layout plugin.
  *
  * Ensure the layout object is clean before it is gone.
@@ -107,6 +114,7 @@ layout::layout()
 layout::~layout()
 {
 }
+
 
 /** \brief Initialize the layout.
  *
@@ -411,7 +419,7 @@ QString layout::define_layout(content::path_info_t& ipath, QString& layout_name)
         // try to load the layout from the database, if not found
         // we'll switch to the default layout instead
         QtCassandra::QCassandraTable::pointer_t layout_table(get_layout_table());
-        QtCassandra::QCassandraValue layout_value(layout_table->row(layout_name)->cell(QString("body"))->value());
+        QtCassandra::QCassandraValue layout_value(layout_table->row(layout_name)->cell(get_name(SNAP_NAME_LAYOUT_BODY_XSL))->value());
         if(layout_value.nullValue())
         {
             // note that a layout cannot be empty so the test is correct
@@ -863,7 +871,7 @@ QString layout::define_theme(content::path_info_t& ipath)
         // try to load the layout from the database, if not found
         // we'll switch to the default layout instead
         QtCassandra::QCassandraTable::pointer_t layout_table(get_layout_table());
-        QtCassandra::QCassandraValue theme_value(layout_table->row(theme_name)->cell(QString("theme"))->value());
+        QtCassandra::QCassandraValue theme_value(layout_table->row(theme_name)->cell(get_name(SNAP_NAME_LAYOUT_THEME_XSL))->value());
         if(theme_value.nullValue())
         {
             // If no theme selected, then default to the "default" theme."
@@ -1092,6 +1100,12 @@ int64_t layout::install_layout(QString const& layout_name, int64_t const last_up
     {
         if( !layout_table->row(layout_name)->exists(get_name(SNAP_NAME_LAYOUT_CONTENT)))
         {
+            // that should probably apply to the body and theme names
+            if(last_updated != 0)
+            {
+                SNAP_LOG_ERROR("Could not read \"")(layout_name)(".")(get_name(SNAP_NAME_LAYOUT_CONTENT))("\" from the layout table while updating layouts, error is ignored now so your plugin can fix it.");
+                return last_updated;
+            }
             f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR,
                         "Layout Unavailable",
                         "Layout \"" + layout_name + "\" content.xml file is missing.",
@@ -1120,6 +1134,11 @@ int64_t layout::install_layout(QString const& layout_name, int64_t const last_up
     f_snap->finish_update();
     if( !data_table->row(layout_ipath.get_branch_key())->exists(get_name(SNAP_NAME_LAYOUT_BOXES)) )
     {
+        if(last_updated != 0)
+        {
+            SNAP_LOG_ERROR("Could not read \"")(layout_ipath.get_branch_key())(".")(get_name(SNAP_NAME_LAYOUT_BOXES))("\" from the layout, error is ignored now so your plugin can fix it.");
+            return last_updated;
+        }
         f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR,
                 "Layout Unavailable",
                 "Layout \"" + layout_name + "\" content.xml file does not define the layout::boxes entry for this layout.",

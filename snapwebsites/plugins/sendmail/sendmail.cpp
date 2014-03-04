@@ -37,6 +37,8 @@
 #include <fstream>
 #include <iostream>
 
+#include <QFile>
+
 #include "poison.h"
 
 
@@ -93,6 +95,9 @@ const char *get_name(name_t name)
 
     case SNAP_NAME_SENDMAIL_INDEX:
         return "*index*";
+
+    case SNAP_NAME_SENDMAIL_LAYOUT_NAME:
+        return "sendmail";
 
     case SNAP_NAME_SENDMAIL_LISTS:
         return "lists";
@@ -527,7 +532,7 @@ sendmail::email::email()
     //, f_site_key("") -- auto-init, set when posting email
     //, f_email_path("") -- auto-init
     //, f_email_key("") -- auto-init, generated when posting email
-    : f_time(static_cast<int64_t>(time(NULL)))
+    : f_time(static_cast<int64_t>(time(nullptr)))
     //, f_header() -- auto-init
     //, f_attachments() -- auto-init, but at least one required
 {
@@ -1266,7 +1271,7 @@ QString sendmail::email::serialize() const
  * This function is used to initialize the sendmail plugin object.
  */
 sendmail::sendmail()
-    //: f_snap(NULL) -- auto-init
+    //: f_snap(nullptr) -- auto-init
 {
 }
 
@@ -1344,7 +1349,7 @@ int64_t sendmail::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2013, 11, 18, 1, 5, 0, content_update);
+    SNAP_PLUGIN_UPDATE(2014, 3, 4, 1, 30, 0, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -1360,8 +1365,55 @@ int64_t sendmail::do_update(int64_t last_updated)
 void sendmail::content_update(int64_t variables_timestamp)
 {
     static_cast<void>(variables_timestamp);
-
     content::content::instance()->add_xml(get_plugin_name());
+
+    QtCassandra::QCassandraTable::pointer_t layout_table(layout::layout::instance()->get_layout_table());
+    char const *sendmail_layout(get_name(SNAP_NAME_SENDMAIL_LAYOUT_NAME));
+
+    {
+        QFile file(":/xsl/layout/sendmail-body-parser.xsl");
+        if(!file.open(QIODevice::ReadOnly))
+        {
+            f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR,
+                    "Sendmail Body Layout Unavailable",
+                    "Could not read \":/xsl/layout/sendmail-body-parser.xsl\" from the Qt resources.",
+                    "sendmail::content_update() could not open sendmail-body-parser.xsl resource file.");
+            NOTREACHED();
+        }
+        QByteArray data(file.readAll());
+        layout_table->row(sendmail_layout)->cell(layout::get_name(layout::SNAP_NAME_LAYOUT_BODY_XSL))->setValue(data);
+    }
+
+    {
+        QFile file(":/xsl/layout/sendmail-theme-parser.xsl");
+        if(!file.open(QIODevice::ReadOnly))
+        {
+            f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR,
+                    "Sendmail Theme Layout Unavailable",
+                    "Could not read sendmail-theme-parser.xsl from the Qt resources.",
+                    "sendmail::content_update() could not open \":/xsl/layout/sendmail-theme-parser.xsl\" resource file.");
+            NOTREACHED();
+        }
+        QByteArray data(file.readAll());
+        layout_table->row(sendmail_layout)->cell(layout::get_name(layout::SNAP_NAME_LAYOUT_THEME_XSL))->setValue(data);
+    }
+
+    {
+        QFile file(":/xml/layout/sendmail-content.xml");
+        if(!file.open(QIODevice::ReadOnly))
+        {
+            f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR,
+                    "Sendmail Theme Content Unavailable",
+                    "Could not read content.xml from the Qt resources.",
+                    "sendmail::content_update() could not open \":/xml/layout/content.xml\" resource file.");
+            NOTREACHED();
+        }
+        QByteArray data(file.readAll());
+        layout_table->row(sendmail_layout)->cell(layout::get_name(layout::SNAP_NAME_LAYOUT_CONTENT))->setValue(data);
+    }
+
+    int64_t updated(f_snap->get_start_date());
+    layout_table->row(sendmail_layout)->cell(snap::get_name(SNAP_NAME_CORE_LAST_UPDATED))->setValue(updated);
 }
 
 
@@ -1864,7 +1916,7 @@ void sendmail::attach_user_email(const email& e)
         frequency = freq_value.stringValue();
     }
     // default date for immediate emails
-    time_t unix_date(time(NULL));
+    time_t unix_date(time(nullptr));
     // TODO: add user's timezone adjustment or the following math is wrong
     if(frequency != immediate)
     {
@@ -1939,7 +1991,7 @@ void sendmail::run_emails()
     QtCassandra::QCassandraColumnRangePredicate column_predicate;
     column_predicate.setStartColumnName("0");
     // we use +1 otherwise immediate emails are sent 5 min. later!
-    time_t unix_date(time(NULL) + 1);
+    time_t unix_date(time(nullptr) + 1);
     QString end(QString("%1").arg(unix_date, 16, 16, QLatin1Char('0')));
     column_predicate.setEndColumnName(end);
     column_predicate.setCount(100); // should this be a parameter?
@@ -2170,7 +2222,7 @@ void sendmail::sendemail(const QString& key, const QString& unique_key)
         // the date must be specified in English only which prevents us from
         // using the strftime() or QDateTime functions which are affected by
         // the current locale of the server
-        headers["Date"] = f_snap->date_to_string(time(NULL) * 1000000, snap_child::DATE_FORMAT_EMAIL);
+        headers["Date"] = f_snap->date_to_string(time(nullptr) * 1000000, snap_child::DATE_FORMAT_EMAIL);
     }
     if(!headers.contains("Message-ID"))
     {
