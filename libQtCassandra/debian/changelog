@@ -1,3 +1,15 @@
+libqtcassandra (0.5.3) saucy; urgency=high
+
+  [Alexis Wilke]
+  * Updated the C++ warnings: reduced the strict-overlow to 4 instead of 5,
+  tested with -Wconversion and fixed many errors.
+  * "Fixed" comparison between floating point numbers (== and !=).
+  * Fixed the modified_content() signal so it saves the modified
+  info in the data table as it should be.
+  * Removed some debug code.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Tue, 04 Mar 2014 14:23:08 -0800
+
 libqtcassandra (0.5.2) saucy; urgency=high
 
   * Put the limit size of a buffer inside the throw raised when the limit is
