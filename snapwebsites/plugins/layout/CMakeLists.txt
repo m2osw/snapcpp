@@ -46,6 +46,7 @@ QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC
     layout.qrc
 )
 
+snap_validate_xml( layout/content.xml content.dtd )
 
 add_library(layout SHARED
     layout.cpp

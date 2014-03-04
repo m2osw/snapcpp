@@ -61,6 +61,9 @@ char const *get_name(name_t name)
     case SNAP_NAME_LAYOUT_ADMIN_LAYOUTS:
         return "admin/layouts";
 
+    case SNAP_NAME_LAYOUT_BODY_XSL:
+        return "body";
+
     case SNAP_NAME_LAYOUT_BOX:
         return "layout::box";
 
@@ -82,6 +85,9 @@ char const *get_name(name_t name)
     case SNAP_NAME_LAYOUT_THEME:
         return "layout::theme";
 
+    case SNAP_NAME_LAYOUT_THEME_XSL:
+        return "theme";
+
     default:
         // invalid index
         throw snap_logic_exception("invalid SNAP_NAME_LAYOUT_...");
@@ -100,6 +106,7 @@ layout::layout()
 {
 }
 
+
 /** \brief Clean up the layout plugin.
  *
  * Ensure the layout object is clean before it is gone.
@@ -107,6 +114,7 @@ layout::layout()
 layout::~layout()
 {
 }
+
 
 /** \brief Initialize the layout.
  *
@@ -411,7 +419,7 @@ QString layout::define_layout(content::path_info_t& ipath, QString& layout_name)
         // try to load the layout from the database, if not found
         // we'll switch to the default layout instead
         QtCassandra::QCassandraTable::pointer_t layout_table(get_layout_table());
-        QtCassandra::QCassandraValue layout_value(layout_table->row(layout_name)->cell(QString("body"))->value());
+        QtCassandra::QCassandraValue layout_value(layout_table->row(layout_name)->cell(get_name(SNAP_NAME_LAYOUT_BODY_XSL))->value());
         if(layout_value.nullValue())
         {
             // note that a layout cannot be empty so the test is correct
@@ -758,39 +766,45 @@ void layout::generate_boxes(content::path_info_t& ipath, QString const& layout_n
         {
             content::path_info_t ichild;
             ichild.set_path(QString("%1/%2/%3").arg(get_name(SNAP_NAME_LAYOUT_ADMIN_LAYOUTS)).arg(layout_name).arg(names[i]));
-            links::link_info info(content::get_name(content::SNAP_NAME_CONTENT_CHILDREN), false, ichild.get_key(), ichild.get_branch());
-            QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
-            links::link_info child_info;
-            while(link_ctxt->next_link(child_info))
+            // links cannot be read if the version is undefined;
+            // the version is undefined if the theme has no boxes at all
+            snap_version::version_number_t branch(ichild.get_branch());
+            if(snap_version::SPECIAL_VERSION_UNDEFINED != branch)
             {
-                box_error_callback.clear_error();
-                content::path_info_t box_ipath;
-                box_ipath.set_path(child_info.key());
-                box_ipath.set_parameter("action", "view"); // we're always only viewing those blocks from here
-                plugin *box_plugin(path::path::instance()->get_plugin(box_ipath, box_error_callback));
-                if(!box_error_callback.has_error() && box_plugin)
+                links::link_info info(content::get_name(content::SNAP_NAME_CONTENT_CHILDREN), false, ichild.get_key(), ichild.get_branch());
+                QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
+                links::link_info child_info;
+                while(link_ctxt->next_link(child_info))
                 {
-                    layout_boxes *lb(dynamic_cast<layout_boxes *>(box_plugin));
-                    if(lb != nullptr)
+                    box_error_callback.clear_error();
+                    content::path_info_t box_ipath;
+                    box_ipath.set_path(child_info.key());
+                    box_ipath.set_parameter("action", "view"); // we're always only viewing those blocks from here
+                    plugin *box_plugin(path::path::instance()->get_plugin(box_ipath, box_error_callback));
+                    if(!box_error_callback.has_error() && box_plugin)
                     {
-                        // put each box in a filter tag because we have to
-                        // specify a different owner and path for each
-                        QDomElement filter_box(doc.createElement("filter"));
-                        filter_box.setAttribute("path", box_ipath.get_cpath()); // not the full key
-                        filter_box.setAttribute("owner", box_plugin->get_plugin_name());
-                        dom_boxes[i].appendChild(filter_box);
-//SNAP_LOG_TRACE() << "handle box for " << box_plugin->get_plugin_name();
-                        lb->on_generate_boxes_content(ipath, box_ipath, page, filter_box, "");
-                    }
-                    else
-                    {
-                        // if this happens a plugin offers a box but not
-                        // the handler
-                        f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR,
-                                "Plugin Missing",
-                                "Plugin \"" + box_plugin->get_plugin_name() + "\" does not know how to handle a box assigned to it.",
-                                "layout::create_body() the plugin does not derive from layout::layout_boxes.");
-                        NOTREACHED();
+                        layout_boxes *lb(dynamic_cast<layout_boxes *>(box_plugin));
+                        if(lb != nullptr)
+                        {
+                            // put each box in a filter tag because we have to
+                            // specify a different owner and path for each
+                            QDomElement filter_box(doc.createElement("filter"));
+                            filter_box.setAttribute("path", box_ipath.get_cpath()); // not the full key
+                            filter_box.setAttribute("owner", box_plugin->get_plugin_name());
+                            dom_boxes[i].appendChild(filter_box);
+    //SNAP_LOG_TRACE() << "handle box for " << box_plugin->get_plugin_name();
+                            lb->on_generate_boxes_content(ipath, box_ipath, page, filter_box, "");
+                        }
+                        else
+                        {
+                            // if this happens a plugin offers a box but not
+                            // the handler
+                            f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR,
+                                    "Plugin Missing",
+                                    "Plugin \"" + box_plugin->get_plugin_name() + "\" does not know how to handle a box assigned to it.",
+                                    "layout::create_body() the plugin does not derive from layout::layout_boxes.");
+                            NOTREACHED();
+                        }
                     }
                 }
             }
@@ -863,7 +877,7 @@ QString layout::define_theme(content::path_info_t& ipath)
         // try to load the layout from the database, if not found
         // we'll switch to the default layout instead
         QtCassandra::QCassandraTable::pointer_t layout_table(get_layout_table());
-        QtCassandra::QCassandraValue theme_value(layout_table->row(theme_name)->cell(QString("theme"))->value());
+        QtCassandra::QCassandraValue theme_value(layout_table->row(theme_name)->cell(get_name(SNAP_NAME_LAYOUT_THEME_XSL))->value());
         if(theme_value.nullValue())
         {
             // If no theme selected, then default to the "default" theme."
@@ -1092,6 +1106,12 @@ int64_t layout::install_layout(QString const& layout_name, int64_t const last_up
     {
         if( !layout_table->row(layout_name)->exists(get_name(SNAP_NAME_LAYOUT_CONTENT)))
         {
+            // that should probably apply to the body and theme names
+            if(last_updated != 0)
+            {
+                SNAP_LOG_ERROR("Could not read \"")(layout_name)(".")(get_name(SNAP_NAME_LAYOUT_CONTENT))("\" from the layout table while updating layouts, error is ignored now so your plugin can fix it.");
+                return last_updated;
+            }
             f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR,
                         "Layout Unavailable",
                         "Layout \"" + layout_name + "\" content.xml file is missing.",
@@ -1120,6 +1140,11 @@ int64_t layout::install_layout(QString const& layout_name, int64_t const last_up
     f_snap->finish_update();
     if( !data_table->row(layout_ipath.get_branch_key())->exists(get_name(SNAP_NAME_LAYOUT_BOXES)) )
     {
+        if(last_updated != 0)
+        {
+            SNAP_LOG_ERROR("Could not read \"")(layout_ipath.get_branch_key())(".")(get_name(SNAP_NAME_LAYOUT_BOXES))("\" from the layout, error is ignored now so your plugin can fix it.");
+            return last_updated;
+        }
         f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR,
                 "Layout Unavailable",
                 "Layout \"" + layout_name + "\" content.xml file does not define the layout::boxes entry for this layout.",

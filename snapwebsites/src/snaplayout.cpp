@@ -198,9 +198,9 @@ void snap_layout::load_xml_info(QDomDocument& doc, QString const& filename, QStr
         std::cerr << "error: the XML document does not have a root element, failed handling \"" << filename << "\"" << std::endl;
         exit(1);
     }
-    QString content_modified_date(snap_tree.attribute("content-modified", "0"));
+    QString const content_modified_date(snap_tree.attribute("content-modified", "0"));
 
-    QDomNodeList content(snap_tree.elementsByTagName("content"));
+    QDomNodeList const content(snap_tree.elementsByTagName("content"));
     int const max_nodes(content.size());
     for(int idx(0); idx < max_nodes; ++idx)
     {
@@ -641,7 +641,7 @@ void snap_layout::set_theme()
 
     QString uri(f_layouts[0]);
     QString field(f_layouts[1]);
-    const QString theme( f_layouts.size() == 3? f_layouts[2]: QString() );
+    QString const theme( f_layouts.size() == 3 ? f_layouts[2]: QString() );
 
     if(!uri.endsWith("/"))
     {

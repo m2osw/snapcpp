@@ -72,6 +72,14 @@ public:
     links_exception_invalid_db_data(QString const&     what_msg) : links_exception(what_msg) {}
 };
 
+class links_exception_missing_link : public links_exception
+{
+public:
+    links_exception_missing_link(char const *       what_msg) : links_exception(what_msg) {}
+    links_exception_missing_link(std::string const& what_msg) : links_exception(what_msg) {}
+    links_exception_missing_link(QString const&     what_msg) : links_exception(what_msg) {}
+};
+
 
 
 class link_info
