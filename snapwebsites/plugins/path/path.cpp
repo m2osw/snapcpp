@@ -277,9 +277,8 @@ void path::verify_permissions(content::path_info_t& ipath, permission_error_call
         }
     }
 
-    // save the action found in the URI so that way any plugin can access
-    // that information at any point, not just the verify_rights() function
-    f_snap->set_action(action);
+    // save the action in the path
+    ipath.set_parameter("action", action);
 
     // only actions that are defined in the permission types are
     // allowed, anything else is funky action from a hacker or
@@ -408,6 +407,11 @@ SNAP_LOG_TRACE() << "path::on_execute(\"" << uri_path << "\") -> [" << ipath.get
 
     f_last_modified = 0;
     plugins::plugin *path_plugin(get_plugin(ipath, main_page_error_callback));
+
+    // save the main page action found in the URI so that way any plugin
+    // can access that information at any point, not just the
+    // verify_rights() function
+    f_snap->set_action(ipath.get_parameter("action"));
 
     // The last modification date is saved in the get_plugin()
     // It's a bit ugly but that way we test there that the page is valid and

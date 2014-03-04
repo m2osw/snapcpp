@@ -24,6 +24,7 @@
 #include "compression.h"
 #include "not_reached.h"
 #include "dom_util.h"
+#include "dbutils.h"
 #include "snap_magic.h"
 #include "snap_image.h"
 #include "snap_version.h"
@@ -3342,42 +3343,13 @@ snap_version::version_number_t content::get_new_revision(QString const& key,
         QString const previous_revision_key(generate_revision_key(key, branch, previous_revision, locale));
         QString const revision_key(generate_revision_key(key, branch, revision, locale));
         QtCassandra::QCassandraTable::pointer_t data_table(get_data_table());
-        QtCassandra::QCassandraRow::pointer_t previous_row(data_table->row(previous_revision_key));
-        QtCassandra::QCassandraRow::pointer_t new_row(data_table->row(revision_key));
-        QtCassandra::QCassandraColumnRangePredicate column_predicate;
-        column_predicate.setCount(1000); // we have to copy everything also it is likely very small (i.e. 10 fields...)
-        column_predicate.setIndex(); // behave like an index
-        for(;;)
-        {
-            previous_row->clearCache();
-            previous_row->readCells(column_predicate);
-            const QtCassandra::QCassandraCells& previous_cells(previous_row->cells());
-            if(previous_cells.isEmpty())
-            {
-                // done
-                break;
-            }
-            // handle one batch
-            for(QtCassandra::QCassandraCells::const_iterator nc(previous_cells.begin());
-                    nc != previous_cells.end();
-                    ++nc)
-            {
-                QtCassandra::QCassandraCell::pointer_t previous_cell(*nc);
-                QByteArray cell_key(previous_cell->columnKey());
-                if(cell_key == get_name(SNAP_NAME_CONTENT_CREATED))
-                {
-                    // one special case (so far) where we can immediately fix
-                    // the value
-                    QtCassandra::QCassandraValue created;
-                    created.setInt64Value(f_snap->get_start_date());
-                    new_row->cell(cell_key)->setValue(created);
-                }
-                else
-                {
-                    new_row->cell(cell_key)->setValue(previous_cell->value());
-                }
-            }
-        }
+
+        dbutils::copy_row(data_table, previous_revision_key, data_table, revision_key);
+
+        // change the creation date
+        QtCassandra::QCassandraValue created;
+        created.setInt64Value(f_snap->get_start_date());
+        data_table->row(revision_key)->cell(get_name(SNAP_NAME_CONTENT_CREATED))->setValue(created);
     }
 
     // unlock ASAP

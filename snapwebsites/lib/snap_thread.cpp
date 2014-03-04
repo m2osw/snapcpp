@@ -710,12 +710,13 @@ snap_thread::~snap_thread()
     stop();
     f_runner->f_thread.reset();
 
-    int err(pthread_attr_destroy(&f_thread_attr));
+    int const err(pthread_attr_destroy(&f_thread_attr));
     if(err != 0)
     {
         SNAP_LOG_ERROR("the thread attributes could not be destroyed, error #")(err);
     }
 }
+
 
 /** \brief Retrieve the name of this process object.
  *
@@ -729,6 +730,7 @@ const QString& snap_thread::get_name() const
     return f_name;
 }
 
+
 /** \brief Check whether the thread is considered to be running.
  *
  * This flag is used to know whether the thread is running.
@@ -740,6 +742,7 @@ bool snap_thread::is_running() const
     snap_lock lock(f_mutex);
     return f_running;
 }
+
 
 /** \brief Check whether the thread was asked to stop.
  *
@@ -755,6 +758,7 @@ bool snap_thread::is_stopping() const
     snap_lock lock(f_mutex);
     return f_stopping;
 }
+
 
 /** \brief Start the actual thread.
  *
@@ -776,6 +780,7 @@ void *func_internal_start(void *thread)
     t->internal_run();
     return nullptr;
 }
+
 
 /** \brief Run the thread process.
  *
@@ -820,6 +825,7 @@ void snap_thread::internal_run()
     // ... any other exception terminates the whole process ...
 }
 
+
 /** \brief Attempt to start the thread.
  *
  * This function is used to start running the thread code. If the
@@ -858,6 +864,7 @@ bool snap_thread::start()
 
     return true;
 }
+
 
 /** \brief Stop the thread.
  *

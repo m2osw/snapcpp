@@ -1112,7 +1112,7 @@ server::udp_server_t server::udp_get_server( const QString& udp_addr_port )
         }
         else
         {
-            throw std::runtime_error("invalid [IPv6]:port specification, port missing for UDP ping");
+            throw snap_exception("invalid [IPv6]:port specification, port missing for UDP listener");
         }
     }
     else if(p != -1)
@@ -1123,7 +1123,7 @@ server::udp_server_t server::udp_get_server( const QString& udp_addr_port )
     }
     else
     {
-        throw std::runtime_error("invalid IPv4:port specification, port missing for UDP ping");
+        throw snap_exception("invalid IPv4:port specification, port missing for UDP listener");
     }
     //
     udp_server_t server( new udp_client_server::udp_server(addr.toUtf8().data(), port.toInt()) );
@@ -1131,7 +1131,7 @@ server::udp_server_t server::udp_get_server( const QString& udp_addr_port )
     {
         // this should not happen since std::badalloc is raised when allocation fails
         // and the new operator will rethrow any exception that the constructor throws
-        throw std::runtime_error("server could not be allocated");
+        throw snap_exception("server for the UDP listener could not be allocated");
     }
     return server;
 }

@@ -484,9 +484,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 		</xsl:for-each>
 
 		<!-- editor may add a session ID that we stick in a meta tag -->
+		<!-- TODO: move that to an editor specific file... -->
 		<xsl:if test="head/metadata/editor/session">
 			<meta name="editor_session" content="{head/metadata/editor/session}"/>
 		</xsl:if>
+		<meta name="action" content="{$action}"/>
+		<meta name="path" content="{$path}"/>
 
 		<!-- JavaScripts -->
 		<xsl:copy-of select="head/metadata/javascript/*"/>

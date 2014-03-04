@@ -19,6 +19,7 @@
 
 #include <QtCassandra/QCassandraCell.h>
 #include <QtCassandra/QCassandraRow.h>
+#include <QtCassandra/QCassandraTable.h>
 
 #include <QString>
 #include <QByteArray>
@@ -29,21 +30,24 @@ namespace snap
 class dbutils
 {
 public:
-    dbutils( const QString& table_name, const QString& row_name );
+                dbutils( const QString& table_name, const QString& row_name );
+
+    static void copy_row(QtCassandra::QCassandraTable::pointer_t ta, QString const& a,  // source
+                         QtCassandra::QCassandraTable::pointer_t tb, QString const& b); // destination
 
     static QString    byte_to_hex   ( const char        byte );
     static QString    key_to_string ( const QByteArray& key  );
     static QByteArray string_to_key ( const QString&    str  );
 
-    int        get_display_len() const;
-    void       set_display_len( const int val );
+    int         get_display_len() const;
+    void        set_display_len( const int val );
 
-    QByteArray get_row_key() const;
-    QString    get_row_name( QtCassandra::QCassandraRow::pointer_t p_r ) const;
+    QByteArray  get_row_key() const;
+    QString     get_row_name( QtCassandra::QCassandraRow::pointer_t p_r ) const;
 
-    QString    get_column_name ( QtCassandra::QCassandraCell::pointer_t c ) const;
-    QString    get_column_value( QtCassandra::QCassandraCell::pointer_t c, const bool display_only = false ) const;
-    void       set_column_value( QtCassandra::QCassandraCell::pointer_t c, const QString& v );
+    QString     get_column_name ( QtCassandra::QCassandraCell::pointer_t c ) const;
+    QString     get_column_value( QtCassandra::QCassandraCell::pointer_t c, const bool display_only = false ) const;
+    void        set_column_value( QtCassandra::QCassandraCell::pointer_t c, const QString& v );
 
 private:
     typedef enum

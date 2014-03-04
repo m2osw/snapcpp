@@ -17,6 +17,8 @@
 
 #include "filter.h"
 
+#include "../messages/messages.h"
+
 #include "qdomxpath.h"
 #include "qstring_stream.h"
 
@@ -634,6 +636,9 @@ void filter::on_token_filter(content::path_info_t& ipath, QDomDocument& xml)
                 // replace anything
                 return false;
             }
+            // TODO: at this point this check test whether the page as a
+            //       whole is in edit mode, when some parts may not be
+            //       editable to the current user
             if(f_snap->get_action() == "edit")
             {
                 // if the editor is turned on, then we want to mark all
@@ -659,23 +664,17 @@ void filter::on_token_filter(content::path_info_t& ipath, QDomDocument& xml)
                         }
                     }
                 }
-                if(use_span)
-                {
-                    info.f_replacement = QString("<span class=\"filter-token\" token=\"%1\">%2</span>")
-                            .arg(f_token)
-                            .arg(info.f_replacement);
-                }
-                else
-                {
-                    info.f_replacement = QString("<div class=\"filter-token\" token=\"%1\">%2</div>")
-                            .arg(f_token)
-                            .arg(info.f_replacement);
-                }
+                QString unbracketed_quote(f_token.mid(1, f_token.length() - 2));
+                unbracketed_quote.replace('"', "&quot;")
+                                 .replace('<', "&lt;")
+                                 .replace('>', "&gt;")
+                                 .replace('\'', "&#39;");
+                info.f_replacement = QString("<%1 class=\"filter-token\" token=\"%2\">%3</%1>")
+                        .arg(use_span ? "span" : "div")
+                        .arg(unbracketed_quote)
+                        .arg(info.f_replacement);
             }
-            else
-            {
-                ungets(info.f_replacement);
-            }
+            ungets(info.f_replacement);
 
             return true;
         }
@@ -974,6 +973,77 @@ void filter::on_token_filter(content::path_info_t& ipath, QDomDocument& xml)
         // the rest is considered to be text
         n = next;
     }
+}
+
+
+/** \brief Filter a URI for safety.
+ *
+ * This function transforms a URI in an acceptable string for the Snap!
+ * system. The parsing is mainly to ensure valid URIs for most search
+ * engines.
+ *
+ * \param[in,out] uri  The URI to filter, changed in place if required.
+ *
+ * \return true if the filtering did not change anything.
+ */
+bool filter::filter_uri(QString& uri)
+{
+    typedef ushort char_t;
+
+    // the system refuses some of the characters entered in the URI
+    // and that should be taken as a signal for hacker's detection
+    bool bad_char(false);
+    QString unwanted;
+    for(int i(0); i < uri.length(); ++i)
+    {
+        // TODO: allow other Unicode characters (i.e. accentuated characters, etc.)
+        char_t c(uri.at(i).unicode());
+        if(c == ' ')
+        {
+            // transform spaces in dashes
+            uri[i] = '-';
+            unwanted += QChar(c);
+        }
+        else if((c < '0' || c > '9')    // TODO: change to accept all Unicode characters
+             && (c < 'a' || c > 'z')    // (see test in lib/snap_utf8.cpp)
+             && (c < 'A' || c > 'Z')
+             && c != '-' && c != '_')
+        {
+            // refuse controls, invalid code points, etc.
+            bad_char = true;
+            unwanted += QChar(c);
+
+            // character refused
+            uri.remove(i, 1);
+            --i;
+        }
+        if(c == '-' && i > 0 && uri.at(i - 1) == '-')
+        {
+            // refuse '--'
+            unwanted += QChar(c);
+            uri.remove(i, 1);
+            --i;
+        }
+        if((c == '-' || c == '_') && i == 0)
+        {
+            // refuse '-' and '_' at the beginning of the string
+            unwanted += QChar(c);
+            uri.remove(i, 1);
+            --i;
+        }
+    }
+
+    if(bad_char)
+    {
+        messages::messages::instance()->set_error(
+            "Invalid Character",
+            QString("One or more characters in the URL that you chose for your page was refused and thus your URL was changed to \"%1\".").arg(uri),
+            QString("removed unwanted characters \"%1\"").arg(unwanted),
+            false
+        );
+    }
+
+    return unwanted.isEmpty();
 }
 
 
