@@ -304,7 +304,7 @@ namespace
 // Note: We need the argc/argv when we create the application and those are
 //       not available when we create the server (they are not passed along)
 //       but I suppose the server could be ameliorated for that purpose...
-std::shared_ptr<QCoreApplication> g_application;
+QPointer<QCoreApplication> g_application;
 
 
 /** \brief Server instance.
@@ -462,6 +462,7 @@ server::server()
  */
 server::~server()
 {
+    close_qtapp();
 }
 
 
@@ -859,7 +860,7 @@ void server::prepare_qtapp( int argc, char *argv[] )
 
     if(!g_application)
     {
-        g_application.reset( new QCoreApplication(argc, argv) );
+        g_application = QPointer<QCoreApplication>( new QCoreApplication(argc, argv) );
     }
 }
 
@@ -873,7 +874,7 @@ void server::prepare_qtapp( int argc, char *argv[] )
  */
 void server::close_qtapp()
 {
-    g_application.reset();
+    g_application = 0;
 }
 
 
