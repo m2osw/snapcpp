@@ -874,7 +874,7 @@ void server::prepare_qtapp( int argc, char *argv[] )
  */
 void server::close_qtapp()
 {
-    g_application = 0;
+    g_application = nullptr;
 }
 
 
