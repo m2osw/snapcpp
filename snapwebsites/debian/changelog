@@ -1,12 +1,15 @@
-snapwebsites (0.1.24~saucy) UNRELEASED; urgency=high
-
-  [ R. Douglas Barbieri ]
-  * 
+snapwebsites (0.1.24~saucy) saucy; urgency=high
 
   [ Alexis Wilke ]
   * Added support for a sendmail specific theme so we can have a default
     theme that looks a little more than pure HTML.
   * Fixed the HTML only emails problem.
+  * Finished up an early version of the save and publish capabilities from a
+  draft.
+
+  [ R. Douglas Barbieri ]
+  * Using QPointer instead of std::shared_ptr for QCoreApplication object.
+  * Added try/catch blocks to help determine where errors might occur.
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Mon, 03 Mar 2014 09:58:24 -0800
 
