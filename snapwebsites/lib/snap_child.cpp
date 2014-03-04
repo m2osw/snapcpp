@@ -2591,56 +2591,73 @@ bool snap_child::process(int socket)
  */
 void snap_child::backend()
 {
-    init_start_date();
-
-    f_is_child = true;
-    f_child_pid = getpid();
-    f_socket = -1;
-
-    connect_cassandra();
-
-    // define a User-Agent for all backends (should that be a parameter?)
-    f_env[snap::get_name(SNAP_NAME_CORE_HTTP_USER_AGENT)] = "Snap! Backend";
-
-    QString uri(f_server->get_parameter("__BACKEND_URI"));
-    if(!uri.isEmpty())
+    try
     {
-        process_backend_uri(uri);
-    }
-    else
-    {
-        QString table_name(get_name(SNAP_NAME_SITES));
-        QtCassandra::QCassandraTable::pointer_t table(f_context->findTable(table_name));
-        if(!table)
+        init_start_date();
+
+        f_is_child = true;
+        f_child_pid = getpid();
+        f_socket = -1;
+
+        connect_cassandra();
+
+        // define a User-Agent for all backends (should that be a parameter?)
+        f_env[snap::get_name(SNAP_NAME_CORE_HTTP_USER_AGENT)] = "Snap! Backend";
+
+        QString uri(f_server->get_parameter("__BACKEND_URI"));
+        if(!uri.isEmpty())
         {
-            // the whole table is still empty
-            SNAP_LOG_ERROR("The 'sites' table is empty or nonexistent! Likely you have not set up the domains and websites tables, either. Exiting!");
-            return;
+            process_backend_uri(uri);
         }
-
-        // if a site exists then it has a "core::last_updated" entry
-        QtCassandra::QCassandraColumnNamePredicate::pointer_t column_predicate(new QtCassandra::QCassandraColumnNamePredicate);
-        column_predicate->addColumnName(get_name(SNAP_NAME_CORE_LAST_UPDATED));
-        QtCassandra::QCassandraRowPredicate row_predicate;
-        row_predicate.setColumnPredicate(column_predicate);
-        for(;;)
+        else
         {
-            table->clearCache();
-            uint32_t count(table->readRows(row_predicate));
-            if(count == 0)
+            QString table_name(get_name(SNAP_NAME_SITES));
+            QtCassandra::QCassandraTable::pointer_t table(f_context->findTable(table_name));
+            if(!table)
             {
-                // we reached the end of the whole table
-                break;
+                // the whole table is still empty
+                SNAP_LOG_ERROR("The 'sites' table is empty or nonexistent! Likely you have not set up the domains and websites tables, either. Exiting!");
+                return;
             }
-            QtCassandra::QCassandraRows const& r(table->rows());
-            for(QtCassandra::QCassandraRows::const_iterator o(r.begin());
+
+            // if a site exists then it has a "core::last_updated" entry
+            QtCassandra::QCassandraColumnNamePredicate::pointer_t column_predicate(new QtCassandra::QCassandraColumnNamePredicate);
+            column_predicate->addColumnName(get_name(SNAP_NAME_CORE_LAST_UPDATED));
+            QtCassandra::QCassandraRowPredicate row_predicate;
+            row_predicate.setColumnPredicate(column_predicate);
+            for(;;)
+            {
+                table->clearCache();
+                uint32_t count(table->readRows(row_predicate));
+                if(count == 0)
+                {
+                    // we reached the end of the whole table
+                    break;
+                }
+                QtCassandra::QCassandraRows const& r(table->rows());
+                for(QtCassandra::QCassandraRows::const_iterator o(r.begin());
                     o != r.end(); ++o)
-            {
-                QString const key(QString::fromUtf8(o.key().data()));
-                process_backend_uri(key);
+                {
+                    QString const key(QString::fromUtf8(o.key().data()));
+                    process_backend_uri(key);
+                }
             }
         }
     }
+    catch( snap_exception const& except )
+    {
+        SNAP_LOG_FATAL("snap_child::backend(): exception caught: ")(except.what());
+    }
+    catch( std::exception const& std_except )
+    {
+        SNAP_LOG_FATAL("snap_child::backend(): exception caught: ")(std_except.what())(" (there are mainly two kinds of exceptions happening here: Snap logic errors and Cassandra exceptions that are thrown by thrift)");
+    }
+    catch( ... )
+    {
+        SNAP_LOG_FATAL("snap_child::backend(): unknown exception caught!");
+    }
+    exit(1);
+    NOTREACHED();
 }
 
 
@@ -7587,44 +7604,22 @@ snap_child::udp_server_t snap_child::udp_get_server( const char *name )
 {
     Q_ASSERT(name);
 
-    return server::udp_get_server( f_server->get_parameter(name) );
+    try
+    {
+        return server::udp_get_server( f_server->get_parameter(name) );
+    }
+    catch( const std::runtime_error& runtime_error )
+    {
+        SNAP_LOG_FATAL() << "Runtime error caught: '" << runtime_error.what() << "'. Cannot connect to server for name '" << name << "'!";
+    }
+    catch( ... )
+    {
+        SNAP_LOG_FATAL() << "Unknown error caught. Cannot connect to server for name '" << name << "'!";
+    }
 
-#if 0
-    QString addr, port;
-    int bracket(udp_addr_port.lastIndexOf("]"));
-    int p(udp_addr_port.lastIndexOf(":"));
-    if(bracket != -1 && p != -1)
-    {
-        if(p > bracket)
-        {
-            // IPv6 port specification
-            addr = udp_addr_port.mid(0, bracket + 1); // include the ']'
-            port = udp_addr_port.mid(p + 1); // ignore the ':'
-        }
-        else
-        {
-            throw std::runtime_error("invalid [IPv6]:port specification, port missing for UDP ping");
-        }
-    }
-    else if(p != -1)
-    {
-        // IPv4 port specification
-        addr = udp_addr_port.mid(0, p); // ignore the ':'
-        port = udp_addr_port.mid(p + 1); // ignore the ':'
-    }
-    else
-    {
-        throw std::runtime_error("invalid IPv4:port specification, port missing for UDP ping");
-    }
-    QSharedPointer<udp_client_server::udp_server> server(new udp_client_server::udp_server(addr.toUtf8().data(), port.toInt()));
-    if(server.isNull())
-    {
-        // this should not happen since std::badalloc is raised when allocation fails
-        // and the new operator will rethrow any exception that the constructor throws
-        throw std::runtime_error("server could not be allocated");
-    }
-    return server;
-#endif
+    exit(1);
+    NOTREACHED();
+    return snap_child::udp_server_t();
 }
 
 
