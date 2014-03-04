@@ -80,18 +80,18 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
             <!--  contenteditable="true" -->
             <div class="page-title snap-editor"><div class="editor-tooltip">
                 <a class="activate-editor" href="#">Edit</a> the page title.
-              </div><div class="editor-content"><h2><xsl:choose>
+              </div><div><h2 class="editor-content"><xsl:choose>
                 <xsl:when test="/snap/page/body/titles/long-title">
-                  <xsl:value-of select="/snap/page/body/titles/long-title"/>
+                  <xsl:copy-of select="/snap/page/body/titles/long-title/node()"/>
                 </xsl:when>
                 <xsl:otherwise>
-                  <xsl:value-of select="/snap/page/body/titles/title"/>
+                  <xsl:copy-of select="/snap/page/body/titles/title/node()"/>
                 </xsl:otherwise>
             </xsl:choose></h2></div></div>
             <div class="body snap-editor"><div class="editor-tooltip">
               <a class="activate-editor" href="#">Edit</a> the page content.
             </div><div class="editor-content">
-              <xsl:copy-of select="output/*"/>
+              <xsl:copy-of select="output/node()"/>
             </div></div>
           </div>
           <div class="clear-both"></div>

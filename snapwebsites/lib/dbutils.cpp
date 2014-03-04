@@ -63,6 +63,53 @@ dbutils::dbutils( const QString& table_name, const QString& row_name )
 }
 
 
+/** \brief Copy all the cells from one row to another.
+ *
+ * This function copies all the cells from one row to another. It does not
+ * try to change anything in the process. The destination (source?) should
+ * be tweaked as required on return.
+ *
+ * \warning
+ * This function does not delete anything, if other fields already existed
+ * in the destination, then it stays there.
+ *
+ * \param[in] ta  The source table.
+ * \param[in] a  The name of the row to copy from.
+ * \param[in] tb  The destination table.
+ * \param[in] b  The name of the row to copy to.
+ */
+void dbutils::copy_row(QtCassandra::QCassandraTable::pointer_t ta, QString const& a, // source
+                       QtCassandra::QCassandraTable::pointer_t tb, QString const& b) // destination
+{
+    QtCassandra::QCassandraRow::pointer_t source_row(ta->row(a));
+    QtCassandra::QCassandraRow::pointer_t destination_row(tb->row(b));
+    QtCassandra::QCassandraColumnRangePredicate column_predicate;
+    column_predicate.setCount(1000); // we have to copy everything also it is likely very small (i.e. 10 fields...)
+    column_predicate.setIndex(); // behave like an index
+    for(;;)
+    {
+        source_row->clearCache();
+        source_row->readCells(column_predicate);
+        const QtCassandra::QCassandraCells& source_cells(source_row->cells());
+        if(source_cells.isEmpty())
+        {
+            // done
+            break;
+        }
+        // handle one batch
+        for(QtCassandra::QCassandraCells::const_iterator nc(source_cells.begin());
+                nc != source_cells.end();
+                ++nc)
+        {
+            QtCassandra::QCassandraCell::pointer_t source_cell(*nc);
+            QByteArray cell_key(source_cell->columnKey());
+            destination_row->cell(cell_key)->setValue(source_cell->value());
+        }
+    }
+}
+
+
+
 QByteArray dbutils::get_row_key() const
 {
     QByteArray row_key;

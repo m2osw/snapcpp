@@ -79,6 +79,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 					{
 						display: none;
 					}
+					.editor-content[contenteditable="true"] .filter-token
+					{
+						background-color: #e0e0e0;
+					}
 				</style>
 			</head>
 			<xsl:apply-templates select="page/body"/>
@@ -110,10 +114,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 						<div><div><xsl:attribute name="class"><xsl:if test="$action = 'edit'">snap-editor</xsl:if></xsl:attribute>
 						     <xsl:attribute name="field_name">title</xsl:attribute><h2 class="editor-content"><xsl:choose>
 								<xsl:when test="/snap/page/body/titles/long-title">
-									<xsl:value-of select="/snap/page/body/titles/long-title"/>
+									<xsl:copy-of select="/snap/page/body/titles/long-title/node()"/>
 								</xsl:when>
 								<xsl:otherwise>
-									<xsl:value-of select="/snap/page/body/titles/title"/>
+									<xsl:copy-of select="/snap/page/body/titles/title/node()"/>
 								</xsl:otherwise>
 							</xsl:choose></h2></div></div>
 						<xsl:copy-of select="output/node()"/>

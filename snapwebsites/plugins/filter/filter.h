@@ -41,6 +41,9 @@ public:
     filter_exception_invalid_arguement(QString const&     what_msg) : filter_exception(what_msg) {}
 };
 
+
+
+
 class filter : public plugins::plugin
 {
 public:
@@ -290,6 +293,7 @@ public:
 
     static filter *     instance();
     virtual QString     description() const;
+    static bool         filter_uri(QString& uri);
 
     void                on_bootstrap(::snap::snap_child *snap);
     void                on_xss_filter(QDomNode& node, QString const& accepted_tags, QString const& accepted_attributes);

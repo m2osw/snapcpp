@@ -1,6 +1,6 @@
 /*
  * Name: editor
- * Version: 0.0.1.36
+ * Version: 0.0.1.45
  * Browsers: all
  * Copyright: Copyright 2013-2014 (c) Made to Order Software Corporation  All rights reverved.
  * License: GPL 2.0
@@ -167,16 +167,33 @@ snapwebsites.Editor.prototype = {
     _msie: false,
     _keys: [],
 
+    _titleToURI: function(title)
+    {
+        // force all lower case
+        title = title.toLowerCase();
+        // replace spaces with dashes
+        title = title.replace(/ +/g, "-");
+        // remove all characters other than letters and digits
+        title = title.replace(/[^-a-z0-9_]+/g, "");
+        // remove duplicate dashes
+        title = title.replace(/--+/g, "-");
+        //// remove dashes at the start & end
+        title = title.replace(/^-+/, "");
+        title = title.replace(/-+$/, "");
+
+        return title;
+    },
+
     _saveData: function(mode)
     {
         var i, obj = {}, saved = [], edit_area, url, name;
-        for(i = 1; i <= snapwebsites.EditorInstance._lastId; ++i)
+        for(i = 1; i <= this._lastId; ++i)
         {
-            if(snapwebsites.EditorInstance._modified[i])
+            if(this._modified[i])
             {
                 // verify one last time whether it was indeed modified
                 edit_area = jQuery("#editor-area-" + i);
-                if(snapwebsites.EditorInstance._originalData[i] != edit_area.html())
+                if(this._originalData[i] != edit_area.html())
                 {
                     name = edit_area.parent().attr("field_name");
                     obj[name] = edit_area.html();
@@ -190,6 +207,7 @@ snapwebsites.Editor.prototype = {
         {
             obj["editor_save_mode"] = mode;
             obj["editor_session"] = jQuery("meta[name='editor_session']").attr("content");
+            obj["editor_uri"] = this._titleToURI(jQuery("[field_name='title'] .editor-content").text());
             url = jQuery("link[rel='canonical']").attr("href");
             url = url ? url : "/";
             jQuery.ajax(url, {
@@ -253,17 +271,17 @@ snapwebsites.Editor.prototype = {
                     // (i.e. if you are editing a new branch that is not
                     //       public then Publish would make that branch
                     //       public and the Save would make that !)
-                    + "<p><a class='button' id='snap_editor_publish' href='#'>Publish</a></p>"
-                    + "<p><a class='button' id='snap_editor_save' href='#'>Save</a></p>"
-                    + "<p><a class='button' id='snap_editor_save_new_branch' href='#'>Save New Branch</a></p>"
-                    + "<p><a class='button' id='snap_editor_save_draft' href='#'>Save Draft</a></p>"
+                    + "<p class='snap_editor_publish_p'><a class='button' id='snap_editor_publish' href='#'>Publish</a></p>"
+                    + "<p class='snap_editor_save_p'><a class='button' id='snap_editor_save' href='#'>Save</a></p>"
+                    + "<p class='snap_editor_save_new_branch_p'><a class='button' id='snap_editor_save_new_branch' href='#'>Save New Branch</a></p>"
+                    + "<p class='snap_editor_save_draft_p'><a class='button' id='snap_editor_save_draft' href='#'>Save Draft</a></p>"
                     + "</div></div>"
             jQuery(html).appendTo("body");
             this._saveDialogPopup = jQuery("#snap_editor_save_dialog");
             this._saveDialogPopup.css("left", jQuery(window).outerWidth(true) - 190);
             jQuery("#snap_editor_publish")
                 .click(function(){
-                    alert("Publish!");
+                    snapwebsites.EditorInstance._saveData("publish");
                 });
             jQuery("#snap_editor_save")
                 .click(function(){
@@ -277,6 +295,11 @@ snapwebsites.Editor.prototype = {
                 .click(function(){
                     snapwebsites.EditorInstance._saveData("draft");
                 });
+            if(jQuery("meta[name='path']").attr("content") == "admin/drafts")
+            {
+                jQuery(".snap_editor_save_p").hide();
+                jQuery(".snap_editor_save_new_branch_p").hide();
+            }
         }
         this._saveDialogPopup.fadeIn(300);
     },

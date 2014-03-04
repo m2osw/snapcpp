@@ -7029,7 +7029,6 @@ QString snap_child::date_to_string(int64_t v, date_format_t date_format)
         break;
 
     case DATE_FORMAT_EMAIL:
-        {
         { // dd MMM yyyy hh:mm:ss +0000
             // do it manually so the date is ALWAYS in English
             return QString("%1 %2 %3 %4:%5:%6 +0000")
@@ -7039,7 +7038,6 @@ QString snap_child::date_to_string(int64_t v, date_format_t date_format)
                 .arg(time_info.tm_hour, 2, 10, QChar('0'))
                 .arg(time_info.tm_min, 2, 10, QChar('0'))
                 .arg(time_info.tm_sec, 2, 10, QChar('0'));
-        }
         }
         break;
 

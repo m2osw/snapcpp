@@ -21,7 +21,9 @@
 #include "../messages/messages.h"
 #include "../permissions/permissions.h"
 #include "../sessions/sessions.h"
+#include "../filter/filter.h"
 
+#include "dbutils.h"
 #include "not_reached.h"
 #include "log.h"
 
@@ -52,6 +54,12 @@ char const *get_name(name_t name)
 
     case SNAP_NAME_EDITOR_PAGE_TYPE:
         return "editor::page_type";
+
+    case SNAP_NAME_EDITOR_TYPE_FORMAT_PATH: // a format to generate the path of a page
+        return "editor::type_format_path";
+
+    case SNAP_NAME_EDITOR_TYPE_EXTENDED_FORMAT_PATH:
+        return "editor::type_extended_format_path";
 
     default:
         // invalid index
@@ -150,7 +158,7 @@ int64_t editor::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2014, 2, 27, 20, 10, 30, content_update);
+    SNAP_PLUGIN_UPDATE(2014, 2, 27, 3, 41, 30, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -648,6 +656,7 @@ void editor::on_process_post(QString const& uri_path)
         break;
 
     case EDITOR_SAVE_MODE_NEW_BRANCH:
+        editor_create_new_branch(ipath);
         break;
 
     case EDITOR_SAVE_MODE_SAVE:
@@ -765,6 +774,525 @@ void editor::editor_save(content::path_info_t& ipath)
 
     // save the modification date in the branch
     content_plugin->modified_content(ipath);
+}
+
+
+/** \brief Publish the page, making it the current page.
+ *
+ * This function saves the page in a new revision and makes it the current
+ * revision. If the page does not exist yet, then it gets created (i.e.
+ * saving from the admin/drafts area to a real page.
+ *
+ * The page type as defined when creating the draft is used as the type of
+ * this new page. This generally defines the permissions, so we do not
+ * worry about that here.
+ *
+ * \param[in,out] ipath  The path to the page being updated.
+ */
+void editor::editor_create_new_branch(content::path_info_t& ipath)
+{
+    messages::messages *messages(messages::messages::instance());
+    content::content *content_plugin(content::content::instance());
+    QtCassandra::QCassandraTable::pointer_t content_table(content::content::instance()->get_content_table());
+    QtCassandra::QCassandraTable::pointer_t data_table(content::content::instance()->get_data_table());
+    QString const site_key(f_snap->get_site_key_with_slash());
+
+    // although we expect the URI sent by the editor to be safe, we filter it
+    // again here really quick because the client sends this to us and thus
+    // the data can be tainted
+    QString page_uri(f_snap->postenv("editor_uri"));
+    filter::filter::filter_uri(page_uri);
+
+    // if the ipath is admin/drafts/<date> then we're dealing with a brand
+    // new page; the URI we just filtered has to be unique
+    bool const is_draft(ipath.get_cpath().startsWith("admin/drafts/"));
+
+    // we got to retrieve the type used on the draft to create the full
+    // page; the type is also used to define the path to the page
+    //
+    // IMPORTANT: it is different here from the normal case because
+    //            we check the EDITOR page type and not the CONTENT
+    //            page type...
+    QString type_name;
+    links::link_info info(is_draft ? content::get_name(content::SNAP_NAME_CONTENT_PAGE_TYPE)
+                                   : get_name(SNAP_NAME_EDITOR_PAGE_TYPE),
+                          false, ipath.get_key(), ipath.get_branch());
+    QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
+    links::link_info type_info;
+    if(link_ctxt->next_link(type_info))
+    {
+        QString const type(type_info.key());
+        if(type.startsWith(site_key + "types/taxonomy/system/content-types/"))
+        {
+            type_name = type.mid(site_key.length() + 36);
+        }
+    }
+    if(type_name.isEmpty())
+    {
+        // this should never happen, but we need a default in case the
+        // type selected at the time the user created the draft is not
+        // valid somehow; at this point the most secure without making
+        // the page totally innaccessible is as follow
+        //
+        // TBD: should we use page/private instead?
+        type_name = "page/secure";
+    }
+
+    // now that we have the type, we can get the path definition for that
+    // type of pages; it is always important because when editing a page
+    // you "lose" the path and "regain" it when you save
+    QString type_format("[page-uri]"); // default is just the page URI computed from the title
+    QString const type_key(QString("%1types/taxonomy/system/content-types/%2").arg(site_key).arg(type_name));
+    if(content_table->row(type_key)->exists(get_name(SNAP_NAME_EDITOR_TYPE_FORMAT_PATH)))
+    {
+        type_format = content_table->row(type_key)->cell(get_name(SNAP_NAME_EDITOR_TYPE_FORMAT_PATH))->value().stringValue();
+    }
+
+    params_map_t params;
+    QString key(format_uri(type_format, ipath, page_uri, params));
+    if(is_draft)
+    {
+        // TBD: we probably should have a lock, but what would we lock in
+        //      this case? (also it is rather unlikely that two people try
+        //      to create a page with the exact same URI at the same time)
+        QString extended_type_format;
+        QString new_key;
+        for(int i(0);; ++i)
+        {
+            // page already exists?
+            if(i == 0)
+            {
+                new_key = key;
+            }
+            else
+            {
+                if(extended_type_format.isEmpty())
+                {
+                    if(content_table->row(type_key)->cell(get_name(SNAP_NAME_EDITOR_TYPE_EXTENDED_FORMAT_PATH)))
+                    {
+                        extended_type_format = content_table->row(type_key)->cell(get_name(SNAP_NAME_EDITOR_TYPE_EXTENDED_FORMAT_PATH))->value().stringValue();
+                    }
+                    if(extended_type_format.isEmpty()
+                    || extended_type_format == type_format)
+                    {
+                        extended_type_format = QString("%1-[param(counter)]").arg(type_format);
+                    }
+                }
+                new_key = format_uri(type_format, ipath, page_uri, params);
+            }
+            if(!content_table->exists(new_key)
+            || !content_table->row(new_key)->exists(content::get_name(content::SNAP_NAME_CONTENT_CREATED)))
+            {
+                if(key != new_key)
+                {
+                    messages->set_warning(
+                        "Editor Already Submitted",
+                        QString("The URL \"<a href=\"%1\">%1</a>\" for your new page is already used by another page and was changed to \"%2\" for this new page.")
+                                            .arg(key).arg(new_key),
+                        "Changed URL because another page already used that one.");
+                    key = new_key;
+                }
+                break;
+            }
+        }
+
+        // this is a new page, create it now
+        //
+        // TODO: language "xx" is totally wrong, plus we actually need to
+        //       publish ALL that languages present in the draft
+        //
+        QString const locale("xx");
+        QString const owner(output::output::instance()->get_plugin_name());
+        content::path_info_t page_ipath;
+        page_ipath.set_path(key);
+        page_ipath.force_branch(content_plugin->get_current_user_branch(key, owner, locale, true));
+        page_ipath.force_revision(static_cast<snap_version::basic_version_number_t>(snap_version::SPECIAL_VERSION_FIRST_REVISION));
+        page_ipath.force_locale(locale);
+        content_plugin->create_content(page_ipath, owner, type_name);
+
+        // it was created at the time the draft was created
+        int64_t created_on(content_table->row(ipath.get_key())->cell(content::get_name(content::SNAP_NAME_CONTENT_CREATED))->value().int64Value());
+        content_table->row(page_ipath.get_key())->cell(content::get_name(content::SNAP_NAME_CONTENT_CREATED))->setValue(created_on);
+
+        // it is being issued now
+        data_table->row(page_ipath.get_branch_key())->cell(content::get_name(content::SNAP_NAME_CONTENT_ISSUED))->setValue(f_snap->get_start_date());
+
+        // copy the last revision
+        dbutils::copy_row(data_table, ipath.get_revision_key(), data_table, page_ipath.get_revision_key());
+
+        // TODO: copy links too...
+    }
+}
+
+
+/** \brief Use a format string to generate a path.
+ *
+ * This function uses a format string to transform different parameters
+ * available in a page to create its path (URI path.)
+ *
+ * The format uses tokens written between square brackets. The brackets
+ * are used to clearly delimit the start and end of the tokens. The tokens
+ * to not take any parameters. Instead, we decided to make it one simple
+ * word per token. There is no recursivity support nor possibility to
+ * add parameters to tokens. Instead, each and every token is a separate
+ * keyword. More keywords can be added as more features are added.
+ *
+ * The keywords are transformed using the signal.
+ *
+ * \li [title] -- the title of the page filtered
+ * \li [date] -- the date the page was issued (YMD)
+ * \li [year] -- the year the page was issued
+ * \li [month] -- the month the page was issued
+ * \li [day] -- the day the page was issued
+ * \li [time] -- the time the page was issued (HMS)
+ * \li [hour] -- the hour the page was issued
+ * \li [minute] -- the minute the page was issued
+ * \li [second] -- the second the page was issued
+ * \li [now] -- the date right now (YMD)
+ * \li [now-year] -- the year right now
+ * \li [now-month] -- the month right now
+ * \li [now-day] -- the day right now
+ * \li [now-time] -- the time the page was issued (HMS)
+ * \li [now-hour] -- the hour right now
+ * \li [now-minute] -- the minute right now
+ * \li [now-second] -- the second right now
+ * \li [mod] -- the modification date when the branch was last modified (YMD)
+ * \li [mod-year] -- the year when the branch was last modified
+ * \li [mod-month] -- the month when the branch was last modified
+ * \li [mod-day] -- the day when the branch was last modified
+ * \li [mod-time] -- the time the page was issued (HMS)
+ * \li [mod-hour] -- the hour when the branch was last modified
+ * \li [mod-minute] -- the minute when the branch was last modified
+ * \li [mod-second] -- the second when the branch was last modified
+ *
+ * \todo
+ * Look into ways to allow for extensions.
+ *
+ * \param[in] format  The format used to generate the string.
+ * \param[in,out] ipath  The ipath of the page we're working on.
+ * \param[in] page_name  The name of the page (i.e. the title transformed
+ *                       to fit Snap! paths limitations)
+ * \param[in] params  An array of parameters.
+ *
+ * \return The formatted path.
+ */
+QString editor::format_uri(QString const& format, content::path_info_t& ipath, QString const& page_name, params_map_t const& params)
+{
+    class parser
+    {
+    public:
+        typedef ushort char_t;
+
+        parser(editor *e, QString const& format, content::path_info_t& ipath, QString const& page_name, params_map_t const& params)
+            : f_editor(e)
+            , f_format(format)
+            //, f_pos(0)
+            , f_token_info(ipath, page_name, params)
+            //, f_result("")
+        {
+        }
+
+        void parse()
+        {
+            for(;;)
+            {
+                char_t c(getc());
+                if(c == static_cast<char_t>(EOF))
+                {
+                    // done
+                    break;
+                }
+                if(c == '[')
+                {
+                    if(!parse_token())
+                    {
+                        // TBD?
+                    }
+                }
+                else
+                {
+                    f_result += QChar(c);
+                }
+            }
+        }
+
+        bool parse_token()
+        {
+            f_token_info.f_token.clear();
+            for(;;)
+            {
+                char_t c(getc());
+                if(c == static_cast<char_t>(EOF) || isspace(c))
+                {
+                    return false;
+                }
+                if(c == ']')
+                {
+                    break;
+                }
+                f_token_info.f_token += QChar(c);
+            }
+            f_token_info.f_result.clear();
+            f_editor->replace_uri_token(f_token_info);
+            f_result += f_token_info.f_result;
+            return true;
+        }
+
+        char_t getc()
+        {
+            char_t c(static_cast<char_t>(EOF));
+            if(f_pos < f_format.length())
+            {
+                c = f_format[f_pos].unicode();
+                ++f_pos;
+            }
+            return c;
+        }
+
+        QString result()
+        {
+            return f_result;
+        }
+
+    private:
+        editor *                    f_editor;
+        QString const&              f_format;
+        controlled_vars::zint32_t   f_pos;
+        editor_uri_token            f_token_info;
+        QString                     f_result;
+    };
+    parser result(this, format, ipath, page_name, params);
+    result.parse();
+    return result.result();
+}
+
+
+/** \brief Replace the specified token with data to generate a URI.
+ *
+ * This signal is used to transform tokens from URI format strings to
+ * values. If your function doesn't know about the token, then just
+ * return without doing anything. The main function returns false
+ * if it understands the token and thus no other plugins receive the
+ * signal in that case.
+ *
+ * The ipath represents the path to the page being saved. It may be
+ * the page draft (under "admin/drafts".)
+ *
+ * The page_name parameter is computed from the page title. It is the title
+ * all in lowercase, with dashes instead of spaces, and removal of
+ * characters that are not generally welcome in a URI.
+ *
+ * The params map defines additional parameters tha are available at the
+ * time the signal is called.
+ *
+ * The token is the keyword parsed our of the input format. For example, it
+ * may be the word "year" to be replaced by the current year.
+ *
+ * \note
+ * This function transforms the "editor" known tokens, this includes
+ * all the tokens known by the editor and any plugin that cannot include
+ * the editor without creating a circular dependency.
+ *
+ * \param[in,out] token_info  The information about this token.
+ *
+ * \return true if the token was not an editor basic token, false otherwise
+ *         so other plugins get a chance to transform the token themselves
+ */
+bool editor::replace_uri_token_impl(editor_uri_token& token_info)
+{
+    //
+    // TITLE
+    //
+    if(token_info.f_token == "page-uri")
+    {
+        token_info.f_result = token_info.f_page_name;
+        return false;
+    }
+
+    QtCassandra::QCassandraTable::pointer_t content_table(content::content::instance()->get_content_table());
+    QtCassandra::QCassandraTable::pointer_t data_table(content::content::instance()->get_data_table());
+
+    //
+    // TIME / DATE
+    //
+    enum type_t
+    {
+        TIME_SOURCE_UNKNOWN,
+        TIME_SOURCE_NOW,
+        TIME_SOURCE_CREATION_DATE,
+        TIME_SOURCE_MODIFICATION_DATE
+    };
+    std::string time_format;
+    type_t type(TIME_SOURCE_UNKNOWN);
+    if(token_info.f_token == "date")
+    {
+        time_format = "%Y%m%d";
+        type = TIME_SOURCE_CREATION_DATE;
+    }
+    else if(token_info.f_token == "year")
+    {
+        time_format = "%Y";
+        type = TIME_SOURCE_CREATION_DATE;
+    }
+    else if(token_info.f_token == "month")
+    {
+        time_format = "%m";
+        type = TIME_SOURCE_CREATION_DATE;
+    }
+    else if(token_info.f_token == "day")
+    {
+        time_format = "%d";
+        type = TIME_SOURCE_CREATION_DATE;
+    }
+    else if(token_info.f_token == "time")
+    {
+        time_format = "%H%M%S";
+        type = TIME_SOURCE_CREATION_DATE;
+    }
+    else if(token_info.f_token == "hour")
+    {
+        time_format = "%H";
+        type = TIME_SOURCE_CREATION_DATE;
+    }
+    else if(token_info.f_token == "minute")
+    {
+        time_format = "%M";
+        type = TIME_SOURCE_CREATION_DATE;
+    }
+    else if(token_info.f_token == "second")
+    {
+        time_format = "%S";
+        type = TIME_SOURCE_CREATION_DATE;
+    }
+    else if(token_info.f_token == "now")
+    {
+        time_format = "%Y%m%d";
+        type = TIME_SOURCE_NOW;
+    }
+    else if(token_info.f_token == "now-year")
+    {
+        time_format = "%Y";
+        type = TIME_SOURCE_NOW;
+    }
+    else if(token_info.f_token == "now-month")
+    {
+        time_format = "%m";
+        type = TIME_SOURCE_NOW;
+    }
+    else if(token_info.f_token == "now-day")
+    {
+        time_format = "%d";
+        type = TIME_SOURCE_NOW;
+    }
+    else if(token_info.f_token == "now-time")
+    {
+        time_format = "%H%M%S";
+        type = TIME_SOURCE_NOW;
+    }
+    else if(token_info.f_token == "now-hour")
+    {
+        time_format = "%H";
+        type = TIME_SOURCE_NOW;
+    }
+    else if(token_info.f_token == "now-hour")
+    {
+        time_format = "%H";
+        type = TIME_SOURCE_NOW;
+    }
+    else if(token_info.f_token == "now-minute")
+    {
+        time_format = "%M";
+        type = TIME_SOURCE_NOW;
+    }
+    else if(token_info.f_token == "now-second")
+    {
+        time_format = "%S";
+        type = TIME_SOURCE_NOW;
+    }
+    else if(token_info.f_token == "mod")
+    {
+        time_format = "%Y%m%d";
+        type = TIME_SOURCE_MODIFICATION_DATE;
+    }
+    else if(token_info.f_token == "mod-year")
+    {
+        time_format = "%Y";
+        type = TIME_SOURCE_MODIFICATION_DATE;
+    }
+    else if(token_info.f_token == "mod-month")
+    {
+        time_format = "%m";
+        type = TIME_SOURCE_MODIFICATION_DATE;
+    }
+    else if(token_info.f_token == "mod-day")
+    {
+        time_format = "%d";
+        type = TIME_SOURCE_MODIFICATION_DATE;
+    }
+    else if(token_info.f_token == "mod-time")
+    {
+        time_format = "%H%M%S";
+        type = TIME_SOURCE_MODIFICATION_DATE;
+    }
+    else if(token_info.f_token == "mod-hour")
+    {
+        time_format = "%H";
+        type = TIME_SOURCE_MODIFICATION_DATE;
+    }
+    else if(token_info.f_token == "mod-minute")
+    {
+        time_format = "%M";
+        type = TIME_SOURCE_MODIFICATION_DATE;
+    }
+    else if(token_info.f_token == "mod-second")
+    {
+        time_format = "%S";
+        type = TIME_SOURCE_MODIFICATION_DATE;
+    }
+
+    if(type != TIME_SOURCE_UNKNOWN)
+    {
+        time_t seconds;
+        switch(type)
+        {
+        case TIME_SOURCE_CREATION_DATE:
+            {
+                QString cell_name;
+
+                if(token_info.f_ipath.get_cpath().startsWith("admin/drafts/"))
+                {
+                    cell_name = content::get_name(content::SNAP_NAME_CONTENT_CREATED);
+                }
+                else
+                {
+                    cell_name = content::get_name(content::SNAP_NAME_CONTENT_ISSUED);
+                }
+                seconds = content_table->row(token_info.f_ipath.get_key())->cell(cell_name)->value().int64Value() / 1000000;
+            }
+            break;
+
+        case TIME_SOURCE_MODIFICATION_DATE:
+            seconds = data_table->row(token_info.f_ipath.get_branch_key())->cell(content::get_name(content::SNAP_NAME_CONTENT_MODIFIED))->value().int64Value() / 1000000;
+            break;
+
+        case TIME_SOURCE_NOW:
+            seconds = f_snap->get_start_date() / 1000000;
+            break;
+
+        //case TIME_SOURCE_UNKNOWN: -- this is not possible, really! look at the if()
+        default:
+            throw snap_logic_exception("somehow the time parameter was set to an unknown value");
+
+        }
+        struct tm time_info;
+        gmtime_r(&seconds, &time_info);
+        char buf[256];
+        buf[0] = '\0';
+        strftime(buf, sizeof(buf), time_format.c_str(), &time_info);
+        return false;
+    }
+
+    return true;
 }
 
 

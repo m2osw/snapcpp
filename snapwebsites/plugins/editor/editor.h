@@ -52,7 +52,9 @@ public:
 enum name_t
 {
     SNAP_NAME_EDITOR_DRAFTS_PATH,
-    SNAP_NAME_EDITOR_PAGE_TYPE
+    SNAP_NAME_EDITOR_PAGE_TYPE,
+    SNAP_NAME_EDITOR_TYPE_EXTENDED_FORMAT_PATH,
+    SNAP_NAME_EDITOR_TYPE_FORMAT_PATH
 };
 char const *get_name(name_t name) __attribute__ ((const));
 
@@ -70,6 +72,26 @@ public:
         EDITOR_SAVE_MODE_SAVE,
         EDITOR_SAVE_MODE_NEW_BRANCH,
         EDITOR_SAVE_MODE_AUTO_DRAFT
+    };
+
+    typedef QMap<QString, QString> params_map_t;
+
+    struct editor_uri_token
+    {
+        editor_uri_token(content::path_info_t& ipath, QString const& page_name, params_map_t const& params)
+            : f_ipath(ipath)
+            , f_page_name(page_name)
+            , f_params(params)
+            //, f_token("") -- auto-init
+            //, f_result("") -- auto-init
+        {
+        }
+
+        content::path_info_t&   f_ipath;
+        QString const&          f_page_name;
+        params_map_t const&     f_params;
+        QString                 f_token;
+        QString                 f_result;
     };
 
                         editor();
@@ -92,14 +114,17 @@ public:
                                          QString const& widget_type, bool is_secret);
     void                on_process_post(QString const& uri_path);
 
+    QString             format_uri(QString const& format, content::path_info_t& ipath, QString const& page_name, params_map_t const& params);
     static save_mode_t  string_to_save_mode(QString const& mode);
 
     SNAP_SIGNAL(save_editor_fields, (content::path_info_t& ipath, QtCassandra::QCassandraRow::pointer_t row), (ipath, row));
+    SNAP_SIGNAL(replace_uri_token, (editor_uri_token& token_info), (token_info));
 
 private:
     void                content_update(int64_t variables_timestamp);
     void                process_new_draft();
     void                editor_save(content::path_info_t& ipath);
+    void                editor_create_new_branch(content::path_info_t& ipath);
 
     zpsnap_child_t      f_snap;
 };

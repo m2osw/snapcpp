@@ -10,7 +10,7 @@ content: links	; @echo $@
 editor: users output messages permissions sessions	; @echo $@
 favicon: path form messages permissions output	; @echo $@
 feed: layout path content messages	; @echo $@
-filter: content	; @echo $@
+filter: content messages	; @echo $@
 form: sessions filter content messages	; @echo $@
 header: path layout output	; @echo $@
 info: path form messages users output	; @echo $@
