@@ -50,11 +50,15 @@ int main(int argc, char *argv[])
 	}
     catch( const snap::snap_exception& except )
     {
-        SNAP_LOG_FATAL("snap_child::process(): exception caught!")(except.what());
+        SNAP_LOG_FATAL("snapbackend: exception caught: ")(except.what());
+    }
+    catch( std::exception const& std_except )
+    {
+        SNAP_LOG_FATAL("snapbackend: exception caught: ")(std_except.what())(" (there are mainly two kinds of exceptions happening here: Snap logic errors and Cassandra exceptions that are thrown by thrift)");
     }
     catch( ... )
     {
-        SNAP_LOG_FATAL("snap_child::process(): unknown exception caught!");
+        SNAP_LOG_FATAL("snapbackend: unknown exception caught!");
     }
 
 	exit(1);

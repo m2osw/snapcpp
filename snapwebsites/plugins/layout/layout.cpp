@@ -766,39 +766,45 @@ void layout::generate_boxes(content::path_info_t& ipath, QString const& layout_n
         {
             content::path_info_t ichild;
             ichild.set_path(QString("%1/%2/%3").arg(get_name(SNAP_NAME_LAYOUT_ADMIN_LAYOUTS)).arg(layout_name).arg(names[i]));
-            links::link_info info(content::get_name(content::SNAP_NAME_CONTENT_CHILDREN), false, ichild.get_key(), ichild.get_branch());
-            QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
-            links::link_info child_info;
-            while(link_ctxt->next_link(child_info))
+            // links cannot be read if the version is undefined;
+            // the version is undefined if the theme has no boxes at all
+            snap_version::version_number_t branch(ichild.get_branch());
+            if(snap_version::SPECIAL_VERSION_UNDEFINED != branch)
             {
-                box_error_callback.clear_error();
-                content::path_info_t box_ipath;
-                box_ipath.set_path(child_info.key());
-                box_ipath.set_parameter("action", "view"); // we're always only viewing those blocks from here
-                plugin *box_plugin(path::path::instance()->get_plugin(box_ipath, box_error_callback));
-                if(!box_error_callback.has_error() && box_plugin)
+                links::link_info info(content::get_name(content::SNAP_NAME_CONTENT_CHILDREN), false, ichild.get_key(), ichild.get_branch());
+                QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
+                links::link_info child_info;
+                while(link_ctxt->next_link(child_info))
                 {
-                    layout_boxes *lb(dynamic_cast<layout_boxes *>(box_plugin));
-                    if(lb != nullptr)
+                    box_error_callback.clear_error();
+                    content::path_info_t box_ipath;
+                    box_ipath.set_path(child_info.key());
+                    box_ipath.set_parameter("action", "view"); // we're always only viewing those blocks from here
+                    plugin *box_plugin(path::path::instance()->get_plugin(box_ipath, box_error_callback));
+                    if(!box_error_callback.has_error() && box_plugin)
                     {
-                        // put each box in a filter tag because we have to
-                        // specify a different owner and path for each
-                        QDomElement filter_box(doc.createElement("filter"));
-                        filter_box.setAttribute("path", box_ipath.get_cpath()); // not the full key
-                        filter_box.setAttribute("owner", box_plugin->get_plugin_name());
-                        dom_boxes[i].appendChild(filter_box);
-//SNAP_LOG_TRACE() << "handle box for " << box_plugin->get_plugin_name();
-                        lb->on_generate_boxes_content(ipath, box_ipath, page, filter_box, "");
-                    }
-                    else
-                    {
-                        // if this happens a plugin offers a box but not
-                        // the handler
-                        f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR,
-                                "Plugin Missing",
-                                "Plugin \"" + box_plugin->get_plugin_name() + "\" does not know how to handle a box assigned to it.",
-                                "layout::create_body() the plugin does not derive from layout::layout_boxes.");
-                        NOTREACHED();
+                        layout_boxes *lb(dynamic_cast<layout_boxes *>(box_plugin));
+                        if(lb != nullptr)
+                        {
+                            // put each box in a filter tag because we have to
+                            // specify a different owner and path for each
+                            QDomElement filter_box(doc.createElement("filter"));
+                            filter_box.setAttribute("path", box_ipath.get_cpath()); // not the full key
+                            filter_box.setAttribute("owner", box_plugin->get_plugin_name());
+                            dom_boxes[i].appendChild(filter_box);
+    //SNAP_LOG_TRACE() << "handle box for " << box_plugin->get_plugin_name();
+                            lb->on_generate_boxes_content(ipath, box_ipath, page, filter_box, "");
+                        }
+                        else
+                        {
+                            // if this happens a plugin offers a box but not
+                            // the handler
+                            f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR,
+                                    "Plugin Missing",
+                                    "Plugin \"" + box_plugin->get_plugin_name() + "\" does not know how to handle a box assigned to it.",
+                                    "layout::create_body() the plugin does not derive from layout::layout_boxes.");
+                            NOTREACHED();
+                        }
                     }
                 }
             }

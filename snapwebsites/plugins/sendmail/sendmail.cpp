@@ -63,6 +63,9 @@ const char *get_name(name_t name)
     case SNAP_NAME_SENDMAIL_CONTENT_TRANSFER_ENCODING:
         return "Content-Transfer-Encoding";
 
+    case SNAP_NAME_SENDMAIL_MIME_VERSION:
+        return "MIME-Version";
+
     case SNAP_NAME_SENDMAIL_CONTENT_TYPE:
         return "Content-Type";
 
@@ -1349,7 +1352,7 @@ int64_t sendmail::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2014, 3, 4, 1, 30, 0, content_update);
+    SNAP_PLUGIN_UPDATE(2014, 3, 4, 11, 24, 0, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -2049,7 +2052,7 @@ void sendmail::run_emails()
  *                 header
  * \param[in] unique_key  The email unique key.
  */
-void sendmail::sendemail(const QString& key, const QString& unique_key)
+void sendmail::sendemail(QString const& key, QString const& unique_key)
 {
     QtCassandra::QCassandraTable::pointer_t table(get_emails_table());
     QtCassandra::QCassandraValue sent_value(table->row(key)->cell(unique_key + "::" + get_name(SNAP_NAME_SENDMAIL_SENDING_STATUS))->value());
@@ -2113,11 +2116,11 @@ void sendmail::sendemail(const QString& key, const QString& unique_key)
     }
 
     // verify that we have at least one attachment
-    const int max(f_email.get_attachment_count());
+    int const max(f_email.get_attachment_count());
     if(max < 1)
     {
         // this should never happen since this is tested in the post_email() function
-        throw sendmail_exception_invalid_argument("To: email is invalid, email won't get sent");
+        throw sendmail_exception_invalid_argument("No attachment, not even a body, so this email cannot be sent");
     }
 
     // we want to transform the body from HTML to text ahead of time
@@ -2125,7 +2128,7 @@ void sendmail::sendemail(const QString& key, const QString& unique_key)
     // TODO: verify that the body is indeed HTML!
     //       although html2text works against plain text but that's a waste
     QString plain_text;
-    const QString body_mime_type(body_attachment.get_header(get_name(SNAP_NAME_SENDMAIL_CONTENT_TYPE)));
+    QString const body_mime_type(body_attachment.get_header(get_name(SNAP_NAME_SENDMAIL_CONTENT_TYPE)));
     if(body_mime_type.mid(0, 9) == "text/html")
     {
         process p("html2text");
@@ -2161,6 +2164,10 @@ void sendmail::sendemail(const QString& key, const QString& unique_key)
         {
             plain_text = p.get_output();
         }
+        else
+        {
+            SNAP_LOG_ERROR("an error occurred while executing html2text (exit code: ")(r)(")");
+        }
     }
 
     QString to(f_email.get_header(get_name(SNAP_NAME_SENDMAIL_TO)));
@@ -2193,7 +2200,16 @@ void sendmail::sendemail(const QString& key, const QString& unique_key)
     email::header_map_t headers(f_email.get_all_headers());
     const bool body_only(max == 1 && plain_text.isEmpty());
     QString boundary;
-    if(!body_only)
+    if(body_only)
+    {
+        // if the body is by itself, then its encoding needs to be transported
+        // to the main set of headers
+        if(body_attachment.get_header(get_name(SNAP_NAME_SENDMAIL_CONTENT_TRANSFER_ENCODING)) == "quoted-printable")
+        {
+            headers[get_name(SNAP_NAME_SENDMAIL_CONTENT_TRANSFER_ENCODING)] = "quoted-printable";
+        }
+    }
+    else
     {
         // boundary      := 0*69<bchars> bcharsnospace
         // bchars        := bcharsnospace / " "
@@ -2214,8 +2230,8 @@ void sendmail::sendemail(const QString& key, const QString& unique_key)
             int c(static_cast<int>(rand() % (sizeof(allowed) - 1)));
             boundary += allowed[c];
         }
-        headers["Content-Type"] = "multipart/mixed;\n  boundary=\"" + boundary + "\"";
-        headers["MIME-Version"] = "1.0";
+        headers[get_name(SNAP_NAME_SENDMAIL_CONTENT_TYPE)] = "multipart/mixed;\n  boundary=\"" + boundary + "\"";
+        headers[get_name(SNAP_NAME_SENDMAIL_MIME_VERSION)] = "1.0";
     }
     if(!headers.contains("Date"))
     {

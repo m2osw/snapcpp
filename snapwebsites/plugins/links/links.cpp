@@ -417,15 +417,23 @@ link_context::link_context(::snap::snap_child *snap, const link_info& info)
             // (since the links is a core plugin, that should not happen)
             throw links_exception_missing_links_table("could not find the links table");
         }
-        f_row = links_table->row(f_info.link_key());
-        // WARNING: Here the column names are the keys, not the link names...
-        // TBD: should we give the caller the means to change this 1,000 count?
-        f_column_predicate.setCount(1000);
-        f_column_predicate.setIndex(); // behave like an index
-        // we MUST clear the cache in case we read the same list of links twice
-        f_row->clearCache();
-        // at this point begin() == end()
-        f_cell_iterator = f_row->cells().begin();
+        if(links_table->exists(f_info.link_key()))
+        {
+            f_row = links_table->row(f_info.link_key());
+            // WARNING: Here the column names are the keys, not the link names...
+            // TBD: should we give the caller the means to change this 1,000 count?
+            f_column_predicate.setCount(1000);
+            f_column_predicate.setIndex(); // behave like an index
+            // we MUST clear the cache in case we read the same list of links twice
+            f_row->clearCache();
+            // at this point begin() == end()
+            f_cell_iterator = f_row->cells().begin();
+        }
+        else
+        {
+            // no such row; it's empty
+            f_row.reset();
+        }
     }
 }
 
@@ -453,7 +461,7 @@ bool link_context::next_link(link_info& info)
         info.from_data(f_link);
         f_link.clear();
     }
-    else
+    else if(f_row)
     {
         QString links_namespace(get_name(SNAP_NAME_LINKS_NAMESPACE));
         links_namespace += "::";
@@ -502,6 +510,11 @@ bool link_context::next_link(link_info& info)
                 break;
             }
         }
+    }
+    else
+    {
+        // there is no such link...
+        return false;
     }
 
     // in this case we do not know what the branch should be... read it
