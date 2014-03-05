@@ -54,14 +54,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="layout::layout" revision="global">"sendmail";</param>
     <param name="layout::theme" revision="global">"sendmail";</param>
   </content>
-  <!-- make the sendmail layout exist, but we keep it as simple as possible -->
-  <content path="/admin/layouts/sendmail">
-    <param name="content::title" revision="revision">Sendmail Layout</param>
-    <param name="content::body" revision="revision">
-      <![CDATA[<p>The sendmail layout is the default used when Snap! sends email.</p>
-               <p><small>Reminder: If your emails work with the sendmail layout, it should work in any valid layout.</small></p>]]>
-    </param>
-  </content>
 </snap-tree>
 <!-- vim: ts=2 sw=2 et syntax=xml
 -->
