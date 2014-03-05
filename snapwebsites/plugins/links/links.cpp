@@ -373,8 +373,9 @@ void link_info::from_data(QString const& db_data)
  *
  * \param[in] snap  The snap_child object pointer.
  * \param[in] info  The link information about this link context.
+ * \param[in] count Row count to select from the row table.
  */
-link_context::link_context(::snap::snap_child *snap, const link_info& info)
+link_context::link_context(::snap::snap_child *snap, const link_info& info, const int count)
     : f_snap(snap)
     , f_info(info)
     //, f_row() -- auto-init
@@ -421,8 +422,7 @@ link_context::link_context(::snap::snap_child *snap, const link_info& info)
         {
             f_row = links_table->row(f_info.link_key());
             // WARNING: Here the column names are the keys, not the link names...
-            // TBD: should we give the caller the means to change this 1,000 count?
-            f_column_predicate.setCount(1000);
+            f_column_predicate.setCount(count);
             f_column_predicate.setIndex(); // behave like an index
             // we MUST clear the cache in case we read the same list of links twice
             f_row->clearCache();
@@ -865,12 +865,13 @@ void links::create_link(const link_info& src, const link_info& dst)
  * links.
  *
  * \param[in] info  The link key and name.
+ * \param[in] count Row count to fetch.
  *
  * \return A shared pointer to a link context, it will always exist.
  */
-QSharedPointer<link_context> links::new_link_context(const link_info& info)
+QSharedPointer<link_context> links::new_link_context(const link_info& info, const int count)
 {
-    QSharedPointer<link_context> context(new link_context(f_snap, info));
+    QSharedPointer<link_context> context(new link_context(f_snap, info, count));
     return context;
 }
 
@@ -903,9 +904,10 @@ QSharedPointer<link_context> links::new_link_context(const link_info& info)
  * time as it gets deleted, the result can be that the new link gets
  * partially created and deleted.
  *
- * \param[in] info  The key and name of the link to be deleted.
+ * \param[in] info                 The key and name of the link to be deleted.
+ * \param[in] delete_record_count  The record count of the rows to select to be deleted.
  */
-void links::delete_link(link_info const& info)
+void links::delete_link(link_info const& info, const int delete_record_count )
 {
     // here I assume that the is_unique() could be misleading
     // this way we can avoid all sorts of pitfalls where someone
@@ -1023,7 +1025,7 @@ void links::delete_link(link_info const& info)
         QtCassandra::QCassandraColumnRangePredicate column_predicate;
         column_predicate.setStartColumnName(QString("%1::").arg(get_name(SNAP_NAME_LINKS_NAMESPACE)));
         column_predicate.setEndColumnName(QString("%1;").arg(get_name(SNAP_NAME_LINKS_NAMESPACE)));
-        column_predicate.setCount(1000);
+        column_predicate.setCount(delete_record_count);
         column_predicate.setIndex(); // behave like an index
         for(;;)
         {

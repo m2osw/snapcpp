@@ -190,7 +190,7 @@ public:
 private:
     friend class links;
 
-    link_context(::snap::snap_child *snap, link_info const& info);
+    link_context(::snap::snap_child *snap, link_info const& info, const int count);
 
     zpsnap_child_t                                  f_snap;
     link_info                                       f_info;
@@ -216,10 +216,10 @@ public:
 
     // TBD should those be events? (or create events?)
     void                create_link(link_info const& src, link_info const& dst);
-    void                delete_link(link_info const& info);
+    void                delete_link(link_info const& info, const int delete_record_count = 1000 );
     void                delete_this_link(link_info const& source, link_info const& destination);
 
-    QSharedPointer<link_context> new_link_context(link_info const& info);
+    QSharedPointer<link_context> new_link_context(link_info const& info, const int count = 1000 );
 
 private:
     void                initial_update(int64_t variables_timestamp);
