@@ -1654,37 +1654,58 @@ void sendmail::on_backend_action(const QString& action)
 {
     static_cast<void>(action);
 
-    QSharedPointer<udp_client_server::udp_server> udp_signals(f_snap->udp_get_server("sendmail_udp_signal"));
-    char const *stop(get_name(SNAP_NAME_SENDMAIL_STOP));
-    for(;;)
+    try
     {
-        // immediately process emails that are in the database and
-        // are ready to go (i.e. their time is in the past or now)
-        process_emails();
-        run_emails();
-        char buf[256];
-        int const r(udp_signals->timed_recv(buf, sizeof(buf), 5 * 60 * 1000)); // wait for up to 5 minutes (x 60 seconds)
-        if(r != -1 || errno != EAGAIN)
+        QSharedPointer<udp_client_server::udp_server> udp_signals(f_snap->udp_get_server("sendmail_udp_signal"));
+        char const *stop(get_name(SNAP_NAME_SENDMAIL_STOP));
+        for(;;)
         {
-            if(r < 1 || r >= static_cast<int>(sizeof(buf) - 1))
+            // immediately process emails that are in the database and
+            // are ready to go (i.e. their time is in the past or now)
+            process_emails();
+            run_emails();
+            char buf[256];
+            int const r(udp_signals->timed_recv(buf, sizeof(buf), 5 * 60 * 1000)); // wait for up to 5 minutes (x 60 seconds)
+            if(r != -1 || errno != EAGAIN)
             {
-                perror("udp_signals->timed_recv():");
-                SNAP_LOG_FATAL() << "error: an error occured in the UDP recv() call, returned size: " << r;
-                exit(1);
+                if(r < 1 || r >= static_cast<int>(sizeof(buf) - 1))
+                {
+                    perror("udp_signals->timed_recv():");
+                    SNAP_LOG_FATAL() << "error: an error occured in the UDP recv() call, returned size: " << r;
+                    exit(1);
+                }
+                buf[r] = '\0';
+                if(strcmp(buf, stop) == 0)
+                {
+                    // clean STOP
+                    return;
+                }
+                // should we check that we really received a PING?
+                //const char *ping(get_name(SNAP_NAME_SENDMAIL_PING));
+                //if(strcmp(buf, ping) != 0)
+                //{
+                //    continue
+                //}
             }
-            buf[r] = '\0';
-            if(strcmp(buf, stop) == 0)
-            {
-                // clean STOP
-                return;
-            }
-            // should we check that we really received a PING?
-            //const char *ping(get_name(SNAP_NAME_SENDMAIL_PING));
-            //if(strcmp(buf, ping) != 0)
-            //{
-            //    continue
-            //}
         }
+    }
+    catch( snap_exception const& except )
+    {
+        SNAP_LOG_FATAL("sendmail::on_backend_action(): exception caught: ")(except.what());
+        exit(1);
+        NOTREACHED();
+    }
+    catch( std::exception const& std_except )
+    {
+        SNAP_LOG_FATAL("sendmail::on_backend_action(): exception caught: ")(std_except.what())(" (there are mainly two kinds of exceptions happening here: Snap logic errors and Cassandra exceptions that are thrown by thrift)");
+        exit(1);
+        NOTREACHED();
+    }
+    catch( ... )
+    {
+        SNAP_LOG_FATAL("sendmail::on_backend_action(): unknown exception caught!");
+        exit(1);
+        NOTREACHED();
     }
 }
 
