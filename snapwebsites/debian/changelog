@@ -1,3 +1,9 @@
+snapwebsites (0.1.24~saucyubuntu1) UNRELEASED; urgency=low
+
+  *  Fixed the sendmail-content.xml file.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Tue, 04 Mar 2014 16:35:35 -0800
+
 snapwebsites (0.1.24~saucy) saucy; urgency=high
 
   [ Alexis Wilke ]
@@ -5,7 +11,7 @@ snapwebsites (0.1.24~saucy) saucy; urgency=high
     theme that looks a little more than pure HTML.
   * Fixed the HTML only emails problem.
   * Finished up an early version of the save and publish capabilities from a
-  draft.
+    draft.
 
   [ R. Douglas Barbieri ]
   * Using QPointer instead of std::shared_ptr for QCoreApplication object.
