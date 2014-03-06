@@ -132,6 +132,28 @@ public:
     static const sessions::sessions::session_info::session_id_t USERS_SESSION_ID_PASSWORD = 13;                 // password-form.xml
     static const sessions::sessions::session_info::session_id_t USERS_SESSION_ID_VERIFY_CREDENTIALS = 14;       // verify-credentials-form.xml
 
+    class user_logged_info_t
+    {
+    public:
+        content::path_info_t&   user_ipath() { return f_user_ipath; }
+
+        void                    set_identifier(int64_t identifier) { f_identifier = identifier; }
+        int64_t                 get_identifier() const { return f_identifier; }
+
+        void                    set_email(QString const& email) { f_email = email; }
+        QString                 get_email() const { return f_email; }
+
+        // f_uri is mutable so we can change it from anywhere
+        void                    set_uri(QString const& uri) const { f_uri = uri; }
+        QString                 get_uri() const { return f_uri; }
+
+    private:
+        mutable content::path_info_t    f_user_ipath;
+        QString                         f_email;
+        controlled_vars::zint64_t       f_identifier;
+        mutable QString                 f_uri;
+    };
+
                             users();
     virtual                 ~users();
 
@@ -158,6 +180,8 @@ public:
     void                    on_cell_is_secure(QString const& table, QString const& row, QString const& cell, server::secure_field_flag_t& secure);
 
     virtual void            on_process_form_post(content::path_info_t& ipath, sessions::sessions::session_info const& session_info);
+
+    SNAP_SIGNAL(user_logged_in, (user_logged_info_t& logged_info), (logged_info));
 
     QString                 get_user_cookie_name();
     QString                 get_user_key() const;

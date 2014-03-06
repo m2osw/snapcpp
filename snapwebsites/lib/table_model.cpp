@@ -48,7 +48,7 @@ void table_model::setTable( QCassandraTable::pointer_t t )
     {
         f_rowp.setStartRowName("");
         f_rowp.setEndRowName("");
-        f_rowp.setCount(f_rowCount); // 100 is the default
+        f_rowp.setCount(f_rowCount); // 1000 is the default for now
         f_rowsRemaining = f_table->readRows( f_rowp );
         f_pos = 0;
     }
@@ -69,7 +69,7 @@ void table_model::fetchMore(const QModelIndex & /* index */)
 
     try
     {
-        f_table->clearCache();
+        //f_table->clearCache();
         f_rowsRemaining = f_table->readRows( f_rowp );
 
         const int itemsToFetch( qMin(f_rowCount, f_rowsRemaining) );

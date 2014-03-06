@@ -5797,7 +5797,7 @@ void content::on_save_content()
                     if(use_new_revision || row_key.isEmpty())
                     {
                         // the revision does not exist yet, create it
-                        snap_version::version_number_t revision_number(get_new_revision(d->f_path, get_plugin_name(), snap_version::SPECIAL_VERSION_SYSTEM_BRANCH, locale, true));
+                        snap_version::version_number_t revision_number(get_new_revision(d->f_path, get_plugin_name(), snap_version::SPECIAL_VERSION_SYSTEM_BRANCH, locale, false));
                         set_current_revision(d->f_path, get_plugin_name(), snap_version::SPECIAL_VERSION_SYSTEM_BRANCH, revision_number, locale, false);
                         set_current_revision(d->f_path, get_plugin_name(), snap_version::SPECIAL_VERSION_SYSTEM_BRANCH, revision_number, locale, true);
                         set_revision_key(d->f_path, get_plugin_name(), snap_version::SPECIAL_VERSION_SYSTEM_BRANCH, revision_number, locale, false);

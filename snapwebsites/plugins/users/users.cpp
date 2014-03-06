@@ -81,7 +81,8 @@ BOOST_STATIC_ASSERT((COOKIE_NAME_SIZE % 3) == 0);
  */
 const char *get_name(name_t name)
 {
-    switch(name) {
+    switch(name)
+    {
     case SNAP_NAME_USERS_ANONYMOUS_PATH:
         return "user";
 
@@ -1680,13 +1681,13 @@ void users::process_login_form(login_mode_t login_mode)
             }
             NOTREACHED();
         }
-        int64_t const identifier(user_identifier.int64Value());
-        content::path_info_t user_ipath;
-        user_ipath.set_path(QString("%1/%2").arg(get_name(SNAP_NAME_USERS_PATH)).arg(identifier));
+        user_logged_info_t logged_info;
+        logged_info.set_identifier(user_identifier.int64Value());
+        logged_info.user_ipath().set_path(QString("%1/%2").arg(get_name(SNAP_NAME_USERS_PATH)).arg(logged_info.get_identifier()));
 
         // before we actually log the user in we must make sure he's
         // not currently blocked or not yet active
-        links::link_info user_status_info(get_name(SNAP_NAME_USERS_STATUS), true, user_ipath.get_key(), user_ipath.get_branch());
+        links::link_info user_status_info(get_name(SNAP_NAME_USERS_STATUS), true, logged_info.user_ipath().get_key(), logged_info.user_ipath().get_branch());
         QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(user_status_info));
         links::link_info status_info;
         bool force_redirect_password_change(false);
@@ -1795,28 +1796,33 @@ void users::process_login_form(login_mode_t login_mode)
                 value.setStringValue(f_snap->snapenv("REMOTE_ADDR"));
                 row->cell(get_name(SNAP_NAME_USERS_LOGIN_IP))->setValue(value);
 
+                // Tell all the other plugins that the user is now logged in
+                // you may specify a URI to where the user should be sent on
+                // log in, used in the redirect below, although we will go
+                // to user/password whatever the path is specified here
+                logged_info.set_email(key);
+                user_logged_in(logged_info);
+
                 if(force_redirect_password_change)
                 {
-                    f_snap->page_redirect("user/password", snap_child::HTTP_CODE_SEE_OTHER);
+                    // this URI has priority over other plugins URIs
+                    logged_info.set_uri("user/password");
                 }
-                else
+                else if(logged_info.get_uri().isEmpty())
                 {
                     // here we detach from the session since we want to
                     // redirect only once to that page
-                    QString referrer(sessions::sessions::instance()->detach_from_session(*f_info, get_name(SNAP_NAME_USERS_LOGIN_REFERRER)));
-                    if(referrer.isEmpty())
+                    logged_info.set_uri(sessions::sessions::instance()->detach_from_session(*f_info, get_name(SNAP_NAME_USERS_LOGIN_REFERRER)));
+                    if(logged_info.get_uri().isEmpty())
                     {
                         // User is now logged in, redirect him to his profile
                         //
                         // TODO: the admin needs to be able to change that
                         //       default redirect
-                        f_snap->page_redirect("user/me", snap_child::HTTP_CODE_SEE_OTHER);
-                    }
-                    else
-                    {
-                        f_snap->page_redirect(referrer, snap_child::HTTP_CODE_SEE_OTHER);
+                        logged_info.set_uri("user/me");
                     }
                 }
+                f_snap->page_redirect(logged_info.get_uri(), snap_child::HTTP_CODE_SEE_OTHER);
                 NOTREACHED();
             }
             else
@@ -1856,6 +1862,40 @@ void users::process_login_form(login_mode_t login_mode)
         details,
         false // should this one be true?
     );
+}
+
+
+/** \brief Tell plugins that the user is now logged in.
+ *
+ * This signal is used to tell plugins that the user is now logged in.
+ * Note that this signal only happens at the time the user logs in, not
+ * each time the user accesses the server.
+ *
+ * In most cases the plugins are expected to check one thing or another that
+ * may be important for that user and act accordingly. If the result is that
+ * the user should be sent to a specific page, then the plugin can set the
+ * f_uri parameter of the logged_in parameter to that page URI.
+ *
+ * Note that if multiple plugins want to redirect the user, then which URI
+ * should be used is not defined. We may later do a 303 where the system lets
+ * the user choose which page to go to. At this time, the last plugin that
+ * sets the URI has priority. Note that of course a plugin can decide not
+ * to change the URI if it is already set.
+ *
+ * \note
+ * It is important to remind you that if the system has to send the user to
+ * change his password, it will do so, whether a plugin sets another URI
+ * or not.
+ *
+ * \param[in] logged_info  The user login information.
+ *
+ * \return true if the signal is to be propagated.
+ */
+bool users::user_logged_in_impl(user_logged_info_t& logged_info)
+{
+    static_cast<void>(logged_info);
+
+    return true;
 }
 
 
@@ -2691,7 +2731,7 @@ bool users::register_user(const QString& email, const QString& password)
     // Now create the user in the contents
     // (nothing else should be create at the path until now)
     QString user_path(get_name(SNAP_NAME_USERS_PATH));
-    const QString site_key(f_snap->get_site_key_with_slash());
+    QString const site_key(f_snap->get_site_key_with_slash());
     content::path_info_t user_ipath;
     user_ipath.set_path(QString("%1/%2").arg(user_path).arg(identifier));
     content::content *content_plugin(content::content::instance());

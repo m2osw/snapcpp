@@ -32,7 +32,7 @@ class table_model
     Q_OBJECT
 
     public:
-        table_model() : f_rowCount(100), f_rowsRemaining(0), f_pos(0) {}
+        table_model() : f_rowCount(1000), f_rowsRemaining(0), f_pos(0) {}
 
         QtCassandra::QCassandraTable::pointer_t getTable() const;
         void setTable( QtCassandra::QCassandraTable::pointer_t t );
