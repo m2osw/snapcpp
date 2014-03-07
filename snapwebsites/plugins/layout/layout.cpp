@@ -375,14 +375,19 @@ QString layout::apply_layout(content::path_info_t& ipath, layout_content *conten
 {
     // First generate the body content (a large XML document)
     QString layout_name;
-    QString const layout_xsl(define_layout(ipath, layout_name));
+    QString xsl(define_layout(ipath, get_name(SNAP_NAME_LAYOUT_LAYOUT), get_name(SNAP_NAME_LAYOUT_BODY_XSL), ":/xsl/layout/default-body-parser.xsl", layout_name));
+
+    // check whether the layout was defined in this website database
+    // (note: this was in the define_layout() which now gets called twice...)
+    install_layout(layout_name, 0);
+
     QDomDocument doc(create_document(ipath, dynamic_cast<plugin *>(content_plugin)));
-    create_body(doc, ipath, layout_xsl, content_plugin, ctemplate, true, layout_name);
+    create_body(doc, ipath, xsl, content_plugin, ctemplate, true, layout_name);
 
     // Then apply a theme to it
-    QString const theme_xsl(define_theme(ipath));
+    xsl = define_layout(ipath, get_name(SNAP_NAME_LAYOUT_THEME), get_name(SNAP_NAME_LAYOUT_THEME_XSL), ":/xsl/layout/default-theme-parser.xsl", layout_name);
     // HTML5 DOCTYPE is just "html" as follow
-    return "<!DOCTYPE html>" + apply_theme(doc, theme_xsl);
+    return "<!DOCTYPE html>" + apply_theme(doc, xsl);
 }
 
 
@@ -391,35 +396,79 @@ QString layout::apply_layout(content::path_info_t& ipath, layout_content *conten
  * This function determines the layout XSL code and name given a content
  * info path.
  *
- * \param[in] ipath  The canonicalized path of content to be laid out.
+ * The \p name parameter defines the field to be used. By default it is
+ * expected to be set to layout::layout or layout::theme, but other names
+ * could be used. The default names come from SNAP_NAME_LAYOUT_LAYOUT and
+ * SNAP_NAME_LAYOUT_THEME names.
+ *
+ * The \p key parameter is the name of the cell to load from the layout
+ * table if the name parameter is something else than "default". Note that
+ * the key can be overwritten if the name returns a theme name and a key
+ * name separated by a slash. For example, we could have:
+ *
+ * \code
+ * "bare/blog"
+ * \endcode
+ *
+ * which could be used to display the blog page when the user visits one
+ * of those pages. Note that this name must match one to one to what is
+ * saved in the layout table (cell name to be loaded.) It cannot include
+ * a colon.
+ *
+ * \param[in,out] ipath  The canonicalized path of content to be laid out.
+ * \param[in] name  The name of the field to user to retrieve the layout name
+ *                  from the database (expects layout::layout or layout::theme)
+ * \param[in] key  The key of the cell to load the XSL from.
  * \param[out] layout_name  A QString to hold the resulting layout name.
  *
  * \return The XSL code in a string.
  */
-QString layout::define_layout(content::path_info_t& ipath, QString& layout_name)
+QString layout::define_layout(content::path_info_t& ipath, QString const& name, QString const& key, QString const& default_filename, QString& layout_name)
 {
-    // Retrieve the theme and layout for this path
+    // result variable
+    QString xsl;
+
+    // Retrieve the name of the layout for this path
     // XXX should the ctemplate ever be used to retrieve the layout?
-    layout_name = get_layout(ipath, get_name(SNAP_NAME_LAYOUT_LAYOUT));
+    layout_name = get_layout(ipath, name);
 
 //SNAP_LOG_TRACE() << "Got theme / layout name = [" << layout_name << "] (key=" << ipath.get_key() << ")";
 
-// TODO: fix the default layout selection!?
-//       until we can get the theme system working right...
-//       actually the theme system works, but we need to have something
-//       to allow us to select said theme
-//       we now have some for of selector using the snaplayout tool
-//       (see the --set-theme command line option)
-//layout_name = "bare";
-
-    // now we want to transform the XML to HTML or some other format
-    QString xsl;
+    // If layout_name is not default, attempt to obtain the selected
+    // theme from the layout table.
+    //
     if(layout_name != "default")
     {
+        // the layout name may have two entries: "row/cell" so we check
+        // that first and cut the name in half if required
+        QStringList const names(layout_name.split("/"));
+        if(names.size() > 2)
+        {
+            // can be one or two workds, no more
+            f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR,
+                    "Layout Unavailable",
+                    "Somehow no website layout was accessible.",
+                    QString("layout::define_layout() found more than one '/' in \"%1\".").arg(layout_name));
+            NOTREACHED();
+        }
+        layout_name = names[0];
+        QString const cell_name(names.size() >= 2 ? names[1] : key);
+        if(cell_name == "content"
+        || cell_name == "style"
+        || cell_name.contains(':'))
+        {
+            // this is just to try to avoid some security issues
+            f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR,
+                    "Layout Unavailable",
+                    QString("The name \"%1\" used as the layout cell is not acceptable.").arg(cell_name),
+                    "layout::define_layout() found an illegal cell name.");
+            NOTREACHED();
+        }
+
         // try to load the layout from the database, if not found
         // we'll switch to the default layout instead
         QtCassandra::QCassandraTable::pointer_t layout_table(get_layout_table());
-        QtCassandra::QCassandraValue layout_value(layout_table->row(layout_name)->cell(get_name(SNAP_NAME_LAYOUT_BODY_XSL))->value());
+        QtCassandra::QCassandraValue const layout_value(layout_table->row(layout_name)->cell(cell_name)->value());
         if(layout_value.nullValue())
         {
             // note that a layout cannot be empty so the test is correct
@@ -430,9 +479,14 @@ QString layout::define_layout(content::path_info_t& ipath, QString& layout_name)
             xsl = layout_value.stringValue();
         }
     }
+
+    // Fallback to the default theme if none was set properly above.
+    //
     if(layout_name == "default")
     {
-        QFile file(":/xsl/layout/default-body-parser.xsl");
+        // Grab the XSL from the Qt4 compiled-in resources.
+        //
+        QFile file(default_filename);
         if(!file.open(QIODevice::ReadOnly))
         {
             f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR,
@@ -441,7 +495,7 @@ QString layout::define_layout(content::path_info_t& ipath, QString& layout_name)
                     "layout::define_layout() could not open default-body-parser.xsl resource file.");
             NOTREACHED();
         }
-        QByteArray data(file.readAll());
+        QByteArray const data(file.readAll());
         if(data.size() == 0)
         {
             f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR,
@@ -456,9 +510,6 @@ QString layout::define_layout(content::path_info_t& ipath, QString& layout_name)
     // replace <xsl:include ...> with other XSTL files (should be done
     // by the parser, but Qt's parser doesn't support it yet)
     replace_includes(xsl);
-
-    // check whether the layout was defined in this website database
-    install_layout(layout_name, 0);
 
     return xsl;
 }
@@ -792,7 +843,7 @@ void layout::generate_boxes(content::path_info_t& ipath, QString const& layout_n
                             filter_box.setAttribute("path", box_ipath.get_cpath()); // not the full key
                             filter_box.setAttribute("owner", box_plugin->get_plugin_name());
                             dom_boxes[i].appendChild(filter_box);
-    //SNAP_LOG_TRACE() << "handle box for " << box_plugin->get_plugin_name();
+//SNAP_LOG_TRACE() << "handle box for " << box_plugin->get_plugin_name();
                             lb->on_generate_boxes_content(ipath, box_ipath, page, filter_box, "");
                         }
                         else
@@ -802,7 +853,7 @@ void layout::generate_boxes(content::path_info_t& ipath, QString const& layout_n
                             f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR,
                                     "Plugin Missing",
                                     "Plugin \"" + box_plugin->get_plugin_name() + "\" does not know how to handle a box assigned to it.",
-                                    "layout::create_body() the plugin does not derive from layout::layout_boxes.");
+                                    "layout::generate_boxes() the plugin does not derive from layout::layout_boxes.");
                             NOTREACHED();
                         }
                     }
@@ -863,62 +914,62 @@ QString layout::apply_theme(QDomDocument doc, QString const& xsl)
  *
  * \return The XSL data of the theme for this page.
  */
-QString layout::define_theme(content::path_info_t& ipath)
-{
-    QString xsl;
-
-    QString theme_name( get_layout(ipath, get_name(SNAP_NAME_LAYOUT_THEME)) );
-
-    // If theme_name is not default, attempt to obtain the
-    // selected theme from the layout table.
-    //
-    if( theme_name != "default" )
-    {
-        // try to load the layout from the database, if not found
-        // we'll switch to the default layout instead
-        QtCassandra::QCassandraTable::pointer_t layout_table(get_layout_table());
-        QtCassandra::QCassandraValue theme_value(layout_table->row(theme_name)->cell(get_name(SNAP_NAME_LAYOUT_THEME_XSL))->value());
-        if(theme_value.nullValue())
-        {
-            // If no theme selected, then default to the "default" theme."
-            //
-            // note: a layout cannot be empty so the test is correct
-            //
-            theme_name = "default";
-        }
-        else
-        {
-            // Use the selected theme.
-            //
-            xsl = theme_value.stringValue();
-        }
-    }
-
-    // Fallback to the default theme if none was set properly above.
-    //
-    if( theme_name == "default" )
-    {
-        // Grab the XSL from the Qt4 compiled-in resources.
-        //
-        QFile file(":/xsl/layout/default-theme-parser.xsl");
-        if(!file.open(QIODevice::ReadOnly))
-        {
-            f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR,
-                "Layout Unavailable",
-                "Somehow no website layout was accessible, not even the internal default.",
-                "layout::define_theme() could not open default-theme-parser.xsl resource file.");
-            NOTREACHED();
-        }
-        QByteArray data(file.readAll());
-        xsl = QString::fromUtf8(data.data(), data.size());
-    }
-
-    // replace <xsl:include ...> with other XSTL files (should be done
-    // by the parser, but Qt's parser doesn't support it yet)
-    replace_includes(xsl);
-
-    return xsl;
-}
+//QString layout::define_theme(content::path_info_t& ipath)
+//{
+//    QString xsl;
+//
+//    QString theme_name( get_layout(ipath, get_name(SNAP_NAME_LAYOUT_THEME)) );
+//
+//    // If theme_name is not default, attempt to obtain the
+//    // selected theme from the layout table.
+//    //
+//    if( theme_name != "default" )
+//    {
+//        // try to load the layout from the database, if not found
+//        // we'll switch to the default layout instead
+//        QtCassandra::QCassandraTable::pointer_t layout_table(get_layout_table());
+//        QtCassandra::QCassandraValue theme_value(layout_table->row(theme_name)->cell(get_name(SNAP_NAME_LAYOUT_THEME_XSL))->value());
+//        if(theme_value.nullValue())
+//        {
+//            // If no theme selected, then default to the "default" theme."
+//            //
+//            // note: a layout cannot be empty so the test is correct
+//            //
+//            theme_name = "default";
+//        }
+//        else
+//        {
+//            // Use the selected theme.
+//            //
+//            xsl = theme_value.stringValue();
+//        }
+//    }
+//
+//    // Fallback to the default theme if none was set properly above.
+//    //
+//    if( theme_name == "default" )
+//    {
+//        // Grab the XSL from the Qt4 compiled-in resources.
+//        //
+//        QFile file(":/xsl/layout/default-theme-parser.xsl");
+//        if(!file.open(QIODevice::ReadOnly))
+//        {
+//            f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR,
+//                "Layout Unavailable",
+//                "Somehow no website layout was accessible, not even the internal default.",
+//                "layout::define_theme() could not open default-theme-parser.xsl resource file.");
+//            NOTREACHED();
+//        }
+//        QByteArray data(file.readAll());
+//        xsl = QString::fromUtf8(data.data(), data.size());
+//    }
+//
+//    // replace <xsl:include ...> with other XSTL files (should be done
+//    // by the parser, but Qt's parser doesn't support it yet)
+//    replace_includes(xsl);
+//
+//    return xsl;
+//}
 
 
 /** \brief Search the XSLT document and replace include/import tags.
@@ -1377,6 +1428,71 @@ void layout::on_load_file(snap_child::post_file_t& file, bool& found)
 }
 
 
+/** \brief Add a layout from a set of resource files.
+ *
+ * This function is used to create a layout in the layout table using a
+ * set of resource files:
+ *
+ * \code
+ * :/xsl/layout/%1-body-parser.xsl        body
+ * :/xsl/layout/%1-theme-parser.xsl       theme
+ * :/xsl/layout/%1-content.xml            content
+ * \endcode
+ *
+ * The update date is set to start_date().
+ *
+ * \param[in] name  The name of the layout. In most cases it will be the
+ *                  same as the name of your plugin.
+ */
+void layout::add_layout_from_resources(QString const& name)
+{
+    QtCassandra::QCassandraTable::pointer_t layout_table(layout::layout::instance()->get_layout_table());
+
+    {
+        QFile file(QString(":/xsl/layout/%1-body-parser.xsl").arg(name));
+        if(!file.open(QIODevice::ReadOnly))
+        {
+            f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR,
+                    "Sendmail Body Layout Unavailable",
+                    "Could not read \":/xsl/layout/sendmail-body-parser.xsl\" from the Qt resources.",
+                    "sendmail::content_update() could not open sendmail-body-parser.xsl resource file.");
+            NOTREACHED();
+        }
+        QByteArray data(file.readAll());
+        layout_table->row(name)->cell(get_name(SNAP_NAME_LAYOUT_BODY_XSL))->setValue(data);
+    }
+
+    {
+        QFile file(QString(":/xsl/layout/%1-theme-parser.xsl").arg(name));
+        if(!file.open(QIODevice::ReadOnly))
+        {
+            f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR,
+                    "Sendmail Theme Layout Unavailable",
+                    "Could not read sendmail-theme-parser.xsl from the Qt resources.",
+                    "sendmail::content_update() could not open \":/xsl/layout/sendmail-theme-parser.xsl\" resource file.");
+            NOTREACHED();
+        }
+        QByteArray data(file.readAll());
+        layout_table->row(name)->cell(get_name(SNAP_NAME_LAYOUT_THEME_XSL))->setValue(data);
+    }
+
+    {
+        QFile file(QString(":/xml/layout/%1-content.xml").arg(name));
+        if(!file.open(QIODevice::ReadOnly))
+        {
+            f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR,
+                    "Sendmail Theme Content Unavailable",
+                    "Could not read content.xml from the Qt resources.",
+                    "sendmail::content_update() could not open \":/xml/layout/content.xml\" resource file.");
+            NOTREACHED();
+        }
+        QByteArray data(file.readAll());
+        layout_table->row(name)->cell(get_name(SNAP_NAME_LAYOUT_CONTENT))->setValue(data);
+    }
+
+    int64_t updated(f_snap->get_start_date());
+    layout_table->row(name)->cell(snap::get_name(SNAP_NAME_CORE_LAST_UPDATED))->setValue(updated);
+}
 
 
 // This was to test, at this point we don't offer anything in the layout itself

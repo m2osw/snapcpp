@@ -235,7 +235,7 @@ void editor::on_generate_header_content(content::path_info_t& ipath, QDomElement
             info.set_user_agent(f_snap->snapenv(snap::get_name(SNAP_NAME_CORE_HTTP_USER_AGENT)));
             info.set_time_to_live(86400);  // 24 hours
             QString const session(sessions::sessions::instance()->create_session(info));
-            int32_t random(info.get_session_random());
+            int32_t const random(info.get_session_random());
 
             QDomElement session_tag(doc.createElement("session"));
             editor_tag.appendChild(session_tag);
@@ -559,6 +559,14 @@ void editor::on_process_post(QString const& uri_path)
 
     // [0] -- session Id, [1] -- random number
     QStringList const session_data(editor_full_session.split("/"));
+    if(session_data.size() != 2)
+    {
+        // should never happen on a valid user
+        f_snap->die(snap_child::HTTP_CODE_NOT_ACCEPTABLE, "Not Acceptable",
+                "The session identification is not valid.",
+                QString("User gave us an unknown session identifier (%1).").arg(editor_full_session));
+        NOTREACHED();
+    }
 
     messages::messages *messages(messages::messages::instance());
 

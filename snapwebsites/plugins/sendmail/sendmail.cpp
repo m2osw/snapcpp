@@ -54,9 +54,10 @@ SNAP_PLUGIN_START(sendmail, 1, 0)
  *
  * \return A pointer to the name.
  */
-const char *get_name(name_t name)
+char const *get_name(name_t name)
 {
-    switch(name) {
+    switch(name)
+    {
     case SNAP_NAME_SENDMAIL:
         return "sendmail";
 
@@ -178,8 +179,10 @@ const char *get_name(name_t name)
  * email will fail.
  */
 sendmail::email::email_attachment::email_attachment()
-    //: f_header()
-    //, f_data()
+    //: f_header() -- auto-init
+    //, f_data() -- auto-init
+    //, f_is_sub_attachment(false) -- auto-init
+    //, f_sub_attachments() -- auto-init
 {
 }
 
@@ -1370,53 +1373,7 @@ void sendmail::content_update(int64_t variables_timestamp)
     static_cast<void>(variables_timestamp);
     content::content::instance()->add_xml(get_plugin_name());
 
-    QtCassandra::QCassandraTable::pointer_t layout_table(layout::layout::instance()->get_layout_table());
-    char const *sendmail_layout(get_name(SNAP_NAME_SENDMAIL_LAYOUT_NAME));
-
-    {
-        QFile file(":/xsl/layout/sendmail-body-parser.xsl");
-        if(!file.open(QIODevice::ReadOnly))
-        {
-            f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR,
-                    "Sendmail Body Layout Unavailable",
-                    "Could not read \":/xsl/layout/sendmail-body-parser.xsl\" from the Qt resources.",
-                    "sendmail::content_update() could not open sendmail-body-parser.xsl resource file.");
-            NOTREACHED();
-        }
-        QByteArray data(file.readAll());
-        layout_table->row(sendmail_layout)->cell(layout::get_name(layout::SNAP_NAME_LAYOUT_BODY_XSL))->setValue(data);
-    }
-
-    {
-        QFile file(":/xsl/layout/sendmail-theme-parser.xsl");
-        if(!file.open(QIODevice::ReadOnly))
-        {
-            f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR,
-                    "Sendmail Theme Layout Unavailable",
-                    "Could not read sendmail-theme-parser.xsl from the Qt resources.",
-                    "sendmail::content_update() could not open \":/xsl/layout/sendmail-theme-parser.xsl\" resource file.");
-            NOTREACHED();
-        }
-        QByteArray data(file.readAll());
-        layout_table->row(sendmail_layout)->cell(layout::get_name(layout::SNAP_NAME_LAYOUT_THEME_XSL))->setValue(data);
-    }
-
-    {
-        QFile file(":/xml/layout/sendmail-content.xml");
-        if(!file.open(QIODevice::ReadOnly))
-        {
-            f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR,
-                    "Sendmail Theme Content Unavailable",
-                    "Could not read content.xml from the Qt resources.",
-                    "sendmail::content_update() could not open \":/xml/layout/content.xml\" resource file.");
-            NOTREACHED();
-        }
-        QByteArray data(file.readAll());
-        layout_table->row(sendmail_layout)->cell(layout::get_name(layout::SNAP_NAME_LAYOUT_CONTENT))->setValue(data);
-    }
-
-    int64_t updated(f_snap->get_start_date());
-    layout_table->row(sendmail_layout)->cell(snap::get_name(SNAP_NAME_CORE_LAST_UPDATED))->setValue(updated);
+    layout::layout::instance()->add_layout_from_resources(get_name(SNAP_NAME_SENDMAIL_LAYOUT_NAME));
 }
 
 

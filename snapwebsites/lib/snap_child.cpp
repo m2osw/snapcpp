@@ -6148,7 +6148,7 @@ QString snap_child::get_unique_number()
         }
         // close the file now; we do not want to hold the file for too long
     }
-    return f_server->get_parameter("server_name") + "-" + QString("%1").arg(c);
+    return QString("%1-%2").arg(f_server->get_parameter("server_name")).arg(c);
 }
 
 /** \brief Initialize the plugins.
