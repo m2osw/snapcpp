@@ -1,6 +1,6 @@
 /*
  * Name: editor
- * Version: 0.0.1.45
+ * Version: 0.0.1.52
  * Browsers: all
  * Copyright: Copyright 2013-2014 (c) Made to Order Software Corporation  All rights reverved.
  * License: GPL 2.0
@@ -938,8 +938,6 @@ console.log("command "+idx+" "+this.toolbarButtons[idx][2]+"!!!");
         jQuery(html).appendTo("body");
         this._toolbar = jQuery("#toolbar");
 
-        // TODO: a click on the toolbar in a location that is not a button
-        //       loses the active element selection
         this._toolbar.click(function(e){snapwebsites.EditorInstance._refocus();e.preventDefault();});
         this._toolbar.mousedown(function(e){snapwebsites.EditorInstance._cancel_toolbar_hide();e.preventDefault();});
     },
@@ -967,26 +965,36 @@ console.log("command "+idx+" "+this.toolbarButtons[idx][2]+"!!!");
 
     _attach: function()
     {
+        var snap_editor, immediate;
+
         if(jQuery("body").hasClass("snap-editor-initialized"))
         {
             return;
         }
         jQuery("body").addClass("snap-editor-initialized");
 
-        jQuery("<div class='editor-tooltip'><a class='activate-editor' href='#'>Edit</a></div>").prependTo(".snap-editor");
-        jQuery(".snap-editor").children(".editor-tooltip").children(".activate-editor").click(function(){
+        // user has to click Edit to activate the editor
+        snap_editor = jQuery(".snap-editor");
+        jQuery("<div class='editor-tooltip'><a class='activate-editor' href='#'>Edit</a></div>").prependTo(".snap-editor:not(.immediate)");
+        snap_editor.filter(":not(.immediate)").children(".editor-tooltip").children(".activate-editor").click(function(){
             jQuery(this).parent().parent().mouseleave().off("mouseenter mouseleave")
                     .children(".editor-content").attr("contenteditable", "true").focus();
         });
-
-        jQuery(".snap-editor")
+        // this adds the mouseenter and mouseleave events
+        snap_editor.filter(":not(.immediate)")
             .hover(function(){// in
                 jQuery(this).children(".editor-tooltip").fadeIn(150);
             },function(){// out
                 jQuery(this).children(".editor-tooltip").fadeOut(150);
             });
 
-        jQuery(".snap-editor .editor-content")
+        // editor is immediately made available
+        immediate = snap_editor.filter(".immediate");
+        immediate.children(".editor-content").attr("contenteditable", "true");
+        immediate.filter(".auto-focus").children(".editor-content").focus();
+
+        snap_editor
+            .children(".editor-content")
             .each(function(){
                 this.objId = ++snapwebsites.EditorInstance._lastId;
                 jQuery(this).attr("id", "editor-area-" + this.objId);
@@ -995,10 +1003,13 @@ console.log("command "+idx+" "+this.toolbarButtons[idx][2]+"!!!");
             })
             .focus(function(){
                 snapwebsites.EditorInstance._activeElement = this;
-                snapwebsites.EditorInstance._cancel_toolbar_hide();
-                if(snapwebsites.EditorInstance.toolbarAutoVisible)
+                if(!jQuery(this).is(".no-toolbar"))
                 {
-                    snapwebsites.EditorInstance._toggleToolbar(true);
+                    snapwebsites.EditorInstance._cancel_toolbar_hide();
+                    if(snapwebsites.EditorInstance.toolbarAutoVisible)
+                    {
+                        snapwebsites.EditorInstance._toggleToolbar(true);
+                    }
                 }
             })
             .blur(function(){
