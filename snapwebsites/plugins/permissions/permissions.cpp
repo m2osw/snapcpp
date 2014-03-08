@@ -839,7 +839,7 @@ bool permissions::get_user_rights_impl(permissions *perms, sets_t& sets)
             // unfortunately, whatever the login status, if we were not given
             // a valid user path, we just cannot test anything else than
             // some kind of visitor
-            QString user_key(sets.get_user_path());
+            QString const user_key(sets.get_user_path());
 //#ifdef DEBUG
 //std::cout << "  +-> user key = [" << user_key << "]" << std::endl;
 //#endif
@@ -854,7 +854,6 @@ bool permissions::get_user_rights_impl(permissions *perms, sets_t& sets)
             {
                 content::path_info_t user_ipath;
                 user_ipath.set_path(user_key);
-                //user_key = f_snap->get_site_key_with_slash() + user_key;
 
                 // add all the groups the user is a member of
                 QtCassandra::QCassandraTable::pointer_t content_table(content::content::instance()->get_content_table());
@@ -863,8 +862,6 @@ bool permissions::get_user_rights_impl(permissions *perms, sets_t& sets)
                     // that user is gone, this will generate a 500 by Apache
                     throw permissions_exception_invalid_path("could not access user \"" + user_ipath.get_key() + "\"");
                 }
-
-                //QtCassandra::QCassandraRow::pointer_t row(content_table->row(user_key));
 
                 // should this one NOT be offered to returning users?
                 sets.add_user_right(user_ipath.get_key());
@@ -890,7 +887,7 @@ bool permissions::get_user_rights_impl(permissions *perms, sets_t& sets)
 
                     // we can also assign permissions directly to a user so get those too
                     {
-                        QString const link_start_name(get_name(SNAP_NAME_PERMISSIONS_NAMESPACE) + ("::" + sets.get_action()));
+                        QString const link_start_name(QString("%1::%2").arg(get_name(SNAP_NAME_PERMISSIONS_NAMESPACE)).arg(sets.get_action()));
                         links::link_info info(link_start_name, false, user_ipath.get_key(), user_ipath.get_branch());
                         QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
                         links::link_info right_info;
@@ -1384,7 +1381,7 @@ void permissions::add_user_rights(QString const& group, sets_t& sets)
     // a quick check to make sure that the programmer is not directly
     // adding a right (which he should do to the sets instead of this
     // function although we instead generate an error.)
-    if(group.contains("types/permissions/rights"))
+    if(group.contains(get_name(SNAP_NAME_PERMISSIONS_RIGHTS_PATH)))
     {
         throw snap_logic_exception("you cannot add rights using add_user_rights(), for those just use sets.add_user_right() directly");
     }
@@ -1527,7 +1524,7 @@ void permissions::recursive_add_plugin_permissions(QString const& plugin_name, Q
         while(link_ctxt->next_link(right_info))
         {
             // an author is attached to this page
-            const QString child_key(right_info.key());
+            QString const child_key(right_info.key());
             recursive_add_plugin_permissions(plugin_name, child_key, sets);
         }
     }

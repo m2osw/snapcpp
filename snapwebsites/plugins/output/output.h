@@ -68,8 +68,8 @@ public:
 
     void                on_bootstrap(snap_child *snap);
     virtual bool        on_path_execute(content::path_info_t& ipath);
-    virtual void        on_generate_main_content(content::path_info_t& path, QDomElement& page, QDomElement& body, QString const& ctemplate);
-    void                on_generate_page_content(content::path_info_t& path, QDomElement& page, QDomElement& body, QString const& ctemplate);
+    virtual void        on_generate_main_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate);
+    void                on_generate_page_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate);
 
     // dynamic javascript property support
     virtual int         js_property_count() const;
