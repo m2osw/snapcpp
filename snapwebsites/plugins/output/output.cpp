@@ -510,7 +510,7 @@ void output::on_generate_page_content(content::path_info_t& ipath, QDomElement& 
                             .arg(errcnt).arg(errcnt == 1 ? "" : "s"));
         }
 
-        content::content::instance()->add_javascript(ipath, page.ownerDocument(), "output");
+        content::content::instance()->add_javascript(page.ownerDocument(), "output");
     }
 }
 

@@ -6194,18 +6194,15 @@ bool content::process_attachment_impl(QByteArray const& file_key, attachment_fil
  * If the script was already added, either immediately or as a dependency
  * of another script, then nothing more happens.
  *
- * \todo
- * Now that the JavaScript plugin depends on content we want to
- * move this function to that plugin.
- *
- * \param[in,out] ipath  The path receiving the javascript.
  * \param[in,out] doc  The XML document receiving the javascript.
  * \param[in] name  The name of the script.
  */
-void content::add_javascript(path_info_t& ipath, QDomDocument doc, QString const& name)
+void content::add_javascript(QDomDocument doc, QString const& name)
 {
-    // TODO: move to the javascript plugin since it now can include the
-    //       content plugin
+    // TBD: it may make sense to move to the javascript plugin since it now
+    //      can include the content plugin; the one advantage would be that
+    //      the get_name() from the JavaScript plugin would then make use
+    //      of the "local" SNAP_NAME_JAVASCRIPT_...
     if(f_added_javascripts.contains(name))
     {
         // already added, we're done
@@ -6227,13 +6224,13 @@ void content::add_javascript(path_info_t& ipath, QDomDocument doc, QString const
     // TODO: at this point I read all the entries with "name_..."
     //       we'll want to first check with the user's browser and
     //       then check with "any" as the browser name if no specific
-    //       script if found
+    //       script is found
     //
     //       Also the following loop does NOT handle dependencies in
     //       a full tree to determine what would be best; instead it
     //       makes uses of the latest and if a file does not match
     //       the whole process fails even if by not using the latest
-    //       it would have worked
+    //       would have worked
     QtCassandra::QCassandraColumnRangePredicate column_predicate;
     column_predicate.setCount(10); // small because we are really only interested by the first 1 unless marked as insecure
     column_predicate.setIndex(); // behave like an index
@@ -6368,7 +6365,7 @@ void content::add_javascript(path_info_t& ipath, QDomDocument doc, QString const
                         {
                             // TODO: add version and browser tests
                             QString const& dep_name(dep.get_name());
-                            add_javascript(ipath, doc, dep_name);
+                            add_javascript(doc, dep_name);
                         }
                         // else TBD -- we checked when saving that darn string
                         //             so failures should not happen here
@@ -6403,6 +6400,218 @@ SNAP_LOG_TRACE() << "Adding JavaScript [" << name << "] [" << ref_cell->columnNa
     f_snap->die(snap_child::HTTP_CODE_NOT_FOUND, "JavaScript Not Found",
             "JavaScript \"" + name + "\" was not found. Was it installed?",
             "The named JavaScript was not found in the \"javascripts\" row of the \"files\" table.");
+    NOTREACHED();
+}
+
+
+/** \brief Add a CSS to the page.
+ *
+ * This function adds a CSS and all of its dependencies to the page.
+ * If the CSS was already added, either immediately or as a dependency
+ * of another CSS, then nothing more happens.
+ *
+ * \param[in,out] doc  The XML document receiving the CSS.
+ * \param[in] name  The name of the script.
+ */
+void content::add_css(QDomDocument doc, QString const& name)
+{
+    if(f_added_css.contains(name))
+    {
+        // already added, we're done
+        return;
+    }
+    f_added_css[name] = true;
+
+    QtCassandra::QCassandraTable::pointer_t files_table(get_files_table());
+    if(!files_table->exists("css"))
+    {
+        // absolutely no CSS available!
+        f_snap->die(snap_child::HTTP_CODE_NOT_FOUND, "CSS Not Found",
+                "CSS \"" + name + "\" could not be read for inclusion in your HTML page.",
+                "A CSS was requested in the \"files\" table before it was inserted under /css/...");
+        NOTREACHED();
+    }
+    QtCassandra::QCassandraRow::pointer_t css_row(files_table->row("css"));
+
+    // TODO: at this point I read all the entries with "name_..."
+    //       we'll want to first check with the user's browser and
+    //       then check with "any" as the browser name if no specific
+    //       file is found
+    //
+    //       Also the following loop does NOT handle dependencies in
+    //       a full tree to determine what would be best; instead it
+    //       makes uses of the latest and if a file does not match
+    //       the whole process fails even if by not using the latest
+    //       would have worked
+    QtCassandra::QCassandraColumnRangePredicate column_predicate;
+    column_predicate.setCount(10); // small because we are really only interested by the first 1 unless marked as insecure
+    column_predicate.setIndex(); // behave like an index
+    QString const start_name(name + "_");
+    column_predicate.setStartColumnName(start_name + QtCassandra::QCassandraColumnPredicate::last_char);
+    column_predicate.setEndColumnName(start_name);
+    column_predicate.setReversed(); // read the last first
+    for(;;)
+    {
+        css_row->clearCache();
+        css_row->readCells(column_predicate);
+        const QtCassandra::QCassandraCells& cells(css_row->cells());
+        if(cells.isEmpty())
+        {
+            break;
+        }
+        // handle one batch
+        for(QtCassandra::QCassandraCells::const_iterator c(cells.begin());
+                c != cells.end();
+                ++c)
+        {
+            // get the email from the database
+            // we expect empty values once in a while because a dropCell() is
+            // not exactly instantaneous in Cassandra
+            QtCassandra::QCassandraCell::pointer_t cell(*c);
+            QtCassandra::QCassandraValue const file_md5(cell->value());
+            if(file_md5.nullValue())
+            {
+                // cell is invalid?
+                SNAP_LOG_ERROR("invalid CSS MD5 for \"")(name)("\", it is empty");
+                continue;
+            }
+            QByteArray const key(file_md5.binaryValue());
+            if(!files_table->exists(key))
+            {
+                // file does not exist?!
+                // TODO: we probably want to report that problem
+                SNAP_LOG_ERROR("CSS for \"")(name)("\" could not be found with its MD5");
+                continue;
+            }
+            QtCassandra::QCassandraRow::pointer_t row(files_table->row(key));
+            if(!row->exists(get_name(SNAP_NAME_CONTENT_FILES_SECURE)))
+            {
+                // secure field missing?! (file was probably deleted)
+                SNAP_LOG_ERROR("file referenced as CSS \"")(name)("\" does not have a ")(get_name(SNAP_NAME_CONTENT_FILES_SECURE))(" field");
+                continue;
+            }
+            QtCassandra::QCassandraValue const secure(row->cell(get_name(SNAP_NAME_CONTENT_FILES_SECURE))->value());
+            if(secure.nullValue())
+            {
+                // secure field missing?!
+                SNAP_LOG_ERROR("file referenced as CSS \"")(name)("\" has an empty ")(get_name(SNAP_NAME_CONTENT_FILES_SECURE))(" field");
+                continue;
+            }
+            signed char const sflag(secure.signedCharValue());
+            if(sflag == CONTENT_SECURE_INSECURE)
+            {
+                // not secure
+#ifdef DEBUG
+                SNAP_LOG_DEBUG("CSS named \"")(name)("\" is marked as being insecure");
+#endif
+                continue;
+            }
+
+            // we want to get the full URI to the CSS file
+            // (WARNING: the filename is only the name used for the very first
+            //           upload the very first time that file is loaded and
+            //           different websites may have used different filenames)
+            //
+            // TODO: allow for remote paths by checking a flag in the file
+            //       saying "remote" (i.e. to use Google Store and alike)
+            QtCassandra::QCassandraColumnRangePredicate references_column_predicate;
+            references_column_predicate.setCount(1);
+            references_column_predicate.setIndex(); // behave like an index
+            QString const site_key(f_snap->get_site_key_with_slash());
+            QString const start_ref(QString("%1::%2").arg(get_name(SNAP_NAME_CONTENT_FILES_REFERENCE)).arg(site_key));
+            references_column_predicate.setStartColumnName(start_ref);
+            references_column_predicate.setEndColumnName(start_ref + QtCassandra::QCassandraColumnPredicate::last_char);
+
+            row->clearCache();
+            row->readCells(references_column_predicate);
+            QtCassandra::QCassandraCells const& ref_cells(row->cells());
+            if(ref_cells.isEmpty())
+            {
+                SNAP_LOG_ERROR("file referenced as CSS \"")(name)("\" has no reference back to ")(site_key);
+                continue;
+            }
+            // the key of this cell is the path we want to use to the file
+            QtCassandra::QCassandraCell::pointer_t ref_cell(*ref_cells.begin());
+            QtCassandra::QCassandraValue const ref_string(ref_cell->value());
+            if(ref_string.nullValue()) // bool true cannot be empty
+            {
+                SNAP_LOG_ERROR("file referenced as CSS \"")(name)("\" has an invalid reference back to ")(site_key)(" (empty)");
+                continue;
+            }
+
+            // file exists and is considered secure
+
+            // we want to first add all dependencies since they need to
+            // be included first, so there is another sub-loop for that
+            // note that all of those must be loaded first but the order
+            // we read them as does not matter
+            QtCassandra::QCassandraColumnRangePredicate dependencies_column_predicate;
+            dependencies_column_predicate.setCount(100);
+            dependencies_column_predicate.setIndex(); // behave like an index
+            QString start_dep(QString("%1::").arg(get_name(SNAP_NAME_CONTENT_FILES_DEPENDENCY)));
+            dependencies_column_predicate.setStartColumnName(start_dep);
+            dependencies_column_predicate.setEndColumnName(start_dep + QtCassandra::QCassandraColumnPredicate::last_char);
+            for(;;)
+            {
+                row->clearCache();
+                row->readCells(dependencies_column_predicate);
+                const QtCassandra::QCassandraCells& dep_cells(row->cells());
+                if(dep_cells.isEmpty())
+                {
+                    break;
+                }
+                // handle one batch
+                for(QtCassandra::QCassandraCells::const_iterator dc(dep_cells.begin());
+                        dc != dep_cells.end();
+                        ++dc)
+                {
+                    // get the email from the database
+                    // we expect empty values once in a while because a dropCell() is
+                    // not exactly instantaneous in Cassandra
+                    QtCassandra::QCassandraCell::pointer_t dep_cell(*dc);
+                    QtCassandra::QCassandraValue const dep_string(dep_cell->value());
+                    if(!dep_string.nullValue())
+                    {
+                        snap_version::dependency dep;
+                        if(dep.set_dependency(dep_string.stringValue()))
+                        {
+                            // TODO: add version and browser tests
+                            QString const& dep_name(dep.get_name());
+                            add_css(doc, dep_name);
+                        }
+                        // else TBD -- we checked when saving that darn string
+                        //             so failures should not happen here
+                    }
+                    // else TBD -- error if empty? (should not happen...)
+                }
+            }
+
+            // TBD: At this point we get a bare name, no version, no browser.
+            //      This means the loader will pick the latest available
+            //      version with the User Agent match. This may not always
+            //      be desirable though.
+#ifdef DEBUG
+SNAP_LOG_TRACE() << "Adding CSS [" << name << "] [" << ref_cell->columnName().mid(start_ref.length() - 1) << "]";
+#endif
+            QDomNodeList metadata(doc.elementsByTagName("metadata"));
+            QDomNode css_tag(metadata.at(0).firstChildElement("css"));
+            if(css_tag.isNull())
+            {
+                css_tag = doc.createElement("css");
+                metadata.at(0).appendChild(css_tag);
+            }
+            QDomElement link_tag(doc.createElement("link"));
+            link_tag.setAttribute("href", ref_cell->columnName().mid(start_ref.length() - 1));
+            link_tag.setAttribute("type", "text/css");
+            link_tag.setAttribute("rel", "stylesheet");
+            css_tag.appendChild(link_tag);
+            return; // we're done since we found our script and added it
+        }
+    }
+
+    f_snap->die(snap_child::HTTP_CODE_NOT_FOUND, "CSS Not Found",
+            "CSS \"" + name + "\" was not found. Was it installed?",
+            "The named CSS was not found in the \"css\" row of the \"files\" table.");
     NOTREACHED();
 }
 

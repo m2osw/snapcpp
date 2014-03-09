@@ -158,7 +158,7 @@ int64_t editor::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2014, 2, 27, 3, 41, 30, content_update);
+    SNAP_PLUGIN_UPDATE(2014, 3, 9, 3, 7, 30, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -245,7 +245,7 @@ void editor::on_generate_header_content(content::path_info_t& ipath, QDomElement
     }
 
     // TODO find a way to include the editor only if required
-    content::content::instance()->add_javascript(ipath, header.ownerDocument(), "editor");
+    content::content::instance()->add_javascript(header.ownerDocument(), "editor");
 }
 
 

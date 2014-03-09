@@ -2211,7 +2211,7 @@ void form::on_filtered_content(content::path_info_t& ipath, QDomDocument& doc)
 
     if(f_form_initialized)
     {
-        content::content::instance()->add_javascript(ipath, doc, "form");
+        content::content::instance()->add_javascript(doc, "form");
     }
 }
 
