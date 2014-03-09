@@ -129,6 +129,7 @@ public:
     void load_xml_info(QDomDocument& doc, QString const& filename, QString& layout_name, time_t& layout_modified);
     void load_xsl_info(QDomDocument& doc, QString const& filename, QString& layout_name, QString& layout_area, time_t& layout_modified);
     void load_css(QString const& filename, QString& row_name);
+    void load_js(QString const& filename, QString& row_name);
     void load_image(QString const& filename, QString& row_name);
     void set_theme();
 
@@ -370,10 +371,51 @@ void snap_layout::load_css(QString const& filename, QString& row_name)
     }
     // valid comment, but we need to have a name which is not mandatory
     // in the find_version() function.
-    row_name = fv.get_name();
-    if(row_name.isEmpty())
+    if(fv.get_name().isEmpty())
     {
         std::cerr << "error: the CSS file \"" << filename << "\" does not define the Name: field. We cannot know where to save it." << std::endl;
+        exit(1);
+    }
+    // now we force a Layout: field for CSS files defined in a layout
+    row_name = fv.get_layout();
+    if(row_name.isEmpty())
+    {
+        std::cerr << "error: the CSS file \"" << filename << "\" does not define the Layout: field. We cannot know where to save it." << std::endl;
+        exit(1);
+    }
+}
+
+
+void snap_layout::load_js(QString const& filename, QString& row_name)
+{
+    // TODO: once we have a JS compressor, use it to verify that the
+    //       data is valid; but save the full thing because we want
+    //       the original in the database
+    QFile js(filename);
+    if(!js.open(QIODevice::ReadOnly))
+    {
+        std::cerr << "error: could not open JS file named \"" << filename << "\"" << std::endl;
+        exit(1);
+    }
+    QByteArray value(js.readAll());
+    snap::snap_version::quick_find_version_in_source fv;
+    if(!fv.find_version(value.data(), value.size()))
+    {
+        std::cerr << "error: the JS file \"" << filename << "\" does not include a valid introducer comment." << std::endl;
+        exit(1);
+    }
+    // valid comment, but we need to have a name which is not mandatory
+    // in the find_version() function.
+    if(fv.get_name().isEmpty())
+    {
+        std::cerr << "error: the JS file \"" << filename << "\" does not define the Name: field. We cannot know where to save it." << std::endl;
+        exit(1);
+    }
+    // now we force a Layout: field for JavaScript files defined in a layout
+    row_name = fv.get_layout();
+    if(row_name.isEmpty())
+    {
+        std::cerr << "error: the JS file \"" << filename << "\" does not define the Layout: field. We cannot know where to save it." << std::endl;
         exit(1);
     }
 }
@@ -490,16 +532,37 @@ void snap_layout::add_files()
             time_t layout_modified;
             load_xml_info(doc, filename, row_name, layout_modified);
         }
-        else if(extension == ".css") // expects the style.css file
+        else if(extension == ".css") // a CSS file
         {
-            // the cell name is always "style" in this case
-            cell_name = "style";
+            // the cell name is the basename
+            cell_name = filename;
+            int const pos(cell_name.lastIndexOf('/'));
+            if(pos >= 0)
+            {
+                cell_name = cell_name.mid(pos + 1);
+            }
             if(!xml.open(QIODevice::ReadOnly))
             {
                 std::cerr << "error: CSS file \"" << filename << "\" could not be opened for reading." << std::endl;
                 exit(1);
             }
             load_css(filename, row_name);
+        }
+        else if(extension == ".js") // a JavaScript file
+        {
+            // the cell name is the basename with the extension
+            cell_name = filename;
+            int const pos(cell_name.lastIndexOf('/'));
+            if(pos >= 0)
+            {
+                cell_name = cell_name.mid(pos + 1);
+            }
+            if(!xml.open(QIODevice::ReadOnly))
+            {
+                std::cerr << "error: JS file \"" << filename << "\" could not be opened for reading." << std::endl;
+                exit(1);
+            }
+            load_js(filename, row_name);
         }
         else if(extension == ".png" || extension == ".gif"
              || extension == ".jpg" || extension == ".jpeg") // expects images
@@ -575,7 +638,7 @@ void snap_layout::add_files()
         }
         else
         {
-            std::cerr << "error: file \"" << filename << "\" must be an XML file (end with the .xml or .xsl extension.)" << std::endl;
+            std::cerr << "error: file \"" << filename << "\" must be an XML file (end with the .xml or .xsl extension,) a CSS file (end with .css,) a JavaScript file (end with .js,) or be an image (end with .gif, .png, .jpg, .jpeg.)" << std::endl;
             exit(1);
         }
         xml.reset();

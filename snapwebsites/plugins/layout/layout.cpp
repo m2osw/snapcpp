@@ -692,6 +692,7 @@ SNAP_LOG_TRACE() << "got in layout... cpath = [" << ipath.get_cpath() << "]";
     QDomDocument doc_output("body");
     QDomReceiver receiver(q.namePool(), doc_output);
     q.evaluateTo(&receiver);
+    extract_js_and_css(doc, doc_output);
     body.appendChild(doc.importNode(doc_output.documentElement(), true));
 //std::cout << "Body HTML is [" << doc_output.toString() << "]\n";
 #else
@@ -712,6 +713,57 @@ SNAP_LOG_TRACE() << "got in layout... cpath = [" << ipath.get_cpath() << "]";
     doc_output.setContent(out, true, nullptr, nullptr, nullptr);
     body.appendChild(doc.importNode(doc_output.documentElement(), true));
 #endif
+}
+
+
+/** \brief Extract any JavaScript and CSS references.
+ *
+ * When running the XSLT parser the user may want to add layout specific
+ * scripts by adding tags as follow:
+ *
+ * \code
+ * <javascript name="/path/of/js"/>
+ * <css name="/path/of/css"/>
+ * \endcode
+ *
+ * This will place those definitions in the HTML \<head\> tag and ensure that
+ * their dependencies also get included (which is probably the most important
+ * part of the mechanism.)
+ *
+ * The function removes the definitions from the \p doc_output document.
+ *
+ * \param[in,out] doc  Main document where the JavaScript and CSS are added.
+ * \param[in,out] doc_output  The document where the defines are taken from.
+ */
+void layout::extract_js_and_css(QDomDocument& doc, QDomDocument& doc_output)
+{
+    content::content *content_plugin(content::content::instance());
+
+    QDomNodeList all_js(doc_output.elementsByTagName("javascript"));
+    int const max_js(all_js.size());
+    for(int i(0); i < max_js; ++i)
+    {
+        QDomNode node(all_js.at(i));
+        QDomElement js(node.toElement());
+        if(!js.isNull())
+        {
+            QString const name(js.attribute("name"));
+            content_plugin->add_javascript(doc, name);
+        }
+    }
+
+    QDomNodeList all_css(doc_output.elementsByTagName("css"));
+    int const max_css(all_css.size());
+    for(int i(0); i < max_css; ++i)
+    {
+        QDomNode node(all_css.at(i));
+        QDomElement css(node.toElement());
+        if(!css.isNull())
+        {
+            QString const name(css.attribute("name"));
+            content_plugin->add_css(doc, name);
+        }
+    }
 }
 
 
@@ -896,7 +948,7 @@ QString layout::apply_theme(QDomDocument doc, QString const& xsl)
     QHtmlSerializer html(q.namePool(), &output);
     q.evaluateTo(&html);
 
-    QString out(QString::fromUtf8(output.data()));
+    QString const out(QString::fromUtf8(output.data()));
 
     return out;
 }
@@ -1408,10 +1460,6 @@ void layout::on_load_file(snap_child::post_file_t& file, bool& found)
             // wrong number of parts...
             SNAP_LOG_ERROR("layout load_file() called with an invalid path: \"")(filename)("\"");
             return;
-        }
-        if(parts[1].endsWith(".css"))
-        {
-            parts[1] = parts[1].left(parts[1].length() - 4);
         }
         QtCassandra::QCassandraTable::pointer_t layout_table(get_layout_table());
         if(layout_table->exists(parts[0])

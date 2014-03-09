@@ -208,6 +208,7 @@ private:
     version_vector_t            f_versions;
     name_vector_t               f_browsers;
 };
+typedef QVector<dependency>     dependency_vector_t;
 
 
 class quick_find_version_in_source
@@ -219,11 +220,13 @@ public:
 
     void                        set_name(QString const& name) { f_name.set_name(name); }
     QString const&              get_name() const { return f_name.get_name(); }
+    QString const&              get_layout() const { return f_layout.get_name(); }
     QString const&              get_version_string() const { return f_version.get_version_string(); } // this was canonicalized
     version_number_t            get_branch() const { if(f_version.get_version().empty()) return SPECIAL_VERSION_UNDEFINED; else return f_version.get_version()[0]; }
     version_numbers_vector_t const& get_version() const { return f_version.get_version(); }
     name_vector_t const&        get_browsers() const { return f_browsers; }
     QString const&              get_description() const { return f_description; }
+    dependency_vector_t const&  get_depends() const { return f_depends; }
     bool                        is_defined() const { return f_data != NULL; }
     bool                        is_valid() const;
     QString const&              get_error() const { return f_error; }
@@ -236,10 +239,12 @@ private:
     char const *                f_end;
 
     name                        f_name;
+    name                        f_layout;
     version                     f_version;
     name_vector_t               f_browsers;
     QString                     f_error;
     QString                     f_description;
+    dependency_vector_t         f_depends;
 };
 
 

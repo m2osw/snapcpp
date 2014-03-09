@@ -1,6 +1,6 @@
 /*
  * Name: editor
- * Version: 0.0.1.52
+ * Version: 0.0.2.1
  * Browsers: all
  * Copyright: Copyright 2013-2014 (c) Made to Order Software Corporation  All rights reverved.
  * License: GPL 2.0
@@ -301,7 +301,7 @@ snapwebsites.Editor.prototype = {
                 jQuery(".snap_editor_save_new_branch_p").hide();
             }
         }
-        this._saveDialogPopup.fadeIn(300);
+        this._saveDialogPopup.fadeIn(300).css("display", "block");
     },
 
     _linkDialog: function(idx)
@@ -965,7 +965,7 @@ console.log("command "+idx+" "+this.toolbarButtons[idx][2]+"!!!");
 
     _attach: function()
     {
-        var snap_editor, immediate;
+        var snap_editor, immediate, auto_focus;
 
         if(jQuery("body").hasClass("snap-editor-initialized"))
         {
@@ -991,7 +991,6 @@ console.log("command "+idx+" "+this.toolbarButtons[idx][2]+"!!!");
         // editor is immediately made available
         immediate = snap_editor.filter(".immediate");
         immediate.children(".editor-content").attr("contenteditable", "true");
-        immediate.filter(".auto-focus").children(".editor-content").focus();
 
         snap_editor
             .children(".editor-content")
@@ -1043,6 +1042,8 @@ console.log("command "+idx+" "+this.toolbarButtons[idx][2]+"!!!");
                 snapwebsites.EditorInstance._checkModified();
             })
         ;
+
+        immediate.filter(".auto-focus").children(".editor-content").focus();
     },
 
     _unload: function()

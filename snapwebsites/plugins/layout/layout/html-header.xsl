@@ -491,6 +491,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 		<meta name="action" content="{$action}"/>
 		<meta name="path" content="{$path}"/>
 
+		<!-- cascading style sheets -->
+		<xsl:copy-of select="head/metadata/css/*"/>
+
 		<!-- JavaScripts -->
 		<xsl:copy-of select="head/metadata/javascript/*"/>
 

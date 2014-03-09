@@ -1230,8 +1230,10 @@ bool versioned_filename::operator >= (versioned_filename const& rhs) const
  *   | '>'
  *   | '>='
  *
- * browsers: name
- *         | browser ',' name
+ * browsers: '[' browser_list ']'
+ *
+ * browser_list: name
+ *             | browser_list ',' name
  * \endcode
  */
 bool dependency::set_dependency(QString const& dependency_string)
@@ -1718,9 +1720,11 @@ bool quick_find_version_in_source::find_version(char const *data, int const size
 
     // note: field names are case insensitive
     field_t field_name("NAME");
+    field_t field_layout("LAYOUT");
     field_t field_version("VERSION");
     field_t field_browsers("BROWSERS");
     field_t field_description("DESCRIPTION");
+    field_t field_depends("DEPENDS");
     for(;;)
     {
         QString value;
@@ -1734,6 +1738,19 @@ bool quick_find_version_in_source::find_version(char const *data, int const size
             if(!f_name.set_name(value))
             {
                 f_error = f_name.get_error();
+                return false;
+            }
+        }
+        if(field_layout.check(l, value))
+        {
+            if(!f_layout.get_name().isEmpty())
+            {
+                f_error = "layout field cannot be defined more than once";
+                return false;
+            }
+            if(!f_layout.set_name(value))
+            {
+                f_error = f_layout.get_error();
                 return false;
             }
         }
@@ -1776,12 +1793,84 @@ bool quick_find_version_in_source::find_version(char const *data, int const size
         {
             if(!f_description.isEmpty())
             {
-                // more than one Browsers field
+                // more than one Description field
                 f_error = "description field cannot be defined more than once";
                 return false;
             }
             // description can be anything
             f_description = value;
+        }
+        else if(field_depends.check(l, value))
+        {
+            if(!f_depends.isEmpty())
+            {
+                // more than one Depends field
+                f_error = "depends field cannot be defined more than once";
+                return false;
+            }
+            // parse dependencies one by one
+            if(!value.isEmpty())
+            {
+                int paren(0);
+                int brack(0);
+                QChar const *start(value.data());
+                for(QChar const *s(start);; ++s)
+                {
+                    switch(s->unicode())
+                    {
+                    case '(':
+                        ++paren;
+                        break;
+
+                    case ')':
+                        --paren;
+                        break;
+
+                    case '[':
+                        ++brack;
+                        break;
+
+                    case ']':
+                        --brack;
+                        break;
+
+                    case ',':
+                    case '\0':
+                        if(paren == 0 && brack == 0)
+                        {
+                            // got one!
+                            size_t const len(s - start);
+                            if(len > 0) // ignore empty entries
+                            {
+                                dependency d;
+                                QString dep(start, static_cast<int>(s - start));
+                                d.set_dependency(dep);
+                                f_depends.push_back(d);
+                            }
+                            start = s;
+                            if(s->unicode() == ',')
+                            {
+                                // skip the comma
+                                ++start;
+                            }
+                        }
+                        else if(s->unicode() == '\0')
+                        {
+                            // parenthesis or brackets mismatched
+                            f_error = "depends field () or [] mismatch";
+                            return false;
+                        }
+                        break;
+
+                    }
+                    // by doing this test here we avoid having to duplicate
+                    // the case when we save a dependency
+                    if(s->unicode() == '\0')
+                    {
+                        break;
+                    }
+                }
+            }
         }
         if(l.contains("*/"))
         {

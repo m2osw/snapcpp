@@ -539,7 +539,8 @@ public:
     void                add_link(QString const& path, links::link_info const& source, links::link_info const& destination);
     void                add_attachment(QString const& path, content_attachment const& attachment);
     bool                load_attachment(QString const& key, attachment_file& file, bool load_data = true);
-    void                add_javascript(path_info_t& path, QDomDocument doc, QString const& name);
+    void                add_javascript(QDomDocument doc, QString const& name);
+    void                add_css(QDomDocument doc, QString const& name);
 
     bool                is_final(QString const& key);
 
@@ -595,6 +596,7 @@ private:
     controlled_vars::fbool_t                        f_updating;
     QMap<QString, bool>                             f_added_javascripts;
     javascript_ref_map_t                            f_javascripts;
+    QMap<QString, bool>                             f_added_css;
 };
 
 //class content_box_execute
