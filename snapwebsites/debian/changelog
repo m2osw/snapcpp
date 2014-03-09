@@ -1,8 +1,21 @@
-snapwebsites (0.1.24~saucyubuntu1) UNRELEASED; urgency=low
+snapwebsites (0.1.25~saucy) saucy; urgency=high
 
-  *  Fixed the sendmail-content.xml file.
+  [ Alexis Wilke ]
+  * Fixed the sendmail-content.xml file.
+  * Added count argument to links objects.
+  * Added a signal to know when a user just logged in.
+  * Enhanced the layout to allow for a layout and a cell name.
+  * Updated editor so we can avoid the toolbar on a per line basis.
+  * Allow data driven JS/CSS files in layouts. Also allow many different .css
+  and .js files in the same layout.
+  * Added support for disabling buttons when clicked (while sending POST.)
+  * Various bug fixes.
 
- -- Alexis Wilke <alexis@m2osw.com>  Tue, 04 Mar 2014 16:35:35 -0800
+  [ R. Douglas Barbieri ]
+  * Minor bug fixes.
+  * Make a PPA release.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Tue, 04 Mar 2014 16:35:35 -0800
 
 snapwebsites (0.1.24~saucy) saucy; urgency=high
 
