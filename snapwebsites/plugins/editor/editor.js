@@ -1,6 +1,6 @@
 /*
  * Name: editor
- * Version: 0.0.2.1
+ * Version: 0.0.2.4
  * Browsers: all
  * Copyright: Copyright 2013-2014 (c) Made to Order Software Corporation  All rights reverved.
  * License: GPL 2.0
@@ -186,6 +186,13 @@ snapwebsites.Editor.prototype = {
 
     _saveData: function(mode)
     {
+        if(jQuery(this).hasClass("editor-disabled"))
+        {
+            // TODO: translation support
+            alert("You already clicked one of these buttons. Please wait until the save is over.");
+            return;
+        }
+
         var i, obj = {}, saved = [], edit_area, url, name;
         for(i = 1; i <= this._lastId; ++i)
         {
@@ -205,6 +212,8 @@ snapwebsites.Editor.prototype = {
         // buttons...
         if(name) // if name is defined we have at least one field defined
         {
+            this._saveDialogStatus(false); // disable buttons
+
             obj["editor_save_mode"] = mode;
             obj["editor_session"] = jQuery("meta[name='editor_session']").attr("content");
             obj["editor_uri"] = this._titleToURI(jQuery("[field_name='title'] .editor-content").text());
@@ -213,13 +222,12 @@ snapwebsites.Editor.prototype = {
             jQuery.ajax(url, {
                 type: "POST",
                 processData: true,
-                data: obj,//"test=with+this&instead=of+the+array",//obj,
-                //processData: true,
+                data: obj,
                 error: function(jqxhr, result_status, error_msg){
                     alert("An error occured while posting AJAX (status: " + result_status + " / error: " + error_msg + ")");
                 },
                 success: function(data, result_status, jqxhr){
-                    var i;
+                    var i, modified, element_modified;
 
 //console.log(jqxhr);
                     if(jqxhr.status == 200)
@@ -227,6 +235,7 @@ snapwebsites.Editor.prototype = {
                         alert("The AJAX succeeded (" + result_status + ")");
                         // success! so it was saved and now that's the new
                         // original value and next "Save" doesn't do anything
+                        modified = false;
                         for(j = 0; j < saved.length; j++)
                         {
                             i = saved[j];
@@ -235,6 +244,16 @@ snapwebsites.Editor.prototype = {
                             edit_area = jQuery("#editor-area-" + i);
                             name = edit_area.parent().attr("field_name");
                             snapwebsites.EditorInstance._originalData[i] = obj[name];
+                            element_modified = obj[name] != edit_area.html();
+                            snapwebsites.EditorInstance._modified[i] = element_modified;
+
+                            modified = modified || element_modified;
+                        }
+                        // if not modified while processing the POST, hide
+                        // those buttons
+                        if(!modified)
+                        {
+                            snapwebsites.EditorInstance._saveDialogPopup.fadeOut(300);
                         }
                     }
                     else
@@ -242,8 +261,35 @@ snapwebsites.Editor.prototype = {
                         alert("The server replied with an error while posting AJAX (status: " + result_status + " / error: " + error_msg + ")");
                     }
                 },
+                complete: function(jqxhr, result_status){
+                    // TODO: avoid this one if we're fading out since that
+                    //       would mean the user can click in these 300ms
+                    //       (probably generally unlikely... and it should
+                    //       not have any effect because we re-compare the
+                    //       data and do nothing if no modifications happened)
+                    snapwebsites.EditorInstance._saveDialogStatus(true); // enable buttons
+                },
                 dataType: "xml"
             });
+        }
+    },
+
+    // when a user clicks on a save dialog button, you should call this
+    // function to disable the dialog
+    _saveDialogStatus: function(new_status)
+    {
+        // dialog even exists?
+        if(!this._saveDialogPopup)
+        {
+            return;
+        }
+        if(new_status)
+        {
+            jQuery(this._saveDialogPopup).parent().children("a").removeClass("disabled");
+        }
+        else
+        {
+            jQuery(this._saveDialogPopup).parent().children("a").addClass("disabled");
         }
     },
 
@@ -261,7 +307,13 @@ snapwebsites.Editor.prototype = {
     {
         if(!this._saveDialogPopup)
         {
-            var html = "<style>#snap_editor_save_dialog{border:1px solid black;border-radius:7px;background-color:#fff8f0;padding:10px;position:fixed;top:10px;z-index:1;width:150px;}#snap_editor_save_dialog .title{text-align:center;}#snap_editor_save_dialog .button{border:1px solid black;border-radius:5px;background-color:#b0e8a0;display:block;padding:10px;margin:10px;font-weight:bold;text-align:center;font-variant:small-caps;text-decoration:none;}#snap_editor_save_dialog .description{font-size:80%;font-style:italic;}</style>"
+            var html = "<style>"
+                        + "#snap_editor_save_dialog{border:1px solid black;border-radius:7px;background-color:#fff8f0;padding:10px;position:fixed;top:10px;z-index:1;width:150px;}"
+                        + "#snap_editor_save_dialog .title{text-align:center;}"
+                        + "#snap_editor_save_dialog .button{border:1px solid black;border-radius:5px;background-color:#b0e8a0;display:block;padding:10px;margin:10px;font-weight:bold;text-align:center;font-variant:small-caps;text-decoration:none;}"
+                        + "#snap_editor_save_dialog .button.disabled{background-color:#aaaaaa;}"
+                        + "#snap_editor_save_dialog .description{font-size:80%;font-style:italic;}"
+                    + "</style>"
                     + "<div id='snap_editor_save_dialog'>"
                     + "<h3 class='title'>Editor</h3>"
                     + "<div id='snap_editor_save_dialog_page'>"
@@ -301,6 +353,7 @@ snapwebsites.Editor.prototype = {
                 jQuery(".snap_editor_save_new_branch_p").hide();
             }
         }
+        this._saveDialogStatus(true); // enable buttons
         this._saveDialogPopup.fadeIn(300).css("display", "block");
     },
 
