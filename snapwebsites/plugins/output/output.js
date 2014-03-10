@@ -35,6 +35,28 @@ snapwebsites.Output = function()
 
 
 snapwebsites.Output.prototype = {
+    /** \brief Helper function: generate hexadecimal number.
+     *
+     * This function transform byte \p c in a hexadecimal number of
+     * exactly two digits.
+     *
+     * Note that \p c can be larger than a byte, only it should probably
+     * not be negative.
+     *
+     * \param[in] c  The byte to transform (expected to be between 0 and 255)
+     *
+     * \return The hexadecimal representation of the number.
+     */
+    char2hex:function(c)
+    {
+        var a, b;
+
+        a = c & 15;
+        b = (c >> 4) & 15;
+        return String.fromCharCode(b + (b >= 10 ? 55 : 48))
+             + String.fromCharCode(a + (a >= 10 ? 55 : 48));
+    },
+
     init: function()
     {
         jQuery("div.user-messages")

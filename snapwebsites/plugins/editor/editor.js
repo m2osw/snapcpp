@@ -1,6 +1,6 @@
 /*
  * Name: editor
- * Version: 0.0.2.4
+ * Version: 0.0.2.12
  * Browsers: all
  * Copyright: Copyright 2013-2014 (c) Made to Order Software Corporation  All rights reverved.
  * License: GPL 2.0
@@ -159,6 +159,7 @@ snapwebsites.Editor.prototype = {
     _height: -1,
     _activeElement: null,
     _lastId: 0,
+    _uniqueId: 0, // for images at this point
     _originalData: [],
     _modified: [],
     _linkDialogPopup: null,
@@ -1016,6 +1017,104 @@ console.log("command "+idx+" "+this.toolbarButtons[idx][2]+"!!!");
         }
     },
 
+    // The buffer is expected to be an ArrayBuffer() as read with a FileReader
+    _buffer2mime: function(buffer)
+    {
+        buf = Uint8Array(buffer);
+        if(buf[0] == 0xFF
+        && buf[1] == 0xD8
+        && buf[2] == 0xFF
+        && buf[3] == 0xE0
+        && buf[4] == 0x00
+        && buf[5] == 0x10
+        && buf[6] == 0x4A  // J
+        && buf[7] == 0x46  // F
+        && buf[8] == 0x49  // I
+        && buf[9] == 0x46) // F
+        {
+            return "image/jpeg";
+        }
+        if(buf[0] == 0x89
+        && buf[1] == 0x50  // P
+        && buf[2] == 0x4E  // N
+        && buf[3] == 0x47  // G
+        && buf[4] == 0x0D  // \r
+        && buf[5] == 0x0A) // \n
+        {
+            return "image/png";
+        }
+        if(buf[0] == 0x47  // G
+        && buf[1] == 0x49  // I
+        && buf[2] == 0x46  // F
+        && buf[3] == 0x38  // 8
+        && buf[4] == 0x39  // 9
+        && buf[5] == 0x61) // a
+        {
+            return "image/gif";
+        }
+
+        // unknown
+        return "";
+    },
+
+    _droppedImageAssign: function(e){
+        var img, id;
+
+        img = new Image();
+        img.onload = function(){
+            // make sure we do it once
+            img.onload = null;
+
+            w = img.width;
+            h = img.height;
+            // TODO: we need to remove those hard coded sizes, those should
+            //       be defined in attributes of the <div> tag
+            if(w > 150 || h > 150)
+            {
+                // source image is too large
+                if(h > w)
+                {
+                    w = Math.round(150 / h * w);
+                    h = 150;
+                }
+                else
+                {
+                    h = Math.round(150 / w * h);
+                    w = 150;
+                }
+            }
+            jQuery(img).attr("width", w).attr("height", h).css({top: (150 - h) / 2, left: (150 - w) / 2, position: "relative"}).appendTo(e.target.snapEditorElement);
+        };
+        img.src = e.target.result;
+
+        // a fix for browsers that don't call onload() if the image is
+        // already considered loaded by now
+        if(img.complete || img.readyState === 4)
+        {
+            img.onload();
+        }
+    },
+
+    _droppedImage: function(e){
+        var mime, r, a, blob;
+
+        mime = snapwebsites.EditorInstance._buffer2mime(e.target.result);
+        if(mime.substr(0, 6) == "image/")
+        {
+//console.log("image type: "+mime.substr(6)+", target = ["+e.target+"]");
+            // XXX: at some point we could try to reuse the reader in target
+            //      but it is certainly safer to use a new one here...
+            r = new FileReader;
+            r.snapEditorElement = e.target.snapEditorElement;
+            //r.snapEditorFile = e.target.snapEditorFile;
+            r.onload = snapwebsites.EditorInstance._droppedImageAssign;
+            a = [];
+            a.push(e.target.snapEditorFile);
+            blob = new Blob(a, {type: mime});
+            r.readAsDataURL(blob);
+        }
+    },
+
     _attach: function()
     {
         var snap_editor, immediate, auto_focus;
@@ -1080,6 +1179,66 @@ console.log("command "+idx+" "+this.toolbarButtons[idx][2]+"!!!");
                         e.preventDefault();
                     }
                 }
+            })
+            .on("dragenter",function(e){
+                jQuery(this).parent().addClass("dragging-over");
+                e.preventDefault();
+                e.stopPropagation();
+            })
+            .on("dragover",function(e){
+                // this is said to make things work better in some browsers...
+                e.preventDefault();
+                e.stopPropagation();
+            })
+            .on("dragleave",function(e){
+                jQuery(this).parent().removeClass("dragging-over");
+                e.preventDefault();
+                e.stopPropagation();
+            })
+            .on("drop",function(e){
+                // remove the dragging-over class on a drop because we
+                // do not get the dragleave event otherwise
+                jQuery(this).parent().removeClass("dragging-over");
+
+                // always prevent the default dropping mechanism
+                // we handle the file manually all the way
+                e.preventDefault();
+                e.stopPropagation();
+
+                // anything transferred on widget that accepts files?
+                if(e.originalEvent.dataTransfer
+                && e.originalEvent.dataTransfer.files.length)
+                {
+                    accept_images = jQuery(this).hasClass("image");
+                    accept_files = jQuery(this).hasClass("attachment");
+                    if(accept_images || accept_files)
+                    {
+                        for(i = 0; i < e.originalEvent.dataTransfer.files.length; ++i)
+                        {
+                            // For images we do not really care about that info, for uploads we will
+                            // use it so I keep that here for now to not have to re-research it...
+                            //console.log("  filename = [" + e.originalEvent.dataTransfer.files[i].name
+                            //          + "] + size = " + e.originalEvent.dataTransfer.files[i].size
+                            //          + " + type = " + e.originalEvent.dataTransfer.files[i].type
+                            //          + "\n");
+
+                            // read the image so we can make sure it is indeed an
+                            // image and ignore any other type of files
+                            r = new FileReader;
+                            r.snapEditorElement = this;
+                            r.snapEditorFile = e.originalEvent.dataTransfer.files[i];
+                            r.onload = accept_files ? snapwebsites.EditorInstance._droppedImage  // TODO: handle attachments (instead of just images)
+                                                    : snapwebsites.EditorInstance._droppedImage;
+                            // TBD: right now we only check the first few bytes
+                            //      but we may want to increase that size later
+                            //      to allow for JPEG that have the width and
+                            //      height defined (much) further in the stream
+                            r.readAsArrayBuffer(r.snapEditorFile.slice(0, 64));
+                        }
+                    }
+                }
+
+                return false;
             })
             .on("keyup bind cut copy paste",function(){
                 if(snapwebsites.EditorInstance._bottomToolbar)
