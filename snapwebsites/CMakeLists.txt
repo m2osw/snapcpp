@@ -119,6 +119,11 @@ add_subdirectory(conf)          # Configuration files and samples
 snap_build_xml_targets()
 
 ##
+## Install run script
+##
+install( PROGRAMS reset-db.sh run-server.sh DESTINATION ${CMAKE_INSTALL_PREFIX} )
+
+##
 ## Code Analysis
 ##
 ## TODO:

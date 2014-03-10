@@ -1,7 +1,6 @@
 #!/bin/sh
 #
-SNAPINIT=/usr/bin/snapinit
-SNAPFLAGS="--detach --binary_path ./src --logfile snapinit.log -c my_server.conf --all"
+SNAPFLAGS="--detach --binary_path ./bin --logfile snapinit.log -c my_server.conf --all"
 
 if [ -z "$1" ]
 then
@@ -9,5 +8,5 @@ then
 	exit 1
 fi
 
-./src/snapinit ${SNAPFLAGS} $1
+./bin/snapinit ${SNAPFLAGS} $1
 

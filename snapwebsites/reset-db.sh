@@ -1,24 +1,54 @@
 #!/bin/sh
 #
-# To be run when the server is installed globally, for production.
-# This assumes that the snap* commands are in your path, and
-# that the configuration files are stored under "/etc/snapwebsites".
+# This script is intended for development use only, NOT TO BE
+# USED ON A PRODUCTION SERVER! We recommend a full backup of your
+# database BEFORE running this script! 
 #
-# Warning: do not run this on a production server, unless you want to
-# erase the entire database! This is intended for testing only.
+# To run the script, specify the DIST prefix (/usr), and the configuration
+# file (optional, defaults to /etc/snapwebsites/snapserver.conf).
 #
-HOSTNAME=127.0.0.1
-PORT=9160
-LAYOUTDIR=/usr/share/snapwebsites/layouts
-snapdb --host ${HOSTNAME} --port ${PORT} --drop-tables
-snaplayout --host ${HOSTNAME} --port ${PORT} \
-	${LAYOUTDIR}/bare/content.xml ${LAYOUTDIR}/bare/body-parser.xsl ${LAYOUTDIR}/bare/theme-parser.xsl ${LAYOUTDIR}/bare/style.css \
-	${LAYOUTDIR}/white/content.xml ${LAYOUTDIR}/white/body-parser.xsl ${LAYOUTDIR}/white/theme-parser.xsl
-snapserver -d --add-host -p cassandra_host=${HOSTNAME} cassandra_port=${PORT}
+if [ -z "$1" ]
+then
+	echo "usage: $0 distdir [config-file]"
+    exit 1
+fi
 
-# To setup the bare theme until the default theme works as expected
+CONFIGFILE=/etc/snapwebsites/snapserver.conf
+if [ -n "$2" ]
+then
+	CONFIGFILE=$2
+fi	
+
+echo
+echo "Reseting your Snap! database..."
+echo
+DISTDIR=$1
+BINDIR=${DISTDIR}/bin
+LAYOUTDIR=${DISTDIR}/share/snapwebsites/layouts
+${BINDIR}/snapdb --drop-tables
+${BINDIR}/snaplayout ${LAYOUTDIR}/bare/content.xml
+${BINDIR}/snaplayout ${LAYOUTDIR}/bare/body-parser.xsl
+${BINDIR}/snaplayout ${LAYOUTDIR}/bare/theme-parser.xsl
+${BINDIR}/snaplayout ${LAYOUTDIR}/bare/style.css
+${BINDIR}/snaplayout ${LAYOUTDIR}/white/content.xml
+${BINDIR}/snaplayout ${LAYOUTDIR}/white/body-parser.xsl
+${BINDIR}/snaplayout ${LAYOUTDIR}/white/theme-parser.xsl
+${BINDIR}/snapserver --no-log -c ${CONFIGFILE} --add-host
+
+# TODO: add ability in snapserver to init the website from command-line
+
+# To setup the bare theme
 # (but we cannot run it at this point yet because the database was not
 # fully initialized to support such.)
-#${BUILDDIR}/snaplayout --set-theme http://www.example.com layout '"bare";'
-#${BUILDDIR}/snaplayout --set-theme http://www.example.com theme '"bare";'
+#${BINDIR}/snaplayout --set-theme http://www.example.com layout '"bare";'
+#${BINDIR}/snaplayout --set-theme http://www.example.com theme '"bare";'
 
+echo
+echo "Done!"
+echo
+echo "After a reset, remember that all your data is lost. So you will"
+echo "have to register a new user and make him root again with a command"
+echo "that looks like this (change the -c and -p parameters as required):"
+echo ${BINDIR}/snapbackend -d -c ${CONFIGFILE} -a makeroot -p ROOT_USER_EMAIL=you@example.com
+
+# vim: ts=4 sw=4 et nocindent
