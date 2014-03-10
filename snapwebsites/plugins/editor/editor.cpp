@@ -766,10 +766,16 @@ void editor::editor_save(content::path_info_t& ipath)
         content_plugin->set_branch_key(key, owner, branch_number, true);
         content_plugin->set_branch_key(key, owner, branch_number, false);
 
+// TODO: add revision manager
+  } // <- the current/working revisions are not correctly handled yet...
+    //    we should not force to the latest every time, but for now it's
+    //    the way it is
+
+
         // in that case we also need to save the new revision accordingly
         content_plugin->set_current_revision(key, owner, branch_number, revision_number, locale, false);
         content_plugin->set_revision_key(key, owner, branch_number, revision_number, locale, false);
-    }
+    //}
     content_plugin->set_current_revision(key, owner, branch_number, revision_number, locale, true);
     content_plugin->set_revision_key(key, owner, branch_number, revision_number, locale, true);
 
