@@ -652,7 +652,10 @@ SNAP_LOG_TRACE() << "got in layout... cpath = [" << ipath.get_cpath() << "]";
         filter::filter::instance()->on_token_filter(ipath, doc);
     }
 
-//std::cout << "Generated XML is [" << doc.toString() << "]\n";
+#if 0
+std::cout << "Generated XML is [" << doc.toString() << "]\n";
+std::cout << "Generated XSL is [" << xsl            << "]\n";
+#endif
 
     filtered_content(ipath, doc);
 
