@@ -496,22 +496,23 @@ void snap_layout::add_files()
 
     typedef QMap<QString, time_t> mtimes_t;
     mtimes_t mtimes;
-    for(string_array_t::const_iterator it(f_layouts.begin());
-                                       it != f_layouts.end();
-                                       ++it)
+    for( auto filename : f_layouts )
     {
-        QString filename(*it);
         int e(filename.lastIndexOf("."));
         if(e == -1)
         {
-            std::cerr << "error: file \"" << filename << "\" must be an XML file (end with the .xml or .xsl extension.)" << std::endl;
+            std::cerr << "error: file \"" << filename << "\" must be an XML file (end with the .xml, .xsl or .zip extension.)" << std::endl;
             exit(1);
         }
         QFile xml(filename);
         QString row_name; // == <layout name>
         QString cell_name; // == <layout_area>  or 'content'
         QString const extension(filename.mid(e));
-        if(extension == ".xml") // expects the content.xml file
+        if( extension == ".zip" )
+        {
+            // TODO: add support for it...
+        }
+        else if(extension == ".xml") // expects the content.xml file
         {
             // the cell name is always "content" in this case
             cell_name = "content";

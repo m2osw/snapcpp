@@ -61,9 +61,11 @@ if( NOT CMAKE_MODULE_PATH )
         PATHS ${CMAKE_SOURCE_DIR}
         NO_DEFAULT_PATH
     )
-    set( CMAKE_MODULE_PATH ${CMAKE_DIRECTORY_PATH}/snapCMakeModules/Modules )
+	set( CMAKE_MODULE_PATH ${CMAKE_DIRECTORY_PATH}/snapCMakeModules/Modules )
     message( "Found snapCMakeModules in ${CMAKE_MODULE_PATH}" )
 endif()
+
+set( CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake )
 
 find_package( AdvGetOpt        REQUIRED )
 find_package( ControlledVars   REQUIRED )
@@ -73,6 +75,7 @@ find_package( QtSerialization  REQUIRED )
 find_package( SnapCMakeModules REQUIRED )
 find_package( SnapDoxygen      REQUIRED )
 find_package( Thrift           REQUIRED )
+find_package( ZipIos++         REQUIRED 0.1.5.9 )
 
 if( "${CMAKE_BUILD_TYPE}" STREQUAL "Debug" )
     message("Debug is in effect for snapwebsites!")
@@ -104,6 +107,7 @@ include_directories(
 ##
 ## Compiling
 ##
+add_subdirectory(cmake)         # SnapWebsites CMake Modules
 add_subdirectory(lib)           # Common code which is too specialized to create a separate library
 add_subdirectory(plugins)       # Plug-ins (i.e. modular functionality)
 add_subdirectory(src)           # Actual Snap! Websites server

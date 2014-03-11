@@ -34,6 +34,7 @@ project(snap_cmake)
 install(
     FILES 
         FindSnapWebsites.cmake
+		FindZipIos++.cmake
         SnapXmlLint.cmake
     DESTINATION
         share/cmake-2.8/Modules
