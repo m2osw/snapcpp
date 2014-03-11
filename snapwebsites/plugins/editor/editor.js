@@ -1,6 +1,6 @@
 /*
  * Name: editor
- * Version: 0.0.2.12
+ * Version: 0.0.2.13
  * Browsers: all
  * Copyright: Copyright 2013-2014 (c) Made to Order Software Corporation  All rights reverved.
  * License: GPL 2.0

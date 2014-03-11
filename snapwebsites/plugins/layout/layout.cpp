@@ -1319,6 +1319,10 @@ bool layout::generate_header_content_impl(content::path_info_t& ipath, QDomEleme
         (content::field_search::COMMAND_ELEMENT, metadata)
         (content::field_search::COMMAND_MODE, content::field_search::SEARCH_MODE_EACH)
 
+        // snap/head/metadata/desc[@type="version"]/data
+        (content::field_search::COMMAND_DEFAULT_VALUE, SNAPWEBSITES_VERSION_STRING)
+        (content::field_search::COMMAND_SAVE, "desc[type=version]/data")
+
         // snap/head/metadata/desc[@type="website_uri"]/data
         (content::field_search::COMMAND_DEFAULT_VALUE, f_snap->get_site_key())
         (content::field_search::COMMAND_SAVE, "desc[type=website_uri]/data")
