@@ -160,22 +160,9 @@ int64_t info::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, initial_update);
-    SNAP_PLUGIN_UPDATE(2013, 12, 23, 14, 21, 40, content_update);
+    SNAP_PLUGIN_UPDATE(2014, 4, 10, 22, 47, 40, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
-}
-
-/** \brief First update to run for the info plugin.
- *
- * This function is the first update for the info plugin. It installs
- * the initial index page.
- *
- * \param[in] variables_timestamp  The timestamp for all the variables added to the database by this update (in micro-seconds).
- */
-void info::initial_update(int64_t variables_timestamp)
-{
-    (void) variables_timestamp;
 }
 
 
