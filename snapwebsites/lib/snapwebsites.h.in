@@ -143,6 +143,8 @@ public:
     static pointer_t instance();
     virtual ~server();
 
+    void exit( const int code );
+
     static const char *version();
     static int version_major();
     static int version_minor();
@@ -157,9 +159,7 @@ public:
     bool is_backend() const { return f_backend; }
     void config( int argc, char *argv[] );
     QString get_parameter(QString const& param_name) const;
-    void exit(int code);
     void prepare_qtapp( int argc, char *argv[] );
-    void close_qtapp();
     void prepare_cassandra();
     QtCassandra::QCassandraTable::pointer_t create_table(QtCassandra::QCassandraContext::pointer_t context, QString table_name, QString comment);
     void detach();

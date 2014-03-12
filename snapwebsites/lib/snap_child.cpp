@@ -2785,6 +2785,37 @@ void snap_child::process_backend_uri(QString const& uri)
 }
 
 
+/** \brief Kill running process.
+ *
+ * Use this method to stop a child process. It first sends the SIGTERM
+ * message, then if the status doesn't change after a brief interval,
+ * SIGKILL is used.
+ *
+ * \sa check_status()
+ */
+void snap_child::kill()
+{
+    if( f_child_pid == 0 )
+    {
+        // Child is not running
+        //
+        return;
+    }
+
+    ::kill( f_child_pid, SIGTERM );
+    int timeout = 5;
+    while( check_status() == SNAP_CHILD_STATUS_RUNNING )
+    {
+        sleep( 1 );
+        if( --timeout <= 0 )
+        {
+            ::kill( f_child_pid, SIGKILL );
+            break;
+        }
+    }
+}
+
+
 /** \brief Check the status of the child process.
  *
  * This function checks whether the child is still running or not.

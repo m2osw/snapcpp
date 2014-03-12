@@ -280,6 +280,7 @@ public:
 
     bool                        process(int socket);
     void                        backend();
+    void                        kill();
     status_t                    check_status();
 
     snap_uri const&             get_uri() const;
