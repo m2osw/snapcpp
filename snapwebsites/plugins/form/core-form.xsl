@@ -261,7 +261,7 @@
     <!-- checkboxes have a bug in Firefox browsers (and maybe others)
          on Reload they don't get reset as expected, the following script
          fixes the problem by setting the state as it should be on load -->
-    <script type="text/javascript"><xsl:value-of select="$name"/>_<xsl:value-of select="$unique_id"/>.checked="<xsl:value-of select="$checked_status"/>";</script>
+    <script type="text/javascript">jQuery("#<xsl:value-of select="$name"/>_<xsl:value-of select="$unique_id"/>").attr("checked","<xsl:value-of select="$checked_status"/>");</script>
   </xsl:template>
   <xsl:template match="widget[@type='checkbox']">
     <div class="form-item checkbox {@id}">
@@ -511,7 +511,7 @@
           </xsl:choose>
           <xsl:if test="focus/@refid">
             <!-- force focus in the specified widget -->
-            <script type="text/javascript"><xsl:value-of select="focus/@refid"/>_<xsl:value-of select="$unique_id"/>.focus();<xsl:value-of select="focus/@refid"/>_<xsl:value-of select="$unique_id"/>.select();</script>
+            <script type="text/javascript">jQuery("#<xsl:value-of select="focus/@refid"/>_<xsl:value-of select="$unique_id"/>").focus();jQuery("#<xsl:value-of select="focus/@refid"/>_<xsl:value-of select="$unique_id"/>").select();</script>
           </xsl:if>
           <xsl:if test="auto-reset">
             <!-- TODO: reset timer each time the user makes a modification so it
@@ -540,7 +540,7 @@
         <!-- enable buttons after the form is fully loaded to avoid problems (early submissions) -->
         <xsl:for-each select="//widget[@type='submit']">
           <xsl:if test="not(state = 'disabled')">
-            <script type="text/javascript"><xsl:value-of select="@id"/>_<xsl:value-of select="$unique_id"/>.disabled="";</script>
+            <script type="text/javascript">jQuery("#<xsl:value-of select="@id"/>_<xsl:value-of select="$unique_id"/>").removeAttr("disabled");</script>
           </xsl:if>
         </xsl:for-each>
       </div>

@@ -124,6 +124,8 @@ private:
     void                process_new_draft();
     void                editor_save(content::path_info_t& ipath);
     void                editor_create_new_branch(content::path_info_t& ipath);
+    void                parse_out_inline_img(content::path_info_t& ipath, QString& body);
+    bool                save_inline_image(content::path_info_t& ipath, QDomElement img, QString const& src);
 
     zpsnap_child_t      f_snap;
 };

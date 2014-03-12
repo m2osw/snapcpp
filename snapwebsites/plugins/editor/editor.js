@@ -1,6 +1,6 @@
 /*
  * Name: editor
- * Version: 0.0.2.13
+ * Version: 0.0.2.16
  * Browsers: all
  * Copyright: Copyright 2013-2014 (c) Made to Order Software Corporation  All rights reverved.
  * License: GPL 2.0
@@ -1062,28 +1062,40 @@ console.log("command "+idx+" "+this.toolbarButtons[idx][2]+"!!!");
 
         img = new Image();
         img.onload = function(){
+            var limit_width, limit_height, nw, nh;
+
             // make sure we do it once
             img.onload = null;
 
             w = img.width;
             h = img.height;
-            // TODO: we need to remove those hard coded sizes, those should
-            //       be defined in attributes of the <div> tag
-            if(w > 150 || h > 150)
+            limit_width = jQuery(e.target.snapEditorElement).attr("img_width");
+            limit_height = jQuery(e.target.snapEditorElement).attr("img_height");
+            if(limit_width > 0 && limit_height > 0)
             {
-                // source image is too large
-                if(h > w)
+                if(w > limit_width || h > limit_height)
                 {
-                    w = Math.round(150 / h * w);
-                    h = 150;
-                }
-                else
-                {
-                    h = Math.round(150 / w * h);
-                    w = 150;
+                    // source image is too large
+                    nw = Math.round(limit_height / h * w);
+                    nh = Math.round(limit_width / w * h);
+                    if(nw > limit_width && nh > limit_height)
+                    {
+                        // TBD can this happen?
+                        alert("somehow we could not adjust the dimentions of the image properly!?");
+                    }
+                    if(nw > limit_width)
+                    {
+                        h = nh;
+                        w = limit_width;
+                    }
+                    else
+                    {
+                        w = nw;
+                        h = limit_height;
+                    }
                 }
             }
-            jQuery(img).attr("width", w).attr("height", h).css({top: (150 - h) / 2, left: (150 - w) / 2, position: "relative"}).appendTo(e.target.snapEditorElement);
+            jQuery(img).attr("width", w).attr("height", h).attr("filename", e.target.snapEditorFile.name).css({top: (limit_height - h) / 2, left: (limit_width - w) / 2, position: "relative"}).appendTo(e.target.snapEditorElement);
         };
         img.src = e.target.result;
 
@@ -1106,7 +1118,7 @@ console.log("command "+idx+" "+this.toolbarButtons[idx][2]+"!!!");
             //      but it is certainly safer to use a new one here...
             r = new FileReader;
             r.snapEditorElement = e.target.snapEditorElement;
-            //r.snapEditorFile = e.target.snapEditorFile;
+            r.snapEditorFile = e.target.snapEditorFile;
             r.onload = snapwebsites.EditorInstance._droppedImageAssign;
             a = [];
             a.push(e.target.snapEditorFile);
@@ -1196,6 +1208,13 @@ console.log("command "+idx+" "+this.toolbarButtons[idx][2]+"!!!");
                 e.stopPropagation();
             })
             .on("drop",function(e){
+                // TODO:
+                // At this point this code breaks the normal behavior that
+                // properly places the image where the user wants it; I'm
+                // not too sure how we can follow up on the "go ahead and
+                // do a normal instead" without propagating the event, but
+                // I'll just ask on StackOverflow for now...
+
                 // remove the dragging-over class on a drop because we
                 // do not get the dragleave event otherwise
                 jQuery(this).parent().removeClass("dragging-over");

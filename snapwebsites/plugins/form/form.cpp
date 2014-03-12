@@ -1146,7 +1146,7 @@ void form::auto_save_form(QString const& owner, content::path_info_t& ipath, aut
         QString id(it.key());
 
         // retrieve the value from the post variable
-        QString post(f_snap->postenv(id));
+        QString const post(f_snap->postenv(id));
 
         QString const name(owner + "::" + id);
 

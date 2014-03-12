@@ -1995,15 +1995,15 @@ void sendmail::run_emails()
             // we expect empty values once in a while because a dropCell() is
             // not exactly instantaneous in Cassandra
             QtCassandra::QCassandraCell::pointer_t cell(*c);
-            const QtCassandra::QCassandraValue value(cell->value());
-            const QString column_key(cell->columnKey());
-            const QString key(column_key.mid(18));
+            QtCassandra::QCassandraValue const value(cell->value());
+            QString const column_key(cell->columnKey());
+            QString const key(column_key.mid(18));
             if(!value.nullValue())
             {
                 QString unique_keys(value.stringValue());
                 QStringList list(unique_keys.split(","));
-                const int max(list.size());
-                for(int i(0); i < max; ++i)
+                int const max_emails(list.size());
+                for(int i(0); i < max_emails; ++i)
                 {
                     sendemail(key, list[i]);
                 }
@@ -2094,8 +2094,8 @@ void sendmail::sendemail(QString const& key, QString const& unique_key)
     }
 
     // verify that we have at least one attachment
-    int const max(f_email.get_attachment_count());
-    if(max < 1)
+    int const max_attachments(f_email.get_attachment_count());
+    if(max_attachments < 1)
     {
         // this should never happen since this is tested in the post_email() function
         throw sendmail_exception_invalid_argument("No attachment, not even a body, so this email cannot be sent");
@@ -2176,7 +2176,7 @@ void sendmail::sendemail(QString const& key, QString const& unique_key)
 
     // convert email data to text and send that to the sendmail command line
     email::header_map_t headers(f_email.get_all_headers());
-    const bool body_only(max == 1 && plain_text.isEmpty());
+    const bool body_only(max_attachments == 1 && plain_text.isEmpty());
     QString boundary;
     if(body_only)
     {
@@ -2307,7 +2307,7 @@ void sendmail::sendemail(QString const& key, QString const& unique_key)
             //fprintf(f, "Content-Description: Mail message body\n");
             //fprintf(f, "\n");
             //fprintf(f, "%s\n", quoted_printable::encode(plain_text.toUtf8().data(), quoted_printable::QUOTED_PRINTABLE_FLAG_NO_LONE_PERIOD).c_str());
-            if(i < max)
+            if(i < max_attachments)
             {
                 // now include the HTML
                 email::email_attachment html_attachment(f_email.get_attachment(0));
@@ -2339,7 +2339,7 @@ void sendmail::sendemail(QString const& key, QString const& unique_key)
         // note that we send ALL the attachments, including attachment 0 since
         // if we converted the HTML to plain text, we still want to send the
         // HTML to the user
-        for(; i < max; ++i)
+        for(; i < max_attachments; ++i)
         {
             email::email_attachment attachment(f_email.get_attachment(i));
             f << "--" << boundary << std::endl;

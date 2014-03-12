@@ -4083,6 +4083,10 @@ bool content::create_content_impl(path_info_t& ipath, QString const& owner, QStr
  * \param[in] file  The file to save in the Cassandra database.
  * \param[in] branch_number  The branch used to save the attachment.
  * \param[in] locale  The language & country to use for this file.
+ *
+ * \return true if other plugins are to receive the signal too, the function
+ *         generally returns false if the attachment cannot be created or
+ *         already exists
  */
 bool content::create_attachment_impl(attachment_file const& file, snap_version::version_number_t branch_number, QString const& locale)
 {

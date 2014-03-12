@@ -24,6 +24,7 @@
 #include "../filter/filter.h"
 
 #include "dbutils.h"
+#include "snap_image.h"
 #include "not_reached.h"
 #include "log.h"
 
@@ -158,7 +159,7 @@ int64_t editor::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2014, 3, 10, 1, 8, 30, content_update);
+    SNAP_PLUGIN_UPDATE(2014, 3, 11, 1, 57, 30, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -1339,10 +1340,204 @@ bool editor::save_editor_fields_impl(content::path_info_t& ipath, QtCassandra::Q
     }
     if(f_snap->postenv_exists("body"))
     {
-        QString const body(f_snap->postenv("body"));
+        QString body(f_snap->postenv("body"));
+        // TODO: find a way to detect whether images are allowed in this
+        //       field and if not make sure that if we find some err
+        // body may include images, transform the <img src="inline-data"/>
+        // to an <img src="/images/..."/> link instead
+        parse_out_inline_img(ipath, body);
         // TODO: XSS filter body
         row->cell(content::get_name(content::SNAP_NAME_CONTENT_BODY))->setValue(body);
     }
+
+    return true;
+}
+
+
+/** \brief Transform inline images into links.
+ *
+ * This function takes a value that was posted by the user of an editor
+ * input field and transforms the <img> tags that have inline data into
+ * images saved as files attachment to the current page and replace the
+ * src="..." with the corresponding path.
+ *
+ * \param[in,out] ipath  The ipath to the page being modified.
+ * \param[in,out] body  The HTML to be parsed and "fixed."
+ */
+void editor::parse_out_inline_img(content::path_info_t& ipath, QString& body)
+{
+    QDomDocument doc;
+    doc.setContent("<?xml version='1.1' encoding='utf-8'?><element>" + body + "</element>");
+    QDomNodeList imgs(doc.elementsByTagName("img"));
+
+    int const max_images(imgs.size());
+    for(int i(0); i < max_images; ++i)
+    {
+        QDomElement img(imgs.at(i).toElement());
+        if(!img.isNull())
+        {
+            // data:image/jpeg;base64,...
+            QString const src(img.attribute("src"));
+            if(src.startsWith("data:"))
+            {
+                bool const valid(save_inline_image(ipath, img, src));
+                if(!valid)
+                {
+                    // remove that tag, it is not considered valid so it
+                    // may cause harm, who knows...
+                    img.parentNode().removeChild(img);
+                }
+            }
+        }
+    }
+}
+
+
+bool editor::save_inline_image(content::path_info_t& ipath, QDomElement img, QString const& src)
+{
+    static uint32_t g_index = 0;
+
+    // we only support images so the MIME type has to start with "image/"
+    if(!src.startsWith("data:image/"))
+    {
+        return false;
+    }
+
+    // verify that it is base64 encoded, that's the only encoding we
+    // support (and browsers too I would think?)
+    int const p(src.indexOf(';', 11));
+    if(p < 0
+    || p > 64
+    || src.mid(p, 8) != ";base64,")
+    {
+        return false;
+    }
+
+    // the type of image (i.e. "png", "jpeg", "gif"...)
+    // we set that up so we know that it is "jpeg" and not "jpg"
+    QString type(src.mid(11, p - 11));
+    if(type != "png"
+    && type != "jpeg"
+    && type != "gif")
+    {
+        // not one of the image format that our JavaScript supports, so
+        // ignore at once
+        return false;
+    }
+
+    // this is an inline image
+    QByteArray const base64(src.mid(p + 8).toUtf8());
+    QByteArray const data(QByteArray::fromBase64(base64));
+
+    // verify the image magic
+    snap_image image;
+    if(!image.get_info(data))
+    {
+        return false;
+    }
+    int const max_frames(image.get_size());
+    if(max_frames == 0)
+    {
+        // a "valid" image file without actual frames?!
+        return false;
+    }
+    for(int i(0); i < max_frames; ++i)
+    {
+        smart_snap_image_buffer_t ibuf(image.get_buffer(i));
+        if(ibuf->get_mime_type().mid(6) != type)
+        {
+            // mime types do not match!?
+            return false;
+        }
+    }
+
+//void filter::filter_filename(QString& filename, QString const& extension (a.k.a. type))
+//{
+    // TODO: we should move this code fixing up the filename in a filter
+    //       function because we probably give access to other plugins
+    //       to such a feature.
+
+    // get the filename in lowercase, remove path, fix extension, make sure
+    // it is otherwise acceptable...
+    QString filename(img.attribute("filename"));
+
+    // remove the path if there is one
+    int const slash(filename.lastIndexOf('/'));
+    if(slash >= 0)
+    {
+        filename.remove(0, slash);
+    }
+
+    // force to all lowercase
+    filename = filename.toLower();
+
+    // avoid spaces in filenames
+    filename.replace(" ", "-");
+
+    // avoid "--", replace with a single "-"
+    for(;;)
+    {
+        int const length(filename.length());
+        filename.replace("--", "-");
+        if(filename.length() == length)
+        {
+            break;
+        }
+    }
+
+    // remove '-' at the start
+    while(!filename.isEmpty() && filename[0] == '-')
+    {
+        filename.remove(0, 1);
+    }
+
+    // remove '-' at the end
+    while(!filename.isEmpty() && *filename.end() == '-')
+    {
+        filename.remove(filename.length() - 1, 1);
+    }
+
+    // force the extension to what we defined in 'type' (image MIME)
+    if(!filename.isEmpty())
+    {
+        int const period(filename.lastIndexOf('.'));
+        filename = QString("%1.%2").arg(filename.left(period)).arg(type == "jpeg" ? "jpg" : type);
+    }
+
+    // prevent hidden Unix filenames, it could cause problems on Linux
+    if(!filename.isEmpty() && filename[0] == '.')
+    {
+        // clear the filename if it has a name we do not
+        // like (i.e. hidden Unix files are forbidden)
+        filename.clear();
+    }
+
+    // user supplied filename is not considered valid, use a default name
+    if(filename.isEmpty())
+    {
+        filename = QString("image.%1").arg(type);
+    }
+//}
+
+    snap_child::post_file_t postfile;
+    postfile.set_name("image");
+    postfile.set_filename(filename);
+    postfile.set_original_mime_type(type);
+    postfile.set_creation_time(f_snap->get_start_time());
+    postfile.set_modification_time(f_snap->get_start_time());
+    postfile.set_data(data);
+    postfile.set_image_width(image.get_buffer(0)->get_width());
+    postfile.set_image_height(image.get_buffer(0)->get_height());
+    ++g_index;
+    postfile.set_index(g_index);
+    content::attachment_file attachment(f_snap, postfile);
+    attachment.set_multiple(false);
+    attachment.set_cpath(ipath.get_cpath());
+    attachment.set_field_name("image");
+    attachment.set_attachment_owner(output::output::instance()->get_plugin_name());
+    attachment.set_attachment_type("attachment/public");
+    // TODO: define the locale in some ways... for now we use "neutral"
+    content::content::instance()->create_attachment(attachment, ipath.get_branch(), "");
 
     return true;
 }
