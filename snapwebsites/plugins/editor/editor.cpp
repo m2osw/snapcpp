@@ -159,7 +159,7 @@ int64_t editor::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2014, 3, 11, 1, 57, 30, content_update);
+    SNAP_PLUGIN_UPDATE(2014, 3, 12, 0, 37, 30, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -1367,9 +1367,11 @@ bool editor::save_editor_fields_impl(content::path_info_t& ipath, QtCassandra::Q
 void editor::parse_out_inline_img(content::path_info_t& ipath, QString& body)
 {
     QDomDocument doc;
-    doc.setContent("<?xml version='1.1' encoding='utf-8'?><element>" + body + "</element>");
+    //doc.setContent("<?xml version='1.1' encoding='utf-8'?><element>" + body + "</element>");
+    doc.setContent(QString("<element>%1</element>").arg(body));
     QDomNodeList imgs(doc.elementsByTagName("img"));
 
+    bool changed(false);
     int const max_images(imgs.size());
     for(int i(0); i < max_images; ++i)
     {
@@ -1381,7 +1383,11 @@ void editor::parse_out_inline_img(content::path_info_t& ipath, QString& body)
             if(src.startsWith("data:"))
             {
                 bool const valid(save_inline_image(ipath, img, src));
-                if(!valid)
+                if(valid)
+                {
+                    changed = true;
+                }
+                else
                 {
                     // remove that tag, it is not considered valid so it
                     // may cause harm, who knows...
@@ -1389,6 +1395,14 @@ void editor::parse_out_inline_img(content::path_info_t& ipath, QString& body)
                 }
             }
         }
+    }
+
+    // if any image was switched, change the body with the new img tags
+    if(changed)
+    {
+        // get the document back in the form of a string (unfortunate...)
+        body = doc.toString(-1);
+        body.remove("<element>").remove("</element>");
     }
 }
 
@@ -1538,6 +1552,10 @@ bool editor::save_inline_image(content::path_info_t& ipath, QDomElement img, QSt
     attachment.set_attachment_type("attachment/public");
     // TODO: define the locale in some ways... for now we use "neutral"
     content::content::instance()->create_attachment(attachment, ipath.get_branch(), "");
+
+    // replace the inline image data block with a local (albeit full) URI
+    // TBD: the probably won't work if the website definition uses a path
+    img.setAttribute("src", QString("/%1/%2").arg(ipath.get_cpath()).arg(filename));
 
     return true;
 }

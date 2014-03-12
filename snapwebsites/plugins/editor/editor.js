@@ -1,6 +1,6 @@
 /*
  * Name: editor
- * Version: 0.0.2.16
+ * Version: 0.0.2.22
  * Browsers: all
  * Copyright: Copyright 2013-2014 (c) Made to Order Software Corporation  All rights reverved.
  * License: GPL 2.0
@@ -1095,7 +1095,19 @@ console.log("command "+idx+" "+this.toolbarButtons[idx][2]+"!!!");
                     }
                 }
             }
-            jQuery(img).attr("width", w).attr("height", h).attr("filename", e.target.snapEditorFile.name).css({top: (limit_height - h) / 2, left: (limit_width - w) / 2, position: "relative"}).appendTo(e.target.snapEditorElement);
+            jQuery(e.target.snapEditorElement).empty();
+            jQuery(img)
+                .attr("width", w)
+                .attr("height", h)
+                .attr("filename", e.target.snapEditorFile.name)
+                .css({top: (limit_height - h) / 2, left: (limit_width - w) / 2, position: "relative"})
+                .appendTo(e.target.snapEditorElement);
+
+            // now make sure the editor detects the change
+            saved_active_element = snapwebsites.EditorInstance._activeElement;
+            snapwebsites.EditorInstance._activeElement = e.target.snapEditorElement;
+            snapwebsites.EditorInstance._checkModified();
+            snapwebsites.EditorInstance._activeElement = saved_active_element;
         };
         img.src = e.target.result;
 

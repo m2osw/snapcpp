@@ -1276,8 +1276,7 @@ void field_search::run()
                 QDomElement last_child(doc.createElement(children[0]));
                 parent.appendChild(last_child);
                 QString const string(f_result[0].stringValue());
-                QDomText text(doc.createTextNode(string));
-                last_child.appendChild(text);
+                snap_dom::insert_html_string_to_xml_doc(last_child, string);
                 cmd_reset(true);
             }
         }

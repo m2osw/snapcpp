@@ -115,6 +115,7 @@ public:
 
     QString             format_uri(QString const& format, content::path_info_t& ipath, QString const& page_name, params_map_t const& params);
     static save_mode_t  string_to_save_mode(QString const& mode);
+    void                parse_out_inline_img(content::path_info_t& ipath, QString& body);
 
     SNAP_SIGNAL(save_editor_fields, (content::path_info_t& ipath, QtCassandra::QCassandraRow::pointer_t row), (ipath, row));
     SNAP_SIGNAL(replace_uri_token, (editor_uri_token& token_info), (token_info));
@@ -124,7 +125,6 @@ private:
     void                process_new_draft();
     void                editor_save(content::path_info_t& ipath);
     void                editor_create_new_branch(content::path_info_t& ipath);
-    void                parse_out_inline_img(content::path_info_t& ipath, QString& body);
     bool                save_inline_image(content::path_info_t& ipath, QDomElement img, QString const& src);
 
     zpsnap_child_t      f_snap;
