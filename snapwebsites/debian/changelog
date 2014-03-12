@@ -1,10 +1,20 @@
+snapwebsites (0.1.27m2osw2~saucy) saucy; urgency=high
+
+  * Fixed the zipios library detection problem.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Tue, 11 Mar 2014 19:13:51 -0700
+
+snapwebsites (0.1.27m2osw1~saucy) saucy; urgency=high
+
+  * This source package version is up at the PPA, so we need to bump the
+  version to get the system to build it.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Tue, 11 Mar 2014 18:26:42 -0700
+
 snapwebsites (0.1.27~saucy) saucy; urgency=high
 
   [ Alexis Wilke ]
-  * 
-
-  [ R. Douglas Barbieri ]
-  *
+  * Fixes so we can register a user under IE9+.
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Mon, 10 Mar 2014 17:56:24 -0700
 

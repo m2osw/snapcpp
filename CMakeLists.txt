@@ -65,23 +65,7 @@ find_package( SnapBuild        REQUIRED )
 ################################################################################
 # Third party libraries
 #
-ConfigureMakeProject(
-    USE_CONFIGURE_SCRIPT
-    PROJECT_NAME  thrift
-    VERSION       0.9.0
-    DISTFILE_PATH ${CMAKE_SOURCE_DIR}/3rdParty/thrift-0.9.0.tar.gz
-    CONFIG_ARGS
-        --without-csharp
-        --without-java
-        --without-erlang
-        --without-python
-        --without-perl
-        --without-php
-        --without-php_extension
-        --without-ruby
-        --without-haskell
-        --without-go
-)
+add_subdirectory( thrift )
 
 
 ################################################################################
@@ -95,12 +79,12 @@ ConfigureMakeProject( PROJECT_NAME googlerank      DEPENDS snapCMakeModules cont
 ConfigureMakeProject( PROJECT_NAME libQtCassandra
         CONFIG_ARGS
             -DTHRIFT_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
-        DEPENDS snapCMakeModules thrift controlled_vars
+        DEPENDS snapCMakeModules controlled_vars
         )
 ConfigureMakeProject( PROJECT_NAME libQtSerialization
         CONFIG_ARGS
             -DTHRIFT_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
-        DEPENDS snapCMakeModules thrift
+        DEPENDS snapCMakeModules
         )
 ConfigureMakeProject( PROJECT_NAME libtld DEPENDS snapCMakeModules )
 ConfigureMakeProject( PROJECT_NAME snapwebsites
