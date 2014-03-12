@@ -1,3 +1,9 @@
+snapwebsites (0.1.27m2osw2~saucy) saucy; urgency=high
+
+  * Fixed the zipios library detection problem.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Tue, 11 Mar 2014 19:13:51 -0700
+
 snapwebsites (0.1.27m2osw1~saucy) saucy; urgency=high
 
   * This source package version is up at the PPA, so we need to bump the

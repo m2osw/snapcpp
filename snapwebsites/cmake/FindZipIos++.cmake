@@ -11,7 +11,7 @@ find_path( ZIPIOSCC_INCLUDE_DIR zipios++/zipfile.h
 		   PATHS /usr/include /usr/local/include $ENV{ZIPIOSCC_INCLUDE_DIR}
 		   PATH_SUFFIXES zipios++
 		 )
-find_library( ZIPIOSCC_LIBRARY snapwebsites
+find_library( ZIPIOSCC_LIBRARY libzipios.so
 			PATHS /usr/lib /usr/local/lib $ENV{ZIPIOSCC_LIBRARY}
 		 )
 mark_as_advanced( ZIPIOSCC_INCLUDE_DIR ZIPIOSCC_LIBRARY )
