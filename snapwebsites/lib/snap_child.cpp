@@ -2605,6 +2605,7 @@ void snap_child::backend()
         f_env[snap::get_name(SNAP_NAME_CORE_HTTP_USER_AGENT)] = "Snap! Backend";
 
         server::pointer_t server( f_server.lock() );
+        Q_ASSERT(server);
         QString uri(server->get_parameter("__BACKEND_URI"));
         if(!uri.isEmpty())
         {
@@ -2740,6 +2741,7 @@ void snap_child::process_backend_uri(QString const& uri)
     f_ready = true;
 
     server::pointer_t server( f_server.lock() );
+    Q_ASSERT(server);
     QString const action(server->get_parameter("__BACKEND_ACTION"));
     if(!action.isEmpty())
     {
@@ -3684,6 +3686,9 @@ void snap_child::snap_info()
  */
 void snap_child::snap_statistics()
 {
+    server::pointer_t server( f_server.lock() );
+    Q_ASSERT(server);
+
     QString s;
 
     // getting started
@@ -3694,7 +3699,7 @@ void snap_child::snap_statistics()
 
     // the number of connections received by the server up until this child fork()'ed
     s = "CONNECTIONS_COUNT=";
-    s += QString::number(f_server.lock()->connections_count());
+    s += QString::number(server->connections_count());
     s += "\n";
     write(s);
 
@@ -3794,7 +3799,9 @@ void snap_child::setup_uri()
     //    f_uri.set_path(f_env["REQUEST_URI"].mid(0, p));
     //}
 
-    QString qs_path(f_server.lock()->get_parameter("qs_path"));
+    server::pointer_t server( f_server.lock() );
+    Q_ASSERT(server);
+    QString qs_path(server->get_parameter("qs_path"));
     QString path(f_uri.query_option(qs_path));
     QString extension;
     if(path != "." && path != "..")
@@ -3881,7 +3888,9 @@ const snap_uri& snap_child::get_uri() const
  */
 QString snap_child::get_action() const
 {
-    return f_uri.query_option(f_server.lock()->get_parameter("qs_action"));
+    server::pointer_t server( f_server.lock() );
+    Q_ASSERT(server);
+    return f_uri.query_option(server->get_parameter("qs_action"));
 }
 
 
@@ -3898,7 +3907,9 @@ QString snap_child::get_action() const
  */
 void snap_child::set_action(QString const& action)
 {
-    f_uri.set_query_option(f_server.lock()->get_parameter("qs_action"), action);
+    server::pointer_t server( f_server.lock() );
+    Q_ASSERT(server);
+    f_uri.set_query_option(server->get_parameter("qs_action"), action);
 }
 
 
@@ -3919,6 +3930,7 @@ void snap_child::connect_cassandra()
 
     // connect to Cassandra
     server::pointer_t server( f_server.lock() );
+    Q_ASSERT(server);
     f_cassandra = QtCassandra::QCassandra::create();
     if(!f_cassandra->connect(server->cassandra_host(), server->cassandra_port()))
     {
@@ -3957,7 +3969,9 @@ void snap_child::connect_cassandra()
  */
 QtCassandra::QCassandraTable::pointer_t snap_child::create_table(const QString& table_name, const QString& comment)
 {
-    return f_server.lock()->create_table(f_context, table_name, comment);
+    server::pointer_t server( f_server.lock() );
+    Q_ASSERT(server);
+    return server->create_table(f_context, table_name, comment);
 }
 
 
@@ -4469,6 +4483,7 @@ void snap_child::canonicalize_options()
     }
 
     server::pointer_t server( f_server.lock() );
+    Q_ASSERT(server);
     QString const qs_lang(server->get_parameter("qs_lang"));
     QString lang(f_uri.query_option(qs_lang));
     QString country;
@@ -5034,7 +5049,9 @@ void snap_child::page_redirect(QString const& path, http_code_t http_code, QStri
         }
     }
 
-    f_server.lock()->attach_to_session();
+    server::pointer_t server( f_server.lock() );
+    Q_ASSERT(server);
+    server->attach_to_session();
 
     // redirect the user to the specified path
     QString http_name;
@@ -5089,7 +5106,9 @@ void snap_child::page_redirect(QString const& path, http_code_t http_code, QStri
  */
 void snap_child::attach_to_session()
 {
-    f_server.lock()->attach_to_session();
+    server::pointer_t server( f_server.lock() );
+    Q_ASSERT(server);
+    server->attach_to_session();
 }
 
 
@@ -5107,7 +5126,9 @@ void snap_child::attach_to_session()
 bool snap_child::load_file(post_file_t& file)
 {
     bool found(false);
-    f_server.lock()->load_file(file, found);
+    server::pointer_t server( f_server.lock() );
+    Q_ASSERT(server);
+    server->load_file(file, found);
     return found;
 }
 
@@ -5356,7 +5377,9 @@ void snap_child::exit(int code)
  */
 bool snap_child::is_debug() const
 {
-    return f_server.lock()->is_debug();
+    server::pointer_t server( f_server.lock() );
+    Q_ASSERT(server);
+    return server->is_debug();
 }
 
 
@@ -5373,7 +5396,9 @@ bool snap_child::is_debug() const
  */
 QString snap_child::get_server_parameter(QString const& name)
 {
-    return f_server.lock()->get_parameter(name);
+    server::pointer_t server( f_server.lock() );
+    Q_ASSERT(server);
+    return server->get_parameter(name);
 }
 
 
@@ -5627,6 +5652,8 @@ void snap_child::die(http_code_t err_code, QString err_name, const QString& err_
         set_header("Content-Type", "text/html; charset=utf8", HEADER_MODE_EVERYWHERE);
 
         // Generate the signature
+        server::pointer_t server( f_server.lock() );
+        Q_ASSERT(server);
         QString signature;
         const QString site_key(get_site_key());
         if(f_cassandra)
@@ -5637,12 +5664,12 @@ void snap_child::die(http_code_t err_code, QString err_name, const QString& err_
 
             QtCassandra::QCassandraValue site_name(get_site_parameter(get_name(SNAP_NAME_CORE_SITE_NAME)));
             signature = "<a href=\"" + get_site_key() + "\">" + site_name.stringValue() + "</a>";
-            f_server.lock()->improve_signature(f_uri.path(), signature);
+            server->improve_signature(f_uri.path(), signature);
         }
         else if(!site_key.isEmpty())
         {
             signature = "<a href=\"" + get_site_key() + "\">" + get_site_key() + "</a>";
-            f_server.lock()->improve_signature(f_uri.path(), signature);
+            server->improve_signature(f_uri.path(), signature);
         }
         // else -- no signature...
 
@@ -6158,6 +6185,7 @@ void snap_child::output_cookies()
 QString snap_child::get_unique_number()
 {
     server::pointer_t server( f_server.lock() );
+    Q_ASSERT(server);
     QString lock_path(server->get_parameter("data_path"));
 
     quint64 c(0);
@@ -6202,6 +6230,7 @@ QString snap_child::get_unique_number()
 void snap_child::init_plugins()
 {
     server::pointer_t server( f_server.lock() );
+    Q_ASSERT(server);
 
     // load the plugins for this website
     QtCassandra::QCassandraValue plugins(get_site_parameter(get_name(SNAP_NAME_CORE_PLUGINS)));
@@ -6413,7 +6442,9 @@ void snap_child::finish_update()
     if(f_new_content)
     {
         f_new_content = false;
-        f_server.lock()->save_content();
+        server::pointer_t server( f_server.lock() );
+        Q_ASSERT(server);
+        server->save_content();
     }
 }
 
@@ -6623,6 +6654,7 @@ void snap_child::execute()
     // give a chance to the system to use cookies such as the
     // cookie used to mark a user as logged in to kick in early
     server::pointer_t server( f_server.lock() );
+    Q_ASSERT(server);
     server->process_cookies();
 
     // let plugins detach whatever data they attached to the user session
@@ -6756,7 +6788,9 @@ void snap_child::process_post()
 {
     if(f_has_post)
     {
-        f_server.lock()->process_post(f_uri.path());
+        server::pointer_t server( f_server.lock() );
+        Q_ASSERT(server);
+        server->process_post(f_uri.path());
     }
 }
 
@@ -6903,7 +6937,9 @@ snap_child::locale_info_vector_t const& snap_child::get_plugins_locales()
         // we expect a string of locales defined as weighted HTTP strings
         // remember that without a proper weight the algorithm uses 1.0
         QString locales;
-        f_server.lock()->define_locales(locales);
+        server::pointer_t server( f_server.lock() );
+        Q_ASSERT(server);
+        server->define_locales(locales);
         if(!locales.isEmpty())
         {
             http_strings::WeightedHttpString language_country(locales);
@@ -7616,7 +7652,9 @@ snap_child::country_name_t const *snap_child::get_countries()
  */
 void snap_child::udp_ping(const char *name, const char *message)
 {
-    f_server.lock()->udp_ping(name, message);
+    server::pointer_t server( f_server.lock() );
+    Q_ASSERT(server);
+    server->udp_ping(name, message);
 }
 
 
@@ -7643,7 +7681,9 @@ snap_child::udp_server_t snap_child::udp_get_server( const char *name )
 
     try
     {
-        return server::udp_get_server( f_server.lock()->get_parameter(name) );
+        server::pointer_t server( f_server.lock() );
+        Q_ASSERT(server);
+        return server::udp_get_server( server->get_parameter(name) );
     }
     catch( const std::runtime_error& runtime_error )
     {
