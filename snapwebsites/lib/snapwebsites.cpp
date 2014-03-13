@@ -498,6 +498,7 @@ void server::exit( const int code )
     // Destroy the snapwebsites server instance.
     //
     g_instance.reset();
+    g_application = nullptr;    // Make sure the QApplication instance is really deleted.
 
     // Call the C exit(3) function.
     //
