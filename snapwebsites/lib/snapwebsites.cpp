@@ -462,7 +462,51 @@ server::server()
  */
 server::~server()
 {
-    close_qtapp();
+    for( auto child : f_children_waiting )
+    {
+        delete child;
+    }
+    f_children_waiting.clear();
+    //
+    for( auto child : f_children_running )
+    {
+        if( child )
+        {
+            child->kill();
+        }
+        //
+        delete child;
+    }
+    f_children_running.clear();
+
+    // Destroy the QApplication instance.
+    //
+    g_application = nullptr;
+}
+
+
+/** \brief Exit the server.
+ *
+ * This function exists the program by calling the exit(3) function from
+ * the C library. Before doing so, though, it will first make sure that
+ * the server is cleaned up as required.
+ *
+ * \param[in] code  The exit code, generally 0 or 1.
+ */
+void server::exit( const int code )
+{
+    // Destroy the snapwebsites server instance.
+    //
+    g_instance.reset();
+    g_application = nullptr;    // Make sure the QApplication instance is really deleted.
+
+    // Call the C exit(3) function.
+    //
+    ::exit(code);
+
+    // Sanity check!
+    //
+    NOTREACHED();
 }
 
 
@@ -862,36 +906,6 @@ void server::prepare_qtapp( int argc, char *argv[] )
     {
         g_application = QPointer<QCoreApplication>( new QCoreApplication(argc, argv) );
     }
-}
-
-
-/** \brief Before quitting your application, call this to delete the application.
- *
- * The application pointer is kept in memory until this function gets called.
- * It is not generally necessary to call this function, however, some
- * processes in Qt may still need proper cleanup. This will generally take
- * care of those before quitting.
- */
-void server::close_qtapp()
-{
-    g_application = nullptr;
-}
-
-
-/** \brief Exit the server.
- *
- * This function exists the program by calling the exit(3) function from
- * the C library. Before doing so, though, it will first make sure that
- * the server is cleaned up as required.
- *
- * \param[in] code  The exit code, generally 0 or 1.
- */
-void server::exit(int code)
-{
-    close_qtapp();
-    // call the C exit(3) function
-    ::exit(code);
-    NOTREACHED();
 }
 
 

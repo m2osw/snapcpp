@@ -23,7 +23,8 @@
 
 int main(int argc, char *argv[])
 {
-	try
+    int exitval = 1;
+    try
 	{
 		// create a server object
 		snap::server::pointer_t s( snap::server::instance() );
@@ -45,9 +46,8 @@ int main(int argc, char *argv[])
 		// listen to connections
 		s->backend();
 
-		// exit via the server so the server can clean itself up properly
-		s->exit(0);
-	}
+        exitval = 0;
+    }
     catch( const snap::snap_exception& except )
     {
         SNAP_LOG_FATAL("snapbackend: exception caught: ")(except.what());
@@ -61,7 +61,9 @@ int main(int argc, char *argv[])
         SNAP_LOG_FATAL("snapbackend: unknown exception caught!");
     }
 
-	exit(1);
+    // exit via the server so the server can clean itself up properly
+    //
+    snap::server::exit( exitval );
     snap::NOTREACHED();
     return 0;
 }

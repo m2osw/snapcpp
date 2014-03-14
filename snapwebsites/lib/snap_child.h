@@ -178,7 +178,7 @@ public:
         SNAP_CHILD_STATUS_READY,
         SNAP_CHILD_STATUS_RUNNING
     };
-    typedef std::shared_ptr<server> server_pointer_t;
+    typedef std::weak_ptr<server> server_pointer_t;
     typedef QMap<QString, QString>  environment_map_t;
 
     // Note: the information saved in files come from the POST and
@@ -280,6 +280,7 @@ public:
 
     bool                        process(int socket);
     void                        backend();
+    void                        kill();
     status_t                    check_status();
 
     snap_uri const&             get_uri() const;
@@ -397,7 +398,7 @@ private:
     controlled_vars::fbool_t                    f_new_content;
     controlled_vars::fbool_t                    f_is_child;
     controlled_vars::fbool_t                    f_is_being_initialized;
-    controlled_vars::fbool_t                    f_ready; // becomes true just before the f_server->execute() call
+    controlled_vars::fbool_t                    f_ready; // becomes true just before the server::execute() call
     pid_t                                       f_child_pid;
     int                                         f_socket;
     environment_map_t                           f_env;

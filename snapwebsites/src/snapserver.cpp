@@ -23,6 +23,7 @@
 
 int main(int argc, char *argv[])
 {
+    int exitval = 1;
 	try
 	{
 		// create a server object
@@ -45,9 +46,7 @@ int main(int argc, char *argv[])
 		// listen to connections
 		s->listen();
 
-		// exit via the server so the server can clean itself up properly
-		s->exit(0);
-        snap::NOTREACHED();
+        exitval = 0;
     }
     catch( snap::snap_exception const& except )
     {
@@ -62,7 +61,11 @@ int main(int argc, char *argv[])
         SNAP_LOG_FATAL("snapserver: unknown exception caught!");
     }
 
-    return 1;
+    // exit via the server so the server can clean itself up properly
+    //
+    snap::server::exit( exitval );
+    snap::NOTREACHED();
+    return 0;
 }
 
 // vim: ts=4 sw=4

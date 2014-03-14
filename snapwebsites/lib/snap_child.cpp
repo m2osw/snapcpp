@@ -2604,7 +2604,9 @@ void snap_child::backend()
         // define a User-Agent for all backends (should that be a parameter?)
         f_env[snap::get_name(SNAP_NAME_CORE_HTTP_USER_AGENT)] = "Snap! Backend";
 
-        QString uri(f_server->get_parameter("__BACKEND_URI"));
+        server::pointer_t server( f_server.lock() );
+        Q_ASSERT(server);
+        QString uri(server->get_parameter("__BACKEND_URI"));
         if(!uri.isEmpty())
         {
             process_backend_uri(uri);
@@ -2738,11 +2740,13 @@ void snap_child::process_backend_uri(QString const& uri)
 
     f_ready = true;
 
-    QString const action(f_server->get_parameter("__BACKEND_ACTION"));
+    server::pointer_t server( f_server.lock() );
+    Q_ASSERT(server);
+    QString const action(server->get_parameter("__BACKEND_ACTION"));
     if(!action.isEmpty())
     {
         server::backend_action_map_t actions;
-        f_server->register_backend_action(actions);
+        server->register_backend_action(actions);
 #ifdef DEBUG
         if(actions.contains("list"))
         {
@@ -2780,7 +2784,38 @@ void snap_child::process_backend_uri(QString const& uri)
     }
     else
     {
-        f_server->backend_process();
+        server->backend_process();
+    }
+}
+
+
+/** \brief Kill running process.
+ *
+ * Use this method to stop a child process. It first sends the SIGTERM
+ * message, then if the status doesn't change after a brief interval,
+ * SIGKILL is used.
+ *
+ * \sa check_status()
+ */
+void snap_child::kill()
+{
+    if( f_child_pid == 0 )
+    {
+        // Child is not running
+        //
+        return;
+    }
+
+    ::kill( f_child_pid, SIGTERM );
+    int timeout = 5;
+    while( check_status() == SNAP_CHILD_STATUS_RUNNING )
+    {
+        sleep( 1 );
+        if( --timeout <= 0 )
+        {
+            ::kill( f_child_pid, SIGKILL );
+            break;
+        }
     }
 }
 
@@ -3651,6 +3686,9 @@ void snap_child::snap_info()
  */
 void snap_child::snap_statistics()
 {
+    server::pointer_t server( f_server.lock() );
+    Q_ASSERT(server);
+
     QString s;
 
     // getting started
@@ -3661,7 +3699,7 @@ void snap_child::snap_statistics()
 
     // the number of connections received by the server up until this child fork()'ed
     s = "CONNECTIONS_COUNT=";
-    s += QString::number(f_server->connections_count());
+    s += QString::number(server->connections_count());
     s += "\n";
     write(s);
 
@@ -3761,7 +3799,9 @@ void snap_child::setup_uri()
     //    f_uri.set_path(f_env["REQUEST_URI"].mid(0, p));
     //}
 
-    QString qs_path(f_server->get_parameter("qs_path"));
+    server::pointer_t server( f_server.lock() );
+    Q_ASSERT(server);
+    QString qs_path(server->get_parameter("qs_path"));
     QString path(f_uri.query_option(qs_path));
     QString extension;
     if(path != "." && path != "..")
@@ -3848,7 +3888,9 @@ const snap_uri& snap_child::get_uri() const
  */
 QString snap_child::get_action() const
 {
-    return f_uri.query_option(f_server->get_parameter("qs_action"));
+    server::pointer_t server( f_server.lock() );
+    Q_ASSERT(server);
+    return f_uri.query_option(server->get_parameter("qs_action"));
 }
 
 
@@ -3865,7 +3907,9 @@ QString snap_child::get_action() const
  */
 void snap_child::set_action(QString const& action)
 {
-    f_uri.set_query_option(f_server->get_parameter("qs_action"), action);
+    server::pointer_t server( f_server.lock() );
+    Q_ASSERT(server);
+    f_uri.set_query_option(server->get_parameter("qs_action"), action);
 }
 
 
@@ -3885,8 +3929,10 @@ void snap_child::connect_cassandra()
     }
 
     // connect to Cassandra
+    server::pointer_t server( f_server.lock() );
+    Q_ASSERT(server);
     f_cassandra = QtCassandra::QCassandra::create();
-    if(!f_cassandra->connect(f_server->cassandra_host(), f_server->cassandra_port()))
+    if(!f_cassandra->connect(server->cassandra_host(), server->cassandra_port()))
     {
         die(HTTP_CODE_SERVICE_UNAVAILABLE, "", "Our database system is temporarilly unavailable.", "Could not connect to Cassandra");
         NOTREACHED();
@@ -3902,7 +3948,7 @@ void snap_child::connect_cassandra()
         die(HTTP_CODE_SERVICE_UNAVAILABLE, "", "Our database system does not seem to be properly installed.", "The child process connected to Cassandra but it could not find the \"" + context_name + "\" context.");
         NOTREACHED();
     }
-    f_context->setHostName(f_server->get_parameter("server_name"));
+    f_context->setHostName(server->get_parameter("server_name"));
 
     // TBD -- that really the right place for this?
     //        (in this way it is done once for any plugin using
@@ -3923,7 +3969,9 @@ void snap_child::connect_cassandra()
  */
 QtCassandra::QCassandraTable::pointer_t snap_child::create_table(const QString& table_name, const QString& comment)
 {
-    return f_server->create_table(f_context, table_name, comment);
+    server::pointer_t server( f_server.lock() );
+    Q_ASSERT(server);
+    return server->create_table(f_context, table_name, comment);
 }
 
 
@@ -4434,7 +4482,9 @@ void snap_child::canonicalize_options()
         }
     }
 
-    QString const qs_lang(f_server->get_parameter("qs_lang"));
+    server::pointer_t server( f_server.lock() );
+    Q_ASSERT(server);
+    QString const qs_lang(server->get_parameter("qs_lang"));
     QString lang(f_uri.query_option(qs_lang));
     QString country;
 
@@ -4477,20 +4527,20 @@ void snap_child::canonicalize_options()
     // now take care of the branch and revision
 
     // current or current working branch (working_branch=1)
-    QString const qs_working_branch(f_server->get_parameter("qs_working_branch"));
+    QString const qs_working_branch(server->get_parameter("qs_working_branch"));
     QString const working_branch_entry(f_uri.query_option(qs_working_branch));
     bool const working_branch(!working_branch_entry.isEmpty());
 
     // branch (branch=<branch>)
-    QString const qs_branch(f_server->get_parameter("qs_branch"));
+    QString const qs_branch(server->get_parameter("qs_branch"));
     QString branch(f_uri.query_option(qs_branch));
 
     // rev (rev=<branch>.<revision>)
-    QString const qs_rev(f_server->get_parameter("qs_rev"));
+    QString const qs_rev(server->get_parameter("qs_rev"));
     QString rev(f_uri.query_option(qs_rev));
 
     // revision (revision=<revision>)
-    QString const qs_revision(f_server->get_parameter("qs_revision"));
+    QString const qs_revision(server->get_parameter("qs_revision"));
     QString revision(f_uri.query_option(qs_revision));
 
     if(branch.isEmpty() && revision.isEmpty())
@@ -4999,7 +5049,9 @@ void snap_child::page_redirect(QString const& path, http_code_t http_code, QStri
         }
     }
 
-    f_server->attach_to_session();
+    server::pointer_t server( f_server.lock() );
+    Q_ASSERT(server);
+    server->attach_to_session();
 
     // redirect the user to the specified path
     QString http_name;
@@ -5054,7 +5106,9 @@ void snap_child::page_redirect(QString const& path, http_code_t http_code, QStri
  */
 void snap_child::attach_to_session()
 {
-    f_server->attach_to_session();
+    server::pointer_t server( f_server.lock() );
+    Q_ASSERT(server);
+    server->attach_to_session();
 }
 
 
@@ -5072,7 +5126,9 @@ void snap_child::attach_to_session()
 bool snap_child::load_file(post_file_t& file)
 {
     bool found(false);
-    f_server->load_file(file, found);
+    server::pointer_t server( f_server.lock() );
+    Q_ASSERT(server);
+    server->load_file(file, found);
     return found;
 }
 
@@ -5300,7 +5356,7 @@ void snap_child::exit(int code)
         close(f_socket);
         f_socket = -1;
     }
-    f_server->exit(code);
+    server::exit(code);
     NOTREACHED();
 }
 
@@ -5321,7 +5377,9 @@ void snap_child::exit(int code)
  */
 bool snap_child::is_debug() const
 {
-    return f_server->is_debug();
+    server::pointer_t server( f_server.lock() );
+    Q_ASSERT(server);
+    return server->is_debug();
 }
 
 
@@ -5338,7 +5396,9 @@ bool snap_child::is_debug() const
  */
 QString snap_child::get_server_parameter(QString const& name)
 {
-    return f_server->get_parameter(name);
+    server::pointer_t server( f_server.lock() );
+    Q_ASSERT(server);
+    return server->get_parameter(name);
 }
 
 
@@ -5592,6 +5652,8 @@ void snap_child::die(http_code_t err_code, QString err_name, const QString& err_
         set_header("Content-Type", "text/html; charset=utf8", HEADER_MODE_EVERYWHERE);
 
         // Generate the signature
+        server::pointer_t server( f_server.lock() );
+        Q_ASSERT(server);
         QString signature;
         const QString site_key(get_site_key());
         if(f_cassandra)
@@ -5602,12 +5664,12 @@ void snap_child::die(http_code_t err_code, QString err_name, const QString& err_
 
             QtCassandra::QCassandraValue site_name(get_site_parameter(get_name(SNAP_NAME_CORE_SITE_NAME)));
             signature = "<a href=\"" + get_site_key() + "\">" + site_name.stringValue() + "</a>";
-            f_server->improve_signature(f_uri.path(), signature);
+            server->improve_signature(f_uri.path(), signature);
         }
         else if(!site_key.isEmpty())
         {
             signature = "<a href=\"" + get_site_key() + "\">" + get_site_key() + "</a>";
-            f_server->improve_signature(f_uri.path(), signature);
+            server->improve_signature(f_uri.path(), signature);
         }
         // else -- no signature...
 
@@ -6122,7 +6184,9 @@ void snap_child::output_cookies()
  */
 QString snap_child::get_unique_number()
 {
-    QString lock_path(f_server->get_parameter("data_path"));
+    server::pointer_t server( f_server.lock() );
+    Q_ASSERT(server);
+    QString lock_path(server->get_parameter("data_path"));
 
     quint64 c(0);
     {
@@ -6148,7 +6212,7 @@ QString snap_child::get_unique_number()
         }
         // close the file now; we do not want to hold the file for too long
     }
-    return QString("%1-%2").arg(f_server->get_parameter("server_name")).arg(c);
+    return QString("%1-%2").arg(server->get_parameter("server_name")).arg(c);
 }
 
 /** \brief Initialize the plugins.
@@ -6165,6 +6229,9 @@ QString snap_child::get_unique_number()
  */
 void snap_child::init_plugins()
 {
+    server::pointer_t server( f_server.lock() );
+    Q_ASSERT(server);
+
     // load the plugins for this website
     QtCassandra::QCassandraValue plugins(get_site_parameter(get_name(SNAP_NAME_CORE_PLUGINS)));
     QString site_plugins(plugins.stringValue());
@@ -6172,7 +6239,7 @@ void snap_child::init_plugins()
     {
         // if the list of plugins is empty in the site parameters
         // then get the default from the server configuration
-        site_plugins = f_server->get_parameter("default_plugins");
+        site_plugins = server->get_parameter("default_plugins");
     }
     QStringList list_of_plugins(site_plugins.split(","));
 
@@ -6197,7 +6264,7 @@ void snap_child::init_plugins()
     }
 
     // load the plugins
-    const QString plugins_path( f_server->get_parameter("plugins_path") );
+    const QString plugins_path( server->get_parameter("plugins_path") );
     if( plugins_path.isEmpty() )
     {
         // Sanity check
@@ -6210,7 +6277,7 @@ void snap_child::init_plugins()
         NOTREACHED();
     }
 
-    if(!snap::plugins::load(plugins_path, std::static_pointer_cast<snap::plugins::plugin>(f_server), list_of_plugins))
+    if(!snap::plugins::load(plugins_path, std::static_pointer_cast<snap::plugins::plugin>(server), list_of_plugins))
     {
         die( HTTP_CODE_SERVICE_UNAVAILABLE
            , "Plugin Unavailable"
@@ -6223,8 +6290,8 @@ void snap_child::init_plugins()
     // but they are not really usable yet because we did not initialize them
 
     // now boot the plugin system (send signals)
-    f_server->bootstrap(this);
-    f_server->init();
+    server->bootstrap(this);
+    server->init();
 
     // run updates if any
     update_plugins(list_of_plugins);
@@ -6375,7 +6442,9 @@ void snap_child::finish_update()
     if(f_new_content)
     {
         f_new_content = false;
-        f_server->save_content();
+        server::pointer_t server( f_server.lock() );
+        Q_ASSERT(server);
+        server->save_content();
     }
 }
 
@@ -6584,11 +6653,13 @@ void snap_child::execute()
 
     // give a chance to the system to use cookies such as the
     // cookie used to mark a user as logged in to kick in early
-    f_server->process_cookies();
+    server::pointer_t server( f_server.lock() );
+    Q_ASSERT(server);
+    server->process_cookies();
 
     // let plugins detach whatever data they attached to the user session
     // (note: nothing to do with the fork() which was called a while back)
-    f_server->detach_from_session();
+    server->detach_from_session();
 
     f_ready = true;
 
@@ -6598,7 +6669,7 @@ void snap_child::execute()
     // path::primary_owner of the content that match f_uri.path() and
     // then calls the corresponding on_path_execute() function of that
     // primary owner
-    f_server->execute(f_uri.path());
+    server->execute(f_uri.path());
 
     if(f_output.buffer().size() == 0)
     {
@@ -6717,7 +6788,9 @@ void snap_child::process_post()
 {
     if(f_has_post)
     {
-        f_server->process_post(f_uri.path());
+        server::pointer_t server( f_server.lock() );
+        Q_ASSERT(server);
+        server->process_post(f_uri.path());
     }
 }
 
@@ -6732,7 +6805,7 @@ void snap_child::process_post()
  * \li the language that the browser sent (as a last resort.)
  *
  * The user preferred language requires the user to be logged in. This
- * call only works 100% correctly only if made the f_server->execute()
+ * call only works 100% correctly only if made the server::execute()
  * call started (f_ready is true in snap_child).
  *
  * The language information is expected to be used to return the
@@ -6864,7 +6937,9 @@ snap_child::locale_info_vector_t const& snap_child::get_plugins_locales()
         // we expect a string of locales defined as weighted HTTP strings
         // remember that without a proper weight the algorithm uses 1.0
         QString locales;
-        f_server->define_locales(locales);
+        server::pointer_t server( f_server.lock() );
+        Q_ASSERT(server);
+        server->define_locales(locales);
         if(!locales.isEmpty())
         {
             http_strings::WeightedHttpString language_country(locales);
@@ -7577,7 +7652,9 @@ snap_child::country_name_t const *snap_child::get_countries()
  */
 void snap_child::udp_ping(const char *name, const char *message)
 {
-    f_server->udp_ping(name, message);
+    server::pointer_t server( f_server.lock() );
+    Q_ASSERT(server);
+    server->udp_ping(name, message);
 }
 
 
@@ -7604,7 +7681,9 @@ snap_child::udp_server_t snap_child::udp_get_server( const char *name )
 
     try
     {
-        return server::udp_get_server( f_server->get_parameter(name) );
+        server::pointer_t server( f_server.lock() );
+        Q_ASSERT(server);
+        return server::udp_get_server( server->get_parameter(name) );
     }
     catch( const std::runtime_error& runtime_error )
     {

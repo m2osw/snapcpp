@@ -1,3 +1,10 @@
+snapwebsites (0.1.28~saucy) UNRELEASED; urgency=high
+
+  * When snap exits, running children are killed in the destructor of
+  the server object.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Wed, 12 Mar 2014 16:38:38 -0700
+
 snapwebsites (0.1.27m2osw2~saucy) saucy; urgency=high
 
   * Fixed the zipios library detection problem.
