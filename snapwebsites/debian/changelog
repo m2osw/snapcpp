@@ -1,7 +1,15 @@
-snapwebsites (0.1.28~saucy) UNRELEASED; urgency=high
+snapwebsites (0.1.28~saucy) saucy; urgency=high
 
-  * When snap exits, running children are killed in the destructor of
-  the server object.
+  * 4621862 Strings need \n substituted for both display *and* edit.
+  * 48aeaf4 Create a user specific right once a user gets verified.
+  * a282122 In snap_child, now check to make sure server pointer is non-null.
+  * 899bcda Fixed problems with server destructor not being called. Also
+  * snap_child uses a weak_ptr to the server.
+  * e22dfa4 Bumping to next version, and added changelog for latest fix.
+  * fe56925 Kill hanging child processes on exit.
+  * 0e9cd39 Fixed the drop of the image so it replaces the image instead of
+  * adding it.
+  * 5dda783 No longer rebuilds projects at the root level that haven't changed.
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Wed, 12 Mar 2014 16:38:38 -0700
 
