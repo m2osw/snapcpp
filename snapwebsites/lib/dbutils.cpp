@@ -564,15 +564,7 @@ QString dbutils::get_column_value( QCassandraCell::pointer_t c, const bool displ
 
             case CT_string_value:
             {
-                // all others viewed as strings
-                if( display_only )
-                {
-                    v = c->value().stringValue().replace("\n", "\\n");
-                }
-                else
-                {
-                    v = c->value().stringValue();
-                }
+                v = c->value().stringValue().replace("\n", "\\n");
             }
             break;
 
@@ -687,7 +679,9 @@ void dbutils::set_column_value( QCassandraCell::pointer_t c, const QString& v )
         case CT_string_value:
         {
             // all others viewed as strings
-            cvalue.setStringValue( v );
+            //v = c->value().stringValue().replace("\n", "\\n");
+            QString convert( v );
+            cvalue.setStringValue( convert.replace( "\\n", "\n" ) );
         }
         break;
     }
