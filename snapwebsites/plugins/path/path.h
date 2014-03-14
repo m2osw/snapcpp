@@ -34,7 +34,7 @@ class dynamic_plugin_t
 {
 public:
                         dynamic_plugin_t()
-                            : f_plugin(NULL)
+                            : f_plugin(nullptr)
                         {
                         }
 

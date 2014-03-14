@@ -42,6 +42,7 @@ enum name_t
     SNAP_NAME_PERMISSIONS_NAMESPACE,
     SNAP_NAME_PERMISSIONS_PATH,
     SNAP_NAME_PERMISSIONS_RIGHTS_PATH,
+    SNAP_NAME_PERMISSIONS_USERS_PATH,
     SNAP_NAME_PERMISSIONS_VIEW
 };
 char const *get_name(name_t name) __attribute__ ((const));
@@ -123,6 +124,7 @@ public:
     void                    on_access_allowed(QString const& user_path, content::path_info_t& ipath, QString const& action, QString const& login_status, content::permission_flag& result);
     void                    on_register_backend_action(server::backend_action_map_t& actions);
     virtual void            on_backend_action(QString const& action);
+    void                    on_user_verified(content::path_info_t& ipath, int64_t identifier);
 
     SNAP_SIGNAL(get_user_rights, (permissions *perms, sets_t& sets), (perms, sets));
     SNAP_SIGNAL(get_plugin_permissions, (permissions *perms, sets_t& sets), (perms, sets));

@@ -317,7 +317,7 @@ int64_t users::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2014, 2, 4, 21, 28, 40, content_update);
+    SNAP_PLUGIN_UPDATE(2014, 3, 12, 20, 28, 40, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -1394,7 +1394,14 @@ void users::verify_user(content::path_info_t& ipath)
     value.setStringValue(f_snap->snapenv("REMOTE_ADDR"));
     row->cell(get_name(SNAP_NAME_USERS_VERIFIED_IP))->setValue(value);
 
+    // tell other plugins that a new user was created and let them add
+    // bells and whisles to the new account
+    user_verified(user_ipath, identifier);
+
     // TODO offer an auto-log in feature
+    //      (TBD: this could be done by another plugin via the
+    //      user_verified() signal although it makes a lot more sense to
+    //      let the users plugin to do such a thing!)
 
     // send the user to the log in page since he got verified now
     messages::messages::instance()->set_info(
@@ -1403,6 +1410,27 @@ void users::verify_user(content::path_info_t& ipath)
     );
     f_snap->page_redirect("login", snap_child::HTTP_CODE_SEE_OTHER);
     NOTREACHED();
+}
+
+
+/** \brief Signal that a new user was verified.
+ *
+ * After a user registers, he receivs an email with a magic number that
+ * needs to be used for the user to register on the system.
+ *
+ * \param[in,out] ipath  The user path.
+ * \param[in] identifier  The user identifier.
+ *
+ * \return true so the other plugins can receive the signal
+ */
+bool users::user_verified_impl(content::path_info_t& ipath, int64_t identifier)
+{
+    static_cast<void>(ipath);
+    static_cast<void>(identifier);
+
+    // all the verifications are processed in the verify_user() function
+    // as far as the users plugin is concerned, so just return true
+    return true;
 }
 
 
@@ -1738,14 +1766,14 @@ void users::process_login_form(login_mode_t login_mode)
             // compute the hash of the password
             // (1) get the digest
             value = row->cell(get_name(SNAP_NAME_USERS_PASSWORD_DIGEST))->value();
-            const QString digest(value.stringValue());
+            QString const digest(value.stringValue());
 
             // (2) we need the passord:
-            const QString password(f_snap->postenv("password"));
+            QString const password(f_snap->postenv("password"));
 
             // (3) get the salt in a buffer
             value = row->cell(get_name(SNAP_NAME_USERS_PASSWORD_SALT))->value();
-            const QByteArray salt(value.binaryValue());
+            QByteArray const salt(value.binaryValue());
 
             // (4) compute the expected hash
             QByteArray hash;
@@ -1753,7 +1781,7 @@ void users::process_login_form(login_mode_t login_mode)
 
             // (5) retrieved the saved hash
             value = row->cell(get_name(SNAP_NAME_USERS_PASSWORD))->value();
-            const QByteArray saved_hash(value.binaryValue());
+            QByteArray const saved_hash(value.binaryValue());
 
             // (6) compare both hashes
             // (note: at this point I don't trust the == operator of the QByteArray
@@ -2120,7 +2148,7 @@ void users::process_replace_password_form()
                     // We're good, save the new password and remove that link
 
                     // First encrypt the password
-                    QString password(f_snap->postenv("password"));
+                    QString const password(f_snap->postenv("password"));
                     QByteArray salt;
                     QByteArray hash;
                     QtCassandra::QCassandraValue digest(f_snap->get_site_parameter(get_name(SNAP_NAME_USERS_PASSWORD_DIGEST)));
@@ -2285,14 +2313,14 @@ void users::process_password_form()
             //
             // (1) get the digest
             QtCassandra::QCassandraValue value(row->cell(get_name(SNAP_NAME_USERS_PASSWORD_DIGEST))->value());
-            const QString old_digest(value.stringValue());
+            QString const old_digest(value.stringValue());
 
             // (2) we need the passord:
-            const QString old_password(f_snap->postenv("old_password"));
+            QString const old_password(f_snap->postenv("old_password"));
 
             // (3) get the salt in a buffer
             value = row->cell(get_name(SNAP_NAME_USERS_PASSWORD_SALT))->value();
-            const QByteArray old_salt(value.binaryValue());
+            QByteArray const old_salt(value.binaryValue());
 
             // (4) compute the expected hash
             QByteArray old_hash;
@@ -2300,7 +2328,7 @@ void users::process_password_form()
 
             // (5) retrieved the saved hashed password
             value = row->cell(get_name(SNAP_NAME_USERS_PASSWORD))->value();
-            const QByteArray saved_hash(value.binaryValue());
+            QByteArray const saved_hash(value.binaryValue());
 
             // (6) verify that it matches
             if(old_hash.size() == saved_hash.size()
@@ -2579,10 +2607,10 @@ QString users::get_user_path() const
         QtCassandra::QCassandraTable::pointer_t users_table(const_cast<users *>(this)->get_users_table());
         if(users_table->exists(f_user_key))
         {
-            const QtCassandra::QCassandraValue value(users_table->row(f_user_key)->cell(get_name(SNAP_NAME_USERS_IDENTIFIER))->value());
+            QtCassandra::QCassandraValue const value(users_table->row(f_user_key)->cell(get_name(SNAP_NAME_USERS_IDENTIFIER))->value());
             if(!value.nullValue())
             {
-                const int64_t identifier(value.int64Value());
+                int64_t const identifier(value.int64Value());
                 return get_name(SNAP_NAME_USERS_PATH) + QString("/%1").arg(identifier);
             }
         }
@@ -2607,7 +2635,7 @@ QString users::get_user_path() const
  *
  * \return true if the user was newly created, false otherwise
  */
-bool users::register_user(const QString& email, const QString& password)
+bool users::register_user(QString const& email, QString const& password)
 {
     QByteArray salt;
     QByteArray hash;
@@ -2657,6 +2685,18 @@ bool users::register_user(const QString& email, const QString& password)
         if(!email_data.nullValue())
         {
             // someone else already registered with that email
+            return false;
+        }
+
+        // Note that the email was already checked when coming from the Register
+        // form, however, it was check for validity as an email, not checked
+        // against a black list or verified in other ways; also the password
+        // can this way be checked by another plugin (i.e. password database)
+        content::permission_flag secure;
+        check_user_security(email, password, secure);
+        if(!secure.allowed())
+        {
+            // well... someone said "don't save that user in there"!
             return false;
         }
 
@@ -2742,6 +2782,16 @@ bool users::register_user(const QString& email, const QString& password)
     user_ipath.force_locale("xx");
     content_plugin->create_content(user_ipath, get_plugin_name(), "user-page");
 
+    // save a default title and body
+    QtCassandra::QCassandraTable::pointer_t data_table(content_plugin->get_data_table());
+    QtCassandra::QCassandraRow::pointer_t revision_row(data_table->row(user_ipath.get_revision_key()));
+    revision_row->cell(content::get_name(content::SNAP_NAME_CONTENT_CREATED))->setValue(created_date);
+    // no title or body by default--other plugins could set those to the
+    //                              user name or other information
+    QString const empty_string;
+    revision_row->cell(content::get_name(content::SNAP_NAME_CONTENT_TITLE))->setValue(empty_string);
+    revision_row->cell(content::get_name(content::SNAP_NAME_CONTENT_BODY))->setValue(empty_string);
+
     // The "public" user account (i.e. in the content table) is limited
     // to the identifier at this point
     //
@@ -2760,6 +2810,56 @@ bool users::register_user(const QString& email, const QString& password)
     dpath.set_path(get_name(SNAP_NAME_USERS_NEW_PATH));
     links::link_info destination(link_to, destination_unique, dpath.get_key(), dpath.get_branch());
     links::links::instance()->create_link(source, destination);
+
+    user_registered(user_ipath, identifier);
+
+    return true;
+}
+
+
+/** \brief Signal that a user is about to get a new account.
+ *
+ * This signal is called before a new user gets created.
+ *
+ * \warning
+ * At this point this signal is sent when the user account is still locked.
+ * This means you MUST return (i.e. avoid calling die() because it does
+ * not return...) and the SEGV, BUS, ILL signals will block that user in
+ * lock mode forever. This may block the software when it tries to create
+ * another user... so be careful.
+ *
+ * \param[in] email  The email of the user about to be registered
+ * \param[in] password  The user password.
+ * \param[in,out] secure  The flag defining whether the flag is secure.
+ *
+ * \return true so other plugins have a chance to verify the user email
+ *         and password before we create the new user.
+ */
+bool users::check_user_security_impl(QString const& email, QString const& password, content::permission_flag& secure)
+{
+    static_cast<void>(email);
+    static_cast<void>(password);
+    static_cast<void>(secure);
+
+    return true;
+}
+
+
+/** \brief Signal telling other plugins that a user just registered.
+ *
+ * Note that this signal is sent when the user was registered and NOT when
+ * the user verified his account. This means the user is not really fully
+ * authorized on the system yet.
+ *
+ * \param[in,out] ipath  The path to the new user's account (/user/\<identifier\>)
+ * \param[in] identifier  The user identifier.
+ *
+ * \return true so the signal propagates to other plugins.
+ */
+bool users::user_registered_impl(content::path_info_t& ipath, int64_t identifier)
+{
+    static_cast<void>(ipath);
+    static_cast<void>(identifier);
 
     return true;
 }
@@ -3045,7 +3145,7 @@ void users::create_password_salt(QByteArray& salt)
  * \param[in] salt  The salt information, necessary to encrypt passwords.
  * \param[out] hash  The resulting password hash.
  */
-void users::encrypt_password(const QString& digest, const QString& password, const QByteArray& salt, QByteArray& hash)
+void users::encrypt_password(QString const& digest, QString const& password, QByteArray const& salt, QByteArray& hash)
 {
     // it is an out only so reset it immediately
     hash.clear();

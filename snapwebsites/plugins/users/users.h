@@ -54,6 +54,7 @@ enum name_t
     SNAP_NAME_USERS_PASSWORD_PATH,
     SNAP_NAME_USERS_PASSWORD_SALT,
     SNAP_NAME_USERS_PATH,
+    SNAP_NAME_USERS_PERMISSIONS_PATH,
     SNAP_NAME_USERS_PICTURE,
     SNAP_NAME_USERS_PREVIOUS_LOGIN_IP,
     SNAP_NAME_USERS_PREVIOUS_LOGIN_ON,
@@ -181,6 +182,9 @@ public:
 
     virtual void            on_process_form_post(content::path_info_t& ipath, sessions::sessions::session_info const& session_info);
 
+    SNAP_SIGNAL(check_user_security, (QString const& email, QString const& password, content::permission_flag& secure), (email, password, secure));
+    SNAP_SIGNAL(user_registered, (content::path_info_t& ipath, int64_t identifier), (ipath, identifier));
+    SNAP_SIGNAL(user_verified, (content::path_info_t& ipath, int64_t identifier), (ipath, identifier));
     SNAP_SIGNAL(user_logged_in, (user_logged_info_t& logged_info), (logged_info));
 
     QString                 get_user_cookie_name();

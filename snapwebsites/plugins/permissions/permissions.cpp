@@ -106,6 +106,9 @@ char const *get_name(name_t name)
     case SNAP_NAME_PERMISSIONS_RIGHTS_PATH:
         return "types/permissions/rights";
 
+    case SNAP_NAME_PERMISSIONS_USERS_PATH:
+        return "types/permissions/users";
+
     case SNAP_NAME_PERMISSIONS_VIEW:
         return "permissions::view";
 
@@ -709,6 +712,7 @@ void permissions::on_bootstrap(snap_child *snap)
     SNAP_LISTEN(permissions, "path", path::path, validate_action, _1, _2, _3);
     SNAP_LISTEN(permissions, "path", path::path, access_allowed, _1, _2, _3, _4, _5);
     SNAP_LISTEN(permissions, "server", server, register_backend_action, _1);
+    SNAP_LISTEN(permissions, "users", users::users, user_verified, _1, _2);
 }
 
 
@@ -760,7 +764,7 @@ int64_t permissions::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2013, 12, 25, 11, 19, 40, content_update);
+    SNAP_PLUGIN_UPDATE(2014, 3, 14, 0, 45, 40, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -868,8 +872,8 @@ bool permissions::get_user_rights_impl(permissions *perms, sets_t& sets)
 
                 if(login_status == get_name(SNAP_NAME_PERMISSIONS_LOGIN_STATUS_REGISTERED))
                 {
-                    // users who are logged in always have registered-user rights
-                    // if nothing else
+                    // users who are logged in always have registered-user
+                    // rights if nothing else
                     perms->add_user_rights(site_key + "types/permissions/groups/root/administrator/editor/moderator/author/commenter/registered-user", sets);
 
                     // add assigned groups
@@ -900,10 +904,11 @@ bool permissions::get_user_rights_impl(permissions *perms, sets_t& sets)
                 }
                 else
                 {
-                    // this is a registered user who comes back and is semi-logged
-                    // in so we do go give this user full rights to avoid potential
-                    // problems; we have to look into a way to offer different
-                    // group/rights for such a user...
+                    // this is a registered user who comes back and is
+                    // semi-logged in so we do not give this user full rights
+                    // to avoid potential security problems; we have to look
+                    // into a way to offer different group/rights for such a
+                    // user...
                     perms->add_user_rights(site_key + "types/permissions/groups/root/administrator/editor/moderator/author/commenter/registered-user/returning-registered-user", sets);
 
                     // add assigned groups
@@ -1617,6 +1622,140 @@ void permissions::on_backend_action(QString const& action)
     }
 }
 
+
+/** \brief Signal received when a new user was verified.
+ *
+ * After a user registers, he receives an email with a magic number that
+ * needs to be used for the user to be authorized to access the system as
+ * a registered user. This signal is sent once the user email got verified.
+ *
+ * \param[in,out] ipath  The user path.
+ * \param[in] identifier  The user identifier.
+ */
+void permissions::on_user_verified(content::path_info_t& ipath, int64_t identifier)
+{
+    content::content *content_plugin(content::content::instance());
+    QtCassandra::QCassandraTable::pointer_t data_table(content_plugin->get_data_table());
+    uint64_t const created_date(f_snap->get_start_date());
+
+    // All users are also given a permission group that can be used to
+    // give each individual user very specific rights.
+
+    // first we create the user specific right
+    content::path_info_t permission_ipath;
+    {
+        // create a specific permission for that new company
+        permission_ipath.set_path(QString("%1/%2").arg(get_name(SNAP_NAME_PERMISSIONS_USERS_PATH)).arg(identifier));
+        permission_ipath.force_branch(snap_version::SPECIAL_VERSION_USER_FIRST_BRANCH);
+        permission_ipath.force_revision(static_cast<snap_version::basic_version_number_t>(snap_version::SPECIAL_VERSION_FIRST_REVISION));
+        permission_ipath.force_locale("xx"); // create the neutral one by default?
+        content_plugin->create_content(permission_ipath, get_plugin_name(), "system-page");
+
+        // create a default the title and body
+        QtCassandra::QCassandraRow::pointer_t permission_revision_row(data_table->row(permission_ipath.get_revision_key()));
+        permission_revision_row->cell(content::get_name(content::SNAP_NAME_CONTENT_CREATED))->setValue(created_date);
+        // TODO: translate (not too important on this page since it is really not public)
+        permission_revision_row->cell(content::get_name(content::SNAP_NAME_CONTENT_TITLE))->setValue(QString("User #%1 Private Permission Right").arg(identifier));
+        permission_revision_row->cell(content::get_name(content::SNAP_NAME_CONTENT_BODY))->setValue(QString("This type represents permissions that are 100% specific to this user."));
+    }
+
+    // second we create the user specific group
+    content::path_info_t group_ipath;
+    {
+        // create a specific permission group for that new user
+        group_ipath.set_path(QString("%1/users/%2").arg(get_name(SNAP_NAME_PERMISSIONS_GROUPS_PATH)).arg(identifier));
+        group_ipath.force_branch(snap_version::SPECIAL_VERSION_USER_FIRST_BRANCH);
+        group_ipath.force_revision(static_cast<snap_version::basic_version_number_t>(snap_version::SPECIAL_VERSION_FIRST_REVISION));
+        group_ipath.force_locale("xx");
+        content_plugin->create_content(group_ipath, get_plugin_name(), "system-page");
+
+        // save the title, description, and link to the type
+        QtCassandra::QCassandraRow::pointer_t group_revision_row(data_table->row(group_ipath.get_revision_key()));
+        group_revision_row->cell(content::get_name(content::SNAP_NAME_CONTENT_CREATED))->setValue(created_date);
+        // TODO: translate (not too important on this page since it is really not public)
+        group_revision_row->cell(content::get_name(content::SNAP_NAME_CONTENT_TITLE))->setValue(QString("User #%1 Private Permission Group").arg(identifier));
+        group_revision_row->cell(content::get_name(content::SNAP_NAME_CONTENT_BODY))->setValue(QString("This group represents a user private group."));
+    }
+
+    // link the permission to the company and the user
+    // this user has view and edit rights
+    //
+    // WARNING: Note that we link the User Page to this new permission, we
+    //          are NOT linking the user to the new permission... it can be
+    //          very confusing on this one since user ipath looks very much
+    //          like the user, doesn't it?
+    {
+        QString const link_name(get_name(SNAP_NAME_PERMISSIONS_VIEW));
+        QString const link_to(get_name(SNAP_NAME_PERMISSIONS_VIEW));
+        bool const source_unique(false);
+        bool const destination_unique(false);
+        links::link_info source(link_name, source_unique, ipath.get_key(), ipath.get_branch());
+        links::link_info destination(link_to, destination_unique, permission_ipath.get_key(), permission_ipath.get_branch());
+        links::links::instance()->create_link(source, destination);
+    }
+    {
+        QString const link_name(get_name(SNAP_NAME_PERMISSIONS_EDIT));
+        QString const link_to(get_name(SNAP_NAME_PERMISSIONS_EDIT));
+        bool const source_unique(false);
+        bool const destination_unique(false);
+        links::link_info source(link_name, source_unique, ipath.get_key(), ipath.get_branch());
+        links::link_info destination(link_to, destination_unique, permission_ipath.get_key(), permission_ipath.get_branch());
+        links::links::instance()->create_link(source, destination);
+    }
+    {
+        QString const link_name(get_name(SNAP_NAME_PERMISSIONS_ADMINISTER));
+        QString const link_to(get_name(SNAP_NAME_PERMISSIONS_ADMINISTER));
+        bool const source_unique(false);
+        bool const destination_unique(false);
+        links::link_info source(link_name, source_unique, ipath.get_key(), ipath.get_branch());
+        links::link_info destination(link_to, destination_unique, permission_ipath.get_key(), permission_ipath.get_branch());
+        links::links::instance()->create_link(source, destination);
+    }
+
+    // link the user to his private group right
+    {
+        QString const link_name(get_name(SNAP_NAME_PERMISSIONS_GROUP));
+        QString const link_to(get_name(SNAP_NAME_PERMISSIONS_GROUP));
+        bool const source_unique(false);
+        bool const destination_unique(false);
+        links::link_info source(link_name, source_unique, ipath.get_key(), ipath.get_branch());
+        links::link_info destination(link_to, destination_unique, group_ipath.get_key(), group_ipath.get_branch());
+        links::links::instance()->create_link(source, destination);
+    }
+
+    // then add permissions for the user to be able to edit his own
+    // account information
+    //
+    // TBD: should we have a way to prevent the user from editing his
+    //      information?
+    {
+        QString const link_name(get_name(SNAP_NAME_PERMISSIONS_VIEW));
+        QString const link_to(get_name(SNAP_NAME_PERMISSIONS_VIEW));
+        bool const source_unique(false);
+        bool const destination_unique(false);
+        links::link_info source(link_name, source_unique, permission_ipath.get_key(), permission_ipath.get_branch());
+        links::link_info destination(link_to, destination_unique, group_ipath.get_key(), group_ipath.get_branch());
+        links::links::instance()->create_link(source, destination);
+    }
+    {
+        QString const link_name(get_name(SNAP_NAME_PERMISSIONS_EDIT));
+        QString const link_to(get_name(SNAP_NAME_PERMISSIONS_EDIT));
+        bool const source_unique(false);
+        bool const destination_unique(false);
+        links::link_info source(link_name, source_unique, permission_ipath.get_key(), permission_ipath.get_branch());
+        links::link_info destination(link_to, destination_unique, group_ipath.get_key(), group_ipath.get_branch());
+        links::links::instance()->create_link(source, destination);
+    }
+    {
+        QString const link_name(get_name(SNAP_NAME_PERMISSIONS_ADMINISTER));
+        QString const link_to(get_name(SNAP_NAME_PERMISSIONS_ADMINISTER));
+        bool const source_unique(false);
+        bool const destination_unique(false);
+        links::link_info source(link_name, source_unique, permission_ipath.get_key(), permission_ipath.get_branch());
+        links::link_info destination(link_to, destination_unique, group_ipath.get_key(), group_ipath.get_branch());
+        links::links::instance()->create_link(source, destination);
+    }
+}
 
 
 SNAP_PLUGIN_END()
