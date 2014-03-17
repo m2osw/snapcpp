@@ -1,0 +1,48 @@
+/*
+ * Name: editor
+ * Version: 0.0.1.8
+ * Browsers: all
+ * Copyright: Copyright 2014 (c) Made to Order Software Corporation  All rights reverved.
+ * License: GPL 2.0
+ */
+
+.editable
+{
+	margin: 10px 0;
+	border: 1px solid black;
+	border-radius: 3px;
+	/*background-color: #f8e16e; -- yellow */
+	background-color: #e0e0e0;
+	cursor: text;
+}
+
+.editable.snap-editor
+{
+	background-color: #f8f8f8;
+}
+
+.editable.image-box
+{
+	cursor: pointer;
+}
+
+.editable .snap-editor-background
+{
+	position: absolute;
+	display: none;
+	pointer-events: none;
+}
+
+.editable .snap-editor-background-content
+{
+	color: #ffffff;
+	text-shadow: 1px 1px 0 #666666;
+	padding: 4px 0 0 5px;
+	pointer-events: none;
+}
+
+.editable.image-box .snap-editor-background-content
+{
+	text-align: center;
+}
+
