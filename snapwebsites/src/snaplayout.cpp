@@ -178,12 +178,6 @@ snap_layout::snap_layout(int argc, char *argv[])
     {
         QString const filename ( f_opt->get_string( "--", idx ).c_str() );
         const int e(filename.lastIndexOf("."));
-        if(e == -1)
-        {
-            std::cerr << "error: file \"" << filename << "\" must be an XML file (end with the .xml, .xsl or .zip extension.)" << std::endl;
-            exit(1);
-        }
-        //
         QString const extension( filename.mid(e) );
         if( extension == ".zip" )
         {
@@ -521,6 +515,11 @@ void snap_layout::add_files()
     for( auto filename : f_layouts )
     {
         const int e(filename.lastIndexOf("."));
+        if(e == -1)
+        {
+            std::cerr << "error: file \"" << filename << "\" must be an XML file (end with the .xml, .xsl or .zip extension.)" << std::endl;
+            exit(1);
+        }
         QFile xml(filename);
         QString row_name; // == <layout name>
         QString cell_name; // == <layout_area>  or 'content'
