@@ -890,6 +890,7 @@ void layout::generate_boxes(content::path_info_t& ipath, QString const& layout_n
                     content::path_info_t box_ipath;
                     box_ipath.set_path(child_info.key());
                     box_ipath.set_parameter("action", "view"); // we're always only viewing those blocks from here
+SNAP_LOG_TRACE() << "box_ipath key = " << box_ipath.get_key() << ", branch_key=" << box_ipath.get_branch_key();
                     plugin *box_plugin(path::path::instance()->get_plugin(box_ipath, box_error_callback));
                     if(!box_error_callback.has_error() && box_plugin)
                     {
@@ -902,7 +903,7 @@ void layout::generate_boxes(content::path_info_t& ipath, QString const& layout_n
                             filter_box.setAttribute("path", box_ipath.get_cpath()); // not the full key
                             filter_box.setAttribute("owner", box_plugin->get_plugin_name());
                             dom_boxes[i].appendChild(filter_box);
-//SNAP_LOG_TRACE() << "handle box for " << box_plugin->get_plugin_name();
+SNAP_LOG_TRACE() << "handle box for " << box_plugin->get_plugin_name();
                             lb->on_generate_boxes_content(ipath, box_ipath, page, filter_box, "");
                         }
                         else

@@ -176,7 +176,23 @@ snap_layout::snap_layout(int argc, char *argv[])
     }
     for( int idx(0); idx < f_opt->size( "--" ); ++idx )
     {
-        f_layouts.push_back( f_opt->get_string( "--", idx ).c_str() );
+        QString const filename ( f_opt->get_string( "--", idx ).c_str() );
+        const int e(filename.lastIndexOf("."));
+        QString const extension( filename.mid(e) );
+        if( extension == ".zip" )
+        {
+            // Sat Mar 15 12:35:12 PDT 2014 (RDB)
+            //
+            // TODO: open zip file, then iterate through each file, pushing
+            // it back into the f_layouts vector.
+            //
+            // This will employ the zipios++ library.
+            //
+        }
+        else
+        {
+            f_layouts.push_back( filename );
+        }
     }
 }
 
@@ -508,7 +524,7 @@ void snap_layout::add_files()
     mtimes_t mtimes;
     for( auto filename : f_layouts )
     {
-        int e(filename.lastIndexOf("."));
+        const int e(filename.lastIndexOf("."));
         if(e == -1)
         {
             std::cerr << "error: file \"" << filename << "\" must be an XML file (end with the .xml, .xsl or .zip extension.)" << std::endl;
@@ -518,11 +534,7 @@ void snap_layout::add_files()
         QString row_name; // == <layout name>
         QString cell_name; // == <layout_area>  or 'content'
         QString const extension(filename.mid(e));
-        if( extension == ".zip" )
-        {
-            // TODO: add support for it...
-        }
-        else if(extension == ".xml") // expects the content.xml file
+        if(extension == ".xml") // expects the content.xml file
         {
             // the cell name is always "content" in this case
             if(!xml.open(QIODevice::ReadOnly))
