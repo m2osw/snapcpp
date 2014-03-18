@@ -1957,21 +1957,25 @@ void editor::on_generate_page_content(content::path_info_t& ipath, QDomElement& 
             bool set_value(true);
             if(widget_auto_save == "int8")
             {
-                int const v(value.signedCharValue());
-                if(field_type == "checkmark")
+                // if the value is null, it's as if it weren't defined
+                if(!value.nullValue())
                 {
-                    if(v == 0)
+                    int const v(value.signedCharValue());
+                    if(field_type == "checkmark")
                     {
-                        current_value = "off";
+                        if(v == 0)
+                        {
+                            current_value = "off";
+                        }
+                        else
+                        {
+                            current_value = "on";
+                        }
                     }
                     else
                     {
-                        current_value = "on";
+                        current_value = QString("%1").arg(current_value);
                     }
-                }
-                else
-                {
-                    current_value = QString("%1").arg(current_value);
                 }
             }
             else if(widget_auto_save == "string")
