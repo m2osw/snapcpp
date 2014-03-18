@@ -192,7 +192,7 @@ public:
 
     void                            force_branch(snap_version::version_number_t branch);
     void                            force_revision(snap_version::version_number_t revision);
-    void                            force_extended_revision(QString const& revision);
+    void                            force_extended_revision(QString const& revision, QString const& filename);
     void                            force_locale(QString const& locale);
 
     snap_child *                    get_snap() const;
