@@ -2334,9 +2334,9 @@ void path_info_t::force_extended_revision(QString const& revision, QString const
         throw snap_logic_exception(QString("invalid version string (%1) in \"%s\" (force_extended_revision).").arg(revision).arg(filename));
     }
     snap_version::version_numbers_vector_t const& version_numbers(v.get_version());
-    if(version_numbers.size() < 2)
+    if(version_numbers.size() < 1)
     {
-        throw snap_logic_exception(QString("invalid version string (%1) in \"%s\" (force_extended_revision): not enough numbers (at least 2 required).").arg(revision).arg(filename));
+        throw snap_logic_exception(QString("invalid version string (%1) in \"%s\" (force_extended_revision): not enough numbers (at least 1 required).").arg(revision).arg(filename));
     }
     f_branch = version_numbers[0];
     f_revision = static_cast<snap_version::basic_version_number_t>(snap_version::SPECIAL_VERSION_EXTENDED); // FIXME cast
