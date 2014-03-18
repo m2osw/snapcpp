@@ -22,7 +22,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
                               xmlns:fn="http://www.w3.org/2005/xpath-functions"
                               xmlns:snap="http://snapwebsites.info/snap-functions">
   <xsl:variable name="editor-name">editor</xsl:variable>
-  <xsl:variable name="editor-modified">2014-03-14 21:03:48</xsl:variable>
+  <xsl:variable name="editor-modified">2014-03-16 00:36:48</xsl:variable>
 
   <!-- COMMAND PARTS -->
   <xsl:template name="snap:common-parts">
@@ -44,18 +44,20 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <widget path="{$path}">
       <div>
         <xsl:attribute name="field_name"><xsl:value-of select="$name"/></xsl:attribute>
-        <xsl:attribute name="class">snap-editor editable image-box <xsl:value-of select="$name"/><xsl:if test="@drop or /editor-form/drop"> drop</xsl:if><xsl:if test="@immediate or /editor-form/immediate"> immediate</xsl:if><xsl:if test="$name = /editor-form/focus/@refid"> auto-focus</xsl:if> <xsl:value-of select="classes"/></xsl:attribute>
+        <xsl:attribute name="class"><xsl:if test="$action = 'edit'">snap-editor </xsl:if>editable image-box <xsl:value-of select="$name"/><xsl:if test="@drop or /editor-form/drop"> drop</xsl:if><xsl:if test="@immediate or /editor-form/immediate"> immediate</xsl:if><xsl:if test="$name = /editor-form/focus/@refid"> auto-focus</xsl:if> <xsl:value-of select="classes"/></xsl:attribute>
         <xsl:if test="background-value != ''">
           <!-- by default "snap-editor-background" have "display: none"
                a script shows them on load once ready AND if the value is empty
                also it is a "pointer-event: none;" -->
           <div class="snap-editor-background">
-            <!-- this div is placed OVER the next div -->
-            <xsl:copy-of select="background-value"/>
+            <div class="snap-editor-background-content">
+              <!-- this div is placed OVER the next div -->
+              <xsl:copy-of select="background-value/node()"/>
+            </div>
           </div>
         </xsl:if>
         <div>
-          <xsl:attribute name="id">editor_widget_<xsl:value-of select="$name"/></xsl:attribute>
+          <xsl:attribute name="name"><xsl:value-of select="$name"/></xsl:attribute>
           <xsl:attribute name="class">editor-content image<xsl:if test="@no-toolbar or /editor-form/no-toolbar"> no-toolbar</xsl:if></xsl:attribute>
           <xsl:if test="/editor-form/taborder/tabindex[@refid=$name]">
             <xsl:attribute name="tabindex"><xsl:value-of select="/editor-form/taborder/tabindex[@refid=$name]/count(preceding-sibling::tabindex) + 1"/></xsl:attribute>
@@ -70,15 +72,11 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
           <xsl:choose>
             <xsl:when test="post != ''">
               <!-- use the post value when there is one, it has priority -->
-              <xsl:value-of select="post"/>
+              <xsl:copy-of select="post/node()"/>
             </xsl:when>
             <xsl:when test="value != ''">
               <!-- use the current value when there is one -->
-              <xsl:value-of select="value"/>
-            </xsl:when>
-            <xsl:when test="default-value != ''">
-              <!-- use the current value when there is one -->
-              <xsl:value-of select="default-value"/>
+              <xsl:copy-of select="value/node()"/>
             </xsl:when>
           </xsl:choose>
         </div>
@@ -103,9 +101,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <widget path="{$path}">
       <div>
         <xsl:attribute name="field_name"><xsl:value-of select="$name"/></xsl:attribute>
-        <xsl:attribute name="class">snap-editor editable checkmark <xsl:value-of select="$name"/><xsl:if test="@immediate or /editor-form/immediate"> immediate</xsl:if><xsl:if test="@id = /editor-form/focus/@refid"> auto-focus</xsl:if> <xsl:value-of select="classes"/></xsl:attribute>
+        <xsl:attribute name="class"><xsl:if test="$action = 'edit'">snap-editor </xsl:if>editable checkmark <xsl:value-of select="$name"/><xsl:if test="@immediate or /editor-form/immediate"> immediate</xsl:if><xsl:if test="@id = /editor-form/focus/@refid"> auto-focus</xsl:if> <xsl:value-of select="classes"/></xsl:attribute>
         <div>
-          <xsl:attribute name="id">editor_widget_<xsl:value-of select="$name"/></xsl:attribute>
+          <xsl:attribute name="name"><xsl:value-of select="$name"/></xsl:attribute>
           <xsl:attribute name="class">editor-content<xsl:if test="@no-toolbar or /editor-form/no-toolbar"> no-toolbar</xsl:if></xsl:attribute>
           <xsl:if test="/editor-form/taborder/tabindex[@refid=$name]">
             <xsl:attribute name="tabindex"><xsl:value-of select="/editor-form/taborder/tabindex[@refid=$name]/count(preceding-sibling::tabindex) + 1"/></xsl:attribute>
@@ -132,15 +130,11 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <xsl:choose>
         <xsl:when test="post != ''">
           <!-- use the post value when there is one, it has priority -->
-          <xsl:value-of select="post"/>
+          <xsl:copy-of select="post/node()"/>
         </xsl:when>
         <xsl:when test="value != ''">
           <!-- use the current value when there is one -->
-          <xsl:value-of select="value"/>
-        </xsl:when>
-        <xsl:when test="default-value != ''">
-          <!-- use the current value when there is one -->
-          <xsl:value-of select="default-value"/>
+          <xsl:copy-of select="value/node()"/>
         </xsl:when>
       </xsl:choose>
     </xsl:variable>
@@ -160,18 +154,20 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <widget path="{$path}">
       <div>
         <xsl:attribute name="field_name"><xsl:value-of select="$name"/></xsl:attribute>
-        <xsl:attribute name="class">snap-editor editable line-edit <xsl:value-of select="$name"/><xsl:if test="@immediate or /editor-form/immediate"> immediate</xsl:if><xsl:if test="@id = /editor-form/focus/@refid"> auto-focus</xsl:if> <xsl:value-of select="classes"/></xsl:attribute>
+        <xsl:attribute name="class"><xsl:if test="$action = 'edit'">snap-editor </xsl:if>editable line-edit <xsl:value-of select="$name"/><xsl:if test="@immediate or /editor-form/immediate"> immediate</xsl:if><xsl:if test="@id = /editor-form/focus/@refid"> auto-focus</xsl:if> <xsl:value-of select="classes"/></xsl:attribute>
         <xsl:if test="background-value != ''">
           <!-- by default "snap-editor-background" have "display: none"
                a script shows them on load once ready AND if the value is empty
                also it is a "pointer-event: none;" -->
           <div class="snap-editor-background">
-            <!-- this div is placed OVER the next div -->
-            <xsl:copy-of select="background-value"/>
+            <div class="snap-editor-background-content">
+              <!-- this div is placed OVER the next div -->
+              <xsl:copy-of select="background-value/node()"/>
+            </div>
           </div>
         </xsl:if>
         <div>
-          <xsl:attribute name="id">editor_widget_<xsl:value-of select="$name"/></xsl:attribute>
+          <xsl:attribute name="name"><xsl:value-of select="$name"/></xsl:attribute>
           <xsl:attribute name="class">editor-content<xsl:if test="@no-toolbar or /editor-form/no-toolbar"> no-toolbar</xsl:if></xsl:attribute>
           <xsl:if test="/editor-form/taborder/tabindex[@refid=$name]">
             <xsl:attribute name="tabindex"><xsl:value-of select="/editor-form/taborder/tabindex[@refid=$name]/count(preceding-sibling::tabindex) + 1"/></xsl:attribute>
@@ -186,15 +182,11 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
           <xsl:choose>
             <xsl:when test="post != ''">
               <!-- use the post value when there is one, it has priority -->
-              <xsl:value-of select="post"/>
+              <xsl:copy-of select="post/node()"/>
             </xsl:when>
             <xsl:when test="value != ''">
               <!-- use the current value when there is one -->
-              <xsl:value-of select="value"/>
-            </xsl:when>
-            <xsl:when test="default-value != ''">
-              <!-- use the current value when there is one -->
-              <xsl:value-of select="default-value"/>
+              <xsl:copy-of select="value/node()"/>
             </xsl:when>
           </xsl:choose>
         </div>

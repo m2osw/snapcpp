@@ -30,11 +30,14 @@
 #include <not_reached.h>
 #include <qdomxpath.h>
 
+#include <iostream>
+
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
 #include <QFile>
 #pragma GCC diagnostic pop
 
+#include <poison.h>
 
 
 
@@ -173,13 +176,13 @@ void display_node(int j, QDomNode node)
     {
         // documents cannot be imported properly
         //node = node.toDocument().documentElement();
-        printf("Result[%d] is the entire document.\n", j);
+        std::cout << "Result[" << j << "] is the entire document." << std::endl;
         return;
     }
     QDomDocument document;
     QDomNode copy(document.importNode(node, true));
     document.appendChild(copy);
-    printf("Node[%d] = \"%s\"\n", j, document.toByteArray().data());
+    std::cout << "Node[" << j << "] = \"" << document.toByteArray().data() << "\"" << std::endl;
 }
 
 
@@ -188,17 +191,17 @@ void cxpath_compile()
 {
     if(!g_opt->is_defined("xpath"))
     {
-        fprintf(stderr, "error: --xpath not defined, nothing to compile.\n");
+        std::cerr << "error: --xpath not defined, nothing to compile." << std::endl;
         exit(1);
     }
 
     std::string xpath(g_opt->get_string("xpath"));
     if(g_verbose)
     {
-        printf("compiling \"%s\" ... \n", xpath.c_str());
+        std::cout << "compiling \"" << xpath.c_str() << "\" ... " << std::endl;
     }
 
-    const bool disassemble(g_opt->is_defined("disassemble"));
+    bool const disassemble(g_opt->is_defined("disassemble"));
 
     QDomXPath dom_xpath;
     dom_xpath.setXPath(QString::fromUtf8(xpath.c_str()), disassemble);
@@ -206,24 +209,24 @@ void cxpath_compile()
     if(g_opt->is_defined("output"))
     {
         QDomXPath::program_t program(dom_xpath.getProgram());
-        const QDomXPath::instruction_t *inst(program.data());
+        QDomXPath::instruction_t const *inst(program.data());
         std::string filename(g_opt->get_string("output"));
         FILE *f(fopen(filename.c_str(), "w"));
         if(f == NULL)
         {
-            fprintf(stderr, "error: cannot open output file \"%s\" for writing.\n", filename.c_str());
+            std::cerr << "error: cannot open output file \"" << filename.c_str() << "\" for writing." << std::endl;
             exit(1);
         }
         if(fwrite(inst, program.size(), 1, f) != 1)
         {
-            fprintf(stderr, "error: I/O error while writing to output file \"%s\".\n", filename.c_str());
+            std::cerr << "error: I/O error while writing to output file \"" << filename.c_str() << "\"." << std::endl;
             exit(1);
         }
         fclose(f);
 
         if(g_verbose)
         {
-            printf("saved compiled XPath in \"%s\" ... \n", filename.c_str());
+            std::cout << "saved compiled XPath in \"" << filename.c_str() << "\" ... " << std::endl;
         }
     }
 }
@@ -236,7 +239,7 @@ void cxpath_execute()
     FILE *f(fopen(program_filename.c_str(), "r"));
     if(f == NULL)
     {
-        fprintf(stderr, "error: could not open program file \"%s\" for reading.\n", program_filename.c_str());
+        std::cerr << "error: could not open program file \"" << program_filename.c_str() << "\" for reading." << std::endl;
         exit(1);
     }
     fseek(f, 0, SEEK_END);
@@ -246,39 +249,41 @@ void cxpath_execute()
     program.resize(program_size);
     if(fread(&program[0], program_size, 1, f) != 1)
     {
-        fprintf(stderr, "error: an I/O error occured while reading the program file \"%s\".\n", program_filename.c_str());
+        std::cerr << "error: an I/O error occured while reading the program file \"" << program_filename.c_str() << "\"." << std::endl;
         exit(1);
     }
     fclose(f);
 
-    const bool keep_namespace(g_opt->is_defined("namespace"));
-    const bool disassemble(g_opt->is_defined("disassemble"));
+    bool const keep_namespace(g_opt->is_defined("namespace"));
+    bool const disassemble(g_opt->is_defined("disassemble"));
 
     QDomXPath dom_xpath;
     dom_xpath.setProgram(program, disassemble);
 
     if(g_verbose)
     {
-        printf("Original XPath: %s\n", dom_xpath.getXPath().toUtf8().data());
+        std::cout << "Original XPath: " << dom_xpath.getXPath().toUtf8().data() << std::endl;
     }
 
-    const int size(g_opt->size("filename"));
+    int const size(g_opt->size("filename"));
     for(int i(0); i < size; ++i)
     {
         if(g_verbose)
         {
-            printf("Processing \"%s\" ... ", g_opt->get_string("filename", i).c_str());
+            std::cout << "Processing \"" << g_opt->get_string("filename", i) << "\" ... ";
         }
         QFile file(QString::fromUtf8(g_opt->get_string("filename", i).c_str()));
         if(!file.open(QIODevice::ReadOnly))
         {
-            fprintf(stderr, "error: could not open XML file \"%s\".", g_opt->get_string("filename", i).c_str());
+            std::cerr << std::endl
+                      << "error: could not open XML file \"" << g_opt->get_string("filename", i) << "\"." << std::endl;
             return;
         }
         QDomDocument document;
         if(!document.setContent(&file, keep_namespace))
         {
-            fprintf(stderr, "error: could not read XML file \"%s\".", g_opt->get_string("filename", i).c_str());
+            std::cerr << std::endl
+                      << "error: could not read XML file \"" << g_opt->get_string("filename", i) << "\"." << std::endl;
             return;
         }
         QDomXPath::node_vector_t result(dom_xpath.apply(document));
@@ -286,7 +291,7 @@ void cxpath_execute()
         if(g_results)
         {
             int const max_nodes(result.size());
-            printf("This XPath returned %d nodes\n", max_nodes);
+            std::cout << "this XPath returned " << max_nodes << " nodes" << std::endl;
             for(int j(0); j < max_nodes; ++j)
             {
                 display_node(j, result[j]);
@@ -302,7 +307,7 @@ void cxpath_disassemble()
     FILE *f(fopen(program_filename.c_str(), "r"));
     if(f == NULL)
     {
-        fprintf(stderr, "error: could not open program file \"%s\" for reading.\n", program_filename.c_str());
+        std::cerr << "error: could not open program file \"" << program_filename.c_str() << "\" for reading." << std::endl;
         exit(1);
     }
     fseek(f, 0, SEEK_END);
@@ -312,7 +317,7 @@ void cxpath_disassemble()
     program.resize(program_size);
     if(fread(&program[0], program_size, 1, f) != 1)
     {
-        fprintf(stderr, "error: an I/O error occured while reading the program file \"%s\".\n", program_filename.c_str());
+        std::cerr << "error: an I/O error occured while reading the program file \"" << program_filename.c_str() << "\"." << std::endl;
         exit(1);
     }
     fclose(f);
@@ -320,7 +325,7 @@ void cxpath_disassemble()
     QDomXPath dom_xpath;
     dom_xpath.setProgram(program, true);
 
-    printf("Original XPath: %s\n", dom_xpath.getXPath().toUtf8().data());
+    std::cout << "Original XPath: " << dom_xpath.getXPath().toUtf8().data() << std::endl;
 
     dom_xpath.disassemble();
 }

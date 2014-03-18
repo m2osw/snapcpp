@@ -22,8 +22,13 @@
 #include "../permissions/permissions.h"
 #include "../sessions/sessions.h"
 #include "../filter/filter.h"
+#include "../layout/layout.h"
 
 #include "dbutils.h"
+#include "qdomreceiver.h"
+#include "qdomxpath.h"
+#include "qdomhelpers.h"
+#include "qxmlmessagehandler.h"
 #include "snap_image.h"
 #include "not_reached.h"
 #include "log.h"
@@ -31,6 +36,9 @@
 #include <QtCassandra/QCassandraLock.h>
 
 #include <iostream>
+
+#include <QXmlQuery>
+#include <QFile>
 
 #include "poison.h"
 
@@ -52,6 +60,9 @@ char const *get_name(name_t name)
     switch(name) {
     case SNAP_NAME_EDITOR_DRAFTS_PATH:
         return "admin/drafts";
+
+    case SNAP_NAME_EDITOR_LAYOUT:
+        return "editor::layout";
 
     case SNAP_NAME_EDITOR_PAGE_TYPE:
         return "editor::page_type";
@@ -105,7 +116,7 @@ void editor::on_bootstrap(snap_child *snap)
 
     SNAP_LISTEN(editor, "server", server, process_post, _1);
     SNAP_LISTEN(editor, "layout", layout::layout, generate_header_content, _1, _2, _3, _4);
-    //SNAP_LISTEN(editor, "layout", layout::layout, generate_page_content, _1, _2, _3, _4);
+    SNAP_LISTEN(editor, "layout", layout::layout, generate_page_content, _1, _2, _3, _4);
     SNAP_LISTEN(editor, "form", form::form, validate_post_for_widget, _1, _2, _3, _4, _5, _6);
 }
 
@@ -159,7 +170,7 @@ int64_t editor::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2014, 3, 12, 0, 37, 30, content_update);
+    SNAP_PLUGIN_UPDATE(2014, 3, 17, 22, 0, 30, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -329,7 +340,7 @@ bool editor::on_path_execute(content::path_info_t& ipath)
 
 void editor::on_validate_post_for_widget(content::path_info_t& ipath, sessions::sessions::session_info& info,
                                          QDomElement const& widget, QString const& widget_name,
-                                         QString const& widget_type, bool is_secret)
+                                         QString const& widget_type, bool const is_secret)
 {
     static_cast<void>(widget);
     static_cast<void>(widget_type);
@@ -669,7 +680,7 @@ void editor::on_process_post(QString const& uri_path)
         break;
 
     case EDITOR_SAVE_MODE_SAVE:
-        editor_save(ipath);
+        editor_save(ipath, info);
         break;
 
     case EDITOR_SAVE_MODE_PUBLISH:
@@ -733,8 +744,9 @@ editor::save_mode_t editor::string_to_save_mode(QString const& mode)
  * received (i.e. the user may just have changed his page title.)
  *
  * \param[in,out] ipath  The path to the page being updated.
+ * \param[in,out] info  The session information, for the validation, just in case.
  */
-void editor::editor_save(content::path_info_t& ipath)
+void editor::editor_save(content::path_info_t& ipath, sessions::sessions::session_info& info)
 {
     bool switch_branch(false);
     snap_version::version_number_t branch_number(ipath.get_branch());
@@ -785,10 +797,272 @@ void editor::editor_save(content::path_info_t& ipath)
     QString const revision_key(ipath.get_revision_key());
     QtCassandra::QCassandraTable::pointer_t data_table(content_plugin->get_data_table());
     QtCassandra::QCassandraRow::pointer_t row(data_table->row(revision_key));
+
+    //
+    // TODO:
+    //      look into getting and parsing the parser_xml ONCE
+    //
+    //      at this time it does that twice if no plugin ends the process
+    //      by doing a redirect
+    //
+
+    // first load the XML code representing the editor widget for this page
+    QDomDocument editor_widgets(get_editor_widgets(ipath));
+    //layout::layout *layout_plugin(layout::layout::instance());
+    //QString const script(layout_plugin->get_layout(ipath, get_name(SNAP_NAME_EDITOR_LAYOUT)));
+    //if(script != "default")
+    if(!editor_widgets.isNull())
+    {
+        //QString const name(layout_plugin->get_layout(ipath, layout::get_name(layout::SNAP_NAME_LAYOUT_LAYOUT)));
+        //QtCassandra::QCassandraTable::pointer_t layout_table(layout_plugin->get_layout_table());
+        //QString const parser_xml(layout_table->row(name)->cell(script)->value().stringValue());
+        //QDomDocument editor_widgets("editor-form");
+        //editor_widgets.setContent(parser_xml);
+
+        messages::messages *messages(messages::messages::instance());
+
+        // now go through all the widgets checking out their path, if the
+        // path exists in doc then copy the data in the parser_xml
+        QtCassandra::QCassandraRow::pointer_t revision_row(data_table->row(ipath.get_revision_key()));
+        QDomNodeList widgets(editor_widgets.elementsByTagName("widget"));
+        int const max_widgets(widgets.size());
+        for(int i(0); i < max_widgets; ++i)
+        {
+            QDomElement widget(widgets.at(i).toElement());
+            QString const widget_name(widget.attribute("id"));
+            QString const field_name(widget.attribute("field"));
+            QString const widget_type(widget.attribute("type"));
+            QString const widget_auto_save(widget.attribute("auto-save", "string")); // this one is #IMPLIED
+            bool const is_secret(widget.attribute("secret") == "secret"); // true if not "public" which is #IMPLIED
+
+            if(widget_name.isEmpty())
+            {
+                // TODO: add some more information to this error message so
+                //       we can find the element with the missing ID easily
+                throw snap_logic_exception(QString("ID of a widget on line %1 found in an editor XML document is missing.").arg(widget.lineNumber()));
+            }
+
+            // now validate using a signal so any plugin can take over
+            // the validation process
+            sessions::sessions::session_info::session_info_type_t const session_type(info.get_session_type());
+            // pretend that everything is fine so far...
+            info.set_session_type(sessions::sessions::session_info::SESSION_INFO_VALID);
+            int const errcnt(messages->get_error_count());
+            int const warncnt(messages->get_warning_count());
+
+            QString current_value;
+
+            // note that a POST from the editor only includes fields that
+            // changed (which reduces the size of the transfer); so we have
+            // to check whether the value is available; however, we have to
+            // check for required fields (since we only receive fields that
+            // change, we cannot avoid saving the data)
+            if(f_snap->postenv_exists(widget_name))
+            {
+                QString const post_value(f_snap->postenv(widget_name));
+                validate_editor_post_for_widget(ipath, info, widget, widget_name, widget_type, is_secret);
+                if(widget_auto_save == "int8")
+                {
+                    signed char c;
+                    if(widget_type == "checkmark")
+                    {
+                        if(post_value == "off")
+                        {
+                            c = 0;
+                        }
+                        else
+                        {
+                            c = 1;
+                        }
+                    }
+                    else
+                    {
+                        bool ok(false);
+                        c = post_value.toInt(&ok, 10);
+                        if(!ok)
+                        {
+                            f_snap->die(snap_child::HTTP_CODE_CONFLICT, "Conflict Error",
+                                QString("field \"%1\" must be a valid decimal number, \"%2\" is not acceptable.")
+                                        .arg(widget_name).arg(post_value),
+                                "This is probably a hacker if we get the wrong value here. We should never get an invalid integer if checked by JavaScript.");
+                            NOTREACHED();
+                        }
+                    }
+                    revision_row->cell(field_name)->setValue(c);
+                    current_value = QString("%1").arg(c);
+                }
+                else if(widget_auto_save == "string")
+                {
+                    // no special handling for empty strings here
+                    revision_row->cell(field_name)->setValue(post_value);
+                }
+            }
+            else
+            {
+                // get the current value from the database to verify the
+                // current value (because it may [still] be wrong)
+                QtCassandra::QCassandraValue const value(revision_row->cell(field_name)->value());
+                if(!value.nullValue())
+                {
+                    if(widget_auto_save == "int8")
+                    {
+                        int const v(value.signedCharValue());
+                        if(widget_type == "checkmark")
+                        {
+                            if(v == 0)
+                            {
+                                current_value = "off";
+                            }
+                            else
+                            {
+                                current_value = "on";
+                            }
+                        }
+                        else
+                        {
+                            current_value = QString("%1").arg(current_value);
+                        }
+                    }
+                    else if(widget_auto_save == "string")
+                    {
+                        // no special handling for empty strings here
+                        current_value = value.stringValue();
+                    }
+                }
+                validate_editor_post_for_widget(ipath, info, widget, widget_name, widget_type, is_secret);
+            }
+
+            if(info.get_session_type() != sessions::sessions::session_info::SESSION_INFO_VALID)
+            {
+                // it was not valid so mark the widgets as errorneous (i.e. so we
+                // can display it with an error message)
+                if(messages->get_error_count() == errcnt
+                && messages->get_warning_count() == warncnt)
+                {
+                    // the pluing marked that it found an error but did not
+                    // generate an actual error, do so here with a generic
+                    // error message
+                    messages->set_error(
+                        "Invalid Content",
+                        "\"" + form::form::html_64max(current_value, is_secret) + "\" is not valid for \"" + widget_name + "\".",
+                        "unspecified error for widget",
+                        false
+                    );
+                }
+                messages::messages::message const& msg(messages->get_last_message());
+
+                // Add the following to the widget so we can display the
+                // widget as having an error and show the error on request
+                //
+                // <error>
+                //   <title>$title</title>
+                //   <message>$message</message>
+                // </error>
+
+                QDomElement err_tag(editor_widgets.createElement("error"));
+                err_tag.setAttribute("idref", QString("messages_message_%1").arg(msg.get_id()));
+                widget.appendChild(err_tag);
+                QDomElement title_tag(editor_widgets.createElement("title"));
+                err_tag.appendChild(title_tag);
+                QDomText title_text(editor_widgets.createTextNode(msg.get_title()));
+                title_tag.appendChild(title_text);
+                QDomElement message_tag(editor_widgets.createElement("message"));
+                err_tag.appendChild(message_tag);
+                QDomText message_text(editor_widgets.createTextNode(msg.get_body()));
+                message_tag.appendChild(message_text);
+            }
+            else
+            {
+                // restore the last type
+                info.set_session_type(session_type);
+
+                // TODO support for attachment so they don't just disappear on
+                //      errors is required here; i.e. we need a way to be able
+                //      to save all the valid attachments in a temporary place
+                //      and then "move" them to their final location once the
+                //      form validates properly
+            }
+        }
+    }
+
+    // allow each plugin to save special fields (i.e. no auto-save)
     save_editor_fields(ipath, row);
 
     // save the modification date in the branch
     content_plugin->modified_content(ipath);
+}
+
+
+/** \brief This function reads the editor widgets.
+ *
+ * This function is used to read the editor widgets. The function caches
+ * the editor form in memory so that way we can put errors in it and thus
+ * when we generate the page we can put the errors linked to each widgets.
+ *
+ * \param[in,out] ipath  The path for which we look for an editor form.
+ *
+ * \return The QDomDocument representing the editor form, may be null.
+ */
+QDomDocument editor::get_editor_widgets(content::path_info_t& ipath)
+{
+    static QMap<QString, QDomDocument> g_cached_form;
+
+    QString const cpath(ipath.get_cpath());
+    if(!g_cached_form.contains(cpath))
+    {
+        QDomDocument editor_widgets("editor-form");
+        layout::layout *layout_plugin(layout::layout::instance());
+        QString const script(layout_plugin->get_layout(ipath, get_name(SNAP_NAME_EDITOR_LAYOUT)));
+        if(script != "default")
+        {
+            QString const layout_name(layout_plugin->get_layout(ipath, layout::get_name(layout::SNAP_NAME_LAYOUT_LAYOUT)));
+            QStringList const names(layout_name.split("/"));
+            if(names.size() > 0)
+            {
+                QString const name(names[0]);
+
+                QtCassandra::QCassandraTable::pointer_t layout_table(layout_plugin->get_layout_table());
+                QString const parser_xml(layout_table->row(name)->cell(script)->value().stringValue());
+std::cerr << "Default [" << script << "," << name << "] -- [" << parser_xml.mid(0, 256) << "]\n";
+                editor_widgets.setContent(parser_xml);
+            }
+        }
+        g_cached_form[cpath] = editor_widgets;
+    }
+
+    return g_cached_form[cpath];
+}
+
+
+/** \brief Start a widget validation.
+ *
+ * This function prepares the validation of the specified widget by
+ * applying common core validations proposed by the editor.
+ *
+ * The \p info parameter is used for the result. If something is wrong,
+ * then the type of the session is changed from SESSION_INFO_VALID to
+ * one of the SESSION_INFO_... that represent an error, in most cases we
+ * use SESSION_INFO_INCOMPATIBLE.
+ *
+ * \param[in] cpath  The path where the form is defined
+ * \param[in,out] info  The information linked with this form (loaded from the session)
+ * \param[in] widget  The widget being tested
+ * \param[in] widget_name  The name of the widget (i.e. the id="..." attribute value)
+ * \param[in] widget_type  The type of the widget (i.e. the type="..." attribute value)
+ * \param[in] is_secret  If true, the field is considered a secret field (i.e. a password.)
+ *
+ * \return Always return true so other plugins have a chance to validate too.
+ */
+bool editor::validate_editor_post_for_widget_impl(content::path_info_t& ipath, sessions::sessions::session_info& info, QDomElement const& widget, QString const& widget_name, QString const& widget_type, bool const is_secret)
+{
+    static_cast<void>(ipath);
+    static_cast<void>(info);
+    static_cast<void>(widget);
+    static_cast<void>(widget_name);
+    static_cast<void>(widget_type);
+    static_cast<void>(is_secret);
+
+    return true;
 }
 
 
@@ -1559,6 +1833,264 @@ bool editor::save_inline_image(content::path_info_t& ipath, QDomElement img, QSt
 
     return true;
 }
+
+
+/** \brief Setup for editor.
+ *
+ * The editor transforms all the fields added to the XML and that the user
+ * is expected to be able to edit in a way that gives the user the ability
+ * to click "Edit this field". More or less, this means adding a couple of
+ * \<div\> tags around the data of those fields.
+ *
+ * In order to allow field editing, you need one \<div\> with class
+ * "snap-editor". This field will also be given the attribute "field_name"
+ * with the name of the field. Within that first \<div\> you want another
+ * \<div\> with class "editor-content".
+ *
+ * \todo
+ * We need to know whether the editor is only inserted if the action is
+ * set to edit or even in view mode. At this point we need ot it for
+ * a customer and only the edit mode requires the editor. This may also
+ * be a setting in the database (per page, type, global...).
+ *
+ * \param[in] ipath  The path being managed.
+ * \param[in,out] doc  The XML document that was generated for this body.
+ * \param[in] xsl  The XSLT document that is about to be used to transform
+ *                 the body (still as a string).
+ */
+void editor::on_generate_page_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate)
+{
+    enum added_form_file_support_t
+    {
+        ADDED_FORM_FILE_NONE,
+        ADDED_FORM_FILE_NOT_YET,
+        ADDED_FORM_FILE_YES
+    };
+    static added_form_file_support_t g_added_editor_form_js_css(ADDED_FORM_FILE_NONE);
+
+    static_cast<void>(ctemplate);
+
+    content::content *content_plugin(content::content::instance());
+
+    QDomDocument editor_widgets(get_editor_widgets(ipath));
+    if(editor_widgets.isNull())
+    {
+        // no editor specified for this page, skip on it (no editing allowed)
+        return;
+    }
+
+    // first load the XML code representing the editor widget for this page
+//    QString const script(layout_plugin->get_layout(ipath, get_name(SNAP_NAME_EDITOR_LAYOUT)));
+//    if(script == "default")
+//    {
+//std::cerr << "***\n*** Default so we cannot get the editor!?\n***\n";
+//        // no editor specified for this page, skip on it (no editing allowed)
+//        return;
+//    }
+//    QString const name(body.attribute("layout-name"));
+
+    // editor enters in action
+
+    // TODO: avoid the full XML conversion to a DOM and search the
+    // Done? names using string indexOf() and similar code; it would
+    //       be a lot faster! (we do not have to test that the XSL
+    //       is valid here, it will be tested when used to parse the
+    //       body XML document)
+
+    //QDomDocument body_xsl("body");
+    //body_xsl.setContent(xsl, true);
+
+    //QString cell(content_table->row(ipath.get_key())->cell());
+    //QDomXPath name_xpath;
+    //name_xpath.setXPath("/xsl:stylesheet/xsl:variable[@name='layout-name']");
+    //QDomXPath::node_vector_t name_nodes(name_xpath.apply(body_xsl));
+
+    //QDomXPath editor_xpath;
+    //editor_xpath.setXPath("/xsl:stylesheet/xsl:variable[@name='layout-editor']");
+    //QDomXPath::node_vector_t editor_nodes(editor_xpath.apply(body_xsl));
+
+    //if(name_nodes.size() != 1 || editor_nodes.size() != 1)
+    //{
+    //    //f_snap->die(snap_child::HTTP_CODE_CONFLICT, "Multiple or Missing Layout Name / Editor Definitions",
+    //    //    "The theme is required to have exactly one variable named \"layout-name\" and one named \"layout-editor\".",
+    //    //    "The programmer or themer need to fix this theme before accessing this page.");
+    //    //NOTREACHED();
+    //    // Most pages do not have a layout-editor entry (TBD at this point though)
+    //    return;
+    //}
+
+    //QDomElement n(name_nodes.at(0).toElement());
+    //QDomElement e(editor_nodes.at(0).toElement());
+    //if(n.isNull() || e.isNull())
+    //{
+    //    throw snap_logic_exception("The nodes retrieved with QDomXPath were not elements.");
+    //}
+    //QString const name(n.text());
+    //QString const script(e.text());
+
+    //QtCassandra::QCassandraTable::pointer_t layout_table(layout_plugin->get_layout_table());
+    //QString const parser_xml(layout_table->row(name)->cell(script)->value().stringValue());
+
+    QDomDocument doc(page.ownerDocument());
+
+    //QDomDocument editor_widgets("editor-form");
+    //editor_widgets.setContent(parser_xml);
+
+    // now go through all the widgets checking out their path, if the
+    // path exists in doc then copy the data in the parser_xml
+    QtCassandra::QCassandraTable::pointer_t data_table(content_plugin->get_data_table());
+    QtCassandra::QCassandraRow::pointer_t revision_row(data_table->row(ipath.get_revision_key()));
+    QDomNodeList widgets(editor_widgets.elementsByTagName("widget"));
+    int const max_widgets(widgets.size());
+    for(int i(0); i < max_widgets; ++i)
+    {
+        QDomElement w(widgets.at(i).toElement());
+        QString const field_name(w.attribute("field"));
+        QString const field_type(w.attribute("type"));
+        QString const widget_auto_save(w.attribute("auto-save", "string")); // this one is #IMPLIED
+
+        // get the current value from the database
+        QtCassandra::QCassandraValue const value(revision_row->cell(field_name)->value());
+        QString current_value;
+        if(!value.nullValue())
+        {
+            if(widget_auto_save == "int8")
+            {
+                int const v(value.signedCharValue());
+                if(field_type == "checkmark")
+                {
+                    if(v == 0)
+                    {
+                        current_value = "off";
+                    }
+                    else
+                    {
+                        current_value = "on";
+                    }
+                }
+                else
+                {
+                    current_value = QString("%1").arg(current_value);
+                }
+            }
+            else if(widget_auto_save == "string")
+            {
+                // no special handling for empty strings here
+                current_value = revision_row->cell(field_name)->value().stringValue();
+            }
+            // If no auto-save we expect a plugin to furnish the current value
+        }
+
+        QDomElement value_tag;
+        value_tag = w.firstChildElement("value");
+        if(value_tag.isNull())
+        {
+            // no <value> tag, create one
+            value_tag = editor_widgets.createElement("value");
+            w.appendChild(value_tag);
+        }
+        snap_dom::insert_html_string_to_xml_doc(value_tag, current_value);
+
+        // this is a path in doc
+        //QDomXPath path_xpath;
+        //path_xpath.setXPath(path);
+        //QDomXPath::node_vector_t path_nodes(path_xpath.apply(doc.documentElement()));
+        //if(path_nodes.size() == 1)
+        //{
+        //    QDomElement current_value(path_nodes.at(0).toElement());
+        //    QDomElement value_tag(editor_widgets.createElement("value"));
+        //    w.appendChild(value_tag);
+        //    snap_dom::insert_node_to_xml_doc(value_tag, current_value);
+        //}
+// TBD: I don't think we need to tell the user that there is "little" problem
+//      here because in most cases it is normal, however, for debug it may
+//      be useful to get a log of some sort...
+//        else
+//        {
+//std::cerr << "ERROR: could not find \"" << path << "\" in XML document of page.\n";
+//std::cerr << doc.toString() << "\n";
+//throw snap_logic_exception("problem with path");
+//        }
+
+    }
+
+    // now process the XML data with the plugin specialized data for
+    // each field through the editor XSLT
+    QFile editor_xsl_file(":/xsl/editor/editor-form.xsl");
+    if(!editor_xsl_file.open(QIODevice::ReadOnly))
+    {
+        throw snap_logic_exception("Could not open resource file \":/xsl/editor/editor-form.xsl\".");
+    }
+    QByteArray const data(editor_xsl_file.readAll());
+    if(data.isEmpty())
+    {
+        throw snap_logic_exception("Could not read resource file \":/xsl/editor/editor-form.xsl\".");
+    }
+    QString const editor_xsl(QString::fromUtf8(data.data(), data.size()));
+    QXmlQuery q(QXmlQuery::XSLT20);
+    QMessageHandler msg;
+    msg.set_xsl(editor_xsl);
+    msg.set_doc(editor_widgets.toString());
+    q.setMessageHandler(&msg);
+    q.setFocus(editor_widgets.toString());
+
+    // set action variable to the current action
+    QString const qs_action(f_snap->get_server_parameter("qs_action"));
+    snap_uri const& uri(f_snap->get_uri());
+    QString const action(uri.query_option(qs_action));
+    q.bindVariable("action", QVariant(action));
+
+    q.setQuery(editor_xsl);
+    QDomDocument doc_output("widgets");
+    QDomReceiver receiver(q.namePool(), doc_output);
+    q.evaluateTo(&receiver);
+
+//std::cerr << "Editor Focus [" << editor_widgets.toString() << "]\n";
+//std::cerr << "Editor Output [" << doc_output.toString() << "]\n";
+
+    QDomNodeList result_widgets(doc_output.elementsByTagName("widget"));
+    int const max_results(result_widgets.size());
+    for(int i(0); i < max_results; ++i)
+    {
+        QDomElement w(result_widgets.at(i).toElement());
+        QString const path(w.attribute("path"));
+
+        QDomElement field_tag(snap_dom::create_element(body, path));
+        snap_dom::insert_node_to_xml_doc(field_tag, w);
+
+        // this is a path in doc
+        //QDomXPath path_xpath;
+        //path_xpath.setXPath(path);
+        //QDomXPath::node_vector_t path_nodes(path_xpath.apply(doc.documentElement()));
+        //if(path_nodes.size() == 1)
+        //{
+        //    // the result overwrites the previous value!
+        //    QDomElement parent(path_nodes.at(0).toElement());
+        //    // TBD: we probably should remove the remove_all_children() call
+        //    //      which should not be necessary anymore since we do not
+        //    //      use that scheme anymore (i.e. we do not expect plugins
+        //    //      to create data and then go under them and plug the
+        //    //      editor in there! -- that makes it extremely laborious)
+        //    snap_dom::remove_all_children(parent);
+        //    snap_dom::insert_node_to_xml_doc(parent, w);
+        //}
+
+        if(g_added_editor_form_js_css == ADDED_FORM_FILE_NONE)
+        {
+            g_added_editor_form_js_css = ADDED_FORM_FILE_NOT_YET;
+        }
+    }
+//std::cerr << "Editor XML [" << doc.toString() << "]\n";
+
+    if(g_added_editor_form_js_css == ADDED_FORM_FILE_NOT_YET)
+    {
+        g_added_editor_form_js_css = ADDED_FORM_FILE_YES;
+
+        content::content::instance()->add_javascript(doc, "editor");
+        content::content::instance()->add_css(doc, "editor");
+    }
+}
+
 
 
 SNAP_PLUGIN_END()

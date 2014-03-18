@@ -1,6 +1,6 @@
 <!--
-Snap Websites Server == DTD for all *-form.xml files
-Copyright (C) 2011-2014  Made to Order Software Corp.
+Snap Websites Server == DTD for editor forms
+Copyright (C) 2014  Made to Order Software Corp.
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -16,14 +16,13 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 -->
-<!ELEMENT snap-form (auto-reset|focus|default-button|taborder|accesskeys|widget)*>
-<!ATTLIST snap-form name CDATA #REQUIRED
-                    session_id CDATA #REQUIRED
-                    owner CDATA #REQUIRED
-                    auto-save (auto-save) #IMPLIED
-                    processor CDATA #IMPLIED>
+<!ELEMENT editor-form (auto-reset|focus|immediate|drop|no-toolbar|taborder|widget)+>
+<!ATTLIST editor-form owner CDATA #REQUIRED
+                      auto-save (auto-save) #IMPLIED
+                      processor CDATA #IMPLIED
+                      content-modified CDATA #REQUIRED>
 
-<!ENTITY % html-data "(#PCDATA|b|i|u|em|strong|a|img|p|div)*" >
+<!ENTITY % html-data "(#PCDATA|a|b|br|div|em|i|img|p|strong|u)*" >
 
 <!ELEMENT auto-reset EMPTY>
 <!ATTLIST auto-reset minutes CDATA #REQUIRED>
@@ -31,35 +30,31 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 <!ELEMENT focus EMPTY>
 <!ATTLIST focus refid IDREF #REQUIRED>
 
-<!ELEMENT default-button EMPTY>
-<!ATTLIST default-button refid IDREF #REQUIRED>
+<!ELEMENT immediate EMPTY>
+
+<!ELEMENT drop EMPTY>
+
+<!ELEMENT no-toolbar EMPTY>
 
 <!ELEMENT taborder (tabindex)*>
 <!ELEMENT tabindex EMPTY>
 <!ATTLIST tabindex refid IDREF #REQUIRED>
 
-<!ELEMENT accesskeys (key)*>
-<!ELEMENT key (#PCDATA)>
-<!ATTLIST key refid IDREF #REQUIRED>
-
-<!ELEMENT widget (widget|label|tooltip|help|background-value|widgetorder|attachment|sizes|filters|value|required|classes)*>
+<!ELEMENT widget (label|tooltip|help|background-value|attachment|sizes|filters|required|classes|value)*>
 <!ATTLIST widget id ID #REQUIRED
                  type NMTOKEN #REQUIRED
+                 field CDATA #REQUIRED
+                 path CDATA #REQUIRED
                  secret (public|secret) "public"
-                 duplicate-of IDREF #IMPLIED
-                 auto-save (binary|int8|string) #IMPLIED>
+                 auto-save (int8|string) #IMPLIED
+                 drop (drop) #IMPLIED>
 
 <!ELEMENT label %html-data;>
 <!ELEMENT tooltip %html-data;>
 <!ELEMENT help %html-data;>
 <!ELEMENT background-value %html-data;>
-<!ELEMENT value %html-data;>
 <!ELEMENT required (#PCDATA)*>
 <!ELEMENT classes (#PCDATA)*>
-
-<!ELEMENT widgetorder (widgetpriority)+>
-<!ELEMENT widgetpriority EMPTY>
-<!ATTLIST widgetpriority refid IDREF #REQUIRED>
 
 <!ELEMENT attachment EMPTY>
 <!ATTLIST attachment type CDATA #REQUIRED
@@ -69,7 +64,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 <!ELEMENT sizes (min|max|width)+>
 <!ELEMENT min (#PCDATA)>
 <!ELEMENT max (#PCDATA)>
-<!ELEMENT width (#PCDATA)>
 
 <!ELEMENT filters (extensions|regex)+>
 <!ELEMENT extensions (#PCDATA)>
@@ -78,16 +72,16 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 <!-- HTML tags that are used in default values or background values
      we're not trying to replicate the whole HTML DTD, so we simply here -->
-<!ELEMENT b %html-data;>
-<!ELEMENT i %html-data;>
-<!ELEMENT u %html-data;>
-<!ELEMENT em %html-data;>
-<!ELEMENT strong %html-data;>
-
 <!ELEMENT a %html-data;>
 <!ATTLIST a href CDATA #REQUIRED
             rel (nofollow|author) #IMPLIED
             title CDATA "">
+
+<!ELEMENT b %html-data;>
+<!ELEMENT br EMPTY>
+<!ELEMENT div %html-data;>
+<!ELEMENT em %html-data;>
+<!ELEMENT i %html-data;>
 
 <!ELEMENT img EMPTY>
 <!ATTLIST img src CDATA #REQUIRED
@@ -97,8 +91,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
           alt CDATA #IMPLIED
           type CDATA #IMPLIED>
 
-<!ELEMENT div %html-data;>
 <!ELEMENT p %html-data;>
+<!ELEMENT strong %html-data;>
+<!ELEMENT u %html-data;>
+<!ELEMENT value %html-data;>
 <!--
 vim: ts=4 sw=4 et
 -->

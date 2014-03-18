@@ -271,6 +271,7 @@ public:
         // save in temporary XML for XSLT
         COMMAND_ELEMENT,                // + QDomElement
         COMMAND_CHILD_ELEMENT,          // + child name
+        COMMAND_NEW_CHILD_ELEMENT,      // + child name
         COMMAND_PARENT_ELEMENT,         // no parameters
         COMMAND_ELEMENT_ATTR,           // + QDomElement
         COMMAND_RESULT,                 // + search_result_t

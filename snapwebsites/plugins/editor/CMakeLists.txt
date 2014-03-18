@@ -53,12 +53,20 @@ QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC
 snap_validate_xml( content.xml content.dtd )
 snap_validate_xml( new-draft.xml form/snap-form.dtd )
 
+# Unfortunate, but at this time this doesn't work too well...
+# (i.e. xmllint [as in libxml2] does not support this complex XSD schema)
+#snap_validate_xml( editor-form.xsl schema-for-xslt20.xsd )
 
 add_library(editor SHARED
     editor.cpp
     ${SNAP_MANAGER_MOC_CXX}
     ${SNAP_MANAGER_RESOURCES_RCC}
+    buttons.png
+    checkmark-15x11.png
+    editor.js
+    editor.css
     content.xml
+    editor-form.xsl
     new-draft.xml
 )
 
@@ -72,7 +80,7 @@ endif()
 install(
     TARGETS editor LIBRARY DESTINATION ${PLUGIN_INSTALL_DIR}
 )
-FILE(GLOB HEADER_FILES "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
+file(GLOB HEADER_FILES "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
 install(
     FILES ${HEADER_FILES}
     DESTINATION include/snapwebsites/plugins/editor

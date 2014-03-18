@@ -59,6 +59,7 @@ add_library(form SHARED
     ${SNAP_MANAGER_MOC_CXX}
     ${SNAP_MANAGER_RESOURCES_RCC}
     content.xml
+    core-form.xsl
     form.js
 )
 

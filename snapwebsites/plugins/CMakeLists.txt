@@ -81,8 +81,9 @@ add_subdirectory(users)
 #
 install( FILES
 	content.dtd
-	form/snap-form.dtd 
+	form/snap-form.dtd
+	editor/editor-form.dtd
 	DESTINATION share/snapwebsites/dtd
-	)
+)
 
 # vim: ts=4 sw=4 nocindent

@@ -1,6 +1,6 @@
 /*
  * Name: editor
- * Version: 0.0.2.22
+ * Version: 0.0.2.53
  * Browsers: all
  * Copyright: Copyright 2013-2014 (c) Made to Order Software Corporation  All rights reverved.
  * License: GPL 2.0
@@ -65,35 +65,35 @@ snapwebsites.Editor = function()
 snapwebsites.Editor.prototype = {
     constructor: snapwebsites.Editor,
     editorStyle: "#toolbar{border:1px solid black;-moz-border-radius:5px;-webkit-border-radius:5px;border-radius:5px;padding:5px;float:left;display:none;position:absolute;z-index:1;background:white;}"
-                 +"#toolbar div.group{float:left;width:4px;height:16px;margin:5px;background:url(/images/editor/buttons.png) no-repeat 0 0;}"
-                 +"#toolbar div.button{float:left;width:16px;height:16px;padding:5px;border:1px solid white;}"
-                 +"#toolbar div.button:hover{background-color:#e0f0ff;border:1px solid #a0d0ff;border-radius:5px;}"
-                 +"#toolbar div.button .image{display:block;width:16px;height:16px;}"
-                 +"#toolbar .horizontal-separator{clear:both;height:3px;margin:19px 0 0;float:none;width:100%}"
-                 +".button.bold .image{background:url(/images/editor/buttons.png) no-repeat -4px 0;}"
-                 +".button.italic .image{background:url(/images/editor/buttons.png) no-repeat -132px 0;}"
-                 +".button.underline .image{background:url(/images/editor/buttons.png) no-repeat -292px 0;}"
-                 +".button.strikeThrough .image{background:url(/images/editor/buttons.png) no-repeat -244px 0;}"
-                 +".button.removeFormat .image{background:url(/images/editor/buttons.png) no-repeat -228px 0;}"
-                 +".button.subscript .image{background:url(/images/editor/buttons.png) no-repeat -260px 0;}"
-                 +".button.superscript .image{background:url(/images/editor/buttons.png) no-repeat -276px 0;}"
-                 +".button.createLink .image{background:url(/images/editor/buttons.png) no-repeat -20px 0;}"
-                 +".button.unlink .image{background:url(/images/editor/buttons.png) no-repeat -308px 0;}"
-                 +".button.insertUnorderedList .image{background:url(/images/editor/buttons.png) no-repeat -116px 0;}"
-                 +".button.insertOrderedList .image{background:url(/images/editor/buttons.png) no-repeat -100px 0;}"
-                 +".button.outdent .image{background:url(/images/editor/buttons.png) no-repeat -212px 0;}"
-                 +".button.indent .image{background:url(/images/editor/buttons.png) no-repeat -52px 0;}"
-                 +".button.formatBlock .image{background:url(/images/editor/buttons.png) no-repeat -36px 0;}"
-                 +".button.insertHorizontalRule .image{background:url(/images/editor/buttons.png) no-repeat -84px 0;}"
-                 +".button.insertFieldset .image{background:url(/images/editor/buttons.png) no-repeat -68px 0;}"
-                 +".button.justifyLeft .image{background:url(/images/editor/buttons.png) no-repeat -180px 0;}"
-                 +".button.justifyCenter .image{background:url(/images/editor/buttons.png) no-repeat -148px 0;}"
-                 +".button.justifyRight .image{background:url(/images/editor/buttons.png) no-repeat -196px 0;}"
-                 +".button.justifyFull .image{background:url(/images/editor/buttons.png) no-repeat -164px 0;}"
-                 +".snap-editor:hover{box-shadow:inset 0 0 0 3px rgba(64, 192, 64, 0.5);}"
-                 +".editor-tooltip{display:none;padding:10px;position:absolute;z-index:1;border:1px solid black;border-radius:7px;background:#f0fff0;color:#0f000f;}"
-                 +".snap-editor [contenteditable=\"true\"] .filter-token{background-color:#e0e0e0;}"
-                 ,
+                +"#toolbar div.group{float:left;width:4px;height:16px;margin:5px;background:url(/images/editor/buttons.png) no-repeat 0 0;}"
+                +"#toolbar div.button{float:left;width:16px;height:16px;padding:5px;border:1px solid white;}"
+                +"#toolbar div.button:hover{background-color:#e0f0ff;border:1px solid #a0d0ff;border-radius:5px;}"
+                +"#toolbar div.button .image{display:block;width:16px;height:16px;}"
+                +"#toolbar .horizontal-separator{clear:both;height:3px;margin:19px 0 0;float:none;width:100%}"
+                +".button.bold .image{background:url(/images/editor/buttons.png) no-repeat -4px 0;}"
+                +".button.italic .image{background:url(/images/editor/buttons.png) no-repeat -132px 0;}"
+                +".button.underline .image{background:url(/images/editor/buttons.png) no-repeat -292px 0;}"
+                +".button.strikeThrough .image{background:url(/images/editor/buttons.png) no-repeat -244px 0;}"
+                +".button.removeFormat .image{background:url(/images/editor/buttons.png) no-repeat -228px 0;}"
+                +".button.subscript .image{background:url(/images/editor/buttons.png) no-repeat -260px 0;}"
+                +".button.superscript .image{background:url(/images/editor/buttons.png) no-repeat -276px 0;}"
+                +".button.createLink .image{background:url(/images/editor/buttons.png) no-repeat -20px 0;}"
+                +".button.unlink .image{background:url(/images/editor/buttons.png) no-repeat -308px 0;}"
+                +".button.insertUnorderedList .image{background:url(/images/editor/buttons.png) no-repeat -116px 0;}"
+                +".button.insertOrderedList .image{background:url(/images/editor/buttons.png) no-repeat -100px 0;}"
+                +".button.outdent .image{background:url(/images/editor/buttons.png) no-repeat -212px 0;}"
+                +".button.indent .image{background:url(/images/editor/buttons.png) no-repeat -52px 0;}"
+                +".button.formatBlock .image{background:url(/images/editor/buttons.png) no-repeat -36px 0;}"
+                +".button.insertHorizontalRule .image{background:url(/images/editor/buttons.png) no-repeat -84px 0;}"
+                +".button.insertFieldset .image{background:url(/images/editor/buttons.png) no-repeat -68px 0;}"
+                +".button.justifyLeft .image{background:url(/images/editor/buttons.png) no-repeat -180px 0;}"
+                +".button.justifyCenter .image{background:url(/images/editor/buttons.png) no-repeat -148px 0;}"
+                +".button.justifyRight .image{background:url(/images/editor/buttons.png) no-repeat -196px 0;}"
+                +".button.justifyFull .image{background:url(/images/editor/buttons.png) no-repeat -164px 0;}"
+                +".snap-editor:hover{box-shadow:inset 0 0 0 3px rgba(64, 192, 64, 0.5);}"
+                +".editor-tooltip{display:none;padding:10px;position:absolute;z-index:1;border:1px solid black;border-radius:7px;background:#f0fff0;color:#0f000f;}"
+                +".snap-editor [contenteditable=\"true\"] .filter-token{background-color:#e0e0e0;}"
+                ,
     // TODO: support for translations
     //
     // WARNING: Some control keys cannot be used under different browsers
@@ -996,16 +996,35 @@ console.log("command "+idx+" "+this.toolbarButtons[idx][2]+"!!!");
         this._toolbar.mousedown(function(e){snapwebsites.EditorInstance._cancel_toolbar_hide();e.preventDefault();});
     },
 
+    _isEmptyBlock: function(html)
+    {
+        // This test is too slow for large buffers so we do not
+        // do it for them; plus large buffers are not likely all empty!
+        if(html.length < 256)
+        {
+            // replace nothingness by "background" value
+            html = html.replace(/<br *\/?>| |\t|\n|\r|&nbsp;/g, "");
+            if(html.length == 0)
+            {
+                return true;
+            }
+        }
+        return false;
+    },
+
     _checkModified: function()
     {
+        var html = jQuery(this._activeElement).html();
         if(!this._modified[this._activeElement.objId])
         {
-            this._modified[this._activeElement.objId] = this._originalData[this._activeElement.objId] != jQuery(this._activeElement).html();
+            this._modified[this._activeElement.objId] = this._originalData[this._activeElement.objId] != html;
             if(this._modified[this._activeElement.objId])
             {
                 this._saveDialog();
             }
         }
+        // replace nothingness by "background" value
+        jQuery(this._activeElement).siblings(".snap-editor-background").toggle(this._isEmptyBlock(html));
     },
 
     _cancel_toolbar_hide: function()
@@ -1152,7 +1171,7 @@ console.log("command "+idx+" "+this.toolbarButtons[idx][2]+"!!!");
         // user has to click Edit to activate the editor
         snap_editor = jQuery(".snap-editor");
         jQuery("<div class='editor-tooltip'><a class='activate-editor' href='#'>Edit</a></div>").prependTo(".snap-editor:not(.immediate)");
-        snap_editor.filter(":not(.immediate)").children(".editor-tooltip").children(".activate-editor").click(function(){
+        snap_editor.not(".immediate").not(".checkmark").children(".editor-tooltip").children(".activate-editor").click(function(){
             jQuery(this).parent().parent().mouseleave().off("mouseenter mouseleave")
                     .children(".editor-content").attr("contenteditable", "true").focus();
         });
@@ -1166,15 +1185,19 @@ console.log("command "+idx+" "+this.toolbarButtons[idx][2]+"!!!");
 
         // editor is immediately made available
         immediate = snap_editor.filter(".immediate");
-        immediate.children(".editor-content").attr("contenteditable", "true");
+        immediate.not(".checkmark").children(".editor-content").attr("contenteditable", "true");
 
         snap_editor
             .children(".editor-content")
             .each(function(){
+                var that = jQuery(this);
+                var html = jQuery(this).html();
                 this.objId = ++snapwebsites.EditorInstance._lastId;
-                jQuery(this).attr("id", "editor-area-" + this.objId);
-                snapwebsites.EditorInstance._originalData[this.objId] = jQuery(this).html();
+                that.attr("id", "editor-area-" + this.objId);
+                snapwebsites.EditorInstance._originalData[this.objId] = html;
                 snapwebsites.EditorInstance._modified[this.objId] = false;
+                // replace nothingness by "background" values
+                that.siblings(".snap-editor-background").toggle(snapwebsites.EditorInstance._isEmptyBlock(html));
             })
             .focus(function(){
                 snapwebsites.EditorInstance._activeElement = this;
@@ -1203,11 +1226,19 @@ console.log("command "+idx+" "+this.toolbarButtons[idx][2]+"!!!");
                         e.preventDefault();
                     }
                 }
+                else if(e.which == 0x20)
+                {
+                    if(jQuery(snapwebsites.EditorInstance._activeElement).filter(".checkmark"))
+                    {
+                        jQuery(snapwebsites.EditorInstance._activeElement).find(".checkmark-area").toggleClass("checked");
+                        snapwebsites.EditorInstance._checkModified();
+                    }
+                }
             })
             .on("dragenter",function(e){
-                jQuery(this).parent().addClass("dragging-over");
                 e.preventDefault();
                 e.stopPropagation();
+                jQuery(this).parent().addClass("dragging-over");
             })
             .on("dragover",function(e){
                 // this is said to make things work better in some browsers...
@@ -1215,9 +1246,9 @@ console.log("command "+idx+" "+this.toolbarButtons[idx][2]+"!!!");
                 e.stopPropagation();
             })
             .on("dragleave",function(e){
-                jQuery(this).parent().removeClass("dragging-over");
                 e.preventDefault();
                 e.stopPropagation();
+                jQuery(this).parent().removeClass("dragging-over");
             })
             .on("drop",function(e){
                 // TODO:
@@ -1287,6 +1318,37 @@ console.log("command "+idx+" "+this.toolbarButtons[idx][2]+"!!!");
         ;
 
         immediate.filter(".auto-focus").children(".editor-content").focus();
+
+        // backgrounds are positioned as "absolute" so their width
+        // is "broken" and we cannot center them in their parent
+        // which is something we want to do for image-box objects
+        jQuery(".snap-editor.image-box").each(function(){
+            var that = jQuery(this);
+            var background = that.children(".snap-editor-background");
+            background.css("width", that.width())
+                      .css("margin-top", (that.height() - background.height()) / 2);
+        });
+
+        jQuery(".editable.checkmark").click(function(e){
+            var that = jQuery(this);
+
+            // the default may do weird stuff, so avoid it!
+            e.preventDefault();
+            e.stopPropagation();
+
+            that.find(".checkmark-area").toggleClass("checked");
+            that.children(".editor-content").focus();
+
+            snapwebsites.EditorInstance._checkModified();
+        });
+
+        // Make labels focus the corresponding editable box
+        jQuery("label[for!='']").click(function(e){
+            // the default may recapture the focus, so avoid it!
+            e.preventDefault();
+            e.stopPropagation();
+            jQuery("div[name='"+jQuery(this).attr("for")+"']").focus();
+        });
     },
 
     _unload: function()

@@ -99,6 +99,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 	<!-- *** PUBLIC HEADER TEMPLATE *** -->
 
 	<xsl:template name="snap:html-header">
+		<xsl:param name="theme-css" select="''"/>
 
 		<!-- force UTF-8 encoding (at the very beginning to avoid a IE6 bug -->
 		<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
@@ -493,6 +494,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 		<!-- cascading style sheets -->
 		<xsl:copy-of select="head/metadata/css/*"/>
+
+		<xsl:if test="$theme-css">
+			<link rel="stylesheet" type="text/css" href="{$theme-css}"/>
+		</xsl:if>
 
 		<!-- JavaScripts -->
 		<xsl:copy-of select="head/metadata/javascript/*"/>

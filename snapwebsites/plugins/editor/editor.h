@@ -52,6 +52,7 @@ public:
 enum name_t
 {
     SNAP_NAME_EDITOR_DRAFTS_PATH,
+    SNAP_NAME_EDITOR_LAYOUT,
     SNAP_NAME_EDITOR_PAGE_TYPE,
     SNAP_NAME_EDITOR_TYPE_EXTENDED_FORMAT_PATH,
     SNAP_NAME_EDITOR_TYPE_FORMAT_PATH
@@ -112,18 +113,21 @@ public:
                                          QDomElement const& widget, QString const& widget_name,
                                          QString const& widget_type, bool is_secret);
     void                on_process_post(QString const& uri_path);
+    void                on_generate_page_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate);
 
     QString             format_uri(QString const& format, content::path_info_t& ipath, QString const& page_name, params_map_t const& params);
     static save_mode_t  string_to_save_mode(QString const& mode);
     void                parse_out_inline_img(content::path_info_t& ipath, QString& body);
+    QDomDocument        get_editor_widgets(content::path_info_t& ipath);
 
     SNAP_SIGNAL(save_editor_fields, (content::path_info_t& ipath, QtCassandra::QCassandraRow::pointer_t row), (ipath, row));
+    SNAP_SIGNAL(validate_editor_post_for_widget, (content::path_info_t& ipath, sessions::sessions::session_info& info, QDomElement const& widget, QString const& widget_name, QString const& widget_type, bool const is_secret), (ipath, info, widget, widget_name, widget_type, is_secret));
     SNAP_SIGNAL(replace_uri_token, (editor_uri_token& token_info), (token_info));
 
 private:
     void                content_update(int64_t variables_timestamp);
     void                process_new_draft();
-    void                editor_save(content::path_info_t& ipath);
+    void                editor_save(content::path_info_t& ipath, sessions::sessions::session_info& info);
     void                editor_create_new_branch(content::path_info_t& ipath);
     bool                save_inline_image(content::path_info_t& ipath, QDomElement img, QString const& src);
 

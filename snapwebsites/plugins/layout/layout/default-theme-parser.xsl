@@ -111,6 +111,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 				</div>
 				<div class="column content">
 					<div class="squeezed">
+						<!-- TODO: this is totally wrong because we may be editing the
+						           long-title or [normal] title when those are two
+											 distinct fields -->
 						<div><div><xsl:attribute name="class"><xsl:if test="$action = 'edit'">snap-editor</xsl:if></xsl:attribute>
 						     <xsl:attribute name="field_name">title</xsl:attribute><h2 class="editor-content"><xsl:choose>
 								<xsl:when test="/snap/page/body/titles/long-title">

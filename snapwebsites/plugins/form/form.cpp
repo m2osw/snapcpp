@@ -141,7 +141,7 @@ void form::on_bootstrap(::snap::snap_child *snap)
 
     SNAP_LISTEN(form, "server", server, process_post, _1);
     SNAP_LISTEN(form, "filter", filter::filter, replace_token, _1, _2, _3, _4);
-    SNAP_LISTEN(form, "layout", layout::layout, filtered_content, _1, _2);
+    SNAP_LISTEN(form, "layout", layout::layout, filtered_content, _1, _2, _3);
 }
 
 
@@ -226,7 +226,7 @@ QDomDocument form::form_to_html(sessions::sessions::session_info& info, QDomDocu
         QDomNode p(f_form_elements.firstChild());
         while(!p.isElement())
         {
-            // this can happen if we have comments
+            // the first node may not be an element since we have comments
             if(p.isNull())
             {
                 // well... nothing found?
@@ -349,7 +349,7 @@ void form::auto_fill_form(QDomDocument xml_form)
 
     // if we have an auto-save, then we can auto-load too
     // otherwise only let the user plugin take care of the auto-fill
-    QString auto_save_str(snap_form.attribute("auto-save"));
+    QString const auto_save_str(snap_form.attribute("auto-save"));
     bool const auto_save(!auto_save_str.isEmpty());
 
     QString const owner(snap_form.attribute("owner"));
@@ -980,7 +980,7 @@ void form::on_process_post(QString const& uri_path)
         }
 
         QDomNode secret(attributes.namedItem("secret"));
-        bool is_secret(!secret.isNull() && secret.nodeValue() == "secret");
+        bool const is_secret(!secret.isNull() && secret.nodeValue() == "secret");
 
         QDomNode auto_save_attr(attributes.namedItem("auto-save"));
         if(!auto_save_attr.isNull())
@@ -1011,11 +1011,11 @@ void form::on_process_post(QString const& uri_path)
 
         // now validate using a signal so any plugin can take over
         // the validation process
-        sessions::sessions::session_info::session_info_type_t session_type(info.get_session_type());
+        sessions::sessions::session_info::session_info_type_t const session_type(info.get_session_type());
         // pretend that everything is fine so far...
         info.set_session_type(sessions::sessions::session_info::SESSION_INFO_VALID);
-        int errcnt(messages->get_error_count());
-        int warncnt(messages->get_warning_count());
+        int const errcnt(messages->get_error_count());
+        int const warncnt(messages->get_warning_count());
         validate_post_for_widget(ipath, info, widget, widget_name, widget_type, is_secret);
         if(info.get_session_type() != sessions::sessions::session_info::SESSION_INFO_VALID)
         {
@@ -1077,7 +1077,7 @@ void form::on_process_post(QString const& uri_path)
 
     // data looks good, let the plugin process it
     QDomElement snap_form(xml_form.documentElement());
-    QString auto_save_str(snap_form.attribute("auto-save"));
+    QString const auto_save_str(snap_form.attribute("auto-save"));
     if(!auto_save_str.isEmpty())
     {
         // in this case the form plugin just saves the data as is in the page
@@ -1258,7 +1258,7 @@ void form::auto_save_form(QString const& owner, content::path_info_t& ipath, aut
  *
  * \return The clipped value as required.
  */
-QString form::text_64max(QString const& text, bool is_secret)
+QString form::text_64max(QString const& text, bool const is_secret)
 {
     if(is_secret && !text.isEmpty())
     {
@@ -1283,7 +1283,7 @@ QString form::text_64max(QString const& text, bool is_secret)
  *
  * \return The shorten HTML, although still 100% valid HTML.
  */
-QString form::html_64max(QString const& html, bool is_secret)
+QString form::html_64max(QString const& html, bool const is_secret)
 {
     if(is_secret)
     {
@@ -1391,10 +1391,13 @@ int form::count_html_lines(QString const& html)
  * \param[in] widget  The widget being tested
  * \param[in] widget_name  The name of the widget (i.e. the id="..." attribute value)
  * \param[in] widget_type  The type of the widget (i.e. the type="..." attribute value)
+ * \param[in] is_secret  If true, the field is considered a secret field (i.e. a password.)
+ *
+ * \return Always return true so other plugins have a chance to validate too.
  */
 bool form::validate_post_for_widget_impl(content::path_info_t& ipath, sessions::sessions::session_info& info,
                                          QDomElement const& widget, QString const& widget_name,
-                                         QString const& widget_type, bool is_secret)
+                                         QString const& widget_type, bool const is_secret)
 {
     messages::messages *messages(messages::messages::instance());
 
@@ -2204,10 +2207,13 @@ QString form::get_source(QString const& owner, content::path_info_t& ipath)
  *
  * \param[in] ipath  The path being managed.
  * \param[in,out] doc  The document that was generated.
+ * \param[in] xsl  The XSLT document that is about to be used to transform
+ *                 the body (still as a string).
  */
-void form::on_filtered_content(content::path_info_t& ipath, QDomDocument& doc)
+void form::on_filtered_content(content::path_info_t& ipath, QDomDocument& doc, QString const& xsl)
 {
     static_cast<void>(ipath);
+    static_cast<void>(xsl);
 
     if(f_form_initialized)
     {

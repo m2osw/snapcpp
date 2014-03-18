@@ -76,11 +76,11 @@ public:
     void                        on_bootstrap(::snap::snap_child *snap);
     void                        on_process_post(QString const& uri_path);
     void                        on_replace_token(content::path_info_t& ipath, QString const& plugin_owner, QDomDocument& xml, filter::filter::token_info_t& token);
-    void                        on_filtered_content(content::path_info_t& path, QDomDocument& doc);
+    void                        on_filtered_content(content::path_info_t& path, QDomDocument& doc, QString const& xsl);
 
     SNAP_SIGNAL(tweak_form, (form *f, content::path_info_t& ipath, QDomDocument form_doc), (f, ipath, form_doc));
     SNAP_SIGNAL(form_element, (form *f), (f));
-    SNAP_SIGNAL(validate_post_for_widget, (content::path_info_t& ipath, sessions::sessions::session_info& info, QDomElement const& widget, QString const& widget_name, QString const& widget_type, bool is_secret), (ipath, info, widget, widget_name, widget_type, is_secret));
+    SNAP_SIGNAL(validate_post_for_widget, (content::path_info_t& ipath, sessions::sessions::session_info& info, QDomElement const& widget, QString const& widget_name, QString const& widget_type, bool const is_secret), (ipath, info, widget, widget_name, widget_type, is_secret));
     SNAP_SIGNAL(fill_form_widget, (form *f, QString const& owner, QString const& cpath, QDomDocument xml_form, QDomElement widget, QString const& id), (f, owner, cpath, xml_form, widget, id));
 
     QDomDocument const          load_form(content::path_info_t& cpath, QString const& source, QString& error);
@@ -92,8 +92,8 @@ public:
     QString                     get_source(QString const& plugin_owner_name, content::path_info_t& cpath);
     bool                        is_auto_save(QString const& cpath);
 
-    static QString              text_64max(QString const& text, bool is_secret);
-    static QString              html_64max(QString const& html, bool is_secret);
+    static QString              text_64max(QString const& text, bool const is_secret);
+    static QString              html_64max(QString const& html, bool const is_secret);
     static int                  count_text_lines(QString const& text);
     static int                  count_html_lines(QString const& html);
     static bool                 parse_width_height(QString const& size, int& width, int& height);

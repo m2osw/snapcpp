@@ -16,6 +16,11 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "qdomhelpers.h"
+#include "qstring_stream.h"
+
+#include <iostream>
+
+#include <QStringList>
 
 #include "poison.h"
 
@@ -34,33 +39,138 @@ namespace snap_dom
  * \param[in,out] child  DOM element receiving the result as children nodes.
  * \param[in] xml  The input XML string.
  */
-void insert_html_string_to_xml_doc(QDomElement& child, QString const& xml)
+void insert_html_string_to_xml_doc(QDomNode& child, QString const& xml)
 {
     // parsing the XML can be slow, try to avoid that if possible
     if(xml.contains('<'))
     {
         QDomDocument xml_doc("wrapper");
         xml_doc.setContent("<wrapper>" + xml + "</wrapper>", true, nullptr, nullptr, nullptr);
-
-        // copy the result in a fragment of our document
-        QDomDocumentFragment frag(child.ownerDocument().createDocumentFragment());
-        frag.appendChild(child.ownerDocument().importNode(xml_doc.documentElement(), true));
-
-        // copy the fragment nodes at the right place
-        QDomNodeList children(frag.firstChild().childNodes());
-        QDomNode previous(children.at(0));
-        child.appendChild(children.at(0));
-        while(!children.isEmpty())
-        {
-            QDomNode l(children.at(0));
-            child.insertAfter(children.at(0), previous);
-            previous = l;
-        }
+        insert_node_to_xml_doc(child, xml_doc.documentElement());
     }
     else
     {
         QDomText text(child.ownerDocument().createTextNode(xml));
         child.appendChild(text);
+    }
+}
+
+
+/** \brief Insert a node's children in a node of another document.
+ *
+ * This function copies all the children of the specified \p node
+ * at the end of the child node.
+ *
+ * \param[in,out] child  The destination node.
+ * \param[in] node  The source element node.
+ */
+void insert_node_to_xml_doc(QDomNode& child, QDomNode const& node)
+{
+    // copy the result in a fragment of our document
+    QDomDocumentFragment frag(child.ownerDocument().createDocumentFragment());
+    frag.appendChild(child.ownerDocument().importNode(node, true));
+
+    // copy the fragment nodes at the right place
+    QDomNodeList children(frag.firstChild().childNodes());
+
+    QDomNode previous;
+    while(!children.isEmpty())
+    {
+        QDomNode l(children.at(0));
+        if(previous.isNull())
+        {
+            // the first time append at the end of the existing data
+            child.appendChild(l);
+        }
+        else
+        {
+            child.insertAfter(l, previous);
+        }
+        previous = l;
+    }
+}
+
+
+/** \brief Useful function that transforms a QString to XML.
+ *
+ * When inserting a string in the XML document and that string may include
+ * HTML code, call this function, it will first convert the string to XML
+ * then insert the result as children of the \p child element.
+ *
+ * \param[in,out] child  DOM element receiving the result as children nodes.
+ * \param[in] xml  The input XML string.
+ */
+void replace_node_with_html_string(QDomNode& replace, QString const& xml)
+{
+    // parsing the XML can be slow, try to avoid that if possible
+    if(xml.contains('<'))
+    {
+        QDomDocument xml_doc("wrapper");
+        xml_doc.setContent("<wrapper>" + xml + "</wrapper>", true, nullptr, nullptr, nullptr);
+        replace_node_with_elements(replace, xml_doc.documentElement());
+    }
+    else
+    {
+        QDomText text(replace.toText());
+        text.setData(xml);
+    }
+}
+
+
+/** \brief Replace a node with another.
+ *
+ * This function replaces the node \p replace with the node \p node.
+ *
+ * Note that the function creates a copy of \p node as if it were from
+ * another document.
+ *
+ * \param[in,out] replace  The node to be replaced.
+ * \param[in] node  The source node to copy in place of \p replace.
+ */
+void replace_node_with_elements(QDomNode& replace, QDomNode const& node)
+{
+    QDomNode parent(replace.parentNode());
+
+    // copy the result in a fragment of our document
+    QDomDocumentFragment frag(replace.ownerDocument().createDocumentFragment());
+    frag.appendChild(replace.ownerDocument().importNode(node, true));
+
+    // copy the fragment nodes at the right place
+    QDomNodeList children(frag.firstChild().childNodes());
+
+    QDomNode previous(replace);
+    while(!children.isEmpty())
+    {
+        QDomNode l(children.at(0));
+        parent.insertAfter(l, previous);
+        previous = l;
+    }
+
+    // got replaced, now remove that node
+    parent.removeChild(replace);
+}
+
+
+/** \brief Delete all the children of a given element node.
+ *
+ * This function loops until all the children of a given element node
+ * were removed.
+ *
+ * \param[in,out] parent  The node from which all the children should be
+ *                        removed.
+ */
+void remove_all_children(QDomElement& parent)
+{
+    for(;;)
+    {
+        // Note: I use the last child because it is much more likely that
+        //       this way we avoid a memmove() of the vector of children
+        QDomNode child(parent.lastChild());
+        if(child.isNull())
+        {
+            return;
+        }
+        parent.removeChild(child);
     }
 }
 
@@ -109,6 +219,76 @@ QDomElement get_element(QDomDocument& doc, QString const& name, bool must_exist)
     return element;
 }
 
+
+/** \brief Create the elements defined by path under parent.
+ *
+ * Starting from the node \p parent create each child as defined by
+ * \p path. The process checks whether each child already exists, if
+ * so then it doesn't re-create them (this is important to understand,
+ * this function does not append new tags.)
+ *
+ * This is particularly useful when dealing with XML documents where you
+ * have to add many tags at different locations and you do not know whether
+ * there is already a tag there.
+ *
+ * \important
+ * The function gets the FIRST of each tag it finds. So if you want to
+ * create a child named \<foo\> and there are 3 tags named that way
+ * under \p parent, then the first one will be used.
+ *
+ * \note
+ * This function is similar to a get_element() with a path if all the
+ * elements in \p path already exist.
+ *
+ * \note
+ * The type of parent is set to QDomNode even though an element is required
+ * because that way we do not force the caller to convert the node.
+ *
+ * \param[in,out] parent  The node from which children are added (i.e. body).
+ * \param[in] path  The path representing the childre to create.
+ */
+QDomElement create_element(QDomNode parent, QString const& path)
+{
+#ifdef _DEBUG
+    if(path.startsWith("/"))
+    {
+        throw snap_logic_exception(QString("path \"%1\" for create_element cannot start with a slash").arg(path));
+    }
+#endif
+
+    if(parent.isNull())
+    {
+        // we cannot add anything starting from a null node
+        // (TBD: should we err instead?)
+        return parent.toElement();
+    }
+
+    QStringList p(path.split('/'));
+
+    QDomDocument doc(parent.ownerDocument());
+
+    int const max_children(p.size());
+    for(int i(0); i < max_children; ++i)
+    {
+        QString const name(p[i]);
+        if(name.isEmpty())
+        {
+            // skip in case of a "//" or starting "/"
+            continue;
+        }
+        QDomNode child(parent.firstChildElement(name));
+        if(child.isNull())
+        {
+            child = doc.createElement(name);
+            parent.appendChild(child);
+        }
+        parent = child;
+    }
+
+    // the parent parameter becomes the child most item along
+    // the course of this function
+    return parent.toElement();
+}
 
 
 

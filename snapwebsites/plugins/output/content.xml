@@ -303,7 +303,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <mime-type>text/javascript</mime-type>
       <!-- jquery has no dependencies -->
     </attachment>
-    <attachment name="content" type="attachment/public">
+    <attachment name="jquery-extensions" type="attachment/public">
+      <path>:/js/output/jquery-extensions.js</path>
+      <mime-type>text/javascript</mime-type>
+      <dependency>jquery (&gt;= 1.10)</dependency>
+    </attachment>
+    <attachment name="output" type="attachment/public">
       <path>:/js/output/output.js</path>
       <mime-type>text/javascript</mime-type>
       <dependency>jquery (&gt;= 1.10.2)</dependency>

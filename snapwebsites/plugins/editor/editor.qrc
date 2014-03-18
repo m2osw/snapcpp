@@ -29,6 +29,13 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   </qresource>
   <qresource prefix="/images/editor">
     <file>buttons.png</file>
+    <file>checkmark-15x11.png</file>
+  </qresource>
+  <qresource prefix="/xsl/editor">
+    <file>editor-form.xsl</file>
+  </qresource>
+  <qresource prefix="/css/editor">
+    <file>editor.css</file>
   </qresource>
 </RCC>
 <!--

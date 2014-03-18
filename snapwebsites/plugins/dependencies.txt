@@ -7,7 +7,7 @@ core:	; @echo $@
 antivirus: content form output	; @echo $@
 char_chart: sitemapxml	; @echo $@
 content: links	; @echo $@
-editor: users output messages permissions sessions	; @echo $@
+editor: users form sitemapxml output messages sendmail permissions sessions filter	; @echo $@
 favicon: path form messages permissions output	; @echo $@
 feed: layout path content messages	; @echo $@
 filter: content messages	; @echo $@
@@ -35,4 +35,4 @@ users: form sitemapxml output messages sendmail	; @echo $@
 
 
 
-# vim: syntax=make ts=64
+# vim: syntax=make ts=95

@@ -18,6 +18,7 @@
 #include "qdomxpath.h"
 
 #include "floats.h"
+#include "qstring_stream.h"
 
 #include <iostream>
 #include <iomanip>
@@ -4722,11 +4723,6 @@ void inst_get_result()
     variant_t result;
     result.setValue(f_functions.back().f_contexts.back().f_result);
     f_functions.back().f_stack.push_back(result);
-
-    // test stack
-    result.atomic_value_t::setValue(static_cast<int64_t>(123));
-    f_functions.back().f_stack.push_back(result);
-    pop_variant_data();
 }
 
 
@@ -5192,6 +5188,11 @@ axis_attribute:
                 {
                     // as far as I know the type node is considered to be
                     // the same as elements (at least in XPath 1.0)
+                    //
+                    // TBD: here we may want to add support for XML files
+                    //      that were loaded without setting the
+                    //      namespaceProcessing parameter set to true
+                    //      (i.e. thus tag names are "blah:foo")
                     QDomNode node(context_node.firstChildElement(local_part));
                     while(!node.isNull())
                     {

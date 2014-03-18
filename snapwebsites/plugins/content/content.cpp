@@ -471,6 +471,7 @@ field_search::cmd_info_t::cmd_info_t(command_t cmd, QString const& str_value)
     case COMMAND_DEFAULT_VALUE:
     case COMMAND_DEFAULT_VALUE_OR_NULL:
     case COMMAND_CHILD_ELEMENT:
+    case COMMAND_NEW_CHILD_ELEMENT:
     case COMMAND_ELEMENT_ATTR:
     case COMMAND_SAVE:
     case COMMAND_SAVE_INT64:
@@ -688,6 +689,7 @@ field_search& field_search::operator () (field_search::command_t cmd)
  * \li COMMAND_DEFAULT_VALUE
  * \li COMMAND_DEFAULT_VALUE_OR_NULL
  * \li COMMAND_CHILD_ELEMENT
+ * \li COMMAND_NEW_CHILD_ELEMENT
  * \li COMMAND_ELEMENT_ATTR
  * \li COMMAND_SAVE
  * \li COMMAND_SAVE_INT64
@@ -719,6 +721,7 @@ field_search& field_search::operator () (field_search::command_t cmd, char const
  * \li COMMAND_DEFAULT_VALUE
  * \li COMMAND_DEFAULT_VALUE_OR_NULL
  * \li COMMAND_CHILD_ELEMENT
+ * \li COMMAND_NEW_CHILD_ELEMENT
  * \li COMMAND_ELEMENT_ATTR
  *
  * \param[in] cmd  The command.
@@ -1188,6 +1191,22 @@ void field_search::run()
         {
             if(!f_element.isNull())
             {
+                QDomElement child(f_element.firstChildElement(child_name));
+                if(child.isNull())
+                {
+                    // it doesn't exist yet, add it
+                    QDomDocument doc(f_element.ownerDocument());
+                    child = doc.createElement(child_name);
+                    f_element.appendChild(child);
+                }
+                f_element = child;
+            }
+        }
+
+        void cmd_new_child_element(QString const& child_name)
+        {
+            if(!f_element.isNull())
+            {
                 QDomDocument doc(f_element.ownerDocument());
                 QDomElement child(doc.createElement(child_name));
                 f_element.appendChild(child);
@@ -1443,6 +1462,10 @@ void field_search::run()
 
                 case COMMAND_CHILD_ELEMENT:
                     cmd_child_element(f_program[i].get_string());
+                    break;
+
+                case COMMAND_NEW_CHILD_ELEMENT:
+                    cmd_new_child_element(f_program[i].get_string());
                     break;
 
                 case COMMAND_PARENT_ELEMENT:

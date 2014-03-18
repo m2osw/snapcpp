@@ -55,6 +55,7 @@ add_library(output SHARED
     content.xml
     close-button.png
     jquery.js
+    jquery-extensions.js
     output.js
 )
 

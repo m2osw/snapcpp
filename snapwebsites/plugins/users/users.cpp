@@ -2611,7 +2611,7 @@ QString users::get_user_path() const
             if(!value.nullValue())
             {
                 int64_t const identifier(value.int64Value());
-                return get_name(SNAP_NAME_USERS_PATH) + QString("/%1").arg(identifier);
+                return QString("%1/%2").arg(get_name(SNAP_NAME_USERS_PATH)).arg(identifier);
             }
         }
     }

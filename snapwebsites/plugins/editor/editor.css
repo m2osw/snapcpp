@@ -1,11 +1,12 @@
 /*
  * Name: editor
- * Version: 0.0.1.8
+ * Version: 0.0.1.13
  * Browsers: all
  * Copyright: Copyright 2014 (c) Made to Order Software Corporation  All rights reverved.
  * License: GPL 2.0
  */
 
+/** most boxes (i.e. LINE BOX, TEXT AREA, etc.) **/
 .editable
 {
 	margin: 10px 0;
@@ -19,11 +20,6 @@
 .editable.snap-editor
 {
 	background-color: #f8f8f8;
-}
-
-.editable.image-box
-{
-	cursor: pointer;
 }
 
 .editable .snap-editor-background
@@ -41,8 +37,59 @@
 	pointer-events: none;
 }
 
+/** IMAGE BOX **/
+.editable.image-box
+{
+	cursor: pointer;
+}
+
 .editable.image-box .snap-editor-background-content
 {
 	text-align: center;
 }
 
+/** CHECKMARK **/
+.editable.checkmark
+{
+	margin-right: 10px;
+	border: none;
+	box-shadow: none;
+	background-color: transparent;
+	font-size: 90%;
+	width: 100%;
+	cursor: default;
+}
+
+.editable.checkmark .checkmark-flag
+{
+	display: inline-block;
+	width: 16px;
+	height: 16px;
+	padding-right: 10px;
+}
+
+.editable.checkmark .checkmark-flag .flag-box
+{
+	margin: 4px 0 0 2px;
+	border: 1px solid #aaaaaa;
+	box-shadow: 0 2px 3px 0px #cccccc;
+	width: 10px;
+	height: 10px;
+}
+
+.editable.checkmark .checkmark-flag .checkmark-area
+{
+	margin: -11px 0 0 3px;
+	width: 16px;
+	height: 16px;
+}
+
+.editable.checkmark .checkmark-flag .checkmark-area.checked
+{
+	background: url(/images/editor/checkmark-15x11.png) 0 0 no-repeat;
+}
+
+.editable.checkmark .editor-content:focus
+{
+	outline: 1px dotted #ff0000;
+}

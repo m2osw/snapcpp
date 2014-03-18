@@ -20,6 +20,7 @@
 #include "../messages/messages.h"
 
 #include "qdomxpath.h"
+#include "qdomhelpers.h"
 #include "qstring_stream.h"
 
 #include <iostream>
@@ -37,8 +38,8 @@ SNAP_PLUGIN_START(filter, 1, 0)
 filter::filter()
     //: f_snap(nullptr) -- auto-init
 {
-//std::cerr << " - Created filter!\n";
 }
+
 
 /** \brief Clean up the filter plugin.
  *
@@ -46,8 +47,8 @@ filter::filter()
  */
 filter::~filter()
 {
-//std::cerr << " - Destroying filter!\n";
 }
+
 
 /** \brief Get a pointer to the filter plugin.
  *
@@ -62,6 +63,7 @@ filter *filter::instance()
 {
     return g_plugin_filter_factory.instance();
 }
+
 
 /** \brief Return the description of this plugin.
  *
@@ -80,6 +82,7 @@ QString filter::description() const
         " computer through someone's website.";
 }
 
+
 /** \brief Initialize the filter plugin.
  *
  * This function terminates the initialization of the filter plugin
@@ -93,6 +96,7 @@ void filter::on_bootstrap(::snap::snap_child *snap)
 
     SNAP_LISTEN(filter, "server", server, xss_filter, _1, _2, _3);
 }
+
 
 /** \brief Filter an DOM node and remove all unwanted tags.
  *
@@ -192,7 +196,7 @@ void filter::on_xss_filter(QDomNode& node,
                     QDomNode c = n.firstChild();
                     while(!c.isNull())
                     {
-                        QDomNode next_sibling = c.nextSibling();
+                        QDomNode next_sibling(c.nextSibling());
                         n.removeChild(c);
                         parent.insertBefore(c, n);
                         c = next_sibling;
@@ -209,15 +213,15 @@ void filter::on_xss_filter(QDomNode& node,
             {
                 // remove unwanted attributes too
                 QDomNamedNodeMap attributes(n.attributes());
-                int max = attributes.length();
-                for(int i = 0; i < max; ++i)
+                int const max_attr(attributes.length());
+                for(int i = 0; i < max_attr; ++i)
                 {
                     QDomAttr a = attributes.item(i).toAttr();
-                    const QString& attr_name = a.name();
+                    QString const& attr_name = a.name();
                     if((attr.indexOf(" " + attr_name.toLower() + " ") == -1) ^ attr_refused)
                     {
                         e.removeAttribute(attr_name);
-//qDebug() << "removing attribute: " << attr_name << " max: " << max << " size: " << attributes.length() << "\n";
+//qDebug() << "removing attribute: " << attr_name << " max: " << max_attr << " size: " << attributes.length() << "\n";
                     }
                 }
             }
@@ -915,31 +919,32 @@ void filter::on_token_filter(content::path_info_t& ipath, QDomDocument& xml)
             text_t t(f_snap, this, state.ipath(), state.owner(), xml, text.data());
             if(t.parse())
             {
-//std::cerr << "replace text [" << text.data() << "]\n";
+//std::cerr << "replace text [" << text.data() << "] with [" << t.result() << "]\n";
                 // replace the text with its contents
-                QString const& result(t.result());
-                if(result.contains('<'))
-                {
-                    // the tokens added HTML... replace the whole text node
-                    QDomDocument doc_text("snap");
-                    doc_text.setContent("<text>" + result + "</text>", true, nullptr, nullptr, nullptr);
-                    QDomDocumentFragment frag(xml.createDocumentFragment());
-                    frag.appendChild(xml.importNode(doc_text.documentElement(), true));
-                    QDomNodeList children(frag.firstChild().childNodes());
-                    int const max(children.size());
-                    QDomNode previous(n);
-                    for(int i(0); i < max; ++i)
-                    {
-                        QDomNode l(children.at(0));
-                        parent.insertAfter(children.at(0), previous);
-                        previous = l;
-                    }
-                    parent.removeChild(n);
-                }
-                else
-                {
-                    text.setData(result);
-                }
+                //QString const& result(t.result());
+                snap_dom::replace_node_with_html_string(n, t.result());
+                //if(result.contains('<'))
+                //{
+                //    // the tokens added HTML... replace the whole text node
+                //    QDomDocument doc_text("snap");
+                //    doc_text.setContent("<text>" + result + "</text>", true, nullptr, nullptr, nullptr);
+                //    QDomDocumentFragment frag(xml.createDocumentFragment());
+                //    frag.appendChild(xml.importNode(doc_text.documentElement(), true));
+                //    QDomNodeList children(frag.firstChild().childNodes());
+                //    int const max(children.size());
+                //    QDomNode previous(n);
+                //    for(int i(0); i < max; ++i)
+                //    {
+                //        QDomNode l(children.at(0));
+                //        parent.insertAfter(children.at(0), previous);
+                //        previous = l;
+                //    }
+                //    parent.removeChild(n);
+                //}
+                //else
+                //{
+                //    text.setData(result);
+                //}
             }
         }
         else if(n.isElement())

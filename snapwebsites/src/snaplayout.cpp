@@ -126,7 +126,7 @@ public:
     void usage();
     void run();
     void add_files();
-    void load_xml_info(QDomDocument& doc, QString const& filename, QString& layout_name, time_t& layout_modified);
+    bool load_xml_info(QDomDocument& doc, QString const& filename, QString& layout_name, time_t& layout_modified);
     void load_xsl_info(QDomDocument& doc, QString const& filename, QString& layout_name, QString& layout_area, time_t& layout_modified);
     void load_css(QString const& filename, QString& row_name);
     void load_js(QString const& filename, QString& row_name);
@@ -188,7 +188,7 @@ void snap_layout::usage()
 }
 
 
-void snap_layout::load_xml_info(QDomDocument& doc, QString const& filename, QString& content_name, time_t& content_modified)
+bool snap_layout::load_xml_info(QDomDocument& doc, QString const& filename, QString& content_name, time_t& content_modified)
 {
     content_name.clear();
     content_modified = 0;
@@ -201,52 +201,60 @@ void snap_layout::load_xml_info(QDomDocument& doc, QString const& filename, QStr
     }
     QString const content_modified_date(snap_tree.attribute("content-modified", "0"));
 
-    QDomNodeList const content(snap_tree.elementsByTagName("content"));
-    int const max_nodes(content.size());
-    for(int idx(0); idx < max_nodes; ++idx)
+    bool const result(snap_tree.tagName() == "snap-tree");
+    if(result)
     {
-        // all should be elements... but still verify
-        QDomNode p(content.at(idx));
-        if(!p.isElement())
+        QDomNodeList const content(snap_tree.elementsByTagName("content"));
+        int const max_nodes(content.size());
+        for(int idx(0); idx < max_nodes; ++idx)
         {
-            continue;
-        }
-        QDomElement e(p.toElement());
-        if(e.isNull())
-        {
-            continue;
-        }
-        QString const path(e.attribute("path", ""));
-        if(path.isEmpty())
-        {
-            // this is probably an error
-            continue;
-        }
-        if(path.startsWith("/admin/layouts/"))
-        {
-            int pos(path.indexOf('/', 15));
-           // int const end(path.indexOf('/', pos + 1));
-            if(pos < 0)
+            // all should be elements... but still verify
+            QDomNode p(content.at(idx));
+            if(!p.isElement())
             {
-                pos = path.length();
+                continue;
             }
-            QString name(path.mid(15, pos - 15));
-            if(name.isEmpty())
+            QDomElement e(p.toElement());
+            if(e.isNull())
             {
-                std::cerr << "error: the XML document seems to have an invalid path in \"" << filename << "\"" << std::endl;
-                exit(1);
+                continue;
             }
-            if(content_name.isEmpty())
+            QString const path(e.attribute("path", ""));
+            if(path.isEmpty())
             {
-                content_name = name;
+                // this is probably an error
+                continue;
             }
-            else if(content_name != name)
+            if(path.startsWith("/admin/layouts/"))
             {
-                std::cerr << "error: the XML document includes two different entries with layout paths that differ: \""
-                          << content_name << "\" and \"" << name << "\" in \"" << filename << "\"" << std::endl;
-                exit(1);
+                int pos(path.indexOf('/', 15));
+               // int const end(path.indexOf('/', pos + 1));
+                if(pos < 0)
+                {
+                    pos = path.length();
+                }
+                QString name(path.mid(15, pos - 15));
+                if(name.isEmpty())
+                {
+                    std::cerr << "error: the XML document seems to have an invalid path in \"" << filename << "\"" << std::endl;
+                    exit(1);
+                }
+                if(content_name.isEmpty())
+                {
+                    content_name = name;
+                }
+                else if(content_name != name)
+                {
+                    std::cerr << "error: the XML document includes two different entries with layout paths that differ: \""
+                              << content_name << "\" and \"" << name << "\" in \"" << filename << "\"" << std::endl;
+                    exit(1);
+                }
             }
         }
+    }
+    else
+    {
+        content_name = snap_tree.attribute("owner");
     }
 
     if(content_name.isEmpty())
@@ -268,6 +276,8 @@ void snap_layout::load_xml_info(QDomDocument& doc, QString const& filename, QStr
         exit(1);
     }
     content_modified = t.toTime_t();
+
+    return result;
 }
 
 
@@ -459,7 +469,7 @@ void snap_layout::add_files()
     f_cassandra->connect(f_host, f_port);
     if( !f_cassandra->isConnected() )
     {
-        std::cerr << "Error connecting to cassandra server on host='"
+        std::cerr << "error: Error connecting to cassandra server on host='"
             << f_host
             << "', port="
             << f_port
@@ -515,7 +525,6 @@ void snap_layout::add_files()
         else if(extension == ".xml") // expects the content.xml file
         {
             // the cell name is always "content" in this case
-            cell_name = "content";
             if(!xml.open(QIODevice::ReadOnly))
             {
                 std::cerr << "error: XML file \"" << filename << "\" could not be opened for reading." << std::endl;
@@ -531,7 +540,24 @@ void snap_layout::add_files()
                 exit(1);
             }
             time_t layout_modified;
-            load_xml_info(doc, filename, row_name, layout_modified);
+            if(load_xml_info(doc, filename, row_name, layout_modified))
+            {
+                cell_name = "content";
+            }
+            else
+            {
+                cell_name = filename;
+                int const last_slash(cell_name.lastIndexOf('/'));
+                if(last_slash >= 0)
+                {
+                    cell_name = cell_name.mid(last_slash + 1);
+                }
+                int const last_period(cell_name.lastIndexOf('.'));
+                if(last_period > 0)
+                {
+                    cell_name = cell_name.mid(0, last_period);
+                }
+            }
         }
         else if(extension == ".css") // a CSS file
         {

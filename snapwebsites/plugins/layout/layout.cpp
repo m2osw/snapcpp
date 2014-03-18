@@ -607,23 +607,21 @@ QDomDocument layout::create_document(content::path_info_t& ipath, plugin *conten
 void layout::create_body(QDomDocument& doc, content::path_info_t& ipath, QString const& xsl, layout_content *content_plugin, QString const& ctemplate, bool handle_boxes, QString const& layout_name)
 {
 #ifdef DEBUG
-SNAP_LOG_TRACE() << "create body in layout";
+SNAP_LOG_TRACE() << "layout::create_body() ... cpath = [" << ipath.get_cpath() << "]";
 #endif
 
-
-#ifdef DEBUG
-SNAP_LOG_TRACE() << "got in layout... cpath = [" << ipath.get_cpath() << "]";
-#endif
-    // other plugins generate defaults
-    {
-        QDomElement head(snap_dom::get_element(doc, "head"));
-        QDomElement metadata(snap_dom::get_element(doc, "metadata"));
-        generate_header_content(ipath, head, metadata, ctemplate);
-    }
-
-    // concerned (owner) plugin generates content
+    // get the elements we are dealing with in this function
+    QDomElement head(snap_dom::get_element(doc, "head"));
+    QDomElement metadata(snap_dom::get_element(doc, "metadata"));
     QDomElement page(snap_dom::get_element(doc, "page"));
     QDomElement body(snap_dom::get_element(doc, "body"));
+
+    body.setAttribute("layout-name", layout_name);
+
+    // other plugins generate defaults
+    generate_header_content(ipath, head, metadata, ctemplate);
+
+    // concerned (owner) plugin generates content
     content_plugin->on_generate_main_content(ipath, page, body, ctemplate);
 //std::cout << "Header + Main XML is [" << doc.toString() << "]\n";
 
@@ -652,12 +650,18 @@ SNAP_LOG_TRACE() << "got in layout... cpath = [" << ipath.get_cpath() << "]";
         filter::filter::instance()->on_token_filter(ipath, doc);
     }
 
+    filtered_content(ipath, doc, xsl);
+
 #if 0
 std::cout << "Generated XML is [" << doc.toString() << "]\n";
 std::cout << "Generated XSL is [" << xsl            << "]\n";
 #endif
 
-    filtered_content(ipath, doc);
+#if 0
+QFile out("/tmp/doc.xml");
+out.open(QIODevice::WriteOnly);
+out.write(doc.toString().toUtf8());
+#endif
 
     // Somehow binding crashes everything at this point?! (Qt 4.8.1)
     QXmlQuery q(QXmlQuery::XSLT20);
@@ -1420,13 +1424,16 @@ bool layout::generate_page_content_impl(content::path_info_t& ipath, QDomElement
  *
  * \param[in] ipath  The path being managed.
  * \param[in,out] doc  The document that was just generated.
+ * \param[in] xsl  The XSLT document that is about to be used to transform
+ *                 the body (still as a string).
  *
  * \return true if the filtered content signal can proceed.
  */
-bool layout::filtered_content_impl(content::path_info_t& ipath, QDomDocument& doc)
+bool layout::filtered_content_impl(content::path_info_t& ipath, QDomDocument& doc, QString const& xsl)
 {
     static_cast<void>(ipath);
     static_cast<void>(doc);
+    static_cast<void>(xsl);
 
     return true;
 }
