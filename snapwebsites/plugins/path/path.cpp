@@ -280,6 +280,8 @@ void path::verify_permissions(content::path_info_t& ipath, permission_error_call
     // save the action in the path
     ipath.set_parameter("action", action);
 
+SNAP_LOG_TRACE() << "verify_permissions(): action ipath=" << ipath.get_key() << ", action=" << action;
+
     // only actions that are defined in the permission types are
     // allowed, anything else is funky action from a hacker or
     // whatnot and we just die with an error in that case
