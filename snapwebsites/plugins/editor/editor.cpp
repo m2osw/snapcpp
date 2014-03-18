@@ -170,7 +170,7 @@ int64_t editor::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2014, 3, 17, 22, 0, 30, content_update);
+    SNAP_PLUGIN_UPDATE(2014, 3, 18, 11, 20, 30, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -1949,11 +1949,12 @@ void editor::on_generate_page_content(content::path_info_t& ipath, QDomElement& 
         QString const field_type(w.attribute("type"));
         QString const widget_auto_save(w.attribute("auto-save", "string")); // this one is #IMPLIED
 
-        // get the current value from the database
-        QtCassandra::QCassandraValue const value(revision_row->cell(field_name)->value());
-        QString current_value;
-        if(!value.nullValue())
+        // get the current value from the database if it exists
+        if(revision_row->exists(field_name))
         {
+            QtCassandra::QCassandraValue const value(revision_row->cell(field_name)->value());
+            QString current_value;
+            bool set_value(true);
             if(widget_auto_save == "int8")
             {
                 int const v(value.signedCharValue());
@@ -1978,40 +1979,29 @@ void editor::on_generate_page_content(content::path_info_t& ipath, QDomElement& 
                 // no special handling for empty strings here
                 current_value = revision_row->cell(field_name)->value().stringValue();
             }
-            // If no auto-save we expect a plugin to furnish the current value
+            else
+            {
+                // If no auto-save we expect a plugin to furnish the current value
+                set_value = false;
+            }
+
+            if(set_value)
+            {
+                QDomElement value_tag;
+                value_tag = w.firstChildElement("value");
+                if(value_tag.isNull())
+                {
+                    // no <value> tag, create one
+                    value_tag = editor_widgets.createElement("value");
+                    w.appendChild(value_tag);
+                }
+                else
+                {
+                    snap_dom::remove_all_children(value_tag);
+                }
+                snap_dom::insert_html_string_to_xml_doc(value_tag, current_value);
+            }
         }
-
-        QDomElement value_tag;
-        value_tag = w.firstChildElement("value");
-        if(value_tag.isNull())
-        {
-            // no <value> tag, create one
-            value_tag = editor_widgets.createElement("value");
-            w.appendChild(value_tag);
-        }
-        snap_dom::insert_html_string_to_xml_doc(value_tag, current_value);
-
-        // this is a path in doc
-        //QDomXPath path_xpath;
-        //path_xpath.setXPath(path);
-        //QDomXPath::node_vector_t path_nodes(path_xpath.apply(doc.documentElement()));
-        //if(path_nodes.size() == 1)
-        //{
-        //    QDomElement current_value(path_nodes.at(0).toElement());
-        //    QDomElement value_tag(editor_widgets.createElement("value"));
-        //    w.appendChild(value_tag);
-        //    snap_dom::insert_node_to_xml_doc(value_tag, current_value);
-        //}
-// TBD: I don't think we need to tell the user that there is "little" problem
-//      here because in most cases it is normal, however, for debug it may
-//      be useful to get a log of some sort...
-//        else
-//        {
-//std::cerr << "ERROR: could not find \"" << path << "\" in XML document of page.\n";
-//std::cerr << doc.toString() << "\n";
-//throw snap_logic_exception("problem with path");
-//        }
-
     }
 
     // now process the XML data with the plugin specialized data for

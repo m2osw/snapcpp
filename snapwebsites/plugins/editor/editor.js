@@ -1,6 +1,6 @@
 /*
  * Name: editor
- * Version: 0.0.2.53
+ * Version: 0.0.2.57
  * Browsers: all
  * Copyright: Copyright 2013-2014 (c) Made to Order Software Corporation  All rights reverved.
  * License: GPL 2.0
@@ -194,7 +194,7 @@ snapwebsites.Editor.prototype = {
             return;
         }
 
-        var i, obj = {}, saved = [], edit_area, url, name;
+        var i, obj = {}, saved_data = {}, saved = [], type = [], edit_area, url, name;
         for(i = 1; i <= this._lastId; ++i)
         {
             if(this._modified[i])
@@ -203,9 +203,21 @@ snapwebsites.Editor.prototype = {
                 edit_area = jQuery("#editor-area-" + i);
                 if(this._originalData[i] != edit_area.html())
                 {
-                    name = edit_area.parent().attr("field_name");
-                    obj[name] = edit_area.html();
                     saved.push(i);
+                    name = edit_area.parent().attr("field_name");
+
+                    if(edit_area.parent().hasClass("checkmark"))
+                    {
+                        // a checkmark pushes "on" or "off"
+                        obj[name] = edit_area.find(".checkmark-area").hasClass("checked") ? "on" : "off";
+                        saved_data[name] = edit_area.html();
+                        type[name] = "checkmark";
+                    }
+                    else
+                    {
+                        obj[name] = edit_area.html();
+                        type[name] = "html";
+                    }
                 }
             }
         }
@@ -244,7 +256,15 @@ snapwebsites.Editor.prototype = {
                             //          HAVE CHANGED SINCE THE SAVE HAPPENED
                             edit_area = jQuery("#editor-area-" + i);
                             name = edit_area.parent().attr("field_name");
-                            snapwebsites.EditorInstance._originalData[i] = obj[name];
+                            if(type[name] == "html")
+                            {
+                                snapwebsites.EditorInstance._originalData[i] = obj[name];
+                            }
+                            else
+                            {
+                                // specialized types save their HTML in saved_data
+                                snapwebsites.EditorInstance._originalData[i] = saved_data[name];
+                            }
                             element_modified = obj[name] != edit_area.html();
                             snapwebsites.EditorInstance._modified[i] = element_modified;
 

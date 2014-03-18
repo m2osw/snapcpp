@@ -116,7 +116,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
           <div class="checkmark-flag">
             <div class="flag-box"></div>
             <!-- the actual value of a checkmark is used to know whether the checkmark is shown or not -->
-            <div><xsl:attribute name="class">checkmark-area<xsl:if test="$value != 0"> checkmark</xsl:if></xsl:attribute></div>
+            <div><xsl:attribute name="class">checkmark-area<xsl:if test="$value != 'off'"> checked</xsl:if></xsl:attribute></div>
           </div>
 
           <xsl:copy-of select="label/node()"/>
