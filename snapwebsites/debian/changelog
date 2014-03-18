@@ -1,3 +1,11 @@
+snapwebsites (0.1.28~saucyubuntu1) UNRELEASED; urgency=low
+
+  * Added the editor form capability. This allows use to generate complex
+    forms with the inline editor which makes it a lot easier to theme.
+  * Fixed a few other things along the way.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Tue, 18 Mar 2014 11:57:45 -0700
+
 snapwebsites (0.1.28~saucy) saucy; urgency=high
 
   * 4621862 Strings need \n substituted for both display *and* edit.
@@ -22,7 +30,7 @@ snapwebsites (0.1.27m2osw2~saucy) saucy; urgency=high
 snapwebsites (0.1.27m2osw1~saucy) saucy; urgency=high
 
   * This source package version is up at the PPA, so we need to bump the
-  version to get the system to build it.
+    version to get the system to build it.
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Tue, 11 Mar 2014 18:26:42 -0700
 
@@ -37,9 +45,9 @@ snapwebsites (0.1.26~saucy) saucy; urgency=high
 
   [ Alexis Wilke ]
   * At this point made the Save behave like "Publish" which is wrong but
-  otherwise we would need more code to handle revisions fully.
+    otherwise we would need more code to handle revisions fully.
   * Added support to drag and drop images with full tests to ensure proper
-  type and resize the image
+    type and resize the image
 
   [ R. Douglas Barbieri ]
   * Moved snap CMake modules from snapCMakeModules into snapwebsites project.
@@ -56,7 +64,7 @@ snapwebsites (0.1.25~saucy) saucy; urgency=high
   * Enhanced the layout to allow for a layout and a cell name.
   * Updated editor so we can avoid the toolbar on a per line basis.
   * Allow data driven JS/CSS files in layouts. Also allow many different .css
-  and .js files in the same layout.
+    and .js files in the same layout.
   * Added support for disabling buttons when clicked (while sending POST.)
   * Various bug fixes.
 
