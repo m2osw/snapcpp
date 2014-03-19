@@ -174,6 +174,8 @@ install(
 ##
 project(snaplayout)
 
+include_directories( ${ZIPIOSCC_INCLUDE_DIRS} )
+
 add_executable(${PROJECT_NAME}
     snaplayout.cpp
 )
@@ -186,6 +188,7 @@ target_link_libraries(${PROJECT_NAME}
     ${QT_LIBRARIES}
     ${THRIFT_LIBRARIES}
     ${LIBTLD_LIBRARIES}
+	${ZIPIOSCC_LIBRARIES}
     dl
 )
 
