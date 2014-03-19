@@ -61,9 +61,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
                      owner CDATA #IMPLIED
                      multiple (multiple) #IMPLIED>
 
-<!ELEMENT sizes (min|max|width)+>
+<!ELEMENT sizes (min|max|resize)+>
 <!ELEMENT min (#PCDATA)>
 <!ELEMENT max (#PCDATA)>
+<!ELEMENT resize (#PCDATA)>
 
 <!ELEMENT filters (extensions|regex)+>
 <!ELEMENT extensions (#PCDATA)>

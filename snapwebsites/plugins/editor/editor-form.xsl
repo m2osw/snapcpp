@@ -66,6 +66,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
             <xsl:attribute name="title"><xsl:value-of select="tooltip"/></xsl:attribute>
           </xsl:if>
           <xsl:if test="sizes/min"><xsl:attribute name="min-sizes"><xsl:value-of select="sizes/min"/></xsl:attribute></xsl:if>
+          <xsl:if test="sizes/resize"><xsl:attribute name="resize-sizes"><xsl:value-of select="sizes/resize"/></xsl:attribute></xsl:if>
           <xsl:if test="sizes/max"><xsl:attribute name="max-sizes"><xsl:value-of select="sizes/max"/></xsl:attribute></xsl:if>
           <xsl:if test="state = 'disabled'"><xsl:attribute name="disabled">disabled</xsl:attribute></xsl:if>
           <!-- now the actual value of this line -->

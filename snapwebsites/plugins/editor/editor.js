@@ -1,6 +1,6 @@
 /*
  * Name: editor
- * Version: 0.0.2.57
+ * Version: 0.0.2.61
  * Browsers: all
  * Copyright: Copyright 2013-2014 (c) Made to Order Software Corporation  All rights reverved.
  * License: GPL 2.0
@@ -194,7 +194,7 @@ snapwebsites.Editor.prototype = {
             return;
         }
 
-        var i, obj = {}, saved_data = {}, saved = [], type = [], edit_area, url, name;
+        var i, obj = {}, saved_data = {}, saved = [], edit_area, url, name;
         for(i = 1; i <= this._lastId; ++i)
         {
             if(this._modified[i])
@@ -205,18 +205,20 @@ snapwebsites.Editor.prototype = {
                 {
                     saved.push(i);
                     name = edit_area.parent().attr("field_name");
+                    saved_data[name] = edit_area.html();
 
                     if(edit_area.parent().hasClass("checkmark"))
                     {
                         // a checkmark pushes "on" or "off"
                         obj[name] = edit_area.find(".checkmark-area").hasClass("checked") ? "on" : "off";
-                        saved_data[name] = edit_area.html();
-                        type[name] = "checkmark";
                     }
                     else
                     {
-                        obj[name] = edit_area.html();
-                        type[name] = "html";
+                        // We copy the big string twice, remember that JS
+                        // uses references to immutable strings, so we're
+                        // really only copying a reference; for details see:
+                        // http://stackoverflow.com/questions/51185/are-javascript-strings-immutable-do-i-need-a-string-builder-in-javascript#51193
+                        obj[name] = saved_data[name];
                     }
                 }
             }
@@ -256,15 +258,8 @@ snapwebsites.Editor.prototype = {
                             //          HAVE CHANGED SINCE THE SAVE HAPPENED
                             edit_area = jQuery("#editor-area-" + i);
                             name = edit_area.parent().attr("field_name");
-                            if(type[name] == "html")
-                            {
-                                snapwebsites.EditorInstance._originalData[i] = obj[name];
-                            }
-                            else
-                            {
-                                // specialized types save their HTML in saved_data
-                                snapwebsites.EditorInstance._originalData[i] = saved_data[name];
-                            }
+                            // specialized types save their HTML in saved_data
+                            snapwebsites.EditorInstance._originalData[i] = saved_data[name];
                             element_modified = obj[name] != edit_area.html();
                             snapwebsites.EditorInstance._modified[i] = element_modified;
 
@@ -1101,15 +1096,48 @@ console.log("command "+idx+" "+this.toolbarButtons[idx][2]+"!!!");
 
         img = new Image();
         img.onload = function(){
-            var limit_width, limit_height, nw, nh;
+            var sizes, limit_width = 0, limit_height = 0, nw, nh;
 
             // make sure we do it once
             img.onload = null;
 
             w = img.width;
             h = img.height;
-            limit_width = jQuery(e.target.snapEditorElement).attr("img_width");
-            limit_height = jQuery(e.target.snapEditorElement).attr("img_height");
+
+            if(jQuery(e.target.snapEditorElement).attr("min-sizes"))
+            {
+                sizes = jQuery(e.target.snapEditorElement).attr("min-sizes").split("x");
+                if(w < sizes[0] || h < sizes[1])
+                {
+                    // image too small...
+                    // TODO: fix alert with clean error popup
+                    alert("This image is too small. Minimum required is "
+                            + jQuery(e.target.snapEditorElement).attr("min-sizes")
+                            + ". Please try with a larger image.");
+                    return;
+                }
+            }
+            if(jQuery(e.target.snapEditorElement).attr("max-sizes"))
+            {
+                sizes = jQuery(e.target.snapEditorElement).attr("max-sizes").split("x");
+                if(w > sizes[0] || h > sizes[1])
+                {
+                    // image too large...
+                    // TODO: fix alert with clean error popup
+                    alert("This image is too large. Maximum allowed is "
+                            + jQuery(e.target.snapEditorElement).attr("max-sizes")
+                            + ". Please try with a smaller image.");
+                    return;
+                }
+            }
+
+            if(jQuery(e.target.snapEditorElement).attr("resize-sizes"))
+            {
+                max_sizes = jQuery(e.target.snapEditorElement).attr("resize-sizes").split("x");
+                limit_width = max_sizes[0];
+                limit_height = max_sizes[1];
+            }
+
             if(limit_width > 0 && limit_height > 0)
             {
                 if(w > limit_width || h > limit_height)
