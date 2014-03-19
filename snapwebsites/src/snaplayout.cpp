@@ -117,14 +117,17 @@ namespace
     };
 
 
-    void stream_to_bytearray( std::istream* is, QByteArray& barr )
+    void stream_to_bytearray( std::istream* is, QByteArray& arr )
     {
-        barr.clear();
+        arr.clear();
         while( !is->eof() )
         {
             char ch = '\0';
             is->get( ch );
-            barr.push_back( ch );
+            if( !is->eof() )
+            {
+                arr.push_back( ch );
+            }
         }
     }
 }
@@ -581,7 +584,7 @@ void snap_layout::add_files()
     for( auto info : f_fileinfo_list )
     {
         const QString filename(info.f_filename);
-        const QByteArray content(info.f_content);
+        QByteArray content(info.f_content);
         const int e(filename.lastIndexOf("."));
         if(e == -1)
         {
@@ -596,11 +599,10 @@ void snap_layout::add_files()
             QDomDocument doc("content");
             QString error_msg;
             int error_line, error_column;
-            QXmlInputSource xis;
-            xis.setData( content );
-            if(!doc.setContent(&xis, false, &error_msg, &error_line, &error_column))
+            content.push_back(' ');
+            if(!doc.setContent(content, false, &error_msg, &error_line, &error_column))
             {
-                std::cerr << "error: file \"" << filename << "\" parsing failed";
+                std::cerr << "error: file \"" << filename << "\" parsing failed." << std::endl;
                 std::cerr << "detail " << error_line << "[" << error_column << "]: " << error_msg << std::endl;
                 exit(1);
             }
@@ -659,14 +661,13 @@ void snap_layout::add_files()
         }
         else if(extension == ".xsl") // expects the body or theme XSLT files
         {
-            QXmlInputSource xis;
-            xis.setData( content );
             QDomDocument doc("stylesheet");
             QString error_msg;
             int error_line, error_column;
-            if(!doc.setContent(&xis, true, &error_msg, &error_line, &error_column))
+            content.push_back(' ');
+            if(!doc.setContent(content, true, &error_msg, &error_line, &error_column))
             {
-                std::cerr << "error: file \"" << filename << "\" parsing failed";
+                std::cerr << "error: file \"" << filename << "\" parsing failed." << std::endl;
                 std::cerr << "detail " << error_line << "[" << error_column << "]: " << error_msg << std::endl;
                 exit(1);
             }
@@ -682,8 +683,8 @@ void snap_layout::add_files()
                     QDomDocument existing_doc("stylesheet");
                     if(!existing_doc.setContent(existing.stringValue(), true, &error_msg, &error_line, &error_column))
                     {
-                        std::cerr << "warning: existing XSLT data parsing failed, it will get replaced";
-                        std::cerr << ", detail " << error_line << "[" << error_column << "]: " << error_msg << std::endl;
+                        std::cerr << "warning: existing XSLT data parsing failed, it will get replaced." << std::endl;
+                        std::cerr << "detail " << error_line << "[" << error_column << "]: " << error_msg << std::endl;
                         // it failed so we want to replace it with a valid XSLT document instead!
                     }
                     else

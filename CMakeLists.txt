@@ -66,6 +66,7 @@ find_package( SnapBuild        REQUIRED )
 # Third party libraries
 #
 add_subdirectory( thrift )
+add_subdirectory( zipios )
 
 
 ################################################################################
