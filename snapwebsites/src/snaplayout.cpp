@@ -46,7 +46,11 @@
 
 #include <sys/stat.h>
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+#pragma GCC diagnostic ignored "-Wshadow"
 #include <zipios++/zipfile.h>
+#pragma GCC diagnostic pop
 
 #include <QDomDocument>
 #include <QDomElement>
@@ -111,6 +115,18 @@ namespace
             advgetopt::getopt::end_of_options
         }
     };
+
+
+    void stream_to_bytearray( std::istream* is, QByteArray& barr )
+    {
+        barr.clear();
+        while( !is->eof() )
+        {
+            char ch = '\0';
+            is->get( ch );
+            barr.push_back( ch );
+        }
+    }
 }
 //namespace
 
@@ -133,9 +149,9 @@ public:
     void add_files();
     bool load_xml_info(QDomDocument& doc, QString const& filename, QString& layout_name, time_t& layout_modified);
     void load_xsl_info(QDomDocument& doc, QString const& filename, QString& layout_name, QString& layout_area, time_t& layout_modified);
-    void load_css  (QString const& filename, QString const& content, QString& row_name);
-    void load_js   (QString const& filename, QString const& content, QString& row_name);
-    void load_image(QString const& filename, QString const& content, QString& row_name);
+    void load_css  (QString const& filename, QByteArray const& content, QString& row_name);
+    void load_js   (QString const& filename, QByteArray const& content, QString& row_name);
+    void load_image(QString const& filename, QByteArray const& content, QString& row_name);
     void set_theme();
 
 private:
@@ -145,12 +161,12 @@ private:
 
     struct fileinfo_t
     {
-        QString f_filename;
-        QString f_content;
-        time_t  f_filetime;
+        QString    f_filename;
+        QByteArray f_content;
+        time_t     f_filetime;
 
         fileinfo_t() : f_filetime(0) {}
-        fileinfo_t( const QString& fn, const QString& content, const int time )
+        fileinfo_t( const QString& fn, const QByteArray& content, const int time )
             : f_filename(fn), f_content(content), f_filetime(time) {}
     };
     typedef std::vector<fileinfo_t>   fileinfo_list_t;
@@ -205,16 +221,39 @@ snap_layout::snap_layout(int argc, char *argv[])
                 exit(1);
             }
             //
-            for( auto zentry : zf.entries() )
+            for( auto ent : zf.entries() )
             {
-                zipios::ConstEntryPointer ent( zf.getEntry( zentry->getName(), zipios::FileCollection::IGNORE )  );
-                if( ent )
+                if( ent && ent->isValid() && !ent->isDirectory() )
                 {
-                    std::auto_ptr< std::istream > is( zf.getInputStream( ent ) ) ;
-                    std::stringstream ss;
-                    ss << *is;
-                    const QString fn(zentry->getName().c_str());
-                    f_fileinfo_list.push_back( fileinfo_t( fn, ss.str().c_str(), static_cast<time_t>(ent->getTime()) ) );
+                    const std::string fn( ent->getName() );
+                    try
+                    {
+                        std::auto_ptr< std::istream > is( zf.getInputStream( ent ) ) ;
+
+                        QByteArray byte_arr;
+                        stream_to_bytearray( is.get(), byte_arr );
+
+                        f_fileinfo_list.push_back( fileinfo_t( fn.c_str(), byte_arr, static_cast<time_t>(ent->getTime()) ) );
+                    }
+                    catch( const std::ios_base::failure& except )
+                    {
+                        std::cerr << "Caught an ios_base::failure when trying to extract file '"
+                                  << fn << "'." << std::endl
+                                  << "Explanatory string: " << except.what() << std::endl
+                                  //<< "Error code: " << except.code() << std::endl
+                                  ;
+                        exit(1);
+                    }
+                    catch( const std::exception& except )
+                    {
+                        std::cerr << "Error extracting '" << fn << "': Exception caught: " << except.what() << std::endl;
+                        exit(1);
+                    }
+                    catch( ... )
+                    {
+                        std::cerr << "Caught unknown exception attempting to extract '" << fn << "'!" << std::endl;
+                        exit(1);
+                    }
                 }
             }
         }
@@ -234,9 +273,9 @@ snap_layout::snap_layout(int argc, char *argv[])
                 filetime = s.st_mtime;
             }
 
-            std::stringstream ss;
-            ss << ifs;
-            f_fileinfo_list.push_back( fileinfo_t( filename, ss.str().c_str(), filetime ) );
+            QByteArray byte_arr;
+            stream_to_bytearray( &ifs, byte_arr );
+            f_fileinfo_list.push_back( fileinfo_t( filename, byte_arr, filetime ) );
         }
     }
 }
@@ -422,11 +461,10 @@ void snap_layout::load_xsl_info(QDomDocument& doc, QString const& filename, QStr
 }
 
 
-void snap_layout::load_css(QString const& filename, QString const& content, QString& row_name)
+void snap_layout::load_css(QString const& filename, QByteArray const& content, QString& row_name)
 {
-    QByteArray value(content.toUtf8().data());
     snap::snap_version::quick_find_version_in_source fv;
-    if(!fv.find_version(value.data(), value.size()))
+    if(!fv.find_version(content.data(), content.size()))
     {
         std::cerr << "error: the CSS file \"" << filename << "\" does not include a valid introducer comment." << std::endl;
         exit(1);
@@ -448,11 +486,10 @@ void snap_layout::load_css(QString const& filename, QString const& content, QStr
 }
 
 
-void snap_layout::load_js(QString const& filename, QString const& content, QString& row_name)
+void snap_layout::load_js(QString const& filename, QByteArray const& content, QString& row_name)
 {
-    QByteArray value(content.toUtf8().data());
     snap::snap_version::quick_find_version_in_source fv;
-    if(!fv.find_version(value.data(), value.size()))
+    if(!fv.find_version(content.data(), content.size()))
     {
         std::cerr << "error: the JS file \"" << filename << "\" does not include a valid introducer comment." << std::endl;
         exit(1);
@@ -474,7 +511,7 @@ void snap_layout::load_js(QString const& filename, QString const& content, QStri
 }
 
 
-void snap_layout::load_image( QString const& filename, QString const& content, QString& row_name)
+void snap_layout::load_image( QString const& filename, QByteArray const& content, QString& row_name)
 {
     row_name = filename;
     int pos(row_name.lastIndexOf('/'));
@@ -490,9 +527,8 @@ void snap_layout::load_image( QString const& filename, QString const& content, Q
         row_name = row_name.mid(pos + 1);
     }
 
-    QByteArray data(content.toUtf8().data());
     snap::snap_image img;
-    if(!img.get_info(data))
+    if(!img.get_info(content))
     {
         std::cerr << "error: \"image\" file named \"" << filename << "\" does not use a recognized image file format." << std::endl;
         exit(1);
@@ -545,7 +581,7 @@ void snap_layout::add_files()
     for( auto info : f_fileinfo_list )
     {
         const QString filename(info.f_filename);
-        const QString content(info.f_content);
+        const QByteArray content(info.f_content);
         const int e(filename.lastIndexOf("."));
         if(e == -1)
         {
@@ -679,8 +715,7 @@ void snap_layout::add_files()
             std::cerr << "error: file \"" << filename << "\" must be an XML file (end with the .xml or .xsl extension,) a CSS file (end with .css,) a JavaScript file (end with .js,) or be an image (end with .gif, .png, .jpg, .jpeg.)" << std::endl;
             exit(1);
         }
-        //xml.reset();
-        //QByteArray value(xml.readAll());
+
         table->row(row_name)->cell(cell_name)->setValue(content);
 
         // set last modification time
