@@ -1,3 +1,14 @@
+snapwebsites (0.1.30~saucy) UNRELEASED; urgency=high
+
+  [ Alexis Wilke ]
+  * 
+
+  [ R. Douglas Barbieri ]
+  * The snaplayout tool now allows theme selection properly (instead of
+  issuing an error).
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Thu, 20 Mar 2014 13:23:57 -0700
+
 snapwebsites (0.1.29m2osw1~saucy) saucy; urgency=high
 
   * Requires the zip binary to build layout dist files.
