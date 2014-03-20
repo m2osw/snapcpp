@@ -56,8 +56,8 @@ then
         do  
             FULLPATH=${LAYOUTDIR}/${layout}
             /usr/bin/snaplayout ${FULLPATH}/*
-            /usr/bin/snapserver -d --add-host
         done
+        /usr/bin/snapserver --no-log --add-host
         echo "Basic database is complete, but you must add domains and websites using the snap-manager tool."
     fi
 fi
