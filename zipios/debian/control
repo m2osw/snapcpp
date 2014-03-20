@@ -9,7 +9,7 @@ Standards-Version: 3.9.4
 Package: libzipios++-dev
 Section: libdevel
 Architecture: any
-Depends: libzipios++0c2a (= ${binary:Version}), libz-dev
+Depends: libzipios++0m2osw (= ${binary:Version}), libz-dev
 Description: a small C++ library for reading zip files (development)
  Zipios++ is a java.util.zip-like C++ library for reading and writing Zip
  files. Access to individual entries is provided through standard C++
