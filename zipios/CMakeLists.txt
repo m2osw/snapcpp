@@ -41,7 +41,7 @@ project( zipios_project )
 set( VERSION 0.1.5.9 )
 set( SOVERSION 0 )
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-error=shadow -Wno-error=unused-parameter")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-error=shadow -Wno-error=unused-parameter -Wno-error=unused-result")
 
 find_package( SnapCMakeModules REQUIRED )
 
