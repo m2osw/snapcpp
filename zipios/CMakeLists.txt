@@ -1,49 +1,68 @@
+#
+# File:
+#      CMakeLists.txt
+#
+# Description:
+#      Build zipios++ library.
+#
+# Documentation:
+#      See the CMake documentation.
+#
+# License:
+#      Copyright (c) 2011-2013 Made to Order Software Corp.
+#
+#      http://snapwebsites.org/
+#      contact@m2osw.com
+#
+#      Permission is hereby granted, free of charge, to any person obtaining a
+#      copy of this software and associated documentation files (the
+#      "Software"), to deal in the Software without restriction, including
+#      without limitation the rights to use, copy, modify, merge, publish,
+#      distribute, sublicense, and/or sell copies of the Software, and to
+#      permit persons to whom the Software is furnished to do so, subject to
+#      the following conditions:
+#
+#      The above copyright notice and this permission notice shall be included
+#      in all copies or substantial portions of the Software.
+#
+#      THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+#      OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+#      MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+#      IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+#      CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+#      TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+#      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#
+
 cmake_minimum_required(VERSION 2.8)
 
-project( zipios )
+project( zipios_project )
 
-set( ZIPIOSCPP_VERS    0.1.5.9+cvs.2007.04.28                                         )
-set( DISTFILE_PATH     ${CMAKE_SOURCE_DIR}/3rdParty/zipios++-${ZIPIOSCPP_VERS}.tar.gz )
-set( ROOT_DIR          ${PROJECT_BINARY_DIR}                                          )
-set( BUILD_DIR         ${ROOT_DIR}/zipios++-${ZIPIOSCPP_VERS}                         )
-set( DIST_DIR          ${CMAKE_BINARY_DIR}/dist                                       )
-set( CONFIGURE_TARGETS ${BUILD_DIR}/config.log                                        )
-unset( CONFIG_ARGS )
+set( VERSION 0.1.5.9 )
+set( SOVERSION 0 )
 
-if( EXISTS ${DIST_DIR}/include/zipios++/zipfile.h )
-    message( STATUS "ZipIOS++ v${ZIPIOSCPP_VERS} already installed in dist folder." )
-else()
-    message( STATUS "Unpacking zipios++ v${ZIPIOSCPP_VERS} source distribution file into local build area..." )
-    execute_process(
-        COMMAND ${CMAKE_COMMAND} -E tar xzf ${DISTFILE_PATH}
-        WORKING_DIRECTORY ${ROOT_DIR}
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-error=shadow -Wno-error=unused-parameter")
+
+find_package( SnapCMakeModules REQUIRED )
+
+configure_file(
+    ${CMAKE_SOURCE_DIR}/zipios++/zipios-config.h.in
+    ${CMAKE_BINARY_DIR}/zipios++/zipios-config.h
     )
 
-    message( STATUS "Configuring zipios++ v${ZIPIOSCPP_VERS}..." )
-    execute_process(
-        COMMAND chmod a+x ${BUILD_DIR}/configure
-        WORKING_DIRECTORY ${BUILD_DIR}
-    )
-    execute_process(
-        COMMAND ${BUILD_DIR}/configure --prefix=${DIST_DIR} ${CONFIG_ARGS}
-        OUTPUT_FILE ${BUILD_DIR}/configure.log
-        ERROR_FILE ${BUILD_DIR}/configure.err
-        WORKING_DIRECTORY ${BUILD_DIR}
-    )
-    message( STATUS "Building zipios++ v${ZIPIOSCPP_VERS}..." )
-    execute_process(
-        COMMAND ${CMAKE_BUILD_TOOL}
-        OUTPUT_FILE ${BUILD_DIR}/make.log
-        ERROR_FILE ${BUILD_DIR}/make.err
-        WORKING_DIRECTORY ${BUILD_DIR}
-    )
-    message( STATUS "Installing zipios++ v${ZIPIOSCPP_VERS}..." )
-    execute_process(
-        COMMAND ${CMAKE_BUILD_TOOL} install
-        OUTPUT_FILE ${BUILD_DIR}/install.log
-        ERROR_FILE ${BUILD_DIR}/install.err
-        WORKING_DIRECTORY ${BUILD_DIR}
-    )
-endif()
+include_directories( ${CMAKE_SOURCE_DIR} ${CMAKE_BINARY_DIR} )
+
+add_subdirectory( src )
+
+install( DIRECTORY zipios++
+    DESTINATION include
+    PATTERN "*.in" EXCLUDE
+    PATTERN "*.w32" EXCLUDE
+    PATTERN "*.am" EXCLUDE
+)
+
+install( FILES ${CMAKE_BINARY_DIR}/zipios++/zipios-config.h
+    DESTINATION include/zipios++
+)
 
 # vim: ts=4 sw=4 et nocindent

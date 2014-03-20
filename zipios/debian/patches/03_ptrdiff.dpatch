@@ -1,0 +1,22 @@
+#! /bin/sh /usr/share/dpatch/dpatch-run
+## Description: include cstddef for ptrdiff_t
+## Author: Julian Taylor <jtaylor.debian@googlemail.com>
+## Bug-Debian: http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=625096
+## Bug-Ubuntu: https://bugs.launchpad.net/ubuntu/+bug/832775
+## ptrdiff.dpatch by Julian Taylor <jtaylor.debian@googlemail.com>
+##
+## All lines beginning with `## DP:' are a description of the patch.
+## DP: No description.
+
+@DPATCH@
+diff -urNad '--exclude=CVS' '--exclude=.svn' '--exclude=.git' '--exclude=.arch' '--exclude=.hg' '--exclude=_darcs' '--exclude=.bzr' zipios++~/src/directory.h zipios++/src/directory.h
+--- zipios++~/src/directory.h	2011-08-24 16:01:00.000000000 +0200
++++ zipios++/src/directory.h	2011-08-24 16:04:56.503892154 +0200
+@@ -31,6 +31,7 @@
+ #include <string>
+ #include <ctime>
+ #include <stdexcept>
++#include <cstddef>
+ 
+ // #include <boost.h>  Contents of boost.h
+ 

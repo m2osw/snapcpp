@@ -1,0 +1,9 @@
+Document: libzipios++-doc
+Title: libzipios++ online documentation
+Author: Various
+Abstract: This set of documents provides help for using the libzipios++ library.
+Section: Programming
+
+Format: html
+Index: /usr/share/doc/libzipios++-doc/html/index.html
+Files: /usr/share/doc/libzipios++-doc/html/*.html

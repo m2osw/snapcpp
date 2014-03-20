@@ -1,0 +1,55 @@
+#! /bin/sh -e
+## 01_amd64_fix.dpatch by Masayuki Hatta <mhatta@debian.org>
+##
+## All lines beginning with \`## DP:' are a description of the patch.
+## DP: Fix for AMD64.
+
+if [ $# -ne 1 ]; then
+    echo >&2 "`basename $0`: script expects -patch|-unpatch as argument"
+    exit 1
+fi
+case "$1" in
+        -patch) patch -f --no-backup-if-mismatch --dry-run -p1 < $0 && patch -f --no-backup-if-mismatch -p1 < $0
+;;
+        -unpatch) patch -f --no-backup-if-mismatch -R -p1 < $0;;
+        *)
+                echo >&2 "`basename $0`: script expects -patch|-unpatch as argument"
+                exit 1;;
+esac
+
+exit 0
+
+diff -urN zipios++-0.1.5.9+cvs.2007.04.28.orig/zipios++/meta-iostreams.h zipios++-0.1.5.9+cvs.2007.04.28/zipios++/meta-iostreams.h
+--- zipios++-0.1.5.9+cvs.2007.04.28.orig/zipios++/meta-iostreams.h	2007-04-30 10:18:49.000000000 +0900
++++ zipios++-0.1.5.9+cvs.2007.04.28/zipios++/meta-iostreams.h	2007-04-30 10:19:25.000000000 +0900
+@@ -7,11 +7,6 @@
+ 
+ #include <iostream>
+ #include <fstream>
+-
+-#if defined (HAVE_STD_IOSTREAM) && defined (USE_STD_IOSTREAM)
+ #include <sstream>
+-#else
+-#include <strstream>
+-#endif
+ 
+ #endif
+diff -urN zipios++-0.1.5.9+cvs.2007.04.28.orig/zipios++/zipios_defs.h zipios++-0.1.5.9+cvs.2007.04.28/zipios++/zipios_defs.h
+--- zipios++-0.1.5.9+cvs.2007.04.28.orig/zipios++/zipios_defs.h	2007-04-30 10:18:49.000000000 +0900
++++ zipios++-0.1.5.9+cvs.2007.04.28/zipios++/zipios_defs.h	2007-04-30 10:19:02.000000000 +0900
+@@ -1,10 +1,13 @@
+ #ifndef ZIPIOS_DEFS_H
+ #define ZIPIOS_DEFS_H
+ 
++#include "zipios++/zipios-config.h"
++#include <stdint.h>
++
+ namespace zipios {
+ 
+-typedef unsigned short uint16 ;
+-typedef unsigned long  uint32 ;
++typedef uint16_t uint16 ;
++typedef uint32_t uint32 ;
+ 
+ } // namespace
+ 

@@ -66,12 +66,12 @@ find_package( SnapBuild        REQUIRED )
 # Third party libraries
 #
 add_subdirectory( thrift )
-add_subdirectory( zipios )
 
 
 ################################################################################
 # Snap libraries
 #
+ConfigureMakeProject( PROJECT_NAME zipios )
 ConfigureMakeProject( PROJECT_NAME snapCMakeModules )
 ConfigureMakeProject( PROJECT_NAME advgetopt       DEPENDS snapCMakeModules controlled_vars )
 ConfigureMakeProject( PROJECT_NAME controlled_vars DEPENDS snapCMakeModules )
@@ -94,7 +94,7 @@ ConfigureMakeProject( PROJECT_NAME snapwebsites
             -DQTSERIALIZATION_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include/QtSerialization
             -DLIBTLD_LIBRARY:PATH=${CMAKE_BINARY_DIR}/dist/lib/libtld.so
             -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-        DEPENDS advgetopt libQtCassandra libQtSerialization libtld
+        DEPENDS zipios advgetopt libQtCassandra libQtSerialization libtld
         )
 ConfigureMakeProject( PROJECT_NAME cassview
         CONFIG_ARGS
