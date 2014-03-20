@@ -802,13 +802,14 @@ void links::create_link(const link_info& src, const link_info& dst)
     src_col = links_namespace + "::" + src.name();
     if(!src.is_unique())
     {
-        src_col += "-";
         // not unique, first check whether it was already created
         QtCassandra::QCassandraValue value(f_links_table->row(src.link_key())->cell(dst.key())->value());
+//std::cerr << "source link_key() [" << src.link_key() << "] - destination key() [" << dst.key() << "] [" << value.stringValue() << "]\n";
         if(value.nullValue())
         {
             // it does not exist, create a unique number
-            QString no(f_snap->get_unique_number());
+            QString const no(f_snap->get_unique_number());
+            src_col += "-";
             src_col += no;
             // save in the index table
             (*f_links_table)[src.link_key()][dst.key()] = QtCassandra::QCassandraValue(src_col);
@@ -823,13 +824,14 @@ void links::create_link(const link_info& src, const link_info& dst)
     dst_col = links_namespace + "::" + dst.name();
     if(!dst.is_unique())
     {
-        dst_col += "-";
         // not unique, first check whether it was already created
         QtCassandra::QCassandraValue value(f_links_table->row(dst.link_key())->cell(src.key())->value());
+//std::cerr << "destination link_key() [" << dst.link_key() << "] - source key() [" << src.key() << "] [" << value.stringValue() << "]\n";
         if(value.nullValue())
         {
             // it does not exist, create a unique number
-            QString no(f_snap->get_unique_number());
+            QString const no(f_snap->get_unique_number());
+            dst_col += "-";
             dst_col += no;
             // save in the index table
             (*f_links_table)[dst.link_key()][src.key()] = QtCassandra::QCassandraValue(dst_col);
@@ -841,12 +843,7 @@ void links::create_link(const link_info& src, const link_info& dst)
         }
     }
 
-    // define the columns data
-    //QString src_data, dst_data;
-    //src_data = "key=" + dst.key() + "\nname=" + dst.name();
-    //dst_data = "key=" + src.key() + "\nname=" + src.name();
-
-    // save the links in the rows
+    // save the links in the rows (branches)
     (*f_data_table)[src.row_key()][src_col] = dst.data(); // save dst in src
     (*f_data_table)[dst.row_key()][dst_col] = src.data(); // save src in dst
 }
