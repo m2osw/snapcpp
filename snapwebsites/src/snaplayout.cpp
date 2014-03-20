@@ -162,6 +162,8 @@ private:
 
     QCassandra::pointer_t           f_cassandra;
 
+    // Layout file structure
+    //
     struct fileinfo_t
     {
         QString    f_filename;
@@ -175,6 +177,8 @@ private:
     typedef std::vector<fileinfo_t>   fileinfo_list_t;
     fileinfo_list_t                   f_fileinfo_list;
 
+    // Common attributes
+    //
     QString                         f_host;
     controlled_vars::zint32_t       f_port;
     getopt_ptr_t                    f_opt;
@@ -210,75 +214,78 @@ snap_layout::snap_layout(int argc, char *argv[])
             usage();
         }
     }
-    for( int idx(0); idx < f_opt->size( "--" ); ++idx )
+    if( !f_opt->is_defined( "set-theme") )
     {
-        QString const filename ( f_opt->get_string( "--", idx ).c_str() );
-        const int e(filename.lastIndexOf("."));
-        QString const extension( filename.mid(e) );
-        if( extension == ".zip" )
+        for( int idx(0); idx < f_opt->size( "--" ); ++idx )
         {
-            zipios::ZipFile zf( filename.toUtf8().data() );
-            if( zf.size() < 0 )
+            QString const filename ( f_opt->get_string( "--", idx ).c_str() );
+            const int e(filename.lastIndexOf("."));
+            QString const extension( filename.mid(e) );
+            if( extension == ".zip" )
             {
-                std::cerr << "error: could not open zipfile \"" << filename << "\"" << std::endl;
-                exit(1);
-            }
-            //
-            for( auto ent : zf.entries() )
-            {
-                if( ent && ent->isValid() && !ent->isDirectory() )
+                zipios::ZipFile zf( filename.toUtf8().data() );
+                if( zf.size() < 0 )
                 {
-                    const std::string fn( ent->getName() );
-                    try
+                    std::cerr << "error: could not open zipfile \"" << filename << "\"" << std::endl;
+                    exit(1);
+                }
+                //
+                for( auto ent : zf.entries() )
+                {
+                    if( ent && ent->isValid() && !ent->isDirectory() )
                     {
-                        std::auto_ptr< std::istream > is( zf.getInputStream( ent ) ) ;
+                        const std::string fn( ent->getName() );
+                        try
+                        {
+                            std::auto_ptr< std::istream > is( zf.getInputStream( ent ) ) ;
 
-                        QByteArray byte_arr;
-                        stream_to_bytearray( is.get(), byte_arr );
+                            QByteArray byte_arr;
+                            stream_to_bytearray( is.get(), byte_arr );
 
-                        f_fileinfo_list.push_back( fileinfo_t( fn.c_str(), byte_arr, static_cast<time_t>(ent->getTime()) ) );
-                    }
-                    catch( const std::ios_base::failure& except )
-                    {
-                        std::cerr << "Caught an ios_base::failure when trying to extract file '"
-                                  << fn << "'." << std::endl
-                                  << "Explanatory string: " << except.what() << std::endl
-                                  //<< "Error code: " << except.code() << std::endl
-                                  ;
-                        exit(1);
-                    }
-                    catch( const std::exception& except )
-                    {
-                        std::cerr << "Error extracting '" << fn << "': Exception caught: " << except.what() << std::endl;
-                        exit(1);
-                    }
-                    catch( ... )
-                    {
-                        std::cerr << "Caught unknown exception attempting to extract '" << fn << "'!" << std::endl;
-                        exit(1);
+                            f_fileinfo_list.push_back( fileinfo_t( fn.c_str(), byte_arr, static_cast<time_t>(ent->getTime()) ) );
+                        }
+                        catch( const std::ios_base::failure& except )
+                        {
+                            std::cerr << "Caught an ios_base::failure when trying to extract file '"
+                                      << fn << "'." << std::endl
+                                      << "Explanatory string: " << except.what() << std::endl
+                                         //<< "Error code: " << except.code() << std::endl
+                                         ;
+                            exit(1);
+                        }
+                        catch( const std::exception& except )
+                        {
+                            std::cerr << "Error extracting '" << fn << "': Exception caught: " << except.what() << std::endl;
+                            exit(1);
+                        }
+                        catch( ... )
+                        {
+                            std::cerr << "Caught unknown exception attempting to extract '" << fn << "'!" << std::endl;
+                            exit(1);
+                        }
                     }
                 }
             }
-        }
-        else
-        {
-            std::ifstream ifs( filename.toUtf8().data() );
-            if( !ifs.is_open() )
+            else
             {
-                std::cerr << "error: could not open layout file named \"" << filename << "\"" << std::endl;
-                exit(1);
-            }
+                std::ifstream ifs( filename.toUtf8().data() );
+                if( !ifs.is_open() )
+                {
+                    std::cerr << "error: could not open layout file named \"" << filename << "\"" << std::endl;
+                    exit(1);
+                }
 
-            time_t filetime(0);
-            struct stat s;
-            if( stat(filename.toUtf8().data(), &s) == 0 )
-            {
-                filetime = s.st_mtime;
-            }
+                time_t filetime(0);
+                struct stat s;
+                if( stat(filename.toUtf8().data(), &s) == 0 )
+                {
+                    filetime = s.st_mtime;
+                }
 
-            QByteArray byte_arr;
-            stream_to_bytearray( &ifs, byte_arr );
-            f_fileinfo_list.push_back( fileinfo_t( filename, byte_arr, filetime ) );
+                QByteArray byte_arr;
+                stream_to_bytearray( &ifs, byte_arr );
+                f_fileinfo_list.push_back( fileinfo_t( filename, byte_arr, filetime ) );
+            }
         }
     }
 }
@@ -742,7 +749,8 @@ void snap_layout::add_files()
 
 void snap_layout::set_theme()
 {
-    if( (f_fileinfo_list.size() != 2) && (f_fileinfo_list.size() != 3) )
+    const auto arg_count( f_opt->size("--") );
+    if( (arg_count != 2) && (arg_count != 3) )
     {
         std::cerr << "error: the --set-theme command expects 2 or 3 arguments." << std::endl;
         exit(1);
@@ -771,9 +779,9 @@ void snap_layout::set_theme()
         exit(1);
     }
 
-    QString uri         ( f_fileinfo_list[0].f_filename);
-    QString field       ( f_fileinfo_list[1].f_filename);
-    QString const theme ( f_fileinfo_list.size() == 3 ? f_fileinfo_list[2].f_filename: QString() );
+    QString uri         ( f_opt->get_string( "--", 0 ).c_str() );
+    QString field       ( f_opt->get_string( "--", 1 ).c_str() );
+    QString const theme ( (arg_count == 3)? f_opt->get_string( "--", 2 ).c_str(): QString() );
 
     if(!uri.endsWith("/"))
     {
@@ -801,7 +809,7 @@ void snap_layout::set_theme()
         exit(1);
     }
 
-    if(theme.isEmpty())
+    if( theme.isEmpty() )
     {
         // remove the theme definition
         table->row(key)->dropCell(field, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
