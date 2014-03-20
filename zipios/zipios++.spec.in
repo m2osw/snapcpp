@@ -1,0 +1,73 @@
+%define release	2
+
+Name: @PACKAGE@
+Version: @VERSION@
+Summary: Zipios++ is a small C++ library for reading zip files
+Release: %{release}
+Source: %{name}-%{version}.tar.gz
+Group: Development/Libraries
+URL: http://zipios.sourceforge.net./
+BuildRoot: %{_tmppath}/%{name}-%{version}-buildroot
+License: GNU LGPL
+Prefix: %{_prefix}
+Packager: "Thomas Sondergaard" <thomass@deltadata.dk>
+Distribution: RedHat 9 Contrib
+
+%description
+Zipios++ is a small C++ library for reading zip files. The structure and public interface are based
+(somewhat loosely) on the java.util.zip package. The streams created to access the individual
+entries in a zip file are based on the standard iostream library.
+
+Zipios++ also provides a way for an application to support files from multiple sources (e.g. from
+zip files or from ordinary directories) transparently.
+
+%package devel
+Summary: zipios++ header files
+Group: Development/Libraries
+Requires: %name = %version
+
+%description devel
+Header files and documentation for zipios++ development.
+
+%prep
+%__rm -rf $RPM_BUILD_ROOT
+%setup -q -n %{name}-%{version}
+
+%build
+%configure
+%__make all doc
+
+%install
+%makeinstall
+
+%post	-p /sbin/ldconfig
+%postun	-p /sbin/ldconfig
+
+%clean
+[ -n "$RPM_BUILD_ROOT" -a "$RPM_BUILD_ROOT" != / ] && %__rm -rf $RPM_BUILD_ROOT $RPM_BUILD_DIR/%{name}-%{version}
+
+%files
+%defattr(-,root,root,644)
+%doc AUTHORS README
+%attr(755,root,root) %{_libdir}/libzipios.so.*
+
+%files devel
+%defattr(-,root,root,644)
+%{_includedir}/zipios++/*.h
+%doc NEWS ChangeLog
+%doc %dir doc/html/
+%defattr(-,root,root,755)
+%{_libdir}/libzipios.a
+%{_libdir}/libzipios.so
+%{_libdir}/libzipios.la
+
+%changelog
+* Tue Feb 3 2004 Russel Winder <r.winder@180sw.com>
+- Updated spec file to tidy up properly after a run.  Removed use of /usr/local/bin/g++ for
+  compilation in favour of using default.
+
+* Tue Jan  7 2003 Ross Burton <r.burton@180sw.com>
+- Updated spec file to use the RPM macros
+
+* Sat Mar 17 2002 Rui M. Silva Seabra <rms@1407.org>
+- Creation

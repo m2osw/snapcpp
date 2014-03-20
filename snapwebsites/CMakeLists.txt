@@ -35,7 +35,7 @@
 ##
 set(SNAPWEBSITES_VERSION_MAJOR 0)
 set(SNAPWEBSITES_VERSION_MINOR 1)
-set(SNAPWEBSITES_VERSION_PATCH 28)
+set(SNAPWEBSITES_VERSION_PATCH 29)
 
 cmake_minimum_required(VERSION 2.8)
 
@@ -76,6 +76,7 @@ find_package( SnapCMakeModules REQUIRED )
 find_package( SnapDoxygen      REQUIRED )
 find_package( Thrift           REQUIRED )
 find_package( ZipIos++         REQUIRED 0.1.5.9 )
+find_program( ZIP zip REQUIRED )
 
 if( "${CMAKE_BUILD_TYPE}" STREQUAL "Debug" )
     message("Debug is in effect for snapwebsites!")

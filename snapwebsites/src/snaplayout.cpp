@@ -41,14 +41,23 @@
 #include <QtCassandra/QCassandra.h>
 
 #include <algorithm>
+#include <iostream>
+#include <sstream>
 
 #include <sys/stat.h>
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+#pragma GCC diagnostic ignored "-Wshadow"
+#include <zipios++/zipfile.h>
+#pragma GCC diagnostic pop
 
 #include <QDomDocument>
 #include <QDomElement>
 #include <QDateTime>
 #include <QFile>
 #include <QTextStream>
+#include <QXmlInputSource>
 
 
 namespace
@@ -106,6 +115,21 @@ namespace
             advgetopt::getopt::end_of_options
         }
     };
+
+
+    void stream_to_bytearray( std::istream* is, QByteArray& arr )
+    {
+        arr.clear();
+        while( !is->eof() )
+        {
+            char ch = '\0';
+            is->get( ch );
+            if( !is->eof() )
+            {
+                arr.push_back( ch );
+            }
+        }
+    }
 }
 //namespace
 
@@ -128,17 +152,29 @@ public:
     void add_files();
     bool load_xml_info(QDomDocument& doc, QString const& filename, QString& layout_name, time_t& layout_modified);
     void load_xsl_info(QDomDocument& doc, QString const& filename, QString& layout_name, QString& layout_area, time_t& layout_modified);
-    void load_css(QString const& filename, QString& row_name);
-    void load_js(QString const& filename, QString& row_name);
-    void load_image(QString const& filename, QString& row_name);
+    void load_css  (QString const& filename, QByteArray const& content, QString& row_name);
+    void load_js   (QString const& filename, QByteArray const& content, QString& row_name);
+    void load_image(QString const& filename, QByteArray const& content, QString& row_name);
     void set_theme();
 
 private:
     typedef std::shared_ptr<advgetopt::getopt>    getopt_ptr_t;
 
     QCassandra::pointer_t           f_cassandra;
-    typedef QVector<QString>        string_array_t;
-    string_array_t                  f_layouts;
+
+    struct fileinfo_t
+    {
+        QString    f_filename;
+        QByteArray f_content;
+        time_t     f_filetime;
+
+        fileinfo_t() : f_filetime(0) {}
+        fileinfo_t( const QString& fn, const QByteArray& content, const int time )
+            : f_filename(fn), f_content(content), f_filetime(time) {}
+    };
+    typedef std::vector<fileinfo_t>   fileinfo_list_t;
+    fileinfo_list_t                   f_fileinfo_list;
+
     QString                         f_host;
     controlled_vars::zint32_t       f_port;
     getopt_ptr_t                    f_opt;
@@ -147,9 +183,9 @@ private:
 
 snap_layout::snap_layout(int argc, char *argv[])
     : f_cassandra( QCassandra::create() )
-    //, f_layouts() -- auto-init
-    //, f_host -- auto-init
-    //, f_port -- auto-init
+    //, f_fileinfo_list -- auto-init
+    //, f_host        -- auto-init
+    //, f_port        -- auto-init
     , f_opt( new advgetopt::getopt( argc, argv, g_snaplayout_options, g_configuration_files, NULL ) )
 {
     if( f_opt->is_defined( "help" ) )
@@ -181,17 +217,68 @@ snap_layout::snap_layout(int argc, char *argv[])
         QString const extension( filename.mid(e) );
         if( extension == ".zip" )
         {
-            // Sat Mar 15 12:35:12 PDT 2014 (RDB)
+            zipios::ZipFile zf( filename.toUtf8().data() );
+            if( zf.size() < 0 )
+            {
+                std::cerr << "error: could not open zipfile \"" << filename << "\"" << std::endl;
+                exit(1);
+            }
             //
-            // TODO: open zip file, then iterate through each file, pushing
-            // it back into the f_layouts vector.
-            //
-            // This will employ the zipios++ library.
-            //
+            for( auto ent : zf.entries() )
+            {
+                if( ent && ent->isValid() && !ent->isDirectory() )
+                {
+                    const std::string fn( ent->getName() );
+                    try
+                    {
+                        std::auto_ptr< std::istream > is( zf.getInputStream( ent ) ) ;
+
+                        QByteArray byte_arr;
+                        stream_to_bytearray( is.get(), byte_arr );
+
+                        f_fileinfo_list.push_back( fileinfo_t( fn.c_str(), byte_arr, static_cast<time_t>(ent->getTime()) ) );
+                    }
+                    catch( const std::ios_base::failure& except )
+                    {
+                        std::cerr << "Caught an ios_base::failure when trying to extract file '"
+                                  << fn << "'." << std::endl
+                                  << "Explanatory string: " << except.what() << std::endl
+                                  //<< "Error code: " << except.code() << std::endl
+                                  ;
+                        exit(1);
+                    }
+                    catch( const std::exception& except )
+                    {
+                        std::cerr << "Error extracting '" << fn << "': Exception caught: " << except.what() << std::endl;
+                        exit(1);
+                    }
+                    catch( ... )
+                    {
+                        std::cerr << "Caught unknown exception attempting to extract '" << fn << "'!" << std::endl;
+                        exit(1);
+                    }
+                }
+            }
         }
         else
         {
-            f_layouts.push_back( filename );
+            std::ifstream ifs( filename.toUtf8().data() );
+            if( !ifs.is_open() )
+            {
+                std::cerr << "error: could not open layout file named \"" << filename << "\"" << std::endl;
+                exit(1);
+            }
+
+            time_t filetime(0);
+            struct stat s;
+            if( stat(filename.toUtf8().data(), &s) == 0 )
+            {
+                filetime = s.st_mtime;
+            }
+
+            QByteArray byte_arr;
+            stream_to_bytearray( &ifs, byte_arr );
+            f_fileinfo_list.push_back( fileinfo_t( filename, byte_arr, filetime ) );
         }
     }
 }
@@ -377,20 +464,10 @@ void snap_layout::load_xsl_info(QDomDocument& doc, QString const& filename, QStr
 }
 
 
-void snap_layout::load_css(QString const& filename, QString& row_name)
+void snap_layout::load_css(QString const& filename, QByteArray const& content, QString& row_name)
 {
-    // TODO: once we have a CSS compressor, use it to verify that the
-    //       data is valid; but save the full thing because we want
-    //       the original in the database
-    QFile css(filename);
-    if(!css.open(QIODevice::ReadOnly))
-    {
-        std::cerr << "error: could not open CSS file named \"" << filename << "\"" << std::endl;
-        exit(1);
-    }
-    QByteArray value(css.readAll());
     snap::snap_version::quick_find_version_in_source fv;
-    if(!fv.find_version(value.data(), value.size()))
+    if(!fv.find_version(content.data(), content.size()))
     {
         std::cerr << "error: the CSS file \"" << filename << "\" does not include a valid introducer comment." << std::endl;
         exit(1);
@@ -412,20 +489,10 @@ void snap_layout::load_css(QString const& filename, QString& row_name)
 }
 
 
-void snap_layout::load_js(QString const& filename, QString& row_name)
+void snap_layout::load_js(QString const& filename, QByteArray const& content, QString& row_name)
 {
-    // TODO: once we have a JS compressor, use it to verify that the
-    //       data is valid; but save the full thing because we want
-    //       the original in the database
-    QFile js(filename);
-    if(!js.open(QIODevice::ReadOnly))
-    {
-        std::cerr << "error: could not open JS file named \"" << filename << "\"" << std::endl;
-        exit(1);
-    }
-    QByteArray value(js.readAll());
     snap::snap_version::quick_find_version_in_source fv;
-    if(!fv.find_version(value.data(), value.size()))
+    if(!fv.find_version(content.data(), content.size()))
     {
         std::cerr << "error: the JS file \"" << filename << "\" does not include a valid introducer comment." << std::endl;
         exit(1);
@@ -447,7 +514,7 @@ void snap_layout::load_js(QString const& filename, QString& row_name)
 }
 
 
-void snap_layout::load_image(QString const& filename, QString& row_name)
+void snap_layout::load_image( QString const& filename, QByteArray const& content, QString& row_name)
 {
     row_name = filename;
     int pos(row_name.lastIndexOf('/'));
@@ -463,16 +530,8 @@ void snap_layout::load_image(QString const& filename, QString& row_name)
         row_name = row_name.mid(pos + 1);
     }
 
-    // check that we recognize that image file format
-    QFile image(filename);
-    if(!image.open(QIODevice::ReadOnly))
-    {
-        std::cerr << "error: could not open image file named \"" << filename << "\"" << std::endl;
-        exit(1);
-    }
-    QByteArray data(image.readAll());
     snap::snap_image img;
-    if(!img.get_info(data))
+    if(!img.get_info(content))
     {
         std::cerr << "error: \"image\" file named \"" << filename << "\" does not use a recognized image file format." << std::endl;
         exit(1);
@@ -522,32 +581,28 @@ void snap_layout::add_files()
 
     typedef QMap<QString, time_t> mtimes_t;
     mtimes_t mtimes;
-    for( auto filename : f_layouts )
+    for( auto info : f_fileinfo_list )
     {
+        const QString filename(info.f_filename);
+        QByteArray content(info.f_content);
         const int e(filename.lastIndexOf("."));
         if(e == -1)
         {
             std::cerr << "error: file \"" << filename << "\" must be an XML file (end with the .xml, .xsl or .zip extension.)" << std::endl;
             exit(1);
         }
-        QFile xml(filename);
         QString row_name; // == <layout name>
         QString cell_name; // == <layout_area>  or 'content'
         QString const extension(filename.mid(e));
         if(extension == ".xml") // expects the content.xml file
         {
-            // the cell name is always "content" in this case
-            if(!xml.open(QIODevice::ReadOnly))
-            {
-                std::cerr << "error: XML file \"" << filename << "\" could not be opened for reading." << std::endl;
-                exit(1);
-            }
             QDomDocument doc("content");
             QString error_msg;
             int error_line, error_column;
-            if(!doc.setContent(&xml, false, &error_msg, &error_line, &error_column))
+            content.push_back(' ');
+            if(!doc.setContent(content, false, &error_msg, &error_line, &error_column))
             {
-                std::cerr << "error: file \"" << filename << "\" parsing failed";
+                std::cerr << "error: file \"" << filename << "\" parsing failed." << std::endl;
                 std::cerr << "detail " << error_line << "[" << error_column << "]: " << error_msg << std::endl;
                 exit(1);
             }
@@ -580,12 +635,7 @@ void snap_layout::add_files()
             {
                 cell_name = cell_name.mid(pos + 1);
             }
-            if(!xml.open(QIODevice::ReadOnly))
-            {
-                std::cerr << "error: CSS file \"" << filename << "\" could not be opened for reading." << std::endl;
-                exit(1);
-            }
-            load_css(filename, row_name);
+            load_css(filename, content, row_name);
         }
         else if(extension == ".js") // a JavaScript file
         {
@@ -596,12 +646,7 @@ void snap_layout::add_files()
             {
                 cell_name = cell_name.mid(pos + 1);
             }
-            if(!xml.open(QIODevice::ReadOnly))
-            {
-                std::cerr << "error: JS file \"" << filename << "\" could not be opened for reading." << std::endl;
-                exit(1);
-            }
-            load_js(filename, row_name);
+            load_js(filename, content, row_name);
         }
         else if(extension == ".png" || extension == ".gif"
              || extension == ".jpg" || extension == ".jpeg") // expects images
@@ -612,26 +657,17 @@ void snap_layout::add_files()
             {
                 cell_name = cell_name.mid(pos + 1);
             }
-            if(!xml.open(QIODevice::ReadOnly))
-            {
-                std::cerr << "error: image file \"" << filename << "\" could not be opened for reading." << std::endl;
-                exit(1);
-            }
-            load_image(filename, row_name);
+            load_image(filename, content, row_name);
         }
         else if(extension == ".xsl") // expects the body or theme XSLT files
         {
-            if(!xml.open(QIODevice::ReadOnly))
-            {
-                std::cerr << "error: XSTL file \"" << filename << "\" could not be opened for reading." << std::endl;
-                exit(1);
-            }
             QDomDocument doc("stylesheet");
             QString error_msg;
             int error_line, error_column;
-            if(!doc.setContent(&xml, true, &error_msg, &error_line, &error_column))
+            content.push_back(' ');
+            if(!doc.setContent(content, true, &error_msg, &error_line, &error_column))
             {
-                std::cerr << "error: file \"" << filename << "\" parsing failed";
+                std::cerr << "error: file \"" << filename << "\" parsing failed." << std::endl;
                 std::cerr << "detail " << error_line << "[" << error_column << "]: " << error_msg << std::endl;
                 exit(1);
             }
@@ -647,8 +683,8 @@ void snap_layout::add_files()
                     QDomDocument existing_doc("stylesheet");
                     if(!existing_doc.setContent(existing.stringValue(), true, &error_msg, &error_line, &error_column))
                     {
-                        std::cerr << "warning: existing XSLT data parsing failed, it will get replaced";
-                        std::cerr << ", detail " << error_line << "[" << error_column << "]: " << error_msg << std::endl;
+                        std::cerr << "warning: existing XSLT data parsing failed, it will get replaced." << std::endl;
+                        std::cerr << "detail " << error_line << "[" << error_column << "]: " << error_msg << std::endl;
                         // it failed so we want to replace it with a valid XSLT document instead!
                     }
                     else
@@ -680,19 +716,13 @@ void snap_layout::add_files()
             std::cerr << "error: file \"" << filename << "\" must be an XML file (end with the .xml or .xsl extension,) a CSS file (end with .css,) a JavaScript file (end with .js,) or be an image (end with .gif, .png, .jpg, .jpeg.)" << std::endl;
             exit(1);
         }
-        xml.reset();
-        QByteArray value(xml.readAll());
-        table->row(row_name)->cell(cell_name)->setValue(value);
 
-        // retrieve last modification time
-        struct stat s;
-        if(stat(filename.toUtf8().data(), &s) == 0)
+        table->row(row_name)->cell(cell_name)->setValue(content);
+
+        // set last modification time
+        if( !mtimes.contains(row_name) || mtimes[row_name] < info.f_filetime )
         {
-            if(!mtimes.contains(row_name)
-            || mtimes[row_name] < s.st_mtime)
-            {
-                mtimes[row_name] = s.st_mtime;
-            }
+            mtimes[row_name] = info.f_filetime;
         }
         else
         {
@@ -701,7 +731,7 @@ void snap_layout::add_files()
         }
     }
 
-    for(mtimes_t::const_iterator i(mtimes.begin()); i != mtimes.end(); ++i)
+    for( mtimes_t::const_iterator i(mtimes.begin()); i != mtimes.end(); ++i )
     {
         // mtimes holds times in seconds, convert to microseconds
         int64_t last_updated(i.value() * 1000000);
@@ -717,7 +747,7 @@ void snap_layout::add_files()
 
 void snap_layout::set_theme()
 {
-    if( (f_layouts.size() != 2) && (f_layouts.size() != 3) )
+    if( (f_fileinfo_list.size() != 2) && (f_fileinfo_list.size() != 3) )
     {
         std::cerr << "error: the --set-theme command expects 2 or 3 arguments." << std::endl;
         exit(1);
@@ -746,9 +776,9 @@ void snap_layout::set_theme()
         exit(1);
     }
 
-    QString uri(f_layouts[0]);
-    QString field(f_layouts[1]);
-    QString const theme( f_layouts.size() == 3 ? f_layouts[2]: QString() );
+    QString uri         ( f_fileinfo_list[0].f_filename);
+    QString field       ( f_fileinfo_list[1].f_filename);
+    QString const theme ( f_fileinfo_list.size() == 3 ? f_fileinfo_list[2].f_filename: QString() );
 
     if(!uri.endsWith("/"))
     {
