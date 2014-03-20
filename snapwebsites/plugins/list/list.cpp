@@ -537,7 +537,7 @@ list_item_vector_t list::read_list(content::path_info_t const& ipath, int start,
         // clear the cache before reading the next load
         list_row->clearCache();
         list_row->readCells(column_predicate);
-        QtCassandra::QCassandraCells const& cells(list_row->cells());
+        QtCassandra::QCassandraCells const cells(list_row->cells());
         if(cells.empty())
         {
             // all columns read
@@ -644,7 +644,7 @@ void list::on_backend_action(QString const& action)
                     {
                         break;
                     }
-                    QtCassandra::QCassandraRows const& rows(list_table->rows());
+                    QtCassandra::QCassandraRows const rows(list_table->rows());
                     for(QtCassandra::QCassandraRows::const_iterator o(rows.begin());
                             o != rows.end(); ++o)
                     {
@@ -789,7 +789,7 @@ int list::generate_all_lists(QString const& site_key)
 
     list_row->clearCache();
     list_row->readCells(column_predicate);
-    QtCassandra::QCassandraCells const& cells(list_row->cells());
+    QtCassandra::QCassandraCells const cells(list_row->cells());
     if(cells.isEmpty())
     {
         return 0;
@@ -806,8 +806,8 @@ int list::generate_all_lists(QString const& site_key)
         // that date does not get updated...
         struct timeval tv;
         gettimeofday(&tv, nullptr);
-        int64_t start_date = static_cast<int64_t>(tv.tv_sec) * static_cast<int64_t>(1000000)
-                           + static_cast<int64_t>(tv.tv_usec);
+        int64_t const start_date = static_cast<int64_t>(tv.tv_sec) * static_cast<int64_t>(1000000)
+                                 + static_cast<int64_t>(tv.tv_usec);
 
         // the cell
         QtCassandra::QCassandraCell::pointer_t cell(*c);
@@ -815,9 +815,10 @@ int list::generate_all_lists(QString const& site_key)
         // string representing the row key in the content table
         QByteArray const& key(cell->columnKey());
 
-#ifdef DEBUG
-        QString name;
+        // print out the row being worked on
+        // (if it crashes it is really good to know where)
         {
+            QString name;
             uint64_t time(QtCassandra::uint64Value(key, 0));
             char buf[64];
             struct tm t;
@@ -825,32 +826,26 @@ int list::generate_all_lists(QString const& site_key)
             gmtime_r(&seconds, &t);
             strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &t);
             name = QString("%1.%2 (%3) %4").arg(buf).arg(time % 1000000, 6, 10, QChar('0')).arg(time).arg(QtCassandra::stringValue(key, sizeof(uint64_t)));
+            SNAP_LOG_TRACE("work on column ")(name);
         }
-        std::cerr << "work on column " << name << "\n";
-#endif
 
         int64_t const page_start_date(QtCassandra::int64Value(key, 0));
-        if(page_start_date + LIST_PROCESSING_LATENCY < start_date)
-        {
-            QString const row_key(QtCassandra::stringValue(key, sizeof(int64_t)));
-            if(generate_all_lists_for_page(site_key, row_key) == 0)
-            {
-                did_work = 1;
-            }
-
-            // we handled that page for all the lists that we have on
-            // this website, so drop it now
-            list_row->dropCell(key, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
-#ifdef DEBUG
-            std::cerr << "  cell dropped\n";
-#endif
-        }
-        else
+        if(page_start_date + LIST_PROCESSING_LATENCY > start_date)
         {
             // since the columns are sorted, anything after that will be
             // inaccessible date wise
             break;
         }
+
+        QString const row_key(QtCassandra::stringValue(key, sizeof(int64_t)));
+        if(generate_all_lists_for_page(site_key, row_key) == 0)
+        {
+            did_work = 1;
+        }
+
+        // we handled that page for all the lists that we have on
+        // this website, so drop it now
+        list_row->dropCell(key, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
     }
 
     // clear our cache
@@ -867,6 +862,12 @@ int list::generate_all_lists_for_page(QString const& site_key, QString const& pa
     QtCassandra::QCassandraTable::pointer_t data_table(content_plugin->get_data_table());
     content::path_info_t page_ipath;
     page_ipath.set_path(page_key);
+    if(!data_table->exists(page_ipath.get_branch_key()))
+    {
+        // branch disappeared... ignore
+        // (it could have been deleted or moved--i.e. renamed)
+        return 0;
+    }
     QtCassandra::QCassandraRow::pointer_t page_branch_row(data_table->row(page_ipath.get_branch_key()));
 
     int did_work(0);

@@ -2636,7 +2636,7 @@ void snap_child::backend()
                     // we reached the end of the whole table
                     break;
                 }
-                QtCassandra::QCassandraRows const& r(table->rows());
+                QtCassandra::QCassandraRows const r(table->rows());
                 for(QtCassandra::QCassandraRows::const_iterator o(r.begin());
                     o != r.end(); ++o)
                 {

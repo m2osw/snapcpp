@@ -106,7 +106,9 @@ QVariant table_model::headerData( int section, Qt::Orientation orientation, int 
 
     try
     {
-        const auto& rows( f_table->rows() );
+		// the rows array is used immediately, so we can keep a temporary
+		// reference here
+        auto const& rows( f_table->rows() );
         if( rows.size() == 0 )
         {
             return QVariant();
@@ -114,14 +116,14 @@ QVariant table_model::headerData( int section, Qt::Orientation orientation, int 
 
         if( orientation == Qt::Horizontal )
         {
-            const auto& row( *(rows.begin()) );
+            auto const& row( *(rows.begin()) );
             Q_ASSERT(row);
 
-            const auto& cell( *(row->cells().begin() + section) );
+            auto const& cell( *(row->cells().begin() + section) );
             return cell->columnName();
         }
     }
-    catch( const std::exception& x )
+    catch( std::exception const& x )
     {
         SNAP_LOG_ERROR() << "Exception caught! [" << x.what() << "]";
     }
@@ -130,7 +132,7 @@ QVariant table_model::headerData( int section, Qt::Orientation orientation, int 
 }
 
 
-QVariant table_model::data( const QModelIndex & idx, int role ) const
+QVariant table_model::data( QModelIndex const & idx, int role ) const
 {
     if( !f_table )
     {
@@ -142,8 +144,8 @@ QVariant table_model::data( const QModelIndex & idx, int role ) const
         if( role == Qt::DisplayRole || role == Qt::EditRole )
         {
             QCassandraContext::pointer_t context( f_table->parentContext() );
-            const auto& rows = f_table->rows();
-            const auto row( (rows.begin()+idx.row()).value() );
+            auto const& rows = f_table->rows();
+            auto const row( (rows.begin() + idx.row()).value() );
             QString ret_name;
             if( context->contextName() == "snap_websites" )
             {
@@ -160,12 +162,12 @@ QVariant table_model::data( const QModelIndex & idx, int role ) const
 
         if( role == Qt::UserRole )
         {
-            const auto& rows = f_table->rows();
-            const auto row( (rows.begin()+idx.row()).value() );
+            auto const& rows = f_table->rows();
+            auto const row( (rows.begin() + idx.row()).value() );
             return row->rowKey();
         }
     }
-    catch( const std::exception& x )
+    catch( std::exception const& x )
     {
         SNAP_LOG_ERROR() << "Exception caught! [" << x.what() << "]";
     }
@@ -188,10 +190,10 @@ int table_model::rowCount( const QModelIndex &prnt ) const
 
     try
     {
-        const QCassandraRows& rows = f_table->rows();
+        QCassandraRows const& rows = f_table->rows();
         return rows.size();
     }
-    catch( const std::exception& x )
+    catch( std::exception const& x )
     {
         SNAP_LOG_ERROR() << "Exception caught! [" << x.what() << "]";
     }

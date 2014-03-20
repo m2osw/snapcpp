@@ -427,7 +427,8 @@ link_context::link_context(::snap::snap_child *snap, const link_info& info, cons
             // we MUST clear the cache in case we read the same list of links twice
             f_row->clearCache();
             // at this point begin() == end()
-            f_cell_iterator = f_row->cells().begin();
+            f_cells = f_row->cells(); // <- this is VERY important in case some wants to delete cells
+            f_cell_iterator = f_cells.begin();
         }
         else
         {
@@ -473,14 +474,14 @@ bool link_context::next_link(link_info& info)
         int const namespace_len(links_namespace.length());
         for(;;)
         {
-            const QtCassandra::QCassandraCells& cells(f_row->cells());
-            if(f_cell_iterator == cells.end())
+            if(f_cell_iterator == f_cells.end())
             {
                 // no more cells available in the cells, try to read more
                 f_row->clearCache();
                 f_row->readCells(f_column_predicate);
-                f_cell_iterator = cells.begin();
-                if(f_cell_iterator == cells.end())
+                f_cells = f_row->cells();
+                f_cell_iterator = f_cells.begin();
+                if(f_cell_iterator == f_cells.end())
                 {
                     // no more cells available
                     return false;
@@ -1032,7 +1033,7 @@ void links::delete_link(link_info const& info, const int delete_record_count )
             // we MUST clear the cache in case we read the same list of links twice
             row->clearCache();
             row->readCells(column_predicate);
-            QtCassandra::QCassandraCells const& cells(row->cells());
+            QtCassandra::QCassandraCells const cells(row->cells());
             if(cells.empty())
             {
                 // all columns read

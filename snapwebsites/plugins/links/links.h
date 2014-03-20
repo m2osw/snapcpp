@@ -196,6 +196,7 @@ private:
     link_info                                       f_info;
     QtCassandra::QCassandraRow::pointer_t           f_row;
     QtCassandra::QCassandraColumnRangePredicate     f_column_predicate;
+    QtCassandra::QCassandraCells                    f_cells;
     QtCassandra::QCassandraCells::const_iterator    f_cell_iterator;
     QString                                         f_link;
 };
