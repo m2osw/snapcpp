@@ -1,10 +1,15 @@
-snapwebsites (0.1.28~saucyubuntu1) UNRELEASED; urgency=low
+snapwebsites (0.1.29~saucy) saucy; urgency=high
 
+  [ Alexis Wilke ]
   * Added the editor form capability. This allows use to generate complex
     forms with the inline editor which makes it a lot easier to theme.
   * Fixed a few other things along the way.
 
- -- Alexis Wilke <alexis@m2osw.com>  Tue, 18 Mar 2014 11:57:45 -0700
+  [ R. Douglas Barbieri ]
+  * snaplayout can now import files in a zip archive.
+  * layouts now create zip files instead of installing individual files.
+
+ -- R. Douglas Barbieri <doug@dooglio.com>  Tue, 18 Mar 2014 11:57:45 -0700
 
 snapwebsites (0.1.28~saucy) saucy; urgency=high
 
