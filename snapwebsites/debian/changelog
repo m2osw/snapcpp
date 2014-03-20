@@ -1,6 +1,7 @@
 snapwebsites (0.1.29m2osw1~saucy) saucy; urgency=high
 
   * Requires the zip binary to build layout dist files.
+  * Moved FindZipIOS++.cmake to zipios++ package.
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Thu, 20 Mar 2014 10:35:03 -0700
 
