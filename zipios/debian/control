@@ -2,7 +2,7 @@ Source: zipios++
 Section: devel
 Priority: optional
 Maintainer: Masayuki Hatta (mhatta) <mhatta@debian.org>
-Build-Depends: automake | automaken, debhelper (>> 4.0.0), doxygen, dpatch, graphicsmagick-imagemagick-compat, libcppunit-dev, libz-dev,
+Build-Depends: cmake, debhelper (>> 4.0.0), doxygen, graphicsmagick-imagemagick-compat, libcppunit-dev, libz-dev,
     snapcmakemodules (>= 0.1.6~saucy)
 Standards-Version: 3.8.0
 
