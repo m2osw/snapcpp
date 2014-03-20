@@ -9,7 +9,7 @@ snapwebsites (0.1.29~saucy) saucy; urgency=high
   * snaplayout can now import files in a zip archive.
   * layouts now create zip files instead of installing individual files.
 
- -- R. Douglas Barbieri <doug@dooglio.com>  Tue, 18 Mar 2014 11:57:45 -0700
+ -- R. Douglas Barbieri <doug@dooglio.net>  Tue, 18 Mar 2014 11:57:45 -0700
 
 snapwebsites (0.1.28~saucy) saucy; urgency=high
 
