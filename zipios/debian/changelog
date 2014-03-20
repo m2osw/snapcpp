@@ -1,3 +1,11 @@
+zipios++ (0.1.5.9+cvs.2007.04.28-5.1.m2osw1~saucy) saucy; urgency=high
+
+  * Fixed bug with zipfile.cpp, where getNextEntry() is called in the
+  getInputStream() method, which does not need to happen, and in fact, causes
+  the last file in the archive to not be read, and an exception to be thrown.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Wed, 19 Mar 2014 18:28:50 -0700
+
 zipios++ (0.1.5.9+cvs.2007.04.28-5.1) unstable; urgency=low
 
   * Non-maintainer upload.
