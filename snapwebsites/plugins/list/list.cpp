@@ -624,6 +624,19 @@ void list::on_backend_action(QString const& action)
     QtCassandra::QCassandraTable::pointer_t list_table(get_list_table());
     if(action == get_name(SNAP_NAME_LIST_PAGELIST))
     {
+
+// Test creating just one link (*:*)
+//content::path_info_t list_ipath;
+//list_ipath.set_path("admin");
+//content::path_info_t page_ipath;
+//page_ipath.set_path("user");
+//bool const source_unique(false);
+//bool const destination_unique(false);
+//links::link_info source("list::links_test", source_unique, list_ipath.get_key(), list_ipath.get_branch());
+//links::link_info destination("list::links_test", destination_unique, page_ipath.get_key(), page_ipath.get_branch());
+//links::links::instance()->create_link(source, destination);
+//return;
+
         QSharedPointer<udp_client_server::udp_server> udp_signals(f_snap->udp_get_server("pagelist_udp_signal"));
         char const *stop(get_name(SNAP_NAME_LIST_STOP));
         // loop until stopped
@@ -949,7 +962,6 @@ int list::generate_all_lists_for_page(QString const& site_key, QString const& pa
                 // it doesn't exist yet, add it
 
                 // create a standard link between the list and the page item
-                QString const destination_key(page_key);
                 bool const source_unique(false);
                 bool const destination_unique(false);
                 links::link_info source(link_name, source_unique, list_ipath.get_key(), list_ipath.get_branch());
@@ -979,7 +991,6 @@ int list::generate_all_lists_for_page(QString const& site_key, QString const& pa
                 list_row->dropCell(current_item_key_full, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
                 page_branch_row->dropCell(list_key_in_page, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
 
-                QString const destination_key(page_key);
                 bool const source_unique(false);
                 bool const destination_unique(false);
                 links::link_info source(link_name, source_unique, list_ipath.get_key(), list_ipath.get_branch());
