@@ -76,6 +76,7 @@ find_package( SnapCMakeModules REQUIRED )
 find_package( SnapDoxygen      REQUIRED )
 find_package( Thrift           REQUIRED )
 find_package( ZipIos++         REQUIRED 0.1.5.9 )
+find_program( ZIP zip REQUIRED )
 
 if( "${CMAKE_BUILD_TYPE}" STREQUAL "Debug" )
     message("Debug is in effect for snapwebsites!")

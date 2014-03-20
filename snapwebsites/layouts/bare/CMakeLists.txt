@@ -33,13 +33,26 @@ project(bare_layout)
 
 snap_validate_xml( content.xml  content.dtd )
 
-# TODO: install as a tarball instead
-install(
-    FILES
+set( LAYOUT_FILES
         content.xml
         body-parser.xsl
         theme-parser.xsl
         style.css
+)
+
+set( ZIPFILE ${PROJECT_BINARY_DIR}/bare_layout.zip )
+
+add_custom_command( OUTPUT ${ZIPFILE}
+	COMMAND ${ZIP} ${ZIPFILE} ${LAYOUT_FILES}
+	DEPENDS ${LAYOUT_FILES}
+	WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+)
+
+add_custom_target( bare_zipfile ALL DEPENDS ${ZIPFILE} )
+
+install(
+    FILES
+        ${ZIPFILE}
     DESTINATION
         share/snapwebsites/layouts/bare
 )
