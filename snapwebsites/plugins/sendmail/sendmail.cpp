@@ -1697,7 +1697,7 @@ void sendmail::process_emails()
     {
         row->clearCache();
         row->readCells(column_predicate);
-        const QtCassandra::QCassandraCells& cells(row->cells());
+        QtCassandra::QCassandraCells const cells(row->cells());
         if(cells.isEmpty())
         {
             break;
@@ -1981,7 +1981,7 @@ void sendmail::run_emails()
     {
         row->clearCache();
         row->readCells(column_predicate);
-        const QtCassandra::QCassandraCells& cells(row->cells());
+        QtCassandra::QCassandraCells const cells(row->cells());
         if(cells.isEmpty())
         {
             break;

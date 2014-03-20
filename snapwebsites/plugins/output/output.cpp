@@ -447,8 +447,8 @@ void output::on_generate_page_content(content::path_info_t& ipath, QDomElement& 
 
         QDomElement messages_tag(doc.createElement("messages"));
         int const errcnt(messages_plugin->get_error_count());
-        messages_tag.setAttribute("error-count", QString("%1").arg(errcnt));
-        messages_tag.setAttribute("warning-count", QString("%1").arg(messages_plugin->get_warning_count()));
+        messages_tag.setAttribute("error-count", errcnt);
+        messages_tag.setAttribute("warning-count", messages_plugin->get_warning_count());
         body.appendChild(messages_tag);
 
         for(int i(0); i < max_messages; ++i)

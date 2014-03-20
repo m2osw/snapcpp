@@ -80,8 +80,8 @@ QVariant row_model::data( const QModelIndex & idx, int role ) const
 
     try
     {
-        const QCassandraCells& cell_list = f_row->cells();
-        const auto cell( (cell_list.begin()+idx.row()).value() );
+        QCassandraCells const& cell_list(f_row->cells());
+        const auto cell( (cell_list.begin() + idx.row()).value() );
 
         if( role == Qt::UserRole )
         {
@@ -103,10 +103,10 @@ QVariant row_model::data( const QModelIndex & idx, int role ) const
             return QVariant();
         }
 
-        const auto value( idx.column() == 0? cell->columnName(): cell->value() );
+        auto const value( idx.column() == 0 ? cell->columnName(): cell->value() );
         return value.stringValue();
     }
-    catch( const std::exception& except )
+    catch( std::exception const& except )
     {
         displayError( except, tr("Cannot read data from database.") );
     }
@@ -132,7 +132,7 @@ QVariant row_model::headerData( int section, Qt::Orientation orientation, int ro
 }
 
 
-int row_model::rowCount( const QModelIndex & /*parent*/ ) const
+int row_model::rowCount( QModelIndex const & /*parent*/ ) const
 {
     if( !f_row )
     {
@@ -141,10 +141,10 @@ int row_model::rowCount( const QModelIndex & /*parent*/ ) const
 
     try
     {
-        const QCassandraCells& cell_list = f_row->cells();
+        QCassandraCells const& cell_list(f_row->cells());
         return cell_list.size();
     }
-    catch( const std::exception& except )
+    catch( std::exception const& except )
     {
         displayError( except, tr("Cannot obtain row count from database.") );
     }

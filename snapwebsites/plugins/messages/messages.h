@@ -83,8 +83,11 @@ public:
 
         message_type_enum_t get_type() const;
         int                 get_id() const;
-        const QString&      get_title() const;
-        const QString&      get_body() const;
+        QString const&      get_title() const;
+        QString const&      get_body() const;
+
+        QString const&      get_widget_name() const;
+        void                set_widget_name(QString const& widget_name);
 
         // internal functions used to save the data serialized
         void                unserialize(QtSerialization::QReader& r);
@@ -96,6 +99,7 @@ public:
         controlled_vars::mint32_t   f_id;
         QString                     f_title;
         QString                     f_body;
+        QString                     f_widget_name;
     };
 
                         messages();
@@ -107,11 +111,11 @@ public:
 
     void                on_bootstrap(snap_child *snap);
 
-    void                set_http_error(snap_child::http_code_t err_code, QString err_name, QString const& err_description, QString const& err_details, bool err_security);
-    void                set_error(QString err_name, QString const& err_description, QString const& err_details, bool err_security);
-    void                set_warning(QString warning_name, QString const& warning_description, QString const& warning_details);
-    void                set_info(QString info_name, QString const& info_description);
-    void                set_debug(QString debug_name, QString const& debug_description);
+    message&            set_http_error(snap_child::http_code_t err_code, QString err_name, QString const& err_description, QString const& err_details, bool err_security);
+    message&            set_error(QString err_name, QString const& err_description, QString const& err_details, bool err_security);
+    message&            set_warning(QString warning_name, QString const& warning_description, QString const& warning_details);
+    message&            set_info(QString info_name, QString const& info_description);
+    message&            set_debug(QString debug_name, QString const& debug_description);
 
     void                clear_messages();
     message const&      get_message(int idx) const;

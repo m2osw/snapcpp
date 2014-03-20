@@ -664,10 +664,15 @@ out.write(doc.toString().toUtf8());
 #endif
 
     // Somehow binding crashes everything at this point?! (Qt 4.8.1)
+    QString doc_str(doc.toString());
+    if(doc_str.isEmpty())
+    {
+        throw snap_logic_exception("somehow the memory XML document for the body XSLT is empty");
+    }
     QXmlQuery q(QXmlQuery::XSLT20);
     QMessageHandler msg;
     msg.set_xsl(xsl);
-    msg.set_doc(doc.toString());
+    msg.set_doc(doc_str);
     q.setMessageHandler(&msg);
 #if 0
     QDomNodeModel m(q.namePool(), doc);
@@ -675,7 +680,7 @@ out.write(doc.toString().toUtf8());
     QXmlItem i(x);
     q.setFocus(i);
 #else
-    q.setFocus(doc.toString());
+    q.setFocus(doc_str);
 #endif
     q.setQuery(xsl);
 #if 0
@@ -945,10 +950,16 @@ QString layout::apply_theme(QDomDocument doc, QString const& xsl)
     // finally apply the theme XSLT to the final XML
     // the output is what we want to return
     QXmlQuery q(QXmlQuery::XSLT20);
+    QString doc_str(doc.toString());
+    if(doc_str.isEmpty())
+    {
+        throw snap_logic_exception("somehow the memory XML document for the theme XSLT is empty");
+    }
     QMessageHandler msg;
     msg.set_xsl(xsl);
+    msg.set_doc(doc_str);
     q.setMessageHandler(&msg);
-    q.setFocus(doc.toString());
+    q.setFocus(doc_str);
     q.setQuery(xsl);
 
     QBuffer output;

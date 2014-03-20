@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 -->
-<!ELEMENT editor-form (auto-reset|focus|immediate|drop|no-toolbar|taborder|widget)+>
+<!ELEMENT editor-form (auto-reset|focus|immediate|on-save|drop|no-toolbar|taborder|widget)+>
 <!ATTLIST editor-form owner CDATA #REQUIRED
                       auto-save (auto-save) #IMPLIED
                       processor CDATA #IMPLIED
@@ -32,6 +32,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 <!ELEMENT immediate EMPTY>
 
+<!ELEMENT on-save EMPTY>
+<!ATTLIST on-save redirect CDATA #IMPLIED
+                  allow-edit (yes|no) "yes">
+
 <!ELEMENT drop EMPTY>
 
 <!ELEMENT no-toolbar EMPTY>
@@ -45,6 +49,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
                  type NMTOKEN #REQUIRED
                  field CDATA #REQUIRED
                  path CDATA #REQUIRED
+                 duplicate-of IDREF #IMPLIED
                  secret (public|secret) "public"
                  auto-save (int8|string) #IMPLIED
                  drop (drop) #IMPLIED>

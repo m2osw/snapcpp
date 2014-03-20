@@ -6067,7 +6067,7 @@ void content::on_backend_process()
     {
         new_row->clearCache();
         new_row->readCells(column_predicate);
-        const QtCassandra::QCassandraCells& new_cells(new_row->cells());
+        QtCassandra::QCassandraCells const new_cells(new_row->cells());
         if(new_cells.isEmpty())
         {
             break;
@@ -6097,7 +6097,7 @@ void content::on_backend_process()
                 {
                     file_row->clearCache();
                     file_row->readCells(reference_column_predicate);
-                    const QtCassandra::QCassandraCells& content_cells(file_row->cells());
+                    QtCassandra::QCassandraCells const content_cells(file_row->cells());
                     if(content_cells.isEmpty())
                     {
                         break;
@@ -6268,7 +6268,7 @@ void content::add_javascript(QDomDocument doc, QString const& name)
     {
         javascript_row->clearCache();
         javascript_row->readCells(column_predicate);
-        const QtCassandra::QCassandraCells& cells(javascript_row->cells());
+        QtCassandra::QCassandraCells const cells(javascript_row->cells());
         if(cells.isEmpty())
         {
             break;
@@ -6338,7 +6338,7 @@ void content::add_javascript(QDomDocument doc, QString const& name)
 
             row->clearCache();
             row->readCells(references_column_predicate);
-            QtCassandra::QCassandraCells const& ref_cells(row->cells());
+            QtCassandra::QCassandraCells const ref_cells(row->cells());
             if(ref_cells.isEmpty())
             {
                 SNAP_LOG_ERROR("file referenced as JavaScript \"")(name)("\" has no reference back to ")(site_key);
@@ -6369,7 +6369,7 @@ void content::add_javascript(QDomDocument doc, QString const& name)
             {
                 row->clearCache();
                 row->readCells(dependencies_column_predicate);
-                const QtCassandra::QCassandraCells& dep_cells(row->cells());
+                QtCassandra::QCassandraCells const dep_cells(row->cells());
                 if(dep_cells.isEmpty())
                 {
                     break;
@@ -6480,7 +6480,7 @@ void content::add_css(QDomDocument doc, QString const& name)
     {
         css_row->clearCache();
         css_row->readCells(column_predicate);
-        const QtCassandra::QCassandraCells& cells(css_row->cells());
+        QtCassandra::QCassandraCells const cells(css_row->cells());
         if(cells.isEmpty())
         {
             break;
@@ -6550,7 +6550,7 @@ void content::add_css(QDomDocument doc, QString const& name)
 
             row->clearCache();
             row->readCells(references_column_predicate);
-            QtCassandra::QCassandraCells const& ref_cells(row->cells());
+            QtCassandra::QCassandraCells const ref_cells(row->cells());
             if(ref_cells.isEmpty())
             {
                 SNAP_LOG_ERROR("file referenced as CSS \"")(name)("\" has no reference back to ")(site_key);
@@ -6581,7 +6581,7 @@ void content::add_css(QDomDocument doc, QString const& name)
             {
                 row->clearCache();
                 row->readCells(dependencies_column_predicate);
-                const QtCassandra::QCassandraCells& dep_cells(row->cells());
+                QtCassandra::QCassandraCells const dep_cells(row->cells());
                 if(dep_cells.isEmpty())
                 {
                     break;

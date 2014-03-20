@@ -2636,7 +2636,7 @@ void snap_child::backend()
                     // we reached the end of the whole table
                     break;
                 }
-                QtCassandra::QCassandraRows const& r(table->rows());
+                QtCassandra::QCassandraRows const r(table->rows());
                 for(QtCassandra::QCassandraRows::const_iterator o(r.begin());
                     o != r.end(); ++o)
                 {
@@ -6674,6 +6674,8 @@ void snap_child::execute()
     if(f_output.buffer().size() == 0)
     {
         // somehow nothing was output...
+        // (that should not happen because the path::on_execute() function
+        // checks and generates a Page Not Found on empty content)
         die(HTTP_CODE_NOT_FOUND, "Page Empty",
             "Somehow this page could not be generated.",
             "the execute() command ran but the output is empty (this is never correct with HTML data, it could be with text/plain responses though)");
@@ -6749,11 +6751,11 @@ void snap_child::execute()
         //set_header("Content-Encoding", "identity");
     }
 
-    QString size(QString("%1").arg(html_output.size()));
+    QString const size(QString("%1").arg(html_output.size()));
     set_header("Content-Length", size);
 
-    QString connection(snapenv("HTTP_CONNECTION"));
-//printf("HTTP_CONNECTION=%s\n", connection.toUtf8().data());
+    QString const connection(snapenv("HTTP_CONNECTION"));
+//std::cout << "HTTP_CONNECTION=[" << connection << "]\n";
     if(connection.toLower() == "keep-alive")
     {
         set_header("Connection", "keep-alive");
@@ -6769,8 +6771,8 @@ void snap_child::execute()
     if(snapenv("REQUEST_METHOD") != "HEAD")
     {
         write(html_output, html_output.size());
-// Warning: don't use this printf() if you allow compression... 8-)
-//printf("%s [%d]\n", f_output.buffer().data(), f_output.buffer().size());
+// Warning: don't use this std::cout if you allow compression... 8-)
+//std::cout << f_output.buffer().data() << " [" << f_output.buffer().size() << "]\n";
     }
 }
 

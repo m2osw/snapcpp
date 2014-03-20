@@ -90,7 +90,7 @@ void dbutils::copy_row(QtCassandra::QCassandraTable::pointer_t ta, QString const
     {
         source_row->clearCache();
         source_row->readCells(column_predicate);
-        const QtCassandra::QCassandraCells& source_cells(source_row->cells());
+        QtCassandra::QCassandraCells const source_cells(source_row->cells());
         if(source_cells.isEmpty())
         {
             // done

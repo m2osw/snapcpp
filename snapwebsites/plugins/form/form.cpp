@@ -1405,8 +1405,6 @@ bool form::validate_post_for_widget_impl(content::path_info_t& ipath, sessions::
     QString const value(f_snap->postenv(widget_name));
     bool has_minimum(false);
 
-    QString type(widget.attribute("type"));
-
     QDomElement sizes(widget.firstChildElement("sizes"));
     if(!sizes.isNull())
     {
@@ -1415,7 +1413,7 @@ bool form::validate_post_for_widget_impl(content::path_info_t& ipath, sessions::
         {
             has_minimum = true;
             QString const m(min.text());
-            if(type == "image")
+            if(widget_type == "image")
             {
                 int width, height;
                 if(!parse_width_height(m, width, height))
@@ -1483,7 +1481,7 @@ bool form::validate_post_for_widget_impl(content::path_info_t& ipath, sessions::
         if(!max.isNull())
         {
             QString const m(max.text());
-            if(type == "image")
+            if(widget_type == "image")
             {
                 int width, height;
                 if(!parse_width_height(m, width, height))
@@ -1500,8 +1498,6 @@ bool form::validate_post_for_widget_impl(content::path_info_t& ipath, sessions::
                 }
                 else if(f_snap->postfile_exists(widget_name))
                 {
-                    // TODO load the image sizes and then compare to the
-                    //      minimum to know whether it is valid
                     snap_child::post_file_t const& image(f_snap->postfile(widget_name));
                     int image_width(image.get_image_width());
                     int image_height(image.get_image_height());

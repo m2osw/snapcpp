@@ -93,3 +93,18 @@
 {
 	outline: 1px dotted #ff0000;
 }
+
+/** editor darkening the background because of a pop-up **/
+#darkenPage
+{
+	display: none;
+	position: fixed;
+	z-index: 1;
+	left: 0;
+	top: 0;
+	width: 100%;
+	height: 100%;
+	background-color: black;
+	opacity: 0.2;
+	filter: alpha(opacity=20);
+}
