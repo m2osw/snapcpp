@@ -1,7 +1,7 @@
-snapwebsites (0.1.30~saucy) UNRELEASED; urgency=high
+snapwebsites (0.1.30~saucy) saucy; urgency=high
 
   [ Alexis Wilke ]
-  * 
+  * Fixed list implementation so it doesn't crash.
 
   [ R. Douglas Barbieri ]
   * The snaplayout tool now allows theme selection properly (instead of
