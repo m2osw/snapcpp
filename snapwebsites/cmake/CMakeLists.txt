@@ -35,6 +35,7 @@ install(
     FILES 
         FindSnapWebsites.cmake
         SnapXmlLint.cmake
+        SnapZipLayout.cmake
     DESTINATION
         share/cmake-2.8/Modules
     )

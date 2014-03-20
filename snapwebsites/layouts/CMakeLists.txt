@@ -31,6 +31,8 @@
 
 project(layout_dir)
 
+include( SnapZipLayout )
+
 add_subdirectory(bare)
 add_subdirectory(white)
 
