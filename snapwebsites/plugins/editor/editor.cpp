@@ -39,6 +39,7 @@
 
 #include <QXmlQuery>
 #include <QFile>
+#include <QFileInfo>
 
 #include "poison.h"
 
@@ -170,7 +171,7 @@ int64_t editor::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2014, 3, 18, 19, 29, 30, content_update);
+    SNAP_PLUGIN_UPDATE(2014, 3, 19, 20, 59, 30, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -195,7 +196,6 @@ void editor::content_update(int64_t variables_timestamp)
  *
  * This function adds different editor specific tags to the layout page
  * and body XML documents.
- *
  *
  * \param[in,out] ipath  The path being managed.
  * \param[in,out] page  The page being generated.
@@ -603,63 +603,98 @@ void editor::on_process_post(QString const& uri_path)
         return;
 
     case sessions::sessions::session_info::SESSION_INFO_OUT_OF_DATE:
+        // TODO:
+        // this is a harsh one! We need to save that data as a Draft, whatever
+        // the Save mode we got. That way if the user wanted to keep his
+        // data he'll be able to do so from the draft (update the message to
+        // correspond to the new mode/possibilities!)
         messages->set_http_error(snap_child::HTTP_CODE_GONE, "Editor Timeout", "Sorry! You sent this request back to Snap! way too late. It timed out. Please re-enter your information and re-submit.", "User did not click the submit button soon enough, the server session timed out.", true);
-        return;
+        break;
 
     case sessions::sessions::session_info::SESSION_INFO_USED_UP:
         // this should not happen because we do not mark editor sessions
         // for one time use
         messages->set_http_error(snap_child::HTTP_CODE_CONFLICT, "Editor Already Submitted", "This editor session was already processed.", "The user submitted the same session more than once.", true);
-        return;
+        break;
 
     default:
         throw snap_logic_exception("load_session() returned an unexpected SESSION_INFO_... value in editor::on_process_post()");
 
     }
 
-    // verify that the session random number is compatible
-    if(info.get_session_random() != session_data[1].toInt())
+    if(messages->get_error_count() == 0)
     {
-        f_snap->die(snap_child::HTTP_CODE_NOT_ACCEPTABLE, "Not Acceptable",
-                "The POST request does not correspond to the session that the editor generated.",
-                QString("User POSTed a request with random number %1, but we expected %2.")
-                        .arg(info.get_session_random())
-                        .arg(session_data[1]));
-        NOTREACHED();
-    }
+        // verify that the session random number is compatible
+        if(info.get_session_random() != session_data[1].toInt())
+        {
+            f_snap->die(snap_child::HTTP_CODE_NOT_ACCEPTABLE, "Not Acceptable",
+                    "The POST request does not correspond to the session that the editor generated.",
+                    QString("User POSTed a request with random number %1, but we expected %2.")
+                            .arg(info.get_session_random())
+                            .arg(session_data[1]));
+            NOTREACHED();
+        }
 
-    // verify that the path is correct
-    if(info.get_page_path() != ipath.get_key()
-    || info.get_user_agent() != f_snap->snapenv(snap::get_name(SNAP_NAME_CORE_HTTP_USER_AGENT))
-    || info.get_plugin_owner() != get_plugin_name())
-    {
-        // the path was tempered with? the agent changes between hits?
-        f_snap->die(snap_child::HTTP_CODE_NOT_ACCEPTABLE, "Not Acceptable",
-                "The POST request does not correspond to the editor it was defined for.",
-                QString("User POSTed a request against \"%1\" with an incompatible page path (%2) or a different plugin (%3).")
-                        .arg(ipath.get_key())
-                        .arg(info.get_page_path())
-                        .arg(info.get_plugin_owner()));
-        NOTREACHED();
-    }
+        // verify that the path is correct
+        if(info.get_page_path() != ipath.get_key()
+        || info.get_user_agent() != f_snap->snapenv(snap::get_name(SNAP_NAME_CORE_HTTP_USER_AGENT))
+        || info.get_plugin_owner() != get_plugin_name())
+        {
+            // the path was tempered with? the agent changes between hits?
+            f_snap->die(snap_child::HTTP_CODE_NOT_ACCEPTABLE, "Not Acceptable",
+                    "The POST request does not correspond to the editor it was defined for.",
+                    QString("User POSTed a request against \"%1\" with an incompatible page path (%2) or a different plugin (%3).")
+                            .arg(ipath.get_key())
+                            .arg(info.get_page_path())
+                            .arg(info.get_plugin_owner()));
+            NOTREACHED();
+        }
 
-    // editing a draft?
-    if(ipath.get_cpath().startsWith("admin/drafts/"))
-    {
-        // adjust the mode for drafts are "special" content
+        // editing a draft?
+        if(ipath.get_cpath().startsWith("admin/drafts/"))
+        {
+            // adjust the mode for drafts are "special" content
+            switch(editor_save_mode)
+            {
+            case EDITOR_SAVE_MODE_DRAFT:
+                editor_save_mode = EDITOR_SAVE_MODE_SAVE;
+            case EDITOR_SAVE_MODE_SAVE:
+                break;
+
+            case EDITOR_SAVE_MODE_PUBLISH:
+                editor_save_mode = EDITOR_SAVE_MODE_NEW_BRANCH;
+            case EDITOR_SAVE_MODE_NEW_BRANCH: // should not be accessible
+                break;
+
+            case EDITOR_SAVE_MODE_AUTO_DRAFT: // TBD
+                break;
+
+            case EDITOR_SAVE_MODE_UNKNOWN:
+                // this should never happen
+                throw snap_logic_exception("The UNKNOWN save mode was ignore, yet we have an edit_save_mode set to UNKNOWN.");
+
+            }
+        }
+
+        // act on the data as per the user's specified mode
         switch(editor_save_mode)
         {
         case EDITOR_SAVE_MODE_DRAFT:
-            editor_save_mode = EDITOR_SAVE_MODE_SAVE;
+            break;
+
+        case EDITOR_SAVE_MODE_NEW_BRANCH:
+            editor_create_new_branch(ipath);
+            break;
+
         case EDITOR_SAVE_MODE_SAVE:
+            editor_save(ipath, info);
             break;
 
         case EDITOR_SAVE_MODE_PUBLISH:
-            editor_save_mode = EDITOR_SAVE_MODE_NEW_BRANCH;
-        case EDITOR_SAVE_MODE_NEW_BRANCH: // should not be accessible
+            //editor_save(ipath, info); -- this will most certainly call the same function with a flag
             break;
 
-        case EDITOR_SAVE_MODE_AUTO_DRAFT: // TBD
+        case EDITOR_SAVE_MODE_AUTO_DRAFT:
             break;
 
         case EDITOR_SAVE_MODE_UNKNOWN:
@@ -669,31 +704,147 @@ void editor::on_process_post(QString const& uri_path)
         }
     }
 
-    // act on the data as per the user's specified mode
-    switch(editor_save_mode)
+    // give other plugins a chance to act on the success/failure of
+    // an AJAX post to the editor
+    int const errcnt(messages->get_error_count());
+    bool const result(errcnt == 0);
+    editor_process_post_result(ipath, result);
+
+    // if errors were found while validating, we prevent further processing
+    if(result)
     {
-    case EDITOR_SAVE_MODE_DRAFT:
-        break;
-
-    case EDITOR_SAVE_MODE_NEW_BRANCH:
-        editor_create_new_branch(ipath);
-        break;
-
-    case EDITOR_SAVE_MODE_SAVE:
-        editor_save(ipath, info);
-        break;
-
-    case EDITOR_SAVE_MODE_PUBLISH:
-        break;
-
-    case EDITOR_SAVE_MODE_AUTO_DRAFT:
-        break;
-
-    case EDITOR_SAVE_MODE_UNKNOWN:
-        // this should never happen
-        throw snap_logic_exception("The UNKNOWN save mode was ignore, yet we have an edit_save_mode set to UNKNOWN.");
-
+        // return success
+        // this is simple enough, do not waste time creating a full DOM
+        QString success_html("<?xml version=\"1.0\"?><!DOCTYPE snap><snap><result>success</result>");
+        QString redirect(ipath.get_parameter("redirect"));
+        if(!redirect.isEmpty())
+        {
+            success_html += QString("<redirect>%1</redirect>").arg(redirect.replace("<", "&lt;").replace(">", "&gt;").replace("&", "&amp;"));
+        }
+        success_html += "</snap>\n";
+        f_snap->output(success_html);
     }
+    else
+    {
+        // one or more errors occured, return them in an XML document
+        f_snap->output("<?xml version=\"1.0\"?>");
+
+        // /snap
+        QDomDocument response("snap");
+        QDomElement snap_tag(response.createElement("snap"));
+        response.appendChild(snap_tag);
+
+        // /snap/result/failure
+        QDomElement result_tag(response.createElement("result"));
+        snap_tag.appendChild(result_tag);
+        QDomText result_text(response.createTextNode("failure"));
+        result_tag.appendChild(result_text);
+
+        // /snap/messages[errcnt=...][warncnt=...]
+        QDomElement messages_tag(response.createElement("messages"));
+        messages_tag.setAttribute("error-count", errcnt);
+        messages_tag.setAttribute("warning-count", messages->get_warning_count());
+        snap_tag.appendChild(messages_tag);
+
+        int const max_messages(messages->get_message_count());
+        if(max_messages <= 0)
+        {
+            throw snap_logic_exception("Somehow the number of messages in the editor error handling is zero when the number of errors was not.");
+        }
+
+        for(int i(0); i < max_messages; ++i)
+        {
+            QString type;
+            messages::messages::message const& msg(messages->get_message(i));
+            switch(msg.get_type())
+            {
+            case messages::messages::message::MESSAGE_TYPE_ERROR:
+                type = "error";
+                break;
+
+            case messages::messages::message::MESSAGE_TYPE_WARNING:
+                type = "warning";
+                break;
+
+            case messages::messages::message::MESSAGE_TYPE_INFO:
+                type = "info";
+                break;
+
+            case messages::messages::message::MESSAGE_TYPE_DEBUG:
+                type = "debug";
+                break;
+
+            // no default, compiler knows if one missing
+            }
+            {
+                // /snap/messages/message[id=...][type=...]
+                // create the message tag with its type
+                QDomElement msg_tag(response.createElement("message"));
+                QString const widget_name(msg.get_widget_name());
+                if(!widget_name.isEmpty())
+                {
+                    msg_tag.setAttribute("id", widget_name);
+                }
+                msg_tag.setAttribute("msg-id", msg.get_id());
+                msg_tag.setAttribute("type", type);
+                messages_tag.appendChild(msg_tag);
+
+                // there is always a title
+                {
+                    QDomElement title_tag(response.createElement("title"));
+                    msg_tag.appendChild(title_tag);
+                    QDomElement span_tag(response.createElement("span"));
+                    span_tag.setAttribute("class", "message-title");
+                    title_tag.appendChild(span_tag);
+                    snap_dom::insert_html_string_to_xml_doc(span_tag, msg.get_title());
+                }
+
+                // don't create the body if empty
+                if(!msg.get_body().isEmpty())
+                {
+                    QDomElement body_tag(response.createElement("body"));
+                    msg_tag.appendChild(body_tag);
+                    QDomElement span_tag(response.createElement("span"));
+                    span_tag.setAttribute("class", "message-body");
+                    body_tag.appendChild(span_tag);
+                    snap_dom::insert_html_string_to_xml_doc(span_tag, msg.get_body());
+                }
+            }
+        }
+        messages->clear_messages();
+
+        if(errcnt != 0)
+        {
+            // on errors generate a warning in the header
+            f_snap->set_header(messages::get_name(messages::SNAP_NAME_MESSAGES_WARNING_HEADER),
+                    QString("This page generated %1 error%2")
+                            .arg(errcnt).arg(errcnt == 1 ? "" : "s"));
+        }
+
+        f_snap->output(response.toString());
+    }
+}
+
+
+/** \brief Inform plugins that a Save from the editor happened.
+ *
+ * This function is called whether the save from an AJAX post sent
+ * by the editor succeeded or not. This way the plugins can choose
+ * to act of the results.
+ *
+ * The error messages can be found in the messages plugin.
+ *
+ * \param[in,out] ipath  The ipath on which the POST was processed.
+ * \param[in] succeeded  Whether the saving process succeeded (true) or not (false).
+ *
+ * \return true so other plugins can act on the signal.
+ */
+bool editor::editor_process_post_result_impl(content::path_info_t& ipath, bool const succeeded)
+{
+    static_cast<void>(ipath);
+    static_cast<void>(succeeded);
+
+    return true;
 }
 
 
@@ -748,6 +899,19 @@ editor::save_mode_t editor::string_to_save_mode(QString const& mode)
  */
 void editor::editor_save(content::path_info_t& ipath, sessions::sessions::session_info& info)
 {
+
+//
+// TODO -- the verification phase needs to be moved in a separate function
+//         that gets called whatever the "process post" function was called
+//         (at this point drafts and such won't work right)
+//
+//         Unfortunately the saving of the data is intricately intermingled
+//         from what I can tell... although if we could extract the
+//         loop that validates and saves the data that could be enough
+//         because then we could call it last with the revision row where
+//         the data is to be saved
+//
+
     bool switch_branch(false);
     snap_version::version_number_t branch_number(ipath.get_branch());
     if(snap_version::SPECIAL_VERSION_SYSTEM_BRANCH == branch_number)
@@ -759,6 +923,7 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
     QString const key(ipath.get_key());
     QString const locale(ipath.get_locale());
     content::content *content_plugin(content::content::instance());
+    messages::messages *messages(messages::messages::instance());
     QString const owner(output::output::instance()->get_plugin_name());
 
     // create the new revision and make it current
@@ -819,7 +984,16 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
         //QDomDocument editor_widgets("editor-form");
         //editor_widgets.setContent(parser_xml);
 
-        messages::messages *messages(messages::messages::instance());
+        // a default (data driven) redirect to apply when saving an editor form
+        QDomElement on_save(snap_dom::get_element(editor_widgets, "on-save", false));
+        if(!on_save.isNull())
+        {
+            QString uri(on_save.attribute("redirect"));
+            if(!uri.isEmpty())
+            {
+                ipath.set_parameter("redirect", uri);
+            }
+        }
 
         // now go through all the widgets checking out their path, if the
         // path exists in doc then copy the data in the parser_xml
@@ -860,7 +1034,8 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
             if(f_snap->postenv_exists(widget_name))
             {
                 QString const post_value(f_snap->postenv(widget_name));
-                validate_editor_post_for_widget(ipath, info, widget, widget_name, widget_type, is_secret);
+                clean_post_value(widget_type, post_value);
+                validate_editor_post_for_widget(ipath, info, widget, widget_name, widget_type, post_value, is_secret);
                 if(widget_auto_save == "int8")
                 {
                     signed char c;
@@ -929,7 +1104,7 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
                         current_value = value.stringValue();
                     }
                 }
-                validate_editor_post_for_widget(ipath, info, widget, widget_name, widget_type, is_secret);
+                validate_editor_post_for_widget(ipath, info, widget, widget_name, widget_type, current_value, is_secret);
             }
 
             if(info.get_session_type() != sessions::sessions::session_info::SESSION_INFO_VALID)
@@ -939,15 +1114,16 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
                 if(messages->get_error_count() == errcnt
                 && messages->get_warning_count() == warncnt)
                 {
-                    // the pluing marked that it found an error but did not
+                    // the plugin marked that it found an error but did not
                     // generate an actual error, do so here with a generic
                     // error message
                     messages->set_error(
                         "Invalid Content",
-                        "\"" + form::form::html_64max(current_value, is_secret) + "\" is not valid for \"" + widget_name + "\".",
+                        QString("\"%1\" is not valid for \"%2\".")
+                                .arg(form::form::html_64max(current_value, is_secret)).arg(widget_name),
                         "unspecified error for widget",
                         false
-                    );
+                    ).set_widget_name(widget_name);
                 }
                 messages::messages::message const& msg(messages->get_last_message());
 
@@ -993,6 +1169,70 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
 }
 
 
+/** \brief This function cleans the tainted data from a POST.
+ *
+ * This function attempts to clean a value that was just posted to us from
+ * a client. The checks depend on the type of widget we're dealing with.
+ *
+ * \todo
+ * Complete the function.
+ *
+ * \param[in] widget_type  The type of widget.
+ * \param[in] value  The value to be cleaned up.
+ *
+ * \return The cleaned up value of the widget.
+ */
+QString editor::clean_post_value(QString const& widget_type, QString const& value)
+{
+    // first trim the value and remove the starting/ending <br> because those
+    // are most often improperly added by editors.
+    QString result(value);
+
+    // trim at the start
+    {
+        QRegExp start_re("^(<br */>| |\t|\n|\r|\v|\f|&nbsp;|&#160;|&#xA0;)+", Qt::CaseInsensitive, QRegExp::RegExp2);
+        if(start_re.indexIn(result) != 0)
+        {
+            result.remove(0, start_re.matchedLength());
+        }
+    }
+
+    // trim at the end
+    {
+        QRegExp end_re("(<br */>| |\t|\n|\r|\v|\f|&nbsp;|&#160;|&#xA0;)+$", Qt::CaseInsensitive, QRegExp::RegExp2);
+        int const p(end_re.indexIn(result));
+        if(p > 0) // here it cannot be zero or we already removed all the characters
+        {
+            result.remove(p, end_re.matchedLength());
+        }
+    }
+
+    // a line edit cannot include new line characters
+    if(widget_type == "line-edit")
+    {
+        result.replace("\n", " ").replace("\r", " ");
+        QRegExp break_line("<br */>", Qt::CaseInsensitive, QRegExp::RegExp2);
+        for(;;)
+        {
+            int const p(break_line.indexIn(result));
+            if(p == -1)
+            {
+                // done removing all those enries
+                break;
+            }
+            result.remove(p, break_line.matchedLength());
+        }
+
+        // TODO: check for any tag that represents a block (i.e. <div>)
+    }
+
+    // TODO: apply XSS filter as required for this user
+
+
+    return result;
+}
+
+
 /** \brief This function reads the editor widgets.
  *
  * This function is used to read the editor widgets. The function caches
@@ -1023,7 +1263,7 @@ QDomDocument editor::get_editor_widgets(content::path_info_t& ipath)
 
                 QtCassandra::QCassandraTable::pointer_t layout_table(layout_plugin->get_layout_table());
                 QString const parser_xml(layout_table->row(name)->cell(script)->value().stringValue());
-std::cerr << "Default [" << script << "," << name << "] -- [" << parser_xml.mid(0, 256) << "]\n";
+//std::cerr << "Default [" << script << "," << name << "] -- [" << parser_xml.mid(0, 256) << "]\n";
                 editor_widgets.setContent(parser_xml);
             }
         }
@@ -1053,14 +1293,435 @@ std::cerr << "Default [" << script << "," << name << "] -- [" << parser_xml.mid(
  *
  * \return Always return true so other plugins have a chance to validate too.
  */
-bool editor::validate_editor_post_for_widget_impl(content::path_info_t& ipath, sessions::sessions::session_info& info, QDomElement const& widget, QString const& widget_name, QString const& widget_type, bool const is_secret)
+bool editor::validate_editor_post_for_widget_impl(content::path_info_t& ipath, sessions::sessions::session_info& info, QDomElement const& widget, QString const& widget_name, QString const& widget_type, QString const& value, bool const is_secret)
 {
-    static_cast<void>(ipath);
-    static_cast<void>(info);
-    static_cast<void>(widget);
-    static_cast<void>(widget_name);
-    static_cast<void>(widget_type);
-    static_cast<void>(is_secret);
+    messages::messages *messages(messages::messages::instance());
+
+    bool has_minimum(false);
+
+//std::cerr << "value [" << value << "] for [" << widget_name << "]\n";
+
+    QString label(widget.firstChildElement("label").text());
+    if(label.isEmpty())
+    {
+        label = widget_name;
+    }
+
+    // Check the minimum and maximum length / sizes / dimensions
+    QDomElement sizes(widget.firstChildElement("sizes"));
+    if(!sizes.isNull())
+    {
+        QDomElement min(sizes.firstChildElement("min"));
+        if(!min.isNull())
+        {
+            has_minimum = true;
+            QString const m(min.text());
+            if(widget_type == "image-box")
+            {
+                int width, height;
+                if(!form::form::parse_width_height(m, width, height))
+                {
+                    // invalid width 'x' height
+                    messages->set_error(
+                        "Invalid Sizes",
+                        QString("minimum size \"%1\" is not a valid \"width 'x' height\" definition for image widget \"%2\".")
+                            .arg(form::form::html_64max(m, false)).arg(label),
+                        QString("incorrect sizes for \"%1\"").arg(widget_name),
+                        false
+                    ).set_widget_name(widget_name);
+                    // TODO add another type of error for setup ("programmer") data?
+                    info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                }
+                else if(f_snap->postfile_exists(widget_name))
+                {
+                    snap_child::post_file_t const& image(f_snap->postfile(widget_name));
+                    int image_width(image.get_image_width());
+                    int image_height(image.get_image_height());
+                    if(width == 0 || height == 0)
+                    {
+                        messages->set_error(
+                            "Incompatible Image File",
+                            QString("The image \"%1\" was not recognized as a supported image file format.").arg(label),
+                            QString("the system did not recognize the image as such (width/height are not valid), cannot verify the minimum size in \"%1\"").arg(widget_name),
+                            false
+                        ).set_widget_name(widget_name);
+                        info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                    }
+                    else if(image_width < width || image_height < height)
+                    {
+                        messages->set_error(
+                            "Image Too Small",
+                            QString("The image \"%1\" you uploaded is too small (your image is %2x%3, the minimum required is %4x%5).")
+                                    .arg(label).arg(image_width).arg(image_height).arg(width).arg(height),
+                            "the user uploaded an image that is too small",
+                            false
+                        ).set_widget_name(widget_name);
+                        info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                    }
+                }
+            }
+            else
+            {
+                bool ok;
+                int const l(m.toInt(&ok));
+                if(!ok)
+                {
+                    throw editor_exception_invalid_editor_form_xml(QString("the minimum size \"%1\" must be a valid decimal integer").arg(m));
+                }
+                if(value.length() < l)
+                {
+                    // length too small
+                    messages->set_error(
+                        "Length Too Small",
+                        QString("\"%1\" is too small in \"%2\". The widget requires at least %3 characters.")
+                                .arg(form::form::html_64max(value, is_secret)).arg(label).arg(m),
+                        QString("not enough characters in \"%1\"").arg(widget_name),
+                        false
+                    ).set_widget_name(widget_name);
+                    info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                }
+            }
+        }
+        QDomElement max(sizes.firstChildElement("max"));
+        if(!max.isNull())
+        {
+            QString const m(max.text());
+            if(widget_type == "image-box")
+            {
+                int width, height;
+                if(!form::form::parse_width_height(m, width, height))
+                {
+                    // invalid width 'x' height
+                    messages->set_error(
+                        "Invalid Sizes",
+                        QString("maximum size \"%1\" is not a valid \"width 'x' height\" definition for this image widget.")
+                                .arg(form::form::html_64max(m, false)),
+                        "incorrect sizes for " + widget_name,
+                        false
+                    ).set_widget_name(widget_name);
+                    // TODO add another type of error for setup ("programmer") data?
+                    info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                }
+                else if(f_snap->postfile_exists(widget_name))
+                {
+                    snap_child::post_file_t const& image(f_snap->postfile(widget_name));
+                    int image_width(image.get_image_width());
+                    int image_height(image.get_image_height());
+                    if(width == 0 || height == 0)
+                    {
+                        // TODO avoid error a 2nd time if done in minimum case
+                        messages->set_error(
+                            "Incompatible Image File",
+                            QString("The image \"%1\" was not recognized as a supported image file format.").arg(label),
+                            QString("the system did not recognize the image as such (width/height are not valid), cannot verify the minimum size of \"%1\"").arg(widget_name),
+                            false
+                        ).set_widget_name(widget_name);
+                        info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                    }
+                    else if(image_width > width || image_height > height)
+                    {
+                        messages->set_error(
+                            "Image Too Large",
+                            QString("The image \"%1\" you uploaded is too large (your image is %2x%3, the maximum allowed is %4x%5).")
+                                .arg(label).arg(image_width).arg(image_height).arg(width).arg(height),
+                            QString("the user uploaded an image that is too large for \"%1\"").arg(widget_name),
+                            false
+                        ).set_widget_name(widget_name);
+                        info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                    }
+                }
+            }
+            else
+            {
+                bool ok;
+                int const l(m.toInt(&ok));
+                if(!ok)
+                {
+                    throw editor_exception_invalid_editor_form_xml(QString("the maximum size \"%1\" must be a valid decimal integer").arg(m));
+                }
+                if(value.length() > l)
+                {
+                    // length too large
+                    messages->set_error(
+                        "Length Too Long",
+                        QString("\"%1\" is too long in \"%2\". The widget requires at most %3 characters.")
+                                .arg(form::form::html_64max(value, is_secret)).arg(label).arg(m),
+                        QString("too many characters in \"%1\"").arg(widget_name),
+                        false
+                    ).set_widget_name(widget_name);
+                    info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                }
+            }
+        }
+        QDomElement lines(sizes.firstChildElement("lines"));
+        if(!lines.isNull())
+        {
+            QString const m(lines.text());
+            bool ok;
+            int const l(m.toInt(&ok));
+            if(!ok)
+            {
+                throw editor_exception_invalid_editor_form_xml(QString("the number of lines \"%1\" must be a valid decimal integer").arg(m));
+            }
+            if(widget_type == "text-edit"
+            || widget_type == "html-edit")
+            {
+                if(form::form::count_text_lines(value) < l)
+                {
+                    // not enough lines (text)
+                    messages->set_error(
+                        "Not Enough Lines",
+                        QString("\"%1\" does not include enough lines in \"%2\". The widget requires at least %3 lines.")
+                                .arg(form::form::html_64max(value, is_secret)).arg(label).arg(m),
+                        QString("not enough lines in \"%1\"").arg(widget_name),
+                        false
+                    ).set_widget_name(widget_name);
+                    info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                }
+            }
+        }
+    }
+
+    // check whether the field is required, in case of a checkbox required
+    // means that the user selects the checkbox ("on")
+    if(widget_type == "line-edit"
+    //|| widget_type == "password" -- not yet implemented
+    || widget_type == "checkbox"
+    //|| widget_type == "file" -- not yet implemented
+    || widget_type == "image-box")
+    {
+        QDomElement required(widget.firstChildElement("required"));
+        if(!required.isNull())
+        {
+            QString const required_text(required.text());
+            if(required_text == "required")
+            {
+                // It is required!
+                if(/*widget_type == "file"
+                ||*/ widget_type == "image-box")
+                {
+                    if(!f_snap->postfile_exists(widget_name)) // TBD <- this test is not logical if widget_type cannot be a FILE type...
+                    {
+                        QDomElement root(widget.ownerDocument().documentElement());
+                        QString const name(QString("%1::%2::%3::%4")
+                                .arg(content::get_name(content::SNAP_NAME_CONTENT_ATTACHMENT))
+                                .arg(root.attribute("owner"))
+                                .arg(widget_name)
+                                .arg(content::get_name(content::SNAP_NAME_CONTENT_ATTACHMENT_PATH_END)));
+                        QtCassandra::QCassandraValue cassandra_value(content::content::instance()->get_content_parameter(ipath, name, content::content::PARAM_REVISION_GLOBAL));
+                        if(cassandra_value.nullValue())
+                        {
+                            // not defined!
+                            messages->set_error(
+                                    "Invalid Value",
+                                    QString("\"%1\" is a required field.").arg(label),
+                                    QString("no data entered by user in widget \"%1\"").arg(widget_name),
+                                    false
+                                ).set_widget_name(widget_name);
+                            info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                        }
+                    }
+                }
+                else
+                {
+                    // not an additional error if the minimum error was
+                    // already generated
+                    if(!has_minimum && value.isEmpty())
+                    {
+                        messages->set_error(
+                                "Value is Invalid",
+                                QString("\"%1\" is a required field.").arg(label),
+                                QString("no data entered in widget \"%1\" by user").arg(widget_name),
+                                false
+                            ).set_widget_name(widget_name);
+                        info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                    }
+                }
+            }
+        }
+    }
+
+    // check whether the widget has a "duplicate-of" attribute, if so
+    // then it must be equal to that other widget's value
+    QString duplicate_of(widget.attribute("duplicate-of"));
+    if(!duplicate_of.isEmpty())
+    {
+        // What we need is the name of the widget so we can get its
+        // current value and the duplicate-of attribute is just that!
+        QString duplicate_value(f_snap->postenv(duplicate_of));
+        if(duplicate_value != value)
+        {
+            QString dup_label(duplicate_of);
+            QDomXPath dom_xpath;
+            dom_xpath.setXPath(QString("/snap-form//widget[@id=\"%1\"]/@id").arg(duplicate_of));
+            QDomXPath::node_vector_t result(dom_xpath.apply(widget));
+            if(result.size() > 0 && result[0].isElement())
+            {
+                // we found the widget, display its label instead
+                dup_label = result[0].toElement().text();
+            }
+            messages->set_error(
+              "Value is Invalid",
+              QString("\"%1\" must be an exact copy of \"%2\". Please try again.")
+                    .arg(label).arg(dup_label),
+              QString("confirmation widget \"%1\" is not equal to the original \"%2\" (i.e. most likely a password confirmation)")
+                    .arg(widget_name).arg(duplicate_of),
+              false
+            ).set_widget_name(widget_name);
+            info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+        }
+    }
+
+    QDomElement filters(widget.firstChildElement("filters"));
+    if(!filters.isNull())
+    {
+        QDomElement regex_tag(filters.firstChildElement("regex"));
+        if(!regex_tag.isNull())
+        {
+            QString re;
+
+            QString const regex_name(regex_tag.attribute("name"));
+            if(!regex_name.isEmpty())
+            {
+                switch(regex_name[0].unicode())
+                {
+                case 'd':
+                    if(regex_name == "decimal")
+                    {
+                        re = "^[0-9]+(?:\\.[0-9]+)?$";
+                    }
+                    break;
+
+                case 'e':
+                    if(regex_name == "email")
+                    {
+                        // TODO: replace the email test with libtld
+                        // For emails we accept anything except local emails:
+                        //     <name>@[<sub-domain>.]<domain>.<tld>
+                        re = "/^[a-z0-9_\\-\\.\\+\\^!#\\$%&*+\\/\\=\\?\\`\\|\\{\\}~\\']+@(?:[a-z0-9]|[a-z0-9][a-z0-9\\-]*[a-z0-9])+\\.(?:(?:[a-z0-9]|[a-z0-9][a-z0-9\\-]*[a-z0-9])\\.?)+$/i";
+                    }
+                    break;
+
+                case 'f':
+                    if(regex_name == "float")
+                    {
+                        re = "^[0-9]+(?:\\.[0-9]+)?(?:[eE][-+]?[0-9]+)?$";
+                    }
+                    break;
+
+                case 'i':
+                    if(regex_name == "integer")
+                    {
+                        re = "^[0-9]+$";
+                    }
+                    break;
+
+                }
+                // TBD: offer other plugins to support their own named regex?
+                //
+                // else -- should empty be ignored? TBD
+                if(re.isEmpty())
+                {
+                    // TBD: this can be a problem if we remove a plugin that
+                    //      adds some regexes (although right now we don't
+                    //      have such a signal...)
+                    throw editor_exception_invalid_editor_form_xml(QString("the regular expression named \"%1\" is not supported.").arg(regex_name));
+                }
+            }
+            else
+            {
+                // Note:
+                // We don't test whether there is some text here to avoid
+                // wasting time; we could have such a test in a tool of
+                // ours used to verify that the editor form is well defined.
+                re = regex_tag.text();
+            }
+
+            Qt::CaseSensitivity cs(Qt::CaseSensitive);
+            if(!re.isEmpty() && re[0] == '/')
+            {
+                re = re.mid(1);
+            }
+            int p(re.lastIndexOf('/'));
+            if(p >= 0)
+            {
+                QString flags(re.mid(p + 1));
+                re = re.mid(0, p);
+                for(QChar *s(flags.data()); s->unicode() != '\0'; ++s)
+                {
+                    switch(s->unicode())
+                    {
+                    case 'i':
+                        cs = Qt::CaseInsensitive;
+                        break;
+
+                    default:
+                        throw editor_exception_invalid_editor_form_xml(QString("\"%1\" is not a supported regex flag").arg(*s));
+
+                    }
+                }
+            }
+            QRegExp reg_expr(re, cs, QRegExp::RegExp2);
+            if(!reg_expr.isValid())
+            {
+                throw editor_exception_invalid_editor_form_xml(QString("\"%1\" regular expression is invalid.").arg(re));
+            }
+            if(reg_expr.indexIn(value) == -1)
+            {
+                messages->set_error(
+                    "Invalid Value",
+                    QString("\"%1\" is not valid for \"%2\".")
+                            .arg(form::form::html_64max(value, is_secret)).arg(label),
+                    QString("the value did not match the filter regular expression of \"%1\"")
+                            .arg(widget_name),
+                    false
+                ).set_widget_name(widget_name);
+                info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+            }
+        }
+
+        if(!value.isEmpty())
+        {
+            QDomElement extensions_tag(filters.firstChildElement("extensions"));
+            if(!extensions_tag.isNull())
+            {
+                QString const extensions(extensions_tag.text());
+                QStringList ext_list(extensions.split(",", QString::SkipEmptyParts));
+                int const max_ext(ext_list.size());
+                QFileInfo const file_info(value);
+                QString const file_ext(file_info.suffix());
+                int i;
+                for(i = 0; i < max_ext; ++i)
+                {
+                    QString const ext(ext_list[i].trimmed());
+                    if(ext.isEmpty())
+                    {
+                        // skip empty entries (this can happen if the trimmed()
+                        // call removed all spaces and it was only spaces!)
+                        continue;
+                    }
+                    if(file_ext == ext)
+                    {
+                        break;
+                    }
+                    ext_list[i] = ext; // save the trimmed version back for errors
+                }
+                // if all extensions were checked and none accepted, error
+                if(i >= max_ext)
+                {
+                    messages->set_error(
+                        "Filename Extension is Invalid",
+                        QString("\"%1\" must end with one of \"%2\" in \"%3\". Please try again.")
+                                .arg(value).arg(ext_list.join(", ")).arg(label),
+                        QString("widget \"%1\" included a filename with an invalid extension")
+                                .arg(widget_name),
+                        false
+                    ).set_widget_name(widget_name);
+                    info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                }
+            }
+        }
+    }
 
     return true;
 }
@@ -1878,6 +2539,14 @@ void editor::on_generate_page_content(content::path_info_t& ipath, QDomElement& 
         // no editor specified for this page, skip on it (no editing allowed)
         return;
     }
+    QDomNodeList widgets(editor_widgets.elementsByTagName("widget"));
+    int const max_widgets(widgets.size());
+    if(max_widgets == 0)
+    {
+        // no editor we we do not at least have one widget
+        // TBD -- this happens, not too sure why at this point
+        return;
+    }
 
     // first load the XML code representing the editor widget for this page
 //    QString const script(layout_plugin->get_layout(ipath, get_name(SNAP_NAME_EDITOR_LAYOUT)));
@@ -1936,12 +2605,19 @@ void editor::on_generate_page_content(content::path_info_t& ipath, QDomElement& 
     //QDomDocument editor_widgets("editor-form");
     //editor_widgets.setContent(parser_xml);
 
+    QDomElement on_save(snap_dom::get_element(editor_widgets, "on-save", false));
+    if(on_save.attribute("allow-edit", "yes") == "no")
+    {
+        QDomElement metadata(snap_dom::get_element(doc, "metadata", true));
+        QDomElement editor_tag(snap_dom::create_element(metadata, "editor"));
+        editor_tag.setAttribute("darken-on-save", "yes");
+        metadata.appendChild(editor_tag);
+    }
+
     // now go through all the widgets checking out their path, if the
     // path exists in doc then copy the data in the parser_xml
     QtCassandra::QCassandraTable::pointer_t data_table(content_plugin->get_data_table());
     QtCassandra::QCassandraRow::pointer_t revision_row(data_table->row(ipath.get_revision_key()));
-    QDomNodeList widgets(editor_widgets.elementsByTagName("widget"));
-    int const max_widgets(widgets.size());
     for(int i(0); i < max_widgets; ++i)
     {
         QDomElement w(widgets.at(i).toElement());
@@ -2021,12 +2697,17 @@ void editor::on_generate_page_content(content::path_info_t& ipath, QDomElement& 
         throw snap_logic_exception("Could not read resource file \":/xsl/editor/editor-form.xsl\".");
     }
     QString const editor_xsl(QString::fromUtf8(data.data(), data.size()));
+    QString const editor_xml(editor_widgets.toString());
+    if(editor_xml.isEmpty())
+    {
+        throw snap_logic_exception(QString("somehow the memory XML document for the editor XSTL parser is empty, ipath key is \"%1\"").arg(ipath.get_key()));
+    }
     QXmlQuery q(QXmlQuery::XSLT20);
     QMessageHandler msg;
     msg.set_xsl(editor_xsl);
-    msg.set_doc(editor_widgets.toString());
+    msg.set_doc(editor_xml);
     q.setMessageHandler(&msg);
-    q.setFocus(editor_widgets.toString());
+    q.setFocus(editor_xml);
 
     // set action variable to the current action
     QString const qs_action(f_snap->get_server_parameter("qs_action"));

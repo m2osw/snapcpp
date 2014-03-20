@@ -180,6 +180,37 @@ const QString& messages::message::get_body() const
 }
 
 
+/** \brief Retrieve the name of the widget associated with this message.
+ *
+ * This message may have been associated with a widget name using
+ * the set_widget_name() function.
+ *
+ * If the message was not associated with a widget, then this function
+ * returns an empty string.
+ *
+ * \return The name of the widget associated with this message or "".
+ */
+QString const& messages::message::get_widget_name() const
+{
+    return f_widget_name;
+}
+
+
+/** \brief Set the name of the widget that generated this message.
+ *
+ * This message can be linked to a widget in a standard or an editor form.
+ * This is particularly useful to display the message locally to the
+ * widget (instead of all at the top or in a popup, but "disorganized"
+ * to the end user point of view.)
+ *
+ * \param[in] widget_name  The name of the widget.
+ */
+void messages::message::set_widget_name(QString const& widget_name)
+{
+    f_widget_name = widget_name;
+}
+
+
 /** \brief Unserialize a message.
  *
  * This function unserializes a message that was serialized using
@@ -362,7 +393,7 @@ int64_t messages::do_update(int64_t last_updated)
  * \sa set_info()
  * \sa set_debug()
  */
-void messages::set_http_error(snap_child::http_code_t err_code, QString err_name, const QString& err_description, const QString& err_details, bool err_security)
+messages::message& messages::set_http_error(snap_child::http_code_t err_code, QString err_name, const QString& err_description, const QString& err_details, bool err_security)
 {
     ++f_error_count;
 
@@ -386,6 +417,7 @@ void messages::set_http_error(snap_child::http_code_t err_code, QString err_name
 
     message msg(message::MESSAGE_TYPE_ERROR, QString("%1 %2").arg(static_cast<int>(err_code)).arg(err_name), err_description);
     f_messages.push_back(msg);
+    return f_messages.last();
 }
 
 
@@ -409,7 +441,7 @@ void messages::set_http_error(snap_child::http_code_t err_code, QString err_name
  * \sa set_info()
  * \sa set_debug()
  */
-void messages::set_error(QString err_name, const QString& err_description, const QString& err_details, bool err_security)
+messages::message& messages::set_error(QString err_name, const QString& err_description, const QString& err_details, bool err_security)
 {
     ++f_error_count;
 
@@ -424,6 +456,7 @@ void messages::set_error(QString err_name, const QString& err_description, const
 
     message msg(message::MESSAGE_TYPE_ERROR, err_name, err_description);
     f_messages.push_back(msg);
+    return f_messages.last();
 }
 
 
@@ -446,7 +479,7 @@ void messages::set_error(QString err_name, const QString& err_description, const
  * \sa set_info()
  * \sa set_debug()
  */
-void messages::set_warning(QString warning_name, const QString& warning_description, const QString& warning_details)
+messages::message& messages::set_warning(QString warning_name, const QString& warning_description, const QString& warning_details)
 {
     ++f_warning_count;
 
@@ -460,6 +493,7 @@ void messages::set_warning(QString warning_name, const QString& warning_descript
 
     message msg(message::MESSAGE_TYPE_WARNING, warning_name, warning_description);
     f_messages.push_back(msg);
+    return f_messages.last();
 }
 
 
@@ -482,7 +516,7 @@ void messages::set_warning(QString warning_name, const QString& warning_descript
  * \sa set_warning()
  * \sa set_debug()
  */
-void messages::set_info(QString info_name, const QString& info_description)
+messages::message& messages::set_info(QString info_name, const QString& info_description)
 {
     if(info_name.isEmpty())
     {
@@ -493,6 +527,7 @@ void messages::set_info(QString info_name, const QString& info_description)
 
     message msg(message::MESSAGE_TYPE_INFO, info_name, info_description);
     f_messages.push_back(msg);
+    return f_messages.last();
 }
 
 
@@ -515,7 +550,7 @@ void messages::set_info(QString info_name, const QString& info_description)
  * \sa set_warning()
  * \sa set_info()
  */
-void messages::set_debug(QString debug_name, const QString& debug_description)
+messages::message& messages::set_debug(QString debug_name, const QString& debug_description)
 {
     if(debug_name.isEmpty())
     {
@@ -526,6 +561,7 @@ void messages::set_debug(QString debug_name, const QString& debug_description)
 
     message msg(message::MESSAGE_TYPE_DEBUG, debug_name, debug_description);
     f_messages.push_back(msg);
+    return f_messages.last();
 }
 
 

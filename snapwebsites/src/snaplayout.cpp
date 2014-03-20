@@ -694,6 +694,11 @@ void snap_layout::add_files()
                 mtimes[row_name] = s.st_mtime;
             }
         }
+        else
+        {
+            std::cerr << "error: could not get mtime from file \"" << filename << "\"." << std::endl;
+            exit(1);
+        }
     }
 
     for(mtimes_t::const_iterator i(mtimes.begin()); i != mtimes.end(); ++i)

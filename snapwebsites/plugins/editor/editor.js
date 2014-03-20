@@ -1,6 +1,6 @@
 /*
  * Name: editor
- * Version: 0.0.2.61
+ * Version: 0.0.2.70
  * Browsers: all
  * Copyright: Copyright 2013-2014 (c) Made to Order Software Corporation  All rights reverved.
  * License: GPL 2.0
@@ -156,6 +156,7 @@ snapwebsites.Editor.prototype = {
     _bottomToolbar: false,
     _toolbar: null,
     _toolbarVisible: false,
+    _darkenPageCreated: false,
     _height: -1,
     _activeElement: null,
     _lastId: 0,
@@ -194,7 +195,14 @@ snapwebsites.Editor.prototype = {
             return;
         }
 
-        var i, obj = {}, saved_data = {}, saved = [], edit_area, url, name;
+        // TODO: add a condition coming from the DOM (i.e. we don't want
+        //       to gray out the screen if the user is expected to be
+        //       able to continue editing while saving)
+        //       the class is nearly there (see header trying to assign body
+        //       attributes), we will then need to test it here
+        this._darkenPage(true);
+
+        var i, obj = {}, saved_data = {}, saved = [], edit_area, url, name, keep_darken_page = false;
         for(i = 1; i <= this._lastId; ++i)
         {
             if(this._modified[i])
@@ -214,11 +222,9 @@ snapwebsites.Editor.prototype = {
                     }
                     else
                     {
-                        // We copy the big string twice, remember that JS
-                        // uses references to immutable strings, so we're
-                        // really only copying a reference; for details see:
-                        // http://stackoverflow.com/questions/51185/are-javascript-strings-immutable-do-i-need-a-string-builder-in-javascript#51193
-                        obj[name] = saved_data[name];
+                        // clean up the string so that way it's a bit smaller
+                        obj[name] = saved_data[name].replace(/^(<br *\/?>| |\t|\n|\r|\v|\f|&nbsp;|&#160;|&#xA0;)+/, "")
+                                                    .replace(/(<br *\/?>| |\t|\n|\r|\v|\f|&nbsp;|&#160;|&#xA0;)+$/, "");
                     }
                 }
             }
@@ -234,48 +240,83 @@ snapwebsites.Editor.prototype = {
             obj["editor_uri"] = this._titleToURI(jQuery("[field_name='title'] .editor-content").text());
             url = jQuery("link[rel='canonical']").attr("href");
             url = url ? url : "/";
+            keep_darken_page = true;
             jQuery.ajax(url, {
                 type: "POST",
                 processData: true,
                 data: obj,
                 error: function(jqxhr, result_status, error_msg){
+                    // TODO get the messages in the HTML and display those
+                    //      in a popup; later we should have one error per
+                    //      widget whenever a widget is specified
                     alert("An error occured while posting AJAX (status: " + result_status + " / error: " + error_msg + ")");
                 },
                 success: function(data, result_status, jqxhr){
-                    var i, modified, element_modified;
+                    var i, modified, element_modified, results;
 
 //console.log(jqxhr);
                     if(jqxhr.status == 200)
                     {
+                        // WARNING: success of the AJAX round trip data does not
+                        //          mean that the POST was a success.
                         alert("The AJAX succeeded (" + result_status + ")");
-                        // success! so it was saved and now that's the new
-                        // original value and next "Save" doesn't do anything
-                        modified = false;
-                        for(j = 0; j < saved.length; j++)
-                        {
-                            i = saved[j];
-                            // WARNING: DO NOT COPY edit_area.html() BECAUSE IT MAY
-                            //          HAVE CHANGED SINCE THE SAVE HAPPENED
-                            edit_area = jQuery("#editor-area-" + i);
-                            name = edit_area.parent().attr("field_name");
-                            // specialized types save their HTML in saved_data
-                            snapwebsites.EditorInstance._originalData[i] = saved_data[name];
-                            element_modified = obj[name] != edit_area.html();
-                            snapwebsites.EditorInstance._modified[i] = element_modified;
 
-                            modified = modified || element_modified;
-                        }
-                        // if not modified while processing the POST, hide
-                        // those buttons
-                        if(!modified)
+                        // we expect exactly ONE result tag
+                        results = jqxhr.responseXML.getElementsByTagName("result");
+                        if(results.length == 1 && results[0].childNodes[0].nodeValue == "success")
                         {
-                            snapwebsites.EditorInstance._saveDialogPopup.fadeOut(300);
+                            // success! so it was saved and now that's the new
+                            // original value and next "Save" doesn't do anything
+                            modified = false;
+                            for(j = 0; j < saved.length; j++)
+                            {
+                                i = saved[j];
+                                // WARNING: DO NOT COPY edit_area.html() BECAUSE IT MAY
+                                //          HAVE CHANGED SINCE THE SAVE HAPPENED
+                                edit_area = jQuery("#editor-area-" + i);
+                                name = edit_area.parent().attr("field_name");
+                                // specialized types save their HTML in saved_data
+                                snapwebsites.EditorInstance._originalData[i] = saved_data[name];
+                                element_modified = saved_data[name] != edit_area.html();
+                                snapwebsites.EditorInstance._modified[i] = element_modified;
+
+                                modified = modified || element_modified;
+                            }
+                            // if not modified while processing the POST, hide
+                            // those buttons
+                            if(!modified)
+                            {
+                                snapwebsites.EditorInstance._saveDialogPopup.fadeOut(300);
+                            }
+
+                            redirect = jqxhr.responseXML.getElementsByTagName("redirect");
+                            if(redirect.length == 1)
+                            {
+                                // redirect the user after a successful save
+                                uri = redirect[0].childNodes[0].nodeValue;
+                                if(uri == ".")
+                                {
+                                    // just exit the editor
+                                    uri = document.location.toString();
+                                    uri = uri.replace(/\?a=edit$/, "")
+                                             .replace(/\?a=edit&/, "?")
+                                             .replace(/&a=edit&/, "&");
+                                }
+                                document.location = uri;
+                                // avoid anything else after a redirect
+                                return;
+                            }
+                        }
+                        else
+                        {
+                            // an error occured... report it
                         }
                     }
                     else
                     {
                         alert("The server replied with an error while posting AJAX (status: " + result_status + " / error: " + error_msg + ")");
                     }
+                    snapwebsites.EditorInstance._darkenPage(false);
                 },
                 complete: function(jqxhr, result_status){
                     // TODO: avoid this one if we're fading out since that
@@ -287,6 +328,11 @@ snapwebsites.Editor.prototype = {
                 },
                 dataType: "xml"
             });
+        }
+
+        if(!keep_darken_page)
+        {
+            this._darkenPage(false);
         }
     },
 
@@ -373,12 +419,32 @@ snapwebsites.Editor.prototype = {
         this._saveDialogPopup.fadeIn(300).css("display", "block");
     },
 
+    _darkenPage: function(show)
+    {
+        var html;
+
+        if(!this._darkenPageCreated)
+        {
+            this._darkenPageCreated = true;
+            html = "<div id='darkenPage'></div>";
+            jQuery(html).appendTo("body");
+        }
+
+        if(show)
+        {
+            jQuery("#darkenPage").fadeIn(150);
+        }
+        else
+        {
+            jQuery("#darkenPage").fadeOut(150);
+        }
+    },
+
     _linkDialog: function(idx)
     {
         if(!this._linkDialogPopup)
         {
             var html = "<style>#snap_editor_link_dialog{display:none;position:absolute;z-index:2;float:left;background:#f0f0ae;padding:0;border:1px solid black;-moz-border-bottom-right-radius:10px;-webkit-border-bottom-right-radius:10px;border-bottom-right-radius:10px;-moz-border-bottom-left-radius:10px;-webkit-border-bottom-left-radius:10px;border-bottom-left-radius:10px;}#snap_editor_link_page{margin:0;padding:10px;}#snap_editor_link_dialog div.line{clear:both;padding:5px 3px;}#snap_editor_link_dialog label.limited{display:block;float:left;width:80px;}#snap_editor_link_dialog input{display:block;float:left;width:150px;}#darkenPage{position:fixed;z-index:1;left:0;top:0;width:100%;height:100%;background-color:black;opacity:0.2;filter:alpha(opacity=20);}#snap_editor_link_dialog div.title{background:black;color:white;font-weight:bold;padding:5px;}</style>"
-                    + "<div id='darkenPage'></div>"
                     + "<div id='snap_editor_link_dialog'>"
                     + "<div class='title'>Link Administration</div>"
                     + "<div id='snap_editor_link_page'>"
@@ -393,7 +459,7 @@ snapwebsites.Editor.prototype = {
             jQuery("#snap_editor_link_dialog #snap_editor_link_ok")
                 .click(function(){
                     snapwebsites.EditorInstance._linkDialogPopup.fadeOut(150);
-                    jQuery("#darkenPage").fadeOut(150);
+                    snapwebsites.EditorInstance._darkenPage(false);
                     snapwebsites.EditorInstance._refocus();
                     snapwebsites.EditorInstance._restoreSelection();
                     var url = jQuery("#snap_editor_link_url");
@@ -483,7 +549,7 @@ snapwebsites.Editor.prototype = {
         }
         this._linkDialogPopup.css("left", left);
         this._linkDialogPopup.fadeIn(300,function(){jQuery(focusItem).focus();});
-        jQuery("#darkenPage").fadeIn(150);
+        snapwebsites.EditorInstance._darkenPage(true);
     },
 
     _saveSelection: function()

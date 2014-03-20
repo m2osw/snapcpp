@@ -469,17 +469,22 @@ SNAP_LOG_TRACE() << "path::on_execute(\"" << uri_path << "\") -> [" << ipath.get
         // return the "form results".)
         f_snap->process_post();
 
-        if(!pe->on_path_execute(ipath))
+        // if the buffer is still empty, the post process did not generate
+        // an AJAX response, so go on by executing the page
+        if(f_snap->empty_output())
         {
-            // TODO (TBD):
-            // page_not_found() not called here because the page exists
-            // it's just not available right now and thus we
-            // may not want to replace it with something else?
-            f_snap->die(snap_child::HTTP_CODE_NOT_FOUND,
-                    "Page Not Present",
-                    "Somehow this page is not currently available.",
-                    "User tried to access page \"" + ipath.get_cpath() + "\" but its plugin (" + path_plugin->get_plugin_name() + ") refused it");
-            NOTREACHED();
+            if(!pe->on_path_execute(ipath))
+            {
+                // TODO (TBD):
+                // page_not_found() not called here because the page exists
+                // it's just not available right now and thus we
+                // may not want to replace it with something else?
+                f_snap->die(snap_child::HTTP_CODE_NOT_FOUND,
+                        "Page Not Present",
+                        "Somehow this page is not currently available.",
+                        "User tried to access page \"" + ipath.get_cpath() + "\" but its plugin (" + path_plugin->get_plugin_name() + ") refused it");
+                NOTREACHED();
+            }
         }
     }
 }
