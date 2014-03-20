@@ -1,3 +1,13 @@
+snapwebsites (0.1.32~saucy) UNRELEASED; urgency=high
+
+  [ Alexis Wilke ]
+  * 
+
+  [ R. Douglas Barbieri ]
+  * 
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Thu, 20 Mar 2014 16:13:54 -0700
+
 snapwebsites (0.1.31~saucy) saucy; urgency=high
 
   * Added cmake function to automate the creation of layout zip files. Can be
