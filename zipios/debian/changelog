@@ -1,3 +1,16 @@
+zipios++ (0.1.5.9+cvs.2007.04.28-5.1.m2osw4~saucy) saucy; urgency=high
+
+  * Control file had the wrong dependency for dev package.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Thu, 20 Mar 2014 09:55:07 -0700
+
+zipios++ (0.1.5.9+cvs.2007.04.28-5.1.m2osw3~saucy) saucy; urgency=high
+
+  * Corrected package install specs.
+  * Main package is now renamed.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Thu, 20 Mar 2014 09:18:20 -0700
+
 zipios++ (0.1.5.9+cvs.2007.04.28-5.1.m2osw2~saucy) saucy; urgency=high
 
   * Forgot to include cmake in the build dependencies.
