@@ -4,7 +4,7 @@ Priority: optional
 Maintainer: Masayuki Hatta (mhatta) <mhatta@debian.org>
 Build-Depends: cmake, debhelper (>> 4.0.0), doxygen, graphicsmagick-imagemagick-compat, libcppunit-dev, libz-dev,
     snapcmakemodules (>= 0.1.6~saucy)
-Standards-Version: 3.8.0
+Standards-Version: 3.9.4
 
 Package: libzipios++-dev
 Section: libdevel
@@ -18,12 +18,12 @@ Description: a small C++ library for reading zip files (development)
  .
  This package contains files needed for development with zipios++.
 
-Package: libzipios++0c2a
+Package: libzipios++0m2osw
 Section: libs
 Architecture: any
 Depends: ${shlibs:Depends}
-Conflicts: libzipios++0c102, libzipios++0
-Replaces: libzipios++0c102, libzipios++0
+Conflicts: libzipios++0c2a, libzipios++0c102, libzipios++0
+Replaces: libzipios++0c2a, libzipios++0c102, libzipios++0
 Description: a small C++ library for reading zip files (library)
  Zipios++ is a java.util.zip-like C++ library for reading and writing Zip
  files. Access to individual entries is provided through standard C++
