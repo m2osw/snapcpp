@@ -169,7 +169,7 @@ private:
         time_t     f_filetime;
 
         fileinfo_t() : f_filetime(0) {}
-        fileinfo_t( const QString& fn, const QByteArray& content, const int time )
+        fileinfo_t( QString const& fn, QByteArray const& content, time_t const time )
             : f_filename(fn), f_content(content), f_filetime(time) {}
     };
     typedef std::vector<fileinfo_t>   fileinfo_list_t;
@@ -274,6 +274,11 @@ snap_layout::snap_layout(int argc, char *argv[])
             if( stat(filename.toUtf8().data(), &s) == 0 )
             {
                 filetime = s.st_mtime;
+            }
+            else
+            {
+                std::cerr << "error: could not get mtime from file \"" << filename << "\"." << std::endl;
+                exit(1);
             }
 
             QByteArray byte_arr;
@@ -723,11 +728,6 @@ void snap_layout::add_files()
         if( !mtimes.contains(row_name) || mtimes[row_name] < info.f_filetime )
         {
             mtimes[row_name] = info.f_filetime;
-        }
-        else
-        {
-            std::cerr << "error: could not get mtime from file \"" << filename << "\"." << std::endl;
-            exit(1);
         }
     }
 

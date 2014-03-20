@@ -428,6 +428,17 @@ void list::on_create_content(content::path_info_t& ipath, QString const& owner, 
  * This function saves the full key to the page that was just modified so
  * lists that include this page can be updated by the backend as required.
  *
+ * \todo
+ * When a page is modified multiple times in the same request, as mentioned,
+ * only the last request sticks (i.e. because all requests will use the
+ * same start date). However, since the key used in the list table includes
+ * start_date as the first 8 bytes, we do not detect the fact that we
+ * end up with a duplicate when updating the same page in different requests.
+ * I am thinking that we should be able to know the column to be deleted by
+ * saving the key of the last entry in the page (ipath->get_key(), save
+ * list::key or something of the sort.) One potential problem, though, is
+ * that a page that is constantly modified may never get listed.
+ *
  * \param[in,out] ipath  The path to the page being modified.
  */
 void list::on_modified_content(content::path_info_t& ipath)
@@ -803,6 +814,21 @@ int list::generate_all_lists(QString const& site_key)
         // the key starts with the "start date" and it is followed by a
         // string representing the row key in the content table
         QByteArray const& key(cell->columnKey());
+
+#ifdef DEBUG
+        QString name;
+        {
+            uint64_t time(QtCassandra::uint64Value(key, 0));
+            char buf[64];
+            struct tm t;
+            time_t const seconds(time / 1000000);
+            gmtime_r(&seconds, &t);
+            strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &t);
+            name = QString("%1.%2 (%3) %4").arg(buf).arg(time % 1000000, 6, 10, QChar('0')).arg(time).arg(QtCassandra::stringValue(key, sizeof(uint64_t)));
+        }
+        std::cerr << "work on column " << name << "\n";
+#endif
+
         int64_t const page_start_date(QtCassandra::int64Value(key, 0));
         if(page_start_date + LIST_PROCESSING_LATENCY < start_date)
         {
@@ -815,6 +841,15 @@ int list::generate_all_lists(QString const& site_key)
             // we handled that page for all the lists that we have on
             // this website, so drop it now
             list_row->dropCell(key, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+#ifdef DEBUG
+            std::cerr << "  cell dropped\n";
+#endif
+        }
+        else
+        {
+            // since the columns are sorted, anything after that will be
+            // inaccessible date wise
+            break;
         }
     }
 
