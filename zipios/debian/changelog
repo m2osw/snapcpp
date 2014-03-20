@@ -1,3 +1,9 @@
+zipios++ (0.1.5.9+cvs.2007.04.28-5.1.m2osw2~saucy) saucy; urgency=high
+
+  * Forgot to include cmake in the build dependencies.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Wed, 19 Mar 2014 19:08:49 -0700
+
 zipios++ (0.1.5.9+cvs.2007.04.28-5.1.m2osw1~saucy) saucy; urgency=high
 
   * Fixed bug with zipfile.cpp, where getNextEntry() is called in the
