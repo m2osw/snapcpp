@@ -1,8 +1,8 @@
-snapwebsites (0.1.31~saucy) UNRELEASED; urgency=high
+snapwebsites (0.1.31~saucy) saucy; urgency=high
 
-  [ R. Douglas Barbieri ]
   * Added cmake function to automate the creation of layout zip files. Can be
   used by third-parties to create a layout zipfile automatically.
+  * Small cleanups to the list and links plugins.
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Thu, 20 Mar 2014 13:53:33 -0700
 
