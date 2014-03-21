@@ -871,7 +871,7 @@ public:
     }
 
 private:
-    void append_int(char *header, int value, int length, int base, char fill)
+    void append_int(char *header, int value, unsigned int length, int base, char fill)
     {
         // save the number (minimum 1 digit)
         do

@@ -7327,19 +7327,21 @@ time_t snap_child::string_to_date(QString const& date)
             return true;
         }
 
-        bool integer(int min_len, int max_len, int min_value, int max_value, int& result)
+        bool integer(unsigned int min_len, unsigned int max_len, unsigned int min_value, unsigned int max_value, int& result)
         {
-            result = 0;
-            int count(0);
+            unsigned int u_result = 0;
+            unsigned int count(0);
             for(; *f_s >= '0' && *f_s <= '9'; ++f_s, ++count)
             {
-                result = result * 10 + *f_s - '0';
+                u_result = u_result * 10 + *f_s - '0';
             }
             if(count < min_len || count > max_len
-            || result < min_value || result > max_value)
+            || u_result < min_value || u_result > max_value)
             {
+                result = static_cast<int>(u_result);
                 return false;
             }
+            result = static_cast<int>(u_result);
             return true;
         }
 

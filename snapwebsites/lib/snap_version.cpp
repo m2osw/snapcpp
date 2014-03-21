@@ -1650,8 +1650,8 @@ bool quick_find_version_in_source::find_version(char const *data, int const size
             // find the field name if available
 
             // skip spaces at the beginning of the line
-            int const max_length(line.length());
-            int pos;
+            unsigned int const max_length(line.length());
+            unsigned int pos;
             for(pos = 0; pos < max_length; ++pos)
             {
                 if(!isspace(line.at(pos).unicode()))
