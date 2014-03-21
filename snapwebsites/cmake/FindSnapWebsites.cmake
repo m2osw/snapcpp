@@ -28,4 +28,5 @@ find_package_handle_standard_args( SnapWebsites DEFAULT_MSG SNAPWEBSITES_INCLUDE
 #
 set( DTD_SOURCE_PATH /usr/share/snapwebsites/dtd CACHE PATH "Default DTD source files." )
 #
-include( SnapXmlLint )
+include( SnapXmlLint   )
+include( SnapZipLayout )

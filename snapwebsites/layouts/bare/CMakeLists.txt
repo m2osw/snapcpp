@@ -33,29 +33,30 @@ project(bare_layout)
 
 snap_validate_xml( content.xml  content.dtd )
 
-set( LAYOUT_FILES
+snap_zip_layout( LAYOUT_NAME bare
+    LAYOUT_FILES
         content.xml
         body-parser.xsl
         theme-parser.xsl
         style.css
 )
 
-set( ZIPFILE ${PROJECT_BINARY_DIR}/bare_layout.zip )
-
-add_custom_command( OUTPUT ${ZIPFILE}
-	COMMAND ${ZIP} ${ZIPFILE} ${LAYOUT_FILES}
-	DEPENDS ${LAYOUT_FILES}
-	WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-)
-
-add_custom_target( bare_zipfile ALL DEPENDS ${ZIPFILE} )
-
-install(
-    FILES
-        ${ZIPFILE}
-    DESTINATION
-        share/snapwebsites/layouts/bare
-)
+#set( ZIPFILE ${PROJECT_BINARY_DIR}/bare_layout.zip )
+#
+#add_custom_command( OUTPUT ${ZIPFILE}
+#	COMMAND ${ZIP} ${ZIPFILE} ${LAYOUT_FILES}
+#	DEPENDS ${LAYOUT_FILES}
+#	WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+#)
+#
+#add_custom_target( bare_zipfile ALL DEPENDS ${ZIPFILE} )
+#
+#install(
+#    FILES
+#        ${ZIPFILE}
+#    DESTINATION
+#        share/snapwebsites/layouts/bare
+#)
 
 
 # vim: ts=4 sw=4 et
