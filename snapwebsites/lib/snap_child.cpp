@@ -6671,6 +6671,12 @@ void snap_child::execute()
     // primary owner
     server->execute(f_uri.path());
 
+    // now that execution is over, we want to re-attach whatever did
+    // not make it in this session (i.e. a message that was posted
+    // after messages were added to the current page, or this page
+    // did not make use of the messages that were detached earlier)
+    server->attach_to_session();
+
     if(f_output.buffer().size() == 0)
     {
         // somehow nothing was output...
