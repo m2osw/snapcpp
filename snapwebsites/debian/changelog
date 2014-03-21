@@ -1,10 +1,6 @@
-snapwebsites (0.1.32~saucy) UNRELEASED; urgency=high
+snapwebsites (0.1.32m2osw1~saucy) saucy; urgency=high
 
-  [ Alexis Wilke ]
-  * 
-
-  [ R. Douglas Barbieri ]
-  * 
+  * Added cmake module install.
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Thu, 20 Mar 2014 16:13:54 -0700
 
