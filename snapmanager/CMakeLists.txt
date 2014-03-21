@@ -29,25 +29,41 @@
 #      along with this program; if not, write to the Free Software
 #      Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
-
+cmake_minimum_required(VERSION 2.8)
 
 ##
-## The Snap! Manager
+## Version
 ##
+set(SNAPMANAGER_VERSION_MAJOR 1)
+set(SNAPMANAGER_VERSION_MINOR 0)
+set(SNAPMANAGER_VERSION_PATCH 0)
+add_definitions( -DSNAPMANAGER_VERSION=\"${SNAPMANAGER_VERSION_MAJOR}.${SNAPMANAGER_VERSION_MINOR}.${SNAPMANAGER_VERSION_PATCH}\" )
 
-find_package( Qt4 4.8.1 QUIET REQUIRED 
+##
+## Find required packages
+##
+find_package( LibTLD           REQUIRED )
+find_package( QtCassandra      REQUIRED )
+find_package( SnapCMakeModules REQUIRED )
+find_package( SnapWebsites     REQUIRED )
+find_package( Thrift           REQUIRED )
+find_package( Qt4 4.8.4 QUIET  REQUIRED 
     QtCore
     QtNetwork
     QtGui
     QtWebKit
 )
+#
 include( ${QT_USE_FILE} )
 add_definitions( ${QT_DEFINITIONS} )
 
-project(snap-manager)
+##
+## The Snap! Manager
+##
+project( snapmanager )
 
 # We remove the -Wswitch-default because qt has some problematic headers in that regard
-set(CMAKE_CXX_FLAGS "-Werror -Wall -Wextra -pedantic -std=c++0x -Wcast-align -Wcast-qual -Wctor-dtor-privacy -Wdisabled-optimization -Wformat=2 -Winit-self -Wlogical-op -Wmissing-include-dirs -Wnoexcept -Wold-style-cast -Woverloaded-virtual -Wredundant-decls -Wshadow -Wsign-promo -Wstrict-null-sentinel -Wstrict-overflow=5 -Wundef -Wno-unused -Wno-variadic-macros -Wno-parentheses -fdiagnostics-show-option")
+#set(CMAKE_CXX_FLAGS "-Werror -Wall -Wextra -pedantic -std=c++0x -Wcast-align -Wcast-qual -Wctor-dtor-privacy -Wdisabled-optimization -Wformat=2 -Winit-self -Wlogical-op -Wmissing-include-dirs -Wnoexcept -Wold-style-cast -Woverloaded-virtual -Wredundant-decls -Wshadow -Wsign-promo -Wstrict-null-sentinel -Wstrict-overflow=5 -Wundef -Wno-unused -Wno-variadic-macros -Wno-parentheses -fdiagnostics-show-option")
 
 QT4_WRAP_UI(SNAP_MANAGER_UIS_H
     snap-manager-mainwindow.ui
@@ -75,8 +91,7 @@ include_directories(
     ${QT_INCLUDES}
 )
 
-
-add_executable(snap-manager
+add_executable( ${PROJECT_NAME}
     snap-manager.cpp
     snap-manager-about.cpp
     snap-manager-help.cpp
@@ -96,8 +111,10 @@ target_link_libraries( ${PROJECT_NAME}
     dl
 )
 
-install( TARGETS snap-manager RUNTIME DESTINATION bin )
+install( TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin )
 install( FILES snapmanager.desktop  DESTINATION share/applications )
 install( FILES snap-medium-icon.png DESTINATION share/pixmaps/ RENAME snapmanager.png )
+
+## TODO: add code coverage, doxygen and unittests
 
 # vim: ts=4 sw=4 et nocindent

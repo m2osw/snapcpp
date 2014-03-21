@@ -112,7 +112,6 @@ add_subdirectory(cmake)         # SnapWebsites CMake Modules
 add_subdirectory(lib)           # Common code which is too specialized to create a separate library
 add_subdirectory(plugins)       # Plug-ins (i.e. modular functionality)
 add_subdirectory(src)           # Actual Snap! Websites server
-add_subdirectory(snap-manager)  # Snap Manager to work on Cassandra data from a constrained UI
 add_subdirectory(layouts)       # Layouts offered along Core
 add_subdirectory(tests)         # Tests to run against the server
 add_subdirectory(doc)           # API Documentation
@@ -138,13 +137,13 @@ install( PROGRAMS reset-db.sh run-server.sh DESTINATION ${CMAKE_INSTALL_PREFIX} 
 add_custom_target(snap_code_analysis
     # Count things and report potential problems with different classes
     COMMAND echo "cccc -- output directory ${PROJECT_BINARY_DIR}/cccc -- and errors saved in ${PROJECT_BINARY_DIR}/cccc.output"
-    COMMAND cccc --lang=c++ --html_outfile=${PROJECT_BINARY_DIR}/cccc/index.html --outdir=${PROJECT_BINARY_DIR}/cccc lib/*.cpp lib/*.h lib/*.h.in src/*.cpp plugins/*/*.cpp plugins/*/*.h snap-manager/*.cpp snap-manager/*.h >${PROJECT_BINARY_DIR}/cccc.output 2>&1
+    COMMAND cccc --lang=c++ --html_outfile=${PROJECT_BINARY_DIR}/cccc/index.html --outdir=${PROJECT_BINARY_DIR}/cccc lib/*.cpp lib/*.h lib/*.h.in src/*.cpp plugins/*/*.cpp plugins/*/*.h >${PROJECT_BINARY_DIR}/cccc.output 2>&1
     # Boost inspect tool that reports different problems
     COMMAND echo "inspect -- output ${PROJECT_BINARY_DIR}/inspect.html"
     COMMAND inspect -tab -crlf -path_name -ascii -minmax -unnamed >"${PROJECT_BINARY_DIR}/inspect.html"
     # Static analysis of the code
     COMMAND echo "cppcheck -- output ${PROJECT_BINARY_DIR}/cppcheck.out"
-    COMMAND cppcheck lib plugins snap-manager src tests >"${PROJECT_BINARY_DIR}/cppcheck.out" 2>&1
+    COMMAND cppcheck lib plugins src tests >"${PROJECT_BINARY_DIR}/cppcheck.out" 2>&1
 
     # All of these are expected to work on source code so make sure we're
     # in the source code top directory

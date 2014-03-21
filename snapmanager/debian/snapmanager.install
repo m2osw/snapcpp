@@ -1,0 +1,3 @@
+usr/bin/*
+debian/tmp/usr/share/applications/snapmanager.desktop usr/share/applications/
+debian/tmp/usr/share/pixmaps/snapmanager.png usr/share/pixmaps/

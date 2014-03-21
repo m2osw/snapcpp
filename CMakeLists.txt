@@ -94,7 +94,14 @@ ConfigureMakeProject( PROJECT_NAME snapwebsites
             -DQTSERIALIZATION_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include/QtSerialization
             -DLIBTLD_LIBRARY:PATH=${CMAKE_BINARY_DIR}/dist/lib/libtld.so
             -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-        DEPENDS zipios advgetopt libQtCassandra libQtSerialization libtld
+        DEPENDS snapCMakeModules zipios advgetopt libQtCassandra libQtSerialization libtld
+        )
+ConfigureMakeProject( PROJECT_NAME snapmanager
+        CONFIG_ARGS
+            -DTHRIFT_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
+            -DLIBTLD_LIBRARY:PATH=${CMAKE_BINARY_DIR}/dist/lib/libtld.so
+            -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+        DEPENDS snapCMakeModules libQtCassandra libtld snapwebsites
         )
 ConfigureMakeProject( PROJECT_NAME cassview
         CONFIG_ARGS
@@ -103,7 +110,7 @@ ConfigureMakeProject( PROJECT_NAME cassview
             -DLIBTLD_LIBRARY:PATH=${CMAKE_BINARY_DIR}/dist/lib/libtld.so
             -DSNAPWEBSITES_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
             -DSNAPWEBSITES_LIBRARY:PATH=${CMAKE_BINARY_DIR}/dist/lib/libsnapwebsites.so
-        DEPENDS snapwebsites
+        DEPENDS snapCMakeModules snapwebsites
         )
 
 get_property( BUILD_TARGETS GLOBAL PROPERTY BUILD_TARGETS )

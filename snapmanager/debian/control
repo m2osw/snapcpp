@@ -1,0 +1,32 @@
+Source: snapmanager
+Priority: extra
+Maintainer: R. Douglas Barbieri <doug@dooglio.net>
+Build-Depends: debhelper, cmake,
+    libqt4-dev (>= 4.8.3), doxygen, graphviz, libqtwebkit-dev, libboost-dev,
+    libthrift-dev (>= 0.9.0), snapcmakemodules (>= 0.1.6~saucy),
+    libcontrolledvars-dev (>= 1.3.6), libadvgetopt-dev (>= 1.0.1-1),
+    libtld-dev (>= 1.4.5), libqtcassandra-dev (>= 0.5.1),
+    libqtserialization-dev (>= 0.1.1)
+Standards-Version: 3.9.4
+Section: libs
+Homepage: http://www.snapwebsites.org/
+Vcs-Git: git://git.code.sf.net/p/snapcpp/code
+Vcs-Browser: http://sourceforge.net/p/snapcpp/code/ci/master/tree/snapwebsites
+
+Package: snapmanager
+Section: web
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Recommends: snapserver (>= 0.1.33~saucy)
+Description: Fast Websites: powerful CMS for Apache written in C++.
+ Snap! C++ runs your CMS using binary code written in C and C++.
+ The basic concept is taken from a large set of Drupal 6.x
+ modules from Drupal Core and necessary 3rd party modules (we've been using
+ over 220 modules on top of the Core modules.) The result is quite
+ extensible as it offers a plug-in mechanism that everyone is welcome to use to
+ create their own extensions.
+ .
+ This package contains a GUI interface for managing hosts, domains, websites,
+ and site information.
+
+# vim: ts=4 sw=4 et
