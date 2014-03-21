@@ -107,20 +107,4 @@ Description: Fast Websites: powerful CMS for Apache written in C++.
  .
  This package installs the server daemon that communicates with the Cassandra server.
 
-Package: snapmanager
-Section: web
-Architecture: any
-Depends: libsnapwebsites (= ${binary:Version}), snapserver (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
-Recommends: cassandra (>= 2.0.3)
-Description: Fast Websites: powerful CMS for Apache written in C++.
- Snap! C++ runs your CMS using binary code written in C and C++.
- The basic concept is taken from a large set of Drupal 6.x
- modules from Drupal Core and necessary 3rd party modules (we've been using
- over 220 modules on top of the Core modules.) The result is quite
- extensible as it offers a plug-in mechanism that everyone is welcome to use to
- create their own extensions.
- .
- This package contains a GUI interface for managing hosts, domains, websites,
- and site information.
-
 # vim: ts=4 sw=4 et

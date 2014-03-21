@@ -29,13 +29,12 @@
 #      Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 
-
 ##
 ## Initialization
 ##
 set(SNAPWEBSITES_VERSION_MAJOR 0)
 set(SNAPWEBSITES_VERSION_MINOR 1)
-set(SNAPWEBSITES_VERSION_PATCH 35)
+set(SNAPWEBSITES_VERSION_PATCH 36)
 
 cmake_minimum_required(VERSION 2.8)
 
