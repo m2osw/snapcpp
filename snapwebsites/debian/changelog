@@ -1,5 +1,9 @@
-snapwebsites (0.1.32m2osw1~saucy) saucy; urgency=high
+snapwebsites (0.1.33~saucy) saucy; urgency=high
 
+  [ Alexis Wilke ]
+  * Fixes so the style sheets work right.
+
+  [ R. Douglas Barbieri ]
   * Added cmake module install.
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Thu, 20 Mar 2014 16:13:54 -0700
