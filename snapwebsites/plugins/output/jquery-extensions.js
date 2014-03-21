@@ -62,6 +62,8 @@ jQuery.expr[':'].any = jQuery.expr.createPseudo(function(selector){
  * The function always returns a valid integer. If it finds no valid z-index,
  * it returns zero (0).
  *
+ * Source: http://stackoverflow.com/questions/5680770/jquery-find-the-highest-z-index
+ *
  * \return The largest z-index found within the DOM items found in
  *         the \<selector\>.
  */

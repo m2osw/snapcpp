@@ -283,8 +283,8 @@ void filter::on_xss_filter(QDomNode& node,
  */
 bool filter::replace_token_impl(content::path_info_t& ipath, QString const& plugin_owner, QDomDocument& xml, token_info_t& token)
 {
-    (void) ipath;
-    (void) plugin_owner;
+    static_cast<void>(ipath);
+    static_cast<void>(plugin_owner);
 
     if(token.is_token("test"))
     {
@@ -716,7 +716,7 @@ void filter::on_token_filter(content::path_info_t& ipath, QDomDocument& xml)
             case '"':
             case '\'':
                 {
-                    char_t quote(c);
+                    char_t const quote(c);
                     tok = QChar(quote);
                     do
                     {
@@ -871,6 +871,44 @@ void filter::on_token_filter(content::path_info_t& ipath, QDomDocument& xml)
         QString                     f_extra_input;
     };
 
+    // Avoid recursivity
+    typedef QMap<QString, bool> save_paths_t;
+    static save_paths_t g_ipaths;
+
+    // list of ipaths are saved in g_ipaths to avoid infinite loop
+    if(g_ipaths.contains(ipath.get_key()))
+    {
+        // we do not throw, instead we want to "return" an error
+        // however we're not (yet) replacing a token here so we just
+        // generate a "standard" message
+        messages::messages::instance()->set_error(
+            "Recusive Token(s)",
+            QString("One or more tokens is looping back to page \"%1\".").arg(ipath.get_key()),
+            QString("to fix, look at the tokens that loop"),
+            false
+        );
+        return;
+    }
+    struct add_remove_path_t
+    {
+        add_remove_path_t(save_paths_t& map, content::path_info_t& ipath)
+            : f_map(map)
+            , f_ipath(ipath)
+        {
+            f_map[f_ipath.get_key()] = true;
+        }
+
+        ~add_remove_path_t()
+        {
+            f_map.remove(f_ipath.get_key());
+        }
+
+        save_paths_t&           f_map;
+        content::path_info_t&   f_ipath;
+    };
+    add_remove_path_t safe_ipath(g_ipaths, ipath);
+
+    // start the token replacement
     filter_state_t state(xml, ipath);
 
     QDomNode n = xml.firstChild();
@@ -921,30 +959,7 @@ void filter::on_token_filter(content::path_info_t& ipath, QDomDocument& xml)
             {
 //std::cerr << "replace text [" << text.data() << "] with [" << t.result() << "]\n";
                 // replace the text with its contents
-                //QString const& result(t.result());
                 snap_dom::replace_node_with_html_string(n, t.result());
-                //if(result.contains('<'))
-                //{
-                //    // the tokens added HTML... replace the whole text node
-                //    QDomDocument doc_text("snap");
-                //    doc_text.setContent("<text>" + result + "</text>", true, nullptr, nullptr, nullptr);
-                //    QDomDocumentFragment frag(xml.createDocumentFragment());
-                //    frag.appendChild(xml.importNode(doc_text.documentElement(), true));
-                //    QDomNodeList children(frag.firstChild().childNodes());
-                //    int const max(children.size());
-                //    QDomNode previous(n);
-                //    for(int i(0); i < max; ++i)
-                //    {
-                //        QDomNode l(children.at(0));
-                //        parent.insertAfter(children.at(0), previous);
-                //        previous = l;
-                //    }
-                //    parent.removeChild(n);
-                //}
-                //else
-                //{
-                //    text.setData(result);
-                //}
             }
         }
         else if(n.isElement())
