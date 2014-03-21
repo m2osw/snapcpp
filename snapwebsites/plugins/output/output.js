@@ -1,6 +1,10 @@
 /*
- * Version: 0.0.4
+ * Name: output
+ * Version: 0.0.5
  * Browsers: all
+ * Copyright: Copyright 2014 (c) Made to Order Software Corporation  All rights reverved.
+ * Depends: jquery-extensions (1.0.1)
+ * License: GPL 2.0
  */
 
 /** \brief Defines the snapwebsites namespace in the JavaScript environment.
@@ -60,6 +64,12 @@ snapwebsites.Output.prototype = {
     init: function()
     {
         jQuery("div.user-messages")
+            .each(function(){
+                var z;
+
+                z = jQuery("div.zordered").maxZIndex() + 1;
+                jQuery(this).css("z-index", z);
+            })
             .delay(250).fadeIn(300) // put a little delay so we see the fadeIn(), eventually
             .click(function(){jQuery(this).fadeOut(300);});
     }

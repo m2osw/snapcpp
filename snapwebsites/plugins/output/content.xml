@@ -311,7 +311,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <attachment name="output" type="attachment/public">
       <path>:/js/output/output.js</path>
       <mime-type>text/javascript</mime-type>
-      <dependency>jquery (&gt;= 1.10.2)</dependency>
+      <dependency>jquery-extensions (&gt;= 1.0.1)</dependency>
     </attachment>
   </content>
   <!-- the content plugin depends on the path plugin so it cannot defined a content.xml file -->

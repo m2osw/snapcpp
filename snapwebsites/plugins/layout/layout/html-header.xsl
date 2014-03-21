@@ -509,8 +509,11 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 	<xsl:template name="snap:body-attributes">
 		<xsl:attribute name="class">
+			<!-- TODO: move this one to the users plugin -->
+			<xsl:if test="/snap/head/metadata/desc[@type='users::email']/data"> user-logged-in</xsl:if>
+
 			<!-- TODO: how do we move that one as part of the editor? -->
-			<xsl:if test="head/metadata/editor[@darken-on-save = 'yes']">editor-darken-on-save</xsl:if>
+			<xsl:if test="/snap/head/metadata/editor[@darken-on-save = 'yes']"> editor-darken-on-save</xsl:if>
 		</xsl:attribute>
 	</xsl:template>
 </xsl:stylesheet>
