@@ -17,9 +17,10 @@
 #ifndef SNAP_MANAGER_H
 #define SNAP_MANAGER_H
 
-#include "snapwebsites.h"
-#include "row_model.h"
-#include "table_model.h"
+#include <snapwebsites/snapwebsites.h>
+#include <snapwebsites/row_model.h>
+#include <snapwebsites/table_model.h>
+
 #include <boost/shared_ptr.hpp>
 #include <QtCore/QMap>
 #include <QtCore/QPointer>

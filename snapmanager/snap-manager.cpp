@@ -19,18 +19,22 @@
 #include "snap-manager-about.h"
 #include "snap-manager-help.h"
 #include "snap-manager-decode-utf8.h"
-#include "snapwebsites.h"
-#include "snap_uri.h"
-#include "tcp_client_server.h"
-#include "dbutils.h"
-#include "../plugins/content/content.h"
+
+#include <snapwebsites/snapwebsites.h>
+#include <snapwebsites/snap_uri.h>
+#include <snapwebsites/tcp_client_server.h>
+#include <snapwebsites/dbutils.h>
+#include <snapwebsites/plugins/content/content.h>
+
 #include <QHostAddress>
 #include <QApplication>
 #include <QMessageBox>
 #include <QCloseEvent>
 #include <QDebug>
 #include <QSettings>
+
 #include <libtld/tld.h>
+
 #include <stdio.h>
 
 

@@ -99,7 +99,10 @@ ConfigureMakeProject( PROJECT_NAME snapwebsites
 ConfigureMakeProject( PROJECT_NAME snapmanager
         CONFIG_ARGS
             -DTHRIFT_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
+            -DLIBTLD_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
             -DLIBTLD_LIBRARY:PATH=${CMAKE_BINARY_DIR}/dist/lib/libtld.so
+            -DQTCASSANDRA_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include/QtCassandra
+            -DQTCASSANDRA_LIBRARY:PATH=${CMAKE_BINARY_DIR}/dist/lib/libQtCassandra.so
             -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
         DEPENDS snapCMakeModules libQtCassandra libtld snapwebsites
         )

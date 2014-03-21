@@ -32,6 +32,11 @@
 cmake_minimum_required(VERSION 2.8)
 
 ##
+## The Snap! Manager
+##
+project( snapmanager )
+
+##
 ## Version
 ##
 set(SNAPMANAGER_VERSION_MAJOR 1)
@@ -56,11 +61,6 @@ find_package( Qt4 4.8.4 QUIET  REQUIRED
 #
 include( ${QT_USE_FILE} )
 add_definitions( ${QT_DEFINITIONS} )
-
-##
-## The Snap! Manager
-##
-project( snapmanager )
 
 # We remove the -Wswitch-default because qt has some problematic headers in that regard
 #set(CMAKE_CXX_FLAGS "-Werror -Wall -Wextra -pedantic -std=c++0x -Wcast-align -Wcast-qual -Wctor-dtor-privacy -Wdisabled-optimization -Wformat=2 -Winit-self -Wlogical-op -Wmissing-include-dirs -Wnoexcept -Wold-style-cast -Woverloaded-virtual -Wredundant-decls -Wshadow -Wsign-promo -Wstrict-null-sentinel -Wstrict-overflow=5 -Wundef -Wno-unused -Wno-variadic-macros -Wno-parentheses -fdiagnostics-show-option")
@@ -89,6 +89,7 @@ include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${LIBTLD_INCLUDE_DIRS}
     ${QT_INCLUDES}
+    ${SNAPWEBSITES_INCLUDE_DIRS}
 )
 
 add_executable( ${PROJECT_NAME}
@@ -103,11 +104,11 @@ add_executable( ${PROJECT_NAME}
 
 # while developing you may need to set LD_LIBRARY_PATH
 target_link_libraries( ${PROJECT_NAME}
-    snapwebsites
-    ${QTCASSANDRA_LIBRARIES}
     ${QT_LIBRARIES}
-    ${THRIFT_LIBRARIES}
+    ${QTCASSANDRA_LIBRARIES}
     ${LIBTLD_LIBRARIES}
+    ${SNAPWEBSITES_LIBRARIES}
+    ${THRIFT_LIBRARIES}
     dl
 )
 

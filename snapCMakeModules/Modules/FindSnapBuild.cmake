@@ -89,14 +89,23 @@ function( ConfigureMakeProject )
 			COMMENT "Running ${ARG_PROJECT_NAME} configure script..."
 			)
 	else()
-		set( CONFIGURE_TARGETS ${BUILD_DIR}/CMakeCache.txt  )
-		add_custom_command(
-			OUTPUT ${CONFIGURE_TARGETS}
-			COMMAND ${CMAKE_COMMAND}
+		set( COMMAND_LIST
+			${CMAKE_COMMAND}
 				-DCMAKE_INSTALL_PREFIX:PATH=${SNAP_DIST_DIR}
 				-DCMAKE_MODULE_PATH:PATH=${SNAP_DIST_DIR}/share/cmake-2.8/Modules
 				${ARG_CONFIG_ARGS}
 				${SRC_DIR}
+	    )
+		set( CMD_FILE ${BUILD_DIR}/${ARG_PROJECT_NAME}_configure.cmd )
+		file( REMOVE ${CMD_FILE} )
+		foreach( line ${COMMAND_LIST} )
+			file( APPEND ${CMD_FILE} ${line} "\n" )
+		endforeach()
+		#
+		set( CONFIGURE_TARGETS ${BUILD_DIR}/CMakeCache.txt  )
+		add_custom_command(
+			OUTPUT ${CONFIGURE_TARGETS}
+			COMMAND ${COMMAND_LIST}
 				1> ${BUILD_DIR}/${ARG_PROJECT_NAME}_configure.log
 				2> ${BUILD_DIR}/${ARG_PROJECT_NAME}_configure.err
 			DEPENDS ${ARG_PROJECT_NAME}-depends
