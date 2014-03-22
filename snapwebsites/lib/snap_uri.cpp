@@ -150,23 +150,23 @@ bool snap_uri::set_uri(QString const& uri)
 
     // retrieve the sub-domains and domain parts
     // we may also discover a name, password, and port
-    const QChar *colon1(NULL);
-    const QChar *colon2(NULL);
-    const QChar *at(NULL);
+    const QChar *colon1(nullptr);
+    const QChar *colon2(nullptr);
+    const QChar *at(nullptr);
     s = u;
     while(!u->isNull() && u->unicode() != '/')
     {
         if(u->unicode() == ':')
         {
-            if(colon1 == NULL)
+            if(colon1 == nullptr)
             {
                 colon1 = u;
             }
             else
             {
-                if(at != NULL)
+                if(at != nullptr)
                 {
-                    if(colon2 != NULL)
+                    if(colon2 != nullptr)
                     {
                         return false;
                     }
@@ -180,7 +180,7 @@ bool snap_uri::set_uri(QString const& uri)
         }
         if(u->unicode() == '@')
         {
-            if(at != NULL)
+            if(at != nullptr)
             {
                 // we cannot have more than one @ character that wasn't escaped
                 return false;
@@ -190,11 +190,11 @@ bool snap_uri::set_uri(QString const& uri)
         ++u;
     }
     // without an at (@) colon1 indicates a port
-    if(at == NULL && colon1 != NULL)
+    if(at == nullptr && colon1 != nullptr)
     {
-        // colon2 is NULL since otherwise we already returned with false
+        // colon2 is nullptr since otherwise we already returned with false
         colon2 = colon1;
-        colon1 = NULL;
+        colon1 = nullptr;
     }
 
     QString username;
@@ -203,19 +203,19 @@ bool snap_uri::set_uri(QString const& uri)
     int port(protocol_to_port(uri_protocol));
 
     // retrieve the data
-    if(colon1 != NULL)
+    if(colon1 != nullptr)
     {
-        // if(at == NULL) -- missing '@'? this is not possible since we just
+        // if(at == nullptr) -- missing '@'? this is not possible since we just
         //                   turned colon1 to colon2 if no '@' was defined
         username.insert(0, s, static_cast<int>(colon1 - s));
         s = colon1 + 1;
     }
-    if(at != NULL)
+    if(at != nullptr)
     {
         password.insert(0, s, static_cast<int>(at - s));
         s = at + 1;
     }
-    if(colon2 != NULL)
+    if(colon2 != nullptr)
     {
         full_domain_name.insert(0, s, static_cast<int>(colon2 - s));
         const QChar *p(colon2 + 1);
@@ -303,12 +303,12 @@ bool snap_uri::set_uri(QString const& uri)
             ++u;
         }
         while(!u->isNull() && u->unicode() == '&');
-        const QChar *e(NULL);
+        const QChar *e(nullptr);
         for(s = u;; ++u)
         {
             if(u->isNull() || u->unicode() == '&' || u->unicode() == '#')
             {
-                if(e == NULL)
+                if(e == nullptr)
                 {
                     // special case when a parameter appears without value
                     // ...&name&...
@@ -353,9 +353,9 @@ bool snap_uri::set_uri(QString const& uri)
                     break;
                 }
                 s = u;
-                e = NULL;
+                e = nullptr;
             }
-            else if(e == NULL && u->unicode() == '=')
+            else if(e == nullptr && u->unicode() == '=')
             {
                 e = u;
             }
@@ -1679,6 +1679,7 @@ bool snap_uri::operator <= (const snap_uri& rhs) const
     return get_uri() <= rhs.get_uri();
 }
 
+
 /** \brief Compare two URIs against each other.
  *
  * This function compares two URIs and returns true if this is
@@ -1695,6 +1696,7 @@ bool snap_uri::operator > (const snap_uri& rhs) const
     return !operator <= (rhs);
 }
 
+
 /** \brief Compare two URIs against each other.
  *
  * This function compares two URIs and returns true if this is
@@ -1710,6 +1712,7 @@ bool snap_uri::operator >= (const snap_uri& rhs) const
 {
     return !operator < (rhs);
 }
+
 
 /** \brief Encode a URI so it is valid for HTTP.
  *
@@ -1728,7 +1731,7 @@ bool snap_uri::operator >= (const snap_uri& rhs) const
  *
  * \param[in] uri  The URI to encode.
  * \param[in] accepted  Extra characters accepted and not encoded. This
- * parameter cannot be set to NULL. Use "" instead if no extra characters
+ * parameter cannot be set to nullptr. Use "" instead if no extra characters
  * are accepted.
  *
  * \return The encoded URI, it may be equal to the input.
@@ -1744,7 +1747,7 @@ QString snap_uri::urlencode(const QString& uri, const char *accepted)
         || (*u >= 'a' && *u <= 'z')
         || (*u >= '0' && *u <= '9')
         || *u == '.' || *u == '-' || *u == '_'
-        || strchr(accepted, *u) != NULL)
+        || strchr(accepted, *u) != nullptr)
         {
             encoded += *u;
         }
@@ -1760,6 +1763,7 @@ QString snap_uri::urlencode(const QString& uri, const char *accepted)
 
     return encoded;
 }
+
 
 /** \brief Decode a URI so it can be used internally.
  *
@@ -1783,7 +1787,7 @@ QString snap_uri::urlencode(const QString& uri, const char *accepted)
  *
  * \return The decoded URI, it may be equal to the input.
  */
-QString snap_uri::urldecode(const QString& uri, bool relax)
+QString snap_uri::urldecode(QString const& uri, bool relax)
 {
     // Note that if the URI is properly encoded, then latin1 == UTF-8
     QByteArray input(uri.toUtf8());
@@ -1816,7 +1820,7 @@ QString snap_uri::urldecode(const QString& uri, bool relax)
                 if(!relax)
                 {
 #ifdef DEBUG
-SNAP_LOG_TRACE() << "url decode?! [" << uri << "]\n";
+SNAP_LOG_TRACE() << "url decode?! [" << uri << "]";
 #endif
                     throw snap_uri_exception_invalid_uri();
                 }
@@ -1842,7 +1846,7 @@ SNAP_LOG_TRACE() << "url decode?! [" << uri << "]\n";
                 if(!relax)
                 {
 #ifdef DEBUG
-SNAP_LOG_TRACE() << "url decode?! [" << uri << "] (2)\n";
+SNAP_LOG_TRACE() << "url decode?! [" << uri << "] (2)";
 #endif
                     throw snap_uri_exception_invalid_uri();
                 }
@@ -1869,7 +1873,7 @@ SNAP_LOG_TRACE() << "url decode?! [" << uri << "] (2)\n";
         else
         {
 #ifdef DEBUG
-SNAP_LOG_TRACE() << "url decode?! [" << uri << "] (3)\n";
+SNAP_LOG_TRACE() << "url decode?! [" << uri << "] (3)";
 #endif
             throw snap_uri_exception_invalid_uri();
         }
@@ -1877,6 +1881,7 @@ SNAP_LOG_TRACE() << "url decode?! [" << uri << "] (3)\n";
 
     return QString::fromUtf8(utf8.data());
 }
+
 
 /** \brief Return the port corresponding to a protocol.
  *
@@ -1925,10 +1930,10 @@ int snap_uri::protocol_to_port(const QString& protocol)
     // not a common service, ask the system... (probably less than 0.01%)
     QByteArray p(protocol.toUtf8());
     servent *s = getservbyname(p.data(), "tcp");
-    if(s == NULL)
+    if(s == nullptr)
     {
         s = getservbyname(p.data(), "udp");
-        if(s == NULL)
+        if(s == nullptr)
         {
             // we don't know...
             return -1;
@@ -1950,6 +1955,7 @@ void domain_variable::read(QtSerialization::QReader& r)
     QtSerialization::QFieldBasicType<controlled_vars::zbool_t> required(comp, "domain_variable::required", f_required);
     r.read(comp);
 }
+
 
 void domain_variable::write(QtSerialization::QWriter& w) const
 {
@@ -1975,6 +1981,7 @@ void domain_variable::write(QtSerialization::QWriter& w) const
     }
 }
 
+
 void domain_info::read(QtSerialization::QReader& r)
 {
     QtSerialization::QComposite comp;
@@ -1982,6 +1989,7 @@ void domain_info::read(QtSerialization::QReader& r)
     QtSerialization::QFieldTag vars(comp, "domain_variable", this);
     r.read(comp);
 }
+
 
 void domain_info::readTag(const QString& name, QtSerialization::QReader& r)
 {
@@ -1996,6 +2004,7 @@ void domain_info::readTag(const QString& name, QtSerialization::QReader& r)
     }
 }
 
+
 void domain_info::write(QtSerialization::QWriter& w) const
 {
     QtSerialization::QWriter::QTag tag(w, "domain_info");
@@ -2007,12 +2016,14 @@ void domain_info::write(QtSerialization::QWriter& w) const
     }
 }
 
+
 void domain_rules::read(QtSerialization::QReader& r)
 {
     QtSerialization::QComposite comp;
     QtSerialization::QFieldTag rules(comp, "domain_rules", this);
     r.read(comp);
 }
+
 
 void domain_rules::readTag(const QString& name, QtSerialization::QReader& r)
 {
@@ -2032,6 +2043,7 @@ void domain_rules::readTag(const QString& name, QtSerialization::QReader& r)
         add_info(info);
     }
 }
+
 
 void domain_rules::write(QtSerialization::QWriter& w) const
 {

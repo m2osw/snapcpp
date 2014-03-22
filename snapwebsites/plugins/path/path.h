@@ -78,6 +78,7 @@ public:
     SNAP_SIGNAL(page_not_found, (content::path_info_t& ipath), (ipath));
     SNAP_SIGNAL(validate_action, (content::path_info_t& ipath, QString const& action, permission_error_callback& err_callback), (ipath, action, err_callback));
     SNAP_SIGNAL(access_allowed, (QString const& user_path, content::path_info_t& ipath, QString const& action, QString const& login_status, content::permission_flag& result), (user_path, ipath, action, login_status, result));
+    SNAP_SIGNAL(check_for_redirect, (content::path_info_t& ipath), (ipath));
 
     void                            handle_dynamic_path(plugins::plugin *p);
 

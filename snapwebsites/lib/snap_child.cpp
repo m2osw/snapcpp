@@ -5663,12 +5663,12 @@ void snap_child::die(http_code_t err_code, QString err_name, const QString& err_
             //       4XX errors though)
 
             QtCassandra::QCassandraValue site_name(get_site_parameter(get_name(SNAP_NAME_CORE_SITE_NAME)));
-            signature = "<a href=\"" + get_site_key() + "\">" + site_name.stringValue() + "</a>";
+            signature = QString("<a href=\"%1\">%2</a>").arg(get_site_key()).arg(site_name.stringValue());
             server->improve_signature(f_uri.path(), signature);
         }
         else if(!site_key.isEmpty())
         {
-            signature = "<a href=\"" + get_site_key() + "\">" + get_site_key() + "</a>";
+            signature = QString("<a href=\"%1\">%2</a>").arg(get_site_key()).arg(get_site_key());
             server->improve_signature(f_uri.path(), signature);
         }
         // else -- no signature...
@@ -5906,7 +5906,7 @@ void snap_child::set_header(QString const& name, QString const& value, header_mo
             if(!valid)
             {
                 // more or less ASCII except well defined separators
-                throw snap_child_exception_invalid_header_field_name("header field name \"" + name + "\" is not valid, found unwanted character: '" + QChar(wc) + "'");
+                throw snap_child_exception_invalid_header_field_name(QString("header field name \"%1\" is not valid, found unwanted character: '%2'").arg(name).arg(QChar(wc)));
             }
         }
     }
@@ -7660,7 +7660,7 @@ snap_child::country_name_t const *snap_child::get_countries()
  * \param[in] name  The name of the configuration variable used to read the IP and port
  * \param[in] message  The message to send, "PING" by default.
  */
-void snap_child::udp_ping(const char *name, const char *message)
+void snap_child::udp_ping(char const *name, char const *message)
 {
     server::pointer_t server( f_server.lock() );
     Q_ASSERT(server);

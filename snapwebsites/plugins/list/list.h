@@ -130,6 +130,7 @@ public:
     void                on_modified_content(content::path_info_t& ipath);
     void                on_replace_token(content::path_info_t& ipath, QString const& plugin_owner, QDomDocument& xml, filter::filter::token_info_t& token);
     virtual void        on_generate_boxes_content(content::path_info_t& page_ipath, content::path_info_t& ipath, QDomElement& page, QDomElement& boxes, QString const& ctemplate);
+    void                on_attach_to_session();
 
     list_item_vector_t  read_list(content::path_info_t const& ipath, int start, int count);
 
@@ -145,6 +146,7 @@ private:
     QtCassandra::QCassandraTable::pointer_t f_list_table;
     snap_expr::expr::expr_map_t             f_check_expressions;
     snap_expr::expr::expr_map_t             f_item_key_expressions;
+    controlled_vars::fbool_t                f_ping_backend;
 };
 
 

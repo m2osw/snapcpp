@@ -171,6 +171,10 @@ char const *get_name(name_t name)
  */
 list::list()
     //: f_snap(nullptr) -- auto-init
+    //, f_list_table(nullptr) -- auto-init
+    //, f_check_expressions() -- auto-init
+    //, f_item_key_expressions() -- auto-init
+    //, f_ping_backend(false) -- auto-init
 {
 }
 
@@ -462,6 +466,28 @@ void list::on_modified_content(content::path_info_t& ipath)
     QString const branch_key(ipath.get_branch_key());
     data_table->row(branch_key)->dropCell(get_name(SNAP_NAME_LIST_TEST_SCRIPT), QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, start_date);
     data_table->row(branch_key)->dropCell(get_name(SNAP_NAME_LIST_ITEM_KEY_SCRIPT), QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, start_date);
+
+    f_ping_backend = true;
+}
+
+
+/** \brief Capture this event which happens last.
+ *
+ * \note
+ * We may want to create another "real" end of session message?
+ *
+ * \bug
+ * There is a 10 seconds latency between the last hit and the time when
+ * the list data is taken in account (see LIST_PROCESSING_LATENCY).
+ * At this point I am not too sure how we can handle this problem.
+ */
+void list::on_attach_to_session()
+{
+    if(f_ping_backend)
+    {
+        // send a PING to the backend
+        f_snap->udp_ping("pagelist_udp_signal", "PING");
+    }
 }
 
 
@@ -828,6 +854,14 @@ int list::generate_all_lists(QString const& site_key)
         // string representing the row key in the content table
         QByteArray const& key(cell->columnKey());
 
+        int64_t const page_start_date(QtCassandra::int64Value(key, 0));
+        if(page_start_date + LIST_PROCESSING_LATENCY > start_date)
+        {
+            // since the columns are sorted, anything after that will be
+            // inaccessible date wise
+            break;
+        }
+
         // print out the row being worked on
         // (if it crashes it is really good to know where)
         {
@@ -839,15 +873,7 @@ int list::generate_all_lists(QString const& site_key)
             gmtime_r(&seconds, &t);
             strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &t);
             name = QString("%1.%2 (%3) %4").arg(buf).arg(time % 1000000, 6, 10, QChar('0')).arg(time).arg(QtCassandra::stringValue(key, sizeof(uint64_t)));
-            SNAP_LOG_TRACE("work on column ")(name);
-        }
-
-        int64_t const page_start_date(QtCassandra::int64Value(key, 0));
-        if(page_start_date + LIST_PROCESSING_LATENCY > start_date)
-        {
-            // since the columns are sorted, anything after that will be
-            // inaccessible date wise
-            break;
+            SNAP_LOG_TRACE("list plugin working on column \"")(name)("\"");
         }
 
         QString const row_key(QtCassandra::stringValue(key, sizeof(int64_t)));
@@ -875,6 +901,7 @@ int list::generate_all_lists_for_page(QString const& site_key, QString const& pa
     QtCassandra::QCassandraTable::pointer_t data_table(content_plugin->get_data_table());
     content::path_info_t page_ipath;
     page_ipath.set_path(page_key);
+    // TODO testing just the row is not enough to know whether it was deleted
     if(!data_table->exists(page_ipath.get_branch_key()))
     {
         // branch disappeared... ignore
@@ -1082,6 +1109,17 @@ bool list::run_list_check(content::path_info_t& list_ipath, content::path_info_t
     snap_expr::functions_t functions;
     e->execute(result, variables, functions);
 
+#if 0
+#ifdef DEBUG
+    {
+        content::content *content_plugin(content::content::instance());
+        QtCassandra::QCassandraTable::pointer_t data_table(content_plugin->get_data_table());
+        QtCassandra::QCassandraValue script(data_table->row(branch_key)->cell(get_name(SNAP_NAME_LIST_ORIGINAL_TEST_SCRIPT))->value());
+        std::cerr << "script [" << script.stringValue() << "] result [" << (result.is_true() ? "true" : "false") << "]\n";
+    }
+#endif
+#endif
+
     return result.is_true();
 }
 
@@ -1172,14 +1210,16 @@ QString list::run_list_item_key(content::path_info_t& list_ipath, content::path_
  *
  * The supported tokens are:
  *
- * \li [list::theme(path="\<list path\>", theme="\<theme name\>", start="\<start\>", count="\<count\>")]
+ * \code
+ * [list::theme(path="<list path>", theme="<theme name>", start="<start>", count="<count>")]
+ * \endcode
  *
  * Theme the list define at \<list path\> with the theme \<theme name\>.
  * You may skip some items and start with item \<start\> instead of item 0.
  * You may specified the number of items to display with \<count\>. Be
  * careful because by default all the items are shown (Although there is a
  * system limit which at this time is 10,000 that still a LARGE list!)
- * The them name, start, and count paramters are all optional.
+ * The theme name, start, and count paramters are optional.
  *
  * \param[in,out] ipath  The path to the page being worked on.
  * \param[in] plugin_owner  The plugin owner of the ipath data.
@@ -1362,6 +1402,10 @@ void list::on_replace_token(content::path_info_t& ipath, QString const& plugin_o
             QDomElement list_element(list_doc.createElement("list"));
             body.appendChild(list_element);
 
+            QString const main_path(f_snap->get_uri().path());
+            content::path_info_t main_ipath;
+            main_ipath.set_path(main_path);
+
             // now theme the list
             int const max_items(items.size());
             for(int i(0), index(1); i < max_items; ++i)
@@ -1376,6 +1420,37 @@ void list::on_replace_token(content::path_info_t& ipath, QString const& plugin_o
                     // put each box in a filter tag so that way we have
                     // a different owner and path for each
                     QDomDocument item_doc(layout_plugin->create_document(item_ipath, item_plugin));
+
+                    FIELD_SEARCH
+                        (content::field_search::COMMAND_ELEMENT, snap_dom::get_element(item_doc, "metadata"))
+                        (content::field_search::COMMAND_MODE, content::field_search::SEARCH_MODE_EACH)
+
+                        // snap/head/metadata/desc[@type="list_uri"]/data
+                        (content::field_search::COMMAND_DEFAULT_VALUE, list_ipath.get_key())
+                        (content::field_search::COMMAND_SAVE, "desc[type=list_uri]/data")
+
+                        // snap/head/metadata/desc[@type="list_path"]/data
+                        (content::field_search::COMMAND_DEFAULT_VALUE, list_ipath.get_cpath())
+                        (content::field_search::COMMAND_SAVE, "desc[type=list_path]/data")
+
+                        // snap/head/metadata/desc[@type="box_uri"]/data
+                        (content::field_search::COMMAND_DEFAULT_VALUE, ipath.get_key())
+                        (content::field_search::COMMAND_SAVE, "desc[type=box_uri]/data")
+
+                        // snap/head/metadata/desc[@type="box_path"]/data
+                        (content::field_search::COMMAND_DEFAULT_VALUE, ipath.get_cpath())
+                        (content::field_search::COMMAND_SAVE, "desc[type=box_path]/data")
+
+                        // snap/head/metadata/desc[@type="main_page_uri"]/data
+                        (content::field_search::COMMAND_DEFAULT_VALUE, main_ipath.get_key())
+                        (content::field_search::COMMAND_SAVE, "desc[type=main_page_uri]/data")
+
+                        // snap/head/metadata/desc[@type="main_page_path"]/data
+                        (content::field_search::COMMAND_DEFAULT_VALUE, main_ipath.get_cpath())
+                        (content::field_search::COMMAND_SAVE, "desc[type=main_page_path]/data")
+
+                        // retrieve names of all the boxes
+                        ;
 
                     layout_plugin->create_body(item_doc, item_ipath, item_body_xsl, dynamic_cast<layout_content *>(item_plugin));
 //std::cerr << "source to be parsed [" << item_doc.toString() << "]\n";

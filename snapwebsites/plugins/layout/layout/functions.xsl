@@ -56,13 +56,13 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <xsl:value-of select="substring-after($base_uri, $website_uri)"/>
   </xsl:variable>
 
-  <!-- compute the full path from the main URI to this page -->
-  <xsl:variable name="full_path" as="xs:string">
-    <xsl:value-of select="concat(substring-after(substring-after($website_uri, '://'), '/'), $path)"/>
-  </xsl:variable>
-
   <!-- get the page URI (i.e. the full path to this page) -->
   <xsl:variable name="page_uri" as="xs:string" select="/snap/head/metadata/desc[@type='page_uri']/data"/>
+
+  <!-- compute the full path from the main URI to this page -->
+  <xsl:variable name="full_path" as="xs:string">
+    <xsl:value-of select="substring-after(substring-after($page_uri, '://'), '/')"/>
+  </xsl:variable>
 
   <!-- compute the full path from the main URI to this page -->
   <xsl:variable name="page" as="xs:string">

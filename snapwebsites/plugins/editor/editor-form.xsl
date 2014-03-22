@@ -121,6 +121,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
           </div>
 
           <xsl:copy-of select="label/node()"/>
+          <xsl:if test="required = 'required'"> <span class="required">*</span></xsl:if>
         </div>
         <xsl:call-template name="snap:common-parts"/>
       </div>

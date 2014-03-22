@@ -21,6 +21,7 @@
 
 #include "not_reached.h"
 #include "log.h"
+#include "qstring_stream.h"
 
 #include <iostream>
 
@@ -185,7 +186,7 @@ void path::on_bootstrap(::snap::snap_child *snap)
 plugins::plugin *path::get_plugin(content::path_info_t& ipath, permission_error_callback& err_callback)
 {
     // get the name of the plugin that owns this URL 
-    plugins::plugin *owner_plugin(NULL);
+    plugins::plugin *owner_plugin(nullptr);
 
     QtCassandra::QCassandraTable::pointer_t content_table(content::content::instance()->get_content_table());
     if(content_table->exists(ipath.get_key())
@@ -219,7 +220,7 @@ plugins::plugin *path::get_plugin(content::path_info_t& ipath, permission_error_
             f_snap->die(snap_child::HTTP_CODE_NOT_FOUND,
                         "Plugin Missing",
                         "This page is not currently available as its plugin is not currently installed.",
-                        "User tried to access page \"" + ipath.get_cpath() + "\" but its plugin (" + owner + ") does not exist (not installed? mispelled?)");
+                        QString("User tried to access page \"%1\" but its plugin (%2) does not exist (not installed? mispelled?)").arg(ipath.get_cpath()).arg(owner));
             NOTREACHED();
         }
     }
@@ -228,7 +229,7 @@ plugins::plugin *path::get_plugin(content::path_info_t& ipath, permission_error_
         // this key doesn't exist as is in the database, but...
         // it may be a dynamically defined path, check for a
         // plugin that would have defined such a path
-//std::cerr << "Testing for page dynamically [" << ipath.get_cpath() << "]\n");
+//std::cerr << "Testing for page dynamically [" << ipath.get_cpath() << "]\n";
         dynamic_plugin_t dp;
         can_handle_dynamic_path(ipath, dp);
         owner_plugin = dp.get_plugin();
@@ -307,10 +308,11 @@ SNAP_LOG_TRACE() << "verify_permissions(): action ipath=" << ipath.get_key() << 
  */
 bool path::access_allowed_impl(QString const& user_path, content::path_info_t& ipath, QString const& action, QString const& login_status, content::permission_flag& result)
 {
-    (void) user_path;
-    (void) ipath;
-    (void) action;
-    (void) login_status;
+    static_cast<void>(user_path);
+    static_cast<void>(ipath);
+    static_cast<void>(action);
+    static_cast<void>(login_status);
+
     return result.allowed();
 }
 
@@ -329,9 +331,10 @@ bool path::access_allowed_impl(QString const& user_path, content::path_info_t& i
  */
 bool path::validate_action_impl(content::path_info_t& ipath, QString const& action, permission_error_callback& err_callback)
 {
-    (void) ipath;
-    (void) action;
-    (void) err_callback;
+    static_cast<void>(ipath);
+    static_cast<void>(action);
+    static_cast<void>(err_callback);
+
     return true;
 }
 
@@ -372,6 +375,17 @@ QString path::default_action(content::path_info_t& ipath)
  */
 void path::on_execute(QString const& uri_path)
 {
+    content::path_info_t ipath;
+    ipath.set_path(uri_path);
+    ipath.set_main_page(true);
+#ifdef DEBUG
+SNAP_LOG_TRACE() << "path::on_execute(\"" << uri_path << "\") -> [" << ipath.get_cpath() << "] [" << ipath.get_branch() << "] [" << ipath.get_revision() << "]";
+#endif
+
+    // allow modules to redirect now, it has to be really early, note
+    // that it will be BEFORE the path module verifies the permissions
+    check_for_redirect(ipath);
+
     class error_callback : public permission_error_callback
     {
     public:
@@ -399,13 +413,6 @@ void path::on_execute(QString const& uri_path)
     private:
         zpsnap_child_t      f_snap;
     } main_page_error_callback(f_snap);
-
-    content::path_info_t ipath;
-    ipath.set_path(uri_path);
-    ipath.set_main_page(true);
-#ifdef DEBUG
-SNAP_LOG_TRACE() << "path::on_execute(\"" << uri_path << "\") -> [" << ipath.get_cpath() << "] [" << ipath.get_branch() << "] [" << ipath.get_revision() << "]";
-#endif
 
     f_last_modified = 0;
     plugins::plugin *path_plugin(get_plugin(ipath, main_page_error_callback));
@@ -487,6 +494,21 @@ SNAP_LOG_TRACE() << "path::on_execute(\"" << uri_path << "\") -> [" << ipath.get
             }
         }
     }
+}
+
+
+/** \brief Allow modules to redirect before we do anything else.
+ *
+ * This signal is used to allow plugins to redirect before we hit anything
+ * else. Note that this happens BEFORE we check for permissions.
+ *
+ * \param[in,out] ipath  The path the client is trying to access.
+ */
+bool path::check_for_redirect_impl(content::path_info_t& ipath)
+{
+    static_cast<void>(ipath);
+
+    return true;
 }
 
 

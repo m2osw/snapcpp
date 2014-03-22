@@ -491,6 +491,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 		</xsl:if>
 		<meta name="action" content="{$action}"/>
 		<meta name="path" content="{$path}"/>
+		<meta name="full_path" content="{$full_path}"/>
+		<!--meta name="base_uri" content="{$base_uri}"/>
+		<meta name="website_uri" content="{$website_uri}"/-->
 
 		<!-- cascading style sheets -->
 		<xsl:copy-of select="head/metadata/css/*"/>

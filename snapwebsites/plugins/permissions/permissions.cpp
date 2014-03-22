@@ -1007,7 +1007,8 @@ bool permissions::get_plugin_permissions_impl(permissions *perms, sets_t& sets)
     QtCassandra::QCassandraTable::pointer_t content_table(content::content::instance()->get_content_table());
     QString const site_key(f_snap->get_site_key_with_slash());
     QString key(ipath.get_key());
-    if(!content_table->exists(key))
+    if(!content_table->exists(key)
+    || !content_table->row(ipath.get_key())->exists(content::get_name(content::SNAP_NAME_CONTENT_PRIMARY_OWNER)))
     {
         // if that page does not exist, it may be dynamic, try to go up
         // until we have one name in the path then check that the page
@@ -1154,7 +1155,7 @@ void permissions::on_validate_action(content::path_info_t& ipath, QString const&
         f_snap->die(snap_child::HTTP_CODE_ACCESS_DENIED,
                 "Access Denied",
                 "You are not authorized to access our website in this way.",
-                "programmer checking permission access with an empty action on page \"" + ipath.get_key() + "\".");
+                QString("programmer checking permission access with an empty action on page \"%1\".").arg(ipath.get_key()));
         NOTREACHED();
     }
 
@@ -1172,6 +1173,8 @@ void permissions::on_validate_action(content::path_info_t& ipath, QString const&
             login_status = get_name(SNAP_NAME_PERMISSIONS_LOGIN_STATUS_VISITOR);
             // TODO determine, once possible, whether the user came on the
             //      website before (i.e. returning visitor)
+            //      (it is already possible since we have a cookie, just
+            //      need to take the time to do it!)
         }
         else if(users_plugin->user_is_logged_in())
         {
@@ -1199,12 +1202,12 @@ void permissions::on_validate_action(content::path_info_t& ipath, QString const&
                     err_callback.on_redirect(
                         // message
                         "Access Denied",
-                        "The page you were trying to access (" + ipath.get_cpath() + ") requires more privileges.",
-                        "spammer trying to \"" + action + "\" on page \"" + ipath.get_cpath() + "\".",
+                        QString("The page you were trying to access (%1) requires more privileges.").arg(ipath.get_cpath()),
+                        QString("spammer trying to \"%1\" on page \"%2\".").arg(action).arg(ipath.get_cpath()),
                         false,
                         // redirect
                         "/",
-                        snap_child::HTTP_CODE_ACCESS_DENIED);
+                        snap_child::HTTP_CODE_FOUND);
                 }
                 else
                 {
@@ -1212,7 +1215,7 @@ void permissions::on_validate_action(content::path_info_t& ipath, QString const&
                     err_callback.on_error(snap_child::HTTP_CODE_ACCESS_DENIED,
                             "Access Denied",
                             "You are not authorized to access our website.",
-                            "spammer trying to \"" + action + "\" on page \"" + ipath.get_cpath() + "\" with unsufficient rights.");
+                            QString("spammer trying to \"%1\" on page \"%2\" with unsufficient rights.").arg(action).arg(ipath.get_cpath()));
                 }
                 return;
             }
@@ -1225,7 +1228,7 @@ void permissions::on_validate_action(content::path_info_t& ipath, QString const&
                         action != "view"
                             ? "You are not authorized to access the login page with action " + action
                             : "Somehow you are not authorized to access the login page.",
-                        "user trying to \"" + action + "\" on page \"" + ipath.get_cpath() + "\" with unsufficient rights.");
+                        QString("user trying to \"%1\" on page \"%2\" with unsufficient rights.").arg(action).arg(ipath.get_cpath()));
                 return;
             }
 
@@ -1236,13 +1239,12 @@ void permissions::on_validate_action(content::path_info_t& ipath, QString const&
             err_callback.on_redirect(
                 // message
                 "Unauthorized",
-                "The page you were trying to access (" + ipath.get_cpath()
-                        + ") requires more privileges. If you think you have such, try to log in first.",
-                "user trying to \"" + action + "\" on page \"" + ipath.get_cpath() + "\" when not logged in.",
+                QString("The page you were trying to access (%1) requires more privileges. If you think you have such, try to log in first.").arg(ipath.get_cpath()),
+                QString("user trying to \"%1\" on page \"%2\" when not logged in.").arg(action).arg(ipath.get_cpath()),
                 false,
                 // redirect
                 "login",
-                snap_child::HTTP_CODE_UNAUTHORIZED);
+                snap_child::HTTP_CODE_FOUND);
         }
         else
         {
@@ -1260,13 +1262,12 @@ void permissions::on_validate_action(content::path_info_t& ipath, QString const&
                     err_callback.on_redirect(
                         // message
                         "Unauthorized",
-                        "The page you were trying to access (" + ipath.get_cpath()
-                                + ") requires you to verify your credentials. Please log in again and the system will send you back there.",
-                        "user trying to \"" + action + "\" on page \"" + ipath.get_cpath() + "\" when not recently logged in.",
+                        QString("The page you were trying to access (%1) requires you to verify your credentials. Please log in again and the system will send you back there.").arg(ipath.get_cpath()),
+                        QString("user trying to \"%1\" on page \"%2\" when not recently logged in.").arg(action).arg(ipath.get_cpath()),
                         false,
                         // redirect
                         "verify-credentials",
-                        snap_child::HTTP_CODE_UNAUTHORIZED);
+                        snap_child::HTTP_CODE_FOUND);
                     return;
                 }
             }
@@ -1274,8 +1275,8 @@ void permissions::on_validate_action(content::path_info_t& ipath, QString const&
             // the double password feature
             err_callback.on_error(snap_child::HTTP_CODE_ACCESS_DENIED,
                     "Access Denied",
-                    "You are not authorized to apply this action (" + action + ") to this page (" + ipath.get_key() + ").",
-                    "user trying to \"" + action + "\" on page \"" + ipath.get_key() + "\" with unsufficient rights.");
+                    QString("You are not authorized to apply this action (%1) to this page (%2).").arg(action).arg(ipath.get_key()),
+                    QString("user trying to \"%1\" on page \"%2\" with unsufficient rights.").arg(action).arg(ipath.get_key()));
         }
         return;
     }
@@ -1324,19 +1325,16 @@ void permissions::on_access_allowed(QString const& user_path, content::path_info
         //      the same IP does it over and over again and block them if so
         f_snap->die(snap_child::HTTP_CODE_ACCESS_DENIED,
                 "Unknown Action",
-                "The action you are trying to performed is not known.",
-                "permissions::on_access_allowed() was used with action \"" + action + "\".");
+                "The action you are trying to performed is not known by Snap!",
+                QString("permissions::on_access_allowed() was used with action \"%1\".").arg(action));
         NOTREACHED();
     }
-
-    // TODO: page_info is what needs to be passed around, not just the path
-    //content::page_info const& page_info(content::content::instance()->get_selected_revision_key(ipath.get_cpath(), content::content::instance()->get_plugin_name(), true));
 
     // setup a sets object which will hold all the user's sets
     sets_t sets(user_path, ipath, action, login_status);
 
-    // first we get the user rights for that action because that's a lot
-    // smaller and if empty we do not have to get anything else
+    // first we get the user rights for that action because in most cases
+    // that's a lot smaller and if empty we do not have to get anything else
     // (intersection of an empty set with anything else is the empty set)
 #ifdef DEBUG
 #ifdef SHOW_RIGHTS

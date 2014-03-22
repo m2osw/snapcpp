@@ -34,10 +34,13 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 		<output>
 			<li>
 				<xsl:attribute name="class">list-item <xsl:if test="page/body[@index mod 2 = 0]">even</xsl:if><xsl:if test="page/body[@index mod 2 = 1]">odd</xsl:if></xsl:attribute>
-				<a class="list-item-list" href="/{$full_path}">
+				<a href="/{$full_path}">
+					<xsl:attribute name="class">list-item-anchor
+						<xsl:if test="/snap/head/metadata/desc[@type='main_page_path']/data = $full_path"> active</xsl:if>
+					</xsl:attribute>
 					<xsl:if test="page/body/titles/long-title">
 						<!-- description of link makes use of long title if available -->
-						<!-- TODO: use the description once available (the one for the meta data...) -->
+						<!-- TODO: give the description [once available] priority over the long-title (the one for the meta data...) -->
 						<xsl:attribute name="title"><xsl:copy-of select="page/body/titles/long-title/node()"/></xsl:attribute>
 					</xsl:if>
 					<xsl:copy-of select="page/body/titles/title/node()"/>

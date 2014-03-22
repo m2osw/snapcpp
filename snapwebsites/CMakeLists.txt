@@ -79,9 +79,10 @@ find_program( ZIP zip REQUIRED )
 
 if( "${CMAKE_BUILD_TYPE}" STREQUAL "Debug" )
     message("Debug is in effect for snapwebsites!")
-    add_definitions( -DDEBUG -DCONTROLLED_VARS_DEBUG )
+    add_definitions( -DDEBUG -D_DEBUG -DCONTROLLED_VARS_DEBUG )
 else()
     message("Debug is turned OFF")
+    add_definitions( -DNDEBUG )
 endif()
 # A few extra warnings specifically for snapwebsites libraries and tools
 # You can also play with -Weffc++ although we are definitively not compliant

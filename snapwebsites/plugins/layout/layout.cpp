@@ -1348,7 +1348,7 @@ bool layout::generate_header_content_impl(content::path_info_t& ipath, QDomEleme
         (content::field_search::COMMAND_SAVE, "desc[type=base_uri]/data")
 
         // snap/head/metadata/desc[type=page_uri]/data
-        (content::field_search::COMMAND_DEFAULT_VALUE, f_snap->get_site_key_with_slash() + ipath.get_cpath())
+        (content::field_search::COMMAND_DEFAULT_VALUE, ipath.get_key())
         (content::field_search::COMMAND_SAVE, "desc[type=page_uri]/data")
 
         // snap/head/metadata/desc[type=template_uri]/data

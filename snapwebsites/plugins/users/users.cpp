@@ -317,7 +317,7 @@ int64_t users::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2014, 3, 12, 20, 28, 40, content_update);
+    SNAP_PLUGIN_UPDATE(2014, 3, 21, 22, 32, 40, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -1011,7 +1011,7 @@ void users::show_user(content::path_info_t& ipath, QDomElement& page, QDomElemen
             return;
         }
 
-        // Probably not necessary to change this one
+        // Probably not necessary to change user_id now
         //user_id = QString("%1").arg(identifier);
         user_path = QString("user/%1").arg(identifier);
     }
