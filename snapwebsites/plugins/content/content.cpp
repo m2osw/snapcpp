@@ -2252,6 +2252,16 @@ void path_info_t::set_path(QString const& path)
             f_key = f_snap->get_site_key_with_slash() + f_cpath;
         }
 
+        // retrieve the action from this path
+        // (note that in case of the main page the action is NOT included)
+        // f_action will be an empty string if no action was specified
+        snap_uri const uri(f_key);
+        QString const action(uri.query_option(server::server::instance()->get_parameter("qs_action")));
+        if(!action.isEmpty())
+        {
+            set_parameter("action", action);
+        }
+
         // the other info becomes invalid
         clear();
     }

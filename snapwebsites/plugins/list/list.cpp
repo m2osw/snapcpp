@@ -1331,6 +1331,7 @@ void list::on_replace_token(content::path_info_t& ipath, QString const& plugin_o
 
         content::path_info_t list_ipath;
         list_ipath.set_path(path_param.f_value);
+        list_ipath.set_parameter("action", "view"); // we are just viewing this list
 
         quiet_error_callback list_error_callback(f_snap, true);
         plugin *list_plugin(path::path::instance()->get_plugin(list_ipath, list_error_callback));
@@ -1413,7 +1414,19 @@ void list::on_replace_token(content::path_info_t& ipath, QString const& plugin_o
                 list_error_callback.clear_error();
                 content::path_info_t item_ipath;
                 item_ipath.set_path(items[i].get_uri());
-                item_ipath.set_parameter("action", "view"); // at this point we only support viewing list items
+                if(item_ipath.get_parameter("action").isEmpty())
+                {
+                    // the default action on a link is "view" unless it
+                    // references an administrative task under /admin
+                    if(item_ipath.get_cpath() == "admin" || item_ipath.get_cpath().startsWith("admin/"))
+                    {
+                        item_ipath.set_parameter("action", "administer");
+                    }
+                    else
+                    {
+                        item_ipath.set_parameter("action", "view");
+                    }
+                }
                 plugin *item_plugin(path::path::instance()->get_plugin(item_ipath, list_error_callback));
                 if(!list_error_callback.has_error() && item_plugin)
                 {

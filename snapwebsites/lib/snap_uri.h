@@ -51,10 +51,10 @@ public:
 
     // constructors
     snap_uri();
-    snap_uri(const QString& uri);
+    snap_uri(QString const& uri);
 
     // URI handling
-    bool set_uri(const QString& uri);
+    bool set_uri(QString const& uri);
     const QString& get_original_uri() const;
     const QString get_uri(bool use_hash_bang = false) const;
 
@@ -66,7 +66,7 @@ public:
     const QString& protocol() const;
 
     // domain & sub-domains handling
-    void set_domain(const QString& full_domain_name);
+    void set_domain(QString const& full_domain_name);
     QString full_domain() const;
     const QString& top_level_domain() const;
     const QString& domain() const;
@@ -76,7 +76,7 @@ public:
     const QStringList& sub_domains_list() const;
 
     // port handling
-    void set_port(const QString& port);
+    void set_port(QString const& port);
     void set_port(int port);
     int get_port() const;
 
@@ -88,42 +88,42 @@ public:
     const QStringList& path_list() const;
 
     // option handling
-    void set_option(const QString& name, const QString& value);
-    void unset_option(const QString& name);
-    QString option(const QString& name) const;
+    void set_option(QString const& name, const QString& value);
+    void unset_option(QString const& name);
+    QString option(QString const& name) const;
     int option_count() const;
     QString option(int part, QString& name) const;
-    const snap_uri_options_t& options_list() const;
+    snap_uri_options_t const& options_list() const;
 
     // query string handling
-    void set_query_option(const QString& name, const QString& value);
-    void unset_query_option(const QString& name);
-    void set_query_string(const QString& uri_query_string);
+    void set_query_option(QString const& name, QString const& value);
+    void unset_query_option(QString const& name);
+    void set_query_string(QString const& uri_query_string);
     QString query_string() const;
-    bool has_query_option(const QString& name) const;
-    QString query_option(const QString& name) const;
+    bool has_query_option(QString const& name) const;
+    QString query_option(QString const& name) const;
     int query_option_count() const;
     QString query_option(int part, QString& name) const;
-    const snap_uri_options_t& query_string_list() const;
+    snap_uri_options_t const& query_string_list() const;
 
     // anchor handling (note: "#!" is not considered an anchor)
-    void set_anchor(const QString& uri_anchor);
+    void set_anchor(QString const& uri_anchor);
     const QString& anchor() const;
 
     // operators
-    bool operator == (const snap_uri& rhs) const;
-    bool operator != (const snap_uri& rhs) const;
-    bool operator < (const snap_uri& rhs) const;
-    bool operator <= (const snap_uri& rhs) const;
-    bool operator > (const snap_uri& rhs) const;
-    bool operator >= (const snap_uri& rhs) const;
+    bool operator == (snap_uri const& rhs) const;
+    bool operator != (snap_uri const& rhs) const;
+    bool operator < (snap_uri const& rhs) const;
+    bool operator <= (snap_uri const& rhs) const;
+    bool operator > (snap_uri const& rhs) const;
+    bool operator >= (snap_uri const& rhs) const;
 
-    static QString urlencode(const QString& uri, const char *accepted = "");
-    static QString urldecode(const QString& uri, bool relax = false);
-    static int protocol_to_port(const QString& uri_protocol);
+    static QString urlencode(QString const& uri, char const *accepted = "");
+    static QString urldecode(QString const& uri, bool relax = false);
+    static int protocol_to_port(QString const& uri_protocol);
 
 private:
-    bool process_domain(const QString& full_domain_name,
+    bool process_domain(QString const& full_domain_name,
         QStringList& sub_domain_names, QString& domain_name, QString& tld);
 
     // f_original is the unchanged source (from constructor or
@@ -154,13 +154,13 @@ class snap_uri_rules
 {
 public:
     // handling of rule scripts
-    bool parse_domain_rules(const QString& script, QByteArray& result);
-    bool parse_website_rules(const QString& script, QByteArray& result);
+    bool parse_domain_rules(QString const& script, QByteArray& result);
+    bool parse_website_rules(QString const& script, QByteArray& result);
 
     // processing of URIs
     //QString process_uri(snap_uri& uri);
 
-    const QString& errmsg() const { return f_errmsg; }
+    QString const& errmsg() const { return f_errmsg; }
 
 private:
     QString        f_errmsg;
@@ -261,7 +261,7 @@ public:
      * \sa set_default()
      * \sa set_required()
      */
-    domain_variable(domain_variable_type_t type, const QString& name, const QString& value)
+    domain_variable(domain_variable_type_t type, QString const& name, QString const& value)
         : f_type(type),
           f_name(name),
           f_value(value)
@@ -302,7 +302,7 @@ public:
      *
      * \return The variable name in a QString.
      */
-    const QString& get_name() const
+    QString const& get_name() const
     {
         return f_name;
     }
@@ -317,7 +317,7 @@ public:
      *
      * \sa set_value()
      */
-    const QString& get_value() const
+    QString const& get_value() const
     {
         return f_value;
     }
@@ -328,7 +328,7 @@ public:
      *
      * \param[in] value  The new value to set this variable to.
      */
-    void set_value(const QString& value)
+    void set_value(QString const& value)
     {
         f_value = value;
     }
@@ -345,7 +345,7 @@ public:
      *
      * \return The default value of this variable.
      */
-    const QString& get_default() const
+    QString const& get_default() const
     {
         return f_default;
     }
@@ -368,7 +368,7 @@ public:
      *
      * \param[in] default_value  The new default value.
      */
-    void set_default(const QString& default_value)
+    void set_default(QString const& default_value)
     {
         switch(f_type) {
         case DOMAIN_VARIABLE_TYPE_WEBSITE:
@@ -506,7 +506,7 @@ public:
      *
      * \sa set_name()
      */
-    const QString& get_name() const
+    QString const& get_name() const
     {
         return f_name;
     }
@@ -521,7 +521,7 @@ public:
      *
      * \sa get_name()
      */
-    void set_name(const QString& name)
+    void set_name(QString const& name)
     {
         f_name = name;
     }
@@ -574,7 +574,7 @@ public:
     }
 
     void read(QtSerialization::QReader& r);
-    virtual void readTag(const QString& name, QtSerialization::QReader& r);
+    virtual void readTag(QString const& name, QtSerialization::QReader& r);
     void write(QtSerialization::QWriter& w) const;
 
 private:
@@ -664,7 +664,7 @@ public:
     }
 
     void read(QtSerialization::QReader& stream);
-    virtual void readTag(const QString& name, QtSerialization::QReader& r);
+    virtual void readTag(QString const& name, QtSerialization::QReader& r);
     void write(QtSerialization::QWriter& stream) const;
 
 private:
@@ -686,17 +686,17 @@ class website_variable : public parser::parser_user_data
 public:
         // WARNING: saved as a number in the database -- DO NOT CHANGE #'s
     typedef int website_variable_type_t;
-    static const website_variable_type_t WEBSITE_VARIABLE_TYPE_STANDARD = 0;
-    static const website_variable_type_t WEBSITE_VARIABLE_TYPE_WEBSITE = 1;
-    static const website_variable_type_t WEBSITE_VARIABLE_TYPE_FLAG_WITH_DEFAULT = 2;
-    static const website_variable_type_t WEBSITE_VARIABLE_TYPE_FLAG_NO_DEFAULT = 3;
+    static website_variable_type_t const WEBSITE_VARIABLE_TYPE_STANDARD = 0;
+    static website_variable_type_t const WEBSITE_VARIABLE_TYPE_WEBSITE = 1;
+    static website_variable_type_t const WEBSITE_VARIABLE_TYPE_FLAG_WITH_DEFAULT = 2;
+    static website_variable_type_t const WEBSITE_VARIABLE_TYPE_FLAG_NO_DEFAULT = 3;
 
         // WARNING: saved as a number in the database -- DO NOT CHANGE #'s
     typedef int website_variable_part_t;
-    static const website_variable_part_t WEBSITE_VARIABLE_PART_PATH = 0;
-    static const website_variable_part_t WEBSITE_VARIABLE_PART_PORT = 1;
-    static const website_variable_part_t WEBSITE_VARIABLE_PART_PROTOCOL = 2;
-    static const website_variable_part_t WEBSITE_VARIABLE_PART_QUERY = 3;
+    static website_variable_part_t const WEBSITE_VARIABLE_PART_PATH = 0;
+    static website_variable_part_t const WEBSITE_VARIABLE_PART_PORT = 1;
+    static website_variable_part_t const WEBSITE_VARIABLE_PART_PROTOCOL = 2;
+    static website_variable_part_t const WEBSITE_VARIABLE_PART_QUERY = 3;
 
     website_variable(website_variable_type_t type, QString const& name, QString const& value)
         : f_type(type),
@@ -815,7 +815,7 @@ public:
         return f_name;
     }
 
-    void set_name(const QString& name)
+    void set_name(QString const& name)
     {
         f_name = name;
     }
@@ -836,7 +836,7 @@ public:
     }
 
     void read(QtSerialization::QReader& r);
-    virtual void readTag(const QString& name, QtSerialization::QReader& r);
+    virtual void readTag(QString const& name, QtSerialization::QReader& r);
     void write(QtSerialization::QWriter& w) const;
 
 private:
@@ -864,7 +864,7 @@ public:
     }
 
     void read(QtSerialization::QReader& r);
-    virtual void readTag(const QString& name, QtSerialization::QReader& r);
+    virtual void readTag(QString const& name, QtSerialization::QReader& r);
     void write(QtSerialization::QWriter& w) const;
 
 private:
