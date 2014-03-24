@@ -1,10 +1,11 @@
 Source: snapmanager
 Priority: extra
 Maintainer: R. Douglas Barbieri <doug@dooglio.net>
-Build-Depends: debhelper, cmake, zip,
+Build-Depends: debhelper, cmake, zip, libboost-dev (>= 1.53.0.0ubuntu2),
     libqt4-dev (>= 4.8.4), doxygen, graphviz, libqtwebkit-dev,
-    libthrift-dev (>= 0.9.0), snapcmakemodules (>= 0.1.6~saucy),
-    libtld-dev (>= 1.4.5), libqtcassandra-dev (>= 0.5.3),
+    libthrift-dev (>= 0.9.0), snapcmakemodules (>= 0.1.6~saucy), libadvgetopt-dev (>= 1.0.1-1),
+    libcontrolledvars-dev (>= 1.3.6), libtld-dev (>= 1.4.5),
+    libqtserialization-dev (>= 0.1.3), libqtcassandra-dev (>= 0.5.3),
     libsnapwebsites-dev (>= 0.1.36~saucy)
 Standards-Version: 3.9.4
 Section: libs
