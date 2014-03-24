@@ -17,7 +17,7 @@ Package: snapmanager
 Section: web
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
-Recommends: snapserver (>= 0.1.33~saucy)
+Suggests: snapserver (>= 0.1.33~saucy)
 Description: Fast Websites: powerful CMS for Apache written in C++.
  Snap! C++ runs your CMS using binary code written in C and C++.
  The basic concept is taken from a large set of Drupal 6.x

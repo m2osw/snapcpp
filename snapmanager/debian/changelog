@@ -1,3 +1,10 @@
+snapmanager (1.0.0m2osw1) saucy; urgency=high
+
+  * Changing "snapserver" to Suggests rather than Recommends, since apt wants
+  to install it!
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Mon, 24 Mar 2014 13:17:18 -0700
+
 snapmanager (1.0.0) saucy; urgency=high
 
   * Initial release of packaging for snapmanager. It has been moved out of
