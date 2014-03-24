@@ -26,13 +26,8 @@ DISTDIR=$1
 BINDIR=${DISTDIR}/bin
 LAYOUTDIR=${DISTDIR}/share/snapwebsites/layouts
 ${BINDIR}/snapdb --drop-tables
-${BINDIR}/snaplayout ${LAYOUTDIR}/bare/content.xml
-${BINDIR}/snaplayout ${LAYOUTDIR}/bare/body-parser.xsl
-${BINDIR}/snaplayout ${LAYOUTDIR}/bare/theme-parser.xsl
-${BINDIR}/snaplayout ${LAYOUTDIR}/bare/style.css
-${BINDIR}/snaplayout ${LAYOUTDIR}/white/content.xml
-${BINDIR}/snaplayout ${LAYOUTDIR}/white/body-parser.xsl
-${BINDIR}/snaplayout ${LAYOUTDIR}/white/theme-parser.xsl
+${BINDIR}/snaplayout ${LAYOUTDIR}/bare/bare_layout.zip
+${BINDIR}/snaplayout ${LAYOUTDIR}/white/white_layout.zip
 ${BINDIR}/snapserver --no-log -c ${CONFIGFILE} --add-host
 
 # TODO: add ability in snapserver to init the website from command-line
