@@ -1,5 +1,10 @@
-snapwebsites (0.1.36~saucy) UNRELEASED; urgency=high
+snapwebsites (0.1.36~saucy) saucy; urgency=high
 
+  [ Alexis Wilke ]
+  * Fixed the navigation menu so it appears even in edit mode.
+  * Allow redirect from any plugin. Enhanced the list plugin.
+
+  [ R. Douglas Barbieri ]
   * Snapmanager is now in a new project, so is no longer provided here.
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Fri, 21 Mar 2014 11:21:05 -0700
