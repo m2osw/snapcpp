@@ -35,6 +35,7 @@
 #include "snap_image.h"
 #include "snapwebsites.h"
 #include "qstring_stream.h"
+#include "dostime.h"
 
 #include <advgetopt/advgetopt.h>
 #include <controlled_vars/controlled_vars_need_init.h>
@@ -223,6 +224,8 @@ snap_layout::snap_layout(int argc, char *argv[])
             QString const extension( filename.mid(e) );
             if( extension == ".zip" )
             {
+                std::cout << "Unpacking zipfile '" << filename << "':" << std::endl;
+
                 zipios::ZipFile zf( filename.toUtf8().data() );
                 if( zf.size() < 0 )
                 {
@@ -234,6 +237,8 @@ snap_layout::snap_layout(int argc, char *argv[])
                 {
                     if( ent && ent->isValid() && !ent->isDirectory() )
                     {
+                        std::cout << "\t" << *ent << std::endl;
+
                         const std::string fn( ent->getName() );
                         try
                         {
@@ -242,7 +247,8 @@ snap_layout::snap_layout(int argc, char *argv[])
                             QByteArray byte_arr;
                             stream_to_bytearray( is.get(), byte_arr );
 
-                            f_fileinfo_list.push_back( fileinfo_t( fn.c_str(), byte_arr, static_cast<time_t>(ent->getTime()) ) );
+                            const time_t unixtime( dos2unixtime(ent->getTime() ) );
+                            f_fileinfo_list.push_back( fileinfo_t( fn.c_str(), byte_arr, unixtime ) );
                         }
                         catch( const std::ios_base::failure& except )
                         {
