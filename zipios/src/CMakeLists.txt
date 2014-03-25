@@ -2,13 +2,17 @@ project( zipios )
 
 add_library( ${PROJECT_NAME} SHARED
 	backbuffer.h
+	../zipios++/basicentry.h
 	basicentry.cpp
 	collcoll.cpp
 	dircoll.cpp
 	directory.cpp
 	directory.h
+	dostime.h
+	dostime.c
 	fcoll.cpp
 	fcollexceptions.cpp
+	../zipios++/fileentry.h
 	fileentry.cpp
 	filepath.cpp
 	filterinputstreambuf.cpp
@@ -17,6 +21,7 @@ add_library( ${PROJECT_NAME} SHARED
 	gzipoutputstream.cpp
 	gzipoutputstreambuf.cpp
 	zipfile.cpp
+	../zipios++/ziphead.h
 	ziphead.cpp
 	zipheadio.cpp
 	zipinputstream.cpp

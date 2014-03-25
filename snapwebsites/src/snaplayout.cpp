@@ -35,7 +35,6 @@
 #include "snap_image.h"
 #include "snapwebsites.h"
 #include "qstring_stream.h"
-#include "dostime.h"
 
 #include <advgetopt/advgetopt.h>
 #include <controlled_vars/controlled_vars_need_init.h>
@@ -247,8 +246,7 @@ snap_layout::snap_layout(int argc, char *argv[])
                             QByteArray byte_arr;
                             stream_to_bytearray( is.get(), byte_arr );
 
-                            const time_t unixtime( dos2unixtime(ent->getTime() ) );
-                            f_fileinfo_list.push_back( fileinfo_t( fn.c_str(), byte_arr, unixtime ) );
+                            f_fileinfo_list.push_back( fileinfo_t( fn.c_str(), byte_arr, ent->getUnixTime() ) );
                         }
                         catch( const std::ios_base::failure& except )
                         {

@@ -73,8 +73,6 @@ add_library( ${PROJECT_NAME} SHARED
     dbutils.h                                   # Utilities to help convert coded table and row names
     dbutils.cpp                                 # and column data.
     dom_util.cpp                                # DOM utilities
-    dostime.c                                   # dostime utilities for zipfile support
-    dostime.h
     floats.cpp                                  # Floats helper functions
     http_cookie.cpp                             # HTTP cookie, server side
     http_strings.cpp                            # parse HTTP strings (Accept strings in particular)

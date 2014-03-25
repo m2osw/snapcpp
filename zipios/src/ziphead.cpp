@@ -7,6 +7,7 @@
 #include <cassert>
 
 #include "zipios_common.h"
+#include "dostime.h"
 #include "zipios++/ziphead.h"
 #include "zipios++/zipheadio.h"
 #include "zipios++/zipios_defs.h"
@@ -105,6 +106,11 @@ int ZipLocalEntry::getTime() const {
   // FIXME: what to do with this time date thing? (not only here?)
 }
 
+std::time_t ZipLocalEntry::getUnixTime() const
+{
+    return dos2unixtime( getTime() );
+}
+
 bool ZipLocalEntry::isValid() const {
   return _valid ;
 }
@@ -152,6 +158,11 @@ void ZipLocalEntry::setTime( int time ) {
   // Mark Donszelmann: added these lines to make zip work for winzip
   last_mod_fdate = (time >> 16) & 0x0000FFFF;
   last_mod_ftime = time & 0x0000FFFF;
+}
+
+void ZipLocalEntry::setUnixTime( std::time_t time )
+{
+    setTime( unix2dostime( &time ) );
 }
 
 string ZipLocalEntry::toString() const {

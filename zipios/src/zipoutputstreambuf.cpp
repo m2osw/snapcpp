@@ -145,6 +145,7 @@ void ZipOutputStreambuf::updateEntryHeaderInfo() {
   entry.setCompressedSize( curr_pos - entry.getLocalHeaderOffset() 
 			   - entry.getLocalHeaderSize() ) ;
 
+#if 0
   // Mark Donszelmann: added current date and time
   time_t ltime;
   time( &ltime );
@@ -152,7 +153,13 @@ void ZipOutputStreambuf::updateEntryHeaderInfo() {
   now = localtime( &ltime );
   int dosTime = (now->tm_year - 80) << 25 | (now->tm_mon + 1) << 21 | now->tm_mday << 16 |
               now->tm_hour << 11 | now->tm_min << 5 | now->tm_sec >> 1;
-  entry.setTime(dosTime);
+  entry.setTime( dosTime );
+#else
+  // Mon Mar 24 19:10:46 PDT 2014 (RDB)
+  // Use std time_t, and get the local time. Use new setUnixTime method.
+  //
+  entry.setUnixTime( std::time( NULL ) );
+#endif
 
   // write ZipLocalEntry header to header position
   os.seekp( entry.getLocalHeaderOffset() ) ;
@@ -186,7 +193,7 @@ void ZipOutputStreambuf::writeCentralDirectory( const vector< ZipCDirEntry > &en
 
 /*
   Zipios++ - a small C++ library that provides easy access to .zip files.
-  Copyright (C) 2000  Thomas Søndergaard
+  Copyright (C) 2000  Thomas SÃ¸ndergaard
   
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
