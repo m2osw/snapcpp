@@ -1,10 +1,8 @@
 snapwebsites (0.1.37~saucy) saucy; urgency=high
 
-  [Alexis Wilke]
-  * 
-
   [R. Douglas Barbieri]
-  *
+  * Repaired problem with snaplayout--it was not converting the time
+  stamp from the zipfile from msdos format into unix format.
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Mon, 24 Mar 2014 13:20:26 -0700
 
