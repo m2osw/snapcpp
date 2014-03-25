@@ -1,3 +1,10 @@
+zipios++ (0.1.5.10m2osw1~saucy) saucy; urgency=high
+
+  * Added dostime.h/c and new methods that allow for conversion between
+  dostime and unixtime.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Mon, 24 Mar 2014 19:17:19 -0700
+
 zipios++ (0.1.5.9+cvs.2007.04.28-5.1.m2osw4~saucy) saucy; urgency=high
 
   * Control file had the wrong dependency for dev package.
