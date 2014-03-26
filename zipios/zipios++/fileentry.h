@@ -5,6 +5,8 @@
 
 #include <string>
 #include <vector>
+#include <ctime>
+
 #include "zipios++/meta-iostreams.h"
 
 #include "zipios++/simplesmartptr.h"
@@ -97,10 +99,14 @@ public:
       @return Returns the (uncompressed) size of the entry.
    */
   virtual uint32 getSize() const = 0 ;
-  /** Returns the date and time of FIXME: what?  
+  /** Returns the date and time of the entry in MSDOS date/time format.
       @return the date and time of the entry.
   */
   virtual int getTime() const = 0 ;
+  /** Returns the date and time of the entry in Unix date/time format (see time()).
+      @return the date and time of the entry.
+  */
+  virtual std::time_t getUnixTime() const = 0 ;
   /** Any method or operator that initializes a FileEntry may set a
       flag, that specifies whether the read entry is valid or not. If
       it isn't this method returns false.  
@@ -147,7 +153,11 @@ public:
       @param time the time field is set to the specified value.
   */
   virtual void setTime( int time ) = 0 ;
-  
+  /** Sets the time field in Unix time format for the entry.
+      @param time the time field is set to the specified value.
+  */
+  virtual void setUnixTime( std::time_t time ) = 0 ;
+
   /** Returns a human-readable string representation of the entry.
       @return a human-readable string representation of the entry.
   */

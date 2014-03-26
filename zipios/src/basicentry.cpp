@@ -84,6 +84,10 @@ int BasicEntry::getTime() const {
   return 0 ; // FIXME later
 }
 
+std::time_t BasicEntry::getUnixTime() const {
+	return 0; // Mon Mar 24 18:33:19 PDT 2014 (RDB)
+}
+
 bool BasicEntry::isValid() const {
   return _valid ;
 }
@@ -120,6 +124,9 @@ void BasicEntry::setSize( uint32 size ) {
 }
 
 void BasicEntry::setTime( int  ) {
+}
+
+void BasicEntry::setUnixTime( std::time_t ) {
 }
 
 

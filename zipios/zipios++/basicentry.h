@@ -5,6 +5,7 @@
 
 #include "zipios++/meta-iostreams.h"
 #include <string>
+#include <ctime>
 
 #include "zipios++/fcollexceptions.h"
 #include "zipios++/fileentry.h"
@@ -32,6 +33,7 @@ public:
   virtual string getFileName() const ;
   virtual uint32 getSize() const ;
   virtual int getTime() const ;
+  virtual std::time_t getUnixTime() const ;
   virtual bool isValid() const ;
   
   //     virtual int hashCode() const ;
@@ -45,6 +47,7 @@ public:
   virtual void setName( const string &name ) ;
   virtual void setSize( uint32 size ) ;
   virtual void setTime( int time ) ;
+  virtual void setUnixTime( std::time_t time ) ;
   
   virtual string toString() const ;
   
@@ -69,7 +72,7 @@ protected:
 
 /*
   Zipios++ - a small C++ library that provides easy access to .zip files.
-  Copyright (C) 2000  Thomas Søndergaard
+  Copyright (C) 2000  Thomas SÃ¸ndergaard
   
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
