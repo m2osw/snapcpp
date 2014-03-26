@@ -1,6 +1,6 @@
 /*
  * Name: editor
- * Version: 0.0.2.70
+ * Version: 0.0.2.73
  * Browsers: all
  * Copyright: Copyright 2013-2014 (c) Made to Order Software Corporation  All rights reverved.
  * License: GPL 2.0
@@ -1336,20 +1336,32 @@ console.log("command "+idx+" "+this.toolbarButtons[idx][2]+"!!!");
                 }, 200);
             })
             .keydown(function(e){
+                var used = false;
                 if(e.ctrlKey)
                 {
 //console.log("ctrl "+(e.shiftKey?"+ shift ":"")+"= "+e.which+", idx = "+(snapwebsites.EditorInstance._keys[e.which + (e.shiftKey ? 0x10000 : 0)]));
                     if(snapwebsites.EditorInstance._command(snapwebsites.EditorInstance._keys[e.which + (e.shiftKey ? 0x10000 : 0)]))
                     {
                         e.preventDefault();
+                        used = true;
                     }
                 }
                 else if(e.which == 0x20)
                 {
-                    if(jQuery(snapwebsites.EditorInstance._activeElement).filter(".checkmark"))
+                    if(jQuery(snapwebsites.EditorInstance._activeElement).is(".checkmark"))
                     {
                         jQuery(snapwebsites.EditorInstance._activeElement).find(".checkmark-area").toggleClass("checked");
                         snapwebsites.EditorInstance._checkModified();
+                        used = true;
+                    }
+                }
+                if(!used)
+                {
+                    if(jQuery(snapwebsites.EditorInstance._activeElement).is(".select-only"))
+                    {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        used = true;
                     }
                 }
             })
@@ -1504,6 +1516,16 @@ console.log("command "+idx+" "+this.toolbarButtons[idx][2]+"!!!");
                 else
                 {
                     content.removeAttr("value");
+                }
+
+                snapwebsites.EditorInstance._checkModified();
+            });
+        jQuery(".editable.dropdown .editor-content")
+            .blur(function(e){
+                if(snapwebsites.EditorInstance._openDropdown)
+                {
+                    snapwebsites.EditorInstance._openDropdown.fadeOut(150);
+                    snapwebsites.EditorInstance._openDropdown = null;
                 }
             });
 

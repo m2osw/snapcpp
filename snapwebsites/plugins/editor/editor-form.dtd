@@ -54,7 +54,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
                  path CDATA #REQUIRED
                  duplicate-of IDREF #IMPLIED
                  secret (public|secret) "public"
-                 auto-save (int8|string|no) #IMPLIED
+                 mode (select-only|editable) "select-only"
+                 auto-save (int8|string|no) "string"
                  drop (drop) #IMPLIED>
 
 <!ELEMENT label %html-data;>
