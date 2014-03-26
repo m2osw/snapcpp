@@ -17,8 +17,9 @@
 
 #pragma once
 
-#include <QString>
 #include <iostream>
+
+#include <QString>
 
 inline std::ostream& operator << ( std::ostream& str, QByteArray const& qarray )
 {

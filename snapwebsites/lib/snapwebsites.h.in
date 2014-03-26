@@ -87,7 +87,8 @@ public:
 };
 
 // a simple specialization of the permission_error_callback that quiet
-// the errors so they don't get in the way
+// the errors so they don't get in the way (quiet as in: the end users don't
+// see them; it's going to be logged anyway)
 class quiet_error_callback : public permission_error_callback
 {
 public:

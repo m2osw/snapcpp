@@ -909,7 +909,20 @@ SNAP_LOG_TRACE() << "box_ipath key = " << box_ipath.get_key() << ", branch_key="
                             filter_box.setAttribute("owner", box_plugin->get_plugin_name());
                             dom_boxes[i].appendChild(filter_box);
 SNAP_LOG_TRACE() << "handle box for " << box_plugin->get_plugin_name();
+
+                            // Unfortunately running the full header content
+                            // signal would overwrite the main data... not good!
+                            //QDomElement head(snap_dom::get_element(doc, "head"));
+                            //QDomElement metadata(snap_dom::get_element(doc, "metadata"));
+                            //generate_header_content(ipath, head, metadata, "");
+
                             lb->on_generate_boxes_content(ipath, box_ipath, page, filter_box, "");
+
+                            // Unfortunately running the full page content
+                            // signal would overwrite the main data... not good!
+                            //QDomElement page(snap_dom::get_element(doc, "page"));
+                            //QDomElement body(snap_dom::get_element(doc, "body"));
+                            //generate_page_content(ipath, page, body, "");
                         }
                         else
                         {

@@ -37,7 +37,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
   <!-- IMAGE BOX WIDGET -->
   <!-- WARNING: we use this sub-template because of a Qt but with variables
-                that do not get defined properly without such trickery -->
+                that do not properly get defined without such trickery -->
   <xsl:template name="snap:image-box">
     <xsl:param name="path"/>
     <xsl:param name="name"/>
@@ -60,7 +60,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
           <xsl:attribute name="name"><xsl:value-of select="$name"/></xsl:attribute>
           <xsl:attribute name="class">editor-content image<xsl:if test="@no-toolbar or /editor-form/no-toolbar"> no-toolbar</xsl:if></xsl:attribute>
           <xsl:if test="/editor-form/taborder/tabindex[@refid=$name]">
-            <xsl:attribute name="tabindex"><xsl:value-of select="/editor-form/taborder/tabindex[@refid=$name]/count(preceding-sibling::tabindex) + 1"/></xsl:attribute>
+            <xsl:attribute name="tabindex"><xsl:value-of select="/editor-form/taborder/tabindex[@refid=$name]/count(preceding-sibling::tabindex) + 1 + $tabindex_base"/></xsl:attribute>
           </xsl:if>
           <xsl:if test="tooltip != ''">
             <xsl:attribute name="title"><xsl:value-of select="tooltip"/></xsl:attribute>
@@ -92,9 +92,81 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     </xsl:call-template>
   </xsl:template>
 
+  <!-- DROPDOWN WIDGET -->
+  <!-- WARNING: we use this sub-template because of a Qt but with variables
+                that do not properly get defined without such trickery -->
+  <xsl:template name="snap:dropdown">
+    <xsl:param name="path"/>
+    <xsl:param name="name"/>
+    <xsl:param name="pv_value"/>
+    <widget path="{$path}">
+      <div>
+        <xsl:attribute name="field_name"><xsl:value-of select="$name"/></xsl:attribute>
+        <xsl:attribute name="class"><xsl:if test="$action = 'edit'">snap-editor </xsl:if>editable dropdown <xsl:value-of select="$name"/><xsl:if test="@immediate or /editor-form/immediate"> immediate</xsl:if><xsl:if test="@id = /editor-form/focus/@refid"> auto-focus</xsl:if> <xsl:value-of select="classes"/></xsl:attribute>
+        <div>
+          <xsl:attribute name="name"><xsl:value-of select="$name"/></xsl:attribute>
+          <xsl:attribute name="class">editor-content<xsl:if test="@no-toolbar or /editor-form/no-toolbar"> no-toolbar</xsl:if></xsl:attribute>
+          <xsl:if test="/editor-form/taborder/tabindex[@refid=$name]">
+            <xsl:attribute name="tabindex"><xsl:value-of select="/editor-form/taborder/tabindex[@refid=$name]/count(preceding-sibling::tabindex) + 1 + $tabindex_base"/></xsl:attribute>
+          </xsl:if>
+          <xsl:if test="tooltip != ''">
+            <xsl:attribute name="title"><xsl:value-of select="tooltip"/></xsl:attribute>
+          </xsl:if>
+          <xsl:if test="state = 'disabled'"><xsl:attribute name="disabled">disabled</xsl:attribute></xsl:if>
+          <xsl:choose>
+            <xsl:when test="value/item[@default='default']">
+              <xsl:attribute name="value"><xsl:copy-of select="value/item[@default='default']/@value"/></xsl:attribute>
+              <xsl:copy-of select="value/item[@default='default']"/>
+            </xsl:when>
+            <xsl:otherwise>
+              Some default value
+            </xsl:otherwise>
+          </xsl:choose>
+        </div>
+        <xsl:if test="required = 'required'"> <span class="required">*</span></xsl:if>
+        <div class="dropdown-items">
+          <xsl:choose>
+            <xsl:when test="value">
+              <ul class="dropdown-selection">
+                <xsl:for-each select="value/item">
+                  <li value="{@value}">
+                    <xsl:attribute name="class">dropdown-item<xsl:if test="@default='default'"> selected</xsl:if></xsl:attribute>
+                    <xsl:copy-of select="./node()"/>
+                  </li>
+                </xsl:for-each>
+              </ul>
+            </xsl:when>
+            <xsl:otherwise>
+              <xsl:attribute name="class">dropdown-items disabled</xsl:attribute>
+              <div class="no-selection">No selection...</div>
+            </xsl:otherwise>
+          </xsl:choose>
+        </div>
+
+        <xsl:call-template name="snap:common-parts"/>
+      </div>
+    </widget>
+  </xsl:template>
+  <xsl:template match="widget[@type='dropdown']">
+    <xsl:variable name="value">
+      <xsl:choose>
+        <!-- use the post value when there is one, it has priority -->
+        <xsl:when test="post != ''"><xsl:copy-of select="post/node()"/></xsl:when>
+        <!-- use the current value when there is one -->
+        <xsl:when test="value != ''"><xsl:copy-of select="value/node()"/></xsl:when>
+        <xsl:otherwise></xsl:otherwise>
+      </xsl:choose>
+    </xsl:variable>
+    <xsl:call-template name="snap:dropdown">
+      <xsl:with-param name="path" select="@path"/>
+      <xsl:with-param name="name" select="@id"/>
+      <xsl:with-param name="pv_value" select="$value"/>
+    </xsl:call-template>
+  </xsl:template>
+
   <!-- CHECKMARK WIDGET -->
   <!-- WARNING: we use this sub-template because of a Qt but with variables
-                that do not get defined properly without such trickery -->
+                that do not properly get defined without such trickery -->
   <xsl:template name="snap:checkmark">
     <xsl:param name="path"/>
     <xsl:param name="name"/>
@@ -107,7 +179,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
           <xsl:attribute name="name"><xsl:value-of select="$name"/></xsl:attribute>
           <xsl:attribute name="class">editor-content<xsl:if test="@no-toolbar or /editor-form/no-toolbar"> no-toolbar</xsl:if></xsl:attribute>
           <xsl:if test="/editor-form/taborder/tabindex[@refid=$name]">
-            <xsl:attribute name="tabindex"><xsl:value-of select="/editor-form/taborder/tabindex[@refid=$name]/count(preceding-sibling::tabindex) + 1"/></xsl:attribute>
+            <xsl:attribute name="tabindex"><xsl:value-of select="/editor-form/taborder/tabindex[@refid=$name]/count(preceding-sibling::tabindex) + 1 + $tabindex_base"/></xsl:attribute>
           </xsl:if>
           <xsl:if test="tooltip != ''">
             <xsl:attribute name="title"><xsl:value-of select="tooltip"/></xsl:attribute>
@@ -158,7 +230,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
         <xsl:attribute name="field_name"><xsl:value-of select="$name"/></xsl:attribute>
         <xsl:attribute name="class"><xsl:if test="$action = 'edit'">snap-editor </xsl:if>editable line-edit <xsl:value-of select="$name"/><xsl:if test="@immediate or /editor-form/immediate"> immediate</xsl:if><xsl:if test="@id = /editor-form/focus/@refid"> auto-focus</xsl:if> <xsl:value-of select="classes"/></xsl:attribute>
         <xsl:if test="background-value != ''">
-          <!-- by default "snap-editor-background" have "display: none"
+          <!-- by default "snap-editor-background" has "display: none"
                a script shows them on load once ready AND if the value is empty
                also it is a "pointer-event: none;" -->
           <div class="snap-editor-background">
@@ -172,7 +244,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
           <xsl:attribute name="name"><xsl:value-of select="$name"/></xsl:attribute>
           <xsl:attribute name="class">editor-content<xsl:if test="@no-toolbar or /editor-form/no-toolbar"> no-toolbar</xsl:if></xsl:attribute>
           <xsl:if test="/editor-form/taborder/tabindex[@refid=$name]">
-            <xsl:attribute name="tabindex"><xsl:value-of select="/editor-form/taborder/tabindex[@refid=$name]/count(preceding-sibling::tabindex) + 1"/></xsl:attribute>
+            <xsl:attribute name="tabindex"><xsl:value-of select="/editor-form/taborder/tabindex[@refid=$name]/count(preceding-sibling::tabindex) + 1 + $tabindex_base"/></xsl:attribute>
           </xsl:if>
           <xsl:if test="tooltip != ''">
             <xsl:attribute name="title"><xsl:value-of select="tooltip"/></xsl:attribute>

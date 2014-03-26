@@ -202,8 +202,8 @@ void form::content_update(int64_t variables_timestamp)
  */
 QDomDocument form::form_to_html(sessions::sessions::session_info& info, QDomDocument& xml_form)
 {
-    static int64_t unique_id(0);
-    static int tabindex_base(0);
+    static int64_t g_unique_id(0);
+    static int g_tabindex_base(0);
 
     QDomDocument doc_output("body");
     if(!f_form_initialized)
@@ -276,18 +276,18 @@ QDomDocument form::form_to_html(sessions::sessions::session_info& info, QDomDocu
     q.setFocus(xml_form.toString());
     // somehow the bind works here...
     q.bindVariable("form_session", QVariant(sessions::sessions::instance()->create_session(info)));
-    ++unique_id;
+    ++g_unique_id;
     q.bindVariable("action", QVariant(info.get_page_path()));
-    q.bindVariable("unique_id", QVariant(QString("%1").arg(unique_id)));
-    q.bindVariable("tabindex_base", QVariant(tabindex_base));
+    q.bindVariable("unique_id", QVariant(QString("%1").arg(g_unique_id)));
+    q.bindVariable("tabindex_base", QVariant(g_tabindex_base));
     q.setQuery(f_form_elements_string);
     QDomReceiver receiver(q.namePool(), doc_output);
     q.evaluateTo(&receiver);
 
-    // the count includes all the widgets even though that do not make
+    // the count includes all the widgets even those that do not make
     // use of the tab index so we'll get some gaps, but that's a very
     // small price to pay for this cool feature
-    tabindex_base += xml_form.elementsByTagName("widget").size();
+    g_tabindex_base += xml_form.elementsByTagName("widget").size();
 
     return doc_output;
 }

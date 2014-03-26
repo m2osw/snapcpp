@@ -68,7 +68,7 @@ enum name_t
 char const *get_name(name_t name) __attribute__ ((const));
 
 
-class editor : public plugins::plugin, public path::path_execute, public layout::layout_content, public form::form_post
+class editor : public plugins::plugin, public path::path_execute, public layout::layout_content, public form::form_post, public layout::layout_boxes
 {
 public:
     static int const    EDITOR_SESSION_ID_EDIT = 1;
@@ -122,6 +122,7 @@ public:
                                          QString const& widget_type, bool is_secret);
     void                on_process_post(QString const& uri_path);
     void                on_generate_page_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate);
+    virtual void        on_generate_boxes_content(content::path_info_t& page_cpath, content::path_info_t& ipath, QDomElement& page, QDomElement& box, QString const& ctemplate);
 
     QString             format_uri(QString const& format, content::path_info_t& ipath, QString const& page_name, params_map_t const& params);
     static save_mode_t  string_to_save_mode(QString const& mode);

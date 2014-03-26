@@ -48,6 +48,63 @@
 	text-align: center;
 }
 
+/** DROPDOWN **/
+.editable.dropdown .editor-content
+{
+	padding: 3px;
+	height: 1em;
+	background: url(/images/editor/dropdown-arrow-15x15.png) 97% 50% no-repeat;
+}
+
+.editable.dropdown .dropdown-items
+{
+	/* items are hidden by default */
+	display: none;
+
+	margin: 0 0 0 5px;
+	padding: 0 0 5px 0;
+	background-color: white;
+	border: 1px solid black;
+	border-radius: 5px;
+	border-top-left-radius: 0;
+	border-top-right-radius: 0;
+	box-shadow: 1px 2px 3px 0px rgba(0, 0, 0, 0.5);
+}
+.editable.dropdown .dropdown-items.disabled
+{
+	background-color: #cccccc;
+}
+
+.editable.dropdown .dropdown-items .no-selection
+{
+	padding: 5px 8px;
+}
+
+.editable.dropdown .dropdown-items ul
+{
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.editable.dropdown .dropdown-items li
+{
+	display: block;
+	padding: 5px 8px;
+	border: 1px solid white;
+}
+.editable.dropdown .dropdown-items li.selected
+{
+	background-color: #ffcc99;
+}
+
+.editable.dropdown .dropdown-items li:hover
+{
+	background-color: #ffeecc;
+	cursor: pointer;
+	border: 1px dashed #ffcc88;
+}
+
 /** CHECKMARK **/
 .editable.checkmark
 {

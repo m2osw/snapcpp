@@ -2059,10 +2059,12 @@ public:
             // there is nothing more to do here
             if(!functions.get_has_internal_functions())
             {
-                // give a chance to plugins and other listeners to
+                // avoid recursivity (you never know!)
+                functions.set_has_internal_functions();
+                functions.add_functions(internal_functions);
+                // also give a chance to plugins and other listeners to
                 // register functions
                 server::instance()->add_snap_expr_functions(functions);
-                functions.add_functions(internal_functions);
                 f = functions.get_function(f_name);
             }
             if(f == nullptr)
