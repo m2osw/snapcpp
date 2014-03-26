@@ -171,7 +171,7 @@ int64_t editor::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2014, 3, 19, 20, 59, 30, content_update);
+    SNAP_PLUGIN_UPDATE(2014, 3, 26, 2, 40, 30, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -963,27 +963,10 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
     QtCassandra::QCassandraTable::pointer_t data_table(content_plugin->get_data_table());
     QtCassandra::QCassandraRow::pointer_t row(data_table->row(revision_key));
 
-    //
-    // TODO:
-    //      look into getting and parsing the parser_xml ONCE
-    //
-    //      at this time it does that twice if no plugin ends the process
-    //      by doing a redirect
-    //
-
     // first load the XML code representing the editor widget for this page
     QDomDocument editor_widgets(get_editor_widgets(ipath));
-    //layout::layout *layout_plugin(layout::layout::instance());
-    //QString const script(layout_plugin->get_layout(ipath, get_name(SNAP_NAME_EDITOR_LAYOUT)));
-    //if(script != "default")
     if(!editor_widgets.isNull())
     {
-        //QString const name(layout_plugin->get_layout(ipath, layout::get_name(layout::SNAP_NAME_LAYOUT_LAYOUT)));
-        //QtCassandra::QCassandraTable::pointer_t layout_table(layout_plugin->get_layout_table());
-        //QString const parser_xml(layout_table->row(name)->cell(script)->value().stringValue());
-        //QDomDocument editor_widgets("editor-form");
-        //editor_widgets.setContent(parser_xml);
-
         // a default (data driven) redirect to apply when saving an editor form
         QDomElement on_save(snap_dom::get_element(editor_widgets, "on-save", false));
         if(!on_save.isNull())
@@ -2528,12 +2511,14 @@ void editor::on_generate_page_content(content::path_info_t& ipath, QDomElement& 
         ADDED_FORM_FILE_YES
     };
     static added_form_file_support_t g_added_editor_form_js_css(ADDED_FORM_FILE_NONE);
+    static int g_tabindex_base(0);
 
     static_cast<void>(ctemplate);
 
     content::content *content_plugin(content::content::instance());
 
     QDomDocument editor_widgets(get_editor_widgets(ipath));
+//std::cerr << "***\n*** Use editor? " << (editor_widgets.isNull() ? "no" : "YES") << " widgets for " << ipath.get_key() << "\n***\n";
     if(editor_widgets.isNull())
     {
         // no editor specified for this page, skip on it (no editing allowed)
@@ -2541,6 +2526,7 @@ void editor::on_generate_page_content(content::path_info_t& ipath, QDomElement& 
     }
     QDomNodeList widgets(editor_widgets.elementsByTagName("widget"));
     int const max_widgets(widgets.size());
+//std::cerr << "***\n*** Generating editor: " << max_widgets << " widgets for " << ipath.get_key() << "\n***\n";
     if(max_widgets == 0)
     {
         // no editor we we do not at least have one widget
@@ -2548,62 +2534,7 @@ void editor::on_generate_page_content(content::path_info_t& ipath, QDomElement& 
         return;
     }
 
-    // first load the XML code representing the editor widget for this page
-//    QString const script(layout_plugin->get_layout(ipath, get_name(SNAP_NAME_EDITOR_LAYOUT)));
-//    if(script == "default")
-//    {
-//std::cerr << "***\n*** Default so we cannot get the editor!?\n***\n";
-//        // no editor specified for this page, skip on it (no editing allowed)
-//        return;
-//    }
-//    QString const name(body.attribute("layout-name"));
-
-    // editor enters in action
-
-    // TODO: avoid the full XML conversion to a DOM and search the
-    // Done? names using string indexOf() and similar code; it would
-    //       be a lot faster! (we do not have to test that the XSL
-    //       is valid here, it will be tested when used to parse the
-    //       body XML document)
-
-    //QDomDocument body_xsl("body");
-    //body_xsl.setContent(xsl, true);
-
-    //QString cell(content_table->row(ipath.get_key())->cell());
-    //QDomXPath name_xpath;
-    //name_xpath.setXPath("/xsl:stylesheet/xsl:variable[@name='layout-name']");
-    //QDomXPath::node_vector_t name_nodes(name_xpath.apply(body_xsl));
-
-    //QDomXPath editor_xpath;
-    //editor_xpath.setXPath("/xsl:stylesheet/xsl:variable[@name='layout-editor']");
-    //QDomXPath::node_vector_t editor_nodes(editor_xpath.apply(body_xsl));
-
-    //if(name_nodes.size() != 1 || editor_nodes.size() != 1)
-    //{
-    //    //f_snap->die(snap_child::HTTP_CODE_CONFLICT, "Multiple or Missing Layout Name / Editor Definitions",
-    //    //    "The theme is required to have exactly one variable named \"layout-name\" and one named \"layout-editor\".",
-    //    //    "The programmer or themer need to fix this theme before accessing this page.");
-    //    //NOTREACHED();
-    //    // Most pages do not have a layout-editor entry (TBD at this point though)
-    //    return;
-    //}
-
-    //QDomElement n(name_nodes.at(0).toElement());
-    //QDomElement e(editor_nodes.at(0).toElement());
-    //if(n.isNull() || e.isNull())
-    //{
-    //    throw snap_logic_exception("The nodes retrieved with QDomXPath were not elements.");
-    //}
-    //QString const name(n.text());
-    //QString const script(e.text());
-
-    //QtCassandra::QCassandraTable::pointer_t layout_table(layout_plugin->get_layout_table());
-    //QString const parser_xml(layout_table->row(name)->cell(script)->value().stringValue());
-
     QDomDocument doc(page.ownerDocument());
-
-    //QDomDocument editor_widgets("editor-form");
-    //editor_widgets.setContent(parser_xml);
 
     QDomElement on_save(snap_dom::get_element(editor_widgets, "on-save", false));
     if(on_save.attribute("allow-edit", "yes") == "no")
@@ -2626,7 +2557,7 @@ void editor::on_generate_page_content(content::path_info_t& ipath, QDomElement& 
         QString const widget_auto_save(w.attribute("auto-save", "string")); // this one is #IMPLIED
 
         // get the current value from the database if it exists
-        if(revision_row->exists(field_name))
+        if(!field_name.isEmpty() && revision_row->exists(field_name))
         {
             QtCassandra::QCassandraValue const value(revision_row->cell(field_name)->value());
             QString current_value;
@@ -2661,7 +2592,8 @@ void editor::on_generate_page_content(content::path_info_t& ipath, QDomElement& 
             }
             else
             {
-                // If no auto-save we expect a plugin to furnish the current value
+                // If no auto-save we expect a plugin to furnish the current
+                // value so we do not overwrite it
                 set_value = false;
             }
 
@@ -2682,6 +2614,19 @@ void editor::on_generate_page_content(content::path_info_t& ipath, QDomElement& 
                 snap_dom::insert_html_string_to_xml_doc(value_tag, current_value);
             }
         }
+    }
+
+    QString action;
+    QDomElement form_mode(snap_dom::get_element(editor_widgets, "mode", false));
+    if(form_mode.hasAttribute("action"))
+    {
+        action = form_mode.attribute("action");
+    }
+    else
+    {
+        QString const qs_action(f_snap->get_server_parameter("qs_action"));
+        snap_uri const& uri(f_snap->get_uri());
+        action = uri.query_option(qs_action);
     }
 
     // now process the XML data with the plugin specialized data for
@@ -2710,10 +2655,8 @@ void editor::on_generate_page_content(content::path_info_t& ipath, QDomElement& 
     q.setFocus(editor_xml);
 
     // set action variable to the current action
-    QString const qs_action(f_snap->get_server_parameter("qs_action"));
-    snap_uri const& uri(f_snap->get_uri());
-    QString const action(uri.query_option(qs_action));
     q.bindVariable("action", QVariant(action));
+    q.bindVariable("tabindex_base", QVariant(g_tabindex_base));
 
     q.setQuery(editor_xsl);
     QDomDocument doc_output("widgets");
@@ -2764,6 +2707,27 @@ void editor::on_generate_page_content(content::path_info_t& ipath, QDomElement& 
         content::content::instance()->add_javascript(doc, "editor");
         content::content::instance()->add_css(doc, "editor");
     }
+
+    // the count includes all the widgets even those that do not make
+    // use of the tab index so we'll get some gaps, but that's a very
+    // small price to pay for this cool feature
+    g_tabindex_base += max_widgets;
+}
+
+
+void editor::on_generate_boxes_content(content::path_info_t& page_cpath, content::path_info_t& ipath, QDomElement& page, QDomElement& box, QString const& ctemplate)
+{
+    static_cast<void>(page_cpath);
+
+    // generate the editor content
+    // TODO: see if there wouldn't be a cleaner way to do this
+    //       because this requires the data to be owned by the editor
+    QDomDocument doc(page.ownerDocument());
+    QDomElement body(snap_dom::get_element(doc, "body"));
+    on_generate_page_content(ipath, page, body, ctemplate);
+
+    // use the output generate main content in the end
+    output::output::instance()->on_generate_main_content(ipath, page, box, ctemplate);
 }
 
 

@@ -29,11 +29,54 @@
 namespace snap
 {
 
-class snap_uri_exception_invalid_uri : public std::exception {};
-class snap_uri_exception_invalid_parameter : public std::exception {};
-class snap_uri_exception_invalid_path : public std::exception {};
-class snap_uri_exception_out_of_bounds : public std::exception {};
-class snap_uri_exception_exclusive_parameters : public std::exception {};
+class snap_uri_exception : public snap_exception
+{
+public:
+    snap_uri_exception(char const *       what_msg) : snap_exception("snap_uri", std::string(what_msg)) {}
+    snap_uri_exception(std::string const& what_msg) : snap_exception("snap_uri", what_msg) {}
+    snap_uri_exception(QString const&     what_msg) : snap_exception("snap_uri", what_msg.toStdString()) {}
+};
+
+class snap_uri_exception_invalid_uri : public snap_uri_exception
+{
+public:
+    snap_uri_exception_invalid_uri(char const *       what_msg) : snap_uri_exception(what_msg) {}
+    snap_uri_exception_invalid_uri(std::string const& what_msg) : snap_uri_exception(what_msg) {}
+    snap_uri_exception_invalid_uri(QString const&     what_msg) : snap_uri_exception(what_msg) {}
+};
+
+class snap_uri_exception_invalid_parameter : public snap_uri_exception
+{
+public:
+    snap_uri_exception_invalid_parameter(char const *       what_msg) : snap_uri_exception(what_msg) {}
+    snap_uri_exception_invalid_parameter(std::string const& what_msg) : snap_uri_exception(what_msg) {}
+    snap_uri_exception_invalid_parameter(QString const&     what_msg) : snap_uri_exception(what_msg) {}
+};
+
+class snap_uri_exception_invalid_path : public snap_uri_exception
+{
+public:
+    snap_uri_exception_invalid_path(char const *       what_msg) : snap_uri_exception(what_msg) {}
+    snap_uri_exception_invalid_path(std::string const& what_msg) : snap_uri_exception(what_msg) {}
+    snap_uri_exception_invalid_path(QString const&     what_msg) : snap_uri_exception(what_msg) {}
+};
+
+class snap_uri_exception_out_of_bounds : public snap_uri_exception
+{
+public:
+    snap_uri_exception_out_of_bounds(char const *       what_msg) : snap_uri_exception(what_msg) {}
+    snap_uri_exception_out_of_bounds(std::string const& what_msg) : snap_uri_exception(what_msg) {}
+    snap_uri_exception_out_of_bounds(QString const&     what_msg) : snap_uri_exception(what_msg) {}
+};
+
+class snap_uri_exception_exclusive_parameters : public snap_uri_exception
+{
+public:
+    snap_uri_exception_exclusive_parameters(char const *       what_msg) : snap_uri_exception(what_msg) {}
+    snap_uri_exception_exclusive_parameters(std::string const& what_msg) : snap_uri_exception(what_msg) {}
+    snap_uri_exception_exclusive_parameters(QString const&     what_msg) : snap_uri_exception(what_msg) {}
+};
+
 
 
 

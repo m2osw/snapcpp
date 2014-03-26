@@ -125,6 +125,7 @@ public:
     void                    on_register_backend_action(server::backend_action_map_t& actions);
     virtual void            on_backend_action(QString const& action);
     void                    on_user_verified(content::path_info_t& ipath, int64_t identifier);
+    void                    on_add_snap_expr_functions(snap_expr::functions_t& functions);
 
     SNAP_SIGNAL(get_user_rights, (permissions *perms, sets_t& sets), (perms, sets));
     SNAP_SIGNAL(get_plugin_permissions, (permissions *perms, sets_t& sets), (perms, sets));

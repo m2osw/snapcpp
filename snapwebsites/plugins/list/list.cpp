@@ -87,6 +87,9 @@ char const *get_name(name_t name)
     case SNAP_NAME_LIST_TABLE:
         return "list";
 
+    case SNAP_NAME_LIST_TAXONOMY_PATH:
+        return "types/taxonomy/system/list";
+
     case SNAP_NAME_LIST_THEME: // filter function
         return "list::theme";
 
@@ -199,6 +202,7 @@ void list::on_bootstrap(snap_child *snap)
 {
     f_snap = snap;
 
+    SNAP_LISTEN0(list, "server", server, attach_to_session);
     SNAP_LISTEN(list, "server", server, register_backend_action, _1);
     SNAP_LISTEN(list, "layout", layout::layout, generate_page_content, _1, _2, _3, _4);
     SNAP_LISTEN(list, "content", content::content, create_content, _1, _2, _3);
@@ -669,6 +673,10 @@ void list::on_backend_action(QString const& action)
         for(;;)
         {
             // work as long as there is work to do
+            // TBD -- we may want to move this loop in a thread so we can
+            //        handle UDP messages full speed all the time and thus
+            //        a STOP could be acted on quickly whereas right now
+            //        any message has to wait the end of the loop.
             int did_work(1);
             while(did_work != 0)
             {
@@ -718,9 +726,29 @@ void list::on_backend_action(QString const& action)
                 //char const *ping(get_name(SNAP_NAME_SENDMAIL_PING));
                 //if(strcmp(buf, ping) != 0)
                 //{
-                //    continue
+                //    continue;
                 //}
+
+                // Because there is a delay of LIST_PROCESSING_LATENCY
+                // between the time when the user generates the PING and
+                // the time we can make use of the data, we sleep here
+                // before processing; note that in most cases that means
+                // the data will be processed very quickly in comparison
+                // to skipping on it now and waiting another 5 minutes
+                // before doing anything on the new data (i.e. at this
+                // time LIST_PROCESSING_LATENCY is only 10 seconds!)
+                //
+                // LIST_PROCESSING_LATENCY is in micro-seconds, whereas
+                // the timespec structure expects nanoseconds
+                // TBD -- should we add 1 sec., just in case?
+                // TBD -- should we check for other UDP packets while
+                //        waiting?
+                struct timespec wait;
+                wait.tv_sec = LIST_PROCESSING_LATENCY / 1000000;
+                wait.tv_nsec = (LIST_PROCESSING_LATENCY % 1000000) * 1000;
+                nanosleep(&wait, NULL);
             }
+            // else 5 min. time out, just go on and check the lists
         }
     }
     else if(action == get_name(SNAP_NAME_LIST_STANDALONELIST))

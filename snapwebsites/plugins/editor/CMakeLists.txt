@@ -63,6 +63,7 @@ add_library(editor SHARED
     ${SNAP_MANAGER_RESOURCES_RCC}
     buttons.png
     checkmark-15x11.png
+    dropdown-arrow-15x15.png
     editor.js
     editor.css
     content.xml

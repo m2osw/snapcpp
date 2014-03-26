@@ -20,6 +20,9 @@
 // Source: http://stackoverflow.com/questions/5605401/insert-link-in-contenteditable-element
 // Source: http://stackoverflow.com/questions/6867519/javascript-regex-to-count-whitespace-characters
 
+// FileReader replacement under IE9:
+// Source: https://github.com/MrSwitch/dropfile
+
 // Code verification with Google Closure Compiler:
 // Source: http://code.google.com/p/closure-compiler/
 // Source: https://developers.google.com/closure/compiler/docs/error-ref
@@ -168,6 +171,7 @@ snapwebsites.Editor.prototype = {
     _savedRange: null,
     _msie: false,
     _keys: [],
+    _openDropdown: null,
 
     _titleToURI: function(title)
     {
@@ -1455,6 +1459,53 @@ console.log("command "+idx+" "+this.toolbarButtons[idx][2]+"!!!");
 
             snapwebsites.EditorInstance._checkModified();
         });
+
+        jQuery(".editable.dropdown")
+            .each(function(){
+               jQuery(this).children(".dropdown-items").css("position", "absolute"); 
+            })
+            .click(function(e){
+                var that = jQuery(this), visible;
+
+                // avoid default browser behavior
+                e.preventDefault();
+                e.stopPropagation();
+
+                visible = that.children(".dropdown-items").is(":visible");
+                if(snapwebsites.EditorInstance._openDropdown)
+                {
+                    snapwebsites.EditorInstance._openDropdown.fadeOut(150);
+                    snapwebsites.EditorInstance._openDropdown = null;
+                }
+                if(!visible)
+                {
+                    snapwebsites.EditorInstance._openDropdown = that.children(".dropdown-items");
+                    snapwebsites.EditorInstance._openDropdown.fadeIn(150);
+                }
+            })
+            .find(".dropdown-items .dropdown-item").click(function(e){
+                var that = jQuery(this), content, items;
+
+                // avoid default browser behavior
+                e.preventDefault();
+                e.stopPropagation();
+
+                items = that.parents(".dropdown-items");
+                items.toggle();
+                items.find(".dropdown-item").removeClass("selected");
+                that.addClass("selected");
+                content = items.siblings(".editor-content");
+                content.empty();
+                content.append(that.html());
+                if(that.attr("value") != "")
+                {
+                    content.attr("value", that.attr("value"));
+                }
+                else
+                {
+                    content.removeAttr("value");
+                }
+            });
 
         // Make labels focus the corresponding editable box
         jQuery("label[for!='']").click(function(e){

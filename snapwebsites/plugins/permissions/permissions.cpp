@@ -285,7 +285,7 @@ QString const& permissions::sets_t::get_login_status() const
  *
  * \sa add_user_right()
  */
-const QString& permissions::sets_t::get_user_path() const
+QString const& permissions::sets_t::get_user_path() const
 {
     return f_user_path;
 }
@@ -821,8 +821,6 @@ void permissions::content_update(int64_t variables_timestamp)
  */
 bool permissions::get_user_rights_impl(permissions *perms, sets_t& sets)
 {
-    (void)perms;
-
     QString const& login_status(sets.get_login_status());
 
     // if spammers are logged in they don't get access to anything anyway
@@ -1285,8 +1283,9 @@ void permissions::on_validate_action(content::path_info_t& ipath, QString const&
 
 /** \brief Check whether the user has permission to access path.
  *
- * This function checks whether the specified \p user has enough rights,
- * type of which is defined by \p action, to access the specified \p path.
+ * This function checks whether the specified \p user_path has enough
+ * rights, type of which is defined by \p action, to access the
+ * specified \p ipath.
  *
  * So for example the anonymous user can "view" a page only if that page
  * is publicly visible. The anonymous user has pretty much only the "view"
@@ -1754,6 +1753,62 @@ void permissions::on_user_verified(content::path_info_t& ipath, int64_t identifi
         links::links::instance()->create_link(source, destination);
     }
 }
+
+
+
+namespace details
+{
+
+void call_perms(snap_expr::variable_t& result, snap_expr::variable_t::variable_vector_t const& sub_results)
+{
+    if(sub_results.size() != 3)
+    {
+        throw snap_expr::snap_expr_exception_invalid_number_of_parameters("invalid number of parameters to call perms() expected exactly 3");
+    }
+    QString path(sub_results[0].get_string("perms(1)"));
+    QString user_path(sub_results[1].get_string("perms(2)"));
+    QString action(sub_results[2].get_string("perms(3)"));
+
+    // setup the parameters to the access_allowed() signal
+    content::path_info_t ipath;
+    ipath.set_path(path);
+    ipath.set_parameter("action", action);
+    quiet_error_callback err_callback(content::content::instance()->get_snap(), false);
+    path::path::instance()->validate_action(ipath, action, err_callback);
+    char const *login_status(get_name(SNAP_NAME_PERMISSIONS_LOGIN_STATUS_RETURNING_REGISTERED));
+
+    // check whether that user is allowed that action with that path
+    content::permission_flag allowed;
+    path::path::instance()->access_allowed(user_path, ipath, action, login_status, allowed);
+
+    // save the result
+    QtCassandra::QCassandraValue value;
+    value.setBoolValue(allowed.allowed());
+    result.set_value(snap_expr::variable_t::EXPR_VARIABLE_TYPE_BOOL, value);
+}
+
+
+snap_expr::functions_t::function_call_table_t const permissions_functions[] =
+{
+    { // check whether a user has permissions to access a page
+        "perms",
+        call_perms
+    },
+    {
+        nullptr,
+        nullptr
+    }
+};
+
+
+} // namespace details
+
+
+void permissions::on_add_snap_expr_functions(snap_expr::functions_t& functions)
+{
+    functions.add_functions(details::permissions_functions);
+}
+
 
 
 SNAP_PLUGIN_END()

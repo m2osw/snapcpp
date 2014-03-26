@@ -289,7 +289,7 @@ bool snap_uri::set_uri(QString const& uri)
         }
         if(s != u)
         {
-            // last path that doesn't end with '/'
+            // last path element when it does not end with '/'
             uri_path << urldecode(QString(s, static_cast<int>(u - s)));
         }
     }
@@ -546,7 +546,7 @@ QString const snap_uri::get_uri(bool use_hash_bang) const
         if(use_hash_bang)
         {
             // hash bang and anchor are exclusive
-            throw snap_uri_exception_exclusive_parameters();
+            throw snap_uri_exception_exclusive_parameters("you cannot use the hash bang (#!) and an anchor (#) in the same URI");
         }
         uri += "#";
         uri += urlencode(f_anchor, "!/~");
@@ -627,7 +627,7 @@ QString snap_uri::get_part(QString const& name, int part) const
         {
             if(part < 0 || part >= f_options.size())
             {
-                throw snap_uri_exception_out_of_bounds();
+                throw snap_uri_exception_out_of_bounds(QString("option %1 does not exist (range is 0 to %2)").arg(part).arg(f_options.size()));
             }
             return (f_options.begin() + part).value();
         }
@@ -651,7 +651,7 @@ QString snap_uri::get_part(QString const& name, int part) const
         {
             if(part < 0 || part >= f_path.size())
             {
-                throw snap_uri_exception_out_of_bounds();
+                throw snap_uri_exception_out_of_bounds(QString("path %1 is not available (range 0 to %2)").arg(part).arg(f_path.size()));
             }
             return f_path[part];
         }
@@ -676,7 +676,7 @@ QString snap_uri::get_part(QString const& name, int part) const
         {
             if(part < 0 || part >= f_query_strings.size())
             {
-                throw snap_uri_exception_out_of_bounds();
+                throw snap_uri_exception_out_of_bounds(QString("query-string %1 does not exist (range 0 to %2)").arg(part).arg(f_query_strings.size()));
             }
             return (f_query_strings.begin() + part).value();
         }
@@ -692,7 +692,7 @@ QString snap_uri::get_part(QString const& name, int part) const
         {
             if(part < 0 || part >= f_sub_domains.size())
             {
-                throw snap_uri_exception_out_of_bounds();
+                throw snap_uri_exception_out_of_bounds(QString("sub-domain %1 does not exist (range 0 to %2)").arg(part).arg(f_sub_domains.size()));
             }
             return f_sub_domains[part];
         }
@@ -745,7 +745,7 @@ void snap_uri::set_protocol(QString const& uri_protocol)
 {
     if(uri_protocol.isEmpty())
     {
-        throw snap_uri_exception_invalid_parameter();
+        throw snap_uri_exception_invalid_parameter("the uri_protocol parameter cannot be an empty string");
     }
     f_protocol = uri_protocol;
 }
@@ -880,7 +880,7 @@ void snap_uri::set_domain(QString const& full_domain_name)
     QString tld;
     if(!process_domain(full_domain_name, sub_domain_names, domain_name, tld))
     {
-        throw snap_uri_exception_invalid_uri();
+        throw snap_uri_exception_invalid_uri(QString("could not break up \"%1\" as a valid domain name").arg(full_domain_name));
     }
 
     f_domain = domain_name;
@@ -974,7 +974,7 @@ QString snap_uri::sub_domain(int part) const
 {
     if(part < 0 || part >= f_sub_domains.size())
     {
-        throw snap_uri_exception_out_of_bounds();
+        throw snap_uri_exception_out_of_bounds(QString("sub-domain %1 does not exist (range 0 to %2)").arg(part).arg(f_sub_domains.size()));
     }
     return f_sub_domains[part];
 }
@@ -1020,7 +1020,7 @@ void snap_uri::set_port(QString const& port)
     int p = port.toInt(&ok);
     if(!ok || p < 0 || p > 65535)
     {
-        throw snap_uri_exception_invalid_parameter();
+        throw snap_uri_exception_invalid_parameter(QString("\"%1\" is an invalid port number").arg(port));
     }
     f_port = p;
 }
@@ -1045,7 +1045,7 @@ void snap_uri::set_port(int port)
 {
     if(port < 0 || port > 65535)
     {
-        throw snap_uri_exception_invalid_parameter();
+        throw snap_uri_exception_invalid_parameter(QString("port \"%1\" is out of range (1 to 65535)").arg(port));
     }
     f_port = port;
 }
@@ -1110,20 +1110,20 @@ void snap_uri::set_path(QString uri_path)
         }
     }
     QStringList p(uri_path.split('/'));
-    int max(p.size());
-    for(int i(0); i < max; ++i)
+    int max_parts(p.size());
+    for(int i(0); i < max_parts; ++i)
     {
         if(p[i] == "..")
         {
             // note: max should not be less than 2 if i != 0
-            if(i == 0 || max < 2)
+            if(i == 0 || max_parts < 2)
             {
-                throw snap_uri_exception_invalid_path();
+                throw snap_uri_exception_invalid_path(QString("path \"%1\" is not valid (it includes too many \"..\")").arg(uri_path));
             }
             p.removeAt(i);
             p.removeAt(--i);
             --i;
-            max -= 2;
+            max_parts -= 2;
         }
     }
 
@@ -1230,7 +1230,7 @@ QString snap_uri::path_folder_name(int part) const
 {
     if(part < 0 || part >= f_path.size())
     {
-        throw snap_uri_exception_out_of_bounds();
+        throw snap_uri_exception_out_of_bounds(QString("no path section %1 available (range 0 to %2)").arg(part).arg(f_path.size()));
     }
     return f_path[part];
 }
@@ -1347,7 +1347,7 @@ QString snap_uri::option(int part, QString& name) const
 {
     if(part < 0 || part >= f_options.size())
     {
-        throw snap_uri_exception_out_of_bounds();
+        throw snap_uri_exception_out_of_bounds(QString("no option %1 available (range 0 to %2)").arg(part).arg(f_options.size()));
     }
     snap_uri_options_t::iterator it(f_options.begin() + part);
     name = it.key();
@@ -1555,7 +1555,7 @@ QString snap_uri::query_option(int part, QString& name) const
 {
     if(part < 0 || part >= f_query_strings.size())
     {
-        throw snap_uri_exception_out_of_bounds();
+        throw snap_uri_exception_out_of_bounds(QString("query-option %1 does not exist (range 0 to %2)").arg(part).arg(f_query_strings.size()));
     }
     snap_uri_options_t::iterator it(f_query_strings.begin() + part);
     name = it.key();
@@ -1598,7 +1598,7 @@ void snap_uri::set_anchor(const QString& uri_anchor)
 {
     if(uri_anchor.indexOf('#') != -1)
     {
-        throw snap_uri_exception_invalid_parameter();
+        throw snap_uri_exception_invalid_parameter(QString("anchor string \"%1\" cannot include a '#' character").arg(uri_anchor));
     }
     f_anchor = uri_anchor;
 }
@@ -1819,10 +1819,10 @@ QString snap_uri::urldecode(QString const& uri, bool relax)
             {
                 if(!relax)
                 {
-#ifdef DEBUG
-SNAP_LOG_TRACE() << "url decode?! [" << uri << "]";
-#endif
-                    throw snap_uri_exception_invalid_uri();
+//#ifdef DEBUG
+//SNAP_LOG_TRACE() << "url decode?! [" << uri << "]";
+//#endif
+                    throw snap_uri_exception_invalid_uri(QString("urldecode(%1, %2) failed because of an invalid %%xx character (digits are %3 / %4)").arg(uri).arg(relax ? "true" : "false").arg(static_cast<int>(u[0])).arg(static_cast<int>(u[1])));
                 }
                 // use the % as is
                 utf8 += '%';
@@ -1845,10 +1845,10 @@ SNAP_LOG_TRACE() << "url decode?! [" << uri << "]";
             {
                 if(!relax)
                 {
-#ifdef DEBUG
-SNAP_LOG_TRACE() << "url decode?! [" << uri << "] (2)";
-#endif
-                    throw snap_uri_exception_invalid_uri();
+//#ifdef DEBUG
+//SNAP_LOG_TRACE() << "url decode?! [" << uri << "] (2)";
+//#endif
+                    throw snap_uri_exception_invalid_uri(QString("urldecode(%1, %2) failed because of an invalid %%xx character (digits are %3 / %4)").arg(uri).arg(relax ? "true" : "false").arg(static_cast<int>(u[0])).arg(static_cast<int>(u[1])));
                 }
                 // use the % as is
                 utf8 += c;
@@ -1872,10 +1872,10 @@ SNAP_LOG_TRACE() << "url decode?! [" << uri << "] (2)";
         }
         else
         {
-#ifdef DEBUG
-SNAP_LOG_TRACE() << "url decode?! [" << uri << "] (3)";
-#endif
-            throw snap_uri_exception_invalid_uri();
+//#ifdef DEBUG
+//SNAP_LOG_TRACE() << "url decode?! found an invalid characters [" << uri << "] (3)";
+//#endif
+            throw snap_uri_exception_invalid_uri(QString("urldecode(%1, %2) failed because of an invalid character (%3)").arg(uri).arg(relax ? "true" : "false").arg(static_cast<int>(*u)));
         }
     }
 

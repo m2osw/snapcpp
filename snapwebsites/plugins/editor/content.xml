@@ -95,8 +95,13 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <path>:/images/editor/buttons.png</path>
       <mime-type>image/png</mime-type>
     </attachment>
+    <!-- put all those images in one image (like the toolbar buttons) -->
     <attachment name="checkmark" type="attachment/public" owner="output">
       <path>:/images/editor/checkmark-15x11.png</path>
+      <mime-type>image/png</mime-type>
+    </attachment>
+    <attachment name="dropdown-arrow" type="attachment/public" owner="output">
+      <path>:/images/editor/dropdown-arrow-15x15.png</path>
       <mime-type>image/png</mime-type>
     </attachment>
   </content>

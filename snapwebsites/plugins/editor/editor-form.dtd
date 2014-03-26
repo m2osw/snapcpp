@@ -16,13 +16,13 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 -->
-<!ELEMENT editor-form (auto-reset|focus|immediate|on-save|drop|no-toolbar|taborder|widget)+>
+<!ELEMENT editor-form (auto-reset|focus|immediate|mode|on-save|drop|no-toolbar|taborder|widget)+>
 <!ATTLIST editor-form owner CDATA #REQUIRED
                       auto-save (auto-save) #IMPLIED
                       processor CDATA #IMPLIED
                       content-modified CDATA #REQUIRED>
 
-<!ENTITY % html-data "(#PCDATA|a|b|br|div|em|i|img|p|strong|u)*" >
+<!ENTITY % html-data "(#PCDATA|a|b|br|div|em|i|img|p|strong|u|item)*" >
 
 <!ELEMENT auto-reset EMPTY>
 <!ATTLIST auto-reset minutes CDATA #REQUIRED>
@@ -31,6 +31,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 <!ATTLIST focus refid IDREF #REQUIRED>
 
 <!ELEMENT immediate EMPTY>
+
+<!ELEMENT mode EMPTY>
+<!ATTLIST mode action (edit|view|auto) #IMPLIED>
 
 <!ELEMENT on-save EMPTY>
 <!ATTLIST on-save redirect CDATA #IMPLIED
@@ -47,11 +50,11 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 <!ELEMENT widget (label|tooltip|help|background-value|attachment|sizes|filters|required|classes|value)*>
 <!ATTLIST widget id ID #REQUIRED
                  type NMTOKEN #REQUIRED
-                 field CDATA #REQUIRED
+                 field CDATA #IMPLIED
                  path CDATA #REQUIRED
                  duplicate-of IDREF #IMPLIED
                  secret (public|secret) "public"
-                 auto-save (int8|string) #IMPLIED
+                 auto-save (int8|string|no) #IMPLIED
                  drop (drop) #IMPLIED>
 
 <!ELEMENT label %html-data;>
@@ -89,13 +92,17 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 <!ELEMENT em %html-data;>
 <!ELEMENT i %html-data;>
 
+<!ELEMENT item %html-data;>
+<!ATTLIST item value CDATA #REQUIRED
+               default CDATA #IMPLIED>
+
 <!ELEMENT img EMPTY>
 <!ATTLIST img src CDATA #REQUIRED
-          width CDATA #IMPLIED
-          height CDATA #IMPLIED
-          title CDATA #IMPLIED
-          alt CDATA #IMPLIED
-          type CDATA #IMPLIED>
+              width CDATA #IMPLIED
+              height CDATA #IMPLIED
+              title CDATA #IMPLIED
+              alt CDATA #IMPLIED
+              type CDATA #IMPLIED>
 
 <!ELEMENT p %html-data;>
 <!ELEMENT strong %html-data;>

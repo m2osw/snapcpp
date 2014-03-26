@@ -1166,9 +1166,12 @@ void links::delete_this_link(link_info const& source, link_info const& destinati
 }
 
 
+namespace details
+{
+
 // TBD maybe this should be a taxonomy function and not directly a links option?
 //     (it would remove some additional dependencies on the content plugin!)
-static void call_linked_to(snap_expr::variable_t& result, snap_expr::variable_t::variable_vector_t const& sub_results)
+void call_linked_to(snap_expr::variable_t& result, snap_expr::variable_t::variable_vector_t const& sub_results)
 {
     if(sub_results.size() != 3)
     {
@@ -1196,6 +1199,7 @@ static void call_linked_to(snap_expr::variable_t& result, snap_expr::variable_t:
     result.set_value(r);
 }
 
+
 snap_expr::functions_t::function_call_table_t const links_functions[] =
 {
     { // check whether a page is linked to a type
@@ -1208,10 +1212,14 @@ snap_expr::functions_t::function_call_table_t const links_functions[] =
     }
 };
 
+
+} // namespace details
+
 void links::on_add_snap_expr_functions(snap_expr::functions_t& functions)
 {
-    functions.add_functions(links_functions);
+    functions.add_functions(details::links_functions);
 }
+
 
 SNAP_PLUGIN_END()
 
