@@ -709,9 +709,10 @@ void permissions::on_bootstrap(snap_child *snap)
 {
     f_snap = snap;
 
+    SNAP_LISTEN(permissions, "server", server, register_backend_action, _1);
+    SNAP_LISTEN(permissions, "server", server, add_snap_expr_functions, _1);
     SNAP_LISTEN(permissions, "path", path::path, validate_action, _1, _2, _3);
     SNAP_LISTEN(permissions, "path", path::path, access_allowed, _1, _2, _3, _4, _5);
-    SNAP_LISTEN(permissions, "server", server, register_backend_action, _1);
     SNAP_LISTEN(permissions, "users", users::users, user_verified, _1, _2);
 }
 
