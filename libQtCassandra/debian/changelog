@@ -1,3 +1,14 @@
+libqtcassandra (0.5.4) saucy; urgency=high
+
+  [Alexis Wilke]
+  * Added documentation about the fact that the QMap is always started from
+  smallest to largest even if you set the reverse flag on.
+
+  [R. Douglas Barbieri]
+  * 
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Fri, 28 Mar 2014 00:26:04 -0700
+
 libqtcassandra (0.5.3) saucy; urgency=high
 
   [Alexis Wilke]
