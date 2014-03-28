@@ -3243,6 +3243,7 @@ void users::on_replace_token(content::path_info_t& ipath, QString const& plugin_
     bool const users_picture(token.is_token("users::picture"));
     if(users_picture)
     {
+        SNAP_LOG_TRACE() << "first is_token(\"users::picture\")";
         // setup as the default image by default
         token.f_replacement = "<img src=\"/images/users/default-user-image.png\" alt=\"Default user picture\" width=\"32\" height=\"32\"/>";
     }
@@ -3300,6 +3301,8 @@ void users::on_replace_token(content::path_info_t& ipath, QString const& plugin_
         QtCassandra::QCassandraValue const value(users_table->row(f_user_key)->cell(get_name(SNAP_NAME_USERS_PICTURE))->value());
         if(!value.nullValue())
         {
+            SNAP_LOG_TRACE() << "second is_token(\"users::picture\")";
+
             // TBD: not sure right now how we'll offer those
             //      probably with a special path that tells us
             //      to go look in the users' table
