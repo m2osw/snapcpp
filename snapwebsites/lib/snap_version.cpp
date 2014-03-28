@@ -63,9 +63,9 @@ char const *g_operators = "\0\0\0"  // OPERATOR_UNORDERED
  * The extensions are all expected
  *
  * \param[in] filename  The name of the file to check.
- * \param[in] extensions  A NULL terminated array of extensions.
+ * \param[in] extensions  A nullptr terminated array of extensions.
  *
- * \return The pointer of the extensions that matched or NULL.
+ * \return The pointer of the extensions that matched or nullptr.
  */
 char const *find_extension(QString const& filename, char const **extensions)
 {
@@ -92,9 +92,9 @@ char const *find_extension(QString const& filename, char const **extensions)
         // not that one, move on
         ++extensions;
     }
-    while(*extensions != NULL);
+    while(*extensions != nullptr);
 
-    return NULL;
+    return nullptr;
 }
 
 
@@ -103,8 +103,10 @@ char const *find_extension(QString const& filename, char const **extensions)
  * The \p name parameter is checked for validity. It must match the
  * following:
  *
- * \li Start with a letter [a-z].
- * \li Include only letters [a-z], digits [0-9], and dahses (-).
+ * \li Optionally, start with a name composed of letters [a-z], digits [0-9],
+ *     and dashes (-), followed by a namespace scope (::).
+ * \li Each name must start with a letter [a-z].
+ * \li Include only letters [a-z], digits [0-9], and dashes (-).
  * \li The name does not end with a dash (-).
  * \li The name does not include two dashes one after another (--).
  * \li The name is 2 characters or more.
@@ -112,7 +114,7 @@ char const *find_extension(QString const& filename, char const **extensions)
  * Which looks like this as a regex:
  *
  * \code
- * /[a-z][-a-z0-9]+/
+ * /([a-z][-a-z0-9]*::)?[a-z][-a-z0-9]*\/
  * \endcode
  *
  * The names must exclusively be composed of lowercase letters. This will
@@ -122,20 +124,22 @@ char const *find_extension(QString const& filename, char const **extensions)
  * \note
  * This function is used to verify the name and the browser strings.
  *
- * \param[in] name  The name to be checked against the name pattern.
+ * \param[in,out] name  The name to be checked against the name pattern.
  * \param[out] error  The error message in case an error occurs.
+ * \param[out] namespace_string  The namespace if one was defined.
  *
  * \return true if the name matches, false otherwise.
  */
-bool validate_name(QString const& name, QString& error)
+bool validate_name(QString& name, QString& error, QString& namespace_string)
 {
     error.clear();
+    namespace_string.clear();
 
     // length constraint
-    int const max_length(name.length());
+    int max_length(name.length());
     if(max_length < 2)
     {
-        error = "the name or browser in a versioned filename must be at least two characters. \"" + name + "\" is not valid.";
+        error = QString("the name or browser in a versioned filename must be at least two characters. \"%1\" is not valid.").arg(name);
         return false;
     }
 
@@ -144,17 +148,19 @@ bool validate_name(QString const& name, QString& error)
     if(c < 'a' || c > 'z')
     {
         // name cannot start with dash (-) or a digit ([0-9])
-        error = "the name or browser of a versioned filename must start with a letter [a-z]. \"" + name + "\" is not valid.";
+        error = QString("the name or browser of a versioned filename must start with a letter [a-z]. \"%1\" is not valid.").arg(name);
         return false;
     }
-    if(name.at(max_length - 1).unicode() == '-')
+    c = name.at(max_length - 1).unicode();
+    if(c == '-' || c == ':')
     {
         // name cannot end with a dash (-)
-        error = "a versioned name or browser cannot end with a dash (-). \"" + name + "\" is not valid.";
+        error = QString("a versioned name or browser cannot end with a dash (-) or a slash (/). \"%1\" is not valid.").arg(name);
         return false;
     }
 
     // start with 1 because we just checked character 0 and it's valid
+    bool has_namespace(false);
     for(int i(1); i < max_length; ++i)
     {
         c = name.at(i).unicode();
@@ -165,15 +171,64 @@ bool validate_name(QString const& name, QString& error)
             // the -1 is safe because we start the loop at 1
             if(name.at(i - 1).unicode() == '-')
             {
-                error = "a name or browser versioned filename cannot include two dashes (--) one after another. \"" + name + "\" is not valid.";
+                error = QString("a name or browser versioned filename cannot include two dashes (--) one after another. \"%1\" is not valid.").arg(name);
                 return false;
             }
+        }
+        else if(c == ':')
+        {
+            // TBD -- we may want to add a test on whether we want to accept
+            //        slashes or not
+            if(has_namespace)
+            {
+                error = QString("a name cannot include more than one slash (/) character. \"%1\" is not valid.").arg(name);
+                return false;
+            }
+            has_namespace = true;
+            if(i == 0)
+            {
+                throw snap_logic_exception("Found a ':' at the start of a version name, when we already checked that case.");
+            }
+            c = name.at(i - 1).unicode();
+            if(c == '-')
+            {
+                error = QString("a namespace name cannot end with a dash (-) characters. \"%1\" is not valid.").arg(name);
+                return false;
+            }
+            namespace_string = name.mid(0, i);
+            ++i;
+            if(i >= max_length)
+            {
+                throw snap_logic_exception("Found a ':' at the end of a version name, when we already checked that case.");
+            }
+            c = name.at(i).unicode();
+            if(c != ':')
+            {
+                error = QString("a namespace must be composed of two colon (::) characters. \"%1\" is not valid.").arg(name);
+                return false;
+            }
+            ++i;
+            if(i >= max_length)
+            {
+                throw snap_logic_exception("Found a ':' at the end of a version name, when we already checked that case.");
+            }
+            c = name.at(i).unicode();
+            if(c < 'a' || c > 'z')
+            {
+                // name cannot start with dash (-) or a digit ([0-9])
+                error = QString("the name or browser of a versioned filename must start with a letter [a-z]. \"%1\" is not valid.").arg(name);
+                return false;
+            }
+            // remove the namespace from the name
+            name = name.mid(i);
+            max_length = name.length();
+            i = 0;
         }
         else if((c < '0' || c > '9')
              && (c < 'a' || c > 'z'))
         {
             // name can only include [a-z0-9] and dashes (-)
-            error = "a name or browser versioned filename can only include letters (a-z), digits (0-9), or dashes (-). \"" + name + "\" is not valid.";
+            error = QString("a name or browser versioned filename can only include letters (a-z), digits (0-9), namespace (::), or dashes (-). \"%1\" is not valid.").arg(name);
             return false;
         }
     }
@@ -386,10 +441,13 @@ bool validate_operator(QString const& operator_string, operator_t& op, QString& 
  */
 bool name::set_name(QString const& name_string)
 {
-    bool const r(validate_name(name_string, f_error));
+    QString namespace_string;
+    QString the_name(name_string);
+    bool const r(validate_name(the_name, f_error, namespace_string));
     if(r)
     {
-        f_name = name_string;
+        f_name = the_name;
+        f_namespace = namespace_string;
     }
     return r;
 }
@@ -865,6 +923,8 @@ versioned_filename::versioned_filename(QString const& extension)
  * continue to return the old value of the versioned filename, except
  * the compare() and relational operators.
  *
+ * \param[in] filename  The filename to be parsed for a version.
+ *
  * \return true if the filename was a valid versioned filename.
  */
 bool versioned_filename::set_filename(QString const& filename)
@@ -907,14 +967,16 @@ bool versioned_filename::set_filename(QString const& filename)
     {
         if(p2 + 1 >= max_length)
         {
-            f_error = "a browser name must be specified in a versioned filename if you include two underscores (_). \"" + filename + "\" is not valid.";
+            f_error = QString("a browser name must be specified in a versioned filename if you include two underscores (_). \"%1\" is not valid.").arg(filename);
             return false;
         }
     }
 
     // name
     QString const name(filename.mid(start, p1 - start));
-    if(!validate_name(name, f_error))
+    QString name_string(name);
+    QString namespace_string;
+    if(!validate_name(name_string, f_error, namespace_string))
     {
         return false;
     }
@@ -934,8 +996,13 @@ bool versioned_filename::set_filename(QString const& filename)
     {
         // validate only if not empty (since it is optional empty is okay)
         browser = filename.mid(p2 + 1, max_length - p2 - 1);
-        if(!validate_name(browser, f_error))
+        if(!validate_name(browser, f_error, namespace_string))
         {
+            return false;
+        }
+        if(!namespace_string.isEmpty())
+        {
+            f_error = QString("a browser name cannot include a namespace (::). \"%1\" is not valid.").arg(filename);
             return false;
         }
     }
@@ -971,7 +1038,9 @@ bool versioned_filename::set_filename(QString const& filename)
  */
 bool versioned_filename::set_name(QString const& name)
 {
-    bool r(validate_name(name, f_error));
+    QString namespace_string;
+    QString name_string(name);
+    bool const r(validate_name(name_string, f_error, namespace_string));
     if(r)
     {
         f_name.set_name(name);
@@ -1259,9 +1328,17 @@ bool dependency::set_dependency(QString const& dependency_string)
     {
         bracket_pos = d.length();
     }
+    if(paren_pos != d.length() && paren_pos > bracket_pos)
+    {
+        // cannot have versions after browsers
+        f_error = "version dependency syntax error, '[' found before '('";
+        return false;
+    }
     int pos(std::min SNAP_PREVENT_MACRO_SUBSTITUTION (space_pos, std::min SNAP_PREVENT_MACRO_SUBSTITUTION (paren_pos, bracket_pos)));
     QString const dep_name(d.left(pos));
-    if(!validate_name(dep_name, f_error))
+    QString namespace_string;
+    QString name_string(dep_name);
+    if(!validate_name(name_string, f_error, namespace_string))
     {
         return false;
     }
@@ -1480,7 +1557,8 @@ bool dependency::set_dependency(QString const& dependency_string)
                 // this happens because of the trimmed()
                 continue;
             }
-            if(!validate_name(bn, f_error))
+            name_string = bn;
+            if(!validate_name(name_string, f_error, namespace_string))
             {
                 return false;
             }
@@ -1500,7 +1578,7 @@ bool dependency::set_dependency(QString const& dependency_string)
 
     if(pos != d.length())
     {
-        f_error = "left over data at the end of the dependency string \"" + dependency_string + "\"";
+        f_error = QString("left over data at the end of the dependency string \"%1\"").arg(dependency_string);
         return false;
     }
 
@@ -1520,7 +1598,14 @@ bool dependency::set_dependency(QString const& dependency_string)
  */
 QString dependency::get_dependency_string() const
 {
-    QString dep(f_name.get_name());
+    QString dep;
+    
+    if(!f_name.get_namespace().isEmpty())
+    {
+        dep = QString("%1::").arg(f_name.get_namespace());
+    }
+
+    dep += f_name.get_name();
 
     int const max_versions(f_versions.count());
     if(max_versions > 0)
@@ -1601,8 +1686,8 @@ bool dependency::is_valid() const
  * The source is expected to be UTF-8.
  */
 quick_find_version_in_source::quick_find_version_in_source()
-    : f_data(NULL)
-    , f_end(NULL)
+    : f_data(nullptr)
+    , f_end(nullptr)
     //, f_version("") -- auto-init
     //, f_browsers("") -- auto-init
 {

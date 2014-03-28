@@ -1385,6 +1385,12 @@ snap_uri::snap_uri_options_t const& snap_uri::options_list() const
  */
 void snap_uri::set_query_option(QString const& name, QString const& value)
 {
+    if(name.isEmpty())
+    {
+        // this happens if the name was not defined in the configuration file
+        return;
+    }
+
     if(value.isEmpty())
     {
         f_query_strings.remove(name);
@@ -1405,6 +1411,12 @@ void snap_uri::set_query_option(QString const& name, QString const& value)
  */
 void snap_uri::unset_query_option(QString const& name)
 {
+    if(name.isEmpty())
+    {
+        // this happens if the name was not defined in the configuration file
+        return;
+    }
+
     f_query_strings.remove(name);
 }
 
@@ -1497,6 +1509,12 @@ QString snap_uri::query_string() const
  */
 bool snap_uri::has_query_option(const QString& name) const
 {
+    if(name.isEmpty())
+    {
+        // this happens if the name was not defined in the configuration file
+        return false;
+    }
+
     return f_query_strings.contains(name);
 }
 
@@ -1516,6 +1534,12 @@ bool snap_uri::has_query_option(const QString& name) const
  */
 QString snap_uri::query_option(const QString& name) const
 {
+    if(name.isEmpty())
+    {
+        // this happens if the name was not defined in the configuration file
+        return "";
+    }
+
     if(f_query_strings.contains(name))
     {
         return f_query_strings[name];

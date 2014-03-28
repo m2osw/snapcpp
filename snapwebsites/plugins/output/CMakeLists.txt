@@ -53,10 +53,12 @@ add_library(output SHARED
     ${SNAP_MANAGER_MOC_CXX}
     ${SNAP_MANAGER_RESOURCES_RCC}
     content.xml
+    output.css
     close-button.png
     jquery.js
     jquery-extensions.js
     output.js
+    popup.js
 )
 
 target_link_libraries( output ${QT_LIBRARIES} )

@@ -142,14 +142,32 @@ QByteArray dbutils::get_row_key() const
 }
 
 
-QString dbutils::byte_to_hex( const char byte )
+/** \brief Transform a byte in an hexadecimal number.
+ *
+ * This function transforms a byte (a number from 0 to 255) to an ASCII
+ * representation using hexadecimal.
+ *
+ * \param[in] byte  The byt to transform.
+ *
+ * \return The resulting string.
+ */
+QString dbutils::byte_to_hex( char const byte )
 {
     const QString hex(QString("%1").arg(byte & 255, 2, 16, QChar('0')));
     return hex;
 }
 
 
-QString dbutils::key_to_string( const QByteArray& key )
+/** \brief Transform a binary key to hexadecimal.
+ *
+ * This function transforms each byte of a binary key to an ASCII string
+ * of hexadecimal numbers using the byte_to_hex() function.
+ *
+ * \param[in] key  The key to transform.
+ *
+ * \return The resulting string.
+ */
+QString dbutils::key_to_string( QByteArray const& key )
 {
     QString ret;
     int const max_length(key.size());

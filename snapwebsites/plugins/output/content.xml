@@ -283,6 +283,17 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     </param>
     <link name="permissions::administer" to="permissions::administer" mode="*:*">/types/permissions/rights/administer/info</link>
   </content>
+  <content path="/css/snap">
+    <param name="content::title" revision="revision">System CSS</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>System or Global CSS such as the popup script CSS support.</p>]]>
+    </param>
+    <link name="permissions::administer" to="permissions::administer" mode="*:*">/types/permissions/rights/administer/info</link>
+    <attachment name="output-style" type="attachment/public" owner="output">
+      <path>qrc:/css/output/output.css</path>
+      <mime-type>text/css</mime-type>
+    </attachment>
+  </content>
   <!-- the content plugin depends on the JavaScript plugin so it cannot define a content.xml file -->
   <content path="/js">
     <param name="content::title" revision="revision">JavaScripts</param>
@@ -312,6 +323,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <path>:/js/output/output.js</path>
       <mime-type>text/javascript</mime-type>
       <dependency>jquery-extensions (&gt;= 1.0.1)</dependency>
+    </attachment>
+    <attachment name="popup" type="attachment/public">
+      <path>:/js/output/popup.js</path>
+      <mime-type>text/javascript</mime-type>
+      <dependency>output (&gt;= 0.0.5)</dependency>
+      <dependency>css::output (&gt;= 0.0.1)</dependency>
     </attachment>
   </content>
   <!-- the content plugin depends on the path plugin so it cannot defined a content.xml file -->

@@ -159,7 +159,6 @@ snapwebsites.Editor.prototype = {
     _bottomToolbar: false,
     _toolbar: null,
     _toolbarVisible: false,
-    _darkenPageCreated: false,
     _height: -1,
     _activeElement: null,
     _lastId: 0,
@@ -204,7 +203,7 @@ snapwebsites.Editor.prototype = {
         //       able to continue editing while saving)
         //       the class is nearly there (see header trying to assign body
         //       attributes), we will then need to test it here
-        this._darkenPage(true);
+        snapwebsites.Popup.darkenPage(150);
 
         var i, obj = {}, saved_data = {}, saved = [], edit_area, url, name, keep_darken_page = false;
         for(i = 1; i <= this._lastId; ++i)
@@ -320,7 +319,7 @@ snapwebsites.Editor.prototype = {
                     {
                         alert("The server replied with an error while posting AJAX (status: " + result_status + " / error: " + error_msg + ")");
                     }
-                    snapwebsites.EditorInstance._darkenPage(false);
+                    snapwebsites.Popup.darkenPage(-150);
                 },
                 complete: function(jqxhr, result_status){
                     // TODO: avoid this one if we're fading out since that
@@ -336,7 +335,7 @@ snapwebsites.Editor.prototype = {
 
         if(!keep_darken_page)
         {
-            this._darkenPage(false);
+            snapwebsites.Popup.darkenPage(-150);
         }
     },
 
@@ -423,32 +422,11 @@ snapwebsites.Editor.prototype = {
         this._saveDialogPopup.fadeIn(300).css("display", "block");
     },
 
-    _darkenPage: function(show)
-    {
-        var html;
-
-        if(!this._darkenPageCreated)
-        {
-            this._darkenPageCreated = true;
-            html = "<div id='darkenPage'></div>";
-            jQuery(html).appendTo("body");
-        }
-
-        if(show)
-        {
-            jQuery("#darkenPage").fadeIn(150);
-        }
-        else
-        {
-            jQuery("#darkenPage").fadeOut(150);
-        }
-    },
-
     _linkDialog: function(idx)
     {
         if(!this._linkDialogPopup)
         {
-            var html = "<style>#snap_editor_link_dialog{display:none;position:absolute;z-index:2;float:left;background:#f0f0ae;padding:0;border:1px solid black;-moz-border-bottom-right-radius:10px;-webkit-border-bottom-right-radius:10px;border-bottom-right-radius:10px;-moz-border-bottom-left-radius:10px;-webkit-border-bottom-left-radius:10px;border-bottom-left-radius:10px;}#snap_editor_link_page{margin:0;padding:10px;}#snap_editor_link_dialog div.line{clear:both;padding:5px 3px;}#snap_editor_link_dialog label.limited{display:block;float:left;width:80px;}#snap_editor_link_dialog input{display:block;float:left;width:150px;}#darkenPage{position:fixed;z-index:1;left:0;top:0;width:100%;height:100%;background-color:black;opacity:0.2;filter:alpha(opacity=20);}#snap_editor_link_dialog div.title{background:black;color:white;font-weight:bold;padding:5px;}</style>"
+            var html = "<style>#snap_editor_link_dialog{display:none;position:absolute;z-index:2;float:left;background:#f0f0ae;padding:0;border:1px solid black;-moz-border-bottom-right-radius:10px;-webkit-border-bottom-right-radius:10px;border-bottom-right-radius:10px;-moz-border-bottom-left-radius:10px;-webkit-border-bottom-left-radius:10px;border-bottom-left-radius:10px;}#snap_editor_link_page{margin:0;padding:10px;}#snap_editor_link_dialog div.line{clear:both;padding:5px 3px;}#snap_editor_link_dialog label.limited{display:block;float:left;width:80px;}#snap_editor_link_dialog input{display:block;float:left;width:150px;}#snap_editor_link_dialog div.title{background:black;color:white;font-weight:bold;padding:5px;}</style>"
                     + "<div id='snap_editor_link_dialog'>"
                     + "<div class='title'>Link Administration</div>"
                     + "<div id='snap_editor_link_page'>"
@@ -463,7 +441,7 @@ snapwebsites.Editor.prototype = {
             jQuery("#snap_editor_link_dialog #snap_editor_link_ok")
                 .click(function(){
                     snapwebsites.EditorInstance._linkDialogPopup.fadeOut(150);
-                    snapwebsites.EditorInstance._darkenPage(false);
+                    snapwebsites.Popup.darkenPage(-150);
                     snapwebsites.EditorInstance._refocus();
                     snapwebsites.EditorInstance._restoreSelection();
                     var url = jQuery("#snap_editor_link_url");
@@ -553,7 +531,7 @@ snapwebsites.Editor.prototype = {
         }
         this._linkDialogPopup.css("left", left);
         this._linkDialogPopup.fadeIn(300,function(){jQuery(focusItem).focus();});
-        snapwebsites.EditorInstance._darkenPage(true);
+        snapwebsites.Popup.darkenPage(150);
     },
 
     _saveSelection: function()

@@ -183,6 +183,9 @@ char const *get_name(name_t name)
     case SNAP_NAME_CONTENT_LONG_TITLE:
         return "content::long_title";
 
+    case SNAP_NAME_CONTENT_MINIMAL_LAYOUT_NAME:
+        return "notheme";
+
     case SNAP_NAME_CONTENT_MODIFIED:
         return "content::modified";
 
@@ -4259,13 +4262,15 @@ bool content::create_attachment_impl(attachment_file const& file, snap_version::
             //    [a-z][-a-z0-9]*[a-z0-9]
             //
             // get the filename without the extension
-            QString fn(attachment_filename.left(attachment_filename.length() - extension.length()));
+            QString const fn(attachment_filename.left(attachment_filename.length() - extension.length()));
+            QString name_string(fn);
+            QString namespace_string;
             QString errmsg;
-            if(!snap_version::validate_name(fn, errmsg))
+            if(!snap_version::validate_name(name_string, errmsg, namespace_string))
             {
                 // unacceptable filename
                 f_snap->die(snap_child::HTTP_CODE_FORBIDDEN, "Invalid Filename",
-                        "The attachment \"" + attachment_filename + "\" has an invalid name and must be rejected. " + errmsg,
+                        QString("The attachment \"%1\" has an invalid name and must be rejected. %2").arg(attachment_filename).arg(errmsg),
                         "The name is not considered valid for a versioned file.");
                 NOTREACHED();
             }
@@ -4413,21 +4418,30 @@ bool content::create_attachment_impl(attachment_file const& file, snap_version::
                 if(!d.set_dependency(deps[i]))
                 {
                     // simply invalid...
-                    SNAP_LOG_ERROR("Dependency \"")(deps[i])("\" is not valid. We cannot add it to the database.");;
+                    SNAP_LOG_ERROR("Dependency \"")(deps[i])("\" is not valid (")(d.get_error())("). We cannot add it to the database. Note: the content plugin does not support <dependency> tags with comma separated dependencies. Instead create multiple tags.");
                 }
                 else
                 {
                     QString const dependency_name(d.get_name());
-                    if(found.contains(dependency_name))
+                    QString full_name;
+                    if(d.get_namespace().isEmpty())
+                    {
+                        full_name = dependency_name;
+                    }
+                    else
+                    {
+                        full_name = QString("%1::%2").arg(d.get_namespace()).arg(dependency_name);
+                    }
+                    if(found.contains(full_name))
                     {
                         // not unique
-                        SNAP_LOG_ERROR("Dependency \"")(deps[i])("\" was specified more than once. We cannot safely add the same dependency (same name) more than once. Please merge both definitions or delete one of them.");;
+                        SNAP_LOG_ERROR("Dependency \"")(deps[i])("\" was specified more than once. We cannot safely add the same dependency (same name) more than once. Please merge both definitions or delete one of them.");
                     }
                     else
                     {
                         // save the canonicalized version of the dependency in the database
-                        found[dependency_name] = true;
-                        file_row->cell(QString("%1::%2").arg(get_name(SNAP_NAME_CONTENT_FILES_DEPENDENCY)).arg(dependency_name))->setValue(d.get_dependency_string());
+                        found[full_name] = true;
+                        file_row->cell(QString("%1::%2").arg(get_name(SNAP_NAME_CONTENT_FILES_DEPENDENCY)).arg(full_name))->setValue(d.get_dependency_string());
                     }
                 }
             }
@@ -6270,9 +6284,8 @@ void content::add_javascript(QDomDocument doc, QString const& name)
     QtCassandra::QCassandraColumnRangePredicate column_predicate;
     column_predicate.setCount(10); // small because we are really only interested by the first 1 unless marked as insecure
     column_predicate.setIndex(); // behave like an index
-    QString const start_name(name + "_");
-    column_predicate.setStartColumnName(start_name + QtCassandra::QCassandraColumnPredicate::last_char);
-    column_predicate.setEndColumnName(start_name);
+    column_predicate.setStartColumnName(name + "`"); // start/end keys are reversed
+    column_predicate.setEndColumnName(name + "_");
     column_predicate.setReversed(); // read the last first
     for(;;)
     {
@@ -6284,14 +6297,16 @@ void content::add_javascript(QDomDocument doc, QString const& name)
             break;
         }
         // handle one batch
-        for(QtCassandra::QCassandraCells::const_iterator c(cells.begin());
-                c != cells.end();
-                ++c)
+        QMapIterator<QByteArray, QtCassandra::QCassandraCell::pointer_t> c(cells);
+        c.toBack();
+        while(c.hasPrevious())
         {
+            c.previous();
+
             // get the email from the database
             // we expect empty values once in a while because a dropCell() is
             // not exactly instantaneous in Cassandra
-            QtCassandra::QCassandraCell::pointer_t cell(*c);
+            QtCassandra::QCassandraCell::pointer_t cell(c.value());
             QtCassandra::QCassandraValue const file_md5(cell->value());
             if(file_md5.nullValue())
             {
@@ -6372,9 +6387,9 @@ void content::add_javascript(QDomDocument doc, QString const& name)
             QtCassandra::QCassandraColumnRangePredicate dependencies_column_predicate;
             dependencies_column_predicate.setCount(100);
             dependencies_column_predicate.setIndex(); // behave like an index
-            QString start_dep(QString("%1::").arg(get_name(SNAP_NAME_CONTENT_FILES_DEPENDENCY)));
-            dependencies_column_predicate.setStartColumnName(start_dep);
-            dependencies_column_predicate.setEndColumnName(start_dep + QtCassandra::QCassandraColumnPredicate::last_char);
+            QString start_dep(QString("%1:").arg(get_name(SNAP_NAME_CONTENT_FILES_DEPENDENCY)));
+            dependencies_column_predicate.setStartColumnName(start_dep + ":");
+            dependencies_column_predicate.setEndColumnName(start_dep + ";");
             for(;;)
             {
                 row->clearCache();
@@ -6401,7 +6416,22 @@ void content::add_javascript(QDomDocument doc, QString const& name)
                         {
                             // TODO: add version and browser tests
                             QString const& dep_name(dep.get_name());
-                            add_javascript(doc, dep_name);
+                            QString const& dep_namespace(dep.get_namespace());
+                            if(dep_namespace == "css")
+                            {
+                                add_css(doc, dep_name);
+                            }
+                            else if(dep_namespace.isEmpty() || dep_namespace == "javascript")
+                            {
+                                add_javascript(doc, dep_name);
+                            }
+                            else
+                            {
+                                f_snap->die(snap_child::HTTP_CODE_NOT_FOUND, "Invalid Dependency",
+                                        QString("JavaScript dependency \"%1::%2\" has a non-supported namespace.").arg(dep_namespace).arg(name),
+                                        QString("The namespace is expected to be \"javascripts\" (or empty,) or \"css\"."));
+                                NOTREACHED();
+                            }
                         }
                         // else TBD -- we checked when saving that darn string
                         //             so failures should not happen here
@@ -6482,9 +6512,8 @@ void content::add_css(QDomDocument doc, QString const& name)
     QtCassandra::QCassandraColumnRangePredicate column_predicate;
     column_predicate.setCount(10); // small because we are really only interested by the first 1 unless marked as insecure
     column_predicate.setIndex(); // behave like an index
-    QString const start_name(name + "_");
-    column_predicate.setStartColumnName(start_name + QtCassandra::QCassandraColumnPredicate::last_char);
-    column_predicate.setEndColumnName(start_name);
+    column_predicate.setStartColumnName(name + "`"); // start/end keys are reversed
+    column_predicate.setEndColumnName(name + "_");
     column_predicate.setReversed(); // read the last first
     for(;;)
     {
@@ -6496,14 +6525,16 @@ void content::add_css(QDomDocument doc, QString const& name)
             break;
         }
         // handle one batch
-        for(QtCassandra::QCassandraCells::const_iterator c(cells.begin());
-                c != cells.end();
-                ++c)
+        QMapIterator<QByteArray, QtCassandra::QCassandraCell::pointer_t> c(cells);
+        c.toBack();
+        while(c.hasPrevious())
         {
+            c.previous();
+
             // get the email from the database
             // we expect empty values once in a while because a dropCell() is
             // not exactly instantaneous in Cassandra
-            QtCassandra::QCassandraCell::pointer_t cell(*c);
+            QtCassandra::QCassandraCell::pointer_t cell(c.value());
             QtCassandra::QCassandraValue const file_md5(cell->value());
             if(file_md5.nullValue())
             {

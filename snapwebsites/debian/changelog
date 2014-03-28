@@ -1,8 +1,15 @@
+snapwebsites (0.1.37~saucyubuntu1) UNRELEASED; urgency=low
+
+  * Added support for dropdown widgets.
+  * Added support for popups.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 26 Mar 2014 16:29:55 -0700
+
 snapwebsites (0.1.37~saucy) saucy; urgency=high
 
   [R. Douglas Barbieri]
   * Repaired problem with snaplayout--it was not converting the time
-  stamp from the zipfile from msdos format into unix format.
+    stamp from the zipfile from msdos format into unix format.
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Mon, 24 Mar 2014 13:20:26 -0700
 
@@ -27,7 +34,7 @@ snapwebsites (0.1.34~saucy) saucy; urgency=high
 
   [ Alexis Wilke ]
   * Avoid recursive tokens (i.e. a page that includes itself) by generating a
-  error message.
+    error message.
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Fri, 21 Mar 2014 03:58:15 -0700
 
@@ -44,7 +51,7 @@ snapwebsites (0.1.33~saucy) saucy; urgency=high
 snapwebsites (0.1.31~saucy) saucy; urgency=high
 
   * Added cmake function to automate the creation of layout zip files. Can be
-  used by third-parties to create a layout zipfile automatically.
+    used by third-parties to create a layout zipfile automatically.
   * Small cleanups to the list and links plugins.
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Thu, 20 Mar 2014 13:53:33 -0700
@@ -56,7 +63,7 @@ snapwebsites (0.1.30~saucy) saucy; urgency=high
 
   [ R. Douglas Barbieri ]
   * The snaplayout tool now allows theme selection properly (instead of
-  issuing an error).
+    issuing an error).
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Thu, 20 Mar 2014 13:23:57 -0700
 
@@ -86,11 +93,11 @@ snapwebsites (0.1.28~saucy) saucy; urgency=high
   * 48aeaf4 Create a user specific right once a user gets verified.
   * a282122 In snap_child, now check to make sure server pointer is non-null.
   * 899bcda Fixed problems with server destructor not being called. Also
-  * snap_child uses a weak_ptr to the server.
+    snap_child uses a weak_ptr to the server.
   * e22dfa4 Bumping to next version, and added changelog for latest fix.
   * fe56925 Kill hanging child processes on exit.
   * 0e9cd39 Fixed the drop of the image so it replaces the image instead of
-  * adding it.
+    adding it.
   * 5dda783 No longer rebuilds projects at the root level that haven't changed.
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Wed, 12 Mar 2014 16:38:38 -0700

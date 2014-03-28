@@ -276,31 +276,90 @@ QtCassandra::QCassandraTable::pointer_t layout::get_layout_table()
  */
 QString layout::get_layout(content::path_info_t& ipath, QString const& column_name)
 {
-    // get the content table first
-    QtCassandra::QCassandraValue layout_value(content::content::instance()->get_content_table()->row(ipath.get_key())->cell(column_name)->value());
-    if(layout_value.nullValue())
+    QString layout_name;
+
+    // first check whether the user is trying to overwrite the layout
+    QString const qs_layout(f_snap->get_server_parameter("qs_" + column_name));
+    if(!qs_layout.isEmpty())
     {
-        // that very content doesn't define a layout, check its type(s)
-        layout_value = taxonomy::taxonomy::instance()->find_type_with(
-            ipath,
-            content::get_name(content::SNAP_NAME_CONTENT_PAGE_TYPE),
-            column_name,
-            content::get_name(content::SNAP_NAME_CONTENT_CONTENT_TYPES_NAME)
-        );
-        if(layout_value.nullValue())
-        {
-            // user did not define any layout, set the value to "default"
-            layout_value = QString("\"default\"");
-        }
+        // although query_option("") works as expected by returning ""
+        // we avoid the call to the get_uri() by testing early
+        snap_uri const& uri(f_snap->get_uri());
+        layout_name = uri.query_option(qs_layout);
     }
 
-    QString layout_script(layout_value.stringValue());
-    bool run_script(true);
-    if(layout_script.startsWith("\"")
-    && (layout_script.endsWith("\"") || layout_script.endsWith("\";")))
+    if(layout_name.isEmpty())
     {
-        run_script = false;
-        QByteArray utf8(layout_script.toUtf8());
+        // try the content itself since the user did not define a theme
+        QtCassandra::QCassandraValue layout_value(content::content::instance()->get_content_table()->row(ipath.get_key())->cell(column_name)->value());
+        if(layout_value.nullValue())
+        {
+            // that very content doesn't define a layout, check its type(s)
+            layout_value = taxonomy::taxonomy::instance()->find_type_with(
+                ipath,
+                content::get_name(content::SNAP_NAME_CONTENT_PAGE_TYPE),
+                column_name,
+                content::get_name(content::SNAP_NAME_CONTENT_CONTENT_TYPES_NAME)
+            );
+            if(layout_value.nullValue())
+            {
+                // user did not define any layout, set the value to "default"
+                layout_value = QString("\"default\"");
+            }
+        }
+
+        QString layout_script(layout_value.stringValue());
+
+        bool run_script(true);
+        if(layout_script.startsWith("\"")
+        && (layout_script.endsWith("\"") || layout_script.endsWith("\";")))
+        {
+            run_script = false;
+            QByteArray const utf8(layout_script.toUtf8());
+            for(char const *s(utf8.data() + 1); *s != '\0'; ++s)
+            {
+                if((*s < 'a' || *s > 'z')
+                && (*s < 'A' || *s > 'Z')
+                && (*s < '0' || *s > '9')
+                && *s != '_')
+                {
+                    run_script = true;
+                    break;
+                }
+            }
+        }
+
+        if(run_script)
+        {
+            // TODO: remove dependency on JS with an event on this one!
+            //       (TBD: as far as I know this is okay now)
+            QVariant v(javascript::javascript::instance()->evaluate_script(layout_script));
+            layout_name = v.toString();
+        }
+        else
+        {
+            // remove the quotes really quick, we avoid the whole JS deal!
+            if(layout_script.endsWith("\";"))
+            {
+                layout_name = layout_script.mid(1, layout_script.length() - 3);
+            }
+            else
+            {
+                layout_name = layout_script.mid(1, layout_script.length() - 2);
+            }
+        }
+
+        if(layout_name.isEmpty())
+        {
+            // looks like the script failed...
+            layout_name = "default";
+        }
+    }
+    else
+    {
+        // in this case we do not run any kind of script, the name has
+        // to be specified as is
+        QByteArray const utf8(layout_name.toUtf8());
         for(char const *s(utf8.data() + 1); *s != '\0'; ++s)
         {
             if((*s < 'a' || *s > 'z')
@@ -308,37 +367,14 @@ QString layout::get_layout(content::path_info_t& ipath, QString const& column_na
             && (*s < '0' || *s > '9')
             && *s != '_')
             {
-                run_script = true;
-                break;
+                // tainted layout/theme name
+                f_snap->die(snap_child::HTTP_CODE_NOT_FOUND,
+                        "Layout Not Found",
+                        QString("User specified layout \"%1\"").arg(layout_name),
+                        "Found a tainted layout name, refusing it!");
+                NOTREACHED();
             }
         }
-    }
-
-    QString layout_name;
-    if(run_script)
-    {
-        // TODO: remove dependency on JS with an event on this one!
-        //       (TBD: as far as I know this is okay now)
-        QVariant v(javascript::javascript::instance()->evaluate_script(layout_script));
-        layout_name = v.toString();
-    }
-    else
-    {
-        // remove the quotes really quick, we avoid the whole JS deal!
-        if(layout_script.endsWith("\";"))
-        {
-            layout_name = layout_script.mid(1, layout_script.length() - 3);
-        }
-        else
-        {
-            layout_name = layout_script.mid(1, layout_script.length() - 2);
-        }
-    }
-
-    if(layout_name.isEmpty())
-    {
-        // looks like the script failed...
-        layout_name = "default";
     }
 
     return layout_name;

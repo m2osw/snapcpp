@@ -624,8 +624,8 @@ void server::config(int argc, char *argv[])
     parameter_map_t cmd_line_params;
     if(f_opt->is_defined("param"))
     {
-        int const max(f_opt->size("param"));
-        for(int idx(0); idx < max; ++idx)
+        int const max_params(f_opt->size("param"));
+        for(int idx(0); idx < max_params; ++idx)
         {
             QString param(QString::fromUtf8(f_opt->get_string("param", idx).c_str()));
             int const p(param.indexOf('='));
@@ -727,7 +727,7 @@ void server::config(int argc, char *argv[])
         }
         if(len == 0)
         {
-            // comment or empty line
+            // empty line
             continue;
         }
         char *n(buf);
@@ -745,6 +745,8 @@ void server::config(int argc, char *argv[])
         {
             // TODO verify that the name is only ASCII? (probably not too
             //      important because if not it will be ignored anyway)
+            //      Note that the layout expects names including colons (:)
+            //      as a namespace separator: layout::layout, layout::theme.
             ++v;
         }
         if(*v != '=')
@@ -778,9 +780,9 @@ void server::config(int argc, char *argv[])
         }
         else
         {
-            SNAP_LOG_WARNING() << "warning: parameter \"" << n << "\" from the configuration file ("
-                      << v << ") ignored as it was specified on the command line ("
-                      << f_parameters[n].toStdString() << ").";
+            SNAP_LOG_WARNING("warning: parameter \"")(n)("\" from the configuration file (")
+                      (v)(") ignored as it was specified on the command line (")
+                      (f_parameters[n])(").");
         }
     }
 

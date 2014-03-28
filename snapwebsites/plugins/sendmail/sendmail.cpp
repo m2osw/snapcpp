@@ -1371,6 +1371,7 @@ int64_t sendmail::do_update(int64_t last_updated)
 void sendmail::content_update(int64_t variables_timestamp)
 {
     static_cast<void>(variables_timestamp);
+
     content::content::instance()->add_xml(get_plugin_name());
 
     layout::layout::instance()->add_layout_from_resources(get_name(SNAP_NAME_SENDMAIL_LAYOUT_NAME));

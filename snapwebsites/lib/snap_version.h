@@ -88,7 +88,7 @@ typedef controlled_vars::limited_auto_init<operator_t, OPERATOR_UNORDERED, OPERA
 
 
 char const *find_extension(QString const& filename, char const **extensions);
-bool validate_name(QString const& name, QString& error);
+bool validate_name(QString& name, QString& error, QString& namespace_string);
 bool validate_version(QString const& version_string, version_numbers_vector_t& version, QString& error);
 bool validate_operator(QString const& operator_string, operator_t& op, QString& error);
 
@@ -99,6 +99,7 @@ public:
     void                    clear() { f_name.clear(); f_error.clear(); }
     bool                    set_name(QString const& name_string);
     QString const&          get_name() const { return f_name; }
+    QString const&          get_namespace() const { return f_namespace; }
     bool                    is_valid() const { return f_error.isEmpty(); }
     QString                 get_error() const { return f_error; }
 
@@ -106,6 +107,7 @@ public:
 
 private:
     QString                 f_name;
+    QString                 f_namespace;
     QString                 f_error;
 };
 typedef QVector<name>       name_vector_t;
@@ -197,6 +199,7 @@ public:
     bool                        set_dependency(QString const& dependency_string);
     QString                     get_dependency_string() const;
     QString const&              get_name() const { return f_name.get_name(); }
+    QString const&              get_namespace() const { return f_name.get_namespace(); }
     version_vector_t const&     get_versions() const { return f_versions; }
     name_vector_t const&        get_browsers() const { return f_browsers; }
     bool                        is_valid() const;

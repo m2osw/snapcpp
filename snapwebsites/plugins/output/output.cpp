@@ -142,7 +142,7 @@ int64_t output::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2014, 3, 22, 1, 28, 30, content_update);
+    SNAP_PLUGIN_UPDATE(2014, 3, 27, 23, 22, 30, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -160,6 +160,8 @@ void output::content_update(int64_t variables_timestamp)
     static_cast<void>(variables_timestamp);
 
     content::content::instance()->add_xml(get_plugin_name());
+
+    layout::layout::instance()->add_layout_from_resources(content::get_name(content::SNAP_NAME_CONTENT_MINIMAL_LAYOUT_NAME));
 }
 
 

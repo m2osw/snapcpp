@@ -61,7 +61,19 @@ snapwebsites.Output.prototype = {
              + String.fromCharCode(a + (a >= 10 ? 55 : 48));
     },
 
-    init: function()
+    /** \brief Internal function used to display the error messages.
+     *
+     * This function is used to display the error messages that occured
+     * "recently" (in most cases, this last access, or the one before.)
+     *
+     * This function is called by the init() function and shows the
+     * messages if any were added to the DOM.
+     *
+     * \note
+     * This is here because the messages plugin cannot handle the output
+     * of its own messages (it is too low level a plugin.)
+     */
+    _handleMessages: function()
     {
         jQuery("div.user-messages")
             .each(function(){
@@ -72,6 +84,15 @@ snapwebsites.Output.prototype = {
             })
             .delay(250).fadeIn(300) // put a little delay so we see the fadeIn(), eventually
             .click(function(){jQuery(this).fadeOut(300);});
+    },
+
+    /** \brief Initialize the output object.
+     *
+     * This function initializes the output object.
+     */
+    init: function()
+    {
+        this._handleMessages();
     }
 };
 
