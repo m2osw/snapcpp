@@ -50,6 +50,7 @@ snap_validate_xml( content.xml content.dtd )
 
 add_library(output SHARED
     output.cpp
+    output.h
     ${SNAP_MANAGER_MOC_CXX}
     ${SNAP_MANAGER_RESOURCES_RCC}
     content.xml
@@ -59,6 +60,9 @@ add_library(output SHARED
     jquery-extensions.js
     output.js
     popup.js
+    layout/notheme-body-parser.xsl
+    layout/notheme-content.xml
+    layout/notheme-theme-parser.xsl
 )
 
 target_link_libraries( output ${QT_LIBRARIES} )
