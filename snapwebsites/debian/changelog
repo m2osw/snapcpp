@@ -1,9 +1,14 @@
-snapwebsites (0.1.37~saucyubuntu1) UNRELEASED; urgency=low
+snapwebsites (0.1.38~saucy) UNRELEASED; urgency=high
 
+  [ Alexis Wilke ]
   * Added support for dropdown widgets.
   * Added support for popups.
+  * Added new layout files to the CMakeLists.txt
 
- -- Alexis Wilke <alexis@m2osw.com>  Wed, 26 Mar 2014 16:29:55 -0700
+  [ R. Douglas Barbieri ]
+  * Make new PPA release.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Wed, 26 Mar 2014 16:29:55 -0700
 
 snapwebsites (0.1.37~saucy) saucy; urgency=high
 
