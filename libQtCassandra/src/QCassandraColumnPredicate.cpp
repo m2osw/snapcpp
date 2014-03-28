@@ -362,10 +362,14 @@ void QCassandraColumnNamePredicate::toPredicate(void *data) const
  */
 
 /** \var QCassandraColumnRangePredicate::f_reversed
- * \brief Whether the list of columns is returned in reversed order.
+ * \brief Whether the list of columns is read in reversed order.
  *
  * This parameter can be used to search the column from the last to
- * the first instead of the first to the last.
+ * the first instead of the first to the last. However, remember that
+ * cells are returned in a map and that map is sorted in binary order
+ * and thus you lose the sorting from the database columns. This will
+ * be fixed at a later time to offer a vector instead so the sort order
+ * from the Cassandra cluster can be preserved.
  */
 
 /** \var QCassandraColumnRangePredicate::f_index
@@ -416,7 +420,11 @@ void QCassandraColumnNamePredicate::toPredicate(void *data) const
  *
  * The constructor sets the reversed status to false (i.e. you get columns
  * from the first to the last,) and sets the number of columns to return
- * to 100.
+ * to 100. However, remember that cells are returned in a map and that map
+ * is sorted in binary order on the key of each cell and thus you lose the
+ * sorting from the database columns. This will be fixed at a later time to
+ * offer a vector instead so the sort order from the Cassandra cluster can
+ * be preserved.
  *
  * This predicate is expected to be used to read one well defined set of
  * columns. If you need to read more than 'count' columns then you may
@@ -581,7 +589,23 @@ void QCassandraColumnRangePredicate::setEndColumnKey(const QByteArray& column_ke
  * This function retrieves the current state of the reversed flag. By default
  * the flag is false which means rows are listed from the start to the end.
  *
- * It can be changed using the setReversed() function.
+ * It can be changed using the setReversed() function. However, remember that
+ * cells are returned in a map and that map is sorted in binary order
+ * and thus you lose the sorting from the database columns. This will
+ * be fixed at a later time to offer a vector instead so the sort order
+ * from the Cassandra cluster can be preserved.
+ *
+ * To read the map in reverse order, you can use code as follow:
+ *
+ * \code
+ * QMapIterator<QByteArray, QtCassandra::QCassandraCell::pointer_t> c(cells);
+ * c.toBack();
+ * while(c.hasPrevious())
+ * {
+ *     c.previous();
+ *     qDebug() << c.key() << c.value();
+ * }
+ * \endcode
  *
  * \return Whether the list of rows is returned in reverse order or not.
  *
@@ -592,11 +616,29 @@ bool QCassandraColumnRangePredicate::reversed() const
     return f_reversed;
 }
 
+
 /** \brief Defines whether the list of rows should start from the end.
  *
  * This function defines whether the list of rows should start from
  * the end of the table. By default, it starts from the beginning.
  *
+ * Remember that cells are returned in a map and that map is sorted in
+ * binary order and thus you lose the sorting from the database columns.
+ * This will be fixed at a later time to offer a vector instead so the
+ * sort order from the Cassandra cluster can be preserved.
+ *
+ * To read the map in reverse order, you can use code as follow:
+ *
+ * \code
+ * QMapIterator<QByteArray, QtCassandra::QCassandraCell::pointer_t> c(cells);
+ * c.toBack();
+ * while(c.hasPrevious())
+ * {
+ *     c.previous();
+ *     qDebug() << c.key() << c.value();
+ * }
+ * \endcode
+
  * \param[in] reversed  Whether it should be normal or reversed.
  *
  * \sa reversed()
@@ -605,6 +647,7 @@ void QCassandraColumnRangePredicate::setReversed(bool val)
 {
     f_reversed = val;
 }
+
 
 /** \brief Return the maximum number of cells that will be returned.
  *
