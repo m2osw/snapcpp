@@ -1,6 +1,6 @@
 /*
  * Name: editor
- * Version: 0.0.2.73
+ * Version: 0.0.2.74
  * Browsers: all
  * Copyright: Copyright 2013-2014 (c) Made to Order Software Corporation  All rights reverved.
  * License: GPL 2.0
@@ -152,6 +152,7 @@ snapwebsites.Editor.prototype = {
         ["*", null, 0x54, "toggleToolbar"]         // Ctrl-T
     ],
     toolbarAutoVisible: true,
+    inPopup: false,
 
     _unloadCalled: false,
     _unloadTimeoutID: -1,
@@ -255,7 +256,7 @@ snapwebsites.Editor.prototype = {
                     alert("An error occured while posting AJAX (status: " + result_status + " / error: " + error_msg + ")");
                 },
                 success: function(data, result_status, jqxhr){
-                    var i, modified, element_modified, results;
+                    var i, modified, element_modified, results, doc;
 
 //console.log(jqxhr);
                     if(jqxhr.status == 200)
@@ -296,16 +297,24 @@ snapwebsites.Editor.prototype = {
                             if(redirect.length == 1)
                             {
                                 // redirect the user after a successful save
+                                doc = document;
+                                if(snapwebsites.EditorInstance.inPopup)
+                                {
+                                    // TODO: we probably want to support
+                                    // multiple levels (i.e. a "_top" kind
+                                    // of a thing) instead of just one up.
+                                    doc = window.parent.document;
+                                }
                                 uri = redirect[0].childNodes[0].nodeValue;
                                 if(uri == ".")
                                 {
                                     // just exit the editor
-                                    uri = document.location.toString();
+                                    uri = doc.location.toString();
                                     uri = uri.replace(/\?a=edit$/, "")
                                              .replace(/\?a=edit&/, "?")
                                              .replace(/&a=edit&/, "&");
                                 }
-                                document.location = uri;
+                                doc.location = uri;
                                 // avoid anything else after a redirect
                                 return;
                             }
@@ -1550,5 +1559,8 @@ console.log("command "+idx+" "+this.toolbarButtons[idx][2]+"!!!");
 };
 
 // auto-initialize
-jQuery(document).ready(function(){snapwebsites.EditorInstance = new snapwebsites.Editor();snapwebsites.EditorInstance.init();});
+jQuery(document).ready(function(){
+    snapwebsites.EditorInstance = new snapwebsites.Editor();
+    snapwebsites.EditorInstance.init();
+});
 // vim: ts=4 sw=4 et

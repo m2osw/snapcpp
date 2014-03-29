@@ -113,6 +113,14 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <![CDATA[<p>Administer the website settings.</p><p>This is the main right allowing someone to administer anything in the website.</p>]]>
     </param>
   </content>
+  <content path="/types/permissions/rights/administer/form">
+    <param name="content::title" revision="revision">Right to post a form</param>
+    <param name="content::body" revision="revision">
+      <!-- TODO: remove once standard editing is properly recognized as such
+                 instead of administration -->
+      <![CDATA[<p>At this point, posting a form (standard form or editor form) most often requires administration rights. This right was created for this purpose until we implement a better scheme.</p>]]>
+    </param>
+  </content>
   <content path="/types/permissions/rights/create">
     <param name="content::title" revision="revision">Create Right</param>
     <param name="content::body" revision="revision">
@@ -261,6 +269,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     </param>
     <link name="permissions::view" to="permissions::view" mode="*:*">/types/permissions/rights/view/page/secure</link>
     <link name="permissions::view" to="permissions::view" mode="*:*">/types/permissions/rights/view/attachment/secure</link>
+    <link name="permissions::administer" to="permissions::administer" mode="*:*">/types/permissions/rights/administer/form</link>
   </content>
   <content path="/types/permissions/groups/root/administrator/editor/moderator/author/commenter/registered-user/returning-registered-user">
     <param name="content::title" revision="revision">Visitor Group</param>

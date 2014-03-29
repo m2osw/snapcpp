@@ -22,6 +22,12 @@
 }
 
 /** default pop-up CSS **/
+iframe
+{
+	display: block;
+	border: none;
+}
+
 .snap-popup
 {
 	background: white;

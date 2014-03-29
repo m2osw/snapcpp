@@ -171,7 +171,7 @@ int64_t editor::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2014, 3, 27, 1, 21, 30, content_update);
+    SNAP_PLUGIN_UPDATE(2014, 3, 28, 22, 6, 30, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -926,49 +926,65 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
     messages::messages *messages(messages::messages::instance());
     QString const owner(output::output::instance()->get_plugin_name());
 
-    // create the new revision and make it current
-    //
-    // TODO: if multiple users approval is required, we cannot make this
-    //       new revision the current revision except if that's the very
-    //       first (although the very first is not created here)
-    //
-    snap_version::version_number_t revision_number(content_plugin->get_new_revision(key, owner, branch_number, locale, true));
+    // get the widgets
+    QDomDocument editor_widgets(get_editor_widgets(ipath));
 
-    // make this newer revision the current one
-    if(switch_branch)
+    // check whether auto-save is ON
+    QDomElement on_save(snap_dom::get_element(editor_widgets, "on-save", false));
+    bool const auto_save = on_save.isNull() ? true : on_save.attribute("auto-save", "yes") == "yes";
+
+    QtCassandra::QCassandraRow::pointer_t revision_row;
+
+    if(auto_save)
     {
-        // working branch cannot really stay as the system branch
-        // so force both branches in this case
-        content_plugin->set_branch(key, owner, branch_number, false);
-        content_plugin->set_branch(key, owner, branch_number, true);
-        content_plugin->set_branch_key(key, owner, branch_number, true);
-        content_plugin->set_branch_key(key, owner, branch_number, false);
+        // create the new revision and make it current
+        //
+        // TODO: if multiple users approval is required, we cannot make this
+        //       new revision the current revision except if that's the very
+        //       first (although the very first is not created here)
+        //
+
+        // make this newer revision the current one
+        if(switch_branch)
+        {
+            // working branch cannot really stay as the system branch
+            // so force both branches in this case
+            content_plugin->set_branch(key, owner, branch_number, false);
+            content_plugin->set_branch(key, owner, branch_number, true);
+            content_plugin->set_branch_key(key, owner, branch_number, true);
+            content_plugin->set_branch_key(key, owner, branch_number, false);
+
+        }
+
+        // get the revision number only AFTER the branch was created
+        snap_version::version_number_t revision_number(content_plugin->get_new_revision(key, owner, branch_number, locale, true));
 
 // TODO: add revision manager
-  } // <- the current/working revisions are not correctly handled yet...
-    //    we should not force to the latest every time, but for now it's
-    //    the way it is
+//       the current/working revisions are not correctly handled yet...
+//       we should not force to the latest every time, but for now it's
+//       the way it is
+        if(switch_branch || true)
+        {
+            // in that case we also need to save the new revision accordingly
+            content_plugin->set_current_revision(key, owner, branch_number, revision_number, locale, false);
+            content_plugin->set_revision_key(key, owner, branch_number, revision_number, locale, false);
+        }
+        content_plugin->set_current_revision(key, owner, branch_number, revision_number, locale, true);
+        content_plugin->set_revision_key(key, owner, branch_number, revision_number, locale, true);
 
+        // now save the new data
+        ipath.force_revision(revision_number);
 
-        // in that case we also need to save the new revision accordingly
-        content_plugin->set_current_revision(key, owner, branch_number, revision_number, locale, false);
-        content_plugin->set_revision_key(key, owner, branch_number, revision_number, locale, false);
-    //}
-    content_plugin->set_current_revision(key, owner, branch_number, revision_number, locale, true);
-    content_plugin->set_revision_key(key, owner, branch_number, revision_number, locale, true);
+        QtCassandra::QCassandraTable::pointer_t data_table(content_plugin->get_data_table());
+        revision_row = data_table->row(ipath.get_revision_key());
+    }
 
-    // now save the new data
-    ipath.force_revision(revision_number);
-    QString const revision_key(ipath.get_revision_key());
-    QtCassandra::QCassandraTable::pointer_t data_table(content_plugin->get_data_table());
-    QtCassandra::QCassandraRow::pointer_t row(data_table->row(revision_key));
+    // this will get initialized if the row is required
 
     // first load the XML code representing the editor widget for this page
-    QDomDocument editor_widgets(get_editor_widgets(ipath));
     if(!editor_widgets.isNull())
     {
         // a default (data driven) redirect to apply when saving an editor form
-        QDomElement on_save(snap_dom::get_element(editor_widgets, "on-save", false));
         if(!on_save.isNull())
         {
             QString uri(on_save.attribute("redirect"));
@@ -980,7 +996,6 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
 
         // now go through all the widgets checking out their path, if the
         // path exists in doc then copy the data in the parser_xml
-        QtCassandra::QCassandraRow::pointer_t revision_row(data_table->row(ipath.get_revision_key()));
         QDomNodeList widgets(editor_widgets.elementsByTagName("widget"));
         int const max_widgets(widgets.size());
         for(int i(0); i < max_widgets; ++i)
@@ -1014,80 +1029,94 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
             // to check whether the value is available; however, we have to
             // check for required fields (since we only receive fields that
             // change, we cannot avoid saving the data)
-            if(f_snap->postenv_exists(widget_name))
+            if(widget_auto_save == "no")
             {
-                QString const post_value(f_snap->postenv(widget_name));
-                clean_post_value(widget_type, post_value);
-                validate_editor_post_for_widget(ipath, info, widget, widget_name, widget_type, post_value, is_secret);
-                if(widget_auto_save == "int8")
+                // no auto-save, but we still want to check validity if
+                // defined (the "required" flag is not checked...)
+                if(f_snap->postenv_exists(widget_name))
                 {
-                    signed char c;
-                    if(widget_type == "checkmark")
-                    {
-                        if(post_value == "off")
-                        {
-                            c = 0;
-                        }
-                        else
-                        {
-                            c = 1;
-                        }
-                    }
-                    else
-                    {
-                        bool ok(false);
-                        c = post_value.toInt(&ok, 10);
-                        if(!ok)
-                        {
-                            f_snap->die(snap_child::HTTP_CODE_CONFLICT, "Conflict Error",
-                                QString("field \"%1\" must be a valid decimal number, \"%2\" is not acceptable.")
-                                        .arg(widget_name).arg(post_value),
-                                "This is probably a hacker if we get the wrong value here. We should never get an invalid integer if checked by JavaScript.");
-                            NOTREACHED();
-                        }
-                    }
-                    revision_row->cell(field_name)->setValue(c);
-                    current_value = QString("%1").arg(c);
-                }
-                else if(widget_auto_save == "string")
-                {
-                    // no special handling for empty strings here
-                    revision_row->cell(field_name)->setValue(post_value);
+                    QString const post_value(f_snap->postenv(widget_name));
+                    clean_post_value(widget_type, post_value);
+                    validate_editor_post_for_widget(ipath, info, widget, widget_name, widget_type, post_value, is_secret);
                 }
             }
             else
             {
-                // get the current value from the database to verify the
-                // current value (because it may [still] be wrong)
-                QtCassandra::QCassandraValue const value(revision_row->cell(field_name)->value());
-                if(!value.nullValue())
+                if(f_snap->postenv_exists(widget_name))
                 {
+                    QString const post_value(f_snap->postenv(widget_name));
+                    clean_post_value(widget_type, post_value);
+                    validate_editor_post_for_widget(ipath, info, widget, widget_name, widget_type, post_value, is_secret);
                     if(widget_auto_save == "int8")
                     {
-                        int const v(value.signedCharValue());
+                        signed char c;
                         if(widget_type == "checkmark")
                         {
-                            if(v == 0)
+                            if(post_value == "off")
                             {
-                                current_value = "off";
+                                c = 0;
                             }
                             else
                             {
-                                current_value = "on";
+                                c = 1;
                             }
                         }
                         else
                         {
-                            current_value = QString("%1").arg(current_value);
+                            bool ok(false);
+                            c = post_value.toInt(&ok, 10);
+                            if(!ok)
+                            {
+                                f_snap->die(snap_child::HTTP_CODE_CONFLICT, "Conflict Error",
+                                    QString("field \"%1\" must be a valid decimal number, \"%2\" is not acceptable.")
+                                            .arg(widget_name).arg(post_value),
+                                    "This is probably a hacker if we get the wrong value here. We should never get an invalid integer if checked by JavaScript.");
+                                NOTREACHED();
+                            }
                         }
+                        revision_row->cell(field_name)->setValue(c);
+                        current_value = QString("%1").arg(c);
                     }
                     else if(widget_auto_save == "string")
                     {
                         // no special handling for empty strings here
-                        current_value = value.stringValue();
+                        revision_row->cell(field_name)->setValue(post_value);
                     }
                 }
-                validate_editor_post_for_widget(ipath, info, widget, widget_name, widget_type, current_value, is_secret);
+                else
+                {
+                    // get the current value from the database to verify the
+                    // current value (because it may [still] be wrong)
+                    QtCassandra::QCassandraValue const value(revision_row->cell(field_name)->value());
+                    if(!value.nullValue())
+                    {
+                        if(widget_auto_save == "int8")
+                        {
+                            int const v(value.signedCharValue());
+                            if(widget_type == "checkmark")
+                            {
+                                if(v == 0)
+                                {
+                                    current_value = "off";
+                                }
+                                else
+                                {
+                                    current_value = "on";
+                                }
+                            }
+                            else
+                            {
+                                current_value = QString("%1").arg(current_value);
+                            }
+                        }
+                        else if(widget_auto_save == "string")
+                        {
+                            // no special handling for empty strings here
+                            current_value = value.stringValue();
+                        }
+                    }
+                    validate_editor_post_for_widget(ipath, info, widget, widget_name, widget_type, current_value, is_secret);
+                }
             }
 
             if(info.get_session_type() != sessions::sessions::session_info::SESSION_INFO_VALID)
@@ -1145,7 +1174,7 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
     }
 
     // allow each plugin to save special fields (i.e. no auto-save)
-    save_editor_fields(ipath, row);
+    save_editor_fields(ipath, revision_row);
 
     // save the modification date in the branch
     content_plugin->modified_content(ipath);

@@ -37,7 +37,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 <!ELEMENT on-save EMPTY>
 <!ATTLIST on-save redirect CDATA #IMPLIED
-                  allow-edit (yes|no) "yes">
+                  allow-edit (yes|no) "yes"
+                  auto-save (yes|no) "yes">
 
 <!ELEMENT drop EMPTY>
 
