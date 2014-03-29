@@ -24,8 +24,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="content::body" revision="revision">
       <![CDATA[<p>The "notheme" layout is used by popup windows shown in IFRAME tags.</p>]]>
     </param>
-    <!-- we have to define the list of boxes, but we do not have any -->
-    <param name="layout::boxes"></param>
+    <!-- we have to define the list of boxes, but we do not have any, so use "." -->
+    <param name="layout::boxes">.</param>
   </content>
   <content path="/css/snap">
     <attachment name="style" type="attachment/public" owner="output">

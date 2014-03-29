@@ -178,7 +178,7 @@ int64_t layout::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    //SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, content_update); -- defined in output/content.xml at this time
+    //SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, content_update); -- layout data is defined in output/content.xml at this time
 
     int64_t const last_layout_update(do_layout_updates(last_updated));
     if(last_layout_update > last_plugin_update)
@@ -907,80 +907,86 @@ void layout::generate_boxes(content::path_info_t& ipath, QString const& layout_n
         {
             throw snap_logic_exception("expected zero or one entry from a COMMAND_SELF");
         }
-        QStringList names(box_names[0].stringValue().split(","));
-        QVector<QDomElement> dom_boxes;
-        int const max_boxes(names.size());
-        for(int i(0); i < max_boxes; ++i)
+        // an empty list is represented by a period because "" cannot be
+        // properly saved in the database!
+        QString box_list(box_names[0].stringValue());
+        if(box_list != ".")
         {
-            names[i] = names[i].trimmed();
-            QDomElement box(doc.createElement(names[i]));
-            boxes.appendChild(box);
-            dom_boxes.push_back(box); // will be the same offset as names[...]
-        }
-#ifdef DEBUG
-        if(dom_boxes.size() != max_boxes)
-        {
-            throw snap_logic_exception("somehow the 'DOM boxes' and 'names' vectors do not have the same size.");
-        }
-#endif
-        quiet_error_callback box_error_callback(f_snap, true); // TODO: set log parameter to false once we are happy about the results
-
-        for(int i(0); i < max_boxes; ++i)
-        {
-            content::path_info_t ichild;
-            ichild.set_path(QString("%1/%2/%3").arg(get_name(SNAP_NAME_LAYOUT_ADMIN_LAYOUTS)).arg(layout_name).arg(names[i]));
-            // links cannot be read if the version is undefined;
-            // the version is undefined if the theme has no boxes at all
-            snap_version::version_number_t branch(ichild.get_branch());
-            if(snap_version::SPECIAL_VERSION_UNDEFINED != branch)
+            QStringList names(box_list.split(","));
+            QVector<QDomElement> dom_boxes;
+            int const max_boxes(names.size());
+            for(int i(0); i < max_boxes; ++i)
             {
-                links::link_info info(content::get_name(content::SNAP_NAME_CONTENT_CHILDREN), false, ichild.get_key(), ichild.get_branch());
-                QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
-                links::link_info child_info;
-                while(link_ctxt->next_link(child_info))
+                names[i] = names[i].trimmed();
+                QDomElement box(doc.createElement(names[i]));
+                boxes.appendChild(box);
+                dom_boxes.push_back(box); // will be the same offset as names[...]
+            }
+#ifdef DEBUG
+            if(dom_boxes.size() != max_boxes)
+            {
+                throw snap_logic_exception("somehow the 'DOM boxes' and 'names' vectors do not have the same size.");
+            }
+#endif
+            quiet_error_callback box_error_callback(f_snap, true); // TODO: set log parameter to false once we are happy about the results
+
+            for(int i(0); i < max_boxes; ++i)
+            {
+                content::path_info_t ichild;
+                ichild.set_path(QString("%1/%2/%3").arg(get_name(SNAP_NAME_LAYOUT_ADMIN_LAYOUTS)).arg(layout_name).arg(names[i]));
+                // links cannot be read if the version is undefined;
+                // the version is undefined if the theme has no boxes at all
+                snap_version::version_number_t branch(ichild.get_branch());
+                if(snap_version::SPECIAL_VERSION_UNDEFINED != branch)
                 {
-                    box_error_callback.clear_error();
-                    content::path_info_t box_ipath;
-                    box_ipath.set_path(child_info.key());
-                    box_ipath.set_parameter("action", "view"); // we're always only viewing those blocks from here
-SNAP_LOG_TRACE() << "box_ipath key = " << box_ipath.get_key() << ", branch_key=" << box_ipath.get_branch_key();
-                    plugin *box_plugin(path::path::instance()->get_plugin(box_ipath, box_error_callback));
-                    if(!box_error_callback.has_error() && box_plugin)
+                    links::link_info info(content::get_name(content::SNAP_NAME_CONTENT_CHILDREN), false, ichild.get_key(), ichild.get_branch());
+                    QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
+                    links::link_info child_info;
+                    while(link_ctxt->next_link(child_info))
                     {
-                        layout_boxes *lb(dynamic_cast<layout_boxes *>(box_plugin));
-                        if(lb != nullptr)
+                        box_error_callback.clear_error();
+                        content::path_info_t box_ipath;
+                        box_ipath.set_path(child_info.key());
+                        box_ipath.set_parameter("action", "view"); // we're always only viewing those blocks from here
+    SNAP_LOG_TRACE() << "box_ipath key = " << box_ipath.get_key() << ", branch_key=" << box_ipath.get_branch_key();
+                        plugin *box_plugin(path::path::instance()->get_plugin(box_ipath, box_error_callback));
+                        if(!box_error_callback.has_error() && box_plugin)
                         {
-                            // put each box in a filter tag because we have to
-                            // specify a different owner and path for each
-                            QDomElement filter_box(doc.createElement("filter"));
-                            filter_box.setAttribute("path", box_ipath.get_cpath()); // not the full key
-                            filter_box.setAttribute("owner", box_plugin->get_plugin_name());
-                            dom_boxes[i].appendChild(filter_box);
-SNAP_LOG_TRACE() << "handle box for " << box_plugin->get_plugin_name();
+                            layout_boxes *lb(dynamic_cast<layout_boxes *>(box_plugin));
+                            if(lb != nullptr)
+                            {
+                                // put each box in a filter tag because we have to
+                                // specify a different owner and path for each
+                                QDomElement filter_box(doc.createElement("filter"));
+                                filter_box.setAttribute("path", box_ipath.get_cpath()); // not the full key
+                                filter_box.setAttribute("owner", box_plugin->get_plugin_name());
+                                dom_boxes[i].appendChild(filter_box);
+    SNAP_LOG_TRACE() << "handle box for " << box_plugin->get_plugin_name();
 
-                            // Unfortunately running the full header content
-                            // signal would overwrite the main data... not good!
-                            //QDomElement head(snap_dom::get_element(doc, "head"));
-                            //QDomElement metadata(snap_dom::get_element(doc, "metadata"));
-                            //generate_header_content(ipath, head, metadata, "");
+                                // Unfortunately running the full header content
+                                // signal would overwrite the main data... not good!
+                                //QDomElement head(snap_dom::get_element(doc, "head"));
+                                //QDomElement metadata(snap_dom::get_element(doc, "metadata"));
+                                //generate_header_content(ipath, head, metadata, "");
 
-                            lb->on_generate_boxes_content(ipath, box_ipath, page, filter_box, "");
+                                lb->on_generate_boxes_content(ipath, box_ipath, page, filter_box, "");
 
-                            // Unfortunately running the full page content
-                            // signal would overwrite the main data... not good!
-                            //QDomElement page(snap_dom::get_element(doc, "page"));
-                            //QDomElement body(snap_dom::get_element(doc, "body"));
-                            //generate_page_content(ipath, page, body, "");
-                        }
-                        else
-                        {
-                            // if this happens a plugin offers a box but not
-                            // the handler
-                            f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR,
-                                    "Plugin Missing",
-                                    "Plugin \"" + box_plugin->get_plugin_name() + "\" does not know how to handle a box assigned to it.",
-                                    "layout::generate_boxes() the plugin does not derive from layout::layout_boxes.");
-                            NOTREACHED();
+                                // Unfortunately running the full page content
+                                // signal would overwrite the main data... not good!
+                                //QDomElement page(snap_dom::get_element(doc, "page"));
+                                //QDomElement body(snap_dom::get_element(doc, "body"));
+                                //generate_page_content(ipath, page, body, "");
+                            }
+                            else
+                            {
+                                // if this happens a plugin offers a box but not
+                                // the handler
+                                f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR,
+                                        "Plugin Missing",
+                                        "Plugin \"" + box_plugin->get_plugin_name() + "\" does not know how to handle a box assigned to it.",
+                                        "layout::generate_boxes() the plugin does not derive from layout::layout_boxes.");
+                                NOTREACHED();
+                            }
                         }
                     }
                 }
@@ -1301,7 +1307,7 @@ int64_t layout::install_layout(QString const& layout_name, int64_t const last_up
             }
             f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR,
                         "Layout Unavailable",
-                        "Layout \"" + layout_name + "\" content.xml file is missing.",
+                        QString("Layout \"%1\" content.xml file is missing.").arg(layout_name),
                         "layout::install_layout() could not find the content.xml file in the layout table.");
             NOTREACHED();
         }
@@ -1313,7 +1319,7 @@ int64_t layout::install_layout(QString const& layout_name, int64_t const last_up
     {
         f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR,
                 "Layout Unavailable",
-                "Layout \"" + layout_name + "\" content.xml file could not be loaded.",
+                QString("Layout \"%1\" content.xml file could not be loaded.").arg(layout_name),
                 "layout::install_layout() could not load the content.xml file from the layout table.");
         NOTREACHED();
     }
@@ -1325,6 +1331,9 @@ int64_t layout::install_layout(QString const& layout_name, int64_t const last_up
     //content_plugin->add_xml_document(dom, p == nullptr ? content::get_name(content::SNAP_NAME_CONTENT_OUTPUT) : p->get_plugin_name());
     content_plugin->add_xml_document(dom, content::get_name(content::SNAP_NAME_CONTENT_OUTPUT));
     f_snap->finish_update();
+
+    // after an update of the content.xml file we expect the layout::boxes
+    // field to be defined
     if( !data_table->row(layout_ipath.get_branch_key())->exists(get_name(SNAP_NAME_LAYOUT_BOXES)) )
     {
         if(last_updated != 0)
