@@ -48,3 +48,8 @@
 {
 	margin: 0;
 }
+
+.snap-popup .popup-body
+{
+	clear: both;
+}

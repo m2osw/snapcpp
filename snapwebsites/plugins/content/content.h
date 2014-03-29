@@ -202,7 +202,7 @@ public:
     QString                         get_cpath() const;
     QString                         get_real_cpath() const;
     QString                         get_owner() const;
-    bool                            get_main_page() const;
+    bool                            is_main_page() const;
     QString                         get_parameter(QString const& name) const;
 
     bool                            get_working_branch() const;

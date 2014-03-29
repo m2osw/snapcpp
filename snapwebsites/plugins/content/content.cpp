@@ -2402,6 +2402,12 @@ QString path_info_t::get_owner() const
 }
 
 
+bool path_info_t::is_main_page() const
+{
+    return f_main_page;
+}
+
+
 QString path_info_t::get_parameter(QString const& name) const
 {
     return f_parameters.contains(name) ? f_parameters[name] : "";

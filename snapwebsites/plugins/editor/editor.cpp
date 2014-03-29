@@ -1235,10 +1235,35 @@ QDomDocument editor::get_editor_widgets(content::path_info_t& ipath)
     {
         QDomDocument editor_widgets("editor-form");
         layout::layout *layout_plugin(layout::layout::instance());
-        QString const script(layout_plugin->get_layout(ipath, get_name(SNAP_NAME_EDITOR_LAYOUT)));
+        QString script(layout_plugin->get_layout(ipath, get_name(SNAP_NAME_EDITOR_LAYOUT), true));
+        QStringList const script_parts(script.split("/"));
+        if(script_parts.size() == 2)
+        {
+            if(script_parts[0].isEmpty()
+            || script_parts[1].isEmpty())
+            {
+                f_snap->die(snap_child::HTTP_CODE_CONFLICT, "Conflict Error",
+                    QString("Layout name \"%1\" is not valid. Names on both sides of the slash (/) must be defined.").arg(script),
+                    "The layout name is not composed of either two valid names separated by a slash (/).");
+                NOTREACHED();
+            }
+            script = script_parts[1];
+        }
+        else if(script_parts.size() != 1)
+        {
+            f_snap->die(snap_child::HTTP_CODE_CONFLICT, "Conflict Error",
+                QString("Layout name \"%1\" is not valid.").arg(script),
+                "The layout name is not composed of either one or two names.");
+            NOTREACHED();
+        }
         if(script != "default")
         {
-            QString const layout_name(layout_plugin->get_layout(ipath, layout::get_name(layout::SNAP_NAME_LAYOUT_LAYOUT)));
+            // in this case we totally ignore the query string because it would
+            // most certainly not correspond to the right theme (the one that
+            // links us to the editor layout)
+            QString const layout_name(script_parts.size() == 2
+                        ? script_parts[0] // force the layout::layout from the editor::layout
+                        : layout_plugin->get_layout(ipath, layout::get_name(layout::SNAP_NAME_LAYOUT_LAYOUT), false));
             QStringList const names(layout_name.split("/"));
             if(names.size() > 0)
             {
@@ -1246,7 +1271,7 @@ QDomDocument editor::get_editor_widgets(content::path_info_t& ipath)
 
                 QtCassandra::QCassandraTable::pointer_t layout_table(layout_plugin->get_layout_table());
                 QString const parser_xml(layout_table->row(name)->cell(script)->value().stringValue());
-//std::cerr << "Default [" << script << "," << name << "] -- [" << parser_xml.mid(0, 256) << "]\n";
+//std::cerr << "Default [" << script << "," << name << "] -- [" << parser_xml.mid(0, 256) << "] found " << layout_name << " for " << ipath.get_key() << "\n";
                 editor_widgets.setContent(parser_xml);
             }
         }

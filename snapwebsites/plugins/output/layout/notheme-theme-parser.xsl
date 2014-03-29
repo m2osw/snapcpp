@@ -35,97 +35,13 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <xsl:call-template name="snap:html-attributes"/>
 			<head>
         <xsl:call-template name="snap:html-header"/>
-				<style>
-					body, div
-					{
-						padding: 0;
-						margin: 0;
-					}
-
-					body
-					{
-						font-family: sans-serif;
-					}
-
-					.page
-					{
-						padding: 10px;
-					}
-
-					.header
-					{
-						height: 65px;
-					}
-
-					.header h1
-					{
-						text-align: center;
-						font-size: 250%;
-						padding-top: 10px;
-					}
-
-					.left
-					{
-						float: left;
-						padding-right: 10px;
-						width: 239px;
-						min-height: 350px;
-						border-right: 1px solid #666666;
-					}
-
-					.content
-					{
-						float: left;
-						width: 730px;
-						padding: 10px;
-					}
-
-					.clear-both
-					{
-						clear: both;
-					}
-
-					.inner-page
-					{
-					}
-
-					.content .body
-					{
-					}
-
-					.footer
-					{
-						margin-top: 20px;
-						padding: 10px;
-						border-top: 1px solid #666666;
-						text-align: center;
-						color: #888888;
-						font-size: 80%;
-					}
-
-					.error input
-					{
-						color: #ff0000;
-					}
-
-					.left .box input.line-edit-input,
-					.left .box input.password-input
-					{
-						display: block;
-						width: 150px;
-					}
-
-					.input-with-background-value
-					{
-						color: #888888;
-					}
-				</style>
 			</head>
 			<xsl:apply-templates select="page/body"/>
 		</html>
 	</xsl:template>
 	<xsl:template match="page/body">
 		<body>
+			<xsl:call-template name="snap:body-attributes"/>
 			<div class="page">
 				<div class="header"><h1><xsl:choose>
 						<xsl:when test="/snap/page/body/titles/long-title">

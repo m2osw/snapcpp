@@ -1,6 +1,6 @@
 /*
  * Name: popup
- * Version: 0.0.18
+ * Version: 0.0.19
  * Browsers: all
  * Copyright: Copyright 2014 (c) Made to Order Software Corporation  All rights reverved.
  * Depends: output (0.0.5)
@@ -177,7 +177,7 @@ snapwebsites.Popup.prototype = {
         }
         else
         {
-            popup.widget.css("top", (jQuery("body").height() - popup.widget.height()) / 2);
+            popup.widget.css("top", Math.floor((jQuery("body").height() - popup.widget.height()) / 2));
         }
         if(popup.left)
         {
@@ -185,7 +185,7 @@ snapwebsites.Popup.prototype = {
         }
         else
         {
-            popup.widget.css("left", (jQuery("body").width() - popup.widget.width()) / 2);
+            popup.widget.css("left", Math.floor((jQuery("body").width() - popup.widget.width()) / 2));
         }
         if(popup.position && popup.position == "absolute")
         {
@@ -194,12 +194,17 @@ snapwebsites.Popup.prototype = {
         if(popup.path)
         {
             b.empty();
-            b.append("<iframe class='popup-iframe' src='" + popup.path + "' frameborder='0' marginleft='0' marginright='0'></iframe>");
+            b.append("<iframe class='popup-iframe' src='" + popup.path + "' frameborder='0' marginheight='0' marginwidth='0'></iframe>");
             f = b.children(".popup-iframe");
-console.log("WxH = "+b.width()+"x"+b.height());
             f.attr("width", b.width());
             // the height of the body matches the height of the IFRAME so we
             // cannot use it here
+
+//console.log("WxH = "+b.width()+"x"+b.height()
+//          +" widget top = "+popup.widget.offset().top
+//          +", widget height = "+popup.widget.height()
+//          +", body top = "+b.offset().top);
+
             f.attr("height", popup.widget.offset().top + popup.widget.height() - b.offset().top);
         }
         if(popup.open)

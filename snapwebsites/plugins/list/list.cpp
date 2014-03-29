@@ -1296,7 +1296,7 @@ void list::on_replace_token(content::path_info_t& ipath, QString const& plugin_o
             {
                 return;
             }
-            // if user uses "" ignore it
+            // if user uses ".xsl" ignore it
             if(theme_param.f_value.endsWith(".xsl"))
             {
                 theme_param.f_value = theme_param.f_value.left(theme_param.f_value.length() - 4);
@@ -1497,7 +1497,7 @@ void list::on_replace_token(content::path_info_t& ipath, QString const& plugin_o
 //std::cerr << "source to be parsed [" << item_doc.toString() << "]\n";
                     QDomElement item_body(snap_dom::get_element(item_doc, "body"));
                     item_body.setAttribute("index", index);
-                    QString themed_item(layout_plugin->apply_theme(item_doc, item_theme_xsl));
+                    QString themed_item(layout_plugin->apply_theme(item_doc, item_theme_xsl, theme));
 //std::cerr << "themed item [" << themed_item << "]\n";
 
                     // add that result to the list document
@@ -1512,7 +1512,7 @@ void list::on_replace_token(content::path_info_t& ipath, QString const& plugin_o
 
             // now theme the list as a whole
             // we add a wrapper so we can use /node()/* in the final theme
-            token.f_replacement = layout_plugin->apply_theme(list_doc, list_theme_xsl);
+            token.f_replacement = layout_plugin->apply_theme(list_doc, list_theme_xsl, theme);
         }
         // else list is not accessible (permission "problem")
     }

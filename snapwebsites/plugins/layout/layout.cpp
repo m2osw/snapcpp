@@ -269,23 +269,35 @@ QtCassandra::QCassandraTable::pointer_t layout::get_layout_table()
  * This function checks for the name of a theme or layout in the current object
  * or the specified type and its parent.
  *
- * \param[in] ipath  The path to the content to process.
- * \param[in] column_name  The name of the column to search (layout::theme or layout::layout)
+ * \param[in,out] ipath  The path to the content to process.
+ * \param[in] column_name  The name of the column to search (layout::theme
+ *                         or layout::layout).
+ * \param[in] use_qs_theme  Whether the ?theme=...&layout=... query string
+ *                          parameters should be checked.
  *
  * \return The name of the layout, may be "default" if no other name was found.
  */
-QString layout::get_layout(content::path_info_t& ipath, QString const& column_name)
+QString layout::get_layout(content::path_info_t& ipath, QString const& column_name, bool use_qs_theme)
 {
     QString layout_name;
 
+    // TODO: We may actually want to first check the page theme, then the
+    //       Query String user definition; although frankly that would not
+    //       make sense; we definitively have a problem here because the
+    //       theme of each item should probably follow the main theme and
+    //       not change depending on the part being themed...
+
     // first check whether the user is trying to overwrite the layout
-    QString const qs_layout(f_snap->get_server_parameter("qs_" + column_name));
-    if(!qs_layout.isEmpty())
+    if(use_qs_theme && ipath.is_main_page())
     {
-        // although query_option("") works as expected by returning ""
-        // we avoid the call to the get_uri() by testing early
-        snap_uri const& uri(f_snap->get_uri());
-        layout_name = uri.query_option(qs_layout);
+        QString const qs_layout(f_snap->get_server_parameter("qs_" + column_name));
+        if(!qs_layout.isEmpty())
+        {
+            // although query_option("") works as expected by returning ""
+            // we avoid the call to the get_uri() by testing early
+            snap_uri const& uri(f_snap->get_uri());
+            layout_name = uri.query_option(qs_layout);
+        }
     }
 
     if(layout_name.isEmpty())
@@ -423,7 +435,7 @@ QString layout::apply_layout(content::path_info_t& ipath, layout_content *conten
     // Then apply a theme to it
     xsl = define_layout(ipath, get_name(SNAP_NAME_LAYOUT_THEME), get_name(SNAP_NAME_LAYOUT_THEME_XSL), ":/xsl/layout/default-theme-parser.xsl", layout_name);
     // HTML5 DOCTYPE is just "html" as follow
-    return "<!DOCTYPE html>" + apply_theme(doc, xsl);
+    return "<!DOCTYPE html>" + apply_theme(doc, xsl, layout_name);
 }
 
 
@@ -466,7 +478,7 @@ QString layout::define_layout(content::path_info_t& ipath, QString const& name, 
 
     // Retrieve the name of the layout for this path
     // XXX should the ctemplate ever be used to retrieve the layout?
-    layout_name = get_layout(ipath, name);
+    layout_name = get_layout(ipath, name, true);
 
 //SNAP_LOG_TRACE() << "Got theme / layout name = [" << layout_name << "] (key=" << ipath.get_key() << ")";
 
@@ -989,13 +1001,17 @@ SNAP_LOG_TRACE() << "handle box for " << box_plugin->get_plugin_name();
  * you'd want to save the title and body elements of the \p doc XML
  * document.
  *
- * \param[in] doc  The XML document to theme.
+ * \param[in,out] doc  The XML document to theme.
  * \param[in] xsl  The XSLT data to use to apply the theme.
+ * \param[in] theme_name  The name of the theme used to generate the output.
  *
  * \return The XML document themed in the form of a string.
  */
-QString layout::apply_theme(QDomDocument doc, QString const& xsl)
+QString layout::apply_theme(QDomDocument doc, QString const& xsl, QString const& theme_name)
 {
+    QDomElement metadata(snap_dom::get_element(doc, "metadata"));
+    metadata.setAttribute("theme-name", theme_name);
+
     // finally apply the theme XSLT to the final XML
     // the output is what we want to return
     QXmlQuery q(QXmlQuery::XSLT20);
@@ -1038,7 +1054,7 @@ QString layout::apply_theme(QDomDocument doc, QString const& xsl)
 //{
 //    QString xsl;
 //
-//    QString theme_name( get_layout(ipath, get_name(SNAP_NAME_LAYOUT_THEME)) );
+//    QString theme_name( get_layout(ipath, get_name(SNAP_NAME_LAYOUT_THEME), false) );
 //
 //    // If theme_name is not default, attempt to obtain the
 //    // selected theme from the layout table.

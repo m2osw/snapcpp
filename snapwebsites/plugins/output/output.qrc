@@ -40,6 +40,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   <qresource prefix="/xml">
     <file>layout/notheme-content.xml</file>
   </qresource>
+  <qresource prefix="/css">
+    <file>layout/notheme-style.css</file>
+  </qresource>
 </RCC>
 <!--
 vim: ts=2 sw=2 et syntax=xml

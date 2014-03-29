@@ -70,12 +70,12 @@ public:
     void                on_bootstrap(snap_child *snap);
     void                on_load_file(snap_child::post_file_t& file, bool& found);
 
-    QString             get_layout(content::path_info_t& ipath, const QString& column_name);
+    QString             get_layout(content::path_info_t& ipath, const QString& column_name, bool use_qs_theme);
     QDomDocument        create_document(content::path_info_t& ipath, plugin *content_plugin);
     QString             apply_layout(content::path_info_t& ipath, layout_content *plugin, const QString& ctemplate = "");
     QString             define_layout(content::path_info_t& ipath, QString const& name, QString const& key, QString const& default_filename, QString& layout_name);
     void                create_body(QDomDocument& doc, content::path_info_t& ipath, QString const& xsl, layout_content *content_plugin, const QString& ctemplate = "", bool handle_boxes = false, QString const& layout_name = "");
-    QString             apply_theme(QDomDocument doc, QString const& xsl);
+    QString             apply_theme(QDomDocument doc, QString const& xsl, QString const& theme_name);
     void                replace_includes(QString& xsl);
     int64_t             install_layout(QString const& layout_name, int64_t const last_updated);
     void                add_layout_from_resources(QString const& name);

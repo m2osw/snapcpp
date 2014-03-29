@@ -142,7 +142,7 @@ int64_t output::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2014, 3, 27, 23, 22, 30, content_update);
+    SNAP_PLUGIN_UPDATE(2014, 3, 28, 18, 6, 30, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -201,7 +201,7 @@ bool output::on_path_execute(content::path_info_t& ipath)
             {
                 // somehow the file data is not available
                 f_snap->die(snap_child::HTTP_CODE_NOT_FOUND, "Attachment Not Found",
-                        "The attachment \"" + ipath.get_key() + "\" was not found.",
+                        QString("The attachment \"%1\" was not found.").arg(ipath.get_key()),
                         QString("Could not find field \"%1\" of file \"%2\".")
                                 .arg(content::get_name(content::SNAP_NAME_CONTENT_FILES_DATA))
                                 .arg(QString::fromAscii(attachment_key.binaryValue().toHex())));

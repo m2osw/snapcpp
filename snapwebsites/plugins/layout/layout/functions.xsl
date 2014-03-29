@@ -116,6 +116,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 		<xsl:attribute name="lang"><xsl:value-of select="$lang"/></xsl:attribute>
 		<xsl:attribute name="xml:lang"><xsl:value-of select="$lang"/></xsl:attribute>
 		<xsl:attribute name="prefix">og: http://ogp.me/ns#</xsl:attribute>
+		<!-- the following includes an extra class, "snap", so the two names
+		     (layout-name and theme-name) are spaced out; Qt concatenate them
+				 otherwise... -->
+		<xsl:attribute name="class"><xsl:value-of select="/snap/page/body/@layout-name"/> snap <xsl:value-of select="/snap/head/metadata/@theme-name"/></xsl:attribute>
 	</xsl:template>
 </xsl:stylesheet>
 <!-- vim: ts=2 sw=2

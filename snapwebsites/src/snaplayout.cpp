@@ -95,7 +95,15 @@ namespace
             advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
             "set-theme",
             NULL,
-            "usage: --set-theme URL [theme|layout] ['\"layout_name\";']'",
+            "usage: --set-theme URL [theme|layout] ['\"layout name\";']'",
+            advgetopt::getopt::no_argument, // expect 3 params as filenames
+        },
+        { // at least until we have a way to edit the theme from the website
+            'v',
+            advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
+            "verbose",
+            NULL,
+            "show what snaplayout is doing",
             advgetopt::getopt::no_argument, // expect 3 params as filenames
         },
         {
@@ -182,6 +190,7 @@ private:
     QString                         f_host;
     controlled_vars::zint32_t       f_port;
     getopt_ptr_t                    f_opt;
+    controlled_vars::fbool_t        f_verbose;
 };
 
 
@@ -465,7 +474,7 @@ void snap_layout::load_xsl_info(QDomDocument& doc, QString const& filename, QStr
 
     if(layout_name.isEmpty() || layout_area.isEmpty() || layout_modified_date.isEmpty())
     {
-        std::cerr << "error: the layout_name, layout_area, and layout_modified parameters must all three be defined in your XSL document \"" << filename << "\"" << std::endl;
+        std::cerr << "error: the layout-name, layout-area, and layout-modified parameters must all three be defined in your XSL document \"" << filename << "\"" << std::endl;
         exit(1);
     }
 
@@ -600,6 +609,10 @@ void snap_layout::add_files()
     for( auto info : f_fileinfo_list )
     {
         const QString filename(info.f_filename);
+        if(f_verbose)
+        {
+            std::cout << "info: working on \"" << filename << "\"." << std::endl;
+        }
         QByteArray content(info.f_content);
         const int e(filename.lastIndexOf("."));
         if(e == -1)
@@ -837,6 +850,8 @@ void snap_layout::set_theme()
 
 void snap_layout::run()
 {
+    f_verbose = f_opt->is_defined("verbose");
+
     if( f_opt->is_defined( "set-theme" ) )
     {
         set_theme();
