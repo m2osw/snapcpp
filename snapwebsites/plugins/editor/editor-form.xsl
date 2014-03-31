@@ -126,7 +126,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
         <xsl:if test="required = 'required'"> <span class="required">*</span></xsl:if>
         <div class="dropdown-items">
           <xsl:choose>
-            <xsl:when test="value">
+            <xsl:when test="count(value/item)">
               <ul class="dropdown-selection">
                 <xsl:for-each select="value/item">
                   <li value="{@value}">
