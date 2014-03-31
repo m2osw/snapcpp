@@ -2565,7 +2565,6 @@ void editor::on_generate_page_content(content::path_info_t& ipath, QDomElement& 
         ADDED_FORM_FILE_YES
     };
     static added_form_file_support_t g_added_editor_form_js_css(ADDED_FORM_FILE_NONE);
-    static int g_tabindex_base(0);
 
     static_cast<void>(ctemplate);
 
@@ -2607,6 +2606,7 @@ void editor::on_generate_page_content(content::path_info_t& ipath, QDomElement& 
     {
         QDomElement w(widgets.at(i).toElement());
         QString const field_name(w.attribute("field"));
+        QString const field_id(w.attribute("id"));
         QString const field_type(w.attribute("type"));
         QString const widget_auto_save(w.attribute("auto-save", "string")); // this one is #IMPLIED
 
@@ -2668,6 +2668,7 @@ void editor::on_generate_page_content(content::path_info_t& ipath, QDomElement& 
                 snap_dom::insert_html_string_to_xml_doc(value_tag, current_value);
             }
         }
+        init_editor_widget(ipath, field_id, field_type, w, revision_row);
     }
 
     QString action;
@@ -2710,7 +2711,7 @@ void editor::on_generate_page_content(content::path_info_t& ipath, QDomElement& 
 
     // set action variable to the current action
     q.bindVariable("action", QVariant(action));
-    q.bindVariable("tabindex_base", QVariant(g_tabindex_base));
+    q.bindVariable("tabindex_base", QVariant(form::form::current_tab_id()));
 
     q.setQuery(editor_xsl);
     QDomDocument doc_output("widgets");
@@ -2765,7 +2766,19 @@ void editor::on_generate_page_content(content::path_info_t& ipath, QDomElement& 
     // the count includes all the widgets even those that do not make
     // use of the tab index so we'll get some gaps, but that's a very
     // small price to pay for this cool feature
-    g_tabindex_base += max_widgets;
+    form::form::used_tab_id(max_widgets);
+}
+
+
+bool editor::init_editor_widget_impl(content::path_info_t& ipath, QString const& field_id, QString const& field_type, QDomElement& widget, QtCassandra::QCassandraRow::pointer_t row)
+{
+    static_cast<void>(ipath);
+    static_cast<void>(field_id);
+    static_cast<void>(field_type);
+    static_cast<void>(widget);
+    static_cast<void>(row);
+
+    return true;
 }
 
 

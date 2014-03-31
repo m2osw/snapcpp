@@ -528,9 +528,15 @@ void list::on_attach_to_session()
  * We read the list::index:200 and us that key to start reading the list
  * (i.e. in the column predicate would use that key as the start key.)
  *
+ * \exception snap_logic_exception
+ * The function raises the snap_logic_exception exception if the start or
+ * count values are incompatible. The start parameter must be positive or
+ * zero. The count value must be position (larger than 0) or -1 to use
+ * the system maximum allowed.
+ *
  * \param[in,out] ipath  The path to the list to be read.
- * \param[in] start  The first item to be returned.
- * \param[in] count  The number of items to return.
+ * \param[in] start  The first item to be returned (must be 0 or larger).
+ * \param[in] count  The number of items to return (-1 for the maximum allowed).
  *
  * \return The list of items
  */

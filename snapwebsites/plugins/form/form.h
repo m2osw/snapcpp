@@ -97,6 +97,8 @@ public:
     static int                  count_text_lines(QString const& text);
     static int                  count_html_lines(QString const& html);
     static bool                 parse_width_height(QString const& size, int& width, int& height);
+    static int                  current_tab_id();
+    static void                 used_tab_id(int used);
 
 private:
     typedef QMap<QString, QString> auto_save_types_t;

@@ -41,6 +41,21 @@
 SNAP_PLUGIN_START(form, 1, 0)
 
 
+namespace
+{
+
+/** \brief The next unique tab index.
+ *
+ * Any form on the screen needs to make use of unique tab indices. This
+ * value represents the current index. You get it with the current_tab_id()
+ * function. Once done with it, you call the used_tab_id() function to
+ * mark those identifiers as used.
+ */
+int64_t g_tabindex_base = 0;
+
+}
+
+
 /** \brief Get an HTML form from an XML document.
  *
  * The form plugin makes use of a set of XSTL templates to generate HTML
@@ -203,7 +218,6 @@ void form::content_update(int64_t variables_timestamp)
 QDomDocument form::form_to_html(sessions::sessions::session_info& info, QDomDocument& xml_form)
 {
     static int64_t g_unique_id(0);
-    static int g_tabindex_base(0);
 
     QDomDocument doc_output("body");
     if(!f_form_initialized)
@@ -279,7 +293,7 @@ QDomDocument form::form_to_html(sessions::sessions::session_info& info, QDomDocu
     ++g_unique_id;
     q.bindVariable("action", QVariant(info.get_page_path()));
     q.bindVariable("unique_id", QVariant(QString("%1").arg(g_unique_id)));
-    q.bindVariable("tabindex_base", QVariant(g_tabindex_base));
+    q.bindVariable("tabindex_base", QVariant(current_tab_id()));
     q.setQuery(f_form_elements_string);
     QDomReceiver receiver(q.namePool(), doc_output);
     q.evaluateTo(&receiver);
@@ -287,7 +301,7 @@ QDomDocument form::form_to_html(sessions::sessions::session_info& info, QDomDocu
     // the count includes all the widgets even those that do not make
     // use of the tab index so we'll get some gaps, but that's a very
     // small price to pay for this cool feature
-    g_tabindex_base += xml_form.elementsByTagName("widget").size();
+    used_tab_id(xml_form.elementsByTagName("widget").size());
 
     return doc_output;
 }
@@ -1917,6 +1931,31 @@ bool form::parse_width_height(QString const& size, int& width, int& height)
         ++s;
     }
     return s->unicode() == '\0';
+}
+
+
+/** \brief Retrieve the next tab identifier.
+ *
+ * Tab identifiers have to be unique for the entire page if we want them to
+ * work properly. For this reason we have a function that can be called
+ * from any plugin to retrieve the next identifier.
+ *
+ * \return The next unique tab identifier.
+ */
+int form::current_tab_id()
+{
+    return g_tabindex_base;
+}
+
+
+/** \brief Add to the used tab identifier.
+ *
+ * This function is used to add the number of widgets a form used so one
+ * can use the next identifier for the next form on the same page.
+ */
+void form::used_tab_id(int used)
+{
+    g_tabindex_base += used;
 }
 
 

@@ -51,6 +51,7 @@ void            replace_node_with_html_string(QDomNode& child, QString const& xm
 void            replace_node_with_elements(QDomNode& replace, QDomNode const& node);
 void            remove_all_children(QDomElement& parent);
 QDomElement     get_element(QDomDocument& doc, QString const& name, bool must_exist = true);
+QDomElement     get_child_element(QDomNode parent, QString const& path);
 QDomElement     create_element(QDomNode parent, QString const& path);
 
 

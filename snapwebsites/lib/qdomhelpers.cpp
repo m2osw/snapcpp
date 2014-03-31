@@ -220,6 +220,65 @@ QDomElement get_element(QDomDocument& doc, QString const& name, bool must_exist)
 }
 
 
+/** \brief Get a specific child element defined by path under parent.
+ *
+ * Starting from the node \p parent search the children as defined by
+ * \p path. The process checks whether each child already exists, if
+ * so then it goes on in the search.
+ *
+ * Although this could be done with our xpath implementation, it is a lot
+ * faster to find the tag you are looking for. Note that if there are
+ * multiple tags with the same name at any level, only the first one is
+ * used.
+ *
+ * \important
+ * Again, the function gets the FIRST of each tag it finds. If you want
+ * to get all the children, use the QDomXPath instead.
+ *
+ * \note
+ * The type of parent is set to QDomNode even though an element is required
+ * because that way we do not force the caller to convert the node.
+ *
+ * \param[in,out] parent  The node from which children are added (i.e. body).
+ * \param[in] path  The path representing the child to retrieve.
+ */
+QDomElement get_child_element(QDomNode parent, QString const& path)
+{
+#ifdef _DEBUG
+    if(path.startsWith("/"))
+    {
+        throw snap_logic_exception(QString("path \"%1\" for get_child_element cannot start with a slash").arg(path));
+    }
+#endif
+
+    // This is not necessary at this point, unless we want to err?
+    //if(parent.isNull())
+    //{
+    //    // we cannot add anything starting from a null node
+    //    // (TBD: should we err instead?)
+    //    return parent.toElement();
+    //}
+
+    QStringList p(path.split('/'));
+
+    int const max_children(p.size());
+    for(int i(0); i < max_children && !parent.isNull(); ++i)
+    {
+        QString const name(p[i]);
+        if(name.isEmpty())
+        {
+            // skip in case of a "//" or starting "/"
+            continue;
+        }
+        parent = parent.firstChildElement(name);
+    }
+
+    // the parent parameter becomes the child most item along
+    // the course of this function
+    return parent.toElement();
+}
+
+
 /** \brief Create the elements defined by path under parent.
  *
  * Starting from the node \p parent create each child as defined by
@@ -245,7 +304,7 @@ QDomElement get_element(QDomDocument& doc, QString const& name, bool must_exist)
  * because that way we do not force the caller to convert the node.
  *
  * \param[in,out] parent  The node from which children are added (i.e. body).
- * \param[in] path  The path representing the childre to create.
+ * \param[in] path  The path representing the children to create.
  */
 QDomElement create_element(QDomNode parent, QString const& path)
 {
