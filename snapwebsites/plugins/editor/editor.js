@@ -1,6 +1,6 @@
 /*
  * Name: editor
- * Version: 0.0.2.74
+ * Version: 0.0.2.77
  * Browsers: all
  * Copyright: Copyright 2013-2014 (c) Made to Order Software Corporation  All rights reverved.
  * License: GPL 2.0
@@ -1335,7 +1335,7 @@ console.log("command "+idx+" "+this.toolbarButtons[idx][2]+"!!!");
                 }
                 else if(e.which == 0x20)
                 {
-                    if(jQuery(snapwebsites.EditorInstance._activeElement).is(".checkmark"))
+                    if(jQuery(snapwebsites.EditorInstance._activeElement).parent().is(".checkmark"))
                     {
                         jQuery(snapwebsites.EditorInstance._activeElement).find(".checkmark-area").toggleClass("checked");
                         snapwebsites.EditorInstance._checkModified();
