@@ -1,4 +1,4 @@
-snapwebsites (0.1.38~saucy) UNRELEASED; urgency=high
+snapwebsites (0.1.38~saucy) saucy; urgency=high
 
   [ Alexis Wilke ]
   * Added support for dropdown widgets.
