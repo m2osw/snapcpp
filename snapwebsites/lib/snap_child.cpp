@@ -2702,6 +2702,12 @@ void snap_child::backend()
             //       testing to see whether a table exists after the first
             //       initialization. That is probably the worst problem at
             //       this point.
+            //
+            //       Finally, right now we've been testing with environment
+            //       using 1 node. That's definitively not enough as a 3
+            //       local nodes environment functions quite differently
+            //       already, and then an environment with separate clusters
+            //       where updates take even more time between nodes.
             sleep(60);
             f_context->clearCache();
             sites_table = f_context->findTable(get_name(SNAP_NAME_SITES));
