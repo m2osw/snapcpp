@@ -967,7 +967,7 @@ int list::generate_new_lists(QString const& site_key)
             {
                 did_work |= generate_new_list_for_children(site_key, list_ipath);
             }
-            if(selector.startsWith("children="))
+            else if(selector.startsWith("children="))
             {
                 content::path_info_t root_ipath;
                 root_ipath.set_path(selector.mid(9));
