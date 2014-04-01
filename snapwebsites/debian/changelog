@@ -1,9 +1,14 @@
-snapwebsites (0.1.38~saucyubuntu1) UNRELEASED; urgency=low
+snapwebsites (0.1.39~saucy) saucy; urgency=high
 
+  [ Alexis Wilke ]
   * Fixed the pagelist backend so it works even while sites are initialized.
     (this includes a fix to the libQtCassandra 0.5.5)
 
- -- Alexis Wilke <alexis@m2osw.com>  Tue, 01 Apr 2014 12:10:10 -0700
+  [ R. Douglas Barbieri ]
+  * Repaired logout/login error where a user would be redirected to an
+  admin-only page on login.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Tue, 01 Apr 2014 12:10:10 -0700
 
 snapwebsites (0.1.38~saucy) saucy; urgency=high
 
