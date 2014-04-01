@@ -50,11 +50,12 @@ public:
     void        set_column_value( QtCassandra::QCassandraCell::pointer_t c, const QString& v );
 
 private:
-    typedef enum
+    enum column_type_t
     {
         CT_uint64_value,
         CT_time_microseconds,
         CT_time_seconds,
+        CT_time_microseconds_and_string,
         CT_float32_value,
         CT_uint32_value,
         CT_int8_value,
@@ -64,7 +65,7 @@ private:
         CT_md5array_value,
         CT_secure_value,
         CT_string_value
-    } column_type_t;
+    };
 
     column_type_t get_column_type( QtCassandra::QCassandraCell::pointer_t c ) const;
 

@@ -462,6 +462,36 @@ void list::on_modified_content(content::path_info_t& ipath)
     bool const modified(true);
     list_table->row(site_key)->cell(key)->setValue(modified);
 
+    // handle a reference so it is possible to delete the old key for that
+    // very page later (i.e. if the page changes multiple times before the
+    // list processes have time to catch up)
+    QString const ref_key(QString("%1#ref").arg(site_key));
+    QtCassandra::QCassandraValue existing_entry(list_table->row(ref_key)->cell(ipath.get_key())->value());
+    if(!existing_entry.nullValue())
+    {
+        QByteArray old_key(existing_entry.binaryValue());
+        if(old_key != key)
+        {
+            // drop only if the key changed (i.e. if the code modifies the
+            // same page over and over again within the same child process,
+            // then the key won't change.)
+            list_table->row(site_key)->dropCell(old_key, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, start_date);
+        }
+    }
+    //
+    // TBD: should we really time these rows? at this point we cannot
+    //      safely delete them so the best is certainly to do that
+    //      (unless we use the start_date time to create/delete these
+    //      entries safely) -- the result if these row disappear too
+    //      soon is that duplicates will appear in the main content
+    //      which is not a big deal (XXX I really think we can delete
+    //      those using the start_date saved in the cells to sort them!)
+    //
+    QtCassandra::QCassandraValue timed_key;
+    timed_key.setBinaryValue(key);
+    timed_key.setTtl(86400 * 3); // 3 days--the list should be updated within 5 min. so 3 days is in case it crashed or did not start, maybe?
+    list_table->row(ref_key)->cell(ipath.get_key())->setValue(timed_key);
+
     // just in case the row changed, we delete the pre-compiled (cached)
     // scripts (this could certainly be optimized but really the scripts
     // are compiled so quickly that it won't matter.)
@@ -483,7 +513,9 @@ void list::on_modified_content(content::path_info_t& ipath)
  * \bug
  * There is a 10 seconds latency between the last hit and the time when
  * the list data is taken in account (see LIST_PROCESSING_LATENCY).
- * At this point I am not too sure how we can handle this problem.
+ * At this point I am not too sure how we can handle this problem
+ * although I added a 10 seconds pause in the code receiving a PING which
+ * seems to help quite a bit.
  */
 void list::on_attach_to_session()
 {
@@ -775,10 +807,11 @@ void list::on_backend_action(QString const& action)
 /** \brief Implementation of the backend process signal.
  *
  * This function captures the backend processing signal which is sent
- * by the server whenever the backend tool is run against a site.
+ * by the server whenever the backend tool is run against a cluster.
  *
  * The list plugin refreshes lists of pages on websites when it receives
- * this signal.
+ * this signal assuming that the website has the parameter PROCESS_LIST
+ * defined.
  *
  * This backend may end up taking a lot of processing time and may need to
  * run very quickly (i.e. within seconds when a new page is created or a
@@ -786,7 +819,7 @@ void list::on_backend_action(QString const& action)
  * the PING signal.
  *
  * This backend process will actually NOT run if the PROCESS_LISTS parameter
- * is not defined on the command line:
+ * is not defined as a site parameter. With the command line:
  *
  * \code
  * snapbackend [--config snapserver.conf] --param PROCESS_LISTS=1
@@ -794,6 +827,26 @@ void list::on_backend_action(QString const& action)
  *
  * At this time the value used with PROCESS_LIST is not tested, however, it
  * is strongly recommended you use 1.
+ *
+ * It is also important to mark the list as a standalone list to avoid
+ * parallelism which is NOT checked by the backend at this point (because
+ * otherwise you take the risk of losing the list updating process
+ * altogether.) So you want to run this command once:
+ *
+ * \code
+ * snapbackend [--config snapserver.conf] --action standalonelist http://my-website.com/
+ * \endcode
+ *
+ * Make sure to specify the URI of your website because otherwise all the
+ * site will be marked as standalone sites!
+ *
+ * Note that if you create a standalone site, then you have to either
+ * allow its processing with the PROCESS_LISTS parameter, or you have
+ * to start it with the pagelist and its URI:
+ *
+ * \code
+ * snapbackend [--config snapserver.conf] --action pagelist http://my-website.com/
+ * \endcode
  */
 void list::on_backend_process()
 {
@@ -856,6 +909,13 @@ int list::generate_all_lists(QString const& site_key)
     QtCassandra::QCassandraTable::pointer_t list_table(get_list_table());
     QtCassandra::QCassandraRow::pointer_t list_row(list_table->row(site_key));
 
+    // note that we do not loop over all the lists, instead we work on
+    // 100 items and then exit; we do so because the cells get deleted
+    // and thus we work on less entries on the next call, but give a
+    // chance to the main process to create new entries each time
+    //
+    // Note: because it is sorted, the oldest entries are worked on first
+    //
     QtCassandra::QCassandraColumnRangePredicate column_predicate;
     column_predicate.setCount(100); // do one round then exit
     column_predicate.setIndex(); // behave like an index

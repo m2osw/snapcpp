@@ -144,6 +144,8 @@ add_custom_target(snap_code_analysis
     # Static analysis of the code
     COMMAND echo "cppcheck -- output ${PROJECT_BINARY_DIR}/cppcheck.out"
     COMMAND cppcheck lib plugins src tests >"${PROJECT_BINARY_DIR}/cppcheck.out" 2>&1
+    # Count # of TODO, XXX, TBD, FIXME, and \todo: (documented in doxygen)
+    COMMAND sh tests/todo.sh "${PROJECT_BINARY_DIR}"
 
     # All of these are expected to work on source code so make sure we're
     # in the source code top directory

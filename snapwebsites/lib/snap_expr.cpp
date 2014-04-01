@@ -15,6 +15,8 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+//#define SHOW_COMMANDS
+
 #include "snap_expr.h"
 
 #include "snap_parser.h"
@@ -422,36 +424,31 @@ public:
 
     void add_child(expr_node_pointer_t child)
     {
-        verify_children();
+        verify_children(-1);
         f_children.push_back(child);
     }
 
     void remove_child(int idx)
     {
-        verify_children();
+        verify_children(idx);
         f_children.remove(idx);
     }
 
     void insert_child(int idx, expr_node_pointer_t child)
     {
-        verify_children();
+        verify_children(idx, true);
         f_children.insert(idx, child);
     }
 
     int children_size() const
     {
-        verify_children();
+        verify_children(-1);
         return f_children.size();
     }
 
     expr_node_pointer_t get_child(int idx)
     {
-        verify_children();
-        if(static_cast<uint32_t>(idx) >= static_cast<uint32_t>(f_children.size()))
-        {
-            throw snap_logic_exception(QString("expr_node::get_child(%1) called with an out of bounds index (max: %2)")
-                                        .arg(idx).arg(f_children.size()));
-        }
+        verify_children(idx);
         return f_children[idx];
     }
 
@@ -926,6 +923,156 @@ public:
 
     void execute(variable_t& result, variable_t::variable_map_t& variables, functions_t& functions)
     {
+#ifdef SHOW_COMMANDS
+        switch(f_type)
+        {
+        case NODE_TYPE_UNKNOWN:
+            std::cerr << "execute: NODE_TYPE_UNKNOWN\n";
+            break;
+
+        case NODE_TYPE_LOADING:
+            std::cerr << "execute: NODE_TYPE_LOADING\n";
+            break;
+
+        case NODE_TYPE_OPERATION_LIST:
+            std::cerr << "execute: NODE_TYPE_OPERATION_LIST\n";
+            break;
+
+        case NODE_TYPE_OPERATION_LOGICAL_NOT:
+            std::cerr << "execute: NODE_TYPE_OPERATION_LOGICAL_NOT\n";
+            break;
+
+        case NODE_TYPE_OPERATION_BITWISE_NOT:
+            std::cerr << "execute: NODE_TYPE_OPERATION_BITWISE_NOT\n";
+            break;
+
+        case NODE_TYPE_OPERATION_NEGATE:
+            std::cerr << "execute: NODE_TYPE_OPERATION_NEGATE\n";
+            break;
+
+        case NODE_TYPE_OPERATION_FUNCTION:
+            std::cerr << "execute: NODE_TYPE_OPERATION_FUNCTION -- " << f_name << "()\n";
+            break;
+
+        case NODE_TYPE_OPERATION_MULTIPLY:
+            std::cerr << "execute: NODE_TYPE_OPERATION_MULTIPLY (*)\n";
+            break;
+
+        case NODE_TYPE_OPERATION_DIVIDE:
+            std::cerr << "execute: NODE_TYPE_OPERATION_DIVIDE (/)\n";
+            break;
+
+        case NODE_TYPE_OPERATION_MODULO:
+            std::cerr << "execute: NODE_TYPE_OPERATION_MODULO (%)\n";
+            break;
+
+        case NODE_TYPE_OPERATION_ADD:
+            std::cerr << "execute: NODE_TYPE_OPERATION_ADD (+)\n";
+            break;
+
+        case NODE_TYPE_OPERATION_SUBTRACT:
+            std::cerr << "execute: NODE_TYPE_OPERATION_SUBTRACT (-)\n";
+            break;
+
+        case NODE_TYPE_OPERATION_SHIFT_LEFT:
+            std::cerr << "execute: NODE_TYPE_OPERATION_SHIFT_LEFT (<<)\n";
+            break;
+
+        case NODE_TYPE_OPERATION_SHIFT_RIGHT:
+            std::cerr << "execute: NODE_TYPE_OPERATION_SHIFT_RIGHT (>>)\n";
+            break;
+
+        case NODE_TYPE_OPERATION_LESS:
+            std::cerr << "execute: NODE_TYPE_OPERATION_LESS (<)\n";
+            break;
+
+        case NODE_TYPE_OPERATION_LESS_OR_EQUAL:
+            std::cerr << "execute: NODE_TYPE_OPERATION_LESS_OR_EQUAL (<=)\n";
+            break;
+
+        case NODE_TYPE_OPERATION_GREATER:
+            std::cerr << "execute: NODE_TYPE_OPERATION_GREATER (>)\n";
+            break;
+
+        case NODE_TYPE_OPERATION_GREATER_OR_EQUAL:
+            std::cerr << "execute: NODE_TYPE_OPERATION_GREATER_OR_EQUAL (>=)\n";
+            break;
+
+        case NODE_TYPE_OPERATION_MINIMUM:
+            std::cerr << "execute: NODE_TYPE_OPERATION_MINIMUM (<?)\n";
+            break;
+
+        case NODE_TYPE_OPERATION_MAXIMUM:
+            std::cerr << "execute: NODE_TYPE_OPERATION_MAXIMUM (>?)\n";
+            break;
+
+        case NODE_TYPE_OPERATION_EQUAL:
+            std::cerr << "execute: NODE_TYPE_OPERATION_EQUAL (==)\n";
+            break;
+
+        case NODE_TYPE_OPERATION_NOT_EQUAL:
+            std::cerr << "execute: NODE_TYPE_OPERATION_NOT_EQUAL (!=)\n";
+            break;
+
+        case NODE_TYPE_OPERATION_BITWISE_AND:
+            std::cerr << "execute: NODE_TYPE_OPERATION_BITWISE_AND (&)\n";
+            break;
+
+        case NODE_TYPE_OPERATION_BITWISE_XOR:
+            std::cerr << "execute: NODE_TYPE_OPERATION_BITWISE_XOR (^)\n";
+            break;
+
+        case NODE_TYPE_OPERATION_BITWISE_OR:
+            std::cerr << "execute: NODE_TYPE_OPERATION_BITWISE_OR (|)\n";
+            break;
+
+        case NODE_TYPE_OPERATION_LOGICAL_AND:
+            std::cerr << "execute: NODE_TYPE_OPERATION_LOGICAL_AND (&&)\n";
+            break;
+
+        case NODE_TYPE_OPERATION_LOGICAL_XOR:
+            std::cerr << "execute: NODE_TYPE_OPERATION_LOGICAL_XOR (^^)\n";
+            break;
+
+        case NODE_TYPE_OPERATION_LOGICAL_OR:
+            std::cerr << "execute: NODE_TYPE_OPERATION_LOGICAL_OR (||)\n";
+            break;
+
+        case NODE_TYPE_OPERATION_CONDITIONAL:
+            std::cerr << "execute: NODE_TYPE_OPERATION_CONDITIONAL (?:)\n";
+            break;
+
+        case NODE_TYPE_OPERATION_ASSIGNMENT:
+            std::cerr << "execute: NODE_TYPE_OPERATION_ASSIGNMENT (" << f_name << ":= ...)\n";
+            break;
+
+        case NODE_TYPE_OPERATION_VARIABLE:
+            std::cerr << "execute: NODE_TYPE_OPERATION_VARIABLE (" << f_name << ")\n";
+            break;
+
+        case NODE_TYPE_LITERAL_BOOLEAN:
+            std::cerr << "execute: NODE_TYPE_LITERAL_BOOLEAN (" << (f_variable.get_bool(f_name) ? "true" : "false") << ")\n";
+            break;
+
+        case NODE_TYPE_LITERAL_INTEGER:
+            std::cerr << "execute: NODE_TYPE_LITERAL_INTEGER (" << f_variable.get_integer(f_name) << ")\n";
+            break;
+
+        case NODE_TYPE_LITERAL_FLOATING_POINT:
+            std::cerr << "execute: NODE_TYPE_LITERAL_FLOATING_POINT (" << f_variable.get_value().doubleValue() << ")\n";
+            break;
+
+        case NODE_TYPE_LITERAL_STRING:
+            std::cerr << "execute: NODE_TYPE_LITERAL_STRING (" << f_variable.get_string(f_name) << ")\n";
+            break;
+
+        case NODE_TYPE_VARIABLE:
+            std::cerr << "execute: NODE_TYPE_VARIABLE\n";
+            break;
+
+        }
+#endif
+
         variable_t::variable_vector_t sub_results;
         if(NODE_TYPE_OPERATION_CONDITIONAL != f_type)
         {
@@ -2632,7 +2779,7 @@ private:
 #endif
     }
 
-    void verify_children() const
+    void verify_children(int idx, bool size_is_legal = false) const
     {
 #ifdef DEBUG
         switch(f_type)
@@ -2674,6 +2821,18 @@ private:
 
         }
 #endif
+        if(idx >= 0)
+        {
+            if(static_cast<uint32_t>(idx) >= static_cast<uint32_t>(f_children.size()))
+            {
+                if(static_cast<uint32_t>(idx) != static_cast<uint32_t>(f_children.size())
+                || !size_is_legal)
+                {
+                    throw snap_logic_exception(QString("expr_node::get_child(%1) called with an out of bounds index (max: %2)")
+                                            .arg(idx).arg(f_children.size()));
+                }
+            }
+        }
     }
 
     void verify_unary(variable_t::variable_vector_t const& sub_results)

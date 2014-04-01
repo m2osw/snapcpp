@@ -245,7 +245,7 @@ QString dbutils::get_column_name( QCassandraCell::pointer_t c ) const
     {
         name = key_to_string( key );
     }
-    else if(f_tableName == "list" && f_rowName != "*standalone*")
+    else if(f_tableName == "list" && f_rowName != "*standalone*" && !f_rowName.endsWith("#ref"))
     {
         uint64_t time(QtCassandra::uint64Value(key, 0));
         char buf[64];
@@ -394,10 +394,14 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
         // cast to integer so arg() doesn't take it as a character
         return CT_uint8_value;
     }
+    else if(f_tableName == "list" && f_rowName.endsWith("#ref"))
+    {
+        return CT_time_microseconds_and_string;
+    }
     else if(n == "content::prevent_delete"
          || n == "permissions::dynamic"
          || n == "finball::read_terms_n_conditions" // TODO -- remove at some point since that a customer's type (we'd need to have an XML file instead)
-         || (f_tableName == "list" && f_rowName != "*standalone*")
+         || (f_tableName == "list" && f_rowName != "*standalone*" && !f_rowName.endsWith("#ref"))
          )
     {
         // signed 8 bit value
@@ -470,6 +474,23 @@ QString dbutils::get_column_value( QCassandraCell::pointer_t c, const bool displ
                     strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &t);
                     v = QString("%1.%2 (%3)").arg(buf).arg(time % 1000000, 6, 10, QChar('0')).arg(time);
                 }
+            }
+            break;
+
+            case CT_time_microseconds_and_string:
+            {
+                QByteArray value(c->value().binaryValue());
+                uint64_t time(QtCassandra::uint64Value(value, 0));
+                char buf[64];
+                struct tm t;
+                time_t const seconds(time / 1000000);
+                gmtime_r(&seconds, &t);
+                strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &t);
+                v = QString("%1.%2 (%3) %4")
+                            .arg(buf)
+                            .arg(time % 1000000, 6, 10, QChar('0'))
+                            .arg(time)
+                            .arg(QtCassandra::stringValue(value, sizeof(uint64_t)));
             }
             break;
 
@@ -614,6 +635,26 @@ void dbutils::set_column_value( QCassandraCell::pointer_t c, const QString& v )
         break;
 
         case CT_time_microseconds:
+        {
+            // String will be of the form: "%Y-%m-%d %H:%M:%S.%N"
+            //
+            const QStringList datetime_split ( v.split(' ') );
+            const QStringList date_split     ( datetime_split[0].split('-') );
+            const QStringList time_split     ( datetime_split[1].split(':') );
+            //
+            tm to;
+            to.tm_sec  = time_split[2].toInt();
+            to.tm_min  = time_split[1].toInt();
+            to.tm_hour = time_split[0].toInt();
+            to.tm_yday = date_split[2].toInt();
+            to.tm_mon  = date_split[1].toInt();
+            to.tm_year = date_split[0].toInt(); // TODO: handle the decimal part
+            //
+            const time_t tt( mktime( &to ) );
+            cvalue.setUInt64Value( tt * 1000000 );
+        }
+        break;
+
         case CT_time_seconds:
         {
             // String will be of the form: "%Y-%m-%d %H:%M:%S"
@@ -632,6 +673,35 @@ void dbutils::set_column_value( QCassandraCell::pointer_t c, const QString& v )
             //
             const time_t tt( mktime( &to ) );
             cvalue.setUInt64Value( tt );
+        }
+        break;
+
+        case CT_time_microseconds_and_string:
+        {
+            // String will be of the form: "%Y-%m-%d %H:%M:%S.%N string"
+            //
+            QStringList datetime_split ( v.split(' ') );
+            QStringList const date_split     ( datetime_split[0].split('-') );
+            QStringList const time_split     ( datetime_split[1].split(':') );
+            datetime_split.removeFirst();
+            datetime_split.removeFirst();
+            QString const str(datetime_split.join(" "));
+            //
+            tm to;
+            to.tm_sec  = time_split[2].toInt();
+            to.tm_min  = time_split[1].toInt();
+            to.tm_hour = time_split[0].toInt();
+            to.tm_yday = date_split[2].toInt();
+            to.tm_mon  = date_split[1].toInt();
+            to.tm_year = date_split[0].toInt(); // TODO handle the microseconds decimal number
+            //
+            time_t const tt( mktime( &to ) );
+
+            // concatenate the result
+            QByteArray tms;
+            appendInt64Value( tms, tt * 1000000 );
+            appendStringValue( tms, str );
+            cvalue.setBinaryValue(tms);
         }
         break;
 
