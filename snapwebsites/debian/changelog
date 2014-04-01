@@ -3,6 +3,8 @@ snapwebsites (0.1.39~saucy) saucy; urgency=high
   [ Alexis Wilke ]
   * Fixed the pagelist backend so it works even while sites are initialized.
     (this includes a fix to the libQtCassandra 0.5.5)
+  * Better handle the clearCache() on the context so it is less likely to
+  fail.
 
   [ R. Douglas Barbieri ]
   * Repaired logout/login error where a user would be redirected to an
