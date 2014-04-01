@@ -2337,10 +2337,23 @@ int main(int argc, char *argv[])
     for(int i(0); i < 256; ++i) {
         int32_t r(my_rand());
         if(r < 0) {
+#if 0
             r = -r;
             if(r < 0) {
                 r = 0;
             }
+#else
+#pragma message "TODO: Alexis, here is a note for you..."
+            // TODO: I'm sure this breaks the above code, but I can't get the code to compile in Release mode
+            // due to strict-overflow warnings-as-errors. And since this is totally undocumented code (ahem, Alexis),
+            // I have remarked out the code that doesn't make any sense to me. What are you after that the negative
+            // of a number would still be negative? What cases could that happen and why? The compiler is not
+            // letting us get away with this, apparently.
+            //
+            // Also, you have the return value (r) as an int32_t, but the function "my_rand()" returns a uint64_t.
+            //
+            r = 0;
+#endif
         }
         value.setTtl(r);
         if(value.ttl() != r) {
