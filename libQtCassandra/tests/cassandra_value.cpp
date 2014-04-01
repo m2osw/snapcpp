@@ -14,7 +14,7 @@
  *      or if any value cannot be read back the way it was written.
  *
  * License:
- *      Copyright (c) 2013 Made to Order Software Corp.
+ *      Copyright (c) 2013-2014 Made to Order Software Corp.
  * 
  *      http://snapwebsites.org/
  *      contact@m2osw.com
@@ -2337,9 +2337,11 @@ int main(int argc, char *argv[])
     for(int i(0); i < 256; ++i) {
         int32_t r(my_rand());
         if(r < 0) {
-            r = -r;
-            if(r < 0) {
+            if(static_cast<uint32_t>(r) == 0x80000000) {
                 r = 0;
+            }
+            else {
+                r = -r;
             }
         }
         value.setTtl(r);
