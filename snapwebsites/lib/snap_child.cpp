@@ -2649,13 +2649,12 @@ void snap_child::backend()
 
         // try up to 60 times or 5 minutes
         bool had_to_wait(false);
-        QtCassandra::QCassandraTable::pointer_t site_table;
+        QtCassandra::QCassandraTable::pointer_t sites_table;
         for(int i(0); i < 60; ++i)
         {
-            // try getting the site_table
-            f_context->clearCache();
-            site_table = f_context->findTable(get_name(SNAP_NAME_SITES));
-            if(site_table)
+            // try getting the sites_table
+            sites_table = f_context->findTable(get_name(SNAP_NAME_SITES));
+            if(sites_table)
             {
                 break;
             }
@@ -2677,8 +2676,9 @@ void snap_child::backend()
 
             // otherwise wait 5 seconds before trying again
             sleep(5);
+            f_context->clearCache();
         }
-        if(!site_table)
+        if(!sites_table)
         {
             // the whole table is still missing after 5 minutes!
             // in this case it is an error instead of a fatal error
@@ -2688,6 +2688,30 @@ void snap_child::backend()
         if(had_to_wait)
         {
             SNAP_LOG_TRACE("Got the 'sites' table, processing...");
+
+            // TODO: how do we know that all the tables were created?
+            //       actually, that could happen at any time, we may end up
+            //       installing a new plugin that creates a table that's
+            //       required by the backend at some point and the table
+            //       won't exist in the f_context... at least here we
+            //       wait 60 seconds to increase changes that our
+            //       backends won't crash too soon after the first
+            //       initialization of the server.
+            //
+            //       However, the libQtCassandra library is NOT currently
+            //       testing to see whether a table exists after the first
+            //       initialization. That is probably the worst problem at
+            //       this point.
+            sleep(60);
+            f_context->clearCache();
+            sites_table = f_context->findTable(get_name(SNAP_NAME_SITES));
+            if(!sites_table)
+            {
+                // the whole table is still missing after 5 minutes!
+                // in this case it is an error instead of a fatal error
+                SNAP_LOG_ERROR("Lost the 'sites' table when re-resetting the context cache.");
+                return;
+            }
         }
 
         if(!uri.isEmpty())
@@ -2703,14 +2727,14 @@ void snap_child::backend()
             row_predicate.setColumnPredicate(column_predicate);
             for(;;)
             {
-                site_table->clearCache();
-                uint32_t count(site_table->readRows(row_predicate));
+                sites_table->clearCache();
+                uint32_t count(sites_table->readRows(row_predicate));
                 if(count == 0)
                 {
                     // we reached the end of the whole table
                     break;
                 }
-                QtCassandra::QCassandraRows const r(site_table->rows());
+                QtCassandra::QCassandraRows const r(sites_table->rows());
                 for(QtCassandra::QCassandraRows::const_iterator o(r.begin());
                     o != r.end(); ++o)
                 {
@@ -6414,7 +6438,7 @@ QStringList snap_child::init_plugins()
  * \param[in] list_of_plugins  The list of plugin names that were loaded
  *                             for this run.
  */
-void snap_child::update_plugins(const QStringList& list_of_plugins)
+void snap_child::update_plugins(QStringList const& list_of_plugins)
 {
     // system updates run at most once every 10 minutes
     QString core_last_updated(get_name(SNAP_NAME_CORE_LAST_UPDATED));
