@@ -44,7 +44,8 @@ add_definitions( ${QT_DEFINITIONS} )
 
 option( SNAP_NO_FORK OFF "Set to suppress snapserver's inate forking [for debugging purposes only--not for release!]" )
 if( ${SNAP_NO_FORK} )
-    add_definitions( -DSNAP_NO_FORK )
+	message( WARNING "SNAP_NO_FORK is turned on! This is not a production-ready build!" )
+	add_definitions( -DSNAP_NO_FORK )
 endif()
 
 find_file( MAGIC magic.h )

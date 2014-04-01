@@ -247,6 +247,16 @@ namespace
             "Output log file to write to. Overrides the setting in the configuration file.",
             advgetopt::getopt::required_argument
         },
+#ifdef SNAP_NO_FORK
+        {
+            'k',
+            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE,
+            "nofork",
+            nullptr,
+            "If set, this switch causes the server not to fork when a child is launched. This should never be use for a production server!",
+            advgetopt::getopt::optional_argument
+        },
+#endif
         {
             'l',
             advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE,
@@ -839,6 +849,15 @@ void server::config(int argc, char *argv[])
         }
     }
 
+#ifdef SNAP_NO_FORK
+    SNAP_LOG_WARNING() << "SNAP_NO_FORK is defined! This is NOT a production-ready build!";
+    if( f_opt->is_defined("nofork") )
+    {
+        SNAP_LOG_INFO() << "--nofork specified: snap_child will not fork and server will terminate.";
+        f_nofork = true;
+    }
+#endif
+
     if( f_debug )
     {
         // Override output level and force it to be debug
@@ -1211,6 +1230,20 @@ void server::udp_ping_server( const QString& udp_addr_port, char const *message 
     udp_client_server::udp_client client(addr.toUtf8().data(), port.toInt());
     client.send(message, strlen(message)); // we do not send the '\0'
 }
+
+
+#ifdef SNAP_NO_FORK
+/** \brief Don't fork the snap child if true.
+ *
+ * This is set via the command line. If set, the snap_child object will not fork.
+ *
+ * \note This is debug-only code, which should never be in production.
+ */
+bool server::nofork() const
+{
+    return f_nofork;
+}
+#endif
 
 
 /** \brief Listen to incoming connections.

@@ -3002,6 +3002,29 @@ QString users::detach_from_session(const QString& name) const
 }
 
 
+/** \brief Set the referrer path for the current session.
+ *
+ * Call this instead of "attach_to_session( SNAP_NAME_USERS_LOGIN_REFERRER, cpath )" directly.
+ *
+ * \note the special case "/logout" will do nothing, since we don't want
+ * a referrer in that case.
+ *
+ * \sa attach_to_session()
+ *
+ */
+void users::set_referrer( const QString& cpath )
+{
+    if( f_snap->get_uri().path() == "/logout" )
+    {
+        // ignore for special cases
+        //
+        return;
+    }
+
+    attach_to_session( get_name(SNAP_NAME_USERS_LOGIN_REFERRER), cpath );
+}
+
+
 /** \brief Save the user session identifier on password change.
  *
  * To avoid loggin people before they are done changing their password,
