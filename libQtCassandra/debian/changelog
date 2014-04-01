@@ -1,8 +1,9 @@
 libqtcassandra (0.5.5) saucy; urgency=high
 
+  [Alexis Wilke]
   * Added fix for clearTable() to work as expected.
 
- -- Alexis Wilke <alexis@m2osw.com>  Tue, 01 Apr 2014 11:58:44 -0700
+ -- R. Douglas Barbieri <doug@dooglio.net>  Tue, 01 Apr 2014 11:58:44 -0700
 
 libqtcassandra (0.5.4) saucy; urgency=high
 
