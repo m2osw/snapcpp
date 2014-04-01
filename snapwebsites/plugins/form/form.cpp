@@ -1422,11 +1422,11 @@ bool form::validate_post_for_widget_impl(content::path_info_t& ipath, sessions::
     QDomElement sizes(widget.firstChildElement("sizes"));
     if(!sizes.isNull())
     {
-        QDomElement min(sizes.firstChildElement("min"));
-        if(!min.isNull())
+        QDomElement min_element(sizes.firstChildElement("min"));
+        if(!min_element.isNull())
         {
             has_minimum = true;
-            QString const m(min.text());
+            QString const m(min_element.text());
             if(widget_type == "image")
             {
                 int width, height;
@@ -1491,10 +1491,10 @@ bool form::validate_post_for_widget_impl(content::path_info_t& ipath, sessions::
                 }
             }
         }
-        QDomElement max(sizes.firstChildElement("max"));
-        if(!max.isNull())
+        QDomElement max_element(sizes.firstChildElement("max"));
+        if(!max_element.isNull())
         {
-            QString const m(max.text());
+            QString const m(max_element.text());
             if(widget_type == "image")
             {
                 int width, height;
@@ -1815,11 +1815,11 @@ bool form::validate_post_for_widget_impl(content::path_info_t& ipath, sessions::
             {
                 QString extensions(extensions_tag.text());
                 QStringList ext_list(extensions.split(",", QString::SkipEmptyParts));
-                int const max(ext_list.size());
+                int const max_strings(ext_list.size());
                 QFileInfo const file_info(value);
                 QString const file_ext(file_info.suffix());
                 int i;
-                for(i = 0; i < max; ++i)
+                for(i = 0; i < max_strings; ++i)
                 {
                     QString ext(ext_list[i].trimmed());
                     if(ext.isEmpty())
@@ -1835,7 +1835,7 @@ bool form::validate_post_for_widget_impl(content::path_info_t& ipath, sessions::
                     ext_list[i] = ext; // save the trimmed version back for errors
                 }
                 // if all extensions were checked and none accepted, error
-                if(i >= max)
+                if(i >= max_strings)
                 {
                     QString const label(widget.firstChildElement("label").text());
                     messages->set_error(

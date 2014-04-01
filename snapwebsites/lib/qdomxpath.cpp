@@ -4581,8 +4581,8 @@ void inst_merge_sets()
     {
         QDomXPath::node_vector_t l(lhs.getNodeSetValue());
         QDomXPath::node_vector_t r(rhs.getNodeSetValue());
-        const int max(r.size());
-        for(int i(0); i < max; ++i)
+        const int imax(r.size());
+        for(int i(0); i < imax; ++i)
         {
             l.push_back(r[i]);
         }
@@ -4595,8 +4595,8 @@ void inst_merge_sets()
     {
         atomic_vector_t l(lhs.getSetValue());
         atomic_vector_t r(rhs.getSetValue());
-        const int max(r.size());
-        for(int i(0); i < max; ++i)
+        const int imax(r.size());
+        for(int i(0); i < imax; ++i)
         {
             l.push_back(r[i]);
         }
@@ -4881,8 +4881,8 @@ void inst_next_context_node()
 
     QDomXPath::node_vector_t r(expr_result.getNodeSetValue());
     QDomXPath::node_vector_t& context_result(context.f_result);
-    const int max(r.size());
-    for(int i(0); i < max; ++i)
+    const int imax(r.size());
+    for(int i(0); i < imax; ++i)
     {
         context_result.push_back(r[i]);
     }
@@ -5125,8 +5125,8 @@ axis_attribute:
             if(local_part.isEmpty())
             {
                 QDomNamedNodeMap attributes(context_node.attributes());
-                const int max(attributes.size());
-                for(int i(0); i < max; ++i)
+                const int imax(attributes.size());
+                for(int i(0); i < imax; ++i)
                 {
                     QDomNode attr(attributes.item(i));
                     if(any_prefix || prefix == attr.prefix())
@@ -6295,24 +6295,24 @@ void append_push_string(const QString& string)
     {
         // push_string
         std::string str(string.toUtf8().data());
-        const size_t max(str.length());
-        if(max < 256)
+        const size_t imax(str.length());
+        if(imax < 256)
         {
             add_to_program(INST_PUSH_SMALL_STRING);
-            add_to_program(static_cast<QDomXPath::instruction_t>(max));
+            add_to_program(static_cast<QDomXPath::instruction_t>(imax));
             // TODO: use memcpy
-            for(size_t i(0); i < max; ++i)
+            for(size_t i(0); i < imax; ++i)
             {
                 add_to_program(str[i]);
             }
         }
-        else if(max < 65536)
+        else if(imax < 65536)
         {
             add_to_program(INST_PUSH_MEDIUM_STRING);
-            add_to_program(static_cast<QDomXPath::instruction_t>(max >> 8));
-            add_to_program(static_cast<QDomXPath::instruction_t>(max));
+            add_to_program(static_cast<QDomXPath::instruction_t>(imax >> 8));
+            add_to_program(static_cast<QDomXPath::instruction_t>(imax));
             // TODO: use memcpy
-            for(size_t i(0); i < max; ++i)
+            for(size_t i(0); i < imax; ++i)
             {
                 add_to_program(str[i]);
             }
@@ -6320,12 +6320,12 @@ void append_push_string(const QString& string)
         else
         {
             add_to_program(INST_PUSH_LARGE_STRING);
-            add_to_program(static_cast<QDomXPath::instruction_t>(max >> 24));
-            add_to_program(static_cast<QDomXPath::instruction_t>(max >> 16));
-            add_to_program(static_cast<QDomXPath::instruction_t>(max >> 8));
-            add_to_program(static_cast<QDomXPath::instruction_t>(max));
+            add_to_program(static_cast<QDomXPath::instruction_t>(imax >> 24));
+            add_to_program(static_cast<QDomXPath::instruction_t>(imax >> 16));
+            add_to_program(static_cast<QDomXPath::instruction_t>(imax >> 8));
+            add_to_program(static_cast<QDomXPath::instruction_t>(imax));
             // TODO: use memcpy
-            for(size_t i(0); i < max; ++i)
+            for(size_t i(0); i < imax; ++i)
             {
                 add_to_program(str[i]);
             }
@@ -6584,8 +6584,8 @@ void mark_with_label(const QString& label)
     if(f_future_labels.contains(label))
     {
         future_labels_t::iterator future(f_future_labels.find(label));
-        const int max((*future).size());
-        for(int i(0); i < max; ++i)
+        const int imax((*future).size());
+        for(int i(0); i < imax; ++i)
         {
             int pc((*future)[i]);
             f_program[pc + 1] = static_cast<instruction_t>(offset >> 8);

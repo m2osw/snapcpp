@@ -282,9 +282,9 @@ bool snap_image::info_jpeg(unsigned char const *s, size_t l, unsigned char const
 bool snap_image::info_ico(unsigned char const *s, size_t l, unsigned char const *e)
 {
     // number of images
-    int const max(s[4] + s[5] * 256);
+    int const max_images(s[4] + s[5] * 256);
 
-    for(int i(0); i < max; ++i)
+    for(int i(0); i < max_images; ++i)
     {
         unsigned char const *q(s + 6 + i * 16);
         // width and height are taken from the BMP if 0x0

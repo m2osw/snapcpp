@@ -209,12 +209,12 @@ http_cookie::http_cookie(snap_child *snap, const QString& name, const QString& v
     //, f_http_only(false) -- auto-init
 {
     // XXX make this check only in debug-like versions
-    int max(f_name.length());
-    if(max == 0)
+    int max_len(f_name.length());
+    if(max_len == 0)
     {
         throw std::runtime_error("the name of a cookie cannot be empty");
     }
-    for(int i(0); i < max; ++i)
+    for(int i(0); i < max_len; ++i)
     {
         ushort c(f_name[i].unicode());
         if(c <= ' ' || c >= 127 || (http_token[c >> 5] & (1 << (c & 0x1F))) == 0)
@@ -313,17 +313,17 @@ void http_cookie::set_domain(const QString& domain)
     // characters (i.e. cannot start/end with a dash.) Although some
     // of those would not be necessary if we check the domain against
     // the website domain name.
-    int max(f_domain.length());
-    if(max > 0 && f_domain[0] == '.')
+    int max_len(f_domain.length());
+    if(max_len > 0 && f_domain[0] == '.')
     {
         f_domain = f_domain.mid(1);
-        max = f_domain.length();
+        max_len = f_domain.length();
     }
-    if(max == 0)
+    if(max_len == 0)
     {
         throw std::runtime_error("the domain of a cookie cannot be empty");
     }
-    for(int i(0); i < max; ++i)
+    for(int i(0); i < max_len; ++i)
     {
         // TODO:
         // TBD -- How is that supporting Unicode characters in domain names?
@@ -361,8 +361,8 @@ void http_cookie::set_path(const QString& path)
     // TODO:
     // TBD -- How is that supporting Unicode characters in paths?
     // (we may have to change them to some %XX syntax
-    int max(path.length());
-    for(int i(0); i < max; ++i)
+    int max_len(path.length());
+    for(int i(0); i < max_len; ++i)
     {
         ushort c(f_domain[i].unicode());
         if((c < ' ' || c > '~')
@@ -762,8 +762,8 @@ QString http_cookie::to_http_header() const
     QString result("Set-Cookie: " + f_name + "=");
 
     const char *v(f_value.constData());
-    int max(f_value.size());
-    for(int i(0); i < max; ++i)
+    int max_len(f_value.size());
+    for(int i(0); i < max_len; ++i)
     {
         char c(v[i]);
         if(c == 0x21

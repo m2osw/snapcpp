@@ -546,7 +546,7 @@ QString dbutils::get_column_value( QCassandraCell::pointer_t c, const bool displ
                 // n bit binary value
                 bool const display_limited( display_only && (ct == CT_hexarray_limited_value) );
                 const QByteArray& buf(c->value().binaryValue());
-                int const max_length( display_limited? std::min(f_displayLen, buf.size()): buf.size() );
+                int const max_length( display_limited ? std::min(f_displayLen, buf.size()): buf.size() );
                 if( display_only )
                 {
                     v += "(hex) ";

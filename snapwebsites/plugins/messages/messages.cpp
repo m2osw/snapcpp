@@ -743,8 +743,8 @@ QString messages::serialize() const
         QtSerialization::QWriter::QTag tag(w, "messages");
         QtSerialization::writeTag(w, "error_count", f_error_count);
         QtSerialization::writeTag(w, "warning_count", f_warning_count);
-        const int max(f_messages.count());
-        for(int i(0); i < max; ++i)
+        const int max_msg(f_messages.count());
+        for(int i(0); i < max_msg; ++i)
         {
             f_messages[i].serialize(w);
         }

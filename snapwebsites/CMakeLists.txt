@@ -135,17 +135,18 @@ install( PROGRAMS reset-db.sh run-server.sh DESTINATION ${CMAKE_INSTALL_PREFIX} 
 ## gives us many interesting warnings;
 ##
 add_custom_target(snap_code_analysis
+    COMMAND mkdir -p ${PROJECT_BINARY_DIR}/analysis
     # Count things and report potential problems with different classes
-    COMMAND echo "cccc -- output directory ${PROJECT_BINARY_DIR}/cccc -- and errors saved in ${PROJECT_BINARY_DIR}/cccc.output"
-    COMMAND cccc --lang=c++ --html_outfile=${PROJECT_BINARY_DIR}/cccc/index.html --outdir=${PROJECT_BINARY_DIR}/cccc lib/*.cpp lib/*.h lib/*.h.in src/*.cpp plugins/*/*.cpp plugins/*/*.h >${PROJECT_BINARY_DIR}/cccc.output 2>&1
+    COMMAND echo "cccc -- output directory ${PROJECT_BINARY_DIR}/analysis/cccc -- and errors saved in ${PROJECT_BINARY_DIR}/analysis/cccc.output"
+    COMMAND cccc --lang=c++ --html_outfile=${PROJECT_BINARY_DIR}/analysis/cccc/index.html --outdir=${PROJECT_BINARY_DIR}/analysis/cccc lib/*.cpp lib/*.h lib/*.h.in src/*.cpp plugins/*/*.cpp plugins/*/*.h >${PROJECT_BINARY_DIR}/analysis/cccc.output 2>&1
     # Boost inspect tool that reports different problems
-    COMMAND echo "inspect -- output ${PROJECT_BINARY_DIR}/inspect.html"
-    COMMAND inspect -tab -crlf -path_name -ascii -minmax -unnamed >"${PROJECT_BINARY_DIR}/inspect.html"
+    COMMAND echo "inspect -- output ${PROJECT_BINARY_DIR}/analysis/inspect.html"
+    COMMAND inspect -tab -crlf -end -path_name -ascii -minmax -assert_macro -deprecated_macro -unnamed -link -copyright >"${PROJECT_BINARY_DIR}/analysis/inspect.html"
     # Static analysis of the code
-    COMMAND echo "cppcheck -- output ${PROJECT_BINARY_DIR}/cppcheck.out"
-    COMMAND cppcheck lib plugins src tests >"${PROJECT_BINARY_DIR}/cppcheck.out" 2>&1
+    COMMAND echo "cppcheck -- output ${PROJECT_BINARY_DIR}/analysis/cppcheck.out"
+    COMMAND cppcheck lib plugins src tests >"${PROJECT_BINARY_DIR}/analysis/cppcheck.out" 2>&1
     # Count # of TODO, XXX, TBD, FIXME, and \todo: (documented in doxygen)
-    COMMAND sh tests/todo.sh "${PROJECT_BINARY_DIR}"
+    COMMAND sh tests/todo.sh "${PROJECT_BINARY_DIR}/analysis"
 
     # All of these are expected to work on source code so make sure we're
     # in the source code top directory

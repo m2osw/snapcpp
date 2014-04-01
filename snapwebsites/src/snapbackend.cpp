@@ -25,26 +25,26 @@ int main(int argc, char *argv[])
 {
     int exitval = 1;
     try
-	{
-		// create a server object
-		snap::server::pointer_t s( snap::server::instance() );
-		s->setup_as_backend();
+    {
+        // create a server object
+        snap::server::pointer_t s( snap::server::instance() );
+        s->setup_as_backend();
 
-		// parse the command line arguments
-		s->config(argc, argv);
+        // parse the command line arguments
+        s->config(argc, argv);
 
-		// if possible, detach the server
-		s->detach();
-		// Only the child (backend) process returns here
+        // if possible, detach the server
+        s->detach();
+        // Only the child (backend) process returns here
 
-		// now create the qt application instance
-		s->prepare_qtapp( argc, argv );
+        // now create the qt application instance
+        s->prepare_qtapp( argc, argv );
 
-		// prepare the database
-		s->prepare_cassandra();
+        // prepare the database
+        s->prepare_cassandra();
 
-		// listen to connections
-		s->backend();
+        // listen to connections
+        s->backend();
 
         exitval = 0;
     }
@@ -68,4 +68,4 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-// vim: ts=4 sw=4
+// vim: ts=4 sw=4 et

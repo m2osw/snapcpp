@@ -82,17 +82,17 @@ void reconfigure();
 bool is_configured();
 void setLogOutputLevel( log_level_t level );
 
-logger& operator << ( logger& logger, const QString&                    msg );
-logger& operator << ( logger& logger, const std::basic_string<char>&    msg );
-logger& operator << ( logger& logger, const std::basic_string<wchar_t>& msg );
-logger& operator << ( logger& logger, const char*                       msg );
-logger& operator << ( logger& logger, const wchar_t*                    msg );
+logger& operator << ( logger& l, const QString&                    msg );
+logger& operator << ( logger& l, const std::basic_string<char>&    msg );
+logger& operator << ( logger& l, const std::basic_string<wchar_t>& msg );
+logger& operator << ( logger& l, const char*                       msg );
+logger& operator << ( logger& l, const wchar_t*                    msg );
 
 template <class T>
-logger& operator << ( logger& logger, const T& msg )
+logger& operator << ( logger& l, const T& msg )
 {
-    logger( msg );
-    return logger;
+    l( msg );
+    return l;
 }
 
 logger fatal  (char const *file = NULL, char const *func = NULL, int line = -1);

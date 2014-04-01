@@ -361,8 +361,8 @@ void permissions::sets_t::add_user_right(QString right)
         right = right + "/";
     }
     int const len(right.length());
-    int max(f_user_rights.size());
-    for(int i(0); i < max; ++i)
+    int max_rights(f_user_rights.size());
+    for(int i(0); i < max_rights; ++i)
     {
         int const l(f_user_rights[i].length());
         if(len > l)
@@ -385,12 +385,12 @@ void permissions::sets_t::add_user_right(QString right)
                 // this new right is smaller, keep that smaller one instead
                 f_user_rights[i] = right;
                 ++i;
-                while(i < max)
+                while(i < max_rights)
                 {
                     if(f_user_rights[i].startsWith(right))
                     {
                         f_user_rights.remove(i);
-                        --max; // here max decreases!
+                        --max_rights; // here max decreases!
                     }
                     else
                     {
@@ -634,7 +634,7 @@ for(req_sets_t::const_iterator pp(f_plugin_permissions.begin());
 #endif
 #endif
 
-    int const max(f_user_rights.size());
+    int const max_rights(f_user_rights.size());
     for(req_sets_t::const_iterator pp(f_plugin_permissions.begin());
             pp != f_plugin_permissions.end();
             ++pp)
@@ -649,7 +649,7 @@ for(req_sets_t::const_iterator pp(f_plugin_permissions.begin());
             // slow... we may want to change the set_t type to a QMap
             // which uses a faster binary search; although on very small
             // maps it may not be any faster
-            for(int j(0); j < max; ++j)
+            for(int j(0); j < max_rights; ++j)
             {
                 const QString& plugin_permission ( *i               );
                 const QString& user_right        ( f_user_rights[j] );
