@@ -10,7 +10,7 @@
 #      See the CMake documentation.
 #
 # License:
-#      Copyright (c) 2011-2013 Made to Order Software Corp.
+#      Copyright (c) 2011-2014 Made to Order Software Corp.
 #
 #      http://snapwebsites.org/
 #      contact@m2osw.com
@@ -37,7 +37,7 @@
 
 set(LIBQTCASSANDRA_VERSION_MAJOR 0)
 set(LIBQTCASSANDRA_VERSION_MINOR 5)
-set(LIBQTCASSANDRA_VERSION_PATCH 4)
+set(LIBQTCASSANDRA_VERSION_PATCH 5)
 
 cmake_minimum_required(VERSION 2.8)
 project(libQtCassandra)
