@@ -2566,7 +2566,10 @@ bool snap_child::process(int socket)
         f_uri.set_option("start_date", QString("%1").arg(f_start_date));
 
         // start the plugins and there initialization
-        init_plugins();
+        QStringList list_of_plugins(init_plugins());
+
+        // run updates if any
+        update_plugins(list_of_plugins);
 
         canonicalize_options();    // find the language, branch, and revision specified by the user
 
@@ -6305,7 +6308,7 @@ QString snap_child::get_unique_number()
  * \li filter
  * \li robotstxt
  */
-void snap_child::init_plugins()
+QStringList snap_child::init_plugins()
 {
     server::pointer_t server( f_server.lock() );
     Q_ASSERT(server);
@@ -6371,8 +6374,7 @@ void snap_child::init_plugins()
     server->bootstrap(this);
     server->init();
 
-    // run updates if any
-    update_plugins(list_of_plugins);
+    return list_of_plugins;
 }
 
 /** \brief Run all the updates as required.

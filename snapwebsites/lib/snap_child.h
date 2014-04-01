@@ -388,7 +388,7 @@ private:
     void                        canonicalize_website();
     void                        canonicalize_options();
     void                        site_redirect();
-    void                        init_plugins();
+    QStringList                 init_plugins();
     void                        update_plugins(QStringList const& list_of_plugins);
     void                        execute();
     void                        process_backend_uri(QString const& uri);
