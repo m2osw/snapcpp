@@ -67,6 +67,14 @@ public:
     snap_child_exception_invalid_header_field_name(QString const&     whatmsg) : snap_child_exception(whatmsg) {}
 };
 
+class snap_child_exception_no_server : public snap_child_exception
+{
+public:
+    snap_child_exception_no_server(char const *       whatmsg) : snap_child_exception(whatmsg) {}
+    snap_child_exception_no_server(std::string const& whatmsg) : snap_child_exception(whatmsg) {}
+    snap_child_exception_no_server(QString const&     whatmsg) : snap_child_exception(whatmsg) {}
+};
+
 
 
 class permission_error_callback;

@@ -2617,23 +2617,73 @@ void snap_child::backend()
         f_env[snap::get_name(SNAP_NAME_CORE_HTTP_USER_AGENT)] = "Snap! Backend";
 
         server::pointer_t server( f_server.lock() );
-        Q_ASSERT(server);
+        if(!server)
+        {
+            throw snap_child_exception_no_server("snap_child::backend(): The server weak pointer could not be locked");
+        }
+
         QString uri(server->get_parameter("__BACKEND_URI"));
+
+        // TODO: we probably want to move the PING and STOP events sent via
+        //       UDP to this function because it can be used in the wait of
+        //       the 'sites' table and we could also make use of the loop
+        //       over the 'sites' table in the backends...
+        //       This would also offer all backends to run instead of having
+        //       some such as sendmail and pagelist capturing the action and
+        //       having their own infinite loops.
+        //       Finally, we would have one place where we can easily define
+        //       the amount of time we should wait and other similar
+        //       parameters in link with the loop.
+
+        // try up to 60 times or 5 minutes
+        bool had_to_wait(false);
+        QtCassandra::QCassandraTable::pointer_t site_table;
+        for(int i(0); i < 60; ++i)
+        {
+            // try getting the site_table
+            f_context->clearCache();
+            site_table = f_context->findTable(get_name(SNAP_NAME_SITES));
+            if(site_table)
+            {
+                break;
+            }
+
+            // if it failed and the backend was specific, then we've got a
+            // real problem so we have to stop with a fatal error
+            if(!uri.isEmpty())
+            {
+                // the whole table is still empty
+                SNAP_LOG_FATAL("The 'sites' table is empty or nonexistent! Likely you have not set up the domains and websites tables, either. Exiting!");
+                return;
+            }
+
+            if(i == 0)
+            {
+                SNAP_LOG_TRACE("The 'sites' table does not exist yet. Waiting...");
+                had_to_wait = true;
+            }
+
+            // otherwise wait 5 seconds before trying again
+            sleep(5);
+        }
+        if(!site_table)
+        {
+            // the whole table is still missing after 5 minutes!
+            // in this case it is an error instead of a fatal error
+            SNAP_LOG_ERROR("After five minutes wait, the 'sites' table is still empty or nonexistent! Likely you have not set up the domains and websites tables, either. Exiting!");
+            return;
+        }
+        if(had_to_wait)
+        {
+            SNAP_LOG_TRACE("Got the 'sites' table, processing...");
+        }
+
         if(!uri.isEmpty())
         {
             process_backend_uri(uri);
         }
         else
         {
-            QString table_name(get_name(SNAP_NAME_SITES));
-            QtCassandra::QCassandraTable::pointer_t table(f_context->findTable(table_name));
-            if(!table)
-            {
-                // the whole table is still empty
-                SNAP_LOG_ERROR("The 'sites' table is empty or nonexistent! Likely you have not set up the domains and websites tables, either. Exiting!");
-                return;
-            }
-
             // if a site exists then it has a "core::last_updated" entry
             QtCassandra::QCassandraColumnNamePredicate::pointer_t column_predicate(new QtCassandra::QCassandraColumnNamePredicate);
             column_predicate->addColumnName(get_name(SNAP_NAME_CORE_LAST_UPDATED));
@@ -2641,14 +2691,14 @@ void snap_child::backend()
             row_predicate.setColumnPredicate(column_predicate);
             for(;;)
             {
-                table->clearCache();
-                uint32_t count(table->readRows(row_predicate));
+                site_table->clearCache();
+                uint32_t count(site_table->readRows(row_predicate));
                 if(count == 0)
                 {
                     // we reached the end of the whole table
                     break;
                 }
-                QtCassandra::QCassandraRows const r(table->rows());
+                QtCassandra::QCassandraRows const r(site_table->rows());
                 for(QtCassandra::QCassandraRows::const_iterator o(r.begin());
                     o != r.end(); ++o)
                 {
@@ -3936,7 +3986,9 @@ void snap_child::connect_cassandra()
     // Cassandra already exists?
     if(f_cassandra)
     {
-        die(HTTP_CODE_SERVICE_UNAVAILABLE, "", "Our database is being initialized more than once.", "The connect_cassandra() function cannot be called more than once.");
+        die(HTTP_CODE_SERVICE_UNAVAILABLE, "",
+                "Our database is being initialized more than once.",
+                "The connect_cassandra() function cannot be called more than once.");
         NOTREACHED();
     }
 
@@ -3946,7 +3998,9 @@ void snap_child::connect_cassandra()
     f_cassandra = QtCassandra::QCassandra::create();
     if(!f_cassandra->connect(server->cassandra_host(), server->cassandra_port()))
     {
-        die(HTTP_CODE_SERVICE_UNAVAILABLE, "", "Our database system is temporarilly unavailable.", "Could not connect to Cassandra");
+        die(HTTP_CODE_SERVICE_UNAVAILABLE, "",
+                "Our database system is temporarilly unavailable.",
+                "Could not connect to Cassandra");
         NOTREACHED();
     }
 
@@ -3957,9 +4011,12 @@ void snap_child::connect_cassandra()
     if(!f_context)
     {
         // we connected to the database, but it is not properly initialized!?
-        die(HTTP_CODE_SERVICE_UNAVAILABLE, "", "Our database system does not seem to be properly installed.", "The child process connected to Cassandra but it could not find the \"" + context_name + "\" context.");
+        die(HTTP_CODE_SERVICE_UNAVAILABLE, "",
+                "Our database system does not seem to be properly installed.",
+                QString("The child process connected to Cassandra but it could not find the \"%1\" context.").arg(context_name));
         NOTREACHED();
     }
+    // setup the host name for locks to function properly
     f_context->setHostName(server->get_parameter("server_name"));
 
     // TBD -- that really the right place for this?
@@ -6364,7 +6421,7 @@ void snap_child::update_plugins(const QStringList& list_of_plugins)
     {
         // save that last time we checked for an update
         last_updated.setInt64Value(f_start_date);
-        QString core_plugin_threshold(get_name(SNAP_NAME_CORE_PLUGIN_THRESHOLD));
+        QString const core_plugin_threshold(get_name(SNAP_NAME_CORE_PLUGIN_THRESHOLD));
         set_site_parameter(param_name, last_updated);
         QtCassandra::QCassandraValue threshold(get_site_parameter(core_plugin_threshold));
         if(threshold.nullValue())
@@ -6421,6 +6478,8 @@ void snap_child::update_plugins(const QStringList& list_of_plugins)
             }
         }
 
+        finish_update();
+
         // avoid a write to the DB if the value did not change
         // (i.e. most of the time!)
         if(new_plugin_threshold > plugin_threshold)
@@ -6428,7 +6487,6 @@ void snap_child::update_plugins(const QStringList& list_of_plugins)
             set_site_parameter(core_plugin_threshold, new_plugin_threshold);
         }
     }
-    finish_update();
 }
 
 /** \brief After adding content, call this function to save it.

@@ -738,6 +738,7 @@ void list::on_backend_action(QString const& action)
 //links::links::instance()->create_link(source, destination);
 //return;
 
+        QString const core_plugin_threshold(get_name(SNAP_NAME_CORE_PLUGIN_THRESHOLD));
         QSharedPointer<udp_client_server::udp_server> udp_signals(f_snap->udp_get_server("pagelist_udp_signal"));
         char const *stop(get_name(SNAP_NAME_LIST_STOP));
         // loop until stopped
@@ -771,8 +772,13 @@ void list::on_backend_action(QString const& action)
                         {
                             f_snap->init_start_date();
                             QString const key(QString::fromUtf8(o.key().data()));
-                            did_work |= generate_new_lists(key);
-                            did_work |= generate_all_lists(key);
+                            QtCassandra::QCassandraValue threshold(f_snap->get_site_parameter(core_plugin_threshold));
+                            if(!threshold.nullValue())
+                            {
+                                did_work |= generate_new_lists(key);
+                                did_work |= generate_all_lists(key);
+                            }
+                            // else -- website is not ready yet (still being initialized)
                         }
                     }
                 }
