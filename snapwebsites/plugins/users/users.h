@@ -195,6 +195,7 @@ public:
     bool                    register_user(QString const& email, QString const& password);
     void                    attach_to_session(QString const& name, QString const& data);
     QString                 detach_from_session(QString const& name) const;
+    void                    set_referrer( const QString& cpath );
 
 private:
     enum login_mode_t

@@ -1234,7 +1234,9 @@ void permissions::on_validate_action(content::path_info_t& ipath, QString const&
             // user is anonymous, there is hope, he may have access once
             // logged in
             // TODO all redirects need to also include a valid action!
-            users_plugin->attach_to_session(get_name(users::SNAP_NAME_USERS_LOGIN_REFERRER), ipath.get_cpath());
+            //
+            users_plugin->set_referrer( ipath.get_cpath() );
+            //
             err_callback.on_redirect(
                 // message
                 "Unauthorized",
