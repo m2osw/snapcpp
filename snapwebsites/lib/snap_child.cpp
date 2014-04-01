@@ -78,6 +78,12 @@ namespace snap
  * versa.)
  */
 
+/** \fn int64_t get_start_date() const
+ * \brief Retrieve the date when the child process started.
+ *
+ * This function returns the date, in micro seconds (seconds x 1,000,000)
+ * when the child was forked from the server.
+ */
 
 namespace
 {
@@ -2436,6 +2442,12 @@ snap_child::~snap_child()
  * This function is called by the processing functions to reset the
  * start date. This is important because child objects may be reused
  * multiple times instead of allocated and deallocated by the server.
+ *
+ * Also, if you are writing a backend process, it should call this function
+ * on each loop to make sure it gets updated. This is quite important because
+ * you cannot be in control of all the functions that are going to be called
+ * from your process and some of them may actually be using this value
+ * without you having control over it.
  */
 void snap_child::init_start_date()
 {

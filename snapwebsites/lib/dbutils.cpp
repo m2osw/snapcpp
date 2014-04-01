@@ -245,7 +245,7 @@ QString dbutils::get_column_name( QCassandraCell::pointer_t c ) const
     {
         name = key_to_string( key );
     }
-    else if(f_tableName == "list" && f_rowName != "*standalone*" && !f_rowName.endsWith("#ref"))
+    else if(f_tableName == "list" && f_rowName != "*standalone*")
     {
         uint64_t time(QtCassandra::uint64Value(key, 0));
         char buf[64];
@@ -394,14 +394,14 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
         // cast to integer so arg() doesn't take it as a character
         return CT_uint8_value;
     }
-    else if(f_tableName == "list" && f_rowName.endsWith("#ref"))
+    else if(f_tableName == "listref")
     {
         return CT_time_microseconds_and_string;
     }
     else if(n == "content::prevent_delete"
          || n == "permissions::dynamic"
          || n == "finball::read_terms_n_conditions" // TODO -- remove at some point since that a customer's type (we'd need to have an XML file instead)
-         || (f_tableName == "list" && f_rowName != "*standalone*" && !f_rowName.endsWith("#ref"))
+         || (f_tableName == "list" && f_rowName != "*standalone*")
          )
     {
         // signed 8 bit value

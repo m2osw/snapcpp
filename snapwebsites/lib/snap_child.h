@@ -298,6 +298,7 @@ public:
     QString const&              get_website_key() const { return f_website_key; }
     QString const&              get_site_key() const { return f_site_key; }
     QString const&              get_site_key_with_slash() const { return f_site_key_with_slash; }
+    void                        init_start_date();
     int64_t                     get_start_date() const { return f_start_date; }
     time_t                      get_start_time() const { return f_start_date / static_cast<int64_t>(1000000); }
     void                        set_header(QString const& name, QString const& value, header_mode_t modes = HEADER_MODE_NO_ERROR);
@@ -371,7 +372,6 @@ private:
 
     void                        read_environment();
     void                        mark_for_initialization();
-    void                        init_start_date();
     void                        setup_uri();
     void                        snap_info();
     void                        snap_statistics();
