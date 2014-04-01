@@ -178,6 +178,10 @@ public:
     static udp_server_t udp_get_server ( const QString& udp_addr_port );
     static void         udp_ping_server( const QString& udp_addr_port, char const *message = "PING" );
 
+#ifdef SNAP_NO_FORK
+    bool nofork() const;
+#endif
+
     SNAP_SIGNAL(bootstrap, (snap_child *snap), (snap));
     SNAP_SIGNAL(init, (), ());
     SNAP_SIGNAL(update, (int64_t last_updated), (last_updated));
@@ -230,6 +234,10 @@ private:
 
     std::auto_ptr<snap_listen_thread>       f_listen_runner;
     std::auto_ptr<snap_thread>              f_listen_thread;
+
+#ifdef SNAP_NO_FORK
+    controlled_vars::zbool_t                f_nofork;
+#endif
 };
 
 } // namespace snap

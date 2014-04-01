@@ -15,8 +15,6 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-//#define SNAP_NO_FORK
-
 #include "snap_child.h"
 #include "snap_uri.h"
 #include "not_reached.h"
@@ -2486,7 +2484,18 @@ bool snap_child::process(int socket)
 // to avoid the fork use 1 on the next line
 // (much easier to debug a crashing problem in a snap child!)
 #ifdef SNAP_NO_FORK
-    pid_t p = 0;
+    pid_t p;
+    //
+    server::pointer_t server( f_server.lock() );
+    Q_ASSERT(server);
+    if( server->nofork() )
+    {
+        p = 0;
+    }
+    else
+    {
+        p = fork();
+    }
 #else
     pid_t p = fork();
 #endif
