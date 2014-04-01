@@ -1,3 +1,11 @@
+libqtcassandra (0.5.6) saucy; urgency=high
+
+  [Alexis Wilke]
+  * Repaired warning-as-error regarding strict-overflow. Alexis added the
+  special-edge case.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Tue, 01 Apr 2014 16:52:22 -0700
+
 libqtcassandra (0.5.5) saucy; urgency=high
 
   [Alexis Wilke]
