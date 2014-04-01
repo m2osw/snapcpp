@@ -290,7 +290,7 @@ void feed::on_generate_main_content(content::path_info_t& ipath, QDomElement& pa
  */
 void feed::on_generate_header_content(content::path_info_t& ipath, QDomElement& header, QDomElement& metadata, QString const& ctemplate)
 {
-	static_cast<void>(header);
+    static_cast<void>(header);
 
     content::field_search::search_result_t result;
 

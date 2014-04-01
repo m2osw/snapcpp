@@ -307,38 +307,38 @@ void setLogOutputLevel( log_level_t level )
 }
 
 
-logger& operator << ( logger& logger, const QString& msg )
+logger& operator << ( logger& l, const QString& msg )
 {
-    logger( msg );
-    return logger;
+    l( msg );
+    return l;
 }
 
 
-logger& operator << ( logger& logger, const std::basic_string<char>& msg )
+logger& operator << ( logger& l, const std::basic_string<char>& msg )
 {
-    logger( msg.c_str() );
-    return logger;
+    l( msg.c_str() );
+    return l;
 }
 
 
-logger& operator << ( logger& logger, const std::basic_string<wchar_t>& msg )
+logger& operator << ( logger& l, const std::basic_string<wchar_t>& msg )
 {
-    logger( msg.c_str() );
-    return logger;
+    l( msg.c_str() );
+    return l;
 }
 
 
-logger& operator << ( logger& logger, const char* msg )
+logger& operator << ( logger& l, const char* msg )
 {
-    logger( msg );
-    return logger;
+    l( msg );
+    return l;
 }
 
 
-logger& operator << ( logger& logger, const wchar_t* msg )
+logger& operator << ( logger& l, const wchar_t* msg )
 {
-    logger( msg );
-    return logger;
+    l( msg );
+    return l;
 }
 
 

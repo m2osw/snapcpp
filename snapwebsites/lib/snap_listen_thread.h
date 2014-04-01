@@ -29,16 +29,16 @@ namespace snap
 {
 
 class snap_listen_thread
-	: public snap_thread::snap_runner
+    : public snap_thread::snap_runner
 {
 public:
     typedef QSharedPointer<udp_client_server::udp_server> udp_server_t;
 
     snap_listen_thread( udp_server_t udp_server );
 
-	virtual void run();
+    virtual void run();
 
-    typedef enum { Waiting, ServerStop, LogReset } word_t;
+    enum word_t { Waiting, ServerStop, LogReset };
     word_t get_word();
 
 private:

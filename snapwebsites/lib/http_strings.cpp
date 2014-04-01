@@ -98,8 +98,8 @@ WeightedHttpString::WeightedHttpString(const QString& str)
 
 float WeightedHttpString::get_level(const QString& name)
 {
-    const int max(f_parts.size());
-    for(int i(0); i < max; ++i)
+    const int max_parts(f_parts.size());
+    for(int i(0); i < max_parts; ++i)
     {
         if(f_parts[i].get_name() == name)
         {

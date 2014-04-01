@@ -9,7 +9,7 @@
  *      See the corresponding .cpp file.
  *
  * License:
- *      Copyright (c) 2011-2013 Made to Order Software Corp.
+ *      Copyright (c) 2011-2014 Made to Order Software Corp.
  * 
  *      http://snapwebsites.org/
  *      contact@m2osw.com
@@ -151,7 +151,7 @@ private:
     // Also, it cannot be a shared_ptr unless you make a restriction that
     // all instances must be allocated on the heap. Thus is the deficiency of
     // std::enabled_shared_from_this<>.
-    std::shared_ptr<QCassandra>				   f_cassandra;
+    std::shared_ptr<QCassandra>                 f_cassandra;
     QCassandraContextOptions                    f_options;
     QCassandraTables                            f_tables;
     QString                                     f_host_name;

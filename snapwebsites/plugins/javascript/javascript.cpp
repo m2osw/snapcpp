@@ -512,8 +512,8 @@ public:
             QScriptValue plugin_object(engine()->newObject(f_dynamic_plugins[temp_name].data()));
             return plugin_object;
         }
-        int const max(f_javascript->f_dynamic_plugins.size());
-        for(int i(0); i < max; ++i)
+        int const max_plugins(f_javascript->f_dynamic_plugins.size());
+        for(int i(0); i < max_plugins; ++i)
         {
             if(dynamic_cast<plugins::plugin *>(f_javascript->f_dynamic_plugins[i])->get_plugin_name() == temp_name)
             {

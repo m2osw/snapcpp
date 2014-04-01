@@ -2033,8 +2033,8 @@ void domain_info::write(QtSerialization::QWriter& w) const
 {
     QtSerialization::QWriter::QTag tag(w, "domain_info");
     QtSerialization::writeTag(w, "domain_info::name", f_name);
-    int max(f_vars.size());
-    for(int i(0); i < max; ++i)
+    int max_vars(f_vars.size());
+    for(int i(0); i < max_vars; ++i)
     {
         f_vars[i]->write(w);
     }
@@ -2640,8 +2640,8 @@ void website_info::write(QtSerialization::QWriter& w) const
 {
     QtSerialization::QWriter::QTag tag(w, "website_info");
     QtSerialization::writeTag(w, "website_info::name", f_name);
-    int max(f_vars.size());
-    for(int i(0); i < max; ++i)
+    int max_vars(f_vars.size());
+    for(int i(0); i < max_vars; ++i)
     {
         f_vars[i]->write(w);
     }
@@ -2676,8 +2676,8 @@ void website_rules::readTag(const QString& name, QtSerialization::QReader& r)
 void website_rules::write(QtSerialization::QWriter& w) const
 {
     QtSerialization::QWriter::QTag tag(w, "website_rules");
-    int max(f_info.size());
-    for(int i(0); i < max; ++i)
+    int max_info(f_info.size());
+    for(int i(0); i < max_info; ++i)
     {
         f_info[i]->write(w);
     }

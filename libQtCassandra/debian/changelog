@@ -1,11 +1,14 @@
+libqtcassandra (0.5.5) saucy; urgency=high
+
+  * Added fix for clearTable() to work as expected.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Tue, 01 Apr 2014 11:58:44 -0700
+
 libqtcassandra (0.5.4) saucy; urgency=high
 
   [Alexis Wilke]
   * Added documentation about the fact that the QMap is always started from
-  smallest to largest even if you set the reverse flag on.
-
-  [R. Douglas Barbieri]
-  * 
+    smallest to largest even if you set the reverse flag on.
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Fri, 28 Mar 2014 00:26:04 -0700
 

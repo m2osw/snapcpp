@@ -49,9 +49,9 @@ namespace
      * empty.
      */
     std::vector<std::string> const g_configuration_files = 
-	{
+    {
         "/etc/snapwebsites/snapinit.conf"
-	};
+    };
 
     /** \brief Command line options.
      *
@@ -365,7 +365,7 @@ private:
 
     snap_init( int argc, char *argv[] );
 
-	void usage();
+    void usage();
     void validate();
     void show_selected_servers() const;
     void create_server_process();
@@ -374,8 +374,8 @@ private:
     void monitor_processes();
     void terminate_processes();
     void start();
-	void restart();
-	void stop();
+    void restart();
+    void stop();
     void remove_lock();
 };
 
@@ -596,11 +596,11 @@ void snap_init::start_processes()
 
 void snap_init::start()
 {
-	SNAP_LOG_INFO() << "Start servers";
+    SNAP_LOG_INFO() << "Start servers";
     if( is_running() )
-	{
+    {
         throw std::runtime_error("snap_init is already running!");
-	}
+    }
 
     if( f_opt.is_defined("detach") )
     {
@@ -628,23 +628,23 @@ void snap_init::start()
 
 void snap_init::restart()
 {
-	SNAP_LOG_INFO() << "Restart servers";
+    SNAP_LOG_INFO() << "Restart servers";
     if( is_running() )
-	{
-		stop();
-	}
+    {
+        stop();
+    }
 
-	start();
+    start();
 }
 
 
 void snap_init::stop()
 {
-	SNAP_LOG_INFO() << "Stop servers";
+    SNAP_LOG_INFO() << "Stop servers";
     if( !is_running() )
-	{
+    {
         throw std::runtime_error("snap_init is not running!");
-	}
+    }
 
     snap::server::udp_ping_server( UDP_SERVER, "STOP" );
 
@@ -714,9 +714,9 @@ void snap_init::sighandler( int sig )
 
 int main(int argc, char *argv[])
 {
-	int retval = 0;
+    int retval = 0;
 
-	try
+    try
     {
         // First, create the static snap_init object
         //
@@ -739,7 +739,7 @@ int main(int argc, char *argv[])
     catch( snap::snap_exception const& except )
     {
         SNAP_LOG_FATAL("snap_init: snap_exception caught! ")(except.what());
-		retval = 1;
+        retval = 1;
     }
     catch( std::invalid_argument const& std_except )
     {
@@ -749,15 +749,15 @@ int main(int argc, char *argv[])
     catch( std::exception const& std_except )
     {
         SNAP_LOG_FATAL("snap_init: std::exception caught! ")(std_except.what());
-		retval = 1;
+        retval = 1;
     }
     catch( ... )
     {
         SNAP_LOG_FATAL("snap_init: unknown exception caught!");
-		retval = 1;
+        retval = 1;
     }
 
     return 0;
 }
 
-// vim: ts=4 sw=4
+// vim: ts=4 sw=4 et

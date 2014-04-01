@@ -9,7 +9,7 @@
  *      See the QCassandra.cpp file.
  *
  * License:
- *      Copyright (c) 2011-2013 Made to Order Software Corp.
+ *      Copyright (c) 2011-2014 Made to Order Software Corp.
  * 
  *      http://snapwebsites.org/
  *      contact@m2osw.com
@@ -73,6 +73,7 @@ public:
 
     void setContext(const QString& context);
     void contexts() const;
+    void retrieve_context(const QString& context_name) const;
     void createContext(const QCassandraContext& context);
     void updateContext(const QCassandraContext& context);
     void dropContext(const QCassandraContext& context);

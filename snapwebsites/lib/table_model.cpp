@@ -36,13 +36,13 @@ namespace snap
 
 QCassandraTable::pointer_t table_model::getTable() const
 {
-	return f_table;
+    return f_table;
 }
 
 
 void table_model::setTable( QCassandraTable::pointer_t t )
 {
-	f_table = t;
+    f_table = t;
 
     if( f_table )
     {
@@ -94,10 +94,10 @@ Qt::ItemFlags table_model::flags( const QModelIndex & /*idx*/ ) const
 
 QVariant table_model::headerData( int section, Qt::Orientation orientation, int role ) const
 {
-	if( role != Qt::DisplayRole )
-	{
+    if( role != Qt::DisplayRole )
+    {
         return QVariant();
-	}
+    }
 
     if( !f_table )
     {
@@ -106,8 +106,8 @@ QVariant table_model::headerData( int section, Qt::Orientation orientation, int 
 
     try
     {
-		// the rows array is used immediately, so we can keep a temporary
-		// reference here
+        // the rows array is used immediately, so we can keep a temporary
+        // reference here
         auto const& rows( f_table->rows() );
         if( rows.size() == 0 )
         {
@@ -128,7 +128,7 @@ QVariant table_model::headerData( int section, Qt::Orientation orientation, int 
         SNAP_LOG_ERROR() << "Exception caught! [" << x.what() << "]";
     }
 
-	return QVariant();
+    return QVariant();
 }
 
 
@@ -205,4 +205,4 @@ int table_model::rowCount( const QModelIndex &prnt ) const
 // namespace snap
 
 
-// vim: ts=4 sw=4 noet
+// vim: ts=4 sw=4 et

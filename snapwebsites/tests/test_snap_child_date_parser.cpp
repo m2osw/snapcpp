@@ -45,8 +45,8 @@ date_t dates[] =
 
 int main(int, char *[])
 {
-    size_t const max(sizeof(dates) / sizeof(dates[0]));
-    for(size_t i(0); i < max; ++i)
+    size_t const max_dates(sizeof(dates) / sizeof(dates[0]));
+    for(size_t i(0); i < max_dates; ++i)
     {
         std::cout << "--- Test date " << dates[i].f_string << std::endl;
         time_t unix_time(snap::snap_child::string_to_date(dates[i].f_string));

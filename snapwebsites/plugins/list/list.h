@@ -43,6 +43,7 @@ enum name_t
     SNAP_NAME_LIST_STANDALONELIST,
     SNAP_NAME_LIST_STOP,
     SNAP_NAME_LIST_TABLE,
+    SNAP_NAME_LIST_TABLE_REF,
     SNAP_NAME_LIST_TAXONOMY_PATH,
     SNAP_NAME_LIST_TEST_SCRIPT,
     SNAP_NAME_LIST_THEME,
@@ -120,6 +121,7 @@ public:
     virtual QString     description() const;
     virtual int64_t     do_update(int64_t last_updated);
     QtCassandra::QCassandraTable::pointer_t get_list_table();
+    QtCassandra::QCassandraTable::pointer_t get_listref_table();
 
     void                on_bootstrap(snap_child *snap);
     void                on_register_backend_action(server::backend_action_map_t& actions);
@@ -140,11 +142,21 @@ private:
     void                content_update(int64_t variables_timestamp);
     int                 generate_all_lists(QString const& site_key);
     int                 generate_all_lists_for_page(QString const& site_key, QString const& row_key);
+    int                 generate_list_for_page(content::path_info_t& page_key, content::path_info_t& list_ipath);
+    int                 generate_new_lists(QString const& site_key);
+    int                 generate_new_list_for_all_pages(QString const& site_key, content::path_info_t& list_ipath);
+    int                 generate_new_list_for_descendant(QString const& site_key, content::path_info_t& list_ipath);
+    int                 generate_new_list_for_children(QString const& site_key, content::path_info_t& list_ipath);
+    int                 generate_new_list_for_all_descendants(content::path_info_t& list_ipath, content::path_info_t& parent, bool const descendants);
+    int                 generate_new_list_for_public(QString const& site_key, content::path_info_t& list_ipath);
+    int                 generate_new_list_for_type(QString const& site_key, content::path_info_t& list_ipath, QString const& type);
+    int                 generate_new_list_for_hand_picked_pages(QString const& site_key, content::path_info_t& list_ipath, QString const& hand_picked_pages);
     bool                run_list_check(content::path_info_t& list_ipath, content::path_info_t& page_ipath);
     QString             run_list_item_key(content::path_info_t& list_ipath, content::path_info_t& page_ipath);
 
     zpsnap_child_t                          f_snap;
     QtCassandra::QCassandraTable::pointer_t f_list_table;
+    QtCassandra::QCassandraTable::pointer_t f_listref_table;
     snap_expr::expr::expr_map_t             f_check_expressions;
     snap_expr::expr::expr_map_t             f_item_key_expressions;
     controlled_vars::fbool_t                f_ping_backend;

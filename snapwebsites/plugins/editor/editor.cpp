@@ -1348,11 +1348,11 @@ bool editor::validate_editor_post_for_widget_impl(content::path_info_t& ipath, s
     QDomElement sizes(widget.firstChildElement("sizes"));
     if(!sizes.isNull())
     {
-        QDomElement min(sizes.firstChildElement("min"));
-        if(!min.isNull())
+        QDomElement min_element(sizes.firstChildElement("min"));
+        if(!min_element.isNull())
         {
             has_minimum = true;
-            QString const m(min.text());
+            QString const m(min_element.text());
             if(widget_type == "image-box")
             {
                 int width, height;
@@ -1419,10 +1419,10 @@ bool editor::validate_editor_post_for_widget_impl(content::path_info_t& ipath, s
                 }
             }
         }
-        QDomElement max(sizes.firstChildElement("max"));
-        if(!max.isNull())
+        QDomElement max_element(sizes.firstChildElement("max"));
+        if(!max_element.isNull())
         {
-            QString const m(max.text());
+            QString const m(max_element.text());
             if(widget_type == "image-box")
             {
                 int width, height;

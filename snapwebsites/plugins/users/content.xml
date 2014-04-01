@@ -152,6 +152,13 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <mime-type>image/png</mime-type>
     </attachment>
   </content>
+  <content path="/admin/email/users">
+    <param name="content::title" revision="revision">User Emails</param>
+    <param name="content::body" revision="revision">
+        <![CDATA[<p>Set of emails used to communicate with your Snap! website users.</p>]]>
+    </param>
+    <link name="content::page_type" to="content::page_type" mode="1:*">/types/taxonomy/system/content-types/page/private</link>
+  </content>
   <content path="/admin/email/users/verify">
     <!-- email sent when users register so we can ask them to verify their email address -->
     <param name="content::title" revision="revision">Please verify your email address</param>

@@ -1354,8 +1354,8 @@ void field_search::run()
 
         void cmd_goto(int& i, int64_t label)
         {
-            int const max(f_program.size());
-            for(int j(0); j < max; ++j)
+            int const max_size(f_program.size());
+            for(int j(0); j < max_size; ++j)
             {
                 if(f_program[j].get_command() == COMMAND_LABEL
                 && f_program[j].get_int64() == label)
@@ -1382,8 +1382,8 @@ void field_search::run()
 
         void run()
         {
-            int const max(f_program.size());
-            for(int i(0); i < max; ++i)
+            int const max_size(f_program.size());
+            for(int i(0); i < max_size; ++i)
             {
                 switch(f_program[i].get_command())
                 {
@@ -3953,10 +3953,6 @@ bool content::create_content_impl(path_info_t& ipath, QString const& owner, QStr
     // save the owner
     row->cell(primary_owner)->setValue(owner);
 
-    // add the different basic content dates setup
-    int64_t const start_date(f_snap->get_start_date());
-    row->cell(get_name(SNAP_NAME_CONTENT_CREATED))->setValue(start_date);
-
     snap_version::version_number_t const branch_number(ipath.get_branch());
     QString const branch_owner(ipath.get_owner());
 
@@ -3976,6 +3972,10 @@ bool content::create_content_impl(path_info_t& ipath, QString const& owner, QStr
         set_revision_key(key, branch_owner, branch_number, revision_number, locale, true);
         set_revision_key(key, branch_owner, branch_number, revision_number, locale, false);
     }
+
+    // add the different basic content dates setup
+    int64_t const start_date(f_snap->get_start_date());
+    row->cell(get_name(SNAP_NAME_CONTENT_CREATED))->setValue(start_date);
 
     //QString const branch_key(generate_branch_key(key, branch_number));
     QtCassandra::QCassandraRow::pointer_t data_row(data_table->row(ipath.get_branch_key()));
@@ -4417,8 +4417,8 @@ bool content::create_attachment_impl(attachment_file const& file, snap_version::
             // save them here too
             dependency_list_t const& deps(file.get_dependencies());
             QMap<QString, bool> found;
-            int const max(deps.size());
-            for(int i(0); i < max; ++i)
+            int const max_size(deps.size());
+            for(int i(0); i < max_size; ++i)
             {
                 snap_version::dependency d;
                 if(!d.set_dependency(deps[i]))
@@ -5078,8 +5078,8 @@ void content::add_xml(const QString& plugin_name)
 void content::add_xml_document(QDomDocument& dom, const QString& plugin_name)
 {
     QDomNodeList content_nodes(dom.elementsByTagName(get_name(SNAP_NAME_CONTENT_TAG)));
-    int const max(content_nodes.size());
-    for(int i(0); i < max; ++i)
+    int const max_nodes(content_nodes.size());
+    for(int i(0); i < max_nodes; ++i)
     {
         QDomNode content_node(content_nodes.at(i));
         if(!content_node.isElement())

@@ -10,7 +10,7 @@
  *      See each function below.
  *
  * License:
- *      Copyright (c) 2011-2013 Made to Order Software Corp.
+ *      Copyright (c) 2011-2014 Made to Order Software Corp.
  * 
  *      http://snapwebsites.org/
  *      contact@m2osw.com
@@ -578,6 +578,31 @@ void QCassandraPrivate::contexts() const
         const org::apache::cassandra::KsDef& ks_def = *ks;
         c->parseContextDefinition(&ks_def);
     }
+}
+
+/** \brief Retrieve the description of a keyspace.
+ *
+ * This function requests for the descriptions of a specific keyspace
+ * (context). It is used to rebuild the list of tables after a clearCache()
+ * call on a context object.
+ *
+ * The QCassandra object is responsible for caching the result. The result
+ * should not change until we create a new table although if another process
+ * on another machine changes the Cassandra cluster structure, it will not
+ * be seen until the cache gets cleared.
+ *
+ * \param[in] context_name  The name of the context to re-describe.
+ */
+void QCassandraPrivate::retrieve_context(const QString& context_name) const
+{
+    mustBeConnected();
+
+    // retrieve this keyspace from Cassandra
+    org::apache::cassandra::KsDef ks_def;
+    f_client->describe_keyspace(ks_def, context_name.toUtf8().data());
+
+    QCassandraContext::pointer_t c(f_parent->context(context_name));
+    c->parseContextDefinition(&ks_def);
 }
 
 /** \brief Create a new context.

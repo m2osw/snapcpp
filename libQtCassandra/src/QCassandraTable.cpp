@@ -9,7 +9,7 @@
  *      See each function below.
  *
  * License:
- *      Copyright (c) 2011-2013 Made to Order Software Corp.
+ *      Copyright (c) 2011-2014 Made to Order Software Corp.
  * 
  *      http://snapwebsites.org/
  *      contact@m2osw.com
@@ -192,7 +192,7 @@ QCassandraTable::QCassandraTable(QCassandraContext::pointer_t context, const QSt
 
     // we save the context name (keyspace) and since it's forbidden to change it
     // in the context, we know it won't change here either
-    QString keyspace = context->contextName();
+    const QString keyspace = context->contextName();
     f_private->__set_keyspace(keyspace.toUtf8().data());
 
     // we save the name and at this point we prevent it from being changed.

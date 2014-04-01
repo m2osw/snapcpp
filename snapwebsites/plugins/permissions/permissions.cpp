@@ -361,8 +361,8 @@ void permissions::sets_t::add_user_right(QString right)
         right = right + "/";
     }
     int const len(right.length());
-    int max(f_user_rights.size());
-    for(int i(0); i < max; ++i)
+    int max_rights(f_user_rights.size());
+    for(int i(0); i < max_rights; ++i)
     {
         int const l(f_user_rights[i].length());
         if(len > l)
@@ -385,12 +385,12 @@ void permissions::sets_t::add_user_right(QString right)
                 // this new right is smaller, keep that smaller one instead
                 f_user_rights[i] = right;
                 ++i;
-                while(i < max)
+                while(i < max_rights)
                 {
                     if(f_user_rights[i].startsWith(right))
                     {
                         f_user_rights.remove(i);
-                        --max; // here max decreases!
+                        --max_rights; // here max decreases!
                     }
                     else
                     {
@@ -503,9 +503,9 @@ void permissions::sets_t::add_plugin_permission(const QString& plugin, QString r
 
     set_t& set(f_plugin_permissions[plugin]);
     int const len(right.length());
-    int const max(set.size());
+    int max_set(set.size());
     int i(0);
-    while(i < max)
+    while(i < max_set)
     {
         int const l(set[i].length());
         if(len > l)
@@ -519,6 +519,7 @@ void permissions::sets_t::add_plugin_permission(const QString& plugin, QString r
 #endif
 #endif
                 set.remove(i);
+                --max_set;
                 continue;
             }
         }
@@ -633,7 +634,7 @@ for(req_sets_t::const_iterator pp(f_plugin_permissions.begin());
 #endif
 #endif
 
-    int const max(f_user_rights.size());
+    int const max_rights(f_user_rights.size());
     for(req_sets_t::const_iterator pp(f_plugin_permissions.begin());
             pp != f_plugin_permissions.end();
             ++pp)
@@ -648,7 +649,7 @@ for(req_sets_t::const_iterator pp(f_plugin_permissions.begin());
             // slow... we may want to change the set_t type to a QMap
             // which uses a faster binary search; although on very small
             // maps it may not be any faster
-            for(int j(0); j < max; ++j)
+            for(int j(0); j < max_rights; ++j)
             {
                 const QString& plugin_permission ( *i               );
                 const QString& user_right        ( f_user_rights[j] );
@@ -1320,7 +1321,7 @@ void permissions::on_access_allowed(QString const& user_path, content::path_info
     // check that the action is defined in the database (i.e. valid)
     QtCassandra::QCassandraTable::pointer_t content_table(content::content::instance()->get_content_table());
     QString const site_key(f_snap->get_site_key_with_slash());
-    QString const key(site_key + get_name(SNAP_NAME_PERMISSIONS_ACTION_PATH) + ("/" + action));
+    QString const key(QString("%1%2/%3").arg(site_key).arg(get_name(SNAP_NAME_PERMISSIONS_ACTION_PATH)).arg(action));
     if(!content_table->exists(key))
     {
         // TODO it is rather easy to get here so we need to test whether
@@ -1771,6 +1772,7 @@ void call_perms(snap_expr::variable_t& result, snap_expr::variable_t::variable_v
     QString path(sub_results[0].get_string("perms(1)"));
     QString user_path(sub_results[1].get_string("perms(2)"));
     QString action(sub_results[2].get_string("perms(3)"));
+//std::cerr << "perms(\"" << path << "\", \"" << user_path << "\", \"" << action << "\")\n";
 
     // setup the parameters to the access_allowed() signal
     content::path_info_t ipath;

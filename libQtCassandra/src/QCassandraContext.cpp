@@ -9,7 +9,7 @@
  *      See each function below.
  *
  * License:
- *      Copyright (c) 2011-2013 Made to Order Software Corp.
+ *      Copyright (c) 2011-2014 Made to Order Software Corp.
  * 
  *      http://snapwebsites.org/
  *      contact@m2osw.com
@@ -1248,6 +1248,9 @@ void QCassandraContext::clearCache()
         (*ti)->unparent();
     }
     f_tables.clear();
+
+    // then reload those tables that still exist in this context
+    f_cassandra->getPrivate()->retrieve_context(f_private->name.c_str());
 }
 
 /** \brief Synchronize the schema versions.
