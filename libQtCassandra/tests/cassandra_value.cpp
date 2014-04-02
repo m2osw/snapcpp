@@ -2338,6 +2338,8 @@ int main(int argc, char *argv[])
         int32_t r(my_rand());
         if(r < 0) {
             if(static_cast<uint32_t>(r) == 0x80000000) {
+                // because -0x80000000 == 0x80000000 and we cannot use
+                // a negative number here
                 r = 0;
             }
             else {
