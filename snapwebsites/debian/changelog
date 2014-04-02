@@ -1,3 +1,15 @@
+snapwebsites (0.1.40~saucy) saucy; urgency=high
+
+  [ R. Douglas Barbieri ]
+  * a7c014d Final repair of SNAP-46.
+
+  [ Alexis Wilke ]
+  * bd016be Fixed a bug in the data initialization that would offer the wrong
+  type to plugins.
+  * b0382ff Added a comment to explain the "strange" code.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Wed, 02 Apr 2014 11:02:59 -0700
+
 snapwebsites (0.1.39~saucy) saucy; urgency=high
 
   [ Alexis Wilke ]
