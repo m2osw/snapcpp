@@ -3021,6 +3021,7 @@ void users::set_referrer( const QString& cpath )
         return;
     }
 
+    SNAP_LOG_DEBUG() << "SNAP_NAME_USERS_LOGIN_REFERRER being set to " << cpath << " for page path " << f_info->get_page_path();
     attach_to_session( get_name(SNAP_NAME_USERS_LOGIN_REFERRER), cpath );
 }
 

@@ -44,6 +44,7 @@
 
 #include <openssl/rand.h>
 
+#include "log.h"
 #include "poison.h"
 
 
@@ -1353,6 +1354,8 @@ void sessions::load_session(QString const& session_key, session_info& info, bool
 void sessions::attach_to_session(session_info const& info, QString const& name, QString const& data)
 {
     QString key(f_snap->get_website_key() + "/" + info.get_session_key());
+
+    SNAP_LOG_DEBUG() << "sessions::attach_to_session(), key = " << key << ", name = " << name << ", data = " << data;
 
     QtCassandra::QCassandraTable::pointer_t table(get_sessions_table());
     if(!table->exists(key))

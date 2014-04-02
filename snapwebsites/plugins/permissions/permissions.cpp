@@ -1236,7 +1236,12 @@ void permissions::on_validate_action(content::path_info_t& ipath, QString const&
             // logged in
             // TODO all redirects need to also include a valid action!
             //
-            users_plugin->set_referrer( ipath.get_cpath() );
+            // Repairs SNAP-46: don't set referrer to non-main page paths.
+            //
+            if( ipath.is_main_page() )
+            {
+                users_plugin->set_referrer( ipath.get_cpath() );
+            }
             //
             err_callback.on_redirect(
                 // message
