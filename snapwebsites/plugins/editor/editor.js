@@ -1,6 +1,6 @@
 /*
  * Name: editor
- * Version: 0.0.2.77
+ * Version: 0.0.2.81
  * Browsers: all
  * Copyright: Copyright 2013-2014 (c) Made to Order Software Corporation  All rights reverved.
  * License: GPL 2.0
@@ -93,7 +93,7 @@ snapwebsites.Editor.prototype = {
                 +".button.justifyCenter .image{background:url(/images/editor/buttons.png) no-repeat -148px 0;}"
                 +".button.justifyRight .image{background:url(/images/editor/buttons.png) no-repeat -196px 0;}"
                 +".button.justifyFull .image{background:url(/images/editor/buttons.png) no-repeat -164px 0;}"
-                +".snap-editor:hover{box-shadow:inset 0 0 0 3px rgba(64, 192, 64, 0.5);}"
+                +".snap-editor:not(.disabled):hover{box-shadow:inset 0 0 0 3px rgba(64, 192, 64, 0.5);}"
                 +".editor-tooltip{display:none;padding:10px;position:absolute;z-index:1;border:1px solid black;border-radius:7px;background:#f0fff0;color:#0f000f;}"
                 +".snap-editor [contenteditable=\"true\"] .filter-token{background-color:#e0e0e0;}"
                 ,
@@ -192,6 +192,10 @@ snapwebsites.Editor.prototype = {
 
     _saveData: function(mode)
     {
+        // TODO: this looks wrong, (this) is the editor, not a DOM object
+        //       also there is no code setting that class, remove the
+        //       class once done, or CSS using it either.
+        //       [see the _saveDialogStatus() function]
         if(jQuery(this).hasClass("editor-disabled"))
         {
             // TODO: translation support
@@ -206,7 +210,7 @@ snapwebsites.Editor.prototype = {
         //       attributes), we will then need to test it here
         snapwebsites.Popup.darkenPage(150);
 
-        var i, obj = {}, saved_data = {}, saved = [], edit_area, url, name, keep_darken_page = false;
+        var i, obj = {}, saved_data = {}, saved = [], edit_area, url, name, keep_darken_page = false, value;
         for(i = 1; i <= this._lastId; ++i)
         {
             if(this._modified[i])
@@ -219,7 +223,12 @@ snapwebsites.Editor.prototype = {
                     name = edit_area.parent().attr("field_name");
                     saved_data[name] = edit_area.html();
 
-                    if(edit_area.parent().hasClass("checkmark"))
+                    value = edit_area.attr("value");
+                    if(typeof value !== "undefined")
+                    {
+                        obj[name] = value;
+                    }
+                    else if(edit_area.parent().hasClass("checkmark"))
                     {
                         // a checkmark pushes "on" or "off"
                         obj[name] = edit_area.find(".checkmark-area").hasClass("checked") ? "on" : "off";
@@ -1470,7 +1479,7 @@ console.log("command "+idx+" "+this.toolbarButtons[idx][2]+"!!!");
                 e.preventDefault();
                 e.stopPropagation();
 
-                visible = that.children(".dropdown-items").is(":visible");
+                visible = that.is(".disabled") || that.children(".dropdown-items").is(":visible");
                 if(snapwebsites.EditorInstance._openDropdown)
                 {
                     snapwebsites.EditorInstance._openDropdown.fadeOut(150);

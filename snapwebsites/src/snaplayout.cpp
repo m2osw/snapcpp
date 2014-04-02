@@ -608,13 +608,13 @@ void snap_layout::add_files()
     mtimes_t mtimes;
     for( auto info : f_fileinfo_list )
     {
-        const QString filename(info.f_filename);
+        QString const filename(info.f_filename);
         if(f_verbose)
         {
             std::cout << "info: working on \"" << filename << "\"." << std::endl;
         }
         QByteArray content(info.f_content);
-        const int e(filename.lastIndexOf("."));
+        int const e(filename.lastIndexOf("."));
         if(e == -1)
         {
             std::cerr << "error: file \"" << filename << "\" must be an XML file (end with the .xml, .xsl or .zip extension.)" << std::endl;
@@ -713,7 +713,7 @@ void snap_layout::add_files()
                     if(!existing_doc.setContent(existing.stringValue(), true, &error_msg, &error_line, &error_column))
                     {
                         std::cerr << "warning: existing XSLT data parsing failed, it will get replaced." << std::endl;
-                        std::cerr << "detail " << error_line << "[" << error_column << "]: " << error_msg << std::endl;
+                        std::cerr << "details: " << error_line << "[" << error_column << "]: " << error_msg << std::endl;
                         // it failed so we want to replace it with a valid XSLT document instead!
                     }
                     else
@@ -721,7 +721,7 @@ void snap_layout::add_files()
                         QString existing_layout_name;
                         QString existing_layout_area;
                         time_t existing_layout_modified;
-                        load_xsl_info(existing_doc, "<existing XSLT data>", existing_layout_name, existing_layout_area, existing_layout_modified);
+                        load_xsl_info(existing_doc, QString("<existing XSLT data for %1>").arg(filename), existing_layout_name, existing_layout_area, existing_layout_modified);
                         // row_name == existing_layout_name && cell_name == existing_layout_area
                         // (since we found that data at that location in the database!)
                         if(layout_modified < existing_layout_modified)

@@ -1,4 +1,4 @@
-// Snap Websites Server -- JavaScript WYSIWYG editor
+// Snap Websites Server -- JavaScript WYSIWYG form widgets
 // Copyright (C) 2013-2014  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
@@ -171,7 +171,7 @@ int64_t editor::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2014, 3, 30, 20, 8, 30, content_update);
+    SNAP_PLUGIN_UPDATE(2014, 4, 2, 0, 0, 30, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -2702,6 +2702,7 @@ void editor::on_generate_page_content(content::path_info_t& ipath, QDomElement& 
     {
         throw snap_logic_exception(QString("somehow the memory XML document for the editor XSTL parser is empty, ipath key is \"%1\"").arg(ipath.get_key()));
     }
+
     QXmlQuery q(QXmlQuery::XSLT20);
     QMessageHandler msg;
     msg.set_xsl(editor_xsl);
@@ -2730,23 +2731,6 @@ void editor::on_generate_page_content(content::path_info_t& ipath, QDomElement& 
 
         QDomElement field_tag(snap_dom::create_element(body, path));
         snap_dom::insert_node_to_xml_doc(field_tag, w);
-
-        // this is a path in doc
-        //QDomXPath path_xpath;
-        //path_xpath.setXPath(path);
-        //QDomXPath::node_vector_t path_nodes(path_xpath.apply(doc.documentElement()));
-        //if(path_nodes.size() == 1)
-        //{
-        //    // the result overwrites the previous value!
-        //    QDomElement parent(path_nodes.at(0).toElement());
-        //    // TBD: we probably should remove the remove_all_children() call
-        //    //      which should not be necessary anymore since we do not
-        //    //      use that scheme anymore (i.e. we do not expect plugins
-        //    //      to create data and then go under them and plug the
-        //    //      editor in there! -- that makes it extremely laborious)
-        //    snap_dom::remove_all_children(parent);
-        //    snap_dom::insert_node_to_xml_doc(parent, w);
-        //}
 
         if(g_added_editor_form_js_css == ADDED_FORM_FILE_NONE)
         {

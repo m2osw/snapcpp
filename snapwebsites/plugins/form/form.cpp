@@ -1634,8 +1634,8 @@ bool form::validate_post_for_widget_impl(content::path_info_t& ipath, sessions::
                             QString const label(widget.firstChildElement("label").text());
                             messages->set_error(
                                     "Value is Invalid",
-                                    "\"" + label + "\" is a required field.",
-                                    "no data entered by user in widget \"" + widget_name + "\"",
+                                    QString("\"%1\" is a required field.").arg(label),
+                                    QString("no data entered by user in widget \"%1\"").arg(widget_name),
                                     false
                                 );
                             info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);

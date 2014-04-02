@@ -58,7 +58,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
         </xsl:if>
         <div>
           <xsl:attribute name="name"><xsl:value-of select="$name"/></xsl:attribute>
-          <xsl:attribute name="class">editor-content image<xsl:if test="@no-toolbar or /editor-form/no-toolbar"> no-toolbar</xsl:if></xsl:attribute>
+          <xsl:attribute name="class">editor-content image<xsl:if test="@no-toolbar or /editor-form/no-toolbar"> no-toolbar</xsl:if><xsl:if test="state = 'disabled'"> disabled</xsl:if></xsl:attribute>
           <xsl:if test="/editor-form/taborder/tabindex[@refid=$name]">
             <xsl:attribute name="tabindex"><xsl:value-of select="/editor-form/taborder/tabindex[@refid=$name]/count(preceding-sibling::tabindex) + 1 + $tabindex_base"/></xsl:attribute>
           </xsl:if>
@@ -68,7 +68,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
           <xsl:if test="sizes/min"><xsl:attribute name="min-sizes"><xsl:value-of select="sizes/min"/></xsl:attribute></xsl:if>
           <xsl:if test="sizes/resize"><xsl:attribute name="resize-sizes"><xsl:value-of select="sizes/resize"/></xsl:attribute></xsl:if>
           <xsl:if test="sizes/max"><xsl:attribute name="max-sizes"><xsl:value-of select="sizes/max"/></xsl:attribute></xsl:if>
-          <xsl:if test="state = 'disabled'"><xsl:attribute name="disabled">disabled</xsl:attribute></xsl:if>
           <!-- now the actual value of this line -->
           <xsl:choose>
             <xsl:when test="post != ''">
@@ -98,11 +97,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   <xsl:template name="snap:dropdown">
     <xsl:param name="path"/>
     <xsl:param name="name"/>
-    <xsl:param name="pv_value"/>
     <widget path="{$path}">
       <div>
         <xsl:attribute name="field_name"><xsl:value-of select="$name"/></xsl:attribute>
-        <xsl:attribute name="class"><xsl:if test="$action = 'edit'">snap-editor </xsl:if>editable dropdown <xsl:value-of select="$name"/><xsl:if test="@immediate or /editor-form/immediate"> immediate</xsl:if><xsl:if test="@id = /editor-form/focus/@refid"> auto-focus</xsl:if> <xsl:value-of select="classes"/></xsl:attribute>
+        <xsl:attribute name="class"><xsl:if test="$action = 'edit'">snap-editor </xsl:if>editable <xsl:value-of select="classes"/> dropdown <xsl:value-of select="$name"/><xsl:if test="@immediate or /editor-form/immediate"> immediate</xsl:if><xsl:if test="@id = /editor-form/focus/@refid"> auto-focus</xsl:if><xsl:if test="state = 'disabled'"> disabled</xsl:if></xsl:attribute>
         <div>
           <xsl:attribute name="name"><xsl:value-of select="$name"/></xsl:attribute>
           <xsl:attribute name="class">editor-content<xsl:if test="@no-toolbar or /editor-form/no-toolbar"> no-toolbar</xsl:if><xsl:if test="not(@mode) or @mode = 'select-only'"> select-only</xsl:if></xsl:attribute>
@@ -112,7 +110,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
           <xsl:if test="tooltip != ''">
             <xsl:attribute name="title"><xsl:value-of select="tooltip"/></xsl:attribute>
           </xsl:if>
-          <xsl:if test="state = 'disabled'"><xsl:attribute name="disabled">disabled</xsl:attribute></xsl:if>
+          
           <xsl:choose>
             <xsl:when test="value/item[@default='default']">
               <xsl:attribute name="value"><xsl:copy-of select="value/item[@default='default']/@value"/></xsl:attribute>
@@ -123,7 +121,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
             </xsl:otherwise>
           </xsl:choose>
         </div>
-        <xsl:if test="required = 'required'"> <span class="required">*</span></xsl:if>
         <div class="dropdown-items">
           <xsl:choose>
             <xsl:when test="count(value/item)">
@@ -142,6 +139,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
             </xsl:otherwise>
           </xsl:choose>
         </div>
+        <xsl:if test="required = 'required'"> <span class="required">*</span></xsl:if>
 
         <xsl:call-template name="snap:common-parts"/>
       </div>
@@ -160,7 +158,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <xsl:call-template name="snap:dropdown">
       <xsl:with-param name="path" select="@path"/>
       <xsl:with-param name="name" select="@id"/>
-      <xsl:with-param name="pv_value" select="$value"/>
     </xsl:call-template>
   </xsl:template>
 
@@ -174,7 +171,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <widget path="{$path}">
       <div>
         <xsl:attribute name="field_name"><xsl:value-of select="$name"/></xsl:attribute>
-        <xsl:attribute name="class"><xsl:if test="$action = 'edit'">snap-editor </xsl:if>editable checkmark <xsl:value-of select="$name"/><xsl:if test="@immediate or /editor-form/immediate"> immediate</xsl:if><xsl:if test="@id = /editor-form/focus/@refid"> auto-focus</xsl:if> <xsl:value-of select="classes"/></xsl:attribute>
+        <xsl:attribute name="class"><xsl:if test="$action = 'edit'">snap-editor </xsl:if>editable <xsl:value-of select="classes"/> checkmark <xsl:value-of select="$name"/><xsl:if test="@immediate or /editor-form/immediate"> immediate</xsl:if><xsl:if test="@id = /editor-form/focus/@refid"> auto-focus</xsl:if><xsl:if test="state = 'disabled'"> disabled</xsl:if></xsl:attribute>
         <div>
           <xsl:attribute name="name"><xsl:value-of select="$name"/></xsl:attribute>
           <xsl:attribute name="class">editor-content<xsl:if test="@no-toolbar or /editor-form/no-toolbar"> no-toolbar</xsl:if></xsl:attribute>
@@ -184,7 +181,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
           <xsl:if test="tooltip != ''">
             <xsl:attribute name="title"><xsl:value-of select="tooltip"/></xsl:attribute>
           </xsl:if>
-          <xsl:if test="state = 'disabled'"><xsl:attribute name="disabled">disabled</xsl:attribute></xsl:if>
 
           <div class="checkmark-flag">
             <div class="flag-box"></div>
@@ -228,7 +224,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <widget path="{$path}">
       <div>
         <xsl:attribute name="field_name"><xsl:value-of select="$name"/></xsl:attribute>
-        <xsl:attribute name="class"><xsl:if test="$action = 'edit'">snap-editor </xsl:if>editable line-edit <xsl:value-of select="$name"/><xsl:if test="@immediate or /editor-form/immediate"> immediate</xsl:if><xsl:if test="@id = /editor-form/focus/@refid"> auto-focus</xsl:if> <xsl:value-of select="classes"/></xsl:attribute>
+        <xsl:attribute name="class"><xsl:if test="$action = 'edit'">snap-editor </xsl:if>editable line-edit <xsl:value-of select="$name"/><xsl:if test="@immediate or /editor-form/immediate"> immediate</xsl:if><xsl:if test="@id = /editor-form/focus/@refid"> auto-focus</xsl:if> <xsl:value-of select="classes"/><xsl:if test="state = 'disabled'"> disabled</xsl:if></xsl:attribute>
         <xsl:if test="background-value != ''">
           <!-- by default "snap-editor-background" has "display: none"
                a script shows them on load once ready AND if the value is empty
@@ -251,7 +247,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
           </xsl:if>
           <xsl:if test="sizes/min"><xsl:attribute name="minlength"><xsl:value-of select="sizes/min"/></xsl:attribute></xsl:if>
           <xsl:if test="sizes/max"><xsl:attribute name="maxlength"><xsl:value-of select="sizes/max"/></xsl:attribute></xsl:if>
-          <xsl:if test="state = 'disabled'"><xsl:attribute name="disabled">disabled</xsl:attribute></xsl:if>
           <!-- now the actual value of this line -->
           <xsl:choose>
             <xsl:when test="post != ''">
@@ -270,6 +265,36 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   </xsl:template>
   <xsl:template match="widget[@type='line-edit']">
     <xsl:call-template name="snap:line-edit">
+      <xsl:with-param name="path" select="@path"/>
+      <xsl:with-param name="name" select="@id"/>
+    </xsl:call-template>
+  </xsl:template>
+
+  <!-- BUTTON WIDGET (an anchor) -->
+  <!-- WARNING: we use this sub-template because of a Qt but with variables
+                that do not get defined properly without such trickery -->
+  <xsl:template name="snap:button">
+    <xsl:param name="path"/>
+    <xsl:param name="name"/>
+    <widget path="{$path}">
+      <a>
+        <!-- name required as a field name? xsl:attribute name="field_name"><xsl:value-of select="$name"/></xsl:attribute-->
+        <xsl:attribute name="class"><xsl:value-of select="classes"/> button <xsl:value-of select="$name"/><xsl:if test="@id = /editor-form/focus/@refid"> auto-focus</xsl:if><xsl:if test="state = 'disabled'"> disabled</xsl:if></xsl:attribute>
+        <xsl:if test="/editor-form/taborder/tabindex[@refid=$name]">
+          <xsl:attribute name="tabindex"><xsl:value-of select="/editor-form/taborder/tabindex[@refid=$name]/count(preceding-sibling::tabindex) + 1 + $tabindex_base"/></xsl:attribute>
+        </xsl:if>
+        <xsl:if test="tooltip">
+          <xsl:attribute name="title"><xsl:value-of select="tooltip"/></xsl:attribute>
+        </xsl:if>
+        <xsl:attribute name="href"><xsl:copy-of select="value/node()"/></xsl:attribute>
+        <!-- use the label as the anchor text -->
+        <xsl:copy-of select="label/node()"/>
+      </a>
+      <xsl:call-template name="snap:common-parts"/>
+    </widget>
+  </xsl:template>
+  <xsl:template match="widget[@type='button']">
+    <xsl:call-template name="snap:button">
       <xsl:with-param name="path" select="@path"/>
       <xsl:with-param name="name" select="@id"/>
     </xsl:call-template>

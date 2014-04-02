@@ -5769,13 +5769,6 @@ void content::on_save_content()
             // do not overwrite the created date
             content_table->row(d->f_path)->cell(QString(get_name(SNAP_NAME_CONTENT_CREATED)))->setValue(start_date);
         }
-        //if(content_table->row(d->f_path)->cell(QString(get_name(SNAP_NAME_CONTENT_UPDATED)))->value().nullValue())
-        //{
-        //    // updated changes only because of a user action (i.e. Save)
-        //    content_table->row(d->f_path)->cell(QString(get_name(SNAP_NAME_CONTENT_UPDATED)))->setValue(start_date);
-        //}
-        //// always overwrite the modified date
-        //content_table->row(d->f_path)->cell(QString(get_name(SNAP_NAME_CONTENT_MODIFIED)))->setValue(start_date);
 
         // TODO: fix the locale... actually the revision for English is
         //       the default and many we do not have to create the revision
@@ -5843,7 +5836,7 @@ void content::on_save_content()
                         throw snap_logic_exception("the overwrite=\"yes\" flag cannot be used along revision=\"revision\"");
                     }
 
-                    // path + "#0.<revision>" in the data table
+                    // path + "#xx/0.<revision>" in the data table
                     param_table = data_table;
                     if(!use_new_revision)
                     {
@@ -5923,6 +5916,12 @@ void content::on_save_content()
             dst = site_key + dst;
             links::link_info source(get_name(SNAP_NAME_CONTENT_PARENT), true, src, snap_version::SPECIAL_VERSION_SYSTEM_BRANCH);
             links::link_info destination(get_name(SNAP_NAME_CONTENT_CHILDREN), false, dst, snap_version::SPECIAL_VERSION_SYSTEM_BRANCH);
+
+            // TODO: these rows generate errors because they are missing the
+            //       branch and revision information generally expected; we
+            //       want to create some data here so the page is "real"
+            //       enough to be used (i.e. call create_content() ?)
+
 // TODO only repeat if the parent did not exist, otherwise we assume the
 //      parent created its own parent/children link already.
 //printf("parent/children [%s]/[%s]\n", src.toUtf8().data(), dst.toUtf8().data());
@@ -6023,13 +6022,21 @@ void content::on_save_content()
             d != f_blocks.end(); ++d)
     {
         QString const path(d->f_path);
-        path_info_t ipath;
-        ipath.set_path(path);
-        QtCassandra::QCassandraValue type(get_content_parameter(ipath, get_name(SNAP_NAME_CONTENT_PAGE_TYPE), PARAM_REVISION_BRANCH));
         if(path.startsWith(site_key))
         {
             // TODO: we may want to have a better way to choose the language
-            create_content(ipath, d->f_owner, type.stringValue());
+            path_info_t ipath;
+            ipath.set_path(path);
+            links::link_info info(get_name(SNAP_NAME_CONTENT_PAGE_TYPE), true, ipath.get_key(), ipath.get_branch());
+            QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
+            links::link_info child_info;
+            if(link_ctxt->next_link(child_info))
+            {
+                // should always be true because all pages have a type
+                QString const type_key(child_info.key());
+                int const pos(type_key.indexOf("/types/taxonomy/system/content-types/"));
+                create_content(ipath, d->f_owner, type_key.mid(pos + 37));
+            }
         }
         // else -- if the path doesn't start with site_key we've got a problem
     }
