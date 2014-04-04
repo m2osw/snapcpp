@@ -1265,7 +1265,11 @@ void permissions::on_validate_action(content::path_info_t& ipath, QString const&
                     // ah! the user is not allowed here but he would be if
                     // only he were recently logged in (with the last 3h or
                     // whatever the administrator set that to.)
-                    users_plugin->attach_to_session(get_name(users::SNAP_NAME_USERS_LOGIN_REFERRER), ipath.get_cpath());
+                    //
+                    if( ipath.is_main_page() )
+                    {
+                        users_plugin->set_referrer( ipath.get_cpath() );
+                    }
                     err_callback.on_redirect(
                         // message
                         "Unauthorized",

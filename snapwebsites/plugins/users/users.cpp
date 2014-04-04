@@ -1096,21 +1096,7 @@ void users::prepare_login_form()
         NOTREACHED();
     }
 
-    // use the current refererrer if there is one as the redirect page
-    // after log in; once the log in is complete, redirect to this referrer
-    // page; if you send the user on a page that only redirects to /login
-    // then the user will end up on his profile (/user/me)
-    if(sessions::sessions::instance()->get_from_session(*f_info, get_name(SNAP_NAME_USERS_LOGIN_REFERRER)).isEmpty())
-    {
-        QString referrer(f_snap->snapenv("HTTP_REFERER"));
-        QString const site_key(f_snap->get_site_key_with_slash());
-        if(!referrer.isEmpty()
-        && referrer != site_key + "login"
-        && referrer != site_key + "logout")
-        {
-            attach_to_session(get_name(SNAP_NAME_USERS_LOGIN_REFERRER), referrer);
-        }
-    }
+    set_referrer( f_snap->snapenv("HTTP_REFERER") );
 }
 
 
@@ -3006,23 +2992,33 @@ QString users::detach_from_session(const QString& name) const
  *
  * Call this instead of "attach_to_session( SNAP_NAME_USERS_LOGIN_REFERRER, cpath )" directly.
  *
- * \note the special case "/logout" will do nothing, since we don't want
- * a referrer in that case.
+ * \note the special cases "/login" and "/logout" will do nothing, since we don't want
+ * a referrer in those cases.
  *
  * \sa attach_to_session()
  *
  */
 void users::set_referrer( const QString& cpath )
 {
-    if( f_snap->get_uri().path() == "/logout" )
-    {
-        // ignore for special cases
-        //
-        return;
-    }
+    const char* loginref_name( get_name(SNAP_NAME_USERS_LOGIN_REFERRER) );
 
-    SNAP_LOG_DEBUG() << "SNAP_NAME_USERS_LOGIN_REFERRER being set to " << cpath << " for page path " << f_info->get_page_path();
-    attach_to_session( get_name(SNAP_NAME_USERS_LOGIN_REFERRER), cpath );
+    // use the current refererrer if there is one as the redirect page
+    // after log in; once the log in is complete, redirect to this referrer
+    // page; if you send the user on a page that only redirects to /login
+    // then the user will end up on his profile (/user/me)
+    //
+    if( sessions::sessions::instance()->get_from_session( *f_info, loginref_name ).isEmpty() )
+    {
+        SNAP_LOG_DEBUG() << "SNAP_NAME_USERS_LOGIN_REFERRER being set to " << cpath << " for page path " << f_info->get_page_path();
+        QString const site_key(f_snap->get_site_key_with_slash());
+        if( !cpath.isEmpty()
+            && cpath != site_key + "login"
+            && cpath != site_key + "logout"
+        )
+        {
+            attach_to_session( loginref_name, cpath );
+        }
+    }
 }
 
 
