@@ -1,6 +1,6 @@
 /*
  * Name: editor
- * Version: 0.0.2.81
+ * Version: 0.0.2.84
  * Browsers: all
  * Copyright: Copyright 2013-2014 (c) Made to Order Software Corporation  All rights reverved.
  * License: GPL 2.0
@@ -1473,7 +1473,7 @@ console.log("command "+idx+" "+this.toolbarButtons[idx][2]+"!!!");
                jQuery(this).children(".dropdown-items").css("position", "absolute"); 
             })
             .click(function(e){
-                var that = jQuery(this), visible;
+                var that = jQuery(this), visible, z;
 
                 // avoid default browser behavior
                 e.preventDefault();
@@ -1488,6 +1488,12 @@ console.log("command "+idx+" "+this.toolbarButtons[idx][2]+"!!!");
                 if(!visible)
                 {
                     snapwebsites.EditorInstance._openDropdown = that.children(".dropdown-items");
+
+                    // setup z-index
+                    snapwebsites.EditorInstance._openDropdown.css("z-index", 0);
+                    z = jQuery("div.zordered").maxZIndex() + 1;
+                    snapwebsites.EditorInstance._openDropdown.css("z-index", z);
+
                     snapwebsites.EditorInstance._openDropdown.fadeIn(150);
                 }
             })

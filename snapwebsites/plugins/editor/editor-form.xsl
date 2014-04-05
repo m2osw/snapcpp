@@ -125,9 +125,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
             </xsl:otherwise>
           </xsl:choose>
         </div>
-        <div class="dropdown-items">
+        <div>
           <xsl:choose>
             <xsl:when test="count(value/item)">
+              <xsl:attribute name="class">dropdown-items zordered</xsl:attribute>
               <ul class="dropdown-selection">
                 <xsl:for-each select="value/item">
                   <li value="{@value}">
@@ -138,7 +139,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
               </ul>
             </xsl:when>
             <xsl:otherwise>
-              <xsl:attribute name="class">dropdown-items disabled</xsl:attribute>
+              <xsl:attribute name="class">dropdown-items zordered disabled</xsl:attribute>
               <div class="no-selection">No selection...</div>
             </xsl:otherwise>
           </xsl:choose>
