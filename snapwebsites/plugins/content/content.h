@@ -111,6 +111,14 @@ public:
     content_exception(QString const&     what_msg) : snap_exception("content", what_msg) {}
 };
 
+class content_exception_content_not_initialized : public content_exception
+{
+public:
+    content_exception_content_not_initialized(char const *       what_msg) : content_exception(what_msg) {}
+    content_exception_content_not_initialized(std::string const& what_msg) : content_exception(what_msg) {}
+    content_exception_content_not_initialized(QString const&     what_msg) : content_exception(what_msg) {}
+};
+
 class content_exception_invalid_content_xml : public content_exception
 {
 public:

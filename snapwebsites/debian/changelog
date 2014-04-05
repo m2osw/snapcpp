@@ -1,3 +1,10 @@
+snapwebsites (0.1.40~saucyubuntu1) UNRELEASED; urgency=low
+
+  [ Alexis Wilke ]
+  * Added support for default value in dropdown widgets.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Fri, 04 Apr 2014 17:39:41 -0700
+
 snapwebsites (0.1.40~saucy) saucy; urgency=high
 
   [ R. Douglas Barbieri ]
@@ -5,7 +12,7 @@ snapwebsites (0.1.40~saucy) saucy; urgency=high
 
   [ Alexis Wilke ]
   * bd016be Fixed a bug in the data initialization that would offer the wrong
-  type to plugins.
+    type to plugins.
   * b0382ff Added a comment to explain the "strange" code.
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Wed, 02 Apr 2014 11:02:59 -0700
@@ -16,11 +23,11 @@ snapwebsites (0.1.39~saucy) saucy; urgency=high
   * Fixed the pagelist backend so it works even while sites are initialized.
     (this includes a fix to the libQtCassandra 0.5.5)
   * Better handle the clearCache() on the context so it is less likely to
-  fail.
+    fail.
 
   [ R. Douglas Barbieri ]
   * Repaired logout/login error where a user would be redirected to an
-  admin-only page on login.
+    admin-only page on login.
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Tue, 01 Apr 2014 12:10:10 -0700
 

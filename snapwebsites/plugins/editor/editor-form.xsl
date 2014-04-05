@@ -110,6 +110,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
           <xsl:if test="tooltip != ''">
             <xsl:attribute name="title"><xsl:value-of select="tooltip"/></xsl:attribute>
           </xsl:if>
+          <xsl:if test="not(@mode) or @mode = 'select-only'">
+            <!-- avoid spellcheck of non-editable widgets -->
+            <xsl:attribute name="spellcheck">false</xsl:attribute>
+          </xsl:if>
           
           <xsl:choose>
             <xsl:when test="value/item[@default='default']">
@@ -117,7 +121,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
               <xsl:copy-of select="value/item[@default='default']"/>
             </xsl:when>
             <xsl:otherwise>
-              Some default value
+              <xsl:copy-of select="default/node()"/>
             </xsl:otherwise>
           </xsl:choose>
         </div>

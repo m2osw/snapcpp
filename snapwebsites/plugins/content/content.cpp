@@ -2222,16 +2222,19 @@ QString const& attachment_file::get_name() const
 path_info_t::path_info_t()
     : f_content_plugin(content::content::instance())
     , f_snap(f_content_plugin->get_snap())
-    //, f_cpath("") -- auto-init
     //, f_key("") -- auto-init
+    //, f_real_key("") -- auto-init
+    //, f_cpath("") -- auto-init
+    //, f_real_cpath("") -- auto-init
     , f_owner(f_content_plugin->get_plugin_name())
     //, f_main_page(false) -- auto-init
+    //, f_parameters() -- auto-init
     //, f_branch(snap_version::SPECIAL_VERSION_UNDEFINED) -- auto-init
     //, f_revision(snap_version::SPECIAL_VERSION_UNDEFINED) -- auto-init
-    //, f_locale("") -- auto-init
+    //, f_revision_string("") -- auto-init
     //, f_branch_key("") -- auto-init
     //, f_revision_key("") -- auto-init
-    //, f_parameters() -- auto-init
+    //, f_locale("") -- auto-init
 {
 }
 
@@ -2900,6 +2903,12 @@ QtCassandra::QCassandraTable::pointer_t content::get_files_table()
  */
 snap_child *content::get_snap()
 {
+    if(!f_snap)
+    {
+        // in case someone tries to get this while in the on_bootstrap()
+        // function (which should not happen...)
+        throw content_exception_content_not_initialized("content::get_snap() called before f_snap got initialized");
+    }
     return f_snap;
 }
 
