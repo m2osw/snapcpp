@@ -1,4 +1,4 @@
-/*
+/** @preserve
  * Name: output
  * Version: 0.0.5
  * Browsers: all
@@ -7,6 +7,21 @@
  * License: GPL 2.0
  */
 
+
+//
+// Inline "command line" parameters for the Google Closure Compiler
+// See output of:
+//    java -jar .../google-js-compiler/compiler.jar --help
+//
+// ==ClosureCompiler==
+// @compilation_level ADVANCED_OPTIMIZATIONS
+// @externs $CLOSURE_COMPILER/contrib/externs/jquery-1.9.js
+// @externs plugins/output/externs/jquery-extensions.js
+// ==/ClosureCompiler==
+//
+
+
+
 /** \brief Defines the snapwebsites namespace in the JavaScript environment.
  *
  * All the JavaScript functions defined by Snap! plugins are defined inside
@@ -14,13 +29,16 @@
  * defined as:
  *
  * \code
- * snapwebsites.editor
+ * snapwebsites.Editor
  * \endcode
  *
  * \note
  * Technically, this is an object.
+ *
+ * @type {Object}
  */
 var snapwebsites = {};
+
 
 
 /** \brief Snap Output Manipulations.
@@ -32,13 +50,34 @@ var snapwebsites = {};
  * gets initialized automatically when this output.js file gets included.
  *
  * @constructor
+ * @struct
  */
 snapwebsites.Output = function()
 {
+    this._handleMessages();
+    return this;
 };
 
 
-snapwebsites.Output.prototype = {
+/** \brief Base definitions in the snapwebsites environment.
+ *
+ * The base prototype of the snapwebsites JavaScript environment is defined
+ * here. These are functions used by all the code we provide as part of
+ * Snap! C++.
+ *
+ * @struct
+ */
+snapwebsites.Output.prototype =
+{
+    /** \brief The constructor of this object.
+     *
+     * Make sure to declare the constructor for proper inheritance
+     * support.
+     *
+     * @type {function()}
+     */
+    constructor: snapwebsites.Output,
+
     /** \brief Helper function: generate hexadecimal number.
      *
      * This function transform byte \p c in a hexadecimal number of
@@ -47,11 +86,11 @@ snapwebsites.Output.prototype = {
      * Note that \p c can be larger than a byte, only it should probably
      * not be negative.
      *
-     * \param[in] c  The byte to transform (expected to be between 0 and 255)
+     * @param {number} c  The byte to transform (expected to be between 0 and 255)
      *
-     * \return The hexadecimal representation of the number.
+     * @return {string}  The hexadecimal representation of the number.
      */
-    char2hex:function(c)
+    char2hex: function(c)
     {
         var a, b;
 
@@ -84,15 +123,6 @@ snapwebsites.Output.prototype = {
             })
             .delay(250).fadeIn(300) // put a little delay so we see the fadeIn(), eventually
             .click(function(){jQuery(this).fadeOut(300);});
-    },
-
-    /** \brief Initialize the output object.
-     *
-     * This function initializes the output object.
-     */
-    init: function()
-    {
-        this._handleMessages();
     }
 };
 
@@ -101,7 +131,6 @@ jQuery(document).ready(
     function()
     {
         snapwebsites.OutputInstance = new snapwebsites.Output();
-        snapwebsites.OutputInstance.init();
     }
 );
 

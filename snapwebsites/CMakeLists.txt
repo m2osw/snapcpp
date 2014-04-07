@@ -136,17 +136,21 @@ install( PROGRAMS reset-db.sh run-server.sh DESTINATION ${CMAKE_INSTALL_PREFIX} 
 ##
 add_custom_target(snap_code_analysis
     COMMAND mkdir -p ${PROJECT_BINARY_DIR}/analysis
-    # Count things and report potential problems with different classes
-    COMMAND echo "cccc -- output directory ${PROJECT_BINARY_DIR}/analysis/cccc -- and errors saved in ${PROJECT_BINARY_DIR}/analysis/cccc.output"
-    COMMAND cccc --lang=c++ --html_outfile=${PROJECT_BINARY_DIR}/analysis/cccc/index.html --outdir=${PROJECT_BINARY_DIR}/analysis/cccc lib/*.cpp lib/*.h lib/*.h.in src/*.cpp plugins/*/*.cpp plugins/*/*.h >${PROJECT_BINARY_DIR}/analysis/cccc.output 2>&1
-    # Boost inspect tool that reports different problems
-    COMMAND echo "inspect -- output ${PROJECT_BINARY_DIR}/analysis/inspect.html"
-    COMMAND inspect -tab -crlf -end -path_name -ascii -minmax -assert_macro -deprecated_macro -unnamed -link -copyright >"${PROJECT_BINARY_DIR}/analysis/inspect.html"
-    # Static analysis of the code
-    COMMAND echo "cppcheck -- output ${PROJECT_BINARY_DIR}/analysis/cppcheck.out"
-    COMMAND cppcheck lib plugins src tests >"${PROJECT_BINARY_DIR}/analysis/cppcheck.out" 2>&1
-    # Count # of TODO, XXX, TBD, FIXME, and \todo: (documented in doxygen)
-    COMMAND sh tests/todo.sh "${PROJECT_BINARY_DIR}/analysis"
+#    # Count things and report potential problems with different classes
+#    COMMAND echo "cccc -- output directory ${PROJECT_BINARY_DIR}/analysis/cccc -- and errors saved in ${PROJECT_BINARY_DIR}/analysis/cccc.output"
+#    COMMAND cccc --lang=c++ --html_outfile=${PROJECT_BINARY_DIR}/analysis/cccc/index.html --outdir=${PROJECT_BINARY_DIR}/analysis/cccc lib/*.cpp lib/*.h lib/*.h.in src/*.cpp plugins/*/*.cpp plugins/*/*.h >${PROJECT_BINARY_DIR}/analysis/cccc.output 2>&1
+#    # Boost inspect tool that reports different problems
+#    COMMAND echo "inspect -- output ${PROJECT_BINARY_DIR}/analysis/inspect.html"
+#    COMMAND inspect -tab -crlf -end -path_name -ascii -minmax -assert_macro -deprecated_macro -unnamed -link -copyright >"${PROJECT_BINARY_DIR}/analysis/inspect.html"
+#    # Static analysis of the code
+#    COMMAND echo "cppcheck -- output ${PROJECT_BINARY_DIR}/analysis/cppcheck.out"
+#    COMMAND cppcheck lib plugins src tests >"${PROJECT_BINARY_DIR}/analysis/cppcheck.out" 2>&1
+#    # Count # of TODO, XXX, TBD, FIXME, and \todo: (documented in doxygen)
+#    COMMAND sh tests/todo.sh "${PROJECT_BINARY_DIR}/analysis"
+#    # Lint the JavaScript code to find additional "errors"
+#    COMMAND sh tests/js-lint.sh "${PROJECT_BINARY_DIR}/analysis"
+    # Compile the JavaScript code to verify most everything (strong typing, etc.)
+    COMMAND sh tests/js-compile.sh "${PROJECT_BINARY_DIR}/analysis"
 
     # All of these are expected to work on source code so make sure we're
     # in the source code top directory

@@ -1,4 +1,4 @@
-/*
+/** @preserve
  * Name: popup
  * Version: 0.0.19
  * Browsers: all
@@ -6,6 +6,21 @@
  * Depends: output (0.0.5)
  * License: GPL 2.0
  */
+
+//
+// Inline "command line" parameters for the Google Closure Compiler
+// See output of:
+//    java -jar .../google-js-compiler/compiler.jar --help
+//
+// ==ClosureCompiler==
+// @compilation_level ADVANCED_OPTIMIZATIONS
+// @externs $CLOSURE_COMPILER/contrib/externs/jquery-1.9.js
+// @externs plugins/output/externs/jquery-extensions.js
+// @js plugins/output/output.js
+// ==/ClosureCompiler==
+//
+
+
 
 /** \brief Snap Popup.
  *
@@ -16,14 +31,54 @@
  * any number of popups.
  *
  * @constructor
+ * @struct
  */
 snapwebsites.Popup = function()
 {
+    return this._init();
 };
 
 
-snapwebsites.Popup.prototype = {
+/** \brief Popup variable members and function members
+ *
+ * @struct
+ */
+snapwebsites.Popup.prototype =
+{
+    /** \brief The constructor of this object.
+     *
+     * Make sure to declare the constructor for proper inheritance
+     * support.
+     *
+     * @type {function()}
+     */
+    constructor: snapwebsites.Popup,
+
+    /** \brief A unique identifier.
+     *
+     * Each time a new popup is created it is given a new unique
+     * identifier. This parameter is used to compute that new
+     * identifier. The value is saved in the settings passed to
+     * the open() function, so on the next call with the same
+     * settings, the identifier will already be defined and thus
+     * it won't change.
+     *
+     * @type {number}
+     */
     _uniqueID: 0,
+
+    /** \brief The jQuery DOM object representing the popup.
+     *
+     * This parameter represents the popup DOM object used to create the
+     * popup window. Since there is only one darken page popup, this is
+     * created once and reused as many times as required.
+     *
+     * Note, however, that it is not "safe" to open a popup from a popup
+     * as that will reuse that same darkenpagepopup object which will
+     * obstruct the view.
+     *
+     * @type {Object}
+     */
     _darkenPagePopup: null,
 
     /** \brief Create a DIV used to darken the background.
@@ -42,14 +97,13 @@ snapwebsites.Popup.prototype = {
      * \todo
      * Offer a debug version that verifies that show is never set to zero.
      *
-     * \param[in] show  If positive, show the darken page using fadeIn(show),
-     *                  if negative, hide the darken page using fadeOut(-show).
+     * @param {number} show  If positive, show the darken page using
+     *                       fadeIn(show), if negative, hide the darken
+     *                       page using fadeOut(-show).
      */
     darkenPage: function(show)
     {
-        var html;
-
-        if(!this._darkenPagePopup)
+        if (!this._darkenPagePopup)
         {
             // create the full screen fixed div
             jQuery("<div id='darkenPage'></div>").appendTo("body");
@@ -59,7 +113,7 @@ snapwebsites.Popup.prototype = {
         this._darkenPagePopup.css("z-index", 1);
         this._darkenPagePopup.css("z-index", jQuery("body").children().maxZIndex() + 1);
 
-        if(show > 0)
+        if (show > 0)
         {
             this._darkenPagePopup.fadeIn(show);
         }
@@ -123,11 +177,16 @@ snapwebsites.Popup.prototype = {
      * \li widget -- the jQuery object referencing the popup is saved in
      *               this variable member
      *
-     * \param[in,out] popup  The settings to create the popup.
+     * @param {{id: ?string, path: string,
+     *          top: number, left: number, width: number, height: number,
+     *          darken: number, position: string, title: string,
+     *          open: function(Object), show: function(Object), hide: function(Object),
+     *          widget: Object}} popup  The settings to create the popup.
+     * @return {jQuery}
      */
     open: function(popup)
     {
-        var i, b, f, t;
+        var i, b, f, t, w;
 
         if(!popup.id)
         {
@@ -145,7 +204,7 @@ snapwebsites.Popup.prototype = {
         }
         popup.widget.show();
         popup.widget.children(".close-popup").click(function(){
-            snapwebsites.Popup.hide(popup);
+            snapwebsites.PopupInstance.hide(popup);
         });
         i = popup.widget.children(".inside-popup");
         t = i.children(".popup-title");
@@ -196,7 +255,11 @@ snapwebsites.Popup.prototype = {
             b.empty();
             b.append("<iframe class='popup-iframe' src='" + popup.path + "' frameborder='0' marginheight='0' marginwidth='0'></iframe>");
             f = b.children(".popup-iframe");
-            f.attr("width", b.width());
+
+            // 'b.width()' may return a jQuery object so we have to force the
+            // type to a number to call f.attr().
+            f.attr("width", /** @type {number} */ (b.width()));
+
             // the height of the body matches the height of the IFRAME so we
             // cannot use it here
 
@@ -220,7 +283,11 @@ snapwebsites.Popup.prototype = {
      * This function shows a popup that was just created with the open()
      * function or got hidden with the hide() function.
      *
-     * \param[in] popup  The popup to show.
+     * @param {{id: ?string, path: string,
+     *          top: number, left: number, width: number, height: number,
+     *          darken: number, position: string, title: string,
+     *          open: function(Object), show: function(Object), hide: function(Object),
+     *          widget: Object}} popup  The popup to show.
      */
     show: function(popup)
     {
@@ -252,7 +319,11 @@ snapwebsites.Popup.prototype = {
      * This is often referenced as a soft-close. After this call the popup
      * is still available in the DOM, it is just hidden (display: none).
      *
-     * \param[in] popup  The popup to hide.
+     * @param {{id: ?string, path: string,
+     *          top: number, left: number, width: number, height: number,
+     *          darken: number, position: string, title: string,
+     *          open: function(Object), show: function(Object), hide: function(Object),
+     *          widget: Object}} popup  The popup to hide.
      */
     hide: function(popup)
     {
@@ -280,7 +351,11 @@ snapwebsites.Popup.prototype = {
      * fade out the popup. This function immediately removes the elements
      * from the DOM.
      *
-     * \param[in,out] popup  The popup object to forget.
+     * @param {{id: ?string, path: string,
+     *          top: number, left: number, width: number, height: number,
+     *          darken: number, position: string, title: string,
+     *          open: function(Object), show: function(Object), hide: function(Object),
+     *          widget: Object}} popup  The popup object to forget.
      */
     forget: function(popup)
     {
@@ -295,7 +370,7 @@ snapwebsites.Popup.prototype = {
      *
      * This function initializes the popup library.
      */
-    init: function()
+    _init: function()
     {
     }
 };
@@ -305,8 +380,7 @@ snapwebsites.Popup.prototype = {
 jQuery(document).ready(
     function()
     {
-        snapwebsites.Popup = new snapwebsites.Popup();
-        snapwebsites.Popup.init();
+        snapwebsites.PopupInstance = new snapwebsites.Popup();
     }
 );
 

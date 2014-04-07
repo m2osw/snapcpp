@@ -6,6 +6,205 @@
  * License: GPL 2.0
  */
 
+/** TOOLBAR **/
+#toolbar
+{
+	border: 1px solid black;
+	-moz-border-radius: 5px;
+	-webkit-border-radius: 5px;
+	border-radius: 5px;
+	padding: 5px;
+	float: left;
+	display: none;
+	position: absolute;
+	z-index: 1;
+	background: white;
+}
+#toolbar div.group
+{
+	float: left;
+	width: 4px;
+	height: 16px;
+	margin: 5px;
+	background: url(/images/editor/buttons.png) no-repeat 0 0;
+}
+#toolbar div.button
+{
+	float: left;
+	width: 16px;
+	height: 16px;
+	padding: 5px;
+	border: 1px solid white;
+}
+#toolbar div.button:hover
+{
+	background-color: #e0f0ff;
+	border: 1px solid #a0d0ff;
+	border-radius: 5px;
+}
+#toolbar div.button .image
+{
+	display: block;
+	width: 16px;
+	height: 16px;
+}
+#toolbar .horizontal-separator
+{
+	clear: both;
+	height: 3px;
+	margin: 19px 0 0;
+	float: none;
+	width: 100%;
+}
+#toolbar div.button.bold .image
+{
+	background: url(/images/editor/buttons.png) no-repeat -4px 0;
+}
+#toolbar div.button.italic .image
+{
+	background: url(/images/editor/buttons.png) no-repeat -132px 0;
+}
+#toolbar div.button.underline .image
+{
+	background: url(/images/editor/buttons.png) no-repeat -292px 0;
+}
+#toolbar div.button.strikeThrough .image
+{
+	background: url(/images/editor/buttons.png) no-repeat -244px 0;
+}
+#toolbar div.button.removeFormat .image
+{
+	background:url(/images/editor/buttons.png) no-repeat -228px 0;
+}
+#toolbar div.button.subscript .image
+{
+	background:url(/images/editor/buttons.png) no-repeat -260px 0;
+}
+#toolbar div.button.superscript .image
+{
+	background:url(/images/editor/buttons.png) no-repeat -276px 0;
+}
+#toolbar div.button.createLink .image
+{
+	background:url(/images/editor/buttons.png) no-repeat -20px 0;
+}
+#toolbar div.button.unlink .image
+{
+	background:url(/images/editor/buttons.png) no-repeat -308px 0;
+}
+#toolbar div.button.insertUnorderedList .image
+{
+	background:url(/images/editor/buttons.png) no-repeat -116px 0;
+}
+#toolbar div.button.insertOrderedList .image
+{
+	background: url(/images/editor/buttons.png) no-repeat -100px 0;
+}
+#toolbar div.button.outdent .image
+{
+	background: url(/images/editor/buttons.png) no-repeat -212px 0;
+}
+#toolbar div.button.indent .image
+{
+	background: url(/images/editor/buttons.png) no-repeat -52px 0;
+}
+#toolbar div.button.formatBlock .image
+{
+	background: url(/images/editor/buttons.png) no-repeat -36px 0;
+}
+#toolbar div.button.insertHorizontalRule .image
+{
+	background: url(/images/editor/buttons.png) no-repeat -84px 0;
+}
+#toolbar div.button.insertFieldset .image
+{
+	background: url(/images/editor/buttons.png) no-repeat -68px 0;
+}
+#toolbar div.button.justifyLeft .image
+{
+	background: url(/images/editor/buttons.png) no-repeat -180px 0;
+}
+#toolbar div.button.justifyCenter .image
+{
+	background: url(/images/editor/buttons.png) no-repeat -148px 0;
+}
+#toolbar div.button.justifyRight .image
+{
+	background: url(/images/editor/buttons.png) no-repeat -196px 0;
+}
+#toolbar div.button.justifyFull .image
+{
+	background: url(/images/editor/buttons.png) no-repeat -164px 0;
+}
+
+
+/** EDITOR LINK DIALOG **/
+#snap_editor_link_dialog
+{
+	display: none;
+	position: absolute;
+	z-index: 2;
+	float: left;
+	background: #f0f0ae;
+	padding: 0;
+	border: 1px solid black;
+	-moz-border-bottom-right-radius: 10px;
+	-webkit-border-bottom-right-radius: 10px;
+	border-bottom-right-radius: 10px;
+	-moz-border-bottom-left-radius: 10px;
+	-webkit-border-bottom-left-radius: 10px;
+	border-bottom-left-radius: 10px;
+}
+#snap_editor_link_page
+{
+	margin: 0;
+	padding: 10px;
+}
+#snap_editor_link_dialog div.line
+{
+	clear: both;
+	padding: 5px 3px;
+}
+#snap_editor_link_dialog label.limited
+{
+	display: block;
+	float: left;
+	width: 80px;
+}
+#snap_editor_link_dialog input
+{
+	display: block;
+	float: left;
+	width: 150px;
+}
+#snap_editor_link_dialog div.title
+{
+	background: black;
+	color: white;
+	font-weight: bold;
+	padding: 5px;
+}
+
+
+
+/** EDITOR EDIT BUTTON **/
+
+/* XXX we probably want to fix the name of this one!
+ * it not a tooltip, it is the little "Edit" button at this point...
+ */
+.editor-tooltip
+{
+	display: none;
+	padding: 10px;
+	position: absolute;
+	z-index: 1;
+	border: 1px solid black;
+	border-radius: 7px;
+	background: #f0fff0;
+	color: #0f000f;
+}
+
+
 /** most boxes (i.e. LINE BOX, TEXT AREA, etc.) **/
 .editable
 {
@@ -40,6 +239,17 @@
 	padding: 4px 0 0 5px;
 	pointer-events: none;
 }
+
+.editable.snap-editor:not(.disabled):hover
+{
+	box-shadow: inset 0 0 0 3px rgba(64, 192, 64, 0.5);
+}
+
+.editable.snap-editor [contenteditable="true"] .filter-token
+{
+	background-color:#e0e0e0;
+}
+
 
 /** IMAGE BOX **/
 .editable.image-box
@@ -116,6 +326,7 @@
 	border: 1px dashed #ffcc88;
 }
 
+
 /** CHECKMARK **/
 .editable.checkmark
 {
@@ -161,3 +372,5 @@
 {
 	outline: 1px dotted #ff0000;
 }
+
+
