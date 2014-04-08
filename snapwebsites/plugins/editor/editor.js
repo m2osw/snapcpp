@@ -27,8 +27,8 @@
 // This editor is based on the execCommand() function available in the
 // JavaScript environment of browsers.
 //
-// This version makes use of jQuery 1.10+ to access objects. It should be
-// compatible with older versions of jQuery.
+// This version makes use of jQuery 1.11+ to access objects. It probably is
+// compatible with a little bit older versions of jQuery.
 //
 // Source: https://developer.mozilla.org/en-US/docs/Rich-Text_Editing_in_Mozilla
 // Source: http://msdn.microsoft.com/en-us/library/ie/ms536419%28v=vs.85%29.aspx
@@ -42,6 +42,7 @@
 // Source: https://github.com/MrSwitch/dropfile
 
 // Code verification with Google Closure Compiler:
+// documentation: http://code.google.com/closure/compiler/
 // Source: http://code.google.com/p/closure-compiler/
 // Source: https://developers.google.com/closure/compiler/docs/error-ref
 // Source: http://www.jslint.com/
@@ -87,17 +88,42 @@
  *                           | Reference    |                 |
  *                           +-----------+  | Reference       |
  *                                       |  |                 |
- * +-------------------+  Reference   +--+--+------------+    |
- * |                   |<-------------+                  |    |
+ * +-------------------+              +--+--+------------+    |
+ * |                   |              |                  |    |
  * |   EditorBase      |              |   EditorToolbar  |    |
- * |                   |<----+        |                  |<---+
- * |                   |     |        |                  |    |
+ * |                   |  Reference   |                  |<---+
+ * |                   |<----+--------+                  |    |
  * +-------------------+     |        +------------------+    |
- *          ^ Inherit        |              ^                 |
- *          |                | Reference    | Reference       |
- *          |                |              |                 |
- * +--------+----------+     |        +-----+------------+    |
- * |                   |     +--------+                  |    |
+ *   ^            |          |                    ^           |
+ *   | Inherit    |          +-----------------+  | Reference |
+ *   |            |                            |  |           |
+ *   |            | Register (1,n)             |  |           |
+ *   |            v                            |  |           |
+ *   |     +--------------------+              |  |           |
+ *   |     |                    |  Inherit     |  |           |
+ *   |     |  EditorWidgetType  |<--+          |  |           |
+ *   |     |                    |   |          |  |           |
+ *   |     |                    |   |          |  |           |
+ *   |     +--------------------+   |          |  |           |
+ *   |            ^                 |          |  |           |
+ *   |            | Reference       |          |  |           |
+ *   |            |                 |          |  |           |
+ *   |            |   +--------------------+   |  |           |
+ *   |            |   |                    |   |  |           |
+ *   |            |   | EditorWidgetType...|   |  |           |
+ *   |            |   | (i.e. LineEdit,    |   |  |           |
+ *   |            |   | Button, Checkmark) |   |  |           |
+ *   |            |   +--------------------+   |  |           |
+ *   |            |                            |  |           |
+ *   |     +--------------------+              |  |           |
+ *   |     |                    |--------------+  |           |
+ *   |     |    EditorWidget    |              |  |           |
+ *   |     |                    | Create (1,n) |  |           |
+ *   |     |                    |<----------+  |  |           |
+ *   |     +--------------------+           |  |  |           |
+ *   |                                      |  |  |           |
+ * +-+-----------------+              +--------+--+------+    |
+ * |                   |              |                  |    |
  * |   Editor          |              |   EditorForm     |    |
  * |                   | Create (1,n) |                  |    |
  * |                   +------------->|                  |    |
@@ -496,11 +522,11 @@ snapwebsites.EditorSelection =
 //    }
 //},
 
-//    _findFirstVisibleTextNode: function(p)
+//    findFirstVisibleTextNode_: function(p)
 //    {
 //        var textNodes, nonWhitespaceMatcher = /\S/;
 //
-//        function __findFirstVisibleTextNode(p)
+//        function findFirstVisibleTextNode__(p)
 //        {
 //            var i, max, result, child;
 //
@@ -522,7 +548,7 @@ snapwebsites.EditorSelection =
 ////                    return result;
 ////                }
 //
-//                result = __findFirstVisibleTextNode(child);
+//                result = findFirstVisibleTextNode__(child);
 //                if(result)
 //                {
 //                    return result;
@@ -530,7 +556,7 @@ snapwebsites.EditorSelection =
 //            }
 //        }
 //
-//        return __findFirstVisibleTextNode(p);
+//        return findFirstVisibleTextNode__(p);
 //    },
 
 //    resetSelectionText: function()
@@ -545,15 +571,15 @@ snapwebsites.EditorSelection =
 //            return;
 //        }
 //
-//console.log("active is ["+this._activeElement+"]");
-//        var elem=this._findFirstVisibleTextNode(this._activeElement);//jQuery(this._activeElement).filter(":visible:text:first");
-//console.log("first elem = ["+this._activeElement+"/"+jQuery(elem).length+"] asis:["+elem+"] text:["+elem.nodeValue+"] node:["+jQuery(elem).prop("nodeType")+"]");
-////jQuery(this._activeElement).find("*").filter(":visible").each(function(i,e){
+//console.log("active is ["+this.activeElement_+"]");
+//        var elem=this.findFirstVisibleTextNode_(this.activeElement_);//jQuery(this.activeElement_).filter(":visible:text:first");
+//console.log("first elem = ["+this.activeElement_+"/"+jQuery(elem).length+"] asis:["+elem+"] text:["+elem.nodeValue+"] node:["+jQuery(elem).prop("nodeType")+"]");
+////jQuery(this.activeElement_).find("*").filter(":visible").each(function(i,e){
 ////console.log(" + child = ["+this+"] ["+jQuery(this).prop("tagName")+"] node:["+jQuery(this).prop("nodeType")+"]");
 ////});
 //
 //        range = document.createRange();//Create a range (a range is a like the selection but invisible)
-//        range.selectNodeContents(elem);//this._activeElement);//Select the entire contents of the element with the range
+//        range.selectNodeContents(elem);//this.activeElement_);//Select the entire contents of the element with the range
 //        //range.collapse(true);//collapse the range to the end point. false means collapse to end rather than the start
 //        selection = window.getSelection();//get the selection object (allows you to change selection)
 //        selection.removeAllRanges();//remove any selections already made
@@ -566,11 +592,92 @@ snapwebsites.EditorSelection =
 //        {
 //            range = sel.getRangeAt(0);
 //console.log('Current position: ['+range.startOffset+'] inside ['+jQuery(range.startContainer).attr("class")+']');
-//            range.setStart(this._activeElement, 0);
-//            range.setEnd(this._activeElement, 0);
+//            range.setStart(this.activeElement_, 0);
+//            range.setEnd(this.activeElement_, 0);
 //        }
 //    },
 
+};
+
+
+
+/** \brief Snap EditorWidgetTypeBase constructor.
+ *
+ * The editor works with widgets that are based on this class. Each widget
+ * is given a type such as "line-edit".
+ *
+ * To make it fully dynamic, we define a base class here and let other
+ * programmers add new widget types in their own .js files by extending
+ * this class.
+ *
+ * Classes must be registered with the EditorBase class function:
+ *
+ * \code
+ *    snapwebsites.EditorInstance.registerWidgetType(your_widget_type);
+ * \endcode
+ *
+ * This base class already implements a few things that are common to
+ * all widgets.
+ *
+ * @constructor
+ * @struct
+ */
+snapwebsites.EditorWidgetTypeBase = function()
+{
+    this.constructor = snapwebsites.EditorWidgetTypeBase;
+
+    // TBD
+    // Maybe at some point we'd want to create yet another layer
+    // so we can have an auto-register, but I'm not totally sure
+    // that would work...
+    //snapwebsites.EditorBase.registerWidgetType(this);
+
+    return this;
+};
+
+
+/** \brief The prototype of the EditorWidgetTypeBase base class.
+ *
+ * This object defines the fields and functions offered in the editor
+ * widget type object.
+ *
+ * It cannot reference any of the other objects (not "legally" at least).
+ *
+ * @struct
+ */
+snapwebsites.EditorWidgetTypeBase.prototype =
+{
+    /** \brief The constructor of this widget.
+     *
+     * The constructor one can use to build this type of object.
+     *
+     * @type {!function()}
+     */
+    constructor: snapwebsites.EditorWidgetTypeBase,
+
+    /** \brief Retrieve the name of this widget type.
+     *
+     * This function returns the widget name. It is used whenever you
+     * register the type in the snap editor object.
+     *
+     * \return The type of this editor widget type as a string.
+     */
+    getType: function() // virtual
+    {
+        throw Error("snapwebsites.EditorWidgetTypeBase.getType() was not overloaded.");
+    },
+
+    /** \brief Initialize a widget of this type.
+     *
+     * The parameter is really a snapwebsites.EditorWidget object,
+     * but at this point we did not yet define that object.
+     *
+     * @param {!Object} editor_widget  The widget being initialized.
+     */
+    initializeWidget: function(editor_widget) // virtual
+    {
+        throw Error("snapwebsites.EditorWidgetTypeinitializeWidget() doesn't do anything (yet)");
+    }
 };
 
 
@@ -589,6 +696,16 @@ snapwebsites.EditorSelection =
  */
 snapwebsites.EditorBase = function()
 {
+//#ifdef DEBUG
+    if(jQuery("body").hasClass("snap-editor-initialized"))
+    {
+        throw Error("Only one editor singleton can be created.");
+    }
+    jQuery("body").addClass("snap-editor-initialized");
+//#endif
+
+    this.constructor = snapwebsites.EditorBase;
+
     return this;
 };
 
@@ -598,12 +715,21 @@ snapwebsites.EditorBase = function()
  * This object defines the fields and functions offered in the editor
  * base object.
  *
- * It cannot reference any of the other objects (not "legally" at least).
+ * It cannot reference most of the other objects (not "legally" at least).
+ * It knows about widget types though.
  *
  * @struct
  */
 snapwebsites.EditorBase.prototype =
 {
+    /** \brief The constructor of this widget.
+     *
+     * The constructor one can use to build this type of object.
+     *
+     * @type {!function()}
+     */
+    constructor: snapwebsites.EditorBase,
+
     /** \brief The currently active element.
      *
      * The element considered active in the editor is the very element
@@ -614,16 +740,17 @@ snapwebsites.EditorBase.prototype =
      *
      * @private
      */
-    _activeElement: null,
+    activeElement_: null,
 
-    /** \brief The constructor of this object.
+    /** \brief The list of widget types understood by the editor.
      *
-     * Make sure to declare the constructor for proper inheritance
-     * support.
+     * This array is used to save the widget types when you call the
+     * registerWidgetType() function.
      *
-     * @type {function()}
+     * @type {Array.<snapwebsites.EditorWidgetType>}
+     * @private
      */
-    constructor: snapwebsites.EditorBase,
+    widgetTypes_: [],
 
     /** \brief Retrieve the toolbar object.
      *
@@ -659,7 +786,7 @@ snapwebsites.EditorBase.prototype =
             throw new Error("setActiveElement() must be called with a jQuery object.");
         }
 //#endif
-        this._activeElement = element;
+        this.activeElement_ = element;
     },
 
     /** \brief Retrieve the currently active element.
@@ -670,8 +797,8 @@ snapwebsites.EditorBase.prototype =
      */
     getActiveElement: function()
     {
-        //jQuery(snapwebsites.EditorInstance._activeElement)
-        return this._activeElement;
+        //jQuery(snapwebsites.EditorInstance.activeElement_)
+        return this.activeElement_;
     },
 
     /** \brief Refocus the active element.
@@ -682,9 +809,9 @@ snapwebsites.EditorBase.prototype =
      */
     refocus: function()
     {
-        if(this._activeElement)
+        if(this.activeElement_)
         {
-            this._activeElement.focus();
+            this.activeElement_.focus();
         }
     },
 
@@ -717,10 +844,91 @@ snapwebsites.EditorBase.prototype =
      *
      * @throws {Error}  The base class implementation just throws.
      */
-    get_link_dialog: function()
+    getLinkDialog: function()
     {
-        throw new Error("get_link_dialog() cannot directly be called on the EditorBase class.");
+        throw new Error("getLinkDialog() cannot directly be called on the EditorBase class.");
+    },
+
+    /** \brief Register a widget type.
+     *
+     * This function is used to register a widget type in the editor.
+     * This allows for any number of extensions and thus any number of
+     * cool advanced features that do not all need to be defined in the
+     * core of the editor.
+     *
+     * @param {snapwebsites.EditorWidgetType} widget_type  The widget type to register.
+     */
+    registerWidgetType: function(widget_type)
+    {
+        var name = widget_type.getType();
+        this.widgetTypes_[name] = widget_type;
+    },
+
+    /** \brief Check whether a type exists.
+     *
+     * This function checks the list of widget types to see whether
+     * \p type_name exists.
+     *
+     * @param {!string} type_name  The name of the type to check.
+     *
+     * @return {!boolean}  true if the type is defined.
+     */
+    hasWidgetType: function(type_name)
+    {
+        return this.widgetTypes_[type_name] instanceof snapwebsites.EditorWidgetTypeBase;
+    },
+
+    /** \brief This function is used to get a widget type.
+     *
+     * Widget types get registered with the registerWidgetType() function.
+     * Later you may retrieve them using this function.
+     *
+     * @throws {Error} If the named \p type was not yet registered, then this
+     *                 function throws.
+     *
+     * @param {string} type_name  The name of the widget type to retrieve.
+     *
+     * @return {snapwebsites.EditorWidgetType} The widget type object.
+     */
+    getWidgetType: function(type_name)
+    {
+        if(!(this.widgetTypes_[type_name] instanceof snapwebsites.EditorWidgetTypeBase))
+        {
+            throw new Error("getWidgetType() of type \"" + type_name + "\" is not yet defined, you cannot get it now.");
+        }
+        return this.widgetTypes_[type_name];
     }
+};
+
+
+/** \brief Check whether a block of HTML is empty or not.
+ *
+ * This function checks the HTML in the specified \p html parameter
+ * and after cleaning up the string, returns true if it ends up
+ * being empty.
+ *
+ * @param {string|jQuery} html
+ *
+ * @return {boolean}  true if the string can be considered empty.
+ */
+snapwebsites.EditorBase.isEmptyBlock = function(html) // static
+{
+//#ifdef DEBUG
+    if(typeof html != "string")
+    {
+        throw Error("snapwebsites.EditorBase.isEmptyBlock() called with a parameter which is not a string (" + (typeof html) + ")");
+    }
+//#endif
+
+    //
+    // replace all the nothingness by ""
+    // and see whether the result is the empty string
+    //
+    // WARNING: in the following, if html is empty on entry then
+    //          the result is still true but just a match against
+    //          the regex would return false on the empty string
+    //
+    return html.replace(/^(<br *\/?>| |\t|\n|\r|&nbsp;)+$/, "").length == 0;
 };
 
 
@@ -740,7 +948,9 @@ snapwebsites.EditorBase.prototype =
  */
 snapwebsites.EditorLinkDialog = function(editor_base)
 {
-    this._editor_base = editor_base;
+    this.constructor = snapwebsites.EditorLinkDialog;
+    this.editorBase_ = editor_base;
+
 
     // TODO: add support for a close without saving the changes!
     var html = "<div id='snap_editor_link_dialog'>"
@@ -754,7 +964,7 @@ snapwebsites.EditorLinkDialog = function(editor_base)
              + "<div style='clear:both;padding:0;'></div></div></div>";
 
     jQuery(html).appendTo("body");
-    this._linkDialogPopup = jQuery("#snap_editor_link_dialog");
+    this.linkDialogPopup_ = jQuery("#snap_editor_link_dialog");
 
     jQuery("#snap_editor_link_ok").click(this.close);
 
@@ -773,12 +983,11 @@ snapwebsites.EditorLinkDialog = function(editor_base)
  */
 snapwebsites.EditorLinkDialog.prototype =
 {
-    /** \brief The constructor of this object.
+    /** \brief The constructor of this widget.
      *
-     * Make sure to declare the constructor for proper inheritance
-     * support.
+     * The constructor one can use to build this type of object.
      *
-     * @type {function(snapwebsites.EditorBase)}
+     * @type {!function(snapwebsites.EditorBase)}
      */
     constructor: snapwebsites.EditorLinkDialog,
 
@@ -795,7 +1004,7 @@ snapwebsites.EditorLinkDialog.prototype =
      * @type {snapwebsites.EditorBase}
      * @private
      */
-    _editor_base: null,
+    editorBase_: null,
 
     /** \brief The jQuery Link Dialog object.
      *
@@ -807,7 +1016,7 @@ snapwebsites.EditorLinkDialog.prototype =
      * @type {jQuery}
      * @private
      */
-    _linkDialogPopup: null,
+    linkDialogPopup_: null,
 
     /** \brief The selection range when opening a dialog.
      *
@@ -819,7 +1028,7 @@ snapwebsites.EditorLinkDialog.prototype =
      * @type {Object}
      * @private
      */
-    _selection_range: null,
+    selectionRange_: null,
 
     /** \brief Open the link dialog.
      *
@@ -830,7 +1039,7 @@ snapwebsites.EditorLinkDialog.prototype =
      */
     open: function()
     {
-        this._selection_range = snapwebsites.EditorSelection.saveSelection();
+        this.selectionRange_ = snapwebsites.EditorSelection.saveSelection();
 
         var jtag;
         var selectionText = snapwebsites.EditorSelection.getSelectionText();
@@ -842,8 +1051,8 @@ snapwebsites.EditorLinkDialog.prototype =
             jtag = jQuery(links[0]);
             // it is already the anchor, we can use the text here
             // in this case we also have a URL and possibly a title
-            jQuery("#snap_editor_link_url").val( /** @type {string} */ (jtag.attr("href")));
-            jQuery("#snap_editor_link_title").val( /** @type {string} */ (jtag.attr("title")));
+            jQuery("#snap_editor_link_url").val(snapwebsites.Output.castToString(jtag.attr("href")));
+            jQuery("#snap_editor_link_title").val(snapwebsites.Output.castToString(jtag.attr("title")));
             new_window = jtag.attr("target") == "_blank";
         }
         else
@@ -879,14 +1088,14 @@ snapwebsites.EditorLinkDialog.prototype =
         }
         var pos = jtag.position();
         var height = jtag.outerHeight(true);
-        this._linkDialogPopup.css("top", pos.top + height);
+        this.linkDialogPopup_.css("top", pos.top + height);
         var left = pos.left - 5;
         if(left < 10)
         {
             left = 10;
         }
-        this._linkDialogPopup.css("left", left);
-        this._linkDialogPopup.fadeIn(300,function(){jQuery(focusItem).focus();});
+        this.linkDialogPopup_.css("left", left);
+        this.linkDialogPopup_.fadeIn(300,function(){jQuery(focusItem).focus();});
         snapwebsites.PopupInstance.darkenPage(150);
     },
 
@@ -897,11 +1106,11 @@ snapwebsites.EditorLinkDialog.prototype =
      */
     close: function()
     {
-        snapwebsites.EditorInstance._linkDialogPopup.fadeOut(150);
+        snapwebsites.EditorInstance.linkDialogPopup_.fadeOut(150);
         snapwebsites.PopupInstance.darkenPage(-150);
 
-        this._editor_base.refocus();
-        snapwebsites.EditorSelection.restoreSelection(this._selection_range);
+        this.editorBase_.refocus();
+        snapwebsites.EditorSelection.restoreSelection(this.selectionRange_);
         var url = jQuery("#snap_editor_link_url");
         document.execCommand("createLink", false, url.val());
         var links = snapwebsites.EditorSelection.getLinksInSelection();
@@ -911,7 +1120,7 @@ snapwebsites.EditorLinkDialog.prototype =
             var text = jQuery("#snap_editor_link_text");
             if(text.length > 0)
             {
-                jtag.text( /** @type {string} */ (text.val()));
+                jtag.text(snapwebsites.Output.castToString(text.val()));
             }
             // do NOT erase the existing text if the user OKed
             // without any text
@@ -919,7 +1128,7 @@ snapwebsites.EditorLinkDialog.prototype =
             var title = jQuery("#snap_editor_link_title");
             if(title.length > 0)
             {
-                jtag.attr("title", /** @type {string} */ (title.val()));
+                jtag.attr("title", snapwebsites.Output.castToString(title.val()));
             }
             else
             {
@@ -959,8 +1168,10 @@ snapwebsites.EditorLinkDialog.prototype =
  */
 snapwebsites.EditorToolbar = function(editor_base)
 {
+    this.constructor = snapwebsites.EditorToolbar;
+
     // save the reference to the editor base
-    this._editor_base = editor_base;
+    this.editorBase_ = editor_base;
 
     return this;
 };
@@ -975,12 +1186,11 @@ snapwebsites.EditorToolbar = function(editor_base)
  */
 snapwebsites.EditorToolbar.prototype =
 {
-    /** \brief The constructor of this object.
+    /** \brief The constructor of this widget.
      *
-     * Make sure to declare the constructor for proper inheritance
-     * support.
+     * The constructor one can use to build this type of object.
      *
-     * @type {function(snapwebsites.EditorBase)}
+     * @type {!function(snapwebsites.EditorBase)}
      */
     constructor: snapwebsites.EditorToolbar,
 
@@ -999,7 +1209,7 @@ snapwebsites.EditorToolbar.prototype =
      * @type {Array.<Array.<(Object|string|number|function(Array))>>}
      * @private
      */
-    _toolbarButtons: [
+    toolbarButtons_: [
         // TODO: support for translations, still need to determine how we
         //       want to do that, at this point I think it should be
         //       separate .js files and depending on the language, the user
@@ -1058,7 +1268,7 @@ snapwebsites.EditorToolbar.prototype =
         ["subscript", "Subscript (Ctrl-Shift-B)", 0x10042],
         ["superscript", "Superscript (Ctrl-Shift-P)", 0x10050],
         ["|", "|"],
-        ["createLink", "Manage Link (Ctrl-L)", 0x6004C, "http://snapwebsites.org/", "_linkDialog"],
+        ["createLink", "Manage Link (Ctrl-L)", 0x6004C, "http://snapwebsites.org/", snapwebsites.EditorToolbar.prototype.callbackLinkDialog_],
         ["unlink", "Remove Link (Ctrl-K)", 0x2004B],
         ["|", "-"],
         ["insertUnorderedList", "Bulleted List (Ctrl-Q)", 0x51],
@@ -1092,7 +1302,7 @@ snapwebsites.EditorToolbar.prototype =
         ["fontName", null, 0x10046, "Arial"],       // Ctrl-Shift-F -- TODO add font selector
         ["foreColor", null, 0x52, "red"],           // Ctrl-R -- TODO add color selector
         ["hiliteColor", null, 0x10048, "#ffff00"],  // Ctrl-Shift-H -- TODO add color selector
-        ["*", null, 0x54, snapwebsites.EditorToolbar.prototype.toggleToolbar]            // Ctrl-T
+        ["*", null, 0x54, "", snapwebsites.EditorToolbar.prototype.callbackToggleToolbar_]            // Ctrl-T
     ],
 
     /** \brief The editor base to access the active widget.
@@ -1108,21 +1318,19 @@ snapwebsites.EditorToolbar.prototype =
      * @type {snapwebsites.EditorBase}
      * @private
      */
-    _editor_base: null,
+    editorBase_: null,
 
     /** \brief The list of keys understood by the toolbar.
      *
      * Each toolbar button (and non-buttons) can have a key assigned to it.
-     * The _keys variable is a map of those keys to very quickly find the
+     * The keys_ variable is a map of those keys to very quickly find the
      * command that corresponds to a key. This table is generated at the
      * time the toolbar is initialized.
-     *
-     * \sa _init()
      *
      * @type {Array.<number>}
      * @private
      */
-    _keys: [],
+    keys_: [],
 
     /** \brief The jQuery toolbar
      *
@@ -1132,7 +1340,7 @@ snapwebsites.EditorToolbar.prototype =
      * @type {jQuery}
      * @private
      */
-    _toolbar: null,
+    toolbar_: null,
 
     /** \brief Whether the toolbar is currently visible.
      *
@@ -1162,7 +1370,7 @@ snapwebsites.EditorToolbar.prototype =
      * @type {boolean}
      * @private
      */
-    _toolbarVisible: false,
+    toolbarVisible_: false,
 
     /** \brief Whether the toolbar is shown at the bottom of the widget.
      *
@@ -1172,7 +1380,7 @@ snapwebsites.EditorToolbar.prototype =
      * @type {boolean}
      * @private
      */
-    _bottomToolbar: false,
+    bottomToolbar_: false,
 
     /** \brief Current height of the widget the toolbar is open for.
      *
@@ -1185,7 +1393,18 @@ snapwebsites.EditorToolbar.prototype =
      * @type {number}
      * @private
      */
-    _height: -1,
+    height_: -1,
+
+    /** \brief The identifier of the last timer created.
+     *
+     * Whenever the current widget loses focus, a timer is used to
+     * eventually hides the toolbar. The problem is that when someone
+     * clicks on the toolbar, the focus gets lost, so just closing
+     * the toolbar at that point is not a good idea.
+     *
+     * @type {number}
+     */
+    toolbarTimeoutID_: -1,
 
     /** \brief Call this function whenever the toolbar is about to be accessed.
      *
@@ -1196,45 +1415,45 @@ snapwebsites.EditorToolbar.prototype =
      *
      * @private
      */
-    _createToolbar: function()
+    createToolbar_: function()
     {
         var that = this, msie, html, originalName, isGroup, idx, max;
 
-        if(!this._toolbar)
+        if(!this.toolbar_)
         {
             msie = /msie/.exec(navigator.userAgent.toLowerCase()); // IE?
             html = "<div id=\"toolbar\">";
-            max = this._toolbarButtons.length;
+            max = this.toolbarButtons_.length;
 
             for(idx = 0; idx < max; ++idx)
             {
                 // the name of the image always uses the original name
-                originalName = this._toolbarButtons[idx][0];
+                originalName = this.toolbarButtons_[idx][0];
                 if(msie)
                 {
-                    if(this._toolbarButtons[idx][0] == "hiliteColor")
+                    if(this.toolbarButtons_[idx][0] == "hiliteColor")
                     {
-                        this._toolbarButtons[idx][0] = "backColor";
+                        this.toolbarButtons_[idx][0] = "backColor";
                     }
                 }
                 else
                 {
-                    if(this._toolbarButtons[idx][0] == "insertFieldset")
+                    if(this.toolbarButtons_[idx][0] == "insertFieldset")
                     {
-                        this._toolbarButtons[idx][0] = "insertHTML";
-                        this._toolbarButtons[idx][3] = "<fieldset><legend>Fieldset</legend><p>&nbsp;</p></fieldset>";
+                        this.toolbarButtons_[idx][0] = "insertHTML";
+                        this.toolbarButtons_[idx][3] = "<fieldset><legend>Fieldset</legend><p>&nbsp;</p></fieldset>";
                     }
                 }
-                isGroup = this._toolbarButtons[idx][0] == "|";
+                isGroup = this.toolbarButtons_[idx][0] == "|";
                 if(!isGroup)
                 {
-                    this._keys[this._toolbarButtons[idx][2] & 0x1FFFF] = idx;
+                    this.keys_[this.toolbarButtons_[idx][2] & 0x1FFFF] = idx;
                 }
-                if(this._toolbarButtons[idx][1] != null)
+                if(this.toolbarButtons_[idx][1] != null)
                 {
                     if(isGroup)
                     {
-                        if(this._toolbarButtons[idx][1] == "-")
+                        if(this.toolbarButtons_[idx][1] == "-")
                         {
                             // horizontal separator, create a new line
                             html += "<div class=\"horizontal-separator\"></div>";
@@ -1251,34 +1470,34 @@ snapwebsites.EditorToolbar.prototype =
                         html += "<div unselectable=\"on\" class=\"button "
                                 + originalName
                                 + "\" button-id=\"" + idx + "\" title=\""
-                                + this._toolbarButtons[idx][1] + "\">"
+                                + this.toolbarButtons_[idx][1] + "\">"
                                 + "<span class=\"image\"></span></div>";
                     }
                 }
             }
             html += "</div>";
             jQuery(html).appendTo("body");
-            this._toolbar = jQuery("#toolbar");
+            this.toolbar_ = jQuery("#toolbar");
 
-            this._toolbar
+            this.toolbar_
                 .click(function(e){
-                    that._editor_base.refocus();
+                    that.editorBase_.refocus();
                     e.preventDefault();
                 })
                 .mousedown(function(e){
                     // XXX: this needs to be handled through a form of callback
-                    snapwebsites.EditorInstance._cancel_toolbar_hide();
+                    snapwebsites.EditorInstance.cancelToolbarHide();
                     e.preventDefault();
                 })
                 .find(":any(.horizontal-separator .group)")
                     .click(function(){
-                        that._editor_base.refocus();
+                        that.editorBase_.refocus();
                     });
-            this._toolbar
+            this.toolbar_
                 .find(".button")
                     .click(function(){
                         var idx = this.attr("button-id");
-                        that._editor_base.refocus();
+                        that.editorBase_.refocus();
                         that.command(idx);
                     });
         }
@@ -1287,7 +1506,7 @@ snapwebsites.EditorToolbar.prototype =
     /** \brief Execute a toolbar command.
      *
      * This function expects the index of the command to execute. The
-     * command index is the index of the command in the _toolbarButtons
+     * command index is the index of the command in the toolbarButtons_
      * array.
      *
      * @throws {Error} In debug version, raise this error if something invalid
@@ -1300,18 +1519,18 @@ snapwebsites.EditorToolbar.prototype =
      */
     command: function(idx)
     {
-        var tag, internal_callback;
+        var tag, callback;
 
         // command is defined?
-        if(!this._toolbarButtons[idx])
+        if(!this.toolbarButtons_[idx])
         {
             return false;
         }
 
-console.log("run command "+idx+" "+this._toolbarButtons[idx][2]+"!!!");
+console.log("run command "+idx+" "+this.toolbarButtons_[idx][2]+"!!!");
 
         // require better selection for a link? (i.e. full link)
-        if(this._toolbarButtons[idx][2] & 0x20000)
+        if(this.toolbarButtons_[idx][2] & 0x20000)
         {
             snapwebsites.EditorSelection.trimSelectionText();
             tag = snapwebsites.EditorSelection.getSelectionBoundaryElement(true);
@@ -1323,133 +1542,73 @@ console.log("run command "+idx+" "+this._toolbarButtons[idx][2]+"!!!");
             }
         }
 
-        if(this._toolbarButtons[idx][2] & 0x40000)
+        if(this.toolbarButtons_[idx][0] == "*"
+        || this.toolbarButtons_[idx][2] & 0x40000)
         {
-            internal_callback = this._toolbarButtons[idx][4];
+            // "internal command" which does not return immediately
+            callback = this.toolbarButtons_[idx][4];
 //#ifdef DEBUG
-            if(typeof internal_callback != "function")
+            if(typeof callback != "function")
             {
-                throw Error("command() internal callback function \"" + internal_callback + "\" is not defined as a function");
+                throw Error("snapwebsites.Editor.command() callback function \"" + callback + "\" is not a function.");
             }
 //#endif
-            internal_callback.apply(this, this._toolbarButtons[idx]);
-            // the dialog OK button will do the rest of the work as
-            // required by this specific command
-            return true;
-        }
+            callback.apply(this, this.toolbarButtons_[idx]);
 
-        if(this._toolbarButtons[idx][0] == "*")
-        {
-            // "internal command"
-            internal_callback = this._toolbarButtons[idx][4];
-//#ifdef DEBUG
-            if(typeof internal_callback != "function")
+            if(this.toolbarButtons_[idx][0] == "*")
             {
-                throw Error("command() internal callback function \"" + internal_callback + "\" is not defined as a function");
+                // the dialog OK button will do the rest of the work as
+                // required by this specific command
+                return true;
             }
-//#endif
-            internal_callback.apply(this, this._toolbarButtons[idx]);
-
-            //switch(this._toolbarButtons[idx][3])
-            //{
-            //case "toggleToolbar":
-            //    this.toggleToolbar(""); // Note: using "" because google compiler "forces" us to
-            //    break;
-            //default:
-            //    throw new Error("command() unknown internal command " + this._toolbarButtons[idx][3] + " (index: " + idx + ")");
-            //}
         }
         else
         {
+            // TODO: We probably want to transform all of those calls
+            //       as callbacks just so it is uniform and clean...
+            //       (even if the callbacks end up using execCommand()
+            //       pretty much as is.)
+            //
             // if there is a toolbar parameter, make sure to pass it along
-            if(this._toolbarButtons[idx][3])
+            if(this.toolbarButtons_[idx][3])
             {
                 // TODO: need to define the toolbar parameter
                 //       (i.e. a color, font name, size, etc.)
-                document.execCommand( /** @type string */ (this._toolbarButtons[idx][0]), false, this._toolbarButtons[idx][3]);
+                document.execCommand(snapwebsites.Output.castToString(this.toolbarButtons_[idx][0]), false, this.toolbarButtons_[idx][3]);
             }
             else
             {
-                document.execCommand( /** @type string */ (this._toolbarButtons[idx][0]), false, null);
+                document.execCommand(snapwebsites.Output.castToString(this.toolbarButtons_[idx][0]), false, null);
             }
         }
-        this._editor_base.checkModified();
+        this.editorBase_.checkModified();
 
         return true;
     },
 
-    /** \brief Show, hide, or toogle the toolbar visibility.
+    /** \brief Process a keydown event.
      *
-     * This function is used to show (true), hide (false), or toggle
-     * (undefined, do not specify a parameter) the visibility of the
-     * toolbar.
+     * This function checks whether the key that was just pressed represents
+     * a command, if so execute it.
      *
-     * The function is responsible for placing the toolbar at the right
-     * place so it is visible and does not obstruct the field being
-     * edited.
+     * The function returns true if the key was used by the toolbar, which
+     * means it should not be used by anything else afterward.
      *
-     * \todo
-     * Ameliorate the positioning of the toolbar, and especially, make sure
-     * it remains visible even when editing very tall or wide widgets (i.e.
-     * the body of a page can span many \em visible pages.) See the
-     * checkPosition() function and the fact that we want ONE common function
-     * to calculate the position requirements.
+     * \note
+     * The function only makes use of keys if the Control key was pushed
+     * down.
      *
-     * \param[in] force  Whether to show (true), hide (false),
-     *                   or toggle (undefined) the visibility.
+     * @param {Event} e  The jQuery event object.
+     *
+     * @return {boolean}  If true, the key was used up by the toolbar process.
      */
-    toggleToolbar: function(force)
+    keydown: function(e)
     {
-        var toolbarHeight, pos, widget;
-
-        if(force === true || force === false)
+        if(e.ctrlKey)
         {
-            this._toolbarVisible = force;
+            return this.command(this.keys_[e.which + (e.shiftKey ? 0x10000 : 0)]);
         }
-        else
-        {
-            this._toolbarVisible = !this._toolbarVisible;
-        }
-
-        if(this._toolbarVisible)
-        {
-            // in this case we definitvely need to have a toolbar, create it
-            this._createToolbar();
-
-            // start showing the bar, then place it (when display is none,
-            // the size is incorrect, calling fadeIn() first fixes that
-            // problem.)
-            this._toolbar.fadeIn(300);
-            widget = this._editor_base.getActiveElement();
-            this._height = /** @type {number} */ (widget.parents('.snap-editor').height());
-            toolbarHeight = this._toolbar.outerHeight();
-            pos = widget.parents('.snap-editor').position();
-            this._bottomToolbar = pos.top < toolbarHeight + 5;
-            if(this._bottomToolbar)
-            {
-                // too low, put the toolbar at the bottom
-                this._toolbar.css("top", (pos.top + this._height + 3) + "px");
-            }
-            else
-            {
-                this._toolbar.css("top", (pos.top - toolbarHeight - 3) + "px");
-            }
-            this._toolbar.css("left", (pos.left + 5) + "px");
-        }
-        else if(this._toolbar) // if no toolbar anyway, exit
-        {
-            // make sure it is gone
-            this._toolbar.fadeOut(150);
-        }
-    },
-
-    /** \brief ToggleToobar callback to support the Ctrl-T key.
-     *
-     * This function is called
-     */
-    _toggleToolbar: function(a, b, c, d)
-    {
-        this.toggleToolbar('');
+        return false;
     },
 
     /** \brief Check whether the toolbar should be moved.
@@ -1483,16 +1642,104 @@ console.log("run command "+idx+" "+this._toolbarButtons[idx][2]+"!!!");
     {
         var newHeight, pos;
 
-        if(snapwebsites.EditorInstance._bottomToolbar)
+        if(snapwebsites.EditorInstance.bottomToolbar_)
         {
             newHeight = jQuery(this).outerHeight();
-            if(newHeight != snapwebsites.EditorInstance._height)
+            if(newHeight != snapwebsites.EditorInstance.height_)
             {
-                snapwebsites.EditorInstance._height = newHeight;
+                snapwebsites.EditorInstance.height_ = newHeight;
                 pos = jQuery(this).position();
-                snapwebsites.EditorInstance._toolbar.animate({top: pos.top + jQuery(this).height() + 3}, 200);
+                snapwebsites.EditorInstance.toolbar_.animate({top: pos.top + jQuery(this).height() + 3}, 200);
             }
         }
+    },
+
+    /** \brief Show, hide, or toogle the toolbar visibility.
+     *
+     * This function is used to show (true), hide (false), or toggle
+     * (undefined, do not specify a parameter) the visibility of the
+     * toolbar.
+     *
+     * The function is responsible for placing the toolbar at the right
+     * place so it is visible and does not obstruct the field being
+     * edited.
+     *
+     * \todo
+     * Ameliorate the positioning of the toolbar, and especially, make sure
+     * it remains visible even when editing very tall or wide widgets (i.e.
+     * the body of a page can span many \em visible pages.) See the
+     * checkPosition() function and the fact that we want ONE common function
+     * to calculate the position requirements.
+     *
+     * @param {boolean=} force  Whether to show (true), hide (false),
+     *                         or toggle (undefined) the visibility.
+     */
+    toggleToolbar: function(force)
+    {
+        var toolbarHeight, snap_editor_element, pos, widget;
+
+        if(force === true || force === false)
+        {
+            this.toolbarVisible_ = force;
+        }
+        else
+        {
+            this.toolbarVisible_ = !this.toolbarVisible_;
+        }
+
+        if(this.toolbarVisible_)
+        {
+            // make sure to cancel the fade out in case it is active
+            this.cancelToolbarHide();
+
+            // in this case we definitvely need to have a toolbar, create it
+            this.createToolbar_();
+
+            // start showing the bar, then place it (when display is none,
+            // the size is incorrect, calling fadeIn() first fixes that
+            // problem.)
+            this.toolbar_.fadeIn(300);
+            widget = this.editorBase_.getActiveElement();
+            snap_editor_element = widget.parents('.snap-editor');
+            this.height_ = snapwebsites.Output.castToNumber(snap_editor_element.height());
+            toolbarHeight = this.toolbar_.outerHeight();
+            pos = snap_editor_element.position();
+            this.bottomToolbar_ = pos.top < toolbarHeight + 5;
+            if(this.bottomToolbar_)
+            {
+                // too low, put the toolbar at the bottom
+                this.toolbar_.css("top", (pos.top + this.height_ + 3) + "px");
+            }
+            else
+            {
+                this.toolbar_.css("top", (pos.top - toolbarHeight - 3) + "px");
+            }
+            this.toolbar_.css("left", (pos.left + 5) + "px");
+        }
+        else if(this.toolbar_) // if no toolbar anyway, exit
+        {
+            // since we're hiding it now, cancel the toolbar timer
+            this.cancelToolbarHide();
+
+            // make sure it is gone
+            this.toolbar_.fadeOut(150);
+        }
+    },
+
+    /** \brief ToggleToobar callback to support the Ctrl-T key.
+     *
+     * This function is called when the user hits the Ctrl-T key. It toggles
+     * the visibility of the toolbar.
+     *
+     * @param {string} cmd  The command that generated this call.
+     * @param {?string} title  The command that generated this call.
+     * @param {number} key_n_flags  The command that generated this call.
+     * @param {string|number|null} param_opt  The command that generated this call.
+     * @param {function(this: snapwebsites.EditorToolbar, string, ?string, number, (string|number|null), function())} func_opt  The command that generated this call.
+     */
+    callbackToggleToolbar_: function(cmd, title, key_n_flags, param_opt, func_opt)
+    {
+        this.toggleToolbar();
     },
 
     /** \brief Callback to define a link.
@@ -1500,13 +1747,203 @@ console.log("run command "+idx+" "+this._toolbarButtons[idx][2]+"!!!");
      * This function is the callback that opens a popup to edit a link in
      * the editor. It makes use of the EditorLinkDialog.
      *
-     * \param[in] cmd  The command that generated this call.
+     * @param {string} cmd  The command that generated this call.
+     * @param {?string} title  The command that generated this call.
+     * @param {number} key_n_flags  The command that generated this call.
+     * @param {string|number|null} param_opt  The command that generated this call.
+     * @param {function(this: snapwebsites.EditorToolbar, string, ?string, number, (string|number|null), function())} func_opt  The command that generated this call.
      */
-    _linkDialog: function(cmd)
+    callbackLinkDialog_: function(cmd, title, key_n_flags, param_opt, func_opt)
     {
         // for now we can ignore cmd
 
-        this._editor_base.get_link_dialog().open();
+        this.editorBase_.getLinkDialog().open();
+    },
+
+    /** \brief Cancel the toolbar hide timer.
+     *
+     * When a widget loses focus we start a timer to be used to hide
+     * the toolbar. This widget may get the focus again before the
+     * toolbar gets completely hidden. This function can be called
+     * to cancel that timer.
+     */
+    cancelToolbarHide: function()
+    {
+        if(this.toolbarTimeoutID_ != -1)
+        {
+            // prevent hiding of the toolbar
+            clearTimeout(this.toolbarTimeoutID_);
+            this.toolbarTimeoutID_ = -1;
+        }
+    },
+
+    /** \brief Start the toolbar hide feature.
+     *
+     * This function starts a timer which, if not cancelled in time, will
+     * close the toolbar.
+     *
+     * It is used whenever a widget loses focus.
+     */
+    startToolbarHide: function()
+    {
+        var that = this;
+
+        this.toolbarTimeoutID_ = setTimeout(
+            function()
+            {
+                that.toggleToolbar(false);
+            },
+            200);
+    }
+};
+
+
+
+/** \brief Snap EditorWidget constructor.
+ *
+ * For each of the widget you add to your editor forms, one of these
+ * is created on the client system.
+ *
+ * @param {snapwebsites.EditorBase} editor_base  A reference to the editor base object.
+ * @param {snapwebsites.EditorForm} editor_form  A reference to the editor form object that owns this widget.
+ * @param {jQuery} widget  The jQuery object representing this editor toolbar.
+ *
+ * @return {snapwebsites.EditorWidget} The newly created object.
+ *
+ * @constructor
+ * @struct
+ */
+snapwebsites.EditorWidget = function(editor_base, editor_form, widget)
+{
+    var type = snapwebsites.Output.castToString(widget.attr("field_type"));
+
+    this.constructor = snapwebsites.EditorWidget;
+    this.editorBase_ = editor_base;
+    this.editorForm_ = editor_form;
+    this.widget_ = widget; // this is the jQuery widget
+    this.originalData_ = snapwebsites.Output.castToString(widget.html());
+    this.widgetType_ = editor_base.getWidgetType(type);
+
+    // this should be last
+    this.widgetType_.initializeWidget(this);
+
+    return this;
+};
+
+
+/** \brief The prototype of the EditorWidget.
+ *
+ * This object defines the fields and functions offered along the
+ * EditorWidget.
+ *
+ * @struct
+ */
+snapwebsites.EditorWidget.prototype =
+{
+    /** \brief The constructor of this widget.
+     *
+     * The constructor one can use to build this type of object.
+     *
+     * @type {!function(snapwebsites.EditorBase, snapwebsites.EditorForm, jQuery)}
+     */
+    constructor: snapwebsites.EditorWidget,
+
+    /** \brief The editor base object.
+     *
+     * The a reference back to the editor base object. This is pretty much
+     * the same as the snapwebsites.EditorInstance reference.
+     *
+     * @type {snapwebsites.EditorBase}
+     * @private
+     */
+    editorBase_: null,
+
+    /** \brief The form that owns this widget.
+     *
+     * This a reference back to the editor form object.
+     *
+     * @type {snapwebsites.EditorForm}
+     * @private
+     */
+    editorForm_: null,
+
+    /** \brief The jQuery widget.
+     *
+     * This parameter represents the jQuery widget. The actual visible
+     * editor widget.
+     *
+     * @type {jQuery}
+     * @private
+     */
+    widget_: null,
+
+    /** \brief The original data of the widget.
+     *
+     * Until saved, this data is taken from the existing widget at
+     * initialization time.
+     *
+     * @type {string}
+     * @private
+     */
+    originalData_: "",
+
+    /** \brief The type of this widget.
+     *
+     * The object representing the type of this widget. It is used to
+     * finish the initialization of the widget (i.e. connect to the
+     * signals, etc.)
+     *
+     * @type {snapwebsites.EditorWidgetTypeBase}
+     * @private
+     */
+    widgetType_: null,
+
+    /** \brief Check whether the widget was modified.
+     *
+     * This function compares the widget old and current data to see
+     * whether it changed.
+     *
+     * @return {boolean}  Whether the widget was modified (true) or not
+     *                    (false).
+     */
+    wasModified: function()
+    {
+        return this.originalData_ != this.widget_.html();
+    },
+
+    /** \brief Retrieve the editor form object.
+     *
+     * This function returns the editor form object.
+     *
+     * @return {snapwebsites.EditorForm} The editor form object.
+     */
+    getEditorForm: function()
+    {
+        return this.editorForm_;
+    },
+
+    /** \brief Retrieve the editor base object.
+     *
+     * This function returns the editor base object as passed to
+     * the constructor.
+     *
+     * @return {snapwebsites.EditorBase} The editor base object.
+     */
+    getEditorBase: function()
+    {
+        return this.editorBase_;
+    },
+
+    /** \brief Retrieve the jQuery widget.
+     *
+     * This function returns the jQuery widget attached to this
+     * editor widget.
+     *
+     * @return {jQuery} The jQuery widget as passed to the constructor.
+     */
+    getWidget: function()
+    {
+        return this.widget_;
     }
 };
 
@@ -1521,15 +1958,20 @@ console.log("run command "+idx+" "+this._toolbarButtons[idx][2]+"!!!");
  * are handled by the editor.
  *
  * @param {snapwebsites.EditorBase} editor_base  The base editor object.
+ * @param {jQuery} form_widget  The editor form DOM in a jQuery object.
  *
- * @return {snapwebsites.EditorForm}  The newly created object.
+ * @return {!snapwebsites.EditorForm}  The newly created object.
  *
  * @constructor
  * @struct
  */
-snapwebsites.EditorForm = function(editor_base)
+snapwebsites.EditorForm = function(editor_base, form_widget)
 {
-    this._editor_base = editor_base;
+    this.constructor = snapwebsites.EditorForm;
+    this.editorBase_ = editor_base;
+    this.formWidget_ = form_widget;
+    this.readyWidgets_();
+
     return this;
 };
 
@@ -1545,12 +1987,11 @@ snapwebsites.EditorForm = function(editor_base)
  */
 snapwebsites.EditorForm.prototype =
 {
-    /** \brief The constructor of this object.
+    /** \brief The constructor of this widget.
      *
-     * Make sure to declare the constructor for proper inheritance
-     * support.
+     * The constructor one can use to build this type of object.
      *
-     * @type {function(snapwebsites.EditorBase)}
+     * @type {!function(new: snapwebsites.EditorForm, snapwebsites.EditorBase, jQuery): !snapwebsites.EditorForm}
      */
     constructor: snapwebsites.EditorForm,
 
@@ -1562,7 +2003,57 @@ snapwebsites.EditorForm.prototype =
      * @type {snapwebsites.EditorBase}
      * @private
      */
-    _editor_base: null,
+    editorBase_: null,
+
+    /** \brief The jQuery object representing this form.
+     *
+     * This variable represents the DOM form as a jQuery object. It is
+     * given to the EditorForm on creation.
+     *
+     * @type {jQuery}
+     * @private
+     */
+    formWidget_: null,
+
+    /** \brief A map of widget types used by this form.
+     *
+     * This object represents a list of types that this form uses to handle
+     * its widgets. Each type defines functions to handle that widget
+     * as it needs to be handled and allows for easy extensions, etc.
+     *
+     * The map uses the name of the type as the index and true or false
+     * as the value. true is used when the type is not known to be
+     * provided by the system, false once it is known to be defined.
+     *
+     * @type {!Object}
+     * @private
+     */
+    usedTypes_: {},
+
+    /** \brief A jQuery array of widgets found in this form.
+     *
+     * This parameter is the jQuery array of widgets defined in this
+     * form.
+     *
+     * \bug
+     * At this time, dynamically adding or removing widgets is not supported.
+     *
+     * @type {jQuery}
+     */
+    editorWidgets_: null,
+
+    /** \brief Flag to know whether the widgets got initialized.
+     *
+     * We initialize the widgets as soon as we know that all the widget
+     * types were loaded. At that point we know that the entire form
+     * can be properly initialized.
+     *
+     * Once the flag is true, the form is fully initialized and
+     * functional.
+     *
+     * @type {boolean}
+     */
+    widgetInitialized_: false,
 
     /** \brief The popup dialog.
      *
@@ -1574,23 +2065,60 @@ snapwebsites.EditorForm.prototype =
      * @type {jQuery}
      * @private
      */
-    _saveDialogPopup: null,
+    saveDialogPopup_: null,
 
-    toolbarAutoVisible: true,
-    inPopup: false,
+    /** \brief Whether the toolbar is shown immediately on focus.
+     *
+     * This flag is used to know whether the toolbar should be shown on
+     * focus. If so, the value is true (the default). You may turn this
+     * value off using the setToolbarAutoVisible() function.
+     *
+     * @type {boolean}
+     * @private
+     */
+    toolbarAutoVisible_: true,
 
-    _unloadCalled: false,
-    _toolbarTimeoutID: -1,
-    _height: -1,
-    _lastFormId: 0,
-    _lastItemId: 0,
-    _uniqueId: 0, // for images at this point
-    _originalData: [],
-    _modified: [],
-    _linkDialogPopup: null,
-    _savedTextRange: null,
-    _savedRange: null,
-    _openDropdown: null,
+    inPopup_: false,
+
+    lastFormId_: 0,
+    lastItemId_: 0,
+    uniqueId_: 0, // for images at this point
+    originalData_: [],
+    modified_: [],
+    linkDialogPopup_: null,
+    savedTextRange_: null,
+    savedRange_: null,
+    openDropdown_: null,
+
+    /** \brief Return whether the toolbar should automatically be shown.
+     *
+     * When clicking in a widget, a form can automatically show the
+     * toolbar corresponding to that widget. This is true by default.
+     * The toolbar can be shown / hidden using the Ctlr-T key as well.
+     *
+     * \todo
+     * We'll also want to add a close button at some point
+     *
+     * @return {boolean} true if the toolbar should be shown on focus.
+     */
+    getToolbarAutoVisible: function()
+    {
+        return this.toolbarAutoVisible_;
+    },
+
+    /** \brief Change whether the toolbar should automatically be shown.
+     *
+     * Whenever a widget gets the focus we can automatically have the
+     * toolbar popup. By default, this is true. It can be changed to
+     * false using this function.
+     *
+     * @param {boolean} toolbar_auto_visible  Whether the toolbar should be
+     *                                        shown on widget focus.
+     */
+    setToolbarAutoVisible: function(toolbar_auto_visible)
+    {
+        this.toolbarAutoVisible_ = toolbar_auto_visible;
+    },
 
     /** \brief Massage the title to make it a URI.
      *
@@ -1602,7 +2130,7 @@ snapwebsites.EditorForm.prototype =
      *
      * @return {string}  The tweaked title. It may be an empty string.
      */
-    _titleToURI: function(title)
+    titleToURI_: function(title)
     {
         // force all lower case
         title = title.toLowerCase();
@@ -1619,12 +2147,14 @@ snapwebsites.EditorForm.prototype =
         return title;
     },
 
-    _saveData: function(mode)
+    saveData_: function(mode)
     {
+        var that = this;
+
         // TODO: this looks wrong, (this) is the editor, not a DOM object
         //       also there is no code setting that class, remove the
         //       class once done, or CSS using it either.
-        //       [see the _saveDialogStatus() function]
+        //       [see the saveDialogStatus_() function]
         if(jQuery(this).hasClass("editor-disabled"))
         {
             // TODO: translation support
@@ -1639,15 +2169,23 @@ snapwebsites.EditorForm.prototype =
         //       attributes), we will then need to test it here
         snapwebsites.PopupInstance.darkenPage(150);
 
-        var i, obj = {}, saved_data = {}, saved = [], edit_area, url, name,
-            keep_darken_page = false, value;
-        for(i = 1; i <= this._lastItemId; ++i)
+        var i,
+            obj = {},
+            saved_data = {},
+            saved = [],
+            edit_area,
+            url,
+            name,
+            keep_darken_page = false,
+            value;
+
+        for(i = 1; i <= this.lastItemId_; ++i)
         {
-            if(this._modified[i])
+            if(this.modified_[i])
             {
                 // verify one last time whether it was indeed modified
                 edit_area = jQuery("#editor-area-" + i);
-                if(this._originalData[i] != edit_area.html())
+                if(this.originalData_[i] != edit_area.html())
                 {
                     saved.push(i);
                     name = edit_area.parent().attr("field_name");
@@ -1677,11 +2215,11 @@ console.log(name + ": " + value);
         // buttons...
         if(name) // if name is defined we have at least one field defined
         {
-            this._saveDialogStatus(false); // disable buttons
+            this.saveDialogStatus_(false); // disable buttons
 
             obj["editor_save_mode"] = mode;
             obj["editor_session"] = jQuery("meta[name='editor_session']").attr("content");
-            obj["editor_uri"] = this._titleToURI( /** @type {string} */ (jQuery("[field_name='title'] .editor-content").text()));
+            obj["editor_uri"] = this.titleToURI_( /** @type {string} */ (jQuery("[field_name='title'] .editor-content").text()));
             url = jQuery("link[rel='canonical']").attr("href");
             url = url ? url : "/";
             keep_darken_page = true;
@@ -1689,14 +2227,16 @@ console.log(name + ": " + value);
                 type: "POST",
                 processData: true,
                 data: obj,
-                error: function(jqxhr, result_status, error_msg){
+                error: function(jqxhr, result_status, error_msg)
+                {
                     // TODO get the messages in the HTML and display those
                     //      in a popup; later we should have one error per
                     //      widget whenever a widget is specified
                     alert("An error occured while posting AJAX (status: " + result_status + " / error: " + error_msg + ")");
                     snapwebsites.PopupInstance.darkenPage(-150);
                 },
-                success: function(data, result_status, jqxhr){
+                success: function(data, result_status, jqxhr)
+                {
                     var i, j, modified, element_modified, results, doc, redirect, uri;
 
 //console.log(jqxhr);
@@ -1721,9 +2261,9 @@ console.log(name + ": " + value);
                                 edit_area = jQuery("#editor-area-" + i);
                                 name = edit_area.parent().attr("field_name");
                                 // specialized types save their HTML in saved_data
-                                snapwebsites.EditorInstance._originalData[i] = saved_data[name];
+                                that.originalData_[i] = saved_data[name];
                                 element_modified = saved_data[name] != edit_area.html();
-                                snapwebsites.EditorInstance._modified[i] = element_modified;
+                                that.modified_[i] = element_modified;
 
                                 modified = modified || element_modified;
                             }
@@ -1731,7 +2271,7 @@ console.log(name + ": " + value);
                             // those buttons
                             if(!modified)
                             {
-                                snapwebsites.EditorInstance._saveDialogPopup.fadeOut(300);
+                                that.saveDialogPopup_.fadeOut(300);
                             }
 
                             redirect = jqxhr.responseXML.getElementsByTagName("redirect");
@@ -1739,7 +2279,7 @@ console.log(name + ": " + value);
                             {
                                 // redirect the user after a successful save
                                 doc = document;
-                                if(snapwebsites.EditorInstance.inPopup)
+                                if(that.inPopup_)
                                 {
                                     // TODO: we probably want to support
                                     // multiple levels (i.e. a "_top" kind
@@ -1777,7 +2317,7 @@ console.log(name + ": " + value);
                     //       (probably generally unlikely... and it should
                     //       not have any effect because we re-compare the
                     //       data and do nothing if no modifications happened)
-                    snapwebsites.EditorInstance._saveDialogStatus(true); // enable buttons
+                    that.saveDialogStatus_(true); // enable buttons
                 },
                 dataType: "xml"
             });
@@ -1799,21 +2339,21 @@ console.log(name + ": " + value);
      *
      * @private
      */
-    _saveDialogStatus: function(new_status)
+    saveDialogStatus_: function(new_status)
     {
         // dialog even exists?
-        if(!this._saveDialogPopup)
+        if(!this.saveDialogPopup_)
         {
             return;
         }
 
         if(new_status)
         {
-            jQuery(this._saveDialogPopup).parent().children("a").removeClass("disabled");
+            jQuery(this.saveDialogPopup_).parent().children("a").removeClass("disabled");
         }
         else
         {
-            jQuery(this._saveDialogPopup).parent().children("a").addClass("disabled");
+            jQuery(this.saveDialogPopup_).parent().children("a").addClass("disabled");
         }
     },
 
@@ -1827,9 +2367,10 @@ console.log(name + ": " + value);
     // However, the branch the user decided to edit (i.e. with the query string
     // ...?a=edit&revision=1.2) needs to be taken in account as well.
     //
-    _saveDialog: function()
+    saveDialog_: function()
     {
-        if(!this._saveDialogPopup)
+        var that = this;
+        if(!this.saveDialogPopup_)
         {
             var html = "<style>"
                         + "#snap_editor_save_dialog{border:1px solid black;border-radius:7px;background-color:#fff8f0;padding:10px;position:fixed;top:10px;z-index:1;width:150px;}"
@@ -1853,11 +2394,11 @@ console.log(name + ": " + value);
                     + "<p class='snap_editor_save_draft_p'><a class='button' id='snap_editor_save_draft' href='#'>Save Draft</a></p>"
                     + "</div></div>";
             jQuery(html).appendTo("body");
-            this._saveDialogPopup = jQuery("#snap_editor_save_dialog");
-            this._saveDialogPopup.css("left", jQuery(window).outerWidth(true) - 190);
+            this.saveDialogPopup_ = jQuery("#snap_editor_save_dialog");
+            this.saveDialogPopup_.css("left", jQuery(window).outerWidth(true) - 190);
             jQuery("#snap_editor_publish")
                 .click(function(){
-                    snapwebsites.EditorInstance._saveData("publish");
+                    that.saveData_("publish");
                 });
             jQuery("#snap_editor_save")
                 .click(function(){
@@ -1869,7 +2410,7 @@ console.log(name + ": " + value);
                 });
             jQuery("#snap_editor_save_draft")
                 .click(function(){
-                    snapwebsites.EditorInstance._saveData("draft");
+                    that.saveData_("draft");
                 });
             if(jQuery("meta[name='path']").attr("content") == "admin/drafts")
             {
@@ -1877,37 +2418,40 @@ console.log(name + ": " + value);
                 jQuery(".snap_editor_save_new_branch_p").hide();
             }
         }
-        this._saveDialogStatus(true); // enable buttons
-        this._saveDialogPopup.fadeIn(300).css("display", "block");
+        this.saveDialogStatus_(true); // enable buttons
+        this.saveDialogPopup_.fadeIn(300).css("display", "block");
     },
 
-    _isEmptyBlock: function(html)
+    /** \brief Let the form know that one of its widgets changed.
+     *
+     * This signal implementation is called whenever the form detects
+     * that one of its widgets changed.
+     *
+     * In most cases it will show the "Save Dialog" although it may just
+     * want to ignore the fact. (i.e. some forms do not care about changes
+     * as their "save" button is always shown, for example, or it may
+     * reacted on this event directly and not give the user a choice to
+     * save the changes.)
+     *
+     * \todo
+     * Support a way to tell others to react to this change.
+     */
+    changed: function()
     {
-        // This test is too slow for large buffers so we do not
-        // do it for them; plus large buffers are not likely all empty!
-        if(html.length < 256)
-        {
-            // replace nothingness by "background" value
-            html = html.replace(/<br *\/?>| |\t|\n|\r|&nbsp;/g, "");
-            if(html.length == 0)
-            {
-                return true;
-            }
-        }
-        return false;
-    },
+        // tell others that something changed in the editor form
+        var e = jQuery.Event("formchange", {
+                form: this
+            });
+        this.formWidget_.trigger(e);
 
-    _cancel_toolbar_hide: function()
-    {
-        if(snapwebsites.EditorInstance._toolbarTimeoutID != -1)
+        if(!this.formWidget_.is(".no-save"))
         {
-            // prevent hiding of the toolbar
-            clearTimeout(snapwebsites.EditorInstance._toolbarTimeoutID);
+            this.saveDialog_();
         }
     },
 
     // The buffer is expected to be an ArrayBuffer() as read with a FileReader
-    _buffer2mime: function(buffer)
+    buffer2mime_: function(buffer)
     {
         var buf;
 
@@ -1948,8 +2492,9 @@ console.log(name + ": " + value);
         return "";
     },
 
-    _droppedImageAssign: function(e){
-        var img, id;
+    droppedImageAssign_: function(e)
+    {
+        var img, id, that = this;
 
         img = new Image();
         img.onload = function(){
@@ -2029,10 +2574,10 @@ console.log(name + ": " + value);
                 .appendTo(e.target.snapEditorElement);
 
             // now make sure the editor detects the change
-            saved_active_element = snapwebsites.EditorInstance._activeElement;
-            snapwebsites.EditorInstance._activeElement = e.target.snapEditorElement;
-            snapwebsites.EditorInstance.checkModified();
-            snapwebsites.EditorInstance._activeElement = saved_active_element;
+            saved_active_element = that.editorBase_.getActiveElement();
+            that.editorBase_.setActiveElement(e.target.snapEditorElement);
+            that.editorBase_.checkModified();
+            that.editorBase_.setActiveElement(saved_active_element);
         };
         img.src = e.target.result;
 
@@ -2044,10 +2589,11 @@ console.log(name + ": " + value);
         }
     },
 
-    _droppedImage: function(e){
+    droppedImage_: function(e)
+    {
         var mime, r, a, blob;
 
-        mime = snapwebsites.EditorInstance._buffer2mime(e.target.result);
+        mime = snapwebsites.EditorInstance.buffer2mime_(e.target.result);
         if(mime.substr(0, 6) == "image/")
         {
 //console.log("image type: "+mime.substr(6)+", target = ["+e.target+"]");
@@ -2056,7 +2602,7 @@ console.log(name + ": " + value);
             r = new FileReader;
             r.snapEditorElement = e.target.snapEditorElement;
             r.snapEditorFile = e.target.snapEditorFile;
-            r.onload = snapwebsites.EditorInstance._droppedImageAssign;
+            r.onload = this.droppedImageAssign_;
             a = [];
             a.push(e.target.snapEditorFile);
             blob = new Blob(a, {type: mime});
@@ -2064,15 +2610,89 @@ console.log(name + ": " + value);
         }
     },
 
-    _attach: function()
+    /** \brief Ready the widget for attachment.
+     *
+     * This function goes through the widgets and prepare them to be
+     * attached to their respective handlers. Because we want to have
+     * an extensible editor, this means we need to allow for "callbacks"
+     * to be defined on the extension and not on some internal object.
+     * This works by getting the list of widgets, retrieving their types,
+     * and looking for a class of that name. If the class does not exist
+     * (yet) then the form is not yet complete and the loader goes on.
+     * Once all the types are properly defined, the form is ready and
+     * the user can start editing.
+     *
+     * \note
+     * The widgets themselves are marked with ".editor-content". The
+     * editor always encapsulate those inside a div marked with
+     * ".snap-editor". So there is a one to one correlation between
+     * both of those.
+     */
+    readyWidgets_: function()
     {
-        var snap_editor, immediate, auto_focus, that = this;
+        var that = this, key;
 
-        if(jQuery("body").hasClass("snap-editor-initialized"))
+        // retrieve the widgets defined in that form
+        this.editorWidgets_ = this.formWidget_.find(".snap-editor");
+
+        // retrieve the field types for all the widgets
+        this.editorWidgets_.each(function(idx, w){
+                var type = jQuery(w).attr("field_type");
+                that.usedTypes_[type] = true;
+            });
+
+        // check whether all the types are available
+        // if so then the function finishes the initialization of the form
+        this.newTypeRegistered_();
+    },
+
+    /** \brief Check whether all types were registered and if so initialize everything.
+     *
+     * The function checks whether all the types necessary to initialize
+     * the widgets are available. If so, then all the form widgets get
+     * initialized.
+     */
+    newTypeRegistered_: function()
+    {
+        var that = this, key;
+
+        if(this.widgetInitialized_)
         {
             return;
         }
-        jQuery("body").addClass("snap-editor-initialized");
+
+        // check whether all the types are available
+        for(key in this.usedTypes_)
+        {
+            if(this.usedTypes_.hasOwnProperty(key)
+            && this.usedTypes_[key])
+            {
+                if(!this.editorBase_.hasWidgetType(key))
+                {
+                    // some types are missing, we're not ready
+                    // (this happens to forms using external widgets)
+                    return;
+                }
+
+                // this one was defined
+                this.usedTypes_[key] = false;
+            }
+        }
+
+        // if we reach here, all the types are available so we can
+        // properly initialize the form now
+        this.editorWidgets_.each(function(idx, w){
+                var widget = jQuery(w);
+                var name = widget.attr("field_name");
+                that.editorWidgets_[name] = new snapwebsites.EditorWidget(this.editorBase_, this, widget);
+            });
+
+        this.widgetInitialized_ = true;
+    },
+
+    attach_: function()
+    {
+        var snap_editor, immediate, auto_focus, that = this;
 
         // user has to click Edit to activate the editor
         snap_editor = jQuery(".snap-editor");
@@ -2095,68 +2715,20 @@ console.log(name + ": " + value);
 
         jQuery(".editor-form")
             .each(function(){
-                ++snapwebsites.EditorInstance._lastFormId;
+                ++that.lastFormId_;
                 jQuery(this)
-                    .attr("id", "editor-form-" + snapwebsites.EditorInstance._lastFormId)
+                    .attr("id", "editor-form-" + that.lastFormId_)
                     .find(".editor-content")
                     .each(function(){
-                        var that = jQuery(this);
+                        var that_element = jQuery(this);
                         var html = jQuery(this).html();
-                        this.objId = ++snapwebsites.EditorInstance._lastItemId;
-                        that.attr("id", "editor-area-" + this.objId);
-                        that.attr("refformid", snapwebsites.EditorInstance._lastFormId);
-                        snapwebsites.EditorInstance._originalData[this.objId] = html;
-                        snapwebsites.EditorInstance._modified[this.objId] = false;
+                        this.objId = ++that.lastItemId_;
+                        that_element.attr("id", "editor-area-" + this.objId);
+                        that_element.attr("refformid", that.lastFormId_);
+                        that.originalData_[this.objId] = html;
+                        that.modified_[this.objId] = false;
                         // replace nothingness by "background" values
-                        that.siblings(".snap-editor-background").toggle(snapwebsites.EditorInstance._isEmptyBlock(html));
-                    })
-                    .focus(function(){
-                        snapwebsites.EditorInstance._activeElement = this;
-                        if(!jQuery(this).is(".no-toolbar"))
-                        {
-                            snapwebsites.EditorInstance._cancel_toolbar_hide();
-                            if(snapwebsites.EditorInstance.toolbarAutoVisible)
-                            {
-                                snapwebsites.EditorInstance.toggleToolbar(true);
-                            }
-                        }
-                    })
-                    .blur(function(){
-                        // don't blur the toolbar immediately because if the user just
-                        // clicked on it, it would break it
-                        snapwebsites.EditorInstance._toolbarTimeoutID = setTimeout(function(){
-                            snapwebsites.EditorInstance.toggleToolbar(false);
-                        }, 200);
-                    })
-                    .keydown(function(e){
-                        var used = false;
-                        if(e.ctrlKey)
-                        {
-//console.log("ctrl "+(e.shiftKey?"+ shift ":"")+"= "+e.which+", idx = "+(snapwebsites.EditorInstance._keys[e.which + (e.shiftKey ? 0x10000 : 0)]));
-                            if(snapwebsites.EditorInstance.command(snapwebsites.EditorInstance._keys[e.which + (e.shiftKey ? 0x10000 : 0)]))
-                            {
-                                e.preventDefault();
-                                used = true;
-                            }
-                        }
-                        else if(e.which == 0x20)
-                        {
-                            if(jQuery(snapwebsites.EditorInstance._activeElement).parent().is(".checkmark"))
-                            {
-                                jQuery(snapwebsites.EditorInstance._activeElement).find(".checkmark-area").toggleClass("checked");
-                                this._editor_base.checkModified();
-                                used = true;
-                            }
-                        }
-                        if(!used)
-                        {
-                            if(jQuery(snapwebsites.EditorInstance._activeElement).is(".select-only"))
-                            {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                used = true;
-                            }
-                        }
+                        that_element.siblings(".snap-editor-background").toggle(snapwebsites.EditorBase.isEmptyBlock(html));
                     })
                     .on("dragenter",function(e){
                         e.preventDefault();
@@ -2214,8 +2786,8 @@ console.log(name + ": " + value);
                                     r = new FileReader;
                                     r.snapEditorElement = this;
                                     r.snapEditorFile = e.originalEvent.dataTransfer.files[i];
-                                    r.onload = accept_files ? snapwebsites.EditorInstance._droppedImage  // TODO: handle attachments (instead of just images)
-                                                            : snapwebsites.EditorInstance._droppedImage;
+                                    r.onload = accept_files ? that.droppedImage_  // TODO: handle attachments (instead of just images)
+                                                            : that.droppedImage_;
                                     // TBD: right now we only check the first few bytes
                                     //      but we may want to increase that size later
                                     //      to allow for JPEG that have the width and
@@ -2228,7 +2800,7 @@ console.log(name + ": " + value);
                         return false;
                     })
                     .on("keyup bind cut copy paste",function(){
-                        this._editor_base.checkModified();
+                        this.editorBase_.checkModified();
                     });
             });
 
@@ -2238,23 +2810,23 @@ console.log(name + ": " + value);
         // is "broken" and we cannot center them in their parent
         // which is something we want to do for image-box objects
         jQuery(".snap-editor.image-box").each(function(){
-            var that = jQuery(this);
-            var background = that.children(".snap-editor-background");
-            background.css("width", /** @type {number} */ (that.width()))
-                      .css("margin-top", (that.height() - background.height()) / 2);
+            var that_element = jQuery(this);
+            var background = that_element.children(".snap-editor-background");
+            background.css("width", snapwebsites.Output.castToNumber(that_element.width()))
+                      .css("margin-top", (snapwebsites.Output.castToNumber(that_element.height()) - snapwebsites.Output.castToNumber(background.height())) / 2);
         });
 
         jQuery(".editable.checkmark").click(function(e){
-            var that = jQuery(this);
+            var that_element = jQuery(this);
 
             // the default may do weird stuff, so avoid it!
             e.preventDefault();
             e.stopPropagation();
 
-            that.find(".checkmark-area").toggleClass("checked");
-            that.children(".editor-content").focus();
+            that_element.find(".checkmark-area").toggleClass("checked");
+            that_element.children(".editor-content").focus();
 
-            this._editor_base.checkModified();
+            this.editorBase_.checkModified();
         });
 
         jQuery(".editable.dropdown")
@@ -2262,62 +2834,62 @@ console.log(name + ": " + value);
                jQuery(this).children(".dropdown-items").css("position", "absolute");
             })
             .click(function(e){
-                var that = jQuery(this), visible, z;
+                var that_element = jQuery(this), visible, z;
 
                 // avoid default browser behavior
                 e.preventDefault();
                 e.stopPropagation();
 
-                visible = that.is(".disabled") || that.children(".dropdown-items").is(":visible");
-                if(snapwebsites.EditorInstance._openDropdown)
+                visible = that_element.is(".disabled") || that_element.children(".dropdown-items").is(":visible");
+                if(snapwebsites.EditorInstance.openDropdown_)
                 {
-                    snapwebsites.EditorInstance._openDropdown.fadeOut(150);
-                    snapwebsites.EditorInstance._openDropdown = null;
+                    that.openDropdown_.fadeOut(150);
+                    that.openDropdown_ = null;
                 }
                 if(!visible)
                 {
-                    snapwebsites.EditorInstance._openDropdown = that.children(".dropdown-items");
+                    that.openDropdown_ = that_element.children(".dropdown-items");
 
                     // setup z-index
                     // (reset itself first so we don't just +1 each time)
-                    snapwebsites.EditorInstance._openDropdown.css("z-index", 0);
+                    that.openDropdown_.css("z-index", 0);
                     z = jQuery("div.zordered").maxZIndex() + 1;
-                    snapwebsites.EditorInstance._openDropdown.css("z-index", z);
+                    that.openDropdown_.css("z-index", z);
 
-                    snapwebsites.EditorInstance._openDropdown.fadeIn(150);
+                    that.openDropdown_.fadeIn(150);
                 }
             })
             .find(".dropdown-items .dropdown-item").click(function(e){
-                var that = jQuery(this), content, items;
+                var that_element = jQuery(this), content, items;
 
                 // avoid default browser behavior
                 e.preventDefault();
                 e.stopPropagation();
 
-                items = that.parents(".dropdown-items");
+                items = that_element.parents(".dropdown-items");
                 items.toggle();
                 items.find(".dropdown-item").removeClass("selected");
-                that.addClass("selected");
+                that_element.addClass("selected");
                 content = items.siblings(".editor-content");
                 content.empty();
-                content.append(that.html());
-                if(that.attr("value") != "")
+                content.append(that_element.html());
+                if(that_element.attr("value") != "")
                 {
-                    content.attr("value", /** @type {string} */ (that.attr("value")));
+                    content.attr("value", /** @type {string} */ (that_element.attr("value")));
                 }
                 else
                 {
                     content.removeAttr("value");
                 }
 
-                this._editor_base.checkModified();
+                this.editorBase_.checkModified();
             });
         jQuery(".editable.dropdown .editor-content")
             .blur(function(e){
-                if(snapwebsites.EditorInstance._openDropdown)
+                if(that.openDropdown_)
                 {
-                    snapwebsites.EditorInstance._openDropdown.fadeOut(150);
-                    snapwebsites.EditorInstance._openDropdown = null;
+                    that.openDropdown_.fadeOut(150);
+                    that.openDropdown_ = null;
                 }
             });
 
@@ -2346,10 +2918,10 @@ console.log(name + ": " + value);
     isModified: function(widget)
     {
         // check whether this active element was modified
-        if(!this._modified[widget.objId])
+        if(!this.modified_[widget.objId])
         {
-            this._modified[widget.objId] = this._originalData[widget.objId] != jQuery(widget).html();
-            return this._modified[widget.objId];
+            this.modified_[widget.objId] = this.originalData_[widget.objId] != jQuery(widget).html();
+            return this.modified_[widget.objId];
         }
         return false;
     },
@@ -2360,9 +2932,12 @@ console.log(name + ": " + value);
      * checks whether the form is to be saved. If not then the function
      * just returns false.
      *
+     * @param {boolean} recheck  Whether to check each widget for modification
+     *                           instead of just the modified flags.
+     *
      * @return {boolean} true if the form was modified.
      */
-    wasModified: function(w)
+    wasModified: function(recheck)
     {
         return true;
     }
@@ -2379,20 +2954,26 @@ console.log(name + ": " + value);
  * \return The newly created object.
  *
  * @constructor
+ * @extends {snapwebsites.EditorBase}
  * @struct
  */
 snapwebsites.Editor = function()
 {
-    
+    snapwebsites.EditorBase.apply(this);
 
-    this._createToolbar();
-    this._attachToForms();
-    this._unload();
+    this.constructor = snapwebsites.Editor;
+    this.attachToForms_();
+    this.initUnload_();
 
     return this;
 };
 
 
+/** \brief Derive from EditorBase.
+ *
+ * The Editor derives from the EditorBase object and define some
+ * function that are otherwise considered to be virtual in the base.
+ */
 snapwebsites.Editor.prototype = new snapwebsites.EditorBase();
 
 
@@ -2401,9 +2982,10 @@ snapwebsites.Editor.prototype = new snapwebsites.EditorBase();
  * Make sure to declare the constructor for proper inheritance
  * support.
  *
- * @type {function()}
+ * @type {!function()}
  */
 snapwebsites.Editor.prototype.constructor = snapwebsites.Editor;
+
 
 /** \brief The toolbar object.
  *
@@ -2415,17 +2997,38 @@ snapwebsites.Editor.prototype.constructor = snapwebsites.Editor;
  * @type {snapwebsites.EditorToolbar}
  * @private
  */
-snapwebsites.Editor.prototype._toolbar = null;
+snapwebsites.Editor.prototype.toolbar_ = null;
+
+
+/** \brief List of EditorForm sessions.
+ *
+ * This variable member holds the array of EditorForm sessions as found
+ * in the DOM. Later additional entries can be added dynamically and
+ * existing entries can be removed (TBD.)
+ *
+ * The "session" attribute is expected to be defined in each tag marked as
+ * an "editor-form" (i.e. with class including the name "editor-form".)
+ *
+ * By default the list is empty, although if this editor scripts get loaded
+ * it is very unlikely that it will stay that way.
+ *
+ * @type {Array.<string>}
+ * @private
+ */
+snapwebsites.Editor.prototype.editorSessions_ = [];
+
 
 /** \brief List of EditorForm objects.
  *
- * This variable member holds the array of EditorForm objects created
- * on initialization or dynamically later.
+ * This variable member holds the map of EditorForm objects indexed by
+ * their sessions number (although those numbers are managed as strings).
+ * The numbers are listed in the editorSessions_ array.
  *
- * @type {Array.<snapwebsites.EditorForm>}
+ * @type {Object}
  * @private
  */
-snapwebsites.Editor.prototype._editor_forms = [];
+snapwebsites.Editor.prototype.editorForms_ = {};
+
 
 /** \brief Whether unload is being processed.
  *
@@ -2438,7 +3041,8 @@ snapwebsites.Editor.prototype._editor_forms = [];
  * @type {!boolean}
  * @private
  */
-snapwebsites.Editor.prototype._unloadCalled = false;
+snapwebsites.Editor.prototype.unloadCalled_ = false;
+
 
 /** \brief The link dialog.
  *
@@ -2448,16 +3052,8 @@ snapwebsites.Editor.prototype._unloadCalled = false;
  * @type {snapwebsites.EditorLinkDialog}
  * @private
  */
-snapwebsites.Editor.prototype._link_dialog = null;
+snapwebsites.Editor.prototype.linkDialog_ = null;
 
-/** \brief Create an editor toolbar.
- *
- * This function creates and initialize the editor toolbar.
- */
-snapwebsites.Editor.prototype._createToolbar = function()
-{
-    this._toolbar = new snapwebsites.EditorToolbar(this);
-};
 
 /** \brief Attach to the EditorForms defined in the DOM.
  *
@@ -2466,16 +3062,23 @@ snapwebsites.Editor.prototype._createToolbar = function()
  * that a \<div\> tag has class ".editor-form".
  *
  * The function is expected to be called only once.
+ *
+ * @private
  */
-snapwebsites.Editor.prototype._attachToForms = function()
+snapwebsites.Editor.prototype.attachToForms_ = function()
 {
-    var that = this;
+    var i, max, that = this;
 
+    // retrieve the list of forms using their sessions
     jQuery(".editor-form")
         .each(function(){
-            that._editor_forms.push(new snapwebsites.EditorForm(that));
+            var that_element = jQuery(this);
+            var session = snapwebsites.Output.castToString(that_element.attr("session"));
+            that.editorSessions_.push(session);
+            that.editorForms_[session] = new snapwebsites.EditorForm(that, that_element);
         });
 };
+
 
 /** \brief Capture the unload event.
  *
@@ -2483,51 +3086,78 @@ snapwebsites.Editor.prototype._attachToForms = function()
  * This is used to make sure that users will save their data before
  * they actually close their browser window or tab.
  *
- * The function loops through all the editor forms and if one or
- * more was modified, then it displays a message saying so.
- *
- * \return A message saying that something wasn't saved if it applies.
+ * @private
  */
-snapwebsites.Editor.prototype._unload = function()
+snapwebsites.Editor.prototype.initUnload_ = function()
 {
-    var that = this;
+    jQuery(window).bind("beforeunload", this.unload_);
+};
 
-    jQuery(window).bind("beforeunload", function()
+
+/** \brief Handle the unload event.
+ *
+ * This function is called whenever the user is about to close their
+ * browser window or tab. The function checks whether anything needs
+ * to be saved. If so, then make sure to ask the user whether he
+ * wants to save his changes before closing the window.
+ *
+ * @return {?string} A message saying that something wasn't saved if it
+ *                   applies, null otherwise.
+ *
+ * @private
+ */
+snapwebsites.Editor.prototype.unload_ = function()
+{
+    var i,                  // loop index
+        max,                // number of sessions
+        that = this;        // this pointer in the closure function
+
+    if(!this.unloadCalled_)
     {
-        var i, max;
-
-        if(!that._unloadCalled)
+        max = this.editorSessions_.length;
+        for(i = 0; i < max; ++i)
         {
-            max = that._editor_forms.length;
-            for(i = 0; i < max; ++i)
+            if(this.editorForms_[this.editorSessions_[i]].wasModified(true))
             {
-                if(that._editor_forms[i].wasModified(true))
-                {
-                    // add this flag and timeout to avoid a doulbe
-                    // "are you sure?" under Firefox browsers
-                    that._unloadCalled = true;
-                    setTimeout(function(){
-                            that._unloadCalled = false;
-                        }, 20);
+                // add this flag and timeout to avoid a double
+                // "are you sure?" under Firefox browsers
+                this.unloadCalled_ = true;
+                setTimeout(function(){
+                        that.unloadCalled_ = false;
+                    }, 20);
 
-                    // TODO: translation
-                    return "You made changes to this page! Click Cancel to avoid closing the window and Save your changes first.";
-                }
+                // TODO: translation
+                return "You made changes to this page! Click Cancel to avoid closing the window and Save your changes first.";
             }
         }
-    });
+    }
+
+    return null;
 };
+
+
+// TO BE REMOVED, TESTING WHETHER OVERWRITING A FUNCTION IS REPORTED BY ANYTHING...
+snapwebsites.Editor.prototype.unload_ = function()
+{
+};
+
 
 /** \brief Retrieve the toolbar object.
  *
  * This function returns a reference to the toolbar object.
  *
  * @return {snapwebsites.EditorToolbar} The toolbar object.
+ * @override
  */
 snapwebsites.Editor.prototype.getToolbar = function() // virtual
 {
-    return this._toolbar;
+    if(!this.toolbar_)
+    {
+        this.toolbar_ = new snapwebsites.EditorToolbar(this);
+    }
+    return this.toolbar_;
 };
+
 
 /** \brief Check whether a field was modified.
  *
@@ -2540,29 +3170,68 @@ snapwebsites.Editor.prototype.getToolbar = function() // virtual
  *
  * As a side effect it also lets the toolbar know so if it needs to be
  * moved, it happens.
+ *
+ * @override
  */
 snapwebsites.Editor.prototype.checkModified = function() // virtual
 {
-    var html, form_element, form_idx;
+    var active_element = this.getActiveElement(),
+        active_form = this.getActiveEditorForm();
 
     // checkMofified only applies to the active element so make sure
     // there is one when called
-    if(this._activeElement)
+    if(active_form)
     {
         // allow the toolbar to adjust itself (move to a new location)
-        this._toolbar.checkPosition();
+        this.toolbar_.checkPosition();
 
         // get the form in which this element is defined
         // and call the isModified() function on it
-        if(this._activeElement.editorForm.isModified(this._activeElement))
+        if(active_form.wasModified(false))
         {
-            this._saveDialog();
+            active_form.changed();
         }
 
         // replace nothingness by "background" value
-        jQuery(this._activeElement).siblings(".snap-editor-background").toggle(this._isEmptyBlock(jQuery(this._activeElement).html()));
+        active_element.siblings(".snap-editor-background").toggle(snapwebsites.EditorBase.isEmptyBlock(active_element.html()));
     }
 };
+
+
+/** \brief Retrieve the active editor form.
+ *
+ * This function gets the editor form that includes the currently
+ * active element.
+ *
+ * @return {snapwebsites.EditorForm}  The active editor form or null.
+ */
+snapwebsites.Editor.prototype.getActiveEditorForm = function()
+{
+    var active_element = this.getActiveElement(),
+        editor_element,
+        editor_form = null,
+        session;
+
+    if(active_element)
+    {
+        editor_element = active_element.parents(".editor-form");
+        if(editor_element)
+        {
+            session = editor_element.attr("session");
+            editor_form = this.editorForms_[session];
+        }
+//#ifdef DEBUG
+        if(!editor_form)
+        {
+            // should not happen or it means we whacked the session element
+            throw Error("There is an active element but no corresponding editor form.");
+        }
+//#endif
+    }
+
+    return null;
+};
+
 
 /** \brief Retrieve the link dialog.
  *
@@ -2580,13 +3249,310 @@ snapwebsites.Editor.prototype.checkModified = function() // virtual
  * @return {snapwebsites.EditorLinkDialog} The link dialog reference.
  * @override
  */
-snapwebsites.Editor.prototype.get_link_dialog = function()
+snapwebsites.Editor.prototype.getLinkDialog = function()
 {
-    if(!this._link_dialog)
+    if(!this.linkDialog_)
     {
-        this._link_dialog = new snapwebsites.EditorLinkDialog(this);
+        this.linkDialog_ = new snapwebsites.EditorLinkDialog(this);
     }
-    return this._link_dialog;
+    return this.linkDialog_;
+};
+
+
+
+/** \brief Snap EditorWidgetType constructor.
+ *
+ * The editor works with widgets that are based on this class. Each widget
+ * is given a type such as "line-edit".
+ *
+ * To make it fully dynamic, we define a base class here and let other
+ * programmers add new widget types in their own .js files by extending
+ * this class.
+ *
+ * Classes must be registered with the EditorBase class function:
+ *
+ * \code
+ *    snapwebsites.EditorInstance.registerWidgetType(your_widget_type);
+ * \endcode
+ *
+ * This base class already implements a few things that are common to
+ * all widgets.
+ *
+ * @constructor
+ * @extends {snapwebsites.EditorWidgetTypeBase}
+ * @struct
+ */
+snapwebsites.EditorWidgetType = function()
+{
+    snapwebsites.EditorWidgetTypeBase.apply(this);
+
+    this.constructor = snapwebsites.EditorWidgetType;
+
+    // TBD
+    // Maybe at some point we'd want to create yet another layer
+    // so we can have an auto-register, but I'm not totally sure
+    // that would work...
+    //snapwebsites.EditorBase.registerWidgetType(this);
+
+    return this;
+};
+
+
+/** \brief Initialize a widget of this type.
+ *
+ * @param {!Object} widget  The widget being initialized.
+ * @override
+ */
+snapwebsites.EditorWidgetType.prototype.initializeWidget = function(widget) // virtual
+{
+    var that = this;
+    var editor_widget = /** @type {snapwebsites.EditorWidget} */ (widget);
+    var w = editor_widget.getWidget();
+
+    w.focus(function()
+        {
+            editor_widget.getEditorBase().setActiveElement(w);
+
+            if(!jQuery(this).is(".no-toolbar"))
+            {
+                if(editor_widget.getEditorForm().getToolbarAutoVisible())
+                {
+                    editor_widget.getEditorBase().getToolbar().toggleToolbar(true);
+                }
+            }
+        });
+
+    w.blur(function()
+        {
+            // don't blur the toolbar immediately because if the user just
+            // clicked on it, it would break it
+            editor_widget.getEditorBase().getToolbar().startToolbarHide();
+        });
+
+    w.keydown(function(e)
+        {
+//console.log("ctrl "+(e.shiftKey?"+ shift ":"")+"= "+e.which+", idx = "+(snapwebsites.EditorInstance.keys_[e.which + (e.shiftKey ? 0x10000 : 0)]));
+            if(editor_widget.getEditorBase().getToolbar().keydown(e))
+            {
+                // toolbar used that key stroke
+                e.preventDefault();
+                e.stopPropagation();
+            }
+        });
+};
+
+
+
+/** \brief Editor widget type for Text Edit widgets.
+ *
+ * This widget defines the full text edit in the editor forms. This is
+ * an equivalent to the text area of a standard form.
+ *
+ * @constructor
+ * @extends {snapwebsites.EditorWidgetType}
+ * @struct
+ */
+snapwebsites.EditorWidgetTypeTextEdit = function()
+{
+    snapwebsites.EditorWidgetType.apply(this);
+
+    return this;
+};
+
+
+/** \brief Return "text-edit".
+ *
+ * Return the name of the text edit type.
+ *
+ * @return {string} The name of the text edit type.
+ * @override
+ */
+snapwebsites.EditorWidgetTypeTextEdit.prototype.getType = function() // virtual
+{
+    return "text-edit";
+};
+
+
+/** \brief Initialize the widget.
+ *
+ * This function initializes the text-edit widget.
+ *
+ * @param {!Object} widget  The widget being initialized.
+ * @override
+ */
+snapwebsites.EditorWidgetTypeTextEdit.prototype.initializeWidget = function(widget) // virtual
+{
+    snapwebsites.EditorWidgetType.prototype.initializeWidget.apply(this, [widget]);
+};
+
+
+
+/** \brief Editor widget type for Text Edit widgets.
+ *
+ * This widget defines the full text edit in the editor forms. This is
+ * an equivalent to the text area of a standard form.
+ *
+ * @return {!snapwebsites.EditorWidgetTypeLineEdit}
+ *
+ * @constructor
+ * @extends {snapwebsites.EditorWidgetTypeTextEdit}
+ * @struct
+ */
+snapwebsites.EditorWidgetTypeLineEdit = function()
+{
+    snapwebsites.EditorWidgetTypeTextEdit.apply(this);
+
+    return this;
+};
+
+
+/** \brief The constructor of this widget.
+ *
+ * The constructor one can use to build this type of object.
+ *
+ * @type {function(): !snapwebsites.EditorWidgetTypeLineEdit}
+ */
+snapwebsites.EditorWidgetTypeLineEdit.prototype.constructor = snapwebsites.EditorWidgetTypeLineEdit;
+
+
+/** \brief Return "line-edit".
+ *
+ * Return the name of the line edit type.
+ *
+ * @return {string} The name of the line edit type.
+ * @override
+ */
+snapwebsites.EditorWidgetTypeLineEdit.prototype.getType = function()
+{
+    return "line-edit";
+};
+
+
+/** \brief Initialize the widget.
+ *
+ * This function initializes the line-edit widget.
+ *
+ * @param {!Object} widget  The widget being initialized.
+ * @override
+ */
+snapwebsites.EditorWidgetTypeLineEdit.prototype.initializeWidget = function(widget) // virtual
+{
+    snapwebsites.EditorWidgetTypeTextEdit.prototype.initializeWidget.apply(this, [widget]);
+};
+
+
+
+/** \brief Editor widget type for Checkmark widgets.
+ *
+ * This widget defines a checkmark in the editor forms.
+ *
+ * @constructor
+ * @extends {snapwebsites.EditorWidgetType}
+ * @struct
+ */
+snapwebsites.EditorWidgetTypeCheckmark = function()
+{
+    snapwebsites.EditorWidgetType.apply(this);
+
+    return this;
+};
+
+
+/** \brief Return "checkmark".
+ *
+ * Return the name of the checkmark type.
+ *
+ * @return {string} The name of the checkmark type.
+ * @override
+ */
+snapwebsites.EditorWidgetTypeCheckmark.prototype.getType = function() // virtual
+{
+    return "checkmark";
+};
+
+
+/** \brief Initialize the widget.
+ *
+ * This function initializes the checkmark widget.
+ *
+ * @param {!Object} widget  The widget being initialized.
+ * @override
+ */
+snapwebsites.EditorWidgetTypeCheckmark.prototype.initializeWidget = function(widget) // virtual
+{
+    var editor_widget = /** @type {snapwebsites.EditorWidget} */ (widget);
+    var w = editor_widget.getWidget();
+
+    snapwebsites.EditorWidgetType.prototype.initializeWidget.apply(this, [widget]);
+
+    w.keydown(function(e)
+        {
+            if(e.which == 0x20) // spacebar
+            {
+                w.find(".checkmark-area").toggleClass("checked");
+                editor_widget.getEditorBase().checkModified();
+
+                e.preventDefault();
+                e.stopPropagation();
+            }
+        });
+};
+
+
+
+/** \brief Editor widget type for Dropdown widgets.
+ *
+ * This widget defines a dropdown in the editor forms.
+ *
+ * @constructor
+ * @extends {snapwebsites.EditorWidgetType}
+ * @struct
+ */
+snapwebsites.EditorWidgetTypeDropdown = function()
+{
+    snapwebsites.EditorWidgetType.apply(this);
+
+    return this;
+};
+
+
+/** \brief Return "dropdown".
+ *
+ * Return the name of the dropdown type.
+ *
+ * @return {string} The name of the dropdown type.
+ * @override
+ */
+snapwebsites.EditorWidgetTypeDropdown.prototype.getType = function() // virtual
+{
+    return "dropdown";
+};
+
+
+/** \brief Initialize the widget.
+ *
+ * This function initializes the dropdown widget.
+ *
+ * @param {!Object} widget  The widget being initialized.
+ * @override
+ */
+snapwebsites.EditorWidgetTypeDropdown.prototype.initializeWidget = function(widget) // virtual
+{
+    var editor_widget = /** @type {snapwebsites.EditorWidget} */ (widget);
+    var w = editor_widget.getWidget();
+
+    snapwebsites.EditorWidgetType.prototype.initializeWidget.apply(this, [widget]);
+
+    w.keydown(function(e)
+        {
+            // TODO: we need to add support for the arrow keys to change
+            //       the selection
+            if(w.is(".select-only"))
+            {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+        });
 };
 
 
@@ -2596,6 +3562,8 @@ jQuery(document).ready(
     function()
     {
         snapwebsites.EditorInstance = new snapwebsites.Editor();
+        snapwebsites.EditorInstance.registerWidgetType(new snapwebsites.EditorWidgetTypeTextEdit());
+        snapwebsites.EditorInstance.registerWidgetType(new snapwebsites.EditorWidgetTypeLineEdit());
     }
 );
 // vim: ts=4 sw=4 et

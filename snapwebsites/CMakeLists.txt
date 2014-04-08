@@ -147,8 +147,8 @@ add_custom_target(snap_code_analysis
 #    COMMAND cppcheck lib plugins src tests >"${PROJECT_BINARY_DIR}/analysis/cppcheck.out" 2>&1
 #    # Count # of TODO, XXX, TBD, FIXME, and \todo: (documented in doxygen)
 #    COMMAND sh tests/todo.sh "${PROJECT_BINARY_DIR}/analysis"
-#    # Lint the JavaScript code to find additional "errors"
-#    COMMAND sh tests/js-lint.sh "${PROJECT_BINARY_DIR}/analysis"
+    # Lint the JavaScript code to find additional "errors"
+    COMMAND sh tests/js-lint.sh "${PROJECT_BINARY_DIR}/analysis"
     # Compile the JavaScript code to verify most everything (strong typing, etc.)
     COMMAND sh tests/js-compile.sh "${PROJECT_BINARY_DIR}/analysis"
 

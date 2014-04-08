@@ -42,7 +42,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <xsl:param name="path"/>
     <xsl:param name="name"/>
     <widget path="{$path}">
-      <div>
+      <div field_type="image-box">
         <xsl:attribute name="field_name"><xsl:value-of select="$name"/></xsl:attribute>
         <xsl:attribute name="class"><xsl:if test="$action = 'edit'">snap-editor </xsl:if>editable image-box <xsl:value-of select="$name"/><xsl:if test="@drop or /editor-form/drop"> drop</xsl:if><xsl:if test="@immediate or /editor-form/immediate"> immediate</xsl:if><xsl:if test="$name = /editor-form/focus/@refid"> auto-focus</xsl:if> <xsl:value-of select="classes"/></xsl:attribute>
         <xsl:if test="background-value != ''">
@@ -98,7 +98,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <xsl:param name="path"/>
     <xsl:param name="name"/>
     <widget path="{$path}">
-      <div>
+      <div field_type="dropdown">
         <xsl:attribute name="field_name"><xsl:value-of select="$name"/></xsl:attribute>
         <xsl:attribute name="class"><xsl:if test="$action = 'edit'">snap-editor </xsl:if>editable <xsl:value-of select="classes"/> dropdown <xsl:value-of select="$name"/><xsl:if test="@immediate or /editor-form/immediate"> immediate</xsl:if><xsl:if test="@id = /editor-form/focus/@refid"> auto-focus</xsl:if><xsl:if test="state = 'disabled'"> disabled</xsl:if></xsl:attribute>
         <div>
@@ -174,7 +174,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <xsl:param name="name"/>
     <xsl:param name="value"/>
     <widget path="{$path}">
-      <div>
+      <div field_type="checkmark">
         <xsl:attribute name="field_name"><xsl:value-of select="$name"/></xsl:attribute>
         <xsl:attribute name="class"><xsl:if test="$action = 'edit'">snap-editor </xsl:if>editable <xsl:value-of select="classes"/> checkmark <xsl:value-of select="$name"/><xsl:if test="@immediate or /editor-form/immediate"> immediate</xsl:if><xsl:if test="@id = /editor-form/focus/@refid"> auto-focus</xsl:if><xsl:if test="state = 'disabled'"> disabled</xsl:if></xsl:attribute>
         <div>
@@ -227,7 +227,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <xsl:param name="path"/>
     <xsl:param name="name"/>
     <widget path="{$path}">
-      <div>
+      <div field_type="line-edit">
         <xsl:attribute name="field_name"><xsl:value-of select="$name"/></xsl:attribute>
         <xsl:attribute name="class"><xsl:if test="$action = 'edit'">snap-editor </xsl:if>editable line-edit <xsl:value-of select="$name"/><xsl:if test="@immediate or /editor-form/immediate"> immediate</xsl:if><xsl:if test="@id = /editor-form/focus/@refid"> auto-focus</xsl:if> <xsl:value-of select="classes"/><xsl:if test="state = 'disabled'"> disabled</xsl:if></xsl:attribute>
         <xsl:if test="background-value != ''">
@@ -282,7 +282,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <xsl:param name="path"/>
     <xsl:param name="name"/>
     <widget path="{$path}">
-      <a>
+      <a field_type="button">
         <!-- name required as a field name? xsl:attribute name="field_name"><xsl:value-of select="$name"/></xsl:attribute-->
         <xsl:attribute name="class"><xsl:value-of select="classes"/> button <xsl:value-of select="$name"/><xsl:if test="@id = /editor-form/focus/@refid"> auto-focus</xsl:if><xsl:if test="state = 'disabled'"> disabled</xsl:if></xsl:attribute>
         <xsl:if test="/editor-form/taborder/tabindex[@refid=$name]">

@@ -2,6 +2,7 @@
  * Name: form
  * Version: 0.0.1.12
  * Browsers: all
+ * Depends: output (>= 0.0.5)
  * Copyright: Copyright 2012-2014 (c) Made to Order Software Corporation  All rights reverved.
  * License: GPL 2.0
  */
@@ -143,14 +144,16 @@ snapwebsites.Form.prototype =
      *
      * @param {Element} widget  The widget element from which you want to
      *                          retrieve the value.
+     *
+     * @return {string}  The current value as a string.
      */
-    get_val: function(widget)
+    getVal: function(widget)
     {
         if(jQuery(widget).hasClass('input-with-background-value'))
         {
             return '';
         }
-        return jQuery(widget).val();
+        return snapwebsites.Output.castToString(jQuery(widget).val());
     },
 
     /** \brief Set the value of the widget.
@@ -164,7 +167,7 @@ snapwebsites.Form.prototype =
      * @param {string|number} value  The value of the text to set the
      *                               input widget.
      */
-    set_val: function(widget, value)
+    setVal: function(widget, value)
     {
         if(value || jQuery(widget).is(":focus"))
         {

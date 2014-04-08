@@ -10,7 +10,7 @@ mkdir -p $OUTPUT
 #   0131 -- Single-quoted string preferred over double-quoted string.
 #
 
-OPTIONS="--disable 0002,0110,0120,0131 --jslint_error=blank_lines_at_top_level --jslint_error=unused_private_members"
+OPTIONS="--disable 0002,0100,0110,0120,0131,0222 --jslint_error=blank_lines_at_top_level --jslint_error=unused_private_members"
 
 for j in `find . -type f -name '*.js'`
 do

@@ -31,6 +31,8 @@
  */
 snapwebsites.List = function()
 {
+    this.constructor = snapwebsites.List;
+
     return this;
 };
 
@@ -41,14 +43,6 @@ snapwebsites.List = function()
  */
 snapwebsites.List.prototype =
 {
-    /** \brief The constructor of this object.
-     *
-     * Make sure to declare the constructor for proper inheritance
-     * support.
-     *
-     * @type {function()}
-     */
-    constructor: snapwebsites.List
 };
 
 // auto-initialize

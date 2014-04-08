@@ -35,7 +35,8 @@
  */
 snapwebsites.Popup = function()
 {
-    return this._init();
+    this.constructor = snapwebsites.Popup;
+    return this;
 };
 
 
@@ -45,15 +46,6 @@ snapwebsites.Popup = function()
  */
 snapwebsites.Popup.prototype =
 {
-    /** \brief The constructor of this object.
-     *
-     * Make sure to declare the constructor for proper inheritance
-     * support.
-     *
-     * @type {function()}
-     */
-    constructor: snapwebsites.Popup,
-
     /** \brief A unique identifier.
      *
      * Each time a new popup is created it is given a new unique
@@ -64,8 +56,9 @@ snapwebsites.Popup.prototype =
      * it won't change.
      *
      * @type {number}
+     * @private
      */
-    _uniqueID: 0,
+    uniqueID_: 0,
 
     /** \brief The jQuery DOM object representing the popup.
      *
@@ -78,8 +71,9 @@ snapwebsites.Popup.prototype =
      * obstruct the view.
      *
      * @type {Object}
+     * @private
      */
-    _darkenPagePopup: null,
+    darkenPagePopup_: null,
 
     /** \brief Create a DIV used to darken the background.
      *
@@ -103,23 +97,23 @@ snapwebsites.Popup.prototype =
      */
     darkenPage: function(show)
     {
-        if (!this._darkenPagePopup)
+        if(!this.darkenPagePopup_)
         {
             // create the full screen fixed div
             jQuery("<div id='darkenPage'></div>").appendTo("body");
-            this._darkenPagePopup = jQuery("#darkenPage");
+            this.darkenPagePopup_ = jQuery("#darkenPage");
         }
 
-        this._darkenPagePopup.css("z-index", 1);
-        this._darkenPagePopup.css("z-index", jQuery("body").children().maxZIndex() + 1);
+        this.darkenPagePopup_.css("z-index", 1);
+        this.darkenPagePopup_.css("z-index", jQuery("body").children().maxZIndex() + 1);
 
-        if (show > 0)
+        if(show > 0)
         {
-            this._darkenPagePopup.fadeIn(show);
+            this.darkenPagePopup_.fadeIn(show);
         }
         else
         {
-            this._darkenPagePopup.fadeOut(-show);
+            this.darkenPagePopup_.fadeOut(-show);
         }
     },
 
@@ -191,8 +185,8 @@ snapwebsites.Popup.prototype =
         if(!popup.id)
         {
             // user did not specific an id, generate a new one
-            ++this._uniqueID;
-            popup.id = "snapPopup" + this._uniqueID;
+            ++this.uniqueID_;
+            popup.id = "snapPopup" + this.uniqueID_;
         }
         // popup already exists?
         popup.widget = jQuery("#" + popup.id);
@@ -258,7 +252,7 @@ snapwebsites.Popup.prototype =
 
             // 'b.width()' may return a jQuery object so we have to force the
             // type to a number to call f.attr().
-            f.attr("width", /** @type {number} */ (b.width()));
+            f.attr("width", snapwebsites.Output.castToNumber(b.width()));
 
             // the height of the body matches the height of the IFRAME so we
             // cannot use it here
@@ -268,7 +262,7 @@ snapwebsites.Popup.prototype =
 //          +", widget height = "+popup.widget.height()
 //          +", body top = "+b.offset().top);
 
-            f.attr("height", popup.widget.offset().top + popup.widget.height() - b.offset().top);
+            f.attr("height", popup.widget.offset().top + snapwebsites.Output.castToNumber(popup.widget.height()) - b.offset().top);
         }
         if(popup.open)
         {
@@ -364,14 +358,6 @@ snapwebsites.Popup.prototype =
             popup.widget.remove();
             popup.widget = null;
         }
-    },
-
-    /** \brief Initialize the popup library.
-     *
-     * This function initializes the popup library.
-     */
-    _init: function()
-    {
     }
 };
 
