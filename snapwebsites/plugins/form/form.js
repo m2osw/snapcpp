@@ -30,6 +30,8 @@
  * The Snap! Form is a singleton and should never be created by you. It
  * gets initialized automatically when this form.js file gets included.
  *
+ * @return {!snapwebsites.Form}  This object reference.
+ *
  * @constructor
  * @struct
  */
@@ -60,7 +62,7 @@ snapwebsites.Form.prototype =
      * Make sure to declare the constructor for proper inheritance
      * support.
      *
-     * @type {function(): snapwebsites.Form}
+     * @type {function(): !snapwebsites.Form}
      */
     constructor: snapwebsites.Form,
 

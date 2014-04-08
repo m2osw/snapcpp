@@ -30,12 +30,15 @@
  * The Snap! Output handles a popup capability that can be used to open
  * any number of popups.
  *
+ * @return {!snapwebsites.Popup}
+ *
  * @constructor
  * @struct
  */
 snapwebsites.Popup = function()
 {
     this.constructor = snapwebsites.Popup;
+
     return this;
 };
 
@@ -46,6 +49,15 @@ snapwebsites.Popup = function()
  */
 snapwebsites.Popup.prototype =
 {
+    /** \brief The constructor of this object.
+     *
+     * Make sure to declare the constructor for proper inheritance
+     * support.
+     *
+     * @type {function(): !snapwebsites.Popup}
+     */
+    constructor: snapwebsites.Popup,
+
     /** \brief A unique identifier.
      *
      * Each time a new popup is created it is given a new unique

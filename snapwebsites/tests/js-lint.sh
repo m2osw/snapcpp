@@ -6,8 +6,11 @@ mkdir -p $OUTPUT
 #
 # Disable:
 #   0002 -- Missing space before "("
+#   0100 -- 
 #   0110 -- Line too long (over 80 characters)
+#   0120 -- 
 #   0131 -- Single-quoted string preferred over double-quoted string.
+#   0222 -- 
 #
 
 OPTIONS="--disable 0002,0100,0110,0120,0131,0222 --jslint_error=blank_lines_at_top_level --jslint_error=unused_private_members"

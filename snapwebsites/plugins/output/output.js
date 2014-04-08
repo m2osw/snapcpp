@@ -48,6 +48,8 @@ var snapwebsites = {};
  * The Snap! Output is a singleton and should never be created by you. It
  * gets initialized automatically when this output.js file gets included.
  *
+ * @return {!snapwebsites.Output}  This object reference.
+ *
  * @constructor
  * @struct
  */
@@ -73,7 +75,7 @@ snapwebsites.Output.prototype =
      * Make sure to declare the constructor for proper inheritance
      * support.
      *
-     * @type {function()}
+     * @type {function(): !snapwebsites.Output}
      */
     constructor: snapwebsites.Output,
 

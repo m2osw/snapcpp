@@ -3136,12 +3136,6 @@ snapwebsites.Editor.prototype.unload_ = function()
 };
 
 
-// TO BE REMOVED, TESTING WHETHER OVERWRITING A FUNCTION IS REPORTED BY ANYTHING...
-snapwebsites.Editor.prototype.unload_ = function()
-{
-};
-
-
 /** \brief Retrieve the toolbar object.
  *
  * This function returns a reference to the toolbar object.
@@ -3564,6 +3558,8 @@ jQuery(document).ready(
         snapwebsites.EditorInstance = new snapwebsites.Editor();
         snapwebsites.EditorInstance.registerWidgetType(new snapwebsites.EditorWidgetTypeTextEdit());
         snapwebsites.EditorInstance.registerWidgetType(new snapwebsites.EditorWidgetTypeLineEdit());
+        snapwebsites.EditorInstance.registerWidgetType(new snapwebsites.EditorWidgetTypeCheckmark());
+        snapwebsites.EditorInstance.registerWidgetType(new snapwebsites.EditorWidgetTypeDropdown());
     }
 );
 // vim: ts=4 sw=4 et
