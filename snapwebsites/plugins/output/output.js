@@ -40,6 +40,244 @@ var snapwebsites = {};
 
 
 
+/** \brief Helper function for base classes that can be inherited from.
+ *
+ * Base classes (those that do not inherit from other classes) can call
+ * function function to get initialized so it works as expected.
+ *
+ * WARNING: the prototype is setup with this function so you cannot
+ *          use blah.prototype = { ... };.
+ *
+ * @param {!function(...)} base_class  The class to initialize.
+ */
+snapwebsites.base = function(base_class)
+{
+    base_class.prototype.constructor = base_class;
+};
+
+
+/** \brief Helper function for inheritance support.
+ *
+ * This function is used by classes that want to inherit from another
+ * class. At this point we do not allow multiple inheritance though.
+ *
+ * The following shows you how it works:
+ *
+ * \code
+ * // class A -- constructor
+ * snapwebsites.A = function()
+ * {
+ *      ...
+ * };
+ *
+ * // class A -- a method
+ * snapwebsites.A.prototype.someMethod = function()
+ * {
+ *      ...
+ * }
+ *
+ * // class B -- constructor
+ * snapwebsites.B = function()
+ * {
+ *      ...
+ * };
+ *
+ * // class B : public A -- define inheritance
+ * snapwebsites.inherits(snapwebsites.B, snapwebsites.A);
+ *
+ * // class B : extend with more functions
+ * snapwebsites.B.prototype.moreStuff = function()
+ * {
+ *      ...
+ * };
+ *
+ * // class B : override function
+ * snapwebsites.B.prototype.someMethod = function()
+ * {
+ *      ...
+ *      // call super class method (optional)
+ *      this.superClass_.someMethod();
+ *      ...
+ * };
+ * \endcode
+ *
+ * @param {!function(...)} child_class  The constructor of the child
+ *                                      class (the on inheriting.)
+ * @param {!function(...)} super_class  The constructor of the parent
+ *                                      class (the to inherit from.)
+ */
+snapwebsites.inherits = function(child_class, super_class) // static
+{
+    /** 
+     * @constructor
+     */
+    function F() {};
+
+    if(Object.create)
+    {
+        // modern inheriting is probably faster than
+        // old browsers (and at some point we will
+        // have the preprocessor which will select
+        // one or the other part)
+        child_class.prototype = Object.create(super_class.prototype);
+    }
+    else
+    {
+        // older browsers don't have Object.create and
+        // this is how you inherit properly in that case
+        F.prototype = super_class.prototype;
+        child_class.prototype = new F();
+        child_class.prototype.constructor = child_class;
+    }
+    child_class.prototype.superClass_ = super_class.prototype;
+};
+
+
+/** \brief A template used to define a set of buffer to MIME type scanners.
+ *
+ * This template class defines a function used by the Output.bufferToMIME()
+ * function to determine the type of a file. The function expects a buffer
+ * which is converts to a Uint8Array and sends to the
+ * BufferToMIMETemplate.bufferToMIME() and overrides of that function to
+ * determine the different file types supported (i.e. accepted) by the
+ * system.
+ *
+ * @return {!snapwebsites.BufferToMIMETemplate} A reference to this new object.
+ *
+ * @constructor
+ */
+snapwebsites.BufferToMIMETemplate = function()
+{
+    this.constructor = snapwebsites.BufferToMIMETemplate;
+
+    return this;
+};
+
+
+/** \brief Check a buffer magic codes.
+ *
+ * This function is expected to check the different MIME types supported
+ * by your plugin. The function must return a string representing a MIME
+ * type. If your function does not recognize that MIME type, then return
+ * an empty string.
+ *
+ * The template function just returns "" so you do not need to call it.
+ *
+ * @param {!Uint8Array} buf  The buffer of data to be checked.
+ *
+ * @return {!string}  The MIME type you determined, or the empty string.
+ */
+snapwebsites.BufferToMIMETemplate.prototype.bufferToMIME = function(buf)
+{
+    return "";
+};
+
+
+
+/** \brief Check for "system" images.
+ *
+ * This function checks for well known images. The function is generally
+ * very fast because it checks only the few very well known image file
+ * formats.
+ *
+ * @return {!snapwebsites.BufferToMIMESystemImages} A reference to this new
+ *                                                  object.
+ *
+ * @extends {snapwebsites.BufferToMIMETemplate}
+ * @constructor
+ */
+snapwebsites.BufferToMIMESystemImages = function()
+{
+    snapwebsites.BufferToMIMETemplate.apply(this);
+
+    this.constructor = snapwebsites.BufferToMIMESystemImages;
+
+    return this;
+};
+
+
+/** \brief Chain up the extension.
+ *
+ * This is the chain between this class and it's super.
+ */
+snapwebsites.BufferToMIMESystemImages.prototype = new snapwebsites.BufferToMIMETemplate;
+
+
+/** \brief Restore the constructor function.
+ *
+ * This function restores the constructor function of this class.
+ *
+ * @type {function(new: snapwebsites.BufferToMIMESystemImages): !snapwebsites.BufferToMIMESystemImages}
+ */
+snapwebsites.BufferToMIMESystemImages.prototype.constructor = snapwebsites.BufferToMIMESystemImages;
+
+
+/** \brief Check for most of the well known image file formats.
+ *
+ * This function checks for the well known image file formats that
+ * we generally want the system to support. This includes:
+ *
+ * \li JPEG
+ * \li PNG
+ * \li GIF
+ *
+ * Other formats will be added with time:
+ *
+ * \li SVG
+ * \li BMP/ICO
+ * \li TIFF
+ * \li ...
+ *
+ * @param {!Uint8Array} buf  The array of data to check for a known magic.
+ *
+ * @return {!string} The MIME type or the empty string if empty.
+ *
+ * @override
+ */
+snapwebsites.BufferToMIMESystemImages.prototype.bufferToMIME = function(buf)
+{
+    // Image JPEG
+    if(buf[0] == 0xFF
+    && buf[1] == 0xD8
+    && buf[2] == 0xFF
+    && buf[3] == 0xE0
+    && buf[4] == 0x00
+    && buf[5] == 0x10
+    && buf[6] == 0x4A  // J
+    && buf[7] == 0x46  // F
+    && buf[8] == 0x49  // I
+    && buf[9] == 0x46) // F
+    {
+        return "image/jpeg";
+    }
+
+    // Image PNG
+    if(buf[0] == 0x89
+    && buf[1] == 0x50  // P
+    && buf[2] == 0x4E  // N
+    && buf[3] == 0x47  // G
+    && buf[4] == 0x0D  // \r
+    && buf[5] == 0x0A) // \n
+    {
+        return "image/png";
+    }
+
+    // Image GIF
+    if(buf[0] == 0x47  // G
+    && buf[1] == 0x49  // I
+    && buf[2] == 0x46  // F
+    && buf[3] == 0x38  // 8
+    && buf[4] == 0x39  // 9
+    && buf[5] == 0x61) // a
+    {
+        return "image/gif";
+    }
+
+    return "";
+};
+
+
+
 /** \brief Snap Output Manipulations.
  *
  * This class initializes and handles the different output objects.
@@ -79,6 +317,24 @@ snapwebsites.Output.prototype =
      */
     constructor: snapwebsites.Output,
 
+    /** \brief Array of objects that know about magic codes.
+     *
+     * This variable member holds an array of objects that can convert a
+     * buffer magic code in a MIME type. The system offers a limited number
+     * of types recognition. In most cases that is enough, although at times
+     * it would be more than useful to support many more formats and this
+     * array is used for that purpose. To register additional supportive
+     * classes, use the function:
+     *
+     * \code
+     * registerBufferToMIME(MyBufferToMIMEExtension);
+     * \endcode
+     *
+     * @type {Array.<snapwebsites.BufferToMIMETemplate>}
+     * @private
+     */
+    registeredBufferToMIME_: [],
+
     /** \brief Internal function used to display the error messages.
      *
      * This function is used to display the error messages that occured
@@ -106,6 +362,71 @@ snapwebsites.Output.prototype =
             .click(function(){
                 jQuery(this).fadeOut(300);
             });
+    },
+
+    /** \brief Determine the MIME type from a buffer of data.
+     *
+     * Assuming you got a buffer (generally from a file dropped over a widget)
+     * you may want to determine what type of file it is. This function uses
+     * the Magic information of the file to return the supposed type (it may
+     * still be lying to us...)
+     *
+     * The function returns a MIME string such as "image/png".
+     *
+     * \todo
+     * Add code to support all the magic as defined by the tool "file".
+     * (once we find the source of magic, it will be easy, now the file
+     * is compiled...) Source files are on ftp://ftp.astron.com/pub/file/
+     * (the home page is http://www.darwinsys.com/file/ )
+     *
+     * @param {ArrayBuffer} buffer  The buffer to check for a Magic.
+     *
+     * @return {string}  The MIME type of the file or the empty string for any
+     *                   unknown (unsupported) file.
+     */
+    bufferToMIME: function(buffer)
+    {
+        var buf = new Uint8Array(buffer),   // buffer to be checked
+            i,                              // loop index
+            max,                            // # of registered MIME parsers
+            mime;                           // the resulting MIME type
+
+        // Give other plugins a chance to determine the MIME type
+        max = this.registeredBufferToMIME_.length;
+        for(i = 0; i < max; ++i)
+        {
+            mime = this.registeredBufferToMIME_[i].bufferToMIME(buf);
+            if(mime)
+            {
+                return mime;
+            }
+        }
+
+        // unknown magic
+        return "";
+    },
+
+    /** \brief Register an object which is capable of determine a MIME type.
+     *
+     * This function allows you to register an object that defines a
+     * bufferToMIME() function:
+     *
+     * \code
+     * myObject.prototype.bufferToMIME(buf)
+     * {
+     *    ...
+     * }
+     * \endcode
+     *
+     * That function is passed a Uint8Array buffer. The size of the buffer
+     * must be checked. It may be very small or even empty.
+     *
+     * @param {snapwebsites.BufferToMIMETemplate} buffer_to_mime  An object
+     *        that derives from the BufferToMIMETemplate definition.
+     */
+    registerBufferToMIME: function(buffer_to_mime)
+    {
+        this.registeredBufferToMIME_.push(buffer_to_mime);
     }
 };
 
@@ -188,6 +509,7 @@ jQuery(document).ready(
     function()
     {
         snapwebsites.OutputInstance = new snapwebsites.Output();
+        snapwebsites.OutputInstance.registerBufferToMIME(new snapwebsites.BufferToMIMESystemImages());
     }
 );
 

@@ -374,3 +374,46 @@
 }
 
 
+/** SAVE DIALOG **/
+#snap_editor_save_dialog
+{
+	border: 1px solid black;
+	border-radius: 7px;
+	background-color: #fff8f0;
+	padding: 10px;
+	position: fixed;
+	top: 10px;
+	z-index: 1;
+	width: 150px;
+}
+
+#snap_editor_save_dialog .title
+{
+	text-align: center;
+}
+
+#snap_editor_save_dialog .button
+{
+	border: 1px solid black;
+	border-radius: 5px;
+	background-color: #b0e8a0;
+	display: block;
+	padding: 10px;
+	margin: 10px;
+	font-weight: bold;
+	text-align: center;
+	font-variant: small-caps;
+	text-decoration: none;
+}
+
+#snap_editor_save_dialog .button.disabled
+{
+	background-color: #aaaaaa;
+}
+
+#snap_editor_save_dialog .description
+{
+	font-size: 80%;
+	font-style: italic;
+}
+
