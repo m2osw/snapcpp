@@ -287,7 +287,6 @@ public:
                                 ~snap_child();
 
     bool                        process(int socket);
-    void                        backend();
     void                        kill();
     status_t                    check_status();
 
@@ -369,6 +368,27 @@ public:
     typedef QSharedPointer<udp_client_server::udp_server> udp_server_t;
     udp_server_t                udp_get_server( char const *name );
 
+protected:
+    server_pointer_t                            f_server;
+    controlled_vars::fbool_t                    f_is_child;
+    pid_t                                       f_child_pid;
+    int                                         f_socket;
+    QtCassandra::QCassandraContext::pointer_t   f_context;
+    controlled_vars::mint64_t                   f_start_date; // time request arrived
+    controlled_vars::fbool_t                    f_ready; // becomes true just before the server::execute() call
+    environment_map_t                           f_env;
+    snap_uri                                    f_uri;
+    QString                                     f_site_key;
+    QString                                     f_original_site_key;
+
+    pid_t                       fork_child();
+    void                        connect_cassandra();
+    void                        canonicalize_domain();
+    void                        canonicalize_website();
+    void                        canonicalize_options();
+    void                        site_redirect();
+    QStringList                 init_plugins();
+
 private:
     struct http_header_t
     {
@@ -383,12 +403,6 @@ private:
     void                        setup_uri();
     void                        snap_info();
     void                        snap_statistics();
-    void                        connect_cassandra();
-    void                        canonicalize_domain();
-    void                        canonicalize_website();
-    void                        canonicalize_options();
-    void                        site_redirect();
-    QStringList                 init_plugins();
     void                        update_plugins(QStringList const& list_of_plugins);
     void                        execute();
     void                        process_backend_uri(QString const& uri);
@@ -398,29 +412,18 @@ private:
     void                        output_headers(header_mode_t modes);
     void                        output_cookies();
 
-    controlled_vars::mint64_t                   f_start_date; // time request arrived
-    server_pointer_t                            f_server;
     QtCassandra::QCassandra::pointer_t          f_cassandra;
-    QtCassandra::QCassandraContext::pointer_t   f_context;
     QtCassandra::QCassandraTable::pointer_t     f_site_table;
     controlled_vars::fbool_t                    f_new_content;
-    controlled_vars::fbool_t                    f_is_child;
     controlled_vars::fbool_t                    f_is_being_initialized;
-    controlled_vars::fbool_t                    f_ready; // becomes true just before the server::execute() call
-    pid_t                                       f_child_pid;
-    int                                         f_socket;
-    environment_map_t                           f_env;
     environment_map_t                           f_post;
     post_file_map_t                             f_files;
     environment_map_t                           f_browser_cookies;
     controlled_vars::fbool_t                    f_has_post;
     mutable controlled_vars::fbool_t            f_fixed_server_protocol;
-    snap_uri                                    f_uri;
     QString                                     f_domain_key;
     QString                                     f_website_key;
-    QString                                     f_site_key;
     QString                                     f_site_key_with_slash;
-    QString                                     f_original_site_key;
     QBuffer                                     f_output;
     header_map_t                                f_header;
     cookie_map_t                                f_cookies;

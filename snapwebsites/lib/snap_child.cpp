@@ -2382,29 +2382,10 @@ int snap_child::post_file_t::get_size() const
  * acknowledge at some point.
  */
 snap_child::snap_child(server_pointer_t s)
-    : f_start_date(0)
-    , f_server(s)
-    //, f_cassandra() -- auto-init
-    //, f_context() -- auto-init
-    //, f_site_table() -- auto-init
-    //, f_new_content(false) -- auto-init
-    //, f_is_child(false) -- auto-init
+    : f_server(s)
     , f_child_pid(0)
     , f_socket(-1)
-    //, f_env() -- auto-init
-    //, f_post() -- auto-init
-    //, f_browser_cookies() -- auto-init
-    //, f_has_post(false) -- auto-init
-    //, f_fixed_server_protocol() -- auto-init
-    //, f_uri() -- auto-init
-    //, f_domain_key() -- auto-init
-    //, f_website_key() -- auto-init
-    //, f_site_key() -- auto-init
-    //, f_site_key_with_slash() -- auto-init
-    //, f_original_site_key() -- auto-init
-    //, f_output() -- auto-init
-    //, f_header() -- auto-init
-    //, f_cookies() -- auto-init
+    , f_start_date(0)
 {
 }
 
@@ -2456,6 +2437,29 @@ void snap_child::init_start_date()
 }
 
 
+/** \brief Fork the child process.
+ *
+ * Use this method to fork child processes. If SNAP_NO_FORK is on,
+ * then respect the "--nofork" command line option.
+ */
+pid_t snap_child::fork_child()
+{
+#ifdef SNAP_NO_FORK
+    pid_t p = 0;
+    //
+    server::pointer_t server( f_server.lock() );
+    Q_ASSERT(server);
+    if( !server->nofork() )
+    {
+        p = fork();
+    }
+#else
+    pid_t p = fork();
+#endif
+    return p;
+}
+
+
 /** \brief Process a request from the Snap CGI tool.
  *
  * The process function accepts a socket that was just connected.
@@ -2495,22 +2499,7 @@ bool snap_child::process(int socket)
 
 // to avoid the fork use 1 on the next line
 // (much easier to debug a crashing problem in a snap child!)
-#ifdef SNAP_NO_FORK
-    pid_t p;
-    //
-    server::pointer_t server( f_server.lock() );
-    Q_ASSERT(server);
-    if( server->nofork() )
-    {
-        p = 0;
-    }
-    else
-    {
-        p = fork();
-    }
-#else
-    pid_t p = fork();
-#endif
+    const pid_t p = fork_child();
     if(p != 0)
     {
         // parent process
@@ -2606,7 +2595,7 @@ bool snap_child::process(int socket)
     return false;
 }
 
-
+#if 0
 /** \brief Execute the backend processes after initialization.
  *
  * This function is somewhat similar to the process() function. It is used
@@ -2797,11 +2786,7 @@ void snap_child::process_backend_uri(QString const& uri)
     // the foot print each time we run a new website,) but the worst
     // are the plugins; we can request a plugin to be unloaded but
     // frankly the system is not very well written to handle that case.
-#ifdef SNAP_NO_FORK
-    pid_t p = 0;
-#else
-    pid_t p = fork();
-#endif
+    const pid_t p = fork_child();
     if(p != 0)
     {
         // parent process
@@ -2891,6 +2876,7 @@ void snap_child::process_backend_uri(QString const& uri)
         server->backend_process();
     }
 }
+#endif
 
 
 /** \brief Kill running process.
