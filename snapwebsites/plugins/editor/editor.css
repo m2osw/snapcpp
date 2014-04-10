@@ -189,10 +189,7 @@
 
 /** EDITOR EDIT BUTTON **/
 
-/* XXX we probably want to fix the name of this one!
- * it not a tooltip, it is the little "Edit" button at this point...
- */
-.editor-tooltip
+.editor-edit-button
 {
 	display: none;
 	padding: 10px;

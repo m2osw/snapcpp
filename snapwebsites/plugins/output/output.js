@@ -39,19 +39,25 @@
 var snapwebsites = {};
 
 
-
 /** \brief Helper function for base classes that can be inherited from.
  *
  * Base classes (those that do not inherit from other classes) can call
  * function function to get initialized so it works as expected.
  *
+ * See the example in the snapwebsites.inherit() function.
+ *
  * WARNING: the prototype is setup with this function so you cannot
  *          use blah.prototype = { ... };.
  *
  * @param {!function(...)} base_class  The class to initialize.
+ *
+ * @final
  */
 snapwebsites.base = function(base_class)
 {
+//#ifdef DEBUG
+    base_class.prototype.snapwebsitesBased_ = true;
+//#endif
     base_class.prototype.constructor = base_class;
 };
 
@@ -69,6 +75,8 @@ snapwebsites.base = function(base_class)
  * {
  *      ...
  * };
+ *
+ * snapwebsites.base(snapwebsites.A);
  *
  * // class A -- a method
  * snapwebsites.A.prototype.someMethod = function()
@@ -105,13 +113,29 @@ snapwebsites.base = function(base_class)
  *                                      class (the on inheriting.)
  * @param {!function(...)} super_class  The constructor of the parent
  *                                      class (the to inherit from.)
+ *
+ * @final
  */
 snapwebsites.inherits = function(child_class, super_class) // static
 {
-    /** 
+    /** \brief Intermediate constructor.
+     *
+     * In case Object.create() is not available (IE8 and older) we
+     * want to have a function to hold the super class prototypes
+     * and be able to do a new() without parameters. This is the
+     * function we use for that purpose.
+     *
      * @constructor
      */
-    function F() {};
+    function C() {};
+
+//#ifdef DEBUG
+    if(!super_class.prototype.snapwebsitesBased_
+    && !super_class.prototype.snapwebsitesInherited_)
+    {
+        throw Error("Super class was not based or inherited");
+    }
+//#endif
 
     if(Object.create)
     {
@@ -125,12 +149,87 @@ snapwebsites.inherits = function(child_class, super_class) // static
     {
         // older browsers don't have Object.create and
         // this is how you inherit properly in that case
-        F.prototype = super_class.prototype;
-        child_class.prototype = new F();
+        C.prototype = super_class.prototype;
+        child_class.prototype = new C();
         child_class.prototype.constructor = child_class;
     }
     child_class.prototype.superClass_ = super_class.prototype;
+    child_class.prototype.snapwebsitesInherited_ = true;
 };
+
+
+/** \brief Helper function: generate hexadecimal number.
+ *
+ * This function transform byte \p c in a hexadecimal number of
+ * exactly two digits.
+ *
+ * Note that \p c can be larger than a byte, only it should probably
+ * not be negative.
+ *
+ * @param {number} c  The byte to transform (expected to be between 0 and 255)
+ *
+ * @return {string}  The hexadecimal representation of the number.
+ */
+snapwebsites.charToHex = function(c) // static
+{
+    var a, b;
+
+    a = c & 15;
+    b = (c >> 4) & 15;
+    return String.fromCharCode(b + (b >= 10 ? 55 : 48))
+         + String.fromCharCode(a + (a >= 10 ? 55 : 48));
+};
+
+
+/** \brief Make sure a parameter is a string.
+ *
+ * This function makes sure the parameter is a string, if not it
+ * throws.
+ *
+ * This is useful in situations where a function may return something
+ * else than a string.
+ *
+ * As you can see the function doesn't do anything to the parameter,
+ * only the closure compiler sees a "string" coming out.
+ *
+ * @param {Object|string|number} s  Expects a string as input.
+ *
+ * @return {string}  The input string after making sure it is a string.
+ */
+snapwebsites.castToString = function(s) // static
+{
+    if(typeof s != "string")
+    {
+        throw Error("a string was expected, got a \"" + (typeof s) + "\" instead");
+    }
+    return s;
+};
+
+
+/** \brief Make sure a parameter is a number.
+ *
+ * This function makes sure the parameter is a number, if not it
+ * throws.
+ *
+ * This is useful in situations where a function may return something
+ * else than a number.
+ *
+ * As you can see the function doesn't do anything to the parameter,
+ * only the closure compiler sees a "number" coming out.
+ *
+ * @param {Object|string|number} n  Expects a number as input.
+ *
+ * @return {number}  The input number after making sure it is a number.
+ */
+snapwebsites.castToNumber = function(n) // static
+{
+    if(typeof n != "number")
+    {
+        throw Error("a number was expected, got a \"" + (typeof n) + "\" instead");
+    }
+    return n;
+};
+
 
 
 /** \brief A template used to define a set of buffer to MIME type scanners.
@@ -142,6 +241,24 @@ snapwebsites.inherits = function(child_class, super_class) // static
  * determine the different file types supported (i.e. accepted) by the
  * system.
  *
+ * The system inheritance is as follow:
+ *
+ * \code
+ *   +---------------------------+
+ *   |                           |
+ *   |  BufferToMIMETemplate     |
+ *   |                           |
+ *   +---------------------------+
+ *        ^
+ *        | Inherit
+ *        |
+ *   +---------------------------+
+ *   |                           |
+ *   |  BufferToMIMESystemImage  |
+ *   |                           |
+ *   +---------------------------+
+ * \endcode
+ *
  * @return {!snapwebsites.BufferToMIMETemplate} A reference to this new object.
  *
  * @constructor
@@ -152,6 +269,14 @@ snapwebsites.BufferToMIMETemplate = function()
 
     return this;
 };
+
+
+/** \brief Mark the template as a base.
+ *
+ * This call marks the BufferToMIMETempate a base. This means you
+ * can inherit from it.
+ */
+snapwebsites.base(snapwebsites.BufferToMIMETemplate);
 
 
 /** \brief Check a buffer magic codes.
@@ -200,16 +325,7 @@ snapwebsites.BufferToMIMESystemImages = function()
  *
  * This is the chain between this class and it's super.
  */
-snapwebsites.BufferToMIMESystemImages.prototype = new snapwebsites.BufferToMIMETemplate;
-
-
-/** \brief Restore the constructor function.
- *
- * This function restores the constructor function of this class.
- *
- * @type {function(new: snapwebsites.BufferToMIMESystemImages): !snapwebsites.BufferToMIMESystemImages}
- */
-snapwebsites.BufferToMIMESystemImages.prototype.constructor = snapwebsites.BufferToMIMESystemImages;
+snapwebsites.inherits(snapwebsites.BufferToMIMESystemImages, snapwebsites.BufferToMIMETemplate);
 
 
 /** \brief Check for most of the well known image file formats.
@@ -293,214 +409,135 @@ snapwebsites.BufferToMIMESystemImages.prototype.bufferToMIME = function(buf)
  */
 snapwebsites.Output = function()
 {
+    this.registeredBufferToMIME_ = [];
     this.handleMessages_();
     return this;
 };
 
 
-/** \brief Base definitions in the snapwebsites environment.
+/** \brief The output is a base class even though it is unlikely derived.
  *
- * The base prototype of the snapwebsites JavaScript environment is defined
- * here. These are functions used by all the code we provide as part of
- * Snap! C++.
- *
- * @struct
+ * This class is marked as a base class, although it is rather unlikely
+ * that we'd need to derive from it.
  */
-snapwebsites.Output.prototype =
+snapwebsites.base(snapwebsites.Output);
+
+
+/** \brief Array of objects that know about magic codes.
+ *
+ * This variable member holds an array of objects that can convert a
+ * buffer magic code in a MIME type. The system offers a limited number
+ * of types recognition. In most cases that is enough, although at times
+ * it would be more than useful to support many more formats and this
+ * array is used for that purpose. To register additional supportive
+ * classes, use the function:
+ *
+ * \code
+ * registerBufferToMIME(MyBufferToMIMEExtension);
+ * \endcode
+ *
+ * @type {Array.<snapwebsites.BufferToMIMETemplate>}
+ * @private
+ */
+snapwebsites.Output.prototype.registeredBufferToMIME_; // = []; -- initialized in constructor to avoid potential problems
+
+
+/** \brief Internal function used to display the error messages.
+ *
+ * This function is used to display the error messages that occured
+ * "recently" (in most cases, this last access, or the one before.)
+ *
+ * This function is called by the init() function and shows the
+ * messages if any were added to the DOM.
+ *
+ * \note
+ * This is here because the messages plugin cannot handle the output
+ * of its own messages (it is too low level a plugin.)
+ *
+ * @private
+ */
+snapwebsites.Output.prototype.handleMessages_ = function()
 {
-    /** \brief The constructor of this object.
-     *
-     * Make sure to declare the constructor for proper inheritance
-     * support.
-     *
-     * @type {function(): !snapwebsites.Output}
-     */
-    constructor: snapwebsites.Output,
+    // put a little delay() so we see the fadeIn(), eventually
+    jQuery("div.user-messages")
+        .each(function(){
+            var z;
 
-    /** \brief Array of objects that know about magic codes.
-     *
-     * This variable member holds an array of objects that can convert a
-     * buffer magic code in a MIME type. The system offers a limited number
-     * of types recognition. In most cases that is enough, although at times
-     * it would be more than useful to support many more formats and this
-     * array is used for that purpose. To register additional supportive
-     * classes, use the function:
-     *
-     * \code
-     * registerBufferToMIME(MyBufferToMIMEExtension);
-     * \endcode
-     *
-     * @type {Array.<snapwebsites.BufferToMIMETemplate>}
-     * @private
-     */
-    registeredBufferToMIME_: [],
+            z = jQuery("div.zordered").maxZIndex() + 1;
+            jQuery(this).css("z-index", z);
+        })
+        .delay(250)
+        .fadeIn(300)
+        .click(function(){
+            jQuery(this).fadeOut(300);
+        });
+};
 
-    /** \brief Internal function used to display the error messages.
-     *
-     * This function is used to display the error messages that occured
-     * "recently" (in most cases, this last access, or the one before.)
-     *
-     * This function is called by the init() function and shows the
-     * messages if any were added to the DOM.
-     *
-     * \note
-     * This is here because the messages plugin cannot handle the output
-     * of its own messages (it is too low level a plugin.)
-     */
-    handleMessages_: function()
+
+/** \brief Determine the MIME type from a buffer of data.
+ *
+ * Assuming you got a buffer (generally from a file dropped over a widget)
+ * you may want to determine what type of file it is. This function uses
+ * the Magic information of the file to return the supposed type (it may
+ * still be lying to us...)
+ *
+ * The function returns a MIME string such as "image/png".
+ *
+ * \todo
+ * Add code to support all the magic as defined by the tool "file".
+ * (once we find the source of magic, it will be easy, now the file
+ * is compiled...) Source files are on ftp://ftp.astron.com/pub/file/
+ * (the home page is http://www.darwinsys.com/file/ )
+ *
+ * @param {ArrayBuffer} buffer  The buffer to check for a Magic.
+ *
+ * @return {string}  The MIME type of the file or the empty string for any
+ *                   unknown (unsupported) file.
+ */
+snapwebsites.Output.prototype.bufferToMIME = function(buffer)
+{
+    var buf = new Uint8Array(buffer),   // buffer to be checked
+        i,                              // loop index
+        max,                            // # of registered MIME parsers
+        mime;                           // the resulting MIME type
+
+    // Give other plugins a chance to determine the MIME type
+    max = this.registeredBufferToMIME_.length;
+    for(i = 0; i < max; ++i)
     {
-        // put a little delay() so we see the fadeIn(), eventually
-        jQuery("div.user-messages")
-            .each(function(){
-                var z;
-
-                z = jQuery("div.zordered").maxZIndex() + 1;
-                jQuery(this).css("z-index", z);
-            })
-            .delay(250)
-            .fadeIn(300)
-            .click(function(){
-                jQuery(this).fadeOut(300);
-            });
-    },
-
-    /** \brief Determine the MIME type from a buffer of data.
-     *
-     * Assuming you got a buffer (generally from a file dropped over a widget)
-     * you may want to determine what type of file it is. This function uses
-     * the Magic information of the file to return the supposed type (it may
-     * still be lying to us...)
-     *
-     * The function returns a MIME string such as "image/png".
-     *
-     * \todo
-     * Add code to support all the magic as defined by the tool "file".
-     * (once we find the source of magic, it will be easy, now the file
-     * is compiled...) Source files are on ftp://ftp.astron.com/pub/file/
-     * (the home page is http://www.darwinsys.com/file/ )
-     *
-     * @param {ArrayBuffer} buffer  The buffer to check for a Magic.
-     *
-     * @return {string}  The MIME type of the file or the empty string for any
-     *                   unknown (unsupported) file.
-     */
-    bufferToMIME: function(buffer)
-    {
-        var buf = new Uint8Array(buffer),   // buffer to be checked
-            i,                              // loop index
-            max,                            // # of registered MIME parsers
-            mime;                           // the resulting MIME type
-
-        // Give other plugins a chance to determine the MIME type
-        max = this.registeredBufferToMIME_.length;
-        for(i = 0; i < max; ++i)
+        mime = this.registeredBufferToMIME_[i].bufferToMIME(buf);
+        if(mime)
         {
-            mime = this.registeredBufferToMIME_[i].bufferToMIME(buf);
-            if(mime)
-            {
-                return mime;
-            }
+            return mime;
         }
-
-        // unknown magic
-        return "";
-    },
-
-    /** \brief Register an object which is capable of determine a MIME type.
-     *
-     * This function allows you to register an object that defines a
-     * bufferToMIME() function:
-     *
-     * \code
-     * myObject.prototype.bufferToMIME(buf)
-     * {
-     *    ...
-     * }
-     * \endcode
-     *
-     * That function is passed a Uint8Array buffer. The size of the buffer
-     * must be checked. It may be very small or even empty.
-     *
-     * @param {snapwebsites.BufferToMIMETemplate} buffer_to_mime  An object
-     *        that derives from the BufferToMIMETemplate definition.
-     */
-    registerBufferToMIME: function(buffer_to_mime)
-    {
-        this.registeredBufferToMIME_.push(buffer_to_mime);
     }
+
+    // unknown magic
+    return "";
 };
 
 
-/** \brief Helper function: generate hexadecimal number.
+/** \brief Register an object which is capable of determine a MIME type.
  *
- * This function transform byte \p c in a hexadecimal number of
- * exactly two digits.
+ * This function allows you to register an object that defines a
+ * bufferToMIME() function:
  *
- * Note that \p c can be larger than a byte, only it should probably
- * not be negative.
+ * \code
+ * myObject.prototype.bufferToMIME(buf)
+ * {
+ *    ...
+ * }
+ * \endcode
  *
- * @param {number} c  The byte to transform (expected to be between 0 and 255)
+ * That function is passed a Uint8Array buffer. The size of the buffer
+ * must be checked. It may be very small or even empty.
  *
- * @return {string}  The hexadecimal representation of the number.
+ * @param {snapwebsites.BufferToMIMETemplate} buffer_to_mime  An object
+ *        that derives from the BufferToMIMETemplate definition.
  */
-snapwebsites.Output.charToHex = function(c) // static
+snapwebsites.Output.prototype.registerBufferToMIME = function(buffer_to_mime)
 {
-    var a, b;
-
-    a = c & 15;
-    b = (c >> 4) & 15;
-    return String.fromCharCode(b + (b >= 10 ? 55 : 48))
-         + String.fromCharCode(a + (a >= 10 ? 55 : 48));
-};
-
-
-/** \brief Make sure a parameter is a string.
- *
- * This function makes sure the parameter is a string, if not it
- * throws.
- *
- * This is useful in situations where a function may return something
- * else than a string.
- *
- * As you can see the function doesn't do anything to the parameter,
- * only the closure compiler sees a "string" coming out.
- *
- * @param {Object|string|number} s  Expects a string as input.
- *
- * @return {string}  The input string after making sure it is a string.
- */
-snapwebsites.Output.castToString = function(s) // static
-{
-    if(typeof s != "string")
-    {
-        throw Error("a string was expected, got a \"" + (typeof s) + "\" instead");
-    }
-    return s;
-};
-
-
-/** \brief Make sure a parameter is a number.
- *
- * This function makes sure the parameter is a number, if not it
- * throws.
- *
- * This is useful in situations where a function may return something
- * else than a number.
- *
- * As you can see the function doesn't do anything to the parameter,
- * only the closure compiler sees a "number" coming out.
- *
- * @param {Object|string|number} n  Expects a number as input.
- *
- * @return {number}  The input number after making sure it is a number.
- */
-snapwebsites.Output.castToNumber = function(n) // static
-{
-    if(typeof n != "number")
-    {
-        throw Error("a number was expected, got a \"" + (typeof n) + "\" instead");
-    }
-    return n;
+    this.registeredBufferToMIME_.push(buffer_to_mime);
 };
 
 

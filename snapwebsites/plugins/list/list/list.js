@@ -39,21 +39,12 @@ snapwebsites.List = function()
 };
 
 
-/** \brief The list functions.
+/** \brief Mark List as a base class.
  *
- * @struct
+ * This class does not inherit from any other classes.
  */
-snapwebsites.List.prototype =
-{
-    /** \brief The constructor of this object.
-     *
-     * Make sure to declare the constructor for proper inheritance
-     * support.
-     *
-     * @type {function(): !snapwebsites.List}
-     */
-    constructor: snapwebsites.List
-};
+snapwebsites.base(snapwebsites.List);
+
 
 // auto-initialize
 jQuery(document).ready(
