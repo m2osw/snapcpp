@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.2.89
+ * Version: 0.0.3.42
  * Browsers: all
  * Copyright: Copyright 2013-2014 (c) Made to Order Software Corporation  All rights reverved.
  * License: GPL 2.0
@@ -940,8 +940,6 @@ snapwebsites.EditorBase.prototype.getLinkDialog = function() // virtual
  * core of the editor.
  *
  * @param {snapwebsites.EditorWidgetType} widget_type  The widget type to register.
- *
- * @final
  */
 snapwebsites.EditorBase.prototype.registerWidgetType = function(widget_type)
 {
@@ -1099,8 +1097,8 @@ snapwebsites.EditorLinkDialog.prototype.open = function()
         jtag = jQuery(links[0]);
         // it is already the anchor, we can use the text here
         // in this case we also have a URL and possibly a title
-        jQuery("#snap_editor_link_url").val(snapwebsites.castToString(jtag.attr("href")));
-        jQuery("#snap_editor_link_title").val(snapwebsites.castToString(jtag.attr("title")));
+        jQuery("#snap_editor_link_url").val(snapwebsites.castToString(jtag.attr("href"), "href in #snap_editor_link_url"));
+        jQuery("#snap_editor_link_title").val(snapwebsites.castToString(jtag.attr("title"), "title in #snap_editor_link_title"));
         new_window = jtag.attr("target") == "_blank";
     }
     else
@@ -1169,7 +1167,7 @@ snapwebsites.EditorLinkDialog.prototype.close = function()
         var text = jQuery("#snap_editor_link_text");
         if(text.length > 0)
         {
-            jtag.text(snapwebsites.castToString(text.val()));
+            jtag.text(snapwebsites.castToString(text.val(), "val() of #snap_editor_link_text"));
         }
         // do NOT erase the existing text if the user OKed
         // without any text
@@ -1177,7 +1175,7 @@ snapwebsites.EditorLinkDialog.prototype.close = function()
         var title = jQuery("#snap_editor_link_title");
         if(title.length > 0)
         {
-            jtag.attr("title", snapwebsites.castToString(title.val()));
+            jtag.attr("title", snapwebsites.castToString(title.val(), "val() of #snap_editor_link_title"));
         }
         else
         {
@@ -1624,12 +1622,12 @@ console.log("run command "+idx+" "+snapwebsites.EditorToolbar.toolbarButtons_[id
         {
             // TODO: need to define the toolbar parameter
             //       (i.e. a color, font name, size, etc.)
-            document.execCommand(snapwebsites.castToString(snapwebsites.EditorToolbar.toolbarButtons_[idx][0]),
+            document.execCommand(snapwebsites.castToString(snapwebsites.EditorToolbar.toolbarButtons_[idx][0], "toolbar command with parameter"),
                                     false, snapwebsites.EditorToolbar.toolbarButtons_[idx][3]);
         }
         else
         {
-            document.execCommand(snapwebsites.castToString(snapwebsites.EditorToolbar.toolbarButtons_[idx][0]),
+            document.execCommand(snapwebsites.castToString(snapwebsites.EditorToolbar.toolbarButtons_[idx][0], "toolbar command, no parameters"),
                                     false, null);
         }
     }
@@ -1756,7 +1754,7 @@ snapwebsites.EditorToolbar.prototype.toggleToolbar = function(force)
         this.toolbar_.fadeIn(300);
         widget = this.editorBase_.getActiveElement();
         snap_editor_element = widget.parents('.snap-editor');
-        this.height_ = snapwebsites.castToNumber(snap_editor_element.height());
+        this.height_ = snapwebsites.castToNumber(snap_editor_element.height(), ".snap-editor height");
         toolbarHeight = this.toolbar_.outerHeight();
         pos = snap_editor_element.position();
         this.bottomToolbar_ = pos.top < toolbarHeight + 5;
@@ -1877,7 +1875,7 @@ snapwebsites.EditorToolbar.prototype.startToolbarHide = function()
  */
 snapwebsites.EditorWidget = function(editor_base, editor_form, widget)
 {
-    var type = snapwebsites.castToString(widget.attr("field_type"));
+    var type = snapwebsites.castToString(widget.attr("field_type"), "field_type attribute");
 
     // back reference for places were we cannot otherwise have this object
     widget.data("snapEditorWidget", this);
@@ -1885,9 +1883,9 @@ snapwebsites.EditorWidget = function(editor_base, editor_form, widget)
     this.editorBase_ = editor_base;
     this.editorForm_ = editor_form;
     this.widget_ = widget; // this is the jQuery widget (.snap-editor)
-    this.widgetContent_ = widget.children(".snap-content");
-    this.name_ = snapwebsites.castToString(widget.attr("field_name"));
-    this.originalData_ = snapwebsites.castToString(this.widgetContent_.html());
+    this.widgetContent_ = widget.children(".editor-content");
+    this.name_ = snapwebsites.castToString(widget.attr("field_name"), "field_name attribute");
+    this.originalData_ = snapwebsites.castToString(this.widgetContent_.html(), "widgetContent HTML in EditorWidget constructor for " + this.name_);
     this.widgetType_ = editor_base.getWidgetType(type);
     this.checkForBackgroundValue();
 
@@ -2073,7 +2071,7 @@ snapwebsites.EditorWidget.prototype.saving = function() // virtual
     var value,          // in case the widget defines a value attribute
         data = {};      // the data to be returned
 
-    data.html = snapwebsites.castToString(this.widgetContent_.html());
+    data.html = snapwebsites.castToString(this.widgetContent_.html(), "widgetContent HTML in saving()");
 
     value = this.widgetContent_.attr("value");
     if(typeof value !== "undefined")
@@ -2082,7 +2080,7 @@ snapwebsites.EditorWidget.prototype.saving = function() // virtual
         // so we can quickly retrieve that and return it as the result
         // (note that in this case we even skip calling the widget type
         // saving() function since the value is already the final result.)
-        data.result = snapwebsites.castToString(value);
+        data.result = snapwebsites.castToString(value, "widgetContent value attribute");
     }
     else
     {
@@ -2093,8 +2091,9 @@ snapwebsites.EditorWidget.prototype.saving = function() // virtual
         // TBD: should we also remove <br> tags with attributes?
         // TBD: should we remove <hr> tags at the start/end too?
         data.result = snapwebsites.castToString(
-                          data.html.replace(/^(<br *\/?>| |\t|\n|\r|\v|\f|&nbsp;|&#160;|&#xA0;)+/, "")
-                                   .replace(/(<br *\/?>| |\t|\n|\r|\v|\f|&nbsp;|&#160;|&#xA0;)+$/, "")
+                            data.html.replace(/^(<br *\/?>| |\t|\n|\r|\v|\f|&nbsp;|&#160;|&#xA0;)+/, "")
+                                     .replace(/(<br *\/?>| |\t|\n|\r|\v|\f|&nbsp;|&#160;|&#xA0;)+$/, ""),
+                            "data html trimmed"
                       );
 
         this.widgetType_.saving(this, data);
@@ -2177,7 +2176,7 @@ snapwebsites.EditorWidget.prototype.getWidget = function()
  * editor widget which holds the content of the field represented
  * by this widget.
  *
- * This is the child of the widget with class "snap-content".
+ * This is the child of the widget with class "editor-content".
  *
  * @return {jQuery} The jQuery widget content.
  *
@@ -2198,7 +2197,7 @@ snapwebsites.EditorWidget.prototype.getWidgetContent = function()
  */
 snapwebsites.EditorWidget.prototype.checkForBackgroundValue = function()
 {
-    this.widget_.children(".snap-editor-background").toggle(snapwebsites.EditorWidget.isEmptyBlock(this.widget_.html()));
+    this.widget_.children(".snap-editor-background").toggle(snapwebsites.EditorWidget.isEmptyBlock(this.widgetContent_.html()));
 };
 
 
@@ -2645,6 +2644,7 @@ snapwebsites.EditorSaveDialog.prototype.setStatus = function(new_status)
  *
  * @param {snapwebsites.EditorBase} editor_base  The base editor object.
  * @param {jQuery} form_widget  The editor form DOM in a jQuery object.
+ * @param {!string} session  The form session identification.
  *
  * @return {!snapwebsites.EditorForm}  The newly created object.
  *
@@ -2652,10 +2652,12 @@ snapwebsites.EditorSaveDialog.prototype.setStatus = function(new_status)
  * @constructor
  * @struct
  */
-snapwebsites.EditorForm = function(editor_base, form_widget)
+snapwebsites.EditorForm = function(editor_base, form_widget, session)
 {
-    this.superClass_.constructor(editor_base, form_widget);
+    snapwebsites.EditorForm.superClass_.constructor(editor_base, form_widget);
+    this.editorWidgets_ = [];
     this.usedTypes_ = {};
+    this.session_ = session;
     this.readyWidgets_();
 
     return this;
@@ -2667,13 +2669,6 @@ snapwebsites.EditorForm = function(editor_base, form_widget)
  * This call ensures proper inheritance between the two classes.
  */
 snapwebsites.inherits(snapwebsites.EditorForm, snapwebsites.EditorFormBase);
-
-
-/** \brief Define the super class of the EditorForm class.
- *
- * @type {snapwebsites.EditorFormBase}
- */
-snapwebsites.EditorForm.prototype.superClass_;
 
 
 /** \brief A map of widget types used by this form.
@@ -2690,6 +2685,17 @@ snapwebsites.EditorForm.prototype.superClass_;
  * @private
  */
 snapwebsites.EditorForm.prototype.usedTypes_; // = {}; -- initialized in the constructor to avoid problems
+
+
+/** \brief The session identification of this form.
+ *
+ * This is the session identification and random number for this editor
+ * form.
+ *
+ * @type {!string}
+ * @private
+ */
+snapwebsites.EditorForm.prototype.session_ = "";
 
 
 /** \brief A jQuery array of widgets found in this form.
@@ -2914,7 +2920,7 @@ snapwebsites.EditorForm.prototype.saveData = function(mode)
     if(!jQuery.isEmptyObject(obj))
     {
         obj["editor_save_mode"] = mode;
-        obj["editor_session"] = this.formWidget_.attr("session");
+        obj["editor_session"] = this.session_;
         obj["editor_uri"] = this.titleToURI_( /** @type {string} */ (jQuery("[field_name='title'] .editor-content").text()));
         url = jQuery("link[rel='canonical']").attr("href");
         url = url ? url : "/";
@@ -3147,7 +3153,7 @@ snapwebsites.EditorForm.prototype.readyWidgets_ = function()
 
     // check whether all the types are available
     // if so then the function finishes the initialization of the form
-    this.newTypeRegistered_();
+    this.newTypeRegistered();
 
     // make labels focus the corresponding editable box
     this.formWidget_.find("label[for!='']").click(function(e)
@@ -3166,10 +3172,8 @@ snapwebsites.EditorForm.prototype.readyWidgets_ = function()
  * The function checks whether all the types necessary to initialize
  * the widgets are available. If so, then all the form widgets get
  * initialized.
- *
- * @private
  */
-snapwebsites.EditorForm.prototype.newTypeRegistered_ = function()
+snapwebsites.EditorForm.prototype.newTypeRegistered = function()
 {
     var that = this, key;
 
@@ -3201,7 +3205,7 @@ snapwebsites.EditorForm.prototype.newTypeRegistered_ = function()
     this.widgets_.each(function(idx, w){
             var widget = jQuery(w);
             var name = widget.attr("field_name");
-            that.editorWidgets_[name] = new snapwebsites.EditorWidget(this.editorBase_, this, widget);
+            that.editorWidgets_[name] = new snapwebsites.EditorWidget(that.editorBase_, that, widget);
         });
 
     //
@@ -3272,11 +3276,11 @@ snapwebsites.EditorForm.prototype.wasModified = function(recheck)
  */
 snapwebsites.Editor = function()
 {
-    this.superClass_.constructor();
+    snapwebsites.Editor.superClass_.constructor();
     this.editorSessions_ = [];
     this.editorForms_ = {};
-    this.attachToForms_();
     this.initUnload_();
+    this.attachToForms_();
 
     return this;
 };
@@ -3287,13 +3291,6 @@ snapwebsites.Editor = function()
  * This call ensures proper inheritance between the two classes.
  */
 snapwebsites.inherits(snapwebsites.Editor, snapwebsites.EditorBase);
-
-
-/** \brief Define the super class of the Editor class.
- *
- * @type {snapwebsites.EditorBase}
- */
-snapwebsites.Editor.prototype.superClass_;
 
 
 /** \brief The toolbar object.
@@ -3382,9 +3379,9 @@ snapwebsites.Editor.prototype.attachToForms_ = function()
     jQuery(".editor-form")
         .each(function(){
             var that_element = jQuery(this);
-            var session = snapwebsites.castToString(that_element.attr("session"));
+            var session = snapwebsites.castToString(that_element.attr("session"), "editor form session attribute");
             that.editorSessions_.push(session);
-            that.editorForms_[session] = new snapwebsites.EditorForm(that, that_element);
+            that.editorForms_[session] = new snapwebsites.EditorForm(that, that_element, session);
         });
 };
 
@@ -3399,7 +3396,11 @@ snapwebsites.Editor.prototype.attachToForms_ = function()
  */
 snapwebsites.Editor.prototype.initUnload_ = function()
 {
-    jQuery(window).bind("beforeunload", this.unload_);
+    var that = this;
+    jQuery(window).bind("beforeunload", function()
+        {
+            that.unload_();
+        });
 };
 
 
@@ -3564,6 +3565,34 @@ snapwebsites.Editor.prototype.getLinkDialog = function()
 };
 
 
+/** \brief Capture the registration of widget types.
+ *
+ * THis function captures the registration of widget types so it
+ * can produce an event on the editor forms which may need additional
+ * types whenever they get created to be able to initialize all their
+ * widgets.
+ *
+ * @param {snapwebsites.EditorWidgetType} widget_type  The widget type to register.
+ */
+snapwebsites.Editor.prototype.registerWidgetType = function(widget_type)
+{
+    // first make sure to call the super class function
+    snapwebsites.Editor.superClass_.registerWidgetType(widget_type);
+
+    var i,
+        max = this.editorSessions_.length;
+
+    // let all the forms know we have a new type
+    //
+    // XXX -- this is not really the most efficient, but at this point it
+    //        will do
+    for(i = 0; i < max; ++i)
+    {
+        this.editorForms_[this.editorSessions_[i]].newTypeRegistered();
+    }
+};
+
+
 
 /** \brief Snap EditorWidgetType constructor.
  *
@@ -3589,7 +3618,7 @@ snapwebsites.Editor.prototype.getLinkDialog = function()
  */
 snapwebsites.EditorWidgetType = function()
 {
-    this.superClass_.constructor();
+    snapwebsites.EditorWidgetType.superClass_.constructor();
 
     // TBD
     // Maybe at some point we'd want to create yet another layer
@@ -3608,13 +3637,6 @@ snapwebsites.EditorWidgetType = function()
 snapwebsites.inherits(snapwebsites.EditorWidgetType, snapwebsites.EditorWidgetTypeBase);
 
 
-/** \brief Define the super class of the EditorWidgetType class.
- *
- * @type {snapwebsites.EditorWidgetTypeBase}
- */
-snapwebsites.EditorWidgetType.prototype.superClass_;
-
-
 /** \brief Initialize a widget of this type.
  *
  * @param {!Object} widget  The widget being initialized.
@@ -3625,7 +3647,7 @@ snapwebsites.EditorWidgetType.prototype.initializeWidget = function(widget) // v
     var that = this;
     var editor_widget = /** @type {snapwebsites.EditorWidget} */ (widget);
     var w = editor_widget.getWidget();
-    var c = w.children(".editor-content");
+    var c = editor_widget.getWidgetContent();
 
     this.setupEditButton(editor_widget); // allow overrides to an empty function
 
@@ -3826,7 +3848,7 @@ snapwebsites.EditorWidgetType.prototype.setupEditButton = function(editor_widget
  */
 snapwebsites.EditorWidgetTypeContentEditable = function()
 {
-    this.superClass_.constructor.call(this);
+    snapwebsites.EditorWidgetTypeContentEditable.superClass_.constructor.call(this);
 
     return this;
 };
@@ -3837,13 +3859,6 @@ snapwebsites.EditorWidgetTypeContentEditable = function()
  * This call ensures proper inheritance between the two classes.
  */
 snapwebsites.inherits(snapwebsites.EditorWidgetTypeContentEditable, snapwebsites.EditorWidgetType);
-
-
-/** \brief Define the super class of the EditorWidgetTypeContentEditable class.
- *
- * @type {snapwebsites.EditorWidgetType}
- */
-snapwebsites.EditorWidgetTypeContentEditable.prototype.superClass_;
 
 
 /** \brief Initialize an "Edit" button.
@@ -3863,7 +3878,7 @@ snapwebsites.EditorWidgetTypeContentEditable.prototype.setupEditButton = functio
 {
     var that = this;
     var w = editor_widget.getWidget();
-    var c = w.children(".editor-content");
+    var c = editor_widget.getWidgetContent();
     var html;
     var edit_button_popup;
 
@@ -4134,7 +4149,7 @@ snapwebsites.EditorWidgetType.prototype.droppedAttachment = function(e) // virtu
  */
 snapwebsites.EditorWidgetTypeTextEdit = function()
 {
-    this.superClass_.constructor.call(this);
+    snapwebsites.EditorWidgetTypeTextEdit.superClass_.constructor.call(this);
 
     return this;
 };
@@ -4145,13 +4160,6 @@ snapwebsites.EditorWidgetTypeTextEdit = function()
  * This is the chain between this class and it's super.
  */
 snapwebsites.inherits(snapwebsites.EditorWidgetTypeTextEdit, snapwebsites.EditorWidgetTypeContentEditable);
-
-
-/** \brief Define the super class of the EditorWidgetTypeTextEdit class.
- *
- * @type {snapwebsites.EditorWidgetTypeContentEditable}
- */
-snapwebsites.EditorWidgetTypeTextEdit.prototype.superClass_;
 
 
 /** \brief Return "text-edit".
@@ -4176,7 +4184,7 @@ snapwebsites.EditorWidgetTypeTextEdit.prototype.getType = function() // virtual
  */
 snapwebsites.EditorWidgetTypeTextEdit.prototype.initializeWidget = function(widget) // virtual
 {
-    this.superClass_.initializeWidget.call(this, widget);
+    snapwebsites.EditorWidgetTypeTextEdit.superClass_.initializeWidget.call(this, widget);
 };
 
 
@@ -4194,7 +4202,7 @@ snapwebsites.EditorWidgetTypeTextEdit.prototype.initializeWidget = function(widg
  */
 snapwebsites.EditorWidgetTypeLineEdit = function()
 {
-    this.superClass_.constructor.call(this);
+    snapwebsites.EditorWidgetTypeLineEdit.superClass_.constructor.call(this);
 
     return this;
 };
@@ -4205,13 +4213,6 @@ snapwebsites.EditorWidgetTypeLineEdit = function()
  * This is the chain between this class and it's super.
  */
 snapwebsites.inherits(snapwebsites.EditorWidgetTypeLineEdit, snapwebsites.EditorWidgetTypeTextEdit);
-
-
-/** \brief Define the super class of the EditorWidgetTypeLineEdit class.
- *
- * @type {snapwebsites.EditorWidgetTypeTextEdit}
- */
-snapwebsites.EditorWidgetTypeLineEdit.prototype.superClass_;
 
 
 /** \brief Return "line-edit".
@@ -4238,9 +4239,9 @@ snapwebsites.EditorWidgetTypeLineEdit.prototype.initializeWidget = function(widg
 {
     var editor_widget = /** @type {snapwebsites.EditorWidget} */ (widget);
     var w = editor_widget.getWidget();
-    var c = w.children(".editor-content");
+    var c = editor_widget.getWidgetContent();
 
-    this.superClass_.initializeWidget.call(this, widget);
+    snapwebsites.EditorWidgetTypeLineEdit.superClass_.initializeWidget.call(this, widget);
 
     c.keydown(function(e)
         {
@@ -4269,7 +4270,7 @@ snapwebsites.EditorWidgetTypeLineEdit.prototype.initializeWidget = function(widg
  */
 snapwebsites.EditorWidgetTypeDropdown = function()
 {
-    this.superClass_.constructor.call(this);
+    snapwebsites.EditorWidgetTypeDropdown.superClass_.constructor.call(this);
 
     return this;
 };
@@ -4280,13 +4281,6 @@ snapwebsites.EditorWidgetTypeDropdown = function()
  * This call ensures proper inheritance between the two classes.
  */
 snapwebsites.inherits(snapwebsites.EditorWidgetTypeDropdown, snapwebsites.EditorWidgetTypeLineEdit);
-
-
-/** \brief Define the super class of the EditorWidgetTypeDropdown class.
- *
- * @type {snapwebsites.EditorWidgetTypeLineEdit}
- */
-snapwebsites.EditorWidgetTypeDropdown.prototype.superClass_;
 
 
 /** \brief The currently opened dropdown.
@@ -4326,10 +4320,10 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.initializeWidget = function(widg
     var that = this;
     var editor_widget = /** @type {snapwebsites.EditorWidget} */ (widget);
     var w = editor_widget.getWidget();
-    var c = w.children(".editor-content");
+    var c = editor_widget.getWidgetContent();
     var d = w.children(".dropdown-items");
 
-    this.superClass_.initializeWidget.call(this, widget);
+    snapwebsites.EditorWidgetTypeDropdown.superClass_.initializeWidget.call(this, widget);
 
     //
     // WARNING: we dynamically assign the "absolute" flag because otherwise
@@ -4392,7 +4386,7 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.initializeWidget = function(widg
             // finally, get the resulting value if there is one
             if(that_element.attr("value") != "")
             {
-                c.attr("value", snapwebsites.castToString(that_element.attr("value")));
+                c.attr("value", snapwebsites.castToString(that_element.attr("value"), "dropdown item value attribute"));
             }
             else
             {
@@ -4406,7 +4400,6 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.initializeWidget = function(widg
         {
             this.hideDropdown();
         });
-
 
     // TODO: we need to add support for the up/down arrow keys to change
     //       the selection
@@ -4442,7 +4435,7 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.hideDropdown = function()
  */
 snapwebsites.EditorWidgetTypeCheckmark = function()
 {
-    this.superClass_.constructor.call(this);
+    snapwebsites.EditorWidgetTypeCheckmark.superClass_.constructor.call(this);
 
     return this;
 };
@@ -4453,13 +4446,6 @@ snapwebsites.EditorWidgetTypeCheckmark = function()
  * This is the chain between this class and it's super.
  */
 snapwebsites.inherits(snapwebsites.EditorWidgetTypeCheckmark, snapwebsites.EditorWidgetType);
-
-
-/** \brief Define the super class of the EditorWidgetTypeCheckmark class.
- *
- * @type {snapwebsites.EditorWidgetType}
- */
-snapwebsites.EditorWidgetTypeCheckmark.prototype.superClass_;
 
 
 /** \brief Return "checkmark".
@@ -4508,7 +4494,7 @@ snapwebsites.EditorWidgetTypeCheckmark.prototype.initializeWidget = function(wid
         editor_widget.getEditorBase().checkModified();
     };
 
-    this.superClass_.initializeWidget.call(this, widget);
+    snapwebsites.EditorWidgetTypeCheckmark.superClass_.initializeWidget.call(this, widget);
 
     c.keydown(function(e)
         {
@@ -4570,7 +4556,7 @@ snapwebsites.EditorWidgetTypeCheckmark.prototype.initializeWidget = function(wid
  */
 snapwebsites.EditorWidgetTypeImageBox = function()
 {
-    this.superClass_.constructor.call(this);
+    snapwebsites.EditorWidgetTypeImageBox.superClass_.constructor.call(this);
 
     return this;
 };
@@ -4583,23 +4569,16 @@ snapwebsites.EditorWidgetTypeImageBox = function()
 snapwebsites.inherits(snapwebsites.EditorWidgetTypeImageBox, snapwebsites.EditorWidgetType);
 
 
-/** \brief Define the super class of the EditorWidgetTypeImageBox class.
+/** \brief Return "image-box".
  *
- * @type {snapwebsites.EditorWidgetType}
- */
-snapwebsites.EditorWidgetTypeImageBox.prototype.superClass_;
-
-
-/** \brief Return "image".
+ * Return the name of the image box type.
  *
- * Return the name of the image type.
- *
- * @return {string} The name of the image type.
+ * @return {string} The name of the image box type.
  * @override
  */
 snapwebsites.EditorWidgetTypeImageBox.prototype.getType = function() // virtual
 {
-    return "image";
+    return "image-box";
 };
 
 
@@ -4622,13 +4601,14 @@ snapwebsites.EditorWidgetTypeImageBox.prototype.initializeWidget = function(widg
     var w = editor_widget.getWidget();
     var background = w.children(".snap-editor-background");
 
-    this.superClass_.initializeWidget.call(this, widget);
+    snapwebsites.EditorWidgetTypeImageBox.superClass_.initializeWidget.call(this, widget);
 
     // backgrounds are positioned as "absolute" so their width
     // is "broken" and we cannot center them in their parent
     // which is something we want to do for image-box objects
-    background.css("width", snapwebsites.castToNumber(w.width()))
-              .css("margin-top", (snapwebsites.castToNumber(w.height()) - snapwebsites.castToNumber(background.height())) / 2);
+    background.css("width", snapwebsites.castToNumber(w.width(), "ImageBox widget width"))
+              .css("margin-top", (snapwebsites.castToNumber(w.height(), "ImageBox widget height")
+                                      - snapwebsites.castToNumber(background.height(), "ImageBox background height")) / 2);
 };
 
 

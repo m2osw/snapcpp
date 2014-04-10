@@ -1,6 +1,6 @@
 /** @preserve
  * Name: output
- * Version: 0.0.5
+ * Version: 0.1.4
  * Browsers: all
  * Copyright: Copyright 2014 (c) Made to Order Software Corporation  All rights reverved.
  * Depends: jquery-extensions (1.0.1)
@@ -56,7 +56,7 @@ var snapwebsites = {};
 snapwebsites.base = function(base_class)
 {
 //#ifdef DEBUG
-    base_class.prototype.snapwebsitesBased_ = true;
+    base_class.snapwebsitesBased_ = true;
 //#endif
     base_class.prototype.constructor = base_class;
 };
@@ -130,8 +130,8 @@ snapwebsites.inherits = function(child_class, super_class) // static
     function C() {};
 
 //#ifdef DEBUG
-    if(!super_class.prototype.snapwebsitesBased_
-    && !super_class.prototype.snapwebsitesInherited_)
+    if(!super_class.snapwebsitesBased_
+    && !super_class.snapwebsitesInherited_)
     {
         throw Error("Super class was not based or inherited");
     }
@@ -153,8 +153,8 @@ snapwebsites.inherits = function(child_class, super_class) // static
         child_class.prototype = new C();
         child_class.prototype.constructor = child_class;
     }
-    child_class.prototype.superClass_ = super_class.prototype;
-    child_class.prototype.snapwebsitesInherited_ = true;
+    child_class.superClass_ = super_class.prototype;
+    child_class.snapwebsitesInherited_ = true;
 };
 
 
@@ -193,14 +193,15 @@ snapwebsites.charToHex = function(c) // static
  * only the closure compiler sees a "string" coming out.
  *
  * @param {Object|string|number} s  Expects a string as input.
+ * @param {string} e  An additional error message in case it fails.
  *
  * @return {string}  The input string after making sure it is a string.
  */
-snapwebsites.castToString = function(s) // static
+snapwebsites.castToString = function(s, e) // static
 {
     if(typeof s != "string")
     {
-        throw Error("a string was expected, got a \"" + (typeof s) + "\" instead");
+        throw Error("a string was expected, got a \"" + (typeof s) + "\" instead (" + e + ")");
     }
     return s;
 };
@@ -218,14 +219,15 @@ snapwebsites.castToString = function(s) // static
  * only the closure compiler sees a "number" coming out.
  *
  * @param {Object|string|number} n  Expects a number as input.
+ * @param {string} e  An additional error message in case it fails.
  *
  * @return {number}  The input number after making sure it is a number.
  */
-snapwebsites.castToNumber = function(n) // static
+snapwebsites.castToNumber = function(n, e) // static
 {
     if(typeof n != "number")
     {
-        throw Error("a number was expected, got a \"" + (typeof n) + "\" instead");
+        throw Error("a number was expected, got a \"" + (typeof n) + "\" instead (" + e + ")");
     }
     return n;
 };

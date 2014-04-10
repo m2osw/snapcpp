@@ -46,7 +46,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
         <xsl:attribute name="field_name"><xsl:value-of select="$name"/></xsl:attribute>
         <xsl:attribute name="class"><xsl:if test="$action = 'edit'">snap-editor </xsl:if>editable image-box <xsl:value-of select="$name"/><xsl:if test="@drop or /editor-form/drop"> drop</xsl:if><xsl:if test="@immediate or /editor-form/immediate"> immediate</xsl:if><xsl:if test="$name = /editor-form/focus/@refid"> auto-focus</xsl:if> <xsl:value-of select="classes"/></xsl:attribute>
         <xsl:if test="background-value != ''">
-          <!-- by default "snap-editor-background" have "display: none"
+          <!-- by default "snap-editor-background" objects have "display: none"
                a script shows them on load once ready AND if the value is empty
                also it is a "pointer-event: none;" -->
           <div class="snap-editor-background">
@@ -304,6 +304,29 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   </xsl:template>
   <xsl:template match="widget[@type='button']">
     <xsl:call-template name="snap:button">
+      <xsl:with-param name="path" select="@path"/>
+      <xsl:with-param name="name" select="@id"/>
+    </xsl:call-template>
+  </xsl:template>
+
+  <!-- HIDDEN (a value such as the editor form session identifier) -->
+  <!-- WARNING: we use this sub-template because of a Qt but with variables
+                that do not get defined properly without such trickery -->
+  <xsl:template name="snap:hidden">
+    <xsl:param name="path"/>
+    <xsl:param name="name"/>
+    <widget path="{$path}">
+      <div field_type="hidden" style="display: none;">
+        <xsl:attribute name="class"><xsl:value-of select="classes"/> snap-editor-hidden <xsl:value-of select="$name"/></xsl:attribute>
+        <div class="snap-content">
+          <xsl:copy-of select="value/node()"/>
+        </div>
+      </div>
+      <xsl:call-template name="snap:common-parts"/>
+    </widget>
+  </xsl:template>
+  <xsl:template match="widget[@type='hidden']">
+    <xsl:call-template name="snap:hidden">
       <xsl:with-param name="path" select="@path"/>
       <xsl:with-param name="name" select="@id"/>
     </xsl:call-template>

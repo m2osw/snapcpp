@@ -290,7 +290,7 @@ bool filter::replace_token_impl(content::path_info_t& ipath, QString const& plug
     {
         token.f_replacement = "<span style=\"font-weight: bold;\">The Test Token Worked</span>";
     }
-    else if(token.is_token("select"))
+    else if(token.is_token("select") || token.is_token("select_text"))
     {
         if(token.verify_args(1, 1))
         {
@@ -311,10 +311,17 @@ bool filter::replace_token_impl(content::path_info_t& ipath, QString const& plug
                     // apply the replacement
                     if(result[0].isElement())
                     {
-                        QDomDocument document;
-                        QDomNode copy(document.importNode(result[0], true));
-                        document.appendChild(copy);
-                        token.f_replacement = document.toString();
+                        if(token.f_name == "select_text")
+                        {
+                            token.f_replacement = result[0].toElement().text();
+                        }
+                        else
+                        {
+                            QDomDocument document;
+                            QDomNode copy(document.importNode(result[0], true));
+                            document.appendChild(copy);
+                            token.f_replacement = document.toString();
+                        }
                     }
                     else if(result[0].isAttr())
                     {
@@ -466,7 +473,15 @@ void filter::on_token_filter(content::path_info_t& ipath, QDomDocument& xml)
     public:
         typedef ushort char_t;
 
-        text_t(snap_child *snap, filter *f, content::path_info_t& ipath, QString const& owner, QDomDocument& xml, QString const& text)
+        text_t(
+                snap_child *snap,
+                filter *f,
+                content::path_info_t& ipath,
+                QString const& owner,
+                QDomDocument& xml,
+                QString const& text,
+                bool support_edit = true
+            )
             : f_snap(snap)
             , f_filter(f)
             , f_ipath(ipath)
@@ -479,6 +494,7 @@ void filter::on_token_filter(content::path_info_t& ipath, QDomDocument& xml)
             //, f_token("") -- auto-init
             //, f_replacement("") -- auto-init
             //, f_extra_input("") -- auto-init
+            , f_support_edit(support_edit)
         {
         }
 
@@ -643,7 +659,7 @@ void filter::on_token_filter(content::path_info_t& ipath, QDomDocument& xml)
             // TODO: at this point this check test whether the page as a
             //       whole is in edit mode, when some parts may not be
             //       editable to the current user
-            if(f_snap->get_action() == "edit")
+            if(f_support_edit && f_snap->get_action() == "edit")
             {
                 // if the editor is turned on, then we want to mark all
                 // fields as such so the editor is aware of them
@@ -869,6 +885,7 @@ void filter::on_token_filter(content::path_info_t& ipath, QDomDocument& xml)
         QString                     f_token;
         QString                     f_replacement;
         QString                     f_extra_input;
+        controlled_vars::mbool_t    f_support_edit;
     };
 
     // Avoid recursivity
@@ -965,6 +982,19 @@ void filter::on_token_filter(content::path_info_t& ipath, QDomDocument& xml)
         else if(n.isElement())
         {
             QDomElement e(n.toElement());
+
+            // apply the replacement to all the attributes of each tag
+            QDomNamedNodeMap attrs(e.attributes());
+            int const max_attrs(attrs.size());
+            for(int i(0); i < max_attrs; ++i)
+            {
+                QDomAttr a(attrs.item(i).toAttr());
+                text_t t(f_snap, this, state.ipath(), state.owner(), xml, a.value(), false);
+                if(t.parse())
+                {
+                    a.setValue(t.result());
+                }
+            }
 
             QString const tag_name(e.tagName());
             // TBD -- is it a problem to have hard coded tag names here?

@@ -186,9 +186,14 @@
 }
 
 
+/** EDITOR HIDDEN FIELD **/
+.editor-hidden
+{
+	display: none;
+}
+
 
 /** EDITOR EDIT BUTTON **/
-
 .editor-edit-button
 {
 	display: none;

@@ -1,6 +1,6 @@
 /** @preserve
  * Name: form
- * Version: 0.0.1.13
+ * Version: 0.0.2.0
  * Browsers: all
  * Depends: output (>= 0.0.5), jquery-extensions (>= 1.0.1)
  * Copyright: Copyright 2012-2014 (c) Made to Order Software Corporation  All rights reverved.
@@ -39,22 +39,22 @@ snapwebsites.Form = function()
 {
     var that = this;
 
-    jQuery(":any(input[type='text'] input[type='password']):not([data-background-value=''])")
+    jQuery("input[type='text']:not([data-background-value='']), input[type='password']:not([data-background-value=''])")
         .focus(function()
             {
-                that._focus(this);
+                that.focus_(this);
             })
         .change(function()
             {
-                that._change(this);
+                that.change_(this);
             })
         .blur(function()
             {
-                that._blur(this);
+                that.blur_(this);
             })
         .each(function(i, e)
             {
-                that._blur(e);
+                that.blur_(e);
             });
 
     return this;
@@ -77,8 +77,10 @@ snapwebsites.base(snapwebsites.Form);
  * password widgets whenever the background value is removed.
  *
  * @param {Element} widget  The widget that was just focused.
+ *
+ * @private
  */
-snapwebsites.Form.prototype._focus = function(widget)
+snapwebsites.Form.prototype.focus_ = function(widget)
 {
     var w = jQuery(widget);
 
@@ -108,8 +110,10 @@ snapwebsites.Form.prototype._focus = function(widget)
  * the widget gets blurred.
  *
  * @param {Element} widget  The widget that just changed.
+ *
+ * @private
  */
-snapwebsites.Form.prototype._change = function(widget)
+snapwebsites.Form.prototype.change_ = function(widget)
 {
     var w = jQuery(widget);
 
@@ -128,8 +132,10 @@ snapwebsites.Form.prototype._change = function(widget)
  * value (otherwise the background value would show up as stars.)
  *
  * @param {Element} widget  The widget that just lost focus.
+ *
+ * @private
  */
-snapwebsites.Form.prototype._blur = function(widget)
+snapwebsites.Form.prototype.blur_ = function(widget)
 {
     var w = jQuery(widget);
 
@@ -168,7 +174,7 @@ snapwebsites.Form.prototype.getVal = function(widget)
     {
         return '';
     }
-    return snapwebsites.Output.castToString(w.val());
+    return snapwebsites.castToString(w.val(), "Form.getVal() casting the .val() result");
 };
 
 

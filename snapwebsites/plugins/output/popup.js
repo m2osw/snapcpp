@@ -1,6 +1,6 @@
 /** @preserve
  * Name: popup
- * Version: 0.0.19
+ * Version: 0.1.0
  * Browsers: all
  * Copyright: Copyright 2014 (c) Made to Order Software Corporation  All rights reverved.
  * Depends: output (0.0.5)
