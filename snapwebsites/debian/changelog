@@ -1,9 +1,10 @@
-snapwebsites (0.1.40~saucyubuntu1) UNRELEASED; urgency=low
+snapwebsites (0.1.41~saucy) saucy; urgency=high
 
   [ Alexis Wilke ]
-  * Added support for default value in dropdown widgets.
+  * a12d730 Fixed z-index problem with dropdown.
+  * 72f505b Added support for a default value in dropdown widgets.
 
- -- Alexis Wilke <alexis@m2osw.com>  Fri, 04 Apr 2014 17:39:41 -0700
+ -- R. Douglas Barbieri <doug@dooglio.net>  Fri, 04 Apr 2014 17:39:41 -0700
 
 snapwebsites (0.1.40~saucy) saucy; urgency=high
 
