@@ -114,7 +114,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
             <!-- avoid spellcheck of non-editable widgets -->
             <xsl:attribute name="spellcheck">false</xsl:attribute>
           </xsl:if>
-          
+
           <xsl:choose>
             <xsl:when test="value/item[@default='default']">
               <xsl:attribute name="value"><xsl:copy-of select="value/item[@default='default']/@value"/></xsl:attribute>

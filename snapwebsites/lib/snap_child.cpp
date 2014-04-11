@@ -5334,6 +5334,22 @@ QString snap_child::postenv(const QString& name, const QString& default_value) c
 }
 
 
+/** \brief Replace the value of a POST variable.
+ *
+ * Once in a while you may want to change a POST variable. One reason might
+ * be to apply a filter on a field before it gets saved in the database. This
+ * is accessible by any plugin so any one of those can do some work as
+ * required.
+ *
+ * \param[in] name  The name of the POST variable to fetch.
+ * \param[in] value  The new value for this POST variable.
+ */
+void snap_child::replace_postenv(const QString& name, const QString& value)
+{
+    f_post[name] = value;
+}
+
+
 /** \brief Check whether a file from the POST request is defined.
  *
  * This function is expected to be called to verify that a file was

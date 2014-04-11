@@ -171,7 +171,7 @@ int64_t editor::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2014, 4, 10, 5, 15, 30, content_update);
+    SNAP_PLUGIN_UPDATE(2014, 4, 11, 5, 50, 40, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -885,7 +885,11 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
 //         from what I can tell... although if we could extract the
 //         loop that validates and saves the data that could be enough
 //         because then we could call it last with the revision row where
-//         the data is to be saved
+//         the data is to be saved.
+//
+//         Plus, we have to verify that the Save happens only after
+//         validation (for obvious security reasons.) However, drafts are a
+//         potential problem in that arena...
 //
 
     bool switch_branch(false);
@@ -929,7 +933,6 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
             content_plugin->set_branch(key, owner, branch_number, true);
             content_plugin->set_branch_key(key, owner, branch_number, true);
             content_plugin->set_branch_key(key, owner, branch_number, false);
-
         }
 
         // get the revision number only AFTER the branch was created
@@ -1058,6 +1061,13 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
                         // no special handling for empty strings here
                         revision_row->cell(field_name)->setValue(post_value);
                     }
+                    else if(widget_auto_save == "html")
+                    {
+                        // like a string, but convert inline images too
+                        QString value(post_value);
+                        parse_out_inline_img(ipath, value);
+                        revision_row->cell(field_name)->setValue(value);
+                    }
                 }
                 else
                 {
@@ -1085,7 +1095,8 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
                                 current_value = QString("%1").arg(current_value);
                             }
                         }
-                        else if(widget_auto_save == "string")
+                        else if(widget_auto_save == "string"
+                             || widget_auto_save == "html")
                         {
                             // no special handling for empty strings here
                             current_value = value.stringValue();
@@ -2639,9 +2650,10 @@ void editor::on_generate_page_content(content::path_info_t& ipath, QDomElement& 
                     }
                 }
             }
-            else if(widget_auto_save == "string")
+            else if(widget_auto_save == "string"
+                 || widget_auto_save == "html")
             {
-                // no special handling for empty strings here
+                // no special handling for strings / html
                 current_value = revision_row->cell(field_name)->value().stringValue();
             }
             else

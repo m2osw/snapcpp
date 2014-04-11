@@ -232,6 +232,7 @@
 	position: absolute;
 	display: none;
 	pointer-events: none;
+	z-index: 2;
 }
 
 .editable .snap-editor-background-content

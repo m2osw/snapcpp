@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.42
+ * Version: 0.0.3.104
  * Browsers: all
  * Copyright: Copyright 2013-2014 (c) Made to Order Software Corporation  All rights reverved.
  * License: GPL 2.0
@@ -771,6 +771,25 @@ snapwebsites.EditorWidgetTypeBase.prototype.saving = function(editor_widget, dat
  * created by the main editor object (i.e. the toolbar and forms are created
  * by the main editor object.)
  *
+ * \code
+ * class EditorBase
+ * {
+ * public:
+ *      virtual function getToolbar() : EditorToolbar;
+ *      function setActiveElement(element: jQuery);
+ *      function getActiveElement() : jQuery;
+ *      function refocus();
+ *      virtual function checkModified();
+ *      virtual function getLinkDialog() : LinkDialog;
+ *      virtual function registerWidgetType(widget_type: EditorWidgetType);
+ *      function hasWidgetType(type_name: string) : boolean;
+ *      function getWidgetType(type_name: string) : EditorWidgetType;
+ * private:
+ *      activeElement_: Element;
+ *      widgetTypes_: EditorWidgetType;
+ * };
+ * \endcode
+ *
  * \return The newly created object.
  *
  * @constructor
@@ -807,6 +826,7 @@ snapwebsites.base(snapwebsites.EditorBase);
  * When no elements are focused, it is expected to be null. However,
  * our current code may not always properly reset it.
  *
+ * @type {jQuery}
  * @private
  */
 snapwebsites.EditorBase.prototype.activeElement_ = null;
@@ -855,9 +875,16 @@ snapwebsites.EditorBase.prototype.getToolbar = function() // virtual
 snapwebsites.EditorBase.prototype.setActiveElement = function(element)
 {
 //#ifdef DEBUG
-    if(!(element instanceof jQuery))
+    if(element !== null)
     {
-        throw new Error("setActiveElement() must be called with a jQuery object.");
+        if(!(element instanceof jQuery))
+        {
+            throw new Error("setActiveElement() must be called with a jQuery object.");
+        }
+        if(!element.is(".editor-content"))
+        {
+            throw new Error("setActiveElement() must be called with a jQuery object of a content-editor object. The class attribute of this object is \"" + element.attr("class") + "\".");
+        }
     }
 //#endif
     this.activeElement_ = element;
@@ -941,7 +968,7 @@ snapwebsites.EditorBase.prototype.getLinkDialog = function() // virtual
  *
  * @param {snapwebsites.EditorWidgetType} widget_type  The widget type to register.
  */
-snapwebsites.EditorBase.prototype.registerWidgetType = function(widget_type)
+snapwebsites.EditorBase.prototype.registerWidgetType = function(widget_type) // virtual
 {
     var name = widget_type.getType();
     this.widgetTypes_[name] = widget_type;
@@ -1877,9 +1904,6 @@ snapwebsites.EditorWidget = function(editor_base, editor_form, widget)
 {
     var type = snapwebsites.castToString(widget.attr("field_type"), "field_type attribute");
 
-    // back reference for places were we cannot otherwise have this object
-    widget.data("snapEditorWidget", this);
-
     this.editorBase_ = editor_base;
     this.editorForm_ = editor_form;
     this.widget_ = widget; // this is the jQuery widget (.snap-editor)
@@ -2238,6 +2262,26 @@ snapwebsites.EditorWidget.isEmptyBlock = function(html) // static
 /** \brief Snap EditorFormBase constructor.
  *
  * The EditorForm inherits the EditorFormBase.
+ *
+ * \code
+ * class EditorFormBase
+ * {
+ * public:
+ *      function EditorFormBase(editor_base, session) : EditorFormBase;
+ *      function getEditorBase() : EditorBase;
+ *      function getFormWidget() : jQuery;
+ *      virtual function saveData();
+ *
+ * private:
+ *      SAVE_MODE_PUBLISH: string;
+ *      SAVE_MODE_SAVE: string;
+ *      SAVE_MODE_SAVE_NEW_BRANCH: string;
+ *      SAVE_MODE_SAVE_DRAFT: string;
+ *
+ *      editorBase_: EditorBase;
+ *      formWidget_: jQuery;
+ * };
+ * \endcode
  *
  * @param {snapwebsites.EditorBase} editor_base  The base editor object.
  * @param {jQuery} form_widget  The editor form DOM in a jQuery object.
@@ -2636,6 +2680,43 @@ snapwebsites.EditorSaveDialog.prototype.setStatus = function(new_status)
 
 /** \brief Snap EditorForm constructor.
  *
+ * \code
+ * class EditorForm : public EditorFormBase
+ * {
+ * public:
+ *      function EditorForm() : EditorForm;
+ *      function getName() : string;
+ *      function getWidgetByName(name: string) : EditorWidget;
+ *      function getSession() : string;
+ *      function setInPopup(in_popup: boolean);
+ *      function getToolbarAutoVisible() : boolean;
+ *      function setToolbarAutoVisible(toolbar_auto_visible: boolean);
+ *      virtual function saveData(mode: string);
+ *      function isSaving() : boolean;
+ *      function setSaving(new_status: boolean);
+ *      function changed();
+ *      function getSaveDialog() : EditorSaveDialog;
+ *      function newTypeRegistered();
+ *      function wasModified(recheck: boolean) : boolean;
+ *
+ * private:
+ *      function titleToURI_(title: string) : string;
+ *      function readyWidgets_();
+ *
+ *      usedTypes_: Object;             // map of types necessary to open that form
+ *      session_: string;               // session identifier
+ *      name_: string;                  // the name of the form
+ *      widgets_: jQuery;               // the widgets of this form
+ *      editorWidgets_: Object;         // map of editor objects
+ *      widgetInitialized_: boolean;    // whether the form was initialized
+ *      saveDialog_: EditorSaveDialog;  // a reference to the save dialog
+ *      saveAll_: boolean;              // save all fields, whether changed or not
+ *      toolbarAutoVisible: boolean;    // whether to show the toolbar automatically
+ *      inPopup_: boolean;              // are we in a popup?
+ *      modified_: boolean;             // one or more fields changed
+ * };
+ * \endcode
+ *
  * \note
  * The Snap! EditorForm objects are created as required based on the DOM.
  * If the DOM is dynamically updated to add more forms, then it may require
@@ -2644,6 +2725,7 @@ snapwebsites.EditorSaveDialog.prototype.setStatus = function(new_status)
  *
  * @param {snapwebsites.EditorBase} editor_base  The base editor object.
  * @param {jQuery} form_widget  The editor form DOM in a jQuery object.
+ * @param {!string} name  The name of the editor form.
  * @param {!string} session  The form session identification.
  *
  * @return {!snapwebsites.EditorForm}  The newly created object.
@@ -2652,12 +2734,15 @@ snapwebsites.EditorSaveDialog.prototype.setStatus = function(new_status)
  * @constructor
  * @struct
  */
-snapwebsites.EditorForm = function(editor_base, form_widget, session)
+snapwebsites.EditorForm = function(editor_base, form_widget, name, session)
 {
-    snapwebsites.EditorForm.superClass_.constructor(editor_base, form_widget);
-    this.editorWidgets_ = [];
+    snapwebsites.EditorForm.superClass_.constructor.call(this, editor_base, form_widget);
+
+    this.editorWidgets_ = {};
     this.usedTypes_ = {};
     this.session_ = session;
+    this.name_ = name;
+
     this.readyWidgets_();
 
     return this;
@@ -2696,6 +2781,17 @@ snapwebsites.EditorForm.prototype.usedTypes_; // = {}; -- initialized in the con
  * @private
  */
 snapwebsites.EditorForm.prototype.session_ = "";
+
+
+/** \brief The name of this form.
+ *
+ * This is the name of this editor form object. The name is taken from the
+ * "form_name" attribute which must exist on the "editor-form" DOM element.
+ *
+ * @type {!string}
+ * @private
+ */
+snapwebsites.EditorForm.prototype.name_ = "";
 
 
 /** \brief A jQuery array of widgets found in this form.
@@ -2791,6 +2887,47 @@ snapwebsites.EditorForm.prototype.toolbarAutoVisible_ = true;
 snapwebsites.EditorForm.prototype.inPopup_ = false;
 
 
+/** \brief Whether this form was modified.
+ *
+ * Whenever a form is first loaded and after a successful save,
+ * this flag is set to false, meaning that the form was not
+ * modified. Each time an event that may have modified the
+ * form happens, the wasModified() function is called to check
+ * all the fields. If one or more were modified, then the form
+ * is marked as modified.
+ *
+ * @type {boolean}
+ * @private
+ */
+snapwebsites.EditorForm.prototype.modified_ = false;
+
+
+/** \brief Retrieve the editor form name.
+ *
+ * This function returns the name of the editor form.
+ *
+ * @return {string} The editor form name.
+ */
+snapwebsites.EditorForm.prototype.getName = function()
+{
+    return this.name_;
+};
+
+
+/** \brief Retrieve a widget reference.
+ *
+ * This function returns the EditorWidget using the widget's name.
+ *
+ * @param {string} name  The name of the widget to retrieve.
+ *
+ * @return {snapwebsites.EditorWidget} A reference to the editor widget.
+ */
+snapwebsites.EditorForm.prototype.getWidgetByName = function(name)
+{
+    return this.editorWidgets_[name];
+};
+
+
 /** \brief Define the inPopup_ flag.
  *
  * This function is used to set the inPopup_ flag to true or false.
@@ -2879,8 +3016,14 @@ snapwebsites.EditorForm.prototype.titleToURI_ = function(title)
  */
 snapwebsites.EditorForm.prototype.saveData = function(mode)
 {
-    var that = this;
+    var that = this,
+        key,                                // loop index
+        w,                                  // widget being managed
+        saved_data = {},                    // "array" of data objects
+        obj = {},                           // object to send via AJAX
+        url;                                // the URL used to send the data
 
+    // are we already saving? if so, generate an error
     if(this.isSaving())
     {
         // TODO: translation support
@@ -2891,27 +3034,17 @@ snapwebsites.EditorForm.prototype.saveData = function(mode)
     // mark the form as saving, it may use CSS to show the new status
     this.setSaving(true);
 
-    var i,                              // loop index
-        max = this.widgets_.length,     // max. index
-        w,                              // widget being managed
-        saved_data = {},                // "array" of data objects
-        obj = {},                       // object to send via AJAX
-
-        saved = [],
-        edit_area,
-        url,
-        name,
-        keep_darken_page = false,
-        value;
-
-    for(i = 0; i < max; ++i)
+    for(key in this.editorWidgets_)
     {
-        w = this.widgets_[i];
-        if(this.saveAll_
-        || w.wasModified(true))
+        if(this.editorWidgets_.hasOwnProperty(key))
         {
-            saved_data[i] = w.saving();
-            obj[w.getName()] = saved_data[i].result;
+            w = this.editorWidgets_[key];
+            if(this.saveAll_
+            || w.wasModified(true))
+            {
+                saved_data[key] = w.saving();
+                obj[key] = saved_data[key].result;
+            }
         }
     }
 
@@ -2924,7 +3057,6 @@ snapwebsites.EditorForm.prototype.saveData = function(mode)
         obj["editor_uri"] = this.titleToURI_( /** @type {string} */ (jQuery("[field_name='title'] .editor-content").text()));
         url = jQuery("link[rel='canonical']").attr("href");
         url = url ? url : "/";
-        keep_darken_page = true;
         jQuery.ajax(url, {
             type: "POST",
             processData: true,
@@ -2938,7 +3070,7 @@ snapwebsites.EditorForm.prototype.saveData = function(mode)
             },
             success: function(data, result_status, jqxhr)
             {
-                var i, j, modified, element_modified, results, doc, redirect, uri;
+                var key, modified, results, doc, redirect, uri;
 
 //console.log(jqxhr);
                 if(jqxhr.status == 200)
@@ -2954,14 +3086,17 @@ snapwebsites.EditorForm.prototype.saveData = function(mode)
                         // success! so it was saved and now that's the new
                         // original value and next "Save" doesn't do anything
                         modified = false;
-                        for(i = 0; i < max; ++i)
+                        for(key in that.editorWidgets_)
                         {
-                            if(saved_data[i])
+                            if(that.editorWidgets_.hasOwnProperty(key))
                             {
-                                w = this.widgets_[i];
-                                if(w.saved(saved_data[i]))
+                                if(saved_data[key])
                                 {
-                                    modified = true;
+                                    w = that.editorWidgets_[key];
+                                    if(w.saved(saved_data[key]))
+                                    {
+                                        modified = true;
+                                    }
                                 }
                             }
                         }
@@ -3015,7 +3150,7 @@ snapwebsites.EditorForm.prototype.saveData = function(mode)
                 //       (probably generally unlikely... and it should
                 //       not have any effect because we re-compare the
                 //       data and do nothing if no modifications happened)
-                this.setSaving(false);
+                that.setSaving(false);
             },
             dataType: "xml"
         });
@@ -3037,7 +3172,7 @@ snapwebsites.EditorForm.prototype.saveData = function(mode)
  */
 snapwebsites.EditorForm.prototype.isSaving = function() // virtual
 {
-    return this.formWidget_.is(".editor-saving");
+    return this.getFormWidget().is(".editor-saving");
 };
 
 
@@ -3052,7 +3187,7 @@ snapwebsites.EditorForm.prototype.isSaving = function() // virtual
  */
 snapwebsites.EditorForm.prototype.setSaving = function(new_status)
 {
-    this.formWidget_.toggleClass("editor-saving", new_status);
+    this.getFormWidget().toggleClass("editor-saving", new_status);
     this.saveDialog_.setStatus(!new_status);
 
     // TODO: add a condition coming from the DOM (i.e. we don't want
@@ -3086,9 +3221,9 @@ snapwebsites.EditorForm.prototype.changed = function()
     var e = jQuery.Event("formchange", {
             form: this
         });
-    this.formWidget_.trigger(e);
+    this.getFormWidget().trigger(e);
 
-    if(!this.formWidget_.is(".no-save"))
+    if(!this.getFormWidget().is(".no-save"))
     {
         this.getSaveDialog().open();
     }
@@ -3142,7 +3277,7 @@ snapwebsites.EditorForm.prototype.readyWidgets_ = function()
     var that = this, key;
 
     // retrieve the widgets defined in that form
-    this.widgets_ = this.formWidget_.find(".snap-editor");
+    this.widgets_ = this.getFormWidget().find(".snap-editor");
 
     // retrieve the field types for all the widgets
     this.widgets_.each(function(idx, w)
@@ -3156,7 +3291,7 @@ snapwebsites.EditorForm.prototype.readyWidgets_ = function()
     this.newTypeRegistered();
 
     // make labels focus the corresponding editable box
-    this.formWidget_.find("label[for!='']").click(function(e)
+    this.getFormWidget().find("label[for!='']").click(function(e)
         {
             // the default may recapture the focus, so avoid it!
             e.preventDefault();
@@ -3246,13 +3381,19 @@ snapwebsites.EditorForm.prototype.newTypeRegistered = function()
  */
 snapwebsites.EditorForm.prototype.wasModified = function(recheck)
 {
-    var i,                              // loop index
-        max = this.widgets_.length;     // number of widgets
+    var key;                            // loop index
 
-    for(i = 0; i < max; ++i)
+    if(!recheck && this.modified_)
     {
-        if(this.widgets_[i].wasModified(recheck))
+        return true;
+    }
+
+    for(key in this.editorWidgets_)
+    {
+        if(this.editorWidgets_.hasOwnProperty(key)
+        && this.editorWidgets_[key].wasModified(recheck))
         {
+            this.modified_ = true;
             return true;
         }
     }
@@ -3268,6 +3409,30 @@ snapwebsites.EditorForm.prototype.wasModified = function(recheck)
  * The Snap! Editor is a singleton and should never be created by you. It
  * gets initialized automatically when this editor.js file gets included.
  *
+ * \code
+ * class Editor : public EditorBase
+ * {
+ * public:
+ *      function Editor() : Editor;
+ *      virtual function getToolbar() : EditorToolbar;
+ *      virtual function checkModified();
+ *      function getActiveEditorForm() : EditorForm;
+ *      virtual function getLinkDialog() : LinkDialog;
+ *      virtual function registerWidgetType(widget_type: EditorWidgetType);
+ *
+ * private:
+ *      function attachToForms_();
+ *      function initUnload_();
+ *      function unload_() : string;
+ *
+ *      toolbar_: EditorToolbar;
+ *      editorSession_: Array; // of strings
+ *      editorForm_: Object; // map of editor forms
+ *      unloadCalled_: boolean;
+ *      linkDialog_: EditorLinkDialog;
+ * };
+ * \endcode
+ *
  * \return The newly created object.
  *
  * @constructor
@@ -3276,9 +3441,9 @@ snapwebsites.EditorForm.prototype.wasModified = function(recheck)
  */
 snapwebsites.Editor = function()
 {
-    snapwebsites.Editor.superClass_.constructor();
-    this.editorSessions_ = [];
+    snapwebsites.Editor.superClass_.constructor.call(this);
     this.editorForms_ = {};
+    this.editorFormsByName_ = {};
     this.initUnload_();
     this.attachToForms_();
 
@@ -3306,31 +3471,23 @@ snapwebsites.inherits(snapwebsites.Editor, snapwebsites.EditorBase);
 snapwebsites.Editor.prototype.toolbar_ = null;
 
 
-/** \brief List of EditorForm sessions.
+/** \brief List of EditorForm objects.
  *
- * This variable member holds the array of EditorForm sessions as found
- * in the DOM. Later additional entries can be added dynamically and
- * existing entries can be removed (TBD.)
+ * This variable member holds the map of EditorForm objects indexed by
+ * their name.
  *
- * The "session" attribute is expected to be defined in each tag marked as
- * an "editor-form" (i.e. with class including the name "editor-form".)
- *
- * By default the list is empty, although if this editor scripts get loaded
- * it is very unlikely that it will stay that way.
- *
- * @type {Array.<string>}
+ * @type {Object.<snapwebsites.EditorForm>}
  * @private
  */
-snapwebsites.Editor.prototype.editorSessions_; // = []; -- initialized in the constructor to avoid problems
+snapwebsites.Editor.prototype.editorFormsByName_; // = {} -- initialized in the constructor to avoid problems
 
 
 /** \brief List of EditorForm objects.
  *
  * This variable member holds the map of EditorForm objects indexed by
  * their sessions number (although those numbers are managed as strings).
- * The numbers are listed in the editorSessions_ array.
  *
- * @type {Object}
+ * @type {Object.<snapwebsites.EditorForm>}
  * @private
  */
 snapwebsites.Editor.prototype.editorForms_; // = {}; -- initialized in the constructor to avoid problems
@@ -3378,11 +3535,30 @@ snapwebsites.Editor.prototype.attachToForms_ = function()
     // retrieve the list of forms using their sessions
     jQuery(".editor-form")
         .each(function(){
+            // TBD: We may able to drop the session map.
             var that_element = jQuery(this);
             var session = snapwebsites.castToString(that_element.attr("session"), "editor form session attribute");
-            that.editorSessions_.push(session);
-            that.editorForms_[session] = new snapwebsites.EditorForm(that, that_element, session);
+            var name = snapwebsites.castToString(that_element.attr("form_name"), "editor form name attribute");
+            that.editorForms_[session] = new snapwebsites.EditorForm(that, that_element, name, session);
+            that.editorFormsByName_[name] = that.editorForms_[session];
         });
+};
+
+
+/** \brief Retrieve a reference to one of the forms by name.
+ *
+ * This function takes the name of a form and returns a corresponding
+ * reference to the EditorForm object.
+ *
+ * If the form does not exist, null is returned.
+ *
+ * @param {string} form_name  The name of the form.
+ *
+ * @return {snapwebsites.EditorForm}  The corresponding EditorForm object.
+ */
+snapwebsites.Editor.prototype.getFormByName = function(form_name)
+{
+    return this.editorFormsByName_[form_name];
 };
 
 
@@ -3418,26 +3594,29 @@ snapwebsites.Editor.prototype.initUnload_ = function()
  */
 snapwebsites.Editor.prototype.unload_ = function()
 {
-    var i,                  // loop index
-        max,                // number of sessions
+    var key,                // loop index
         that = this;        // this pointer in the closure function
 
     if(!this.unloadCalled_)
     {
-        max = this.editorSessions_.length;
-        for(i = 0; i < max; ++i)
+        for(key in this.editorForms_)
         {
-            if(this.editorForms_[this.editorSessions_[i]].wasModified(true))
+            if(this.editorForms_.hasOwnProperty(key))
             {
-                // add this flag and timeout to avoid a double
-                // "are you sure?" under Firefox browsers
-                this.unloadCalled_ = true;
-                setTimeout(function(){
-                        that.unloadCalled_ = false;
-                    }, 20);
+                if(this.editorForms_[key].wasModified(true))
+                {
+                    // add this flag and timeout to avoid a double
+                    // "are you sure?" under Firefox browsers
+                    this.unloadCalled_ = true;
+                    setTimeout(function(){
+                            that.unloadCalled_ = false;
+                        }, 20);
 
-                // TODO: translation
-                return "You made changes to this page! Click Cancel to avoid closing the window and Save your changes first.";
+                    // TODO: translation
+                    //       (although it doesn't show up in FireFox based
+                    //       browsers many others do show this message)
+                    return "You made changes to this page! Click Cancel to avoid closing the window and Save your changes first.";
+                }
             }
         }
     }
@@ -3479,16 +3658,20 @@ snapwebsites.Editor.prototype.getToolbar = function() // virtual
  */
 snapwebsites.Editor.prototype.checkModified = function() // virtual
 {
-    var active_element = this.getActiveElement(),
+    var active_element,
         active_form = this.getActiveEditorForm(),
+        widget_name,
         widget;
 
-    // checkMofified only applies to the active element so make sure
+    // checkModified only applies to the active element so make sure
     // there is one when called
     if(active_form)
     {
         // allow the toolbar to adjust itself (move to a new location)
-        this.toolbar_.checkPosition();
+        if(this.toolbar_)
+        {
+            this.toolbar_.checkPosition();
+        }
 
         // get the form in which this element is defined
         // and call the wasModified() function on it
@@ -3498,7 +3681,9 @@ snapwebsites.Editor.prototype.checkModified = function() // virtual
         }
 
         // replace nothingness by "background" value
-        widget = /** @type {snapwebsites.EditorWidget} */ (active_element.data("snapEditorWidget"));
+        active_element = this.getActiveElement();
+        widget_name = snapwebsites.castToString(active_element.parent().attr("field_name"), "Editor active element \"field_name\" attribute");
+        widget = active_form.getWidgetByName(widget_name);
         widget.checkForBackgroundValue();
     }
 };
@@ -3535,7 +3720,7 @@ snapwebsites.Editor.prototype.getActiveEditorForm = function()
 //#endif
     }
 
-    return null;
+    return editor_form;
 };
 
 
@@ -3574,21 +3759,23 @@ snapwebsites.Editor.prototype.getLinkDialog = function()
  *
  * @param {snapwebsites.EditorWidgetType} widget_type  The widget type to register.
  */
-snapwebsites.Editor.prototype.registerWidgetType = function(widget_type)
+snapwebsites.Editor.prototype.registerWidgetType = function(widget_type) // virtual
 {
     // first make sure to call the super class function
-    snapwebsites.Editor.superClass_.registerWidgetType(widget_type);
+    snapwebsites.Editor.superClass_.registerWidgetType.call(this, widget_type);
 
-    var i,
-        max = this.editorSessions_.length;
+    var key;
 
     // let all the forms know we have a new type
     //
     // XXX -- this is not really the most efficient, but at this point it
     //        will do
-    for(i = 0; i < max; ++i)
+    for(key in this.editorForms_)
     {
-        this.editorForms_[this.editorSessions_[i]].newTypeRegistered();
+        if(this.editorForms_.hasOwnProperty(key))
+        {
+            this.editorForms_[key].newTypeRegistered();
+        }
     }
 };
 
@@ -3618,7 +3805,7 @@ snapwebsites.Editor.prototype.registerWidgetType = function(widget_type)
  */
 snapwebsites.EditorWidgetType = function()
 {
-    snapwebsites.EditorWidgetType.superClass_.constructor();
+    snapwebsites.EditorWidgetType.superClass_.constructor.call(this);
 
     // TBD
     // Maybe at some point we'd want to create yet another layer
@@ -3660,7 +3847,7 @@ snapwebsites.EditorWidgetType.prototype.initializeWidget = function(widget) // v
     // widget gets the focus, make it the active widget
     c.focus(function()
         {
-            editor_widget.getEditorBase().setActiveElement(w);
+            editor_widget.getEditorBase().setActiveElement(c);
 
             if(!jQuery(this).is(".no-toolbar"))
             {
@@ -3701,6 +3888,9 @@ snapwebsites.EditorWidgetType.prototype.initializeWidget = function(widget) // v
         {
             e.preventDefault();
             e.stopPropagation();
+
+            // allows your CSS to change some things when areas are
+            // being dragged over
             jQuery(this).parent().addClass("dragging-over");
         });
 
@@ -3717,6 +3907,8 @@ snapwebsites.EditorWidgetType.prototype.initializeWidget = function(widget) // v
         {
             e.preventDefault();
             e.stopPropagation();
+
+            // remove the class when the mouse leaves
             jQuery(this).parent().removeClass("dragging-over");
         });
 
@@ -3785,7 +3977,10 @@ snapwebsites.EditorWidgetType.prototype.initializeWidget = function(widget) // v
                         r.snapEditorIndex = i;
                         r.snapEditorAcceptImages = accept_images;
                         r.snapEditorAcceptFiles = accept_files;
-                        r.onload = that.droppedFile_;
+                        r.onload = function(e)
+                            {
+                                that.droppedFile_(e);
+                            };
 
                         //
                         // TBD: right now we only check the first few bytes
@@ -3957,7 +4152,10 @@ snapwebsites.EditorWidgetType.prototype.getEditButton = function() // virtual
  */
 snapwebsites.EditorWidgetType.prototype.droppedFile_ = function(e)
 {
-    var mime, r, a, blob;
+    var that = this,
+        r,
+        a,
+        blob;
 
     e.target.snapEditorMIME = snapwebsites.OutputInstance.bufferToMIME(e.target.result);
     if(e.target.snapEditorAcceptImages && e.target.snapEditorMIME.substr(0, 6) == "image/")
@@ -3967,19 +4165,21 @@ snapwebsites.EditorWidgetType.prototype.droppedFile_ = function(e)
         // It is an image, now convert the data to URI encoding
         // (i.e. base64 encoding) before saving the result in the
         // target element
-
-//console.log("image type: "+mime.substr(6)+", target = ["+e.target+"]");
-
         r = new FileReader;
         r.snapEditorElement = e.target.snapEditorElement;
         r.snapEditorFile = e.target.snapEditorFile;
+        r.snapEditorIndex = e.target.snapEditorIndex;
         r.snapEditorAcceptImages = e.target.snapEditorAcceptImages;
         r.snapEditorAcceptFiles = e.target.snapEditorAcceptFiles;
         r.snapEditorMIME = e.target.snapEditorMIME;
-        r.onload = this.droppedImageConvert_;
+        r.onload = function(e)
+            {
+                that.droppedImageConvert_(e);
+            };
+
         a = [];
         a.push(e.target.snapEditorFile);
-        blob = new Blob(a, { type: mime });
+        blob = new Blob(a, { type: e.target.snapEditorMIME });
         r.readAsDataURL(blob);
     }
     else if(e.target.snapEditorAcceptFiles && e.target.snapEditorMIME)
@@ -4346,7 +4546,7 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.initializeWidget = function(widg
             visible = that_element.is(".disabled") || d.is(":visible");
 
             // hide the dropdown AFTER we checked its visibility
-            this.hideDropdown();
+            that.hideDropdown();
 
             if(!visible)
             {
@@ -4363,42 +4563,47 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.initializeWidget = function(widg
             }
         });
 
-    d.children(".dropdown-item").click(function(e)
-        {
-            var that_element = jQuery(this), content, items;
-
-            // avoid default browser behavior
-            e.preventDefault();
-            e.stopPropagation();
-
-            // hide the dropdown (we could use d.toggle() but that
-            // would not update the openDropdon_ variable member)
-            this.hideDropdown();
-
-            // first select the new item
-            d.find(".dropdown-item").removeClass("selected");
-            that_element.addClass("selected");
-
-            // then copy the item label to the "content" (line edit)
-            c.empty();
-            c.append(that_element.html());
-
-            // finally, get the resulting value if there is one
-            if(that_element.attr("value") != "")
+    d.children(".dropdown-selection").children(".dropdown-item")
+        .click(function(e)
             {
-                c.attr("value", snapwebsites.castToString(that_element.attr("value"), "dropdown item value attribute"));
-            }
-            else
-            {
-                c.removeAttr("value");
-            }
+                var that_element = jQuery(this), content, items;
 
-            editor_widget.getEditorBase().checkModified();
-        });
+                // avoid default browser behavior
+                e.preventDefault();
+                e.stopPropagation();
+
+                // hide the dropdown (we could use d.toggle() but that
+                // would not update the openDropdon_ variable member)
+                that.hideDropdown();
+
+                // first select the new item
+                d.find(".dropdown-item").removeClass("selected");
+                that_element.addClass("selected");
+
+                // then copy the item label to the "content" (line edit)
+                c.empty();
+                c.append(that_element.html());
+
+                // finally, get the resulting value if there is one
+                if(that_element.attr("value") != "")
+                {
+                    c.attr("value", snapwebsites.castToString(that_element.attr("value"), "dropdown item value attribute"));
+                }
+                else
+                {
+                    c.removeAttr("value");
+                }
+
+                // make that dropdown the currently active object
+                c.focus();
+                editor_widget.getEditorBase().setActiveElement(c);
+
+                editor_widget.getEditorBase().checkModified();
+            });
 
     c.blur(function(e)
         {
-            this.hideDropdown();
+            that.hideDropdown();
         });
 
     // TODO: we need to add support for the up/down arrow keys to change
@@ -4624,17 +4829,17 @@ snapwebsites.EditorWidgetTypeImageBox.prototype.initializeWidget = function(widg
  */
 snapwebsites.EditorWidgetTypeImageBox.prototype.droppedImage = function(e, img)
 {
-    var saved_active_element, editor_base;
+    var saved_active_element, editor;
 
     e.target.snapEditorElement.empty();
     jQuery(img).appendTo(e.target.snapEditorElement);
 
     // now make sure the editor detects the change
-    editor_base = snapwebsites.EditorInstance;
-    saved_active_element = editor_base.getActiveElement();
-    editor_base.setActiveElement(e.target.snapEditorElement);
-    editor_base.checkModified();
-    editor_base.setActiveElement(saved_active_element);
+    editor = snapwebsites.EditorInstance;
+    saved_active_element = editor.getActiveElement();
+    editor.setActiveElement(e.target.snapEditorElement);
+    editor.checkModified();
+    editor.setActiveElement(saved_active_element);
 };
 
 

@@ -79,7 +79,7 @@ snapwebsites.base = function(base_class)
  * snapwebsites.base(snapwebsites.A);
  *
  * // class A -- a method
- * snapwebsites.A.prototype.someMethod = function()
+ * snapwebsites.A.prototype.someMethod = function(q)
  * {
  *      ...
  * }
@@ -87,6 +87,8 @@ snapwebsites.base = function(base_class)
  * // class B -- constructor
  * snapwebsites.B = function()
  * {
+ *      snapwebsites.B.superClass_.constructor.call(this);
+ *      // with parameters: snapwebsites.B.superClass_.constructor.call(this, a, b, c);
  *      ...
  * };
  *
@@ -100,11 +102,11 @@ snapwebsites.base = function(base_class)
  * };
  *
  * // class B : override function
- * snapwebsites.B.prototype.someMethod = function()
+ * snapwebsites.B.prototype.someMethod = function(p, q)
  * {
  *      ...
  *      // call super class method (optional)
- *      this.superClass_.someMethod();
+ *      snapwebsites.B.superClass_.someMethod.call(this, q);
  *      ...
  * };
  * \endcode
@@ -315,7 +317,7 @@ snapwebsites.BufferToMIMETemplate.prototype.bufferToMIME = function(buf)
  */
 snapwebsites.BufferToMIMESystemImages = function()
 {
-    snapwebsites.BufferToMIMETemplate.apply(this);
+    snapwebsites.BufferToMIMESystemImages.superClass_.constructor.call(this);
 
     this.constructor = snapwebsites.BufferToMIMESystemImages;
 
