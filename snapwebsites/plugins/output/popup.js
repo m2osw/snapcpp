@@ -1,6 +1,6 @@
 /** @preserve
  * Name: popup
- * Version: 0.1.0
+ * Version: 0.1.0.1
  * Browsers: all
  * Copyright: Copyright 2014 (c) Made to Order Software Corporation  All rights reverved.
  * Depends: output (0.0.5)
@@ -29,6 +29,8 @@
  * \note
  * The Snap! Output handles a popup capability that can be used to open
  * any number of popups.
+ *
+ * By default popups automatically include a close button.
  *
  * @return {!snapwebsites.Popup}
  *
@@ -257,7 +259,7 @@ snapwebsites.Popup.prototype.open = function(popup)
 
         // 'b.width()' may return a jQuery object so we have to force the
         // type to a number to call f.attr().
-        f.attr("width", snapwebsites.Output.castToNumber(b.width()));
+        f.attr("width", snapwebsites.castToNumber(b.width(), "snapwebsites.Popup.open() retrieving popup body height"));
 
         // the height of the body matches the height of the IFRAME so we
         // cannot use it here
@@ -267,7 +269,9 @@ snapwebsites.Popup.prototype.open = function(popup)
 //          +", widget height = "+popup.widget.height()
 //          +", body top = "+b.offset().top);
 
-        f.attr("height", popup.widget.offset().top + snapwebsites.Output.castToNumber(popup.widget.height()) - b.offset().top);
+        f.attr("height", popup.widget.offset().top
+                       + snapwebsites.castToNumber(popup.widget.height(), "snapwebsites.Popup.open() retrieving popup window height")
+                       - b.offset().top);
     }
     if(popup.open)
     {

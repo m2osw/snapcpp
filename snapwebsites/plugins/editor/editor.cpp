@@ -171,7 +171,7 @@ int64_t editor::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2014, 4, 11, 5, 50, 40, content_update);
+    SNAP_PLUGIN_UPDATE(2014, 4, 11, 16, 36, 40, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -1008,7 +1008,7 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
             // to check whether the value is available; however, we have to
             // check for required fields (since we only receive fields that
             // change, we cannot avoid saving the data)
-            if(widget_auto_save == "no")
+            if(!auto_save || widget_auto_save == "no")
             {
                 // no auto-save, but we still want to check validity if
                 // defined (the "required" flag is not checked...)

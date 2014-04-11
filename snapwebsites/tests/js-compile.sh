@@ -6,8 +6,7 @@ mkdir -p $OUTPUT
 
 #
 
-OPTIONS="--warning_level VERBOSE
-         --js_output_file /dev/null"
+OPTIONS="--warning_level VERBOSE"
 
        # At this point the extensions doesn't work right because the
        # expr is not defined in the jquery definitions
@@ -31,7 +30,7 @@ do
     INLINE_OPTIONS=`echo $INLINE_OPTIONS_WITH_VARS | sed \
         -e "s:\\\$CLOSURE_COMPILER:$CLOSURE_COMPILER:"`
 
-    cmd="java -jar ../tmp/google-js-compiler/compiler.jar $OPTIONS $INLINE_OPTIONS --js $js"
+    cmd="java -jar ../tmp/google-js-compiler/compiler.jar --js_output_file $OUTPUT/`basename $js .js`.min.js $OPTIONS $INLINE_OPTIONS --js $js"
     echo $cmd
     $cmd
 done

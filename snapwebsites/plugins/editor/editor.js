@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.104
+ * Version: 0.0.3.107
  * Browsers: all
  * Copyright: Copyright 2013-2014 (c) Made to Order Software Corporation  All rights reverved.
  * License: GPL 2.0
@@ -2710,7 +2710,7 @@ snapwebsites.EditorSaveDialog.prototype.setStatus = function(new_status)
  *      editorWidgets_: Object;         // map of editor objects
  *      widgetInitialized_: boolean;    // whether the form was initialized
  *      saveDialog_: EditorSaveDialog;  // a reference to the save dialog
- *      saveAll_: boolean;              // save all fields, whether changed or not
+ *      mode: string;                   // general mode the form is used as
  *      toolbarAutoVisible: boolean;    // whether to show the toolbar automatically
  *      inPopup_: boolean;              // are we in a popup?
  *      modified_: boolean;             // one or more fields changed
@@ -2736,12 +2736,23 @@ snapwebsites.EditorSaveDialog.prototype.setStatus = function(new_status)
  */
 snapwebsites.EditorForm = function(editor_base, form_widget, name, session)
 {
+    var mode;
+
     snapwebsites.EditorForm.superClass_.constructor.call(this, editor_base, form_widget);
 
     this.editorWidgets_ = {};
     this.usedTypes_ = {};
     this.session_ = session;
     this.name_ = name;
+    mode = form_widget.attr("mode");
+    if(mode) // user specified?
+    {
+        this.mode_ = snapwebsites.castToString(mode, "casting the editor form mode");
+    }
+    else
+    {
+        this.mode_ = "default";
+    }
 
     this.readyWidgets_();
 
@@ -2831,7 +2842,7 @@ snapwebsites.EditorForm.prototype.editorWidgets_ = null;
  * Once the flag is true, the form is fully initialized and
  * functional.
  *
- * @type {boolean}
+ * @type {!boolean}
  * @private
  */
 snapwebsites.EditorForm.prototype.widgetInitialized_ = false;
@@ -2849,16 +2860,20 @@ snapwebsites.EditorForm.prototype.widgetInitialized_ = false;
 snapwebsites.EditorForm.prototype.saveDialog_ = null;
 
 
-/** \brief Whether all the fields should be saved.
+/** \brief The mode used for this editor form.
  *
- * Whenever the save function is called, it is possible to request the
- * system to save all the fields. This is used by forms that are not
- * used to just edit data but to create forms such as a search form.
+ * This parameter is taken from the attribute named "mode" of the
+ * div representing the editor form. The mode can be set to one of
+ * the following values:
  *
- * @type {boolean}
+ * \li default -- process the form "as normal", you do not need to define
+ *                this value as it is the default.
+ * \li save-all -- save all the fields whether or not they were modified.
+ *
+ * @type {!string}
  * @private
  */
-snapwebsites.EditorForm.prototype.saveAll_ = false;
+snapwebsites.EditorForm.prototype.mode_ = "";
 
 
 /** \brief Whether the toolbar is shown immediately on focus.
@@ -2867,7 +2882,7 @@ snapwebsites.EditorForm.prototype.saveAll_ = false;
  * focus. If so, the value is true (the default). You may turn this
  * value off using the setToolbarAutoVisible() function.
  *
- * @type {boolean}
+ * @type {!boolean}
  * @private
  */
 snapwebsites.EditorForm.prototype.toolbarAutoVisible_ = true;
@@ -3017,11 +3032,12 @@ snapwebsites.EditorForm.prototype.titleToURI_ = function(title)
 snapwebsites.EditorForm.prototype.saveData = function(mode)
 {
     var that = this,
-        key,                                // loop index
-        w,                                  // widget being managed
-        saved_data = {},                    // "array" of data objects
-        obj = {},                           // object to send via AJAX
-        url;                                // the URL used to send the data
+        key,                                    // loop index
+        w,                                      // widget being managed
+        saved_data = {},                        // "array" of data objects
+        obj = {},                               // object to send via AJAX
+        url,                                    // the URL used to send the data
+        save_all = this.mode_ == "save-all";    // whether all fields are sent to the server
 
     // are we already saving? if so, generate an error
     if(this.isSaving())
@@ -3039,8 +3055,7 @@ snapwebsites.EditorForm.prototype.saveData = function(mode)
         if(this.editorWidgets_.hasOwnProperty(key))
         {
             w = this.editorWidgets_[key];
-            if(this.saveAll_
-            || w.wasModified(true))
+            if(save_all || w.wasModified(true))
             {
                 saved_data[key] = w.saving();
                 obj[key] = saved_data[key].result;
