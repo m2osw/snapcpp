@@ -284,7 +284,7 @@ public:
     typedef QVector<safe_compression_t> compression_vector_t;
 
                                 snap_child(server_pointer_t s);
-                                ~snap_child();
+                                virtual ~snap_child();
 
     bool                        process(int socket);
     void                        kill();

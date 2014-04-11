@@ -29,33 +29,154 @@ namespace snap
 
 
 /** \class backend
- * \brief Child process class.
+ * \brief Backend process class.
  *
- * This class handles child objects that process queries from the Snap
- * CGI tool.
+ * This class handles backend processing for the snapserver.
  *
- * The children appear in the Snap Server and themselves. The server is
- * the parent that handles the lifetime of the child. The parent also
- * holds the child process identifier and it waits on the child for its
- * death.
+ * \todo Add more documentation about the backend and how it works.
  *
- * The child itself has its f_child_pid set to zero.
- *
- * Some of the functions will react with an error if called from the
- * wrong process (i.e. parent calling a child process function and vice
- * versa.)
+ * \sa snap_child
  */
-
-
-snap_backend::snap_backend( server_pointer_t s ) : snap_child(s)
+snap_backend::snap_backend( server_pointer_t s )
+    : snap_child(s)
+    , f_thread( "snap_backend", &f_monitor )
 {
-    // empty
+    f_monitor.set_backend( this );
 }
 
 
 snap_backend::~snap_backend()
 {
     // empty
+}
+
+
+class thread_life
+{
+public:
+    thread_life( snap_thread* thread )
+        : f_thread(thread)
+    {
+        assert(f_thread);
+        f_thread->start();
+    }
+
+    ~thread_life()
+    {
+        f_thread->stop();
+    }
+
+private:
+    snap_thread* f_thread;
+};
+
+
+/* \class udp_monitor
+ *
+ * This private class encapsulates a thread which monitors the UDP buffer.
+ */
+snap_backend::udp_monitor::udp_monitor()
+    : snap_thread::snap_runner( "udp_monitor" )
+{
+}
+
+
+void snap_backend::udp_monitor::set_signal( snap_backend::udp_signal_t signal )
+{
+    snap_thread::snap_lock lock( f_mutex );
+    f_udp_signal = signal;
+}
+
+
+void snap_backend::udp_monitor::set_backend( zpsnap_backend_t backend )
+{
+    snap_thread::snap_lock lock( f_mutex );
+    f_backend = backend;
+}
+
+
+bool snap_backend::udp_monitor::get_error() const
+{
+    snap_thread::snap_lock lock( f_mutex );
+    return f_error;
+}
+
+
+void snap_backend::udp_monitor::run()
+{
+    while( !get_thread()->is_stopping() )
+    {
+        snap_thread::snap_lock lock( f_mutex );
+        if( !f_udp_signal )
+        {
+            // wait until the signal is hooked up
+            sleep(1);
+            continue;
+        }
+
+        char buf[256];
+        int const r( f_udp_signal->timed_recv( buf, sizeof(buf), 5 * 60 * 1000 ) ); // wait for up to 5 minutes (x 60 seconds)
+        if( r != -1 || errno != EAGAIN )
+        {
+            if( r < 1 || r >= static_cast<int>(sizeof(buf) - 1) )
+            {
+                perror("udp_monitor::run(): f_udp_signal->timed_recv():");
+                SNAP_LOG_FATAL() << "error: an error occured in the UDP recv() call, returned size: " << r;
+                f_error = true;
+                break;
+            }
+            buf[r] = '\0';
+            //
+            f_backend->push_message( buf );
+        }
+    }
+}
+
+
+/** \brief Create the UDP signal that will be monitored by the background thread.
+ */
+void snap_backend::create_signal( const std::string& name )
+{
+    snap_thread::snap_lock lock( f_mutex );
+    f_monitor.set_signal( udp_get_server( name.c_str() ) );
+}
+
+
+/** \brief Check for received ping in background monitoring process.
+ *
+ * The snap_backend class creates a background thread which monitors
+ * the backend action port. It uses a mutex to set the flag and message
+ * after receipt.
+ *
+ */
+std::string snap_backend::pop_message()
+{
+    snap_thread::snap_lock lock( f_mutex );
+
+    if( f_message_list.empty() )
+    {
+        return std::string();
+    }
+
+    const std::string msg( f_message_list.front() );
+    f_message_list.pop_front();
+    return msg;
+}
+
+
+void snap_backend::push_message( const std::string& msg )
+{
+    snap_thread::snap_lock lock( f_mutex );
+
+    f_message_list.push_back( msg );
+}
+
+
+bool snap_backend::get_error() const
+{
+    snap_thread::snap_lock lock( f_mutex );
+
+    return f_monitor.get_error();
 }
 
 
@@ -89,6 +210,9 @@ void snap_backend::run_backend()
         const QString uri( p_server->get_parameter("__BACKEND_URI") );
         //
         QtCassandra::QCassandraTable::pointer_t sites_table = f_context->findTable(get_name(SNAP_NAME_SITES));
+#if 0
+        // TODO: this code needs to be moved to snapinit
+        //
         if( !sites_table )
         {
             if( !uri.isEmpty())
@@ -164,6 +288,7 @@ void snap_backend::run_backend()
                 return;
             }
         }
+#endif
         //
         if(!sites_table)
         {
@@ -173,7 +298,7 @@ void snap_backend::run_backend()
             return;
         }
 
-        if(!uri.isEmpty())
+        if( !uri.isEmpty() )
         {
             process_backend_uri(uri);
         }
@@ -294,7 +419,8 @@ void snap_backend::process_backend_uri(QString const& uri)
     f_ready = true;
 
     auto p_server( f_server.lock() );
-    Q_ASSERT(p_server);
+    assert( p_server );
+
     QString const action(p_server->get_parameter("__BACKEND_ACTION"));
     if(!action.isEmpty())
     {
@@ -307,7 +433,13 @@ void snap_backend::process_backend_uri(QString const& uri)
                                                 .arg(dynamic_cast<plugins::plugin *>(actions["list"])->get_plugin_name()));
         }
 #endif
-        if(actions.contains(action))
+
+        // RAII monitor for the background thread. Stops the thread
+        // when it goes out of scope...
+        //
+        thread_life tl( &f_thread );
+
+        if( actions.contains(action) )
         {
             // this is a valid action, execute the corresponding function!
             actions[action]->on_backend_action(action);

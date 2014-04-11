@@ -25,6 +25,7 @@
 #include "qdomhelpers.h"
 #include "dbutils.h"
 #include "log.h"
+#include "snap_backend.h"
 
 #include <iostream>
 
@@ -722,6 +723,10 @@ void list::on_register_backend_action(server::backend_action_map_t& actions)
  */
 void list::on_backend_action(QString const& action)
 {
+    snap_backend* backend( dynamic_cast<snap_backend*>(f_snap.get()) );
+    assert( backend );
+    backend->create_signal( "pagelist_udp_signal" );
+
     QtCassandra::QCassandraTable::pointer_t list_table(get_list_table());
     if(action == get_name(SNAP_NAME_LIST_PAGELIST))
     {
@@ -739,7 +744,6 @@ void list::on_backend_action(QString const& action)
 //return;
 
         QString const core_plugin_threshold(get_name(SNAP_NAME_CORE_PLUGIN_THRESHOLD));
-        QSharedPointer<udp_client_server::udp_server> udp_signals(f_snap->udp_get_server("pagelist_udp_signal"));
         char const *stop(get_name(SNAP_NAME_LIST_STOP));
         // loop until stopped
         for(;;)
@@ -784,29 +788,23 @@ void list::on_backend_action(QString const& action)
                 }
             }
 
-            // sleep till next PING (but max. 5 minutes)
-            char buf[256];
-            int r(udp_signals->timed_recv(buf, sizeof(buf), 5 * 60 * 1000)); // wait for up to 5 minutes (x 60 seconds)
-            if(r != -1 || errno != EAGAIN)
+            // Stop on error
+            //
+            if( backend->get_error() )
             {
-                if(r < 1 || r >= static_cast<int>(sizeof(buf) - 1))
-                {
-                    perror("udp_signals->timed_recv():");
-                    SNAP_LOG_FATAL() << "error: an error occured in the UDP recv() call, returned size: " << r;
-                    exit(1);
-                }
-                buf[r] = '\0';
-                if(strcmp(buf, stop) == 0)
+                exit(1);
+            }
+
+            // sleep till next PING (but max. 5 minutes)
+            //
+            const std::string message = backend->pop_message();
+            if( !message.empty() )
+            {
+                if( message == stop )
                 {
                     // clean STOP
                     return;
                 }
-                // should we check that we really received a PING?
-                //char const *ping(get_name(SNAP_NAME_SENDMAIL_PING));
-                //if(strcmp(buf, ping) != 0)
-                //{
-                //    continue;
-                //}
 
                 // Because there is a delay of LIST_PROCESSING_LATENCY
                 // between the time when the user generates the PING and
