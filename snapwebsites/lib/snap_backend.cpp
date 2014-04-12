@@ -63,7 +63,9 @@ public:
 
     ~thread_life()
     {
+        SNAP_LOG_TRACE() << "stopping thread...";
         f_thread->stop();
+        SNAP_LOG_TRACE() << "thread stopped!";
     }
 
 private:
@@ -107,15 +109,20 @@ void snap_backend::udp_monitor::run()
     while( !get_thread()->is_stopping() )
     {
         snap_thread::snap_lock lock( f_mutex );
-        if( !f_udp_signal )
+        if( f_udp_signal )
         {
-            // wait until the signal is hooked up
-            sleep(1);
-            continue;
+            break;
         }
 
+        // wait until the signal is hooked up
+        lock.unlock();
+        sleep(1);
+    }
+
+    while( !get_thread()->is_stopping() )
+    {
         char buf[256];
-        int const r( f_udp_signal->timed_recv( buf, sizeof(buf), 5 * 60 * 1000 ) ); // wait for up to 5 minutes (x 60 seconds)
+        int const r( f_udp_signal->timed_recv( buf, sizeof(buf), 1000 ) );
         if( r != -1 || errno != EAGAIN )
         {
             if( r < 1 || r >= static_cast<int>(sizeof(buf) - 1) )
@@ -137,7 +144,6 @@ void snap_backend::udp_monitor::run()
  */
 void snap_backend::create_signal( const std::string& name )
 {
-    snap_thread::snap_lock lock( f_mutex );
     f_monitor.set_signal( udp_get_server( name.c_str() ) );
 }
 
@@ -174,8 +180,6 @@ void snap_backend::push_message( const std::string& msg )
 
 bool snap_backend::get_error() const
 {
-    snap_thread::snap_lock lock( f_mutex );
-
     return f_monitor.get_error();
 }
 
