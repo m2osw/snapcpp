@@ -1636,8 +1636,8 @@ void sendmail::on_backend_action(const QString& action)
 
             // Process UDP message, if any
             //
-            const std::string message = backend->pop_message();
-            if( !message.empty() )
+            std::string message;
+            if( backend->pop_message( message ) )
             {
                 if( message == stop )
                 {

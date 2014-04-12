@@ -148,25 +148,46 @@ void snap_backend::create_signal( const std::string& name )
 }
 
 
-/** \brief Check for received ping in background monitoring process.
+/** \brief Check to see if there are any ping messages pending.
+ *
+ * \note This method does not block.
+ *
+ * \return true if pending messages that can be read.
+ */
+bool snap_backend::is_message_pending() const
+{
+    snap_thread::snap_lock lock( f_mutex );
+    return !f_message_list.empty();
+}
+
+
+/** \brief Pop received ping message from top of queue.
  *
  * The snap_backend class creates a background thread which monitors
  * the backend action port. It uses a mutex to set the flag and message
  * after receipt.
  *
+ * \note This method does not block.
+ *
+ * \param [out] message  Top message on the list.
+ * \param [in] wait_secs Wait time in seconds if queue is empty.
+ *
+ * \return true if a message was read from the front of the message list.
+ *
  */
-std::string snap_backend::pop_message()
+bool snap_backend::pop_message( std::string& message, const bool wait_secs )
 {
     snap_thread::snap_lock lock( f_mutex );
 
     if( f_message_list.empty() )
     {
-        return std::string();
+        sleep( wait_secs );
+        return false;
     }
 
-    const std::string msg( f_message_list.front() );
+    message = f_message_list.front();
     f_message_list.pop_front();
-    return msg;
+    return true;
 }
 
 

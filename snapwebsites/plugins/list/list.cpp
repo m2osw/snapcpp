@@ -797,8 +797,8 @@ void list::on_backend_action(QString const& action)
 
             // sleep till next PING (but max. 5 minutes)
             //
-            const std::string message = backend->pop_message();
-            if( !message.empty() )
+            std::string message;
+            if( backend->pop_message( message ) )
             {
                 if( message == stop )
                 {

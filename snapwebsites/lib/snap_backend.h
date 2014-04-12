@@ -32,7 +32,8 @@ public:
 
     void        create_signal( const std::string& name );
 
-    std::string pop_message();
+    bool        is_message_pending() const;
+    bool        pop_message( std::string& message, const bool wait_secs = 1 );
     void        push_message( const std::string& msg );
     bool        get_error() const;
 
