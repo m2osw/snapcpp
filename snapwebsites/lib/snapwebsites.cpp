@@ -22,6 +22,7 @@
 #include "log.h"
 #include "not_reached.h"
 #include "tcp_client_server.h"
+#include "snap_backend.h"
 
 #include <iostream>
 #include <memory>
@@ -1497,8 +1498,8 @@ void server::process_connection(int socket)
  */
 void server::backend()
 {
-    snap_child child(g_instance);
-    child.backend();
+    snap_backend the_backend(g_instance);
+    the_backend.run_backend();
 }
 
 

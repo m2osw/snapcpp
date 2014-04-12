@@ -27,6 +27,7 @@
 #include "quoted_printable.h"
 #include "process.h"
 #include "snap_pipe.h"
+#include "snap_backend.h"
 
 #include <libtld/tld.h>
 #include <QtCassandra/QCassandraValue.h>
@@ -1614,7 +1615,10 @@ void sendmail::on_backend_action(const QString& action)
 
     try
     {
-        QSharedPointer<udp_client_server::udp_server> udp_signals(f_snap->udp_get_server("sendmail_udp_signal"));
+        snap_backend* backend( dynamic_cast<snap_backend*>(f_snap.get()) );
+        assert( backend );
+        backend->create_signal( "sendmail_udp_signal" );
+
         char const *stop(get_name(SNAP_NAME_SENDMAIL_STOP));
         for(;;)
         {
@@ -1622,28 +1626,25 @@ void sendmail::on_backend_action(const QString& action)
             // are ready to go (i.e. their time is in the past or now)
             process_emails();
             run_emails();
-            char buf[256];
-            int const r(udp_signals->timed_recv(buf, sizeof(buf), 5 * 60 * 1000)); // wait for up to 5 minutes (x 60 seconds)
-            if(r != -1 || errno != EAGAIN)
+
+            // Stop on error
+            //
+            if( backend->get_error() )
             {
-                if(r < 1 || r >= static_cast<int>(sizeof(buf) - 1))
-                {
-                    perror("udp_signals->timed_recv():");
-                    SNAP_LOG_FATAL() << "error: an error occured in the UDP recv() call, returned size: " << r;
-                    exit(1);
-                }
-                buf[r] = '\0';
-                if(strcmp(buf, stop) == 0)
+                exit(1);
+            }
+
+            // Process UDP message, if any
+            //
+            const std::string message = backend->pop_message();
+            if( !message.empty() )
+            {
+                if( message == stop )
                 {
                     // clean STOP
                     return;
                 }
-                // should we check that we really received a PING?
-                //const char *ping(get_name(SNAP_NAME_SENDMAIL_PING));
-                //if(strcmp(buf, ping) != 0)
-                //{
-                //    continue
-                //}
+                // Other message tests go here...
             }
         }
     }

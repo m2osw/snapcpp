@@ -44,8 +44,8 @@ add_definitions( ${QT_DEFINITIONS} )
 
 option( SNAP_NO_FORK OFF "Set to suppress snapserver's inate forking [for debugging purposes only--not for release!]" )
 if( ${SNAP_NO_FORK} )
-	message( WARNING "SNAP_NO_FORK is turned on! This is not a production-ready build!" )
-	add_definitions( -DSNAP_NO_FORK )
+    message( WARNING "SNAP_NO_FORK is turned on! This is not a production-ready build!" )
+    add_definitions( -DSNAP_NO_FORK )
 endif()
 
 find_file( MAGIC magic.h )
@@ -89,25 +89,26 @@ add_library( ${PROJECT_NAME} SHARED
     qstring_stream.h                            # Stream QString objects property to ostream objects.
     quoted_printable.cpp                        # to encode / decode data using the quoted printable format
     qxmlmessagehandler.cpp                      # Qt extension for us to capture the QXmlQuery messages
-	row_model.cpp                               #  libQtCassandra row model for use with a QTableView object.
-	snap_child.cpp                              # requests processing
+    row_model.cpp                               # libQtCassandra row model for use with a QTableView object.
+    snap_backend.cpp                            # A type of snap_child, but for backends only
+    snap_child.cpp                              # requests processing
     snap_exception.cpp                          # exception stack backtrack
     snap_expr.cpp                               # snap C-like expression compiler and execution environment
     snap_image.cpp                              # image handling
     snap_magic.cpp                              # support for MIME type
     snap_parser.cpp                             # lexer/parser for all our script like entries
     snap_pipe.cpp                               # RAII popen()/pclose() class
-	snap_listen_thread.cpp                      # Thread which listens on UDP and allows snapsignal to direct snapserver
-	snap_thread.cpp                             # a C++ thread implementation
-	snap_uri.cpp                                # URI handling
+    snap_listen_thread.cpp                      # Thread which listens on UDP and allows snapsignal to direct snapserver
+    snap_thread.cpp                             # a C++ thread implementation
+    snap_uri.cpp                                # URI handling
     snap_utf8.cpp                               # UTF-8 functions
     snap_version.cpp                            # extract name, version, browser info from a filename
     snapwebsites.h.in                           # Header for server class (pre-parsed)
     ${CMAKE_CURRENT_BINARY_DIR}/snapwebsites.h  # binary output of header file (generated)
     snapwebsites.cpp                            # server
     tcp_client_server.cpp                       # low level TCP/IP that works
-	table_model.cpp                             # libQtCassandra table model for use with a QListView object.
-	udp_client_server.cpp                       # low level UDP/IP that works
+    table_model.cpp                             # libQtCassandra table model for use with a QListView object.
+    udp_client_server.cpp                       # low level UDP/IP that works
 )
 
 target_link_libraries( ${PROJECT_NAME}
