@@ -148,6 +148,13 @@ add_custom_target(snap_code_analysis
     # Count # of TODO, XXX, TBD, FIXME, and \todo: (documented in doxygen)
     COMMAND sh tests/todo.sh "${PROJECT_BINARY_DIR}/analysis"
 
+# Lint + compiler need to be scripts that get called on each compile because
+# otherwise errors will pile up!
+    # Lint the JavaScript code to find additional "errors"
+    COMMAND sh tests/js-lint.sh "${PROJECT_BINARY_DIR}/analysis"
+    # Compile the JavaScript code to verify most everything (strong typing, etc.)
+    COMMAND sh tests/js-compile.sh "${PROJECT_BINARY_DIR}/analysis"
+
     # All of these are expected to work on source code so make sure we're
     # in the source code top directory
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}

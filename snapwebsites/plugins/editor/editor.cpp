@@ -171,7 +171,7 @@ int64_t editor::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2014, 4, 4, 22, 3, 30, content_update);
+    SNAP_PLUGIN_UPDATE(2014, 4, 11, 16, 36, 40, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -226,38 +226,14 @@ void editor::on_generate_main_content(content::path_info_t& ipath, QDomElement& 
  */
 void editor::on_generate_header_content(content::path_info_t& ipath, QDomElement& header, QDomElement& metadata, QString const& ctemplate)
 {
+    static_cast<void>(ipath);
     static_cast<void>(metadata);
     static_cast<void>(ctemplate);
 
     QDomDocument doc(header.ownerDocument());
 
-    {
-        QDomElement editor_tag(doc.createElement("editor"));
-        metadata.appendChild(editor_tag);
-
-        // define a set of dynamic parameters as defined by the user
-        // /snap/head/metadata/session/<session-id>
-        {
-            sessions::sessions::session_info info;
-            info.set_session_type(sessions::sessions::session_info::SESSION_INFO_FORM);
-            info.set_session_id(EDITOR_SESSION_ID_EDIT);
-            info.set_plugin_owner(get_plugin_name()); // ourselves
-            info.set_page_path(ipath.get_key());
-            //info.set_object_path();
-            info.set_user_agent(f_snap->snapenv(snap::get_name(SNAP_NAME_CORE_HTTP_USER_AGENT)));
-            info.set_time_to_live(86400);  // 24 hours
-            QString const session(sessions::sessions::instance()->create_session(info));
-            int32_t const random(info.get_session_random());
-
-            QDomElement session_tag(doc.createElement("session"));
-            editor_tag.appendChild(session_tag);
-            QDomText session_text(doc.createTextNode(QString("%1/%2").arg(session).arg(random)));
-            session_tag.appendChild(session_text);
-        }
-    }
-
     // TODO find a way to include the editor only if required
-    content::content::instance()->add_javascript(header.ownerDocument(), "editor");
+    content::content::instance()->add_javascript(doc, "editor");
 }
 
 
@@ -909,7 +885,11 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
 //         from what I can tell... although if we could extract the
 //         loop that validates and saves the data that could be enough
 //         because then we could call it last with the revision row where
-//         the data is to be saved
+//         the data is to be saved.
+//
+//         Plus, we have to verify that the Save happens only after
+//         validation (for obvious security reasons.) However, drafts are a
+//         potential problem in that arena...
 //
 
     bool switch_branch(false);
@@ -953,7 +933,6 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
             content_plugin->set_branch(key, owner, branch_number, true);
             content_plugin->set_branch_key(key, owner, branch_number, true);
             content_plugin->set_branch_key(key, owner, branch_number, false);
-
         }
 
         // get the revision number only AFTER the branch was created
@@ -1029,7 +1008,7 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
             // to check whether the value is available; however, we have to
             // check for required fields (since we only receive fields that
             // change, we cannot avoid saving the data)
-            if(widget_auto_save == "no")
+            if(!auto_save || widget_auto_save == "no")
             {
                 // no auto-save, but we still want to check validity if
                 // defined (the "required" flag is not checked...)
@@ -1052,7 +1031,7 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
                         signed char c;
                         if(widget_type == "checkmark")
                         {
-                            if(post_value == "off")
+                            if(post_value == "0")
                             {
                                 c = 0;
                             }
@@ -1082,6 +1061,13 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
                         // no special handling for empty strings here
                         revision_row->cell(field_name)->setValue(post_value);
                     }
+                    else if(widget_auto_save == "html")
+                    {
+                        // like a string, but convert inline images too
+                        QString value(post_value);
+                        parse_out_inline_img(ipath, value);
+                        revision_row->cell(field_name)->setValue(value);
+                    }
                 }
                 else
                 {
@@ -1097,11 +1083,11 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
                             {
                                 if(v == 0)
                                 {
-                                    current_value = "off";
+                                    current_value = "0";
                                 }
                                 else
                                 {
-                                    current_value = "on";
+                                    current_value = "1";
                                 }
                             }
                             else
@@ -1109,7 +1095,8 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
                                 current_value = QString("%1").arg(current_value);
                             }
                         }
-                        else if(widget_auto_save == "string")
+                        else if(widget_auto_save == "string"
+                             || widget_auto_save == "html")
                         {
                             // no special handling for empty strings here
                             current_value = value.stringValue();
@@ -2598,6 +2585,23 @@ void editor::on_generate_page_content(content::path_info_t& ipath, QDomElement& 
         metadata.appendChild(editor_tag);
     }
 
+    // Define a session identifier (one per form)
+    QString session_identification;
+    {
+        sessions::sessions::session_info info;
+        info.set_session_type(sessions::sessions::session_info::SESSION_INFO_FORM);
+        info.set_session_id(EDITOR_SESSION_ID_EDIT);
+        info.set_plugin_owner(get_plugin_name()); // ourselves
+        info.set_page_path(ipath.get_key());
+        //info.set_object_path();
+        info.set_user_agent(f_snap->snapenv(snap::get_name(SNAP_NAME_CORE_HTTP_USER_AGENT)));
+        info.set_time_to_live(86400);  // 24 hours
+        QString const session(sessions::sessions::instance()->create_session(info));
+        int32_t const random(info.get_session_random());
+
+        session_identification = QString("%1/%2").arg(session).arg(random);
+    }
+
     // now go through all the widgets checking out their path, if the
     // path exists in doc then copy the data in the parser_xml
     QtCassandra::QCassandraTable::pointer_t data_table(content_plugin->get_data_table());
@@ -2611,12 +2615,19 @@ void editor::on_generate_page_content(content::path_info_t& ipath, QDomElement& 
         QString const widget_auto_save(w.attribute("auto-save", "string")); // this one is #IMPLIED
 
         // get the current value from the database if it exists
-        if(!field_name.isEmpty() && revision_row->exists(field_name))
+        bool const is_editor_session_field(field_name == "editor::session");
+        if(!field_name.isEmpty()
+        && (is_editor_session_field || revision_row->exists(field_name)))
         {
             QtCassandra::QCassandraValue const value(revision_row->cell(field_name)->value());
             QString current_value;
             bool set_value(true);
-            if(widget_auto_save == "int8")
+            if(is_editor_session_field)
+            {
+                // special case of the "editor::session" value
+                current_value = session_identification;
+            }
+            else if(widget_auto_save == "int8")
             {
                 // if the value is null, it's as if it weren't defined
                 if(!value.nullValue())
@@ -2626,11 +2637,11 @@ void editor::on_generate_page_content(content::path_info_t& ipath, QDomElement& 
                     {
                         if(v == 0)
                         {
-                            current_value = "off";
+                            current_value = "0";
                         }
                         else
                         {
-                            current_value = "on";
+                            current_value = "1";
                         }
                     }
                     else
@@ -2639,9 +2650,10 @@ void editor::on_generate_page_content(content::path_info_t& ipath, QDomElement& 
                     }
                 }
             }
-            else if(widget_auto_save == "string")
+            else if(widget_auto_save == "string"
+                 || widget_auto_save == "html")
             {
-                // no special handling for empty strings here
+                // no special handling for strings / html
                 current_value = revision_row->cell(field_name)->value().stringValue();
             }
             else
@@ -2713,6 +2725,7 @@ void editor::on_generate_page_content(content::path_info_t& ipath, QDomElement& 
     // set action variable to the current action
     q.bindVariable("action", QVariant(action));
     q.bindVariable("tabindex_base", QVariant(form::form::current_tab_id()));
+    q.bindVariable("editor_session", QVariant(session_identification));
 
     q.setQuery(editor_xsl);
     QDomDocument doc_output("widgets");

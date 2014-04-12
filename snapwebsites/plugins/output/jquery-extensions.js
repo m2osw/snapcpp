@@ -7,6 +7,17 @@
  * License: GPL 2.0
  */
 
+//
+// Inline "command line" parameters for the Google Closure Compiler
+// See output of:
+//    java -jar .../google-js-compiler/compiler.jar --help
+//
+// ==ClosureCompiler==
+// @compilation_level ADVANCED_OPTIMIZATIONS
+// @js $CLOSURE_COMPILER/contrib/externs/jquery-1.9.js
+// ==/ClosureCompiler==
+//
+
 
 
 /** \brief Objects that match any one of the selectors.

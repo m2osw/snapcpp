@@ -341,6 +341,7 @@ public:
     QString                     snapenv(QString const& name) const;
     bool                        postenv_exists(QString const& name) const;
     QString                     postenv(QString const& name, QString const& default_value = "") const;
+    void                        replace_postenv(QString const& name, QString const& value);
     environment_map_t const&    all_postenv() const { return f_post; }
     bool                        postfile_exists(QString const& name) const;
     post_file_t const&          postfile(QString const& name) const;

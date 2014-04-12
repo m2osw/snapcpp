@@ -1,6 +1,17 @@
 /*
  * Fake definitions to run the Google Closure Compiler against our code
  * to discover errors that their compile detects.
+ *
+ * Command line (please update as we go):
+ * java -jar ../tmp/google-js-compiler/compiler.jar --warning_level VERBOSE \
+ * 	--externs ../tmp/google-js-compiler/closure-compiler/contrib/externs/jquery-1.9.js \
+ * 	--js_output_file /dev/null \
+ * 	plugins/output/jquery-extensions.js \
+ * 	plugins/output/output.js plugins/output/popup.js \
+ * 	plugins/editor/editor.js
+ *
+ * Google closure annotations:
+ * https://developers.google.com/closure/compiler/docs/js-for-compiler
  */
 
 /**
@@ -19,6 +30,8 @@ jQuery.prototype = {
 	animate: function(a, b) { },
 	appendTo: function(a) { },
 	attr: function(a, b) { },
+	children: function(a) { },
+	css: function(selector, opt_new_value) { },
 	delay: function(a) { },
 	each: function(a) { },
 	fadeIn: function(a) { },
@@ -31,10 +44,12 @@ jQuery.prototype = {
 	mouseleave: function() { },
 	off: function(a) { },
 	on: function(a, b) { },
+	parents: function(a) { },
 	prependTo: function(a) { },
 	prop: function(a) { },
 	ready: function(a) { },
 	removeAttr: function(a) { },
+	removeClass: function(a) { },
 	val: function() { }
 };
 

@@ -1,3 +1,11 @@
+snapwebsites (0.1.41~saucyubuntu1) UNRELEASED; urgency=low
+
+  [ Alexis Wilke ]
+  * Redesigned in a fully object oriented of the editor.js
+  * Made all the corresponding changes to all the other files.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Fri, 11 Apr 2014 16:58:29 -0700
+
 snapwebsites (0.1.41~saucy) saucy; urgency=high
 
   [ Alexis Wilke ]

@@ -56,7 +56,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
                  duplicate-of IDREF #IMPLIED
                  secret (public|secret) "public"
                  mode (select-only|editable) "select-only"
-                 auto-save (int8|string|no) "string"
+                 auto-save (int8|string|html|no) "string"
                  drop (drop) #IMPLIED>
 
 <!ELEMENT label %html-data;>
