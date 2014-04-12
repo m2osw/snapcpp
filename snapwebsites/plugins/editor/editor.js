@@ -185,7 +185,7 @@
  *      |                                                                  |
  *  +---+------------------------------+    +---------------------------+  |
  *  |                                  |    |                           +--+
- *  | EditorWidgetTypeTextEdit         |    | EditorWidgetTypeCheckmark |
+ *  | EditorWidgetTypeTextEdit         |    | EditorWidgetTypeImageBox  |
  *  |                                  |    |                           |
  *  +----------------------------------+    +---------------------------+
  *      ^

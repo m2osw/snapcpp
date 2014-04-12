@@ -370,6 +370,14 @@ public:
     udp_server_t                udp_get_server( char const *name );
 
 protected:
+    pid_t                       fork_child();
+    void                        connect_cassandra();
+    void                        canonicalize_domain();
+    void                        canonicalize_website();
+    void                        canonicalize_options();
+    void                        site_redirect();
+    QStringList                 init_plugins();
+
     server_pointer_t                            f_server;
     controlled_vars::fbool_t                    f_is_child;
     pid_t                                       f_child_pid;
@@ -381,14 +389,6 @@ protected:
     snap_uri                                    f_uri;
     QString                                     f_site_key;
     QString                                     f_original_site_key;
-
-    pid_t                       fork_child();
-    void                        connect_cassandra();
-    void                        canonicalize_domain();
-    void                        canonicalize_website();
-    void                        canonicalize_options();
-    void                        site_redirect();
-    QStringList                 init_plugins();
 
 private:
     struct http_header_t
