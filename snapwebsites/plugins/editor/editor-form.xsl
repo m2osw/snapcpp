@@ -49,7 +49,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
           <!-- by default "snap-editor-background" objects have "display: none"
                a script shows them on load once ready AND if the value is empty
                also it is a "pointer-event: none;" -->
-          <div class="snap-editor-background">
+          <div class="snap-editor-background zordered">
             <div class="snap-editor-background-content">
               <!-- this div is placed OVER the next div -->
               <xsl:copy-of select="background-value/node()"/>
@@ -101,6 +101,17 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <div field_type="dropdown">
         <xsl:attribute name="field_name"><xsl:value-of select="$name"/></xsl:attribute>
         <xsl:attribute name="class"><xsl:if test="$action = 'edit'">snap-editor </xsl:if>editable <xsl:value-of select="classes"/> dropdown <xsl:value-of select="$name"/><xsl:if test="@immediate or /editor-form/immediate"> immediate</xsl:if><xsl:if test="@id = /editor-form/focus/@refid"> auto-focus</xsl:if><xsl:if test="state = 'disabled'"> disabled</xsl:if></xsl:attribute>
+        <xsl:if test="background-value != ''">
+          <!-- by default "snap-editor-background" has "display: none"
+               a script shows them on load once ready AND if the value is empty
+               also it is a "pointer-event: none;" -->
+          <div class="snap-editor-background zordered">
+            <div class="snap-editor-background-content">
+              <!-- this div is placed OVER the next div -->
+              <xsl:copy-of select="background-value/node()"/>
+            </div>
+          </div>
+        </xsl:if>
         <div>
           <xsl:attribute name="name"><xsl:value-of select="$name"/></xsl:attribute>
           <xsl:attribute name="class">editor-content<xsl:if test="@no-toolbar or /editor-form/no-toolbar"> no-toolbar</xsl:if><xsl:if test="not(@mode) or @mode = 'select-only'"> read-only</xsl:if></xsl:attribute>
@@ -238,7 +249,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
           <!-- by default "snap-editor-background" has "display: none"
                a script shows them on load once ready AND if the value is empty
                also it is a "pointer-event: none;" -->
-          <div class="snap-editor-background">
+          <div class="snap-editor-background zordered">
             <div class="snap-editor-background-content">
               <!-- this div is placed OVER the next div -->
               <xsl:copy-of select="background-value/node()"/>
