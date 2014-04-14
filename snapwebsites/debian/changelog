@@ -1,4 +1,4 @@
-snapwebsites (0.1.42~saucy) UNRELEASED; urgency=high
+snapwebsites (0.1.42~saucy) saucy; urgency=high
 
   [ Alexis Wilke ]
   * Redesigned in a fully object oriented of the editor.js
