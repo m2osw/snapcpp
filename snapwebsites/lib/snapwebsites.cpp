@@ -632,7 +632,7 @@ void server::config(int argc, char *argv[])
 
     bool help(false);
 
-    parameter_map_t cmd_line_params;
+    snap_config::parameter_map_t cmd_line_params;
     if(f_opt->is_defined("param"))
     {
         int const max_params(f_opt->size("param"));
@@ -696,106 +696,9 @@ void server::config(int argc, char *argv[])
         exit(1);
     }
 
-    f_config = f_opt->get_string( "config" ).c_str();
-
-    // read the configuration file now
-    QFile c;
-    c.setFileName(f_config);
-    c.open(QIODevice::ReadOnly);
-    if(!c.isOpen())
-    {
-        // if for nothing else we need to have the list of plugins so we always
-        // expect to have a configuration file... if we're here we could not
-        // read it, unfortunately
-        std::stringstream ss;
-        ss << "cannot read configuration file \"" << f_config.toUtf8().data() << "\"";
-        SNAP_LOG_ERROR() << ss.str() << ".";
-        syslog( LOG_CRIT, "%s, server not started. (in server::config())", ss.str().c_str() );
-        exit(1);
-    }
-
-    // read the configuration file variables as parameters
-    char buf[256];
-    for(int line(1); c.readLine(buf, sizeof(buf)) > 0; ++line)
-    {
-        // make sure the last byte is '\0'
-        buf[sizeof(buf) - 1] = '\0';
-        int len(static_cast<int>(strlen(buf)));
-        if(len == 0 || (buf[len - 1] != '\n' && buf[len - 1] != '\r'))
-        {
-            std::stringstream ss;
-            ss << "line " << line << " in \"" << f_config.toUtf8().data() << "\" is too long";
-            SNAP_LOG_ERROR() << ss.str() << ".";
-            syslog( LOG_CRIT, "%s, server not started. (in server::config())", ss.str().c_str() );
-            exit(1);
-        }
-        buf[len - 1] = '\0';
-        --len;
-        while(len > 0 && (buf[len - 1] == '\n' || buf[len - 1] == '\r'))
-        {
-            --len;
-            buf[len] = '\0';
-        }
-        if(len == 0)
-        {
-            // empty line
-            continue;
-        }
-        char *n(buf);
-        while(isspace(*n))
-        {
-            ++n;
-        }
-        if(*n == '#' || *n == '\0')
-        {
-            // comment or empty line
-            continue;
-        }
-        char *v(n);
-        while(*v != '=' && *v != '\0')
-        {
-            // TODO verify that the name is only ASCII? (probably not too
-            //      important because if not it will be ignored anyway)
-            //      Note that the layout expects names including colons (:)
-            //      as a namespace separator: layout::layout, layout::theme.
-            ++v;
-        }
-        if(*v != '=')
-        {
-            std::stringstream ss;
-            ss << "invalid variable on line " << line << " in \"" << f_config.toUtf8().data() << "\", no equal sign found";
-            SNAP_LOG_ERROR() << ss.str() << ".";
-            syslog( LOG_CRIT, "%s, server not started. (in server::config())", ss.str().c_str() );
-            exit(1);
-        }
-        char *e;
-        for(e = v; e > n && isspace(e[-1]); --e);
-        *e = '\0';
-        do
-        {
-            ++v;
-        }
-        while(isspace(*v));
-        for(e = v + strlen(v); e > v && isspace(e[-1]); --e);
-        *e = '\0';
-        if(v != e && ((v[0] == '\'' && e[-1] == '\'') || (v[0] == '"' && e[-1] == '"')))
-        {
-            // remove single or double quotes
-            v++;
-            e[-1] = '\0';
-        }
-        // keep the command line defined parameters
-        if(!cmd_line_params.contains(n))
-        {
-            f_parameters[n] = QString::fromUtf8(v);
-        }
-        else
-        {
-            SNAP_LOG_WARNING("warning: parameter \"")(n)("\" from the configuration file (")
-                      (v)(") ignored as it was specified on the command line (")
-                      (f_parameters[n])(").");
-        }
-    }
+    f_parameters.clear();
+    f_parameters.set_cmdline_params( cmd_line_params );
+    f_parameters.read_config_file( f_opt->get_string( "config" ).c_str() );
 
     // the name of the server is mandatory, use hostname by default
     if(f_parameters["server_name"] == "")
@@ -900,6 +803,8 @@ void server::config(int argc, char *argv[])
  *
  * \param[in] param_name  The name of the parameter to retrieve.
  *
+ * \sa set_parameter()
+ *
  * \return The value of the specified parameter.
  */
 QString server::get_parameter(QString const& param_name) const
@@ -909,6 +814,19 @@ QString server::get_parameter(QString const& param_name) const
         return f_parameters[param_name];
     }
     return "";
+}
+
+
+/** \brief Set one of the configuration file parameters.
+ *
+ * \param[in] param_name  The name of the parameter to retrieve.
+ * \param[in] value       The value to put into the parameter.
+ *
+ * \sa get_parameter()
+ */
+void server::set_parameter( const QString& param_name, const QString& value )
+{
+    f_parameters[param_name] = value;
 }
 
 
