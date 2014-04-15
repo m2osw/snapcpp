@@ -23,8 +23,9 @@
 
 #include "snapwebsites.h"
 #include "snap_exception.h"
-#include "log.h"
+#include "snap_config.h"
 #include "snap_thread.h"
+#include "log.h"
 #include "not_reached.h"
 
 #include <stdlib.h>
@@ -38,6 +39,8 @@
 #include <vector>
 
 #include <advgetopt/advgetopt.h>
+
+#include <QtCassandra/QCassandraTable.h>
 
 #include <QFile>
 
@@ -357,8 +360,9 @@ private:
     static pointer_t    f_instance;
     advgetopt::getopt   f_opt;
     typedef std::map<std::string,bool> map_t;
-    map_t       f_opt_map;
-    QFile       f_lock_file;
+    map_t               f_opt_map;
+    QFile               f_lock_file;
+    snap::snap_config   f_config;
 
     typedef std::vector<process::pointer_t> process_list_t;
     process_list_t f_process_list;
@@ -395,6 +399,24 @@ snap_init::snap_init( int argc, char *argv[] )
     {
         snap::logging::configureLogfile( f_opt.get_string("logfile").c_str() );
     }
+
+    f_config.read_config_file( f_opt.get_string("config").c_str() );
+
+    // TODO: read snapserver config file to talk to the cassandra server...
+    // This will require an instance of the snapwebsites object.
+    //
+#if 0
+    QtCassandra::QCassandraTable::pointer_t domains_table  ( f_context->findTable(get_name(SNAP_NAME_DOMAINS))  );
+    QtCassandra::QCassandraTable::pointer_t websites_table ( f_context->findTable(get_name(SNAP_NAME_WEBSITES)) );
+
+    if( !(domains_table && websites_table) )
+    {
+        SNAP_LOG_FATAL() << "You must create both the 'domains' and the 'websites' tables before you can run snapserver!";
+        exit( 1 );
+    }
+#endif
+
+    //QtCassandra::QCassandraTable::pointer_t sites_table = f_context->findTable(get_name(SNAP_NAME_SITES));
 }
 
 

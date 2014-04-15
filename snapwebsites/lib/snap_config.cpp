@@ -41,7 +41,7 @@ snap_config::snap_config()
 
 QString& snap_config::operator []( const QString& name )
 {
-	return f_parameters[name];
+    return f_parameters[name];
 }
 
 

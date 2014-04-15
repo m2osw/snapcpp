@@ -23,6 +23,7 @@
 #include "not_reached.h"
 #include "tcp_client_server.h"
 #include "snap_backend.h"
+#include "snap_cassandra.h"
 
 #include <iostream>
 #include <memory>
@@ -863,6 +864,7 @@ void server::prepare_qtapp( int argc, char *argv[] )
  */
 void server::prepare_cassandra()
 {
+#if 0
     // This function connects to the Cassandra database, but it doesn't
     // keep the connection. We are the server and the connection would
     // not be shared properly between all the children.
@@ -937,6 +939,16 @@ void server::prepare_cassandra()
         // and have the tables created as required (i.e. as we add new ones
         // they get added as expected, no need for special handling.)
     }
+#else
+    snap_cassandra cassandra;
+    cassandra.connect( &f_parameters );
+    cassandra.init_context();
+    QtCassandra::QCassandraContext::pointer_t context( cassandra.get_snap_context() );
+    assert( context );
+    //
+    f_cassandra_host = cassandra.get_cassandra_host();
+    f_cassandra_port = cassandra.get_cassandra_port();
+#endif
     context->setHostName(f_parameters["server_name"]);
 
     // create missing tables
