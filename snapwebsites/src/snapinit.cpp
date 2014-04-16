@@ -338,8 +338,12 @@ void process::kill()
     int timeout = 10;
     while( is_running() )
     {
-        SNAP_LOG_TRACE() << "process " << f_name << " is still running. Waiting.";
-        sleep( 5 );
+        if( timeout > 0 )
+        {
+            SNAP_LOG_TRACE() << "process " << f_name << " is still running. Waiting " << timeout << " more seconds.";
+        }
+        //
+        sleep( 1 );
         --timeout;
 
         if( timeout == 0 )
@@ -657,6 +661,7 @@ void snap_init::start_processes()
             terminate_processes();
             break;
         }
+        sleep( 1 );
     }
 
     remove_lock();
