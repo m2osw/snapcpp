@@ -2028,7 +2028,7 @@ void sendmail::run_emails()
  * that way we can confirm to the receiver that we sent that email.
  * Only we'd need to know how to offer the public key via DNS... Hmmm!
  *
- * \param[in] key  The key of the email being send; i.e. the email in the To:
+ * \param[in] key  The key of the email being sent; i.e. the email in the To:
  *                 header
  * \param[in] unique_key  The email unique key.
  */
@@ -2060,38 +2060,34 @@ void sendmail::sendemail(QString const& key, QString const& unique_key)
     QString const& path(f_email.get_email_path());
     if(!path.isEmpty())
     {
-        // TODO -- we need to setup an email layout used to send emails, not
-        //         the default layout which will include all the theme
-        //         everything (title, header, footer...)
-        //         the theme selection should be enough to select the right
-        //         theme once we support setting the email layout at the
-        //         right place...
-
         // TODO look how we want to setup the email: either all inline or
         //      with links back to the website (for images, CSS...) to
         //      embed, use the sub-attachment feature
 
         content::path_info_t ipath;
         ipath.set_path(path);
-        QString const html_body(layout::layout::instance()->apply_layout(ipath, this));
-
-        // the output only includes valid ASCII (controls + ' ' to '~')
-        std::string const encoded_body(quoted_printable::encode(html_body.toUtf8().data(), quoted_printable::QUOTED_PRINTABLE_FLAG_LFONLY | quoted_printable::QUOTED_PRINTABLE_FLAG_NO_LONE_PERIOD));
-
-        email::email_attachment html_body_attachment;
-        QByteArray body_data;
-        body_data.append(encoded_body.c_str(), static_cast<int>(encoded_body.length()));
-        html_body_attachment.set_data(body_data, "text/html; charset=\"utf-8\"");
-        html_body_attachment.add_header(get_name(SNAP_NAME_SENDMAIL_CONTENT_TRANSFER_ENCODING), "quoted-printable");
-        f_email.set_body_attachment(html_body_attachment);
-
-        // Use the page title as the subject
-        // (TBD: should the page title always overwrite the subject?)
-        if(f_email.get_header(get_name(SNAP_NAME_SENDMAIL_SUBJECT)).isEmpty())
+        if(ipath.has_revision())
         {
-            // TODO: apply safety filters on the subject
-            content::content *c(content::content::instance());
-            f_email.set_subject(c->get_content_parameter(ipath, content::get_name(content::SNAP_NAME_CONTENT_TITLE), c->PARAM_REVISION_REVISION).stringValue());
+            QString const html_body(layout::layout::instance()->apply_layout(ipath, this));
+
+            // the output only includes valid ASCII (controls + ' ' to '~')
+            std::string const encoded_body(quoted_printable::encode(html_body.toUtf8().data(), quoted_printable::QUOTED_PRINTABLE_FLAG_LFONLY | quoted_printable::QUOTED_PRINTABLE_FLAG_NO_LONE_PERIOD));
+
+            email::email_attachment html_body_attachment;
+            QByteArray body_data;
+            body_data.append(encoded_body.c_str(), static_cast<int>(encoded_body.length()));
+            html_body_attachment.set_data(body_data, "text/html; charset=\"utf-8\"");
+            html_body_attachment.add_header(get_name(SNAP_NAME_SENDMAIL_CONTENT_TRANSFER_ENCODING), "quoted-printable");
+            f_email.set_body_attachment(html_body_attachment);
+
+            // Use the page title as the subject
+            // (TBD: should the page title always overwrite the subject?)
+            if(f_email.get_header(get_name(SNAP_NAME_SENDMAIL_SUBJECT)).isEmpty())
+            {
+                // TODO: apply safety filters on the subject
+                content::content *c(content::content::instance());
+                f_email.set_subject(c->get_content_parameter(ipath, content::get_name(content::SNAP_NAME_CONTENT_TITLE), c->PARAM_REVISION_REVISION).stringValue());
+            }
         }
     }
 
@@ -2100,7 +2096,8 @@ void sendmail::sendemail(QString const& key, QString const& unique_key)
     if(max_attachments < 1)
     {
         // this should never happen since this is tested in the post_email() function
-        throw sendmail_exception_invalid_argument("No attachment, not even a body, so this email cannot be sent");
+        SNAP_LOG_FATAL("No attachment, not even a body, so email ")(key)("/")(unique_key)(" cannot be sent");
+        return;
     }
 
     // we want to transform the body from HTML to text ahead of time
@@ -2155,12 +2152,14 @@ void sendmail::sendemail(QString const& key, QString const& unique_key)
     if(list.parse(to.toStdString(), 0) != TLD_RESULT_SUCCESS)
     {
         // this should never happen here
-        throw sendmail_exception_invalid_argument("To: email is invalid, email won't get sent");
+        SNAP_LOG_FATAL("To: email address is considered invalid, email ")(key)("/")(unique_key)("  won't get sent");
+        return;
     }
     tld_email_list::tld_email_t m;
     if(!list.next(m))
     {
-        throw sendmail_exception_invalid_argument("To: email does not return at least one email, email won't get sent");
+        SNAP_LOG_FATAL("To: email address does not return at least one email, email ")(key)("/")(unique_key)("  won't get sent");
+        return;
     }
 
     // now we're starting to send the email to the system sendmail tool
@@ -2264,16 +2263,12 @@ void sendmail::sendemail(QString const& key, QString const& unique_key)
                                             ++it)
     {
         f << it.key() << ": " << it.value() << std::endl;
-        //fprintf(f, "%s: %s\n", it.key().toUtf8().data(), it.value().toUtf8().data());
     }
     f << "X-Generated-By: Snap! Websites C++ v" SNAPWEBSITES_VERSION_STRING " (http://snapwebsites.org/)" << std::endl
       << "X-Mailer: Snap! Websites C++ v" SNAPWEBSITES_VERSION_STRING " (http://snapwebsites.org/)" << std::endl;
-    //fprintf(f, "X-Generated-By: Snap! Websites C++ v" SNAPWEBSITES_VERSION_STRING " (http://snapwebsites.org/)\n"
-    //           "X-Mailer: Snap! Websites C++ v" SNAPWEBSITES_VERSION_STRING " (http://snapwebsites.org/)\n");
 
     // one empty line before the contents
     f << std::endl;
-    //fprintf(f, "\n");
 
     if(body_only)
     {
@@ -2281,7 +2276,6 @@ void sendmail::sendemail(QString const& key, QString const& unique_key)
         // can avoid the multi-part headers and attachments
         email::email_attachment attachment(f_email.get_attachment(0));
         f << attachment.get_data().data() << std::endl;
-        //fprintf(f, "%s\n", attachment.get_data().data());
     }
     else
     {
@@ -2300,28 +2294,17 @@ void sendmail::sendemail(QString const& key, QString const& unique_key)
               << "Content-Description: Mail message body" << std::endl
               << std::endl
               << quoted_printable::encode(plain_text.toUtf8().data(), quoted_printable::QUOTED_PRINTABLE_FLAG_NO_LONE_PERIOD) << std::endl;
-            //fprintf(f, "--%s\n", boundary.toUtf8().data());
-            //fprintf(f, "Content-Type: multipart/alternative;\n  boundary=\"%s.msg\"\n\n", boundary.toUtf8().data());
-            //fprintf(f, "--%s.msg\n", boundary.toUtf8().data());
-            //fprintf(f, "Content-Type: text/plain; charset=\"utf-8\"\n");
-            //fprintf(f, "MIME-Version: 1.0\n"); -- only show this one in the main header
-            //fprintf(f, "Content-Transfer-Encoding: quoted-printable\n");
-            //fprintf(f, "Content-Description: Mail message body\n");
-            //fprintf(f, "\n");
-            //fprintf(f, "%s\n", quoted_printable::encode(plain_text.toUtf8().data(), quoted_printable::QUOTED_PRINTABLE_FLAG_NO_LONE_PERIOD).c_str());
             if(i < max_attachments)
             {
                 // now include the HTML
                 email::email_attachment html_attachment(f_email.get_attachment(0));
                 f << "--" << boundary << ".msg" << std::endl;
-                //fprintf(f, "--%s.msg\n", boundary.toUtf8().data());
                 email::header_map_t attachment_headers(html_attachment.get_all_headers());
                 for(email::header_map_t::const_iterator it(attachment_headers.begin());
                                                         it != attachment_headers.end();
                                                         ++it)
                 {
                     f << it.key() << ": " << it.value() << std::endl;
-                    //fprintf(f, "%s: %s\n", it.key().toUtf8().data(), it.value().toUtf8().data());
                 }
 
                 // one empty line before the contents
@@ -2330,9 +2313,6 @@ void sendmail::sendemail(QString const& key, QString const& unique_key)
                   << html_attachment.get_data().data() << std::endl
                   << "--" << boundary << ".msg--" << std::endl
                   << std::endl;
-                //fprintf(f, "\n");
-                //fprintf(f, "%s\n", html_attachment.get_data().data());
-                //fprintf(f, "--%s.msg--\n\n", boundary.toUtf8().data());
 
                 // we used "attachment" 0, so print the others starting at 1
                 i = 1;
@@ -2345,33 +2325,26 @@ void sendmail::sendemail(QString const& key, QString const& unique_key)
         {
             email::email_attachment attachment(f_email.get_attachment(i));
             f << "--" << boundary << std::endl;
-            //fprintf(f, "--%s\n", boundary.toUtf8().data());
             email::header_map_t attachment_headers(attachment.get_all_headers());
             for(email::header_map_t::const_iterator it(attachment_headers.begin());
                                                     it != attachment_headers.end();
                                                     ++it)
             {
                 f << it.key() << ": " << it.value() << std::endl;
-                //fprintf(f, "%s: %s\n", it.key().toUtf8().data(), it.value().toUtf8().data());
             }
 
             // one empty line before the contents
             f << std::endl;
-            //fprintf(f, "\n");
 
             // here the data is already be encoded
             f << attachment.get_data().data() << std::endl;
-            //fprintf(f, "%s\n", attachment.get_data().data());
         }
         f << "--" << boundary << "--" << std::endl;
-        //fprintf(f, "--%s--\n", boundary.toUtf8().data());
     }
 
     // end the message
     f << std::endl
       << "." << std::endl;
-    //fprintf(f, "\n");
-    //fprintf(f, ".\n");
 
     // TODO: check the returned value of pclose().
     // close pipe as soon as we're done writing to it

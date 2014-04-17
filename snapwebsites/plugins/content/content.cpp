@@ -2449,6 +2449,12 @@ snap_version::version_number_t path_info_t::get_branch(bool create_new_if_requir
 }
 
 
+bool path_info_t::has_branch() const
+{
+    return snap_version::SPECIAL_VERSION_UNDEFINED != get_branch();
+}
+
+
 snap_version::version_number_t path_info_t::get_revision() const
 {
     if(snap_version::SPECIAL_VERSION_UNDEFINED == f_revision
@@ -2462,7 +2468,11 @@ snap_version::version_number_t path_info_t::get_revision() const
         // at some point.
 
         // make sure the branch is defined
-        get_branch();
+        if(!has_branch())
+        {
+            // no branch implies no revision...
+            return f_revision;
+        }
 
         // reset values
         f_revision = f_main_page
@@ -2518,6 +2528,31 @@ snap_version::version_number_t path_info_t::get_revision() const
 }
 
 
+/** \brief Check whether a revision is defined for that path.
+ *
+ * This function checks for a revision number for that path.
+ *
+ * Note that this function may return false when the get_revision_key()
+ * function may return a valid key. This is because the revision key
+ * may create a new key or make use of some other heuristic to define
+ * a key.
+ *
+ * \return true if the revision is defined.
+ */
+bool path_info_t::has_revision() const
+{
+    if(snap_version::SPECIAL_VERSION_UNDEFINED == f_revision
+    || snap_version::SPECIAL_VERSION_INVALID == f_revision)
+    {
+        get_revision();
+        return snap_version::SPECIAL_VERSION_UNDEFINED != f_revision
+            && snap_version::SPECIAL_VERSION_INVALID != f_revision;
+    }
+
+    return true;
+}
+
+
 QString path_info_t::get_locale() const
 {
     if(snap_version::SPECIAL_VERSION_UNDEFINED == f_revision
@@ -2531,12 +2566,24 @@ QString path_info_t::get_locale() const
 
 QString path_info_t::get_branch_key() const
 {
+    // if f_branch is still undefined, get it from the database
     if(snap_version::SPECIAL_VERSION_UNDEFINED == f_branch)
     {
         get_branch();
-        f_branch_key = f_content_plugin->generate_branch_key(f_key, f_branch);
     }
-    else if(f_branch_key.isEmpty())
+
+// avoid the warning about the minimum being zero and thus the useless test
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wtype-limits"
+    if(snap_version::SPECIAL_VERSION_MIN > f_branch
+    || snap_version::SPECIAL_VERSION_MAX_BRANCH_NUMBER < f_branch)
+#pragma GCC diagnostic pop
+    {
+        // the branch is still undefined...
+        throw content_exception_data_missing("get_branch_key() request failed on this ipath, branch not defined");
+    }
+
+    if(f_branch_key.isEmpty())
     {
         f_branch_key = f_content_plugin->generate_branch_key(f_key, f_branch);
     }
@@ -2583,6 +2630,11 @@ QString path_info_t::get_revision_key() const
                 f_revision_key = value.stringValue();
             }
             // else -- no default revision...
+
+            if(f_revision_key.isEmpty())
+            {
+                throw content_exception_data_missing("get_revision_key() request failed on this ipath, revision not defined");
+            }
         }
     }
 

@@ -183,6 +183,14 @@ public:
     content_exception_unexpected_revision_type(QString const&     what_msg) : content_exception(what_msg) {}
 };
 
+class content_exception_data_missing : public content_exception
+{
+public:
+    content_exception_data_missing(char const *       what_msg) : content_exception(what_msg) {}
+    content_exception_data_missing(std::string const& what_msg) : content_exception(what_msg) {}
+    content_exception_data_missing(QString const&     what_msg) : content_exception(what_msg) {}
+};
+
 
 
 
@@ -215,7 +223,9 @@ public:
 
     bool                            get_working_branch() const;
     snap_version::version_number_t  get_branch(bool create_new_if_required = false, QString const& locale = "") const;
+    bool                            has_branch() const;
     snap_version::version_number_t  get_revision() const;
+    bool                            has_revision() const;
     QString                         get_locale() const;
     QString                         get_branch_key() const;
     QString                         get_revision_key() const;
