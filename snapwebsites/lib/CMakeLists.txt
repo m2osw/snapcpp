@@ -91,6 +91,8 @@ add_library( ${PROJECT_NAME} SHARED
     qxmlmessagehandler.cpp                      # Qt extension for us to capture the QXmlQuery messages
     row_model.cpp                               # libQtCassandra row model for use with a QTableView object.
     snap_backend.cpp                            # A type of snap_child, but for backends only
+    snap_cassandra.cpp                          # Encapuslate initiating a connection to the database.
+    snap_config.cpp                             # class to read in configuration
     snap_child.cpp                              # requests processing
     snap_exception.cpp                          # exception stack backtrack
     snap_expr.cpp                               # snap C-like expression compiler and execution environment

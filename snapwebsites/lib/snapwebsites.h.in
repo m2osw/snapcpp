@@ -20,6 +20,7 @@
 #include "snap_expr.h"
 #include "plugins.h"
 #include "snap_listen_thread.h"
+#include "snap_config.h"
 
 #include <advgetopt/advgetopt.h>
 
@@ -160,6 +161,7 @@ public:
     bool is_backend() const { return f_backend; }
     void config( int argc, char *argv[] );
     QString get_parameter(QString const& param_name) const;
+    void set_parameter( const QString& param_name, const QString& value );
     void prepare_qtapp( int argc, char *argv[] );
     void prepare_cassandra();
     QtCassandra::QCassandraTable::pointer_t create_table(QtCassandra::QCassandraContext::pointer_t context, QString table_name, QString comment);
@@ -205,7 +207,7 @@ public:
     SNAP_SIGNAL(add_snap_expr_functions, (snap_expr::functions_t& functions), (functions));
 
 private:
-    typedef QMap<QString, QString>                parameter_map_t;
+    //typedef QMap<QString, QString>                parameter_map_t;
     typedef std::shared_ptr<advgetopt::getopt>    getopt_ptr_t;
 
     server();
@@ -221,8 +223,9 @@ private:
     controlled_vars::fbool_t                f_debug;
     controlled_vars::fbool_t                f_foreground;
     controlled_vars::fbool_t                f_backend;
-    QString                                 f_config;
-    parameter_map_t                         f_parameters;
+    //QString                                 f_config;
+    snap_config                             f_parameters;
+    //parameter_map_t                         f_parameters;
     QString                                 f_cassandra_host;
     controlled_vars::zint32_t               f_cassandra_port;
 

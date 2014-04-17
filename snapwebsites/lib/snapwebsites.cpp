@@ -23,6 +23,7 @@
 #include "not_reached.h"
 #include "tcp_client_server.h"
 #include "snap_backend.h"
+#include "snap_cassandra.h"
 
 #include <iostream>
 #include <memory>
@@ -632,7 +633,7 @@ void server::config(int argc, char *argv[])
 
     bool help(false);
 
-    parameter_map_t cmd_line_params;
+    snap_config::parameter_map_t cmd_line_params;
     if(f_opt->is_defined("param"))
     {
         int const max_params(f_opt->size("param"));
@@ -696,106 +697,9 @@ void server::config(int argc, char *argv[])
         exit(1);
     }
 
-    f_config = f_opt->get_string( "config" ).c_str();
-
-    // read the configuration file now
-    QFile c;
-    c.setFileName(f_config);
-    c.open(QIODevice::ReadOnly);
-    if(!c.isOpen())
-    {
-        // if for nothing else we need to have the list of plugins so we always
-        // expect to have a configuration file... if we're here we could not
-        // read it, unfortunately
-        std::stringstream ss;
-        ss << "cannot read configuration file \"" << f_config.toUtf8().data() << "\"";
-        SNAP_LOG_ERROR() << ss.str() << ".";
-        syslog( LOG_CRIT, "%s, server not started. (in server::config())", ss.str().c_str() );
-        exit(1);
-    }
-
-    // read the configuration file variables as parameters
-    char buf[256];
-    for(int line(1); c.readLine(buf, sizeof(buf)) > 0; ++line)
-    {
-        // make sure the last byte is '\0'
-        buf[sizeof(buf) - 1] = '\0';
-        int len(static_cast<int>(strlen(buf)));
-        if(len == 0 || (buf[len - 1] != '\n' && buf[len - 1] != '\r'))
-        {
-            std::stringstream ss;
-            ss << "line " << line << " in \"" << f_config.toUtf8().data() << "\" is too long";
-            SNAP_LOG_ERROR() << ss.str() << ".";
-            syslog( LOG_CRIT, "%s, server not started. (in server::config())", ss.str().c_str() );
-            exit(1);
-        }
-        buf[len - 1] = '\0';
-        --len;
-        while(len > 0 && (buf[len - 1] == '\n' || buf[len - 1] == '\r'))
-        {
-            --len;
-            buf[len] = '\0';
-        }
-        if(len == 0)
-        {
-            // empty line
-            continue;
-        }
-        char *n(buf);
-        while(isspace(*n))
-        {
-            ++n;
-        }
-        if(*n == '#' || *n == '\0')
-        {
-            // comment or empty line
-            continue;
-        }
-        char *v(n);
-        while(*v != '=' && *v != '\0')
-        {
-            // TODO verify that the name is only ASCII? (probably not too
-            //      important because if not it will be ignored anyway)
-            //      Note that the layout expects names including colons (:)
-            //      as a namespace separator: layout::layout, layout::theme.
-            ++v;
-        }
-        if(*v != '=')
-        {
-            std::stringstream ss;
-            ss << "invalid variable on line " << line << " in \"" << f_config.toUtf8().data() << "\", no equal sign found";
-            SNAP_LOG_ERROR() << ss.str() << ".";
-            syslog( LOG_CRIT, "%s, server not started. (in server::config())", ss.str().c_str() );
-            exit(1);
-        }
-        char *e;
-        for(e = v; e > n && isspace(e[-1]); --e);
-        *e = '\0';
-        do
-        {
-            ++v;
-        }
-        while(isspace(*v));
-        for(e = v + strlen(v); e > v && isspace(e[-1]); --e);
-        *e = '\0';
-        if(v != e && ((v[0] == '\'' && e[-1] == '\'') || (v[0] == '"' && e[-1] == '"')))
-        {
-            // remove single or double quotes
-            v++;
-            e[-1] = '\0';
-        }
-        // keep the command line defined parameters
-        if(!cmd_line_params.contains(n))
-        {
-            f_parameters[n] = QString::fromUtf8(v);
-        }
-        else
-        {
-            SNAP_LOG_WARNING("warning: parameter \"")(n)("\" from the configuration file (")
-                      (v)(") ignored as it was specified on the command line (")
-                      (f_parameters[n])(").");
-        }
-    }
+    f_parameters.clear();
+    f_parameters.set_cmdline_params( cmd_line_params );
+    f_parameters.read_config_file( f_opt->get_string( "config" ).c_str() );
 
     // the name of the server is mandatory, use hostname by default
     if(f_parameters["server_name"] == "")
@@ -900,6 +804,8 @@ void server::config(int argc, char *argv[])
  *
  * \param[in] param_name  The name of the parameter to retrieve.
  *
+ * \sa set_parameter()
+ *
  * \return The value of the specified parameter.
  */
 QString server::get_parameter(QString const& param_name) const
@@ -909,6 +815,19 @@ QString server::get_parameter(QString const& param_name) const
         return f_parameters[param_name];
     }
     return "";
+}
+
+
+/** \brief Set one of the configuration file parameters.
+ *
+ * \param[in] param_name  The name of the parameter to retrieve.
+ * \param[in] value       The value to put into the parameter.
+ *
+ * \sa get_parameter()
+ */
+void server::set_parameter( const QString& param_name, const QString& value )
+{
+    f_parameters[param_name] = value;
 }
 
 
@@ -945,80 +864,20 @@ void server::prepare_qtapp( int argc, char *argv[] )
  */
 void server::prepare_cassandra()
 {
-    // This function connects to the Cassandra database, but it doesn't
-    // keep the connection. We are the server and the connection would
-    // not be shared properly between all the children.
-    f_cassandra_host = get_parameter("cassandra_host");
-    if(f_cassandra_host.isEmpty())
+    snap_cassandra cassandra;
+    cassandra.connect( &f_parameters );
+    cassandra.init_context();
+    QtCassandra::QCassandraContext::pointer_t context( cassandra.get_snap_context() );
+    Q_ASSERT( context );
+    if( !context )
     {
-        f_cassandra_host = "localhost";
-    }
-    QString port_str(get_parameter("cassandra_port"));
-    if(port_str.isEmpty())
-    {
-        port_str = "9160";
-    }
-    bool ok;
-    f_cassandra_port = port_str.toLong(&ok);
-    if(!ok)
-    {
-        SNAP_LOG_FATAL("invalid cassandra_port, a valid number was expected instead of \"")(port_str)("\".");
+        SNAP_LOG_FATAL() << "snap_websites context does not exist! Exiting.";
         exit(1);
     }
-    if(f_cassandra_port < 1 || f_cassandra_port > 65535)
-    {
-        SNAP_LOG_FATAL("invalid cassandra_port, a port must be between 1 and 65535, ")(f_cassandra_port)(" is not.");
-        exit(1);
-    }
-
-    // TODO:
-    // We must stay "alive" waiting for the cassandra server to come up.
-    // This will take entries into the configuration file: check interval, and max_tries.
     //
-    const int wait_interval  = f_parameters["wait_interval"].toInt();
-    const int wait_max_tries = f_parameters["wait_max_tries"].toInt();
-    QtCassandra::QCassandra::pointer_t cassandra( QtCassandra::QCassandra::create() );
-    Q_ASSERT(cassandra);
-    int timeout = wait_max_tries;
-    while( !cassandra->connect(f_cassandra_host, f_cassandra_port) )
-    {
-        // if timeout is 1 we're about to call exit(1) so we're not going
-        // to retry once more
-        if(timeout != 1)
-        {
-            SNAP_LOG_WARNING()
-                   << "The connection to the Cassandra server failed ("
-                   << f_cassandra_host << ":" << f_cassandra_port << "). "
-                   << "Try again in " << wait_interval << " secs.";
-            sleep( wait_interval );
-        }
-        //
-        if( timeout > 0 )
-        {
-            if( --timeout <= 0 )
-            {
-                SNAP_LOG_FATAL() << "TIMEOUT: Could not connect to remote Cassandra server at ("
-                                 << f_cassandra_host << ":" << f_cassandra_port << ")!";
-                exit(1);
-            }
-        }
-    }
-    // we need to read all the contexts in order to make sure the
-    // findContext() works
-    cassandra->contexts();
-    QString context_name(snap::get_name(snap::SNAP_NAME_CONTEXT));
-    QtCassandra::QCassandraContext::pointer_t context(cassandra->findContext(context_name));
-    if(!context)
-    {
-        // create the context since it doesn't exist yet
-        context = cassandra->context(context_name);
-        context->setStrategyClass("org.apache.cassandra.locator.SimpleStrategy");
-        context->setReplicationFactor(1);
-        context->create();
-        // we don't put the tables in here so we can call the create_table()
-        // and have the tables created as required (i.e. as we add new ones
-        // they get added as expected, no need for special handling.)
-    }
+    f_cassandra_host = cassandra.get_cassandra_host();
+    f_cassandra_port = cassandra.get_cassandra_port();
+    //
     context->setHostName(f_parameters["server_name"]);
 
     // create missing tables

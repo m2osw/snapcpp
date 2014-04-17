@@ -22,9 +22,11 @@
 /////////////////////////////////////////////////////////////////////////////////
 
 #include "snapwebsites.h"
+#include "snap_cassandra.h"
+#include "snap_config.h"
 #include "snap_exception.h"
-#include "log.h"
 #include "snap_thread.h"
+#include "log.h"
 #include "not_reached.h"
 
 #include <stdlib.h>
@@ -38,6 +40,8 @@
 #include <vector>
 
 #include <advgetopt/advgetopt.h>
+
+#include <QtCassandra/QCassandraTable.h>
 
 #include <QFile>
 
@@ -330,11 +334,31 @@ void process::kill()
     }
 
     // Wait for process to end, then set f_exit status appropriately.
-    // TODO: implement a timeout, and a force-kill option...
     //
+    int timeout = 10;
     while( is_running() )
     {
-        usleep( 100000 );
+        SNAP_LOG_TRACE() << "process " << f_name << " is still running. Waiting.";
+        sleep( 5 );
+        --timeout;
+
+        if( timeout == 0 )
+        {
+            SNAP_LOG_WARNING() << "process " << f_name << ", pid=" << f_pid << ", failed to respond to signal, using SIGTERM...";
+            ::kill( f_pid, SIGTERM );
+        }
+        else if( timeout == -1 )
+        {
+            SNAP_LOG_WARNING() << "process " << f_name << ", pid=" << f_pid << ", failed to respond to signal, using SIGKILL...";
+            ::kill( f_pid, SIGKILL );
+        }
+        else if( timeout < -1 )
+        {
+            // stop the loop
+            //
+            SNAP_LOG_WARNING() << "process " << f_name << ", pid=" << f_pid << ", failed to terminate properly...";
+            break;
+        }
     }
 }
 
@@ -354,11 +378,14 @@ public:
     static void sighandler( int sig );
 
 private:
-    static pointer_t    f_instance;
-    advgetopt::getopt   f_opt;
     typedef std::map<std::string,bool> map_t;
-    map_t       f_opt_map;
-    QFile       f_lock_file;
+
+    static pointer_t     f_instance;
+    advgetopt::getopt    f_opt;
+    map_t                f_opt_map;
+    QFile                f_lock_file;
+    snap::snap_config    f_config;
+    snap::snap_cassandra f_cassandra;
 
     typedef std::vector<process::pointer_t> process_list_t;
     process_list_t f_process_list;
@@ -368,6 +395,7 @@ private:
     void usage();
     void validate();
     void show_selected_servers() const;
+    bool backend_ready();
     void create_server_process();
     void create_backend_process( const QString& name );
     void start_processes();
@@ -394,6 +422,21 @@ snap_init::snap_init( int argc, char *argv[] )
     else
     {
         snap::logging::configureLogfile( f_opt.get_string("logfile").c_str() );
+    }
+
+    f_config.read_config_file( f_opt.get_string("config").c_str() );
+    f_cassandra.connect( &f_config );
+    //
+    QtCassandra::QCassandraContext::pointer_t context( f_cassandra.get_snap_context() );
+    Q_ASSERT(context);
+    //
+    QtCassandra::QCassandraTable::pointer_t domains_table  ( context->findTable(snap::get_name(snap::SNAP_NAME_DOMAINS))  );
+    QtCassandra::QCassandraTable::pointer_t websites_table ( context->findTable(snap::get_name(snap::SNAP_NAME_WEBSITES)) );
+    //
+    if( !(domains_table && websites_table) )
+    {
+        SNAP_LOG_FATAL() << "You must create both the 'domains' and the 'websites' tables before you can run snapserver!";
+        exit( 1 );
     }
 }
 
@@ -512,6 +555,28 @@ void snap_init::show_selected_servers() const
 }
 
 
+/** \brief Check if backend is ready to start.
+ *
+ * If the sites table has not yet been created, you don't want to
+ * continue with backend processing.
+ *
+ * \return false means the sites table does not exist.
+ */
+bool snap_init::backend_ready()
+{
+    QtCassandra::QCassandraContext::pointer_t context( f_cassandra.get_snap_context() );
+    Q_ASSERT( context );
+    if( !context )
+    {
+        SNAP_LOG_FATAL() << "snap_websites context does not exist! Exiting.";
+        exit(1);
+    }
+
+    QtCassandra::QCassandraTable::pointer_t sites_table( context->findTable( snap::get_name(snap::SNAP_NAME_SITES) ) );
+    return static_cast<bool>(sites_table);
+}
+
+
 void snap_init::create_server_process()
 {
     process::pointer_t p( new process() );
@@ -524,6 +589,12 @@ void snap_init::create_server_process()
 
 void snap_init::create_backend_process( const QString& name )
 {
+    if( !backend_ready() )
+    {
+        SNAP_LOG_ERROR() << "The 'sites' table does not yet exist. Disabling backend--restart snapinit when the database is ready.";
+        return;
+    }
+
     process::pointer_t p( new process( name ) );
     p->set_path( f_opt.get_string("binary_path").c_str() );
     p->set_config( f_opt.get_string("config").c_str() );

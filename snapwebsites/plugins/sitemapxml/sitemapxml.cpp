@@ -628,7 +628,22 @@ bool sitemapxml::generate_sitemapxml_impl(sitemapxml *r)
         {
             // check the path, not the site_key + path
             // XXX should we use VISITOR or RETURNING VISITOR as the status?
-            allowed = f_snap->access_allowed("", page_key.mid(site_key.length()), "view", permissions::get_name(permissions::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_VISITOR));
+#pragma message "Alexis, please fill in the appropriate parameters."
+            // TODO:
+            // Need these new parameters:
+            //
+            //SNAP_SIGNAL(access_allowed
+            // , (QString const& user_path, content::path_info_t& ipath, QString const& action, QString const& login_status, content::permission_flag& result)
+            // , (user_path, ipath, action, login_status, result));
+#if 0
+            allowed = path::path::instance()->access_allowed
+                ( ""
+                , ipath
+                , page_key.mid(site_key.length())
+                , "view"
+                , permissions::get_name(permissions::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_VISITOR)
+                );
+#endif
         }
         if(allowed)
         {
