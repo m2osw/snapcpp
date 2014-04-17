@@ -215,12 +215,12 @@ public:
     void                on_bootstrap(::snap::snap_child *snap);
     void                on_add_snap_expr_functions(snap_expr::functions_t& functions);
 
-    // TBD should those be events? (or create events?)
+    // TBD should those be events? (or trigger events?)
     void                create_link(link_info const& src, link_info const& dst);
-    void                delete_link(link_info const& info, const int delete_record_count = 1000 );
+    void                delete_link(link_info const& info, int const delete_record_count = 1000);
     void                delete_this_link(link_info const& source, link_info const& destination);
 
-    QSharedPointer<link_context> new_link_context(link_info const& info, const int count = 1000 );
+    QSharedPointer<link_context> new_link_context(link_info const& info, int const count = 1000);
 
 private:
     void                initial_update(int64_t variables_timestamp);

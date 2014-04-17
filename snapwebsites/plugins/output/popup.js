@@ -1,6 +1,6 @@
 /** @preserve
  * Name: popup
- * Version: 0.1.0.1
+ * Version: 0.1.0.3
  * Browsers: all
  * Copyright: Copyright 2014 (c) Made to Order Software Corporation  All rights reverved.
  * Depends: output (0.0.5)
@@ -151,6 +151,7 @@ snapwebsites.Popup.prototype.darkenPage = function(show)
  *           jQuery object is also saved in your popup parameter
  * \li path -- the path to the content to load in the popup using an IFRAME
  *             default is no IFRAME
+ * \li html -- the HTML to put in the popup if no path was defined
  * \li top -- the top position of the popup, default center vertically
  * \li left -- the left position of the popup, default center horizontally
  * \li width -- the width of the popup, default 400 pixels
@@ -174,11 +175,11 @@ snapwebsites.Popup.prototype.darkenPage = function(show)
  * The function creates the following parameters in \p popup as required:
  *
  * \li id -- if the input \p popup does not already have a valid
- *           identifier defined, it creates a new one
+ *           identifier defined, this function assigns a new one
  * \li widget -- the jQuery object referencing the popup is saved in
  *               this variable member
  *
- * @param {{id: ?string, path: string,
+ * @param {{id: ?string, path: string, html: string,
  *          top: number, left: number, width: number, height: number,
  *          darken: number, position: string, title: string,
  *          open: function(Object), show: function(Object), hide: function(Object),
@@ -187,7 +188,7 @@ snapwebsites.Popup.prototype.darkenPage = function(show)
  */
 snapwebsites.Popup.prototype.open = function(popup)
 {
-    var i, b, f, t, w;
+    var i, b, f, t, w, y;
 
     if(!popup.id)
     {
@@ -237,7 +238,12 @@ snapwebsites.Popup.prototype.open = function(popup)
     }
     else
     {
-        popup.widget.css("top", Math.floor((jQuery("body").height() - popup.widget.height()) / 2));
+        y = Math.floor((jQuery("body").height() - popup.widget.height()) / 2);
+        if(y < 0)
+        {
+            y = 0;
+        }
+        popup.widget.css("top", y);
     }
     if(popup.left)
     {
@@ -273,6 +279,13 @@ snapwebsites.Popup.prototype.open = function(popup)
                        + snapwebsites.castToNumber(popup.widget.height(), "snapwebsites.Popup.open() retrieving popup window height")
                        - b.offset().top);
     }
+    else if(popup.html)
+    {
+        b.empty();
+        b.append(popup.html);
+    }
+    //else -- leave the user's body alone (on a second call, it may not be
+    //        empty and already have what the user expects.)
     if(popup.open)
     {
         popup.open(popup.widget);
@@ -287,7 +300,7 @@ snapwebsites.Popup.prototype.open = function(popup)
  * This function shows a popup that was just created with the open()
  * function or got hidden with the hide() function.
  *
- * @param {{id: ?string, path: string,
+ * @param {{id: ?string, path: string, html: string,
  *          top: number, left: number, width: number, height: number,
  *          darken: number, position: string, title: string,
  *          open: function(Object), show: function(Object), hide: function(Object),
@@ -324,7 +337,7 @@ snapwebsites.Popup.prototype.show = function(popup)
  * This is often referenced as a soft-close. After this call the popup
  * is still available in the DOM, it is just hidden (display: none).
  *
- * @param {{id: ?string, path: string,
+ * @param {{id: ?string, path: string, html: string,
  *          top: number, left: number, width: number, height: number,
  *          darken: number, position: string, title: string,
  *          open: function(Object), show: function(Object), hide: function(Object),
@@ -357,7 +370,7 @@ snapwebsites.Popup.prototype.hide = function(popup)
  * fade out the popup. This function immediately removes the elements
  * from the DOM.
  *
- * @param {{id: ?string, path: string,
+ * @param {{id: ?string, path: string, html: string,
  *          top: number, left: number, width: number, height: number,
  *          darken: number, position: string, title: string,
  *          open: function(Object), show: function(Object), hide: function(Object),

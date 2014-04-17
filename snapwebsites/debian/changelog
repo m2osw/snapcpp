@@ -1,7 +1,10 @@
 snapwebsites (0.1.43~saucy) UNRELEASED; urgency=high
 
   [ Alexis Wilke ]
-  * 
+  * Moved the AJAX handling to a separate script.
+  * Enhanced the AJAX handling to support redirects with a target.
+  * Added helper functions to handle users other than the logged in user.
+  * Added the custom widget to the editor.
 
   [ R. Douglas Barbieri ]
   * 57a88a3 Disable a job if it does not restart within a reasonable time.
@@ -16,7 +19,7 @@ snapwebsites (0.1.43~saucy) UNRELEASED; urgency=high
 snapwebsites (0.1.42~saucy) saucy; urgency=high
 
   [ Alexis Wilke ]
-  * Redesigned in a fully object oriented of the editor.js
+  * Redesign in a fully object oriented of the editor.js
   * Made all the corresponding changes to all the other files.
 
   [ R. Douglas Barbieri ]

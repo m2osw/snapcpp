@@ -1,7 +1,8 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.107
+ * Version: 0.0.3.119
  * Browsers: all
+ * Depends: output (>= 0.1.4), popup (>= 0.1.0.1)
  * Copyright: Copyright 2013-2014 (c) Made to Order Software Corporation  All rights reverved.
  * License: GPL 2.0
  */
@@ -17,6 +18,7 @@
 // @externs plugins/output/externs/jquery-extensions.js
 // @js plugins/output/output.js
 // @js plugins/output/popup.js
+// @js plugins/output/server-access.js
 // ==/ClosureCompiler==
 //
 
@@ -106,16 +108,16 @@
  *   |          |  |                       |   |                                  |
  *   |          |  |                       |   |                                  |
  *   |          |  +-----------------------+   |                                  |
- *   |          |         ^                    |                                  |
- *   |          |         | Inherit            |                                  |
- *   |          v         |                    |                                  |
- *   |     +--------------------+              |                                  |
- *   |     |                    |  Inherit     |                                  |
- *   |     |  EditorWidgetType  |<--+          |                                  |
- *   |     |                    |   |          ^                                  |
- *   |     |                    |   |          |                                  |
- *   |     +--------------------+   |          |                                  |
- *   |            ^                 |          |   +------------------+           |
+ *   |          |         ^                    |   +-----------------------+      |
+ *   |          |         | Inherit            |   |                       |      |
+ *   |          v         |                    |   | ServerAccessCallbacks |      |
+ *   |     +--------------------+              |   |                       |      |
+ *   |     |                    |  Inherit     |   |                       |      |
+ *   |     |  EditorWidgetType  |<--+          |   +-----------------------+      |
+ *   |     |                    |   |          ^          ^                       |
+ *   |     |                    |   |          |          | Inherit               |
+ *   |     +--------------------+   |          |          |                       |
+ *   |            ^                 |          |   +------+-----------+           |
  *   |            | Reference       |          |   |                  |           |
  *   |            |                 |          +---|  EditorFormBase  |           |
  *   |            |   +-------------+------+   |   |                  |           |
@@ -124,30 +126,39 @@
  *   |            |   | (i.e. LineEdit,    |   |     ^            ^               |
  *   |            |   | Button, Checkmark) |   |     | Inherit    | Reference     |
  *   |            |   +--------------------+   |     |            |               |
- *   |            |                            |     |            |               |
- *   |     +------+-------------+              |     |            |               |
- *   |     |                    +--------------+     |     +------+-----------+   |
+ *   |            |                            |     |     +------+-----------+   |
+ *   |     +------+-------------+              |     |     |                  |   |
+ *   |     |                    +--------------+     |     | EditorSaveDialog |   |
  *   |     |    EditorWidget    |                    |     |                  |   |
- *   |     |                    | Create (1,n)       |     | EditorSaveDialog |   |
- *   |     |                    |<----------+        |     |                  |   |
- *   |     +--------------------+           |        |     |                  |   |
- *   |                                      |        |     +------------------+   |
- * +-+-----------------+              +-----+--------+---+       ^                |
- * |                   |              |                  |       |                |
- * |   Editor          |              |   EditorForm     +-------+                |
- * |                   | Create (1,n) |                  | Create (1,1)           |
- * |                   +------------->|                  |                        |
- * +-----------------+-+              +--------+---------+                        |
- *       ^           |                         |                                  |
- *       |           |    Create (1,1)         |                                  |
+ *   |     |                    | Create (1,n)       |     |                  |   |
+ *   |     |                    |<----------+        |     +------------------+   |
+ *   |     +--------------------+           |        |           ^                |
+ *   |                                      |        |           |                |
+ * +-+-----------------+              +-----+--------+---+       |                |
+ * |                   |              |                  +-------+                |
+ * |   Editor          |              |   EditorForm     | Create (1,1)           |
+ * |                   | Create (1,n) |                  |                        |
+ * |                   +------------->|                  |<---------------+       |
+ * +-----------------+-+              +--------+------+--+     Reference  |       |
+ *       ^           |                         |      |                   |       |
+ *       |           |  Create (1,1)           |      | Create (1,1)      |       |
+ *       |           |                         |      v                   |       |
+ *       |           |                         |   +------------------+   |       |
+ *       |           |                         |   |                  |   |       |
+ *       |           |                         |   |   ServerAccess   +---+       |
+ *       |           |                         |   |                  |           |
+ *       |           |                         |   |                  |           |
+ *       |           |                         |   +------------------+           |
+ *       |           |                         |                                  |
  *       |           +-------------------------+----------------->----------------+
  *       |
- *       | Create(1,1)
- *  +----+-------------------+
- *  |                        |
- *  |   jQuery()             |
- *  |   Initialization       |
- *  +------------------------+
+ *       | Create (1,1)
+ *  +----+-------------------+  Create (1,n)    +------------------------+
+ *  |                        +----------------->|                        |
+ *  |   jQuery()             |                  | EditorWidgetType...    |
+ *  |   Initialization       |                  |                        |
+ *  |                        |                  |                        |
+ *  +------------------------+                  +------------------------+
  * \endcode
  *
  * Note that the reference of the Toolbar from the EditorForm works
@@ -1924,7 +1935,7 @@ snapwebsites.EditorWidget = function(editor_base, editor_form, widget)
         //
         // XXX: could setting the focus have side effects on other widgets
         //      that were not yet created and thus not fully initialized yet?
-        widget.focus();
+        this.widgetContent_.focus();
     }
 
     return this;
@@ -2271,6 +2282,9 @@ snapwebsites.EditorWidget.isEmptyBlock = function(html) // static
  *      function getEditorBase() : EditorBase;
  *      function getFormWidget() : jQuery;
  *      virtual function saveData();
+ *      virtual function serverAccessSuccess(result);
+ *      virtual function serverAccessError(result);
+ *      virtual function serverAccessComplete(result);
  *
  * private:
  *      SAVE_MODE_PUBLISH: string;
@@ -2288,11 +2302,14 @@ snapwebsites.EditorWidget.isEmptyBlock = function(html) // static
  *
  * @return {!snapwebsites.EditorFormBase}  The newly created object.
  *
+ * @extends {snapwebsites.ServerAccessCallbacks}
  * @constructor
  * @struct
  */
 snapwebsites.EditorFormBase = function(editor_base, form_widget)
 {
+    snapwebsites.EditorFormBase.superClass_.constructor.call(this);
+
     this.editorBase_ = editor_base;
     this.formWidget_ = form_widget;
 
@@ -2300,11 +2317,12 @@ snapwebsites.EditorFormBase = function(editor_base, form_widget)
 };
 
 
-/** \brief Mark EditorFormBase as a base class.
+/** \brief The EditorFormBase derives from ServerAccessCallbacks.
  *
- * This class does not inherit from any other classes.
+ * This class inherits from the ServerAccessCallbacks so it can receive
+ * callback events after a AJAX object was sent to the server.
  */
-snapwebsites.base(snapwebsites.EditorFormBase);
+snapwebsites.inherits(snapwebsites.EditorFormBase, snapwebsites.ServerAccessCallbacks);
 
 
 /** \brief Save the data and then publish it.
@@ -2578,6 +2596,9 @@ snapwebsites.EditorSaveDialog.prototype.create_ = function()
  * to be hidden by default. It will show them whenever necessary
  * (i.e. when something changed.)
  *
+ * \note
+ * This function forces an immediate hide on the save popup dialog.
+ *
  * \todo
  * Offer ways to just disable buttons (instead of hiding them)
  * and to keep the buttons "active" but generate errors if clicked
@@ -2588,6 +2609,7 @@ snapwebsites.EditorSaveDialog.prototype.create_ = function()
 snapwebsites.EditorSaveDialog.prototype.setPopup = function(widget)
 {
     this.saveDialogPopup_ = jQuery(widget);
+    this.saveDialogPopup_.hide();
 };
 
 
@@ -2692,6 +2714,9 @@ snapwebsites.EditorSaveDialog.prototype.setStatus = function(new_status)
  *      function getToolbarAutoVisible() : boolean;
  *      function setToolbarAutoVisible(toolbar_auto_visible: boolean);
  *      virtual function saveData(mode: string);
+ *      virtual function serverAccessSuccess(result);
+ *      virtual function serverAccessError(result);
+ *      virtual function serverAccessComplete(result);
  *      function isSaving() : boolean;
  *      function setSaving(new_status: boolean);
  *      function changed();
@@ -2703,17 +2728,19 @@ snapwebsites.EditorSaveDialog.prototype.setStatus = function(new_status)
  *      function titleToURI_(title: string) : string;
  *      function readyWidgets_();
  *
- *      usedTypes_: Object;             // map of types necessary to open that form
- *      session_: string;               // session identifier
- *      name_: string;                  // the name of the form
- *      widgets_: jQuery;               // the widgets of this form
- *      editorWidgets_: Object;         // map of editor objects
- *      widgetInitialized_: boolean;    // whether the form was initialized
- *      saveDialog_: EditorSaveDialog;  // a reference to the save dialog
- *      mode: string;                   // general mode the form is used as
- *      toolbarAutoVisible: boolean;    // whether to show the toolbar automatically
- *      inPopup_: boolean;              // are we in a popup?
- *      modified_: boolean;             // one or more fields changed
+ *      usedTypes_: Object;                 // map of types necessary to open that form
+ *      session_: string;                   // session identifier
+ *      name_: string;                      // the name of the form
+ *      widgets_: jQuery;                   // the widgets of this form
+ *      editorWidgets_: Object;             // map of editor objects
+ *      widgetInitialized_: boolean;        // whether the form was initialized
+ *      saveDialog_: EditorSaveDialog;      // a reference to the save dialog
+ *      mode: string;                       // general mode the form is used as
+ *      toolbarAutoVisible: boolean;        // whether to show the toolbar automatically
+ *      modified_: boolean;                 // one or more fields changed
+ *      saveFunctionOnSuccess_: function(); // function called in case the save succeeded
+ *      savedData_: Object;                 // a set of object to know whether things changed while saving
+ *      serverAccess_: ServerAccess;        // a ServerAccess object to send the AJAX
  * };
  * \endcode
  *
@@ -2888,20 +2915,6 @@ snapwebsites.EditorForm.prototype.mode_ = "";
 snapwebsites.EditorForm.prototype.toolbarAutoVisible_ = true;
 
 
-/** \brief Whether this form was opened in a popup window.
- *
- * When a form uses a popup with an IFRAME and wants to redirect the
- * user on a successful Save, the system needs to know whether the
- * form was opened in a "popup" (an IFRAME really.)
- *
- * This option is used to know that the popup has to be closed.
- *
- * @type {boolean}
- * @private
- */
-snapwebsites.EditorForm.prototype.inPopup_ = false;
-
-
 /** \brief Whether this form was modified.
  *
  * Whenever a form is first loaded and after a successful save,
@@ -2915,6 +2928,46 @@ snapwebsites.EditorForm.prototype.inPopup_ = false;
  * @private
  */
 snapwebsites.EditorForm.prototype.modified_ = false;
+
+
+/** \brief A function to call on a successful save.
+ *
+ * This reference points to a function that gets called in the event
+ * of a successful save. You may define one such function.
+ *
+ * @type {?function()}
+ * @private
+ */
+snapwebsites.EditorForm.prototype.saveFunctionOnSuccess_ = null;
+
+
+/** \brief An object of the data as sent to the server.
+ *
+ * The user clicks Save, that may take a little time since the entier
+ * block of data is sent to the server (maybe at some point we'll have
+ * a JavaScript "diff" function...). While that happens, some pages do
+ * not block the user who can continue to edit his work. When that
+ * happens the behavior of the editor changes slightly. To know whether
+ * such a change happens, the data is saved in this object for the time
+ * it takes to process the save command.
+ *
+ * @type {Object}
+ * @private
+ */
+snapwebsites.EditorForm.prototype.savedData_ = null;
+
+
+/** \brief A server access object.
+ *
+ * Whenever the user wants to save his data, a ServerAccess object
+ * is required so we create one and keep its reference here. It
+ * will be reused on each subsequent save (instead of a new one
+ * created each time.)
+ *
+ * @type {snapwebsites.ServerAccess}
+ * @private
+ */
+snapwebsites.EditorForm.prototype.serverAccess_ = null;
 
 
 /** \brief Retrieve the editor form name.
@@ -2940,22 +2993,6 @@ snapwebsites.EditorForm.prototype.getName = function()
 snapwebsites.EditorForm.prototype.getWidgetByName = function(name)
 {
     return this.editorWidgets_[name];
-};
-
-
-/** \brief Define the inPopup_ flag.
- *
- * This function is used to set the inPopup_ flag to true or false.
- * The default is false. When set to true, a redirect on a successful
- * AJAX Save requests the editor form to redirect the user from the
- * outside of the popup IFRAME window.
- *
- * @param {boolean} in_popup  Whether the form is in a popup (true) or
- *                            not (false).
- */
-snapwebsites.EditorForm.prototype.setInPopup = function(in_popup)
-{
-    this.inPopup_ = in_popup;
 };
 
 
@@ -3020,6 +3057,127 @@ snapwebsites.EditorForm.prototype.titleToURI_ = function(title)
 };
 
 
+/** \brief A function to call on a successful save.
+ *
+ * If defined, this function is called when the Save function is
+ * returned a successful result and is not asked to redirect the
+ * user.
+ *
+ * This is particularly useful if you used a form in a popup that
+ * should be closed on success.
+ *
+ * @param {function()} f  A function to call on success.
+ */
+snapwebsites.EditorForm.prototype.setSaveFunctionOnSuccess = function(f)
+{
+    this.saveFunctionOnSuccess_ = f;
+};
+
+
+/** \brief Function called on success.
+ *
+ * This function is called if the remote access was successful. The
+ * result object includes a reference to the XML document found in the
+ * data sent back from the server.
+ *
+ * By default this function does nothing.
+ *
+ * @param {snapwebsites.ServerAccessCallbacks.ResultData} result  The
+ *          resulting data.
+ */
+snapwebsites.EditorForm.prototype.serverAccessSuccess = function(result) // virtual
+{
+    var key,                    // loop index
+        modified = false;       // whether some data was modified while saving
+
+    // success! so it was saved and now that's the new original value
+    // and next "Save" doesn't do anything
+    for(key in this.editorWidgets_)
+    {
+        if(this.editorWidgets_.hasOwnProperty(key))
+        {
+            if(this.savedData_[key])
+            {
+                if(this.editorWidgets_[key].saved(this.savedData_[key]))
+                {
+                    modified = true;
+                }
+            }
+        }
+    }
+
+    // if not modified while processing the POST, hide the save buttons
+    if(!modified)
+    {
+        this.getSaveDialog().close();
+    }
+
+    // in case the manager of the form wants to know that a save was
+    // successful (but only if we're not going to redirect the user)
+    if(!result.will_redirect && this.saveFunctionOnSuccess_)
+    {
+        this.saveFunctionOnSuccess_();
+    }
+};
+
+
+/** \brief Function called on error.
+ *
+ * This function is called if the remote access generated an error.
+ * In this case errors include I/O errors, server errors, and application
+ * errors. All call this function so you do not have to repeat the same
+ * code for each type of error.
+ *
+ * \li I/O errors -- somehow the AJAX command did not work, maybe the
+ *                   domain name is wrong or the URI has a syntax error.
+ * \li server errors -- the server received the POST but somehow refused
+ *                      it (maybe the request generated a crash.)
+ * \li application errors -- the server received the POST and returned an
+ *                           HTTP 200 result code, but the result includes
+ *                           a set of errors (not enough permissions,
+ *                           invalid data, etc.)
+ *
+ * By default this function does nothing.
+ *
+ * @param {snapwebsites.ServerAccessCallbacks.ResultData} result  The
+ *          resulting data with information about the error(s).
+ */
+snapwebsites.EditorForm.prototype.serverAccessError = function(result) // virtual
+{
+    alert(result.error_message);
+};
+
+
+/** \brief Function called on completion.
+ *
+ * This function is called once the whole process is over. It is most
+ * often used to do some cleanup.
+ *
+ * By default this function does nothing.
+ *
+ * @param {snapwebsites.ServerAccessCallbacks.ResultData} result  The
+ *          resulting data with information about the error(s).
+ */
+snapwebsites.EditorForm.prototype.serverAccessComplete = function(result) // virtual
+{
+    // we do not need that data anymore, release it
+    this.savedData_ = null;
+
+    // TBD: avoid this one if we're fading out since that
+    //      would mean the user can click in these 300ms
+    //      (probably generally unlikely... and it should
+    //      not have any effect because we re-compare the
+    //      data and do nothing if no modifications happened)
+    this.setSaving(false);
+
+    if(!result.will_redirect && result.messages && result.messages.length > 0)
+    {
+        // TODO: handle the messages we received on success or error
+        alert("Got Snap! messages to display (TODO)");
+    }
+};
+
+
 /** \brief Save the data.
  *
  * This function checks whether the data changed or not. If it was
@@ -3028,15 +3186,13 @@ snapwebsites.EditorForm.prototype.titleToURI_ = function(title)
  * data to the server using AJAX.
  *
  * @param {!string} mode  The mode used to save the data.
+ * @param {Object=} options_opt  Additional options to be added to the query string.
  */
-snapwebsites.EditorForm.prototype.saveData = function(mode)
+snapwebsites.EditorForm.prototype.saveData = function(mode, options_opt)
 {
-    var that = this,
-        key,                                    // loop index
+    var key,                                    // loop index
         w,                                      // widget being managed
-        saved_data = {},                        // "array" of data objects
         obj = {},                               // object to send via AJAX
-        url,                                    // the URL used to send the data
         save_all = this.mode_ == "save-all";    // whether all fields are sent to the server
 
     // are we already saving? if so, generate an error
@@ -3050,6 +3206,7 @@ snapwebsites.EditorForm.prototype.saveData = function(mode)
     // mark the form as saving, it may use CSS to show the new status
     this.setSaving(true);
 
+    this.savedData_ = {};
     for(key in this.editorWidgets_)
     {
         if(this.editorWidgets_.hasOwnProperty(key))
@@ -3057,8 +3214,8 @@ snapwebsites.EditorForm.prototype.saveData = function(mode)
             w = this.editorWidgets_[key];
             if(save_all || w.wasModified(true))
             {
-                saved_data[key] = w.saving();
-                obj[key] = saved_data[key].result;
+                this.savedData_[key] = w.saving();
+                obj[key] = this.savedData_[key].result;
             }
         }
     }
@@ -3070,105 +3227,14 @@ snapwebsites.EditorForm.prototype.saveData = function(mode)
         obj["editor_save_mode"] = mode;
         obj["editor_session"] = this.session_;
         obj["editor_uri"] = this.titleToURI_( /** @type {string} */ (jQuery("[field_name='title'] .editor-content").text()));
-        url = jQuery("link[rel='canonical']").attr("href");
-        url = url ? url : "/";
-        jQuery.ajax(url, {
-            type: "POST",
-            processData: true,
-            data: obj,
-            error: function(jqxhr, result_status, error_msg)
-            {
-                // TODO get the messages in the HTML and display those
-                //      in a popup; later we should have one error per
-                //      widget whenever a widget is specified
-                alert("An error occured while posting AJAX (status: " + result_status + " / error: " + error_msg + ")");
-            },
-            success: function(data, result_status, jqxhr)
-            {
-                var key, modified, results, doc, redirect, uri;
-
-//console.log(jqxhr);
-                if(jqxhr.status == 200)
-                {
-                    // WARNING: success of the AJAX round trip data does not
-                    //          mean that the POST was a success.
-                    alert("The AJAX succeeded (" + result_status + ")");
-
-                    // we expect exactly ONE result tag
-                    results = jqxhr.responseXML.getElementsByTagName("result");
-                    if(results.length == 1 && results[0].childNodes[0].nodeValue == "success")
-                    {
-                        // success! so it was saved and now that's the new
-                        // original value and next "Save" doesn't do anything
-                        modified = false;
-                        for(key in that.editorWidgets_)
-                        {
-                            if(that.editorWidgets_.hasOwnProperty(key))
-                            {
-                                if(saved_data[key])
-                                {
-                                    w = that.editorWidgets_[key];
-                                    if(w.saved(saved_data[key]))
-                                    {
-                                        modified = true;
-                                    }
-                                }
-                            }
-                        }
-                        // if not modified while processing the POST, hide
-                        // those buttons
-                        if(!modified)
-                        {
-                            that.getSaveDialog().close();
-                        }
-
-                        redirect = jqxhr.responseXML.getElementsByTagName("redirect");
-                        if(redirect.length == 1)
-                        {
-                            // redirect the user after a successful save
-                            doc = document;
-                            if(that.inPopup_)
-                            {
-                                // TODO: we probably want to support
-                                // multiple levels (i.e. a "_top" kind
-                                // of a thing) instead of just one up.
-                                doc = window.parent.document;
-                            }
-                            uri = redirect[0].childNodes[0].nodeValue;
-                            if(uri == ".")
-                            {
-                                // just exit the editor
-                                uri = doc.location.toString();
-                                uri = uri.replace(/\?a=edit$/, "")
-                                         .replace(/\?a=edit&/, "?")
-                                         .replace(/&a=edit&/, "&");
-                            }
-                            doc.location = uri;
-                            // avoid anything else after a redirect
-                            return;
-                        }
-                    }
-                    else
-                    {
-                        // an error occured... report it
-                        alert("The server replied with errors (TODO: display the errors in a popup or by each widget)");
-                    }
-                }
-                else
-                {
-                    alert("The server replied with HTTP code " + jqxhr.status + " while posting AJAX (status: " + result_status + ")");
-                }
-            },
-            complete: function(jqxhr, result_status){
-                // TODO: avoid this one if we're fading out since that
-                //       would mean the user can click in these 300ms
-                //       (probably generally unlikely... and it should
-                //       not have any effect because we re-compare the
-                //       data and do nothing if no modifications happened)
-                that.setSaving(false);
-            },
-            dataType: "xml"
-        });
+        if(!this.serverAccess_)
+        {
+            this.serverAccess_ = new snapwebsites.ServerAccess(this);
+        }
+        this.serverAccess_.setURI(snapwebsites.castToString(jQuery("link[rel='canonical']").attr("href"), "casting href of the canonical link to a string in snapwebsites.EditorForm.saveData()"),
+                                  options_opt);
+        this.serverAccess_.setData(obj);
+        this.serverAccess_.send();
     }
     else
     {

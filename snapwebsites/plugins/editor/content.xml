@@ -80,7 +80,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <attachment name="editor" type="attachment/public" owner="output">
       <path>:/js/editor/editor.js</path>
       <mime-type>text/javascript</mime-type>
-      <dependency>output (&gt;= 0.0.1)</dependency>
+      <dependency>output (&gt;= 0.1.4)</dependency>
+      <dependency>popup (&gt;= 0.1.0.1)</dependency>
+      <dependency>server-access (&gt;= 0.0.1)</dependency>
     </attachment>
   </content>
   <content path="/images/editor">

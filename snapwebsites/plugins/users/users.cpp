@@ -2605,6 +2605,125 @@ QString users::get_user_path() const
 }
 
 
+/** \brief Retrieve the user identifier from its user path.
+ *
+ * This function parses the path to a user's account and return its
+ * identifier (i.e. the number after the slash in "user/123".)
+ *
+ * The path may include the site key as well. It will be ignored as expected.
+ *
+ * WARNING: This function does NOT return the current user identifier.
+ * It returns the identifier of the user path passed as a parameter.
+ *
+ * \param[in] user_path  The path to the user.
+ *
+ * \return The user identifier if it worked, -1 if the path is invalid
+ *         and does not represent a user identifier.
+ */
+int64_t users::get_user_identifier(QString const& user_path) const
+{
+    QString const site_key(f_snap->get_site_key_with_slash());
+    int pos(0);
+    if(user_path.startsWith(site_key))
+    {
+        // remove the site key, including the slash
+        pos = site_key.length();
+    }
+    if(user_path.mid(pos, 5) == "user/")
+    {
+        QString const identifier_string(user_path.mid(pos + 5));
+        bool ok(false);
+        int64_t identifier(identifier_string.toLongLong(&ok, 10));
+        if(ok)
+        {
+            return identifier;
+        }
+    }
+
+    return -1;
+}
+
+
+/** \brief Given a user path, return his email address.
+ *
+ * This function transforms the specified user path and transforms it
+ * in his identifier and then it calls the other get_user_email()
+ * function.
+ *
+ * The user path may or not include the site key. Both cases function
+ * perfectly.
+ *
+ * \param[in] user_path  The path to the user data in the content table.
+ *
+ * \return The email address of the user, if the user is defined in the
+ *         database.
+ */
+QString users::get_user_email(QString const& user_path)
+{
+    return get_user_email(get_user_identifier(user_path));
+}
+
+
+/** \brief Given a user identifier, return his email address.
+ *
+ * The email address of a user is the key used to access his private
+ * data in the users table.
+ *
+ * Note that an invalid identifier will make this function return an
+ * empty string (i.e. not such user.)
+ *
+ * \param[in] identifier  The identifier of the user to retrieve the email for.
+ *
+ * \return The email address of the user, if the user is defined in the
+ *         database.
+ */
+QString users::get_user_email(int64_t const identifier)
+{
+    if(identifier > 0)
+    {
+        QtCassandra::QCassandraTable::pointer_t users_table(get_users_table());
+        QtCassandra::QCassandraRow::pointer_t row(users_table->row(get_name(SNAP_NAME_USERS_INDEX_ROW)));
+
+        QByteArray key;
+        QtCassandra::appendInt64Value(key, identifier);
+        if(row->exists(key))
+        {
+            // found the email
+            return row->cell(key)->value().stringValue();
+        }
+    }
+
+    return "";
+}
+
+
+/** \brief Get the path to a user from an email.
+ *
+ * This function returns the path of the user corresponding to the specified
+ * email. The function returns an empty string if the user is not found.
+ *
+ * \param[in] email  The email of the user to search the path for.
+ *
+ * \return The path to the user.
+ */
+QString users::get_user_path(QString const& email)
+{
+    QtCassandra::QCassandraTable::pointer_t users_table(get_users_table());
+    if(users_table->exists(email))
+    {
+        QtCassandra::QCassandraRow::pointer_t row(users_table->row(email));
+        QtCassandra::QCassandraValue const value(users_table->row(email)->cell(get_name(SNAP_NAME_USERS_IDENTIFIER))->value());
+        if(!value.nullValue())
+        {
+            int64_t identifier(value.int64Value());
+            return QString("%1/%2").arg(get_name(SNAP_NAME_USERS_PATH)).arg(identifier);
+        }
+    }
+
+    return "";
+}
+
+
 /** \brief Register a new user in the database
  *
  * If you find out that a user is not yet registered but still want to
@@ -2614,7 +2733,14 @@ QString users::get_user_path() const
  * This function accepts an email and a password. The password can be set
  * to "!" to prevent that user from logging in (password too small!) but
  * still have an account. The account can later be activated, which
- * happens whenever the user decides to register.
+ * happens whenever the user decides to register "for real" (i.e. the
+ * "!" accounts are often used for users added to mailing lists and alike.)
+ *
+ * If you are creating a user as an administrator or similar role, you
+ * may want to give the user a full account. This is doable by creating
+ * a random password and passing that password to this function. The
+ * user will be considered fully registered in that case. The password
+ * can be generated using the create_password() function.
  *
  * \param[in] email  The email of the user. It must be a valid email address.
  * \param[in] password  The password of the user or "!".
@@ -2858,7 +2984,7 @@ bool users::user_registered_impl(content::path_info_t& ipath, int64_t identifier
  *
  * \param[in] email  The user email.
  */
-void users::verify_email(const QString& email)
+void users::verify_email(QString const& email)
 {
     sendmail::sendmail::email e;
 
@@ -2899,7 +3025,7 @@ void users::verify_email(const QString& email)
  *
  * \param[in] email  The user email.
  */
-void users::forgot_password_email(const QString& email)
+void users::forgot_password_email(QString const& email)
 {
     sendmail::sendmail::email e;
 
@@ -3102,6 +3228,46 @@ void users::on_define_locales(QString& locales)
             }
         }
     }
+}
+
+
+/** \brief Create a default password.
+ *
+ * In some cases an administrator may want to create an account for a user
+ * which should then have a valid, albeit unknown, password.
+ *
+ * This function can be used to create that password.
+ *
+ * It is strongly advised to NOT send such passwords to the user via email
+ * because they may contain "strange" characters and emails are notoriously
+ * not safe.
+ *
+ * \return The string with the new password.
+ */
+QString users::create_password()
+{
+    // a "large" set of random bytes
+    const int PASSWORD_SIZE = 256;
+    unsigned char buf[PASSWORD_SIZE];
+
+    QString result;
+    do
+    {
+        // get the random bytes
+        RAND_bytes(buf, sizeof(buf));
+
+        for(int i(0); i < PASSWORD_SIZE; ++i)
+        {
+            // only use ASCII characters
+            if(buf[i] >= ' ' && buf[i] < 0x7F)
+            {
+                result += buf[i];
+            }
+        }
+    }
+    while(result.length() < 64); // just in case, make sure it is long enough
+
+    return result;
 }
 
 

@@ -3675,7 +3675,7 @@ void snap_child::setup_uri()
  *
  * \return The URI reference.
  */
-const snap_uri& snap_child::get_uri() const
+snap_uri const& snap_child::get_uri() const
 {
     return f_uri;
 }
