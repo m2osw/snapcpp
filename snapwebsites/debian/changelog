@@ -1,4 +1,4 @@
-snapwebsites (0.1.43~saucy) UNRELEASED; urgency=high
+snapwebsites (0.1.43~saucy) saucy; urgency=high
 
   [ Alexis Wilke ]
   * Moved the AJAX handling to a separate script.
