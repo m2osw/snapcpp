@@ -1,7 +1,16 @@
+snapwebsites (0.1.42~saucyubuntu1) UNRELEASED; urgency=low
+
+  * Moved the AJAX handling to a separate script.
+  * Enhanced the AJAX handling to support redirects with a target.
+  * Added helper functions to handle users other than the logged in user.
+  * Added the custom widget to the editor.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Thu, 17 Apr 2014 04:00:44 -0700
+
 snapwebsites (0.1.42~saucy) saucy; urgency=high
 
   [ Alexis Wilke ]
-  * Redesigned in a fully object oriented of the editor.js
+  * Redesign in a fully object oriented of the editor.js
   * Made all the corresponding changes to all the other files.
 
   [ R. Douglas Barbieri ]

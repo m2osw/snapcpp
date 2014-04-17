@@ -119,7 +119,7 @@ void snap_cassandra::init_context()
 }
 
 
-QtCassandra::QCassandraContext::pointer_t	snap_cassandra::get_snap_context()
+QtCassandra::QCassandraContext::pointer_t snap_cassandra::get_snap_context()
 {
     if( !f_cassandra )
     {
