@@ -697,7 +697,6 @@ void server::config(int argc, char *argv[])
         exit(1);
     }
 
-    f_parameters.clear();
     f_parameters.set_cmdline_params( cmd_line_params );
     f_parameters.read_config_file( f_opt->get_string( "config" ).c_str() );
 
