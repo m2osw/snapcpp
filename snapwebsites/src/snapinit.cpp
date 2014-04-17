@@ -44,6 +44,7 @@
 #include <QtCassandra/QCassandraTable.h>
 
 #include <QFile>
+#include <QTime>
 
 namespace
 {
@@ -176,12 +177,13 @@ public:
 
     typedef enum { Server, Backend } type_t;
 
-    process( const QString& name )
+    process( const QString& n )
         : f_type(Backend)
-        , f_name(name)
+        , f_name(n)
         , f_pid(0)
         , f_exit(0)
         , f_startcount(0)
+        , f_disabled(false)
     {
     }
 
@@ -191,17 +193,25 @@ public:
         , f_pid(0)
         , f_exit(0)
         , f_startcount(0)
+        , f_disabled(false)
     {
     }
 
     void set_path( const QString& path )     { f_path = path; }
     void set_config( const QString& config ) { f_config = config; }
 
-    bool run();
-    bool is_running();
-    void kill();
-    int  startcount() const { return f_startcount; }
-    type_t type() const { return f_type; }
+    bool   run();
+    bool   is_running();
+    void   kill();
+    //
+    pid_t   pid()        const { return f_pid;             }
+    QString name()       const { return f_name;            }
+    int     startcount() const { return f_startcount;      }
+    type_t  type()       const { return f_type;            }
+    int     elapsed()    const { return f_timer.elapsed(); }
+    bool    disabled()   const { return f_disabled;        }
+    //
+    void   set_disabled( const bool val ) { f_disabled = val; }
 
 private:
     type_t   f_type;
@@ -211,6 +221,8 @@ private:
     int      f_pid;
     int      f_exit;
     int      f_startcount;
+    QTime    f_timer;
+    bool     f_disabled;
 
     void handle_status( const int pid, const int status );
 };
@@ -218,6 +230,7 @@ private:
 
 bool process::run()
 {
+    f_timer.start();
     f_startcount++;
     f_pid = fork();
     if( f_pid == 0 )
@@ -270,7 +283,7 @@ bool process::run()
 }
 
 
-void process::handle_status( const int pid, const int status )
+void process::handle_status( const int the_pid, const int status )
 {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
@@ -284,7 +297,7 @@ void process::handle_status( const int pid, const int status )
     }
 #pragma GCC diagnostic pop
 
-    if( pid == -1 )
+    if( the_pid == -1 )
     {
         SNAP_LOG_ERROR() << "Command [" << f_name << "] terminated abnormally with exit code [" << f_exit << "]";
     }
@@ -305,13 +318,13 @@ bool process::is_running()
     }
 
     int status = 0;
-    const int pid = waitpid( f_pid, &status, WNOHANG );
-    if( pid == 0 )
+    const int the_pid = waitpid( f_pid, &status, WNOHANG );
+    if( the_pid == 0 )
     {
         return true;
     }
 
-    handle_status( pid, status );
+    handle_status( the_pid, status );
 
     return false;
 }
@@ -340,7 +353,7 @@ void process::kill()
     {
         if( timeout > 0 )
         {
-            SNAP_LOG_TRACE() << "process " << f_name << " is still running. Waiting " << timeout << " more seconds.";
+            SNAP_LOG_INFO() << "process " << f_name << " is still running. Waiting " << timeout << " more seconds.";
         }
         //
         sleep( 1 );
@@ -613,12 +626,38 @@ void snap_init::monitor_processes()
     {
         if( !p->is_running() )
         {
-            // TODO: need some kind of count and a timer to disable
-            // processes that just won't run
-            //
+            if( (p->startcount() > 5) && (p->elapsed() < 5000) )
+            {
+                // Job has died too often and too soon between startups
+                //
+                p->set_disabled( true );
+                continue;
+            }
+
             // Restart process
+            //
             p->run();
         }
+    }
+
+    // Remove all disabled jobs
+    //
+    while( true )
+    {
+        auto it = std::find_if( f_process_list.begin(), f_process_list.end(),
+            []( process::pointer_t p )
+            {
+                return p->disabled();
+            }
+        );
+        //
+        if( it == f_process_list.end() )
+        {
+            break;
+        }
+        //
+        SNAP_LOG_WARNING() << "Process [" << (*it)->name() << "] refused to start, so removed from list!";
+        f_process_list.erase( it );
     }
 }
 
