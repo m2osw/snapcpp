@@ -1,3 +1,18 @@
+snapwebsites (0.1.43~saucy) UNRELEASED; urgency=high
+
+  [ Alexis Wilke ]
+  * 
+
+  [ R. Douglas Barbieri ]
+  * 57a88a3 Disable a job if it does not restart within a reasonable time.
+  * ff6456d Now times out a little bit more gracefully, with better trace
+    messages.
+  * 3912075 Fixed endless wait for processes not responding to snapsignal STOP.
+  * 2c1c9f9 Moved cassandra connection code into a new class.
+  * c53afcc Moved configuration reading code to its own class.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Thu, 17 Apr 2014 09:24:25 -0700
+
 snapwebsites (0.1.42~saucy) saucy; urgency=high
 
   [ Alexis Wilke ]
