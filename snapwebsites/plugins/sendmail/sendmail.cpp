@@ -125,6 +125,9 @@ char const *get_name(name_t name)
     case SNAP_NAME_SENDMAIL_STATUS_DELETED:
         return "deleted";
 
+    case SNAP_NAME_SENDMAIL_STATUS_FAILED:
+        return "failed";
+
     case SNAP_NAME_SENDMAIL_STATUS_LOADING:
         return "loading";
 
@@ -2037,10 +2040,20 @@ void sendmail::sendemail(QString const& key, QString const& unique_key)
     QtCassandra::QCassandraTable::pointer_t table(get_emails_table());
     QtCassandra::QCassandraValue sent_value(table->row(key)->cell(unique_key + "::" + get_name(SNAP_NAME_SENDMAIL_SENDING_STATUS))->value());
     //if(sent_value.stringValue() != get_name(SNAP_NAME_SENDMAIL_STATUS_NEW))
-    if(sent_value.stringValue() == get_name(SNAP_NAME_SENDMAIL_STATUS_SENT))
+    QString const sent_status(sent_value.stringValue());
+    if(sent_status == get_name(SNAP_NAME_SENDMAIL_STATUS_SENT)
+    || sent_status == get_name(SNAP_NAME_SENDMAIL_STATUS_FAILED)
+    || sent_status == get_name(SNAP_NAME_SENDMAIL_STATUS_DELETED))
     {
         // email was already sent, not too sure why we're being called,
         // just ignore to avoid bothering the destination owner...
+        //
+        // also ignore if it failed (it probably would fail again) and
+        // if it were deleted by a user
+        //
+        // TODO: a failed email may be reset to new by a user if so they
+        //       wish so that way this process can try again (we'll have
+        //       to also put it in the list of new emails...)
         return;
     }
     // mark that the email was sent, if it fails from here, then we do not
@@ -2096,6 +2109,8 @@ void sendmail::sendemail(QString const& key, QString const& unique_key)
     if(max_attachments < 1)
     {
         // this should never happen since this is tested in the post_email() function
+        sending_value.setStringValue(get_name(SNAP_NAME_SENDMAIL_STATUS_FAILED));
+        table->row(key)->cell(unique_key + "::" + get_name(SNAP_NAME_SENDMAIL_SENDING_STATUS))->setValue(sending_value);
         SNAP_LOG_FATAL("No attachment, not even a body, so email ")(key)("/")(unique_key)(" cannot be sent");
         return;
     }
@@ -2152,12 +2167,16 @@ void sendmail::sendemail(QString const& key, QString const& unique_key)
     if(list.parse(to.toStdString(), 0) != TLD_RESULT_SUCCESS)
     {
         // this should never happen here
+        sending_value.setStringValue(get_name(SNAP_NAME_SENDMAIL_STATUS_FAILED));
+        table->row(key)->cell(unique_key + "::" + get_name(SNAP_NAME_SENDMAIL_SENDING_STATUS))->setValue(sending_value);
         SNAP_LOG_FATAL("To: email address is considered invalid, email ")(key)("/")(unique_key)("  won't get sent");
         return;
     }
     tld_email_list::tld_email_t m;
     if(!list.next(m))
     {
+        sending_value.setStringValue(get_name(SNAP_NAME_SENDMAIL_STATUS_FAILED));
+        table->row(key)->cell(unique_key + "::" + get_name(SNAP_NAME_SENDMAIL_SENDING_STATUS))->setValue(sending_value);
         SNAP_LOG_FATAL("To: email address does not return at least one email, email ")(key)("/")(unique_key)("  won't get sent");
         return;
     }
