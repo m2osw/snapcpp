@@ -1,3 +1,9 @@
+snapwebsites (0.1.44~saucy1ubuntu1) UNRELEASED; urgency=low
+
+  * Fixed the sendmail plugin so it continues to work even if an email fails.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Thu, 17 Apr 2014 16:41:48 -0700
+
 snapwebsites (0.1.44~saucy1) saucy; urgency=high
 
   * 8389b11 Parameters should not be cleared after actions have been loaded!
