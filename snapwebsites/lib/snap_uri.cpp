@@ -527,9 +527,18 @@ QString const snap_uri::get_uri(bool use_hash_bang) const
 
     // path if no hash bang
     QString p(path());
-    if(!use_hash_bang)
+    if(!use_hash_bang && p.length() > 0)
     {
-        uri += p;
+        // avoid a double slash if possible
+        // XXX: should the path not have a starting slash?
+        if(p[0] == '/')
+        {
+            uri += p.mid(1);
+        }
+        else
+        {
+            uri += p;
+        }
     }
 
     // query string

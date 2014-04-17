@@ -26,6 +26,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <file>jquery-extensions.js</file>
     <file>output.js</file>
     <file>popup.js</file>
+    <file>server-access.js</file>
   </qresource>
   <qresource prefix="/css/output">
     <file>output.css</file>

@@ -320,6 +320,28 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     </xsl:call-template>
   </xsl:template>
 
+  <!-- CUSTOM ("user" data, we just copy the <value> tag over) -->
+  <!-- WARNING: we use this sub-template because of a Qt but with variables
+                that do not get defined properly without such trickery -->
+  <xsl:template name="snap:custom">
+    <xsl:param name="path"/>
+    <xsl:param name="name"/>
+    <widget path="{$path}">
+      <div field_type="custom" style="display: none;">
+        <xsl:attribute name="class"><xsl:value-of select="classes"/> snap-editor-custom <xsl:value-of select="$name"/></xsl:attribute>
+        <div class="snap-content">
+          <xsl:copy-of select="value/node()"/>
+        </div>
+      </div>
+    </widget>
+  </xsl:template>
+  <xsl:template match="widget[@type='custom']">
+    <xsl:call-template name="snap:custom">
+      <xsl:with-param name="path" select="@path"/>
+      <xsl:with-param name="name" select="@id"/>
+    </xsl:call-template>
+  </xsl:template>
+
   <!-- HIDDEN (a value such as the editor form session identifier) -->
   <!-- WARNING: we use this sub-template because of a Qt but with variables
                 that do not get defined properly without such trickery -->

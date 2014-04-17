@@ -171,7 +171,7 @@ int64_t editor::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2014, 4, 11, 16, 36, 40, content_update);
+    SNAP_PLUGIN_UPDATE(2014, 4, 17, 3, 53, 40, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -695,7 +695,16 @@ void editor::on_process_post(QString const& uri_path)
         QString redirect(ipath.get_parameter("redirect"));
         if(!redirect.isEmpty())
         {
-            success_html += QString("<redirect>%1</redirect>").arg(redirect.replace("<", "&lt;").replace(">", "&gt;").replace("&", "&amp;"));
+            QString target(ipath.get_parameter("target"));
+            if(!target.isEmpty())
+            {
+                target = QString(" target=\"%1\"").arg(target);
+            }
+            success_html += QString("<redirect%1>%2</redirect>")
+                        .arg(target)
+                        .arg(redirect.replace("<", "&lt;")
+                                     .replace(">", "&gt;")
+                                     .replace("&", "&amp;"));
         }
         success_html += "</snap>\n";
         f_snap->output(success_html);
@@ -966,10 +975,15 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
         // a default (data driven) redirect to apply when saving an editor form
         if(!on_save.isNull())
         {
-            QString uri(on_save.attribute("redirect"));
+            QString const uri(on_save.attribute("redirect"));
             if(!uri.isEmpty())
             {
                 ipath.set_parameter("redirect", uri);
+            }
+            QString const target(on_save.attribute("target"));
+            if(!target.isEmpty())
+            {
+                ipath.set_parameter("target", target);
             }
         }
 

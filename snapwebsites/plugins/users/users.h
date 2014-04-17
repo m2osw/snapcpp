@@ -192,10 +192,16 @@ public:
     QString                 get_user_path() const;
     bool                    user_is_a_spammer();
     bool                    user_is_logged_in();
+    static QString          create_password();
     bool                    register_user(QString const& email, QString const& password);
     void                    attach_to_session(QString const& name, QString const& data);
     QString                 detach_from_session(QString const& name) const;
-    void                    set_referrer( const QString& cpath );
+    void                    set_referrer( QString const& cpath );
+
+    int64_t                 get_user_identifier(QString const& user_path) const;
+    QString                 get_user_email(QString const& user_path);
+    QString                 get_user_email(int64_t const identifier);
+    QString                 get_user_path(QString const& email);
 
 private:
     enum login_mode_t

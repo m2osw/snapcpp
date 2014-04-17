@@ -1,6 +1,6 @@
 /** @preserve
  * Name: output
- * Version: 0.1.4
+ * Version: 0.1.5.2
  * Browsers: all
  * Copyright: Copyright 2014 (c) Made to Order Software Corporation  All rights reverved.
  * Depends: jquery-extensions (1.0.1)
@@ -153,8 +153,8 @@ snapwebsites.inherits = function(child_class, super_class) // static
         // this is how you inherit properly in that case
         C.prototype = super_class.prototype;
         child_class.prototype = new C();
-        child_class.prototype.constructor = child_class;
     }
+    child_class.prototype.constructor = child_class;
     child_class.superClass_ = super_class.prototype;
     child_class.snapwebsitesInherited_ = true;
 };
@@ -427,6 +427,20 @@ snapwebsites.Output = function()
 snapwebsites.base(snapwebsites.Output);
 
 
+/** \brief Holds the array of query string values if any.
+ *
+ * This variable member is an array of the query string values keyed on
+ * their names.
+ *
+ * By default this parameter is undefined. It gets defined the first time
+ * you call the qsParam() function.
+ *
+ * @type {Object}
+ * @private
+ */
+snapwebsites.Output.prototype.queryString_ = null;
+
+
 /** \brief Array of objects that know about magic codes.
  *
  * This variable member holds an array of objects that can convert a
@@ -444,6 +458,77 @@ snapwebsites.base(snapwebsites.Output);
  * @private
  */
 snapwebsites.Output.prototype.registeredBufferToMIME_; // = []; -- initialized in constructor to avoid potential problems
+
+
+/** \brief Initialize the Query String parameters.
+ *
+ * This function is called to make sure that the Query String
+ * parameters are properly initialized. Functions such as
+ * the qsParam() one call this function the first time they
+ * are called.
+ *
+ * Valid parameters are those that have an equal sign and
+ * that have valid UTF-8 values (either as such or encoded).
+ *
+ * This function can be called multiple times, although really
+ * it should be called only once since the query string is not
+ * expected to change for the duration of a page lifetime.
+ *
+ * @private
+ */
+snapwebsites.Output.prototype.initQsParams_ = function()
+{
+    var v, variables, name_value;
+
+    this.queryString_ = {};
+
+    variables = location.search.replace(/^\?/, "")
+                               .replace(/\+/, "%20")
+                               .split("&");
+    for(v in variables)
+    {
+        if(variables.hasOwnProperty(v))
+        {
+            name_value = variables[v].split("=");
+            if(name_value.length == 2)
+            {
+                try
+                {
+                    this.queryString_[name_value[0]] = decodeURIComponent(name_value[1]);
+                }
+                catch(e)
+                {
+                    // totally ignore if invalid
+                    // (happens if name_value[1] is not valid UTF-8)
+                }
+            }
+        }
+    }
+};
+
+
+/** \brief Retrieve a parameter from the query string.
+ *
+ * This function reads the query string of the current page and retrieves
+ * the named parameter.
+ *
+ * Note that parameters that are not followed by an equal sign or that
+ * have "invalid" values (not valid UTF-8) will generally be ignored.
+ *
+ * @param {!string} name  A valid query string name.
+ * @return {string}  The value of that query string if defined, otherwise
+ *                   the "undefined" value.
+ */
+snapwebsites.Output.prototype.qsParam = function(name)
+{
+    if(this.queryString_ === null)
+    {
+        this.initQsParams_();
+    }
+
+    // if it was not defined, then this returnes "undefined"
+    return this.queryString_[name];
+};
 
 
 /** \brief Internal function used to display the error messages.

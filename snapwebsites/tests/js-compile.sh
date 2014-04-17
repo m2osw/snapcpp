@@ -15,6 +15,7 @@ OPTIONS="--warning_level VERBOSE"
 FILES="plugins/editor/editor.js
        plugins/output/popup.js
        plugins/output/output.js
+       plugins/output/server-access.js
        plugins/form/form.js
        plugins/list/list/list.js"
 
