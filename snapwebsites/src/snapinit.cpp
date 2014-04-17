@@ -348,21 +348,22 @@ void process::kill()
 
     // Wait for process to end, then set f_exit status appropriately.
     //
-    int timeout = 10;
+    int timeout = 5;
     while( is_running() )
     {
         if( timeout > 0 )
         {
-            SNAP_LOG_INFO() << "process " << f_name << " is still running. Waiting " << timeout << " more seconds.";
+            SNAP_LOG_INFO() << "process " << f_name << " is still running. Wating " << timeout << " more counts.";
         }
         //
-        sleep( 1 );
+        sleep( 5 );
         --timeout;
 
         if( timeout == 0 )
         {
             SNAP_LOG_WARNING() << "process " << f_name << ", pid=" << f_pid << ", failed to respond to signal, using SIGTERM...";
             ::kill( f_pid, SIGTERM );
+            sleep(10);
         }
         else if( timeout == -1 )
         {
