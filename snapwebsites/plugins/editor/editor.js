@@ -22,7 +22,8 @@
 // ==/ClosureCompiler==
 //
 
-
+/*jslint nomen: true, todo: true, devel: true */
+/*global snapwebsites: false, jQuery: false, FileReader: true, Blob: true */
 
 
 
@@ -359,10 +360,12 @@ snapwebsites.EditorSelection =
     setSelectionBoundaryElement: function(tag) // static
     {
         // This works since IE9
-        var range = document.createRange();
+        var range = document.createRange(),
+            sel;
+
         range.setStartBefore(tag);
         range.setEndAfter(tag);
-        var sel = window.getSelection();
+        sel = window.getSelection();
         sel.removeAllRanges();
         sel.addRange(range);
     },
@@ -441,8 +444,9 @@ snapwebsites.EditorSelection =
      */
     getLinksInSelection: function() // static
     {
-        var i, r, sel, selectedLinks = [];
-        var range, containerEl, links, linkRange;
+        var i, r, sel, selectedLinks = [],
+            range, containerEl, links, linkRange;
+
         if(window.getSelection)
         {
             sel = window.getSelection();
@@ -457,7 +461,7 @@ snapwebsites.EditorSelection =
                     {
                         containerEl = containerEl.parentNode;
                     }
-                    if(containerEl.nodeName.toLowerCase() == "a")
+                    if(containerEl.nodeName.toLowerCase() === "a")
                     {
                         selectedLinks.push(containerEl);
                     }
@@ -478,11 +482,11 @@ snapwebsites.EditorSelection =
                 linkRange.detach();
             }
         }
-        else if(document.selection && document.selection.type != "Control")
+        else if(document.selection && document.selection.type !== "Control")
         {
             range = document.selection.createRange();
             containerEl = range.parentElement();
-            if(containerEl.nodeName.toLowerCase() == "a")
+            if(containerEl.nodeName.toLowerCase() === "a")
             {
                 selectedLinks.push(containerEl);
             }
@@ -520,14 +524,15 @@ snapwebsites.EditorSelection =
      */
     getSelectionText: function() // static
     {
-        var range;
+        var range, sel;
+
         if(document.selection)
         {
             range = document.selection.createRange();
             return range.text;
         }
 
-        var sel = window.getSelection();
+        sel = window.getSelection();
         if(sel.getRangeAt)
         {
             range = sel.getRangeAt(0);
@@ -739,10 +744,11 @@ snapwebsites.EditorWidgetTypeBase.SaveData;
  */
 snapwebsites.EditorWidgetTypeBase.prototype.getType = function() // virtual
 {
-    throw Error("snapwebsites.EditorWidgetTypeBase.getType() was not overloaded.");
+    throw new Error("snapwebsites.EditorWidgetTypeBase.getType() was not overloaded.");
 };
 
 
+/*jslint unparam: true */
 /** \brief Initialize a widget of this type.
  *
  * The parameter is really a snapwebsites.EditorWidget object,
@@ -755,10 +761,12 @@ snapwebsites.EditorWidgetTypeBase.prototype.getType = function() // virtual
  */
 snapwebsites.EditorWidgetTypeBase.prototype.initializeWidget = function(editor_widget) // virtual
 {
-    throw Error("snapwebsites.EditorWidgetTypeBase.initializeWidget() doesn't do anything (yet)");
+    throw new Error("snapwebsites.EditorWidgetTypeBase.initializeWidget() doesn't do anything (yet)");
 };
+/*jslint unparam: false */
 
 
+/*jslint unparam: true */
 /** \brief Allow for special handling of the widget data when saving.
  *
  * This function is called whenever the data of a widget is to be
@@ -767,11 +775,12 @@ snapwebsites.EditorWidgetTypeBase.prototype.initializeWidget = function(editor_w
  * @param {!Object} editor_widget  The concerned widget
  * @param {!Object.<snapwebsites.EditorWidgetTypeBase.SaveData>} data  The data to be saved.
  */
-snapwebsites.EditorWidgetTypeBase.prototype.saving = function(editor_widget, data)
+snapwebsites.EditorWidgetTypeBase.prototype.saving = function(editor_widget, data) // virtual
 {
     // by default we do nothing (the defaults created by the
     // snapwebsites.EditorWidget.saving() function are good enough.)
 };
+/*jslint unparam: false */
 
 
 
@@ -811,7 +820,7 @@ snapwebsites.EditorBase = function()
 //#ifdef DEBUG
     if(jQuery("body").hasClass("snap-editor-initialized"))
     {
-        throw Error("Only one editor singleton can be created.");
+        throw new Error("Only one editor singleton can be created.");
     }
     jQuery("body").addClass("snap-editor-initialized");
 //#endif
@@ -1125,10 +1134,14 @@ snapwebsites.EditorLinkDialog.prototype.open = function()
 {
     this.selectionRange_ = snapwebsites.EditorSelection.saveSelection();
 
-    var jtag;
-    var selectionText = snapwebsites.EditorSelection.getSelectionText();
-    var links = snapwebsites.EditorSelection.getLinksInSelection();
-    var new_window = true;
+    var jtag,
+        selectionText = snapwebsites.EditorSelection.getSelectionText(),
+        links = snapwebsites.EditorSelection.getLinksInSelection(),
+        new_window = true,
+        focusItem,
+        pos,
+        height,
+        left;
 
     if(links.length > 0)
     {
@@ -1137,7 +1150,7 @@ snapwebsites.EditorLinkDialog.prototype.open = function()
         // in this case we also have a URL and possibly a title
         jQuery("#snap_editor_link_url").val(snapwebsites.castToString(jtag.attr("href"), "href in #snap_editor_link_url"));
         jQuery("#snap_editor_link_title").val(snapwebsites.castToString(jtag.attr("title"), "title in #snap_editor_link_title"));
-        new_window = jtag.attr("target") == "_blank";
+        new_window = jtag.attr("target") === "_blank";
     }
     else
     {
@@ -1146,9 +1159,9 @@ snapwebsites.EditorLinkDialog.prototype.open = function()
         // this is not yet the anchor, we need to retrieve the selection
         //
         // TODO detect email addresses
-        if(selectionText.substr(0, 7) == "http://"
-        || selectionText.substr(0, 8) == "https://"
-        || selectionText.substr(0, 6) == "ftp://")
+        if(selectionText.substr(0, 7) === "http://"
+        || selectionText.substr(0, 8) === "https://"
+        || selectionText.substr(0, 6) === "ftp://")
         {
             // selection is a URL so make use of it
             jQuery("#snap_editor_link_url").val(selectionText);
@@ -1161,19 +1174,18 @@ snapwebsites.EditorLinkDialog.prototype.open = function()
     }
     jQuery("#snap_editor_link_text").val(selectionText);
     jQuery("#snap_editor_link_new_window").prop('checked', new_window);
-    var focusItem;
-    if(selectionText.length == 0)
-    {
-        focusItem = "#snap_editor_link_text";
-    }
-    else
+    if(selectionText.length)
     {
         focusItem = "#snap_editor_link_url";
     }
-    var pos = jtag.position();
-    var height = jtag.outerHeight(true);
+    else
+    {
+        focusItem = "#snap_editor_link_text";
+    }
+    pos = jtag.position();
+    height = jtag.outerHeight(true);
     this.linkDialogPopup_.css("top", pos.top + height);
-    var left = pos.left - 5;
+    left = pos.left - 5;
     if(left < 10)
     {
         left = 10;
@@ -1191,18 +1203,20 @@ snapwebsites.EditorLinkDialog.prototype.open = function()
  */
 snapwebsites.EditorLinkDialog.prototype.close = function()
 {
+    var url, links, jtag, text, title, new_window;
+
     snapwebsites.EditorInstance.linkDialogPopup_.fadeOut(150);
     snapwebsites.PopupInstance.darkenPage(-150);
 
     this.editorBase_.refocus();
     snapwebsites.EditorSelection.restoreSelection(this.selectionRange_);
-    var url = jQuery("#snap_editor_link_url");
+    url = jQuery("#snap_editor_link_url");
     document.execCommand("createLink", false, url.val());
-    var links = snapwebsites.EditorSelection.getLinksInSelection();
+    links = snapwebsites.EditorSelection.getLinksInSelection();
     if(links.length > 0)
     {
-        var jtag = jQuery(links[0]);
-        var text = jQuery("#snap_editor_link_text");
+        jtag = jQuery(links[0]);
+        text = jQuery("#snap_editor_link_text");
         if(text.length > 0)
         {
             jtag.text(snapwebsites.castToString(text.val(), "val() of #snap_editor_link_text"));
@@ -1210,7 +1224,7 @@ snapwebsites.EditorLinkDialog.prototype.close = function()
         // do NOT erase the existing text if the user OKed
         // without any text
 
-        var title = jQuery("#snap_editor_link_title");
+        title = jQuery("#snap_editor_link_title");
         if(title.length > 0)
         {
             jtag.attr("title", snapwebsites.castToString(title.val(), "val() of #snap_editor_link_title"));
@@ -1220,7 +1234,7 @@ snapwebsites.EditorLinkDialog.prototype.close = function()
             jtag.removeAttr("title");
         }
 
-        var new_window = jQuery("#snap_editor_link_new_window");
+        new_window = jQuery("#snap_editor_link_new_window");
         if(new_window.prop("checked"))
         {
             jtag.attr("target", "_blank");
@@ -1516,29 +1530,29 @@ snapwebsites.EditorToolbar.prototype.createToolbar_ = function()
             originalName = snapwebsites.EditorToolbar.toolbarButtons_[idx][0];
             if(msie)
             {
-                if(snapwebsites.EditorToolbar.toolbarButtons_[idx][0] == "hiliteColor")
+                if(snapwebsites.EditorToolbar.toolbarButtons_[idx][0] === "hiliteColor")
                 {
                     snapwebsites.EditorToolbar.toolbarButtons_[idx][0] = "backColor";
                 }
             }
             else
             {
-                if(snapwebsites.EditorToolbar.toolbarButtons_[idx][0] == "insertFieldset")
+                if(snapwebsites.EditorToolbar.toolbarButtons_[idx][0] === "insertFieldset")
                 {
                     snapwebsites.EditorToolbar.toolbarButtons_[idx][0] = "insertHTML";
                     snapwebsites.EditorToolbar.toolbarButtons_[idx][3] = "<fieldset><legend>Fieldset</legend><p>&nbsp;</p></fieldset>";
                 }
             }
-            isGroup = snapwebsites.EditorToolbar.toolbarButtons_[idx][0] == "|";
+            isGroup = snapwebsites.EditorToolbar.toolbarButtons_[idx][0] === "|";
             if(!isGroup)
             {
                 this.keys_[snapwebsites.EditorToolbar.toolbarButtons_[idx][2] & 0x1FFFF] = idx;
             }
-            if(snapwebsites.EditorToolbar.toolbarButtons_[idx][1] != null)
+            if(snapwebsites.EditorToolbar.toolbarButtons_[idx][1] !== null)
             {
                 if(isGroup)
                 {
-                    if(snapwebsites.EditorToolbar.toolbarButtons_[idx][1] == "-")
+                    if(snapwebsites.EditorToolbar.toolbarButtons_[idx][1] === "-")
                     {
                         // horizontal separator, create a new line
                         html += "<div class=\"horizontal-separator\"></div>";
@@ -1620,7 +1634,7 @@ console.log("run command "+idx+" "+snapwebsites.EditorToolbar.toolbarButtons_[id
     {
         snapwebsites.EditorSelection.trimSelectionText();
         tag = snapwebsites.EditorSelection.getSelectionBoundaryElement(true);
-        if(jQuery(tag).prop("tagName") == "A")
+        if(jQuery(tag).prop("tagName") === "A")
         {
             // if we get here the whole tag was not selected,
             // select it now
@@ -1628,20 +1642,20 @@ console.log("run command "+idx+" "+snapwebsites.EditorToolbar.toolbarButtons_[id
         }
     }
 
-    if(snapwebsites.EditorToolbar.toolbarButtons_[idx][0] == "*"
+    if(snapwebsites.EditorToolbar.toolbarButtons_[idx][0] === "*"
     || snapwebsites.EditorToolbar.toolbarButtons_[idx][2] & 0x40000)
     {
         // "internal command" which does not return immediately
         callback = snapwebsites.EditorToolbar.toolbarButtons_[idx][4];
 //#ifdef DEBUG
-        if(typeof callback != "function")
+        if(typeof callback !== "function")
         {
-            throw Error("snapwebsites.Editor.command() callback function \"" + callback + "\" is not a function.");
+            throw new Error("snapwebsites.Editor.command() callback function \"" + callback + "\" is not a function.");
         }
 //#endif
         callback.apply(this, snapwebsites.EditorToolbar.toolbarButtons_[idx]);
 
-        if(snapwebsites.EditorToolbar.toolbarButtons_[idx][0] == "*")
+        if(snapwebsites.EditorToolbar.toolbarButtons_[idx][0] === "*")
         {
             // the dialog OK button will do the rest of the work as
             // required by this specific command
@@ -1734,7 +1748,7 @@ snapwebsites.EditorToolbar.prototype.checkPosition = function()
 
     if(snapwebsites.EditorInstance.bottomToolbar_)
     {
-        newHeight = jQuery(this).outerHeight();
+        newHeight = snapwebsites.castToNumber(jQuery(this).outerHeight(), "casting outer height to a number");
         if(newHeight != snapwebsites.EditorInstance.height_)
         {
             snapwebsites.EditorInstance.height_ = newHeight;
@@ -1818,6 +1832,7 @@ snapwebsites.EditorToolbar.prototype.toggleToolbar = function(force)
 };
 
 
+/*jslint unparam: true */
 /** \brief ToggleToobar callback to support the Ctrl-T key.
  *
  * This function is called when the user hits the Ctrl-T key. It toggles
@@ -1835,8 +1850,10 @@ snapwebsites.EditorToolbar.prototype.callbackToggleToolbar_ = function(cmd, titl
 {
     this.toggleToolbar();
 };
+/*jslint unparam: false */
 
 
+/*jslint unparam: true */
 /** \brief Callback to define a link.
  *
  * This function is the callback that opens a popup to edit a link in
@@ -1856,6 +1873,7 @@ snapwebsites.EditorToolbar.prototype.callbackLinkDialog_ = function(cmd, title, 
 
     this.editorBase_.getLinkDialog().open();
 };
+/*jslint unparam: false */
 
 
 /** \brief Cancel the toolbar hide timer.
@@ -2093,15 +2111,15 @@ snapwebsites.EditorWidget.prototype.wasModified = function(recheck_opt)
  * ending blanks are kept. It also removes \<br\> tags that have
  * no attributes.
  *
- * When you override this function, make sure to call it first,
- * then change the data.result field only as appropriate for you
- * widget type.
+ * This function cannot be overridden. There is no need because the
+ * editor creates the EditorWidget objects anyway. Instead you want
+ * to derive the saving() function of the widget type.
  *
  * @return {snapwebsites.EditorWidgetTypeBase.SaveData}  The data to be saved.
  *
  * @final
  */
-snapwebsites.EditorWidget.prototype.saving = function() // virtual
+snapwebsites.EditorWidget.prototype.saving = function()
 {
     var value,          // in case the widget defines a value attribute
         data = {};      // the data to be returned
@@ -2251,9 +2269,9 @@ snapwebsites.EditorWidget.prototype.checkForBackgroundValue = function()
 snapwebsites.EditorWidget.isEmptyBlock = function(html) // static
 {
 //#ifdef DEBUG
-    if(typeof html != "string")
+    if(typeof html !== "string")
     {
-        throw Error("snapwebsites.EditorBase.isEmptyBlock() called with a parameter which is not a string (" + (typeof html) + ")");
+        throw new Error("snapwebsites.EditorBase.isEmptyBlock() called with a parameter which is not a string (" + (typeof html) + ")");
     }
 //#endif
 
@@ -2265,7 +2283,7 @@ snapwebsites.EditorWidget.isEmptyBlock = function(html) // static
     //          the result is still true but just a match against
     //          the regex would return false on the empty string
     //
-    return html.replace(/^(<br *\/?>| |\t|\n|\r|&nbsp;)+$/, "").length == 0;
+    return html.replace(/^(<br *\/?>| |\t|\n|\r|&nbsp;)+$/, "").length === 0;
 };
 
 
@@ -2437,6 +2455,7 @@ snapwebsites.EditorFormBase.prototype.getFormWidget = function()
 };
 
 
+/*jslint unparam: true */
 /** \brief Save the form data.
  *
  * This function is called to save the data. It generally happens in
@@ -2461,8 +2480,9 @@ snapwebsites.EditorFormBase.prototype.getFormWidget = function()
  */
 snapwebsites.EditorFormBase.prototype.saveData = function(mode) // virtual
 {
-    throw Error("snapwebsites.EditorFormBase.saveData() was called which means it was not properly overridden");
+    throw new Error("snapwebsites.EditorFormBase.saveData() was called which means it was not properly overridden");
 };
+/*jslint unparam: false */
 
 
 
@@ -2539,8 +2559,8 @@ snapwebsites.EditorSaveDialog.prototype.saveDialogPopup_ = null;
  */
 snapwebsites.EditorSaveDialog.prototype.create_ = function()
 {
-    var that = this;
-    var html = "<div id='snap_editor_save_dialog'>"
+    var that = this,
+        html = "<div id='snap_editor_save_dialog'>"
             + "<h3 class='title'>Editor</h3>"
             + "<div id='snap_editor_save_dialog_page'>"
             + "<p class='description'>You made changes to your page. Make sure to save your modifications.</p>"
@@ -2581,7 +2601,7 @@ snapwebsites.EditorSaveDialog.prototype.create_ = function()
 
     // while creating a new page, the page is kept under "admin/drafts"
     // and in that case "save" and "save new branch" do not make sense
-    if(jQuery("meta[name='path']").attr("content") == "admin/drafts")
+    if(jQuery("meta[name='path']").attr("content") === "admin/drafts")
     {
         jQuery(".snap_editor_save_p").hide();
         jQuery(".snap_editor_save_new_branch_p").hide();
@@ -2684,7 +2704,7 @@ snapwebsites.EditorSaveDialog.prototype.setStatus = function(new_status)
     // dialog even exists?
     if(!this.saveDialogPopup_)
     {
-        throw Error("setStatus_() called without the dialog defined.");
+        throw new Error("setStatus_() called without the dialog defined.");
     }
 //#endif
 
@@ -3193,7 +3213,7 @@ snapwebsites.EditorForm.prototype.saveData = function(mode, options_opt)
     var key,                                    // loop index
         w,                                      // widget being managed
         obj = {},                               // object to send via AJAX
-        save_all = this.mode_ == "save-all";    // whether all fields are sent to the server
+        save_all = this.mode_ === "save-all";   // whether all fields are sent to the server
 
     // are we already saving? if so, generate an error
     if(this.isSaving())
@@ -3224,9 +3244,9 @@ snapwebsites.EditorForm.prototype.saveData = function(mode, options_opt)
     // buttons...
     if(!jQuery.isEmptyObject(obj))
     {
-        obj["editor_save_mode"] = mode;
-        obj["editor_session"] = this.session_;
-        obj["editor_uri"] = this.titleToURI_( /** @type {string} */ (jQuery("[field_name='title'] .editor-content").text()));
+        obj.editor_save_mode = mode;
+        obj.editor_session = this.session_;
+        obj.editor_uri = this.titleToURI_(snapwebsites.castToString(jQuery("[field_name='title'] .editor-content").text(), "casting the field name title to a string"));
         if(!this.serverAccess_)
         {
             this.serverAccess_ = new snapwebsites.ServerAccess(this);
@@ -3355,7 +3375,7 @@ snapwebsites.EditorForm.prototype.getSaveDialog = function()
  */
 snapwebsites.EditorForm.prototype.readyWidgets_ = function()
 {
-    var that = this, key;
+    var that = this;
 
     // retrieve the widgets defined in that form
     this.widgets_ = this.getFormWidget().find(".snap-editor");
@@ -3419,8 +3439,9 @@ snapwebsites.EditorForm.prototype.newTypeRegistered = function()
     // if we reach here, all the types are available so we can
     // properly initialize the form now
     this.widgets_.each(function(idx, w){
-            var widget = jQuery(w);
-            var name = widget.attr("field_name");
+            var widget = jQuery(w),
+                name = widget.attr("field_name");
+
             that.editorWidgets_[name] = new snapwebsites.EditorWidget(that.editorBase_, that, widget);
         });
 
@@ -3611,15 +3632,16 @@ snapwebsites.Editor.prototype.linkDialog_ = null;
  */
 snapwebsites.Editor.prototype.attachToForms_ = function()
 {
-    var i, max, that = this;
+    var that = this;
 
     // retrieve the list of forms using their sessions
     jQuery(".editor-form")
         .each(function(){
-            // TBD: We may able to drop the session map.
-            var that_element = jQuery(this);
-            var session = snapwebsites.castToString(that_element.attr("session"), "editor form session attribute");
-            var name = snapwebsites.castToString(that_element.attr("form_name"), "editor form name attribute");
+            // TBD: We may be able to drop the session map.
+            var that_element = jQuery(this),
+                session = snapwebsites.castToString(that_element.attr("session"), "editor form session attribute"),
+                name = snapwebsites.castToString(that_element.attr("form_name"), "editor form name attribute");
+
             that.editorForms_[session] = new snapwebsites.EditorForm(that, that_element, name, session);
             that.editorFormsByName_[name] = that.editorForms_[session];
         });
@@ -3689,6 +3711,9 @@ snapwebsites.Editor.prototype.unload_ = function()
                     // add this flag and timeout to avoid a double
                     // "are you sure?" under Firefox browsers
                     this.unloadCalled_ = true;
+
+                    // we create a function in a for() loop because
+                    // right after that statement we return
                     setTimeout(function(){
                             that.unloadCalled_ = false;
                         }, 20);
@@ -3796,7 +3821,7 @@ snapwebsites.Editor.prototype.getActiveEditorForm = function()
         if(!editor_form)
         {
             // should not happen or it means we whacked the session element
-            throw Error("There is an active element but no corresponding editor form.");
+            throw new Error("There is an active element but no corresponding editor form.");
         }
 //#endif
     }
@@ -3912,10 +3937,10 @@ snapwebsites.inherits(snapwebsites.EditorWidgetType, snapwebsites.EditorWidgetTy
  */
 snapwebsites.EditorWidgetType.prototype.initializeWidget = function(widget) // virtual
 {
-    var that = this;
-    var editor_widget = /** @type {snapwebsites.EditorWidget} */ (widget);
-    var w = editor_widget.getWidget();
-    var c = editor_widget.getWidgetContent();
+    var that = this,
+        editor_widget = /** @type {snapwebsites.EditorWidget} */ (widget),
+        //w = editor_widget.getWidget(),
+        c = editor_widget.getWidgetContent();
 
     this.setupEditButton(editor_widget); // allow overrides to an empty function
 
@@ -4005,7 +4030,8 @@ snapwebsites.EditorWidgetType.prototype.initializeWidget = function(widget) // v
                 r,                      // file reader object
                 accept_images,          // boolean, true if element accepts images
                 accept_files,           // boolean, true if element accepts attachments
-                that_element = jQuery(this);    // this element as a jQuery object
+                that_element = jQuery(this),    // this element as a jQuery object
+                file_loaded;            // finalizing function
 
             //
             // TODO:
@@ -4041,6 +4067,10 @@ snapwebsites.EditorWidgetType.prototype.initializeWidget = function(widget) // v
                 accept_files = that_element.hasClass("attachment");
                 if(accept_images || accept_files)
                 {
+                    file_loaded = function(e)
+                        {
+                            that.droppedFile_(e);
+                        };
                     for(i = 0; i < e.originalEvent.dataTransfer.files.length; ++i)
                     {
                         // For images we do not really care about that info, for uploads we will
@@ -4052,16 +4082,13 @@ snapwebsites.EditorWidgetType.prototype.initializeWidget = function(widget) // v
 
                         // read the image so we can make sure it is indeed an
                         // image and ignore any other type of files
-                        r = new FileReader;
+                        r = new FileReader();
                         r.snapEditorElement = that_element;
                         r.snapEditorFile = e.originalEvent.dataTransfer.files[i];
                         r.snapEditorIndex = i;
                         r.snapEditorAcceptImages = accept_images;
                         r.snapEditorAcceptFiles = accept_files;
-                        r.onload = function(e)
-                            {
-                                that.droppedFile_(e);
-                            };
+                        r.onload = file_loaded;
 
                         //
                         // TBD: right now we only check the first few bytes
@@ -4080,6 +4107,7 @@ snapwebsites.EditorWidgetType.prototype.initializeWidget = function(widget) // v
 };
 
 
+/*jslint unparam: true */
 /** \brief Add an "Edit" button to this widget.
  *
  * In general, forms will make use of the "immediate" class which
@@ -4107,6 +4135,7 @@ snapwebsites.EditorWidgetType.prototype.initializeWidget = function(widget) // v
 snapwebsites.EditorWidgetType.prototype.setupEditButton = function(editor_widget) // virtual
 {
 };
+/*jslint unparam: false */
 
 
 
@@ -4152,11 +4181,10 @@ snapwebsites.inherits(snapwebsites.EditorWidgetTypeContentEditable, snapwebsites
  */
 snapwebsites.EditorWidgetTypeContentEditable.prototype.setupEditButton = function(editor_widget)
 {
-    var that = this;
-    var w = editor_widget.getWidget();
-    var c = editor_widget.getWidgetContent();
-    var html;
-    var edit_button_popup;
+    var w = editor_widget.getWidget(),
+        c = editor_widget.getWidgetContent(),
+        html,
+        edit_button_popup;
 
     if(w.is(".immediate"))
     {
@@ -4239,14 +4267,14 @@ snapwebsites.EditorWidgetType.prototype.droppedFile_ = function(e)
         blob;
 
     e.target.snapEditorMIME = snapwebsites.OutputInstance.bufferToMIME(e.target.result);
-    if(e.target.snapEditorAcceptImages && e.target.snapEditorMIME.substr(0, 6) == "image/")
+    if(e.target.snapEditorAcceptImages && e.target.snapEditorMIME.substr(0, 6) === "image/")
     {
         // Dropped an Image managed as such
 
         // It is an image, now convert the data to URI encoding
         // (i.e. base64 encoding) before saving the result in the
         // target element
-        r = new FileReader;
+        r = new FileReader();
         r.snapEditorElement = e.target.snapEditorElement;
         r.snapEditorFile = e.target.snapEditorFile;
         r.snapEditorIndex = e.target.snapEditorIndex;
@@ -4281,6 +4309,7 @@ snapwebsites.EditorWidgetType.prototype.droppedFile_ = function(e)
 };
 
 
+/*jslint eqeq: true */
 /** \brief Save the resulting image in the target.
  *
  * This function receives the image as data that can readily be stick
@@ -4294,9 +4323,8 @@ snapwebsites.EditorWidgetType.prototype.droppedFile_ = function(e)
  */
 snapwebsites.EditorWidgetType.prototype.droppedImageConvert_ = function(e)
 {
-    var img, that = this;
-
-    img = new Image();
+    var that = this,
+        img = new Image();
 
     // The image parameters (width/height) are only available after the
     // onload() event kicks in
@@ -4305,8 +4333,14 @@ snapwebsites.EditorWidgetType.prototype.droppedImageConvert_ = function(e)
             // keep this function here because it is a full closure (it
             // uses 'img' 'that', and even 'e')
 
-            var sizes, limit_width = 0, limit_height = 0, w, h, nw, nh,
-                max_sizes, saved_active_element;
+            var sizes,
+                limit_width = 0,
+                limit_height = 0,
+                w,
+                h,
+                nw,
+                nh,
+                max_sizes;
 
             // make sure we do it just once
             img.onload = null;
@@ -4391,8 +4425,10 @@ snapwebsites.EditorWidgetType.prototype.droppedImageConvert_ = function(e)
         img.onload();
     }
 };
+/*jslint eqeq: false */
 
 
+/*jslint unparam: true */
 /** \brief Handle an image that was just dropped.
  *
  * This function handles an image as it was just dropped.
@@ -4402,10 +4438,12 @@ snapwebsites.EditorWidgetType.prototype.droppedImageConvert_ = function(e)
  */
 snapwebsites.EditorWidgetType.prototype.droppedImage = function(e, img) // virtual
 {
-    throw Error("snapwebsites.EditorWidgetType.prototype.droppedImage() not overridden and thus it cannot handle the dropped image.");
+    throw new Error("snapwebsites.EditorWidgetType.prototype.droppedImage() not overridden and thus it cannot handle the dropped image.");
 };
+/*jslint unparam: false */
 
 
+/*jslint unparam: true */
 /** \brief Handle an image that was just dropped.
  *
  * This function handles an image as it was just dropped.
@@ -4414,8 +4452,9 @@ snapwebsites.EditorWidgetType.prototype.droppedImage = function(e, img) // virtu
  */
 snapwebsites.EditorWidgetType.prototype.droppedAttachment = function(e) // virtual
 {
-    throw Error("snapwebsites.EditorWidgetType.prototype.droppedAttachment() not overridden and thus it cannot handle the dropped attachment.");
+    throw new Error("snapwebsites.EditorWidgetType.prototype.droppedAttachment() not overridden and thus it cannot handle the dropped attachment.");
 };
+/*jslint unparam: false */
 
 
 
@@ -4518,9 +4557,9 @@ snapwebsites.EditorWidgetTypeLineEdit.prototype.getType = function()
  */
 snapwebsites.EditorWidgetTypeLineEdit.prototype.initializeWidget = function(widget) // virtual
 {
-    var editor_widget = /** @type {snapwebsites.EditorWidget} */ (widget);
-    var w = editor_widget.getWidget();
-    var c = editor_widget.getWidgetContent();
+    var editor_widget = /** @type {snapwebsites.EditorWidget} */ (widget),
+        //w = editor_widget.getWidget(),
+        c = editor_widget.getWidgetContent();
 
     snapwebsites.EditorWidgetTypeLineEdit.superClass_.initializeWidget.call(this, widget);
 
@@ -4598,11 +4637,11 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.getType = function() // virtual
  */
 snapwebsites.EditorWidgetTypeDropdown.prototype.initializeWidget = function(widget) // virtual
 {
-    var that = this;
-    var editor_widget = /** @type {snapwebsites.EditorWidget} */ (widget);
-    var w = editor_widget.getWidget();
-    var c = editor_widget.getWidgetContent();
-    var d = w.children(".dropdown-items");
+    var that = this,
+        editor_widget = /** @type {snapwebsites.EditorWidget} */ (widget),
+        w = editor_widget.getWidget(),
+        c = editor_widget.getWidgetContent(),
+        d = w.children(".dropdown-items");
 
     snapwebsites.EditorWidgetTypeDropdown.superClass_.initializeWidget.call(this, widget);
 
@@ -4618,7 +4657,9 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.initializeWidget = function(widg
     // we just closed.)
     w.click(function(e)
         {
-            var that_element = jQuery(this), visible, z;
+            var that_element = jQuery(this),
+                visible,
+                z;
 
             // avoid default browser behavior
             e.preventDefault();
@@ -4647,7 +4688,8 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.initializeWidget = function(widg
     d.children(".dropdown-selection").children(".dropdown-item")
         .click(function(e)
             {
-                var that_element = jQuery(this), content, items;
+                var that_element = jQuery(this),
+                    value;
 
                 // avoid default browser behavior
                 e.preventDefault();
@@ -4666,9 +4708,10 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.initializeWidget = function(widg
                 c.append(that_element.html());
 
                 // finally, get the resulting value if there is one
-                if(that_element.attr("value") != "")
+                value = that_element.attr("value");
+                if(value)
                 {
-                    c.attr("value", snapwebsites.castToString(that_element.attr("value"), "dropdown item value attribute"));
+                    c.attr("value", snapwebsites.castToString(value, "dropdown item value attribute"));
                 }
                 else
                 {
@@ -4682,7 +4725,7 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.initializeWidget = function(widg
                 editor_widget.getEditorBase().checkModified();
             });
 
-    c.blur(function(e)
+    c.blur(function()
         {
             that.hideDropdown();
         });
@@ -4756,35 +4799,39 @@ snapwebsites.EditorWidgetTypeCheckmark.prototype.getType = function() // virtual
  */
 snapwebsites.EditorWidgetTypeCheckmark.prototype.initializeWidget = function(widget) // virtual
 {
-    var that = this;
-    var editor_widget = /** @type {snapwebsites.EditorWidget} */ (widget);
-    var w = editor_widget.getWidget();
-    var c = editor_widget.getWidgetContent();
-    var toggle = function()
-    {
-        // toggle the current value
-        var checkmark = c.find(".checkmark-area");
-        checkmark.toggleClass("checked");
-        c.attr("value", checkmark.hasClass("checked") ? 1 : 0);
+    var editor_widget = /** @type {snapwebsites.EditorWidget} */ (widget),
+        w = editor_widget.getWidget(),
+        c = editor_widget.getWidgetContent(),
+        toggle = function()
+            {
+                // toggle the current value
+                var checkmark = c.find(".checkmark-area");
+                checkmark.toggleClass("checked");
+                c.attr("value", checkmark.hasClass("checked") ? 1 : 0);
 
-        // TBD: necessary to avoid setting the focus anew?
-        //      if not then we should remove the if() statement
-        if(editor_widget.getEditorBase().getActiveElement().get() != c)
-        {
-            c.focus();
-        }
+                // TBD: necessary to avoid setting the focus anew?
+                //      if not then we should remove the if() statement
+                //
+                // Note: from what I can tell, c is a jQuery and so we
+                //       should do a get on it too; at this point, it seems
+                //       that calling focus() everytime is just fine.
+                //
+                //if(editor_widget.getEditorBase().getActiveElement().get() != c)
+                //{
+                    c.focus();
+                //}
 
-        // tell the editor that something may have changed
-        // TODO: call the widget function which in turn tells the
-        //       editor instead of re-testing all the widgets?!
-        editor_widget.getEditorBase().checkModified();
-    };
+                // tell the editor that something may have changed
+                // TODO: call the widget function which in turn tells the
+                //       editor instead of re-testing all the widgets?!
+                editor_widget.getEditorBase().checkModified();
+            };
 
     snapwebsites.EditorWidgetTypeCheckmark.superClass_.initializeWidget.call(this, widget);
 
     c.keydown(function(e)
         {
-            if(e.which == 0x20) // spacebar
+            if(e.which === 0x20) // spacebar
             {
                 e.preventDefault();
                 e.stopPropagation();
@@ -4815,9 +4862,10 @@ snapwebsites.EditorWidgetTypeCheckmark.prototype.initializeWidget = function(wid
 // * instead of the HTML of the sub-objects. This value represents the
 // * current selection (0 -- not checked, or 1 -- checked.)
 // *
+// * param {!Object} editor_widget  The concerned widget
 // * param {snapwebsites.EditorWidgetTypeBase.SaveData} data  The data object with the HTML and result parameters.
 // */
-//snapwebsites.EditorWidgetTypeCheckmark.prototype.saving = function(data) // virtual
+//snapwebsites.EditorWidgetTypeCheckmark.prototype.saving = function(editor_widget, data) // virtual
 //{
 //    snapwebsites.EditorWidgetType.prototype.initializeWidget.apply(this, data);
 //
@@ -4883,9 +4931,9 @@ snapwebsites.EditorWidgetTypeImageBox.prototype.getType = function() // virtual
  */
 snapwebsites.EditorWidgetTypeImageBox.prototype.initializeWidget = function(widget) // virtual
 {
-    var editor_widget = /** @type {snapwebsites.EditorWidget} */ (widget);
-    var w = editor_widget.getWidget();
-    var background = w.children(".snap-editor-background");
+    var editor_widget = /** @type {snapwebsites.EditorWidget} */ (widget),
+        w = editor_widget.getWidget(),
+        background = w.children(".snap-editor-background");
 
     snapwebsites.EditorWidgetTypeImageBox.superClass_.initializeWidget.call(this, widget);
 
