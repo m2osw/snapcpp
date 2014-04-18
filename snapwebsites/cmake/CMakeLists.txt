@@ -34,6 +34,7 @@ project(snap_cmake)
 install(
     FILES 
         FindSnapWebsites.cmake
+        SnapJsLint.cmake
         SnapXmlLint.cmake
         SnapZipLayout.cmake
     DESTINATION
