@@ -64,7 +64,7 @@ if( NOT CMAKE_MODULE_PATH )
     message( "Found snapCMakeModules in ${CMAKE_MODULE_PATH}" )
 endif()
 
-set( CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake )
+set( CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH} )
 
 find_package( AdvGetOpt        REQUIRED )
 find_package( ControlledVars   REQUIRED )
@@ -118,9 +118,10 @@ add_subdirectory(doc)           # API Documentation
 add_subdirectory(conf)          # Configuration files and samples
 
 ##
-## Analyse xml
+## Analyse xml and javascript
 ##
 snap_build_xml_targets()
+snap_build_js_targets()
 
 ##
 ## Install run script

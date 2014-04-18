@@ -34,9 +34,9 @@ find_program( JSLINT gjslint /usr/bin )
 #
 set( OPTIONS "--disable 0002,0110,0120,0131 --jslint_error=blank_lines_at_top_level --jslint_error=unused_private_members" )
 
-set( lint_script ${CMAKE_BINARY_DIR}/do_js_lint.sh CACHE INTERNAL "JS lint script" FORCE )
-file( WRITE  ${lint_script} "#!${BASH}\n"                                                            )
-file( APPEND ${lint_script} "${JSLINT} ${OPTIONS} $1 > $2 && exit 0 || (rm $2; exit 1)\n" )
+set( js_lint_script ${CMAKE_BINARY_DIR}/do_js_lint.sh CACHE INTERNAL "JS lint script" FORCE )
+file( WRITE  ${js_lint_script} "#!${BASH}\n"                                                            )
+file( APPEND ${js_lint_script} "${JSLINT} ${OPTIONS} $1 > $2 && exit 0 || (rm $2; exit 1)\n" )
 
 function( snap_validate_js JS_FILE )
     get_filename_component( FULL_JS_PATH ${JS_FILE} ABSOLUTE )
@@ -63,17 +63,17 @@ macro( snap_build_js_targets )
     math( EXPR whole_range "${range} - 1" )
     foreach( var_idx RANGE 0 ${whole_range} ${arg_count} )
         list( GET JS_FILE_LIST ${var_idx} js_file )
-        math( EXPR next_idx "${next_idx} + 1" )
+        math( EXPR next_idx "${var_idx} + 1" )
         list( GET JS_FILE_LIST ${next_idx} binary_dir )
         #
         get_filename_component( base_js_file ${js_file} NAME )
         set( lint_file "${binary_dir}/${base_js_file}.lint" )
         #
-        # Command runs the lint_script above...
+        # Command runs the js_lint_script above...
         #
         add_custom_command(
             OUTPUT ${lint_file}
-            COMMAND ${BASH} ${lint_script} ${js_file} ${lint_file}
+            COMMAND ${BASH} ${js_lint_script} "${js_file}" "${lint_file}"
             WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
             DEPENDS ${js_file}
             COMMENT "running gjslint on ${js_file}"
