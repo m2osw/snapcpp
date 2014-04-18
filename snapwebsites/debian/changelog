@@ -5,6 +5,8 @@ snapwebsites (0.1.45~saucy) UNRELEASED; urgency=high
 
   [ R. Douglas Barbieri ]
   * Added jslint script.
+  * Control file now requires latest closurelinter which fixes missing
+  dependencies.
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Thu, 17 Apr 2014 16:41:48 -0700
 
