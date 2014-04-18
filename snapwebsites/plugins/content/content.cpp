@@ -2580,7 +2580,7 @@ QString path_info_t::get_branch_key() const
 #pragma GCC diagnostic pop
     {
         // the branch is still undefined...
-        throw content_exception_data_missing("get_branch_key() request failed on this ipath, branch not defined");
+        throw content_exception_data_missing(QString("get_branch_key() request failed for \"%1\", branch not defined").arg(f_cpath));
     }
 
     if(f_branch_key.isEmpty())
@@ -2633,7 +2633,8 @@ QString path_info_t::get_revision_key() const
 
             if(f_revision_key.isEmpty())
             {
-                throw content_exception_data_missing("get_revision_key() request failed on this ipath, revision not defined");
+                // the revision is still undefined...
+                throw content_exception_data_missing(QString("get_revision_key() request failed for \"%1\", revision not defined").arg(f_cpath));
             }
         }
     }

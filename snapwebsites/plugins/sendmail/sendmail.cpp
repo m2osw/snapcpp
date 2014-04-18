@@ -2075,7 +2075,8 @@ void sendmail::sendemail(QString const& key, QString const& unique_key)
     {
         // TODO look how we want to setup the email: either all inline or
         //      with links back to the website (for images, CSS...) to
-        //      embed, use the sub-attachment feature
+        //      inline, use the sub-attachment feature to embed the extra
+        //      content in the email
 
         content::path_info_t ipath;
         ipath.set_path(path);
@@ -2101,6 +2102,10 @@ void sendmail::sendemail(QString const& key, QString const& unique_key)
                 content::content *c(content::content::instance());
                 f_email.set_subject(c->get_content_parameter(ipath, content::get_name(content::SNAP_NAME_CONTENT_TITLE), c->PARAM_REVISION_REVISION).stringValue());
             }
+        }
+        else
+        {
+            SNAP_LOG_ERROR("Page \"")(path)("\" was not found. Misspelled?");
         }
     }
 
@@ -2400,6 +2405,7 @@ void sendmail::on_generate_main_content(content::path_info_t& ipath, QDomElement
         QDomElement sendmail_tag(doc.createElement("sendmail"));
         body.appendChild(sendmail_tag);
 
+        // /snap/page/body/sendmail/from
         {
             QDomElement from(doc.createElement("from"));
             sendmail_tag.appendChild(from);
@@ -2410,6 +2416,7 @@ void sendmail::on_generate_main_content(content::path_info_t& ipath, QDomElement
             //         sender-name
             //         sender-email
         }
+        // /snap/page/body/sendmail/to
         {
             QDomElement to(doc.createElement("to"));
             sendmail_tag.appendChild(to);
@@ -2417,18 +2424,21 @@ void sendmail::on_generate_main_content(content::path_info_t& ipath, QDomElement
             QDomText to_text(doc.createTextNode(to_email));
             to.appendChild(to_text);
         }
+        // /snap/page/body/sendmail/path
         {
             QDomElement path_tag(doc.createElement("path"));
             sendmail_tag.appendChild(path_tag);
             QDomText path_text(doc.createTextNode(f_email.get_email_path()));
             path_tag.appendChild(path_text);
         }
+        // /snap/page/body/sendmail/key
         {
             QDomElement key(doc.createElement("key"));
             sendmail_tag.appendChild(key);
             QDomText key_text(doc.createTextNode(f_email.get_email_key()));
             key.appendChild(key_text);
         }
+        // /snap/page/body/sendmail/created
         const QString created(f_snap->date_to_string(f_email.get_time() * 1000000, snap_child::DATE_FORMAT_LONG));
         {
             QDomElement time_tag(doc.createElement("created"));
@@ -2436,24 +2446,28 @@ void sendmail::on_generate_main_content(content::path_info_t& ipath, QDomElement
             QDomText time_text(doc.createTextNode(created));
             time_tag.appendChild(time_text);
         }
+        // /snap/page/body/sendmail/date
         {
             QDomElement time_tag(doc.createElement("date"));
             sendmail_tag.appendChild(time_tag);
             QDomText time_text(doc.createTextNode(created.mid(0, 10)));
             time_tag.appendChild(time_text);
         }
+        // /snap/page/body/sendmail/time
         {
             QDomElement time_tag(doc.createElement("time"));
             sendmail_tag.appendChild(time_tag);
             QDomText time_text(doc.createTextNode(created.mid(11)));
             time_tag.appendChild(time_text);
         }
+        // /snap/page/body/sendmail/attachment-count
         {
             QDomElement time_tag(doc.createElement("attachment-count"));
             sendmail_tag.appendChild(time_tag);
             QDomText time_text(doc.createTextNode(QString("%1").arg(f_email.get_attachment_count())));
             time_tag.appendChild(time_text);
         }
+        // /snap/page/body/sendmail/important
         const QString x_priority(f_email.get_header(get_name(SNAP_NAME_SENDMAIL_X_PRIORITY)));
         {
             // save the priority as a name
@@ -2463,6 +2477,7 @@ void sendmail::on_generate_main_content(content::path_info_t& ipath, QDomElement
             QDomText important_text(doc.createTextNode(important_email));
             important.appendChild(important_text);
         }
+        // /snap/page/body/sendmail/x-priority
         {
             // save the priority as a value + name between parenthesis
             QDomElement priority(doc.createElement("x-priority"));
@@ -2470,6 +2485,7 @@ void sendmail::on_generate_main_content(content::path_info_t& ipath, QDomElement
             QDomText priority_text(doc.createTextNode(x_priority));
             priority.appendChild(priority_text);
         }
+        // /snap/page/body/sendmail/priority
         {
             // save the priority as a value
             QDomElement priority(doc.createElement("priority"));
@@ -2478,6 +2494,7 @@ void sendmail::on_generate_main_content(content::path_info_t& ipath, QDomElement
             QDomText priority_text(doc.createTextNode(value_name[0]));
             priority.appendChild(priority_text);
         }
+        // /snap/page/body/sendmail/parameters/param[name=...][value=...]
         const email::parameter_map_t& parameters(f_email.get_all_parameters());
         if(parameters.size() > 0)
         {
