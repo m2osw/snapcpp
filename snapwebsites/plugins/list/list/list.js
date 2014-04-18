@@ -16,6 +16,9 @@
 // ==/ClosureCompiler==
 //
 
+/*jslint nomen: true, todo: true, devel: true */
+/*global snapwebsites: false, jQuery: false */
+
 
 
 /** \brief Snap Output Manipulations.

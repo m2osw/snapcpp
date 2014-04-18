@@ -20,6 +20,9 @@
 // ==/ClosureCompiler==
 //
 
+/*jslint nomen: true, todo: true, devel: true */
+/*global snapwebsites: false, jQuery: false */
+
 
 
 /** \brief Snap Form Manipulations.
@@ -117,7 +120,7 @@ snapwebsites.Form.prototype.change_ = function(widget)
 {
     var w = jQuery(widget);
 
-    w.data("edited", w.val() != "");
+    w.data("edited", w.val() !== "");
 };
 
 

@@ -20,6 +20,9 @@
 // ==/ClosureCompiler==
 //
 
+/*jslint nomen: true, todo: true, devel: true */
+/*global snapwebsites: false, jQuery: false */
+
 
 
 /** \brief Interface you have to implement to receive the access results.
@@ -64,6 +67,7 @@ snapwebsites.base(snapwebsites.ServerAccessCallbacks);
 snapwebsites.ServerAccessCallbacks.ResultData;
 
 
+/*jslint unparam: true */
 /** \brief Function called on success.
  *
  * This function is called if the remote access was successful. The
@@ -78,8 +82,10 @@ snapwebsites.ServerAccessCallbacks.ResultData;
 snapwebsites.ServerAccessCallbacks.prototype.serverAccessSuccess = function(result) // virtual
 {
 };
+/*jslint unparam: false */
 
 
+/*jslint unparam: true */
 /** \brief Function called on error.
  *
  * This function is called if the remote access generated an error.
@@ -104,8 +110,10 @@ snapwebsites.ServerAccessCallbacks.prototype.serverAccessSuccess = function(resu
 snapwebsites.ServerAccessCallbacks.prototype.serverAccessError = function(result) // virtual
 {
 };
+/*jslint unparam: false */
 
 
+/*jslint unparam: true */
 /** \brief Function called on completion.
  *
  * This function is called once the whole process is over. It is most
@@ -119,6 +127,7 @@ snapwebsites.ServerAccessCallbacks.prototype.serverAccessError = function(result
 snapwebsites.ServerAccessCallbacks.prototype.serverAccessComplete = function(result) // virtual
 {
 };
+/*jslint unparam: false */
 
 
 
@@ -304,7 +313,7 @@ snapwebsites.ServerAccess.prototype.send = function()
             var results,        // the XML results (should be 1 element)
                 doc,            // the document used to redirect
                 redirect,       // the XML redirect element
-                uri,            // the redirect URI
+                redirect_uri,   // the redirect URI
                 target,         // the redirect target
                 doc_type_start, // the position of <!DOCTYPE in the result
                 doc_type_end,   // the position of > of the <!DOCTYPE>
@@ -315,15 +324,15 @@ snapwebsites.ServerAccess.prototype.send = function()
             result.jqxhr = jqxhr;
 
 //console.log(jqxhr);
-            if(jqxhr.status == 200)
+            if(jqxhr.status === 200)
             {
                 doc_type_start = jqxhr.responseText.indexOf("<!DOCTYPE");
-                if(doc_type_start != -1)
+                if(doc_type_start !== -1)
                 {
                     doc_type_start += 9; // skip the <!DOCTYPE part
                     doc_type_end = jqxhr.responseText.indexOf(">", doc_type_start);
                     doc_type = jqxhr.responseText.substr(doc_type_start, doc_type_end - doc_type_start);
-                    if(doc_type.indexOf("html") != -1)
+                    if(doc_type.indexOf("html") !== -1)
                     {
                         // this is definitively wrong, but we want to avoid
                         // the following tests in case the HTML includes
@@ -342,7 +351,7 @@ snapwebsites.ServerAccess.prototype.send = function()
 
                 // we expect exactly ONE result tag
                 results = jqxhr.responseXML.getElementsByTagName("result");
-                if(results.length == 1 && results[0].childNodes[0].nodeValue == "success")
+                if(results.length === 1 && results[0].childNodes[0].nodeValue === "success")
                 {
                     // WARNING: success of the AJAX round trip data does not
                     //          mean that the POST was a success.
@@ -350,7 +359,7 @@ snapwebsites.ServerAccess.prototype.send = function()
 
                     // success!
                     redirect = jqxhr.responseXML.getElementsByTagName("redirect");
-                    result.will_redirect = redirect.length == 1;
+                    result.will_redirect = redirect.length === 1;
 
                     that.that_.serverAccessSuccess(result);
 
@@ -365,14 +374,14 @@ snapwebsites.ServerAccess.prototype.send = function()
                         // get the target to see whether we need to use the
                         // parent, top, or self...
                         target = redirect[0].getAttribute("target");
-                        if(target == "_parent" && window.parent)
+                        if(target === "_parent" && window.parent)
                         {
                             // TODO: we probably want to support
                             // multiple levels (i.e. a "_top" kind
                             // of a thing) instead of just one up.
                             doc = window.parent.document;
                         }
-                        else if(target == "_top")
+                        else if(target === "_top")
                         {
                             doc = window.top.document;
                         }
@@ -383,16 +392,16 @@ snapwebsites.ServerAccess.prototype.send = function()
                         //           but not windows unless we 100%
                         //           handle the window.open() calls
 
-                        uri = redirect[0].childNodes[0].nodeValue;
-                        if(uri == ".")
+                        redirect_uri = redirect[0].childNodes[0].nodeValue;
+                        if(redirect_uri === ".")
                         {
                             // just exit the editor
-                            uri = doc.location.toString();
-                            uri = uri.replace(/\?a=edit$/, "")
-                                     .replace(/\?a=edit&/, "?")
-                                     .replace(/&a=edit&/, "&");
+                            redirect_uri = doc.location.toString();
+                            redirect_uri = redirect_uri.replace(/\?a=edit$/, "")
+                                                       .replace(/\?a=edit&/, "?")
+                                                       .replace(/&a=edit&/, "&");
                         }
-                        doc.location = uri;
+                        doc.location = redirect_uri;
                         // avoid anything else after a redirect
                         return;
                     }
