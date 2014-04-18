@@ -1,4 +1,4 @@
-snapwebsites (0.1.45~saucy) UNRELEASED; urgency=high
+snapwebsites (0.1.45~saucy) saucy; urgency=high
 
   [ Alexis Wilke ]
   * Fixed the sendmail plugin so it continues to work even if an email fails.
