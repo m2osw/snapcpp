@@ -55,7 +55,7 @@ macro( snap_build_js_targets )
     list( LENGTH JS_FILE_LIST range )
     math( EXPR mod_test "${range} % ${arg_count}" )
     if( NOT ${mod_test} EQUAL 0 )
-        message( FATAL_ERROR "The list of files must have an even count. Each JS file must have an accompanying DTD file!" )
+        message( FATAL_ERROR "The list of files must have an even count. Each JS file must have an accompanying binary path file!" )
     endif()
     #
     # Create a lint file for each pair
