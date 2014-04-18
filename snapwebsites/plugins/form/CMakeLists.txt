@@ -49,6 +49,7 @@ QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC
 )
 
 snap_validate_xml( content.xml content.dtd )
+snap_validate_js ( form.js )
 
 # Unfortunate, but at this time this doesn't work too well...
 # (i.e. xmllint [as in libxml2] does not support this complex XSD schema)

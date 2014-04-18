@@ -48,6 +48,15 @@ QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC
 
 snap_validate_xml( content.xml content.dtd )
 
+# TODO: do these need to pass the linter too?
+#snap_validate_js( jquery.js                    )
+#snap_validate_js( jquery-extensions.js         )
+#snap_validate_js( externs/jquery-extensions.js )
+#
+snap_validate_js( server-access.js             )
+snap_validate_js( popup.js                     )
+snap_validate_js( output.js                    )
+
 add_library(output SHARED
     output.cpp
     output.h

@@ -48,6 +48,7 @@ QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC
 )
 
 snap_validate_xml( list/content.xml content.dtd )
+snap_validate_js( list/list.js )
 
 add_library(list SHARED
     list.cpp
