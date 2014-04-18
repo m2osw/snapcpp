@@ -20,6 +20,9 @@
 // ==/ClosureCompiler==
 //
 
+/*jslint nomen: true, todo: true, devel: true */
+/*global jQuery: false, Uint8Array: true */
+
 
 /** \brief Defines the snapwebsites namespace in the JavaScript environment.
  *
@@ -129,13 +132,13 @@ snapwebsites.inherits = function(child_class, super_class) // static
      *
      * @constructor
      */
-    function C() {};
+    function C() {}
 
 //#ifdef DEBUG
     if(!super_class.snapwebsitesBased_
     && !super_class.snapwebsitesInherited_)
     {
-        throw Error("Super class was not based or inherited");
+        throw new Error("Super class was not based or inherited");
     }
 //#endif
 
@@ -201,9 +204,9 @@ snapwebsites.charToHex = function(c) // static
  */
 snapwebsites.castToString = function(s, e) // static
 {
-    if(typeof s != "string")
+    if(typeof s !== "string")
     {
-        throw Error("a string was expected, got a \"" + (typeof s) + "\" instead (" + e + ")");
+        throw new Error("a string was expected, got a \"" + (typeof s) + "\" instead (" + e + ")");
     }
     return s;
 };
@@ -227,9 +230,9 @@ snapwebsites.castToString = function(s, e) // static
  */
 snapwebsites.castToNumber = function(n, e) // static
 {
-    if(typeof n != "number")
+    if(typeof n !== "number")
     {
-        throw Error("a number was expected, got a \"" + (typeof n) + "\" instead (" + e + ")");
+        throw new Error("a number was expected, got a \"" + (typeof n) + "\" instead (" + e + ")");
     }
     return n;
 };
@@ -283,6 +286,7 @@ snapwebsites.BufferToMIMETemplate = function()
 snapwebsites.base(snapwebsites.BufferToMIMETemplate);
 
 
+/*jslint unparam: true */
 /** \brief Check a buffer magic codes.
  *
  * This function is expected to check the different MIME types supported
@@ -296,10 +300,11 @@ snapwebsites.base(snapwebsites.BufferToMIMETemplate);
  *
  * @return {!string}  The MIME type you determined, or the empty string.
  */
-snapwebsites.BufferToMIMETemplate.prototype.bufferToMIME = function(buf)
+snapwebsites.BufferToMIMETemplate.prototype.bufferToMIME = function(buf) // virtual
 {
     return "";
 };
+/*jslint unparam: false */
 
 
 
@@ -357,38 +362,38 @@ snapwebsites.inherits(snapwebsites.BufferToMIMESystemImages, snapwebsites.Buffer
 snapwebsites.BufferToMIMESystemImages.prototype.bufferToMIME = function(buf)
 {
     // Image JPEG
-    if(buf[0] == 0xFF
-    && buf[1] == 0xD8
-    && buf[2] == 0xFF
-    && buf[3] == 0xE0
-    && buf[4] == 0x00
-    && buf[5] == 0x10
-    && buf[6] == 0x4A  // J
-    && buf[7] == 0x46  // F
-    && buf[8] == 0x49  // I
-    && buf[9] == 0x46) // F
+    if(buf[0] === 0xFF
+    && buf[1] === 0xD8
+    && buf[2] === 0xFF
+    && buf[3] === 0xE0
+    && buf[4] === 0x00
+    && buf[5] === 0x10
+    && buf[6] === 0x4A  // J
+    && buf[7] === 0x46  // F
+    && buf[8] === 0x49  // I
+    && buf[9] === 0x46) // F
     {
         return "image/jpeg";
     }
 
     // Image PNG
-    if(buf[0] == 0x89
-    && buf[1] == 0x50  // P
-    && buf[2] == 0x4E  // N
-    && buf[3] == 0x47  // G
-    && buf[4] == 0x0D  // \r
-    && buf[5] == 0x0A) // \n
+    if(buf[0] === 0x89
+    && buf[1] === 0x50  // P
+    && buf[2] === 0x4E  // N
+    && buf[3] === 0x47  // G
+    && buf[4] === 0x0D  // \r
+    && buf[5] === 0x0A) // \n
     {
         return "image/png";
     }
 
     // Image GIF
-    if(buf[0] == 0x47  // G
-    && buf[1] == 0x49  // I
-    && buf[2] == 0x46  // F
-    && buf[3] == 0x38  // 8
-    && buf[4] == 0x39  // 9
-    && buf[5] == 0x61) // a
+    if(buf[0] === 0x47  // G
+    && buf[1] === 0x49  // I
+    && buf[2] === 0x46  // F
+    && buf[3] === 0x38  // 8
+    && buf[4] === 0x39  // 9
+    && buf[5] === 0x61) // a
     {
         return "image/gif";
     }
@@ -490,7 +495,7 @@ snapwebsites.Output.prototype.initQsParams_ = function()
         if(variables.hasOwnProperty(v))
         {
             name_value = variables[v].split("=");
-            if(name_value.length == 2)
+            if(name_value.length === 2)
             {
                 try
                 {

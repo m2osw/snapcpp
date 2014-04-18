@@ -38,7 +38,7 @@ do
 	if    gjslint $GOOGLE_OPTIONS $j >$OUTPUT/`basename $j .js`-google.txt 2>&1
 	then
 		# if no errors, delete the file... (no need!)
-		rm $OUTPUT/`basename $j .js`.txt
+		rm $OUTPUT/`basename $j .js`-google.txt
 	fi
 
 	echo "jslint $NODEJS_OPTIONS $j >$OUTPUT/`basename $j .js`-nodejs.txt 2>&1"

@@ -20,6 +20,9 @@
 // ==/ClosureCompiler==
 //
 
+/*jslint nomen: true, todo: true, devel: true */
+/*global snapwebsites: false, jQuery: false */
+
 
 
 /** \brief Snap Popup.
@@ -198,7 +201,7 @@ snapwebsites.Popup.prototype.open = function(popup)
     }
     // popup already exists?
     popup.widget = jQuery("#" + popup.id);
-    if(popup.widget.length == 0)
+    if(popup.widget.length === 0)
     {
         jQuery("<div class='snap-popup' id='" + popup.id + "' style='position:fixed;display:none;'><div class='close-popup'></div><div class='inside-popup'><div class='popup-title'></div><div class='popup-body'></div></div></div>")
                 .appendTo("body");
@@ -251,9 +254,14 @@ snapwebsites.Popup.prototype.open = function(popup)
     }
     else
     {
-        popup.widget.css("left", Math.floor((jQuery("body").width() - popup.widget.width()) / 2));
+        w = Math.floor((jQuery("body").width() - popup.widget.width()) / 2);
+        if(w < 0)
+        {
+            w = 0;
+        }
+        popup.widget.css("left", w);
     }
-    if(popup.position && popup.position == "absolute")
+    if(popup.position && popup.position === "absolute")
     {
         popup.widget.css("position", "absolute");
     }
