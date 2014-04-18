@@ -1254,7 +1254,8 @@ int64_t layout::install_layout(QString const& layout_name, int64_t const last_up
 
     content::path_info_t layout_ipath;
     layout_ipath.set_path(QString("%1/%2").arg(get_name(SNAP_NAME_LAYOUT_ADMIN_LAYOUTS)).arg(layout_name));
-    if(data_table->exists(layout_ipath.get_branch_key())
+    if(layout_ipath.has_branch()
+    && data_table->exists(layout_ipath.get_branch_key())
     && data_table->row(layout_ipath.get_branch_key())->exists(get_name(SNAP_NAME_LAYOUT_BOXES)))
     {
         // The layout is already installed
