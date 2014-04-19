@@ -2,6 +2,7 @@ snapwebsites (0.1.45~saucy) saucy; urgency=high
 
   [ Alexis Wilke ]
   * Fixed the sendmail plugin so it continues to work even if an email fails.
+  * Added the ability to ignore the User Agents in sessions.
 
   [ R. Douglas Barbieri ]
   * Added jslint script.

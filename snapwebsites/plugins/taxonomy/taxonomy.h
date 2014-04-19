@@ -47,7 +47,6 @@ public:
     QtCassandra::QCassandraValue    find_type_with(content::path_info_t& cpath, const QString& taxonomy, const QString& col_name, const QString& limit_name);
 
 private:
-    void                initial_update(int64_t variables_timestamp);
     void                content_update(int64_t variables_timestamp);
 
     zpsnap_child_t      f_snap;

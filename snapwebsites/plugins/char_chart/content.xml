@@ -19,6 +19,21 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 -->
 <snap-tree>
   <content path="/char-chart">
+    <param name="content::title" revision="revision">Character Charts</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[
+        <p>The following are the Unicode character charts:</p>
+        <table border="1" cellpadding="5" cellspacing="0">
+          <tr>
+            <td><a href="/char-chart/0">Basic Latin, Latin 1 (ISO-8859-1)</a></td>
+            <td><a href="/char-chart/1">Latin Extended-A, Latin Extended-B</a></td>
+          </tr>
+          <tr>
+            <td colspan="2">TODO: add a few more (See: <a href="http://www.unicode.org/charts/">Unicode Character Code Charts</a>)</td>
+          </tr>
+        </table>
+      ]]>
+    </param>
     <link name="content::page_type" to="content::page_type" mode="1:*">/types/taxonomy/system/content-types/page/public</link>
     <param name="permissions::dynamic" type="int8" revision="global">1</param>
   </content>

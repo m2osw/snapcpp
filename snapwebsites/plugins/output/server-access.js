@@ -1,6 +1,6 @@
 /** @preserve
  * Name: server-access
- * Version: 0.0.1.7
+ * Version: 0.0.1.8
  * Browsers: all
  * Depends: output (>= 0.1.5)
  * Copyright: Copyright 2013-2014 (c) Made to Order Software Corporation  All rights reverved.
@@ -310,6 +310,9 @@ snapwebsites.ServerAccess.prototype.send = function()
         },
         success: function(data, result_status, jqxhr)
         {
+            // WARNING: success of the AJAX round trip data does not
+            //          mean that the POST was a success.
+            //
             var results,        // the XML results (should be 1 element)
                 doc,            // the document used to redirect
                 redirect,       // the XML redirect element
@@ -324,6 +327,7 @@ snapwebsites.ServerAccess.prototype.send = function()
             result.jqxhr = jqxhr;
 
 //console.log(jqxhr);
+
             if(jqxhr.status === 200)
             {
                 doc_type_start = jqxhr.responseText.indexOf("<!DOCTYPE");
@@ -353,9 +357,7 @@ snapwebsites.ServerAccess.prototype.send = function()
                 results = jqxhr.responseXML.getElementsByTagName("result");
                 if(results.length === 1 && results[0].childNodes[0].nodeValue === "success")
                 {
-                    // WARNING: success of the AJAX round trip data does not
-                    //          mean that the POST was a success.
-                    alert("The AJAX succeeded (" + result_status + ")");
+                    //alert("The AJAX succeeded (" + result_status + ")");
 
                     // success!
                     redirect = jqxhr.responseXML.getElementsByTagName("redirect");

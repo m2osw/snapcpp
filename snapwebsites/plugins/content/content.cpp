@@ -6519,9 +6519,9 @@ void content::add_javascript(QDomDocument doc, QString const& name)
             //      This means the loader will pick the latest available
             //      version with the User Agent match. This may not always
             //      be desirable though.
-#ifdef DEBUG
-SNAP_LOG_TRACE() << "Adding JavaScript [" << name << "] [" << ref_cell->columnName().mid(start_ref.length() - 1) << "]";
-#endif
+//#ifdef DEBUG
+//SNAP_LOG_TRACE() << "Adding JavaScript [" << name << "] [" << ref_cell->columnName().mid(start_ref.length() - 1) << "]";
+//#endif
             QDomNodeList metadata(doc.elementsByTagName("metadata"));
             QDomNode javascript_tag(metadata.at(0).firstChildElement("javascript"));
             if(javascript_tag.isNull())
@@ -6732,9 +6732,9 @@ void content::add_css(QDomDocument doc, QString const& name)
             //      This means the loader will pick the latest available
             //      version with the User Agent match. This may not always
             //      be desirable though.
-#ifdef DEBUG
-SNAP_LOG_TRACE() << "Adding CSS [" << name << "] [" << ref_cell->columnName().mid(start_ref.length() - 1) << "]";
-#endif
+//#ifdef DEBUG
+//SNAP_LOG_TRACE() << "Adding CSS [" << name << "] [" << ref_cell->columnName().mid(start_ref.length() - 1) << "]";
+//#endif
             QDomNodeList metadata(doc.elementsByTagName("metadata"));
             QDomNode css_tag(metadata.at(0).firstChildElement("css"));
             if(css_tag.isNull())

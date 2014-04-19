@@ -1226,7 +1226,7 @@ void permissions::on_validate_action(content::path_info_t& ipath, QString const&
                 err_callback.on_error(snap_child::HTTP_CODE_ACCESS_DENIED,
                         "Access Denied",
                         action != "view"
-                            ? "You are not authorized to access the login page with action " + action
+                            ? QString("You are not authorized to access the login page with action \"%1\".").arg(action)
                             : "Somehow you are not authorized to access the login page.",
                         QString("user trying to \"%1\" on page \"%2\" with unsufficient rights.").arg(action).arg(ipath.get_cpath()));
                 return;

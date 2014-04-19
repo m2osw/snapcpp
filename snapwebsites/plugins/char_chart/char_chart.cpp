@@ -17,6 +17,8 @@
 
 #include "char_chart.h"
 
+#include "../output/output.h"
+
 #include <iostream>
 
 #include <QDebug>
@@ -37,6 +39,7 @@ char_chart::char_chart()
 {
 }
 
+
 /** \brief Clean up the char_chart plugin.
  *
  * Ensure the char_chart object is clean before it is gone.
@@ -44,6 +47,7 @@ char_chart::char_chart()
 char_chart::~char_chart()
 {
 }
+
 
 /** \brief Initialize the char_chart plugin.
  *
@@ -60,6 +64,7 @@ void char_chart::on_bootstrap(::snap::snap_child *snap)
     SNAP_LISTEN(char_chart, "sitemapxml", sitemapxml::sitemapxml, generate_sitemapxml, _1);
 }
 
+
 /** \brief Get a pointer to the char_chart plugin.
  *
  * This function returns an instance pointer to the char_chart plugin.
@@ -74,6 +79,7 @@ char_chart *char_chart::instance()
     return g_plugin_char_chart_factory.instance();
 }
 
+
 /** \brief Return the description of this plugin.
  *
  * This function returns the English description of this plugin.
@@ -87,6 +93,7 @@ QString char_chart::description() const
 {
     return "This dynamically generates tables of characters.";
 }
+
 
 /** \brief Check whether updates are necessary.
  *
@@ -104,29 +111,11 @@ int64_t char_chart::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-//std::cerr << "Got the do_update() in char_chart! "
-//        << static_cast<int64_t>(last_updated) << ", "
-//        << static_cast<int64_t>(SNAP_UNIX_TIMESTAMP(2012, 1, 1, 0, 0, 0) * 1000000LL) << "\n";
-
-    SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, initial_update);
-    SNAP_PLUGIN_UPDATE(2013, 12, 23, 17, 10, 20, content_update);
+    SNAP_PLUGIN_UPDATE(2014, 4, 19, 0, 41, 20, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
 
-/** \brief First update to run for the char_chart plugin.
- *
- * This function is the first update for the char_chart plugin. It installs
- * the initial data required by the char_chart plugin.
- *
- * \param[in] variables_timestamp  The timestamp for all the variables added to the database by this update (in micro-seconds).
- */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-void char_chart::initial_update(int64_t variables_timestamp)
-{
-}
-#pragma GCC diagnostic pop
 
 /** \brief Update the char_chart plugin content.
  *
@@ -139,13 +128,12 @@ void char_chart::initial_update(int64_t variables_timestamp)
  *
  * \param[in] variables_timestamp  The timestamp for all the variables added to the database by this update (in micro-seconds).
  */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
 void char_chart::content_update(int64_t variables_timestamp)
 {
+    static_cast<void>(variables_timestamp);
+
     content::content::instance()->add_xml("char_chart");
 }
-#pragma GCC diagnostic pop
 
 
 /** \brief Check whether \p cpath matches our introducer.
@@ -177,22 +165,28 @@ void char_chart::on_can_handle_dynamic_path(content::path_info_t& ipath, path::d
  */
 bool char_chart::on_path_execute(content::path_info_t& ipath)
 {
-    f_snap->output(layout::layout::instance()->apply_layout(ipath, this));
+    f_page = ipath.get_cpath().mid(11);
+
+    content::path_info_t chart_ipath;
+    chart_ipath.set_path("char-chart");
+    f_snap->output(layout::layout::instance()->apply_layout(chart_ipath, this));
 
     return true;
 }
 
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
 void char_chart::on_generate_main_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, const QString& ctemplate)
 {
     QDomDocument doc(page.ownerDocument());
 
-    QString value(ipath.get_cpath().mid(11));
+    QString value(f_page);
     if(value.length() < 1)
     {
-        // problem
+        // the top page?
+        if(ipath.get_cpath() == "char-chart")
+        {
+            output::output::instance()->on_generate_main_content(ipath, page, body, ctemplate);
+        }
         return;
     }
     bool ok;
@@ -629,7 +623,7 @@ void char_chart::on_generate_main_content(content::path_info_t& ipath, QDomEleme
 
     //return true;
 }
-#pragma GCC diagnostic pop
+
 
 /** \brief Give access to the first page.
  *

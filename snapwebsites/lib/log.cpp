@@ -23,6 +23,8 @@
 
 #include <syslog.h>
 
+#include <boost/algorithm/string/replace.hpp>
+
 #include <log4cplus/configurator.h>
 #include <log4cplus/logger.h>
 #include <log4cplus/fileappender.h>
@@ -83,6 +85,9 @@ void unconfigure()
  * configure() is called from the server::config() function. If no configuration
  * file is defined then the other functions will do nothing.
  *
+ * Format documentation:
+ * http://log4cplus.sourceforge.net/docs/html/classlog4cplus_1_1PatternLayout.html
+ *
  * \sa fatal()
  * \sa error()
  * \sa warning()
@@ -98,8 +103,8 @@ void configureConsole()
             appender(new log4cplus::ConsoleAppender());
     appender->setName(LOG4CPLUS_TEXT("console"));
     const log4cplus::tstring pattern
-                ( server::instance()->servername().c_str()
-                + log4cplus::tstring(":%b:%L:%h: %m%n")
+                ( boost::replace_all_copy(server::instance()->servername(), "%", "%%").c_str()
+                + log4cplus::tstring("[%i]:%b:%L:%h: %m%n")
                 );
     //const log4cplus::tstring pattern( "%b:%L:%h: %m%n" );
     appender->setLayout( std::auto_ptr<log4cplus::Layout>( new log4cplus::PatternLayout(pattern)) );
@@ -154,7 +159,7 @@ void configureLogfile( QString const& logfile )
     appender->setName(LOG4CPLUS_TEXT("log_file"));
     const log4cplus::tstring pattern
                 ( log4cplus::tstring("%d{%Y/%m/%d %H:%M:%S} %h ")
-                + server::instance()->servername().c_str()
+                + boost::replace_all_copy(server::instance()->servername(), "%", "%%").c_str()
                 + log4cplus::tstring("[%i]: %m (%b:%L)%n")
                 );
     appender->setLayout( std::auto_ptr<log4cplus::Layout>( new log4cplus::PatternLayout(pattern)) );

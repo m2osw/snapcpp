@@ -64,6 +64,9 @@ char const *get_name(name_t name)
 {
     switch(name)
     {
+    case SNAP_NAME_SESSIONS_CHECK_FLAGS:
+        return "sessions::check_flags";
+
     case SNAP_NAME_SESSIONS_DATE:
         return "sessions::date";
 
@@ -493,6 +496,94 @@ void sessions::session_info::set_login_limit(time_t time_limit)
 void sessions::session_info::set_date(int64_t date)
 {
     f_date = date;
+}
+
+
+/** \brief Force the specified checks for this session.
+ *
+ * Sessions support a certain number of checks that are not mandatory.
+ * It is possible, by code, to add and remove those checks.
+ *
+ * This function is generally only used when loading a session to restore
+ * the value that was saved in the database. You probably want to use
+ * the add_check_flags() and remove_check_flags() functions instead
+ * because that way you do not take the risk of disturbing flags that you
+ * do not know anything about (possibly because they were added after
+ * you wrote your code.)
+ *
+ * Note that the add and remove functions can both be used to retrieve
+ * the current set of flags by passing 0 as parameter:
+ *
+ * \code
+ *      check_flag_t flags(info.add_check_flags(0));
+ * \endcode
+ *
+ * \param[in] flags  The new check flags.
+ *
+ * \sa add_check_flags()
+ * \sa remove_check_flags()
+ */
+void sessions::session_info::set_check_flags(check_flag_t flags)
+{
+    f_check_flags = flags;
+}
+
+
+/** \brief Force the specified checks for this session.
+ *
+ * Sessions support a certain number of checks that are not mandatory.
+ * It is possible, by code, to add those checks.
+ *
+ * Some checks are set by default and can be removed. Use the
+ * remove_check_flags() in that case.
+ *
+ * The checks that are options are defined as flags:
+ *
+ * \li CHECK_HTTP_USER_AGENT -- make sure to check the user agent string.
+ *
+ * \param[in] flags  The flags to add to the list of checks.
+ *
+ * \return The current set of flags.
+ *
+ * \sa set_check_flags()
+ * \sa remove_check_flags()
+ */
+sessions::session_info::check_flag_t sessions::session_info::add_check_flags(check_flag_t flags)
+{
+    return f_check_flags |= flags;
+}
+
+
+/** \brief Remove the specified checks for this sessions.
+ *
+ * Sessions support a certain number of checks that are not mandatory.
+ * It is possible, by code, to remove those checks.
+ *
+ * Some checks are not set by default and can be added. Use the
+ * add_check_flags() in that case.
+ *
+ * For a list of checks that are currently optional, read the documentation
+ * of the add_check_flags() function instead.
+ *
+ * Note that to clear a flag, its bit must be set. For for example, to
+ * clear the CHECK_HTTP_USER_AGENT flag you would do:
+ *
+ * \code
+ *      sessions::session_info info;
+ *      ...
+ *      info.remove_check_flags(info.CHECK_HTTP_USER_AGENT):
+ * \endcode
+ *
+ * \param[in] flags  The flags to clear from the list of checks.
+ *
+ * \return The current set of flags.
+ *
+ * \sa set_check_flags()
+ * \sa add_check_flags()
+ */
+sessions::session_info::check_flag_t sessions::session_info::remove_check_flags(check_flag_t flags)
+{
+    return f_check_flags &= ~flags;
 }
 
 
@@ -1140,6 +1231,9 @@ void sessions::save_session(session_info& info, bool new_random)
 
     value.setInt32Value(info.get_session_random());
     row->cell(get_name(SNAP_NAME_SESSIONS_RANDOM))->setValue(value);
+
+    value.setInt64Value(info.add_check_flags(0));
+    row->cell(get_name(SNAP_NAME_SESSIONS_CHECK_FLAGS))->setValue(value);
 }
 
 
@@ -1246,6 +1340,15 @@ void sessions::load_session(QString const& session_key, session_info& info, bool
 
     value = row->cell(get_name(SNAP_NAME_SESSIONS_USER_AGENT))->value();
     info.set_user_agent(value.stringValue());
+
+    value = row->cell(get_name(SNAP_NAME_SESSIONS_CHECK_FLAGS))->value();
+    if(value.nullValue())
+    {
+        // row timed out between calls
+        info.set_session_type(session_info::SESSION_INFO_MISSING);
+        return;
+    }
+    info.set_check_flags(value.int64Value());
 
     value = row->cell(get_name(SNAP_NAME_SESSIONS_TIME_TO_LIVE))->value();
     if(value.nullValue())

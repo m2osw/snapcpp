@@ -19,7 +19,6 @@
 //
 
 
-
 /** \brief Objects that match any one of the selectors.
  *
  * Usage: $(":any(\<selectors\>)")

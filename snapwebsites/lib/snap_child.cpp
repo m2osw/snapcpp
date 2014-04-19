@@ -2535,6 +2535,10 @@ bool snap_child::process(int socket)
         read_environment();         // environment to QMap<>
         setup_uri();                // the raw URI
 
+#ifdef DEBUG
+SNAP_LOG_TRACE("------------------------------------ new snap_child session (")(f_uri.get_uri())(")");
+#endif
+
         // now we connect to the DB
         // move all possible work that does not required the DB before
         // this line so we avoid a network connection altogether
@@ -4271,7 +4275,7 @@ void snap_child::canonicalize_options()
     // first take care of the language
 
     // transform the language specified by the browser in an array
-    http_strings::WeightedHttpString languages(snapenv("HTTP_ACCEPT_LANGUAGE"));
+    http_strings::WeightedHttpString languages(snapenv(get_name(SNAP_NAME_CORE_HTTP_ACCEPT_LANGUAGE)));
     http_strings::WeightedHttpString::part_vector_t browser_languages(languages.get_parts());
     if(!browser_languages.isEmpty())
     {
@@ -4965,7 +4969,7 @@ bool snap_child::load_file(post_file_t& file)
  */
 QString snap_child::snapenv(QString const& name) const
 {
-    if(name == "SERVER_PROTOCOL")
+    if(name == get_name(SNAP_NAME_CORE_SERVER_PROTOCOL))
     {
         // SERVER PROTOCOL
         if(false == f_fixed_server_protocol)
@@ -4973,24 +4977,24 @@ QString snap_child::snapenv(QString const& name) const
             f_fixed_server_protocol = true;
             // Drupal does the following
             // TBD can the SERVER_PROTOCOL really be wrong?
-            if(f_env.count("SERVER_PROTOCOL") != 1)
+            if(f_env.count(get_name(SNAP_NAME_CORE_SERVER_PROTOCOL)) != 1)
             {
                 // if undefined, set a default protocol
-                const_cast<snap_child *>(this)->f_env["SERVER_PROTOCOL"] = "HTTP/1.0";
+                const_cast<snap_child *>(this)->f_env[get_name(SNAP_NAME_CORE_SERVER_PROTOCOL)] = "HTTP/1.0";
             }
             else
             {
                 // note that HTTP/0.9 could be somewhat supported but that's
                 // most certainly totally useless
-                if("HTTP/1.0" != f_env.value("SERVER_PROTOCOL")
-                && "HTTP/1.1" != f_env.value("SERVER_PROTOCOL"))
+                if("HTTP/1.0" != f_env.value(get_name(SNAP_NAME_CORE_SERVER_PROTOCOL))
+                && "HTTP/1.1" != f_env.value(get_name(SNAP_NAME_CORE_SERVER_PROTOCOL)))
                 {
                     // environment is no good!?
-                    const_cast<snap_child *>(this)->f_env["SERVER_PROTOCOL"] = "HTTP/1.0";
+                    const_cast<snap_child *>(this)->f_env[get_name(SNAP_NAME_CORE_SERVER_PROTOCOL)] = "HTTP/1.0";
                 }
             }
         }
-        return f_env.value("SERVER_PROTOCOL", "HTTP/1.0");
+        return f_env.value(get_name(SNAP_NAME_CORE_SERVER_PROTOCOL), "HTTP/1.0");
     }
 
     return f_env.value(name, "");

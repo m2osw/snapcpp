@@ -142,7 +142,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 	<xsl:template match="page/body">
 		<body>
 			<div class="page">
-				<div class="header"><h1><xsl:choose>
+				<div class="header"><h1 style="font-size: 150%;"><xsl:choose>
 						<xsl:when test="/snap/page/body/titles/long-title">
 							<xsl:copy-of select="/snap/page/body/titles/long-title/node()"/>
 						</xsl:when>

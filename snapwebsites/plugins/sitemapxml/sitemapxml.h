@@ -104,7 +104,6 @@ public:
     void                    add_url(const url_info& url);
 
 private:
-    void                    initial_update(int64_t variables_timestamp);
     void                    content_update(int64_t variables_timestamp);
 
     zpsnap_child_t          f_snap;

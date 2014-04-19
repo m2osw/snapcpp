@@ -366,29 +366,10 @@ int64_t sitemapxml::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, initial_update);
     SNAP_PLUGIN_UPDATE(2013, 12, 23, 18, 46, 42, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
-
-
-/** \brief First update to run for the sitemapxml plugin.
- *
- * This function is the first update for the sitemapxml plugin. It installs
- * the initial sitemap.xml page.
- *
- * \param[in] variables_timestamp  The timestamp for all the variables added to the database by this update (in micro-seconds).
- */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-void sitemapxml::initial_update(int64_t variables_timestamp)
-{
-    // additional sitemap<###>.xml will be added as the CRON processes
-    // find out that additional pages are required.
-    //path::path::instance()->add_path("sitemapxml", "sitemap.xml", variables_timestamp);
-}
-#pragma GCC diagnostic pop
 
 
 /** \brief Update the content with our references.
@@ -398,15 +379,14 @@ void sitemapxml::initial_update(int64_t variables_timestamp)
  *
  * \param[in] variables_timestamp  The timestamp for all the variables added to the database by this update (in micro-seconds).
  */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
 void sitemapxml::content_update(int64_t variables_timestamp)
 {
+    static_cast<void>(variables_timestamp);
+
     // additional sitemap<###>.xml are added dynamically as the CRON processes
     // find out that additional pages are required.
     content::content::instance()->add_xml("sitemapxml");
 }
-#pragma GCC diagnostic pop
 
 
 /** \brief Implementation of the robotstxt signal.
@@ -599,53 +579,54 @@ bool sitemapxml::on_path_execute(content::path_info_t& ipath)
  *
  * \return true if the signal has to be sent to other plugins.
  */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
 bool sitemapxml::generate_sitemapxml_impl(sitemapxml *r)
 {
-    QtCassandra::QCassandraTable::pointer_t content_table(content::content::instance()->get_content_table());
-    if(!content_table)
+    static_cast<void>(r);
+
+    QtCassandra::QCassandraTable::pointer_t data_table(content::content::instance()->get_data_table());
+    if(!data_table)
     {
         // the table does not exist?!
         // (since the content is a core plugin, that should not happen)
-        throw sitemapxml_exception_missing_table("could not get the content table");
+        throw sitemapxml_exception_missing_table("could not get the data table");
     }
 
-    content::path_info_t ipath;
-    ipath.set_path("types/taxonomy/system/sitemapxml/include");
-    links::link_info xml_sitemap_info("sitemapxml::include", false, ipath.get_key(), ipath.get_branch());
+    path::path *path_plugin(path::path::instance());
+
+    content::path_info_t include_ipath;
+    include_ipath.set_path("types/taxonomy/system/sitemapxml/include");
+    links::link_info xml_sitemap_info("sitemapxml::include", false, include_ipath.get_key(), include_ipath.get_branch());
     QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(xml_sitemap_info));
     links::link_info xml_sitemap;
     while(link_ctxt->next_link(xml_sitemap))
     {
         QString const page_key(xml_sitemap.key());
-//printf("Found key [%s]\n", page_key.toUtf8().data());
+
+        // valid for this site?
+        QString const site_key(f_snap->get_site_key_with_slash());
+        if(!page_key.startsWith(site_key))  // this should never be false!
+        {
+            // invalid page?!?
+            continue;
+        }
+
+        content::path_info_t page_ipath;
+        page_ipath.set_path(page_key);
 
         // anonymous user has access to that page??
-        QString const site_key(f_snap->get_site_key_with_slash());
-        bool allowed(false);
-        if(page_key.startsWith(site_key))
-        {
-            // check the path, not the site_key + path
-            // XXX should we use VISITOR or RETURNING VISITOR as the status?
-#pragma message "Alexis, please fill in the appropriate parameters."
-            // TODO:
-            // Need these new parameters:
-            //
-            //SNAP_SIGNAL(access_allowed
-            // , (QString const& user_path, content::path_info_t& ipath, QString const& action, QString const& login_status, content::permission_flag& result)
-            // , (user_path, ipath, action, login_status, result));
-#if 0
-            allowed = path::path::instance()->access_allowed
-                ( ""
-                , ipath
-                , page_key.mid(site_key.length())
-                , "view"
-                , permissions::get_name(permissions::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_VISITOR)
-                );
-#endif
-        }
-        if(allowed)
+        // check the path, not the site_key + path
+        // XXX should we use VISITOR or RETURNING VISITOR as the status?
+        content::permission_flag result;
+        path_plugin->access_allowed
+            ( ""        // anonymous user
+            , page_ipath     // this page
+            , "view"    // can the anonymous user view this page
+            , permissions::get_name(permissions::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_VISITOR)    // anonymous users are Visitors
+            , result    // give me the result here
+            );
+
+//std::cerr << "Found key [" << page_key << "] allowed? " << (result.allowed() ? "YES" : "Nope") << "\n";
+        if(result.allowed())
         {
 
             // TODO: test that this page is accessible anonymously
@@ -655,7 +636,7 @@ bool sitemapxml::generate_sitemapxml_impl(sitemapxml *r)
             url.set_uri(page_key);
 
             // author of the page defined a priority for the sitemap.xml file?
-            QtCassandra::QCassandraValue priority(content_table->row(page_key)->cell(get_name(SNAP_NAME_SITEMAPXML_PRIORITY))->value());
+            QtCassandra::QCassandraValue priority(data_table->row(page_ipath.get_branch_key())->cell(get_name(SNAP_NAME_SITEMAPXML_PRIORITY))->value());
             if(priority.nullValue())
             {
                 // set the site priority to 1.0 for the home page
@@ -672,14 +653,14 @@ bool sitemapxml::generate_sitemapxml_impl(sitemapxml *r)
             }
 
             // use the last modification date from that page
-            QtCassandra::QCassandraValue modified(content_table->row(page_key)->cell(QString(content::get_name(content::SNAP_NAME_CONTENT_MODIFIED)))->value());
+            QtCassandra::QCassandraValue modified(data_table->row(page_ipath.get_branch_key())->cell(QString(content::get_name(content::SNAP_NAME_CONTENT_MODIFIED)))->value());
             if(!modified.nullValue())
             {
                 url.set_last_modification(modified.int64Value() / 1000000L); // micro-seconds -> seconds
             }
 
             // XXX ameliorate as we grow this feature
-            QtCassandra::QCassandraValue frequency(content_table->row(page_key)->cell(get_name(SNAP_NAME_SITEMAPXML_FREQUENCY))->value());
+            QtCassandra::QCassandraValue frequency(data_table->row(page_ipath.get_branch_key())->cell(get_name(SNAP_NAME_SITEMAPXML_FREQUENCY))->value());
             if(!frequency.nullValue())
             {
                 QString f(frequency.stringValue());
@@ -710,7 +691,6 @@ bool sitemapxml::generate_sitemapxml_impl(sitemapxml *r)
     }
     return true;
 }
-#pragma GCC diagnostic pop
 
 
 /** \brief Implementation of the backend process signal.
@@ -849,7 +829,7 @@ void sitemapxml::on_backend_process()
     content_table->row(sitemap_txt)->cell(content_modified)->setValue(start_date);
 
 #ifdef DEBUG
-SNAP_LOG_TRACE() << "Updating [" << sitemap_xml << "]\n";
+SNAP_LOG_TRACE() << "Updating [" << sitemap_xml << "]";
 #endif
 }
 

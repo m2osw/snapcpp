@@ -26,7 +26,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <![CDATA[<p>Welcome to your new Snap! C++ website.</p><p><a href="/login">Log In Now!</a></p>]]>
     </param>
     <param name="content::body" revision="revision" lang="fr">
-      <![CDATA[<p>Bienvenue sur le nouveau site web Snap! C++.</p><p><a href="/login">Connectez-vous!</a></p>]]>
+      <![CDATA[<p>Bienvenue sur le nouveau site web de Snap! C++.</p><p><a href="/login">Connectez-vous!</a></p>]]>
     </param>
     <param name="sitemapxml::frequency">always</param>
     <!--param name="layout::theme" force-namespace="no">plugins.content.modified&gt;10?"large_theme":"small_theme";</param-->

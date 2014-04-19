@@ -37,24 +37,29 @@ namespace snap
 
 enum name_t
 {
+    // low level names
     SNAP_NAME_SERVER,           // The name of the Snap! Server
     SNAP_NAME_CONTEXT,          // Cassandra Keyspace
     SNAP_NAME_INDEX,            // Row used for the domains & websites index
     SNAP_NAME_DOMAINS,          // Cassandra Table used for domains
     SNAP_NAME_WEBSITES,         // Cassandra Table used for websites
     SNAP_NAME_SITES,            // Cassandra Table used for sites (one site per row)
+
+    // names used by core (server & snap_child)
     SNAP_NAME_CORE_ADMINISTRATOR_EMAIL,
-    SNAP_NAME_CORE_LAST_UPDATED,
+    SNAP_NAME_CORE_COOKIE_DOMAIN,
+    SNAP_NAME_CORE_HTTP_ACCEPT_LANGUAGE,
     SNAP_NAME_CORE_HTTP_USER_AGENT,
+    SNAP_NAME_CORE_LAST_UPDATED,
+    SNAP_NAME_CORE_ORIGINAL_RULES,
+    SNAP_NAME_CORE_PLUGINS,
+    SNAP_NAME_CORE_PLUGIN_THRESHOLD,
+    SNAP_NAME_CORE_REDIRECT,
+    SNAP_NAME_CORE_RULES,
+    SNAP_NAME_CORE_SERVER_PROTOCOL,
     SNAP_NAME_CORE_SITE_NAME,
     SNAP_NAME_CORE_SITE_SHORT_NAME,
     SNAP_NAME_CORE_SITE_LONG_NAME,
-    SNAP_NAME_CORE_PLUGINS,
-    SNAP_NAME_CORE_REDIRECT,
-    SNAP_NAME_CORE_RULES,
-    SNAP_NAME_CORE_ORIGINAL_RULES,
-    SNAP_NAME_CORE_PLUGIN_THRESHOLD,
-    SNAP_NAME_CORE_COOKIE_DOMAIN,
     SNAP_NAME_CORE_USER_COOKIE_NAME
 };
 char const *get_name(name_t name) __attribute__ ((const));
