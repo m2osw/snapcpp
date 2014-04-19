@@ -40,10 +40,10 @@ public:
     bool                on_path_execute(content::path_info_t& cpath);
 
 private:
-    void                initial_update(int64_t variables_timestamp);
     void                content_update(int64_t variables_timestamp);
 
     zpsnap_child_t      f_snap;
+    QString             f_page;
 };
 
 } // namespace char_chart

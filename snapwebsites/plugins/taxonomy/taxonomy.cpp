@@ -41,7 +41,7 @@ SNAP_PLUGIN_START(taxonomy, 1, 0)
  *
  * \return A pointer to the name.
  */
-const char *get_name(name_t name)
+char const *get_name(name_t name)
 {
     switch(name)
     {
@@ -66,6 +66,7 @@ taxonomy::taxonomy()
 {
 }
 
+
 /** \brief Clean up the taxonomy plugin.
  *
  * Ensure the taxonomy object is clean before it is gone.
@@ -73,6 +74,7 @@ taxonomy::taxonomy()
 taxonomy::~taxonomy()
 {
 }
+
 
 /** \brief Initialize the taxonomy plugin.
  *
@@ -85,6 +87,7 @@ void taxonomy::on_bootstrap(::snap::snap_child *snap)
 {
     f_snap = snap;
 }
+
 
 /** \brief Get a pointer to the taxonomy plugin.
  *
@@ -99,6 +102,7 @@ taxonomy *taxonomy::instance()
 {
     return g_plugin_taxonomy_factory.instance();
 }
+
 
 /** \brief Return the description of this plugin.
  *
@@ -117,6 +121,7 @@ QString taxonomy::description() const
         " work, however, all can be edited by the user in some way.";
 }
 
+
 /** \brief Check whether updates are necessary.
  *
  * This function updates the database when a newer version is installed
@@ -133,27 +138,11 @@ int64_t taxonomy::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, initial_update);
     SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
 
-/** \brief First update to run for the taxonomy plugin.
- *
- * This function is the first update for the taxonomy plugin. It installs
- * the initial data required by the taxonomy plugin.
- *
- * \param[in] variables_timestamp  The timestamp for all the variables added
- *                                 to the database by this update
- *                                 (in micro-seconds).
- */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-void taxonomy::initial_update(int64_t variables_timestamp)
-{
-}
-#pragma GCC diagnostic pop
 
 /** \brief Update the taxonomy plugin content.
  *
@@ -166,13 +155,13 @@ void taxonomy::initial_update(int64_t variables_timestamp)
  *
  * \param[in] variables_timestamp  The timestamp for all the variables added to the database by this update (in micro-seconds).
  */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
 void taxonomy::content_update(int64_t variables_timestamp)
 {
+    static_cast<void>(variables_timestamp);
+
     content::content::instance()->add_xml("taxonomy");
 }
-#pragma GCC diagnostic pop
+
 
 /** \brief Search for a field in a type tree.
  *

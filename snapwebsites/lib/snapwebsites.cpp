@@ -115,6 +115,7 @@ char const *get_name(name_t name)
 {
     switch(name)
     {
+    // Names that are really considered low level
     case SNAP_NAME_SERVER:
         return "Snap! Server";
 
@@ -133,14 +134,39 @@ char const *get_name(name_t name)
     case SNAP_NAME_SITES: // website global settings
         return "sites";
 
+    // names used by CORE (server and snap_child)
     case SNAP_NAME_CORE_ADMINISTRATOR_EMAIL:
         return "core::administrator_email";
+
+    case SNAP_NAME_CORE_COOKIE_DOMAIN:
+        return "core::cookie_domain";
+
+    case SNAP_NAME_CORE_HTTP_ACCEPT_LANGUAGE:
+        return "HTTP_ACCEPT_LANGUAGE";
 
     case SNAP_NAME_CORE_HTTP_USER_AGENT:
         return "HTTP_USER_AGENT";
 
     case SNAP_NAME_CORE_LAST_UPDATED:
         return "core::last_updated";
+
+    case SNAP_NAME_CORE_ORIGINAL_RULES:
+        return "core::original_rules";
+
+    case SNAP_NAME_CORE_PLUGINS:
+        return "core::plugins";
+
+    case SNAP_NAME_CORE_PLUGIN_THRESHOLD:
+        return "core::plugin_threshold";
+
+    case SNAP_NAME_CORE_REDIRECT:
+        return "core::redirect";
+
+    case SNAP_NAME_CORE_RULES:
+        return "core::rules";
+
+    case SNAP_NAME_CORE_SERVER_PROTOCOL:
+        return "SERVER_PROTOCOL";
 
     case SNAP_NAME_CORE_SITE_NAME:
         return "core::site_name";
@@ -150,24 +176,6 @@ char const *get_name(name_t name)
 
     case SNAP_NAME_CORE_SITE_LONG_NAME:
         return "core::site_long_name";
-
-    case SNAP_NAME_CORE_PLUGINS:
-        return "core::plugins";
-
-    case SNAP_NAME_CORE_REDIRECT:
-        return "core::redirect";
-
-    case SNAP_NAME_CORE_RULES:
-        return "core::rules";
-
-    case SNAP_NAME_CORE_ORIGINAL_RULES:
-        return "core::original_rules";
-
-    case SNAP_NAME_CORE_PLUGIN_THRESHOLD:
-        return "core::plugin_threshold";
-
-    case SNAP_NAME_CORE_COOKIE_DOMAIN:
-        return "core::cookie_domain";
 
     case SNAP_NAME_CORE_USER_COOKIE_NAME:
         return "core::user_cookie_name";

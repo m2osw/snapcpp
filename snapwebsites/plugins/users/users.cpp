@@ -915,10 +915,10 @@ void users::on_create_content(content::path_info_t& ipath, QString const& owner,
  *
  * \param[in] body  The body where the form is saved.
  */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
 void users::prepare_replace_password_form(QDomElement& body)
 {
+    static_cast<void>(body);
+
     // make sure the user is properly setup
     if(user_is_logged_in())
     {
@@ -940,7 +940,6 @@ void users::prepare_replace_password_form(QDomElement& body)
         NOTREACHED();
     }
 }
-#pragma GCC diagnostic pop
 
 
 /** \brief Show the user profile.
@@ -1246,11 +1245,14 @@ void users::prepare_new_password_form()
  * The result is a verified tag on the user so that way we can let the
  * user log in without additional anything.
  *
+ * Note that the user agent check can be turned off by software.
+ *
  * \todo
  * As an additional verification we could use the cookie that was setup
  * to make sure that the user is the same person. This means the cookie
  * should not be deleted on closure in the event the user is to confirm
- * his email later and wants to close everything in the meantime.
+ * his email later and wants to close everything in the meantime. Also
+ * that would not be good if user A creates an account for user B...
  *
  * \param[in,out] ipath  The path used to access this page.
  */
@@ -1272,7 +1274,7 @@ void users::verify_user(content::path_info_t& ipath)
     session->load_session(session_id, info);
     QString const path(info.get_object_path());
     if(info.get_session_type() != sessions::sessions::session_info::SESSION_INFO_VALID
-    || info.get_user_agent() != f_snap->snapenv(snap::get_name(SNAP_NAME_CORE_HTTP_USER_AGENT))
+    || ((info.add_check_flags(0) & info.CHECK_HTTP_USER_AGENT) != 0 && info.get_user_agent() != f_snap->snapenv(snap::get_name(SNAP_NAME_CORE_HTTP_USER_AGENT)))
     || path.mid(0, 6) != "/user/")
     {
         // it failed, the session could not be loaded properly
@@ -1549,6 +1551,56 @@ void users::verify_password(content::path_info_t& ipath)
     // he was successfully logged in -- don't kill this one yet...
     //links::links::instance()->delete_link(user_status_info);
 
+    // redirect the user to the "semi-public replace password page"
+    send_to_replace_password_page(email, false);
+    NOTREACHED();
+}
+
+
+/** \brief This function sends the user to the replace password.
+ *
+ * WARNING: Use this function at your own risk! It allows the user to
+ *          change (his) password and thus it should be done only if
+ *          you know for sure (as sure as one can be in an HTTP context)
+ *          that the user is allowed to do this.
+ *
+ * This function saves the email of the user to redirect to the
+ * /user/password/replace page. That page is semi-public in that it can
+ * be accessed by users who forgot their password after they followed
+ * a link we generate from the "I forgot my password" account. It is
+ * semi-public because, after all, it can be accessed by someone who is
+ * not actually logged in.
+ *
+ * The function redirects you so it does not return.
+ *
+ * The function saves the date and time when it gets called, and the IP
+ * address of the user who triggered the call.
+ *
+ * \param[in] email  The email of the user to redirect.
+ * \param[in] set_status  Whether to setup the user status too.
+ */
+void users::send_to_replace_password_page(QString const& email, bool const set_status)
+{
+    QtCassandra::QCassandraTable::pointer_t users_table(get_users_table());
+    QtCassandra::QCassandraRow::pointer_t row(users_table->row(email));
+
+    if(set_status)
+    {
+        // mark the user with the types/users/password tag
+        // (i.e. user requested a new password)
+        QString const link_name(get_name(SNAP_NAME_USERS_STATUS));
+        bool const source_unique(true);
+        content::path_info_t user_ipath;
+        user_ipath.set_path(get_user_path(email));
+        links::link_info source(link_name, source_unique, user_ipath.get_key(), user_ipath.get_branch());
+        QString const link_to(get_name(SNAP_NAME_USERS_STATUS));
+        bool const destination_unique(false);
+        content::path_info_t dpath;
+        dpath.set_path(get_name(SNAP_NAME_USERS_PASSWORD_PATH));
+        links::link_info destination(link_to, destination_unique, dpath.get_key(), dpath.get_branch());
+        links::links::instance()->create_link(source, destination);
+    }
+
     // Save the date when the user verified
     QtCassandra::QCassandraValue value;
     value.setInt64Value(f_snap->get_start_date());
@@ -1560,7 +1612,7 @@ void users::verify_password(content::path_info_t& ipath)
 
     f_user_changing_password_key = email;
 
-    // send the user to the log in page since he got verified now
+    // send the user to the "public" replace password page since he got verified
     f_snap->page_redirect("user/password/replace", snap_child::HTTP_CODE_SEE_OTHER);
     NOTREACHED();
 }
@@ -2523,12 +2575,12 @@ void users::process_verify_form()
  * WARNING WARNING WARNING
  * This returns the user key which is his email address. It does not
  * tell you that the user is logged in. For that purpose you MUST
- * use the is_user_logged_in() function.
+ * use the user_is_logged_in() function.
  *
  * This function returns the key of the user that last logged
  * in. This key is the user's email address. Remember that a
  * user is not considered fully logged in if his sesion his more than
- * 3 hours old. You must make sure to check the is_user_logged_in()
+ * 3 hours old. You must make sure to check the user_is_logged_in()
  * too. Note that the permission system should already take care of
  * most of those problems for you anyway, but you need to know what
  * you're doing!
@@ -2564,7 +2616,7 @@ void users::process_verify_form()
  * WARNING WARNING WARNING
  * This returns the user key which is his email address. It does not
  * tell you that the user is logged in. For that purpose you MUST
- * use the is_user_logged_in() function.
+ * use the user_is_logged_in() function.
  *
  * \return The user email address (which is the user key in the users table).
  */

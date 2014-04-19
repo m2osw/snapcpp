@@ -1359,7 +1359,7 @@ int64_t sendmail::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2014, 3, 29, 1, 36, 0, content_update);
+    SNAP_PLUGIN_UPDATE(2014, 4, 18, 22, 20, 0, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }

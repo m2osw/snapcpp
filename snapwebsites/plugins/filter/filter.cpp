@@ -271,6 +271,8 @@ void filter::on_xss_filter(QDomNode& node,
  *               message, in English.
  * \li [select("\<xpath>")] -- select content from the XML document using
  *                             the specified \<xpath>
+ * \li [select_text("\<xpath>")] -- select content from the XML document using
+ *                                  the specified \<xpath>, output as text
  * \li [date(\"format\")] -- date with format as per strftime(); without
  *                           format, use the default which is %m/%d/%Y
  * \li [version] -- version of the Snap! C++ server

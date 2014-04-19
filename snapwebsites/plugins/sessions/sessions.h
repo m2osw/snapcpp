@@ -25,6 +25,7 @@ namespace sessions
 
 enum name_t
 {
+    SNAP_NAME_SESSIONS_CHECK_FLAGS,
     SNAP_NAME_SESSIONS_DATE,
     SNAP_NAME_SESSIONS_ID,
     SNAP_NAME_SESSIONS_LOGIN_LIMIT,
@@ -93,7 +94,14 @@ public:
             SESSION_INFO_USED_UP,       // key was already used
             SESSION_INFO_INCOMPATIBLE   // key is not compatible (wrong path, object, etc.)
         };
-        typedef int        session_id_t;
+        typedef int         session_id_t;
+
+        typedef int64_t     check_flag_t;
+
+        static check_flag_t const   CHECK_HTTP_USER_AGENT   = 0x0001;
+
+        // define with all the default CHECKs we want to run
+        typedef controlled_vars::auto_init<check_flag_t, CHECK_HTTP_USER_AGENT> safe_check_flag_t;
 
         session_info();
 
@@ -111,6 +119,10 @@ public:
         void set_time_limit(time_t time_limit);
         void set_login_limit(time_t time_limit);
         void set_date(int64_t date);
+
+        void set_check_flags(check_flag_t flags);
+        check_flag_t add_check_flags(check_flag_t flags);
+        check_flag_t remove_check_flags(check_flag_t flags);
 
         session_info_type_t get_session_type() const;
         session_id_t get_session_id() const;
@@ -146,6 +158,7 @@ public:
         ztime_t                     f_time_limit;
         ztime_t                     f_login_limit;
         controlled_vars::zint64_t   f_date;
+        safe_check_flag_t           f_check_flags;
     };
 
                             sessions();
