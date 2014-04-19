@@ -1,3 +1,9 @@
+snapwebsites (0.1.45~saucyubuntu1) UNRELEASED; urgency=low
+
+  * Fixed the checkmark links, they can now react as expected.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sat, 19 Apr 2014 16:44:33 -0700
+
 snapwebsites (0.1.45~saucy) saucy; urgency=high
 
   [ Alexis Wilke ]
