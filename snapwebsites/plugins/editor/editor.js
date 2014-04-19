@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.119
+ * Version: 0.0.3.120
  * Browsers: all
  * Depends: output (>= 0.1.4), popup (>= 0.1.0.1)
  * Copyright: Copyright 2013-2014 (c) Made to Order Software Corporation  All rights reverved.
@@ -4843,12 +4843,14 @@ snapwebsites.EditorWidgetTypeCheckmark.prototype.initializeWidget = function(wid
     w.click(function(e)
         {
             // TODO: add support for clicks on links part of the label
+            if(!(jQuery(e.target).is("a")))
+            {
+                // the default may do weird stuff, so avoid it!
+                e.preventDefault();
+                e.stopPropagation();
 
-            // the default may do weird stuff, so avoid it!
-            e.preventDefault();
-            e.stopPropagation();
-
-            toggle();
+                toggle();
+            }
         });
 };
 

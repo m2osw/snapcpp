@@ -1,6 +1,6 @@
 /** @preserve
  * Name: output
- * Version: 0.1.5.2
+ * Version: 0.1.5.3
  * Browsers: all
  * Copyright: Copyright 2014 (c) Made to Order Software Corporation  All rights reverved.
  * Depends: jquery-extensions (1.0.1)
@@ -563,7 +563,10 @@ snapwebsites.Output.prototype.handleMessages_ = function()
         .delay(250)
         .fadeIn(300)
         .click(function(){
-            jQuery(this).fadeOut(300);
+            if(!(jQuery(e.target).is("a")))
+            {
+                jQuery(this).fadeOut(300);
+            }
         });
 };
 
