@@ -2543,8 +2543,8 @@ void sendmail::on_generate_main_content(content::path_info_t& ipath, QDomElement
  */
 void sendmail::on_replace_token(content::path_info_t& ipath, QString const& plugin_owner, QDomDocument& xml, filter::filter::token_info_t& token)
 {
-    (void) ipath;
-    (void) plugin_owner;
+    static_cast<void>(ipath);
+    static_cast<void>(plugin_owner);
 
     if(!token.is_namespace("sendmail::"))
     {
