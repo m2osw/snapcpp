@@ -72,6 +72,13 @@ bool is_valid_ascii(char const *string)
  * Source: http://stackoverflow.com/questions/1031645/how-to-detect-utf-8-in-plain-c
  * Source: http://www.w3.org/International/questions/qa-forms-utf-8
  *
+ * \note
+ * The test ensures proper encoding of UTF-8 in the range 0 to
+ * 0x10FFFF and also that UTF-16 surrogate aren't used as characters
+ * (i.e. code points 0xD800 to 0xDFFF). No other code points are considered
+ * invalid (i.e. 0xFFFE is not a valid character, but this function does
+ * not return false when it finds such.)
+ *
  * The Perl expression:
  *
  * \code
