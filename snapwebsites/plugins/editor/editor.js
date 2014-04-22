@@ -2868,8 +2868,10 @@ snapwebsites.EditorForm.prototype.widgets_ = null;
 
 /** \brief A jQuery array of widgets found in this form.
  *
- * This parameter is the jQuery array of widgets defined in this
- * form.
+ * This parameter is the map of EditorWidget objects defined in this
+ * form. The key used to define these widget is the name of the widget
+ * (the parameter used as the name.) This is quite practical to retrieve
+ * widgets which name is known.
  *
  * \bug
  * At this time, dynamically adding or removing widgets is not supported.
@@ -3779,8 +3781,8 @@ snapwebsites.Editor.prototype.checkModified = function() // virtual
             this.toolbar_.checkPosition();
         }
 
-        // get the form in which this element is defined
-        // and call the wasModified() function on it
+        // got the form in which this element is defined,
+        // now call the wasModified() function on it
         if(active_form.wasModified(false))
         {
             active_form.changed();
