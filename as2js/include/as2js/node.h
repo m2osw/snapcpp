@@ -33,13 +33,13 @@ SOFTWARE.
 
 */
 
-//#include    "as2js/as2js.h"
-#include    "as2js/string.h"
+#include    "string.h"
+#include    "int64.h"
 
 #include    <controlled_vars/controlled_vars_limited_auto_init.h>
 
 #include    <memory>
-#include    <map>
+#include    <bitset>
 
 namespace as2js
 {
@@ -293,7 +293,7 @@ public:
         NODE_VAR_FLAG_ATTRS,                // currently being read for attributes (to avoid loops)
         NODE_VAR_FLAG_DEFINED,              // was already parsed
         NODE_VAR_FLAG_DEFINING,             // currently defining, can't read
-        NODE_VAR_FLAG_TOADD                 // to be added in the directive list
+        NODE_VAR_FLAG_TOADD,                // to be added in the directive list
 
     //
     // the following is a list of all the possible attributes in our system
@@ -346,39 +346,22 @@ public:
         NODE_FLAG_ATTRIBUTE_MAX
     };
 
-    typedef bitset<NODE_FLAG_ATTRIBUTE_MAX - 1>     flag_attribute_set_t;
+    typedef std::bitset<NODE_FLAG_ATTRIBUTE_MAX - 1>     flag_attribute_set_t;
 
-    class Data
-    {
-    public:
-        void                Clear()
-                            {
-                                f_type = NODE_UNKNOWN;
-                                f_int.set(0);
-                                f_float.set(0.0);
-                                f_str.clear();
-                                f_user_data.clear();
-                            }
-        void                Display(FILE *out) const;
-        char const *        GetTypeName() const;
+                            Node(node_t type);
+                            Node(Node const& source, Node const& parent);
+                            ~Node();
 
-        // basic conversions
-        bool                    ToBoolean();
-        bool                    ToNumber();
-        bool                    ToString();
+    char const *            GetTypeName() const;
 
-        // check flags
-        bool                    get_flag(flag_t f) const;
-        void                    set_flag(flag_t f, bool v);
+    // basic conversions
+    bool                    ToBoolean();
+    bool                    ToNumber();
+    bool                    ToString();
 
-    private:
-
-    };
-
-
-                        Node(node_t type /*, NodePtr *shell*/);
-                        Node(Node const& source, Node const& parent);
-                        ~Node();
+    // check flags
+    bool                    get_flag(flag_attribute_t f) const;
+    void                    set_flag(flag_attribute_t f, bool v);
 
     void                SetInputInfo(Input const *input);
     void                CopyInputInfo(Node const *input);
@@ -386,26 +369,9 @@ public:
     long                GetPageLine() const { return f_page_line; }
     long                GetParagraph() const { return f_paragraph; }
     long                GetLine() const { return f_line; }
-    String const&       GetFilename() const { return f_filename; }
+    std::string const&  GetFilename() const { return f_filename; }
 
-    Data const&         GetData() const
-                        {
-                            return f_data;
-                        }
-    void            SetData(const Data& data)
-                {
-                    f_data = data;
-                }
-
-    unsigned long        GetAttrs() const
-                {
-                    return f_attrs;
-                }
-    void            SetAttrs(unsigned long attrs)
-                {
-                    f_attrs = attrs;
-                }
-    bool            HasSideEffects() const;
+    bool                    has_side_effects() const;
 
     bool            IsLocked() const
                 {
@@ -430,28 +396,23 @@ public:
                 }
     void            ReplaceWith(Node *node);
     void            DeleteChild(int index);
-    void            AddChild(NodePtr& child);
-    void            InsertChild(int index, NodePtr& child);
+    void            append_child(node_pointer_t& child);
+    void            insert_child(int index, node_pointer_t& child);
     void            SetChild(int index, NodePtr& child);
     int            GetChildCount() const
                 {
-                    return f_count;
+                    return f_children.size();
                 }
-    NodePtr&        GetChild(int index) const;
-    void            SetParent(Node *parent)
-                {
-                    if(parent != 0) {
-                        AS_ASSERT(!f_parent.HasNode());
-                        f_parent.SetNode(parent);
-                    }
-                    else {
-                        f_parent.ClearNode();
-                    }
-                }
-    NodePtr&        GetParent(void)
-                {
-                    return f_parent;
-                }
+    node_pointer_t      get_child(int index) const;
+    void                set_parent(node_pointer_t& parent)
+                        {
+                            f_parent.reset(parent);
+                        }
+    node_pointer_t&     get_parent()
+                        {
+                            return f_parent;
+                        }
+
     void            SetLink(NodePtr::link_t index, NodePtr& link)
                 {
                     AS_ASSERT(index < NodePtr::LINK_max);
@@ -493,7 +454,8 @@ private:
     void                            init();
 
     // verify that the specified flag correspond to the node type
-    void                            verify_flag(flag_t f);
+    void                            verify_flag(flag_t f) const;
+    void                            modifying() const;
 
     controlled_vars::zint32_t       f_lock;
 
@@ -501,7 +463,7 @@ private:
     controlled_vars::zint32_t       f_page_line;
     controlled_vars::zint32_t       f_paragraph;
     controlled_vars::zint32_t       f_line;
-    String                          f_filename;
+    std::string                     f_filename;
 
     //Data            f_data;
     safe_node_t                     f_type;
@@ -511,11 +473,9 @@ private:
     String                          f_str;
     std::vector<int>                f_user_data;  // TBD -- necessary?!
 
-    NodePtr                         f_parent;
+    node_pointer_t                  f_parent;
     int                             f_offset;        // offset (index) in parent array of children
-    int                             f_count;
-    int                             f_max;
-    NodePtr *                       f_children;
+    std::vector<node_pointer_t>     f_children;
     NodePtr                         f_link[NodePtr::LINK_max];
     int                             f_var_count;
     int                             f_var_max;

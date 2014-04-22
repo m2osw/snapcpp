@@ -1,6 +1,6 @@
 #ifndef AS2JS_STRING_H
 #define AS2JS_STRING_H
-/* string.h -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2009 */
+/* string.h -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
 
 /*
 

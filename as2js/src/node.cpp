@@ -177,7 +177,8 @@ Node::Node(const Node& source, const Node& parent)
     f_filename = source.f_filename;
     f_data = source.f_data;
     f_parent.SetNode(&const_cast<Node&>(parent));
-    for(int idx = 0; idx < NodePtr::LINK_max; ++idx) {
+    for(int idx = 0; idx < NodePtr::LINK_max; ++idx)
+    {
         f_link[idx] = source.f_link[idx];
     }
 
@@ -187,7 +188,6 @@ Node::Node(const Node& source, const Node& parent)
 
 Node::~Node()
 {
-    delete [] f_children;
     delete [] f_variables;
     delete [] f_labels;
 }
@@ -195,7 +195,7 @@ Node::~Node()
 
 void Node::init()
 {
-    f_lock = 0;
+    //f_lock = 0; -- auto-init
     f_page = 0;
     f_page_line = 0;
     f_paragraph = 0;
@@ -205,9 +205,7 @@ void Node::init()
     f_attrs = 0;
     //f_parent -- auto-init
     f_offset = 0x7FFFFFFF;
-    f_count = 0;
-    f_max = 0;
-    f_children = 0;
+    //f_children -- auto-init
     //f_link[] -- auto-init
     f_var_count = 0;
     f_var_max = 0;
@@ -303,27 +301,27 @@ void Node::SetInputInfo(Input const *input)
 
     // copy the input info so we can generate an error on
     // any node at a later time (especially in the compiler)
-    f_page = input->Page();
+    f_page      = input->Page();
     f_page_line = input->PageLine();
     f_paragraph = input->Paragraph();
-    f_line = input->Line();
-    f_filename = input->GetFilename();
+    f_line      = input->Line();
+    f_filename  = input->GetFilename();
 }
 
 
 void Node::CopyInputInfo(const Node *node)
 {
-    f_page        = node->f_page;
-    f_page_line    = node->f_page_line;
-    f_paragraph    = node->f_paragraph;
-    f_line        = node->f_line;
-    f_filename    = node->f_filename;
+    f_page      = node->f_page;
+    f_page_line = node->f_page_line;
+    f_paragraph = node->f_paragraph;
+    f_line      = node->f_line;
+    f_filename  = node->f_filename;
 }
 
 
 void Node::ReplaceWith(Node *node)
 {
-    AS_ASSERT(f_lock == 0);        // this should be okay?
+    modifying();
     AS_ASSERT(!node->f_parent.HasNode());
 
     node->f_parent = f_parent;
@@ -333,84 +331,48 @@ void Node::ReplaceWith(Node *node)
 
 void Node::DeleteChild(int index)
 {
-    AS_ASSERT(f_lock == 0);
-    AS_ASSERT(index < f_count);
+    modifying();
 
-    f_children[index].SetParent(0);
+    // disconnect the parent (XXX necessary?)
+    f_children[index].set_parent(0);
 
-    --f_count;
-    while(index < f_count) {
-        f_children[index] = f_children[index + 1];
-        index++;
-    }
-    f_children[f_count].ClearNode();
+    f_children.erase(f_children.begin() + index);
 }
 
 
-void Node::AddChild(NodePtr& child)
+void Node::append_child(node_pointer_t& child)
 {
-    AS_ASSERT(f_lock == 0);
+    modifying();
 
-    if(f_max == 0) {
-        // for most parents, 3 children is more than enough
-        // (left hand, right hand and at times center)
-        f_max = 3;
-        f_children = new NodePtr[3];
-    }
-    if(f_count >= f_max) {
-        // for lists, the number of children can vary widely
-        f_max += 10;
-        NodePtr *extra = new NodePtr[f_max];
-        for(int i = 0; i < f_count; ++i) {
-            extra[i] = f_children[i];
-        }
-        delete [] f_children;
-        f_children = extra;
-    }
-
-    f_children[f_count] = child;
-    child.SetParent(this);
-    ++f_count;
+    f_children.push_back(child);
+    child.set_parent(this);
 }
 
 
-void Node::InsertChild(int index, NodePtr& child)
+void Node::insert_child(int index, node_pointer_t& child)
 {
-    AS_ASSERT(f_lock == 0);
-    AS_ASSERT(index <= f_count);
+    modifying();
 
-    if(f_max == 0) {
-        // for most parents, 3 children is more than enough
-        // (left hand, right hand and at times center)
-        f_max = 3;
-        f_children = new NodePtr[3];
-    }
-    if(f_count >= f_max) {
-        // for lists, the number of children can vary widely
-        f_max += 10;
-        NodePtr *extra = new NodePtr[f_max];
-        for(int i = 0; i < f_count; ++i) {
-            extra[i] = f_children[i];
-        }
-        delete [] f_children;
-        f_children = extra;
-    }
-
-    for(int i = f_count; i > index; --i) {
-        f_children[i] = f_children[i - 1];
-    }
-
-    f_children[index] = child;
-    child.SetParent(this);
-    ++f_count;
+    f_children.insert(f_children.begin() + index, child);
+    child.set_parent(this);
 }
 
 
-void Node::SetChild(int index, NodePtr& child)
+void Node::modifying() const
 {
-    AS_ASSERT(f_lock == 0);        // this isn't so bad...
-    AS_ASSERT(index < f_max);
-    if(f_children[index].HasNode()) {
+    if(f_lock != 0)
+    {
+        throw locked_node("trying to modify a locked node.");
+    }
+}
+
+
+void Node::set_child(int index, node_pointer_t& child)
+{
+    modifying();
+
+    if(f_children[index].HasNode())
+    {
         f_children[index].SetParent(0);
     }
     f_children[index] = child;
@@ -418,14 +380,13 @@ void Node::SetChild(int index, NodePtr& child)
 }
 
 
-NodePtr& Node::GetChild(int index) const
+NodePtr& Node::get_child(int index) const
 {
-    AS_ASSERT(index < f_max);
     return f_children[index];
 }
 
 
-bool Node::HasSideEffects(void) const
+bool Node::has_side_Effects() const
 {
     //
     // Well... I'm wondering if we can really
@@ -490,7 +451,7 @@ bool Node::HasSideEffects(void) const
     //case NODE_IDENTIFIER:
     //
     // TODO: Test whether this is a reference to a getter
-    //     function (needs to be compiled already...)
+    //       function (needs to be compiled already...)
     //    
     //    break;
 
@@ -499,9 +460,10 @@ bool Node::HasSideEffects(void) const
 
     }
 
-    for(int idx = 0; idx < f_count; ++idx) {
-        if(f_children[idx].HasNode()
-        && f_children[idx].HasSideEffects()) {
+    for(size_t idx = 0; idx < f_children.size(); ++idx)
+    {
+        if(f_children[idx] && f_children[idx].has_side_effects())
+        {
             return true;
         }
     }
@@ -517,11 +479,13 @@ void Node::AddVariable(NodePtr& variable)
     Data& data = variable.GetData();
     AS_ASSERT(data.f_type == NODE_VARIABLE);
 #endif
-    if(f_var_max == 0) {
+    if(f_var_max == 0)
+    {
         f_var_max = 10;
         f_variables = new NodePtr[10];
     }
-    if(f_var_count >= f_var_max) {
+    if(f_var_count >= f_var_max)
+    {
         f_var_max += 10;
         NodePtr *extra = new NodePtr[f_var_max];
         for(int i = 0; i < f_var_count; ++i) {
@@ -736,7 +700,7 @@ void Node::Display(FILE *out, int indent, NodePtr *parent, char c) const
     fprintf(out, "\n");
     NodePtr me;
     me.SetNode(this);
-    for(int idx = 0; idx < f_count; ++idx)
+    for(size_t idx = 0; idx < f_children.size(); ++idx)
     {
         f_children[idx].Display(out, indent + 1, &me, '-');
     }

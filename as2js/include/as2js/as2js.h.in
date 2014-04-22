@@ -142,38 +142,6 @@ enum err_code_t
 
 
 
-class Int64
-{
-public:
-                    Int64()
-                    {
-                        f_int = 0;
-                    }
-                    Int64(const Int64& src_int)
-                    {
-                        f_int = src_int.f_int;
-                    }
-
-    Int64&          operator = (Int64 const& src_int)
-                    {
-                        f_int = src_int.f_int;
-                        return *this;
-                    }
-
-    int64_t         Get() const
-                    {
-                        return f_int;
-                    }
-    void            Set(int64_t const new_int)
-                    {
-                        f_int = new_int;
-                    }
-
-private:
-    int64_t        f_int;
-};
-
-
 class Float64
 {
 public:
@@ -215,7 +183,8 @@ class Input;
 class NodePtr
 {
 public:
-    enum link_t {
+    enum link_t
+    {
         LINK_INSTANCE = 0,
         LINK_TYPE,
         LINK_ATTRIBUTES,    // this is the list of identifiers

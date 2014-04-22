@@ -1,10 +1,10 @@
-#ifndef AS2JS_EXCEPTIONS_H
-#define AS2JS_EXCEPTIONS_H
-/* as.h -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2011 */
+#ifndef AS2JS_INT64_H
+#define AS2JS_INT64_H
+/* int64.h -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
 
 /*
 
-Copyright (c) 2005-2011 Made to Order Software Corp.
+Copyright (c) 2005-2014 Made to Order Software Corp.
 
 Permission is hereby granted, free of charge, to any
 person obtaining a copy of this software and
@@ -33,31 +33,49 @@ SOFTWARE.
 
 */
 
-#include    <stdexcept>
-
+#include    <controlled_vars/controlled_vars_auto_init.h>
 
 namespace as2js
 {
 
-class internal_error : public std::runtime_error
+class Int64
 {
 public:
-	internal_error(char const *msg)        : runtime_error(msg) {}
-	internal_error(std::string const& msg) : runtime_error(msg) {}
-};
+                    Int64(int64_t const rhs)
+                    {
+                        f_int = rhs;
+                    }
 
+                    Int64(const Int64& rhs)
+                    {
+                        f_int = rhs.f_int;
+                    }
 
-class locked_node : public std::runtime_error
-{
-public:
-	locked_node(char const *msg)        : runtime_error(msg) {}
-	locked_node(std::string const& msg) : runtime_error(msg) {}
+    Int64&          operator = (Int64 const& rhs)
+                    {
+                        f_int = rhs.f_int;
+                        return *this;
+                    }
+
+    int64_t         get() const
+                    {
+                        return f_int;
+                    }
+
+    void            set(int64_t const new_int)
+                    {
+                        f_int = new_int;
+                    }
+
+private:
+    controlled_vars::zint64_t        f_int;
 };
 
 
 }
 // namespace as2js
+
 #endif
-// #ifndef AS2JS_AS_H
+// #ifndef AS2JS_INT64_H
 
 // vim: ts=4 sw=4 et
