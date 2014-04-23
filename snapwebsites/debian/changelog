@@ -1,8 +1,9 @@
-snapwebsites (0.1.46~saucyubuntu1) UNRELEASED; urgency=low
+snapwebsites (0.1.47~saucy) saucy; urgency=high
 
-  * Added a phone number to URI function.
+  [ Alexis Wilke ]
+  * c0d53b8 Added a phone number to URI function.
 
- -- Alexis Wilke <alexis@m2osw.com>  Wed, 23 Apr 2014 13:00:38 -0700
+ -- R. Douglas Barbieri <doug@dooglio.net>  Wed, 23 Apr 2014 13:00:38 -0700
 
 snapwebsites (0.1.46~saucy) saucy; urgency=high
 
