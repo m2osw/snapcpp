@@ -71,6 +71,8 @@ public:
     virtual void        on_generate_main_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate);
     void                on_generate_page_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate);
 
+    static QString      phone_to_uri(QString const phone);
+
     // dynamic javascript property support
     virtual int         js_property_count() const;
     virtual QVariant    js_property_get(QString const& name) const;

@@ -517,6 +517,45 @@ void output::on_generate_page_content(content::path_info_t& ipath, QDomElement& 
 }
 
 
+/** \brief This function is based on RFC-3966.
+ *
+ * This function formats a phone number so it can be used as a URI in
+ * an anchor (i.e. the href attribute.) The function removes all the
+ * characters other than the digits (0-9) and letters (a-z).
+ *
+ * The letters are all forced to lowercase.
+ *
+ * The string is returned with the "tel:" introducer. Note that the
+ * input may start with "tel:" or "callto:". The "callto:" is changed
+ * to "tel:" which is the standard ("callto:" is used by Skpye only.)
+ *
+ * Source: http://tools.ietf.org/html/rfc3966#page-6
+ *
+ * \param[in] phone  The phone number to transform.
+ *
+ * \return The phone number to put in the href of an anchor.
+ */
+QString output::phone_to_uri(QString const phone)
+{
+    QString number(phone.toLower());
+
+    if(number.startsWith("tel:"))
+    {
+        number.remove(0, 4);
+    }
+    else if(number.startsWith("callto:"))
+    {
+        number.remove(0, 7);
+    }
+
+    // remove any character that does not represent a phone number
+    number.replace(QRegExp("[^0-9a-z]+"), "");
+
+    return QString("tel:%1").arg(number);
+}
+
+
+
 // javascript can depend on content, not the other way around
 // so this plugin has to define the default content support
 

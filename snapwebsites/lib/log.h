@@ -43,7 +43,7 @@ enum log_security_t
 class logger
 {
 public:
-    logger(log_level_t log_level, char const *file = NULL, char const *func = NULL, int line = -1);
+    logger(log_level_t log_level, char const *file = nullptr, char const *func = nullptr, int line = -1);
     ~logger();
 
     logger& operator () ();
@@ -95,12 +95,12 @@ logger& operator << ( logger& l, const T& msg )
     return l;
 }
 
-logger fatal  (char const *file = NULL, char const *func = NULL, int line = -1);
-logger error  (char const *file = NULL, char const *func = NULL, int line = -1);
-logger warning(char const *file = NULL, char const *func = NULL, int line = -1);
-logger info   (char const *file = NULL, char const *func = NULL, int line = -1);
-logger debug  (char const *file = NULL, char const *func = NULL, int line = -1);
-logger trace  (char const *file = NULL, char const *func = NULL, int line = -1);
+logger fatal  (char const *file = nullptr, char const *func = nullptr, int line = -1);
+logger error  (char const *file = nullptr, char const *func = nullptr, int line = -1);
+logger warning(char const *file = nullptr, char const *func = nullptr, int line = -1);
+logger info   (char const *file = nullptr, char const *func = nullptr, int line = -1);
+logger debug  (char const *file = nullptr, char const *func = nullptr, int line = -1);
+logger trace  (char const *file = nullptr, char const *func = nullptr, int line = -1);
 
 #define    SNAP_LOG_FATAL       snap::logging::fatal  (__FILE__, __func__, __LINE__)
 #define    SNAP_LOG_ERROR       snap::logging::error  (__FILE__, __func__, __LINE__)
