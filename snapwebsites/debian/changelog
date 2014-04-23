@@ -1,8 +1,11 @@
-snapwebsites (0.1.45~saucyubuntu1) UNRELEASED; urgency=low
+snapwebsites (0.1.46~saucy) saucy; urgency=high
 
-  * Fixed the checkmark links, they can now react as expected.
+  [ Alexis Wilke ]
+  * 5d60abf Fixed the output change, the event was not passed in.
+  * 60a3528 Fixed the checkmark links, they can now react as expected.
+  * 70356ce Offer a way for the user agents of session to be ignored.
 
- -- Alexis Wilke <alexis@m2osw.com>  Sat, 19 Apr 2014 16:44:33 -0700
+ -- R. Douglas Barbieri <doug@dooglio.net>  Sat, 19 Apr 2014 16:44:33 -0700
 
 snapwebsites (0.1.45~saucy) saucy; urgency=high
 
