@@ -265,6 +265,14 @@ QDomDocument form::form_to_html(sessions::sessions::session_info& info, QDomDocu
         f_form_initialized = true;
     }
 
+    //content::permission_flag can_edit;
+    //path::path::instance()->access_allowed(
+    //        users::users::instance()->get_user_path(),
+    //        ipath,
+    //        "edit",
+    //        permissions::get_name(permissions::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_REGISTERED),
+    //        result);
+
     // IMPORTANT NOTE:
     // Forms are nearly NOT modified, although we have to allow plugins to
     // setup the form "default" values (i.e. if you saved a text entry
@@ -293,7 +301,12 @@ QDomDocument form::form_to_html(sessions::sessions::session_info& info, QDomDocu
     q.bindVariable("action", QVariant(info.get_page_path()));
     q.bindVariable("unique_id", QVariant(QString("%1").arg(g_unique_id)));
     q.bindVariable("tabindex_base", QVariant(current_tab_id()));
+    //q.bindVariable("can_edit", QVariant(QString(can_edit.allowed() ? "yes" : "")));
     q.setQuery(f_form_elements_string);
+    if(!q.isValid())
+    {
+        throw form_exception_invalid_xslt_data(QString("invalid XSLT query for FORM \"%1\" detected by Qt").arg(":/xsl/form/core-form.xsl"));
+    }
     QDomReceiver receiver(q.namePool(), doc_output);
     q.evaluateTo(&receiver);
 

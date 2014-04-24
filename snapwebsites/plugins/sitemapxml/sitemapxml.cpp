@@ -556,6 +556,10 @@ bool sitemapxml::on_path_execute(content::path_info_t& ipath)
             return false;
         }
         q.setQuery(&xsl);
+        if(!q.isValid())
+        {
+            throw sitemapxml_exception_invalid_xslt_data(QString("invalid XSLT query for SITEMAP.XML \"%1\" detected by Qt (text format)").arg(ipath.get_key()));
+        }
         QString out;
         q.evaluateTo(&out);
         f_snap->output(out);

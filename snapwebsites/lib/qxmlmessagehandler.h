@@ -28,12 +28,15 @@ public:
 
     void                set_xsl(QString const& xsl) { f_xsl = xsl; }
     void                set_doc(QString const& doc) { f_doc = doc; }
+    bool                had_msg() const { return f_had_msg; }
 
 protected:
     virtual void        handleMessage(QtMsgType type, QString const & description, QUrl const & identifier, QSourceLocation const & sourceLocation);
 
+private:
     QString             f_xsl;
     QString             f_doc;
+    bool                f_had_msg;
 };
 
 } // namespace snap

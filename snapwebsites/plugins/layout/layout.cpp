@@ -731,6 +731,10 @@ out.write(doc.toString().toUtf8());
     q.setFocus(doc_str);
 #endif
     q.setQuery(xsl);
+    if(!q.isValid())
+    {
+        throw layout_exception_invalid_xslt_data(QString("invalid XSLT query for BODY \"%1\" detected by Qt").arg(ipath.get_key()));
+    }
 #if 0
     QXmlResultItems results;
     q.evaluateTo(&results);
@@ -1032,6 +1036,10 @@ QString layout::apply_theme(QDomDocument doc, QString const& xsl, QString const&
     q.setMessageHandler(&msg);
     q.setFocus(doc_str);
     q.setQuery(xsl);
+    if(!q.isValid())
+    {
+        throw layout_exception_invalid_xslt_data(QString("invalid XSLT query for THEME \"%1\" detected by Qt").arg(theme_name));
+    }
 
     QBuffer output;
     output.open(QBuffer::ReadWrite);
@@ -1422,36 +1430,36 @@ bool layout::generate_header_content_impl(content::path_info_t& ipath, QDomEleme
         (content::field_search::COMMAND_DEFAULT_VALUE, base)
         (content::field_search::COMMAND_SAVE, "desc[type=base_uri]/data")
 
-        // snap/head/metadata/desc[type=page_uri]/data
+        // snap/head/metadata/desc[@type=page_uri]/data
         (content::field_search::COMMAND_DEFAULT_VALUE, ipath.get_key())
         (content::field_search::COMMAND_SAVE, "desc[type=page_uri]/data")
 
-        // snap/head/metadata/desc[type=template_uri]/data
+        // snap/head/metadata/desc[@type=template_uri]/data
         (content::field_search::COMMAND_DEFAULT_VALUE_OR_NULL, ctemplate.isEmpty() ? "" : f_snap->get_site_key_with_slash() + ctemplate)
         (content::field_search::COMMAND_SAVE, "desc[type=template_uri]/data")
 
-        // snap/head/metadata/desc[type=name]/data
+        // snap/head/metadata/desc[@type=name]/data
         (content::field_search::COMMAND_CHILD_ELEMENT, "desc")
         (content::field_search::COMMAND_ELEMENT_ATTR, "type=name")
         (content::field_search::COMMAND_DEFAULT_VALUE, f_snap->get_site_parameter(snap::get_name(SNAP_NAME_CORE_SITE_NAME)))
         (content::field_search::COMMAND_SAVE, "data")
-        // snap/head/metadata/desc[type=name]/short-data
+        // snap/head/metadata/desc[@type=name]/short-data
         (content::field_search::COMMAND_DEFAULT_VALUE_OR_NULL, f_snap->get_site_parameter(snap::get_name(SNAP_NAME_CORE_SITE_SHORT_NAME)))
         (content::field_search::COMMAND_SAVE, "short-data")
-        // snap/head/metadata/desc[type=name]/long-data
+        // snap/head/metadata/desc[@type=name]/long-data
         (content::field_search::COMMAND_DEFAULT_VALUE_OR_NULL, f_snap->get_site_parameter(snap::get_name(SNAP_NAME_CORE_SITE_LONG_NAME)))
         (content::field_search::COMMAND_SAVE, "long-data")
         (content::field_search::COMMAND_PARENT_ELEMENT)
 
-        // snap/head/metadata/desc[type=email]/data
+        // snap/head/metadata/desc[@type=email]/data
         (content::field_search::COMMAND_DEFAULT_VALUE_OR_NULL, f_snap->get_site_parameter(snap::get_name(SNAP_NAME_CORE_ADMINISTRATOR_EMAIL)))
         (content::field_search::COMMAND_SAVE, "desc[type=email]/data")
 
-        // snap/head/metadata/desc[type=remote_ip]/data
+        // snap/head/metadata/desc[@type=remote_ip]/data
         (content::field_search::COMMAND_DEFAULT_VALUE, f_snap->snapenv("REMOTE_ADDR"))
         (content::field_search::COMMAND_SAVE, "desc[type=remote_ip]/data")
 
-        // snap/head/metadata/desc[type=action]/data
+        // snap/head/metadata/desc[@type=action]/data
         (content::field_search::COMMAND_DEFAULT_VALUE, action)
         (content::field_search::COMMAND_SAVE, "desc[type=action]/data")
 

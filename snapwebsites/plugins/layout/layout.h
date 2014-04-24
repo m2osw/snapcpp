@@ -39,6 +39,22 @@ enum name_t
 char const *get_name(name_t name) __attribute__ ((const));
 
 
+class layout_exception : public snap_exception
+{
+public:
+    layout_exception(char const *       what_msg) : snap_exception("layout", what_msg) {}
+    layout_exception(std::string const& what_msg) : snap_exception("layout", what_msg) {}
+    layout_exception(QString const&     what_msg) : snap_exception("layout", what_msg) {}
+};
+
+class layout_exception_invalid_xslt_data : public layout_exception
+{
+public:
+    layout_exception_invalid_xslt_data(char const *       what_msg) : layout_exception(what_msg) {}
+    layout_exception_invalid_xslt_data(std::string const& what_msg) : layout_exception(what_msg) {}
+    layout_exception_invalid_xslt_data(QString const&     what_msg) : layout_exception(what_msg) {}
+};
+
 
 class layout_content
 {

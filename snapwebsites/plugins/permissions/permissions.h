@@ -119,6 +119,7 @@ public:
     virtual int64_t         do_update(int64_t last_updated);
 
     void                    on_bootstrap(snap_child *snap);
+    void                    on_generate_header_content(content::path_info_t& path, QDomElement& hader, QDomElement& metadata, QString const& ctemplate);
     virtual void            on_generate_main_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate);
     void                    on_validate_action(content::path_info_t& path, QString const& action, permission_error_callback& err_callback);
     void                    on_access_allowed(QString const& user_path, content::path_info_t& ipath, QString const& action, QString const& login_status, content::permission_flag& result);

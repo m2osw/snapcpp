@@ -52,6 +52,15 @@ public:
     form_exception_invalid_form_xml(QString const&     what_msg) : form_exception(what_msg.toStdString()) {}
 };
 
+class form_exception_invalid_xslt_data : public form_exception
+{
+public:
+    form_exception_invalid_xslt_data(char const *       what_msg) : form_exception(what_msg) {}
+    form_exception_invalid_xslt_data(std::string const& what_msg) : form_exception(what_msg) {}
+    form_exception_invalid_xslt_data(QString const&     what_msg) : form_exception(what_msg) {}
+};
+
+
 
 class form_post
 {

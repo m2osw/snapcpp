@@ -2729,6 +2729,16 @@ void editor::on_generate_page_content(content::path_info_t& ipath, QDomElement& 
         throw snap_logic_exception(QString("somehow the memory XML document for the editor XSTL parser is empty, ipath key is \"%1\"").arg(ipath.get_key()));
     }
 
+    // check whether the user has edit rights
+    content::permission_flag can_edit;
+    path::path::instance()->access_allowed(
+            users::users::instance()->get_user_path(),
+            ipath,
+            "edit",
+            permissions::get_name(permissions::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_REGISTERED),
+            can_edit);
+    QString can_edit_page(can_edit.allowed() ? "yes" : "");
+
     QXmlQuery q(QXmlQuery::XSLT20);
     QMessageHandler msg;
     msg.set_xsl(editor_xsl);
@@ -2737,11 +2747,16 @@ void editor::on_generate_page_content(content::path_info_t& ipath, QDomElement& 
     q.setFocus(editor_xml);
 
     // set action variable to the current action
+    q.bindVariable("editor_session", QVariant(session_identification));
     q.bindVariable("action", QVariant(action));
     q.bindVariable("tabindex_base", QVariant(form::form::current_tab_id()));
-    q.bindVariable("editor_session", QVariant(session_identification));
+    q.bindVariable("can_edit", QVariant(can_edit_page));
 
     q.setQuery(editor_xsl);
+    if(!q.isValid())
+    {
+        throw editor_exception_invalid_xslt_data(QString("invalid XSLT query for EDITOR \"%1\" detected by Qt").arg(ipath.get_key()));
+    }
     QDomDocument doc_output("widgets");
     QDomReceiver receiver(q.namePool(), doc_output);
     q.evaluateTo(&receiver);

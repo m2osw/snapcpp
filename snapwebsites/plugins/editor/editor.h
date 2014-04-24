@@ -55,6 +55,15 @@ public:
     editor_exception_invalid_editor_form_xml(QString const&     what_msg) : editor_exception(what_msg) {}
 };
 
+class editor_exception_invalid_xslt_data : public editor_exception
+{
+public:
+    editor_exception_invalid_xslt_data(char const *       what_msg) : editor_exception(what_msg) {}
+    editor_exception_invalid_xslt_data(std::string const& what_msg) : editor_exception(what_msg) {}
+    editor_exception_invalid_xslt_data(QString const&     what_msg) : editor_exception(what_msg) {}
+};
+
+
 
 
 enum name_t

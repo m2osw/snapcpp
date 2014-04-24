@@ -33,6 +33,7 @@ namespace snap
 
 QMessageHandler::QMessageHandler(QObject *parent_object)
     : QAbstractMessageHandler(parent_object)
+    , f_had_msg(false)
 {
 }
 
@@ -56,6 +57,11 @@ void QMessageHandler::handleMessage(QtMsgType type, QString const & description,
     || !description_string.startsWith("The variable")
     || !description_string.endsWith("is unused"))
     {
+        // TODO: determine whether QtDebugMsg should not turn this flag
+        //       on; although I'm not too sure how you get debug messages
+        //       in the first place...
+        f_had_msg = true;
+
         char const *type_msg(nullptr);
         logging::log_level_t level(logging::LOG_LEVEL_OFF);
         switch(type)

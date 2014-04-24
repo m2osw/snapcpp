@@ -715,6 +715,7 @@ void permissions::on_bootstrap(snap_child *snap)
     SNAP_LISTEN(permissions, "path", path::path, validate_action, _1, _2, _3);
     SNAP_LISTEN(permissions, "path", path::path, access_allowed, _1, _2, _3, _4, _5);
     SNAP_LISTEN(permissions, "users", users::users, user_verified, _1, _2);
+    SNAP_LISTEN(permissions, "layout", layout::layout, generate_header_content, _1, _2, _3, _4);
 }
 
 
@@ -1823,6 +1824,33 @@ void permissions::on_add_snap_expr_functions(snap_expr::functions_t& functions)
     functions.add_functions(details::permissions_functions);
 }
 
+
+void permissions::on_generate_header_content(content::path_info_t& ipath, QDomElement& header, QDomElement& metadata, QString const& ctemplate)
+{
+    static_cast<void>(header);
+    static_cast<void>(ctemplate);
+
+    // check whether the user has edit rights
+    content::permission_flag can_edit;
+    path::path::instance()->access_allowed(
+            users::users::instance()->get_user_path(),
+            ipath,
+            "edit",
+            get_name(SNAP_NAME_PERMISSIONS_LOGIN_STATUS_REGISTERED),
+            can_edit);
+    QString can_edit_page(can_edit.allowed() ? "yes" : "");
+
+    FIELD_SEARCH
+        (content::field_search::COMMAND_ELEMENT, metadata)
+        (content::field_search::COMMAND_MODE, content::field_search::SEARCH_MODE_EACH)
+
+        // snap/head/metadata/desc[@type=can_edit]/data
+        (content::field_search::COMMAND_DEFAULT_VALUE, can_edit.allowed() ? "yes" : "")
+        (content::field_search::COMMAND_SAVE, "desc[type=can_edit]/data")
+
+        // generate!
+        ;
+}
 
 
 SNAP_PLUGIN_END()

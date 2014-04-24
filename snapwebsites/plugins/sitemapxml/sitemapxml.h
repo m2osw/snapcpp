@@ -49,6 +49,15 @@ public:
     sitemapxml_exception_missing_table(const QString& what_msg) : sitemapxml_exception(what_msg) {}
 };
 
+class sitemapxml_exception_invalid_xslt_data : public sitemapxml_exception
+{
+public:
+    sitemapxml_exception_invalid_xslt_data(char const *       what_msg) : sitemapxml_exception(what_msg) {}
+    sitemapxml_exception_invalid_xslt_data(std::string const& what_msg) : sitemapxml_exception(what_msg) {}
+    sitemapxml_exception_invalid_xslt_data(QString const&     what_msg) : sitemapxml_exception(what_msg) {}
+};
+
+
 
 
 class sitemapxml : public plugins::plugin, public path::path_execute
