@@ -63,7 +63,7 @@ class Message
 {
 public:
                         Message(message_level_t message_level, char const *file = nullptr, char const *func = nullptr, int line = -1);
-                        Message(Message const& rhs);
+                        //Message(Message const& rhs);
                         ~Message();
 
     // internal types; you can add your own types with
@@ -91,6 +91,8 @@ public:
     Message&            operator << (bool const v);
 
     static void         set_message_callback(MessageCallback *callback);
+    static int          warning_count();
+    static int          error_count();
 
 private:
     message_level_t     f_message_level;
@@ -100,19 +102,7 @@ private:
     std::stringstream   f_message;
 };
 
-Message fatal  (char const *file = nullptr, char const *func = nullptr, int line = -1);
-Message error  (char const *file = nullptr, char const *func = nullptr, int line = -1);
-Message warning(char const *file = nullptr, char const *func = nullptr, int line = -1);
-Message info   (char const *file = nullptr, char const *func = nullptr, int line = -1);
-Message debug  (char const *file = nullptr, char const *func = nullptr, int line = -1);
-Message trace  (char const *file = nullptr, char const *func = nullptr, int line = -1);
 
-#define    AS2JS_MESSAGE_FATAL       as2js::fatal  (__FILE__, __func__, __LINE__)
-#define    AS2JS_MESSAGE_ERROR       as2js::error  (__FILE__, __func__, __LINE__)
-#define    AS2JS_MESSAGE_WARNING     as2js::warning(__FILE__, __func__, __LINE__)
-#define    AS2JS_MESSAGE_INFO        as2js::info   (__FILE__, __func__, __LINE__)
-#define    AS2JS_MESSAGE_DEBUG       as2js::debug  (__FILE__, __func__, __LINE__)
-#define    AS2JS_MESSAGE_TRACE       as2js::trace  (__FILE__, __func__, __LINE__)
 
 }
 // namespace as2js

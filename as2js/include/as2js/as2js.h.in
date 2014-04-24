@@ -1,10 +1,10 @@
 #ifndef AS2JS_AS_H
 #define AS2JS_AS_H
-/* as.h -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2011 */
+/* as.h -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
 
 /*
 
-Copyright (c) 2005-2011 Made to Order Software Corp.
+Copyright (c) 2005-2014 Made to Order Software Corp.
 
 Permission is hereby granted, free of charge, to any
 person obtaining a copy of this software and
@@ -142,36 +142,6 @@ enum err_code_t
 
 
 
-class Float64
-{
-public:
-                    Float64()
-                    {
-                        f_float = 0.0;
-                    }
-                    Float64(Float64 const& src_float)
-                    {
-                        f_float = src_float.f_float;
-                    }
-
-    Float64&        operator = (Float64 const& src_float)
-                    {
-                        f_float = src_float.f_float;
-                        return *this;
-                    }
-
-    double          Get() const
-                    {
-                        return f_float;
-                    }
-    void            Set(double const new_float)
-                    {
-                        f_float = new_float;
-                    }
-
-private:
-    double          f_float;
-};
 
 
 
@@ -361,150 +331,6 @@ private:
     mutable String        f_filename;    // IntGetFilename() must return a string...
 };
 
-
-
-// I/O interface that YOU have to derive from so the
-// parser can read the input data from somewhere
-// You need to implement the GetC() function. You can
-// also overload the Error() function so it prints
-// the errors in a console of your choice.
-// The GetFilename() is used by the default Error()
-// function. It is used to generate an error like gcc.
-// That function returns "asc" by default.
-//
-// Two examples are available below. One reads a USC-4
-// formatted file and the other reads a string.
-class Input : public ErrorStream
-{
-public:
-    typedef long        char_t;
-
-    static char_t const AS_EOF = -1;
-
-                        Input();
-    virtual             ~Input();
-
-    virtual char_t      GetC() = 0;
-
-    // return the size if known, -1 if unknown
-    virtual long        GetSize() const;
-
-    void                ResetCounters(long line = 1)
-                        {
-                            f_page = 1;
-                            f_page_line = 1;
-                            f_paragraph = 1;
-                            f_line = line;
-                        }
-
-    void                NewPage()
-                        {
-                            ++f_page;
-                            f_page_line = 1;
-                            f_paragraph = 1;
-                        }
-    void                NewParagraph()
-                        {
-                            ++f_paragraph;
-                        }
-    void                NewLine()
-                        {
-                            ++f_page_line;
-                            ++f_line;
-                        }
-
-    long                Page() const
-                        {
-                            return f_page;
-                        }
-    long                PageLine() const
-                        {
-                            return f_page_line;
-                        }
-    long                Paragraph() const
-                        {
-                            return f_paragraph;
-                        }
-    virtual long        Line() const
-                        {
-                            return f_line;
-                        }
-
-private:
-    long                f_page;
-    long                f_page_line;
-    long                f_paragraph;
-    long                f_line;
-};
-
-
-
-
-
-
-
-class FileInput : public Input
-{
-public:
-                FileInput(void);
-    virtual            ~FileInput();
-    virtual const char *    GetFilename(void) const;
-    bool            StandardInput(void);
-    bool            Open(const char *filename);
-    void            Close(void);
-    virtual long        GetC(void);
-    virtual long        GetSize(void) const;
-    void            SetOriginalFilename(const char *original_filename);
-
-protected:
-    char *            f_filename;
-    char *            f_original_filename;
-    FILE *            f_file;
-    long            f_size;
-};
-
-
-class FileUCS32Input : public FileInput
-{
-public:
-    virtual long        GetC(void);
-};
-
-
-
-class StringInput : public Input
-{
-public:
-                StringInput(const char *filename = 0);
-    virtual            ~StringInput();
-
-    void            Set(const long *str, long size, unsigned long line);
-    long            GetSize(void) const;
-    virtual long        GetC(void);
-
-    virtual const char *    GetFilename(void) const;
-
-private:
-    int            f_pos;
-    String            f_str;
-    const char *        f_filename;
-};
-
-
-
-// In order to support different types of file systems, the
-// compiler supports a file retriever. Any time a file is
-// opened, it calls the retriever (if defined) and uses
-// that file. If no retriever was defined, the default is
-// used: attempt to open the file with fopen() or an equivalent.
-// In particular, this is used to handle the internal ASC files.
-class InputRetriever
-{
-public:
-    virtual            ~InputRetriever() {}
-
-    virtual Input *        Retrieve(const char *filename) = 0;
-};
 
 
 

@@ -39,6 +39,8 @@ namespace as2js
 namespace
 {
     MessageCallback *   g_message_callback = nullptr;
+    int                 g_warning_count = 0;
+    int                 g_error_count = 0;
 }
 // no name namespace
 
@@ -69,19 +71,21 @@ Message::Message(message_level_t message_level, char const *file, char const *fu
 }
 
 
-/** \brief Copy a message in another.
- *
- * In some cases copy messages get from one Message object to another.
- */
-Message::Message(Message const& rhs)
-    : f_message_level(rhs.f_message_level)
-    , f_file(rhs.f_file)
-    , f_func(rhs.f_func)
-    , f_line(rhs.f_line)
-    //, f_message() -- auto-init
-{
-    f_message << rhs.f_message.str();
-}
+///* \brief Copy a message in another.
+// *
+// * In some cases copy messages get from one Message object to another.
+// *
+// * \param[in] rhs  The existing message to copy.
+// */
+//Message::Message(Message const& rhs)
+//    : f_message_level(rhs.f_message_level)
+//    , f_file(rhs.f_file)
+//    , f_func(rhs.f_func)
+//    , f_line(rhs.f_line)
+//    //, f_message() -- auto-init
+//{
+//    f_message << rhs.f_message.str();
+//}
 
 
 /** \brief Output the message created with the << operators.
@@ -99,7 +103,7 @@ Message::Message(Message const& rhs)
 Message::~Message()
 {
     // actually emit the message
-    if(g_message_callback && f_message_level != MESSAGE_LEVEL_OFF)
+    if(g_message_callback && f_message_level != MESSAGE_LEVEL_OFF && f_message.rdbuf()->in_avail() != 0)
     {
         if(f_file == nullptr)
         {
@@ -110,10 +114,36 @@ Message::~Message()
             f_func = "unknown-func";
         }
 
+        switch(f_message_level)
+        {
+        case MESSAGE_LEVEL_FATAL:
+        case MESSAGE_LEVEL_ERROR:
+            ++g_error_count;
+            break;
+
+        case MESSAGE_LEVEL_WARNING:
+            ++g_warning_count;
+            break;
+
+        // others are not currently counted
+        default:
+            break;
+
+        }
+
         g_message_callback->output(f_message_level, f_file, f_func, f_line, f_message.str());
     }
 }
 
+
+/** \brief Append an char string.
+ *
+ * This function appends an char string to the message.
+ *
+ * \param[in] v  An char string.
+ *
+ * \return A reference to the message.
+ */
 Message& Message::operator << (char const *s)
 {
     // we assume UTF-8 because in our Snap environment most everything is
@@ -121,6 +151,15 @@ Message& Message::operator << (char const *s)
     return *this;
 }
 
+
+/** \brief Append an wchar_t string.
+ *
+ * This function appends an wchar_t string to the message.
+ *
+ * \param[in] v  An wchar_t string.
+ *
+ * \return A reference to the message.
+ */
 Message& Message::operator << (wchar_t const *s)
 {
     String str;
@@ -129,12 +168,30 @@ Message& Message::operator << (wchar_t const *s)
     return *this;
 }
 
+
+/** \brief Append an std::string value.
+ *
+ * This function appends an std::string value to the message.
+ *
+ * \param[in] v  An std::string value.
+ *
+ * \return A reference to the message.
+ */
 Message& Message::operator << (std::string const& s)
 {
     f_message << s.c_str();
     return *this;
 }
 
+
+/** \brief Append an std::wstring value.
+ *
+ * This function appends an std::wstring value to the message.
+ *
+ * \param[in] v  An std::wstring value.
+ *
+ * \return A reference to the message.
+ */
 Message& Message::operator << (std::wstring const& s)
 {
     String str;
@@ -143,90 +200,225 @@ Message& Message::operator << (std::wstring const& s)
     return *this;
 }
 
+
+/** \brief Append a String value.
+ *
+ * This function appends a String value to the message.
+ *
+ * \param[in] v  A String value.
+ *
+ * \return A reference to the message.
+ */
 Message& Message::operator << (String const& s)
 {
     f_message << s.to_utf8();
     return *this;
 }
 
+
+/** \brief Append a char value.
+ *
+ * This function appends a char value to the message.
+ *
+ * \param[in] v  A char value.
+ *
+ * \return A reference to the message.
+ */
 Message& Message::operator << (char const v)
 {
     f_message << static_cast<int>(v);
     return *this;
 }
 
+
+/** \brief Append a signed char value.
+ *
+ * This function appends a signed char value to the message.
+ *
+ * \param[in] v  A signed char value.
+ *
+ * \return A reference to the message.
+ */
 Message& Message::operator << (signed char const v)
 {
     f_message << static_cast<int>(v);
     return *this;
 }
 
+
+/** \brief Append a unsigned char value.
+ *
+ * This function appends a unsigned char value to the message.
+ *
+ * \param[in] v  A unsigned char value.
+ *
+ * \return A reference to the message.
+ */
 Message& Message::operator << (unsigned char const v)
 {
     f_message << static_cast<int>(v);
     return *this;
 }
 
+
+/** \brief Append a signed short value.
+ *
+ * This function appends a signed short value to the message.
+ *
+ * \param[in] v  A signed short value.
+ *
+ * \return A reference to the message.
+ */
 Message& Message::operator << (signed short const v)
 {
     f_message << static_cast<int>(v);
     return *this;
 }
 
+
+/** \brief Append a unsigned short value.
+ *
+ * This function appends a unsigned short value to the message.
+ *
+ * \param[in] v  A unsigned short value.
+ *
+ * \return A reference to the message.
+ */
 Message& Message::operator << (unsigned short const v)
 {
     f_message << static_cast<int>(v);
     return *this;
 }
 
+
+/** \brief Append a signed int value.
+ *
+ * This function appends a signed int value to the message.
+ *
+ * \param[in] v  A signed int value.
+ *
+ * \return A reference to the message.
+ */
 Message& Message::operator << (signed int const v)
 {
     f_message << v;
     return *this;
 }
 
+
+/** \brief Append a unsigned int value.
+ *
+ * This function appends a unsigned int value to the message.
+ *
+ * \param[in] v  A unsigned int value.
+ *
+ * \return A reference to the message.
+ */
 Message& Message::operator << (unsigned int const v)
 {
     f_message << v;
     return *this;
 }
 
+
+/** \brief Append a signed long value.
+ *
+ * This function appends a signed long value to the message.
+ *
+ * \param[in] v  A signed long value.
+ *
+ * \return A reference to the message.
+ */
 Message& Message::operator << (signed long const v)
 {
     f_message << v;
     return *this;
 }
 
+
+/** \brief Append a unsigned long value.
+ *
+ * This function appends a unsigned long value to the message.
+ *
+ * \param[in] v  A unsigned long value.
+ *
+ * \return A reference to the message.
+ */
 Message& Message::operator << (unsigned long const v)
 {
     f_message << v;
     return *this;
 }
 
+
+/** \brief Append a signed long long value.
+ *
+ * This function appends a signed long long value to the message.
+ *
+ * \param[in] v  A signed long long value.
+ *
+ * \return A reference to the message.
+ */
 Message& Message::operator << (signed long long const v)
 {
     f_message << v;
     return *this;
 }
 
+
+/** \brief Append a unsigned long long value.
+ *
+ * This function appends a unsigned long long value to the message.
+ *
+ * \param[in] v  A unsigned long long value.
+ *
+ * \return A reference to the message.
+ */
 Message& Message::operator << (unsigned long long const v)
 {
     f_message << v;
     return *this;
 }
 
+
+/** \brief Append a float value.
+ *
+ * This function appends a float value to the message.
+ *
+ * \param[in] v  A float value.
+ *
+ * \return A reference to the message.
+ */
 Message& Message::operator << (float const v)
 {
     f_message << v;
     return *this;
 }
 
+
+/** \brief Append a double value.
+ *
+ * This function appends a double value to the message.
+ *
+ * \param[in] v  A double value.
+ *
+ * \return A reference to the message.
+ */
 Message& Message::operator << (double const v)
 {
     f_message << v;
     return *this;
 }
 
+
+/** \brief Append a Boolean value.
+ *
+ * This function appends a Boolean value to the message as a 0 or a 1.
+ *
+ * \param[in] v  A Boolean value.
+ *
+ * \return A reference to the message.
+ */
 Message& Message::operator << (bool const v)
 {
     f_message << static_cast<int>(v);
@@ -248,47 +440,31 @@ void Message::set_message_callback(MessageCallback *callback)
 }
 
 
-Message fatal(char const *file, char const *func, int line)
+/** \brief The number of warnings that were found so far.
+ *
+ * This function returns the number of warnings that were
+ * processed so far.
+ *
+ * \return The number of warnings that were processed so far.
+ */
+int Message::warning_count()
 {
-    Message l(MESSAGE_LEVEL_FATAL, file, func, line);
-    l.operator << ("fatal: ");
-    return l;
+    return g_warning_count;
 }
 
-Message error(char const *file, char const *func, int line)
+
+/** \brief The number of errors that were found so far.
+ *
+ * This function returns the number of errors and fatal errors that were
+ * processed so far.
+ *
+ * \return The number of errors that were processed so far.
+ */
+int Message::error_count()
 {
-    Message l(MESSAGE_LEVEL_ERROR, file, func, line);
-    l.operator << ("error: ");
-    return l;
+    return g_error_count;
 }
 
-Message warning(char const *file, char const *func, int line)
-{
-    Message l(MESSAGE_LEVEL_WARNING, file, func, line);
-    l.operator << ("warning: ");
-    return l;
-}
-
-Message info(char const *file, char const *func, int line)
-{
-    Message l(MESSAGE_LEVEL_INFO, file, func, line);
-    l.operator << ("info: ");
-    return l;
-}
-
-Message debug(char const *file, char const *func, int line)
-{
-    Message l(MESSAGE_LEVEL_DEBUG, file, func, line);
-    l.operator << ("debug: ");
-    return l;
-}
-
-Message trace(char const *file, char const *func, int line)
-{
-    Message l(MESSAGE_LEVEL_INFO, file, func, line);
-    l.operator << ("trace: ");
-    return l;
-}
 
 
 

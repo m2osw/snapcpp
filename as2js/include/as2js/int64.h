@@ -41,7 +41,13 @@ namespace as2js
 class Int64
 {
 public:
-                    Int64(int64_t const rhs)
+    typedef int64_t int64_type;
+
+                    Int64()
+                    {
+                    }
+
+                    Int64(int64_type const rhs)
                     {
                         f_int = rhs;
                     }
@@ -62,19 +68,18 @@ public:
                         return f_int;
                     }
 
-    void            set(int64_t const new_int)
+    void            set(int64_type const new_int)
                     {
                         f_int = new_int;
                     }
 
 private:
-    controlled_vars::zint64_t        f_int;
+    controlled_vars::auto_init<int64_type>        f_int;
 };
 
 
 }
 // namespace as2js
-
 #endif
 // #ifndef AS2JS_INT64_H
 
