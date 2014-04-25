@@ -69,6 +69,7 @@ if( NOT CMAKE_MODULE_PATH )
 endif()
 #
 find_package( SnapCMakeModules )
+find_package( ControlledVars   )
 
 add_subdirectory( include )
 add_subdirectory( src )
