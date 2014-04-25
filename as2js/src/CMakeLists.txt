@@ -32,9 +32,11 @@
 ##
 project(libas2js)
 include_directories(
+    ${CONTROLLEDVARS_INCLUDE_DIR}
     ${as2js_compiler_BINARY_DIR}/include
     ${as2js_compiler_SOURCE_DIR}/include
 )
+
 add_library(as2js SHARED
     position.cpp
     message.cpp
