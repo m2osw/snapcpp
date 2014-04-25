@@ -2412,9 +2412,10 @@ void users::process_password_form()
                     "Your new password was saved. Next time you want to log in, you must use your email with this new password."
                 );
                 QString referrer(sessions::sessions::instance()->detach_from_session(*f_info, get_name(SNAP_NAME_USERS_LOGIN_REFERRER)));
-                if(referrer == "user/password")
+                if(referrer == "user/password"
+                || referrer == "user/password/replace")
                 {
-                    // ignore that redirect if it is to this page
+                    // ignore the default redirect if it is to this page
                     referrer.clear();
                 }
                 if(referrer.isEmpty())
