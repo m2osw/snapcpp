@@ -1,3 +1,11 @@
+snapwebsites (0.1.48~saucy) saucy; urgency=high
+
+  [ Alexis Wilke ]
+  * 6b9d14b Added code to avoid SEGV on invalid XSLT document. We throw
+  instead.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Thu, 24 Apr 2014 09:14:49 -0700
+
 snapwebsites (0.1.47~saucy) saucy; urgency=high
 
   [ Alexis Wilke ]
