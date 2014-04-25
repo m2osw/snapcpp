@@ -141,15 +141,15 @@ snapwebsites.ServerAccessCallbacks.prototype.serverAccessComplete = function(res
  * that you are interested in, then call the send() function. Once a
  * response is received, one or more of you callbacks will be called.
  *
- * @param {snapwebsites.ServerAccessCallbacks} that  An object reference,
+ * @param {snapwebsites.ServerAccessCallbacks} callback  An object reference,
  *          object that derives from the ServerAccessCallbacks interface.
  *
  * @constructor
  * @struct
  */
-snapwebsites.ServerAccess = function(that)
+snapwebsites.ServerAccess = function(callback)
 {
-    this.that_ = that;
+    this.callback_ = callback;
 };
 
 
@@ -166,10 +166,10 @@ snapwebsites.base(snapwebsites.ServerAccess);
  * server. It has to be an object that derives from the
  * snapwebsites.ServerAccessCallbacks interface.
  *
- * @type {Object}
+ * @type {snapwebsites.ServerAccessCallbacks}
  * @private
  */
-snapwebsites.ServerAccess.prototype.that_ = null;
+snapwebsites.ServerAccess.prototype.callback_ = null;
 
 
 /** \brief The URI used to send the request to the server.
@@ -306,7 +306,7 @@ snapwebsites.ServerAccess.prototype.send = function()
             result.ajax_error_message = error_msg;
             result.error_message = "An error occured while posting AJAX (status: "
                             + result_status + " / error: " + error_msg + ")";
-            that.that_.serverAccessError(result);
+            that.callback_.serverAccessError(result);
         },
         success: function(data, result_status, jqxhr)
         {
@@ -344,7 +344,7 @@ snapwebsites.ServerAccess.prototype.send = function()
                         // do not convert such documents to an XML tree
                         // anyway...)
                         result.error_message = "The server replied with HTML instead of XML.";
-                        that.that_.serverAccessError(result);
+                        that.callback_.serverAccessError(result);
                         return;
                     }
                 }
@@ -363,7 +363,7 @@ snapwebsites.ServerAccess.prototype.send = function()
                     redirect = jqxhr.responseXML.getElementsByTagName("redirect");
                     result.will_redirect = redirect.length === 1;
 
-                    that.that_.serverAccessSuccess(result);
+                    that.callback_.serverAccessSuccess(result);
 
                     // test the object flag so the callback could set it to
                     // false if applicable
@@ -413,21 +413,21 @@ snapwebsites.ServerAccess.prototype.send = function()
                     // although it went round trip fine, the application
                     // returned an error... report it
                     result.error_message = "The server replied with errors.";
-                    that.that_.serverAccessError(result);
+                    that.callback_.serverAccessError(result);
                 }
             }
             else
             {
                 result.error_message = "The server replied with HTTP code " + jqxhr.status
                                      + " while posting AJAX (status: " + result_status + ")";
-                that.that_.serverAccessError(result);
+                that.callback_.serverAccessError(result);
             }
         },
         complete: function(jqxhr, result_status)
         {
             result.jqxhr = jqxhr;
             result.result_status = result_status;
-            that.that_.serverAccessComplete(result);
+            that.callback_.serverAccessComplete(result);
         },
         dataType: "xml"
     });
