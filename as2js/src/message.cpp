@@ -39,6 +39,7 @@ namespace as2js
 namespace
 {
     MessageCallback *   g_message_callback = nullptr;
+    message_level_t     g_maximum_message_level = MESSAGE_LEVEL_INFO;
     int                 g_warning_count = 0;
     int                 g_error_count = 0;
 }
@@ -57,15 +58,11 @@ namespace
  * support a varying message level.)
  *
  * \param[in] message_level  The level of the message.
- * \param[in] file  The name of the source file that message was generated from.
- * \param[in] func  The name of the function that message was generated from.
- * \param[in] line  The line number that message was generated from.
+ * \param[in] pos  The position to which the message applies.
  */
-Message::Message(message_level_t message_level, char const *file, char const *func, int line)
+Message::Message(message_level_t message_level, Position const& pos)
     : f_message_level(message_level)
-    , f_file(file)
-    , f_func(func)
-    , f_line(line)
+    , f_position(pos)
     //, f_message() -- auto-init
 {
 }
@@ -79,9 +76,7 @@ Message::Message(message_level_t message_level, char const *file, char const *fu
 // */
 //Message::Message(Message const& rhs)
 //    : f_message_level(rhs.f_message_level)
-//    , f_file(rhs.f_file)
-//    , f_func(rhs.f_func)
-//    , f_line(rhs.f_line)
+//    , f_position(rhs.f_position)
 //    //, f_message() -- auto-init
 //{
 //    f_message << rhs.f_message.str();
@@ -103,15 +98,18 @@ Message::Message(message_level_t message_level, char const *file, char const *fu
 Message::~Message()
 {
     // actually emit the message
-    if(g_message_callback && f_message_level != MESSAGE_LEVEL_OFF && f_message.rdbuf()->in_avail() != 0)
+    if(g_message_callback                           // there is a callback?
+    && f_message_level != MESSAGE_LEVEL_OFF         // level is off?!
+    && f_message_level <= g_maximum_message_level   // level is large enough?
+    && f_message.rdbuf()->in_avail() != 0)          // there is a message?
     {
-        if(f_file == nullptr)
+        if(f_position.get_filename().empty())
         {
-            f_file = "unknown-file";
+            f_position.set_filename("unknown-file");
         }
-        if(f_func == nullptr)
+        if(f_position.get_function().empty())
         {
-            f_func = "unknown-func";
+            f_position.set_function("unknown-func");
         }
 
         switch(f_message_level)
@@ -131,7 +129,7 @@ Message::~Message()
 
         }
 
-        g_message_callback->output(f_message_level, f_file, f_func, f_line, f_message.str());
+        g_message_callback->output(f_message_level, f_position, f_message.str());
     }
 }
 
@@ -437,6 +435,26 @@ Message& Message::operator << (bool const v)
 void Message::set_message_callback(MessageCallback *callback)
 {
     g_message_callback = callback;
+}
+
+
+/** \brief Define the maximum level a message can be to be displayed.
+ *
+ * This function is used to change the maximum level a message can
+ * be in order to be displayed. Messages with a larger level are
+ * completely ignored.
+ *
+ * Note that errors and fatal errors cannot be ignored using this
+ * mechanism (i.e. the smallest possible value for max_level is
+ * MESSAGE_LEVEL_ERROR.)
+ *
+ * \param[in] max_level  The maximum level a message can have.
+ */
+void Message::set_message_level(message_level_t max_level)
+{
+    g_maximum_message_level = max_level < MESSAGE_LEVEL_ERROR
+                            ? MESSAGE_LEVEL_ERROR
+                            : max_level;
 }
 
 

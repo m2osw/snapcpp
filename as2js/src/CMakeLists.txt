@@ -36,6 +36,7 @@ include_directories(
     ${as2js_compiler_SOURCE_DIR}/include
 )
 add_library(as2js SHARED
+    position.cpp
     message.cpp
     node.cpp
     string.cpp

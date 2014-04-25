@@ -33,76 +33,12 @@ SOFTWARE.
 
 */
 
-
-
-//#include    <string>
-//#include    <vector>
+#include    "string.h"
+#include    "position.h"
 
 
 namespace as2js
 {
-
-
-class Position
-{
-public:
-    typedef int32_t     counter_t;
-    typedef controlled_vars::auto_init<counter_t, 0>    zcounter_t;
-
-    void                reset_counters(counter_t line = 1)
-                        {
-                            f_page = 1;
-                            f_page_line = 1;
-                            f_paragraph = 1;
-                            f_line = line;
-                        }
-
-    void                next_line();
-
-    void                new_page()
-                        {
-                            ++f_page;
-                            f_page_line = 1;
-                            f_paragraph = 1;
-                        }
-
-    void                new_paragraph()
-                        {
-                            ++f_paragraph;
-                        }
-
-    void                new_line()
-                        {
-                            ++f_page_line;
-                            ++f_line;
-                        }
-
-    counter_t           page() const
-                        {
-                            return f_page;
-                        }
-
-    counter_t           page_line() const
-                        {
-                            return f_page_line;
-                        }
-
-    counter_t           paragraph() const
-                        {
-                            return f_paragraph;
-                        }
-
-    virtual counter_t   line() const
-                        {
-                            return f_line;
-                        }
-
-private:
-    zcounter_t          f_page;
-    zcounter_t          f_page_line;
-    zcounter_t          f_paragraph;
-    zcounter_t          f_line;
-};
 
 
 
@@ -120,18 +56,24 @@ private:
 class Input
 {
 public:
-    typedef long        char_t;
+    typedef as_char_t       char_t;
+    typedef ssize_t         input_size_t;
 
-    static char_t const AS_EOF = -1;
+    static char_t const     AS_EOF = -1;
 
-                        Input();
-    virtual             ~Input();
+                            Input();
+    virtual                 ~Input();
 
-    virtual char_t      GetC() = 0;
+    void                    set_filename(String const& filename);
+    Position const&         get_position() const;
+
+    virtual char_t          getc() = 0;
 
     // return the size if known, -1 if unknown
-    virtual long        GetSize() const;
+    virtual input_size_t    get_size() const;
 
+private:
+    Position                f_position;
 };
 
 
@@ -143,28 +85,29 @@ public:
 class FileInput : public Input
 {
 public:
-                FileInput(void);
-    virtual            ~FileInput();
-    virtual const char *    GetFilename(void) const;
-    bool            StandardInput(void);
-    bool            Open(const char *filename);
-    void            Close(void);
-    virtual long        GetC(void);
-    virtual long        GetSize(void) const;
-    void            SetOriginalFilename(const char *original_filename);
+                            FileInput();
+    virtual                 ~FileInput();
+
+    bool                    standard_input();
+    bool                    open(std::string const& filename);
+    void                    close();
+
+    virtual char_t          getc();
+    virtual input_size_t    get_size() const;
+
+    void                    set_original_filename(String const& original_filename);
 
 protected:
-    char *            f_filename;
-    char *            f_original_filename;
-    FILE *            f_file;
-    long            f_size;
+    std::string             f_original_filename;
+    FILE *                  f_file;
+    ssize_t                 f_size;
 };
 
 
 class FileUCS32Input : public FileInput
 {
 public:
-    virtual long        GetC(void);
+    virtual char_t          getc();
 };
 
 
@@ -172,19 +115,17 @@ public:
 class StringInput : public Input
 {
 public:
-                StringInput(const char *filename = 0);
-    virtual            ~StringInput();
+                            StringInput();
+    virtual                 ~StringInput();
 
-    void            Set(const long *str, long size, unsigned long line);
-    long            GetSize(void) const;
-    virtual long        GetC(void);
+    void                    set(QString const& str, Position::counter_t line);
 
-    virtual const char *    GetFilename(void) const;
+    virtual char_t          getc();
+    virtual input_size_t    get_size() const;
 
 private:
-    int            f_pos;
-    String            f_str;
-    const char *        f_filename;
+    String::size_type       f_pos;
+    String                  f_str;
 };
 
 
@@ -198,9 +139,9 @@ private:
 class InputRetriever
 {
 public:
-    virtual            ~InputRetriever() {}
+    virtual                         ~InputRetriever() {}
 
-    virtual Input *        Retrieve(const char *filename) = 0;
+    virtual std::shared_ptr<Input>  Retrieve(String const& filename) = 0;
 };
 
 
@@ -209,6 +150,6 @@ public:
 }
 // namespace as2js
 #endif
-// #ifndef AS2JS_AS_H
+// #ifndef AS2JS_STREAM_H
 
 // vim: ts=4 sw=4 et

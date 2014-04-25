@@ -33,7 +33,7 @@ SOFTWARE.
 
 */
 
-#include "string.h"
+#include "position.h"
 #include "int64.h"
 #include "float64.h"
 
@@ -56,13 +56,13 @@ enum message_level_t
 class MessageCallback
 {
 public:
-    virtual void        output(message_level_t message_level, char const *file, char const *func, int line, std::string const& message) = 0;
+    virtual void        output(message_level_t message_level, Position const& pos, std::string const& message) = 0;
 };
 
 class Message
 {
 public:
-                        Message(message_level_t message_level, char const *file = nullptr, char const *func = nullptr, int line = -1);
+                        Message(message_level_t message_level, Position const& pos);
                         //Message(Message const& rhs);
                         ~Message();
 
@@ -91,14 +91,13 @@ public:
     Message&            operator << (bool const v);
 
     static void         set_message_callback(MessageCallback *callback);
+    static void         set_message_level(message_level_t min_level);
     static int          warning_count();
     static int          error_count();
 
 private:
     message_level_t     f_message_level;
-    char const *        f_file;
-    char const *        f_func;
-    int                 f_line;
+    Position            f_position;
     std::stringstream   f_message;
 };
 
