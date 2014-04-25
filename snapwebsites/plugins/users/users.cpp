@@ -2594,7 +2594,7 @@ void users::process_verify_form()
  * {
  *   // anonymous visitory user code
  * }
- * else if(users::users::instance()->is_user_logged_in())
+ * else if(users::users::instance()->user_is_logged_in())
  * {
  *   // user recently logged in (last 3 hours by default)
  *   // here you can process "dangerous / top-secret" stuff

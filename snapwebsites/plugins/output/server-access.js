@@ -261,6 +261,15 @@ snapwebsites.ServerAccess.prototype.setData = function(data)
  * \note
  * The function returns while the data is still being sent as it is
  * asynchroneous.
+ *
+ * \todo
+ * Look into a way to allow for serialization of "many" requests (i.e.
+ * stack send() requests so that we can process the next one when
+ * we get the complete() event.)
+ *
+ * \todo
+ * Allow for request to prevent the user from closing the window until the
+ * request was completed.
  */
 snapwebsites.ServerAccess.prototype.send = function()
 {
