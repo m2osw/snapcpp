@@ -2211,7 +2211,7 @@ void users::process_replace_password_form()
                     row->cell(get_name(SNAP_NAME_USERS_PASSWORD_DIGEST))->setValue(digest);
 
                     // Unlink from the password tag too
-                    links::links::instance()->delete_link(status_info);
+                    links::links::instance()->delete_link(user_status_info);
 
                     // Now we auto-log in the user... the session should
                     // already be adequate from the on_process_cookies()
@@ -2238,6 +2238,9 @@ void users::process_replace_password_form()
                         "Password Changed",
                         "Your new password was saved. Next time you want to log in, you can use your email with this new password."
                     );
+
+                    // TBD: should we use the saved login redirect instead?
+                    //      (if not then we probably want to clear it)
                     f_snap->page_redirect("user/me", snap_child::HTTP_CODE_SEE_OTHER);
                     NOTREACHED();
                 }
@@ -2400,7 +2403,7 @@ void users::process_password_form()
                 // Unlink from the password tag too
                 if(delete_password_status)
                 {
-                    links::links::instance()->delete_link(status_info);
+                    links::links::instance()->delete_link(user_status_info);
                 }
 
                 content::content::instance()->modified_content(user_ipath);
@@ -2412,8 +2415,7 @@ void users::process_password_form()
                     "Your new password was saved. Next time you want to log in, you must use your email with this new password."
                 );
                 QString referrer(sessions::sessions::instance()->detach_from_session(*f_info, get_name(SNAP_NAME_USERS_LOGIN_REFERRER)));
-                if(referrer == "user/password"
-                || referrer == "user/password/replace")
+                if(referrer == "user/password")
                 {
                     // ignore the default redirect if it is to this page
                     referrer.clear();

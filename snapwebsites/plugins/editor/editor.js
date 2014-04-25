@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.120
+ * Version: 0.0.3.122
  * Browsers: all
  * Depends: output (>= 0.1.4), popup (>= 0.1.0.1)
  * Copyright: Copyright 2013-2014 (c) Made to Order Software Corporation  All rights reverved.
@@ -3185,17 +3185,16 @@ snapwebsites.EditorForm.prototype.serverAccessComplete = function(result) // vir
     // we do not need that data anymore, release it
     this.savedData_ = null;
 
-    // TBD: avoid this one if we're fading out since that
-    //      would mean the user can click in these 300ms
-    //      (probably generally unlikely... and it should
-    //      not have any effect because we re-compare the
-    //      data and do nothing if no modifications happened)
-    this.setSaving(false);
-
     if(!result.will_redirect && result.messages && result.messages.length > 0)
     {
+        this.setSaving(false, false);
+
         // TODO: handle the messages we received on success or error
         alert("Got Snap! messages to display (TODO)");
+    }
+    else
+    {
+        this.setSaving(false, result.will_redirect);
     }
 };
 
@@ -3226,7 +3225,7 @@ snapwebsites.EditorForm.prototype.saveData = function(mode, options_opt)
     }
 
     // mark the form as saving, it may use CSS to show the new status
-    this.setSaving(true);
+    this.setSaving(true, false);
 
     this.savedData_ = {};
     for(key in this.editorWidgets_)
@@ -3260,7 +3259,7 @@ snapwebsites.EditorForm.prototype.saveData = function(mode, options_opt)
     }
     else
     {
-        this.setSaving(false);
+        this.setSaving(false, false);
     }
 };
 
@@ -3287,9 +3286,16 @@ snapwebsites.EditorForm.prototype.isSaving = function() // virtual
  * a color or a border.
  *
  * @param {boolean} new_status  The saving status of this editor form.
+ * @param {boolean} will_redirect  Whether we're going to be redirected just
+ *                                 after this call (keep the darken page if
+ *                                 true!)
  */
-snapwebsites.EditorForm.prototype.setSaving = function(new_status)
+snapwebsites.EditorForm.prototype.setSaving = function(new_status, will_redirect)
 {
+    // TBD: use the will_redirect flag to know what else to do?
+    //      (i.e. if will_redirect is true, we probably should not
+    //      do anything here, what do you think?)
+    //
     this.getFormWidget().toggleClass("editor-saving", new_status);
     this.saveDialog_.setStatus(!new_status);
 
@@ -3300,7 +3306,10 @@ snapwebsites.EditorForm.prototype.setSaving = function(new_status)
     //       attributes), we will then need to test it here
     //       WARNING: this needs to be moved to the editor-form object
     //                instead of the body!
-    snapwebsites.PopupInstance.darkenPage(new_status ? 150 : -150);
+    if(!will_redirect)
+    {
+        snapwebsites.PopupInstance.darkenPage(new_status ? 150 : -150);
+    }
 };
 
 

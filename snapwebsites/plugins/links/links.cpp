@@ -915,7 +915,7 @@ void links::delete_link(link_info const& info, const int delete_record_count )
 
     if(!f_data_table->exists(info.row_key()))
     {
-        // probably not an error if a link does not exist at all...
+        // probably not an error if the row does not even exist...
         return;
     }
 
@@ -941,7 +941,6 @@ void links::delete_link(link_info const& info, const int delete_record_count )
         // destination and can delete it too
         link_info destination;
         destination.from_data(link.stringValue());
-        destination.set_branch(info.branch());
         if(!f_data_table->exists(destination.row_key()))
         {
             SNAP_LOG_WARNING("links::delete_link() could not find the destination link for \"")
