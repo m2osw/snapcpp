@@ -1,7 +1,15 @@
-snapwebsites (0.1.49~saucy) UNRELEASED; urgency=high
+snapwebsites (0.1.49~saucy) saucy; urgency=high
 
   [ Alexis Wilke ]
-  * 
+  * 86fbc73 Fixed a bug in deleting links.
+  * 86266e6 Added a test for "this page" when changing password after a "forgot
+  * password" process.
+  * c89afae Force the content.xml update.
+  * ca2963b Restored home page CDATA block. Having two blocks breaks something
+  * at this point...
+  * 17452c2 Bumping version and changelog.
+  * 6a401a3 Updated documentation.
+  * 63d8b2b Renamed the "that_" parameter as "callback_" in ServerAccess.
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Fri, 25 Apr 2014 09:12:21 -0700
 
