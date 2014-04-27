@@ -3409,6 +3409,41 @@ void list_expr_copy_result(const rule& r, QSharedPointer<token_node>& t)
  * \<path> may represent a list of paths in which case only the first path
  * is used by default. The following paths are simply ignored.
  *
+ * \li cell_exists( \<table>, \<row>, \<cell> )
+ *
+ * Check whether the specified cell exists in the specified row of the
+ * specified table.
+ *
+ * \li int16( \<any> )
+ *
+ * Transform \<any> in a signed integer of 16 bits.
+ *
+ * \li int32( \<any> )
+ *
+ * Transform \<any> in a signed integer of 32 bits.
+ *
+ * \li int64( \<any> )
+ *
+ * Transform \<any> in a signed integer of 64 bits.
+ *
+ * \li int8( \<any> )
+ *
+ * Transform \<any> in a signed integer of 8 bits (-128 to +127).
+ *
+ * \li parent( \<path> )
+ *
+ * Compute the parent path of \<path>. (i.e. remove the last name on the
+ * path.) If the path ends with a slash, the slash is first removed, the
+ * the last name.
+ *
+ * \li row_exists( \<table>, \<row> )
+ *
+ * Check whether \<row> exists in \<table>.
+ *
+ * \li string( \<any> )
+ *
+ * Return \<any> converted to a string.
+ *
  * \li strlen( \<string> )
  *
  * Return the length of the \<string>.
@@ -3417,6 +3452,26 @@ void list_expr_copy_result(const rule& r, QSharedPointer<token_node>& t)
  *
  * Return the portion of the \<string> starting at \<start> and with at
  * most \<length> characters.
+ *
+ * \li table_exists( \<table> )
+ *
+ * Check wether the named table exists, if so return true.
+ *
+ * \li uint16( \<any> )
+ *
+ * Transform the parameter to an integer of 16 bit, unsigned.
+ *
+ * \li uint32( \<any> )
+ *
+ * Transform the parameter to an integer of 32 bit, unsigned.
+ *
+ * \li uint64( \<any> )
+ *
+ * Transform the parameter to an integer of 64 bit, unsigned.
+ *
+ * \li uint8( \<any> )
+ *
+ * Transform the parameter to an integer of 8 bits, unsigned (from 0 to 255).
  *
  * \param[in] script  The script to be compiled to binary code bytes.
  *
