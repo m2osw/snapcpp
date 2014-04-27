@@ -1,12 +1,18 @@
+snapwebsites (0.1.49~saucyubuntu1) UNRELEASED; urgency=low
+
+  * 
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sat, 26 Apr 2014 19:58:19 -0700
+
 snapwebsites (0.1.49~saucy) saucy; urgency=high
 
   [ Alexis Wilke ]
   * 86fbc73 Fixed a bug in deleting links.
   * 86266e6 Added a test for "this page" when changing password after a "forgot
-  * password" process.
+    password" process.
   * c89afae Force the content.xml update.
   * ca2963b Restored home page CDATA block. Having two blocks breaks something
-  * at this point...
+    at this point...
   * 17452c2 Bumping version and changelog.
   * 6a401a3 Updated documentation.
   * 63d8b2b Renamed the "that_" parameter as "callback_" in ServerAccess.
@@ -17,7 +23,7 @@ snapwebsites (0.1.48~saucy) saucy; urgency=high
 
   [ Alexis Wilke ]
   * 6b9d14b Added code to avoid SEGV on invalid XSLT document. We throw
-  instead.
+    instead.
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Thu, 24 Apr 2014 09:14:49 -0700
 
@@ -46,14 +52,14 @@ snapwebsites (0.1.45~saucy) saucy; urgency=high
   [ R. Douglas Barbieri ]
   * Added jslint script.
   * Control file now requires latest closurelinter which fixes missing
-  dependencies.
+    dependencies.
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Thu, 17 Apr 2014 16:41:48 -0700
 
 snapwebsites (0.1.44~saucy1) saucy; urgency=high
 
   * 8389b11 Parameters should not be cleared after actions have been loaded!
-  Backends now work.
+    Backends now work.
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Thu, 17 Apr 2014 16:03:23 -0700
 
@@ -83,8 +89,8 @@ snapwebsites (0.1.42~saucy) saucy; urgency=high
 
   [ R. Douglas Barbieri ]
   * Back end processes now read the UDP buffer in a background thread and
-  buffer up messages, so no message should ever be lost during long updates
-  (e.g. pagelist).
+    buffer up messages, so no message should ever be lost during long updates
+    (e.g. pagelist).
   * Added sleep so thread doesn't peg the processor.
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Fri, 11 Apr 2014 16:58:29 -0700
@@ -359,7 +365,7 @@ snapwebsites (0.1.18~saucy) saucy; urgency=high
 snapwebsites (0.1.17m2osw2~saucy) saucy; urgency=high
 
   * The snapbackend processes must background, so the --background flag is
-  required.
+    required.
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Wed, 26 Feb 2014 22:57:29 -0800
 
@@ -393,8 +399,8 @@ snapwebsites (0.1.16~saucy) saucy; urgency=high
   * Added clamav as a dependency for antivirus to work.
   
   [R. Douglas Barbieri]
-  Moved config files, but didn't update the *.install files in the debian
-  directory.
+  * Moved config files, but didn't update the *.install files in the debian
+    directory.
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Fri, 21 Feb 2014 16:31:09 -0800
 
@@ -484,7 +490,7 @@ snapwebsites (0.1.8~saucy) saucy; urgency=high
 snapwebsites (0.1.7~saucy) saucy; urgency=high
 
   * Added prompt to snapdb when dropping the tables. A command line switch
-  allows this to be bypassed.
+    allows this to be bypassed.
   * Added row and table models to allow easy access for GUI apps and views.
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Tue, 11 Feb 2014 17:45:17 -0800
@@ -492,7 +498,7 @@ snapwebsites (0.1.7~saucy) saucy; urgency=high
 snapwebsites (0.1.6~saucy) saucy; urgency=high
 
   * Logrotate for snapserver was incorrect: now restarts snapserver (instead
-  of snapwebsites).
+    of snapwebsites).
   * Added crontab for snapbackend.
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Tue, 11 Feb 2014 08:37:17 -0800
@@ -556,7 +562,7 @@ snapwebsites (0.1.0-38) saucy; urgency=high
 snapwebsites (0.1.0-37) saucy; urgency=high
 
   * Added dbutils class which encapsulates the code that translates data
-  depending on the table/row names.
+    depending on the table/row names.
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Thu, 30 Jan 2014 15:06:36 -0800
 
@@ -580,7 +586,7 @@ snapwebsites (0.1.0-35) saucy; urgency=high
 snapwebsites (0.1.0-34) saucy; urgency=high
 
   * Fixed error in CMakeLists.txt file. Now look under
-  CMAKE_CURRENT_SOURCE_DIR for local modules.
+    CMAKE_CURRENT_SOURCE_DIR for local modules.
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Tue, 14 Jan 2014 23:18:04 -0800
 
