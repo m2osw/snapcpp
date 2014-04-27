@@ -36,6 +36,10 @@ SOFTWARE.
 #include    "string.h"
 #include    "position.h"
 
+#include    <controlled_vars/controlled_vars_ptr_auto_init.h>
+
+#include    <memory>
+
 
 namespace as2js
 {
@@ -57,14 +61,13 @@ class Input
 {
 public:
     typedef as_char_t       char_t;
-    typedef ssize_t         input_size_t;
+    typedef controlled_vars::auto_init<ssize_t, -1> input_size_t;
 
     static char_t const     AS_EOF = -1;
 
-                            Input();
-    virtual                 ~Input();
+    virtual                 ~Input() {}
 
-    void                    set_filename(String const& filename);
+    Position&               get_position();
     Position const&         get_position() const;
 
     virtual char_t          getc() = 0;
@@ -85,21 +88,19 @@ private:
 class FileInput : public Input
 {
 public:
-                            FileInput();
+    typedef controlled_vars::ptr_auto_init<FILE>    zfile_t;
+
     virtual                 ~FileInput();
 
     bool                    standard_input();
-    bool                    open(std::string const& filename);
+    bool                    open(String const& filename);
     void                    close();
 
     virtual char_t          getc();
     virtual input_size_t    get_size() const;
 
-    void                    set_original_filename(String const& original_filename);
-
 protected:
-    std::string             f_original_filename;
-    FILE *                  f_file;
+    zfile_t                 f_file;
     ssize_t                 f_size;
 };
 
@@ -115,16 +116,15 @@ public:
 class StringInput : public Input
 {
 public:
-                            StringInput();
-    virtual                 ~StringInput();
+    virtual                 ~StringInput() {}
 
-    void                    set(QString const& str, Position::counter_t line);
+    void                    set(String const& str, Position::counter_t line);
 
     virtual char_t          getc();
     virtual input_size_t    get_size() const;
 
 private:
-    String::size_type       f_pos;
+    String::zsize_type_t    f_pos;
     String                  f_str;
 };
 

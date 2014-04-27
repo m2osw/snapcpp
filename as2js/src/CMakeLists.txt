@@ -38,10 +38,11 @@ include_directories(
 )
 
 add_library(as2js SHARED
+    string.cpp
     position.cpp
     message.cpp
+    stream.cpp
     node.cpp
-    string.cpp
 
     class.cpp
     compile.cpp
@@ -50,7 +51,6 @@ add_library(as2js SHARED
     directive.cpp
     expression.cpp
     function.cpp
-    input.cpp
     lexer.cpp
     optimizer.cpp
     package.cpp

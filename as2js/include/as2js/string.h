@@ -50,6 +50,8 @@ typedef controlled_vars::auto_init<as_char_t, 0>        zas_char_t;
 class String : public std::basic_string<as_char_t>
 {
 public:
+    typedef controlled_vars::auto_init<size_type, 0>    zsize_type_t;
+
                     String();
                     String(String const& str);
                     String(char const *str, int len = -1);

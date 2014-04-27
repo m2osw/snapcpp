@@ -27,7 +27,7 @@
 # THE SOFTWARE.
 #
 # Build command for now:
-#   (mkdir -p ../BUILD/as2js; cd ../BUILD/as2js; cmake -DCMAKE_INSTALL_PREFIX:PATH=/home/snapwebsites/BUILD/dist -DCMAKE_MODULE_PATH:PATH=/home/snapwebsites/BUILD/dist/share/cmake-2.8/Modules ../../as2js)
+#   (mkdir -p ../BUILD/as2js; cd ../BUILD/as2js; cmake -DCMAKE_INSTALL_PREFIX:PATH=/home/snapwebsites/BUILD/dist -DCMAKE_MODULE_PATH:PATH=/home/snapwebsites/BUILD/dist/share/cmake-2.8/Modules -DCONTROLLEDVARS_INCLUDE_DIR=../dist/include ../../as2js)
 #
 
 set(AS2JS_VERSION_MAJOR 0)
@@ -68,8 +68,11 @@ if( NOT CMAKE_MODULE_PATH )
     message( "Found snapCMakeModules in ${CMAKE_MODULE_PATH}" )
 endif()
 #
-find_package( SnapCMakeModules )
-find_package( ControlledVars   )
+set( CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH} )
+#
+find_package( AdvGetOpt        REQUIRED )
+find_package( ControlledVars   REQUIRED )
+find_package( SnapCMakeModules REQUIRED )
 
 add_subdirectory( include )
 add_subdirectory( src )
