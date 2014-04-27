@@ -33,7 +33,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 	<xsl:template match="snap">
 		<output>
 			<li>
-				<xsl:attribute name="class">list-item <xsl:if test="page/body[@index mod 2 = 0]">even</xsl:if><xsl:if test="page/body[@index mod 2 = 1]">odd</xsl:if></xsl:attribute>
+				<xsl:attribute name="class">list-item index<xsl:value-of select="@index"/><xsl:if test="@index mod 2 = 0"> even</xsl:if><xsl:if test="@index mod 2 = 1"> odd</xsl:if></xsl:attribute>
 				<a href="/{$full_path}">
 					<xsl:attribute name="class">list-item-anchor
 						<xsl:if test="/snap/head/metadata/desc[@type='main_page_path']/data = $full_path"> active</xsl:if>

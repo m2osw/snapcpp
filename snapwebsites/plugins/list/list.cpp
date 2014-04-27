@@ -1808,12 +1808,18 @@ void list::on_replace_token(content::path_info_t& ipath, QString const& plugin_o
                         item_ipath.set_parameter("action", "view");
                     }
                 }
+                // whether we're attempting to display this item
+                // (opposed to the test when going to the page or generating
+                // the list in the first place)
+                item_ipath.set_parameter("mode", "display");
                 plugin *item_plugin(path::path::instance()->get_plugin(item_ipath, list_error_callback));
                 if(!list_error_callback.has_error() && item_plugin)
                 {
                     // put each box in a filter tag so that way we have
                     // a different owner and path for each
                     QDomDocument item_doc(layout_plugin->create_document(item_ipath, item_plugin));
+                    QDomElement item_root(item_doc.documentElement());
+                    item_root.setAttribute("index", index);
 
                     FIELD_SEARCH
                         (content::field_search::COMMAND_ELEMENT, snap_dom::get_element(item_doc, "metadata"))
