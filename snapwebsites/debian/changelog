@@ -1,9 +1,13 @@
-snapwebsites (0.1.49~saucyubuntu1) UNRELEASED; urgency=low
+snapwebsites (0.1.50~saucy) UNRELEASED; urgency=high
 
+  [ Alexis Wilke ]
   * Fixed a bug in the @index of the list items.
   * Allow distinguishing the list permission when displaying from others.
 
- -- Alexis Wilke <alexis@m2osw.com>  Sat, 26 Apr 2014 19:58:19 -0700
+  [ R. Douglas Barbieri ]
+  * 
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Sat, 26 Apr 2014 19:58:19 -0700
 
 snapwebsites (0.1.49~saucy) saucy; urgency=high
 
