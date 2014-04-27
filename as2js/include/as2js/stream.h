@@ -134,8 +134,8 @@ private:
 // compiler supports a file retriever. Any time a file is
 // opened, it calls the retriever (if defined) and uses
 // that file. If no retriever was defined, the default is
-// used: attempt to open the file with fopen() or an equivalent.
-// In particular, this is used to handle the internal ASC files.
+// used: attempt to open the file with FileInput().
+// In particular, this is used to handle the external definitions.
 class InputRetriever
 {
 public:

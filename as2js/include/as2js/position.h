@@ -75,6 +75,7 @@ private:
     zcounter_t          f_line;
 };
 
+std::ostream& operator << (std::ostream& out, Position const& pos);
 
 
 }

@@ -47,7 +47,6 @@ add_library(as2js SHARED
     class.cpp
     compile.cpp
     compiler.cpp
-    data.cpp
     directive.cpp
     expression.cpp
     function.cpp

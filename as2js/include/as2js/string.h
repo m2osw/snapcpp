@@ -35,6 +35,7 @@ SOFTWARE.
 
 #include    <controlled_vars/controlled_vars_auto_init.h>
 
+#include    <iostream>
 #include    <string>
 
 namespace as2js
@@ -67,6 +68,9 @@ public:
     String&         operator = (std::string const& str);
     String&         operator = (std::wstring const& str);
 
+    bool            operator == (char const *str) const;
+    friend bool     operator == (char const *str, String const& string);
+
     bool            valid() const;
     static bool     valid_character(as_char_t c);
 
@@ -78,6 +82,9 @@ public:
     size_t          utf8_length() const;
     std::string     to_utf8() const;
 };
+
+std::ostream& operator << (std::ostream& out, String const& str);
+
 
 }
 // namespace as2js

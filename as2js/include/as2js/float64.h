@@ -41,7 +41,7 @@ namespace as2js
 class Float64
 {
 public:
-    typedef double      float64_type;
+    typedef double  float64_type;
 
                     Float64()
                         // : f_float(0.0) auto-init

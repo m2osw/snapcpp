@@ -204,6 +204,29 @@ Position::counter_t Position::get_line() const
 }
 
 
+/** \brief Print this position in the \p out stream.
+ *
+ * This function prints out this position in the \p out stream. We limit
+ * the printing to the filename and the line number as most compilers
+ * do. The other information is available for you to print additional
+ * data if required.
+ *
+ * \code
+ * <filename>:<line>:
+ * \endcode
+ *
+ * \param[in,out] out  The stream to print to.
+ * \param[in] pos  The position to print in the output.
+ *
+ * \return A reference to this stream.
+ */
+std::ostream& operator << (std::ostream& out, Position const& pos)
+{
+    out << pos.get_filename() << ":" << pos.get_line() << ":";
+
+    return out;
+}
+
 
 }
 // namespace as2js

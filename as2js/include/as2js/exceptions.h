@@ -1,10 +1,10 @@
 #ifndef AS2JS_EXCEPTIONS_H
 #define AS2JS_EXCEPTIONS_H
-/* as.h -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2011 */
+/* as.h -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
 
 /*
 
-Copyright (c) 2005-2011 Made to Order Software Corp.
+Copyright (c) 2005-2014 Made to Order Software Corp.
 
 Permission is hereby granted, free of charge, to any
 person obtaining a copy of this software and
@@ -39,19 +39,35 @@ SOFTWARE.
 namespace as2js
 {
 
-class internal_error : public std::runtime_error
+class exception_internal_error : public std::runtime_error
 {
 public:
-	internal_error(char const *msg)        : runtime_error(msg) {}
-	internal_error(std::string const& msg) : runtime_error(msg) {}
+    exception_internal_error(char const *msg)        : runtime_error(msg) {}
+    exception_internal_error(std::string const& msg) : runtime_error(msg) {}
 };
 
 
-class locked_node : public std::runtime_error
+class exception_locked_node : public std::runtime_error
 {
 public:
-	locked_node(char const *msg)        : runtime_error(msg) {}
-	locked_node(std::string const& msg) : runtime_error(msg) {}
+    exception_locked_node(char const *msg)        : runtime_error(msg) {}
+    exception_locked_node(std::string const& msg) : runtime_error(msg) {}
+};
+
+
+class exception_incompatible_node_type : public std::runtime_error
+{
+public:
+    exception_incompatible_node_type(char const *msg)        : runtime_error(msg) {}
+    exception_incompatible_node_type(std::string const& msg) : runtime_error(msg) {}
+};
+
+
+class exception_index_out_of_range : public std::out_of_range
+{
+public:
+    exception_index_out_of_range(char const *msg)        : out_of_range(msg) {}
+    exception_index_out_of_range(std::string const& msg) : out_of_range(msg) {}
 };
 
 

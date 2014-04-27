@@ -99,9 +99,11 @@ int IntCompiler::Compile(NodePtr& root)
 void IntCompiler::Offsets(NodePtr& node)
 {
     int max = node.GetChildCount();
-    for(int idx = 0; idx < max; ++idx) {
+    for(int idx = 0; idx < max; ++idx)
+    {
         NodePtr child = node.GetChild(idx);
-        if(child.HasNode()) {
+        if(child.HasNode())
+        {
 #if defined(_DEBUG) || defined(DEBUG)
             NodePtr& parent = child.GetParent();
             AS_ASSERT(parent.SameAs(node));
@@ -395,10 +397,15 @@ fprintf(stderr, " (%d + 1 of %d)\n", idx, max);
         int max = directive_list.GetVariableCount();
         for(int idx = 0; idx < max; ++idx) {
             NodePtr& variable = directive_list.GetVariable(idx);
-            NodePtr& var = variable.GetParent();
-            if(var.HasNode()) {
+            Node::node_pointer_t var(variable.get_parent());
+            if(var)
+            {
                 Data& var_data = var.GetData();
-                if((var_data.f_int.Get() & NODE_VAR_FLAG_TOADD) != 0) {
+                if((var_data.f_int.Get() & NODE_VAR_FLAG_TOADD) != 0)
+                {
+                    // TBD: is that just the var declaration and no
+                    //      assignment? because the assignment needs to
+                    //      happen at the proper time!!!
                     var_data.f_int.Set(var_data.f_int.Get() & ~NODE_VAR_FLAG_TOADD);
                     directive_list.InsertChild(0, var);
                 }
@@ -5491,7 +5498,8 @@ void IntCompiler::UnaryOperator(NodePtr& expr)
     list.SetLink(NodePtr::LINK_TYPE, op_type);
     call.AddChild(list);
 
-    if(is_post) {
+    if(is_post)
+    {
         post_list.AddChild(call);
 
         NodePtr temp_var;
@@ -5504,7 +5512,8 @@ void IntCompiler::UnaryOperator(NodePtr& expr)
         expr.GetParent().SetChild(expr.GetOffset(), post_list);
         //expr = post_list;
     }
-    else {
+    else
+    {
         expr.GetParent().SetChild(expr.GetOffset(), call);
         //expr = call;
     }

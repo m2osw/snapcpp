@@ -33,13 +33,17 @@ SOFTWARE.
 
 */
 
-#include    "string.h"
+//#include    "string.h"
 #include    "int64.h"
+#include    "float64.h"
+#include    "stream.h"
 
 #include    <controlled_vars/controlled_vars_limited_auto_init.h>
 
-#include    <memory>
 #include    <bitset>
+#include    <map>
+#include    <memory>
+#include    <vector>
 
 namespace as2js
 {
@@ -51,10 +55,12 @@ namespace as2js
 //       flags. While creating the tree, the attributes are always
 //       set to 0.
 
-class Node
+class Node : public std::enable_shared_from_this<Node>
 {
 public:
-    typedef std::shared_ptr<Node>   node_pointer_t;
+    typedef std::shared_ptr<Node>               node_pointer_t;
+    typedef std::map<String, node_pointer_t>    map_of_node_pointers_t;
+    typedef std::vector<node_pointer_t>         vector_of_node_pointers_t;
 
     // the node type is often referenced as a token
     enum node_t
@@ -348,144 +354,108 @@ public:
 
     typedef std::bitset<NODE_FLAG_ATTRIBUTE_MAX - 1>     flag_attribute_set_t;
 
-                            Node(node_t type);
-                            Node(Node const& source, Node const& parent);
-                            ~Node();
+    enum link_t
+    {
+        LINK_INSTANCE = 0,
+        LINK_TYPE,
+        LINK_ATTRIBUTES,    // this is the list of identifiers
 
-    char const *            GetTypeName() const;
+        LINK_max,
+
+        LINK_GOTO_EXIT = LINK_INSTANCE,
+        LINK_GOTO_ENTER = LINK_TYPE,
+
+        LINK_end
+    };
+
+                            Node(node_t type);
+                            Node(node_pointer_t const& source, node_pointer_t& parent);
+
+    char const *            get_type_name() const;
 
     // basic conversions
-    bool                    ToBoolean();
-    bool                    ToNumber();
-    bool                    ToString();
+    bool                    to_boolean();
+    bool                    to_number();
+    bool                    to_string();
 
     // check flags
     bool                    get_flag(flag_attribute_t f) const;
     void                    set_flag(flag_attribute_t f, bool v);
 
-    void                SetInputInfo(Input const *input);
-    void                CopyInputInfo(Node const *input);
-    long                GetPage() const { return f_page; }
-    long                GetPageLine() const { return f_page_line; }
-    long                GetParagraph() const { return f_paragraph; }
-    long                GetLine() const { return f_line; }
-    std::string const&  GetFilename() const { return f_filename; }
+    void                    set_position(Position const& position);
+    Position const&         get_position() const;
 
     bool                    has_side_effects() const;
 
-    bool            IsLocked() const
-                {
-                    return f_lock != 0;
-                }
-    void            Lock()
-                {
-                    f_lock++;
-                }
-    void            Unlock()
-                {
-                    AS_ASSERT(f_lock > 0);
-                    f_lock--;
-                }
-    void            SetOffset(int offset)
-                {
-                    f_offset = offset;
-                }
-    int            GetOffset() const
-                {
-                    return f_offset;
-                }
-    void            ReplaceWith(Node *node);
-    void            DeleteChild(int index);
-    void            append_child(node_pointer_t& child);
-    void            insert_child(int index, node_pointer_t& child);
-    void            SetChild(int index, NodePtr& child);
-    int            GetChildCount() const
-                {
-                    return f_children.size();
-                }
-    node_pointer_t      get_child(int index) const;
-    void                set_parent(node_pointer_t& parent)
-                        {
-                            f_parent.reset(parent);
-                        }
-    node_pointer_t&     get_parent()
-                        {
-                            return f_parent;
-                        }
+    bool                    is_locked() const;
+    void                    lock();
+    void                    unlock();
 
-    void            SetLink(NodePtr::link_t index, NodePtr& link)
-                {
-                    AS_ASSERT(index < NodePtr::LINK_max);
-                    if(link.HasNode()) {
-                        AS_ASSERT(!f_link[index].HasNode());
-                        f_link[index].SetNode(link);
-                    }
-                    else {
-                        f_link[index].ClearNode();
-                    }
-                }
-    NodePtr&        GetLink(NodePtr::link_t index)
-                {
-                    AS_ASSERT(index < NodePtr::LINK_max);
-                    return f_link[index];
-                }
+    void                    set_offset(int32_t offset);
+    int32_t                 get_offset() const;
 
-    void            AddVariable(NodePtr& variable);
-    int            GetVariableCount(void) const
-                {
-                    return f_var_count;
-                }
-    NodePtr&        GetVariable(int index) const;
+    void                    set_parent(node_pointer_t parent = node_pointer_t(), int index = -1);
+    node_pointer_t          get_parent() const;
 
-    void            AddLabel(NodePtr& label);
-    int             GetLabelCount(void) const
-                    {
-                        return f_label_count;
-                    }
-    NodePtr&        GetLabel(int index) const;
-    NodePtr&        FindLabel(String const& name) const;
+    size_t                  get_children_size() const;
+    //void                    replace_with(node_pointer_t& node); -- this is wrong...
+    void                    delete_child(int index);
+    void                    append_child(node_pointer_t& child);
+    void                    insert_child(int index, node_pointer_t& child);
+    void                    set_child(int index, node_pointer_t& child);
+    node_pointer_t          get_child(int index) const;
 
-    void            Display(FILE *out, int indent, NodePtr *parent, char c) const;
+    void                    set_link(link_t index, node_pointer_t& link);
+    node_pointer_t          get_link(link_t index);
 
-    static char const * OperatorToString(node_t op);
-    static node_t       StringToOperator(String const& str);
+    void                    add_variable(node_pointer_t& variable);
+    size_t                  get_variable_size() const;
+    node_pointer_t          get_variable(int index) const;
+
+    void                    add_label(node_pointer_t& label);
+    size_t                  get_label_size() const;
+    //node_pointer_t          get_label(size_t index) const; -- because of the map and it looks like we're not using this one anyway
+    node_pointer_t          find_label(String const& name) const;
+
+    static char const *     operator_to_string(node_t op);
+    static node_t           string_to_operator(String const& str);
+
+    void                    display(std::ostream& out, int indent, node_pointer_t const& parent, char c) const;
 
 private:
-    void                            init();
-
     // verify that the specified flag correspond to the node type
-    void                            verify_flag(flag_t f) const;
-    void                            modifying() const;
+    void                    verify_flag_attribute(flag_attribute_t f) const;
+    void                    modifying() const;
+    void                    display_data(std::ostream& out) const;
 
-    controlled_vars::zint32_t       f_lock;
-
-    controlled_vars::zint32_t       f_page;
-    controlled_vars::zint32_t       f_page_line;
-    controlled_vars::zint32_t       f_paragraph;
-    controlled_vars::zint32_t       f_line;
-    std::string                     f_filename;
-
-    //Data            f_data;
+    // define the node type
     safe_node_t                     f_type;
     flag_attribute_set_t            f_flags_and_attributes;
+
+    // whether this node is currently locked
+    controlled_vars::zint32_t       f_lock;
+
+    // location where the node was found (filename, line #, etc.)
+    Position                        f_position;
+
+    // data of this node
     Int64                           f_int;
     Float64                         f_float;
     String                          f_str;
-    std::vector<int>                f_user_data;  // TBD -- necessary?!
+    //std::vector<int>                f_user_data;  // TBD -- necessary?!
 
+    // parent children node tree handling
     node_pointer_t                  f_parent;
-    int                             f_offset;        // offset (index) in parent array of children
-    std::vector<node_pointer_t>     f_children;
-    NodePtr                         f_link[NodePtr::LINK_max];
-    int                             f_var_count;
-    int                             f_var_max;
-    NodePtr *                       f_variables;
-    int                             f_label_count;
-    int                             f_label_max;
-    NodePtr *                       f_labels;
+    controlled_vars::zint32_t       f_offset;        // offset (index) in parent array of children -- set by compiler, should probably be removed...
+    vector_of_node_pointers_t       f_children;
+
+    // other connections between nodes
+    vector_of_node_pointers_t       f_link;
+    vector_of_node_pointers_t       f_variables;
+    map_of_node_pointers_t          f_labels;
 };
 
-
+std::ostream& operator << (std::ostream& out, Node const& node);
 
 
 

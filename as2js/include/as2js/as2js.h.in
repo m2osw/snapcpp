@@ -153,20 +153,6 @@ class Input;
 class NodePtr
 {
 public:
-    enum link_t
-    {
-        LINK_INSTANCE = 0,
-        LINK_TYPE,
-        LINK_ATTRIBUTES,    // this is the list of identifiers
-
-        LINK_max,
-
-        LINK_GOTO_EXIT = LINK_INSTANCE,
-        LINK_GOTO_ENTER = LINK_TYPE,
-
-        LINK_end
-    };
-
                     NodePtr()
                     {
                         f_node = 0;
