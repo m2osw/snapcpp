@@ -1871,6 +1871,31 @@ public:
         result.set_value(variable_t::EXPR_VARIABLE_TYPE_INT64, value);
     }
 
+    static void call_strmatch(variable_t& result, variable_t::variable_vector_t const& sub_results)
+    {
+        int const size(sub_results.size());
+        if(size < 2 || size > 3)
+        {
+            throw snap_expr_exception_invalid_number_of_parameters("invalid number of parameters to call strmatch() expected 2 or 3");
+        }
+        QString const pattern(sub_results[0].get_string("substr(1)"));
+        QString const str(sub_results[1].get_string("substr(2)"));
+        QString flags;
+        if(size == 3)
+        {
+            flags = sub_results[2].get_string("substr(3)");
+        }
+        Qt::CaseSensitivity cs(Qt::CaseSensitive);
+        if(flags.contains("i"))
+        {
+            cs = Qt::CaseInsensitive;
+        }
+        QRegExp re(pattern, cs, QRegExp::RegExp2);
+        QtCassandra::QCassandraValue value;
+        value.setBoolValue(re.exactMatch(str));
+        result.set_value(variable_t::EXPR_VARIABLE_TYPE_BOOL, value);
+    }
+
     static void call_substr(variable_t& result, variable_t::variable_vector_t const& sub_results)
     {
         int const size(sub_results.size());
@@ -2911,6 +2936,10 @@ functions_t::function_call_table_t const expr_node::internal_functions[] =
     { // return length of a string
         "strlen",
         expr_node::call_strlen
+    },
+    { // return true if the string matches the regular expression
+        "strmatch",
+        expr_node::call_strmatch
     },
     { // retrieve part of a string
         "substr",
