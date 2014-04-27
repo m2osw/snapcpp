@@ -50,13 +50,13 @@ endif()
 
 find_file( MAGIC magic.h )
 if( ${MAGIC} STREQUAL "MAGIC-NOTFOUND" )
-    message( FATAL_ERROR "Please install libmagic!" )
+    message( FATAL_ERROR "Please install libmagic-dev!" )
 endif()
 get_filename_component( MAGIC_INCLUDE_PATH ${MAGIC} PATH )
 
 find_library( MAGIC_LIBRARY magic )
 if( ${MAGIC_LIBRARY} STREQUAL "MAGIC_LIBRARY-NOTFOUND" )
-    message( FATAL_ERROR "Please install libmagic!" )
+    message( FATAL_ERROR "Please install libmagic-dev!" )
 endif()
 
 include_directories(
