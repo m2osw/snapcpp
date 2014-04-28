@@ -1,10 +1,10 @@
 #ifndef AS2JS_PARSER_H
 #define AS2JS_PARSER_H
-/* parser.h -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2009 */
+/* parser.h -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
 
 /*
 
-Copyright (c) 2005-2009 Made to Order Software Corp.
+Copyright (c) 2005-2014 Made to Order Software Corp.
 
 Permission is hereby granted, free of charge, to any
 person obtaining a copy of this software and

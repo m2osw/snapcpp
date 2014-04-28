@@ -33,10 +33,10 @@ SOFTWARE.
 
 */
 
-//#include    "string.h"
+#include    "string.h"
 #include    "int64.h"
 #include    "float64.h"
-#include    "stream.h"
+#include    "position.h"
 
 #include    <controlled_vars/controlled_vars_limited_auto_init.h>
 

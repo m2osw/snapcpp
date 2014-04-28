@@ -60,10 +60,11 @@ namespace
  * \param[in] message_level  The level of the message.
  * \param[in] pos  The position to which the message applies.
  */
-Message::Message(message_level_t message_level, Position const& pos)
-    : f_message_level(message_level)
+Message::Message(message_level_t message_level, err_code_t error_code, Position const& pos)
+    //: stringstream() -- auto-init
+    : f_message_level(static_cast<int32_t>(message_level))
+    , f_error_code(static_cast<int32_t>(error_code))
     , f_position(pos)
-    //, f_message() -- auto-init
 {
 }
 
@@ -99,9 +100,9 @@ Message::~Message()
 {
     // actually emit the message
     if(g_message_callback                           // there is a callback?
-    && f_message_level != MESSAGE_LEVEL_OFF         // level is off?!
-    && f_message_level <= g_maximum_message_level   // level is large enough?
-    && f_message.rdbuf()->in_avail() != 0)          // there is a message?
+    && MESSAGE_LEVEL_OFF != f_message_level         // level is off?!
+    && static_cast<int32_t>(f_message_level) <= g_maximum_message_level   // level is large enough?
+    && rdbuf()->in_avail() != 0)                    // there is a message?
     {
         if(f_position.get_filename().empty())
         {
@@ -129,7 +130,7 @@ Message::~Message()
 
         }
 
-        g_message_callback->output(f_message_level, f_position, f_message.str());
+        g_message_callback->output(f_message_level, f_position, str());
     }
 }
 
@@ -145,7 +146,7 @@ Message::~Message()
 Message& Message::operator << (char const *s)
 {
     // we assume UTF-8 because in our Snap environment most everything is
-    f_message << s;
+    *this << s;
     return *this;
 }
 
@@ -160,9 +161,9 @@ Message& Message::operator << (char const *s)
  */
 Message& Message::operator << (wchar_t const *s)
 {
-    String str;
-    str.from_wchar(s);
-    f_message << str.to_utf8();
+    String string;
+    string.from_wchar(s);
+    *this << string.to_utf8();
     return *this;
 }
 
@@ -177,7 +178,7 @@ Message& Message::operator << (wchar_t const *s)
  */
 Message& Message::operator << (std::string const& s)
 {
-    f_message << s.c_str();
+    *this << s.c_str();
     return *this;
 }
 
@@ -192,9 +193,9 @@ Message& Message::operator << (std::string const& s)
  */
 Message& Message::operator << (std::wstring const& s)
 {
-    String str;
-    str.from_wchar(s.c_str(), s.length());
-    f_message << str.to_utf8();
+    String string;
+    string.from_wchar(s.c_str(), s.length());
+    *this << string.to_utf8();
     return *this;
 }
 
@@ -209,7 +210,7 @@ Message& Message::operator << (std::wstring const& s)
  */
 Message& Message::operator << (String const& s)
 {
-    f_message << s.to_utf8();
+    *this << s.to_utf8();
     return *this;
 }
 
@@ -224,7 +225,7 @@ Message& Message::operator << (String const& s)
  */
 Message& Message::operator << (char const v)
 {
-    f_message << static_cast<int>(v);
+    *this << static_cast<int>(v);
     return *this;
 }
 
@@ -239,7 +240,7 @@ Message& Message::operator << (char const v)
  */
 Message& Message::operator << (signed char const v)
 {
-    f_message << static_cast<int>(v);
+    *this << static_cast<int>(v);
     return *this;
 }
 
@@ -254,7 +255,7 @@ Message& Message::operator << (signed char const v)
  */
 Message& Message::operator << (unsigned char const v)
 {
-    f_message << static_cast<int>(v);
+    *this << static_cast<int>(v);
     return *this;
 }
 
@@ -269,7 +270,7 @@ Message& Message::operator << (unsigned char const v)
  */
 Message& Message::operator << (signed short const v)
 {
-    f_message << static_cast<int>(v);
+    *this << static_cast<int>(v);
     return *this;
 }
 
@@ -284,7 +285,7 @@ Message& Message::operator << (signed short const v)
  */
 Message& Message::operator << (unsigned short const v)
 {
-    f_message << static_cast<int>(v);
+    *this << static_cast<int>(v);
     return *this;
 }
 
@@ -299,7 +300,7 @@ Message& Message::operator << (unsigned short const v)
  */
 Message& Message::operator << (signed int const v)
 {
-    f_message << v;
+    *this << v;
     return *this;
 }
 
@@ -314,7 +315,7 @@ Message& Message::operator << (signed int const v)
  */
 Message& Message::operator << (unsigned int const v)
 {
-    f_message << v;
+    *this << v;
     return *this;
 }
 
@@ -329,7 +330,7 @@ Message& Message::operator << (unsigned int const v)
  */
 Message& Message::operator << (signed long const v)
 {
-    f_message << v;
+    *this << v;
     return *this;
 }
 
@@ -344,7 +345,7 @@ Message& Message::operator << (signed long const v)
  */
 Message& Message::operator << (unsigned long const v)
 {
-    f_message << v;
+    *this << v;
     return *this;
 }
 
@@ -359,7 +360,7 @@ Message& Message::operator << (unsigned long const v)
  */
 Message& Message::operator << (signed long long const v)
 {
-    f_message << v;
+    *this << v;
     return *this;
 }
 
@@ -374,7 +375,7 @@ Message& Message::operator << (signed long long const v)
  */
 Message& Message::operator << (unsigned long long const v)
 {
-    f_message << v;
+    *this << v;
     return *this;
 }
 
@@ -389,7 +390,7 @@ Message& Message::operator << (unsigned long long const v)
  */
 Message& Message::operator << (float const v)
 {
-    f_message << v;
+    *this << v;
     return *this;
 }
 
@@ -404,7 +405,7 @@ Message& Message::operator << (float const v)
  */
 Message& Message::operator << (double const v)
 {
-    f_message << v;
+    *this << v;
     return *this;
 }
 
@@ -419,7 +420,7 @@ Message& Message::operator << (double const v)
  */
 Message& Message::operator << (bool const v)
 {
-    f_message << static_cast<int>(v);
+    *this << static_cast<int>(v);
     return *this;
 }
 

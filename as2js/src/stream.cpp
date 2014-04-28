@@ -61,6 +61,24 @@ Position const& Input::get_position() const
 }
 
 
+Input::char_t Input::getc()
+{
+    if(!f_unget.empty())
+    {
+        char_t result(f_unget.back());
+        f_unget.pop_back();
+        return result;
+    }
+    return internal_getc();
+}
+
+
+void Input::ungetc(char_t c)
+{
+    f_unget.push_back(c);
+}
+
+
 Input::input_size_t Input::get_size() const
 {
     return -1;
@@ -143,7 +161,7 @@ FileInput::input_size_t FileInput::get_size() const
 }
 
 
-Input::char_t FileInput::getc()
+Input::char_t FileInput::internal_getc()
 {
     if(!f_file)
     {
@@ -161,7 +179,7 @@ Input::char_t FileInput::getc()
 }
 
 
-Input::char_t FileUCS32Input::getc()
+Input::char_t FileUCS32Input::internal_getc()
 {
     if(!f_file)
     {
@@ -203,7 +221,7 @@ void StringInput::set(String const& str, Position::counter_t line)
 }
 
 
-Input::char_t StringInput::getc()
+Input::char_t StringInput::internal_getc()
 {
     char_t  c;
 

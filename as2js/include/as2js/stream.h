@@ -39,6 +39,7 @@ SOFTWARE.
 #include    <controlled_vars/controlled_vars_ptr_auto_init.h>
 
 #include    <memory>
+#include    <vector>
 
 
 namespace as2js
@@ -60,7 +61,8 @@ namespace as2js
 class Input
 {
 public:
-    typedef as_char_t       char_t;
+    typedef std::shared_ptr<Input>                  input_pointer_t;
+    typedef as_char_t                               char_t;
     typedef controlled_vars::auto_init<ssize_t, -1> input_size_t;
 
     static char_t const     AS_EOF = -1;
@@ -70,13 +72,18 @@ public:
     Position&               get_position();
     Position const&         get_position() const;
 
-    virtual char_t          getc() = 0;
+    char_t                  getc();
+    void                    ungetc(char_t c);
 
     // return the size if known, -1 if unknown
     virtual input_size_t    get_size() const;
 
+protected:
+    virtual char_t          internal_getc() = 0;
+
 private:
     Position                f_position;
+    std::vector<char_t>     f_unget;
 };
 
 
@@ -96,10 +103,11 @@ public:
     bool                    open(String const& filename);
     void                    close();
 
-    virtual char_t          getc();
     virtual input_size_t    get_size() const;
 
 protected:
+    virtual char_t          internal_getc();
+
     zfile_t                 f_file;
     ssize_t                 f_size;
 };
@@ -107,8 +115,8 @@ protected:
 
 class FileUCS32Input : public FileInput
 {
-public:
-    virtual char_t          getc();
+protected:
+    virtual char_t          internal_getc();
 };
 
 
@@ -120,8 +128,10 @@ public:
 
     void                    set(String const& str, Position::counter_t line);
 
-    virtual char_t          getc();
     virtual input_size_t    get_size() const;
+
+protected:
+    virtual char_t          internal_getc();
 
 private:
     String::zsize_type_t    f_pos;

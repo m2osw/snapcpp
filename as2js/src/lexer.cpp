@@ -1,8 +1,8 @@
-/* lexer.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2009 */
+/* lexer.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
 
 /*
 
-Copyright (c) 2005-2009 Made to Order Software Corp.
+Copyright (c) 2005-2014 Made to Order Software Corp.
 
 Permission is hereby granted, free of charge, to any
 person obtaining a copy of this software and
@@ -31,7 +31,11 @@ SOFTWARE.
 
 */
 
-#include "as2js/parser.h"
+#include "as2js/lexer.h"
+
+#include "as2js/message.h"
+
+#include    <iomanip>
 
 
 namespace as2js
@@ -45,85 +49,83 @@ namespace as2js
 /**********************************************************************/
 
 
-Lexer::Lexer(void)
+Lexer::Lexer()
+    //: f_type(CHAR_NO_FLAGS) -- auto-init
+    //, f_result(nullptr) -- auto-init
+    //, f_input(nullptr) -- auto-init
+    //, f_options(nullptr) -- auto-init
+    //, f_for_in(false)
 {
-    f_last = 0;
-    f_type = 0;
-    //f_data -- auto-init
-    f_unget_pos = 0;
-    //f_unget[...] -- don't require initialization
-    f_input = 0;
-    f_options = 0;
-    f_for_in = false;
 }
 
 
 
-void Lexer::SetInput(Input& input)
+void Lexer::set_input(Input::input_pointer_t& input)
 {
-    f_input = &input;
+    f_input = input;
 }
 
 
-void Lexer::SetOptions(Options& options)
+Input::input_pointer_t Lexer::get_input() const
 {
-    f_options = &options;
+    return f_input;
 }
 
 
-long Lexer::InputGetC(void)
+void Lexer::set_options(Options::options_pointer_t& options)
 {
-    AS_ASSERT(f_input != 0);
-
-    return f_input->GetC();
+    f_options = options;
 }
 
 
-long Lexer::GetC(void)
+void Lexer::set_for_in(bool const for_in)
 {
-    long        c;
+    f_for_in = for_in;
+}
 
-    // we don't want to re-process these!
-    if(f_unget_pos > 0) {
-        --f_unget_pos;
-        f_last = f_unget[f_unget_pos];
-        f_type = CharType(f_last);
-//fprintf(stderr, "(reget) ");
-        return f_last;
-    }
 
-    c = InputGetC();
+Input::char_t Lexer::getc()
+{
+    Input::char_t c(f_input->getc());
 
-    f_type = CharType(c);
-    if((f_type & (CHAR_LINE_TERMINATOR | CHAR_WHITE_SPACE)) != 0) {
-        switch(c) {
+    f_type = char_type(c);
+    if((f_type & (CHAR_LINE_TERMINATOR | CHAR_WHITE_SPACE)) != 0)
+    {
+        switch(c)
+        {
         case '\n':
             // skip '\n\r' as one newline
-            do {
-                f_input->NewLine();
-                c = InputGetC();
-            } while(c == '\n');
-            if(c != '\r') {
-                UngetC(c);
+            do
+            {
+                f_input->get_position().new_line();
+                c = f_input->getc();
+            }
+            while(c == '\n');
+            if(c != '\r')
+            {
+                ungetc(c);
             }
             c = '\n';
             break;
 
         case '\r':
             // skip '\r\n' as one newline (?!)
-            do {
-                f_input->NewLine();
-                c = InputGetC();
-            } while(c == '\r');
-            if(c != '\n') {
-                UngetC(c);
+            do
+            {
+                f_input->get_position().new_line();
+                c = f_input->getc();
+            }
+            while(c == '\r');
+            if(c != '\n')
+            {
+                ungetc(c);
             }
             c = '\n';
             break;
 
         case '\f':
             // view the form feed as a new page for now...
-            f_input->NewPage();
+            f_input->get_position().new_page();
             break;
 
         case 0x0085:
@@ -131,30 +133,27 @@ long Lexer::GetC(void)
             break;
 
         case 0x2028:
-            f_input->NewLine();
+            f_input->get_position().new_line();
             break;
 
         case 0x2029:
-            f_input->NewParagraph();
+            f_input->get_position().new_paragraph();
             break;
 
         }
     }
 
-    return f_last = c;
+    return c;
 }
 
 
-void Lexer::UngetC(long c)
+void Lexer::ungetc(Input::char_t c)
 {
-    AS_ASSERT(f_unget_pos < MAX_UNGET);
-
-    f_unget[f_unget_pos] = c;
-    ++f_unget_pos;
+    f_input->ungetc(c);
 }
 
 
-long Lexer::CharType(long c)
+Lexer::char_type_t Lexer::char_type(Input::char_t c)
 {
     // TODO: this needs a HUGE improvement to be conformant...
     switch(c) {
@@ -173,8 +172,7 @@ long Lexer::CharType(long c)
     case '\f':
     case ' ':
     case 0x00A0:
-    //case 0x2000 ... 0x200B: -- cl doesn't like those
-    case 0x2000:
+    case 0x2000: // 0x2000 ... 0x200B
     case 0x2001:
     case 0x2002:
     case 0x2003:
@@ -189,8 +187,7 @@ long Lexer::CharType(long c)
     case 0x3000:
         return CHAR_WHITE_SPACE;
 
-    //case '0' ... '9': -- cl doesn't like those
-    case '0':
+    case '0': // '0' ... '9'
     case '1':
     case '2':
     case '3':
@@ -202,15 +199,13 @@ long Lexer::CharType(long c)
     case '9':
         return CHAR_DIGIT | CHAR_HEXDIGIT;
 
-    //case 'a' ... 'f': -- cl doesn't like those
-    //case 'A' ... 'F':
-    case 'a':
+    case 'a': // 'a' ... 'f'
     case 'b':
     case 'c':
     case 'd':
     case 'e':
     case 'f':
-    case 'A':
+    case 'A': // 'A' ... 'F'
     case 'B':
     case 'C':
     case 'D':
@@ -220,19 +215,21 @@ long Lexer::CharType(long c)
 
     case '_':
     case '$':
-    //case 'g' ... 'z': -- cl doesn't like those (moved to default:)
-    //case 'G' ... 'Z':
         return CHAR_LETTER;
 
     default:
         if((c >= 'g' && c <= 'z')
-        || (c >= 'G' && c <= 'Z')) {
+        || (c >= 'G' && c <= 'Z'))
+        {
             return CHAR_LETTER;
         }
-        if((c & 0x0FFFF) >= 0xFFFE) {
+        if((c & 0x0FFFF) >= 0xFFFE)
+        {
+            // 0xFFFE and 0xFFFF are invalid in all planes
             return CHAR_INVALID;
         }
-        if(c < 0x7F) {
+        if(c < 0x7F)
+        {
             return CHAR_PUNCTUATION;
         }
         // TODO: this will be true in most cases, but not always!
@@ -245,27 +242,31 @@ long Lexer::CharType(long c)
 
 
 
-int64_t Lexer::ReadHex(long max)
+int64_t Lexer::read_hex(long max)
 {
-    long        c, p, result;
-
-    result = 0;
-    p = 0;
-    c = GetC();
-    while((f_type & CHAR_HEXDIGIT) != 0 && p < max) {
-        p++;
-        if(c <= '9') {
+    int64_t result(0);
+    Input::char_t c(getc());
+    long p(0);
+    for(; (f_type & CHAR_HEXDIGIT) != 0 && p < max; ++p)
+    {
+        if(c <= '9')
+        {
             result = result * 16 + c - '0';
         }
-        else {
+        else
+        {
             result = result * 16 + c - ('A' - 10);
         }
-        c = GetC();
+        c = getc();
     }
-    UngetC(c);
+    ungetc(c);
 
-    if(p == 0) {
-        f_input->ErrMsg(AS_ERR_INVALID_UNICODE_ESCAPE_SEQUENCE, "invalid unicode (\\[xXuU]##) escape sequence)");
+    if(p == 0)
+    {
+        {
+            Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_UNICODE_ESCAPE_SEQUENCE, f_input->get_position());
+            msg << "invalid unicode (\\[xXuU]##) escape sequence)";
+        }
         return -1;
     }
 
@@ -276,40 +277,37 @@ int64_t Lexer::ReadHex(long max)
 }
 
 
-int64_t Lexer::ReadOctal(long c, long max)
+int64_t Lexer::read_octal(Input::char_t c, long max)
 {
-    long        p, result;
-
-    result = c - '0';
-    p = 1;
-    c = GetC();
-    while(c >= '0' && c <= '7' && p < max) {
-        p++;
+    int64_t result(c - '0');
+    c = getc();
+    for(long p(1); c >= '0' && c <= '7' && p < max; ++p, c = getc())
+    {
         result = result * 8 + c - '0';
-        c = GetC();
     }
-    UngetC(c);
+    ungetc(c);
 
     return result;
 }
 
 
-long Lexer::EscapeSequence(void)
+Input::char_t Lexer::escape_sequence()
 {
-    long c = f_input->GetC();
-    switch(c) {
+    Input::char_t c(getc());
+    switch(c)
+    {
     case 'u':
         // 4 hex digits
-        return ReadHex(4);
+        return read_hex(4);
 
     case 'U':
         // 8 hex digits
-        return ReadHex(8);
+        return read_hex(8);
 
     case 'x':
     case 'X':
         // 2 hex digits
-        return ReadHex(2);
+        return read_hex(2);
 
     case '\'':
     case '\"':
@@ -320,8 +318,9 @@ long Lexer::EscapeSequence(void)
         return '\b';
 
     case 'e':
-        if(f_options != 0
-        && f_options->GetOption(AS_OPTION_EXTENDED_ESCAPE_SEQUENCES) != 0) {
+        if(f_options
+        && f_options->get_option(Options::AS_OPTION_EXTENDED_ESCAPE_SEQUENCES) != 0)
+        {
             return '\033';
         }
         break;
@@ -341,81 +340,67 @@ long Lexer::EscapeSequence(void)
     case 'v':
         return '\v';
 
-    //case '0' ... '7': -- cl doesn't like those
     default:
-        if(c >= '0' && c <= '7') {
-            return ReadOctal(c, 3);
+        if(c >= '0' && c <= '7')
+        {
+            return read_octal(c, 3);
         }
         break;
 
     }
 
-    if(c > ' ' && c < 0x7F) {
-        f_input->ErrMsg(AS_ERR_UNKNOWN_ESCAPE_SEQUENCE, "unknown escape letter '%c'", (char) c);
+    if(c > ' ' && c < 0x7F)
+    {
+        {
+            Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_UNKNOWN_ESCAPE_SEQUENCE, f_input->get_position());
+            msg << "unknown escape letter '" << static_cast<char>(c) << "'";
+        }
     }
-    else {
-        f_input->ErrMsg(AS_ERR_UNKNOWN_ESCAPE_SEQUENCE, "unknown escape letter '\\U%08lX'", c);
+    else
+    {
+        {
+            Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_UNKNOWN_ESCAPE_SEQUENCE, f_input->get_position());
+            msg << "unknown escape letter '\\U" << std::hex << std::setw(8) << std::setfill('0') << static_cast<int32_t>(c) << "'";
+        }
     }
 
     return '?';
 }
 
 
-
-
-
-
-long Lexer::Read(long c, long flags, String& str)
+Input::char_t Lexer::read(Input::char_t c, char_type_t flags, String& str)
 {
-    bool        escape;
-
-    do {
-        escape = c == '\\';
-        if(escape) {
-            c = EscapeSequence();
+    do
+    {
+        if(c == '\\')
+        {
+            c = escape_sequence();
         }
-        if((f_type & CHAR_INVALID) == 0) {
-            str.AppendChar(c);
+        if((f_type & CHAR_INVALID) == 0)
+        {
+            str += c;
         }
-        c = GetC();
-    } while((f_type & flags) != 0 && c >= 0);
-
-    if(escape) {
-        long l, i;
-        l = c;
-        i = 8;
-        while(i > 0) {
-            --i;
-            long x = l & 15;
-            if(x >= 10) {
-                x += 'A' - 10;
-            }
-            else {
-                x += '0';
-            }
-            UngetC(x);
-            l >>= 4;
-        }
-        UngetC('U');
-        UngetC('\\');
+        c = getc();
     }
-    else {
-        UngetC(c);
-    }
+    while((f_type & flags) != 0 && c >= 0);
+
+    ungetc(c);
 
     return c;
 }
 
 
 
-void Lexer::ReadIdentifier(long c)
+void Lexer::read_identifier(Input::char_t c)
 {
     f_data.f_type = NODE_IDENTIFIER;
-    c = Read(c, CHAR_LETTER | CHAR_DIGIT, f_data.f_str);
+    QString str;
+    c = read(c, CHAR_LETTER | CHAR_DIGIT, str);
 
     // An identifier can be a keyword, we check that right here!
     long l = f_data.f_str.GetLength();
-    if(l > 1) {
+    if(l > 1)
+    {
         const long *s = f_data.f_str.Get();
         switch(s[0]) {
         case 'a':
@@ -671,48 +656,54 @@ void Lexer::ReadIdentifier(long c)
 }
 
 
-void Lexer::ReadNumber(long c)
+void Lexer::read_number(char_t c)
 {
-    String        number;
+    String      number;
     char        buf[256];
-    size_t        sz;
+    size_t      sz;
 
     buf[sizeof(buf) - 1] = '\0';
 
-    if(c == '.') {
+    if(c == '.')
+    {
         // in case the strtod() doesn't support a missing 0
         // at the start of the string
         number.AppendChar('0');
         number.AppendChar('.');
     }
-    else if(c == '0') {
+    else if(c == '0')
+    {
         c = GetC();
-        if(c == 'x' || c == 'X') {
+        if(c == 'x' || c == 'X')
+        {
             // hexadecimal number
             f_data.f_type = NODE_INT64;
-            f_data.f_int.Set(ReadHex(16));
+            f_data.f_int.Set(read_hex(16));
             return;
         }
         // octal is not permitted in ECMAScript version 3+
-        if(f_options != 0
-        && f_options->GetOption(AS_OPTION_OCTAL) != 0
-        && c >= '0' && c <= '7') {
+        if(f_options
+        && f_options->get_option(AS_OPTION_OCTAL) != 0
+        && c >= '0' && c <= '7')
+        {
             // octal
             f_data.f_type = NODE_INT64;
-            f_data.f_int.Set(ReadOctal(c, 22));
+            f_data.f_int.set(read_octal(c, 22));
             return;
         }
         number.AppendChar('0');
-        UngetC(c);
+        ungetc(c);
     }
-    else {
-        c = Read(c, CHAR_DIGIT, number);
+    else
+    {
+        c = read(c, CHAR_DIGIT, number);
     }
 
-    if(c == '.') {
+    if(c == '.')
+    {
         // TODO: we may want to support 32 bits floats as well
         f_data.f_type = NODE_FLOAT64;
-        c = GetC();
+        c = getc();
 
         // TODO:
         // Here we could check to know whether this really
@@ -724,7 +715,8 @@ void Lexer::ReadNumber(long c)
             number.AppendChar('e');
             GetC();        // skip the 'e'
             c = GetC();    // get the character after!
-            if(c == '-' || c == '+' || (c >= '0' && c <= '9')) {
+            if(c == '-' || c == '+' || (c >= '0' && c <= '9'))
+            {
                 c = Read(c, CHAR_DIGIT, number);
             }
         }
@@ -732,62 +724,58 @@ void Lexer::ReadNumber(long c)
         number.ToUTF8(buf, sz);
         f_data.f_float.Set(strtod(buf, 0));
     }
-    else {
+    else
+    {
         // TODO: Support 8, 16, 32 bits, unsigned thereof
         f_data.f_type = NODE_INT64;
         sz = sizeof(buf);
         number.ToUTF8(buf, sz);
         f_data.f_int.Set(strtoll(buf, 0, 10));
     }
-
-    // TODO: Note, we could also support numbers followed by a unit.
-    //     (but not too useful in Flash ActionScript at this time
-    //     without us doing all the work...)
 }
 
 
-void Lexer::ReadString(long quote)
+void Lexer::read_string(Input::char_t quote)
 {
-    long        c;
-
     f_data.f_type = NODE_STRING;
 
-    c = GetC();
-    while(c != quote) {
-        if(c < 0) { 
+    for(Input::char_t c(getc()); c != quote; c = getc())
+    {
+        if(c < 0)
+        {
             f_input->ErrMsg(AS_ERR_UNTERMINTED_STRING, "the last string wasn't closed before the end of the input was reached");
             return;
         }
-        if((f_type & CHAR_LINE_TERMINATOR) != 0) {
+        if((f_type & CHAR_LINE_TERMINATOR) != 0)
+        {
             f_input->ErrMsg(AS_ERR_UNTERMINTED_STRING, "a string can't include a line terminator");
             return;
         }
-        if(c == '\\') {
-            c = EscapeSequence();
+        if(c == '\\')
+        {
+            c = escape_sequence();
             // here c can be equal to quote (c == quote)
         }
         f_data.f_str.AppendChar(c);
-        c = GetC();
     }
 }
 
 
 
-const Data& Lexer::GetNextToken(void)
+Node::node_pointer_t Lexer::GetNextToken()
 {
-    long        c;
+    f_result = Node::node_pointer_t(new Node);
 
-    f_data.Clear();
-
-    for(;;) {
-        c = GetC();
-        if(c < 0) {
+    for(Input::char_t c(getc());; c = getc()) {
+        if(c < 0)
+        {
             // we're done
             f_data.f_type = NODE_EOF;
             return f_data;
         }
 
-        if((f_type & (CHAR_WHITE_SPACE | CHAR_LINE_TERMINATOR | CHAR_INVALID)) != 0) {
+        if((f_type & (CHAR_WHITE_SPACE | CHAR_LINE_TERMINATOR | CHAR_INVALID)) != 0)
+        {
             continue;
         }
 
@@ -1189,10 +1177,12 @@ const Data& Lexer::GetNextToken(void)
             return f_data;
 
         default:
-            if(c > ' ' && c < 0x7F) {
+            if(c > ' ' && c < 0x7F)
+            {
                 f_input->ErrMsg(AS_ERR_UNEXPECTED_PUNCTUATION, "unexpected punctuation '%c'", (char) c);
             }
-            else {
+            else
+            {
                 f_input->ErrMsg(AS_ERR_UNEXPECTED_PUNCTUATION, "unexpected punctuation '\\U%08lX'", c);
             }
             break;
@@ -1200,19 +1190,6 @@ const Data& Lexer::GetNextToken(void)
         }
     }
 }
-
-
-void Lexer::ErrMsg(err_code_t err_code, const char *format, ...)
-{
-    va_list        ap;
-
-    va_start(ap, format);
-    f_input->ErrMsg(err_code, format, ap);
-    va_end(ap);
-}
-
-
-
 
 
 
