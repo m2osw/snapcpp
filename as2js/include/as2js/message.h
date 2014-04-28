@@ -132,7 +132,7 @@ enum err_code_t
 class MessageCallback
 {
 public:
-    virtual void        output(message_level_t message_level, Position const& pos, std::string const& message) = 0;
+    virtual void        output(message_level_t message_level, err_code_t error_code, Position const& pos, std::string const& message) = 0;
 };
 
 

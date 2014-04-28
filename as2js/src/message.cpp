@@ -130,7 +130,7 @@ Message::~Message()
 
         }
 
-        g_message_callback->output(f_message_level, f_position, str());
+        g_message_callback->output(f_message_level, f_error_code, f_position, str());
     }
 }
 
