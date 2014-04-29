@@ -50,7 +50,7 @@ namespace as2js
 
 
 Lexer::Lexer()
-    //: f_type(CHAR_NO_FLAGS) -- auto-init
+    //: f_char_type(CHAR_NO_FLAGS) -- auto-init
     //, f_result(nullptr) -- auto-init
     //, f_input(nullptr) -- auto-init
     //, f_options(nullptr) -- auto-init
@@ -88,8 +88,8 @@ Input::char_t Lexer::getc()
 {
     Input::char_t c(f_input->getc());
 
-    f_type = char_type(c);
-    if((f_type & (CHAR_LINE_TERMINATOR | CHAR_WHITE_SPACE)) != 0)
+    f_char_type = char_type(c);
+    if((f_char_type & (CHAR_LINE_TERMINATOR | CHAR_WHITE_SPACE)) != 0)
     {
         switch(c)
         {
@@ -223,7 +223,8 @@ Lexer::char_type_t Lexer::char_type(Input::char_t c)
         {
             return CHAR_LETTER;
         }
-        if((c & 0x0FFFF) >= 0xFFFE)
+        if((c & 0x0FFFF) >= 0xFFFE
+        || (c >= 0xD800 && c <= 0xDFFF))
         {
             // 0xFFFE and 0xFFFF are invalid in all planes
             return CHAR_INVALID;
@@ -247,7 +248,7 @@ int64_t Lexer::read_hex(long max)
     int64_t result(0);
     Input::char_t c(getc());
     long p(0);
-    for(; (f_type & CHAR_HEXDIGIT) != 0 && p < max; ++p)
+    for(; (f_char_type & CHAR_HEXDIGIT) != 0 && p < max; ++p)
     {
         if(c <= '9')
         {
@@ -318,8 +319,7 @@ Input::char_t Lexer::escape_sequence()
         return '\b';
 
     case 'e':
-        if(f_options
-        && f_options->get_option(Options::AS_OPTION_EXTENDED_ESCAPE_SEQUENCES) != 0)
+        if(has_option_set(Options::AS_OPTION_EXTENDED_ESCAPE_SEQUENCES))
         {
             return '\033';
         }
@@ -376,13 +376,13 @@ Input::char_t Lexer::read(Input::char_t c, char_type_t flags, String& str)
         {
             c = escape_sequence();
         }
-        if((f_type & CHAR_INVALID) == 0)
+        if((f_char_type & CHAR_INVALID) == 0)
         {
             str += c;
         }
         c = getc();
     }
-    while((f_type & flags) != 0 && c >= 0);
+    while((f_char_type & flags) != 0 && c >= 0);
 
     ungetc(c);
 
@@ -393,305 +393,356 @@ Input::char_t Lexer::read(Input::char_t c, char_type_t flags, String& str)
 
 void Lexer::read_identifier(Input::char_t c)
 {
-    f_data.f_type = NODE_IDENTIFIER;
-    QString str;
-    c = read(c, CHAR_LETTER | CHAR_DIGIT, str);
+    String str;
+    read(c, CHAR_LETTER | CHAR_DIGIT, str);
 
     // An identifier can be a keyword, we check that right here!
-    long l = f_data.f_str.GetLength();
+    size_t l(str.length());
     if(l > 1)
     {
-        const long *s = f_data.f_str.Get();
-        switch(s[0]) {
+        as_char_t const *s(str.c_str());
+        switch(s[0])
+        {
         case 'a':
-            if(l == 2 && s[1] == 's') {
-                f_data.f_type = NODE_AS;
+            if(l == 2 && s[1] == 's')
+            {
+                f_result_type = Node::NODE_AS;
                 break;
             }
             break;
 
         case 'b':
-            if(l == 5 && f_data.f_str == "break") {
-                f_data.f_type = NODE_BREAK;
+            if(l == 5 && str == "break")
+            {
+                f_result_type = Node::NODE_BREAK;
                 break;
             }
             break;
 
         case 'c':
-            if(l == 4 && f_data.f_str == "case") {
-                f_data.f_type = NODE_CASE;
+            if(l == 4 && str == "case")
+            {
+                f_result_type = Node::NODE_CASE;
                 break;
             }
-            if(l == 5 && f_data.f_str == "catch") {
-                f_data.f_type = NODE_CATCH;
+            if(l == 5 && str == "catch")
+            {
+                f_result_type = Node::NODE_CATCH;
                 break;
             }
-            if(l == 5 && f_data.f_str == "class") {
-                f_data.f_type = NODE_CLASS;
+            if(l == 5 && str == "class")
+            {
+                f_result_type = Node::NODE_CLASS;
                 break;
             }
-            if(l == 5 && f_data.f_str == "const") {
-                f_data.f_type = NODE_CONST;
+            if(l == 5 && str == "const")
+            {
+                f_result_type = Node::NODE_CONST;
                 break;
             }
-            if(l == 8 && f_data.f_str == "continue") {
-                f_data.f_type = NODE_CONTINUE;
+            if(l == 8 && str == "continue")
+            {
+                f_result_type = Node::NODE_CONTINUE;
                 break;
             }
             break;
 
         case 'd':
-            if(l == 8 && f_data.f_str == "debugger") {
-                f_data.f_type = NODE_DEBUGGER;
+            if(l == 8 && str == "debugger")
+            {
+                f_result_type = Node::NODE_DEBUGGER;
                 break;
             }
-            if(l == 7 && f_data.f_str == "default") {
-                f_data.f_type = NODE_DEFAULT;
+            if(l == 7 && str == "default")
+            {
+                f_result_type = Node::NODE_DEFAULT;
                 break;
             }
-            if(l == 6 && f_data.f_str == "delete") {
-                f_data.f_type = NODE_DELETE;
+            if(l == 6 && str == "delete")
+            {
+                f_result_type = Node::NODE_DELETE;
                 break;
             }
-            if(l == 2 && s[1] == 'o') {
-                f_data.f_type = NODE_DO;
+            if(l == 2 && s[1] == 'o')
+            {
+                f_result_type = Node::NODE_DO;
                 break;
             }
             break;
 
         case 'e':
-            if(l == 4 && f_data.f_str == "else") {
-                f_data.f_type = NODE_ELSE;
+            if(l == 4 && str == "else")
+            {
+                f_result_type = Node::NODE_ELSE;
                 break;
             }
-            if(l == 4 && f_data.f_str == "enum") {
-                f_data.f_type = NODE_ENUM;
+            if(l == 4 && str == "enum")
+            {
+                f_result_type = Node::NODE_ENUM;
                 break;
             }
-            if(l == 7 && f_data.f_str == "extends") {
-                f_data.f_type = NODE_EXTENDS;
+            if(l == 7 && str == "extends")
+            {
+                f_result_type = Node::NODE_EXTENDS;
                 break;
             }
             break;
 
         case 'f':
-            if(l == 5 && f_data.f_str == "false") {
-                f_data.f_type = NODE_FALSE;
+            if(l == 5 && str == "false")
+            {
+                f_result_type = Node::NODE_FALSE;
                 break;
             }
-            if(l == 7 && f_data.f_str == "finally") {
-                f_data.f_type = NODE_FINALLY;
+            if(l == 7 && str == "finally")
+            {
+                f_result_type = Node::NODE_FINALLY;
                 break;
             }
-            if(l == 3 && s[1] == 'o' && s[2] == 'r') {
-                f_data.f_type = NODE_FOR;
+            if(l == 3 && s[1] == 'o' && s[2] == 'r')
+            {
+                f_result_type = Node::NODE_FOR;
                 break;
             }
-            if(l == 8 && f_data.f_str == "function") {
-                f_data.f_type = NODE_FUNCTION;
+            if(l == 8 && str == "function")
+            {
+                f_result_type = Node::NODE_FUNCTION;
                 break;
             }
             break;
 
         case 'g':
-            if(f_options != 0
-            && f_options->GetOption(AS_OPTION_EXTENDED_STATEMENTS) != 0) {
-                if(l == 4 && f_data.f_str == "goto") {
-                    f_data.f_type = NODE_GOTO;
+            if(has_option_set(Options::AS_OPTION_EXTENDED_STATEMENTS))
+            {
+                if(l == 4 && str == "goto")
+                {
+                    f_result_type = Node::NODE_GOTO;
                     break;
                 }
             }
             break;
 
         case 'i':
-            if(l == 2 && s[1] == 'f') {
-                f_data.f_type = NODE_IF;
+            if(l == 2 && s[1] == 'f')
+            {
+                f_result_type = Node::NODE_IF;
                 break;
             }
-            if(l == 10 && f_data.f_str == "implements") {
-                f_data.f_type = NODE_IMPLEMENTS;
+            if(l == 10 && str == "implements")
+            {
+                f_result_type = Node::NODE_IMPLEMENTS;
                 break;
             }
-            if(l == 6 && f_data.f_str == "import") {
-                f_data.f_type = NODE_IMPORT;
+            if(l == 6 && str == "import")
+            {
+                f_result_type = Node::NODE_IMPORT;
                 break;
             }
-            if(l == 2 && s[1] == 'n') {
-                f_data.f_type = f_for_in ? NODE_FOR_IN : NODE_IN;
+            if(l == 2 && s[1] == 'n')
+            {
+                f_result_type = f_for_in ? Node::NODE_FOR_IN : Node::NODE_IN;
                 break;
             }
-            if(l == 10 && f_data.f_str == "instanceof") {
-                f_data.f_type = NODE_INSTANCEOF;
+            if(l == 10 && str == "instanceof")
+            {
+                f_result_type = Node::NODE_INSTANCEOF;
                 break;
             }
-            if(l == 9 && f_data.f_str == "interface") {
-                f_data.f_type = NODE_INTERFACE;
+            if(l == 9 && str == "interface")
+            {
+                f_result_type = Node::NODE_INTERFACE;
                 break;
             }
-            if(l == 2 && s[1] == 's') {
-                f_data.f_type = NODE_IS;
+            if(l == 2 && s[1] == 's')
+            {
+                f_result_type = Node::NODE_IS;
                 break;
             }
             break;
 
         case 'n':
-            if(l == 9 && f_data.f_str == "namespace") {
-                f_data.f_type = NODE_NAMESPACE;
+            if(l == 9 && str == "namespace")
+            {
+                f_result_type = Node::NODE_NAMESPACE;
                 break;
             }
-            if(l == 3 && s[1] == 'e' && s[2] == 'w') {
-                f_data.f_type = NODE_NEW;
+            if(l == 3 && s[1] == 'e' && s[2] == 'w')
+            {
+                f_result_type = Node::NODE_NEW;
                 break;
             }
-            if(l == 4 && f_data.f_str == "null") {
-                f_data.f_type = NODE_NULL;
+            if(l == 4 && str == "null")
+            {
+                f_result_type = Node::NODE_NULL;
                 break;
             }
             break;
 
         case 'p':
-            if(l == 7 && f_data.f_str == "package") {
-                f_data.f_type = NODE_PACKAGE;
+            if(l == 7 && str == "package")
+            {
+                f_result_type = Node::NODE_PACKAGE;
                 break;
             }
-            if(l == 7 && f_data.f_str == "private") {
-                f_data.f_type = NODE_PRIVATE;
+            if(l == 7 && str == "private")
+            {
+                f_result_type = Node::NODE_PRIVATE;
                 break;
             }
-            if(l == 6 && f_data.f_str == "public") {
-                f_data.f_type = NODE_PUBLIC;
+            if(l == 6 && str == "public")
+            {
+                f_result_type = Node::NODE_PUBLIC;
                 break;
             }
             break;
 
         case 'r':
-            if(l == 6 && f_data.f_str == "return") {
-                f_data.f_type = NODE_RETURN;
+            if(l == 6 && str == "return")
+            {
+                f_result_type = Node::NODE_RETURN;
                 break;
             }
             break;
 
         case 's':
-            if(l == 5 && f_data.f_str == "super") {
-                f_data.f_type = NODE_SUPER;
+            if(l == 5 && str == "super")
+            {
+                f_result_type = Node::NODE_SUPER;
                 break;
             }
-            if(l == 6 && f_data.f_str == "switch") {
-                f_data.f_type = NODE_SWITCH;
+            if(l == 6 && str == "switch")
+            {
+                f_result_type = Node::NODE_SWITCH;
                 break;
             }
             break;
 
         case 't':
-            if(l == 4 && f_data.f_str == "this") {
-                f_data.f_type = NODE_THIS;
+            if(l == 4 && str == "this")
+            {
+                f_result_type = Node::NODE_THIS;
                 break;
             }
-            if(l == 5 && f_data.f_str == "throw") {
-                f_data.f_type = NODE_THROW;
+            if(l == 5 && str == "throw")
+            {
+                f_result_type = Node::NODE_THROW;
                 break;
             }
-            if(l == 4 && f_data.f_str == "true") {
-                f_data.f_type = NODE_TRUE;
+            if(l == 4 && str == "true")
+            {
+                f_result_type = Node::NODE_TRUE;
                 break;
             }
-            if(l == 3 && s[1] == 'r' && s[2] == 'y') {
-                f_data.f_type = NODE_TRY;
+            if(l == 3 && s[1] == 'r' && s[2] == 'y')
+            {
+                f_result_type = Node::NODE_TRY;
                 break;
             }
-            if(l == 6 && f_data.f_str == "typeof") {
-                f_data.f_type = NODE_TYPEOF;
+            if(l == 6 && str == "typeof")
+            {
+                f_result_type = Node::NODE_TYPEOF;
                 break;
             }
             break;
 
         case 'u':
-            if(l == 9 && f_data.f_str == "undefined") {
-                f_data.f_type = NODE_UNDEFINED;
+            if(l == 9 && str == "undefined")
+            {
+                // Note: undefined is actually not a reserved keyword, but
+                //       by reserving it, we avoid stupid mistakes like:
+                //
+                //       var undefined = 5;
+                //
+                f_result_type = Node::NODE_UNDEFINED;
                 break;
             }
-            if(l == 3 && s[1] == 's' && s[2] == 'e') {
-                f_data.f_type = NODE_USE;
+            if(l == 3 && s[1] == 's' && s[2] == 'e')
+            {
+                f_result_type = Node::NODE_USE;
                 break;
             }
             break;
 
         case 'v':
-            if(l == 3 && s[1] == 'a' && s[2] == 'r') {
-                f_data.f_type = NODE_VAR;
+            if(l == 3 && s[1] == 'a' && s[2] == 'r')
+            {
+                f_result_type = Node::NODE_VAR;
                 break;
             }
-            if(l == 4 && f_data.f_str == "void") {
-                f_data.f_type = NODE_VOID;
+            if(l == 4 && str == "void")
+            {
+                f_result_type = Node::NODE_VOID;
                 break;
             }
             break;
 
         case 'w':
-            if(l == 4 && f_data.f_str == "with") {
-                f_data.f_type = NODE_WITH;
+            if(l == 4 && str == "with")
+            {
+                f_result_type = Node::NODE_WITH;
                 break;
             }
-            if(l == 5 && f_data.f_str == "while") {
-                f_data.f_type = NODE_WHILE;
+            if(l == 5 && str == "while")
+            {
+                f_result_type = Node::NODE_WHILE;
                 break;
             }
             break;
 
         case '_':
-            if(l == 8 && f_data.f_str == "__FILE__") {
-                f_data.f_type = NODE_STRING;
-                f_data.f_str = f_input->GetFilename();
+            if(l == 8 && str == "__FILE__")
+            {
+                f_result_type = Node::NODE_STRING;
+                f_result_string = f_input->get_position().get_filename();
                 break;
             }
-            if(l == 8 && f_data.f_str == "__LINE__") {
-                f_data.f_type = NODE_INT64;
-                f_data.f_int.Set(f_input->Line());
+            if(l == 8 && str == "__LINE__")
+            {
+                f_result_type = Node::NODE_INT64;
+                f_result_int64 = f_input->get_position().get_line();
                 break;
             }
             break;
 
         }
     }
+
+    f_result_type = Node::NODE_IDENTIFIER;
+    f_result_string = str;
 }
 
 
-void Lexer::read_number(char_t c)
+void Lexer::read_number(Input::char_t c)
 {
     String      number;
-    char        buf[256];
     size_t      sz;
-
-    buf[sizeof(buf) - 1] = '\0';
 
     if(c == '.')
     {
         // in case the strtod() doesn't support a missing 0
         // at the start of the string
-        number.AppendChar('0');
-        number.AppendChar('.');
+        number = "0.";
     }
     else if(c == '0')
     {
-        c = GetC();
+        c = getc();
         if(c == 'x' || c == 'X')
         {
             // hexadecimal number
-            f_data.f_type = NODE_INT64;
-            f_data.f_int.Set(read_hex(16));
+            f_result_type = Node::NODE_INT64;
+            f_result_int64 = read_hex(16);
             return;
         }
         // octal is not permitted in ECMAScript version 3+
-        if(f_options
-        && f_options->get_option(AS_OPTION_OCTAL) != 0
+        if(has_option_set(Options::AS_OPTION_OCTAL)
         && c >= '0' && c <= '7')
         {
             // octal
-            f_data.f_type = NODE_INT64;
-            f_data.f_int.set(read_octal(c, 22));
+            f_result_type = Node::NODE_INT64;
+            f_result_int64 = read_octal(c, 22);
             return;
         }
-        number.AppendChar('0');
+        number = "0";
         ungetc(c);
     }
     else
@@ -702,53 +753,57 @@ void Lexer::read_number(char_t c)
     if(c == '.')
     {
         // TODO: we may want to support 32 bits floats as well
-        f_data.f_type = NODE_FLOAT64;
-        c = getc();
+        f_result_type = Node::NODE_FLOAT64;
+        c = getc(); // re-read the '.' from f_input
 
         // TODO:
         // Here we could check to know whether this really
         // represents a decimal number or whether the decimal
         // point is a member operator. This can be very tricky.
 
-        c = Read(c, CHAR_DIGIT, number);
-        if(c == 'e' || c == 'E') {
-            number.AppendChar('e');
-            GetC();        // skip the 'e'
-            c = GetC();    // get the character after!
+        c = read(c, CHAR_DIGIT, number);
+        if(c == 'e' || c == 'E')
+        {
+            number += 'e';
+            getc();        // skip the 'e'
+            c = getc();    // get the character after!
             if(c == '-' || c == '+' || (c >= '0' && c <= '9'))
             {
-                c = Read(c, CHAR_DIGIT, number);
+                c = read(c, CHAR_DIGIT, number);
             }
         }
         sz = sizeof(buf);
         number.ToUTF8(buf, sz);
-        f_data.f_float.Set(strtod(buf, 0));
+        f_result_float64 = strtod(buf, 0);
     }
     else
     {
         // TODO: Support 8, 16, 32 bits, unsigned thereof
-        f_data.f_type = NODE_INT64;
+        f_result_type = Node::NODE_INT64;
         sz = sizeof(buf);
         number.ToUTF8(buf, sz);
-        f_data.f_int.Set(strtoll(buf, 0, 10));
+        f_result_int64 = strtoll(buf, 0, 10);
     }
 }
 
 
 void Lexer::read_string(Input::char_t quote)
 {
-    f_data.f_type = NODE_STRING;
+    f_result_type = Node::NODE_STRING;
+    f_result_string.clear();
 
     for(Input::char_t c(getc()); c != quote; c = getc())
     {
         if(c < 0)
         {
-            f_input->ErrMsg(AS_ERR_UNTERMINTED_STRING, "the last string wasn't closed before the end of the input was reached");
+            Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_UNTERMINTED_STRING, f_input->get_position());
+            msg << "the last string was not closed before the end of the input was reached";
             return;
         }
-        if((f_type & CHAR_LINE_TERMINATOR) != 0)
+        if((f_char_type & CHAR_LINE_TERMINATOR) != 0)
         {
-            f_input->ErrMsg(AS_ERR_UNTERMINTED_STRING, "a string can't include a line terminator");
+            Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_UNTERMINTED_STRING, f_input->get_position());
+            msg << "a string cannot include a line terminator";
             return;
         }
         if(c == '\\')
@@ -756,441 +811,538 @@ void Lexer::read_string(Input::char_t quote)
             c = escape_sequence();
             // here c can be equal to quote (c == quote)
         }
-        f_data.f_str.AppendChar(c);
+        f_result_string += c;
     }
 }
 
 
 
-Node::node_pointer_t Lexer::GetNextToken()
+Node::node_pointer_t Lexer::get_next_token()
 {
-    f_result = Node::node_pointer_t(new Node);
+    // get the info
+    get_token();
 
-    for(Input::char_t c(getc());; c = getc()) {
+    // create a node for the result
+    Node::node_pointer_t node(new Node(f_result_type));
+    switch(f_result_type)
+    {
+    case Node::NODE_IDENTIFIER:
+    case Node::NODE_STRING:
+        node->set_string(f_result_string);
+        break;
+
+    case Node::NODE_INT64:
+        node->set_int64(f_result_int64);
+        break;
+
+    case Node::NODE_FLOAT64:
+        node->set_float64(f_result_float64);
+        break;
+
+    default:
+        // no data attached
+        break;
+
+    }
+    return node;
+}
+
+
+void Lexer::get_token()
+{
+    for(Input::char_t c(getc());; c = getc())
+    {
         if(c < 0)
         {
             // we're done
-            f_data.f_type = NODE_EOF;
-            return f_data;
+            f_result_type = Node::NODE_EOF;
+            return;
         }
 
-        if((f_type & (CHAR_WHITE_SPACE | CHAR_LINE_TERMINATOR | CHAR_INVALID)) != 0)
+        if((f_char_type & (CHAR_WHITE_SPACE | CHAR_LINE_TERMINATOR | CHAR_INVALID)) != 0)
         {
             continue;
         }
 
-        if((f_type & CHAR_LETTER) != 0) {
-            ReadIdentifier(c);
-            return f_data;
+        if((f_char_type & CHAR_LETTER) != 0)
+        {
+            read_identifier(c);
+            return;
         }
 
-        if((f_type & CHAR_DIGIT) != 0) {
-            ReadNumber(c);
-            return f_data;
+        if((f_char_type & CHAR_DIGIT) != 0)
+        {
+            read_number(c);
+            return;
         }
 
         switch(c) {
         case '"':
         case '\'':
-        case '`':    // TODO: do we want to support correct regex?
-            ReadString(c);
-            if(c == '`') {
-                f_data.f_type = NODE_REGULAR_EXPRESSION;
+        case '`':    // TODO: do we want to support the correct regex syntax?
+            read_string(c);
+            if(c == '`')
+            {
+                f_result_type = Node::NODE_REGULAR_EXPRESSION;
             }
-            return f_data;
+            return;
 
         case '<':
-            c = GetC();
-            if(c == '<') {
-                c = GetC();
-                if(c == '=') {
-                    f_data.f_type = NODE_ASSIGNMENT_SHIFT_LEFT;
-                    return f_data;
+            c = getc();
+            if(c == '<')
+            {
+                c = getc();
+                if(c == '=')
+                {
+                    f_result_type = Node::NODE_ASSIGNMENT_SHIFT_LEFT;
+                    return;
                 }
-                UngetC(c);
-                f_data.f_type = NODE_SHIFT_LEFT;
-                return f_data;
+                ungetc(c);
+                f_result_type = Node::NODE_SHIFT_LEFT;
+                return;
             }
-            if(c == '=') {
-                f_data.f_type = NODE_LESS_EQUAL;
-                return f_data;
+            if(c == '=')
+            {
+                f_result_type = Node::NODE_LESS_EQUAL;
+                return;
             }
-            if(f_options != 0
-            && f_options->GetOption(AS_OPTION_EXTENDED_OPERATORS) != 0) {
-                if(c == '>') {
-                    f_data.f_type = NODE_NOT_EQUAL;
-                    return f_data;
+            if(has_option_set(Options::AS_OPTION_EXTENDED_OPERATORS))
+            {
+                if(c == '>')
+                {
+                    f_result_type = Node::NODE_NOT_EQUAL;
+                    return;
                 }
             }
-            UngetC(c);
-            f_data.f_type = NODE_LESS;
-            return f_data;
+            ungetc(c);
+            f_result_type = Node::NODE_LESS;
+            return;
 
         case '>':
-            c = GetC();
-            if(c == '>') {
-                c = GetC();
-                if(c == '>') {
-                    c = GetC();
-                    if(c == '=') {
-                        f_data.f_type = NODE_ASSIGNMENT_SHIFT_RIGHT_UNSIGNED;
-                        return f_data;
+            c = getc();
+            if(c == '>')
+            {
+                c = getc();
+                if(c == '>')
+                {
+                    c = getc();
+                    if(c == '=')
+                    {
+                        f_result_type = Node::NODE_ASSIGNMENT_SHIFT_RIGHT_UNSIGNED;
+                        return;
                     }
-                    UngetC(c);
-                    f_data.f_type = NODE_SHIFT_RIGHT_UNSIGNED;
-                    return f_data;
+                    ungetc(c);
+                    f_result_type = Node::NODE_SHIFT_RIGHT_UNSIGNED;
+                    return;
                 }
-                if(c == '=') {
-                    f_data.f_type = NODE_ASSIGNMENT_SHIFT_RIGHT;
-                    return f_data;
+                if(c == '=')
+                {
+                    f_result_type = Node::NODE_ASSIGNMENT_SHIFT_RIGHT;
+                    return;
                 }
-                UngetC(c);
-                f_data.f_type = NODE_SHIFT_RIGHT;
-                return f_data;
+                ungetc(c);
+                f_result_type = Node::NODE_SHIFT_RIGHT;
+                return;
             }
-            if(c == '=') {
-                f_data.f_type = NODE_GREATER_EQUAL;
-                return f_data;
+            if(c == '=')
+            {
+                f_result_type = Node::NODE_GREATER_EQUAL;
+                return;
             }
-            UngetC(c);
-            f_data.f_type = NODE_GREATER;
-            return f_data;
+            ungetc(c);
+            f_result_type = Node::NODE_GREATER;
+            return;
 
         case '!':
-            c = GetC();
-            if(f_options != 0
-            && f_options->GetOption(AS_OPTION_EXTENDED_OPERATORS) != 0) {
-                if(c == '<') {
-                    c = GetC();
-                    if(c == '=') {
-                        f_data.f_type = NODE_ASSIGNMENT_ROTATE_LEFT;
-                        return f_data;
+            c = getc();
+            if(has_option_set(Options::AS_OPTION_EXTENDED_OPERATORS))
+            {
+                if(c == '<')
+                {
+                    c = getc();
+                    if(c == '=')
+                    {
+                        f_result_type = Node::NODE_ASSIGNMENT_ROTATE_LEFT;
+                        return;
                     }
-                    UngetC(c);
-                    f_data.f_type = NODE_ROTATE_LEFT;
-                    return f_data;
+                    ungetc(c);
+                    f_result_type = Node::NODE_ROTATE_LEFT;
+                    return;
                 }
-                if(c == '>') {
-                    c = GetC();
-                    if(c == '=') {
-                        f_data.f_type = NODE_ASSIGNMENT_ROTATE_RIGHT;
-                        return f_data;
+                if(c == '>')
+                {
+                    c = getc();
+                    if(c == '=')
+                    {
+                        f_result_type = Node::NODE_ASSIGNMENT_ROTATE_RIGHT;
+                        return;
                     }
-                    UngetC(c);
-                    f_data.f_type = NODE_ROTATE_RIGHT;
-                    return f_data;
+                    ungetc(c);
+                    f_result_type = Node::NODE_ROTATE_RIGHT;
+                    return;
                 }
             }
-            if(c == '=') {
-                c = GetC();
-                if(c == '=') {
-                    f_data.f_type = NODE_STRICTLY_NOT_EQUAL;
-                    return f_data;
+            if(c == '=')
+            {
+                c = getc();
+                if(c == '=')
+                {
+                    f_result_type = Node::NODE_STRICTLY_NOT_EQUAL;
+                    return;
                 }
-                UngetC(c);
-                f_data.f_type = NODE_NOT_EQUAL;
-                return f_data;
+                ungetc(c);
+                f_result_type = Node::NODE_NOT_EQUAL;
+                return;
             }
-            UngetC(c);
-            f_data.f_type = NODE_LOGICAL_NOT;
-            return f_data;
+            ungetc(c);
+            f_result_type = Node::NODE_LOGICAL_NOT;
+            return;
 
         case '=':
-            c = GetC();
-            if(c == '=') {
-                c = GetC();
-                if(c == '=') {
-                    f_data.f_type = NODE_STRICTLY_EQUAL;
-                    return f_data;
+            c = getc();
+            if(c == '=')
+            {
+                c = getc();
+                if(c == '=')
+                {
+                    f_result_type = Node::NODE_STRICTLY_EQUAL;
+                    return;
                 }
-                UngetC(c);
-                f_data.f_type = NODE_EQUAL;
-                return f_data;
+                ungetc(c);
+                f_result_type = Node::NODE_EQUAL;
+                return;
             }
-            UngetC(c);
-            f_data.f_type = NODE_ASSIGNMENT;
-            return f_data;
+            ungetc(c);
+            f_result_type = Node::NODE_ASSIGNMENT;
+            return;
 
         case ':':
-            c = GetC();
-            if(f_options != 0
-            && f_options->GetOption(AS_OPTION_EXTENDED_OPERATORS) != 0
-            && c == '=') {
-                f_data.f_type = NODE_ASSIGNMENT;
-                return f_data;
+            c = getc();
+            if(has_option_set(Options::AS_OPTION_EXTENDED_OPERATORS)
+            && c == '=')
+            {
+                f_result_type = Node::NODE_ASSIGNMENT;
+                return;
             }
-            if(c == ':') {
-                f_data.f_type = NODE_SCOPE;
-                return f_data;
+            if(c == ':')
+            {
+                f_result_type = Node::NODE_SCOPE;
+                return;
             }
-            UngetC(c);
-            f_data.f_type = NODE_COLON;
-            return f_data;
+            ungetc(c);
+            f_result_type = Node::NODE_COLON;
+            return;
 
         case '~':
-            c = GetC();
-            if(f_options != 0
-            && f_options->GetOption(AS_OPTION_EXTENDED_OPERATORS) != 0
-            && c == '=') {
-                f_data.f_type = NODE_MATCH;
-                return f_data;
+            c = getc();
+            if(has_option_set(Options::AS_OPTION_EXTENDED_OPERATORS)
+            && c == '=')
+            {
+                f_result_type = Node::NODE_MATCH;
+                return;
             }
-            UngetC(c);
-            f_data.f_type = NODE_BITWISE_NOT;
-            return f_data;
+            ungetc(c);
+            f_result_type = Node::NODE_BITWISE_NOT;
+            return;
 
         case '+':
-            c = GetC();
-            if(c == '=') {
-                f_data.f_type = NODE_ASSIGNMENT_ADD;
-                return f_data;
+            c = getc();
+            if(c == '=')
+            {
+                f_result_type = Node::NODE_ASSIGNMENT_ADD;
+                return;
             }
-            if(c == '+') {
-                f_data.f_type = NODE_INCREMENT;
-                return f_data;
+            if(c == '+')
+            {
+                f_result_type = Node::NODE_INCREMENT;
+                return;
             }
-            UngetC(c);
-            f_data.f_type = NODE_ADD;
-            return f_data;
+            ungetc(c);
+            f_result_type = Node::NODE_ADD;
+            return;
 
         case '-':
-            c = GetC();
-            if(c == '=') {
-                f_data.f_type = NODE_ASSIGNMENT_SUBTRACT;
-                return f_data;
+            c = getc();
+            if(c == '=')
+            {
+                f_result_type = Node::NODE_ASSIGNMENT_SUBTRACT;
+                return;
             }
-            if(c == '-') {
-                f_data.f_type = NODE_DECREMENT;
-                return f_data;
+            if(c == '-')
+            {
+                f_result_type = Node::NODE_DECREMENT;
+                return;
             }
-            UngetC(c);
-            f_data.f_type = NODE_SUBTRACT;
-            return f_data;
+            ungetc(c);
+            f_result_type = Node::NODE_SUBTRACT;
+            return;
 
         case '*':
-            c = GetC();
-            if(c == '=') {
-                f_data.f_type = NODE_ASSIGNMENT_MULTIPLY;
-                return f_data;
+            c = getc();
+            if(c == '=')
+            {
+                f_result_type = Node::NODE_ASSIGNMENT_MULTIPLY;
+                return;
             }
-            if(f_options != 0
-            && f_options->GetOption(AS_OPTION_EXTENDED_OPERATORS) != 0
-            && c == '*') {
-                c = GetC();
-                if(c == '=') {
-                    f_data.f_type = NODE_ASSIGNMENT_POWER;
-                    return f_data;
+            if(has_option_set(Options::AS_OPTION_EXTENDED_OPERATORS)
+            && c == '*')
+            {
+                c = getc();
+                if(c == '=')
+                {
+                    f_result_type = Node::NODE_ASSIGNMENT_POWER;
+                    return;
                 }
-                UngetC(c);
-                f_data.f_type = NODE_POWER;
-                return f_data;
+                ungetc(c);
+                f_result_type = Node::NODE_POWER;
+                return;
             }
-            UngetC(c);
-            f_data.f_type = NODE_MULTIPLY;
-            return f_data;
+            ungetc(c);
+            f_result_type = Node::NODE_MULTIPLY;
+            return;
 
         case '/':
-            c = GetC();
-            if(c == '=') {
-                f_data.f_type = NODE_ASSIGNMENT_DIVIDE;
-                return f_data;
+            c = getc();
+            if(c == '=')
+            {
+                f_result_type = Node::NODE_ASSIGNMENT_DIVIDE;
+                return;
             }
-            if(c == '/') {
+            if(c == '/')
+            {
                 // skip comments (to end of line)
-                do {
-                    c = GetC();
-                } while((f_type & CHAR_LINE_TERMINATOR) == 0 && c > 0);
+                do
+                {
+                    c = getc();
+                }
+                while((f_char_type & CHAR_LINE_TERMINATOR) == 0 && c > 0);
                 break;
             }
-            if(c == '*') {
+            if(c == '*')
+            {
                 // skip comments (multiline)
-                do {
-                    c = GetC();
-                    while(c == '*') {
-                        c = GetC();
-                        if(c == '/') {
+                do
+                {
+                    c = getc();
+                    while(c == '*')
+                    {
+                        c = getc();
+                        if(c == '/')
+                        {
                             c = -1;
                             break;
                         }
                     }
-                } while(c > 0);
+                }
+                while(c > 0);
                 break;
             }
-            UngetC(c);
-            f_data.f_type = NODE_DIVIDE;
-            return f_data;
+            ungetc(c);
+            f_result_type = Node::NODE_DIVIDE;
+            return;
 
         case '%':
-            c = GetC();
-            if(c == '=') {
-                f_data.f_type = NODE_ASSIGNMENT_MODULO;
-                return f_data;
+            c = getc();
+            if(c == '=')
+            {
+                f_result_type = Node::NODE_ASSIGNMENT_MODULO;
+                return;
             }
-            UngetC(c);
-            f_data.f_type = NODE_MODULO;
-            return f_data;
+            ungetc(c);
+            f_result_type = Node::NODE_MODULO;
+            return;
 
         case '?':
-            c = GetC();
-            if(f_options != 0
-            && f_options->GetOption(AS_OPTION_EXTENDED_OPERATORS) != 0) {
-                if(c == '<') {
-                    c = GetC();
-                    if(c == '=') {
-                        f_data.f_type = NODE_ASSIGNMENT_MINIMUM;
-                        return f_data;
+            c = getc();
+            if(has_option_set(Options::AS_OPTION_EXTENDED_OPERATORS))
+            {
+                if(c == '<')
+                {
+                    c = getc();
+                    if(c == '=')
+                    {
+                        f_result_type = Node::NODE_ASSIGNMENT_MINIMUM;
+                        return;
                     }
-                    UngetC(c);
-                    f_data.f_type = NODE_MINIMUM;
-                    return f_data;
+                    ungetc(c);
+                    f_result_type = Node::NODE_MINIMUM;
+                    return;
                 }
-                if(c == '>') {
-                    c = GetC();
-                    if(c == '=') {
-                        f_data.f_type = NODE_ASSIGNMENT_MAXIMUM;
-                        return f_data;
+                if(c == '>')
+                {
+                    c = getc();
+                    if(c == '=')
+                    {
+                        f_result_type = Node::NODE_ASSIGNMENT_MAXIMUM;
+                        return;
                     }
-                    UngetC(c);
-                    f_data.f_type = NODE_MAXIMUM;
-                    return f_data;
+                    ungetc(c);
+                    f_result_type = Node::NODE_MAXIMUM;
+                    return;
                 }
             }
-            UngetC(c);
-            f_data.f_type = NODE_CONDITIONAL;
-            return f_data;
+            ungetc(c);
+            f_result_type = Node::NODE_CONDITIONAL;
+            return;
 
         case '&':
-            c = GetC();
-            if(c == '=') {
-                f_data.f_type = NODE_ASSIGNMENT_BITWISE_AND;
-                return f_data;
+            c = getc();
+            if(c == '=')
+            {
+                f_result_type = Node::NODE_ASSIGNMENT_BITWISE_AND;
+                return;
             }
-            if(c == '&') {
-                c = GetC();
-                if(c == '=') {
-                    f_data.f_type = NODE_ASSIGNMENT_LOGICAL_AND;
-                    return f_data;
+            if(c == '&')
+            {
+                c = getc();
+                if(c == '=')
+                {
+                    f_result_type = Node::NODE_ASSIGNMENT_LOGICAL_AND;
+                    return;
                 }
-                UngetC(c);
-                f_data.f_type = NODE_LOGICAL_AND;
-                return f_data;
+                ungetc(c);
+                f_result_type = Node::NODE_LOGICAL_AND;
+                return;
             }
-            UngetC(c);
-            f_data.f_type = NODE_BITWISE_AND;
-            return f_data;
+            ungetc(c);
+            f_result_type = Node::NODE_BITWISE_AND;
+            return;
 
         case '^':
-            c = GetC();
-            if(c == '=') {
-                f_data.f_type = NODE_ASSIGNMENT_BITWISE_XOR;
-                return f_data;
+            c = getc();
+            if(c == '=')
+            {
+                f_result_type = Node::NODE_ASSIGNMENT_BITWISE_XOR;
+                return;
             }
-            if(c == '^') {
-                c = GetC();
-                if(c == '=') {
-                    f_data.f_type = NODE_ASSIGNMENT_LOGICAL_XOR;
-                    return f_data;
+            if(c == '^')
+            {
+                c = getc();
+                if(c == '=')
+                {
+                    f_result_type = Node::NODE_ASSIGNMENT_LOGICAL_XOR;
+                    return;
                 }
-                UngetC(c);
-                f_data.f_type = NODE_LOGICAL_XOR;
-                return f_data;
+                ungetc(c);
+                f_result_type = Node::NODE_LOGICAL_XOR;
+                return;
             }
-            UngetC(c);
-            f_data.f_type = NODE_BITWISE_XOR;
-            return f_data;
+            ungetc(c);
+            f_result_type = Node::NODE_BITWISE_XOR;
+            return;
 
         case '|':
-            c = GetC();
-            if(c == '=') {
-                f_data.f_type = NODE_ASSIGNMENT_BITWISE_OR;
-                return f_data;
+            c = getc();
+            if(c == '=')
+            {
+                f_result_type = Node::NODE_ASSIGNMENT_BITWISE_OR;
+                return;
             }
-            if(c == '|') {
-                c = GetC();
-                if(c == '=') {
-                    f_data.f_type = NODE_ASSIGNMENT_LOGICAL_OR;
-                    return f_data;
+            if(c == '|')
+            {
+                c = getc();
+                if(c == '=')
+                {
+                    f_result_type = Node::NODE_ASSIGNMENT_LOGICAL_OR;
+                    return;
                 }
-                UngetC(c);
-                f_data.f_type = NODE_LOGICAL_OR;
-                return f_data;
+                ungetc(c);
+                f_result_type = Node::NODE_LOGICAL_OR;
+                return;
             }
-            UngetC(c);
-            f_data.f_type = NODE_BITWISE_OR;
-            return f_data;
+            ungetc(c);
+            f_result_type = Node::NODE_BITWISE_OR;
+            return;
 
         case '.':
-            c = GetC();
-            if(c >= '0' && c <= '9') {
-                // this is a valid fraction
-                UngetC(c);
-                ReadNumber('.');
-                return f_data;
+            c = getc();
+            if(c >= '0' && c <= '9')
+            {
+                // this is a valid float
+                ungetc(c);
+                read_number('.');
+                return;
             }
-            if(c == '.') {
-                c = GetC();
-                if(c == '.') {
+            if(c == '.')
+            {
+                c = getc();
+                if(c == '.')
+                {
                     // Elipsis!
-                    f_data.f_type = NODE_REST;
-                    return f_data;
+                    f_result_type = Node::NODE_REST;
+                    return;
                 }
-                UngetC(c);
+                ungetc(c);
+
                 // Range (not too sure if this is really used yet
                 // and whether it will be called RANGE)
-                f_data.f_type = NODE_RANGE;
-                return f_data;
+                f_result_type = Node::NODE_RANGE;
+                return;
             }
-            UngetC(c);
-            f_data.f_type = NODE_MEMBER;
-            return f_data;
+            ungetc(c);
+            f_result_type = Node::NODE_MEMBER;
+            return;
 
         case '[':
-            f_data.f_type = NODE_OPEN_SQUARE_BRACKET;
-            return f_data;
+            f_result_type = Node::NODE_OPEN_SQUARE_BRACKET;
+            return;
 
         case ']':
-            f_data.f_type = NODE_CLOSE_SQUARE_BRACKET;
-            return f_data;
+            f_result_type = Node::NODE_CLOSE_SQUARE_BRACKET;
+            return;
 
         case '{':
-            f_data.f_type = NODE_OPEN_CURVLY_BRACKET;
-            return f_data;
+            f_result_type = Node::NODE_OPEN_CURVLY_BRACKET;
+            return;
 
         case '}':
-            f_data.f_type = NODE_CLOSE_CURVLY_BRACKET;
-            return f_data;
+            f_result_type = Node::NODE_CLOSE_CURVLY_BRACKET;
+            return;
 
         case '(':
-            f_data.f_type = NODE_OPEN_PARENTHESIS;
-            return f_data;
+            f_result_type = Node::NODE_OPEN_PARENTHESIS;
+            return;
 
         case ')':
-            f_data.f_type = NODE_CLOSE_PARENTHESIS;
-            return f_data;
+            f_result_type = Node::NODE_CLOSE_PARENTHESIS;
+            return;
 
         case ';':
-            f_data.f_type = NODE_SEMICOLON;
-            return f_data;
+            f_result_type = Node::NODE_SEMICOLON;
+            return;
 
         case ',':
-            f_data.f_type = NODE_COMMA;
-            return f_data;
+            f_result_type = Node::NODE_COMMA;
+            return;
 
         default:
             if(c > ' ' && c < 0x7F)
             {
-                f_input->ErrMsg(AS_ERR_UNEXPECTED_PUNCTUATION, "unexpected punctuation '%c'", (char) c);
+                Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_UNEXPECTED_PUNCTUATION, f_input->get_position());
+                msg << "unexpected punctuation '" << static_cast<char>(c) << "'";
             }
             else
             {
-                f_input->ErrMsg(AS_ERR_UNEXPECTED_PUNCTUATION, "unexpected punctuation '\\U%08lX'", c);
+                Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_UNEXPECTED_PUNCTUATION, f_input->get_position());
+                msg << "unexpected punctuation '\\U" << c << "'";
             }
             break;
 
         }
     }
+    /*NOTREACHED*/
 }
 
+
+bool Lexer::has_option_set(Options::option_t option) const
+{
+    if(f_options)
+    {
+        return f_options->get_option(option);
+    }
+
+    return false;
+}
 
 
 }

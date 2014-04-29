@@ -68,6 +68,7 @@ private:
 
     typedef controlled_vars::auto_init<char_type_t, CHAR_NO_FLAGS>  zchar_type_t;
 
+    void                        get_token();
     Input::char_t               input_getc();
     Input::char_t               getc();
     void                        ungetc(Input::char_t c);
@@ -79,12 +80,17 @@ private:
     void                        read_identifier(Input::char_t c);
     void                        read_number(Input::char_t c);
     void                        read_string(Input::char_t quote);
+    bool                        has_option_set(Options::option_t option) const;
 
-    zchar_type_t                f_type;        // type of the last character read
-    Node::node_pointer_t        f_result;
+    zchar_type_t                f_char_type;    // type of the last character read
     Input::input_pointer_t      f_input;
     Options::options_pointer_t  f_options;
-    controlled_vars::fbool_t    f_for_in;    // IN becomes FOR_IN when this is true
+    controlled_vars::fbool_t    f_for_in;       // IN becomes FOR_IN when this is true
+
+    Node::node_t                f_result_type;
+    String                      f_result_string;
+    Int64                       f_result_int64;
+    Float64                     f_result_float64;
 };
 
 
