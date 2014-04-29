@@ -882,12 +882,12 @@ void sendmail::email::add_header(const QString& name, const QString& value)
             {
                 // TODO: this can happen if a TLD becomes obsolete and
                 //       a user did not update one's email address.
-                throw sendmail_exception_invalid_argument("Invalid header field of emails");
+                throw sendmail_exception_invalid_argument(QString("Invalid header field of emails in: \"%1: %2\"").arg(name).arg(value));
             }
             if(type == TLD_EMAIL_FIELD_TYPE_MAILBOX
             && emails.count() != 1)
             {
-                throw sendmail_exception_invalid_argument("Header field expects exactly one email");
+                throw sendmail_exception_invalid_argument(QString("Header field expects exactly one email in: \"%1: %2\"").arg(name).arg(value));
             }
         }
     }

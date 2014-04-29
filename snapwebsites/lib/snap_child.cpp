@@ -2383,8 +2383,8 @@ int snap_child::post_file_t::get_size() const
  */
 snap_child::snap_child(server_pointer_t s)
     : f_server(s)
-    , f_child_pid(0)
-    , f_socket(-1)
+    //, f_child_pid(0) -- auto-init
+    //, f_socket(-1) -- auto-init
     , f_start_date(0)
 {
 }

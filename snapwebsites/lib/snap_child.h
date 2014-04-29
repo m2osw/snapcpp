@@ -80,6 +80,9 @@ public:
 class permission_error_callback;
 class server;
 
+typedef controlled_vars::auto_init<pid_t>   zpid_t;
+typedef controlled_vars::auto_init<int, -1> zfile_descriptor_t;
+
 
 class snap_child
 {
@@ -186,7 +189,8 @@ public:
         SNAP_CHILD_STATUS_READY,
         SNAP_CHILD_STATUS_RUNNING
     };
-    typedef std::weak_ptr<server> server_pointer_t;
+
+    typedef std::weak_ptr<server>   server_pointer_t;
     typedef QMap<QString, QString>  environment_map_t;
 
     // Note: the information saved in files come from the POST and
@@ -379,8 +383,8 @@ protected:
 
     server_pointer_t                            f_server;
     controlled_vars::fbool_t                    f_is_child;
-    pid_t                                       f_child_pid;
-    int                                         f_socket;
+    zpid_t                                      f_child_pid;
+    zfile_descriptor_t                          f_socket;
     QtCassandra::QCassandraContext::pointer_t   f_context;
     controlled_vars::mint64_t                   f_start_date; // time request arrived
     controlled_vars::fbool_t                    f_ready; // becomes true just before the server::execute() call
