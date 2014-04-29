@@ -218,7 +218,22 @@ bool output::on_path_execute(content::path_info_t& ipath)
 
             // this is an attachment, output it as such
             QtCassandra::QCassandraValue attachment_mime_type(file_row->cell(content::get_name(content::SNAP_NAME_CONTENT_FILES_MIME_TYPE))->value());
-            f_snap->set_header("Content-Type", attachment_mime_type.stringValue());
+            QString content_type(attachment_mime_type.stringValue());
+            // TBD -- we probably should check what's defined inside those
+            //        files before assuming it's using UTF-8.
+            if(content_type == "text/javascript")
+            {
+                content_type += "; charset=utf-8";
+            }
+            else if(content_type == "text/css")
+            {
+                content_type += "; charset=utf-8";
+            }
+            else if(content_type == "text/xml")
+            {
+                content_type += "; charset=utf-8";
+            }
+            f_snap->set_header("Content-Type", content_type);
 
             QtCassandra::QCassandraValue data(file_row->cell(content::get_name(content::SNAP_NAME_CONTENT_FILES_DATA))->value());
             f_snap->output(data.binaryValue());

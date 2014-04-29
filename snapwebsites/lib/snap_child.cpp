@@ -5856,7 +5856,7 @@ bool snap_child::has_header(const QString& name) const
  *
  * \return The value of this header, "" if undefined.
  */
-QString snap_child::get_header(const QString& name) const
+QString snap_child::get_header(QString const& name) const
 {
     header_map_t::const_iterator it(f_header.find(name.toLower()));
     if(it == f_header.end())
@@ -6548,47 +6548,65 @@ void snap_child::execute()
 
     // it looks like some browsers use that one instead of plain "gzip"
     // try both just in case
-    float gzip_level(std::max(std::max(encodings.get_level("gzip"), encodings.get_level("x-gzip")), encodings.get_level("*")));
-    float deflate_level(encodings.get_level("deflate"));
-    if(gzip_level > 0.0f && gzip_level >= deflate_level)
+    QString const content_type(get_header("Content-Type"));
+    // at this point we only attempt to compress known text formats
+    // (should we instead have a list of mime types that we do not want to
+    // compress? before, attempting to compress the "wrong" files would
+    // make the browsers fail badly... but today not so much.)
+    if(content_type.startsWith("text/plain;")
+    || content_type.startsWith("text/html;")
+    || content_type.startsWith("text/xml;")
+    || content_type.startsWith("text/css;")
+    || content_type.startsWith("text/javascript;"))
     {
-        // browser asked for gzip with higher preference
-        QString compressor("gzip");
-        html_output = compression::compress(compressor, f_output.buffer(), 100, true);
-        if(compressor == "gzip")
+        float gzip_level(std::max(std::max(encodings.get_level("gzip"), encodings.get_level("x-gzip")), encodings.get_level("*")));
+        float deflate_level(encodings.get_level("deflate"));
+        if(gzip_level > 0.0f && gzip_level >= deflate_level)
         {
-            // compression succeeded
-            set_header("Content-Encoding", "gzip");
+            // browser asked for gzip with higher preference
+            QString compressor("gzip");
+            html_output = compression::compress(compressor, f_output.buffer(), 100, true);
+            if(compressor == "gzip")
+            {
+                // compression succeeded
+                set_header("Content-Encoding", "gzip");
+            }
         }
-    }
-    else if(deflate_level > 0.0f)
-    {
-        QString compressor("deflate");
-        html_output = compression::compress(compressor, f_output.buffer(), 100, true);
-        if(compressor == "deflate")
+        else if(deflate_level > 0.0f)
         {
-            // compression succeeded
-            set_header("Content-Encoding", "deflate");
+            QString compressor("deflate");
+            html_output = compression::compress(compressor, f_output.buffer(), 100, true);
+            if(compressor == "deflate")
+            {
+                // compression succeeded
+                set_header("Content-Encoding", "deflate");
+            }
+        }
+        else
+        {
+            // This 406 is in the spec. (RFC2616) but frankly?!
+            float identity_level(encodings.get_level("identity"));
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+            if(identity_level == 0.0f)
+#pragma GCC diagnostic pop
+            {
+                die(HTTP_CODE_NOT_ACCEPTABLE, "No Acceptable Compression Encoding",
+                    "Your client requested a compression that we do not offer and it does not accept content without compression.",
+                    "a client requested content with Accept-Encoding: identify;q=0 and no other compression we understand");
+                NOTREACHED();
+            }
+            html_output = f_output.buffer();
+            // The "identity" SHOULD NOT be used with the Content-Encoding
+            // (RFC 2616 -- https://tools.ietf.org/html/rfc2616)
+            //set_header("Content-Encoding", "identity");
         }
     }
     else
     {
-        // This 406 is in the spec. (RFC2616) but frankly?!
-        float identity_level(encodings.get_level("identity"));
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wfloat-equal"
-        if(identity_level == 0.0f)
-#pragma GCC diagnostic pop
-        {
-            die(HTTP_CODE_NOT_ACCEPTABLE, "No Acceptable Compression Encoding",
-                "Your client requested a compression that we do not offer and it does not accept content without compression.",
-                "a client requested content with Accept-Encoding: identify;q=0 and no other compression we understand");
-            NOTREACHED();
-        }
+        // note that "html"-output is NOT html in this case!
+        // (most likely an image... but any document really)
         html_output = f_output.buffer();
-        // The "identity" SHOULD NOT be used with the Content-Encoding
-        // (RFC 2616 -- https://tools.ietf.org/html/rfc2616)
-        //set_header("Content-Encoding", "identity");
     }
 
     QString const size(QString("%1").arg(html_output.size()));
