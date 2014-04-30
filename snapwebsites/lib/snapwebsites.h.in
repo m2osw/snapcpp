@@ -46,6 +46,7 @@ enum name_t
     SNAP_NAME_SITES,            // Cassandra Table used for sites (one site per row)
 
     // names used by core (server & snap_child)
+    SNAP_NAME_CORE_CONTENT_TYPE_HEADER,
     SNAP_NAME_CORE_ADMINISTRATOR_EMAIL,
     SNAP_NAME_CORE_COOKIE_DOMAIN,
     SNAP_NAME_CORE_HTTP_ACCEPT_LANGUAGE,
@@ -210,6 +211,7 @@ public:
     SNAP_SIGNAL(load_file, (snap_child::post_file_t& file, bool& found), (file, found));
     SNAP_SIGNAL(cell_is_secure, (QString const& table, QString const& row, QString const& cell, secure_field_flag_t& secure), (table, row, cell, secure));
     SNAP_SIGNAL(add_snap_expr_functions, (snap_expr::functions_t& functions), (functions));
+    SNAP_SIGNAL(output_result, (QString const& uri_path, QByteArray& output), (uri_path, output));
 
 private:
     //typedef QMap<QString, QString>                parameter_map_t;

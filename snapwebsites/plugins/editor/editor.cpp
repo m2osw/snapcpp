@@ -23,6 +23,7 @@
 #include "../sessions/sessions.h"
 #include "../filter/filter.h"
 #include "../layout/layout.h"
+#include "../server_access/server_access.h"
 
 #include "dbutils.h"
 #include "qdomreceiver.h"
@@ -680,156 +681,10 @@ void editor::on_process_post(QString const& uri_path)
         }
     }
 
-    // give other plugins a chance to act on the success/failure of
-    // an AJAX post to the editor
-    int const errcnt(messages->get_error_count());
-    bool const result(errcnt == 0);
-    editor_process_post_result(ipath, result);
-
-    // if errors were found while validating, we prevent further processing
-    if(result)
-    {
-        // return success
-        // this is simple enough, do not waste time creating a full DOM
-        QString success_html("<?xml version=\"1.0\"?><!DOCTYPE snap><snap><result>success</result>");
-        QString redirect(ipath.get_parameter("redirect"));
-        if(!redirect.isEmpty())
-        {
-            QString target(ipath.get_parameter("target"));
-            if(!target.isEmpty())
-            {
-                target = QString(" target=\"%1\"").arg(target);
-            }
-            success_html += QString("<redirect%1>%2</redirect>")
-                        .arg(target)
-                        .arg(redirect.replace("<", "&lt;")
-                                     .replace(">", "&gt;")
-                                     .replace("&", "&amp;"));
-        }
-        success_html += "</snap>\n";
-        f_snap->output(success_html);
-    }
-    else
-    {
-        // one or more errors occured, return them in an XML document
-        f_snap->output("<?xml version=\"1.0\"?>");
-
-        // /snap
-        QDomDocument response("snap");
-        QDomElement snap_tag(response.createElement("snap"));
-        response.appendChild(snap_tag);
-
-        // /snap/result/failure
-        QDomElement result_tag(response.createElement("result"));
-        snap_tag.appendChild(result_tag);
-        QDomText result_text(response.createTextNode("failure"));
-        result_tag.appendChild(result_text);
-
-        // /snap/messages[errcnt=...][warncnt=...]
-        QDomElement messages_tag(response.createElement("messages"));
-        messages_tag.setAttribute("error-count", errcnt);
-        messages_tag.setAttribute("warning-count", messages->get_warning_count());
-        snap_tag.appendChild(messages_tag);
-
-        int const max_messages(messages->get_message_count());
-        if(max_messages <= 0)
-        {
-            throw snap_logic_exception("Somehow the number of messages in the editor error handling is zero when the number of errors was not.");
-        }
-
-        for(int i(0); i < max_messages; ++i)
-        {
-            QString type;
-            messages::messages::message const& msg(messages->get_message(i));
-            switch(msg.get_type())
-            {
-            case messages::messages::message::MESSAGE_TYPE_ERROR:
-                type = "error";
-                break;
-
-            case messages::messages::message::MESSAGE_TYPE_WARNING:
-                type = "warning";
-                break;
-
-            case messages::messages::message::MESSAGE_TYPE_INFO:
-                type = "info";
-                break;
-
-            case messages::messages::message::MESSAGE_TYPE_DEBUG:
-                type = "debug";
-                break;
-
-            // no default, compiler knows if one missing
-            }
-            {
-                // /snap/messages/message[id=...][type=...]
-                // create the message tag with its type
-                QDomElement msg_tag(response.createElement("message"));
-                QString const widget_name(msg.get_widget_name());
-                if(!widget_name.isEmpty())
-                {
-                    msg_tag.setAttribute("id", widget_name);
-                }
-                msg_tag.setAttribute("msg-id", msg.get_id());
-                msg_tag.setAttribute("type", type);
-                messages_tag.appendChild(msg_tag);
-
-                // there is always a title
-                {
-                    QDomElement title_tag(response.createElement("title"));
-                    msg_tag.appendChild(title_tag);
-                    QDomElement span_tag(response.createElement("span"));
-                    span_tag.setAttribute("class", "message-title");
-                    title_tag.appendChild(span_tag);
-                    snap_dom::insert_html_string_to_xml_doc(span_tag, msg.get_title());
-                }
-
-                // don't create the body if empty
-                if(!msg.get_body().isEmpty())
-                {
-                    QDomElement body_tag(response.createElement("body"));
-                    msg_tag.appendChild(body_tag);
-                    QDomElement span_tag(response.createElement("span"));
-                    span_tag.setAttribute("class", "message-body");
-                    body_tag.appendChild(span_tag);
-                    snap_dom::insert_html_string_to_xml_doc(span_tag, msg.get_body());
-                }
-            }
-        }
-        messages->clear_messages();
-
-        if(errcnt != 0)
-        {
-            // on errors generate a warning in the header
-            f_snap->set_header(messages::get_name(messages::SNAP_NAME_MESSAGES_WARNING_HEADER),
-                    QString("This page generated %1 error%2")
-                            .arg(errcnt).arg(errcnt == 1 ? "" : "s"));
-        }
-
-        f_snap->output(response.toString());
-    }
-}
-
-
-/** \brief Inform plugins that a Save from the editor happened.
- *
- * This function is called whether the save from an AJAX post sent
- * by the editor succeeded or not. This way the plugins can choose
- * to act of the results.
- *
- * The error messages can be found in the messages plugin.
- *
- * \param[in,out] ipath  The ipath on which the POST was processed.
- * \param[in] succeeded  Whether the saving process succeeded (true) or not (false).
- *
- * \return true so other plugins can act on the signal.
- */
-bool editor::editor_process_post_result_impl(content::path_info_t& ipath, bool const succeeded)
-{
-    static_cast<void>(ipath);
-    static_cast<void>(succeeded);
-
-    return true;
+    // create the AJAX response
+    server_access::server_access *server_access_plugin(server_access::server_access::instance());
+    server_access_plugin->create_ajax_result(ipath, messages->get_error_count() == 0);
+    server_access_plugin->ajax_output();
 }
 
 
@@ -975,16 +830,7 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
         // a default (data driven) redirect to apply when saving an editor form
         if(!on_save.isNull())
         {
-            QString const uri(on_save.attribute("redirect"));
-            if(!uri.isEmpty())
-            {
-                ipath.set_parameter("redirect", uri);
-            }
-            QString const target(on_save.attribute("target"));
-            if(!target.isEmpty())
-            {
-                ipath.set_parameter("target", target);
-            }
+            server_access::server_access::instance()->ajax_redirect(on_save.attribute("redirect"), on_save.attribute("target"));
         }
 
         // now go through all the widgets checking out their path, if the

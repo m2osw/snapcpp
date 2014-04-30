@@ -1,4 +1,4 @@
-// Snap Websites Server -- content management (pages, tags, everything!)
+// Snap Websites Server -- handle the basic display of the website content
 // Copyright (C) 2011-2014  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify

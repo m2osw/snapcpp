@@ -135,6 +135,9 @@ char const *get_name(name_t name)
         return "sites";
 
     // names used by CORE (server and snap_child)
+    case SNAP_NAME_CORE_CONTENT_TYPE_HEADER:
+        return "Content-Type";
+
     case SNAP_NAME_CORE_ADMINISTRATOR_EMAIL:
         return "core::administrator_email";
 
@@ -1788,6 +1791,35 @@ bool server::cell_is_secure_impl(QString const& table, QString const& row, QStri
 bool server::add_snap_expr_functions_impl(snap_expr::functions_t& functions)
 {
     static_cast<void>(functions);
+
+    return true;
+}
+
+
+/** \brief Implementation of the output_result signal.
+ *
+ * This function readies the output_result signal.
+ *
+ * At this time, it does nothing.
+ *
+ * This signal offers the result buffer to all the plugins to look at.
+ * Since the buffer is passed as a reference, a plugin can modify it
+ * as required although it is not generally expected to happen.
+ *
+ * It may also be used to process the result and exit if a plugin thinks
+ * that the default processing is not going to be capable of handling
+ * the data appropriately. For example, the server_access plugin
+ * intercepts all results and transforms them to an AJAX response in
+ * case the request was an AJAX request.
+ *
+ * \param[in,out] result  The result buffer.
+ *
+ * \return true if the signal has to be sent to other plugins.
+ */
+bool server::output_result_impl(QString const& uri_path, QByteArray& result)
+{
+    static_cast<void>(uri_path);
+    static_cast<void>(result);
 
     return true;
 }

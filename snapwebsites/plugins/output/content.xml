@@ -330,11 +330,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <dependency>output (&gt;= 0.1.5)</dependency>
       <dependency>css::output (&gt;= 0.0.1)</dependency>
     </attachment>
-    <attachment name="server-access" type="attachment/public">
-      <path>:/js/output/server-access.js</path>
-      <mime-type>text/javascript</mime-type>
-      <dependency>output (&gt;= 0.1.5)</dependency>
-    </attachment>
   </content>
   <!-- the content plugin depends on the path plugin so it cannot defined a content.xml file -->
   <content path="/admin/settings/path">

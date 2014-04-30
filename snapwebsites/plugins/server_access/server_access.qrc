@@ -1,5 +1,5 @@
 <!--
-Snap Plugin - - snap output plugin resources
+Snap Plugin - - server_access plugin resources
 Copyright (C) 2014  Made to Order Software Corp.
 
 This program is free software; you can redistribute it and/or modify
@@ -18,30 +18,11 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 -->
 <!DOCTYPE RCC>
 <RCC version="1.0">
-  <qresource prefix="/plugins/output">
+  <qresource prefix="/plugins/server_access">
     <file>content.xml</file>
   </qresource>
-  <qresource prefix="/js/output">
-    <file>jquery.js</file>
-    <file>jquery-extensions.js</file>
-    <file>output.js</file>
-    <file>popup.js</file>
-  </qresource>
-  <qresource prefix="/css/output">
-    <file>output.css</file>
-  </qresource>
-  <qresource prefix="/images/output">
-    <file>close-button.png</file>
-  </qresource>
-  <qresource prefix="/xsl">
-    <file>layout/notheme-body-parser.xsl</file>
-    <file>layout/notheme-theme-parser.xsl</file>
-  </qresource>
-  <qresource prefix="/xml">
-    <file>layout/notheme-content.xml</file>
-  </qresource>
-  <qresource prefix="/css">
-    <file>layout/notheme-style.css</file>
+  <qresource prefix="/js/server_access">
+    <file>server-access.js</file>
   </qresource>
 </RCC>
 <!--

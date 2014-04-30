@@ -1,10 +1,12 @@
 #
 # File:
-#      plugins/output/CMakeLists.txt
+#      plugins/server_access/CMakeLists.txt
 #
 # Description:
-#      Generate the output of a page. This plugin takes what the content
-#      plugin manages and transforms it in HTML or some other format.
+#      Process the output of a query when the client sent an AJAX request.
+#      This plugin intercepts all normal responses and transforms them to
+#      AJAX and handles the expected AJAX responses with one specialized
+#      function and response object.
 #
 # Documentation:
 #      See the CMake documentation.
@@ -30,7 +32,7 @@
 #      Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 
-project(plugin_output)
+project(plugin_server_access)
 
 find_package( Qt4 4.8.1 QUIET REQUIRED QtCore )
 include( ${QT_USE_FILE} )
@@ -43,52 +45,36 @@ include_directories(
 )
 
 QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC
-    output.qrc
+    server_access.qrc
 )
 
-snap_validate_xml( content.xml content.dtd )
 
 
-# jQuery does not need to be validated
-#snap_validate_js( jquery.js                    )
-# Externs are used by the compiler and should be auto generated at some point
-#snap_validate_js( externs/jquery-extensions.js )
-#
-snap_validate_js( jquery-extensions.js         )
-snap_validate_js( output.js                    )
-snap_validate_js( popup.js                     )
+snap_validate_js( server-access.js             )
 
 
-add_library(output SHARED
-    output.cpp
-    output.h
+add_library(server_access SHARED
+    server_access.cpp
+    server_access.h
     ${SNAP_MANAGER_MOC_CXX}
     ${SNAP_MANAGER_RESOURCES_RCC}
     content.xml
-    output.css
-    close-button.png
-    jquery.js
-    jquery-extensions.js
-    output.js
-    popup.js
-    layout/notheme-body-parser.xsl
-    layout/notheme-content.xml
-    layout/notheme-theme-parser.xsl
+    server-access.js
 )
 
-target_link_libraries( output ${QT_LIBRARIES} )
+target_link_libraries( server_access ${QT_LIBRARIES} )
 
 get_property( 3RDPARTY_INCLUDED GLOBAL PROPERTY 3RDPARTY_INCLUDED )
 if( 3RDPARTY_INCLUDED )
-    add_dependencies( output make_controlled_vars_headers )
+    add_dependencies( server_access make_controlled_vars_headers )
 endif()
 
 install(
-    TARGETS output LIBRARY DESTINATION ${PLUGIN_INSTALL_DIR}
+    TARGETS server_access LIBRARY DESTINATION ${PLUGIN_INSTALL_DIR}
 )
 install(
     DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/
-    DESTINATION include/snapwebsites/plugins/output
+    DESTINATION include/snapwebsites/plugins/server_access
     FILES_MATCHING PATTERN "*.h"
 )
 

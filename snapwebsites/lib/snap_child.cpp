@@ -16,6 +16,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "snap_child.h"
+
 #include "snap_uri.h"
 #include "not_reached.h"
 #include "snapwebsites.h"
@@ -104,6 +105,7 @@ char const *g_minimum_plugins[] =
     "path",
     "permissions",
     "sendmail",
+    "server_access",
     "sessions",
     "taxonomy",
     "users",
@@ -2448,7 +2450,10 @@ pid_t snap_child::fork_child()
     pid_t p = 0;
     //
     server::pointer_t server( f_server.lock() );
-    Q_ASSERT(server);
+    if(!server)
+    {
+        throw snap_logic_exception("server pointer is NULL");
+    }
     if( !server->nofork() )
     {
         p = fork();
@@ -3498,7 +3503,10 @@ void snap_child::snap_info()
 void snap_child::snap_statistics()
 {
     server::pointer_t server( f_server.lock() );
-    Q_ASSERT(server);
+    if(!server)
+    {
+        throw snap_logic_exception("server pointer is NULL");
+    }
 
     QString s;
 
@@ -3611,7 +3619,10 @@ void snap_child::setup_uri()
     //}
 
     server::pointer_t server( f_server.lock() );
-    Q_ASSERT(server);
+    if(!server)
+    {
+        throw snap_logic_exception("server pointer is NULL");
+    }
     QString qs_path(server->get_parameter("qs_path"));
     QString path(f_uri.query_option(qs_path));
     QString extension;
@@ -3700,7 +3711,10 @@ snap_uri const& snap_child::get_uri() const
 QString snap_child::get_action() const
 {
     server::pointer_t server( f_server.lock() );
-    Q_ASSERT(server);
+    if(!server)
+    {
+        throw snap_logic_exception("server pointer is NULL");
+    }
     return f_uri.query_option(server->get_parameter("qs_action"));
 }
 
@@ -3719,7 +3733,10 @@ QString snap_child::get_action() const
 void snap_child::set_action(QString const& action)
 {
     server::pointer_t server( f_server.lock() );
-    Q_ASSERT(server);
+    if(!server)
+    {
+        throw snap_logic_exception("server pointer is NULL");
+    }
     f_uri.set_query_option(server->get_parameter("qs_action"), action);
 }
 
@@ -3743,7 +3760,10 @@ void snap_child::connect_cassandra()
 
     // connect to Cassandra
     server::pointer_t server( f_server.lock() );
-    Q_ASSERT(server);
+    if(!server)
+    {
+        throw snap_logic_exception("server pointer is NULL");
+    }
     f_cassandra = QtCassandra::QCassandra::create();
     if(!f_cassandra->connect(server->cassandra_host(), server->cassandra_port()))
     {
@@ -3788,7 +3808,10 @@ void snap_child::connect_cassandra()
 QtCassandra::QCassandraTable::pointer_t snap_child::create_table(const QString& table_name, const QString& comment)
 {
     server::pointer_t server( f_server.lock() );
-    Q_ASSERT(server);
+    if(!server)
+    {
+        throw snap_logic_exception("server pointer is NULL");
+    }
     return server->create_table(f_context, table_name, comment);
 }
 
@@ -4301,7 +4324,10 @@ void snap_child::canonicalize_options()
     }
 
     server::pointer_t server( f_server.lock() );
-    Q_ASSERT(server);
+    if(!server)
+    {
+        throw snap_logic_exception("server pointer is NULL");
+    }
     QString const qs_lang(server->get_parameter("qs_lang"));
     QString lang(f_uri.query_option(qs_lang));
     QString country;
@@ -4868,7 +4894,10 @@ void snap_child::page_redirect(QString const& path, http_code_t http_code, QStri
     }
 
     server::pointer_t server( f_server.lock() );
-    Q_ASSERT(server);
+    if(!server)
+    {
+        throw snap_logic_exception("server pointer is NULL");
+    }
     server->attach_to_session();
 
     // redirect the user to the specified path
@@ -4884,29 +4913,28 @@ void snap_child::page_redirect(QString const& path, http_code_t http_code, QStri
 
     // also the default is already text/html we force it again in case this
     // function is called after someone changed this header
-    set_header("Content-Type", "text/html; charset=utf-8", HEADER_MODE_EVERYWHERE);
+    set_header(get_name(SNAP_NAME_CORE_CONTENT_TYPE_HEADER), "text/html; charset=utf-8", HEADER_MODE_EVERYWHERE);
 
     // compute the body ahead so we can get its size
     // (should we support getting the content of a page? since 99.9999% of
     // the time this content is ignored, I would say no.)
-    QString body("<html><head>"
-            "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\"/>"
-            "<title>" + reason_brief + "</title>"
-            "<meta http-equiv=\"Refresh\" content=\"0; url=" + uri.get_uri() + "\"/>"
+    //
+    // TODO: we may want to us a DOM because that way all parameters are
+    //       automatically checked for validity for the place where they
+    //       are inserted!
+    QString const body(QString("<html><head>"
+            "<meta http-equiv=\"%1\" content=\"text/html; charset=utf-8\"/>"
+            "<title>%2</title>"
+            "<meta http-equiv=\"Refresh\" content=\"0; url=%4\"/>"
             "<meta name=\"ROBOTS\" content=\"NOINDEX\"/>" // no need for the NOFOLLOW on this one
-            "</head><body><h1>" + reason_brief + "</h1><p>" + reason + ". New location: <a href=\""
-                    + uri.get_uri() + "\">"
-                    + uri.get_uri() + "</a>.</p></body></html>");
+            "</head><body><h1>%2</h1><p>%3. New location: "
+            "<a href=\"%4\">%4</a>.</p></body></html>")
+        .arg(get_name(SNAP_NAME_CORE_CONTENT_TYPE_HEADER))
+        .arg(reason_brief)
+        .arg(reason)
+        .arg(uri.get_uri()));
 
-    //write(QString("Content-Length: %1\n").arg(body.length()));
-    set_header("Content-Length", QString("%1").arg(body.toUtf8().size()), HEADER_MODE_REDIRECT);
-
-    // in case there are any cookies, send them along too
-    output_headers(HEADER_MODE_REDIRECT);
-
-    write("\n"); // header / body separator
-
-    write(body);
+    output_result(HEADER_MODE_REDIRECT, body.toUtf8());
 
     // XXX should we exit with 1 in this case?
     exit(0);
@@ -4925,7 +4953,10 @@ void snap_child::page_redirect(QString const& path, http_code_t http_code, QStri
 void snap_child::attach_to_session()
 {
     server::pointer_t server( f_server.lock() );
-    Q_ASSERT(server);
+    if(!server)
+    {
+        throw snap_logic_exception("server pointer is NULL");
+    }
     server->attach_to_session();
 }
 
@@ -4945,7 +4976,10 @@ bool snap_child::load_file(post_file_t& file)
 {
     bool found(false);
     server::pointer_t server( f_server.lock() );
-    Q_ASSERT(server);
+    if(!server)
+    {
+        throw snap_logic_exception("server pointer is NULL");
+    }
     server->load_file(file, found);
     return found;
 }
@@ -5212,7 +5246,10 @@ void snap_child::exit(int code)
 bool snap_child::is_debug() const
 {
     server::pointer_t server( f_server.lock() );
-    Q_ASSERT(server);
+    if(!server)
+    {
+        throw snap_logic_exception("server pointer is NULL");
+    }
     return server->is_debug();
 }
 
@@ -5231,7 +5268,10 @@ bool snap_child::is_debug() const
 QString snap_child::get_server_parameter(QString const& name)
 {
     server::pointer_t server( f_server.lock() );
-    Q_ASSERT(server);
+    if(!server)
+    {
+        throw snap_logic_exception("server pointer is NULL");
+    }
     return server->get_parameter(name);
 }
 
@@ -5334,6 +5374,21 @@ void snap_child::set_site_parameter(const QString& name, const QtCassandra::QCas
 }
 
 
+/** \brief Retrieve a current copy of the output buffer.
+ *
+ * This function returns a copy of the current snap_child output buffer.
+ *
+ * The buffer cannot be changed using the returned buffer. Use the
+ * write() functions to appened to the buffer.
+ *
+ * \return A copy of the output buffer.
+ */
+QByteArray snap_child::get_output() const
+{
+    return f_output.buffer();
+}
+
+
 /** \brief Write the buffer to the output.
  *
  * This function writes the specified buffer (array of bytes) to
@@ -5362,7 +5417,7 @@ void snap_child::output(QByteArray const& data)
  *
  * \param[in] data  The string data to append to the buffer.
  */
-void snap_child::output(const QString& data)
+void snap_child::output(QString const& data)
 {
     f_output.write(data.toUtf8());
 }
@@ -5379,7 +5434,7 @@ void snap_child::output(const QString& data)
  *
  * \param[in] data  The string data to append to the buffer.
  */
-void snap_child::output(const std::string& data)
+void snap_child::output(std::string const& data)
 {
     f_output.write(data.c_str(), data.length());
 }
@@ -5396,7 +5451,7 @@ void snap_child::output(const std::string& data)
  *
  * \param[in] data  The string data to append to the buffer.
  */
-void snap_child::output(const char *data)
+void snap_child::output(char const *data)
 {
     f_output.write(data);
 }
@@ -5413,7 +5468,7 @@ void snap_child::output(const char *data)
  *
  * \param[in] data  The string data to append to the buffer.
  */
-void snap_child::output(const wchar_t *data)
+void snap_child::output(wchar_t const *data)
 {
     f_output.write(QString::fromWCharArray(data).toUtf8());
 }
@@ -5464,7 +5519,7 @@ bool snap_child::empty_output() const
  * \param[in] err_description  HTML message about the problem.
  * \param[in] err_details  Server side text message with details that are logged only.
  */
-void snap_child::die(http_code_t err_code, QString err_name, const QString& err_description, const QString& err_details)
+void snap_child::die(http_code_t err_code, QString err_name, QString const& err_description, QString const& err_details)
 {
     try
     {
@@ -5483,11 +5538,15 @@ void snap_child::die(http_code_t err_code, QString err_name, const QString& err_
         // content type is HTML, we reset this header because it could have
         // been changed to something else and prevent the error from showing
         // up in the browser
-        set_header("Content-Type", "text/html; charset=utf8", HEADER_MODE_EVERYWHERE);
+        set_header(get_name(SNAP_NAME_CORE_CONTENT_TYPE_HEADER), "text/html; charset=utf8", HEADER_MODE_EVERYWHERE);
 
         // Generate the signature
         server::pointer_t server( f_server.lock() );
-        Q_ASSERT(server);
+        if(!server)
+        {
+            throw snap_logic_exception("server pointer is NULL");
+        }
+
         QString signature;
         const QString site_key(get_site_key());
         if(f_cassandra)
@@ -5508,23 +5567,20 @@ void snap_child::die(http_code_t err_code, QString err_name, const QString& err_
         // else -- no signature...
 
         // HTML output
-        QString html(QString("<html><head>"
-                        "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\"/>"
+        QString const html(QString("<html><head>"
+                        "<meta http-equiv=\"%1\" content=\"text/html; charset=utf-8\"/>"
                         "<meta name=\"ROBOTS\" content=\"NOINDEX,NOFOLLOW\"/>"
                         "<title>Snap Server Error</title>"
                         "</head>"
-                        "<body><h1>%1 %2</h1><p>%3</p><p>%4</p></body></html>\n")
+                        "<body><h1>%2 %3</h1><p>%4</p><p>%5</p></body></html>\n")
+                .arg(get_name(SNAP_NAME_CORE_CONTENT_TYPE_HEADER))
                 .arg(static_cast<int>(err_code))
                 .arg(err_name)
                 .arg(err_description)
                 .arg(signature));
-        set_header("Content-Length", QString("%1").arg(html.toUtf8().size()));
 
         // in case there are any cookies, send them along too
-        output_headers(HEADER_MODE_ERROR);
-
-        // output body
-        write(html);
+        output_result(HEADER_MODE_ERROR, html.toUtf8());
     }
     catch(...)
     {
@@ -6019,7 +6075,11 @@ void snap_child::output_cookies()
 QString snap_child::get_unique_number()
 {
     server::pointer_t server( f_server.lock() );
-    Q_ASSERT(server);
+    if(!server)
+    {
+        throw snap_logic_exception("server pointer is NULL");
+    }
+
     QString lock_path(server->get_parameter("data_path"));
 
     quint64 c(0);
@@ -6064,7 +6124,10 @@ QString snap_child::get_unique_number()
 QStringList snap_child::init_plugins()
 {
     server::pointer_t server( f_server.lock() );
-    Q_ASSERT(server);
+    if(!server)
+    {
+        throw snap_logic_exception("server pointer is NULL");
+    }
 
     // load the plugins for this website
     QtCassandra::QCassandraValue plugins(get_site_parameter(get_name(SNAP_NAME_CORE_PLUGINS)));
@@ -6277,7 +6340,10 @@ void snap_child::finish_update()
     {
         f_new_content = false;
         server::pointer_t server( f_server.lock() );
-        Q_ASSERT(server);
+        if(!server)
+        {
+            throw snap_logic_exception("server pointer is NULL");
+        }
         server->save_content();
     }
 }
@@ -6470,7 +6536,21 @@ void snap_child::execute()
     set_header("Cache-Control", "no-store, no-cache, must-revalidate, post-check=0, pre-check=0", HEADER_MODE_EVERYWHERE);
 
     // By default we expect [X]HTML in the output
-    set_header("Content-Type", "text/html; charset=utf-8", HEADER_MODE_EVERYWHERE);
+    set_header(get_name(SNAP_NAME_CORE_CONTENT_TYPE_HEADER), "text/html; charset=utf-8", HEADER_MODE_EVERYWHERE);
+
+    // XXX I moved that up here from just before sending the output because
+    //     it seems that all answers should use this flag (because even pages
+    //     that represent errors may end up reusing the same connection.)
+    QString const connection(snapenv("HTTP_CONNECTION"));
+//std::cout << "HTTP_CONNECTION=[" << connection << "]\n";
+    if(connection.toLower() == "keep-alive")
+    {
+        set_header("Connection", "keep-alive");
+    }
+    else
+    {
+        set_header("Connection", "close");
+    }
 
     // Let the caches know that the cookie changes all the time
     // (the content is likely to change too, but it could still be cached)
@@ -6488,7 +6568,10 @@ void snap_child::execute()
     // give a chance to the system to use cookies such as the
     // cookie used to mark a user as logged in to kick in early
     server::pointer_t server( f_server.lock() );
-    Q_ASSERT(server);
+    if(!server)
+    {
+        throw snap_logic_exception("server pointer is NULL");
+    }
     server->process_cookies();
 
     // let plugins detach whatever data they attached to the user session
@@ -6523,6 +6606,35 @@ void snap_child::execute()
     }
 
     // created a page, output it now
+    output_result(HEADER_MODE_NO_ERROR, f_output.buffer());
+}
+
+
+/** \brief Output the resulting buffer.
+ *
+ * This function takes all the data generated by the different processes
+ * run and generates the final output.
+ *
+ * It must be used by all the functions that are ready to send their
+ * result to the client (assuming the default scheme cannot be used,
+ * somehow.) This is important because this function makes sure to:
+ *
+ * \li Signal all plugins of the event,
+ * \li Only send the headers if the method was HEAD,
+ * \li Answer AJAX requests as expected.
+ *
+ * \param[in] modes  Print the headers for these modes.
+ * \param[in] output_data  The output being process.
+ */
+void snap_child::output_result(header_mode_t modes, QByteArray output_data)
+{
+    // give plugins a chance to tweak the output one more time
+    server::pointer_t server(f_server.lock());
+    if(!server)
+    {
+        throw snap_logic_exception("server pointer is NULL");
+    }
+    server->output_result(f_uri.path(), output_data);
 
     // Handling the compression has to be done before defining the
     // Content-Length header since that represents the compressed
@@ -6539,8 +6651,8 @@ void snap_child::execute()
     //      required
 
     // TODO add compression capabilities with bz2, lzma and sdch as
-    //      may be supported by the browser
-    QByteArray html_output;
+    //      may be supported by the browser (although sdch is not
+    //      possible here as long as we require/use Apache2)
     http_strings::WeightedHttpString encodings(snapenv("HTTP_ACCEPT_ENCODING"));
 
     // TODO image file formats that are already compressed should not be
@@ -6548,7 +6660,7 @@ void snap_child::execute()
 
     // it looks like some browsers use that one instead of plain "gzip"
     // try both just in case
-    QString const content_type(get_header("Content-Type"));
+    QString const content_type(get_header(get_name(SNAP_NAME_CORE_CONTENT_TYPE_HEADER)));
     // at this point we only attempt to compress known text formats
     // (should we instead have a list of mime types that we do not want to
     // compress? before, attempting to compress the "wrong" files would
@@ -6559,13 +6671,13 @@ void snap_child::execute()
     || content_type.startsWith("text/css;")
     || content_type.startsWith("text/javascript;"))
     {
-        float gzip_level(std::max(std::max(encodings.get_level("gzip"), encodings.get_level("x-gzip")), encodings.get_level("*")));
-        float deflate_level(encodings.get_level("deflate"));
+        float const gzip_level(std::max(std::max(encodings.get_level("gzip"), encodings.get_level("x-gzip")), encodings.get_level("*")));
+        float const deflate_level(encodings.get_level("deflate"));
         if(gzip_level > 0.0f && gzip_level >= deflate_level)
         {
             // browser asked for gzip with higher preference
             QString compressor("gzip");
-            html_output = compression::compress(compressor, f_output.buffer(), 100, true);
+            output_data = compression::compress(compressor, output_data, 100, true);
             if(compressor == "gzip")
             {
                 // compression succeeded
@@ -6575,7 +6687,7 @@ void snap_child::execute()
         else if(deflate_level > 0.0f)
         {
             QString compressor("deflate");
-            html_output = compression::compress(compressor, f_output.buffer(), 100, true);
+            output_data = compression::compress(compressor, output_data, 100, true);
             if(compressor == "deflate")
             {
                 // compression succeeded
@@ -6585,7 +6697,7 @@ void snap_child::execute()
         else
         {
             // This 406 is in the spec. (RFC2616) but frankly?!
-            float identity_level(encodings.get_level("identity"));
+            float const identity_level(encodings.get_level("identity"));
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
             if(identity_level == 0.0f)
@@ -6596,7 +6708,7 @@ void snap_child::execute()
                     "a client requested content with Accept-Encoding: identify;q=0 and no other compression we understand");
                 NOTREACHED();
             }
-            html_output = f_output.buffer();
+            output_data = f_output.buffer();
             // The "identity" SHOULD NOT be used with the Content-Encoding
             // (RFC 2616 -- https://tools.ietf.org/html/rfc2616)
             //set_header("Content-Encoding", "identity");
@@ -6606,29 +6718,18 @@ void snap_child::execute()
     {
         // note that "html"-output is NOT html in this case!
         // (most likely an image... but any document really)
-        html_output = f_output.buffer();
+        output_data = f_output.buffer();
     }
 
-    QString const size(QString("%1").arg(html_output.size()));
+    QString const size(QString("%1").arg(output_data.size()));
     set_header("Content-Length", size);
 
-    QString const connection(snapenv("HTTP_CONNECTION"));
-//std::cout << "HTTP_CONNECTION=[" << connection << "]\n";
-    if(connection.toLower() == "keep-alive")
-    {
-        set_header("Connection", "keep-alive");
-    }
-    else
-    {
-        set_header("Connection", "close");
-    }
-
-    output_headers(HEADER_MODE_NO_ERROR);
+    output_headers(modes);
 
     // write the body unless method is HEAD
     if(snapenv("REQUEST_METHOD") != "HEAD")
     {
-        write(html_output, html_output.size());
+        write(output_data, output_data.size());
 // Warning: don't use this std::cout if you allow compression... 8-)
 //std::cout << f_output.buffer().data() << " [" << f_output.buffer().size() << "]\n";
     }
@@ -6649,7 +6750,10 @@ void snap_child::process_post()
     if(f_has_post)
     {
         server::pointer_t server( f_server.lock() );
-        Q_ASSERT(server);
+        if(!server)
+        {
+            throw snap_logic_exception("server pointer is NULL");
+        }
         server->process_post(f_uri.path());
     }
 }
@@ -6798,7 +6902,10 @@ snap_child::locale_info_vector_t const& snap_child::get_plugins_locales()
         // remember that without a proper weight the algorithm uses 1.0
         QString locales;
         server::pointer_t server( f_server.lock() );
-        Q_ASSERT(server);
+        if(!server)
+        {
+            throw snap_logic_exception("server pointer is NULL");
+        }
         server->define_locales(locales);
         if(!locales.isEmpty())
         {
@@ -7515,7 +7622,10 @@ snap_child::country_name_t const *snap_child::get_countries()
 void snap_child::udp_ping(char const *name, char const *message)
 {
     server::pointer_t server( f_server.lock() );
-    Q_ASSERT(server);
+    if(!server)
+    {
+        throw snap_logic_exception("server pointer is NULL");
+    }
     server->udp_ping(name, message);
 }
 
@@ -7537,14 +7647,20 @@ void snap_child::udp_ping(char const *name, char const *message)
  *
  * \param[in] name  The name of the configuration variable used to read the IP and port
  */
-snap_child::udp_server_t snap_child::udp_get_server( const char *name )
+snap_child::udp_server_t snap_child::udp_get_server( char const *name )
 {
-    Q_ASSERT(name);
+    if(!name)
+    {
+        throw snap_logic_exception("name pointer is NULL");
+    }
 
     try
     {
         server::pointer_t server( f_server.lock() );
-        Q_ASSERT(server);
+        if(!server)
+        {
+            throw snap_logic_exception("server pointer is NULL");
+        }
         return server::udp_get_server( server->get_parameter(name) );
     }
     catch( const std::runtime_error& runtime_error )

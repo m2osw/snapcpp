@@ -360,6 +360,7 @@ public:
     static void                 define_http_name(http_code_t http_code, QString& http_name);
     void                        finish_update();
 
+    QByteArray                  get_output() const;
     void                        output(QByteArray const& data);
     void                        output(QString const& data);
     void                        output(std::string const& data);
@@ -413,6 +414,7 @@ private:
     void                        write(char const *data, ssize_t size);
     void                        write(char const *str);
     void                        write(QString const& str);
+    void                        output_result(header_mode_t mode, QByteArray output_data);
     void                        output_headers(header_mode_t modes);
     void                        output_cookies();
 

@@ -105,7 +105,7 @@ bool is_valid_ascii(char const *string)
  *
  * \return true if the string is valid UTF-8
  */
-bool is_valid_utf8(const char * string)
+bool is_valid_utf8(char const *string)
 {
     if(string == nullptr)
     {
@@ -114,7 +114,7 @@ bool is_valid_utf8(const char * string)
     }
 
     // use unsigned characters so it works even if char is signed
-    unsigned char const *s(reinterpret_cast<const unsigned char *>(string));
+    unsigned char const *s(reinterpret_cast<unsigned char const *>(string));
     while(*s != '\0')
     {
         if(s[0] <= 0x7F)
