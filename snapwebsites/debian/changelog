@@ -3,9 +3,7 @@ snapwebsites (0.1.50~saucy) UNRELEASED; urgency=high
   [ Alexis Wilke ]
   * Fixed a bug in the @index of the list items.
   * Allow distinguishing the list permission when displaying from others.
-
-  [ R. Douglas Barbieri ]
-  * 
+  * Fixed the output to better support AJAX with a server_access plugin.
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Sat, 26 Apr 2014 19:58:19 -0700
 
