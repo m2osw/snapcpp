@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.122
+ * Version: 0.0.3.123
  * Browsers: all
  * Depends: output (>= 0.1.4), popup (>= 0.1.0.1)
  * Copyright: Copyright 2013-2014 (c) Made to Order Software Corporation  All rights reverved.
@@ -1595,9 +1595,9 @@ snapwebsites.EditorToolbar.prototype.createToolbar_ = function()
         this.toolbar_
             .find(".button")
                 .click(function(){
-                    var idx = this.attr("button-id");
+                    var index = this.attr("button-id");
                     that.editorBase_.refocus();
-                    that.command(idx);
+                    that.command(index);
                 });
     }
 };

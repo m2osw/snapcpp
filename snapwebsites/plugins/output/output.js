@@ -1,6 +1,6 @@
 /** @preserve
  * Name: output
- * Version: 0.1.5.4
+ * Version: 0.1.5.5
  * Browsers: all
  * Copyright: Copyright 2014 (c) Made to Order Software Corporation  All rights reverved.
  * Depends: jquery-extensions (1.0.1)
@@ -501,7 +501,7 @@ snapwebsites.Output.prototype.initQsParams_ = function()
                 {
                     this.queryString_[name_value[0]] = decodeURIComponent(name_value[1]);
                 }
-                catch(e)
+                catch(ignore)
                 {
                     // totally ignore if invalid
                     // (happens if name_value[1] is not valid UTF-8)

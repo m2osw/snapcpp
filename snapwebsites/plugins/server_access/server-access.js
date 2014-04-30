@@ -1,6 +1,6 @@
 /** @preserve
  * Name: server-access
- * Version: 0.0.1.8
+ * Version: 0.0.1.10
  * Browsers: all
  * Depends: output (>= 0.1.5)
  * Copyright: Copyright 2013-2014 (c) Made to Order Software Corporation  All rights reverved.
@@ -240,11 +240,22 @@ snapwebsites.ServerAccess.prototype.setURI = function(uri, queryString_opt)
  * The object can be anything, although it is safer to keep a single level
  * of key/value pairs (no sub-objects.)
  *
+ * \note
+ * The system always adds the "ajax" field to your object. This allows
+ * the server to know that this specific POST is an AJAX query. This
+ * changes your original object since we do not do a deep copy of it.
+ *
  * @param {!Object} data  The data to send to the server.
  */
 snapwebsites.ServerAccess.prototype.setData = function(data)
 {
-    this.data_ = data;
+    if(data)
+    {
+        this.data_ = data;
+
+        // always force the ajax entry to 1
+        this.data_.ajax = 1;
+    }
 };
 
 
@@ -302,7 +313,6 @@ snapwebsites.ServerAccess.prototype.send = function()
             // [S] Whether a redirect will be done on success
             will_redirect: false
         };
-
 
     jQuery.ajax(snapwebsites.ServerAccess.appendQueryString(uri, this.queryString_), {
         type: "POST",
