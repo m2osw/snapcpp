@@ -378,6 +378,16 @@ public:
     bool                    to_number();
     bool                    to_string();
 
+    void                    set_boolean(bool value);
+    void                    set_int64(Int64 value);
+    void                    set_float64(Float64 value);
+    void                    set_string(String& value);
+
+    bool                    get_boolean() const;
+    Int64                   get_int64() const;
+    Float64                 get_float64() const;
+    String const&           get_string() const;
+
     // check flags
     bool                    get_flag(flag_attribute_t f) const;
     void                    set_flag(flag_attribute_t f, bool v);

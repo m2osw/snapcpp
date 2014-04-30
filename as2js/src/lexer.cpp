@@ -715,7 +715,6 @@ void Lexer::read_identifier(Input::char_t c)
 void Lexer::read_number(Input::char_t c)
 {
     String      number;
-    size_t      sz;
 
     if(c == '.')
     {
@@ -772,17 +771,15 @@ void Lexer::read_number(Input::char_t c)
                 c = read(c, CHAR_DIGIT, number);
             }
         }
-        sz = sizeof(buf);
-        number.ToUTF8(buf, sz);
-        f_result_float64 = strtod(buf, 0);
+        // TODO: detect whether an error was detected in the conversion
+        f_result_float64 = strtod(number.to_utf8().c_str(), 0);
     }
     else
     {
         // TODO: Support 8, 16, 32 bits, unsigned thereof
         f_result_type = Node::NODE_INT64;
-        sz = sizeof(buf);
-        number.ToUTF8(buf, sz);
-        f_result_int64 = strtoll(buf, 0, 10);
+        // TODO: detect whether an error was detected in the conversion
+        f_result_int64 = strtoll(number.to_utf8().c_str(), 0, 10);
     }
 }
 

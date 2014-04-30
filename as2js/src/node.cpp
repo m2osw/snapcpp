@@ -597,6 +597,145 @@ bool Node::to_string()
 }
 
 
+void Node::set_boolean(bool value)
+{
+    // only the corresponding node type accepts a set() call
+    switch(f_type)
+    {
+    case NODE_TRUE:
+    case NODE_FALSE:
+        break;
+
+    default:
+        throw exception_internal_error("set_boolean() called with a non-Boolean node type");
+
+    }
+
+    f_type = static_cast<int32_t>(value ? NODE_TRUE : NODE_FALSE);  // FIXME cast
+}
+
+
+void Node::set_int64(Int64 value)
+{
+    // only the corresponding node type accepts a set() call
+    switch(f_type)
+    {
+    case NODE_INT64:
+        break;
+
+    default:
+        throw exception_internal_error("set_int64() called with a non-int64 node type");
+
+    }
+
+    f_int = value;
+}
+
+
+void Node::set_float64(Float64 value)
+{
+    // only the corresponding node type accepts a set() call
+    switch(f_type)
+    {
+    case NODE_FLOAT64:
+        break;
+
+    default:
+        throw exception_internal_error("set_float64() called with a non-float64 node type");
+
+    }
+
+    f_float = value;
+}
+
+
+void Node::set_string(String& value)
+{
+    // only the corresponding node type accepts a set() call
+    switch(f_type)
+    {
+    case NODE_STRING:
+        break;
+
+    default:
+        throw exception_internal_error("set_string() called with a non-string node type");
+
+    }
+
+    f_str = value;
+}
+
+
+bool Node::get_boolean() const
+{
+    // only the corresponding node type accepts a get() call
+    switch(f_type)
+    {
+    case NODE_TRUE:
+        return true;
+
+    case NODE_FALSE:
+        return false;
+
+    default:
+        throw exception_internal_error("get_boolean() called with a non-Boolean node type");
+
+    }
+    /*NOTREACHED*/
+}
+
+
+Int64 Node::get_int64() const
+{
+    // only the corresponding node type accepts a get() call
+    switch(f_type)
+    {
+    case NODE_INT64:
+        break;
+
+    default:
+        throw exception_internal_error("get_int64() called with a non-int64 node type");
+
+    }
+
+    return f_int;
+}
+
+
+Float64 Node::get_float64() const
+{
+    // only the corresponding node type accepts a get() call
+    switch(f_type)
+    {
+    case NODE_FLOAT64:
+        break;
+
+    default:
+        throw exception_internal_error("get_float64() called with a non-float64 node type");
+
+    }
+
+    return f_float;
+}
+
+
+String const& Node::get_string() const
+{
+    // only the corresponding node type accepts a get() call
+    switch(f_type)
+    {
+    case NODE_STRING:
+        break;
+
+    default:
+        throw exception_internal_error("get_string() called with a non-string node type");
+
+    }
+
+    return f_str;
+}
+
+
 /** \brief Get the current status of a flag.
  *
  * This function returns true or false depending on the current status
