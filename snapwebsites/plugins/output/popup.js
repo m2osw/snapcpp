@@ -1,6 +1,6 @@
 /** @preserve
  * Name: popup
- * Version: 0.1.0.3
+ * Version: 0.1.0.6
  * Browsers: all
  * Copyright: Copyright 2014 (c) Made to Order Software Corporation  All rights reverved.
  * Depends: output (0.0.5)
@@ -191,7 +191,7 @@ snapwebsites.Popup.prototype.darkenPage = function(show)
  */
 snapwebsites.Popup.prototype.open = function(popup)
 {
-    var i, b, f, t, w, y;
+    var i, b, f, p, t, w, y;
 
     if(!popup.id)
     {
@@ -267,8 +267,10 @@ snapwebsites.Popup.prototype.open = function(popup)
     }
     if(popup.path)
     {
+        // make sure to mark this popup window as coming from an IFRAME
+        p = popup.path + (popup.path.indexOf("?") === -1 ? "?" : "&") + "iframe=true";
         b.empty();
-        b.append("<iframe class='popup-iframe' src='" + popup.path + "' frameborder='0' marginheight='0' marginwidth='0'></iframe>");
+        b.append("<iframe class='popup-iframe' src='" + p + "' frameborder='0' marginheight='0' marginwidth='0'></iframe>");
         f = b.children(".popup-iframe");
 
         // 'b.width()' may return a jQuery object so we have to force the

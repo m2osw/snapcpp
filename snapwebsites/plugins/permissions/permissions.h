@@ -138,8 +138,13 @@ private:
     void                    content_update(int64_t variables_timestamp);
     void                    recursive_add_user_rights(QString const& key, sets_t& sets);
     void                    recursive_add_plugin_permissions(QString const& plugin_name, QString const& key, sets_t& sets);
+    QString const&          get_login_status();
+    QString const&          get_user_path();
 
-    zpsnap_child_t          f_snap;
+    zpsnap_child_t              f_snap;
+    QString                     f_login_status;
+    controlled_vars::fbool_t    f_has_user_path;
+    QString                     f_user_path;
 };
 
 } // namespace permissions

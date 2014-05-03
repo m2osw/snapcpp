@@ -489,6 +489,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 		<xsl:if test="head/metadata/editor/session">
 			<meta name="editor_session" content="{head/metadata/editor/session}"/>
 		</xsl:if>
+		<meta name="user_status" content="{substring-after(head/metadata/desc[@type='login_status']/data, 'status::')}"/>
 		<meta name="action" content="{$action}"/>
 		<meta name="path" content="{$path}"/>
 		<meta name="full_path" content="{$full_path}"/>
@@ -511,9 +512,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 	<!-- *** BODY ATTRIBUTES DEFINED BY THE SYSTEM/PLUGINS *** -->
 
 	<xsl:template name="snap:body-attributes">
-		<xsl:attribute name="class">
-			<!-- TODO: move this one to the users plugin -->
-			<xsl:if test="/snap/head/metadata/desc[@type='users::email']/data"> user-logged-in</xsl:if>
+		<xsl:attribute name="class"><xsl:value-of
+			select="substring-after(/snap/head/metadata/desc[@type='login_status']/data, 'status::')"/>
 
 			<!-- TODO: how do we move that one as part of the editor? -->
 			<xsl:if test="/snap/head/metadata/editor[@darken-on-save = 'yes']"> editor-darken-on-save</xsl:if>

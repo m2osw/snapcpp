@@ -45,6 +45,7 @@
 
 SNAP_PLUGIN_START(layout, 1, 0)
 
+
 /** \brief Get a fixed layout name.
  *
  * The layout plugin makes use of different names in the database. This
@@ -340,6 +341,7 @@ QString layout::get_layout(content::path_info_t& ipath, QString const& column_na
                 }
             }
         }
+//std::cerr << "Layout selection with [" << layout_script << "] or " << run_script << " for " << ipath.get_key() << "\n";
 
         if(run_script)
         {

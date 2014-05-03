@@ -1723,7 +1723,7 @@ void list::on_replace_token(content::path_info_t& ipath, QString const& plugin_o
             {
                 f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR,
                         "Plugin Missing",
-                        "Plugin \"" + list_plugin->get_plugin_name() + "\" does not know how to handle a list assigned to it.",
+                        QString("Plugin \"%1\" does not know how to handle a list assigned to it.").arg(list_plugin->get_plugin_name()),
                         "list::on_replace_token() the plugin does not derive from layout::layout_content.");
                 NOTREACHED();
             }

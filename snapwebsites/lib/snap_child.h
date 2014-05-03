@@ -367,6 +367,7 @@ public:
     void                        output(char const *data);
     void                        output(wchar_t const *data);
     bool                        empty_output() const;
+    void                        output_result(header_mode_t mode, QByteArray output_data);
 
     void                        udp_ping(char const *name, char const *message = "PING");
 
@@ -414,7 +415,6 @@ private:
     void                        write(char const *data, ssize_t size);
     void                        write(char const *str);
     void                        write(QString const& str);
-    void                        output_result(header_mode_t mode, QByteArray output_data);
     void                        output_headers(header_mode_t modes);
     void                        output_cookies();
 

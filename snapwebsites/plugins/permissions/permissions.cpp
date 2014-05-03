@@ -686,6 +686,9 @@ next_plugin:;
  */
 permissions::permissions()
     //: f_snap(NULL) -- auto-init
+    //, f_login_status("") -- auto-init
+    //, f_has_user_path(false) -- auto-init
+    //, f_user_path("") -- auto-init
 {
 }
 
@@ -782,7 +785,8 @@ int64_t permissions::do_update(int64_t last_updated)
  */
 void permissions::content_update(int64_t variables_timestamp)
 {
-    (void) variables_timestamp;
+    static_cast<void>(variables_timestamp);
+
     content::content::instance()->add_xml(get_plugin_name());
 }
 
@@ -1160,36 +1164,14 @@ void permissions::on_validate_action(content::path_info_t& ipath, QString const&
         NOTREACHED();
     }
 
-    users::users *users_plugin(users::users::instance());
-    QString user_path(users_plugin->get_user_path());
-    if(user_path == "user")
-    {
-        user_path.clear();
-    }
-    QString login_status(get_name(SNAP_NAME_PERMISSIONS_LOGIN_STATUS_SPAMMER));
-    if(!users_plugin->user_is_a_spammer())
-    {
-        if(user_path.isEmpty())
-        {
-            login_status = get_name(SNAP_NAME_PERMISSIONS_LOGIN_STATUS_VISITOR);
-            // TODO determine, once possible, whether the user came on the
-            //      website before (i.e. returning visitor)
-            //      (it is already possible since we have a cookie, just
-            //      need to take the time to do it!)
-        }
-        else if(users_plugin->user_is_logged_in())
-        {
-            login_status = get_name(SNAP_NAME_PERMISSIONS_LOGIN_STATUS_REGISTERED);
-        }
-        else
-        {
-            login_status = get_name(SNAP_NAME_PERMISSIONS_LOGIN_STATUS_RETURNING_REGISTERED);
-        }
-    }
+
+    QString const& login_status(get_login_status());
+    QString const& user_path(get_user_path());
     content::permission_flag allowed;
     path::path::instance()->access_allowed(user_path, ipath, action, login_status, allowed);
     if(!allowed.allowed())
     {
+        users::users *users_plugin(users::users::instance());
         if(users_plugin->get_user_key().isEmpty())
         {
             // special case of spammers
@@ -1253,6 +1235,7 @@ void permissions::on_validate_action(content::path_info_t& ipath, QString const&
                 // redirect
                 "login",
                 snap_child::HTTP_CODE_FOUND);
+            // not reached if path checking
         }
         else
         {
@@ -1263,6 +1246,10 @@ void permissions::on_validate_action(content::path_info_t& ipath, QString const&
                 path::path::instance()->access_allowed(user_path, ipath, action, get_name(SNAP_NAME_PERMISSIONS_LOGIN_STATUS_REGISTERED), allowed_if_logged_in);
                 if(allowed_if_logged_in.allowed())
                 {
+                    // TODO: find a way to save the data that is about
+                    //       to be lost because we're going to redirect
+                    //       the user...
+
                     // ah! the user is not allowed here but he would be if
                     // only he were recently logged in (with the last 3h or
                     // whatever the administrator set that to.)
@@ -1280,6 +1267,7 @@ void permissions::on_validate_action(content::path_info_t& ipath, QString const&
                         // redirect
                         "verify-credentials",
                         snap_child::HTTP_CODE_FOUND);
+                    // not reached if path checking
                     return;
                 }
             }
@@ -1292,6 +1280,88 @@ void permissions::on_validate_action(content::path_info_t& ipath, QString const&
         }
         return;
     }
+}
+
+
+/** \brief Get the login status of this user.
+ *
+ * This function retrieves the so called login status of the user. This
+ * status is defined as:
+ *
+ * \li Spammer -- if the user was discovered to spam any one of our sites
+ * \li Visitor -- a non-logged in user who happens to visit one of our sites
+ * \li Returning Visitor -- a non-logged in user who came back on our site
+ * \li Registered -- the user is currently logged in; this status does not
+ *                   indicate the level of permission of the user
+ * \li Returning Registered -- the user was logged in before but his
+ *                             time is up
+ *
+ * \note
+ * The exact syntax of the status is not disclosed here. Instead, use one
+ * of the available get_name():
+ *
+ * \li SNAP_NAME_PERMISSIONS_LOGIN_STATUS_SPAMMER
+ * \li SNAP_NAME_PERMISSIONS_LOGIN_STATUS_VISITOR
+ * \li SNAP_NAME_PERMISSIONS_LOGIN_STATUS_RETURNING_VISITOR
+ * \li SNAP_NAME_PERMISSIONS_LOGIN_STATUS_REGISTERED
+ * \li SNAP_NAME_PERMISSIONS_LOGIN_STATUS_RETURNING_REGISTERED
+ *
+ * \todo
+ * The returning visitor is not yet implemented.
+ *
+ * \return One of the logged in status.
+ */
+QString const& permissions::get_login_status()
+{
+    if(f_login_status.isEmpty())
+    {
+        users::users *users_plugin(users::users::instance());
+        f_login_status = get_name(SNAP_NAME_PERMISSIONS_LOGIN_STATUS_SPAMMER);
+        if(!users_plugin->user_is_a_spammer())
+        {
+            QString const& user_path(get_user_path());
+            if(user_path.isEmpty())
+            {
+                f_login_status = get_name(SNAP_NAME_PERMISSIONS_LOGIN_STATUS_VISITOR);
+                // TODO: determine, once possible, whether the user came on the
+                //       website before (i.e. returning visitor)
+                //       (it is already possible since we have a cookie, just
+                //       need to take the time to do it!)
+            }
+            else if(users_plugin->user_is_logged_in())
+            {
+                f_login_status = get_name(SNAP_NAME_PERMISSIONS_LOGIN_STATUS_REGISTERED);
+            }
+            else
+            {
+                f_login_status = get_name(SNAP_NAME_PERMISSIONS_LOGIN_STATUS_RETURNING_REGISTERED);
+            }
+        }
+    }
+    return f_login_status;
+}
+
+
+/** \brief Get the path to the current user.
+ *
+ * This function retrieves the path to the user. If the path is already
+ * defined, then the function returns the cached information.
+ *
+ * \return The user path or "" if anonymous.
+ */
+QString const& permissions::get_user_path()
+{
+    if(!f_has_user_path)
+    {
+        f_has_user_path = true;
+        users::users *users_plugin(users::users::instance());
+        f_user_path = users_plugin->get_user_path();
+        if(f_user_path == "user") // anonymous?
+        {
+            f_user_path.clear();
+        }
+    }
+    return f_user_path;
 }
 
 
@@ -1790,6 +1860,9 @@ void call_perms(snap_expr::variable_t& result, snap_expr::variable_t::variable_v
     ipath.set_parameter("action", action);
     quiet_error_callback err_callback(content::content::instance()->get_snap(), false);
     path::path::instance()->validate_action(ipath, action, err_callback);
+
+    // TODO: we probably need to allow the end user to select the status
+    //       (note that for lists we check again when we display the list)
     char const *login_status(get_name(SNAP_NAME_PERMISSIONS_LOGIN_STATUS_RETURNING_REGISTERED));
 
     // check whether that user is allowed that action with that path
@@ -1844,9 +1917,13 @@ void permissions::on_generate_header_content(content::path_info_t& ipath, QDomEl
         (content::field_search::COMMAND_ELEMENT, metadata)
         (content::field_search::COMMAND_MODE, content::field_search::SEARCH_MODE_EACH)
 
-        // snap/head/metadata/desc[@type=can_edit]/data
+        // snap/head/metadata/desc[@type="can_edit"]/data
         (content::field_search::COMMAND_DEFAULT_VALUE, can_edit.allowed() ? "yes" : "")
         (content::field_search::COMMAND_SAVE, "desc[type=can_edit]/data")
+
+        // snap/head/metadata/desc[@type="login_status"]/data
+        (content::field_search::COMMAND_DEFAULT_VALUE, get_login_status())
+        (content::field_search::COMMAND_SAVE, "desc[type=login_status]/data")
 
         // generate!
         ;

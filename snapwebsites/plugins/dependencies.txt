@@ -7,7 +7,7 @@ core:	; @echo $@
 antivirus: content form output	; @echo $@
 char_chart: sitemapxml	; @echo $@
 content: links	; @echo $@
-editor: users form sitemapxml output messages sendmail permissions sessions filter	; @echo $@
+editor: form sitemapxml output sendmail server_access	; @echo $@
 favicon: path form messages permissions output	; @echo $@
 feed: layout path content messages	; @echo $@
 filter: content messages	; @echo $@
@@ -22,11 +22,12 @@ mailinglist: core content	; @echo $@
 menu: layout content output	; @echo $@
 messages: core	; @echo $@
 output: layout path javascript messages	; @echo $@
-path: content messages	; @echo $@
+path: content messages server_access	; @echo $@
 permissions: layout output users messages	; @echo $@
 robotstxt: layout path content	; @echo $@
 search: layout content	; @echo $@
 sendmail: sessions filter output users	; @echo $@
+server_access: content messages	; @echo $@
 sessions: layout output	; @echo $@
 shorturl: sessions path output messages	; @echo $@
 sitemapxml: robotstxt permissions	; @echo $@

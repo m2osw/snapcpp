@@ -1948,6 +1948,7 @@ void quiet_error_callback::on_error(snap_child::http_code_t err_code, QString co
  * In the base implementation, the error is logged (assuming the object was
  * created with the log flag set to true) and the object is marked as
  * erroneous, meaning that the object being checked will remain hidden.
+ * However, the user does not get redirected.
  *
  * \param[in] err_name  The name of the error being generated.
  * \param[in] err_description  A more complete description of the error.

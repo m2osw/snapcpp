@@ -272,8 +272,6 @@ snapwebsites.castToNumber = function(n, e) // static
  */
 snapwebsites.BufferToMIMETemplate = function()
 {
-    this.constructor = snapwebsites.BufferToMIMETemplate;
-
     return this;
 };
 
@@ -323,8 +321,6 @@ snapwebsites.BufferToMIMETemplate.prototype.bufferToMIME = function(buf) // virt
 snapwebsites.BufferToMIMESystemImages = function()
 {
     snapwebsites.BufferToMIMESystemImages.superClass_.constructor.call(this);
-
-    this.constructor = snapwebsites.BufferToMIMESystemImages;
 
     return this;
 };

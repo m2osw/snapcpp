@@ -118,7 +118,7 @@ int64_t server_access::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2014, 4, 30, 10, 8, 30, content_update);
+    SNAP_PLUGIN_UPDATE(2014, 5, 1, 0, 23, 30, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -129,13 +129,27 @@ int64_t server_access::do_update(int64_t last_updated)
  * Send our content to the database so the system can find us when a
  * user references our pages.
  *
- * \param[in] variables_timestamp  The timestamp for all the variables added to the database by this update (in micro-seconds).
+ * \param[in] variables_timestamp  The timestamp for all the variables added
+ *                                 to the database by this update (in
+ *                                 micro-seconds).
  */
 void server_access::content_update(int64_t variables_timestamp)
 {
     static_cast<void>(variables_timestamp);
 
     content::content::instance()->add_xml(get_plugin_name());
+}
+
+
+/** \brief Check whether the POST was an AJAX request.
+ *
+ * This function returns true if the POST request was an AJAX request.
+ *
+ * \return true if the request is an AJAX request.
+ */
+bool server_access::is_ajax_request() const
+{
+    return f_snap->postenv_exists("ajax");
 }
 
 
@@ -153,11 +167,14 @@ void server_access::content_update(int64_t variables_timestamp)
 void server_access::on_output_result(QString const& uri_path, QByteArray& result)
 {
     // AJAX request?
-    if(!f_snap->postenv_exists("ajax")
+    if(!is_ajax_request()
     || f_ajax_initialized)  // already an AJAX response
     {
         return;
     }
+
+    // remove the Location header if present!
+    f_snap->set_header("Location", "", snap_child::HEADER_MODE_REDIRECT);
 
     // This is viewed as an AJAX request... transform the response here
     content::path_info_t ipath;
@@ -213,6 +230,7 @@ void server_access::create_ajax_result(content::path_info_t& ipath, bool success
     f_success = success;
 
     // if a redirect had been added before the create function was called
+    // make sure it is saved in the XML
     ajax_redirect(f_ajax_redirect, f_ajax_target);
 
     //server_access_plugin->ajax_redirect(ipath.get_parameter("redirect"), ipath.get_parameter("target"));
@@ -353,26 +371,36 @@ void server_access::ajax_output()
  */
 void server_access::ajax_redirect(QString const& uri, QString const& target)
 {
-    if(f_ajax_initialized)
+    if(!uri.isEmpty())
     {
-        // redirect only successful requests
-        if(f_success && !uri.isEmpty())
+        if(f_ajax_initialized)
         {
-            QDomElement snap_tag(f_ajax.documentElement());
-            QDomElement redirect_tag(f_ajax.createElement("redirect"));
-            snap_tag.appendChild(redirect_tag);
-            if(!target.isEmpty())
+            if(f_success)
             {
-                redirect_tag.setAttribute("target", target);
+                // redirect only successful requests
+                QDomElement snap_tag(f_ajax.documentElement());
+                QDomElement redirect_tag(snap_dom::create_element(snap_tag, "redirect"));
+                if(!target.isEmpty())
+                {
+                    redirect_tag.setAttribute("target", target);
+                }
+                QDomText redirect_uri(f_ajax.createTextNode(uri));
+                QDomNode child(redirect_tag.firstChild());
+                if(child.isNull())
+                {
+                    redirect_tag.appendChild(redirect_uri);
+                }
+                else
+                {
+                    redirect_tag.replaceChild(redirect_uri, child);
+                }
             }
-            QDomText redirect_uri(f_ajax.createTextNode(uri));
-            redirect_tag.appendChild(redirect_uri);
         }
-    }
-    else
-    {
-        f_ajax_redirect = uri;
-        f_ajax_target = target;
+        else
+        {
+            f_ajax_redirect = uri;
+            f_ajax_target = target;
+        }
     }
 }
 
@@ -400,11 +428,11 @@ void server_access::ajax_append_data(QByteArray& data)
     if(is_valid_utf8(data.data()))
     {
         QDomElement snap_tag(f_ajax.documentElement());
-        QDomElement redirect_tag(f_ajax.createElement("data"));
-        snap_tag.appendChild(redirect_tag);
+        QDomElement data_tag(f_ajax.createElement("data"));
+        snap_tag.appendChild(data_tag);
         // send it escaped... whatever it is
-        QDomText redirect_uri(f_ajax.createTextNode(data.data()));
-        redirect_tag.appendChild(redirect_uri);
+        QDomText data_text(f_ajax.createTextNode(data.data()));
+        data_tag.appendChild(data_text);
     }
     // else -- TBD: we refuse those at this point
 }

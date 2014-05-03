@@ -19,6 +19,7 @@
 
 #include "../messages/messages.h"
 
+#include "log.h"
 #include "qdomxpath.h"
 #include "qdomhelpers.h"
 #include "qstring_stream.h"
@@ -800,6 +801,16 @@ void filter::on_token_filter(content::path_info_t& ipath, QDomDocument& xml)
             case ',':
             case '=':
                 return TOK_SEPARATOR;
+
+            case '-':
+                // XXX: Should the be an error instead?
+                //
+                //      IMPORTANT: Do not use a throw because we do not
+                //                 expect to lose control over a user
+                //                 entered piece of text.
+                //
+                SNAP_LOG_WARNING("tokens found in on_token_filter() cannot use dash ('-') in their name; use underscore (_) instead.");
+                return TOK_INVALID;
 
             default:
                 if((c >= 'a' && c <= 'z')

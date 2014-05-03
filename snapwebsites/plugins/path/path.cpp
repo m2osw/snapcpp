@@ -18,6 +18,7 @@
 #include "path.h"
 
 #include "../messages/messages.h"
+#include "../server_access/server_access.h"
 
 #include "not_reached.h"
 #include "log.h"
@@ -389,8 +390,9 @@ SNAP_LOG_TRACE() << "path::on_execute(\"" << uri_path << "\") -> [" << ipath.get
     class error_callback : public permission_error_callback
     {
     public:
-        error_callback(snap_child *snap)
+        error_callback(snap_child *snap, content::path_info_t ipath)
             : f_snap(snap)
+            , f_ipath(ipath)
         {
         }
 
@@ -406,13 +408,36 @@ SNAP_LOG_TRACE() << "path::on_execute(\"" << uri_path << "\") -> [" << ipath.get
         {
             // TODO: remove this message dependency
             messages::messages::instance()->set_error(err_name, err_description, err_details, err_security);
-            f_snap->page_redirect(path, http_code, err_description, err_details);
+            server_access::server_access *server_access_plugin(server_access::server_access::instance());
+            if(server_access_plugin->is_ajax_request())
+            {
+                // Since the user sent an AJAX request, returning
+                // a redirect won't work as expected... instead we
+                // reply with a redirect in AJAX.
+                //
+                // TODO: The redirect requires the result of the AJAX
+                //       request to be 'true'... verify that this is
+                //       not in conflict with what we're trying to
+                //       achieve here
+                //
+//std::cerr << "***\n*** PATH Permission denied, but we can ask user for credentials with a redirect...\n***\n";
+                server_access_plugin->create_ajax_result(f_ipath, true);
+                server_access_plugin->ajax_redirect(QString("/%1").arg(path), "_top");
+                server_access_plugin->ajax_output();
+                f_snap->output_result(snap_child::HEADER_MODE_REDIRECT, f_snap->get_output());
+                f_snap->exit(0);
+            }
+            else
+            {
+                f_snap->page_redirect(path, http_code, err_description, err_details);
+            }
             NOTREACHED();
         }
 
     private:
-        zpsnap_child_t      f_snap;
-    } main_page_error_callback(f_snap);
+        zpsnap_child_t          f_snap;
+        content::path_info_t&   f_ipath;
+    } main_page_error_callback(f_snap, ipath);
 
     f_last_modified = 0;
     plugins::plugin *path_plugin(get_plugin(ipath, main_page_error_callback));

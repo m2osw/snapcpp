@@ -122,7 +122,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 		<!-- the following includes an extra class, "snap", so the two names
 		     (layout-name and theme-name) are spaced out; Qt concatenate them
 				 otherwise... -->
-		<xsl:attribute name="class"><xsl:value-of select="/snap/page/body/@layout-name"/> snap <xsl:value-of select="/snap/head/metadata/@theme-name"/></xsl:attribute>
+		<xsl:attribute name="class"><xsl:value-of
+				select="/snap/page/body/@layout-name"/> snap <xsl:value-of
+				select="/snap/head/metadata/@theme-name"/> standard <xsl:value-of
+				select="substring-after(/snap/head/metadata/desc[@type='login_status']/data, 'status::')"/></xsl:attribute>
 	</xsl:template>
 </xsl:stylesheet>
 <!-- vim: ts=2 sw=2

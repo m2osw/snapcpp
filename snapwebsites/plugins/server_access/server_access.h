@@ -59,6 +59,7 @@ public:
     void                        on_bootstrap(snap_child *snap);
     void                        on_output_result(QString const& uri_path, QByteArray& result);
 
+    bool                        is_ajax_request() const;
     void                        create_ajax_result(content::path_info_t& ipath, bool const success);
     void                        ajax_output();
 

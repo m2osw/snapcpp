@@ -5896,6 +5896,7 @@ bool snap_child::has_header(const QString& name) const
     return f_header.find(name.toLower()) != f_header.end();
 }
 
+
 /** \brief Retrieve the current value of the given header.
  *
  * This function returns the value of the specified header, if
@@ -6681,7 +6682,7 @@ void snap_child::output_result(header_mode_t modes, QByteArray output_data)
             if(compressor == "gzip")
             {
                 // compression succeeded
-                set_header("Content-Encoding", "gzip");
+                set_header("Content-Encoding", "gzip", HEADER_MODE_EVERYWHERE);
             }
         }
         else if(deflate_level > 0.0f)
@@ -6691,7 +6692,7 @@ void snap_child::output_result(header_mode_t modes, QByteArray output_data)
             if(compressor == "deflate")
             {
                 // compression succeeded
-                set_header("Content-Encoding", "deflate");
+                set_header("Content-Encoding", "deflate", HEADER_MODE_EVERYWHERE);
             }
         }
         else
@@ -6708,21 +6709,19 @@ void snap_child::output_result(header_mode_t modes, QByteArray output_data)
                     "a client requested content with Accept-Encoding: identify;q=0 and no other compression we understand");
                 NOTREACHED();
             }
-            output_data = f_output.buffer();
             // The "identity" SHOULD NOT be used with the Content-Encoding
             // (RFC 2616 -- https://tools.ietf.org/html/rfc2616)
-            //set_header("Content-Encoding", "identity");
+            //set_header("Content-Encoding", "identity", HEADER_MODE_EVERYWHERE);
         }
     }
     else
     {
         // note that "html"-output is NOT html in this case!
         // (most likely an image... but any document really)
-        output_data = f_output.buffer();
     }
 
     QString const size(QString("%1").arg(output_data.size()));
-    set_header("Content-Length", size);
+    set_header("Content-Length", size, HEADER_MODE_EVERYWHERE);
 
     output_headers(modes);
 
