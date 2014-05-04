@@ -40,8 +40,6 @@
 ##
 project(documentation)
 
-find_package( SnapDoxygen )
-
 set( PROJECT_ROOT_PATH ${CMAKE_SOURCE_DIR} )
 
 AddDoxygenTarget( libtld

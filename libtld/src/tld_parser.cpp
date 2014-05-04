@@ -1,5 +1,5 @@
 /* TLD library -- XML to C++ parser
- * Copyright (C) 2011-2013  Made to Order Software Corp.
+ * Copyright (C) 2011-2014  Made to Order Software Corp.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the
@@ -466,6 +466,7 @@ void verify_data(tld_info_map_t& map)
                 // otherwise considered letters...
                 switch(c.unicode())
                 {
+                case 0x0902: // Devanagari sign anusvara
                 case 0x093E: // devanagari vowel sign AA
                 case 0x0982: // Bengali Sign Anusvara
                 case 0x09BE: // Bengali Vowel Sign AA
@@ -523,6 +524,10 @@ void verify_data(tld_info_map_t& map)
         else if(it->f_category_name == "entrepreneurial")
         {
             it->f_category = "TLD_CATEGORY_ENTREPRENEURIAL";
+        }
+        else if(it->f_category_name == "brand")
+        {
+            it->f_category = "TLD_CATEGORY_BRAND";
         }
         else
         {

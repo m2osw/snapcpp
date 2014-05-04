@@ -6,8 +6,11 @@
   http://en.wikipedia.org/wiki/List_of_Internet_top-level_domains
   http://publicsuffix.org/
 
+  For new TLDs (companies, cities, international, etc.)
+  http://newgtlds.icann.org/en/program-status/delegated-strings
+
   TLD library - - TLD declarations in XML
-  Copyright (C) 2011-2013  Made to Order Software Corp.
+  Copyright (C) 2011-2014  Made to Order Software Corp.
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -37,11 +40,99 @@
 <tld>
   <!-- international (for the whole world) -->
   <area category="international">
-    .biz .com .coop .edu .info .int .jobs .mobi .name .net
-    .org .post .tel .travel .xxx .eu.int
-    <!-- Note about .post:
-         Also the .post is defined as "having a complex second level domain
-         name rules", technically, it has no second level domain -->
+    .academy .agency .airforce .archi .associates
+
+    .bar .bargains .best .bid .bike .biz .black .blackfriday .blue
+    .boutique .build .buzz
+
+    .cab .camera .camp .capital .cards .care .career .careers .cash .catering
+    .center .ceo .cheap .christmas .cleaning .clinic .clothing .club
+    .codes .coffee .college .com .community .company .computer
+    .condos .construction .consulting .contractors .cooking .cool .coop
+    .country .creditcard .cruises
+
+    .dance .dating .democrat .diamonds .directory .discount
+    .domains
+
+    .edu .education .email .engineering .enterprises .equipment .estate
+    .eu.int .events .exchange .expert .exposed
+
+    .fail .farm .feedback .finance .financial .fish .fishing .fitness .flights
+    .florist .foo .foundation .frogans .fund .furniture .futbol
+
+    .gallery .gift .glass .gop .graphics .gratis .gripe .guitars .guru
+
+    .haus .holdings .holiday .horse .house
+
+    .immobilien .industries .info .ink .institute .insure .int .international
+    .investments
+
+    .jetzt .jobs
+
+    .kaufen .kitchen .kim .koeln .kred
+
+    .land .lease .lighting .limited .limo .link .luxury
+
+    .maison .management .marketing .media .meet .menu .mobi
+    .moda .moe .monash
+
+    .name .net .ninja
+
+    .org
+
+    .partners .parts .photo .photography .photos .pics .pictures
+    .pink .productions .properties .pub
+
+    .post <!-- Also the .post is defined as "having a complex second level
+            domain name rules", technically, it has no second level domain -->
+
+    .qpon <!-- "coupon" -->
+
+    .recipes .red .reisen .rentals .repair .report .rest .reviews
+    .rich .rocks .rodeo .ruhr
+
+    .schule .services .sexy .shiksha .shoes .singles .social
+
+    .solar .solutions .soy .supplies .supply .support .systems
+
+    .tattoo .tax .technology .tel .tienda .tips .today .tools .town
+    .toys .trade .training .travel
+
+    .university .uno
+
+    .vacations .ventures .viajes .vision .villas .vodka .vote .voting
+    .voto .voyage
+
+    .wang .watch .webcam .wed .wiki .works .wtc .wtf
+
+    .xxx .xyz
+
+    .zone
+
+    .&#x0434;&#x0435;&#x0442;&#x0438; <!-- kids (Russian) -->
+    .&#x043E;&#x043D;&#x043B;&#x0430;&#x0439;&#x043D; <!-- online (Russian) -->
+    .&#x043E;&#x0440;&#x0433; <!-- organization (Russian) -->
+    .&#x0441;&#x0430;&#x0439;&#x0442; <!-- site (Russian) -->
+    .&#x0628;&#x0627;&#x0632;&#x0627;&#x0631; <!-- bazaar (Arabic) -->
+    .&#x0634;&#x0628;&#x0643;&#x0629; <!-- web/network (Arabic) -->
+    .&#x0938;&#x0902;&#x0917;&#x0920;&#x0928; <!-- organization (Hindi) -->
+    .&#x307F;&#x3093;&#x306A; <!-- everyone (Japanese) -->
+    .&#x4E16;&#x754C; <!-- world (Chinese) -->
+    .&#x4E2D;&#x6587;&#x7F51; <!-- chinesenetwork (Chinese) -->
+    .&#x516C;&#x53F8; <!-- company (Chinese) -->
+    .&#x516C;&#x76CA; <!-- charity (Chinese) -->
+    .&#x5546;&#x57CE; <!-- mail (Chinese) -->
+    .&#x5728;&#x7EBF; <!-- online (Chinese) -->
+    .&#x6211;&#x7231;&#x4F60; <!-- I love you (Chinese) -->
+    .&#x653F;&#x52A1; <!-- government (Chinese) -->
+    .&#x673A;&#x6784; <!-- agencies/institutions (Chinese) -->
+    .&#x6E38;&#x620F; <!-- games (Chinese) -->
+    .&#x79FB;&#x52A8; <!-- mobile (Chinese) -->
+    .&#x7EC4;&#x7EC7;&#x673A;&#x6784; <!-- organization (Chinese) -->
+    .&#x7F51;&#x5740; <!-- network address (Chinese) -->
+    .&#x7F51;&#x7EDC; <!-- network (Chinese) -->
+    .&#x96C6;&#x56E2; <!-- group (Chinese) -->
+
     <!-- yeah... .areo has gone crazy https://www.information.aero/ -->
     .aero .accident-investigation.aero .accident-prevention.aero
     .aerobatic.aero .aeroclub.aero .aerodrome.aero .agents.aero .aircraft.aero
@@ -64,6 +155,7 @@
     .show.aero .skydiving.aero .software.aero .student.aero .taxi.aero
     .trader.aero .trading.aero .trainer.aero .union.aero .workinggroup.aero
     .works.aero
+
     <!-- yeah... this is the .museum total craziness! -->
     .museum .academy.museum .agriculture.museum .air.museum .airguard.museum
     .alabama.museum .alaska.museum .amber.museum .ambulance.museum
@@ -218,30 +310,38 @@
     .zoological.museum .zoology.museum
     .&#x05D9;&#x05E8;&#x05D5;&#x05E9;&#x05DC;&#x05D9;&#x05DD;.museum
     .&#x0438;&#x043A;&#x043E;&#x043C;.museum
+
     <forbid reason="deprecated">.nato</forbid>
-    <forbid reason="proposed">.web .mail .med .wine .shop .sport</forbid>
+    <forbid reason="proposed">.mail .med .shop .sport .web .wine</forbid>
   </area>
 
   <!-- specialized TLDs -->
+  <area category="brand">
+    .axa .citic .desi .dnp .mango .neustar .onl .ren .sohu
+    .&#x4E2D;&#x4FE1; <!-- citic (Chinese) -->
+    .&#xC0BC;&#xC131; <!-- samsung (Korean) -->
+  </area>
   <area category="professionals">
+    .actor .builders .dental .plumbing
     .pro .aaa.pro .aca.pro .acct.pro .avocat.pro .bar.pro .cpa.pro .eng.pro
-    .jur.pro .law.pro .med.pro .recht.pro
+    .jur.pro .law.pro .med.pro .recht.pro .surgery
   </area>
   <area category="language">
-    .cat
-    <forbid reason="proposed">.bzh .eus .gal .ker .lli .scot</forbid>
+    .cat .eus .gal
+    <forbid reason="proposed">.bzh .ker .lli .scot</forbid>
   </area>
   <area category="groups">
     <forbid reason="proposed">.kids .nai .eco .gay .fc</forbid>
   </area>
   <area category="region">
-    .aq .asia .eu
+    .aq .asia .berlin .cologne .eu .kiwi .london .miami .moscow .nagoya
+    .nyc .okinawa .paris .quebec .ryukyu .saarland .tokyo .vegas .wien .yokohama
+    .&#x043C;&#x043E;&#x0441;&#x043A;&#x0432;&#x0430; <!-- moscow (Russian) -->
     <!-- the .cs and .yu were assigned to countries that are no more
          because of splits; as such it is difficult to place them in
          a specific country -->
     <forbid reason="unused">.cs .yu</forbid>
-    <forbid reason="proposed">.geo .berlin .wien .london .nyc .paris .lat
-    .africa .moscow .eng .quebec .sci</forbid>
+    <forbid reason="proposed">.geo .lat .africa .eng .sci</forbid>
   </area>
   <area category="technical">
     <!-- .local is used by Mac OS/X as in computername.local

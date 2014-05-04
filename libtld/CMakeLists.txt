@@ -66,9 +66,11 @@ if( NOT CMAKE_MODULE_PATH )
 endif()
 #
 find_package( SnapCMakeModules )
+find_package( SnapDoxygen )
 find_package( Qt4 4.8.1 REQUIRED QtCore QtXml )
 include( ${QT_USE_FILE} )
 add_definitions( ${QT_DEFINITIONS} )
+
 
 add_subdirectory( include )
 add_subdirectory( src )
