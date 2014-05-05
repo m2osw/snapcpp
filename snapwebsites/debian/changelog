@@ -1,6 +1,39 @@
-snapwebsites (0.1.50~saucy) UNRELEASED; urgency=high
+snapwebsites (0.1.51~saucy) UNRELEASED; urgency=high
 
   [ Alexis Wilke ]
+  * 
+
+ -- R. Douglas Barbieri <doug@jedi.dooglio.net>  Sat, 03 May 2014 22:32:04 -0700
+
+snapwebsites (0.1.50~saucy) saucy; urgency=high
+
+  [ Alexis Wilke ]
+  * 1f5b41c Better handle cases where we have to ask the user to re-enter their
+  login info.
+  * 0e1ab28 Force POST variable "ajax = 1" in server-access.js.
+  * 5b9a240 Now the lexer compiles!
+  * 8f53dd3 Updated the changelog.
+  * 6002987 Broke out the server-access.js from the output and created a
+  * seperated plugin.
+  * 7acb83d Finally fixed the fact that ALL files were getting compressed. Now
+  we only attempt to compress known text files.
+  * 4aa7d19 Fixed the "/confirmation-email" link with the one we use:
+  "/verify/resend".
+  * a106f3c Some more work on the lexer.
+  * 2db27bb Added missing error code in the message callback.
+  * a37d8d8 Started on the lexer.cpp file.
+  * da40e12 Bumping version.
+  * ac6c954 Worked on getting the node.cpp to compile, which it does. Probably
+  still quite bogus though...
+  * 5aca130 Moved to the node.cpp file as this is now part of the Node.
+  * 149c5fb Updated changelog.
+  * 7480ade Allow to distinguish between display and other list permission
+  * validations.
+  * 5b28125 Tweaks so it actually compiles the stream.cpp file.
+  * 29a8cbf Added an strmatch() function in snap_expr.
+  * 5fa13f0 Updated documentation about the internal functions.
+  * 1738566 Fixed up the formatting.
+  * 6cd28e7 Fixed the name of the package we need to compile.
   * Fixed a bug in the @index of the list items.
   * Allow distinguishing the list permission when displaying from others.
   * Fixed the output to better support AJAX with a server_access plugin.
