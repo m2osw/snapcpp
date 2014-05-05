@@ -1,0 +1,16 @@
+
+###
+### WARNING WARNING -- make sure that your source directory is as clean as
+###                    possible; otherwise, it will be included in the source
+###                    tarball (i.e. temporary files, etc.)
+###
+
+# Build Debian source files from within a project directory
+debuild -S -sa
+
+# Send file to launchpad (generally right outside of the project directory)
+dput ppa:snapcpp/ppa foo.changes
+
+# Note: you need to be part of the snapcpp project to have dput permissions
+#       and get that to work
+
