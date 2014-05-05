@@ -329,7 +329,7 @@ Node::Node(node_t type)
 }
 
 
-Node::Node(node_pointer_t const& source, node_pointer_t& parent)
+Node::Node(pointer_t const& source, pointer_t& parent)
     : f_type(source->f_type)
     , f_flags_and_attributes(source->f_flags_and_attributes)
     //, f_lock(0) -- auto-init
@@ -371,6 +371,12 @@ Node::Node(node_pointer_t const& source, node_pointer_t& parent)
 /***  DATA DISPLAY  ***************************************************/
 /**********************************************************************/
 /**********************************************************************/
+
+
+Node::node_t Node::get_type() const
+{
+    return f_type;
+}
 
 
 const char *Node::get_type_name() const
@@ -597,6 +603,17 @@ bool Node::to_string()
 }
 
 
+void Node::to_videntifier()
+{
+    if(NODE_IDENTIFIER != f_type)
+    {
+        throw exception_internal_error("to_videntifier() called with a node other than a NODE_IDENTIFIER node");
+    }
+
+    f_type = static_cast<int32_t>(NODE_VIDENTIFIER); // FIXME cast
+}
+
+
 void Node::set_boolean(bool value)
 {
     // only the corresponding node type accepts a set() call
@@ -649,12 +666,13 @@ void Node::set_float64(Float64 value)
 }
 
 
-void Node::set_string(String& value)
+void Node::set_string(String const& value)
 {
     // only the corresponding node type accepts a set() call
     switch(f_type)
     {
     case NODE_STRING:
+    case NODE_CLASS: // name of class
         break;
 
     default:
@@ -1036,7 +1054,7 @@ Node::node_t Node::string_to_operator(String const& str)
 
 
 // TODO: understand what the heck we were trying to do with the ReplaceWith()
-//void Node::replace_with(node_pointer_t& node)
+//void Node::replace_with(pointer_t& node)
 //{
 //    modifying();
 //
@@ -1083,7 +1101,7 @@ Node::node_t Node::string_to_operator(String const& str)
  * \param[in] index  The position where the new item is inserted in the parent
  *                   array of children.
  */
-void Node::set_parent(node_pointer_t parent, int index)
+void Node::set_parent(pointer_t parent, int index)
 {
     modifying();
 
@@ -1097,8 +1115,8 @@ void Node::set_parent(node_pointer_t parent, int index)
 
     if(f_parent)
     {
-        node_pointer_t me(shared_from_this());
-        vector_of_node_pointers_t::iterator it(std::find(f_parent->f_children.begin(), f_parent->f_children.end(), me));
+        pointer_t me(shared_from_this());
+        vector_of_pointers_t::iterator it(std::find(f_parent->f_children.begin(), f_parent->f_children.end(), me));
         if(it == f_parent->f_children.end())
         {
             throw exception_internal_error("trying to remove a child from a parent which does not know about that child");
@@ -1126,7 +1144,7 @@ void Node::set_parent(node_pointer_t parent, int index)
 }
 
 
-Node::node_pointer_t Node::get_parent() const
+Node::pointer_t Node::get_parent() const
 {
     return f_parent;
 }
@@ -1149,13 +1167,13 @@ void Node::delete_child(int index)
 }
 
 
-void Node::append_child(node_pointer_t& child)
+void Node::append_child(pointer_t& child)
 {
     child->set_parent(shared_from_this());
 }
 
 
-void Node::insert_child(int index, node_pointer_t& child)
+void Node::insert_child(int index, pointer_t& child)
 {
     modifying();
 
@@ -1163,7 +1181,7 @@ void Node::insert_child(int index, node_pointer_t& child)
 }
 
 
-void Node::set_child(int index, node_pointer_t& child)
+void Node::set_child(int index, pointer_t& child)
 {
     modifying();
 
@@ -1172,7 +1190,7 @@ void Node::set_child(int index, node_pointer_t& child)
 }
 
 
-Node::node_pointer_t Node::get_child(int index) const
+Node::pointer_t Node::get_child(int index) const
 {
     return f_children[index];
 }
@@ -1190,7 +1208,7 @@ int32_t Node::get_offset() const
 }
 
 
-void Node::set_link(link_t index, node_pointer_t& link)
+void Node::set_link(link_t index, pointer_t& link)
 {
     modifying();
 
@@ -1222,7 +1240,7 @@ void Node::set_link(link_t index, node_pointer_t& link)
 }
 
 
-Node::node_pointer_t Node::get_link(link_t index)
+Node::pointer_t Node::get_link(link_t index)
 {
     if(index >= LINK_max)
     {
@@ -1356,7 +1374,7 @@ void Node::unlock()
 }
 
 
-void Node::add_variable(node_pointer_t& variable)
+void Node::add_variable(pointer_t& variable)
 {
     if(NODE_VARIABLE != variable->f_type)
     {
@@ -1375,13 +1393,13 @@ size_t Node::get_variable_size() const
 }
 
 
-Node::node_pointer_t Node::get_variable(int index) const
+Node::pointer_t Node::get_variable(int index) const
 {
     return f_variables[index];
 }
 
 
-void Node::add_label(node_pointer_t& label)
+void Node::add_label(pointer_t& label)
 {
     if(NODE_LABEL != label->f_type)
     {
@@ -1400,7 +1418,7 @@ size_t Node::get_label_size() const
 }
 
 
-//Node::node_pointer_t Node::get_label(size_t index) const
+//Node::pointer_t Node::get_label(size_t index) const
 //{
 //    if(index >= f_labels.size())
 //    {
@@ -1411,10 +1429,10 @@ size_t Node::get_label_size() const
 //}
 
 
-Node::node_pointer_t Node::find_label(String const& name) const
+Node::pointer_t Node::find_label(String const& name) const
 {
-    map_of_node_pointers_t::const_iterator it(f_labels.find(name));
-    return it == f_labels.end() ? node_pointer_t() : it->second;
+    map_of_pointers_t::const_iterator it(f_labels.find(name));
+    return it == f_labels.end() ? pointer_t() : it->second;
 }
 
 
@@ -1624,7 +1642,7 @@ void Node::display_data(std::ostream& out) const
 }
 
 
-void Node::display(std::ostream& out, int indent, node_pointer_t const& parent, char c) const
+void Node::display(std::ostream& out, int indent, pointer_t const& parent, char c) const
 {
     // this pointer
     out << this << ":" << std::setfill('\0') << std::setw(2) << indent << c << " " << std::setw(indent) << "";
@@ -1698,19 +1716,19 @@ void Node::display(std::ostream& out, int indent, node_pointer_t const& parent, 
     out << " " << f_position << std::endl;
 
     // now print 
-    node_pointer_t me = const_cast<Node *>(this)->shared_from_this();
+    pointer_t me = const_cast<Node *>(this)->shared_from_this();
     for(size_t idx(0); idx < f_children.size(); ++idx)
     {
         f_children[idx]->display(out, indent + 1, me, '-');
     }
-    node_pointer_t null_ptr;
+    pointer_t null_ptr;
     for(size_t idx(0); idx < f_variables.size(); ++idx)
     {
         f_variables[idx]->display(out, indent + 1, null_ptr, '=');
     }
-    for(map_of_node_pointers_t::const_iterator it(f_labels.begin());
-                                               it != f_labels.end();
-                                               ++it)
+    for(map_of_pointers_t::const_iterator it(f_labels.begin());
+                                          it != f_labels.end();
+                                          ++it)
     {
         it->second->display(out, indent + 1, null_ptr, ':');
     }

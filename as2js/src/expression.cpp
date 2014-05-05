@@ -1,8 +1,8 @@
-/* expression.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2009 */
+/* expression.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
 
 /*
 
-Copyright (c) 2005-2009 Made to Order Software Corp.
+Copyright (c) 2005-2014 Made to Order Software Corp.
 
 Permission is hereby granted, free of charge, to any
 person obtaining a copy of this software and
@@ -32,6 +32,8 @@ SOFTWARE.
 */
 
 #include "as2js/parser.h"
+#include "as2js/exceptions.h"
+#include "as2js/message.h"
 
 
 namespace as2js
@@ -44,90 +46,103 @@ namespace as2js
 /**********************************************************************/
 /**********************************************************************/
 
-void IntParser::Expression(NodePtr& node)
+void Parser::expression(Node::pointer_t& node)
 {
-    ListExpression(node, false, false);
+    list_expression(node, false, false);
 }
 
 
-void IntParser::ListExpression(NodePtr& node, bool rest, bool empty)
+void Parser::list_expression(Node::pointer_t& node, bool rest, bool empty)
 {
-    if(empty && f_data.f_type == ',') {
-        node.CreateNode(NODE_EMPTY);
-        node.SetInputInfo(f_lexer.GetInput());
+    if(node)
+    {
+        throw exception_internal_error("list_expression() called with a non-null node pointer");
     }
-    else {
-        AssignmentExpression(node);
+
+    if(empty && f_node->get_type() == Node::NODE_COMMA)
+    {
+        node = f_lexer->get_new_node(Node::NODE_EMPTY);
+    }
+    else
+    {
+        assignment_expression(node);
+
         // accept named parameters
-        if(f_data.f_type == ':' && rest) {
-            GetToken();
-            NodePtr name;
-            name.CreateNode(NODE_NAME);
-            name.SetInputInfo(f_lexer.GetInput());
-            name.AddChild(node);
-            AssignmentExpression(node);
-            node.AddChild(name);
+        if(rest && f_node->get_type() == Node::NODE_COLON)
+        {
+            get_token();
+            Node::pointer_t name(f_lexer->get_new_node(Node::NODE_NAME));
+            name->append_child(node);
+            node.reset();
+            assignment_expression(node);
+            node->append_child(name);
         }
     }
 
-    if(f_data.f_type == ',') {
-        NodePtr item = node;
+    if(f_node->get_type() == Node::NODE_COMMA)
+    {
+        Node::pointer_t item(node);
 
-        node.CreateNode(NODE_LIST);
-        node.SetInputInfo(f_lexer.GetInput());
-
-        node.AddChild(item);
+        node = f_lexer->get_new_node(Node::NODE_EMPTY);
+        node->append_child(item);
 
         int has_rest = 0;
-        while(f_data.f_type == ',') {
-            GetToken();
-            if(has_rest == 1) {
-                f_lexer.ErrMsg(AS_ERR_INVALID_REST, "'...' was expected to be the last expression only");
+        while(f_node->get_type() == Node::NODE_COMMA)
+        {
+            get_token();
+            if(has_rest == 1)
+            {
+                Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_REST, f_lexer->get_input()->get_position());
+                msg << "'...' was expected to be the last expression only";
                 has_rest = 2;
             }
-            if(empty && f_data.f_type == ',') {
-                NodePtr empty;
-                empty.CreateNode(NODE_EMPTY);
-                empty.SetInputInfo(f_lexer.GetInput());
-                node.AddChild(empty);
+            if(empty && f_node->get_type() == Node::NODE_COMMA)
+            {
+                Node::pointer_t empty_node(f_lexer->get_new_node(Node::NODE_EMPTY));
+                node->append_child(empty_node);
             }
-            else if(rest && f_data.f_type == NODE_REST) {
-                NodePtr rest;
-                rest.CreateNode(NODE_REST);
-                rest.SetInputInfo(f_lexer.GetInput());
-                node.AddChild(rest);
-                GetToken();
-                if(has_rest == 0) {
+            else if(rest && f_node->get_type() == Node::NODE_REST)
+            {
+                Node::pointer_t rest_node(f_lexer->get_new_node(Node::NODE_REST));
+                node->append_child(rest_node);
+                get_token();
+                if(has_rest == 0)
+                {
                     has_rest = 1;
                 }
                 // note: we expect ')' here but we
                 // let the user put ',' <expr> still
+                // and err in case it happens
             }
-            else {
-                AssignmentExpression(item);
+            else
+            {
+                assignment_expression(item);
+
                 // accept named parameters
-                if(f_data.f_type == ':' && rest) {
-                    GetToken();
-                    NodePtr name;
-                    name.CreateNode(NODE_NAME);
-                    name.SetInputInfo(f_lexer.GetInput());
-                    name.AddChild(item);
-                    if(f_data.f_type == NODE_REST) {
-                        item.CreateNode(NODE_REST);
-                        item.SetInputInfo(f_lexer.GetInput());
-                        GetToken();
-                        if(has_rest == 0) {
+                if(rest && f_node->get_type() == Node::NODE_COLON)
+                {
+                    get_token();
+                    Node::pointer_t name(f_lexer->get_new_node(Node::NODE_NAME));
+                    name->append_child(item);
+                    if(f_node->get_type() == Node::NODE_REST)
+                    {
+                        item = f_lexer->get_new_node(Node::NODE_REST);
+                        get_token();
+                        if(has_rest == 0)
+                        {
                             has_rest = 1;
                         }
                         // note: we expect ')' here but we
                         // let the user put ',' <expr> still
+                        // and err in case it happens
                     }
-                    else {
-                        AssignmentExpression(item);
+                    else
+                    {
+                        assignment_expression(item);
                     }
-                    item.AddChild(name);
+                    item->append_child(name);
                 }
-                node.AddChild(item);
+                node->append_child(item);
             }
         }
 
@@ -136,32 +151,33 @@ void IntParser::ListExpression(NodePtr& node, bool rest, bool empty)
 }
 
 
-void IntParser::AssignmentExpression(NodePtr& node)
+void Parser::assignment_expression(Node::pointer_t& node)
 {
-    ConditionalExpression(node, true);
+    conditional_expression(node, true);
 
     // TODO: check that the result is a postfix expression
-    switch(f_data.f_type) {
-    case '=':    // NODE_ASSIGNMENT
-    case NODE_ASSIGNMENT_ADD:
-    case NODE_ASSIGNMENT_BITWISE_AND:
-    case NODE_ASSIGNMENT_BITWISE_OR:
-    case NODE_ASSIGNMENT_BITWISE_XOR:
-    case NODE_ASSIGNMENT_DIVIDE:
-    case NODE_ASSIGNMENT_LOGICAL_AND:
-    case NODE_ASSIGNMENT_LOGICAL_OR:
-    case NODE_ASSIGNMENT_LOGICAL_XOR:
-    case NODE_ASSIGNMENT_MAXIMUM:
-    case NODE_ASSIGNMENT_MINIMUM:
-    case NODE_ASSIGNMENT_MODULO:
-    case NODE_ASSIGNMENT_MULTIPLY:
-    case NODE_ASSIGNMENT_POWER:
-    case NODE_ASSIGNMENT_ROTATE_LEFT:
-    case NODE_ASSIGNMENT_ROTATE_RIGHT:
-    case NODE_ASSIGNMENT_SHIFT_LEFT:
-    case NODE_ASSIGNMENT_SHIFT_RIGHT:
-    case NODE_ASSIGNMENT_SHIFT_RIGHT_UNSIGNED:
-    case NODE_ASSIGNMENT_SUBTRACT:
+    switch(f_node->get_type())
+    {
+    case Node::NODE_ASSIGNMENT:
+    case Node::NODE_ASSIGNMENT_ADD:
+    case Node::NODE_ASSIGNMENT_BITWISE_AND:
+    case Node::NODE_ASSIGNMENT_BITWISE_OR:
+    case Node::NODE_ASSIGNMENT_BITWISE_XOR:
+    case Node::NODE_ASSIGNMENT_DIVIDE:
+    case Node::NODE_ASSIGNMENT_LOGICAL_AND:
+    case Node::NODE_ASSIGNMENT_LOGICAL_OR:
+    case Node::NODE_ASSIGNMENT_LOGICAL_XOR:
+    case Node::NODE_ASSIGNMENT_MAXIMUM:
+    case Node::NODE_ASSIGNMENT_MINIMUM:
+    case Node::NODE_ASSIGNMENT_MODULO:
+    case Node::NODE_ASSIGNMENT_MULTIPLY:
+    case Node::NODE_ASSIGNMENT_POWER:
+    case Node::NODE_ASSIGNMENT_ROTATE_LEFT:
+    case Node::NODE_ASSIGNMENT_ROTATE_RIGHT:
+    case Node::NODE_ASSIGNMENT_SHIFT_LEFT:
+    case Node::NODE_ASSIGNMENT_SHIFT_RIGHT:
+    case Node::NODE_ASSIGNMENT_SHIFT_RIGHT_UNSIGNED:
+    case Node::NODE_ASSIGNMENT_SUBTRACT:
         break;
 
     default:
@@ -169,537 +185,489 @@ void IntParser::AssignmentExpression(NodePtr& node)
 
     }
 
-    NodePtr left = node;
+    Node::pointer_t left(node);
 
-    node.CreateNode(f_data.f_type);
-    node.SetInputInfo(f_lexer.GetInput());
+    node = f_node;
 
-    GetToken();
-    NodePtr right;
-    AssignmentExpression(right);
+    get_token();
+    Node::pointer_t right;
+    assignment_expression(right);
 
-    node.AddChild(left);
-    node.AddChild(right);
+    node->append_child(left);
+    node->append_child(right);
 }
 
 
-void IntParser::ConditionalExpression(NodePtr& node, bool assignment)
+void Parser::conditional_expression(Node::pointer_t& node, bool assignment)
 {
-    MinMaxExpression(node);
+    min_max_expression(node);
 
-    if(f_data.f_type == '?') {
-        NodePtr condition = node;
-
-        node.CreateNode(NODE_CONDITIONAL);
-        node.SetInputInfo(f_lexer.GetInput());
-        node.AddChild(condition);
-
-        GetToken();
-        NodePtr left;
-        // not like C/C++, not a list expression here
-        if(assignment) {
-            AssignmentExpression(left);
-        }
-        else {
-            ConditionalExpression(left, false);
-        }
-        node.AddChild(left);
-
-        if(f_data.f_type == ':') {
-            GetToken();
-            NodePtr right;
-            if(assignment) {
-                AssignmentExpression(right);
-            }
-            else {
-                ConditionalExpression(right, false);
-            }
-            node.AddChild(right);
-        }
-        else {
-            f_lexer.ErrMsg(AS_ERR_INVALID_CONDITIONAL, "invalid use of the conditional operator, ':' was expected");
-        }
-    }
-}
-
-
-
-void IntParser::MinMaxExpression(NodePtr& node)
-{
-    LogicalOrExpression(node);
-
-    while(f_data.f_type == NODE_MINIMUM
-    || f_data.f_type == NODE_MAXIMUM) {
-        NodePtr left = node;
-
-        node.CreateNode(f_data.f_type);
-        node.SetInputInfo(f_lexer.GetInput());
-
-        GetToken();
-        NodePtr right;
-        LogicalOrExpression(right);
-
-        node.AddChild(left);
-        node.AddChild(right);
-    }
-}
-
-
-void IntParser::LogicalOrExpression(NodePtr& node)
-{
-    LogicalXOrExpression(node);
-
-    while(f_data.f_type == NODE_LOGICAL_OR) {
-        NodePtr left = node;
-
-        node.CreateNode(NODE_LOGICAL_OR);
-        node.SetInputInfo(f_lexer.GetInput());
-
-        GetToken();
-        NodePtr right;
-        LogicalXOrExpression(right);
-
-        node.AddChild(left);
-        node.AddChild(right);
-    }
-}
-
-
-void IntParser::LogicalXOrExpression(NodePtr& node)
-{
-    LogicalAndExpression(node);
-
-    while(f_data.f_type == NODE_LOGICAL_XOR) {
-        NodePtr left = node;
-
-        node.CreateNode(NODE_LOGICAL_XOR);
-        node.SetInputInfo(f_lexer.GetInput());
-
-        GetToken();
-        NodePtr right;
-        LogicalAndExpression(right);
-
-        node.AddChild(left);
-        node.AddChild(right);
-    }
-}
-
-
-void IntParser::LogicalAndExpression(NodePtr& node)
-{
-    BitwiseOrExpression(node);
-
-    while(f_data.f_type == NODE_LOGICAL_AND) {
-        NodePtr left = node;
-
-        node.CreateNode(NODE_LOGICAL_AND);
-        node.SetInputInfo(f_lexer.GetInput());
-
-        GetToken();
-        NodePtr right;
-        BitwiseOrExpression(right);
-
-        node.AddChild(left);
-        node.AddChild(right);
-    }
-}
-
-
-
-void IntParser::BitwiseOrExpression(NodePtr& node)
-{
-    BitwiseXOrExpression(node);
-
-    while(f_data.f_type == '|') {
-        NodePtr left = node;
-
-        node.CreateNode(NODE_BITWISE_OR);
-        node.SetInputInfo(f_lexer.GetInput());
-
-        GetToken();
-        NodePtr right;
-        BitwiseXOrExpression(right);
-
-        node.AddChild(left);
-        node.AddChild(right);
-    }
-}
-
-
-void IntParser::BitwiseXOrExpression(NodePtr& node)
-{
-    BitwiseAndExpression(node);
-
-    while(f_data.f_type == '^') {
-        NodePtr left = node;
-
-        node.CreateNode(NODE_BITWISE_XOR);
-        node.SetInputInfo(f_lexer.GetInput());
-
-        GetToken();
-        NodePtr right;
-        BitwiseAndExpression(right);
-
-        node.AddChild(left);
-        node.AddChild(right);
-    }
-}
-
-
-void IntParser::BitwiseAndExpression(NodePtr& node)
-{
-    EqualityExpression(node);
-
-    while(f_data.f_type == '&') {
-        NodePtr left = node;
-
-        node.CreateNode(NODE_BITWISE_AND);
-        node.SetInputInfo(f_lexer.GetInput());
-
-        GetToken();
-        NodePtr right;
-        EqualityExpression(right);
-
-        node.AddChild(left);
-        node.AddChild(right);
-    }
-}
-
-
-void IntParser::EqualityExpression(NodePtr& node)
-{
-    RelationalExpression(node);
-
-    while(f_data.f_type == NODE_EQUAL
-    || f_data.f_type == NODE_NOT_EQUAL
-    || f_data.f_type == NODE_STRICTLY_EQUAL
-    || f_data.f_type == NODE_STRICTLY_NOT_EQUAL) {
-        NodePtr left = node;
-
-        node.CreateNode(f_data.f_type);
-        node.SetInputInfo(f_lexer.GetInput());
-
-        GetToken();
-        NodePtr right;
-        RelationalExpression(right);
-
-        node.AddChild(left);
-        node.AddChild(right);
-    }
-}
-
-
-void IntParser::RelationalExpression(NodePtr& node)
-{
-    ShiftExpression(node);
-
-    while(f_data.f_type == NODE_LESS
-    || f_data.f_type == NODE_GREATER
-    || f_data.f_type == NODE_LESS_EQUAL
-    || f_data.f_type == NODE_GREATER_EQUAL
-    || f_data.f_type == NODE_IS
-    || f_data.f_type == NODE_AS
-    || f_data.f_type == NODE_MATCH
-    || f_data.f_type == NODE_IN
-    || f_data.f_type == NODE_INSTANCEOF) {
-        NodePtr left = node;
-
-        node_t type = f_data.f_type;
-        node.CreateNode(type);
-        node.SetInputInfo(f_lexer.GetInput());
-
-        GetToken();
-        NodePtr right;
-        ShiftExpression(right);
-
-        node.AddChild(left);
-        node.AddChild(right);
-
-        if(type == NODE_IN
-        && (f_data.f_type == NODE_RANGE || f_data.f_type == NODE_REST)) {
-            GetToken();
-            ShiftExpression(right);
-            node.AddChild(right);
-        }
-    }
-}
-
-
-void IntParser::ShiftExpression(NodePtr& node)
-{
-    AdditiveExpression(node);
-
-    while(f_data.f_type == NODE_SHIFT_LEFT
-    || f_data.f_type == NODE_SHIFT_RIGHT
-    || f_data.f_type == NODE_SHIFT_RIGHT_UNSIGNED
-    || f_data.f_type == NODE_ROTATE_LEFT
-    || f_data.f_type == NODE_ROTATE_RIGHT) {
-        NodePtr left = node;
-
-        node.CreateNode(f_data.f_type);
-        node.SetInputInfo(f_lexer.GetInput());
-
-        GetToken();
-        NodePtr right;
-        AdditiveExpression(right);
-
-        node.AddChild(left);
-        node.AddChild(right);
-    }
-}
-
-
-void IntParser::AdditiveExpression(NodePtr& node)
-{
-    MultiplicativeExpression(node);
-
-    while(f_data.f_type == '+'
-    || f_data.f_type == '-') {
-        NodePtr left = node;
-
-        node.CreateNode(f_data.f_type);
-        node.SetInputInfo(f_lexer.GetInput());
-
-        GetToken();
-        NodePtr right;
-        MultiplicativeExpression(right);
-
-        node.AddChild(left);
-        node.AddChild(right);
-    }
-}
-
-
-void IntParser::MultiplicativeExpression(NodePtr& node)
-{
-    PowerExpression(node);
-
-    while(f_data.f_type == '*'
-    || f_data.f_type == '/'
-    || f_data.f_type == '%') {
-        NodePtr left = node;
-
-        node.CreateNode(f_data.f_type);
-        node.SetInputInfo(f_lexer.GetInput());
-
-        GetToken();
-        NodePtr right;
-        PowerExpression(right);
-
-        node.AddChild(left);
-        node.AddChild(right);
-    }
-}
-
-
-void IntParser::PowerExpression(NodePtr& node)
-{
-    UnaryExpression(node);
-
-    if(f_data.f_type == NODE_POWER) {
-        NodePtr left = node;
-
-        node.CreateNode(f_data.f_type);
-        node.SetInputInfo(f_lexer.GetInput());
-
-        GetToken();
-        NodePtr right;
-        PowerExpression(right);
-
-        node.AddChild(left);
-        node.AddChild(right);
-    }
-}
-
-
-
-void IntParser::UnaryExpression(NodePtr& node)
-{
-    switch(f_data.f_type) {
-    case NODE_DELETE:
-    case NODE_INCREMENT:
-    case NODE_DECREMENT:
+    if(f_node->get_type() == Node::NODE_CONDITIONAL)
     {
-        node.CreateNode(f_data.f_type);
-        node.SetInputInfo(f_lexer.GetInput());
-        GetToken();
-        NodePtr postfix;
-        PostfixExpression(postfix);
-        node.AddChild(postfix);
+        f_node->append_child(node);
+        node = f_node;
+
+        get_token();
+        Node::pointer_t left;
+        // not like C/C++, not a list expression here
+        if(assignment)
+        {
+            assignment_expression(left);
+        }
+        else
+        {
+            conditional_expression(left, false);
+        }
+        node->append_child(left);
+
+        if(f_node->get_type() == Node::NODE_COLON)
+        {
+            get_token();
+            Node::pointer_t right;
+            if(assignment)
+            {
+                assignment_expression(right);
+            }
+            else
+            {
+                conditional_expression(right, false);
+            }
+            node->append_child(right);
+        }
+        else
+        {
+            Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_CONDITIONAL, f_lexer->get_input()->get_position());
+            msg << "invalid use of the conditional operator, ':' was expected";
+        }
+    }
+}
+
+
+
+void Parser::min_max_expression(Node::pointer_t& node)
+{
+    logical_or_expression(node);
+
+    if(f_node->get_type() == Node::NODE_MINIMUM
+    || f_node->get_type() == Node::NODE_MAXIMUM)
+    {
+        f_node->append_child(node);
+        node = f_node;
+
+        get_token();
+        Node::pointer_t right;
+        logical_or_expression(right);
+        node->append_child(right);
+    }
+}
+
+
+void Parser::logical_or_expression(Node::pointer_t& node)
+{
+    logical_xor_expression(node);
+
+    if(f_node->get_type() == Node::NODE_LOGICAL_OR)
+    {
+        f_node->append_child(node);
+        node = f_node;
+
+        get_token();
+        Node::pointer_t right;
+        logical_xor_expression(right);
+        node->append_child(right);
+    }
+}
+
+
+void Parser::logical_xor_expression(Node::pointer_t& node)
+{
+    logical_and_expression(node);
+
+    if(f_node->get_type() == Node::NODE_LOGICAL_XOR)
+    {
+        f_node->append_child(node);
+        node = f_node;
+
+        get_token();
+        Node::pointer_t right;
+        logical_and_expression(right);
+        node->append_child(right);
+    }
+}
+
+
+void Parser::logical_and_expression(Node::pointer_t& node)
+{
+    bitwise_or_expression(node);
+
+    if(f_node->get_type() == Node::NODE_LOGICAL_AND)
+    {
+        f_node->append_child(node);
+        node = f_node;
+
+        get_token();
+        Node::pointer_t right;
+        bitwise_or_expression(right);
+        node->append_child(right);
+    }
+}
+
+
+
+void Parser::bitwise_or_expression(Node::pointer_t& node)
+{
+    bitwise_xor_expression(node);
+
+    if(f_node->get_type() == Node::NODE_BITWISE_OR)
+    {
+        f_node->append_child(node);
+        node = f_node;
+
+        get_token();
+        Node::pointer_t right;
+        bitwise_xor_expression(right);
+        node->append_child(right);
+    }
+}
+
+
+void Parser::bitwise_xor_expression(Node::pointer_t& node)
+{
+    bitwise_and_expression(node);
+
+    if(f_node->get_type() == Node::NODE_BITWISE_XOR)
+    {
+        f_node->append_child(node);
+        node = f_node;
+
+        get_token();
+        Node::pointer_t right;
+        bitwise_and_expression(right);
+        node->append_child(right);
+    }
+}
+
+
+void Parser::bitwise_and_expression(Node::pointer_t& node)
+{
+    equality_expression(node);
+
+    if(f_node->get_type() == Node::NODE_BITWISE_AND)
+    {
+        f_node->append_child(node);
+        node = f_node;
+
+        get_token();
+        Node::pointer_t right;
+        equality_expression(right);
+        node->append_child(right);
+    }
+}
+
+
+void Parser::equality_expression(Node::pointer_t& node)
+{
+    relational_expression(node);
+
+    while(f_node->get_type() == Node::NODE_EQUAL
+       || f_node->get_type() == Node::NODE_NOT_EQUAL
+       || f_node->get_type() == Node::NODE_STRICTLY_EQUAL
+       || f_node->get_type() == Node::NODE_STRICTLY_NOT_EQUAL)
+    {
+        f_node->append_child(node);
+        node = f_node;
+
+        get_token();
+        Node::pointer_t right;
+        relational_expression(right);
+        node->append_child(right);
+    }
+}
+
+
+void Parser::relational_expression(Node::pointer_t& node)
+{
+    shift_expression(node);
+
+    while(f_node->get_type() == Node::NODE_LESS
+       || f_node->get_type() == Node::NODE_GREATER
+       || f_node->get_type() == Node::NODE_LESS_EQUAL
+       || f_node->get_type() == Node::NODE_GREATER_EQUAL
+       || f_node->get_type() == Node::NODE_IS
+       || f_node->get_type() == Node::NODE_AS
+       || f_node->get_type() == Node::NODE_MATCH
+       || f_node->get_type() == Node::NODE_IN
+       || f_node->get_type() == Node::NODE_INSTANCEOF)
+    {
+        f_node->append_child(node);
+        node = f_node;
+
+        get_token();
+        Node::pointer_t right;
+        shift_expression(right);
+        node->append_child(right);
+
+        // with IN we accept a range (optional)
+        if(node->get_type() == Node::NODE_IN
+        && (f_node->get_type() == Node::NODE_RANGE || f_node->get_type() == Node::NODE_REST))
+        {
+            get_token();
+            Node::pointer_t end;
+            shift_expression(end);
+            node->append_child(end);
+        }
+    }
+}
+
+
+void Parser::shift_expression(Node::pointer_t& node)
+{
+    additive_expression(node);
+
+    while(f_node->get_type() == Node::NODE_SHIFT_LEFT
+       || f_node->get_type() == Node::NODE_SHIFT_RIGHT
+       || f_node->get_type() == Node::NODE_SHIFT_RIGHT_UNSIGNED
+       || f_node->get_type() == Node::NODE_ROTATE_LEFT
+       || f_node->get_type() == Node::NODE_ROTATE_RIGHT)
+    {
+        f_node->append_child(node);
+        node = f_node;
+
+        get_token();
+        Node::pointer_t right;
+        additive_expression(right);
+        node->append_child(right);
+    }
+}
+
+
+void Parser::additive_expression(Node::pointer_t& node)
+{
+    multiplicative_expression(node);
+
+    while(f_node->get_type() == Node::NODE_ADD
+       || f_node->get_type() == Node::NODE_SUBTRACT)
+    {
+        f_node->append_child(node);
+        node = f_node;
+
+        get_token();
+        Node::pointer_t right;
+        multiplicative_expression(right);
+        node->append_child(right);
+    }
+}
+
+
+void Parser::multiplicative_expression(Node::pointer_t& node)
+{
+    power_expression(node);
+
+    while(f_node->get_type() == Node::NODE_MULTIPLY
+       || f_node->get_type() == Node::NODE_DIVIDE
+       || f_node->get_type() == Node::NODE_MODULO)
+    {
+        f_node->append_child(node);
+        node = f_node;
+
+        get_token();
+        Node::pointer_t right;
+        power_expression(right);
+        node->append_child(right);
+    }
+}
+
+
+void Parser::power_expression(Node::pointer_t& node)
+{
+    unary_expression(node);
+
+    if(f_node->get_type() == Node::NODE_POWER)
+    {
+        f_node->append_child(node);
+        node = f_node;
+
+        get_token();
+        Node::pointer_t right;
+        power_expression(right); // right to left
+        node->append_child(right);
+    }
+}
+
+
+
+void Parser::unary_expression(Node::pointer_t& node)
+{
+    if(node)
+    {
+        throw exception_internal_error("unary_expression() called with a non-null node pointer");
+    }
+
+    switch(f_node->get_type())
+    {
+    case Node::NODE_DELETE:
+    case Node::NODE_INCREMENT:
+    case Node::NODE_DECREMENT:
+    {
+        node = f_node;
+        get_token();
+        Node::pointer_t postfix;
+        postfix_expression(postfix);
+        node->append_child(postfix);
     }
         break;
 
-    case NODE_VOID:
-    case NODE_TYPEOF:
-    case '+':
-    case '-':
-    case '~':
-    case '!':
+    case Node::NODE_VOID:
+    case Node::NODE_TYPEOF:
+    case Node::NODE_ADD: // +<value>
+    case Node::NODE_SUBTRACT: // -<value>
+    case Node::NODE_BITWISE_NOT:
+    case Node::NODE_LOGICAL_NOT:
     {
-        node.CreateNode(f_data.f_type);
-        node.SetInputInfo(f_lexer.GetInput());
-
-        GetToken();
-
-        NodePtr unary;
-        UnaryExpression(unary);
-
-        node.AddChild(unary);
+        node = f_node;
+        get_token();
+        Node::pointer_t unary;
+        unary_expression(unary);
+        node->append_child(unary);
     }
         break;
 
     default:
-        PostfixExpression(node);
+        postfix_expression(node);
         break;
 
     }
 }
 
 
-void IntParser::PostfixExpression(NodePtr& node)
+void Parser::postfix_expression(Node::pointer_t& node)
 {
-    PrimaryExpression(node);
+    primary_expression(node);
 
-    for(;;) {
-        switch(f_data.f_type) {
-        case '.':
+    for(;;)
+    {
+        switch(f_node->get_type())
         {
-            NodePtr left = node;
+        case Node::NODE_MEMBER:
+        {
+            f_node->append_child(node);
+            node = f_node;
 
-            node.CreateNode(NODE_MEMBER);
-            node.SetInputInfo(f_lexer.GetInput());
-
-            GetToken();
-            NodePtr right;
-            PrimaryExpression(right);
-
-            node.AddChild(left);
-            node.AddChild(right);
+            get_token();
+            Node::pointer_t right;
+            primary_expression(right);
+            node->append_child(right);
         }
             break;
 
-        case NODE_SCOPE:
+        case Node::NODE_SCOPE:
         {
-            GetToken();
-            if(f_data.f_type == NODE_IDENTIFIER) {
-                NodePtr left = node;
+            f_node->append_child(node);
+            node = f_node;
 
-                node.CreateNode(NODE_SCOPE);
-                node.SetInputInfo(f_lexer.GetInput());
-
-                NodePtr right;
-                right.CreateNode();
-                right.SetInputInfo(f_lexer.GetInput());
-                right.SetData(f_data);
-
-                node.AddChild(left);
-                node.AddChild(right);
-
-                GetToken();
+            get_token();
+            if(f_node->get_type() == Node::NODE_IDENTIFIER)
+            {
+                node->append_child(f_node);
+                get_token();
             }
-            else {
-                f_lexer.ErrMsg(AS_ERR_INVALID_SCOPE, "'::' is expected to be followed by an identifier");
+            else
+            {
+                Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_SCOPE, f_lexer->get_input()->get_position());
+                msg << "scope operator '::' is expected to be followed by an identifier";
             }
             // don't repeat scope (it seems)
             return;
         }
             break;
 
-        case NODE_INCREMENT:
+        case Node::NODE_INCREMENT:
         {
-            NodePtr left = node;
-
-            node.CreateNode(NODE_POST_INCREMENT);
-            node.SetInputInfo(f_lexer.GetInput());
-
-            GetToken();
-
-            node.AddChild(left);
+            Node::pointer_t decrement(f_lexer->get_new_node(Node::NODE_POST_INCREMENT));
+            decrement->append_child(node);
+            node = decrement;
+            get_token();
         }
             break;
 
-        case NODE_DECREMENT:
+        case Node::NODE_DECREMENT:
         {
-            NodePtr left = node;
-
-            node.CreateNode(NODE_POST_DECREMENT);
-            node.SetInputInfo(f_lexer.GetInput());
-
-            GetToken();
-
-            node.AddChild(left);
+            Node::pointer_t decrement(f_lexer->get_new_node(Node::NODE_POST_DECREMENT));
+            decrement->append_child(node);
+            node = decrement;
+            get_token();
         }
             break;
 
-        case '(':        // arguments
+        case Node::NODE_OPEN_PARENTHESIS:        // function call arguments
         {
-            NodePtr left = node;
+            Node::pointer_t left(node);
+            node = f_lexer->get_new_node(Node::NODE_CALL);
+            node->append_child(left);
 
-            node.CreateNode(NODE_CALL);
-            node.SetInputInfo(f_lexer.GetInput());
-
-            GetToken();
-
-            node.AddChild(left);
+            get_token();
 
             // any arguments?
-            NodePtr right;
-            if(f_data.f_type != ')') {
-                NodePtr list;
-                ListExpression(list, true, false);
-                Data& data = list.GetData();
-                if(data.f_type == NODE_LIST) {
+            Node::pointer_t right;
+            if(f_node->get_type() != Node::NODE_CLOSE_PARENTHESIS)
+            {
+                Node::pointer_t list;
+                list_expression(list, true, false);
+                if(list->get_type() == Node::NODE_LIST)
+                {
+                    // already a list, use it as is
                     right = list;
                 }
-                else {
-                    right.CreateNode(NODE_LIST);
-                    right.SetInputInfo(f_lexer.GetInput());
-                    right.AddChild(list);
+                else
+                {
+                    // not a list, so put it in a one
+                    right = f_lexer->get_new_node(Node::NODE_LIST);
+                    right->append_child(list);
                 }
             }
-            else {
+            else
+            {
                 // an empty list!
-                right.CreateNode(NODE_LIST);
-                right.SetInputInfo(f_lexer.GetInput());
+                right = f_lexer->get_new_node(Node::NODE_LIST);
             }
-            node.AddChild(right);
+            node->append_child(right);
 
-            if(f_data.f_type == ')') {
-                GetToken();
+            if(f_node->get_type() == Node::NODE_CLOSE_PARENTHESIS)
+            {
+                get_token();
             }
-            else {
-                f_lexer.ErrMsg(AS_ERR_PARENTHESIS_EXPECTED, "')' expected to end the list of arguments");
+            else
+            {
+                Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_PARENTHESIS_EXPECTED, f_lexer->get_input()->get_position());
+                msg << "')' expected to end the list of arguments";
             }
         }
             break;
 
-        case '[':        // array/property access
+        case Node::NODE_OPEN_SQUARE_BRACKET:        // array/property access
         {
-            NodePtr left = node;
+            Node::pointer_t array(f_lexer->get_new_node(Node::NODE_ARRAY));
+            array->append_child(node);
+            node = array;
 
-            // NOTE: this could be NODE_MEMBER in most
-            //     cases however the NODE_ARRAY supports
-            //     lists (including the empty list)
-            //     which NODE_MEMBER doesn't
-            node.CreateNode(NODE_ARRAY);
-            node.SetInputInfo(f_lexer.GetInput());
-
-            GetToken();
-
-            node.AddChild(left);
+            get_token();
 
             // any arguments?
-            if(f_data.f_type != ']') {
-                NodePtr right;
-                ListExpression(right, false, false);
-                node.AddChild(right);
+            if(f_node->get_type() != Node::NODE_CLOSE_SQUARE_BRACKET)
+            {
+                Node::pointer_t right;
+                list_expression(right, false, false);
+                node->append_child(right);
             }
 
-            if(f_data.f_type == ']') {
-                GetToken();
+            if(f_node->get_type() == Node::NODE_CLOSE_SQUARE_BRACKET)
+            {
+                get_token();
             }
-            else {
-                f_lexer.ErrMsg(AS_ERR_SQUARE_BRAKETS_EXPECTED, "']' expected to end the list of element references");
+            else
+            {
+                Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_SQUARE_BRAKETS_EXPECTED, f_lexer->get_input()->get_position());
+                msg << "']' expected to end the list of element references or declarations";
             }
         }
             break;
@@ -712,109 +680,110 @@ void IntParser::PostfixExpression(NodePtr& node)
 }
 
 
-void IntParser::PrimaryExpression(NodePtr& node)
+void Parser::primary_expression(Node::pointer_t& node)
 {
-    switch(f_data.f_type) {
-    case NODE_NULL:
-    case NODE_UNDEFINED:
-    case NODE_TRUE:
-    case NODE_FALSE:
-    case NODE_IDENTIFIER:
-    case NODE_INT64:
-    case NODE_FLOAT64:
-    case NODE_STRING:
-    case NODE_THIS:
-    case NODE_REGULAR_EXPRESSION:
-    case NODE_PUBLIC:
-    case NODE_PRIVATE:
+    switch(f_node->get_type())
     {
-        node.CreateNode();
-        node.SetInputInfo(f_lexer.GetInput());
-        node.SetData(f_data);
-        GetToken();
+    case Node::NODE_NULL:
+    case Node::NODE_UNDEFINED:
+    case Node::NODE_TRUE:
+    case Node::NODE_FALSE:
+    case Node::NODE_IDENTIFIER:
+    case Node::NODE_INT64:
+    case Node::NODE_FLOAT64:
+    case Node::NODE_STRING:
+    case Node::NODE_THIS:
+    case Node::NODE_REGULAR_EXPRESSION:
+    case Node::NODE_PUBLIC:
+    case Node::NODE_PRIVATE:
+    case Node::NODE_SUPER:
+    {
+        node = f_node;
+        get_token();
     }
         break;
 
-    case NODE_NEW:
+    case Node::NODE_NEW:
     {
-        node.CreateNode(NODE_NEW);
-        node.SetInputInfo(f_lexer.GetInput());
-        GetToken();
-        NodePtr object;
-        PostfixExpression(object);
-        node.AddChild(object);
+        node = f_node;
+        get_token();
+        Node::pointer_t object_name;
+        postfix_expression(object_name);
+        node->append_child(object_name);
     }
         break;
 
-    case NODE_SUPER:
+    case Node::NODE_OPEN_PARENTHESIS:        // grouped expressions
     {
-        node.CreateNode(NODE_SUPER);
-        node.SetInputInfo(f_lexer.GetInput());
-        GetToken();
-    }
-        break;
+        get_token();
+        list_expression(node, false, false);
 
-    case '(':
-    {
-        GetToken();
-        ListExpression(node, false, false);
-        Data& d = node.GetData();
         // NOTE: the following is important in different cases
-        // such as (a).field which is dynamic (i.e. we get the
-        // content of variable a as the name of the object to
-        // access and thus it is not equivalent to a.field)
-        if(d.f_type == NODE_IDENTIFIER) {
-            d.f_type = NODE_VIDENTIFIER;
+        //       such as (a).field which is dynamic (i.e. we get the
+        //       content of variable a as the name of the object to
+        //       access and thus it is not equivalent to a.field)
+        if(node->get_type() == Node::NODE_IDENTIFIER)
+        {
+            node->to_videntifier();
         }
-        if(f_data.f_type == ')') {
-            GetToken();
+        if(f_node->get_type() == Node::NODE_CLOSE_PARENTHESIS)
+        {
+            get_token();
         }
-        else {
-            f_lexer.ErrMsg(AS_ERR_PARENTHESIS_EXPECTED, "')' expected to match the '('");
-        }
-    }
-        break;
-
-    case '[':
-    {
-        node.CreateNode(NODE_ARRAY_LITERAL);
-        node.SetInputInfo(f_lexer.GetInput());
-        GetToken();
-
-        NodePtr elements;
-        ListExpression(elements, false, true);
-        node.AddChild(elements);
-        if(f_data.f_type == ']') {
-            GetToken();
-        }
-        else {
-            f_lexer.ErrMsg(AS_ERR_SQUARE_BRAKETS_EXPECTED, "']' expected to match the '[' of this array");
+        else
+        {
+            Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_PARENTHESIS_EXPECTED, f_lexer->get_input()->get_position());
+            msg << "')' expected to match the '('";
         }
     }
         break;
 
-    case '{':
+    case Node::NODE_OPEN_SQUARE_BRACKET: // array declaration
     {
-        GetToken();
-        ObjectLiteralExpression(node);
-        if(f_data.f_type == '}') {
-            GetToken();
+        node = f_lexer->get_new_node(Node::NODE_ARRAY_LITERAL);
+        get_token();
+
+        Node::pointer_t elements;
+        list_expression(elements, false, true);
+        node->append_child(elements);
+        if(f_node->get_type() == Node::NODE_CLOSE_SQUARE_BRACKET)
+        {
+            get_token();
         }
-        else {
-            f_lexer.ErrMsg(AS_ERR_CURVLY_BRAKETS_EXPECTED, "'}' expected to match the '{' of this object literal");
+        else
+        {
+            Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_SQUARE_BRAKETS_EXPECTED, f_lexer->get_input()->get_position());
+            msg << "']' expected to match the '[' of this array";
         }
     }
         break;
 
-    case NODE_FUNCTION:
+    case Node::NODE_OPEN_CURVLY_BRACKET: // object declaration
     {
-        GetToken();
-        Function(node, true);
+        get_token();
+        object_literal_expression(node);
+        if(f_node->get_type() == Node::NODE_CLOSE_CURVLY_BRACKET)
+        {
+            get_token();
+        }
+        else
+        {
+            Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_CURVLY_BRAKETS_EXPECTED, f_lexer->get_input()->get_position());
+            msg << "'}' expected to match the '{' of this object literal";
+        }
+    }
+        break;
+
+    case Node::NODE_FUNCTION:
+    {
+        get_token();
+        function(node, true);
     }
         break;
 
     default:
-        f_lexer.ErrMsg(AS_ERR_INVALID_EXPRESSION, "unexpected token found in an expression");
+        Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_EXPRESSION, f_lexer->get_input()->get_position());
+        msg << "unexpected token found in an expression";
         break;
 
     }
@@ -822,94 +791,107 @@ void IntParser::PrimaryExpression(NodePtr& node)
 
 
 
-void IntParser::ObjectLiteralExpression(NodePtr& node)
+void Parser::object_literal_expression(Node::pointer_t& node)
 {
-    NodePtr        name;
-    node_t        type;
+    Node::pointer_t name;
+    Node::node_t    type;
 
-    node.CreateNode(NODE_OBJECT_LITERAL);
-    node.SetInputInfo(f_lexer.GetInput());
-    for(;;) {
-        name.CreateNode(NODE_TYPE);
-        name.SetInputInfo(f_lexer.GetInput());
-        switch(type = f_data.f_type) {
-        case '(':
+    node = f_lexer->get_new_node(Node::NODE_OBJECT_LITERAL);
+    for(;;)
+    {
+        name = f_lexer->get_new_node(Node::NODE_TYPE);
+        type = f_node->get_type();
+        switch(type)
+        {
+        case Node::NODE_OPEN_PARENTHESIS: // (<expr>)::<name> only
         {
             // We keep the '(' so an identifier becomes
             // a VIDENTIFIER and thus remains dynamic.
             //GetToken();
-            NodePtr type;
-            Expression(type);
-            name.AddChild(type);
+            Node::pointer_t expr;
+            expression(expr);
+            name->append_child(expr);
         }
             goto and_scope;
 
-        case NODE_IDENTIFIER:    // <name> or <namespace>::<name>
-        case NODE_PRIVATE:    // private::<name> only
-        case NODE_PUBLIC:    // public::<name> only
+        case Node::NODE_IDENTIFIER:    // <name> or <namespace>::<name>
+        case Node::NODE_PRIVATE:    // private::<name> only
+        case Node::NODE_PUBLIC:    // public::<name> only
             // NOTE: an IDENTIFIER here remains NODE_IDENTIFIER
-            // so it doesn't look like the previous expression
-            // (i.e. an expression literal can be just an
-            // identifier but it will be marked as
-            // NODE_VIDENTIFIER instead)
-            name.SetData(f_data);
-            GetToken();
+            //       so it does not look like the previous expression
+            //       (i.e. an expression literal can be just an
+            //       identifier but it will be marked as
+            //       NODE_VIDENTIFIER instead)
+            name->set_string(f_node->get_string());
+            get_token();
 and_scope:
-            if(f_data.f_type == NODE_SCOPE) {
-                GetToken();
-                if(f_data.f_type == NODE_IDENTIFIER) {
-                    NodePtr scope;
-                    scope.CreateNode();
-                    scope.SetInputInfo(f_lexer.GetInput());
-                    scope.SetData(f_data);
-                    name.AddChild(scope);
+            if(f_node->get_type() == Node::NODE_SCOPE)
+            {
+                get_token();
+                if(f_node->get_type() == Node::NODE_IDENTIFIER)
+                {
+                    name->append_child(f_node);
                 }
-                else {
-                    f_lexer.ErrMsg(AS_ERR_INVALID_SCOPE, "'::' is expected to be followed by an identifier");
+                else
+                {
+                    Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_SCOPE, f_lexer->get_input()->get_position());
+                    msg << "'::' is expected to be followed by an identifier";
                 }
             }
-            else if(type != NODE_IDENTIFIER) {
-                f_lexer.ErrMsg(AS_ERR_INVALID_FIELD_NAME, "'public' or 'private' cannot be used as a field name, '::' was expected");
+            else if(type != Node::NODE_IDENTIFIER)
+            {
+                Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_FIELD_NAME, f_lexer->get_input()->get_position());
+                msg << "'public' or 'private' cannot be used as a field name, '::' was expected";
             }
             break;
 
-        case NODE_INT64:
-        case NODE_FLOAT64:
-        case NODE_STRING:
-            name.SetData(f_data);
-            GetToken();
+        case Node::NODE_INT64:
+        case Node::NODE_FLOAT64:
+        case Node::NODE_STRING:
+            name = f_node;
+            get_token();
             break;
 
         default:
-            f_lexer.ErrMsg(AS_ERR_INVALID_FIELD, "the name of a field was expected");
+            Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_FIELD, f_lexer->get_input()->get_position());
+            msg << "the name of a field was expected";
             break;
 
         }
 
-        if(f_data.f_type == ':') {
-            GetToken();
+        if(f_node->get_type() == Node::NODE_COLON)
+        {
+            get_token();
         }
-        else {
+        else
+        {
             // if we have a closing brace here, the programmer
             // tried to end his list with a comma; we just
             // accept that one silently! (like in C/C++)
-            if(f_data.f_type == '}') {
+            if(f_node->get_type() == Node::NODE_CLOSE_CURVLY_BRACKET)
+            {
+                // TODO: in pedantic, emit a warning
                 break;
             }
 
-            f_lexer.ErrMsg(AS_ERR_COLON_EXPECTED, "':' expected after the name of a field");
-            if(f_data.f_type == ';') {
+            Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_COLON_EXPECTED, f_lexer->get_input()->get_position());
+            msg << "':' expected after the name of a field";
+
+            if(f_node->get_type() == Node::NODE_SEMICOLON)
+            {
                 // this is probably the end...
                 return;
             }
 
             // if we have a comma here, the programmer
             // just forgot a few things...
-            if(f_data.f_type == ',') {
-                GetToken();
+            if(f_node->get_type() == Node::NODE_COLON)
+            {
+                get_token();
                 // we accept a comma at the end here too!
-                if(f_data.f_type == '}'
-                || f_data.f_type == ';') {
+                if(f_node->get_type() == Node::NODE_CLOSE_CURVLY_BRACKET
+                || f_node->get_type() == Node::NODE_SEMICOLON)
+                {
                     break;
                 }
                 continue;
@@ -918,16 +900,18 @@ and_scope:
 
         // add the name only now so we have a mostly
         // valid tree from here on
-        node.AddChild(name);
+        node->append_child(name);
 
-        NodePtr value;
-        AssignmentExpression(value);
-        node.AddChild(value);
+        Node::pointer_t value;
+        assignment_expression(value);
+        node->append_child(value);
 
-        if(f_data.f_type != ',') {
+        if(f_node->get_type() != Node::NODE_COMMA)
+        {
+            // XXX: no error here?
             break;
         }
-        GetToken();
+        get_token();
     }
 }
 

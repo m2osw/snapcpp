@@ -45,14 +45,17 @@ namespace as2js
 class Lexer
 {
 public:
+    typedef std::shared_ptr<Lexer>      pointer_t;
+
                                 Lexer();
 
-    void                        set_options(Options::options_pointer_t& options);
-    void                        set_input(Input::input_pointer_t& input);
-    Input::input_pointer_t      get_input() const;
+    void                        set_options(Options::pointer_t& options);
+    void                        set_input(Input::pointer_t& input);
+    Input::pointer_t            get_input() const;
     void                        set_for_in(bool const for_in);
 
-    Node::node_pointer_t        get_next_token();
+    Node::pointer_t             get_new_node(Node::node_t type);
+    Node::pointer_t             get_next_token();
 
 private:
     typedef int                 char_type_t;
@@ -83,8 +86,9 @@ private:
     bool                        has_option_set(Options::option_t option) const;
 
     zchar_type_t                f_char_type;    // type of the last character read
-    Input::input_pointer_t      f_input;
-    Options::options_pointer_t  f_options;
+    Input::pointer_t            f_input;
+    Position                    f_position;     // position just before reading a token
+    Options::pointer_t          f_options;
     controlled_vars::fbool_t    f_for_in;       // IN becomes FOR_IN when this is true
 
     Node::node_t                f_result_type;

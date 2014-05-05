@@ -34,144 +34,104 @@ SOFTWARE.
 */
 
 
-#include    "as2js/as2js.h"
+#include    "as2js/lexer.h"
 
 namespace as2js
 {
 
 
-
-
-class Lexer
+// OLD DOCUMENTATION
+// We do not have a separate interface for now...
+//
+// The parser class is mostly hidden to you.
+// You can't derive from it. You call the CreateParser() to use it.
+// Once you are finished with the parser, delete it.
+// Note that deleting the parser doesn't delete the nodes and thus
+// you can work with the tree even after you deleted the parser.
+//
+// You use like this:
+//
+//    using namespace sswf::as;
+//    MyInput input;
+//    Parser *parser = Parser::CreateParser();
+//    parser->SetInput(input);
+//    // it is optional to set the options
+//    parser->SetOptions(options);
+//    NodePtr root = parser->Parse();
+//
+// NOTE: the input and options are NOT copied, a pointer to these
+// object is saved in the parser. Delete the Parser() before you
+// delete them. Also, this means you can change the options as the
+// parsing goes on (i.e. usually this happens in Input::Error().).
+class Parser
 {
 public:
-    static int const    MAX_UNGET = 16;
+                        Parser();
 
-                        Lexer();
-
-    void                SetOptions(Options& options);
-    void                SetInput(Input& input);
-    Input *             GetInput() const
-                        {
-                            return const_cast<Input *>(f_input);
-                        }
-
-    const Data&         GetNextToken();
-    void                ErrMsg(err_code_t err_code, const char *format, ...);
-
-    void                SetForIn(bool const for_in)
-                        {
-                            f_for_in = for_in;
-                        }
+    void                set_input(Input::pointer_t& input);
+    void                set_options(Options::pointer_t& options);
+    Node::pointer_t     parse();
 
 private:
-    static int const    CHAR_LETTER          = 0x0001;
-    static int const    CHAR_DIGIT           = 0x0002;
-    static int const    CHAR_PUNCTUATION     = 0x0004;
-    static int const    CHAR_WHITE_SPACE     = 0x0008;
-    static int const    CHAR_LINE_TERMINATOR = 0x0010;
-    static int const    CHAR_HEXDIGIT        = 0x0020;
-    static int const    CHAR_INVALID         = 0x8000;   // such as 0xFFFE & 0xFFFF
+    void                get_token();
+    void                unget_token(Node::pointer_t& data);
 
-    long                InputGetC();
-    long                GetC();
-    void                UngetC(long c);
-    int64_t             ReadHex(long max);
-    int64_t             ReadOctal(long c, long max);
-    long                EscapeSequence(void);
-    long                CharType(long c);
-    long                Read(long c, long flags, String& str);
-    void                ReadIdentifier(long c);
-    void                ReadNumber(long c);
-    void                ReadString(long quote);
+    void                additive_expression(Node::pointer_t& node);
+    void                assignment_expression(Node::pointer_t& node);
+    void                attributes(Node::pointer_t& attr_list);
+    void                bitwise_and_expression(Node::pointer_t& node);
+    void                bitwise_or_expression(Node::pointer_t& node);
+    void                bitwise_xor_expression(Node::pointer_t& node);
+    void                block(Node::pointer_t& node);
+    void                break_continue(Node::pointer_t& node, Node::node_t type);
+    void                case_expression(Node::pointer_t& node);
+    void                catch_statement(Node::pointer_t& node);
+    void                class_declaration(Node::pointer_t& node, Node::node_t type);
+    void                conditional_expression(Node::pointer_t& node, bool assignment);
+    void                default_label(Node::pointer_t& node);
+    void                directive(Node::pointer_t& node);
+    void                directive_list(Node::pointer_t& node);
+    void                do_statement(Node::pointer_t& node);
+    void                enum_declaration(Node::pointer_t& node);
+    void                equality_expression(Node::pointer_t& node);
+    void                expression(Node::pointer_t& node);
+    void                function(Node::pointer_t& node, bool const expression);
+    void                for_statement(Node::pointer_t& node);
+    void                if_statement(Node::pointer_t& node);
+    void                import(Node::pointer_t& node);
+    void                list_expression(Node::pointer_t& node, bool rest, bool empty);
+    void                logical_and_expression(Node::pointer_t& node);
+    void                logical_or_expression(Node::pointer_t& node);
+    void                logical_xor_expression(Node::pointer_t& node);
+    void                min_max_expression(Node::pointer_t& node);
+    void                multiplicative_expression(Node::pointer_t& node);
+    void                namespace_block(Node::pointer_t& node);
+    void                object_literal_expression(Node::pointer_t& node);
+    void                parameter_list(Node::pointer_t& node, bool& has_out);
+    void                pragma();
+    void                program(Node::pointer_t& node);
+    void                package(Node::pointer_t& node);
+    void                postfix_expression(Node::pointer_t& node);
+    void                power_expression(Node::pointer_t& node);
+    void                primary_expression(Node::pointer_t& node);
+    void                relational_expression(Node::pointer_t& node);
+    void                return_statement(Node::pointer_t& node);
+    void                shift_expression(Node::pointer_t& node);
+    void                switch_statement(Node::pointer_t& node);
+    void                throw_statement(Node::pointer_t& node);
+    void                try_finally(Node::pointer_t& node, Node::node_t type);
+    void                unary_expression(Node::pointer_t& node);
+    void                use_namespace(Node::pointer_t& node);
+    void                variable(Node::pointer_t& node, bool const constant);
+    void                with_while(Node::pointer_t& node, Node::node_t type);
 
-    long                f_last;
-    long                f_type;        // type of the last character read
-    Data                f_data;
-    long                f_unget_pos;
-    long                f_unget[MAX_UNGET];
-    Input *             f_input;
-    Options *           f_options;
-    bool                f_for_in;    // IN becomes FOR_IN when this is true
-};
+    void                pragma_option(Options::option_t option, bool prima, Node::pointer_t& argument, long value);
 
-
-
-
-class IntParser : public Parser
-{
-public:
-    static int const MAX_UNGET = 3;
-
-                        IntParser();
-    virtual             ~IntParser();
-
-    virtual void        SetInput(Input& input);
-    virtual void        SetOptions(Options& options);
-    virtual NodePtr&    Parse();
-
-private:
-    void                GetToken();
-    void                UngetToken(const Data& data);
-
-    void                AdditiveExpression(NodePtr& node);
-    void                AssignmentExpression(NodePtr& node);
-    void                Attributes(NodePtr& attr_list);
-    void                BitwiseAndExpression(NodePtr& node);
-    void                BitwiseOrExpression(NodePtr& node);
-    void                BitwiseXOrExpression(NodePtr& node);
-    void                Block(NodePtr& node);
-    void                BreakContinue(NodePtr& node, node_t type);
-    void                Case(NodePtr& node);
-    void                Catch(NodePtr& node);
-    void                Class(NodePtr& node, node_t type);
-    void                ConditionalExpression(NodePtr& node, bool assignment);
-    void                Default(NodePtr& node);
-    void                Directive(NodePtr& node);
-    void                DirectiveList(NodePtr& node);
-    void                Do(NodePtr& node);
-    void                Enum(NodePtr& node);
-    void                EqualityExpression(NodePtr& node);
-    void                Expression(NodePtr& node);
-    void                Function(NodePtr& node, bool expression);
-    void                For(NodePtr& node);
-    void                Goto(NodePtr& node);
-    void                If(NodePtr& node);
-    void                Import(NodePtr& node);
-    void                ListExpression(NodePtr& node, bool rest, bool empty);
-    void                LogicalAndExpression(NodePtr& node);
-    void                LogicalOrExpression(NodePtr& node);
-    void                LogicalXOrExpression(NodePtr& node);
-    void                MinMaxExpression(NodePtr& node);
-    void                MultiplicativeExpression(NodePtr& node);
-    void                Namespace(NodePtr& node);
-    void                ObjectLiteralExpression(NodePtr& node);
-    void                ParameterList(NodePtr& node, bool& has_out);
-    void                Pragma();
-    void                Program(NodePtr& node);
-    void                Package(NodePtr& node);
-    void                PostfixExpression(NodePtr& node);
-    void                PowerExpression(NodePtr& node);
-    void                PrimaryExpression(NodePtr& node);
-    void                RelationalExpression(NodePtr& node);
-    void                Return(NodePtr& node);
-    void                ShiftExpression(NodePtr& node);
-    void                Switch(NodePtr& node);
-    void                Throw(NodePtr& node);
-    void                TryFinally(NodePtr& node, node_t type);
-    void                UnaryExpression(NodePtr& node);
-    void                UseNamespace(NodePtr& node);
-    void                Variable(NodePtr& node, bool const constant);
-    void                WithWhile(NodePtr& node, node_t type);
-
-    void                Pragma_Option(option_t option, bool prima, const Data& argument, long value);
-
-    Lexer               f_lexer;
-    Options *           f_options;
-    NodePtr             f_root;
-    Data                f_data;    // last data read by GetNextToken()
-    int                 f_unget_pos;
-    Data                f_unget[MAX_UNGET];
+    Lexer::pointer_t            f_lexer;
+    Options::pointer_t          f_options;
+    Node::pointer_t             f_root;
+    Node::pointer_t             f_node;    // last data read by get_token()
+    Node::vector_of_pointers_t  f_unget;
 };
 
 

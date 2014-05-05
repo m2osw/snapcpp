@@ -61,7 +61,7 @@ namespace as2js
 class Input
 {
 public:
-    typedef std::shared_ptr<Input>                  input_pointer_t;
+    typedef std::shared_ptr<Input>                  pointer_t;
     typedef as_char_t                               char_t;
     typedef controlled_vars::auto_init<ssize_t, -1> input_size_t;
 

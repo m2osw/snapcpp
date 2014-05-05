@@ -1,6 +1,6 @@
 #ifndef AS2JS_NODE_H
 #define AS2JS_NODE_H
-/* node.h -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2009 */
+/* node.h -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
 
 /*
 
@@ -58,9 +58,9 @@ namespace as2js
 class Node : public std::enable_shared_from_this<Node>
 {
 public:
-    typedef std::shared_ptr<Node>               node_pointer_t;
-    typedef std::map<String, node_pointer_t>    map_of_node_pointers_t;
-    typedef std::vector<node_pointer_t>         vector_of_node_pointers_t;
+    typedef std::shared_ptr<Node>               pointer_t;
+    typedef std::map<String, pointer_t>         map_of_pointers_t;
+    typedef std::vector<pointer_t>              vector_of_pointers_t;
 
     // the node type is often referenced as a token
     enum node_t
@@ -369,19 +369,21 @@ public:
     };
 
                             Node(node_t type);
-                            Node(node_pointer_t const& source, node_pointer_t& parent);
+                            Node(pointer_t const& source, pointer_t& parent);
 
+    node_t                  get_type() const;
     char const *            get_type_name() const;
 
     // basic conversions
     bool                    to_boolean();
     bool                    to_number();
     bool                    to_string();
+    void                    to_videntifier();
 
     void                    set_boolean(bool value);
     void                    set_int64(Int64 value);
     void                    set_float64(Float64 value);
-    void                    set_string(String& value);
+    void                    set_string(String const& value);
 
     bool                    get_boolean() const;
     Int64                   get_int64() const;
@@ -404,33 +406,33 @@ public:
     void                    set_offset(int32_t offset);
     int32_t                 get_offset() const;
 
-    void                    set_parent(node_pointer_t parent = node_pointer_t(), int index = -1);
-    node_pointer_t          get_parent() const;
+    void                    set_parent(pointer_t parent = pointer_t(), int index = -1);
+    pointer_t               get_parent() const;
 
     size_t                  get_children_size() const;
-    //void                    replace_with(node_pointer_t& node); -- this is wrong...
+    //void                    replace_with(pointer_t& node); -- this is wrong...
     void                    delete_child(int index);
-    void                    append_child(node_pointer_t& child);
-    void                    insert_child(int index, node_pointer_t& child);
-    void                    set_child(int index, node_pointer_t& child);
-    node_pointer_t          get_child(int index) const;
+    void                    append_child(pointer_t& child);
+    void                    insert_child(int index, pointer_t& child);
+    void                    set_child(int index, pointer_t& child);
+    pointer_t               get_child(int index) const;
 
-    void                    set_link(link_t index, node_pointer_t& link);
-    node_pointer_t          get_link(link_t index);
+    void                    set_link(link_t index, pointer_t& link);
+    pointer_t               get_link(link_t index);
 
-    void                    add_variable(node_pointer_t& variable);
+    void                    add_variable(pointer_t& variable);
     size_t                  get_variable_size() const;
-    node_pointer_t          get_variable(int index) const;
+    pointer_t               get_variable(int index) const;
 
-    void                    add_label(node_pointer_t& label);
+    void                    add_label(pointer_t& label);
     size_t                  get_label_size() const;
-    //node_pointer_t          get_label(size_t index) const; -- because of the map and it looks like we're not using this one anyway
-    node_pointer_t          find_label(String const& name) const;
+    //pointer_t               get_label(size_t index) const; -- because of the map and it looks like we're not using this one anyway
+    pointer_t               find_label(String const& name) const;
 
     static char const *     operator_to_string(node_t op);
     static node_t           string_to_operator(String const& str);
 
-    void                    display(std::ostream& out, int indent, node_pointer_t const& parent, char c) const;
+    void                    display(std::ostream& out, int indent, pointer_t const& parent, char c) const;
 
 private:
     // verify that the specified flag correspond to the node type
@@ -455,14 +457,14 @@ private:
     //std::vector<int>                f_user_data;  // TBD -- necessary?!
 
     // parent children node tree handling
-    node_pointer_t                  f_parent;
+    pointer_t                       f_parent;
     controlled_vars::zint32_t       f_offset;        // offset (index) in parent array of children -- set by compiler, should probably be removed...
-    vector_of_node_pointers_t       f_children;
+    vector_of_pointers_t            f_children;
 
     // other connections between nodes
-    vector_of_node_pointers_t       f_link;
-    vector_of_node_pointers_t       f_variables;
-    map_of_node_pointers_t          f_labels;
+    vector_of_pointers_t            f_link;
+    vector_of_pointers_t            f_variables;
+    map_of_pointers_t               f_labels;
 };
 
 std::ostream& operator << (std::ostream& out, Node const& node);

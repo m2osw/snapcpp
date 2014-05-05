@@ -1,8 +1,8 @@
-/* function.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2009 */
+/* function.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
 
 /*
 
-Copyright (c) 2005-2009 Made to Order Software Corp.
+Copyright (c) 2005-2014 Made to Order Software Corp.
 
 Permission is hereby granted, free of charge, to any
 person obtaining a copy of this software and
@@ -44,14 +44,15 @@ namespace as2js
 /**********************************************************************/
 /**********************************************************************/
 
-void IntParser::ParameterList(NodePtr& node, bool& has_out)
+void Parser::parameter_list(Node::pointer_t& node, bool& has_out)
 {
     has_out = false;
 
     // accept function stuff(void) { ... } as in C/C++
     if(f_data.f_type == NODE_VOID
-    || (f_data.f_type == NODE_IDENTIFIER && f_data.f_str == "Void")) {
-        GetToken();
+    || (f_data.f_type == NODE_IDENTIFIER && f_data.f_str == "Void"))
+    {
+        get_token();
         return;
     }
 
@@ -212,7 +213,7 @@ f_lexer.ErrMsg(AS_ERR_INVALID_PARAMETERS, "you cannot use the function attribute
 
 
 
-void IntParser::Function(NodePtr& node, bool expression)
+void Parser::function(Node::pointer_t& node, bool const expression)
 {
     node.CreateNode(NODE_FUNCTION);
     node.SetInputInfo(f_lexer.GetInput());

@@ -1,8 +1,8 @@
-/* parser.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2009 */
+/* parser.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
 
 /*
 
-Copyright (c) 2005-2009 Made to Order Software Corp.
+Copyright (c) 2005-2014 Made to Order Software Corp.
 
 Permission is hereby granted, free of charge, to any
 person obtaining a copy of this software and
@@ -40,60 +40,34 @@ namespace as2js
 
 /**********************************************************************/
 /**********************************************************************/
-/***  PARSER CREATOR  *************************************************/
+/***  PARSER  *********************************************************/
 /**********************************************************************/
 /**********************************************************************/
 
-Parser *Parser::CreateParser(void)
+Parser::Parser()
+    : f_lexer(new Lexer)
+    //, f_options(nullptr) -- auto-init
+    //, f_root(nullptr) -- auto-init [we keep it unknown at the start]
+    //, f_node(nullptr) -- auto-init
+    //, f_unget() -- auto-init
 {
-    return new IntParser();
 }
 
 
-const char *Parser::Version(void)
+void Parser::set_input(Input::pointer_t& input)
 {
-    return TO_STR(SSWF_VERSION);
+    f_lexer->set_input(input);
 }
 
 
-
-/**********************************************************************/
-/**********************************************************************/
-/***  INTERNAL PARSER  ************************************************/
-/**********************************************************************/
-/**********************************************************************/
-
-IntParser::IntParser(void)
+void Parser::set_options(Options::pointer_t& options)
 {
-    //f_lexer -- auto-init
-    f_options = 0;
-    //f_root -- auto-init [we keep it unknown at the start]
-    //f_data -- auto-init
-    f_unget_pos = 0;
-    //f_unget[...] -- ignored with f_unget_pos = 0
+    f_options = options;
+    f_lexer->set_options(options);
 }
 
 
-IntParser::~IntParser()
-{
-    // required for the virtual-ness
-}
-
-
-void IntParser::SetInput(Input& input)
-{
-    f_lexer.SetInput(input);
-}
-
-
-void IntParser::SetOptions(Options& options)
-{
-    f_options = &options;
-    f_lexer.SetOptions(options);
-}
-
-
-NodePtr& IntParser::Parse(void)
+Node::pointer_t Parser::parse()
 {
     // This parses everything and creates ONE tree
     // with the result. The tree obviously needs to
@@ -101,40 +75,38 @@ NodePtr& IntParser::Parse(void)
 
     // We lose the previous tree if any and create a new
     // root node. This is our program node.
-    GetToken();
-    Program(f_root);
+    get_token();
+    program(f_root);
 
     return f_root;
 }
 
 
-void IntParser::GetToken(void)
+void Parser::get_token()
 {
-    bool reget = f_unget_pos > 0;
+    bool const reget(!f_unget.empty());
 
-    if(f_unget_pos > 0) {
-        --f_unget_pos;
-        f_data = f_unget[f_unget_pos];
+    if(f_unget.size() > 0)
+    {
+        f_node = f_unget.back();
+        f_unget.pop_back();
     }
-    else {
-        f_data = f_lexer.GetNextToken();
+    else
+    {
+        f_node = f_lexer->get_next_token();
     }
 
-    if(f_options != 0
-    && f_options->GetOption(AS_OPTION_DEBUG_LEXER) != 0) {
-        fprintf(stderr, "%s: ", reget ? "RE-TOKEN" : "TOKEN");
-        f_data.Display(stderr);
-        fprintf(stderr, "\n");
+    if(f_options
+    && f_options->get_option(Options::AS_OPTION_DEBUG_LEXER) != 0)
+    {
+        std::cerr << (reget ? "RE-TOKEN" : "TOKEN") << ": " << f_node << std::endl;
     }
 }
 
 
-void IntParser::UngetToken(const Data& data)
+void Parser::unget_token(Node::pointer_t& node)
 {
-    AS_ASSERT(f_unget_pos < MAX_UNGET);
-
-    f_unget[f_unget_pos] = data;
-    ++f_unget_pos;
+    f_unget.push_back(node);
 }
 
 

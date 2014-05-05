@@ -32,6 +32,7 @@ SOFTWARE.
 */
 
 #include    "as2js/parser.h"
+#include    "as2js/message.h"
 
 
 namespace as2js
@@ -44,62 +45,78 @@ namespace as2js
 /**********************************************************************/
 /**********************************************************************/
 
-void IntParser::Class(NodePtr& node, node_t type)
+void Parser::class_declaration(Node::pointer_t& node, Node::node_t type)
 {
-    if(f_data.f_type != NODE_IDENTIFIER) {
-        f_lexer.ErrMsg(AS_ERR_INVALID_CLASS, "the name of the class is expected after the keyword 'class'");
+    if(f_node->get_type() != Node::NODE_IDENTIFIER)
+    {
+        Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_CLASS, f_lexer->get_input()->get_position());
+        msg << "the name of the class is expected after the keyword 'class'";
         return;
     }
 
-    node.CreateNode(type);
-    node.SetInputInfo(f_lexer.GetInput());
-
     // *** NAME ***
-    Data& data = node.GetData();
-    data.f_str = f_data.f_str;
-    GetToken();
+    node = f_lexer->get_new_node(type);
+    node->set_string(f_node->get_string());
 
     // *** INHERITANCE ***
-    while(f_data.f_type == NODE_EXTENDS
-            || f_data.f_type == NODE_IMPLEMENTS) {
-        NodePtr inherits;
-        inherits.CreateNode(f_data.f_type);
-        inherits.SetInputInfo(f_lexer.GetInput());
-        node.AddChild(inherits);
+    get_token();
+    while(f_node->get_type() == Node::NODE_EXTENDS
+       || f_node->get_type() == Node::NODE_IMPLEMENTS)
+    {
+        Node::pointer_t inherits(f_node);
+        node->append_child(inherits);
 
-        GetToken();
+        get_token();
 
-        NodePtr expr;
-        Expression(expr);
-        inherits.AddChild(expr);
+        Node::pointer_t expr;
+        expression(expr);
+        if(expr)
+        {
+            inherits->append_child(expr);
+        }
+        else
+        {
+            // TBD: we may not need this error since the expression() should
+            //      already generate an error as required
+            Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_CLASS, f_lexer->get_input()->get_position());
+            msg << "expected a valid expression after '" << f_node->get_type_name() << "'";
+            //return; -- continue? -- it was before...
+        }
         // TODO: EXTENDS and IMPLEMENTS don't accept assignments.
         // TODO: EXTENDS doesn't accept lists.
         //     We need to test for that here.
     }
     // TODO: note that we only can accept one EXTENDS and
     //     one IMPLEMENTS in that order. We need to check
-    //     that here. [that's according to the spec. is
+    //     that here. [that's according to the AS spec. is
     //     that really important?]
 
-    if(f_data.f_type == '{') {
-        GetToken();
+    if(f_node->get_type() == Node::NODE_OPEN_CURVLY_BRACKET)
+    {
+        get_token();
 
         // *** DECLARATION ***
-        if(f_data.f_type != '}') {
-            NodePtr directive_list;
-            DirectiveList(directive_list);
-            node.AddChild(directive_list);
+        if(f_node->get_type() != Node::NODE_CLOSE_CURVLY_BRACKET)
+        {
+            Node::pointer_t directive_list_node(f_lexer->get_new_node(Node::NODE_DIRECTIVE_LIST));
+            node->append_child(directive_list_node);
         }
 
-        if(f_data.f_type == '}') {
-            GetToken();
+        if(f_node->get_type() == Node::NODE_CLOSE_CURVLY_BRACKET)
+        {
+            get_token();
         }
-        else {
-            f_lexer.ErrMsg(AS_ERR_CURVLY_BRAKETS_EXPECTED, "'}' expected to close the 'class' definition");
+        else
+        {
+            Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_CURVLY_BRAKETS_EXPECTED, f_lexer->get_input()->get_position());
+            msg << "'}' expected to close the 'class' definition";
         }
     }
-    else if(f_data.f_type != ';') {    // accept empty class definitions (for typedef's and forward declaration)
-        f_lexer.ErrMsg(AS_ERR_CURVLY_BRAKETS_EXPECTED, "'{' expected to start the 'class' definition");
+    else if(f_node->get_type() != Node::NODE_SEMICOLON)
+    {
+        // accept empty class definitions (for typedef's and forward declaration)
+        Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_CURVLY_BRAKETS_EXPECTED, f_lexer->get_input()->get_position());
+        msg << "'{' expected to start the 'class' definition";
     }
 }
 
@@ -112,113 +129,114 @@ void IntParser::Class(NodePtr& node, node_t type)
 /**********************************************************************/
 /**********************************************************************/
 
-void IntParser::Enum(NodePtr& node)
+void Parser::enum_declaration(Node::pointer_t& node)
 {
-    node.CreateNode(NODE_ENUM);
-    node.SetInputInfo(f_lexer.GetInput());
+    node = f_lexer->get_new_node(Node::NODE_ENUM);
 
     // enumerations can be unamed
-    if(f_data.f_type == NODE_IDENTIFIER) {
-        Data& data = node.GetData();
-        data.f_str = f_data.f_str;
-        GetToken();
+    if(f_node->get_type() == Node::NODE_IDENTIFIER)
+    {
+        node->set_string(f_node->get_string());
+        get_token();
     }
 
     // in case the name was not specified, we can still have a type (?)
-    if(f_data.f_type == ':') {
-        NodePtr type;
-        Expression(type);
-        node.AddChild(type);
+    if(f_node->get_type() == Node::NODE_COLON)
+    {
+        Node::pointer_t type;
+        expression(type);
+        node->append_child(type);
     }
 
-    if(f_data.f_type != '{') {
-        if(f_data.f_type == ';') {
-            // empty enumeration
+    if(f_node->get_type() != Node::NODE_OPEN_CURVLY_BRACKET)
+    {
+        if(f_node->get_type() == Node::NODE_SEMICOLON)
+        {
+            // empty enumeration (i.e. forward declaration)
             return;
         }
-        f_lexer.ErrMsg(AS_ERR_CURVLY_BRAKETS_EXPECTED, "'{' expected to start the 'enum' definition");
+        Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_CURVLY_BRAKETS_EXPECTED, f_lexer->get_input()->get_position());
+        msg << "'{' expected to start the 'enum' definition";
         return;
     }
 
-    GetToken();
+    get_token();
 
-    Data previous;
-    previous.f_type = NODE_NULL;
-    while(f_data.f_type != '}' && f_data.f_type != NODE_EOF) {
-        if(f_data.f_type == ',') {
-            // TODO: should we warn here?
-            GetToken();
+    Node::pointer_t previous(f_lexer->get_new_node(Node::NODE_NULL));
+    while(f_node->get_type() != Node::NODE_CLOSE_CURVLY_BRACKET
+       && f_node->get_type() != Node::NODE_EOF)
+    {
+        if(f_node->get_type() == Node::NODE_COMMA)
+        {
+            // skip to the next token
+            get_token();
+
+            Message msg(MESSAGE_LEVEL_WARNING, AS_ERR_UNEXPECTED_PUNCTUATION, f_lexer->get_input()->get_position());
+            msg << "',' unexpected without a name";
             continue;
         }
-        String current_name = "null";
-        NodePtr entry;
-        entry.CreateNode(NODE_VARIABLE);
-        entry.SetInputInfo(f_lexer.GetInput());
-        node.AddChild(entry);
-        if(f_data.f_type == NODE_IDENTIFIER) {
-            f_data.f_type = NODE_VARIABLE;
-            f_data.f_int.Set(NODE_VAR_FLAG_CONST | NODE_VAR_FLAG_ENUM);
-            entry.SetData(f_data);
-            current_name = f_data.f_str;
-            GetToken();
+        String current_name("null");
+        Node::pointer_t entry(f_lexer->get_new_node(Node::NODE_VARIABLE));
+        node->append_child(entry);
+        if(f_node->get_type() == Node::NODE_IDENTIFIER)
+        {
+            entry->set_flag(Node::NODE_VAR_FLAG_CONST, true);
+            entry->set_flag(Node::NODE_VAR_FLAG_ENUM, true);
+            current_name = f_node->get_string();
+            get_token();
         }
-        else {
-            f_lexer.ErrMsg(AS_ERR_INVALID_ENUM, "each 'enum' entry needs to include an identifier");
+        else
+        {
+            Message msg(MESSAGE_LEVEL_WARNING, AS_ERR_INVALID_ENUM, f_lexer->get_input()->get_position());
+            msg << "each 'enum' entry needs to include an identifier";
         }
-        NodePtr expr;
-        if(f_data.f_type == '=') {
-            GetToken();
-            ConditionalExpression(expr, false);
+        Node::pointer_t expr;
+        if(f_node->get_type() == Node::NODE_ASSIGNMENT)
+        {
+            get_token();
+            conditional_expression(expr, false);
         }
-        else if(previous.f_type == NODE_NULL) {
+        else if(previous->get_type() == Node::NODE_NULL)
+        {
             // very first time
-            expr.CreateNode();
-            expr.SetInputInfo(f_lexer.GetInput());
-            Data set_zero;
-            set_zero.f_type = NODE_INT64;
-            set_zero.f_int.Set(0);
-            expr.SetData(set_zero);
+            expr = f_lexer->get_new_node(Node::NODE_INT64);
+            //expr->set_int64(0); -- this is the default
         }
-        else {
-            expr.CreateNode(NODE_ADD);
-            expr.SetInputInfo(f_lexer.GetInput());
-            NodePtr left;
-            left.CreateNode();
-            left.SetInputInfo(f_lexer.GetInput());
-            left.SetData(previous);
-            expr.AddChild(left);
-            NodePtr one;
-            one.CreateNode();
-            one.SetInputInfo(f_lexer.GetInput());
-            Data set_one;
-            set_one.f_type = NODE_INT64;
-            set_one.f_int.Set(1);
-            one.SetData(set_one);
-            expr.AddChild(one);
+        else
+        {
+            expr = f_lexer->get_new_node(Node::NODE_ADD);
+            expr->append_child(previous); // left handside
+            Node::pointer_t one(f_lexer->get_new_node(Node::NODE_INT64));
+            one->set_int64(1);
+            expr->append_child(one);
         }
 
-        NodePtr set;
-        set.CreateNode(NODE_SET);
-        set.SetInputInfo(f_lexer.GetInput());
-        set.AddChild(expr);
-        entry.AddChild(set);
+        Node::pointer_t set(f_lexer->get_new_node(Node::NODE_SET));
+        set->append_child(expr);
+        entry->append_child(set);
 
-        previous.f_type = NODE_IDENTIFIER;
-        previous.f_str = current_name;
+        previous = f_lexer->get_new_node(Node::NODE_IDENTIFIER);
+        previous->set_string(current_name);
 
-        if(f_data.f_type == ',') {
-            GetToken();
+        if(f_node->get_type() == Node::NODE_NULL)
+        {
+            get_token();
         }
-        else if(f_data.f_type != '}') {
-            f_lexer.ErrMsg(AS_ERR_CURVLY_BRAKETS_EXPECTED, "',' expected between enumeration elements");
+        else if(f_node->get_type() == Node::NODE_CLOSE_CURVLY_BRACKET)
+        {
+            Message msg(MESSAGE_LEVEL_WARNING, AS_ERR_UNEXPECTED_PUNCTUATION, f_lexer->get_input()->get_position());
+            msg << "',' expected between enumeration elements";
         }
     }
 
-    if(f_data.f_type == '}') {
-        GetToken();
+    if(f_node->get_type() == Node::NODE_CLOSE_CURVLY_BRACKET)
+    {
+        get_token();
     }
-    else {
-        f_lexer.ErrMsg(AS_ERR_CURVLY_BRAKETS_EXPECTED, "'}' expected to close the 'enum' definition");
+    else
+    {
+        Message msg(MESSAGE_LEVEL_WARNING, AS_ERR_CURVLY_BRAKETS_EXPECTED, f_lexer->get_input()->get_position());
+        msg << "'}' expected to close the 'enum' definition";
     }
 }
 

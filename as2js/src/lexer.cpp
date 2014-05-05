@@ -60,19 +60,19 @@ Lexer::Lexer()
 
 
 
-void Lexer::set_input(Input::input_pointer_t& input)
+void Lexer::set_input(Input::pointer_t& input)
 {
     f_input = input;
 }
 
 
-Input::input_pointer_t Lexer::get_input() const
+Input::pointer_t Lexer::get_input() const
 {
     return f_input;
 }
 
 
-void Lexer::set_options(Options::options_pointer_t& options)
+void Lexer::set_options(Options::pointer_t& options)
 {
     f_options = options;
 }
@@ -814,13 +814,23 @@ void Lexer::read_string(Input::char_t quote)
 
 
 
-Node::node_pointer_t Lexer::get_next_token()
+Node::pointer_t Lexer::get_new_node(Node::node_t type)
+{
+    Node::pointer_t node(new Node(type));
+    node->set_position(f_position);
+    // no data by default in this case
+    return node;
+}
+
+
+Node::pointer_t Lexer::get_next_token()
 {
     // get the info
     get_token();
 
     // create a node for the result
-    Node::node_pointer_t node(new Node(f_result_type));
+    Node::pointer_t node(new Node(f_result_type));
+    node->set_position(f_position);
     switch(f_result_type)
     {
     case Node::NODE_IDENTIFIER:
@@ -849,6 +859,7 @@ void Lexer::get_token()
 {
     for(Input::char_t c(getc());; c = getc())
     {
+        f_position = f_input->get_position();
         if(c < 0)
         {
             // we're done

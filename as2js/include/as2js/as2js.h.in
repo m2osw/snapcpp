@@ -251,39 +251,6 @@ private:
 
 
 
-// The parser class is mostly hidden to you.
-// You can't derive from it. You call the CreateParser() to use it.
-// Once you are finished with the parser, delete it.
-// Note that deleting the parser doesn't delete the nodes and thus
-// you can work with the tree even after you deleted the parser.
-//
-// You use like this:
-//
-//    using namespace sswf::as;
-//    MyInput input;
-//    Parser *parser = Parser::CreateParser();
-//    parser->SetInput(input);
-//    // it is optional to set the options
-//    parser->SetOptions(options);
-//    NodePtr root = parser->Parse();
-//
-// NOTE: the input and options are NOT copied, a pointer to these
-// object is saved in the parser. Delete the Parser() before you
-// delete them. Also, this means you can change the options as the
-// parsing goes on (i.e. usually this happens in Input::Error().).
-class Parser
-{
-public:
-    virtual            ~Parser() {}
-
-    static Parser *        CreateParser(void);
-    static const char *    Version(void);
-
-    virtual void        SetInput(Input& input) = 0;
-    virtual void        SetOptions(Options& options) = 0;
-    virtual NodePtr&    Parse(void) = 0;
-};
-
 
 // Once a program was parsed, you need to compile it. This
 // mainly means resolving the references (i.e. identifiers)

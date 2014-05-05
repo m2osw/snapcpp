@@ -52,7 +52,7 @@ namespace as2js
 class Options
 {
 public:
-    typedef std::shared_ptr<Options>    options_pointer_t;
+    typedef std::shared_ptr<Options>    pointer_t;
 
     enum option_t
     {
