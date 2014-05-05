@@ -3,6 +3,9 @@
 # Run the tests
 # Package the result
 
+echo "Please, do not use this script anymore. I did not try, but at this point it is likely not doing what was expected anymore."
+exit 1;
+
 # Stop immediately on errors
 set -e
 

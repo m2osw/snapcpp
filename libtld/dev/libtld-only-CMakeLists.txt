@@ -2,10 +2,10 @@
 # File:         CMakeLists.txt
 # Object:       Definitions to create the build environment with cmake
 #
-# Copyright:    Copyright (c) 2011-2013 Made to Order Software Corp.
+# Copyright:    Copyright (c) 2011-2014 Made to Order Software Corp.
 #               All Rights Reserved.
 #
-# http://snapwebsites.org/
+# http://snapwebsites.org/project/libtld
 # contact@m2osw.com
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -29,7 +29,7 @@
 
 set(LIBTLD_VERSION_MAJOR 1)
 set(LIBTLD_VERSION_MINOR 4)
-set(LIBTLD_VERSION_PATCH 3)
+set(LIBTLD_VERSION_PATCH 6)
 
 cmake_minimum_required(VERSION 2.8.4)
 project(tld)

@@ -1,4 +1,5 @@
-
+# Taken from the GoDaddy website to make sure that we support all
+# the gTLDs that GoDaddy offers. (sorted alphabetically)
 .academy
 .actor
 .ag

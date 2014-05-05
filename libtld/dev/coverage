@@ -11,8 +11,8 @@ cd tmp/coverage
 mkdir BUILD
 cd BUILD
 # request coverage in this build
-ln -s ../snapCMakeModules ../../..
-cmake -DCMAKE_BUILD_TYPE=Debug -Dtld_library_COVERAGE:BOOL=ON ../../..
+modules=`cd ../../../../; pwd`/snapCMakeModules/Modules
+cmake -DCMAKE_MODULE_PATH=$modules -DCMAKE_BUILD_TYPE=Debug -Dtld_library_COVERAGE:BOOL=ON ../../..
 cd ..
 echo
 echo "***"
@@ -27,9 +27,12 @@ BUILD/tests/tld_internal_test
 BUILD/tests/tld_test
 BUILD/tests/tld_test_emails
 BUILD/tests/tld_test_full_uri
+(cd ../../tests/; ./tld_test_godaddy.sh ../tmp/coverage/BUILD/src)
+../../tests/tld_test_godaddy.sh
 BUILD/tests/tld_test_object
 cp ../../tests/effective_tld_names.dat .
 BUILD/tests/tld_test_tld_names
+(cd ../../tests; ./tld_test_xml.sh)
 if BUILD/src/tld_parser
 then
     echo "tld_parser without a path did not generate an error";
@@ -126,7 +129,6 @@ lcov --capture --directory BUILD --output-file coverage.info
 mkdir -p html
 genhtml --legend --demangle-cpp --no-branch-coverage --show-details coverage.info --output-directory html
 
-rm ../../snapCMakeModules
 
 echo "Process started  on $start_date"
 echo "Process finished on `date`"

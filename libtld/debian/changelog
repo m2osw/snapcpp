@@ -1,3 +1,17 @@
+libtld (1.4.6) saucy; urgency=high
+
+  * Added new gTLDs as defined by the INA.
+  * Added a "brand" category.
+  * Added a test to verify all the extensions offered by GoDaddy.
+  * Added a script to build the source using the Debian tool dpkg-source.
+  * Added some documentation in different files (INSTALL.txt, README...)
+  * Updated the coverage test to work in the new environment.
+  * Fixed the copyright notice with 2014.
+  * Bumped the version in the CMakeLists.txt to the correct version.
+  * Bump for publication to Sourceforge.net.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 04 May 2014 17:22:48 -0800
+
 libtld (1.4.5) saucy; urgency=high
 
   * Bump for upload to PPA.

@@ -1,5 +1,5 @@
 /* TLD library -- Test the TLD library by including the tld.c file.
- * Copyright (C) 2011-2013  Made to Order Software Corp.
+ * Copyright (C) 2011-2014  Made to Order Software Corp.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the
@@ -102,7 +102,7 @@ void test_search()
 		 */
 
 		/* get the .uk offset */
-		{ 6775, 7133, "uk", 2, 7109 },
+		{ 6775, 7380, "uk", 2, 7333 },
 
 		/* get each offset of the .uk 2nd level domain */
 		{ 6587, 6612, "ac", 2,							6587 },
@@ -141,7 +141,7 @@ void test_search()
 		{ 6530, 6555, "cz", 2, -1 },
 
 		/* get the .vu offset */
-		{ 6775, 7133, "vu", 2, 7119 },
+		{ 6775, 7380, "vu", 2, 7356 },
 
 		/* get the .gov.vu offset */
 		{ 6720, 6721, "gov", 3, 6720 },

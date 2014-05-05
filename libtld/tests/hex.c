@@ -1,3 +1,16 @@
+/* Copyright (c) 2014  Made to Order Software Corp.
+ *
+ * http://snapwebsites.org/project/libtld
+ * contact@m2osw.com
+ *
+ * This file is public domain.
+ *
+ * Quick and dirty (And NOT safe because of an easy to produce
+ * buffer overflow) tool to transform UTF-8 strings written on
+ * the command line (Linux at least) to UCS-4 in the output.
+ * Just and only purpose: update our data.xml file with Unicode
+ * characters (i.e. &#x????;).
+ */
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
