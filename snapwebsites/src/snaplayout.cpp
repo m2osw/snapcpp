@@ -70,7 +70,7 @@ namespace
             '?',
             advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
             "help",
-            NULL,
+            nullptr,
             "show this help output",
             advgetopt::getopt::no_argument
         },
@@ -90,36 +90,44 @@ namespace
             "port on the host to which to connect [default=9160]",
             advgetopt::getopt::optional_argument
         },
+        {
+            '\0',
+            0,
+            "remove-theme",
+            nullptr,
+            "remove the specified theme; this remove the entire row and can allow you to reinstall a theme that \"lost\" files",
+            advgetopt::getopt::no_argument
+        },
         { // at least until we have a way to edit the theme from the website
             't',
             advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
             "set-theme",
-            NULL,
+            nullptr,
             "usage: --set-theme URL [theme|layout] ['\"layout name\";']'",
             advgetopt::getopt::no_argument, // expect 3 params as filenames
         },
         { // at least until we have a way to edit the theme from the website
             'v',
-            advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
+            0,
             "verbose",
-            NULL,
+            nullptr,
             "show what snaplayout is doing",
             advgetopt::getopt::no_argument, // expect 3 params as filenames
         },
         {
             '\0',
-            advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
-            NULL,
-            NULL,
+            0,
+            nullptr,
+            nullptr,
             "layout-file1.xsl layout-file2.xsl ... layout-fileN.xsl",
             advgetopt::getopt::default_multiple_argument
         },
         {
             '\0',
             0,
-            NULL,
-            NULL,
-            NULL,
+            nullptr,
+            nullptr,
+            nullptr,
             advgetopt::getopt::end_of_options
         }
     };
@@ -164,6 +172,7 @@ public:
     void load_js   (QString const& filename, QByteArray const& content, QString& row_name);
     void load_image(QString const& filename, QByteArray const& content, QString& row_name);
     void set_theme();
+    void remove_theme();
 
 private:
     typedef std::shared_ptr<advgetopt::getopt>    getopt_ptr_t;
@@ -199,7 +208,7 @@ snap_layout::snap_layout(int argc, char *argv[])
     //, f_fileinfo_list -- auto-init
     //, f_host        -- auto-init
     //, f_port        -- auto-init
-    , f_opt( new advgetopt::getopt( argc, argv, g_snaplayout_options, g_configuration_files, NULL ) )
+    , f_opt( new advgetopt::getopt( argc, argv, g_snaplayout_options, g_configuration_files, nullptr ) )
 {
     if( f_opt->is_defined( "help" ) )
     {
@@ -216,14 +225,20 @@ snap_layout::snap_layout(int argc, char *argv[])
             std::cerr << "usage: snaplayout --set-theme URL [theme|layout] ['\"layout_name\";']'" << std::endl;
             std::cerr << "note: if layout_name is not specified, the theme/layout is deleted from the database." << std::endl;
             exit(1);
+            /*NOTREACHED*/
         }
-        else
+        if( f_opt->is_defined( "remove-theme" ) )
         {
-            std::cerr << "one or more layout files are required!" << std::endl;
-            usage();
+            std::cerr << "usage: snaplayout --remove-theme <layout name>" << std::endl;
+            exit(1);
+            /*NOTREACHED*/
         }
+        std::cerr << "one or more layout files are required!" << std::endl;
+        usage();
+        /*NOTREACHED*/
     }
-    if( !f_opt->is_defined( "set-theme") )
+    if(!f_opt->is_defined("set-theme")
+    && !f_opt->is_defined("remove-theme"))
     {
         for( int idx(0); idx < f_opt->size( "--" ); ++idx )
         {
@@ -313,6 +328,7 @@ void snap_layout::usage()
 {
     f_opt->usage( advgetopt::getopt::no_error, "snaplayout" );
     exit(1);
+    /*NOTREACHED*/
 }
 
 
@@ -848,6 +864,61 @@ void snap_layout::set_theme()
 }
 
 
+void snap_layout::remove_theme()
+{
+    const auto arg_count( f_opt->size("--") );
+    if( arg_count != 1 )
+    {
+        std::cerr << "error: the --remove-theme command expects 1 argument." << std::endl;
+        exit(1);
+    }
+
+    // the theme for the entire website is set at the top of the
+    // page type structure .../types/taxonomy/system/content-types
+    f_cassandra->connect(f_host, f_port);
+    if( !f_cassandra->isConnected() )
+    {
+        std::cerr << "error: connecting to cassandra server on host='"
+            << f_host
+            << "', port="
+            << f_port
+            << "!"
+            << std::endl;
+        exit(1);
+    }
+
+    QCassandraContext::pointer_t context(f_cassandra->context("snap_websites"));
+
+    QCassandraTable::pointer_t table(context->findTable("layout"));
+    if(!table)
+    {
+        std::cerr << "warning: \"layout\" table not found. If you do not yet have a layout table then no theme can be deleted." << std::endl;
+        exit(1);
+    }
+
+    QString const row_name( f_opt->get_string( "--", 0 ).c_str() );
+    if(!table->exists(row_name))
+    {
+        std::cerr << "warning: \"" << row_name << "\" layout not found." << std::endl;
+        exit(1);
+    }
+
+    if(!table->row(row_name)->exists("theme"))
+    {
+        std::cerr << "warning: it looks like the \"" << row_name << "\" layout did not exist (no \"theme\" found)." << std::endl;
+    }
+
+    // drop the entire row; however, remember that does not really delete
+    // the row itself for a while (it's still visible in the database)
+    table->dropRow(row_name);
+
+    if(f_verbose)
+    {
+        std::cout << "info: theme \"" << row_name << "\" dropped." << std::endl;
+    }
+}
+
+
 void snap_layout::run()
 {
     f_verbose = f_opt->is_defined("verbose");
@@ -855,6 +926,10 @@ void snap_layout::run()
     if( f_opt->is_defined( "set-theme" ) )
     {
         set_theme();
+    }
+    else if( f_opt->is_defined( "remove-theme" ) )
+    {
+        remove_theme();
     }
     else
     {
