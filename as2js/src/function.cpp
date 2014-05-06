@@ -32,6 +32,7 @@ SOFTWARE.
 */
 
 #include "as2js/parser.h"
+#include "as2js/message.h"
 
 
 namespace as2js
@@ -49,76 +50,90 @@ void Parser::parameter_list(Node::pointer_t& node, bool& has_out)
     has_out = false;
 
     // accept function stuff(void) { ... } as in C/C++
-    if(f_data.f_type == NODE_VOID
-    || (f_data.f_type == NODE_IDENTIFIER && f_data.f_str == "Void"))
+    // XXX: determine whether the identifier should be checked case insensitively
+    //      (because just "Void" seems strange to me now)
+    if(f_node->get_type() == Node::NODE_VOID
+    || (f_node->get_type() == Node::NODE_IDENTIFIER && f_node->get_string() == "Void"))
     {
         get_token();
         return;
     }
 
-    node.CreateNode(NODE_PARAMETERS);
-    node.SetInputInfo(f_lexer.GetInput());
+    node = f_lexer->get_new_node(Node::NODE_PARAMETERS);
 
     // special case which explicitly says that a function definition
     // is not prototyped (vs. an empty list of parameters which is
     // equivalent to a (void)); this means the function accepts
     // parameters, their type & number are just not defined
-    if(f_data.f_type == NODE_IDENTIFIER
-    && f_data.f_str == "unprototyped") {
-        NodePtr param;
-        param.CreateNode();
-        param.SetInputInfo(f_lexer.GetInput());
-        f_data.f_type = NODE_PARAM;
-        f_data.f_int.Set(NODE_PARAMETERS_FLAG_UNPROTOTYPED);
-        param.SetData(f_data);
-        node.AddChild(param);
-        GetToken();
+    if(f_node->get_type() == Node::NODE_IDENTIFIER
+    && f_node->get_string() == "unprototyped")
+    {
+        Node::pointer_t param(f_lexer->get_new_node(Node::NODE_PARAM));
+        param->set_flag(Node::NODE_PARAMETERS_FLAG_UNPROTOTYPED, true);
+        node->append_child(param);
+        get_token();
         return;
     }
 
-    bool invalid = false;
-    for(;;) {
-        int flags = 0;
+    bool invalid(false);
+    for(;;)
+    {
+        Node::pointer_t param(f_lexer->get_new_node(Node::NODE_PARAM));
 
         // get all the attributes for the parameters
-        // (const, in, out, named)
-        bool more = true;
-        do {
-            switch(f_data.f_type) {
-            case NODE_REST:
-                flags |= NODE_PARAMETERS_FLAG_REST;
-                GetToken();
+        // (var, const, in, out, named, unchecked, ...)
+        bool more(true);
+        do
+        {
+            // TODO: it seems that any one flag should only be accepted
+            //       once, 'var' first, and '...' last.
+            switch(f_node->get_type())
+            {
+            case Node::NODE_REST:
+                param->set_flag(Node::NODE_PARAMETERS_FLAG_REST, true);
+                invalid = false;
+                get_token();
                 break;
 
-            case NODE_CONST:
-                flags |= NODE_PARAMETERS_FLAG_CONST;
-                GetToken();
+            case Node::NODE_CONST:
+                param->set_flag(Node::NODE_PARAMETERS_FLAG_CONST, true);
+                invalid = false;
+                get_token();
                 break;
 
-            case NODE_IN:
-                flags |= NODE_PARAMETERS_FLAG_IN;
-                GetToken();
+            case Node::NODE_IN:
+                param->set_flag(Node::NODE_PARAMETERS_FLAG_IN, true);
+                invalid = false;
+                get_token();
                 break;
 
-            case NODE_VAR:
-                GetToken();
+            case Node::NODE_VAR:
+                // TBD: should this be forced first?
+                invalid = false;
+                get_token();
                 break;
 
-            case NODE_IDENTIFIER:
-                if(f_data.f_str == "out") {
-                    flags |= NODE_PARAMETERS_FLAG_OUT;
-                    GetToken();
-                    has_out = true;
+            case Node::NODE_IDENTIFIER:
+                if(f_node->get_string() == "out")
+                {
+                    param->set_flag(Node::NODE_PARAMETERS_FLAG_OUT, true);
+                    invalid = false;
+                    get_token();
+                    has_out = true; // for caller to know
                     break;
                 }
-                if(f_data.f_str == "named") {
-                    flags |= NODE_PARAMETERS_FLAG_NAMED;
-                    GetToken();
+                if(f_node->get_string() == "named")
+                {
+                    param->set_flag(Node::NODE_PARAMETERS_FLAG_NAMED, true);
+                    invalid = false;
+                    get_token();
                     break;
                 }
-                if(f_data.f_str == "unchecked") {
-                    flags |= NODE_PARAMETERS_FLAG_UNCHECKED;
-                    GetToken();
+                if(f_node->get_string() == "unchecked")
+                {
+                    param->set_flag(Node::NODE_PARAMETERS_FLAG_UNCHECKED, true);
+                    invalid = false;
+                    get_token();
                     break;
                 }
                 /*FALLTHROUGH*/
@@ -127,344 +142,397 @@ void Parser::parameter_list(Node::pointer_t& node, bool& has_out)
                 break;
 
             }
-        } while(more); 
+        }
+        while(more); 
 
-        if(flags != 0) {
+        if(has_out) // (flags & Node::NODE_PARAMETERS_FLAG_OUT) != 0
+        {
+            if(f_node->get_flag(Node::NODE_PARAMETERS_FLAG_REST))
+            {
+                Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_PARAMETERS, f_lexer->get_input()->get_position());
+                msg << "you cannot use the function parameter attribute 'out' with '...'";
+            }
+            if(f_node->get_flag(Node::NODE_PARAMETERS_FLAG_CONST))
+            {
+                Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_PARAMETERS, f_lexer->get_input()->get_position());
+                msg << "you cannot use the function attributes 'out' and 'const' together";
+            }
+        }
+
+        if(f_node->get_type() == Node::NODE_IDENTIFIER)
+        {
+            node->append_child(param);
             invalid = false;
-            if((flags & NODE_PARAMETERS_FLAG_OUT) != 0) {
-                if((flags & NODE_PARAMETERS_FLAG_REST) != 0) {
-f_lexer.ErrMsg(AS_ERR_INVALID_PARAMETERS, "you cannot use the function parameter attribute 'out' with '...'");
+            get_token();
+            if(f_node->get_type() == Node::NODE_COLON)
+            {
+                // TBD: what about REST? does this mean all
+                //      the following parameters need to be
+                //      of that type?
+                get_token();
+                Node::pointer_t type;
+                conditional_expression(type, false);
+                param->append_child(type);
+            }
+            if(f_node->get_type() == Node::NODE_ASSIGNMENT)
+            {
+                // cannot accept when REST is set
+                if(f_node->get_flag(Node::NODE_PARAMETERS_FLAG_REST))
+                {
+                    Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_PARAMETERS, f_lexer->get_input()->get_position());
+                    msg << "you cannot assign a default value to '...'";
                 }
-                if((flags & NODE_PARAMETERS_FLAG_CONST) != 0) {
-f_lexer.ErrMsg(AS_ERR_INVALID_PARAMETERS, "you cannot use the function attributes 'out' and 'const' together");
+                else
+                {
+                    // initializer
+                    get_token();
+                    Node::pointer_t initializer(f_lexer->get_new_node(Node::NODE_SET));
+                    Node::pointer_t expr;
+                    conditional_expression(expr, false);
+                    initializer->append_child(expr);
+                    param->append_child(initializer);
                 }
             }
         }
-
-        if(f_data.f_type == NODE_IDENTIFIER) {
-            invalid = false;
-            NodePtr param;
-            param.CreateNode();
-            param.SetInputInfo(f_lexer.GetInput());
-            f_data.f_type = NODE_PARAM;
-            f_data.f_int.Set(flags);
-            param.SetData(f_data);
-            node.AddChild(param);
-            GetToken();
-            if(f_data.f_type == ':') {
-                // what about REST? does this mean all
-                // the following parameters need to be
-                // of that type?
-                GetToken();
-                NodePtr type;
-                ConditionalExpression(type, false);
-                param.AddChild(type);
-            }
-            if(f_data.f_type == '=') {
-                // should not accept when REST is set
-                GetToken();
-                NodePtr initializer;
-                initializer.CreateNode(NODE_SET);
-                initializer.SetInputInfo(f_lexer.GetInput());
-                NodePtr expr;
-                ConditionalExpression(expr, false);
-                initializer.AddChild(expr);
-                param.AddChild(initializer);
-            }
-        }
-        else if((flags & NODE_PARAMETERS_FLAG_REST) != 0) {
-            NodePtr param;
-            param.CreateNode();
-            param.SetInputInfo(f_lexer.GetInput());
-            Data flg;
-            flg.f_type = NODE_PARAM;
-            flg.f_int.Set(flags);
-            param.SetData(flg);
-            node.AddChild(param);
-            invalid = false;
+        else if(f_node->get_flag(Node::NODE_PARAMETERS_FLAG_REST))
+        {
+            node->append_child(param);
         }
 
-        if(f_data.f_type == ')') {
+        if(f_node->get_type() == Node::NODE_CLOSE_PARENTHESIS)
+        {
             return;
         }
-        else if(f_data.f_type != ',') {
-            if(!invalid) {
-                f_lexer.ErrMsg(AS_ERR_INVALID_PARAMETERS, "expected an identifier as the parameter name (not token %d)", f_data.f_type);
+        else if(f_node->get_type() != Node::NODE_COMMA)
+        {
+            if(!invalid)
+            {
+                Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_PARAMETERS, f_lexer->get_input()->get_position());
+                msg << "expected an identifier as the parameter name (not token " << f_node->get_type_name() << ")";
             }
-            if(f_data.f_type == NODE_EOF
-            || f_data.f_type == ';'
-            || f_data.f_type == '{'
-            || f_data.f_type == '}') {
+            switch(f_node->get_type())
+            {
+            case Node::NODE_EOF:
+            case Node::NODE_SEMICOLON:
+            case Node::NODE_OPEN_CURVLY_BRACKET:
+            case Node::NODE_CLOSE_CURVLY_BRACKET:
                 return;
+
+            default:
+                // continue, just ignore that token
+                break;
+
             }
-            if(invalid) {
-                GetToken();
+            if(invalid)
+            {
+                get_token();
             }
             invalid = true;
         }
-        else {
-            if((flags & NODE_PARAMETERS_FLAG_REST) != 0) {
-                f_lexer.ErrMsg(AS_ERR_INVALID_PARAMETERS, "no other parameter expected after '...'");
+        else
+        {
+            if(f_node->get_flag(Node::NODE_PARAMETERS_FLAG_REST))
+            {
+                Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_PARAMETERS, f_lexer->get_input()->get_position());
+                msg << "no other parameters expected after '...'";
             }
-            GetToken();
+            get_token();
         }
     }
 }
 
 
 
-void Parser::function(Node::pointer_t& node, bool const expression)
+void Parser::function(Node::pointer_t& node, bool const expression_function)
 {
-    node.CreateNode(NODE_FUNCTION);
-    node.SetInputInfo(f_lexer.GetInput());
-    Data& data = node.GetData();
+    node = f_lexer->get_new_node(Node::NODE_FUNCTION);
 
-    switch(f_data.f_type) {
-    case NODE_IDENTIFIER:
+    switch(f_node->get_type())
+    {
+    case Node::NODE_IDENTIFIER:
     {
         long flags = 0;
         const char *etter = "";
-        if(f_data.f_str == "get") {
+        if(f_node->get_string() == "get")
+        {
             // *** GETTER ***
-            flags = NODE_FUNCTION_FLAG_GETTER;
+            node->set_flag(Node::NODE_FUNCTION_FLAG_GETTER, true);
             etter = "->";
         }
-        else if(f_data.f_str == "set") {
+        else if(f_node->get_string() == "set")
+        {
             // *** SETTER ***
-            flags = NODE_FUNCTION_FLAG_SETTER;
+            node->set_flag(Node::NODE_FUNCTION_FLAG_SETTER, true);
             etter = "<-";
         }
-        if(flags != 0) {
-            GetToken();
-            if(f_data.f_type == NODE_IDENTIFIER) {
-                data.f_int.Set(flags);
-                data.f_str = etter;
-                data.f_str += f_data.f_str;
-                GetToken();
+        if(*etter != '\0')
+        {
+            // *** one of GETTER/SETTER ***
+            get_token();
+            if(f_node->get_type() == Node::NODE_IDENTIFIER)
+            {
+                node->set_string(etter + f_node->get_string());
+                get_token();
             }
-            else if(f_data.f_type == NODE_STRING) {
+            else if(f_node->get_type() == Node::NODE_STRING)
+            {
                 // this is an extension, you can't have
                 // a getter or setter which is also an
-                // operator overload
-                data.f_int.Set(flags);
-                data.f_str = etter;
-                data.f_str += f_data.f_str;
-                if(node.StringToOperator() != NODE_UNKNOWN) {
-                    f_lexer.ErrMsg(AS_ERR_INVALID_FUNCTION, "operators cannot be a getter nor a setter function");
+                // operator overload though...
+                node->set_string(etter + f_node->get_string());
+                if(Node::string_to_operator(node->get_string()) != Node::NODE_UNKNOWN)
+                {
+                    Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_FUNCTION, f_lexer->get_input()->get_position());
+                    msg << "operator override cannot be marked as a getter nor a setter function";
                 }
-                GetToken();
+                get_token();
             }
-            else if(f_data.f_type == '(') {
+            else if(f_node->get_type() == Node::NODE_OPEN_PARENTHESIS)
+            {
                 // not a getter or setter when only get() or set()
-                if((flags & NODE_FUNCTION_FLAG_GETTER) != 0) {
-                    data.f_str = "get";
+                if(f_node->get_flag(Node::NODE_FUNCTION_FLAG_GETTER))
+                {
+                    node->set_string("get");
                 }
-                else {
-                    data.f_str = "set";
+                else
+                {
+                    node->set_string("set");
                 }
-                flags = 0;
+                f_node->set_flag(Node::NODE_FUNCTION_FLAG_GETTER, false);
+                f_node->set_flag(Node::NODE_FUNCTION_FLAG_SETTER, false);
+                etter = "";
             }
-            else if(!expression) {
-                f_lexer.ErrMsg(AS_ERR_INVALID_FUNCTION, "getter and setter functions require a name");
+            else if(!expression_function)
+            {
+                Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_FUNCTION, f_lexer->get_input()->get_position());
+                msg << "getter and setter functions require a name";
             }
-            if(expression && flags != 0) {
-                f_lexer.ErrMsg(AS_ERR_INVALID_FUNCTION, "expression functions cannot be getter nor setter functions");
+            if(expression_function && *etter != '\0')
+            {
+                Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_FUNCTION, f_lexer->get_input()->get_position());
+                msg << "expression functions cannot be getter nor setter functions";
             }
         }
-        else {
+        else
+        {
             // *** STANDARD ***
-            data.f_str = f_data.f_str;
-            GetToken();
-            if(f_data.f_type == NODE_IDENTIFIER) {
+            node->set_string(f_node->get_string());
+            get_token();
+            if(f_node->get_type() == Node::NODE_IDENTIFIER)
+            {
                 // Ooops? this could be that the user misspelled get or set
-                f_lexer.ErrMsg(AS_ERR_INVALID_FUNCTION, "only one name is expected for a function (misspelled get or set?)");
-                GetToken();
+                Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_FUNCTION, f_lexer->get_input()->get_position());
+                msg << "only one name is expected for a function (misspelled get or set?)";
+                get_token();
             }
         }
     }
         break;
 
-    case NODE_STRING:
+    case Node::NODE_STRING:
     {
         // *** OPERATOR OVERLOAD ***
         // (though we just accept any string at this time)
-        data.f_str = f_data.f_str;
-        if(node.StringToOperator() != NODE_UNKNOWN) {
-            data.f_int.Set(NODE_FUNCTION_FLAG_OPERATOR);
+        node->set_string(f_node->get_string());
+        if(Node::string_to_operator(node->get_string()) != Node::NODE_UNKNOWN)
+        {
+            node->set_flag(Node::NODE_FUNCTION_FLAG_OPERATOR, true);
         }
-        GetToken();
+        get_token();
     }
         break;
 
     // all the operators which can be overloaded as is
-    case NODE_LOGICAL_NOT:
-    case NODE_MODULO:
-    case NODE_BITWISE_AND:
-    case NODE_MULTIPLY:
-    case NODE_ADD:
-    case NODE_SUBTRACT:
-    case NODE_DIVIDE:
-    case NODE_LESS:
-    case NODE_ASSIGNMENT:
-    case NODE_GREATER:
-    case NODE_BITWISE_XOR:
-    case NODE_BITWISE_OR:
-    case NODE_BITWISE_NOT:
-    case NODE_ASSIGNMENT_ADD:
-    case NODE_ASSIGNMENT_BITWISE_AND:
-    case NODE_ASSIGNMENT_BITWISE_OR:
-    case NODE_ASSIGNMENT_BITWISE_XOR:
-    case NODE_ASSIGNMENT_DIVIDE:
-    case NODE_ASSIGNMENT_LOGICAL_AND:
-    case NODE_ASSIGNMENT_LOGICAL_OR:
-    case NODE_ASSIGNMENT_LOGICAL_XOR:
-    case NODE_ASSIGNMENT_MAXIMUM:
-    case NODE_ASSIGNMENT_MINIMUM:
-    case NODE_ASSIGNMENT_MODULO:
-    case NODE_ASSIGNMENT_MULTIPLY:
-    case NODE_ASSIGNMENT_POWER:
-    case NODE_ASSIGNMENT_ROTATE_LEFT:
-    case NODE_ASSIGNMENT_ROTATE_RIGHT:
-    case NODE_ASSIGNMENT_SHIFT_LEFT:
-    case NODE_ASSIGNMENT_SHIFT_RIGHT:
-    case NODE_ASSIGNMENT_SHIFT_RIGHT_UNSIGNED:
-    case NODE_ASSIGNMENT_SUBTRACT:
-    case NODE_DECREMENT:
-    case NODE_EQUAL:
-    case NODE_GREATER_EQUAL:
-    case NODE_INCREMENT:
-    case NODE_LESS_EQUAL:
-    case NODE_LOGICAL_AND:
-    case NODE_LOGICAL_OR:
-    case NODE_LOGICAL_XOR:
-    case NODE_MATCH:
-    case NODE_MAXIMUM:
-    case NODE_MINIMUM:
-    case NODE_NOT_EQUAL:
-    case NODE_POST_DECREMENT:
-    case NODE_POST_INCREMENT:
-    case NODE_POWER:
-    case NODE_ROTATE_LEFT:
-    case NODE_ROTATE_RIGHT:
-    case NODE_SHIFT_LEFT:
-    case NODE_SHIFT_RIGHT:
-    case NODE_SHIFT_RIGHT_UNSIGNED:
-    case NODE_STRICTLY_EQUAL:
-    case NODE_STRICTLY_NOT_EQUAL:
+    case Node::NODE_LOGICAL_NOT:
+    case Node::NODE_MODULO:
+    case Node::NODE_BITWISE_AND:
+    case Node::NODE_MULTIPLY:
+    case Node::NODE_ADD:
+    case Node::NODE_SUBTRACT:
+    case Node::NODE_DIVIDE:
+    case Node::NODE_LESS:
+    case Node::NODE_ASSIGNMENT:
+    case Node::NODE_GREATER:
+    case Node::NODE_BITWISE_XOR:
+    case Node::NODE_BITWISE_OR:
+    case Node::NODE_BITWISE_NOT:
+    case Node::NODE_ASSIGNMENT_ADD:
+    case Node::NODE_ASSIGNMENT_BITWISE_AND:
+    case Node::NODE_ASSIGNMENT_BITWISE_OR:
+    case Node::NODE_ASSIGNMENT_BITWISE_XOR:
+    case Node::NODE_ASSIGNMENT_DIVIDE:
+    case Node::NODE_ASSIGNMENT_LOGICAL_AND:
+    case Node::NODE_ASSIGNMENT_LOGICAL_OR:
+    case Node::NODE_ASSIGNMENT_LOGICAL_XOR:
+    case Node::NODE_ASSIGNMENT_MAXIMUM:
+    case Node::NODE_ASSIGNMENT_MINIMUM:
+    case Node::NODE_ASSIGNMENT_MODULO:
+    case Node::NODE_ASSIGNMENT_MULTIPLY:
+    case Node::NODE_ASSIGNMENT_POWER:
+    case Node::NODE_ASSIGNMENT_ROTATE_LEFT:
+    case Node::NODE_ASSIGNMENT_ROTATE_RIGHT:
+    case Node::NODE_ASSIGNMENT_SHIFT_LEFT:
+    case Node::NODE_ASSIGNMENT_SHIFT_RIGHT:
+    case Node::NODE_ASSIGNMENT_SHIFT_RIGHT_UNSIGNED:
+    case Node::NODE_ASSIGNMENT_SUBTRACT:
+    case Node::NODE_DECREMENT:
+    case Node::NODE_EQUAL:
+    case Node::NODE_GREATER_EQUAL:
+    case Node::NODE_INCREMENT:
+    case Node::NODE_LESS_EQUAL:
+    case Node::NODE_LOGICAL_AND:
+    case Node::NODE_LOGICAL_OR:
+    case Node::NODE_LOGICAL_XOR:
+    case Node::NODE_MATCH:
+    case Node::NODE_MAXIMUM:
+    case Node::NODE_MINIMUM:
+    case Node::NODE_NOT_EQUAL:
+    case Node::NODE_POST_DECREMENT:
+    case Node::NODE_POST_INCREMENT:
+    case Node::NODE_POWER:
+    case Node::NODE_ROTATE_LEFT:
+    case Node::NODE_ROTATE_RIGHT:
+    case Node::NODE_SHIFT_LEFT:
+    case Node::NODE_SHIFT_RIGHT:
+    case Node::NODE_SHIFT_RIGHT_UNSIGNED:
+    case Node::NODE_STRICTLY_EQUAL:
+    case Node::NODE_STRICTLY_NOT_EQUAL:
     {
         // save the operator type in the node to be able
         // to get the string
-        data.f_type = f_data.f_type;
-        data.f_str = node.OperatorToString();
-        data.f_int.Set(NODE_FUNCTION_FLAG_OPERATOR);
-        data.f_type = NODE_FUNCTION;
-        GetToken();
+        node->set_string(Node::operator_to_string(f_node->get_type()));
+        node->set_flag(Node::NODE_FUNCTION_FLAG_OPERATOR, true);
+        get_token();
     }
         break;
 
     // this is a complicated one because () can
     // be used for the parameters too
-    case '(':
+    case Node::NODE_OPEN_PARENTHESIS:
     {
-        Data restore = f_data;
-        GetToken();
-        if(f_data.f_type == ')') {
-            Data save = f_data;
-            GetToken();
-            if(f_data.f_type == '(') {
+        Node::pointer_t restore(f_node);
+        get_token();
+        if(f_node->get_type() == Node::NODE_CLOSE_PARENTHESIS)
+        {
+            Node::pointer_t save(f_node);
+            get_token();
+            if(f_node->get_type() == Node::NODE_OPEN_PARENTHESIS)
+            {
+                // at this point...
                 // this is taken as the "()" operator!
-                data.f_str = "()";
-                data.f_int.Set(NODE_FUNCTION_FLAG_OPERATOR);
-                data.f_type = NODE_FUNCTION;
+                node->set_string("()");
+                node->set_flag(Node::NODE_FUNCTION_FLAG_OPERATOR, true);
             }
-            else {
-                UngetToken(f_data);
-                UngetToken(save);
-                f_data = restore;
+            else
+            {
+                unget_token(f_node);
+                unget_token(save);
+                f_node = restore;
             }
         }
-        else {
-            UngetToken(f_data);
-            f_data = restore;
+        else
+        {
+            unget_token(f_node);
+            f_node = restore;
         }
     }
         break;
 
     default:
-        if(!expression) {
-            f_lexer.ErrMsg(AS_ERR_INVALID_FUNCTION, "function declarations are required to be named");
+        if(!expression_function)
+        {
+            Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_FUNCTION, f_lexer->get_input()->get_position());
+            msg << "function declarations are required to be named";
         }
         break;
 
     }
 
-    if(f_data.f_type == '(') {
-        GetToken();
-        if(f_data.f_type != ')') {
+    if(f_node->get_type() == Node::NODE_OPEN_PARENTHESIS)
+    {
+        get_token();
+        if(f_node->get_type() != Node::NODE_CLOSE_PARENTHESIS)
+        {
             // read params
-            NodePtr params;
+            Node::pointer_t params;
             bool has_out;
-            ParameterList(params, has_out);
-            if(has_out) {
-                data.f_int.Set(data.f_int.Get() | NODE_FUNCTION_FLAG_OUT);
+            parameter_list(params, has_out);
+            if(has_out)
+            {
+                node->set_flag(Node::NODE_FUNCTION_FLAG_OUT, true);
             }
-            if(params.HasNode()) {
-                node.AddChild(params);
+            if(params)
+            {
+                node->append_child(params);
             }
-            else {
-                data.f_int.Set(data.f_int.Get() | NODE_FUNCTION_FLAG_NOPARAMS);
+            else
+            {
+                node->set_flag(Node::NODE_FUNCTION_FLAG_NOPARAMS, true);
             }
-            if(f_data.f_type != ')') {
-                f_lexer.ErrMsg(AS_ERR_PARENTHESIS_EXPECTED, "')' expected to close the 'function' parameters");
+            if(f_node->get_type() != Node::NODE_CLOSE_PARENTHESIS)
+            {
+                Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_PARENTHESIS_EXPECTED, f_lexer->get_input()->get_position());
+                msg << "')' expected to close the 'function' parameters";
             }
-            else {
-                GetToken();
+            else
+            {
+                get_token();
             }
         }
-        else {
-            GetToken();
+        else
+        {
+            get_token();
         }
     }
 
-    if(f_data.f_type == ':') {
-        NodePtr expr;
-        GetToken();
-        if(f_data.f_type == NODE_VOID
-        || (f_data.f_type == NODE_IDENTIFIER
-                && f_data.f_str == "Void")) {
-            // special case of a procedure
-            //expr.CreateNode(NODE_VOID);
-            //expr.SetInputInfo(f_lexer.GetInput());
-            data.f_int.Set(data.f_int.Get() | NODE_FUNCTION_FLAG_VOID);
-            GetToken();
+    // return type specified?
+    if(f_node->get_type() == Node::NODE_COLON)
+    {
+        get_token();
+        if(f_node->get_type() == Node::NODE_VOID
+        || (f_node->get_type() == Node::NODE_IDENTIFIER && f_node->get_string() == "Void"))
+        {
+            // special case of a procedure instead of a function
+            node->set_flag(Node::NODE_FUNCTION_FLAG_VOID, true);
+            get_token();
         }
-        else if(f_data.f_type == NODE_IDENTIFIER
-                && f_data.f_str == "Never") {
-            data.f_int.Set(data.f_int.Get() | NODE_FUNCTION_FLAG_NEVER);
-            GetToken();
+        else if(f_node->get_type() == Node::NODE_VOID && f_node->get_string() == "Never")
+        {
+            // function is not expected to return
+            node->set_flag(Node::NODE_FUNCTION_FLAG_NEVER, true);
+            get_token();
         }
-        else {
-            ConditionalExpression(expr, false);
-            node.AddChild(expr);
+        else
+        {
+            // normal type definition
+            Node::pointer_t expr;
+            conditional_expression(expr, false);
+            node->append_child(expr);
         }
     }
 
-    if(f_data.f_type == '{') {
-        GetToken();
-        if(f_data.f_type != '}') {
-            // NOTE: by not inserting anything when we have
-            // an empty definition, it looks like an abstract
-            // definition... we may want to change that at a
-            // later time.
-            NodePtr directive_list;
-            DirectiveList(directive_list);
-            node.AddChild(directive_list);
+    if(f_node->get_type() == Node::NODE_OPEN_CURVLY_BRACKET)
+    {
+        get_token();
+        if(f_node->get_type() != Node::NODE_CLOSE_CURVLY_BRACKET)
+        {
+            Node::pointer_t statements;
+            directive_list(statements);
+            node->append_child(statements);
         }
-        if(f_data.f_type != '}') {
-            f_lexer.ErrMsg(AS_ERR_CURVLY_BRAKETS_EXPECTED, "'}' expected to close the 'function' block");
+        // else ... nothing?!
+        // NOTE: by not inserting anything when we have
+        //       an empty definition, it looks like an abstract
+        //       definition... we may want to change that at a
+        //       later time.
+        if(f_node->get_type() != Node::NODE_CLOSE_CURVLY_BRACKET)
+        {
+            Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_CURVLY_BRAKETS_EXPECTED, f_lexer->get_input()->get_position());
+            msg << "'}' expected to close the 'function' block");
         }
-        else {
-            GetToken();
+        else
+        {
+            get_token();
         }
     }
     // empty function (a.k.a abstract or function as a type)
