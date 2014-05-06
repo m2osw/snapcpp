@@ -59,7 +59,8 @@ SNAP_PLUGIN_START(editor, 1, 0)
  */
 char const *get_name(name_t name)
 {
-    switch(name) {
+    switch(name)
+    {
     case SNAP_NAME_EDITOR_DRAFTS_PATH:
         return "admin/drafts";
 
