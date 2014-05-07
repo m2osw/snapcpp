@@ -2971,7 +2971,7 @@ bool users::register_user(QString const& email, QString const& password)
     //       have "" and a default website language...) -- this is the
     //       language of the profile, not the language of the website...
     links::link_info source(link_name, source_unique, user_ipath.get_key(), user_ipath.get_branch(true, "xx"));
-    const QString link_to(get_name(SNAP_NAME_USERS_STATUS));
+    QString const link_to(get_name(SNAP_NAME_USERS_STATUS));
     bool const destination_unique(false);
     content::path_info_t dpath;
     dpath.set_path(get_name(SNAP_NAME_USERS_NEW_PATH));
