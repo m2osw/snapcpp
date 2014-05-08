@@ -145,7 +145,7 @@ void Parser::parameter_list(Node::pointer_t& node, bool& has_out)
         }
         while(more); 
 
-        if(has_out) // (flags & Node::NODE_PARAMETERS_FLAG_OUT) != 0
+        if(has_out)
         {
             if(f_node->get_flag(Node::NODE_PARAMETERS_FLAG_REST))
             {
@@ -251,8 +251,7 @@ void Parser::function(Node::pointer_t& node, bool const expression_function)
     {
     case Node::NODE_IDENTIFIER:
     {
-        long flags = 0;
-        const char *etter = "";
+        String etter;
         if(f_node->get_string() == "get")
         {
             // *** GETTER ***
@@ -265,13 +264,13 @@ void Parser::function(Node::pointer_t& node, bool const expression_function)
             node->set_flag(Node::NODE_FUNCTION_FLAG_SETTER, true);
             etter = "<-";
         }
-        if(*etter != '\0')
+        if(!etter.empty())
         {
             // *** one of GETTER/SETTER ***
             get_token();
             if(f_node->get_type() == Node::NODE_IDENTIFIER)
             {
-                node->set_string(etter + f_node->get_string());
+                node->set_string(String(etter + f_node->get_string()));
                 get_token();
             }
             else if(f_node->get_type() == Node::NODE_STRING)
@@ -307,7 +306,7 @@ void Parser::function(Node::pointer_t& node, bool const expression_function)
                 Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_FUNCTION, f_lexer->get_input()->get_position());
                 msg << "getter and setter functions require a name";
             }
-            if(expression_function && *etter != '\0')
+            if(expression_function && !etter.empty())
             {
                 Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_FUNCTION, f_lexer->get_input()->get_position());
                 msg << "expression functions cannot be getter nor setter functions";
@@ -528,7 +527,7 @@ void Parser::function(Node::pointer_t& node, bool const expression_function)
         if(f_node->get_type() != Node::NODE_CLOSE_CURVLY_BRACKET)
         {
             Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_CURVLY_BRAKETS_EXPECTED, f_lexer->get_input()->get_position());
-            msg << "'}' expected to close the 'function' block");
+            msg << "'}' expected to close the 'function' block";
         }
         else
         {

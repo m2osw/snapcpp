@@ -60,6 +60,7 @@ public:
                     String(as_char_t const *str, int len = -1);
                     String(std::string const& str);
                     String(std::wstring const& str);
+                    String(std::basic_string<as_char_t> const& str);
 
     String&         operator = (String const& str);
     String&         operator = (char const *str);
@@ -67,9 +68,22 @@ public:
     String&         operator = (as_char_t const *str);
     String&         operator = (std::string const& str);
     String&         operator = (std::wstring const& str);
+    String&         operator = (std::basic_string<as_char_t> const& str);
 
     bool            operator == (char const *str) const;
     friend bool     operator == (char const *str, String const& string);
+
+    String&         operator += (String const& str);
+    String&         operator += (char const *str);
+    String&         operator += (wchar_t const *str);
+    String&         operator += (as_char_t const *str);
+    String&         operator += (std::string const& str);
+    String&         operator += (std::wstring const& str);
+    String&         operator += (std::basic_string<as_char_t> const& str);
+
+    String&         operator += (as_char_t const c);
+    String&         operator += (char const c);
+    String&         operator += (wchar_t const c);
 
     bool            valid() const;
     static bool     valid_character(as_char_t c);

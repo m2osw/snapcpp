@@ -671,8 +671,11 @@ void Node::set_string(String const& value)
     // only the corresponding node type accepts a set() call
     switch(f_type)
     {
-    case NODE_STRING:
     case NODE_CLASS: // name of class
+    case NODE_IMPORT: // name of package
+    case NODE_NAMESPACE: // name of namespace
+    case NODE_PACKAGE: // name of package
+    case NODE_STRING:
         break;
 
     default:

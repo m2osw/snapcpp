@@ -1,8 +1,8 @@
-/* statement.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2009 */
+/* statement.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
 
 /*
 
-Copyright (c) 2005-2009 Made to Order Software Corp.
+Copyright (c) 2005-2014 Made to Order Software Corp.
 
 Permission is hereby granted, free of charge, to any
 person obtaining a copy of this software and
@@ -416,18 +416,21 @@ forin_done:
 /**********************************************************************/
 /**********************************************************************/
 
-void IntParser::Goto(NodePtr& node)
+// although JavaScript does not support a goto directive, we support it
+// in the parser; however, the compiler will reject it if you try to
+// output the result to JavaScript for browsers.
+void Parser::goto_directive(Node::pointer_t& node)
 {
-    if(f_data.f_type == NODE_IDENTIFIER) {
+    if(f_node->get_type() == Node::NODE_IDENTIFIER)
+    {
         // save the label
-        node.CreateNode(NODE_GOTO);
-        node.SetInputInfo(f_lexer.GetInput());
-        Data& data = node.GetData();
-        data.f_str = f_data.f_str;
-        GetToken();
+        node = f_node;
+        get_token();
     }
-    else {
-        f_lexer.ErrMsg(AS_ERR_INVALID_GOTO, "'goto' expects a label as parameter");
+    else
+    {
+        Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_GOTO, f_lexer->get_input()->get_position());
+        msg << "'goto' expects a label as parameter";
     }
 }
 

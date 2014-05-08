@@ -156,6 +156,20 @@ String::String(std::wstring const& str)
 
 /** \brief Copy str in this String.
  *
+ * This function copies str in this String.
+ *
+ * The input string is taken as UCS-4 and copy as is in its entirety.
+ *
+ * \param[in] str  The input string to copy in this String.
+ */
+String::String(std::basic_string<as_char_t> const& str)
+    : basic_string(str)
+{
+}
+
+
+/** \brief Copy str in this String.
+ *
  * This function makes a copy of str in this string.
  *
  * \param[in] str  The input string to copy in this String.
@@ -234,6 +248,183 @@ String& String::operator = (std::string const& str)
 String& String::operator = (std::wstring const& str)
 {
     from_wchar(str.c_str(), static_cast<int>(str.length()));
+    return *this;
+}
+
+
+/** \brief Copy str in this String.
+ *
+ * This function copies str in this String. The string is viewed as
+ * UCS-4. If another format is expected, make sure to use the
+ * proper function.
+ *
+ * \param[in] str  The string to copy in this String.
+ *
+ * \return A reference to this string.
+ */
+String& String::operator = (std::basic_string<as_char_t> const& str)
+{
+    basic_string<as_char_t>::operator = (str);
+    return *this;
+}
+
+
+/** \brief Append str to this String.
+ *
+ * This function appends str in this string.
+ *
+ * \param[in] str  The input string to append to this String.
+ *
+ * \return A reference to this string.
+ */
+String& String::operator += (String const& str)
+{
+    // use basic string implementation as is
+    basic_string<as_char_t>::operator += (str);
+    return *this;
+}
+
+
+/** \brief Append str to this String.
+ *
+ * This function appends str to this String. The string is viewed as
+ * ISO-8859-1. If another format is expected, make sure to use the
+ * proper function.
+ *
+ * \param[in] str  The string to append to this String.
+ *
+ * \return A reference to this string.
+ */
+String& String::operator += (char const *str)
+{
+    String s(str);
+    basic_string<as_char_t>::operator += (s);
+    return *this;
+}
+
+
+/** \brief Append str to this String.
+ *
+ * This function appends str to this String. The string is viewed as
+ * UTF-16. If another format is expected, make sure to use the
+ * proper function.
+ *
+ * \param[in] str  The string to append to this String.
+ *
+ * \return A reference to this string.
+ */
+String& String::operator += (wchar_t const *str)
+{
+    String s(str);
+    basic_string<as_char_t>::operator += (s);
+    return *this;
+}
+
+
+/** \brief Append str to this String.
+ *
+ * This function appends str to this String. The string is viewed as
+ * ISO-8859-1. If another format is expected, make sure to use the
+ * proper function.
+ *
+ * \param[in] str  The string to append to this String.
+ *
+ * \return A reference to this string.
+ */
+String& String::operator += (std::string const& str)
+{
+    String s(str);
+    basic_string<as_char_t>::operator += (s);
+    return *this;
+}
+
+
+/** \brief Append str to this String.
+ *
+ * This function appends str to this String. The string is viewed as
+ * UTF-16. If another format is expected, make sure to use the
+ * proper function.
+ *
+ * \param[in] str  The string to append to this String.
+ *
+ * \return A reference to this string.
+ */
+String& String::operator += (std::wstring const& str)
+{
+    String s(str);
+    basic_string<as_char_t>::operator += (s);
+    return *this;
+}
+
+
+/** \brief Append str to this String.
+ *
+ * This function append str to this String. The string is viewed as
+ * UCS-4. If another format is expected, make sure to use the
+ * proper function.
+ *
+ * \param[in] str  The string to append to this String.
+ *
+ * \return A reference to this string.
+ */
+String& String::operator += (std::basic_string<as_char_t> const& str)
+{
+    String s(str);
+    basic_string<as_char_t>::operator += (s);
+    return *this;
+}
+
+
+/** \brief Append c to this String.
+ *
+ * This function append c to this String. The character is viewed as
+ * UCS-4. If another format is expected, make sure to use the
+ * proper function.
+ *
+ * \param[in] c  The character to append to this String.
+ *
+ * \return A reference to this string.
+ */
+String& String::operator += (as_char_t const c)
+{
+    basic_string<as_char_t>::operator += (c);
+    return *this;
+}
+
+
+/** \brief Append c to this String.
+ *
+ * This function append c to this String. The character is viewed as
+ * ISO-8859-1. If another format is expected, make sure to use the
+ * proper function.
+ *
+ * \param[in] c  The character to append to this String.
+ *
+ * \return A reference to this string.
+ */
+String& String::operator += (char const c)
+{
+    basic_string<as_char_t>::operator += (static_cast<as_char_t>(c));
+    return *this;
+}
+
+
+/** \brief Append c to this String.
+ *
+ * This function append c to this String. The character is viewed as
+ * UCS-4. If another format is expected, make sure to use the
+ * proper function.
+ *
+ * \note
+ * Under MS-Windows the character is viewed as UCS-2.
+ *
+ * \param[in] c  The character to append to this String.
+ *
+ * \return A reference to this string.
+ */
+String& String::operator += (wchar_t const c)
+{
+    basic_string<as_char_t>::operator += (static_cast<as_char_t>(c));
     return *this;
 }
 

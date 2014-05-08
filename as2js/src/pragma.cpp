@@ -1,8 +1,8 @@
-/* pragma.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2009 */
+/* pragma.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
 
 /*
 
-Copyright (c) 2005-2009 Made to Order Software Corp.
+Copyright (c) 2005-2014 Made to Order Software Corp.
 
 Permission is hereby granted, free of charge, to any
 person obtaining a copy of this software and
@@ -31,7 +31,8 @@ SOFTWARE.
 
 */
 
-#include "as2js/parser.h"
+#include    "as2js/parser.h"
+#include    "as2js/message.h"
 
 
 namespace as2js
@@ -44,82 +45,90 @@ namespace as2js
 /**********************************************************************/
 /**********************************************************************/
 
-void IntParser::Pragma(void)
+void Parser::pragma()
 {
-    while(f_data.f_type == NODE_IDENTIFIER)
+    while(f_node->get_type() == Node::NODE_IDENTIFIER)
     {
-        String name = f_data.f_str;
-        Data argument;
+        String const name = f_node->get_string();
+        Node::pointer_t argument;
         bool prima = false;
-        GetToken();
-        if(f_data.f_type == '(')
+        get_token();
+        if(f_node->get_type() == Node::NODE_OPEN_PARENTHESIS)
         {
             // has zero or one argument
-            GetToken();
+            get_token();
             // accept an empty argument '()'
-            if(f_data.f_type != ')')
+            if(f_node->get_type() != Node::NODE_CLOSE_PARENTHESIS)
             {
                 bool negative = false;
-                if(f_data.f_type == '-')
+                if(f_node->get_type() == Node::NODE_SUBTRACT)
                 {
-                    GetToken();
+                    get_token();
                     negative = true;
                 }
-                switch(f_data.f_type)
+                switch(f_node->get_type())
                 {
-                case NODE_FALSE:
-                case NODE_STRING:
-                case NODE_TRUE:
+                case Node::NODE_FALSE:
+                case Node::NODE_STRING:
+                case Node::NODE_TRUE:
                     if(negative)
                     {
                         negative = false;
-                        f_lexer.ErrMsg(AS_ERR_BAD_PRAGMA, "invalid negative argument for a pragma");
+                        Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_BAD_PRAGMA, f_lexer->get_input()->get_position());
+                        msg << "invalid negative argument for a pragma";
                     }
-                    argument = f_data;
-                    GetToken();
+                    argument = f_node;
+                    get_token();
                     break;
 
-                case NODE_FLOAT64:
-                    argument = f_data;
+                case Node::NODE_FLOAT64:
+                    argument = f_node;
                     if(negative)
                     {
-                        argument.f_float.Set(-argument.f_float.Get());
+                        argument->set_float64(-argument->get_float64().get());
                     }
-                    GetToken();
+                    get_token();
                     break;
 
-                case NODE_INT64:
-                    argument = f_data;
+                case Node::NODE_INT64:
+                    argument = f_node;
                     if(negative)
                     {
-                        argument.f_int.Set(-argument.f_int.Get());
+                        argument->set_int64(-argument->get_int64().get());
                     }
-                    GetToken();
+                    get_token();
                     break;
 
-                case ')':
-                    f_lexer.ErrMsg(AS_ERR_BAD_PRAGMA, "a pragma argument can't just be '-'");
+                case Node::NODE_CLOSE_PARENTHESIS:
+                {
+                    Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_BAD_PRAGMA, f_lexer->get_input()->get_position());
+                    msg << "a pragma argument can't just be '-'";
+                }
                     break;
 
                 default:
-                    f_lexer.ErrMsg(AS_ERR_BAD_PRAGMA, "invalid argument type for a pragma");
+                {
+                    Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_BAD_PRAGMA, f_lexer->get_input()->get_position());
+                    msg << "invalid argument type for a pragma";
+                }
                     break;
 
                 }
             }
-            if(f_data.f_type != ')')
+            if(f_node->get_type() == Node::NODE_CLOSE_PARENTHESIS)
             {
-                f_lexer.ErrMsg(AS_ERR_BAD_PRAGMA, "invalid argument for a pragma");
+                Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_BAD_PRAGMA, f_lexer->get_input()->get_position());
+                msg << "invalid argument for a pragma";
             }
             else
             {
-                GetToken();
+                get_token();
             }
         }
-        if(f_data.f_type == '?')
+        if(f_node->get_type() == Node::NODE_CONDITIONAL)
         {
             prima = true;
-            GetToken();
+            get_token();
         }
 
         // Check out this pragma. We have the following
@@ -130,117 +139,128 @@ void IntParser::Pragma(void)
         //    prima        True if pragma name followed by '?'
         //
         // NOTE: pragmas that we don't recognize are simply
-        // being ignored.
+        //       being ignored.
         //
-        long value = 1;
-        option_t option = AS_OPTION_UNKNOWN;
+        Options::option_value_t value(1);
+        Options::option_t option = Options::AS_OPTION_UNKNOWN;
         if(name == "extended_operators")
         {
-            option = AS_OPTION_EXTENDED_OPERATORS;
+            option = Options::AS_OPTION_EXTENDED_OPERATORS;
         }
         else if(name == "no_extended_operators")
         {
-            option = AS_OPTION_EXTENDED_OPERATORS;
+            option = Options::AS_OPTION_EXTENDED_OPERATORS;
             value = 0;
         }
         else if(name == "extended_escape_sequences")
         {
-            option = AS_OPTION_EXTENDED_ESCAPE_SEQUENCES;
+            option = Options::AS_OPTION_EXTENDED_ESCAPE_SEQUENCES;
         }
         else if(name == "no_extended_escape_sequences")
         {
-            option = AS_OPTION_EXTENDED_ESCAPE_SEQUENCES;
+            option = Options::AS_OPTION_EXTENDED_ESCAPE_SEQUENCES;
             value = 0;
         }
         else if(name == "octal")
         {
-            option = AS_OPTION_OCTAL;
+            option = Options::AS_OPTION_OCTAL;
         }
         else if(name == "no_octal")
         {
-            option = AS_OPTION_OCTAL;
+            option = Options::AS_OPTION_OCTAL;
             value = 0;
         }
         else if(name == "strict")
         {
-            option = AS_OPTION_STRICT;
+            option = Options::AS_OPTION_STRICT;
         }
         else if(name == "not_strict")
         {
-            option = AS_OPTION_STRICT;
+            option = Options::AS_OPTION_STRICT;
             value = 0;
         }
         else if(name == "trace_to_object")
         {
-            option = AS_OPTION_TRACE_TO_OBJECT;
+            option = Options::AS_OPTION_TRACE_TO_OBJECT;
         }
         else if(name == "no_trace_to_object")
         {
-            option = AS_OPTION_TRACE_TO_OBJECT;
+            option = Options::AS_OPTION_TRACE_TO_OBJECT;
             value = 0;
         }
         else if(name == "trace")
         {
-            option = AS_OPTION_TRACE;
+            option = Options::AS_OPTION_TRACE;
         }
         else if(name == "no_trace")
         {
-            option = AS_OPTION_TRACE;
+            option = Options::AS_OPTION_TRACE;
             value = 0;
         }
-        if(option != AS_OPTION_UNKNOWN)
+        if(option != Options::AS_OPTION_UNKNOWN)
         {
-            Pragma_Option(option, prima, argument, value);
+            pragma_option(option, prima, argument, value);
         }
     }
 }
 
 
 
-void IntParser::Pragma_Option(option_t option, bool prima, const Data& argument, long value)
+void Parser::pragma_option(Options::option_t option, bool prima, Node::pointer_t& argument, Options::option_value_t value)
 {
     // did we get any option object?
     if(f_options == 0)
     {
+        // TBD: should we create one since we're dealing with options now?
         return;
+    }
+
+    // user overloaded the value?
+    switch(argument->get_type())
+    {
+    case Node::NODE_UNKNOWN:
+        // default value used
+        break;
+
+    case Node::NODE_TRUE:
+        value = 1;
+        break;
+
+    case Node::NODE_INT64:
+        value = option, argument->get_int64().get() != 0;
+        break;
+
+    case Node::NODE_FLOAT64:
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+        value = option, argument->get_float64().get() != 0.0;
+#pragma GCC diagnostic pop
+        break;
+
+    case Node::NODE_STRING:
+    {
+        Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INCOMPATIBLE_PRAGMA_ARGUMENT, f_lexer->get_input()->get_position());
+        msg << "incompatible pragma argument";
+    }
+        break;
+
+    default: // Node::NODE_FALSE
+        value = 0;
+        break;
+
     }
 
     if(prima)
     {
-        if(f_options->GetOption(option) != value)
+        if(f_options->get_option(option) != value)
         {
-            f_lexer.ErrMsg(AS_ERR_PRAGMA_FAILED, "prima pragma failed");
+            Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_PRAGMA_FAILED, f_lexer->get_input()->get_position());
+            msg << "prima pragma failed";
         }
         return;
     }
 
-    switch(argument.f_type)
-    {
-    case NODE_UNKNOWN:
-        f_options->SetOption(option, value);
-        break;
-
-    case NODE_TRUE:
-        f_options->SetOption(option, 1);
-        break;
-
-    case NODE_INT64:
-        f_options->SetOption(option, argument.f_int.Get() != 0);
-        break;
-
-    case NODE_FLOAT64:
-        f_options->SetOption(option, argument.f_float.Get() != 0.0f);
-        break;
-
-    case NODE_STRING:
-        f_lexer.ErrMsg(AS_ERR_INCOMPATIBLE_PRAGMA_ARGUMENT, "incompatible pragma argument");
-        break;
-
-    default: // NODE_FALSE
-        f_options->SetOption(option, 0);
-        break;
-
-    }
+    f_options->set_option(option, value);
 }
 
 
