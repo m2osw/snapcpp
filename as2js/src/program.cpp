@@ -1,8 +1,8 @@
-/* program.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2009 */
+/* program.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
 
 /*
 
-Copyright (c) 2005-2009 Made to Order Software Corp.
+Copyright (c) 2005-2014 Made to Order Software Corp.
 
 Permission is hereby granted, free of charge, to any
 person obtaining a copy of this software and
@@ -31,7 +31,8 @@ SOFTWARE.
 
 */
 
-#include "as2js/parser.h"
+#include    "as2js/parser.h"
+#include    "as2js/message.h"
 
 
 namespace as2js
@@ -44,22 +45,26 @@ namespace as2js
 /**********************************************************************/
 /**********************************************************************/
 
-void IntParser::Program(NodePtr& node)
+void Parser::program(Node::pointer_t& node)
 {
-    node.CreateNode(NODE_PROGRAM);
-    node.SetInputInfo(f_lexer.GetInput());
-    while(f_data.f_type != NODE_EOF) {
-        NodePtr directive_list;
-        DirectiveList(directive_list);
-        node.AddChild(directive_list);
+    node = f_lexer->get_new_node(Node::NODE_PROGRAM);
+    while(f_node->get_type() == Node::NODE_EOF)
+    {
+        Node::pointer_t directives;
+        directive_list(directives);
+        node->append_child(directives);
 
-        if(f_data.f_type == NODE_ELSE) {
-            f_lexer.ErrMsg(AS_ERR_INVALID_KEYWORD, "'else' not expected without an 'if' keyword");
-            GetToken();
+        if(f_node->get_type() == Node::NODE_ELSE)
+        {
+            Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_KEYWORD, f_lexer->get_input()->get_position());
+            msg << "'else' not expected without an 'if' keyword";
+            get_token();
         }
-        else if(f_data.f_type == '}') {
-            f_lexer.ErrMsg(AS_ERR_CURVLY_BRAKETS_EXPECTED, "'}' not expected without a '{'");
-            GetToken();
+        else if(f_node->get_type() == Node::NODE_CLOSE_CURVLY_BRACKET)
+        {
+            Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_CURVLY_BRAKETS_EXPECTED, f_lexer->get_input()->get_position());
+            msg << "'}' not expected without a '{'";
+            get_token();
         }
     }
 }

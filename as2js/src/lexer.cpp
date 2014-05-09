@@ -54,7 +54,6 @@ Lexer::Lexer()
     //, f_result(nullptr) -- auto-init
     //, f_input(nullptr) -- auto-init
     //, f_options(nullptr) -- auto-init
-    //, f_for_in(false)
 {
 }
 
@@ -75,12 +74,6 @@ Input::pointer_t Lexer::get_input() const
 void Lexer::set_options(Options::pointer_t& options)
 {
     f_options = options;
-}
-
-
-void Lexer::set_for_in(bool const for_in)
-{
-    f_for_in = for_in;
 }
 
 
@@ -540,7 +533,7 @@ void Lexer::read_identifier(Input::char_t c)
             }
             if(l == 2 && s[1] == 'n')
             {
-                f_result_type = f_for_in ? Node::NODE_FOR_IN : Node::NODE_IN;
+                f_result_type = Node::NODE_IN;
                 break;
             }
             if(l == 10 && str == "instanceof")

@@ -31,7 +31,8 @@ SOFTWARE.
 
 */
 
-#include "as2js/parser.h"
+#include    "as2js/parser.h"
+#include    "as2js/message.h"
 
 
 namespace as2js
@@ -44,18 +45,23 @@ namespace as2js
 /**********************************************************************/
 /**********************************************************************/
 
-void IntParser::Block(NodePtr& node)
+void Parser::block(Node::pointer_t& node)
 {
     // handle the emptiness right here
-    if(f_data.f_type != '}') {
-        DirectiveList(node);
+    if(f_node->get_type() != Node::NODE_CLOSE_CURVLY_BRACKET)
+    {
+        directive_list(node);
     }
 
-    if(f_data.f_type != '}') {
-        f_lexer.ErrMsg(AS_ERR_CURVLY_BRAKETS_EXPECTED, "'}' expected to close a block");
+    if(f_node->get_type() != Node::NODE_CLOSE_CURVLY_BRACKET)
+    {
+        Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_CURVLY_BRAKETS_EXPECTED, f_lexer->get_input()->get_position());
+        msg << "'}' expected to close a block";
     }
-    else {
-        GetToken();
+    else
+    {
+        // skip the '}'
+        get_token();
     }
 }
 
@@ -66,23 +72,25 @@ void IntParser::Block(NodePtr& node)
 /**********************************************************************/
 /**********************************************************************/
 
-void IntParser::BreakContinue(NodePtr& node, node_t type)
+void Parser::break_continue(Node::pointer_t& node, Node::node_t type)
 {
-    node.CreateNode(type);
-    node.SetInputInfo(f_lexer.GetInput());
+    node = f_lexer->get_new_node(type);
 
-    if(f_data.f_type == NODE_IDENTIFIER) {
-        Data& data = node.GetData();
-        data.f_str = f_data.f_str;
-        GetToken();
+    if(f_node->get_type() == Node::NODE_IDENTIFIER)
+    {
+        node->set_string(f_node->get_string());
+        get_token();
     }
-    else if(f_data.f_type == NODE_DEFAULT) {
+    else if(f_node->get_type() == Node::NODE_DEFAULT)
+    {
         // default is equivalent to no label
-        GetToken();
+        get_token();
     }
 
-    if(f_data.f_type != ';') {
-        f_lexer.ErrMsg(AS_ERR_INVALID_LABEL, "'break' and 'continue' can be followed by one label only");
+    if(f_node->get_type() != Node::NODE_SEMICOLON)
+    {
+        Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_LABEL, f_lexer->get_input()->get_position());
+        msg << "'break' and 'continue' can be followed by one label only";
     }
 }
 
@@ -93,29 +101,34 @@ void IntParser::BreakContinue(NodePtr& node, node_t type)
 /**********************************************************************/
 /**********************************************************************/
 
-void IntParser::Case(NodePtr& node)
+void Parser::case_directive(Node::pointer_t& node)
 {
-    node.CreateNode(NODE_CASE);
-    node.SetInputInfo(f_lexer.GetInput());
-    NodePtr expr;
-    Expression(expr);
-    node.AddChild(expr);
+    node = f_lexer->get_new_node(Node::NODE_CASE);
+    Node::pointer_t expr;
+    expression(expr);
+    node->append_child(expr);
 
-    if(f_options != 0
-    && f_options->GetOption(AS_OPTION_EXTENDED_STATEMENTS) != 0) {
+    if(f_options
+    && f_options->get_option(Options::AS_OPTION_EXTENDED_STATEMENTS) != 0) {
         // check for 'case <expr> ... <expr>:'
-        if(f_data.f_type == NODE_REST || f_data.f_type == NODE_RANGE) {
-            GetToken();
-            Expression(expr);
-            node.AddChild(expr);
+        if(f_node->get_type() == Node::NODE_REST
+        || f_node->get_type() == Node::NODE_RANGE)
+        {
+            get_token();
+            Node::pointer_t expr_to;
+            expression(expr_to);
+            node->append_child(expr_to);
         }
     }
 
-    if(f_data.f_type == ':') {
-        GetToken();
+    if(f_node->get_type() == Node::NODE_COLON)
+    {
+        get_token();
     }
-    else {
-        f_lexer.ErrMsg(AS_ERR_CASE_LABEL, "case expression expected to be followed by ':'");
+    else
+    {
+        Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_CASE_LABEL, f_lexer->get_input()->get_position());
+        msg << "case expression expected to be followed by ':'";
     }
 }
 
@@ -129,61 +142,72 @@ void IntParser::Case(NodePtr& node)
 /**********************************************************************/
 /**********************************************************************/
 
-void IntParser::Catch(NodePtr& node)
+void Parser::catch_directive(Node::pointer_t& node)
 {
-    if(f_data.f_type == '(') {
-        node.CreateNode(NODE_CATCH);
-        node.SetInputInfo(f_lexer.GetInput());
-        GetToken();
-        NodePtr parameters;
+    if(f_node->get_type() == Node::NODE_OPEN_PARENTHESIS)
+    {
+        node = f_lexer->get_new_node(Node::NODE_CATCH);
+        get_token();
+        Node::pointer_t parameters;
         bool unused;
-        ParameterList(parameters, unused);
-        node.AddChild(parameters);
+        parameter_list(parameters, unused);
+        node->append_child(parameters);
         // we want exactly ONE parameter
-        int count = parameters.GetChildCount();
-        if(count == 0) {
-            f_lexer.ErrMsg(AS_ERR_INVALID_CATCH, "the 'catch' keyword expects one parameter");
+        size_t const count(parameters->get_children_size());
+        if(count != 1)
+        {
+            Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_CATCH, f_lexer->get_input()->get_position());
+            msg << "the 'catch' keyword expects exactly one parameter";
         }
-        else if(count > 1) {
-            f_lexer.ErrMsg(AS_ERR_INVALID_CATCH, "the 'catch' keyword expects at most one parameter");
-        }
-        else {
+        else
+        {
             // There is just one parameter, make sure there
-            // isn't an initializer
+            // is no initializer
             bool has_type = false;
-            NodePtr& param = parameters.GetChild(0);
-            count = param.GetChildCount();
-            while(count > 0) {
-                --count;
-                if(param.GetChild(count).GetData().f_type == NODE_SET) {
-                    f_lexer.ErrMsg(AS_ERR_INVALID_CATCH, "the 'catch' parameters can't have an initializer");
+            Node::pointer_t param(parameters->get_child(0));
+            size_t idx(param->get_children_size());
+            while(idx > 0)
+            {
+                --idx;
+                if(param->get_child(idx)->get_type() == Node::NODE_SET)
+                {
+                    Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_CATCH, f_lexer->get_input()->get_position());
+                    msg << "'catch' parameters do not support initializers";
                     break;
                 }
                 has_type = true;
             }
-            if(has_type) {
-                Data& data = node.GetData();
-                data.f_int.Set(NODE_CATCH_FLAG_TYPED);
+            if(has_type)
+            {
+                node->set_flag(Node::NODE_CATCH_FLAG_TYPED, true);
             }
         }
-        if(f_data.f_type == ')') {
-            GetToken();
-            if(f_data.f_type == '{') {
-                GetToken();
-                NodePtr directive_list;
-                Block(directive_list);
-                node.AddChild(directive_list);
+        if(f_node->get_type() == Node::NODE_CLOSE_PARENTHESIS)
+        {
+            get_token();
+            if(f_node->get_type() == Node::NODE_OPEN_CURVLY_BRACKET)
+            {
+                get_token();
+                Node::pointer_t one_block;
+                block(one_block);
+                node->append_child(one_block);
             }
-            else {
-                f_lexer.ErrMsg(AS_ERR_CURVLY_BRAKETS_EXPECTED, "'{' expected after the 'catch' parameter");
+            else
+            {
+                Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_CURVLY_BRAKETS_EXPECTED, f_lexer->get_input()->get_position());
+                msg << "'{' expected after the 'catch' parameter";
             }
         }
-        else {
-            f_lexer.ErrMsg(AS_ERR_PARENTHESIS_EXPECTED, "')' expected to end the 'catch' parameter list");
+        else
+        {
+            Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_PARENTHESIS_EXPECTED, f_lexer->get_input()->get_position());
+            msg << "')' expected to end the 'catch' parameter list";
         }
     }
-    else {
-        f_lexer.ErrMsg(AS_ERR_PARENTHESIS_EXPECTED, "'(' expected after the 'catch' keyword");
+    else
+    {
+        Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_PARENTHESIS_EXPECTED, f_lexer->get_input()->get_position());
+        msg << "'(' expected after the 'catch' keyword";
     }
 }
 
@@ -201,20 +225,22 @@ void IntParser::Catch(NodePtr& node)
 // NOTE: if default wasn't a keyword, then it could be used as a
 //     label like any user label!
 //
-//     The fact that it is a keyword allows us to forbid the goto
-//     without having to do any extra work.
+//     The fact that it is a keyword allows us to forbid default with
+//     the goto instruction without having to do any extra work.
 //
-void IntParser::Default(NodePtr& node)
+void Parser::default_directive(Node::pointer_t& node)
 {
-    node.CreateNode(NODE_DEFAULT);
-    node.SetInputInfo(f_lexer.GetInput());
+    node = f_lexer->get_new_node(Node::NODE_DEFAULT);
 
     // default is just itself!
-    if(f_data.f_type == ':') {
-        GetToken();
+    if(f_node->get_type() == Node::NODE_COLON)
+    {
+        get_token();
     }
-    else {
-        f_lexer.ErrMsg(AS_ERR_DEFAULT_LABEL, "default label expected to be followed by ':'");
+    else
+    {
+        Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_DEFAULT_LABEL, f_lexer->get_input()->get_position());
+        msg << "default label expected to be followed by ':'";
     }
 }
 
@@ -228,35 +254,43 @@ void IntParser::Default(NodePtr& node)
 /**********************************************************************/
 /**********************************************************************/
 
-void IntParser::Do(NodePtr& node)
+void Parser::do_directive(Node::pointer_t& node)
 {
-    node.CreateNode(NODE_DO);
-    node.SetInputInfo(f_lexer.GetInput());
+    node = f_lexer->get_new_node(Node::NODE_DO);
 
-    NodePtr directive;
-    Directive(directive);
-    node.AddChild(directive);
+    Node::pointer_t one_directive;
+    directive(one_directive);
+    node->append_child(one_directive);
 
-    if(f_data.f_type == NODE_WHILE) {
-        GetToken();
-        if(f_data.f_type == '(') {
-            GetToken();
-            NodePtr expr;
-            Expression(expr);
-            node.AddChild(expr);
-            if(f_data.f_type != ')') {
-                f_lexer.ErrMsg(AS_ERR_PARENTHESIS_EXPECTED, "')' expected to end the 'while' expression");
+    if(f_node->get_type() == Node::NODE_WHILE)
+    {
+        get_token();
+        if(f_node->get_type() == Node::NODE_OPEN_PARENTHESIS)
+        {
+            get_token();
+            Node::pointer_t expr;
+            expression(expr);
+            node->append_child(expr);
+            if(f_node->get_type() != Node::NODE_CLOSE_PARENTHESIS)
+            {
+                Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_PARENTHESIS_EXPECTED, f_lexer->get_input()->get_position());
+                msg << "')' expected to end the 'while' expression";
             }
-            else {
-                GetToken();
+            else
+            {
+                get_token();
             }
         }
-        else {
-            f_lexer.ErrMsg(AS_ERR_PARENTHESIS_EXPECTED, "'(' expected after the 'while' keyword");
+        else
+        {
+            Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_PARENTHESIS_EXPECTED, f_lexer->get_input()->get_position());
+            msg << "'(' expected after the 'while' keyword";
         }
     }
-    else {
-        f_lexer.ErrMsg(AS_ERR_INVALID_DO, "'while' expected after the block of a 'do' keyword");
+    else
+    {
+        Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_DO, f_lexer->get_input()->get_position());
+        msg << "'while' expected after the block of a 'do' keyword";
     }
 }
 
@@ -268,141 +302,157 @@ void IntParser::Do(NodePtr& node)
 /**********************************************************************/
 /**********************************************************************/
 
-void IntParser::For(NodePtr& node)
+void Parser::for_directive(Node::pointer_t& node)
 {
-    bool for_each = f_data.f_type == NODE_IDENTIFIER
-            && f_data.f_str == "each";
-    if(for_each) {
-        GetToken();
+    // for each(...)
+    bool const for_each(f_node->get_type() == Node::NODE_IDENTIFIER
+                     && f_node->get_string() == "each");
+    if(for_each)
+    {
+        get_token();
     }
-    if(f_data.f_type == '(') {
-        // NOTE: Avoid IN within the expression by setting
-        //     a flag in the lexer. This way it will be
-        //     returned as FOR_IN instead.
-        //     Not necessary since we can know in which
-        //     mode we are anyway.
-        //f_lexer.SetForIn(true);
+    if(f_node->get_type() == Node::NODE_OPEN_PARENTHESIS)
+    {
+        node = f_lexer->get_new_node(Node::NODE_FOR);
 
-        node.CreateNode(NODE_FOR);
-        node.SetInputInfo(f_lexer.GetInput());
-
-        GetToken();
-        if(f_data.f_type == NODE_CONST
-        || f_data.f_type == NODE_VAR) {
+        bool got_for_in(false);
+        get_token();
+        if(f_node->get_type() == Node::NODE_CONST
+        || f_node->get_type() == Node::NODE_VAR)
+        {
             // *** VARIABLE ***
-            NodePtr variables;
-            bool constant = f_data.f_type == NODE_CONST;
-            if(constant) {
-                GetToken();
-                if(f_data.f_type == NODE_VAR) {
-                    GetToken();
+            Node::pointer_t variables;
+            bool const constant(f_node->get_type() == Node::NODE_CONST);
+            if(constant)
+            {
+                get_token();
+                if(f_node->get_type() == Node::NODE_VAR)
+                {
+                    // allow just 'const' or 'const var'
+                    get_token();
                 }
             }
-            else {
-                GetToken();
+            else
+            {
+                get_token();
             }
-            Variable(variables, constant);
-            node.AddChild(variables);
+            variable(variables, constant);
+            node->append_child(variables);
         }
-        else if(f_data.f_type == ';') {
+        else if(f_node->get_type() == Node::NODE_SEMICOLON)
+        {
             // When we have ';' we've got an empty initializer!
-            NodePtr empty;
-            empty.CreateNode(NODE_EMPTY);
-            empty.SetInputInfo(f_lexer.GetInput());
-            node.AddChild(empty);
+            Node::pointer_t empty(f_lexer->get_new_node(Node::NODE_EMPTY));
+            node->append_child(empty);
         }
-        else /*if(f_data.f_type != ';')*/ {
+        else /*if(f_node->get_type() != Node::NODE_SEMICOLON)*/
+        {
             // *** EXPRESSION ***
-            NodePtr expr;
-            Expression(expr);
-            if(f_data.f_type != ';') {
-                Data& data = expr.GetData();
-                if(data.f_type != NODE_IN) {
-                    goto bad_forin;
+            Node::pointer_t expr;
+            expression(expr);
+            if(f_node->get_type() != Node::NODE_SEMICOLON)
+            {
+                if(f_node->get_type() == Node::NODE_IN)
+                {
+                    Node::pointer_t left(expr->get_child(0));
+                    Node::pointer_t right(expr->get_child(1));
+                    expr->delete_child(0);
+                    expr->delete_child(0);
+                    node->append_child(left);
+                    node->append_child(right);
+                    got_for_in = true;
                 }
-                NodePtr left = expr.GetChild(0);
-                NodePtr right = expr.GetChild(1);
-                expr.DeleteChild(0);
-                expr.DeleteChild(0);
-                node.AddChild(left);
-                node.AddChild(right);
-                goto forin_done;
             }
-            else {
-                node.AddChild(expr);
+            else
+            {
+                node->append_child(expr);
             }
         }
 
-        // back to normal -- don't need, really
-        //f_lexer.SetForIn(false);
-
-        // This can happen when we return from the
-        // Variable() function
-        if(f_data.f_type == NODE_IN) {
-            // *** IN ***
-            GetToken();
-            NodePtr expr;
-            Expression(expr);
-            node.AddChild(expr);
-        }
-        else if(f_data.f_type == ';') {
-            // *** SECOND EXPRESSION ***
-            GetToken();
-            NodePtr expr;
-            if(f_data.f_type == ';') {
-                // empty expression
-                expr.CreateNode(NODE_EMPTY);
-                expr.SetInputInfo(f_lexer.GetInput());
+        if(!got_for_in)
+        {
+            // This can happen when we return from the
+            // variable() function
+            if(f_node->get_type() == Node::NODE_IN)
+            {
+                // *** IN ***
+                get_token();
+                Node::pointer_t expr;
+                expression(expr);
+                node->append_child(expr);
             }
-            else {
-                Expression(expr);
-            }
-            node.AddChild(expr);
-            if(f_data.f_type == ';') {
-                // *** THIRD EXPRESSION ***
-                GetToken();
-                NodePtr expr;
-                if(f_data.f_type == ')') {
-                    expr.CreateNode(NODE_EMPTY);
-                    expr.SetInputInfo(f_lexer.GetInput());
+            else if(f_node->get_type() == Node::NODE_SEMICOLON)
+            {
+                // *** SECOND EXPRESSION ***
+                get_token();
+                Node::pointer_t expr;
+                if(f_node->get_type() == Node::NODE_SEMICOLON)
+                {
+                    // empty expression
+                    expr = f_lexer->get_new_node(Node::NODE_EMPTY);
                 }
-                else {
-                    Expression(expr);
+                else
+                {
+                    expression(expr);
                 }
-                node.AddChild(expr);
+                node->append_child(expr);
+                if(f_node->get_type() == Node::NODE_SEMICOLON)
+                {
+                    // *** THIRD EXPRESSION ***
+                    get_token();
+                    Node::pointer_t thrid_expr;
+                    if(f_node->get_type() == Node::NODE_CLOSE_PARENTHESIS)
+                    {
+                        thrid_expr = f_lexer->get_new_node(Node::NODE_EMPTY);
+                    }
+                    else
+                    {
+                        expression(thrid_expr);
+                    }
+                    node->append_child(thrid_expr);
+                }
+                else
+                {
+                    Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_SEMICOLON_EXPECTED, f_lexer->get_input()->get_position());
+                    msg << "';' expected between the last two 'for' expressions";
+                }
             }
-            else {
-                f_lexer.ErrMsg(AS_ERR_SEMICOLON_EXPECTED, "';' expected between the last two 'for' expressions");
+            else
+            {
+                Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_SEMICOLON_EXPECTED, f_lexer->get_input()->get_position());
+                msg << "';' or 'in' expected between the 'for' expressions";
             }
-        }
-        else {
-bad_forin:
-            f_lexer.ErrMsg(AS_ERR_SEMICOLON_EXPECTED, "';' or 'in' expected between the 'for' expressions");
         }
 
-forin_done:
-        if(f_data.f_type != ')') {
-            f_lexer.ErrMsg(AS_ERR_PARENTHESIS_EXPECTED, "')' expected to close the 'for' expressions");
+        if(f_node->get_type() != Node::NODE_CLOSE_PARENTHESIS)
+        {
+            Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_PARENTHESIS_EXPECTED, f_lexer->get_input()->get_position());
+            msg << "')' expected to close the 'for' expressions";
         }
-        else {
-            GetToken();
+        else
+        {
+            get_token();
         }
 
-        if(node.GetChildCount() == 2 && for_each) {
-            Data& data = node.GetData();
-            data.f_int.Set(data.f_int.Get() | NODE_FOR_FLAG_FOREACH);
+        if(node->get_children_size() == 2 && for_each)
+        {
+            node->set_flag(Node::NODE_FOR_FLAG_FOREACH, true);
         }
-        else if(for_each) {
-            f_lexer.ErrMsg(AS_ERR_PARENTHESIS_EXPECTED, "'for each()' only available with an enumeration for");
+        else if(for_each)
+        {
+            Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_PARENTHESIS_EXPECTED, f_lexer->get_input()->get_position());
+            msg << "'for each()' only available with an enumeration for";
         }
 
         // *** DIRECTIVES ***
-        NodePtr directive;
-        Directive(directive);
-        node.AddChild(directive);
+        Node::pointer_t one_directive;
+        directive(one_directive);
+        node->append_child(one_directive);
     }
-    else {
-        f_lexer.ErrMsg(AS_ERR_PARENTHESIS_EXPECTED, "'(' expected for the 'for' expressions");
+    else
+    {
+        Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_PARENTHESIS_EXPECTED, f_lexer->get_input()->get_position());
+        msg << "'(' expected following the 'for' directive";
     }
 }
 
@@ -443,39 +493,44 @@ void Parser::goto_directive(Node::pointer_t& node)
 /**********************************************************************/
 /**********************************************************************/
 
-void IntParser::If(NodePtr& node)
+void Parser::if_directive(Node::pointer_t& node)
 {
-    if(f_data.f_type == '(') {
-        node.CreateNode(NODE_IF);
-        node.SetInputInfo(f_lexer.GetInput());
-        GetToken();
-        NodePtr expr;
-        Expression(expr);
-        node.AddChild(expr);
-        if(f_data.f_type == ')') {
-            GetToken();
+    if(f_node->get_type() == Node::NODE_OPEN_PARENTHESIS)
+    {
+        node = f_lexer->get_new_node(Node::NODE_IF);
+        get_token();
+        Node::pointer_t expr;
+        expression(expr);
+        node->append_child(expr);
+        if(f_node->get_type() == Node::NODE_CLOSE_PARENTHESIS)
+        {
+            get_token();
         }
-        else {
-            f_lexer.ErrMsg(AS_ERR_PARENTHESIS_EXPECTED, "')' expected to end the 'if' expression");
+        else
+        {
+            Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_PARENTHESIS_EXPECTED, f_lexer->get_input()->get_position());
+            msg << "')' expected to end the 'if' expression";
         }
 
         // IF part
-        NodePtr directive;
-        Directive(directive);
-        node.AddChild(directive);
+        Node::pointer_t one_directive;
+        directive(one_directive);
+        node->append_child(one_directive);
 
-        // Note that this is the only place where ELSE is
-        // really permitted
-        if(f_data.f_type == NODE_ELSE) {
-            GetToken();
+        // Note that this is the only place where ELSE is permitted!
+        if(f_node->get_type() == Node::NODE_ELSE)
+        {
+            get_token();
             // ELSE part
-            NodePtr directive;
-            Directive(directive);
-            node.AddChild(directive);
+            Node::pointer_t else_directive;
+            directive(else_directive);
+            node->append_child(else_directive);
         }
     }
-    else {
-        f_lexer.ErrMsg(AS_ERR_PARENTHESIS_EXPECTED, "'(' expected after the 'if' keyword");
+    else
+    {
+        Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_PARENTHESIS_EXPECTED, f_lexer->get_input()->get_position());
+        msg << "'(' expected after the 'if' keyword";
     }
 }
 
@@ -490,14 +545,14 @@ void IntParser::If(NodePtr& node)
 
 
 
-void IntParser::Return(NodePtr& node)
+void Parser::return_directive(Node::pointer_t& node)
 {
-    node.CreateNode(NODE_RETURN);
-    node.SetInputInfo(f_lexer.GetInput());
-    if(f_data.f_type != ';') {
-        NodePtr expr;
-        Expression(expr);
-        node.AddChild(expr);
+    node = f_lexer->get_new_node(Node::NODE_RETURN);
+    if(f_node->get_type() == Node::NODE_SEMICOLON)
+    {
+        Node::pointer_t expr;
+        expression(expr);
+        node->append_child(expr);
     }
 }
 
@@ -508,18 +563,20 @@ void IntParser::Return(NodePtr& node)
 /**********************************************************************/
 /**********************************************************************/
 
-void IntParser::TryFinally(NodePtr& node, node_t type)
+void Parser::try_finally(Node::pointer_t& node, Node::node_t type)
 {
-    if(f_data.f_type == '{') {
-        GetToken();
-        node.CreateNode(type);
-        node.SetInputInfo(f_lexer.GetInput());
-        NodePtr block;
-        Block(block);
-        node.AddChild(block);
+    if(f_node->get_type() == Node::NODE_OPEN_CURVLY_BRACKET)
+    {
+        get_token();
+        node = f_lexer->get_new_node(type);
+        Node::pointer_t one_block;
+        block(one_block);
+        node->append_child(one_block);
     }
-    else {
-        f_lexer.ErrMsg(AS_ERR_CURVLY_BRAKETS_EXPECTED, "'{' expected after the 'try' keyword");
+    else
+    {
+        Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_CURVLY_BRAKETS_EXPECTED, f_lexer->get_input()->get_position());
+        msg << "'{' expected after the '" << (type == Node::NODE_TRY ? "try" : "finally") << "' keyword";
     }
 }
 
@@ -531,87 +588,107 @@ void IntParser::TryFinally(NodePtr& node, node_t type)
 /**********************************************************************/
 /**********************************************************************/
 
-void IntParser::Switch(NodePtr& node)
+void Parser::switch_directive(Node::pointer_t& node)
 {
-    bool        has_open;
+    bool has_open;
 
-    if(f_data.f_type == '(') {
-        node.CreateNode(NODE_SWITCH);
-        node.SetInputInfo(f_lexer.GetInput());
-        Data& data = node.GetData();
-        // a default is important to support ranges properly
-        data.f_int.Set(NODE_UNKNOWN);
-        GetToken();
-        NodePtr expr;
-        Expression(expr);
-        node.AddChild(expr);
-        if(f_data.f_type == ')') {
-            GetToken();
+    if(f_node->get_type() == Node::NODE_OPEN_PARENTHESIS)
+    {
+        node = f_lexer->get_new_node(Node::NODE_SWITCH);
+
+        // a default comparison is important to support ranges properly
+        node->set_int64(Node::NODE_UNKNOWN);
+
+        get_token();
+        Node::pointer_t expr;
+        expression(expr);
+        node->append_child(expr);
+        if(f_node->get_type() == Node::NODE_CLOSE_PARENTHESIS)
+        {
+            get_token();
         }
-        else {
-            f_lexer.ErrMsg(AS_ERR_PARENTHESIS_EXPECTED, "')' expected to end the 'switch' expression");
+        else
+        {
+            Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_PARENTHESIS_EXPECTED, f_lexer->get_input()->get_position());
+            msg << "')' expected to end the 'switch' expression";
         }
-        if(f_data.f_type == NODE_WITH) {
-            GetToken();
-            has_open = f_data.f_type == '(';
-            if(has_open) {
-                GetToken();
+        if(f_node->get_type() == Node::NODE_WITH)
+        {
+            get_token();
+            has_open = f_node->get_type() == '(';
+            if(has_open)
+            {
+                get_token();
             }
-            switch(f_data.f_type) {
+            switch(f_node->get_type())
+            {
             // equality
-            case NODE_STRICTLY_EQUAL:
-            case NODE_EQUAL:
-            case NODE_NOT_EQUAL:
-            case NODE_STRICTLY_NOT_EQUAL:
+            case Node::NODE_STRICTLY_EQUAL:
+            case Node::NODE_EQUAL:
+            case Node::NODE_NOT_EQUAL:
+            case Node::NODE_STRICTLY_NOT_EQUAL:
             // relational
-            case NODE_MATCH:
-            case NODE_IN:
-            case NODE_IS:
-            case NODE_AS:
-            case NODE_INSTANCEOF:
-            case NODE_LESS:
-            case NODE_LESS_EQUAL:
-            case NODE_GREATER:
-            case NODE_GREATER_EQUAL:
+            case Node::NODE_MATCH:
+            case Node::NODE_IN:
+            case Node::NODE_IS:
+            case Node::NODE_AS:
+            case Node::NODE_INSTANCEOF:
+            case Node::NODE_LESS:
+            case Node::NODE_LESS_EQUAL:
+            case Node::NODE_GREATER:
+            case Node::NODE_GREATER_EQUAL:
             // so the user can specify the default too
-            case NODE_DEFAULT:
-                data.f_int.Set(f_data.f_type);
-                GetToken();
+            case Node::NODE_DEFAULT:
+                node->set_int64(f_node->get_type());
+                get_token();
                 break;
 
             default:
-                f_lexer.ErrMsg(AS_ERR_PARENTHESIS_EXPECTED, "insupported operator for a 'switch() with()' expression");
+            {
+                Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_PARENTHESIS_EXPECTED, f_lexer->get_input()->get_position());
+                msg << "insupported operator for a 'switch() with()' expression";
+            }
                 break;
 
             }
-            if(f_data.f_type == ')') {
-                GetToken();
-                if(!has_open) {
-                    f_lexer.ErrMsg(AS_ERR_PARENTHESIS_EXPECTED, "'(' was expected to start the 'switch() with()' expression");
+            if(f_node->get_type() == Node::NODE_CLOSE_PARENTHESIS)
+            {
+                get_token();
+                if(!has_open)
+                {
+                    Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_PARENTHESIS_EXPECTED, f_lexer->get_input()->get_position());
+                    msg << "'(' was expected to start the 'switch() with()' expression";
                 }
             }
-            else if(has_open) {
-                f_lexer.ErrMsg(AS_ERR_PARENTHESIS_EXPECTED, "')' expected to end the 'switch() with()' expression");
+            else if(has_open)
+            {
+                Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_PARENTHESIS_EXPECTED, f_lexer->get_input()->get_position());
+                msg << "')' expected to end the 'switch() with()' expression";
             }
         }
-        NodePtr attr_list;
-        Attributes(attr_list);
-        long attr_count = attr_list.GetChildCount();
-        if(attr_count > 0) {
-            node.SetLink(NodePtr::LINK_ATTRIBUTES, attr_list);
+        Node::pointer_t attr_list;
+        attributes(attr_list);
+        if(attr_list->get_children_size() > 0)
+        {
+            node->set_link(Node::LINK_ATTRIBUTES, attr_list);
         }
-        if(f_data.f_type == '{') {
-            GetToken();
-            NodePtr directive_list;
-            Block(directive_list);
-            node.AddChild(directive_list);
+        if(f_node->get_type() == Node::NODE_OPEN_CURVLY_BRACKET)
+        {
+            get_token();
+            Node::pointer_t one_block;
+            block(one_block);
+            node->append_child(one_block);
         }
-        else {
-            f_lexer.ErrMsg(AS_ERR_CURVLY_BRAKETS_EXPECTED, "'{' expected after the 'switch' expression");
+        else
+        {
+            Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_CURVLY_BRAKETS_EXPECTED, f_lexer->get_input()->get_position());
+            msg << "'{' expected after the 'switch' expression";
         }
     }
-    else {
-        f_lexer.ErrMsg(AS_ERR_PARENTHESIS_EXPECTED, "'(' expected after the 'switch' keyword");
+    else
+    {
+        Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_PARENTHESIS_EXPECTED, f_lexer->get_input()->get_position());
+        msg << "'(' expected after the 'switch' keyword";
     }
 }
 
@@ -623,14 +700,13 @@ void IntParser::Switch(NodePtr& node)
 /**********************************************************************/
 /**********************************************************************/
 
-void IntParser::Throw(NodePtr& node)
+void Parser::throw_directive(Node::pointer_t& node)
 {
-    node.CreateNode(NODE_THROW);
-    node.SetInputInfo(f_lexer.GetInput());
+    node = f_lexer->get_new_node(Node::NODE_THROW);
 
-    NodePtr expr;
-    Expression(expr);
-    node.AddChild(expr);
+    Node::pointer_t expr;
+    expression(expr);
+    node->append_child(expr);
 }
 
 
@@ -641,30 +717,34 @@ void IntParser::Throw(NodePtr& node)
 /**********************************************************************/
 /**********************************************************************/
 
-void IntParser::WithWhile(NodePtr& node, node_t type)
+void Parser::with_while(Node::pointer_t& node, Node::node_t type)
 {
-    const char *inst = type == NODE_WITH ? "with" : "while";
+    char const *inst = type == Node::NODE_WITH ? "with" : "while";
 
-    if(f_data.f_type == '(') {
-        node.CreateNode(type);
-        node.SetInputInfo(f_lexer.GetInput());
-        GetToken();
-        NodePtr expr;
-        Expression(expr);
-        node.AddChild(expr);
-        if(f_data.f_type == ')') {
-            GetToken();
+    if(f_node->get_type() == Node::NODE_OPEN_PARENTHESIS)
+    {
+        node = f_lexer->get_new_node(type);
+        get_token();
+        Node::pointer_t expr;
+        expression(expr);
+        node->append_child(expr);
+        if(f_node->get_type() == Node::NODE_CLOSE_PARENTHESIS)
+        {
+            get_token();
         }
-        else {
-            f_lexer.ErrMsg(AS_ERR_PARENTHESIS_EXPECTED, "')' expected to end the '%s' expression", inst);
+        else
+        {
+            Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_PARENTHESIS_EXPECTED, f_lexer->get_input()->get_position());
+            msg << "')' expected to end the '" << inst << "' expression";
         }
-        NodePtr directive;
-        Directive(directive);
-        node.AddChild(directive);
+        Node::pointer_t one_directive;
+        directive(one_directive);
+        node->append_child(one_directive);
     }
     else
     {
-        f_lexer.ErrMsg(AS_ERR_PARENTHESIS_EXPECTED, "'(' expected after the '%s' keyword", inst);
+        Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_PARENTHESIS_EXPECTED, f_lexer->get_input()->get_position());
+        msg << "'(' expected after the '" << inst << "' keyword";
     }
 }
 

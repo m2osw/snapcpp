@@ -1,8 +1,8 @@
-/* variable.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2009 */
+/* variable.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
 
 /*
 
-Copyright (c) 2005-2009 Made to Order Software Corp.
+Copyright (c) 2005-2014 Made to Order Software Corp.
 
 Permission is hereby granted, free of charge, to any
 person obtaining a copy of this software and
@@ -31,7 +31,8 @@ SOFTWARE.
 
 */
 
-#include "as2js/parser.h"
+#include    "as2js/parser.h"
+#include    "as2js/message.h"
 
 
 namespace as2js
@@ -44,74 +45,65 @@ namespace as2js
 /**********************************************************************/
 /**********************************************************************/
 
-void IntParser::Variable(NodePtr& node, bool const constant)
+void Parser::variable(Node::pointer_t& node, bool const constant)
 {
-    long    flags;
-
-    if(constant)
+    node = f_lexer->get_new_node(Node::NODE_VAR);
+    for(;;)
     {
-        flags = NODE_VAR_FLAG_CONST;
-    }
-    else
-    {
-        flags = 0;
-    }
-
-    node.CreateNode(NODE_VAR);
-    node.SetInputInfo(f_lexer.GetInput());
-    for(;;) {
-        NodePtr variable;
-        variable.CreateNode(NODE_VARIABLE);
-        variable.SetInputInfo(f_lexer.GetInput());
-        node.AddChild(variable);
-
-        Data& data = variable.GetData();
-        data.f_int.Set(flags);
-
-        if(f_data.f_type == NODE_IDENTIFIER) {
-            data.f_str = f_data.f_str;
-            GetToken();
+        Node::pointer_t variable_node(f_lexer->get_new_node(Node::NODE_VARIABLE));
+        if(constant)
+        {
+            variable_node->set_flag(Node::NODE_VAR_FLAG_CONST, true);
         }
-        else {
-            f_lexer.ErrMsg(AS_ERR_INVALID_VARIABLE, "expected an identifier as the variable name");
+        node->append_child(variable_node);
+
+        if(f_node->get_type() == Node::NODE_IDENTIFIER)
+        {
+            get_token();
+        }
+        else
+        {
+            Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_VARIABLE, f_lexer->get_input()->get_position());
+            msg << "expected an identifier as the variable name";
         }
 
-        if(f_data.f_type == ':') {
-            GetToken();
-            NodePtr type;
-            ConditionalExpression(type, false);
-            variable.AddChild(type);
+        if(f_node->get_type() == Node::NODE_COLON)
+        {
+            get_token();
+            Node::pointer_t type;
+            conditional_expression(type, false);
+            variable_node->append_child(type);
         }
 
-        if(f_data.f_type == '=') {
-            GetToken();
-            do {
-                NodePtr initializer;
-                initializer.CreateNode(NODE_SET);
-                initializer.SetInputInfo(f_lexer.GetInput());
-                NodePtr expr;
-                ConditionalExpression(expr, false);
-                initializer.AddChild(expr);
-                variable.AddChild(initializer);
+        if(f_node->get_type() == Node::NODE_ASSIGNMENT)
+        {
+            get_token();
+            do
+            {
+                Node::pointer_t initializer(f_lexer->get_new_node(Node::NODE_SET));
+                Node::pointer_t expr;
+                conditional_expression(expr, false);
+                initializer->append_child(expr);
+                variable_node->append_child(initializer);
                 // We loop in case we have a list of attributes!
                 // This could also be a big syntax error (a missing
                 // operator in most cases.) We will report the error
                 // later once we know where the variable is being
                 // used.
             }
-            while((flags & NODE_VAR_FLAG_CONST) != 0
-                && f_data.f_type != ','
-                && f_data.f_type != ';'
-                && f_data.f_type != '{'
-                && f_data.f_type != '}'
-                && f_data.f_type != ')');
+            while(constant
+                && f_node->get_type() != Node::NODE_COMMA
+                && f_node->get_type() != Node::NODE_SEMICOLON
+                && f_node->get_type() != Node::NODE_OPEN_CURVLY_BRACKET
+                && f_node->get_type() != Node::NODE_CLOSE_CURVLY_BRACKET
+                && f_node->get_type() != Node::NODE_CLOSE_PARENTHESIS);
         }
 
-        if(f_data.f_type != ',')
+        if(f_node->get_type() == Node::NODE_COMMA)
         {
             return;
         }
-        GetToken();
+        get_token();
     }
 }
 

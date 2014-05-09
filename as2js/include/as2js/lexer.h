@@ -52,7 +52,6 @@ public:
     void                        set_options(Options::pointer_t& options);
     void                        set_input(Input::pointer_t& input);
     Input::pointer_t            get_input() const;
-    void                        set_for_in(bool const for_in);
 
     Node::pointer_t             get_new_node(Node::node_t type);
     Node::pointer_t             get_next_token();
@@ -89,7 +88,6 @@ private:
     Input::pointer_t            f_input;
     Position                    f_position;     // position just before reading a token
     Options::pointer_t          f_options;
-    controlled_vars::fbool_t    f_for_in;       // IN becomes FOR_IN when this is true
 
     Node::node_t                f_result_type;
     String                      f_result_string;

@@ -49,16 +49,16 @@ add_library(as2js SHARED
     package.cpp
     position.cpp
     pragma.cpp
+    program.cpp
+    statement.cpp
     stream.cpp
     string.cpp
     parser.cpp
+    variable.cpp
 
     compile.cpp
     compiler.cpp
     optimizer.cpp
-    program.cpp
-    statement.cpp
-    variable.cpp
 )
 set_target_properties( as2js PROPERTIES
         VERSION ${AS2JS_VERSION_MAJOR}.${AS2JS_VERSION_MINOR}

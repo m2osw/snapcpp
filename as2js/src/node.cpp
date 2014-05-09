@@ -638,6 +638,7 @@ void Node::set_int64(Int64 value)
     switch(f_type)
     {
     case NODE_INT64:
+    case NODE_SWITCH: // comparison operator
         break;
 
     default:
@@ -671,7 +672,9 @@ void Node::set_string(String const& value)
     // only the corresponding node type accepts a set() call
     switch(f_type)
     {
+    case NODE_BREAK: // name of label
     case NODE_CLASS: // name of class
+    case NODE_CONTINUE: // name of label
     case NODE_IMPORT: // name of package
     case NODE_NAMESPACE: // name of namespace
     case NODE_PACKAGE: // name of package
