@@ -69,9 +69,6 @@ char const *get_name(name_t name)
     case SNAP_NAME_CONTENT_ATTACHMENT:
         return "content::attachment";
 
-    case SNAP_NAME_CONTENT_ATTACHMENT_REFERENCE:
-        return "content::attachment::reference";
-
     case SNAP_NAME_CONTENT_ATTACHMENT_FILENAME:
         return "content::attachment::filename";
 
@@ -80,6 +77,12 @@ char const *get_name(name_t name)
 
     case SNAP_NAME_CONTENT_ATTACHMENT_PATH_END:
         return "path";
+
+    case SNAP_NAME_CONTENT_ATTACHMENT_PLUGIN: // this is a forward definition...
+        return "attachment";
+
+    case SNAP_NAME_CONTENT_ATTACHMENT_REFERENCE:
+        return "content::attachment::reference";
 
     case SNAP_NAME_CONTENT_BODY:
         return "content::body";
@@ -123,8 +126,8 @@ char const *get_name(name_t name)
     case SNAP_NAME_CONTENT_FILES_DATA:
         return "content::files::data";
 
-    case SNAP_NAME_CONTENT_FILES_DATA_COMPRESSED:
-        return "content::files::data::compressed";
+    case SNAP_NAME_CONTENT_FILES_DATA_GZIP_COMPRESSED:
+        return "content::files::data::gzip_compressed";
 
     case SNAP_NAME_CONTENT_FILES_DEPENDENCY:
         return "content::files::dependency";
@@ -165,8 +168,8 @@ char const *get_name(name_t name)
     case SNAP_NAME_CONTENT_FILES_SIZE:
         return "content::files::size";
 
-    case SNAP_NAME_CONTENT_FILES_SIZE_COMPRESSED:
-        return "content::files::size::compressed";
+    case SNAP_NAME_CONTENT_FILES_SIZE_GZIP_COMPRESSED:
+        return "content::files::size::gzip_compressed";
 
     case SNAP_NAME_CONTENT_FILES_TABLE:
         return "files";
@@ -189,7 +192,7 @@ char const *get_name(name_t name)
     case SNAP_NAME_CONTENT_MODIFIED:
         return "content::modified";
 
-    case SNAP_NAME_CONTENT_OUTPUT: // this is the name of the "output" plugin...
+    case SNAP_NAME_CONTENT_OUTPUT_PLUGIN: // this a forward declaration of the name of the "output" plugin...
         return "output";
 
     case SNAP_NAME_CONTENT_OWNER:
@@ -3012,7 +3015,8 @@ QString content::get_revision_base_key(QString const& owner)
 
     QString base_key(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL));
     if(owner != get_name(SNAP_NAME_CONTENT_OWNER)
-    && owner != get_name(SNAP_NAME_CONTENT_OUTPUT))
+    && owner != get_name(SNAP_NAME_CONTENT_OUTPUT_PLUGIN)
+    && owner != get_name(SNAP_NAME_CONTENT_ATTACHMENT_PLUGIN))
     {
         base_key += "::";
         base_key += owner;
@@ -5405,7 +5409,7 @@ void content::add_xml_document(QDomDocument& dom, const QString& plugin_name)
                 if(ca.f_owner.isEmpty())
                 {
                     // the output plugin is the default owner
-                    ca.f_owner = get_name(SNAP_NAME_CONTENT_OUTPUT);
+                    ca.f_owner = get_name(SNAP_NAME_CONTENT_ATTACHMENT_PLUGIN);
                 }
                 ca.f_field_name = element.attribute("name");
                 if(ca.f_field_name.isEmpty())
@@ -6301,12 +6305,23 @@ bool content::process_attachment_impl(QByteArray const& file_key, attachment_fil
 {
     QtCassandra::QCassandraTable::pointer_t files_table(get_files_table());
     QtCassandra::QCassandraRow::pointer_t file_row(files_table->row(file_key));
-    if(!file_row->exists(get_name(SNAP_NAME_CONTENT_FILES_DATA_COMPRESSED)))
+    if(!file_row->exists(get_name(SNAP_NAME_CONTENT_FILES_SIZE_GZIP_COMPRESSED)))
     {
         QString compressor_name("gzip");
         QByteArray compressed_file(compression::compress(compressor_name, file.get_file().get_data(), 100, false));
-        file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_DATA_COMPRESSED))->setValue(compressed_file);
-        file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_SIZE_COMPRESSED))->setValue(compressed_file.size());
+        if(compressor_name == "gzip")
+        {
+            // compression succeeded
+            file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_DATA_GZIP_COMPRESSED))->setValue(compressed_file);
+            uint64_t compressed_size(compressed_file.size());
+            file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_SIZE_GZIP_COMPRESSED))->setValue(compressed_size);
+        }
+        else
+        {
+            // no better when compressed, mark such with a size of zero
+            uint64_t empty_size(0);
+            file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_SIZE_GZIP_COMPRESSED))->setValue(empty_size);
+        }
     }
 
     return true;

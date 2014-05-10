@@ -82,7 +82,10 @@ public:
 private:
     void                content_update(int64_t variables_timestamp);
 
-    zpsnap_child_t      f_snap;
+    typedef std::map<QString, bool> compression_extensions_map_t;
+
+    zpsnap_child_t                  f_snap;
+    compression_extensions_map_t    f_compression_extensions;
 };
 
 

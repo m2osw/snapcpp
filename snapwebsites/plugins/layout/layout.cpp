@@ -1340,7 +1340,7 @@ int64_t layout::install_layout(QString const& layout_name, int64_t const last_up
     //      and it should probably not be initialized with a plugin
     //      that we don't know anything about...
     //content_plugin->add_xml_document(dom, p == nullptr ? content::get_name(content::SNAP_NAME_CONTENT_OUTPUT) : p->get_plugin_name());
-    content_plugin->add_xml_document(dom, content::get_name(content::SNAP_NAME_CONTENT_OUTPUT));
+    content_plugin->add_xml_document(dom, content::get_name(content::SNAP_NAME_CONTENT_OUTPUT_PLUGIN));
     f_snap->finish_update();
 
     // after an update of the content.xml file we expect the layout::boxes

@@ -90,7 +90,7 @@ SNAP_PLUGIN_START(path, 1, 0)
 void dynamic_plugin_t::set_plugin(plugins::plugin *p)
 {
 //std::cerr << "handle_dynamic_path(" << p->get_plugin_name() << ")\n";
-    if(f_plugin != NULL)
+    if(f_plugin != nullptr)
     {
         // two different plugins are fighting for the same path
         // we'll have to enhance our error to give the user a way to choose
@@ -107,6 +107,54 @@ void dynamic_plugin_t::set_plugin(plugins::plugin *p)
 }
 
 
+/** \brief Tell the system that a fallback exists for this path.
+ *
+ * Some plugins may understand a path even if not an exact match as
+ * otherwise expected by the system.
+ *
+ * For example, the attachment plugin understands all of the following
+ * even though the only file that really exists in the database is
+ * "jquery.js":
+ *
+ * \li jquery.js.gz
+ * \li jquery.min.js
+ * \li jquery.min.js.gz
+ * \li jquery-1.2.3.js
+ * \li jquery-1.2.3.js.gz
+ * \li jquery-1.2.3.min.js
+ * \li jquery-1.2.3.min.js.gz
+ *
+ * File types of filenames that we support in the core:
+ *
+ * \li Compressions: .gz, .bz2, .xz, ...
+ * \li Minified: .min.js, .min.css
+ * \li Resized: -32x32.png, -64x64.jpg, ...
+ * \li Cropped: -32x32+64+64.png
+ * \li Black and White: -bw.png, -bw.jpg, ...
+ * \li Converted: file is .pdf, user gets a .png ...
+ * \li Book: .pdf on the root page of a book tree
+ *
+ * \param[in] plugin  The plugin that understands the path.
+ */
+void dynamic_plugin_t::set_plugin_if_renamed(plugins::plugin *p, QString const& cpath)
+{
+    if(f_plugin_if_renamed)
+    {
+        // in this case we really cannot handle the path properly...
+        // I'm not too sure how we can resolve the problem because we
+        // cannot be sure in which order the plugins will be executing
+        // the tests...
+        content::content::instance()->get_snap()->die(snap_child::HTTP_CODE_MULTIPLE_CHOICE,
+                    "Multiple Choices",
+                    "This page references multiple plugins if the path is renamed and the server does not currently have means of choosing one over the other.",
+                    QString("User tried to access dynamic page, but more than one plugin says it can handle it: primary \"%2\", second request \"%3\".")
+                            .arg(f_plugin_if_renamed->get_plugin_name()).arg(p->get_plugin_name()));
+        NOTREACHED();
+    }
+
+    f_plugin_if_renamed = p;
+    f_cpath_renamed = cpath;
+}
 
 
 /** \brief Initialize the path plugin.
@@ -114,7 +162,7 @@ void dynamic_plugin_t::set_plugin(plugins::plugin *p)
  * This function initializes the path plugin.
  */
 path::path()
-    //: f_snap(NULL) -- auto-init
+    //: f_snap(nullptr) -- auto-init
 {
 }
 
@@ -206,7 +254,7 @@ plugins::plugin *path::get_plugin(content::path_info_t& ipath, permission_error_
                                 .arg(ipath.get_key())
                                 .arg(static_cast<int>(value.nullValue()))
                                 .arg(static_cast<int>(owner.isEmpty())));
-            return NULL;
+            return nullptr;
         }
         // TODO: this is not correct anymore! (we're getting the creation date, not last mod.)
         f_last_modified = value.int64Value();
@@ -214,7 +262,7 @@ plugins::plugin *path::get_plugin(content::path_info_t& ipath, permission_error_
         // get the primary owner (plugin name) and retrieve the plugin pointer
 //std::cerr << "Execute [" << ipath.get_key() << "] with plugin [" << owner << "]\n";
         owner_plugin = plugins::get_plugin(owner);
-        if(owner_plugin == NULL)
+        if(owner_plugin == nullptr)
         {
             // if the plugin cannot be found then either it was mispelled
             // or the plugin is not currently installed...
@@ -234,9 +282,20 @@ plugins::plugin *path::get_plugin(content::path_info_t& ipath, permission_error_
         dynamic_plugin_t dp;
         can_handle_dynamic_path(ipath, dp);
         owner_plugin = dp.get_plugin();
+
+        if(owner_plugin == nullptr)
+        {
+            // a plugin (such as the attachment or search plugins) may
+            // take care of this path
+            owner_plugin = dp.get_plugin_if_renamed();
+            if(owner_plugin != nullptr)
+            {
+                ipath.set_parameter("renamed_path", dp.get_renamed_path());
+            }
+        }
     }
 
-    if(owner_plugin != NULL)
+    if(owner_plugin != nullptr)
     {
         // got a valid plugin, verify that the user has permission
         verify_permissions(ipath, err_callback);
@@ -442,6 +501,8 @@ SNAP_LOG_TRACE() << "path::on_execute(\"" << uri_path << "\") -> [" << ipath.get
     f_last_modified = 0;
     plugins::plugin *path_plugin(get_plugin(ipath, main_page_error_callback));
 
+    preprocess_path(ipath, path_plugin);
+
     // save the main page action found in the URI so that way any plugin
     // can access that information at any point, not just the
     // verify_rights() function
@@ -460,9 +521,9 @@ SNAP_LOG_TRACE() << "path::on_execute(\"" << uri_path << "\") -> [" << ipath.get
     }
 
     // if a plugin pointer was defined we expect that the dynamic_cast<> will
-    // always work, however path_plugin may be NULL
+    // always work, however path_plugin may be nullptr
     path_execute *pe(dynamic_cast<path_execute *>(path_plugin));
-    if(pe == NULL)
+    if(pe == nullptr)
     {
         // not found, give a chance to some plugins to do something with the
         // current data (i.e. auto-search, internally redirect to a nice
@@ -471,7 +532,7 @@ SNAP_LOG_TRACE() << "path::on_execute(\"" << uri_path << "\") -> [" << ipath.get
         if(f_snap->empty_output())
         {
             // no page_not_found() plugin support...
-            if(path_plugin != NULL)
+            if(path_plugin != nullptr)
             {
                 // if the page exists then
                 QString const owner(path_plugin->get_plugin_name());
@@ -532,6 +593,26 @@ SNAP_LOG_TRACE() << "path::on_execute(\"" << uri_path << "\") -> [" << ipath.get
 bool path::check_for_redirect_impl(content::path_info_t& ipath)
 {
     static_cast<void>(ipath);
+
+    return true;
+}
+
+
+/** \brief Allow other modules to do some pre-processing.
+ *
+ * This signal is sent just before we run the actual execute() function
+ * of the plugins. This can be useful to make some early changes to
+ * the database so the page being displayed uses the correct data.
+ *
+ * \param[in,out] ipath  The path of the page being processed.
+ * \param[in] owner_plugin  The plugin that owns this page (may be nullptr).
+ *
+ * \return true so other plugins have a chance to receive this signal.
+ */
+bool path::preprocess_path_impl(content::path_info_t& ipath, plugins::plugin *owner_plugin)
+{
+    static_cast<void>(ipath);
+    static_cast<void>(owner_plugin);
 
     return true;
 }

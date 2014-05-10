@@ -18,6 +18,7 @@
 #include "editor.h"
 
 #include "../output/output.h"
+#include "../attachment/attachment.h"
 #include "../messages/messages.h"
 #include "../permissions/permissions.h"
 #include "../sessions/sessions.h"
@@ -173,7 +174,7 @@ int64_t editor::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2014, 4, 25, 16, 30, 40, content_update);
+    SNAP_PLUGIN_UPDATE(2014, 5, 9, 11, 13, 40, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -2364,14 +2365,14 @@ bool editor::save_inline_image(content::path_info_t& ipath, QDomElement img, QSt
     postfile.set_image_height(image.get_buffer(0)->get_height());
     ++g_index;
     postfile.set_index(g_index);
-    content::attachment_file attachment(f_snap, postfile);
-    attachment.set_multiple(false);
-    attachment.set_cpath(ipath.get_cpath());
-    attachment.set_field_name("image");
-    attachment.set_attachment_owner(output::output::instance()->get_plugin_name());
-    attachment.set_attachment_type("attachment/public");
+    content::attachment_file the_attachment(f_snap, postfile);
+    the_attachment.set_multiple(false);
+    the_attachment.set_cpath(ipath.get_cpath());
+    the_attachment.set_field_name("image");
+    the_attachment.set_attachment_owner(attachment::attachment::instance()->get_plugin_name());
+    the_attachment.set_attachment_type("attachment/public");
     // TODO: define the locale in some ways... for now we use "neutral"
-    content::content::instance()->create_attachment(attachment, ipath.get_branch(), "");
+    content::content::instance()->create_attachment(the_attachment, ipath.get_branch(), "");
 
     // replace the inline image data block with a local (albeit full) URI
     // TBD: the probably won't work if the website definition uses a path

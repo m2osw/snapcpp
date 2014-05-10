@@ -1,6 +1,6 @@
 /** @preserve
  * Name: popup
- * Version: 0.1.0.6
+ * Version: 0.1.0.7
  * Browsers: all
  * Copyright: Copyright 2014 (c) Made to Order Software Corporation  All rights reverved.
  * Depends: output (0.0.5)
@@ -116,7 +116,7 @@ snapwebsites.Popup.prototype.darkenPage = function(show)
     this.darkenPagePopup_.css("z-index", 1);
     this.darkenPagePopup_.css("z-index", jQuery("body").children().maxZIndex() + 1);
 
-    if(show > 0)
+    if(show >= 0)
     {
         this.darkenPagePopup_.fadeIn(show);
     }

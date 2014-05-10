@@ -169,29 +169,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <![CDATA[<p>These pages are created by the system on startup. This is the default type of all the pages of content generated from content.xml files when they do not otherwise specify a page type.</p>]]>
     </param>
   </content>
-  <content path="/types/taxonomy/system/content-types/attachment">
-    <param name="content::title" revision="revision">Attachment Type</param>
-    <param name="content::body" revision="revision">
-      <![CDATA[<p>This type represents an attachment. You may have public or private attachments.</p>]]>
-    </param>
-    <link name="permissions::view" to="permissions::view" mode="*:*">/types/permissions/rights/view</link>
-  </content>
-  <content path="/types/taxonomy/system/content-types/attachment/public">
-    <param name="content::title" revision="revision">Public Attachment Type</param>
-    <param name="content::body" revision="revision">
-      <![CDATA[<p>Public attachment can be downloaded by your users.</p>]]>
-    </param>
-    <link name="permissions::view" to="permissions::view" mode="*:*">/types/permissions/rights/view/attachment/public</link>
-    <link name="permissions::administer" to="permissions::administer" mode="*:*">/types/permissions/rights/administer</link>
-  </content>
-  <content path="/types/taxonomy/system/content-types/attachment/private">
-    <param name="content::title" revision="revision">Private Attachment Type</param>
-    <param name="content::body" revision="revision">
-      <![CDATA[<p>Private attachment can be downloaded by logged in users.</p>]]>
-    </param>
-    <link name="permissions::view" to="permissions::view" mode="*:*">/types/permissions/rights/view/attachment/private</link>
-    <link name="permissions::administer" to="permissions::administer" mode="*:*">/types/permissions/rights/administer</link>
-  </content>
   <content path="/types/permissions/rights/view/page">
     <param name="content::title" revision="revision">View Page Right</param>
     <param name="content::body" revision="revision">
@@ -222,28 +199,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <![CDATA[<p>View system pages.</p><p>This right is used to mark public pages that are managed by the system.</p>]]>
     </param>
   </content>
-  <content path="/types/permissions/rights/view/attachment">
-    <param name="content::title" revision="revision">View Page Right</param>
-    <param name="content::body" revision="revision">
-      <![CDATA[<p>View an attachment.</p><p>This right is used to mark attachments.</p>]]>
-    </param>
-  </content>
-  <content path="/types/permissions/rights/view/attachment/public">
-    <param name="content::title" revision="revision">Public Attachment Right</param>
-    <param name="content::body" revision="revision">
-      <![CDATA[<p>Right given to public attachments so visitors can see them.</p>]]>
-    </param>
-  </content>
-  <content path="/types/permissions/rights/view/attachment/private">
-    <param name="content::title" revision="revision">Private Attachment Right</param>
-    <param name="content::body" revision="revision">
-      <![CDATA[<p>Right given to private attachments so registered users can see them.</p>]]>
-    </param>
-  </content>
   <content path="/types/permissions/rights/view/page/public">
     <param name="content::title" revision="revision">Public Page Right</param>
     <param name="content::body" revision="revision">
-      <![CDATA[<p>Right given to public attachments so anonymous visitors can see them.</p>]]>
+      <![CDATA[<p>Right given to public pages so anonymous visitors can see them.</p>]]>
     </param>
   </content>
   <content path="/types/permissions/rights/edit/page">
@@ -289,7 +248,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <![CDATA[<p>System or Global CSS such as the popup script CSS support.</p>]]>
     </param>
     <link name="permissions::administer" to="permissions::administer" mode="*:*">/types/permissions/rights/administer/info</link>
-    <attachment name="output-style" type="attachment/public" owner="output">
+    <attachment name="output-style" type="attachment/public">
       <path>qrc:/css/output/output.css</path>
       <mime-type>text/css</mime-type>
     </attachment>

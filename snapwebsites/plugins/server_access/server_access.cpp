@@ -182,7 +182,7 @@ void server_access::on_output_result(QString const& uri_path, QByteArray& result
 
     // if we arrive here, we suppose that the AJAX answer is a failure
     create_ajax_result(ipath, false);
-    ajax_append_data(result);
+    ajax_append_data("default-response", result);
     ajax_output();
     result = f_snap->get_output();
 }
@@ -415,9 +415,13 @@ void server_access::ajax_redirect(QString const& uri, QString const& target)
  * Otherwise it would not fit in the XML document by itself and encoded
  * (uuencode, base64, etc.) data is not terribly useful for the client.
  *
+ * Multiple data blocks can be added with each AJAX request. Different
+ * blocks can be recognized using the name parameter.
+ *
+ * \param[in] name  Give a name to that data block.
  * \param[in] data  Data that was expected to be sent to the client as is.
  */
-void server_access::ajax_append_data(QByteArray& data)
+void server_access::ajax_append_data(QString const& name, QByteArray const& data)
 {
     if(!f_ajax_initialized)
     {
@@ -429,6 +433,7 @@ void server_access::ajax_append_data(QByteArray& data)
     {
         QDomElement snap_tag(f_ajax.documentElement());
         QDomElement data_tag(f_ajax.createElement("data"));
+        data_tag.setAttribute("name", name);
         snap_tag.appendChild(data_tag);
         // send it escaped... whatever it is
         QDomText data_text(f_ajax.createTextNode(data.data()));

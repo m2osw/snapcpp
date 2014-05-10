@@ -1,8 +1,8 @@
-/* compiler.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2011 */
+/* compiler.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
 
 /*
 
-Copyright (c) 2005-2011 Made to Order Software Corp.
+Copyright (c) 2005-2014 Made to Order Software Corp.
 
 Permission is hereby granted, free of charge, to any
 person obtaining a copy of this software and

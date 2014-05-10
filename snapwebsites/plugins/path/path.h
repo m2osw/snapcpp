@@ -35,11 +35,16 @@ class dynamic_plugin_t
 public:
                         dynamic_plugin_t()
                             : f_plugin(nullptr)
+                            , f_plugin_if_renamed(nullptr)
                         {
                         }
 
     plugins::plugin *   get_plugin() const { return f_plugin; }
-    void                set_plugin(plugins::plugin *plugin);
+    void                set_plugin(plugins::plugin *p);
+
+    plugins::plugin *   get_plugin_if_renamed() const { return f_plugin_if_renamed; }
+    void                set_plugin_if_renamed(plugins::plugin *p, QString const& cpath);
+    QString             get_renamed_path() const { return f_cpath_renamed; }
 
 private:
                         // prevent copies or a user could reset the pointer!
@@ -47,6 +52,8 @@ private:
                         dynamic_plugin_t& operator = (dynamic_plugin_t const& rhs);
 
     plugins::plugin *   f_plugin;
+    plugins::plugin *   f_plugin_if_renamed;
+    QString             f_cpath_renamed;
 };
 
 
@@ -79,6 +86,7 @@ public:
     SNAP_SIGNAL(validate_action, (content::path_info_t& ipath, QString const& action, permission_error_callback& err_callback), (ipath, action, err_callback));
     SNAP_SIGNAL(access_allowed, (QString const& user_path, content::path_info_t& ipath, QString const& action, QString const& login_status, content::permission_flag& result), (user_path, ipath, action, login_status, result));
     SNAP_SIGNAL(check_for_redirect, (content::path_info_t& ipath), (ipath));
+    SNAP_SIGNAL(preprocess_path, (content::path_info_t& ipath, plugins::plugin *owner_plugin), (ipath, owner_plugin));
 
     void                            handle_dynamic_path(plugins::plugin *p);
 

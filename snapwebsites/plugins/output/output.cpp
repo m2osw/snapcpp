@@ -142,7 +142,7 @@ int64_t output::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2014, 5, 2, 12, 52, 30, content_update);
+    SNAP_PLUGIN_UPDATE(2014, 5, 8, 12, 15, 30, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -180,67 +180,6 @@ void output::content_update(int64_t variables_timestamp)
  */
 bool output::on_path_execute(content::path_info_t& ipath)
 {
-    // TODO: we probably do not want to check for attachments to send if the
-    //       action is not "view"...
-
-    // on entry ipath is defined with the "output" as the owner
-    // we want to test the same with "attachment" as the owner
-    content::path_info_t attachment_ipath;
-    attachment_ipath.set_path(ipath.get_cpath());
-    //attachment_ipath.set_owner(content::get_name(content::SNAP_NAME_CONTENT_ATTACHMENT_OWNER));
-    QtCassandra::QCassandraTable::pointer_t data_table(content::content::instance()->get_data_table());
-    if(data_table->exists(ipath.get_revision_key())
-    && data_table->row(ipath.get_revision_key())->exists(content::get_name(content::SNAP_NAME_CONTENT_ATTACHMENT)))
-    {
-        QtCassandra::QCassandraValue attachment_key(data_table->row(ipath.get_revision_key())->cell(content::get_name(content::SNAP_NAME_CONTENT_ATTACHMENT))->value());
-        if(!attachment_key.nullValue())
-        {
-            QtCassandra::QCassandraTable::pointer_t files_table(content::content::instance()->get_files_table());
-            if(!files_table->exists(attachment_key.binaryValue())
-            || !files_table->row(attachment_key.binaryValue())->exists(content::get_name(content::SNAP_NAME_CONTENT_FILES_DATA)))
-            {
-                // somehow the file data is not available
-                f_snap->die(snap_child::HTTP_CODE_NOT_FOUND, "Attachment Not Found",
-                        QString("The attachment \"%1\" was not found.").arg(ipath.get_key()),
-                        QString("Could not find field \"%1\" of file \"%2\".")
-                                .arg(content::get_name(content::SNAP_NAME_CONTENT_FILES_DATA))
-                                .arg(QString::fromAscii(attachment_key.binaryValue().toHex())));
-                NOTREACHED();
-            }
-
-            QtCassandra::QCassandraRow::pointer_t file_row(files_table->row(attachment_key.binaryValue()));
-
-            //int pos(cpath.lastIndexOf('/'));
-            //QString basename(cpath.mid(pos + 1));
-            //f_snap->set_header("Content-Disposition", "attachment; filename=" + basename);
-
-            //f_snap->set_header("Content-Transfer-Encoding", "binary");
-
-            // this is an attachment, output it as such
-            QtCassandra::QCassandraValue attachment_mime_type(file_row->cell(content::get_name(content::SNAP_NAME_CONTENT_FILES_MIME_TYPE))->value());
-            QString content_type(attachment_mime_type.stringValue());
-            // TBD -- we probably should check what's defined inside those
-            //        files before assuming it's using UTF-8.
-            if(content_type == "text/javascript")
-            {
-                content_type += "; charset=utf-8";
-            }
-            else if(content_type == "text/css")
-            {
-                content_type += "; charset=utf-8";
-            }
-            else if(content_type == "text/xml")
-            {
-                content_type += "; charset=utf-8";
-            }
-            f_snap->set_header("Content-Type", content_type);
-
-            QtCassandra::QCassandraValue data(file_row->cell(content::get_name(content::SNAP_NAME_CONTENT_FILES_DATA))->value());
-            f_snap->output(data.binaryValue());
-            return true;
-        }
-    }
-
     f_snap->output(layout::layout::instance()->apply_layout(ipath, this));
 
     return true;
@@ -565,6 +504,12 @@ QString output::phone_to_uri(QString const phone)
 
     // remove any character that does not represent a phone number
     number.replace(QRegExp("[^0-9a-z]+"), "");
+
+    // if the number is empty, make sure to return empty and not "tel:"
+    if(number.isEmpty())
+    {
+        return QString();
+    }
 
     return QString("tel:%1").arg(number);
 }

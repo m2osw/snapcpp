@@ -90,6 +90,7 @@ namespace
 // list of plugins that we cannot do without
 char const *g_minimum_plugins[] =
 {
+    "attachment",
     "content",
     "editor",
     "filter",

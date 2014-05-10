@@ -157,35 +157,6 @@ private:
 };
 
 
-class NodeLock
-{
-public:
-                NodeLock(NodePtr& node)
-                {
-                    f_node = node;
-                    if(f_node.HasNode()) {
-                        f_node.Lock();
-                    }
-                }
-                ~NodeLock()
-                {
-                    if(f_node.HasNode()) {
-                        f_node.Unlock();
-                    }
-                }
-
-    // premature unlocking
-    void            Unlock(void)
-                {
-                    if(f_node.HasNode()) {
-                        f_node.Unlock();
-                        f_node.ClearNode();
-                    }
-                }
-
-private:
-    NodePtr            f_node;
-};
 
 
 
@@ -251,40 +222,6 @@ private:
 
 
 
-
-// Once a program was parsed, you need to compile it. This
-// mainly means resolving the references (i.e. identifiers)
-// which may generate the loading of libraries specified in
-// import instructions (note that some import instructions
-// are automatic for the global and native environments.)
-//
-// The code, after you ran the parser looks like this:
-//
-//    Compiler *compiler = Compiler::CreateCompiler();
-//    // this is the same options as for the parser
-//    compiler->SetOptions(options);
-//    error_count = compiler->Compile(root);
-//
-// The Compile() function returns the number of errors
-// encountered while compiling. The root parameter is
-// what was returned by the Parse() function of the
-// Parser object.
-class Compiler
-{
-public:
-    virtual            ~Compiler() {}
-
-    // NOTE: to be thread safe, this call should be
-    //     protected so only one thread can call it at
-    //     a time (or create a compiler before any thread)
-    static Compiler *    CreateCompiler(InputRetriever *retriever);
-    static const char *    Version(void);
-
-    virtual InputRetriever *SetInputRetriever(InputRetriever *retriever) = 0;
-    virtual void        SetErrorStream(ErrorStream& error_stream) = 0;
-    virtual void        SetOptions(Options& options) = 0;
-    virtual int        Compile(NodePtr& tree) = 0;
-};
 
 
 

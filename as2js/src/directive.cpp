@@ -79,6 +79,9 @@ void Parser::attributes(Node::pointer_t& node)
             node = f_lexer->get_new_node(Node::NODE_ATTRIBUTES);
         }
 
+        // at this point attributes are kept as nodes, the directive()
+        // function saves them as a link in the node, later the compiler
+        // transform them in actual NODE_ATTR_... flags
         node->append_child(f_node);
         get_token();
     }
@@ -134,7 +137,7 @@ void Parser::directive(Node::pointer_t& node)
     Node::pointer_t last_attr;
 
     // depending on the following token, we may want to restore
-    // the last attribute (if it is an identifier)
+    // the last "attribute" (if it is an identifier)
     switch(type)
     {
     case Node::NODE_COLON:
@@ -633,11 +636,11 @@ void Parser::directive(Node::pointer_t& node)
     case Node::NODE_VAR_ATTRIBUTES:
     case Node::NODE_other:    // no node should be of this type
     case Node::NODE_max:        // no node should be of this type
-    {
-        Message msg(MESSAGE_LEVEL_FATAL, AS_ERR_INTERNAL_ERROR, f_lexer->get_input()->get_position());
-        msg << "INTERNAL ERROR: invalid node (" << Node::operator_to_string(type) << ") in directive_list.";
+        {
+            Message msg(MESSAGE_LEVEL_FATAL, AS_ERR_INTERNAL_ERROR, f_lexer->get_input()->get_position());
+            msg << "INTERNAL ERROR: invalid node (" << Node::operator_to_string(type) << ") in directive_list.";
+        }
         throw exception_internal_error("unexpected node type found while parsing directives");
-    }
 
     }
     if(directive_node)

@@ -321,6 +321,14 @@ public:
         // will likely be read-only
         NODE_ATTR_INTRINSIC,
 
+        // function/variable is still defined, but should not be used
+        // (using generates a "foo deprecated" warning)
+        NODE_ATTR_DEPRECATED,
+
+        // TODO: add a way to mark functions/variables as browser specific
+        //       so we can easily tell the user that it should not be used
+        //       or with caution (i.e. #ifdef browser-name ...)
+
         // operator overload (function member)
         // Contructor -> another way to construct this type of objects
         NODE_ATTR_CONSTRUCTOR,
@@ -334,7 +342,7 @@ public:
         // conditional compilation
         NODE_ATTR_TRUE,
         NODE_ATTR_FALSE,
-        NODE_ATTR_UNUSED,                      // if definition is used, error!
+        NODE_ATTR_UNUSED,                   // if definition is used, error!
 
         // class attribute (whether a class can be enlarged at run time)
         NODE_ATTR_DYNAMIC,
@@ -470,6 +478,20 @@ private:
 std::ostream& operator << (std::ostream& out, Node const& node);
 
 
+
+// Stack based locking of nodes
+class NodeLock
+{
+public:
+                NodeLock(NodePtr& node);
+                ~NodeLock();
+
+    // premature unlock
+    void        unlock();
+
+private:
+    Node::pointer_t f_node;
+};
 
 
 }

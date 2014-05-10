@@ -1246,6 +1246,8 @@ void form::auto_save_form(QString const& owner, content::path_info_t& ipath, aut
                 attachment.set_multiple(multiple);
                 attachment.set_cpath(ipath.get_cpath());
                 attachment.set_field_name(id);
+                // TODO: It is likely that this is wrong because it is likely
+                //       something like output when it should be attachment
                 attachment.set_attachment_owner(attachment_owner);
                 attachment.set_attachment_type(attachment_type);
                 // TODO: define the locale in some ways...

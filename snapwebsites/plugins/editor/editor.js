@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.123
+ * Version: 0.0.3.129
  * Browsers: all
  * Depends: output (>= 0.1.4), popup (>= 0.1.0.1)
  * Copyright: Copyright 2013-2014 (c) Made to Order Software Corporation  All rights reverved.
@@ -18,7 +18,7 @@
 // @externs plugins/output/externs/jquery-extensions.js
 // @js plugins/output/output.js
 // @js plugins/output/popup.js
-// @js plugins/output/server-access.js
+// @js plugins/server_access/server-access.js
 // ==/ClosureCompiler==
 //
 
@@ -1627,7 +1627,7 @@ snapwebsites.EditorToolbar.prototype.command = function(idx)
         return false;
     }
 
-console.log("run command "+idx+" "+snapwebsites.EditorToolbar.toolbarButtons_[idx][2]+"!!!");
+//console.log("run command "+idx+" "+snapwebsites.EditorToolbar.toolbarButtons_[idx][2]+"!!!");
 
     // require better selection for a link? (i.e. full link)
     if(snapwebsites.EditorToolbar.toolbarButtons_[idx][2] & 0x20000)
@@ -2734,9 +2734,9 @@ snapwebsites.EditorSaveDialog.prototype.setStatus = function(new_status)
  *      function getToolbarAutoVisible() : boolean;
  *      function setToolbarAutoVisible(toolbar_auto_visible: boolean);
  *      virtual function saveData(mode: string);
- *      virtual function serverAccessSuccess(result);
- *      virtual function serverAccessError(result);
- *      virtual function serverAccessComplete(result);
+ *      virtual function serverAccessSuccess(result: ResultData);
+ *      virtual function serverAccessError(result: ResultData);
+ *      virtual function serverAccessComplete(result: ResultData);
  *      function isSaving() : boolean;
  *      function setSaving(new_status: boolean);
  *      function changed();
@@ -3481,6 +3481,32 @@ snapwebsites.EditorForm.prototype.newTypeRegistered = function()
 };
 
 
+/** \brief This function checks whether the form is to be saved.
+ *
+ * You may mark a form as a "no-save" form. In that case, the main form
+ * \<div\> tag gets a class named "no-save". This function checks for
+ * that class.
+ *
+ * If the class "no-save" is defined on the main form \<div\> tag then
+ * this function returns false, otherwise it returns true.
+ *
+ * This indicates whether the form is expected to be saved. In most cases,
+ * a search form or a locator form would be marked as a "no-save" form
+ * because entering data and click on a button or another should not
+ * generate a save request.
+ *
+ * \note
+ * This function is called on the unload event. If it returns false,
+ * then that form is ignored in the test on whether it was modified.
+ *
+ * @return {boolean} true if the form is to be saved.
+ */
+snapwebsites.EditorForm.prototype.toBeSaved = function()
+{
+    return !this.getFormWidget().hasClass("no-save");
+};
+
+
 /** \brief This function checks whether the form was modified.
  *
  * This function checks whether the form was modified. First it
@@ -3689,7 +3715,7 @@ snapwebsites.Editor.prototype.initUnload_ = function()
     var that = this;
     jQuery(window).bind("beforeunload", function()
         {
-            that.unload_();
+            return that.unload_();
         });
 };
 
@@ -3717,7 +3743,8 @@ snapwebsites.Editor.prototype.unload_ = function()
         {
             if(this.editorForms_.hasOwnProperty(key))
             {
-                if(this.editorForms_[key].wasModified(true))
+                if(this.editorForms_[key].toBeSaved()
+                && this.editorForms_[key].wasModified(true))
                 {
                     // add this flag and timeout to avoid a double
                     // "are you sure?" under Firefox browsers
@@ -3738,7 +3765,7 @@ snapwebsites.Editor.prototype.unload_ = function()
         }
     }
 
-    return null;
+    return;
 };
 
 

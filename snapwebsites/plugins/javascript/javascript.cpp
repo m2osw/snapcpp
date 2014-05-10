@@ -99,9 +99,10 @@ char const *get_name(name_t name)
  */
 javascript::javascript()
     //: f_snap(NULL) -- auto-init
-    //  f_dynamic_plugins() -- auto-init
+    //, f_dynamic_plugins() -- auto-init
 {
 }
+
 
 /** \brief Clean up the javascript plugin.
  *
@@ -110,6 +111,7 @@ javascript::javascript()
 javascript::~javascript()
 {
 }
+
 
 /** \brief Initialize the javascript.
  *
@@ -154,7 +156,7 @@ javascript *javascript::instance()
 QString javascript::description() const
 {
     return "Offer server side JavaScript support for different plugins."
-            " This implementation makes use of the QtScript extension.";
+            " This implementation makes use of the QScript extension.";
 }
 
 
@@ -172,27 +174,14 @@ QString javascript::description() const
  */
 int64_t javascript::do_update(int64_t last_updated)
 {
+    static_cast<void>(last_updated);
+
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, initial_update);
     //SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, content_update); -- content depends on JavaScript so we cannot do a content update here
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
-
-/** \brief First update to run for the javascript plugin.
- *
- * This function is the first update for the javascript plugin. It installs
- * the initial index page.
- *
- * \param[in] variables_timestamp  The timestamp for all the variables added to the database by this update (in micro-seconds).
- */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-void javascript::initial_update(int64_t variables_timestamp)
-{
-}
-#pragma GCC diagnostic pop
 
 
 /** \brief Add plugin p as a dynamic plugin.

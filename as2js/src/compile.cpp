@@ -1,8 +1,8 @@
-/* compile.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2009 */
+/* compile.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
 
 /*
 
-Copyright (c) 2005-2009 Made to Order Software Corp.
+Copyright (c) 2005-2014 Made to Order Software Corp.
 
 Permission is hereby granted, free of charge, to any
 person obtaining a copy of this software and
@@ -4854,6 +4854,13 @@ void IntCompiler::IdentifierToAttrs(NodePtr& node, NodePtr& a, unsigned long& at
                 "DYNAMIC");
             return;
         }
+        if(data.f_str == "deprecated") {
+            SetAttr(node, attrs,
+                NODE_ATTR_DEPRECATED,
+                0,
+                "DEPRECATED");
+            return;
+        }
         break;
 
     case 'e':
@@ -5042,11 +5049,19 @@ void IntCompiler::NodeToAttrs(NodePtr& node, NodePtr& a, unsigned long& attrs)
 }
 
 
-unsigned long IntCompiler::GetAttributes(NodePtr& node)
+bool Compiler::get_attribute(Node::pointer_t& node, Node::flag_attribute_t f)
 {
-    unsigned long attrs = node.GetAttrs();
-    if(attrs != 0) {
-        return attrs;
+    prepare_attributes(node);
+    return node->get_flag(f);
+}
+
+
+void Compiler::prepare_attributes(Node::pointer_t& node)
+{
+    // done here?
+    if(node->get_flag(NODE_ATTR_DEFINED))
+    {
+        return;
     }
 
     Data& data = node.GetData();
@@ -5071,13 +5086,14 @@ unsigned long IntCompiler::GetAttributes(NodePtr& node)
     unsigned long local_attrs = attrs;
 
     if(data.f_type != NODE_PACKAGE
-    && data.f_type != NODE_PROGRAM) {
+    && data.f_type != NODE_PROGRAM)
+    {
         NodePtr& parent = node.GetParent();
         if(parent.HasNode()) {
             // this is recursive
             unsigned long parent_attrs = GetAttributes(parent);
 
-            // child can redefine (ignore parent if defined)
+            // child can redefine (ignore parent if any defined)
             // [TODO: should this be an error if conflicting?]
             if((attrs & (NODE_ATTR_PUBLIC | NODE_ATTR_PRIVATE | NODE_ATTR_PROTECTED)) == 0) {
                 attrs |= parent_attrs & (NODE_ATTR_PUBLIC | NODE_ATTR_PRIVATE | NODE_ATTR_PROTECTED);

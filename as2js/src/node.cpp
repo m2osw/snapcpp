@@ -933,6 +933,9 @@ void Node::verify_flag_attribute(flag_attribute_t f) const
     // function/variable is defined in your system (execution env.)
     case NODE_ATTR_INTRINSIC:
 
+    // function/variable will be removed in future releases, do not use
+    case NODE_ATTR_DEPRECATED:
+
     // operator overload (function member)
     case NODE_ATTR_CONSTRUCTOR:
 
@@ -1692,6 +1695,7 @@ void Node::display(std::ostream& out, int indent, pointer_t const& parent, char 
             display_attribute(NODE_ATTR_VIRTUAL,        "VIRTUAL"       );
             display_attribute(NODE_ATTR_INTERNAL,       "INTERNAL"      );
             display_attribute(NODE_ATTR_INTRINSIC,      "INTRINSIC"     );
+            display_attribute(NODE_ATTR_DEPRECATED,     "DEPRECATED"    );
             display_attribute(NODE_ATTR_CONSTRUCTOR,    "CONSTRUCTOR"   );
             display_attribute(NODE_ATTR_FINAL,          "FINAL"         );
             display_attribute(NODE_ATTR_ENUMERABLE,     "ENUMERABLE"    );
@@ -1749,6 +1753,36 @@ std::ostream& operator << (std::ostream& out, Node const& node)
     return out;
 }
 
+
+
+
+class 
+{
+public:
+NodeLock::NodeLock(Node::pointer_t& node)
+    : f_node(node)
+{
+    if(f_node)
+    {
+        f_node->lock();
+    }
+}
+
+
+NodeLock::~NodeLock()
+{
+    unlock();
+}
+
+
+void NodeLock::unlock()
+{
+    if(f_node)
+    {
+        f_node->unlock();
+        f_node.reset();
+    }
+}
 
 
 }
