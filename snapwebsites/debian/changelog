@@ -1,7 +1,13 @@
 snapwebsites (0.1.51~saucy) UNRELEASED; urgency=high
 
   [ Alexis Wilke ]
-  * 
+  * Moved the attachment support from the output plugin to the attachment
+    plugin.
+  * Added a signal to offer the opportunity to support conversions on
+    attachments.
+  * Added a pre-process signal in the path.
+  * Fixed 3 bugs in the handling of the beforeunload event.
+  * Many cleanups.
 
  -- R. Douglas Barbieri <doug@jedi.dooglio.net>  Sat, 03 May 2014 22:32:04 -0700
 
