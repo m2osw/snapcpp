@@ -21,6 +21,12 @@
 	filter: alpha(opacity=20);
 }
 
+#darkenPage.wait
+{
+	background: black url(/images/snap/wait.gif) no-repeat 5% 95%;
+	opacity: 0.2;
+}
+
 /** default pop-up CSS **/
 iframe
 {

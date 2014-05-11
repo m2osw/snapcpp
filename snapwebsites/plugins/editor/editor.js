@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.129
+ * Version: 0.0.3.132
  * Browsers: all
  * Depends: output (>= 0.1.4), popup (>= 0.1.0.1)
  * Copyright: Copyright 2013-2014 (c) Made to Order Software Corporation  All rights reverved.
@@ -1192,7 +1192,7 @@ snapwebsites.EditorLinkDialog.prototype.open = function()
     }
     this.linkDialogPopup_.css("left", left);
     this.linkDialogPopup_.fadeIn(300,function(){jQuery(focusItem).focus();});
-    snapwebsites.PopupInstance.darkenPage(150);
+    snapwebsites.PopupInstance.darkenPage(150, true);
 };
 
 
@@ -1206,7 +1206,7 @@ snapwebsites.EditorLinkDialog.prototype.close = function()
     var url, links, jtag, text, title, new_window;
 
     snapwebsites.EditorInstance.linkDialogPopup_.fadeOut(150);
-    snapwebsites.PopupInstance.darkenPage(-150);
+    snapwebsites.PopupInstance.darkenPage(-150, false);
 
     this.editorBase_.refocus();
     snapwebsites.EditorSelection.restoreSelection(this.selectionRange_);
@@ -2501,6 +2501,22 @@ snapwebsites.EditorFormBase.prototype.saveData = function(mode) // virtual
  * DOM buttons with just a Save button which pretty much acts like
  * the Publish button.
  *
+ * \code
+ * class SaveEditorDialog
+ * {
+ * public:
+ *      function setPopup(widget: Element|jQuery);
+ *      function open();
+ *      function close();
+ *      function setStatus(new_status: boolean);
+ *
+ * private:
+ *      var editorForm_: EditorFormBase;
+ *      var saveDialogPopup_: jQuery;
+ *      function create_();
+ * };
+ * \endcode
+ *
  * \todo
  * The branch the user decided to edit (i.e. with the query string
  * ...?a=edit&revision=1.2) needs to be taken in account as well.
@@ -2748,19 +2764,19 @@ snapwebsites.EditorSaveDialog.prototype.setStatus = function(new_status)
  *      function titleToURI_(title: string) : string;
  *      function readyWidgets_();
  *
- *      usedTypes_: Object;                 // map of types necessary to open that form
- *      session_: string;                   // session identifier
- *      name_: string;                      // the name of the form
- *      widgets_: jQuery;                   // the widgets of this form
- *      editorWidgets_: Object;             // map of editor objects
- *      widgetInitialized_: boolean;        // whether the form was initialized
- *      saveDialog_: EditorSaveDialog;      // a reference to the save dialog
- *      mode: string;                       // general mode the form is used as
- *      toolbarAutoVisible: boolean;        // whether to show the toolbar automatically
- *      modified_: boolean;                 // one or more fields changed
- *      saveFunctionOnSuccess_: function(); // function called in case the save succeeded
- *      savedData_: Object;                 // a set of object to know whether things changed while saving
- *      serverAccess_: ServerAccess;        // a ServerAccess object to send the AJAX
+ *      var usedTypes_: Object;                 // map of types necessary to open that form
+ *      var session_: string;                   // session identifier
+ *      var name_: string;                      // the name of the form
+ *      var widgets_: jQuery;                   // the widgets of this form
+ *      var editorWidgets_: Object;             // map of editor objects
+ *      var widgetInitialized_: boolean;        // whether the form was initialized
+ *      var saveDialog_: EditorSaveDialog;      // a reference to the save dialog
+ *      var mode: string;                       // general mode the form is used as
+ *      var toolbarAutoVisible: boolean;        // whether to show the toolbar automatically
+ *      var modified_: boolean;                 // one or more fields changed
+ *      var saveFunctionOnSuccess_: function(); // function called in case the save succeeded
+ *      var savedData_: Object;                 // a set of object to know whether things changed while saving
+ *      var serverAccess_: ServerAccess;        // a ServerAccess object to send the AJAX
  * };
  * \endcode
  *
@@ -3308,7 +3324,7 @@ snapwebsites.EditorForm.prototype.setSaving = function(new_status, will_redirect
     //                instead of the body!
     if(!will_redirect)
     {
-        snapwebsites.PopupInstance.darkenPage(new_status ? 150 : -150);
+        snapwebsites.PopupInstance.darkenPage(new_status ? 150 : -150, false);
     }
 };
 
@@ -3419,6 +3435,10 @@ snapwebsites.EditorForm.prototype.readyWidgets_ = function()
  * The function checks whether all the types necessary to initialize
  * the widgets are available. If so, then all the form widgets get
  * initialized.
+ *
+ * \todo
+ * Find a way to detect that a form initialization was never completed
+ * because the system is missing a widget type.
  */
 snapwebsites.EditorForm.prototype.newTypeRegistered = function()
 {
@@ -4496,6 +4516,58 @@ snapwebsites.EditorWidgetType.prototype.droppedAttachment = function(e) // virtu
 
 
 
+/** \brief Editor widget type for Hidden widgets.
+ *
+ * This widget defines hidden elements in the editor forms. This is
+ * an equivalent to the hidden input element of a standard form, although
+ * our hidden widgets can include any type of text.
+ *
+ * @constructor
+ * @extends {snapwebsites.EditorWidgetTypeContentEditable}
+ * @struct
+ */
+snapwebsites.EditorWidgetTypeHidden = function()
+{
+    snapwebsites.EditorWidgetTypeHidden.superClass_.constructor.call(this);
+
+    return this;
+};
+
+
+/** \brief Chain up the extension.
+ *
+ * This is the chain between this class and it's super.
+ */
+snapwebsites.inherits(snapwebsites.EditorWidgetTypeHidden, snapwebsites.EditorWidgetTypeContentEditable);
+
+
+/** \brief Return "hidden".
+ *
+ * Return the name of the hidden type.
+ *
+ * @return {string} The name of the hidden type.
+ * @override
+ */
+snapwebsites.EditorWidgetTypeHidden.prototype.getType = function() // virtual
+{
+    return "hidden";
+};
+
+
+/** \brief Initialize the widget.
+ *
+ * This function initializes the hidden widget.
+ *
+ * @param {!Object} widget  The widget being initialized.
+ * @override
+ */
+snapwebsites.EditorWidgetTypeHidden.prototype.initializeWidget = function(widget) // virtual
+{
+    snapwebsites.EditorWidgetTypeHidden.superClass_.initializeWidget.call(this, widget);
+};
+
+
+
 /** \brief Editor widget type for Text Edit widgets.
  *
  * This widget defines the full text edit in the editor forms. This is
@@ -5017,6 +5089,7 @@ jQuery(document).ready(
     function()
     {
         snapwebsites.EditorInstance = new snapwebsites.Editor();
+        snapwebsites.EditorInstance.registerWidgetType(new snapwebsites.EditorWidgetTypeHidden());
         snapwebsites.EditorInstance.registerWidgetType(new snapwebsites.EditorWidgetTypeTextEdit());
         snapwebsites.EditorInstance.registerWidgetType(new snapwebsites.EditorWidgetTypeLineEdit());
         snapwebsites.EditorInstance.registerWidgetType(new snapwebsites.EditorWidgetTypeDropdown());

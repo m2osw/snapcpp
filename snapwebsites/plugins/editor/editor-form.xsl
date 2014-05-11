@@ -277,6 +277,15 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
               <!-- use the current value when there is one -->
               <xsl:copy-of select="value/node()"/>
             </xsl:when>
+            <xsl:when test="value/@default">
+              <!-- transform the system default if one was defined -->
+              <xsl:choose>
+                <xsl:when test="value/@default = 'today'">
+                  <!-- US format & GMT... this should be a parameter, probably a variable we set in the editor before running the parser? -->
+                  <xsl:value-of select="month-from-date(current-date())"/>/<xsl:value-of select="day-from-date(current-date())"/>/<xsl:value-of select="year-from-date(current-date())"/>
+                </xsl:when>
+              </xsl:choose>
+            </xsl:when>
           </xsl:choose>
         </div>
         <xsl:call-template name="snap:common-parts"/>
@@ -342,16 +351,42 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     </xsl:call-template>
   </xsl:template>
 
-  <!-- HIDDEN (a value such as the editor form session identifier) -->
+  <!-- SILENT (a value such as the editor form session identifier which
+              is not returned to the editor on a Save) -->
+  <!-- WARNING: we use this sub-template because of a Qt but with variables
+                that do not get defined properly without such trickery -->
+  <xsl:template name="snap:silent">
+    <xsl:param name="path"/>
+    <xsl:param name="name"/>
+    <widget path="{$path}">
+      <div field_type="silent">
+        <xsl:attribute name="class"><xsl:value-of select="classes"/> snap-editor-silent <xsl:value-of select="$name"/></xsl:attribute>
+        <div class="snap-content">
+          <xsl:copy-of select="value/node()"/>
+        </div>
+      </div>
+      <xsl:call-template name="snap:common-parts"/>
+    </widget>
+  </xsl:template>
+  <xsl:template match="widget[@type='silent']">
+    <xsl:call-template name="snap:silent">
+      <xsl:with-param name="path" select="@path"/>
+      <xsl:with-param name="name" select="@id"/>
+    </xsl:call-template>
+  </xsl:template>
+
+  <!-- HIDDEN (a value hidden from the user and always returned on Save) -->
   <!-- WARNING: we use this sub-template because of a Qt but with variables
                 that do not get defined properly without such trickery -->
   <xsl:template name="snap:hidden">
     <xsl:param name="path"/>
     <xsl:param name="name"/>
     <widget path="{$path}">
-      <div field_type="hidden" style="display: none;">
-        <xsl:attribute name="class"><xsl:value-of select="classes"/> snap-editor-hidden <xsl:value-of select="$name"/></xsl:attribute>
-        <div class="snap-content">
+      <div field_type="hidden">
+        <xsl:attribute name="field_name"><xsl:value-of select="$name"/></xsl:attribute>
+        <xsl:attribute name="class"><xsl:value-of select="classes"/> snap-editor snap-editor-hidden <xsl:value-of select="$name"/></xsl:attribute>
+        <div class="editor-content">
+          <xsl:attribute name="name"><xsl:value-of select="$name"/></xsl:attribute>
           <xsl:copy-of select="value/node()"/>
         </div>
       </div>

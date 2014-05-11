@@ -186,8 +186,15 @@
 }
 
 
+/** EDITOR SILENT FIELD **/
+.snap-editor-silent
+{
+	display: none;
+}
+
+
 /** EDITOR HIDDEN FIELD **/
-.editor-hidden
+.snap-editor-hidden
 {
 	display: none;
 }

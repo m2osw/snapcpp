@@ -103,8 +103,9 @@ snapwebsites.Popup.prototype.darkenPagePopup_ = null;
  * @param {number} show  If positive, show the darken page using
  *                       fadeIn(show), if negative, hide the darken
  *                       page using fadeOut(-show).
+ * @param {boolean} wait  Whether this is opened to represent a wait.
  */
-snapwebsites.Popup.prototype.darkenPage = function(show)
+snapwebsites.Popup.prototype.darkenPage = function(show, wait)
 {
     if(!this.darkenPagePopup_)
     {
@@ -115,6 +116,7 @@ snapwebsites.Popup.prototype.darkenPage = function(show)
 
     this.darkenPagePopup_.css("z-index", 1);
     this.darkenPagePopup_.css("z-index", jQuery("body").children().maxZIndex() + 1);
+    this.darkenPagePopup_.toggleClass("wait", wait);
 
     if(show >= 0)
     {
@@ -330,7 +332,7 @@ snapwebsites.Popup.prototype.show = function(popup)
             }
             if(popup.darken > 0)
             {
-                this.darkenPage(popup.darken);
+                this.darkenPage(popup.darken, false);
             }
             popup.widget.css("z-index", 1);
             popup.widget.css("z-index", jQuery("body").children().maxZIndex() + 1);
@@ -367,7 +369,7 @@ snapwebsites.Popup.prototype.hide = function(popup)
             }
             if(popup.darken > 0)
             {
-                this.darkenPage(-popup.darken);
+                this.darkenPage(-popup.darken, false);
             }
         }
     }

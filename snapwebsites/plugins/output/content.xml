@@ -234,6 +234,14 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <path>:/images/output/close-button.png</path>
       <mime-type>image/png</mime-type>
     </attachment>
+    <attachment name="progress" type="attachment/public">
+      <path>:/images/output/progress.gif</path>
+      <mime-type>image/gif</mime-type>
+    </attachment>
+    <attachment name="wait" type="attachment/public">
+      <path>:/images/output/wait.gif</path>
+      <mime-type>image/gif</mime-type>
+    </attachment>
   </content>
   <content path="/css">
     <param name="content::title" revision="revision">CSS</param>
