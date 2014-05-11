@@ -309,39 +309,39 @@ void Parser::for_directive(Node::pointer_t& node)
                      && f_node->get_string() == "each");
     if(for_each)
     {
-        get_token();
+        get_token(); // skip the 'each' "keyword"
     }
     if(f_node->get_type() == Node::NODE_OPEN_PARENTHESIS)
     {
         node = f_lexer->get_new_node(Node::NODE_FOR);
 
         bool got_for_in(false);
-        get_token();
+        get_token(); // skip the '('
         if(f_node->get_type() == Node::NODE_CONST
         || f_node->get_type() == Node::NODE_VAR)
         {
             // *** VARIABLE ***
-            Node::pointer_t variables;
             bool const constant(f_node->get_type() == Node::NODE_CONST);
             if(constant)
             {
-                get_token();
+                get_token(); // skip the 'const'
                 if(f_node->get_type() == Node::NODE_VAR)
                 {
                     // allow just 'const' or 'const var'
-                    get_token();
+                    get_token(); // skip the 'var'
                 }
             }
             else
             {
-                get_token();
+                get_token(); // skip the 'var'
             }
+            Node::pointer_t variables;
             variable(variables, constant);
             node->append_child(variables);
         }
         else if(f_node->get_type() == Node::NODE_SEMICOLON)
         {
-            // When we have ';' we've got an empty initializer!
+            // When we have ';' we have got an empty initializer!
             Node::pointer_t empty(f_lexer->get_new_node(Node::NODE_EMPTY));
             node->append_child(empty);
         }

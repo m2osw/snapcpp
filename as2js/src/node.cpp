@@ -140,7 +140,6 @@ type_name_t const g_node_type_name[] =
     NODE_TYPE_NAME(FINALLY),
     NODE_TYPE_NAME(FLOAT64),
     NODE_TYPE_NAME(FOR),
-    NODE_TYPE_NAME(FOR_IN),
     NODE_TYPE_NAME(FUNCTION),
     NODE_TYPE_NAME(GOTO),
     NODE_TYPE_NAME(GREATER_EQUAL),
@@ -292,7 +291,6 @@ operator_to_string_t const g_operator_to_string[] =
 // the following doesn't make it in user redefinable operators yet
     //{ NODE_CONDITIONAL,                   "" },
     //{ NODE_DELETE,                        "" },
-    //{ NODE_FOR_IN,                        "" },
     //{ NODE_IN,                            "" },
     //{ NODE_INSTANCEOF,                    "" },
     //{ NODE_IS,                            "" },
@@ -439,9 +437,20 @@ const char *Node::get_type_name() const
 /**********************************************************************/
 /**********************************************************************/
 
+
+void Node::to_unknown()
+{
+    // whatever the type of node we can always convert it to an unknown
+    // node since that's similar to "deleting" the node
+    f_type = static_cast<int32_t>(NODE_UNKNOWN);
+    // clear the node's data to avoid other problems?
+}
+
+
 bool Node::to_boolean()
 {
-    switch(f_type) {
+    switch(f_type)
+    {
     case NODE_TRUE:
     case NODE_FALSE:
         // already a boolean
@@ -489,6 +498,70 @@ bool Node::to_boolean()
 
     }
 
+    return true;
+}
+
+
+bool Node::to_int64()
+{
+    switch(f_type)
+    {
+    case NODE_INT64:
+        return true;
+
+    case NODE_FLOAT64:
+        f_int.set(f_float.get());
+        break;
+
+    case NODE_TRUE:
+        f_int.set(1);
+        break;
+
+    case NODE_NULL:
+    case NODE_FALSE:
+    case NODE_UNDEFINED:
+        f_int.set(0);
+        break;
+
+    default:
+        // failure (can't convert)
+        return false;
+
+    }
+
+    f_type = static_cast<int32_t>(NODE_INT64);
+    return true;
+}
+
+
+bool Node::to_float64()
+{
+    switch(f_type)
+    {
+    case NODE_INT64:
+        f_float.set(f_int.get());
+        break;
+
+    case NODE_FLOAT64:
+        return true;
+
+    case NODE_TRUE:
+        f_float.set(1.0);
+        break;
+
+    case NODE_NULL:
+    case NODE_FALSE:
+    case NODE_UNDEFINED:
+        f_float.set(0.0);
+        break;
+
+    default:
+        // failure (can't convert)
+        return false;
+
+    }
+
+    f_type = static_cast<int32_t>(NODE_FLOAT64);
     return true;
 }
 
@@ -757,6 +830,28 @@ String const& Node::get_string() const
     }
 
     return f_str;
+}
+
+
+/** \brief Create a new node with the given type.
+ *
+ * This function creates a new node that is expected to be used as a
+ * replacement of this node.
+ *
+ * Note that this node does not get modified by this call.
+ *
+ * \param[in] type  The type of the new node.
+ *
+ * \return A new node pointer.
+ */
+Node::pointer_t Node::create_replacement(node_t type) const
+{
+    Node::pointer_t n(new Node(type));
+
+    // this is why we want to have a function instead of doing new Node().
+    n->f_position = f_position;
+
+    return n;
 }
 
 
@@ -1062,19 +1157,43 @@ Node::node_t Node::string_to_operator(String const& str)
 
 
 
-// TODO: understand what the heck we were trying to do with the ReplaceWith()
-//void Node::replace_with(pointer_t& node)
-//{
-//    modifying();
-//
-//    if(node->f_parent)
-//    {
-//        throw exception_internal_error("replace_with() called with a node that already has a parent");
-//    }
-//
-//    node->f_parent = f_parent;
-//    f_parent.ClearNode();
-//}
+/** \brief Replace this node with the \p node parameter.
+ *
+ * This function replaces this node with the specified node. This is used
+ * a lot in the optimizer and once in the compiler.
+ *
+ * It is useful in a case such as an if() statement that has a resulting
+ * Boolean value which is known at compile time. For example:
+ *
+ * \code
+ *  if(true)
+ *      blah;
+ *  else
+ *      foo;
+ * \endcode
+ *
+ * can be optimized by just this:
+ *
+ * \code
+ *  blah;
+ * \endcode
+ *
+ * In that case what we do is replace the NODE_IF (this) with the content
+ * of the 'blah' node.
+ *
+ * This function is very similar to the set_child() when you do not know
+ * the index position of this node in its parent.
+ *
+ * \warning
+ * This function modifies the tree in a why that may break loops over
+ * node children.
+ *
+ * \param[in] node  The node to replace this node with.
+ */
+void Node::replace_with(pointer_t node)
+{
+    f_parent->set_child(get_offset(), node);
+}
 
 
 /** \brief This function sets the parent of a node.
@@ -1124,6 +1243,8 @@ void Node::set_parent(pointer_t parent, int index)
 
     if(f_parent)
     {
+        // very similar to the get_offset() call only we want the iterator
+        // in this case, not the index
         pointer_t me(shared_from_this());
         vector_of_pointers_t::iterator it(std::find(f_parent->f_children.begin(), f_parent->f_children.end(), me));
         if(it == f_parent->f_children.end())
@@ -1172,17 +1293,19 @@ void Node::delete_child(int index)
     // remove the node from the parent, but the node itself does not
     // actually get deleted (that part is expected to be automatic
     // because of the shared pointers)
+    //
+    // HOWEVER, the vector changes making the index invalid after that!
     f_children[index]->set_parent();
 }
 
 
-void Node::append_child(pointer_t& child)
+void Node::append_child(pointer_t child)
 {
     child->set_parent(shared_from_this());
 }
 
 
-void Node::insert_child(int index, pointer_t& child)
+void Node::insert_child(int index, pointer_t child)
 {
     modifying();
 
@@ -1190,12 +1313,26 @@ void Node::insert_child(int index, pointer_t& child)
 }
 
 
-void Node::set_child(int index, pointer_t& child)
+/** \brief Replace the current child at position \p index with \p child.
+ *
+ * This function replace the child in this node and at \p index with
+ * the new specified \p child.
+ *
+ * \param[in] index  The position where the new child is to be placed.
+ * \param[in] child  The new child replacing the existing child at \p index.
+ */
+void Node::set_child(int index, pointer_t child)
 {
     modifying();
 
     delete_child(index);
     insert_child(index, child);
+}
+
+
+Node::vector_of_pointers_t const& Node::get_children() const
+{
+    return f_children;
 }
 
 
@@ -1205,19 +1342,95 @@ Node::pointer_t Node::get_child(int index) const
 }
 
 
-void Node::set_offset(int32_t offset)
+Node::pointer_t Node::find_first_child(node_t type) const
 {
-    f_offset = offset;
+    Node::pointer_t child;
+    return find_next_child(child, type);
 }
 
 
+Node::pointer_t Node::find_next_child(pointer_t child, node_t type) const
+{
+    size_t const max(f_children.size());
+    for(size_t idx(0); idx < max; ++idx)
+    {
+        // if child is defined, skip up to it first
+        if(child && child == f_children[idx])
+        {
+            child.reset();
+        }
+        else if(f_children[idx]->get_type() == type)
+        {
+            return f_children[idx];
+        }
+    }
+
+    // not found...
+    return pointer_t();
+}
+
+
+/** \brief Remove all unknown nodes.
+ *
+ * This function goes in the entire tree starting at this node and
+ * remove all the children that are marked as NODE_UNKNOWN.
+ *
+ * This allows many functions to clear out many nodes without
+ * having to have very special handling of their loops while
+ * scanning all the children of a node.
+ *
+ * \note
+ * The nodes themselves do not get deleted by this function. If
+ * it was their last reference then it will be deleted by the
+ * shared pointer code.
+ */
+void Node::clean_tree()
+{
+    size_t idx(f_children.size());
+    while(idx > 0)
+    {
+        --idx;
+        if(f_children[idx]->get_type() == NODE_UNKNOWN)
+        {
+            delete_child(idx);
+        }
+        else
+        {
+            f_children[idx]->clean_tree();  // recursive
+        }
+    }
+}
+
+
+/** \brief Find the offset of this node in its parent array of children.
+ *
+ * This function searches for a node in its parent list of children and
+ * returns the corresponding index so we can apply functions to that
+ * child from the parent.
+ *
+ * \return The offset (index, position) of the child in its parent f_children vector.
+ */
 int32_t Node::get_offset() const
 {
-    return f_offset;
+    if(!f_parent)
+    {
+        // no parent
+        throw exception_no_parent("get_offset() only works against nodes that have a parent.");
+    }
+
+    pointer_t me = const_cast<Node *>(this)->shared_from_this();
+    vector_of_pointers_t::iterator it(std::find(f_parent->f_children.begin(), f_parent->f_children.end(), me));
+    if(it == f_parent->f_children.end())
+    {
+        throw exception_internal_error("get_offset() could not find this node in its parent");
+    }
+
+    // found ourselves in our parent
+    return it - f_parent->f_children.begin();
 }
 
 
-void Node::set_link(link_t index, pointer_t& link)
+void Node::set_link(link_t index, pointer_t link)
 {
     modifying();
 
@@ -1281,17 +1494,17 @@ bool Node::has_side_effects() const
     //
     // Problem II:
     //    some operators may not have been
-    //     compiled yet and they could have
-    //     side effects too; now this is much
-    //     less likely a problem because then
-    //     the programmer is most certainly
-    //     creating a really weird program
-    //     with all sorts of side effects that
-    //     he wants no one else to know about,
-    //     etc. etc. etc.
+    //    compiled yet and they could have
+    //    side effects too; now this is much
+    //    less likely a problem because then
+    //    the programmer is most certainly
+    //    creating a really weird program
+    //    with all sorts of side effects that
+    //    he wants no one else to know about,
+    //    etc. etc. etc.
     //
     // Problem III:
-    //    Note that we don't memorize whether
+    //    Note that we do not memorize whether
     //    a node has side effects because its
     //    children may change and then the side
     //    effects may disappear
@@ -1383,7 +1596,7 @@ void Node::unlock()
 }
 
 
-void Node::add_variable(pointer_t& variable)
+void Node::add_variable(pointer_t variable)
 {
     if(NODE_VARIABLE != variable->f_type)
     {
@@ -1408,7 +1621,7 @@ Node::pointer_t Node::get_variable(int index) const
 }
 
 
-void Node::add_label(pointer_t& label)
+void Node::add_label(pointer_t label)
 {
     if(NODE_LABEL != label->f_type)
     {
@@ -1651,7 +1864,7 @@ void Node::display_data(std::ostream& out) const
 }
 
 
-void Node::display(std::ostream& out, int indent, pointer_t const& parent, char c) const
+void Node::display(std::ostream& out, int indent, pointer_t parent, char c) const
 {
     // this pointer
     out << this << ":" << std::setfill('\0') << std::setw(2) << indent << c << " " << std::setw(indent) << "";
@@ -1756,10 +1969,7 @@ std::ostream& operator << (std::ostream& out, Node const& node)
 
 
 
-class 
-{
-public:
-NodeLock::NodeLock(Node::pointer_t& node)
+NodeLock::NodeLock(Node::pointer_t node)
     : f_node(node)
 {
     if(f_node)

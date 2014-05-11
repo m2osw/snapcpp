@@ -59,7 +59,7 @@ namespace as2js
  * would miss a large percentage of possible optimizations.
  */
 
-int IntCompiler::Compile(NodePtr& root)
+int Compiler::Compile(NodePtr& root)
 {
 #if defined(_DEBUG) || defined(DEBUG)
     fflush(stdout);
@@ -87,7 +87,7 @@ int IntCompiler::Compile(NodePtr& root)
             }
         }
         else {
-            f_error_stream->ErrMsg(AS_ERR_INTERNAL_ERROR, root, "the IntCompiler::Compile() function expected a root or a program node to start with.");
+            f_error_stream->ErrMsg(AS_ERR_INTERNAL_ERROR, root, "the Compiler::Compile() function expected a root or a program node to start with.");
         }
     }
 
@@ -96,81 +96,57 @@ int IntCompiler::Compile(NodePtr& root)
 
 
 
-void IntCompiler::Offsets(NodePtr& node)
-{
-    int max = node.GetChildCount();
-    for(int idx = 0; idx < max; ++idx)
-    {
-        NodePtr child = node.GetChild(idx);
-        if(child.HasNode())
-        {
-#if defined(_DEBUG) || defined(DEBUG)
-            NodePtr& parent = child.GetParent();
-            AS_ASSERT(parent.SameAs(node));
-#endif
-            child.SetOffset(idx);
-            Offsets(child);
-        }
-    }
-}
 
 
 
-
-
-void IntCompiler::Program(NodePtr& program)
+void Compiler::program(Node::pointer_t& program)
 {
     // This is the root. Whenever you search to resolve a reference,
     // don't go past that node! What's in the parent of a program is
     // not part of that program...
     f_program = program;
-    int max = program.GetChildCount();
 
 #if 0
 program.Display(stderr);
 #endif
     // get rid of any declaration marked false
-    for(int idx = 0; idx < max; ++idx) {
-        NodePtr& child = program.GetChild(idx);
-        if(child.HasNode()) {
-            unsigned long attrs = GetAttributes(child);
-            if((attrs & NODE_ATTR_FALSE) != 0) {
-                program.DeleteChild(idx);
-                --idx;
-                --max;
-            }
+    size_t const org_max(program->get_child_size());
+    for(size_t idx(0); idx < max; ++idx)
+    {
+        Node::pointer_t child(program.get_child(idx));
+        if(get_attribute(child, Node::NODE_ATTR_FALSE))
+        {
+            child->to_unknown();
         }
     }
+    program->clean_tree();
 
     NodeLock ln(program);
 
     // look for all the labels in this program (for goto's)
-    for(int idx = 0; idx < max; ++idx) {
-        NodePtr& child = program.GetChild(idx);
-        if(child.HasNode()) {
-            Data& data = child.GetData();
-            if(data.f_type == NODE_DIRECTIVE_LIST) {
-                FindLabels(program, child);
+    for(size_t idx(0); idx < max; ++idx)
+    {
+        Node::pointer_t child(program.GetChild(idx));
+        if(child)
+        {
+            if(child->get_type() == Node::NODE_DIRECTIVE_LIST)
+            {
+                find_labels(program, child);
             }
         }
     }
-
-    // compute all the offsets of all the nodes in their respective
-    // parent (for the ResolveName() to work)
-    Offsets(program);
 
     // a program is composed of directives (usually just one list)
     // which we want to compile
-    for(int idx = 0; idx < max; ++idx) {
-        NodePtr& child = program.GetChild(idx);
-        if(child.HasNode()) {
-            Data& data = child.GetData();
-            if(data.f_type == NODE_DIRECTIVE_LIST) {
-                DirectiveList(child);
-            }
+    for(size_t idx(0); idx < max; ++idx)
+    {
+        Node::pointer_t child(program->get_child(idx));
+        if(child->get_type() == NODE_DIRECTIVE_LIST)
+        {
+            directive_list(child);
         }
     }
-#if 1
+#if 0
 if(f_error_stream->ErrCount() != 0)
 program.Display(stderr);
 #endif
@@ -178,9 +154,9 @@ program.Display(stderr);
 
 
 
-NodePtr IntCompiler::DirectiveList(NodePtr& directive_list)
+NodePtr Compiler::DirectiveList(Node::pointer_t& directive_list)
 {
-    int p = f_scope.GetChildCount();
+    int p(f_scope->get_child_size());
 
     // TODO: should we go through the list a first time
     //     so we get the list of namespaces for these
@@ -189,14 +165,16 @@ NodePtr IntCompiler::DirectiveList(NodePtr& directive_list)
     //     start or the end of this scope and it works
     //     the same way...
 
-    int max = directive_list.GetChildCount();
+    size_t max(directive_list->get_child_size());
 
     // get rid of any declaration marked false
-    for(int idx = 0; idx < max; ++idx) {
-        NodePtr& child = directive_list.GetChild(idx);
-        if(child.HasNode()) {
-            unsigned long attrs = GetAttributes(child);
-            if((attrs & NODE_ATTR_FALSE) != 0) {
+    for(size_t idx(0); idx < max; ++idx)
+    {
+        Node::pointer_t child(directive_list->get_child(idx));
+        if(child)
+        {
+            if(get_attribute(child, Node::NODE_ATTR_FALSE))
+            {
                 directive_list.DeleteChild(idx);
                 --idx;
                 --max;
@@ -264,7 +242,7 @@ fprintf(stderr, " (%d + 1 of %d)\n", idx, max);
                     break;
 
                 case NODE_FOR:
-                    For(child);
+                    for_directive(child);
                     break;
 
                 case NODE_SWITCH:
@@ -370,17 +348,18 @@ fprintf(stderr, " (%d + 1 of %d)\n", idx, max);
                 case NODE_NEW:
                 case NODE_POST_DECREMENT:
                 case NODE_POST_INCREMENT:
-                    Expression(child);
+                    expression(child);
                     break;
 
                 default:
-                    f_error_stream->ErrMsg(AS_ERR_INTERNAL_ERROR, child, "directive node '%s' not handled yet in IntCompiler::DirectiveList().", data.GetTypeName());
+                    f_error_stream->ErrMsg(AS_ERR_INTERNAL_ERROR, child, "directive node '%s' not handled yet in Compiler::DirectiveList().", data.GetTypeName());
                     break;
 
                 }
 
                 if(end_list.HasNode()
-                && idx + 1 < max) {
+                && idx + 1 < max)
+                {
                     NodePtr& next = directive_list.GetChild(idx + 1);
                     Data& data = next.GetData();
                     if(data.f_type == NODE_CASE
@@ -429,7 +408,7 @@ fprintf(stderr, " (%d + 1 of %d)\n", idx, max);
 
 
 
-void IntCompiler::Var(NodePtr& var)
+void Compiler::var(Node::pointer_t& var)
 {
     // when variables are used, they are initialized
     // here, we initialize them only if they have
@@ -439,22 +418,24 @@ void IntCompiler::Var(NodePtr& var)
     // found as identifier(s) defining another
     // object)
     NodeLock ln(var);
-    int vcnt = var.GetChildCount();
-    for(int v = 0; v < vcnt; ++v) {
-        NodePtr& variable = var.GetChild(v);
-        Variable(variable, true);
+    size_t vcnt(var.get_child_size());
+    for(size_t v(0); v < vcnt; ++v)
+    {
+        Node::pointer_t variable(var->get_child(v));
+        variable(variable, true);
     }
 }
 
 
-void IntCompiler::Variable(NodePtr& variable, bool side_effects_only)
+void Compiler::variable(Node::pointer_t& variable, bool const side_effects_only)
 {
-    int max = variable.GetChildCount();
+    size_t max(variable.get_child_size());
 
     // if we already have a type, we've been parsed
     Data& data = variable.GetData();
     int flags = data.f_int.Get();
-    if((flags & (NODE_VAR_FLAG_DEFINED | NODE_VAR_FLAG_ATTRIBUTES)) != 0) {
+    if((flags & (NODE_VAR_FLAG_DEFINED | NODE_VAR_FLAG_ATTRIBUTES)) != 0)
+    {
 #if 0
  {
 char buf[256];
@@ -494,10 +475,11 @@ fprintf(stderr, "Parsing variable [%s]\n", buf);
  }
 #endif
 
-    GetAttributes(variable);
+    // make sure to get the attributes before the node gets locked
+    get_attribute(variable, Node::NODE_ATTR_DEFINED);
 
     NodeLock ln(variable);
-    int set = 0;
+    int set(0);
 
     for(int idx = 0; idx < max; ++idx) {
         NodePtr& child = variable.GetChild(idx);
@@ -545,7 +527,7 @@ fprintf(stderr, "Parsing variable [%s]\n", buf);
 }
 
 
-void IntCompiler::AddVariable(NodePtr& variable)
+void Compiler::AddVariable(NodePtr& variable)
 {
     // For variables, we want to save a link in the
     // first directive list; this is used to clear
@@ -610,7 +592,7 @@ void IntCompiler::AddVariable(NodePtr& variable)
 
 
 
-void IntCompiler::With(NodePtr& with)
+void Compiler::With(NodePtr& with)
 {
     int max = with.GetChildCount();
     if(max != 2) {
@@ -655,7 +637,7 @@ void IntCompiler::With(NodePtr& with)
 
 
 
-void IntCompiler::Goto(NodePtr& goto_node)
+void Compiler::Goto(NodePtr& goto_node)
 {
     int        idx, count;
     NodePtr        label;
@@ -669,23 +651,25 @@ void IntCompiler::Goto(NodePtr& goto_node)
         ++count;
         parent = parent.GetParent();
         if(!parent.HasNode()) {
-            f_error_stream->ErrMsg(AS_ERR_INTERNAL_ERROR, goto_node, "IntCompiler::Goto(): Out of parent before we find function, program or package parent?!");
+            f_error_stream->ErrMsg(AS_ERR_INTERNAL_ERROR, goto_node, "Compiler::Goto(): Out of parent before we find function, program or package parent?!");
             AS_ASSERT(0);
             return;
         }
 
         Data& parent_data = parent.GetData();
-        switch(parent_data.f_type) {
-        case NODE_CLASS:
-        case NODE_INTERFACE:
+        switch(parent->get_type())
+        {
+        case Node::NODE_CLASS:
+        case Node::NODE_INTERFACE:
             f_error_stream->ErrMsg(AS_ERR_IMPORPER_STATEMENT, goto_node, "cannot have a GOTO instruction in a 'class' or 'interface'.");
             return;
 
-        case NODE_FUNCTION:
-        case NODE_PACKAGE:
-        case NODE_PROGRAM:
+        case Node::NODE_FUNCTION:
+        case Node::NODE_PACKAGE:
+        case Node::NODE_PROGRAM:
             label = parent.FindLabel(data.f_str);
-            if(!label.HasNode()) {
+            if(!label.HasNode())
+            {
                 f_error_stream->ErrStrMsg(AS_ERR_LABEL_NOT_FOUND, goto_node, "label '%S' for goto instruction not found.", &data.f_str);
             }
             break;
@@ -693,10 +677,10 @@ void IntCompiler::Goto(NodePtr& goto_node)
         // We most certainly want to test those with some user
         // options to know whether we should accept or refuse
         // inter-frame gotos
-        //case NODE_WITH:
-        //case NODE_TRY:
-        //case NODE_CATCH:
-        //case NODE_FINALLY:
+        //case Node::NODE_WITH:
+        //case Node::NODE_TRY:
+        //case Node::NODE_CATCH:
+        //case Node::NODE_FINALLY:
 
         default:
             break;
@@ -735,7 +719,7 @@ void IntCompiler::Goto(NodePtr& goto_node)
     for(;;) {
         parent = parent.GetParent();
         if(!parent.HasNode()) {
-            f_error_stream->ErrMsg(AS_ERR_INTERNAL_ERROR, goto_node, "IntCompiler::Goto(): Out of parent before we find the common node?!");
+            f_error_stream->ErrMsg(AS_ERR_INTERNAL_ERROR, goto_node, "Compiler::Goto(): Out of parent before we find the common node?!");
             AS_ASSERT(0);
             return;
         }
@@ -750,32 +734,37 @@ void IntCompiler::Goto(NodePtr& goto_node)
 
 
 
-void IntCompiler::For(NodePtr& for_node)
+void Compiler::for_directive(Node::pointer_t& for_node)
 {
-    int max = for_node.GetChildCount();
-    if(max < 3) {
+    // support for the two forms: for(foo in blah) ... and for(a;b;c) ...
+    // (Note: first case we have 3 children: foo, blah, directives
+    //        second case we have 4 children: a, b, c, directives
+    size_t max(for_node->get_children_size());
+    if(max < 3)
+    {
         return;
     }
     NodeLock ln(for_node);
 
-    for(int idx = 0; idx < max; ++idx) {
-        NodePtr& child = for_node.GetChild(idx);
-        Data& data = child.GetData();
-        switch(data.f_type) {
+    for(size_t idx(0); idx < max; ++idx)
+    {
+        Node::pointer_t child(for_node->get_child(idx));
+        switch(child->get_type())
+        {
         case NODE_EMPTY:
             // do nothing
             break;
 
         case NODE_DIRECTIVE_LIST:
-            DirectiveList(child);
+            directive_list(child);
             break;
 
         case NODE_VAR:
-            Var(child);
+            var(child);
             break;
 
         default:    // expression
-            Expression(child);
+            expression(child);
             break;
 
         }
@@ -783,7 +772,7 @@ void IntCompiler::For(NodePtr& for_node)
 }
 
 
-void IntCompiler::Switch(NodePtr& switch_node)
+void Compiler::Switch(NodePtr& switch_node)
 {
     int max = switch_node.GetChildCount();
     if(max != 2)
@@ -826,7 +815,7 @@ void IntCompiler::Switch(NodePtr& switch_node)
 }
 
 
-void IntCompiler::Case(NodePtr& case_node)
+void Compiler::Case(NodePtr& case_node)
 {
     // make sure it was used inside a switch statement
     // (the parser doesn't enforce it)
@@ -872,7 +861,7 @@ void IntCompiler::Case(NodePtr& case_node)
 }
 
 
-void IntCompiler::Default(NodePtr& default_node)
+void Compiler::Default(NodePtr& default_node)
 {
     // make sure it was used inside a switch statement
     // (the parser doesn't enforce it)
@@ -902,7 +891,7 @@ void IntCompiler::Default(NodePtr& default_node)
 }
 
 
-void IntCompiler::If(NodePtr& if_node)
+void Compiler::If(NodePtr& if_node)
 {
     int max = if_node.GetChildCount();
     if(max < 2) {
@@ -921,7 +910,7 @@ void IntCompiler::If(NodePtr& if_node)
 
 
 
-void IntCompiler::While(NodePtr& while_node)
+void Compiler::While(NodePtr& while_node)
 {
     int max = while_node.GetChildCount();
     if(max != 2) {
@@ -937,7 +926,7 @@ void IntCompiler::While(NodePtr& while_node)
 }
 
 
-void IntCompiler::Do(NodePtr& do_node)
+void Compiler::Do(NodePtr& do_node)
 {
     int max = do_node.GetChildCount();
     if(max != 2) {
@@ -954,7 +943,7 @@ void IntCompiler::Do(NodePtr& do_node)
 }
 
 
-void IntCompiler::BreakContinue(NodePtr& break_node)
+void Compiler::BreakContinue(NodePtr& break_node)
 {
     int        offset;
     NodePtr        to_break, parent, p, previous;
@@ -1028,7 +1017,7 @@ void IntCompiler::BreakContinue(NodePtr& break_node)
 
 
 
-void IntCompiler::Throw(NodePtr& throw_node)
+void Compiler::Throw(NodePtr& throw_node)
 {
     if(throw_node.GetChildCount() != 1) {
         return;
@@ -1038,7 +1027,7 @@ void IntCompiler::Throw(NodePtr& throw_node)
 }
 
 
-void IntCompiler::Try(NodePtr& try_node)
+void Compiler::Try(NodePtr& try_node)
 {
     if(try_node.GetChildCount() != 1) {
         return;
@@ -1066,7 +1055,7 @@ void IntCompiler::Try(NodePtr& try_node)
 }
 
 
-void IntCompiler::Catch(NodePtr& catch_node)
+void Compiler::Catch(NodePtr& catch_node)
 {
     if(catch_node.GetChildCount() != 2) {
         return;
@@ -1108,7 +1097,7 @@ void IntCompiler::Catch(NodePtr& catch_node)
 }
 
 
-void IntCompiler::Finally(NodePtr& finally_node)
+void Compiler::Finally(NodePtr& finally_node)
 {
     if(finally_node.GetChildCount() != 1) {
         return;
@@ -1140,44 +1129,49 @@ void IntCompiler::Finally(NodePtr& finally_node)
 
 
 
-void IntCompiler::Enum(NodePtr& enum_node)
+void Compiler::enum_directive(Node::pointer_t& enum_node)
 {
-    int        idx, max, cnt;
-
     NodeLock ln(enum_node);
-    max = enum_node.GetChildCount();
-    for(idx = 0; idx < max; ++idx) {
-        NodePtr& entry = enum_node.GetChild(idx);
-        if(!entry.HasNode()) {
-            continue;
-        }
-        cnt = entry.GetChildCount();
-        if(cnt != 1) {
+    size_t const max(enum_node->get_children_size());
+    for(size_t idx(0); idx < max; ++idx)
+    {
+        Node::pointer_t entry(enum_node->get_child(idx));
+        if(entry->get_children_size() != 1)
+        {
+            // not valid, skip
             continue;
         }
         // compile the expression
-        NodePtr& set = entry.GetChild(0);
-        if(set.GetChildCount() != 1) {
+        Node::pointer_t set = entry->get_child(0);
+        if(set->get_children_size() != 1)
+        {
+            // not valid, skip
             continue;
         }
-        Expression(set.GetChild(0));
+        expression(set->get_child(0));
     }
 }
 
 
-bool IntCompiler::FindFinalFunctions(NodePtr& function, NodePtr& super)
+/** \brief Check whether that function was not marked as final before.
+ *
+ * \return true if the function is marked as final in a super definition.
+ */
+bool Compiler::find_final_functions(Node::pointer_t& function, Node::pointer_t& super)
 {
-    Data& func_data = function.GetData();
-    int max = super.GetChildCount();
-    for(int idx = 0; idx < max; ++idx) {
-        NodePtr& child = super.GetChild(idx);
-        Data& data = child.GetData();
-        switch(data.f_type) {
+    size_t const max(super.get_child_size());
+    for(size_t idx(0); idx < max; ++idx)
+    {
+        Node::pointer_t child(super.get_child(idx));
+        switch(child->get_type())
+        {
         case NODE_EXTENDS:
         {
-            NodePtr& super = child.GetLink(NodePtr::LINK_INSTANCE);
-            if(super.HasNode()) {
-                if(FindFinalFunctions(function, super)) {
+            Node::pointer_t next_super(child.GetLink(NodePtr::LINK_INSTANCE));
+            if(next_super)
+            {
+                if(find_final_functions(function, next_super))
+                {
                     return true;
                 }
             }
@@ -1185,16 +1179,18 @@ bool IntCompiler::FindFinalFunctions(NodePtr& function, NodePtr& super)
             break;
 
         case NODE_DIRECTIVE_LIST:
-            if(FindFinalFunctions(function, child)) {
+            if(find_final_functions(function, child))
+            {
                 return true;
             }
             break;
 
         case NODE_FUNCTION:
-            if(func_data.f_str == data.f_str) {
+            if(function->get_string() == child->get_string())
+            {
                 // we found a function of the same name
-                unsigned long attrs = GetAttributes(child);
-                if((attrs & NODE_ATTR_FINAL) != 0) {
+                if(get_attribute(child, Node::NODE_ATTR_FINAL))
+                {
                     // Ooops! it was final...
                     return true;
                 }
@@ -1211,20 +1207,31 @@ bool IntCompiler::FindFinalFunctions(NodePtr& function, NodePtr& super)
 }
 
 
-bool IntCompiler::CheckFinalFunctions(NodePtr& function, NodePtr& class_node)
+/** \brief Check whether that function was not marked as final before.
+ *
+ * \return true if the function is marked as final in a super definition.
+ */
+bool Compiler::check_final_functions(Node::pointer_t& function, Node::pointer_t& class_node)
 {
-    int max = class_node.GetChildCount();
-    for(int idx = 0; idx < max; ++idx) {
-        NodePtr& child = class_node.GetChild(idx);
-        Data& data = child.GetData();
+    size_t max(class_node->get_child_size());
+    for(size_t idx(0); idx < max; ++idx)
+    {
+        Node::pointer_t child(class_node->get_child(idx));
+
         // NOTE: there can be only one 'extends'
-        if(data.f_type == NODE_EXTENDS) {
+        //
+        // TODO: we most certainly can support more than one extend in
+        //       JavaScript, although it is not 100% clean, but we can
+        //       make it work so we'll have to enhance this test
+        if(child->get_type() == Node::NODE_EXTENDS)
+        {
             // this points to another class which may defined
             // the same function as final
-            NodePtr& name = child.GetChild(0);
-            NodePtr& super = name.GetLink(NodePtr::LINK_INSTANCE);
-            if(super.HasNode()) {
-                return FindFinalFunctions(function, super);
+            Node::pointer_t name(child->get_child(0));
+            Node::pointer_t super(name->get_link(Node::LINK_INSTANCE));
+            if(super)
+            {
+                return find_final_functions(function, super);
             }
             break;
         }
@@ -1234,57 +1241,30 @@ bool IntCompiler::CheckFinalFunctions(NodePtr& function, NodePtr& class_node)
 }
 
 
-bool IntCompiler::CompareParameters(NodePtr& lfunction, NodePtr& rfunction)
+bool Compiler::compare_parameters(Node::pointer_t& lfunction, Node::pointer_t& rfunction)
 {
 //Data& d = lfunction.GetData();
 //fprintf(stderr, "Comparing params of %.*S\n", d.f_str.GetLength(), d.f_str.Get());
 
-// search for the list of parameters
-    NodePtr lparams;
-    int lmax = lfunction.GetChildCount();
-    for(int lidx = 0; lidx < lmax; ++lidx) {
-        NodePtr& child = lfunction.GetChild(lidx);
-        Data& data = child.GetData();
-        if(data.f_type == NODE_PARAMETERS) {
-            lparams = child;
-            break;
-        }
-    }
+    // search for the list of parameters in each function
+    Node::pointer_t lparams(lfunction->get_first_child(Node::NODE_PARAMETERS));
+    Node::pointer_t rparams(rfunction->get_first_child(Node::NODE_PARAMETERS));
 
-    NodePtr rparams;
-    int rmax = rfunction.GetChildCount();
-    for(int ridx = 0; ridx < rmax; ++ridx) {
-        NodePtr& child = rfunction.GetChild(ridx);
-        Data& data = child.GetData();
-        if(data.f_type == NODE_PARAMETERS) {
-            rparams = child;
-            break;
-        }
-    }
+    // get the number of parameters in each list
+    size_t const lmax(lparams ? lparams->get_child_size() : 0);
+    size_t const rmax(rparams ? rparams->get_child_size() : 0);
 
-// get the number of parameters in each list
-    if(lparams.HasNode()) {
-        lmax = lparams.GetChildCount();
-    }
-    else {
-        lmax = 0;
-    }
-    if(rparams.HasNode()) {
-        rmax = rparams.GetChildCount();
-    }
-    else {
-        rmax = 0;
-    }
-
-// if we don't have the same number of parameters, already, we know it isn't
-// the same, even if one has just a rest in addition
-    if(lmax != rmax) {
+    // if we do not have the same number of parameters, already, we know it
+    // is not the same, even if one has just a rest in addition
+    if(lmax != rmax)
+    {
         return false;
     }
 
-// same number, compare the types
+    // same number, compare the types
     bool result = true;
-    for(int idx = 0; idx < lmax; ++idx) {
+    for(size_t idx(0); idx < lmax; ++idx)
+    {
         // Get the PARAM
         NodePtr& lp = lparams.GetChild(idx);
         NodePtr& rp = rparams.GetChild(idx);
@@ -1312,7 +1292,7 @@ bool IntCompiler::CompareParameters(NodePtr& lfunction, NodePtr& rfunction)
 
 
 
-bool IntCompiler::CheckUniqueFunctions(NodePtr& function, NodePtr& class_node, bool all_levels)
+bool Compiler::CheckUniqueFunctions(NodePtr& function, NodePtr& class_node, bool all_levels)
 {
     Data& data = function.GetData();
     int max = class_node.GetChildCount();
@@ -1330,18 +1310,24 @@ bool IntCompiler::CheckUniqueFunctions(NodePtr& function, NodePtr& class_node, b
 
         case NODE_FUNCTION:
             // TODO: stop recursion properly
+            //
             // this condition isn't enough to stop this
             // recursive process; but I think it's good
             // enough for most cases; the only problem is
             // anyway that we will eventually get the same
             // error multiple times...
-            if(child.SameAs(function)) {
+            if(child == function)
+            {
                 return false;
             }
 
-            if(data.f_str == child_data.f_str) {
-                if(CompareParameters(function, child)) {
-                    f_error_stream->ErrStrMsg(AS_ERR_DUPLICATES, function, "you cannot define two functions with the same name (%S) and prototype in the same scope, class or interface.", &data.f_str);
+            if(function->get_string() == child->get_string())
+            {
+                if(compare_parameters(function, child))
+                {
+                    Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_DUPLICATES, f_lexer->get_input()->get_position());
+                    msg << "you cannot define two functions with the same name (" << function->get_string()
+                                << ") and prototype in the same scope, class or interface.";
                     return true;
                 }
             }
@@ -1372,15 +1358,17 @@ bool IntCompiler::CheckUniqueFunctions(NodePtr& function, NodePtr& class_node, b
 
 
 
-void IntCompiler::Function(NodePtr& function)
+void Compiler::function(Node::pointer_t& function)
 {
-    int        idx, max, flags;
+    int        idx, flags;
 
-    unsigned long attrs = GetAttributes(function);
-    if((attrs & (NODE_ATTR_UNUSED | NODE_ATTR_FALSE)) != 0) {
+    if(function->get_flag(Node::NODE_ATTR_UNUSED)
+    || function->get_flag(Node::NODE_ATTR_FALSE))
+    {
         return;
     }
 
+    unsigned long attrs = GetAttributes(function);
     Data& data = function.GetData();
 
     // Here we search for a parent for this function.
@@ -1391,49 +1379,51 @@ void IntCompiler::Function(NodePtr& function)
     // effects which need to be tested here (i.e. a function marked
     // final in a class can't be overwritten)
 
-    NodePtr parent = function;
-    NodePtr list;
-    Data parent_data;
-    bool more = true;
-    bool member = false;
-    bool package = false;
-    do {
-        parent = parent.GetParent();
-        if(!parent.HasNode()) {
+    Node::pointer_t parent(function);
+    Node::pointer_t list;
+    bool more(true);
+    bool member(false);
+    bool package(false);
+    do
+    {
+        parent = parent->get_parent();
+        if(!parent)
+        {
             // more = false; -- not required here
             break;
         }
-        parent_data = parent.GetData();
-        switch(parent_data.f_type) {
-        case NODE_CLASS:
-        case NODE_INTERFACE:
+        switch(parent->get_type())
+        {
+        case Node::NODE_CLASS:
+        case Node::NODE_INTERFACE:
             more = false;
             member = true;
             break;
 
-        case NODE_PACKAGE:
+        case Node::NODE_PACKAGE:
             more = false;
             package = true;
             break;
 
-        case NODE_CATCH:
-        case NODE_DO:
-        case NODE_ELSE:
-        case NODE_FINALLY:
-        case NODE_FOR:
-        case NODE_FUNCTION:
-        case NODE_IF:
-        case NODE_PROGRAM:
-        case NODE_ROOT:
-        case NODE_SWITCH:
-        case NODE_TRY:
-        case NODE_WHILE:
-        case NODE_WITH:
+        case Node::NODE_CATCH:
+        case Node::NODE_DO:
+        case Node::NODE_ELSE:
+        case Node::NODE_FINALLY:
+        case Node::NODE_FOR:
+        case Node::NODE_FUNCTION:
+        case Node::NODE_IF:
+        case Node::NODE_PROGRAM:
+        case Node::NODE_ROOT:
+        case Node::NODE_SWITCH:
+        case Node::NODE_TRY:
+        case Node::NODE_WHILE:
+        case Node::NODE_WITH:
             more = false;
             break;
 
-        case NODE_DIRECTIVE_LIST:
-            if(!list.HasNode()) {
+        case Node::NODE_DIRECTIVE_LIST:
+            if(!list)
+            {
                 list = parent;
             }
             break;
@@ -1442,77 +1432,102 @@ void IntCompiler::Function(NodePtr& function)
             break;
 
         }
-    } while(more);
+    }
+    while(more);
 
     // any one of the following flags implies that the function is
     // defined in a class; check to make sure!
-    if((attrs & (NODE_ATTR_ABSTRACT | NODE_ATTR_STATIC | NODE_ATTR_PROTECTED | NODE_ATTR_VIRTUAL | NODE_ATTR_CONSTRUCTOR | NODE_ATTR_FINAL)) != 0) {
-        if(!member) {
-            f_error_stream->ErrStrMsg(AS_ERR_INVALID_ATTRIBUTES, function, "function '%S' was defined with an attribute which can only be used with a function member inside a class definition.", &data.f_str);
+    if(function->get_flag(Node::NODE_ATTR_ABSTRACT)
+    || function->get_flag(Node::NODE_ATTR_STATIC)
+    || function->get_flag(Node::NODE_ATTR_PROTECTED)
+    || function->get_flag(Node::NODE_ATTR_VIRTUAL)
+    || function->get_flag(Node::NODE_ATTR_CONSTRUCTOR)
+    || function->get_flag(Node::NODE_ATTR_FINAL))
+    {
+        if(!member)
+        {
+            Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_ATTRIBUTES, f_lexer->get_input()->get_position());
+            msg << "function \"" << function->get_string() << "\" was defined with an attribute which can only be used with a function member inside a class definition.";
         }
     }
-    if((data.f_int.Get() & NODE_FUNCTION_FLAG_OPERATOR) != 0) {
-        if(!member) {
-            f_error_stream->ErrStrMsg(AS_ERR_INVALID_OPERATOR, function, "operator '%S' can only be defined inside a class definition.", &data.f_str);
+    if(function->get_flag(Node::NODE_FUNCTION_FLAG_OPERATOR))
+    {
+        if(!member)
+        {
+            Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_OPERATOR, f_lexer->get_input()->get_position());
+            msg << "operator \"" << function->get_string() << "\" can only be defined inside a class definition.";
         }
     }
 
     // any one of the following flags implies that the function is
     // defined in a class or a package; check to make sure!
-    if((attrs & NODE_ATTR_PRIVATE) != 0) {
-        if(!package && !member) {
-            f_error_stream->ErrStrMsg(AS_ERR_INVALID_ATTRIBUTES, function, "function '%S' was defined with an attribute which can only be used inside a class or package definition.", &data.f_str);
+    if(function->get_flag(Node::NODE_ATTR_PRIVATE))
+    {
+        if(!package && !member)
+        {
+            Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_ATTRIBUTES, f_lexer->get_input()->get_position());
+            msg << "function \"" << function->get_string() << "\" was defined with an attribute which can only be used inside a class or package definition.";
         }
     }
 
     // member functions need to not be defined in a super class
-    // as final since that means you can't overwrite these functions
-    if(member) {
-        if(CheckFinalFunctions(function, parent)) {
-            f_error_stream->ErrStrMsg(AS_ERR_CANNOT_OVERLOAD, function, "function '%S' was marked as final in a super class and thus it cannot be defined in class '%S'.", &data.f_str, &parent_data.f_str);
+    // as final since that means you cannot overwrite these functions
+    if(member)
+    {
+        if(check_final_functions(function, parent))
+        {
+            Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_CANNOT_OVERLOAD, f_lexer->get_input()->get_position());
+            msg << "function \"" << function->get_string() << "\" was marked as final in a super class and thus it cannot be defined in class \"" << parent->get_string() << "\".";
         }
-        CheckUniqueFunctions(function, parent, true);
+        check_unique_functions(function, parent, true);
     }
-    else {
-        CheckUniqueFunctions(function, list, false);
+    else
+    {
+        check_unique_functions(function, list, false);
     }
 
     // when the function calls itself (recursive) it would try to
-    // add children when it's locked if we don't do this right here!
-    if(!DefineFunctionType(function)) {
+    // add children when it is locked if we do not do this right here!
+    if(!define_function_type(function))
+    {
         return;
     }
 
-    NodePtr end_list, directive_list;
+    Node::pointer_t end_list, directive_list;
     NodeLock ln(function);
-    max = function.GetChildCount();
-    for(idx = 0; idx < max; ++idx) {
-        NodePtr& child = function.GetChild(idx);
-        Data& child_data = child.GetData();
-        switch(child_data.f_type) {
-        case NODE_PARAMETERS:
+    size_t const max(function->get_child_size());
+    for(size_t idx(0); idx < max; ++idx)
+    {
+        Node::pointer_t child = function->get_child(idx);
+        switch(child->get_type())
+        {
+        case Node::NODE_PARAMETERS:
             // parse the parameters which have a default value
-            Parameters(child);
+            parameters(child);
             break;
 
-        case NODE_DIRECTIVE_LIST:
-            if((attrs & NODE_ATTR_ABSTRACT) != 0) {
-                f_error_stream->ErrStrMsg(AS_ERR_IMPORPER_STATEMENT, function, "the function '%S' is marked abstract and cannot have a body.", &data.f_str);
+        case Node::NODE_DIRECTIVE_LIST:
+            if(function->get_flag(Node::NODE_ATTR_ABSTRACT))
+            {
+                Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_IMPORPER_STATEMENT, f_lexer->get_input()->get_position());
+                msg << "the function \"" << function->get_string() << "\" is marked abstract and cannot have a body.";
             }
             // find all the labels of this function
-            FindLabels(function, child);
+            find_labels(function, child);
             // parse the function body
-            end_list = DirectiveList(child);
+            end_list = directive_list(child);
             directive_list = child;
             break;
 
         default:
-            // the expression represents the function type
-            Expression(child);
+            // the expression represents the function return type
+            expression(child);
             // constructors only support Void (or should
             // it be the same name as the class?)
-            if(IsConstructor(function)) {
-                f_error_stream->ErrStrMsg(AS_ERR_INVALID_RETURN_TYPE, function, "a constructor must return Void and nothing else, '%S' is invalid.", &data.f_str);
+            if(is_constructor(function))
+            {
+                Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_RETURN_TYPE, f_lexer->get_input()->get_position());
+                msg << "a constructor must return \"void\" and nothing else, \"" << function->get_string() << "\" is invalid.";
             }
             break;
 
@@ -1520,19 +1535,24 @@ void IntCompiler::Function(NodePtr& function)
     }
 
     flags = data.f_int.Get();
-    if((flags & NODE_FUNCTION_FLAG_NEVER) != 0 && IsConstructor(function)) {
-        f_error_stream->ErrMsg(AS_ERR_INVALID_RETURN_TYPE, function, "a constructor must return (it cannot be marked Never).");
+    if(function->get_flag(Node::NODE_FUNCTION_FLAG_NEVER) && is_constructor(function))
+    {
+        Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_RETURN_TYPE, f_lexer->get_input()->get_position());
+        msg << "a constructor must return (it cannot be marked Never).";
     }
 
-// test for a return whenever necessary
-    if(!end_list.HasNode() && directive_list.HasNode()
-    && (attrs & (NODE_ATTR_ABSTRACT | NODE_ATTR_INTRINSIC)) == 0
-    && (flags & (NODE_FUNCTION_FLAG_VOID | NODE_FUNCTION_FLAG_NEVER)) == 0) {
-        f_optimizer.Optimize(directive_list);
-        FindLabels(function, directive_list);
+    // test for a return whenever necessary
+    if(!end_list
+    && directive_list
+    && (function->get_flag(Node::NODE_ATTR_ABSTRACT) || function->get_flag(Node::NODE_ATTR_INTRINSIC))
+    && (function->get_flag(Node::NODE_FUNCTION_FLAG_VOID) || function->get_flag(Node::NODE_FUNCTION_FLAG_NEVER)))
+    {
+        f_optimizer->optimize(directive_list);
+        find_labels(function, directive_list);
 //fprintf(stderr, "ARGH! 2nd call...\n");
         end_list = DirectiveList(directive_list);
-        if(!end_list.HasNode()) {
+        if(!end_list.HasNode())
+        {
             // TODO: we need a much better control flow to make
             // sure that this isn't a spurious error (i.e. you
             // don't need to have a return after a loop which
@@ -1547,7 +1567,7 @@ void IntCompiler::Function(NodePtr& function)
 
 
 
-void IntCompiler::Parameters(NodePtr& parameters)
+void Compiler::Parameters(NodePtr& parameters)
 {
     int        idx, max, j, jmax, k;
     int64_t        flags;
@@ -1593,11 +1613,13 @@ void IntCompiler::Parameters(NodePtr& parameters)
         for(j = 0; j < jmax; ++j) {
             NodePtr& child = param.GetChild(j);
             Data& data = child.GetData();
-            if(data.f_type == NODE_SET) {
-                Expression(child.GetChild(0));
+            if(data.f_type == NODE_SET)
+            {
+                expression(child.GetChild(0));
             }
-            else {
-                Expression(child);
+            else
+            {
+                expression(child);
                 NodePtr& type = child.GetLink(NodePtr::LINK_INSTANCE);
                 if(type.HasNode()) {
                     NodePtr& existing_type = param.GetLink(NodePtr::LINK_TYPE);
@@ -1635,7 +1657,7 @@ void IntCompiler::Parameters(NodePtr& parameters)
 // note that we search for labels in functions, programs, packages
 // [and maybe someday classes, but for now classes can't have
 // code and thus no labels]
-void IntCompiler::FindLabels(NodePtr& function, NodePtr& node)
+void Compiler::FindLabels(NodePtr& function, NodePtr& node)
 {
     // NOTE: function may also be a program or a package.
     Data& data = node.GetData();
@@ -1708,7 +1730,7 @@ void IntCompiler::FindLabels(NodePtr& function, NodePtr& node)
 
 
 
-NodePtr IntCompiler::Return(NodePtr& return_node)
+NodePtr Compiler::Return(NodePtr& return_node)
 {
     // 1. a return is only valid in a function (procedure)
     // 2. a return must return a value in a function
@@ -1785,7 +1807,7 @@ NodePtr IntCompiler::Return(NodePtr& return_node)
 
 
 
-void IntCompiler::DeclareClass(NodePtr& class_node)
+void Compiler::DeclareClass(NodePtr& class_node)
 {
     int max = class_node.GetChildCount();
     for(int idx = 0; idx < max; ++idx) {
@@ -1825,7 +1847,7 @@ void IntCompiler::DeclareClass(NodePtr& class_node)
 
 
 
-void IntCompiler::ExtendClass(NodePtr& class_node, NodePtr& extend_name)
+void Compiler::ExtendClass(NodePtr& class_node, NodePtr& extend_name)
 {
     Expression(extend_name);
 
@@ -1841,7 +1863,7 @@ void IntCompiler::ExtendClass(NodePtr& class_node, NodePtr& extend_name)
 }
 
 
-void IntCompiler::Class(NodePtr& class_node)
+void Compiler::Class(NodePtr& class_node)
 {
     int max = class_node.GetChildCount();
     for(int idx = 0; idx < max; ++idx) {
@@ -1869,7 +1891,7 @@ void IntCompiler::Class(NodePtr& class_node)
 
 
 
-void IntCompiler::Import(NodePtr& import)
+void Compiler::Import(NodePtr& import)
 {
     // If we have the IMPLEMENTS flag set, then we must make sure
     // that the corresponding package is compiled.
@@ -1907,7 +1929,7 @@ void IntCompiler::Import(NodePtr& import)
 
 
 
-void IntCompiler::UseNamespace(NodePtr& use_namespace)
+void Compiler::UseNamespace(NodePtr& use_namespace)
 {
     int max = use_namespace.GetChildCount();
     if(max != 1) {
@@ -1936,7 +1958,7 @@ void IntCompiler::UseNamespace(NodePtr& use_namespace)
 
 
 
-void IntCompiler::LinkType(NodePtr& type)
+void Compiler::LinkType(NodePtr& type)
 {
     // already linked?
     NodePtr& link = type.GetLink(NodePtr::LINK_INSTANCE);
@@ -1978,7 +2000,7 @@ void IntCompiler::LinkType(NodePtr& type)
 }
 
 
-bool IntCompiler::CheckField(NodePtr& link, NodePtr& field, int& funcs, NodePtr& resolution, NodePtr *params, int search_flags)
+bool Compiler::CheckField(NodePtr& link, NodePtr& field, int& funcs, NodePtr& resolution, NodePtr *params, int search_flags)
 {
     int        idx, max, j, m;
 
@@ -2024,7 +2046,7 @@ bool IntCompiler::CheckField(NodePtr& link, NodePtr& field, int& funcs, NodePtr&
 }
 
 
-bool IntCompiler::FindField(NodePtr& link, NodePtr& field, int& funcs, NodePtr& resolution, NodePtr *params, int search_flags)
+bool Compiler::FindField(NodePtr& link, NodePtr& field, int& funcs, NodePtr& resolution, NodePtr *params, int search_flags)
 {
     RestoreFlags restore_flags(this);
 
@@ -2037,7 +2059,7 @@ bool IntCompiler::FindField(NodePtr& link, NodePtr& field, int& funcs, NodePtr& 
 }
 
 
-bool IntCompiler::FindAnyField(NodePtr& link, NodePtr& field, int& funcs, NodePtr& resolution, NodePtr *params, int search_flags)
+bool Compiler::FindAnyField(NodePtr& link, NodePtr& field, int& funcs, NodePtr& resolution, NodePtr *params, int search_flags)
 {
 //fprintf(stderr, "Find Any Field...\n");
 
@@ -2060,7 +2082,7 @@ bool IntCompiler::FindAnyField(NodePtr& link, NodePtr& field, int& funcs, NodePt
 
 
 
-bool IntCompiler::FindInExtends(NodePtr& link, NodePtr& field, int& funcs, NodePtr& resolution, NodePtr *params, int search_flags)
+bool Compiler::FindInExtends(NodePtr& link, NodePtr& field, int& funcs, NodePtr& resolution, NodePtr *params, int search_flags)
 {
     int        idx, max, count;
 
@@ -2142,7 +2164,7 @@ fprintf(stderr, "WARNING: type not linked, cannot lookup member.\n");
 }
 
 
-bool IntCompiler::ResolveField(NodePtr& object, NodePtr& field, NodePtr& resolution, NodePtr *params, int search_flags)
+bool Compiler::ResolveField(NodePtr& object, NodePtr& field, NodePtr& resolution, NodePtr *params, int search_flags)
 {
     unsigned long    idx, max;
     NodePtr        type;
@@ -2242,7 +2264,7 @@ fprintf(stderr, " is a function.\n");
 
 
 
-bool IntCompiler::IsDynamicClass(NodePtr& class_node)
+bool Compiler::IsDynamicClass(NodePtr& class_node)
 {
     if(!class_node.HasNode()) {
         // we cannot know, return that it is...
@@ -2280,7 +2302,7 @@ bool IntCompiler::IsDynamicClass(NodePtr& class_node)
 
 
 
-void IntCompiler::CheckMember(NodePtr& ref, NodePtr& field, NodePtr& field_name)
+void Compiler::CheckMember(NodePtr& ref, NodePtr& field, NodePtr& field_name)
 {
     unsigned long    attrs;
     bool        err;
@@ -2355,7 +2377,7 @@ void IntCompiler::CheckMember(NodePtr& ref, NodePtr& field, NodePtr& field_name)
 
 
 
-bool IntCompiler::FindMember(NodePtr& member, NodePtr& resolution, NodePtr *params, int search_flags)
+bool Compiler::FindMember(NodePtr& member, NodePtr& resolution, NodePtr *params, int search_flags)
 {
     // Just in case the caller is re-using the same node
     resolution.ClearNode();
@@ -2507,7 +2529,7 @@ bool IntCompiler::FindMember(NodePtr& member, NodePtr& resolution, NodePtr *para
     return true;
 }
 
-void IntCompiler::ResolveMember(NodePtr& expr, NodePtr *params, int search_flags)
+void Compiler::ResolveMember(NodePtr& expr, NodePtr *params, int search_flags)
 {
     NodePtr resolution;
 
@@ -2602,7 +2624,7 @@ fprintf(stderr, "CAUGHT! getter...\n");
 // as a 'match any' special type.
 // Otherwise we make sure we transform the type expression in
 // a usable type and compare it with t1 and its ancestors.
-int IntCompiler::MatchType(NodePtr& t1, NodePtr t2, int match)
+int Compiler::MatchType(NodePtr& t1, NodePtr t2, int match)
 {
 // Some invalid input?
     if(!t1.HasNode() || !t2.HasNode()) {
@@ -2711,7 +2733,7 @@ fprintf(stderr, "Name of tp2 [%s] (type = %d)\n", buf, d2.f_type);
 
 
 
-int IntCompiler::FindClass(NodePtr& class_type, NodePtr& type, int depth)
+int Compiler::FindClass(NodePtr& class_type, NodePtr& type, int depth)
 {
     int    idx, max, r, result;
 
@@ -2772,7 +2794,7 @@ int IntCompiler::FindClass(NodePtr& class_type, NodePtr& type, int depth)
 }
 
 
-bool IntCompiler::DefineFunctionType(NodePtr& func)
+bool Compiler::DefineFunctionType(NodePtr& func)
 {
     int        idx, max;
 
@@ -2853,7 +2875,7 @@ bool IntCompiler::DefineFunctionType(NodePtr& func)
 // check whether the list of input parameters matches the function
 // prototype; note that if the function is marked as "no prototype"
 // then it matches automatically, but it gets a really low score.
-int IntCompiler::CheckFunctionWithParams(NodePtr& func, NodePtr *params)
+int Compiler::CheckFunctionWithParams(NodePtr& func, NodePtr *params)
 {
     int    idx, j, rest;
 
@@ -3143,7 +3165,7 @@ params->Display(stderr);
 
 
 
-NodePtr IntCompiler::FindPackage(NodePtr& list, const String& name)
+NodePtr Compiler::FindPackage(NodePtr& list, const String& name)
 {
     NodeLock ln(list);
     int max = list.GetChildCount();
@@ -3168,7 +3190,7 @@ NodePtr IntCompiler::FindPackage(NodePtr& list, const String& name)
 }
 
 
-bool IntCompiler::FindExternalPackage(NodePtr& import, const String& name, NodePtr& program)
+bool Compiler::FindExternalPackage(NodePtr& import, const String& name, NodePtr& program)
 {
     // search a package which has an element named 'name'
     // and has a name which match the identifier specified in 'import'
@@ -3198,7 +3220,7 @@ bool IntCompiler::FindExternalPackage(NodePtr& import, const String& name, NodeP
 
 
 
-bool IntCompiler::CheckImport(NodePtr& import, NodePtr& resolution, const String& name, NodePtr *params, int search_flags)
+bool Compiler::CheckImport(NodePtr& import, NodePtr& resolution, const String& name, NodePtr *params, int search_flags)
 {
 //fprintf(stderr, "CheckImport(... [%.*S] ..., %d)\n", name.GetLength(), name.Get(), search_flags);
     // search for a package within this program
@@ -3218,7 +3240,7 @@ bool IntCompiler::CheckImport(NodePtr& import, NodePtr& resolution, const String
 }
 
 
-bool IntCompiler::FindPackageItem(NodePtr& program, NodePtr& import, NodePtr& resolution, const String& name, NodePtr *params, int search_flags)
+bool Compiler::FindPackageItem(NodePtr& program, NodePtr& import, NodePtr& resolution, const String& name, NodePtr *params, int search_flags)
 {
     Data& data = import.GetData();
 
@@ -3305,7 +3327,7 @@ bool IntCompiler::FindPackageItem(NodePtr& program, NodePtr& import, NodePtr& re
 }
 
 
-bool IntCompiler::IsConstructor(NodePtr& func)
+bool Compiler::IsConstructor(NodePtr& func)
 {
     unsigned long attrs = GetAttributes(func);
     // user defined constructor
@@ -3342,7 +3364,7 @@ bool IntCompiler::IsConstructor(NodePtr& func)
 
 
 
-bool IntCompiler::CheckFunction(NodePtr& func, NodePtr& resolution, const String& name, NodePtr *params, int search_flags)
+bool Compiler::CheckFunction(NodePtr& func, NodePtr& resolution, const String& name, NodePtr *params, int search_flags)
 {
     // The fact that a function is marked UNUSED should
     // be an error, but overloading prevents us from
@@ -3402,7 +3424,7 @@ func.Display(stderr);
 
 
 
-bool IntCompiler::IsDerivedFrom(NodePtr& derived_class, NodePtr& super_class)
+bool Compiler::IsDerivedFrom(NodePtr& derived_class, NodePtr& super_class)
 {
     if(derived_class.SameAs(super_class)) {
         return true;
@@ -3454,7 +3476,7 @@ bool IntCompiler::IsDerivedFrom(NodePtr& derived_class, NodePtr& super_class)
 
 
 
-NodePtr IntCompiler::ClassOfMember(NodePtr parent, Data *& data)
+NodePtr Compiler::ClassOfMember(NodePtr parent, Data *& data)
 {
     for(;;) {
         data = &parent.GetData();
@@ -3477,7 +3499,7 @@ NodePtr IntCompiler::ClassOfMember(NodePtr parent, Data *& data)
 
 
 
-bool IntCompiler::AreObjectsDerivedFromOneAnother(NodePtr& derived_class, NodePtr& super_class, Data *& data)
+bool Compiler::AreObjectsDerivedFromOneAnother(NodePtr& derived_class, NodePtr& super_class, Data *& data)
 {
     NodePtr the_super_class = ClassOfMember(super_class, data);
     if(!the_super_class.HasNode()) {
@@ -3493,7 +3515,7 @@ bool IntCompiler::AreObjectsDerivedFromOneAnother(NodePtr& derived_class, NodePt
 }
 
 
-bool IntCompiler::CheckName(NodePtr& list, int idx, NodePtr& resolution, NodePtr& id, NodePtr *params, int search_flags)
+bool Compiler::CheckName(NodePtr& list, int idx, NodePtr& resolution, NodePtr& id, NodePtr *params, int search_flags)
 {
     NodePtr& child = list.GetChild(idx);
     Data& id_data = id.GetData();
@@ -3714,7 +3736,7 @@ fprintf(stderr, "Compile package now!\n");
 
 
 
-bool IntCompiler::FuncsName(int& funcs, NodePtr& resolution, bool increment)
+bool Compiler::FuncsName(int& funcs, NodePtr& resolution, bool increment)
 {
     if(!resolution.HasNode()) {
         return true;
@@ -3744,7 +3766,7 @@ bool IntCompiler::FuncsName(int& funcs, NodePtr& resolution, bool increment)
 
 
 
-bool IntCompiler::BestParamMatchDerivedFrom(NodePtr& best, NodePtr& match)
+bool Compiler::BestParamMatchDerivedFrom(NodePtr& best, NodePtr& match)
 {
     Data *data;
 
@@ -3775,7 +3797,7 @@ bool IntCompiler::BestParamMatchDerivedFrom(NodePtr& best, NodePtr& match)
 
 
 
-bool IntCompiler::BestParamMatch(NodePtr& best, NodePtr& match)
+bool Compiler::BestParamMatch(NodePtr& best, NodePtr& match)
 {
     Data& b_data = best.GetData();
     Data& m_data = match.GetData();
@@ -3830,7 +3852,7 @@ bool IntCompiler::BestParamMatch(NodePtr& best, NodePtr& match)
 
 
 
-bool IntCompiler::SelectBestFunc(NodePtr *params, NodePtr& resolution)
+bool Compiler::SelectBestFunc(NodePtr *params, NodePtr& resolution)
 {
     // We found one or more function which matched the name
     AS_ASSERT(params != 0);
@@ -3885,7 +3907,7 @@ bool IntCompiler::SelectBestFunc(NodePtr *params, NodePtr& resolution)
 
 
 
-bool IntCompiler::ResolveName(NodePtr list, NodePtr& id, NodePtr& resolution, NodePtr *params, int search_flags)
+bool Compiler::ResolveName(NodePtr list, NodePtr& id, NodePtr& resolution, NodePtr *params, int search_flags)
 {
     RestoreFlags restore_flags(this);
 
@@ -4023,7 +4045,7 @@ fprintf(stderr, ").\n");
         NodeLock ln(list);
         int max = list.GetChildCount();
         switch(d->f_type) {
-        case NODE_DIRECTIVE_LIST:
+        case Node::NODE_DIRECTIVE_LIST:
         {
             // okay! we've got a list of directives
             // backward loop up first since in 99% of cases that
@@ -4072,8 +4094,10 @@ var.DisplayPtr(stderr);
 fprintf(stderr, " [Type = %d]\n", d.f_type);
 #endif
 
-            if(max > 0 && CheckName(list, 0, resolution, id, params, search_flags)) {
-                if(FuncsName(funcs, resolution)) {
+            if(max > 0 && check_name(list, 0, resolution, id, params, search_flags))
+            {
+                if(funcs_name(funcs, resolution))
+                {
                     return true;
                 }
             }
@@ -4231,7 +4255,7 @@ fprintf(stderr, "\n");
             break;
 
         default:
-            fprintf(stderr, "INTERNAL ERROR: unhandled type in IntCompiler::ResolveName()\n");
+            fprintf(stderr, "INTERNAL ERROR: unhandled type in Compiler::ResolveName()\n");
             AS_ASSERT(0);
             break;
 
@@ -4253,7 +4277,7 @@ fprintf(stderr, "\n");
 
 
 
-void IntCompiler::PrintSearchErrors(const NodePtr& name)
+void Compiler::PrintSearchErrors(const NodePtr& name)
 {
     // all failed, check whether we have errors...
     if(f_err_flags == 0) {
@@ -4284,7 +4308,7 @@ void IntCompiler::PrintSearchErrors(const NodePtr& name)
 
 
 
-void IntCompiler::CallAddMissingParams(NodePtr& call, NodePtr& params)
+void Compiler::CallAddMissingParams(NodePtr& call, NodePtr& params)
 {
     // any children?
     int idx = params.GetChildCount();
@@ -4378,7 +4402,7 @@ fprintf(stderr, "\n\n");
 
 
 
-bool IntCompiler::ResolveCall(NodePtr& call)
+bool Compiler::ResolveCall(NodePtr& call)
 {
     int        max;
 
@@ -4561,7 +4585,7 @@ bool IntCompiler::ResolveCall(NodePtr& call)
 
 // we can simplify constant variables with their content whenever that's
 // a string, number or other non-dynamic constant
-bool IntCompiler::ReplaceConstantVariable(NodePtr& replace, NodePtr& resolution)
+bool Compiler::ReplaceConstantVariable(NodePtr& replace, NodePtr& resolution)
 {
     int        idx, max;
 
@@ -4629,7 +4653,7 @@ replace.Display(stderr, 2);
 
 
 
-void IntCompiler::ResolveInternalType(NodePtr& parent, const char *type, NodePtr& resolution)
+void Compiler::ResolveInternalType(NodePtr& parent, const char *type, NodePtr& resolution)
 {
     NodePtr id;
 
@@ -4664,7 +4688,7 @@ void IntCompiler::ResolveInternalType(NodePtr& parent, const char *type, NodePtr
 
 
 
-void IntCompiler::TypeExpr(NodePtr& expr)
+void Compiler::TypeExpr(NodePtr& expr)
 {
     NodePtr resolution;
 
@@ -4740,7 +4764,7 @@ void IntCompiler::TypeExpr(NodePtr& expr)
 
 
 
-void IntCompiler::SetAttr(NodePtr& node, unsigned long& list_attrs, unsigned long set, unsigned long exclusive, const char *names)
+void Compiler::SetAttr(NodePtr& node, unsigned long& list_attrs, unsigned long set, unsigned long exclusive, const char *names)
 {
     if((list_attrs & exclusive) != 0) {
         f_error_stream->ErrMsg(AS_ERR_INVALID_ATTRIBUTES, node, "the attributes %s are mutually exclusive.", names);
@@ -4762,7 +4786,7 @@ fprintf(stderr, "WARNING: %s is defined multiple times.\n", names);
 
 
 
-void IntCompiler::VariableToAttrs(NodePtr& node, NodePtr& var, unsigned long& attrs)
+void Compiler::VariableToAttrs(NodePtr& node, NodePtr& var, unsigned long& attrs)
 {
     Data& var_data = var.GetData();
     if(var_data.f_type != NODE_SET) {
@@ -4806,7 +4830,7 @@ void IntCompiler::VariableToAttrs(NodePtr& node, NodePtr& var, unsigned long& at
 }
 
 
-void IntCompiler::IdentifierToAttrs(NodePtr& node, NodePtr& a, unsigned long& attrs)
+void Compiler::IdentifierToAttrs(NodePtr& node, NodePtr& a, unsigned long& attrs)
 {
     Data& data = a.GetData();
 
@@ -4999,7 +5023,7 @@ void IntCompiler::IdentifierToAttrs(NodePtr& node, NodePtr& a, unsigned long& at
 }
 
 
-void IntCompiler::NodeToAttrs(NodePtr& node, NodePtr& a, unsigned long& attrs)
+void Compiler::NodeToAttrs(NodePtr& node, NodePtr& a, unsigned long& attrs)
 {
     Data& data = a.GetData();
 
@@ -5064,88 +5088,107 @@ void Compiler::prepare_attributes(Node::pointer_t& node)
         return;
     }
 
-    Data& data = node.GetData();
-    if(data.f_type == NODE_PROGRAM) {
+    // mark ourselves as done even if errors occur
+    node->set_flag(Node::NODE_ATTR_DEFINED, true);
+
+    if(node->get_type() == Node::NODE_PROGRAM)
+    {
         // programs don't get any specific attributes
-        node.SetAttrs(NODE_ATTR_DEFINED);
         return NODE_ATTR_DEFINED;
     }
 
-    NodePtr& attr = node.GetLink(NodePtr::LINK_ATTRIBUTES);
-    if(attr.HasNode()) {
+    Node::pointer_t attr(node->get_link(Node::LINK_ATTRIBUTES));
+    if(attr)
+    {
         NodeLock ln(attr);
-        int max = attr.GetChildCount();
-        for(int idx = 0; idx < max; ++idx) {
-            NodePtr& a = attr.GetChild(idx);
-            NodeToAttrs(node, a, attrs);
+        size_t const max(attr->get_children_size());
+        for(size_t idx(0); idx < max; ++idx)
+        {
+            node_to_attrs(node, attr->get_child(idx), attrs);
         }
     }
 
-    // keep a copy of the attributes defined for this
-    // specific instruction
-    unsigned long local_attrs = attrs;
+    // check whether intrinsic is already set
+    // (in which case it is probably an error)
+    bool const has_direct_intrinsic(node->get_flag(Node::NODE_ATTR_INTRINSIC));
 
-    if(data.f_type != NODE_PACKAGE
-    && data.f_type != NODE_PROGRAM)
+    // Note: we already returned if it is equal
+    //       to program; here it is just documentation
+    if(node->get_type() != Node::NODE_PACKAGE
+    && node->get_type() != Node::NODE_PROGRAM)
     {
-        NodePtr& parent = node.GetParent();
-        if(parent.HasNode()) {
-            // this is recursive
-            unsigned long parent_attrs = GetAttributes(parent);
+        Node::pointer_t parent(node.get_parent());
+        if(parent)
+        {
+            // recurse against all parents as required
+            prepare_flags(parent);
 
             // child can redefine (ignore parent if any defined)
             // [TODO: should this be an error if conflicting?]
-            if((attrs & (NODE_ATTR_PUBLIC | NODE_ATTR_PRIVATE | NODE_ATTR_PROTECTED)) == 0) {
-                attrs |= parent_attrs & (NODE_ATTR_PUBLIC | NODE_ATTR_PRIVATE | NODE_ATTR_PROTECTED);
+            if(!node->get_flag(Node::NODE_ATTR_PUBLIC)
+            && !node->get_flag(Node::NODE_ATTR_PRIVATE)
+            && !node->get_flag(Node::NODE_ATTR_PROTECTED))
+            {
+                node->set_flag(Node::NODE_ATTR_PUBLIC,    parent->get_flag(Node::NODE_ATTR_PUBLIC));
+                node->set_flag(Node::NODE_ATTR_PRIVATE,   parent->get_flag(Node::NODE_ATTR_PRIVATE));
+                node->set_flag(Node::NODE_ATTR_PROTECTED, parent->get_flag(Node::NODE_ATTR_PROTECTED));
             }
             // child can redefine (ignore parent if defined)
-            if((attrs & (NODE_ATTR_STATIC | NODE_ATTR_ABSTRACT | NODE_ATTR_VIRTUAL)) == 0) {
-                attrs |= parent_attrs & (NODE_ATTR_STATIC | NODE_ATTR_ABSTRACT | NODE_ATTR_VIRTUAL);
+            if(!node->get_flag(Node::NODE_ATTR_STATIC)
+            && !node->get_flag(Node::NODE_ATTR_ABSTRACT)
+            && !node->get_flag(Node::NODE_ATTR_VIRTUAL))
+            {
+                node->set_flag(Node::NODE_ATTR_STATIC,   parent->get_flag(Node::NODE_ATTR_STATIC));
+                node->set_flag(Node::NODE_ATTR_ABSTRACT, parent->get_flag(Node::NODE_ATTR_ABSTRACT));
+                node->set_flag(Node::NODE_ATTR_VIRTUAL,  parent->get_flag(Node::NODE_ATTR_VIRTUAL));
             }
             // inherit
-            attrs |= parent_attrs & (NODE_ATTR_INTRINSIC | NODE_ATTR_ENUMERABLE);
+            node->set_flag(Node::NODE_ATTR_INTRINSIC,  parent->get_flag(Node::NODE_ATTR_INTRINSIC));
+            node->set_flag(Node::NODE_ATTR_ENUMERABLE, parent->get_flag(Node::NODE_ATTR_ENUMERABLE));
             // false has priority
-            if((parent_attrs & NODE_ATTR_FALSE) != 0) {
-                attrs |= NODE_ATTR_FALSE;
-                attrs &= ~NODE_ATTR_TRUE;
+            if(parent->get_flag(Node::NODE_ATTR_FALSE))
+            {
+                node->set_flag(Node::NODE_ATTR_FASLE, true);
+                node->set_flag(Node::NODE_ATTR_TRUE, false);
             }
 
-            Data& data = parent.GetData();
-            if(data.f_type != NODE_CLASS) {
-                attrs |= parent_attrs & (NODE_ATTR_DYNAMIC | NODE_ATTR_FINAL);
+            if(parent->get_type() != Node::NODE_CLASS)
+            {
+                node->set_flag(Node::NODE_ATTR_DYNAMIC, parent->get_flag(Node::NODE_ATTR_DYNAMIC));
+                node->set_flag(Node::NODE_ATTR_FINAL,   parent->get_flag(Node::NODE_ATTR_FINAL));
             }
         }
     }
 
     // a function which has a body cannot be intrinsic
-    if((attrs & NODE_ATTR_INTRINSIC) != 0
-    && data.f_type == NODE_FUNCTION) {
+    if(node->get_flag(Node::NODE_ATTR_INTRINSIC)
+    && node->get_type() != Node::NODE_FUNCTION)
+    {
         NodeLock ln(node);
-        int max = node.GetChildCount();
-        for(int idx = 0; idx < max; ++idx) {
-            NodePtr& list = node.GetChild(idx);
-            Data& data = list.GetData();
-            if(data.f_type == NODE_DIRECTIVE_LIST) {
+        size_t const max(node->get_children_size());
+        for(size_t idx(0); idx < max; ++idx)
+        {
+            Node::pointer_t list(node->get_child(idx));
+            if(list->gettype() == Node::NODE_DIRECTIVE_LIST)
+            {
                 // it is an error if the user defined
                 // it directly on the function; it is
                 // fine if it comes from the parent
-                if((local_attrs & NODE_ATTR_INTRINSIC) != 0) {
-                    f_error_stream->ErrMsg(AS_ERR_INTRINSIC, node, "'intrinsic' is not permitted on a function with a body.");
+                if(has_direct_intrinsic)
+                {
+                    Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INTRINSIC, f_lexer->get_input()->get_position());
+                    msg << "'intrinsic' is not permitted on a function with a body.";
                 }
-                attrs &= ~NODE_ATTR_INTRINSIC;
+                node->set_flag(NODE_ATTR_INTRINSIC, false);
                 break;
             }
         }
     }
-
-    node.SetAttrs(attrs | NODE_ATTR_DEFINED);
-
-    return attrs;
 }
 
 
 
-void IntCompiler::AssignmentOperator(NodePtr& expr)
+void Compiler::AssignmentOperator(NodePtr& expr)
 {
     bool    is_var = false;
 
@@ -5336,7 +5379,7 @@ fprintf(stderr, "CAUGHT! setter...\n");
 }
 
 
-void IntCompiler::UnaryOperator(NodePtr& expr)
+void Compiler::UnaryOperator(NodePtr& expr)
 {
     const char *op;
 
@@ -5347,7 +5390,8 @@ void IntCompiler::UnaryOperator(NodePtr& expr)
 
     NodePtr left = expr.GetChild(0);
     NodePtr& type = left.GetLink(NodePtr::LINK_TYPE);
-    if(!type.HasNode()) {
+    if(!type.HasNode())
+    {
 //fprintf(stderr, "WARNING: operand of unary operator isn't typed.\n");
         return;
     }
@@ -5381,17 +5425,18 @@ void IntCompiler::UnaryOperator(NodePtr& expr)
     }
 
     expr.DeleteChild(del);
-    if(!result) {
+    if(!result)
+    {
         f_error_stream->ErrMsg(AS_ERR_INVALID_OPERATOR, expr, "cannot apply operator '%s' to this object.", op);
         return;
     }
 
 //fprintf(stderr, "Found operator!!!\n");
 
-    NodePtr& op_type = resolution.GetLink(NodePtr::LINK_TYPE);
+    Node::pointer_t op_type(resolution->get_link(Node::LINK_TYPE));
 
-    unsigned long attrs = GetAttributes(resolution);
-    if((attrs & NODE_ATTR_INTRINSIC) != 0) {
+    if(get_attribute(resolution, Node::NODE_ATTR_INTRINSIC))
+    {
         Data& data = expr.GetData();
         switch(data.f_type) {
         case NODE_INCREMENT:
@@ -5541,85 +5586,77 @@ void IntCompiler::UnaryOperator(NodePtr& expr)
 
 
 
-void IntCompiler::BinaryOperator(NodePtr& expr)
+void Compiler::binary_operator(Node::pointer_t& expr)
 {
-    const char *op;
+    char const *op;
 
-    op = expr.OperatorToString();
-    AS_ASSERT(op != 0);
+    op = expr->operator_to_string();
+    if(!op)
+    {
+        throw exception_internal_error("operator_to_string() returned an empty string for a binary operator");
+    }
 
-//fprintf(stderr, "Bin - Operator [%s]\n", op);
-//expr.Display(stderr);
-
-    NodePtr left = expr.GetChild(0);
-    NodePtr& ltype = left.GetLink(NodePtr::LINK_TYPE);
-    if(!ltype.HasNode()) {
-//fprintf(stderr, "WARNING: left hand side of operator isn't typed.\n");
+    Node::poiner_t left(expr->get_child(0));
+    Node::pointer_t ltype(left->get_link(Node::LINK_TYPE));
+    if(!ltype)
+    {
         return;
     }
 
-    NodePtr right = expr.GetChild(1);
-    NodePtr rtype = right.GetLink(NodePtr::LINK_TYPE);
-    if(!rtype.HasNode()) {
-//fprintf(stderr, "WARNING: right hand side of operator isn't typed.\n");
+    Node::pointer_t right(expr->get_child(1));
+    Node::pointer_t rtype(right->get_link(Node::LINK_TYPE);
+    if(!rtype)
+    {
         return;
     }
 
-    NodePtr l;
-    NodePtr r;
+    Node::pointer_t l(expr->create_replacement(Node::NODE_IDENTIFIER));
+    l->set_string("left");
+    Node::pointer_t r(expr->create_replacement(Node::NODE_IDENTIFIER));
+    r->set_string("right");
 
-    l.CreateNode(NODE_IDENTIFIER);
-    r.CreateNode(NODE_IDENTIFIER);
+    l->set_link(Node::LINK_TYPE, ltype);
+    r->set_link(Node::LINK_TYPE, rtype);
 
-    Data& lname = l.GetData();
-    Data& rname = r.GetData();
-    lname.f_str = "left";
-    rname.f_str = "right";
+    Node::pointer_t params(expr->create_replacement(Node::NODE_LIST));
+    params->append_child(l);
+    params->append_child(r);
 
-    l.SetLink(NodePtr::LINK_TYPE, ltype);
-    r.SetLink(NodePtr::LINK_TYPE, rtype);
+    Node::pointer_t id(expr->create_replacement(Node::NODE_IDENTIFIER));
+    id->set_string(op);
+    id->append_child(params);
 
-    NodePtr params;
-    params.CreateNode(NODE_LIST);
-    params.AddChild(l);
-    params.AddChild(r);
+    int const del(expr.GetChildCount());
+    expr->add_child(id);
 
-    NodePtr id;
-    id.CreateNode(NODE_IDENTIFIER);
-    Data& name = id.GetData();
-    name.f_str = op;
-    id.AddChild(params);
+    offsets(expr);
 
-    int del = expr.GetChildCount();
-    expr.AddChild(id);
-
-    Offsets(expr);
-
-    NodePtr resolution;
+    Node::pointer_t resolution;
     int funcs = 0;
     bool result;
     {
         NodeLock ln(expr);
-        result = FindField(ltype, id, funcs, resolution, &params, 0);
-        if(!result) {
-            result = FindField(rtype, id, funcs, resolution, &params, 0);
+        result = find_field(ltype, id, funcs, resolution, &params, 0);
+        if(!result)
+        {
+            result = find_field(rtype, id, funcs, resolution, &params, 0);
         }
     }
 
-    expr.DeleteChild(del);
-    if(!result) {
-        f_error_stream->ErrMsg(AS_ERR_INVALID_OPERATOR, expr, "cannot apply operator '%s' to these objects.", op);
+    expr->delete_child(del);
+    if(!result)
+    {
+        Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_OPERATOR, expr->get_position());
+        msg << "cannot apply operator '" << op << "' to these objects.";
         return;
     }
-
-//fprintf(stderr, "Found operator!!!\n");
 
     NodePtr& op_type = resolution.GetLink(NodePtr::LINK_TYPE);
 
     unsigned long attrs = GetAttributes(resolution);
-    if((attrs & NODE_ATTR_INTRINSIC) != 0) {
+    if((attrs & NODE_ATTR_INTRINSIC) != 0)
+    {
         // we keep intrinsic operators as is
-//fprintf(stderr, "It is binary intrinsic operator...\n");
         expr.SetLink(NodePtr::LINK_INSTANCE, resolution);
         expr.SetLink(NodePtr::LINK_TYPE, op_type);
         return;
@@ -5673,7 +5710,7 @@ void IntCompiler::BinaryOperator(NodePtr& expr)
 
 
 
-void IntCompiler::ObjectLiteral(NodePtr& expr)
+void Compiler::ObjectLiteral(NodePtr& expr)
 {
     // define the type of the literal (i.e. Object)
     TypeExpr(expr);
@@ -5719,7 +5756,7 @@ void IntCompiler::ObjectLiteral(NodePtr& expr)
 }
 
 
-void IntCompiler::CheckThisValidity(NodePtr& expr)
+void Compiler::CheckThisValidity(NodePtr& expr)
 {
     unsigned long attrs;
     NodePtr parent = expr;
@@ -5758,7 +5795,7 @@ void IntCompiler::CheckThisValidity(NodePtr& expr)
 
 
 
-void IntCompiler::CheckSuperValidity(NodePtr& expr)
+void Compiler::CheckSuperValidity(NodePtr& expr)
 {
     NodePtr parent = expr.GetParent();
     Data& data = parent.GetData();
@@ -5828,7 +5865,7 @@ fprintf(stderr, "WARNING: 'super.member()' should only be used in a class functi
 
 
 
-bool IntCompiler::IsFunctionAbstract(NodePtr& function)
+bool Compiler::IsFunctionAbstract(NodePtr& function)
 {
     int max = function.GetChildCount();
     for(int idx = 0; idx < max; ++idx) {
@@ -5843,7 +5880,7 @@ bool IntCompiler::IsFunctionAbstract(NodePtr& function)
 }
 
 
-bool IntCompiler::FindOverloadedFunction(NodePtr& class_node, NodePtr& function)
+bool Compiler::FindOverloadedFunction(NodePtr& class_node, NodePtr& function)
 {
     Data& func_data = function.GetData();
     int max = class_node.GetChildCount();
@@ -5880,7 +5917,8 @@ bool IntCompiler::FindOverloadedFunction(NodePtr& class_node, NodePtr& function)
         case NODE_FUNCTION:
             if(func_data.f_str == data.f_str) {
                 // found a function with the same name
-                if(CompareParameters(function, child)) {
+                if(compare_parameters(function, child))
+                {
                     // yes! it is overloaded!
                     return true;
                 }
@@ -5897,7 +5935,7 @@ bool IntCompiler::FindOverloadedFunction(NodePtr& class_node, NodePtr& function)
 }
 
 
-bool IntCompiler::IsFunctionOverloaded(NodePtr& class_node, NodePtr& function)
+bool Compiler::IsFunctionOverloaded(NodePtr& class_node, NodePtr& function)
 {
     Data *d;
     NodePtr parent = ClassOfMember(function, d);
@@ -5911,7 +5949,7 @@ bool IntCompiler::IsFunctionOverloaded(NodePtr& class_node, NodePtr& function)
 }
 
 
-bool IntCompiler::HasAbstractFunctions(NodePtr& class_node, NodePtr& list, NodePtr& func)
+bool Compiler::HasAbstractFunctions(NodePtr& class_node, NodePtr& list, NodePtr& func)
 {
     int max = list.GetChildCount();
     for(int idx = 0; idx < max; ++idx) {
@@ -5966,7 +6004,7 @@ bool IntCompiler::HasAbstractFunctions(NodePtr& class_node, NodePtr& list, NodeP
 }
 
 
-void IntCompiler::CanInstantiateType(NodePtr& expr)
+void Compiler::CanInstantiateType(NodePtr& expr)
 {
     Data& data = expr.GetData();
     if(data.f_type != NODE_IDENTIFIER) {
@@ -5998,7 +6036,7 @@ void IntCompiler::CanInstantiateType(NodePtr& expr)
 }
 
 
-bool IntCompiler::SpecialIdentifier(NodePtr& expr)
+bool Compiler::SpecialIdentifier(NodePtr& expr)
 {
     // all special identifier are defined as "__...__"
     // that means they are at least 5 characters and they need to
@@ -6205,7 +6243,7 @@ bool IntCompiler::SpecialIdentifier(NodePtr& expr)
 }
 
 
-bool IntCompiler::ExpressionNew(NodePtr& new_node)
+bool Compiler::expression_new(Node::pointer_t new_node)
 {
     //
     // handle the special case of:
@@ -6271,130 +6309,134 @@ bool IntCompiler::ExpressionNew(NodePtr& new_node)
 }
 
 
-void IntCompiler::Expression(NodePtr& expr, NodePtr *params)
+void Compiler::expression(Node::pointer_t expr, Node::pointer_t params)
 {
     // we already came here on that one?
-    if(expr.GetLink(NodePtr::LINK_TYPE).HasNode()) {
+    if(expr->get_link(Node::LINK_TYPE))
+    {
         return;
     }
 
     // try to optimize the expression before to compile it
     // (it can make a huge difference!)
-    f_optimizer.Optimize(expr);
+    f_optimizer->optimize(expr);
 
     Data& data = expr.GetData();
 
-    switch(data.f_type) {
-    case NODE_STRING:
-    case NODE_INT64:
-    case NODE_FLOAT64:
-    case NODE_TRUE:
-    case NODE_FALSE:
+    switch(expr->get_type())
+    {
+    case Node::NODE_STRING:
+    case Node::NODE_INT64:
+    case Node::NODE_FLOAT64:
+    case Node::NODE_TRUE:
+    case Node::NODE_FALSE:
         TypeExpr(expr);
         return;
 
-    case NODE_ARRAY_LITERAL:
+    case Node::NODE_ARRAY_LITERAL:
         TypeExpr(expr);
         break;
 
-    case NODE_OBJECT_LITERAL:
+    case Node::NODE_OBJECT_LITERAL:
         ObjectLiteral(expr);
         return;
 
-    case NODE_NULL:
-    case NODE_PUBLIC:
-    case NODE_PRIVATE:
-    case NODE_UNDEFINED:
+    case Node::NODE_NULL:
+    case Node::NODE_PUBLIC:
+    case Node::NODE_PRIVATE:
+    case Node::NODE_UNDEFINED:
         return;
 
-    case NODE_SUPER:
+    case Node::NODE_SUPER:
         CheckSuperValidity(expr);
         return;
 
-    case NODE_THIS:
+    case Node::NODE_THIS:
         CheckThisValidity(expr);
         return;
 
-    case NODE_ADD:
-    case NODE_ARRAY:
-    case NODE_AS:
-    case NODE_ASSIGNMENT_ADD:
-    case NODE_ASSIGNMENT_BITWISE_AND:
-    case NODE_ASSIGNMENT_BITWISE_OR:
-    case NODE_ASSIGNMENT_BITWISE_XOR:
-    case NODE_ASSIGNMENT_DIVIDE:
-    case NODE_ASSIGNMENT_LOGICAL_AND:
-    case NODE_ASSIGNMENT_LOGICAL_OR:
-    case NODE_ASSIGNMENT_LOGICAL_XOR:
-    case NODE_ASSIGNMENT_MAXIMUM:
-    case NODE_ASSIGNMENT_MINIMUM:
-    case NODE_ASSIGNMENT_MODULO:
-    case NODE_ASSIGNMENT_MULTIPLY:
-    case NODE_ASSIGNMENT_POWER:
-    case NODE_ASSIGNMENT_ROTATE_LEFT:
-    case NODE_ASSIGNMENT_ROTATE_RIGHT:
-    case NODE_ASSIGNMENT_SHIFT_LEFT:
-    case NODE_ASSIGNMENT_SHIFT_RIGHT:
-    case NODE_ASSIGNMENT_SHIFT_RIGHT_UNSIGNED:
-    case NODE_ASSIGNMENT_SUBTRACT:
-    case NODE_BITWISE_AND:
-    case NODE_BITWISE_NOT:
-    case NODE_BITWISE_OR:
-    case NODE_BITWISE_XOR:
-    case NODE_CONDITIONAL:
-    case NODE_DECREMENT:
-    case NODE_DELETE:
-    case NODE_DIVIDE:
-    case NODE_EQUAL:
-    case NODE_GREATER:
-    case NODE_GREATER_EQUAL:
-    case NODE_IN:
-    case NODE_INCREMENT:
-    case NODE_INSTANCEOF:
-    case NODE_TYPEOF:
-    case NODE_IS:
-    case NODE_LESS:
-    case NODE_LESS_EQUAL:
-    case NODE_LIST:
-    case NODE_LOGICAL_AND:
-    case NODE_LOGICAL_NOT:
-    case NODE_LOGICAL_OR:
-    case NODE_LOGICAL_XOR:
-    case NODE_MATCH:
-    case NODE_MAXIMUM:
-    case NODE_MINIMUM:
-    case NODE_MODULO:
-    case NODE_MULTIPLY:
-    case NODE_NOT_EQUAL:
-    case NODE_POST_DECREMENT:
-    case NODE_POST_INCREMENT:
-    case NODE_POWER:
-    case NODE_RANGE:
-    case NODE_ROTATE_LEFT:
-    case NODE_ROTATE_RIGHT:
-    case NODE_SCOPE:
-    case NODE_SHIFT_LEFT:
-    case NODE_SHIFT_RIGHT:
-    case NODE_SHIFT_RIGHT_UNSIGNED:
-    case NODE_STRICTLY_EQUAL:
-    case NODE_STRICTLY_NOT_EQUAL:
-    case NODE_SUBTRACT:
+    case Node::NODE_ADD:
+    case Node::NODE_ARRAY:
+    case Node::NODE_AS:
+    case Node::NODE_ASSIGNMENT_ADD:
+    case Node::NODE_ASSIGNMENT_BITWISE_AND:
+    case Node::NODE_ASSIGNMENT_BITWISE_OR:
+    case Node::NODE_ASSIGNMENT_BITWISE_XOR:
+    case Node::NODE_ASSIGNMENT_DIVIDE:
+    case Node::NODE_ASSIGNMENT_LOGICAL_AND:
+    case Node::NODE_ASSIGNMENT_LOGICAL_OR:
+    case Node::NODE_ASSIGNMENT_LOGICAL_XOR:
+    case Node::NODE_ASSIGNMENT_MAXIMUM:
+    case Node::NODE_ASSIGNMENT_MINIMUM:
+    case Node::NODE_ASSIGNMENT_MODULO:
+    case Node::NODE_ASSIGNMENT_MULTIPLY:
+    case Node::NODE_ASSIGNMENT_POWER:
+    case Node::NODE_ASSIGNMENT_ROTATE_LEFT:
+    case Node::NODE_ASSIGNMENT_ROTATE_RIGHT:
+    case Node::NODE_ASSIGNMENT_SHIFT_LEFT:
+    case Node::NODE_ASSIGNMENT_SHIFT_RIGHT:
+    case Node::NODE_ASSIGNMENT_SHIFT_RIGHT_UNSIGNED:
+    case Node::NODE_ASSIGNMENT_SUBTRACT:
+    case Node::NODE_BITWISE_AND:
+    case Node::NODE_BITWISE_NOT:
+    case Node::NODE_BITWISE_OR:
+    case Node::NODE_BITWISE_XOR:
+    case Node::NODE_CONDITIONAL:
+    case Node::NODE_DECREMENT:
+    case Node::NODE_DELETE:
+    case Node::NODE_DIVIDE:
+    case Node::NODE_EQUAL:
+    case Node::NODE_GREATER:
+    case Node::NODE_GREATER_EQUAL:
+    case Node::NODE_IN:
+    case Node::NODE_INCREMENT:
+    case Node::NODE_INSTANCEOF:
+    case Node::NODE_TYPEOF:
+    case Node::NODE_IS:
+    case Node::NODE_LESS:
+    case Node::NODE_LESS_EQUAL:
+    case Node::NODE_LIST:
+    case Node::NODE_LOGICAL_AND:
+    case Node::NODE_LOGICAL_NOT:
+    case Node::NODE_LOGICAL_OR:
+    case Node::NODE_LOGICAL_XOR:
+    case Node::NODE_MATCH:
+    case Node::NODE_MAXIMUM:
+    case Node::NODE_MINIMUM:
+    case Node::NODE_MODULO:
+    case Node::NODE_MULTIPLY:
+    case Node::NODE_NOT_EQUAL:
+    case Node::NODE_POST_DECREMENT:
+    case Node::NODE_POST_INCREMENT:
+    case Node::NODE_POWER:
+    case Node::NODE_RANGE:
+    case Node::NODE_ROTATE_LEFT:
+    case Node::NODE_ROTATE_RIGHT:
+    case Node::NODE_SCOPE:
+    case Node::NODE_SHIFT_LEFT:
+    case Node::NODE_SHIFT_RIGHT:
+    case Node::NODE_SHIFT_RIGHT_UNSIGNED:
+    case Node::NODE_STRICTLY_EQUAL:
+    case Node::NODE_STRICTLY_NOT_EQUAL:
+    case Node::NODE_SUBTRACT:
         break;
 
-    case NODE_NEW:
+    case Node::NODE_NEW:
         if(ExpressionNew(expr)) {
             return;
         }
         break;
 
-    case NODE_VOID:
+    case Node::NODE_VOID:
     {
         // If the expression has no side effect (i.e. doesn't
         // call a function, doesn't use ++ or --, etc.) then
         // we don't even need to keep it! Instead we replace
         // the void by undefined.
-        if(expr.HasSideEffects()) {
+        if(expr->has_side_effects())
+        {
             // we need to keep some of this expression
+            //
             // TODO: we need to optimize better; this
             // should only keep expressions with side
             // effects and not all expressions; for
@@ -6402,7 +6444,7 @@ void IntCompiler::Expression(NodePtr& expr, NodePtr *params)
             //    void (a + b(c));
             // should become:
             //    void b(c);
-            // (assuming that a isn't a call to a getter
+            // (assuming that 'a' isn't a call to a getter
             // function which could have a side effect)
             break;
         }
@@ -6410,27 +6452,28 @@ void IntCompiler::Expression(NodePtr& expr, NodePtr *params)
         data.f_type = NODE_UNDEFINED;
         // and we don't need to keep the children
         int idx = expr.GetChildCount();
-        while(idx > 0) {
+        while(idx > 0)
+        {
             idx--;
             expr.DeleteChild(idx);
         }
     }
         return;
 
-    case NODE_ASSIGNMENT:
+    case Node::NODE_ASSIGNMENT:
         AssignmentOperator(expr);
         return;
 
-    case NODE_FUNCTION:
+    case Node::NODE_FUNCTION:
         Function(expr);
         return;
 
-    case NODE_MEMBER:
+    case Node::NODE_MEMBER:
         ResolveMember(expr, params, SEARCH_FLAG_GETTER);
         return;
 
-    case NODE_IDENTIFIER:
-    case NODE_VIDENTIFIER:
+    case Node::NODE_IDENTIFIER:
+    case Node::NODE_VIDENTIFIER:
     {
         if(SpecialIdentifier(expr)) {
             return;
@@ -6459,12 +6502,15 @@ void IntCompiler::Expression(NodePtr& expr, NodePtr *params)
     }
         return;
 
-    case NODE_CALL:
+    case Node::NODE_CALL:
         ResolveCall(expr);
         return;
 
     default:
-        f_error_stream->ErrMsg(AS_ERR_INTERNAL_ERROR, expr, "unhandled expression data type %s.\n", data.GetTypeName());
+    {
+        Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INTERNAL_ERROR, f_lexer->get_input()->get_position());
+        msg << "unhandled expression data type \"" << expr->get_type_name() << "\".";
+    }
         return;
 
     }
@@ -6535,7 +6581,7 @@ void IntCompiler::Expression(NodePtr& expr, NodePtr *params)
     case NODE_SHIFT_RIGHT_UNSIGNED:
     case NODE_STRICTLY_EQUAL:
     case NODE_STRICTLY_NOT_EQUAL:
-        BinaryOperator(expr);
+        binary_operator(expr);
         break;
 
     case NODE_IN:
@@ -6585,15 +6631,13 @@ void IntCompiler::Expression(NodePtr& expr, NodePtr *params)
     case NODE_ASSIGNMENT_SHIFT_RIGHT_UNSIGNED:
     case NODE_ASSIGNMENT_SUBTRACT:
         // TODO: we need to replace the intrinsic special
-        //     assignment ops with a regular assignment
-        //     (i.e. a += b becomes a = a + (b))
-        BinaryOperator(expr);
+        //       assignment ops with a regular assignment
+        //       (i.e. a += b becomes a = a + (b))
+        binary_operator(expr);
         break;
 
     default:
-        // ERROR: there is a missing entry in the 2nd switch!
-        AS_ASSERT(0);
-        break;
+        throw exception_internal_error("error: there is a missing entry in the 2nd switch of Compiler::expression()");
 
     }
 }

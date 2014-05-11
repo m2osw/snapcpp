@@ -226,46 +226,6 @@ private:
 
 
 
-// Finally, once the program was parsed and then compiled
-// one usually wants to optimize it. This means removing
-// all the possible expressions and statements which can
-// be removed to make the code more efficient. The
-// optimizations applied can be tweaked using the options.
-//
-// The code, after you ran the compiler looks like this:
-//
-//    Optimizer *optimizer = Optimizer::CreateOptimizer();
-//    // this is the same options as for the parser
-//    optimize->SetOptions(options);
-//    optimize->Optimize(root);
-//
-// The Optimize() function goes through the list of
-// nodes defined in the root parameter and it tries to
-// remove all possible expressions and functions which
-// will have no effect in the final output (certain things,
-// such as x + 0, are not removed since it has an effect!).
-// The root parameter is what was returned by the Parse()
-// function of the Parser object.
-//
-// Note that it is expected that you first Compile()
-// the nodes, but it is possible to call the optimizer
-// without first running any compilation.
-class Optimizer
-{
-public:
-    virtual            ~Optimizer() {}
-
-    static Optimizer *    CreateOptimizer(void);
-    static const char *    Version(void);
-
-    virtual void        SetErrorStream(ErrorStream& error_stream) = 0;
-    virtual void        SetOptions(Options& options) = 0;
-    virtual int        Optimize(NodePtr& tree) = 0;
-    virtual    int        GetLastLabel(void) const = 0;
-    virtual void        SetFirstLabel(int label) = 0;
-};
-
-
 
 
 // Now you're on your own! You have a perfect tree

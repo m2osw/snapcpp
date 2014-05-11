@@ -1,10 +1,10 @@
-#ifndef AS2JS_NODE_H
-#define AS2JS_NODE_H
-/* optimizer.h -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2009 */
+#ifndef AS2JS_OPTIMIZER_H
+#define AS2JS_OPTIMIZER_H
+/* optimizer.h -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
 
 /*
 
-Copyright (c) 2005-2009 Made to Order Software Corp.
+Copyright (c) 2005-2014 Made to Order Software Corp.
 
 Permission is hereby granted, free of charge, to any
 person obtaining a copy of this software and
@@ -33,78 +33,99 @@ SOFTWARE.
 
 */
 
+//#include    "as2js/stream.h"
+#include    "as2js/options.h"
+#include    "as2js/node.h"
 
-#include    "sswf/libsswf_as.h"
 
-namespace sswf
+namespace as2js
 {
-namespace as
-{
 
 
 
 
-class IntOptimizer : public Optimizer
+// Finally, once the program was parsed and then compiled
+// one usually wants to optimize it. This means removing
+// all the possible expressions and statements which can
+// be removed to make the code more efficient. The
+// optimizations applied can be tweaked using the options.
+//
+// The code, after you ran the compiler looks like this:
+//
+//    Optimizer *optimizer = Optimizer::CreateOptimizer();
+//    // this is the same options as for the parser
+//    optimize->SetOptions(options);
+//    optimize->Optimize(root);
+//
+// The Optimize() function goes through the list of
+// nodes defined in the root parameter and it tries to
+// remove all possible expressions and functions which
+// will have no effect in the final output (certain things,
+// such as x + 0, are not removed since it has an effect!).
+// The root parameter is what was returned by the Parse()
+// function of the Parser object.
+//
+// Note that it is expected that you first Compile()
+// the nodes, but it is possible to call the optimizer
+// without first running any compilation.
+class Optimizer
 {
 public:
-                IntOptimizer(void);
-    virtual            ~IntOptimizer();
+    typedef int32_t         label_t;
 
-    virtual void        SetErrorStream(ErrorStream& error_stream);
-    virtual void        SetOptions(Options& options);
-    virtual int        Optimize(NodePtr& root);
-    virtual    int        GetLastLabel(void) const;
-    virtual void        SetFirstLabel(int label);
+                            Optimizer();
+
+    void                    set_options(Options::pointer_t& options);
+    int                     optimize(Node::pointer_t& root);
+    label_t                 get_last_label() const;
+    void                    set_first_label(label_t label);
 
 private:
-    void            Run(NodePtr& root);
-    int            Compare(NodePtr& relational);
-    void            Label(String& label);
+    void                    run(Node::pointer_t& root);
+    int                     compare(Node::pointer_t& relational);
+    void                    label(String& new_label);
 
-    void            Add(NodePtr& add);
-    void            Assignment(NodePtr& add);
-    void            AssignmentAdd(NodePtr& assignment);
-    void            AssignmentDivide(NodePtr& assignment);
-    void            AssignmentMultiply(NodePtr& assignment);
-    void            AssignmentModulo(NodePtr& assignment);
-    void            BitwiseAnd(NodePtr& bitwise_and);
-    void            BitwiseNot(NodePtr& bitwise_not);
-    void            BitwiseOr(NodePtr& bitwise_or);
-    void            BitwiseXOr(NodePtr& bitwise_xor);
-    void            Conditional(NodePtr& conditional);
-    void            Decrement(NodePtr& decrement);
-    void            DirectiveList(NodePtr& id);
-    void            Divide(NodePtr& divide);
-    void            Do(NodePtr& do_node);
-    void            Equality(NodePtr& equality, bool strict, bool logical_not);
-    void            Greater(NodePtr& logical_and);
-    void            GreaterEqual(NodePtr& logical_and);
-    void            If(NodePtr& if_node);
-    void            Increment(NodePtr& increment);
-    void            Less(NodePtr& logical_and);
-    void            LessEqual(NodePtr& logical_and);
-    void            LogicalAnd(NodePtr& logical_and);
-    void            LogicalNot(NodePtr& logical_not);
-    void            LogicalOr(NodePtr& logical_or);
-    void            LogicalXOr(NodePtr& logical_xor);
-    void            Maximum(NodePtr& minmax);
-    void            Minimum(NodePtr& minmax);
-    void            Modulo(NodePtr& divide);
-    void            Multiply(NodePtr& multiply);
-    void            Power(NodePtr& multiply);
-    void            RotateLeft(NodePtr& rotate_left);
-    void            RotateRight(NodePtr& rotate_right);
-    void            ShiftLeft(NodePtr& shift_left);
-    void            ShiftRight(NodePtr& shift_right);
-    void            ShiftRightUnsigned(NodePtr& shift_right_unsigned);
-    void            Subtract(NodePtr& subtract);
-    void            While(NodePtr& while_node);
+    void                    add(Node::pointer_t& add);
+    void                    assignment(Node::pointer_t& add);
+    void                    assignment_add(Node::pointer_t& assignment);
+    void                    assignment_divide(Node::pointer_t& assignment);
+    void                    assignment_multiply(Node::pointer_t& assignment);
+    void                    assignment_modulo(Node::pointer_t& assignment);
+    void                    bitwise_and(Node::pointer_t& bitwise_and);
+    void                    bitwise_not(Node::pointer_t& bitwise_not);
+    void                    bitwise_or(Node::pointer_t& bitwise_or);
+    void                    bitwise_xor(Node::pointer_t& bitwise_xor);
+    void                    conditional(Node::pointer_t& conditional);
+    void                    decrement(Node::pointer_t& decrement);
+    void                    directive_list(Node::pointer_t& id);
+    void                    divide(Node::pointer_t& divide);
+    void                    do_directive(Node::pointer_t& do_node);
+    void                    equality(Node::pointer_t& equality, bool strict, bool logical_not);
+    void                    greater(Node::pointer_t& logical_and);
+    void                    greater_equal(Node::pointer_t& logical_and);
+    void                    if_directive(Node::pointer_t& if_node);
+    void                    increment(Node::pointer_t& increment);
+    void                    less(Node::pointer_t& logical_and);
+    void                    less_equal(Node::pointer_t& logical_and);
+    void                    logical_and(Node::pointer_t& logical_and);
+    void                    logical_not(Node::pointer_t& logical_not);
+    void                    logical_or(Node::pointer_t& logical_or);
+    void                    logical_xor(Node::pointer_t& logical_xor);
+    void                    maximum(Node::pointer_t& minmax);
+    void                    minimum(Node::pointer_t& minmax);
+    void                    modulo(Node::pointer_t& divide);
+    void                    multiply(Node::pointer_t& multiply);
+    void                    power(Node::pointer_t& multiply);
+    void                    rotate_left(Node::pointer_t& rotate_left);
+    void                    rotate_right(Node::pointer_t& rotate_right);
+    void                    shift_left(Node::pointer_t& shift_left);
+    void                    shift_right(Node::pointer_t& shift_right);
+    void                    shift_right_unsigned(Node::pointer_t& shift_right_unsigned);
+    void                    subtract(Node::pointer_t& subtract);
+    void                    while_directive(Node::pointer_t& while_node);
 
-    ErrorStream        f_default_error_stream;
-    ErrorStream *        f_error_stream;
-    Options *        f_options;
-    int            f_label;    // for auto-label naming
-    int            f_errcnt;
+    Options::pointer_t                      f_options;
+    controlled_vars::auto_init<label_t, 0>  f_label;    // for auto-label naming
 };
 
 
@@ -115,6 +136,6 @@ private:
 // namespace as2js
 
 #endif
-// #ifndef AS2JS_NODE_H
+// #ifndef AS2JS_OPTIMIZER_H
 
 // vim: ts=4 sw=4 et

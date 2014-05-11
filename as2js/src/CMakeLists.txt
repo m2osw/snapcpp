@@ -56,9 +56,9 @@ add_library(as2js SHARED
     parser.cpp
     variable.cpp
 
+    optimizer.cpp
     compile.cpp
     compiler.cpp
-    optimizer.cpp
 )
 set_target_properties( as2js PROPERTIES
         VERSION ${AS2JS_VERSION_MAJOR}.${AS2JS_VERSION_MINOR}

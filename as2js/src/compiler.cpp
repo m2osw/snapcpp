@@ -65,16 +65,21 @@ const char *Compiler::Version(void)
 /**********************************************************************/
 
 
-IntCompiler::rc_t    IntCompiler::g_rc;
-NodePtr            IntCompiler::g_global_import;
-NodePtr            IntCompiler::g_system_import;
-NodePtr            IntCompiler::g_native_import;
+namespace
+{
+
+IntCompiler::rc_t    Compiler::g_rc;
+Node::pointer_t      Compiler::g_global_import;
+Node::pointer_t      Compiler::g_system_import;
+Node::pointer_t      Compiler::g_native_import;
+
+}
 
 
-IntCompiler::IntCompiler(InputRetriever *input)
+Compiler::Compiler(InputRetriever *input)
 {
     // TODO: under MS-Windows, we may want to use something such
-    //     as a SHGetFolder() call
+    //       as a SHGetFolder() call
     f_home = getenv("HOME");
 
     //f_default_error_stream -- auto-init
@@ -155,7 +160,7 @@ bool IntCompiler::isspace(int c)
 
 
 
-void IntCompiler::rc_t::FindRC(const String& home, bool accept_if_missing)
+void Compiler::rc_t::find_rc(String const& home, bool const accept_if_missing)
 {
     // first try to find a place with a .rc
     // (at this time, these directories are kind of random...)
@@ -931,17 +936,18 @@ found:
 }
 
 
-void IntCompiler::FindPackages_AddDatabaseEntry(const String& package_name, NodePtr& element, const char *type)
+void Compiler::find_packages_add_database_entry(String const& package_name, Node::pointer_t& element, char const *type)
 {
     // here, we totally ignore internal, private
     // and false entries right away
-    unsigned long attr = GetAttributes(element);
-    if((attr & (NODE_ATTR_PRIVATE | NODE_ATTR_FALSE | NODE_ATTR_INTERNAL)) != 0) {
+    if(get_attribute(element, Node::NODE_ATTR_PRIVATE)
+    || get_attribute(element, Node::NODE_ATTR_FALSE)
+    || get_attribute(element, Node::NODE_ATTR_INTERNAL))
+    {
         return;
     }
 
-    Data& data = element.GetData();
-    FindElement(package_name, data.f_str, &element, type);
+    find_element(package_name, element->get_string(), element, type);
 }
 
 

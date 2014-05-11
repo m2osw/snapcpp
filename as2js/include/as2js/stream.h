@@ -95,6 +95,7 @@ private:
 class FileInput : public Input
 {
 public:
+    typedef std::shared_ptr<FileInput>              pointer_t;
     typedef controlled_vars::ptr_auto_init<FILE>    zfile_t;
 
     virtual                 ~FileInput();
@@ -116,6 +117,8 @@ protected:
 class FileUCS32Input : public FileInput
 {
 protected:
+    typedef std::shared_ptr<FileUCS32Input>         pointer_t;
+
     virtual char_t          internal_getc();
 };
 
@@ -124,6 +127,8 @@ protected:
 class StringInput : public Input
 {
 public:
+    typedef std::shared_ptr<StringInput>            pointer_t;
+
     virtual                 ~StringInput() {}
 
     void                    set(String const& str, Position::counter_t line);
@@ -149,9 +154,11 @@ private:
 class InputRetriever
 {
 public:
+    typedef std::shared_ptr<InputRetriever>         pointer_t;
+
     virtual                         ~InputRetriever() {}
 
-    virtual std::shared_ptr<Input>  Retrieve(String const& filename) = 0;
+    virtual Input::pointer_t        retrieve(String const& filename) = 0;
 };
 
 

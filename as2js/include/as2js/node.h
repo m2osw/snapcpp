@@ -147,7 +147,6 @@ public:
         NODE_FINALLY,
         NODE_FLOAT64,
         NODE_FOR,
-        NODE_FOR_IN,
         NODE_FUNCTION,
         NODE_GOTO,
         NODE_GREATER_EQUAL,
@@ -353,7 +352,7 @@ public:
         NODE_ATTR_AUTOBREAK,
 
         // The following is to make sure we never define the attributes more
-        // than once.
+        // than once. In itself it is not an attribute.
         NODE_ATTR_DEFINED,
 
         // max used to know the number of entries and define out bitset
@@ -376,71 +375,79 @@ public:
         LINK_end
     };
 
-                            Node(node_t type);
-                            Node(pointer_t const& source, pointer_t& parent);
+                                Node(node_t type);
+                                Node(pointer_t const& source, pointer_t& parent);
 
-    node_t                  get_type() const;
-    char const *            get_type_name() const;
+    node_t                      get_type() const;
+    char const *                get_type_name() const;
 
     // basic conversions
-    bool                    to_boolean();
-    bool                    to_number();
-    bool                    to_string();
-    void                    to_videntifier();
+    void                        to_unknown();
+    bool                        to_boolean();
+    bool                        to_int64();
+    bool                        to_float64();
+    bool                        to_number();
+    bool                        to_string();
+    void                        to_videntifier();
 
-    void                    set_boolean(bool value);
-    void                    set_int64(Int64 value);
-    void                    set_float64(Float64 value);
-    void                    set_string(String const& value);
+    void                        set_boolean(bool value);
+    void                        set_int64(Int64 value);
+    void                        set_float64(Float64 value);
+    void                        set_string(String const& value);
 
-    bool                    get_boolean() const;
-    Int64                   get_int64() const;
-    Float64                 get_float64() const;
-    String const&           get_string() const;
+    bool                        get_boolean() const;
+    Int64                       get_int64() const;
+    Float64                     get_float64() const;
+    String const&               get_string() const;
+
+    pointer_t                   create_replacement(node_t type) const;
 
     // check flags
-    bool                    get_flag(flag_attribute_t f) const;
-    void                    set_flag(flag_attribute_t f, bool v);
+    bool                        get_flag(flag_attribute_t f) const;
+    void                        set_flag(flag_attribute_t f, bool v);
 
-    void                    set_position(Position const& position);
-    Position const&         get_position() const;
+    void                        set_position(Position const& position);
+    Position const&             get_position() const;
 
-    bool                    has_side_effects() const;
+    bool                        has_side_effects() const;
 
-    bool                    is_locked() const;
-    void                    lock();
-    void                    unlock();
+    bool                        is_locked() const;
+    void                        lock();
+    void                        unlock();
 
-    void                    set_offset(int32_t offset);
-    int32_t                 get_offset() const;
+    int32_t                     get_offset() const;
 
-    void                    set_parent(pointer_t parent = pointer_t(), int index = -1);
-    pointer_t               get_parent() const;
+    void                        set_parent(pointer_t parent = pointer_t(), int index = -1);
+    pointer_t                   get_parent() const;
 
-    size_t                  get_children_size() const;
-    //void                    replace_with(pointer_t& node); -- this is wrong...
-    void                    delete_child(int index);
-    void                    append_child(pointer_t& child);
-    void                    insert_child(int index, pointer_t& child);
-    void                    set_child(int index, pointer_t& child);
-    pointer_t               get_child(int index) const;
+    size_t                      get_children_size() const;
+    void                        replace_with(pointer_t node);
+    void                        delete_child(int index);
+    void                        append_child(pointer_t child);
+    void                        insert_child(int index, pointer_t child);
+    void                        set_child(int index, pointer_t child);
+    vector_of_pointers_t const& get_children() const;
+    pointer_t                   get_child(int index) const;
+    pointer_t                   find_first_child(node_t type) const;
+    pointer_t                   find_next_child(pointer_t start, node_t type) const;
+    void                        clean_tree();
 
-    void                    set_link(link_t index, pointer_t& link);
-    pointer_t               get_link(link_t index);
+    void                        set_link(link_t index, pointer_t link);
+    pointer_t                   get_link(link_t index);
 
-    void                    add_variable(pointer_t& variable);
-    size_t                  get_variable_size() const;
-    pointer_t               get_variable(int index) const;
+    void                        add_variable(pointer_t variable);
+    size_t                      get_variable_size() const;
+    pointer_t                   get_variable(int index) const;
 
-    void                    add_label(pointer_t& label);
-    size_t                  get_label_size() const;
-    //pointer_t               get_label(size_t index) const; -- because of the map and it looks like we're not using this one anyway
-    pointer_t               find_label(String const& name) const;
+    void                        add_label(pointer_t label);
+    size_t                      get_label_size() const;
+    //pointer_t                   get_label(size_t index) const; -- because of the map and it looks like we're not using this one anyway
+    pointer_t                   find_label(String const& name) const;
 
-    static char const *     operator_to_string(node_t op);
-    static node_t           string_to_operator(String const& str);
+    static char const *         operator_to_string(node_t op);
+    static node_t               string_to_operator(String const& str);
 
-    void                    display(std::ostream& out, int indent, pointer_t const& parent, char c) const;
+    void                        display(std::ostream& out, int indent, pointer_t parent, char c) const;
 
 private:
     // verify that the specified flag correspond to the node type
@@ -483,7 +490,7 @@ std::ostream& operator << (std::ostream& out, Node const& node);
 class NodeLock
 {
 public:
-                NodeLock(NodePtr& node);
+                NodeLock(Node::pointer_t node);
                 ~NodeLock();
 
     // premature unlock

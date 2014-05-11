@@ -173,9 +173,9 @@ public:
     static int          error_count();
 
 private:
-    controlled_vars::need_init<message_level_t>    f_message_level;
-    controlled_vars::need_init<err_code_t>         f_error_code;
-    Position            f_position;
+    controlled_vars::need_init<message_level_t> f_message_level;
+    controlled_vars::need_init<err_code_t>      f_error_code;
+    Position                                    f_position;
 };
 
 

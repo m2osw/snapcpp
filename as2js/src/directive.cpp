@@ -617,7 +617,6 @@ void Parser::directive(Node::pointer_t& node)
     case Node::NODE_EMPTY:
     case Node::NODE_ENTRY:
     case Node::NODE_EXCLUDE:
-    case Node::NODE_FOR_IN:    // maybe this should be a terminator?
     case Node::NODE_INCLUDE:
     case Node::NODE_LABEL:
     case Node::NODE_LIST:

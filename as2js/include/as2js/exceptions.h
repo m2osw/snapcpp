@@ -39,11 +39,11 @@ SOFTWARE.
 namespace as2js
 {
 
-class exception_internal_error : public std::runtime_error
+class exception_internal_error : public std::logic_error
 {
 public:
-    exception_internal_error(char const *msg)        : runtime_error(msg) {}
-    exception_internal_error(std::string const& msg) : runtime_error(msg) {}
+    exception_internal_error(char const *msg)        : logic_error(msg) {}
+    exception_internal_error(std::string const& msg) : logic_error(msg) {}
 };
 
 
@@ -60,6 +60,14 @@ class exception_incompatible_node_type : public std::runtime_error
 public:
     exception_incompatible_node_type(char const *msg)        : runtime_error(msg) {}
     exception_incompatible_node_type(std::string const& msg) : runtime_error(msg) {}
+};
+
+
+class exception_no_parent : public std::runtime_error
+{
+public:
+    exception_no_parent(char const *msg)        : runtime_error(msg) {}
+    exception_no_parent(std::string const& msg) : runtime_error(msg) {}
 };
 
 
