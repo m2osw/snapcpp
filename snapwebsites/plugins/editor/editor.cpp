@@ -27,6 +27,7 @@
 #include "../server_access/server_access.h"
 
 #include "dbutils.h"
+#include "mkgmtime.h"
 #include "qdomreceiver.h"
 #include "qdomxpath.h"
 #include "qdomhelpers.h"
@@ -174,7 +175,7 @@ int64_t editor::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2014, 5, 10, 16, 35, 40, content_update);
+    SNAP_PLUGIN_UPDATE(2014, 5, 13, 0, 17, 40, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -235,7 +236,8 @@ void editor::on_generate_header_content(content::path_info_t& ipath, QDomElement
 
     QDomDocument doc(header.ownerDocument());
 
-    // TODO find a way to include the editor only if required
+    // TODO: find a way to include the editor only if required
+    //       (it may already be done, search on add_javascript() for info.)
     content::content::instance()->add_javascript(doc, "editor");
 }
 
@@ -918,10 +920,32 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
                         revision_row->cell(field_name)->setValue(c);
                         current_value = QString("%1").arg(c);
                     }
+                    else if(widget_auto_save == "ms-date-us")
+                    {
+                        // convert a US date to 64 bit value in micro seconds
+                        //
+                        // TODO: verify that the date is valid and has a
+                        //       proper format for the locale
+                        //       Also we want to have a function in the
+                        //       library to do this conversion because many
+                        //       different people may end up doing similar
+                        //       conversions...
+                        struct tm time_info;
+                        memset(&time_info, 0, sizeof(time_info));
+                        time_info.tm_mon = post_value.mid(0, 2).toInt() - 1;
+                        time_info.tm_mday = post_value.mid(3, 2).toInt();
+                        time_info.tm_year = post_value.mid(6, 4).toInt() - 1900;
+                        time_t t(mkgmtime(&time_info));
+                        QtCassandra::QCassandraValue v;
+                        v.setInt64Value(t * 1000000); // seconds to microseconds
+                        revision_row->cell(field_name)->setValue(v);
+                        current_value = post_value;
+                    }
                     else if(widget_auto_save == "string")
                     {
                         // no special handling for empty strings here
                         revision_row->cell(field_name)->setValue(post_value);
+                        current_value = post_value;
                     }
                     else if(widget_auto_save == "html")
                     {
@@ -929,6 +953,7 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
                         QString value(post_value);
                         parse_out_inline_img(ipath, value);
                         revision_row->cell(field_name)->setValue(value);
+                        current_value = value;
                     }
                 }
                 else
@@ -962,6 +987,14 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
                         {
                             // no special handling for empty strings here
                             current_value = value.stringValue();
+                        }
+                        else if(widget_auto_save == "ms-date-us")
+                        {
+                            // 64 bit value representing a date in microseconds
+                            if(!value.nullValue())
+                            {
+                                current_value = f_snap->date_to_string(value.int64Value(), snap_child::DATE_FORMAT_SHORT_US);
+                            }
                         }
                     }
                     validate_editor_post_for_widget(ipath, info, widget, widget_name, widget_type, current_value, is_secret);
@@ -1122,7 +1155,7 @@ QDomDocument editor::get_editor_widgets(content::path_info_t& ipath)
             {
                 f_snap->die(snap_child::HTTP_CODE_CONFLICT, "Conflict Error",
                     QString("Layout name \"%1\" is not valid. Names on both sides of the slash (/) must be defined.").arg(script),
-                    "The layout name is not composed of either two valid names separated by a slash (/).");
+                    "The layout name is not composed of two valid names separated by a slash (/) but it does contain a slash.");
                 NOTREACHED();
             }
             script = script_parts[1];
@@ -1131,7 +1164,7 @@ QDomDocument editor::get_editor_widgets(content::path_info_t& ipath)
         {
             f_snap->die(snap_child::HTTP_CODE_CONFLICT, "Conflict Error",
                 QString("Layout name \"%1\" is not valid.").arg(script),
-                "The layout name is not composed of either one or two names.");
+                "The layout name is not composed of exactly one or two names.");
             NOTREACHED();
         }
         if(script != "default")
@@ -2510,6 +2543,14 @@ void editor::on_generate_page_content(content::path_info_t& ipath, QDomElement& 
                     {
                         current_value = QString("%1").arg(current_value);
                     }
+                }
+            }
+            else if(widget_auto_save == "ms-date-us")
+            {
+                // convert a 64 bit value in micro seconds to a US date
+                if(!value.nullValue())
+                {
+                    current_value = f_snap->date_to_string(value.int64Value(), snap_child::DATE_FORMAT_SHORT_US);
                 }
             }
             else if(widget_auto_save == "string"

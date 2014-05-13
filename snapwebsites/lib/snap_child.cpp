@@ -7045,7 +7045,7 @@ snap_child::compression_vector_t snap_child::get_compression() const
  * \li DATE_FORMAT_LONG  -- YYYY-MM-DDTHH:MM:SSZ
  * \li DATE_FORMAT_TIME  -- HH:MM:SS
  * \li DATE_FORMAT_EMAIL -- dd MMM yyyy hh:mm:ss +0000
- * \li DATE_FORAMT_HTTP  -- ddd, dd MMM yyyy hh:mm:ss +0000
+ * \li DATE_FORMAT_HTTP  -- ddd, dd MMM yyyy hh:mm:ss +0000
  *
  * The long format includes the time.
  *
@@ -7075,6 +7075,10 @@ QString snap_child::date_to_string(int64_t v, date_format_t date_format)
     {
     case DATE_FORMAT_SHORT:
         strftime(buf, sizeof(buf), "%Y-%m-%d", &time_info);
+        break;
+
+    case DATE_FORMAT_SHORT_US:
+        strftime(buf, sizeof(buf), "%m-%d-%Y", &time_info);
         break;
 
     case DATE_FORMAT_LONG:
@@ -7467,7 +7471,7 @@ time_t snap_child::string_to_date(QString const& date)
                 if(!parse_week_day())
                 {
                     // maybe that was the month, not the day
-                    // if the hours is last, we have a preprocessor date/time
+                    // if the time is last, we have a preprocessor date/time
                     if(strlen(f_s) == 11 + 1 + 8
                     && f_s[11 + 1 + 8 - 6] == ':'
                     && f_s[11 + 1 + 8 - 3] == ':')

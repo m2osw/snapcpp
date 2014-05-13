@@ -49,6 +49,9 @@ QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC
 
 snap_validate_xml( content.xml content.dtd )
 
+snap_validate_xml( sitemapxml-to-text.xsl layout/simplified-xslt20.dtd )
+snap_validate_xml( sitemapxml-to-html.xsl layout/simplified-xslt20.dtd )
+
 add_library(sitemapxml SHARED
     sitemapxml.cpp
     ${SNAP_MANAGER_MOC_CXX}

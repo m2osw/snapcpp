@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.132
+ * Version: 0.0.3.137
  * Browsers: all
  * Depends: output (>= 0.1.4), popup (>= 0.1.0.1)
  * Copyright: Copyright 2013-2014 (c) Made to Order Software Corporation  All rights reverved.
@@ -22,6 +22,10 @@
 // ==/ClosureCompiler==
 //
 
+/*
+ * JSLint options are defined online at:
+ *    http://www.jshint.com/docs/options/
+ */
 /*jslint nomen: true, todo: true, devel: true */
 /*global snapwebsites: false, jQuery: false, FileReader: true, Blob: true */
 
@@ -197,17 +201,17 @@
  *      |                                                                  |
  *  +---+------------------------------+    +---------------------------+  |
  *  |                                  |    |                           +--+
- *  | EditorWidgetTypeTextEdit         |    | EditorWidgetTypeImageBox  |
+ *  | EditorWidgetTypeTextEdit         |    | EditorWidgetTypeImageBox  |  |
+ *  |                                  |    |                           |  |
+ *  +----------------------------------+    +---------------------------+  |
+ *      ^                                                                  |
+ *      | Inherit                                                          |
+ *      |                                                                  |
+ *  +---+------------------------------+    +---------------------------+  |
+ *  |                                  |    |                           +--+
+ *  | EditorWidgetTypeLineEdit         |    | EditorWidgetTypeHidden    |
  *  |                                  |    |                           |
  *  +----------------------------------+    +---------------------------+
- *      ^
- *      | Inherit
- *      |
- *  +---+------------------------------+
- *  |                                  |
- *  | EditorWidgetTypeLineEdit         |
- *  |                                  |
- *  +----------------------------------+
  *      ^
  *      | Inherit
  *      |
@@ -3469,7 +3473,8 @@ snapwebsites.EditorForm.prototype.newTypeRegistered = function()
 
     // if we reach here, all the types are available so we can
     // properly initialize the form now
-    this.widgets_.each(function(idx, w){
+    this.widgets_.each(function(idx, w)
+        {
             var widget = jQuery(w),
                 name = widget.attr("field_name");
 
@@ -3747,8 +3752,8 @@ snapwebsites.Editor.prototype.initUnload_ = function()
  * to be saved. If so, then make sure to ask the user whether he
  * wants to save his changes before closing the window.
  *
- * @return {?string} A message saying that something wasn't saved if it
- *                   applies, null otherwise.
+ * @return {null|string|undefined}  A message saying that something
+ *          was not saved if it applies, null otherwise.
  *
  * @private
  */
@@ -4165,6 +4170,7 @@ snapwebsites.EditorWidgetType.prototype.initializeWidget = function(widget) // v
 };
 
 
+// noempty: false -- not support in current version of jslint
 /*jslint unparam: true */
 /** \brief Add an "Edit" button to this widget.
  *
@@ -4193,7 +4199,7 @@ snapwebsites.EditorWidgetType.prototype.initializeWidget = function(widget) // v
 snapwebsites.EditorWidgetType.prototype.setupEditButton = function(editor_widget) // virtual
 {
 };
-/*jslint unparam: false */
+/*jslint unparam: false */ // noempty: true -- not support in current version
 
 
 
@@ -4523,7 +4529,7 @@ snapwebsites.EditorWidgetType.prototype.droppedAttachment = function(e) // virtu
  * our hidden widgets can include any type of text.
  *
  * @constructor
- * @extends {snapwebsites.EditorWidgetTypeContentEditable}
+ * @extends {snapwebsites.EditorWidgetType}
  * @struct
  */
 snapwebsites.EditorWidgetTypeHidden = function()
@@ -4538,7 +4544,7 @@ snapwebsites.EditorWidgetTypeHidden = function()
  *
  * This is the chain between this class and it's super.
  */
-snapwebsites.inherits(snapwebsites.EditorWidgetTypeHidden, snapwebsites.EditorWidgetTypeContentEditable);
+snapwebsites.inherits(snapwebsites.EditorWidgetTypeHidden, snapwebsites.EditorWidgetType);
 
 
 /** \brief Return "hidden".
@@ -4614,7 +4620,20 @@ snapwebsites.EditorWidgetTypeTextEdit.prototype.getType = function() // virtual
  */
 snapwebsites.EditorWidgetTypeTextEdit.prototype.initializeWidget = function(widget) // virtual
 {
+    var editor_widget = /** @type {snapwebsites.EditorWidget} */ (widget),
+        c = editor_widget.getWidgetContent();
+
     snapwebsites.EditorWidgetTypeTextEdit.superClass_.initializeWidget.call(this, widget);
+
+    c.keydown(function(e)
+        {
+            if(c.is(".read-only"))
+            {
+                // no typing allowed (this should be in the text-edit though
+                e.preventDefault();
+                e.stopPropagation();
+            }
+        });
 };
 
 
@@ -4675,8 +4694,13 @@ snapwebsites.EditorWidgetTypeLineEdit.prototype.initializeWidget = function(widg
 
     c.keydown(function(e)
         {
-            if(c.is(".read-only"))
+            if(e.which === 13)
             {
+                // prevent enter from doing anything here
+                //
+                // TODO: actually we want return to apply the submit if
+                //       there is one
+                //
                 e.preventDefault();
                 e.stopPropagation();
             }

@@ -130,7 +130,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 		<!-- include dcterms? -->
 		<xsl:if test="$use_dcterms = 'yes'">
-			<link rel="schema.dcterms" href="http://purl.org/dc/terms/"/>
+			<link rel="schema.dcterms" type="text/uri-list" href="http://purl.org/dc/terms/"/>
 		</xsl:if>
 
 		<!-- short description (abstract) -->
@@ -155,9 +155,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 		<!-- copyright (by owner) / license / provenance -->
 		<xsl:if test="page/body/owner != ''">
 			<xsl:variable name="owner" select="page/body/owner"/>
-			<meta name="copyright" content="Copyright © {$year_range} by {$owner}"/>
+			<meta name="copyright" content="Copyright &#xA9; {$year_range} by {$owner}"/>
 			<xsl:if test="$use_dcterms = 'yes'">
-				<meta name="dcterms.rights" content="Copyright © {$year_range} by {$owner}"/>
+				<meta name="dcterms.rights" content="Copyright &#xA9; {$year_range} by {$owner}"/>
 				<xsl:choose>
 					<xsl:when test="page/body/owner[@href] != ''">
 						<xsl:variable name="href" select="page/body/owner/@href"/>

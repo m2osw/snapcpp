@@ -48,6 +48,12 @@ QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC
 
 snap_validate_xml( layout/content.xml content.dtd )
 
+snap_validate_xml( layout/html-header.xsl            layout/simplified-xslt20.dtd )
+snap_validate_xml( layout/default-theme-parser.xsl   layout/simplified-xslt20.dtd )
+snap_validate_xml( layout/functions.xsl              layout/simplified-xslt20.dtd )
+snap_validate_xml( layout/user-messages.xsl          layout/simplified-xslt20.dtd )
+snap_validate_xml( layout/default-body-parser.xsl    layout/simplified-xslt20.dtd )
+
 add_library(layout SHARED
     layout.cpp
     ${SNAP_MANAGER_MOC_CXX}

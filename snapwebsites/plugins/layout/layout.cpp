@@ -805,29 +805,45 @@ void layout::extract_js_and_css(QDomDocument& doc, QDomDocument& doc_output)
 {
     content::content *content_plugin(content::content::instance());
 
+    // javascripts can be added in any order because we have
+    // proper dependencies thus they automatically get sorted
+    // exactly as required (assuming the programmers know what
+    // they are doing....)
     QDomNodeList all_js(doc_output.elementsByTagName("javascript"));
-    int const max_js(all_js.size());
-    for(int i(0); i < max_js; ++i)
+    int js_idx(all_js.size());
+    while(js_idx > 0)
     {
-        QDomNode node(all_js.at(i));
+        --js_idx;
+        QDomNode node(all_js.at(js_idx));
         QDomElement js(node.toElement());
         if(!js.isNull())
         {
             QString const name(js.attribute("name"));
             content_plugin->add_javascript(doc, name);
+
+            // done with that node, remove it
+            QDomNode parent(node.parentNode());
+            parent.removeChild(node);
         }
     }
 
+    // At this pointer the CSS are not properly defined with
+    // dependencies (although I think they should just like
+    // their JavaScript counter part.) So we have to add
+    // them in the order they were defined in
     QDomNodeList all_css(doc_output.elementsByTagName("css"));
-    int const max_css(all_css.size());
-    for(int i(0); i < max_css; ++i)
+    while(all_css.size())
     {
-        QDomNode node(all_css.at(i));
+        QDomNode node(all_css.at(0));
         QDomElement css(node.toElement());
         if(!css.isNull())
         {
             QString const name(css.attribute("name"));
             content_plugin->add_css(doc, name);
+
+            // done with that node, remove it
+            QDomNode parent(node.parentNode());
+            parent.removeChild(node);
         }
     }
 }

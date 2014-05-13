@@ -96,13 +96,13 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 						<div class="box">
 							<!-- copy nodes under left -->
 							<h2 class="box-title"><xsl:choose>
-							<xsl:when test="descendant::node()/titles/short-title">
-								<xsl:value-of select="*/titles/short-title"/>
-							</xsl:when>
-							<xsl:otherwise>
-								<xsl:value-of select="*/titles/title"/>
-							</xsl:otherwise>
-							</xsl:choose></h2>
+								<xsl:when test="descendant::node()/titles/short-title">
+									<xsl:value-of select="*/titles/short-title"/>
+								</xsl:when>
+								<xsl:otherwise>
+									<xsl:value-of select="*/titles/title"/>
+								</xsl:otherwise>
+								</xsl:choose></h2>
 							<div class="box-content">
 								<xsl:copy-of select="descendant::node()/content/node()"/>
 							</div>

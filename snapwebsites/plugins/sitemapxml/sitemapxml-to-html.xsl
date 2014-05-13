@@ -106,7 +106,7 @@
     <tr>
       <td>
         <xsl:variable name="sitemapURL"><xsl:value-of select="sitemap:loc"/></xsl:variable>
-        <a href="{$sitemapURL}" ref="nofollow"><xsl:value-of select="$sitemapURL"></xsl:value-of></a>
+        <a href="{$sitemapURL}" rel="nofollow"><xsl:value-of select="$sitemapURL"></xsl:value-of></a>
       </td>
       <td><xsl:value-of select="sitemap:lastmod"/></td>
       <td><xsl:value-of select="sitemap:changefreq"/></td>

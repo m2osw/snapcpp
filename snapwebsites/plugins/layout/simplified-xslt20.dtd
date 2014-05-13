@@ -1,0 +1,258 @@
+<!--
+Snap Websites Server == DTD for all .xsl files
+Copyright (C) 2011-2014  Made to Order Software Corp.
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+-->
+<!--
+The default DTD for XSLT 2.0 is so complex that most systems trying to
+use it to verify an XSLT 2.0 file fail.
+
+Since we are not using all the features and we still want to test that
+our files are correct before sending them to a server, we use a simplified
+DTD of the XSLT 2.0.
+-->
+<!ELEMENT xsl:stylesheet (xsl:include|xsl:param|xsl:template|xsl:call-template|xsl:variable|xsl:function|xsl:output)+>
+<!ATTLIST xsl:stylesheet version CDATA #REQUIRED
+                         xmlns CDATA #IMPLIED
+                         xmlns:fn CDATA #IMPLIED
+                         xmlns:html CDATA #IMPLIED
+                         xmlns:sitemap CDATA #IMPLIED
+                         xmlns:snap CDATA #IMPLIED
+                         xmlns:xsl CDATA #IMPLIED
+                         xmlns:xs CDATA #IMPLIED>
+
+<!ELEMENT xsl:output EMPTY>
+<!ATTLIST xsl:output encoding CDATA #IMPLIED
+                     indent CDATA #IMPLIED
+                     method CDATA #IMPLIED
+                     version CDATA #IMPLIED>
+
+<!ELEMENT xsl:include EMPTY>
+<!ATTLIST xsl:include href CDATA #REQUIRED>
+
+<!ELEMENT xsl:param (#PCDATA)>
+<!ATTLIST xsl:param as CDATA #IMPLIED
+                    name CDATA #REQUIRED
+                    select CDATA #IMPLIED>
+
+<!ELEMENT xsl:with-param (#PCDATA)>
+<!ATTLIST xsl:with-param name CDATA #REQUIRED
+                         select CDATA #IMPLIED>
+
+<!ELEMENT xsl:template ANY>
+<!ATTLIST xsl:template name CDATA #IMPLIED
+                       match CDATA #IMPLIED>
+
+<!ELEMENT xsl:call-template ANY>
+<!ATTLIST xsl:call-template name CDATA #REQUIRED>
+
+<!ELEMENT xsl:apply-templates ANY>
+<!ATTLIST xsl:apply-templates select CDATA #IMPLIED>
+
+<!ELEMENT xsl:sort ANY>
+<!ATTLIST xsl:sort select CDATA #REQUIRED
+                   order (ascending|descending) "ascending">
+
+<!ELEMENT xsl:for-each ANY>
+<!ATTLIST xsl:for-each select CDATA #REQUIRED>
+
+<!ELEMENT xsl:choose (xsl:when|xsl:otherwise)+>
+
+<!ELEMENT xsl:when ANY>
+<!ATTLIST xsl:when test CDATA #REQUIRED>
+
+<!ELEMENT xsl:otherwise ANY>
+
+<!ELEMENT xsl:copy-of ANY>
+<!ATTLIST xsl:copy-of select CDATA #REQUIRED>
+
+<!ELEMENT xsl:value-of ANY>
+<!ATTLIST xsl:value-of select CDATA #REQUIRED>
+
+<!ELEMENT xsl:attribute ANY>
+<!ATTLIST xsl:attribute name CDATA #REQUIRED>
+
+<!ELEMENT xsl:if ANY>
+<!ATTLIST xsl:if test CDATA #REQUIRED>
+
+<!ELEMENT xsl:variable ANY>
+<!ATTLIST xsl:variable as CDATA #IMPLIED
+                       name CDATA #REQUIRED
+                       select CDATA #IMPLIED>
+
+<!ELEMENT xsl:function ANY>
+<!ATTLIST xsl:function as CDATA #IMPLIED
+                       name CDATA #REQUIRED>
+
+<!ELEMENT xsl:text ANY>
+<!ATTLIST xsl:text xml:space (default|preserve) "default">
+
+<!-- This is a tag we often use to generate our output
+     and to avoid problems with xsl:output, we should change it -->
+<!ELEMENT output ANY>
+<!ATTLIST output lang CDATA #IMPLIED>
+
+<!ELEMENT css ANY>
+<!ATTLIST css name CDATA #REQUIRED>
+
+<!ELEMENT javascript ANY>
+<!ATTLIST javascript name CDATA #REQUIRED>
+
+<!-- HTML tags that are used in default values or background values
+     we're not trying to replicate the whole HTML DTD, so we simply here -->
+<!ELEMENT a ANY>
+<!ATTLIST a class CDATA #IMPLIED
+            field_type CDATA #IMPLIED
+            href CDATA #IMPLIED
+            rel (nofollow) #IMPLIED
+            target CDATA #IMPLIED
+            title CDATA "">
+
+<!ELEMENT b ANY>
+<!ELEMENT body ANY>
+
+<!ELEMENT div ANY>
+<!ATTLIST div class CDATA #IMPLIED
+              id CDATA #IMPLIED
+              idref CDATA #IMPLIED
+              mode CDATA #IMPLIED
+              style CDATA #IMPLIED
+              field_name CDATA #IMPLIED
+              field_type CDATA #IMPLIED
+              form_name CDATA #IMPLIED
+              title CDATA "">
+
+<!ELEMENT form ANY>
+<!ATTLIST form accept-charset CDATA #IMPLIED
+               action CDATA #IMPLIED
+               id CDATA #IMPLIED
+               method (get|post) "get">
+
+<!ELEMENT h1 ANY>
+<!ATTLIST h1 style CDATA #IMPLIED>
+
+<!ELEMENT h2 ANY>
+<!ATTLIST h2 class CDATA #IMPLIED>
+
+<!ELEMENT h3 ANY>
+<!ELEMENT h4 ANY>
+<!ELEMENT h5 ANY>
+<!ELEMENT head ANY>
+<!ELEMENT html ANY>
+<!ATTLIST html lang CDATA #IMPLIED
+               prefix CDATA #IMPLIED
+               xml:lang CDATA #IMPLIED>
+
+<!ELEMENT i ANY>
+
+<!ELEMENT input ANY>
+<!ATTLIST input disabled (disabled) #IMPLIED
+                id CDATA #IMPLIED
+                name CDATA #IMPLIED
+                type CDATA #IMPLIED
+                value CDATA #IMPLIED>
+
+<!ELEMENT em ANY>
+
+<!ELEMENT fieldset ANY>
+<!ATTLIST fieldset class CDATA #IMPLIED>
+
+<!ELEMENT img EMPTY>
+<!ATTLIST img src CDATA #REQUIRED
+              width CDATA #IMPLIED
+              height CDATA #IMPLIED
+              title CDATA #IMPLIED
+              alt CDATA #IMPLIED
+              type CDATA #IMPLIED>
+
+<!-- IDREF would be better for the "for" attribute, but unfortunately,
+     at the point we are checking the files, the items may not yet exist -->
+<!ELEMENT label ANY>
+<!ATTLIST label class CDATA #IMPLIED
+                for CDATA #IMPLIED>
+
+<!ELEMENT legend ANY>
+
+<!ELEMENT li ANY>
+<!ATTLIST li class CDATA #IMPLIED
+             value CDATA #IMPLIED>
+
+<!ELEMENT link EMPTY>
+<!ATTLIST link href CDATA #REQUIRED
+               hreflang CDATA #IMPLIED
+               rel CDATA #REQUIRED
+               sizes CDATA #IMPLIED
+               title CDATA #IMPLIED
+               type CDATA #REQUIRED>
+
+<!ELEMENT meta EMPTY>
+<!ATTLIST meta content CDATA #REQUIRED
+               http-equiv CDATA #IMPLIED
+               name CDATA #IMPLIED
+               property CDATA #IMPLIED>
+
+<!ELEMENT p ANY>
+
+<!ELEMENT script ANY>
+<!ATTLIST script type CDATA #REQUIRED>
+
+<!ELEMENT span ANY>
+<!ATTLIST span class CDATA #IMPLIED>
+
+<!ELEMENT strong ANY>
+<!ELEMENT style ANY>
+
+<!ELEMENT table (thead|tr|th|tbody)*>
+<!ATTLIST table border CDATA #IMPLIED
+                cellpadding CDATA #IMPLIED
+                cellspacing CDATA #IMPLIED
+                class CDATA #IMPLIED>
+
+<!ELEMENT tbody ANY>
+
+<!ELEMENT td ANY>
+
+<!ELEMENT th ANY>
+
+<!ELEMENT thead ANY>
+
+<!ELEMENT tr ANY>
+
+<!ELEMENT title (#PCDATA|xsl:copy-of|xsl:value-of)*>
+
+<!ELEMENT u ANY>
+
+<!ELEMENT ul ANY>
+<!ATTLIST ul class CDATA #IMPLIED>
+
+<!-- Editor tags, these are simplified -->
+<!ELEMENT widget ANY>
+<!ATTLIST widget path CDATA #REQUIRED>
+
+<!ELEMENT attachment ANY>
+<!ATTLIST attachment foo CDATA #REQUIRED>
+
+<!ELEMENT background-value ANY>
+<!ATTLIST background-value foo CDATA #REQUIRED>
+
+<!ELEMENT help ANY>
+<!ATTLIST help foo CDATA #REQUIRED>
+
+<!ELEMENT tooltip ANY>
+<!ATTLIST tooltip foo CDATA #REQUIRED>
+
+<!-- vim: ts=4 sw=4 et
+-->

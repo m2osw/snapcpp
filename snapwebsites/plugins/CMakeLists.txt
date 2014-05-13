@@ -84,8 +84,9 @@ add_subdirectory(users)
 #
 install( FILES
 	content.dtd
-	form/snap-form.dtd
 	editor/editor-form.dtd
+	form/snap-form.dtd
+	layout/simplified-xslt20.dtd
 	DESTINATION share/snapwebsites/dtd
 )
 

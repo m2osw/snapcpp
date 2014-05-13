@@ -36,7 +36,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   </xsl:template>
 
   <!-- IMAGE BOX WIDGET -->
-  <!-- WARNING: we use this sub-template because of a Qt but with variables
+  <!-- WARNING: we use this sub-template because of a Qt bug with variables
                 that do not properly get defined without such trickery -->
   <xsl:template name="snap:image-box">
     <xsl:param name="path"/>
@@ -92,7 +92,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   </xsl:template>
 
   <!-- DROPDOWN WIDGET -->
-  <!-- WARNING: we use this sub-template because of a Qt but with variables
+  <!-- WARNING: we use this sub-template because of a Qt bug with variables
                 that do not properly get defined without such trickery -->
   <xsl:template name="snap:dropdown">
     <xsl:param name="path"/>
@@ -178,7 +178,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   </xsl:template>
 
   <!-- CHECKMARK WIDGET -->
-  <!-- WARNING: we use this sub-template because of a Qt but with variables
+  <!-- WARNING: we use this sub-template because of a Qt bug with variables
                 that do not properly get defined without such trickery -->
   <xsl:template name="snap:checkmark">
     <xsl:param name="path"/>
@@ -231,8 +231,81 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     </xsl:call-template>
   </xsl:template>
 
+  <!-- TEXT EDIT WIDGET -->
+  <!-- WARNING: we use this sub-template because of a Qt bug with variables
+                that do not get defined properly without such trickery -->
+  <xsl:template name="snap:text-edit">
+    <xsl:param name="path"/>
+    <xsl:param name="name"/>
+    <widget path="{$path}">
+      <div field_type="text-edit">
+        <xsl:attribute name="field_name"><xsl:value-of select="$name"/></xsl:attribute>
+        <xsl:attribute name="class"><xsl:if
+              test="$action = 'edit'">snap-editor </xsl:if>editable text-edit <xsl:value-of select="$name"/><xsl:if
+              test="@immediate or /editor-form/immediate"> immediate</xsl:if><xsl:if
+              test="@id = /editor-form/focus/@refid"> auto-focus</xsl:if> <xsl:value-of select="classes"/><xsl:if
+              test="state = 'disabled'"> disabled</xsl:if><xsl:if
+              test="state = 'read-only'"> read-only</xsl:if></xsl:attribute>
+        <xsl:if test="@state = 'read-only' or @state = 'disabled'">
+          <!-- avoid spellcheck of non-editable widgets -->
+          <xsl:attribute name="spellcheck">false</xsl:attribute>
+        </xsl:if>
+        <xsl:if test="background-value != ''">
+          <!-- by default "snap-editor-background" has "display: none"
+               a script shows them on load once ready AND if the value is empty
+               also it is a "pointer-event: none;" -->
+          <div class="snap-editor-background zordered">
+            <div class="snap-editor-background-content">
+              <!-- this div is placed OVER the next div -->
+              <xsl:copy-of select="background-value/node()"/>
+            </div>
+          </div>
+        </xsl:if>
+        <div>
+          <xsl:attribute name="name"><xsl:value-of select="$name"/></xsl:attribute>
+          <xsl:attribute name="class">editor-content<xsl:if test="@no-toolbar or /editor-form/no-toolbar"> no-toolbar</xsl:if></xsl:attribute>
+          <xsl:if test="/editor-form/taborder/tabindex[@refid=$name]">
+            <xsl:attribute name="tabindex"><xsl:value-of select="/editor-form/taborder/tabindex[@refid=$name]/count(preceding-sibling::tabindex) + 1 + $tabindex_base"/></xsl:attribute>
+          </xsl:if>
+          <xsl:if test="tooltip != ''">
+            <xsl:attribute name="title"><xsl:value-of select="tooltip"/></xsl:attribute>
+          </xsl:if>
+          <xsl:if test="sizes/min"><xsl:attribute name="minlength"><xsl:value-of select="sizes/min"/></xsl:attribute></xsl:if>
+          <xsl:if test="sizes/max"><xsl:attribute name="maxlength"><xsl:value-of select="sizes/max"/></xsl:attribute></xsl:if>
+          <!-- now the actual value of this text widget -->
+          <xsl:choose>
+            <xsl:when test="post != ''">
+              <!-- use the post value when there is one, it has priority -->
+              <xsl:copy-of select="post/node()"/>
+            </xsl:when>
+            <xsl:when test="value != ''">
+              <!-- use the current value when there is one -->
+              <xsl:copy-of select="value/node()"/>
+            </xsl:when>
+            <xsl:when test="value/@default">
+              <!-- transform the system default if one was defined -->
+              <xsl:choose>
+                <xsl:when test="value/@default = 'today'">
+                  <!-- US format & GMT... this should be a parameter, probably a variable we set in the editor before running the parser? -->
+                  <xsl:value-of select="month-from-date(current-date())"/>/<xsl:value-of select="day-from-date(current-date())"/>/<xsl:value-of select="year-from-date(current-date())"/>
+                </xsl:when>
+              </xsl:choose>
+            </xsl:when>
+          </xsl:choose>
+        </div>
+        <xsl:call-template name="snap:common-parts"/>
+      </div>
+    </widget>
+  </xsl:template>
+  <xsl:template match="widget[@type='text-edit']">
+    <xsl:call-template name="snap:text-edit">
+      <xsl:with-param name="path" select="@path"/>
+      <xsl:with-param name="name" select="@id"/>
+    </xsl:call-template>
+  </xsl:template>
+
   <!-- LINE EDIT WIDGET -->
-  <!-- WARNING: we use this sub-template because of a Qt but with variables
+  <!-- WARNING: we use this sub-template because of a Qt bug with variables
                 that do not get defined properly without such trickery -->
   <xsl:template name="snap:line-edit">
     <xsl:param name="path"/>
@@ -300,7 +373,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   </xsl:template>
 
   <!-- BUTTON WIDGET (an anchor) -->
-  <!-- WARNING: we use this sub-template because of a Qt but with variables
+  <!-- WARNING: we use this sub-template because of a Qt bug with variables
                 that do not get defined properly without such trickery -->
   <xsl:template name="snap:button">
     <xsl:param name="path"/>
@@ -330,7 +403,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   </xsl:template>
 
   <!-- CUSTOM ("user" data, we just copy the <value> tag over) -->
-  <!-- WARNING: we use this sub-template because of a Qt but with variables
+  <!-- WARNING: we use this sub-template because of a Qt bug with variables
                 that do not get defined properly without such trickery -->
   <xsl:template name="snap:custom">
     <xsl:param name="path"/>
@@ -353,7 +426,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
   <!-- SILENT (a value such as the editor form session identifier which
               is not returned to the editor on a Save) -->
-  <!-- WARNING: we use this sub-template because of a Qt but with variables
+  <!-- WARNING: we use this sub-template because of a Qt bug with variables
                 that do not get defined properly without such trickery -->
   <xsl:template name="snap:silent">
     <xsl:param name="path"/>
@@ -376,7 +449,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   </xsl:template>
 
   <!-- HIDDEN (a value hidden from the user and always returned on Save) -->
-  <!-- WARNING: we use this sub-template because of a Qt but with variables
+  <!-- WARNING: we use this sub-template because of a Qt bug with variables
                 that do not get defined properly without such trickery -->
   <xsl:template name="snap:hidden">
     <xsl:param name="path"/>

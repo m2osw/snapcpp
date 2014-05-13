@@ -178,6 +178,7 @@ public:
     enum date_format_t
     {
         DATE_FORMAT_SHORT,
+        DATE_FORMAT_SHORT_US,
         DATE_FORMAT_LONG,
         DATE_FORMAT_TIME,
         DATE_FORMAT_EMAIL,

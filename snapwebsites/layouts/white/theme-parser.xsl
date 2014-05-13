@@ -128,12 +128,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 				<meta name="generator" content="Snap! Websites"/>
 				<!-- canonical (must be complete so we do not try to snap:prepend-base()) -->
 				<xsl:if test="$page_uri != ''">
-					<link rel="canonical" title="Canonical URI" href="{$page_uri}"/>
+					<link rel="canonical" type="text/html" title="Canonical URI" href="{$page_uri}"/>
 					<meta property="og:url" content="{$page_uri}"/>
 				</xsl:if>
 				<!-- include dcterms? -->
 				<xsl:if test="$use_dcterms = 'yes'">
-					<link rel="schema.dcterms" href="http://purl.org/dc/terms/"/>
+					<link rel="schema.dcterms" type="text/uri-list" href="http://purl.org/dc/terms/"/>
 				</xsl:if>
 				<!-- short description (abstract) -->
 				<xsl:if test="page/body/abstract != ''">
@@ -161,7 +161,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 						<xsl:choose>
 							<xsl:when test="page/body/owner[@href] != ''">
 								<xsl:variable name="href" select="page/body/owner/@href"/>
-								<link rel="dcterms.rightsHolder" title="{$owner}" href="{snap:prepend-base($website_uri, $base_uri, $href)}"/>
+								<link rel="dcterms.rightsHolder" type="text/html" title="{$owner}" href="{snap:prepend-base($website_uri, $base_uri, $href)}"/>
 							</xsl:when>
 							<xsl:otherwise>
 								<meta name="dcterms.rightsHolder" content="{$owner}"/>
@@ -172,7 +172,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 							<xsl:choose>
 								<xsl:when test="page/body/license[@href] != ''">
 									<xsl:variable name="href" select="page/body/license/@href"/>
-									<link rel="dcterms.license" title="{$license}" href="{snap:prepend-base($website_uri, $base_uri, $href)}"/>
+									<link rel="dcterms.license" type="text/html" title="{$license}" href="{snap:prepend-base($website_uri, $base_uri, $href)}"/>
 								</xsl:when>
 								<xsl:otherwise>
 									<meta name="dcterms.license" content="{$license}"/>
@@ -184,7 +184,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 							<xsl:choose>
 								<xsl:when test="page/body/provenance[@href] != ''">
 									<xsl:variable name="href" select="page/body/provenance/@href"/>
-									<link rel="dcterms.provenance" title="{$provenance}" href="{snap:prepend-base($website_uri, $base_uri, $href)}"/>
+									<link rel="dcterms.provenance" type="text/html" title="{$provenance}" href="{snap:prepend-base($website_uri, $base_uri, $href)}"/>
 								</xsl:when>
 								<xsl:otherwise>
 									<meta name="dcterms.provenance" content="{$provenance}"/>
@@ -200,7 +200,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 						<xsl:choose>
 							<xsl:when test="page/body/publisher[@href] != ''">
 								<xsl:variable name="href" select="page/body/publisher/@href"/>
-								<link rel="dcterms.publisher" title="{$publisher}" href="{snap:prepend-base($website_uri, $base_uri, $href)}"/>
+								<link rel="dcterms.publisher" type="text/html" title="{$publisher}" href="{snap:prepend-base($website_uri, $base_uri, $href)}"/>
 							</xsl:when>
 							<xsl:otherwise>
 								<meta name="dcterms.publisher" content="{$publisher}"/>
@@ -228,7 +228,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 						<xsl:choose>
 							<xsl:when test="page/body/location/jurisdiction[@href] != ''">
 								<xsl:variable name="href" select="page/body/location/jurisdiction/@href"/>
-								<link rel="dcterms.coverage" title="{$jurisdiction}" href="{snap:prepend-base($website_uri, $base_uri, $href)}"/>
+								<link rel="dcterms.coverage" type="text/html" title="{$jurisdiction}" href="{snap:prepend-base($website_uri, $base_uri, $href)}"/>
 							</xsl:when>
 							<xsl:otherwise>
 								<meta name="dcterms.coverage" content="{$jurisdiction}"/>
@@ -241,7 +241,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 						<xsl:choose>
 							<xsl:when test="page/body/location/longlat[@href] != ''">
 								<xsl:variable name="href" select="page/body/location/longlat/@href"/>
-								<link rel="dcterms.spacial" title="{$longlat}" href="{snap:prepend-base($website_uri, $base_uri, $href)}"/>
+								<link rel="dcterms.spacial" type="text/html" title="{$longlat}" href="{snap:prepend-base($website_uri, $base_uri, $href)}"/>
 							</xsl:when>
 							<xsl:otherwise>
 								<meta name="dcterms.spacial" content="{$longlat}"/>
@@ -258,7 +258,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 					</xsl:if>
 					<xsl:if test="@href">
 						<xsl:variable name="href" select="@href"/>
-						<link rel="author" title="{$author}" href="{snap:prepend-base($website_uri, $base_uri, $href)}"/>
+						<link rel="author" type="text/html" title="{$author}" href="{snap:prepend-base($website_uri, $base_uri, $href)}"/>
 					</xsl:if>
 				</xsl:for-each>
 				<!-- contributor (one tag per contributor) -->
@@ -269,7 +269,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 					</xsl:if>
 					<xsl:if test="@href">
 						<xsl:variable name="href" select="@href"/>
-						<link rel="contributor" title="{$contributor}" href="{snap:prepend-base($website_uri, $base_uri, $href)}"/>
+						<link rel="contributor" type="text/html" title="{$contributor}" href="{snap:prepend-base($website_uri, $base_uri, $href)}"/>
 					</xsl:if>
 				</xsl:for-each>
 				<!-- language (if not defined in source, no meta tag) -->
@@ -367,7 +367,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 					<xsl:choose>
 						<xsl:when test="page/body/instructions/@href">
 							<xsl:variable name="href" select="page/body/instructions/@href"/>
-							<link rel="dcterms.instructionalMethod" title="{$instructions}" href="{snap:prepend-base($website_uri, $base_uri, $href)}"/>
+							<link rel="dcterms.instructionalMethod" type="text/html" title="{$instructions}" href="{snap:prepend-base($website_uri, $base_uri, $href)}"/>
 						</xsl:when>
 						<xsl:otherwise>
 							<meta name="dcterms.instructionalMethod" content="{$instructions}"/>
@@ -380,7 +380,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 					<xsl:choose>
 						<xsl:when test="page/body/permission/@href">
 							<xsl:variable name="href" select="page/body/permission/@href"/>
-							<link rel="dcterms.accessRights" title="{$permission}" href="{snap:prepend-base($website_uri, $base_uri, $href)}"/>
+							<link rel="dcterms.accessRights" type="text/html" title="{$permission}" href="{snap:prepend-base($website_uri, $base_uri, $href)}"/>
 						</xsl:when>
 						<xsl:otherwise>
 							<meta name="dcterms.accessRights" content="{$permission}"/>
@@ -409,16 +409,16 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 				<!-- navigation -->
 				<xsl:if test="page/body/navigation[@href]">
 					<xsl:variable name="sitemap" select="page/body/navigation/@href"/>
-					<link rel="sitemap" title="Sitemap" href="{$sitemap}"/>
+					<link rel="sitemap" type="text/html" title="Sitemap" href="{$sitemap}"/>
 				</xsl:if>
 				<xsl:if test="page/body/toc[@href]">
 					<xsl:variable name="toc" select="page/body/toc/@href"/>
-					<link rel="toc" title="toc" href="{$toc}"/>
+					<link rel="toc" type="text/html" title="toc" href="{$toc}"/>
 				</xsl:if>
 				<xsl:for-each select="page/body/navigation/link">
 					<xsl:variable name="rel" select="@rel"/>
 					<xsl:variable name="href" select="@href"/>
-					<link rel="{$rel}" href="{$href}"/>
+					<link rel="{$rel}" type="text/html" href="{$href}"/>
 				</xsl:for-each>
 				<!-- bookmarks -->
 				<xsl:for-each select="page/body/bookmarks/link">
@@ -430,7 +430,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 				</xsl:for-each>
 				<xsl:if test="page/body/bookmarks[@href]">
 					<xsl:variable name="sitemap" select="page/body/navigation/@href"/>
-					<link rel="sitemap" title="Sitemap" href="{$sitemap}"/>
+					<link rel="sitemap" type="text/html" title="Sitemap" href="{$sitemap}"/>
 				</xsl:if>
 				<!-- table of contents -->
 				<xsl:for-each select="page/body/toc/entry">
@@ -593,10 +593,10 @@ body
 		<xsl:param name="title"/>
 		<xsl:choose>
 			<xsl:when test="$title">
-				<link rel="{$rel}" title="{$title}" href="{$href}"/>
+				<link rel="{$rel}" type="text/html" title="{$title}" href="{$href}"/>
 			</xsl:when>
 			<xsl:otherwise>
-				<link rel="{$rel}" href="{$href}"/>
+				<link rel="{$rel}" type="text/html" href="{$href}"/>
 			</xsl:otherwise>
 		</xsl:choose>
 	</xsl:template>

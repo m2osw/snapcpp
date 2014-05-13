@@ -337,6 +337,7 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
          || n == "users::previous_login_on"
          || n == "users::start_date"
          || n == "users::verified_on"
+         || n == "finball::void_date" // TODO -- remove at some point since that is a customer's type (we'd need to have an XML file instead)
          )
     {
         // 64 bit value (microseconds)

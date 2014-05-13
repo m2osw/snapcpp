@@ -52,7 +52,8 @@ QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC
 
 snap_validate_xml( content.xml content.dtd )
 snap_validate_xml( layout/sendmail-content.xml content.dtd )
-
+snap_validate_xml( layout/sendmail-theme-parser.xsl layout/simplified-xslt20.dtd )
+snap_validate_xml( layout/sendmail-body-parser.xsl layout/simplified-xslt20.dtd )
 
 add_library(sendmail SHARED
     sendmail.cpp

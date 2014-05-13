@@ -47,7 +47,12 @@ QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC
     list.qrc
 )
 
-snap_validate_xml( list/content.xml content.dtd )
+snap_validate_xml( list/content.xml             content.dtd                  )
+snap_validate_xml( list/default-item-theme.xsl  layout/simplified-xslt20.dtd )
+snap_validate_xml( list/default-item-body.xsl   layout/simplified-xslt20.dtd )
+snap_validate_xml( list/default-list-theme.xsl  layout/simplified-xslt20.dtd )
+snap_validate_xml( list/default-list-body.xsl   layout/simplified-xslt20.dtd )
+
 snap_validate_js( list/list.js )
 
 add_library(list SHARED
