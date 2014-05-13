@@ -3410,7 +3410,7 @@ snap_version::version_number_t content::get_new_revision(QString const& key,
     // point... it is important because if user A edits revision X, and user
     // B creates a new revision Y in the meantime, we may still want to copy
     // revision X at the time A saves his changes.)
-    QtCassandra::QCassandraValue current_revision_value(content_table->row(key)->cell(last_revision_key)->value());
+    QtCassandra::QCassandraValue current_revision_value(content_table->row(key)->cell(current_revision_key)->value());
     if(!current_revision_value.nullValue())
     {
         previous_revision = current_revision_value.uint32Value();
@@ -3446,7 +3446,9 @@ snap_version::version_number_t content::get_new_revision(QString const& key,
     && previous_revision != revision)
     {
         // get two revision keys like:
-        // http://csnap.m2osw.com/verify-credentials#en/0.0
+        // http://csnap.m2osw.com/verify-credentials#en/0.2
+        // and:
+        // http://csnap.m2osw.com/verify-credentials#en/0.3
         QString const previous_revision_key(generate_revision_key(key, branch, previous_revision, locale));
         QString const revision_key(generate_revision_key(key, branch, revision, locale));
         QtCassandra::QCassandraTable::pointer_t data_table(get_data_table());
