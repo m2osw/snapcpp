@@ -44,7 +44,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <widget path="{$path}">
       <div field_type="image-box">
         <xsl:attribute name="field_name"><xsl:value-of select="$name"/></xsl:attribute>
-        <xsl:attribute name="class"><xsl:if test="$action = 'edit'">snap-editor </xsl:if>editable image-box <xsl:value-of select="$name"/><xsl:if test="@drop or /editor-form/drop"> drop</xsl:if><xsl:if test="@immediate or /editor-form/immediate"> immediate</xsl:if><xsl:if test="$name = /editor-form/focus/@refid"> auto-focus</xsl:if> <xsl:value-of select="classes"/></xsl:attribute>
+        <xsl:attribute name="class"><xsl:if
+            test="$action = 'edit'">snap-editor </xsl:if>editable image-box <xsl:value-of
+            select="$name"/><xsl:if test="@drop or /editor-form/drop"> drop</xsl:if><xsl:if
+            test="@immediate or /editor-form/immediate"> immediate</xsl:if><xsl:if
+            test="$name = /editor-form/focus/@refid"> auto-focus</xsl:if> <xsl:value-of
+            select="classes"/></xsl:attribute>
         <xsl:if test="background-value != ''">
           <!-- by default "snap-editor-background" objects have "display: none"
                a script shows them on load once ready AND if the value is empty

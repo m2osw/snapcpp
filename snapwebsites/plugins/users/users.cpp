@@ -36,6 +36,7 @@
 #include "../output/output.h"
 #include "../messages/messages.h"
 #include "../sendmail/sendmail.h"
+#include "../server_access/server_access.h"
 
 #include "qstring_stream.h"
 #include "not_reached.h"
@@ -3171,33 +3172,81 @@ QString users::detach_from_session(const QString& name) const
 
 /** \brief Set the referrer path for the current session.
  *
- * Call this instead of "attach_to_session( SNAP_NAME_USERS_LOGIN_REFERRER, cpath )" directly.
+ * Call this function instead of
  *
- * \note the special cases "/login" and "/logout" will do nothing, since we don't want
- * a referrer in those cases.
+ * \code
+ *      attach_to_session( SNAP_NAME_USERS_LOGIN_REFERRER, path );
+ * \endcode
+ *
+ * This way we can make sure that a certain number of paths never get
+ * saved for the log in redirect.
+ *
+ * \note
+ * The special cases "/login" and "/logout" will do nothing, since we
+ * do not want a referrer in those cases.
+ *
+ * \note
+ * This function ensures that the path gets canonicalized before it
+ * gets used.
+ *
+ * \param[in] path  The path to the page being viewed as the referrer.
  *
  * \sa attach_to_session()
- *
+ * \sa detach_from_session()
  */
-void users::set_referrer( const QString& cpath )
+void users::set_referrer( QString path )
 {
-    const char* loginref_name( get_name(SNAP_NAME_USERS_LOGIN_REFERRER) );
+    // this is acceptable and it happens
+    //
+    // (note that if you want to go to the home page, you may want
+    // to use f_snap->get_site_key_with_slash() instead of "" or "/")
+    if(path.isEmpty())
+    {
+        return;
+    }
+
+    // canonicalize the path
+    content::path_info_t ipath;
+    ipath.set_path(path);
+    path = ipath.get_key();  // make sure it is canonicalized
+
+    // check whether this is our current page
+    content::path_info_t main_ipath;
+    main_ipath.set_path(f_snap->get_uri().path());
+    if(path == main_ipath.get_key())
+    {
+        // this is the main page, verify it is not an AJAX path
+        // because redirects to those fail big time
+        // (we really need a much stronger way of testing such!)
+        //
+        // TBD:  the fact that the request is AJAX does not 100%
+        //       of the time mean that it could not be a valid
+        //       referrer, but close enough at this point
+        //
+        if(server_access::server_access::instance()->is_ajax_request())
+        {
+            return;
+        }
+    }
 
     // use the current refererrer if there is one as the redirect page
     // after log in; once the log in is complete, redirect to this referrer
     // page; if you send the user on a page that only redirects to /login
     // then the user will end up on his profile (/user/me)
     //
+    char const *loginref_name( get_name(SNAP_NAME_USERS_LOGIN_REFERRER) );
     if( sessions::sessions::instance()->get_from_session( *f_info, loginref_name ).isEmpty() )
     {
-        SNAP_LOG_DEBUG() << "SNAP_NAME_USERS_LOGIN_REFERRER being set to " << cpath << " for page path " << f_info->get_page_path();
+        SNAP_LOG_DEBUG() << "SNAP_NAME_USERS_LOGIN_REFERRER being set to " << path << " for page path " << f_info->get_page_path();
+
+        // verify that it is not /login or /logout because those cause
+        // real problems!
         QString const site_key(f_snap->get_site_key_with_slash());
-        if( !cpath.isEmpty()
-            && cpath != site_key + "login"
-            && cpath != site_key + "logout"
-        )
+        if( path != site_key + "login"
+         && path != site_key + "logout")
         {
-            attach_to_session( loginref_name, cpath );
+            // everything okay!
+            attach_to_session( loginref_name, path );
         }
     }
 }

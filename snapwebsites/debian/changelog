@@ -11,6 +11,7 @@ snapwebsites (0.1.51~saucy) UNRELEASED; urgency=high
   * Fixed 3 bugs in the handling of the beforeunload event.
   * Fixed the bug in the layout leaving the <javascript> and <css> tags
     in the output.
+  * Added a test in set_referrer() as an attempt to avoid AJAX URIs.
   * Many cleanups.
 
  -- R. Douglas Barbieri <doug@jedi.dooglio.net>  Sat, 03 May 2014 22:32:04 -0700

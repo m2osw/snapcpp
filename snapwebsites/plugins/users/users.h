@@ -196,7 +196,7 @@ public:
     bool                    register_user(QString const& email, QString const& password);
     void                    attach_to_session(QString const& name, QString const& data);
     QString                 detach_from_session(QString const& name) const;
-    void                    set_referrer( QString const& cpath );
+    void                    set_referrer( QString path );
     void                    send_to_replace_password_page(QString const& email, bool const set_status);
 
     int64_t                 get_user_identifier(QString const& user_path) const;
