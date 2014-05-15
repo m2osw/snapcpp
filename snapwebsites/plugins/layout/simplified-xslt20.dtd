@@ -222,14 +222,19 @@ DTD of the XSLT 2.0.
                 class CDATA #IMPLIED>
 
 <!ELEMENT tbody ANY>
+<!ATTLIST tbody class CDATA #IMPLIED>
 
 <!ELEMENT td ANY>
+<!ATTLIST td class CDATA #IMPLIED>
 
 <!ELEMENT th ANY>
+<!ATTLIST th class CDATA #IMPLIED>
 
 <!ELEMENT thead ANY>
+<!ATTLIST thead class CDATA #IMPLIED>
 
 <!ELEMENT tr ANY>
+<!ATTLIST tr class CDATA #IMPLIED>
 
 <!ELEMENT title (#PCDATA|xsl:copy-of|xsl:value-of)*>
 
