@@ -127,6 +127,7 @@ public:
 
     bool                                get_bool(QString const& name) const;
     int64_t                             get_integer(QString const& name) const;
+    double                              get_floating_point(QString const& name) const;
     QString                             get_string(QString const& name) const;
 
     bool                                is_true() const;

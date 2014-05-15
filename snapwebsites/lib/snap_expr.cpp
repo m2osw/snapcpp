@@ -294,8 +294,58 @@ int64_t variable_t::get_integer(QString const& name) const
     case variable_t::EXPR_VARIABLE_TYPE_UINT64:
         return get_value().uint64Value();
 
+    case variable_t::EXPR_VARIABLE_TYPE_FLOAT:
+        return static_cast<int64_t>(get_value().floatValue());
+
+    case variable_t::EXPR_VARIABLE_TYPE_DOUBLE:
+        return static_cast<int64_t>(get_value().doubleValue());
+
     default:
+        // although we allow floating point too...
         throw snap_expr_exception_invalid_parameter_type(QString("parameter for %1 must be an integer").arg(name));
+
+    }
+    NOTREACHED();
+}
+
+
+double variable_t::get_floating_point(QString const& name) const
+{
+    switch(get_type())
+    {
+    case variable_t::EXPR_VARIABLE_TYPE_INT8:
+        return get_value().signedCharValue();
+
+    case variable_t::EXPR_VARIABLE_TYPE_UINT8:
+        return get_value().unsignedCharValue();
+
+    case variable_t::EXPR_VARIABLE_TYPE_INT16:
+        return get_value().int16Value();
+
+    case variable_t::EXPR_VARIABLE_TYPE_UINT16:
+        return get_value().uint16Value();
+
+    case variable_t::EXPR_VARIABLE_TYPE_INT32:
+        return get_value().int32Value();
+
+    case variable_t::EXPR_VARIABLE_TYPE_UINT32:
+        return get_value().uint32Value();
+
+    case variable_t::EXPR_VARIABLE_TYPE_INT64:
+        return get_value().int64Value();
+
+    case variable_t::EXPR_VARIABLE_TYPE_UINT64:
+        return get_value().uint64Value();
+
+    case variable_t::EXPR_VARIABLE_TYPE_FLOAT:
+        return static_cast<int64_t>(get_value().floatValue());
+
+    case variable_t::EXPR_VARIABLE_TYPE_DOUBLE:
+        return static_cast<int64_t>(get_value().doubleValue());
+
+    default:
+        // although we auto-convert integers too
+        throw snap_expr_exception_invalid_parameter_type(QString("parameter for %1 must be a floating point").arg(name));
 
     }
     NOTREACHED();
@@ -1436,6 +1486,7 @@ public:
         }
 
         QtCassandra::QCassandraValue value(g_context->table(table_name)->row(row_name)->cell(cell_name)->value());
+//std::cerr << "  -> value size: " << value.size() << "\n";
         result.set_value(variable_t::EXPR_VARIABLE_TYPE_BINARY, value);
     }
 
@@ -1455,6 +1506,356 @@ public:
         QtCassandra::QCassandraValue value;
         value.setBoolValue(g_context->table(table_name)->row(row_name)->exists(cell_name));
         result.set_value(variable_t::EXPR_VARIABLE_TYPE_BOOL, value);
+    }
+
+    static void call_format(variable_t& result, variable_t::variable_vector_t const& sub_results)
+    {
+        if(sub_results.size() < 1)
+        {
+            throw snap_expr_exception_invalid_number_of_parameters("invalid number of parameters to call format() expected at least 1, the format");
+        }
+
+        struct input
+        {
+            int const INPUT_LEFT_ALIGN = 0x0001;
+            int const INPUT_ZERO_PAD   = 0x0002;
+            int const INPUT_BLANK      = 0x0004;
+            int const INPUT_SIGN       = 0x0008;
+            int const INPUT_THOUSANDS  = 0x0010;
+
+            input(variable_t::variable_vector_t const& sub_results)
+                : f_sub_results(sub_results)
+                //, f_position(0) -- auto-init
+                , f_index(1)
+                //, f_format(...) -- initialized below
+                //, f_result("") -- auto-init
+                , f_last(EOF)
+                , f_flags(0)
+                //, f_count(0) -- auto-init
+            {
+                f_format = sub_results[0].get_string("format() function format string");
+            }
+
+            int getc()
+            {
+                if(f_position >= f_format.length())
+                {
+                    f_last = EOF;
+                }
+                else
+                {
+                    f_last = f_format[f_position].unicode();
+                    ++f_position;
+                }
+                return f_last;
+            }
+
+            int get_flags()
+            {
+                int flags(0);
+                for(int old_flags(-1); flags != old_flags; )
+                {
+                    old_flags = flags;
+                    if(f_last == '\'')
+                    {
+                        flags |= INPUT_THOUSANDS;
+                        getc();
+                    }
+                    if(f_last == ' ')
+                    {
+                        flags |= INPUT_BLANK;
+                        getc();
+                    }
+                    if(f_last == '+')
+                    {
+                        flags |= INPUT_SIGN;
+                        getc();
+                    }
+                    if(f_last == '-')
+                    {
+                        flags |= INPUT_LEFT_ALIGN;
+                        getc();
+                    }
+                    if(f_last == '0')
+                    {
+                        flags |= INPUT_ZERO_PAD;
+                        getc();
+                    }
+                }
+
+                // mutually exclusive flags
+                if(flags & INPUT_LEFT_ALIGN)
+                {
+                    flags &= ~INPUT_ZERO_PAD;
+                }
+                if(flags & INPUT_SIGN)
+                {
+                    flags &= ~INPUT_BLANK;
+                }
+
+                return flags;
+            }
+
+            int get_number()
+            {
+                int number(0);
+                for(; f_last >= '0' && f_last <= '9'; getc())
+                {
+                    number = number * 10 + f_last - '0';
+                }
+                return number;
+            }
+
+            variable_t const& get_next_variable()
+            {
+                if(f_index >= f_sub_results.size())
+                {
+                    throw snap_expr_exception_invalid_number_of_parameters("invalid number of parameters to call format(), your format requires more parameters than is currently allowed");
+                }
+                variable_t const& r(f_sub_results[f_index]);
+                ++f_position;
+                return r;
+            }
+
+            QString get_integer()
+            {
+                int64_t v(get_next_variable().get_integer("format.get_integer()"));
+                QString r(QString("%1").arg(v));
+                if(f_flags & INPUT_THOUSANDS)
+                {
+                    int stop(0);
+                    if(r[0] == '-')
+                    {
+                        stop = 1;
+                    }
+                    for(int p(r.length() - 3); p > stop; p -= 3)
+                    {
+                        // TODO: need to be able to specify the separator
+                        //       (',', or '.', or ' ', or '_', ...)
+                        //
+                        r.insert(p, ',');
+                    }
+                }
+                if((f_flags & INPUT_SIGN) && v >= 0)
+                {
+                    r = "+" + r;
+                }
+                else if((f_flags & INPUT_BLANK) && v >= 0)
+                {
+                    r = " " + r;
+                }
+                return r;
+            }
+
+            QString get_floating_point()
+            {
+                // TODO: floating points need to be properly formatted here
+                //       (i.e. width and precision...)
+                double v(get_next_variable().get_floating_point("format.get_floating_point()"));
+                QString r(QString("%1").arg(v));
+                if(f_flags & INPUT_THOUSANDS)
+                {
+                    int stop(0);
+                    if(r[0] == '-')
+                    {
+                        stop = 1;
+                    }
+                    int p(r.indexOf('.'));
+                    if(p == -1)
+                    {
+                        p = r.length() - 3;
+                    }
+                    for(; p > stop; p -= 3)
+                    {
+                        // TODO: need to be able to specify the separator
+                        //       (',', or '.', or ' ', or '_', ...)
+                        //
+                        r.insert(p, ',');
+                    }
+                    // TBD: add thousand markers in the decimal part?
+                }
+                if((f_flags & INPUT_SIGN) && v >= 0)
+                {
+                    r = "+" + r;
+                }
+                else if((f_flags & INPUT_BLANK) && v >= 0)
+                {
+                    r = " " + r;
+                }
+                return r;
+            }
+
+            QString get_character()
+            {
+                // TODO: verify that the integer is a valid code point
+                int64_t code(get_next_variable().get_integer("format.get_character()"));
+                if(code < 0 || code > 0x110000
+                || (code >= 0xD800 && code <= 0xDFFF))
+                {
+                    throw snap_expr_exception_invalid_number_of_parameters("invalid character code in format(), only valid Unicode characters are allowed");
+                }
+                if(QChar::requiresSurrogates(code))
+                {
+                    // this uses the old Unicode terminology
+                    QChar high(QChar::highSurrogate(code));
+                    QChar low(QChar::lowSurrogate(code));
+                    return QString(high) + QString(low);
+                }
+                else
+                {
+                    // small characters can be used as is
+                    QChar c(static_cast<uint>(code));
+                    return QString(c);
+                }
+            }
+
+            QString get_string()
+            {
+                QString r(QString("%1").arg(get_next_variable().get_string("format.get_string()")));
+                if(r.isEmpty() && (f_flags & INPUT_BLANK))
+                {
+                    // blank against empty strings...
+                    r = " ";
+                }
+                if(f_precision > 0)
+                {
+                    // truncate
+                    // TODO: truncating a QString is wrong if it includes
+                    //       UTF-16 surrogate characters!
+                    r = r.left(f_precision);
+                }
+                f_flags &= ~INPUT_ZERO_PAD;
+                return r;
+            }
+
+            QString format(QString value)
+            {
+                int align(f_width - value.length());
+                if(align > 0)
+                {
+                    // need padding
+                    if(f_flags & INPUT_LEFT_ALIGN)
+                    {
+                        // add padding to the right side
+                        value += QString(" ").repeated(align);
+                    }
+                    else if(f_flags & INPUT_ZERO_PAD)
+                    {
+                        QChar c(value[0]);
+                        QString const pad("0");
+                        switch(c.unicode())
+                        {
+                        case '+':
+                        case '-':
+                            value = c + pad.repeated(align) + value.mid(1);
+                            break;
+
+                        case ' ':
+                            if(f_flags & INPUT_BLANK)
+                            {
+                                // special case if we had the blank flag
+                                value = c + pad.repeated(align) + value.mid(1);
+                                break;
+                            }
+                            /*FALLTHROUGH*/
+                        default:
+                            value = pad.repeated(align) + value;
+                            break;
+
+                        }
+                    }
+                    else
+                    {
+                        value = QString(" ").repeated(align) + value;
+                    }
+                }
+                return value;
+            }
+
+            void parse()
+            {
+                while(getc() != EOF)
+                {
+                    if(f_last == '%')
+                    {
+                        // skip the '%'
+                        if(getc() == EOF)
+                        {
+                            return;
+                        }
+                        if(f_last == '%')
+                        {
+                            // literal percent
+                            f_result += '%';
+                        }
+                        else
+                        {
+                            f_flags = get_flags();
+                            if(f_last >= '1' && f_last <= '9')
+                            {
+                                f_width = get_number();
+                            }
+                            else
+                            {
+                                f_width = 0;
+                            }
+                            if(f_last == '.')
+                            {
+                                getc();
+                                f_precision = get_number();
+                            }
+                            else
+                            {
+                                // default precision is 1, but we need to
+                                // have -1 to distinguish in the case of
+                                // a string
+                                f_precision = -1;
+                            }
+                            switch(f_last)
+                            {
+                            case 'd': // integer formatting
+                            case 'i':
+                                f_result += format(get_integer());
+                                break;
+
+                            case 'f': // floating point formatting
+                            case 'g':
+                                f_result += format(get_floating_point());
+                                break;
+
+                            case 'c': // character formatting
+                            case 'C':
+                                f_result += format(get_character());
+                                break;
+
+                            case 's': // string formatting
+                            case 'S':
+                                f_result += format(get_string());
+                                break;
+
+                            }
+                        }
+                    }
+                    else
+                    {
+                        f_result += f_last;
+                    }
+                }
+            }
+
+            variable_t::variable_vector_t const& f_sub_results;
+            QString f_format;
+            controlled_vars::zint32_t f_position;
+            controlled_vars::mint32_t f_index;
+            QString f_result;
+            int f_last;
+            int f_flags;
+            controlled_vars::zint32_t f_width;
+            controlled_vars::zint32_t f_precision;
+        };
+        input in(sub_results);
+        in.parse();
+        result.set_value(variable_t::EXPR_VARIABLE_TYPE_STRING, in.f_result);
     }
 
     static void call_int16(variable_t& result, variable_t::variable_vector_t const& sub_results)
@@ -2904,6 +3305,10 @@ functions_t::function_call_table_t const expr_node::internal_functions[] =
     { // check whether a cell exists in a table and row
         "cell_exists",
         expr_node::call_cell_exists
+    },
+    { // cast to format
+        "format",
+        expr_node::call_format
     },
     { // cast to int16
         "int16",

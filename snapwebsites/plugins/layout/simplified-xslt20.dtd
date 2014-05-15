@@ -215,7 +215,7 @@ DTD of the XSLT 2.0.
 <!ELEMENT strong ANY>
 <!ELEMENT style ANY>
 
-<!ELEMENT table (thead|tr|th|tbody)*>
+<!ELEMENT table ANY>
 <!ATTLIST table border CDATA #IMPLIED
                 cellpadding CDATA #IMPLIED
                 cellspacing CDATA #IMPLIED
