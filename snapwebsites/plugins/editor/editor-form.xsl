@@ -134,7 +134,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
           <xsl:choose>
             <xsl:when test="value/item[@default='default']">
               <xsl:attribute name="value"><xsl:copy-of select="value/item[@default='default']/@value"/></xsl:attribute>
-              <xsl:copy-of select="value/item[@default='default']"/>
+              <xsl:copy-of select="value/item[@default='default']/node()"/>
             </xsl:when>
             <xsl:otherwise>
               <xsl:copy-of select="default/node()"/>
@@ -147,8 +147,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
               <xsl:attribute name="class">dropdown-items zordered</xsl:attribute>
               <ul class="dropdown-selection">
                 <xsl:for-each select="value/item">
-                  <li value="{@value}">
+                  <li>
                     <xsl:attribute name="class">dropdown-item<xsl:if test="@default='default'"> selected</xsl:if></xsl:attribute>
+                    <xsl:if test="@value"><xsl:attribute name="value"><xsl:value-of select="@value"/></xsl:attribute></xsl:if>
                     <xsl:copy-of select="./node()"/>
                   </li>
                 </xsl:for-each>
