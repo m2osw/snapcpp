@@ -1,3 +1,34 @@
+libtld (1.4.7) saucy; urgency=high
+
+  * beade87 Added the "class" attribute to a few more tags.
+  * 0f570a7 Added a format() function to our snap expression library.
+  * 4c161f5 Fixed the availability of the value tag in a dropdown list of items.
+  * 23c3494 Added a test in the set_referrer() to avoid AJAX pages.
+  * f6c390a Fixed a bug in the get_new_revision() function, it would not use the
+  * current revision to retrieve the current revision number.
+  * efef771 Updated the changelog.
+  * a25a1b6 Added a simplified XSLT 2.0 DTD so we can check those files before
+  * sending them to the server.
+  * a26a58c Started working on the compiler / optimizer to get things to
+  compile. These are 3 big files.
+  * 9e45c89 Added support for a special value named 'today' for date fields.
+  * 32d9bad Added info in the changelog.
+  * 11b7bac Added the attachment plugin to clearly separate them from the
+  * standard HTML output.
+  * 6b23f7c Got the program, statement, variable to compile.
+  * b2aed25 Got pragma and package done.
+  * b7f9ed5 Tiny clean up.
+  * b7beac2 Started work on function.cpp, got most converted.
+  * cd2fde6 Clean up enhanced references.
+  * 84be51a Added a --remove-theme option to the snaplayout tool.
+  * 1668981 Got the class and expression to compile. Cleaned up the parser
+  heavily.
+  * b71ab05 Added info on how to compile a project on launchpad.
+  * c2729d8 Added a README.txt for version 1.4.6 (quite specific to that version).
+  * 0565d09 Added documentation (INSTALL.txt, README.*).
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Thu, 15 May 2014 21:14:30 -0700
+
 libtld (1.4.6) saucy; urgency=high
 
   * Added new gTLDs as defined by the ICANN.
