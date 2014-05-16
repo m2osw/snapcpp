@@ -4,6 +4,8 @@
 
 Copyright (c) 2005-2014 Made to Order Software Corp.
 
+http://snapwebsites.org/project/as2js
+
 Permission is hereby granted, free of charge, to any
 person obtaining a copy of this software and
 associated documentation files (the "Software"), to
@@ -44,26 +46,13 @@ namespace as2js
 /**********************************************************************/
 /**********************************************************************/
 
-Parser::Parser()
-    : f_lexer(new Lexer)
-    //, f_options(nullptr) -- auto-init
+Parser::Parser(Input::pointer_t input, Options::pointer_t options)
+    : f_lexer(new Lexer(input, options))
+    , f_options(options)
     //, f_root(nullptr) -- auto-init [we keep it unknown at the start]
     //, f_node(nullptr) -- auto-init
     //, f_unget() -- auto-init
 {
-}
-
-
-void Parser::set_input(Input::pointer_t& input)
-{
-    f_lexer->set_input(input);
-}
-
-
-void Parser::set_options(Options::pointer_t& options)
-{
-    f_options = options;
-    f_lexer->set_options(options);
 }
 
 
@@ -97,7 +86,7 @@ void Parser::get_token()
     }
 
     if(f_options
-    && f_options->get_option(Options::AS_OPTION_DEBUG_LEXER) != 0)
+    && f_options->get_option(Options::OPTION_DEBUG_LEXER) != 0)
     {
         std::cerr << (reget ? "RE-TOKEN" : "TOKEN") << ": " << f_node << std::endl;
     }

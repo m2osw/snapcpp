@@ -1,6 +1,6 @@
-#ifndef AS2JS_AS2JS_H
-#define AS2JS_AS2JS_H
-/* as.h -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
+#ifndef AS2JS_COMPARE_H
+#define AS2JS_COMPARE_H
+/* compare.h -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
 
 /*
 
@@ -35,26 +35,34 @@ SOFTWARE.
 
 */
 
-#include    <string>
-#include    <vector>
-
 
 namespace as2js
 {
 
 
-#define AS2JS_VERSION_MAJOR    @AS2JS_VERSION_MAJOR@
-#define AS2JS_VERSION_MINOR    @AS2JS_VERSION_MINOR@
-#define AS2JS_VERSION_PATCH    @AS2JS_VERSION_PATCH@
-#define AS2JS_VERSION          "@AS2JS_VERSION_MAJOR@.@AS2JS_VERSION_MINOR@.@AS2JS_VERSION_PATCH@"
+enum compare_t
+{
+	COMPARE_EQUAL = 0,
+	COMPARE_GREATER = 1,
+	COMPARE_LESS = -1,
+	COMPARE_UNORDERED = 2,
+	COMPARE_ERROR = -2,
+	COMPARE_UNDEFINED = -3		// not yet compared
+};
 
 
-const char *        as2js_library_version();
-
+namespace compare_utils
+{
+bool is_ordered(compare_t const c)
+{
+    return c == COMPARE_EQUAL || c == COMPARE_GREATER || c == COMPARE_LESS;
+}
+}
+// namespace compare
 
 }
 // namespace as2js
 #endif
-// #ifndef AS2JS_AS2JS_H
+// #ifndef AS2JS_COMPARE_H
 
 // vim: ts=4 sw=4 et

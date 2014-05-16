@@ -4,6 +4,8 @@
 
 Copyright (c) 2005-2014 Made to Order Software Corp.
 
+http://snapwebsites.org/project/as2js
+
 Permission is hereby granted, free of charge, to any
 person obtaining a copy of this software and
 associated documentation files (the "Software"), to
@@ -109,7 +111,7 @@ void Parser::case_directive(Node::pointer_t& node)
     node->append_child(expr);
 
     if(f_options
-    && f_options->get_option(Options::AS_OPTION_EXTENDED_STATEMENTS) != 0) {
+    && f_options->get_option(Options::OPTION_EXTENDED_STATEMENTS) != 0) {
         // check for 'case <expr> ... <expr>:'
         if(f_node->get_type() == Node::NODE_REST
         || f_node->get_type() == Node::NODE_RANGE)

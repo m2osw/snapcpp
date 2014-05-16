@@ -1,6 +1,6 @@
-#ifndef AS2JS_AS2JS_H
-#define AS2JS_AS2JS_H
-/* as.h -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
+#ifndef AS2JS_RC_H
+#define AS2JS_RC_H
+/* rc.h -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
 
 /*
 
@@ -35,26 +35,36 @@ SOFTWARE.
 
 */
 
-#include    <string>
-#include    <vector>
+#include	"as2js/string.h"
 
+#include    <fstream>
 
 namespace as2js
 {
 
+// "Resources" support to load .rc files
+class rc_t
+{
+public:
+    void                    find_rc(bool const accept_if_missing);
+    void                    read_rc();
+    void                    close();
+    String const&           get_path() const;
+    String const&           get_db() const;
+    static String const&    get_home();
 
-#define AS2JS_VERSION_MAJOR    @AS2JS_VERSION_MAJOR@
-#define AS2JS_VERSION_MINOR    @AS2JS_VERSION_MINOR@
-#define AS2JS_VERSION_PATCH    @AS2JS_VERSION_PATCH@
-#define AS2JS_VERSION          "@AS2JS_VERSION_MAJOR@.@AS2JS_VERSION_MINOR@.@AS2JS_VERSION_PATCH@"
-
-
-const char *        as2js_library_version();
+private:
+    std::ifstream           f_rcfile;
+    String                  f_rcfilename;
+    String                  f_path;
+    String                  f_db;
+};
 
 
 }
 // namespace as2js
+
 #endif
-// #ifndef AS2JS_AS2JS_H
+// #ifndef AS2JS_RC_H
 
 // vim: ts=4 sw=4 et

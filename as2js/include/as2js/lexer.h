@@ -6,6 +6,8 @@
 
 Copyright (c) 2005-2014 Made to Order Software Corp.
 
+http://snapwebsites.org/project/as2js
+
 Permission is hereby granted, free of charge, to any
 person obtaining a copy of this software and
 associated documentation files (the "Software"), to
@@ -47,10 +49,8 @@ class Lexer
 public:
     typedef std::shared_ptr<Lexer>      pointer_t;
 
-                                Lexer();
+                                Lexer(Input::pointer_t input, Options::pointer_t options);
 
-    void                        set_options(Options::pointer_t& options);
-    void                        set_input(Input::pointer_t& input);
     Input::pointer_t            get_input() const;
 
     Node::pointer_t             get_new_node(Node::node_t type);
@@ -84,12 +84,12 @@ private:
     void                        read_string(Input::char_t quote);
     bool                        has_option_set(Options::option_t option) const;
 
-    zchar_type_t                f_char_type;    // type of the last character read
     Input::pointer_t            f_input;
-    Position                    f_position;     // position just before reading a token
     Options::pointer_t          f_options;
+    zchar_type_t                f_char_type;    // type of the last character read
+    Position                    f_position;     // position just before reading a token
 
-    Node::node_t                f_result_type;
+    Node::safe_node_t           f_result_type;
     String                      f_result_string;
     Int64                       f_result_int64;
     Float64                     f_result_float64;

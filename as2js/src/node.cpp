@@ -4,6 +4,8 @@
 
 Copyright (c) 2005-2014 Made to Order Software Corp.
 
+http://snapwebsites.org/project/as2js
+
 Permission is hereby granted, free of charge, to any
 person obtaining a copy of this software and
 associated documentation files (the "Software"), to
@@ -35,7 +37,6 @@ SOFTWARE.
 #include    "as2js/exceptions.h"
 
 #include    <algorithm>
-#include    <cmath>
 #include    <sstream>
 #include    <iomanip>
 
@@ -431,6 +432,163 @@ const char *Node::get_type_name() const
 }
 
 
+/** \brief Return true if node represens a number.
+ *
+ * This function returns true if the node is an integer or a
+ * floating point value.
+ *
+ * Note that this function returns false on a string that
+ * represents a valid number.
+ *
+ * Note that JavaScript also considered Boolean values and null as
+ * valid numbers. To test such, use is_nan() instead
+ *
+ * \return true if this node represents a number
+ */
+bool Node::is_number() const
+{
+    return f_type == NODE_INT64 || f_type == NODE_FLOAT64;
+}
+
+
+/** \brief Check whether this node represents a NaN if converted to a number.
+ *
+ * When converting a node to a number (to_number() function) we accept a
+ * certain number of parameters as numbers:
+ *
+ * \li Integers (unchanged)
+ * \li Float points (unchanged)
+ * \li True (1) or False (0)
+ * \li Null (0)
+ * \li Strings that represent valid numbers as a whole
+ *
+ * \return true if the value could not be converted to a number.
+ */
+bool Node::is_nan() const
+{
+    if(f_type == NODE_STRING)
+    {
+        return f_str.is_number();
+    }
+
+    return f_type != NODE_INT64
+        && f_type != NODE_FLOAT64
+        && f_type != NODE_TRUE
+        && f_type != NODE_FALSE
+        && f_type != NODE_NULL;
+}
+
+
+/** \brief Check whether a node is an integer.
+ *
+ * This function checks whether the type of the node is NODE_INT64.
+ *
+ * \return true if the node type is NODE_INT64.
+ */
+bool Node::is_int64() const
+{
+    return f_type == NODE_INT64;
+}
+
+
+/** \brief Check whether a node is a floating point.
+ *
+ * This function checks whether the type of the node is NODE_FLOAT64.
+ *
+ * \return true if the node type is NODE_FLOAT64.
+ */
+bool Node::is_float64() const
+{
+    return f_type == NODE_FLOAT64;
+}
+
+
+/** \brief Check whether a node is a Boolean value.
+ *
+ * This function checks whether the type of the node is NODE_TRUE or
+ * NODE_FALSE.
+ *
+ * \return true if the node type represents a boolean value.
+ */
+bool Node::is_boolean() const
+{
+    return f_type == NODE_TRUE || f_type == NODE_FALSE;
+}
+
+
+/** \brief Check whether a node represents the true Boolean value.
+ *
+ * This function checks whether the type of the node is NODE_TRUE.
+ *
+ * \return true if the node type represents true.
+ */
+bool Node::is_true() const
+{
+    return f_type == NODE_TRUE;
+}
+
+
+/** \brief Check whether a node represents the false Boolean value.
+ *
+ * This function checks whether the type of the node is NODE_FALSE.
+ *
+ * \return true if the node type represents false.
+ */
+bool Node::is_false() const
+{
+    return f_type == NODE_FALSE;
+}
+
+
+/** \brief Check whether a node is a string.
+ *
+ * This function checks whether the type of the node is NODE_STRING.
+ *
+ * \return true if the node type represents a string value.
+ */
+bool Node::is_string() const
+{
+    return f_type == NODE_STRING;
+}
+
+
+/** \brief Check whether a node is the special value undefined.
+ *
+ * This function checks whether the type of the node is NODE_UNDEFINED.
+ *
+ * \return true if the node type represents the undefined value.
+ */
+bool Node::is_undefined() const
+{
+    return f_type == NODE_UNDEFINED;
+}
+
+
+/** \brief Check whether a node is the special value null.
+ *
+ * This function checks whether the type of the node is NODE_NULL.
+ *
+ * \return true if the node type represents the null value.
+ */
+bool Node::is_null() const
+{
+    return f_type == NODE_NULL;
+}
+
+
+/** \brief Check whether a node is an identifier.
+ *
+ * This function checks whether the type of the node is NODE_IDENTIFIER
+ * or NODE_VIDENTIFIER.
+ *
+ * \return true if the node type represents an identifier value.
+ */
+bool Node::is_identifier() const
+{
+    return f_type == NODE_IDENTIFIER || f_type == NODE_VIDENTIFIER;
+}
+
+
 /**********************************************************************/
 /**********************************************************************/
 /***  DATA CONVERSION  ************************************************/
@@ -444,6 +602,40 @@ void Node::to_unknown()
     // node since that's similar to "deleting" the node
     f_type = static_cast<int32_t>(NODE_UNKNOWN);
     // clear the node's data to avoid other problems?
+}
+
+
+Node::node_t Node::to_boolean_type_only() const
+{
+    switch(f_type)
+    {
+    case NODE_TRUE:
+    case NODE_FALSE:
+        // already a boolean
+        return f_type;
+
+    case NODE_NULL:
+    case NODE_UNDEFINED:
+        return NODE_FALSE;
+
+    case NODE_INT64:
+        return f_int.get() != 0 ? NODE_TRUE : NODE_FALSE;
+
+    case NODE_FLOAT64:
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+        return f_float.get() != 0.0 && !f_float.is_NaN() ? NODE_TRUE : NODE_FALSE;
+#pragma GCC diagnostic pop
+
+    case NODE_STRING:
+        return f_str.is_true() ? NODE_TRUE : NODE_FALSE;
+
+    default:
+        // failure (cannot convert)
+        return NODE_UNDEFINED;
+
+    }
+    /*NOTREACHED*/
 }
 
 
@@ -466,34 +658,18 @@ bool Node::to_boolean()
         break;
 
     case NODE_FLOAT64:
-    {
-        double value = f_float.get();
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
-        f_type = static_cast<int32_t>(value != 0.0 && !std::isnan(value) ? NODE_TRUE : NODE_FALSE);
+        f_type = static_cast<int32_t>(f_float.get() != 0.0 && !f_float.is_NaN() ? NODE_TRUE : NODE_FALSE);
 #pragma GCC diagnostic pop
-    }
         break;
 
     case NODE_STRING:
-        f_type = static_cast<int32_t>(f_str.empty() ? NODE_FALSE : NODE_TRUE);
+        f_type = static_cast<int32_t>(f_str.is_true() ? NODE_TRUE : NODE_FALSE);
         break;
 
-    // At this time Data doesn't support any of these:
-    //case CHARACTER:
-    //case NAMESPACE:
-    //case COMPOUNDATTRIBUTE:
-    //case CLASS:
-    //case SIMPLEINSTANCE:
-    //case METHODCLOSURE:
-    //case DATE:
-    //case REGEXP:
-    //case PACKAGE:
-    //    f_type = NODE_TRUE;
-    //    break;
-
     default:
-        // failure (can't convert)
+        // failure (cannot convert)
         return false;
 
     }
@@ -519,8 +695,10 @@ bool Node::to_int64()
 
     case NODE_NULL:
     case NODE_FALSE:
-    case NODE_UNDEFINED:
         f_int.set(0);
+        break;
+
+    case NODE_UNDEFINED:
         break;
 
     default:
@@ -566,6 +744,17 @@ bool Node::to_float64()
 }
 
 
+/** \brief Convert this node to a number.
+ *
+ * This function converts the node to a number just like JavaScript would do.
+ * This means converting the following type of nodes:
+ *
+ * \li NODE_INT64 -- no conversion
+ * \li NODE_FLOAT64 -- no conversion
+ * \li NODE_TRUE -- convert to 1 (INT64)
+ * \li NODE_FALSE -- convert to 0 (INT64)
+ * \li NODE_UNDEFINED -- convert to NaN (FLOAT64)
+ */
 bool Node::to_number()
 {
     switch(f_type) {
@@ -586,7 +775,15 @@ bool Node::to_number()
 
     case NODE_UNDEFINED:
         f_type = static_cast<int32_t>(NODE_FLOAT64);
-        f_float.set(FP_NAN);
+        f_float.set_NaN();
+        break;
+
+    case NODE_STRING:
+        // JavaScript tends to force conversions from stings to integers
+        // when possible (actually it always is, only strings often become
+        // NaN as a result)
+        f_type = static_cast<int32_t>(NODE_FLOAT64);
+        f_float.set(f_str.to_float64());
         break;
 
     default:
@@ -603,31 +800,26 @@ bool Node::to_string()
 {
     switch(f_type) {
     case NODE_STRING:
-        break;
+        return true;
 
     case NODE_UNDEFINED:
-        f_type = static_cast<int32_t>(NODE_STRING);
         f_str = "undefined";
         break;
 
     case NODE_NULL:
-        f_type = static_cast<int32_t>(NODE_STRING);
         f_str = "null";
         break;
 
     case NODE_TRUE:
-        f_type = static_cast<int32_t>(NODE_STRING);
         f_str = "true";
         break;
 
     case NODE_FALSE:
-        f_type = static_cast<int32_t>(NODE_STRING);
         f_str = "false";
         break;
 
     case NODE_INT64:
     {
-        f_type = static_cast<int32_t>(NODE_STRING);
         std::stringstream ss;
         ss << f_int.get();
         f_str = ss.str();
@@ -638,21 +830,21 @@ bool Node::to_string()
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
     {
-        double const value(f_float.get());
-        f_type = static_cast<int32_t>(NODE_STRING);
-        if(std::isnan(value))
+        Float64::float64_type const value(f_float.get());
+        if(f_float.is_NaN())
         {
             f_str = "NaN";
         }
         else if(value == 0.0)
         {
+            // make sure it does not become "0.0"
             f_str = "0";
         }
-        else if(std::isinf(value) < 0)
+        else if(f_float.is_negative_infinity())
         {
             f_str = "-Infinity";
         }
-        else if(std::isinf(value) > 0)
+        else if(f_float.is_positive_infinity())
         {
             f_str = "Infinity";
         }
@@ -671,6 +863,7 @@ bool Node::to_string()
         return false;
 
     }
+    f_type = static_cast<int32_t>(NODE_STRING);
 
     return true;
 }
@@ -745,12 +938,12 @@ void Node::set_string(String const& value)
     // only the corresponding node type accepts a set() call
     switch(f_type)
     {
-    case NODE_BREAK: // name of label
-    case NODE_CLASS: // name of class
-    case NODE_CONTINUE: // name of label
-    case NODE_IMPORT: // name of package
-    case NODE_NAMESPACE: // name of namespace
-    case NODE_PACKAGE: // name of package
+    case NODE_BREAK:        // name of label
+    case NODE_CLASS:        // name of class
+    case NODE_CONTINUE:     // name of label
+    case NODE_IMPORT:       // name of package
+    case NODE_NAMESPACE:    // name of namespace
+    case NODE_PACKAGE:      // name of package
     case NODE_STRING:
         break;
 

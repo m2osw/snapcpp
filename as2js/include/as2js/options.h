@@ -6,6 +6,8 @@
 
 Copyright (c) 2005-2014 Made to Order Software Corp.
 
+http://snapwebsites.org/project/as2js
+
 Permission is hereby granted, free of charge, to any
 person obtaining a copy of this software and
 associated documentation files (the "Software"), to
@@ -56,18 +58,19 @@ public:
 
     enum option_t
     {
-        AS_OPTION_UNKNOWN = 0,
-        AS_OPTION_DEBUG,
-        AS_OPTION_DEBUG_LEXER,
-        AS_OPTION_EXTENDED_ESCAPE_SEQUENCES,
-        AS_OPTION_EXTENDED_OPERATORS,
-        AS_OPTION_EXTENDED_STATEMENTS,
-        AS_OPTION_OCTAL,
-        AS_OPTION_STRICT,
-        AS_OPTION_TRACE,
-        AS_OPTION_TRACE_TO_OBJECT,
+        OPTION_UNKNOWN = 0,
+        OPTION_DEBUG,
+        OPTION_DEBUG_LEXER,
+        OPTION_EXTENDED_ESCAPE_SEQUENCES,
+        OPTION_EXTENDED_OPERATORS,
+        OPTION_EXTENDED_STATEMENTS,
+        OPTION_JSON,
+        OPTION_OCTAL,
+        OPTION_STRICT,
+        OPTION_TRACE,
+        OPTION_TRACE_TO_OBJECT,
 
-        AS_OPTION_max
+        OPTION_max
     };
 
     typedef long        option_value_t;

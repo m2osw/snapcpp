@@ -4,6 +4,8 @@
 
 Copyright (c) 2005-2014 Made to Order Software Corp.
 
+http://snapwebsites.org/project/as2js
+
 Permission is hereby granted, free of charge, to any
 person obtaining a copy of this software and
 associated documentation files (the "Software"), to
@@ -31,7 +33,10 @@ SOFTWARE.
 
 */
 
-#include "as2js/string.h"
+#include    "as2js/string.h"
+#include    "as2js/exceptions.h"
+
+#include    <limits>
 
 
 namespace as2js
@@ -65,7 +70,7 @@ String::String(String const& str)
  * input string.
  *
  * The input is considered to be ISO-8859-1 and thus it gets copied in
- * the string as is. If you have UTF-8 data, make sure to use the fromUtf8()
+ * the string as is. If you have UTF-8 data, make sure to use the from_utf8()
  * function instead.
  *
  * Note that we cannot include '\0' characters in our strings. This function
@@ -415,8 +420,9 @@ String& String::operator += (char const c)
  * UCS-4. If another format is expected, make sure to use the
  * proper function.
  *
- * \note
- * Under MS-Windows the character is viewed as UCS-2.
+ * \todo
+ * Under MS-Windows the character is viewed as UTF-16, only we do
+ * not properly manage surrogates at this point.
  *
  * \param[in] c  The character to append to this String.
  *
@@ -436,93 +442,126 @@ String& String::operator += (wchar_t const c)
  *
  * If a null character is found, the copy stops.
  *
- * The len parameter can be used to limit the length of the copy.
+ * The \p len parameter can be used to limit the length of the copy.
  *
  * \param[in] str  The input string to copy in this string.
  * \param[in] len  The maximum number of characters to copy, if -1, copy
  *                 up to the next null ('\0') character.
+ *
+ * \return Always STRING_GOOD since all bytes in ISO-8859-1 are all
+ *         valid Unicode characters.
  */
-void String::from_char(char const *str, int len)
+String::conversion_result_t String::from_char(char const *str, int len)
 {
     clear();
     if(len == -1)
     {
         for(; *str != '\0'; ++str)
         {
-            append(1, static_cast<as_char_t>(*str));
+            append(1, static_cast<unsigned char>(*str));
         }
     }
     else
     {
         for(; len > 0 && *str != '\0'; --len, ++str)
         {
-            append(1, static_cast<as_char_t>(*str));
+            append(1, static_cast<unsigned char>(*str));
         }
     }
+
+    return STRING_GOOD;
 }
 
 
 /** \brief Copy a wchar_t string to this String.
  *
  * This function copies a wchar_t string to this String. Internally we
- * only deal with UCS-4 characters. However, this function expects the
+ * only deal with UTF-32 characters. However, this function expects the
  * input to possibly be UTF-16 and converts surrogate characters to
- * UCS-4 as expected in UTF-16.
+ * UTF-32 as expected in UTF-16. (In other words, this functions works
+ * under Linux and MS-Windows.)
+ *
+ * \note
+ * This string is not modified if the input is not valid.
  *
  * \param[in] str  The input string to copy in this string.
  * \param[in] len  The maximum number of characters to copy, if -1, copy
  *                 up to the next null ('\0') character.
+ *
+ * \return STRING_INVALID: if the resulting character is not a valid UTF-32 character,
+ *         STRING_BAD: if the input is invalid,
+ *         STRING_END: could not be converted (not enough data for last character),
+ *         STRING_GOOD: the new string is valid.
  */
-void String::from_wchar(wchar_t const *str, int len)
+String::conversion_result_t String::from_wchar(wchar_t const *str, int len)
 {
     struct out
     {
-        out(String& str)
-            : f_string(str)
-        {
-        }
-
-        void add(as_char_t c)
+        String::conversion_result_t add(as_char_t c)
         {
             if(c >= 0xD800 && c < 0xDC00)
             {
                 f_lead_surrogate = c;
-                return;
+                return STRING_END; // not an error unless it was the last character
             }
             else if(c >= 0xDC00 && c <= 0xDFFF)
             {
                 if(f_lead_surrogate == 0)
                 {
-                    // ignore invalid character
-                    return;
+                    // invalid encoding
+                    return STRING_BAD;
                 }
                 c = (((static_cast<as_char_t>(f_lead_surrogate) & 0x03FF) << 10) | (static_cast<as_char_t>(c) & 0x03FF)) + 0x10000;
+                // Note: UTF-16 characters cannot be invalid here
+                //       (unless we add code points such as 0xFFFE and 0xFFFF
+                //       among invalid characters)
+                if(!f_string.valid_character(c))
+                {
+                    return STRING_INVALID;
+                }
                 f_lead_surrogate = 0;
             }
             f_string.append(1, c);
+            return STRING_GOOD;
         }
 
-        String&         f_string;
+        String          f_string;
         zas_char_t      f_lead_surrogate;
     };
 
     clear();
 
-    out o(*this);
+    out o;
+    String::conversion_result_t result;
     if(len == -1)
     {
         for(; *str != '\0'; ++str)
         {
-            o.add(*str);
+            result = o.add(*str);
+            if(result != STRING_GOOD && result != STRING_END)
+            {
+                break;
+            }
         }
     }
     else
     {
         for(; len > 0 && *str != '\0'; --len, ++str)
         {
-            o.add(*str);
+            result = o.add(*str);
+            if(result != STRING_GOOD && result != STRING_END)
+            {
+                break;
+            }
         }
     }
+
+    if(result == STRING_GOOD)
+    {
+        *this = o.f_string;
+    }
+
+    return result;
 }
 
 
@@ -534,26 +573,45 @@ void String::from_wchar(wchar_t const *str, int len)
  *
  * The copy stops as soon as a null ('\0') character is found.
  *
+ * \note
+ * If an error occurs, this String object is not modified.
+ *
  * \param[in] str  The input string to copy in this string.
  * \param[in] len  The maximum number of characters to copy, if -1, copy
  *                 up to the next null ('\0') character.
+ *
+ * \return STRING_INVALID: if the resulting character is not a valid UTF-32 character,
+ *         STRING_GOOD: the new string is valid.
  */
-void String::from_as_char(as_char_t const *str, int len)
+String::conversion_result_t String::from_as_char(as_char_t const *str, int len)
 {
+    String s;
     if(len == -1)
     {
         for(; *str != '\0'; ++str)
         {
-            append(1, *str);
+            if(!valid_character(*str))
+            {
+                return STRING_INVALID;
+            }
+            s.append(1, *str);
         }
     }
     else
     {
         for(; len > 0 && *str != '\0'; --len, ++str)
         {
-            append(1, *str);
+            if(!valid_character(*str))
+            {
+                return STRING_INVALID;
+            }
+            s.append(1, *str);
         }
     }
+
+    *this = s;
+
+    return STRING_GOOD;
 }
 
 
@@ -568,15 +626,18 @@ void String::from_as_char(as_char_t const *str, int len)
  * The copy stops as soon as a null ('\0') character is found.
  *
  * \note
- * If an error occurs, the String object is not modified.
+ * If an error occurs, this String object is not modified.
  *
  * \param[in] str  The input string to copy in this string.
  * \param[in] len  The maximum number of characters to copy, if -1, copy
  *                 up to the next null ('\0') character.
  *
- * \return -1 if the input could not be converted, the string length otherwise.
+ * \return STRING_INVALID: if the resulting character is not a valid UTF-32 character,
+ *         STRING_BAD: if the input is invalid,
+ *         STRING_END: could not be converted (not enough data for last character),
+ *         STRING_GOOD: the new string is valid.
  */
-int String::from_utf8(char const *str, int len)
+String::conversion_result_t String::from_utf8(char const *str, int len)
 {
     String          result;
     unsigned char   c;
@@ -628,12 +689,12 @@ int String::from_utf8(char const *str, int len)
             else
             {
                 // invalid UTF-8 sequence
-                return -1;
+                return STRING_BAD;
             }
             if(len < l)
             {
                 // not enough character
-                return -1;
+                return STRING_END;
             }
             len -= l;
             while(l > 0)
@@ -641,7 +702,7 @@ int String::from_utf8(char const *str, int len)
                 c = static_cast<unsigned char>(*str++);
                 if(c < 0x80 || c > 0xBF)
                 {
-                    return -1;
+                    return STRING_BAD;
                 }
                 l--;
                 w = (w << 6) | (c & 0x3F);
@@ -649,14 +710,15 @@ int String::from_utf8(char const *str, int len)
         }
         if(!valid_character(w))
         {
-            return -1;
+            return STRING_INVALID;
         }
         result.append(1, w);
     }
 
     // it worked, we can smash this String
     *this = result;
-    return length();
+
+    return STRING_GOOD;
 }
 
 
@@ -705,6 +767,11 @@ bool operator == (char const *str, String const& string)
  * Note that the null character '\0' is considered valid and part of
  * the string, however, anything after that character is ignored.
  *
+ * \todo
+ * We are actually transforming the String object to properly check
+ * all of its characters as added to the buffer so this function
+ * should become obsolete at some point.
+ *
  * \return true if the string is considered valid.
  */
 bool String::valid() const
@@ -736,9 +803,249 @@ bool String::valid() const
  */
 bool String::valid_character(as_char_t c)
 {
+    // Note: as_char_t is an int32_t (i.e. a signed value)
     return (c < 0xD800 || c > 0xDFFF)   // UTF-16 surrogates
         && c < 0x110000                 // too large?
         && c >= 0;                      // too small?
+}
+
+
+/** \brief Check whether this string represents a valid integer.
+ *
+ * This function checks the strings to see whether it represents a
+ * valid integer. The function supports decimal and hexadecimal
+ * numbers. Octals are not supported because JavaScript does not
+ * convert numbers that start with a 0 as if these were octal
+ * numbers.
+ *
+ * \li Decimal number: [-+]?[0-9]+
+ * \li Hexadecimal number: [-+]?0[xX][0-9a-fA-F]+
+ *
+ * \return true if the string represents an integer.
+ */
+bool String::is_int64() const
+{
+    struct hex_test
+    {
+        static bool is_hex(as_char_t c)
+        {
+            return (c >= '0' && c <= '9')
+                || (c >= 'a' && c <= 'f')
+                || (c >= 'A' && c <= 'F');
+        }
+    };
+
+    as_char_t const *s(c_str());
+
+    // sign
+    // TODO: in strict mode hexadecimal numbers cannot be signed
+    if(*s == '-' || *s == '+')
+    {
+        ++s;
+    }
+
+    // handle special case of hexadecimal
+    if(*s == '0')
+    {
+        ++s;
+        if(*s == 'x' || *s == 'X')
+        {
+            if(s[1] == '\0')
+            {
+                // just "0x" or "0X" is not a valid number
+                return false;
+            }
+            for(++s; hex_test::is_hex(*s); ++s);
+            return *s == '\0';
+        }
+        // no octal support in strings
+    }
+
+    // number
+    for(; *s >= '0' && *s <= '9'; ++s);
+
+    return *s == '\0';
+}
+
+
+/** \brief Check whether the string represents a valid floating pointer number.
+ *
+ * This function parses the string to see whether it represents a valid
+ * floating pointer number: an integral part, an optional decimal part,
+ * and an optional signed exponent.
+ *
+ * The sign of the exponent is also itself optional.
+ *
+ * Note that this function returns true if the number is an integer in
+ * decimal number representation, however, it will return false for
+ * hexadecimal numbers. You may also call the is_number() function to
+ * know whether a string represents either a decimal number or a floating
+ * point number.
+ *
+ * \li A floating point number: [-+]?[0-9]+(\.[0-9]+)?([eE]?[0-9]+)?
+ *
+ * \return true if the string represents a floating point number.
+ */
+bool String::is_float64() const
+{
+    as_char_t const *s(c_str());
+
+    // sign
+    if(*s == '-' || *s == '+')
+    {
+        ++s;
+    }
+
+    // integral part
+    for(; *s >= '0' && *s <= '9'; ++s);
+
+    // if '.' check for a decimal part
+    if(*s == '.')
+    {
+        for(++s; *s >= '0' && *s <= '9'; ++s);
+    }
+
+    // if 'e' check for an exponent
+    if(*s == 'e' || *s == 'E')
+    {
+        ++s;
+        if(*s == '+' || *s == '-')
+        {
+            // skip the sign
+            ++s;
+        }
+        for(; *s >= '0' && *s <= '9'; ++s);
+    }
+
+    return *s == '\0';
+}
+
+
+/** \brief Check whether this string represents a number.
+ *
+ * This function checks whether this string represents a number.
+ * This means it returns true in the following cases:
+ *
+ * \li The string represents a decimal number ([-+]?[0-9]+)
+ * \li The string represents an hexadecimal number ([-+]?0[xX][0-9a-fA-F]+)
+ * \li The string represents a floating point number ([-+]?[0-9]+(\.[0-9]+)?([eE]?[0-9]+)?)
+ *
+ * Unfortunately, JavaScript does not understand "true", "false",
+ * and "null" as numbers (even though isNaN(true), isNaN(false),
+ * and isNaN(null) all return true.)
+ *
+ * \return true if this string represents a valid number
+ */
+bool String::is_number() const
+{
+    // floats support integers so this is true if this string is an int64
+    return is_int64() || is_float64();
+}
+
+
+/** \brief Convert a string to a floating point number.
+ *
+ * This function verifies that the string represents a valid floating
+ * point number, if so, it converts it to such and returns the result.
+ *
+ * If the string does not represent a valid floating point, then the
+ * function returns NaN.
+ *
+ * \note
+ * When used by the lexer, it should always work since the lexer reads
+ * floating points with the same expected syntax.
+ *
+ * \return The string as a floating point.
+ */
+Int64::int64_type String::to_int64() const
+{
+    if(empty())
+    {
+        return 0;
+    }
+
+    if(is_int64())
+    {
+        // Check whether it is an hexadecimal number, because if so
+        // we use base 16. We want to force the base because we do
+        // not support base 8 which strtoll() could otherwise switch
+        // to when we have a number that starts with zero.
+        as_char_t const *s(c_str());
+        if(*s == '+' || *s == '-')
+        {
+            ++s;
+        }
+        if(s[0] == '0' && (s[1] == 'x' || s[1] == 'X'))
+        {
+            // the strtoll() function supports the sign
+            return strtoll(to_utf8().c_str(), nullptr, 16);
+        }
+        return strtoll(to_utf8().c_str(), nullptr, 10);
+    }
+
+    // this is invalid
+    throw exception_internal_error("String::to_int64() called with an invalid integer");
+}
+
+
+/** \brief Convert a string to a floating point number.
+ *
+ * This function verifies that the string represents a valid floating
+ * point number, if so, it converts it to such and returns the result.
+ *
+ * If the string does not represent a valid floating point, then the
+ * function returns NaN.
+ *
+ * \note
+ * When used by the lexer, it should always work since the lexer reads
+ * floating points with the same expected syntax.
+ *
+ * \return The string as a floating point.
+ */
+Float64::float64_type String::to_float64() const
+{
+    if(empty())
+    {
+        return 0.0;
+    }
+
+    if(is_float64())
+    {
+        return strtod(to_utf8().c_str(), 0);
+    }
+
+    return std::numeric_limits<double>::quiet_NaN();
+}
+
+
+/** \brief Check whether the string is considered true.
+ *
+ * A string that is empty is considered false. A string which is
+ * not empty is generally considered true, however, if the string
+ * represents the number 0, then it is still considered false.
+ *
+ * Note that any number of zeroes can be used: "000" == false.
+ *
+ * \return true if the string is considered true.
+ */
+bool String::is_true() const
+{
+    if(empty())
+    {
+        return false;
+    }
+    if(is_int64())
+    {
+        return to_int64() != 0;
+    }
+    if(is_float64())
+    {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+        return strtod(to_utf8().c_str(), 0) != 0.0;
+#pragma GCC diagnostic pop
+    }
+    return true;
 }
 
 
@@ -749,50 +1056,38 @@ bool String::valid_character(as_char_t c)
  *
  * \return The length if converted to UTF-8.
  */
-size_t String::utf8_length() const
+ssize_t String::utf8_length() const
 {
-    size_t      r, l;
+    ssize_t     r(0);
     as_char_t   c;
 
-    // result
-    r = 0;
-
-    for(as_char_t  const *wc = c_str(); *wc != '\0'; ++wc)
+    for(as_char_t const *wc(c_str()); *wc != '\0'; ++wc)
     {
         // get one wide character
         c = *wc;
+        if(!valid_character(c))
+        {
+            // character is not valid UTF-32
+            return -1;
+        }
 
-        // simluate encoding
+        // simulate encoding
         if(c < 0x80)
         {
-            l = 1;
+            r += 1;
         }
         else if(c < 0x800)
         {
-            l = 2;
+            r += 2;
         }
         else if(c < 0x10000)
         {
-            l = 3;
+            r += 3;
         }
-        else if(c < 0x200000)
+        else //if(c < 0x200000)
         {
-            l = 4;
+            r += 4;
         }
-        else if(c < 0x4000000)
-        {
-            l = 5;
-        }
-        else if(c > 0)
-        {
-            l = 6;
-        }
-        else
-        {
-            // an invalid wide character (negative!)
-            return -1;
-        }
-        r += l;
     }
 
     return r;
@@ -813,6 +1108,11 @@ size_t String::utf8_length() const
  * The function skips any character considered invalid. If you want to
  * know whether the resulting UTF-8 string is an exact representation
  * of this String, then call the valid() function.
+ *
+ * \todo
+ * This String object is expected to not have any invalid characters
+ * so this function always returns the conversion even if it finds
+ * invalid characters.
  *
  * \return The String converted to UTF-8 and saved in an std::string.
  */
@@ -845,17 +1145,9 @@ std::string String::to_utf8() const
                 result.append(1, ((c >> 6) & 0x3F) | 0x80);
                 result.append(1, (c & 0x3F) | 0x80);
             }
-            else if(c < 0x200000)
-            {
-                result.append(1, (c >> 18) | 0xF0);
-                result.append(1, ((c >> 12) & 0x3F) | 0x80);
-                result.append(1, ((c >> 6) & 0x3F) | 0x80);
-                result.append(1, (c & 0x3F) | 0x80);
-            }
             else
             {
-                result.append(1, (c >> 24) | 0xF8);
-                result.append(1, ((c >> 18) & 0x3F) | 0x80);
+                result.append(1, (c >> 18) | 0xF0);
                 result.append(1, ((c >> 12) & 0x3F) | 0x80);
                 result.append(1, ((c >> 6) & 0x3F) | 0x80);
                 result.append(1, (c & 0x3F) | 0x80);
@@ -867,6 +1159,16 @@ std::string String::to_utf8() const
 }
 
 
+/** \brief Send string to output stream.
+ *
+ * This function sends this String to the specified output buffer. It is
+ * to ease the output of a string to stream such as std::cout and std::cerr.
+ *
+ * \param[in,out] out  Stream where the string is printed.
+ * \param[in] str  The string to be printed out.
+ *
+ * \return A reference to the \p out stream.
+ */
 std::ostream& operator << (std::ostream& out, String const& str)
 {
     out << str.to_utf8();

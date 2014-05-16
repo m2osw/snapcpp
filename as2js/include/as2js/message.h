@@ -6,6 +6,8 @@
 
 Copyright (c) 2005-2014 Made to Order Software Corp.
 
+http://snapwebsites.org/project/as2js
+
 Permission is hereby granted, free of charge, to any
 person obtaining a copy of this software and
 associated documentation files (the "Software"), to
@@ -41,6 +43,7 @@ SOFTWARE.
 
 #include    <sstream>
 
+
 namespace as2js
 {
 
@@ -63,6 +66,7 @@ enum err_code_t
 
     AS_ERR_ABSTRACT,
     AS_ERR_BAD_PRAGMA,
+    AS_ERR_CANNOT_COMPILE,
     AS_ERR_CANNOT_MATCH,
     AS_ERR_CANNOT_OVERLOAD,
     AS_ERR_CANNOT_OVERWRITE_CONST,
@@ -78,6 +82,7 @@ enum err_code_t
     AS_ERR_INACCESSIBLE_STATEMENT,
     AS_ERR_INCOMPATIBLE,
     AS_ERR_INCOMPATIBLE_PRAGMA_ARGUMENT,
+    AS_ERR_INSTALLATION,
     AS_ERR_INSTANCE_EXPECTED,
     AS_ERR_INTERNAL_ERROR,
     AS_ERR_INTRINSIC,
@@ -95,6 +100,7 @@ enum err_code_t
     AS_ERR_INVALID_FRAME,
     AS_ERR_INVALID_FUNCTION,
     AS_ERR_INVALID_GOTO,
+    AS_ERR_INVALID_INPUT_STREAM,
     AS_ERR_INVALID_KEYWORD,
     AS_ERR_INVALID_LABEL,
     AS_ERR_INVALID_NAMESPACE,
@@ -109,21 +115,26 @@ enum err_code_t
     AS_ERR_INVALID_TYPE,
     AS_ERR_INVALID_UNICODE_ESCAPE_SEQUENCE,
     AS_ERR_INVALID_VARIABLE,
+    AS_ERR_IO_ERROR,
     AS_ERR_LABEL_NOT_FOUND,
     AS_ERR_LOOPING_REFERENCE,
     AS_ERR_MISMATCH_FUNC_VAR,
     AS_ERR_NEED_CONST,
     AS_ERR_NOT_FOUND,
     AS_ERR_NOT_SUPPORTED,
+    AS_ERR_OBJECT_MEMBER_DEFINED_TWICE,
     AS_ERR_PARENTHESIS_EXPECTED,
     AS_ERR_PRAGMA_FAILED,
     AS_ERR_SEMICOLON_EXPECTED,
     AS_ERR_SQUARE_BRAKETS_EXPECTED,
+    AS_ERR_STRING_EXPECTED,
     AS_ERR_STATIC,
     AS_ERR_UNKNOWN_ESCAPE_SEQUENCE,
     AS_ERR_UNKNOWN_OPERATOR,
     AS_ERR_UNTERMINTED_STRING,
     AS_ERR_UNEXPECTED_PUNCTUATION,
+    AS_ERR_UNEXPECTED_TOKEN,
+    AS_ERR_UNEXPECTED_DATABASE,
 
     AS_ERR_max
 };
@@ -140,6 +151,7 @@ class Message : public std::stringstream
 {
 public:
                         Message(message_level_t message_level, err_code_t error_code, Position const& pos);
+                        Message(message_level_t message_level, err_code_t error_code);
                         //Message(Message const& rhs);
                         ~Message();
 

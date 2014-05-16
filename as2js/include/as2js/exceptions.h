@@ -6,6 +6,8 @@
 
 Copyright (c) 2005-2014 Made to Order Software Corp.
 
+http://snapwebsites.org/project/as2js
+
 Permission is hereby granted, free of charge, to any
 person obtaining a copy of this software and
 associated documentation files (the "Software"), to
@@ -55,6 +57,14 @@ public:
 };
 
 
+class exception_invalid_float : public std::runtime_error
+{
+public:
+    exception_invalid_float(char const *msg)        : runtime_error(msg) {}
+    exception_invalid_float(std::string const& msg) : runtime_error(msg) {}
+};
+
+
 class exception_incompatible_node_type : public std::runtime_error
 {
 public:
@@ -76,6 +86,22 @@ class exception_index_out_of_range : public std::out_of_range
 public:
     exception_index_out_of_range(char const *msg)        : out_of_range(msg) {}
     exception_index_out_of_range(std::string const& msg) : out_of_range(msg) {}
+};
+
+
+class exception_cannot_open_file : public std::runtime_error
+{
+public:
+    exception_cannot_open_file(char const *msg)        : runtime_error(msg) {}
+    exception_cannot_open_file(std::string const& msg) : runtime_error(msg) {}
+};
+
+
+class exception_file_already_open : public std::logic_error
+{
+public:
+    exception_file_already_open(char const *msg)        : logic_error(msg) {}
+    exception_file_already_open(std::string const& msg) : logic_error(msg) {}
 };
 
 

@@ -5,7 +5,7 @@
 # Copyright:    Copyright (c) 2005-2013 Made to Order Software Corp.
 #               All Rights Reserved.
 #
-# http://snapwebsites.org/
+# http://snapwebsites.org/project/as2js
 # contact@m2osw.com
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -45,6 +45,7 @@ add_library(as2js SHARED
     lexer.cpp
     message.cpp
     node.cpp
+    optimizer.cpp
     options.cpp
     package.cpp
     position.cpp
@@ -55,8 +56,11 @@ add_library(as2js SHARED
     string.cpp
     parser.cpp
     variable.cpp
+    rc.cpp
 
-    optimizer.cpp
+    json.cpp
+
+    db.cpp
     compile.cpp
     compiler.cpp
 )

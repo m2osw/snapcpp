@@ -6,6 +6,8 @@
 
 Copyright (c) 2005-2014 Made to Order Software Corp.
 
+http://snapwebsites.org/project/as2js
+
 Permission is hereby granted, free of charge, to any
 person obtaining a copy of this software and
 associated documentation files (the "Software"), to
@@ -33,7 +35,8 @@ SOFTWARE.
 
 */
 
-#include    <controlled_vars/controlled_vars_auto_init.h>
+#include    "int64.h"
+#include    "float64.h"
 
 #include    <iostream>
 #include    <string>
@@ -43,7 +46,7 @@ namespace as2js
 
 // our character type, yes, it also becomes as String::value_type
 // but at least this way we control the size outside of the class
-typedef int32_t         as_char_t;
+typedef int32_t                                         as_char_t;
 typedef controlled_vars::auto_init<as_char_t, 0>        zas_char_t;
 
 // Our String type is a UCS-4 compatible string type
@@ -53,48 +56,66 @@ class String : public std::basic_string<as_char_t>
 public:
     typedef controlled_vars::auto_init<size_type, 0>    zsize_type_t;
 
-                    String();
-                    String(String const& str);
-                    String(char const *str, int len = -1);
-                    String(wchar_t const *str, int len = -1);
-                    String(as_char_t const *str, int len = -1);
-                    String(std::string const& str);
-                    String(std::wstring const& str);
-                    String(std::basic_string<as_char_t> const& str);
+    // Unicode BOM character
+    static as_char_t const  STRING_BOM = 0xFEFF;
 
-    String&         operator = (String const& str);
-    String&         operator = (char const *str);
-    String&         operator = (wchar_t const *str);
-    String&         operator = (as_char_t const *str);
-    String&         operator = (std::string const& str);
-    String&         operator = (std::wstring const& str);
-    String&         operator = (std::basic_string<as_char_t> const& str);
+    enum conversion_result_t
+    {
+        STRING_GOOD    =  0,   // string conversion succeeded
+        STRING_END     = -1,   // not enough data to form a character
+        STRING_BAD     = -2,   // input is not valid (bad encoding sequence)
+        STRING_INVALID = -3    // invalid character found (character is not between 0 and 0x10FFFF, or is a code point reserved for UTF-16 surrogates)
+    };
 
-    bool            operator == (char const *str) const;
-    friend bool     operator == (char const *str, String const& string);
+                            String();
+                            String(String const& str);
+                            String(char const *str, int len = -1);
+                            String(wchar_t const *str, int len = -1);
+                            String(as_char_t const *str, int len = -1);
+                            String(std::string const& str);
+                            String(std::wstring const& str);
+                            String(std::basic_string<as_char_t> const& str);
 
-    String&         operator += (String const& str);
-    String&         operator += (char const *str);
-    String&         operator += (wchar_t const *str);
-    String&         operator += (as_char_t const *str);
-    String&         operator += (std::string const& str);
-    String&         operator += (std::wstring const& str);
-    String&         operator += (std::basic_string<as_char_t> const& str);
+    String&                 operator = (String const& str);
+    String&                 operator = (char const *str);
+    String&                 operator = (wchar_t const *str);
+    String&                 operator = (as_char_t const *str);
+    String&                 operator = (std::string const& str);
+    String&                 operator = (std::wstring const& str);
+    String&                 operator = (std::basic_string<as_char_t> const& str);
 
-    String&         operator += (as_char_t const c);
-    String&         operator += (char const c);
-    String&         operator += (wchar_t const c);
+    bool                    operator == (char const *str) const;
+    friend bool             operator == (char const *str, String const& string);
 
-    bool            valid() const;
-    static bool     valid_character(as_char_t c);
+    String&                 operator += (String const& str);
+    String&                 operator += (char const *str);
+    String&                 operator += (wchar_t const *str);
+    String&                 operator += (as_char_t const *str);
+    String&                 operator += (std::string const& str);
+    String&                 operator += (std::wstring const& str);
+    String&                 operator += (std::basic_string<as_char_t> const& str);
 
-    void            from_char(char const *str, int len = -1);
-    void            from_wchar(wchar_t const *str, int len = -1);
-    void            from_as_char(as_char_t const *str, int len = -1);
-    int             from_utf8(char const *str, int len = -1);
+    String&                 operator += (as_char_t const c);
+    String&                 operator += (char const c);
+    String&                 operator += (wchar_t const c);
 
-    size_t          utf8_length() const;
-    std::string     to_utf8() const;
+    bool                    valid() const;
+    static bool             valid_character(as_char_t c);
+
+    bool                    is_int64() const;
+    bool                    is_float64() const;
+    bool                    is_number() const;
+    Int64::int64_type       to_int64() const;
+    Float64::float64_type   to_float64() const;
+    bool                    is_true() const;
+
+    conversion_result_t     from_char(char const *str, int len = -1);
+    conversion_result_t     from_wchar(wchar_t const *str, int len = -1);
+    conversion_result_t     from_as_char(as_char_t const *str, int len = -1);
+    conversion_result_t     from_utf8(char const *str, int len = -1);
+
+    ssize_t                 utf8_length() const;
+    std::string             to_utf8() const;
 };
 
 std::ostream& operator << (std::ostream& out, String const& str);

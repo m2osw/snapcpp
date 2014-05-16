@@ -1,10 +1,12 @@
 #ifndef AS2JS_FLOAT64_H
 #define AS2JS_FLOAT64_H
-/* as.h -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
+/* float64.h -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
 
 /*
 
 Copyright (c) 2005-2014 Made to Order Software Corp.
+
+http://snapwebsites.org/project/as2js
 
 Permission is hereby granted, free of charge, to any
 person obtaining a copy of this software and
@@ -34,6 +36,10 @@ SOFTWARE.
 */
 
 #include    <controlled_vars/controlled_vars_fauto_init.h>
+
+#include    <limits>
+#include    <cmath>
+
 
 namespace as2js
 {
@@ -72,6 +78,63 @@ public:
     void            set(float64_type const new_float)
                     {
                         f_float = new_float;
+                    }
+
+    void            set_NaN()
+                    {
+                        f_float = std::numeric_limits<Float64::float64_type>::quiet_NaN();
+                    }
+
+    void            set_infinity()
+                    {
+                        f_float = std::numeric_limits<Float64::float64_type>::infinity();
+                    }
+
+    bool            is_NaN() const
+                    {
+                        return std::isnan(f_float);
+                    }
+
+    bool            is_infinity() const
+                    {
+                        return std::isinf(f_float);
+                    }
+
+    bool            is_positive_infinity() const
+                    {
+                        return std::isinf(f_float) && !std::signbit(f_float);
+                    }
+
+    bool            is_negative_infinity() const
+                    {
+                        return std::isinf(f_float) && std::signbit(f_float);
+                    }
+
+    int             classified_infinity() const
+                    {
+                        // if infinity, return -1 or +1
+                        // if not infinity, return 0
+                        return std::isinf(f_float)
+                                ? (std::signbit(f_float) ? -1 : 1)
+                                : 0;
+                    }
+
+    compare_t       compare(Float64 const& rhs) const
+                    {
+                        // if we got a NaN, it's not ordered
+                        if(is_NaN() || rhs.is_NaN())
+                        {
+                            return COMPARE_UNORDERED;
+                        }
+
+                        // comparing two floats properly handles infinity
+                        // (at least in g++ on Intel processors)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+                        return f_float == rhs.f_float ? COMPARE_EQUAL
+                             : (f_float < rhs.f_float ? COMPARE_LESS
+                                                      : COMPARE_GREATER);
+#pragma GCC diagnostic pop
                     }
 
 private:

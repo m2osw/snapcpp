@@ -4,6 +4,8 @@
 
 Copyright (c) 2005-2014 Made to Order Software Corp.
 
+http://snapwebsites.org/project/as2js
+
 Permission is hereby granted, free of charge, to any
 person obtaining a copy of this software and
 associated documentation files (the "Software"), to
@@ -142,62 +144,62 @@ void Parser::pragma()
         //       being ignored.
         //
         Options::option_value_t value(1);
-        Options::option_t option = Options::AS_OPTION_UNKNOWN;
+        Options::option_t option = Options::OPTION_UNKNOWN;
         if(name == "extended_operators")
         {
-            option = Options::AS_OPTION_EXTENDED_OPERATORS;
+            option = Options::OPTION_EXTENDED_OPERATORS;
         }
         else if(name == "no_extended_operators")
         {
-            option = Options::AS_OPTION_EXTENDED_OPERATORS;
+            option = Options::OPTION_EXTENDED_OPERATORS;
             value = 0;
         }
         else if(name == "extended_escape_sequences")
         {
-            option = Options::AS_OPTION_EXTENDED_ESCAPE_SEQUENCES;
+            option = Options::OPTION_EXTENDED_ESCAPE_SEQUENCES;
         }
         else if(name == "no_extended_escape_sequences")
         {
-            option = Options::AS_OPTION_EXTENDED_ESCAPE_SEQUENCES;
+            option = Options::OPTION_EXTENDED_ESCAPE_SEQUENCES;
             value = 0;
         }
         else if(name == "octal")
         {
-            option = Options::AS_OPTION_OCTAL;
+            option = Options::OPTION_OCTAL;
         }
         else if(name == "no_octal")
         {
-            option = Options::AS_OPTION_OCTAL;
+            option = Options::OPTION_OCTAL;
             value = 0;
         }
         else if(name == "strict")
         {
-            option = Options::AS_OPTION_STRICT;
+            option = Options::OPTION_STRICT;
         }
         else if(name == "not_strict")
         {
-            option = Options::AS_OPTION_STRICT;
+            option = Options::OPTION_STRICT;
             value = 0;
         }
         else if(name == "trace_to_object")
         {
-            option = Options::AS_OPTION_TRACE_TO_OBJECT;
+            option = Options::OPTION_TRACE_TO_OBJECT;
         }
         else if(name == "no_trace_to_object")
         {
-            option = Options::AS_OPTION_TRACE_TO_OBJECT;
+            option = Options::OPTION_TRACE_TO_OBJECT;
             value = 0;
         }
         else if(name == "trace")
         {
-            option = Options::AS_OPTION_TRACE;
+            option = Options::OPTION_TRACE;
         }
         else if(name == "no_trace")
         {
-            option = Options::AS_OPTION_TRACE;
+            option = Options::OPTION_TRACE;
             value = 0;
         }
-        if(option != Options::AS_OPTION_UNKNOWN)
+        if(option != Options::OPTION_UNKNOWN)
         {
             pragma_option(option, prima, argument, value);
         }

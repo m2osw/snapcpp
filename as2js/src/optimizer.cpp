@@ -4,6 +4,8 @@
 
 Copyright (c) 2005-2014 Made to Order Software Corp.
 
+http://snapwebsites.org/project/as2js
+
 Permission is hereby granted, free of charge, to any
 person obtaining a copy of this software and
 associated documentation files (the "Software"), to
@@ -33,6 +35,9 @@ SOFTWARE.
 
 #include    "as2js/optimizer.h"
 #include    "as2js/message.h"
+#include    "as2js/exceptions.h"
+
+#include    <controlled_vars/controlled_vars_no_init.h>
 
 #include    <math.h>
 
@@ -298,11 +303,37 @@ void Optimizer::directive_list(Node::pointer_t& list)
         if(child->get_type() == Node::NODE_IDENTIFIER
         && child->get_link(Node::LINK_INSTANCE))
         {
+            // TBD: At this point I do not recall what this represents...
+            //      (I think child would be an unused type)
+            //
             // Source:
             //   ??
             // Destination:
             //   ??
             child->to_unknown();
+        }
+    }
+}
+
+
+void Optimizer::condition_double_logical_not(Node::pointer_t& condition)
+{
+    // Reduce double '!'
+    //   !!a, !!!!a, !!!!!!a, etc.
+    //
+    while(condition->get_type() == Node::NODE_LOGICAL_NOT
+       && condition->get_children_size() == 1)
+    {
+        Node::pointer_t sub_expr(condition->get_child(0));
+        if(sub_expr->get_type() == Node::NODE_LOGICAL_NOT
+        && sub_expr->get_children_size() == 1)
+        {
+            // Source:
+            //   if(!!a)
+            // Destination:
+            //   if(a)
+            //
+            condition->replace_with(sub_expr->get_child(0));
         }
     }
 }
@@ -317,9 +348,10 @@ void Optimizer::if_directive(Node::pointer_t& if_node)
     }
 
     Node::pointer_t condition(if_node->get_child(0));
+    condition_double_logical_not(condition);
     if(condition->to_boolean())
     {
-        if(condition->get_type() == Node::NODE_TRUE)
+        if(condition->is_true())
         {
             // Source:
             //   if(true) A; [else B;]
@@ -379,9 +411,10 @@ void Optimizer::while_directive(Node::pointer_t& while_node)
 //
 
     Node::pointer_t condition(while_node->get_child(0));
+    condition_double_logical_not(condition);
     if(condition->to_boolean())
     {
-        if(condition->get_type() == Node::NODE_TRUE)
+        if(condition->is_true())
         {
             // Source:
             //    while(true) A;
@@ -396,13 +429,16 @@ void Optimizer::while_directive(Node::pointer_t& while_node)
             // TODO:
             // Whenever we detect a forever loop we
             // need to check whether it includes some
-            // break or return statement.
+            // break, continue, or return statement.
+            //
+            // if(while_node->check_labels(BREAK?)) ...
             //
             // If there are none, we should err about it.
             // It is likely a bad one!
             // [except if the function returns Never]
             //
             // create a forever loop
+            //
             Node::pointer_t forever(while_node->create_replacement(Node::NODE_FOR));
             forever->append_child(while_node->create_replacement(Node::NODE_EMPTY));
             forever->append_child(while_node->create_replacement(Node::NODE_EMPTY));
@@ -416,9 +452,6 @@ void Optimizer::while_directive(Node::pointer_t& while_node)
             //    while(false) A;
             // Destination:
             //    ;
-            //
-            // TODO: this is wrong if the user has labels and
-            //       uses them with a break or a continue.
             //
             // we want to delete the while_node, it serves
             // no purpose! (another function is in charge
@@ -438,9 +471,16 @@ void Optimizer::do_directive(Node::pointer_t& do_node)
     }
 
     Node::pointer_t condition(do_node->get_child(1));
+    condition_double_logical_not(condition);
     if(condition->to_boolean())
     {
-        if(condition->get_type() == Node::NODE_TRUE)
+        // TODO: changing loops is wrong if the user has labels and
+        //       uses them with a break or a continue from within
+        //       that loop.
+        //
+        //if(!do_node->check_labels(USES?))
+        //{
+        if(condition->is_true())
         {
             // Source:
             //   do { A; } while(true);
@@ -457,7 +497,10 @@ void Optimizer::do_directive(Node::pointer_t& do_node)
             // err about it. It is likely a bad one!
             // [except if the function returns Never]
             //
+            //   if(!do_node->check_labels(BREAKS?)) ... warning/error
+            //
             // create a forever loop
+            //
             Node::pointer_t forever(do_node->create_replacement(Node::NODE_FOR));
             forever->append_child(do_node->create_replacement(Node::NODE_EMPTY));
             forever->append_child(do_node->create_replacement(Node::NODE_EMPTY));
@@ -472,13 +515,12 @@ void Optimizer::do_directive(Node::pointer_t& do_node)
             // Destination:
             //   A;
             //
-            // TODO: this is wrong if the user has labels and
-            //       uses them with a break or a continue.
-            //
             // in this case, we simply run the
             // directives once
+            //
             do_node->replace_with(do_node->get_child(0));
         }
+        //}
     }
 }
 
@@ -502,6 +544,12 @@ void Optimizer::assignment(Node::pointer_t& assignment_node)
         // Destination:
         //   a;
         //
+        // Note: Why would this happen?
+        //
+        //       The user may do something much more complicated such as:
+        //          a = (complex test) ? a : b;
+        //       and (complex test) ends up being true at compile time.
+        //
         assignment_node->replace_with(left);
     }
 }
@@ -519,11 +567,24 @@ void Optimizer::assignment_add(Node::pointer_t& assignment_node)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
     Node::pointer_t right(assignment_node->get_child(1));
-    if((right->get_type() == Node::NODE_INT64 && right->get_int64().get() == 0)
-    || (right->get_type() == Node::NODE_FLOAT64 && right->get_float64().get() == 0.0))
+
+    // WARNING: here we cannot convert strings to numbers because
+    //          the plus operator concatenates strings
+    if((assignment_node->get_type() == Node::NODE_ASSIGNMENT_ADD && !right->is_string())
+    || assignment_node->get_type() == Node::NODE_ASSIGNMENT_SUBTRACT)
+    {
+        if(!right->to_number())
+        {
+            return;
+        }
+    }
+
+    if((right->is_int64() && right->get_int64().get() == 0)
+    || (right->is_float64() && right->get_float64().get() == 0.0))
     {
         // Source:
         //   a += 0;   or   a += 0.0;
+        //   a -= 0;   or   a -= 0.0;
         // Destination:
         //   a;
         //
@@ -537,58 +598,62 @@ void Optimizer::assignment_multiply(Node::pointer_t& assignment_node)
 {
     // a *= 0 -> 0
     // a *= 1 -> a
+    // a *= NaN -> NaN
     if(assignment_node->get_children_size() != 2)
     {
         return;
     }
 
     Node::pointer_t right(assignment_node->get_child(1));
-    if(right->get_type() == Node::NODE_INT64)
+    if(right->to_number())
     {
-        Int64::int64_type i(right->get_int64().get());
-        if(i == 0)
+        if(right->is_int64())
         {
-            // Source:
-            //   a *= 0;
-            // Destination:
-            //   0
-            //
-            assignment_node->replace_with(right);
+            Int64::int64_type i(right->get_int64().get());
+            if(i == 0)
+            {
+                // Source:
+                //   a *= 0;
+                // Destination:
+                //   0
+                //
+                assignment_node->replace_with(right);
+            }
+            else if(i == 1)
+            {
+                // Source:
+                //   a *= 1;
+                // Destination:
+                //   a;
+                //
+                assignment_node->replace_with(assignment_node->get_child(0));
+            }
         }
-        else if(i == 1)
+        else
         {
-            // Source:
-            //   a *= 1;
-            // Destination:
-            //   a;
-            //
-            assignment_node->replace_with(assignment_node->get_child(0));
-        }
-    }
-    else if(right->get_type() == Node::NODE_FLOAT64)
-    {
-        Float64::float64_type f(right->get_float64().get());
+            Float64::float64_type f(right->get_float64().get());
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
-        if(f == 0.0)
-        {
-            // Source:
-            //   a *= 0.0;
-            // Destination:
-            //   a;
-            //
-            assignment_node->replace_with(right);
-        }
-        else if(f == 1.0)
-        {
-            // Source:
-            //   a *= 1.0;
-            // Destination:
-            //   a;
-            //
-            assignment_node->replace_with(assignment_node->get_child(0));
-        }
+            if(f == 0.0)
+            {
+                // Source:
+                //   a *= 0.0;
+                // Destination:
+                //   a;
+                //
+                assignment_node->replace_with(right);
+            }
+            else if(f == 1.0)
+            {
+                // Source:
+                //   a *= 1.0;
+                // Destination:
+                //   a;
+                //
+                assignment_node->replace_with(assignment_node->get_child(0));
+            }
 #pragma GCC diagnostic pop
+        }
     }
 }
 
@@ -695,7 +760,7 @@ void Optimizer::bitwise_not(Node::pointer_t& bitwise_not_node)
             // Source:
             //   ~<int>
             // Destination:
-            //   computed ~<int>
+            //   computed ~ToInt32(<int>)
             //
             // ECMAScript documentation says return a 32bit number
             child->set_int64((~child->get_int64().get()) & 0x0FFFFFFFF);
@@ -743,6 +808,8 @@ void Optimizer::logical_not(Node::pointer_t& logical_not_node)
         //                 to start with!
         //                 However, if someone was to use '!!!a',
         //                 that we can optimize to '!a'.
+        //                 Note also that we can optimize cases such
+        //                 as if(!!a) and while(!!a).
         if(child->get_children_size() == 1)
         {
             Node::pointer_t sub_child(child->get_child(0));
@@ -1521,862 +1588,994 @@ void Optimizer::divide(Node::pointer_t& divide_node)
 
 void Optimizer::modulo(Node::pointer_t& modulo_node)
 {
-    int64_t        itotal, idiv;
-    double        ftotal, fdiv;
-    node_t        type;
-    int        idx, max;
-    bool        div0, constant;
-
+    // Reduce
+    //    a % b       -- when a and b are literals
+    //    a % 1 = 0   -- this is true only with integers
+    //    a % -1 = 0   -- this is true only with integers
     // Error
     //    a % 0
 
-    type = NODE_UNKNOWN;
-    itotal = 0;
-    ftotal = 0.0;
-    constant = true;
-    max = modulo.GetChildCount();
-    for(idx = 0; idx < max; ++idx) {
-        div0 = false;
-        NodePtr& child = modulo.GetChild(idx);
-        Data data = child.GetData();
-        if(data.ToNumber()) {
-            if(data.f_type == NODE_INT64) {
-                idiv = data.f_int.Get();
-                if(type == NODE_UNKNOWN) {
-                    type = NODE_INT64;
-                    itotal = idiv;
-                }
-                else {
-                    div0 = idiv == 0;
-                    if(!div0) {
-                        if(type == NODE_FLOAT64) {
-                            ftotal = fmod(ftotal, idiv);
-                        }
-                        else {
-                            itotal %= idiv;
-                        }
-                    }
-                }
-            }
-            else {
-                fdiv = data.f_float.Get();
-                if(type == NODE_UNKNOWN) {
-                    type = NODE_FLOAT64;
-                    ftotal = fdiv;
-                }
-                else {
-                    div0 = fdiv != 0;
-                    if(!div0) {
-                        if(type == NODE_INT64) {
-                            type = NODE_FLOAT64;
-                            ftotal = fmod(itotal, fdiv);
-                        }
-                        else {
-                            ftotal = fmod(ftotal, fdiv);
-                        }
-                    }
-                }
-            }
-        }
-        else {
-            // We assume that the expression was already
-            // compiled and thus identifiers which were
-            // constants have been replaced already.
-            constant = false;
-        }
-        if(div0) {
-            f_error_stream->ErrMsg(AS_ERR_DIVIDE_BY_ZERO, modulo, "dividing by zero is illegal");
-        }
-    }
-
-    if(!constant) {
+    if(modulo_node->get_children_size() != 2)
+    {
         return;
     }
 
-// if we reach here, we can change the node type
-// to NODE_INT64 or NODE_FLOAT64
-    Data& data = modulo.GetData();
-    data.f_type = type;
-    if(type == NODE_INT64) {
-        data.f_int.Set(itotal);
-    }
-    else {
-        data.f_float.Set(ftotal);
-    }
+    Node::pointer_t left(modulo_node->get_child(0));
+    Node::pointer_t right(modulo_node->get_child(1));
 
-// we don't need any of these children anymore
-    while(max > 0) {
-        --max;
-        modulo.DeleteChild(max);
+    if(left->to_number())
+    {
+        if(right->to_number())
+        {
+            if(left->get_type() == Node::NODE_INT64)
+            {
+                if(right->get_type() == Node::NODE_INT64)
+                {
+                    // Source:
+                    //   a % b;
+                    // Destination:
+                    //   (a % b);    // computed as it was immediate numbers
+                    //
+                    Int64::int64_type ri(right->get_int64().get());
+                    if(ri == 0)
+                    {
+                        Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_DIVIDE_BY_ZERO, modulo_node->get_position());
+                        msg << "modulo by zero is illegal";
+                        return;
+                    }
+                    Float64::float64_type f(static_cast<Float64::float64_type>(left->get_int64().get()) / static_cast<Float64::float64_type>(ri));
+                    Int64::int64_type i(static_cast<Int64::int64_type>(f));
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+                    if(f == i) // maybe not such a rare event... (10 / 2 = 5)
+                    {
+                        left->set_int64(i);
+                    }
+                    else
+                    {
+                        left->to_float64();
+                        left->set_float64(f);
+                    }
+#pragma GCC diagnostic pop
+                    modulo_node->replace_with(left);
+                }
+                else
+                {
+                    // Source:
+                    //   a / b;
+                    // Destination:
+                    //   (a / b);    // computed as it was immediate numbers
+                    //
+                    Float64::float64_type rf(right->get_float64().get());
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+                    if(rf == 0)
+                    {
+                        Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_DIVIDE_BY_ZERO, modulo_node->get_position());
+                        msg << "modulo by zero is illegal";
+                        return;
+                    }
+#pragma GCC diagnostic pop
+                    right->set_float64(static_cast<Float64::float64_type>(left->get_int64().get()) / rf);
+                    modulo_node->replace_with(right);
+                }
+            }
+            else
+            {
+                if(right->get_type() == Node::NODE_INT64)
+                {
+                    // Source:
+                    //   a / b;
+                    // Destination:
+                    //   (a / b);    // computed as it was immediate numbers
+                    //
+                    Int64::int64_type ri(right->get_int64().get());
+                    if(ri == 0)
+                    {
+                        Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_DIVIDE_BY_ZERO, modulo_node->get_position());
+                        msg << "modulo by zero is illegal";
+                        return;
+                    }
+                    left->set_float64(left->get_float64().get() / ri);
+                    modulo_node->replace_with(left);
+                }
+                else
+                {
+                    // Source:
+                    //   a / b;
+                    // Destination:
+                    //   (a / b);    // computed as it was immediate numbers
+                    //
+                    Float64::float64_type rf(right->get_float64().get());
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+                    if(rf == 0)
+                    {
+                        Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_DIVIDE_BY_ZERO, modulo_node->get_position());
+                        msg << "modulo by zero is illegal";
+                        return;
+                    }
+#pragma GCC diagnostic pop
+                    right->set_float64(left->get_float64().get() / right->get_float64().get());
+                    modulo_node->replace_with(right);
+                }
+            }
+        }
+        else
+        {
+            if(left->get_type() == Node::NODE_INT64)
+            {
+                Int64::int64_type i(left->get_int64().get());
+                if(i == 0)
+                {
+                    // Note that if b is zero too then we should get an
+                    // error instead we'll get zero...
+                    //
+                    // TODO: if right is not a number then it should be NaN
+                    if(right->has_side_effects())
+                    {
+                        // Source:
+                        //   0 / b;
+                        // Destination:
+                        //   (b, 0);    // because b has side effects...
+                        //
+                        Node::pointer_t list(modulo_node->create_replacement(Node::NODE_LIST));
+                        list->append_child(right);
+                        list->append_child(left);
+                        modulo_node->replace_with(list);
+                    }
+                    else
+                    {
+                        // Source:
+                        //   0 / b;
+                        // Destination:
+                        //   0;
+                        //
+                        modulo_node->replace_with(left);
+                    }
+                }
+            }
+            else
+            {
+                Float64::float64_type f(left->get_float64().get());
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+                if(f == 0.0)
+                {
+                    // Note that if b is zero too then we should get an
+                    // error instead we'll get zero...
+                    //
+                    // TODO: if right is not a number then it should be NaN
+                    if(right->has_side_effects())
+                    {
+                        // Source:
+                        //   0.0 * b;
+                        // Destination:
+                        //   (b, 0.0);    // because b has side effects...
+                        //
+                        Node::pointer_t list(modulo_node->create_replacement(Node::NODE_LIST));
+                        list->append_child(right);
+                        list->append_child(left);
+                        modulo_node->replace_with(list);
+                    }
+                    else
+                    {
+                        // Source:
+                        //   0.0 * b;
+                        // Destination:
+                        //   0.0;
+                        //
+                        modulo_node->replace_with(left);
+                    }
+                }
+#pragma GCC diagnostic pop
+            }
+        }
+    }
+    else
+    {
+        if(right->get_type() == Node::NODE_INT64)
+        {
+            Int64::int64_type i(right->get_int64().get());
+            if(i == 0)
+            {
+                Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_DIVIDE_BY_ZERO, modulo_node->get_position());
+                msg << "modulo by zero is illegal";
+                return;
+            }
+            else if(i == 1)
+            {
+                // Source:
+                //   a / 1;
+                // Destination:
+                //   a;
+                //
+                modulo_node->replace_with(left);
+            }
+            else if(i == -1)
+            {
+                // Source:
+                //   a / -1;
+                // Destination:
+                //   -a;
+                //
+                Node::pointer_t negate(modulo_node->create_replacement(Node::NODE_SUBTRACT));
+                negate->append_child(left);
+                modulo_node->replace_with(negate);
+            }
+        }
+        else
+        {
+            Float64::float64_type f(right->get_float64().get());
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+            if(f == 0.0)
+            {
+                Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_DIVIDE_BY_ZERO, modulo_node->get_position());
+                msg << "modulo by zero is illegal";
+                return;
+            }
+            else if(f == 1.0)
+            {
+                // Source:
+                //   a % 1.0;
+                // Destination:
+                //   0;
+                //
+                modulo_node->replace_with(left);
+            }
+            else if(f == -1.0)
+            {
+                // Source:
+                //   a % -1.0;
+                // Destination:
+                //   0;
+                //
+                Node::pointer_t negate(modulo_node->create_replacement(Node::NODE_SUBTRACT));
+                negate->append_child(left);
+                modulo_node->replace_with(negate);
+            }
+#pragma GCC diagnostic pop
+        }
     }
 }
 
 
-void Optimizer::Add(NodePtr& add)
+void Optimizer::add(Node::pointer_t& add_node)
 {
-    int64_t        itotal;
-    double        ftotal;
-    node_t        type;
-    int        idx, max;
-    bool        constant;
+    // Reduce
+    //    +a       -- when a is a literal
+    //    a + b    -- when a and b are literals
 
-    // Reduce:
-    //    a + 0 = a
-    //    0 + a = a
-
-    constant = true;
-    type = NODE_INT64;
-    itotal = 0;
-    ftotal = 0.0;
-    max = add.GetChildCount();
-    for(idx = 0; idx < max; ++idx) {
-        NodePtr child = add.GetChild(idx);
-        Data data = child.GetData();
-        if(data.ToNumber()) {
-            if(data.f_type == NODE_INT64) {
-                if(data.f_int.Get() == 0) {
-                    add.DeleteChild(idx);
-                    --idx;
-                    --max;
-                }
-                else if(type == NODE_FLOAT64) {
-                    ftotal += data.f_int.Get();
-                }
-                else {
-                    itotal += data.f_int.Get();
-                }
-            }
-            else {
-                // special case where we still want
-                // to force the value to a floating
-                // point value! (1 + 0.0 -> 1.0)
-                if(type == NODE_INT64) {
-                    type = NODE_FLOAT64;
-                    ftotal = itotal + data.f_float.Get();
-                }
-                else {
-                    ftotal += data.f_float.Get();
-                }
-                if(data.f_float.Get() == 0.0) {
-                    add.DeleteChild(idx);
-                    --idx;
-                    --max;
-                }
-            }
-        }
-        else {
-            // We assume that the expression was already
-            // compiled and thus identifiers which were
-            // constants have been replaced already.
-            constant = false;
+    size_t const max(add_node->get_children_size());
+    if(max == 1)
+    {
+        // in this case the + expects a number and even strings are
+        // always converted here
+        Node::pointer_t left(add_node->get_child(0));
+        if(left->to_number())
+        {
+            add_node->replace_with(left);
         }
     }
+    else if(max == 2)
+    {
+        Node::pointer_t left(add_node->get_child(0));
+        Node::pointer_t right(add_node->get_child(1));
 
-    // max is 1 when the user used positive or added zero
-    if(max == 1) {
-        NodePtr expr = add.GetChild(0);
-        add.DeleteChild(0);
-        add.ReplaceWith(expr);
-        return;
-    }
+        // we can concatenate in this case
+        if(left->is_string() || right->is_string())
+        {
+            if(left->to_string()
+            && right->to_string())
+            {
+                // Source:
+                //   a + b
+                // Destination:
+                //   (a + b)   computed
+                //
+                left->set_string(left->get_string() + right->get_string());
+                add_node->replace_with(left);
+            }
+            return;
+        }
 
-    if(!constant) {
-        return;
-    }
+        // we cannot really know whether a NaN here is a string at
+        // runtime (i.e. a variable is considered a NaN.)
+        if(left->is_nan() || right->is_nan()
+        || !left->to_number() || !right->to_number())
+        {
+            // any optimization here would be "dangerous"
+            return;
+        }
 
-// if we reach here, we can change the node type
-// to NODE_INT64 or NODE_FLOAT64
-    Data& data = add.GetData();
-    data.f_type = type;
-    if(type == NODE_INT64) {
-        data.f_int.Set(itotal);
-    }
-    else {
-        data.f_float.Set(ftotal);
-    }
+        // if both are integers, do it simple
+        if(left->is_int64() && right->is_int64())
+        {
+            // Source:
+            //   a + b
+            // Destination:
+            //   (a + b)   computed
+            //
+            left->set_int64(left->get_int64().get() + right->get_int64().get());
+            add_node->replace_with(left);
+            return;
+        }
 
-// we don't need any of these children anymore
-    while(max > 0) {
-        --max;
-        add.DeleteChild(max);
+        // then both are floating points
+        if(!left->to_float64() || !right->to_float64())
+        {
+            return;
+        }
+
+        // Source:
+        //   a + b
+        // Destination:
+        //   (a + b)   computed
+        //
+        left->set_float64(left->get_float64().get() + right->get_float64().get());
+        add_node->replace_with(left);
     }
 }
 
 
-void Optimizer::Subtract(NodePtr& subtract)
+void Optimizer::subtract(Node::pointer_t& subtract_node)
 {
-    int64_t        itotal;
-    double        ftotal;
-    node_t        type;
-    int        idx, max, start_max;
-    bool        constant;
-
     // Reduce:
+    //    -a = (-a)    if we can compute it now
     //    a - 0 = a
+    //    0 - b = -b
 
-    type = NODE_UNKNOWN;
-    itotal = 0;
-    ftotal = 0.0;
-    constant = true;
-    start_max = max = subtract.GetChildCount();
-    for(idx = 0; idx < max; ++idx) {
-        NodePtr& child = subtract.GetChild(idx);
-        Data data = child.GetData();
-        if(data.ToNumber()) {
-            if(data.f_type == NODE_INT64) {
-                if(idx != 0 && data.f_int.Get() == 0) {
-                    subtract.DeleteChild(idx);
-                    --idx;
-                    --max;
-                }
-                else if(type == NODE_UNKNOWN) {
-                    type = NODE_INT64;
-                    itotal = data.f_int.Get();
-                }
-                else if(type == NODE_FLOAT64) {
-                    ftotal -= data.f_int.Get();
-                }
-                else {
-                    itotal -= data.f_int.Get();
-                }
-            }
-            else {
-                if(idx != 0 && data.f_int.Get() == 0) {
-                    subtract.DeleteChild(idx);
-                    --idx;
-                    --max;
-                }
-                else if(type == NODE_UNKNOWN) {
-                    type = NODE_FLOAT64;
-                    ftotal = data.f_float.Get();
-                }
-                else if(type == NODE_INT64) {
-                    type = NODE_FLOAT64;
-                    ftotal = itotal - data.f_float.Get();
-                }
-                else {
-                    ftotal -= data.f_float.Get();
-                }
-            }
+    size_t const max(subtract_node->get_children_size());
+    if(max == 1)
+    {
+        Node::pointer_t left(subtract_node->get_child(0));
+
+        if(!left->to_number())
+        {
+            return;
         }
-        else {
-            // We assume that the expression was already
-            // compiled and thus identifiers which were
-            // constants have been replaced already.
-            constant = false;
+        if(left->is_int64())
+        {
+            // Source:
+            //   -a
+            // Destination:
+            //   (-a)     -- computed
+            //
+            left->set_int64(-left->get_int64().get());
         }
+        else
+        {
+            // Source:
+            //   -b
+            // Destination:
+            //   (-b)     -- computed
+            //
+            left->set_float64(-left->get_float64().get());
+        }
+        subtract_node->replace_with(left);
     }
+    else if(max == 2)
+    {
+        Node::pointer_t left(subtract_node->get_child(0));
+        Node::pointer_t right(subtract_node->get_child(1));
 
-// cancellation of the operation? (i.e. a - 0)
-    if(start_max > 1 && max == 1) {
-        NodePtr expr = subtract.GetChild(0);
-        subtract.DeleteChild(0);
-        subtract.ReplaceWith(expr);
+        // we can concatenate in this case
+        if(!left->to_number() && !right->to_number())
+        {
+            return;
+        }
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+        if((right->is_int64() && right->get_int64().get() == 0)
+        || (right->is_float64() && right->get_float64().get() == 0.0))
+        {
+            // Source:
+            //   a - 0;
+            // Destination:
+            //   a
+            //
+            subtract_node->replace_with(left);
+            return;
+        }
+
+        if((left->is_int64() && left->get_int64().get() == 0)
+        || (left->is_float64() && left->get_float64().get() == 0.0))
+        {
+            if(right->is_int64())
+            {
+                // Source:
+                //   0 - b     or    0.0 - b
+                // Destination:
+                //   -b     -- computed
+                //
+                right->set_int64(-right->get_int64().get());
+            }
+            else if(right->is_float64())
+            {
+                // Source:
+                //   0 - b     or    0.0 - b
+                // Destination:
+                //   -b     -- computed
+                //
+                right->set_float64(-right->get_float64().get());
+            }
+            else
+            {
+                // This is a quite special case since the subtract is
+                // also used to negate... so all we need to do in this
+                // case is remove the first child
+                left->to_unknown();
+                return;
+            }
+            subtract_node->replace_with(right);
+        }
+#pragma GCC diagnostic pop
+    }
+}
+
+
+
+void Optimizer::shift_left(Node::pointer_t& shift_left_node)
+{
+    // Reduce
+    //    a << b       -- when a and b are literals
+    //    a << 0       -- this CANNOT be simplified because it is like a = static_cast<int32_t>(a) instead...
+    //    a << 1       -- we could replace with a+a or a*2 but it's not really the same...
+
+    if(shift_left_node->get_children_size() != 2)
+    {
         return;
     }
 
-    if(!constant) {
+    Node::pointer_t left(shift_left_node->get_child(0));
+    Node::pointer_t right(shift_left_node->get_child(1));
+
+    if(left->to_number() && right->to_number())
+    {
+        left->to_int64();
+        right->to_int64();
+
+        // Source:
+        //   a << b
+        // Destination:
+        //   ToInt32(a << (b & 0x1F))   -- computed
+        //
+        left->set_int64(static_cast<int32_t>(left->get_int64().get() << (right->get_int64().get() & 0x1F)));
+        shift_left_node->replace_with(left);
+    }
+    else if(left->is_float64() && left->get_float64().is_NaN())
+    {
+        // Source:
+        //   NaN << b
+        // Destination:
+        //   0
+        //
+        // This case may be a bug in Firefox, but that is what Firefox returns
+        //
+        left->to_int64();
+        left->set_int64(0);
+        shift_left_node->replace_with(left);
+        return;
+    }
+    else if(right->is_float64() && right->get_float64().is_NaN())
+    {
+        // Source:
+        //   a << NaN
+        // Destination:
+        //   a
+        //
+        // This case may be a bug in Firefox, but that is what Firefox returns
+        //
+        shift_left_node->replace_with(left);
+        return;
+    }
+    //else if((right->is_int64() && right->get_int64().get() == 0)
+    //     || (right->is_float64() && right->get_float64().get() == 0.0))
+    //{
+    //    // Source:
+    //    //   a << 0;    or    a << 0.0;
+    //    // Destination:
+    //    //   a;
+    //    //
+    //    // NOTE: This would mean 'a' would NOT be modified when in reality
+    //    //       it should be because the final result is computed in an
+    //    //       int32_t or something like a = (a & 0x0FFFFFFFF) + repeat bit 31:
+    //    //
+    //    shift_left_node->replace_with(left);
+    //    return;
+    //}
+}
+
+
+void Optimizer::shift_right(Node::pointer_t& shift_right_node)
+{
+    // Reduce
+    //    a >> b       -- when a and b are literals
+    //    a >> 0       -- this CANNOT be simplified because it is like a = static_cast<int32_t>(a) instead...
+    //    a >> 1       -- we could replace with a/2 but it's not really the same in JavaScript...
+
+    if(shift_right_node->get_children_size() != 2)
+    {
         return;
     }
 
-// subtraction or negation?
-    if(max == 1) {
-        if(type == NODE_INT64) {
-            itotal = -itotal;
-        }
-        else {
-            ftotal = -ftotal;
-        }
-    }
+    Node::pointer_t left(shift_right_node->get_child(0));
+    Node::pointer_t right(shift_right_node->get_child(1));
 
-// if we reach here, we can change the node type
-// to NODE_INT64 or NODE_FLOAT64
-    Data& data = subtract.GetData();
-    data.f_type = type;
-    if(type == NODE_INT64) {
-        data.f_int.Set(itotal);
-    }
-    else {
-        data.f_float.Set(ftotal);
-    }
+    if(left->to_number() && right->to_number())
+    {
+        left->to_int64();
+        right->to_int64();
 
-// we don't need any of these children anymore
-    while(max > 0) {
-        --max;
-        subtract.DeleteChild(max);
+        // Source:
+        //   a >> b
+        // Destination:
+        //   ToInt32(a >> (b & 0x1F))   -- computed
+        //
+        left->set_int64(static_cast<int32_t>(left->get_int64().get()) >> (right->get_int64().get() & 0x1F));
+        shift_right_node->replace_with(left);
     }
+    else if(left->is_float64() && left->get_float64().is_NaN())
+    {
+        // Source:
+        //   NaN >> b
+        // Destination:
+        //   0
+        //
+        // This case may be a bug in Firefox, but that is what Firefox returns
+        //
+        left->to_int64();
+        left->set_int64(0);
+        shift_right_node->replace_with(left);
+        return;
+    }
+    else if(right->is_float64() && right->get_float64().is_NaN())
+    {
+        // Source:
+        //   a >> NaN
+        // Destination:
+        //   a
+        //
+        // This case may be a bug in Firefox, but that is what Firefox returns
+        //
+        shift_right_node->replace_with(left);
+        return;
+    }
+    //else if((right->is_int64() && right->get_int64().get() == 0)
+    //     || (right->is_float64() && right->get_float64().get() == 0.0))
+    //{
+    //    // Source:
+    //    //   a >> 0;    or    a >> 0.0;
+    //    // Destination:
+    //    //   a;
+    //    //
+    //    // NOTE: This would mean 'a' would NOT be modified when in reality
+    //    //       it should be because the final result is computed in an
+    //    //       int32_t or something like a = (a & 0x0FFFFFFFF) + repeat bit 31:
+    //    //
+    //    shift_right_node->replace_with(left);
+    //    return;
+    //}
 }
 
 
 
-void Optimizer::ShiftLeft(NodePtr& shift_left)
+void Optimizer::shift_right_unsigned(Node::pointer_t& shift_right_unsigned_node)
 {
-    int64_t        itotal;
-    node_t        type;
-    int        idx, max;
+    // Reduce
+    //    a >>> b       -- when a and b are literals
+    //    a >>> 0       -- this CANNOT be simplified because it is like a = static_cast<int32_t>(a) instead...
+    //    a >>> 1       -- we could replace with a/2 but it's not really the same in JavaScript...
 
-    type = NODE_UNKNOWN;
-    itotal = 0;
-    max = shift_left.GetChildCount();
-    for(idx = 0; idx < max; ++idx) {
-        NodePtr child = shift_left.GetChild(idx);
-        Data data = child.GetData();
-        if(data.ToNumber()) {
-            if(data.f_type == NODE_INT64) {
-                if(type == NODE_UNKNOWN) {
-                    itotal = data.f_int.Get();
-                }
-                else {
-                    itotal <<= data.f_int.Get() & 0x3F;
-                }
-                type = NODE_INT64;
-            }
-            else {
-                if(type == NODE_UNKNOWN) {
-                    itotal = (int32_t) data.f_float.Get();
-                }
-                else {
-                    itotal <<= (int32_t) data.f_float.Get() & 0x1F;
-                }
-                type = NODE_FLOAT64;
-            }
-        }
-        else {
-            // We assume that the expression was already
-            // compiled and thus identifiers which were
-            // constants have been replaced already.
-            return;
-        }
+    if(shift_right_unsigned_node->get_children_size() != 2)
+    {
+        return;
     }
 
-// if we reach here, we can change the node type
-// to NODE_INT64 or NODE_FLOAT64
-    Data& data = shift_left.GetData();
-    data.f_type = type;
-    if(type == NODE_INT64) {
-        data.f_int.Set(itotal);
-    }
-    else {
-        data.f_float.Set(itotal);
-    }
+    Node::pointer_t left(shift_right_unsigned_node->get_child(0));
+    Node::pointer_t right(shift_right_unsigned_node->get_child(1));
 
-// we don't need any of these children anymore
-    while(max > 0) {
-        --max;
-        shift_left.DeleteChild(max);
+    if(left->to_number() && right->to_number())
+    {
+        left->to_int64();
+        right->to_int64();
+
+        // Source:
+        //   a >>> b
+        // Destination:
+        //   ToUInt32(a >>> (b & 0x1F))   -- computed
+        //
+        left->set_int64(static_cast<uint32_t>(left->get_int64().get()) >> (right->get_int64().get() & 0x1F));
+        shift_right_unsigned_node->replace_with(left);
     }
+    else if(left->is_float64() && left->get_float64().is_NaN())
+    {
+        // Source:
+        //   NaN >>> b
+        // Destination:
+        //   0
+        //
+        // This case may be a bug in Firefox, but that is what Firefox returns
+        //
+        left->to_int64();
+        left->set_int64(0);
+        shift_right_unsigned_node->replace_with(left);
+        return;
+    }
+    else if(right->is_float64() && right->get_float64().is_NaN())
+    {
+        // Source:
+        //   a >>> NaN
+        // Destination:
+        //   a
+        //
+        // This case may be a bug in Firefox, but that is what Firefox returns
+        //
+        shift_right_unsigned_node->replace_with(left);
+        return;
+    }
+    //else if((right->is_int64() && right->get_int64().get() == 0)
+    //     || (right->is_float64() && right->get_float64().get() == 0.0))
+    //{
+    //    // Source:
+    //    //   a >>> 0;    or    a >>> 0.0;
+    //    // Destination:
+    //    //   a;
+    //    //
+    //    // NOTE: This would mean 'a' would NOT be modified when in reality
+    //    //       it should be because the final result is computed in an
+    //    //       int32_t or something like a = (a & 0x0FFFFFFFF)
+    //    //
+    //    shift_right_unsigned_node->replace_with(left);
+    //    return;
+    //}
 }
 
 
-void Optimizer::ShiftRight(NodePtr& shift_right)
+void Optimizer::rotate_left(Node::pointer_t& rotate_left_node)
 {
-    int64_t        itotal;
-    node_t        type;
-    int        idx, max;
+    // Reduce
+    //    a !< b       -- when a and b are literals
+    //    a !< 0       -- this CANNOT be simplified because it is like a = static_cast<uint32_t>(a) instead...
 
-    type = NODE_UNKNOWN;
-    itotal = 0;
-    max = shift_right.GetChildCount();
-    for(idx = 0; idx < max; ++idx) {
-        NodePtr child = shift_right.GetChild(idx);
-        Data data = child.GetData();
-        if(data.ToNumber()) {
-            if(data.f_type == NODE_INT64) {
-                if(type == NODE_UNKNOWN) {
-                    itotal = data.f_int.Get();
-                }
-                else {
-                    itotal >>= data.f_int.Get() & 0x3F;
-                }
-                type = NODE_INT64;
-            }
-            else {
-                if(type == NODE_UNKNOWN) {
-                    itotal = (int32_t) data.f_float.Get();
-                }
-                else {
-                    itotal >>= (int32_t) data.f_float.Get() & 0x1F;
-                }
-                type = NODE_FLOAT64;
-            }
+    if(rotate_left_node->get_children_size() != 2)
+    {
+        return;
+    }
+
+    Node::pointer_t left(rotate_left_node->get_child(0));
+    Node::pointer_t right(rotate_left_node->get_child(1));
+
+    if(left->to_number() && right->to_number())
+    {
+        left->to_int64();
+        right->to_int64();
+
+        // Source:
+        //   a !< b
+        // Destination:
+        //   ToUInt32(a !< (b & 0x1F))   -- computed
+        //
+        int32_t const shift(right->get_int64().get() & 0x1F);
+        if(shift != 0)
+        {
+            left->set_int64(static_cast<uint32_t>(left->get_int64().get()) << shift
+                          | static_cast<uint32_t>(left->get_int64().get()) >> (32 - shift));
         }
-        else {
-            // We assume that the expression was already
-            // compiled and thus identifiers which were
-            // constants have been replaced already.
-            return;
-        }
+        rotate_left_node->replace_with(left);
     }
-
-// if we reach here, we can change the node type
-// to NODE_INT64 or NODE_FLOAT64
-    Data& data = shift_right.GetData();
-    data.f_type = type;
-    if(type == NODE_INT64) {
-        data.f_int.Set(itotal);
+    else if(left->is_float64() && left->get_float64().is_NaN())
+    {
+        // Source:
+        //   NaN !< b
+        // Destination:
+        //   0
+        //
+        // This case may be a bug in Firefox, but that is what Firefox returns
+        //
+        left->to_int64();
+        left->set_int64(0);
+        rotate_left_node->replace_with(left);
+        return;
     }
-    else {
-        data.f_float.Set(itotal);
+    else if(right->is_float64() && right->get_float64().is_NaN())
+    {
+        // Source:
+        //   a !< NaN
+        // Destination:
+        //   a
+        //
+        // This case may be a bug in Firefox, but that is what Firefox returns
+        //
+        rotate_left_node->replace_with(left);
+        return;
     }
-
-// we don't need any of these children anymore
-    while(max > 0) {
-        --max;
-        shift_right.DeleteChild(max);
-    }
+    //else if((right->is_int64() && right->get_int64().get() == 0)
+    //     || (right->is_float64() && right->get_float64().get() == 0.0))
+    //{
+    //    // Source:
+    //    //   a !< 0;    or    a !< 0.0;
+    //    // Destination:
+    //    //   a;
+    //    //
+    //    // NOTE: This would mean 'a' would NOT be modified when in reality
+    //    //       it should be because the final result is computed in an
+    //    //       int32_t or something like a = (a & 0x0FFFFFFFF)
+    //    //
+    //    //       (Obviously, since the !< and !> operators are our
+    //    //       additions we could change the rules, but it makes
+    //    //       more sense to follow the rules used to compute
+    //    //       other bitwise operations.)
+    //    //
+    //    rotate_left_node->replace_with(left);
+    //    return;
+    //}
 }
 
 
 
-void Optimizer::ShiftRightUnsigned(NodePtr& shift_right_unsigned)
+void Optimizer::rotate_right(Node::pointer_t& rotate_right_node)
 {
-    uint64_t    itotal;
-    node_t        type;
-    int        idx, max;
+    // Reduce
+    //    a !> b       -- when a and b are literals
+    //    a !> 0       -- this CANNOT be simplified because it is like a = static_cast<uint32_t>(a) instead...
 
-    type = NODE_UNKNOWN;
-    itotal = 0;
-    max = shift_right_unsigned.GetChildCount();
-    for(idx = 0; idx < max; ++idx) {
-        NodePtr child = shift_right_unsigned.GetChild(idx);
-        Data data = child.GetData();
-        if(data.ToNumber()) {
-            if(data.f_type == NODE_INT64) {
-                if(type == NODE_UNKNOWN) {
-                    itotal = data.f_int.Get();
-                }
-                else {
-                    itotal >>= data.f_int.Get() & 0x3F;
-                }
-                type = NODE_INT64;
-            }
-            else {
-                if(type == NODE_UNKNOWN) {
-                    itotal = (int32_t) data.f_float.Get();
-                }
-                else {
-                    itotal >>= (int32_t) data.f_float.Get() & 0x1F;
-                }
-                type = NODE_FLOAT64;
-            }
+    if(rotate_right_node->get_children_size() != 2)
+    {
+        return;
+    }
+
+    Node::pointer_t left(rotate_right_node->get_child(0));
+    Node::pointer_t right(rotate_right_node->get_child(1));
+
+    if(left->to_number() && right->to_number())
+    {
+        left->to_int64();
+        right->to_int64();
+
+        // Source:
+        //   a !< b
+        // Destination:
+        //   ToUInt32(a !< (b & 0x1F))   -- computed
+        //
+        int32_t const shift(right->get_int64().get() & 0x1F);
+        if(shift != 0)
+        {
+            left->set_int64(static_cast<uint32_t>(left->get_int64().get()) >> shift
+                          | static_cast<uint32_t>(left->get_int64().get()) << (32 - shift));
         }
-        else {
-            // We assume that the expression was already
-            // compiled and thus identifiers which were
-            // constants have been replaced already.
-            return;
-        }
+        rotate_right_node->replace_with(left);
     }
-
-// if we reach here, we can change the node type
-// to NODE_INT64 or NODE_FLOAT64
-    Data& data = shift_right_unsigned.GetData();
-    data.f_type = type;
-    if(type == NODE_INT64) {
-        data.f_int.Set(itotal);
+    else if(left->is_float64() && left->get_float64().is_NaN())
+    {
+        // Source:
+        //   NaN !> b
+        // Destination:
+        //   0
+        //
+        // This case may be a bug in Firefox, but that is what Firefox returns
+        //
+        left->to_int64();
+        left->set_int64(0);
+        rotate_right_node->replace_with(left);
+        return;
     }
-    else {
-        data.f_float.Set(itotal);
+    else if(right->is_float64() && right->get_float64().is_NaN())
+    {
+        // Source:
+        //   a !> NaN
+        // Destination:
+        //   a
+        //
+        // This case may be a bug in Firefox, but that is what Firefox returns
+        //
+        rotate_right_node->replace_with(left);
+        return;
     }
-
-// we don't need any of these children anymore
-    while(max > 0) {
-        --max;
-        shift_right_unsigned.DeleteChild(max);
-    }
-}
-
-
-void Optimizer::RotateLeft(NodePtr& rotate_left)
-{
-    uint64_t    itotal;
-    node_t        type;
-    int        idx, max, count;
-
-    type = NODE_UNKNOWN;
-    itotal = 0;
-    max = rotate_left.GetChildCount();
-    for(idx = 0; idx < max; ++idx) {
-        NodePtr child = rotate_left.GetChild(idx);
-        Data data = child.GetData();
-        if(data.ToNumber()) {
-            if(data.f_type == NODE_INT64) {
-                if(type == NODE_UNKNOWN) {
-                    itotal = data.f_int.Get();
-                }
-                else {
-                    count = data.f_int.Get() & 0x1F;
-                    if(count != 0) {
-                        itotal = (itotal << count) | (itotal >> (32 - count));
-                    }
-                }
-                type = NODE_INT64;
-            }
-            else {
-                if(type == NODE_UNKNOWN) {
-                    itotal = (int32_t) data.f_float.Get();
-                }
-                else {
-                    count = (int32_t) data.f_float.Get() & 0x1F;
-                    if(count != 0) {
-                        itotal = ((itotal << count) | (itotal >> (32 - count)));
-                    }
-                }
-                type = NODE_FLOAT64;
-            }
-        }
-        else {
-            // We assume that the expression was already
-            // compiled and thus identifiers which were
-            // constants have been replaced already.
-            return;
-        }
-    }
-
-// if we reach here, we can change the node type
-// to NODE_INT64 or NODE_FLOAT64
-    Data& data = rotate_left.GetData();
-    data.f_type = type;
-    if(type == NODE_INT64) {
-        data.f_int.Set(itotal);
-    }
-    else {
-        data.f_float.Set(itotal);
-    }
-
-// we don't need any of these children anymore
-    while(max > 0) {
-        --max;
-        rotate_left.DeleteChild(max);
-    }
+    //else if((right->is_int64() && right->get_int64().get() == 0)
+    //     || (right->is_float64() && right->get_float64().get() == 0.0))
+    //{
+    //    // Source:
+    //    //   a !> 0;    or    a !> 0.0;
+    //    // Destination:
+    //    //   a;
+    //    //
+    //    // NOTE: This would mean 'a' would NOT be modified when in reality
+    //    //       it should be because the final result is computed in an
+    //    //       int32_t or something like a = (a & 0x0FFFFFFFF)
+    //    //
+    //    //       (Obviously, since the !< and !> operators are our
+    //    //       additions we could change the rules, but it makes
+    //    //       more sense to follow the rules used to compute
+    //    //       other bitwise operations.)
+    //    //
+    //    rotate_right_node->replace_with(left);
+    //    return;
+    //}
 }
 
 
 
-void Optimizer::RotateRight(NodePtr& rotate_right)
-{
-    uint64_t    itotal;
-    node_t        type;
-    int        idx, max, count;
-
-    type = NODE_UNKNOWN;
-    itotal = 0;
-    max = rotate_right.GetChildCount();
-    for(idx = 0; idx < max; ++idx) {
-        NodePtr child = rotate_right.GetChild(idx);
-        Data data = child.GetData();
-        if(data.ToNumber()) {
-            if(data.f_type == NODE_INT64) {
-                if(type == NODE_UNKNOWN) {
-                    itotal = data.f_int.Get();
-                }
-                else {
-                    count = data.f_int.Get() & 0x1F;
-                    if(count != 0) {
-                        itotal = (itotal >> count) | (itotal << (32 - count));
-                    }
-                }
-                type = NODE_INT64;
-            }
-            else {
-                if(type == NODE_UNKNOWN) {
-                    itotal = (int32_t) data.f_float.Get();
-                }
-                else {
-                    count = (int32_t) data.f_float.Get() & 0x1F;
-                    if(count != 0) {
-                        itotal = ((itotal >> count) | (itotal << (32 - count)));
-                    }
-                }
-                type = NODE_FLOAT64;
-            }
-        }
-        else {
-            // We assume that the expression was already
-            // compiled and thus identifiers which were
-            // constants have been replaced already.
-            return;
-        }
-    }
-
-// if we reach here, we can change the node type
-// to NODE_INT64 or NODE_FLOAT64
-    Data& data = rotate_right.GetData();
-    data.f_type = type;
-    if(type == NODE_INT64) {
-        data.f_int.Set(itotal);
-    }
-    else {
-        data.f_float.Set(itotal);
-    }
-
-// we don't need any of these children anymore
-    while(max > 0) {
-        --max;
-        rotate_right.DeleteChild(max);
-    }
-}
-
-
-
-// returns:
+// returns (please use the COMPARE_... enumerations):
 //     0 - equal
 //    -1 - left < right
 //     1 - left > right
 //     2 - unordered (left or right is a NaN)
 //    -2 - error (cannot compare)
-int Optimizer::compare(Node::poiner_t relational)
+compare_t Optimizer::compare(Node::pointer_t& relational)
 {
     if(relational->get_children_size() != 2)
     {
-        return -2;
+        return COMPARE_ERROR;
     }
 
     Node::pointer_t left(relational->get_child(0));
     Node::pointer_t right(relational->get_child(1));
 
+    // Contrary to some other operators, if one of left or right
+    // is a number, the string gets converted!
     if(left->get_type() == Node::NODE_STRING
     && right->get_type() == Node::NODE_STRING)
     {
-        return left->get_string()->compare(right->get_string());
+        // the std::string::compare() function returns 0 if
+        // equal, however, negative or postive when no equal
+        // so we have to normalize the return value
+        int r(left->get_string().compare(right->get_string()));
+        return r == 0 ? COMPARE_EQUAL
+             : (r < 0 ? COMPARE_LESS
+                      : COMPARE_GREATER);
     }
 
-    // TODO: if left or right is a string, then JavaScript may convert
-    //       the other side to a string and then do a string compare
-    //       and vice versa, a string to a number; and we probably
-    //       want to handle boolean values too
-    if(!left->to_number())
+    // if both are numbers, then convert and test
+    // but avoid the conversion if either is not a number
+    if(left->is_nan() || right->is_nan()
+    || !left->to_number() || !right->to_number())
     {
-        return -2;
-    }
-    if(!right->to_number())
-    {
-        return -2;
+        return COMPARE_ERROR;
     }
 
-    if(left->get_type() == Node::NODE_INT64)
+    // if both are integers, compare as integers
+    // (this is NOT 100% JavaScript compatible since we do have more
+    // finite precision)
+    if(left->is_int64() && right->is_int64())
     {
-        Int64::int64_type const li(left->get_int64().get());
-        if(right->get_type() == Node::NODE_INT64)
+        return left->get_int64().compare(right->get_int64());
+    }
+
+    left->to_float64();
+    right->to_float64();
+    return left->get_float64().compare(right->get_float64());
+}
+
+
+
+void Optimizer::less(Node::pointer_t& less_node)
+{
+    compare_t r(compare(less_node));
+    if(compare_utils::is_ordered(r))
+    {
+        Node::pointer_t result(less_node->create_replacement(r == COMPARE_LESS ? Node::NODE_TRUE : Node::NODE_FALSE));
+        less_node->replace_with(result);
+    }
+}
+
+
+void Optimizer::less_equal(Node::pointer_t& less_equal_node)
+{
+    compare_t r(compare(less_equal_node));
+    if(compare_utils::is_ordered(r))
+    {
+        Node::pointer_t result(less_equal_node->create_replacement(r != COMPARE_GREATER ? Node::NODE_TRUE : Node::NODE_FALSE));
+        less_equal_node->replace_with(result);
+    }
+}
+
+
+void Optimizer::greater(Node::pointer_t& greater_node)
+{
+    compare_t r(compare(greater_node));
+    if(compare_utils::is_ordered(r))
+    {
+        Node::pointer_t result(greater_node->create_replacement(r == COMPARE_GREATER ? Node::NODE_TRUE : Node::NODE_FALSE));
+        greater_node->replace_with(result);
+    }
+}
+
+
+void Optimizer::greater_equal(Node::pointer_t& greater_equal_node)
+{
+    compare_t r(compare(greater_equal_node));
+    if(compare_utils::is_ordered(r))
+    {
+        Node::pointer_t result(greater_equal_node->create_replacement(r != COMPARE_LESS ? Node::NODE_TRUE : Node::NODE_FALSE));
+        greater_equal_node->replace_with(result);
+    }
+}
+
+
+void Optimizer::equality(Node::pointer_t& equality_node, bool const strict, bool const inverse)
+{
+    if(equality_node->get_children_size() != 2)
+    {
+        return;
+    }
+
+    // result is expected to always be set so we do no initialized it
+    // by default; but we use a contolled variable to make sure that
+    // if we use it without first setting it, we get a throw
+    controlled_vars::rbool_t result;
+
+    Node::pointer_t left(equality_node->get_child(0));
+    Node::pointer_t right(equality_node->get_child(1));
+
+    if(strict)          // ===
+    {
+        // in this case, do not apply any conversion
+        if(left->is_boolean() && right->is_boolean())
         {
-            Int64::int64_type const r(li - right->get_int64().get());
-            if(r == 0)
-            {
-                return 0;
-            }
-            return r < 0 ? -1 : 1;
+            result = left->get_type() == right->get_type();
         }
-        else
+        else if(left->is_int64() && right->is_int64())
         {
-            Float64::float64_type rf(right->get_float64().get());
-            if(isnan(rf))
-            {
-                return 2;
-            }
-            int const inf(isinf(rf));
-            if(inf != 0)
-            {
-                return -inf;
-            }
-            double const r(li - rf);
+            result = left->get_int64().get() == right->get_int64().get();
+        }
+        else if(left->is_float64() && right->is_float64())
+        {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
-            if(r == 0.0)
-            {
-                return 0;
-            }
+            result = left->get_float64().get() == right->get_float64().get();
 #pragma GCC diagnostic pop
-            return r < 0.0 ? -1 : 1;
         }
-    }
-    else
-    {
-        Float64::float64_type const lf(left->get_float64().get());
-        if(isnan(lf))
+        else if(left->is_int64() && right->is_float64())
         {
-            return 2;
-        }
-        if(right->get_type() == Node::NODE_INT64)
-        {
-            int const inf(isinf(lf));
-            if(inf != 0)
-            {
-                return inf;
-            }
-            double const r(lf - right.get_int64.get());
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
-            if(r == 0.0)
-            {
-                return 0;
-            }
+            result = left->get_int64().get() == right->get_float64().get();
 #pragma GCC diagnostic pop
-            return r < 0.0 ? -1 : 1;
         }
-        else
+        else if(left->is_float64() && right->is_int64())
         {
-            Float64::float64_type const rf(right->get_float64().get());
-            if(isnan())
-            {
-                return 2;
-            }
-            int const linf(isinf(lf));
-            int const rinf(isinf(rf));
-            if(linf != 0 || rinf != 0)
-            {
-                if(linf == rinf)
-                {
-                    return 0;
-                }
-                return linf < rinf ? -1 : 1;
-            }
-            double const r(lf - rf);
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
-            if(r == 0.0)
-            {
-                return 0;
-            }
+            result = left->get_float64().get() == right->get_int64().get();
 #pragma GCC diagnostic pop
-            return r < 0.0 ? -1 : 1;
         }
-    }
-}
-
-
-
-void Optimizer::less(Node::pointer_t less)
-{
-    int r(compare(less));
-    if(r != -2 && r != 2)
-    {
-        Node::pointer_t result(less->create_replacement(r < 0 ? Node::NODE_TRUE : Node::NODE_FALSE));
-        less->replace_with(result);
-    }
-}
-
-
-void Optimizer::LessEqual(NodePtr& less_equal)
-{
-    long r = Compare(less_equal);
-    if(r == -2) {
-        return;
-    }
-
-    if(r == 2) {
-        // ???
-        return;
-    }
-
-    Data& result = less_equal.GetData();
-    result.f_type = r <= 0 ? NODE_TRUE : NODE_FALSE;
-
-    less_equal.DeleteChild(1);
-    less_equal.DeleteChild(0);
-}
-
-
-void Optimizer::Greater(NodePtr& greater)
-{
-    long r = Compare(greater);
-    if(r == -2) {
-        return;
-    }
-
-    if(r == 2) {
-        // ???
-        return;
-    }
-
-    Data& result = greater.GetData();
-    result.f_type = r > 0 ? NODE_TRUE : NODE_FALSE;
-
-    greater.DeleteChild(1);
-    greater.DeleteChild(0);
-}
-
-
-void Optimizer::GreaterEqual(NodePtr& greater_equal)
-{
-    long r = Compare(greater_equal);
-    if(r == -2) {
-        return;
-    }
-
-    if(r == 2) {
-        // ???
-        return;
-    }
-
-    Data& result = greater_equal.GetData();
-    result.f_type = r >= 0 ? NODE_TRUE : NODE_FALSE;
-
-    greater_equal.DeleteChild(1);
-    greater_equal.DeleteChild(0);
-}
-
-
-void Optimizer::Equality(NodePtr& equality, bool strict, bool logical_not)
-{
-    if(equality.GetChildCount() != 2) {
-        return;
-    }
-
-    bool result = false;
-
-    NodePtr child = equality.GetChild(0);
-    Data left = child.GetData();
-
-    child = equality.GetChild(1);
-    Data right = child.GetData();
-
-    if(strict) {        // ===
-        if((left.f_type  == NODE_TRUE || left.f_type  == NODE_FALSE)
-        && (right.f_type == NODE_TRUE || right.f_type == NODE_FALSE)) {
-            result = left.f_type == right.f_type;
+        else if(left->is_string() && right->is_string())
+        {
+            result = left->get_string() == right->get_string();
         }
-        else if(left.f_type == NODE_INT64 && right.f_type == NODE_INT64) {
-            result = left.f_int.Get() == right.f_int.Get();
-        }
-        else if(left.f_type == NODE_FLOAT64 && right.f_type == NODE_FLOAT64) {
-            result = left.f_float.Get() == right.f_float.Get();
-        }
-        else if(left.f_type == NODE_INT64 && right.f_type == NODE_FLOAT64) {
-            result = left.f_int.Get() == right.f_float.Get();
-        }
-        else if(left.f_type == NODE_FLOAT64 && right.f_type == NODE_INT64) {
-            result = left.f_float.Get() == right.f_int.Get();
-        }
-        else if(left.f_type == NODE_STRING && right.f_type == NODE_STRING) {
-            result = left.f_str == right.f_str;
-        }
-        else if((left.f_type == NODE_UNDEFINED && right.f_type == NODE_UNDEFINED)
-             || (left.f_type == NODE_NULL && right.f_type == NODE_NULL)) {
+        else if((left->is_undefined() && right->is_undefined())
+             || (left->is_null() && right->is_null()))
+        {
             result = true;
         }
-        else if((left.f_type == NODE_NULL && right.f_type == NODE_UNDEFINED)
-             || (left.f_type == NODE_UNDEFINED && right.f_type == NODE_NULL)) {
-            result = false;
-        }
-        else if((left.f_type  == NODE_IDENTIFIER || left.f_type  == NODE_VIDENTIFIER)
-             && (right.f_type == NODE_IDENTIFIER || right.f_type == NODE_VIDENTIFIER)) {
+        else if(left->is_identifier() && right->is_identifier())
+        {
             // special case of  a === a
-            if(left.f_str != right.f_str) {
-                // If not the same, we can't know what the result
+            if(left->get_string() != right->get_string())
+            {
+                // If not the same variable, we cannot know what the result
                 // is at compile time.
                 return;
             }
             result = true;
         }
-        else {
-            switch(left.f_type) {
-            case NODE_INT64:
-            case NODE_FLOAT64:
-            case NODE_STRING:
-            case NODE_NULL:
-            case NODE_UNDEFINED:
-            case NODE_TRUE:
-            case NODE_FALSE:
+        else
+        {
+            // compare a === b where a and b are not of a type that
+            // can be compared between each others in strict mode
+            // (those that can be compared were just before)
+            switch(left->get_type())
+            {
+            case Node::NODE_INT64:
+            case Node::NODE_FLOAT64:
+            case Node::NODE_STRING:
+            case Node::NODE_NULL:
+            case Node::NODE_UNDEFINED:
+            case Node::NODE_TRUE:
+            case Node::NODE_FALSE:
                 break;
 
             default:
@@ -2384,14 +2583,15 @@ void Optimizer::Equality(NodePtr& equality, bool strict, bool logical_not)
                 return;
 
             }
-            switch(right.f_type) {
-            case NODE_INT64:
-            case NODE_FLOAT64:
-            case NODE_STRING:
-            case NODE_NULL:
-            case NODE_UNDEFINED:
-            case NODE_TRUE:
-            case NODE_FALSE:
+            switch(right->get_type())
+            {
+            case Node::NODE_INT64:
+            case Node::NODE_FLOAT64:
+            case Node::NODE_STRING:
+            case Node::NODE_NULL:
+            case Node::NODE_UNDEFINED:
+            case Node::NODE_TRUE:
+            case Node::NODE_FALSE:
                 break;
 
             default:
@@ -2399,25 +2599,29 @@ void Optimizer::Equality(NodePtr& equality, bool strict, bool logical_not)
                 return;
 
             }
-            // any one of these mix is always false in strict mode
+            // any one of these mixes is always false in strict mode
             result = false;
         }
     }
-    else {            // ==
-        switch(left.f_type) {
-        case NODE_UNDEFINED:
-        case NODE_NULL:
-            switch(right.f_type) {
-            case NODE_UNDEFINED:
-            case NODE_NULL:
+    else            // ==
+    {
+        Node::node_t rt(right->get_type());
+        switch(left->get_type())
+        {
+        case Node::NODE_UNDEFINED:
+        case Node::NODE_NULL:
+            switch(rt)
+            {
+            case Node::NODE_UNDEFINED:
+            case Node::NODE_NULL:
                 result = true;
                 break;
 
-            case NODE_INT64:
-            case NODE_FLOAT64:
-            case NODE_STRING:
-            case NODE_TRUE:
-            case NODE_FALSE:
+            case Node::NODE_INT64:
+            case Node::NODE_FLOAT64:
+            case Node::NODE_STRING:
+            case Node::NODE_TRUE:
+            case Node::NODE_FALSE:
                 result = false;
                 break;
 
@@ -2428,86 +2632,124 @@ void Optimizer::Equality(NodePtr& equality, bool strict, bool logical_not)
             }
             break;
 
-        case NODE_TRUE:
-            switch(right.f_type) {
-            case NODE_TRUE:
+        case Node::NODE_TRUE:
+            switch(rt)
+            {
+            case Node::NODE_TRUE:
                 result = true;
                 break;
 
-            case NODE_FALSE:
-            case NODE_STRING:
-            case NODE_NULL:
-            case NODE_UNDEFINED:
+            case Node::NODE_FALSE:
+            case Node::NODE_NULL:
+            case Node::NODE_UNDEFINED:
                 result = false;
                 break;
 
+            //case Node::NODE_STRING:
+            //case Node::NODE_INT64:
+            //case Node::NODE_FLOAT64:
             default:
-                if(!right.ToNumber()) {
+                if(!right->to_number())
+                {
                     // undefined at compile time
                     return;
                 }
-                if(right.f_type == NODE_INT64) {
-                    result = right.f_int.Get() == 1;
+                if(right->is_int64())
+                {
+                    result = right->get_int64().get() == 1;
                 }
-                else {
-                    result = right.f_float.Get() == 1.0;
+                else
+                {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+                    result = right->get_float64().get() == 1.0;
+#pragma GCC diagnostic pop
                 }
                 break;
 
             }
             break;
 
-        case NODE_FALSE:
-            switch(right.f_type) {
-            case NODE_TRUE:
-            case NODE_STRING:
-            case NODE_NULL:
-            case NODE_UNDEFINED:
+        case Node::NODE_FALSE:
+            switch(rt)
+            {
+            case Node::NODE_TRUE:
+            case Node::NODE_NULL:
+            case Node::NODE_UNDEFINED:
                 result = false;
                 break;
 
-            case NODE_FALSE:
+            case Node::NODE_FALSE:
                 result = true;
                 break;
 
+            //case Node::NODE_STRING:
+            //case Node::NODE_INT64:
+            //case Node::NODE_FLOAT64:
             default:
-                if(!right.ToNumber()) {
+                if(!right->to_number())
+                {
                     // undefined at compile time
                     return;
                 }
-                if(right.f_type == NODE_INT64) {
-                    result = right.f_int.Get() == 0;
+                if(right->is_int64())
+                {
+                    result = right->get_int64().get() == 0;
                 }
-                else {
-                    result = right.f_float.Get() == 0.0;
+                else
+                {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+                    result = right->get_float64().get() == 0.0;
+#pragma GCC diagnostic pop
                 }
                 break;
 
             }
             break;
 
-        case NODE_INT64:
-            switch(right.f_type) {
-            case NODE_INT64:
-                result = left.f_int.Get() == right.f_int.Get();
+        case Node::NODE_INT64:
+            switch(rt)
+            {
+            case Node::NODE_INT64:
+                result = left->get_int64().get() == right->get_int64().get();
                 break;
 
-            case NODE_FLOAT64:
-                result = left.f_int.Get() == right.f_float.Get();
+            case Node::NODE_FLOAT64:
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+                result = left->get_int64().get() == right->get_float64().get();
+#pragma GCC diagnostic pop
                 break;
 
-            case NODE_TRUE:
-                result = left.f_int.Get() == 1;
+            case Node::NODE_TRUE:
+                result = left->get_int64().get() == 1;
                 break;
 
-            case NODE_FALSE:
-                result = left.f_int.Get() == 0;
+            case Node::NODE_FALSE:
+                result = left->get_int64().get() == 0;
                 break;
 
-            //case NODE_STRING: ...
+            case Node::NODE_STRING:
+                if(!right->to_number())
+                {
+                    throw exception_internal_error("somehow a string could not be converted to a number");
+                }
+                if(right->is_int64()) // rt is the old type
+                {
+                    result = left->get_int64().get() == right->get_int64().get();
+                }
+                else
+                {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+                    result = left->get_int64().get() == right->get_float64().get();
+#pragma GCC diagnostic pop
+                }
+                break;
 
-            case NODE_NULL:
-            case NODE_UNDEFINED:
+            case Node::NODE_NULL:
+            case Node::NODE_UNDEFINED:
                 result = false;
                 break;
 
@@ -2517,29 +2759,106 @@ void Optimizer::Equality(NodePtr& equality, bool strict, bool logical_not)
             }
             break;
 
-        case NODE_FLOAT64:
-            switch(right.f_type) {
-            case NODE_FLOAT64:
-                result = left.f_float.Get() == right.f_float.Get();
+        case Node::NODE_FLOAT64:
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+            switch(rt)
+            {
+            case Node::NODE_FLOAT64:
+                result = left->get_float64().get() == right->get_float64().get();
                 break;
 
-            case NODE_INT64:
-                result = left.f_float.Get() == right.f_int.Get();
+            case Node::NODE_INT64:
+                result = left->get_float64().get() == right->get_int64().get();
                 break;
 
-            case NODE_TRUE:
-                result = left.f_float.Get() == 1.0;
+            case Node::NODE_TRUE:
+                result = left->get_float64().get() == 1.0;
                 break;
 
-            case NODE_FALSE:
-                result = left.f_float.Get() == 0.0;
+            case Node::NODE_FALSE:
+                result = left->get_float64().get() == 0.0;
                 break;
 
-            //case NODE_STRING: ...
+            case Node::NODE_STRING:
+                if(!right->to_number())
+                {
+                    throw exception_internal_error("somehow a string could not be converted to a number");
+                }
+                if(right->is_int64()) // rt is the old type
+                {
+                    result = left->get_float64().get() == right->get_int64().get();
+                }
+                else
+                {
+                    result = left->get_float64().get() == right->get_float64().get();
+                }
+                break;
 
-            case NODE_NULL:
-            case NODE_UNDEFINED:
+            case Node::NODE_NULL:
+            case Node::NODE_UNDEFINED:
                 result = false;
+                break;
+
+            default:
+                return;
+
+            }
+#pragma GCC diagnostic pop
+            break;
+
+        case Node::NODE_STRING:
+            switch(rt)
+            {
+            case Node::NODE_STRING:
+                result = left->get_string() == right->get_string();
+                break;
+
+            case Node::NODE_NULL:
+            case Node::NODE_UNDEFINED:
+                result = false;
+                break;
+
+            case Node::NODE_INT64:
+            case Node::NODE_TRUE:
+            case Node::NODE_FALSE:
+                if(!left->to_number())
+                {
+                    throw exception_internal_error("somehow a string could not be converted to a number");
+                }
+                if(!right->to_number())
+                {
+                    throw exception_internal_error("somehow a number or a boolean value could not be converted to a number?!");
+                }
+                if(left->is_int64())
+                {
+                    result = left->get_int64().get() == right->get_int64().get();
+                }
+                else
+                {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+                    result = left->get_float64().get() == right->get_int64().get();
+#pragma GCC diagnostic pop
+                }
+                break;
+
+            case Node::NODE_FLOAT64:
+                if(!left->to_number())
+                {
+                    throw exception_internal_error("somehow a string could not be converted to a number");
+                }
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+                if(left->is_int64())
+                {
+                    result = left->get_int64().get() == right->get_float64().get();
+                }
+                else
+                {
+                    result = left->get_float64().get() == right->get_float64().get();
+                }
+#pragma GCC diagnostic pop
                 break;
 
             default:
@@ -2548,30 +2867,11 @@ void Optimizer::Equality(NodePtr& equality, bool strict, bool logical_not)
             }
             break;
 
-        case NODE_STRING:
-            switch(right.f_type) {
-            case NODE_STRING:
-                result = left.f_str == right.f_str;
-                break;
-
-            case NODE_NULL:
-            case NODE_UNDEFINED:
-                result = false;
-                break;
-
-            //case NODE_INT64: ...
-            //case NODE_FLOAT64: ...
-
-            default:
-                return;
-
-            }
-            break;
-
-        case NODE_IDENTIFIER:
-        case NODE_VIDENTIFIER:
-            if((right.f_type != NODE_IDENTIFIER && right.f_type != NODE_VIDENTIFIER)
-            || left.f_str != right.f_str) {
+        case Node::NODE_IDENTIFIER:
+        case Node::NODE_VIDENTIFIER:
+            if(!right->is_identifier()
+            || left->get_string() != right->get_string())
+            {
                 return;
             }
             // special case of  a == a
@@ -2585,394 +2885,648 @@ void Optimizer::Equality(NodePtr& equality, bool strict, bool logical_not)
         }
     }
 
-// if we reach here, we can change the node type
-// to NODE_INT64 or NODE_FLOAT64
-    Data& data = equality.GetData();
-    data.f_type = result ^ logical_not ? NODE_TRUE : NODE_FALSE;
-
-// we don't need any of these children anymore
-    equality.DeleteChild(1);
-    equality.DeleteChild(0);
+    // we use !inverse to make 100% sure that it is a valid Boolean value
+    // (it can be tainted since it is given to use by the caller)
+    Node::pointer_t boolean(equality_node->create_replacement(result ^ !inverse ? Node::NODE_FALSE : Node::NODE_TRUE));
+    equality_node->replace_with(boolean);
 }
 
 
 
-void Optimizer::BitwiseAnd(NodePtr& bitwise_and)
+void Optimizer::bitwise_and(Node::pointer_t& bitwise_and_node)
 {
-    int64_t        itotal;
-    double        ftotal;
-    node_t        type;
-    int        idx, max;
-    String        result;
+    // Reduce
+    //   a & 0 = 0
+    //   0 & b = 0
+    //   a & -1 = a  -- NOT TRUE, because they implicitely convert floats to
+    //                  integers of 32 bits when using &
+    //   a & b       -- when a and b are literals
+    //   a & b & c & d ...       -- when several of the parameters are literals TODO
 
-    type = NODE_INT64;
-    itotal = -1;
-    ftotal = -1.0;
-    max = bitwise_and.GetChildCount();
-    for(idx = 0; idx < max; ++idx) {
-        NodePtr child = bitwise_and.GetChild(idx);
-        Data data = child.GetData();
-        if(data.f_type == NODE_STRING || type == NODE_STRING) {
-            if(type != NODE_STRING && idx != 0) {
-                Data value;
-                value.f_type = type;
-                if(type == NODE_INT64) {
-                    value.f_int.Set(itotal);
-                }
-                else {
-                    value.f_float.Set(ftotal);
-                }
-                value.ToString();
-                result = value.f_str;
-            }
-            if(!data.ToString()) {
-                return;
-            }
-            type = NODE_STRING;
-            result += data.f_str;
-        }
-        else if(data.ToNumber()) {
-            if(data.f_type == NODE_INT64) {
-                if(type == NODE_INT64) {
-                    itotal &= data.f_int.Get();
-                }
-                else {
-                    ftotal = (int32_t) ftotal & (int32_t) data.f_int.Get();
-                    type = NODE_FLOAT64;
-                }
-            }
-            else {
-                if(type == NODE_INT64) {
-                    type = NODE_FLOAT64;
-                    ftotal = (int32_t) itotal & (int32_t) data.f_float.Get();
-                }
-                else {
-                    ftotal = (int32_t) ftotal & (int32_t) data.f_float.Get();
-                }
-            }
-        }
-        else {
-            // We assume that the expression was already
-            // compiled and thus identifiers which were
-            // constants have been replaced already.
-            return;
-        }
-    }
-
-// if we reach here, we can change the node type
-// to NODE_INT64 or NODE_FLOAT64
-    Data& data = bitwise_and.GetData();
-    data.f_type = type;
-    if(type == NODE_STRING) {
-        data.f_str = result;
-    }
-    else if(type == NODE_INT64) {
-        data.f_int.Set(itotal);
-    }
-    else {
-        data.f_float.Set(ftotal);
-    }
-
-// we don't need any of these children anymore
-    while(max > 0) {
-        --max;
-        bitwise_and.DeleteChild(max);
-    }
-}
-
-
-
-void Optimizer::BitwiseXOr(NodePtr& bitwise_xor)
-{
-    int64_t        itotal;
-    double        ftotal;
-    node_t        type;
-    int        idx, max;
-
-    type = NODE_INT64;
-    itotal = 0;
-    ftotal = 0.0;
-    max = bitwise_xor.GetChildCount();
-    for(idx = 0; idx < max; ++idx) {
-        NodePtr child = bitwise_xor.GetChild(idx);
-        Data data = child.GetData();
-        if(data.ToNumber()) {
-            if(data.f_type == NODE_INT64) {
-                if(type == NODE_INT64) {
-                    itotal ^= data.f_int.Get();
-                }
-                else {
-                    ftotal = (int32_t) ftotal ^ (int32_t) data.f_int.Get();
-                }
-            }
-            else {
-                if(type == NODE_INT64) {
-                    ftotal = (int32_t) itotal ^ (int32_t) data.f_float.Get();
-                }
-                else {
-                    ftotal = (int32_t) ftotal ^ (int32_t) data.f_float.Get();
-                }
-            }
-        }
-        else {
-            // We assume that the expression was already
-            // compiled and thus identifiers which were
-            // constants have been replaced already.
-            return;
-        }
-    }
-
-// if we reach here, we can change the node type
-// to NODE_INT64 or NODE_FLOAT64
-    Data& data = bitwise_xor.GetData();
-    data.f_type = type;
-    if(type == NODE_INT64) {
-        data.f_int.Set(itotal);
-    }
-    else {
-        data.f_float.Set(ftotal);
-    }
-
-// we don't need any of these children anymore
-    while(max > 0) {
-        --max;
-        bitwise_xor.DeleteChild(max);
-    }
-}
-
-
-
-void Optimizer::BitwiseOr(NodePtr& bitwise_or)
-{
-    int64_t        itotal;
-    double        ftotal;
-    node_t        type;
-    int        idx, max;
-
-    type = NODE_INT64;
-    itotal = 0;
-    ftotal = 0.0;
-    max = bitwise_or.GetChildCount();
-    for(idx = 0; idx < max; ++idx) {
-        NodePtr child = bitwise_or.GetChild(idx);
-        Data data = child.GetData();
-        if(data.ToNumber()) {
-            if(data.f_type == NODE_INT64) {
-                if(type == NODE_INT64) {
-                    itotal |= data.f_int.Get();
-                }
-                else {
-                    ftotal = (int32_t) ftotal | (int32_t) data.f_int.Get();
-                }
-            }
-            else {
-                if(type == NODE_INT64) {
-                    ftotal = (int32_t) itotal | (int32_t) data.f_float.Get();
-                }
-                else {
-                    ftotal = (int32_t) ftotal | (int32_t) data.f_float.Get();
-                }
-            }
-        }
-        else {
-            // We assume that the expression was already
-            // compiled and thus identifiers which were
-            // constants have been replaced already.
-            return;
-        }
-    }
-
-// if we reach here, we can change the node type
-// to NODE_INT64 or NODE_FLOAT64
-    Data& data = bitwise_or.GetData();
-    data.f_type = type;
-    if(type == NODE_INT64) {
-        data.f_int.Set(itotal);
-    }
-    else {
-        data.f_float.Set(ftotal);
-    }
-
-// we don't need any of these children anymore
-    while(max > 0) {
-        --max;
-        bitwise_or.DeleteChild(max);
-    }
-}
-
-
-
-void Optimizer::LogicalAnd(NodePtr& logical_and)
-{
-    node_t        type;
-    int        idx, max;
-
-    type = NODE_TRUE;
-    max = logical_and.GetChildCount();
-    for(idx = 0; idx < max; ++idx) {
-        NodePtr child = logical_and.GetChild(idx);
-        Data data = child.GetData();
-        if(data.ToBoolean()) {
-            if(data.f_type == NODE_FALSE) {
-                // stop testing as soon as it is known to be false
-                type = NODE_FALSE;
-                break;
-            }
-        }
-        else {
-            // We assume that the expression was already
-            // compiled and thus identifiers which were
-            // constants have been replaced already.
-            return;
-        }
-    }
-
-// if we reach here, we can change the node type
-// to NODE_INT64 or NODE_FLOAT64
-    Data& data = logical_and.GetData();
-    data.f_type = type;
-
-// we don't need any of these children anymore
-    while(max > 0) {
-        --max;
-        logical_and.DeleteChild(max);
-    }
-}
-
-
-
-void Optimizer::LogicalXOr(NodePtr& logical_xor)
-{
-    node_t        type;
-    int        idx, max;
-
-    type = NODE_FALSE;
-    max = logical_xor.GetChildCount();
-    for(idx = 0; idx < max; ++idx) {
-        NodePtr child = logical_xor.GetChild(idx);
-        Data data = child.GetData();
-        if(data.ToBoolean()) {
-            if(data.f_type == NODE_TRUE) {
-                type = type == NODE_TRUE ? NODE_FALSE : NODE_TRUE;
-            }
-        }
-        else {
-            // We assume that the expression was already
-            // compiled and thus identifiers which were
-            // constants have been replaced already.
-            return;
-        }
-    }
-
-// if we reach here, we can change the node type
-// to NODE_INT64 or NODE_FLOAT64
-    Data& data = logical_xor.GetData();
-    data.f_type = type;
-
-// we don't need any of these children anymore
-    while(max > 0) {
-        --max;
-        logical_xor.DeleteChild(max);
-    }
-}
-
-
-
-void Optimizer::LogicalOr(NodePtr& logical_or)
-{
-    node_t        type;
-    int        idx, max;
-
-    type = NODE_FALSE;
-    max = logical_or.GetChildCount();
-    for(idx = 0; idx < max; ++idx) {
-        NodePtr child = logical_or.GetChild(idx);
-        Data data = child.GetData();
-        if(data.ToBoolean()) {
-            if(data.f_type == NODE_TRUE) {
-                type = NODE_TRUE;
-                break;
-            }
-        }
-        else {
-            // We assume that the expression was already
-            // compiled and thus identifiers which were
-            // constants have been replaced already.
-            return;
-        }
-    }
-
-// if we reach here, we can change the node type
-// to NODE_INT64 or NODE_FLOAT64
-    Data& data = logical_or.GetData();
-    data.f_type = type;
-
-// we don't need any of these children anymore
-    while(max > 0) {
-        --max;
-        logical_or.DeleteChild(max);
-    }
-}
-
-
-
-void Optimizer::Minimum(NodePtr& minimum)
-{
-    int r = Compare(minimum);
-    if(r == -2 || r == 2) {
+    if(bitwise_and_node->get_children_size() != 2)
+    {
         return;
     }
 
-    if(r <= 0) {
-        // in this case we want to keep the left node
-        minimum = minimum.GetChild(0);
+    Node::pointer_t left(bitwise_and_node->get_child(0));
+    Node::pointer_t right(bitwise_and_node->get_child(1));
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+    if(left->to_number() && right->to_number())
+    {
+        left->to_int64();
+        right->to_int64();
+
+        // Source:
+        //   a & b
+        // Destination:
+        //   ToInt32(a !< (b & 0x1F))   -- computed
+        //
+        left->set_int64(static_cast<int32_t>(left->get_int64().get())
+                      & static_cast<int32_t>(right->get_int64().get()));
+        bitwise_and_node->replace_with(left);
     }
-    else {
-        minimum = minimum.GetChild(1);
+    else if(left->is_float64() && left->get_float64().is_NaN()
+         || right->is_float64() && right->get_float64().is_NaN())
+    {
+        // Source:
+        //   a & NaN     or     NaN & b
+        // Destination:
+        //   0
+        //
+        // This case may be a bug in Firefox, but that is what Firefox returns
+        //
+        left->to_int64();
+        left->set_int64(0);
+        bitwise_and_node->replace_with(left);
+        return;
+    }
+    else if((right->is_int64() && right->get_int64().get() == 0)
+         || (right->is_float64() && right->get_float64().get() == 0.0))
+    {
+        // Source:
+        //   a & 0;
+        // Destination:
+        //   0;
+        //
+        bitwise_and_node->replace_with(right);
+        return;
+    }
+    else if((left->is_int64() && left->get_int64().get() == 0)
+         || (left->is_float64() && left->get_float64().get() == 0.0))
+    {
+        // Source:
+        //   0 & b;
+        // Destination:
+        //   0;
+        //
+        bitwise_and_node->replace_with(left);
+        return;
+    }
+    //else if((right->is_int64() && right->get_int64().get() == -1)
+    //     || (right->is_float64() && right->get_float64().get() == -1.0))
+    //{
+    //    // Source:
+    //    //   a & -1;    or    -1 & b;
+    //    // Destination:
+    //    //   a;         or    b
+    //    //
+    //    // NOTE: This would mean 'a' would NOT be modified when in reality
+    //    //       it should be because the final result is computed in an
+    //    //       int32_t or something like a = (a & 0x0FFFFFFFF)
+    //    //
+    //    //       (Obviously, since the !< and !> operators are our
+    //    //       additions we could change the rules, but it makes
+    //    //       more sense to follow the rules used to compute
+    //    //       other bitwise operations.)
+    //    //
+    //    bitwise_and_node->replace_with(left or right);
+    //    return;
+    //}
+#pragma GCC diagnostic pop
+}
+
+
+
+void Optimizer::bitwise_xor(Node::pointer_t& bitwise_xor_node)
+{
+    // Reduce
+    //   a ^ 0       -- this cannot be optimized because of the side effects
+    //   a ^ -1 = ~a
+    //   a ^ b       -- when a and b are literals
+    //   a ^ b ^ c ^ d ...       -- when several of the parameters are literals
+
+    if(bitwise_xor_node->get_children_size() != 2)
+    {
+        return;
+    }
+
+    Node::pointer_t left(bitwise_xor_node->get_child(0));
+    Node::pointer_t right(bitwise_xor_node->get_child(1));
+
+    if(left->to_number() && right->to_number())
+    {
+        left->to_int64();
+        right->to_int64();
+
+        // Source:
+        //   a ^ b
+        // Destination:
+        //   ToInt32(a ^ b)   -- computed
+        //
+        left->set_int64(static_cast<int32_t>(left->get_int64().get())
+                      ^ static_cast<int32_t>(right->get_int64().get()));
+        bitwise_xor_node->replace_with(left);
+    }
+    else if(left->is_float64() && left->get_float64().is_NaN()
+         && right->is_float64() && right->get_float64().is_NaN())
+    {
+        // Source:
+        //   NaN ^ NaN
+        // Destination:
+        //   0
+        //
+        // This case may be a bug in Firefox, but that is what Firefox returns
+        //
+        left->to_int64();
+        left->set_int64(0);
+        bitwise_xor_node->replace_with(left);
+        return;
+    }
+    else if(left->is_float64() && left->get_float64().is_NaN())
+    {
+        // Source:
+        //   NaN ^ b
+        // Destination:
+        //   b
+        //
+        // This case may be a bug in Firefox, but that is what Firefox returns
+        //
+        bitwise_xor_node->replace_with(right);
+        return;
+    }
+    else if(right->is_float64() && right->get_float64().is_NaN())
+    {
+        // Source:
+        //   a ^ NaN
+        // Destination:
+        //   a
+        //
+        // This case may be a bug in Firefox, but that is what Firefox returns
+        //
+        bitwise_xor_node->replace_with(left);
+        return;
+    }
+    else if(left->is_number())
+    {
+        left->to_int64();
+        Int64::int64_type l(left->get_int64().get());
+        if((l & 0xFFFFFFFF) == 0xFFFFFFFF)
+        {
+            // Source:
+            //   -1 ^ b;
+            // Destination:
+            //   ~b;
+            //
+            Node::pointer_t bitwise_not_node(bitwise_xor_node->create_replacement(Node::NODE_BITWISE_NOT));
+            bitwise_not_node->append_child(right);
+            bitwise_xor_node->replace_with(bitwise_not_node);
+        }
+        return;
+    }
+    else if(right->is_number())
+    {
+        right->to_int64();
+        Int64::int64_type r(right->get_int64().get());
+        if((r & 0xFFFFFFFF) == 0xFFFFFFFF)
+        {
+            // Source:
+            //   a ^ -1;
+            // Destination:
+            //   ~a;
+            //
+            Node::pointer_t bitwise_not_node(bitwise_xor_node->create_replacement(Node::NODE_BITWISE_NOT));
+            bitwise_not_node->append_child(left);
+            bitwise_xor_node->replace_with(bitwise_not_node);
+        }
+        return;
     }
 }
 
 
 
-void Optimizer::Maximum(NodePtr& maximum)
+void Optimizer::bitwise_or(Node::pointer_t& bitwise_or_node)
 {
-    int r = Compare(maximum);
-    if(r == -2 || r == 2) {
+    // Reduce
+    //   a | 0       -- this cannot be optimized because of the side effects
+    //   a | -1 = -1
+    //   a | b       -- when a and b are literals
+    //   a | b | c | d ...       -- when several of the parameters are literals
+
+    if(bitwise_or_node->get_children_size() != 2)
+    {
         return;
     }
 
-    if(r >= 0) {
-        // in this case we want to keep the left node
-        maximum = maximum.GetChild(0);
+    Node::pointer_t left(bitwise_or_node->get_child(0));
+    Node::pointer_t right(bitwise_or_node->get_child(1));
+
+    if(left->to_number() && right->to_number())
+    {
+        left->to_int64();
+        right->to_int64();
+
+        // Source:
+        //   a | b
+        // Destination:
+        //   ToInt32(a | b)   -- computed
+        //
+        left->set_int64(static_cast<int32_t>(left->get_int64().get())
+                      | static_cast<int32_t>(right->get_int64().get()));
+        bitwise_or_node->replace_with(left);
     }
-    else {
-        maximum = maximum.GetChild(1);
+    else if(left->is_float64() && left->get_float64().is_NaN()
+         && right->is_float64() && right->get_float64().is_NaN())
+    {
+        // Source:
+        //   NaN | NaN
+        // Destination:
+        //   0
+        //
+        // This case may be a bug in Firefox, but that is what Firefox returns
+        //
+        left->to_int64();
+        left->set_int64(0);
+        bitwise_or_node->replace_with(left);
+        return;
+    }
+    else if(left->is_float64() && left->get_float64().is_NaN())
+    {
+        // Source:
+        //   NaN | b
+        // Destination:
+        //   b
+        //
+        // This case may be a bug in Firefox, but that is what Firefox returns
+        //
+        bitwise_or_node->replace_with(right);
+        return;
+    }
+    else if(right->is_float64() && right->get_float64().is_NaN())
+    {
+        // Source:
+        //   a | NaN
+        // Destination:
+        //   a
+        //
+        // This case may be a bug in Firefox, but that is what Firefox returns
+        //
+        bitwise_or_node->replace_with(left);
+        return;
+    }
+    else if(left->is_number())
+    {
+        left->to_int64();
+        Int64::int64_type l(left->get_int64().get());
+        if((l & 0xFFFFFFFF) == 0xFFFFFFFF)
+        {
+            // Source:
+            //   -1 | b;
+            // Destination:
+            //   -1;
+            //
+            left->set_int64(-1);
+            bitwise_or_node->replace_with(left);
+        }
+        return;
+    }
+    else if(right->is_number())
+    {
+        right->to_int64();
+        Int64::int64_type r(right->get_int64().get());
+        if((r & 0xFFFFFFFF) == 0xFFFFFFFF)
+        {
+            // Source:
+            //   a | -1;
+            // Destination:
+            //   -1;
+            //
+            right->set_int64(-1);
+            bitwise_or_node->replace_with(right);
+        }
+        return;
     }
 }
 
 
 
-void Optimizer::conditional(Node::pointer_t& conditional)
+void Optimizer::logical_and(Node::pointer_t& logical_and_node)
 {
-    if(conditional.GetChildCount() != 3) {
+    // WARNING: the left hand side of the && operator is converted
+    //          to a boolean, but NOT the right hand side!
+    //          So if the left hand side is true, replace the &&
+    //          with the right hand side as is...
+
+    // Reduce
+    //    true && b == b
+    //    false && b == false
+    //    a && true == !!a     -- we reduce this one because it is smaller
+    //                            text wise and we may end up reducing the
+    //                            !! to nothing
+    //    a && false == false  -- if a has no side effect
+
+    if(logical_and_node->get_children_size() != 2)
+    {
         return;
     }
 
-    NodePtr child = conditional.GetChild(0);
-    Data data = child.GetData();
-    if(!data.ToBoolean()) {
+    Node::pointer_t left(logical_and_node->get_child(0));
+    Node::pointer_t right(logical_and_node->get_child(1));
+
+    condition_double_logical_not(left);
+    if(left->to_boolean())
+    {
+        if(left->is_true())
+        {
+            // Source:
+            //   true && b;
+            // Destination:
+            //   b;
+            //
+            logical_and_node->replace_with(right);
+        }
+        else //if(left->is_false())
+        {
+            // Source:
+            //   false && b;
+            // Destination:
+            //   false;
+            //
+            logical_and_node->replace_with(left);
+        }
+    }
+    else if(right->is_true())
+    {
+        // Source:
+        //   a && true;
+        // Destination:
+        //   !!a;
+        //
+        Node::pointer_t logical_not_one(logical_and_node->create_replacement(Node::NODE_LOGICAL_NOT));
+        Node::pointer_t logical_not_two(logical_and_node->create_replacement(Node::NODE_LOGICAL_NOT));
+        logical_not_one->append_child(logical_not_two);
+        logical_not_two->append_child(left);
+        logical_and_node->replace_with(logical_not_one);
+    }
+    else if(right->is_false())
+    {
+        if(!left->has_side_effects())
+        {
+            // Source:
+            //   a && false;
+            // Destination:
+            //   false;        -- if a has no side effects
+            //
+            logical_and_node->replace_with(right);
+        }
+    }
+}
+
+
+
+void Optimizer::logical_xor(Node::pointer_t& logical_xor_node)
+{
+    // WARNING: the logical XOR (^^) is another of our additions;
+    //          and since we always need both sides to compute the
+    //          result (contrary to the && and ||) we presume that
+    //          both sides must be Boolean values
+
+    // Reduce
+    //    true ^^ b == !b
+    //    false ^^ b == !!b
+
+    if(logical_xor_node->get_children_size() != 2)
+    {
         return;
     }
 
-    if(data.f_type == NODE_TRUE) {
-        NodePtr expr = conditional.GetChild(1);
-        conditional.DeleteChild(1);
-        conditional.ReplaceWith(expr);
+    Node::pointer_t left(logical_xor_node->get_child(0));
+    Node::pointer_t right(logical_xor_node->get_child(1));
+
+    condition_double_logical_not(left);
+    condition_double_logical_not(right);
+
+    if(left->to_boolean() || right->to_boolean())
+    {
+        if(left->is_true())
+        {
+            if(right->is_true())
+            {
+                // Source:
+                //   true ^^ true
+                // Destination:
+                //   false
+                //
+                left->set_boolean(Node::NODE_FALSE);
+                logical_xor_node->replace_with(left);
+            }
+            else if(right->is_false())
+            {
+                // Source:
+                //   true ^^ false
+                // Destination:
+                //   true
+                //
+                logical_xor_node->replace_with(left);
+            }
+            else
+            {
+                // Source:
+                //   true ^^ b;
+                // Destination:
+                //   !b;
+                //
+                Node::pointer_t logical_not_node(logical_xor_node->create_replacement(Node::NODE_LOGICAL_NOT));
+                logical_not_node->append_child(right);
+                logical_xor_node->replace_with(logical_not_node);
+            }
+        }
+        else if(left->is_false())
+        {
+            if(right->is_true())
+            {
+                // Source:
+                //   false ^^ true
+                // Destination:
+                //   true
+                //
+                logical_xor_node->replace_with(right);
+            }
+            else if(right->is_false())
+            {
+                // Source:
+                //   false ^^ false
+                // Destination:
+                //   false
+                //
+                logical_xor_node->replace_with(left);
+            }
+            else
+            {
+                // Source:
+                //   false ^^ b;
+                // Destination:
+                //   !!b;
+                //
+                Node::pointer_t logical_not_one(logical_xor_node->create_replacement(Node::NODE_LOGICAL_NOT));
+                Node::pointer_t logical_not_two(logical_xor_node->create_replacement(Node::NODE_LOGICAL_NOT));
+                logical_not_one->append_child(logical_not_two);
+                logical_not_two->append_child(right);
+                logical_xor_node->replace_with(logical_not_one);
+            }
+        }
+        else if(right->is_true())
+        {
+            // Source:
+            //   a ^^ true;
+            // Destination:
+            //   !a;
+            //
+            Node::pointer_t logical_not_node(logical_xor_node->create_replacement(Node::NODE_LOGICAL_NOT));
+            logical_not_node->append_child(left);
+            logical_xor_node->replace_with(logical_not_node);
+        }
+        else if(right->is_false())
+        {
+            // Source:
+            //   a ^^ false;
+            // Destination:
+            //   !!a;
+            //
+            Node::pointer_t logical_not_one(logical_xor_node->create_replacement(Node::NODE_LOGICAL_NOT));
+            Node::pointer_t logical_not_two(logical_xor_node->create_replacement(Node::NODE_LOGICAL_NOT));
+            logical_not_one->append_child(logical_not_two);
+            logical_not_two->append_child(left);
+            logical_xor_node->replace_with(logical_not_one);
+        }
     }
-    else {
-        NodePtr expr = conditional.GetChild(2);
-        conditional.DeleteChild(2);
-        conditional.ReplaceWith(expr);
+}
+
+
+
+void Optimizer::logical_or(Node::pointer_t& logical_or_node)
+{
+    // WARNING: the left hand side of the || operator is converted
+    //          to a boolean, but NOT the right hand side!
+    //          So if the left hand side is false, replace the ||
+    //          with the right hand side as is...
+
+    // Reduce
+    //    true || b == true
+    //    false || b == b
+    //    a || true == true   or (a, true)
+    //                         -- we reduce if a has no side effects
+    //    a || false == !!a
+
+    if(logical_or_node->get_children_size() != 2)
+    {
+        return;
+    }
+
+    Node::pointer_t left(logical_or_node->get_child(0));
+    Node::pointer_t right(logical_or_node->get_child(1));
+
+    condition_double_logical_not(left);
+    if(left->to_boolean())
+    {
+        if(left->is_true())
+        {
+            // Source:
+            //   true || b;
+            // Destination:
+            //   true;
+            //
+            logical_or_node->replace_with(left);
+        }
+        else //if(left->is_false())
+        {
+            // Source:
+            //   false || b;
+            // Destination:
+            //   b;
+            //
+            logical_or_node->replace_with(right);
+        }
+    }
+    else if(right->is_true())
+    {
+        if(!left->has_side_effects())
+        {
+            // Source:
+            //   a || true
+            // Destination:
+            //   true         -- assuming 'a' has no side effects
+            //
+            logical_or_node->replace_with(right);
+        }
+    }
+    else if(right->is_false())
+    {
+        // Source:
+        //   a || false;
+        // Destination:
+        //   !!a;
+        //
+        // We do this optimization because there are several places where
+        // we will remove the double logical not (i.e. 'if(a || false)'
+        // will result in 'if(a)'.)
+        //
+        Node::pointer_t logical_not_one(logical_or_node->create_replacement(Node::NODE_LOGICAL_NOT));
+        Node::pointer_t logical_not_two(logical_or_node->create_replacement(Node::NODE_LOGICAL_NOT));
+        logical_not_one->append_child(logical_not_two);
+        logical_not_two->append_child(left);
+        logical_or_node->replace_with(logical_not_one);
+    }
+}
+
+
+
+void Optimizer::minimum(Node::pointer_t& minimum_node)
+{
+    compare_t r(compare(minimum_node));
+    if(compare_utils::is_ordered(r))
+    {
+        if(r != COMPARE_GREATER)
+        {
+            minimum_node->replace_with(minimum_node->get_child(0));
+        }
+        else
+        {
+            minimum_node->replace_with(minimum_node->get_child(1));
+        }
+    }
+}
+
+
+
+void Optimizer::maximum(Node::pointer_t& maximum_node)
+{
+    compare_t r(compare(maximum_node));
+    if(compare_utils::is_ordered(r))
+    {
+        if(r != COMPARE_LESS)
+        {
+            maximum_node->replace_with(maximum_node->get_child(0));
+        }
+        else
+        {
+            maximum_node->replace_with(maximum_node->get_child(1));
+        }
+    }
+}
+
+
+
+void Optimizer::conditional(Node::pointer_t& conditional_node)
+{
+    if(conditional_node->get_children_size() != 3)
+    {
+        return;
+    }
+
+    Node::pointer_t condition(conditional_node->get_child(0));
+    condition_double_logical_not(condition);
+    if(condition->to_boolean())
+    {
+        if(condition->is_true())
+        {
+            conditional_node->replace_with(conditional_node->get_child(1));
+        }
+        else
+        {
+            conditional_node->replace_with(conditional_node->get_child(2));
+        }
     }
 }
 

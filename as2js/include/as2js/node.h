@@ -6,6 +6,8 @@
 
 Copyright (c) 2005-2014 Made to Order Software Corp.
 
+http://snapwebsites.org/project/as2js
+
 Permission is hereby granted, free of charge, to any
 person obtaining a copy of this software and
 associated documentation files (the "Software"), to
@@ -381,8 +383,21 @@ public:
     node_t                      get_type() const;
     char const *                get_type_name() const;
 
+    bool                        is_number() const;
+    bool                        is_nan() const;
+    bool                        is_int64() const;
+    bool                        is_float64() const;
+    bool                        is_boolean() const;
+    bool                        is_true() const;
+    bool                        is_false() const;
+    bool                        is_string() const;
+    bool                        is_undefined() const;
+    bool                        is_null() const;
+    bool                        is_identifier() const;
+
     // basic conversions
     void                        to_unknown();
+    node_t                      to_boolean_type_only() const;
     bool                        to_boolean();
     bool                        to_int64();
     bool                        to_float64();
@@ -449,11 +464,13 @@ public:
 
     void                        display(std::ostream& out, int indent, pointer_t parent, char c) const;
 
+    String                      output() const;
+
 private:
     // verify that the specified flag correspond to the node type
-    void                    verify_flag_attribute(flag_attribute_t f) const;
-    void                    modifying() const;
-    void                    display_data(std::ostream& out) const;
+    void                        verify_flag_attribute(flag_attribute_t f) const;
+    void                        modifying() const;
+    void                        display_data(std::ostream& out) const;
 
     // define the node type
     safe_node_t                     f_type;

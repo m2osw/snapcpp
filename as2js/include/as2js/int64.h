@@ -6,6 +6,8 @@
 
 Copyright (c) 2005-2014 Made to Order Software Corp.
 
+http://snapwebsites.org/project/as2js
+
 Permission is hereby granted, free of charge, to any
 person obtaining a copy of this software and
 associated documentation files (the "Software"), to
@@ -33,7 +35,10 @@ SOFTWARE.
 
 */
 
+#include    "compare.h"
+
 #include    <controlled_vars/controlled_vars_auto_init.h>
+
 
 namespace as2js
 {
@@ -71,6 +76,13 @@ public:
     void            set(int64_type const new_int)
                     {
                         f_int = new_int;
+                    }
+
+    compare_t       compare(Int64 const& rhs) const
+                    {
+                        return f_int == rhs.f_int ? COMPARE_EQUAL
+                             : (f_int < rhs.f_int ? COMPARE_LESS
+                                                  : COMPARE_GREATER);
                     }
 
 private:

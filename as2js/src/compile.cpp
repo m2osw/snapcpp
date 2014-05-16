@@ -4,6 +4,8 @@
 
 Copyright (c) 2005-2014 Made to Order Software Corp.
 
+http://snapwebsites.org/project/as2js
+
 Permission is hereby granted, free of charge, to any
 person obtaining a copy of this software and
 associated documentation files (the "Software"), to
@@ -427,14 +429,15 @@ void Compiler::var(Node::pointer_t& var)
 }
 
 
-void Compiler::variable(Node::pointer_t& variable, bool const side_effects_only)
+void Compiler::variable(Node::pointer_t& variable_node, bool const side_effects_only)
 {
-    size_t max(variable.get_child_size());
+    size_t max(variable_node->get_child_size());
 
     // if we already have a type, we've been parsed
     Data& data = variable.GetData();
     int flags = data.f_int.Get();
-    if((flags & (NODE_VAR_FLAG_DEFINED | NODE_VAR_FLAG_ATTRIBUTES)) != 0)
+    if(variable_node->get_flag(Node::NODE_VAR_FLAG_DEFINED)
+    || variable_node->get_flag(Node::NODE_VAR_FLAG_ATTRIBUTES))
     {
 #if 0
  {
@@ -503,9 +506,10 @@ fprintf(stderr, "Parsing variable [%s]\n", buf);
             }
             else {
                 // define the variable type in this case
-                Expression(child);
-                if(!variable.GetLink(NodePtr::LINK_TYPE).HasNode()) {
-                    variable.SetLink(NodePtr::LINK_TYPE, child.GetLink(NodePtr::LINK_INSTANCE));
+                expression(child);
+                if(!variable_node->get_link(Node::LINK_TYPE))
+                {
+                    variable_node->set_link(Node::LINK_TYPE, child->get_link(Node::LINK_INSTANCE));
                 }
             }
         }
@@ -1621,22 +1625,18 @@ void Compiler::Parameters(NodePtr& parameters)
             {
                 expression(child);
                 NodePtr& type = child.GetLink(NodePtr::LINK_INSTANCE);
-                if(type.HasNode()) {
-                    NodePtr& existing_type = param.GetLink(NodePtr::LINK_TYPE);
-                    if(!existing_type.HasNode()) {
-                        param.SetLink(NodePtr::LINK_TYPE, type);
+                if(type.HasNode())
+                {
+                    Node::pointer_t existing_type(param->get_link(Node::LINK_TYPE));
+                    if(!existing_type)
+                    {
+                        param->set_link(Node::LINK_TYPE, type);
                     }
-#if defined(_DEBUG) || defined(DEBUG)
-                    else {
-                        if(!existing_type.SameAs(type)) {
-                            fprintf(stderr, "Existing type is:\n");
-                            existing_type.Display(stderr);
-                            fprintf(stderr, "New type would be:\n");
-                            type.Display(stderr);
-                            AS_ASSERT(existing_type.SameAs(type));
-                        }
+                    else if(existing_type != type)
+                    {
+                        Message msg(MESSAGE_LEVEL_FATAL, AS_ERR_INVALID_TYPE, param->get_position());
+                        msg << "Existing type is:" << std::endl << existing_type << std::endl << "New type would be:" << std::endl << type;
                     }
-#endif
                 }
             }
         }
@@ -1891,28 +1891,34 @@ void Compiler::Class(NodePtr& class_node)
 
 
 
-void Compiler::Import(NodePtr& import)
+void Compiler::import(Node::pointer_t& import_node)
 {
     // If we have the IMPLEMENTS flag set, then we must make sure
     // that the corresponding package is compiled.
-    Data& data = import.GetData();
-    if((data.f_int.Get() & NODE_IMPORT_FLAG_IMPLEMENTS) == 0) {
+    if(!import_node->get_flag(Node::NODE_IMPORT_FLAG_IMPLEMENTS))
+    {
         return;
     }
 
     // find the package
-    NodePtr package;
+    Node::pointer_t package;
 
     // search in this program
-    package = FindPackage(f_program, data.f_str);
-    if(!package.HasNode()) {
-        NodePtr program;
-        String any_name = "*";
-        if(FindExternalPackage(import, any_name, program)) {
-            package = FindPackage(program, data.f_str);
+    package = find_package(f_program, import_node->get_string());
+    if(!package)
+    {
+        // not in this program, search externals
+        Node::pointer_t program;
+        String any_name("*");
+        if(find_external_package(import_node, any_name, program))
+        {
+            // got externals, search those now
+            package = find_package(program, import_node->get_string());
         }
-        if(!package.HasNode()) {
-            f_error_stream->ErrStrMsg(AS_ERR_NOT_FOUND, import, "cannot find package '%S'.", &data.f_str);
+        if(!package)
+        {
+            Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_NOT_FOUND, f_lexer->get_input()->get_position());
+            msg << "cannot find package '" << import_node->get_string() << "'.";
             return;
         }
     }
@@ -1920,40 +1926,49 @@ void Compiler::Import(NodePtr& import)
     Data& package_data = package.GetData();
 
     // make sure it is compiled (once)
-    long flags = package_data.f_int.Get();
-    package_data.f_int.Set(flags | NODE_PACKAGE_FLAG_REFERENCED);
-    if((flags & NODE_PACKAGE_FLAG_REFERENCED) == 0) {
-        DirectiveList(package);
+    bool const was_referenced(package->get_flag(Node::NODE_PACKAGE_FLAG_REFERENCED));
+    package->set_flag(Node::NODE_PACKAGE_FLAG_REFERENCED, true);
+    if(was_referenced)
+    {
+        directive_list(package);
     }
 }
 
 
 
-void Compiler::UseNamespace(NodePtr& use_namespace)
+void Compiler::use_namespace(Node::pointer_t& use_namespace_node)
 {
-    int max = use_namespace.GetChildCount();
-    if(max != 1) {
+    if(use_namespace_node->get_children_count() != 1)
+    {
         return;
     }
-    NodeLock ln(use_namespace);
+    NodeLock ln(use_namespace_node);
 
     // type/scope name defined in an expression
     // (needs to be resolved in an identifiers, members composed of
     // identifiers or a string representing a valid type name)
-    NodePtr& qualifier = use_namespace.GetChild(0);
-    Expression(qualifier);
+    Node::pointer_t qualifier(use_namespace_node->get_child(0));
+    expression(qualifier);
+
+    // TODO: I'm not too sure what the qualifier can end up being at this
+    //       point, but if it is a whole tree of node, we do not know
+    //       how to copy it... (because using qualifier directly instead
+    //       of using q as defined below would completely break the
+    //       existing namespace...)
+    if(qualifier->get_type() != Node::NODE_STRING)
+    {
+        throw exception_internal_error("type qualifier is not just a string, we cannot duplicate it at this point");
+    }
 
     // we create two nodes; one so we know we have a NAMESPACE instruction
     // and a child of that node which is the type itself; these are
-    // deleted once we return from the DirectiveList() function and not
+    // deleted once we return from the directive_list() function and not
     // this function
-    NodePtr q;
-    q.CreateNode();
-    q.SetData(qualifier.GetData());
-    NodePtr n;
-    n.CreateNode(NODE_NAMESPACE);
-    n.AddChild(q);
-    f_scope.AddChild(n);
+    Node::pointer_t q(qualifier->create_replacement(qualifier->get_type()));
+    q->set_string(qualifier->get_string());
+    Node::pointer_t n(qualifier->create_replacement(Node::NODE_NAMESPACE));
+    n->append_child(q);
+    f_scope->append_child(n);
 }
 
 
@@ -3165,48 +3180,54 @@ params->Display(stderr);
 
 
 
-NodePtr Compiler::FindPackage(NodePtr& list, const String& name)
+Node::pointer_t Compiler::find_package(Node::pointer_t& list, String const& name)
 {
     NodeLock ln(list);
-    int max = list.GetChildCount();
-    for(int idx = 0; idx < max; ++idx) {
-        NodePtr& child = list.GetChild(idx);
-        Data& data = child.GetData();
-        if(data.f_type == NODE_DIRECTIVE_LIST) {
-            NodePtr package = FindPackage(child, name);
-            if(package.HasNode()) {
+    size_t const max(list->get_children_size());
+    for(size_t idx(0); idx < max; ++idx)
+    {
+        Node::pointer_t child(list->get_child(idx));
+        if(child->get_type() == Node::NODE_DIRECTIVE_LIST)
+        {
+            Node::pointer_t package(find_package(child, name));  // recursive
+            if(package)
+            {
                 return package;
             }
         }
-        else if(data.f_type == NODE_PACKAGE) {
-            if(data.f_str == name) {
+        else if(child->get_type() == Node::NODE_PACKAGE)
+        {
+            if(child->get_string() == name)
+            {
+                // found it!
                 return child;
             }
         }
     }
 
-    NodePtr not_found;
-    return not_found;
+    // not found
+    return Node::pointer_t();
 }
 
 
-bool Compiler::FindExternalPackage(NodePtr& import, const String& name, NodePtr& program)
+bool Compiler::find_external_package(Node::pointer_t& import, String const& name, Node::pointer_t& program)
 {
     // search a package which has an element named 'name'
     // and has a name which match the identifier specified in 'import'
-    Data& data = import.GetData();
-    const char *package_info = FindElement(data.f_str, name, 0, 0);
-    if(package_info == 0) {
+    Node::pointer_t element;  // ignored
+    char const *package_info(find_element(import->get_string(), name, element, nullptr));
+    if(package_info == nullptr)
+    {
         // not found!
         return false;
     }
 
-    String filename = GetPackageFilename(package_info);
+    String filename = get_package_filename(package_info);
 
     // found it, let's get a node for it
-    FindModule(filename, program);
+    find_module(filename, program);
 
-    // at this time this won't happen because if the FindModule()
+    // at this time this won't happen because if the find_module()
     // function fails, it exit(1)...
     if(!program.HasNode()) {
         return false;
@@ -3220,107 +3241,121 @@ bool Compiler::FindExternalPackage(NodePtr& import, const String& name, NodePtr&
 
 
 
-bool Compiler::CheckImport(NodePtr& import, NodePtr& resolution, const String& name, NodePtr *params, int search_flags)
+bool Compiler::check_import(Node::pointer_t& import, Node::pointer_t& resolution, String const& name, Node::pointer_t params, int search_flags)
 {
 //fprintf(stderr, "CheckImport(... [%.*S] ..., %d)\n", name.GetLength(), name.Get(), search_flags);
     // search for a package within this program
     // (I'm not too sure, but according to the spec. you can very well
     // have a package within any script file)
-    if(FindPackageItem(f_program, import, resolution, name, params, search_flags)) {
+    if(find_package_item(f_program, import, resolution, name, params, search_flags))
+    {
         return true;
     }
 
-//fprintf(stderr, "Search for an external package!\n");
-    NodePtr program;
-    if(!FindExternalPackage(import, name, program)) {
+//fprintf(stderr, "Search for an external package instead.\n");
+    Node::pointer_t program;
+    if(!find_external_package(import, name, program))
+    {
         return false;
     }
 
-    return FindPackageItem(program, import, resolution, name, params, search_flags | SEARCH_FLAG_PACKAGE_MUST_EXIST);
+    return find_package_item(program, import, resolution, name, params, search_flags | SEARCH_FLAG_PACKAGE_MUST_EXIST);
 }
 
 
-bool Compiler::FindPackageItem(NodePtr& program, NodePtr& import, NodePtr& resolution, const String& name, NodePtr *params, int search_flags)
+bool Compiler::find_package_item(Node::pointer_t& program, Node::pointer_t& import, Node::pointer_t& resolution, String const& name, Node::pointer_t params, int search_flags)
 {
     Data& data = import.GetData();
 
-    NodePtr package;
-    package = FindPackage(program, data.f_str);
+    Node::pointer_t package;
+    package = find_package(program, import->get_string());
 
-    if(!package.HasNode()) {
-        if((search_flags & SEARCH_FLAG_PACKAGE_MUST_EXIST) != 0) {
+    if(!package)
+    {
+        if((search_flags & SEARCH_FLAG_PACKAGE_MUST_EXIST) != 0)
+        {
             // this is a bad error! we should always find the
             // packages in this case (i.e. when looking using the
             // database.)
-            f_error_stream->ErrStrMsg(AS_ERR_INTERNAL_ERROR, import, "cannot find package '%S' in any of the previously registered packages.", &name);
-            AS_ASSERT(0);
+            Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INTERNAL_ERROR, import->get_position());
+            msg << "cannot find package '" << import->get_string() << "' in any of the previously registered packages."
+            exit(1);
         }
         return false;
     }
 
-    if(package.GetChildCount() == 0) {
+    if(package->get_children_size() == 0)
+    {
         return false;
     }
 
     // setup labels (only the first time around)
     Data& package_data = package.GetData();
-    if((package_data.f_int.Get() & NODE_PACKAGE_FLAG_FOUND_LABELS) == 0) {
-        package_data.f_int.Set(package_data.f_int.Get() | NODE_PACKAGE_FLAG_FOUND_LABELS);
-        NodePtr& child = package.GetChild(0);
-        FindLabels(package, child);
+    if((package->get_flag(Node::NODE_PACKAGE_FLAG_FOUND_LABELS) == 0)
+    {
+        package->set_flag(Node::NODE_PACKAGE_FLAG_FOUND_LABELS, true);
+        Node::pointer_t child(package->get_child(0));
+        find_labels(package, child);
     }
 
     // search the name of the class/function/variable we're
     // searching for in this package:
 
     // TODO: Hmmm... could we have the actual node instead?
-    NodePtr id;
-    id.CreateNode(NODE_IDENTIFIER);
-    Data& id_name = id.GetData();
-    id_name.f_str = name;
+    Node::pointer_t id(package->create_replacement(Node::NODE_IDENTIFIER));
+    id->set_string(name);
 
 //fprintf(stderr, "Found package [%.*S], search field [%.*S]\n", data.f_str.GetLength(), data.f_str.Get(), name.GetLength(), name.Get());
     int funcs = 0;
-    if(!FindField(package, id, funcs, resolution, params, search_flags)) {
+    if(!find_field(package, id, funcs, resolution, params, search_flags))
+    {
         return false;
     }
 
     // TODO: Can we have an empty resolution here?!
-    if(resolution.HasNode()) {
+    if(resolution)
+    {
         unsigned long attrs = resolution.GetAttrs();
-        if((attrs & NODE_ATTR_PRIVATE) != 0) {
-            // it's private, we can't use this item
+        if(resolution->get_flag(Node::NODE_ATTR_PRIVATE))
+        {
+            // it is private, we cannot use this item
             // from outside whether it is in the
             // package or a sub-class
             return false;
         }
 
-        if((attrs & NODE_ATTR_INTERNAL) != 0) {
-            // it's internal we can only use it from
+        if(resolution->get_flag(Node::NODE_ATTR_INTERNAL))
+        {
+            // it is internal we can only use it from
             // another package
-            NodePtr parent = import;
-            for(;;) {
-                parent = parent.GetParent();
-                if(!parent.HasNode()) {
+            Node::pointer_t parent(import);
+            for(;;)
+            {
+                parent = parent->get_parent();
+                if(!parent)
+                {
                     return false;
                 }
-                Data& data = parent.GetData();
-                if(data.f_type == NODE_PACKAGE) {
+                switch(parent->get_type())
+                {
+                case Node::NODE_PACKAGE:
                     break;
-                }
-                if(data.f_type == NODE_ROOT
-                || data.f_type == NODE_PROGRAM) {
+
+                case Node::NODE_ROOT:
+                case Node::NODE_PROGRAM:
                     return false;
+
                 }
             }
         }
     }
 
     // make sure it is compiled (once)
-    long flags = package_data.f_int.Get();
-    package_data.f_int.Set(flags | NODE_PACKAGE_FLAG_REFERENCED);
-    if((flags & NODE_PACKAGE_FLAG_REFERENCED) == 0) {
-        DirectiveList(package);
+    bool was_referenced(package->get_flag(Node::NODE_PACKAGE_FLAG_REFERENCED));
+    package->set_flag(Node::NODE_PACKAGE_FLAG_REFERENCED, true);
+    if(was_referenced)
+    {
+        directive_list(package);
     }
 
     return true;

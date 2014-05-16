@@ -4,6 +4,8 @@
 
 Copyright (c) 2005-2014 Made to Order Software Corp.
 
+http://snapwebsites.org/project/as2js
+
 Permission is hereby granted, free of charge, to any
 person obtaining a copy of this software and
 associated documentation files (the "Software"), to
@@ -684,19 +686,19 @@ void Parser::primary_expression(Node::pointer_t& node)
 {
     switch(f_node->get_type())
     {
-    case Node::NODE_NULL:
-    case Node::NODE_UNDEFINED:
-    case Node::NODE_TRUE:
     case Node::NODE_FALSE:
+    case Node::NODE_FLOAT64:
     case Node::NODE_IDENTIFIER:
     case Node::NODE_INT64:
-    case Node::NODE_FLOAT64:
-    case Node::NODE_STRING:
-    case Node::NODE_THIS:
-    case Node::NODE_REGULAR_EXPRESSION:
-    case Node::NODE_PUBLIC:
+    case Node::NODE_NULL:
     case Node::NODE_PRIVATE:
+    case Node::NODE_PUBLIC:
+    case Node::NODE_REGULAR_EXPRESSION:
+    case Node::NODE_STRING:
     case Node::NODE_SUPER:
+    case Node::NODE_THIS:
+    case Node::NODE_TRUE:
+    case Node::NODE_UNDEFINED:
     {
         node = f_node;
         get_token();

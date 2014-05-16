@@ -4,6 +4,8 @@
 
 Copyright (c) 2005-2014 Made to Order Software Corp.
 
+http://snapwebsites.org/project/as2js
+
 Permission is hereby granted, free of charge, to any
 person obtaining a copy of this software and
 associated documentation files (the "Software"), to
@@ -40,10 +42,10 @@ namespace as2js
 
 
 Options::Options()
-    : f_options(AS_OPTION_max)
+    : f_options(OPTION_max)
 {
     // we're always in strict mode
-    set_option(AS_OPTION_STRICT, 1);
+    set_option(OPTION_STRICT, 1);
 }
 
 
@@ -52,7 +54,7 @@ void Options::set_option(option_t option, option_value_t value)
     // TODO: verify that we really want that here, we may prefer
     //       to give the user non-strict access to his code...
     // we're always in strict mode
-    if(option == AS_OPTION_STRICT)
+    if(option == OPTION_STRICT)
     {
         value = 1;
     }

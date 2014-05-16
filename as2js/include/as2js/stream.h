@@ -6,6 +6,8 @@
 
 Copyright (c) 2005-2014 Made to Order Software Corp.
 
+http://snapwebsites.org/project/as2js
+
 Permission is hereby granted, free of charge, to any
 person obtaining a copy of this software and
 associated documentation files (the "Software"), to
@@ -40,10 +42,89 @@ SOFTWARE.
 
 #include    <memory>
 #include    <vector>
+#include    <fstream>
 
 
 namespace as2js
 {
+
+
+class DecodingFilter
+{
+public:
+    typedef std::shared_ptr<DecodingFilter>     pointer_t;
+    typedef unsigned char                       byte_t;
+
+    void                    putc(byte_t c);
+    as_char_t               getc();
+
+protected:
+    virtual as_char_t       get_char() = 0;
+
+    std::vector<byte_t>     f_buffer;
+};
+
+
+class DecodingFilterISO88591 : public DecodingFilter
+{
+protected:
+    virtual as_char_t       get_char();
+};
+
+
+class DecodingFilterUTF8 : public DecodingFilter
+{
+protected:
+    virtual as_char_t       get_char();
+};
+
+
+class DecodingFilterUTF16 : public DecodingFilter
+{
+protected:
+    as_char_t               next_char(as_char_t c);
+
+private:
+    zas_char_t              f_lead_surrogate;
+};
+
+
+class DecodingFilterUTF16LE : public DecodingFilterUTF16
+{
+protected:
+    virtual as_char_t       get_char();
+};
+
+
+class DecodingFilterUTF16BE : public DecodingFilterUTF16
+{
+protected:
+    virtual as_char_t       get_char();
+};
+
+
+class DecodingFilterUTF32LE : public DecodingFilter
+{
+protected:
+    virtual as_char_t       get_char();
+};
+
+
+class DecodingFilterUTF32BE : public DecodingFilter
+{
+protected:
+    virtual as_char_t       get_char();
+};
+
+
+class DecodingFilterDetect : public DecodingFilter
+{
+protected:
+    virtual as_char_t       get_char();
+
+private:
+    DecodingFilter::pointer_t   f_filter;
+};
 
 
 
@@ -63,10 +144,12 @@ class Input
 public:
     typedef std::shared_ptr<Input>                  pointer_t;
     typedef as_char_t                               char_t;
-    typedef controlled_vars::auto_init<ssize_t, -1> input_size_t;
 
-    static char_t const     AS_EOF = -1;
+    static char_t const     INPUT_EOF = -1;  // end of file
+    static char_t const     INPUT_NAC = -2;  // not a character (filter requires more input)
+    static char_t const     INPUT_ERR = -3;  // stream error
 
+                            Input(DecodingFilter::pointer_t filter = DecodingFilter::pointer_t(new DecodingFilterDetect));
     virtual                 ~Input() {}
 
     Position&               get_position();
@@ -75,18 +158,30 @@ public:
     char_t                  getc();
     void                    ungetc(char_t c);
 
-    // return the size if known, -1 if unknown
-    virtual input_size_t    get_size() const;
-
 protected:
-    virtual char_t          internal_getc() = 0;
+    virtual char_t                  filter_getc();
+    virtual char_t                  get_byte();
 
 private:
-    Position                f_position;
-    std::vector<char_t>     f_unget;
+    DecodingFilter::pointer_t   f_filter;
+    Position                    f_position;
+    std::vector<char_t>         f_unget;
 };
 
 
+
+
+
+class StandardInput : public Input
+{
+public:
+    typedef std::shared_ptr<StandardInput>          pointer_t;
+
+                            StandardInput();
+
+protected:
+    virtual char_t          get_byte();
+};
 
 
 
@@ -96,31 +191,16 @@ class FileInput : public Input
 {
 public:
     typedef std::shared_ptr<FileInput>              pointer_t;
-    typedef controlled_vars::ptr_auto_init<FILE>    zfile_t;
 
-    virtual                 ~FileInput();
-
-    bool                    standard_input();
     bool                    open(String const& filename);
-    void                    close();
-
-    virtual input_size_t    get_size() const;
 
 protected:
-    virtual char_t          internal_getc();
+    virtual char_t          get_byte();
 
-    zfile_t                 f_file;
-    ssize_t                 f_size;
+    std::ifstream           f_file;
 };
 
 
-class FileUCS32Input : public FileInput
-{
-protected:
-    typedef std::shared_ptr<FileUCS32Input>         pointer_t;
-
-    virtual char_t          internal_getc();
-};
 
 
 
@@ -129,18 +209,14 @@ class StringInput : public Input
 public:
     typedef std::shared_ptr<StringInput>            pointer_t;
 
-    virtual                 ~StringInput() {}
-
-    void                    set(String const& str, Position::counter_t line);
-
-    virtual input_size_t    get_size() const;
+                            StringInput(String const& str, Position::counter_t line = 1);
 
 protected:
-    virtual char_t          internal_getc();
+    virtual char_t          filter_getc();
 
 private:
-    String::zsize_type_t    f_pos;
     String                  f_str;
+    String::zsize_type_t    f_pos;
 };
 
 
@@ -162,6 +238,51 @@ public:
 };
 
 
+
+
+class Output
+{
+public:
+    typedef std::shared_ptr<Output>             pointer_t;
+
+    virtual                 ~Output() {}
+
+    Position&               get_position();
+    Position const&         get_position() const;
+
+    void                    write(String const& data);
+
+protected:
+    virtual void            internal_write(String const& data) = 0;
+
+    Position                f_position;
+};
+
+
+class StandardOutput : public Output
+{
+public:
+                            StandardOutput();
+
+protected:
+    typedef std::shared_ptr<StandardOutput>     pointer_t;
+
+    virtual void            internal_write(String const& data);
+};
+
+
+class FileOutput : public Output
+{
+public:
+    typedef std::shared_ptr<FileOutput>         pointer_t;
+
+    bool                    open(String const& filename);
+
+protected:
+    virtual void            internal_write(String const& data);
+
+    std::ofstream           f_file;
+};
 
 
 }
