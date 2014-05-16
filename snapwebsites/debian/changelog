@@ -1,4 +1,4 @@
-snapwebsites (0.1.51~saucy) UNRELEASED; urgency=high
+snapwebsites (0.1.51~saucy) saucy; urgency=high
 
   [ Alexis Wilke ]
   * Moved the attachment support from the output plugin to the attachment
@@ -14,7 +14,10 @@ snapwebsites (0.1.51~saucy) UNRELEASED; urgency=high
   * Added a test in set_referrer() as an attempt to avoid AJAX URIs.
   * Many cleanups.
 
- -- R. Douglas Barbieri <doug@jedi.dooglio.net>  Sat, 03 May 2014 22:32:04 -0700
+  [ R. Douglas Barbieri ]
+  * Release to PPA.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Sat, 03 May 2014 22:32:04 -0700
 
 snapwebsites (0.1.50~saucy) saucy; urgency=high
 
