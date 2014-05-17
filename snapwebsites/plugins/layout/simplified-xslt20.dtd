@@ -170,13 +170,14 @@ DTD of the XSLT 2.0.
 <!ELEMENT fieldset ANY>
 <!ATTLIST fieldset class CDATA #IMPLIED>
 
-<!ELEMENT img EMPTY>
-<!ATTLIST img src CDATA #REQUIRED
+<!ELEMENT img ANY>
+<!ATTLIST img src CDATA #IMPLIED
               width CDATA #IMPLIED
               height CDATA #IMPLIED
               title CDATA #IMPLIED
               alt CDATA #IMPLIED
-              type CDATA #IMPLIED>
+              type CDATA #IMPLIED
+              align (middle|left|right|bottom|top) #IMPLIED>
 
 <!-- IDREF would be better for the "for" attribute, but unfortunately,
      at the point we are checking the files, the items may not yet exist -->

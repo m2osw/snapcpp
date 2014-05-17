@@ -1,6 +1,6 @@
 /** @preserve
  * Name: popup
- * Version: 0.1.0.7
+ * Version: 0.1.0.10
  * Browsers: all
  * Copyright: Copyright 2014 (c) Made to Order Software Corporation  All rights reverved.
  * Depends: output (0.0.5)
@@ -243,7 +243,9 @@ snapwebsites.Popup.prototype.open = function(popup)
     }
     else
     {
-        y = Math.floor((jQuery("body").height() - popup.widget.height()) / 2);
+        // We use jQuery("body") instead of jQuery(window) because the
+        // body may have padding which needs to be taken in account
+        y = Math.floor((jQuery("body").height() - popup.widget.outerHeight()) / 2);
         if(y < 0)
         {
             y = 0;
@@ -256,7 +258,7 @@ snapwebsites.Popup.prototype.open = function(popup)
     }
     else
     {
-        w = Math.floor((jQuery("body").width() - popup.widget.width()) / 2);
+        w = Math.floor((jQuery("body").width() - popup.widget.outerWidth()) / 2);
         if(w < 0)
         {
             w = 0;

@@ -144,6 +144,9 @@ const char *get_name(name_t name)
     case SNAP_NAME_USERS_LOGOUT_ON:
         return "users::logout_on";
 
+    case SNAP_NAME_USERS_NAME:
+        return "users::name";
+
     case SNAP_NAME_USERS_NEW_PATH:
         return "types/users/new";
 
@@ -808,7 +811,7 @@ void users::on_generate_header_content(content::path_info_t& ipath, QDomElement&
             if(!value.nullValue())
             {
                 QDomElement desc(doc.createElement("desc"));
-                desc.setAttribute("type", "users::name");
+                desc.setAttribute("type", get_name(SNAP_NAME_USERS_NAME));
                 metadata.appendChild(desc);
                 QDomElement data(doc.createElement("data"));
                 desc.appendChild(data);
@@ -845,25 +848,26 @@ void users::on_generate_page_content(content::path_info_t& ipath, QDomElement& p
     // TODO: add support to retrieve the "author" who last modified this
     //       page (i.e. user reference in the last revision)
     QtCassandra::QCassandraTable::pointer_t content_table(content::content::instance()->get_content_table());
-    const QString link_name(get_name(SNAP_NAME_USERS_AUTHOR));
+    QString const link_name(get_name(SNAP_NAME_USERS_AUTHOR));
     links::link_info author_info(get_name(SNAP_NAME_USERS_AUTHOR), true, ipath.get_key(), ipath.get_branch());
     QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(author_info));
     links::link_info user_info;
     if(link_ctxt->next_link(user_info))
     {
-        // an author is attached to this page
-        const QString author_key(user_info.key());
+        // an author is attached to this page!
+        //
         // all we want to offer here is the author details defined in the
         // /user/... location although we may want access to his email
         // address too (to display to an admin for example)
-        QtCassandra::QCassandraRow::pointer_t author_row(content_table->row(author_key));
+        content::path_info_t user_ipath;
+        user_ipath.set_path(user_info.key());
 
-        {   // snap/page/body/author[type=users::name]/data
-            QtCassandra::QCassandraValue value(author_row->cell(get_name(SNAP_NAME_USERS_USERNAME))->value());
+        {   // snap/page/body/author[@type="users::name"]/data
+            QtCassandra::QCassandraValue value(content_table->row(user_ipath.get_key())->cell(get_name(SNAP_NAME_USERS_USERNAME))->value());
             if(!value.nullValue())
             {
                 QDomElement author(doc.createElement("author"));
-                author.setAttribute("type", "users::name");
+                author.setAttribute("type", get_name(SNAP_NAME_USERS_NAME));
                 body.appendChild(author);
                 QDomElement data(doc.createElement("data"));
                 author.appendChild(data);

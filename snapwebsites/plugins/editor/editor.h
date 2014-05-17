@@ -136,7 +136,7 @@ public:
     QString             format_uri(QString const& format, content::path_info_t& ipath, QString const& page_name, params_map_t const& params);
     static save_mode_t  string_to_save_mode(QString const& mode);
     static QString      clean_post_value(QString const& widget_type, QString const& value);
-    void                parse_out_inline_img(content::path_info_t& ipath, QString& body);
+    void                parse_out_inline_img(content::path_info_t& ipath, QString& body, QString const& force_filename);
     QDomDocument        get_editor_widgets(content::path_info_t& ipath);
 
     SNAP_SIGNAL(save_editor_fields, (content::path_info_t& ipath, QtCassandra::QCassandraRow::pointer_t row), (ipath, row));
@@ -150,7 +150,7 @@ private:
     void                process_new_draft();
     void                editor_save(content::path_info_t& ipath, sessions::sessions::session_info& info);
     void                editor_create_new_branch(content::path_info_t& ipath);
-    bool                save_inline_image(content::path_info_t& ipath, QDomElement img, QString const& src);
+    bool                save_inline_image(content::path_info_t& ipath, QDomElement img, QString const& src, QString const& force_filename);
 
     zpsnap_child_t      f_snap;
 };

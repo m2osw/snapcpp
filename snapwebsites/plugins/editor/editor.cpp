@@ -951,7 +951,8 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
                     {
                         // like a string, but convert inline images too
                         QString value(post_value);
-                        parse_out_inline_img(ipath, value);
+                        QString const widget_force_filename(widget.attribute("force-filename", "string")); // this one is #IMPLIED
+                        parse_out_inline_img(ipath, value, widget_force_filename);
                         revision_row->cell(field_name)->setValue(value);
                         current_value = value;
                     }
@@ -2199,7 +2200,7 @@ bool editor::save_editor_fields_impl(content::path_info_t& ipath, QtCassandra::Q
         //       field and if not make sure that if we find some err
         // body may include images, transform the <img src="inline-data"/>
         // to an <img src="/images/..."/> link instead
-        parse_out_inline_img(ipath, body);
+        parse_out_inline_img(ipath, body, "");
         // TODO: XSS filter body
         row->cell(content::get_name(content::SNAP_NAME_CONTENT_BODY))->setValue(body);
     }
@@ -2218,14 +2219,14 @@ bool editor::save_editor_fields_impl(content::path_info_t& ipath, QtCassandra::Q
  * \param[in,out] ipath  The ipath to the page being modified.
  * \param[in,out] body  The HTML to be parsed and "fixed."
  */
-void editor::parse_out_inline_img(content::path_info_t& ipath, QString& body)
+void editor::parse_out_inline_img(content::path_info_t& ipath, QString& body, QString const& force_filename)
 {
     QDomDocument doc;
     //doc.setContent("<?xml version='1.1' encoding='utf-8'?><element>" + body + "</element>");
     doc.setContent(QString("<element>%1</element>").arg(body));
     QDomNodeList imgs(doc.elementsByTagName("img"));
 
-    bool changed(false);
+    int changed(0);
     int const max_images(imgs.size());
     for(int i(0); i < max_images; ++i)
     {
@@ -2236,10 +2237,16 @@ void editor::parse_out_inline_img(content::path_info_t& ipath, QString& body)
             QString const src(img.attribute("src"));
             if(src.startsWith("data:"))
             {
-                bool const valid(save_inline_image(ipath, img, src));
+                // TBD: should multi-image + force_filename be an error?
+                //if(changed && !force_filename.isEmpty()) ...error...
+
+                QString ff(changed == 0
+                            ? force_filename
+                            : QString("%1-%2").arg(force_filename).arg(changed));
+                bool const valid(save_inline_image(ipath, img, src, ff));
                 if(valid)
                 {
-                    changed = true;
+                    ++changed;
                 }
                 else
                 {
@@ -2252,7 +2259,7 @@ void editor::parse_out_inline_img(content::path_info_t& ipath, QString& body)
     }
 
     // if any image was switched, change the body with the new img tags
-    if(changed)
+    if(changed != 0)
     {
         // get the document back in the form of a string (unfortunate...)
         body = doc.toString(-1);
@@ -2261,7 +2268,7 @@ void editor::parse_out_inline_img(content::path_info_t& ipath, QString& body)
 }
 
 
-bool editor::save_inline_image(content::path_info_t& ipath, QDomElement img, QString const& src)
+bool editor::save_inline_image(content::path_info_t& ipath, QDomElement img, QString const& src, QString const& force_filename)
 {
     static uint32_t g_index = 0;
 
@@ -2325,9 +2332,16 @@ bool editor::save_inline_image(content::path_info_t& ipath, QDomElement img, QSt
     //       function because we probably give access to other plugins
     //       to such a feature.
 
+    // by default we want to use the widget forced filename if defined
+    // otherwise use the user defined filename
+    QString filename(force_filename);
+
     // get the filename in lowercase, remove path, fix extension, make sure
     // it is otherwise acceptable...
-    QString filename(img.attribute("filename"));
+    if(filename.isEmpty())
+    {
+        filename = img.attribute("filename");
+    }
 
     // remove the path if there is one
     int const slash(filename.lastIndexOf('/'));
@@ -2383,7 +2397,7 @@ bool editor::save_inline_image(content::path_info_t& ipath, QDomElement img, QSt
     // user supplied filename is not considered valid, use a default name
     if(filename.isEmpty())
     {
-        filename = QString("image.%1").arg(type);
+        filename = QString("image.%1").arg(type == "jpeg" ? "jpg" : type);
     }
 //}
 
