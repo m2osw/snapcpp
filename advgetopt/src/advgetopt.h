@@ -121,18 +121,18 @@ public:
         argument_mode_t     f_arg_mode;
     };
 
-                    getopt(int argc, char *argv[], const option *opts, const std::vector<std::string> configuration_files, const char *environment_variable_name);
+                    getopt(int argc, char *argv[], option const *opts, const std::vector<std::string> configuration_files, char const *environment_variable_name);
 
-    void            reset(int argc, char *argv[], const option *opts, const std::vector<std::string> configuration_files, const char *environment_variable_name);
+    void            reset(int argc, char *argv[], option const *opts, const std::vector<std::string> configuration_files, char const *environment_variable_name);
 
     bool            is_defined(const std::string& name) const;
-    int             size(const std::string& name) const;
-    const char *    get_default(const std::string& name) const;
-    long            get_long(const std::string& name, int idx = 0, long min = std::numeric_limits<long>::min(), long max = std::numeric_limits<long>::max());
-    std::string     get_string(const std::string& name, int idx = 0) const;
+    int             size(std::string const& name) const;
+    char const *    get_default(std::string const& name) const;
+    long            get_long(std::string const& name, int idx = 0, long min = std::numeric_limits<long>::min(), long max = std::numeric_limits<long>::max());
+    std::string     get_string(std::string const& name, int idx = 0) const;
     std::string     get_program_name() const;
     std::string     get_program_fullname() const;
-    void            usage(status_t status, const char *msg, ...);
+    void            usage(status_t status, char const *msg, ...);
 
 private:
     struct optmap_info
@@ -142,16 +142,22 @@ private:
         std::vector<long>           f_int;
         std::vector<std::string>    f_val;
     };
-    typedef std::map<std::string, optmap_info> optmap_t;
+    typedef std::map<std::string, optmap_info>  optmap_t;
+    typedef std::map<char, int>                 short_opt_name_map_t;
+    typedef std::map<std::string, int>          long_opt_name_map_t;
 
-    void parse_arguments(int argc, char *argv[], const option *opts, int def_opt, std::map<char, int> opt_by_short_name, std::map<std::string, int> opt_by_long_name, bool only_environment_variable);
-    void add_options(const option *opt, int& i, int argc, char **argv);
-    void add_option(const option *opt, const char *value);
-    std::string assemble_options( status_t status, std::string& default_arg_help ) const;
+    void                parse_arguments(int argc, char *argv[], const option *opts, int def_opt,
+                                        short_opt_name_map_t opt_by_short_name,
+                                        long_opt_name_map_t opt_by_long_name,
+                                        bool only_environment_variable);
+    void                add_options(option const *opt, int& i, int argc, char **argv);
+    void                add_option(option const *opt, char const *value);
+    std::string         assemble_options( status_t status, std::string& default_arg_help ) const;
+    std::string         process_help_string( char const *help ) const;
 
     std::string         f_program_fullname;
     std::string         f_program_name;
-    const option *      f_options;
+    option const *      f_options;
     optmap_t            f_map;
 };
 

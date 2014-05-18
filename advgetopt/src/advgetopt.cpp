@@ -38,8 +38,8 @@
 #include    <string.h>
 
 #include    <fstream>
-#include		<iostream>
-#include		<iomanip>
+#include    <iostream>
+#include    <iomanip>
 #include    <sstream>
 
 
@@ -601,7 +601,9 @@ void getopt::reset(int argc, char *argv[], const option *opts, const std::vector
  * \param[in] opt_by_short_name  A map of all the command options by short name (one letter).
  * \param[in] opt_by_long_name  A map of all the command options by long name (--\<name\>).
  */
-void getopt::parse_arguments(int argc, char *argv[], const option *opts, int def_opt, std::map<char, int> opt_by_short_name, std::map<std::string, int> opt_by_long_name, bool only_environment_variable)
+void getopt::parse_arguments(int argc, char *argv[], const option *opts, int def_opt,
+                             short_opt_name_map_t opt_by_short_name, long_opt_name_map_t opt_by_long_name,
+                             bool only_environment_variable)
 {
     for(int i = 1; i < argc; ++i)
     {
@@ -991,6 +993,39 @@ std::string getopt::get_string(const std::string& name, int idx) const
 }
 
 
+/** \brief Change the %p in help strings in the program name.
+ *
+ * Because the same set of options may be used by different programs,
+ * having the usage directly in the list of options may break the
+ * usage name. So here we offer a dynamic way of changing the help
+ * string with "%p". For example:
+ *
+ * \code
+ *    "Usage: %p [-opt] filename ..."
+ * \endcode
+ */
+std::string getopt::process_help_string( char const *help ) const
+{
+    std::string result;
+
+    while(help[0] != '\0')
+    {
+        if(help[0] == '%' && help[1] == 'p')
+        {
+            result += f_program_name;
+            help += 2; // skip the % and p at the same time
+        }
+        else
+        {
+            result += help[0];
+            ++help;
+        }
+    }
+
+    return result;
+}
+
+
 /** \brief Assemble the cmdline arguments.
  *
  * Assembles the command line arguments into a string and returns
@@ -1019,7 +1054,7 @@ std::string getopt::assemble_options( status_t status, std::string& default_arg_
         {
             if( f_options[i].f_arg_mode == help_argument )
             {
-                ss << f_options[i].f_help << std::endl;
+                ss << process_help_string(f_options[i].f_help) << std::endl;
             }
             else
             {
@@ -1054,7 +1089,7 @@ std::string getopt::assemble_options( status_t status, std::string& default_arg_
                 else
                 {
                     //throw getopt_exception_invalid("an option has help but no option name");
-                    default_arg_help = f_options[i].f_help;
+                    default_arg_help = process_help_string(f_options[i].f_help);
                     continue;
                 }
                 switch(f_options[i].f_arg_mode)
@@ -1111,7 +1146,7 @@ std::string getopt::assemble_options( status_t status, std::string& default_arg_
                     ss << options;
                 }
                 //
-                ss << f_options[i].f_help << std::endl;
+                ss << process_help_string(f_options[i].f_help) << std::endl;
             }
         }
     }
@@ -1145,6 +1180,7 @@ void getopt::usage(status_t status, const char *msg, ...)
     if( !no_error_status )
     {
         errflag = GETOPT_FLAG_SHOW_USAGE_ON_ERROR;
+        char const *errstr(nullptr);
         switch(status)
         {
         // other cases are eliminated by the test before this if() block
@@ -1152,48 +1188,54 @@ void getopt::usage(status_t status, const char *msg, ...)
         //case no_error_nobr:
 
         case warning:
-            printf("warning:%s: ", f_program_name.c_str());
+            errstr = "warning";
             break;
 
         case fatal:
-            printf("fatal error:%s: ", f_program_name.c_str());
+            errstr = "fatal error";
             break;
 
         default: //case error:
-            printf("error:%s: ", f_program_name.c_str());
+            errstr = "error";
             break;
 
         }
-        vprintf(msg, ap);
-        printf(".\n");
+        std::cerr << errstr << ":" << f_program_name << ": ";
+        // TODO: fix that with some form of << or () operator support
+        vfprintf(stderr, msg, ap);
+        std::cerr << "." << std::endl;
     }
 
-    std::cout << std::endl << "usage: " << f_program_name;
-    //
-    if( !options.empty() )
-    {
-        std::cout << " [options]";
-    }
+    // To make use more customizable, we expect the user to enter some
+    // special help entries in his list of options
+    //std::cout << std::endl << "usage: " << f_program_name;
+    ////
+    //if( !options.empty() )
+    //{
+    //    std::cout << " [options]";
+    //}
+    //if( !default_arg_help.empty() )
+    //{
+    //    std::cout << " " << default_arg_help;
+    //}
+    //if( options.empty() )
+    //{
+    //    std::cout << std::endl;
+    //}
+    //else
+    //{
+    //    std::cout << std::endl << "options:" << std::endl;
+    //    std::cout << options;
+    //}
 
-    if( !default_arg_help.empty() )
-    {
-        std::cout << " " << default_arg_help;
-    }
-
-    if( options.empty() )
-    {
-        std::cout << std::endl;
-    }
-    else
-    {
-        std::cout << std::endl << "options:" << std::endl;
-        std::cout << options;
-    }
+    std::cout << options;
 
     // A little flush helps greatly under MS-Windows
     //
     std::cout << std::flush;
+
 #ifdef ADVGETOPT_THROW_FOR_EXIT
+    // for test purposes
     throw getopt_exception_exiting("usage was called, throwing an exception instead of calling exit(1)...");
 #else
     exit(1);
