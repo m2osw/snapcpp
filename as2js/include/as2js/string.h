@@ -68,7 +68,6 @@ public:
     };
 
                             String();
-                            String(String const& str);
                             String(char const *str, int len = -1);
                             String(wchar_t const *str, int len = -1);
                             String(as_char_t const *str, int len = -1);
@@ -76,7 +75,6 @@ public:
                             String(std::wstring const& str);
                             String(std::basic_string<as_char_t> const& str);
 
-    String&                 operator = (String const& str);
     String&                 operator = (char const *str);
     String&                 operator = (wchar_t const *str);
     String&                 operator = (as_char_t const *str);
@@ -87,7 +85,6 @@ public:
     bool                    operator == (char const *str) const;
     friend bool             operator == (char const *str, String const& string);
 
-    String&                 operator += (String const& str);
     String&                 operator += (char const *str);
     String&                 operator += (wchar_t const *str);
     String&                 operator += (as_char_t const *str);

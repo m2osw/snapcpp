@@ -64,7 +64,7 @@ struct type_name_t
 #define    NODE_TYPE_NAME(node)     { Node::NODE_##node, TO_STR_sub(node) }
 
 #if defined(_DEBUG) || defined(DEBUG)
-g_node_type_name_file_line = __LINE__; // for errors detected in this .cpp file
+int g_node_type_name_file_line = __LINE__; // for errors detected in this .cpp file
 #endif
 type_name_t const g_node_type_name[] =
 {
@@ -394,8 +394,8 @@ const char *Node::get_type_name() const
                 {
                     std::cerr << "INTERNAL ERROR at offset " << idx
                               << " (line ~#" << (idx + g_node_type_name_file_line + 5)
-                              << ", node type " << g_node_type_name[idx].f_type
-                              << " vs. " << g_node_type_name[idx - 1].f_type
+                              << ", node type " << static_cast<uint32_t>(g_node_type_name[idx].f_type)
+                              << " vs. " << static_cast<uint32_t>(g_node_type_name[idx - 1].f_type)
                               << "): the g_node_type_name table is not sorted properly. We cannot binary search it."
                               << std::endl;
                     throw exception_internal_error("INTERNAL ERROR: node type names not properly sorted, cannot properly search for names using a binary search.");
@@ -1296,8 +1296,8 @@ char const *Node::operator_to_string(node_t op)
                 {
                     std::cerr << "INTERNAL ERROR at offset " << idx
                               << " (line ~#" << (idx + g_operator_to_string_file_line + 5)
-                              << ", node type " << g_operator_to_string[idx].f_node
-                              << " vs. " << g_operator_to_string[idx - 1].f_node
+                              << ", node type " << static_cast<uint32_t>(g_operator_to_string[idx].f_node)
+                              << " vs. " << static_cast<uint32_t>(g_operator_to_string[idx - 1].f_node)
                               << "): the g_operator_to_string table isn't sorted properly. We can't binary search it."
                               << std::endl;
                     throw exception_internal_error("INTERNAL ERROR: node types not properly sorted, cannot properly search for operators using a binary search.");

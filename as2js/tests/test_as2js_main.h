@@ -42,8 +42,9 @@ SOFTWARE.
 namespace as2js_test
 {
 
-extern std::string   tmp_dir;
-extern std::string   as2js_compiler;
+extern  std::string     g_tmp_dir;
+extern  std::string     g_as2js_compiler;
+extern  bool            g_gui;
 
 class obj_setenv
 {

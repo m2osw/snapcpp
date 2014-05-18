@@ -58,8 +58,9 @@ SOFTWARE.
 namespace as2js_test
 {
 
-std::string   tmp_dir;
-std::string   as2js_compiler;
+std::string     g_tmp_dir;
+std::string     g_as2js_compiler;
+bool            g_gui = false;
 
 }
 
@@ -251,7 +252,7 @@ int unittest_main(int argc, char *argv[])
 
     if(opt.is_defined("version"))
     {
-        printf("%s\n", as2js::as2js_library_version());
+        std::cout << AS2JS_VERSION << std::endl;
         exit(1);
     }
 
@@ -276,20 +277,21 @@ int unittest_main(int argc, char *argv[])
         seed = static_cast<unsigned int>(opt.get_long("seed"));
     }
     srand(seed);
-    std::cout << opt.get_program_name() << "[" << getpid() << "]" << ": seed is " << seed << std::endl;
+    std::cout << opt.get_program_name() << "[" << getpid() << "]" << ": version " << AS2JS_VERSION << ", seed is " << seed << std::endl;
 
     if(opt.is_defined("tmp"))
     {
-        as2js_test::tmp_dir = opt.get_string("tmp");
+        as2js_test::g_tmp_dir = opt.get_string("tmp");
     }
     if(opt.is_defined("as2js"))
     {
-        as2js_test::as2js_compiler = opt.get_string("as2js");
+        as2js_test::g_as2js_compiler = opt.get_string("as2js");
     }
 
     if(opt.is_defined("gui"))
     {
 #ifdef HAVE_QT4
+        as2js_test::g_gui = true;
         QApplication app(argc, argv);
         QxCppUnit::TestRunner runner;
         add_tests(opt, runner);

@@ -42,20 +42,22 @@ SOFTWARE.
 class As2JsStringUnitTests : public CPPUNIT_NS::TestFixture
 {
     CPPUNIT_TEST_SUITE( As2JsStringUnitTests );
-        CPPUNIT_TEST( iso88591 );
-        CPPUNIT_TEST( utf8 );
-        CPPUNIT_TEST( utf16 );
-        CPPUNIT_TEST( utf32 );
+        CPPUNIT_TEST( constructor_iso88591 );
+        CPPUNIT_TEST( constructor_utf8 );
+        CPPUNIT_TEST( constructor_utf16 );
+        CPPUNIT_TEST( constructor_utf32 );
+        CPPUNIT_TEST( test_number );
     CPPUNIT_TEST_SUITE_END();
 
 public:
-    void setUp();
+    //void setUp();
 
 protected:
-    void iso88591();
-    void utf8();
-    void utf16();
-    void utf32();
+    void constructor_iso88591();
+    void constructor_utf8();
+    void constructor_utf16();
+    void constructor_utf32();
+    void test_number();
 };
 
 #endif

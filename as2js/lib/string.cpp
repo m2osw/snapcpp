@@ -54,16 +54,6 @@ String::String()
 }
 
 
-/** \brief Copy a string in this string.
- *
- * This function initializes a string as a copy of another string.
- */
-String::String(String const& str)
-    : basic_string(str)
-{
-}
-
-
 /** \brief Create a string from the specified input string.
  *
  * This function creates a string and initializes it with the specified
@@ -175,22 +165,6 @@ String::String(std::basic_string<as_char_t> const& str)
 
 /** \brief Copy str in this String.
  *
- * This function makes a copy of str in this string.
- *
- * \param[in] str  The input string to copy in this String.
- *
- * \return A reference to this string.
- */
-String& String::operator = (String const& str)
-{
-    // use basic string implementation as is
-    basic_string<as_char_t>::operator = (str);
-    return *this;
-}
-
-
-/** \brief Copy str in this String.
- *
  * This function copies str in this String. The string is viewed as
  * ISO-8859-1. If another format is expected, make sure to use the
  * proper function.
@@ -276,22 +250,6 @@ String& String::operator = (std::basic_string<as_char_t> const& str)
 
 /** \brief Append str to this String.
  *
- * This function appends str in this string.
- *
- * \param[in] str  The input string to append to this String.
- *
- * \return A reference to this string.
- */
-String& String::operator += (String const& str)
-{
-    // use basic string implementation as is
-    basic_string<as_char_t>::operator += (str);
-    return *this;
-}
-
-
-/** \brief Append str to this String.
- *
  * This function appends str to this String. The string is viewed as
  * ISO-8859-1. If another format is expected, make sure to use the
  * proper function.
@@ -312,7 +270,9 @@ String& String::operator += (char const *str)
  *
  * This function appends str to this String. The string is viewed as
  * UTF-16. If another format is expected, make sure to use the
- * proper function.
+ * proper function. Note that under Operating Systems where wchar_t
+ * is 4 bytes, the input is UTF-32, although if a pair of valid surrogates
+ * are found, they still get converted.
  *
  * \param[in] str  The string to append to this String.
  *
@@ -322,6 +282,23 @@ String& String::operator += (wchar_t const *str)
 {
     String s(str);
     basic_string<as_char_t>::operator += (s);
+    return *this;
+}
+
+
+/** \brief Append str to this String.
+ *
+ * This function appends str to this String. The string is viewed as
+ * UTF-32. If another format is expected, make sure to use the
+ * proper function.
+ *
+ * \param[in] str  The string to append to this String.
+ *
+ * \return A reference to this string.
+ */
+String& String::operator += (as_char_t const *str)
+{
+    basic_string<as_char_t>::operator += (str);
     return *this;
 }
 
@@ -374,8 +351,7 @@ String& String::operator += (std::wstring const& str)
  */
 String& String::operator += (std::basic_string<as_char_t> const& str)
 {
-    String s(str);
-    basic_string<as_char_t>::operator += (s);
+    basic_string<as_char_t>::operator += (str);
     return *this;
 }
 
@@ -409,7 +385,7 @@ String& String::operator += (as_char_t const c)
  */
 String& String::operator += (char const c)
 {
-    basic_string<as_char_t>::operator += (static_cast<as_char_t>(c));
+    basic_string<as_char_t>::operator += (static_cast<as_char_t>(static_cast<unsigned char>(c)));
     return *this;
 }
 
@@ -430,7 +406,15 @@ String& String::operator += (char const c)
  */
 String& String::operator += (wchar_t const c)
 {
-    basic_string<as_char_t>::operator += (static_cast<as_char_t>(c));
+    // TODO: cannot add surrogate in this way?
+    //       (under MS-Windows, where wchar_t is 16 bits, this would be
+    //       the only way to add large characters with wchar_t... we could
+    //       save leads and when a tail arrives convert the character, but
+    //       that's rather unsafe...)
+    if(valid_character(c))
+    {
+        basic_string<as_char_t>::operator += (static_cast<as_char_t>(c));
+    }
     return *this;
 }
 
@@ -676,6 +660,8 @@ String::conversion_result_t String::from_utf8(char const *str, int len)
                 l = 3;
                 w = c & 0x07;
             }
+            // The following are not valid UTF-8 characters, these are
+            // refused below as we verify the validity of the character
             else if(c >= 0xF8 && c <= 0xFB)
             {
                 l = 4;
