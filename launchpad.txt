@@ -19,8 +19,20 @@ dput ppa:snapcpp/ppa foo.changes
 cd foo
 debuild -S -sa -k'your name <email>'
 cd ..
-debuilder saucy build foo_<version>~saucy.dsc
+pbuilder-dist saucy build foo_<version>~saucy.dsc
 
+# See the resulting files in:   ~/pbuilder/saucy_result/...
+
+
+
+# To build many different packages, you need to make the first packages
+# available to the next build process; to do so you first want to send
+# the package to your PPA, see:
+#   http://snapwebsites.net/info/our-adventure-installing-our-own-ppa
+# and then add the PPA URL to your build environment:
+pbuilder-dist saucy login --save-after-login
+sudo vim /etc/apt/sources.list.d/
+apt-get update
 
 
 When installing pbuilder you get the following tools installed
