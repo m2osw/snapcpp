@@ -67,6 +67,22 @@ namespace
     const advgetopt::getopt::option g_snaplayout_options[] =
     {
         {
+            '\0',
+            advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
+            NULL,
+            NULL,
+            "Usage: %p [-<opt>] <layout filename> ...",
+            advgetopt::getopt::help_argument
+        },
+        {
+            '\0',
+            advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
+            NULL,
+            NULL,
+            "where -<opt> is one or more of:",
+            advgetopt::getopt::help_argument
+        },
+        {
             '?',
             advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
             "help",

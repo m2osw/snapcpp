@@ -65,6 +65,22 @@ namespace
     advgetopt::getopt::option const g_snapinit_options[] =
     {
         {
+            '\0',
+            advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
+            NULL,
+            NULL,
+            "Usage: %p [-<opt>] <start|restart|stop|>",
+            advgetopt::getopt::help_argument
+        },
+        {
+            '\0',
+            advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
+            NULL,
+            NULL,
+            "where -<opt> is one or more of:",
+            advgetopt::getopt::help_argument
+        },
+        {
             'a',
             advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
             "all",

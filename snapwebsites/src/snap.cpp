@@ -79,7 +79,23 @@ namespace
     {
         {
             '\0',
-            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_CONFIGURATION_FILE,
+            advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
+            NULL,
+            NULL,
+            "Usage: %p [-<opt>]",
+            advgetopt::getopt::help_argument
+        },
+        {
+            '\0',
+            advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
+            NULL,
+            NULL,
+            "where -<opt> is one or more of:",
+            advgetopt::getopt::help_argument
+        },
+        {
+            '\0',
+            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_CONFIGURATION_FILE | advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
             "snapserver",
             NULL,
             "IP address on which the snapserver is running, it may include a port (i.e. 192.168.0.1:4004)",
@@ -87,7 +103,7 @@ namespace
         },
         {
             '\0',
-            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_CONFIGURATION_FILE,
+            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_CONFIGURATION_FILE | advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
             "logconfig",
             "/etc/snapwebsites/snapcgilog.conf",
             "Full path of log configuration file",

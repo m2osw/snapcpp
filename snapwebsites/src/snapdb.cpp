@@ -59,6 +59,22 @@ namespace
         {
             '\0',
             advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
+            NULL,
+            NULL,
+            "Usage: %p [-<opt>] [table [row]]",
+            advgetopt::getopt::help_argument
+        },
+        {
+            '\0',
+            advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
+            NULL,
+            NULL,
+            "where -<opt> is one or more of:",
+            advgetopt::getopt::help_argument
+        },
+        {
+            '\0',
+            advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
             "help",
             NULL,
             "show this help output",
@@ -66,7 +82,7 @@ namespace
         },
         {
             '\0',
-            advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
+            0,
             "context",
             NULL,
             "name of the context from which to read",
@@ -74,7 +90,7 @@ namespace
         },
         {
             '\0',
-            advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
+            0,
             "count",
             NULL,
             "specify the number of rows to display",
@@ -82,7 +98,7 @@ namespace
         },
         {
             '\0',
-            advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
+            0,
             "drop-tables",
             NULL,
             "drop all the content tables of the specified context",
@@ -90,7 +106,7 @@ namespace
         },
         {
             '\0',
-            advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
+            0,
             "drop-all-tables",
             NULL,
             "drop absolutely all the tables",
@@ -98,7 +114,7 @@ namespace
         },
         {
             '\0',
-            advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
+            0,
             "yes-i-know-what-im-doing",
             NULL,
             "Force the dropping of tables, without warning and stdin prompt. Only use this if you know what you're doing!",
