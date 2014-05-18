@@ -14,3 +14,88 @@ dput ppa:snapcpp/ppa foo.changes
 # Note: you need to be part of the snapcpp project to have dput permissions
 #       and get that to work
 
+
+# To build on your own computer:
+cd foo
+debuild -S -sa -k'your name <email>'
+cd ..
+debuilder saucy build foo_<version>~saucy.dsc
+
+
+
+When installing pbuilder you get the following tools installed
+(probably much more if you have pristine system). These tools
+are used to build packages and ISOs thereof. I put the list here
+so I know where to look this or that while building things.
+
+/usr/bin
+/usr/bin/404main
+/usr/bin/backportpackage
+/usr/bin/bitesize
+/usr/bin/bzr-buildpackage
+/usr/bin/changestool
+/usr/bin/check-mir
+/usr/bin/check-symbols
+/usr/bin/cowbuilder-dist
+/usr/bin/debuild-pbuilder
+/usr/bin/deb3
+/usr/bin/debian-distro-info
+/usr/bin/dch-repeat
+/usr/bin/dh_pysupport
+/usr/bin/dh_quilt_patch
+/usr/bin/dh_quilt_unpatch
+/usr/bin/distro-info
+/usr/bin/doveadm
+/usr/bin/doveconf
+/usr/bin/dsync
+/usr/bin/grab-merge
+/usr/bin/grep-merges
+/usr/bin/guards
+/usr/bin/harvest
+/usr/bin/hugdaylist
+/usr/bin/import-bug-from-debian
+/usr/bin/maildirmake.dovecot
+/usr/bin/merge-changelog
+/usr/bin/mk-sbuild
+/usr/bin/pbuilder-dist
+/usr/bin/pbuilder-dist-simple
+/usr/bin/pbzip2
+/usr/bin/pdebuild
+/usr/bin/pristine-bz2
+/usr/bin/pristine-gz
+/usr/bin/pristine-tar
+/usr/bin/pristine-xz
+/usr/bin/pull-debian-debdiff
+/usr/bin/pull-debian-source
+/usr/bin/pull-lp-source
+/usr/bin/pull-revu-source
+/usr/bin/querybts
+/usr/bin/quilt
+/usr/bin/reportbug
+/usr/bin/reprepro
+/usr/bin/requestbackport
+/usr/bin/requestsync
+/usr/bin/reverse-build-depends
+/usr/bin/reverse-depends
+/usr/bin/rredtool
+/usr/bin/seeded-in-ubuntu
+/usr/bin/setup-packaging-environment
+/usr/bin/sponsor-patch
+/usr/bin/submittodebian
+/usr/bin/syncpackage
+/usr/bin/ubuntu-build
+/usr/bin/ubuntu-distro-info
+/usr/bin/ubuntu-iso
+/usr/bin/update-maintainer
+/usr/bin/ubuntu-upload-permission
+/usr/bin/xdelta
+/usr/bin/xdelta-config
+/usr/bin/xml2-config
+/usr/bin/xmlcatalog
+/usr/bin/xmllint
+/usr/bin/zgz
+
+
+
+
+
