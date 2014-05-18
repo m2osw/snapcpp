@@ -49,10 +49,10 @@ public:
     typedef int32_t     counter_t;
     typedef controlled_vars::auto_init<counter_t, 1>    zcounter_t;
 
-                        Position();
-                        Position(Position const& rhs);
-
-    Position&           operator = (Position const& rhs);
+//                        Position();
+//                        Position(Position const& rhs);
+//
+//    Position&           operator = (Position const& rhs);
 
     void                set_filename(String const& filename);
     void                set_function(String const& function);

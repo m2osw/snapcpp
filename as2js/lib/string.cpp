@@ -1177,6 +1177,6 @@ std::ostream& operator << (std::ostream& out, String const& str)
 
 
 }
-// namespace as
+// namespace as2js
 
 // vim: ts=4 sw=4 et

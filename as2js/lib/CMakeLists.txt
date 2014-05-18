@@ -5,7 +5,7 @@
 # Copyright:    Copyright (c) 2005-2013 Made to Order Software Corp.
 #               All Rights Reserved.
 #
-# http://snapwebsites.org/
+# http://snapwebsites.org/project/as2js
 # contact@m2osw.com
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -27,19 +27,52 @@
 # THE SOFTWARE.
 #
 
-project(as2js_include)
-
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/as2js/as2js.h.in ${CMAKE_CURRENT_BINARY_DIR}/as2js/as2js.h)
-
-install(
-    DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/as2js
-    DESTINATION include
-    COMPONENT development
+##
+## AS to JavaScript library
+##
+project(libas2js)
+include_directories(
+    ${CONTROLLEDVARS_INCLUDE_DIR}
+    ${as2js_compiler_BINARY_DIR}/include
+    ${as2js_compiler_SOURCE_DIR}/include
 )
 
+add_library( as2js SHARED
+    class.cpp
+    db.cpp
+    directive.cpp
+    expression.cpp
+    function.cpp
+    json.cpp
+    lexer.cpp
+    message.cpp
+    node.cpp
+    optimizer.cpp
+    options.cpp
+    package.cpp
+    position.cpp
+    pragma.cpp
+    program.cpp
+    statement.cpp
+    stream.cpp
+    string.cpp
+    parser.cpp
+    variable.cpp
+    rc.cpp
+    version.cpp
+
+    #compile.cpp
+    #compiler.cpp
+)
+set_target_properties( as2js PROPERTIES
+        VERSION ${AS2JS_VERSION_MAJOR}.${AS2JS_VERSION_MINOR}
+        SOVERSION ${AS2JS_VERSION_MAJOR}
+)
 install(
-    DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/as2js
-    DESTINATION include
-    COMPONENT development
+    TARGETS as2js
+    LIBRARY DESTINATION lib
+    COMPONENT runtime
 )
 
+
+# vim: ts=4 sw=4 et

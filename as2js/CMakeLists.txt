@@ -2,10 +2,10 @@
 # File:         CMakeLists.txt
 # Object:       Definitions to create the build environment with cmake
 #
-# Copyright:    Copyright (c) 2005-2013 Made to Order Software Corp.
+# Copyright:    Copyright (c) 2005-2014 Made to Order Software Corp.
 #               All Rights Reserved.
 #
-# http://snapwebsites.org/
+# http://snapwebsites.org/project/as2js
 # contact@m2osw.com
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -75,9 +75,10 @@ find_package( ControlledVars   REQUIRED )
 find_package( SnapCMakeModules REQUIRED )
 
 add_subdirectory( include )
+add_subdirectory( lib )
 add_subdirectory( src )
 #add_subdirectory( doc )
-#add_subdirectory( tests )
+add_subdirectory( tests )
 #add_subdirectory( package )
 
 # vim: ts=4 sw=4 et

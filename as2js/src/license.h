@@ -1,6 +1,6 @@
-#ifndef AS2JS_AS2JS_H
-#define AS2JS_AS2JS_H
-/* as.h -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
+#ifndef AS2JS_LICENSE_H
+#define AS2JS_LICENSE_H
+/* license.h -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
 
 /*
 
@@ -35,22 +35,26 @@ SOFTWARE.
 
 */
 
-namespace as2js
+/** \file
+ * \brief Declaration of the license function.
+ *
+ * This header defines the license function so all our tools can display
+ * the same license without the need for us to redefine the license in each
+ * tool.
+ */
+
+namespace as2js_tools
+{
+namespace license
 {
 
-
-#define AS2JS_VERSION_MAJOR    @AS2JS_VERSION_MAJOR@
-#define AS2JS_VERSION_MINOR    @AS2JS_VERSION_MINOR@
-#define AS2JS_VERSION_PATCH    @AS2JS_VERSION_PATCH@
-#define AS2JS_VERSION          "@AS2JS_VERSION_MAJOR@.@AS2JS_VERSION_MINOR@.@AS2JS_VERSION_PATCH@"
-
-
-char const *        as2js_library_version();
-
+void license();
 
 }
-// namespace as2js
-#endif
-// #ifndef AS2JS_AS2JS_H
+// namespace license
+}
+// namespace as2js_tools
 
+#endif
+// #ifndef AS2JS_LICENSE_H
 // vim: ts=4 sw=4 et

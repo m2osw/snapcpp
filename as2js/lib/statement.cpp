@@ -756,6 +756,6 @@ void Parser::with_while(Node::pointer_t& node, Node::node_t type)
 
 
 }
-// namespace as
+// namespace as2js
 
 // vim: ts=4 sw=4 et

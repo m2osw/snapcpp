@@ -1,6 +1,6 @@
-#ifndef AS2JS_AS2JS_H
-#define AS2JS_AS2JS_H
-/* as.h -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
+#ifndef TEST_AS2JS_STRING_H
+#define TEST_AS2JS_STRING_H
+/* stream.h -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
 
 /*
 
@@ -35,22 +35,28 @@ SOFTWARE.
 
 */
 
-namespace as2js
+
+#include <cppunit/extensions/HelperMacros.h>
+
+
+class As2JsStringUnitTests : public CPPUNIT_NS::TestFixture
 {
+    CPPUNIT_TEST_SUITE( As2JsStringUnitTests );
+        CPPUNIT_TEST( iso88591 );
+        CPPUNIT_TEST( utf8 );
+        CPPUNIT_TEST( utf16 );
+        CPPUNIT_TEST( utf32 );
+    CPPUNIT_TEST_SUITE_END();
 
+public:
+    void setUp();
 
-#define AS2JS_VERSION_MAJOR    @AS2JS_VERSION_MAJOR@
-#define AS2JS_VERSION_MINOR    @AS2JS_VERSION_MINOR@
-#define AS2JS_VERSION_PATCH    @AS2JS_VERSION_PATCH@
-#define AS2JS_VERSION          "@AS2JS_VERSION_MAJOR@.@AS2JS_VERSION_MINOR@.@AS2JS_VERSION_PATCH@"
+protected:
+    void iso88591();
+    void utf8();
+    void utf16();
+    void utf32();
+};
 
-
-char const *        as2js_library_version();
-
-
-}
-// namespace as2js
 #endif
-// #ifndef AS2JS_AS2JS_H
-
 // vim: ts=4 sw=4 et

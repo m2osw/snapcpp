@@ -270,6 +270,6 @@ void Parser::pragma_option(Options::option_t option, bool prima, Node::pointer_t
 
 
 }
-// namespace as
+// namespace as2js
 
 // vim: ts=4 sw=4 et

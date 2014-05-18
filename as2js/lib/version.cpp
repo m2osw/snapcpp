@@ -1,6 +1,4 @@
-#ifndef AS2JS_AS2JS_H
-#define AS2JS_AS2JS_H
-/* as.h -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
+/* version.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
 
 /*
 
@@ -35,22 +33,42 @@ SOFTWARE.
 
 */
 
+#include    "as2js/as2js.h"
+
+#include    <iostream>
+
 namespace as2js
 {
 
-
-#define AS2JS_VERSION_MAJOR    @AS2JS_VERSION_MAJOR@
-#define AS2JS_VERSION_MINOR    @AS2JS_VERSION_MINOR@
-#define AS2JS_VERSION_PATCH    @AS2JS_VERSION_PATCH@
-#define AS2JS_VERSION          "@AS2JS_VERSION_MAJOR@.@AS2JS_VERSION_MINOR@.@AS2JS_VERSION_PATCH@"
-
-
-char const *        as2js_library_version();
+/** \brief Return the library version.
+ *
+ * This function can be used to get the current version of the as2js
+ * library. It returns a string of the form:
+ *
+ * \code
+ * <major>.<minor>.<release>
+ * \endcode
+ *
+ * where each entry is a number (only numerics are used.)
+ *
+ * Note that this is different from using the AS2JS_VERSION macro
+ * (defined in as2js.h) in that the macro defines the version you
+ * are compiling against and not automatically the version that
+ * your code will run against.
+ *
+ * \todo
+ * Add another function that checks whether your code is compatible
+ * with this library.
+ *
+ * \return The version of the loaded library.
+ */
+char const *as2js_library_version()
+{
+	return AS2JS_VERSION;
+}
 
 
 }
 // namespace as2js
-#endif
-// #ifndef AS2JS_AS2JS_H
 
 // vim: ts=4 sw=4 et

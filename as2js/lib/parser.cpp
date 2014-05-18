@@ -102,6 +102,6 @@ void Parser::unget_token(Node::pointer_t& node)
 
 
 }
-// namespace as
+// namespace as2js
 
 // vim: ts=4 sw=4 et

@@ -1,6 +1,6 @@
-#ifndef AS2JS_AS2JS_H
-#define AS2JS_AS2JS_H
-/* as.h -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
+#ifndef TEST_AS2JS_MAIN_H
+#define TEST_AS2JS_MAIN_H
+/* test_as2js_main.h -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
 
 /*
 
@@ -34,23 +34,41 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
+#include <string>
+#include <cstring>
+#include <cstdlib>
 
-namespace as2js
+
+namespace as2js_test
 {
 
+extern std::string   tmp_dir;
+extern std::string   as2js_compiler;
 
-#define AS2JS_VERSION_MAJOR    @AS2JS_VERSION_MAJOR@
-#define AS2JS_VERSION_MINOR    @AS2JS_VERSION_MINOR@
-#define AS2JS_VERSION_PATCH    @AS2JS_VERSION_PATCH@
-#define AS2JS_VERSION          "@AS2JS_VERSION_MAJOR@.@AS2JS_VERSION_MINOR@.@AS2JS_VERSION_PATCH@"
+class obj_setenv
+{
+public:
+	obj_setenv(const std::string& var)
+		: f_copy(strdup(var.c_str()))
+	{
+		putenv(f_copy);
+		std::string::size_type p(var.find_first_of('='));
+		f_name = var.substr(0, p);
+	}
+	~obj_setenv()
+	{
+		putenv(strdup((f_name + "=").c_str()));
+		free(f_copy);
+	}
 
-
-char const *        as2js_library_version();
-
+private:
+	char *		f_copy;
+	std::string	f_name;
+};
 
 }
-// namespace as2js
+// namespace as2js_test
 #endif
-// #ifndef AS2JS_AS2JS_H
+// #ifdef TEST_AS2JS_MAIN_H
 
 // vim: ts=4 sw=4 et

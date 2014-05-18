@@ -53,7 +53,7 @@ enum compare_t
 
 namespace compare_utils
 {
-bool is_ordered(compare_t const c)
+inline bool is_ordered(compare_t const c)
 {
     return c == COMPARE_EQUAL || c == COMPARE_GREATER || c == COMPARE_LESS;
 }

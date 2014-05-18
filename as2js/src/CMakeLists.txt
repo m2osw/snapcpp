@@ -28,71 +28,35 @@
 #
 
 ##
-## AS to JavaScript library
+## AS to JavaScript tools
 ##
-project(libas2js)
+project(as2js-compiler)
+
 include_directories(
     ${CONTROLLEDVARS_INCLUDE_DIR}
+    ${ADVGETOPT_INCLUDE_DIR}
     ${as2js_compiler_BINARY_DIR}/include
     ${as2js_compiler_SOURCE_DIR}/include
+    ${as2js_SOURCE_DIR}
 )
-
-add_library(as2js SHARED
-    class.cpp
-    directive.cpp
-    expression.cpp
-    function.cpp
-    lexer.cpp
-    message.cpp
-    node.cpp
-    optimizer.cpp
-    options.cpp
-    package.cpp
-    position.cpp
-    pragma.cpp
-    program.cpp
-    statement.cpp
-    stream.cpp
-    string.cpp
-    parser.cpp
-    variable.cpp
-    rc.cpp
-
-    json.cpp
-
-    db.cpp
-    compile.cpp
-    compiler.cpp
+add_executable(${PROJECT_NAME}
+    as2js.cpp
+    license.cpp
 )
-set_target_properties( as2js PROPERTIES
-        VERSION ${AS2JS_VERSION_MAJOR}.${AS2JS_VERSION_MINOR}
-        SOVERSION ${AS2JS_VERSION_MAJOR}
-        )
+target_link_libraries(${PROJECT_NAME}
+    as2js
+    ${ADVGETOPT_LIBRARIES}
+)
+set_target_properties(${PROJECT_NAME} PROPERTIES
+    OUTPUT_NAME as2js
+    VERSION ${AS2JS_VERSION_MAJOR}.${AS2JS_VERSION_MINOR}
+    SOVERSION ${AS2JS_VERSION_MAJOR}
+)
 install(
-    TARGETS as2js
-    LIBRARY DESTINATION lib
+    TARGETS ${PROJECT_NAME}
+    DESTINATION bin
     COMPONENT runtime
 )
 
-
-##
-## as2js command line tool
-##
-#project(validate_tld)
-#include_directories(
-#    ${tld_library_BINARY_DIR}/include
-#    ${tld_library_SOURCE_DIR}/include
-#)
-#add_executable(${PROJECT_NAME}
-#    validate_tld.cpp
-#)
-#target_link_libraries(${PROJECT_NAME}
-#    tld
-#)
-#install(
-#    TARGETS ${PROJECT_NAME}
-#    RUNTIME DESTINATION bin
-#    COMPONENT runtime
-#)
 
 # vim: ts=4 sw=4 et
