@@ -1,3 +1,9 @@
+snapwebsites (0.1.51~saucy) UNRELEASED; urgency=low
+
+  * Small fix to the simplified DTD for XSLT 2.0 linter.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Mon, 19 May 2014 12:38:00 -0700
+
 snapwebsites (0.1.51~saucy) saucy; urgency=high
 
   [ Alexis Wilke ]
