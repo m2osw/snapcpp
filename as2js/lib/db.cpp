@@ -263,7 +263,7 @@ bool Database::load(String const& filename)
     }
 
     // there is a db, load it
-    f_value = f_json->load(filename);
+    f_value = f_json->parse(in);
     if(!f_value)
     {
         return false;

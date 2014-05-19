@@ -353,6 +353,26 @@ void As2JsStringUnitTests::test_iso88591()
         CPPUNIT_ASSERT("" == str8);
         CPPUNIT_ASSERT(str8 == "");
         CPPUNIT_ASSERT(str8.valid());
+
+        char const *null_char_ptr(nullptr);
+        as2js::String str9(null_char_ptr, 4);
+        CPPUNIT_ASSERT(&(str9 = "") == &str9);
+        CPPUNIT_ASSERT(str9.empty());
+        CPPUNIT_ASSERT(str9.length() == 0);
+        CPPUNIT_ASSERT(str9.utf8_length() == 0);
+        CPPUNIT_ASSERT("" == str9);
+        CPPUNIT_ASSERT(str9 == "");
+        CPPUNIT_ASSERT(str9.valid());
+
+        as2js::String str10;
+        str10.from_char(null_char_ptr, 6);
+        CPPUNIT_ASSERT(&(str10 = "") == &str10);
+        CPPUNIT_ASSERT(str10.empty());
+        CPPUNIT_ASSERT(str10.length() == 0);
+        CPPUNIT_ASSERT(str10.utf8_length() == 0);
+        CPPUNIT_ASSERT("" == str10);
+        CPPUNIT_ASSERT(str10 == "");
+        CPPUNIT_ASSERT(str10.valid());
     }
 
     // characters between 0x80 and 0xBF are only to chain UTF-8
@@ -644,6 +664,19 @@ void As2JsStringUnitTests::test_utf8()
     // all the other contructor tests verify that they do not support
     // UTF-8; there are no UTF-8 constructors actually, so here all
     // we can test is the from_utf8().
+
+    {
+        char const *null_char_ptr(nullptr);
+        as2js::String str1;
+        str1.from_utf8(null_char_ptr, 3);
+        CPPUNIT_ASSERT(&(str1 = "") == &str1);
+        CPPUNIT_ASSERT(str1.empty());
+        CPPUNIT_ASSERT(str1.length() == 0);
+        CPPUNIT_ASSERT(str1.utf8_length() == 0);
+        CPPUNIT_ASSERT("" == str1);
+        CPPUNIT_ASSERT(str1 == "");
+        CPPUNIT_ASSERT(str1.valid());
+    }
 
     // first check a few small strings
     for(int i(0); i < 10; ++i)
@@ -938,6 +971,28 @@ void As2JsStringUnitTests::test_utf8()
 
 void As2JsStringUnitTests::test_utf16()
 {
+    {
+        wchar_t const *null_wchar_ptr(nullptr);
+        as2js::String str1(null_wchar_ptr, 4);
+        CPPUNIT_ASSERT(&(str1 = "") == &str1);
+        CPPUNIT_ASSERT(str1.empty());
+        CPPUNIT_ASSERT(str1.length() == 0);
+        CPPUNIT_ASSERT(str1.utf8_length() == 0);
+        CPPUNIT_ASSERT("" == str1);
+        CPPUNIT_ASSERT(str1 == "");
+        CPPUNIT_ASSERT(str1.valid());
+
+        as2js::String str2;
+        str2.from_wchar(null_wchar_ptr, 6);
+        CPPUNIT_ASSERT(&(str2 = "") == &str2);
+        CPPUNIT_ASSERT(str2.empty());
+        CPPUNIT_ASSERT(str2.length() == 0);
+        CPPUNIT_ASSERT(str2.utf8_length() == 0);
+        CPPUNIT_ASSERT("" == str2);
+        CPPUNIT_ASSERT(str2 == "");
+        CPPUNIT_ASSERT(str2.valid());
+    }
+
     // check all the characters (Except '\0' and surrogates)
     for(int i(1); i < 0x110000; ++i)
     {
@@ -1162,6 +1217,28 @@ void As2JsStringUnitTests::test_utf16()
 
 void As2JsStringUnitTests::test_utf32()
 {
+    {
+        as2js::as_char_t const *null_char32_ptr(nullptr);
+        as2js::String str1(null_char32_ptr, 9);
+        CPPUNIT_ASSERT(&(str1 = "") == &str1);
+        CPPUNIT_ASSERT(str1.empty());
+        CPPUNIT_ASSERT(str1.length() == 0);
+        CPPUNIT_ASSERT(str1.utf8_length() == 0);
+        CPPUNIT_ASSERT("" == str1);
+        CPPUNIT_ASSERT(str1 == "");
+        CPPUNIT_ASSERT(str1.valid());
+
+        as2js::String str2;
+        str2.from_as_char(null_char32_ptr, 6);
+        CPPUNIT_ASSERT(&(str2 = "") == &str2);
+        CPPUNIT_ASSERT(str2.empty());
+        CPPUNIT_ASSERT(str2.length() == 0);
+        CPPUNIT_ASSERT(str2.utf8_length() == 0);
+        CPPUNIT_ASSERT("" == str2);
+        CPPUNIT_ASSERT(str2 == "");
+        CPPUNIT_ASSERT(str2.valid());
+    }
+
     // check all the characters (Except '\0' and surrogates)
     for(int i(1); i < 0x110000; ++i)
     {

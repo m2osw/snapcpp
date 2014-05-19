@@ -299,7 +299,7 @@ result.Display(stderr);
 Node::pointer_t Compiler::load_module(char const *module, char const *file)
 {
     // create the path to the module
-    String path(g_rc.get_path());
+    String path(g_rc.get_scripts());
     path += "/";
     path += module;
     path += "/";
@@ -429,7 +429,7 @@ void Compiler::load_internal_packages(char const *module)
 {
     // TODO: create sub-class to handle the directory
 
-    std::string path(g_rc.get_path().to_utf8());
+    std::string path(g_rc.get_scripts().to_utf8());
     path += "/";
     path += module;
     DIR *dir(opendir(path.c_str()));
@@ -484,16 +484,13 @@ void Compiler::InternalImports()
     if(!g_global_import)
     {
         // read the resource file
-        g_rc.find_rc(static_cast<bool>(f_input_retriever));
-        g_rc.read_rc();
-        g_rc.close();
+        g_rc.init_rc(static_cast<bool>(f_input_retriever));
 
         g_global_import = load_module("global", "as_init.js");
         g_system_import = load_module("system", "as_init.js");
         g_native_import = load_module("native", "as_init.js");
     }
 
-    //ReadDB();
     f_db->load(g_rc.get_db());
 
     if(f_db_count == 0)

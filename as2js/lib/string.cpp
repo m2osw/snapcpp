@@ -66,6 +66,10 @@ String::String()
  * Note that we cannot include '\0' characters in our strings. This function
  * stops at the first null terminator no matter what.
  *
+ * \note
+ * The \p str pointer can be set to nullptr in which case the string is
+ * considered empty.
+ *
  * \param[in] str  A string, if not null terminated, make sure to define the size.
  * \param[in] len  The length of the string, if -1, expect a '\0'.
  */
@@ -87,6 +91,10 @@ String::String(char const *str, int len)
  * Note that we cannot include '\0' characters in our strings. This function
  * stops at the first null terminator no matter what.
  *
+ * \note
+ * The \p str pointer can be set to nullptr in which case the string is
+ * considered empty.
+ *
  * \param[in] str  A string, if not null terminated, make sure to define the size.
  * \param[in] len  The length of the string, if -1, expect a '\0'.
  */
@@ -106,6 +114,10 @@ String::String(wchar_t const *str, int len)
  *
  * Note that we cannot include '\0' characters in our strings. This function
  * stops at the first null terminator no matter what.
+ *
+ * \note
+ * The \p str pointer can be set to nullptr in which case the string is
+ * considered empty.
  *
  * \param[in] str  A string, if not null terminated, make sure to define the size.
  * \param[in] len  The length of the string, if -1, expect a '\0'.
@@ -428,6 +440,10 @@ String& String::operator += (wchar_t const c)
  *
  * The \p len parameter can be used to limit the length of the copy.
  *
+ * \note
+ * This function can be called with a nullptr in \p str, in which
+ * case the string is considered empty.
+ *
  * \param[in] str  The input string to copy in this string.
  * \param[in] len  The maximum number of characters to copy, if -1, copy
  *                 up to the next null ('\0') character.
@@ -438,18 +454,21 @@ String& String::operator += (wchar_t const c)
 String::conversion_result_t String::from_char(char const *str, int len)
 {
     clear();
-    if(len == -1)
+    if(str != nullptr)
     {
-        for(; *str != '\0'; ++str)
+        if(len == -1)
         {
-            append(1, static_cast<unsigned char>(*str));
+            for(; *str != '\0'; ++str)
+            {
+                append(1, static_cast<unsigned char>(*str));
+            }
         }
-    }
-    else
-    {
-        for(; len > 0 && *str != '\0'; --len, ++str)
+        else
         {
-            append(1, static_cast<unsigned char>(*str));
+            for(; len > 0 && *str != '\0'; --len, ++str)
+            {
+                append(1, static_cast<unsigned char>(*str));
+            }
         }
     }
 
@@ -467,6 +486,10 @@ String::conversion_result_t String::from_char(char const *str, int len)
  *
  * \note
  * This string is not modified if the input is not valid.
+ *
+ * \note
+ * This function can be called with a nullptr in \p str, in which
+ * case the string is considered empty.
  *
  * \param[in] str  The input string to copy in this string.
  * \param[in] len  The maximum number of characters to copy, if -1, copy
@@ -515,25 +538,28 @@ String::conversion_result_t String::from_wchar(wchar_t const *str, int len)
 
     out o;
     String::conversion_result_t result(STRING_GOOD);
-    if(len == -1)
+    if(str != nullptr)
     {
-        for(; *str != '\0'; ++str)
+        if(len == -1)
         {
-            result = o.add(*str);
-            if(result != STRING_GOOD && result != STRING_END)
+            for(; *str != '\0'; ++str)
             {
-                break;
+                result = o.add(*str);
+                if(result != STRING_GOOD && result != STRING_END)
+                {
+                    break;
+                }
             }
         }
-    }
-    else
-    {
-        for(; len > 0 && *str != '\0'; --len, ++str)
+        else
         {
-            result = o.add(*str);
-            if(result != STRING_GOOD && result != STRING_END)
+            for(; len > 0 && *str != '\0'; --len, ++str)
             {
-                break;
+                result = o.add(*str);
+                if(result != STRING_GOOD && result != STRING_END)
+                {
+                    break;
+                }
             }
         }
     }
@@ -558,6 +584,10 @@ String::conversion_result_t String::from_wchar(wchar_t const *str, int len)
  * \note
  * If an error occurs, this String object is not modified.
  *
+ * \note
+ * This function can be called with a nullptr in \p str, in which
+ * case the string is considered empty.
+ *
  * \param[in] str  The input string to copy in this string.
  * \param[in] len  The maximum number of characters to copy, if -1, copy
  *                 up to the next null ('\0') character.
@@ -568,26 +598,29 @@ String::conversion_result_t String::from_wchar(wchar_t const *str, int len)
 String::conversion_result_t String::from_as_char(as_char_t const *str, int len)
 {
     String s;
-    if(len == -1)
+    if(str != nullptr)
     {
-        for(; *str != '\0'; ++str)
+        if(len == -1)
         {
-            if(!valid_character(*str))
+            for(; *str != '\0'; ++str)
             {
-                return STRING_INVALID;
+                if(!valid_character(*str))
+                {
+                    return STRING_INVALID;
+                }
+                s.append(1, *str);
             }
-            s.append(1, *str);
         }
-    }
-    else
-    {
-        for(; len > 0 && *str != '\0'; --len, ++str)
+        else
         {
-            if(!valid_character(*str))
+            for(; len > 0 && *str != '\0'; --len, ++str)
             {
-                return STRING_INVALID;
+                if(!valid_character(*str))
+                {
+                    return STRING_INVALID;
+                }
+                s.append(1, *str);
             }
-            s.append(1, *str);
         }
     }
 
@@ -626,77 +659,80 @@ String::conversion_result_t String::from_utf8(char const *str, int len)
     as_char_t       w;
     int             l;
 
-    if(len == -1)
+    if(str != nullptr)
     {
-        // it's a bit of a waste, but makes it a lot easier
-        len = std::char_traits<char>::length(str);
-    }
-
-    while(len > 0)
-    {
-        --len;
-        c = static_cast<unsigned char>(*str++);
-
-        if(c < 0x80)
+        if(len == -1)
         {
-            w = c;
+            // it's a bit of a waste, but makes it a lot easier
+            len = std::char_traits<char>::length(str);
         }
-        else
+
+        while(len > 0)
         {
-            if(c >= 0xC0 && c <= 0xDF)
+            --len;
+            c = static_cast<unsigned char>(*str++);
+
+            if(c < 0x80)
             {
-                l = 1;
-                w = c & 0x1F;
-            }
-            else if(c >= 0xE0 && c <= 0xEF)
-            {
-                l = 2;
-                w = c & 0x0F;
-            }
-            else if(c >= 0xF0 && c <= 0xF7)
-            {
-                l = 3;
-                w = c & 0x07;
-            }
-            // The following are not valid UTF-8 characters, these are
-            // refused below as we verify the validity of the character
-            else if(c >= 0xF8 && c <= 0xFB)
-            {
-                l = 4;
-                w = c & 0x03;
-            }
-            else if(c >= 0xFC && c <= 0xFD)
-            {
-                l = 5;
-                w = c & 0x01;
+                w = c;
             }
             else
             {
-                // invalid UTF-8 sequence
-                return STRING_BAD;
-            }
-            if(len < l)
-            {
-                // not enough character
-                return STRING_END;
-            }
-            len -= l;
-            while(l > 0)
-            {
-                c = static_cast<unsigned char>(*str++);
-                if(c < 0x80 || c > 0xBF)
+                if(c >= 0xC0 && c <= 0xDF)
                 {
+                    l = 1;
+                    w = c & 0x1F;
+                }
+                else if(c >= 0xE0 && c <= 0xEF)
+                {
+                    l = 2;
+                    w = c & 0x0F;
+                }
+                else if(c >= 0xF0 && c <= 0xF7)
+                {
+                    l = 3;
+                    w = c & 0x07;
+                }
+                // The following are not valid UTF-8 characters, these are
+                // refused below as we verify the validity of the character
+                else if(c >= 0xF8 && c <= 0xFB)
+                {
+                    l = 4;
+                    w = c & 0x03;
+                }
+                else if(c >= 0xFC && c <= 0xFD)
+                {
+                    l = 5;
+                    w = c & 0x01;
+                }
+                else
+                {
+                    // invalid UTF-8 sequence
                     return STRING_BAD;
                 }
-                l--;
-                w = (w << 6) | (c & 0x3F);
+                if(len < l)
+                {
+                    // not enough character
+                    return STRING_END;
+                }
+                len -= l;
+                while(l > 0)
+                {
+                    c = static_cast<unsigned char>(*str++);
+                    if(c < 0x80 || c > 0xBF)
+                    {
+                        return STRING_BAD;
+                    }
+                    l--;
+                    w = (w << 6) | (c & 0x3F);
+                }
             }
+            if(!valid_character(w))
+            {
+                return STRING_INVALID;
+            }
+            result.append(1, w);
         }
-        if(!valid_character(w))
-        {
-            return STRING_INVALID;
-        }
-        result.append(1, w);
     }
 
     // it worked, we can smash this String

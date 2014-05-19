@@ -46,17 +46,15 @@ namespace as2js
 class rc_t
 {
 public:
-    void                    find_rc(bool const accept_if_missing);
-    void                    read_rc();
-    void                    close();
-    String const&           get_path() const;
+    void                    init_rc(bool const accept_if_missing);
+
+    String const&           get_scripts() const;
     String const&           get_db() const;
+
     static String const&    get_home();
 
 private:
-    std::ifstream           f_rcfile;
-    String                  f_rcfilename;
-    String                  f_path;
+    String                  f_scripts;
     String                  f_db;
 };
 
