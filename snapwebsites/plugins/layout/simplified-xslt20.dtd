@@ -226,10 +226,12 @@ DTD of the XSLT 2.0.
 <!ATTLIST tbody class CDATA #IMPLIED>
 
 <!ELEMENT td ANY>
-<!ATTLIST td class CDATA #IMPLIED>
+<!ATTLIST td class CDATA #IMPLIED
+             colspan CDATA #IMPLIED>
 
 <!ELEMENT th ANY>
-<!ATTLIST th class CDATA #IMPLIED>
+<!ATTLIST th class CDATA #IMPLIED
+             colspan CDATA #IMPLIED>
 
 <!ELEMENT thead ANY>
 <!ATTLIST thead class CDATA #IMPLIED>
