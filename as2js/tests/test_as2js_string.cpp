@@ -271,14 +271,13 @@ bool close_double(double a, double b, double epsilon)
     return a >= b - epsilon && a <= b + epsilon;
 }
 
-
 }
 // no name namespace
 
 
 
 
-void As2JsStringUnitTests::constructor_iso88591()
+void As2JsStringUnitTests::test_iso88591()
 {
     // to know whether code checks for UTF-8 we should provide
     // invalid input
@@ -345,6 +344,15 @@ void As2JsStringUnitTests::constructor_iso88591()
         CPPUNIT_ASSERT("" == str7);
         CPPUNIT_ASSERT(str7 == "");
         CPPUNIT_ASSERT(str7.valid());
+
+        as2js::String str8;
+        CPPUNIT_ASSERT(&(str8 = "") == &str8);
+        CPPUNIT_ASSERT(str8.empty());
+        CPPUNIT_ASSERT(str8.length() == 0);
+        CPPUNIT_ASSERT(str8.utf8_length() == 0);
+        CPPUNIT_ASSERT("" == str8);
+        CPPUNIT_ASSERT(str8 == "");
+        CPPUNIT_ASSERT(str8.valid());
     }
 
     // characters between 0x80 and 0xBF are only to chain UTF-8
@@ -383,6 +391,13 @@ void As2JsStringUnitTests::constructor_iso88591()
         CPPUNIT_ASSERT(iso8859_1_bad_start == str4);
         CPPUNIT_ASSERT(str4 == iso8859_1_bad_start);
         CPPUNIT_ASSERT(str4.valid());
+
+        as2js::String str5;
+        CPPUNIT_ASSERT(&(str5 = iso8859_1_bad_start) == &str5);
+        CPPUNIT_ASSERT(strlen(iso8859_1_bad_start) == str5.length());
+        CPPUNIT_ASSERT(iso8859_1_bad_start == str5);
+        CPPUNIT_ASSERT(str5 == iso8859_1_bad_start);
+        CPPUNIT_ASSERT(str5.valid());
     }
 
     // make sure that the UTF-8 BOM does not change a thing
@@ -419,6 +434,14 @@ void As2JsStringUnitTests::constructor_iso88591()
         CPPUNIT_ASSERT(iso8859_1_bom_and_bad_start == str4);
         CPPUNIT_ASSERT(str4 == iso8859_1_bom_and_bad_start);
         CPPUNIT_ASSERT(str4.valid());
+
+        as2js::String str5;
+        CPPUNIT_ASSERT(&(str5 = iso8859_1_bom_and_bad_start) == &str5);
+        CPPUNIT_ASSERT(strlen(iso8859_1_bom_and_bad_start) == str5.length());
+        CPPUNIT_ASSERT(compare_chars(iso8859_1_bom_and_bad_start, str5.c_str()));
+        CPPUNIT_ASSERT(iso8859_1_bom_and_bad_start == str5);
+        CPPUNIT_ASSERT(str5 == iso8859_1_bom_and_bad_start);
+        CPPUNIT_ASSERT(str5.valid());
     }
 
     // try with all possible bytes now, the order would totally break
@@ -498,6 +521,14 @@ void As2JsStringUnitTests::constructor_iso88591()
             CPPUNIT_ASSERT(str1 == buf);
             CPPUNIT_ASSERT(str1.valid());
 
+            {
+                std::stringstream ss;
+                ss << str1;
+                as2js::String wcs(buf); // this is verified in different places
+                std::string utf8(wcstombs(wcs));
+                CPPUNIT_ASSERT(ss.str() == utf8);
+            }
+
             // then copy operator
             as2js::String str2(str1);
             CPPUNIT_ASSERT(strlen(buf) == str2.length());
@@ -523,6 +554,15 @@ void As2JsStringUnitTests::constructor_iso88591()
             CPPUNIT_ASSERT(buf == str4);
             CPPUNIT_ASSERT(str4 == buf);
             CPPUNIT_ASSERT(str4.valid());
+
+            // also test the from_char(), should get the same result
+            as2js::String str5;
+            CPPUNIT_ASSERT(&(str5 = std) == &str5);
+            CPPUNIT_ASSERT(strlen(buf) == str5.length());
+            CPPUNIT_ASSERT(compare_chars(buf, str5.c_str()));
+            CPPUNIT_ASSERT(buf == str5);
+            CPPUNIT_ASSERT(str5 == buf);
+            CPPUNIT_ASSERT(str5.valid());
 
             // try truncation the input string
             // note: copy operators do not offer a truncate capability
@@ -571,13 +611,35 @@ void As2JsStringUnitTests::constructor_iso88591()
                 CPPUNIT_ASSERT(buf == str1);
                 CPPUNIT_ASSERT(str1 == buf);
                 CPPUNIT_ASSERT(str1.valid());
+
+                char buf2_2[64 * 1024 + 10];
+                strcpy(buf2_2, "foo: ");
+                strcat(buf2_2, buf);
+                as2js::String str2_2("foo: ");
+                CPPUNIT_ASSERT(&(str2_2 += buf) == &str2_2);
+                CPPUNIT_ASSERT(strlen(buf) + 5 == str2_2.length());
+                CPPUNIT_ASSERT(strlen(buf2_2) == str2_2.length());
+                CPPUNIT_ASSERT(compare_chars(buf2_2, str2_2.c_str()));
+                CPPUNIT_ASSERT(buf2_2 == str2_2);
+                CPPUNIT_ASSERT(str2_2 == buf2_2);
+                CPPUNIT_ASSERT(str2_2.valid());
+
+                as2js::String str2_3("foo: ");
+                std::string lstd(buf);
+                CPPUNIT_ASSERT(&(str2_3 += lstd) == &str2_3);
+                CPPUNIT_ASSERT(strlen(buf) + 5 == str2_3.length());
+                CPPUNIT_ASSERT(strlen(buf2_2) == str2_3.length());
+                CPPUNIT_ASSERT(compare_chars(buf2_2, str2_3.c_str()));
+                CPPUNIT_ASSERT(buf2_2 == str2_3);
+                CPPUNIT_ASSERT(str2_3 == buf2_2);
+                CPPUNIT_ASSERT(str2_3.valid());
             }
         }
     }
 }
 
 
-void As2JsStringUnitTests::constructor_utf8()
+void As2JsStringUnitTests::test_utf8()
 {
     // all the other contructor tests verify that they do not support
     // UTF-8; there are no UTF-8 constructors actually, so here all
@@ -874,7 +936,7 @@ void As2JsStringUnitTests::constructor_utf8()
 }
 
 
-void As2JsStringUnitTests::constructor_utf16()
+void As2JsStringUnitTests::test_utf16()
 {
     // check all the characters (Except '\0' and surrogates)
     for(int i(1); i < 0x110000; ++i)
@@ -889,7 +951,7 @@ void As2JsStringUnitTests::constructor_utf16()
 
         CPPUNIT_ASSERT(as2js::String::valid_character(i));
 
-        if(!as2js_test::g_gui && (i & 0x00FFFF) == 0)
+        if(!as2js_test::g_gui && (i & 0x001FFF) == 0)
         {
             std::cout << "." << std::flush;
         }
@@ -898,7 +960,7 @@ void As2JsStringUnitTests::constructor_utf16()
         //       strings as if they were 16 bits... (although we'll
         //       accept characters larger than 0x00FFFF as a UTF-32
         //       character.)
-        wchar_t buf[3];
+        wchar_t buf[10];
         if(i >= 0x10000)
         {
             buf[0] = ((i - 0x10000) >> 10) | 0xD800;    // lead
@@ -938,6 +1000,13 @@ void As2JsStringUnitTests::constructor_utf16()
             CPPUNIT_ASSERT(str1[2] == 0x1111);
             CPPUNIT_ASSERT(str1[3] == 0x2222);
             CPPUNIT_ASSERT(str1[4] == 0x3333);
+
+            // try copies of strings created from wchar_t characters
+            as2js::String str6;
+            CPPUNIT_ASSERT(&(str6 = str2) == &str6);
+            CPPUNIT_ASSERT(1 == str6.length());
+            CPPUNIT_ASSERT(str2 == str6);
+            CPPUNIT_ASSERT(str6.valid());
         }
 
         // just in case, try without the surrogate if wchar_t is > 2
@@ -965,13 +1034,133 @@ void As2JsStringUnitTests::constructor_utf16()
                 CPPUNIT_ASSERT(str3[1] == 0x1111);
                 CPPUNIT_ASSERT(str3[2] == 0x2222);
                 CPPUNIT_ASSERT(str3[3] == 0x3333);
+
+                CPPUNIT_ASSERT(&(str3 = wstr) == &str3);
+                CPPUNIT_ASSERT(3 == str3.length());
+                CPPUNIT_ASSERT(str3.valid());
+                CPPUNIT_ASSERT(str3[0] == 0x1111);
+                CPPUNIT_ASSERT(str3[1] == 0x2222);
+                CPPUNIT_ASSERT(str3[2] == 0x3333);
             }
+        }
+
+        // try with a string of a respectful size (really small though)
+        // and the operator = (wchar_t const *) function
+        {
+            // repeat 5 times
+            for(int j(0); j < 5; ++j)
+            {
+                for(int k(0); k < 8; ++k)
+                {
+                    if(k == 4)
+                    {
+                        if(i >= 0x10000)
+                        {
+                            buf[k] = ((i - 0x10000) >> 10) | 0xD800;    // lead
+                            ++k;
+                            buf[k] = ((i - 0x10000) & 0x3FF) | 0xDC00;  // trail
+                        }
+                        else
+                        {
+                            buf[k] = i;
+                        }
+                    }
+                    else
+                    {
+                        // if not offset 4, get a random character
+                        // in BMP 0 which are not '\0' nor a surrogate
+                        do
+                        {
+                            buf[k] = rand() & 0x00FFFF;
+                        }
+                        while(buf[k] == '\0' || (buf[k] >= 0xD800 && buf[k] <= 0xDFFF));
+                    }
+                }
+                buf[8] = '\0';
+
+                // we verify the constructor, so we know it works...
+                as2js::String str_cmp(buf);
+                as2js::String str9("original");
+                CPPUNIT_ASSERT(&(str9 = buf) == &str9);
+                CPPUNIT_ASSERT((i >= 0x10000 ? 7 : 8) == str9.length());
+                CPPUNIT_ASSERT(str9 == str9);
+                CPPUNIT_ASSERT(str9 == str_cmp);
+                CPPUNIT_ASSERT(str_cmp == str_cmp);
+                CPPUNIT_ASSERT(str9.valid());
+
+                std::wstring wstd(buf);
+                as2js::String str10("original");
+                CPPUNIT_ASSERT(&(str10 = buf) == &str10);
+                CPPUNIT_ASSERT((i >= 0x10000 ? 7 : 8) == str10.length());
+                CPPUNIT_ASSERT(str10 == str10);
+                CPPUNIT_ASSERT(str10 == str_cmp);
+                CPPUNIT_ASSERT(str_cmp == str_cmp);
+                CPPUNIT_ASSERT(str10.valid());
+            }
+        }
+
+        // test that we detect lead without trail surrogates
+        if(i >= 0x10000)
+        {
+            // inverted, oops!
+            for(int j(0); j < 5; ++j)
+            {
+                do
+                {
+                    // generate a random character in the first spot
+                    buf[j] = rand() & 0x00FFFF;
+                }
+                while(buf[j] == '\0' || (buf[j] >= 0xD800 && buf[j] <= 0xDFFF));
+            }
+            buf[5] = ((i - 0x10000) >> 10) | 0xD800;    // lead
+            buf[6] = '\0';
+
+            as2js::String str7("original");
+            CPPUNIT_ASSERT(str7.from_wchar(buf) == as2js::String::STRING_END);
+            CPPUNIT_ASSERT(8 == str7.length());
+            CPPUNIT_ASSERT("original" == str7);
+            CPPUNIT_ASSERT(str7.valid());
+
+            as2js::String str8("original");
+            CPPUNIT_ASSERT(str8.from_wchar(buf, 6) == as2js::String::STRING_END);
+            CPPUNIT_ASSERT(8 == str8.length());
+            CPPUNIT_ASSERT("original" == str8);
+            CPPUNIT_ASSERT(str8.valid());
+        }
+
+        // test that we detect inverted surrogates
+        if(i >= 0x10000)
+        {
+            // inverted, oops!
+            buf[0] = ((i - 0x10000) & 0x3FF) | 0xDC00;  // trail
+            buf[1] = ((i - 0x10000) >> 10) | 0xD800;    // lead
+            buf[2] = '\0';
+
+            as2js::String str7("original");
+            CPPUNIT_ASSERT(str7.from_wchar(buf) == as2js::String::STRING_BAD);
+            CPPUNIT_ASSERT(8 == str7.length());
+            CPPUNIT_ASSERT("original" == str7);
+            CPPUNIT_ASSERT(str7.valid());
+
+            buf[2] = rand();
+            buf[3] = rand();
+            buf[4] = rand();
+            buf[5] = rand();
+            buf[6] = rand();
+            buf[7] = rand();
+            buf[8] = rand();
+            buf[9] = rand();
+            as2js::String str11("original");
+            CPPUNIT_ASSERT(str11.from_wchar(buf, rand() % 8 + 2) == as2js::String::STRING_BAD);
+            CPPUNIT_ASSERT(8 == str11.length());
+            CPPUNIT_ASSERT("original" == str11);
+            CPPUNIT_ASSERT(str11.valid());
         }
     }
 }
 
 
-void As2JsStringUnitTests::constructor_utf32()
+void As2JsStringUnitTests::test_utf32()
 {
     // check all the characters (Except '\0' and surrogates)
     for(int i(1); i < 0x110000; ++i)
@@ -1041,7 +1230,7 @@ void As2JsStringUnitTests::constructor_utf32()
             {
                 buf[j] = rand() & 0x001FFFFF;
             }
-            while(buf[j] == '\0' || buf[j] > 0x0010FFFF || (buf[j] >= 0xD800 && buf[j] < 0xDFFF));
+            while(buf[j] == '\0' || buf[j] > 0x0010FFFF || (buf[j] >= 0xD800 && buf[j] <= 0xDFFF));
         }
         buf[255] = '\0';
 
@@ -1111,7 +1300,42 @@ void As2JsStringUnitTests::constructor_utf32()
                 CPPUNIT_ASSERT(str2.valid());
                 buf[size] = save_c;
             }
+
+            // try again with the from_as_char()
+            int const bad_pos(size / 2);
+            as2js::as_char_t save_d(buf[bad_pos]);
+            do
+            {
+                buf[bad_pos] = rand();
+            }
+            while((buf[bad_pos] > 0 && buf[bad_pos] < 0xD800)
+               || (buf[bad_pos] > 0xDFFF && buf[bad_pos] < 0x110000));
+            as2js::String str4;
+            CPPUNIT_ASSERT(str4.from_as_char(buf, size) == as2js::String::STRING_INVALID);
+            CPPUNIT_ASSERT(0 == str4.length());
+            CPPUNIT_ASSERT(str4.empty());
+            CPPUNIT_ASSERT("" == str4);
+            CPPUNIT_ASSERT(str4 == "");
+            CPPUNIT_ASSERT(str4.valid());
+            buf[bad_pos] = save_d;
+
+            // test a copy of str1 with one invalid character
+            as2js::String str5(str1);
+            do
+            {
+                // testing that indeed the [] operator does not check the
+                // validity of UTF-32 characters...
+                // std::basic_string<as_char_t> operator []()
+                str5[bad_pos] = rand();
+            }
+            while((str5[bad_pos] > 0 && str5[bad_pos] < 0xD800)
+               || (str5[bad_pos] > 0xDFFF && str5[bad_pos] < 0x110000));
+            CPPUNIT_ASSERT(!str5.valid());
+            // if invalid the UTF-8 length is always -1
+            CPPUNIT_ASSERT(str5.utf8_length() == -1);
         }
+
+        //
     }
 
     // test that the surrogate all crap out
@@ -1129,6 +1353,15 @@ void As2JsStringUnitTests::constructor_utf32()
         CPPUNIT_ASSERT(str2.from_as_char(buf) == as2js::String::STRING_INVALID);
         CPPUNIT_ASSERT(str2.length() == 9); // not modified
         CPPUNIT_ASSERT(str2 == "old value"); // not modified
+
+        as2js::String str3;
+        CPPUNIT_ASSERT(str3.from_as_char(buf, 1) == as2js::String::STRING_INVALID);
+        CPPUNIT_ASSERT(str3.empty()); // not modified
+
+        as2js::String str4("old value");
+        CPPUNIT_ASSERT(str4.from_as_char(buf, 1) == as2js::String::STRING_INVALID);
+        CPPUNIT_ASSERT(str4.length() == 9); // not modified
+        CPPUNIT_ASSERT(str4 == "old value"); // not modified
     }
 
     // characters over 0x10FFFF are all invalid
@@ -1167,36 +1400,85 @@ void As2JsStringUnitTests::constructor_utf32()
 
 void As2JsStringUnitTests::test_number()
 {
-    for(int i(-100000); i <= 100000; ++i)
     {
-        std::stringstream str;
-        str << i;
-        as2js::String str1(str.str());
+        // empty is a special case that represents 0 or 0.0
+        as2js::String str1;
+
         CPPUNIT_ASSERT(str1.is_int64());
         CPPUNIT_ASSERT(str1.is_float64());
         CPPUNIT_ASSERT(str1.is_number());
-        CPPUNIT_ASSERT(str1.to_int64() == i);
+        CPPUNIT_ASSERT(str1.to_int64() == 0);
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
-        CPPUNIT_ASSERT(str1.to_float64() == static_cast<double>(i));
+        CPPUNIT_ASSERT(str1.to_float64() == 0.0);
 #pragma GCC diagnostic pop
-        CPPUNIT_ASSERT(str1.is_true() ^ (i == 0));
+        CPPUNIT_ASSERT(!str1.is_true());
+
+        // "0x" or "0X" are not valid hexadecimal numbers
+        as2js::String str2;
+        CPPUNIT_ASSERT(&(str2 = "0x") == &str2);
+        CPPUNIT_ASSERT(!str2.is_int64());
+        CPPUNIT_ASSERT(!str2.is_float64());
+        CPPUNIT_ASSERT(!str2.is_number());
+        CPPUNIT_ASSERT_THROW(str2.to_int64(), as2js::exception_internal_error);
+        CPPUNIT_ASSERT(std::isnan(str2.to_float64()));
+        CPPUNIT_ASSERT(str2.is_true());
+
+        as2js::String str3;
+        CPPUNIT_ASSERT(&(str3 = "0X") == &str3);
+        CPPUNIT_ASSERT(!str3.is_int64());
+        CPPUNIT_ASSERT(!str3.is_float64());
+        CPPUNIT_ASSERT(!str3.is_number());
+        CPPUNIT_ASSERT_THROW(str3.to_int64(), as2js::exception_internal_error);
+        CPPUNIT_ASSERT(std::isnan(str3.to_float64()));
+        CPPUNIT_ASSERT(str3.is_true());
+    }
+
+    for(int64_t i(-100000); i <= 100000; ++i)
+    {
+        // decimal
+        {
+            std::stringstream str;
+            str << (i >= 0 && (rand() & 1) ? "+" : "") << i;
+            as2js::String str1(str.str());
+            CPPUNIT_ASSERT(str1.is_int64());
+            CPPUNIT_ASSERT(str1.is_float64());
+            CPPUNIT_ASSERT(str1.is_number());
+            CPPUNIT_ASSERT(str1.to_int64() == i);
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+            CPPUNIT_ASSERT(str1.to_float64() == static_cast<double>(i));
+#pragma GCC diagnostic pop
+            CPPUNIT_ASSERT(str1.is_true() ^ (i == 0));
+        }
+        // hexadecimal
+        {
+            std::stringstream str;
+            str << (i < 0 ? "-" : (rand() & 1 ? "+" : "")) << "0" << (rand() & 1 ? "x" : "X") << std::hex << labs(i);
+            as2js::String str1(str.str());
+            CPPUNIT_ASSERT(str1.is_int64());
+            CPPUNIT_ASSERT(!str1.is_float64());
+            CPPUNIT_ASSERT(str1.is_number());
+            CPPUNIT_ASSERT(str1.to_int64() == i);
+            CPPUNIT_ASSERT(std::isnan(str1.to_float64()));
+            CPPUNIT_ASSERT(str1.is_true() ^ (i == 0));
+        }
     }
 
     for(double i(-1000.00); i <= 1000.00; i += (rand() % 120) / 100.0)
     {
         std::stringstream str;
         str << i;
-        std::string value(str.str());
-        as2js::String str1(value);
-        int64_t integer(lrint(i));
-        bool is_integer(std::find(value.begin(), value.end(), '.') == value.end());
-        CPPUNIT_ASSERT(str1.is_int64() ^ !is_integer);
+        std::string value1(str.str());
+        as2js::String str1(value1);
+        int64_t integer1(lrint(i));
+        bool is_integer1(std::find(value1.begin(), value1.end(), '.') == value1.end());
+        CPPUNIT_ASSERT(str1.is_int64() ^ !is_integer1);
         CPPUNIT_ASSERT(str1.is_float64());
         CPPUNIT_ASSERT(str1.is_number());
-        if(is_integer)
+        if(is_integer1)
         {
-            CPPUNIT_ASSERT(str1.to_int64() == integer);
+            CPPUNIT_ASSERT(str1.to_int64() == integer1);
         }
         else
         {
@@ -1204,6 +1486,31 @@ void As2JsStringUnitTests::test_number()
         }
         CPPUNIT_ASSERT(close_double(str1.to_float64(), i, 0.01));
         CPPUNIT_ASSERT(str1.is_true() ^ close_double(i, 0.0, 0.0001));
+
+        // add x 1000 as an exponent
+        str << "e" << (rand() & 1 ? "+" : "") << "3";
+        std::string value2(str.str());
+        as2js::String str2(value2);
+        // the 'e' "breaks" the integer test in JavaScript
+        CPPUNIT_ASSERT(!str2.is_int64());
+        CPPUNIT_ASSERT(str2.is_float64());
+        CPPUNIT_ASSERT(str2.is_number());
+        CPPUNIT_ASSERT_THROW(str2.to_int64(), as2js::exception_internal_error);
+        CPPUNIT_ASSERT(close_double(str2.to_float64(), i * 1000.0, 0.01));
+        CPPUNIT_ASSERT(str2.is_true() ^ close_double(i, 0.0, 0.0001));
+
+        // add x 1000 as an exponent
+        str.str(""); // reset the string
+        str << value1 << "e-3";
+        std::string value3(str.str());
+        as2js::String str3(value3);
+        // the 'e' "breaks" the integer test in JavaScript
+        CPPUNIT_ASSERT(!str3.is_int64());
+        CPPUNIT_ASSERT(str3.is_float64());
+        CPPUNIT_ASSERT(str3.is_number());
+        CPPUNIT_ASSERT_THROW(str3.to_int64(), as2js::exception_internal_error);
+        CPPUNIT_ASSERT(close_double(str3.to_float64(), i / 1000.0, 0.00001));
+        CPPUNIT_ASSERT(str3.is_true() ^ close_double(i, 0.0, 0.0001));
     }
 
     // a few more using random
@@ -1224,6 +1531,64 @@ void As2JsStringUnitTests::test_number()
 #pragma GCC diagnostic pop
         CPPUNIT_ASSERT(str1.is_true() ^ (value == 0));
     }
+
+    // test a few non-hexadecimal numbers
+    for(int i(0); i < 100; ++i)
+    {
+        // get a character which is not a valid hex digit and not '\0'
+        char c;
+        do
+        {
+            c = static_cast<char>(rand());
+        }
+        while(c == '\0'
+          || (c >= '0' && c <= '9')
+          || (c >= 'a' && c <= 'f')
+          || (c >= 'A' && c <= 'F'));
+
+        // bad character is right at the beginning of the hex number
+        std::stringstream ss1;
+        ss1 << "0" << (rand() & 1 ? "x" : "X") << c << "123ABC";
+        as2js::String str1(ss1.str());
+        CPPUNIT_ASSERT(!str1.is_int64());
+        CPPUNIT_ASSERT(!str1.is_float64());
+        CPPUNIT_ASSERT(!str1.is_number());
+        CPPUNIT_ASSERT_THROW(str1.to_int64(), as2js::exception_internal_error);
+        CPPUNIT_ASSERT(std::isnan(str1.to_float64()));
+        CPPUNIT_ASSERT(str1.is_true()); // non-empty string which is no a number
+
+        // invalid character is in the middle of the hex number
+        std::stringstream ss2;
+        ss2 << "0" << (rand() & 1 ? "x" : "X") << "123" << c << "ABC";
+        as2js::String str2(ss2.str());
+        CPPUNIT_ASSERT(!str2.is_int64());
+        CPPUNIT_ASSERT(!str2.is_float64());
+        CPPUNIT_ASSERT(!str2.is_number());
+        CPPUNIT_ASSERT_THROW(str2.to_int64(), as2js::exception_internal_error);
+        CPPUNIT_ASSERT(std::isnan(str2.to_float64()));
+        CPPUNIT_ASSERT(str2.is_true()); // non-empty string which is no a number
+    }
+}
+
+
+void As2JsStringUnitTests::test_concatenation()
+{
+    // this test allows us to hit the basic_string<as_char_t> constructor
+    // and copy operator
+
+    as2js::String str1("blah");
+    as2js::String str2("foo");
+
+    as2js::String str3(str1 + str2); // here!
+    CPPUNIT_ASSERT(str3.length() == 7);
+    CPPUNIT_ASSERT(str3 == "blahfoo");
+    CPPUNIT_ASSERT(str3 == str1 + str2);
+
+    as2js::String str4;
+    str4 = str2 + str1;
+    CPPUNIT_ASSERT(str4.length() == 7);
+    CPPUNIT_ASSERT(str4 == "fooblah");
+    CPPUNIT_ASSERT(str4 == str2 + str1);
 }
 
 

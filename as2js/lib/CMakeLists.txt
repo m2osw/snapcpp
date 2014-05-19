@@ -38,26 +38,26 @@ include_directories(
 )
 
 add_library( as2js SHARED
-    class.cpp
     db.cpp
-    directive.cpp
-    expression.cpp
-    function.cpp
     json.cpp
     lexer.cpp
     message.cpp
     node.cpp
     optimizer.cpp
     options.cpp
-    package.cpp
+    parser_class.cpp
+    parser_directive.cpp
+    parser_expression.cpp
+    parser_function.cpp
+    parser_package.cpp
+    parser_pragma.cpp
+    parser_program.cpp
+    parser_statement.cpp
+    parser_variable.cpp
     position.cpp
-    pragma.cpp
-    program.cpp
-    statement.cpp
     stream.cpp
     string.cpp
     parser.cpp
-    variable.cpp
     rc.cpp
     version.cpp
 

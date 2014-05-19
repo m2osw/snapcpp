@@ -501,7 +501,7 @@ String::conversion_result_t String::from_wchar(wchar_t const *str, int len)
                 //       among invalid characters)
                 if(!f_string.valid_character(c))
                 {
-                    return STRING_INVALID;
+                    return STRING_INVALID; // LCOV_EXCL_LINE
                 }
                 f_lead_surrogate = 0;
             }
@@ -513,10 +513,8 @@ String::conversion_result_t String::from_wchar(wchar_t const *str, int len)
         zas_char_t      f_lead_surrogate;
     };
 
-    clear();
-
     out o;
-    String::conversion_result_t result;
+    String::conversion_result_t result(STRING_GOOD);
     if(len == -1)
     {
         for(; *str != '\0'; ++str)

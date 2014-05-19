@@ -29,6 +29,12 @@
 # Build command for now:
 #   (mkdir -p ../BUILD/as2js; cd ../BUILD/as2js; cmake -DCMAKE_INSTALL_PREFIX:PATH=/home/snapwebsites/BUILD/dist -DCMAKE_MODULE_PATH:PATH=/home/snapwebsites/BUILD/dist/share/cmake-2.8/Modules -DCONTROLLEDVARS_INCLUDE_DIR=../dist/include ../../as2js)
 #
+# Build with DEBUG turned on using this definition:
+#   -DCMAKE_BUILD_TYPE=Debug
+#
+# To build with coverage add the following two definitions:
+#   -Das2js_compiler_COVERAGE=ON -DCMAKE_BUILD_TYPE=Debug
+#
 
 set(AS2JS_VERSION_MAJOR 0)
 set(AS2JS_VERSION_MINOR 1)
