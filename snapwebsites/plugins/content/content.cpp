@@ -4256,7 +4256,7 @@ bool content::create_attachment_impl(attachment_file const& file, snap_version::
             f_snap->die(snap_child::HTTP_CODE_FORBIDDEN, "Invalid Extension",
                     QString("The attachment \"%1\" cannot be added under \"%2\" as it does not represent JavaScript code.")
                                 .arg(attachment_filename).arg(parent_key),
-                    "The file does not have a .js extension in its filename.");
+                    "The filename does not have a .js extension.");
             NOTREACHED();
         }
     }
@@ -4268,7 +4268,7 @@ bool content::create_attachment_impl(attachment_file const& file, snap_version::
             f_snap->die(snap_child::HTTP_CODE_FORBIDDEN, "Invalid Extension",
                     QString("The attachment \"%1\" cannot be added under \"%2\" as it does not represent CSS data.")
                                 .arg(attachment_filename).arg(parent_key),
-                    "The file does not have a .css extension in its filename.");
+                    "The filename does not have a .css extension.");
             NOTREACHED();
         }
     }
@@ -4752,7 +4752,7 @@ bool content::create_attachment_impl(attachment_file const& file, snap_version::
     int64_t const start_date(f_snap->get_start_date());
     revision_attachment_row->cell(get_name(SNAP_NAME_CONTENT_CREATED))->setValue(start_date);
 
-    // XXX we could also save the modification and creation times, but the
+    // XXX we could also save the modification and creation dates, but the
     //     likelihood that these exist is so small that I'll skip at this
     //     time; we do save them in the files table
 
@@ -4785,7 +4785,9 @@ bool content::create_attachment_impl(attachment_file const& file, snap_version::
             {
                 QtCassandra::appendUInt32Value(jskey, version[v]);
             }
-            // TODO: find a proper way to access the JS plugin...
+            // TODO: find a proper way to access the JS plugin... unless
+            //       we consider the JAVASCRIPT row name as a content plugin
+            //       definition?
             files_table->row(is_css ? "css" : "javascripts"/*javascript::get_name(javascript::SNAP_NAME_JAVASCRIPT_ROW)*/)->cell(jskey)->setValue(md5);
             if(!all)
             {

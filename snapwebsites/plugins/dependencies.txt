@@ -7,7 +7,7 @@ core:	; @echo $@
 antivirus: content form output	; @echo $@
 char_chart: sitemapxml	; @echo $@
 content: links	; @echo $@
-editor: form sitemapxml output sendmail server_access	; @echo $@
+editor: form sitemapxml mimetype sendmail server_access	; @echo $@
 favicon: path form messages permissions output	; @echo $@
 feed: layout path content messages	; @echo $@
 filter: content messages	; @echo $@
@@ -21,6 +21,7 @@ list: layout filter path output	; @echo $@
 mailinglist: core content	; @echo $@
 menu: layout content output	; @echo $@
 messages: core	; @echo $@
+mimetype: output	; @echo $@
 output: layout path javascript messages	; @echo $@
 path: content messages server_access	; @echo $@
 permissions: layout output users messages	; @echo $@

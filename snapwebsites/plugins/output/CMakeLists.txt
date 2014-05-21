@@ -69,6 +69,8 @@ add_library(output SHARED
     content.xml
     output.css
     close-button.png
+    progress.gif
+    wait.gif
     jquery.js
     jquery-extensions.js
     output.js

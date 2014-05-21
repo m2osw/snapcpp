@@ -1,0 +1,39 @@
+<?xml version="1.0"?>
+<!--
+Snap Websites Server == mimetype plugin database setup
+Copyright (C) 2014  Made to Order Software Corp.
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+-->
+<snap-tree>
+  <!-- here we have the list of JavaScript files that we support -->
+  <content path="/js/mimetype">
+    <!-- MIME type JavaScripts generated using the magic library -->
+    <param name="content::title" revision="revision">MIME Type JavaScripts</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>The different JavaScripts generated to handle the determination of a file type from its content.</p>]]>
+    </param>
+    <link name="permissions::administer" to="permissions::administer" mode="*:*">/types/permissions/rights/administer/info</link>
+    <attachment name="mimetype-basics" type="attachment/public">
+      <path>:/js/mimetype/mimetype-basics.js</path>
+      <mime-type>text/javascript</mime-type>
+      <dependency>output (&gt;= 0.1.4)</dependency>
+    </attachment>
+    <!-- TODO: add standard and advanced once available -->
+  </content>
+  <!-- TBD: add a settings screen? (i.e. we could make the standard and advanced load on request instead of having hard dependences on them.) -->
+</snap-tree>
+<!-- vim: ts=2 sw=2 et syntax=xml
+-->

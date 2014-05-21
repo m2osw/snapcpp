@@ -1,8 +1,8 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.137
+ * Version: 0.0.3.139
  * Browsers: all
- * Depends: output (>= 0.1.4), popup (>= 0.1.0.1)
+ * Depends: output (>= 0.1.4), popup (>= 0.1.0.1), server-access (>= 0.0.1.11), mimetype-basics (>= 0.0.3)
  * Copyright: Copyright 2013-2014 (c) Made to Order Software Corporation  All rights reverved.
  * License: GPL 2.0
  */
@@ -20,6 +20,10 @@
 // @js plugins/output/popup.js
 // @js plugins/server_access/server-access.js
 // ==/ClosureCompiler==
+//
+// This is not required and it may not exist at the time you run the
+// JS compiler against this file (it gets generated)
+// --js plugins/mimetype/mimetype-basics.js
 //
 
 /*

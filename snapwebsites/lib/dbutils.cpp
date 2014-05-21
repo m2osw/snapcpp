@@ -365,7 +365,7 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
          || n == "content::files::image_height"
          || n == "content::files::image_width"
          || n == "content::files::size"
-         || n == "content::files::size::compressed"
+         || n == "content::files::size::gzip_compressed"
          || n == "content::revision_control::attachment::current_branch"
          || n == "content::revision_control::attachment::current_working_branch"
          || n == "content::revision_control::current_branch"
@@ -422,7 +422,7 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
     }
     else if(n == "favicon::icon"
          || n == "content::files::data"
-         || n == "content::files::data::compressed"
+         || n == "content::files::data::gzip_compressed"
          || f_tableName == "layout"
          )
     {

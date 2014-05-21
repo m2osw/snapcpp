@@ -19,6 +19,7 @@
 #include "../layout/layout.h"
 #include "../path/path.h"
 #include "../javascript/javascript.h"
+
 #include <controlled_vars/controlled_vars_ptr_no_init.h>
 
 namespace snap
@@ -29,7 +30,7 @@ namespace output
 
 //enum name_t
 //{
-//    SNAP_NAME_CONTENT_ACCEPTED
+//    SNAP_NAME_OUTPUT_ACCEPTED
 //};
 //char const *get_name(name_t name) __attribute__ ((const));
 
