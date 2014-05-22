@@ -1,4 +1,4 @@
-/* directive.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
+/* parser_directive.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
 
 /*
 
@@ -622,7 +622,6 @@ void Parser::directive(Node::pointer_t& node)
     case Node::NODE_INCLUDE:
     case Node::NODE_LABEL:
     case Node::NODE_LIST:
-    case Node::NODE_MASK:
     case Node::NODE_NAME:
     case Node::NODE_PARAM:
     case Node::NODE_PARAMETERS:

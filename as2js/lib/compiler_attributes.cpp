@@ -1,0 +1,419 @@
+/* compiler_attributes.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
+
+/*
+
+Copyright (c) 2005-2014 Made to Order Software Corp.
+
+http://snapwebsites.org/project/as2js
+
+Permission is hereby granted, free of charge, to any
+person obtaining a copy of this software and
+associated documentation files (the "Software"), to
+deal in the Software without restriction, including
+without limitation the rights to use, copy, modify,
+merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom
+the Software is furnished to do so, subject to the
+following conditions:
+
+The above copyright notice and this permission notice
+shall be included in all copies or substantial
+portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF
+ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT
+LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO
+EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+*/
+
+#include    "as2js/compiler.h"
+
+#include    "as2js/message.h"
+
+
+namespace as2js
+{
+
+
+
+void Compiler::variable_to_attrs(Node::pointer_t node, Node::pointer_t var_node)
+{
+    if(var_node->get_type() != Node::NODE_SET)
+    {
+        Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_VARIABLE, var_node->get_position());
+        msg << "an attribute variable has to be given a value.";
+        return;
+    }
+
+    Node::pointer_t a(var_node->get_child(0));
+    switch(a->get_type()) {
+    case Node::NODE_FALSE:
+    case Node::NODE_IDENTIFIER:
+    case Node::NODE_PRIVATE:
+    case Node::NODE_PUBLIC:
+    case Node::NODE_TRUE:
+        node_to_attrs(node, a);
+        return;
+
+    default:
+        // expect a full boolean expression in this case
+        break;
+
+    }
+
+    // compute the expression
+    expression(a);
+    f_optimizer->optimize(a);
+
+    switch(a->get_type()) {
+    case Node::NODE_TRUE:
+    case Node::NODE_FALSE:
+        node_to_attrs(node, a);
+        return;
+
+    default:
+        break;
+
+    }
+
+    Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_EXPRESSION, var_node->get_position());
+    msg << "an attribute which is an expression needs to result in a boolean value (true or false).";
+}
+
+
+void Compiler::identifier_to_attrs(Node::pointer_t node, Node::pointer_t a)
+{
+    // an identifier can't be an empty string
+    String const identifier(a->get_string());
+    switch(identifier[0])
+    {
+    case 'a':
+        if(identifier == "abstract")
+        {
+            node->set_flag(Node::NODE_ATTR_ABSTRACT, true);
+            return;
+        }
+        if(identifier == "array")
+        {
+            node->set_flag(Node::NODE_ATTR_ARRAY, true);
+            return;
+        }
+        if(identifier == "autobreak")
+        {
+            node->set_flag(Node::NODE_ATTR_AUTOBREAK, true);
+            return;
+        }
+        break;
+
+    case 'c':
+        if(identifier == "constructor")
+        {
+            node->set_flag(Node::NODE_ATTR_CONSTRUCTOR, true);
+            return;
+        }
+        break;
+
+    case 'd':
+        if(identifier == "dynamic")
+        {
+            node->set_flag(Node::NODE_ATTR_DYNAMIC, true);
+            return;
+        }
+        if(identifier == "deprecated")
+        {
+            node->set_flag(Node::NODE_ATTR_DEPRECATED, true);
+            return;
+        }
+        break;
+
+    case 'e':
+        if(identifier == "enumerable")
+        {
+            node->set_flag(Node::NODE_ATTR_ENUMERABLE, true);
+            return;
+        }
+        break;
+
+    case 'f':
+        if(identifier == "final")
+        {
+            node->set_flag(Node::NODE_ATTR_FINAL, true);
+            return;
+        }
+        if(identifier == "foreach")
+        {
+            node->set_flag(Node::NODE_ATTR_FOREACH, true);
+            return;
+        }
+        break;
+
+    case 'i':
+        if(identifier == "internal")
+        {
+            node->set_flag(Node::NODE_ATTR_INTERNAL, true);
+            return;
+        }
+        if(identifier == "intrinsic")
+        {
+            node->set_flag(Node::NODE_ATTR_INTRINSIC, true);
+            return;
+        }
+        break;
+
+    case 'n':
+        if(identifier == "nobreak")
+        {
+            node->set_flag(Node::NODE_ATTR_NOBREAK, true);
+            return;
+        }
+        break;
+
+    case 'p':
+        if(identifier == "protected")
+        {
+            node->set_flag(Node::NODE_ATTR_PROTECTED, true);
+            return;
+        }
+        break;
+
+    case 's':
+        if(identifier == "static")
+        {
+            node->set_flag(Node::NODE_ATTR_STATIC, true);
+            return;
+        }
+        break;
+
+    case 'u':
+        if(identifier == "unused")
+        {
+            node->set_flag(Node::NODE_ATTR_UNUSED, true);
+            return;
+        }
+        break;
+
+    case 'v':
+        if(identifier == "virtual")
+        {
+            node->set_flag(Node::NODE_ATTR_VIRTUAL, true);
+            return;
+        }
+        break;
+
+    }
+
+    // it could be a user defined variable list of attributes
+    Node::pointer_t resolution;
+    if(!resolve_name(node, a, resolution, Node::pointer_t(), SEARCH_FLAG_NO_PARSING))
+    {
+        Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_NOT_FOUND, a->get_position());
+        msg << "cannot find a variable named '" << a->get_string() << "'.";
+        return;
+    }
+    if(!resolution)
+    {
+        // TODO: do we expect an error here?
+        return;
+    }
+    if(resolution->get_type() != Node::NODE_VARIABLE
+    && resolution->get_type() != Node::NODE_VAR_ATTRIBUTES)
+    {
+        Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_DYNAMIC, a->get_position());
+        msg << "a dynamic attribute name can only reference a variable and '" << a->get_string() << "' is not one.";
+        return;
+    }
+
+    // it is a variable, go through the list and call ourselves recursively
+    // with each identifiers; but make sure we do not loop forever
+    if(resolution->get_flag(Node::NODE_VAR_FLAG_ATTRS))
+    {
+        Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_LOOPING_REFERENCE, a->get_position());
+        msg << "the dynamic attribute variable '" << a->get_string() << "' is used circularly (it loops).";
+        return;
+    }
+
+    resolution->set_flag(Node::NODE_VAR_FLAG_ATTRS, true); // to avoid infinite loop
+    resolution->set_flag(Node::NODE_VAR_FLAG_ATTRIBUTES, true);
+    NodeLock ln(resolution);
+    size_t const max_children(resolution->get_children_size());
+    for(size_t idx(0); idx < max_children; ++idx)
+    {
+        Node::pointer_t child(resolution->get_child(idx));
+        variable_to_attrs(node, child);
+    }
+    resolution->set_flag(Node::NODE_VAR_FLAG_ATTRS, false);
+}
+
+
+void Compiler::node_to_attrs(Node::pointer_t node, Node::pointer_t a)
+{
+    switch(a->get_type()) {
+    case Node::NODE_FALSE:
+        node->set_flag(Node::NODE_ATTR_FALSE, true);
+        break;
+
+    case Node::NODE_IDENTIFIER:
+        identifier_to_attrs(node, a);
+        break;
+
+    case Node::NODE_PRIVATE:
+        node->set_flag(Node::NODE_ATTR_PRIVATE, true);
+        break;
+
+    case Node::NODE_PUBLIC:
+        node->set_flag(Node::NODE_ATTR_PUBLIC, true);
+        break;
+
+    case Node::NODE_TRUE:
+        node->set_flag(Node::NODE_ATTR_TRUE, true);
+        break;
+
+    default:
+        // TODO: this is a scope (user defined name)
+        // ERROR: unknown attribute type
+        // Note that will happen whenever someone references a
+        // variable which is an expression which does not resolve
+        // to a valid attribute and thus we need a user error here
+        Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_NOT_SUPPORTED, a->get_position());
+        msg << "unsupported attribute data type, dynamic expressions for attributes need to be resolved as constants.";
+        break;
+
+    }
+}
+
+
+void Compiler::prepare_attributes(Node::pointer_t node)
+{
+    // done here?
+    if(node->get_flag(Node::NODE_ATTR_DEFINED))
+    {
+        return;
+    }
+
+    // mark ourselves as done even if errors occur
+    node->set_flag(Node::NODE_ATTR_DEFINED, true);
+
+    if(node->get_type() == Node::NODE_PROGRAM)
+    {
+        // programs do not get any specific attributes
+        // (optimization)
+        return;
+    }
+
+    Node::pointer_t attr(node->get_link(Node::LINK_ATTRIBUTES));
+    if(attr)
+    {
+        NodeLock ln(attr);
+        size_t const max_attr(attr->get_children_size());
+        for(size_t idx(0); idx < max_attr; ++idx)
+        {
+            node_to_attrs(node, attr->get_child(idx));
+        }
+    }
+
+    // check whether intrinsic is already set
+    // (in which case it is probably an error)
+    bool const has_direct_intrinsic(node->get_flag(Node::NODE_ATTR_INTRINSIC));
+
+    // Note: we already returned if it is equal
+    //       to program; here it is just documentation
+    if(node->get_type() != Node::NODE_PACKAGE
+    && node->get_type() != Node::NODE_PROGRAM)
+    {
+        Node::pointer_t parent(node->get_parent());
+        if(parent)
+        {
+            // recurse against all parents as required
+            prepare_attributes(parent);
+
+            // child can redefine (ignore parent if any defined)
+            // [TODO: should this be an error if conflicting?]
+            if(!node->get_flag(Node::NODE_ATTR_PUBLIC)
+            && !node->get_flag(Node::NODE_ATTR_PRIVATE)
+            && !node->get_flag(Node::NODE_ATTR_PROTECTED))
+            {
+                node->set_flag(Node::NODE_ATTR_PUBLIC,    parent->get_flag(Node::NODE_ATTR_PUBLIC));
+                node->set_flag(Node::NODE_ATTR_PRIVATE,   parent->get_flag(Node::NODE_ATTR_PRIVATE));
+                node->set_flag(Node::NODE_ATTR_PROTECTED, parent->get_flag(Node::NODE_ATTR_PROTECTED));
+            }
+
+            // child can redefine (ignore parent if defined)
+            if(!node->get_flag(Node::NODE_ATTR_STATIC)
+            && !node->get_flag(Node::NODE_ATTR_ABSTRACT)
+            && !node->get_flag(Node::NODE_ATTR_VIRTUAL))
+            {
+                node->set_flag(Node::NODE_ATTR_STATIC,   parent->get_flag(Node::NODE_ATTR_STATIC));
+                node->set_flag(Node::NODE_ATTR_ABSTRACT, parent->get_flag(Node::NODE_ATTR_ABSTRACT));
+                node->set_flag(Node::NODE_ATTR_VIRTUAL,  parent->get_flag(Node::NODE_ATTR_VIRTUAL));
+            }
+
+            // inherit
+            node->set_flag(Node::NODE_ATTR_INTRINSIC,  parent->get_flag(Node::NODE_ATTR_INTRINSIC));
+            node->set_flag(Node::NODE_ATTR_ENUMERABLE, parent->get_flag(Node::NODE_ATTR_ENUMERABLE));
+
+            // false has priority
+            if(parent->get_flag(Node::NODE_ATTR_FALSE))
+            {
+                node->set_flag(Node::NODE_ATTR_TRUE, false);
+                node->set_flag(Node::NODE_ATTR_FALSE, true);
+            }
+
+            if(parent->get_type() != Node::NODE_CLASS)
+            {
+                node->set_flag(Node::NODE_ATTR_DYNAMIC, parent->get_flag(Node::NODE_ATTR_DYNAMIC));
+                node->set_flag(Node::NODE_ATTR_FINAL,   parent->get_flag(Node::NODE_ATTR_FINAL));
+            }
+        }
+    }
+
+    // a function which has a body cannot be intrinsic
+    if(node->get_flag(Node::NODE_ATTR_INTRINSIC)
+    && node->get_type() != Node::NODE_FUNCTION)
+    {
+        NodeLock ln(node);
+        size_t const max(node->get_children_size());
+        for(size_t idx(0); idx < max; ++idx)
+        {
+            Node::pointer_t list(node->get_child(idx));
+            if(list->get_type() == Node::NODE_DIRECTIVE_LIST)
+            {
+                // it is an error if the user defined
+                // it directly on the function; it is
+                // fine if it comes from the parent
+                if(has_direct_intrinsic)
+                {
+                    Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INTRINSIC, node->get_position());
+                    msg << "'intrinsic' is not permitted on a function with a body.";
+                }
+                node->set_flag(Node::NODE_ATTR_INTRINSIC, false);
+                break;
+            }
+        }
+    }
+}
+
+
+bool Compiler::get_attribute(Node::pointer_t node, Node::flag_attribute_t f)
+{
+    prepare_attributes(node);
+    return node->get_flag(f);
+}
+
+
+
+
+
+
+
+
+}
+// namespace as2js
+
+// vim: ts=4 sw=4 et

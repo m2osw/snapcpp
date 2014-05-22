@@ -34,7 +34,9 @@ SOFTWARE.
 */
 
 #include    "as2js/node.h"
+
 #include    "as2js/exceptions.h"
+#include    "as2js/message.h"
 
 #include    <algorithm>
 #include    <sstream>
@@ -303,6 +305,21 @@ operator_to_string_t const g_operator_to_string[] =
 
 size_t const g_operator_to_string_size = sizeof(g_operator_to_string) / sizeof(g_operator_to_string[0]);
 
+enum
+{
+    ATTRIBUTES_GROUP_CONDITIONAL_COMPILATION,
+    ATTRIBUTES_GROUP_FUNCTION_TYPE,
+    ATTRIBUTES_GROUP_SWITCH_TYPE,
+    ATTRIBUTES_GROUP_MEMBER_VISIBILITY
+};
+char const *g_flag_groups[] =
+{
+    [ATTRIBUTES_GROUP_CONDITIONAL_COMPILATION] = "true and false",
+    [ATTRIBUTES_GROUP_FUNCTION_TYPE] = "static, abstract, virtual, and constructor",
+    [ATTRIBUTES_GROUP_SWITCH_TYPE] = "foreach, nobreak, and autobreak",
+    [ATTRIBUTES_GROUP_MEMBER_VISIBILITY] = "public, private, and protected"
+};
+
 
 }
 // no name namespace
@@ -313,6 +330,7 @@ size_t const g_operator_to_string_size = sizeof(g_operator_to_string) / sizeof(g
 Node::Node(node_t type)
     : f_type(static_cast<int32_t>(type))
     //, f_flags_and_attributes() -- auto-init
+    //, f_switch_operator(NODE_UNKNOWN) -- auto-init
     //, f_lock(0) -- auto-init
     //, f_position() -- auto-init
     //, f_int() -- auto-init
@@ -331,6 +349,7 @@ Node::Node(node_t type)
 Node::Node(pointer_t const& source, pointer_t& parent)
     : f_type(source->f_type)
     , f_flags_and_attributes(source->f_flags_and_attributes)
+    , f_switch_operator(source->f_switch_operator)
     //, f_lock(0) -- auto-init
     , f_position(source->f_position)
     , f_int(source->f_int)
@@ -880,6 +899,17 @@ void Node::to_videntifier()
 }
 
 
+void Node::to_var_attributes()
+{
+    if(NODE_VARIABLE != f_type)
+    {
+        throw exception_internal_error("to_var_attribute() called with a node other than a NODE_VARIABLE node");
+    }
+
+    f_type = static_cast<int32_t>(NODE_VAR_ATTRIBUTES); // FIXME cast
+}
+
+
 void Node::set_boolean(bool value)
 {
     // only the corresponding node type accepts a set() call
@@ -1083,6 +1113,10 @@ bool Node::get_flag(flag_attribute_t f) const
 void Node::set_flag(flag_attribute_t f, bool v)
 {
     verify_flag_attribute(f);
+    if(v)
+    {
+        verify_exclusive_attributes(f);
+    }
     f_flags_and_attributes[f] = v;
 }
 
@@ -1264,6 +1298,229 @@ void Node::verify_flag_attribute(flag_attribute_t f) const
     }
 }
 
+
+/** \brief Verify that we can indeed set an attribute.
+ *
+ * Many attributes are mutually exclusive. This function checks that
+ * only one of a group of attributes gets set.
+ *
+ * This function is not called if you clear an attribute since in that
+ * case the default applies.
+ *
+ * \param[in] f  The attribute being set.
+ */
+void Node::verify_exclusive_attributes(flag_attribute_t f) const
+{
+    bool conflict(false);
+    char const *names;
+    switch(f)
+    {
+    case NODE_CATCH_FLAG_TYPED:
+    case NODE_DIRECTIVE_LIST_FLAG_NEW_VARIABLES:
+    case NODE_FOR_FLAG_FOREACH:
+    case NODE_FUNCTION_FLAG_GETTER:
+    case NODE_FUNCTION_FLAG_SETTER:
+    case NODE_FUNCTION_FLAG_OUT:
+    case NODE_FUNCTION_FLAG_VOID:
+    case NODE_FUNCTION_FLAG_NEVER:
+    case NODE_FUNCTION_FLAG_NOPARAMS:
+    case NODE_FUNCTION_FLAG_OPERATOR:
+    case NODE_IDENTIFIER_FLAG_WITH:
+    case NODE_IDENTIFIER_FLAG_TYPED:
+    case NODE_IMPORT_FLAG_IMPLEMENTS:
+    case NODE_PACKAGE_FLAG_FOUND_LABELS:
+    case NODE_PACKAGE_FLAG_REFERENCED:
+    case NODE_PARAM_MATCH_FLAG_UNPROTOTYPED:
+    case NODE_PARAMETERS_FLAG_CONST:
+    case NODE_PARAMETERS_FLAG_IN:
+    case NODE_PARAMETERS_FLAG_OUT:
+    case NODE_PARAMETERS_FLAG_NAMED:
+    case NODE_PARAMETERS_FLAG_REST:
+    case NODE_PARAMETERS_FLAG_UNCHECKED:
+    case NODE_PARAMETERS_FLAG_UNPROTOTYPED:
+    case NODE_PARAMETERS_FLAG_REFERENCED:
+    case NODE_PARAMETERS_FLAG_PARAMREF:
+    case NODE_PARAMETERS_FLAG_CATCH:
+    case NODE_SWITCH_FLAG_DEFAULT:
+    case NODE_VAR_FLAG_CONST:
+    case NODE_VAR_FLAG_LOCAL:
+    case NODE_VAR_FLAG_MEMBER:
+    case NODE_VAR_FLAG_ATTRIBUTES:
+    case NODE_VAR_FLAG_ENUM:
+    case NODE_VAR_FLAG_COMPILED:
+    case NODE_VAR_FLAG_INUSE:
+    case NODE_VAR_FLAG_ATTRS:
+    case NODE_VAR_FLAG_DEFINED:
+    case NODE_VAR_FLAG_DEFINING:
+    case NODE_VAR_FLAG_TOADD:
+        // ignore the flags
+        return;
+
+    case NODE_ATTR_ARRAY:
+    case NODE_ATTR_DEPRECATED:
+    case NODE_ATTR_DEFINED:
+    case NODE_ATTR_DYNAMIC:
+    case NODE_ATTR_ENUMERABLE:
+    case NODE_ATTR_FINAL:
+    case NODE_ATTR_INTERNAL:
+    case NODE_ATTR_INTRINSIC:
+    case NODE_ATTR_UNUSED:
+        // these attributes have no conflicts
+        return;
+
+    // member visibility
+    case NODE_ATTR_PUBLIC:
+        conflict = f_flags_and_attributes[NODE_ATTR_PRIVATE]
+                || f_flags_and_attributes[NODE_ATTR_PROTECTED];
+        names = g_flag_groups[ATTRIBUTES_GROUP_MEMBER_VISIBILITY];
+        break;
+
+    case NODE_ATTR_PRIVATE:
+        conflict = f_flags_and_attributes[NODE_ATTR_PUBLIC]
+                || f_flags_and_attributes[NODE_ATTR_PROTECTED];
+        names = g_flag_groups[ATTRIBUTES_GROUP_MEMBER_VISIBILITY];
+        break;
+
+    case NODE_ATTR_PROTECTED:
+        conflict = f_flags_and_attributes[NODE_ATTR_PUBLIC]
+                || f_flags_and_attributes[NODE_ATTR_PRIVATE];
+        names = g_flag_groups[ATTRIBUTES_GROUP_MEMBER_VISIBILITY];
+        break;
+
+    // function type group
+    case NODE_ATTR_STATIC:
+        conflict = f_flags_and_attributes[NODE_ATTR_ABSTRACT]
+                || f_flags_and_attributes[NODE_ATTR_CONSTRUCTOR]
+                || f_flags_and_attributes[NODE_ATTR_VIRTUAL];
+        names = g_flag_groups[ATTRIBUTES_GROUP_FUNCTION_TYPE];
+        break;
+
+    case NODE_ATTR_ABSTRACT:
+        conflict = f_flags_and_attributes[NODE_ATTR_STATIC]
+                || f_flags_and_attributes[NODE_ATTR_CONSTRUCTOR]
+                || f_flags_and_attributes[NODE_ATTR_VIRTUAL];
+        names = g_flag_groups[ATTRIBUTES_GROUP_FUNCTION_TYPE];
+        break;
+
+    case NODE_ATTR_VIRTUAL:
+        conflict = f_flags_and_attributes[NODE_ATTR_STATIC]
+                || f_flags_and_attributes[NODE_ATTR_CONSTRUCTOR]
+                || f_flags_and_attributes[NODE_ATTR_ABSTRACT];
+        names = g_flag_groups[ATTRIBUTES_GROUP_FUNCTION_TYPE];
+        break;
+
+    case NODE_ATTR_CONSTRUCTOR:
+        conflict = f_flags_and_attributes[NODE_ATTR_STATIC]
+                || f_flags_and_attributes[NODE_ATTR_CONSTRUCTOR]
+                || f_flags_and_attributes[NODE_ATTR_ABSTRACT];
+        names = g_flag_groups[ATTRIBUTES_GROUP_FUNCTION_TYPE];
+        break;
+
+    // switch type group
+    case NODE_ATTR_FOREACH:
+        conflict = f_flags_and_attributes[NODE_ATTR_NOBREAK]
+                || f_flags_and_attributes[NODE_ATTR_AUTOBREAK];
+        names = g_flag_groups[ATTRIBUTES_GROUP_SWITCH_TYPE];
+        break;
+
+    case NODE_ATTR_NOBREAK:
+        conflict = f_flags_and_attributes[NODE_ATTR_FOREACH]
+                || f_flags_and_attributes[NODE_ATTR_AUTOBREAK];
+        names = g_flag_groups[ATTRIBUTES_GROUP_SWITCH_TYPE];
+        break;
+
+    case NODE_ATTR_AUTOBREAK:
+        conflict = f_flags_and_attributes[NODE_ATTR_FOREACH]
+                || f_flags_and_attributes[NODE_ATTR_NOBREAK];
+        names = g_flag_groups[ATTRIBUTES_GROUP_SWITCH_TYPE];
+        break;
+
+    // conditional compilation group
+    case NODE_ATTR_TRUE:
+        conflict = f_flags_and_attributes[NODE_ATTR_FALSE];
+        names = g_flag_groups[ATTRIBUTES_GROUP_CONDITIONAL_COMPILATION];
+        break;
+
+    case NODE_ATTR_FALSE:
+        conflict = f_flags_and_attributes[NODE_ATTR_TRUE];
+        names = g_flag_groups[ATTRIBUTES_GROUP_CONDITIONAL_COMPILATION];
+        break;
+
+    case NODE_FLAG_ATTRIBUTE_MAX:
+        throw exception_internal_error("invalid attribute / flag in Node::verify_flag_attribute()");
+
+    // default: -- do not define so the compiler can tell us if
+    //             an enumeration is missing in this case
+    }
+
+    if(conflict)
+    {
+        // this can be a user error so we emit an error instead of throwing
+        Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_ATTRIBUTES, f_position);
+        msg << "Attributes " << names << " are mutually exclusive. Only one of them can be used.";
+    }
+}
+
+
+/** \brief Retrieve the switch operator.
+ *
+ * A switch statement can be constrained to use a specific operator
+ * using the with() syntax as in:
+ *
+ * \code
+ * switch(foo) with(===)
+ * {
+ *    ...
+ * }
+ * \endcode
+ *
+ * This operator is saved in the switch node and can later be retrieved
+ * with this function.
+ *
+ * \exception exception_internal_error
+ * If the function is called on a node of a type other than NODE_SWITCH
+ * then this exception is raised.
+ *
+ * \return The operator of the switch statement, or NODE_UNKNOWN if undefined.
+ */
+Node::node_t Node::get_switch_operator() const
+{
+    if(NODE_SWITCH != f_type)
+    {
+        throw exception_internal_error("INTERNAL ERROR: set_switch_operator() called on a node which is not a switch node.");
+    }
+
+    return f_switch_operator;
+}
+
+
+/** \brief Set the switch statement operator.
+ *
+ * This function saves the operator defined following the switch statement
+ * using the with() instruction as in:
+ *
+ * \code
+ * switch(foo) with(===)
+ * {
+ *    ...
+ * }
+ * \endcode
+ *
+ * \exception exception_internal_error
+ * If the function is called on a node of a type other than NODE_SWITCH
+ * then this exception is raised.
+ *
+ * \param[in] op  The new operator to save in this switch statement.
+ */
+void Node::set_switch_operator(node_t op)
+{
+    if(NODE_SWITCH != f_type)
+    {
+        throw exception_internal_error("INTERNAL ERROR: set_switch_operator() called on a node which is not a switch node.");
+    }
+
+    f_switch_operator = static_cast<int32_t>(op);
+}
 
 
 

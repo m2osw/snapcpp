@@ -45,6 +45,7 @@ add_library( as2js SHARED
     node.cpp
     optimizer.cpp
     options.cpp
+    parser.cpp
     parser_class.cpp
     parser_directive.cpp
     parser_expression.cpp
@@ -55,14 +56,18 @@ add_library( as2js SHARED
     parser_statement.cpp
     parser_variable.cpp
     position.cpp
+    rc.cpp
     stream.cpp
     string.cpp
-    parser.cpp
-    rc.cpp
     version.cpp
 
-    #compile.cpp
-    #compiler.cpp
+    compiler_attributes.cpp
+    compiler_class.cpp
+    compiler_directive.cpp
+    compiler_expression.cpp
+
+    compiler_compile.cpp
+    compiler.cpp
 )
 set_target_properties( as2js PROPERTIES
         VERSION ${AS2JS_VERSION_MAJOR}.${AS2JS_VERSION_MINOR}

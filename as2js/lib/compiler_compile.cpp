@@ -1,4 +1,4 @@
-/* compile.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
+/* compiler_compile.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
 
 /*
 
@@ -35,6 +35,8 @@ SOFTWARE.
 
 #include    "as2js/compiler.h"
 
+#include    "as2js/message.h"
+
 
 namespace as2js
 {
@@ -61,39 +63,38 @@ namespace as2js
  * would miss a large percentage of possible optimizations.
  */
 
-int Compiler::Compile(NodePtr& root)
+int Compiler::compile(Node::pointer_t& root)
 {
-#if defined(_DEBUG) || defined(DEBUG)
-    fflush(stdout);
-#endif
+    // all the "use namespace ... / with ..." currently in effect
+    f_scope = root->create_replacement(Node::NODE_SCOPE);
 
-    // all the "use namespace ..." currently in effect
-    f_scope.CreateNode(NODE_SCOPE);
-
-    if(root.HasNode()) {
-        Data& data = root.GetData();
-        if(data.f_type == NODE_PROGRAM) {
-            Program(root);
+    if(root)
+    {
+        if(root->get_type() == Node::NODE_PROGRAM)
+        {
+            program(root);
         }
-        else if(data.f_type == NODE_ROOT) {
+        else if(root->get_type() == Node::NODE_ROOT)
+        {
             NodeLock ln(root);
-            int max = root.GetChildCount();
-            for(int idx = 0; idx < max; ++idx) {
-                NodePtr child = root.GetChild(idx);
-                if(child.HasNode()) {
-                    data = child.GetData();
-                    if(data.f_type == NODE_PROGRAM) {
-                        Program(child);
-                    }
+            size_t const max_children(root->get_children_size());
+            for(size_t idx(0); idx < max_children; ++idx)
+            {
+                Node::pointer_t child(root->get_child(idx));
+                if(child->get_type() == Node::NODE_PROGRAM)
+                {
+                    program(child);
                 }
             }
         }
-        else {
-            f_error_stream->ErrMsg(AS_ERR_INTERNAL_ERROR, root, "the Compiler::Compile() function expected a root or a program node to start with.");
+        else
+        {
+            Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INTERNAL_ERROR, root->get_position());
+            msg << "the Compiler::compile() function expected a root or a program node to start with.";
         }
     }
 
-    return f_error_stream->ErrCount();
+    return Message::error_count();
 }
 
 
@@ -101,316 +102,60 @@ int Compiler::Compile(NodePtr& root)
 
 
 
-void Compiler::program(Node::pointer_t& program)
+void Compiler::program(Node::pointer_t& program_node)
 {
     // This is the root. Whenever you search to resolve a reference,
     // don't go past that node! What's in the parent of a program is
     // not part of that program...
-    f_program = program;
+    f_program = program_node;
 
 #if 0
-program.Display(stderr);
+std::cerr << program_node;
 #endif
     // get rid of any declaration marked false
-    size_t const org_max(program->get_child_size());
-    for(size_t idx(0); idx < max; ++idx)
+    size_t const org_max(program_node->get_children_size());
+    for(size_t idx(0); idx < org_max; ++idx)
     {
-        Node::pointer_t child(program.get_child(idx));
+        Node::pointer_t child(program_node->get_child(idx));
         if(get_attribute(child, Node::NODE_ATTR_FALSE))
         {
             child->to_unknown();
         }
     }
-    program->clean_tree();
+    program_node->clean_tree();
 
-    NodeLock ln(program);
+    NodeLock ln(program_node);
 
     // look for all the labels in this program (for goto's)
-    for(size_t idx(0); idx < max; ++idx)
+    for(size_t idx(0); idx < org_max; ++idx)
     {
-        Node::pointer_t child(program.GetChild(idx));
-        if(child)
+        Node::pointer_t child(program_node->get_child(idx));
+        if(child->get_type() == Node::NODE_DIRECTIVE_LIST)
         {
-            if(child->get_type() == Node::NODE_DIRECTIVE_LIST)
-            {
-                find_labels(program, child);
-            }
+            find_labels(program_node, child);
         }
     }
 
     // a program is composed of directives (usually just one list)
     // which we want to compile
-    for(size_t idx(0); idx < max; ++idx)
+    for(size_t idx(0); idx < org_max; ++idx)
     {
-        Node::pointer_t child(program->get_child(idx));
-        if(child->get_type() == NODE_DIRECTIVE_LIST)
+        Node::pointer_t child(program_node->get_child(idx));
+        if(child->get_type() == Node::NODE_DIRECTIVE_LIST)
         {
             directive_list(child);
         }
     }
+
 #if 0
-if(f_error_stream->ErrCount() != 0)
-program.Display(stderr);
+if(Message::error_count() > 0)
+std::cerr << program_node;
 #endif
 }
 
 
 
-NodePtr Compiler::DirectiveList(Node::pointer_t& directive_list)
-{
-    int p(f_scope->get_child_size());
-
-    // TODO: should we go through the list a first time
-    //     so we get the list of namespaces for these
-    //     directives at once; so in other words you
-    //     could declare the namespaces in use at the
-    //     start or the end of this scope and it works
-    //     the same way...
-
-    size_t max(directive_list->get_child_size());
-
-    // get rid of any declaration marked false
-    for(size_t idx(0); idx < max; ++idx)
-    {
-        Node::pointer_t child(directive_list->get_child(idx));
-        if(child)
-        {
-            if(get_attribute(child, Node::NODE_ATTR_FALSE))
-            {
-                directive_list.DeleteChild(idx);
-                --idx;
-                --max;
-            }
-        }
-    }
-
-    bool no_access = false;
-    NodePtr end_list;
-
-    // compile each directive one by one...
-    {
-        NodeLock ln(directive_list);
-        for(int idx = 0; idx < max; ++idx) {
-            NodePtr& child = directive_list.GetChild(idx);
-            if(!no_access && end_list.HasNode()) {
-                // err only once on this one
-                no_access = true;
-                f_error_stream->ErrMsg(AS_ERR_INACCESSIBLE_STATEMENT, child, "code is not accessible after a break, continue, goto, throw or return statement.");
-            }
-            if(child.HasNode()) {
-#if 0
-fprintf(stderr, "Directive at ");
-child.DisplayPtr(stderr);
-fprintf(stderr, " (%d + 1 of %d)\n", idx, max);
-#endif
-
-                Data& data = child.GetData();
-                switch(data.f_type) {
-                case NODE_PACKAGE:
-                    // there is nothing to do on those
-                    // until users reference them...
-                    break;
-
-                case NODE_DIRECTIVE_LIST:
-                    // Recursive!
-                    end_list = DirectiveList(child);
-                    // TODO: we need a real control flow
-                    // information to know whether this
-                    // latest list had a break, continue,
-                    // goto or return statement which
-                    // was (really) breaking us too.
-                    break;
-
-                case NODE_LABEL:
-                    // labels don't require any
-                    // compile whatever...
-                    break;
-
-                case NODE_VAR:
-                    Var(child);
-                    break;
-
-                case NODE_WITH:
-                    With(child);
-                    break;
-
-                case NODE_USE: // TODO: should that move in a separate loop?
-                    UseNamespace(child);
-                    break;
-
-                case NODE_GOTO:
-                    Goto(child);
-                    end_list = child;
-                    break;
-
-                case NODE_FOR:
-                    for_directive(child);
-                    break;
-
-                case NODE_SWITCH:
-                    Switch(child);
-                    break;
-
-                case NODE_CASE:
-                    Case(child);
-                    break;
-
-                case NODE_DEFAULT:
-                    Default(child);
-                    break;
-
-                case NODE_IF:
-                    If(child);
-                    break;
-
-                case NODE_WHILE:
-                    While(child);
-                    break;
-
-                case NODE_DO:
-                    Do(child);
-                    break;
-
-                case NODE_THROW:
-                    Throw(child);
-                    end_list = child;
-                    break;
-
-                case NODE_TRY:
-                    Try(child);
-                    break;
-
-                case NODE_CATCH:
-                    Catch(child);
-                    break;
-
-                case NODE_FINALLY:
-                    Finally(child);
-                    break;
-
-                case NODE_BREAK:
-                case NODE_CONTINUE:
-                    BreakContinue(child);
-                    end_list = child;
-                    break;
-
-                case NODE_ENUM:
-                    Enum(child);
-                    break;
-
-                case NODE_FUNCTION:
-                    Function(child);
-                    break;
-
-                case NODE_RETURN:
-                    end_list = Return(child);
-                    break;
-
-                case NODE_CLASS:
-                case NODE_INTERFACE:
-                    // TODO: any non-intrinsic function or
-                    //     variable member referenced in
-                    //     a class requires that the
-                    //     whole class be assembled.
-                    //     (Unless we can just assemble
-                    //     what the user accesses.)
-                    Class(child);
-                    break;
-
-                case NODE_IMPORT:
-                    Import(child);
-                    break;
-
-                // all the possible expression entries
-                case NODE_ASSIGNMENT:
-                case NODE_ASSIGNMENT_ADD:
-                case NODE_ASSIGNMENT_BITWISE_AND:
-                case NODE_ASSIGNMENT_BITWISE_OR:
-                case NODE_ASSIGNMENT_BITWISE_XOR:
-                case NODE_ASSIGNMENT_DIVIDE:
-                case NODE_ASSIGNMENT_LOGICAL_AND:
-                case NODE_ASSIGNMENT_LOGICAL_OR:
-                case NODE_ASSIGNMENT_LOGICAL_XOR:
-                case NODE_ASSIGNMENT_MAXIMUM:
-                case NODE_ASSIGNMENT_MINIMUM:
-                case NODE_ASSIGNMENT_MODULO:
-                case NODE_ASSIGNMENT_MULTIPLY:
-                case NODE_ASSIGNMENT_POWER:
-                case NODE_ASSIGNMENT_ROTATE_LEFT:
-                case NODE_ASSIGNMENT_ROTATE_RIGHT:
-                case NODE_ASSIGNMENT_SHIFT_LEFT:
-                case NODE_ASSIGNMENT_SHIFT_RIGHT:
-                case NODE_ASSIGNMENT_SHIFT_RIGHT_UNSIGNED:
-                case NODE_ASSIGNMENT_SUBTRACT:
-                case NODE_CALL:
-                case NODE_DECREMENT:
-                case NODE_DELETE:
-                case NODE_INCREMENT:
-                case NODE_MEMBER:
-                case NODE_NEW:
-                case NODE_POST_DECREMENT:
-                case NODE_POST_INCREMENT:
-                    expression(child);
-                    break;
-
-                default:
-                    f_error_stream->ErrMsg(AS_ERR_INTERNAL_ERROR, child, "directive node '%s' not handled yet in Compiler::DirectiveList().", data.GetTypeName());
-                    break;
-
-                }
-
-                if(end_list.HasNode()
-                && idx + 1 < max)
-                {
-                    NodePtr& next = directive_list.GetChild(idx + 1);
-                    Data& data = next.GetData();
-                    if(data.f_type == NODE_CASE
-                    || data.f_type == NODE_DEFAULT) {
-                        end_list.ClearNode();
-                    }
-                }
-            }
-        }
-    }
-
-    Data& data = directive_list.GetData();
-    if((data.f_int.Get() & NODE_DIRECTIVE_LIST_FLAG_NEW_VARIABLES) != 0) {
-        int max = directive_list.GetVariableCount();
-        for(int idx = 0; idx < max; ++idx) {
-            NodePtr& variable = directive_list.GetVariable(idx);
-            Node::node_pointer_t var(variable.get_parent());
-            if(var)
-            {
-                Data& var_data = var.GetData();
-                if((var_data.f_int.Get() & NODE_VAR_FLAG_TOADD) != 0)
-                {
-                    // TBD: is that just the var declaration and no
-                    //      assignment? because the assignment needs to
-                    //      happen at the proper time!!!
-                    var_data.f_int.Set(var_data.f_int.Get() & ~NODE_VAR_FLAG_TOADD);
-                    directive_list.InsertChild(0, var);
-                }
-            }
-        }
-        Offsets(directive_list);
-        data.f_int.Set(data.f_int.Get() & ~NODE_DIRECTIVE_LIST_FLAG_NEW_VARIABLES);
-    }
-
-    // go through the f_scope list and remove all the use namespace
-    // (because those are NOT like in C++, they are standalone
-    // instructions... weird!)
-    max = f_scope.GetChildCount();
-    while(p < max) {
-        max--;
-        f_scope.DeleteChild(max);
-    }
-
-    return end_list;
-}
-
-
-
-void Compiler::var(Node::pointer_t& var)
+void Compiler::var(Node::pointer_t& var_node)
 {
     // when variables are used, they are initialized
     // here, we initialize them only if they have
@@ -419,119 +164,117 @@ void Compiler::var(Node::pointer_t& var)
     // end up as an error (i.e. attributes not
     // found as identifier(s) defining another
     // object)
-    NodeLock ln(var);
-    size_t vcnt(var.get_child_size());
+    NodeLock ln(var_node);
+    size_t const vcnt(var_node->get_children_size());
     for(size_t v(0); v < vcnt; ++v)
     {
-        Node::pointer_t variable(var->get_child(v));
-        variable(variable, true);
+        Node::pointer_t variable_node(var_node->get_child(v));
+        variable(variable_node, true);
     }
 }
 
 
 void Compiler::variable(Node::pointer_t& variable_node, bool const side_effects_only)
 {
-    size_t max(variable_node->get_child_size());
+    size_t const max_children(variable_node->get_children_size());
 
-    // if we already have a type, we've been parsed
-    Data& data = variable.GetData();
-    int flags = data.f_int.Get();
+    // if we already have a type, we have been parsed
     if(variable_node->get_flag(Node::NODE_VAR_FLAG_DEFINED)
     || variable_node->get_flag(Node::NODE_VAR_FLAG_ATTRIBUTES))
     {
-#if 0
- {
-char buf[256];
-size_t sz = sizeof(buf);
-data.f_str.ToUTF8(buf, sz);
-fprintf(stderr, "Querying variable [%s] %08X (%d)\n", buf, flags, side_effects_only);
- }
-#endif
-        if(!side_effects_only) {
-            if((flags & NODE_VAR_FLAG_COMPILED) == 0) {
-                for(int idx = 0; idx < max; ++idx) {
-                    NodePtr& child = variable.GetChild(idx);
-                    if(child.HasNode()) {
-                        Data& child_data = child.GetData();
-                        if(child_data.f_type == NODE_SET) {
-                            NodePtr& expr = child.GetChild(0);
-                            Expression(expr);
-                            flags |= NODE_VAR_FLAG_COMPILED;
-                            break;
-                        }
+        if(!side_effects_only)
+        {
+            if(!variable_node->get_flag(Node::NODE_VAR_FLAG_COMPILED))
+            {
+                for(size_t idx(0); idx < max_children; ++idx)
+                {
+                    Node::pointer_t child(variable_node->get_child(idx));
+                    if(child->get_type() == Node::NODE_SET)
+                    {
+                        Node::pointer_t expr(child->get_child(0));
+                        expression(expr);
+                        variable_node->set_flag(Node::NODE_VAR_FLAG_COMPILED, true);
+                        break;
                     }
                 }
             }
-            data.f_int.Set(flags | NODE_VAR_FLAG_INUSE);
+            variable_node->set_flag(Node::NODE_VAR_FLAG_INUSE, true);
         }
         return;
     }
-    data.f_int.Set(flags | NODE_VAR_FLAG_DEFINED | (!side_effects_only ? NODE_VAR_FLAG_INUSE : 0));
-    bool constant = (flags & NODE_VAR_FLAG_CONST) != 0;
 
-#if 0
- {
-char buf[256];
-size_t sz = sizeof(buf);
-data.f_str.ToUTF8(buf, sz);
-fprintf(stderr, "Parsing variable [%s]\n", buf);
- }
-#endif
+    variable_node->set_flag(Node::NODE_VAR_FLAG_DEFINED, true);
+    variable_node->set_flag(Node::NODE_VAR_FLAG_INUSE, !side_effects_only);
+
+    bool const constant(variable_node->get_flag(Node::NODE_VAR_FLAG_CONST));
 
     // make sure to get the attributes before the node gets locked
-    get_attribute(variable, Node::NODE_ATTR_DEFINED);
+    // (we know that the result is true in this case)
+    get_attribute(variable_node, Node::NODE_ATTR_DEFINED);
 
-    NodeLock ln(variable);
+    NodeLock ln(variable_node);
     int set(0);
 
-    for(int idx = 0; idx < max; ++idx) {
-        NodePtr& child = variable.GetChild(idx);
-        if(child.HasNode()) {
-            Data& child_data = child.GetData();
-            if(child_data.f_type == NODE_SET) {
-                NodePtr& expr = child.GetChild(0);
-                 Data& expr_data = expr.GetData();
-                if(expr_data.f_type == NODE_PRIVATE
-                || expr_data.f_type == NODE_PUBLIC) {
+    for(size_t idx(0); idx < max_children; ++idx)
+    {
+        Node::pointer_t child(variable_node->get_child(idx));
+        switch(child->get_type())
+        {
+        case Node::NODE_UNKNOWN:
+            break;
+
+        case Node::NODE_SET:
+            {
+                Node::pointer_t expr(child->get_child(0));
+                if(expr->get_type() == Node::NODE_PRIVATE
+                || expr->get_type() == Node::NODE_PUBLIC)
+                {
                     // this is a list of attributes
                     ++set;
                 }
-                else if((!side_effects_only
-                    || expr.HasSideEffects())
-                        && set == 0) {
-                    Expression(expr);
-                    data.f_int.Set(data.f_int.Get() | NODE_VAR_FLAG_COMPILED | NODE_VAR_FLAG_INUSE);
+                else if(set == 0
+                     && (!side_effects_only || expr->has_side_effects()))
+                {
+                    expression(expr);
+                    expr->set_flag(Node::NODE_VAR_FLAG_COMPILED, true);
+                    expr->set_flag(Node::NODE_VAR_FLAG_INUSE, true);
                 }
                 ++set;
             }
-            else {
-                // define the variable type in this case
-                expression(child);
-                if(!variable_node->get_link(Node::LINK_TYPE))
-                {
-                    variable_node->set_link(Node::LINK_TYPE, child->get_link(Node::LINK_INSTANCE));
-                }
+            break;
+
+        default:
+            // define the variable type in this case
+            expression(child);
+            if(!variable_node->get_link(Node::LINK_TYPE))
+            {
+                variable_node->set_link(Node::LINK_TYPE, child->get_link(Node::LINK_INSTANCE));
             }
+            break;
+
         }
     }
 
-    if(set > 1) {
-        Data& data = variable.GetData();
-        data.f_type = NODE_VAR_ATTRIBUTES;
-        if(!constant) {
-            f_error_stream->ErrStrMsg(AS_ERR_NEED_CONST, variable, "a variable cannot be a list of attributes unless it is made constant and '%S' is not constant.", &data.f_str);
+    if(set > 1)
+    {
+        variable_node->to_var_attributes();
+        if(!constant)
+        {
+            Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_NEED_CONST, variable_node->get_position());
+            msg << "a variable cannot be a list of attributes unless it is made constant and '" << variable_node->get_string() << "' is not constant.";
         }
     }
-    else {
+    else
+    {
         // read the initializer (we're expecting an expression, but
         // if this is only one identifier or PUBLIC or PRIVATE then
         // we're in a special case...)
-        AddVariable(variable);
+        add_variable(variable_node);
     }
 }
 
 
-void Compiler::AddVariable(NodePtr& variable)
+void Compiler::add_variable(Node::pointer_t& variable_node)
 {
     // For variables, we want to save a link in the
     // first directive list; this is used to clear
@@ -545,45 +288,46 @@ void Compiler::AddVariable(NodePtr& variable)
     // correct frame management and a goto inside a
     // frame would otherwise possibly use the wrong
     // variable value!]
-    NodePtr parent = variable;
-    bool first = true;
-    for(;;) {
-        parent = parent.GetParent();
-        Data& parent_data = parent.GetData();
-        switch(parent_data.f_type) {
-        case NODE_DIRECTIVE_LIST:
-            if(first) {
+    Node::pointer_t parent(variable_node);
+    bool first(true);
+    for(;;)
+    {
+        parent = parent->get_parent();
+        switch(parent->get_type())
+        {
+        case Node::NODE_DIRECTIVE_LIST:
+            if(first)
+            {
                 first = false;
-                parent.AddVariable(variable);
+                parent->add_variable(variable_node);
             }
             break;
 
-        case NODE_FUNCTION:
+        case Node::NODE_FUNCTION:
             // mark the variable as local
-        {
-            Data& data = variable.GetData();
-            data.f_int.Set(data.f_int.Get() | NODE_VAR_FLAG_LOCAL);
-            if(first) {
-                parent.AddVariable(variable);
+            variable_node->set_flag(Node::NODE_VAR_FLAG_LOCAL, true);
+            if(first)
+            {
+                parent->add_variable(variable_node);
             }
-        }
             return;
 
-        case NODE_CLASS:
-        case NODE_INTERFACE:
-        {
-            Data& data = variable.GetData();
-            data.f_int.Set(data.f_int.Get() | NODE_VAR_FLAG_MEMBER);
-            if(first) {
-                parent.AddVariable(variable);
+        case Node::NODE_CLASS:
+        case Node::NODE_INTERFACE:
+            // mark the variable as a member of this class or interface
+            variable_node->set_flag(Node::NODE_VAR_FLAG_MEMBER, true);
+            if(first)
+            {
+                parent->add_variable(variable_node);
             }
-        }
             return;
 
-        case NODE_PROGRAM:
-        case NODE_PACKAGE:
-            if(first) {
-                parent.AddVariable(variable);
+        case Node::NODE_PROGRAM:
+        case Node::NODE_PACKAGE:
+            // variable is global
+            if(first)
+            {
+                parent->add_variable(variable_node);
             }
             return;
 
@@ -596,28 +340,31 @@ void Compiler::AddVariable(NodePtr& variable)
 
 
 
-void Compiler::With(NodePtr& with)
+void Compiler::with(Node::pointer_t& with_node)
 {
-    int max = with.GetChildCount();
-    if(max != 2) {
+    size_t const max_children(with_node->get_children_size());
+    if(max_children != 2)
+    {
+        // invalid, ignore
         return;
     }
-    NodeLock ln(with);
+    NodeLock ln(with_node);
 
     // object name defined in an expression
     // (used to resolve identifiers as members in the following
     // expressions until it gets popped)
-    NodePtr& object = with.GetChild(0);
+    Node::pointer_t object(with_node->get_child(0));
 
-    Data& data = object.GetData();
-    if(data.f_type == NODE_THIS) {
+    if(object->get_type() == Node::NODE_THIS)
+    {
         // TODO: could we avoid erring here?!
-        f_error_stream->ErrMsg(AS_ERR_INVALID_EXPRESSION, with, "'with' cannot use 'this' as an object.");
+        Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_EXPRESSION, object->get_position());
+        msg << "'with' cannot use 'this' as an object.";
     }
 
 //fprintf(stderr, "Resolving WITH object...\n");
 
-    Expression(object);
+    expression(object);
 
     // we create two nodes; one so we know we have a WITH instruction
     // and a child of that node which is the object itself; these are
@@ -631,8 +378,8 @@ void Compiler::With(NodePtr& with)
     //int p = f_scope.GetChildCount();
     //f_scope.AddChild(w);
 
-    NodePtr& sub_directives = with.GetChild(1);
-    DirectiveList(sub_directives);
+    Node::pointer_t sub_directives(with_node->get_child(1));
+    directive_list(sub_directives);
 
     // the effect of this with() ends with the end of its
     // list of directives
@@ -641,40 +388,53 @@ void Compiler::With(NodePtr& with)
 
 
 
-void Compiler::Goto(NodePtr& goto_node)
+/** \brief Compile the goto directive.
+ *
+ * Note that JavaScript in browsers do not support the goto instruction.
+ * They have a similar behavior when using while() loop and either a
+ * continue (goto at the start) or the break (goto after the while()
+ * loop.).
+ *
+ * This function is kept here, although we are very unlikely to implement
+ * the instruction in your browser, it may end up being useful in case
+ * we again work on ActionScript.
+ *
+ * \param[in] goto_node  The node representing the goto statement.
+ */
+void Compiler::goto_directive(Node::pointer_t& goto_node)
 {
-    int        idx, count;
-    NodePtr        label;
-
-    count = 0;
-
-    NodePtr parent = goto_node;
-    Data& data = goto_node.GetData();
-
-    do {
-        ++count;
-        parent = parent.GetParent();
-        if(!parent.HasNode()) {
-            f_error_stream->ErrMsg(AS_ERR_INTERNAL_ERROR, goto_node, "Compiler::Goto(): Out of parent before we find function, program or package parent?!");
-            AS_ASSERT(0);
-            return;
+    Node::vector_of_pointers_t parents;
+    Node::pointer_t label;
+    Node::pointer_t parent(goto_node);
+    do
+    {
+        parent = parent->get_parent();
+        if(!parent)
+        {
+            Message msg(MESSAGE_LEVEL_FATAL, AS_ERR_INTERNAL_ERROR, goto_node->get_position());
+            msg << "Compiler::goto(): out of parents before we find function, program or package parent?!";
+            exit(1);
         }
 
-        Data& parent_data = parent.GetData();
         switch(parent->get_type())
         {
         case Node::NODE_CLASS:
         case Node::NODE_INTERFACE:
-            f_error_stream->ErrMsg(AS_ERR_IMPORPER_STATEMENT, goto_node, "cannot have a GOTO instruction in a 'class' or 'interface'.");
+            {
+                Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_IMPROPER_STATEMENT, goto_node->get_position());
+                msg << "cannot have a GOTO instruction in a 'class' or 'interface'.";
+            }
             return;
 
         case Node::NODE_FUNCTION:
         case Node::NODE_PACKAGE:
         case Node::NODE_PROGRAM:
-            label = parent.FindLabel(data.f_str);
-            if(!label.HasNode())
+            label = parent->find_label(goto_node->get_string());
+            if(!label)
             {
-                f_error_stream->ErrStrMsg(AS_ERR_LABEL_NOT_FOUND, goto_node, "label '%S' for goto instruction not found.", &data.f_str);
+                Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_LABEL_NOT_FOUND, goto_node->get_position());
+                msg << "label '" << goto_node->get_string() << "' for goto instruction not found.";
+                return;
             }
             break;
 
@@ -690,46 +450,35 @@ void Compiler::Goto(NodePtr& goto_node)
             break;
 
         }
-    } while(!label.HasNode());
+        parents.push_back(parent);
+    }
+    while(!label);
+    goto_node->set_link(Node::LINK_GOTO_ENTER, label);
 
-    // Now we have to do the hardess part:
+    // Now we have to do the hardest part:
     //    find the common parent frame where both, the goto
     //    and the label can be found
-    //    for this purpose we create an array with all the
-    //    frames and then we search that array with each
+    //    for this purpose we created an array with all the
+    //    frames (parents) and then we search that array with each
     //    parent of the label
 
-#ifdef _MSVC
-    // alloca() not available with cl
-    class AutoDelete {
-    public: AutoDelete(NodePtr *ptr) { f_ptr = ptr; }
-        ~AutoDelete() { delete f_ptr; }
-    private: NodePtr *f_ptr;
-    };
-    NodePtr *parents = new NodePtr[count];
-    AutoDelete ad_parent(parents);
-#else
-    NodePtr parents[count];
-#endif
-    parent = goto_node;
-    for(idx = 0; idx < count; ++idx) {
-        parent = parent.GetParent();
-        parents[idx] = parent;
-    }
-
-    goto_node.SetLink(NodePtr::LINK_GOTO_ENTER, label);
-
     parent = label;
-    for(;;) {
-        parent = parent.GetParent();
-        if(!parent.HasNode()) {
-            f_error_stream->ErrMsg(AS_ERR_INTERNAL_ERROR, goto_node, "Compiler::Goto(): Out of parent before we find the common node?!");
-            AS_ASSERT(0);
-            return;
+    for(;;)
+    {
+        parent = parent->get_parent();
+        if(!parent)
+        {
+            // never found a common parent?!
+            Message msg(MESSAGE_LEVEL_FATAL, AS_ERR_INTERNAL_ERROR, goto_node->get_position());
+            msg << "Compiler::goto(): out of parent before we find the common node?!";
+            exit(1);
         }
-        for(idx = 0; idx < count; ++idx) {
-            if(parents[idx].SameAs(parent)) {
-                goto_node.SetLink(NodePtr::LINK_GOTO_EXIT, parent);
+        for(size_t idx(0); idx < parents.size(); ++idx)
+        {
+            if(parents[idx] == parent)
+            {
+                // found the first common parent
+                goto_node->set_link(Node::LINK_GOTO_EXIT, parent);
                 return;
             }
         }
@@ -755,15 +504,15 @@ void Compiler::for_directive(Node::pointer_t& for_node)
         Node::pointer_t child(for_node->get_child(idx));
         switch(child->get_type())
         {
-        case NODE_EMPTY:
+        case Node::NODE_EMPTY:
             // do nothing
             break;
 
-        case NODE_DIRECTIVE_LIST:
+        case Node::NODE_DIRECTIVE_LIST:
             directive_list(child);
             break;
 
-        case NODE_VAR:
+        case Node::NODE_VAR:
             var(child);
             break;
 
@@ -776,148 +525,159 @@ void Compiler::for_directive(Node::pointer_t& for_node)
 }
 
 
-void Compiler::Switch(NodePtr& switch_node)
+void Compiler::switch_directive(Node::pointer_t& switch_node)
 {
-    int max = switch_node.GetChildCount();
-    if(max != 2)
+    size_t const max_children(switch_node->get_children_size());
+    if(max_children != 2)
     {
         return;
     }
 
     NodeLock ln_sn(switch_node);
-    Expression(switch_node.GetChild(0));
+    expression(switch_node->get_child(0));
 
     // make sure that the list of directive starts
-    // with a label [this is a requirements which
-    // really makes sense but the parser doesn't
+    // with a label [this is a requirement which
+    // really makes sense but the parser does not
     // enforce it]
-    NodePtr& directive_list = switch_node.GetChild(1);
-    max = directive_list.GetChildCount();
-    if(max > 0)
+    Node::pointer_t directive_list_node(switch_node->get_child(1));
+    size_t const max_directives(directive_list_node->get_children_size());
+    if(max_directives > 0)
     {
-        NodePtr& child = directive_list.GetChild(0);
-        Data& data = child.GetData();
-        if(data.f_type != NODE_CASE
-        && data.f_type != NODE_DEFAULT)
+        Node::pointer_t child(directive_list_node->get_child(0));
+        if(child->get_type() != Node::NODE_CASE
+        && child->get_type() != Node::NODE_DEFAULT)
         {
-            f_error_stream->ErrMsg(AS_ERR_INACCESSIBLE_STATEMENT, child, "the list of instructions of a 'switch()' must start with a 'case' or 'default' label.");
+            Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INACCESSIBLE_STATEMENT, switch_node->get_position());
+            msg << "the list of instructions of a 'switch()' statement must start with a 'case' or 'default' label.";
         }
     }
+    // else -- should we warn when empty?
 
-    DirectiveList(directive_list);
+    directive_list(directive_list_node);
 
-    // in case we are being compiled a second time
-    // (it happens for testing the missing return validity)
-    switch_node.set_flag(NODE_SWITCH_FLAG_DEFAULT, false);  // <<-- new scheme!
-    //Data& data = switch_node.GetData();
-    //data.f_int.Set(data.f_int.Get() & ~NODE_SWITCH_FLAG_DEFAULT);
+    // reset the DEFAULT flag just in case we get compiled a second
+    // time (which happens when testing for missing return statements)
+    switch_node->set_flag(Node::NODE_SWITCH_FLAG_DEFAULT, false);
 
     // TODO: If EQUAL or STRICTLY EQUAL we may
     //       want to check for duplicates.
     //       (But cases can be dynamic so it
-    //       doesn't really make sense, does it?!)
+    //       does not really make sense, does it?!)
 }
 
 
-void Compiler::Case(NodePtr& case_node)
+void Compiler::case_directive(Node::pointer_t& case_node)
 {
     // make sure it was used inside a switch statement
     // (the parser doesn't enforce it)
-    NodePtr parent = case_node.GetParent();
-    if(!parent.HasNode())
+    Node::pointer_t parent(case_node->get_parent());
+    if(!parent)
     {
         // ?!?
         return;
     }
-    parent = parent.GetParent();
-    if(!parent.HasNode())
+    parent = parent->get_parent();
+    if(!parent)
     {
         // ?!?
         return;
     }
-    Data& data = parent.GetData();
-    if(data.f_type != NODE_SWITCH)
+    if(parent->get_type() != Node::NODE_SWITCH)
     {
-        f_error_stream->ErrMsg(AS_ERR_IMPORPER_STATEMENT, case_node, "a 'case' statement can only be used within a 'switch()' block.");
+        Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_IMPROPER_STATEMENT, case_node->get_position());
+        msg << "a 'case' statement can only be used within a 'switch()' block.";
         return;
     }
 
-    int const max = case_node.GetChildCount();
-    if(max > 0)
+    size_t const max_children(case_node->get_children_size());
+    if(max_children > 0)
     {
-        Expression(case_node.GetChild(0));
-        if(max > 1)
+        expression(case_node->get_child(0));
+        if(max_children > 1)
         {
-            switch(data.f_int.Get() & NODE_MASK)
+            switch(parent->get_switch_operator())
             {
-            case NODE_UNKNOWN:
-            case NODE_IN:
+            case Node::NODE_UNKNOWN:
+            case Node::NODE_IN:
                 break;
 
             default:
-                f_error_stream->ErrMsg(AS_ERR_INVALID_EXPRESSION, case_node, "a range on a 'case' statement can only be used with the 'in' and 'default' operators.");
+                {
+                    Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_EXPRESSION, case_node->get_position());
+                    msg << "a range on a 'case' statement can only be used with the 'in' and 'default' switch() operators.";
+                }
                 break;
 
             }
-            Expression(case_node.GetChild(1));
+            expression(case_node->get_child(1));
         }
     }
 }
 
 
-void Compiler::Default(NodePtr& default_node)
+void Compiler::default_directive(Node::pointer_t& default_node)
 {
     // make sure it was used inside a switch statement
     // (the parser doesn't enforce it)
-    NodePtr parent = default_node.GetParent();
-    if(!parent.HasNode()) {
+    Node::pointer_t parent(default_node->get_parent());
+    if(!parent) {
         // ?!?
         return;
     }
-    parent = parent.GetParent();
-    if(!parent.HasNode()) {
+    parent = parent->get_parent();
+    if(!parent) {
         // ?!?
         return;
     }
-    Data& data = parent.GetData();
-    if(data.f_type != NODE_SWITCH) {
-        f_error_stream->ErrMsg(AS_ERR_INACCESSIBLE_STATEMENT, default_node, "a 'default' statement can only be used within a 'switch()' block.");
+    if(parent->get_type() != Node::NODE_SWITCH)
+    {
+        Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INACCESSIBLE_STATEMENT, default_node->get_position());
+        msg << "a 'default' statement can only be used within a 'switch()' block.";
         return;
     }
 
-    int flags = data.f_int.Get();
-    if((flags & NODE_SWITCH_FLAG_DEFAULT) != 0) {
-        f_error_stream->ErrMsg(AS_ERR_IMPORPER_STATEMENT, default_node, "only one 'default' statement can be used within one 'switch()'.");
+    if(parent->get_flag(Node::NODE_SWITCH_FLAG_DEFAULT))
+    {
+        Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_IMPROPER_STATEMENT, default_node->get_position());
+        msg << "only one 'default' statement can be used within one 'switch()'.";
     }
-    else {
-        data.f_int.Set(flags | NODE_SWITCH_FLAG_DEFAULT);
+    else
+    {
+        parent->set_flag(Node::NODE_SWITCH_FLAG_DEFAULT, true);
     }
 }
 
 
-void Compiler::If(NodePtr& if_node)
+void Compiler::if_directive(Node::pointer_t& if_node)
 {
-    int max = if_node.GetChildCount();
-    if(max < 2) {
+    size_t const max_children(if_node->get_children_size());
+    if(max_children < 2)
+    {
         return;
     }
     NodeLock ln(if_node);
 
-    // TODO: check whether the first expression
-    //     is a valid boolean?
-    Expression(if_node.GetChild(0));
-    DirectiveList(if_node.GetChild(1));
-    if(max == 3) {
-        DirectiveList(if_node.GetChild(2));
+    // TBD: check whether the first expression
+    //      is a valid boolean? (for strict mode
+    //      maybe, but JavaScript is very lax on
+    //      just like C/C++)
+    expression(if_node->get_child(0));
+    directive_list(if_node->get_child(1));
+    if(max_children == 3)
+    {
+        // else part
+        directive_list(if_node->get_child(2));
     }
 }
 
 
 
-void Compiler::While(NodePtr& while_node)
+void Compiler::while_directive(Node::pointer_t& while_node)
 {
-    int max = while_node.GetChildCount();
-    if(max != 2) {
+    size_t const max_children(while_node->get_children_size());
+    if(max_children != 2)
+    {
         return;
     }
     NodeLock ln(while_node);
@@ -925,15 +685,16 @@ void Compiler::While(NodePtr& while_node)
     // If the first expression is a constant boolean,
     // the optimizer will replace the while()
     // loop in a loop forever; or remove it entirely.
-    Expression(while_node.GetChild(0));
-    DirectiveList(while_node.GetChild(1));
+    expression(while_node->get_child(0));
+    directive_list(while_node->get_child(1));
 }
 
 
-void Compiler::Do(NodePtr& do_node)
+void Compiler::do_directive(Node::pointer_t& do_node)
 {
-    int max = do_node.GetChildCount();
-    if(max != 2) {
+    size_t const max_children(do_node->get_children_size());
+    if(max_children != 2)
+    {
         return;
     }
     NodeLock ln(do_node);
@@ -942,66 +703,75 @@ void Compiler::Do(NodePtr& do_node)
     // the optimizer will replace the do/while()
     // loop in a loop forever; or execute the first
     // list of directives once.
-    DirectiveList(do_node.GetChild(0));
-    Expression(do_node.GetChild(1));
+    directive_list(do_node->get_child(0));
+    expression(do_node->get_child(1));
 }
 
 
-void Compiler::BreakContinue(NodePtr& break_node)
+void Compiler::break_continue(Node::pointer_t& break_node)
 {
-    int        offset;
-    NodePtr        to_break, parent, p, previous;
-
-    Data& data = break_node.GetData();
-    bool no_name = data.f_str.IsEmpty();
-    bool accept_switch = !no_name || data.f_type == NODE_BREAK;
-    bool found_switch = false;
-    parent = break_node;
-    for(;;) {
-        parent = parent.GetParent();
-        Data& parent_data = parent.GetData();
-        if(parent_data.f_type == NODE_SWITCH) {
+    bool const no_label(break_node->get_string().empty());
+    bool const accept_switch(!no_label || break_node->get_type() == Node::NODE_BREAK);
+    bool found_switch(false);
+    Node::pointer_t parent(break_node);
+    for(;;)
+    {
+        parent = parent->get_parent();
+        if(parent->get_type() == Node::NODE_SWITCH)
+        {
             found_switch = true;
         }
-        if((parent_data.f_type == NODE_SWITCH && accept_switch)
-        || parent_data.f_type == NODE_FOR
-        || parent_data.f_type == NODE_DO
-        || parent_data.f_type == NODE_WHILE) {
-            if(no_name) {
-                // just break the current switch, for,
-                // while, do when there isn't a name.
+        if((parent->get_type() == Node::NODE_SWITCH && accept_switch)
+        || parent->get_type() == Node::NODE_FOR
+        || parent->get_type() == Node::NODE_DO
+        || parent->get_type() == Node::NODE_WHILE)
+        {
+            if(no_label)
+            {
+                // just break the current 'switch', 'for',
+                // 'while', 'do' when there is no name.
                 break;
             }
             // check whether this statement has a label
             // and whether it matches the requested name
-            offset = parent.GetOffset();
-            if(offset > 0) {
-                p = parent.GetParent();
-                previous = p.GetChild(offset - 1);
-                Data& prev_data = previous.GetData();
-                if(prev_data.f_type == NODE_LABEL
-                && prev_data.f_str == data.f_str) {
+            int32_t const offset(parent->get_offset());
+            if(offset > 0)
+            {
+                Node::pointer_t p(parent->get_parent());
+                Node::pointer_t previous(p->get_child(offset - 1));
+                if(previous->get_type() == Node::NODE_LABEL
+                && previous->get_string() == break_node->get_string())
+                {
+                    // found a match
                     break;
                 }
             }
         }
-        if(parent_data.f_type == NODE_FUNCTION
-        || parent_data.f_type == NODE_PROGRAM
-        || parent_data.f_type == NODE_CLASS    // ?!
-        || parent_data.f_type == NODE_INTERFACE    // ?!
-        || parent_data.f_type == NODE_PACKAGE) {
+        if(parent->get_type() == Node::NODE_FUNCTION
+        || parent->get_type() == Node::NODE_PROGRAM
+        || parent->get_type() == Node::NODE_CLASS       // ?!
+        || parent->get_type() == Node::NODE_INTERFACE   // ?!
+        || parent->get_type() == Node::NODE_PACKAGE)
+        {
             // not found?! a break/continue outside a loop or
-            // switch?! or the name wasn't found
-            if(no_name) {
-                if(found_switch) {
-                    f_error_stream->ErrMsg(AS_ERR_IMPORPER_STATEMENT, break_node, "you cannot use a continue statement outside a loop (and you need a label to make it work with a switch statement).");
+            // switch?! or the label was not found
+            if(no_label)
+            {
+                if(found_switch)
+                {
+                    Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_IMPROPER_STATEMENT, break_node->get_position());
+                    msg << "you cannot use a continue statement outside a loop (and you need a label to make it work with a switch statement).";
                 }
-                else {
-                    f_error_stream->ErrMsg(AS_ERR_IMPORPER_STATEMENT, break_node, "you cannot use a break or continue instruction outside a loop or switch statement.");
+                else
+                {
+                    Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_IMPROPER_STATEMENT, break_node->get_position());
+                    msg << "you cannot use a break or continue instruction outside a loop or switch statement.";
                 }
             }
-            else {
-                f_error_stream->ErrStrMsg(AS_ERR_LABEL_NOT_FOUND, break_node, "could not find a loop or switch statement labelled '%s' for this break or continue.", &data.f_str);
+            else
+            {
+                Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_LABEL_NOT_FOUND, break_node->get_position());
+                msg << "could not find a loop or switch statement labelled '" << break_node->get_string() << "' for this break or continue.";
             }
             return;
         }
@@ -1010,171 +780,160 @@ void Compiler::BreakContinue(NodePtr& break_node)
     // We just specify which node needs to be reached
     // on this break/continue.
     //
-    // We don't replace these with a simple goto instruction
+    // We do not replace these with a simple goto instruction
     // because that way the person using the tree later can
     // program the break and/or continue the way they feel
     // (using a variable, a special set of instructions,
     // etc. so as to be able to unwind all the necessary
     // data in a way specific to the break/continue).
-    break_node.SetLink(NodePtr::LINK_GOTO_EXIT, parent);
+    //
+    // Also in browsers, JavaScript does not offer a goto.
+    break_node->set_link(Node::LINK_GOTO_EXIT, parent);
 }
 
 
 
-void Compiler::Throw(NodePtr& throw_node)
+void Compiler::throw_directive(Node::pointer_t& throw_node)
 {
-    if(throw_node.GetChildCount() != 1) {
+    if(throw_node->get_children_size() != 1)
+    {
         return;
     }
 
-    Expression(throw_node.GetChild(0));
+    expression(throw_node->get_child(0));
 }
 
 
-void Compiler::Try(NodePtr& try_node)
+void Compiler::try_directive(Node::pointer_t& try_node)
 {
-    if(try_node.GetChildCount() != 1) {
+    if(try_node->get_children_size() != 1)
+    {
         return;
     }
 
     // we want to make sure that we are followed
     // by a catch or a finally
-    NodePtr& parent = try_node.GetParent();
-    bool correct =  false;
-    int max = parent.GetChildCount();
-    int offset = try_node.GetOffset() + 1;
-    if(offset < max) {
-        NodePtr& next = parent.GetChild(offset);
-        Data& data = next.GetData();
-        if(data.f_type == NODE_CATCH
-        || data.f_type == NODE_FINALLY) {
+    Node::pointer_t parent(try_node->get_parent());
+    bool correct(false);
+    size_t const max_parent_children(parent->get_children_size());
+    size_t const offset(static_cast<size_t>(try_node->get_offset()) + 1);
+    if(offset < max_parent_children)
+    {
+        Node::pointer_t next(parent->get_child(offset));
+        if(next->get_type() == Node::NODE_CATCH
+        || next->get_type() == Node::NODE_FINALLY)
+        {
             correct = true;
         }
     }
-    if(!correct) {
-        f_error_stream->ErrMsg(AS_ERR_INVALID_TRY, try_node, "a 'try' statement needs to be followed by at least one catch or a finally.");
+    if(!correct)
+    {
+        Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_TRY, try_node->get_position());
+        msg << "a 'try' statement needs to be followed by at least one of 'catch' or 'finally'.";
     }
 
-    DirectiveList(try_node.GetChild(0));
+    directive_list(try_node->get_child(0));
 }
 
 
-void Compiler::Catch(NodePtr& catch_node)
+void Compiler::catch_directive(Node::pointer_t& catch_node)
 {
-    if(catch_node.GetChildCount() != 2) {
+    if(catch_node->get_children_size() != 2)
+    {
         return;
     }
 
-    // we want to make sure that we are preceded
-    // by a try
-    NodePtr& parent = catch_node.GetParent();
-    bool correct =  false;
-    int offset = catch_node.GetOffset() - 1;
-    if(offset >= 0) {
-        NodePtr& prev = parent.GetChild(offset);
-        Data& data = prev.GetData();
-        if(data.f_type == NODE_TRY) {
+    // we want to make sure that we are preceded by a try
+    Node::pointer_t parent(catch_node->get_parent());
+    bool correct(false);
+    int32_t const offset(catch_node->get_offset());
+    if(offset > 0)
+    {
+        Node::pointer_t prev(parent->get_child(offset - 1));
+        if(prev->get_type() == Node::NODE_TRY)
+        {
             correct = true;
         }
-        else if(data.f_type == NODE_CATCH) {
+        else if(prev->get_type() == Node::NODE_CATCH)
+        {
             correct = true;
-            // It is correct syntactically, but we must
-            // also have all typed catch()'es first!
-            if((data.f_int.Get() & NODE_CATCH_FLAG_TYPED) == 0) {
-                f_error_stream->ErrMsg(AS_ERR_INVALID_TYPE, catch_node, "only the last 'catch' statement can have a parameter without a valid type.");
+
+            // correct syntactically, however, the previous catch
+            // must clearly be typed
+            if(!prev->get_flag(Node::NODE_CATCH_FLAG_TYPED))
+            {
+                Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_TYPE, catch_node->get_position());
+                msg << "only the last 'catch' statement can have a parameter without a valid type.";
             }
         }
     }
-    if(!correct) {
-        f_error_stream->ErrMsg(AS_ERR_IMPORPER_STATEMENT, catch_node, "a 'catch' statement needs to be preceded by a 'try' statement.");
+    if(!correct)
+    {
+        Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_IMPROPER_STATEMENT, catch_node->get_position());
+        msg << "a 'catch' statement needs to be preceded by a 'try' or another typed 'catch' statement.";
     }
 
-    NodePtr& parameters = catch_node.GetChild(0);
-    Parameters(parameters);
-    if(parameters.GetChildCount() > 0) {
-        NodePtr& param = parameters.GetChild(0);
-        Data& data = param.GetData();
-        data.f_int.Set(data.f_int.Get() | NODE_PARAMETERS_FLAG_CATCH);
+    Node::pointer_t parameters_node(catch_node->get_child(0));
+    parameters(parameters_node);
+    if(parameters_node->get_children_size() > 0)
+    {
+        Node::pointer_t param(parameters_node->get_child(0));
+        param->set_flag(Node::NODE_PARAMETERS_FLAG_CATCH, true);
     }
 
-    DirectiveList(catch_node.GetChild(1));
+    directive_list(catch_node->get_child(1));
 }
 
 
-void Compiler::Finally(NodePtr& finally_node)
+void Compiler::finally(Node::pointer_t& finally_node)
 {
-    if(finally_node.GetChildCount() != 1) {
+    if(finally_node->get_children_size() != 1)
+    {
         return;
     }
 
-    // we want to make sure that we are preceded
-    // by a try
-    NodePtr& parent = finally_node.GetParent();
-    bool correct =  false;
-    int offset = finally_node.GetOffset() - 1;
-    if(offset >= 0) {
-        NodePtr& prev = parent.GetChild(offset);
-        Data& data = prev.GetData();
-        if(data.f_type == NODE_TRY
-        || data.f_type == NODE_CATCH) {
+    // we want to make sure that we are preceded by a try or a catch
+    Node::pointer_t parent(finally_node->get_parent());
+    bool correct(false);
+    int32_t const offset(finally_node->get_offset());
+    if(offset > 0)
+    {
+        Node::pointer_t prev(parent->get_child(offset - 1));
+        if(prev->get_type() == Node::NODE_TRY
+        || prev->get_type() == Node::NODE_CATCH)
+        {
             correct = true;
         }
     }
-    if(!correct) {
-        f_error_stream->ErrMsg(AS_ERR_IMPORPER_STATEMENT, finally_node, "a 'finally' statement needs to be preceded by a 'try' or 'catch' statement.");
-    }
-
-    // At this time we do nothing about the
-    // parameter; this is just viewed as a
-    // variable at this time
-
-    DirectiveList(finally_node.GetChild(0));
-}
-
-
-
-void Compiler::enum_directive(Node::pointer_t& enum_node)
-{
-    NodeLock ln(enum_node);
-    size_t const max(enum_node->get_children_size());
-    for(size_t idx(0); idx < max; ++idx)
+    if(!correct)
     {
-        Node::pointer_t entry(enum_node->get_child(idx));
-        if(entry->get_children_size() != 1)
-        {
-            // not valid, skip
-            continue;
-        }
-        // compile the expression
-        Node::pointer_t set = entry->get_child(0);
-        if(set->get_children_size() != 1)
-        {
-            // not valid, skip
-            continue;
-        }
-        expression(set->get_child(0));
+        Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_IMPROPER_STATEMENT, finally_node->get_position());
+        msg << "a 'finally' statement needs to be preceded by a 'try' or 'catch' statement.";
     }
+
+    directive_list(finally_node->get_child(0));
 }
+
 
 
 /** \brief Check whether that function was not marked as final before.
  *
  * \return true if the function is marked as final in a super definition.
  */
-bool Compiler::find_final_functions(Node::pointer_t& function, Node::pointer_t& super)
+bool Compiler::find_final_functions(Node::pointer_t& function_node, Node::pointer_t& super)
 {
-    size_t const max(super.get_child_size());
-    for(size_t idx(0); idx < max; ++idx)
+    size_t const max_children(super->get_children_size());
+    for(size_t idx(0); idx < max_children; ++idx)
     {
-        Node::pointer_t child(super.get_child(idx));
+        Node::pointer_t child(super->get_child(idx));
         switch(child->get_type())
         {
-        case NODE_EXTENDS:
+        case Node::NODE_EXTENDS:
         {
-            Node::pointer_t next_super(child.GetLink(NodePtr::LINK_INSTANCE));
+            Node::pointer_t next_super(child->get_link(Node::LINK_INSTANCE));
             if(next_super)
             {
-                if(find_final_functions(function, next_super))
+                if(find_final_functions(function_node, next_super)) // recursive
                 {
                     return true;
                 }
@@ -1182,15 +941,18 @@ bool Compiler::find_final_functions(Node::pointer_t& function, Node::pointer_t& 
         }
             break;
 
-        case NODE_DIRECTIVE_LIST:
-            if(find_final_functions(function, child))
+        case Node::NODE_DIRECTIVE_LIST:
+            if(find_final_functions(function_node, child)) // recursive
             {
                 return true;
             }
             break;
 
-        case NODE_FUNCTION:
-            if(function->get_string() == child->get_string())
+        case Node::NODE_FUNCTION:
+            // TBD: are we not also expected to check the number of
+            //      parameter to know that it is the same function?
+            //      (see compare_parameters() below)
+            if(function_node->get_string() == child->get_string())
             {
                 // we found a function of the same name
                 if(get_attribute(child, Node::NODE_ATTR_FINAL))
@@ -1215,10 +977,10 @@ bool Compiler::find_final_functions(Node::pointer_t& function, Node::pointer_t& 
  *
  * \return true if the function is marked as final in a super definition.
  */
-bool Compiler::check_final_functions(Node::pointer_t& function, Node::pointer_t& class_node)
+bool Compiler::check_final_functions(Node::pointer_t& function_node, Node::pointer_t& class_node)
 {
-    size_t max(class_node->get_child_size());
-    for(size_t idx(0); idx < max; ++idx)
+    size_t const max_children(class_node->get_children_size());
+    for(size_t idx(0); idx < max_children; ++idx)
     {
         Node::pointer_t child(class_node->get_child(idx));
 
@@ -1226,16 +988,17 @@ bool Compiler::check_final_functions(Node::pointer_t& function, Node::pointer_t&
         //
         // TODO: we most certainly can support more than one extend in
         //       JavaScript, although it is not 100% clean, but we can
-        //       make it work so we'll have to enhance this test
-        if(child->get_type() == Node::NODE_EXTENDS)
+        //       make it work so we will have to enhance this test
+        if(child->get_type() == Node::NODE_EXTENDS
+        && child->get_children_size() > 0)
         {
-            // this points to another class which may defined
+            // this points to another class which may define
             // the same function as final
             Node::pointer_t name(child->get_child(0));
             Node::pointer_t super(name->get_link(Node::LINK_INSTANCE));
             if(super)
             {
-                return find_final_functions(function, super);
+                return find_final_functions(function_node, super);
             }
             break;
         }
@@ -1247,16 +1010,13 @@ bool Compiler::check_final_functions(Node::pointer_t& function, Node::pointer_t&
 
 bool Compiler::compare_parameters(Node::pointer_t& lfunction, Node::pointer_t& rfunction)
 {
-//Data& d = lfunction.GetData();
-//fprintf(stderr, "Comparing params of %.*S\n", d.f_str.GetLength(), d.f_str.Get());
-
     // search for the list of parameters in each function
-    Node::pointer_t lparams(lfunction->get_first_child(Node::NODE_PARAMETERS));
-    Node::pointer_t rparams(rfunction->get_first_child(Node::NODE_PARAMETERS));
+    Node::pointer_t lparams(lfunction->find_first_child(Node::NODE_PARAMETERS));
+    Node::pointer_t rparams(rfunction->find_first_child(Node::NODE_PARAMETERS));
 
     // get the number of parameters in each list
-    size_t const lmax(lparams ? lparams->get_child_size() : 0);
-    size_t const rmax(rparams ? rparams->get_child_size() : 0);
+    size_t const lmax(lparams ? lparams->get_children_size() : 0);
+    size_t const rmax(rparams ? rparams->get_children_size() : 0);
 
     // if we do not have the same number of parameters, already, we know it
     // is not the same, even if one has just a rest in addition
@@ -1266,85 +1026,92 @@ bool Compiler::compare_parameters(Node::pointer_t& lfunction, Node::pointer_t& r
     }
 
     // same number, compare the types
-    bool result = true;
     for(size_t idx(0); idx < lmax; ++idx)
     {
         // Get the PARAM
-        NodePtr& lp = lparams.GetChild(idx);
-        NodePtr& rp = rparams.GetChild(idx);
+        Node::pointer_t lp(lparams->get_child(idx));
+        Node::pointer_t rp(rparams->get_child(idx));
         // Get the type of each PARAM
-        NodePtr& l = lp.GetChild(0);
-        NodePtr& r = rp.GetChild(0);
+        // TODO: test that lp and rp have at least one child?
+        Node::pointer_t l(lp->get_child(0));
+        Node::pointer_t r(rp->get_child(0));
         // We can directly compare strings and identifiers
-        Data& ldata = l.GetData();
-        Data& rdata = r.GetData();
-        if((ldata.f_type != NODE_IDENTIFIER
-                && ldata.f_type != NODE_STRING)
-        || (rdata.f_type != NODE_IDENTIFIER
-                && rdata.f_type != NODE_STRING)) {
-            // if we can't compare at compile time,
-            // we consider the types as equal...
+        // Anything else fails meaning that we consider them equal
+        if((l->get_type() != Node::NODE_IDENTIFIER && l->get_type() != Node::NODE_STRING)
+        || (r->get_type() != Node::NODE_IDENTIFIER && r->get_type() != Node::NODE_STRING))
+        {
+            // if we cannot compare at compile time,
+            // we consider the types as equal... (i.e. match!)
             continue;
         }
-        if(ldata.f_str != rdata.f_str) {
+        if(l->get_string() != r->get_string())
+        {
             return false;
         }
     }
 
-    return result;
+    return true;
 }
 
 
 
-bool Compiler::CheckUniqueFunctions(NodePtr& function, NodePtr& class_node, bool all_levels)
+bool Compiler::check_unique_functions(Node::pointer_t function_node, Node::pointer_t class_node, bool const all_levels)
 {
-    Data& data = function.GetData();
-    int max = class_node.GetChildCount();
-    for(int idx = 0; idx < max; ++idx) {
-        NodePtr& child = class_node.GetChild(idx);
-        Data& child_data = child.GetData();
-        switch(child_data.f_type) {
-        case NODE_DIRECTIVE_LIST:
-            if(all_levels) {
-                if(CheckUniqueFunctions(function, child, true)) {
+    size_t const max(class_node->get_children_size());
+    for(size_t idx(0); idx < max; ++idx)
+    {
+        Node::pointer_t child(class_node->get_child(idx));
+        switch(child->get_type())
+        {
+        case Node::NODE_DIRECTIVE_LIST:
+            if(all_levels)
+            {
+                if(check_unique_functions(function_node, child, true)) // recursive
+                {
                     return true;
                 }
             }
             break;
 
-        case NODE_FUNCTION:
+        case Node::NODE_FUNCTION:
             // TODO: stop recursion properly
             //
-            // this condition isn't enough to stop this
-            // recursive process; but I think it's good
+            // this condition is not enough to stop this
+            // recursive process; but I think it is good
             // enough for most cases; the only problem is
             // anyway that we will eventually get the same
             // error multiple times...
-            if(child == function)
+            if(child == function_node)
             {
                 return false;
             }
 
-            if(function->get_string() == child->get_string())
+            if(function_node->get_string() == child->get_string())
             {
-                if(compare_parameters(function, child))
+                if(compare_parameters(function_node, child))
                 {
-                    Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_DUPLICATES, f_lexer->get_input()->get_position());
-                    msg << "you cannot define two functions with the same name (" << function->get_string()
+                    Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_DUPLICATES, function_node->get_position());
+                    msg << "you cannot define two functions with the same name (" << function_node->get_string()
                                 << ") and prototype in the same scope, class or interface.";
                     return true;
                 }
             }
             break;
 
-        case NODE_VAR:
+        case Node::NODE_VAR:
         {
-            int cnt = child.GetChildCount();
-            for(int j = 0; j < cnt; ++j) {
-                NodePtr& variable = child.GetChild(j);
-                Data& var_data = variable.GetData();
-                if(data.f_str == var_data.f_str) {
-                    f_error_stream->ErrStrMsg(AS_ERR_DUPLICATES, function, "you cannot define a function and a variable (found at line #%ld) with the same name (%S) in the same scope, class or interface.", variable.GetLine(), &data.f_str);
+            size_t const cnt(child->get_children_size());
+            for(size_t j(0); j < cnt; ++j)
+            {
+                Node::pointer_t variable_node(child->get_child(j));
+                if(function_node->get_string() == variable_node->get_string())
+                {
+                    Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_DUPLICATES, function_node->get_position());
+                    msg << "you cannot define a function and a variable (found at line #"
+                            << variable_node->get_position().get_line()
+                            << ") with the same name ("
+                            << function_node->get_string()
+                            << ") in the same scope, class or interface.";
                     return true;
                 }
             }
@@ -1362,12 +1129,12 @@ bool Compiler::CheckUniqueFunctions(NodePtr& function, NodePtr& class_node, bool
 
 
 
-void Compiler::function(Node::pointer_t& function)
+void Compiler::function(Node::pointer_t& function_node)
 {
     int        idx, flags;
 
-    if(function->get_flag(Node::NODE_ATTR_UNUSED)
-    || function->get_flag(Node::NODE_ATTR_FALSE))
+    if(get_attribute(function_node, Node::NODE_ATTR_UNUSED)
+    || get_attribute(function_node, Node::NODE_ATTR_FALSE))
     {
         return;
     }
@@ -1441,12 +1208,12 @@ void Compiler::function(Node::pointer_t& function)
 
     // any one of the following flags implies that the function is
     // defined in a class; check to make sure!
-    if(function->get_flag(Node::NODE_ATTR_ABSTRACT)
-    || function->get_flag(Node::NODE_ATTR_STATIC)
-    || function->get_flag(Node::NODE_ATTR_PROTECTED)
-    || function->get_flag(Node::NODE_ATTR_VIRTUAL)
-    || function->get_flag(Node::NODE_ATTR_CONSTRUCTOR)
-    || function->get_flag(Node::NODE_ATTR_FINAL))
+    if(get_attribute(function, Node::NODE_ATTR_ABSTRACT)
+    || get_attribute(function, Node::NODE_ATTR_STATIC)
+    || get_attribute(function, Node::NODE_ATTR_PROTECTED)
+    || get_attribute(function, Node::NODE_ATTR_VIRTUAL)
+    || get_attribute(function, Node::NODE_ATTR_CONSTRUCTOR)
+    || get_attribute(function, Node::NODE_ATTR_FINAL))
     {
         if(!member)
         {
@@ -1465,7 +1232,7 @@ void Compiler::function(Node::pointer_t& function)
 
     // any one of the following flags implies that the function is
     // defined in a class or a package; check to make sure!
-    if(function->get_flag(Node::NODE_ATTR_PRIVATE))
+    if(get_attribute(function, Node::NODE_ATTR_PRIVATE))
     {
         if(!package && !member)
         {
@@ -1511,9 +1278,9 @@ void Compiler::function(Node::pointer_t& function)
             break;
 
         case Node::NODE_DIRECTIVE_LIST:
-            if(function->get_flag(Node::NODE_ATTR_ABSTRACT))
+            if(get_attribute(function, Node::NODE_ATTR_ABSTRACT))
             {
-                Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_IMPORPER_STATEMENT, f_lexer->get_input()->get_position());
+                Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_IMPROPER_STATEMENT, f_lexer->get_input()->get_position());
                 msg << "the function \"" << function->get_string() << "\" is marked abstract and cannot have a body.";
             }
             // find all the labels of this function
@@ -1548,7 +1315,7 @@ void Compiler::function(Node::pointer_t& function)
     // test for a return whenever necessary
     if(!end_list
     && directive_list
-    && (function->get_flag(Node::NODE_ATTR_ABSTRACT) || function->get_flag(Node::NODE_ATTR_INTRINSIC))
+    && (get_attribute(function, Node::NODE_ATTR_ABSTRACT) || get_attribute(function, Node::NODE_ATTR_INTRINSIC))
     && (function->get_flag(Node::NODE_FUNCTION_FLAG_VOID) || function->get_flag(Node::NODE_FUNCTION_FLAG_NEVER)))
     {
         f_optimizer->optimize(directive_list);
@@ -1772,18 +1539,18 @@ NodePtr Compiler::Return(NodePtr& return_node)
         }
     } while(more);
     if(bad) {
-        f_error_stream->ErrMsg(AS_ERR_IMPORPER_STATEMENT, return_node, "'return' can only be used inside a function.");
+        f_error_stream->ErrMsg(AS_ERR_IMPROPER_STATEMENT, return_node, "'return' can only be used inside a function.");
     }
     else {
         if((flags & NODE_FUNCTION_FLAG_NEVER) != 0) {
-            f_error_stream->ErrStrMsg(AS_ERR_IMPORPER_STATEMENT, return_node, "'return' was used inside '%S', a function Never returning.", &data->f_str);
+            f_error_stream->ErrStrMsg(AS_ERR_IMPROPER_STATEMENT, return_node, "'return' was used inside '%S', a function Never returning.", &data->f_str);
         }
 
         int max = return_node.GetChildCount();
         if(max == 1) {
             if((flags & NODE_FUNCTION_FLAG_VOID) != 0
             || IsConstructor(parent)) {
-                f_error_stream->ErrStrMsg(AS_ERR_IMPORPER_STATEMENT, return_node, "'return' was used with an expression inside '%S', a function returning Void.", &data->f_str);
+                f_error_stream->ErrStrMsg(AS_ERR_IMPROPER_STATEMENT, return_node, "'return' was used with an expression inside '%S', a function returning Void.", &data->f_str);
             }
             Expression(return_node.GetChild(0));
         }
@@ -1795,7 +1562,7 @@ NodePtr Compiler::Return(NodePtr& return_node)
             // here at some point.
             if((flags & NODE_FUNCTION_FLAG_VOID) == 0
             && !IsConstructor(parent)) {
-                f_error_stream->ErrStrMsg(AS_ERR_IMPORPER_STATEMENT, return_node, "'return' was used without an expression inside '%S', a function which expected a value to be returned.", &data->f_str);
+                f_error_stream->ErrStrMsg(AS_ERR_IMPROPER_STATEMENT, return_node, "'return' was used without an expression inside '%S', a function which expected a value to be returned.", &data->f_str);
             }
         }
     }
@@ -1805,88 +1572,6 @@ NodePtr Compiler::Return(NodePtr& return_node)
 
 
 
-
-
-void Compiler::DeclareClass(NodePtr& class_node)
-{
-    int max = class_node.GetChildCount();
-    for(int idx = 0; idx < max; ++idx) {
-        //NodeLock ln(class_node);
-        NodePtr& child = class_node.GetChild(idx);
-        Data& data = child.GetData();
-        switch(data.f_type) {
-        case NODE_DIRECTIVE_LIST:
-            DeclareClass(child);
-            break;
-
-        case NODE_CLASS:
-        case NODE_INTERFACE:
-            Class(child);
-            break;
-
-        case NODE_ENUM:
-            Enum(child);
-            break;
-
-        case NODE_FUNCTION:
-            Function(child);
-            break;
-
-        case NODE_VAR:
-            Var(child);
-            break;
-
-        default:
-            f_error_stream->ErrMsg(AS_ERR_INVALID_NODE, child, "the '%s' token cannot be a class member.", data.GetTypeName());
-            break;
-
-        }
-    }
-}
-
-
-
-
-void Compiler::ExtendClass(NodePtr& class_node, NodePtr& extend_name)
-{
-    Expression(extend_name);
-
-    NodePtr& super = extend_name.GetLink(NodePtr::LINK_INSTANCE);
-    if(super.HasNode()) {
-        unsigned long attrs = GetAttributes(super);
-        if((attrs & NODE_ATTR_FINAL) != 0) {
-            Data& super_data = super.GetData();
-            Data& class_data = class_node.GetData();
-            f_error_stream->ErrStrMsg(AS_ERR_FINAL, class_node, "the class '%S' is marked final and it cannot be extended by '%S'.", &super_data.f_str, &class_data.f_str);
-        }
-    }
-}
-
-
-void Compiler::Class(NodePtr& class_node)
-{
-    int max = class_node.GetChildCount();
-    for(int idx = 0; idx < max; ++idx) {
-        //NodeLock ln(class_node);
-        NodePtr& child = class_node.GetChild(idx);
-        Data& data = child.GetData();
-        switch(data.f_type) {
-        case NODE_DIRECTIVE_LIST:
-            DeclareClass(child);
-            break;
-
-        case NODE_EXTENDS:
-        case NODE_IMPLEMENTS:
-            ExtendClass(class_node, child.GetChild(0));
-            break;
-
-        default:
-            f_error_stream->ErrMsg(AS_ERR_INTERNAL_ERROR, class_node, "invalid token '%s' in a class definition.", data.GetTypeName());
-            break;
-
-        }
-    }
-}
 
 
 
@@ -1996,8 +1681,8 @@ void Compiler::LinkType(NodePtr& type)
     }
     data.f_int.Set(flags | NODE_IDENTIFIER_FLAG_TYPED);
 
-    NodePtr object;
-    if(!ResolveName(type, type, object, 0, 0)) {
+    Node::pointer_t object;
+    if(!resolve_name(type, type, object, Node::pointer_t(), 0)) {
         // unknown type?! -- should we return a link to Object?
         f_error_stream->ErrStrMsg(AS_ERR_INVALID_EXPRESSION, type, "cannot find a class definition for type '%S'.", &data.f_str);
         return;
@@ -2518,7 +2203,7 @@ bool Compiler::FindMember(NodePtr& member, NodePtr& resolution, NodePtr *params,
             return true;
         }
 
-        if(!ResolveName(name, name, object, params, search_flags)) {
+        if(!resolve_name(name, name, object, params, search_flags)) {
             // we can't even find the first name!
             // we won't search for fields since we need to have
             // an object for that purpose!
@@ -2674,7 +2359,7 @@ fprintf(stderr, "WARNING: a variable name is expected for a function parameter f
         resolution = id.GetLink(NodePtr::LINK_TYPE);
         if(!resolution.HasNode()) {
 //fprintf(stderr, "Resolving type for a NODE_PARAM (%.*S)\n", data.f_str.GetLength(), data.f_str.Get());
-            if(!ResolveName(t2, id, resolution, 0, 0)) {
+            if(!resolve_name(t2, id, resolution, Node::pointer_t(), 0)) {
                 return 0;
             }
 //fprintf(stderr, "   ---> ");
@@ -2688,7 +2373,8 @@ fprintf(stderr, "WARNING: a variable name is expected for a function parameter f
     NodePtr& tp1 = t1.GetLink(NodePtr::LINK_TYPE);
     NodePtr& tp2 = t2.GetLink(NodePtr::LINK_TYPE);
 
-    if(!tp1.HasNode()) {
+    if(!tp1.HasNode())
+    {
         TypeExpr(t1);
         tp1 = t1.GetLink(NodePtr::LINK_TYPE);
         if(!tp1.HasNode()) {
@@ -2833,9 +2519,9 @@ bool Compiler::DefineFunctionType(NodePtr& func)
             if(data.f_type != NODE_PARAMETERS
             && data.f_type != NODE_DIRECTIVE_LIST) {
                 // then this is the type definition
-                Expression(type);
-                NodePtr resolution;
-                if(ResolveName(type, type, resolution, 0, 0)) {
+                expression(type);
+                Node::pointer_t resolution;
+                if(resolve_name(type, type, resolution, Node::pointer_t(), 0)) {
 #if 0
                     // we may want to have that in
                     // different places for when we
@@ -3942,7 +3628,7 @@ bool Compiler::SelectBestFunc(NodePtr *params, NodePtr& resolution)
 
 
 
-bool Compiler::ResolveName(NodePtr list, NodePtr& id, NodePtr& resolution, NodePtr *params, int search_flags)
+bool Compiler::resolve_name(Node::pointer_t list, Node::pointer_t id, Node::pointer_t& resolution, Node::pointer_t params, int const search_flags)
 {
     RestoreFlags restore_flags(this);
 
@@ -4290,7 +3976,7 @@ fprintf(stderr, "\n");
             break;
 
         default:
-            fprintf(stderr, "INTERNAL ERROR: unhandled type in Compiler::ResolveName()\n");
+            fprintf(stderr, "INTERNAL ERROR: unhandled type in Compiler::resolve_name()\n");
             AS_ASSERT(0);
             break;
 
@@ -4477,7 +4163,7 @@ bool Compiler::ResolveCall(NodePtr& call)
         // these need to be function names
         NodePtr resolution;
         int errcnt = f_error_stream->ErrCount();
-        if(ResolveName(id, id, resolution, &params, SEARCH_FLAG_GETTER)) {
+        if(resolve_name(id, id, resolution, params, SEARCH_FLAG_GETTER)) {
 //fprintf(stderr, "Cool! identifier found [%s]\n", name.f_str.GetUTF8());
             Data& res_data = resolution.GetData();
             if(res_data.f_type == NODE_CLASS
@@ -4705,7 +4391,7 @@ void Compiler::ResolveInternalType(NodePtr& parent, const char *type, NodePtr& r
     bool r;
     {
         NodeLock ln(parent);
-        r = ResolveName(id, id, resolution, 0, 0);
+        r = resolve_name(id, id, resolution, Node::pointer_t(), 0);
     }
 
     // get rid of the temporary identifier
@@ -4799,427 +4485,6 @@ void Compiler::TypeExpr(NodePtr& expr)
 
 
 
-void Compiler::SetAttr(NodePtr& node, unsigned long& list_attrs, unsigned long set, unsigned long exclusive, const char *names)
-{
-    if((list_attrs & exclusive) != 0) {
-        f_error_stream->ErrMsg(AS_ERR_INVALID_ATTRIBUTES, node, "the attributes %s are mutually exclusive.", names);
-        return;
-    }
-
-    /* We would need the proper name...
-     * Also, if we have variables, it isn't unlikely normal that
-     * the same attribute would be defined multiple times.
-    if((list_attrs & set) != 0) {
-fprintf(stderr, "WARNING: %s is defined multiple times.\n", names);
-        return;
-    }
-    */
-
-    list_attrs |= set;
-}
-
-
-
-
-void Compiler::VariableToAttrs(NodePtr& node, NodePtr& var, unsigned long& attrs)
-{
-    Data& var_data = var.GetData();
-    if(var_data.f_type != NODE_SET) {
-        f_error_stream->ErrMsg(AS_ERR_INVALID_VARIABLE, node, "an attribute variable has to be given a value.");
-        return;
-    }
-
-    NodePtr& a = var.GetChild(0);
-    Data& data = a.GetData();
-    switch(data.f_type) {
-    case NODE_FALSE:
-    case NODE_IDENTIFIER:
-    case NODE_PRIVATE:
-    case NODE_PUBLIC:
-    case NODE_TRUE:
-        NodeToAttrs(node, a, attrs);
-        return;
-
-    default:
-        // expect a full boolean expression in this case
-        break;
-
-    }
-
-    // compute the expression
-    Expression(a);
-    f_optimizer.Optimize(a);
-
-    switch(data.f_type) {
-    case NODE_TRUE:
-    case NODE_FALSE:
-        NodeToAttrs(node, a, attrs);
-        return;
-
-    default:
-        break;
-
-    }
-
-    f_error_stream->ErrMsg(AS_ERR_INVALID_EXPRESSION, node, "an attribute which is an expression needs to result in a boolean value (true or false).");
-}
-
-
-void Compiler::IdentifierToAttrs(NodePtr& node, NodePtr& a, unsigned long& attrs)
-{
-    Data& data = a.GetData();
-
-    // an identifier can't be an empty string
-    switch(data.f_str.Get()[0]) {
-    case 'a':
-        if(data.f_str == "abstract") {
-            SetAttr(node, attrs,
-                NODE_ATTR_ABSTRACT,
-                NODE_ATTR_CONSTRUCTOR | NODE_ATTR_STATIC | NODE_ATTR_VIRTUAL,
-                "ABSTRACT, CONSTRUCTOR, STATIC and VIRTUAL");
-            return;
-        }
-        if(data.f_str == "array") {
-            SetAttr(node, attrs,
-                NODE_ATTR_ARRAY,
-                0,
-                "ARRAY");
-            return;
-        }
-        if(data.f_str == "autobreak") {
-            SetAttr(node, attrs,
-                NODE_ATTR_AUTOBREAK,
-                NODE_ATTR_FOREACH | NODE_ATTR_NOBREAK,
-                "AUTOBREAK, FOREACH and NOBREAK");
-            return;
-        }
-        break;
-
-    case 'c':
-        if(data.f_str == "constructor") {
-            SetAttr(node, attrs,
-                NODE_ATTR_CONSTRUCTOR,
-                NODE_ATTR_ABSTRACT | NODE_ATTR_STATIC | NODE_ATTR_VIRTUAL,
-                "ABSTRACT, CONSTRUCTOR, STATIC and VIRTUAL");
-            return;
-        }
-        break;
-
-    case 'd':
-        if(data.f_str == "dynamic") {
-            SetAttr(node, attrs,
-                NODE_ATTR_DYNAMIC,
-                0,
-                "DYNAMIC");
-            return;
-        }
-        if(data.f_str == "deprecated") {
-            SetAttr(node, attrs,
-                NODE_ATTR_DEPRECATED,
-                0,
-                "DEPRECATED");
-            return;
-        }
-        break;
-
-    case 'e':
-        if(data.f_str == "enumerable") {
-            SetAttr(node, attrs,
-                NODE_ATTR_ENUMERABLE,
-                0,
-                "ENUMERABLE");
-            return;
-        }
-        break;
-
-    case 'f':
-        if(data.f_str == "final") {
-            SetAttr(node, attrs,
-                NODE_ATTR_FINAL,
-                0,
-                "FINAL");
-            return;
-        }
-        if(data.f_str == "foreach") {
-            SetAttr(node, attrs,
-                NODE_ATTR_FOREACH,
-                NODE_ATTR_AUTOBREAK | NODE_ATTR_NOBREAK,
-                "AUTOBREAK, FOREACH and NOBREAK");
-            return;
-        }
-        break;
-
-    case 'i':
-        if(data.f_str == "internal") {
-            SetAttr(node, attrs,
-                NODE_ATTR_INTERNAL,
-                0,
-                "INTERNAL");
-            return;
-        }
-        if(data.f_str == "intrinsic") {
-            SetAttr(node, attrs,
-                NODE_ATTR_INTRINSIC,
-                0,
-                "INTRINSIC");
-            return;
-        }
-        break;
-
-    case 'n':
-        if(data.f_str == "nobreak") {
-            SetAttr(node, attrs,
-                NODE_ATTR_NOBREAK,
-                NODE_ATTR_AUTOBREAK | NODE_ATTR_FOREACH,
-                "AUTOBREAK, FOREACH and NOBREAK");
-            return;
-        }
-        break;
-
-    case 'p':
-        if(data.f_str == "protected") {
-            SetAttr(node, attrs,
-                NODE_ATTR_PROTECTED,
-                NODE_ATTR_PUBLIC | NODE_ATTR_PRIVATE,
-                "PUBLIC, PRIVATE and PROTECTED");
-            return;
-        }
-        break;
-
-    case 's':
-        if(data.f_str == "static") {
-            SetAttr(node, attrs,
-                NODE_ATTR_STATIC,
-                NODE_ATTR_ABSTRACT | NODE_ATTR_CONSTRUCTOR | NODE_ATTR_VIRTUAL,
-                "ABSTRACT, CONSTRUCTOR, STATIC and VIRTUAL");
-            return;
-        }
-        break;
-
-    case 'u':
-        if(data.f_str == "unused") {
-            SetAttr(node, attrs,
-                NODE_ATTR_UNUSED,
-                0,
-                "UNUSED");
-            return;
-        }
-        break;
-
-    case 'v':
-        if(data.f_str == "virtual") {
-            SetAttr(node, attrs,
-                NODE_ATTR_VIRTUAL,
-                NODE_ATTR_ABSTRACT | NODE_ATTR_CONSTRUCTOR | NODE_ATTR_STATIC,
-                "ABSTRACT, CONSTRUCTOR, STATIC and VIRTUAL");
-            return;
-        }
-        break;
-
-    }
-
-    // it could be a user defined variable
-    // list of attributes
-    NodePtr resolution;
-    if(!ResolveName(node, a, resolution, 0, SEARCH_FLAG_NO_PARSING)) {
-        f_error_stream->ErrStrMsg(AS_ERR_NOT_FOUND, node, "cannot find a variable named '%S'.", &data.f_str);
-        return;
-    }
-    if(!resolution.HasNode()) {
-        // TODO: do we expect an error here?
-        return;
-    }
-    Data& res_data = resolution.GetData();
-    if(res_data.f_type != NODE_VARIABLE
-    && res_data.f_type != NODE_VAR_ATTRIBUTES) {
-        f_error_stream->ErrStrMsg(AS_ERR_DYNAMIC, node, "a dynamic attribute name can only reference a variable and '%S' is not one.", &data.f_str);
-        return;
-    }
-
-    if((res_data.f_int.Get() & NODE_VAR_FLAG_ATTRS) != 0) {
-        f_error_stream->ErrStrMsg(AS_ERR_LOOPING_REFERENCE, node, "the dynamic attribute variable '%S' is used circularly (it loops).", &data.f_str);
-        return;
-    }
-
-    // it is a variable, go through the list
-    // and call ourself recursively with each
-    // identifiers
-    res_data.f_int.Set(res_data.f_int.Get() | NODE_VAR_FLAG_ATTRS | NODE_VAR_FLAG_ATTRIBUTES);
-    NodeLock ln(resolution);
-    int max = resolution.GetChildCount();
-    for(int idx = 0; idx < max; ++idx) {
-        NodePtr& child = resolution.GetChild(idx);
-        if(child.HasNode()) {
-            VariableToAttrs(node, child, attrs);
-        }
-    }
-
-    res_data.f_int.Set(res_data.f_int.Get() & ~NODE_VAR_FLAG_ATTRS);
-}
-
-
-void Compiler::NodeToAttrs(NodePtr& node, NodePtr& a, unsigned long& attrs)
-{
-    Data& data = a.GetData();
-
-    switch(data.f_type) {
-    case NODE_FALSE:
-        SetAttr(node, attrs,
-            NODE_ATTR_FALSE,
-            NODE_ATTR_TRUE,
-            "FALSE and TRUE");
-        break;
-
-    case NODE_IDENTIFIER:
-        IdentifierToAttrs(node, a, attrs);
-        break;
-
-    case NODE_PRIVATE:
-        SetAttr(node, attrs,
-            NODE_ATTR_PRIVATE,
-            NODE_ATTR_PUBLIC | NODE_ATTR_PROTECTED,
-            "PUBLIC, PRIVATE and PROTECTED");
-        break;
-
-    case NODE_PUBLIC:
-        SetAttr(node, attrs,
-            NODE_ATTR_PUBLIC,
-            NODE_ATTR_PRIVATE | NODE_ATTR_PROTECTED,
-            "PUBLIC, PRIVATE and PROTECTED");
-        break;
-
-    case NODE_TRUE:
-        SetAttr(node, attrs,
-            NODE_ATTR_TRUE,
-            NODE_ATTR_FALSE,
-            "FALSE and TRUE");
-        break;
-
-    default:
-        // TODO: this is a scope (user defined name)
-        // ERROR: unknown attribute type
-        // Note that will happen whenever someone references a
-        // variable which is an expression which doesn't resolve
-        // to a valid attribute and thus we need a valid error here
-        f_error_stream->ErrMsg(AS_ERR_NOT_SUPPORTED, node, "unsupported attribute data type, dynamic expressions for attributes need to be resolved as constants.");
-        break;
-
-    }
-}
-
-
-bool Compiler::get_attribute(Node::pointer_t& node, Node::flag_attribute_t f)
-{
-    prepare_attributes(node);
-    return node->get_flag(f);
-}
-
-
-void Compiler::prepare_attributes(Node::pointer_t& node)
-{
-    // done here?
-    if(node->get_flag(NODE_ATTR_DEFINED))
-    {
-        return;
-    }
-
-    // mark ourselves as done even if errors occur
-    node->set_flag(Node::NODE_ATTR_DEFINED, true);
-
-    if(node->get_type() == Node::NODE_PROGRAM)
-    {
-        // programs don't get any specific attributes
-        return NODE_ATTR_DEFINED;
-    }
-
-    Node::pointer_t attr(node->get_link(Node::LINK_ATTRIBUTES));
-    if(attr)
-    {
-        NodeLock ln(attr);
-        size_t const max(attr->get_children_size());
-        for(size_t idx(0); idx < max; ++idx)
-        {
-            node_to_attrs(node, attr->get_child(idx), attrs);
-        }
-    }
-
-    // check whether intrinsic is already set
-    // (in which case it is probably an error)
-    bool const has_direct_intrinsic(node->get_flag(Node::NODE_ATTR_INTRINSIC));
-
-    // Note: we already returned if it is equal
-    //       to program; here it is just documentation
-    if(node->get_type() != Node::NODE_PACKAGE
-    && node->get_type() != Node::NODE_PROGRAM)
-    {
-        Node::pointer_t parent(node.get_parent());
-        if(parent)
-        {
-            // recurse against all parents as required
-            prepare_flags(parent);
-
-            // child can redefine (ignore parent if any defined)
-            // [TODO: should this be an error if conflicting?]
-            if(!node->get_flag(Node::NODE_ATTR_PUBLIC)
-            && !node->get_flag(Node::NODE_ATTR_PRIVATE)
-            && !node->get_flag(Node::NODE_ATTR_PROTECTED))
-            {
-                node->set_flag(Node::NODE_ATTR_PUBLIC,    parent->get_flag(Node::NODE_ATTR_PUBLIC));
-                node->set_flag(Node::NODE_ATTR_PRIVATE,   parent->get_flag(Node::NODE_ATTR_PRIVATE));
-                node->set_flag(Node::NODE_ATTR_PROTECTED, parent->get_flag(Node::NODE_ATTR_PROTECTED));
-            }
-            // child can redefine (ignore parent if defined)
-            if(!node->get_flag(Node::NODE_ATTR_STATIC)
-            && !node->get_flag(Node::NODE_ATTR_ABSTRACT)
-            && !node->get_flag(Node::NODE_ATTR_VIRTUAL))
-            {
-                node->set_flag(Node::NODE_ATTR_STATIC,   parent->get_flag(Node::NODE_ATTR_STATIC));
-                node->set_flag(Node::NODE_ATTR_ABSTRACT, parent->get_flag(Node::NODE_ATTR_ABSTRACT));
-                node->set_flag(Node::NODE_ATTR_VIRTUAL,  parent->get_flag(Node::NODE_ATTR_VIRTUAL));
-            }
-            // inherit
-            node->set_flag(Node::NODE_ATTR_INTRINSIC,  parent->get_flag(Node::NODE_ATTR_INTRINSIC));
-            node->set_flag(Node::NODE_ATTR_ENUMERABLE, parent->get_flag(Node::NODE_ATTR_ENUMERABLE));
-            // false has priority
-            if(parent->get_flag(Node::NODE_ATTR_FALSE))
-            {
-                node->set_flag(Node::NODE_ATTR_FASLE, true);
-                node->set_flag(Node::NODE_ATTR_TRUE, false);
-            }
-
-            if(parent->get_type() != Node::NODE_CLASS)
-            {
-                node->set_flag(Node::NODE_ATTR_DYNAMIC, parent->get_flag(Node::NODE_ATTR_DYNAMIC));
-                node->set_flag(Node::NODE_ATTR_FINAL,   parent->get_flag(Node::NODE_ATTR_FINAL));
-            }
-        }
-    }
-
-    // a function which has a body cannot be intrinsic
-    if(node->get_flag(Node::NODE_ATTR_INTRINSIC)
-    && node->get_type() != Node::NODE_FUNCTION)
-    {
-        NodeLock ln(node);
-        size_t const max(node->get_children_size());
-        for(size_t idx(0); idx < max; ++idx)
-        {
-            Node::pointer_t list(node->get_child(idx));
-            if(list->gettype() == Node::NODE_DIRECTIVE_LIST)
-            {
-                // it is an error if the user defined
-                // it directly on the function; it is
-                // fine if it comes from the parent
-                if(has_direct_intrinsic)
-                {
-                    Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INTRINSIC, f_lexer->get_input()->get_position());
-                    msg << "'intrinsic' is not permitted on a function with a body.";
-                }
-                node->set_flag(NODE_ATTR_INTRINSIC, false);
-                break;
-            }
-        }
-    }
-}
 
 
 
@@ -5234,7 +4499,7 @@ void Compiler::AssignmentOperator(NodePtr& expr)
     if(data.f_type == NODE_IDENTIFIER) {
         // this may be like a VAR <name> = ...
         NodePtr resolution;
-        if(ResolveName(left, left, resolution, 0, 0)) {
+        if(resolve_name(left, left, resolution, Node::pointer_t(), 0)) {
             Data& data = resolution.GetData();
             bool valid = false;
             if(data.f_type == NODE_VARIABLE) {
@@ -5791,44 +5056,6 @@ void Compiler::ObjectLiteral(NodePtr& expr)
 }
 
 
-void Compiler::CheckThisValidity(NodePtr& expr)
-{
-    unsigned long attrs;
-    NodePtr parent = expr;
-    for(;;) {
-        parent = parent.GetParent();
-        if(!parent.HasNode()) {
-            return;
-        }
-        Data& data = parent.GetData();
-        switch(data.f_type) {
-        case NODE_FUNCTION:
-            // If we are in a static function, then we
-            // don't have access to 'this'. Note that
-            // it doesn't matter whether we're in a
-            // class or not...
-            attrs = GetAttributes(parent);
-            if((data.f_int.Get() & NODE_FUNCTION_FLAG_OPERATOR) != 0
-            || (attrs & (NODE_ATTR_STATIC | NODE_ATTR_CONSTRUCTOR)) != 0
-            || IsConstructor(parent)) {
-                f_error_stream->ErrMsg(AS_ERR_STATIC, expr, "'this' cannot be used in a static function nor a constructor.");
-            }
-            return;
-
-        case NODE_CLASS:
-        case NODE_INTERFACE:
-        case NODE_PROGRAM:
-        case NODE_ROOT:
-            return;
-
-        default:
-            break;
-
-        }
-    }
-}
-
-
 
 void Compiler::CheckSuperValidity(NodePtr& expr)
 {
@@ -6039,38 +5266,6 @@ bool Compiler::HasAbstractFunctions(NodePtr& class_node, NodePtr& list, NodePtr&
 }
 
 
-void Compiler::CanInstantiateType(NodePtr& expr)
-{
-    Data& data = expr.GetData();
-    if(data.f_type != NODE_IDENTIFIER) {
-        // dynamic, can't test at compile time...
-        return;
-    }
-
-    NodePtr& inst = expr.GetLink(NodePtr::LINK_INSTANCE);
-    Data& inst_data = inst.GetData();
-    if(inst_data.f_type == NODE_INTERFACE) {
-        f_error_stream->ErrStrMsg(AS_ERR_INVALID_EXPRESSION, expr, "you can only instantiate an object from a class. '%S' is an interface.", &data.f_str);
-        return;
-    }
-    if(inst_data.f_type != NODE_CLASS) {
-        f_error_stream->ErrStrMsg(AS_ERR_INVALID_EXPRESSION, expr, "you can only instantiate an object from a class. '%S' does not seem to be a class.", &data.f_str);
-        return;
-    }
-
-    // check all the functions and make sure none are [still] abstract
-    // in this class...
-    NodePtr func;
-    if(HasAbstractFunctions(inst, inst, func)) {
-        Data& func_data = func.GetData();
-        f_error_stream->ErrStrMsg(AS_ERR_ABSTRACT, expr, "the class '%S' has an abstract function '%S' in file '%S' at line #%ld and cannot be instantiated. (If you have an overloaded version of that function it may have the wrong prototype.)", &data.f_str, &func_data.f_str, &func.GetFilename(), func.GetLine());
-        return;
-    }
-
-    // we're fine...
-}
-
-
 bool Compiler::SpecialIdentifier(NodePtr& expr)
 {
     // all special identifier are defined as "__...__"
@@ -6277,405 +5472,6 @@ bool Compiler::SpecialIdentifier(NodePtr& expr)
     return true;
 }
 
-
-bool Compiler::expression_new(Node::pointer_t new_node)
-{
-    //
-    // handle the special case of:
-    //    VAR name := NEW class()
-    //
-
-//fprintf(stderr, "BEFORE:\n");
-//new_node.Display(stderr);
-    NodePtr& call = new_node.GetChild(0);
-    if(!call.HasNode()) {
-        return false;
-    }
-
-    Data& data = call.GetData();
-    if(data.f_type != NODE_CALL) {
-        return false;
-    }
-
-    // get the function name
-    NodePtr& id = call.GetChild(0);
-    Data& name = id.GetData();
-    if(name.f_type != NODE_IDENTIFIER) {
-        return false;
-    }
-
-    // determine the types of the parameters to search a corresponding object or function
-    NodePtr params;
-    params.SetNode(call.GetChild(1));
-    int count = params.GetChildCount();
-//fprintf(stderr, "ResolveCall() with %d expressions\n", count);
-//new_node.Display(stderr);
-    for(int idx = 0; idx < count; ++idx) {
-        NodePtr& p = params.GetChild(idx);
-        Expression(p);
-    }
-
-    // resolve what is named
-    NodePtr resolution;
-    if(!ResolveName(id, id, resolution, &params, SEARCH_FLAG_GETTER)) {
-        // an error is generated later if this is a call and no function can be found
-        return false;
-    }
-
-    // is the name a class or interface?
-    Data& res_data = resolution.GetData();
-    if(res_data.f_type != NODE_CLASS
-    && res_data.f_type != NODE_INTERFACE) {
-        return false;
-    }
-
-    // move the nodes under CALL up one level
-    NodePtr type = call.GetChild(0);
-    NodePtr expr = call.GetChild(1);
-    call.DeleteChild(0);
-    call.DeleteChild(0);    // 1 is now 0
-    new_node.DeleteChild(0);    // remove the CALL
-    new_node.AddChild(type);    // replace with TYPE + parameters (LIST)
-    new_node.AddChild(expr);
-//fprintf(stderr, "CHANGED TO:\n");
-//new_node.Display(stderr);
-
-    return true;
-}
-
-
-void Compiler::expression(Node::pointer_t expr, Node::pointer_t params)
-{
-    // we already came here on that one?
-    if(expr->get_link(Node::LINK_TYPE))
-    {
-        return;
-    }
-
-    // try to optimize the expression before to compile it
-    // (it can make a huge difference!)
-    f_optimizer->optimize(expr);
-
-    Data& data = expr.GetData();
-
-    switch(expr->get_type())
-    {
-    case Node::NODE_STRING:
-    case Node::NODE_INT64:
-    case Node::NODE_FLOAT64:
-    case Node::NODE_TRUE:
-    case Node::NODE_FALSE:
-        TypeExpr(expr);
-        return;
-
-    case Node::NODE_ARRAY_LITERAL:
-        TypeExpr(expr);
-        break;
-
-    case Node::NODE_OBJECT_LITERAL:
-        ObjectLiteral(expr);
-        return;
-
-    case Node::NODE_NULL:
-    case Node::NODE_PUBLIC:
-    case Node::NODE_PRIVATE:
-    case Node::NODE_UNDEFINED:
-        return;
-
-    case Node::NODE_SUPER:
-        CheckSuperValidity(expr);
-        return;
-
-    case Node::NODE_THIS:
-        CheckThisValidity(expr);
-        return;
-
-    case Node::NODE_ADD:
-    case Node::NODE_ARRAY:
-    case Node::NODE_AS:
-    case Node::NODE_ASSIGNMENT_ADD:
-    case Node::NODE_ASSIGNMENT_BITWISE_AND:
-    case Node::NODE_ASSIGNMENT_BITWISE_OR:
-    case Node::NODE_ASSIGNMENT_BITWISE_XOR:
-    case Node::NODE_ASSIGNMENT_DIVIDE:
-    case Node::NODE_ASSIGNMENT_LOGICAL_AND:
-    case Node::NODE_ASSIGNMENT_LOGICAL_OR:
-    case Node::NODE_ASSIGNMENT_LOGICAL_XOR:
-    case Node::NODE_ASSIGNMENT_MAXIMUM:
-    case Node::NODE_ASSIGNMENT_MINIMUM:
-    case Node::NODE_ASSIGNMENT_MODULO:
-    case Node::NODE_ASSIGNMENT_MULTIPLY:
-    case Node::NODE_ASSIGNMENT_POWER:
-    case Node::NODE_ASSIGNMENT_ROTATE_LEFT:
-    case Node::NODE_ASSIGNMENT_ROTATE_RIGHT:
-    case Node::NODE_ASSIGNMENT_SHIFT_LEFT:
-    case Node::NODE_ASSIGNMENT_SHIFT_RIGHT:
-    case Node::NODE_ASSIGNMENT_SHIFT_RIGHT_UNSIGNED:
-    case Node::NODE_ASSIGNMENT_SUBTRACT:
-    case Node::NODE_BITWISE_AND:
-    case Node::NODE_BITWISE_NOT:
-    case Node::NODE_BITWISE_OR:
-    case Node::NODE_BITWISE_XOR:
-    case Node::NODE_CONDITIONAL:
-    case Node::NODE_DECREMENT:
-    case Node::NODE_DELETE:
-    case Node::NODE_DIVIDE:
-    case Node::NODE_EQUAL:
-    case Node::NODE_GREATER:
-    case Node::NODE_GREATER_EQUAL:
-    case Node::NODE_IN:
-    case Node::NODE_INCREMENT:
-    case Node::NODE_INSTANCEOF:
-    case Node::NODE_TYPEOF:
-    case Node::NODE_IS:
-    case Node::NODE_LESS:
-    case Node::NODE_LESS_EQUAL:
-    case Node::NODE_LIST:
-    case Node::NODE_LOGICAL_AND:
-    case Node::NODE_LOGICAL_NOT:
-    case Node::NODE_LOGICAL_OR:
-    case Node::NODE_LOGICAL_XOR:
-    case Node::NODE_MATCH:
-    case Node::NODE_MAXIMUM:
-    case Node::NODE_MINIMUM:
-    case Node::NODE_MODULO:
-    case Node::NODE_MULTIPLY:
-    case Node::NODE_NOT_EQUAL:
-    case Node::NODE_POST_DECREMENT:
-    case Node::NODE_POST_INCREMENT:
-    case Node::NODE_POWER:
-    case Node::NODE_RANGE:
-    case Node::NODE_ROTATE_LEFT:
-    case Node::NODE_ROTATE_RIGHT:
-    case Node::NODE_SCOPE:
-    case Node::NODE_SHIFT_LEFT:
-    case Node::NODE_SHIFT_RIGHT:
-    case Node::NODE_SHIFT_RIGHT_UNSIGNED:
-    case Node::NODE_STRICTLY_EQUAL:
-    case Node::NODE_STRICTLY_NOT_EQUAL:
-    case Node::NODE_SUBTRACT:
-        break;
-
-    case Node::NODE_NEW:
-        if(ExpressionNew(expr)) {
-            return;
-        }
-        break;
-
-    case Node::NODE_VOID:
-    {
-        // If the expression has no side effect (i.e. doesn't
-        // call a function, doesn't use ++ or --, etc.) then
-        // we don't even need to keep it! Instead we replace
-        // the void by undefined.
-        if(expr->has_side_effects())
-        {
-            // we need to keep some of this expression
-            //
-            // TODO: we need to optimize better; this
-            // should only keep expressions with side
-            // effects and not all expressions; for
-            // instance:
-            //    void (a + b(c));
-            // should become:
-            //    void b(c);
-            // (assuming that 'a' isn't a call to a getter
-            // function which could have a side effect)
-            break;
-        }
-        // this is what void returns
-        data.f_type = NODE_UNDEFINED;
-        // and we don't need to keep the children
-        int idx = expr.GetChildCount();
-        while(idx > 0)
-        {
-            idx--;
-            expr.DeleteChild(idx);
-        }
-    }
-        return;
-
-    case Node::NODE_ASSIGNMENT:
-        AssignmentOperator(expr);
-        return;
-
-    case Node::NODE_FUNCTION:
-        Function(expr);
-        return;
-
-    case Node::NODE_MEMBER:
-        ResolveMember(expr, params, SEARCH_FLAG_GETTER);
-        return;
-
-    case Node::NODE_IDENTIFIER:
-    case Node::NODE_VIDENTIFIER:
-    {
-        if(SpecialIdentifier(expr)) {
-            return;
-        }
-        NodePtr resolution;
-        if(ResolveName(expr, expr, resolution, params, SEARCH_FLAG_GETTER)) {
-            if(!ReplaceConstantVariable(expr, resolution)) {
-                NodePtr& current = expr.GetLink(NodePtr::LINK_INSTANCE);
-                if(!current.HasNode()) {
-                    expr.SetLink(NodePtr::LINK_INSTANCE, resolution);
-                }
-#if defined(_DEBUG) || defined(DEBUG)
-                else {
-                    AS_ASSERT(current.SameAs(resolution));
-                }
-#endif
-                NodePtr& type = resolution.GetLink(NodePtr::LINK_TYPE);
-                if(type.HasNode()) {
-                    expr.SetLink(NodePtr::LINK_TYPE, type);
-                }
-            }
-        }
-        else {
-            f_error_stream->ErrStrMsg(AS_ERR_NOT_FOUND, expr, "cannot find any variable or class declaration for: '%S'.", &data.f_str);
-        }
-    }
-        return;
-
-    case Node::NODE_CALL:
-        ResolveCall(expr);
-        return;
-
-    default:
-    {
-        Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INTERNAL_ERROR, f_lexer->get_input()->get_position());
-        msg << "unhandled expression data type \"" << expr->get_type_name() << "\".";
-    }
-        return;
-
-    }
-
-// When not returned yet, we want that expression to
-// compile all the children nodes as expressions.
-    int max = expr.GetChildCount();
-    {
-        NodeLock ln(expr);
-        for(int idx = 0; idx < max; ++idx) {
-            NodePtr& child = expr.GetChild(idx);
-            if(child.HasNode()) {
-                Data& data = child.GetData();
-                // skip labels
-                if(data.f_type != NODE_NAME) {
-                    Expression(child);
-                }
-            }
-        }
-    }
-
-// Now check for operators to give them a type
-    switch(data.f_type) {
-    case NODE_ADD:
-    case NODE_SUBTRACT:
-        if(max == 1) {
-            UnaryOperator(expr);
-        }
-        else {
-            BinaryOperator(expr);
-        }
-        break;
-
-    case NODE_BITWISE_NOT:
-    case NODE_DECREMENT:
-    case NODE_INCREMENT:
-    case NODE_LOGICAL_NOT:
-    case NODE_POST_DECREMENT:
-    case NODE_POST_INCREMENT:
-        UnaryOperator(expr);
-        break;
-
-    case NODE_BITWISE_AND:
-    case NODE_BITWISE_OR:
-    case NODE_BITWISE_XOR:
-    case NODE_DIVIDE:
-    case NODE_EQUAL:
-    case NODE_GREATER:
-    case NODE_GREATER_EQUAL:
-    case NODE_LESS:
-    case NODE_LESS_EQUAL:
-    case NODE_LOGICAL_AND:
-    case NODE_LOGICAL_OR:
-    case NODE_LOGICAL_XOR:
-    case NODE_MATCH:
-    case NODE_MAXIMUM:
-    case NODE_MINIMUM:
-    case NODE_MODULO:
-    case NODE_MULTIPLY:
-    case NODE_NOT_EQUAL:
-    case NODE_POWER:
-    case NODE_RANGE:
-    case NODE_ROTATE_LEFT:
-    case NODE_ROTATE_RIGHT:
-    case NODE_SCOPE:
-    case NODE_SHIFT_LEFT:
-    case NODE_SHIFT_RIGHT:
-    case NODE_SHIFT_RIGHT_UNSIGNED:
-    case NODE_STRICTLY_EQUAL:
-    case NODE_STRICTLY_NOT_EQUAL:
-        binary_operator(expr);
-        break;
-
-    case NODE_IN:
-    case NODE_CONDITIONAL:    // cannot be overwritten!
-        break;
-
-    case NODE_ARRAY:
-    case NODE_ARRAY_LITERAL:
-    case NODE_AS:
-    case NODE_DELETE:
-    case NODE_INSTANCEOF:
-    case NODE_IS:
-    case NODE_TYPEOF:
-    case NODE_VOID:
-        // nothing special we can do here...
-        break;
-
-    case NODE_NEW:
-        CanInstantiateType(expr.GetChild(0));
-        break;
-
-    case NODE_LIST:
-    {
-        // this is the type of the last entry
-        NodePtr& child = expr.GetChild(max - 1);
-        expr.SetLink(NodePtr::LINK_TYPE, child.GetLink(NodePtr::LINK_TYPE));
-    }
-        break;
-
-    case NODE_ASSIGNMENT_ADD:
-    case NODE_ASSIGNMENT_BITWISE_AND:
-    case NODE_ASSIGNMENT_BITWISE_OR:
-    case NODE_ASSIGNMENT_BITWISE_XOR:
-    case NODE_ASSIGNMENT_DIVIDE:
-    case NODE_ASSIGNMENT_LOGICAL_AND:
-    case NODE_ASSIGNMENT_LOGICAL_OR:
-    case NODE_ASSIGNMENT_LOGICAL_XOR:
-    case NODE_ASSIGNMENT_MAXIMUM:
-    case NODE_ASSIGNMENT_MINIMUM:
-    case NODE_ASSIGNMENT_MODULO:
-    case NODE_ASSIGNMENT_MULTIPLY:
-    case NODE_ASSIGNMENT_POWER:
-    case NODE_ASSIGNMENT_ROTATE_LEFT:
-    case NODE_ASSIGNMENT_ROTATE_RIGHT:
-    case NODE_ASSIGNMENT_SHIFT_LEFT:
-    case NODE_ASSIGNMENT_SHIFT_RIGHT:
-    case NODE_ASSIGNMENT_SHIFT_RIGHT_UNSIGNED:
-    case NODE_ASSIGNMENT_SUBTRACT:
-        // TODO: we need to replace the intrinsic special
-        //       assignment ops with a regular assignment
-        //       (i.e. a += b becomes a = a + (b))
-        binary_operator(expr);
-        break;
-
-    default:
-        throw exception_internal_error("error: there is a missing entry in the 2nd switch of Compiler::expression()");
-
-    }
-}
 
 
 

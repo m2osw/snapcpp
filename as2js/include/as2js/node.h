@@ -222,12 +222,6 @@ public:
         NODE_WITH,
 
         NODE_max,    // mark the limit
-
-        // used to extract the node type from some integers
-        // (used by the SWITCH statement at time of writing)
-        // hopefully we can remove that later... at this point
-        // I'm not too sure I see whether this really gets set
-        NODE_MASK = 0x0FFFF
     };
     typedef controlled_vars::limited_auto_init<node_t, NODE_EOF, NODE_max, NODE_UNKNOWN> safe_node_t;
 
@@ -404,6 +398,7 @@ public:
     bool                        to_number();
     bool                        to_string();
     void                        to_videntifier();
+    void                        to_var_attributes();
 
     void                        set_boolean(bool value);
     void                        set_int64(Int64 value);
@@ -420,6 +415,9 @@ public:
     // check flags
     bool                        get_flag(flag_attribute_t f) const;
     void                        set_flag(flag_attribute_t f, bool v);
+
+    node_t                      get_switch_operator() const;
+    void                        set_switch_operator(node_t op);
 
     void                        set_position(Position const& position);
     Position const&             get_position() const;
@@ -469,12 +467,14 @@ public:
 private:
     // verify that the specified flag correspond to the node type
     void                        verify_flag_attribute(flag_attribute_t f) const;
+    void                        verify_exclusive_attributes(flag_attribute_t f) const;
     void                        modifying() const;
     void                        display_data(std::ostream& out) const;
 
     // define the node type
     safe_node_t                     f_type;
     flag_attribute_set_t            f_flags_and_attributes;
+    safe_node_t                     f_switch_operator;
 
     // whether this node is currently locked
     controlled_vars::zint32_t       f_lock;

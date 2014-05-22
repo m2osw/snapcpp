@@ -74,6 +74,29 @@ void Parser::block(Node::pointer_t& node)
 /**********************************************************************/
 /**********************************************************************/
 
+/** \brief Read a break or continue statement.
+ *
+ * The statement is a break or continue optionally followed by a label
+ * (an identifier) or the default keyword (a special label meaning
+ * use the default behavior.)
+ *
+ * Then we expect a semi-colon.
+ *
+ * The label is saved in the break or continue statement as the string
+ * of the break or continue node.
+ *
+ * \code
+ *     // A break by itself or the default break
+ *     break;
+ *     break default;
+ *    
+ *     // A break with a label
+ *     break label;
+ * \endcode
+ *
+ * \param[out] node  The node to be created.
+ * \param[in] type  The type of node (break or continue).
+ */
 void Parser::break_continue(Node::pointer_t& node, Node::node_t type)
 {
     node = f_lexer->get_new_node(type);
@@ -599,7 +622,7 @@ void Parser::switch_directive(Node::pointer_t& node)
         node = f_lexer->get_new_node(Node::NODE_SWITCH);
 
         // a default comparison is important to support ranges properly
-        node->set_int64(Node::NODE_UNKNOWN);
+        //node->set_switch_operator(Node::NODE_UNKNOWN); -- this is the default
 
         get_token();
         Node::pointer_t expr;
@@ -641,7 +664,7 @@ void Parser::switch_directive(Node::pointer_t& node)
             case Node::NODE_GREATER_EQUAL:
             // so the user can specify the default too
             case Node::NODE_DEFAULT:
-                node->set_int64(f_node->get_type());
+                node->set_switch_operator(f_node->get_type());
                 get_token();
                 break;
 
