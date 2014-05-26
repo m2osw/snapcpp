@@ -118,7 +118,7 @@ int64_t server_access::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2014, 5, 21, 23, 34, 30, content_update);
+    SNAP_PLUGIN_UPDATE(2014, 5, 23, 23, 48, 30, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -232,6 +232,12 @@ void server_access::create_ajax_result(content::path_info_t& ipath, bool success
     // if a redirect had been added before the create function was called
     // make sure it is saved in the XML
     ajax_redirect(f_ajax_redirect, f_ajax_target);
+
+    while(f_ajax_data.size() > 0)
+    {
+        ajax_append_data(f_ajax_data.begin().key(), f_ajax_data.begin().value());
+        f_ajax_data.erase(f_ajax_data.begin());
+    }
 
     //server_access_plugin->ajax_redirect(ipath.get_parameter("redirect"), ipath.get_parameter("target"));
     process_ajax_result(ipath, f_success);
@@ -415,18 +421,25 @@ void server_access::ajax_redirect(QString const& uri, QString const& target)
  * Otherwise it would not fit in the XML document by itself and encoded
  * (uuencode, base64, etc.) data is not terribly useful for the client.
  *
- * Multiple data blocks can be added with each AJAX request. Different
- * blocks can be recognized using the name parameter.
+ * Multiple data blocks with the same or different names can be added
+ * with each AJAX request. Different blocks can be recognized using
+ * different name parameter.
+ *
+ * \note
+ * The data is saved as an XML Text DOM object. This means the text
+ * is parsed and any XML special character, such as the \<, are
+ * tranformed to an entity. Also control characters are NOT welcome
+ * in XML (even though they are valid UTF-8 characters.)
  *
  * \param[in] name  Give a name to that data block.
- * \param[in] data  Data that was expected to be sent to the client as is.
+ * \param[in] data  Data that is to be sent to the client "as is."
  */
 void server_access::ajax_append_data(QString const& name, QByteArray const& data)
 {
     if(!f_ajax_initialized)
     {
-        // at this point, prevent adding data before AJAX result available
-        throw snap_logic_exception("ajax_append_data() called before create_ajax_result()");
+        f_ajax_data[name] = data;
+        return;
     }
 
     if(is_valid_utf8(data.data()))
@@ -439,7 +452,7 @@ void server_access::ajax_append_data(QString const& name, QByteArray const& data
         QDomText data_text(f_ajax.createTextNode(data.data()));
         data_tag.appendChild(data_text);
     }
-    // else -- TBD: we refuse those at this point
+    // else -- TBD: we silently refuse those at this point
 }
 
 

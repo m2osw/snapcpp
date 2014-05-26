@@ -1,6 +1,6 @@
 /** @preserve
  * Name: server-access
- * Version: 0.0.1.13
+ * Version: 0.0.1.17
  * Browsers: all
  * Depends: output (>= 0.1.5)
  * Copyright: Copyright 2013-2014 (c) Made to Order Software Corporation  All rights reverved.
@@ -29,6 +29,20 @@
  *
  * This interface has to be derived from so you receive different callbacks
  * as required by your objects.
+ *
+ * \code
+ *  interface ServerAccessCallbacks
+ *  {
+ *  public:
+ *      typedef ... ResultData;
+ *
+ *      function ServerAccessCallbacks();
+ *
+ *      abstract function serverAccessSuccess(result : ResultData) : void;
+ *      abstract function serverAccessError(result : ResultData) : void;
+ *      abstract function serverAccessComplete(result : ResultData) : void;
+ *  };
+ * \endcode
  *
  * @return {snapwebsites.ServerAccessCallbacks}
  *

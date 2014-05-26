@@ -69,6 +69,8 @@ public:
     SNAP_SIGNAL(process_ajax_result, (content::path_info_t& ipath, bool const succeeded), (ipath, succeeded));
 
 private:
+    typedef QMap<QString, QByteArray>   data_map_t;
+
     void                        content_update(int64_t variables_timestamp);
 
     zpsnap_child_t              f_snap;
@@ -77,6 +79,7 @@ private:
     controlled_vars::fbool_t    f_success;
     QString                     f_ajax_redirect;
     QString                     f_ajax_target;
+    data_map_t                  f_ajax_data;
 };
 
 

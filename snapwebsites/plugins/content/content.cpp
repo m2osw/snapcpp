@@ -1594,8 +1594,9 @@ attachment_file::attachment_file(snap_child *snap)
     : f_snap(snap)
     //, f_file()
     //, f_multiple(false) -- auto-init
-    //, f_cpath("") -- auto-init
+    //, f_parent_cpath("") -- auto-init
     //, f_field_name("") -- auto-init
+    //, f_attachment_cpath("") -- auto-init
     //, f_attachment_owner("") -- auto-init
     //, f_attachment_type("") -- auto-init
 {
@@ -1611,8 +1612,9 @@ attachment_file::attachment_file(snap_child *snap)
  * To finish the initialization of this structure you must call the
  * following functions:
  *
- * \li set_cpath()
+ * \li set_parent_cpath()
  * \li set_field_name()
+ * \li set_attachment_cpath()
  * \li set_attachment_owner()
  * \li set_attachment_type()
  *
@@ -1637,8 +1639,9 @@ attachment_file::attachment_file(snap_child *snap, snap_child::post_file_t const
     : f_snap(snap)
     , f_file(file)
     //, f_multiple(false) -- auto-init
-    //, f_cpath("") -- auto-init
+    //, f_parent_cpath("") -- auto-init
     //, f_field_name("") -- auto-init
+    //, f_attachment_cpath("") -- auto-init
     //, f_attachment_owner("") -- auto-init
     //, f_attachment_type("") -- auto-init
 {
@@ -1690,9 +1693,9 @@ void attachment_file::set_multiple(bool multiple)
  *
  * \sa get_cpath()
  */
-void attachment_file::set_cpath(QString const& cpath)
+void attachment_file::set_parent_cpath(QString const& cpath)
 {
-    f_cpath = cpath;
+    f_parent_cpath = cpath;
     f_has_cpath = true;
 }
 
@@ -1723,6 +1726,28 @@ void attachment_file::set_cpath(QString const& cpath)
 void attachment_file::set_field_name(QString const& field_name)
 {
     f_field_name = field_name;
+}
+
+
+/** \brief Define the path of the attachment page.
+ *
+ * This function saves the path to the attachment itself in the
+ * attachment_file object.
+ *
+ * Only the create_attachment() function is expected to call this function,
+ * although if you replicate your own similar function, then you will have
+ * to call this function from your replica.
+ *
+ * The path is expected to the canonicalized and set only once the full
+ * path in the content table is known.
+ *
+ * \param[in] cpath  The path to the attachment file.
+ *
+ * \sa get_attachment_cpath()
+ */
+void attachment_file::set_attachment_cpath(QString const& cpath)
+{
+    f_attachment_cpath = cpath;
 }
 
 
@@ -2029,15 +2054,15 @@ snap_child::post_file_t const& attachment_file::get_file() const
  *
  * \return The path to the parent of the attachment.
  *
- * \sa set_cpath()
+ * \sa set_parent_cpath()
  */
-QString const& attachment_file::get_cpath() const
+QString const& attachment_file::get_parent_cpath() const
 {
     if(!f_has_cpath)
     {
         throw content_exception_invalid_name("the cpath parameter of a attachment_file object was never set");
     }
-    return f_cpath;
+    return f_parent_cpath;
 }
 
 
@@ -2062,6 +2087,28 @@ QString const& attachment_file::get_field_name() const
         throw content_exception_invalid_name("the field name of a attachment_file object cannot be empty");
     }
     return f_field_name;
+}
+
+
+/** \brief Retrieve the path of the attachment page.
+ *
+ * This function returns the path that the create_attachment() function
+ * creates to save the attachment. This can be used to later access the
+ * attachment.
+ *
+ * The path is expected to the canonicalized.
+ *
+ * The function may return an empty string if the create_attachment()
+ * function was not called or it failed. It is considered a bug to
+ * set this path outside of the create_attachment() function.
+ *
+ * \return The path to the attachment file.
+ *
+ * \sa set_attachment_cpath()
+ */
+QString const& attachment_file::get_attachment_cpath() const
+{
+    return f_attachment_cpath;
 }
 
 
@@ -4104,7 +4151,10 @@ bool content::create_content_impl(path_info_t& ipath, QString const& owner, QStr
 /** \brief Create a page which represents an attachment (A file).
  *
  * This function creates a page that represents an attachment with the
- * specified file, owner, and type.
+ * specified file, owner, and type. The new file path is saved in the
+ * attachment_file object. On a successfully return (when the function
+ * returns true) you can retrieve the attachment path with the
+ * get_attachment_cpath() function.
  *
  * This function prepares the file and sends a create_content() event
  * to create the actual content entry if it did not yet exist.
@@ -4189,7 +4239,10 @@ bool content::create_content_impl(path_info_t& ipath, QString const& owner, QStr
  *                         used to convert an image to another format
  * \li [d=] \<width>x<height> -- dimensions for an image
  *
- * \param[in] file  The file to save in the Cassandra database.
+ * \param[in,out] file  The file to save in the Cassandra database. It is an
+ *                      in,out parameter because the exact filename used to
+ *                      save the file in the content table is saved in this
+ *                      object.
  * \param[in] branch_number  The branch used to save the attachment.
  * \param[in] locale  The language & country to use for this file.
  *
@@ -4197,7 +4250,7 @@ bool content::create_content_impl(path_info_t& ipath, QString const& owner, QStr
  *         generally returns false if the attachment cannot be created or
  *         already exists
  */
-bool content::create_attachment_impl(attachment_file const& file, snap_version::version_number_t branch_number, QString const& locale)
+bool content::create_attachment_impl(attachment_file& file, snap_version::version_number_t branch_number, QString const& locale)
 {
     // quick check for security reasons so we can avoid unwanted uploads
     // (note that we already had the check for size and similar "problems")
@@ -4216,7 +4269,7 @@ bool content::create_attachment_impl(attachment_file const& file, snap_version::
     // verify that the row specified by file::get_cpath() exists
     QtCassandra::QCassandraTable::pointer_t content_table(get_content_table());
     QString const site_key(f_snap->get_site_key_with_slash());
-    QString const parent_key(site_key + file.get_cpath());
+    QString const parent_key(site_key + file.get_parent_cpath());
     if(!content_table->exists(parent_key))
     {
         // the parent row does not even exist yet...
@@ -4246,8 +4299,8 @@ bool content::create_attachment_impl(attachment_file const& file, snap_version::
 
     // if JavaScript or CSS, add the version to the filename before
     // going forward (unless the version is already there, of course)
-    bool const is_js(file.get_cpath().startsWith("js/"));
-    bool const is_css(file.get_cpath().startsWith("css/"));
+    bool const is_js(file.get_parent_cpath().startsWith("js/"));
+    bool const is_css(file.get_parent_cpath().startsWith("css/"));
     if(is_js)
     {
         extension = snap_version::find_extension(attachment_filename, js_extensions);
@@ -4388,7 +4441,7 @@ bool content::create_attachment_impl(attachment_file const& file, snap_version::
     // name without version, language, or encoding
     path_info_t attachment_ipath;
     //attachment_ipath.set_owner(...); -- this is not additional so keep the default (content)
-    attachment_ipath.set_path(QString("%1/%2").arg(file.get_cpath()).arg(attachment_filename));
+    attachment_ipath.set_path(QString("%1/%2").arg(file.get_parent_cpath()).arg(attachment_filename));
     if(!revision.isEmpty())
     {
         // in this case the revision becomes a string with more than one
@@ -4396,6 +4449,10 @@ bool content::create_attachment_impl(attachment_file const& file, snap_version::
         // files only at this point.)
         attachment_ipath.force_extended_revision(revision, attachment_filename);
     }
+
+    // save the path to the attachment so the caller knows exactly where it
+    // is (if required by that code.)
+    file.set_attachment_cpath(attachment_ipath.get_cpath());
 
 #ifdef DEBUG
 //SNAP_LOG_DEBUG("attaching ")(file.get_file().get_filename())(", attachment_key = ")(attachment_ipath.get_key());
@@ -6026,7 +6083,7 @@ void content::on_save_content()
 
             // attachment specific fields
             file.set_multiple(false);
-            file.set_cpath(a->f_path);
+            file.set_parent_cpath(a->f_path);
             file.set_field_name(a->f_field_name);
             file.set_attachment_owner(a->f_owner);
             file.set_attachment_type(a->f_type);

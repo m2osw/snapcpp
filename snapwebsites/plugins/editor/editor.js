@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.153
+ * Version: 0.0.3.166
  * Browsers: all
  * Depends: output (>= 0.1.4), popup (>= 0.1.0.1), server-access (>= 0.0.1.11), mimetype-basics (>= 0.0.3)
  * Copyright: Copyright 2013-2014 (c) Made to Order Software Corporation  All rights reverved.
@@ -19,6 +19,7 @@
 // @js plugins/output/output.js
 // @js plugins/output/popup.js
 // @js plugins/server_access/server-access.js
+// @js plugins/listener/listener.js
 // ==/ClosureCompiler==
 //
 // This is not required and it may not exist at the time you run the
@@ -54,7 +55,7 @@
 
 // Code verification with Google Closure Compiler:
 // documentation: http://code.google.com/closure/compiler/
-// Source: http://code.google.com/p/closure-compiler/
+// Source: https://github.com/google/closure-compiler
 // Source: https://developers.google.com/closure/compiler/docs/error-ref
 // Source: http://www.jslint.com/
 //
@@ -182,7 +183,7 @@
  *  +-----------------------+
  *  |                       |
  *  | ServerAccessCallbacks |
- *  |                       |
+ *  | (cannot instantiate)  |
  *  +-----------------------+
  *      ^
  *      | Inherit
@@ -3404,7 +3405,7 @@ snapwebsites.EditorForm.prototype.saveData = function(mode, options_opt)
         obj._editor_session = this.session_;
         if(this.editorWidgets_.hasOwnProperty("title"))
         {
-            obj._editor_uri = this.titleToURI(this.editorWidgets_["title"].saving().result);
+            obj._editor_uri = snapwebsites.EditorForm.titleToURI(this.editorWidgets_["title"].saving().result);
             //snapwebsites.castToString(jQuery("[field_name='title'] .editor-content").text(), "casting the field name title to a string"));
         }
         if(!this.serverAccess_)
@@ -4232,7 +4233,7 @@ snapwebsites.EditorWidgetType.prototype.initializeWidget = function(widget) // v
                 r,                      // file reader object
                 accept_images,          // boolean, true if element accepts images
                 accept_files,           // boolean, true if element accepts attachments
-                that_element = c, //jQuery(this),    // this element as a jQuery object
+                that_element = c,       // this element as a jQuery object
                 file_loaded;            // finalizing function
 
             //
@@ -5362,7 +5363,8 @@ snapwebsites.EditorWidgetTypeDroppedFileWithPreview.prototype.droppedAttachment 
         editor_widget = /** @type {snapwebsites.EditorWidget} */ (e.target.snapEditorWidget),
         editor_form = editor_widget.getEditorForm(),
         session = editor_form.getSession(),
-        title_widget = editor_form.getWidgetByName("title");
+        title_widget = editor_form.getWidgetByName("title"),
+        name = editor_widget.getName();
 
     //
     // In case of an attachment, we send them to the server because the
@@ -5386,11 +5388,11 @@ snapwebsites.EditorWidgetTypeDroppedFileWithPreview.prototype.droppedAttachment 
     form_data.append("_editor_save_mode", "attachment");
     if(title_widget)
     {
-        form_data.append("_editor_uri", this.titleToURI(title_widget.saving().result));
+        form_data.append("_editor_uri", snapwebsites.EditorForm.titleToURI(title_widget.saving().result));
         //form_data.append("_editor_uri", snapwebsites.EditorForm.titleToURI(snapwebsites.castToString(jQuery("[field_name='title'] .editor-content").text(), "casting the field name title to a string")));
     }
-    form_data.append("_editor_widget_name", editor_widget.getName());
-    form_data.append("_editor_attachment", e.target.snapEditorFile);
+    form_data.append("_editor_widget_names", name); // this field supports multiple names separated by commas
+    form_data.append(name, e.target.snapEditorFile);
 
     // mark widget as processing (allows for CSS effects)
     e.target.snapEditorWidget.getWidget().addClass("processing-attachment");
@@ -5419,9 +5421,29 @@ snapwebsites.EditorWidgetTypeDroppedFileWithPreview.prototype.droppedAttachment 
  */
 snapwebsites.EditorWidgetTypeDroppedFileWithPreview.prototype.serverAccessSuccess = function(result) // virtual
 {
+    // the response was successful so responseXML is valid,
+    // get the canonicalized path to the file we just sent
+    // to the server (this is a full URI)
+    var xml_data = jQuery(result.jqxhr.responseXML),
+        attachment_path = xml_data.find("data[name='attachment-path']").text(),
+        attachment_icon = xml_data.find("data[name='attachment-icon']").text(),
+        request;
+
     snapwebsites.EditorWidgetTypeDroppedFileWithPreview.superClass_.serverAccessSuccess.call(this, result);
 
-    alert("preview accepted by server");
+    request = new snapwebsites.ListenerRequest(
+            attachment_path + "/preview.png?width=648&height=838",
+            function(request) // success
+            {
+                console.log("Editor Request: SUCCESS!");
+            },
+            function(request) // failure
+            {
+                //console.log("Editor Request: failure...");
+                // show a broken image in this case
+            });
+    request.setSpeeds([10, 3]);
+    snapwebsites.ListenerInstance.addRequest(request);
 };
 /*jslint unparam: false */
 

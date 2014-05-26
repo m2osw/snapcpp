@@ -2,6 +2,7 @@
 
 set -e
 start_date=`date`
+SOURCE=`pwd`
 MAJOR=`grep AS2JS_VERSION_MAJOR CMakeLists.txt | sed -e 's/^.*set(.*AS2JS_VERSION_MAJOR.*\([0-9]\+\).*$/\1/'`
 MINOR=`grep AS2JS_VERSION_MINOR CMakeLists.txt | sed -e 's/^.*set(.*AS2JS_VERSION_MINOR.*\([0-9]\+\).*$/\1/'`
 PATCH=`grep AS2JS_VERSION_PATCH CMakeLists.txt | sed -e 's/^.*set(.*AS2JS_VERSION_PATCH.*\([0-9]\+\).*$/\1/'`
@@ -50,9 +51,12 @@ gcov -o ../BUILD/src/CMakeFiles/as2js.dir/as2js.cpp.gcno ../../../src/as2js.cpp
 cd ..
 
 
-# Use --no-external to avoid /usr/include and other unwanted files
-# (only available in lcov version 1.10+)
 lcov --capture --directory BUILD --output-file coverage.info
+# The following lcov options can be used under Ubuntu 14.10+
+# Use --no-external and --base-directory $SOURCE
+# to avoid /usr/include and other unwanted files
+# (only available in lcov version 1.10+)
+#lcov --capture --no-external --directory BUILD --base-directory $SOURCE --output-file coverage.info
 mkdir -p html
 genhtml --legend --demangle-cpp --no-branch-coverage --show-details coverage.info --output-directory html
 

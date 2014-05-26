@@ -1164,7 +1164,6 @@ void permissions::on_validate_action(content::path_info_t& ipath, QString const&
         NOTREACHED();
     }
 
-
     QString const& login_status(get_login_status());
     QString const& user_path(get_user_path());
     content::permission_flag allowed;

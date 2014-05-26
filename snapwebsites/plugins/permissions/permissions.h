@@ -133,12 +133,12 @@ public:
 
     void                    add_user_rights(QString const & right, sets_t& sets);
     void                    add_plugin_permissions(QString const& plugin_name, QString const& group, sets_t& sets);
+    QString const&          get_login_status();
 
 private:
     void                    content_update(int64_t variables_timestamp);
     void                    recursive_add_user_rights(QString const& key, sets_t& sets);
     void                    recursive_add_plugin_permissions(QString const& plugin_name, QString const& key, sets_t& sets);
-    QString const&          get_login_status();
     QString const&          get_user_path();
 
     zpsnap_child_t              f_snap;

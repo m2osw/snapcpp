@@ -24,7 +24,6 @@
 #include "../sessions/sessions.h"
 #include "../filter/filter.h"
 #include "../layout/layout.h"
-#include "../server_access/server_access.h"
 
 #include "dbutils.h"
 #include "mkgmtime.h"
@@ -175,7 +174,7 @@ int64_t editor::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2014, 5, 22, 12, 52, 40, content_update);
+    SNAP_PLUGIN_UPDATE(2014, 5, 24, 2, 38, 40, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -604,6 +603,8 @@ void editor::on_process_post(QString const& uri_path)
 
     }
 
+    server_access::server_access *server_access_plugin(server_access::server_access::instance());
+
     if(messages->get_error_count() == 0)
     {
         // verify that the session random number is compatible
@@ -683,8 +684,7 @@ void editor::on_process_post(QString const& uri_path)
             break;
 
         case EDITOR_SAVE_MODE_ATTACHMENT:
-std::cerr << "***\n*** Editor Processing POST... [" << session_data[0] << "] / [" << session_data[1] << "] -> " << f_snap->postenv("_editor_save_mode") << "\n***\n";
-            editor_save_attachment(ipath, info);
+            editor_save_attachment(ipath, info, server_access_plugin);
             break;
 
         case EDITOR_SAVE_MODE_UNKNOWN:
@@ -695,7 +695,6 @@ std::cerr << "***\n*** Editor Processing POST... [" << session_data[0] << "] / [
     }
 
     // create the AJAX response
-    server_access::server_access *server_access_plugin(server_access::server_access::instance());
     server_access_plugin->create_ajax_result(ipath, messages->get_error_count() == 0);
     server_access_plugin->ajax_output();
 }
@@ -1154,32 +1153,49 @@ QString editor::clean_post_value(QString const& widget_type, QString const& valu
  *
  * \param[in,out] ipath  The path to the page being updated.
  * \param[in,out] info  The session information, for the validation, just in case.
+ * \param[in,out] server_access_plugin  The plugin used to build the output data for the AJAX request.
  */
-void editor::editor_save_attachment(content::path_info_t& ipath, sessions::sessions::session_info& info)
+void editor::editor_save_attachment(content::path_info_t& ipath, sessions::sessions::session_info& info, server_access::server_access *server_access_plugin)
 {
-    static_cast<void>(ipath);
     static_cast<void>(info);
 
-    snap_child::post_file_t postfile;
-    postfile.set_name("image");
-    postfile.set_filename(filename);
-    postfile.set_original_mime_type(type);
-    postfile.set_creation_time(f_snap->get_start_time());
-    postfile.set_modification_time(f_snap->get_start_time());
-    postfile.set_data(data);
-    postfile.set_image_width(image.get_buffer(0)->get_width());
-    postfile.set_image_height(image.get_buffer(0)->get_height());
-    ++g_index;
-    postfile.set_index(g_index);
-    content::attachment_file the_attachment(f_snap, postfile);
-    the_attachment.set_multiple(false);
-    the_attachment.set_cpath(ipath.get_cpath());
-    the_attachment.set_field_name("image");
-    the_attachment.set_attachment_owner(attachment::attachment::instance()->get_plugin_name());
-    // TODO: determine the correct attachment permission (public by default is probably wrong!)
-    the_attachment.set_attachment_type("attachment/public");
-    // TODO: define the locale in some ways... for now we use "neutral"
-    content::content::instance()->create_attachment(the_attachment, ipath.get_branch(), "");
+    QString widget_names(f_snap->postenv("_editor_widget_names"));
+std::cerr << "***\n*** Editor Processing POST... [" << ipath.get_key() << "::" << widget_names << "]\n***\n";
+
+    QStringList names(widget_names.split(","));
+    for(int i(0); i < names.size(); ++i)
+    {
+        // TODO: All those names may be tainted, we MUST verify them to make
+        //       the editor secure.
+        content::attachment_file the_attachment(f_snap, f_snap->postfile(names[i]));
+        the_attachment.set_multiple(false);
+        the_attachment.set_parent_cpath(ipath.get_cpath());
+        the_attachment.set_field_name(names[i]);
+        the_attachment.set_attachment_owner(attachment::attachment::instance()->get_plugin_name());
+        // TODO: determine the correct attachment permission (public by default is probably wrong!)
+        the_attachment.set_attachment_type("attachment/public");
+        // TODO: define the locale in some ways... for now we use "neutral"
+        content::content::instance()->create_attachment(the_attachment, ipath.get_branch(), "");
+        QString attachment_cpath(the_attachment.get_attachment_cpath());
+        if(!attachment_cpath.isEmpty())
+        {
+            content::path_info_t attachment_ipath;
+            attachment_ipath.set_path(attachment_cpath);
+            server_access_plugin->ajax_append_data("attachment-path", attachment_ipath.get_key().toUtf8());
+            QString const mimetype(the_attachment.get_file().get_mime_type());
+            //server_access_plugin->ajax_append_data("attachment-mimetype", mimetype.toUtf8());
+            QString const site_key(f_snap->get_site_key_with_slash());
+            if(mimetype.startsWith("application/pdf"))
+            {
+                server_access_plugin->ajax_append_data("attachment-icon", (site_key + "/images/editor/pdf.png").toUtf8());
+            }
+            else
+            {
+                // send some default otherwise
+                server_access_plugin->ajax_append_data("attachment-icon", (site_key + "/images/editor/file.png").toUtf8());
+            }
+        }
+    }
 }
 
 
@@ -2469,7 +2485,7 @@ bool editor::save_inline_image(content::path_info_t& ipath, QDomElement img, QSt
     postfile.set_index(g_index);
     content::attachment_file the_attachment(f_snap, postfile);
     the_attachment.set_multiple(false);
-    the_attachment.set_cpath(ipath.get_cpath());
+    the_attachment.set_parent_cpath(ipath.get_cpath());
     the_attachment.set_field_name("image");
     the_attachment.set_attachment_owner(attachment::attachment::instance()->get_plugin_name());
     // TODO: determine the correct attachment permission (public by default is probably wrong!)

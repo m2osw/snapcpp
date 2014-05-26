@@ -17,6 +17,7 @@
 #pragma once
 
 #include "../users/users.h"
+#include "../server_access/server_access.h"
 
 namespace snap
 {
@@ -150,7 +151,7 @@ private:
     void                content_update(int64_t variables_timestamp);
     void                process_new_draft();
     void                editor_save(content::path_info_t& ipath, sessions::sessions::session_info& info);
-    void                editor_save_attachment(content::path_info_t& ipath, sessions::sessions::session_info& info);
+    void                editor_save_attachment(content::path_info_t& ipath, sessions::sessions::session_info& info, server_access::server_access *server_access_plugin);
     void                editor_create_new_branch(content::path_info_t& ipath);
     bool                save_inline_image(content::path_info_t& ipath, QDomElement img, QString const& src, QString const& force_filename);
 

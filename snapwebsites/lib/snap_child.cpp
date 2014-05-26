@@ -100,6 +100,7 @@ char const *g_minimum_plugins[] =
     "layout",
     "links",
     "list",
+    "listener",
     "menu",
     "messages",
     "output",

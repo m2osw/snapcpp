@@ -389,8 +389,9 @@ public:
                                     attachment_file(snap_child *snap, snap_child::post_file_t const& file);
 
     void                            set_multiple(bool multiple);
-    void                            set_cpath(QString const& cpath);
+    void                            set_parent_cpath(QString const& cpath);
     void                            set_field_name(QString const& field_name);
+    void                            set_attachment_cpath(QString const& cpath);
     void                            set_attachment_owner(QString const& owner);
     void                            set_attachment_type(QString const& type);
     void                            set_creation_time(int64_t time);
@@ -411,8 +412,9 @@ public:
 
     bool                            get_multiple() const;
     snap_child::post_file_t const&  get_file() const;
-    QString const&                  get_cpath() const;
+    QString const&                  get_parent_cpath() const;
     QString const&                  get_field_name() const;
+    QString const&                  get_attachment_cpath() const;
     QString const&                  get_attachment_owner() const;
     QString const&                  get_attachment_type() const;
     int64_t                         get_creation_time() const;
@@ -425,8 +427,9 @@ private:
     snap_child::post_file_t         f_file;
     controlled_vars::fbool_t        f_multiple;
     controlled_vars::fbool_t        f_has_cpath;
-    QString                         f_cpath;
+    QString                         f_parent_cpath;
     QString                         f_field_name;
+    QString                         f_attachment_cpath;
     QString                         f_attachment_owner;
     QString                         f_attachment_type;
     mutable QString                 f_name;
@@ -543,7 +546,7 @@ public:
 
     SNAP_SIGNAL(new_content, (path_info_t& path), (path));
     SNAP_SIGNAL(create_content, (path_info_t& path, QString const& owner, QString const& type), (path, owner, type));
-    SNAP_SIGNAL(create_attachment, (attachment_file const& file, snap_version::version_number_t branch_number, QString const& locale), (file, branch_number, locale));
+    SNAP_SIGNAL(create_attachment, (attachment_file& file, snap_version::version_number_t branch_number, QString const& locale), (file, branch_number, locale));
     SNAP_SIGNAL(modified_content, (path_info_t& ipath), (ipath));
     SNAP_SIGNAL(check_attachment_security, (attachment_file const& file, permission_flag& secure, bool const fast), (file, secure, fast));
     SNAP_SIGNAL(process_attachment, (QByteArray const& key, attachment_file const& file), (key, file));

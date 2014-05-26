@@ -18,6 +18,7 @@ javascript: content	; @echo $@
 layout: content filter javascript taxonomy	; @echo $@
 links: core content	; @echo $@
 list: layout filter path output	; @echo $@
+listener: path server_access	; @echo $@
 mailinglist: core content	; @echo $@
 menu: layout content output	; @echo $@
 messages: core	; @echo $@

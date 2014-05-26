@@ -1244,7 +1244,7 @@ void form::auto_save_form(QString const& owner, content::path_info_t& ipath, aut
                 // save the file in the database
                 content::attachment_file attachment(f_snap, f_snap->postfile(id));
                 attachment.set_multiple(multiple);
-                attachment.set_cpath(ipath.get_cpath());
+                attachment.set_parent_cpath(ipath.get_cpath());
                 attachment.set_field_name(id);
                 // TODO: It is likely that this is wrong because it is likely
                 //       something like output when it should be attachment

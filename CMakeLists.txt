@@ -115,6 +115,7 @@ ConfigureMakeProject( PROJECT_NAME cassview
             -DSNAPWEBSITES_LIBRARY:PATH=${CMAKE_BINARY_DIR}/dist/lib/libsnapwebsites.so
         DEPENDS snapCMakeModules snapwebsites
         )
+ConfigureMakeProject( PROJECT_NAME as2js           DEPENDS snapCMakeModules controlled_vars )
 
 get_property( BUILD_TARGETS GLOBAL PROPERTY BUILD_TARGETS )
 get_property( CLEAN_TARGETS GLOBAL PROPERTY CLEAN_TARGETS )

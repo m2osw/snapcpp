@@ -13,11 +13,12 @@ OPTIONS="--warning_level VERBOSE"
        #plugins/output/jquery-extensions.js
 
 FILES="plugins/editor/editor.js
+       plugins/form/form.js
+       plugins/list/list/list.js
+       plugins/listener/listener.js
        plugins/output/popup.js
        plugins/output/output.js
-       plugins/server_access/server-access.js
-       plugins/form/form.js
-       plugins/list/list/list.js"
+       plugins/server_access/server-access.js"
 
 CLOSURE_COMPILER=/home/snapwebsites/tmp/google-js-compiler/closure-compiler
 
