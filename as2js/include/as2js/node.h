@@ -64,6 +64,13 @@ public:
     typedef std::map<String, pointer_t>         map_of_pointers_t;
     typedef std::vector<pointer_t>              vector_of_pointers_t;
 
+    // member related depth parameter
+    typedef ssize_t             depth_t;
+
+    static depth_t const        MATCH_NOT_FOUND = 0;
+    static depth_t const        MATCH_HIGHEST_DEPTH = 1;
+    static depth_t const        MATCH_LOWEST_DEPTH = INT_MAX / 2;
+
     // the node type is often referenced as a token
     enum node_t
     {
@@ -362,13 +369,10 @@ public:
         LINK_INSTANCE = 0,
         LINK_TYPE,
         LINK_ATTRIBUTES,    // this is the list of identifiers
+        LINK_GOTO_EXIT,
+        LINK_GOTO_ENTER,
 
-        LINK_max,
-
-        LINK_GOTO_EXIT = LINK_INSTANCE,
-        LINK_GOTO_ENTER = LINK_TYPE,
-
-        LINK_end
+        LINK_max
     };
 
                                 Node(node_t type);
@@ -391,8 +395,10 @@ public:
 
     // basic conversions
     void                        to_unknown();
+    bool                        to_as();
     node_t                      to_boolean_type_only() const;
     bool                        to_boolean();
+    bool                        to_call();
     bool                        to_int64();
     bool                        to_float64();
     bool                        to_number();
@@ -416,8 +422,17 @@ public:
     bool                        get_flag(flag_attribute_t f) const;
     void                        set_flag(flag_attribute_t f, bool v);
 
+    // switch operator: switch(...) with(<operator>)
     node_t                      get_switch_operator() const;
     void                        set_switch_operator(node_t op);
+
+    // handle function parameters (reorder and depth)
+    void                        set_param_size(size_t size);
+    size_t                      get_param_size() const;
+    depth_t                     get_param_depth(size_t j) const;
+    void                        set_param_depth(size_t j, depth_t depth);
+    size_t                      get_param_index(size_t idx) const; // returns 'j'
+    void                        set_param_index(size_t idx, size_t j);
 
     void                        set_position(Position const& position);
     Position const&             get_position() const;
@@ -428,7 +443,7 @@ public:
     void                        lock();
     void                        unlock();
 
-    int32_t                     get_offset() const;
+    size_t                      get_offset() const;
 
     void                        set_parent(pointer_t parent = pointer_t(), int index = -1);
     pointer_t                   get_parent() const;
@@ -465,6 +480,9 @@ public:
     String                      output() const;
 
 private:
+    typedef std::vector<controlled_vars::zint32_t>  param_depth_t;
+    typedef std::vector<controlled_vars::zuint32_t> param_index_t;
+
     // verify that the specified flag correspond to the node type
     void                        verify_flag_attribute(flag_attribute_t f) const;
     void                        verify_exclusive_attributes(flag_attribute_t f) const;
@@ -486,7 +504,10 @@ private:
     Int64                           f_int;
     Float64                         f_float;
     String                          f_str;
-    //std::vector<int>                f_user_data;  // TBD -- necessary?!
+
+    // function parameters
+    param_depth_t                   f_param_depth;
+    param_index_t                   f_param_index;
 
     // parent children node tree handling
     pointer_t                       f_parent;

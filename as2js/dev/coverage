@@ -50,6 +50,8 @@ gcov -o ../BUILD/src/CMakeFiles/as2js.dir/as2js.cpp.gcno ../../../src/as2js.cpp
 cd ..
 
 
+# Use --no-external to avoid /usr/include and other unwanted files
+# (only available in lcov version 1.10+)
 lcov --capture --directory BUILD --output-file coverage.info
 mkdir -p html
 genhtml --legend --demangle-cpp --no-branch-coverage --show-details coverage.info --output-directory html

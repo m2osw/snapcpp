@@ -101,7 +101,7 @@ public:
 
         String                      get_package_name() const;
 
-        element_vector_t            find_element(String const& pattern) const;
+        element_vector_t            find_elements(String const& pattern) const;
         Element::pointer_t          get_element(String const& element_name) const;
         Element::pointer_t          add_element(String const& element_name);
 
@@ -117,7 +117,7 @@ public:
     bool                        load(String const& filename);
     void                        save() const;
 
-    package_vector_t            find_package(String const& pattern) const;
+    package_vector_t            find_packages(String const& pattern) const;
     Package::pointer_t          get_package(String const& package_name) const;
     Package::pointer_t          add_package(String const& package_name);
 

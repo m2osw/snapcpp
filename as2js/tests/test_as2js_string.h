@@ -1,6 +1,6 @@
 #ifndef TEST_AS2JS_STRING_H
 #define TEST_AS2JS_STRING_H
-/* stream.h -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
+/* test_as2js_string.h -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
 
 /*
 

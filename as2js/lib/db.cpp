@@ -195,7 +195,7 @@ String Database::Package::get_package_name() const
 }
 
 
-Database::element_vector_t Database::Package::find_element(String const& pattern) const
+Database::element_vector_t Database::Package::find_elements(String const& pattern) const
 {
     element_vector_t found;
     for(auto it(f_elements.begin()); it != f_elements.end(); ++it)
@@ -342,7 +342,7 @@ void Database::save() const
 }
 
 
-Database::package_vector_t Database::find_package(String const& pattern) const
+Database::package_vector_t Database::find_packages(String const& pattern) const
 {
     package_vector_t found;
     for(auto it(f_packages.begin()); it != f_packages.end(); ++it)

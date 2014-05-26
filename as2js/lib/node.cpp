@@ -624,6 +624,20 @@ void Node::to_unknown()
 }
 
 
+bool Node::to_as()
+{
+    // "a call to a getter" may be transformed from CALL to AS
+    // because a getter can very much look like a cast (false positive)
+    if(NODE_CALL == f_type)
+    {
+        f_type = static_cast<int32_t>(NODE_AS);
+        return true;
+    }
+
+    return false;
+}
+
+
 Node::node_t Node::to_boolean_type_only() const
 {
     switch(f_type)
@@ -694,6 +708,20 @@ bool Node::to_boolean()
     }
 
     return true;
+}
+
+
+bool Node::to_call()
+{
+    // getters are transformed from MEMBER to CALL
+    if(NODE_MEMBER == f_type        // member getter
+    || NODE_ASSIGNMENT == f_type)   // assignment setter
+    {
+        f_type = static_cast<int32_t>(NODE_CALL);
+        return true;
+    }
+
+    return false;
 }
 
 
@@ -820,6 +848,10 @@ bool Node::to_string()
     switch(f_type) {
     case NODE_STRING:
         return true;
+
+    case NODE_IDENTIFIER:
+        // this happens with special identifiers that are strings in the end
+        break;
 
     case NODE_UNDEFINED:
         f_str = "undefined";
@@ -1523,6 +1555,123 @@ void Node::set_switch_operator(node_t op)
 }
 
 
+/** \brief Define the size of the parameter index and depth vectors.
+ *
+ * This function defines the size of the depth and index parameter
+ * vectors. Until this function is called, trying to set a depth
+ * or index parameter will fail.
+ *
+ * Also, the function cannot be called more than once and the size
+ * parameter cannot be zero.
+ *
+ * \param[in] size  The number of parameters (size > 0 must be true).
+ */
+void Node::set_param_size(size_t size)
+{
+    if(f_param_depth.size() != 0)
+    {
+        throw exception_internal_error("INTERNAL ERROR: set_param_depth() called twice.");
+    }
+    if(size == 0)
+    {
+        throw exception_internal_error("INTERNAL ERROR: set_param_depth() was called with a size of zero.");
+    }
+    f_param_depth.resize(size);
+    f_param_index.resize(size);
+}
+
+
+/** \brief Return the size of the parameter index and depth vectors.
+ *
+ * This function returns zero unless the set_param_size() was successfully
+ * called with a valid size.
+ *
+ * \return The current size of the parameter index and depth vectors.
+ */
+size_t Node::get_param_size() const
+{
+    return f_param_depth.size();
+}
+
+
+/** \brief Get the depth at the specified index.
+ *
+ * This function returns the depth parameter at the specified index.
+ *
+ * \return The depth of the type of this parameter.
+ */
+Node::depth_t Node::get_param_depth(size_t idx) const
+{
+    return f_param_depth[idx];
+}
+
+
+/** \brief Set the depth of a parameter.
+ *
+ * When we search for a match of a function call, we check its parameters.
+ * If a parameter has a higher class type definition, then it wins over
+ * the others. This depth value represents that information.
+ *
+ * \param[in] j  The index of the parameter for which we define the depth.
+ *               (The order is the function being called order.)
+ * \param[in] depth  The new depth.
+ */
+void Node::set_param_depth(size_t j, depth_t depth)
+{
+    f_param_depth[j] = depth;
+}
+
+
+/** \brief Get the index of the parameter.
+ *
+ * When a user writes a function call, he can spell out the parameter
+ * names as in:
+ *
+ * \code
+ * pos = find(size => 123, characer => 'c', haystack => str);
+ * \endcode
+ *
+ * Those parameters, in the function definition, may not be in the
+ * same order:
+ *
+ * \code
+ * function find(haystack: string, character: string, size: number = -1);
+ * \endcode
+ *
+ * The parameter index vector holds the indices so we can reorganize the
+ * call as in:
+ *
+ * \code
+ * pos = find(str, 'c', 123);
+ * \endcode
+ *
+ * The really cool thing is that you could call a function with
+ * multiple definitions and still get the parameters in the right
+ * order even though both functions define their parameters
+ * in a different order.
+ *
+ * \param[in] j  The index of the parameter in the function being called.
+ *
+ * \return The index in the function definition.
+ */
+size_t Node::get_param_index(size_t j) const
+{
+    return f_param_index[j];
+}
+
+
+/** \brief Set the parameter index.
+ *
+ * Save the index of the parameter in the function being called, opposed
+ * to the index of the parameter in the function call.
+ *
+ * \param[in] idx  The index in the function call.
+ * \param[in] j  The index in the function being called.
+ */
+void Node::set_param_index(size_t idx, size_t j)
+{
+    f_param_index[idx] = j;
+}
 
 
 void Node::set_position(Position const& position)
@@ -1858,9 +2007,10 @@ void Node::clean_tree()
  * returns the corresponding index so we can apply functions to that
  * child from the parent.
  *
- * \return The offset (index, position) of the child in its parent f_children vector.
+ * \return The offset (index, position) of the child in its parent
+ *         f_children vector.
  */
-int32_t Node::get_offset() const
+size_t Node::get_offset() const
 {
     if(!f_parent)
     {
@@ -1872,6 +2022,7 @@ int32_t Node::get_offset() const
     vector_of_pointers_t::iterator it(std::find(f_parent->f_children.begin(), f_parent->f_children.end(), me));
     if(it == f_parent->f_children.end())
     {
+        // if this happen, we have a bug in the set_parent() function
         throw exception_internal_error("get_offset() could not find this node in its parent");
     }
 

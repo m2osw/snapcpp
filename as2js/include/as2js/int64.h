@@ -57,7 +57,7 @@ public:
                         f_int = rhs;
                     }
 
-                    Int64(const Int64& rhs)
+                    Int64(Int64 const& rhs)
                     {
                         f_int = rhs.f_int;
                     }
