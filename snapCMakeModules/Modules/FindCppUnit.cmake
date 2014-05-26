@@ -38,11 +38,13 @@ ELSE(WIN32)
   FIND_LIBRARY(CPPUNIT_LIBRARY cppunit
                ${CPPUNIT_INCLUDE_DIR}/../lib
                /usr/local/lib
-               /usr/lib)
+               /usr/lib
+	       /usr/lib/x86_64-linux-gnu)
   FIND_LIBRARY(CPPUNIT_DEBUG_LIBRARY cppunit
                ${CPPUNIT_INCLUDE_DIR}/../lib
                /usr/local/lib
-               /usr/lib)
+               /usr/lib
+	       /usr/lib/x86_64-linux-gnu)
 ENDIF(WIN32)
 
 IF(CPPUNIT_INCLUDE_DIR)
