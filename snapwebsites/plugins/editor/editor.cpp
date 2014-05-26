@@ -175,7 +175,7 @@ int64_t editor::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2014, 5, 20, 23, 47, 40, content_update);
+    SNAP_PLUGIN_UPDATE(2014, 5, 22, 12, 52, 40, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -530,14 +530,15 @@ void editor::process_new_draft()
  */
 void editor::on_process_post(QString const& uri_path)
 {
-    QString const editor_full_session(f_snap->postenv("editor_session"));
+    QString const editor_full_session(f_snap->postenv("_editor_session"));
     if(editor_full_session.isEmpty())
     {
-        // if the editor_session variable does not exist, do not consider this
+        // if the _editor_session variable does not exist, do not consider this
         // POST as an Editor POST
         return;
     }
-    save_mode_t editor_save_mode(string_to_save_mode(f_snap->postenv("editor_save_mode")));
+
+    save_mode_t editor_save_mode(string_to_save_mode(f_snap->postenv("_editor_save_mode")));
     if(editor_save_mode == EDITOR_SAVE_MODE_UNKNOWN)
     {
         // this could happen between versions (i.e. newer version wants to
@@ -546,7 +547,7 @@ void editor::on_process_post(QString const& uri_path)
         // a server that has a newer version and a server that does not...
         f_snap->die(snap_child::HTTP_CODE_NOT_ACCEPTABLE, "Not Acceptable",
                 "Somehow the editor does not understand the Save command sent to the server.",
-                QString("User gave us an unknown save mode (%1).").arg(f_snap->postenv("editor_save_mode")));
+                QString("User gave us an unknown save mode (%1).").arg(f_snap->postenv("_editor_save_mode")));
         NOTREACHED();
     }
 
@@ -568,8 +569,8 @@ void editor::on_process_post(QString const& uri_path)
     ipath.set_main_page(true);
     ipath.force_locale("xx");
 
-    // First we verify the session information from the meta tag:
-    // <meta name="editor_session" content="session_id/random_number"/>
+    // First we verify the editor form session information
+    // <div id="content" form_name="..." class="editor-form ..." session="session_id/random_number">...</div>
     sessions::sessions::session_info info;
     sessions::sessions::instance()->load_session(session_data[0], info, false);
     switch(info.get_session_type())
@@ -650,6 +651,9 @@ void editor::on_process_post(QString const& uri_path)
             case EDITOR_SAVE_MODE_AUTO_DRAFT: // TBD
                 break;
 
+            case EDITOR_SAVE_MODE_ATTACHMENT: // no change
+                break;
+
             case EDITOR_SAVE_MODE_UNKNOWN:
                 // this should never happen
                 throw snap_logic_exception("The UNKNOWN save mode was ignore, yet we have an edit_save_mode set to UNKNOWN.");
@@ -676,6 +680,11 @@ void editor::on_process_post(QString const& uri_path)
             break;
 
         case EDITOR_SAVE_MODE_AUTO_DRAFT:
+            break;
+
+        case EDITOR_SAVE_MODE_ATTACHMENT:
+std::cerr << "***\n*** Editor Processing POST... [" << session_data[0] << "] / [" << session_data[1] << "] -> " << f_snap->postenv("_editor_save_mode") << "\n***\n";
+            editor_save_attachment(ipath, info);
             break;
 
         case EDITOR_SAVE_MODE_UNKNOWN:
@@ -726,6 +735,10 @@ editor::save_mode_t editor::string_to_save_mode(QString const& mode)
     if(mode == "auto_draft")
     {
         return EDITOR_SAVE_MODE_AUTO_DRAFT;
+    }
+    if(mode == "attachment")
+    {
+        return EDITOR_SAVE_MODE_ATTACHMENT;
     }
 
     return EDITOR_SAVE_MODE_UNKNOWN;
@@ -1125,6 +1138,48 @@ QString editor::clean_post_value(QString const& widget_type, QString const& valu
 
 
     return result;
+}
+
+
+/** \brief Instant save attachment function.
+ *
+ * Attachment can be made to be saved instantaneously. If that feature is
+ * used, then this function gets called at some point. The save is very
+ * simply a normal create attachment to this page.
+ *
+ * \todo
+ * We should put such attachments in a list of temporary attachments because
+ * if the user cancels their upload, then we want to delete the attachment
+ * otherwise we'd end up with many left overs...
+ *
+ * \param[in,out] ipath  The path to the page being updated.
+ * \param[in,out] info  The session information, for the validation, just in case.
+ */
+void editor::editor_save_attachment(content::path_info_t& ipath, sessions::sessions::session_info& info)
+{
+    static_cast<void>(ipath);
+    static_cast<void>(info);
+
+    snap_child::post_file_t postfile;
+    postfile.set_name("image");
+    postfile.set_filename(filename);
+    postfile.set_original_mime_type(type);
+    postfile.set_creation_time(f_snap->get_start_time());
+    postfile.set_modification_time(f_snap->get_start_time());
+    postfile.set_data(data);
+    postfile.set_image_width(image.get_buffer(0)->get_width());
+    postfile.set_image_height(image.get_buffer(0)->get_height());
+    ++g_index;
+    postfile.set_index(g_index);
+    content::attachment_file the_attachment(f_snap, postfile);
+    the_attachment.set_multiple(false);
+    the_attachment.set_cpath(ipath.get_cpath());
+    the_attachment.set_field_name("image");
+    the_attachment.set_attachment_owner(attachment::attachment::instance()->get_plugin_name());
+    // TODO: determine the correct attachment permission (public by default is probably wrong!)
+    the_attachment.set_attachment_type("attachment/public");
+    // TODO: define the locale in some ways... for now we use "neutral"
+    content::content::instance()->create_attachment(the_attachment, ipath.get_branch(), "");
 }
 
 
@@ -1670,7 +1725,7 @@ void editor::editor_create_new_branch(content::path_info_t& ipath)
     // although we expect the URI sent by the editor to be safe, we filter it
     // again here really quick because the client sends this to us and thus
     // the data can be tainted
-    QString page_uri(f_snap->postenv("editor_uri"));
+    QString page_uri(f_snap->postenv("_editor_uri"));
     filter::filter::filter_uri(page_uri);
 
     // if the ipath is admin/drafts/<date> then we're dealing with a brand
@@ -2417,12 +2472,14 @@ bool editor::save_inline_image(content::path_info_t& ipath, QDomElement img, QSt
     the_attachment.set_cpath(ipath.get_cpath());
     the_attachment.set_field_name("image");
     the_attachment.set_attachment_owner(attachment::attachment::instance()->get_plugin_name());
+    // TODO: determine the correct attachment permission (public by default is probably wrong!)
     the_attachment.set_attachment_type("attachment/public");
     // TODO: define the locale in some ways... for now we use "neutral"
     content::content::instance()->create_attachment(the_attachment, ipath.get_branch(), "");
 
     // replace the inline image data block with a local (albeit full) URI
-    // TBD: the probably won't work if the website definition uses a path
+    //
+    // TODO: this most certainly won't work if the website definition uses a path
     img.setAttribute("src", QString("/%1/%2").arg(ipath.get_cpath()).arg(filename));
 
     return true;

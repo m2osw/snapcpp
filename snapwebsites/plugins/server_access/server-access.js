@@ -1,6 +1,6 @@
 /** @preserve
  * Name: server-access
- * Version: 0.0.1.11
+ * Version: 0.0.1.13
  * Browsers: all
  * Depends: output (>= 0.1.5)
  * Copyright: Copyright 2013-2014 (c) Made to Order Software Corporation  All rights reverved.
@@ -52,9 +52,29 @@ snapwebsites.base(snapwebsites.ServerAccessCallbacks);
  *
  * The result is saved in a data object which fields are:
  *
- * \li html -- the data being saved, used to change the originalData_
- *               field once successfully saved.
- * \li result -- the data to send to the server.
+ * \li [ESC] result_status -- the AJAX result_status parameter.
+ * \li [ES] messages -- XML DOM object with the error/success messages
+ *                      returned in the AJAX response.
+ * \li [E] error_message -- our own error message, may happen even if the
+ *                          AJAX data returned and worked.
+ * \li [E] ajax_error_message -- The raw AJAX system error message.
+ * \li [ESC] jqxhr -- the original XHR plus a few things adjusted by jQuery.
+ * \li [S] result_data -- raw AJAX result string.
+ * \li [S] will_redirect -- whether the response includes a redirect request.
+ *                          You may set this to false in your callback to
+ *                          avoid the redirect.
+ * \li [ESC] userdata -- the data passed to the send() function, may be
+ *                       set to 'undefined'.
+ *
+ * The [ESC] letters stand for:
+ *
+ * \li E -- set when an error occurs,
+ * \li S -- set when the AJAX request was successful,
+ * \li C -- reset in the complete function before calling your callback.
+ *
+ * The ajax_error_message may not be set if the error occurs on a successful
+ * AJAX request, but the server generated an error. In that case, the
+ * result_data and messages are likely defined.
  *
  * @typedef {{result_status: string,
  *            messages: (Object|null),
@@ -62,7 +82,8 @@ snapwebsites.base(snapwebsites.ServerAccessCallbacks);
  *            ajax_error_message: string,
  *            jqxhr: (Object|null),
  *            result_data: string,
- *            will_redirect: boolean}}
+ *            will_redirect: boolean,
+ *            userdata: (Object|null|undefined)}}
  */
 snapwebsites.ServerAccessCallbacks.ResultData;
 
@@ -141,6 +162,26 @@ snapwebsites.ServerAccessCallbacks.prototype.serverAccessComplete = function(res
  * that you are interested in, then call the send() function. Once a
  * response is received, one or more of you callbacks will be called.
  *
+ * \code
+ * class ServerAccess
+ * {
+ * public:
+ *     function ServerAccess(callback: ServerAccessCallbacks);
+ *     function setURI(uri: string, queryString_opt: Object);
+ *     function setData(data: Object);
+ *     function send();
+ *     static function appendQueryString(uri: string, query_string: Object): string;
+ *
+ * private:
+ *     var callback_: ServerAccessCallbacks = null;
+ *     var uri_: string = "";
+ *     var queryString_: Object = null;
+ *     var data_: Object = null;
+ * };
+ * \endcode
+ *
+ * data_ may specifically be an object of type FormData.
+ *
  * @param {snapwebsites.ServerAccessCallbacks} callback  An object reference,
  *          object that derives from the ServerAccessCallbacks interface.
  *
@@ -158,6 +199,40 @@ snapwebsites.ServerAccess = function(callback)
  * This class does not inherit from any other classes.
  */
 snapwebsites.base(snapwebsites.ServerAccess);
+
+
+/** \brief Type of object in the data_ parameter.
+ *
+ * This object represents a simple object of key/value pairs.
+ *
+ * Adding parameters is as simple as setting assigning a value to
+ * a new member:
+ *
+ * \code
+ *    this.data_._ajax = 1;
+ * \endcode
+ *
+ * @type {string}
+ * @const
+ * @private
+ */
+snapwebsites.ServerAccess.OBJECT_ = "object"; // static const
+
+
+/** \brief Type of object in the data_ parameter.
+ *
+ * This object represents a FormData object. Setting parameters in a FormData
+ * requires the append() function instead of using the [] operator.
+ *
+ * \code
+ *    this.data_.append("_ajax", "1");
+ * \endcode
+ *
+ * @type {string}
+ * @const
+ * @private
+ */
+snapwebsites.ServerAccess.FORM_ = "form"; // static const
 
 
 /** \brief The object wanting remote access.
@@ -203,6 +278,26 @@ snapwebsites.ServerAccess.prototype.uri_ = "";
 snapwebsites.ServerAccess.prototype.queryString_ = null;
 
 
+/** \brief The type of object defined in the data_ variable member.
+ *
+ * The ServerAccess object accepts two types of object:
+ *
+ * \li Object -- a simple key/value based object, which is sent as a
+ *               query string (key1=value1&key2=value2&...)
+ * \li FormData -- a form data object, which is created using
+ *                 "new FormData()" and supports sending files
+ *
+ * The AJAX request is tweaked depending on the type of object in use.
+ *
+ * The default is "object". The value is always forced when you call
+ * the setData() or setFormData() functions.
+ *
+ * @type {string}
+ * @private
+ */
+snapwebsites.ServerAccess.prototype.dataType_ = "object";
+
+
 /** \brief An object if key/value pairs to send to the server.
  *
  * The ServerAccess object uses this object to build a set of variables
@@ -210,7 +305,7 @@ snapwebsites.ServerAccess.prototype.queryString_ = null;
  *
  * This object is directly passed to the ajax() function of jQuery.
  *
- * @type {Object}
+ * @type {Object|FormData}
  * @private
  */
 snapwebsites.ServerAccess.prototype.data_ = null;
@@ -238,10 +333,10 @@ snapwebsites.ServerAccess.prototype.setURI = function(uri, queryString_opt)
  * using a POST.
  *
  * The object can be anything, although it is safer to keep a single level
- * of key/value pairs (no sub-objects.)
+ * of key/value pairs (no sub-objects, no array.)
  *
  * \note
- * The system always adds the "ajax" field to your object. This allows
+ * The system always adds the "_ajax" field to your object. This allows
  * the server to know that this specific POST is an AJAX query. This
  * changes your original object since we do not do a deep copy of it.
  *
@@ -251,12 +346,66 @@ snapwebsites.ServerAccess.prototype.setData = function(data)
 {
     if(data)
     {
+        // in this case we expect a standard simple field name/value
+        // object or a FormData, define the type depending on that
+        this.dataType_ = data instanceof FormData
+                    ? snapwebsites.ServerAccess.FORM_
+                    : snapwebsites.ServerAccess.OBJECT_;
+
         this.data_ = data;
 
-        // always force the ajax entry to 1
-        this.data_.ajax = 1;
+        // always force the _ajax field to 1
+        if(this.dataType_ === snapwebsites.ServerAccess.FORM_)
+        {
+            this.data_.append("_ajax", "1");
+        }
+        else
+        {
+            this.data_._ajax = 1;
+        }
     }
 };
+
+
+/** \brief Set the data in the form of a FormData object.
+ *
+ * This function expects a FormData object (or null). This function
+ * is used when you need to send more than just simple field name/value
+ * pairs. In most cases this means you are sending a file in a
+ * multi-part message.
+ *
+ * To setup a FormData object, do the following:
+ *
+ * \code
+ * // create the FormData object
+ * var form_data = new FormData();
+ *
+ * // set fields
+ * form_data.append("field_name1", "value1");
+ * form_data.append("field_name2", "value2");
+ *    ...
+ * form_data.append("field_nameN", "valueN");
+ *
+ * // set data in your server access object
+ * server_access.setFormData(form_data);
+ * \endcode
+ *
+ * Any of the value1, value2, etc. can be a file:
+ *
+ * \code
+ * form_data.append("my_file", e.originalEvent.dataTransfer.files[0]);
+ * \endcode
+ *
+ * The AJAX request will automatically handle the necessary conversions
+ * to send the data.
+ *
+ * \note
+ * The system always adds the "_ajax" field to your object. This allows
+ * the server to know that this specific POST is an AJAX query. This
+ * changes your original object since we do not do a deep copy of it.
+ *
+ * @param {!Object} form_data  The data to send to the server.
+ */
 
 
 /** \brief Send a POST to the server.
@@ -279,15 +428,34 @@ snapwebsites.ServerAccess.prototype.setData = function(data)
  * we get the complete() event.)
  *
  * \todo
- * Allow for request to prevent the user from closing the window until the
- * request was completed.
+ * Allow for a way to prevent the user from closing the window until the
+ * request was completed. We have such a thing in the editor, but that
+ * ignores the server access, and it means the unload event should
+ * be handled by a lower level object commont to the server access and
+ * the editor (and both could request to be checked on unload...)
+ *
+ * @param {Object|null=} opt_userdata  Any userdata that will be attached to
+ *                                     the result sent to your callbacks.
  */
-snapwebsites.ServerAccess.prototype.send = function()
+snapwebsites.ServerAccess.prototype.send = function(opt_userdata)
 {
     var that = this,
-        uri = this.uri_;
+        uri = snapwebsites.ServerAccess.appendQueryString(this.uri_, this.queryString_);
 
-    /**
+    /** \brief Initialize the result object.
+     *
+     * The letters below tell you where each member of the result
+     * object is modified.
+     *
+     * \li E -- error
+     * \li S -- success
+     * \li C -- completion
+     *
+     * Note that the same object is passed to the completion so the error
+     * and success parameters, if not overridden by the completion step,
+     * are also available in the completion function (also are fields
+     * you added in your success or error callback.)
+     *
      * @type {snapwebsites.ServerAccessCallbacks.ResultData}
      */
     var result =
@@ -311,145 +479,232 @@ snapwebsites.ServerAccess.prototype.send = function()
             result_data: "",
 
             // [S] Whether a redirect will be done on success
-            will_redirect: false
+            will_redirect: false,
+
+            // [ESC] A user object
+            userdata: opt_userdata
         };
 
-    jQuery.ajax(snapwebsites.ServerAccess.appendQueryString(uri, this.queryString_), {
-        type: "POST",
-        processData: true,
-        data: this.data_,
-        error: function(jqxhr, result_status, error_msg)
+    // TODO: add an AJAX object definition or find the one from jQuery externs
+    //       to have closure ensure we don't mess up this object parameters
+    var ajax_options =
         {
-            result.jqxhr = jqxhr;
-            result.result_status = result_status;
-            result.ajax_error_message = error_msg;
-            result.error_message = "An error occured while posting AJAX (status: "
-                            + result_status + " / error: " + error_msg + ")";
-            that.callback_.serverAccessError(result);
-        },
-        success: function(data, result_status, jqxhr)
-        {
-            // WARNING: success of the AJAX round trip data does not
-            //          mean that the POST was a success.
-            //
-            var results,        // the XML results (should be 1 element)
-                doc,            // the document used to redirect
-                redirect,       // the XML redirect element
-                redirect_uri,   // the redirect URI
-                target,         // the redirect target
-                doc_type_start, // the position of <!DOCTYPE in the result
-                doc_type_end,   // the position of > of the <!DOCTYPE>
-                doc_type;       // the DOCTYPE information
+            type: "POST",
+            processData: this.dataType_ === snapwebsites.ServerAccess.OBJECT_,
+            data: this.data_,
+            error: function(jqxhr, result_status, error_msg)
+            {
+                result.jqxhr = jqxhr;
+                result.result_status = result_status;
+                result.ajax_error_message = error_msg;
+                that.onError_(result);
+            },
+            success: function(data, result_status, jqxhr)
+            {
+                result.jqxhr = jqxhr;
+                result.result_data = data;
+                result.result_status = result_status;
+                that.onSuccess_(result);
+            },
+            complete: function(jqxhr, result_status)
+            {
+                result.jqxhr = jqxhr;
+                result.result_status = result_status;
+                that.onComplete_(result);
+            },
+            dataType: "xml" // server is expected to return XML only
+        };
 
-            result.result_data = data;
-            result.result_status = result_status;
-            result.jqxhr = jqxhr;
+    // TODO: to the xhr object, add a listener to handle the upload
+    //       progress (most certainly will work in Chrome, might not
+    //       in other broswers without many more AJAX calls...)
+    //       http://stackoverflow.com/questions/166221/how-can-i-upload-files-asynchronously-with-jquery#8758614
+
+    if(this.dataType_ === snapwebsites.ServerAccess.FORM_)
+    {
+        // prevent jQuery from setting the Content-Type field as that
+        // would otherwise clear the boundary string of the request
+        //
+        // see: http://stackoverflow.com/questions/5392344/sending-multipart-formdata-with-jquery-ajax#5976031
+        ajax_options.contentType = false;
+    }
+
+    jQuery.ajax(uri, ajax_options);
+};
+
+
+/** \brief Handle the case of a failed AJAX request.
+ *
+ * This function is called whenever the error callback of the ajax()
+ * function gets called.
+ *
+ * The function builds a result object and calls the user server
+ * access callback named serverAccessError().
+ *
+ * @param {snapwebsites.ServerAccessCallbacks.ResultData} result  The result object to pass to the serverAccessError().
+ *
+ * @private
+ */
+snapwebsites.ServerAccess.prototype.onError_ = function(result)
+{
+    result.error_message = "An error occured while posting AJAX (status: "
+                    + result.result_status + " / error: " + result.ajax_error_message + ")";
+    this.callback_.serverAccessError(result);
+};
+
+
+/** \brief Handle the case of a successful AJAX request.
+ *
+ * This function is called whenever the success callback of the ajax()
+ * function gets called.
+ *
+ * The function builds a result object and calls the user server
+ * access callback named serverAccessError() or serverAccessSuccess()
+ * depending on what is defined in the result request.
+ *
+ * If we do not get XML in return, or the XML response is not
+ * "success", then the function generates an error and calls the
+ * serverAccessError() callback.
+ *
+ * If the response HTTP code is 200, the response is XML, and the
+ * XML says "success", then the function calls the serverAccessSuccess()
+ * callback.
+ *
+ * @param {snapwebsites.ServerAccessCallbacks.ResultData} result  The result object.
+ *
+ * @private
+ */
+snapwebsites.ServerAccess.prototype.onSuccess_ = function(result)
+{
+    //
+    // WARNING: success of the AJAX round trip data does not
+    //          mean that the POST was a success.
+    //
+    var results,        // the XML results (should be 1 element)
+        doc,            // the document used to redirect
+        redirect,       // the XML redirect element
+        redirect_uri,   // the redirect URI
+        target,         // the redirect target
+        doc_type_start, // the position of <!DOCTYPE in the result
+        doc_type_end,   // the position of > of the <!DOCTYPE>
+        doc_type;       // the DOCTYPE information
 
 //console.log(jqxhr);
 
-            if(jqxhr.status === 200)
-            {
-                doc_type_start = jqxhr.responseText.indexOf("<!DOCTYPE");
-                if(doc_type_start !== -1)
-                {
-                    doc_type_start += 9; // skip the <!DOCTYPE part
-                    doc_type_end = jqxhr.responseText.indexOf(">", doc_type_start);
-                    doc_type = jqxhr.responseText.substr(doc_type_start, doc_type_end - doc_type_start);
-                    if(doc_type.indexOf("html") !== -1)
-                    {
-                        // this is definitively wrong, but we want to avoid
-                        // the following tests in case the HTML includes
-                        // invalid content (although it looks like jQuery
-                        // do not convert such documents to an XML tree
-                        // anyway...)
-                        result.error_message = "The server replied with HTML instead of XML.";
-                        that.callback_.serverAccessError(result);
-                        return;
-                    }
-                }
-
-                // success or error, we may have messages
-                // (at this point, only errors, but later...)
-                result.messages = jqxhr.responseXML.getElementsByTagName("messages");
-
-                // we expect exactly ONE result tag
-                results = jqxhr.responseXML.getElementsByTagName("result");
-                if(results.length === 1 && results[0].childNodes[0].nodeValue === "success")
-                {
-                    //alert("The AJAX succeeded (" + result_status + ")");
-
-                    // success!
-                    redirect = jqxhr.responseXML.getElementsByTagName("redirect");
-                    result.will_redirect = redirect.length === 1;
-
-                    that.callback_.serverAccessSuccess(result);
-
-                    // test the object flag so the callback could set it to
-                    // false if applicable
-                    if(result.will_redirect)
-                    {
-                        // used asked to redirect the user after a
-                        // successful save
-                        doc = document;
-
-                        // get the target to see whether we need to use the
-                        // parent, top, or self...
-                        target = redirect[0].getAttribute("target");
-                        if(target === "_parent" && window.parent)
-                        {
-                            // TODO: we probably want to support
-                            // multiple levels (i.e. a "_top" kind
-                            // of a thing) instead of just one up.
-                            doc = window.parent.document;
-                        }
-                        else if(target === "_top")
-                        {
-                            doc = window.top.document;
-                        }
-                        // else TODO search for a window named 'target'
-                        //           and do the redirect in there?
-                        //           it doesn't look good in terms of
-                        //           API though... we can find frames
-                        //           but not windows unless we 100%
-                        //           handle the window.open() calls
-
-                        redirect_uri = redirect[0].childNodes[0].nodeValue;
-                        if(redirect_uri === ".")
-                        {
-                            // just exit the editor
-                            redirect_uri = doc.location.toString();
-                            redirect_uri = redirect_uri.replace(/\?a=edit$/, "")
-                                                       .replace(/\?a=edit&/, "?")
-                                                       .replace(/&a=edit&/, "&");
-                        }
-                        doc.location = redirect_uri;
-                        // avoid anything else after a redirect
-                        return;
-                    }
-                }
-                else
-                {
-                    // although it went round trip fine, the application
-                    // returned an error... report it
-                    result.error_message = "The server replied with errors.";
-                    that.callback_.serverAccessError(result);
-                }
-            }
-            else
-            {
-                result.error_message = "The server replied with HTTP code " + jqxhr.status
-                                     + " while posting AJAX (status: " + result_status + ")";
-                that.callback_.serverAccessError(result);
-            }
-        },
-        complete: function(jqxhr, result_status)
+    if(result.jqxhr.status === 200)
+    {
+        doc_type_start = result.jqxhr.responseText.indexOf("<!DOCTYPE");
+        if(doc_type_start !== -1)
         {
-            result.jqxhr = jqxhr;
-            result.result_status = result_status;
-            that.callback_.serverAccessComplete(result);
-        },
-        dataType: "xml"
-    });
+            doc_type_start += 9; // skip the <!DOCTYPE part
+            doc_type_end = result.jqxhr.responseText.indexOf(">", doc_type_start);
+            doc_type = result.jqxhr.responseText.substr(doc_type_start, doc_type_end - doc_type_start);
+            if(doc_type.indexOf("html") !== -1)
+            {
+                // this is definitively wrong, but we want to avoid
+                // the following tests in case the HTML includes
+                // invalid content (although it looks like jQuery
+                // do not convert such documents to an XML tree
+                // anyway...)
+                result.error_message = "The server replied with HTML instead of XML.";
+                this.callback_.serverAccessError(result);
+                return;
+            }
+        }
+
+        // success or error, we may have messages
+        // (at this point, only errors, but later...)
+        result.messages = result.jqxhr.responseXML.getElementsByTagName("messages");
+
+        // we expect exactly ONE result tag
+        results = result.jqxhr.responseXML.getElementsByTagName("result");
+        if(results.length === 1 && results[0].childNodes[0].nodeValue === "success")
+        {
+//alert("The AJAX succeeded (" + result_status + ")");
+
+            // success!
+            redirect = result.jqxhr.responseXML.getElementsByTagName("redirect");
+            result.will_redirect = redirect.length === 1;
+
+            this.callback_.serverAccessSuccess(result);
+
+            // test the object flag so the callback could set it to
+            // false if applicable
+            if(result.will_redirect)
+            {
+                // used asked to redirect the user after a
+                // successful save
+                doc = document;
+
+                // get the target to see whether we need to use the
+                // parent, top, or self...
+                target = redirect[0].getAttribute("target");
+                if(target === "_parent" && window.parent)
+                {
+                    // TODO: we probably want to support
+                    // multiple levels (i.e. a "_top" kind
+                    // of a thing) instead of just one up.
+                    doc = window.parent.document;
+                }
+                else if(target === "_top")
+                {
+                    doc = window.top.document;
+                }
+                // else TODO search for a window named 'target'
+                //           and do the redirect in there?
+                //           it doesn't look good in terms of
+                //           API though... we can find frames
+                //           but not windows unless we 100%
+                //           handle the window.open() calls
+
+                redirect_uri = redirect[0].childNodes[0].nodeValue;
+                if(redirect_uri === ".")
+                {
+                    // just exit the editor (i.e. remove the edit action)
+                    //
+                    // TODO: the action field name may not be 'a'
+                    redirect_uri = doc.location.toString();
+                    redirect_uri = redirect_uri.replace(/\?a=edit$/, "")
+                                               .replace(/\?a=edit&/, "?")
+                                               .replace(/&a=edit&/, "&");
+                }
+                doc.location = redirect_uri;
+                // avoid anything else after a redirect
+                return;
+            }
+        }
+        else
+        {
+            // although it went round trip fine, the application
+            // returned an error... report it
+            result.error_message = "The server replied with errors.";
+            this.callback_.serverAccessError(result);
+        }
+    }
+    else
+    {
+        result.error_message = "The server replied with HTTP code " + result.jqxhr.status
+                             + " while posting AJAX (status: " + result.result_status + ")";
+        this.callback_.serverAccessError(result);
+    }
+};
+
+
+/** \brief Function called on completion of the AJAX query.
+ *
+ * After the serverAccessSuccess() or serverAccessError() callbacks were
+ * called, this function calls the serverAccessComplete() callback.
+ *
+ * This callback is always called, whether the AJAX was successful or
+ * erroneous.
+ *
+ * @param {snapwebsites.ServerAccessCallbacks.ResultData} result  The result object.
+ *
+ * @private
+ */
+snapwebsites.ServerAccess.prototype.onComplete_ = function(result)
+{
+    this.callback_.serverAccessComplete(result);
 };
 
 

@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.139
+ * Version: 0.0.3.153
  * Browsers: all
  * Depends: output (>= 0.1.4), popup (>= 0.1.0.1), server-access (>= 0.0.1.11), mimetype-basics (>= 0.0.3)
  * Copyright: Copyright 2013-2014 (c) Made to Order Software Corporation  All rights reverved.
@@ -113,10 +113,10 @@
  *   |          |    v                         |                                  |
  *   |          |  +-----------------------+   |                                  |
  *   |          |  |                       |   |                                  |
- *   |          |  | EditorWidgetTypeBase  |   |                                  |
- *   |          |  |                       |   |                                  |
- *   |          |  |                       |   |                                  |
- *   |          |  +-----------------------+   |                                  |
+ *   |          |  | EditorWidgetTypeBase  +-o | o----+                           |
+ *   |          |  |                       |   |      |                           |
+ *   |          |  |                       |   |      | Inherit                   |
+ *   |          |  +-----------------------+   |      v                           |
  *   |          |         ^                    |   +-----------------------+      |
  *   |          |         | Inherit            |   |                       |      |
  *   |          v         |                    |   | ServerAccessCallbacks |      |
@@ -179,6 +179,14 @@
  * The widget types are better defined in the following chart:
  *
  * \code
+ *  +-----------------------+
+ *  |                       |
+ *  | ServerAccessCallbacks |
+ *  |                       |
+ *  +-----------------------+
+ *      ^
+ *      | Inherit
+ *      |
  *  +------------------------+
  *  |                        |
  *  |  EditorWidgetTypeBase  |
@@ -189,41 +197,41 @@
  *      |
  *  +---+--------------------+
  *  |                        |  Inherit
- *  |  EditorWidgetType      |<--------------------------------------------+
- *  |  (cannot instantiate)  |                                             |
- *  +------------------------+                                             |
- *      ^                                                                  |
- *      | Inherit                                                          |
- *      |                                                                  |
- *  +---+------------------------------+    +---------------------------+  |
- *  |                                  |    |                           +--+
- *  | EditorWidgetTypeContentEditable  |    | EditorWidgetTypeCheckmark |  |
- *  | (cannot instantiate)             |    |                           |  |
- *  +----------------------------------+    +---------------------------+  |
- *      ^                                                                  |
- *      | Inherit                                                          |
- *      |                                                                  |
- *  +---+------------------------------+    +---------------------------+  |
- *  |                                  |    |                           +--+
- *  | EditorWidgetTypeTextEdit         |    | EditorWidgetTypeImageBox  |  |
- *  |                                  |    |                           |  |
- *  +----------------------------------+    +---------------------------+  |
- *      ^                                                                  |
- *      | Inherit                                                          |
- *      |                                                                  |
- *  +---+------------------------------+    +---------------------------+  |
- *  |                                  |    |                           +--+
- *  | EditorWidgetTypeLineEdit         |    | EditorWidgetTypeHidden    |
+ *  |  EditorWidgetType      |<---------------------------------------------+
+ *  |  (cannot instantiate)  |                                              |
+ *  +------------------------+                                              |
+ *      ^                                                                   |
+ *      | Inherit                                                           |
+ *      |                                                                   |
+ *  +---+------------------------------+    +---------------------------+   |
+ *  |                                  |    |                           +---+
+ *  | EditorWidgetTypeContentEditable  |    | EditorWidgetTypeCheckmark |   |
+ *  | (cannot instantiate)             |    |                           |   |
+ *  +----------------------------------+    +---------------------------+   |
+ *      ^                                                                   |
+ *      | Inherit                                                           |
+ *      |                                                                   |
+ *  +---+------------------------------+    +---------------------------+   |
+ *  |                                  |    |                           +---+
+ *  | EditorWidgetTypeTextEdit         |    | EditorWidgetTypeImageBox  |   |
+ *  |                                  |    |                           |   |
+ *  +----------------------------------+    +---------------------------+   |
+ *      ^                                      ^                            |
+ *      | Inherit                              | Inherit                    |
+ *      |                                      |                            |
+ *  +---+------------------------------+    +---------------------------+   |
+ *  |                                  |    |                           |   |
+ *  | EditorWidgetTypeLineEdit         |    | EditorWidgetTypeDropped-  |   |
+ *  |                                  |    | FileWithPreview           |   |
+ *  +----------------------------------+    +---------------------------+   |
+ *      ^                                                                   |
+ *      | Inherit                                                           |
+ *      |                                                                   |
+ *  +---+------------------------------+    +---------------------------+   |
+ *  |                                  |    |                           +---+
+ *  | EditorWidgetTypeDropdown         |    | EditorWidgetTypeHidden    |
  *  |                                  |    |                           |
  *  +----------------------------------+    +---------------------------+
- *      ^
- *      | Inherit
- *      |
- *  +---+------------------------------+
- *  |                                  |
- *  | EditorWidgetTypeDropdown         |
- *  |                                  |
- *  +----------------------------------+
  * \endcode
  */
 
@@ -706,6 +714,7 @@ snapwebsites.EditorSelection =
  * all widgets.
  *
  * @constructor
+ * @extends snapwebsites.ServerAccessCallbacks
  * @struct
  */
 snapwebsites.EditorWidgetTypeBase = function()
@@ -720,11 +729,17 @@ snapwebsites.EditorWidgetTypeBase = function()
 };
 
 
-/** \brief Mark EditorWidgetTypeBase as a base class.
+/** \brief EditorWidgetTypeBase inherits from the ServerAccessCallbacks class.
  *
- * This class does not inherit from any other classes.
+ * This class inherits from the snapwebsites.ServerAccessCallbacks so that
+ * way widgets can send AJAX data to the server and handle the response.
+ *
+ * Note that if you inherit from a widget and implements these functions,
+ * make sure to call the super version too in case they do something that
+ * is required. At this point the base class does nothing in those callbacks
+ * although we may add error handling in the error callback.
  */
-snapwebsites.base(snapwebsites.EditorWidgetTypeBase);
+snapwebsites.inherits(snapwebsites.EditorWidgetTypeBase, snapwebsites.ServerAccessCallbacks);
 
 
 /** \brief The type of parameter one can pass to the save functions.
@@ -738,6 +753,69 @@ snapwebsites.base(snapwebsites.EditorWidgetTypeBase);
  * @typedef {{html: string, result: string}}
  */
 snapwebsites.EditorWidgetTypeBase.SaveData;
+
+
+/*jslint unparam: true */
+/** \brief Function called on AJAX success.
+ *
+ * This function is called if the remote access was successful. The
+ * result object includes a reference to the XML document found in the
+ * data sent back from the server.
+ *
+ * @param {snapwebsites.ServerAccessCallbacks.ResultData} result  The
+ *          resulting data.
+ */
+snapwebsites.EditorWidgetTypeBase.prototype.serverAccessSuccess = function(result) // virtual
+{
+};
+/*jslint unparam: false */
+
+
+/*jslint unparam: true */
+/** \brief Function called on AJAX error.
+ *
+ * This function is called if the remote access generated an error.
+ * In this case errors include I/O errors, server errors, and application
+ * errors. All call this function so you do not have to repeat the same
+ * code for each type of error.
+ *
+ * \li I/O errors -- somehow the AJAX command did not work, maybe the
+ *                   domain name is wrong or the URI has a syntax error.
+ * \li server errors -- the server received the POST but somehow refused
+ *                      it (maybe the request generated a crash.)
+ * \li application errors -- the server received the POST and returned an
+ *                           HTTP 200 result code, but the result includes
+ *                           a set of errors (not enough permissions,
+ *                           invalid data, etc.)
+ *
+ * By default this function displays the errors to the client.
+ *
+ * @param {snapwebsites.ServerAccessCallbacks.ResultData} result  The
+ *          resulting data with information about the error(s).
+ */
+snapwebsites.EditorWidgetTypeBase.prototype.serverAccessError = function(result) // virtual
+{
+    // TODO: generate an error pop-up type of a thing
+    alert("Your browser failed sending the file to the server...");
+};
+/*jslint unparam: false */
+
+
+/*jslint unparam: true */
+/** \brief Function called on AJAX completion.
+ *
+ * This function is called once the whole process is over. It is most
+ * often used to do some cleanup.
+ *
+ * By default this function does nothing.
+ *
+ * @param {snapwebsites.ServerAccessCallbacks.ResultData} result  The
+ *          resulting data with information about the error(s).
+ */
+snapwebsites.EditorWidgetTypeBase.prototype.serverAccessComplete = function(result) // virtual
+{
+};
+/*jslint unparam: false */
 
 
 /** \brief Retrieve the name of this widget type.
@@ -1928,6 +2006,34 @@ snapwebsites.EditorToolbar.prototype.startToolbarHide = function()
  * For each of the widget you add to your editor forms, one of these
  * is created on the client system.
  *
+ * \code
+ * class EditorWidget
+ * {
+ * public:
+ *      function EditorWidget(editor_base: EditorBase, editor_form: EditorForm, widget: jQuery);
+ *      final function getName() : string;
+ *      final function wasModified(recheck_opt: boolean) : boolean;
+ *      final function saving() : SaveData;
+ *      final function saved(data: SaveData) : boolean;
+ *      function getEditorForm() : EditorForm;
+ *      function getEditorBase() : EditorBase;
+ *      final function getWidget() : jQuery;
+ *      final function getWidgetContent() : jQuery;
+ *      final function checkForBackgroundValue();
+ *      static final function isEmptyBlock(html: string|jQuery) : boolean;
+ *
+ * private:
+ *      var editorBase_: EditorBase = null;
+ *      var editorForm_: EditorForm = null;
+ *      var widget_: jQuery = null;
+ *      var widgetContent_ : jQuery = null;
+ *      var name_: string;
+ *      var originalData_: string = "";
+ *      var modified_: boolean = false;
+ *      var widgetType_: EditorWidgetTypeBase = null;
+ * };
+ * \endcode
+ *
  * @param {snapwebsites.EditorBase} editor_base  A reference to the editor base object.
  * @param {snapwebsites.EditorForm} editor_form  A reference to the editor form object that owns this widget.
  * @param {jQuery} widget  The jQuery object representing this editor toolbar.
@@ -1949,6 +2055,19 @@ snapwebsites.EditorWidget = function(editor_base, editor_form, widget)
     this.originalData_ = snapwebsites.castToString(this.widgetContent_.html(), "widgetContent HTML in EditorWidget constructor for " + this.name_);
     this.widgetType_ = editor_base.getWidgetType(type);
     this.checkForBackgroundValue();
+
+//#ifdef DEBUG
+    // these should be caught on the server side too but this test
+    // ensures that we catch invalid names of dynamically created widgets
+    // (i.e. in most cases the widget names are "hard coded" in your XSLT
+    // files and as such can be checked even before we add the file to the
+    // layout table)
+    if(this.name_.length > 0
+    && this.name_[0] === "_")
+    {
+        throw new Error("The widget name \"" + this.name_ + "\" cannot start with an underscore as such names are reserved by the system.");
+    }
+//#endif
 
     // this should be last
     this.widgetType_.initializeWidget(this);
@@ -2767,9 +2886,9 @@ snapwebsites.EditorSaveDialog.prototype.setStatus = function(new_status)
  *      function getSaveDialog() : EditorSaveDialog;
  *      function newTypeRegistered();
  *      function wasModified(recheck: boolean) : boolean;
+ *      static function titleToURI(title: string) : string;
  *
  * private:
- *      function titleToURI_(title: string) : string;
  *      function readyWidgets_();
  *
  *      var usedTypes_: Object;                 // map of types necessary to open that form
@@ -3042,6 +3161,19 @@ snapwebsites.EditorForm.prototype.getWidgetByName = function(name)
 };
 
 
+/** \brief Retrieve the session of this EditorForm object.
+ *
+ * This function returns the session one can use to communicate with the
+ * server about this form.
+ *
+ * @return {string} A session string of the editor widget.
+ */
+snapwebsites.EditorForm.prototype.getSession = function()
+{
+    return this.session_;
+};
+
+
 /** \brief Return whether the toolbar should automatically be shown.
  *
  * When clicking in a widget, a form can automatically show the
@@ -3083,9 +3215,8 @@ snapwebsites.EditorForm.prototype.setToolbarAutoVisible = function(toolbar_auto_
  * @param {string} title  The title to tweak.
  *
  * @return {string}  The tweaked title. It may be an empty string.
- * @private
  */
-snapwebsites.EditorForm.prototype.titleToURI_ = function(title)
+snapwebsites.EditorForm.titleToURI = function(title) // static
 {
     // force all lower case
     title = title.toLowerCase();
@@ -3269,9 +3400,13 @@ snapwebsites.EditorForm.prototype.saveData = function(mode, options_opt)
     // buttons...
     if(!jQuery.isEmptyObject(obj))
     {
-        obj.editor_save_mode = mode;
-        obj.editor_session = this.session_;
-        obj.editor_uri = this.titleToURI_(snapwebsites.castToString(jQuery("[field_name='title'] .editor-content").text(), "casting the field name title to a string"));
+        obj._editor_save_mode = mode;
+        obj._editor_session = this.session_;
+        if(this.editorWidgets_.hasOwnProperty("title"))
+        {
+            obj._editor_uri = this.titleToURI(this.editorWidgets_["title"].saving().result);
+            //snapwebsites.castToString(jQuery("[field_name='title'] .editor-content").text(), "casting the field name title to a string"));
+        }
         if(!this.serverAccess_)
         {
             this.serverAccess_ = new snapwebsites.ServerAccess(this);
@@ -4097,7 +4232,7 @@ snapwebsites.EditorWidgetType.prototype.initializeWidget = function(widget) // v
                 r,                      // file reader object
                 accept_images,          // boolean, true if element accepts images
                 accept_files,           // boolean, true if element accepts attachments
-                that_element = jQuery(this),    // this element as a jQuery object
+                that_element = c, //jQuery(this),    // this element as a jQuery object
                 file_loaded;            // finalizing function
 
             //
@@ -4134,6 +4269,14 @@ snapwebsites.EditorWidgetType.prototype.initializeWidget = function(widget) // v
                 accept_files = that_element.hasClass("attachment");
                 if(accept_images || accept_files)
                 {
+                    // TODO: add a test, in case length > 1 and the destination
+                    //       widget expects exactly 1 file, then generate an
+                    //       error because we cannot know which file the user
+                    //       really intended to drop (maybe we could offer a
+                    //       selection, assuming we do not lose the necessary
+                    //       info...) We could also just have a max. # of
+                    //       possible drops and if `length > max` then err.
+                    //
                     file_loaded = function(e)
                         {
                             that.droppedFile_(e);
@@ -4150,7 +4293,7 @@ snapwebsites.EditorWidgetType.prototype.initializeWidget = function(widget) // v
                         // read the image so we can make sure it is indeed an
                         // image and ignore any other type of files
                         r = new FileReader();
-                        r.snapEditorElement = that_element;
+                        r.snapEditorWidget = editor_widget;
                         r.snapEditorFile = e.originalEvent.dataTransfer.files[i];
                         r.snapEditorIndex = i;
                         r.snapEditorAcceptImages = accept_images;
@@ -4322,7 +4465,7 @@ snapwebsites.EditorWidgetType.prototype.getEditButton = function() // virtual
  * This function analyze the dropped file content. If recognized then we
  * proceed with the onimagedrop or onattachmentdrop as required.
  *
- * @param {ProgressEvent} e  The file reader structure.
+ * @param {ProgressEvent} e  The event.
  *
  * @private
  * @final
@@ -4343,7 +4486,7 @@ snapwebsites.EditorWidgetType.prototype.droppedFile_ = function(e)
         // (i.e. base64 encoding) before saving the result in the
         // target element
         r = new FileReader();
-        r.snapEditorElement = e.target.snapEditorElement;
+        r.snapEditorWidget = e.target.snapEditorWidget;
         r.snapEditorFile = e.target.snapEditorFile;
         r.snapEditorIndex = e.target.snapEditorIndex;
         r.snapEditorAcceptImages = e.target.snapEditorAcceptImages;
@@ -4416,36 +4559,36 @@ snapwebsites.EditorWidgetType.prototype.droppedImageConvert_ = function(e)
             w = img.width;
             h = img.height;
 
-            if(e.target.snapEditorElement.attr("min-sizes"))
+            if(e.target.snapEditorWidget.getWidget().attr("min-sizes"))
             {
-                sizes = e.target.snapEditorElement.attr("min-sizes").split("x");
+                sizes = e.target.snapEditorWidget.getWidget().attr("min-sizes").split("x");
                 if(w < sizes[0] || h < sizes[1])
                 {
                     // image too small...
                     // TODO: fix alert with clean error popup
                     alert("This image is too small. Minimum required is "
-                            + e.target.snapEditorElement.attr("min-sizes")
+                            + e.target.snapEditorWidget.getWidget().attr("min-sizes")
                             + ". Please try with a larger image.");
                     return;
                 }
             }
-            if(e.target.snapEditorElement.attr("max-sizes"))
+            if(e.target.snapEditorWidget.getWidget().attr("max-sizes"))
             {
-                sizes = e.target.snapEditorElement.attr("max-sizes").split("x");
+                sizes = e.target.snapEditorWidget.getWidget().attr("max-sizes").split("x");
                 if(w > sizes[0] || h > sizes[1])
                 {
                     // image too large...
                     // TODO: fix alert with clean error popup
                     alert("This image is too large. Maximum allowed is "
-                            + e.target.snapEditorElement.attr("max-sizes")
+                            + e.target.snapEditorWidget.getWidget().attr("max-sizes")
                             + ". Please try with a smaller image.");
                     return;
                 }
             }
 
-            if(e.target.snapEditorElement.attr("resize-sizes"))
+            if(e.target.snapEditorWidget.getWidget().attr("resize-sizes"))
             {
-                max_sizes = e.target.snapEditorElement.attr("resize-sizes").split("x");
+                max_sizes = e.target.snapEditorWidget.getWidget().attr("resize-sizes").split("x");
                 limit_width = max_sizes[0];
                 limit_height = max_sizes[1];
             }
@@ -4516,7 +4659,7 @@ snapwebsites.EditorWidgetType.prototype.droppedImage = function(e, img) // virtu
  *
  * This function handles an image as it was just dropped.
  *
- * @param {ProgressEvent} e  The reader data.
+ * @param {ProgressEvent} e  The event.
  */
 snapwebsites.EditorWidgetType.prototype.droppedAttachment = function(e) // virtual
 {
@@ -5100,16 +5243,237 @@ snapwebsites.EditorWidgetTypeImageBox.prototype.droppedImage = function(e, img)
 {
     var saved_active_element, editor;
 
-    e.target.snapEditorElement.empty();
-    jQuery(img).appendTo(e.target.snapEditorElement);
+    e.target.snapEditorWidget.getWidget().empty();
+    jQuery(img).appendTo(e.target.snapEditorWidget.getWidget());
 
     // now make sure the editor detects the change
     editor = snapwebsites.EditorInstance;
     saved_active_element = editor.getActiveElement();
-    editor.setActiveElement(e.target.snapEditorElement);
+    editor.setActiveElement(e.target.snapEditorWidget.getWidget());
     editor.checkModified();
     editor.setActiveElement(saved_active_element);
 };
+
+
+
+/** \brief Editor widget type for Dropped Image with a Preview.
+ *
+ * This widget defines an image box in the editor forms. The image form
+ * is used to display a preview of the file that gets dropped in it. This
+ * is an extension of the EditorWidgetTypeImageBox which itself only
+ * accepts recognized image files.
+ *
+ * Just like the image box widget, this widget does not allow for typing,
+ * only to drag and drop a file in it. A new file dropped on this widget
+ * replaces the previously attached file (it is not additive.)
+ *
+ * As required, the widget is smart enough to use a proportional resize
+ * so the preview is made to fit the widget area.
+ *
+ * The widget accepts images just like the EditorWidgetTypeImageBox widget
+ * does. It also can accept file formats that we can transform to a preview
+ * (i.e. a PDF of which the first page will be transform in a preview.)
+ *
+ * @constructor
+ * @extends {snapwebsites.EditorWidgetTypeImageBox}
+ * @struct
+ */
+snapwebsites.EditorWidgetTypeDroppedFileWithPreview = function()
+{
+    snapwebsites.EditorWidgetTypeDroppedFileWithPreview.superClass_.constructor.call(this);
+
+    return this;
+};
+
+
+/** \brief EditorWidgetTypeDroppedFileWithPreview inherits from EditorWidgetTypeImageBox.
+ *
+ * This call ensures proper inheritance between the two classes.
+ */
+snapwebsites.inherits(snapwebsites.EditorWidgetTypeDroppedFileWithPreview, snapwebsites.EditorWidgetTypeImageBox);
+
+
+/** \brief A server access object.
+ *
+ * Whenever the user drops a file, we use this object to send it to
+ * the server. In turn the server sends us a reply to know whether
+ * the file was accepted or not. Later we will be able to check on
+ * the server to know whether it has a preview for us to display.
+ *
+ * \note
+ * This serverAccess_ object is shared between all the drop widget
+ * of this type of attachments.
+ *
+ * @type {snapwebsites.ServerAccess}
+ * @private
+ */
+snapwebsites.EditorWidgetTypeDroppedFileWithPreview.prototype.serverAccess_ = null;
+
+
+/** \brief Return "dropped-file-with-preview".
+ *
+ * Return the name of the image box type.
+ *
+ * @return {string} The name of the image box type.
+ * @override
+ */
+snapwebsites.EditorWidgetTypeDroppedFileWithPreview.prototype.getType = function() // virtual
+{
+    return "dropped-file-with-preview";
+};
+
+
+/** \brief Initialize the widget.
+ *
+ * This function initializes the image box widget.
+ *
+ * \note
+ * At this point the Image Box widget do not attach to any events since all
+ * the drag and drop work is done at the EditorWidgetType level. However,
+ * we have a droppedImage() function (see below) which finishes the work
+ * of the drag and drop implementation.
+ *
+ * @param {!Object} widget  The widget being initialized.
+ * @override
+ */
+snapwebsites.EditorWidgetTypeDroppedFileWithPreview.prototype.initializeWidget = function(widget) // virtual
+{
+    snapwebsites.EditorWidgetTypeDroppedFileWithPreview.superClass_.initializeWidget.call(this, widget);
+};
+
+
+/** \brief Handle the dropped file.
+ *
+ * This function handles the dropped image by saving it in the target
+ * element.
+ *
+ * \todo
+ * We may want to look into generating an MD5 checksum and check that first
+ * because the file may already be available on the server. Calculating an
+ * MD5 in JavaScript is not that hard...
+ *
+ * @param {ProgressEvent} e  The event.
+ *
+ * @override
+ */
+snapwebsites.EditorWidgetTypeDroppedFileWithPreview.prototype.droppedAttachment = function(e)
+{
+    var form_data,
+        editor_widget = /** @type {snapwebsites.EditorWidget} */ (e.target.snapEditorWidget),
+        editor_form = editor_widget.getEditorForm(),
+        session = editor_form.getSession(),
+        title_widget = editor_form.getWidgetByName("title");
+
+    //
+    // In case of an attachment, we send them to the server because the
+    // browser cannot just magically generate a preview; so we create
+    // a POST with the data and send that.
+    //
+    // (Note: the client "could" create a preview, it would just take
+    // a day or two and loads of memory...)
+    //
+    // The data is attached to the session of this editor form. We do that
+    // because we do not want to involve the main plugin responsible for
+    // the form until a full POST of all the changes. We can still have a
+    // hook on a callback if necessary.
+    //
+    // Note that in the end this means the data of an editor form come from
+    // the client and the editor session system.
+    //
+
+    form_data = new FormData();
+    form_data.append("_editor_session", session);
+    form_data.append("_editor_save_mode", "attachment");
+    if(title_widget)
+    {
+        form_data.append("_editor_uri", this.titleToURI(title_widget.saving().result));
+        //form_data.append("_editor_uri", snapwebsites.EditorForm.titleToURI(snapwebsites.castToString(jQuery("[field_name='title'] .editor-content").text(), "casting the field name title to a string")));
+    }
+    form_data.append("_editor_widget_name", editor_widget.getName());
+    form_data.append("_editor_attachment", e.target.snapEditorFile);
+
+    // mark widget as processing (allows for CSS effects)
+    e.target.snapEditorWidget.getWidget().addClass("processing-attachment");
+
+    if(!this.serverAccess_)
+    {
+        this.serverAccess_ = new snapwebsites.ServerAccess(this);
+    }
+    this.serverAccess_.setURI(snapwebsites.castToString(jQuery("link[rel='canonical']").attr("href"), "casting href of the canonical link to a string in snapwebsites.EditorWidgetTypeDroppedFileWithPreview.droppedAttachment()"));
+    this.serverAccess_.setData(form_data);
+    this.serverAccess_.send(e);
+};
+
+
+/*jslint unparam: true */
+/** \brief Function called on AJAX success.
+ *
+ * This function is called if the remote access was successful. The
+ * result object includes a reference to the XML document found in the
+ * data sent back from the server.
+ *
+ * By default this function does nothing.
+ *
+ * @param {snapwebsites.ServerAccessCallbacks.ResultData} result  The
+ *          resulting data.
+ */
+snapwebsites.EditorWidgetTypeDroppedFileWithPreview.prototype.serverAccessSuccess = function(result) // virtual
+{
+    snapwebsites.EditorWidgetTypeDroppedFileWithPreview.superClass_.serverAccessSuccess.call(this, result);
+
+    alert("preview accepted by server");
+};
+/*jslint unparam: false */
+
+
+/*jslint unparam: true */
+/** \brief Function called on AJAX error.
+ *
+ * This function is called if the remote access generated an error.
+ * In this case errors include I/O errors, server errors, and application
+ * errors. All call this function so you do not have to repeat the same
+ * code for each type of error.
+ *
+ * \li I/O errors -- somehow the AJAX command did not work, maybe the
+ *                   domain name is wrong or the URI has a syntax error.
+ * \li server errors -- the server received the POST but somehow refused
+ *                      it (maybe the request generated a crash.)
+ * \li application errors -- the server received the POST and returned an
+ *                           HTTP 200 result code, but the result includes
+ *                           a set of errors (not enough permissions,
+ *                           invalid data, etc.)
+ *
+ * By default this function does nothing.
+ *
+ * @param {snapwebsites.ServerAccessCallbacks.ResultData} result  The
+ *          resulting data with information about the error(s).
+ */
+snapwebsites.EditorWidgetTypeDroppedFileWithPreview.prototype.serverAccessError = function(result) // virtual
+{
+    snapwebsites.EditorWidgetTypeDroppedFileWithPreview.superClass_.serverAccessError.call(this, result);
+};
+/*jslint unparam: false */
+
+
+/*jslint unparam: true */
+/** \brief Function called on AJAX completion.
+ *
+ * This function is called once the whole process is over. It is most
+ * often used to do some cleanup.
+ *
+ * By default this function does nothing.
+ *
+ * @param {snapwebsites.ServerAccessCallbacks.ResultData} result  The
+ *          resulting data with information about the error(s).
+ */
+snapwebsites.EditorWidgetTypeDroppedFileWithPreview.prototype.serverAccessComplete = function(result) // virtual
+{
+    snapwebsites.EditorWidgetTypeDroppedFileWithPreview.superClass_.serverAccessComplete.call(this, result);
+
+    // done processing
+    result.userdata.target.snapEditorWidget.getWidget().removeClass("processing-attachment");
+};
+/*jslint unparam: false */
 
 
 // auto-initialize
@@ -5123,6 +5487,7 @@ jQuery(document).ready(
         snapwebsites.EditorInstance.registerWidgetType(new snapwebsites.EditorWidgetTypeDropdown());
         snapwebsites.EditorInstance.registerWidgetType(new snapwebsites.EditorWidgetTypeCheckmark());
         snapwebsites.EditorInstance.registerWidgetType(new snapwebsites.EditorWidgetTypeImageBox());
+        snapwebsites.EditorInstance.registerWidgetType(new snapwebsites.EditorWidgetTypeDroppedFileWithPreview());
     }
 );
 // vim: ts=4 sw=4 et

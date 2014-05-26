@@ -2978,8 +2978,8 @@ void snap_child::read_environment()
                         }
                     }
 #ifdef DEBUG
-SNAP_LOG_ERROR() << " f_files[\"" << f_name << "\"] = \"...\" (Filename: \"" << filename
-    << "\" MIME: " << file.get_mime_type() << ", size: " << f_post_content.size() << ")\n";
+SNAP_LOG_INFO() << " f_files[\"" << f_name << "\"] = \"...\" (Filename: \"" << filename
+    << "\" MIME: " << file.get_mime_type() << ", size: " << f_post_content.size() << ")";
 #endif
                 }
             }
@@ -3015,7 +3015,7 @@ SNAP_LOG_ERROR() << " f_files[\"" << f_name << "\"] = \"...\" (Filename: \"" << 
                 }
                 // make sure to view the input as UTF-8 characters
                 f_post[f_name] = QString::fromUtf8(f_post_content.data(), f_post_content.size() - 1); //snap_uri::urldecode(f_post_content, true);?
-//fprintf(stderr, " f_post[\"%s\"] = \"%s\"\n", f_name.toUtf8().data(), f_post_content.data());
+//std::cerr << " f_post[\"" << f_name << "\"] = \"" << f_post_content << "\"\n";
             }
         }
 

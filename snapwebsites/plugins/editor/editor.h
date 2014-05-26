@@ -89,7 +89,8 @@ public:
         EDITOR_SAVE_MODE_PUBLISH,
         EDITOR_SAVE_MODE_SAVE,
         EDITOR_SAVE_MODE_NEW_BRANCH,
-        EDITOR_SAVE_MODE_AUTO_DRAFT
+        EDITOR_SAVE_MODE_AUTO_DRAFT,
+        EDITOR_SAVE_MODE_ATTACHMENT
     };
 
     typedef QMap<QString, QString> params_map_t;
@@ -149,6 +150,7 @@ private:
     void                content_update(int64_t variables_timestamp);
     void                process_new_draft();
     void                editor_save(content::path_info_t& ipath, sessions::sessions::session_info& info);
+    void                editor_save_attachment(content::path_info_t& ipath, sessions::sessions::session_info& info);
     void                editor_create_new_branch(content::path_info_t& ipath);
     bool                save_inline_image(content::path_info_t& ipath, QDomElement img, QString const& src, QString const& force_filename);
 

@@ -267,7 +267,8 @@
 	cursor: pointer;
 }
 
-.editable.image-box .snap-editor-background-content
+.editable.image-box .snap-editor-background-content,
+.editable.dropped-file-with-preview-box .snap-editor-background-content
 {
 	text-align: center;
 }
