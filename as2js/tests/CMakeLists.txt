@@ -95,8 +95,12 @@ include_directories(
 add_executable(${PROJECT_NAME}
     test_as2js_main.cpp
 
+    test_as2js_float64.cpp
     test_as2js_int64.cpp
+    test_as2js_options.cpp
+    test_as2js_position.cpp
     test_as2js_string.cpp
+    test_as2js_version.cpp
 
     # Stick a copy of the tools license in the tests
     ../src/license.cpp

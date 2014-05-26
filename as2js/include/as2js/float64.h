@@ -35,6 +35,8 @@ SOFTWARE.
 
 */
 
+#include    "as2js/compare.h"
+
 #include    <controlled_vars/controlled_vars_fauto_init.h>
 
 #include    <limits>

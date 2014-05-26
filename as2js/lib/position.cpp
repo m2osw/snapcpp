@@ -35,6 +35,8 @@ SOFTWARE.
 
 #include "as2js/position.h"
 
+#include "as2js/exceptions.h"
+
 
 namespace as2js
 {
@@ -43,6 +45,9 @@ namespace as2js
 /** \brief Set the filename being read.
  *
  * This function saves the name of the file being read if available.
+ *
+ * \todo
+ * Test that the filename is valid (no '\0', mainly.)
  *
  * \param[in] filename  The name of the file being compiled.
  */
@@ -77,6 +82,11 @@ void Position::set_function(String const& function)
  */
 void Position::reset_counters(counter_t line)
 {
+    if(line < 1)
+    {
+        throw exception_internal_error("the line parameter of the position object cannot be less than 1");
+    }
+
     f_page = 1;
     f_page_line = 1;
     f_paragraph = 1;
