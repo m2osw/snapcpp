@@ -97,6 +97,7 @@ add_executable(${PROJECT_NAME}
 
     test_as2js_float64.cpp
     test_as2js_int64.cpp
+    test_as2js_message.cpp
     test_as2js_options.cpp
     test_as2js_position.cpp
     test_as2js_string.cpp

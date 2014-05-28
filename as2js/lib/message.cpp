@@ -91,21 +91,6 @@ Message::Message(message_level_t message_level, err_code_t error_code)
 }
 
 
-///* \brief Copy a message in another.
-// *
-// * In some cases copy messages get from one Message object to another.
-// *
-// * \param[in] rhs  The existing message to copy.
-// */
-//Message::Message(Message const& rhs)
-//    : f_message_level(rhs.f_message_level)
-//    , f_position(rhs.f_position)
-//    //, f_message() -- auto-init
-//{
-//    f_message << rhs.f_message.str();
-//}
-
-
 /** \brief Output the message created with the << operators.
  *
  * The destructor of the message object is where things happen. This function
@@ -161,14 +146,14 @@ Message::~Message()
  *
  * This function appends an char string to the message.
  *
- * \param[in] v  An char string.
+ * \param[in] v  A character string.
  *
  * \return A reference to the message.
  */
 Message& Message::operator << (char const *s)
 {
     // we assume UTF-8 because in our Snap environment most everything is
-    *this << s;
+    static_cast<std::stringstream&>(*this) << s;
     return *this;
 }
 
@@ -177,7 +162,7 @@ Message& Message::operator << (char const *s)
  *
  * This function appends an wchar_t string to the message.
  *
- * \param[in] v  An wchar_t string.
+ * \param[in] v  A wchar_t string.
  *
  * \return A reference to the message.
  */
@@ -185,7 +170,7 @@ Message& Message::operator << (wchar_t const *s)
 {
     String string;
     string.from_wchar(s);
-    *this << string.to_utf8();
+    static_cast<std::stringstream&>(*this) << string.to_utf8();
     return *this;
 }
 
@@ -200,7 +185,7 @@ Message& Message::operator << (wchar_t const *s)
  */
 Message& Message::operator << (std::string const& s)
 {
-    *this << s.c_str();
+    static_cast<std::stringstream&>(*this) << s;
     return *this;
 }
 
@@ -217,7 +202,7 @@ Message& Message::operator << (std::wstring const& s)
 {
     String string;
     string.from_wchar(s.c_str(), s.length());
-    *this << string.to_utf8();
+    static_cast<std::stringstream&>(*this) << string.to_utf8();
     return *this;
 }
 
@@ -232,7 +217,7 @@ Message& Message::operator << (std::wstring const& s)
  */
 Message& Message::operator << (String const& s)
 {
-    *this << s.to_utf8();
+    static_cast<std::stringstream&>(*this) << s.to_utf8();
     return *this;
 }
 
@@ -247,7 +232,7 @@ Message& Message::operator << (String const& s)
  */
 Message& Message::operator << (char const v)
 {
-    *this << static_cast<int>(v);
+    static_cast<std::stringstream&>(*this) << static_cast<int>(v);
     return *this;
 }
 
@@ -262,7 +247,7 @@ Message& Message::operator << (char const v)
  */
 Message& Message::operator << (signed char const v)
 {
-    *this << static_cast<int>(v);
+    static_cast<std::stringstream&>(*this) << static_cast<int>(v);
     return *this;
 }
 
@@ -277,7 +262,7 @@ Message& Message::operator << (signed char const v)
  */
 Message& Message::operator << (unsigned char const v)
 {
-    *this << static_cast<int>(v);
+    static_cast<std::stringstream&>(*this) << static_cast<int>(v);
     return *this;
 }
 
@@ -292,7 +277,7 @@ Message& Message::operator << (unsigned char const v)
  */
 Message& Message::operator << (signed short const v)
 {
-    *this << static_cast<int>(v);
+    static_cast<std::stringstream&>(*this) << static_cast<int>(v);
     return *this;
 }
 
@@ -307,7 +292,7 @@ Message& Message::operator << (signed short const v)
  */
 Message& Message::operator << (unsigned short const v)
 {
-    *this << static_cast<int>(v);
+    static_cast<std::stringstream&>(*this) << static_cast<int>(v);
     return *this;
 }
 
@@ -322,7 +307,7 @@ Message& Message::operator << (unsigned short const v)
  */
 Message& Message::operator << (signed int const v)
 {
-    *this << v;
+    static_cast<std::stringstream&>(*this) << v;
     return *this;
 }
 
@@ -337,7 +322,7 @@ Message& Message::operator << (signed int const v)
  */
 Message& Message::operator << (unsigned int const v)
 {
-    *this << v;
+    static_cast<std::stringstream&>(*this) << v;
     return *this;
 }
 
@@ -352,7 +337,7 @@ Message& Message::operator << (unsigned int const v)
  */
 Message& Message::operator << (signed long const v)
 {
-    *this << v;
+    static_cast<std::stringstream&>(*this) << v;
     return *this;
 }
 
@@ -367,7 +352,7 @@ Message& Message::operator << (signed long const v)
  */
 Message& Message::operator << (unsigned long const v)
 {
-    *this << v;
+    static_cast<std::stringstream&>(*this) << v;
     return *this;
 }
 
@@ -382,7 +367,7 @@ Message& Message::operator << (unsigned long const v)
  */
 Message& Message::operator << (signed long long const v)
 {
-    *this << v;
+    static_cast<std::stringstream&>(*this) << v;
     return *this;
 }
 
@@ -397,7 +382,7 @@ Message& Message::operator << (signed long long const v)
  */
 Message& Message::operator << (unsigned long long const v)
 {
-    *this << v;
+    static_cast<std::stringstream&>(*this) << v;
     return *this;
 }
 
@@ -412,7 +397,7 @@ Message& Message::operator << (unsigned long long const v)
  */
 Message& Message::operator << (float const v)
 {
-    *this << v;
+    static_cast<std::stringstream&>(*this) << v;
     return *this;
 }
 
@@ -427,7 +412,7 @@ Message& Message::operator << (float const v)
  */
 Message& Message::operator << (double const v)
 {
-    *this << v;
+    static_cast<std::stringstream&>(*this) << v;
     return *this;
 }
 
@@ -442,7 +427,7 @@ Message& Message::operator << (double const v)
  */
 Message& Message::operator << (bool const v)
 {
-    *this << static_cast<int>(v);
+    static_cast<std::stringstream&>(*this) << static_cast<int>(v);;
     return *this;
 }
 
