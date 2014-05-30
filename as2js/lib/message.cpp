@@ -372,6 +372,19 @@ Message& Message::operator << (signed long long const v)
 }
 
 
+/** \brief Append an Int64 value.
+ *
+ * This function appends the value saved in an Int64 value.
+ *
+ * \parm[in] v  An as2js::Int64 value.
+ */
+Message& Message::operator << (Int64 const v)
+{
+    static_cast<std::stringstream&>(*this) << v.get();
+    return *this;
+}
+
+
 /** \brief Append a unsigned long long value.
  *
  * This function appends a unsigned long long value to the message.
@@ -413,6 +426,19 @@ Message& Message::operator << (float const v)
 Message& Message::operator << (double const v)
 {
     static_cast<std::stringstream&>(*this) << v;
+    return *this;
+}
+
+
+/** \brief Append a Float64 value.
+ *
+ * This function appends the value saved in an Float64 value.
+ *
+ * \parm[in] v  An as2js::Float64 value.
+ */
+Message& Message::operator << (Float64 const v)
+{
+    static_cast<std::stringstream&>(*this) << v.get();
     return *this;
 }
 

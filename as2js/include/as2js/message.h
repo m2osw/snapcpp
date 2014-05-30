@@ -146,17 +146,26 @@ enum err_code_t
 class MessageCallback
 {
 public:
+                        MessageCallback() {}
+                        MessageCallback(MessageCallback const& rhs) { static_cast<void>(rhs); }
+    virtual             ~MessageCallback() {}
+
+    MessageCallback&    operator = (MessageCallback const& rhs) { static_cast<void>(rhs); return *this; }
+
     virtual void        output(message_level_t message_level, err_code_t error_code, Position const& pos, std::string const& message) = 0;
 };
 
 
+// Note: avoid copies because with such you'd get the Message two or more times
 class Message : public std::stringstream
 {
 public:
                         Message(message_level_t message_level, err_code_t error_code, Position const& pos);
                         Message(message_level_t message_level, err_code_t error_code);
-                        //Message(Message const& rhs);
+                        Message(Message const& rhs) = delete;
                         ~Message();
+
+    Message&            operator = (Message const& rhs) = delete;
 
     // internal types; you can add your own types with
     // Message& operator << (Message& os, <my-type>);

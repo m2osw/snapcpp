@@ -43,6 +43,7 @@ class As2JsMessageUnitTests : public CPPUNIT_NS::TestFixture
 {
     CPPUNIT_TEST_SUITE( As2JsMessageUnitTests );
         CPPUNIT_TEST( test_message );
+        CPPUNIT_TEST( test_operator );
     CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -50,6 +51,7 @@ public:
 
 protected:
     void test_message();
+    void test_operator();
 };
 
 #endif
