@@ -42,6 +42,11 @@ snap_listen_thread::word_t snap_listen_thread::get_word()
 {
     snap_thread::snap_lock lock( f_mutex );
 
+    if( f_stop_received )
+    {
+        return ServerStop;
+    }
+
     if( f_word_list.empty() )
     {
         return Waiting;
@@ -59,7 +64,7 @@ void snap_listen_thread::run()
     {
         // sleep till next PING (but max. 5 minutes)
         //
-        const std::string word( f_server->timed_recv( BUFSIZE, TIMEOUT ) );
+        std::string const word( f_server->timed_recv( BUFSIZE, TIMEOUT ) );
         if( word.empty() )
         {
             continue;
@@ -71,7 +76,7 @@ void snap_listen_thread::run()
             //
             snap_thread::snap_lock lock( f_mutex );
             SNAP_LOG_TRACE("STOP");
-            f_word_list.push_back( ServerStop );
+            f_stop_received = true;
             break;
         }
         else if( word == "NLOG")
@@ -93,4 +98,4 @@ void snap_listen_thread::run()
 }
 // namespace snap
 
-// vim: ts=4 sw=4 et syntax=cpp.doxygen
+// vim: ts=4 sw=4 et

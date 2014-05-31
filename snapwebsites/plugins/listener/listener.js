@@ -1,6 +1,6 @@
 /** @preserve
  * Name: listener
- * Version: 0.0.1.7
+ * Version: 0.0.1.13
  * Browsers: all
  * Depends: server-access (>= 0.0.1.16)
  * Copyright: Copyright 2014 (c) Made to Order Software Corporation  All rights reverved.
@@ -37,32 +37,61 @@
  * This is useful, for example, to handle a wait after a successful
  * drag and drop which should result in a preview.
  *
+ * The settings can be set to a string in which case it is viewed as
+ * the URI by itself (no callbacks.)
+ *
+ * When the settings are set to an object, however, you can specify
+ * a set of callbacks along the URI as in:
+ *
+ * \li "uri": the URI to listen on
+ * \li "success": the function called once the resource is available
+ * \li "error": the function called if an error occurs
+ * \li "complete": the function called when the listener is complete
+ *                 with your request
+ *
+ * Note that only one of "success" or "error" is called. "complete"
+ * is always called, however.
+ *
  * \note
- * The success and failure functions are not mandatory, although they
- * are very strongly advised since otherwise you won't know what
- * happens (that being said, you may not care much about the failure
+ * The success and error functions are not mandatory, although they
+ * are very strongly advised since otherwise you will not know what
+ * happened (that being said, you may not care much about the failure
  * case... if it fails, then nothing happens anyway.)
  *
- * @param {string} uri  The URI of the object being checked.
- * @param {function(snapwebsites.ListenerRequest)} success  The function called on success.
- * @param {function(snapwebsites.ListenerRequest)} failure  The function called on failure.
+ * @param {string|Object.<string,string|function(snapwebsites.ListenerRequest)>} settings  The URI of the object being checked.
  *
- * @return {snapwebsites.ListenerRequest} A reference to
+ * @return {snapwebsites.ListenerRequest}  A reference to
  *              the newly created object.
  *
  * @constructor
  * @struct
  */
-snapwebsites.ListenerRequest = function(uri, success, failure)
+snapwebsites.ListenerRequest = function(settings)
 {
-    if(!uri)
+    if(!settings)
     {
         throw new Error("the URI to the ListenerRequest() constructor cannot be empty.");
     }
 
-    this.uri_ = uri;
-    this.success_ = success;
-    this.failure_ = failure;
+    if(typeof settings === "string")
+    {
+        this.uri_ = settings;
+    }
+    else if(settings instanceof Object)
+    {
+        if(typeof settings.uri !== "string")
+        {
+            throw new Error("the ListenerRequest() constructor always expects a URI string.");
+        }
+        this.uri_ = settings.uri;
+        this.success_ = settings.success;
+        this.error_ = settings.error;
+        this.complete_ = settings.complete;
+    }
+    else
+    {
+        throw new Error("the ListenerRequest() constructor expected a string or an object as input.");
+    }
 
     return this;
 };
@@ -112,16 +141,32 @@ snapwebsites.ListenerRequest.prototype.resultXML_ = null;
 snapwebsites.ListenerRequest.prototype.success_ = null;
 
 
-/** \brief The function called on failure.
+/** \brief The function called on error.
  *
  * This variable member holds a function that is to be called in case
  * the request definitively failed. This generally is known on the
- * very first call.
+ * very first AJAX request.
+ *
+ * There are two main reasons for the error callback to get called:
+ *
+ * \li The server refused the request (probably permission denied).
+ * \li The client tried for too long and the system decides to timeout.
  *
  * @type {function(snapwebsites.ListenerRequest)|null}
  * @private
  */
-snapwebsites.ListenerRequest.prototype.failure_ = null;
+snapwebsites.ListenerRequest.prototype.error_ = null;
+
+
+/** \brief The function called once everything is complete.
+ *
+ * This variable member holds a function that is to be called once
+ * the listener request is done.
+ *
+ * @type {function(snapwebsites.ListenerRequest)|null}
+ * @private
+ */
+snapwebsites.ListenerRequest.prototype.complete_ = null;
 
 
 /** \brief Poll speeds.
@@ -287,11 +332,12 @@ snapwebsites.ListenerRequest.prototype.setSpeeds = function(speeds)
 /** \brief Check whether this request should start immediately.
  *
  * This function returns true if the request was assigned an array of
- * speedst that starts with zero.
+ * speeds that starts with zero.
  *
  * \note
- * This is really only effective if the request is the only one at
- * the time it gets added. In all other cases, this won't happen.
+ * Using a zero at the start is really only effective if the request is
+ * the only one at the time it gets added. In all other cases, this will
+ * not happen.
  *
  * @return {boolean}  true if this request should be sent to the server.
  */
@@ -299,7 +345,7 @@ snapwebsites.ListenerRequest.prototype.immediate = function()
 {
     return this.waitingPeriods_ !== null
         && this.waitingPeriods_.length > 0
-        && this.waitingPeriods_[0] == 0;
+        && this.waitingPeriods_[0] === 0;
 };
 
 
@@ -319,7 +365,14 @@ snapwebsites.ListenerRequest.prototype.done = function()
     if(this.processedCounter_ >= this.maxRetry_)
     {
         this.processedCounter_ = this.maxRetry_ + 1; // allow for timedout() to return true
-        this.failure_(this);
+        if(this.error_)
+        {
+            this.error_(this);
+        }
+        if(this.complete_)
+        {
+            this.complete_(this);
+        }
         return true;
     }
 
@@ -364,7 +417,7 @@ snapwebsites.ListenerRequest.prototype.ready = function()
 
     // ignore empty arrays, always true in this case
     if(this.waitingPeriods_ === null
-    || this.waitingPeriods_.length == 0)
+    || this.waitingPeriods_.length === 0)
     {
         ++this.processedCounter_;
         return true;
@@ -480,10 +533,14 @@ snapwebsites.ListenerRequest.prototype.callCallback = function(result_status)
     }
     else
     {
-        if(this.failure_)
+        if(this.error_)
         {
-            this.failure_(this);
+            this.error_(this);
         }
+    }
+    if(this.complete_)
+    {
+        this.complete_(this);
     }
 };
 
@@ -640,7 +697,7 @@ snapwebsites.Listener.prototype.serverAccessSuccess = function(result) // virtua
     {
         // make sure it is one of our parameters
         name = data_tags[idx].getAttribute("name");
-        if(name == "listener")
+        if(name === "listener")
         {
             result_xml = jQuery.parseXML(data_tags[idx].childNodes[0].nodeValue);
             result_tag = jQuery("result", result_xml);
@@ -652,7 +709,7 @@ snapwebsites.Listener.prototype.serverAccessSuccess = function(result) // virtua
                 {
                     // we save the data using a new index to make sure it goes
                     // from 0 to n
-                    if(this.requests_[r].getURI() == uri)
+                    if(this.requests_[r].getURI() === uri)
                     {
                         request = this.requests_[r];
                         break;
@@ -862,7 +919,7 @@ snapwebsites.Listener.prototype.processRequests_ = function()
         // anything to process this time around?
         // (this happens if your requests are to be checked every
         // few seconds instead of every second.)
-        if(idx != 0)
+        if(idx !== 0)
         {
             // prepare the server access object and then call send()
             this.processing_ = true;

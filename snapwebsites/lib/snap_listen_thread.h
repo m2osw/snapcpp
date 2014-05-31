@@ -36,20 +36,28 @@ public:
 
     snap_listen_thread( udp_server_t udp_server );
 
+    // from class snap_thread
     virtual void run();
 
-    enum word_t { Waiting, ServerStop, LogReset };
+    enum word_t
+    {
+        Waiting,
+        ServerStop,
+        LogReset
+    };
     word_t get_word();
 
 private:
     snap_thread::snap_mutex     f_mutex;
     udp_server_t                f_server;
 
-    typedef std::list<word_t>   word_list_t;
+    typedef std::deque<word_t>  word_list_t;
     word_list_t                 f_word_list;
+
+    controlled_vars::fbool_t    f_stop_received;
 };
 
 }
 // namespace
 
-// vim: ts=4 sw=4 et syntax=cpp.doxygen
+// vim: ts=4 sw=4 et

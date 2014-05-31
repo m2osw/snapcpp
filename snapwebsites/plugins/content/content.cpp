@@ -6200,8 +6200,8 @@ void content::on_save_content()
  *     fails, then the file is marked as invalid.
  *
  * When serving a file that is an attachment, plugins that own those
- * files are given a chance to server the attachment themselves. If
- * they do, then the default code doesn't get used at all. This allows
+ * files are given a chance to serve the attachment themselves. If
+ * they do, then the default code does not get used at all. This allows
  * plugins such as the JavaScript plugin to send their compressed and
  * minimized version of the file instead of the source version.
  *
@@ -6211,14 +6211,14 @@ void content::on_save_content()
  * security reason, implement the check_attachment_security(). In
  * all other cases, use the process_attachment(). It is important to
  * do that work in the right function because attempting to load a
- * virus or some other bad file make cause havoc on the server.
+ * virus or some other bad file may cause havoc on the server.
  *
  * \todo
  * The security checks may need to be re-run on all the files once
  * in a while since brand new viruses may not be detected when they
- * first get uploaded. Once signal on that one could be to count the
+ * first get uploaded. One signal on that one could be to count the
  * number of time a file gets uploaded, if the counter increases
- * outregiously fast, it's probably not a good sign.
+ * outregiously fast, it is probably not a good sign.
  */
 void content::on_backend_process()
 {

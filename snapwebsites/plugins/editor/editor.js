@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.166
+ * Version: 0.0.3.178
  * Browsers: all
  * Depends: output (>= 0.1.4), popup (>= 0.1.0.1), server-access (>= 0.0.1.11), mimetype-basics (>= 0.0.3)
  * Copyright: Copyright 2013-2014 (c) Made to Order Software Corporation  All rights reverved.
@@ -2127,6 +2127,39 @@ snapwebsites.EditorWidget.prototype.editorForm_ = null;
 snapwebsites.EditorWidget.prototype.widget_ = null;
 
 
+/** \brief A jQuery wait widget.
+ *
+ * This parameter represents a jQuery widget created when the
+ * showWaitImage() is called.
+ *
+ * @type {jQuery}
+ * @private
+ */
+snapwebsites.EditorWidget.prototype.waitWidget_ = null;
+
+
+/** \brief The timer identifier.
+ *
+ * This parameter is the identifier returned by the setInterval() function.
+ *
+ * @type {number}
+ * @private
+ */
+snapwebsites.EditorWidget.prototype.waitWidgetTimerID_ = -1;
+
+
+/** \brief A jQuery wait widget current rotation position.
+ *
+ * This parameter represents the position of the image in the wait
+ * widget. The wait widget has a background which position is moved
+ * from 0 to -704 so it looks as it was rotating.
+ *
+ * @type {number}
+ * @private
+ */
+snapwebsites.EditorWidget.prototype.waitWidgetPosition_ = 0;
+
+
 /** \brief The jQuery widget representing the content of the widget.
  *
  * This parameter is the DIV under the widget which is marked as the
@@ -2412,6 +2445,103 @@ snapwebsites.EditorWidget.isEmptyBlock = function(html) // static
     //          the regex would return false on the empty string
     //
     return html.replace(/^(<br *\/?>| |\t|\n|\r|&nbsp;)+$/, "").length === 0;
+};
+
+
+/** \brief Show a wait image inside this widget.
+ *
+ * This function creates a wait image inside the widget and then shows
+ * it rotating.
+ *
+ * Any widget that needs to do a computation that will take time or
+ * communicate with the server should probably use this function.
+ *
+ * \note
+ * If the wait image is already visible, then nothing happens.
+ */
+snapwebsites.EditorWidget.prototype.showWaitImage = function()
+{
+    var that = this,
+        w = this.getWidget();
+
+    if(!this.waitWidget_)
+    {
+        //wait_image = w.children(".widget-wait-image");
+        w.prepend("<div class=\"widget-wait-image\"/>");
+        this.waitWidget_ = w.children(".widget-wait-image");
+    }
+
+    if(this.waitWidgetTimerID_ === -1)
+    {
+        this.waitWidget_.fadeIn(1000);
+        this.waitWidgetTimerID_ = setInterval(
+            function()
+            {
+                that.rotateWaitImage_();
+            },
+            200);
+    }
+
+    //
+    // The rotateWait_ works but uses 100% of the CPU, so no good.
+    // (especially for a wait!) At this time make use of a GIF instead.
+    // The rotate is still very cool for a one time animation of 1
+    // second or less.
+    //
+    // /** \brief A RotateAnimation object.
+    //  *
+    //  * This object is used to rotate the wait image by 30 degrees every 200ms.
+    //  *
+    //  * It gets created whenever a file is dropped and a preview is being
+    //  * generated.
+    //  *
+    //  * @type {snapwebsites.RotateAnimation}
+    //  * @private
+    //  */
+    // snapwebsites.EditorWidgetTypeDroppedFileWithPreview.prototype.rotateWait_ = null;
+    //
+    //if(!this.rotateWait_)
+    //{
+    //    this.rotateWait_ = new snapwebsites.RotateAnimation(wait_image, 30);
+    //}
+    //this.rotateWait_.start();
+};
+
+
+/** \brief Once the wait is over, hide it.
+ *
+ * This function is used to hide the wait image in this widget. It also
+ * makes sure to stop the animation.
+ */
+snapwebsites.EditorWidget.prototype.hideWaitImage = function()
+{
+    if(this.waitWidgetTimerID_ !== -1)
+    {
+        clearTimeout(this.waitWidgetTimerID_);
+        this.waitWidgetTimerID_ = -1;
+        this.waitWidget_.fadeOut(200);
+    }
+};
+
+
+/** \brief Rotate the wait image by 30 degrees.
+ *
+ * Each time we rotate the wait image we turn it by 30 degrees. This
+ * function increments a counter that wraps back to zero when it
+ * reaches 12.
+ *
+ * The function changes the background position to give the effect that
+ * the image rotates.
+ *
+ * On my computer this animation takes less than 7% of the CPU. So I think
+ * it is still acceptable.
+ *
+ * @private
+ */
+snapwebsites.EditorWidget.prototype.rotateWaitImage_ = function()
+{
+    this.waitWidgetPosition_ = (this.waitWidgetPosition_ + 1) % 12;
+    this.waitWidget_.css('background-position', (this.waitWidgetPosition_ * -64) + 'px 0');
 };
 
 
@@ -3405,8 +3535,7 @@ snapwebsites.EditorForm.prototype.saveData = function(mode, options_opt)
         obj._editor_session = this.session_;
         if(this.editorWidgets_.hasOwnProperty("title"))
         {
-            obj._editor_uri = snapwebsites.EditorForm.titleToURI(this.editorWidgets_["title"].saving().result);
-            //snapwebsites.castToString(jQuery("[field_name='title'] .editor-content").text(), "casting the field name title to a string"));
+            obj._editor_uri = snapwebsites.EditorForm.titleToURI(this.editorWidgets_.title.saving().result);
         }
         if(!this.serverAccess_)
         {
@@ -5362,9 +5491,17 @@ snapwebsites.EditorWidgetTypeDroppedFileWithPreview.prototype.droppedAttachment 
     var form_data,
         editor_widget = /** @type {snapwebsites.EditorWidget} */ (e.target.snapEditorWidget),
         editor_form = editor_widget.getEditorForm(),
+        w = editor_widget.getWidget(),
         session = editor_form.getSession(),
         title_widget = editor_form.getWidgetByName("title"),
-        name = editor_widget.getName();
+        name = editor_widget.getName(),
+        wait_image,
+        broken_icon = jQuery(".broken-attachment-icon"),
+        icon_widget = w.children(".attachment-icon");
+
+    // hide previous icons if the user is doing this a second time
+    broken_icon.hide();
+    icon_widget.hide();
 
     //
     // In case of an attachment, we send them to the server because the
@@ -5395,7 +5532,10 @@ snapwebsites.EditorWidgetTypeDroppedFileWithPreview.prototype.droppedAttachment 
     form_data.append(name, e.target.snapEditorFile);
 
     // mark widget as processing (allows for CSS effects)
-    e.target.snapEditorWidget.getWidget().addClass("processing-attachment");
+    w.addClass("processing-attachment");
+
+    // show a waiting rotating image
+    editor_widget.showWaitImage();
 
     if(!this.serverAccess_)
     {
@@ -5424,24 +5564,60 @@ snapwebsites.EditorWidgetTypeDroppedFileWithPreview.prototype.serverAccessSucces
     // the response was successful so responseXML is valid,
     // get the canonicalized path to the file we just sent
     // to the server (this is a full URI)
-    var xml_data = jQuery(result.jqxhr.responseXML),
+    var editor_widget = /** @type {snapwebsites.EditorWidget} */ (result.userdata.target.snapEditorWidget),
+        w = editor_widget.getWidget(),
+        xml_data = jQuery(result.jqxhr.responseXML),
         attachment_path = xml_data.find("data[name='attachment-path']").text(),
         attachment_icon = xml_data.find("data[name='attachment-icon']").text(),
+        icon_widget,
         request;
 
     snapwebsites.EditorWidgetTypeDroppedFileWithPreview.superClass_.serverAccessSuccess.call(this, result);
 
+    // show the attachment icon
+    icon_widget = w.children(".attachment-icon");
+    if(icon_widget.length == 0)
+    {
+        w.prepend("<div class=\"attachment-icon\"><img src=\"" + attachment_icon + "\"/></div>");
+        icon_widget = w.children(".attachment-icon");
+    }
+    else
+    {
+        icon_widget.show();
+    }
+
     request = new snapwebsites.ListenerRequest(
-            attachment_path + "/preview.png?width=648&height=838",
-            function(request) // success
-            {
-                console.log("Editor Request: SUCCESS!");
-            },
-            function(request) // failure
-            {
-                //console.log("Editor Request: failure...");
-                // show a broken image in this case
-            });
+        {
+            uri: attachment_path + "/preview.png?width=648&height=838",
+            success: function(request)
+                {
+                    console.log("Editor Listener Request: SUCCESS!");
+                },
+            error: function(request)
+                {
+                    var broken_icon;
+
+                    // show a broken image in this case
+                    console.log("Editor Listener Request: FAILURE!");
+                    broken_icon = jQuery(".broken-attachment-icon");
+                    if(broken_icon.length == 0)
+                    {
+                        // TODO: fix the path with our sitekey
+                        w.prepend("<div class=\"broken-attachment-icon\"><img src=\"/images/mimetype/file-broken-document.png\" width=\"48\" height=\"48\"/></div>");
+                    }
+                    else
+                    {
+                        broken_icon.show();
+                    }
+                },
+            complete: function(request)
+                {
+                    console.log("Editor Listener Request: COMPLETE!");
+                    // not waiting anymore
+                    editor_widget.hideWaitImage();
+                    icon_widget.hide();
+                }
+        });
     request.setSpeeds([10, 3]);
     snapwebsites.ListenerInstance.addRequest(request);
 };
@@ -5472,7 +5648,11 @@ snapwebsites.EditorWidgetTypeDroppedFileWithPreview.prototype.serverAccessSucces
  */
 snapwebsites.EditorWidgetTypeDroppedFileWithPreview.prototype.serverAccessError = function(result) // virtual
 {
+    var editor_widget = /** @type {snapwebsites.EditorWidget} */ (result.userdata.target.snapEditorWidget);
+
     snapwebsites.EditorWidgetTypeDroppedFileWithPreview.superClass_.serverAccessError.call(this, result);
+
+    editor_widget.hideWaitImage();
 };
 /*jslint unparam: false */
 

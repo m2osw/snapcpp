@@ -27,7 +27,6 @@
 #include "quoted_printable.h"
 #include "process.h"
 #include "snap_pipe.h"
-#include "snap_backend.h"
 
 #include <libtld/tld.h>
 #include <QtCassandra/QCassandraValue.h>
@@ -1618,11 +1617,13 @@ void sendmail::on_backend_action(const QString& action)
 
     try
     {
-        snap_backend* backend( dynamic_cast<snap_backend*>(f_snap.get()) );
-        assert( backend );
-        backend->create_signal( "sendmail_udp_signal" );
+        f_backend = dynamic_cast<snap_backend*>(f_snap.get());
+        if(!f_backend)
+        {
+            throw sendmail_exception_no_backend("could not determine the snap_backend pointer");
+        }
+        f_backend->create_signal( "sendmail_udp_signal" );
 
-        char const *stop(get_name(SNAP_NAME_SENDMAIL_STOP));
         for(;;)
         {
             // immediately process emails that are in the database and
@@ -1632,28 +1633,33 @@ void sendmail::on_backend_action(const QString& action)
 
             // Stop on error
             //
-            if( backend->get_error() )
+            if( f_backend->get_error() )
             {
+                // TODO: we probably should return here?
                 exit(1);
             }
 
             // Process UDP message, if any
+            // Wait up to 5 minutes before trying again
             //
-            std::string message;
-            if( backend->pop_message( message ) )
+            snap_backend::message_t message;
+            if( f_backend->pop_message( message, 5 * 60 * 1000 ) )
             {
-                if( message == stop )
-                {
-                    // clean STOP
-                    return;
-                }
-                // Other message tests go here...
+                // If we are to test messages other than PING,
+                // add the code here
+                //if(message == "OTHR") ...
+            }
+
+            if(f_backend->stop_received())
+            {
+                // clean STOP
+                return;
             }
         }
     }
     catch( snap_exception const& except )
     {
-        SNAP_LOG_FATAL("sendmail::on_backend_action(): exception caught: ")(except.what());
+        SNAP_LOG_FATAL("sendmail::on_backend_action(): snap exception caught: ")(except.what());
         exit(1);
         NOTREACHED();
     }
@@ -1723,8 +1729,15 @@ void sendmail::process_emails()
                 e.unserialize(value.stringValue());
                 attach_email(e);
             }
-            // we're done with that email, get rid of it
+            // we are done with that email, get rid of it
             row->dropCell(cell->columnKey());
+
+            // quickly end this process if the user requested a stop
+            if(f_backend->stop_received())
+            {
+                // clean STOP
+                return;
+            }
         }
     }
 }

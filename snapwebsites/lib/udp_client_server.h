@@ -68,8 +68,8 @@ public:
     std::string         get_addr() const;
 
     int                 recv(char *msg, size_t max_size);
-    int                 timed_recv( char *msg, size_t max_size, int max_wait_ms );
-    std::string         timed_recv( const int bufsize, const int max_wait_ms );
+    int                 timed_recv( char *msg, size_t const max_size, int const max_wait_ms );
+    std::string         timed_recv( int const bufsize, int const max_wait_ms );
 
 private:
     int                 f_socket;

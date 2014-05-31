@@ -19,7 +19,9 @@
 #include "../sessions/sessions.h"
 #include "../filter/filter.h"
 
+#include "snap_backend.h"
 #include "qcaseinsensitivestring.h"
+
 
 namespace snap
 {
@@ -32,6 +34,14 @@ public:
     sendmail_exception(char const *       what_msg) : snap_exception("sendmail", what_msg) {}
     sendmail_exception(std::string const& what_msg) : snap_exception("sendmail", what_msg) {}
     sendmail_exception(QString const&     what_msg) : snap_exception("sendmail", what_msg) {}
+};
+
+class sendmail_exception_no_backend : public sendmail_exception
+{
+public:
+    sendmail_exception_no_backend(char const *       what_msg) : sendmail_exception(what_msg) {}
+    sendmail_exception_no_backend(std::string const& what_msg) : sendmail_exception(what_msg) {}
+    sendmail_exception_no_backend(QString const&     what_msg) : sendmail_exception(what_msg) {}
 };
 
 class sendmail_exception_invalid_argument : public sendmail_exception
@@ -211,8 +221,9 @@ private:
     void run_emails();
     void sendemail(QString const& key, QString const& unique_key);
 
-    zpsnap_child_t      f_snap;
-    email               f_email; // email being processed
+    zpsnap_child_t                  f_snap;
+    snap_backend::zpsnap_backend_t  f_backend;
+    email                           f_email; // email being processed
 };
 
 } // namespace sendmail

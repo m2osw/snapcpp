@@ -681,6 +681,10 @@ void javascript::on_check_attachment_security(content::attachment_file const& fi
         // with QScript (TBD -- we'll have to make sure that QScript
         // does indeed support the full spectrum of the JavaScript
         // specification with scripts such as jQuery, Sizzle, etc.)
+        // or maybe js (from node.js); we could also have a special
+        // parser in our as2js project that verifies that the script
+        // is okay (i.e. we could then, for example, forbid the eval()
+        // function among others.)
     }
 }
 

@@ -27,56 +27,28 @@
 namespace snap
 {
 
-
-/** \class backend
- * \brief Backend process class.
- *
- * This class handles backend processing for the snapserver.
- *
- * \todo Add more documentation about the backend and how it works.
- *
- * \sa snap_child
- */
-snap_backend::snap_backend( server_pointer_t s )
-    : snap_child(s)
-    , f_thread( "snap_backend", &f_monitor )
+namespace
 {
-    f_monitor.set_backend( this );
+
+// this is a special case handled internally so the STOP works
+// as soon as possible (some backend may still take a little
+// while before stopping, but this should help greatly.)
+char const *g_stop_message = "STOP";
+
 }
+// no name namespace
 
 
-snap_backend::~snap_backend()
-{
-    // empty
-}
 
 
-class thread_life
-{
-public:
-    thread_life( snap_thread* thread )
-        : f_thread(thread)
-    {
-        assert(f_thread);
-        f_thread->start();
-    }
-
-    ~thread_life()
-    {
-        SNAP_LOG_TRACE() << "stopping thread...";
-        f_thread->stop();
-        SNAP_LOG_TRACE() << "thread stopped!";
-    }
-
-private:
-    snap_thread* f_thread;
-};
 
 
 /* \class udp_monitor
  *
  * This private class encapsulates a thread which monitors the UDP buffer.
  */
+
+
 snap_backend::udp_monitor::udp_monitor()
     : snap_thread::snap_runner( "udp_monitor" )
 {
@@ -104,6 +76,33 @@ bool snap_backend::udp_monitor::get_error() const
 }
 
 
+bool snap_backend::udp_monitor::stop_received() const
+{
+    snap_thread::snap_lock lock( f_mutex );
+    return f_stop_received;
+}
+
+
+bool snap_backend::udp_monitor::is_message_pending() const
+{
+    snap_thread::snap_lock lock( f_mutex );
+    return !f_message_fifo.empty();
+}
+
+
+bool snap_backend::udp_monitor::pop_message( message_t& message, int const wait_msecs )
+{
+    // already received STOP? bypass the possible wait...
+    if(f_stop_received)
+    {
+        return false;
+    }
+    return f_message_fifo.pop_front(message, wait_msecs);
+}
+
+
+
+
 void snap_backend::udp_monitor::run()
 {
     while( !get_thread()->is_stopping() )
@@ -128,23 +127,116 @@ void snap_backend::udp_monitor::run()
             if( r < 1 || r >= static_cast<int>(sizeof(buf) - 1) )
             {
                 perror("udp_monitor::run(): f_udp_signal->timed_recv():");
-                SNAP_LOG_FATAL() << "error: an error occured in the UDP recv() call, returned size: " << r;
+                SNAP_LOG_FATAL() << "error: an error occurred in the UDP recv() call, returned size: " << r;
                 f_error = true;
                 break;
             }
             buf[r] = '\0';
             //
-            f_backend->push_message( buf );
+            if(strcmp(buf, g_stop_message) == 0)
+            {
+                // this is a special case where we do not need to push
+                // the message because all we want now is stop
+                //
+                snap_thread::snap_lock lock( f_mutex );
+
+                f_stop_received = true;
+
+                // we have to push that or the listener is likely to
+                // continue to way for minutes...
+                //
+                f_message_fifo.push_back( buf );
+                break; // no need to listen for more
+            }
+            else
+            {
+                snap_thread::snap_lock lock( f_mutex );
+
+                f_message_fifo.push_back( buf );
+            }
         }
     }
 }
 
 
-/** \brief Create the UDP signal that will be monitored by the background thread.
+
+
+
+
+
+
+/** \class backend
+ * \brief Backend process class.
+ *
+ * This class handles backend processing for the snapserver.
+ *
+ * \todo Add more documentation about the backend and how it works.
+ *
+ * \sa snap_child
  */
-void snap_backend::create_signal( const std::string& name )
+snap_backend::snap_backend( server_pointer_t s )
+    : snap_child(s)
+    , f_thread( "snap_backend", &f_monitor )
+{
+    f_monitor.set_backend( this );
+}
+
+
+snap_backend::~snap_backend()
+{
+    // empty
+}
+
+
+
+
+/** \brief Create an object to monitor UDP messages.
+ *
+ * This function creates the UDP signal and attaches it to the monitor.
+ *
+ * This signal is used to monitor signals from the front end servers
+ * in an attempt to wake up the backends.
+ *
+ * \param[in] name  A name to identifier the object in memory.
+ */
+void snap_backend::create_signal( std::string const& name )
 {
     f_monitor.set_signal( udp_get_server( name.c_str() ) );
+}
+
+
+/** \brief Check whether the monitor had a problem.
+ *
+ * This function returns true if the monitor detected an error and
+ * returned prematuraly. This should be checked in your backend
+ * loop because no more message will be received once this flag is
+ * set to one and the backend should be restarted as soon as
+ * possible.
+ *
+ * Note that it is not necessary to break your inner loops on an
+ * error. Only the main loop that waits on messages needs to test
+ * this flag and if through break free.
+ *
+ * \return true if an error occurred and the backend should restart
+ *         to make sure it continues to receive messages.
+ */
+bool snap_backend::get_error() const
+{
+    return f_monitor.get_error();
+}
+
+
+/** \brief Check whether the STOP signal was received.
+ *
+ * This function checks whether the UDP signal thread received the
+ * STOP message. If so the function returns true and you are
+ * expected to return from your backend as soon as possible.
+ *
+ * \return true if the backend thread received the STOP signal.
+ */
+bool snap_backend::stop_received() const
+{
+    return f_monitor.stop_received();
 }
 
 
@@ -156,52 +248,29 @@ void snap_backend::create_signal( const std::string& name )
  */
 bool snap_backend::is_message_pending() const
 {
-    snap_thread::snap_lock lock( f_mutex );
-    return !f_message_list.empty();
+    return f_monitor.is_message_pending();
 }
 
 
-/** \brief Pop received ping message from top of queue.
+/** \brief Pop received UDP message from top of queue.
  *
  * The snap_backend class creates a background thread which monitors
  * the backend action port. It uses a mutex to set the flag and message
  * after receipt.
  *
- * \note This method does not block.
+ * \note
+ * This method does not currently block. However, it may wait wait_secs
+ * if the queue is empty. We will change that in the future so the
+ * function can block until the next message or for X seconds.
  *
- * \param [out] message  Top message on the list.
- * \param [in] wait_secs Wait time in seconds if queue is empty.
+ * \param [out] message  Top message of the FIFO if not empty.
+ * \param [in] wait_msecs  Wait time in milliseconds if FIFO is empty.
  *
  * \return true if a message was read from the front of the message list.
- *
  */
-bool snap_backend::pop_message( std::string& message, const bool wait_secs )
+bool snap_backend::pop_message( message_t& message, int const wait_msecs )
 {
-    snap_thread::snap_lock lock( f_mutex );
-
-    if( f_message_list.empty() )
-    {
-        sleep( wait_secs );
-        return false;
-    }
-
-    message = f_message_list.front();
-    f_message_list.pop_front();
-    return true;
-}
-
-
-void snap_backend::push_message( const std::string& msg )
-{
-    snap_thread::snap_lock lock( f_mutex );
-
-    f_message_list.push_back( msg );
-}
-
-
-bool snap_backend::get_error() const
-{
-    return f_monitor.get_error();
+    return f_monitor.pop_message(message, wait_msecs);
 }
 
 
@@ -444,7 +513,10 @@ void snap_backend::process_backend_uri(QString const& uri)
     f_ready = true;
 
     auto p_server( f_server.lock() );
-    assert( p_server );
+    if(!p_server)
+    {
+        throw snap_logic_exception("server pointer is nullptr");
+    }
 
     QString const action(p_server->get_parameter("__BACKEND_ACTION"));
     if(!action.isEmpty())
@@ -459,13 +531,13 @@ void snap_backend::process_backend_uri(QString const& uri)
         }
 #endif
 
-        // RAII monitor for the background thread. Stops the thread
-        // when it goes out of scope...
-        //
-        thread_life tl( &f_thread );
-
         if( actions.contains(action) )
         {
+            // RAII monitor for the background thread. Stops the thread
+            // when it goes out of scope...
+            //
+            snap_thread::snap_thread_life tl( &f_thread );
+
             // this is a valid action, execute the corresponding function!
             actions[action]->on_backend_action(action);
         }
@@ -494,6 +566,9 @@ void snap_backend::process_backend_uri(QString const& uri)
     }
     else
     {
+        // "standalone" backend processes are not expected to block
+        // because if they do most everything won't work as expected
+        // thus we do not need a thread here
         p_server->backend_process();
     }
 }

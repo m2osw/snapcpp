@@ -60,12 +60,12 @@ public:
     list_exception(QString const& what_msg)     : snap_exception("list", what_msg.toStdString()) {}
 };
 
-class list_exception_unknown_function : public list_exception
+class list_exception_no_backend : public list_exception
 {
 public:
-    list_exception_unknown_function(char const *what_msg)        : list_exception(what_msg) {}
-    list_exception_unknown_function(std::string const& what_msg) : list_exception(what_msg) {}
-    list_exception_unknown_function(QString const& what_msg)     : list_exception(what_msg) {}
+    list_exception_no_backend(char const *what_msg)        : list_exception(what_msg) {}
+    list_exception_no_backend(std::string const& what_msg) : list_exception(what_msg) {}
+    list_exception_no_backend(QString const& what_msg)     : list_exception(what_msg) {}
 };
 
 class list_exception_invalid_number_of_parameters : public list_exception

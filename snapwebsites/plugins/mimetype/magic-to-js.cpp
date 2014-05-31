@@ -2778,7 +2778,7 @@ void parser::output_header()
 "//\n"
 "\n"
 "/*jslint nomen: true, todo: true, devel: true */\n"
-"/*global jQuery: false, Uint8Array: true */\n"
+"/*global snapwebsites: false, jQuery: false, Uint8Array: true */\n"
 "\n"
 "\n"
 "\n"
@@ -2834,7 +2834,7 @@ void parser::output_footer()
     // close the function we opened in the header
     std::cout <<
 "return \"\";\n"
-"}\n"
+"};\n"
 "\n"
 "// auto-initialize\n"
 "jQuery(document).ready(\n"

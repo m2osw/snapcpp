@@ -1079,8 +1079,8 @@ server::udp_server_t server::udp_get_server( const QString& udp_addr_port )
  * accept a PING message to wake up and start working on new
  * data.
  *
- * The \p name parameter is the name of a variable in the server
- * configuration file.
+ * The \p upd_addr_port parameter is an IP address (IPv4 or IPv6)
+ * which must be followed by a colon and a port number.
  *
  * \param[in] udp_addr_port  The server:port string to connect to.
  * \param[in] message        The message to send, "PING" by default.
@@ -1088,8 +1088,8 @@ server::udp_server_t server::udp_get_server( const QString& udp_addr_port )
 void server::udp_ping_server( const QString& udp_addr_port, char const *message )
 {
     QString addr, port;
-    int bracket(udp_addr_port.lastIndexOf("]"));
-    int p(udp_addr_port.lastIndexOf(":"));
+    int const bracket(udp_addr_port.lastIndexOf("]"));
+    int const p(udp_addr_port.lastIndexOf(":"));
     if(bracket != -1 && p != -1)
     {
         if(p > bracket)
@@ -1751,6 +1751,7 @@ bool server::load_file_impl(snap_child::post_file_t& file, bool& found)
         if(!f.open(QIODevice::ReadOnly))
         {
             // file not found...
+            SNAP_LOG_ERROR("error trying to read file \"")(filename)("\", system error: ")(f.errorString());
             return false;
         }
         file.set_filename(filename);
@@ -1865,7 +1866,8 @@ bool server::output_result_impl(QString const& uri_path, QByteArray& result)
  * The \p name parameter is the name of a variable in the server
  * configuration file.
  *
- * \param[in] name  The name of the configuration variable used to read the IP and port
+ * \param[in] name  The name of the configuration variable used to read
+ *                  the IP and port from the server configuration file.
  * \param[in] message  The message to send, "PING" by default.
  *
  * \sa udp_ping_server()

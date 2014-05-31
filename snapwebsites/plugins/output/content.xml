@@ -242,6 +242,19 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <path>:/images/output/wait.gif</path>
       <mime-type>image/gif</mime-type>
     </attachment>
+    <attachment name="wait-dots" type="attachment/public">
+      <path>:/images/output/wait-dots.gif</path>
+      <mime-type>image/gif</mime-type>
+    </attachment>
+    <!-- Note: the wait-rotate image does not rotate, we use jquery-rotate to animate it! -->
+    <attachment name="wait-rotate" type="attachment/public">
+      <path>:/images/output/wait-rotate.png</path>
+      <mime-type>image/png</mime-type>
+    </attachment>
+    <attachment name="wait-rotate-64x64" type="attachment/public">
+      <path>:/images/output/wait-rotate-64x64.png</path>
+      <mime-type>image/png</mime-type>
+    </attachment>
   </content>
   <content path="/css">
     <param name="content::title" revision="revision">CSS</param>
@@ -286,6 +299,11 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <mime-type>text/javascript</mime-type>
       <dependency>jquery (&gt;= 1.10)</dependency>
     </attachment>
+    <attachment name="jquery-rotate" type="attachment/public">
+      <path>:/js/output/jquery-rotate.js</path>
+      <mime-type>text/javascript</mime-type>
+      <dependency>jquery (&gt;= 1.11.0)</dependency>
+    </attachment>
     <attachment name="output" type="attachment/public">
       <path>:/js/output/output.js</path>
       <mime-type>text/javascript</mime-type>
@@ -296,6 +314,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <mime-type>text/javascript</mime-type>
       <dependency>output (&gt;= 0.1.5)</dependency>
       <dependency>css::output (&gt;= 0.0.1)</dependency>
+    </attachment>
+    <attachment name="rotate-animation" type="attachment/public">
+      <path>:/js/output/rotate-animation.js</path>
+      <mime-type>text/javascript</mime-type>
+      <dependency>output (&gt;= 0.1.5)</dependency>
+      <dependency>jquery-rotate (&gt;= 2.3)</dependency>
     </attachment>
   </content>
   <!-- the content plugin depends on the path plugin so it cannot defined a content.xml file -->

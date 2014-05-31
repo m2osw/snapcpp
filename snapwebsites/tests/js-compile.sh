@@ -18,6 +18,7 @@ FILES="plugins/editor/editor.js
        plugins/listener/listener.js
        plugins/output/popup.js
        plugins/output/output.js
+       plugins/output/rotate-animation.js
        plugins/server_access/server-access.js"
 
 CLOSURE_COMPILER=/home/snapwebsites/tmp/google-js-compiler/closure-compiler

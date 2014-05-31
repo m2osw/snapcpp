@@ -1,6 +1,6 @@
 /*
  * Name: editor
- * Version: 0.0.1.17
+ * Version: 0.0.1.18
  * Browsers: all
  * Copyright: Copyright 2014 (c) Made to Order Software Corporation  All rights reverved.
  * License: GPL 2.0
@@ -273,6 +273,44 @@
 	text-align: center;
 }
 
+
+/** DROPPED FILE WITH PREVIEW **/
+.editable .widget-wait-image
+{
+	display: none;
+	position: absolute;
+	pointer-events: none;
+	z-index: 3;
+	background: url(/images/snap/wait-rotate-64x64.png) no-repeat 0 0;
+	width: 64px;
+	height: 64px;
+}
+
+.editable .attachment-icon
+{
+	position: absolute;
+	pointer-events: none;
+	z-index: 3;
+	width: 64px;
+	height: 64px;
+	text-align: center;
+	padding-top: 8px;
+	border: 1px solid black;
+	background-color: #eeeeee;
+}
+
+.editable .broken-attachment-icon
+{
+	position: absolute;
+	pointer-events: none;
+	z-index: 3;
+	width: 64px;
+	height: 64px;
+	text-align: center;
+	padding-top: 8px;
+}
+
+
 /** DROPDOWN **/
 .editable.dropdown .editor-content
 {
@@ -427,4 +465,5 @@
 	font-size: 80%;
 	font-style: italic;
 }
+
 

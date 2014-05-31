@@ -174,7 +174,7 @@ int64_t editor::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2014, 5, 24, 2, 38, 40, content_update);
+    SNAP_PLUGIN_UPDATE(2014, 5, 30, 14, 29, 40, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -1176,7 +1176,7 @@ std::cerr << "***\n*** Editor Processing POST... [" << ipath.get_key() << "::" <
         the_attachment.set_attachment_type("attachment/public");
         // TODO: define the locale in some ways... for now we use "neutral"
         content::content::instance()->create_attachment(the_attachment, ipath.get_branch(), "");
-        QString attachment_cpath(the_attachment.get_attachment_cpath());
+        QString const attachment_cpath(the_attachment.get_attachment_cpath());
         if(!attachment_cpath.isEmpty())
         {
             content::path_info_t attachment_ipath;
@@ -1185,14 +1185,17 @@ std::cerr << "***\n*** Editor Processing POST... [" << ipath.get_key() << "::" <
             QString const mimetype(the_attachment.get_file().get_mime_type());
             //server_access_plugin->ajax_append_data("attachment-mimetype", mimetype.toUtf8());
             QString const site_key(f_snap->get_site_key_with_slash());
+            // MIME type to icon, we need to have a map that can easily be
+            // updated (probably  directly uploaded in the database for each
+            // website so each webmaster can tweak their own map.)
             if(mimetype.startsWith("application/pdf"))
             {
-                server_access_plugin->ajax_append_data("attachment-icon", (site_key + "/images/editor/pdf.png").toUtf8());
+                server_access_plugin->ajax_append_data("attachment-icon", (site_key + "images/mimetype/file-pdf.png").toUtf8());
             }
             else
             {
                 // send some default otherwise
-                server_access_plugin->ajax_append_data("attachment-icon", (site_key + "/images/editor/file.png").toUtf8());
+                server_access_plugin->ajax_append_data("attachment-icon", (site_key + "images/mimetype/file-unknown.png").toUtf8());
             }
         }
     }

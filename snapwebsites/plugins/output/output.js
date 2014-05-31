@@ -269,6 +269,7 @@ snapwebsites.castToNumber = function(n, e) // static
  * @return {!snapwebsites.BufferToMIMETemplate} A reference to this new object.
  *
  * @constructor
+ * @struct
  */
 snapwebsites.BufferToMIMETemplate = function()
 {

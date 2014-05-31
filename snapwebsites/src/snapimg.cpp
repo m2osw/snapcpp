@@ -4,7 +4,8 @@
  *
  * Description:
  *      Get image information and display that on the screen. This is mainly
- *      a test although it can, of course, be used for any other purpose.
+ *      a test of our image library although it can, of course, be used for
+ *      any other purpose.
  *
  * License:
  *      Copyright (c) 2013 Made to Order Software Corp.

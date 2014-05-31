@@ -221,10 +221,10 @@ void attachment::on_can_handle_dynamic_path(content::path_info_t& ipath, path::d
     if(!files_table->exists(attachment_key.binaryValue())
     || !files_table->row(attachment_key.binaryValue())->exists(content::get_name(content::SNAP_NAME_CONTENT_FILES_DATA_GZIP_COMPRESSED)))
     {
-        // TODO: also offer a dynamic version which compesseses
-        //       the file on the fly (but we'd have to save it and
+        // TODO: also offer a dynamic version which compress the
+        //       file on the fly (but we wouldd have to save it and
         //       that could cause problems with the backend if we
-        //       were to not use the max. compression?)
+        //       were to not use the maximum compression?)
         return;
     }
 

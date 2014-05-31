@@ -5,20 +5,22 @@
 core:	; @echo $@
 
 antivirus: content form output	; @echo $@
+attachment: path	; @echo $@
 char_chart: sitemapxml	; @echo $@
 content: links	; @echo $@
-editor: form sitemapxml mimetype sendmail server_access	; @echo $@
+editor: attachment form sitemapxml mimetype sendmail server_access	; @echo $@
 favicon: path form messages permissions output	; @echo $@
 feed: layout path content messages	; @echo $@
 filter: content messages	; @echo $@
 form: sessions filter content messages	; @echo $@
 header: path layout output	; @echo $@
+images: listener	; @echo $@
 info: path form messages users output	; @echo $@
 javascript: content	; @echo $@
 layout: content filter javascript taxonomy	; @echo $@
 links: core content	; @echo $@
 list: layout filter path output	; @echo $@
-listener: path server_access	; @echo $@
+listener: path	; @echo $@
 mailinglist: core content	; @echo $@
 menu: layout content output	; @echo $@
 messages: core	; @echo $@

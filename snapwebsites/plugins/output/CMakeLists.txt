@@ -75,6 +75,7 @@ add_library(output SHARED
     jquery-extensions.js
     output.js
     popup.js
+    rotate-animation.js
     layout/notheme-body-parser.xsl
     layout/notheme-content.xml
     layout/notheme-theme-parser.xsl

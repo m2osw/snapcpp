@@ -52,6 +52,17 @@ int main(int argc, char *argv[])
         // use sendmail UDP information
         s->udp_ping("snapserver_udp_signal", msg.toUtf8().data());
     }
+    else if(s->get_parameter("__BACKEND_ACTION") == "images")
+    {
+        // use sendmail UDP information
+        s->udp_ping("images_udp_signal", msg.toUtf8().data());
+    }
+	else
+	{
+		std::cerr << "error: unknown/unsupported action." << std::endl;
+		s->exit(1);
+		snap::NOTREACHED();
+	}
 
     // exit via the server so the server can clean itself up cleanly
     s->exit(0);

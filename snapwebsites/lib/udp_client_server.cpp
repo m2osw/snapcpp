@@ -331,7 +331,7 @@ int udp_server::recv(char *msg, size_t max_size)
  *
  * \return -1 if an error occurs or the function timed out, the number of bytes received otherwise.
  */
-int udp_server::timed_recv(char *msg, size_t max_size, int max_wait_ms)
+int udp_server::timed_recv(char *msg, size_t const max_size, int const max_wait_ms)
 {
     fd_set s;
     FD_ZERO(&s);
@@ -373,28 +373,29 @@ int udp_server::timed_recv(char *msg, size_t max_size, int max_wait_ms)
  * This function blocks for a maximum amount of time as defined by
  * max_wait_ms. It may return sooner with an error or a message.
  *
+ * \param[in] bufsize  The maximum size of the returned string in bytes.
  * \param[in] max_wait_ms  The maximum number of milliseconds to wait for a message.
  *
  * \return received string. NULL if error.
  *
  * \sa timed_recv()
  */
-std::string udp_server::timed_recv( const int bufsize, const int max_wait_ms )
+std::string udp_server::timed_recv( int const bufsize, int const max_wait_ms )
 {
     std::vector<char> buf;
-    buf.resize( bufsize+1, '\0' );
-    const int r = timed_recv( &buf[0], buf.size(), max_wait_ms );
+    buf.resize( bufsize + 1, '\0' ); // +1 for ending \0
+    int const r(timed_recv( &buf[0], bufsize, max_wait_ms ));
     if( r <= -1 )
     {
         // Timed out, so return empty string.
+        // TBD: could std::string() smash errno?
         //
         return std::string();
     }
 
     // Resize the buffer, then convert to std string
     //
-    buf.resize( r+1 );
-    buf.shrink_to_fit();
+    buf.resize( r + 1, '\0' );
 
     std::string word;
     word.resize( r );

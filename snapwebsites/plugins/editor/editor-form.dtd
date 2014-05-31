@@ -22,7 +22,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
                       processor CDATA #IMPLIED
                       content-modified CDATA #REQUIRED>
 
-<!ENTITY % html-data "a|b|br|div|em|i|img|p|small|strong|u" >
+<!ENTITY % html-data "a|b|br|div|em|i|img|p|small|strong|table|tbody|td|tr|u" >
 
 <!ELEMENT auto-reset EMPTY>
 <!ATTLIST auto-reset minutes CDATA #REQUIRED>
@@ -120,11 +120,32 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
               height CDATA #IMPLIED
               title CDATA #IMPLIED
               alt CDATA #IMPLIED
+              style CDATA #IMPLIED
               type CDATA #IMPLIED>
 
 <!ELEMENT p (#PCDATA|%html-data;)*>
 <!ELEMENT small (#PCDATA|%html-data;)*>
 <!ELEMENT strong (#PCDATA|%html-data;)*>
+
+<!ELEMENT table (%html-data;)*>
+<!ATTLIST table border CDATA #IMPLIED
+                cellpadding CDATA #IMPLIED
+                cellspacing CDATA #IMPLIED
+                class CDATA #IMPLIED
+                height CDATA #IMPLIED
+                style CDATA #IMPLIED
+                width CDATA #IMPLIED>
+
+<!ELEMENT tbody (%html-data;)*>
+<!ATTLIST tbody class CDATA #IMPLIED>
+
+<!ELEMENT td (#PCDATA|%html-data;)*>
+<!ATTLIST td class CDATA #IMPLIED
+             width CDATA #IMPLIED>
+
+<!ELEMENT tr (%html-data;)*>
+<!ATTLIST tr class CDATA #IMPLIED>
+
 <!ELEMENT u (#PCDATA|%html-data;)*>
 
 <!--

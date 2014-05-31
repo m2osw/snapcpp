@@ -670,12 +670,19 @@ list_item_vector_t list::read_list(content::path_info_t const& ipath, int start,
 }
 
 
-/** \brief Register the pagelist action.
+/** \brief Register the pagelist and standalonelist actions.
  *
- * This function registers this plugin as supporting the "pagelist" action.
+ * This function registers this plugin as supporting the "pagelist" and
+ * the "standalonelist" actions.
+ *
  * This is used by the backend to continuously and as fast as possible build
  * lists of pages. It understands PINGs so one can wake this backend up as
  * soon as required.
+ *
+ * \note
+ * At this time there is a 10 seconds delay between a PING and the
+ * processing of the list. This is to make sure that all the data
+ * was saved by the main server before running the backend.
  *
  * \param[in,out] actions  The list of supported actions where we add ourselves.
  */
@@ -723,13 +730,15 @@ void list::on_register_backend_action(server::backend_action_map_t& actions)
  */
 void list::on_backend_action(QString const& action)
 {
-    snap_backend* backend( dynamic_cast<snap_backend*>(f_snap.get()) );
-    assert( backend );
-    backend->create_signal( "pagelist_udp_signal" );
-
     QtCassandra::QCassandraTable::pointer_t list_table(get_list_table());
     if(action == get_name(SNAP_NAME_LIST_PAGELIST))
     {
+        snap_backend* backend( dynamic_cast<snap_backend*>(f_snap.get()) );
+        if(backend == nullptr)
+        {
+            throw list_exception_no_backend("could not determine the snap_backend pointer");
+        }
+        backend->create_signal( "pagelist_udp_signal" );
 
 // Test creating just one link (*:*)
 //content::path_info_t list_ipath;
@@ -744,45 +753,49 @@ void list::on_backend_action(QString const& action)
 //return;
 
         QString const core_plugin_threshold(get_name(SNAP_NAME_CORE_PLUGIN_THRESHOLD));
-        char const *stop(get_name(SNAP_NAME_LIST_STOP));
         // loop until stopped
         for(;;)
         {
-            // work as long as there is work to do
-            // TBD -- we may want to move this loop in a thread so we can
-            //        handle UDP messages full speed all the time and thus
-            //        a STOP could be acted on quickly whereas right now
-            //        any message has to wait the end of the loop.
-            int did_work(1);
-            while(did_work != 0)
+            // verify that the site is ready, if not, do not process lists yet
+            QtCassandra::QCassandraValue threshold(f_snap->get_site_parameter(core_plugin_threshold));
+            if(!threshold.nullValue())
             {
-                did_work = 0;
-                QtCassandra::QCassandraRowPredicate row_predicate;
-                row_predicate.setCount(1000);
-                for(;;)
+                // work as long as there is work to do
+                int did_work(1);
+                while(did_work != 0)
                 {
-                    list_table->clearCache();
-                    uint32_t count(list_table->readRows(row_predicate));
-                    if(count == 0)
+                    did_work = 0;
+                    QtCassandra::QCassandraRowPredicate row_predicate;
+                    row_predicate.setCount(1000);
+                    for(;;)
                     {
-                        break;
-                    }
-                    QtCassandra::QCassandraRows const rows(list_table->rows());
-                    for(QtCassandra::QCassandraRows::const_iterator o(rows.begin());
-                            o != rows.end(); ++o)
-                    {
-                        // do not work on standalone websites
-                        if(!(*o)->exists(get_name(SNAP_NAME_LIST_STANDALONE)))
+                        list_table->clearCache();
+                        uint32_t count(list_table->readRows(row_predicate));
+                        if(count == 0)
                         {
-                            f_snap->init_start_date();
-                            QString const key(QString::fromUtf8(o.key().data()));
-                            QtCassandra::QCassandraValue threshold(f_snap->get_site_parameter(core_plugin_threshold));
-                            if(!threshold.nullValue())
+                            // no more lists to process
+                            break;
+                        }
+                        QtCassandra::QCassandraRows const rows(list_table->rows());
+                        for(QtCassandra::QCassandraRows::const_iterator o(rows.begin());
+                                o != rows.end(); ++o)
+                        {
+                            // do not work on standalone websites
+                            if(!(*o)->exists(get_name(SNAP_NAME_LIST_STANDALONE)))
                             {
+                                f_snap->init_start_date();
+                                QString const key(QString::fromUtf8(o.key().data()));
                                 did_work |= generate_new_lists(key);
                                 did_work |= generate_all_lists(key);
+                                // else -- website is not ready yet (still being initialized)
                             }
-                            // else -- website is not ready yet (still being initialized)
+
+                            // quickly end this process if the user requested a stop
+                            if(backend->stop_received())
+                            {
+                                // clean STOP
+                                return;
+                            }
                         }
                     }
                 }
@@ -792,20 +805,16 @@ void list::on_backend_action(QString const& action)
             //
             if( backend->get_error() )
             {
+                // TODO: see whether errors should generate a return
+                //       instead of an exit(1).
                 exit(1);
             }
 
             // sleep till next PING (but max. 5 minutes)
             //
-            std::string message;
-            if( backend->pop_message( message ) )
+            snap_backend::message_t message;
+            if( backend->pop_message( message, 5 * 60 * 1000 ) )
             {
-                if( message == stop )
-                {
-                    // clean STOP
-                    return;
-                }
-
                 // Because there is a delay of LIST_PROCESSING_LATENCY
                 // between the time when the user generates the PING and
                 // the time we can make use of the data, we sleep here
@@ -825,7 +834,14 @@ void list::on_backend_action(QString const& action)
                 wait.tv_nsec = (LIST_PROCESSING_LATENCY % 1000000) * 1000;
                 nanosleep(&wait, NULL);
             }
-            // else 5 min. time out, just go on and check the lists
+            // else 5 min. time out or we received the STOP message
+
+            // quickly end this process if the user requested a stop
+            if(backend->stop_received())
+            {
+                // clean STOP
+                return;
+            }
         }
     }
     else if(action == get_name(SNAP_NAME_LIST_STANDALONELIST))
@@ -877,7 +893,7 @@ void list::on_backend_action(QString const& action)
  * \endcode
  *
  * Make sure to specify the URI of your website because otherwise all the
- * site will be marked as standalone sites!
+ * sites will be marked as standalone sites!
  *
  * Note that if you create a standalone site, then you have to either
  * allow its processing with the PROCESS_LISTS parameter, or you have
@@ -1170,7 +1186,8 @@ int list::generate_all_lists(QString const& site_key)
     // and thus we work on less entries on the next call, but give a
     // chance to the main process to create new entries each time
     //
-    // Note: because it is sorted, the oldest entries are worked on first
+    // Note: because it is sorted by timestamp,
+    //       the oldest entries are automatically worked on first
     //
     QtCassandra::QCassandraColumnRangePredicate column_predicate;
     column_predicate.setCount(100); // do one round then exit

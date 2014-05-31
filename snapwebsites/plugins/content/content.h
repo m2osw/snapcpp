@@ -200,6 +200,9 @@ class content;
 class path_info_t
 {
 public:
+    typedef std::vector<path_info_t *>              vector_path_info_t;
+    typedef std::map<std::string, path_info_t *>    map_path_info_t;
+
                                     path_info_t();
 
     void                            set_path(QString const& path);

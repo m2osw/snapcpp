@@ -114,7 +114,7 @@ int64_t listener::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2014, 5, 24, 2, 42, 30, content_update);
+    SNAP_PLUGIN_UPDATE(2014, 5, 27, 1, 37, 30, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -230,7 +230,7 @@ void listener::on_process_post(QString const& uri_path)
         path_plugin->access_allowed
             ( user_path         // current user
             , page_ipath        // this page
-            , action            // can the anonymous user act that way on this page
+            , action            // can the current user act that way on this page
             , login_status      // the log in status of the currently user
             , allowed           // give me the result here
             );

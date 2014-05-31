@@ -26,6 +26,7 @@ class snap_backend : public snap_child
 {
 public:
     typedef controlled_vars::ptr_auto_init<snap_backend>    zpsnap_backend_t;
+    typedef std::string                                     message_t;
 
     snap_backend( server_pointer_t s );
     ~snap_backend();
@@ -33,48 +34,54 @@ public:
     void        create_signal( const std::string& name );
 
     bool        is_message_pending() const;
-    bool        pop_message( std::string& message, const bool wait_secs = 1 );
-    void        push_message( const std::string& msg );
+    bool        pop_message( message_t& message, int const wait_secs = 1 );
     bool        get_error() const;
+    bool        stop_received() const;
 
     void        run_backend();
 
 private:
-    typedef QSharedPointer<udp_client_server::udp_server> udp_signal_t;
+    typedef QSharedPointer<udp_client_server::udp_server>   udp_signal_t;
 
     class udp_monitor
         : public snap_thread::snap_runner
     {
     public:
-        typedef controlled_vars::ptr_auto_init<udp_monitor>    zp_t;
+        typedef controlled_vars::ptr_auto_init<udp_monitor>     zp_t;
+
         udp_monitor();
 
+        // initialization
         void set_signal( udp_signal_t signal );
         void set_backend( zpsnap_backend_t backend );
-        bool get_error() const;
 
+        // current status
+        bool get_error() const;
+        bool stop_received() const;
+        bool is_message_pending() const;
+        bool pop_message( message_t& message, int const wait_secs );
+
+        // from snap_thread::snap_runner
         virtual void run();
 
     private:
-        typedef controlled_vars::auto_init<bool,false> zp_bool_t;
-
         mutable snap_thread::snap_mutex f_mutex;
 
-        zpsnap_backend_t        f_backend;
-        std::string             f_signal_name;
-        udp_signal_t            f_udp_signal;
-        zp_bool_t               f_error;
+        zpsnap_backend_t                    f_backend;
+        udp_signal_t                        f_udp_signal;
+        controlled_vars::fbool_t            f_error;
+        controlled_vars::fbool_t            f_stop_received;
+        snap_thread::snap_fifo<message_t>   f_message_fifo;
     };
 
-    mutable snap_thread::snap_mutex f_mutex;
+    //mutable snap_thread::snap_mutex f_mutex;
 
-    typedef std::list<std::string> message_list_t;
-    message_list_t          f_message_list;
-    udp_monitor             f_monitor;
-    snap_thread             f_thread;
+    udp_monitor                 f_monitor;
+    snap_thread                 f_thread;
 
-    void   process_backend_uri(QString const& uri);
+    void                        process_backend_uri(QString const& uri);
 };
+
 
 } // namespace snap
 // vim: ts=4 sw=4 et

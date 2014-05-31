@@ -138,7 +138,7 @@ int64_t mimetype::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2014, 5, 20, 23, 44, 30, content_update);
+    SNAP_PLUGIN_UPDATE(2014, 5, 27, 12, 3, 30, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }

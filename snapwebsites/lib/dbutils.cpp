@@ -116,13 +116,13 @@ QByteArray dbutils::get_row_key() const
 
     if(!f_rowName.isEmpty() && f_tableName == "files")
     {
-        // these rows make use of MD5 sums so we have to convert them
-        if(f_rowName == "new" || f_rowName == "javascripts" || f_rowName == "css")
+        if(f_rowName == "new" || f_rowName == "javascripts" || f_rowName == "css" || f_rowName == "images")
         {
             row_key = f_rowName.toAscii();
         }
         else
         {
+            // these rows make use of MD5 sums so we have to convert them
             QByteArray str(f_rowName.toUtf8());
             char const *s(str.data());
             while(s[0] != '\0' && s[1] != '\0')
@@ -245,7 +245,8 @@ QString dbutils::get_column_name( QCassandraCell::pointer_t c ) const
     {
         name = key_to_string( key );
     }
-    else if(f_tableName == "list" && f_rowName != "*standalone*")
+    else if((f_tableName == "list" && f_rowName != "*standalone*")
+         || (f_tableName == "files" && f_rowName == "images"))
     {
         uint64_t time(QtCassandra::uint64Value(key, 0));
         char buf[64];
@@ -327,6 +328,7 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
          || n == "content::updated"
          || n.left(18) == "core::last_updated"
          || n == "core::plugin_threshold"
+         || n == "images::modified"
          || n == "list::last_updated"
          || n == "sessions::date"
          || n == "shorturl::date"
@@ -392,20 +394,22 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
          || n == "favicon::sitewide"
          || n == "sessions::used_up"
          || (f_tableName == "files" && f_rowName == "new")
+         || (f_tableName == "files" && f_rowName == "images")
          )
     {
         // unsigned 8 bit value
         // cast to integer so arg() doesn't take it as a character
         return CT_uint8_value;
     }
-    else if(f_tableName == "listref")
+    else if(f_tableName == "listref"
+         )
     {
         return CT_time_microseconds_and_string;
     }
     else if(n == "content::prevent_delete"
          || n == "permissions::dynamic"
-         || n == "finball::read_terms_n_conditions" // TODO -- remove at some point since that is a customer's type (we'd need to have an XML file instead)
          || (f_tableName == "list" && f_rowName != "*standalone*")
+         || n == "finball::read_terms_n_conditions" // TODO -- remove at some point since that is a customer's type (we'd need to have an XML file instead)
          )
     {
         // signed 8 bit value
@@ -421,8 +425,7 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
         return CT_hexarray_value;
     }
     else if(n == "favicon::icon"
-         || n == "content::files::data"
-         || n == "content::files::data::gzip_compressed"
+         || n.startsWith("content::files::data")
          || f_tableName == "layout"
          )
     {
