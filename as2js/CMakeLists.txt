@@ -88,6 +88,7 @@ else()
     add_definitions( -DNDEBUG )
 endif()
 
+
 add_subdirectory( include )
 add_subdirectory( lib )
 add_subdirectory( src )

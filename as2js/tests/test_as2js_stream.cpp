@@ -59,6 +59,7 @@ void As2JsStreamUnitTests::test_filter_iso88591()
             filter->putc(c);
             CPPUNIT_ASSERT(filter->getc() == c);
         }
+        CPPUNIT_ASSERT(filter->getc() == as2js::Input::INPUT_EOF);
     }
     {
         as2js::DecodingFilterISO88591::pointer_t filter(new as2js::DecodingFilterISO88591);
@@ -70,6 +71,7 @@ void As2JsStreamUnitTests::test_filter_iso88591()
         {
             CPPUNIT_ASSERT(filter->getc() == c);
         }
+        CPPUNIT_ASSERT(filter->getc() == as2js::Input::INPUT_EOF);
     }
 }
 

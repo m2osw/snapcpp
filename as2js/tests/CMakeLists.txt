@@ -84,8 +84,8 @@ if(QT_FOUND)
 endif(QT_FOUND)
 
 include_directories(
-    ${CONTROLLEDVARS_INCLUDE_DIR}
-    ${ADVGETOPT_INCLUDE_DIR}
+    ${CONTROLLEDVARS_INCLUDE_DIRS}
+    ${ADVGETOPT_INCLUDE_DIRS}
     ${as2js_compiler_BINARY_DIR}/include
     ${as2js_compiler_SOURCE_DIR}/include
     ${as2js_compiler_SOURCE_DIR}/src
@@ -124,21 +124,46 @@ target_link_libraries( ${PROJECT_NAME}
 ##
 project(run_as2js_tests)
 add_custom_target(run_as2js_tests
-	COMMAND echo "*** test_as2js"
-	COMMAND test_as2js
-	DEPENDS
-		test_as2js
+    COMMAND echo "*** test_as2js"
+    COMMAND test_as2js
+    DEPENDS
+        test_as2js
 )
 
-# See source:
+
+
+# Source:
 # http://stackoverflow.com/questions/23977313/with-cmake-how-could-i-write-a-test-to-verify-that-a-class-is-abstract
-#check_cxx_source_compiles(
-#    "class A { void foo() = 0; };\nint main() { new A; }"
-#    BUILT_ABSTRACT
-#)
-#if (BUILT_ABSTRACT)
-#    message(FATAL_ERROR "A can be instantiated, but should be abstract.")
-#endif()
+#
+# Here I test all the abstract classes that are abstract now and are
+# expected to remain abstract forever
+include(CheckCXXAbstractClass)
+
+#
+# class DecodingFilter
+#
+unset(BUILT_ABSTRACT_DECODING_FILTER CACHE)
+set(
+    CMAKE_REQUIRED_INCLUDES 
+        ${CONTROLLEDVARS_INCLUDE_DIR}
+        ${ADVGETOPT_INCLUDE_DIR}
+        ${as2js_compiler_BINARY_DIR}/include
+        ${as2js_compiler_SOURCE_DIR}/include
+        ${as2js_compiler_SOURCE_DIR}/src
+        ${CPPUNIT_INCLUDE_DIR}
+        ${QT_INCLUDES}
+)
+check_cxx_abstract_class(
+"#include \"as2js/stream.h\"
+int main() { new as2js::DecodingFilter; }"
+    BUILT_ABSTRACT_DECODING_FILTER
+    FAIL_REGEX "because the following virtual functions are pure within"
+)
+if (BUILT_ABSTRACT_DECODING_FILTER)
+    message(FATAL_ERROR "class as2js::DecodingFilter can be instantiated, but should be abstract.")
+endif()
+
+
 
 else(CPPUNIT_FOUND)
 message("No test will be created because you do not seem to have cppunit available")
