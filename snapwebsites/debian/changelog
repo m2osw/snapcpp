@@ -1,9 +1,13 @@
 snapwebsites (0.1.51~saucy) UNRELEASED; urgency=low
 
   * Added the MIME type plugin to support any MIME type on the client side.
+  * Added an images plugin to support generating images from attachments.
+  * Added a listener plugin to let the client query for a file which may
+    need some processing time before being available.
   * Small fix to the simplified DTD for XSLT 2.0 linter.
   * Fixed the compressed column name in dbutils.cpp.
   * Fixed the output CMakeLists.txt: 2 image filenames were missing.
+  * Many cleanups.
 
  -- Alexis Wilke <alexis@m2osw.com>  Mon, 19 May 2014 12:38:00 -0700
 
