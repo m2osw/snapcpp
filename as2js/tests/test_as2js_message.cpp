@@ -219,6 +219,11 @@ void As2JsMessageUnitTests::test_operator()
     as2js::Message::set_message_callback(&c);
     as2js::Message::set_message_level(as2js::MESSAGE_LEVEL_INFO);
 
+    // test the copy constructor and operator
+    test_callback try_copy(c);
+    test_callback try_assignment;
+    try_assignment = c;
+
     as2js::Position pos;
     pos.set_filename("file.js");
     pos.set_function("compute");

@@ -1,6 +1,4 @@
-#ifndef TEST_AS2JS_POSITION_H
-#define TEST_AS2JS_POSITION_H
-/* test_as2hs_position.h -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
+/* test_as2js_stream.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
 
 /*
 
@@ -35,26 +33,47 @@ SOFTWARE.
 
 */
 
+#include    "test_as2js_stream.h"
+#include    "test_as2js_main.h"
 
-#include <cppunit/extensions/HelperMacros.h>
+#include    "as2js/stream.h"
+#include    "as2js/exceptions.h"
+
+#include    <cstring>
+#include    <algorithm>
+#include    <sstream>
+
+#include    <cppunit/config/SourcePrefix.h>
+CPPUNIT_TEST_SUITE_REGISTRATION( As2JsStreamUnitTests );
 
 
-class As2JsPositionUnitTests : public CPPUNIT_NS::TestFixture
+
+
+
+void As2JsStreamUnitTests::test_filter_iso88591()
 {
-    CPPUNIT_TEST_SUITE( As2JsPositionUnitTests );
-        CPPUNIT_TEST( test_names );
-        CPPUNIT_TEST( test_counters );
-        CPPUNIT_TEST( test_output );
-    CPPUNIT_TEST_SUITE_END();
+    {
+        as2js::DecodingFilterISO88591::pointer_t filter(new as2js::DecodingFilterISO88591);
+        for(int c(1); c < 256; ++c)
+        {
+            filter->putc(c);
+            CPPUNIT_ASSERT(filter->getc() == c);
+        }
+    }
+    {
+        as2js::DecodingFilterISO88591::pointer_t filter(new as2js::DecodingFilterISO88591);
+        for(int c(1); c < 256; ++c)
+        {
+            filter->putc(c);
+        }
+        for(int c(1); c < 256; ++c)
+        {
+            CPPUNIT_ASSERT(filter->getc() == c);
+        }
+    }
+}
 
-public:
-    //void setUp();
 
-protected:
-    void test_names();
-    void test_counters();
-    void test_output();
-};
 
-#endif
+
 // vim: ts=4 sw=4 et

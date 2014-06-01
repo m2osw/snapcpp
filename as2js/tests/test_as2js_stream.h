@@ -1,6 +1,6 @@
-#ifndef TEST_AS2JS_POSITION_H
-#define TEST_AS2JS_POSITION_H
-/* test_as2hs_position.h -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
+#ifndef TEST_AS2JS_STREAM_H
+#define TEST_AS2JS_STREAM_H
+/* test_as2hs_stream.h -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
 
 /*
 
@@ -39,21 +39,17 @@ SOFTWARE.
 #include <cppunit/extensions/HelperMacros.h>
 
 
-class As2JsPositionUnitTests : public CPPUNIT_NS::TestFixture
+class As2JsStreamUnitTests : public CPPUNIT_NS::TestFixture
 {
-    CPPUNIT_TEST_SUITE( As2JsPositionUnitTests );
-        CPPUNIT_TEST( test_names );
-        CPPUNIT_TEST( test_counters );
-        CPPUNIT_TEST( test_output );
+    CPPUNIT_TEST_SUITE( As2JsStreamUnitTests );
+        CPPUNIT_TEST( test_filter_iso88591 );
     CPPUNIT_TEST_SUITE_END();
 
 public:
     //void setUp();
 
 protected:
-    void test_names();
-    void test_counters();
-    void test_output();
+    void test_filter_iso88591();
 };
 
 #endif

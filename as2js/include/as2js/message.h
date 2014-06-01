@@ -146,11 +146,7 @@ enum err_code_t
 class MessageCallback
 {
 public:
-                        MessageCallback() {}
-                        MessageCallback(MessageCallback const& rhs) { static_cast<void>(rhs); }
     virtual             ~MessageCallback() {}
-
-    MessageCallback&    operator = (MessageCallback const& rhs) { static_cast<void>(rhs); return *this; }
 
     virtual void        output(message_level_t message_level, err_code_t error_code, Position const& pos, std::string const& message) = 0;
 };

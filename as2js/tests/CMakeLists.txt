@@ -100,6 +100,7 @@ add_executable(${PROJECT_NAME}
     test_as2js_message.cpp
     test_as2js_options.cpp
     test_as2js_position.cpp
+    test_as2js_stream.cpp
     test_as2js_string.cpp
     test_as2js_version.cpp
 
@@ -118,7 +119,6 @@ target_link_libraries( ${PROJECT_NAME}
 )
 
 
-
 ##
 ## Run all the tests
 ##
@@ -129,6 +129,16 @@ add_custom_target(run_as2js_tests
 	DEPENDS
 		test_as2js
 )
+
+# See source:
+# http://stackoverflow.com/questions/23977313/with-cmake-how-could-i-write-a-test-to-verify-that-a-class-is-abstract
+#check_cxx_source_compiles(
+#    "class A { void foo() = 0; };\nint main() { new A; }"
+#    BUILT_ABSTRACT
+#)
+#if (BUILT_ABSTRACT)
+#    message(FATAL_ERROR "A can be instantiated, but should be abstract.")
+#endif()
 
 else(CPPUNIT_FOUND)
 message("No test will be created because you do not seem to have cppunit available")

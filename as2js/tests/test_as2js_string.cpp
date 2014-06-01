@@ -906,9 +906,16 @@ void As2JsStringUnitTests::test_utf8()
         uint32_t wc;
         as2js::String out;
         int r(0);
+        as2js::String::conversion_result_t result(as2js::String::STRING_BAD);
         do
         {
             r = mbstowc(wc, sub, length);
+            if(r > 0 && !as2js::String::valid_character(wc))
+            {
+                result = as2js::String::STRING_INVALID;
+                r = -2;
+                break;
+            }
         }
         while(r > 0);
         if(r != -2 && r != -3)
@@ -918,7 +925,7 @@ void As2JsStringUnitTests::test_utf8()
         }
         // all characters are good, but we may read the end early
         as2js::String str3;
-        CPPUNIT_ASSERT(str3.from_utf8(buf) == as2js::String::STRING_BAD);
+        CPPUNIT_ASSERT(str3.from_utf8(buf) == result);
         CPPUNIT_ASSERT(out.length() == str3.length());
     }
 
