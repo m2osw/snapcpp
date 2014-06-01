@@ -17,10 +17,12 @@
 
 #include "images.h"
 
+#include "../listener/listener.h"
 #include "../messages/messages.h"
 
 #include "log.h"
 #include "dbutils.h"
+#include "snap_image.h"
 
 #include <iostream>
 #include <algorithm>
@@ -185,6 +187,7 @@ void images::on_bootstrap(snap_child *snap)
     SNAP_LISTEN(images, "path", path::path, can_handle_dynamic_path, _1, _2);
     SNAP_LISTEN(images, "content", content::content, create_content, _1, _2, _3);
     SNAP_LISTEN(images, "content", content::content, modified_content, _1);
+    SNAP_LISTEN(images, "listener", listener::listener, listener_check, _1, _2, _3, _4);
 }
 
 
@@ -268,72 +271,267 @@ void images::content_update(int64_t variables_timestamp)
  * .../my-page/image.png
  * \endcode
  *
- * This plugin understands basic transformations on the and will accept
- * entries such as:
+ * This plugin understands entries such as:
  *
  * \code
- * .../my-page/image.png/icon.png?geometry=64x64
+ * .../my-page/image.png/icon.png
  * \endcode
  *
- * This is why this plugin adds the necessary permission::dynamic field
- * to attachments so the permission plugin does not refuse such paths
- * even before we are reached (because the icon.png is a virtual filename
- * which will not be created in the database--especially because attachments
- * are marked as final--but the image transformations are actually saved
- * in that file row, not in their own files entries.)
+ * Note that for this to work you need two things:
+ *
+ * \li The image.png must somehow be given a permission depth of 1 or more.
+ * \li A plugin or the administrator must link the image.png document to
+ *     an images script that will generate the icon.png data field in that
+ *     document.
+ *
+ * At this point we can handle any file format that ImageMagick can transform
+ * in an image. For example, we can generate a PDF preview in the exact same
+ * manner. The following is an example of a script to handle a PDF document
+ * and generate a high quality image of 648x838 pixels called preview.jpg:
+ *
+ * \code
+ * create
+ * density 300
+ * read ${INPUT} data
+ * alpha off
+ * resize 648x838
+ * write ${INPUT} preview.jpg
+ * \endcode
+ *
+ * The script is run by this images plugin. It makes use of the ImageMagick
+ * library to do all the heavy image work.
  *
  * \param[in] ipath  The path being checked.
  * \param[in] plugin_info  The current information about this path plugin.
  */
 void images::on_can_handle_dynamic_path(content::path_info_t& ipath, path::dynamic_plugin_t& plugin_info)
 {
+    // in this case we ignore the result, all we are interested in is
+    // whatever is put in the plugin info object
+    check_virtual_path(ipath, plugin_info);
+}
+
+
+images::virtual_path_t images::check_virtual_path(content::path_info_t& ipath, path::dynamic_plugin_t& plugin_info)
+{
     // is that path already going to be handled by someone else?
     // (avoid wasting time if that's the case)
     if(plugin_info.get_plugin()
     || plugin_info.get_plugin_if_renamed())
     {
-        return;
+        return VIRTUAL_PATH_INVALID;
     }
 
-    // TODO: will other plugins check for their own extension schemes?
-    //       (I would imagine that this plugin will support more than
-    //       just the .gz extension...)
+    content::content *content_plugin(content::content::instance());
+    QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
+    if(content_table->exists(ipath.get_key()))
+    {
+        // if it exists, it's not dynamic so ignore it (this should
+        // never happen because it is tested in the path plugin!)
+        return VIRTUAL_PATH_INVALID;
+    }
+
+    content::path_info_t parent_ipath;
+    ipath.get_parent(parent_ipath);
+    if(!content_table->exists(parent_ipath.get_key()))
+    {
+        // this should always be true, although we may later want to support
+        // more levels, at this point I do not really see the point of doing
+        // so outside of organization which can be done with a name as in:
+        //
+        // icon_blah.png
+        // icon_foo.png
+        // preview_blah.png
+        // preview_foo.png
+        // ...
+        //
+        // so for now, ignore such (and that gives a way for other plugins
+        // to support similar capabilities as the images plugin, just at
+        // a different level!)
+        return VIRTUAL_PATH_INVALID;
+    }
+
+    // is the parent an attachment?
+    QString owner(content_table->row(parent_ipath.get_key())->cell(content::get_name(content::SNAP_NAME_CONTENT_PRIMARY_OWNER))->value().stringValue());
+    if(owner != content::get_name(content::SNAP_NAME_CONTENT_ATTACHMENT_PLUGIN))
+    {
+        // something is dearly wrong if empty... and if not the attachment
+        // plugin, we assume we do not support this path
+        return VIRTUAL_PATH_INVALID;
+    }
+
+    // verify that the attachment key exists
+    QtCassandra::QCassandraTable::pointer_t data_table(content_plugin->get_data_table());
+    if(!data_table->exists(parent_ipath.get_revision_key())
+    || !data_table->row(parent_ipath.get_revision_key())->exists(content::get_name(content::SNAP_NAME_CONTENT_ATTACHMENT)))
+    {
+        // again, check whether we have an attachment...
+        return VIRTUAL_PATH_INVALID;
+    }
+
+    // get the key of that attachment, it should be a file md5
+    QtCassandra::QCassandraValue attachment_key(data_table->row(parent_ipath.get_revision_key())->cell(content::get_name(content::SNAP_NAME_CONTENT_ATTACHMENT))->value());
+    if(attachment_key.nullValue())
+    {
+        // no key?!
+        return VIRTUAL_PATH_INVALID;
+    }
+
+    // the field name is the basename of the ipath preceeded by the
+    // "content::attachment::data" default name
     QString cpath(ipath.get_cpath());
-    if(!cpath.endsWith(".gz") || cpath.endsWith("/.gz"))
+    int const pos(cpath.lastIndexOf("/"));
+    if(pos <= 0)
     {
-        return;
+        // what the heck happened?!
+        return VIRTUAL_PATH_INVALID;
+    }
+    QString filename(cpath.mid(pos + 1));
+    QString field_name(QString("%1::%2").arg(content::get_name(content::SNAP_NAME_CONTENT_FILES_DATA)).arg(filename));
+
+    // Does the file exist at this point?
+    QtCassandra::QCassandraTable::pointer_t files_table(content_plugin->get_files_table());
+    if(!files_table->exists(attachment_key.binaryValue())
+    || !files_table->row(attachment_key.binaryValue())->exists(field_name))
+    {
+        return VIRTUAL_PATH_NOT_AVAILABLE;
     }
 
-    cpath = cpath.left(cpath.length() - 3);
+    // tell the path plugin that we know how to handle this one
+    plugin_info.set_plugin_if_renamed(this, parent_ipath.get_cpath());
+    ipath.set_parameter("attachment_field", field_name);
+
+    return VIRTUAL_PATH_READY;
+}
+
+
+void images::on_listener_check(snap_uri const& uri, content::path_info_t& page_ipath, QDomDocument doc, QDomElement result)
+{
+    static_cast<void>(uri);
+    static_cast<void>(doc);
+
+    path::dynamic_plugin_t info;
+    switch(check_virtual_path(page_ipath, info))
+    {
+    case VIRTUAL_PATH_READY:
+        result.setAttribute("status", "success");
+        break;
+
+    case VIRTUAL_PATH_INVALID:
+        {
+            // this is not acceptable
+            QDomElement message(doc.createElement("message"));
+            result.appendChild(message);
+            QDomText unknown_path(doc.createTextNode("unknown path"));
+            message.appendChild(unknown_path);
+            result.setAttribute("status", "failed");
+        }
+        break;
+
+    case VIRTUAL_PATH_NOT_AVAILABLE:
+        // TODO: enhance this code so we can know whether it is worth
+        //       waiting (i.e. if a script runs, we would know what
+        //       path will be created and thus immediately know whether
+        //       it is worth the wait.)
+        result.setAttribute("status", "wait");
+        break;
+
+    }
+}
+
+
+bool images::on_path_execute(content::path_info_t& ipath)
+{
+    // TODO: we probably do not want to check for attachments to send if the
+    //       action is not "view"...
+
+    // attachments should never be saved with a compression extension
+    //
+    // HOWEVER, we'd like to offer a way for the system to allow extensions
+    // but if we are here the system already found the page and thus found
+    // it with[out] the extension as defined in the database...
+    //
+    QString field_name;
     content::path_info_t attachment_ipath;
-    attachment_ipath.set_path(cpath);
-    QtCassandra::QCassandraTable::pointer_t data_table(content::content::instance()->get_data_table());
-    if(!data_table->exists(attachment_ipath.get_revision_key())
-    || ~data_table->row(attachment_ipath.get_revision_key())->exists(content::get_name(content::SNAP_NAME_CONTENT_ATTACHMENT)))
+    QString const renamed(ipath.get_parameter("renamed_path"));
+    if(renamed.isEmpty())
     {
-        return;
+        attachment_ipath = ipath;
+        field_name = content::get_name(content::SNAP_NAME_CONTENT_FILES_DATA);
+    }
+    else
+    {
+        // TODO: that data may NOT be available yet in which case a plugin
+        //       needs to offer it... how do we do that?!
+        attachment_ipath.set_path(renamed);
+        field_name = ipath.get_parameter("attachment_field");
     }
 
+    QtCassandra::QCassandraTable::pointer_t data_table(content::content::instance()->get_data_table());
     QtCassandra::QCassandraValue attachment_key(data_table->row(attachment_ipath.get_revision_key())->cell(content::get_name(content::SNAP_NAME_CONTENT_ATTACHMENT))->value());
     if(attachment_key.nullValue())
     {
-        return;
+        // somehow the file key is not available
+        f_snap->die(snap_child::HTTP_CODE_NOT_FOUND, "Attachment Not Found",
+                QString("The attachment \"%1\" was not found.").arg(ipath.get_key()),
+                QString("Could not find field \"%1\" of file \"%2\" (maybe renamed \"%3\").")
+                        .arg(field_name)
+                        .arg(QString::fromAscii(attachment_key.binaryValue().toHex()))
+                        .arg(renamed));
+        NOTREACHED();
     }
 
     QtCassandra::QCassandraTable::pointer_t files_table(content::content::instance()->get_files_table());
     if(!files_table->exists(attachment_key.binaryValue())
-    || !files_table->row(attachment_key.binaryValue())->exists(content::get_name(content::SNAP_NAME_CONTENT_FILES_DATA_GZIP_COMPRESSED)))
+    || !files_table->row(attachment_key.binaryValue())->exists(field_name))
     {
-        // TODO: also offer a dynamic version which compress the
-        //       file on the fly (but we wouldd have to save it and
-        //       that could cause problems with the backend if we
-        //       were to not use the maximum compression?)
-        return;
+        // somehow the file data is not available
+        f_snap->die(snap_child::HTTP_CODE_NOT_FOUND, "Attachment Not Found",
+                QString("The attachment \"%1\" was not found.").arg(ipath.get_key()),
+                QString("Could not find field \"%1\" of file \"%2\".")
+                        .arg(content::get_name(content::SNAP_NAME_CONTENT_FILES_DATA))
+                        .arg(QString::fromAscii(attachment_key.binaryValue().toHex())));
+        NOTREACHED();
     }
 
-    // tell the path plugin that we know how to handle this one
-    plugin_info.set_plugin_if_renamed(this, attachment_ipath.get_cpath());
-    ipath.set_parameter("attachment_field", content::get_name(content::SNAP_NAME_CONTENT_FILES_DATA_GZIP_COMPRESSED));
+    QtCassandra::QCassandraRow::pointer_t file_row(files_table->row(attachment_key.binaryValue()));
+
+    // TODO: If the user is loading the file as an attachment,
+    //       we need those headers
+
+    //int pos(cpath.lastIndexOf('/'));
+    //QString basename(cpath.mid(pos + 1));
+    //f_snap->set_header("Content-Disposition", "attachment; filename=" + basename);
+
+    //f_snap->set_header("Content-Transfer-Encoding", "binary");
+
+    // get the file data
+    QByteArray data(file_row->cell(field_name)->value().binaryValue());
+
+    // get the attachment MIME type and tweak it if it is a known text format
+    //QtCassandra::QCassandraValue attachment_mime_type(file_row->cell(content::get_name(content::SNAP_NAME_CONTENT_FILES_MIME_TYPE))->value());
+    //QString content_type(attachment_mime_type.stringValue());
+    //if(content_type == "text/javascript"
+    //|| content_type == "text/css"
+    //|| content_type == "text/xml")
+    //{
+    //    // TBD -- we probably should check what's defined inside those
+    //    //        files before assuming it's using UTF-8.
+    //    content_type += "; charset=utf-8";
+    //}
+    // Our MIME type is always expected to be an image file format that we
+    // know about
+    snap_image img;
+    if(img.get_info(data))
+    {
+        smart_snap_image_buffer_t img_info(img.get_buffer(0));
+        f_snap->set_header("Content-Type", img_info->get_mime_type());
+    }
+
+    // the actual file data now
+    f_snap->output(data);
+
+    return true;
 }
 
 

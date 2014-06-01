@@ -216,6 +216,9 @@ public:
     void                            force_extended_revision(QString const& revision, QString const& filename);
     void                            force_locale(QString const& locale);
 
+    void                            get_parent(path_info_t& parent_ipath) const;
+    void                            get_child(path_info_t& parent_ipath, QString const& child) const;
+
     snap_child *                    get_snap() const;
     QString                         get_key() const;
     QString                         get_real_key() const;
@@ -238,7 +241,7 @@ public:
 private:
     typedef QMap<QString, QString>  parameters_t;
 
-    void                            clear();
+    void                            clear(bool keep_parameters = false);
 
     // auto-initialized
     content *                       f_content_plugin;

@@ -2344,7 +2344,8 @@ void path_info_t::set_real_path(QString const& path)
         }
 
         // the other info becomes invalid
-        clear();
+        // execpt for the parameters which we keep in place
+        clear(true);
     }
 }
 
@@ -2416,6 +2417,31 @@ void path_info_t::force_locale(QString const& locale)
 {
     // TBD: not too sure how valid this is...
     f_locale = locale;
+}
+
+
+void path_info_t::get_parent(path_info_t& parent_ipath) const
+{
+    int const pos(f_cpath.lastIndexOf("/"));
+    if(pos <= 0)
+    {
+        parent_ipath.set_path("");
+    }
+    else
+    {
+        // f_cpath is canonicalized so we can be sure there
+        // aren't two // one after another; also cpath does
+        // not include the domain name
+        parent_ipath.set_path(f_cpath.mid(0, pos));
+    }
+}
+
+
+void path_info_t::get_child(path_info_t& parent_ipath, QString const& child) const
+{
+    // since the path won't include the domain name, it will get
+    // canonicalized automatically
+    parent_ipath.set_path(f_cpath + "/" + child);
 }
 
 
@@ -2699,7 +2725,7 @@ QString path_info_t::get_extended_revision() const
 }
 
 
-void path_info_t::clear()
+void path_info_t::clear(bool keep_parameters)
 {
     f_branch = static_cast<snap_version::basic_version_number_t>(snap_version::SPECIAL_VERSION_UNDEFINED); // FIXME cast
     f_revision = static_cast<snap_version::basic_version_number_t>(snap_version::SPECIAL_VERSION_UNDEFINED); // FIXME cast
@@ -2707,7 +2733,12 @@ void path_info_t::clear()
     f_locale.clear();
     f_branch_key.clear();
     f_revision_key.clear();
-    f_parameters.clear();
+
+    // in case of a set_real_path() we do not want to lose the parameters
+    if(!keep_parameters)
+    {
+        f_parameters.clear();
+    }
 }
 
 

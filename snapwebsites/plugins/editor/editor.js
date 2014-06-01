@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.178
+ * Version: 0.0.3.181
  * Browsers: all
  * Depends: output (>= 0.1.4), popup (>= 0.1.0.1), server-access (>= 0.0.1.11), mimetype-basics (>= 0.0.3)
  * Copyright: Copyright 2013-2014 (c) Made to Order Software Corporation  All rights reverved.
@@ -5570,7 +5570,8 @@ snapwebsites.EditorWidgetTypeDroppedFileWithPreview.prototype.serverAccessSucces
         attachment_path = xml_data.find("data[name='attachment-path']").text(),
         attachment_icon = xml_data.find("data[name='attachment-icon']").text(),
         icon_widget,
-        request;
+        request,
+        preview_uri = attachment_path + "/preview.jpg";
 
     snapwebsites.EditorWidgetTypeDroppedFileWithPreview.superClass_.serverAccessSuccess.call(this, result);
 
@@ -5588,10 +5589,21 @@ snapwebsites.EditorWidgetTypeDroppedFileWithPreview.prototype.serverAccessSucces
 
     request = new snapwebsites.ListenerRequest(
         {
-            uri: attachment_path + "/preview.png?width=648&height=838",
+            uri: preview_uri,
             success: function(request)
                 {
-                    console.log("Editor Listener Request: SUCCESS!");
+                    var preview_widget = editor_widget.getWidgetContent(),
+                        editor = snapwebsites.EditorInstance,
+                        saved_active_element = editor.getActiveElement();
+
+                    preview_widget.empty();
+                    jQuery("<img src=\"" + preview_uri + "\"/>").appendTo(preview_widget);
+
+                    // now make sure the editor detects the change
+                    // (even though we do not expect to re-save this widget)
+                    editor.setActiveElement(preview_widget);
+                    editor.checkModified();
+                    editor.setActiveElement(saved_active_element);
                 },
             error: function(request)
                 {

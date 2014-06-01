@@ -16,7 +16,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
-#include "../listener/listener.h"
+#include "../path/path.h"
 
 #include "snapwebsites.h"
 #include "snap_backend.h"
@@ -64,9 +64,16 @@ public:
 
 
 
-class images : public plugins::plugin, public server::backend_action
+class images : public plugins::plugin, public server::backend_action, public path::path_execute
 {
 public:
+    enum virtual_path_t
+    {
+        VIRTUAL_PATH_READY,
+        VIRTUAL_PATH_INVALID,
+        VIRTUAL_PATH_NOT_AVAILABLE
+    };
+
                         images();
                         ~images();
 
@@ -77,12 +84,14 @@ public:
     void                on_bootstrap(snap_child *snap);
     void                on_register_backend_action(server::backend_action_map_t& actions);
     virtual void        on_backend_action(QString const& action);
+    virtual bool        on_path_execute(content::path_info_t& ipath);
 
     void                on_backend_process();
     void                on_can_handle_dynamic_path(content::path_info_t& ipath, path::dynamic_plugin_t& plugin_info);
     void                on_create_content(content::path_info_t& ipath, QString const& owner, QString const& type);
     void                on_modified_content(content::path_info_t& ipath);
     void                on_attach_to_session();
+    void                on_listener_check(snap_uri const& uri, content::path_info_t& page_ipath, QDomDocument doc, QDomElement result);
 
     Magick::Image       apply_image_script(QString const& script, content::path_info_t::map_path_info_t image_ipaths);
 
@@ -108,6 +117,7 @@ private:
         void            (images::*f_command)(parameters_t& params);
     };
 
+    virtual_path_t      check_virtual_path(content::path_info_t& ipath, path::dynamic_plugin_t& plugin_info);
     void                content_update(int64_t variables_timestamp);
     int64_t             transform_images();
     bool                do_image_transformations(QString const& image_key);

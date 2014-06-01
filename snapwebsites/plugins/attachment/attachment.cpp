@@ -206,7 +206,7 @@ void attachment::on_can_handle_dynamic_path(content::path_info_t& ipath, path::d
     attachment_ipath.set_path(cpath);
     QtCassandra::QCassandraTable::pointer_t data_table(content::content::instance()->get_data_table());
     if(!data_table->exists(attachment_ipath.get_revision_key())
-    || ~data_table->row(attachment_ipath.get_revision_key())->exists(content::get_name(content::SNAP_NAME_CONTENT_ATTACHMENT)))
+    || !data_table->row(attachment_ipath.get_revision_key())->exists(content::get_name(content::SNAP_NAME_CONTENT_ATTACHMENT)))
     {
         return;
     }
@@ -331,8 +331,6 @@ bool attachment::on_path_execute(content::path_info_t& ipath)
 
     return true;
 }
-
-
 
 
 SNAP_PLUGIN_END()
