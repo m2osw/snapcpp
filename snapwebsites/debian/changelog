@@ -1,4 +1,4 @@
-snapwebsites (0.1.51~saucy) saucy; urgency=high
+snapwebsites (0.1.52~saucy) saucy; urgency=high
 
   [ Alexis Wilke ]
   * Added the MIME type plugin to support any MIME type on the client side.
