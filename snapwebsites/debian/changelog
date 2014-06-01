@@ -1,3 +1,9 @@
+snapwebsites (0.1.52+m2osw1~saucy) saucy; urgency=high
+
+  * Forgot a new, critical dependency for the source package: libmagick++-dev.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Sun, 01 Jun 2014 09:19:59 -0700
+
 snapwebsites (0.1.52~saucy) saucy; urgency=high
 
   [ Alexis Wilke ]
