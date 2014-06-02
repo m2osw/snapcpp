@@ -116,6 +116,8 @@ ConfigureMakeProject( PROJECT_NAME cassview
         DEPENDS snapCMakeModules snapwebsites
         )
 ConfigureMakeProject( PROJECT_NAME as2js
+        CONFIG_ARGS
+            -DCONTROLLEDVARS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
         DEPENDS snapCMakeModules advgetopt controlled_vars
         )
 
