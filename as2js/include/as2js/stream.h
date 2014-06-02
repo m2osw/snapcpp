@@ -159,8 +159,8 @@ public:
     void                    ungetc(char_t c);
 
 protected:
-    virtual char_t                  filter_getc();
-    virtual char_t                  get_byte();
+    virtual char_t          filter_getc();
+    virtual char_t          get_byte();
 
 private:
     DecodingFilter::pointer_t   f_filter;

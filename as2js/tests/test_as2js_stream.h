@@ -43,6 +43,10 @@ class As2JsStreamUnitTests : public CPPUNIT_NS::TestFixture
 {
     CPPUNIT_TEST_SUITE( As2JsStreamUnitTests );
         CPPUNIT_TEST( test_filter_iso88591 );
+        CPPUNIT_TEST( test_filter_utf8 );
+        CPPUNIT_TEST( test_filter_utf16 );
+        CPPUNIT_TEST( test_filter_utf32 );
+        CPPUNIT_TEST( test_filter_detect );
     CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -50,6 +54,10 @@ public:
 
 protected:
     void test_filter_iso88591();
+    void test_filter_utf8();
+    void test_filter_utf16();
+    void test_filter_utf32();
+    void test_filter_detect();
 };
 
 #endif

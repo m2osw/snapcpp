@@ -102,6 +102,8 @@ Input::char_t DecodingFilter::getc()
     }
     while(c == String::STRING_BOM);
 
+    // return a valid character except the BOM, or one of:
+    // Input::INPUT_ERR, Input::INPUT_NAC, or Input::INPUT_EOF
     return c;
 }
 
@@ -229,17 +231,24 @@ Input::char_t DecodingFilterUTF16::next_char(Input::char_t c)
     if(c >= 0xD800 && c < 0xDC00)
     {
         f_lead_surrogate = c;
-        return Input::INPUT_NAC; // not an error unless it was the last character
+        return Input::INPUT_NAC; // not an error unless it was the last 2 bytes
     }
     else if(c >= 0xDC00 && c <= 0xDFFF)
     {
         if(f_lead_surrogate == 0)
         {
-            // invalid encoding
+            // lead surrogate missing, skip trail
+            f_buffer.erase(f_buffer.begin(), f_buffer.begin() + 2);
             return Input::INPUT_ERR;
         }
         c = (((static_cast<as_char_t>(f_lead_surrogate) & 0x03FF) << 10) | (static_cast<as_char_t>(c) & 0x03FF)) + 0x10000;
         f_lead_surrogate = 0;
+    }
+    else if(f_lead_surrogate != 0)
+    {
+        // trail surrogate missing
+        f_lead_surrogate = 0;
+        return Input::INPUT_ERR;
     }
 
     return c;
@@ -250,9 +259,12 @@ Input::char_t DecodingFilterUTF16::next_char(Input::char_t c)
  *
  * This function reads data in UTF-16 Little Endian. The function may
  * return Input::INPUT_NAC if called without enough data forming a
- * unicode character with a surrogate.
+ * unicode character or when only the lead surrogate is read.
  *
- * \return The next character or Input::INPUT_NAC.
+ * The function returns Input::INPUT_ERR if the function finds a lead
+ * without a trail surrogate, or a trail without a lead.
+ *
+ * \return The next character, Input::INPUT_ERR, or Input::INPUT_NAC.
  */
 Input::char_t DecodingFilterUTF16LE::get_char()
 {
@@ -265,6 +277,10 @@ Input::char_t DecodingFilterUTF16LE::get_char()
         }
 
         c = next_char(f_buffer[0] + f_buffer[1] * 256);
+        if(c == Input::INPUT_ERR)
+        {
+            return Input::INPUT_ERR;
+        }
         f_buffer.erase(f_buffer.begin(), f_buffer.begin() + 2);
     }
     while(c == Input::INPUT_NAC);
@@ -277,7 +293,10 @@ Input::char_t DecodingFilterUTF16LE::get_char()
  *
  * This function reads data in UTF-16 Big Endian. The function may
  * return Input::INPUT_NAC if called without enough data forming a
- * unicode character with a surrogate.
+ * unicode character or when only the lead surrogate is read.
+ *
+ * The function returns Input::INPUT_ERR if the function finds a lead
+ * without a trail surrogate, or a trail without a lead.
  *
  * \return The next character or Input::INPUT_NAC.
  */
@@ -292,6 +311,10 @@ Input::char_t DecodingFilterUTF16BE::get_char()
         }
 
         c = next_char(f_buffer[0] * 256 + f_buffer[1]);
+        if(c == Input::INPUT_ERR)
+        {
+            return Input::INPUT_ERR;
+        }
         f_buffer.erase(f_buffer.begin(), f_buffer.begin() + 2);
     }
     while(c == Input::INPUT_NAC);
@@ -381,73 +404,97 @@ Input::char_t DecodingFilterUTF32BE::get_char()
  * filter unless we notice many zeroes in which case we use one of
  * the UTF-16 or UTF-32 decoders.
  *
+ * \bug
+ * Known bug: if the input file is less than 4 bytes it cannot be
+ * used because this filter will always return a NAC. So even a valid
+ * source of 1, 2, or 3 characters fails. However, the likelihood of
+ * such a script to be useful are probably negative so we do not care
+ * too much.
+ *
  * \return The following characters, Input::INPUT_NAC, or Input::INPUT_ERR.
  */
 Input::char_t DecodingFilterDetect::get_char()
 {
-    if(f_filter)
+    if(!f_filter)
     {
-        // here we could check for the BOM character and adjust
-        // the filter if we detect it being swapped (it does not
-        // look like Unicode promotes that scheme anymore though.)
-        return f_filter->getc();
-    }
-
-    if(f_buffer.size() < 4)
-    {
-        return Input::INPUT_NAC;
-    }
-
-    // read the BOM in big endian
-    uint32_t bom(
-              (f_buffer[0] << 24)
-            | (f_buffer[1] << 16)
-            | (f_buffer[2] <<  8)
-            | (f_buffer[3] <<  0)
-        );
-
-    if(bom == 0x0000FEFF)
-    {
-        // UTF-32 Big Endian
-        f_filter.reset(new DecodingFilterUTF32BE);
-    }
-    else if(bom == 0xFFFE0000)
-    {
-        // UTF-32 Little Endian
-        f_filter.reset(new DecodingFilterUTF32LE);
-    }
-    else if((bom >> 16) == 0xFEFF)
-    {
-        // UTF-16 Big Endian
-        f_filter.reset(new DecodingFilterUTF16BE);
-    }
-    else if((bom >> 16) == 0xFFFE)
-    {
-        // UTF-16 Little Endian
-        f_filter.reset(new DecodingFilterUTF16LE);
-    }
-    else if((bom & 0xFFFFFF00) == 0xEFBBBF00)
-    {
-        // UTF-8
-        f_filter.reset(new DecodingFilterUTF8);
-    }
-    else
-    {
-        // if each character is valid UTF-8, the use UTF-8
-        String s;
-        String::conversion_result_t r(s.from_utf8(reinterpret_cast<char const *>(&f_buffer[0]), f_buffer.size()));
-        if(r == String::STRING_GOOD || r == String::STRING_END)
+        if(f_buffer.size() < 4)
         {
+            return Input::INPUT_NAC;
+        }
+
+        // read the BOM in big endian
+        uint32_t bom(
+                  (f_buffer[0] << 24)
+                | (f_buffer[1] << 16)
+                | (f_buffer[2] <<  8)
+                | (f_buffer[3] <<  0)
+            );
+
+        if(bom == 0x0000FEFF)
+        {
+            // UTF-32 Big Endian
+            f_filter.reset(new DecodingFilterUTF32BE);
+            f_buffer.erase(f_buffer.begin(), f_buffer.begin() + 4);
+        }
+        else if(bom == 0xFFFE0000)
+        {
+            // UTF-32 Little Endian
+            f_filter.reset(new DecodingFilterUTF32LE);
+            f_buffer.erase(f_buffer.begin(), f_buffer.begin() + 4);
+        }
+        else if((bom >> 16) == 0xFEFF)
+        {
+            // UTF-16 Big Endian
+            f_filter.reset(new DecodingFilterUTF16BE);
+            f_buffer.erase(f_buffer.begin(), f_buffer.begin() + 2);
+        }
+        else if((bom >> 16) == 0xFFFE)
+        {
+            // UTF-16 Little Endian
+            f_filter.reset(new DecodingFilterUTF16LE);
+            f_buffer.erase(f_buffer.begin(), f_buffer.begin() + 2);
+        }
+        else if((bom & 0xFFFFFF00) == 0xEFBBBF00)
+        {
+            // UTF-8
             f_filter.reset(new DecodingFilterUTF8);
+            f_buffer.erase(f_buffer.begin(), f_buffer.begin() + 3);
         }
         else
         {
-            // fallback to ISO-8859-1 (should very rarely happen!)
-            f_filter.reset(new DecodingFilterISO88591);
+            // if each character is valid UTF-8, the use UTF-8
+            String s;
+            String::conversion_result_t r(s.from_utf8(reinterpret_cast<char const *>(&f_buffer[0]), f_buffer.size()));
+            if(r == String::STRING_GOOD || r == String::STRING_END)
+            {
+                f_filter.reset(new DecodingFilterUTF8);
+            }
+            else
+            {
+                // fallback to ISO-8859-1 (should very rarely happen!)
+                f_filter.reset(new DecodingFilterISO88591);
+            }
         }
     }
 
-    return f_filter->getc();
+    // we do not get BOMs returned, yet we could check for the BOM
+    // character and adjust the filter if we detect it being
+    // swapped (it does not look like Unicode promotes that scheme
+    // anymore though, therefore at this point we won't do that...)
+
+    Input::char_t c(f_filter->getc());
+    while((c == Input::INPUT_EOF || c == Input::INPUT_NAC)
+       && !f_buffer.empty())
+    {
+        // transmit the data added to "this" filter
+        // down to f_filter, but only as required
+        // because otherwise we'd generate an EOF
+        f_filter->putc(f_buffer[0]);
+        f_buffer.erase(f_buffer.begin(), f_buffer.begin() + 1);
+        c = f_filter->getc();
+    }
+
+    return c;
 }
 
 
@@ -577,7 +624,9 @@ Input::char_t Input::filter_getc()
         f_filter->putc(c);
         w = f_filter->getc();
     }
-    while(w == Input::INPUT_NAC);
+    while(w == Input::INPUT_NAC || w == Input::INPUT_EOF);
+    // EOF can happen if we bump in a BOM in the middle of nowhere
+    // so we have to loop on EOF as well
 
     return w;
 }
