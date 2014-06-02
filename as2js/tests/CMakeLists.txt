@@ -145,8 +145,8 @@ include(CheckCXXAbstractClass)
 unset(BUILT_ABSTRACT_DECODING_FILTER CACHE)
 set(
     CMAKE_REQUIRED_INCLUDES 
-        ${CONTROLLEDVARS_INCLUDE_DIR}
-        ${ADVGETOPT_INCLUDE_DIR}
+        ${CONTROLLEDVARS_INCLUDE_DIRS}
+        ${ADVGETOPT_INCLUDE_DIRS}
         ${as2js_compiler_BINARY_DIR}/include
         ${as2js_compiler_SOURCE_DIR}/include
         ${as2js_compiler_SOURCE_DIR}/src

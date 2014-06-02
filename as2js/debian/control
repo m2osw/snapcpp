@@ -1,0 +1,63 @@
+Source: as2js
+Priority: extra
+Maintainer: R. Douglas Barbieri <doug@dooglio.net>
+Build-Depends: debhelper, cmake,
+    libqt4-dev (>= 4.8.3), doxygen, graphviz,
+    libqtwebkit-dev, snapcmakemodules (>= 0.1.6~saucy),
+    libcontrolledvars-dev (>= 1.3.6), libadvgetopt-dev (>= 1.0.1-1),
+    libcppunit-dev (>= 1.13), libqxcppunit-dev (>= 1.13)
+Standards-Version: 3.9.4
+Section: libs
+Homepage: http://www.snapwebsites.org/
+Vcs-Git: git://git.code.sf.net/p/snapcpp/code
+Vcs-Browser: http://sourceforge.net/p/snapcpp/code/ci/master/tree/as2js
+
+Package: libas2js-dev
+Section: libdevel
+Architecture: any
+Depends: libas2js (= ${binary:Version}), ${misc:Depends}
+Recommends: as2js-doc (= ${binary:Version})
+Description: C++ library to support AlexScript to JavaScript compilation.
+ This package includes all the necessary files for you to develope code
+ that link against the libas2js library.
+ .
+ This is the development package complete with C++ headers.
+
+Package: as2js-doc
+Section: doc
+Architecture: any
+Depends: ${misc:Depends}
+Recommends: as2js (= ${binary:Version})
+Description: C++ AlexScript to JavaScript documentation.
+ The Snap! C++ environment includes an advanced JavaScript compiler. Here
+ you will find all the necessary documentation to write AlexScript and
+ compile it so it runs in your browsers.
+ .
+ This is the documenation package, complete developer reference to use the
+ libas2js library and the as2js compiler.
+
+Package: libas2js
+Section: libdevel
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: C++ AlexScript to JavaScript compiler
+ The Snap! C++ environment includes this advanced JavaScript compiler which
+ allows you to transform AS-like scripts, using "interface", "class",
+ "public", "private", "protected", and many other additional keywords, and
+ transform that in prototype definitions as supported by browsers.
+ .
+ This is the runtime package for the C++ library.
+
+Package: as2js
+Section: web
+Architecture: any
+Depends: libas2js (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
+Suggests: as2js-doc (>=2.4)
+Description: Compile AlexScript to JavaScript
+ This tool is the as2js compiler. It takes Advanced JavaScript that looks
+ like classes, interfaces, etc. and compiles that in objects that can be
+ reused by your browser with namespaces, functions, and prototypes.
+ .
+ This package contains the compiler.
+
+# vim: ts=4 sw=4 et

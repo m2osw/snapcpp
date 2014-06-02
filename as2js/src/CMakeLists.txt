@@ -30,11 +30,13 @@
 ##
 ## AS to JavaScript tools
 ##
+# The project name should be "as2js", unfortunately the library target
+# has to be named that way to work...
 project(as2js-compiler)
 
 include_directories(
-    ${CONTROLLEDVARS_INCLUDE_DIR}
-    ${ADVGETOPT_INCLUDE_DIR}
+    ${CONTROLLEDVARS_INCLUDE_DIRS}
+    ${ADVGETOPT_INCLUDE_DIRS}
     ${as2js_compiler_BINARY_DIR}/include
     ${as2js_compiler_SOURCE_DIR}/include
     ${as2js_SOURCE_DIR}
