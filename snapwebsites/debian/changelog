@@ -1,3 +1,11 @@
+snapwebsites (0.1.53~saucy) saucy; urgency=high
+
+  [ Alexis Wilke ]
+  * c4f5c61 Changed the loop looking for variables so it works without warnings
+  in release mode. 
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Sun, 01 Jun 2014 21:16:53 -0700
+
 snapwebsites (0.1.52+m2osw1~saucy) saucy; urgency=high
 
   * Forgot a new, critical dependency for the source package: libmagick++-dev.
