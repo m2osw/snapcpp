@@ -57,7 +57,7 @@ project( snapwebsites_main )
 set( CMAKE_MODULE_PATH
     ${CMAKE_SOURCE_DIR}/snapCMakeModules/Modules
     ${CMAKE_BINARY_DIR}/dist/share/cmake-2.8/Modules
-    )
+)
 find_package( SnapCMakeModules REQUIRED )
 find_package( SnapBuild        REQUIRED )
 
