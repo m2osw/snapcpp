@@ -583,7 +583,11 @@ Input::char_t Input::getc()
  */
 void Input::ungetc(char_t c)
 {
-    f_unget.push_back(c);
+    // silently avoid ungetting special values such as INPUT_EOF
+    if(c > 0 && c < 0x110000)
+    {
+        f_unget.push_back(c);
+    }
 }
 
 
@@ -635,12 +639,12 @@ Input::char_t Input::filter_getc()
 /** \brief Function used to get the following byte of data.
  *
  * This virtual function is used by the filter_getc() function to
- * retrieve the next byte of data from the input stream. The
+ * retrieve the next character of data from the input stream. The
  * default implementation of the function throws because it
  * should never get called.
  *
  * Note that it is possible to bypass this function by implementing
- * the filter_getc() in your class.
+ * instead the filter_getc() in your own class.
  *
  * \exception exception_internal_error
  * This function always raises this exception because it should
@@ -694,7 +698,7 @@ Input::char_t StandardInput::get_byte()
     char c;
     if(std::cin.get(c))
     {
-        return static_cast<char_t>(c);
+        return static_cast<char_t>(c) & 255;
     }
     return INPUT_EOF;
 }
@@ -725,14 +729,14 @@ Input::char_t StandardInput::get_byte()
  */
 bool FileInput::open(String const& filename)
 {
-    if(f_file)
+    if(f_file.is_open())
     {
         throw exception_file_already_open("file object for \"" + get_position().get_filename().to_utf8() + "\" cannot be reused for \"" + filename.to_utf8() + "\"");
     }
 
     std::string utf8(filename.to_utf8());
     f_file.open(utf8.c_str());
-    if(!f_file)
+    if(!f_file.is_open())
     {
         return false;
     }
@@ -753,7 +757,7 @@ Input::char_t FileInput::get_byte()
     char c;
     if(f_file.get(c))
     {
-        return static_cast<char_t>(c);
+        return static_cast<char_t>(c) & 255;
     }
     return INPUT_EOF;
 }
@@ -923,14 +927,14 @@ void StandardOutput::internal_write(String const& data)
  */
 bool FileOutput::open(String const& filename)
 {
-    if(f_file)
+    if(f_file.is_open())
     {
         throw exception_file_already_open("file object for \"" + get_position().get_filename().to_utf8() + "\" cannot be reused for \"" + filename.to_utf8() + "\"");
     }
 
     std::string utf8(filename.to_utf8());
     f_file.open(utf8.c_str());
-    if(!f_file)
+    if(!f_file.is_open())
     {
         return false;
     }

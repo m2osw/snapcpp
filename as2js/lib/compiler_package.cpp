@@ -195,7 +195,7 @@ bool Compiler::find_module(String const& filename, Node::pointer_t& result)
         return true;
     }
 
-    // we could not find this module, try to load the it
+    // we could not find this module, try to load it
     Input::pointer_t in;
     if(f_input_retriever)
     {
@@ -204,6 +204,7 @@ bool Compiler::find_module(String const& filename, Node::pointer_t& result)
     if(!in)
     {
         in.reset(new FileInput());
+        // 'in' is just a 'class Input' so we need to cast
         if(!static_cast<FileInput&>(*in).open(filename))
         {
             Message msg(MESSAGE_LEVEL_FATAL, AS_ERR_NOT_FOUND, in->get_position());

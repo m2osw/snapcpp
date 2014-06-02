@@ -149,9 +149,6 @@ public:
     static char_t const     INPUT_NAC = -2;  // not a character (filter requires more input)
     static char_t const     INPUT_ERR = -3;  // stream error
 
-                            Input(DecodingFilter::pointer_t filter = DecodingFilter::pointer_t(new DecodingFilterDetect));
-    virtual                 ~Input() {}
-
     Position&               get_position();
     Position const&         get_position() const;
 
@@ -159,8 +156,11 @@ public:
     void                    ungetc(char_t c);
 
 protected:
+                            Input(DecodingFilter::pointer_t filter = DecodingFilter::pointer_t(new DecodingFilterDetect));
+    virtual                 ~Input() {}
+
     virtual char_t          filter_getc();
-    virtual char_t          get_byte();
+    virtual char_t          get_byte(); // get_byte() is not abstract because the deriving class may instead redefine filter_getc()
 
 private:
     DecodingFilter::pointer_t   f_filter;

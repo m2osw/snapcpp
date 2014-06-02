@@ -158,7 +158,6 @@ check_cxx_abstract_class(
 "#include \"as2js/stream.h\"
 int main() { new as2js::DecodingFilter; }"
     BUILT_ABSTRACT_DECODING_FILTER
-    FAIL_REGEX "because the following virtual functions are pure within"
 )
 if (BUILT_ABSTRACT_DECODING_FILTER)
     message(FATAL_ERROR "class as2js::DecodingFilter can be instantiated, but should be abstract.")
@@ -168,7 +167,7 @@ endif()
 #
 # class DecodingFilterUTF16
 #
-unset(BUILT_ABSTRACT_DECODING_FILTER CACHE)
+unset(BUILT_ABSTRACT_DECODING_FILTER_UTF16 CACHE)
 set(
     CMAKE_REQUIRED_INCLUDES 
         ${CONTROLLEDVARS_INCLUDE_DIRS}
@@ -182,11 +181,58 @@ set(
 check_cxx_abstract_class(
 "#include \"as2js/stream.h\"
 int main() { new as2js::DecodingFilterUTF16; }"
-    BUILT_ABSTRACT_DECODING_FILTER
-    FAIL_REGEX "because the following virtual functions are pure within"
+    BUILT_ABSTRACT_DECODING_FILTER_UTF16
 )
-if (BUILT_ABSTRACT_DECODING_FILTER)
-    message(FATAL_ERROR "class as2js::DecodingFilter can be instantiated, but should be abstract.")
+if(BUILT_ABSTRACT_DECODING_FILTER_UTF16)
+    message(FATAL_ERROR "class as2js::DecodingFilterUTF16 can be instantiated, but should be abstract.")
+endif()
+
+
+#
+# class Input
+#
+unset(BUILT_ABSTRACT_INPUT CACHE)
+set(
+    CMAKE_REQUIRED_INCLUDES 
+        ${CONTROLLEDVARS_INCLUDE_DIRS}
+        ${ADVGETOPT_INCLUDE_DIRS}
+        ${as2js_compiler_BINARY_DIR}/include
+        ${as2js_compiler_SOURCE_DIR}/include
+        ${as2js_compiler_SOURCE_DIR}/src
+        ${CPPUNIT_INCLUDE_DIR}
+        ${QT_INCLUDES}
+)
+check_cxx_abstract_class(
+"#include \"as2js/stream.h\"
+int main() { new as2js::Input; }"
+    BUILT_ABSTRACT_INPUT
+)
+if(BUILT_ABSTRACT_INPUT)
+    message(FATAL_ERROR "class as2js::Input can be instantiated, but should be abstract.")
+endif()
+
+
+#
+# class InputRetriever
+#
+unset(BUILT_ABSTRACT_INPUT_RETRIEVER CACHE)
+set(
+    CMAKE_REQUIRED_INCLUDES 
+        ${CONTROLLEDVARS_INCLUDE_DIRS}
+        ${ADVGETOPT_INCLUDE_DIRS}
+        ${as2js_compiler_BINARY_DIR}/include
+        ${as2js_compiler_SOURCE_DIR}/include
+        ${as2js_compiler_SOURCE_DIR}/src
+        ${CPPUNIT_INCLUDE_DIR}
+        ${QT_INCLUDES}
+)
+check_cxx_abstract_class(
+"#include \"as2js/stream.h\"
+int main() { new as2js::InputRetriever; }"
+    BUILT_ABSTRACT_INPUT_RETRIEVER
+)
+if(BUILT_ABSTRACT_INPUT_RETRIEVER)
+    message(FATAL_ERROR "class as2js::InputRetriever can be instantiated, but should be abstract.")
 endif()
 
 

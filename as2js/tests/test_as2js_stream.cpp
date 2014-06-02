@@ -43,6 +43,8 @@ SOFTWARE.
 #include    <algorithm>
 #include    <sstream>
 
+#include    <unistd.h>
+
 #include    <cppunit/config/SourcePrefix.h>
 CPPUNIT_TEST_SUITE_REGISTRATION( As2JsStreamUnitTests );
 
@@ -1119,6 +1121,168 @@ void As2JsStreamUnitTests::test_filter_detect()
         CPPUNIT_ASSERT(filter->getc() == 0x01);
         CPPUNIT_ASSERT(filter->getc() == 0x02);
         CPPUNIT_ASSERT(filter->getc() == 0x03);
+    }
+}
+
+
+void As2JsStreamUnitTests::test_string_input()
+{
+    {
+        as2js::String input_data("This is\nthe\ninput data\n");
+        as2js::Input::pointer_t str_input(new as2js::StringInput(input_data));
+
+        CPPUNIT_ASSERT(str_input->get_position().get_line() == 1);
+        for(size_t idx(0); idx < input_data.length(); ++idx)
+        {
+            as2js::Input::char_t c(str_input->getc());
+            CPPUNIT_ASSERT(c == input_data[idx]);
+            // the input does not know anything about the position
+            // so it does not change a bit
+            CPPUNIT_ASSERT(str_input->get_position().get_line() == 1);
+        }
+    }
+
+    {
+        as2js::String input_data("Here we have another string\n");
+        as2js::Input::pointer_t str_input(new as2js::StringInput(input_data));
+
+        CPPUNIT_ASSERT(str_input->get_position().get_line() == 1);
+        for(size_t idx(0); idx < input_data.length(); ++idx)
+        {
+            as2js::Input::char_t c(str_input->getc());
+            CPPUNIT_ASSERT(c == input_data[idx]);
+
+            // unget and re-get
+            str_input->ungetc(c);
+            as2js::Input::char_t bad;
+            do
+            {
+                bad = (rand() << 16) ^ rand();
+            }
+            while(bad > 0 && bad < 0x110000);
+            str_input->ungetc(bad); // this will be ignored
+            str_input->ungetc(0); // and this too (0 is rather unlikely otherwise
+            CPPUNIT_ASSERT(str_input->getc() == input_data[idx]);
+
+            // the input does not know anything about the position
+            // so it does not change a bit
+            CPPUNIT_ASSERT(static_cast<as2js::Input const *>(str_input.get())->get_position().get_line() == 1);
+        }
+    }
+
+    {
+        as2js::String input_data("This is\nthe\ninput data\n");
+        as2js::Input::pointer_t str_input(new as2js::StringInput(input_data));
+
+        CPPUNIT_ASSERT(str_input->get_position().get_line() == 1);
+        int line(1);
+        for(size_t idx(0); idx < input_data.length(); ++idx)
+        {
+            as2js::Input::char_t c(str_input->getc());
+            CPPUNIT_ASSERT(c == input_data[idx]);
+            if(c == '\n')
+            {
+                ++line;
+                str_input->get_position().new_line();
+            }
+            // we handle the '\n' so the line no. increases in this one
+            CPPUNIT_ASSERT(static_cast<as2js::Input const *>(str_input.get())->get_position().get_line() == line);
+        }
+    }
+}
+
+
+void As2JsStreamUnitTests::test_stdin()
+{
+    {
+        // 1. create a file with some test in it
+        char filename[256];
+        strncpy(filename, "/tmp/testXXXXXX.js", sizeof(filename));
+        int fd(mkstemps(filename, 3));
+        char const *input_data("This is\nthe\ninput data\nfor std::cin\n");
+        write(fd, input_data, strlen(input_data));
+        close(fd);
+
+        // 2. put that in std::cin
+        freopen(filename, "r", stdin);
+
+        as2js::Input::pointer_t str_input(new as2js::StandardInput);
+
+        // The filename for the StandardInput is set to "-" by default
+        CPPUNIT_ASSERT(str_input->get_position().get_filename() == "-");
+
+        CPPUNIT_ASSERT(str_input->get_position().get_line() == 1);
+        as2js::String input_data_str(input_data);
+        for(size_t idx(0); idx < input_data_str.length(); ++idx)
+        {
+            as2js::Input::char_t c(str_input->getc());
+            CPPUNIT_ASSERT(c == input_data_str[idx]);
+            // the input does not know anything about the position
+            // so it does not change a bit
+            CPPUNIT_ASSERT(str_input->get_position().get_line() == 1);
+        }
+
+        unlink(filename);
+    }
+}
+
+
+void As2JsStreamUnitTests::test_file()
+{
+    {
+        // 1. create a file with some test in it
+        char filename[256];
+        strncpy(filename, "/tmp/testXXXXXX.js", sizeof(filename));
+        int fd(mkstemps(filename, 3));
+        char const *input_data("This is\nthe\ninput data\nfor the file\n");
+        write(fd, input_data, strlen(input_data));
+        close(fd);
+
+        // 2. put that in a file
+        as2js::FileInput::pointer_t str_input(new as2js::FileInput);
+
+        // test a filename that does not exist
+        CPPUNIT_ASSERT(!str_input->open("I'm pretty sure that this will not work although a funky programmer may end up creating such a file..."));
+        // filename not modified if open fails
+        CPPUNIT_ASSERT(str_input->get_position().get_filename() == "");
+
+        // expect this open to work
+        CPPUNIT_ASSERT(str_input->open(filename));
+
+        // The filename for the StandardInput is set to "-" by default
+        CPPUNIT_ASSERT(str_input->get_position().get_filename() == filename);
+
+        CPPUNIT_ASSERT(str_input->get_position().get_line() == 1);
+        as2js::String input_data_str(input_data);
+        for(size_t idx(0); idx < input_data_str.length(); ++idx)
+        {
+            as2js::Input::char_t c(str_input->getc());
+            CPPUNIT_ASSERT(c == input_data_str[idx]);
+            // the input does not know anything about the position
+            // so it does not change a bit
+            CPPUNIT_ASSERT(str_input->get_position().get_line() == 1);
+        }
+
+        // if already open, we get a throw
+        CPPUNIT_ASSERT_THROW(str_input->open("This is yet another filename..."), as2js::exception_file_already_open);
+        CPPUNIT_ASSERT(str_input->get_position().get_filename() == filename);
+
+        unlink(filename);
+    }
+}
+
+
+void As2JsStreamUnitTests::test_bad_impl()
+{
+    {
+        class BadImpl : public as2js::Input
+        {
+        public:
+            // no overloading of either virtual function is a problem!
+        };
+
+        as2js::Input::pointer_t str_input(new BadImpl);
+        CPPUNIT_ASSERT_THROW(str_input->getc(), as2js::exception_internal_error);
     }
 }
 
