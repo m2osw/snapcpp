@@ -1091,31 +1091,30 @@ std::cerr << " ++ [" << params.f_command << "]\n";
         for(int k(0); k < params.f_params.size(); ++k)
         {
             int start_pos(0);
-            do
+            for(;;)
             {
                 QString const param(params.f_params[k]);
-                int dollar_pos(param.indexOf("${", start_pos));
-                if(dollar_pos >= 0)
+                start_pos = param.indexOf("${", start_pos);
+                if(start_pos < 0)
                 {
-                    // there is a variable start point ("${")
-                    dollar_pos += 2;
-                    int const end_pos(param.indexOf("}", dollar_pos));
-                    if(dollar_pos < end_pos )
+                    break;
+                }
+                // there is a variable start point ("${")
+                start_pos += 2;
+                int const end_pos(param.indexOf("}", start_pos));
+                if(start_pos < end_pos )
+                {
+                    // variable name is not empty
+                    QString var_name(param.mid(start_pos, end_pos - start_pos));
+                    content::path_info_t::map_path_info_t::const_iterator var(params.f_image_ipaths.find(var_name.toUtf8().data()));
+                    if(var != params.f_image_ipaths.end())
                     {
-                        // variable name is not empty
-                        QString var_name(param.mid(dollar_pos, end_pos - dollar_pos));
-                        content::path_info_t::map_path_info_t::const_iterator var(params.f_image_ipaths.find(var_name.toUtf8().data()));
-                        if(var != params.f_image_ipaths.end())
-                        {
-                            dollar_pos -= 2;
-                            QString var_value(var->second->get_key());
-                            params.f_params[k].replace(dollar_pos, end_pos + 1 - dollar_pos, var_value);
-                        }
+                        start_pos -= 2;
+                        QString var_value(var->second->get_key());
+                        params.f_params[k].replace(start_pos, end_pos + 1 - start_pos, var_value);
                     }
                 }
-                start_pos = dollar_pos;
             }
-            while(start_pos > 0);
 std::cerr << " -- param[" << k << "] = [" << params.f_params[k] << "]\n";
         }
 
