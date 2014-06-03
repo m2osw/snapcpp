@@ -312,38 +312,33 @@ void setLogOutputLevel( log_level_t level )
 }
 
 
-logger& operator << ( logger& l, const QString& msg )
+logger& operator << ( logger& l, QString const& msg )
 {
-    l( msg );
-    return l;
+    return l( msg );
 }
 
 
-logger& operator << ( logger& l, const std::basic_string<char>& msg )
+logger& operator << ( logger& l, std::basic_string<char> const& msg )
 {
-    l( msg.c_str() );
-    return l;
+    return l( msg.c_str() );
 }
 
 
-logger& operator << ( logger& l, const std::basic_string<wchar_t>& msg )
+logger& operator << ( logger& l, std::basic_string<wchar_t> const& msg )
 {
-    l( msg.c_str() );
-    return l;
+    return l( msg.c_str() );
 }
 
 
-logger& operator << ( logger& l, const char* msg )
+logger& operator << ( logger& l, char const* msg )
 {
-    l( msg );
-    return l;
+    return l( msg );
 }
 
 
-logger& operator << ( logger& l, const wchar_t* msg )
+logger& operator << ( logger& l, wchar_t const* msg )
 {
-    l( msg );
-    return l;
+    return l( msg );
 }
 
 
@@ -372,7 +367,7 @@ logger& operator << ( logger& l, const wchar_t* msg )
  * \param[in] func  The name of the function that log was generated from.
  * \param[in] line  The line number that log was generated from.
  */
-logger::logger(log_level_t log_level, const char *file, const char *func, int line)
+logger::logger(log_level_t log_level, char const *file, char const *func, int line)
     : f_log_level(log_level)
     , f_file(file)
     , f_func(func)
@@ -481,50 +476,53 @@ logger& logger::operator () ()
     return *this;
 }
 
-logger& logger::operator () (const log_security_t v)
+logger& logger::operator () (log_security_t const v)
 {
     f_security = v;
     return *this;
 }
 
-logger& logger::operator () (const char *s)
+logger& logger::operator () (char const *s)
 {
     // we assume UTF-8 because in our Snap environment most everything is
+    // TODO: change control characters to \xXX
     f_message += QString::fromUtf8(s);
     return *this;
 }
 
-logger& logger::operator () (const wchar_t *s)
+logger& logger::operator () (wchar_t const *s)
 {
+    // TODO: change control characters to \xXX
     f_message += QString::fromWCharArray(s);
     return *this;
 }
 
-logger& logger::operator () (const QString& s)
+logger& logger::operator () (QString const& s)
 {
+    // TODO: change control characters to \xXX
     f_message += s;
     return *this;
 }
 
-logger& logger::operator () (const char v)
+logger& logger::operator () (char const v)
 {
     f_message += QString("%1").arg(static_cast<int>(v));
     return *this;
 }
 
-logger& logger::operator () (const signed char v)
+logger& logger::operator () (signed char const v)
 {
     f_message += QString("%1").arg(static_cast<int>(v));
     return *this;
 }
 
-logger& logger::operator () (const unsigned char v)
+logger& logger::operator () (unsigned char const v)
 {
     f_message += QString("%1").arg(static_cast<int>(v));
     return *this;
 }
 
-logger& logger::operator () (const signed short v)
+logger& logger::operator () (signed short const v)
 {
     f_message += QString("%1").arg(static_cast<int>(v));
     return *this;
@@ -536,100 +534,94 @@ logger& logger::operator () (const unsigned short v)
     return *this;
 }
 
-logger& logger::operator () (const signed int v)
+logger& logger::operator () (signed int const v)
 {
     f_message += QString("%1").arg(v);
     return *this;
 }
 
-logger& logger::operator () (const unsigned int v)
+logger& logger::operator () (unsigned int const v)
 {
     f_message += QString("%1").arg(v);
     return *this;
 }
 
-logger& logger::operator () (const signed long v)
+logger& logger::operator () (signed long const v)
 {
     f_message += QString("%1").arg(v);
     return *this;
 }
 
-logger& logger::operator () (const unsigned long v)
+logger& logger::operator () (unsigned long const v)
 {
     f_message += QString("%1").arg(v);
     return *this;
 }
 
-logger& logger::operator () (const signed long long v)
+logger& logger::operator () (signed long long const v)
 {
     f_message += QString("%1").arg(v);
     return *this;
 }
 
-logger& logger::operator () (const unsigned long long v)
+logger& logger::operator () (unsigned long long const v)
 {
     f_message += QString("%1").arg(v);
     return *this;
 }
 
-logger& logger::operator () (const float v)
+logger& logger::operator () (float const v)
 {
     f_message += QString("%1").arg(v);
     return *this;
 }
 
-logger& logger::operator () (const double v)
+logger& logger::operator () (double const v)
 {
     f_message += QString("%1").arg(v);
     return *this;
 }
 
-logger& logger::operator () (const bool v)
+logger& logger::operator () (bool const v)
 {
     f_message += QString("%1").arg(static_cast<int>(v));
     return *this;
 }
 
-logger fatal(const char *file, const char *func, int line)
+logger fatal(char const *file, char const *func, int line)
 {
     logger l(LOG_LEVEL_FATAL, file, func, line);
-    l.operator () ("fatal: ");
-    return l;
+    return l.operator () ("fatal: ");
 }
 
-logger error(const char *file, const char *func, int line)
+logger error(char const *file, char const *func, int line)
 {
     logger l(LOG_LEVEL_ERROR, file, func, line);
-    l.operator () ("error: ");
-    return l;
+    return l.operator () ("error: ");
 }
 
-logger warning(const char *file, const char *func, int line)
+logger warning(char const *file, char const *func, int line)
 {
     logger l(LOG_LEVEL_WARNING, file, func, line);
-    l.operator () ("warning: ");
-    return l;
+    return l.operator () ("warning: ");
 }
 
-logger info(const char *file, const char *func, int line)
+logger info(char const *file, char const *func, int line)
 {
     logger l(LOG_LEVEL_INFO, file, func, line);
-    l.operator () ("info: ");
-    return l;
+    return l.operator () ("info: ");
 }
 
-logger debug(const char *file, const char *func, int line)
+logger debug(char const *file, char const *func, int line)
 {
     logger l(LOG_LEVEL_DEBUG, file, func, line);
-    l.operator () ("debug: ");
-    return l;
+    return l.operator () ("debug: ");
 }
 
-logger trace(const char *file, const char *func, int line)
+logger trace(char const *file, char const *func, int line)
 {
     logger l(LOG_LEVEL_INFO, file, func, line);
-    l.operator () ("trace: ");
-    return l;
+    return l.operator () ("trace: ");
 }
 
 

@@ -113,6 +113,14 @@ namespace
             advgetopt::getopt::no_argument
         },
         {
+            'i',
+            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
+            "images",
+            nullptr,
+            "snapbackend images service.",
+            advgetopt::getopt::no_argument
+        },
+        {
             'b',
             advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
             "binary_path",
@@ -542,7 +550,12 @@ bool snap_init::is_running()
 
 void snap_init::validate()
 {
-    f_opt_map = { {"server",false}, {"sendmail",false}, {"pagelist",false} };
+    f_opt_map = {
+        {"server",false},
+        {"sendmail",false},
+        {"pagelist",false},
+        {"images",false}
+    };
 
     for( auto& opt : f_opt_map )
     {
@@ -556,7 +569,7 @@ void snap_init::validate()
     if( ((command == "start") || (command == "restart"))
             && std::find_if( f_opt_map.begin(), f_opt_map.end(), []( map_t::value_type& opt ) { return opt.second; } ) == f_opt_map.end() )
     {
-        throw std::invalid_argument("Must specify at least one --all, --server, --sendmail or --pagelist");
+        throw std::invalid_argument("Must specify at least one --all, --server, --sendmail, --pagelist, or --images");
     }
     else if( command == "stop" )
     {
@@ -566,7 +579,7 @@ void snap_init::validate()
         }
         if( std::find_if( f_opt_map.begin(), f_opt_map.end(), []( map_t::value_type& opt ) { return opt.second; } ) != f_opt_map.end() )
         {
-            SNAP_LOG_WARNING("--all, --server, --sendmail and --pagelist are ignored with the 'stop' command.");
+            SNAP_LOG_WARNING("--all, --server, --sendmail, --pagelist, and --images are ignored with the 'stop' command.");
         }
     }
 }
