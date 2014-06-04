@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.181
+ * Version: 0.0.3.182
  * Browsers: all
  * Depends: output (>= 0.1.4), popup (>= 0.1.0.1), server-access (>= 0.0.1.11), mimetype-basics (>= 0.0.3)
  * Copyright: Copyright 2013-2014 (c) Made to Order Software Corporation  All rights reverved.
@@ -3518,8 +3518,13 @@ snapwebsites.EditorForm.prototype.saveData = function(mode, options_opt)
     {
         if(this.editorWidgets_.hasOwnProperty(key))
         {
+            // note that widget marked as "immediate-save" are ignored
+            // here because those were saved as soon as they were modified
+            // so there is no need for us to save them again here (plus
+            // in some cases it would be impossible like for file upload)
             w = this.editorWidgets_[key];
-            if(save_all || w.wasModified(true))
+            if((save_all || w.wasModified(true))
+            && !w.getWidget().hasClass("immediate-save"))
             {
                 this.savedData_[key] = w.saving();
                 obj[key] = this.savedData_[key].result;

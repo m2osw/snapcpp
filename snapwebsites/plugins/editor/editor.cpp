@@ -174,7 +174,7 @@ int64_t editor::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2014, 6, 1, 1, 17, 40, content_update);
+    SNAP_PLUGIN_UPDATE(2014, 6, 5, 0, 14, 40, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -1310,7 +1310,8 @@ bool editor::validate_editor_post_for_widget_impl(content::path_info_t& ipath, s
         {
             has_minimum = true;
             QString const m(min_element.text());
-            if(widget_type == "image-box")
+            if(widget_type == "image-box"
+            || widget_type == "dropped-file-with-preview")
             {
                 int width, height;
                 if(!form::form::parse_width_height(m, width, height))
@@ -1380,7 +1381,8 @@ bool editor::validate_editor_post_for_widget_impl(content::path_info_t& ipath, s
         if(!max_element.isNull())
         {
             QString const m(max_element.text());
-            if(widget_type == "image-box")
+            if(widget_type == "image-box"
+            || widget_type == "dropped-file-with-preview")
             {
                 int width, height;
                 if(!form::form::parse_width_height(m, width, height))
@@ -1482,7 +1484,8 @@ bool editor::validate_editor_post_for_widget_impl(content::path_info_t& ipath, s
     //|| widget_type == "password" -- not yet implemented
     || widget_type == "checkbox"
     //|| widget_type == "file" -- not yet implemented
-    || widget_type == "image-box")
+    || widget_type == "image-box"
+    || widget_type == "dropped-file-with-preview")
     {
         QDomElement required(widget.firstChildElement("required"));
         if(!required.isNull())
@@ -1492,7 +1495,8 @@ bool editor::validate_editor_post_for_widget_impl(content::path_info_t& ipath, s
             {
                 // It is required!
                 if(/*widget_type == "file"
-                ||*/ widget_type == "image-box")
+                ||*/ widget_type == "image-box"
+                || widget_type == "dropped-file-with-preview")
                 {
                     if(!f_snap->postfile_exists(widget_name)) // TBD <- this test is not logical if widget_type cannot be a FILE type...
                     {
