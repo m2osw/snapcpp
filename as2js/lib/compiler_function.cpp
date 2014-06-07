@@ -59,8 +59,8 @@ void Compiler::parameters(Node::pointer_t parameters_node)
     for(size_t idx(0); idx < max_children; ++idx)
     {
         Node::pointer_t param(parameters_node->get_child(idx));
-        param->set_flag(Node::NODE_PARAMETERS_FLAG_REFERENCED, false);
-        param->set_flag(Node::NODE_PARAMETERS_FLAG_PARAMREF, false);
+        param->set_flag(Node::flag_attribute_t::NODE_PARAMETERS_FLAG_REFERENCED, false);
+        param->set_flag(Node::flag_attribute_t::NODE_PARAMETERS_FLAG_PARAMREF, false);
     }
 
     // verify unicity and compute the NODE_SET and parameter type
@@ -87,20 +87,20 @@ void Compiler::parameters(Node::pointer_t parameters_node)
         for(size_t j(0); j < jmax; ++j)
         {
             Node::pointer_t child(param->get_child(j));
-            if(child->get_type() == Node::NODE_SET)
+            if(child->get_type() == Node::node_t::NODE_SET)
             {
                 expression(child->get_child(0));
             }
             else
             {
                 expression(child);
-                Node::pointer_t type(child->get_link(Node::LINK_INSTANCE));
+                Node::pointer_t type(child->get_link(Node::link_t::LINK_INSTANCE));
                 if(type)
                 {
-                    Node::pointer_t existing_type(param->get_link(Node::LINK_TYPE));
+                    Node::pointer_t existing_type(param->get_link(Node::link_t::LINK_TYPE));
                     if(!existing_type)
                     {
-                        param->set_link(Node::LINK_TYPE, type);
+                        param->set_link(Node::link_t::LINK_TYPE, type);
                     }
                     else if(existing_type != type)
                     {
@@ -116,10 +116,10 @@ void Compiler::parameters(Node::pointer_t parameters_node)
     for(size_t idx(0); idx < max_children; ++idx)
     {
         Node::pointer_t param(parameters_node->get_child(idx));
-        if(param->get_flag(Node::NODE_PARAMETERS_FLAG_REFERENCED))
+        if(param->get_flag(Node::flag_attribute_t::NODE_PARAMETERS_FLAG_REFERENCED))
         {
             // if referenced, we want to keep it so mark it as necessary
-            param->set_flag(Node::NODE_PARAMETERS_FLAG_PARAMREF, true);
+            param->set_flag(Node::flag_attribute_t::NODE_PARAMETERS_FLAG_PARAMREF, true);
         }
     }
 }
@@ -127,8 +127,8 @@ void Compiler::parameters(Node::pointer_t parameters_node)
 
 void Compiler::function(Node::pointer_t function_node)
 {
-    if(get_attribute(function_node, Node::NODE_ATTR_UNUSED)
-    || get_attribute(function_node, Node::NODE_ATTR_FALSE))
+    if(get_attribute(function_node, Node::flag_attribute_t::NODE_ATTR_UNUSED)
+    || get_attribute(function_node, Node::flag_attribute_t::NODE_ATTR_FALSE))
     {
         return;
     }
@@ -156,34 +156,34 @@ void Compiler::function(Node::pointer_t function_node)
         }
         switch(parent->get_type())
         {
-        case Node::NODE_CLASS:
-        case Node::NODE_INTERFACE:
+        case Node::node_t::NODE_CLASS:
+        case Node::node_t::NODE_INTERFACE:
             more = false;
             member = true;
             break;
 
-        case Node::NODE_PACKAGE:
+        case Node::node_t::NODE_PACKAGE:
             more = false;
             package = true;
             break;
 
-        case Node::NODE_CATCH:
-        case Node::NODE_DO:
-        case Node::NODE_ELSE:
-        case Node::NODE_FINALLY:
-        case Node::NODE_FOR:
-        case Node::NODE_FUNCTION:
-        case Node::NODE_IF:
-        case Node::NODE_PROGRAM:
-        case Node::NODE_ROOT:
-        case Node::NODE_SWITCH:
-        case Node::NODE_TRY:
-        case Node::NODE_WHILE:
-        case Node::NODE_WITH:
+        case Node::node_t::NODE_CATCH:
+        case Node::node_t::NODE_DO:
+        case Node::node_t::NODE_ELSE:
+        case Node::node_t::NODE_FINALLY:
+        case Node::node_t::NODE_FOR:
+        case Node::node_t::NODE_FUNCTION:
+        case Node::node_t::NODE_IF:
+        case Node::node_t::NODE_PROGRAM:
+        case Node::node_t::NODE_ROOT:
+        case Node::node_t::NODE_SWITCH:
+        case Node::node_t::NODE_TRY:
+        case Node::node_t::NODE_WHILE:
+        case Node::node_t::NODE_WITH:
             more = false;
             break;
 
-        case Node::NODE_DIRECTIVE_LIST:
+        case Node::node_t::NODE_DIRECTIVE_LIST:
             if(!list)
             {
                 list = parent;
@@ -199,12 +199,12 @@ void Compiler::function(Node::pointer_t function_node)
 
     // any one of the following flags implies that the function is
     // defined in a class; check to make sure!
-    if(get_attribute(function_node, Node::NODE_ATTR_ABSTRACT)
-    || get_attribute(function_node, Node::NODE_ATTR_STATIC)
-    || get_attribute(function_node, Node::NODE_ATTR_PROTECTED)
-    || get_attribute(function_node, Node::NODE_ATTR_VIRTUAL)
-    || get_attribute(function_node, Node::NODE_ATTR_CONSTRUCTOR)
-    || get_attribute(function_node, Node::NODE_ATTR_FINAL))
+    if(get_attribute(function_node, Node::flag_attribute_t::NODE_ATTR_ABSTRACT)
+    || get_attribute(function_node, Node::flag_attribute_t::NODE_ATTR_STATIC)
+    || get_attribute(function_node, Node::flag_attribute_t::NODE_ATTR_PROTECTED)
+    || get_attribute(function_node, Node::flag_attribute_t::NODE_ATTR_VIRTUAL)
+    || get_attribute(function_node, Node::flag_attribute_t::NODE_ATTR_CONSTRUCTOR)
+    || get_attribute(function_node, Node::flag_attribute_t::NODE_ATTR_FINAL))
     {
         if(!member)
         {
@@ -212,7 +212,7 @@ void Compiler::function(Node::pointer_t function_node)
             msg << "function \"" << function_node->get_string() << "\" was defined with an attribute which can only be used with a function member inside a class definition.";
         }
     }
-    if(function_node->get_flag(Node::NODE_FUNCTION_FLAG_OPERATOR))
+    if(function_node->get_flag(Node::flag_attribute_t::NODE_FUNCTION_FLAG_OPERATOR))
     {
         if(!member)
         {
@@ -223,7 +223,7 @@ void Compiler::function(Node::pointer_t function_node)
 
     // any one of the following flags implies that the function is
     // defined in a class or a package; check to make sure!
-    if(get_attribute(function_node, Node::NODE_ATTR_PRIVATE))
+    if(get_attribute(function_node, Node::flag_attribute_t::NODE_ATTR_PRIVATE))
     {
         if(!package && !member)
         {
@@ -263,13 +263,13 @@ void Compiler::function(Node::pointer_t function_node)
         Node::pointer_t child = function_node->get_child(idx);
         switch(child->get_type())
         {
-        case Node::NODE_PARAMETERS:
+        case Node::node_t::NODE_PARAMETERS:
             // parse the parameters which have a default value
             parameters(child);
             break;
 
-        case Node::NODE_DIRECTIVE_LIST:
-            if(get_attribute(function_node, Node::NODE_ATTR_ABSTRACT))
+        case Node::node_t::NODE_DIRECTIVE_LIST:
+            if(get_attribute(function_node, Node::flag_attribute_t::NODE_ATTR_ABSTRACT))
             {
                 Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_IMPROPER_STATEMENT, function_node->get_position());
                 msg << "the function \"" << function_node->get_string() << "\" is marked abstract and cannot have a body.";
@@ -296,7 +296,7 @@ void Compiler::function(Node::pointer_t function_node)
         }
     }
 
-    if(function_node->get_flag(Node::NODE_FUNCTION_FLAG_NEVER) && is_constructor(function_node))
+    if(function_node->get_flag(Node::flag_attribute_t::NODE_FUNCTION_FLAG_NEVER) && is_constructor(function_node))
     {
         Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_RETURN_TYPE, function_node->get_position());
         msg << "a constructor must return (it cannot be marked Never).";
@@ -305,8 +305,8 @@ void Compiler::function(Node::pointer_t function_node)
     // test for a return whenever necessary
     if(!end_list
     && directive_list_node
-    && (get_attribute(function_node, Node::NODE_ATTR_ABSTRACT) || get_attribute(function_node, Node::NODE_ATTR_INTRINSIC))
-    && (function_node->get_flag(Node::NODE_FUNCTION_FLAG_VOID) || function_node->get_flag(Node::NODE_FUNCTION_FLAG_NEVER)))
+    && (get_attribute(function_node, Node::flag_attribute_t::NODE_ATTR_ABSTRACT) || get_attribute(function_node, Node::flag_attribute_t::NODE_ATTR_INTRINSIC))
+    && (function_node->get_flag(Node::flag_attribute_t::NODE_FUNCTION_FLAG_VOID) || function_node->get_flag(Node::flag_attribute_t::NODE_FUNCTION_FLAG_NEVER)))
     {
         f_optimizer->optimize(directive_list_node);
         find_labels(function_node, directive_list_node);
@@ -330,7 +330,7 @@ void Compiler::function(Node::pointer_t function_node)
 bool Compiler::define_function_type(Node::pointer_t function_node)
 {
     // define the type of the function when not available yet
-    if(function_node->get_link(Node::LINK_TYPE))
+    if(function_node->get_link(Node::link_t::LINK_TYPE))
     {
         return true;
     }
@@ -341,7 +341,7 @@ bool Compiler::define_function_type(Node::pointer_t function_node)
     {
         // Should we put the default of Object if not VOID?
         // (see at the bottom of the function)
-        return function_node->get_flag(Node::NODE_FUNCTION_FLAG_VOID);
+        return function_node->get_flag(Node::flag_attribute_t::NODE_FUNCTION_FLAG_VOID);
     }
 
     {
@@ -350,8 +350,8 @@ bool Compiler::define_function_type(Node::pointer_t function_node)
         for(; idx < max_children; ++idx)
         {
             Node::pointer_t type(function_node->get_child(idx));
-            if(type->get_type() != Node::NODE_PARAMETERS
-            && type->get_type() != Node::NODE_DIRECTIVE_LIST)
+            if(type->get_type() != Node::node_t::NODE_PARAMETERS
+            && type->get_type() != Node::node_t::NODE_DIRECTIVE_LIST)
             {
                 // then this is the type definition
                 expression(type);
@@ -362,7 +362,7 @@ bool Compiler::define_function_type(Node::pointer_t function_node)
                     // we may want to have that in
                     // different places for when we
                     // specifically look for a type
-                    if(resolution->get_type() == Node::NODE_FUNCTION)
+                    if(resolution->get_type() == Node::node_t::NODE_FUNCTION)
                     {
                         Node::pointer_t parent(resolution);
                         for(;;)
@@ -372,7 +372,7 @@ bool Compiler::define_function_type(Node::pointer_t function_node)
                             {
                                 break;
                             }
-                            if(parent->get_type() == Node::NODE_CLASS)
+                            if(parent->get_type() == Node::node_t::NODE_CLASS)
                             {
                                 if(parent->get_string() == resolution->get_string())
                                 {
@@ -381,9 +381,9 @@ bool Compiler::define_function_type(Node::pointer_t function_node)
                                 }
                                 break;
                             }
-                            if(parent->get_type() == Node::NODE_INTERFACE
-                            || parent->get_type() == Node::NODE_PACKAGE
-                            || parent->get_type() == Node::NODE_ROOT)
+                            if(parent->get_type() == Node::node_t::NODE_INTERFACE
+                            || parent->get_type() == Node::node_t::NODE_PACKAGE
+                            || parent->get_type() == Node::node_t::NODE_ROOT)
                             {
                                 break;
                             }
@@ -394,7 +394,7 @@ bool Compiler::define_function_type(Node::pointer_t function_node)
 //fprintf(stderr, "  final function type is:\n");
 //resolution.Display(stderr);
 
-                    function_node->set_link(Node::LINK_TYPE, resolution);
+                    function_node->set_link(Node::link_t::LINK_TYPE, resolution);
                 }
                 break;
             }
@@ -406,7 +406,7 @@ bool Compiler::define_function_type(Node::pointer_t function_node)
         // if no type defined, put a default of Object
         Node::pointer_t object;
         resolve_internal_type(function_node, "Object", object);
-        function_node->set_link(Node::LINK_TYPE, object);
+        function_node->set_link(Node::link_t::LINK_TYPE, object);
     }
 
     return true;
@@ -458,13 +458,13 @@ Node::depth_t Compiler::match_type(Node::pointer_t t1, Node::pointer_t t2)
     }
 
     // special case for function parameters
-    if(t2->get_type() == Node::NODE_PARAM)
+    if(t2->get_type() == Node::node_t::NODE_PARAM)
     {
-        if(t2->get_flag(Node::NODE_PARAMETERS_FLAG_OUT))
+        if(t2->get_flag(Node::flag_attribute_t::NODE_PARAMETERS_FLAG_OUT))
         {
             // t1 MUST be an identifier which references
             // a variable which we can set on exit
-            if(t1->get_type() != Node::NODE_IDENTIFIER)
+            if(t1->get_type() != Node::node_t::NODE_IDENTIFIER)
             {
                 // NOTE: we can't generate an error here
                 //     because there could be another
@@ -481,11 +481,11 @@ Node::depth_t Compiler::match_type(Node::pointer_t t1, Node::pointer_t t2)
         Node::pointer_t id(t2->get_child(0));
         // make sure we have a type definition, if it is
         // only a default set, then it is equal anyway
-        if(id->get_type() == Node::NODE_SET)
+        if(id->get_type() == Node::node_t::NODE_SET)
         {
             return Node::MATCH_LOWEST_DEPTH;
         }
-        Node::pointer_t resolution(id->get_link(Node::LINK_TYPE));
+        Node::pointer_t resolution(id->get_link(Node::link_t::LINK_TYPE));
         if(!resolution)
         {
             if(!resolve_name(t2, id, resolution, Node::pointer_t(), 0))
@@ -495,18 +495,18 @@ Node::depth_t Compiler::match_type(Node::pointer_t t1, Node::pointer_t t2)
 //fprintf(stderr, "   ---> ");
 //resolution.DisplayPtr(stderr);
 //fprintf(stderr, "\n");
-            id->set_link(Node::LINK_TYPE, resolution);
+            id->set_link(Node::link_t::LINK_TYPE, resolution);
         }
         t2 = id;
     }
 
-    Node::pointer_t tp1(t1->get_link(Node::LINK_TYPE));
-    Node::pointer_t tp2(t2->get_link(Node::LINK_TYPE));
+    Node::pointer_t tp1(t1->get_link(Node::link_t::LINK_TYPE));
+    Node::pointer_t tp2(t2->get_link(Node::link_t::LINK_TYPE));
 
     if(!tp1)
     {
         type_expr(t1);
-        tp1 = t1->get_link(Node::LINK_TYPE);
+        tp1 = t1->get_link(Node::link_t::LINK_TYPE);
         if(!tp1)
         {
 //fprintf(stderr, "WARNING: cannot determine the type of the input parameter.\n");
@@ -541,7 +541,7 @@ Node::depth_t Compiler::match_type(Node::pointer_t t1, Node::pointer_t t2)
 
     // Okay, still not equal, check ancestors of tp1 if
     // permitted (and if tp1 is a class).
-    if(tp1->get_type() != Node::NODE_CLASS)
+    if(tp1->get_type() != Node::node_t::NODE_CLASS)
     {
         return Node::MATCH_NOT_FOUND;
     }
@@ -555,12 +555,12 @@ bool Compiler::check_function(Node::pointer_t function_node, Node::pointer_t& re
     // The fact that a function is marked UNUSED should
     // be an error, but overloading prevents us from
     // generating an error here...
-    if(get_attribute(function_node, Node::NODE_ATTR_UNUSED))
+    if(get_attribute(function_node, Node::flag_attribute_t::NODE_ATTR_UNUSED))
     {
         return false;
     }
 
-    if(function_node->get_flag(Node::NODE_FUNCTION_FLAG_GETTER)
+    if(function_node->get_flag(Node::flag_attribute_t::NODE_FUNCTION_FLAG_GETTER)
     && (search_flags & SEARCH_FLAG_GETTER) != 0)
     {
         String getter("->");
@@ -570,7 +570,7 @@ bool Compiler::check_function(Node::pointer_t function_node, Node::pointer_t& re
             return false;
         }
     }
-    else if(function_node->get_flag(Node::NODE_FUNCTION_FLAG_SETTER)
+    else if(function_node->get_flag(Node::flag_attribute_t::NODE_FUNCTION_FLAG_SETTER)
          && (search_flags & SEARCH_FLAG_SETTER) != 0)
     {
         String setter("<-");
@@ -598,8 +598,8 @@ func.Display(stderr);
     if(!params)
     {
         // getters and setters do not have parameters
-        if(function_node->get_flag(Node::NODE_FUNCTION_FLAG_GETTER)
-        || function_node->get_flag(Node::NODE_FUNCTION_FLAG_SETTER))
+        if(function_node->get_flag(Node::flag_attribute_t::NODE_FUNCTION_FLAG_GETTER)
+        || function_node->get_flag(Node::flag_attribute_t::NODE_FUNCTION_FLAG_SETTER))
         {
             // warning: we have to check whether we hit a constructor
             //          before to generate an error
@@ -631,8 +631,8 @@ int Compiler::check_function_with_params(Node::pointer_t function_node, Node::po
         return 0;
     }
 
-    Node::pointer_t match(function_node->create_replacement(Node::NODE_PARAM_MATCH));
-    match->set_link(Node::LINK_INSTANCE, function_node);
+    Node::pointer_t match(function_node->create_replacement(Node::node_t::NODE_PARAM_MATCH));
+    match->set_link(Node::link_t::LINK_INSTANCE, function_node);
 
     // define the type of the function when not available yet
     if(!define_function_type(function_node))
@@ -651,13 +651,13 @@ int Compiler::check_function_with_params(Node::pointer_t function_node, Node::po
     {
         // no parameters; check whether the user specifically
         // used void or Void as the list of parameters
-        if(!function_node->get_flag(Node::NODE_FUNCTION_FLAG_NOPARAMS))
+        if(!function_node->get_flag(Node::flag_attribute_t::NODE_FUNCTION_FLAG_NOPARAMS))
         {
             // TODO:
             // this function accepts whatever
             // however, the function wasn't marked as such and
             // therefore we could warn about this...
-            match->set_flag(Node::NODE_PARAM_MATCH_FLAG_UNPROTOTYPED, true);
+            match->set_flag(Node::flag_attribute_t::NODE_PARAM_MATCH_FLAG_UNPROTOTYPED, true);
             params->append_child(match);
             return 0;
         }
@@ -673,9 +673,9 @@ int Compiler::check_function_with_params(Node::pointer_t function_node, Node::po
 
     NodeLock ln_function(function_node);
     Node::pointer_t parameters_node(function_node->get_child(0));
-    if(parameters_node->get_type() != Node::NODE_PARAMETERS)
+    if(parameters_node->get_type() != Node::node_t::NODE_PARAMETERS)
     {
-        match->set_flag(Node::NODE_PARAM_MATCH_FLAG_UNPROTOTYPED, true);
+        match->set_flag(Node::flag_attribute_t::NODE_PARAM_MATCH_FLAG_UNPROTOTYPED, true);
         params->append_child(match);
         return 0;
     }
@@ -698,10 +698,10 @@ int Compiler::check_function_with_params(Node::pointer_t function_node, Node::po
     // check whether the user marked the function as unprototyped;
     // if so, then we are done
     Node::pointer_t unproto(parameters_node->get_child(0));
-    if(unproto->get_flag(Node::NODE_PARAMETERS_FLAG_UNPROTOTYPED))
+    if(unproto->get_flag(Node::flag_attribute_t::NODE_PARAMETERS_FLAG_UNPROTOTYPED))
     {
         // this function is marked to accept whatever
-        match->set_flag(Node::NODE_PARAM_MATCH_FLAG_UNPROTOTYPED, true);
+        match->set_flag(Node::flag_attribute_t::NODE_PARAM_MATCH_FLAG_UNPROTOTYPED, true);
         params->append_child(match);
         return 0;
     }
@@ -728,7 +728,7 @@ fprintf(stderr, ")\n");
     for(idx = 0; idx < count; ++idx)
     {
         Node::pointer_t p(params->get_child(idx));
-        if(p->get_type() == Node::NODE_PARAM_MATCH)
+        if(p->get_type() == Node::node_t::NODE_PARAM_MATCH)
         {
             // skip NODE_PARAM_MATCH etnries
 //fprintf(stderr, "Skipping entry %d since it is a PARAM MATCH\n", idx);
@@ -740,7 +740,7 @@ fprintf(stderr, ")\n");
         for(size_t c(0); c < cm; ++c)
         {
             Node::pointer_t child(p->get_child(c));
-            if(child->get_type() == Node::NODE_NAME)
+            if(child->get_type() == Node::node_t::NODE_NAME)
             {
                 // the parameter name is specified
                 if(child->get_children_size() != 1)
@@ -751,7 +751,7 @@ fprintf(stderr, ")\n");
                     return -1;
                 }
                 Node::pointer_t name_node(child->get_child(0));
-                if(name_node->get_type() != Node::NODE_IDENTIFIER)
+                if(name_node->get_type() != Node::node_t::NODE_IDENTIFIER)
                 {
                     Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INTERNAL_ERROR, function_node->get_position());
                     msg << "the name of a parameter needs to be an identifier.";
@@ -787,7 +787,7 @@ fprintf(stderr, ")\n");
             // if already used, make sure it is a REST node
             if(match->get_param_depth(j) != Node::MATCH_NOT_FOUND)
             {
-                if(fp->get_flag(Node::NODE_PARAMETERS_FLAG_REST))
+                if(fp->get_flag(Node::flag_attribute_t::NODE_PARAMETERS_FLAG_REST))
                 {
                     Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_FIELD_NAME, function_node->get_position());
                     msg << "function parameter name '" << name << "' already used & not a 'rest' (...).";
@@ -819,7 +819,7 @@ std::cerr << "Found by name [" << name << "] at position " << j << "\n";
                 // check whether the last parameter
                 // is of type REST
                 fp = parameters_node->get_child(max_parameters - 1);
-                if(fp->get_flag(Node::NODE_PARAMETERS_FLAG_REST))
+                if(fp->get_flag(Node::flag_attribute_t::NODE_PARAMETERS_FLAG_REST))
                 {
                     // parameters in the function list
                     // of params are all used up!
@@ -869,15 +869,15 @@ params->Display(stderr);
             match->set_param_index(idx, j);
             idx++;
             Node::pointer_t param(parameters_node->get_child(j));
-            if(param->get_flag(Node::NODE_PARAMETERS_FLAG_UNCHECKED)
-            || param->get_flag(Node::NODE_PARAMETERS_FLAG_REST))
+            if(param->get_flag(Node::flag_attribute_t::NODE_PARAMETERS_FLAG_UNCHECKED)
+            || param->get_flag(Node::flag_attribute_t::NODE_PARAMETERS_FLAG_REST))
             {
                 Node::pointer_t set;
                 size_t cnt(param->get_children_size());
                 for(size_t k(0); k < cnt; ++k)
                 {
                     Node::pointer_t child(param->get_child(k));
-                    if(child->get_type() == Node::NODE_SET)
+                    if(child->get_type() == Node::node_t::NODE_SET)
                     {
                         set = child;
                         break;
@@ -1025,7 +1025,7 @@ bool Compiler::select_best_func(Node::pointer_t params, Node::pointer_t& resolut
     while(idx < max_children)
     {
         Node::pointer_t match(params->get_child(idx));
-        if(match->get_type() == Node::NODE_PARAM_MATCH)
+        if(match->get_type() == Node::node_t::NODE_PARAM_MATCH)
         {
             if(best)
             {
@@ -1068,7 +1068,7 @@ bool Compiler::select_best_func(Node::pointer_t params, Node::pointer_t& resolut
     if(found)
     {
         // we found a better one! and no error occured
-        resolution = best->get_link(Node::LINK_INSTANCE);
+        resolution = best->get_link(Node::link_t::LINK_INSTANCE);
     }
 
     return found;
@@ -1082,13 +1082,13 @@ bool Compiler::funcs_name(int& funcs, Node::pointer_t resolution, bool const inc
         return true;
     }
 
-    if(resolution->get_type() != Node::NODE_FUNCTION)
+    if(resolution->get_type() != Node::node_t::NODE_FUNCTION)
     {
         // TODO: do we really ignore those?!
         return funcs == 0;
     }
-    if(resolution->get_flag(Node::NODE_FUNCTION_FLAG_GETTER)
-    || resolution->get_flag(Node::NODE_FUNCTION_FLAG_SETTER))
+    if(resolution->get_flag(Node::flag_attribute_t::NODE_FUNCTION_FLAG_GETTER)
+    || resolution->get_flag(Node::flag_attribute_t::NODE_FUNCTION_FLAG_SETTER))
     {
         // this is viewed as a variable; also, there is no
         // parameters to a getter and thus no way to overload
@@ -1118,7 +1118,7 @@ void Compiler::call_add_missing_params(Node::pointer_t call, Node::pointer_t par
     // if we have a parameter match, it has to be at the end
     --idx;
     Node::pointer_t match(params->get_child(idx));
-    if(match->get_type() != Node::NODE_PARAM_MATCH)
+    if(match->get_type() != Node::node_t::NODE_PARAM_MATCH)
     {
         // Not a param match with a valid best match?!
         throw exception_internal_error("call_add_missing_params() called when the list of parameters do not include a NODE_PARAM_MATCH");
@@ -1145,13 +1145,13 @@ fprintf(stderr, "\n\n");
     if(idx < size)
     {
         // get the list of parameters of the function
-        Node::pointer_t function_node(call->get_link(Node::LINK_INSTANCE));
+        Node::pointer_t function_node(call->get_link(Node::link_t::LINK_INSTANCE));
         if(!function_node)
         {
             // should never happen
             return;
         }
-        Node::pointer_t parameters_node(function_node->find_first_child(Node::NODE_PARAMETERS));
+        Node::pointer_t parameters_node(function_node->find_first_child(Node::node_t::NODE_PARAMETERS));
         if(!parameters_node)
         {
             // should never happen
@@ -1173,12 +1173,12 @@ fprintf(stderr, "\n\n");
             for(size_t k(0); k < cnt; ++k)
             {
                 Node::pointer_t set(param->get_child(k));
-                if(set->get_type() == Node::NODE_SET
+                if(set->get_type() == Node::node_t::NODE_SET
                 && set->get_children_size() > 0)
                 {
                     has_set = true;
-                    Node::pointer_t auto_param(call->create_replacement(Node::NODE_AUTO));
-                    auto_param->set_link(Node::LINK_INSTANCE, set->get_child(0));
+                    Node::pointer_t auto_param(call->create_replacement(Node::node_t::NODE_AUTO));
+                    auto_param->set_link(Node::link_t::LINK_INSTANCE, set->get_child(0));
                     params->append_child(auto_param);
                     break;
                 }
@@ -1188,7 +1188,7 @@ fprintf(stderr, "\n\n");
                 // although it should be automatic we actually force
                 // the undefined value here (we can optimize it out on
                 // output later)
-                Node::pointer_t undefined(call->create_replacement(Node::NODE_UNDEFINED));
+                Node::pointer_t undefined(call->create_replacement(Node::node_t::NODE_UNDEFINED));
                 params->append_child(undefined);
             }
             idx++;
@@ -1227,7 +1227,7 @@ bool Compiler::resolve_call(Node::pointer_t call)
     Node::pointer_t id(call->get_child(0));
 
     // if possible, resolve the function name
-    if(id->get_type() != Node::NODE_IDENTIFIER)
+    if(id->get_type() != Node::node_t::NODE_IDENTIFIER)
     {
         // a dynamic expression cannot always be
         // resolved at compile time
@@ -1239,14 +1239,14 @@ bool Compiler::resolve_call(Node::pointer_t call)
         if(params_count > 0)
         {
             Node::pointer_t last(expr_params->get_child(params_count - 1));
-            if(last->get_type() == Node::NODE_PARAM_MATCH)
+            if(last->get_type() == Node::node_t::NODE_PARAM_MATCH)
             {
                 expr_params->delete_child(params_count - 1);
             }
         }
 
-        Node::pointer_t type(id->get_link(Node::LINK_TYPE));
-        call->set_link(Node::LINK_TYPE, type);
+        Node::pointer_t type(id->get_link(Node::link_t::LINK_TYPE));
+        call->set_link(Node::link_t::LINK_TYPE, type);
 
         return false;
     }
@@ -1260,8 +1260,8 @@ bool Compiler::resolve_call(Node::pointer_t call)
     if(resolve_name(id, id, resolution, params, SEARCH_FLAG_GETTER))
     {
 //fprintf(stderr, "Cool! identifier found [%s]\n", name.f_str.GetUTF8());
-        if(resolution->get_type() == Node::NODE_CLASS
-        || resolution->get_type() == Node::NODE_INTERFACE)
+        if(resolution->get_type() == Node::node_t::NODE_CLASS
+        || resolution->get_type() == Node::node_t::NODE_INTERFACE)
         {
             // this looks like a cast, but if the parent is
             // the NEW operator, then it is really a call!
@@ -1274,19 +1274,19 @@ bool Compiler::resolve_call(Node::pointer_t call)
             call->delete_child(0);    // 1 is now 0
             call->append_child(expr);
             call->append_child(type);
-            type->set_link(Node::LINK_INSTANCE, resolution);
+            type->set_link(Node::link_t::LINK_INSTANCE, resolution);
             call->to_as();
             return true;
         }
-        else if(resolution->get_type() == Node::NODE_VARIABLE)
+        else if(resolution->get_type() == Node::node_t::NODE_VARIABLE)
         {
             // if it is a variable, we need to test
             // the type for a "()" operator
 //fprintf(stderr, "Looking for a '()' operator\n");
-            Node::pointer_t var_class(resolution->get_link(Node::LINK_TYPE));
+            Node::pointer_t var_class(resolution->get_link(Node::link_t::LINK_TYPE));
             if(var_class)
             {
-                id->set_link(Node::LINK_INSTANCE, var_class);
+                id->set_link(Node::link_t::LINK_INSTANCE, var_class);
                 // search for a function named "()"
                 //NodePtr l;
                 //l.CreateNode(NODE_IDENTIFIER);
@@ -1298,7 +1298,7 @@ bool Compiler::resolve_call(Node::pointer_t call)
                 //NodePtr op_params;
                 //op_params.CreateNode(NODE_LIST);
                 //op_params.AddChild(l);
-                Node::pointer_t op(call->create_replacement(Node::NODE_IDENTIFIER));
+                Node::pointer_t op(call->create_replacement(Node::node_t::NODE_IDENTIFIER));
                 op->set_string("()");
                 op->append_child(all_params);
                 Node::pointer_t func;
@@ -1312,7 +1312,7 @@ bool Compiler::resolve_call(Node::pointer_t call)
                 {
                     resolution = func;
                     Node::pointer_t identifier(id);
-                    Node::pointer_t member(call->create_replacement(Node::NODE_MEMBER));
+                    Node::pointer_t member(call->create_replacement(Node::node_t::NODE_MEMBER));
                     call->set_child(0, member);
                     op->delete_child(0);
                     if(call->get_children_size() > 1)
@@ -1339,7 +1339,7 @@ bool Compiler::resolve_call(Node::pointer_t call)
                 msg << "getters and setters not supported yet (what is that error message saying?!).";
             }
         }
-        else if(resolution->get_type() != Node::NODE_FUNCTION)
+        else if(resolution->get_type() != Node::node_t::NODE_FUNCTION)
         {
             Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_TYPE, id->get_position());
             msg << "'" << id->get_string() << "' was expected to be a type, a variable or a function.";
@@ -1360,17 +1360,17 @@ bool Compiler::resolve_call(Node::pointer_t call)
         {
             ln.unlock();
             Node::pointer_t identifier(id);
-            Node::pointer_t member(call->create_replacement(Node::NODE_MEMBER));
+            Node::pointer_t member(call->create_replacement(Node::node_t::NODE_MEMBER));
             call->set_child(0, member);
-            Node::pointer_t this_expr(call->create_replacement(Node::NODE_THIS));
+            Node::pointer_t this_expr(call->create_replacement(Node::node_t::NODE_THIS));
             member->append_child(this_expr);
             member->append_child(identifier);
         }
-        call->set_link(Node::LINK_INSTANCE, resolution);
-        Node::pointer_t type(resolution->get_link(Node::LINK_TYPE));
+        call->set_link(Node::link_t::LINK_INSTANCE, resolution);
+        Node::pointer_t type(resolution->get_link(Node::link_t::LINK_TYPE));
         if(type)
         {
-            call->set_link(Node::LINK_TYPE, type);
+            call->set_link(Node::link_t::LINK_TYPE, type);
         }
         call_add_missing_params(call, params);
         return true;
@@ -1398,9 +1398,9 @@ bool Compiler::find_final_functions(Node::pointer_t& function_node, Node::pointe
         Node::pointer_t child(super->get_child(idx));
         switch(child->get_type())
         {
-        case Node::NODE_EXTENDS:
+        case Node::node_t::NODE_EXTENDS:
         {
-            Node::pointer_t next_super(child->get_link(Node::LINK_INSTANCE));
+            Node::pointer_t next_super(child->get_link(Node::link_t::LINK_INSTANCE));
             if(next_super)
             {
                 if(find_final_functions(function_node, next_super)) // recursive
@@ -1411,21 +1411,21 @@ bool Compiler::find_final_functions(Node::pointer_t& function_node, Node::pointe
         }
             break;
 
-        case Node::NODE_DIRECTIVE_LIST:
+        case Node::node_t::NODE_DIRECTIVE_LIST:
             if(find_final_functions(function_node, child)) // recursive
             {
                 return true;
             }
             break;
 
-        case Node::NODE_FUNCTION:
+        case Node::node_t::NODE_FUNCTION:
             // TBD: are we not also expected to check the number of
             //      parameter to know that it is the same function?
             //      (see compare_parameters() below)
             if(function_node->get_string() == child->get_string())
             {
                 // we found a function of the same name
-                if(get_attribute(child, Node::NODE_ATTR_FINAL))
+                if(get_attribute(child, Node::flag_attribute_t::NODE_ATTR_FINAL))
                 {
                     // Ooops! it was final...
                     return true;
@@ -1459,13 +1459,13 @@ bool Compiler::check_final_functions(Node::pointer_t& function_node, Node::point
         // TODO: we most certainly can support more than one extend in
         //       JavaScript, although it is not 100% clean, but we can
         //       make it work so we will have to enhance this test
-        if(child->get_type() == Node::NODE_EXTENDS
+        if(child->get_type() == Node::node_t::NODE_EXTENDS
         && child->get_children_size() > 0)
         {
             // this points to another class which may define
             // the same function as final
             Node::pointer_t name(child->get_child(0));
-            Node::pointer_t super(name->get_link(Node::LINK_INSTANCE));
+            Node::pointer_t super(name->get_link(Node::link_t::LINK_INSTANCE));
             if(super)
             {
                 return find_final_functions(function_node, super);
@@ -1481,8 +1481,8 @@ bool Compiler::check_final_functions(Node::pointer_t& function_node, Node::point
 bool Compiler::compare_parameters(Node::pointer_t& lfunction, Node::pointer_t& rfunction)
 {
     // search for the list of parameters in each function
-    Node::pointer_t lparams(lfunction->find_first_child(Node::NODE_PARAMETERS));
-    Node::pointer_t rparams(rfunction->find_first_child(Node::NODE_PARAMETERS));
+    Node::pointer_t lparams(lfunction->find_first_child(Node::node_t::NODE_PARAMETERS));
+    Node::pointer_t rparams(rfunction->find_first_child(Node::node_t::NODE_PARAMETERS));
 
     // get the number of parameters in each list
     size_t const lmax(lparams ? lparams->get_children_size() : 0);
@@ -1507,8 +1507,8 @@ bool Compiler::compare_parameters(Node::pointer_t& lfunction, Node::pointer_t& r
         Node::pointer_t r(rp->get_child(0));
         // We can directly compare strings and identifiers
         // Anything else fails meaning that we consider them equal
-        if((l->get_type() != Node::NODE_IDENTIFIER && l->get_type() != Node::NODE_STRING)
-        || (r->get_type() != Node::NODE_IDENTIFIER && r->get_type() != Node::NODE_STRING))
+        if((l->get_type() != Node::node_t::NODE_IDENTIFIER && l->get_type() != Node::node_t::NODE_STRING)
+        || (r->get_type() != Node::node_t::NODE_IDENTIFIER && r->get_type() != Node::node_t::NODE_STRING))
         {
             // if we cannot compare at compile time,
             // we consider the types as equal... (i.e. match!)
@@ -1533,7 +1533,7 @@ bool Compiler::check_unique_functions(Node::pointer_t function_node, Node::point
         Node::pointer_t child(class_node->get_child(idx));
         switch(child->get_type())
         {
-        case Node::NODE_DIRECTIVE_LIST:
+        case Node::node_t::NODE_DIRECTIVE_LIST:
             if(all_levels)
             {
                 if(check_unique_functions(function_node, child, true)) // recursive
@@ -1543,7 +1543,7 @@ bool Compiler::check_unique_functions(Node::pointer_t function_node, Node::point
             }
             break;
 
-        case Node::NODE_FUNCTION:
+        case Node::node_t::NODE_FUNCTION:
             // TODO: stop recursion properly
             //
             // this condition is not enough to stop this
@@ -1568,7 +1568,7 @@ bool Compiler::check_unique_functions(Node::pointer_t function_node, Node::point
             }
             break;
 
-        case Node::NODE_VAR:
+        case Node::node_t::NODE_VAR:
         {
             size_t const cnt(child->get_children_size());
             for(size_t j(0); j < cnt; ++j)

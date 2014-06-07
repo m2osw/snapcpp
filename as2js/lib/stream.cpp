@@ -897,7 +897,7 @@ void StandardOutput::internal_write(String const& data)
         // should we do something here?
         Message msg(MESSAGE_LEVEL_FATAL, AS_ERR_IO_ERROR, get_position());
         msg << "I/O error: could not write to output.";
-        exit(1);
+        throw exception_exit(1, "I/O error: could not write to output.");
     }
 }
 
@@ -961,7 +961,7 @@ void FileOutput::internal_write(String const& data)
         // should we do something here?
         Message msg(MESSAGE_LEVEL_FATAL, AS_ERR_IO_ERROR, get_position());
         msg << "I/O error: could not write to output.";
-        exit(1);
+        throw exception_exit(1, "I/O error: could not write to output.");
     }
 }
 

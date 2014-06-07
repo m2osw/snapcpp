@@ -45,14 +45,14 @@ namespace as2js
 
 
 JSON::JSONValue::JSONValue(Position const &position)
-    : f_type(static_cast<int32_t>(JSON_TYPE_NULL))
+    : f_type(JSON_TYPE_NULL)
     , f_position(position)
 {
 }
 
 
 JSON::JSONValue::JSONValue(Position const &position, Int64 integer)
-    : f_type(static_cast<int32_t>(JSON_TYPE_INT64))
+    : f_type(JSON_TYPE_INT64)
     , f_position(position)
     , f_integer(integer)
 {
@@ -60,7 +60,7 @@ JSON::JSONValue::JSONValue(Position const &position, Int64 integer)
 
 
 JSON::JSONValue::JSONValue(Position const &position, Float64 floating_point)
-    : f_type(static_cast<int32_t>(JSON_TYPE_FLOAT64))
+    : f_type(JSON_TYPE_FLOAT64)
     , f_position(position)
     , f_float(floating_point)
 {
@@ -68,7 +68,7 @@ JSON::JSONValue::JSONValue(Position const &position, Float64 floating_point)
 
 
 JSON::JSONValue::JSONValue(Position const &position, String const& string)
-    : f_type(static_cast<int32_t>(JSON_TYPE_STRING))
+    : f_type(JSON_TYPE_STRING)
     , f_position(position)
     , f_string(string)
 {
@@ -76,14 +76,14 @@ JSON::JSONValue::JSONValue(Position const &position, String const& string)
 
 
 JSON::JSONValue::JSONValue(Position const &position, bool boolean)
-    : f_type(static_cast<int32_t>(boolean ? JSON_TYPE_TRUE : JSON_TYPE_FALSE))
+    : f_type(boolean ? JSON_TYPE_TRUE : JSON_TYPE_FALSE)
     , f_position(position)
 {
 }
 
 
 JSON::JSONValue::JSONValue(Position const &position, array_t const& array)
-    : f_type(static_cast<int32_t>(JSON_TYPE_ARRAY))
+    : f_type(JSON_TYPE_ARRAY)
     , f_position(position)
     , f_array(array)
 {
@@ -91,7 +91,7 @@ JSON::JSONValue::JSONValue(Position const &position, array_t const& array)
 
 
 JSON::JSONValue::JSONValue(Position const &position, object_t const& object)
-    : f_type(static_cast<int32_t>(JSON_TYPE_OBJECT))
+    : f_type(JSON_TYPE_OBJECT)
     , f_position(position)
     , f_object(object)
 {
@@ -297,25 +297,25 @@ JSON::JSONValue::pointer_t JSON::read_json_value()
     for(;;)
     {
         Node::pointer_t n(f_lexer->get_next_token());
-        if(n->get_type() == Node::NODE_EOF)
+        if(n->get_type() == Node::node_t::NODE_EOF)
         {
             return JSONValue::pointer_t();
         }
         switch(n->get_type())
         {
-        case Node::NODE_FALSE:
+        case Node::node_t::NODE_FALSE:
             return JSONValue::pointer_t(new JSONValue(f_lexer->get_input()->get_position(), false));
 
-        case Node::NODE_FLOAT64:
+        case Node::node_t::NODE_FLOAT64:
             return JSONValue::pointer_t(new JSONValue(f_lexer->get_input()->get_position(), n->get_float64()));
 
-        case Node::NODE_INT64:
+        case Node::node_t::NODE_INT64:
             return JSONValue::pointer_t(new JSONValue(f_lexer->get_input()->get_position(), n->get_int64()));
 
-        case Node::NODE_NULL:
+        case Node::node_t::NODE_NULL:
             return JSONValue::pointer_t(new JSONValue(f_lexer->get_input()->get_position()));
 
-        case Node::NODE_OPEN_CURVLY_BRACKET: // read an object
+        case Node::node_t::NODE_OPEN_CURVLY_BRACKET: // read an object
             {
                 JSONValue::object_t obj;
 
@@ -323,11 +323,11 @@ JSON::JSONValue::pointer_t JSON::read_json_value()
                 for(;;)
                 {
                     n = f_lexer->get_next_token();
-                    if(n->get_type() == Node::NODE_CLOSE_CURVLY_BRACKET)
+                    if(n->get_type() == Node::node_t::NODE_CLOSE_CURVLY_BRACKET)
                     {
                         break;
                     }
-                    if(n->get_type() != Node::NODE_STRING)
+                    if(n->get_type() != Node::node_t::NODE_STRING)
                     {
                         Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_STRING_EXPECTED, f_lexer->get_input()->get_position());
                         msg << "expected a string as the JSON object member name";
@@ -335,7 +335,7 @@ JSON::JSONValue::pointer_t JSON::read_json_value()
                     }
                     String name(n->get_string());
                     n = f_lexer->get_next_token();
-                    if(n->get_type() != Node::NODE_COLON)
+                    if(n->get_type() != Node::node_t::NODE_COLON)
                     {
                         Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_COLON_EXPECTED, f_lexer->get_input()->get_position());
                         msg << "expected a colon (:) as the JSON object member name and member value separator";
@@ -366,7 +366,7 @@ JSON::JSONValue::pointer_t JSON::read_json_value()
             }
             break;
 
-        case Node::NODE_OPEN_SQUARE_BRACKET: // read an array
+        case Node::node_t::NODE_OPEN_SQUARE_BRACKET: // read an array
             {
                 JSONValue::array_t array;
 
@@ -374,7 +374,7 @@ JSON::JSONValue::pointer_t JSON::read_json_value()
                 for(;;)
                 {
                     n = f_lexer->get_next_token();
-                    if(n->get_type() == Node::NODE_CLOSE_SQUARE_BRACKET)
+                    if(n->get_type() == Node::node_t::NODE_CLOSE_SQUARE_BRACKET)
                     {
                         break;
                     }
@@ -391,10 +391,10 @@ JSON::JSONValue::pointer_t JSON::read_json_value()
             }
             break;
 
-        case Node::NODE_STRING:
+        case Node::node_t::NODE_STRING:
             return JSONValue::pointer_t(new JSONValue(f_lexer->get_input()->get_position(), n->get_string()));
 
-        case Node::NODE_TRUE:
+        case Node::node_t::NODE_TRUE:
             return JSONValue::pointer_t(new JSONValue(f_lexer->get_input()->get_position(), true));
 
         default:

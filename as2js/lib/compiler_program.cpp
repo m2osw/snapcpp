@@ -65,7 +65,7 @@ std::cerr << program_node;
     for(size_t idx(0); idx < org_max; ++idx)
     {
         Node::pointer_t child(program_node->get_child(idx));
-        if(get_attribute(child, Node::NODE_ATTR_FALSE))
+        if(get_attribute(child, Node::flag_attribute_t::NODE_ATTR_FALSE))
         {
             child->to_unknown();
         }
@@ -78,7 +78,7 @@ std::cerr << program_node;
     for(size_t idx(0); idx < org_max; ++idx)
     {
         Node::pointer_t child(program_node->get_child(idx));
-        if(child->get_type() == Node::NODE_DIRECTIVE_LIST)
+        if(child->get_type() == Node::node_t::NODE_DIRECTIVE_LIST)
         {
             find_labels(program_node, child);
         }
@@ -89,7 +89,7 @@ std::cerr << program_node;
     for(size_t idx(0); idx < org_max; ++idx)
     {
         Node::pointer_t child(program_node->get_child(idx));
-        if(child->get_type() == Node::NODE_DIRECTIVE_LIST)
+        if(child->get_type() == Node::node_t::NODE_DIRECTIVE_LIST)
         {
             directive_list(child);
         }

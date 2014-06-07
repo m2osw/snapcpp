@@ -37,7 +37,7 @@ SOFTWARE.
 #include    "as2js/message.h"
 #include    "as2js/exceptions.h"
 
-#include    <controlled_vars/controlled_vars_no_init.h>
+#include    <controlled_vars/controlled_vars_no_enum_init.h>
 
 #include    <math.h>
 
@@ -114,7 +114,7 @@ void Optimizer::run(Node::pointer_t& node)
 {
     // accept empty nodes, just ignore them
     if(!node
-    || node->get_type() == Node::NODE_UNKNOWN)
+    || node->get_type() == Node::node_t::NODE_UNKNOWN)
     {
         return;
     }
@@ -129,160 +129,160 @@ void Optimizer::run(Node::pointer_t& node)
 
     switch(node->get_type())
     {
-    case Node::NODE_DIRECTIVE_LIST:
+    case Node::node_t::NODE_DIRECTIVE_LIST:
         directive_list(node);
         break;
 
-    case Node::NODE_IF:
+    case Node::node_t::NODE_IF:
         if_directive(node);
         break;
 
-    case Node::NODE_WHILE:
+    case Node::node_t::NODE_WHILE:
         while_directive(node);
         break;
 
-    case Node::NODE_DO:
+    case Node::node_t::NODE_DO:
         do_directive(node);
         break;
 
-    case Node::NODE_ASSIGNMENT:
+    case Node::node_t::NODE_ASSIGNMENT:
         assignment(node);
         break;
 
-    case Node::NODE_ASSIGNMENT_ADD:
-    case Node::NODE_ASSIGNMENT_SUBTRACT:
+    case Node::node_t::NODE_ASSIGNMENT_ADD:
+    case Node::node_t::NODE_ASSIGNMENT_SUBTRACT:
         assignment_add(node);
         break;
 
-    case Node::NODE_ASSIGNMENT_MULTIPLY:
+    case Node::node_t::NODE_ASSIGNMENT_MULTIPLY:
         assignment_multiply(node);
         break;
 
-    case Node::NODE_ASSIGNMENT_DIVIDE:
+    case Node::node_t::NODE_ASSIGNMENT_DIVIDE:
         assignment_divide(node);
         break;
 
-    case Node::NODE_ASSIGNMENT_MODULO:
+    case Node::node_t::NODE_ASSIGNMENT_MODULO:
         assignment_modulo(node);
         break;
 
-    case Node::NODE_BITWISE_NOT:
+    case Node::node_t::NODE_BITWISE_NOT:
         bitwise_not(node);
         break;
 
-    case Node::NODE_LOGICAL_NOT:
+    case Node::node_t::NODE_LOGICAL_NOT:
         logical_not(node);
         break;
 
-    case Node::NODE_POWER:
+    case Node::node_t::NODE_POWER:
         power(node);
         break;
 
-    case Node::NODE_MULTIPLY:
+    case Node::node_t::NODE_MULTIPLY:
         multiply(node);
         break;
 
-    case Node::NODE_DIVIDE:
+    case Node::node_t::NODE_DIVIDE:
         divide(node);
         break;
 
-    case Node::NODE_MODULO:
+    case Node::node_t::NODE_MODULO:
         modulo(node);
         break;
 
-    case Node::NODE_ADD:
+    case Node::node_t::NODE_ADD:
         add(node);
         break;
 
-    case Node::NODE_SUBTRACT:
+    case Node::node_t::NODE_SUBTRACT:
         subtract(node);
         break;
 
-    case Node::NODE_SHIFT_LEFT:
+    case Node::node_t::NODE_SHIFT_LEFT:
         shift_left(node);
         break;
 
-    case Node::NODE_SHIFT_RIGHT:
+    case Node::node_t::NODE_SHIFT_RIGHT:
         shift_right(node);
         break;
 
-    case Node::NODE_SHIFT_RIGHT_UNSIGNED:
+    case Node::node_t::NODE_SHIFT_RIGHT_UNSIGNED:
         shift_right_unsigned(node);
         break;
 
-    case Node::NODE_ROTATE_LEFT:
+    case Node::node_t::NODE_ROTATE_LEFT:
         rotate_left(node);
         break;
 
-    case Node::NODE_ROTATE_RIGHT:
+    case Node::node_t::NODE_ROTATE_RIGHT:
         rotate_right(node);
         break;
 
-    case Node::NODE_LESS:
+    case Node::node_t::NODE_LESS:
         less(node);
         break;
 
-    case Node::NODE_LESS_EQUAL:
+    case Node::node_t::NODE_LESS_EQUAL:
         less_equal(node);
         break;
 
-    case Node::NODE_GREATER:
+    case Node::node_t::NODE_GREATER:
         greater(node);
         break;
 
-    case Node::NODE_GREATER_EQUAL:
+    case Node::node_t::NODE_GREATER_EQUAL:
         greater_equal(node);
         break;
 
-    case Node::NODE_EQUAL:
+    case Node::node_t::NODE_EQUAL:
         equality(node, false, false);
         break;
 
-    case Node::NODE_STRICTLY_EQUAL:
+    case Node::node_t::NODE_STRICTLY_EQUAL:
         equality(node, true, false);
         break;
 
-    case Node::NODE_NOT_EQUAL:
+    case Node::node_t::NODE_NOT_EQUAL:
         equality(node, false, true);
         break;
 
-    case Node::NODE_STRICTLY_NOT_EQUAL:
+    case Node::node_t::NODE_STRICTLY_NOT_EQUAL:
         equality(node, true, true);
         break;
 
-    case Node::NODE_BITWISE_AND:
+    case Node::node_t::NODE_BITWISE_AND:
         bitwise_and(node);
         break;
 
-    case Node::NODE_BITWISE_XOR:
+    case Node::node_t::NODE_BITWISE_XOR:
         bitwise_xor(node);
         break;
 
-    case Node::NODE_BITWISE_OR:
+    case Node::node_t::NODE_BITWISE_OR:
         bitwise_or(node);
         break;
 
-    case Node::NODE_LOGICAL_AND:
+    case Node::node_t::NODE_LOGICAL_AND:
         logical_and(node);
         break;
 
-    case Node::NODE_LOGICAL_XOR:
+    case Node::node_t::NODE_LOGICAL_XOR:
         logical_xor(node);
         break;
 
-    case Node::NODE_LOGICAL_OR:
+    case Node::node_t::NODE_LOGICAL_OR:
         logical_or(node);
         break;
 
-    case Node::NODE_MAXIMUM:
+    case Node::node_t::NODE_MAXIMUM:
         maximum(node);
         break;
 
-    case Node::NODE_MINIMUM:
+    case Node::node_t::NODE_MINIMUM:
         minimum(node);
         break;
 
-    case Node::NODE_CONDITIONAL:
+    case Node::node_t::NODE_CONDITIONAL:
         conditional(node);
         break;
 
@@ -300,8 +300,8 @@ void Optimizer::directive_list(Node::pointer_t& list)
     for(size_t idx(0); idx < max; ++idx)
     {
         Node::pointer_t child(list->get_child(idx));
-        if(child->get_type() == Node::NODE_IDENTIFIER
-        && child->get_link(Node::LINK_INSTANCE))
+        if(child->get_type() == Node::node_t::NODE_IDENTIFIER
+        && child->get_link(Node::link_t::LINK_INSTANCE))
         {
             // TBD: At this point I do not recall what this represents...
             //      (I think child would be an unused type)
@@ -321,11 +321,11 @@ void Optimizer::condition_double_logical_not(Node::pointer_t& condition)
     // Reduce double '!'
     //   !!a, !!!!a, !!!!!!a, etc.
     //
-    while(condition->get_type() == Node::NODE_LOGICAL_NOT
+    while(condition->get_type() == Node::node_t::NODE_LOGICAL_NOT
        && condition->get_children_size() == 1)
     {
         Node::pointer_t sub_expr(condition->get_child(0));
-        if(sub_expr->get_type() == Node::NODE_LOGICAL_NOT
+        if(sub_expr->get_type() == Node::node_t::NODE_LOGICAL_NOT
         && sub_expr->get_children_size() == 1)
         {
             // Source:
@@ -439,10 +439,10 @@ void Optimizer::while_directive(Node::pointer_t& while_node)
             //
             // create a forever loop
             //
-            Node::pointer_t forever(while_node->create_replacement(Node::NODE_FOR));
-            forever->append_child(while_node->create_replacement(Node::NODE_EMPTY));
-            forever->append_child(while_node->create_replacement(Node::NODE_EMPTY));
-            forever->append_child(while_node->create_replacement(Node::NODE_EMPTY));
+            Node::pointer_t forever(while_node->create_replacement(Node::node_t::NODE_FOR));
+            forever->append_child(while_node->create_replacement(Node::node_t::NODE_EMPTY));
+            forever->append_child(while_node->create_replacement(Node::node_t::NODE_EMPTY));
+            forever->append_child(while_node->create_replacement(Node::node_t::NODE_EMPTY));
             forever->append_child(while_node->get_child(1));
             while_node->replace_with(forever);
         }
@@ -501,10 +501,10 @@ void Optimizer::do_directive(Node::pointer_t& do_node)
             //
             // create a forever loop
             //
-            Node::pointer_t forever(do_node->create_replacement(Node::NODE_FOR));
-            forever->append_child(do_node->create_replacement(Node::NODE_EMPTY));
-            forever->append_child(do_node->create_replacement(Node::NODE_EMPTY));
-            forever->append_child(do_node->create_replacement(Node::NODE_EMPTY));
+            Node::pointer_t forever(do_node->create_replacement(Node::node_t::NODE_FOR));
+            forever->append_child(do_node->create_replacement(Node::node_t::NODE_EMPTY));
+            forever->append_child(do_node->create_replacement(Node::node_t::NODE_EMPTY));
+            forever->append_child(do_node->create_replacement(Node::node_t::NODE_EMPTY));
             forever->append_child(do_node->get_child(0));
             do_node->replace_with(forever);
         }
@@ -535,8 +535,8 @@ void Optimizer::assignment(Node::pointer_t& assignment_node)
     Node::pointer_t left(assignment_node->get_child(0));
     Node::pointer_t right(assignment_node->get_child(1));
 
-    if(left->get_type() == Node::NODE_IDENTIFIER
-    && right->get_type() == Node::NODE_IDENTIFIER
+    if(left->get_type() == Node::node_t::NODE_IDENTIFIER
+    && right->get_type() == Node::node_t::NODE_IDENTIFIER
     && left->get_string() == right->get_string())
     {
         // Source:
@@ -570,8 +570,8 @@ void Optimizer::assignment_add(Node::pointer_t& assignment_node)
 
     // WARNING: here we cannot convert strings to numbers because
     //          the plus operator concatenates strings
-    if((assignment_node->get_type() == Node::NODE_ASSIGNMENT_ADD && !right->is_string())
-    || assignment_node->get_type() == Node::NODE_ASSIGNMENT_SUBTRACT)
+    if((assignment_node->get_type() == Node::node_t::NODE_ASSIGNMENT_ADD && !right->is_string())
+    || assignment_node->get_type() == Node::node_t::NODE_ASSIGNMENT_SUBTRACT)
     {
         if(!right->to_number())
         {
@@ -668,7 +668,7 @@ void Optimizer::assignment_divide(Node::pointer_t& assignment_node)
     }
 
     Node::pointer_t right(assignment_node->get_child(1));
-    if(right->get_type() == Node::NODE_INT64)
+    if(right->get_type() == Node::node_t::NODE_INT64)
     {
         Int64::int64_type i(right->get_int64().get());
         if(i == 0)
@@ -686,7 +686,7 @@ void Optimizer::assignment_divide(Node::pointer_t& assignment_node)
             assignment_node->replace_with(assignment_node->get_child(0));
         }
     }
-    else if(right->get_type() == Node::NODE_FLOAT64)
+    else if(right->get_type() == Node::node_t::NODE_FLOAT64)
     {
         Float64::float64_type f(right->get_float64().get());
 #pragma GCC diagnostic push
@@ -719,7 +719,7 @@ void Optimizer::assignment_modulo(Node::pointer_t& assignment_node)
     }
 
     Node::pointer_t right(assignment_node->get_child(1));
-    if(right->get_type() == Node::NODE_INT64)
+    if(right->get_type() == Node::node_t::NODE_INT64)
     {
         if(right->get_int64().get() == 0)
         {
@@ -727,7 +727,7 @@ void Optimizer::assignment_modulo(Node::pointer_t& assignment_node)
             msg << "modulo by zero is illegal";
         }
     }
-    else if(right->get_type() == Node::NODE_FLOAT64)
+    else if(right->get_type() == Node::node_t::NODE_FLOAT64)
     {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
@@ -755,7 +755,7 @@ void Optimizer::bitwise_not(Node::pointer_t& bitwise_not_node)
     Node::pointer_t child(bitwise_not_node->get_child(0));
     if(child->to_number())
     {
-        if(child->get_type() == Node::NODE_INT64)
+        if(child->get_type() == Node::node_t::NODE_INT64)
         {
             // Source:
             //   ~<int>
@@ -798,10 +798,10 @@ void Optimizer::logical_not(Node::pointer_t& logical_not_node)
         // Destination:
         //   false   or   true
         //
-        child->set_boolean(child->get_type() != Node::NODE_TRUE);
+        child->set_boolean(child->get_type() != Node::node_t::NODE_TRUE);
         logical_not_node->replace_with(child);
     }
-    else if(child->get_type() == Node::NODE_LOGICAL_NOT)
+    else if(child->get_type() == Node::node_t::NODE_LOGICAL_NOT)
     {
         // IMPORTANT NOTE: We do NOT replace '!!a' with 'a' because
         //                 in reality, '!!a != a' if a is not boolean
@@ -813,7 +813,7 @@ void Optimizer::logical_not(Node::pointer_t& logical_not_node)
         if(child->get_children_size() == 1)
         {
             Node::pointer_t sub_child(child->get_child(0));
-            if(sub_child->get_type() == Node::NODE_LOGICAL_NOT)
+            if(sub_child->get_type() == Node::node_t::NODE_LOGICAL_NOT)
             {
                 if(sub_child->get_children_size() == 1)
                 {
@@ -849,7 +849,7 @@ void Optimizer::power(Node::pointer_t& power_node)
         {
             return;
         }
-        if(left->get_type() == Node::NODE_INT64
+        if(left->get_type() == Node::node_t::NODE_INT64
         && left->get_int64().get() == 1)
         {
             if(right->has_side_effects())
@@ -859,7 +859,7 @@ void Optimizer::power(Node::pointer_t& power_node)
                 // Destination:
                 //   (b, 1);    // because b has side effects...
                 //
-                Node::pointer_t list(power_node->create_replacement(Node::NODE_LIST));
+                Node::pointer_t list(power_node->create_replacement(Node::node_t::NODE_LIST));
                 list->append_child(right);
                 list->append_child(left);
                 power_node->replace_with(list);
@@ -887,7 +887,7 @@ void Optimizer::power(Node::pointer_t& power_node)
                     // Destination:
                     //   (b, 1.0);    // because b has side effects...
                     //
-                    Node::pointer_t list(power_node->create_replacement(Node::NODE_LIST));
+                    Node::pointer_t list(power_node->create_replacement(Node::node_t::NODE_LIST));
                     list->append_child(right);
                     list->append_child(left);
                     power_node->replace_with(list);
@@ -935,9 +935,9 @@ void Optimizer::power(Node::pointer_t& power_node)
     //                     to duplicate; test the complexity if just one
     //                     var do it!)
     //
-    if(right->get_type() == Node::NODE_INT64)
+    if(right->get_type() == Node::node_t::NODE_INT64)
     {
-        Node::pointer_t one(power_node->create_replacement(Node::NODE_INT64));
+        Node::pointer_t one(power_node->create_replacement(Node::node_t::NODE_INT64));
         one->set_int64(1);
         Int64::int64_type i(right->get_int64().get());
         if(i == 0)
@@ -949,7 +949,7 @@ void Optimizer::power(Node::pointer_t& power_node)
                 // Destination:
                 //   (a, 1);     // because 'a' has side effects
                 //
-                Node::pointer_t list(power_node->create_replacement(Node::NODE_LIST));
+                Node::pointer_t list(power_node->create_replacement(Node::node_t::NODE_LIST));
                 list->append_child(left);
                 list->append_child(one);
                 power_node->replace_with(list);
@@ -983,7 +983,7 @@ void Optimizer::power(Node::pointer_t& power_node)
             //   1 / a;
             //
             // This should be better than using Math.pow(a, -1);
-            Node::pointer_t inverse(power_node->create_replacement(Node::NODE_DIVIDE));
+            Node::pointer_t inverse(power_node->create_replacement(Node::node_t::NODE_DIVIDE));
             inverse->append_child(one);
             inverse->append_child(left);
             power_node->replace_with(inverse);
@@ -992,7 +992,7 @@ void Optimizer::power(Node::pointer_t& power_node)
     }
     else
     {
-        Node::pointer_t one(power_node->create_replacement(Node::NODE_FLOAT64));
+        Node::pointer_t one(power_node->create_replacement(Node::node_t::NODE_FLOAT64));
         one->set_float64(1.0);
         Float64::float64_type f(right->get_float64().get());
 #pragma GCC diagnostic push
@@ -1006,7 +1006,7 @@ void Optimizer::power(Node::pointer_t& power_node)
                 // Destination:
                 //   (a, 1.0);     // because 'a' has side effects
                 //
-                Node::pointer_t list(power_node->create_replacement(Node::NODE_LIST));
+                Node::pointer_t list(power_node->create_replacement(Node::node_t::NODE_LIST));
                 list->append_child(left);
                 list->append_child(one);
                 power_node->replace_with(list);
@@ -1040,7 +1040,7 @@ void Optimizer::power(Node::pointer_t& power_node)
             //   1.0 / a;
             //
             // This should be better than using Math.pow(a, -1);
-            Node::pointer_t inverse(power_node->create_replacement(Node::NODE_DIVIDE));
+            Node::pointer_t inverse(power_node->create_replacement(Node::node_t::NODE_DIVIDE));
             inverse->append_child(one);
             inverse->append_child(left);
             power_node->replace_with(inverse);
@@ -1072,9 +1072,9 @@ void Optimizer::multiply(Node::pointer_t& multiply_node)
     {
         if(right->to_number())
         {
-            if(left->get_type() == Node::NODE_INT64)
+            if(left->get_type() == Node::node_t::NODE_INT64)
             {
-                if(right->get_type() == Node::NODE_INT64)
+                if(right->get_type() == Node::node_t::NODE_INT64)
                 {
                     // Source:
                     //   a * b;
@@ -1097,7 +1097,7 @@ void Optimizer::multiply(Node::pointer_t& multiply_node)
             }
             else
             {
-                if(right->get_type() == Node::NODE_INT64)
+                if(right->get_type() == Node::node_t::NODE_INT64)
                 {
                     // Source:
                     //   a * b;
@@ -1121,7 +1121,7 @@ void Optimizer::multiply(Node::pointer_t& multiply_node)
         }
         else
         {
-            if(left->get_type() == Node::NODE_INT64)
+            if(left->get_type() == Node::node_t::NODE_INT64)
             {
                 Int64::int64_type i(left->get_int64().get());
                 if(i == 0)
@@ -1134,7 +1134,7 @@ void Optimizer::multiply(Node::pointer_t& multiply_node)
                         // Destination:
                         //   (b, 0);    // because b has side effects...
                         //
-                        Node::pointer_t list(multiply_node->create_replacement(Node::NODE_LIST));
+                        Node::pointer_t list(multiply_node->create_replacement(Node::node_t::NODE_LIST));
                         list->append_child(right);
                         list->append_child(left);
                         multiply_node->replace_with(list);
@@ -1165,7 +1165,7 @@ void Optimizer::multiply(Node::pointer_t& multiply_node)
                     // Destination:
                     //   -b;
                     //
-                    Node::pointer_t negate(multiply_node->create_replacement(Node::NODE_SUBTRACT));
+                    Node::pointer_t negate(multiply_node->create_replacement(Node::node_t::NODE_SUBTRACT));
                     negate->append_child(right);
                     multiply_node->replace_with(negate);
                 }
@@ -1185,7 +1185,7 @@ void Optimizer::multiply(Node::pointer_t& multiply_node)
                         // Destination:
                         //   (b, 0.0);    // because b has side effects...
                         //
-                        Node::pointer_t list(multiply_node->create_replacement(Node::NODE_LIST));
+                        Node::pointer_t list(multiply_node->create_replacement(Node::node_t::NODE_LIST));
                         list->append_child(right);
                         list->append_child(left);
                         multiply_node->replace_with(list);
@@ -1216,7 +1216,7 @@ void Optimizer::multiply(Node::pointer_t& multiply_node)
                     // Destination:
                     //   -b;
                     //
-                    Node::pointer_t negate(multiply_node->create_replacement(Node::NODE_SUBTRACT));
+                    Node::pointer_t negate(multiply_node->create_replacement(Node::node_t::NODE_SUBTRACT));
                     negate->append_child(right);
                     multiply_node->replace_with(negate);
                 }
@@ -1226,7 +1226,7 @@ void Optimizer::multiply(Node::pointer_t& multiply_node)
     }
     else
     {
-        if(right->get_type() == Node::NODE_INT64)
+        if(right->get_type() == Node::node_t::NODE_INT64)
         {
             Int64::int64_type i(right->get_int64().get());
             if(i == 0)
@@ -1239,7 +1239,7 @@ void Optimizer::multiply(Node::pointer_t& multiply_node)
                     // Destination:
                     //   (a, 0);    // because a has side effects...
                     //
-                    Node::pointer_t list(multiply_node->create_replacement(Node::NODE_LIST));
+                    Node::pointer_t list(multiply_node->create_replacement(Node::node_t::NODE_LIST));
                     list->append_child(left);
                     list->append_child(right);
                     multiply_node->replace_with(list);
@@ -1270,7 +1270,7 @@ void Optimizer::multiply(Node::pointer_t& multiply_node)
                 // Destination:
                 //   -a;
                 //
-                Node::pointer_t negate(multiply_node->create_replacement(Node::NODE_SUBTRACT));
+                Node::pointer_t negate(multiply_node->create_replacement(Node::node_t::NODE_SUBTRACT));
                 negate->append_child(left);
                 multiply_node->replace_with(negate);
             }
@@ -1290,7 +1290,7 @@ void Optimizer::multiply(Node::pointer_t& multiply_node)
                     // Destination:
                     //   (a, 0.0);    // because b has side effects...
                     //
-                    Node::pointer_t list(multiply_node->create_replacement(Node::NODE_LIST));
+                    Node::pointer_t list(multiply_node->create_replacement(Node::node_t::NODE_LIST));
                     list->append_child(left);
                     list->append_child(right);
                     multiply_node->replace_with(list);
@@ -1321,7 +1321,7 @@ void Optimizer::multiply(Node::pointer_t& multiply_node)
                 // Destination:
                 //   -a;
                 //
-                Node::pointer_t negate(multiply_node->create_replacement(Node::NODE_SUBTRACT));
+                Node::pointer_t negate(multiply_node->create_replacement(Node::node_t::NODE_SUBTRACT));
                 negate->append_child(left);
                 multiply_node->replace_with(negate);
             }
@@ -1352,9 +1352,9 @@ void Optimizer::divide(Node::pointer_t& divide_node)
     {
         if(right->to_number())
         {
-            if(left->get_type() == Node::NODE_INT64)
+            if(left->get_type() == Node::node_t::NODE_INT64)
             {
-                if(right->get_type() == Node::NODE_INT64)
+                if(right->get_type() == Node::node_t::NODE_INT64)
                 {
                     // Source:
                     //   a / b;
@@ -1407,7 +1407,7 @@ void Optimizer::divide(Node::pointer_t& divide_node)
             }
             else
             {
-                if(right->get_type() == Node::NODE_INT64)
+                if(right->get_type() == Node::node_t::NODE_INT64)
                 {
                     // Source:
                     //   a / b;
@@ -1448,7 +1448,7 @@ void Optimizer::divide(Node::pointer_t& divide_node)
         }
         else
         {
-            if(left->get_type() == Node::NODE_INT64)
+            if(left->get_type() == Node::node_t::NODE_INT64)
             {
                 Int64::int64_type i(left->get_int64().get());
                 if(i == 0)
@@ -1464,7 +1464,7 @@ void Optimizer::divide(Node::pointer_t& divide_node)
                         // Destination:
                         //   (b, 0);    // because b has side effects...
                         //
-                        Node::pointer_t list(divide_node->create_replacement(Node::NODE_LIST));
+                        Node::pointer_t list(divide_node->create_replacement(Node::node_t::NODE_LIST));
                         list->append_child(right);
                         list->append_child(left);
                         divide_node->replace_with(list);
@@ -1498,7 +1498,7 @@ void Optimizer::divide(Node::pointer_t& divide_node)
                         // Destination:
                         //   (b, 0.0);    // because b has side effects...
                         //
-                        Node::pointer_t list(divide_node->create_replacement(Node::NODE_LIST));
+                        Node::pointer_t list(divide_node->create_replacement(Node::node_t::NODE_LIST));
                         list->append_child(right);
                         list->append_child(left);
                         divide_node->replace_with(list);
@@ -1519,7 +1519,7 @@ void Optimizer::divide(Node::pointer_t& divide_node)
     }
     else
     {
-        if(right->get_type() == Node::NODE_INT64)
+        if(right->get_type() == Node::node_t::NODE_INT64)
         {
             Int64::int64_type i(right->get_int64().get());
             if(i == 0)
@@ -1544,7 +1544,7 @@ void Optimizer::divide(Node::pointer_t& divide_node)
                 // Destination:
                 //   -a;
                 //
-                Node::pointer_t negate(divide_node->create_replacement(Node::NODE_SUBTRACT));
+                Node::pointer_t negate(divide_node->create_replacement(Node::node_t::NODE_SUBTRACT));
                 negate->append_child(left);
                 divide_node->replace_with(negate);
             }
@@ -1576,7 +1576,7 @@ void Optimizer::divide(Node::pointer_t& divide_node)
                 // Destination:
                 //   -a;
                 //
-                Node::pointer_t negate(divide_node->create_replacement(Node::NODE_SUBTRACT));
+                Node::pointer_t negate(divide_node->create_replacement(Node::node_t::NODE_SUBTRACT));
                 negate->append_child(left);
                 divide_node->replace_with(negate);
             }
@@ -1607,9 +1607,9 @@ void Optimizer::modulo(Node::pointer_t& modulo_node)
     {
         if(right->to_number())
         {
-            if(left->get_type() == Node::NODE_INT64)
+            if(left->get_type() == Node::node_t::NODE_INT64)
             {
-                if(right->get_type() == Node::NODE_INT64)
+                if(right->get_type() == Node::node_t::NODE_INT64)
                 {
                     // Source:
                     //   a % b;
@@ -1662,7 +1662,7 @@ void Optimizer::modulo(Node::pointer_t& modulo_node)
             }
             else
             {
-                if(right->get_type() == Node::NODE_INT64)
+                if(right->get_type() == Node::node_t::NODE_INT64)
                 {
                     // Source:
                     //   a / b;
@@ -1703,7 +1703,7 @@ void Optimizer::modulo(Node::pointer_t& modulo_node)
         }
         else
         {
-            if(left->get_type() == Node::NODE_INT64)
+            if(left->get_type() == Node::node_t::NODE_INT64)
             {
                 Int64::int64_type i(left->get_int64().get());
                 if(i == 0)
@@ -1719,7 +1719,7 @@ void Optimizer::modulo(Node::pointer_t& modulo_node)
                         // Destination:
                         //   (b, 0);    // because b has side effects...
                         //
-                        Node::pointer_t list(modulo_node->create_replacement(Node::NODE_LIST));
+                        Node::pointer_t list(modulo_node->create_replacement(Node::node_t::NODE_LIST));
                         list->append_child(right);
                         list->append_child(left);
                         modulo_node->replace_with(list);
@@ -1753,7 +1753,7 @@ void Optimizer::modulo(Node::pointer_t& modulo_node)
                         // Destination:
                         //   (b, 0.0);    // because b has side effects...
                         //
-                        Node::pointer_t list(modulo_node->create_replacement(Node::NODE_LIST));
+                        Node::pointer_t list(modulo_node->create_replacement(Node::node_t::NODE_LIST));
                         list->append_child(right);
                         list->append_child(left);
                         modulo_node->replace_with(list);
@@ -1774,7 +1774,7 @@ void Optimizer::modulo(Node::pointer_t& modulo_node)
     }
     else
     {
-        if(right->get_type() == Node::NODE_INT64)
+        if(right->get_type() == Node::node_t::NODE_INT64)
         {
             Int64::int64_type i(right->get_int64().get());
             if(i == 0)
@@ -1799,7 +1799,7 @@ void Optimizer::modulo(Node::pointer_t& modulo_node)
                 // Destination:
                 //   -a;
                 //
-                Node::pointer_t negate(modulo_node->create_replacement(Node::NODE_SUBTRACT));
+                Node::pointer_t negate(modulo_node->create_replacement(Node::node_t::NODE_SUBTRACT));
                 negate->append_child(left);
                 modulo_node->replace_with(negate);
             }
@@ -1831,7 +1831,7 @@ void Optimizer::modulo(Node::pointer_t& modulo_node)
                 // Destination:
                 //   0;
                 //
-                Node::pointer_t negate(modulo_node->create_replacement(Node::NODE_SUBTRACT));
+                Node::pointer_t negate(modulo_node->create_replacement(Node::node_t::NODE_SUBTRACT));
                 negate->append_child(left);
                 modulo_node->replace_with(negate);
             }
@@ -2416,8 +2416,8 @@ compare_t Optimizer::compare(Node::pointer_t& relational)
 
     // Contrary to some other operators, if one of left or right
     // is a number, the string gets converted!
-    if(left->get_type() == Node::NODE_STRING
-    && right->get_type() == Node::NODE_STRING)
+    if(left->get_type() == Node::node_t::NODE_STRING
+    && right->get_type() == Node::node_t::NODE_STRING)
     {
         // the std::string::compare() function returns 0 if
         // equal, however, negative or postive when no equal
@@ -2456,7 +2456,7 @@ void Optimizer::less(Node::pointer_t& less_node)
     compare_t r(compare(less_node));
     if(compare_utils::is_ordered(r))
     {
-        Node::pointer_t result(less_node->create_replacement(r == COMPARE_LESS ? Node::NODE_TRUE : Node::NODE_FALSE));
+        Node::pointer_t result(less_node->create_replacement(r == COMPARE_LESS ? Node::node_t::NODE_TRUE : Node::node_t::NODE_FALSE));
         less_node->replace_with(result);
     }
 }
@@ -2467,7 +2467,7 @@ void Optimizer::less_equal(Node::pointer_t& less_equal_node)
     compare_t r(compare(less_equal_node));
     if(compare_utils::is_ordered(r))
     {
-        Node::pointer_t result(less_equal_node->create_replacement(r != COMPARE_GREATER ? Node::NODE_TRUE : Node::NODE_FALSE));
+        Node::pointer_t result(less_equal_node->create_replacement(r != COMPARE_GREATER ? Node::node_t::NODE_TRUE : Node::node_t::NODE_FALSE));
         less_equal_node->replace_with(result);
     }
 }
@@ -2478,7 +2478,7 @@ void Optimizer::greater(Node::pointer_t& greater_node)
     compare_t r(compare(greater_node));
     if(compare_utils::is_ordered(r))
     {
-        Node::pointer_t result(greater_node->create_replacement(r == COMPARE_GREATER ? Node::NODE_TRUE : Node::NODE_FALSE));
+        Node::pointer_t result(greater_node->create_replacement(r == COMPARE_GREATER ? Node::node_t::NODE_TRUE : Node::node_t::NODE_FALSE));
         greater_node->replace_with(result);
     }
 }
@@ -2489,7 +2489,7 @@ void Optimizer::greater_equal(Node::pointer_t& greater_equal_node)
     compare_t r(compare(greater_equal_node));
     if(compare_utils::is_ordered(r))
     {
-        Node::pointer_t result(greater_equal_node->create_replacement(r != COMPARE_LESS ? Node::NODE_TRUE : Node::NODE_FALSE));
+        Node::pointer_t result(greater_equal_node->create_replacement(r != COMPARE_LESS ? Node::node_t::NODE_TRUE : Node::node_t::NODE_FALSE));
         greater_equal_node->replace_with(result);
     }
 }
@@ -2569,13 +2569,13 @@ void Optimizer::equality(Node::pointer_t& equality_node, bool const strict, bool
             // (those that can be compared were just before)
             switch(left->get_type())
             {
-            case Node::NODE_INT64:
-            case Node::NODE_FLOAT64:
-            case Node::NODE_STRING:
-            case Node::NODE_NULL:
-            case Node::NODE_UNDEFINED:
-            case Node::NODE_TRUE:
-            case Node::NODE_FALSE:
+            case Node::node_t::NODE_INT64:
+            case Node::node_t::NODE_FLOAT64:
+            case Node::node_t::NODE_STRING:
+            case Node::node_t::NODE_NULL:
+            case Node::node_t::NODE_UNDEFINED:
+            case Node::node_t::NODE_TRUE:
+            case Node::node_t::NODE_FALSE:
                 break;
 
             default:
@@ -2585,13 +2585,13 @@ void Optimizer::equality(Node::pointer_t& equality_node, bool const strict, bool
             }
             switch(right->get_type())
             {
-            case Node::NODE_INT64:
-            case Node::NODE_FLOAT64:
-            case Node::NODE_STRING:
-            case Node::NODE_NULL:
-            case Node::NODE_UNDEFINED:
-            case Node::NODE_TRUE:
-            case Node::NODE_FALSE:
+            case Node::node_t::NODE_INT64:
+            case Node::node_t::NODE_FLOAT64:
+            case Node::node_t::NODE_STRING:
+            case Node::node_t::NODE_NULL:
+            case Node::node_t::NODE_UNDEFINED:
+            case Node::node_t::NODE_TRUE:
+            case Node::node_t::NODE_FALSE:
                 break;
 
             default:
@@ -2608,20 +2608,20 @@ void Optimizer::equality(Node::pointer_t& equality_node, bool const strict, bool
         Node::node_t rt(right->get_type());
         switch(left->get_type())
         {
-        case Node::NODE_UNDEFINED:
-        case Node::NODE_NULL:
+        case Node::node_t::NODE_UNDEFINED:
+        case Node::node_t::NODE_NULL:
             switch(rt)
             {
-            case Node::NODE_UNDEFINED:
-            case Node::NODE_NULL:
+            case Node::node_t::NODE_UNDEFINED:
+            case Node::node_t::NODE_NULL:
                 result = true;
                 break;
 
-            case Node::NODE_INT64:
-            case Node::NODE_FLOAT64:
-            case Node::NODE_STRING:
-            case Node::NODE_TRUE:
-            case Node::NODE_FALSE:
+            case Node::node_t::NODE_INT64:
+            case Node::node_t::NODE_FLOAT64:
+            case Node::node_t::NODE_STRING:
+            case Node::node_t::NODE_TRUE:
+            case Node::node_t::NODE_FALSE:
                 result = false;
                 break;
 
@@ -2632,22 +2632,22 @@ void Optimizer::equality(Node::pointer_t& equality_node, bool const strict, bool
             }
             break;
 
-        case Node::NODE_TRUE:
+        case Node::node_t::NODE_TRUE:
             switch(rt)
             {
-            case Node::NODE_TRUE:
+            case Node::node_t::NODE_TRUE:
                 result = true;
                 break;
 
-            case Node::NODE_FALSE:
-            case Node::NODE_NULL:
-            case Node::NODE_UNDEFINED:
+            case Node::node_t::NODE_FALSE:
+            case Node::node_t::NODE_NULL:
+            case Node::node_t::NODE_UNDEFINED:
                 result = false;
                 break;
 
-            //case Node::NODE_STRING:
-            //case Node::NODE_INT64:
-            //case Node::NODE_FLOAT64:
+            //case Node::node_t::NODE_STRING:
+            //case Node::node_t::NODE_INT64:
+            //case Node::node_t::NODE_FLOAT64:
             default:
                 if(!right->to_number())
                 {
@@ -2670,22 +2670,22 @@ void Optimizer::equality(Node::pointer_t& equality_node, bool const strict, bool
             }
             break;
 
-        case Node::NODE_FALSE:
+        case Node::node_t::NODE_FALSE:
             switch(rt)
             {
-            case Node::NODE_TRUE:
-            case Node::NODE_NULL:
-            case Node::NODE_UNDEFINED:
+            case Node::node_t::NODE_TRUE:
+            case Node::node_t::NODE_NULL:
+            case Node::node_t::NODE_UNDEFINED:
                 result = false;
                 break;
 
-            case Node::NODE_FALSE:
+            case Node::node_t::NODE_FALSE:
                 result = true;
                 break;
 
-            //case Node::NODE_STRING:
-            //case Node::NODE_INT64:
-            //case Node::NODE_FLOAT64:
+            //case Node::node_t::NODE_STRING:
+            //case Node::node_t::NODE_INT64:
+            //case Node::node_t::NODE_FLOAT64:
             default:
                 if(!right->to_number())
                 {
@@ -2708,29 +2708,29 @@ void Optimizer::equality(Node::pointer_t& equality_node, bool const strict, bool
             }
             break;
 
-        case Node::NODE_INT64:
+        case Node::node_t::NODE_INT64:
             switch(rt)
             {
-            case Node::NODE_INT64:
+            case Node::node_t::NODE_INT64:
                 result = left->get_int64().get() == right->get_int64().get();
                 break;
 
-            case Node::NODE_FLOAT64:
+            case Node::node_t::NODE_FLOAT64:
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
                 result = left->get_int64().get() == right->get_float64().get();
 #pragma GCC diagnostic pop
                 break;
 
-            case Node::NODE_TRUE:
+            case Node::node_t::NODE_TRUE:
                 result = left->get_int64().get() == 1;
                 break;
 
-            case Node::NODE_FALSE:
+            case Node::node_t::NODE_FALSE:
                 result = left->get_int64().get() == 0;
                 break;
 
-            case Node::NODE_STRING:
+            case Node::node_t::NODE_STRING:
                 if(!right->to_number())
                 {
                     throw exception_internal_error("somehow a string could not be converted to a number");
@@ -2748,8 +2748,8 @@ void Optimizer::equality(Node::pointer_t& equality_node, bool const strict, bool
                 }
                 break;
 
-            case Node::NODE_NULL:
-            case Node::NODE_UNDEFINED:
+            case Node::node_t::NODE_NULL:
+            case Node::node_t::NODE_UNDEFINED:
                 result = false;
                 break;
 
@@ -2759,28 +2759,28 @@ void Optimizer::equality(Node::pointer_t& equality_node, bool const strict, bool
             }
             break;
 
-        case Node::NODE_FLOAT64:
+        case Node::node_t::NODE_FLOAT64:
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
             switch(rt)
             {
-            case Node::NODE_FLOAT64:
+            case Node::node_t::NODE_FLOAT64:
                 result = left->get_float64().get() == right->get_float64().get();
                 break;
 
-            case Node::NODE_INT64:
+            case Node::node_t::NODE_INT64:
                 result = left->get_float64().get() == right->get_int64().get();
                 break;
 
-            case Node::NODE_TRUE:
+            case Node::node_t::NODE_TRUE:
                 result = left->get_float64().get() == 1.0;
                 break;
 
-            case Node::NODE_FALSE:
+            case Node::node_t::NODE_FALSE:
                 result = left->get_float64().get() == 0.0;
                 break;
 
-            case Node::NODE_STRING:
+            case Node::node_t::NODE_STRING:
                 if(!right->to_number())
                 {
                     throw exception_internal_error("somehow a string could not be converted to a number");
@@ -2795,8 +2795,8 @@ void Optimizer::equality(Node::pointer_t& equality_node, bool const strict, bool
                 }
                 break;
 
-            case Node::NODE_NULL:
-            case Node::NODE_UNDEFINED:
+            case Node::node_t::NODE_NULL:
+            case Node::node_t::NODE_UNDEFINED:
                 result = false;
                 break;
 
@@ -2807,21 +2807,21 @@ void Optimizer::equality(Node::pointer_t& equality_node, bool const strict, bool
 #pragma GCC diagnostic pop
             break;
 
-        case Node::NODE_STRING:
+        case Node::node_t::NODE_STRING:
             switch(rt)
             {
-            case Node::NODE_STRING:
+            case Node::node_t::NODE_STRING:
                 result = left->get_string() == right->get_string();
                 break;
 
-            case Node::NODE_NULL:
-            case Node::NODE_UNDEFINED:
+            case Node::node_t::NODE_NULL:
+            case Node::node_t::NODE_UNDEFINED:
                 result = false;
                 break;
 
-            case Node::NODE_INT64:
-            case Node::NODE_TRUE:
-            case Node::NODE_FALSE:
+            case Node::node_t::NODE_INT64:
+            case Node::node_t::NODE_TRUE:
+            case Node::node_t::NODE_FALSE:
                 if(!left->to_number())
                 {
                     throw exception_internal_error("somehow a string could not be converted to a number");
@@ -2843,7 +2843,7 @@ void Optimizer::equality(Node::pointer_t& equality_node, bool const strict, bool
                 }
                 break;
 
-            case Node::NODE_FLOAT64:
+            case Node::node_t::NODE_FLOAT64:
                 if(!left->to_number())
                 {
                     throw exception_internal_error("somehow a string could not be converted to a number");
@@ -2867,8 +2867,8 @@ void Optimizer::equality(Node::pointer_t& equality_node, bool const strict, bool
             }
             break;
 
-        case Node::NODE_IDENTIFIER:
-        case Node::NODE_VIDENTIFIER:
+        case Node::node_t::NODE_IDENTIFIER:
+        case Node::node_t::NODE_VIDENTIFIER:
             if(!right->is_identifier()
             || left->get_string() != right->get_string())
             {
@@ -2887,7 +2887,7 @@ void Optimizer::equality(Node::pointer_t& equality_node, bool const strict, bool
 
     // we use !inverse to make 100% sure that it is a valid Boolean value
     // (it can be tainted since it is given to use by the caller)
-    Node::pointer_t boolean(equality_node->create_replacement(result ^ !inverse ? Node::NODE_FALSE : Node::NODE_TRUE));
+    Node::pointer_t boolean(equality_node->create_replacement(result ^ !inverse ? Node::node_t::NODE_FALSE : Node::node_t::NODE_TRUE));
     equality_node->replace_with(boolean);
 }
 
@@ -3069,7 +3069,7 @@ void Optimizer::bitwise_xor(Node::pointer_t& bitwise_xor_node)
             // Destination:
             //   ~b;
             //
-            Node::pointer_t bitwise_not_node(bitwise_xor_node->create_replacement(Node::NODE_BITWISE_NOT));
+            Node::pointer_t bitwise_not_node(bitwise_xor_node->create_replacement(Node::node_t::NODE_BITWISE_NOT));
             bitwise_not_node->append_child(right);
             bitwise_xor_node->replace_with(bitwise_not_node);
         }
@@ -3086,7 +3086,7 @@ void Optimizer::bitwise_xor(Node::pointer_t& bitwise_xor_node)
             // Destination:
             //   ~a;
             //
-            Node::pointer_t bitwise_not_node(bitwise_xor_node->create_replacement(Node::NODE_BITWISE_NOT));
+            Node::pointer_t bitwise_not_node(bitwise_xor_node->create_replacement(Node::node_t::NODE_BITWISE_NOT));
             bitwise_not_node->append_child(left);
             bitwise_xor_node->replace_with(bitwise_not_node);
         }
@@ -3253,8 +3253,8 @@ void Optimizer::logical_and(Node::pointer_t& logical_and_node)
         // Destination:
         //   !!a;
         //
-        Node::pointer_t logical_not_one(logical_and_node->create_replacement(Node::NODE_LOGICAL_NOT));
-        Node::pointer_t logical_not_two(logical_and_node->create_replacement(Node::NODE_LOGICAL_NOT));
+        Node::pointer_t logical_not_one(logical_and_node->create_replacement(Node::node_t::NODE_LOGICAL_NOT));
+        Node::pointer_t logical_not_two(logical_and_node->create_replacement(Node::node_t::NODE_LOGICAL_NOT));
         logical_not_one->append_child(logical_not_two);
         logical_not_two->append_child(left);
         logical_and_node->replace_with(logical_not_one);
@@ -3308,7 +3308,7 @@ void Optimizer::logical_xor(Node::pointer_t& logical_xor_node)
                 // Destination:
                 //   false
                 //
-                left->set_boolean(Node::NODE_FALSE);
+                left->set_boolean(false);
                 logical_xor_node->replace_with(left);
             }
             else if(right->is_false())
@@ -3327,7 +3327,7 @@ void Optimizer::logical_xor(Node::pointer_t& logical_xor_node)
                 // Destination:
                 //   !b;
                 //
-                Node::pointer_t logical_not_node(logical_xor_node->create_replacement(Node::NODE_LOGICAL_NOT));
+                Node::pointer_t logical_not_node(logical_xor_node->create_replacement(Node::node_t::NODE_LOGICAL_NOT));
                 logical_not_node->append_child(right);
                 logical_xor_node->replace_with(logical_not_node);
             }
@@ -3359,8 +3359,8 @@ void Optimizer::logical_xor(Node::pointer_t& logical_xor_node)
                 // Destination:
                 //   !!b;
                 //
-                Node::pointer_t logical_not_one(logical_xor_node->create_replacement(Node::NODE_LOGICAL_NOT));
-                Node::pointer_t logical_not_two(logical_xor_node->create_replacement(Node::NODE_LOGICAL_NOT));
+                Node::pointer_t logical_not_one(logical_xor_node->create_replacement(Node::node_t::NODE_LOGICAL_NOT));
+                Node::pointer_t logical_not_two(logical_xor_node->create_replacement(Node::node_t::NODE_LOGICAL_NOT));
                 logical_not_one->append_child(logical_not_two);
                 logical_not_two->append_child(right);
                 logical_xor_node->replace_with(logical_not_one);
@@ -3373,7 +3373,7 @@ void Optimizer::logical_xor(Node::pointer_t& logical_xor_node)
             // Destination:
             //   !a;
             //
-            Node::pointer_t logical_not_node(logical_xor_node->create_replacement(Node::NODE_LOGICAL_NOT));
+            Node::pointer_t logical_not_node(logical_xor_node->create_replacement(Node::node_t::NODE_LOGICAL_NOT));
             logical_not_node->append_child(left);
             logical_xor_node->replace_with(logical_not_node);
         }
@@ -3384,8 +3384,8 @@ void Optimizer::logical_xor(Node::pointer_t& logical_xor_node)
             // Destination:
             //   !!a;
             //
-            Node::pointer_t logical_not_one(logical_xor_node->create_replacement(Node::NODE_LOGICAL_NOT));
-            Node::pointer_t logical_not_two(logical_xor_node->create_replacement(Node::NODE_LOGICAL_NOT));
+            Node::pointer_t logical_not_one(logical_xor_node->create_replacement(Node::node_t::NODE_LOGICAL_NOT));
+            Node::pointer_t logical_not_two(logical_xor_node->create_replacement(Node::node_t::NODE_LOGICAL_NOT));
             logical_not_one->append_child(logical_not_two);
             logical_not_two->append_child(left);
             logical_xor_node->replace_with(logical_not_one);
@@ -3462,8 +3462,8 @@ void Optimizer::logical_or(Node::pointer_t& logical_or_node)
         // we will remove the double logical not (i.e. 'if(a || false)'
         // will result in 'if(a)'.)
         //
-        Node::pointer_t logical_not_one(logical_or_node->create_replacement(Node::NODE_LOGICAL_NOT));
-        Node::pointer_t logical_not_two(logical_or_node->create_replacement(Node::NODE_LOGICAL_NOT));
+        Node::pointer_t logical_not_one(logical_or_node->create_replacement(Node::node_t::NODE_LOGICAL_NOT));
+        Node::pointer_t logical_not_two(logical_or_node->create_replacement(Node::node_t::NODE_LOGICAL_NOT));
         logical_not_one->append_child(logical_not_two);
         logical_not_two->append_child(left);
         logical_or_node->replace_with(logical_not_one);

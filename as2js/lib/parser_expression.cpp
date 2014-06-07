@@ -61,19 +61,19 @@ void Parser::list_expression(Node::pointer_t& node, bool rest, bool empty)
         throw exception_internal_error("list_expression() called with a non-null node pointer");
     }
 
-    if(empty && f_node->get_type() == Node::NODE_COMMA)
+    if(empty && f_node->get_type() == Node::node_t::NODE_COMMA)
     {
-        node = f_lexer->get_new_node(Node::NODE_EMPTY);
+        node = f_lexer->get_new_node(Node::node_t::NODE_EMPTY);
     }
     else
     {
         assignment_expression(node);
 
         // accept named parameters
-        if(rest && f_node->get_type() == Node::NODE_COLON)
+        if(rest && f_node->get_type() == Node::node_t::NODE_COLON)
         {
             get_token();
-            Node::pointer_t name(f_lexer->get_new_node(Node::NODE_NAME));
+            Node::pointer_t name(f_lexer->get_new_node(Node::node_t::NODE_NAME));
             name->append_child(node);
             node.reset();
             assignment_expression(node);
@@ -81,15 +81,15 @@ void Parser::list_expression(Node::pointer_t& node, bool rest, bool empty)
         }
     }
 
-    if(f_node->get_type() == Node::NODE_COMMA)
+    if(f_node->get_type() == Node::node_t::NODE_COMMA)
     {
         Node::pointer_t item(node);
 
-        node = f_lexer->get_new_node(Node::NODE_EMPTY);
+        node = f_lexer->get_new_node(Node::node_t::NODE_EMPTY);
         node->append_child(item);
 
         int has_rest = 0;
-        while(f_node->get_type() == Node::NODE_COMMA)
+        while(f_node->get_type() == Node::node_t::NODE_COMMA)
         {
             get_token();
             if(has_rest == 1)
@@ -98,14 +98,14 @@ void Parser::list_expression(Node::pointer_t& node, bool rest, bool empty)
                 msg << "'...' was expected to be the last expression only";
                 has_rest = 2;
             }
-            if(empty && f_node->get_type() == Node::NODE_COMMA)
+            if(empty && f_node->get_type() == Node::node_t::NODE_COMMA)
             {
-                Node::pointer_t empty_node(f_lexer->get_new_node(Node::NODE_EMPTY));
+                Node::pointer_t empty_node(f_lexer->get_new_node(Node::node_t::NODE_EMPTY));
                 node->append_child(empty_node);
             }
-            else if(rest && f_node->get_type() == Node::NODE_REST)
+            else if(rest && f_node->get_type() == Node::node_t::NODE_REST)
             {
-                Node::pointer_t rest_node(f_lexer->get_new_node(Node::NODE_REST));
+                Node::pointer_t rest_node(f_lexer->get_new_node(Node::node_t::NODE_REST));
                 node->append_child(rest_node);
                 get_token();
                 if(has_rest == 0)
@@ -121,14 +121,14 @@ void Parser::list_expression(Node::pointer_t& node, bool rest, bool empty)
                 assignment_expression(item);
 
                 // accept named parameters
-                if(rest && f_node->get_type() == Node::NODE_COLON)
+                if(rest && f_node->get_type() == Node::node_t::NODE_COLON)
                 {
                     get_token();
-                    Node::pointer_t name(f_lexer->get_new_node(Node::NODE_NAME));
+                    Node::pointer_t name(f_lexer->get_new_node(Node::node_t::NODE_NAME));
                     name->append_child(item);
-                    if(f_node->get_type() == Node::NODE_REST)
+                    if(f_node->get_type() == Node::node_t::NODE_REST)
                     {
-                        item = f_lexer->get_new_node(Node::NODE_REST);
+                        item = f_lexer->get_new_node(Node::node_t::NODE_REST);
                         get_token();
                         if(has_rest == 0)
                         {
@@ -160,26 +160,26 @@ void Parser::assignment_expression(Node::pointer_t& node)
     // TODO: check that the result is a postfix expression
     switch(f_node->get_type())
     {
-    case Node::NODE_ASSIGNMENT:
-    case Node::NODE_ASSIGNMENT_ADD:
-    case Node::NODE_ASSIGNMENT_BITWISE_AND:
-    case Node::NODE_ASSIGNMENT_BITWISE_OR:
-    case Node::NODE_ASSIGNMENT_BITWISE_XOR:
-    case Node::NODE_ASSIGNMENT_DIVIDE:
-    case Node::NODE_ASSIGNMENT_LOGICAL_AND:
-    case Node::NODE_ASSIGNMENT_LOGICAL_OR:
-    case Node::NODE_ASSIGNMENT_LOGICAL_XOR:
-    case Node::NODE_ASSIGNMENT_MAXIMUM:
-    case Node::NODE_ASSIGNMENT_MINIMUM:
-    case Node::NODE_ASSIGNMENT_MODULO:
-    case Node::NODE_ASSIGNMENT_MULTIPLY:
-    case Node::NODE_ASSIGNMENT_POWER:
-    case Node::NODE_ASSIGNMENT_ROTATE_LEFT:
-    case Node::NODE_ASSIGNMENT_ROTATE_RIGHT:
-    case Node::NODE_ASSIGNMENT_SHIFT_LEFT:
-    case Node::NODE_ASSIGNMENT_SHIFT_RIGHT:
-    case Node::NODE_ASSIGNMENT_SHIFT_RIGHT_UNSIGNED:
-    case Node::NODE_ASSIGNMENT_SUBTRACT:
+    case Node::node_t::NODE_ASSIGNMENT:
+    case Node::node_t::NODE_ASSIGNMENT_ADD:
+    case Node::node_t::NODE_ASSIGNMENT_BITWISE_AND:
+    case Node::node_t::NODE_ASSIGNMENT_BITWISE_OR:
+    case Node::node_t::NODE_ASSIGNMENT_BITWISE_XOR:
+    case Node::node_t::NODE_ASSIGNMENT_DIVIDE:
+    case Node::node_t::NODE_ASSIGNMENT_LOGICAL_AND:
+    case Node::node_t::NODE_ASSIGNMENT_LOGICAL_OR:
+    case Node::node_t::NODE_ASSIGNMENT_LOGICAL_XOR:
+    case Node::node_t::NODE_ASSIGNMENT_MAXIMUM:
+    case Node::node_t::NODE_ASSIGNMENT_MINIMUM:
+    case Node::node_t::NODE_ASSIGNMENT_MODULO:
+    case Node::node_t::NODE_ASSIGNMENT_MULTIPLY:
+    case Node::node_t::NODE_ASSIGNMENT_POWER:
+    case Node::node_t::NODE_ASSIGNMENT_ROTATE_LEFT:
+    case Node::node_t::NODE_ASSIGNMENT_ROTATE_RIGHT:
+    case Node::node_t::NODE_ASSIGNMENT_SHIFT_LEFT:
+    case Node::node_t::NODE_ASSIGNMENT_SHIFT_RIGHT:
+    case Node::node_t::NODE_ASSIGNMENT_SHIFT_RIGHT_UNSIGNED:
+    case Node::node_t::NODE_ASSIGNMENT_SUBTRACT:
         break;
 
     default:
@@ -204,7 +204,7 @@ void Parser::conditional_expression(Node::pointer_t& node, bool assignment)
 {
     min_max_expression(node);
 
-    if(f_node->get_type() == Node::NODE_CONDITIONAL)
+    if(f_node->get_type() == Node::node_t::NODE_CONDITIONAL)
     {
         f_node->append_child(node);
         node = f_node;
@@ -222,7 +222,7 @@ void Parser::conditional_expression(Node::pointer_t& node, bool assignment)
         }
         node->append_child(left);
 
-        if(f_node->get_type() == Node::NODE_COLON)
+        if(f_node->get_type() == Node::node_t::NODE_COLON)
         {
             get_token();
             Node::pointer_t right;
@@ -250,8 +250,8 @@ void Parser::min_max_expression(Node::pointer_t& node)
 {
     logical_or_expression(node);
 
-    if(f_node->get_type() == Node::NODE_MINIMUM
-    || f_node->get_type() == Node::NODE_MAXIMUM)
+    if(f_node->get_type() == Node::node_t::NODE_MINIMUM
+    || f_node->get_type() == Node::node_t::NODE_MAXIMUM)
     {
         f_node->append_child(node);
         node = f_node;
@@ -268,7 +268,7 @@ void Parser::logical_or_expression(Node::pointer_t& node)
 {
     logical_xor_expression(node);
 
-    if(f_node->get_type() == Node::NODE_LOGICAL_OR)
+    if(f_node->get_type() == Node::node_t::NODE_LOGICAL_OR)
     {
         f_node->append_child(node);
         node = f_node;
@@ -285,7 +285,7 @@ void Parser::logical_xor_expression(Node::pointer_t& node)
 {
     logical_and_expression(node);
 
-    if(f_node->get_type() == Node::NODE_LOGICAL_XOR)
+    if(f_node->get_type() == Node::node_t::NODE_LOGICAL_XOR)
     {
         f_node->append_child(node);
         node = f_node;
@@ -302,7 +302,7 @@ void Parser::logical_and_expression(Node::pointer_t& node)
 {
     bitwise_or_expression(node);
 
-    if(f_node->get_type() == Node::NODE_LOGICAL_AND)
+    if(f_node->get_type() == Node::node_t::NODE_LOGICAL_AND)
     {
         f_node->append_child(node);
         node = f_node;
@@ -320,7 +320,7 @@ void Parser::bitwise_or_expression(Node::pointer_t& node)
 {
     bitwise_xor_expression(node);
 
-    if(f_node->get_type() == Node::NODE_BITWISE_OR)
+    if(f_node->get_type() == Node::node_t::NODE_BITWISE_OR)
     {
         f_node->append_child(node);
         node = f_node;
@@ -337,7 +337,7 @@ void Parser::bitwise_xor_expression(Node::pointer_t& node)
 {
     bitwise_and_expression(node);
 
-    if(f_node->get_type() == Node::NODE_BITWISE_XOR)
+    if(f_node->get_type() == Node::node_t::NODE_BITWISE_XOR)
     {
         f_node->append_child(node);
         node = f_node;
@@ -354,7 +354,7 @@ void Parser::bitwise_and_expression(Node::pointer_t& node)
 {
     equality_expression(node);
 
-    if(f_node->get_type() == Node::NODE_BITWISE_AND)
+    if(f_node->get_type() == Node::node_t::NODE_BITWISE_AND)
     {
         f_node->append_child(node);
         node = f_node;
@@ -371,10 +371,10 @@ void Parser::equality_expression(Node::pointer_t& node)
 {
     relational_expression(node);
 
-    while(f_node->get_type() == Node::NODE_EQUAL
-       || f_node->get_type() == Node::NODE_NOT_EQUAL
-       || f_node->get_type() == Node::NODE_STRICTLY_EQUAL
-       || f_node->get_type() == Node::NODE_STRICTLY_NOT_EQUAL)
+    while(f_node->get_type() == Node::node_t::NODE_EQUAL
+       || f_node->get_type() == Node::node_t::NODE_NOT_EQUAL
+       || f_node->get_type() == Node::node_t::NODE_STRICTLY_EQUAL
+       || f_node->get_type() == Node::node_t::NODE_STRICTLY_NOT_EQUAL)
     {
         f_node->append_child(node);
         node = f_node;
@@ -391,15 +391,15 @@ void Parser::relational_expression(Node::pointer_t& node)
 {
     shift_expression(node);
 
-    while(f_node->get_type() == Node::NODE_LESS
-       || f_node->get_type() == Node::NODE_GREATER
-       || f_node->get_type() == Node::NODE_LESS_EQUAL
-       || f_node->get_type() == Node::NODE_GREATER_EQUAL
-       || f_node->get_type() == Node::NODE_IS
-       || f_node->get_type() == Node::NODE_AS
-       || f_node->get_type() == Node::NODE_MATCH
-       || f_node->get_type() == Node::NODE_IN
-       || f_node->get_type() == Node::NODE_INSTANCEOF)
+    while(f_node->get_type() == Node::node_t::NODE_LESS
+       || f_node->get_type() == Node::node_t::NODE_GREATER
+       || f_node->get_type() == Node::node_t::NODE_LESS_EQUAL
+       || f_node->get_type() == Node::node_t::NODE_GREATER_EQUAL
+       || f_node->get_type() == Node::node_t::NODE_IS
+       || f_node->get_type() == Node::node_t::NODE_AS
+       || f_node->get_type() == Node::node_t::NODE_MATCH
+       || f_node->get_type() == Node::node_t::NODE_IN
+       || f_node->get_type() == Node::node_t::NODE_INSTANCEOF)
     {
         f_node->append_child(node);
         node = f_node;
@@ -410,8 +410,8 @@ void Parser::relational_expression(Node::pointer_t& node)
         node->append_child(right);
 
         // with IN we accept a range (optional)
-        if(node->get_type() == Node::NODE_IN
-        && (f_node->get_type() == Node::NODE_RANGE || f_node->get_type() == Node::NODE_REST))
+        if(node->get_type() == Node::node_t::NODE_IN
+        && (f_node->get_type() == Node::node_t::NODE_RANGE || f_node->get_type() == Node::node_t::NODE_REST))
         {
             get_token();
             Node::pointer_t end;
@@ -426,11 +426,11 @@ void Parser::shift_expression(Node::pointer_t& node)
 {
     additive_expression(node);
 
-    while(f_node->get_type() == Node::NODE_SHIFT_LEFT
-       || f_node->get_type() == Node::NODE_SHIFT_RIGHT
-       || f_node->get_type() == Node::NODE_SHIFT_RIGHT_UNSIGNED
-       || f_node->get_type() == Node::NODE_ROTATE_LEFT
-       || f_node->get_type() == Node::NODE_ROTATE_RIGHT)
+    while(f_node->get_type() == Node::node_t::NODE_SHIFT_LEFT
+       || f_node->get_type() == Node::node_t::NODE_SHIFT_RIGHT
+       || f_node->get_type() == Node::node_t::NODE_SHIFT_RIGHT_UNSIGNED
+       || f_node->get_type() == Node::node_t::NODE_ROTATE_LEFT
+       || f_node->get_type() == Node::node_t::NODE_ROTATE_RIGHT)
     {
         f_node->append_child(node);
         node = f_node;
@@ -447,8 +447,8 @@ void Parser::additive_expression(Node::pointer_t& node)
 {
     multiplicative_expression(node);
 
-    while(f_node->get_type() == Node::NODE_ADD
-       || f_node->get_type() == Node::NODE_SUBTRACT)
+    while(f_node->get_type() == Node::node_t::NODE_ADD
+       || f_node->get_type() == Node::node_t::NODE_SUBTRACT)
     {
         f_node->append_child(node);
         node = f_node;
@@ -465,9 +465,9 @@ void Parser::multiplicative_expression(Node::pointer_t& node)
 {
     power_expression(node);
 
-    while(f_node->get_type() == Node::NODE_MULTIPLY
-       || f_node->get_type() == Node::NODE_DIVIDE
-       || f_node->get_type() == Node::NODE_MODULO)
+    while(f_node->get_type() == Node::node_t::NODE_MULTIPLY
+       || f_node->get_type() == Node::node_t::NODE_DIVIDE
+       || f_node->get_type() == Node::node_t::NODE_MODULO)
     {
         f_node->append_child(node);
         node = f_node;
@@ -484,7 +484,7 @@ void Parser::power_expression(Node::pointer_t& node)
 {
     unary_expression(node);
 
-    if(f_node->get_type() == Node::NODE_POWER)
+    if(f_node->get_type() == Node::node_t::NODE_POWER)
     {
         f_node->append_child(node);
         node = f_node;
@@ -507,9 +507,9 @@ void Parser::unary_expression(Node::pointer_t& node)
 
     switch(f_node->get_type())
     {
-    case Node::NODE_DELETE:
-    case Node::NODE_INCREMENT:
-    case Node::NODE_DECREMENT:
+    case Node::node_t::NODE_DELETE:
+    case Node::node_t::NODE_INCREMENT:
+    case Node::node_t::NODE_DECREMENT:
     {
         node = f_node;
         get_token();
@@ -519,12 +519,12 @@ void Parser::unary_expression(Node::pointer_t& node)
     }
         break;
 
-    case Node::NODE_VOID:
-    case Node::NODE_TYPEOF:
-    case Node::NODE_ADD: // +<value>
-    case Node::NODE_SUBTRACT: // -<value>
-    case Node::NODE_BITWISE_NOT:
-    case Node::NODE_LOGICAL_NOT:
+    case Node::node_t::NODE_VOID:
+    case Node::node_t::NODE_TYPEOF:
+    case Node::node_t::NODE_ADD: // +<value>
+    case Node::node_t::NODE_SUBTRACT: // -<value>
+    case Node::node_t::NODE_BITWISE_NOT:
+    case Node::node_t::NODE_LOGICAL_NOT:
     {
         node = f_node;
         get_token();
@@ -550,7 +550,7 @@ void Parser::postfix_expression(Node::pointer_t& node)
     {
         switch(f_node->get_type())
         {
-        case Node::NODE_MEMBER:
+        case Node::node_t::NODE_MEMBER:
         {
             f_node->append_child(node);
             node = f_node;
@@ -562,13 +562,13 @@ void Parser::postfix_expression(Node::pointer_t& node)
         }
             break;
 
-        case Node::NODE_SCOPE:
+        case Node::node_t::NODE_SCOPE:
         {
             f_node->append_child(node);
             node = f_node;
 
             get_token();
-            if(f_node->get_type() == Node::NODE_IDENTIFIER)
+            if(f_node->get_type() == Node::node_t::NODE_IDENTIFIER)
             {
                 node->append_child(f_node);
                 get_token();
@@ -583,39 +583,39 @@ void Parser::postfix_expression(Node::pointer_t& node)
         }
             break;
 
-        case Node::NODE_INCREMENT:
+        case Node::node_t::NODE_INCREMENT:
         {
-            Node::pointer_t decrement(f_lexer->get_new_node(Node::NODE_POST_INCREMENT));
+            Node::pointer_t decrement(f_lexer->get_new_node(Node::node_t::NODE_POST_INCREMENT));
             decrement->append_child(node);
             node = decrement;
             get_token();
         }
             break;
 
-        case Node::NODE_DECREMENT:
+        case Node::node_t::NODE_DECREMENT:
         {
-            Node::pointer_t decrement(f_lexer->get_new_node(Node::NODE_POST_DECREMENT));
+            Node::pointer_t decrement(f_lexer->get_new_node(Node::node_t::NODE_POST_DECREMENT));
             decrement->append_child(node);
             node = decrement;
             get_token();
         }
             break;
 
-        case Node::NODE_OPEN_PARENTHESIS:        // function call arguments
+        case Node::node_t::NODE_OPEN_PARENTHESIS:        // function call arguments
         {
             Node::pointer_t left(node);
-            node = f_lexer->get_new_node(Node::NODE_CALL);
+            node = f_lexer->get_new_node(Node::node_t::NODE_CALL);
             node->append_child(left);
 
             get_token();
 
             // any arguments?
             Node::pointer_t right;
-            if(f_node->get_type() != Node::NODE_CLOSE_PARENTHESIS)
+            if(f_node->get_type() != Node::node_t::NODE_CLOSE_PARENTHESIS)
             {
                 Node::pointer_t list;
                 list_expression(list, true, false);
-                if(list->get_type() == Node::NODE_LIST)
+                if(list->get_type() == Node::node_t::NODE_LIST)
                 {
                     // already a list, use it as is
                     right = list;
@@ -623,18 +623,18 @@ void Parser::postfix_expression(Node::pointer_t& node)
                 else
                 {
                     // not a list, so put it in a one
-                    right = f_lexer->get_new_node(Node::NODE_LIST);
+                    right = f_lexer->get_new_node(Node::node_t::NODE_LIST);
                     right->append_child(list);
                 }
             }
             else
             {
                 // an empty list!
-                right = f_lexer->get_new_node(Node::NODE_LIST);
+                right = f_lexer->get_new_node(Node::node_t::NODE_LIST);
             }
             node->append_child(right);
 
-            if(f_node->get_type() == Node::NODE_CLOSE_PARENTHESIS)
+            if(f_node->get_type() == Node::node_t::NODE_CLOSE_PARENTHESIS)
             {
                 get_token();
             }
@@ -646,23 +646,23 @@ void Parser::postfix_expression(Node::pointer_t& node)
         }
             break;
 
-        case Node::NODE_OPEN_SQUARE_BRACKET:        // array/property access
+        case Node::node_t::NODE_OPEN_SQUARE_BRACKET:        // array/property access
         {
-            Node::pointer_t array(f_lexer->get_new_node(Node::NODE_ARRAY));
+            Node::pointer_t array(f_lexer->get_new_node(Node::node_t::NODE_ARRAY));
             array->append_child(node);
             node = array;
 
             get_token();
 
             // any arguments?
-            if(f_node->get_type() != Node::NODE_CLOSE_SQUARE_BRACKET)
+            if(f_node->get_type() != Node::node_t::NODE_CLOSE_SQUARE_BRACKET)
             {
                 Node::pointer_t right;
                 list_expression(right, false, false);
                 node->append_child(right);
             }
 
-            if(f_node->get_type() == Node::NODE_CLOSE_SQUARE_BRACKET)
+            if(f_node->get_type() == Node::node_t::NODE_CLOSE_SQUARE_BRACKET)
             {
                 get_token();
             }
@@ -686,26 +686,26 @@ void Parser::primary_expression(Node::pointer_t& node)
 {
     switch(f_node->get_type())
     {
-    case Node::NODE_FALSE:
-    case Node::NODE_FLOAT64:
-    case Node::NODE_IDENTIFIER:
-    case Node::NODE_INT64:
-    case Node::NODE_NULL:
-    case Node::NODE_PRIVATE:
-    case Node::NODE_PUBLIC:
-    case Node::NODE_REGULAR_EXPRESSION:
-    case Node::NODE_STRING:
-    case Node::NODE_SUPER:
-    case Node::NODE_THIS:
-    case Node::NODE_TRUE:
-    case Node::NODE_UNDEFINED:
+    case Node::node_t::NODE_FALSE:
+    case Node::node_t::NODE_FLOAT64:
+    case Node::node_t::NODE_IDENTIFIER:
+    case Node::node_t::NODE_INT64:
+    case Node::node_t::NODE_NULL:
+    case Node::node_t::NODE_PRIVATE:
+    case Node::node_t::NODE_PUBLIC:
+    case Node::node_t::NODE_REGULAR_EXPRESSION:
+    case Node::node_t::NODE_STRING:
+    case Node::node_t::NODE_SUPER:
+    case Node::node_t::NODE_THIS:
+    case Node::node_t::NODE_TRUE:
+    case Node::node_t::NODE_UNDEFINED:
     {
         node = f_node;
         get_token();
     }
         break;
 
-    case Node::NODE_NEW:
+    case Node::node_t::NODE_NEW:
     {
         node = f_node;
         get_token();
@@ -715,7 +715,7 @@ void Parser::primary_expression(Node::pointer_t& node)
     }
         break;
 
-    case Node::NODE_OPEN_PARENTHESIS:        // grouped expressions
+    case Node::node_t::NODE_OPEN_PARENTHESIS:        // grouped expressions
     {
         get_token();
         list_expression(node, false, false);
@@ -724,11 +724,11 @@ void Parser::primary_expression(Node::pointer_t& node)
         //       such as (a).field which is dynamic (i.e. we get the
         //       content of variable a as the name of the object to
         //       access and thus it is not equivalent to a.field)
-        if(node->get_type() == Node::NODE_IDENTIFIER)
+        if(node->get_type() == Node::node_t::NODE_IDENTIFIER)
         {
             node->to_videntifier();
         }
-        if(f_node->get_type() == Node::NODE_CLOSE_PARENTHESIS)
+        if(f_node->get_type() == Node::node_t::NODE_CLOSE_PARENTHESIS)
         {
             get_token();
         }
@@ -740,15 +740,15 @@ void Parser::primary_expression(Node::pointer_t& node)
     }
         break;
 
-    case Node::NODE_OPEN_SQUARE_BRACKET: // array declaration
+    case Node::node_t::NODE_OPEN_SQUARE_BRACKET: // array declaration
     {
-        node = f_lexer->get_new_node(Node::NODE_ARRAY_LITERAL);
+        node = f_lexer->get_new_node(Node::node_t::NODE_ARRAY_LITERAL);
         get_token();
 
         Node::pointer_t elements;
         list_expression(elements, false, true);
         node->append_child(elements);
-        if(f_node->get_type() == Node::NODE_CLOSE_SQUARE_BRACKET)
+        if(f_node->get_type() == Node::node_t::NODE_CLOSE_SQUARE_BRACKET)
         {
             get_token();
         }
@@ -760,11 +760,11 @@ void Parser::primary_expression(Node::pointer_t& node)
     }
         break;
 
-    case Node::NODE_OPEN_CURVLY_BRACKET: // object declaration
+    case Node::node_t::NODE_OPEN_CURVLY_BRACKET: // object declaration
     {
         get_token();
         object_literal_expression(node);
-        if(f_node->get_type() == Node::NODE_CLOSE_CURVLY_BRACKET)
+        if(f_node->get_type() == Node::node_t::NODE_CLOSE_CURVLY_BRACKET)
         {
             get_token();
         }
@@ -776,7 +776,7 @@ void Parser::primary_expression(Node::pointer_t& node)
     }
         break;
 
-    case Node::NODE_FUNCTION:
+    case Node::node_t::NODE_FUNCTION:
     {
         get_token();
         function(node, true);
@@ -798,14 +798,14 @@ void Parser::object_literal_expression(Node::pointer_t& node)
     Node::pointer_t name;
     Node::node_t    type;
 
-    node = f_lexer->get_new_node(Node::NODE_OBJECT_LITERAL);
+    node = f_lexer->get_new_node(Node::node_t::NODE_OBJECT_LITERAL);
     for(;;)
     {
-        name = f_lexer->get_new_node(Node::NODE_TYPE);
+        name = f_lexer->get_new_node(Node::node_t::NODE_TYPE);
         type = f_node->get_type();
         switch(type)
         {
-        case Node::NODE_OPEN_PARENTHESIS: // (<expr>)::<name> only
+        case Node::node_t::NODE_OPEN_PARENTHESIS: // (<expr>)::<name> only
         {
             // We keep the '(' so an identifier becomes
             // a VIDENTIFIER and thus remains dynamic.
@@ -816,9 +816,9 @@ void Parser::object_literal_expression(Node::pointer_t& node)
         }
             goto and_scope;
 
-        case Node::NODE_IDENTIFIER:    // <name> or <namespace>::<name>
-        case Node::NODE_PRIVATE:    // private::<name> only
-        case Node::NODE_PUBLIC:    // public::<name> only
+        case Node::node_t::NODE_IDENTIFIER:    // <name> or <namespace>::<name>
+        case Node::node_t::NODE_PRIVATE:    // private::<name> only
+        case Node::node_t::NODE_PUBLIC:    // public::<name> only
             // NOTE: an IDENTIFIER here remains NODE_IDENTIFIER
             //       so it does not look like the previous expression
             //       (i.e. an expression literal can be just an
@@ -827,10 +827,10 @@ void Parser::object_literal_expression(Node::pointer_t& node)
             name->set_string(f_node->get_string());
             get_token();
 and_scope:
-            if(f_node->get_type() == Node::NODE_SCOPE)
+            if(f_node->get_type() == Node::node_t::NODE_SCOPE)
             {
                 get_token();
-                if(f_node->get_type() == Node::NODE_IDENTIFIER)
+                if(f_node->get_type() == Node::node_t::NODE_IDENTIFIER)
                 {
                     name->append_child(f_node);
                 }
@@ -840,16 +840,16 @@ and_scope:
                     msg << "'::' is expected to be followed by an identifier";
                 }
             }
-            else if(type != Node::NODE_IDENTIFIER)
+            else if(type != Node::node_t::NODE_IDENTIFIER)
             {
                 Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_FIELD_NAME, f_lexer->get_input()->get_position());
                 msg << "'public' or 'private' cannot be used as a field name, '::' was expected";
             }
             break;
 
-        case Node::NODE_INT64:
-        case Node::NODE_FLOAT64:
-        case Node::NODE_STRING:
+        case Node::node_t::NODE_INT64:
+        case Node::node_t::NODE_FLOAT64:
+        case Node::node_t::NODE_STRING:
             name = f_node;
             get_token();
             break;
@@ -861,7 +861,7 @@ and_scope:
 
         }
 
-        if(f_node->get_type() == Node::NODE_COLON)
+        if(f_node->get_type() == Node::node_t::NODE_COLON)
         {
             get_token();
         }
@@ -870,7 +870,7 @@ and_scope:
             // if we have a closing brace here, the programmer
             // tried to end his list with a comma; we just
             // accept that one silently! (like in C/C++)
-            if(f_node->get_type() == Node::NODE_CLOSE_CURVLY_BRACKET)
+            if(f_node->get_type() == Node::node_t::NODE_CLOSE_CURVLY_BRACKET)
             {
                 // TODO: in pedantic, emit a warning
                 break;
@@ -879,7 +879,7 @@ and_scope:
             Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_COLON_EXPECTED, f_lexer->get_input()->get_position());
             msg << "':' expected after the name of a field";
 
-            if(f_node->get_type() == Node::NODE_SEMICOLON)
+            if(f_node->get_type() == Node::node_t::NODE_SEMICOLON)
             {
                 // this is probably the end...
                 return;
@@ -887,12 +887,12 @@ and_scope:
 
             // if we have a comma here, the programmer
             // just forgot a few things...
-            if(f_node->get_type() == Node::NODE_COLON)
+            if(f_node->get_type() == Node::node_t::NODE_COLON)
             {
                 get_token();
                 // we accept a comma at the end here too!
-                if(f_node->get_type() == Node::NODE_CLOSE_CURVLY_BRACKET
-                || f_node->get_type() == Node::NODE_SEMICOLON)
+                if(f_node->get_type() == Node::node_t::NODE_CLOSE_CURVLY_BRACKET
+                || f_node->get_type() == Node::node_t::NODE_SEMICOLON)
                 {
                     break;
                 }
@@ -908,7 +908,7 @@ and_scope:
         assignment_expression(value);
         node->append_child(value);
 
-        if(f_node->get_type() != Node::NODE_COMMA)
+        if(f_node->get_type() != Node::node_t::NODE_COMMA)
         {
             // XXX: no error here?
             break;

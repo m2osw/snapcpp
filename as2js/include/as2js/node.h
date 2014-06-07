@@ -40,7 +40,7 @@ SOFTWARE.
 #include    "float64.h"
 #include    "position.h"
 
-#include    <controlled_vars/controlled_vars_limited_auto_init.h>
+#include    <controlled_vars/controlled_vars_limited_auto_enum_init.h>
 
 #include    <bitset>
 #include    <map>
@@ -72,37 +72,37 @@ public:
     static depth_t const        MATCH_LOWEST_DEPTH = INT_MAX / 2;
 
     // the node type is often referenced as a token
-    enum node_t
+    enum class node_t
     {
         NODE_EOF                    = -1,       // when reading after the end of the file
         NODE_UNKNOWN                = 0,        // node still uninitialized
 
         // here are all the punctuation as themselves
         // (i.e. '<', '>', '=', '+', '-', etc.)
-        NODE_ADD                    = '+',
-        NODE_BITWISE_AND            = '&',
-        NODE_BITWISE_NOT            = '~',
-        NODE_ASSIGNMENT             = '=',
-        NODE_BITWISE_OR             = '|',
-        NODE_BITWISE_XOR            = '^',
-        NODE_CLOSE_CURVLY_BRACKET   = '}',
-        NODE_CLOSE_PARENTHESIS      = ')',
-        NODE_CLOSE_SQUARE_BRACKET   = ']',
-        NODE_COLON                  = ':',
-        NODE_COMMA                  = ',',
-        NODE_CONDITIONAL            = '?',
-        NODE_DIVIDE                 = '/',
-        NODE_GREATER                = '>',
-        NODE_LESS                   = '<',
-        NODE_LOGICAL_NOT            = '!',
-        NODE_MODULO                 = '%',
-        NODE_MULTIPLY               = '*',
-        NODE_OPEN_CURVLY_BRACKET    = '{',
-        NODE_OPEN_PARENTHESIS       = '(',
-        NODE_OPEN_SQUARE_BRACKET    = '[',
-        NODE_MEMBER                 = '.',
-        NODE_SEMICOLON              = ';',
-        NODE_SUBTRACT               = '-',
+        NODE_ADD                    = '+',      // 0x2B
+        NODE_BITWISE_AND            = '&',      // 0x26
+        NODE_BITWISE_NOT            = '~',      // 0x7E
+        NODE_ASSIGNMENT             = '=',      // 0x3D
+        NODE_BITWISE_OR             = '|',      // 0x7C
+        NODE_BITWISE_XOR            = '^',      // 0x5E
+        NODE_CLOSE_CURVLY_BRACKET   = '}',      // 0x7D
+        NODE_CLOSE_PARENTHESIS      = ')',      // 0x29
+        NODE_CLOSE_SQUARE_BRACKET   = ']',      // 0x5D
+        NODE_COLON                  = ':',      // 0x3A
+        NODE_COMMA                  = ',',      // 0x2C
+        NODE_CONDITIONAL            = '?',      // 0x3F
+        NODE_DIVIDE                 = '/',      // 0x2F
+        NODE_GREATER                = '>',      // 0x3E
+        NODE_LESS                   = '<',      // 0x3C
+        NODE_LOGICAL_NOT            = '!',      // 0x21
+        NODE_MODULO                 = '%',      // 0x25
+        NODE_MULTIPLY               = '*',      // 0x2A
+        NODE_OPEN_CURVLY_BRACKET    = '{',      // 0x7B
+        NODE_OPEN_PARENTHESIS       = '(',      // 0x28
+        NODE_OPEN_SQUARE_BRACKET    = '[',      // 0x5B
+        NODE_MEMBER                 = '.',      // 0x2E
+        NODE_SEMICOLON              = ';',      // 0x3B
+        NODE_SUBTRACT               = '-',      // 0x2D
 
         // The following are composed tokens
         // (operators, keywords, strings, numbers...)
@@ -230,7 +230,7 @@ public:
 
         NODE_max,    // mark the limit
     };
-    typedef controlled_vars::limited_auto_init<node_t, NODE_EOF, NODE_max, NODE_UNKNOWN> safe_node_t;
+    typedef controlled_vars::limited_auto_enum_init<node_t, node_t::NODE_EOF, node_t::NODE_max, node_t::NODE_UNKNOWN> safe_node_t;
 
     // some nodes use flags and attributes, all of which are managed in
     // one bitset
@@ -238,7 +238,7 @@ public:
     // (Note that our Nodes are smart and make use of the function named
     // verify_flag_attribute() to make sure that this specific node can
     // indeed be given such flag or attribute)
-    enum flag_attribute_t
+    enum class flag_attribute_t
     {
     //
     // the following is a list of all the possible flags in our system
@@ -326,6 +326,7 @@ public:
         // function/variable is still defined, but should not be used
         // (using generates a "foo deprecated" warning)
         NODE_ATTR_DEPRECATED,
+        NODE_ATTR_UNSAFE, // i.e. eval()
 
         // TODO: add a way to mark functions/variables as browser specific
         //       so we can easily tell the user that it should not be used
@@ -362,9 +363,9 @@ public:
         NODE_FLAG_ATTRIBUTE_MAX
     };
 
-    typedef std::bitset<NODE_FLAG_ATTRIBUTE_MAX - 1>     flag_attribute_set_t;
+    typedef std::bitset<static_cast<int>(flag_attribute_t::NODE_FLAG_ATTRIBUTE_MAX) - 1>     flag_attribute_set_t;
 
-    enum link_t
+    enum class link_t
     {
         LINK_INSTANCE = 0,
         LINK_TYPE,

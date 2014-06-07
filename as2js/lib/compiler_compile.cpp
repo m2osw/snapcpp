@@ -35,6 +35,7 @@ SOFTWARE.
 
 #include    "as2js/compiler.h"
 
+#include    "as2js/exceptions.h"
 #include    "as2js/message.h"
 
 
@@ -66,22 +67,22 @@ namespace as2js
 int Compiler::compile(Node::pointer_t& root)
 {
     // all the "use namespace ... / with ..." currently in effect
-    f_scope = root->create_replacement(Node::NODE_SCOPE);
+    f_scope = root->create_replacement(Node::node_t::NODE_SCOPE);
 
     if(root)
     {
-        if(root->get_type() == Node::NODE_PROGRAM)
+        if(root->get_type() == Node::node_t::NODE_PROGRAM)
         {
             program(root);
         }
-        else if(root->get_type() == Node::NODE_ROOT)
+        else if(root->get_type() == Node::node_t::NODE_ROOT)
         {
             NodeLock ln(root);
             size_t const max_children(root->get_children_size());
             for(size_t idx(0); idx < max_children; ++idx)
             {
                 Node::pointer_t child(root->get_child(idx));
-                if(child->get_type() == Node::NODE_PROGRAM)
+                if(child->get_type() == Node::node_t::NODE_PROGRAM)
                 {
                     program(child);
                 }
@@ -115,7 +116,7 @@ void Compiler::find_labels(Node::pointer_t function_node, Node::pointer_t node)
     // NOTE: function may also be a program or a package.
     switch(node->get_type())
     {
-    case Node::NODE_LABEL:
+    case Node::node_t::NODE_LABEL:
     {
         Node::pointer_t label(function_node->find_label(node->get_string()));
         if(label)
@@ -133,41 +134,41 @@ void Compiler::find_labels(Node::pointer_t function_node, Node::pointer_t node)
 
     // sub-declarations and expressions are just skipped
     // decls:
-    case Node::NODE_FUNCTION:
-    case Node::NODE_CLASS:
-    case Node::NODE_INTERFACE:
-    case Node::NODE_VAR:
-    case Node::NODE_PACKAGE:    // ?!
-    case Node::NODE_PROGRAM:    // ?!
+    case Node::node_t::NODE_FUNCTION:
+    case Node::node_t::NODE_CLASS:
+    case Node::node_t::NODE_INTERFACE:
+    case Node::node_t::NODE_VAR:
+    case Node::node_t::NODE_PACKAGE:    // ?!
+    case Node::node_t::NODE_PROGRAM:    // ?!
     // expr:
-    case Node::NODE_ASSIGNMENT:
-    case Node::NODE_ASSIGNMENT_ADD:
-    case Node::NODE_ASSIGNMENT_BITWISE_AND:
-    case Node::NODE_ASSIGNMENT_BITWISE_OR:
-    case Node::NODE_ASSIGNMENT_BITWISE_XOR:
-    case Node::NODE_ASSIGNMENT_DIVIDE:
-    case Node::NODE_ASSIGNMENT_LOGICAL_AND:
-    case Node::NODE_ASSIGNMENT_LOGICAL_OR:
-    case Node::NODE_ASSIGNMENT_LOGICAL_XOR:
-    case Node::NODE_ASSIGNMENT_MAXIMUM:
-    case Node::NODE_ASSIGNMENT_MINIMUM:
-    case Node::NODE_ASSIGNMENT_MODULO:
-    case Node::NODE_ASSIGNMENT_MULTIPLY:
-    case Node::NODE_ASSIGNMENT_POWER:
-    case Node::NODE_ASSIGNMENT_ROTATE_LEFT:
-    case Node::NODE_ASSIGNMENT_ROTATE_RIGHT:
-    case Node::NODE_ASSIGNMENT_SHIFT_LEFT:
-    case Node::NODE_ASSIGNMENT_SHIFT_RIGHT:
-    case Node::NODE_ASSIGNMENT_SHIFT_RIGHT_UNSIGNED:
-    case Node::NODE_ASSIGNMENT_SUBTRACT:
-    case Node::NODE_CALL:
-    case Node::NODE_DECREMENT:
-    case Node::NODE_DELETE:
-    case Node::NODE_INCREMENT:
-    case Node::NODE_MEMBER:
-    case Node::NODE_NEW:
-    case Node::NODE_POST_DECREMENT:
-    case Node::NODE_POST_INCREMENT:
+    case Node::node_t::NODE_ASSIGNMENT:
+    case Node::node_t::NODE_ASSIGNMENT_ADD:
+    case Node::node_t::NODE_ASSIGNMENT_BITWISE_AND:
+    case Node::node_t::NODE_ASSIGNMENT_BITWISE_OR:
+    case Node::node_t::NODE_ASSIGNMENT_BITWISE_XOR:
+    case Node::node_t::NODE_ASSIGNMENT_DIVIDE:
+    case Node::node_t::NODE_ASSIGNMENT_LOGICAL_AND:
+    case Node::node_t::NODE_ASSIGNMENT_LOGICAL_OR:
+    case Node::node_t::NODE_ASSIGNMENT_LOGICAL_XOR:
+    case Node::node_t::NODE_ASSIGNMENT_MAXIMUM:
+    case Node::node_t::NODE_ASSIGNMENT_MINIMUM:
+    case Node::node_t::NODE_ASSIGNMENT_MODULO:
+    case Node::node_t::NODE_ASSIGNMENT_MULTIPLY:
+    case Node::node_t::NODE_ASSIGNMENT_POWER:
+    case Node::node_t::NODE_ASSIGNMENT_ROTATE_LEFT:
+    case Node::node_t::NODE_ASSIGNMENT_ROTATE_RIGHT:
+    case Node::node_t::NODE_ASSIGNMENT_SHIFT_LEFT:
+    case Node::node_t::NODE_ASSIGNMENT_SHIFT_RIGHT:
+    case Node::node_t::NODE_ASSIGNMENT_SHIFT_RIGHT_UNSIGNED:
+    case Node::node_t::NODE_ASSIGNMENT_SUBTRACT:
+    case Node::node_t::NODE_CALL:
+    case Node::node_t::NODE_DECREMENT:
+    case Node::node_t::NODE_DELETE:
+    case Node::node_t::NODE_INCREMENT:
+    case Node::node_t::NODE_MEMBER:
+    case Node::node_t::NODE_NEW:
+    case Node::node_t::NODE_POST_DECREMENT:
+    case Node::node_t::NODE_POST_INCREMENT:
         return;
 
     default:
@@ -263,7 +264,7 @@ void Compiler::print_search_errors(Node::pointer_t name)
 
 void Compiler::resolve_internal_type(Node::pointer_t parent, char const *type, Node::pointer_t& resolution)
 {
-    Node::pointer_t id(parent->create_replacement(Node::NODE_IDENTIFIER));
+    Node::pointer_t id(parent->create_replacement(Node::node_t::NODE_IDENTIFIER));
     id->set_string(type);
 
     // create a temporary identifier
@@ -284,8 +285,8 @@ void Compiler::resolve_internal_type(Node::pointer_t parent, char const *type, N
     {
         // if the compiler can't find an internal type, that's really bad!
         Message msg(MESSAGE_LEVEL_FATAL, AS_ERR_INTERNAL_ERROR, parent->get_position());
-        msg << "cannot find internal type '" << type << "'.";
-        exit(1);
+        msg << "cannot find internal type \"" << type << "\".";
+        throw exception_exit(1, "cannot find internal type");
     }
 
     return;

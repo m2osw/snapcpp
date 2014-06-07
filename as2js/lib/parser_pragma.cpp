@@ -49,30 +49,30 @@ namespace as2js
 
 void Parser::pragma()
 {
-    while(f_node->get_type() == Node::NODE_IDENTIFIER)
+    while(f_node->get_type() == Node::node_t::NODE_IDENTIFIER)
     {
         String const name = f_node->get_string();
         Node::pointer_t argument;
         bool prima = false;
         get_token();
-        if(f_node->get_type() == Node::NODE_OPEN_PARENTHESIS)
+        if(f_node->get_type() == Node::node_t::NODE_OPEN_PARENTHESIS)
         {
             // has zero or one argument
             get_token();
             // accept an empty argument '()'
-            if(f_node->get_type() != Node::NODE_CLOSE_PARENTHESIS)
+            if(f_node->get_type() != Node::node_t::NODE_CLOSE_PARENTHESIS)
             {
                 bool negative = false;
-                if(f_node->get_type() == Node::NODE_SUBTRACT)
+                if(f_node->get_type() == Node::node_t::NODE_SUBTRACT)
                 {
                     get_token();
                     negative = true;
                 }
                 switch(f_node->get_type())
                 {
-                case Node::NODE_FALSE:
-                case Node::NODE_STRING:
-                case Node::NODE_TRUE:
+                case Node::node_t::NODE_FALSE:
+                case Node::node_t::NODE_STRING:
+                case Node::node_t::NODE_TRUE:
                     if(negative)
                     {
                         negative = false;
@@ -83,7 +83,7 @@ void Parser::pragma()
                     get_token();
                     break;
 
-                case Node::NODE_FLOAT64:
+                case Node::node_t::NODE_FLOAT64:
                     argument = f_node;
                     if(negative)
                     {
@@ -92,7 +92,7 @@ void Parser::pragma()
                     get_token();
                     break;
 
-                case Node::NODE_INT64:
+                case Node::node_t::NODE_INT64:
                     argument = f_node;
                     if(negative)
                     {
@@ -101,7 +101,7 @@ void Parser::pragma()
                     get_token();
                     break;
 
-                case Node::NODE_CLOSE_PARENTHESIS:
+                case Node::node_t::NODE_CLOSE_PARENTHESIS:
                 {
                     Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_BAD_PRAGMA, f_lexer->get_input()->get_position());
                     msg << "a pragma argument can't just be '-'";
@@ -117,7 +117,7 @@ void Parser::pragma()
 
                 }
             }
-            if(f_node->get_type() == Node::NODE_CLOSE_PARENTHESIS)
+            if(f_node->get_type() == Node::node_t::NODE_CLOSE_PARENTHESIS)
             {
                 Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_BAD_PRAGMA, f_lexer->get_input()->get_position());
                 msg << "invalid argument for a pragma";
@@ -127,7 +127,7 @@ void Parser::pragma()
                 get_token();
             }
         }
-        if(f_node->get_type() == Node::NODE_CONDITIONAL)
+        if(f_node->get_type() == Node::node_t::NODE_CONDITIONAL)
         {
             prima = true;
             get_token();
@@ -220,33 +220,33 @@ void Parser::pragma_option(Options::option_t option, bool prima, Node::pointer_t
     // user overloaded the value?
     switch(argument->get_type())
     {
-    case Node::NODE_UNKNOWN:
+    case Node::node_t::NODE_UNKNOWN:
         // default value used
         break;
 
-    case Node::NODE_TRUE:
+    case Node::node_t::NODE_TRUE:
         value = 1;
         break;
 
-    case Node::NODE_INT64:
+    case Node::node_t::NODE_INT64:
         value = option, argument->get_int64().get() != 0;
         break;
 
-    case Node::NODE_FLOAT64:
+    case Node::node_t::NODE_FLOAT64:
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
         value = option, argument->get_float64().get() != 0.0;
 #pragma GCC diagnostic pop
         break;
 
-    case Node::NODE_STRING:
+    case Node::node_t::NODE_STRING:
     {
         Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INCOMPATIBLE_PRAGMA_ARGUMENT, f_lexer->get_input()->get_position());
         msg << "incompatible pragma argument";
     }
         break;
 
-    default: // Node::NODE_FALSE
+    default: // Node::node_t::NODE_FALSE
         value = 0;
         break;
 

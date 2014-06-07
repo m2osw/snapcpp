@@ -98,6 +98,7 @@ add_executable(${PROJECT_NAME}
     test_as2js_float64.cpp
     test_as2js_int64.cpp
     test_as2js_message.cpp
+    test_as2js_node.cpp
     test_as2js_options.cpp
     test_as2js_position.cpp
     test_as2js_stream.cpp
@@ -233,6 +234,30 @@ int main() { new as2js::InputRetriever; }"
 )
 if(BUILT_ABSTRACT_INPUT_RETRIEVER)
     message(FATAL_ERROR "class as2js::InputRetriever can be instantiated, but should be abstract.")
+endif()
+
+
+#
+# class Output
+#
+unset(BUILT_ABSTRACT_OUTPUT CACHE)
+set(
+    CMAKE_REQUIRED_INCLUDES 
+        ${CONTROLLEDVARS_INCLUDE_DIRS}
+        ${ADVGETOPT_INCLUDE_DIRS}
+        ${as2js_compiler_BINARY_DIR}/include
+        ${as2js_compiler_SOURCE_DIR}/include
+        ${as2js_compiler_SOURCE_DIR}/src
+        ${CPPUNIT_INCLUDE_DIR}
+        ${QT_INCLUDES}
+)
+check_cxx_abstract_class(
+"#include \"as2js/stream.h\"
+int main() { new as2js::Output; }"
+    BUILT_ABSTRACT_OUTPUT
+)
+if(BUILT_ABSTRACT_OUTPUT)
+    message(FATAL_ERROR "class as2js::Output can be instantiated, but should be abstract.")
 endif()
 
 

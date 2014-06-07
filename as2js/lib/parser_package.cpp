@@ -51,16 +51,16 @@ void Parser::package(Node::pointer_t& node)
 {
     String        name;
 
-    node = f_lexer->get_new_node(Node::NODE_PACKAGE);
+    node = f_lexer->get_new_node(Node::node_t::NODE_PACKAGE);
 
-    if(f_node->get_type() == Node::NODE_IDENTIFIER)
+    if(f_node->get_type() == Node::node_t::NODE_IDENTIFIER)
     {
         name = f_node->get_string();
         get_token();
-        while(f_node->get_type() == Node::NODE_MEMBER)
+        while(f_node->get_type() == Node::node_t::NODE_MEMBER)
         {
             get_token();
-            if(f_node->get_type() != Node::NODE_IDENTIFIER)
+            if(f_node->get_type() != Node::node_t::NODE_IDENTIFIER)
             {
                 // unexpected token/missing name
                 Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_PACKAGE_NAME, f_lexer->get_input()->get_position());
@@ -72,7 +72,7 @@ void Parser::package(Node::pointer_t& node)
             get_token();
         }
     }
-    else if(f_node->get_type() == Node::NODE_STRING)
+    else if(f_node->get_type() == Node::node_t::NODE_STRING)
     {
         name = f_node->get_string();
         // TODO: Validate Package Name (in case of a STRING)
@@ -85,7 +85,7 @@ void Parser::package(Node::pointer_t& node)
     // set the name and flags of this package
     node->set_string(name);
 
-    if(f_node->get_type() == Node::NODE_OPEN_CURVLY_BRACKET)
+    if(f_node->get_type() == Node::node_t::NODE_OPEN_CURVLY_BRACKET)
     {
         get_token();
     }
@@ -101,7 +101,7 @@ void Parser::package(Node::pointer_t& node)
     node->append_child(directives);
 
     // when we return we should have a '}'
-    if(f_node->get_type() == Node::NODE_CLOSE_CURVLY_BRACKET)
+    if(f_node->get_type() == Node::node_t::NODE_CLOSE_CURVLY_BRACKET)
     {
         get_token();
     }
@@ -123,37 +123,37 @@ void Parser::package(Node::pointer_t& node)
 
 void Parser::import(Node::pointer_t& node)
 {
-    node = f_lexer->get_new_node(Node::NODE_IMPORT);
+    node = f_lexer->get_new_node(Node::node_t::NODE_IMPORT);
 
-    if(f_node->get_type() == Node::NODE_IMPLEMENTS)
+    if(f_node->get_type() == Node::node_t::NODE_IMPLEMENTS)
     {
-        node->set_flag(Node::NODE_IMPORT_FLAG_IMPLEMENTS, true);
+        node->set_flag(Node::flag_attribute_t::NODE_IMPORT_FLAG_IMPLEMENTS, true);
         get_token();
     }
 
-    if(f_node->get_type() == Node::NODE_IDENTIFIER)
+    if(f_node->get_type() == Node::node_t::NODE_IDENTIFIER)
     {
         String name;
         Node::pointer_t first(f_node);
         get_token();
-        bool const is_renaming = f_node->get_type() == Node::NODE_ASSIGNMENT;
+        bool const is_renaming = f_node->get_type() == Node::node_t::NODE_ASSIGNMENT;
         if(is_renaming)
         {
             // add first as the package alias
             node->append_child(first);
 
             get_token();
-            if(f_node->get_type() == Node::NODE_STRING)
+            if(f_node->get_type() == Node::node_t::NODE_STRING)
             {
                 name = f_node->get_string();
                 get_token();
-                if(f_node->get_type() == Node::NODE_MEMBER)
+                if(f_node->get_type() == Node::node_t::NODE_MEMBER)
                 {
                     Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_PACKAGE_NAME, f_lexer->get_input()->get_position());
                     msg << "a package name is either a string or a list of identifiers separated by periods (.); you can't mixed both";
                 }
             }
-            else if(f_node->get_type() == Node::NODE_IDENTIFIER)
+            else if(f_node->get_type() == Node::node_t::NODE_IDENTIFIER)
             {
                 name = f_node->get_string();
                 get_token();
@@ -170,7 +170,7 @@ void Parser::import(Node::pointer_t& node)
         }
 
         int everything = 0;
-        while(f_node->get_type() == Node::NODE_MEMBER)
+        while(f_node->get_type() == Node::node_t::NODE_MEMBER)
         {
             if(everything == 1)
             {
@@ -180,7 +180,7 @@ void Parser::import(Node::pointer_t& node)
             }
             name += ".";
             get_token();
-            if(f_node->get_type() == Node::NODE_MULTIPLY)
+            if(f_node->get_type() == Node::node_t::NODE_MULTIPLY)
             {
                 if(is_renaming && everything == 0)
                 {
@@ -195,9 +195,9 @@ void Parser::import(Node::pointer_t& node)
                     everything = 1;
                 }
             }
-            else if(f_node->get_type() == Node::NODE_IDENTIFIER)
+            else if(f_node->get_type() == Node::node_t::NODE_IDENTIFIER)
             {
-                if(f_node->get_type() == Node::NODE_STRING)
+                if(f_node->get_type() == Node::node_t::NODE_STRING)
                 {
                     Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_PACKAGE_NAME, f_lexer->get_input()->get_position());
                     msg << "a package name is either a string or a list of identifiers separated by periods (.); you can't mixed both";
@@ -218,7 +218,7 @@ void Parser::import(Node::pointer_t& node)
 
         node->set_string(name);
     }
-    else if(f_node->get_type() == Node::NODE_STRING)
+    else if(f_node->get_type() == Node::node_t::NODE_STRING)
     {
         // TODO: Validate Package Name (in case of a STRING)
         node->set_string(f_node->get_string());
@@ -228,7 +228,7 @@ void Parser::import(Node::pointer_t& node)
     {
         Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_PACKAGE_NAME, f_lexer->get_input()->get_position());
         msg << "a composed name or a string was expected after 'import'";
-        if(f_node->get_type() != Node::NODE_SEMICOLON && f_node->get_type() != Node::NODE_COMMA)
+        if(f_node->get_type() != Node::node_t::NODE_SEMICOLON && f_node->get_type() != Node::node_t::NODE_COMMA)
         {
             get_token();
         }
@@ -239,20 +239,20 @@ void Parser::import(Node::pointer_t& node)
     //     or exclude.
     //     However, include and exclude are mutually exclusive.
     long include_exclude = 0;
-    while(f_node->get_type() == Node::NODE_COMMA)
+    while(f_node->get_type() == Node::node_t::NODE_COMMA)
     {
         get_token();
-        if(f_node->get_type() == Node::NODE_NAMESPACE)
+        if(f_node->get_type() == Node::node_t::NODE_NAMESPACE)
         {
             get_token();
             // read the namespace (an expression)
             Node::pointer_t expr;
             conditional_expression(expr, false);
-            Node::pointer_t use(f_lexer->get_new_node(Node::NODE_USE /*namespace*/));
+            Node::pointer_t use(f_lexer->get_new_node(Node::node_t::NODE_USE /*namespace*/));
             use->append_child(expr);
             node->append_child(use);
         }
-        else if(f_node->get_type() == Node::NODE_IDENTIFIER)
+        else if(f_node->get_type() == Node::node_t::NODE_IDENTIFIER)
         {
             if(f_node->get_string() == "include")
             {
@@ -270,7 +270,7 @@ void Parser::import(Node::pointer_t& node)
                 // read the list of inclusion (an expression)
                 Node::pointer_t expr;
                 conditional_expression(expr, false);
-                Node::pointer_t include(f_lexer->get_new_node(Node::NODE_INCLUDE));
+                Node::pointer_t include(f_lexer->get_new_node(Node::node_t::NODE_INCLUDE));
                 include->append_child(expr);
                 node->append_child(include);
             }
@@ -290,7 +290,7 @@ void Parser::import(Node::pointer_t& node)
                 // read the list of exclusion (an expression)
                 Node::pointer_t expr;
                 conditional_expression(expr, false);
-                Node::pointer_t exclude(f_lexer->get_new_node(Node::NODE_EXCLUDE));
+                Node::pointer_t exclude(f_lexer->get_new_node(Node::node_t::NODE_EXCLUDE));
                 exclude->append_child(expr);
                 node->append_child(exclude);
             }
@@ -317,7 +317,7 @@ void Parser::use_namespace(Node::pointer_t& node)
 {
     Node::pointer_t expr;
     expression(expr);
-    node = f_lexer->get_new_node(Node::NODE_USE /*namespace*/);
+    node = f_lexer->get_new_node(Node::node_t::NODE_USE /*namespace*/);
     node->append_child(expr);
 }
 
@@ -325,10 +325,10 @@ void Parser::use_namespace(Node::pointer_t& node)
 
 void Parser::namespace_block(Node::pointer_t& node)
 {
-    if(f_node->get_type() == Node::NODE_IDENTIFIER)
+    if(f_node->get_type() == Node::node_t::NODE_IDENTIFIER)
     {
         // save the name of the namespace
-        node = f_lexer->get_new_node(Node::NODE_NAMESPACE);
+        node = f_lexer->get_new_node(Node::node_t::NODE_NAMESPACE);
         node->set_string(f_node->get_string());
         get_token();
     }

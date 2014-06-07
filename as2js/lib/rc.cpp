@@ -36,8 +36,11 @@ SOFTWARE.
 // this is private
 #include    "rc.h"
 
+#include    "as2js/exceptions.h"
 #include    "as2js/json.h"
 #include    "as2js/message.h"
+
+#include    <controlled_vars/controlled_vars_auto_enum_init.h>
 
 #include    <cstring>
 
@@ -62,7 +65,7 @@ char const *g_rc_directories[] =
     nullptr
 };
 
-controlled_vars::zbool_t    g_home_initialized;
+controlled_vars::fbool_t    g_home_initialized;
 String                      g_home;
 
 }
@@ -133,7 +136,7 @@ void rc_t::init_rc(bool const accept_if_missing)
             // no position in this case...
             Message msg(MESSAGE_LEVEL_FATAL, AS_ERR_INSTALLATION);
             msg << "cannot find the as2js.rc file; the system default is usually put in /etc/as2js/as2js.rc";
-            exit(1);
+            throw exception_exit(1, "cannot find the as2js.rc file; the system default is usually put in /etc/as2js/as2js.rc");
         }
 
         // nothing to load in this case...
@@ -153,7 +156,7 @@ void rc_t::init_rc(bool const accept_if_missing)
             {
                 Message msg(MESSAGE_LEVEL_FATAL, AS_ERR_UNEXPECTED_RC, pos);
                 msg << "A resource file (.rc) must be defined as a JSON object, or set to 'null'";
-                exit(1);
+                throw exception_exit(1, "A resource file (.rc) must be defined as a JSON object, or set to 'null'");
             }
 
             JSON::JSONValue::object_t const& obj(root->get_object());
@@ -166,7 +169,7 @@ void rc_t::init_rc(bool const accept_if_missing)
                 {
                     Message msg(MESSAGE_LEVEL_FATAL, AS_ERR_UNEXPECTED_RC, pos);
                     msg << "A resource file is expected to be an object of string elements.";
-                    exit(1);
+                    throw exception_exit(1, "A resource file (.rc) must be defined as a JSON object, or set to 'null'");
                 }
 
                 String parameter_name(it->first);

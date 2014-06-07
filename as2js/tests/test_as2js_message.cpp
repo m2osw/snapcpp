@@ -39,6 +39,8 @@ SOFTWARE.
 #include    "as2js/message.h"
 #include    "as2js/exceptions.h"
 
+#include    <controlled_vars/controlled_vars_limited_auto_enum_init.h>
+
 #include    <cstring>
 #include    <algorithm>
 
@@ -85,8 +87,14 @@ public:
         f_got_called = true;
     }
 
-    controlled_vars::tbool_t    f_expected_call;
-    controlled_vars::fbool_t    f_got_called;
+    ~test_callback()
+    {
+        // make sure the pointer gets reset!
+        as2js::Message::set_message_callback(nullptr);
+    }
+
+    controlled_vars::tlbool_t   f_expected_call;
+    controlled_vars::flbool_t   f_got_called;
     as2js::message_level_t      f_expected_message_level;
     as2js::err_code_t           f_expected_error_code;
     as2js::Position             f_expected_pos;
@@ -625,7 +633,6 @@ void As2JsMessageUnitTests::test_operator()
         }
         CPPUNIT_ASSERT(c.f_expected_call == c.f_got_called);
     }
-
 }
 
 

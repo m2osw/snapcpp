@@ -44,6 +44,7 @@ SOFTWARE.
 #include    <sstream>
 
 #include    <unistd.h>
+#include    <fcntl.h>
 
 #include    <cppunit/config/SourcePrefix.h>
 CPPUNIT_TEST_SUITE_REGISTRATION( As2JsStreamUnitTests );
@@ -1204,7 +1205,12 @@ void As2JsStreamUnitTests::test_stdin()
         close(fd);
 
         // 2. put that in std::cin
-        freopen(filename, "r", stdin);
+        if(freopen(filename, "r", stdin) == nullptr)
+        {
+            std::cerr << "error: failed to set stdin to a file" << std::endl;
+            CPPUNIT_ASSERT(!"freopen(..., stdin) failed");
+            return;
+        }
 
         as2js::Input::pointer_t str_input(new as2js::StandardInput);
 
@@ -1283,6 +1289,204 @@ void As2JsStreamUnitTests::test_bad_impl()
 
         as2js::Input::pointer_t str_input(new BadImpl);
         CPPUNIT_ASSERT_THROW(str_input->getc(), as2js::exception_internal_error);
+    }
+}
+
+
+void As2JsStreamUnitTests::test_stdout()
+{
+    {
+        // 1. create an empty file
+        char filename[256];
+        strncpy(filename, "/tmp/testXXXXXX.js", sizeof(filename));
+        int fd(mkostemps(filename, 3, O_WRONLY));
+
+        // 2. put that in std::cout
+        freopen(filename, "a", stdout);
+
+        // 3. generate some data in the file
+        as2js::String str("This is some test to send to stdout\n");
+        bool assert0(false);
+        bool assert1(false);
+        bool assert2(false);
+        {
+            as2js::Output::pointer_t output(new as2js::StandardOutput);
+
+            // at the start the position is expected to be 1
+
+            // The filename for the StandardOutput is set to "-" by default
+            assert0 = output->get_position().get_filename() == "-";
+
+            assert1 = output->get_position().get_line() == 1;
+
+            output->write(str);
+
+            // the write() has no effect over the position
+            assert2 = static_cast<as2js::Output const *>(output.get())->get_position().get_line() == 1;
+        }
+        // now StandardOutput is closed, verify the contents of the file
+
+        // 4. reassign the output
+        //
+        //    This freopen() works under Linux, on other systems, you may
+        //    have to fiddle with the code; see:
+        //    http://stackoverflow.com/questions/1908687/how-to-redirect-the-output-back-to-the-screen-after-freopenout-txt-a-stdo
+        freopen("/dev/tty", "a", stdout);
+
+        CPPUNIT_ASSERT(assert0 && assert1 && assert2); // these are here because stdout is now restored
+
+        lseek(fd, 0, SEEK_SET);
+
+        char buf[256];
+        ssize_t l(read(fd, buf, sizeof(buf)));
+        CPPUNIT_ASSERT(l == str.utf8_length());
+        CPPUNIT_ASSERT(static_cast<size_t>(l) < sizeof(buf)); // too large, we cannot continue
+        buf[l] = '\0';
+        CPPUNIT_ASSERT(str == buf);
+
+        close(fd);
+        unlink(filename);
+    }
+}
+
+
+void As2JsStreamUnitTests::test_stdout_destructive()
+{
+    if(as2js_test::g_run_stdout_destructive)
+    {
+        // 1. create an empty file
+        char filename[256];
+        strncpy(filename, "/tmp/testXXXXXX.js", sizeof(filename));
+        /*int fd =*/ mkostemps(filename, 3, O_WRONLY);
+
+        // 2. put that in std::cout
+        freopen(filename, "a", stdout);
+        setbuf(stdout, nullptr); // with a buffer the write would not fail!
+
+        // 3. generate some data in the file
+        as2js::String str("This is some test to send to stdout\n");
+        {
+            as2js::Output::pointer_t output(new as2js::StandardOutput);
+
+            // close stdout before writing to it so we get an error
+            close(fileno(stdout));
+
+            CPPUNIT_ASSERT_THROW(output->write(str), as2js::exception_exit);
+        }
+        // now StandardOutput is closed, verify the contents of the file
+
+        // 4. reassign the output
+        //
+        //    This freopen() fails with error 22 (EINVAL).
+        //    have to fiddle with the code; see:
+        //    http://stackoverflow.com/questions/1908687/how-to-redirect-the-output-back-to-the-screen-after-freopenout-txt-a-stdo
+        freopen("/dev/tty", "a+", stdout);
+
+        unlink(filename);
+    }
+    else
+    {
+        std::cout << " --- test_stdout_destructive() not run, use --destructive on the command line to not bypass this test --- ";
+    }
+}
+
+
+void As2JsStreamUnitTests::test_output()
+{
+    {
+        // 1. create an empty file
+        char const *filename("/tmp/test123456.js");
+
+        // 2. generate some data in the file
+        as2js::String str("This is\nsome test\nto send\nto \"filename\".\n");
+        {
+            as2js::FileOutput::pointer_t output(new as2js::FileOutput);
+
+            CPPUNIT_ASSERT(!output->open("/first/we/want/to/test/with/an/invalid/filename!"));
+
+            CPPUNIT_ASSERT(output->open(filename));
+
+            CPPUNIT_ASSERT_THROW(output->open("another one"), as2js::exception_file_already_open);
+
+            // at the start the position is expected to be 1
+            CPPUNIT_ASSERT(output->get_position().get_line() == 1);
+
+            // The filename for the StandardOutput is set to "-" by default
+            CPPUNIT_ASSERT(output->get_position().get_filename() == filename);
+
+            CPPUNIT_ASSERT(output->get_position().get_line() == 1);
+
+            output->write(str);
+
+            // the write() has no effect over the position
+            CPPUNIT_ASSERT(static_cast<as2js::Output const *>(output.get())->get_position().get_line() == 1);
+        }
+        // now StandardOutput is closed, verify the contents of the file
+
+        int fd(open(filename, O_RDONLY));
+
+        char buf[256];
+        ssize_t l(read(fd, buf, sizeof(buf)));
+        CPPUNIT_ASSERT(l == str.utf8_length());
+        CPPUNIT_ASSERT(static_cast<size_t>(l) < sizeof(buf)); // too large, we cannot continue
+        buf[l] = '\0';
+        CPPUNIT_ASSERT(str == buf);
+
+        close(fd);
+        unlink(filename);
+    }
+
+    {
+        // 1. create an empty file
+        char const *filename("/tmp/test789012.js");
+
+        // 2. determine the current fd
+        char const *find_fd("/tmp/test345678.js");
+        int fd_to_close(open(find_fd, O_RDWR|O_CREAT, 0600));
+        close(fd_to_close);
+        unlink(find_fd);
+
+        // 3. generate some data in the file
+        as2js::String str("This is\nsome test\nto send\nto \"filename\".\n");
+        while(str.length() < 64 * 1024) // we should get the size from a file created with fopen()... ?
+        {
+            str += "This string is too short to make sure we get a flush and a write error...";
+        }
+        {
+            as2js::FileOutput::pointer_t output(new as2js::FileOutput);
+
+            CPPUNIT_ASSERT(!output->open("/first/we/want/to/test/with/an/invalid/filename!"));
+
+            CPPUNIT_ASSERT(output->open(filename));
+
+            CPPUNIT_ASSERT_THROW(output->open("another one"), as2js::exception_file_already_open);
+
+            // at the start the position is expected to be 1
+            CPPUNIT_ASSERT(output->get_position().get_line() == 1);
+
+            // The filename for the StandardOutput is set to "-" by default
+            CPPUNIT_ASSERT(output->get_position().get_filename() == filename);
+
+            CPPUNIT_ASSERT(output->get_position().get_line() == 1);
+
+            // close so we can generate an error...
+            close(fd_to_close);
+
+            CPPUNIT_ASSERT_THROW(output->write(str), as2js::exception_exit);
+
+            // the write() has no effect over the position
+            CPPUNIT_ASSERT(static_cast<as2js::Output const *>(output.get())->get_position().get_line() == 1);
+        }
+        // now StandardOutput is closed, verify the contents of the file
+
+        int fd(open(filename, O_RDONLY));
+
+        char buf[256];
+        ssize_t l(read(fd, buf, sizeof(buf)));
+        CPPUNIT_ASSERT(l == 0); // must be empty since it was closed before the write
+
+        close(fd);
+        unlink(filename);
     }
 }
 

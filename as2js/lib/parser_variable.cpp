@@ -49,17 +49,17 @@ namespace as2js
 
 void Parser::variable(Node::pointer_t& node, bool const constant)
 {
-    node = f_lexer->get_new_node(Node::NODE_VAR);
+    node = f_lexer->get_new_node(Node::node_t::NODE_VAR);
     for(;;)
     {
-        Node::pointer_t variable_node(f_lexer->get_new_node(Node::NODE_VARIABLE));
+        Node::pointer_t variable_node(f_lexer->get_new_node(Node::node_t::NODE_VARIABLE));
         if(constant)
         {
-            variable_node->set_flag(Node::NODE_VAR_FLAG_CONST, true);
+            variable_node->set_flag(Node::flag_attribute_t::NODE_VAR_FLAG_CONST, true);
         }
         node->append_child(variable_node);
 
-        if(f_node->get_type() == Node::NODE_IDENTIFIER)
+        if(f_node->get_type() == Node::node_t::NODE_IDENTIFIER)
         {
             get_token();
         }
@@ -69,7 +69,7 @@ void Parser::variable(Node::pointer_t& node, bool const constant)
             msg << "expected an identifier as the variable name";
         }
 
-        if(f_node->get_type() == Node::NODE_COLON)
+        if(f_node->get_type() == Node::node_t::NODE_COLON)
         {
             get_token();
             Node::pointer_t type;
@@ -77,12 +77,12 @@ void Parser::variable(Node::pointer_t& node, bool const constant)
             variable_node->append_child(type);
         }
 
-        if(f_node->get_type() == Node::NODE_ASSIGNMENT)
+        if(f_node->get_type() == Node::node_t::NODE_ASSIGNMENT)
         {
             get_token();
             do
             {
-                Node::pointer_t initializer(f_lexer->get_new_node(Node::NODE_SET));
+                Node::pointer_t initializer(f_lexer->get_new_node(Node::node_t::NODE_SET));
                 Node::pointer_t expr;
                 conditional_expression(expr, false);
                 initializer->append_child(expr);
@@ -94,14 +94,14 @@ void Parser::variable(Node::pointer_t& node, bool const constant)
                 // used.
             }
             while(constant
-                && f_node->get_type() != Node::NODE_COMMA
-                && f_node->get_type() != Node::NODE_SEMICOLON
-                && f_node->get_type() != Node::NODE_OPEN_CURVLY_BRACKET
-                && f_node->get_type() != Node::NODE_CLOSE_CURVLY_BRACKET
-                && f_node->get_type() != Node::NODE_CLOSE_PARENTHESIS);
+                && f_node->get_type() != Node::node_t::NODE_COMMA
+                && f_node->get_type() != Node::node_t::NODE_SEMICOLON
+                && f_node->get_type() != Node::node_t::NODE_OPEN_CURVLY_BRACKET
+                && f_node->get_type() != Node::node_t::NODE_CLOSE_CURVLY_BRACKET
+                && f_node->get_type() != Node::node_t::NODE_CLOSE_PARENTHESIS);
         }
 
-        if(f_node->get_type() == Node::NODE_COMMA)
+        if(f_node->get_type() == Node::node_t::NODE_COMMA)
         {
             return;
         }

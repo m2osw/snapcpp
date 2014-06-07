@@ -50,12 +50,12 @@ namespace as2js
 void Parser::block(Node::pointer_t& node)
 {
     // handle the emptiness right here
-    if(f_node->get_type() != Node::NODE_CLOSE_CURVLY_BRACKET)
+    if(f_node->get_type() != Node::node_t::NODE_CLOSE_CURVLY_BRACKET)
     {
         directive_list(node);
     }
 
-    if(f_node->get_type() != Node::NODE_CLOSE_CURVLY_BRACKET)
+    if(f_node->get_type() != Node::node_t::NODE_CLOSE_CURVLY_BRACKET)
     {
         Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_CURVLY_BRAKETS_EXPECTED, f_lexer->get_input()->get_position());
         msg << "'}' expected to close a block";
@@ -101,18 +101,18 @@ void Parser::break_continue(Node::pointer_t& node, Node::node_t type)
 {
     node = f_lexer->get_new_node(type);
 
-    if(f_node->get_type() == Node::NODE_IDENTIFIER)
+    if(f_node->get_type() == Node::node_t::NODE_IDENTIFIER)
     {
         node->set_string(f_node->get_string());
         get_token();
     }
-    else if(f_node->get_type() == Node::NODE_DEFAULT)
+    else if(f_node->get_type() == Node::node_t::NODE_DEFAULT)
     {
         // default is equivalent to no label
         get_token();
     }
 
-    if(f_node->get_type() != Node::NODE_SEMICOLON)
+    if(f_node->get_type() != Node::node_t::NODE_SEMICOLON)
     {
         Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_LABEL, f_lexer->get_input()->get_position());
         msg << "'break' and 'continue' can be followed by one label only";
@@ -128,7 +128,7 @@ void Parser::break_continue(Node::pointer_t& node, Node::node_t type)
 
 void Parser::case_directive(Node::pointer_t& node)
 {
-    node = f_lexer->get_new_node(Node::NODE_CASE);
+    node = f_lexer->get_new_node(Node::node_t::NODE_CASE);
     Node::pointer_t expr;
     expression(expr);
     node->append_child(expr);
@@ -136,8 +136,8 @@ void Parser::case_directive(Node::pointer_t& node)
     if(f_options
     && f_options->get_option(Options::OPTION_EXTENDED_STATEMENTS) != 0) {
         // check for 'case <expr> ... <expr>:'
-        if(f_node->get_type() == Node::NODE_REST
-        || f_node->get_type() == Node::NODE_RANGE)
+        if(f_node->get_type() == Node::node_t::NODE_REST
+        || f_node->get_type() == Node::node_t::NODE_RANGE)
         {
             get_token();
             Node::pointer_t expr_to;
@@ -146,7 +146,7 @@ void Parser::case_directive(Node::pointer_t& node)
         }
     }
 
-    if(f_node->get_type() == Node::NODE_COLON)
+    if(f_node->get_type() == Node::node_t::NODE_COLON)
     {
         get_token();
     }
@@ -169,9 +169,9 @@ void Parser::case_directive(Node::pointer_t& node)
 
 void Parser::catch_directive(Node::pointer_t& node)
 {
-    if(f_node->get_type() == Node::NODE_OPEN_PARENTHESIS)
+    if(f_node->get_type() == Node::node_t::NODE_OPEN_PARENTHESIS)
     {
-        node = f_lexer->get_new_node(Node::NODE_CATCH);
+        node = f_lexer->get_new_node(Node::node_t::NODE_CATCH);
         get_token();
         Node::pointer_t parameters;
         bool unused;
@@ -194,7 +194,7 @@ void Parser::catch_directive(Node::pointer_t& node)
             while(idx > 0)
             {
                 --idx;
-                if(param->get_child(idx)->get_type() == Node::NODE_SET)
+                if(param->get_child(idx)->get_type() == Node::node_t::NODE_SET)
                 {
                     Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_CATCH, f_lexer->get_input()->get_position());
                     msg << "'catch' parameters do not support initializers";
@@ -204,13 +204,13 @@ void Parser::catch_directive(Node::pointer_t& node)
             }
             if(has_type)
             {
-                node->set_flag(Node::NODE_CATCH_FLAG_TYPED, true);
+                node->set_flag(Node::flag_attribute_t::NODE_CATCH_FLAG_TYPED, true);
             }
         }
-        if(f_node->get_type() == Node::NODE_CLOSE_PARENTHESIS)
+        if(f_node->get_type() == Node::node_t::NODE_CLOSE_PARENTHESIS)
         {
             get_token();
-            if(f_node->get_type() == Node::NODE_OPEN_CURVLY_BRACKET)
+            if(f_node->get_type() == Node::node_t::NODE_OPEN_CURVLY_BRACKET)
             {
                 get_token();
                 Node::pointer_t one_block;
@@ -255,10 +255,10 @@ void Parser::catch_directive(Node::pointer_t& node)
 //
 void Parser::default_directive(Node::pointer_t& node)
 {
-    node = f_lexer->get_new_node(Node::NODE_DEFAULT);
+    node = f_lexer->get_new_node(Node::node_t::NODE_DEFAULT);
 
     // default is just itself!
-    if(f_node->get_type() == Node::NODE_COLON)
+    if(f_node->get_type() == Node::node_t::NODE_COLON)
     {
         get_token();
     }
@@ -281,22 +281,22 @@ void Parser::default_directive(Node::pointer_t& node)
 
 void Parser::do_directive(Node::pointer_t& node)
 {
-    node = f_lexer->get_new_node(Node::NODE_DO);
+    node = f_lexer->get_new_node(Node::node_t::NODE_DO);
 
     Node::pointer_t one_directive;
     directive(one_directive);
     node->append_child(one_directive);
 
-    if(f_node->get_type() == Node::NODE_WHILE)
+    if(f_node->get_type() == Node::node_t::NODE_WHILE)
     {
         get_token();
-        if(f_node->get_type() == Node::NODE_OPEN_PARENTHESIS)
+        if(f_node->get_type() == Node::node_t::NODE_OPEN_PARENTHESIS)
         {
             get_token();
             Node::pointer_t expr;
             expression(expr);
             node->append_child(expr);
-            if(f_node->get_type() != Node::NODE_CLOSE_PARENTHESIS)
+            if(f_node->get_type() != Node::node_t::NODE_CLOSE_PARENTHESIS)
             {
                 Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_PARENTHESIS_EXPECTED, f_lexer->get_input()->get_position());
                 msg << "')' expected to end the 'while' expression";
@@ -330,27 +330,27 @@ void Parser::do_directive(Node::pointer_t& node)
 void Parser::for_directive(Node::pointer_t& node)
 {
     // for each(...)
-    bool const for_each(f_node->get_type() == Node::NODE_IDENTIFIER
+    bool const for_each(f_node->get_type() == Node::node_t::NODE_IDENTIFIER
                      && f_node->get_string() == "each");
     if(for_each)
     {
         get_token(); // skip the 'each' "keyword"
     }
-    if(f_node->get_type() == Node::NODE_OPEN_PARENTHESIS)
+    if(f_node->get_type() == Node::node_t::NODE_OPEN_PARENTHESIS)
     {
-        node = f_lexer->get_new_node(Node::NODE_FOR);
+        node = f_lexer->get_new_node(Node::node_t::NODE_FOR);
 
         bool got_for_in(false);
         get_token(); // skip the '('
-        if(f_node->get_type() == Node::NODE_CONST
-        || f_node->get_type() == Node::NODE_VAR)
+        if(f_node->get_type() == Node::node_t::NODE_CONST
+        || f_node->get_type() == Node::node_t::NODE_VAR)
         {
             // *** VARIABLE ***
-            bool const constant(f_node->get_type() == Node::NODE_CONST);
+            bool const constant(f_node->get_type() == Node::node_t::NODE_CONST);
             if(constant)
             {
                 get_token(); // skip the 'const'
-                if(f_node->get_type() == Node::NODE_VAR)
+                if(f_node->get_type() == Node::node_t::NODE_VAR)
                 {
                     // allow just 'const' or 'const var'
                     get_token(); // skip the 'var'
@@ -364,20 +364,20 @@ void Parser::for_directive(Node::pointer_t& node)
             variable(variables, constant);
             node->append_child(variables);
         }
-        else if(f_node->get_type() == Node::NODE_SEMICOLON)
+        else if(f_node->get_type() == Node::node_t::NODE_SEMICOLON)
         {
             // When we have ';' we have got an empty initializer!
-            Node::pointer_t empty(f_lexer->get_new_node(Node::NODE_EMPTY));
+            Node::pointer_t empty(f_lexer->get_new_node(Node::node_t::NODE_EMPTY));
             node->append_child(empty);
         }
-        else /*if(f_node->get_type() != Node::NODE_SEMICOLON)*/
+        else /*if(f_node->get_type() != Node::node_t::NODE_SEMICOLON)*/
         {
             // *** EXPRESSION ***
             Node::pointer_t expr;
             expression(expr);
-            if(f_node->get_type() != Node::NODE_SEMICOLON)
+            if(f_node->get_type() != Node::node_t::NODE_SEMICOLON)
             {
-                if(f_node->get_type() == Node::NODE_IN)
+                if(f_node->get_type() == Node::node_t::NODE_IN)
                 {
                     Node::pointer_t left(expr->get_child(0));
                     Node::pointer_t right(expr->get_child(1));
@@ -398,7 +398,7 @@ void Parser::for_directive(Node::pointer_t& node)
         {
             // This can happen when we return from the
             // variable() function
-            if(f_node->get_type() == Node::NODE_IN)
+            if(f_node->get_type() == Node::node_t::NODE_IN)
             {
                 // *** IN ***
                 get_token();
@@ -406,29 +406,29 @@ void Parser::for_directive(Node::pointer_t& node)
                 expression(expr);
                 node->append_child(expr);
             }
-            else if(f_node->get_type() == Node::NODE_SEMICOLON)
+            else if(f_node->get_type() == Node::node_t::NODE_SEMICOLON)
             {
                 // *** SECOND EXPRESSION ***
                 get_token();
                 Node::pointer_t expr;
-                if(f_node->get_type() == Node::NODE_SEMICOLON)
+                if(f_node->get_type() == Node::node_t::NODE_SEMICOLON)
                 {
                     // empty expression
-                    expr = f_lexer->get_new_node(Node::NODE_EMPTY);
+                    expr = f_lexer->get_new_node(Node::node_t::NODE_EMPTY);
                 }
                 else
                 {
                     expression(expr);
                 }
                 node->append_child(expr);
-                if(f_node->get_type() == Node::NODE_SEMICOLON)
+                if(f_node->get_type() == Node::node_t::NODE_SEMICOLON)
                 {
                     // *** THIRD EXPRESSION ***
                     get_token();
                     Node::pointer_t thrid_expr;
-                    if(f_node->get_type() == Node::NODE_CLOSE_PARENTHESIS)
+                    if(f_node->get_type() == Node::node_t::NODE_CLOSE_PARENTHESIS)
                     {
-                        thrid_expr = f_lexer->get_new_node(Node::NODE_EMPTY);
+                        thrid_expr = f_lexer->get_new_node(Node::node_t::NODE_EMPTY);
                     }
                     else
                     {
@@ -449,7 +449,7 @@ void Parser::for_directive(Node::pointer_t& node)
             }
         }
 
-        if(f_node->get_type() != Node::NODE_CLOSE_PARENTHESIS)
+        if(f_node->get_type() != Node::node_t::NODE_CLOSE_PARENTHESIS)
         {
             Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_PARENTHESIS_EXPECTED, f_lexer->get_input()->get_position());
             msg << "')' expected to close the 'for' expressions";
@@ -461,7 +461,7 @@ void Parser::for_directive(Node::pointer_t& node)
 
         if(node->get_children_size() == 2 && for_each)
         {
-            node->set_flag(Node::NODE_FOR_FLAG_FOREACH, true);
+            node->set_flag(Node::flag_attribute_t::NODE_FOR_FLAG_FOREACH, true);
         }
         else if(for_each)
         {
@@ -496,7 +496,7 @@ void Parser::for_directive(Node::pointer_t& node)
 // output the result to JavaScript for browsers.
 void Parser::goto_directive(Node::pointer_t& node)
 {
-    if(f_node->get_type() == Node::NODE_IDENTIFIER)
+    if(f_node->get_type() == Node::node_t::NODE_IDENTIFIER)
     {
         // save the label
         node = f_node;
@@ -520,14 +520,14 @@ void Parser::goto_directive(Node::pointer_t& node)
 
 void Parser::if_directive(Node::pointer_t& node)
 {
-    if(f_node->get_type() == Node::NODE_OPEN_PARENTHESIS)
+    if(f_node->get_type() == Node::node_t::NODE_OPEN_PARENTHESIS)
     {
-        node = f_lexer->get_new_node(Node::NODE_IF);
+        node = f_lexer->get_new_node(Node::node_t::NODE_IF);
         get_token();
         Node::pointer_t expr;
         expression(expr);
         node->append_child(expr);
-        if(f_node->get_type() == Node::NODE_CLOSE_PARENTHESIS)
+        if(f_node->get_type() == Node::node_t::NODE_CLOSE_PARENTHESIS)
         {
             get_token();
         }
@@ -543,7 +543,7 @@ void Parser::if_directive(Node::pointer_t& node)
         node->append_child(one_directive);
 
         // Note that this is the only place where ELSE is permitted!
-        if(f_node->get_type() == Node::NODE_ELSE)
+        if(f_node->get_type() == Node::node_t::NODE_ELSE)
         {
             get_token();
             // ELSE part
@@ -572,8 +572,8 @@ void Parser::if_directive(Node::pointer_t& node)
 
 void Parser::return_directive(Node::pointer_t& node)
 {
-    node = f_lexer->get_new_node(Node::NODE_RETURN);
-    if(f_node->get_type() == Node::NODE_SEMICOLON)
+    node = f_lexer->get_new_node(Node::node_t::NODE_RETURN);
+    if(f_node->get_type() == Node::node_t::NODE_SEMICOLON)
     {
         Node::pointer_t expr;
         expression(expr);
@@ -590,7 +590,7 @@ void Parser::return_directive(Node::pointer_t& node)
 
 void Parser::try_finally(Node::pointer_t& node, Node::node_t type)
 {
-    if(f_node->get_type() == Node::NODE_OPEN_CURVLY_BRACKET)
+    if(f_node->get_type() == Node::node_t::NODE_OPEN_CURVLY_BRACKET)
     {
         get_token();
         node = f_lexer->get_new_node(type);
@@ -601,7 +601,7 @@ void Parser::try_finally(Node::pointer_t& node, Node::node_t type)
     else
     {
         Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_CURVLY_BRAKETS_EXPECTED, f_lexer->get_input()->get_position());
-        msg << "'{' expected after the '" << (type == Node::NODE_TRY ? "try" : "finally") << "' keyword";
+        msg << "'{' expected after the '" << (type == Node::node_t::NODE_TRY ? "try" : "finally") << "' keyword";
     }
 }
 
@@ -617,18 +617,18 @@ void Parser::switch_directive(Node::pointer_t& node)
 {
     bool has_open;
 
-    if(f_node->get_type() == Node::NODE_OPEN_PARENTHESIS)
+    if(f_node->get_type() == Node::node_t::NODE_OPEN_PARENTHESIS)
     {
-        node = f_lexer->get_new_node(Node::NODE_SWITCH);
+        node = f_lexer->get_new_node(Node::node_t::NODE_SWITCH);
 
         // a default comparison is important to support ranges properly
-        //node->set_switch_operator(Node::NODE_UNKNOWN); -- this is the default
+        //node->set_switch_operator(Node::node_t::NODE_UNKNOWN); -- this is the default
 
         get_token();
         Node::pointer_t expr;
         expression(expr);
         node->append_child(expr);
-        if(f_node->get_type() == Node::NODE_CLOSE_PARENTHESIS)
+        if(f_node->get_type() == Node::node_t::NODE_CLOSE_PARENTHESIS)
         {
             get_token();
         }
@@ -637,10 +637,10 @@ void Parser::switch_directive(Node::pointer_t& node)
             Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_PARENTHESIS_EXPECTED, f_lexer->get_input()->get_position());
             msg << "')' expected to end the 'switch' expression";
         }
-        if(f_node->get_type() == Node::NODE_WITH)
+        if(f_node->get_type() == Node::node_t::NODE_WITH)
         {
             get_token();
-            has_open = f_node->get_type() == '(';
+            has_open = f_node->get_type() == Node::node_t::NODE_OPEN_PARENTHESIS;
             if(has_open)
             {
                 get_token();
@@ -648,22 +648,22 @@ void Parser::switch_directive(Node::pointer_t& node)
             switch(f_node->get_type())
             {
             // equality
-            case Node::NODE_STRICTLY_EQUAL:
-            case Node::NODE_EQUAL:
-            case Node::NODE_NOT_EQUAL:
-            case Node::NODE_STRICTLY_NOT_EQUAL:
+            case Node::node_t::NODE_STRICTLY_EQUAL:
+            case Node::node_t::NODE_EQUAL:
+            case Node::node_t::NODE_NOT_EQUAL:
+            case Node::node_t::NODE_STRICTLY_NOT_EQUAL:
             // relational
-            case Node::NODE_MATCH:
-            case Node::NODE_IN:
-            case Node::NODE_IS:
-            case Node::NODE_AS:
-            case Node::NODE_INSTANCEOF:
-            case Node::NODE_LESS:
-            case Node::NODE_LESS_EQUAL:
-            case Node::NODE_GREATER:
-            case Node::NODE_GREATER_EQUAL:
+            case Node::node_t::NODE_MATCH:
+            case Node::node_t::NODE_IN:
+            case Node::node_t::NODE_IS:
+            case Node::node_t::NODE_AS:
+            case Node::node_t::NODE_INSTANCEOF:
+            case Node::node_t::NODE_LESS:
+            case Node::node_t::NODE_LESS_EQUAL:
+            case Node::node_t::NODE_GREATER:
+            case Node::node_t::NODE_GREATER_EQUAL:
             // so the user can specify the default too
-            case Node::NODE_DEFAULT:
+            case Node::node_t::NODE_DEFAULT:
                 node->set_switch_operator(f_node->get_type());
                 get_token();
                 break;
@@ -676,7 +676,7 @@ void Parser::switch_directive(Node::pointer_t& node)
                 break;
 
             }
-            if(f_node->get_type() == Node::NODE_CLOSE_PARENTHESIS)
+            if(f_node->get_type() == Node::node_t::NODE_CLOSE_PARENTHESIS)
             {
                 get_token();
                 if(!has_open)
@@ -695,9 +695,9 @@ void Parser::switch_directive(Node::pointer_t& node)
         attributes(attr_list);
         if(attr_list->get_children_size() > 0)
         {
-            node->set_link(Node::LINK_ATTRIBUTES, attr_list);
+            node->set_link(Node::link_t::LINK_ATTRIBUTES, attr_list);
         }
-        if(f_node->get_type() == Node::NODE_OPEN_CURVLY_BRACKET)
+        if(f_node->get_type() == Node::node_t::NODE_OPEN_CURVLY_BRACKET)
         {
             get_token();
             Node::pointer_t one_block;
@@ -727,7 +727,7 @@ void Parser::switch_directive(Node::pointer_t& node)
 
 void Parser::throw_directive(Node::pointer_t& node)
 {
-    node = f_lexer->get_new_node(Node::NODE_THROW);
+    node = f_lexer->get_new_node(Node::node_t::NODE_THROW);
 
     Node::pointer_t expr;
     expression(expr);
@@ -744,16 +744,16 @@ void Parser::throw_directive(Node::pointer_t& node)
 
 void Parser::with_while(Node::pointer_t& node, Node::node_t type)
 {
-    char const *inst = type == Node::NODE_WITH ? "with" : "while";
+    char const *inst = type == Node::node_t::NODE_WITH ? "with" : "while";
 
-    if(f_node->get_type() == Node::NODE_OPEN_PARENTHESIS)
+    if(f_node->get_type() == Node::node_t::NODE_OPEN_PARENTHESIS)
     {
         node = f_lexer->get_new_node(type);
         get_token();
         Node::pointer_t expr;
         expression(expr);
         node->append_child(expr);
-        if(f_node->get_type() == Node::NODE_CLOSE_PARENTHESIS)
+        if(f_node->get_type() == Node::node_t::NODE_CLOSE_PARENTHESIS)
         {
             get_token();
         }

@@ -1,6 +1,6 @@
 #ifndef AS2JS_EXCEPTIONS_H
 #define AS2JS_EXCEPTIONS_H
-/* as.h -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
+/* exceptions.h -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
 
 /*
 
@@ -46,6 +46,19 @@ class exception_internal_error : public std::logic_error
 public:
     exception_internal_error(char const *msg)        : logic_error(msg) {}
     exception_internal_error(std::string const& msg) : logic_error(msg) {}
+};
+
+
+class exception_exit : public std::runtime_error
+{
+public:
+    exception_exit(int exit_code, char const *msg)        : runtime_error(msg), f_exit_code(exit_code) {}
+    exception_exit(int exit_code, std::string const& msg) : runtime_error(msg), f_exit_code(exit_code) {}
+
+    int         get_exit_code() const { return f_exit_code; }
+
+private:
+    int const   f_exit_code;
 };
 
 

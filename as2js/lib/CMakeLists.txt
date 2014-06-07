@@ -31,8 +31,9 @@
 ## AS to JavaScript library
 ##
 project(libas2js)
+
 include_directories(
-    ${CONTROLLEDVARS_INCLUDE_DIR}
+    ${CONTROLLEDVARS_INCLUDE_DIRS}
     ${as2js_compiler_BINARY_DIR}/include
     ${as2js_compiler_SOURCE_DIR}/include
 )
@@ -72,10 +73,12 @@ add_library( as2js SHARED
     string.cpp
     version.cpp
 )
+
 set_target_properties( as2js PROPERTIES
-        VERSION ${AS2JS_VERSION_MAJOR}.${AS2JS_VERSION_MINOR}
-        SOVERSION ${AS2JS_VERSION_MAJOR}
+    VERSION ${AS2JS_VERSION_MAJOR}.${AS2JS_VERSION_MINOR}
+    SOVERSION ${AS2JS_VERSION_MAJOR}
 )
+
 install(
     TARGETS as2js
     LIBRARY DESTINATION lib

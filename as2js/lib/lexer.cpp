@@ -405,7 +405,7 @@ void Lexer::read_identifier(Input::char_t c)
         case 'a':
             if(l == 2 && s[1] == 's')
             {
-                f_result_type = static_cast<int32_t>(Node::NODE_AS);
+                f_result_type = Node::node_t::NODE_AS;
                 break;
             }
             break;
@@ -413,7 +413,7 @@ void Lexer::read_identifier(Input::char_t c)
         case 'b':
             if(l == 5 && str == "break")
             {
-                f_result_type = static_cast<int32_t>(Node::NODE_BREAK);
+                f_result_type = Node::node_t::NODE_BREAK;
                 break;
             }
             break;
@@ -421,27 +421,27 @@ void Lexer::read_identifier(Input::char_t c)
         case 'c':
             if(l == 4 && str == "case")
             {
-                f_result_type = static_cast<int32_t>(Node::NODE_CASE);
+                f_result_type = Node::node_t::NODE_CASE;
                 break;
             }
             if(l == 5 && str == "catch")
             {
-                f_result_type = static_cast<int32_t>(Node::NODE_CATCH);
+                f_result_type = Node::node_t::NODE_CATCH;
                 break;
             }
             if(l == 5 && str == "class")
             {
-                f_result_type = static_cast<int32_t>(Node::NODE_CLASS);
+                f_result_type = Node::node_t::NODE_CLASS;
                 break;
             }
             if(l == 5 && str == "const")
             {
-                f_result_type = static_cast<int32_t>(Node::NODE_CONST);
+                f_result_type = Node::node_t::NODE_CONST;
                 break;
             }
             if(l == 8 && str == "continue")
             {
-                f_result_type = static_cast<int32_t>(Node::NODE_CONTINUE);
+                f_result_type = Node::node_t::NODE_CONTINUE;
                 break;
             }
             break;
@@ -449,22 +449,22 @@ void Lexer::read_identifier(Input::char_t c)
         case 'd':
             if(l == 8 && str == "debugger")
             {
-                f_result_type = static_cast<int32_t>(Node::NODE_DEBUGGER);
+                f_result_type = Node::node_t::NODE_DEBUGGER;
                 break;
             }
             if(l == 7 && str == "default")
             {
-                f_result_type = static_cast<int32_t>(Node::NODE_DEFAULT);
+                f_result_type = Node::node_t::NODE_DEFAULT;
                 break;
             }
             if(l == 6 && str == "delete")
             {
-                f_result_type = static_cast<int32_t>(Node::NODE_DELETE);
+                f_result_type = Node::node_t::NODE_DELETE;
                 break;
             }
             if(l == 2 && s[1] == 'o')
             {
-                f_result_type = static_cast<int32_t>(Node::NODE_DO);
+                f_result_type = Node::node_t::NODE_DO;
                 break;
             }
             break;
@@ -472,17 +472,17 @@ void Lexer::read_identifier(Input::char_t c)
         case 'e':
             if(l == 4 && str == "else")
             {
-                f_result_type = static_cast<int32_t>(Node::NODE_ELSE);
+                f_result_type = Node::node_t::NODE_ELSE;
                 break;
             }
             if(l == 4 && str == "enum")
             {
-                f_result_type = static_cast<int32_t>(Node::NODE_ENUM);
+                f_result_type = Node::node_t::NODE_ENUM;
                 break;
             }
             if(l == 7 && str == "extends")
             {
-                f_result_type = static_cast<int32_t>(Node::NODE_EXTENDS);
+                f_result_type = Node::node_t::NODE_EXTENDS;
                 break;
             }
             break;
@@ -490,22 +490,22 @@ void Lexer::read_identifier(Input::char_t c)
         case 'f':
             if(l == 5 && str == "false")
             {
-                f_result_type = static_cast<int32_t>(Node::NODE_FALSE);
+                f_result_type = Node::node_t::NODE_FALSE;
                 break;
             }
             if(l == 7 && str == "finally")
             {
-                f_result_type = static_cast<int32_t>(Node::NODE_FINALLY);
+                f_result_type = Node::node_t::NODE_FINALLY;
                 break;
             }
             if(l == 3 && s[1] == 'o' && s[2] == 'r')
             {
-                f_result_type = static_cast<int32_t>(Node::NODE_FOR);
+                f_result_type = Node::node_t::NODE_FOR;
                 break;
             }
             if(l == 8 && str == "function")
             {
-                f_result_type = static_cast<int32_t>(Node::NODE_FUNCTION);
+                f_result_type = Node::node_t::NODE_FUNCTION;
                 break;
             }
             break;
@@ -515,7 +515,7 @@ void Lexer::read_identifier(Input::char_t c)
             {
                 if(l == 4 && str == "goto")
                 {
-                    f_result_type = static_cast<int32_t>(Node::NODE_GOTO);
+                    f_result_type = Node::node_t::NODE_GOTO;
                     break;
                 }
             }
@@ -524,37 +524,37 @@ void Lexer::read_identifier(Input::char_t c)
         case 'i':
             if(l == 2 && s[1] == 'f')
             {
-                f_result_type = static_cast<int32_t>(Node::NODE_IF);
+                f_result_type = Node::node_t::NODE_IF;
                 break;
             }
             if(l == 10 && str == "implements")
             {
-                f_result_type = static_cast<int32_t>(Node::NODE_IMPLEMENTS);
+                f_result_type = Node::node_t::NODE_IMPLEMENTS;
                 break;
             }
             if(l == 6 && str == "import")
             {
-                f_result_type = static_cast<int32_t>(Node::NODE_IMPORT);
+                f_result_type = Node::node_t::NODE_IMPORT;
                 break;
             }
             if(l == 2 && s[1] == 'n')
             {
-                f_result_type = static_cast<int32_t>(Node::NODE_IN);
+                f_result_type = Node::node_t::NODE_IN;
                 break;
             }
             if(l == 10 && str == "instanceof")
             {
-                f_result_type = static_cast<int32_t>(Node::NODE_INSTANCEOF);
+                f_result_type = Node::node_t::NODE_INSTANCEOF;
                 break;
             }
             if(l == 9 && str == "interface")
             {
-                f_result_type = static_cast<int32_t>(Node::NODE_INTERFACE);
+                f_result_type = Node::node_t::NODE_INTERFACE;
                 break;
             }
             if(l == 2 && s[1] == 's')
             {
-                f_result_type = static_cast<int32_t>(Node::NODE_IS);
+                f_result_type = Node::node_t::NODE_IS;
                 break;
             }
             break;
@@ -583,7 +583,7 @@ void Lexer::read_identifier(Input::char_t c)
                 //
                 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Infinity
                 //
-                f_result_type = static_cast<int32_t>(Node::NODE_FLOAT64);
+                f_result_type = Node::node_t::NODE_FLOAT64;
                 f_result_float64.set_infinity();
                 break;
             }
@@ -592,17 +592,17 @@ void Lexer::read_identifier(Input::char_t c)
         case 'n':
             if(l == 9 && str == "namespace")
             {
-                f_result_type = static_cast<int32_t>(Node::NODE_NAMESPACE);
+                f_result_type = Node::node_t::NODE_NAMESPACE;
                 break;
             }
             if(l == 3 && s[1] == 'e' && s[2] == 'w')
             {
-                f_result_type = static_cast<int32_t>(Node::NODE_NEW);
+                f_result_type = Node::node_t::NODE_NEW;
                 break;
             }
             if(l == 4 && str == "null")
             {
-                f_result_type = static_cast<int32_t>(Node::NODE_NULL);
+                f_result_type = Node::node_t::NODE_NULL;
                 break;
             }
             break;
@@ -630,7 +630,7 @@ void Lexer::read_identifier(Input::char_t c)
                 //
                 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/NaN
                 //
-                f_result_type = static_cast<int32_t>(Node::NODE_FLOAT64);
+                f_result_type = Node::node_t::NODE_FLOAT64;
                 f_result_float64.set_NaN();
                 break;
             }
@@ -639,17 +639,17 @@ void Lexer::read_identifier(Input::char_t c)
         case 'p':
             if(l == 7 && str == "package")
             {
-                f_result_type = static_cast<int32_t>(Node::NODE_PACKAGE);
+                f_result_type = Node::node_t::NODE_PACKAGE;
                 break;
             }
             if(l == 7 && str == "private")
             {
-                f_result_type = static_cast<int32_t>(Node::NODE_PRIVATE);
+                f_result_type = Node::node_t::NODE_PRIVATE;
                 break;
             }
             if(l == 6 && str == "public")
             {
-                f_result_type = static_cast<int32_t>(Node::NODE_PUBLIC);
+                f_result_type = Node::node_t::NODE_PUBLIC;
                 break;
             }
             break;
@@ -657,7 +657,7 @@ void Lexer::read_identifier(Input::char_t c)
         case 'r':
             if(l == 6 && str == "return")
             {
-                f_result_type = static_cast<int32_t>(Node::NODE_RETURN);
+                f_result_type = Node::node_t::NODE_RETURN;
                 break;
             }
             break;
@@ -665,12 +665,12 @@ void Lexer::read_identifier(Input::char_t c)
         case 's':
             if(l == 5 && str == "super")
             {
-                f_result_type = static_cast<int32_t>(Node::NODE_SUPER);
+                f_result_type = Node::node_t::NODE_SUPER;
                 break;
             }
             if(l == 6 && str == "switch")
             {
-                f_result_type = static_cast<int32_t>(Node::NODE_SWITCH);
+                f_result_type = Node::node_t::NODE_SWITCH;
                 break;
             }
             break;
@@ -678,27 +678,27 @@ void Lexer::read_identifier(Input::char_t c)
         case 't':
             if(l == 4 && str == "this")
             {
-                f_result_type = static_cast<int32_t>(Node::NODE_THIS);
+                f_result_type = Node::node_t::NODE_THIS;
                 break;
             }
             if(l == 5 && str == "throw")
             {
-                f_result_type = static_cast<int32_t>(Node::NODE_THROW);
+                f_result_type = Node::node_t::NODE_THROW;
                 break;
             }
             if(l == 4 && str == "true")
             {
-                f_result_type = static_cast<int32_t>(Node::NODE_TRUE);
+                f_result_type = Node::node_t::NODE_TRUE;
                 break;
             }
             if(l == 3 && s[1] == 'r' && s[2] == 'y')
             {
-                f_result_type = static_cast<int32_t>(Node::NODE_TRY);
+                f_result_type = Node::node_t::NODE_TRY;
                 break;
             }
             if(l == 6 && str == "typeof")
             {
-                f_result_type = static_cast<int32_t>(Node::NODE_TYPEOF);
+                f_result_type = Node::node_t::NODE_TYPEOF;
                 break;
             }
             break;
@@ -713,12 +713,12 @@ void Lexer::read_identifier(Input::char_t c)
                 //
                 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/undefined
                 //
-                f_result_type = static_cast<int32_t>(Node::NODE_UNDEFINED);
+                f_result_type = Node::node_t::NODE_UNDEFINED;
                 break;
             }
             if(l == 3 && s[1] == 's' && s[2] == 'e')
             {
-                f_result_type = static_cast<int32_t>(Node::NODE_USE);
+                f_result_type = Node::node_t::NODE_USE;
                 break;
             }
             break;
@@ -726,12 +726,12 @@ void Lexer::read_identifier(Input::char_t c)
         case 'v':
             if(l == 3 && s[1] == 'a' && s[2] == 'r')
             {
-                f_result_type = static_cast<int32_t>(Node::NODE_VAR);
+                f_result_type = Node::node_t::NODE_VAR;
                 break;
             }
             if(l == 4 && str == "void")
             {
-                f_result_type = static_cast<int32_t>(Node::NODE_VOID);
+                f_result_type = Node::node_t::NODE_VOID;
                 break;
             }
             break;
@@ -739,12 +739,12 @@ void Lexer::read_identifier(Input::char_t c)
         case 'w':
             if(l == 4 && str == "with")
             {
-                f_result_type = static_cast<int32_t>(Node::NODE_WITH);
+                f_result_type = Node::node_t::NODE_WITH;
                 break;
             }
             if(l == 5 && str == "while")
             {
-                f_result_type = static_cast<int32_t>(Node::NODE_WHILE);
+                f_result_type = Node::node_t::NODE_WHILE;
                 break;
             }
             break;
@@ -752,13 +752,13 @@ void Lexer::read_identifier(Input::char_t c)
         case '_':
             if(l == 8 && str == "__FILE__")
             {
-                f_result_type = static_cast<int32_t>(Node::NODE_STRING);
+                f_result_type = Node::node_t::NODE_STRING;
                 f_result_string = f_input->get_position().get_filename();
                 break;
             }
             if(l == 8 && str == "__LINE__")
             {
-                f_result_type = static_cast<int32_t>(Node::NODE_INT64);
+                f_result_type = Node::node_t::NODE_INT64;
                 f_result_int64 = f_input->get_position().get_line();
                 break;
             }
@@ -767,7 +767,7 @@ void Lexer::read_identifier(Input::char_t c)
         }
     }
 
-    f_result_type = static_cast<int32_t>(Node::NODE_IDENTIFIER);
+    f_result_type = Node::node_t::NODE_IDENTIFIER;
     f_result_string = str;
 }
 
@@ -788,7 +788,7 @@ void Lexer::read_number(Input::char_t c)
         if(c == 'x' || c == 'X')
         {
             // hexadecimal number
-            f_result_type = static_cast<int32_t>(Node::NODE_INT64);
+            f_result_type = Node::node_t::NODE_INT64;
             f_result_int64 = read_hex(16);
             return;
         }
@@ -798,7 +798,7 @@ void Lexer::read_number(Input::char_t c)
         && c >= '0' && c <= '7')
         {
             // octal
-            f_result_type = static_cast<int32_t>(Node::NODE_INT64);
+            f_result_type = Node::node_t::NODE_INT64;
             f_result_int64 = read_octal(c, 22);
             return;
         }
@@ -813,7 +813,7 @@ void Lexer::read_number(Input::char_t c)
     if(c == '.')
     {
         // TODO: we may want to support 32 bits floats as well
-        f_result_type = static_cast<int32_t>(Node::NODE_FLOAT64);
+        f_result_type = Node::node_t::NODE_FLOAT64;
         c = getc(); // re-read the '.' from f_input
 
         // TODO:
@@ -838,7 +838,7 @@ void Lexer::read_number(Input::char_t c)
     else
     {
         // TODO: Support 8, 16, 32 bits, unsigned thereof
-        f_result_type = static_cast<int32_t>(Node::NODE_INT64);
+        f_result_type = Node::node_t::NODE_INT64;
         // TODO: detect whether an error was detected in the conversion
         f_result_int64 = strtoll(number.to_utf8().c_str(), nullptr, 10);
     }
@@ -847,7 +847,7 @@ void Lexer::read_number(Input::char_t c)
 
 void Lexer::read_string(Input::char_t quote)
 {
-    f_result_type = static_cast<int32_t>(Node::NODE_STRING);
+    f_result_type = Node::node_t::NODE_STRING;
     f_result_string.clear();
 
     for(Input::char_t c(getc()); c != quote; c = getc())
@@ -894,16 +894,16 @@ Node::pointer_t Lexer::get_next_token()
     node->set_position(f_position);
     switch(f_result_type)
     {
-    case Node::NODE_IDENTIFIER:
-    case Node::NODE_STRING:
+    case Node::node_t::NODE_IDENTIFIER:
+    case Node::node_t::NODE_STRING:
         node->set_string(f_result_string);
         break;
 
-    case Node::NODE_INT64:
+    case Node::node_t::NODE_INT64:
         node->set_int64(f_result_int64);
         break;
 
-    case Node::NODE_FLOAT64:
+    case Node::node_t::NODE_FLOAT64:
         node->set_float64(f_result_float64);
         break;
 
@@ -924,7 +924,7 @@ void Lexer::get_token()
         if(c < 0)
         {
             // we're done
-            f_result_type = static_cast<int32_t>(Node::NODE_EOF);
+            f_result_type = Node::node_t::NODE_EOF;
             return;
         }
 
@@ -952,7 +952,7 @@ void Lexer::get_token()
             read_string(c);
             if(c == '`')
             {
-                f_result_type = static_cast<int32_t>(Node::NODE_REGULAR_EXPRESSION);
+                f_result_type = Node::node_t::NODE_REGULAR_EXPRESSION;
             }
             return;
 
@@ -963,28 +963,28 @@ void Lexer::get_token()
                 c = getc();
                 if(c == '=')
                 {
-                    f_result_type = static_cast<int32_t>(Node::NODE_ASSIGNMENT_SHIFT_LEFT);
+                    f_result_type = Node::node_t::NODE_ASSIGNMENT_SHIFT_LEFT;
                     return;
                 }
                 ungetc(c);
-                f_result_type = static_cast<int32_t>(Node::NODE_SHIFT_LEFT);
+                f_result_type = Node::node_t::NODE_SHIFT_LEFT;
                 return;
             }
             if(c == '=')
             {
-                f_result_type = static_cast<int32_t>(Node::NODE_LESS_EQUAL);
+                f_result_type = Node::node_t::NODE_LESS_EQUAL;
                 return;
             }
             if(has_option_set(Options::OPTION_EXTENDED_OPERATORS))
             {
                 if(c == '>')
                 {
-                    f_result_type = static_cast<int32_t>(Node::NODE_NOT_EQUAL);
+                    f_result_type = Node::node_t::NODE_NOT_EQUAL;
                     return;
                 }
             }
             ungetc(c);
-            f_result_type = static_cast<int32_t>(Node::NODE_LESS);
+            f_result_type = Node::node_t::NODE_LESS;
             return;
 
         case '>':
@@ -997,29 +997,29 @@ void Lexer::get_token()
                     c = getc();
                     if(c == '=')
                     {
-                        f_result_type = static_cast<int32_t>(Node::NODE_ASSIGNMENT_SHIFT_RIGHT_UNSIGNED);
+                        f_result_type = Node::node_t::NODE_ASSIGNMENT_SHIFT_RIGHT_UNSIGNED;
                         return;
                     }
                     ungetc(c);
-                    f_result_type = static_cast<int32_t>(Node::NODE_SHIFT_RIGHT_UNSIGNED);
+                    f_result_type = Node::node_t::NODE_SHIFT_RIGHT_UNSIGNED;
                     return;
                 }
                 if(c == '=')
                 {
-                    f_result_type = static_cast<int32_t>(Node::NODE_ASSIGNMENT_SHIFT_RIGHT);
+                    f_result_type = Node::node_t::NODE_ASSIGNMENT_SHIFT_RIGHT;
                     return;
                 }
                 ungetc(c);
-                f_result_type = static_cast<int32_t>(Node::NODE_SHIFT_RIGHT);
+                f_result_type = Node::node_t::NODE_SHIFT_RIGHT;
                 return;
             }
             if(c == '=')
             {
-                f_result_type = static_cast<int32_t>(Node::NODE_GREATER_EQUAL);
+                f_result_type = Node::node_t::NODE_GREATER_EQUAL;
                 return;
             }
             ungetc(c);
-            f_result_type = static_cast<int32_t>(Node::NODE_GREATER);
+            f_result_type = Node::node_t::NODE_GREATER;
             return;
 
         case '!':
@@ -1031,11 +1031,11 @@ void Lexer::get_token()
                     c = getc();
                     if(c == '=')
                     {
-                        f_result_type = static_cast<int32_t>(Node::NODE_ASSIGNMENT_ROTATE_LEFT);
+                        f_result_type = Node::node_t::NODE_ASSIGNMENT_ROTATE_LEFT;
                         return;
                     }
                     ungetc(c);
-                    f_result_type = static_cast<int32_t>(Node::NODE_ROTATE_LEFT);
+                    f_result_type = Node::node_t::NODE_ROTATE_LEFT;
                     return;
                 }
                 if(c == '>')
@@ -1043,11 +1043,11 @@ void Lexer::get_token()
                     c = getc();
                     if(c == '=')
                     {
-                        f_result_type = static_cast<int32_t>(Node::NODE_ASSIGNMENT_ROTATE_RIGHT);
+                        f_result_type = Node::node_t::NODE_ASSIGNMENT_ROTATE_RIGHT;
                         return;
                     }
                     ungetc(c);
-                    f_result_type = static_cast<int32_t>(Node::NODE_ROTATE_RIGHT);
+                    f_result_type = Node::node_t::NODE_ROTATE_RIGHT;
                     return;
                 }
             }
@@ -1056,15 +1056,15 @@ void Lexer::get_token()
                 c = getc();
                 if(c == '=')
                 {
-                    f_result_type = static_cast<int32_t>(Node::NODE_STRICTLY_NOT_EQUAL);
+                    f_result_type = Node::node_t::NODE_STRICTLY_NOT_EQUAL;
                     return;
                 }
                 ungetc(c);
-                f_result_type = static_cast<int32_t>(Node::NODE_NOT_EQUAL);
+                f_result_type = Node::node_t::NODE_NOT_EQUAL;
                 return;
             }
             ungetc(c);
-            f_result_type = static_cast<int32_t>(Node::NODE_LOGICAL_NOT);
+            f_result_type = Node::node_t::NODE_LOGICAL_NOT;
             return;
 
         case '=':
@@ -1074,15 +1074,15 @@ void Lexer::get_token()
                 c = getc();
                 if(c == '=')
                 {
-                    f_result_type = static_cast<int32_t>(Node::NODE_STRICTLY_EQUAL);
+                    f_result_type = Node::node_t::NODE_STRICTLY_EQUAL;
                     return;
                 }
                 ungetc(c);
-                f_result_type = static_cast<int32_t>(Node::NODE_EQUAL);
+                f_result_type = Node::node_t::NODE_EQUAL;
                 return;
             }
             ungetc(c);
-            f_result_type = static_cast<int32_t>(Node::NODE_ASSIGNMENT);
+            f_result_type = Node::node_t::NODE_ASSIGNMENT;
             return;
 
         case ':':
@@ -1090,16 +1090,16 @@ void Lexer::get_token()
             if(has_option_set(Options::OPTION_EXTENDED_OPERATORS)
             && c == '=')
             {
-                f_result_type = static_cast<int32_t>(Node::NODE_ASSIGNMENT);
+                f_result_type = Node::node_t::NODE_ASSIGNMENT;
                 return;
             }
             if(c == ':')
             {
-                f_result_type = static_cast<int32_t>(Node::NODE_SCOPE);
+                f_result_type = Node::node_t::NODE_SCOPE;
                 return;
             }
             ungetc(c);
-            f_result_type = static_cast<int32_t>(Node::NODE_COLON);
+            f_result_type = Node::node_t::NODE_COLON;
             return;
 
         case '~':
@@ -1107,50 +1107,50 @@ void Lexer::get_token()
             if(has_option_set(Options::OPTION_EXTENDED_OPERATORS)
             && c == '=')
             {
-                f_result_type = static_cast<int32_t>(Node::NODE_MATCH);
+                f_result_type = Node::node_t::NODE_MATCH;
                 return;
             }
             ungetc(c);
-            f_result_type = static_cast<int32_t>(Node::NODE_BITWISE_NOT);
+            f_result_type = Node::node_t::NODE_BITWISE_NOT;
             return;
 
         case '+':
             c = getc();
             if(c == '=')
             {
-                f_result_type = static_cast<int32_t>(Node::NODE_ASSIGNMENT_ADD);
+                f_result_type = Node::node_t::NODE_ASSIGNMENT_ADD;
                 return;
             }
             if(c == '+')
             {
-                f_result_type = static_cast<int32_t>(Node::NODE_INCREMENT);
+                f_result_type = Node::node_t::NODE_INCREMENT;
                 return;
             }
             ungetc(c);
-            f_result_type = static_cast<int32_t>(Node::NODE_ADD);
+            f_result_type = Node::node_t::NODE_ADD;
             return;
 
         case '-':
             c = getc();
             if(c == '=')
             {
-                f_result_type = static_cast<int32_t>(Node::NODE_ASSIGNMENT_SUBTRACT);
+                f_result_type = Node::node_t::NODE_ASSIGNMENT_SUBTRACT;
                 return;
             }
             if(c == '-')
             {
-                f_result_type = static_cast<int32_t>(Node::NODE_DECREMENT);
+                f_result_type = Node::node_t::NODE_DECREMENT;
                 return;
             }
             ungetc(c);
-            f_result_type = static_cast<int32_t>(Node::NODE_SUBTRACT);
+            f_result_type = Node::node_t::NODE_SUBTRACT;
             return;
 
         case '*':
             c = getc();
             if(c == '=')
             {
-                f_result_type = static_cast<int32_t>(Node::NODE_ASSIGNMENT_MULTIPLY);
+                f_result_type = Node::node_t::NODE_ASSIGNMENT_MULTIPLY;
                 return;
             }
             if(has_option_set(Options::OPTION_EXTENDED_OPERATORS)
@@ -1159,22 +1159,22 @@ void Lexer::get_token()
                 c = getc();
                 if(c == '=')
                 {
-                    f_result_type = static_cast<int32_t>(Node::NODE_ASSIGNMENT_POWER);
+                    f_result_type = Node::node_t::NODE_ASSIGNMENT_POWER;
                     return;
                 }
                 ungetc(c);
-                f_result_type = static_cast<int32_t>(Node::NODE_POWER);
+                f_result_type = Node::node_t::NODE_POWER;
                 return;
             }
             ungetc(c);
-            f_result_type = static_cast<int32_t>(Node::NODE_MULTIPLY);
+            f_result_type = Node::node_t::NODE_MULTIPLY;
             return;
 
         case '/':
             c = getc();
             if(c == '=')
             {
-                f_result_type = static_cast<int32_t>(Node::NODE_ASSIGNMENT_DIVIDE);
+                f_result_type = Node::node_t::NODE_ASSIGNMENT_DIVIDE;
                 return;
             }
             if(c == '/')
@@ -1207,18 +1207,18 @@ void Lexer::get_token()
                 break;
             }
             ungetc(c);
-            f_result_type = static_cast<int32_t>(Node::NODE_DIVIDE);
+            f_result_type = Node::node_t::NODE_DIVIDE;
             return;
 
         case '%':
             c = getc();
             if(c == '=')
             {
-                f_result_type = static_cast<int32_t>(Node::NODE_ASSIGNMENT_MODULO);
+                f_result_type = Node::node_t::NODE_ASSIGNMENT_MODULO;
                 return;
             }
             ungetc(c);
-            f_result_type = static_cast<int32_t>(Node::NODE_MODULO);
+            f_result_type = Node::node_t::NODE_MODULO;
             return;
 
         case '?':
@@ -1230,11 +1230,11 @@ void Lexer::get_token()
                     c = getc();
                     if(c == '=')
                     {
-                        f_result_type = static_cast<int32_t>(Node::NODE_ASSIGNMENT_MINIMUM);
+                        f_result_type = Node::node_t::NODE_ASSIGNMENT_MINIMUM;
                         return;
                     }
                     ungetc(c);
-                    f_result_type = static_cast<int32_t>(Node::NODE_MINIMUM);
+                    f_result_type = Node::node_t::NODE_MINIMUM;
                     return;
                 }
                 if(c == '>')
@@ -1242,23 +1242,23 @@ void Lexer::get_token()
                     c = getc();
                     if(c == '=')
                     {
-                        f_result_type = static_cast<int32_t>(Node::NODE_ASSIGNMENT_MAXIMUM);
+                        f_result_type = Node::node_t::NODE_ASSIGNMENT_MAXIMUM;
                         return;
                     }
                     ungetc(c);
-                    f_result_type = static_cast<int32_t>(Node::NODE_MAXIMUM);
+                    f_result_type = Node::node_t::NODE_MAXIMUM;
                     return;
                 }
             }
             ungetc(c);
-            f_result_type = static_cast<int32_t>(Node::NODE_CONDITIONAL);
+            f_result_type = Node::node_t::NODE_CONDITIONAL;
             return;
 
         case '&':
             c = getc();
             if(c == '=')
             {
-                f_result_type = static_cast<int32_t>(Node::NODE_ASSIGNMENT_BITWISE_AND);
+                f_result_type = Node::node_t::NODE_ASSIGNMENT_BITWISE_AND;
                 return;
             }
             if(c == '&')
@@ -1266,22 +1266,22 @@ void Lexer::get_token()
                 c = getc();
                 if(c == '=')
                 {
-                    f_result_type = static_cast<int32_t>(Node::NODE_ASSIGNMENT_LOGICAL_AND);
+                    f_result_type = Node::node_t::NODE_ASSIGNMENT_LOGICAL_AND;
                     return;
                 }
                 ungetc(c);
-                f_result_type = static_cast<int32_t>(Node::NODE_LOGICAL_AND);
+                f_result_type = Node::node_t::NODE_LOGICAL_AND;
                 return;
             }
             ungetc(c);
-            f_result_type = static_cast<int32_t>(Node::NODE_BITWISE_AND);
+            f_result_type = Node::node_t::NODE_BITWISE_AND;
             return;
 
         case '^':
             c = getc();
             if(c == '=')
             {
-                f_result_type = static_cast<int32_t>(Node::NODE_ASSIGNMENT_BITWISE_XOR);
+                f_result_type = Node::node_t::NODE_ASSIGNMENT_BITWISE_XOR;
                 return;
             }
             if(c == '^')
@@ -1289,22 +1289,22 @@ void Lexer::get_token()
                 c = getc();
                 if(c == '=')
                 {
-                    f_result_type = static_cast<int32_t>(Node::NODE_ASSIGNMENT_LOGICAL_XOR);
+                    f_result_type = Node::node_t::NODE_ASSIGNMENT_LOGICAL_XOR;
                     return;
                 }
                 ungetc(c);
-                f_result_type = static_cast<int32_t>(Node::NODE_LOGICAL_XOR);
+                f_result_type = Node::node_t::NODE_LOGICAL_XOR;
                 return;
             }
             ungetc(c);
-            f_result_type = static_cast<int32_t>(Node::NODE_BITWISE_XOR);
+            f_result_type = Node::node_t::NODE_BITWISE_XOR;
             return;
 
         case '|':
             c = getc();
             if(c == '=')
             {
-                f_result_type = static_cast<int32_t>(Node::NODE_ASSIGNMENT_BITWISE_OR);
+                f_result_type = Node::node_t::NODE_ASSIGNMENT_BITWISE_OR;
                 return;
             }
             if(c == '|')
@@ -1312,15 +1312,15 @@ void Lexer::get_token()
                 c = getc();
                 if(c == '=')
                 {
-                    f_result_type = static_cast<int32_t>(Node::NODE_ASSIGNMENT_LOGICAL_OR);
+                    f_result_type = Node::node_t::NODE_ASSIGNMENT_LOGICAL_OR;
                     return;
                 }
                 ungetc(c);
-                f_result_type = static_cast<int32_t>(Node::NODE_LOGICAL_OR);
+                f_result_type = Node::node_t::NODE_LOGICAL_OR;
                 return;
             }
             ungetc(c);
-            f_result_type = static_cast<int32_t>(Node::NODE_BITWISE_OR);
+            f_result_type = Node::node_t::NODE_BITWISE_OR;
             return;
 
         case '.':
@@ -1338,50 +1338,50 @@ void Lexer::get_token()
                 if(c == '.')
                 {
                     // Elipsis!
-                    f_result_type = static_cast<int32_t>(Node::NODE_REST);
+                    f_result_type = Node::node_t::NODE_REST;
                     return;
                 }
                 ungetc(c);
 
                 // Range (not too sure if this is really used yet
                 // and whether it will be called RANGE)
-                f_result_type = static_cast<int32_t>(Node::NODE_RANGE);
+                f_result_type = Node::node_t::NODE_RANGE;
                 return;
             }
             ungetc(c);
-            f_result_type = static_cast<int32_t>(Node::NODE_MEMBER);
+            f_result_type = Node::node_t::NODE_MEMBER;
             return;
 
         case '[':
-            f_result_type = static_cast<int32_t>(Node::NODE_OPEN_SQUARE_BRACKET);
+            f_result_type = Node::node_t::NODE_OPEN_SQUARE_BRACKET;
             return;
 
         case ']':
-            f_result_type = static_cast<int32_t>(Node::NODE_CLOSE_SQUARE_BRACKET);
+            f_result_type = Node::node_t::NODE_CLOSE_SQUARE_BRACKET;
             return;
 
         case '{':
-            f_result_type = static_cast<int32_t>(Node::NODE_OPEN_CURVLY_BRACKET);
+            f_result_type = Node::node_t::NODE_OPEN_CURVLY_BRACKET;
             return;
 
         case '}':
-            f_result_type = static_cast<int32_t>(Node::NODE_CLOSE_CURVLY_BRACKET);
+            f_result_type = Node::node_t::NODE_CLOSE_CURVLY_BRACKET;
             return;
 
         case '(':
-            f_result_type = static_cast<int32_t>(Node::NODE_OPEN_PARENTHESIS);
+            f_result_type = Node::node_t::NODE_OPEN_PARENTHESIS;
             return;
 
         case ')':
-            f_result_type = static_cast<int32_t>(Node::NODE_CLOSE_PARENTHESIS);
+            f_result_type = Node::node_t::NODE_CLOSE_PARENTHESIS;
             return;
 
         case ';':
-            f_result_type = static_cast<int32_t>(Node::NODE_SEMICOLON);
+            f_result_type = Node::node_t::NODE_SEMICOLON;
             return;
 
         case ',':
-            f_result_type = static_cast<int32_t>(Node::NODE_COMMA);
+            f_result_type = Node::node_t::NODE_COMMA;
             return;
 
         default:

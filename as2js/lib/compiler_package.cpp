@@ -43,6 +43,8 @@ SOFTWARE.
 #include    "db.h"
 #include    "rc.h"
 
+#include    <controlled_vars/controlled_vars_auto_enum_init.h>
+
 #include    <algorithm>
 
 #include    <dirent.h>
@@ -177,8 +179,8 @@ String Compiler::get_package_filename(char const *package_info)
  *
  * \note
  * At this point this function either returns true because it found
- * the named module, or it calls exit(1) with an error. Also the
- * \p result parameter is always set on return.
+ * the named module, or it throws exception_exit. So the
+ * \p result parameter is always set on a normal return.
  *
  * \param[in] filename  The name of the module to be loaded
  * \param[in,out] result  The shared pointer to the resulting root node.
@@ -209,7 +211,7 @@ bool Compiler::find_module(String const& filename, Node::pointer_t& result)
         {
             Message msg(MESSAGE_LEVEL_FATAL, AS_ERR_NOT_FOUND, in->get_position());
             msg << "cannot open module file \"" << filename << "\".";
-            exit(1);
+            throw exception_exit(1, "cannot open module file");
         }
     }
 
@@ -227,7 +229,7 @@ result.Display(stderr);
     {
         Message msg(MESSAGE_LEVEL_FATAL, AS_ERR_CANNOT_COMPILE, in->get_position());
         msg << "could not compile module file \"" << filename << "\".";
-        exit(1);
+        throw exception_exit(1, "could not compile module file");
     }
 
     // save the newly loaded module
@@ -278,9 +280,9 @@ void Compiler::find_packages_add_database_entry(String const& package_name, Node
 {
     // here, we totally ignore internal, private
     // and false entries right away
-    if(get_attribute(element, Node::NODE_ATTR_PRIVATE)
-    || get_attribute(element, Node::NODE_ATTR_FALSE)
-    || get_attribute(element, Node::NODE_ATTR_INTERNAL))
+    if(get_attribute(element, Node::flag_attribute_t::NODE_ATTR_PRIVATE)
+    || get_attribute(element, Node::flag_attribute_t::NODE_ATTR_FALSE)
+    || get_attribute(element, Node::flag_attribute_t::NODE_ATTR_INTERNAL))
     {
         return;
     }
@@ -299,11 +301,11 @@ void Compiler::find_packages_save_package_elements(Node::pointer_t package, Stri
     for(size_t idx = 0; idx < max_children; ++idx)
     {
         Node::pointer_t child(package->get_child(idx));
-        if(child->get_type() == Node::NODE_DIRECTIVE_LIST)
+        if(child->get_type() == Node::node_t::NODE_DIRECTIVE_LIST)
         {
             find_packages_save_package_elements(child, package_name); // recursive
         }
-        else if(child->get_type() == Node::NODE_CLASS)
+        else if(child->get_type() == Node::node_t::NODE_CLASS)
         {
             find_packages_add_database_entry(
                     package_name,
@@ -311,15 +313,15 @@ void Compiler::find_packages_save_package_elements(Node::pointer_t package, Stri
                     "class"
                 );
         }
-        else if(child->get_type() == Node::NODE_FUNCTION)
+        else if(child->get_type() == Node::node_t::NODE_FUNCTION)
         {
             // we do not save prototypes, that is tested later
             const char *type;
-            if(child->get_flag(Node::NODE_FUNCTION_FLAG_GETTER))
+            if(child->get_flag(Node::flag_attribute_t::NODE_FUNCTION_FLAG_GETTER))
             {
                 type = "getter";
             }
-            else if(child->get_flag(Node::NODE_FUNCTION_FLAG_SETTER))
+            else if(child->get_flag(Node::flag_attribute_t::NODE_FUNCTION_FLAG_SETTER))
             {
                 type = "setter";
             }
@@ -333,7 +335,7 @@ void Compiler::find_packages_save_package_elements(Node::pointer_t package, Stri
                     type
                 );
         }
-        else if(child->get_type() == Node::NODE_VAR)
+        else if(child->get_type() == Node::node_t::NODE_VAR)
         {
             size_t const vcnt(child->get_children_size());
             for(size_t v(0); v < vcnt; ++v)
@@ -348,7 +350,7 @@ void Compiler::find_packages_save_package_elements(Node::pointer_t package, Stri
                     );
             }
         }
-        else if(child->get_type() == Node::NODE_PACKAGE)
+        else if(child->get_type() == Node::node_t::NODE_PACKAGE)
         {
             // sub packages
             Node::pointer_t list(child->get_child(0));
@@ -369,11 +371,11 @@ void Compiler::find_packages_directive_list(Node::pointer_t list)
     for(size_t idx(0); idx < max_children; ++idx)
     {
         Node::pointer_t child(list->get_child(idx));
-        if(child->get_type() == Node::NODE_DIRECTIVE_LIST)
+        if(child->get_type() == Node::node_t::NODE_DIRECTIVE_LIST)
         {
             find_packages_directive_list(child);
         }
-        else if(child->get_type() == Node::NODE_PACKAGE)
+        else if(child->get_type() == Node::node_t::NODE_PACKAGE)
         {
             // Found a package! Save all the functions
             // variables and classes in the database
@@ -387,7 +389,7 @@ void Compiler::find_packages_directive_list(Node::pointer_t list)
 
 void Compiler::find_packages(Node::pointer_t program_node)
 {
-    if(program_node->get_type() != Node::NODE_PROGRAM)
+    if(program_node->get_type() != Node::node_t::NODE_PROGRAM)
     {
         return;
     }
@@ -411,7 +413,7 @@ void Compiler::load_internal_packages(char const *module)
         pos.set_filename(path);
         Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INSTALLATION, pos);
         msg << "cannot read directory \"" << path << "\".\n";
-        exit(1);
+        throw exception_exit(1, "cannot read directory");
     }
 
     for(;;)
@@ -456,7 +458,7 @@ void Compiler::import(Node::pointer_t& import_node)
 {
     // If we have the IMPLEMENTS flag set, then we must make sure
     // that the corresponding package is compiled.
-    if(!import_node->get_flag(Node::NODE_IMPORT_FLAG_IMPLEMENTS))
+    if(!import_node->get_flag(Node::flag_attribute_t::NODE_IMPORT_FLAG_IMPLEMENTS))
     {
         return;
     }
@@ -485,8 +487,8 @@ void Compiler::import(Node::pointer_t& import_node)
     }
 
     // make sure it is compiled (once)
-    bool const was_referenced(package->get_flag(Node::NODE_PACKAGE_FLAG_REFERENCED));
-    package->set_flag(Node::NODE_PACKAGE_FLAG_REFERENCED, true);
+    bool const was_referenced(package->get_flag(Node::flag_attribute_t::NODE_PACKAGE_FLAG_REFERENCED));
+    package->set_flag(Node::flag_attribute_t::NODE_PACKAGE_FLAG_REFERENCED, true);
     if(was_referenced)
     {
         directive_list(package);
@@ -505,7 +507,7 @@ Node::pointer_t Compiler::find_package(Node::pointer_t list, String const& name)
     for(size_t idx(0); idx < max_children; ++idx)
     {
         Node::pointer_t child(list->get_child(idx));
-        if(child->get_type() == Node::NODE_DIRECTIVE_LIST)
+        if(child->get_type() == Node::node_t::NODE_DIRECTIVE_LIST)
         {
             Node::pointer_t package(find_package(child, name));  // recursive
             if(package)
@@ -513,7 +515,7 @@ Node::pointer_t Compiler::find_package(Node::pointer_t list, String const& name)
                 return package;
             }
         }
-        else if(child->get_type() == Node::NODE_PACKAGE)
+        else if(child->get_type() == Node::node_t::NODE_PACKAGE)
         {
             if(child->get_string() == name)
             {
@@ -545,7 +547,7 @@ bool Compiler::find_external_package(Node::pointer_t import_node, String const& 
     find_module(filename, program_node);
 
     // at this time this will not happen because if the find_module()
-    // function fails, it exit(1)...
+    // function fails, it throws exception_exit(1, ...);
     if(!program_node)
     {
         return false;
@@ -590,7 +592,7 @@ bool Compiler::find_package_item(Node::pointer_t program_node, Node::pointer_t i
             // database.)
             Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INTERNAL_ERROR, import_node->get_position());
             msg << "cannot find package '" << import_node->get_string() << "' in any of the previously registered packages.";
-            exit(1);
+            throw exception_exit(1, "cannot find package");
         }
         return false;
     }
@@ -601,9 +603,9 @@ bool Compiler::find_package_item(Node::pointer_t program_node, Node::pointer_t i
     }
 
     // setup labels (only the first time around)
-    if(!package_node->get_flag(Node::NODE_PACKAGE_FLAG_FOUND_LABELS))
+    if(!package_node->get_flag(Node::flag_attribute_t::NODE_PACKAGE_FLAG_FOUND_LABELS))
     {
-        package_node->set_flag(Node::NODE_PACKAGE_FLAG_FOUND_LABELS, true);
+        package_node->set_flag(Node::flag_attribute_t::NODE_PACKAGE_FLAG_FOUND_LABELS, true);
         Node::pointer_t child(package_node->get_child(0));
         find_labels(package_node, child);
     }
@@ -612,7 +614,7 @@ bool Compiler::find_package_item(Node::pointer_t program_node, Node::pointer_t i
     // searching for in this package:
 
     // TODO: Hmmm... could we have the actual node instead?
-    Node::pointer_t id(package_node->create_replacement(Node::NODE_IDENTIFIER));
+    Node::pointer_t id(package_node->create_replacement(Node::node_t::NODE_IDENTIFIER));
     id->set_string(name);
 
     int funcs = 0;
@@ -624,7 +626,7 @@ bool Compiler::find_package_item(Node::pointer_t program_node, Node::pointer_t i
     // TODO: Can we have an empty resolution here?!
     if(resolution)
     {
-        if(get_attribute(resolution, Node::NODE_ATTR_PRIVATE))
+        if(get_attribute(resolution, Node::flag_attribute_t::NODE_ATTR_PRIVATE))
         {
             // it is private, we cannot use this item
             // from outside whether it is in the
@@ -632,7 +634,7 @@ bool Compiler::find_package_item(Node::pointer_t program_node, Node::pointer_t i
             return false;
         }
 
-        if(get_attribute(resolution, Node::NODE_ATTR_INTERNAL))
+        if(get_attribute(resolution, Node::flag_attribute_t::NODE_ATTR_INTERNAL))
         {
             // it is internal we can only use it from
             // another package
@@ -644,13 +646,13 @@ bool Compiler::find_package_item(Node::pointer_t program_node, Node::pointer_t i
                 {
                     return false;
                 }
-                if(parent->get_type() == Node::NODE_PACKAGE)
+                if(parent->get_type() == Node::node_t::NODE_PACKAGE)
                 {
                     // found the package mark
                     break;
                 }
-                if(parent->get_type() == Node::NODE_ROOT
-                || parent->get_type() == Node::NODE_PROGRAM)
+                if(parent->get_type() == Node::node_t::NODE_ROOT
+                || parent->get_type() == Node::node_t::NODE_PROGRAM)
                 {
                     return false;
                 }
@@ -659,8 +661,8 @@ bool Compiler::find_package_item(Node::pointer_t program_node, Node::pointer_t i
     }
 
     // make sure it is compiled (once)
-    bool was_referenced(package_node->get_flag(Node::NODE_PACKAGE_FLAG_REFERENCED));
-    package_node->set_flag(Node::NODE_PACKAGE_FLAG_REFERENCED, true);
+    bool was_referenced(package_node->get_flag(Node::flag_attribute_t::NODE_PACKAGE_FLAG_REFERENCED));
+    package_node->set_flag(Node::flag_attribute_t::NODE_PACKAGE_FLAG_REFERENCED, true);
     if(was_referenced)
     {
         directive_list(package_node);
@@ -710,7 +712,7 @@ bool Compiler::check_name(Node::pointer_t list, int idx, Node::pointer_t& resolu
     Node::pointer_t child(list->get_child(idx));
 
     // turned off?
-    //if(get_attribute(child, Node::NODE_ATTR_FALSE))
+    //if(get_attribute(child, Node::flag_attribute_t::NODE_ATTR_FALSE))
     //{
     //    return false;
     //}
@@ -718,7 +720,7 @@ bool Compiler::check_name(Node::pointer_t list, int idx, Node::pointer_t& resolu
     bool result = false;
     switch(child->get_type())
     {
-    case Node::NODE_VAR:    // a VAR is composed of VARIABLEs
+    case Node::node_t::NODE_VAR:    // a VAR is composed of VARIABLEs
         {
             NodeLock ln(child);
             size_t const max_children(child->get_children_size());
@@ -747,21 +749,21 @@ bool Compiler::check_name(Node::pointer_t list, int idx, Node::pointer_t& resolu
         }
         break;
 
-    case Node::NODE_PARAM:
+    case Node::node_t::NODE_PARAM:
         if(child->get_string() == id->get_string())
         {
             resolution = child;
-            resolution->set_flag(Node::NODE_PARAMETERS_FLAG_REFERENCED, true);
+            resolution->set_flag(Node::flag_attribute_t::NODE_PARAMETERS_FLAG_REFERENCED, true);
             return true;
         }
         break;
 
-    case Node::NODE_FUNCTION:
+    case Node::node_t::NODE_FUNCTION:
         result = check_function(child, resolution, id->get_string(), params, search_flags);
         break;
 
-    case Node::NODE_CLASS:
-    case Node::NODE_INTERFACE:
+    case Node::node_t::NODE_CLASS:
+    case Node::node_t::NODE_INTERFACE:
         if(child->get_string() == id->get_string())
         {
             // That is a class name! (good for a typedef, etc.)
@@ -770,14 +772,14 @@ bool Compiler::check_name(Node::pointer_t list, int idx, Node::pointer_t& resolu
         }
         break;
 
-    case Node::NODE_ENUM:
+    case Node::node_t::NODE_ENUM:
     {
         // first we check whether the name of the enum is what
         // is being referenced (i.e. the type)
         if(child->get_string() == id->get_string())
         {
             resolution = list;
-            resolution->set_flag(Node::NODE_VAR_FLAG_INUSE, true);
+            resolution->set_flag(Node::flag_attribute_t::NODE_VAR_FLAG_INUSE, true);
             return true;
         }
 
@@ -792,14 +794,14 @@ bool Compiler::check_name(Node::pointer_t list, int idx, Node::pointer_t& resolu
             {
                 // this can't be a function, right?
                 resolution = entry;
-                resolution->set_flag(Node::NODE_VAR_FLAG_INUSE, true);
+                resolution->set_flag(Node::flag_attribute_t::NODE_VAR_FLAG_INUSE, true);
                 return true;
             }
         }
     }
         break;
 
-    case Node::NODE_PACKAGE:
+    case Node::node_t::NODE_PACKAGE:
         if(child->get_string() == id->get_string())
         {
             // That is a package... we have to see packages
@@ -829,16 +831,16 @@ bool Compiler::check_name(Node::pointer_t list, int idx, Node::pointer_t& resolu
         }
         result = true;
 //std::cerr << "Found inside package! [" << id->get_string() << "]\n";
-        if(!child->get_flag(Node::NODE_PACKAGE_FLAG_REFERENCED))
+        if(!child->get_flag(Node::flag_attribute_t::NODE_PACKAGE_FLAG_REFERENCED))
         {
 //std::cerr << "Compile package now!\n";
             directive_list(child);
-            child->set_flag(Node::NODE_PACKAGE_FLAG_REFERENCED);
+            child->set_flag(Node::flag_attribute_t::NODE_PACKAGE_FLAG_REFERENCED);
         }
 #endif
         break;
 
-    case Node::NODE_IMPORT:
+    case Node::node_t::NODE_IMPORT:
         return check_import(child, resolution, id->get_string(), params, search_flags);
 
     default:
@@ -859,7 +861,7 @@ bool Compiler::check_name(Node::pointer_t list, int idx, Node::pointer_t& resolu
         return true;
     }
 
-    if(get_attribute(resolution, Node::NODE_ATTR_PRIVATE))
+    if(get_attribute(resolution, Node::flag_attribute_t::NODE_ATTR_PRIVATE))
     {
         // Note that an interface and a package
         // can also have private members
@@ -870,14 +872,14 @@ bool Compiler::check_name(Node::pointer_t list, int idx, Node::pointer_t& resolu
             resolution.reset();
             return false;
         }
-        if(the_resolution_class->get_type() == Node::NODE_PACKAGE)
+        if(the_resolution_class->get_type() == Node::node_t::NODE_PACKAGE)
         {
             f_err_flags |= SEARCH_ERROR_PRIVATE_PACKAGE;
             resolution.reset();
             return false;
         }
-        if(the_resolution_class->get_type() != Node::NODE_CLASS
-        && the_resolution_class->get_type() != Node::NODE_INTERFACE)
+        if(the_resolution_class->get_type() != Node::node_t::NODE_CLASS
+        && the_resolution_class->get_type() != Node::node_t::NODE_INTERFACE)
         {
             f_err_flags |= SEARCH_ERROR_WRONG_PRIVATE;
             resolution.reset();
@@ -898,15 +900,15 @@ bool Compiler::check_name(Node::pointer_t list, int idx, Node::pointer_t& resolu
         }
     }
 
-    if(get_attribute(resolution, Node::NODE_ATTR_PROTECTED))
+    if(get_attribute(resolution, Node::flag_attribute_t::NODE_ATTR_PROTECTED))
     {
         // Note that an interface can also have protected members
         Node::pointer_t the_super_class;
         if(!are_objects_derived_from_one_another(id, resolution, the_super_class))
         {
             if(the_super_class
-            && the_super_class->get_type() != Node::NODE_CLASS
-            && the_super_class->get_type() != Node::NODE_INTERFACE)
+            && the_super_class->get_type() != Node::node_t::NODE_CLASS
+            && the_super_class->get_type() != Node::node_t::NODE_INTERFACE)
             {
                 f_err_flags |= SEARCH_ERROR_WRONG_PROTECTED;
             }
@@ -919,7 +921,7 @@ bool Compiler::check_name(Node::pointer_t list, int idx, Node::pointer_t& resolu
         }
     }
 
-    if(child->get_type() == Node::NODE_FUNCTION && params)
+    if(child->get_type() == Node::node_t::NODE_FUNCTION && params)
     {
         if(check_function_with_params(child, params) < 0)
         {
@@ -940,9 +942,9 @@ bool Compiler::resolve_name(Node::pointer_t list, Node::pointer_t id, Node::poin
 
     // in some cases we may want to resolve a name specified in a string
     // (i.e. test["me"])
-    if(id->get_type() != Node::NODE_IDENTIFIER
-    && id->get_type() != Node::NODE_VIDENTIFIER
-    && id->get_type() != Node::NODE_STRING)
+    if(id->get_type() != Node::node_t::NODE_IDENTIFIER
+    && id->get_type() != Node::node_t::NODE_VIDENTIFIER
+    && id->get_type() != Node::node_t::NODE_STRING)
     {
         throw exception_internal_error("Compiler::resolve_name() was called with an 'identifier node' which is not a NODE_[V]IDENTIFIER or NODE_STRING");
     }
@@ -962,7 +964,7 @@ bool Compiler::resolve_name(Node::pointer_t list, Node::pointer_t id, Node::poin
     int funcs(0);
 
     Node::pointer_t parent(list->get_parent());
-    if(parent->get_type() == Node::NODE_WITH)
+    if(parent->get_type() == Node::node_t::NODE_WITH)
     {
         // we are currently defining the WITH object, skip the
         // WITH itself!
@@ -989,7 +991,7 @@ bool Compiler::resolve_name(Node::pointer_t list, Node::pointer_t id, Node::poin
             // otherwise we could have a forward search of
             // the parameters which we disallow (only backward
             // search is allowed in that list)
-            if(list->get_type() == Node::NODE_PARAMETERS)
+            if(list->get_type() == Node::node_t::NODE_PARAMETERS)
             {
 //fprintf(stderr, "Skipping parameters?!\n");
                 list = list->get_parent();
@@ -1003,27 +1005,27 @@ bool Compiler::resolve_name(Node::pointer_t list, Node::pointer_t id, Node::poin
                 // TBD: should we verify that list is not a null pointer?
                 switch(list->get_type())
                 {
-                case Node::NODE_ROOT:
+                case Node::node_t::NODE_ROOT:
                     throw exception_internal_error("Compiler::resolve_name() found the NODE_ROOT while searching for a parent.");
 
-                case Node::NODE_EXTENDS:
-                case Node::NODE_IMPLEMENTS:
+                case Node::node_t::NODE_EXTENDS:
+                case Node::node_t::NODE_IMPLEMENTS:
                     list = list->get_parent();
                     // TBD: this is used to skip one node, but should we
                     //      check for the null pointer?
                     break;
 
-                case Node::NODE_DIRECTIVE_LIST:
-                case Node::NODE_FOR:
-                case Node::NODE_WITH:
-                //case Node::NODE_PACKAGE: -- not necessary, the first item is a NODE_DIRECTIVE_LIST
-                case Node::NODE_PROGRAM:
-                case Node::NODE_FUNCTION:
-                case Node::NODE_PARAMETERS:
-                case Node::NODE_ENUM:
-                case Node::NODE_CATCH:
-                case Node::NODE_CLASS:
-                case Node::NODE_INTERFACE:
+                case Node::node_t::NODE_DIRECTIVE_LIST:
+                case Node::node_t::NODE_FOR:
+                case Node::node_t::NODE_WITH:
+                //case Node::node_t::NODE_PACKAGE: -- not necessary, the first item is a NODE_DIRECTIVE_LIST
+                case Node::node_t::NODE_PROGRAM:
+                case Node::node_t::NODE_FUNCTION:
+                case Node::node_t::NODE_PARAMETERS:
+                case Node::node_t::NODE_ENUM:
+                case Node::node_t::NODE_CATCH:
+                case Node::node_t::NODE_CLASS:
+                case Node::node_t::NODE_INTERFACE:
                     more = false;
                     break;
 
@@ -1034,7 +1036,7 @@ bool Compiler::resolve_name(Node::pointer_t list, Node::pointer_t id, Node::poin
             }
         }
 
-        if(list->get_type() == Node::NODE_PROGRAM
+        if(list->get_type() == Node::node_t::NODE_PROGRAM
         || module != 0)
         {
             // not resolved
@@ -1090,7 +1092,7 @@ bool Compiler::resolve_name(Node::pointer_t list, Node::pointer_t id, Node::poin
         size_t const max_children(list->get_children_size());
         switch(list->get_type())
         {
-        case Node::NODE_DIRECTIVE_LIST:
+        case Node::node_t::NODE_DIRECTIVE_LIST:
         {
             // okay! we've got a list of directives
             // backward loop up first since in 99% of cases that
@@ -1135,7 +1137,7 @@ fprintf(stderr, "\n");
         }
             break;
 
-        case Node::NODE_FOR:
+        case Node::node_t::NODE_FOR:
         {
             // the first member of a for can include variable
             // definitions
@@ -1159,7 +1161,7 @@ fprintf(stderr, " [Type = %d]\n", d.f_type);
             break;
 
 #if 0
-        case Node::NODE_PACKAGE:
+        case Node::node_t::NODE_PACKAGE:
             // From inside a package, we have an implicit
             //    IMPORT <package name>;
             //
@@ -1173,7 +1175,7 @@ fprintf(stderr, " [Type = %d]\n", d.f_type);
             break;
 #endif
 
-        case Node::NODE_WITH:
+        case Node::node_t::NODE_WITH:
         {
             if(max_children != 2)
             {
@@ -1185,14 +1187,14 @@ fprintf(stderr, " [Type = %d]\n", d.f_type);
             Node::pointer_t type(list->get_child(0));
             if(type)
             {
-                Node::pointer_t link(type->get_link(Node::LINK_INSTANCE));
+                Node::pointer_t link(type->get_link(Node::link_t::LINK_INSTANCE));
                 if(link)
                 {
                     if(resolve_field(link, id, resolution, params, search_flags))
                     {
                         // Mark this identifier as a
                         // reference to a WITH object
-                        id->set_flag(Node::NODE_IDENTIFIER_FLAG_WITH, true);
+                        id->set_flag(Node::flag_attribute_t::NODE_IDENTIFIER_FLAG_WITH, true);
 
                         // TODO: we certainly want to compare
                         //       all the field functions and the
@@ -1210,13 +1212,13 @@ fprintf(stderr, " [Type = %d]\n", d.f_type);
         }
             break;
 
-        case Node::NODE_FUNCTION:
+        case Node::node_t::NODE_FUNCTION:
         {
             // search the list of parameters for a corresponding name
             for(size_t idx(0); idx < max_children; ++idx)
             {
                 Node::pointer_t parameters_node(list->get_child(idx));
-                if(parameters_node->get_type() == Node::NODE_PARAMETERS)
+                if(parameters_node->get_type() == Node::node_t::NODE_PARAMETERS)
                 {
                     NodeLock parameters_ln(parameters_node);
                     size_t const cnt(parameters_node->get_children_size());
@@ -1241,7 +1243,7 @@ fprintf(stderr, "\n");
         }
             break;
 
-        case Node::NODE_PARAMETERS:
+        case Node::node_t::NODE_PARAMETERS:
         {
             // Wow! I cannot believe I am implementing this...
             // So we will be able to reference the previous
@@ -1269,7 +1271,7 @@ fprintf(stderr, "\n");
         }
             break;
 
-        case Node::NODE_CATCH:
+        case Node::node_t::NODE_CATCH:
         {
             // a catch can have a parameter of its own
             Node::pointer_t parameters_node(list->get_child(0));
@@ -1286,13 +1288,13 @@ fprintf(stderr, "\n");
         }
             break;
 
-        case Node::NODE_ENUM:
+        case Node::node_t::NODE_ENUM:
             // first we check whether the name of the enum is what
             // is being referenced (i.e. the type)
             if(id->get_string() == list->get_string())
             {
                 resolution = list;
-                resolution->set_flag(Node::NODE_VAR_FLAG_INUSE, true);
+                resolution->set_flag(Node::flag_attribute_t::NODE_VAR_FLAG_INUSE, true);
                 return true;
             }
 
@@ -1311,15 +1313,15 @@ fprintf(stderr, "\n");
                     resolution = entry;
                     if(funcs_name(funcs, resolution))
                     {
-                        resolution->set_flag(Node::NODE_VAR_FLAG_INUSE, true);
+                        resolution->set_flag(Node::flag_attribute_t::NODE_VAR_FLAG_INUSE, true);
                         return true;
                     }
                 }
             }
             break;
 
-        case Node::NODE_CLASS:
-        case Node::NODE_INTERFACE:
+        case Node::node_t::NODE_CLASS:
+        case Node::node_t::NODE_INTERFACE:
             // We need to search the extends and implements
             if(find_in_extends(list, id, funcs, resolution, params, search_flags))
             {

@@ -37,7 +37,10 @@ SOFTWARE.
 
 #include    "as2js/compare.h"
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
 #include    <controlled_vars/controlled_vars_fauto_init.h>
+#pragma GCC diagnostic pop
 
 #include    <limits>
 #include    <cmath>
@@ -131,12 +134,9 @@ public:
 
                         // comparing two floats properly handles infinity
                         // (at least in g++ on Intel processors)
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wfloat-equal"
                         return f_float == rhs.f_float ? COMPARE_EQUAL
                              : (f_float < rhs.f_float ? COMPARE_LESS
                                                       : COMPARE_GREATER);
-#pragma GCC diagnostic pop
                     }
 
 private:

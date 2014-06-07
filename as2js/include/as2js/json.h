@@ -87,7 +87,7 @@ public:
             JSON_TYPE_STRING,
             JSON_TYPE_TRUE
         };
-        typedef controlled_vars::limited_auto_init<type_t, JSON_TYPE_UNKNOWN, JSON_TYPE_TRUE, JSON_TYPE_UNKNOWN> safe_type_t;
+        typedef controlled_vars::limited_auto_enum_init<type_t, JSON_TYPE_UNKNOWN, JSON_TYPE_TRUE, JSON_TYPE_UNKNOWN> safe_type_t;
 
                             JSONValue(Position const& position);  // null
                             JSONValue(Position const& position, Int64 integer);

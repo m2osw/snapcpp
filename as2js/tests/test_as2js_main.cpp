@@ -61,6 +61,7 @@ namespace as2js_test
 std::string     g_tmp_dir;
 std::string     g_as2js_compiler;
 bool            g_gui = false;
+bool            g_run_stdout_destructive = false;
 
 }
 
@@ -149,6 +150,14 @@ int unittest_main(int argc, char *argv[])
             "all",
             nullptr,
             "run all the tests in the console (default)",
+            advgetopt::getopt::no_argument
+        },
+        {
+            '\0',
+            0,
+            "destructive",
+            nullptr,
+            "also run the stdout destructive test (otherwise skip the test so we do not lose stdout)",
             advgetopt::getopt::no_argument
         },
         {
@@ -268,6 +277,7 @@ int unittest_main(int argc, char *argv[])
         dump(all, "");
         exit(1);
     }
+    as2js_test::g_run_stdout_destructive = opt.is_defined("destructive");
 
     // by default we get a different seed each time; that really helps
     // in detecting errors! (I know, I wrote loads of tests before)
