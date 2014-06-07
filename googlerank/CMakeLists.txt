@@ -66,7 +66,7 @@ include_directories( ${QT_INCLUDES} )
 ##
 set(GOOGLERANK_VERSION_MAJOR 1)
 set(GOOGLERANK_VERSION_MINOR 0)
-set(GOOGLERANK_VERSION_PATCH 0)
+set(GOOGLERANK_VERSION_PATCH 2)
 
 ##
 ## Google Rank library

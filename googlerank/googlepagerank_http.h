@@ -33,7 +33,7 @@
 #define GOOGLEPAGERANK_HTTP_H
 
 #include "googlepagerank.h"
-#include <controlled_vars/controlled_vars_auto_init.h>
+#include <controlled_vars/controlled_vars_limited_auto_enum_init.h>
 #include <stdexcept>
 
 class QNetworkAccessManager;
@@ -87,8 +87,8 @@ private:
 	void extractRank();
 
 	QString				f_uri;
-	controlled_vars::zbool_t	f_finished;
-	controlled_vars::zbool_t	f_aborted;
+	controlled_vars::flbool_t	f_finished;
+	controlled_vars::flbool_t	f_aborted;
 	QNetworkAccessManager *		f_network_access_manager;
 	QNetworkReply *			f_reply;
 	QString				f_data;
