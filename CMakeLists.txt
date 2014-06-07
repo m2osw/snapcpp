@@ -71,66 +71,108 @@ add_subdirectory( thrift )
 ################################################################################
 # Snap libraries
 #
-ConfigureMakeProject( PROJECT_NAME zipios )
 ConfigureMakeProject( PROJECT_NAME snapCMakeModules )
-ConfigureMakeProject( PROJECT_NAME advgetopt       DEPENDS snapCMakeModules controlled_vars )
-ConfigureMakeProject( PROJECT_NAME controlled_vars DEPENDS snapCMakeModules )
-ConfigureMakeProject( PROJECT_NAME iplock          )
-ConfigureMakeProject( PROJECT_NAME googlerank      DEPENDS snapCMakeModules controlled_vars )
-ConfigureMakeProject( PROJECT_NAME libQtCassandra
-        CONFIG_ARGS
-            -DTHRIFT_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
-        DEPENDS snapCMakeModules controlled_vars
-        )
-ConfigureMakeProject( PROJECT_NAME libQtSerialization
-        CONFIG_ARGS
-            -DTHRIFT_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
-        DEPENDS snapCMakeModules
-        )
-ConfigureMakeProject( PROJECT_NAME libtld DEPENDS snapCMakeModules )
-ConfigureMakeProject( PROJECT_NAME snapwebsites
-        CONFIG_ARGS
-            -DTHRIFT_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
-            -DQTSERIALIZATION_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include/QtSerialization
-            -DLIBTLD_LIBRARY:PATH=${CMAKE_BINARY_DIR}/dist/lib/libtld.so
-            -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-        DEPENDS snapCMakeModules zipios advgetopt libQtCassandra libQtSerialization libtld
-        )
-ConfigureMakeProject( PROJECT_NAME snapmanager
-        CONFIG_ARGS
-            -DTHRIFT_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
-            -DLIBTLD_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
-            -DLIBTLD_LIBRARY:PATH=${CMAKE_BINARY_DIR}/dist/lib/libtld.so
-            -DQTCASSANDRA_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include/QtCassandra
-            -DQTCASSANDRA_LIBRARY:PATH=${CMAKE_BINARY_DIR}/dist/lib/libQtCassandra.so
-            -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-        DEPENDS snapCMakeModules libQtCassandra libtld snapwebsites
-        )
-ConfigureMakeProject( PROJECT_NAME cassview
-        CONFIG_ARGS
-            -DTHRIFT_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
-            -DQTSERIALIZATION_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include/QtSerialization
-            -DLIBTLD_LIBRARY:PATH=${CMAKE_BINARY_DIR}/dist/lib/libtld.so
-            -DSNAPWEBSITES_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
-            -DSNAPWEBSITES_LIBRARY:PATH=${CMAKE_BINARY_DIR}/dist/lib/libsnapwebsites.so
-        DEPENDS snapCMakeModules snapwebsites
-        )
+
+ConfigureMakeProject( PROJECT_NAME zipios )
+
+ConfigureMakeProject( PROJECT_NAME iplock
+    CONFIG_ARGS
+        -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+)
+
+ConfigureMakeProject( PROJECT_NAME controlled_vars
+    CONFIG_ARGS
+        -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+    DEPENDS snapCMakeModules
+)
+
+ConfigureMakeProject( PROJECT_NAME libtld
+    CONFIG_ARGS
+        -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+    DEPENDS snapCMakeModules
+)
+
+ConfigureMakeProject( PROJECT_NAME advgetopt
+    CONFIG_ARGS
+        -DCONTROLLEDVARS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
+        -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+    DEPENDS snapCMakeModules controlled_vars
+)
+
 ConfigureMakeProject( PROJECT_NAME as2js
-        CONFIG_ARGS
-            -DCONTROLLEDVARS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
-        DEPENDS snapCMakeModules advgetopt controlled_vars
-        )
+    CONFIG_ARGS
+        -DCONTROLLEDVARS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
+        -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+    DEPENDS snapCMakeModules controlled_vars advgetopt
+)
+
+ConfigureMakeProject( PROJECT_NAME googlerank
+    CONFIG_ARGS
+        -DCONTROLLEDVARS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
+        -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+    DEPENDS snapCMakeModules controlled_vars
+)
+
+ConfigureMakeProject( PROJECT_NAME libQtCassandra
+    CONFIG_ARGS
+        -DTHRIFT_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
+        -DCONTROLLEDVARS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
+        -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+    DEPENDS snapCMakeModules controlled_vars
+)
+
+ConfigureMakeProject( PROJECT_NAME libQtSerialization
+    CONFIG_ARGS
+        -DTHRIFT_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
+        -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+    DEPENDS snapCMakeModules
+)
+
+ConfigureMakeProject( PROJECT_NAME snapwebsites
+    CONFIG_ARGS
+        -DTHRIFT_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
+        -DCONTROLLEDVARS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
+        -DQTSERIALIZATION_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include/QtSerialization
+        -DLIBTLD_LIBRARY:PATH=${CMAKE_BINARY_DIR}/dist/lib/libtld.so
+        -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+    DEPENDS snapCMakeModules zipios advgetopt libQtCassandra libQtSerialization libtld controlled_vars
+)
+
+ConfigureMakeProject( PROJECT_NAME snapmanager
+    CONFIG_ARGS
+        -DTHRIFT_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
+        -DCONTROLLEDVARS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
+        -DLIBTLD_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
+        -DLIBTLD_LIBRARY:PATH=${CMAKE_BINARY_DIR}/dist/lib/libtld.so
+        -DQTCASSANDRA_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include/QtCassandra
+        -DQTCASSANDRA_LIBRARY:PATH=${CMAKE_BINARY_DIR}/dist/lib/libQtCassandra.so
+        -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+    DEPENDS snapCMakeModules libQtCassandra libtld snapwebsites controlled_vars
+)
+
+ConfigureMakeProject( PROJECT_NAME cassview
+    CONFIG_ARGS
+        -DTHRIFT_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
+        -DCONTROLLEDVARS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
+        -DQTSERIALIZATION_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include/QtSerialization
+        -DLIBTLD_LIBRARY:PATH=${CMAKE_BINARY_DIR}/dist/lib/libtld.so
+        -DSNAPWEBSITES_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
+        -DSNAPWEBSITES_LIBRARY:PATH=${CMAKE_BINARY_DIR}/dist/lib/libsnapwebsites.so
+        -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+    DEPENDS snapCMakeModules snapwebsites controlled_vars
+)
+
 
 get_property( BUILD_TARGETS GLOBAL PROPERTY BUILD_TARGETS )
 get_property( CLEAN_TARGETS GLOBAL PROPERTY CLEAN_TARGETS )
 add_custom_target( build-all ALL
     DEPENDS ${BUILD_TARGETS}
-    )
+)
 add_custom_target( clean-all
     COMMAND rm -rf ${CMAKE_BINARY_DIR}/recipes
     COMMAND ${CMAKE_COMMAND} ${CMAKE_BINARY_DIR}
     DEPENDS ${CLEAN_TARGETS}
-    )
+)
 
 #option( BUILD_RECIPES "Build source tarballs based on launchpad recipes." OFF )
 #if( ${BUILD_RECIPES} )
