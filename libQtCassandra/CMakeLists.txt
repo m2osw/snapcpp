@@ -37,7 +37,7 @@
 
 set(LIBQTCASSANDRA_VERSION_MAJOR 0)
 set(LIBQTCASSANDRA_VERSION_MINOR 5)
-set(LIBQTCASSANDRA_VERSION_PATCH 6)
+set(LIBQTCASSANDRA_VERSION_PATCH 7)
 
 cmake_minimum_required(VERSION 2.8)
 project(libQtCassandra)
@@ -66,14 +66,18 @@ add_definitions( ${QT_DEFINITIONS} )
 link_directories( ${CMAKE_BINARY_DIR}/dist/lib/ )
 
 include_directories(
+    SYSTEM
+        ${THRIFT_INCLUDE_DIRS}
+        ${QT_INCLUDES}
+)
+
+include_directories(
     ${PROJECT_SOURCE_DIR}
     ${PROJECT_SOURCE_DIR}/include
     ${PROJECT_BINARY_DIR}
     ${PROJECT_BINARY_DIR}/include
     ${CMAKE_BINARY_DIR}
-    ${CONTROLLEDVARS_INCLUDE_DIRS}
-    ${THRIFT_INCLUDE_DIRS}
-    ${QT_INCLUDES}
+    ${CONTROLLEDVARS_INCLUDE_DIR}
 )
 
 # Create a configure script

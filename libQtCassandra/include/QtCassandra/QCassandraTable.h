@@ -266,7 +266,7 @@ private:
     friend class QCassandraTablePrivate;
     friend class QCassandraRow;
 
-    controlled_vars::zbool_t                    f_from_cassandra;
+    controlled_vars::flbool_t                   f_from_cassandra;
     std::auto_ptr<QCassandraTablePrivate>       f_private;
     // f_context is a parent that has a strong shared pointer over us so it
     // cannot disappear before we do, thus only a bare pointer is enough here

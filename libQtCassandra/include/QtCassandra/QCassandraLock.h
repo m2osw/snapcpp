@@ -65,7 +65,7 @@ private:
     QCassandraTable::pointer_t     f_table;
     QByteArray                     f_object_name;
     QByteArray                     f_ticket_id;
-    controlled_vars::fbool_t       f_locked;
+    controlled_vars::flbool_t      f_locked;
     const consistency_level_t      f_consistency;
 };
 

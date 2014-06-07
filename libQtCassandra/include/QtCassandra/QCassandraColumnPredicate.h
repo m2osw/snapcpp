@@ -39,6 +39,7 @@
 
 #include "QCassandraConsistencyLevel.h"
 #include <controlled_vars/controlled_vars_limited_auto_init.h>
+#include <controlled_vars/controlled_vars_limited_auto_enum_init.h>
 #include <QByteArray>
 #include <QVector>
 #include <QObject>
@@ -138,9 +139,9 @@ private:
 
     QByteArray                  f_start_column;
     QByteArray                  f_end_column;
-    controlled_vars::fbool_t    f_reversed;
-    controlled_vars::fbool_t    f_index; // whether predicate is used as an index
-    controlled_vars::fbool_t    f_exclude; // whether f_start_column is excluded
+    controlled_vars::flbool_t   f_reversed;
+    controlled_vars::flbool_t   f_index; // whether predicate is used as an index
+    controlled_vars::flbool_t   f_exclude; // whether f_start_column is excluded
     cassandra_count_t           f_count;
 };
 

@@ -156,7 +156,7 @@ private:
     QCassandraTables                            f_tables;
     QString                                     f_host_name;
     QString                                     f_lock_table_name;
-    mutable controlled_vars::zbool_t            f_lock_accessed;
+    mutable controlled_vars::flbool_t           f_lock_accessed;
     lock_timeout_t                              f_lock_timeout;
     lock_ttl_t                                  f_lock_ttl;
 };

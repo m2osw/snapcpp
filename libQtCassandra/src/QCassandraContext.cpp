@@ -1388,8 +1388,8 @@ void QCassandraContext::addLockHost(const QString& host_name)
     //       when many numbers are missing; so instead we use a vector of
     //       booleans which anyway is a lot simpler to implement and maintain
     //       See: http://stackoverflow.com/questions/3492302/easy-interview-question-got-harder-given-numbers-1-100-find-the-missing-numbe
-    std::vector<controlled_vars::fbool_t> set;
-    std::vector<controlled_vars::fbool_t>::size_type size(0);
+    std::vector<controlled_vars::flbool_t> set;
+    std::vector<controlled_vars::flbool_t>::size_type size(0);
     for(QCassandraCells::const_iterator j(hosts.begin()); j != hosts.end(); ++j) {
         if((*j)->columnName() == host_name) {
             // we already have it there, don't touch it
@@ -1410,7 +1410,7 @@ void QCassandraContext::addLockHost(const QString& host_name)
     }
     else {
         // ignore 0 in the search (which is why we need a special case...)
-        std::vector<controlled_vars::fbool_t>::const_iterator it(std::find(set.begin() + 1, set.end(), false));
+        std::vector<controlled_vars::flbool_t>::const_iterator it(std::find(set.begin() + 1, set.end(), false));
         new_id = it - set.begin();
     }
     QCassandraValue value(new_id);

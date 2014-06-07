@@ -38,6 +38,7 @@
 
 #include "QtCassandra/QCassandraConsistencyLevel.h"
 #include <controlled_vars/controlled_vars_limited_auto_init.h>
+#include <controlled_vars/controlled_vars_limited_auto_enum_init.h>
 #include <QString>
 #include <QByteArray>
 #include <memory>
@@ -485,7 +486,7 @@ public:
         TIMESTAMP_MODE_AUTO,
         TIMESTAMP_MODE_DEFINED
     };
-    typedef controlled_vars::limited_auto_init<def_timestamp_mode_t, TIMESTAMP_MODE_CASSANDRA, TIMESTAMP_MODE_DEFINED, TIMESTAMP_MODE_AUTO> timestamp_mode_t;
+    typedef controlled_vars::limited_auto_enum_init<def_timestamp_mode_t, TIMESTAMP_MODE_CASSANDRA, TIMESTAMP_MODE_DEFINED, TIMESTAMP_MODE_AUTO> timestamp_mode_t;
 
     // CASSANDRA_VALUE_TYPE_BINARY (empty buffer)
     QCassandraValue();

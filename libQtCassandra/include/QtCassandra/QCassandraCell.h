@@ -37,6 +37,7 @@
 #define QCASSANDRA_CELL_H
 
 #include "QCassandraValue.h"
+#include <controlled_vars/controlled_vars_limited_auto_enum_init.h>
 #include <QObject>
 #include <QMap>
 #include <memory>
@@ -94,7 +95,7 @@ private:
 
     std::weak_ptr<QCassandraRow>        f_row;
     QByteArray                          f_key;
-    mutable controlled_vars::fbool_t    f_cached;
+    mutable controlled_vars::flbool_t   f_cached;
     QCassandraValue                     f_value;
 };
 

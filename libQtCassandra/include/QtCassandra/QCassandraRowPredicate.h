@@ -79,12 +79,12 @@ private:
 
     friend class QCassandraPrivate;
 
-    QByteArray                                  f_start_row;
-    QByteArray                                  f_end_row;
-    cassandra_count_t                           f_count;
-    controlled_vars::zbool_t                    f_wrap; // i.e. KeyRange tokens versus keys
-    controlled_vars::zbool_t                    f_exclude; // whether f_start_row is excluded
-    QCassandraColumnPredicate::pointer_t   f_column_predicate;
+    QByteArray                              f_start_row;
+    QByteArray                              f_end_row;
+    cassandra_count_t                       f_count;
+    controlled_vars::flbool_t               f_wrap; // i.e. KeyRange tokens versus keys
+    controlled_vars::flbool_t               f_exclude; // whether f_start_row is excluded
+    QCassandraColumnPredicate::pointer_t    f_column_predicate;
 };
 
 } // namespace QtCassandra
