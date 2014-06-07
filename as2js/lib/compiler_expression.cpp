@@ -338,9 +338,9 @@ void Compiler::check_this_validity(Node::pointer_t expr)
             // don't have access to 'this'. Note that
             // it doesn't matter whether we're in a
             // class or not...
-            if(parent->get_flag(Node::flag_attribute_t::NODE_FUNCTION_FLAG_OPERATOR)
-            || get_attribute(parent, Node::flag_attribute_t::NODE_ATTR_STATIC)
-            || get_attribute(parent, Node::flag_attribute_t::NODE_ATTR_CONSTRUCTOR)
+            if(parent->get_flag(Node::flag_t::NODE_FUNCTION_FLAG_OPERATOR)
+            || get_attribute(parent, Node::attribute_t::NODE_ATTR_STATIC)
+            || get_attribute(parent, Node::attribute_t::NODE_ATTR_CONSTRUCTOR)
             || is_constructor(parent))
             {
                 Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_STATIC, expr->get_position());
@@ -416,7 +416,7 @@ void Compiler::unary_operator(Node::pointer_t expr)
 
     Node::pointer_t op_type(resolution->get_link(Node::link_t::LINK_TYPE));
 
-    if(get_attribute(resolution, Node::flag_attribute_t::NODE_ATTR_INTRINSIC))
+    if(get_attribute(resolution, Node::attribute_t::NODE_ATTR_INTRINSIC))
     {
         switch(expr->get_type())
         {
@@ -429,7 +429,7 @@ void Compiler::unary_operator(Node::pointer_t expr)
                 if(var_node)
                 {
                     if((var_node->get_type() == Node::node_t::NODE_PARAM || var_node->get_type() == Node::node_t::NODE_VARIABLE)
-                    && var_node->get_flag(Node::flag_attribute_t::NODE_VAR_FLAG_CONST))
+                    && var_node->get_flag(Node::flag_t::NODE_VAR_FLAG_CONST))
                     {
                         Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_CANNOT_OVERWRITE_CONST, expr->get_position());
                         msg << "cannot increment or decrement a constant variable or function parameters.";
@@ -626,7 +626,7 @@ void Compiler::binary_operator(Node::pointer_t& expr)
 
     Node::pointer_t op_type(resolution->get_link(Node::link_t::LINK_TYPE));
 
-    if(get_attribute(resolution, Node::flag_attribute_t::NODE_ATTR_INTRINSIC))
+    if(get_attribute(resolution, Node::attribute_t::NODE_ATTR_INTRINSIC))
     {
         // we keep intrinsic operators as is
         expr->set_link(Node::link_t::LINK_INSTANCE, resolution);
@@ -1078,7 +1078,7 @@ void Compiler::assignment_operator(Node::pointer_t expr)
             bool valid(false);
             if(resolution->get_type() == Node::node_t::NODE_VARIABLE)
             {
-                if(resolution->get_flag(Node::flag_attribute_t::NODE_VAR_FLAG_CONST))
+                if(resolution->get_flag(Node::flag_t::NODE_VAR_FLAG_CONST))
                 {
                     Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_CANNOT_OVERWRITE_CONST, left->get_position());
                     msg << "you cannot assign a value to the constant variable '" << resolution->get_string() << "'.";
@@ -1090,7 +1090,7 @@ void Compiler::assignment_operator(Node::pointer_t expr)
             }
             else if(resolution->get_type() == Node::node_t::NODE_PARAM)
             {
-                if(resolution->get_flag(Node::flag_attribute_t::NODE_PARAMETERS_FLAG_CONST))
+                if(resolution->get_flag(Node::flag_t::NODE_PARAMETERS_FLAG_CONST))
                 {
                     Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_CANNOT_OVERWRITE_CONST, left->get_position());
                     msg << "you cannot assign a value to the constant function parameter '" << resolution->get_string() << "'.";
@@ -1123,8 +1123,8 @@ void Compiler::assignment_operator(Node::pointer_t expr)
             Node::pointer_t variable_node;
             Node::pointer_t set;
             var_node = expr->create_replacement(Node::node_t::NODE_VAR);
-            var_node->set_flag(Node::flag_attribute_t::NODE_VAR_FLAG_TOADD, true);
-            var_node->set_flag(Node::flag_attribute_t::NODE_VAR_FLAG_DEFINING, true);
+            var_node->set_flag(Node::flag_t::NODE_VAR_FLAG_TOADD, true);
+            var_node->set_flag(Node::flag_t::NODE_VAR_FLAG_DEFINING, true);
             variable_node = expr->create_replacement(Node::node_t::NODE_VARIABLE);
             var_node->append_child(variable_node);
             variable_node->set_string(left->get_string());
@@ -1139,7 +1139,7 @@ void Compiler::assignment_operator(Node::pointer_t expr)
                 }
                 else if(parent->get_type() == Node::node_t::NODE_FUNCTION)
                 {
-                    variable_node->set_flag(Node::flag_attribute_t::NODE_VAR_FLAG_LOCAL, true);
+                    variable_node->set_flag(Node::flag_t::NODE_VAR_FLAG_LOCAL, true);
                     parent->add_variable(variable_node);
                     break;
                 }
@@ -1165,7 +1165,7 @@ void Compiler::assignment_operator(Node::pointer_t expr)
             {
                 //parent->insert_child(0, var_node);
                 last_directive->add_variable(variable_node);
-                last_directive->set_flag(Node::flag_attribute_t::NODE_DIRECTIVE_LIST_FLAG_NEW_VARIABLES, true);
+                last_directive->set_flag(Node::flag_t::NODE_DIRECTIVE_LIST_FLAG_NEW_VARIABLES, true);
             }
         }
     }
@@ -1188,7 +1188,7 @@ void Compiler::assignment_operator(Node::pointer_t expr)
             if(resolution)
             {
                 if(resolution->get_type() == Node::node_t::NODE_FUNCTION
-                && resolution->get_flag(Node::flag_attribute_t::NODE_FUNCTION_FLAG_SETTER))
+                && resolution->get_flag(Node::flag_t::NODE_FUNCTION_FLAG_SETTER))
                 {
                     // TODO: handle setters -- this is an old comment
                     //       maybe it was not deleted? I do not think
@@ -1254,7 +1254,7 @@ std::cerr << "CAUGHT! setter...\n";
 
     if(var_node)
     {
-        var_node->set_flag(Node::flag_attribute_t::NODE_VAR_FLAG_DEFINING, false);
+        var_node->set_flag(Node::flag_t::NODE_VAR_FLAG_DEFINING, false);
     }
 
     Node::pointer_t type(left->get_link(Node::link_t::LINK_TYPE));

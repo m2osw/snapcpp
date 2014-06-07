@@ -1,4 +1,4 @@
-/* variable.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
+/* parser_variable.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
 
 /*
 
@@ -55,7 +55,7 @@ void Parser::variable(Node::pointer_t& node, bool const constant)
         Node::pointer_t variable_node(f_lexer->get_new_node(Node::node_t::NODE_VARIABLE));
         if(constant)
         {
-            variable_node->set_flag(Node::flag_attribute_t::NODE_VAR_FLAG_CONST, true);
+            variable_node->set_flag(Node::flag_t::NODE_VAR_FLAG_CONST, true);
         }
         node->append_child(variable_node);
 

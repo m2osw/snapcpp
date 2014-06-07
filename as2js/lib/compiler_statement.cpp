@@ -262,7 +262,7 @@ void Compiler::switch_directive(Node::pointer_t& switch_node)
 
     // reset the DEFAULT flag just in case we get compiled a second
     // time (which happens when testing for missing return statements)
-    switch_node->set_flag(Node::flag_attribute_t::NODE_SWITCH_FLAG_DEFAULT, false);
+    switch_node->set_flag(Node::flag_t::NODE_SWITCH_FLAG_DEFAULT, false);
 
     // TODO: If EQUAL or STRICTLY EQUAL we may
     //       want to check for duplicates.
@@ -341,14 +341,14 @@ void Compiler::default_directive(Node::pointer_t& default_node)
         return;
     }
 
-    if(parent->get_flag(Node::flag_attribute_t::NODE_SWITCH_FLAG_DEFAULT))
+    if(parent->get_flag(Node::flag_t::NODE_SWITCH_FLAG_DEFAULT))
     {
         Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_IMPROPER_STATEMENT, default_node->get_position());
         msg << "only one 'default' statement can be used within one 'switch()'.";
     }
     else
     {
-        parent->set_flag(Node::flag_attribute_t::NODE_SWITCH_FLAG_DEFAULT, true);
+        parent->set_flag(Node::flag_t::NODE_SWITCH_FLAG_DEFAULT, true);
     }
 }
 
@@ -563,7 +563,7 @@ void Compiler::catch_directive(Node::pointer_t& catch_node)
 
             // correct syntactically, however, the previous catch
             // must clearly be typed
-            if(!prev->get_flag(Node::flag_attribute_t::NODE_CATCH_FLAG_TYPED))
+            if(!prev->get_flag(Node::flag_t::NODE_CATCH_FLAG_TYPED))
             {
                 Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_TYPE, catch_node->get_position());
                 msg << "only the last 'catch' statement can have a parameter without a valid type.";
@@ -581,7 +581,7 @@ void Compiler::catch_directive(Node::pointer_t& catch_node)
     if(parameters_node->get_children_size() > 0)
     {
         Node::pointer_t param(parameters_node->get_child(0));
-        param->set_flag(Node::flag_attribute_t::NODE_PARAMETERS_FLAG_CATCH, true);
+        param->set_flag(Node::flag_t::NODE_PARAMETERS_FLAG_CATCH, true);
     }
 
     directive_list(catch_node->get_child(1));
@@ -669,7 +669,7 @@ Node::pointer_t Compiler::return_directive(Node::pointer_t return_node)
     }
     else
     {
-        if(function_node->get_flag(Node::flag_attribute_t::NODE_FUNCTION_FLAG_NEVER))
+        if(function_node->get_flag(Node::flag_t::NODE_FUNCTION_FLAG_NEVER))
         {
             Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_IMPROPER_STATEMENT, return_node->get_position());
             msg << "'return' was used inside '" << function_node->get_string() << "', a function Never returning.";
@@ -678,7 +678,7 @@ Node::pointer_t Compiler::return_directive(Node::pointer_t return_node)
         size_t const max_children(return_node->get_children_size());
         if(max_children == 1)
         {
-            if(function_node->get_flag(Node::flag_attribute_t::NODE_FUNCTION_FLAG_VOID)
+            if(function_node->get_flag(Node::flag_t::NODE_FUNCTION_FLAG_VOID)
             || is_constructor(function_node))
             {
                 Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_IMPROPER_STATEMENT, return_node->get_position());
@@ -693,7 +693,7 @@ Node::pointer_t Compiler::return_directive(Node::pointer_t return_node)
             // returning 'undefined' in the execution
             // environment... maybe we will add this
             // here at some point.
-            if(!function_node->get_flag(Node::flag_attribute_t::NODE_FUNCTION_FLAG_VOID)
+            if(!function_node->get_flag(Node::flag_t::NODE_FUNCTION_FLAG_VOID)
             && !is_constructor(function_node))
             {
                 Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_IMPROPER_STATEMENT, return_node->get_position());

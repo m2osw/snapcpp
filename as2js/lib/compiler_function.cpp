@@ -59,8 +59,8 @@ void Compiler::parameters(Node::pointer_t parameters_node)
     for(size_t idx(0); idx < max_children; ++idx)
     {
         Node::pointer_t param(parameters_node->get_child(idx));
-        param->set_flag(Node::flag_attribute_t::NODE_PARAMETERS_FLAG_REFERENCED, false);
-        param->set_flag(Node::flag_attribute_t::NODE_PARAMETERS_FLAG_PARAMREF, false);
+        param->set_flag(Node::flag_t::NODE_PARAMETERS_FLAG_REFERENCED, false);
+        param->set_flag(Node::flag_t::NODE_PARAMETERS_FLAG_PARAMREF, false);
     }
 
     // verify unicity and compute the NODE_SET and parameter type
@@ -116,10 +116,10 @@ void Compiler::parameters(Node::pointer_t parameters_node)
     for(size_t idx(0); idx < max_children; ++idx)
     {
         Node::pointer_t param(parameters_node->get_child(idx));
-        if(param->get_flag(Node::flag_attribute_t::NODE_PARAMETERS_FLAG_REFERENCED))
+        if(param->get_flag(Node::flag_t::NODE_PARAMETERS_FLAG_REFERENCED))
         {
             // if referenced, we want to keep it so mark it as necessary
-            param->set_flag(Node::flag_attribute_t::NODE_PARAMETERS_FLAG_PARAMREF, true);
+            param->set_flag(Node::flag_t::NODE_PARAMETERS_FLAG_PARAMREF, true);
         }
     }
 }
@@ -127,8 +127,8 @@ void Compiler::parameters(Node::pointer_t parameters_node)
 
 void Compiler::function(Node::pointer_t function_node)
 {
-    if(get_attribute(function_node, Node::flag_attribute_t::NODE_ATTR_UNUSED)
-    || get_attribute(function_node, Node::flag_attribute_t::NODE_ATTR_FALSE))
+    if(get_attribute(function_node, Node::attribute_t::NODE_ATTR_UNUSED)
+    || get_attribute(function_node, Node::attribute_t::NODE_ATTR_FALSE))
     {
         return;
     }
@@ -199,12 +199,12 @@ void Compiler::function(Node::pointer_t function_node)
 
     // any one of the following flags implies that the function is
     // defined in a class; check to make sure!
-    if(get_attribute(function_node, Node::flag_attribute_t::NODE_ATTR_ABSTRACT)
-    || get_attribute(function_node, Node::flag_attribute_t::NODE_ATTR_STATIC)
-    || get_attribute(function_node, Node::flag_attribute_t::NODE_ATTR_PROTECTED)
-    || get_attribute(function_node, Node::flag_attribute_t::NODE_ATTR_VIRTUAL)
-    || get_attribute(function_node, Node::flag_attribute_t::NODE_ATTR_CONSTRUCTOR)
-    || get_attribute(function_node, Node::flag_attribute_t::NODE_ATTR_FINAL))
+    if(get_attribute(function_node, Node::attribute_t::NODE_ATTR_ABSTRACT)
+    || get_attribute(function_node, Node::attribute_t::NODE_ATTR_STATIC)
+    || get_attribute(function_node, Node::attribute_t::NODE_ATTR_PROTECTED)
+    || get_attribute(function_node, Node::attribute_t::NODE_ATTR_VIRTUAL)
+    || get_attribute(function_node, Node::attribute_t::NODE_ATTR_CONSTRUCTOR)
+    || get_attribute(function_node, Node::attribute_t::NODE_ATTR_FINAL))
     {
         if(!member)
         {
@@ -212,7 +212,7 @@ void Compiler::function(Node::pointer_t function_node)
             msg << "function \"" << function_node->get_string() << "\" was defined with an attribute which can only be used with a function member inside a class definition.";
         }
     }
-    if(function_node->get_flag(Node::flag_attribute_t::NODE_FUNCTION_FLAG_OPERATOR))
+    if(function_node->get_flag(Node::flag_t::NODE_FUNCTION_FLAG_OPERATOR))
     {
         if(!member)
         {
@@ -223,7 +223,7 @@ void Compiler::function(Node::pointer_t function_node)
 
     // any one of the following flags implies that the function is
     // defined in a class or a package; check to make sure!
-    if(get_attribute(function_node, Node::flag_attribute_t::NODE_ATTR_PRIVATE))
+    if(get_attribute(function_node, Node::attribute_t::NODE_ATTR_PRIVATE))
     {
         if(!package && !member)
         {
@@ -269,7 +269,7 @@ void Compiler::function(Node::pointer_t function_node)
             break;
 
         case Node::node_t::NODE_DIRECTIVE_LIST:
-            if(get_attribute(function_node, Node::flag_attribute_t::NODE_ATTR_ABSTRACT))
+            if(get_attribute(function_node, Node::attribute_t::NODE_ATTR_ABSTRACT))
             {
                 Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_IMPROPER_STATEMENT, function_node->get_position());
                 msg << "the function \"" << function_node->get_string() << "\" is marked abstract and cannot have a body.";
@@ -296,7 +296,7 @@ void Compiler::function(Node::pointer_t function_node)
         }
     }
 
-    if(function_node->get_flag(Node::flag_attribute_t::NODE_FUNCTION_FLAG_NEVER) && is_constructor(function_node))
+    if(function_node->get_flag(Node::flag_t::NODE_FUNCTION_FLAG_NEVER) && is_constructor(function_node))
     {
         Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_RETURN_TYPE, function_node->get_position());
         msg << "a constructor must return (it cannot be marked Never).";
@@ -305,8 +305,8 @@ void Compiler::function(Node::pointer_t function_node)
     // test for a return whenever necessary
     if(!end_list
     && directive_list_node
-    && (get_attribute(function_node, Node::flag_attribute_t::NODE_ATTR_ABSTRACT) || get_attribute(function_node, Node::flag_attribute_t::NODE_ATTR_INTRINSIC))
-    && (function_node->get_flag(Node::flag_attribute_t::NODE_FUNCTION_FLAG_VOID) || function_node->get_flag(Node::flag_attribute_t::NODE_FUNCTION_FLAG_NEVER)))
+    && (get_attribute(function_node, Node::attribute_t::NODE_ATTR_ABSTRACT) || get_attribute(function_node, Node::attribute_t::NODE_ATTR_INTRINSIC))
+    && (function_node->get_flag(Node::flag_t::NODE_FUNCTION_FLAG_VOID) || function_node->get_flag(Node::flag_t::NODE_FUNCTION_FLAG_NEVER)))
     {
         f_optimizer->optimize(directive_list_node);
         find_labels(function_node, directive_list_node);
@@ -341,7 +341,7 @@ bool Compiler::define_function_type(Node::pointer_t function_node)
     {
         // Should we put the default of Object if not VOID?
         // (see at the bottom of the function)
-        return function_node->get_flag(Node::flag_attribute_t::NODE_FUNCTION_FLAG_VOID);
+        return function_node->get_flag(Node::flag_t::NODE_FUNCTION_FLAG_VOID);
     }
 
     {
@@ -460,7 +460,7 @@ Node::depth_t Compiler::match_type(Node::pointer_t t1, Node::pointer_t t2)
     // special case for function parameters
     if(t2->get_type() == Node::node_t::NODE_PARAM)
     {
-        if(t2->get_flag(Node::flag_attribute_t::NODE_PARAMETERS_FLAG_OUT))
+        if(t2->get_flag(Node::flag_t::NODE_PARAMETERS_FLAG_OUT))
         {
             // t1 MUST be an identifier which references
             // a variable which we can set on exit
@@ -555,12 +555,12 @@ bool Compiler::check_function(Node::pointer_t function_node, Node::pointer_t& re
     // The fact that a function is marked UNUSED should
     // be an error, but overloading prevents us from
     // generating an error here...
-    if(get_attribute(function_node, Node::flag_attribute_t::NODE_ATTR_UNUSED))
+    if(get_attribute(function_node, Node::attribute_t::NODE_ATTR_UNUSED))
     {
         return false;
     }
 
-    if(function_node->get_flag(Node::flag_attribute_t::NODE_FUNCTION_FLAG_GETTER)
+    if(function_node->get_flag(Node::flag_t::NODE_FUNCTION_FLAG_GETTER)
     && (search_flags & SEARCH_FLAG_GETTER) != 0)
     {
         String getter("->");
@@ -570,7 +570,7 @@ bool Compiler::check_function(Node::pointer_t function_node, Node::pointer_t& re
             return false;
         }
     }
-    else if(function_node->get_flag(Node::flag_attribute_t::NODE_FUNCTION_FLAG_SETTER)
+    else if(function_node->get_flag(Node::flag_t::NODE_FUNCTION_FLAG_SETTER)
          && (search_flags & SEARCH_FLAG_SETTER) != 0)
     {
         String setter("<-");
@@ -598,8 +598,8 @@ func.Display(stderr);
     if(!params)
     {
         // getters and setters do not have parameters
-        if(function_node->get_flag(Node::flag_attribute_t::NODE_FUNCTION_FLAG_GETTER)
-        || function_node->get_flag(Node::flag_attribute_t::NODE_FUNCTION_FLAG_SETTER))
+        if(function_node->get_flag(Node::flag_t::NODE_FUNCTION_FLAG_GETTER)
+        || function_node->get_flag(Node::flag_t::NODE_FUNCTION_FLAG_SETTER))
         {
             // warning: we have to check whether we hit a constructor
             //          before to generate an error
@@ -651,13 +651,13 @@ int Compiler::check_function_with_params(Node::pointer_t function_node, Node::po
     {
         // no parameters; check whether the user specifically
         // used void or Void as the list of parameters
-        if(!function_node->get_flag(Node::flag_attribute_t::NODE_FUNCTION_FLAG_NOPARAMS))
+        if(!function_node->get_flag(Node::flag_t::NODE_FUNCTION_FLAG_NOPARAMS))
         {
             // TODO:
             // this function accepts whatever
             // however, the function wasn't marked as such and
             // therefore we could warn about this...
-            match->set_flag(Node::flag_attribute_t::NODE_PARAM_MATCH_FLAG_UNPROTOTYPED, true);
+            match->set_flag(Node::flag_t::NODE_PARAM_MATCH_FLAG_UNPROTOTYPED, true);
             params->append_child(match);
             return 0;
         }
@@ -675,7 +675,7 @@ int Compiler::check_function_with_params(Node::pointer_t function_node, Node::po
     Node::pointer_t parameters_node(function_node->get_child(0));
     if(parameters_node->get_type() != Node::node_t::NODE_PARAMETERS)
     {
-        match->set_flag(Node::flag_attribute_t::NODE_PARAM_MATCH_FLAG_UNPROTOTYPED, true);
+        match->set_flag(Node::flag_t::NODE_PARAM_MATCH_FLAG_UNPROTOTYPED, true);
         params->append_child(match);
         return 0;
     }
@@ -698,10 +698,10 @@ int Compiler::check_function_with_params(Node::pointer_t function_node, Node::po
     // check whether the user marked the function as unprototyped;
     // if so, then we are done
     Node::pointer_t unproto(parameters_node->get_child(0));
-    if(unproto->get_flag(Node::flag_attribute_t::NODE_PARAMETERS_FLAG_UNPROTOTYPED))
+    if(unproto->get_flag(Node::flag_t::NODE_PARAMETERS_FLAG_UNPROTOTYPED))
     {
         // this function is marked to accept whatever
-        match->set_flag(Node::flag_attribute_t::NODE_PARAM_MATCH_FLAG_UNPROTOTYPED, true);
+        match->set_flag(Node::flag_t::NODE_PARAM_MATCH_FLAG_UNPROTOTYPED, true);
         params->append_child(match);
         return 0;
     }
@@ -787,7 +787,7 @@ fprintf(stderr, ")\n");
             // if already used, make sure it is a REST node
             if(match->get_param_depth(j) != Node::MATCH_NOT_FOUND)
             {
-                if(fp->get_flag(Node::flag_attribute_t::NODE_PARAMETERS_FLAG_REST))
+                if(fp->get_flag(Node::flag_t::NODE_PARAMETERS_FLAG_REST))
                 {
                     Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_FIELD_NAME, function_node->get_position());
                     msg << "function parameter name '" << name << "' already used & not a 'rest' (...).";
@@ -819,7 +819,7 @@ std::cerr << "Found by name [" << name << "] at position " << j << "\n";
                 // check whether the last parameter
                 // is of type REST
                 fp = parameters_node->get_child(max_parameters - 1);
-                if(fp->get_flag(Node::flag_attribute_t::NODE_PARAMETERS_FLAG_REST))
+                if(fp->get_flag(Node::flag_t::NODE_PARAMETERS_FLAG_REST))
                 {
                     // parameters in the function list
                     // of params are all used up!
@@ -869,8 +869,8 @@ params->Display(stderr);
             match->set_param_index(idx, j);
             idx++;
             Node::pointer_t param(parameters_node->get_child(j));
-            if(param->get_flag(Node::flag_attribute_t::NODE_PARAMETERS_FLAG_UNCHECKED)
-            || param->get_flag(Node::flag_attribute_t::NODE_PARAMETERS_FLAG_REST))
+            if(param->get_flag(Node::flag_t::NODE_PARAMETERS_FLAG_UNCHECKED)
+            || param->get_flag(Node::flag_t::NODE_PARAMETERS_FLAG_REST))
             {
                 Node::pointer_t set;
                 size_t cnt(param->get_children_size());
@@ -1087,8 +1087,8 @@ bool Compiler::funcs_name(int& funcs, Node::pointer_t resolution, bool const inc
         // TODO: do we really ignore those?!
         return funcs == 0;
     }
-    if(resolution->get_flag(Node::flag_attribute_t::NODE_FUNCTION_FLAG_GETTER)
-    || resolution->get_flag(Node::flag_attribute_t::NODE_FUNCTION_FLAG_SETTER))
+    if(resolution->get_flag(Node::flag_t::NODE_FUNCTION_FLAG_GETTER)
+    || resolution->get_flag(Node::flag_t::NODE_FUNCTION_FLAG_SETTER))
     {
         // this is viewed as a variable; also, there is no
         // parameters to a getter and thus no way to overload
@@ -1425,7 +1425,7 @@ bool Compiler::find_final_functions(Node::pointer_t& function_node, Node::pointe
             if(function_node->get_string() == child->get_string())
             {
                 // we found a function of the same name
-                if(get_attribute(child, Node::flag_attribute_t::NODE_ATTR_FINAL))
+                if(get_attribute(child, Node::attribute_t::NODE_ATTR_FINAL))
                 {
                     // Ooops! it was final...
                     return true;

@@ -180,7 +180,7 @@ private:
     void                for_directive(Node::pointer_t& for_node);
     bool                funcs_name(int& funcs, Node::pointer_t resolution, bool const increment = true);
     void                function(Node::pointer_t function_node);
-    bool                get_attribute(Node::pointer_t node, Node::flag_attribute_t f);
+    bool                get_attribute(Node::pointer_t node, Node::attribute_t const a);
     unsigned long       get_attributes(Node::pointer_t& node);
     int                 get_err_flags() const { return f_err_flags; }
     void                goto_directive(Node::pointer_t& goto_node);

@@ -280,9 +280,9 @@ void Compiler::find_packages_add_database_entry(String const& package_name, Node
 {
     // here, we totally ignore internal, private
     // and false entries right away
-    if(get_attribute(element, Node::flag_attribute_t::NODE_ATTR_PRIVATE)
-    || get_attribute(element, Node::flag_attribute_t::NODE_ATTR_FALSE)
-    || get_attribute(element, Node::flag_attribute_t::NODE_ATTR_INTERNAL))
+    if(get_attribute(element, Node::attribute_t::NODE_ATTR_PRIVATE)
+    || get_attribute(element, Node::attribute_t::NODE_ATTR_FALSE)
+    || get_attribute(element, Node::attribute_t::NODE_ATTR_INTERNAL))
     {
         return;
     }
@@ -317,11 +317,11 @@ void Compiler::find_packages_save_package_elements(Node::pointer_t package, Stri
         {
             // we do not save prototypes, that is tested later
             const char *type;
-            if(child->get_flag(Node::flag_attribute_t::NODE_FUNCTION_FLAG_GETTER))
+            if(child->get_flag(Node::flag_t::NODE_FUNCTION_FLAG_GETTER))
             {
                 type = "getter";
             }
-            else if(child->get_flag(Node::flag_attribute_t::NODE_FUNCTION_FLAG_SETTER))
+            else if(child->get_flag(Node::flag_t::NODE_FUNCTION_FLAG_SETTER))
             {
                 type = "setter";
             }
@@ -458,7 +458,7 @@ void Compiler::import(Node::pointer_t& import_node)
 {
     // If we have the IMPLEMENTS flag set, then we must make sure
     // that the corresponding package is compiled.
-    if(!import_node->get_flag(Node::flag_attribute_t::NODE_IMPORT_FLAG_IMPLEMENTS))
+    if(!import_node->get_flag(Node::flag_t::NODE_IMPORT_FLAG_IMPLEMENTS))
     {
         return;
     }
@@ -487,8 +487,8 @@ void Compiler::import(Node::pointer_t& import_node)
     }
 
     // make sure it is compiled (once)
-    bool const was_referenced(package->get_flag(Node::flag_attribute_t::NODE_PACKAGE_FLAG_REFERENCED));
-    package->set_flag(Node::flag_attribute_t::NODE_PACKAGE_FLAG_REFERENCED, true);
+    bool const was_referenced(package->get_flag(Node::flag_t::NODE_PACKAGE_FLAG_REFERENCED));
+    package->set_flag(Node::flag_t::NODE_PACKAGE_FLAG_REFERENCED, true);
     if(was_referenced)
     {
         directive_list(package);
@@ -603,9 +603,9 @@ bool Compiler::find_package_item(Node::pointer_t program_node, Node::pointer_t i
     }
 
     // setup labels (only the first time around)
-    if(!package_node->get_flag(Node::flag_attribute_t::NODE_PACKAGE_FLAG_FOUND_LABELS))
+    if(!package_node->get_flag(Node::flag_t::NODE_PACKAGE_FLAG_FOUND_LABELS))
     {
-        package_node->set_flag(Node::flag_attribute_t::NODE_PACKAGE_FLAG_FOUND_LABELS, true);
+        package_node->set_flag(Node::flag_t::NODE_PACKAGE_FLAG_FOUND_LABELS, true);
         Node::pointer_t child(package_node->get_child(0));
         find_labels(package_node, child);
     }
@@ -626,7 +626,7 @@ bool Compiler::find_package_item(Node::pointer_t program_node, Node::pointer_t i
     // TODO: Can we have an empty resolution here?!
     if(resolution)
     {
-        if(get_attribute(resolution, Node::flag_attribute_t::NODE_ATTR_PRIVATE))
+        if(get_attribute(resolution, Node::attribute_t::NODE_ATTR_PRIVATE))
         {
             // it is private, we cannot use this item
             // from outside whether it is in the
@@ -634,7 +634,7 @@ bool Compiler::find_package_item(Node::pointer_t program_node, Node::pointer_t i
             return false;
         }
 
-        if(get_attribute(resolution, Node::flag_attribute_t::NODE_ATTR_INTERNAL))
+        if(get_attribute(resolution, Node::attribute_t::NODE_ATTR_INTERNAL))
         {
             // it is internal we can only use it from
             // another package
@@ -661,8 +661,8 @@ bool Compiler::find_package_item(Node::pointer_t program_node, Node::pointer_t i
     }
 
     // make sure it is compiled (once)
-    bool was_referenced(package_node->get_flag(Node::flag_attribute_t::NODE_PACKAGE_FLAG_REFERENCED));
-    package_node->set_flag(Node::flag_attribute_t::NODE_PACKAGE_FLAG_REFERENCED, true);
+    bool was_referenced(package_node->get_flag(Node::flag_t::NODE_PACKAGE_FLAG_REFERENCED));
+    package_node->set_flag(Node::flag_t::NODE_PACKAGE_FLAG_REFERENCED, true);
     if(was_referenced)
     {
         directive_list(package_node);
@@ -712,7 +712,7 @@ bool Compiler::check_name(Node::pointer_t list, int idx, Node::pointer_t& resolu
     Node::pointer_t child(list->get_child(idx));
 
     // turned off?
-    //if(get_attribute(child, Node::flag_attribute_t::NODE_ATTR_FALSE))
+    //if(get_attribute(child, Node::attribute_t::NODE_ATTR_FALSE))
     //{
     //    return false;
     //}
@@ -753,7 +753,7 @@ bool Compiler::check_name(Node::pointer_t list, int idx, Node::pointer_t& resolu
         if(child->get_string() == id->get_string())
         {
             resolution = child;
-            resolution->set_flag(Node::flag_attribute_t::NODE_PARAMETERS_FLAG_REFERENCED, true);
+            resolution->set_flag(Node::flag_t::NODE_PARAMETERS_FLAG_REFERENCED, true);
             return true;
         }
         break;
@@ -779,7 +779,7 @@ bool Compiler::check_name(Node::pointer_t list, int idx, Node::pointer_t& resolu
         if(child->get_string() == id->get_string())
         {
             resolution = list;
-            resolution->set_flag(Node::flag_attribute_t::NODE_VAR_FLAG_INUSE, true);
+            resolution->set_flag(Node::flag_t::NODE_VAR_FLAG_INUSE, true);
             return true;
         }
 
@@ -794,7 +794,7 @@ bool Compiler::check_name(Node::pointer_t list, int idx, Node::pointer_t& resolu
             {
                 // this can't be a function, right?
                 resolution = entry;
-                resolution->set_flag(Node::flag_attribute_t::NODE_VAR_FLAG_INUSE, true);
+                resolution->set_flag(Node::flag_t::NODE_VAR_FLAG_INUSE, true);
                 return true;
             }
         }
@@ -831,11 +831,11 @@ bool Compiler::check_name(Node::pointer_t list, int idx, Node::pointer_t& resolu
         }
         result = true;
 //std::cerr << "Found inside package! [" << id->get_string() << "]\n";
-        if(!child->get_flag(Node::flag_attribute_t::NODE_PACKAGE_FLAG_REFERENCED))
+        if(!child->get_flag(Node::flag_t::NODE_PACKAGE_FLAG_REFERENCED))
         {
 //std::cerr << "Compile package now!\n";
             directive_list(child);
-            child->set_flag(Node::flag_attribute_t::NODE_PACKAGE_FLAG_REFERENCED);
+            child->set_flag(Node::flag_t::NODE_PACKAGE_FLAG_REFERENCED);
         }
 #endif
         break;
@@ -861,7 +861,7 @@ bool Compiler::check_name(Node::pointer_t list, int idx, Node::pointer_t& resolu
         return true;
     }
 
-    if(get_attribute(resolution, Node::flag_attribute_t::NODE_ATTR_PRIVATE))
+    if(get_attribute(resolution, Node::attribute_t::NODE_ATTR_PRIVATE))
     {
         // Note that an interface and a package
         // can also have private members
@@ -900,7 +900,7 @@ bool Compiler::check_name(Node::pointer_t list, int idx, Node::pointer_t& resolu
         }
     }
 
-    if(get_attribute(resolution, Node::flag_attribute_t::NODE_ATTR_PROTECTED))
+    if(get_attribute(resolution, Node::attribute_t::NODE_ATTR_PROTECTED))
     {
         // Note that an interface can also have protected members
         Node::pointer_t the_super_class;
@@ -1194,7 +1194,7 @@ fprintf(stderr, " [Type = %d]\n", d.f_type);
                     {
                         // Mark this identifier as a
                         // reference to a WITH object
-                        id->set_flag(Node::flag_attribute_t::NODE_IDENTIFIER_FLAG_WITH, true);
+                        id->set_flag(Node::flag_t::NODE_IDENTIFIER_FLAG_WITH, true);
 
                         // TODO: we certainly want to compare
                         //       all the field functions and the
@@ -1294,7 +1294,7 @@ fprintf(stderr, "\n");
             if(id->get_string() == list->get_string())
             {
                 resolution = list;
-                resolution->set_flag(Node::flag_attribute_t::NODE_VAR_FLAG_INUSE, true);
+                resolution->set_flag(Node::flag_t::NODE_VAR_FLAG_INUSE, true);
                 return true;
             }
 
@@ -1313,7 +1313,7 @@ fprintf(stderr, "\n");
                     resolution = entry;
                     if(funcs_name(funcs, resolution))
                     {
-                        resolution->set_flag(Node::flag_attribute_t::NODE_VAR_FLAG_INUSE, true);
+                        resolution->set_flag(Node::flag_t::NODE_VAR_FLAG_INUSE, true);
                         return true;
                     }
                 }

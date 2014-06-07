@@ -65,7 +65,7 @@ std::cerr << program_node;
     for(size_t idx(0); idx < org_max; ++idx)
     {
         Node::pointer_t child(program_node->get_child(idx));
-        if(get_attribute(child, Node::flag_attribute_t::NODE_ATTR_FALSE))
+        if(get_attribute(child, Node::attribute_t::NODE_ATTR_FALSE))
         {
             child->to_unknown();
         }

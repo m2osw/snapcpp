@@ -1,4 +1,4 @@
-/* class.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
+/* parser_class.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
 
 /*
 
@@ -182,8 +182,8 @@ void Parser::enum_declaration(Node::pointer_t& node)
         node->append_child(entry);
         if(f_node->get_type() == Node::node_t::NODE_IDENTIFIER)
         {
-            entry->set_flag(Node::flag_attribute_t::NODE_VAR_FLAG_CONST, true);
-            entry->set_flag(Node::flag_attribute_t::NODE_VAR_FLAG_ENUM, true);
+            entry->set_flag(Node::flag_t::NODE_VAR_FLAG_CONST, true);
+            entry->set_flag(Node::flag_t::NODE_VAR_FLAG_ENUM, true);
             current_name = f_node->get_string();
             get_token();
         }

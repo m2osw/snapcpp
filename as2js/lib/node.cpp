@@ -317,7 +317,7 @@ enum
     ATTRIBUTES_GROUP_SWITCH_TYPE,
     ATTRIBUTES_GROUP_MEMBER_VISIBILITY
 };
-char const *g_flag_groups[] =
+char const *g_attribute_groups[] =
 {
     [ATTRIBUTES_GROUP_CONDITIONAL_COMPILATION] = "true and false",
     [ATTRIBUTES_GROUP_FUNCTION_TYPE] = "static, abstract, virtual, and constructor",
@@ -334,7 +334,8 @@ char const *g_flag_groups[] =
 
 Node::Node(node_t type)
     : f_type(type)
-    //, f_flags_and_attributes() -- auto-init
+    //, f_flags() -- auto-init
+    //, f_attributes() -- auto-init
     //, f_switch_operator(NODE_UNKNOWN) -- auto-init
     //, f_lock(0) -- auto-init
     //, f_position() -- auto-init
@@ -507,7 +508,8 @@ Node::Node(node_t type)
 
 Node::Node(pointer_t const& source, pointer_t& parent)
     : f_type(source->f_type)
-    , f_flags_and_attributes(source->f_flags_and_attributes)
+    , f_flags(source->f_flags)
+    , f_attributes(source->f_attributes)
     , f_switch_operator(source->f_switch_operator)
     //, f_lock(0) -- auto-init
     , f_position(source->f_position)
@@ -1288,10 +1290,10 @@ Node::pointer_t Node::create_replacement(node_t type) const
  *
  * \return true if the flag was set, false otherwise.
  */
-bool Node::get_flag(flag_attribute_t f) const
+bool Node::get_flag(flag_t f) const
 {
-    verify_flag_attribute(f);
-    return f_flags_and_attributes[static_cast<size_t>(f)];
+    verify_flag(f);
+    return f_flags[static_cast<size_t>(f)];
 }
 
 
@@ -1306,14 +1308,181 @@ bool Node::get_flag(flag_attribute_t f) const
  * \param[in] f  The flag to set.
  * \param[in] v  The new value for the flag.
  */
-void Node::set_flag(flag_attribute_t f, bool v)
+void Node::set_flag(flag_t f, bool v)
 {
-    verify_flag_attribute(f);
+    verify_flag(f);
+    f_flags[static_cast<size_t>(f)] = v;
+}
+
+
+/** \brief Verify that f corresponds to the node type.
+ *
+ * This function verifies that \p f corresponds to a valid flag according
+ * to the type of this Node object.
+ *
+ * \param[in] f  The flag to check.
+ */
+void Node::verify_flag(flag_t f) const
+{
+    switch(f)
+    {
+    case flag_t::NODE_CATCH_FLAG_TYPED:
+        if(f_type != node_t::NODE_CATCH)
+        {
+            throw exception_internal_error("flag / type missmatch in Node::verify_flag()");
+        }
+        break;
+
+    case flag_t::NODE_DIRECTIVE_LIST_FLAG_NEW_VARIABLES:
+        if(f_type != node_t::NODE_DIRECTIVE_LIST)
+        {
+            throw exception_internal_error("flag / type missmatch in Node::verify_flag()");
+        }
+        break;
+
+    case flag_t::NODE_FOR_FLAG_FOREACH:
+        if(f_type != node_t::NODE_FOR)
+        {
+            throw exception_internal_error("flag / type missmatch in Node::verify_flag()");
+        }
+        break;
+
+    case flag_t::NODE_FUNCTION_FLAG_GETTER:
+    case flag_t::NODE_FUNCTION_FLAG_SETTER:
+    case flag_t::NODE_FUNCTION_FLAG_OUT:
+    case flag_t::NODE_FUNCTION_FLAG_VOID:
+    case flag_t::NODE_FUNCTION_FLAG_NEVER:
+    case flag_t::NODE_FUNCTION_FLAG_NOPARAMS:
+    case flag_t::NODE_FUNCTION_FLAG_OPERATOR:
+        if(f_type != node_t::NODE_FUNCTION)
+        {
+            throw exception_internal_error("flag / type missmatch in Node::verify_flag()");
+        }
+        break;
+
+    case flag_t::NODE_IDENTIFIER_FLAG_WITH:
+    case flag_t::NODE_IDENTIFIER_FLAG_TYPED:
+        if(f_type != node_t::NODE_IDENTIFIER
+        && f_type != node_t::NODE_VIDENTIFIER
+        && f_type != node_t::NODE_STRING)
+        {
+            throw exception_internal_error("flag / type missmatch in Node::verify_flag()");
+        }
+        break;
+
+    case flag_t::NODE_IMPORT_FLAG_IMPLEMENTS:
+        if(f_type != node_t::NODE_IMPORT)
+        {
+            throw exception_internal_error("flag / type missmatch in Node::verify_flag()");
+        }
+        break;
+
+    case flag_t::NODE_PACKAGE_FLAG_FOUND_LABELS:
+    case flag_t::NODE_PACKAGE_FLAG_REFERENCED:
+        if(f_type != node_t::NODE_PACKAGE)
+        {
+            throw exception_internal_error("flag / type missmatch in Node::verify_flag()");
+        }
+        break;
+
+    case flag_t::NODE_PARAM_MATCH_FLAG_UNPROTOTYPED:
+        if(f_type != node_t::NODE_PARAM_MATCH)
+        {
+            throw exception_internal_error("flag / type missmatch in Node::verify_flag()");
+        }
+        break;
+
+    case flag_t::NODE_PARAMETERS_FLAG_CONST:
+    case flag_t::NODE_PARAMETERS_FLAG_IN:
+    case flag_t::NODE_PARAMETERS_FLAG_OUT:
+    case flag_t::NODE_PARAMETERS_FLAG_NAMED:
+    case flag_t::NODE_PARAMETERS_FLAG_REST:
+    case flag_t::NODE_PARAMETERS_FLAG_UNCHECKED:
+    case flag_t::NODE_PARAMETERS_FLAG_UNPROTOTYPED:
+    case flag_t::NODE_PARAMETERS_FLAG_REFERENCED:    // referenced from a parameter or a variable
+    case flag_t::NODE_PARAMETERS_FLAG_PARAMREF:      // referenced from another parameter
+    case flag_t::NODE_PARAMETERS_FLAG_CATCH:         // a parameter defined in a catch()
+        if(f_type != node_t::NODE_PARAMETERS)
+        {
+            throw exception_internal_error("flag / type missmatch in Node::verify_flag()");
+        }
+        break;
+
+    case flag_t::NODE_SWITCH_FLAG_DEFAULT:           // we found a 'default:' label in that switch
+        if(f_type != node_t::NODE_SWITCH)
+        {
+            throw exception_internal_error("flag / type missmatch in Node::verify_flag()");
+        }
+        break;
+
+    case flag_t::NODE_VAR_FLAG_CONST:
+    case flag_t::NODE_VAR_FLAG_LOCAL:
+    case flag_t::NODE_VAR_FLAG_MEMBER:
+    case flag_t::NODE_VAR_FLAG_ATTRIBUTES:
+    case flag_t::NODE_VAR_FLAG_ENUM:                 // there is a NODE_SET and it somehow needs to be copied
+    case flag_t::NODE_VAR_FLAG_COMPILED:             // Expression() was called on the NODE_SET
+    case flag_t::NODE_VAR_FLAG_INUSE:                // this variable was referenced
+    case flag_t::NODE_VAR_FLAG_ATTRS:                // currently being read for attributes (to avoid loops)
+    case flag_t::NODE_VAR_FLAG_DEFINED:              // was already parsed
+    case flag_t::NODE_VAR_FLAG_DEFINING:             // currently defining, can't read
+    case flag_t::NODE_VAR_FLAG_TOADD:                // to be added in the directive list
+        if(f_type != node_t::NODE_VARIABLE
+        && f_type != node_t::NODE_VAR
+        && f_type != node_t::NODE_PARAM)
+        {
+            throw exception_internal_error("flag / type missmatch in Node::verify_flag()");
+        }
+        break;
+
+    case flag_t::NODE_FLAG_max:
+        throw exception_internal_error("invalid attribute / flag in Node::verify_flag()");
+
+    // default: -- do not define so the compiler can tell us if
+    //             an enumeration is missing in this case
+    }
+}
+
+
+/** \brief Get the current status of an attribute.
+ *
+ * This function returns true or false depending on the current status
+ * of the specified attribute.
+ *
+ * The function verifies that the specified attribute (\p a) corresponds to
+ * the type of data you are dealing with.
+ *
+ * If the attribute was never set, this function returns false.
+ *
+ * \param[in] a  The attribute to retrieve.
+ *
+ * \return true if the attribute was set, false otherwise.
+ */
+bool Node::get_attribute(attribute_t a) const
+{
+    verify_attribute(a);
+    return f_attributes[static_cast<size_t>(a)];
+}
+
+
+/** \brief Set an attribute.
+ *
+ * This function sets the specified attribute \p a to the specified value \p v
+ * in this Node object.
+ *
+ * The function verifies that the specified attribute (\p a) corresponds to
+ * the type of data you are dealing with.
+ *
+ * \param[in] a  The flag to set.
+ * \param[in] v  The new value for the flag.
+ */
+void Node::set_attribute(attribute_t a, bool v)
+{
+    verify_attribute(a);
     if(v)
     {
-        verify_exclusive_attributes(f);
+        verify_exclusive_attributes(a);
     }
-    f_flags_and_attributes[static_cast<size_t>(f)] = v;
+    f_attributes[static_cast<size_t>(a)] = v;
 }
 
 
@@ -1324,171 +1493,63 @@ void Node::set_flag(flag_attribute_t f, bool v)
  *
  * \param[in] f  The flag or attribute to check.
  */
-void Node::verify_flag_attribute(flag_attribute_t f) const
+void Node::verify_attribute(attribute_t f) const
 {
     switch(f)
     {
-    case flag_attribute_t::NODE_CATCH_FLAG_TYPED:
-        if(f_type != node_t::NODE_CATCH)
-        {
-            throw exception_internal_error("flag / type missmatch in Node::verify_flag_attribute()");
-        }
-        break;
-
-    case flag_attribute_t::NODE_DIRECTIVE_LIST_FLAG_NEW_VARIABLES:
-        if(f_type != node_t::NODE_DIRECTIVE_LIST)
-        {
-            throw exception_internal_error("flag / type missmatch in Node::verify_flag_attribute()");
-        }
-        break;
-
-    case flag_attribute_t::NODE_FOR_FLAG_FOREACH:
-        if(f_type != node_t::NODE_FOR)
-        {
-            throw exception_internal_error("flag / type missmatch in Node::verify_flag_attribute()");
-        }
-        break;
-
-    case flag_attribute_t::NODE_FUNCTION_FLAG_GETTER:
-    case flag_attribute_t::NODE_FUNCTION_FLAG_SETTER:
-    case flag_attribute_t::NODE_FUNCTION_FLAG_OUT:
-    case flag_attribute_t::NODE_FUNCTION_FLAG_VOID:
-    case flag_attribute_t::NODE_FUNCTION_FLAG_NEVER:
-    case flag_attribute_t::NODE_FUNCTION_FLAG_NOPARAMS:
-    case flag_attribute_t::NODE_FUNCTION_FLAG_OPERATOR:
-        if(f_type != node_t::NODE_FUNCTION)
-        {
-            throw exception_internal_error("flag / type missmatch in Node::verify_flag_attribute()");
-        }
-        break;
-
-    case flag_attribute_t::NODE_IDENTIFIER_FLAG_WITH:
-    case flag_attribute_t::NODE_IDENTIFIER_FLAG_TYPED:
-        if(f_type != node_t::NODE_IDENTIFIER
-        && f_type != node_t::NODE_VIDENTIFIER
-        && f_type != node_t::NODE_STRING)
-        {
-            throw exception_internal_error("flag / type missmatch in Node::verify_flag_attribute()");
-        }
-        break;
-
-    case flag_attribute_t::NODE_IMPORT_FLAG_IMPLEMENTS:
-        if(f_type != node_t::NODE_IMPORT)
-        {
-            throw exception_internal_error("flag / type missmatch in Node::verify_flag_attribute()");
-        }
-        break;
-
-    case flag_attribute_t::NODE_PACKAGE_FLAG_FOUND_LABELS:
-    case flag_attribute_t::NODE_PACKAGE_FLAG_REFERENCED:
-        if(f_type != node_t::NODE_PACKAGE)
-        {
-            throw exception_internal_error("flag / type missmatch in Node::verify_flag_attribute()");
-        }
-        break;
-
-    case flag_attribute_t::NODE_PARAM_MATCH_FLAG_UNPROTOTYPED:
-        if(f_type != node_t::NODE_PARAM_MATCH)
-        {
-            throw exception_internal_error("flag / type missmatch in Node::verify_flag_attribute()");
-        }
-        break;
-
-    case flag_attribute_t::NODE_PARAMETERS_FLAG_CONST:
-    case flag_attribute_t::NODE_PARAMETERS_FLAG_IN:
-    case flag_attribute_t::NODE_PARAMETERS_FLAG_OUT:
-    case flag_attribute_t::NODE_PARAMETERS_FLAG_NAMED:
-    case flag_attribute_t::NODE_PARAMETERS_FLAG_REST:
-    case flag_attribute_t::NODE_PARAMETERS_FLAG_UNCHECKED:
-    case flag_attribute_t::NODE_PARAMETERS_FLAG_UNPROTOTYPED:
-    case flag_attribute_t::NODE_PARAMETERS_FLAG_REFERENCED:    // referenced from a parameter or a variable
-    case flag_attribute_t::NODE_PARAMETERS_FLAG_PARAMREF:      // referenced from another parameter
-    case flag_attribute_t::NODE_PARAMETERS_FLAG_CATCH:         // a parameter defined in a catch()
-        if(f_type != node_t::NODE_PARAMETERS)
-        {
-            throw exception_internal_error("flag / type missmatch in Node::verify_flag_attribute()");
-        }
-        break;
-
-    case flag_attribute_t::NODE_SWITCH_FLAG_DEFAULT:           // we found a 'default:' label in that switch
-        if(f_type != node_t::NODE_SWITCH)
-        {
-            throw exception_internal_error("flag / type missmatch in Node::verify_flag_attribute()");
-        }
-        break;
-
-    case flag_attribute_t::NODE_VAR_FLAG_CONST:
-    case flag_attribute_t::NODE_VAR_FLAG_LOCAL:
-    case flag_attribute_t::NODE_VAR_FLAG_MEMBER:
-    case flag_attribute_t::NODE_VAR_FLAG_ATTRIBUTES:
-    case flag_attribute_t::NODE_VAR_FLAG_ENUM:                 // there is a NODE_SET and it somehow needs to be copied
-    case flag_attribute_t::NODE_VAR_FLAG_COMPILED:             // Expression() was called on the NODE_SET
-    case flag_attribute_t::NODE_VAR_FLAG_INUSE:                // this variable was referenced
-    case flag_attribute_t::NODE_VAR_FLAG_ATTRS:                // currently being read for attributes (to avoid loops)
-    case flag_attribute_t::NODE_VAR_FLAG_DEFINED:              // was already parsed
-    case flag_attribute_t::NODE_VAR_FLAG_DEFINING:             // currently defining, can't read
-    case flag_attribute_t::NODE_VAR_FLAG_TOADD:                // to be added in the directive list
-        if(f_type != node_t::NODE_VARIABLE
-        && f_type != node_t::NODE_VAR
-        && f_type != node_t::NODE_PARAM)
-        {
-            throw exception_internal_error("flag / type missmatch in Node::verify_flag_attribute()");
-        }
-        break;
-
     // member visibility
-    case flag_attribute_t::NODE_ATTR_PUBLIC:
-    case flag_attribute_t::NODE_ATTR_PRIVATE:
-    case flag_attribute_t::NODE_ATTR_PROTECTED:
-    case flag_attribute_t::NODE_ATTR_INTERNAL:
+    case attribute_t::NODE_ATTR_PUBLIC:
+    case attribute_t::NODE_ATTR_PRIVATE:
+    case attribute_t::NODE_ATTR_PROTECTED:
+    case attribute_t::NODE_ATTR_INTERNAL:
 
     // function member type
-    case flag_attribute_t::NODE_ATTR_STATIC:
-    case flag_attribute_t::NODE_ATTR_ABSTRACT:
-    case flag_attribute_t::NODE_ATTR_VIRTUAL:
-    case flag_attribute_t::NODE_ATTR_ARRAY:
+    case attribute_t::NODE_ATTR_STATIC:
+    case attribute_t::NODE_ATTR_ABSTRACT:
+    case attribute_t::NODE_ATTR_VIRTUAL:
+    case attribute_t::NODE_ATTR_ARRAY:
 
     // function/variable is defined in your system (execution env.)
-    case flag_attribute_t::NODE_ATTR_INTRINSIC:
+    case attribute_t::NODE_ATTR_INTRINSIC:
 
     // function/variable will be removed in future releases, do not use
-    case flag_attribute_t::NODE_ATTR_DEPRECATED:
-    case flag_attribute_t::NODE_ATTR_UNSAFE:
+    case attribute_t::NODE_ATTR_DEPRECATED:
+    case attribute_t::NODE_ATTR_UNSAFE:
 
     // operator overload (function member)
-    case flag_attribute_t::NODE_ATTR_CONSTRUCTOR:
+    case attribute_t::NODE_ATTR_CONSTRUCTOR:
 
     // function & member constrains
-    case flag_attribute_t::NODE_ATTR_FINAL:
-    case flag_attribute_t::NODE_ATTR_ENUMERABLE:
+    case attribute_t::NODE_ATTR_FINAL:
+    case attribute_t::NODE_ATTR_ENUMERABLE:
 
     // conditional compilation
-    case flag_attribute_t::NODE_ATTR_TRUE:
-    case flag_attribute_t::NODE_ATTR_FALSE:
-    case flag_attribute_t::NODE_ATTR_UNUSED:                      // if definition is used, error!
+    case attribute_t::NODE_ATTR_TRUE:
+    case attribute_t::NODE_ATTR_FALSE:
+    case attribute_t::NODE_ATTR_UNUSED:                      // if definition is used, error!
 
     // class attribute (whether a class can be enlarged at run time)
-    case flag_attribute_t::NODE_ATTR_DYNAMIC:
+    case attribute_t::NODE_ATTR_DYNAMIC:
 
     // switch attributes
-    case flag_attribute_t::NODE_ATTR_FOREACH:
-    case flag_attribute_t::NODE_ATTR_NOBREAK:
-    case flag_attribute_t::NODE_ATTR_AUTOBREAK:
+    case attribute_t::NODE_ATTR_FOREACH:
+    case attribute_t::NODE_ATTR_NOBREAK:
+    case attribute_t::NODE_ATTR_AUTOBREAK:
         // TBD -- we'll need to see whether we want to limit the attributes
         //        on a per node type basis and how we can do that properly
         if(f_type == node_t::NODE_PROGRAM)
         {
-            throw exception_internal_error("attribute / type missmatch in Node::verify_flag_attribute()");
+            throw exception_internal_error("attribute / type missmatch in Node::verify_attribute()");
         }
         break;
 
     // attributes were defined
-    case flag_attribute_t::NODE_ATTR_DEFINED:
+    case attribute_t::NODE_ATTR_DEFINED:
         // all nodes can receive this flag
         break;
 
-    case flag_attribute_t::NODE_FLAG_ATTRIBUTE_MAX:
-        throw exception_internal_error("invalid attribute / flag in Node::verify_flag_attribute()");
+    case attribute_t::NODE_ATTRIBUTE_max:
+        throw exception_internal_error("invalid attribute / flag in Node::verify_attribute()");
 
     // default: -- do not define so the compiler can tell us if
     //             an enumeration is missing in this case
@@ -1504,148 +1565,107 @@ void Node::verify_flag_attribute(flag_attribute_t f) const
  * This function is not called if you clear an attribute since in that
  * case the default applies.
  *
- * \param[in] f  The attribute being set.
+ * \param[in] a  The attribute being set.
  */
-void Node::verify_exclusive_attributes(flag_attribute_t f) const
+void Node::verify_exclusive_attributes(attribute_t a) const
 {
     bool conflict(false);
     char const *names;
-    switch(f)
+    switch(a)
     {
-    case flag_attribute_t::NODE_CATCH_FLAG_TYPED:
-    case flag_attribute_t::NODE_DIRECTIVE_LIST_FLAG_NEW_VARIABLES:
-    case flag_attribute_t::NODE_FOR_FLAG_FOREACH:
-    case flag_attribute_t::NODE_FUNCTION_FLAG_GETTER:
-    case flag_attribute_t::NODE_FUNCTION_FLAG_SETTER:
-    case flag_attribute_t::NODE_FUNCTION_FLAG_OUT:
-    case flag_attribute_t::NODE_FUNCTION_FLAG_VOID:
-    case flag_attribute_t::NODE_FUNCTION_FLAG_NEVER:
-    case flag_attribute_t::NODE_FUNCTION_FLAG_NOPARAMS:
-    case flag_attribute_t::NODE_FUNCTION_FLAG_OPERATOR:
-    case flag_attribute_t::NODE_IDENTIFIER_FLAG_WITH:
-    case flag_attribute_t::NODE_IDENTIFIER_FLAG_TYPED:
-    case flag_attribute_t::NODE_IMPORT_FLAG_IMPLEMENTS:
-    case flag_attribute_t::NODE_PACKAGE_FLAG_FOUND_LABELS:
-    case flag_attribute_t::NODE_PACKAGE_FLAG_REFERENCED:
-    case flag_attribute_t::NODE_PARAM_MATCH_FLAG_UNPROTOTYPED:
-    case flag_attribute_t::NODE_PARAMETERS_FLAG_CONST:
-    case flag_attribute_t::NODE_PARAMETERS_FLAG_IN:
-    case flag_attribute_t::NODE_PARAMETERS_FLAG_OUT:
-    case flag_attribute_t::NODE_PARAMETERS_FLAG_NAMED:
-    case flag_attribute_t::NODE_PARAMETERS_FLAG_REST:
-    case flag_attribute_t::NODE_PARAMETERS_FLAG_UNCHECKED:
-    case flag_attribute_t::NODE_PARAMETERS_FLAG_UNPROTOTYPED:
-    case flag_attribute_t::NODE_PARAMETERS_FLAG_REFERENCED:
-    case flag_attribute_t::NODE_PARAMETERS_FLAG_PARAMREF:
-    case flag_attribute_t::NODE_PARAMETERS_FLAG_CATCH:
-    case flag_attribute_t::NODE_SWITCH_FLAG_DEFAULT:
-    case flag_attribute_t::NODE_VAR_FLAG_CONST:
-    case flag_attribute_t::NODE_VAR_FLAG_LOCAL:
-    case flag_attribute_t::NODE_VAR_FLAG_MEMBER:
-    case flag_attribute_t::NODE_VAR_FLAG_ATTRIBUTES:
-    case flag_attribute_t::NODE_VAR_FLAG_ENUM:
-    case flag_attribute_t::NODE_VAR_FLAG_COMPILED:
-    case flag_attribute_t::NODE_VAR_FLAG_INUSE:
-    case flag_attribute_t::NODE_VAR_FLAG_ATTRS:
-    case flag_attribute_t::NODE_VAR_FLAG_DEFINED:
-    case flag_attribute_t::NODE_VAR_FLAG_DEFINING:
-    case flag_attribute_t::NODE_VAR_FLAG_TOADD:
-        // ignore the flags
-        return;
-
-    case flag_attribute_t::NODE_ATTR_ARRAY:
-    case flag_attribute_t::NODE_ATTR_DEPRECATED:
-    case flag_attribute_t::NODE_ATTR_UNSAFE:
-    case flag_attribute_t::NODE_ATTR_DEFINED:
-    case flag_attribute_t::NODE_ATTR_DYNAMIC:
-    case flag_attribute_t::NODE_ATTR_ENUMERABLE:
-    case flag_attribute_t::NODE_ATTR_FINAL:
-    case flag_attribute_t::NODE_ATTR_INTERNAL:
-    case flag_attribute_t::NODE_ATTR_INTRINSIC:
-    case flag_attribute_t::NODE_ATTR_UNUSED:
+    case attribute_t::NODE_ATTR_ARRAY:
+    case attribute_t::NODE_ATTR_DEPRECATED:
+    case attribute_t::NODE_ATTR_UNSAFE:
+    case attribute_t::NODE_ATTR_DEFINED:
+    case attribute_t::NODE_ATTR_DYNAMIC:
+    case attribute_t::NODE_ATTR_ENUMERABLE:
+    case attribute_t::NODE_ATTR_FINAL:
+    case attribute_t::NODE_ATTR_INTERNAL:
+    case attribute_t::NODE_ATTR_INTRINSIC:
+    case attribute_t::NODE_ATTR_UNUSED:
         // these attributes have no conflicts
         return;
 
     // member visibility
-    case flag_attribute_t::NODE_ATTR_PUBLIC:
-        conflict = f_flags_and_attributes[static_cast<size_t>(flag_attribute_t::NODE_ATTR_PRIVATE)]
-                || f_flags_and_attributes[static_cast<size_t>(flag_attribute_t::NODE_ATTR_PROTECTED)];
-        names = g_flag_groups[ATTRIBUTES_GROUP_MEMBER_VISIBILITY];
+    case attribute_t::NODE_ATTR_PUBLIC:
+        conflict = f_attributes[static_cast<size_t>(attribute_t::NODE_ATTR_PRIVATE)]
+                || f_attributes[static_cast<size_t>(attribute_t::NODE_ATTR_PROTECTED)];
+        names = g_attribute_groups[ATTRIBUTES_GROUP_MEMBER_VISIBILITY];
         break;
 
-    case flag_attribute_t::NODE_ATTR_PRIVATE:
-        conflict = f_flags_and_attributes[static_cast<size_t>(flag_attribute_t::NODE_ATTR_PUBLIC)]
-                || f_flags_and_attributes[static_cast<size_t>(flag_attribute_t::NODE_ATTR_PROTECTED)];
-        names = g_flag_groups[ATTRIBUTES_GROUP_MEMBER_VISIBILITY];
+    case attribute_t::NODE_ATTR_PRIVATE:
+        conflict = f_attributes[static_cast<size_t>(attribute_t::NODE_ATTR_PUBLIC)]
+                || f_attributes[static_cast<size_t>(attribute_t::NODE_ATTR_PROTECTED)];
+        names = g_attribute_groups[ATTRIBUTES_GROUP_MEMBER_VISIBILITY];
         break;
 
-    case flag_attribute_t::NODE_ATTR_PROTECTED:
-        conflict = f_flags_and_attributes[static_cast<size_t>(flag_attribute_t::NODE_ATTR_PUBLIC)]
-                || f_flags_and_attributes[static_cast<size_t>(flag_attribute_t::NODE_ATTR_PRIVATE)];
-        names = g_flag_groups[ATTRIBUTES_GROUP_MEMBER_VISIBILITY];
+    case attribute_t::NODE_ATTR_PROTECTED:
+        conflict = f_attributes[static_cast<size_t>(attribute_t::NODE_ATTR_PUBLIC)]
+                || f_attributes[static_cast<size_t>(attribute_t::NODE_ATTR_PRIVATE)];
+        names = g_attribute_groups[ATTRIBUTES_GROUP_MEMBER_VISIBILITY];
         break;
 
     // function type group
-    case flag_attribute_t::NODE_ATTR_STATIC:
-        conflict = f_flags_and_attributes[static_cast<size_t>(flag_attribute_t::NODE_ATTR_ABSTRACT)]
-                || f_flags_and_attributes[static_cast<size_t>(flag_attribute_t::NODE_ATTR_CONSTRUCTOR)]
-                || f_flags_and_attributes[static_cast<size_t>(flag_attribute_t::NODE_ATTR_VIRTUAL)];
-        names = g_flag_groups[ATTRIBUTES_GROUP_FUNCTION_TYPE];
+    case attribute_t::NODE_ATTR_STATIC:
+        conflict = f_attributes[static_cast<size_t>(attribute_t::NODE_ATTR_ABSTRACT)]
+                || f_attributes[static_cast<size_t>(attribute_t::NODE_ATTR_CONSTRUCTOR)]
+                || f_attributes[static_cast<size_t>(attribute_t::NODE_ATTR_VIRTUAL)];
+        names = g_attribute_groups[ATTRIBUTES_GROUP_FUNCTION_TYPE];
         break;
 
-    case flag_attribute_t::NODE_ATTR_ABSTRACT:
-        conflict = f_flags_and_attributes[static_cast<size_t>(flag_attribute_t::NODE_ATTR_STATIC)]
-                || f_flags_and_attributes[static_cast<size_t>(flag_attribute_t::NODE_ATTR_CONSTRUCTOR)]
-                || f_flags_and_attributes[static_cast<size_t>(flag_attribute_t::NODE_ATTR_VIRTUAL)];
-        names = g_flag_groups[ATTRIBUTES_GROUP_FUNCTION_TYPE];
+    case attribute_t::NODE_ATTR_ABSTRACT:
+        conflict = f_attributes[static_cast<size_t>(attribute_t::NODE_ATTR_STATIC)]
+                || f_attributes[static_cast<size_t>(attribute_t::NODE_ATTR_CONSTRUCTOR)]
+                || f_attributes[static_cast<size_t>(attribute_t::NODE_ATTR_VIRTUAL)];
+        names = g_attribute_groups[ATTRIBUTES_GROUP_FUNCTION_TYPE];
         break;
 
-    case flag_attribute_t::NODE_ATTR_VIRTUAL:
-        conflict = f_flags_and_attributes[static_cast<size_t>(flag_attribute_t::NODE_ATTR_STATIC)]
-                || f_flags_and_attributes[static_cast<size_t>(flag_attribute_t::NODE_ATTR_CONSTRUCTOR)]
-                || f_flags_and_attributes[static_cast<size_t>(flag_attribute_t::NODE_ATTR_ABSTRACT)];
-        names = g_flag_groups[ATTRIBUTES_GROUP_FUNCTION_TYPE];
+    case attribute_t::NODE_ATTR_VIRTUAL:
+        conflict = f_attributes[static_cast<size_t>(attribute_t::NODE_ATTR_STATIC)]
+                || f_attributes[static_cast<size_t>(attribute_t::NODE_ATTR_CONSTRUCTOR)]
+                || f_attributes[static_cast<size_t>(attribute_t::NODE_ATTR_ABSTRACT)];
+        names = g_attribute_groups[ATTRIBUTES_GROUP_FUNCTION_TYPE];
         break;
 
-    case flag_attribute_t::NODE_ATTR_CONSTRUCTOR:
-        conflict = f_flags_and_attributes[static_cast<size_t>(flag_attribute_t::NODE_ATTR_STATIC)]
-                || f_flags_and_attributes[static_cast<size_t>(flag_attribute_t::NODE_ATTR_CONSTRUCTOR)]
-                || f_flags_and_attributes[static_cast<size_t>(flag_attribute_t::NODE_ATTR_ABSTRACT)];
-        names = g_flag_groups[ATTRIBUTES_GROUP_FUNCTION_TYPE];
+    case attribute_t::NODE_ATTR_CONSTRUCTOR:
+        conflict = f_attributes[static_cast<size_t>(attribute_t::NODE_ATTR_STATIC)]
+                || f_attributes[static_cast<size_t>(attribute_t::NODE_ATTR_CONSTRUCTOR)]
+                || f_attributes[static_cast<size_t>(attribute_t::NODE_ATTR_ABSTRACT)];
+        names = g_attribute_groups[ATTRIBUTES_GROUP_FUNCTION_TYPE];
         break;
 
     // switch type group
-    case flag_attribute_t::NODE_ATTR_FOREACH:
-        conflict = f_flags_and_attributes[static_cast<size_t>(flag_attribute_t::NODE_ATTR_NOBREAK)]
-                || f_flags_and_attributes[static_cast<size_t>(flag_attribute_t::NODE_ATTR_AUTOBREAK)];
-        names = g_flag_groups[ATTRIBUTES_GROUP_SWITCH_TYPE];
+    case attribute_t::NODE_ATTR_FOREACH:
+        conflict = f_attributes[static_cast<size_t>(attribute_t::NODE_ATTR_NOBREAK)]
+                || f_attributes[static_cast<size_t>(attribute_t::NODE_ATTR_AUTOBREAK)];
+        names = g_attribute_groups[ATTRIBUTES_GROUP_SWITCH_TYPE];
         break;
 
-    case flag_attribute_t::NODE_ATTR_NOBREAK:
-        conflict = f_flags_and_attributes[static_cast<size_t>(flag_attribute_t::NODE_ATTR_FOREACH)]
-                || f_flags_and_attributes[static_cast<size_t>(flag_attribute_t::NODE_ATTR_AUTOBREAK)];
-        names = g_flag_groups[ATTRIBUTES_GROUP_SWITCH_TYPE];
+    case attribute_t::NODE_ATTR_NOBREAK:
+        conflict = f_attributes[static_cast<size_t>(attribute_t::NODE_ATTR_FOREACH)]
+                || f_attributes[static_cast<size_t>(attribute_t::NODE_ATTR_AUTOBREAK)];
+        names = g_attribute_groups[ATTRIBUTES_GROUP_SWITCH_TYPE];
         break;
 
-    case flag_attribute_t::NODE_ATTR_AUTOBREAK:
-        conflict = f_flags_and_attributes[static_cast<size_t>(flag_attribute_t::NODE_ATTR_FOREACH)]
-                || f_flags_and_attributes[static_cast<size_t>(flag_attribute_t::NODE_ATTR_NOBREAK)];
-        names = g_flag_groups[ATTRIBUTES_GROUP_SWITCH_TYPE];
+    case attribute_t::NODE_ATTR_AUTOBREAK:
+        conflict = f_attributes[static_cast<size_t>(attribute_t::NODE_ATTR_FOREACH)]
+                || f_attributes[static_cast<size_t>(attribute_t::NODE_ATTR_NOBREAK)];
+        names = g_attribute_groups[ATTRIBUTES_GROUP_SWITCH_TYPE];
         break;
 
     // conditional compilation group
-    case flag_attribute_t::NODE_ATTR_TRUE:
-        conflict = f_flags_and_attributes[static_cast<size_t>(flag_attribute_t::NODE_ATTR_FALSE)];
-        names = g_flag_groups[ATTRIBUTES_GROUP_CONDITIONAL_COMPILATION];
+    case attribute_t::NODE_ATTR_TRUE:
+        conflict = f_attributes[static_cast<size_t>(attribute_t::NODE_ATTR_FALSE)];
+        names = g_attribute_groups[ATTRIBUTES_GROUP_CONDITIONAL_COMPILATION];
         break;
 
-    case flag_attribute_t::NODE_ATTR_FALSE:
-        conflict = f_flags_and_attributes[static_cast<size_t>(flag_attribute_t::NODE_ATTR_TRUE)];
-        names = g_flag_groups[ATTRIBUTES_GROUP_CONDITIONAL_COMPILATION];
+    case attribute_t::NODE_ATTR_FALSE:
+        conflict = f_attributes[static_cast<size_t>(attribute_t::NODE_ATTR_TRUE)];
+        names = g_attribute_groups[ATTRIBUTES_GROUP_CONDITIONAL_COMPILATION];
         break;
 
-    case flag_attribute_t::NODE_FLAG_ATTRIBUTE_MAX:
-        throw exception_internal_error("invalid attribute / flag in Node::verify_flag_attribute()");
+    case attribute_t::NODE_ATTRIBUTE_max:
+        throw exception_internal_error("invalid attribute / flag in Node::verify_attribute()");
 
     // default: -- do not define so the compiler can tell us if
     //             an enumeration is missing in this case
@@ -2492,7 +2512,7 @@ void Node::display_data(std::ostream& out) const
 
     case node_t::NODE_PACKAGE:
         sub_function::display_str(out, f_str);
-        if(f_flags_and_attributes[static_cast<size_t>(flag_attribute_t::NODE_PACKAGE_FLAG_FOUND_LABELS)])
+        if(f_flags[static_cast<size_t>(flag_t::NODE_PACKAGE_FLAG_FOUND_LABELS)])
         {
             out << " FOUND-LABELS";
         }
@@ -2508,11 +2528,11 @@ void Node::display_data(std::ostream& out) const
 
     case node_t::NODE_FUNCTION:
         sub_function::display_str(out, f_str);
-        if(f_flags_and_attributes[static_cast<size_t>(flag_attribute_t::NODE_FUNCTION_FLAG_GETTER)])
+        if(f_flags[static_cast<size_t>(flag_t::NODE_FUNCTION_FLAG_GETTER)])
         {
             out << " GETTER";
         }
-        if(f_flags_and_attributes[static_cast<size_t>(flag_attribute_t::NODE_FUNCTION_FLAG_SETTER)])
+        if(f_flags[static_cast<size_t>(flag_t::NODE_FUNCTION_FLAG_SETTER)])
         {
             out << " SETTER";
         }
@@ -2520,39 +2540,39 @@ void Node::display_data(std::ostream& out) const
 
     case node_t::NODE_PARAM:
         sub_function::display_str(out, f_str);
-        if(f_flags_and_attributes[static_cast<size_t>(flag_attribute_t::NODE_PARAMETERS_FLAG_CONST)])
+        if(f_flags[static_cast<size_t>(flag_t::NODE_PARAMETERS_FLAG_CONST)])
         {
             out << " CONST";
         }
-        if(f_flags_and_attributes[static_cast<size_t>(flag_attribute_t::NODE_PARAMETERS_FLAG_IN)])
+        if(f_flags[static_cast<size_t>(flag_t::NODE_PARAMETERS_FLAG_IN)])
         {
             out << " IN";
         }
-        if(f_flags_and_attributes[static_cast<size_t>(flag_attribute_t::NODE_PARAMETERS_FLAG_OUT)])
+        if(f_flags[static_cast<size_t>(flag_t::NODE_PARAMETERS_FLAG_OUT)])
         {
             out << " OUT";
         }
-        if(f_flags_and_attributes[static_cast<size_t>(flag_attribute_t::NODE_PARAMETERS_FLAG_NAMED)])
+        if(f_flags[static_cast<size_t>(flag_t::NODE_PARAMETERS_FLAG_NAMED)])
         {
             out << " NAMED";
         }
-        if(f_flags_and_attributes[static_cast<size_t>(flag_attribute_t::NODE_PARAMETERS_FLAG_REST)])
+        if(f_flags[static_cast<size_t>(flag_t::NODE_PARAMETERS_FLAG_REST)])
         {
             out << " REST";
         }
-        if(f_flags_and_attributes[static_cast<size_t>(flag_attribute_t::NODE_PARAMETERS_FLAG_UNCHECKED)])
+        if(f_flags[static_cast<size_t>(flag_t::NODE_PARAMETERS_FLAG_UNCHECKED)])
         {
             out << " UNCHECKED";
         }
-        if(f_flags_and_attributes[static_cast<size_t>(flag_attribute_t::NODE_PARAMETERS_FLAG_UNPROTOTYPED)])
+        if(f_flags[static_cast<size_t>(flag_t::NODE_PARAMETERS_FLAG_UNPROTOTYPED)])
         {
             out << " UNPROTOTYPED";
         }
-        if(f_flags_and_attributes[static_cast<size_t>(flag_attribute_t::NODE_PARAMETERS_FLAG_REFERENCED)])
+        if(f_flags[static_cast<size_t>(flag_t::NODE_PARAMETERS_FLAG_REFERENCED)])
         {
             out << " REFERENCED";
         }
-        if(f_flags_and_attributes[static_cast<size_t>(flag_attribute_t::NODE_PARAMETERS_FLAG_PARAMREF)])
+        if(f_flags[static_cast<size_t>(flag_t::NODE_PARAMETERS_FLAG_PARAMREF)])
         {
             out << " PARAMREF";
         }
@@ -2560,7 +2580,7 @@ void Node::display_data(std::ostream& out) const
 
     case node_t::NODE_PARAM_MATCH:
         out << ":";
-        if(f_flags_and_attributes[static_cast<size_t>(flag_attribute_t::NODE_PARAM_MATCH_FLAG_UNPROTOTYPED)])
+        if(f_flags[static_cast<size_t>(flag_t::NODE_PARAM_MATCH_FLAG_UNPROTOTYPED)])
         {
             out << " UNPROTOTYPED";
         }
@@ -2569,47 +2589,47 @@ void Node::display_data(std::ostream& out) const
     case node_t::NODE_VARIABLE:
     case node_t::NODE_VAR_ATTRIBUTES:
         sub_function::display_str(out, f_str);
-        if(f_flags_and_attributes[static_cast<size_t>(flag_attribute_t::NODE_VAR_FLAG_CONST)])
+        if(f_flags[static_cast<size_t>(flag_t::NODE_VAR_FLAG_CONST)])
         {
             out << " CONST";
         }
-        if(f_flags_and_attributes[static_cast<size_t>(flag_attribute_t::NODE_VAR_FLAG_LOCAL)])
+        if(f_flags[static_cast<size_t>(flag_t::NODE_VAR_FLAG_LOCAL)])
         {
             out << " LOCAL";
         }
-        if(f_flags_and_attributes[static_cast<size_t>(flag_attribute_t::NODE_VAR_FLAG_MEMBER)])
+        if(f_flags[static_cast<size_t>(flag_t::NODE_VAR_FLAG_MEMBER)])
         {
             out << " MEMBER";
         }
-        if(f_flags_and_attributes[static_cast<size_t>(flag_attribute_t::NODE_VAR_FLAG_ATTRIBUTES)])
+        if(f_flags[static_cast<size_t>(flag_t::NODE_VAR_FLAG_ATTRIBUTES)])
         {
             out << " ATTRIBUTES";
         }
-        if(f_flags_and_attributes[static_cast<size_t>(flag_attribute_t::NODE_VAR_FLAG_ENUM)])
+        if(f_flags[static_cast<size_t>(flag_t::NODE_VAR_FLAG_ENUM)])
         {
             out << " ENUM";
         }
-        if(f_flags_and_attributes[static_cast<size_t>(flag_attribute_t::NODE_VAR_FLAG_COMPILED)])
+        if(f_flags[static_cast<size_t>(flag_t::NODE_VAR_FLAG_COMPILED)])
         {
             out << " COMPILED";
         }
-        if(f_flags_and_attributes[static_cast<size_t>(flag_attribute_t::NODE_VAR_FLAG_INUSE)])
+        if(f_flags[static_cast<size_t>(flag_t::NODE_VAR_FLAG_INUSE)])
         {
             out << " INUSE";
         }
-        if(f_flags_and_attributes[static_cast<size_t>(flag_attribute_t::NODE_VAR_FLAG_ATTRS)])
+        if(f_flags[static_cast<size_t>(flag_t::NODE_VAR_FLAG_ATTRS)])
         {
             out << " ATTRS";
         }
-        if(f_flags_and_attributes[static_cast<size_t>(flag_attribute_t::NODE_VAR_FLAG_DEFINED)])
+        if(f_flags[static_cast<size_t>(flag_t::NODE_VAR_FLAG_DEFINED)])
         {
             out << " DEFINED";
         }
-        if(f_flags_and_attributes[static_cast<size_t>(flag_attribute_t::NODE_VAR_FLAG_DEFINING)])
+        if(f_flags[static_cast<size_t>(flag_t::NODE_VAR_FLAG_DEFINING)])
         {
             out << " DEFINING";
         }
-        if(f_flags_and_attributes[static_cast<size_t>(flag_attribute_t::NODE_VAR_FLAG_TOADD)])
+        if(f_flags[static_cast<size_t>(flag_t::NODE_VAR_FLAG_TOADD)])
         {
             out << " TOADD";
         }
@@ -2665,36 +2685,36 @@ void Node::display(std::ostream& out, int indent, pointer_t parent, char c) cons
     // display the different attributes if any
     struct display_attributes
     {
-        display_attributes(std::ostream& out, flag_attribute_set_t attrs)
+        display_attributes(std::ostream& out, attribute_set_t attrs)
             : f_out(out)
-            , f_flags_and_attributes(attrs)
+            , f_attributes(attrs)
         {
-            display_attribute(flag_attribute_t::NODE_ATTR_PUBLIC,         "PUBLIC"        );
-            display_attribute(flag_attribute_t::NODE_ATTR_PRIVATE,        "PRIVATE"       );
-            display_attribute(flag_attribute_t::NODE_ATTR_PROTECTED,      "PROTECTED"     );
-            display_attribute(flag_attribute_t::NODE_ATTR_STATIC,         "STATIC"        );
-            display_attribute(flag_attribute_t::NODE_ATTR_ABSTRACT,       "ABSTRACT"      );
-            display_attribute(flag_attribute_t::NODE_ATTR_VIRTUAL,        "VIRTUAL"       );
-            display_attribute(flag_attribute_t::NODE_ATTR_INTERNAL,       "INTERNAL"      );
-            display_attribute(flag_attribute_t::NODE_ATTR_INTRINSIC,      "INTRINSIC"     );
-            display_attribute(flag_attribute_t::NODE_ATTR_DEPRECATED,     "DEPRECATED"    );
-            display_attribute(flag_attribute_t::NODE_ATTR_UNSAFE,         "UNSAFE"        );
-            display_attribute(flag_attribute_t::NODE_ATTR_CONSTRUCTOR,    "CONSTRUCTOR"   );
-            display_attribute(flag_attribute_t::NODE_ATTR_FINAL,          "FINAL"         );
-            display_attribute(flag_attribute_t::NODE_ATTR_ENUMERABLE,     "ENUMERABLE"    );
-            display_attribute(flag_attribute_t::NODE_ATTR_TRUE,           "TRUE"          );
-            display_attribute(flag_attribute_t::NODE_ATTR_FALSE,          "FALSE"         );
-            display_attribute(flag_attribute_t::NODE_ATTR_UNUSED,         "UNUSED"        );
-            display_attribute(flag_attribute_t::NODE_ATTR_DYNAMIC,        "DYNAMIC"       );
-            display_attribute(flag_attribute_t::NODE_ATTR_FOREACH,        "FOREACH"       );
-            display_attribute(flag_attribute_t::NODE_ATTR_NOBREAK,        "NOBREAK"       );
-            display_attribute(flag_attribute_t::NODE_ATTR_AUTOBREAK,      "AUTOBREAK"     );
-            display_attribute(flag_attribute_t::NODE_ATTR_DEFINED,        "DEFINED"       );
+            display_attribute(attribute_t::NODE_ATTR_PUBLIC,         "PUBLIC"        );
+            display_attribute(attribute_t::NODE_ATTR_PRIVATE,        "PRIVATE"       );
+            display_attribute(attribute_t::NODE_ATTR_PROTECTED,      "PROTECTED"     );
+            display_attribute(attribute_t::NODE_ATTR_STATIC,         "STATIC"        );
+            display_attribute(attribute_t::NODE_ATTR_ABSTRACT,       "ABSTRACT"      );
+            display_attribute(attribute_t::NODE_ATTR_VIRTUAL,        "VIRTUAL"       );
+            display_attribute(attribute_t::NODE_ATTR_INTERNAL,       "INTERNAL"      );
+            display_attribute(attribute_t::NODE_ATTR_INTRINSIC,      "INTRINSIC"     );
+            display_attribute(attribute_t::NODE_ATTR_DEPRECATED,     "DEPRECATED"    );
+            display_attribute(attribute_t::NODE_ATTR_UNSAFE,         "UNSAFE"        );
+            display_attribute(attribute_t::NODE_ATTR_CONSTRUCTOR,    "CONSTRUCTOR"   );
+            display_attribute(attribute_t::NODE_ATTR_FINAL,          "FINAL"         );
+            display_attribute(attribute_t::NODE_ATTR_ENUMERABLE,     "ENUMERABLE"    );
+            display_attribute(attribute_t::NODE_ATTR_TRUE,           "TRUE"          );
+            display_attribute(attribute_t::NODE_ATTR_FALSE,          "FALSE"         );
+            display_attribute(attribute_t::NODE_ATTR_UNUSED,         "UNUSED"        );
+            display_attribute(attribute_t::NODE_ATTR_DYNAMIC,        "DYNAMIC"       );
+            display_attribute(attribute_t::NODE_ATTR_FOREACH,        "FOREACH"       );
+            display_attribute(attribute_t::NODE_ATTR_NOBREAK,        "NOBREAK"       );
+            display_attribute(attribute_t::NODE_ATTR_AUTOBREAK,      "AUTOBREAK"     );
+            display_attribute(attribute_t::NODE_ATTR_DEFINED,        "DEFINED"       );
         }
 
-        void display_attribute(flag_attribute_t a, char const *n)
+        void display_attribute(attribute_t a, char const *n)
         {
-            if(f_flags_and_attributes[static_cast<size_t>(a)])
+            if(f_attributes[static_cast<size_t>(a)])
             {
                 f_out << " " << n;
             }
@@ -2702,8 +2722,8 @@ void Node::display(std::ostream& out, int indent, pointer_t parent, char c) cons
 
         std::ostream&               f_out;
         controlled_vars::fbool_t    f_first;
-        flag_attribute_set_t        f_flags_and_attributes;
-    } display_attr(out, f_flags_and_attributes);
+        attribute_set_t             f_attributes;
+    } display_attr(out, f_attributes);
 
     // end the line with our position
     out << " " << f_position << std::endl;

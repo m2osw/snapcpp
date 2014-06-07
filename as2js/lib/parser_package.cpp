@@ -127,7 +127,7 @@ void Parser::import(Node::pointer_t& node)
 
     if(f_node->get_type() == Node::node_t::NODE_IMPLEMENTS)
     {
-        node->set_flag(Node::flag_attribute_t::NODE_IMPORT_FLAG_IMPLEMENTS, true);
+        node->set_flag(Node::flag_t::NODE_IMPORT_FLAG_IMPLEMENTS, true);
         get_token();
     }
 

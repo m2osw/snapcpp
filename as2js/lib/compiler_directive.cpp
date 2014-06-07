@@ -60,7 +60,7 @@ Node::pointer_t Compiler::directive_list(Node::pointer_t directive_list_node)
     for(size_t idx(0); idx < max_children; ++idx)
     {
         Node::pointer_t child(directive_list_node->get_child(idx));
-        if(get_attribute(child, Node::flag_attribute_t::NODE_ATTR_FALSE))
+        if(get_attribute(child, Node::attribute_t::NODE_ATTR_FALSE))
         {
             child->to_unknown();
         }
@@ -262,23 +262,23 @@ fprintf(stderr, " (%d + 1 of %d)\n", idx, max);
         }
     }
 
-    if(directive_list_node->get_flag(Node::flag_attribute_t::NODE_DIRECTIVE_LIST_FLAG_NEW_VARIABLES))
+    if(directive_list_node->get_flag(Node::flag_t::NODE_DIRECTIVE_LIST_FLAG_NEW_VARIABLES))
     {
         size_t const max_variables(directive_list_node->get_variable_size());
         for(size_t idx(0); idx < max_variables; ++idx)
         {
             Node::pointer_t variable_node(directive_list_node->get_variable(idx));
             Node::pointer_t var_parent(variable_node->get_parent());
-            if(var_parent && var_parent->get_flag(Node::flag_attribute_t::NODE_VAR_FLAG_TOADD))
+            if(var_parent && var_parent->get_flag(Node::flag_t::NODE_VAR_FLAG_TOADD))
             {
                 // TBD: is that just the var declaration and no
                 //      assignment? because the assignment needs to
                 //      happen at the proper time!!!
-                var_parent->set_flag(Node::flag_attribute_t::NODE_VAR_FLAG_TOADD, false);
+                var_parent->set_flag(Node::flag_t::NODE_VAR_FLAG_TOADD, false);
                 directive_list_node->insert_child(0, var_parent); // insert at the start!
             }
         }
-        directive_list_node->set_flag(Node::flag_attribute_t::NODE_DIRECTIVE_LIST_FLAG_NEW_VARIABLES, false);
+        directive_list_node->set_flag(Node::flag_t::NODE_DIRECTIVE_LIST_FLAG_NEW_VARIABLES, false);
     }
 
     // go through the f_scope list and remove the "use namespace" that

@@ -52,7 +52,7 @@ bool Compiler::is_dynamic_class(Node::pointer_t class_node)
     }
 
     // already determined?
-    if(get_attribute(class_node, Node::flag_attribute_t::NODE_ATTR_DYNAMIC))
+    if(get_attribute(class_node, Node::attribute_t::NODE_ATTR_DYNAMIC))
     {
         return true;
     }
@@ -133,14 +133,14 @@ void Compiler::check_member(Node::pointer_t ref, Node::pointer_t field, Node::po
         // operators (since you need to call operators with
         // all the required inputs)
         //
-        err = !get_attribute(field, Node::flag_attribute_t::NODE_ATTR_STATIC)
-           && !field->get_flag(Node::flag_attribute_t::NODE_FUNCTION_FLAG_OPERATOR);
+        err = !get_attribute(field, Node::attribute_t::NODE_ATTR_STATIC)
+           && !field->get_flag(Node::flag_t::NODE_FUNCTION_FLAG_OPERATOR);
         break;
 
     case Node::node_t::NODE_VARIABLE:
         // static const foo = 123; is fine
-        err = !get_attribute(field, Node::flag_attribute_t::NODE_ATTR_STATIC)
-           && !field->get_flag(Node::flag_attribute_t::NODE_VAR_FLAG_CONST);
+        err = !get_attribute(field, Node::attribute_t::NODE_ATTR_STATIC)
+           && !field->get_flag(Node::flag_t::NODE_VAR_FLAG_CONST);
         break;
 
     default:
@@ -162,7 +162,7 @@ void Compiler::check_member(Node::pointer_t ref, Node::pointer_t field, Node::po
 bool Compiler::is_constructor(Node::pointer_t function_node)
 {
     // user defined constructor?
-    if(get_attribute(function_node, Node::flag_attribute_t::NODE_ATTR_CONSTRUCTOR))
+    if(get_attribute(function_node, Node::attribute_t::NODE_ATTR_CONSTRUCTOR))
     {
         return true;
     }
@@ -244,9 +244,9 @@ void Compiler::check_super_validity(Node::pointer_t expr)
                 }
                 else
                 {
-                    if(parent->get_flag(Node::flag_attribute_t::NODE_FUNCTION_FLAG_OPERATOR)
-                    || get_attribute(parent, Node::flag_attribute_t::NODE_ATTR_STATIC)
-                    || get_attribute(parent, Node::flag_attribute_t::NODE_ATTR_CONSTRUCTOR)
+                    if(parent->get_flag(Node::flag_t::NODE_FUNCTION_FLAG_OPERATOR)
+                    || get_attribute(parent, Node::attribute_t::NODE_ATTR_STATIC)
+                    || get_attribute(parent, Node::attribute_t::NODE_ATTR_CONSTRUCTOR)
                     || is_constructor(parent))
                     {
                         Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_EXPRESSION, expr->get_position());
@@ -314,12 +314,12 @@ void Compiler::link_type(Node::pointer_t type)
         return;
     }
 
-    if(type->get_flag(Node::flag_attribute_t::NODE_IDENTIFIER_FLAG_TYPED))
+    if(type->get_flag(Node::flag_t::NODE_IDENTIFIER_FLAG_TYPED))
     {
         // if it failed already, fail only once...
         return;
     }
-    type->set_flag(Node::flag_attribute_t::NODE_IDENTIFIER_FLAG_TYPED, true);
+    type->set_flag(Node::flag_t::NODE_IDENTIFIER_FLAG_TYPED, true);
 
     Node::pointer_t object;
     if(!resolve_name(type, type, object, Node::pointer_t(), 0))
@@ -849,7 +849,7 @@ fprintf(stderr, "WARNING: cannot find field member.\n");
     // if we have a Getter, transform the MEMBER into a CALL
     // to a MEMBER
     if(resolution->get_type() == Node::node_t::NODE_FUNCTION
-    && resolution->get_flag(Node::flag_attribute_t::NODE_FUNCTION_FLAG_GETTER))
+    && resolution->get_flag(Node::flag_t::NODE_FUNCTION_FLAG_GETTER))
     {
 fprintf(stderr, "CAUGHT! getter...\n");
         // so expr is a MEMBER at this time
@@ -1150,7 +1150,7 @@ void Compiler::extend_class(Node::pointer_t class_node, Node::pointer_t extend_n
     Node::pointer_t super(extend_name->get_link(Node::link_t::LINK_INSTANCE));
     if(super)
     {
-        if(get_attribute(super, Node::flag_attribute_t::NODE_ATTR_FINAL))
+        if(get_attribute(super, Node::attribute_t::NODE_ATTR_FINAL))
         {
             Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_FINAL, class_node->get_position());
             msg << "class '" << super->get_string() << "' is marked final and it cannot be extended by '" << class_node->get_string() << "'.";

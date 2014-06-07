@@ -1,4 +1,4 @@
-/* statement.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
+/* parser_statement.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
 
 /*
 
@@ -204,7 +204,7 @@ void Parser::catch_directive(Node::pointer_t& node)
             }
             if(has_type)
             {
-                node->set_flag(Node::flag_attribute_t::NODE_CATCH_FLAG_TYPED, true);
+                node->set_flag(Node::flag_t::NODE_CATCH_FLAG_TYPED, true);
             }
         }
         if(f_node->get_type() == Node::node_t::NODE_CLOSE_PARENTHESIS)
@@ -461,7 +461,7 @@ void Parser::for_directive(Node::pointer_t& node)
 
         if(node->get_children_size() == 2 && for_each)
         {
-            node->set_flag(Node::flag_attribute_t::NODE_FOR_FLAG_FOREACH, true);
+            node->set_flag(Node::flag_t::NODE_FOR_FLAG_FOREACH, true);
         }
         else if(for_each)
         {

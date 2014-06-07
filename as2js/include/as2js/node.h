@@ -228,21 +228,17 @@ public:
         NODE_WHILE,
         NODE_WITH,
 
-        NODE_max,    // mark the limit
+        NODE_max     // mark the limit
     };
     typedef controlled_vars::limited_auto_enum_init<node_t, node_t::NODE_EOF, node_t::NODE_max, node_t::NODE_UNKNOWN> safe_node_t;
 
-    // some nodes use flags and attributes, all of which are managed in
-    // one bitset
+    // some nodes use flags, all of which are managed in one bitset
     //
     // (Note that our Nodes are smart and make use of the function named
-    // verify_flag_attribute() to make sure that this specific node can
-    // indeed be given such flag or attribute)
-    enum class flag_attribute_t
+    // verify_flag() to make sure that this specific node can
+    // indeed be given such flag)
+    enum class flag_t
     {
-    //
-    // the following is a list of all the possible flags in our system
-    //
         // NODE_CATCH
         NODE_CATCH_FLAG_TYPED,
 
@@ -290,7 +286,7 @@ public:
         // NODE_SWITCH
         NODE_SWITCH_FLAG_DEFAULT,           // we found a 'default:' label in that switch
 
-        // NODE_VARIABLE (and NODE_VAR, NODE_PARAM)
+        // NODE_VARIABLE, NODE_VAR, NODE_PARAM
         NODE_VAR_FLAG_CONST,
         NODE_VAR_FLAG_LOCAL,
         NODE_VAR_FLAG_MEMBER,
@@ -303,9 +299,18 @@ public:
         NODE_VAR_FLAG_DEFINING,             // currently defining, can't read
         NODE_VAR_FLAG_TOADD,                // to be added in the directive list
 
+        NODE_FLAG_max
+    };
+
+    typedef std::bitset<static_cast<size_t>(flag_t::NODE_FLAG_max)>     flag_set_t;
+
+    // some nodes use flags, all of which are managed in one bitset
     //
-    // the following is a list of all the possible attributes in our system
-    //
+    // (Note that our Nodes are smart and make use of the function named
+    // verify_flag() to make sure that this specific node can
+    // indeed be given such flag)
+    enum class attribute_t
+    {
         // member visibility
         NODE_ATTR_PUBLIC,
         NODE_ATTR_PRIVATE,
@@ -359,11 +364,11 @@ public:
         // than once. In itself it is not an attribute.
         NODE_ATTR_DEFINED,
 
-        // max used to know the number of entries and define out bitset
-        NODE_FLAG_ATTRIBUTE_MAX
+        // max used to know the number of entries and define our bitset
+        NODE_ATTRIBUTE_max
     };
 
-    typedef std::bitset<static_cast<int>(flag_attribute_t::NODE_FLAG_ATTRIBUTE_MAX) - 1>     flag_attribute_set_t;
+    typedef std::bitset<static_cast<int>(attribute_t::NODE_ATTRIBUTE_max)>     attribute_set_t;
 
     enum class link_t
     {
@@ -420,8 +425,12 @@ public:
     pointer_t                   create_replacement(node_t type) const;
 
     // check flags
-    bool                        get_flag(flag_attribute_t f) const;
-    void                        set_flag(flag_attribute_t f, bool v);
+    bool                        get_flag(flag_t f) const;
+    void                        set_flag(flag_t f, bool v);
+
+    // check attributes
+    bool                        get_attribute(attribute_t f) const;
+    void                        set_attribute(attribute_t f, bool v);
 
     // switch operator: switch(...) with(<operator>)
     node_t                      get_switch_operator() const;
@@ -485,14 +494,16 @@ private:
     typedef std::vector<controlled_vars::zuint32_t> param_index_t;
 
     // verify that the specified flag correspond to the node type
-    void                        verify_flag_attribute(flag_attribute_t f) const;
-    void                        verify_exclusive_attributes(flag_attribute_t f) const;
+    void                        verify_flag(flag_t f) const;
+    void                        verify_attribute(attribute_t f) const;
+    void                        verify_exclusive_attributes(attribute_t f) const;
     void                        modifying() const;
     void                        display_data(std::ostream& out) const;
 
     // define the node type
     safe_node_t                     f_type;
-    flag_attribute_set_t            f_flags_and_attributes;
+    flag_set_t                      f_flags;
+    attribute_set_t                 f_attributes;
     safe_node_t                     f_switch_operator;
 
     // whether this node is currently locked

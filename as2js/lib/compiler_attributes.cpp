@@ -97,17 +97,17 @@ void Compiler::identifier_to_attrs(Node::pointer_t node, Node::pointer_t a)
     case 'a':
         if(identifier == "abstract")
         {
-            node->set_flag(Node::flag_attribute_t::NODE_ATTR_ABSTRACT, true);
+            node->set_attribute(Node::attribute_t::NODE_ATTR_ABSTRACT, true);
             return;
         }
         if(identifier == "array")
         {
-            node->set_flag(Node::flag_attribute_t::NODE_ATTR_ARRAY, true);
+            node->set_attribute(Node::attribute_t::NODE_ATTR_ARRAY, true);
             return;
         }
         if(identifier == "autobreak")
         {
-            node->set_flag(Node::flag_attribute_t::NODE_ATTR_AUTOBREAK, true);
+            node->set_attribute(Node::attribute_t::NODE_ATTR_AUTOBREAK, true);
             return;
         }
         break;
@@ -115,7 +115,7 @@ void Compiler::identifier_to_attrs(Node::pointer_t node, Node::pointer_t a)
     case 'c':
         if(identifier == "constructor")
         {
-            node->set_flag(Node::flag_attribute_t::NODE_ATTR_CONSTRUCTOR, true);
+            node->set_attribute(Node::attribute_t::NODE_ATTR_CONSTRUCTOR, true);
             return;
         }
         break;
@@ -123,12 +123,12 @@ void Compiler::identifier_to_attrs(Node::pointer_t node, Node::pointer_t a)
     case 'd':
         if(identifier == "dynamic")
         {
-            node->set_flag(Node::flag_attribute_t::NODE_ATTR_DYNAMIC, true);
+            node->set_attribute(Node::attribute_t::NODE_ATTR_DYNAMIC, true);
             return;
         }
         if(identifier == "deprecated")
         {
-            node->set_flag(Node::flag_attribute_t::NODE_ATTR_DEPRECATED, true);
+            node->set_attribute(Node::attribute_t::NODE_ATTR_DEPRECATED, true);
             return;
         }
         break;
@@ -136,7 +136,7 @@ void Compiler::identifier_to_attrs(Node::pointer_t node, Node::pointer_t a)
     case 'e':
         if(identifier == "enumerable")
         {
-            node->set_flag(Node::flag_attribute_t::NODE_ATTR_ENUMERABLE, true);
+            node->set_attribute(Node::attribute_t::NODE_ATTR_ENUMERABLE, true);
             return;
         }
         break;
@@ -144,12 +144,12 @@ void Compiler::identifier_to_attrs(Node::pointer_t node, Node::pointer_t a)
     case 'f':
         if(identifier == "final")
         {
-            node->set_flag(Node::flag_attribute_t::NODE_ATTR_FINAL, true);
+            node->set_attribute(Node::attribute_t::NODE_ATTR_FINAL, true);
             return;
         }
         if(identifier == "foreach")
         {
-            node->set_flag(Node::flag_attribute_t::NODE_ATTR_FOREACH, true);
+            node->set_attribute(Node::attribute_t::NODE_ATTR_FOREACH, true);
             return;
         }
         break;
@@ -157,12 +157,12 @@ void Compiler::identifier_to_attrs(Node::pointer_t node, Node::pointer_t a)
     case 'i':
         if(identifier == "internal")
         {
-            node->set_flag(Node::flag_attribute_t::NODE_ATTR_INTERNAL, true);
+            node->set_attribute(Node::attribute_t::NODE_ATTR_INTERNAL, true);
             return;
         }
         if(identifier == "intrinsic")
         {
-            node->set_flag(Node::flag_attribute_t::NODE_ATTR_INTRINSIC, true);
+            node->set_attribute(Node::attribute_t::NODE_ATTR_INTRINSIC, true);
             return;
         }
         break;
@@ -170,7 +170,7 @@ void Compiler::identifier_to_attrs(Node::pointer_t node, Node::pointer_t a)
     case 'n':
         if(identifier == "nobreak")
         {
-            node->set_flag(Node::flag_attribute_t::NODE_ATTR_NOBREAK, true);
+            node->set_attribute(Node::attribute_t::NODE_ATTR_NOBREAK, true);
             return;
         }
         break;
@@ -178,7 +178,7 @@ void Compiler::identifier_to_attrs(Node::pointer_t node, Node::pointer_t a)
     case 'p':
         if(identifier == "protected")
         {
-            node->set_flag(Node::flag_attribute_t::NODE_ATTR_PROTECTED, true);
+            node->set_attribute(Node::attribute_t::NODE_ATTR_PROTECTED, true);
             return;
         }
         break;
@@ -186,7 +186,7 @@ void Compiler::identifier_to_attrs(Node::pointer_t node, Node::pointer_t a)
     case 's':
         if(identifier == "static")
         {
-            node->set_flag(Node::flag_attribute_t::NODE_ATTR_STATIC, true);
+            node->set_attribute(Node::attribute_t::NODE_ATTR_STATIC, true);
             return;
         }
         break;
@@ -194,12 +194,12 @@ void Compiler::identifier_to_attrs(Node::pointer_t node, Node::pointer_t a)
     case 'u':
         if(identifier == "unsafe")
         {
-            node->set_flag(Node::flag_attribute_t::NODE_ATTR_UNSAFE, true);
+            node->set_attribute(Node::attribute_t::NODE_ATTR_UNSAFE, true);
             return;
         }
         if(identifier == "unused")
         {
-            node->set_flag(Node::flag_attribute_t::NODE_ATTR_UNUSED, true);
+            node->set_attribute(Node::attribute_t::NODE_ATTR_UNUSED, true);
             return;
         }
         break;
@@ -207,7 +207,7 @@ void Compiler::identifier_to_attrs(Node::pointer_t node, Node::pointer_t a)
     case 'v':
         if(identifier == "virtual")
         {
-            node->set_flag(Node::flag_attribute_t::NODE_ATTR_VIRTUAL, true);
+            node->set_attribute(Node::attribute_t::NODE_ATTR_VIRTUAL, true);
             return;
         }
         break;
@@ -237,15 +237,15 @@ void Compiler::identifier_to_attrs(Node::pointer_t node, Node::pointer_t a)
 
     // it is a variable, go through the list and call ourselves recursively
     // with each identifiers; but make sure we do not loop forever
-    if(resolution->get_flag(Node::flag_attribute_t::NODE_VAR_FLAG_ATTRS))
+    if(resolution->get_flag(Node::flag_t::NODE_VAR_FLAG_ATTRS))
     {
         Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_LOOPING_REFERENCE, a->get_position());
         msg << "the dynamic attribute variable '" << a->get_string() << "' is used circularly (it loops).";
         return;
     }
 
-    resolution->set_flag(Node::flag_attribute_t::NODE_VAR_FLAG_ATTRS, true); // to avoid infinite loop
-    resolution->set_flag(Node::flag_attribute_t::NODE_VAR_FLAG_ATTRIBUTES, true);
+    resolution->set_flag(Node::flag_t::NODE_VAR_FLAG_ATTRS, true); // to avoid infinite loop
+    resolution->set_flag(Node::flag_t::NODE_VAR_FLAG_ATTRIBUTES, true);
     NodeLock ln(resolution);
     size_t const max_children(resolution->get_children_size());
     for(size_t idx(0); idx < max_children; ++idx)
@@ -253,7 +253,7 @@ void Compiler::identifier_to_attrs(Node::pointer_t node, Node::pointer_t a)
         Node::pointer_t child(resolution->get_child(idx));
         variable_to_attrs(node, child);
     }
-    resolution->set_flag(Node::flag_attribute_t::NODE_VAR_FLAG_ATTRS, false);
+    resolution->set_flag(Node::flag_t::NODE_VAR_FLAG_ATTRS, false);
 }
 
 
@@ -261,7 +261,7 @@ void Compiler::node_to_attrs(Node::pointer_t node, Node::pointer_t a)
 {
     switch(a->get_type()) {
     case Node::node_t::NODE_FALSE:
-        node->set_flag(Node::flag_attribute_t::NODE_ATTR_FALSE, true);
+        node->set_attribute(Node::attribute_t::NODE_ATTR_FALSE, true);
         break;
 
     case Node::node_t::NODE_IDENTIFIER:
@@ -269,15 +269,15 @@ void Compiler::node_to_attrs(Node::pointer_t node, Node::pointer_t a)
         break;
 
     case Node::node_t::NODE_PRIVATE:
-        node->set_flag(Node::flag_attribute_t::NODE_ATTR_PRIVATE, true);
+        node->set_attribute(Node::attribute_t::NODE_ATTR_PRIVATE, true);
         break;
 
     case Node::node_t::NODE_PUBLIC:
-        node->set_flag(Node::flag_attribute_t::NODE_ATTR_PUBLIC, true);
+        node->set_attribute(Node::attribute_t::NODE_ATTR_PUBLIC, true);
         break;
 
     case Node::node_t::NODE_TRUE:
-        node->set_flag(Node::flag_attribute_t::NODE_ATTR_TRUE, true);
+        node->set_attribute(Node::attribute_t::NODE_ATTR_TRUE, true);
         break;
 
     default:
@@ -297,13 +297,13 @@ void Compiler::node_to_attrs(Node::pointer_t node, Node::pointer_t a)
 void Compiler::prepare_attributes(Node::pointer_t node)
 {
     // done here?
-    if(node->get_flag(Node::flag_attribute_t::NODE_ATTR_DEFINED))
+    if(node->get_attribute(Node::attribute_t::NODE_ATTR_DEFINED))
     {
         return;
     }
 
     // mark ourselves as done even if errors occur
-    node->set_flag(Node::flag_attribute_t::NODE_ATTR_DEFINED, true);
+    node->set_attribute(Node::attribute_t::NODE_ATTR_DEFINED, true);
 
     if(node->get_type() == Node::node_t::NODE_PROGRAM)
     {
@@ -325,7 +325,7 @@ void Compiler::prepare_attributes(Node::pointer_t node)
 
     // check whether intrinsic is already set
     // (in which case it is probably an error)
-    bool const has_direct_intrinsic(node->get_flag(Node::flag_attribute_t::NODE_ATTR_INTRINSIC));
+    bool const has_direct_intrinsic(node->get_attribute(Node::attribute_t::NODE_ATTR_INTRINSIC));
 
     // Note: we already returned if it is equal
     //       to program; here it is just documentation
@@ -340,46 +340,46 @@ void Compiler::prepare_attributes(Node::pointer_t node)
 
             // child can redefine (ignore parent if any defined)
             // [TODO: should this be an error if conflicting?]
-            if(!node->get_flag(Node::flag_attribute_t::NODE_ATTR_PUBLIC)
-            && !node->get_flag(Node::flag_attribute_t::NODE_ATTR_PRIVATE)
-            && !node->get_flag(Node::flag_attribute_t::NODE_ATTR_PROTECTED))
+            if(!node->get_attribute(Node::attribute_t::NODE_ATTR_PUBLIC)
+            && !node->get_attribute(Node::attribute_t::NODE_ATTR_PRIVATE)
+            && !node->get_attribute(Node::attribute_t::NODE_ATTR_PROTECTED))
             {
-                node->set_flag(Node::flag_attribute_t::NODE_ATTR_PUBLIC,    parent->get_flag(Node::flag_attribute_t::NODE_ATTR_PUBLIC));
-                node->set_flag(Node::flag_attribute_t::NODE_ATTR_PRIVATE,   parent->get_flag(Node::flag_attribute_t::NODE_ATTR_PRIVATE));
-                node->set_flag(Node::flag_attribute_t::NODE_ATTR_PROTECTED, parent->get_flag(Node::flag_attribute_t::NODE_ATTR_PROTECTED));
+                node->set_attribute(Node::attribute_t::NODE_ATTR_PUBLIC,    parent->get_attribute(Node::attribute_t::NODE_ATTR_PUBLIC));
+                node->set_attribute(Node::attribute_t::NODE_ATTR_PRIVATE,   parent->get_attribute(Node::attribute_t::NODE_ATTR_PRIVATE));
+                node->set_attribute(Node::attribute_t::NODE_ATTR_PROTECTED, parent->get_attribute(Node::attribute_t::NODE_ATTR_PROTECTED));
             }
 
             // child can redefine (ignore parent if defined)
-            if(!node->get_flag(Node::flag_attribute_t::NODE_ATTR_STATIC)
-            && !node->get_flag(Node::flag_attribute_t::NODE_ATTR_ABSTRACT)
-            && !node->get_flag(Node::flag_attribute_t::NODE_ATTR_VIRTUAL))
+            if(!node->get_attribute(Node::attribute_t::NODE_ATTR_STATIC)
+            && !node->get_attribute(Node::attribute_t::NODE_ATTR_ABSTRACT)
+            && !node->get_attribute(Node::attribute_t::NODE_ATTR_VIRTUAL))
             {
-                node->set_flag(Node::flag_attribute_t::NODE_ATTR_STATIC,   parent->get_flag(Node::flag_attribute_t::NODE_ATTR_STATIC));
-                node->set_flag(Node::flag_attribute_t::NODE_ATTR_ABSTRACT, parent->get_flag(Node::flag_attribute_t::NODE_ATTR_ABSTRACT));
-                node->set_flag(Node::flag_attribute_t::NODE_ATTR_VIRTUAL,  parent->get_flag(Node::flag_attribute_t::NODE_ATTR_VIRTUAL));
+                node->set_attribute(Node::attribute_t::NODE_ATTR_STATIC,   parent->get_attribute(Node::attribute_t::NODE_ATTR_STATIC));
+                node->set_attribute(Node::attribute_t::NODE_ATTR_ABSTRACT, parent->get_attribute(Node::attribute_t::NODE_ATTR_ABSTRACT));
+                node->set_attribute(Node::attribute_t::NODE_ATTR_VIRTUAL,  parent->get_attribute(Node::attribute_t::NODE_ATTR_VIRTUAL));
             }
 
             // inherit
-            node->set_flag(Node::flag_attribute_t::NODE_ATTR_INTRINSIC,  parent->get_flag(Node::flag_attribute_t::NODE_ATTR_INTRINSIC));
-            node->set_flag(Node::flag_attribute_t::NODE_ATTR_ENUMERABLE, parent->get_flag(Node::flag_attribute_t::NODE_ATTR_ENUMERABLE));
+            node->set_attribute(Node::attribute_t::NODE_ATTR_INTRINSIC,  parent->get_attribute(Node::attribute_t::NODE_ATTR_INTRINSIC));
+            node->set_attribute(Node::attribute_t::NODE_ATTR_ENUMERABLE, parent->get_attribute(Node::attribute_t::NODE_ATTR_ENUMERABLE));
 
             // false has priority
-            if(parent->get_flag(Node::flag_attribute_t::NODE_ATTR_FALSE))
+            if(parent->get_attribute(Node::attribute_t::NODE_ATTR_FALSE))
             {
-                node->set_flag(Node::flag_attribute_t::NODE_ATTR_TRUE, false);
-                node->set_flag(Node::flag_attribute_t::NODE_ATTR_FALSE, true);
+                node->set_attribute(Node::attribute_t::NODE_ATTR_TRUE, false);
+                node->set_attribute(Node::attribute_t::NODE_ATTR_FALSE, true);
             }
 
             if(parent->get_type() != Node::node_t::NODE_CLASS)
             {
-                node->set_flag(Node::flag_attribute_t::NODE_ATTR_DYNAMIC, parent->get_flag(Node::flag_attribute_t::NODE_ATTR_DYNAMIC));
-                node->set_flag(Node::flag_attribute_t::NODE_ATTR_FINAL,   parent->get_flag(Node::flag_attribute_t::NODE_ATTR_FINAL));
+                node->set_attribute(Node::attribute_t::NODE_ATTR_DYNAMIC, parent->get_attribute(Node::attribute_t::NODE_ATTR_DYNAMIC));
+                node->set_attribute(Node::attribute_t::NODE_ATTR_FINAL,   parent->get_attribute(Node::attribute_t::NODE_ATTR_FINAL));
             }
         }
     }
 
     // a function which has a body cannot be intrinsic
-    if(node->get_flag(Node::flag_attribute_t::NODE_ATTR_INTRINSIC)
+    if(node->get_attribute(Node::attribute_t::NODE_ATTR_INTRINSIC)
     && node->get_type() != Node::node_t::NODE_FUNCTION)
     {
         NodeLock ln(node);
@@ -397,7 +397,7 @@ void Compiler::prepare_attributes(Node::pointer_t node)
                     Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INTRINSIC, node->get_position());
                     msg << "'intrinsic' is not permitted on a function with a body.";
                 }
-                node->set_flag(Node::flag_attribute_t::NODE_ATTR_INTRINSIC, false);
+                node->set_attribute(Node::attribute_t::NODE_ATTR_INTRINSIC, false);
                 break;
             }
         }
@@ -405,10 +405,10 @@ void Compiler::prepare_attributes(Node::pointer_t node)
 }
 
 
-bool Compiler::get_attribute(Node::pointer_t node, Node::flag_attribute_t f)
+bool Compiler::get_attribute(Node::pointer_t node, Node::attribute_t const a)
 {
     prepare_attributes(node);
-    return node->get_flag(f);
+    return node->get_attribute(a);
 }
 
 
