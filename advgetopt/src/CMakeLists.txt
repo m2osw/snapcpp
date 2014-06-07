@@ -31,8 +31,8 @@
 ##
 project(advgetopt)
 include_directories(
-    ${PROJECT_SOURCE_DIR}
     ${CONTROLLEDVARS_INCLUDE_DIRS}
+    ${PROJECT_SOURCE_DIR}
 )
 add_library( ${PROJECT_NAME} STATIC
     advgetopt.h

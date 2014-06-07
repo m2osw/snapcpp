@@ -1,7 +1,9 @@
-advgetopt (1.0.2) UNRELEASED; urgency=low
+advgetopt (1.0.2) saucy; urgency=low
 
   * Updated the code to handle the help_argument again for the Usage
   * Added support to convert %p to print the program name
+  * Made changes to properly support the new controlled_vars headers.
+  * Added support handling our Snap DEBUG flag.
 
  -- Alexis Wilke <alexis@m2osw.com>  Sat, 17 May 2014 18:38:20 -0700
 

@@ -28,7 +28,8 @@
  * used all around for that purpose.
  */
 #include    <controlled_vars/controlled_vars_auto_init.h>
-#include    <stdint.h>
+#include    <controlled_vars/controlled_vars_auto_enum_init.h>
+
 #include    <map>
 #include    <stdexcept>
 #include    <string>

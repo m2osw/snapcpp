@@ -37,6 +37,14 @@ project(advgetopt_library)
 find_package( ControlledVars   REQUIRED )
 find_package( SnapCMakeModules REQUIRED )
 
+if( "${CMAKE_BUILD_TYPE}" STREQUAL "Debug" )
+    message("Debug is in effect for advgetopt!")
+    add_definitions( -DDEBUG -D_DEBUG -DCONTROLLED_VARS_DEBUG )
+else()
+    message("Debug is turned OFF")
+    add_definitions( -DNDEBUG )
+endif()
+
 add_subdirectory( src )
 add_subdirectory( doc )
 
