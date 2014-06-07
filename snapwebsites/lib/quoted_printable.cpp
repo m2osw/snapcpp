@@ -20,6 +20,7 @@
 #include "not_reached.h"
 
 #include <controlled_vars/controlled_vars_auto_init.h>
+#include <controlled_vars/controlled_vars_limited_auto_enum_init.h>
 
 #include "poison.h"
 
@@ -244,7 +245,7 @@ std::string encode(const std::string& input, int flags)
         controlled_vars::zchar_t    f_buffer;
         std::string                 f_result;
         controlled_vars::zint32_t   f_line;
-        controlled_vars::fbool_t    f_cr;
+        controlled_vars::flbool_t   f_cr;
     };
 
     result r(input.length(), flags);

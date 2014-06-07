@@ -18,6 +18,8 @@
 #include "snap_parser.h"
 #include "qstring_stream.h"
 
+#include <controlled_vars/controlled_vars_limited_auto_enum_init.h>
+
 #include <iostream>
 
 #include <stdio.h>
@@ -246,13 +248,13 @@ public:
     bool get_required() const { return f_required; }
 
 private:
-    domain_variable_type_t            f_type;
-    QString                            f_name;
-    QString                            f_value;
+    domain_variable_type_t          f_type;
+    QString                         f_name;
+    QString                         f_value;
 
-    QString                            f_default;  // this may be the default (flag) or forced (website) value
+    QString                         f_default;  // this may be the default (flag) or forced (website) value
 
-    controlled_vars::zbool_t        f_required;
+    controlled_vars::flbool_t       f_required;
 };
 class domain_info : public snap::parser::parser_user_data
 {

@@ -898,7 +898,7 @@ void filter::on_token_filter(content::path_info_t& ipath, QDomDocument& xml)
         QString                     f_token;
         QString                     f_replacement;
         QString                     f_extra_input;
-        controlled_vars::mbool_t    f_support_edit;
+        controlled_vars::mlbool_t   f_support_edit;
     };
 
     // Avoid recursivity

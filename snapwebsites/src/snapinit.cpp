@@ -69,7 +69,7 @@ namespace
             advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
             NULL,
             NULL,
-            "Usage: %p [-<opt>] <start|restart|stop|>",
+            "Usage: %p [-<opt>] <start|restart|stop>",
             advgetopt::getopt::help_argument
         },
         {
@@ -81,48 +81,8 @@ namespace
             advgetopt::getopt::help_argument
         },
         {
-            'a',
-            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
-            "all",
-            nullptr,
-            "All services.",
-            advgetopt::getopt::no_argument
-        },
-        {
-            's',
-            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
-            "server",
-            nullptr,
-            "snapserver service.",
-            advgetopt::getopt::no_argument
-        },
-        {
-            'm',
-            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
-            "sendmail",
-            nullptr,
-            "snapbackend sendmail service.",
-            advgetopt::getopt::no_argument
-        },
-        {
-            'p',
-            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
-            "pagelist",
-            nullptr,
-            "snapbackend pagelist service.",
-            advgetopt::getopt::no_argument
-        },
-        {
-            'i',
-            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
-            "images",
-            nullptr,
-            "snapbackend images service.",
-            advgetopt::getopt::no_argument
-        },
-        {
             'b',
-            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
+            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE,
             "binary_path",
             "/usr/bin",
             "Path where snap! binaries can be found (e.g. snapserver and snapbackend).",
@@ -137,36 +97,12 @@ namespace
             advgetopt::getopt::optional_argument
         },
         {
-            'l',
-            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
-            "logfile",
-            "/var/log/snapwebsites/snapinit.log",
-            "Full path to the snapinit logfile",
-            advgetopt::getopt::optional_argument
-        },
-        {
-            'n',
-            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
-            "nolog",
-            nullptr,
-            "Only output to the console, not the log.",
-            advgetopt::getopt::no_argument
-        },
-        {
             'd',
-            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
+            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE,
             "detach",
             nullptr,
-            "Background the init server.",
+            "Background the snapinit server.",
             advgetopt::getopt::no_argument
-        },
-        {
-            '\0',
-            advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
-            nullptr,
-            nullptr,
-            "start|restart|stop",
-            advgetopt::getopt::default_argument
         },
         {
             'h',
@@ -175,6 +111,40 @@ namespace
             nullptr,
             "Show usage and exit.",
             advgetopt::getopt::no_argument
+        },
+        {
+            '\0',
+            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE,
+            "list",
+            nullptr,
+            "Display the list of services and exit.",
+            advgetopt::getopt::no_argument
+        },
+        // TODO: We should allow for a log filename definition
+        //       in the snapserver.conf file too
+        {
+            'l',
+            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE,
+            "logfile",
+            "/var/log/snapwebsites/snapinit.log",
+            "Full path to the snapinit logfile.",
+            advgetopt::getopt::optional_argument
+        },
+        {
+            'n',
+            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE,
+            "nolog",
+            nullptr,
+            "Only output to the console, not the log file.",
+            advgetopt::getopt::no_argument
+        },
+        {
+            '\0',
+            0,
+            nullptr,
+            nullptr,
+            "start|restart|stop",
+            advgetopt::getopt::default_argument
         },
         {
             '\0',
@@ -222,7 +192,7 @@ public:
     }
 
     void set_path( const QString& path )     { f_path = path; }
-    void set_config( const QString& config ) { f_config = config; }
+    void set_config( const QString& config ) { f_config_filename = config; }
 
     bool   run();
     bool   is_running();
@@ -240,7 +210,7 @@ public:
 private:
     type_t   f_type;
     QString  f_path;
-    QString  f_config;
+    QString  f_config_filename;
     QString  f_name;
     int      f_pid;
     int      f_exit;
@@ -264,7 +234,7 @@ bool process::run()
         const QString cmd( QString("%1/%2").arg(f_path).arg( (f_type == Server)? "snapserver": "snapbackend") );
         QStringList qargs;
         qargs << cmd
-              << "-c" << f_config;
+              << "-c" << f_config_filename;
         //
         if( f_type == Backend )
         {
@@ -298,7 +268,7 @@ bool process::run()
         );
 #pragma GCC diagnostic pop
 
-        SNAP_LOG_FATAL("Child process \"") << qargs.join(" ") << "\" failed to start!";
+        SNAP_LOG_FATAL("Child process \"")(qargs.join(" "))("\" failed to start!");
         exit(1);
     }
 
@@ -362,7 +332,7 @@ void process::kill()
         return;
     }
 
-    const QString command( QString("%1/snapsignal -c %2 -a %3 STOP").arg(f_path).arg(f_config).arg(f_name) );
+    const QString command( QString("%1/snapsignal -c %2 -a %3 STOP").arg(f_path).arg(f_config_filename).arg(f_name) );
     const int retval = system( command.toUtf8().data() );
     if( retval == -1 )
     {
@@ -420,11 +390,11 @@ public:
     static void sighandler( int sig );
 
 private:
-    typedef std::map<std::string,bool> map_t;
+    typedef std::vector<std::string>        services_t;
 
     static pointer_t     f_instance;
     advgetopt::getopt    f_opt;
-    map_t                f_opt_map;
+    services_t           f_services;
     QFile                f_lock_file;
     snap::snap_config    f_config;
     snap::snap_cassandra f_cassandra;
@@ -439,7 +409,7 @@ private:
     void show_selected_servers() const;
     bool backend_ready();
     void create_server_process();
-    void create_backend_process( const QString& name );
+    void create_backend_process( QString const& name );
     void start_processes();
     void monitor_processes();
     void terminate_processes();
@@ -457,7 +427,7 @@ snap_init::snap_init( int argc, char *argv[] )
     : f_opt(argc, argv, g_snapinit_options, g_configuration_files, "SNAPINIT_OPTIONS")
     , f_lock_file( QString("/tmp/%1").arg(SNAPINIT_KEY) )
 {
-    if( f_opt.is_defined( "nolog" ) )
+    if( f_opt.is_defined( "nolog" ) || f_opt.is_defined( "help" ) )
     {
         snap::logging::configureConsole();
     }
@@ -467,6 +437,12 @@ snap_init::snap_init( int argc, char *argv[] )
     }
 
     f_config.read_config_file( f_opt.get_string("config").c_str() );
+    if(!f_config.contains("services"))
+    {
+        SNAP_LOG_FATAL() << "the configuration file must list the services to start (services=server,images,pagelist,sendmail)";
+        exit( 1 );
+    }
+
     f_cassandra.connect( &f_config );
     //
     QtCassandra::QCassandraContext::pointer_t context( f_cassandra.get_snap_context() );
@@ -479,6 +455,30 @@ snap_init::snap_init( int argc, char *argv[] )
     {
         SNAP_LOG_FATAL() << "You must create both the 'domains' and the 'websites' tables before you can run snapserver!";
         exit( 1 );
+    }
+
+    bool const list( f_opt.is_defined( "list" ) );
+    if(list)
+    {
+        std::cout << "List of services to start on this server:" << std::endl;
+    }
+    QString services(f_config["services"]);
+    QStringList service_list(services.split(","));
+    int const max_services(service_list.size());
+    for(int idx(0); idx < max_services; ++idx)
+    {
+        QString service(service_list[idx].trimmed());
+        f_services.push_back(service.toStdString());
+
+        if(list)
+        {
+            std::cout << service.toStdString() << std::endl;
+        }
+    }
+    if(list)
+    {
+        // the --list command is over!
+        exit(1);
     }
 }
 
@@ -550,36 +550,17 @@ bool snap_init::is_running()
 
 void snap_init::validate()
 {
-    f_opt_map = {
-        {"server",false},
-        {"sendmail",false},
-        {"pagelist",false},
-        {"images",false}
-    };
-
-    for( auto& opt : f_opt_map )
-    {
-        opt.second = f_opt.is_defined("all")
-                   ? true
-                   : f_opt.is_defined(opt.first);
-    }
-
     const std::string command( f_opt.get_string("--") );
 
-    if( ((command == "start") || (command == "restart"))
-            && std::find_if( f_opt_map.begin(), f_opt_map.end(), []( map_t::value_type& opt ) { return opt.second; } ) == f_opt_map.end() )
+    if( ((command == "start") || (command == "restart")) && f_services.empty() )
     {
-        throw std::invalid_argument("Must specify at least one --all, --server, --sendmail, --pagelist, or --images");
+        throw std::invalid_argument("Must specify at least one service in the services parameter in the configuration file");
     }
     else if( command == "stop" )
     {
         if( f_opt.is_defined("detach") )
         {
             SNAP_LOG_WARNING("The --detach option is ignored with the 'stop' command.");
-        }
-        if( std::find_if( f_opt_map.begin(), f_opt_map.end(), []( map_t::value_type& opt ) { return opt.second; } ) != f_opt_map.end() )
-        {
-            SNAP_LOG_WARNING("--all, --server, --sendmail, --pagelist, and --images are ignored with the 'stop' command.");
         }
     }
 }
@@ -588,17 +569,14 @@ void snap_init::validate()
 void snap_init::show_selected_servers() const
 {
     std::stringstream ss;
-    ss << "Enabled servers: ";
+    ss << "Enabled servers:";
     //
-    for( const auto& opt : f_opt_map )
+    for( const auto& opt : f_services )
     {
-        if( opt.second )
-        {
-            ss << "[" << opt.first << "] ";
-        }
+        ss << " [" << opt << "]";
     }
     //
-    SNAP_LOG_INFO() << ss.str();
+    SNAP_LOG_INFO(ss.str());
 }
 
 
@@ -634,7 +612,7 @@ void snap_init::create_server_process()
 }
 
 
-void snap_init::create_backend_process( const QString& name )
+void snap_init::create_backend_process( QString const& name )
 {
     if( !backend_ready() )
     {
@@ -704,17 +682,16 @@ void snap_init::terminate_processes()
 void snap_init::start_processes()
 {
     f_lock_file.open( QFile::ReadWrite );
-    for( auto opt : f_opt_map )
+    for( auto opt : f_services )
     {
-        if( !opt.second ) continue;
         //
-        if( opt.first == "server" )
+        if( opt == "server" )
         {
             create_server_process();
         }
         else
         {
-            create_backend_process( opt.first.c_str() );
+            create_backend_process( opt.c_str() );
         }
     }
 

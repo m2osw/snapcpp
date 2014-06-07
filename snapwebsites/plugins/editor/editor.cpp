@@ -174,7 +174,7 @@ int64_t editor::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2014, 6, 5, 0, 14, 40, content_update);
+    SNAP_PLUGIN_UPDATE(2014, 6, 5, 21, 14, 40, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -840,7 +840,7 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
 
     // this will get initialized if the row is required
 
-    // first load the XML code representing the editor widget for this page
+    // first load the XML code representing the editor widgets for this page
     if(!editor_widgets.isNull())
     {
         // a default (data driven) redirect to apply when saving an editor form
@@ -1311,7 +1311,9 @@ bool editor::validate_editor_post_for_widget_impl(content::path_info_t& ipath, s
             has_minimum = true;
             QString const m(min_element.text());
             if(widget_type == "image-box"
-            || widget_type == "dropped-file-with-preview")
+            || widget_type == "dropped-file-with-preview"
+            || widget_type == "dropped-image-with-preview"
+            || widget_type == "dropped-any-with-preview")
             {
                 int width, height;
                 if(!form::form::parse_width_height(m, width, height))
@@ -1382,7 +1384,9 @@ bool editor::validate_editor_post_for_widget_impl(content::path_info_t& ipath, s
         {
             QString const m(max_element.text());
             if(widget_type == "image-box"
-            || widget_type == "dropped-file-with-preview")
+            || widget_type == "dropped-file-with-preview"
+            || widget_type == "dropped-image-with-preview"
+            || widget_type == "dropped-any-with-preview")
             {
                 int width, height;
                 if(!form::form::parse_width_height(m, width, height))
@@ -1485,7 +1489,9 @@ bool editor::validate_editor_post_for_widget_impl(content::path_info_t& ipath, s
     || widget_type == "checkbox"
     //|| widget_type == "file" -- not yet implemented
     || widget_type == "image-box"
-    || widget_type == "dropped-file-with-preview")
+    || widget_type == "dropped-file-with-preview"
+    || widget_type == "dropped-image-with-preview"
+    || widget_type == "dropped-any-with-preview")
     {
         QDomElement required(widget.firstChildElement("required"));
         if(!required.isNull())
@@ -1494,8 +1500,7 @@ bool editor::validate_editor_post_for_widget_impl(content::path_info_t& ipath, s
             if(required_text == "required")
             {
                 // It is required!
-                if(/*widget_type == "file"
-                ||*/ widget_type == "image-box"
+                if(widget_type == "file"
                 || widget_type == "dropped-file-with-preview")
                 {
                     if(!f_snap->postfile_exists(widget_name)) // TBD <- this test is not logical if widget_type cannot be a FILE type...
@@ -1503,9 +1508,14 @@ bool editor::validate_editor_post_for_widget_impl(content::path_info_t& ipath, s
                         QDomElement root(widget.ownerDocument().documentElement());
                         QString const name(QString("%1::%2::%3::%4")
                                 .arg(content::get_name(content::SNAP_NAME_CONTENT_ATTACHMENT))
-                                .arg(root.attribute("owner"))
+                                .arg(ipath.get_owner()) //root.attribute("owner"))
                                 .arg(widget_name)
                                 .arg(content::get_name(content::SNAP_NAME_CONTENT_ATTACHMENT_PATH_END)));
+// TODO: fix the owner
+// The owner is not correct... we would need to have "attachment" but
+// the ipath is the parent of the file and the root is owned by whever
+// owns the page at this time... so right now this test fails
+//std::cerr << "***\n*** Check for " << name << " in page " << ipath.get_key() << "\n***\n";
                         QtCassandra::QCassandraValue cassandra_value(content::content::instance()->get_content_parameter(ipath, name, content::content::PARAM_REVISION_GLOBAL));
                         if(cassandra_value.nullValue())
                         {
@@ -1514,6 +1524,25 @@ bool editor::validate_editor_post_for_widget_impl(content::path_info_t& ipath, s
                                     "Invalid Value",
                                     QString("\"%1\" is a required field.").arg(label),
                                     QString("no data entered by user in widget \"%1\"").arg(widget_name),
+                                    false
+                                ).set_widget_name(widget_name);
+                            info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                        }
+                    }
+                }
+                else if(widget_type == "image-box"
+                     || widget_type == "dropped-image-with-preview"
+                     || widget_type == "dropped-any-with-preview")
+                {
+                    // here whether has_minimum is set does not matter
+                    if(!f_snap->postfile_exists(widget_name)) // TBD <- this test is not logical if widget_type cannot be a FILE type...
+                    {
+                        if(value.isEmpty())
+                        {
+                            messages->set_error(
+                                    "Value is Invalid",
+                                    QString("\"%1\" is a required field.").arg(label),
+                                    QString("no data entered in widget \"%1\" by user").arg(widget_name),
                                     false
                                 ).set_widget_name(widget_name);
                             info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);

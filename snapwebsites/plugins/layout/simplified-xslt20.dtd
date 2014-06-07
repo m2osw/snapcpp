@@ -76,6 +76,9 @@ DTD of the XSLT 2.0.
 
 <!ELEMENT xsl:otherwise ANY>
 
+<!ELEMENT xsl:copy ANY>
+<!ATTLIST xsl:copy select CDATA #IMPLIED>
+
 <!ELEMENT xsl:copy-of ANY>
 <!ATTLIST xsl:copy-of select CDATA #REQUIRED>
 

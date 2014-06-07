@@ -33,10 +33,15 @@
 find_package( Qt4 4.8.1 QUIET REQUIRED QtCore QtNetwork QtXml QtXmlPatterns )
 include( ${QT_USE_FILE} )
 add_definitions( ${QT_DEFINITIONS} )
+
 include_directories(
-        ${CMAKE_CURRENT_SOURCE_DIR}
+    SYSTEM
         ${QT_INCLUDES}
-        )
+)
+
+include_directories(
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
 
 get_property( 3RDPARTY_INCLUDED GLOBAL PROPERTY 3RDPARTY_INCLUDED )
 if( 3RDPARTY_INCLUDED )

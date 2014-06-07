@@ -54,7 +54,7 @@ private:
     typedef std::deque<word_t>  word_list_t;
     word_list_t                 f_word_list;
 
-    controlled_vars::fbool_t    f_stop_received;
+    controlled_vars::flbool_t   f_stop_received;
 };
 
 }

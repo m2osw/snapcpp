@@ -1782,7 +1782,7 @@ struct parser_state
 
 #endif
 
-    controlled_vars::fbool_t        f_lock;
+    controlled_vars::flbool_t       f_lock;
 
     int                             f_line;
     parser_state *                  f_parent;
@@ -1969,7 +1969,7 @@ bool grammar::parse(lexer& input, choices& start)
                         // to avoid infinite loop; recurvise rules are used
                         // only when the concern rule gets reduced
                         // the child position is always 0 here (it's a new child)
-                        controlled_vars::fbool_t recursive;
+                        controlled_vars::flbool_t recursive;
 //                        token_t const child_token_id(child_ref.get_token().get_id());
 //                        if(child_token_id == TOKEN_ID_CHOICES_ENUM)
 //                        {

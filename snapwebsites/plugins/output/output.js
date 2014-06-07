@@ -1,6 +1,6 @@
 /** @preserve
  * Name: output
- * Version: 0.1.5.5
+ * Version: 0.1.5.11
  * Browsers: all
  * Copyright: Copyright 2014 (c) Made to Order Software Corporation  All rights reverved.
  * Depends: jquery-extensions (1.0.1)
@@ -551,20 +551,117 @@ snapwebsites.Output.prototype.handleMessages_ = function()
 {
     // put a little delay() so we see the fadeIn(), eventually
     jQuery("div.user-messages")
-        .each(function(){
-            var z;
-
-            z = jQuery("div.zordered").maxZIndex() + 1;
-            jQuery(this).css("z-index", z);
-        })
+        .each(function()
+            {
+                var z = jQuery("div.zordered").maxZIndex() + 1;
+                jQuery(this).css("z-index", z);
+            })
         .delay(250)
         .fadeIn(300)
-        .click(function(e){
-            if(!(jQuery(e.target).is("a")))
+        .click(function(e)
             {
-                jQuery(this).fadeOut(300);
+                if(!(jQuery(e.target).is("a")))
+                {
+                    jQuery(this).fadeOut(300);
+                }
+            });
+};
+
+
+/** \brief Display a set of messages.
+ *
+ * When working with AJAX, you may at times receive standard messages
+ * as shown by the XSLT code and handleMessages_() function. To display
+ * these messages, use this function.
+ *
+ * The function:
+ *
+ * \li Creates a div.user-messages if it is not available yet;
+ * \li Deletes the existing messages if the div is currently hidden;
+ * \li Appends the new messages at the end of list;
+ * \li Fades the 'div' in.
+ *
+ * See snapwebsites.ServerAccess.onSuccess_() for the origin of the
+ * \p xml object.
+ *
+ * @param {Element} xml  The XML object that encompasses all the messages.
+ */
+snapwebsites.Output.prototype.displayMessages = function(xml)
+{
+    var msg = jQuery("div.user-messages"),
+        visible = false,
+        errors = 0,
+        warnings = 0,
+        call_handle = false;
+
+    if(msg.length == 0)
+    {
+        // that <div> does not exist yet so create it
+        jQuery("body").append("<div class='user-messages zordered'><div class='close-button'><img src='/images/snap/close-button.png'/></div></div>");
+        msg = jQuery("div.user-messages");
+        call_handle = true;
+    }
+    else
+    {
+        // still visible?
+        visible = msg.is(":visible");
+        if(!visible)
+        {
+            // remove old errors
+            msg.empty();
+        }
+    }
+
+    jQuery(xml).children("message").each(function()
+        {
+            var m = jQuery(this),
+                title = m.children("title").html(),
+                body = m.children("body").html(),
+                id = m.attr("msg-id"),  // WARNING: the "id" attribute represents the name of a widget in the editor
+                type = m.attr("type"),
+                txt = "<div id='" + id
+                      + "' class='message message-" + type
+                      + (body ? "" : " message-" + type + "-title-only")
+                      + "'><h3>"
+                      + title + "</h3>"
+                      + (body ? "<p>" + body + "</p>" : "")
+                      + "</div>";
+
+            if(type == "error")
+            {
+                ++errors;
             }
+            if(type == "warning")
+            {
+                ++warnings;
+            }
+
+            msg.append(txt);
         });
+
+    msg.toggleClass("warning-messages", warnings > 0);
+    msg.toggleClass("error-messages", errors > 0);
+
+    if(!visible)
+    {
+        msg.fadeIn(500);
+        if(call_handle)
+        {
+            this.handleMessages_();
+        }
+    }
+    if(!call_handle)
+    {
+        // z-index may need updating
+        msg.each(function()
+            {
+                var z;
+
+                jQuery(this).css("z-index", 0);
+                z = jQuery("div.zordered").maxZIndex() + 1;
+                jQuery(this).css("z-index", z);
+            });
+    }
 };
 
 

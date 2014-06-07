@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.182
+ * Version: 0.0.3.192
  * Browsers: all
  * Depends: output (>= 0.1.4), popup (>= 0.1.0.1), server-access (>= 0.0.1.11), mimetype-basics (>= 0.0.3)
  * Copyright: Copyright 2013-2014 (c) Made to Order Software Corporation  All rights reverved.
@@ -3452,7 +3452,10 @@ snapwebsites.EditorForm.prototype.serverAccessSuccess = function(result) // virt
  */
 snapwebsites.EditorForm.prototype.serverAccessError = function(result) // virtual
 {
-    alert(result.error_message);
+    // TODO: do we have to anything with this error message? We
+    //       should always have messages in the AJAX, but we may reach
+    //       this function for other reasons...
+    //alert(result.error_message);
 };
 
 
@@ -3474,9 +3477,7 @@ snapwebsites.EditorForm.prototype.serverAccessComplete = function(result) // vir
     if(!result.will_redirect && result.messages && result.messages.length > 0)
     {
         this.setSaving(false, false);
-
-        // TODO: handle the messages we received on success or error
-        alert("Got Snap! messages to display (TODO)");
+        snapwebsites.OutputInstance.displayMessages(result.messages);
     }
     else
     {
@@ -3699,11 +3700,14 @@ snapwebsites.EditorForm.prototype.readyWidgets_ = function()
     // make labels focus the corresponding editable box
     this.getFormWidget().find("label[for!='']").click(function(e)
         {
-            // the default may recapture the focus, so avoid it!
-            e.preventDefault();
-            e.stopPropagation();
+            if(!(jQuery(e.target).is("a")))
+            {
+                // the default may recapture the focus, so avoid it!
+                e.preventDefault();
+                e.stopPropagation();
 
-            jQuery("div[name='" + jQuery(this).attr("for") + "']").focus();
+                jQuery("div[name='" + jQuery(this).attr("for") + "']").focus();
+            }
         });
 };
 
@@ -4694,36 +4698,36 @@ snapwebsites.EditorWidgetType.prototype.droppedImageConvert_ = function(e)
             w = img.width;
             h = img.height;
 
-            if(e.target.snapEditorWidget.getWidget().attr("min-sizes"))
+            if(e.target.snapEditorWidget.getWidgetContent().attr("min-sizes"))
             {
-                sizes = e.target.snapEditorWidget.getWidget().attr("min-sizes").split("x");
+                sizes = e.target.snapEditorWidget.getWidgetContent().attr("min-sizes").split("x");
                 if(w < sizes[0] || h < sizes[1])
                 {
                     // image too small...
                     // TODO: fix alert with clean error popup
                     alert("This image is too small. Minimum required is "
-                            + e.target.snapEditorWidget.getWidget().attr("min-sizes")
+                            + e.target.snapEditorWidget.getWidgetContent().attr("min-sizes")
                             + ". Please try with a larger image.");
                     return;
                 }
             }
-            if(e.target.snapEditorWidget.getWidget().attr("max-sizes"))
+            if(e.target.snapEditorWidget.getWidgetContent().attr("max-sizes"))
             {
-                sizes = e.target.snapEditorWidget.getWidget().attr("max-sizes").split("x");
+                sizes = e.target.snapEditorWidget.getWidgetContent().attr("max-sizes").split("x");
                 if(w > sizes[0] || h > sizes[1])
                 {
                     // image too large...
                     // TODO: fix alert with clean error popup
                     alert("This image is too large. Maximum allowed is "
-                            + e.target.snapEditorWidget.getWidget().attr("max-sizes")
+                            + e.target.snapEditorWidget.getWidgetContent().attr("max-sizes")
                             + ". Please try with a smaller image.");
                     return;
                 }
             }
 
-            if(e.target.snapEditorWidget.getWidget().attr("resize-sizes"))
+            if(e.target.snapEditorWidget.getWidgetContent().attr("resize-sizes"))
             {
-                max_sizes = e.target.snapEditorWidget.getWidget().attr("resize-sizes").split("x");
+                max_sizes = e.target.snapEditorWidget.getWidgetContent().attr("resize-sizes").split("x");
                 limit_width = max_sizes[0];
                 limit_height = max_sizes[1];
             }
@@ -5105,7 +5109,8 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.initializeWidget = function(widg
         .click(function(e)
             {
                 var that_element = jQuery(this),
-                    value;
+                    value,
+                    widget_change;
 
                 // avoid default browser behavior
                 e.preventDefault();
@@ -5131,12 +5136,23 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.initializeWidget = function(widg
                 }
                 else
                 {
+                    // canonicalize the undefined value
+                    value = null;
                     c.removeAttr("value");
                 }
 
                 // make that dropdown the currently active object
                 c.focus();
                 editor_widget.getEditorBase().setActiveElement(c);
+
+                // send an event for each change because the user
+                // make want to know even if the value was not actually
+                // modified
+                widget_change = jQuery.Event("widgetchange", {
+                        widget: editor_widget,
+                        value: value
+                    });
+                w.trigger(widget_change);
 
                 editor_widget.getEditorBase().checkModified();
             });
@@ -5258,7 +5274,6 @@ snapwebsites.EditorWidgetTypeCheckmark.prototype.initializeWidget = function(wid
 
     w.click(function(e)
         {
-            // TODO: add support for clicks on links part of the label
             if(!(jQuery(e.target).is("a")))
             {
                 // the default may do weird stuff, so avoid it!
@@ -5378,13 +5393,13 @@ snapwebsites.EditorWidgetTypeImageBox.prototype.droppedImage = function(e, img)
 {
     var saved_active_element, editor;
 
-    e.target.snapEditorWidget.getWidget().empty();
-    jQuery(img).appendTo(e.target.snapEditorWidget.getWidget());
+    e.target.snapEditorWidget.getWidgetContent().empty();
+    jQuery(img).appendTo(e.target.snapEditorWidget.getWidgetContent());
 
     // now make sure the editor detects the change
     editor = snapwebsites.EditorInstance;
     saved_active_element = editor.getActiveElement();
-    editor.setActiveElement(e.target.snapEditorWidget.getWidget());
+    editor.setActiveElement(e.target.snapEditorWidget.getWidgetContent());
     editor.checkModified();
     editor.setActiveElement(saved_active_element);
 };
@@ -5448,6 +5463,11 @@ snapwebsites.EditorWidgetTypeDroppedFileWithPreview.prototype.serverAccess_ = nu
 /** \brief Return "dropped-file-with-preview".
  *
  * Return the name of the image box type.
+ *
+ * Note that this widget type has 2 sub-types named
+ * "dropped-image-with-preview" and "dropped-any-with-preview". However,
+ * these sub-types cannot be distinguished here. Instead you have to
+ * check whether it has classes "attachment" and/or "image".
  *
  * @return {string} The name of the image box type.
  * @override
@@ -5615,7 +5635,7 @@ snapwebsites.EditorWidgetTypeDroppedFileWithPreview.prototype.serverAccessSucces
                     var broken_icon;
 
                     // show a broken image in this case
-                    console.log("Editor Listener Request: FAILURE!");
+//console.log("Editor Listener Request: FAILURE!");
                     broken_icon = jQuery(".broken-attachment-icon");
                     if(broken_icon.length == 0)
                     {
@@ -5629,7 +5649,7 @@ snapwebsites.EditorWidgetTypeDroppedFileWithPreview.prototype.serverAccessSucces
                 },
             complete: function(request)
                 {
-                    console.log("Editor Listener Request: COMPLETE!");
+//console.log("Editor Listener Request: COMPLETE!");
                     // not waiting anymore
                     editor_widget.hideWaitImage();
                     icon_widget.hide();

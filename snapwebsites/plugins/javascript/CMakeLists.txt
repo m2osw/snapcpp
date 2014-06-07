@@ -36,9 +36,13 @@ include( ${QT_USE_FILE} )
 add_definitions( ${QT_DEFINITIONS} )
 
 include_directories(
+    SYSTEM
+        ${QT_INCLUDES}
+)
+
+include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CONTROLLEDVARS_INCLUDE_DIRS}
-    ${QT_INCLUDES}
 )
 
 QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC

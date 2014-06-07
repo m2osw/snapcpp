@@ -385,12 +385,12 @@ protected:
     QStringList                 init_plugins();
 
     server_pointer_t                            f_server;
-    controlled_vars::fbool_t                    f_is_child;
+    controlled_vars::flbool_t                   f_is_child;
     zpid_t                                      f_child_pid;
     zfile_descriptor_t                          f_socket;
     QtCassandra::QCassandraContext::pointer_t   f_context;
     controlled_vars::mint64_t                   f_start_date; // time request arrived
-    controlled_vars::fbool_t                    f_ready; // becomes true just before the server::execute() call
+    controlled_vars::flbool_t                   f_ready; // becomes true just before the server::execute() call
     environment_map_t                           f_env;
     snap_uri                                    f_uri;
     QString                                     f_site_key;
@@ -421,13 +421,13 @@ private:
 
     QtCassandra::QCassandra::pointer_t          f_cassandra;
     QtCassandra::QCassandraTable::pointer_t     f_site_table;
-    controlled_vars::fbool_t                    f_new_content;
-    controlled_vars::fbool_t                    f_is_being_initialized;
+    controlled_vars::flbool_t                   f_new_content;
+    controlled_vars::flbool_t                   f_is_being_initialized;
     environment_map_t                           f_post;
     post_file_map_t                             f_files;
     environment_map_t                           f_browser_cookies;
-    controlled_vars::fbool_t                    f_has_post;
-    mutable controlled_vars::fbool_t            f_fixed_server_protocol;
+    controlled_vars::flbool_t                   f_has_post;
+    mutable controlled_vars::flbool_t           f_fixed_server_protocol;
     QString                                     f_domain_key;
     QString                                     f_website_key;
     QString                                     f_site_key_with_slash;
@@ -437,10 +437,10 @@ private:
     QString                                     f_language;
     QString                                     f_country;
     QString                                     f_language_key;
-    controlled_vars::fbool_t                    f_plugins_locales_was_not_ready;
+    controlled_vars::flbool_t                   f_plugins_locales_was_not_ready;
     locale_info_vector_t                        f_plugins_locales;
     locale_info_vector_t                        f_browser_locales;
-    controlled_vars::fbool_t                    f_working_branch;
+    controlled_vars::flbool_t                   f_working_branch;
     snap_version::version_number_t              f_branch;
     snap_version::version_number_t              f_revision;
     QString                                     f_revision_key;

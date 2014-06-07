@@ -32,13 +32,10 @@
 
 #include <iostream>
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wold-style-cast"
 #include <QXmlQuery>
 #include <QDomDocument>
 #include <QFile>
 #include <QXmlResultItems>
-#pragma GCC diagnostic pop
 
 #include "poison.h"
 

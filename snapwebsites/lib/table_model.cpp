@@ -109,7 +109,7 @@ QVariant table_model::headerData( int section, Qt::Orientation orientation, int 
         // the rows array is used immediately, so we can keep a temporary
         // reference here
         auto const& rows( f_table->rows() );
-        if( rows.size() == 0 )
+        if( rows.size() <= section )
         {
             return QVariant();
         }
@@ -145,6 +145,10 @@ QVariant table_model::data( QModelIndex const & idx, int role ) const
         {
             QCassandraContext::pointer_t context( f_table->parentContext() );
             auto const& rows = f_table->rows();
+            if( rows.size() <= idx.row() )
+            {
+                return QVariant();
+            }
             auto const row( (rows.begin() + idx.row()).value() );
             QString ret_name;
             if( context->contextName() == "snap_websites" )
@@ -163,6 +167,10 @@ QVariant table_model::data( QModelIndex const & idx, int role ) const
         if( role == Qt::UserRole )
         {
             auto const& rows = f_table->rows();
+            if( rows.size() <= idx.row() )
+            {
+                return QVariant();
+            }
             auto const row( (rows.begin() + idx.row()).value() );
             return row->rowKey();
         }

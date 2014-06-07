@@ -3704,10 +3704,10 @@ void users::on_improve_signature(QString const& path, QString& signature)
  *
  * \return This function returns true in case the signal needs to proceed.
  */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
 void users::on_cell_is_secure(QString const& table, QString const& row, QString const& cell, server::secure_field_flag_t& secure)
 {
+    static_cast<void>(row);
+
     if(table == get_name(SNAP_NAME_USERS_TABLE))
     {
         if(cell == get_name(SNAP_NAME_USERS_PASSWORD)
@@ -3719,7 +3719,6 @@ void users::on_cell_is_secure(QString const& table, QString const& row, QString 
         }
     }
 }
-#pragma GCC diagnostic pop
 
 
 SNAP_PLUGIN_END()

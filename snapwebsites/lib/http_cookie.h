@@ -17,6 +17,7 @@
 #pragma once
 
 #include <controlled_vars/controlled_vars_auto_init.h>
+#include <controlled_vars/controlled_vars_limited_auto_enum_init.h>
 #include <controlled_vars/controlled_vars_ptr_auto_init.h>
 #include <QDateTime>
 
@@ -72,8 +73,8 @@ private:
     QString                     f_domain;       // domain for which the cookie is valid
     QString                     f_path;         // path under which the cookie is valid
     QDateTime                   f_expire;       // when to expire the cookie (if null, session, if past delete)
-    controlled_vars::fbool_t    f_secure;       // only valid on HTTPS
-    controlled_vars::fbool_t    f_http_only;    // JavaScript cannot access this cookie
+    controlled_vars::flbool_t   f_secure;       // only valid on HTTPS
+    controlled_vars::flbool_t   f_http_only;    // JavaScript cannot access this cookie
     QString                     f_comment;      // verbatim comment
     QString                     f_comment_url;  // verbatim comment
 };

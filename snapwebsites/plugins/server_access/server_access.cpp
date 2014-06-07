@@ -319,7 +319,7 @@ void server_access::ajax_output()
                     snap_dom::insert_html_string_to_xml_doc(span_tag, msg.get_title());
                 }
 
-                // don't create the body if empty
+                // do not create the body if empty
                 if(!msg.get_body().isEmpty())
                 {
                     QDomElement body_tag(f_ajax.createElement("body"));

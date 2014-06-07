@@ -16,6 +16,12 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
+#include <controlled_vars/controlled_vars_need_init.h>
+#include <controlled_vars/controlled_vars_auto_init.h>
+#include <controlled_vars/controlled_vars_limited_need_enum_init.h>
+#include <controlled_vars/controlled_vars_limited_auto_enum_init.h>
+#include <controlled_vars/controlled_vars_ptr_need_init.h>
+
 #include <QString>
 
 namespace snap
@@ -44,12 +50,17 @@ class logger
 {
 public:
     logger(log_level_t log_level, char const *file = nullptr, char const *func = nullptr, int line = -1);
+    logger(logger const& l);
     ~logger();
+
+    // avoid assignments
+    logger& operator = (logger const&) = delete;
 
     logger& operator () ();
     logger& operator () (log_security_t const v);
     logger& operator () (char const *s);
     logger& operator () (wchar_t const *s);
+    logger& operator () (std::string const& s);
     logger& operator () (QString const& s);
     logger& operator () (char const v);
     logger& operator () (signed char const v);
@@ -67,12 +78,17 @@ public:
     logger& operator () (bool const v);
 
 private:
-    log_level_t     f_log_level;
-    char const *    f_file;
-    char const *    f_func;
-    int             f_line;
-    log_security_t  f_security;
-    QString         f_message;
+    typedef controlled_vars::limited_need_enum_init<log_security_t, LOG_SECURITY_NONE, LOG_SECURITY_SECURE> mlog_security_t;
+    typedef controlled_vars::limited_need_enum_init<log_level_t, LOG_LEVEL_OFF, LOG_LEVEL_TRACE> mlog_level_t;
+    typedef controlled_vars::ptr_need_init<char const> mpcchar_t;
+
+    mlog_level_t                        f_log_level;
+    mpcchar_t                           f_file;
+    mpcchar_t                           f_func;
+    controlled_vars::mint32_t           f_line;
+    mlog_security_t                     f_security;
+    QString                             f_message;
+    mutable controlled_vars::flbool_t   f_ignore;
 };
 
 void configureConsole  ();

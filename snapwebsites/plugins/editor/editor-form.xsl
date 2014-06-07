@@ -41,6 +41,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   <xsl:template name="snap:dropped-file-with-preview">
     <xsl:param name="path"/>
     <xsl:param name="name"/>
+    <xsl:param name="type"/>
     <widget path="{$path}">
       <div field_type="dropped-file-with-preview">
         <xsl:attribute name="field_name"><xsl:value-of select="$name"/></xsl:attribute>
@@ -64,7 +65,11 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
         <div>
           <xsl:attribute name="name"><xsl:value-of select="$name"/></xsl:attribute>
           <!-- TBD: should we use "image" instead of "attachment" since we show images? -->
-          <xsl:attribute name="class">editor-content attachment dropped-file-with-preview<xsl:if test="@no-toolbar or /editor-form/no-toolbar"> no-toolbar</xsl:if><xsl:if test="state = 'disabled'"> disabled</xsl:if></xsl:attribute>
+          <xsl:attribute name="class">editor-content dropped-file-with-preview<xsl:if
+            test="$type = 'dropped-file-with-preview' or $type = 'dropped-any-with-preview'"> attachment</xsl:if><xsl:if
+            test="$type = 'dropped-image-with-preview' or $type = 'dropped-any-with-preview'"> image</xsl:if><xsl:if
+            test="@no-toolbar or /editor-form/no-toolbar"> no-toolbar</xsl:if><xsl:if
+            test="state = 'disabled'"> disabled</xsl:if></xsl:attribute>
           <xsl:if test="/editor-form/taborder/tabindex[@refid=$name]">
             <xsl:attribute name="tabindex"><xsl:value-of select="/editor-form/taborder/tabindex[@refid=$name]/count(preceding-sibling::tabindex) + 1 + $tabindex_base"/></xsl:attribute>
           </xsl:if>
@@ -90,10 +95,11 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       </div>
     </widget>
   </xsl:template>
-  <xsl:template match="widget[@type='dropped-file-with-preview']">
+  <xsl:template match="widget[@type='dropped-file-with-preview' or @type='dropped-image-with-preview' or @type='dropped-any-with-preview']">
     <xsl:call-template name="snap:dropped-file-with-preview">
       <xsl:with-param name="path" select="@path"/>
       <xsl:with-param name="name" select="@id"/>
+      <xsl:with-param name="type" select="@type"/>
     </xsl:call-template>
   </xsl:template>
 

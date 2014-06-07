@@ -131,25 +131,10 @@ int64_t header::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, initial_update);
     SNAP_PLUGIN_UPDATE(2013, 12, 13, 17, 12, 40, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
-
-/** \brief First update to run for the header plugin.
- *
- * This function is the first update for the header plugin. It installs
- * the initial index page.
- *
- * \param[in] variables_timestamp  The timestamp for all the variables added to the database by this update (in micro-seconds).
- */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-void header::initial_update(int64_t variables_timestamp)
-{
-}
-#pragma GCC diagnostic pop
 
 
 /** \brief Update the database with our content references.
@@ -159,13 +144,11 @@ void header::initial_update(int64_t variables_timestamp)
  *
  * \param[in] variables_timestamp  The timestamp for all the variables added to the database by this update (in micro-seconds).
  */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
 void header::content_update(int64_t variables_timestamp)
 {
+    static_cast<void>(variables_timestamp);
     content::content::instance()->add_xml("header");
 }
-#pragma GCC diagnostic pop
 
 
 /** \brief Execute header page: generate the complete output of that page.
@@ -206,10 +189,10 @@ void header::on_generate_main_content(content::path_info_t& ipath, QDomElement& 
  * \param[in,out] metadata  The metada being generated.
  * \param[in] ctemplate  The template path if one was specified.
  */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
 void header::on_generate_header_content(content::path_info_t& ipath, QDomElement& header_dom, QDomElement& metadata, QString const& ctemplate)
 {
+    static_cast<void>(ctemplate);
+
     QDomDocument doc(header_dom.ownerDocument());
 
     content::content *content_plugin(content::content::instance());
@@ -232,7 +215,6 @@ void header::on_generate_header_content(content::path_info_t& ipath, QDomElement
         }
     }
 }
-#pragma GCC diagnostic pop
 
 
 

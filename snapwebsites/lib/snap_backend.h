@@ -69,8 +69,8 @@ private:
 
         zpsnap_backend_t                    f_backend;
         udp_signal_t                        f_udp_signal;
-        controlled_vars::fbool_t            f_error;
-        controlled_vars::fbool_t            f_stop_received;
+        controlled_vars::flbool_t           f_error;
+        controlled_vars::flbool_t           f_stop_received;
         snap_thread::snap_fifo<message_t>   f_message_fifo;
     };
 

@@ -198,7 +198,7 @@ public:
 
 private:
     expr_node_functions_map_t   f_functions;
-    controlled_vars::fbool_t    f_has_internal_functions;
+    controlled_vars::flbool_t   f_has_internal_functions;
 };
 
 

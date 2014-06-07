@@ -47,4 +47,4 @@ private:
 }
 // namespace snap
 
-// vim: ts=4 sw=4 et syntax=cpp.doxygen
+// vim: ts=4 sw=4 et

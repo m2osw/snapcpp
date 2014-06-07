@@ -416,10 +416,11 @@ void favicon::on_generate_main_content(content::path_info_t& ipath, QDomElement&
  * \param[in,out] body  The body being generated.
  * \param[in] ctemplate  The path to a template if cpath does not exist.
  */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
 void favicon::on_generate_page_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate)
 {
+    static_cast<void>(page);
+    static_cast<void>(ctemplate);
+
     content::field_search::search_result_t result;
 
     get_icon(ipath, result);
@@ -450,7 +451,6 @@ void favicon::on_generate_page_content(content::path_info_t& ipath, QDomElement&
         // generate
         ;
 }
-#pragma GCC diagnostic pop
 
 
 /** \brief Search for the favorite icon for a given page.

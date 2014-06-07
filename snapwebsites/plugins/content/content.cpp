@@ -36,12 +36,9 @@
 
 #include <openssl/md5.h>
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wold-style-cast"
 #include <QFile>
 #include <QUuid>
 #include <QTextStream>
-#pragma GCC diagnostic pop
 
 #include "poison.h"
 

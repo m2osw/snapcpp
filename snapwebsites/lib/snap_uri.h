@@ -18,6 +18,8 @@
 
 #include "snap_parser.h"
 
+#include <controlled_vars/controlled_vars_limited_auto_enum_init.h>
+
 #include <QtSerialization/QSerializationReader.h>
 #include <QtSerialization/QSerializationFieldTag.h>
 #include <QtSerialization/QSerializationWriter.h>
@@ -510,7 +512,7 @@ private:
      * \sa get_required()
      * \sa set_required()
      */
-    controlled_vars::zbool_t f_required;
+    controlled_vars::flbool_t f_required;
 };
 
 
@@ -841,7 +843,7 @@ private:
     QString                     f_name;
     QString                     f_value;
     QString                     f_default;
-    controlled_vars::zbool_t    f_required;
+    controlled_vars::flbool_t   f_required;
 };
 
 

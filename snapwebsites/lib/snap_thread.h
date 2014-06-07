@@ -22,6 +22,7 @@
 
 #include <controlled_vars/controlled_vars_auto_init.h>
 #include <controlled_vars/controlled_vars_limited_auto_init.h>
+#include <controlled_vars/controlled_vars_limited_auto_enum_init.h>
 #include <controlled_vars/controlled_vars_need_init.h>
 #include <controlled_vars/controlled_vars_ptr_auto_init.h>
 #include <controlled_vars/controlled_vars_ptr_need_init.h>
@@ -412,9 +413,9 @@ private:
     const QString               f_name;
     snap_runner *               f_runner;
     mutable snap_mutex          f_mutex;
-    controlled_vars::fbool_t    f_running;
-    controlled_vars::fbool_t    f_started;
-    controlled_vars::fbool_t    f_stopping;
+    controlled_vars::flbool_t   f_running;
+    controlled_vars::flbool_t   f_started;
+    controlled_vars::flbool_t   f_stopping;
     pthread_t                   f_thread;
     pthread_attr_t              f_thread_attr;
     std::exception_ptr          f_exception;

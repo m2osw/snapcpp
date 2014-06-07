@@ -61,7 +61,6 @@ public:
     //void                on_generate_page_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate);
 
 private:
-    void initial_update(int64_t variables_timestamp);
     void content_update(int64_t variables_timestamp);
 
     zpsnap_child_t      f_snap;

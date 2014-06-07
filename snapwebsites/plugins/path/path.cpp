@@ -96,10 +96,10 @@ void dynamic_plugin_t::set_plugin(plugins::plugin *p)
         // we'll have to enhance our error to give the user a way to choose
         // the plugin one wants to use for this request...
         content::content::instance()->get_snap()->die(snap_child::HTTP_CODE_MULTIPLE_CHOICE,
-                    "Multiple Choices",
-                    "This page references multiple plugins and the server does not currently have means of choosing one over the other.",
-                    "User tried to access dynamic page but more than one plugin says it owns the resource, primary is \""
-                            + f_plugin->get_plugin_name() + "\", second request by \"" + p->get_plugin_name());
+                "Multiple Choices",
+                "This page references multiple plugins and the server does not currently have means of choosing one over the other.",
+                QString("User tried to access dynamic page but more than one plugin says it owns the resource, primary is \"%1\", second request by \"%2\"")
+                        .arg(f_plugin->get_plugin_name()).arg(p->get_plugin_name()));
         NOTREACHED();
     }
 

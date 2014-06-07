@@ -16,12 +16,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
-#include "snap_exception.h"
 #include "snap_thread.h"
-
-#include <controlled_vars/controlled_vars_auto_init.h>
-#include <controlled_vars/controlled_vars_limited_auto_init.h>
-#include <controlled_vars/controlled_vars_ptr_auto_init.h>
 
 #include <map>
 
@@ -105,7 +100,7 @@ private:
     environment_map_t           f_environment;
     QByteArray                  f_input;
     QByteArray                  f_output;
-    controlled_vars::fbool_t    f_forced_environment;
+    controlled_vars::flbool_t   f_forced_environment;
     zpprocess_output_callback_t f_output_callback;
     snap_thread::snap_mutex     f_mutex;
     int                         f_pid;

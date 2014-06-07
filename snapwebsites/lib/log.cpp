@@ -312,36 +312,6 @@ void setLogOutputLevel( log_level_t level )
 }
 
 
-logger& operator << ( logger& l, QString const& msg )
-{
-    return l( msg );
-}
-
-
-logger& operator << ( logger& l, std::basic_string<char> const& msg )
-{
-    return l( msg.c_str() );
-}
-
-
-logger& operator << ( logger& l, std::basic_string<wchar_t> const& msg )
-{
-    return l( msg.c_str() );
-}
-
-
-logger& operator << ( logger& l, char const* msg )
-{
-    return l( msg );
-}
-
-
-logger& operator << ( logger& l, wchar_t const* msg )
-{
-    return l( msg );
-}
-
-
 /** \brief Create a log object with the specified information.
  *
  * This function generates a log object that can be used to generate
@@ -374,8 +344,36 @@ logger::logger(log_level_t log_level, char const *file, char const *func, int li
     , f_line(line)
     , f_security(LOG_SECURITY_NONE)
     //, f_message() -- auto-init
+    //, f_ignore(false) -- auto-init
 {
 }
+
+
+/** \brief Create a copy of this logger instance.
+ *
+ * This function creates a copy of the logger instance. This happens when
+ * you use the predefined fatal(), error(), warning(), ... functions since
+ * the logger instantiated inside the function is returned and thus copied
+ * once or twice (the number of copies will depend on the way the compiler
+ * is capable of optimizing our work.)
+ *
+ * \note
+ * The copy has a side effect on the input logger: it marks it as "please
+ * ignore that copy" so its destructor does not print out anything.
+ *
+ * \param[in] l  The logger to duplicate.
+ */
+logger::logger(logger const& l)
+    : f_log_level(l.f_log_level)
+    , f_file(l.f_file)
+    , f_func(l.f_func)
+    , f_line(l.f_line)
+    , f_security(l.f_security)
+    , f_message(l.f_message)
+{
+    l.f_ignore = true;
+}
+
 
 /** \brief Output the log created with the () operators.
  *
@@ -392,6 +390,12 @@ logger::logger(log_level_t log_level, char const *file, char const *func, int li
  */
 logger::~logger()
 {
+    if(f_ignore)
+    {
+        // someone made a copy, this version we ignore
+        return;
+    }
+
     log4cplus::LogLevel ll(log4cplus::FATAL_LOG_LEVEL);
     int sll(-1);  // syslog level if log4cplus not available (if -1 don't syslog() anything)
     switch(f_log_level)
@@ -431,24 +435,24 @@ logger::~logger()
     }
 
     // TBD: is the exists() call doing anything for us here?
-    if( (g_logging_type == unconfigured_logger) || !log4cplus::Logger::exists(f_security == LOG_SECURITY_SECURE ? "security" : "snap"))
+    if( (g_logging_type == unconfigured_logger) || !log4cplus::Logger::exists(LOG_SECURITY_SECURE == f_security ? "security" : "snap"))
     {
         // not even configured, return immediately
         if(sll != -1)
         {
-            if(f_file == NULL)
+            if(!f_file)
             {
                 f_file = "unknown-file";
             }
-            if(f_func == NULL)
+            if(!f_func)
             {
                 f_func = "unknown-func";
             }
-            syslog(sll, "%s (%s:%s: %d)", f_message.toUtf8().data(), f_file, f_func, f_line);
+            syslog(sll, "%s (%s:%s: %d)", f_message.toUtf8().data(), f_file.get(), f_func.get(), static_cast<int32_t>(f_line));
         }
         return;
     }
-    if(f_func != NULL)
+    if(!f_func)
     {
         // TBD: how should we really include the function name to the log4cplus messages?
         //
@@ -458,7 +462,7 @@ logger::~logger()
     }
 
     // actually emit the log
-    if(f_security == LOG_SECURITY_SECURE)
+    if(LOG_SECURITY_SECURE == f_security)
     {
         // generally this at least goes in the /var/log/syslog
         // and it may also go in a secure log file (i.e. not readable by everyone)
@@ -470,17 +474,20 @@ logger::~logger()
     }
 }
 
+
 logger& logger::operator () ()
 {
     // does nothing
     return *this;
 }
 
+
 logger& logger::operator () (log_security_t const v)
 {
     f_security = v;
     return *this;
 }
+
 
 logger& logger::operator () (char const *s)
 {
@@ -490,12 +497,23 @@ logger& logger::operator () (char const *s)
     return *this;
 }
 
+
 logger& logger::operator () (wchar_t const *s)
 {
     // TODO: change control characters to \xXX
     f_message += QString::fromWCharArray(s);
     return *this;
 }
+
+
+logger& logger::operator () (std::string const& s)
+{
+    // we assume UTF-8 because in our Snap environment most everything is
+    // TODO: change control characters to \xXX
+    f_message += QString::fromUtf8(s.c_str());
+    return *this;
+}
+
 
 logger& logger::operator () (QString const& s)
 {
@@ -504,11 +522,13 @@ logger& logger::operator () (QString const& s)
     return *this;
 }
 
+
 logger& logger::operator () (char const v)
 {
     f_message += QString("%1").arg(static_cast<int>(v));
     return *this;
 }
+
 
 logger& logger::operator () (signed char const v)
 {
@@ -516,11 +536,13 @@ logger& logger::operator () (signed char const v)
     return *this;
 }
 
+
 logger& logger::operator () (unsigned char const v)
 {
     f_message += QString("%1").arg(static_cast<int>(v));
     return *this;
 }
+
 
 logger& logger::operator () (signed short const v)
 {
@@ -528,11 +550,13 @@ logger& logger::operator () (signed short const v)
     return *this;
 }
 
+
 logger& logger::operator () (const unsigned short v)
 {
     f_message += QString("%1").arg(static_cast<int>(v));
     return *this;
 }
+
 
 logger& logger::operator () (signed int const v)
 {
@@ -540,11 +564,13 @@ logger& logger::operator () (signed int const v)
     return *this;
 }
 
+
 logger& logger::operator () (unsigned int const v)
 {
     f_message += QString("%1").arg(v);
     return *this;
 }
+
 
 logger& logger::operator () (signed long const v)
 {
@@ -552,11 +578,13 @@ logger& logger::operator () (signed long const v)
     return *this;
 }
 
+
 logger& logger::operator () (unsigned long const v)
 {
     f_message += QString("%1").arg(v);
     return *this;
 }
+
 
 logger& logger::operator () (signed long long const v)
 {
@@ -564,11 +592,13 @@ logger& logger::operator () (signed long long const v)
     return *this;
 }
 
+
 logger& logger::operator () (unsigned long long const v)
 {
     f_message += QString("%1").arg(v);
     return *this;
 }
+
 
 logger& logger::operator () (float const v)
 {
@@ -576,17 +606,50 @@ logger& logger::operator () (float const v)
     return *this;
 }
 
+
 logger& logger::operator () (double const v)
 {
     f_message += QString("%1").arg(v);
     return *this;
 }
 
+
 logger& logger::operator () (bool const v)
 {
     f_message += QString("%1").arg(static_cast<int>(v));
     return *this;
 }
+
+
+logger& operator << ( logger& l, QString const& msg )
+{
+    return l( msg );
+}
+
+
+logger& operator << ( logger& l, std::basic_string<char> const& msg )
+{
+    return l( msg.c_str() );
+}
+
+
+logger& operator << ( logger& l, std::basic_string<wchar_t> const& msg )
+{
+    return l( msg.c_str() );
+}
+
+
+logger& operator << ( logger& l, char const* msg )
+{
+    return l( msg );
+}
+
+
+logger& operator << ( logger& l, wchar_t const* msg )
+{
+    return l( msg );
+}
+
 
 logger fatal(char const *file, char const *func, int line)
 {
