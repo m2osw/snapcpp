@@ -31,6 +31,7 @@
 // make sure we compile in debug mode otherwise we don't get the throws.
 #define CONTROLLED_VARS_DEBUG
 #include "controlled_vars_need_init.h"
+#include "controlled_vars_need_enum_init.h"
 #include <stdio.h>
 #include <stdlib.h>
 

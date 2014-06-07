@@ -32,6 +32,7 @@
 #define CONTROLLED_VARS_DEBUG
 #define CONTROLLED_VARS_LIMITED
 #include "controlled_vars_limited_auto_init.h"
+#include "controlled_vars_limited_auto_enum_init.h"
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -59,10 +60,14 @@ int main(int /*argc*/, char * /*argv*/[])
 		e = 1;
 	}
 
+	// This test fails when using 123 directly because the compiler
+	// knows to convert the value to a bool! so we really have to
+	// trick it to get a value other than just 0 or 1
+	char boolean(123);
 	try {
 		// this must throw because the check uses a template<class L>
 		// for the type instead of casting to bool first!
-		t.f_false = 256;
+		t.f_false = *reinterpret_cast<bool *>(&boolean);
 		fprintf(stderr, "error: expected t.f_false to throw an exception on 256.\n");
 		e = 1;
 	}

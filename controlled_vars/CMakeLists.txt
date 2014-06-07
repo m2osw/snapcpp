@@ -33,8 +33,8 @@ cmake_minimum_required(VERSION 2.8)
 ## Controlled Variables Version
 ##
 set(CONTROLLED_VARS_MAJOR 1)
-set(CONTROLLED_VARS_MINOR 3)
-set(CONTROLLED_VARS_PATCH 6)
+set(CONTROLLED_VARS_MINOR 4)
+set(CONTROLLED_VARS_PATCH 0)
 
 ##
 ## Controlled Variables Generator
@@ -43,8 +43,8 @@ project(controlled_vars)
 
 # Basic static analysis done by the compiler, you may remove that line if
 # you have problems compiling (specifically the -Werror, -pedantic, and
-# -std=c++0x flags)
-#set(CMAKE_CXX_FLAGS "-Werror -Wall -Wextra -pedantic -std=c++0x -Wcast-align -Wcast-qual -Wctor-dtor-privacy -Wdisabled-optimization -Wformat=2 -Winit-self -Wlogical-op -Wmissing-include-dirs -Wnoexcept -Wold-style-cast -Woverloaded-virtual -Wredundant-decls -Wshadow -Wstrict-null-sentinel -Wstrict-overflow=5 -Wswitch-default -Wundef -Wno-unused -Wno-variadic-macros -Wno-parentheses -fdiagnostics-show-option")
+# -std=c++11 flags)
+#set(CMAKE_CXX_FLAGS "-Werror -Wall -Wextra -pedantic -std=c++11 -Wcast-align -Wcast-qual -Wctor-dtor-privacy -Wdisabled-optimization -Wformat=2 -Winit-self -Wlogical-op -Wmissing-include-dirs -Wnoexcept -Wold-style-cast -Woverloaded-virtual -Wredundant-decls -Wshadow -Wstrict-null-sentinel -Wstrict-overflow=5 -Wswitch-default -Wundef -Wno-unused -Wno-variadic-macros -Wno-parentheses -fdiagnostics-show-option")
 
 ## Include support modules
 ##
@@ -87,15 +87,21 @@ add_custom_command(
 add_custom_target( make_controlled_vars_headers ALL DEPENDS controlled_vars.h )
 
 install(FILES
+		${CMAKE_CURRENT_BINARY_DIR}/controlled_vars_auto_enum_init.h
 		${CMAKE_CURRENT_BINARY_DIR}/controlled_vars_auto_init.h
 		${CMAKE_CURRENT_BINARY_DIR}/controlled_vars_exceptions.h
 		${CMAKE_CURRENT_BINARY_DIR}/controlled_vars_fauto_init.h
 		${CMAKE_CURRENT_BINARY_DIR}/controlled_vars.h
+		${CMAKE_CURRENT_BINARY_DIR}/controlled_vars_limited_auto_enum_init.h
 		${CMAKE_CURRENT_BINARY_DIR}/controlled_vars_limited_auto_init.h
 		${CMAKE_CURRENT_BINARY_DIR}/controlled_vars_limited_fauto_init.h
+		${CMAKE_CURRENT_BINARY_DIR}/controlled_vars_limited_need_enum_init.h
 		${CMAKE_CURRENT_BINARY_DIR}/controlled_vars_limited_need_init.h
+		${CMAKE_CURRENT_BINARY_DIR}/controlled_vars_limited_no_enum_init.h
 		${CMAKE_CURRENT_BINARY_DIR}/controlled_vars_limited_no_init.h
+		${CMAKE_CURRENT_BINARY_DIR}/controlled_vars_need_enum_init.h
 		${CMAKE_CURRENT_BINARY_DIR}/controlled_vars_need_init.h
+		${CMAKE_CURRENT_BINARY_DIR}/controlled_vars_no_enum_init.h
 		${CMAKE_CURRENT_BINARY_DIR}/controlled_vars_no_init.h
 		${CMAKE_CURRENT_BINARY_DIR}/controlled_vars_ptr_auto_init.h
 		${CMAKE_CURRENT_BINARY_DIR}/controlled_vars_ptr_need_init.h

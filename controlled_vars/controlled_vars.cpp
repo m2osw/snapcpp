@@ -63,6 +63,7 @@
 #include	<unistd.h>
 #endif
 #include	<string.h>
+#include	<stdint.h>
 
 
 
@@ -70,10 +71,13 @@ int no_bool_constructors = 0;
 
 
 // current output file
-FILE *out = NULL;
+FILE *out = nullptr;
 
-#define	FLAG_TYPE_INT		0x00000001
-#define	FLAG_TYPE_FLOAT		0x00000002
+namespace
+{
+uint32_t	FLAG_TYPE_INT		= 0x00000001;
+uint32_t	FLAG_TYPE_FLOAT		= 0x00000002;
+}
 
 struct TYPES {
 	const char	*name;
@@ -94,17 +98,18 @@ const types_t g_types[] =
 	{ "wchar_t",       "wchar",       "int32_t",       FLAG_TYPE_INT,   "#if !defined(_MSC_VER) || (defined(_WCHAR_T_DEFINED) && defined(_NATIVE_WCHAR_T_DEFINED))" },
 	{ "int16_t",       "int16",       "int32_t",       FLAG_TYPE_INT,   0 },
 	{ "uint16_t",      "uint16",      "int32_t",       FLAG_TYPE_INT,   0 },
-	{ "int32_t",       "int32",       "int64_t",       FLAG_TYPE_INT,   0 },
-	{ "uint32_t",      "uint32",      "int64_t",       FLAG_TYPE_INT,   0 },
+	{ "int32_t",       "int32",       "int32_t",       FLAG_TYPE_INT,   0 },
+	{ "uint32_t",      "uint32",      "int32_t",       FLAG_TYPE_INT,   0 },
 	{ "long",          "plain_long",  "int64_t",       FLAG_TYPE_INT,   "#if UINT_MAX == ULONG_MAX" },
 	{ "unsigned long", "plain_ulong", "uint64_t",      FLAG_TYPE_INT,   "#if UINT_MAX == ULONG_MAX" },
 	{ "int64_t",       "int64",       "int64_t",       FLAG_TYPE_INT,   0 },
 	{ "uint64_t",      "uint64",      "uint64_t",      FLAG_TYPE_INT,   0 },
 	{ "float",         "float",       "double",        FLAG_TYPE_FLOAT, 0 },
 	{ "double",        "double",      "double",        FLAG_TYPE_FLOAT, 0 }, /* "long double" would be problematic here */
-	{ "long double",   "longdouble",  "long double",   FLAG_TYPE_FLOAT, "#ifndef __APPLE__" },
-	{ "size_t",        "size",        "uint64_t",      FLAG_TYPE_INT,   "#ifdef __APPLE__" },
-	{ "time_t",        "time",        "int64_t",       FLAG_TYPE_INT,   "#ifdef __APPLE__" }
+	{ "long double",   "longdouble",  "long double",   FLAG_TYPE_FLOAT, 0 },
+	// The following were for Apple computers with a PPC
+	//{ "size_t",        "size",        "uint64_t",      FLAG_TYPE_INT,   "#ifdef __APPLE__" },
+	//{ "time_t",        "time",        "int64_t",       FLAG_TYPE_INT,   "#ifdef __APPLE__" }
 };
 #define	TYPES_ALL	(sizeof(g_types) / sizeof(g_types[0]))
 
@@ -128,22 +133,27 @@ const types_t g_ptr_types[] =
 #define	PTR_TYPES_ALL	(sizeof(g_ptr_types) / sizeof(g_ptr_types[0]))
 
 
-#define	FLAG_HAS_VOID		0x00000001
-#define	FLAG_HAS_DOINIT		0x00000002
-#define	FLAG_HAS_INITFLG	0x00000004
-#define	FLAG_HAS_DEFAULT	0x00000008
-#define	FLAG_HAS_LIMITS		0x00000010
-#define	FLAG_HAS_FLOAT		0x00000020
-#define	FLAG_HAS_DEBUG_ALREADY	0x00000040
+namespace
+{
+uint32_t	FLAG_HAS_VOID		= 0x00000001;
+uint32_t	FLAG_HAS_DOINIT		= 0x00000002;
+uint32_t	FLAG_HAS_INITFLG	= 0x00000004;
+uint32_t	FLAG_HAS_DEFAULT	= 0x00000008;
+uint32_t	FLAG_HAS_LIMITS		= 0x00000010;
+uint32_t	FLAG_HAS_FLOAT		= 0x00000020;
+uint32_t	FLAG_HAS_DEBUG_ALREADY	= 0x00000040;
+uint32_t	FLAG_HAS_ENUM         	= 0x00000080;
 
-#define	FLAG_HAS_RETURN_T	0x00010000
-#define	FLAG_HAS_RETURN_BOOL	0x00020000
-#define	FLAG_HAS_NOINIT		0x00040000
-#define	FLAG_HAS_LIMITED	0x00080000
-#define	FLAG_HAS_NOFLOAT	0x00100000
-#define	FLAG_HAS_PTR		0x00200000
-#define	FLAG_HAS_RETURN_PRIMARY	0x00400000
-#define	FLAG_HAS_REFERENCE	0x00800000
+uint32_t	FLAG_HAS_RETURN_T	= 0x00010000;
+uint32_t	FLAG_HAS_RETURN_BOOL	= 0x00020000;
+uint32_t	FLAG_HAS_NOINIT		= 0x00040000;
+uint32_t	FLAG_HAS_LIMITED	= 0x00080000;
+uint32_t	FLAG_HAS_NOFLOAT	= 0x00100000;
+uint32_t	FLAG_HAS_PTR		= 0x00200000;
+uint32_t	FLAG_HAS_RETURN_PRIMARY	= 0x00400000;
+uint32_t	FLAG_HAS_REFERENCE	= 0x00800000;
+uint32_t	FLAG_HAS_CONST    	= 0x01000000;
+}
 
 
 struct OP_T {
@@ -164,22 +174,22 @@ const op_t g_generic_operators[] = {
 	{ "&=",  FLAG_HAS_LIMITED | FLAG_HAS_NOFLOAT },
 	{ "|=",  FLAG_HAS_LIMITED | FLAG_HAS_NOFLOAT },
 	{ "^=",  FLAG_HAS_LIMITED | FLAG_HAS_NOFLOAT },
-	{ "*",   FLAG_HAS_RETURN_T },
-	{ "/",   FLAG_HAS_RETURN_T },
-	{ "%",   FLAG_HAS_RETURN_T | FLAG_HAS_NOFLOAT },
-	{ "+",   FLAG_HAS_RETURN_T },
-	{ "-",   FLAG_HAS_RETURN_T },
-	{ "<<",  FLAG_HAS_RETURN_T | FLAG_HAS_NOFLOAT },
-	{ ">>",  FLAG_HAS_RETURN_T | FLAG_HAS_NOFLOAT },
-	{ "&",   FLAG_HAS_RETURN_T | FLAG_HAS_NOFLOAT },
-	{ "|",   FLAG_HAS_RETURN_T | FLAG_HAS_NOFLOAT },
-	{ "^",   FLAG_HAS_RETURN_T | FLAG_HAS_NOFLOAT },
-	{ "==",  FLAG_HAS_RETURN_BOOL },
-	{ "!=",  FLAG_HAS_RETURN_BOOL },
-	{ "<",   FLAG_HAS_RETURN_BOOL },
-	{ "<=",  FLAG_HAS_RETURN_BOOL },
-	{ ">",   FLAG_HAS_RETURN_BOOL },
-	{ ">=",  FLAG_HAS_RETURN_BOOL }
+	{ "*",   FLAG_HAS_RETURN_T | FLAG_HAS_CONST },
+	{ "/",   FLAG_HAS_RETURN_T | FLAG_HAS_CONST },
+	{ "%",   FLAG_HAS_RETURN_T | FLAG_HAS_CONST | FLAG_HAS_NOFLOAT },
+	{ "+",   FLAG_HAS_RETURN_T | FLAG_HAS_CONST },
+	{ "-",   FLAG_HAS_RETURN_T | FLAG_HAS_CONST },
+	{ "<<",  FLAG_HAS_RETURN_T | FLAG_HAS_CONST | FLAG_HAS_NOFLOAT },
+	{ ">>",  FLAG_HAS_RETURN_T | FLAG_HAS_CONST | FLAG_HAS_NOFLOAT },
+	{ "&",   FLAG_HAS_RETURN_T | FLAG_HAS_CONST | FLAG_HAS_NOFLOAT },
+	{ "|",   FLAG_HAS_RETURN_T | FLAG_HAS_CONST | FLAG_HAS_NOFLOAT },
+	{ "^",   FLAG_HAS_RETURN_T | FLAG_HAS_CONST | FLAG_HAS_NOFLOAT },
+	{ "==",  FLAG_HAS_RETURN_BOOL | FLAG_HAS_CONST },
+	{ "!=",  FLAG_HAS_RETURN_BOOL | FLAG_HAS_CONST },
+	{ "<",   FLAG_HAS_RETURN_BOOL | FLAG_HAS_CONST },
+	{ "<=",  FLAG_HAS_RETURN_BOOL | FLAG_HAS_CONST },
+	{ ">",   FLAG_HAS_RETURN_BOOL | FLAG_HAS_CONST },
+	{ ">=",  FLAG_HAS_RETURN_BOOL | FLAG_HAS_CONST }
 };
 #define	GENERIC_OPERATORS_MAX		(sizeof(g_generic_operators) / sizeof(g_generic_operators[0]))
 
@@ -201,7 +211,7 @@ const op_t g_generic_ptr_operators[] = {
 
 
 
-void create_operator(const char *name, const char *op, const char *type, long flags)
+void create_operator(const char *name, const char *op, const char *type, long flags, char const *long_type)
 {
 	const char *right;
 	int direct;
@@ -209,6 +219,10 @@ void create_operator(const char *name, const char *op, const char *type, long fl
 	fprintf(out, "\t");
 	if((flags & FLAG_HAS_RETURN_BOOL) != 0) {
 		fprintf(out, "bool");
+		direct = 1;
+	}
+	else if((flags & FLAG_HAS_ENUM) != 0 && long_type) {
+		fprintf(out, "%s", long_type);
 		direct = 1;
 	}
 	else if((flags & FLAG_HAS_RETURN_T) != 0) {
@@ -225,14 +239,14 @@ void create_operator(const char *name, const char *op, const char *type, long fl
 	}
 	fprintf(out, " operator %s (", op);
 	if(type == 0) {
-		fprintf(out, "const %s_init& n", name);
+		fprintf(out, "%s_init const& n", name);
 		right = "n.f_value";
 	}
 	else {
 		fprintf(out, "%s v", type);
 		right = "v";
 	}
-	fprintf(out, ") {");
+	fprintf(out, ")%s {", (flags & FLAG_HAS_CONST) != 0 ? " const" : "");
 	if((flags & FLAG_HAS_INITFLG) != 0) {
 		if((flags & FLAG_HAS_NOINIT) == 0) {
 			fprintf(out, " if(!f_initialized) throw controlled_vars_error_not_initialized(\"uninitialized variable\");");
@@ -439,13 +453,14 @@ void create_all_operators(const char *name, long flags)
 	for(o = 0; o < GENERIC_OPERATORS_MAX; ++o) {
 		op = g_generic_operators + o;
 		f = flags | op->flags;
-		// test to avoid the auto_init& operator =% (auto_init& v); operators.
+		// test to avoid the auto_init& operator %= (auto_init& v);
+		// and other integer only operators.
 		if((f & FLAG_HAS_FLOAT) == 0 || (f & FLAG_HAS_NOFLOAT) == 0) {
-			create_operator(name, op->name, 0, f);
+			create_operator(name, op->name, 0, f, nullptr);
 		}
 		/* IMPORTANT:
 		 *	Here we were skipping the type bool, now there is a
-		 *	command line option and by default we don't skip it.
+		 *	command line option and by default we do not skip it.
 		 */
 		for(t = (no_bool_constructors == 1 ? 1 : 0); t < TYPES_ALL; ++t) {
 			// test to avoid all the operators that are not float compatible
@@ -454,13 +469,81 @@ void create_all_operators(const char *name, long flags)
 				if(g_types[t].condition) {
 					fprintf(out, "%s\n", g_types[t].condition);
 				}
-				create_operator(name, op->name, g_types[t].name, f);
+				create_operator(name, op->name, g_types[t].name, f, nullptr);
 				if(g_types[t].condition) {
 					fprintf(out, "#endif\n");
 				}
 			}
 		}
 	}
+}
+
+
+void create_all_enum_operators(const char *name, long flags)
+{
+	const op_t	*op;
+	unsigned long	o, t, f;
+
+	for(o = 0; o < GENERIC_OPERATORS_MAX; ++o) {
+		op = g_generic_operators + o;
+		f = flags | op->flags;
+		// test to avoid the auto_init& operator %= (auto_init& v);
+		// and other integer only operators.
+		if(((f & FLAG_HAS_FLOAT) == 0 || (f & FLAG_HAS_NOFLOAT) == 0)
+		&& (f & FLAG_HAS_LIMITED) == 0) {
+			create_operator(name, op->name, 0, f, "int32_t");
+		}
+		/* IMPORTANT:
+		 *	Here we were skipping the type bool, now there is a
+		 *	command line option and by default we do not skip it
+		 *	except for comparison tests which are in conflict
+		 *	with testing with the enumeration type, somehow.
+		 */
+		t = no_bool_constructors == 1
+			|| strcmp(op->name, "==") == 0
+			|| strcmp(op->name, "!=") == 0
+			|| strcmp(op->name, "<") == 0
+			|| strcmp(op->name, "<=") == 0
+			|| strcmp(op->name, ">") == 0
+			|| strcmp(op->name, ">=") == 0
+				? 1 : 0;
+		for(; t < TYPES_ALL; ++t) {
+			// test to avoid all the operators that are not float compatible
+			// (i.e. bitwise operators, modulo)
+			if(((f & FLAG_HAS_NOFLOAT) == 0 || ((f & FLAG_HAS_FLOAT) == 0 && (g_types[t].flags & FLAG_TYPE_FLOAT) == 0))
+			&& (f & FLAG_HAS_LIMITED) == 0) {
+				if(g_types[t].condition) {
+					fprintf(out, "%s\n", g_types[t].condition);
+				}
+				create_operator(name, op->name, g_types[t].name, f, g_types[t].long_name);
+				if(g_types[t].condition) {
+					fprintf(out, "#endif\n");
+				}
+			}
+		}
+	}
+	create_operator(name, "==", "T", f | FLAG_HAS_CONST, nullptr);
+	create_operator(name, "!=", "T", f | FLAG_HAS_CONST, nullptr);
+	create_operator(name, "<", "T", f | FLAG_HAS_CONST, nullptr);
+	create_operator(name, "<=", "T", f | FLAG_HAS_CONST, nullptr);
+	create_operator(name, ">", "T", f | FLAG_HAS_CONST, nullptr);
+	create_operator(name, ">=", "T", f | FLAG_HAS_CONST, nullptr);
+
+	// our create_operator does not support the following so we do it
+	// here as is:
+	fprintf(out, "template<class Q = T>\n");
+	fprintf(out, "typename std::enable_if<!std::is_fundamental<Q>::value, Q>::type operator == (bool v) const { return f_value == v; }\n");
+	fprintf(out, "template<class Q = T>\n");
+	fprintf(out, "typename std::enable_if<!std::is_fundamental<Q>::value, Q>::type operator >= (bool v) const { return f_value == v; }\n");
+	fprintf(out, "template<class Q = T>\n");
+	fprintf(out, "typename std::enable_if<!std::is_fundamental<Q>::value, Q>::type operator > (bool v) const { return f_value == v; }\n");
+	fprintf(out, "template<class Q = T>\n");
+	fprintf(out, "typename std::enable_if<!std::is_fundamental<Q>::value, Q>::type operator <= (bool v) const { return f_value == v; }\n");
+	fprintf(out, "template<class Q = T>\n");
+	fprintf(out, "typename std::enable_if<!std::is_fundamental<Q>::value, Q>::type operator < (bool v) const { return f_value == v; }\n");
+	fprintf(out, "template<class Q = T>\n");
+	fprintf(out, "typename std::enable_if<!std::is_fundamental<Q>::value, Q>::type operator != (bool v) const { return f_value == v; }\n");
+
 }
 
 
@@ -566,6 +649,76 @@ void create_unary_operators(const char *name, long flags)
 			fprintf(out, " return *this;");
 		}
 		fprintf(out, " }\n");
+	}
+}
+
+
+void create_unary_enum_operators(const char *name, long flags)
+{
+	int		i;
+	const char	*s;
+
+	static_cast<void>(name);
+
+	// NOTE: max i can be either 2 or 4
+	//	 at this time, we don't want to have the T * operators
+	//	 instead we'll have a set of ptr() functions
+	for(i = 0; i < 2; ++i) {
+		fprintf(out, "\toperator T%s ()%s {",
+				i & 2 ? " *" : "",
+				i & 1 ? "" : " const");
+		// NOTE: we want to change the following test for T *
+		//	 but it requires a reference!!!
+		//	 (also, we use ptr() instead for now)
+		if((flags & FLAG_HAS_INITFLG) != 0) {
+			fprintf(out, " if(!f_initialized) throw controlled_vars_error_not_initialized(\"uninitialized variable\");");
+		}
+		fprintf(out, " return %sf_value;", i & 2 ? "&" : "");
+		fprintf(out, " }\n");
+	}
+
+	// C++ casts can be annoying to write so make a value() function available too
+	fprintf(out, "\tT value() const {");
+	if((flags & FLAG_HAS_INITFLG) != 0) {
+		fprintf(out, " if(!f_initialized) throw controlled_vars_error_not_initialized(\"uninitialized variable\");");
+	}
+	fprintf(out, " return f_value; }\n");
+
+	for(i = 0; i < 2; ++i) {
+		s = i & 1 ? "" : "const ";
+		fprintf(out, "\t%sT * ptr() %s{", s, s);
+		// NOTE: we want to change the following test for T *
+		//	 but it requires a reference!!!
+		if((flags & FLAG_HAS_INITFLG) != 0) {
+			fprintf(out, " if(!f_initialized) throw controlled_vars_error_not_initialized(\"uninitialized variable\");");
+		}
+		fprintf(out, " return &f_value; }\n");
+	}
+
+	// This does not work with 'operator T () const'
+	//fprintf(out, "\toperator bool () const {");
+	//if((flags & FLAG_HAS_INITFLG) != 0) {
+	//	fprintf(out, " if(!f_initialized) throw controlled_vars_error_not_initialized(\"uninitialized variable\");");
+	//}
+	//fprintf(out, " return f_value != static_cast<T>(0); }\n");
+
+	fprintf(out, "\tbool operator ! () const {");
+	if((flags & FLAG_HAS_INITFLG) != 0) {
+		fprintf(out, " if(!f_initialized) throw controlled_vars_error_not_initialized(\"uninitialized variable\");");
+	}
+	fprintf(out, " return !f_value; }\n");
+
+	const char *op = "~+-";
+	if(flags & FLAG_HAS_FLOAT) {
+		op = "+-";
+	}
+	int max = strlen(op);
+	for(i = 0; i < max; ++i) {
+		fprintf(out, "\tint operator %c () const {", op[i]);
+		if((flags & FLAG_HAS_INITFLG) != 0) {
+			fprintf(out, " if(!f_initialized) throw controlled_vars_error_not_initialized(\"uninitialized variable\");");
+		}
+		fprintf(out, " return %cf_value; }\n", op[i]);
 	}
 }
 
@@ -718,13 +871,15 @@ void create_all_ptr_operators(const char *name, long flags)
 }
 
 
-void create_typedef(const char *name, const char *short_name )
+void create_typedef(const char *name, const char *short_name)
 {
 	const char	*t;
 	unsigned int	idx;
 
-	// here we include the size_t and time_t types
-	for(idx = 0; idx < TYPES_ALL; ++idx) {
+	// here we include the size_t and time_t types (these were removed though)
+	// UPDATE: We do not include bool because now it is managed as an
+	//         enumeration instead
+	for(idx = 1; idx < TYPES_ALL; ++idx) {
 		t = g_types[idx].name;
 		if(g_types[idx].flags & FLAG_TYPE_FLOAT) {
 			// skip integer types
@@ -753,8 +908,8 @@ void create_typedef(const char *name, const char *short_name )
 void create_class(const char *name, const char *short_name, long flags)
 {
 	unsigned int	idx;
-	const char 	*init;
-	const char	*limits;
+	char const 	*init;
+	char const	*limits;
 
 	if((flags & FLAG_HAS_LIMITS) != 0) {
 		// we'd need to check that min <= max which should be possible
@@ -796,13 +951,13 @@ void create_class(const char *name, const char *short_name, long flags)
 
 	// Define the default value
 	if((flags & FLAG_HAS_DEFAULT) != 0) {
-		fprintf(out, "\tstatic const T DEFAULT_VALUE = init_value;\n");
+		fprintf(out, "\tstatic T const DEFAULT_VALUE = init_value;\n");
 	}
 
 	// Define the limits
 	if((flags & FLAG_HAS_LIMITS) != 0) {
-		fprintf(out, "\tstatic const primary_type_t MIN_BOUND = min;\n");
-		fprintf(out, "\tstatic const primary_type_t MAX_BOUND = max;\n");
+		fprintf(out, "\tstatic primary_type_t const MIN_BOUND = min;\n");
+		fprintf(out, "\tstatic primary_type_t const MAX_BOUND = max;\n");
 		fprintf(out, "\tCONTROLLED_VARS_STATIC_ASSERT(min <= max);\n");
 		if((flags & FLAG_HAS_DEFAULT) != 0) {
 			fprintf(out, "\tCONTROLLED_VARS_STATIC_ASSERT(init_value >= min && init_value <= max);\n");
@@ -891,8 +1046,165 @@ void create_class(const char *name, const char *short_name, long flags)
 	fprintf(out, "};\n");
 
 	if((flags & FLAG_HAS_LIMITS) == 0) {
-		create_typedef(name, short_name );
+		create_typedef(name, short_name);
 	}
+}
+
+
+void create_class_enum(const char *name, long flags)
+{
+	char const 	*init;
+	char const	*limits;
+
+	flags |= FLAG_HAS_ENUM;
+
+	if((flags & FLAG_HAS_FLOAT) != 0) {
+		fprintf(stderr, "internal error: create_class_enum() called with FLAG_HAS_FLOAT.\n");
+		exit(1);
+	}
+
+	if((flags & FLAG_HAS_LIMITS) != 0) {
+		// we'd need to check that min <= max which should be possible
+		// (actually BOOST does it...)
+		limits = ", T min, T max";
+	}
+	else {
+		limits = "";
+	}
+
+	fprintf(out, "/** \\brief Documentation available online.\n");
+	fprintf(out, " * Please go to http://snapwebsites.org/project/controlled-vars\n");
+	fprintf(out, " */\n");
+	if((flags & FLAG_HAS_DEFAULT) != 0) {
+		if((flags & FLAG_HAS_ENUM) != 0) {
+			// we allow an "auto-init" of enumerations although
+			// really we probably should not allow those at all
+			// because all enumerations should be limited
+			fprintf(out, "template<class T%s, T init_value = static_cast<T>(0)>", limits);
+		}
+		else {
+			fprintf(out, "template<class T%s, T init_value = static_cast<T>(0)>", limits);
+		}
+		if((flags & FLAG_HAS_LIMITS) != 0) {
+			// the init_value should be checked using a static test
+			// (which is possible, BOOST does it, but good luck to
+			// replicate that work in a couple lines of code!)
+			init = " f_value = check(init_value);";
+		}
+		else {
+			init = " f_value = init_value;";
+		}
+	}
+	else {
+		fprintf(out, "template<class T%s>", limits);
+		if((flags & FLAG_HAS_LIMITS) != 0) {
+			// here we can use the min value if zero is not part of the range
+			init = " f_value = 0.0 >= min && 0.0 <= max ? 0.0 : min;";
+		}
+		else {
+			init = " f_value = 0.0;";
+		}
+	}
+	fprintf(out, " class %s_init {\n", name);
+	fprintf(out, "public:\n");
+	fprintf(out, "\ttypedef T primary_type_t;\n");
+
+	// Define the default value
+	if((flags & FLAG_HAS_DEFAULT) != 0) {
+		fprintf(out, "\tstatic T const DEFAULT_VALUE = init_value;\n");
+	}
+
+	// Define the limits
+	if((flags & FLAG_HAS_LIMITS) != 0) {
+		fprintf(out, "\tstatic primary_type_t const MIN_BOUND = min;\n");
+		fprintf(out, "\tstatic primary_type_t const MAX_BOUND = max;\n");
+		fprintf(out, "\tCONTROLLED_VARS_STATIC_ASSERT(min <= max);\n");
+		if((flags & FLAG_HAS_DEFAULT) != 0) {
+			fprintf(out, "\tCONTROLLED_VARS_STATIC_ASSERT(init_value >= min && init_value <= max);\n");
+		}
+
+		// a function to check the limits
+		fprintf(out, "\tT check(T v) {\n");
+		fprintf(out, "#ifdef CONTROLLED_VARS_LIMITED\n");
+		fprintf(out, "#ifdef __GNUC__\n");
+		fprintf(out, "#pragma GCC diagnostic push\n");
+		fprintf(out, "#pragma GCC diagnostic ignored \"-Wlogical-op\"\n");
+		fprintf(out, "#endif\n");
+		fprintf(out, "\t\tif(v < min || v > max)");
+		fprintf(out, " throw controlled_vars_error_out_of_bounds(\"value out of bounds\");\n");
+		fprintf(out, "#ifdef __GNUC__\n");
+		fprintf(out, "#pragma GCC diagnostic pop\n");
+		fprintf(out, "#endif\n");
+		fprintf(out, "#endif\n");
+		fprintf(out, "\t\treturn v;\n");
+		fprintf(out, "\t}\n");
+	}
+
+	// Constructors
+	if((flags & FLAG_HAS_VOID) != 0) {
+		fprintf(out, "\t%s_init() {%s%s }\n", name,
+			(flags & FLAG_HAS_DOINIT) != 0 ? init : "",
+			(flags & FLAG_HAS_INITFLG) != 0 ? " f_initialized = false;" : "");
+	}
+
+	// create only one constructor for enumerations, but the correct
+	// one!
+	fprintf(out, "\t%s_init(T v) {", name);
+	if((flags & FLAG_HAS_INITFLG) != 0) {
+		fprintf(out, " f_initialized = true;");
+	}
+	fprintf(out, " f_value =");
+	if((flags & FLAG_HAS_LIMITS) != 0) {
+		fprintf(out, " check(v); }\n");
+	}
+	else {
+		fprintf(out, " v; }\n");
+	}
+
+	// create only one assignment operator
+	fprintf(out, "\t%s_init& operator = (T v) {", name);
+	if((flags & FLAG_HAS_INITFLG) != 0) {
+		fprintf(out, " f_initialized = true;");
+	}
+	fprintf(out, " f_value =");
+	if((flags & FLAG_HAS_LIMITS) != 0) {
+		fprintf(out, " check(v); return *this; }\n");
+	}
+	else {
+		fprintf(out, " v; return *this; }\n");
+	}
+
+	// Unary operators
+	create_unary_enum_operators(name, flags);
+
+	// Binary Operators
+	create_all_enum_operators(name, flags);
+
+	if((flags & FLAG_HAS_DEBUG_ALREADY) == 0) {
+		fprintf(out, "#ifdef CONTROLLED_VARS_DEBUG\n");
+	}
+	fprintf(out, "\tbool is_initialized() const {");
+	if((flags & FLAG_HAS_INITFLG) != 0) {
+		fprintf(out, " return f_initialized;");
+	}
+	else {
+		fprintf(out, " return true;");
+	}
+	fprintf(out, " }\n");
+	if((flags & FLAG_HAS_DEBUG_ALREADY) == 0) {
+		fprintf(out, "#endif\n");
+	}
+
+	fprintf(out, "private:\n");
+	if((flags & FLAG_HAS_INITFLG) != 0) {
+		fprintf(out, "\tbool f_initialized;\n");
+	}
+	fprintf(out, "\tT f_value;\n");
+	fprintf(out, "};\n");
+
+	//if((flags & FLAG_HAS_LIMITS) == 0) {
+	//	create_typedef(name, short_name);
+	//}
 }
 
 
@@ -1005,7 +1317,8 @@ void create_direct_typedef(const char *short_name)
 	unsigned int	idx;
 
 	// here we include the bool, size_t and time_t types
-	for(idx = 0; idx < TYPES_ALL; ++idx) {
+	// UPDATE: I removed the bool because it is handled as an enumeration
+	for(idx = 1; idx < TYPES_ALL; ++idx) {
 		if(g_types[idx].condition) {
 			fprintf(out, "%s\n", g_types[idx].condition);
 		}
@@ -1019,22 +1332,27 @@ void create_direct_typedef(const char *short_name)
 
 void create_file(const char *filename)
 {
-	if(out != NULL) {
+	if(out != nullptr) {
 		fclose(out);
 	}
 	out = fopen(filename, "w");
-	if(out == NULL) {
+	if(out == nullptr) {
 		fprintf(stderr, "error:controlled_vars: cannot create file \"%s\"\n", filename);
 		exit(1);
 	}
 }
 
 
-#define PRINT_FLAG_INCLUDE_STDEXCEPT     0x0001
-#define PRINT_FLAG_INCLUDE_INIT          0x0002
-#define PRINT_FLAG_INCLUDE_EXCEPTION     0x0004
-#define PRINT_FLAG_NO_NAMESPACE          0x0008
-#define PRINT_FLAG_INCLUDE_STATIC_ASSERT 0x0010
+namespace
+{
+uint32_t PRINT_FLAG_INCLUDE_STDEXCEPT     = 0x0001;
+uint32_t PRINT_FLAG_INCLUDE_INIT          = 0x0002;
+uint32_t PRINT_FLAG_INCLUDE_EXCEPTION     = 0x0004;
+uint32_t PRINT_FLAG_NO_NAMESPACE          = 0x0008;
+uint32_t PRINT_FLAG_INCLUDE_STATIC_ASSERT = 0x0010;
+uint32_t PRINT_FLAG_ENUM                  = 0x0020;
+}
+
 void print_header(const char *filename, const char *upper, int flags)
 {
 	fprintf(out, "// WARNING: do not edit; this is an auto-generated\n");
@@ -1097,6 +1415,9 @@ void print_header(const char *filename, const char *upper, int flags)
 		}
 		if((flags & PRINT_FLAG_INCLUDE_STDEXCEPT) != 0) {
 			fprintf(out, "#include <stdexcept>\n");
+		}
+		if((flags & PRINT_FLAG_ENUM) != 0) {
+			fprintf(out, "#include <type_traits>\n");
 		}
 		fprintf(out, "namespace controlled_vars {\n");
 	}
@@ -1174,17 +1495,30 @@ void print_static_assert()
 void print_auto()
 {
 	create_class("auto", "z", FLAG_HAS_VOID | FLAG_HAS_DOINIT | FLAG_HAS_DEFAULT);
-	fprintf(out, "typedef auto_init<bool, false> fbool_t;\n");
-	fprintf(out, "typedef auto_init<bool, true> tbool_t;\n");
+}
+
+
+void print_auto_enum()
+{
+	create_class_enum("auto_enum", FLAG_HAS_VOID | FLAG_HAS_DOINIT | FLAG_HAS_DEFAULT);
+	fprintf(out, "typedef auto_enum_init<bool, false> fbool_t;\n");
+	fprintf(out, "typedef fbool_t zbool_t;\n");
+	fprintf(out, "typedef auto_enum_init<bool, true> tbool_t;\n");
 }
 
 
 void print_limited_auto()
 {
 	create_class("limited_auto", "lz", FLAG_HAS_VOID | FLAG_HAS_DOINIT | FLAG_HAS_DEFAULT | FLAG_HAS_LIMITS);
-	fprintf(out, "typedef limited_auto_init<bool, false, true, false> flbool_t;\n");
+}
+
+
+void print_limited_auto_enum()
+{
+	create_class_enum("limited_auto_enum", FLAG_HAS_VOID | FLAG_HAS_DOINIT | FLAG_HAS_DEFAULT | FLAG_HAS_LIMITS);
+	fprintf(out, "typedef limited_auto_enum_init<bool, false, true, false> flbool_t;\n");
 	fprintf(out, "typedef flbool_t zlbool_t;\n");
-	fprintf(out, "typedef limited_auto_init<bool, false, true, true> tlbool_t;\n");
+	fprintf(out, "typedef limited_auto_enum_init<bool, false, true, true> tlbool_t;\n");
 }
 
 
@@ -1212,10 +1546,23 @@ void print_need()
 }
 
 
+void print_need_enum()
+{
+	create_class_enum("need_enum", 0);
+	fprintf(out, "typedef need_enum_init<bool> mbool_t;\n");
+}
+
+
 void print_limited_need()
 {
 	create_class("limited_need", "lm", FLAG_HAS_LIMITS);
-	fprintf(out, "typedef limited_need_init<bool, false, true> mlbool_t;\n");
+}
+
+
+void print_limited_need_enum()
+{
+	create_class_enum("limited_need_enum", FLAG_HAS_LIMITS);
+	fprintf(out, "typedef limited_need_enum_init<bool, false, true> mlbool_t;\n");
 }
 
 
@@ -1235,16 +1582,37 @@ void print_no_init()
 }
 
 
+void print_no_init_enum()
+{
+	// Anything here?
+	fprintf(out, "#ifdef CONTROLLED_VARS_DEBUG\n");
+	create_class_enum("no_enum", FLAG_HAS_VOID | FLAG_HAS_INITFLG | FLAG_HAS_DEBUG_ALREADY);
+	fprintf(out, "typedef no_enum_init<bool> rbool_t;\n");
+	fprintf(out, "#else\n");
+	fprintf(out, "typedef bool rbool_t;\n");
+	fprintf(out, "#endif\n");
+}
+
+
 void print_limited_no_init()
 {
 	fprintf(out, "#ifdef CONTROLLED_VARS_DEBUG\n");
 	create_class("limited_no", "r", FLAG_HAS_VOID | FLAG_HAS_INITFLG | FLAG_HAS_LIMITS | FLAG_HAS_DEBUG_ALREADY);
-	fprintf(out, "typedef limited_no_init<bool, false, true> rlbool_t;\n");
-	fprintf(out, "#else\n");
+	//fprintf(out, "#else\n");
 	// in non-debug, this is essentially the same template, but we
 	// expect the users to declare their types "properly" (i.e. using
 	// a typedef whenever CONTROLLED_VARS_DEBUG is not defined.)
 	//create_direct_typedef("rl");
+	fprintf(out, "#endif\n");
+}
+
+
+void print_limited_no_init_enum()
+{
+	fprintf(out, "#ifdef CONTROLLED_VARS_DEBUG\n");
+	create_class_enum("limited_no_enum", FLAG_HAS_VOID | FLAG_HAS_INITFLG | FLAG_HAS_LIMITS | FLAG_HAS_DEBUG_ALREADY);
+	fprintf(out, "typedef limited_no_enum_init<bool, false, true> rlbool_t;\n");
+	fprintf(out, "#else\n");
 	fprintf(out, "typedef bool rlbool_t;\n");
 	fprintf(out, "#endif\n");
 }
@@ -1291,13 +1659,19 @@ void print_include_all()
 	// we don't have to include the exception header,
 	// it will be by several of the following headers
 	fprintf(out, "#include \"controlled_vars_auto_init.h\"\n");
+	fprintf(out, "#include \"controlled_vars_auto_enum_init.h\"\n");
 	fprintf(out, "#include \"controlled_vars_limited_auto_init.h\"\n");
+	fprintf(out, "#include \"controlled_vars_limited_auto_enum_init.h\"\n");
 	fprintf(out, "#include \"controlled_vars_fauto_init.h\"\n");
 	fprintf(out, "#include \"controlled_vars_limited_fauto_init.h\"\n");
 	fprintf(out, "#include \"controlled_vars_need_init.h\"\n");
+	fprintf(out, "#include \"controlled_vars_need_enum_init.h\"\n");
 	fprintf(out, "#include \"controlled_vars_limited_need_init.h\"\n");
+	fprintf(out, "#include \"controlled_vars_limited_need_enum_init.h\"\n");
 	fprintf(out, "#include \"controlled_vars_no_init.h\"\n");
+	fprintf(out, "#include \"controlled_vars_no_enum_init.h\"\n");
 	fprintf(out, "#include \"controlled_vars_limited_no_init.h\"\n");
+	fprintf(out, "#include \"controlled_vars_limited_no_enum_init.h\"\n");
 	print_footer(PRINT_FLAG_NO_NAMESPACE);
 }
 
@@ -1312,17 +1686,23 @@ int main(int argc, char *argv[])
 	print_file("exceptions", PRINT_FLAG_INCLUDE_STDEXCEPT, print_exceptions);
 	print_file("static_assert", 0, print_static_assert);
 
-	print_file("auto",          PRINT_FLAG_INCLUDE_INIT, print_auto);
-	print_file("limited_auto",  PRINT_FLAG_INCLUDE_INIT | PRINT_FLAG_INCLUDE_EXCEPTION | PRINT_FLAG_INCLUDE_STATIC_ASSERT, print_limited_auto);
-	print_file("ptr_auto",      PRINT_FLAG_INCLUDE_INIT | PRINT_FLAG_INCLUDE_EXCEPTION, print_ptr_auto);
-	print_file("fauto",         PRINT_FLAG_INCLUDE_INIT, print_fauto);
-	print_file("limited_fauto", PRINT_FLAG_INCLUDE_INIT | PRINT_FLAG_INCLUDE_EXCEPTION | PRINT_FLAG_INCLUDE_STATIC_ASSERT, print_limited_fauto);
-	print_file("need",          PRINT_FLAG_INCLUDE_INIT, print_need);
-	print_file("limited_need",  PRINT_FLAG_INCLUDE_INIT | PRINT_FLAG_INCLUDE_EXCEPTION | PRINT_FLAG_INCLUDE_STATIC_ASSERT, print_limited_need);
-	print_file("ptr_need",      PRINT_FLAG_INCLUDE_INIT | PRINT_FLAG_INCLUDE_EXCEPTION, print_ptr_need);
-	print_file("no",            PRINT_FLAG_INCLUDE_INIT | PRINT_FLAG_INCLUDE_EXCEPTION, print_no_init);
-	print_file("limited_no",    PRINT_FLAG_INCLUDE_INIT | PRINT_FLAG_INCLUDE_EXCEPTION | PRINT_FLAG_INCLUDE_STATIC_ASSERT, print_limited_no_init);
-	print_file("ptr_no",        PRINT_FLAG_INCLUDE_INIT | PRINT_FLAG_INCLUDE_EXCEPTION, print_ptr_no_init);
+	print_file("auto",              PRINT_FLAG_INCLUDE_INIT, print_auto);
+	print_file("auto_enum",         PRINT_FLAG_INCLUDE_INIT | PRINT_FLAG_ENUM, print_auto_enum);
+	print_file("limited_auto",      PRINT_FLAG_INCLUDE_INIT | PRINT_FLAG_INCLUDE_EXCEPTION | PRINT_FLAG_INCLUDE_STATIC_ASSERT, print_limited_auto);
+	print_file("limited_auto_enum", PRINT_FLAG_INCLUDE_INIT | PRINT_FLAG_ENUM | PRINT_FLAG_INCLUDE_EXCEPTION | PRINT_FLAG_INCLUDE_STATIC_ASSERT, print_limited_auto_enum);
+	print_file("ptr_auto",          PRINT_FLAG_INCLUDE_INIT | PRINT_FLAG_INCLUDE_EXCEPTION, print_ptr_auto);
+	print_file("fauto",             PRINT_FLAG_INCLUDE_INIT, print_fauto);
+	print_file("limited_fauto",     PRINT_FLAG_INCLUDE_INIT | PRINT_FLAG_INCLUDE_EXCEPTION | PRINT_FLAG_INCLUDE_STATIC_ASSERT, print_limited_fauto);
+	print_file("need",              PRINT_FLAG_INCLUDE_INIT, print_need);
+	print_file("need_enum",         PRINT_FLAG_INCLUDE_INIT | PRINT_FLAG_ENUM, print_need_enum);
+	print_file("limited_need",      PRINT_FLAG_INCLUDE_INIT | PRINT_FLAG_INCLUDE_EXCEPTION | PRINT_FLAG_INCLUDE_STATIC_ASSERT, print_limited_need);
+	print_file("limited_need_enum", PRINT_FLAG_INCLUDE_INIT | PRINT_FLAG_ENUM | PRINT_FLAG_INCLUDE_EXCEPTION | PRINT_FLAG_INCLUDE_STATIC_ASSERT, print_limited_need_enum);
+	print_file("ptr_need",          PRINT_FLAG_INCLUDE_INIT | PRINT_FLAG_INCLUDE_EXCEPTION, print_ptr_need);
+	print_file("no",                PRINT_FLAG_INCLUDE_INIT | PRINT_FLAG_INCLUDE_EXCEPTION, print_no_init);
+	print_file("no_enum",           PRINT_FLAG_INCLUDE_INIT | PRINT_FLAG_ENUM | PRINT_FLAG_INCLUDE_EXCEPTION, print_no_init_enum);
+	print_file("limited_no",        PRINT_FLAG_INCLUDE_INIT | PRINT_FLAG_INCLUDE_EXCEPTION | PRINT_FLAG_INCLUDE_STATIC_ASSERT, print_limited_no_init);
+	print_file("limited_no_enum",   PRINT_FLAG_INCLUDE_INIT | PRINT_FLAG_ENUM | PRINT_FLAG_INCLUDE_EXCEPTION | PRINT_FLAG_INCLUDE_STATIC_ASSERT, print_limited_no_init_enum);
+	print_file("ptr_no",            PRINT_FLAG_INCLUDE_INIT | PRINT_FLAG_INCLUDE_EXCEPTION, print_ptr_no_init);
 
 	print_include_all();
 
