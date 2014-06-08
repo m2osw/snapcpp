@@ -382,7 +382,10 @@ public:
     };
 
                                 Node(node_t type);
-                                Node(pointer_t const& source, pointer_t& parent);
+                                ~Node();
+
+                                Node(Node const&) = delete;
+    Node&                       operator = (Node const&) = delete;
 
     node_t                      get_type() const;
     char const *                get_type_name() const;

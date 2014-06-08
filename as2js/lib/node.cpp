@@ -506,43 +506,32 @@ Node::Node(node_t type)
 }
 
 
-Node::Node(pointer_t const& source, pointer_t& parent)
-    : f_type(source->f_type)
-    , f_flags(source->f_flags)
-    , f_attributes(source->f_attributes)
-    , f_switch_operator(source->f_switch_operator)
-    //, f_lock(0) -- auto-init
-    , f_position(source->f_position)
-    , f_int(source->f_int)
-    , f_float(source->f_float)
-    , f_str(source->f_str)
-    //, f_parent(parent) -- requires a function call to work properly
-    //, f_offset(0) -- auto-init
-    //, f_children() -- auto-init
-    , f_link(source->f_link)
-    //, f_variables() -- auto-init
-    //, f_labels() -- auto-init
+/** \brief Destruction of a node.
+ *
+ * This function ensures that a node being destroyed is not currently
+ * in a parent's list. If it is, then we assume that we cannot be
+ * destroyed so we throw (which is really bad in a destructor, but
+ * I do not know of another way.)
+ *
+ * Note that the throw should never occur. This is a bug somewhere
+ * in the code, the throw itself is not a bug.
+ */
+Node::~Node()
 {
-    switch(f_type)
+    if(f_parent)
     {
-    case node_t::NODE_STRING:
-    case node_t::NODE_INT64:
-    case node_t::NODE_FLOAT64:
-    case node_t::NODE_TRUE:
-    case node_t::NODE_FALSE:
-    case node_t::NODE_NULL:
-    case node_t::NODE_UNDEFINED:
-    case node_t::NODE_REGULAR_EXPRESSION:
-        break;
-
-    default:
-        // ERROR: only constants can be cloned at this time
-        throw exception_incompatible_node_type("only nodes representing constants can be cloned");
-
+        // TBD: maybe we should use std::terminate() instead, but for
+        //      test purposes, a throw is easier to catch, only our
+        //      state afterward is rather unknown...
+        //
+        // If you reach this throw, you have a bug
+        // The throw should simply NEVER be reached.
+        // (i.e. trying to delete a node which still has a parent
+        //       is a bug in the caller's, not here)
+        throw exception_internal_error("this node still has a parent, it cannot be safely deleted, you have a bug!");
     }
-
-    set_parent(parent);
 }
+
 
 
 /**********************************************************************/
@@ -2025,6 +2014,9 @@ void Node::set_parent(pointer_t parent, int index)
     {
         return;
     }
+
+    // TODO: add tests to make sure that said node can indeed be a parent
+    //       (i.e. a string should not have children)
 
     if(f_parent)
     {

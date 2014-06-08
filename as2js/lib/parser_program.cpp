@@ -1,4 +1,4 @@
-/* program.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
+/* parser_program.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
 
 /*
 
