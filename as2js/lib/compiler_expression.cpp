@@ -288,13 +288,13 @@ void Compiler::can_instantiate_type(Node::pointer_t expr)
     Node::pointer_t inst(expr->get_link(Node::link_t::LINK_INSTANCE));
     if(inst->get_type() == Node::node_t::NODE_INTERFACE)
     {
-        Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_EXPRESSION, expr->get_position());
+        Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_EXPRESSION, expr->get_position());
         msg << "you can only instantiate an object from a class. '" << expr->get_string() << "' is an interface.";
         return;
     }
     if(inst->get_type() != Node::node_t::NODE_CLASS)
     {
-        Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_EXPRESSION, expr->get_position());
+        Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_EXPRESSION, expr->get_position());
         msg << "you can only instantiate an object from a class. '" << expr->get_string() << "' does not seem to be a class.";
         return;
     }
@@ -304,7 +304,7 @@ void Compiler::can_instantiate_type(Node::pointer_t expr)
     Node::pointer_t func;
     if(has_abstract_functions(inst, inst, func))
     {
-        Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_ABSTRACT, expr->get_position());
+        Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_ABSTRACT, expr->get_position());
         msg << "the class '"
             << expr->get_string()
             << "' has an abstract function '"
@@ -343,7 +343,7 @@ void Compiler::check_this_validity(Node::pointer_t expr)
             || get_attribute(parent, Node::attribute_t::NODE_ATTR_CONSTRUCTOR)
             || is_constructor(parent))
             {
-                Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_STATIC, expr->get_position());
+                Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_STATIC, expr->get_position());
                 msg << "'this' cannot be used in a static function nor a constructor.";
             }
             return;
@@ -407,7 +407,7 @@ void Compiler::unary_operator(Node::pointer_t expr)
     expr->delete_child(del);
     if(!result)
     {
-        Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_OPERATOR, expr->get_position());
+        Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_OPERATOR, expr->get_position());
         msg << "cannot apply operator '" << op << "' to this object.";
         return;
     }
@@ -431,7 +431,7 @@ void Compiler::unary_operator(Node::pointer_t expr)
                     if((var_node->get_type() == Node::node_t::NODE_PARAM || var_node->get_type() == Node::node_t::NODE_VARIABLE)
                     && var_node->get_flag(Node::flag_t::NODE_VAR_FLAG_CONST))
                     {
-                        Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_CANNOT_OVERWRITE_CONST, expr->get_position());
+                        Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_CANNOT_OVERWRITE_CONST, expr->get_position());
                         msg << "cannot increment or decrement a constant variable or function parameters.";
                     }
                 }
@@ -619,7 +619,7 @@ void Compiler::binary_operator(Node::pointer_t& expr)
     expr->delete_child(del);
     if(!result)
     {
-        Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_OPERATOR, expr->get_position());
+        Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_OPERATOR, expr->get_position());
         msg << "cannot apply operator '" << op << "' to these objects.";
         return;
     }
@@ -918,7 +918,7 @@ bool Compiler::special_identifier(Node::pointer_t expr)
     }
     else if(!parent)
     {
-        Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_EXPRESSION, expr->get_position());
+        Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_EXPRESSION, expr->get_position());
         msg << "'" << expr->get_string() << "' was used outside " << what << ".";
         // we keep the string as is!
     }
@@ -996,7 +996,7 @@ void Compiler::type_expr(Node::pointer_t expr)
         {
             // TODO: resolve that if not done yet (it should
             //     always already be at this time)
-            Message msg(MESSAGE_LEVEL_FATAL, AS_ERR_INTERNAL_ERROR, expr->get_position());
+            Message msg(message_level_t::MESSAGE_LEVEL_FATAL, err_code_t::AS_ERR_INTERNAL_ERROR, expr->get_position());
             msg << "type is missing when it should not.";
             throw exception_exit(1, "type is missing when it should not.");
         }
@@ -1041,7 +1041,7 @@ void Compiler::object_literal(Node::pointer_t expr)
                 // TODO: this is a scope
                 //    name.GetChild(0) :: name.GetChild(1)
                 // ...
-                Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_NOT_SUPPORTED, name->get_position());
+                Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_NOT_SUPPORTED, name->get_position());
                 msg << "scopes not supported yet. (1)";
             }
         }
@@ -1051,7 +1051,7 @@ void Compiler::object_literal(Node::pointer_t expr)
             //    name :: name->get_child(0)
             // Here name is IDENTIFIER, PRIVATE or PUBLIC
             // ...
-            Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_NOT_SUPPORTED, name->get_position());
+            Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_NOT_SUPPORTED, name->get_position());
             msg << "scopes not supported yet. (2)";
         }
 
@@ -1080,7 +1080,7 @@ void Compiler::assignment_operator(Node::pointer_t expr)
             {
                 if(resolution->get_flag(Node::flag_t::NODE_VAR_FLAG_CONST))
                 {
-                    Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_CANNOT_OVERWRITE_CONST, left->get_position());
+                    Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_CANNOT_OVERWRITE_CONST, left->get_position());
                     msg << "you cannot assign a value to the constant variable '" << resolution->get_string() << "'.";
                 }
                 else
@@ -1092,7 +1092,7 @@ void Compiler::assignment_operator(Node::pointer_t expr)
             {
                 if(resolution->get_flag(Node::flag_t::NODE_PARAMETERS_FLAG_CONST))
                 {
-                    Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_CANNOT_OVERWRITE_CONST, left->get_position());
+                    Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_CANNOT_OVERWRITE_CONST, left->get_position());
                     msg << "you cannot assign a value to the constant function parameter '" << resolution->get_string() << "'.";
                 }
                 else
@@ -1102,7 +1102,7 @@ void Compiler::assignment_operator(Node::pointer_t expr)
             }
             else
             {
-                Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_CANNOT_OVERLOAD, left->get_position());
+                Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_CANNOT_OVERLOAD, left->get_position());
                 msg << "you cannot assign but a variable or a function parameter.";
             }
             if(valid)
@@ -1458,7 +1458,7 @@ void Compiler::expression(Node::pointer_t expr, Node::pointer_t params)
             }
             else
             {
-                Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_NOT_FOUND, expr->get_position());
+                Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_NOT_FOUND, expr->get_position());
                 msg << "cannot find any variable or class declaration for: '" << expr->get_string() << "'.";
             }
         }
@@ -1470,7 +1470,7 @@ void Compiler::expression(Node::pointer_t expr, Node::pointer_t params)
 
     default:
         {
-            Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INTERNAL_ERROR, expr->get_position());
+            Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INTERNAL_ERROR, expr->get_position());
             msg << "unhandled expression data type \"" << expr->get_type_name() << "\".";
         }
         return;

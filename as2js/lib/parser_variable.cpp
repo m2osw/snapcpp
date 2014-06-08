@@ -65,7 +65,7 @@ void Parser::variable(Node::pointer_t& node, bool const constant)
         }
         else
         {
-            Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_VARIABLE, f_lexer->get_input()->get_position());
+            Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_VARIABLE, f_lexer->get_input()->get_position());
             msg << "expected an identifier as the variable name";
         }
 

@@ -55,7 +55,7 @@ Database::Element::Element(String const& element_name, JSON::JSONValue::pointer_
 {
     // verify the type, but we already tested before creating this object
     JSON::JSONValue::type_t type(f_element->get_type());
-    if(type != JSON::JSONValue::JSON_TYPE_OBJECT)
+    if(type != JSON::JSONValue::type_t::JSON_TYPE_OBJECT)
     {
         throw exception_internal_error("an element cannot be created with a JSON value which has a type other than Object");
     }
@@ -68,9 +68,9 @@ Database::Element::Element(String const& element_name, JSON::JSONValue::pointer_
         String const field_name(it->first);
         if(field_name == "type")
         {
-            if(sub_type != JSON::JSONValue::JSON_TYPE_STRING)
+            if(sub_type != JSON::JSONValue::type_t::JSON_TYPE_STRING)
             {
-                Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_UNEXPECTED_DATABASE, it->second->get_position());
+                Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_UNEXPECTED_DATABASE, it->second->get_position());
                 msg << "The type of an element in the database has to be a string.";
             }
             else
@@ -80,9 +80,9 @@ Database::Element::Element(String const& element_name, JSON::JSONValue::pointer_
         }
         else if(field_name == "filename")
         {
-            if(sub_type != JSON::JSONValue::JSON_TYPE_STRING)
+            if(sub_type != JSON::JSONValue::type_t::JSON_TYPE_STRING)
             {
-                Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_UNEXPECTED_DATABASE, it->second->get_position());
+                Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_UNEXPECTED_DATABASE, it->second->get_position());
                 msg << "The filename of an element in the database has to be a string.";
             }
             else
@@ -92,9 +92,9 @@ Database::Element::Element(String const& element_name, JSON::JSONValue::pointer_
         }
         else if(field_name == "line")
         {
-            if(sub_type != JSON::JSONValue::JSON_TYPE_INT64)
+            if(sub_type != JSON::JSONValue::type_t::JSON_TYPE_INT64)
             {
-                Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_UNEXPECTED_DATABASE, it->second->get_position());
+                Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_UNEXPECTED_DATABASE, it->second->get_position());
                 msg << "The line of an element in the database has to be an integer.";
             }
             else
@@ -163,7 +163,7 @@ Database::Package::Package(String const& package_name, JSON::JSONValue::pointer_
 {
     // verify the type, but we already tested before creatin this object
     JSON::JSONValue::type_t type(f_package->get_type());
-    if(type != JSON::JSONValue::JSON_TYPE_OBJECT)
+    if(type != JSON::JSONValue::type_t::JSON_TYPE_OBJECT)
     {
         throw exception_internal_error("a package cannot be created with a JSON value which has a type other than Object");
     }
@@ -175,9 +175,9 @@ Database::Package::Package(String const& package_name, JSON::JSONValue::pointer_
         // the only type of value that we expect are objects within the
         // main object; each one represents a package
         JSON::JSONValue::type_t const sub_type(it->second->get_type());
-        if(sub_type != JSON::JSONValue::JSON_TYPE_OBJECT)
+        if(sub_type != JSON::JSONValue::type_t::JSON_TYPE_OBJECT)
         {
-            Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_UNEXPECTED_DATABASE, it->second->get_position());
+            Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_UNEXPECTED_DATABASE, it->second->get_position());
             msg << "A database is expected to be an object of object packages composed of object elements.";
             return;
         }
@@ -272,16 +272,16 @@ bool Database::load(String const& filename)
     JSON::JSONValue::type_t type(f_value->get_type());
 
     // a 'null' is acceptable, it means the database is currently empty
-    if(type == JSON::JSONValue::JSON_TYPE_NULL)
+    if(type == JSON::JSONValue::type_t::JSON_TYPE_NULL)
     {
         return true;
     }
 
-    if(type != JSON::JSONValue::JSON_TYPE_OBJECT)
+    if(type != JSON::JSONValue::type_t::JSON_TYPE_OBJECT)
     {
         Position pos;
         pos.set_filename(filename);
-        Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_UNEXPECTED_DATABASE, pos);
+        Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_UNEXPECTED_DATABASE, pos);
         msg << "A database must be defined as a JSON object, or set to 'null'";
         return false;
     }
@@ -294,11 +294,11 @@ bool Database::load(String const& filename)
         // the only type of value that we expect are objects within the
         // main object; each one represents a package
         JSON::JSONValue::type_t sub_type(it->second->get_type());
-        if(sub_type != JSON::JSONValue::JSON_TYPE_OBJECT)
+        if(sub_type != JSON::JSONValue::type_t::JSON_TYPE_OBJECT)
         {
             Position pos;
             pos.set_filename(filename);
-            Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_UNEXPECTED_DATABASE, pos);
+            Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_UNEXPECTED_DATABASE, pos);
             msg << "A database is expected to be an object of object packages composed of elements.";
             return false;
         }

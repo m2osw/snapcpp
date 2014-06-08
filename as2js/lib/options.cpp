@@ -42,10 +42,10 @@ namespace as2js
 
 
 Options::Options()
-    : f_options(OPTION_max)
+    : f_options(static_cast<size_t>(option_t::OPTION_max))
 {
-    // we're always in strict mode
-    set_option(OPTION_STRICT, 1);
+    // we are always in strict mode
+    set_option(option_t::OPTION_STRICT, 1);
 }
 
 
@@ -53,19 +53,20 @@ void Options::set_option(option_t option, option_value_t value)
 {
     // TODO: verify that we really want that here, we may prefer
     //       to give the user non-strict access to his code...
-    // we're always in strict mode
-    if(option == OPTION_STRICT)
+
+    // we are always in strict mode
+    if(option == option_t::OPTION_STRICT)
     {
         value = 1;
     }
 
-    f_options[option] = value;
+    f_options[static_cast<size_t>(option)] = value;
 }
 
 
 Options::option_value_t Options::get_option(option_t option)
 {
-    return f_options[option];
+    return f_options[static_cast<size_t>(option)];
 }
 
 

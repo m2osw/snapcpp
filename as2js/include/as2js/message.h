@@ -48,7 +48,7 @@ namespace as2js
 {
 
 
-enum message_level_t
+enum class message_level_t
 {
     MESSAGE_LEVEL_OFF,
     MESSAGE_LEVEL_FATAL,
@@ -60,7 +60,7 @@ enum message_level_t
 };
 
 
-enum err_code_t
+enum class err_code_t
 {
     AS_ERR_NONE = 0,
 

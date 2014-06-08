@@ -51,7 +51,7 @@ void Parser::class_declaration(Node::pointer_t& node, Node::node_t type)
 {
     if(f_node->get_type() != Node::node_t::NODE_IDENTIFIER)
     {
-        Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_CLASS, f_lexer->get_input()->get_position());
+        Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_CLASS, f_lexer->get_input()->get_position());
         msg << "the name of the class is expected after the keyword 'class'";
         return;
     }
@@ -80,7 +80,7 @@ void Parser::class_declaration(Node::pointer_t& node, Node::node_t type)
         {
             // TBD: we may not need this error since the expression() should
             //      already generate an error as required
-            Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_CLASS, f_lexer->get_input()->get_position());
+            Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_CLASS, f_lexer->get_input()->get_position());
             msg << "expected a valid expression after '" << f_node->get_type_name() << "'";
             //return; -- continue? -- it was before...
         }
@@ -110,14 +110,14 @@ void Parser::class_declaration(Node::pointer_t& node, Node::node_t type)
         }
         else
         {
-            Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_CURVLY_BRAKETS_EXPECTED, f_lexer->get_input()->get_position());
+            Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_CURVLY_BRAKETS_EXPECTED, f_lexer->get_input()->get_position());
             msg << "'}' expected to close the 'class' definition";
         }
     }
     else if(f_node->get_type() != Node::node_t::NODE_SEMICOLON)
     {
         // accept empty class definitions (for typedef's and forward declaration)
-        Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_CURVLY_BRAKETS_EXPECTED, f_lexer->get_input()->get_position());
+        Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_CURVLY_BRAKETS_EXPECTED, f_lexer->get_input()->get_position());
         msg << "'{' expected to start the 'class' definition";
     }
 }
@@ -157,7 +157,7 @@ void Parser::enum_declaration(Node::pointer_t& node)
             // empty enumeration (i.e. forward declaration)
             return;
         }
-        Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_CURVLY_BRAKETS_EXPECTED, f_lexer->get_input()->get_position());
+        Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_CURVLY_BRAKETS_EXPECTED, f_lexer->get_input()->get_position());
         msg << "'{' expected to start the 'enum' definition";
         return;
     }
@@ -173,7 +173,7 @@ void Parser::enum_declaration(Node::pointer_t& node)
             // skip to the next token
             get_token();
 
-            Message msg(MESSAGE_LEVEL_WARNING, AS_ERR_UNEXPECTED_PUNCTUATION, f_lexer->get_input()->get_position());
+            Message msg(message_level_t::MESSAGE_LEVEL_WARNING, err_code_t::AS_ERR_UNEXPECTED_PUNCTUATION, f_lexer->get_input()->get_position());
             msg << "',' unexpected without a name";
             continue;
         }
@@ -189,7 +189,7 @@ void Parser::enum_declaration(Node::pointer_t& node)
         }
         else
         {
-            Message msg(MESSAGE_LEVEL_WARNING, AS_ERR_INVALID_ENUM, f_lexer->get_input()->get_position());
+            Message msg(message_level_t::MESSAGE_LEVEL_WARNING, err_code_t::AS_ERR_INVALID_ENUM, f_lexer->get_input()->get_position());
             msg << "each 'enum' entry needs to include an identifier";
         }
         Node::pointer_t expr;
@@ -226,7 +226,7 @@ void Parser::enum_declaration(Node::pointer_t& node)
         }
         else if(f_node->get_type() == Node::node_t::NODE_CLOSE_CURVLY_BRACKET)
         {
-            Message msg(MESSAGE_LEVEL_WARNING, AS_ERR_UNEXPECTED_PUNCTUATION, f_lexer->get_input()->get_position());
+            Message msg(message_level_t::MESSAGE_LEVEL_WARNING, err_code_t::AS_ERR_UNEXPECTED_PUNCTUATION, f_lexer->get_input()->get_position());
             msg << "',' expected between enumeration elements";
         }
     }
@@ -237,7 +237,7 @@ void Parser::enum_declaration(Node::pointer_t& node)
     }
     else
     {
-        Message msg(MESSAGE_LEVEL_WARNING, AS_ERR_CURVLY_BRAKETS_EXPECTED, f_lexer->get_input()->get_position());
+        Message msg(message_level_t::MESSAGE_LEVEL_WARNING, err_code_t::AS_ERR_CURVLY_BRAKETS_EXPECTED, f_lexer->get_input()->get_position());
         msg << "'}' expected to close the 'enum' definition";
     }
 }

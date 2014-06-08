@@ -81,18 +81,18 @@ void As2JsInt64UnitTests::test_int64()
         CPPUNIT_ASSERT(as2js::compare_utils::is_ordered(copy.compare(random)));
         if(q < r)
         {
-            CPPUNIT_ASSERT(random.compare(copy) == as2js::COMPARE_LESS);
-            CPPUNIT_ASSERT(copy.compare(random) == as2js::COMPARE_GREATER);
+            CPPUNIT_ASSERT(random.compare(copy) == as2js::compare_t::COMPARE_LESS);
+            CPPUNIT_ASSERT(copy.compare(random) == as2js::compare_t::COMPARE_GREATER);
         }
         else if(q > r)
         {
-            CPPUNIT_ASSERT(random.compare(copy) == as2js::COMPARE_GREATER);
-            CPPUNIT_ASSERT(copy.compare(random) == as2js::COMPARE_LESS);
+            CPPUNIT_ASSERT(random.compare(copy) == as2js::compare_t::COMPARE_GREATER);
+            CPPUNIT_ASSERT(copy.compare(random) == as2js::compare_t::COMPARE_LESS);
         }
         else
         {
-            CPPUNIT_ASSERT(random.compare(copy) == as2js::COMPARE_EQUAL);
-            CPPUNIT_ASSERT(copy.compare(random) == as2js::COMPARE_EQUAL);
+            CPPUNIT_ASSERT(random.compare(copy) == as2js::compare_t::COMPARE_EQUAL);
+            CPPUNIT_ASSERT(copy.compare(random) == as2js::compare_t::COMPARE_EQUAL);
         }
 
         int8_t p;
@@ -126,18 +126,18 @@ void As2JsInt64UnitTests::test_int64()
         CPPUNIT_ASSERT(as2js::compare_utils::is_ordered(copy.compare(random)));
         if(q < r)
         {
-            CPPUNIT_ASSERT(random.compare(copy) == as2js::COMPARE_LESS);
-            CPPUNIT_ASSERT(copy.compare(random) == as2js::COMPARE_GREATER);
+            CPPUNIT_ASSERT(random.compare(copy) == as2js::compare_t::COMPARE_LESS);
+            CPPUNIT_ASSERT(copy.compare(random) == as2js::compare_t::COMPARE_GREATER);
         }
         else if(q > r)
         {
-            CPPUNIT_ASSERT(random.compare(copy) == as2js::COMPARE_GREATER);
-            CPPUNIT_ASSERT(copy.compare(random) == as2js::COMPARE_LESS);
+            CPPUNIT_ASSERT(random.compare(copy) == as2js::compare_t::COMPARE_GREATER);
+            CPPUNIT_ASSERT(copy.compare(random) == as2js::compare_t::COMPARE_LESS);
         }
         else
         {
-            CPPUNIT_ASSERT(random.compare(copy) == as2js::COMPARE_EQUAL);
-            CPPUNIT_ASSERT(copy.compare(random) == as2js::COMPARE_EQUAL);
+            CPPUNIT_ASSERT(random.compare(copy) == as2js::compare_t::COMPARE_EQUAL);
+            CPPUNIT_ASSERT(copy.compare(random) == as2js::compare_t::COMPARE_EQUAL);
         }
 
         uint8_t p;
@@ -172,18 +172,18 @@ void As2JsInt64UnitTests::test_int64()
         CPPUNIT_ASSERT(as2js::compare_utils::is_ordered(copy.compare(random)));
         if(q < r)
         {
-            CPPUNIT_ASSERT(random.compare(copy) == as2js::COMPARE_LESS);
-            CPPUNIT_ASSERT(copy.compare(random) == as2js::COMPARE_GREATER);
+            CPPUNIT_ASSERT(random.compare(copy) == as2js::compare_t::COMPARE_LESS);
+            CPPUNIT_ASSERT(copy.compare(random) == as2js::compare_t::COMPARE_GREATER);
         }
         else if(q > r)
         {
-            CPPUNIT_ASSERT(random.compare(copy) == as2js::COMPARE_GREATER);
-            CPPUNIT_ASSERT(copy.compare(random) == as2js::COMPARE_LESS);
+            CPPUNIT_ASSERT(random.compare(copy) == as2js::compare_t::COMPARE_GREATER);
+            CPPUNIT_ASSERT(copy.compare(random) == as2js::compare_t::COMPARE_LESS);
         }
         else
         {
-            CPPUNIT_ASSERT(random.compare(copy) == as2js::COMPARE_EQUAL);
-            CPPUNIT_ASSERT(copy.compare(random) == as2js::COMPARE_EQUAL);
+            CPPUNIT_ASSERT(random.compare(copy) == as2js::compare_t::COMPARE_EQUAL);
+            CPPUNIT_ASSERT(copy.compare(random) == as2js::compare_t::COMPARE_EQUAL);
         }
 
         int16_t p;
@@ -219,18 +219,18 @@ void As2JsInt64UnitTests::test_int64()
         CPPUNIT_ASSERT(as2js::compare_utils::is_ordered(copy.compare(random)));
         if(q < r)
         {
-            CPPUNIT_ASSERT(random.compare(copy) == as2js::COMPARE_LESS);
-            CPPUNIT_ASSERT(copy.compare(random) == as2js::COMPARE_GREATER);
+            CPPUNIT_ASSERT(random.compare(copy) == as2js::compare_t::COMPARE_LESS);
+            CPPUNIT_ASSERT(copy.compare(random) == as2js::compare_t::COMPARE_GREATER);
         }
         else if(q > r)
         {
-            CPPUNIT_ASSERT(random.compare(copy) == as2js::COMPARE_GREATER);
-            CPPUNIT_ASSERT(copy.compare(random) == as2js::COMPARE_LESS);
+            CPPUNIT_ASSERT(random.compare(copy) == as2js::compare_t::COMPARE_GREATER);
+            CPPUNIT_ASSERT(copy.compare(random) == as2js::compare_t::COMPARE_LESS);
         }
         else
         {
-            CPPUNIT_ASSERT(random.compare(copy) == as2js::COMPARE_EQUAL);
-            CPPUNIT_ASSERT(copy.compare(random) == as2js::COMPARE_EQUAL);
+            CPPUNIT_ASSERT(random.compare(copy) == as2js::compare_t::COMPARE_EQUAL);
+            CPPUNIT_ASSERT(copy.compare(random) == as2js::compare_t::COMPARE_EQUAL);
         }
 
         uint16_t p;
@@ -268,18 +268,18 @@ void As2JsInt64UnitTests::test_int64()
         CPPUNIT_ASSERT(as2js::compare_utils::is_ordered(copy.compare(random)));
         if(q < r)
         {
-            CPPUNIT_ASSERT(random.compare(copy) == as2js::COMPARE_LESS);
-            CPPUNIT_ASSERT(copy.compare(random) == as2js::COMPARE_GREATER);
+            CPPUNIT_ASSERT(random.compare(copy) == as2js::compare_t::COMPARE_LESS);
+            CPPUNIT_ASSERT(copy.compare(random) == as2js::compare_t::COMPARE_GREATER);
         }
         else if(q > r)
         {
-            CPPUNIT_ASSERT(random.compare(copy) == as2js::COMPARE_GREATER);
-            CPPUNIT_ASSERT(copy.compare(random) == as2js::COMPARE_LESS);
+            CPPUNIT_ASSERT(random.compare(copy) == as2js::compare_t::COMPARE_GREATER);
+            CPPUNIT_ASSERT(copy.compare(random) == as2js::compare_t::COMPARE_LESS);
         }
         else
         {
-            CPPUNIT_ASSERT(random.compare(copy) == as2js::COMPARE_EQUAL);
-            CPPUNIT_ASSERT(copy.compare(random) == as2js::COMPARE_EQUAL);
+            CPPUNIT_ASSERT(random.compare(copy) == as2js::compare_t::COMPARE_EQUAL);
+            CPPUNIT_ASSERT(copy.compare(random) == as2js::compare_t::COMPARE_EQUAL);
         }
 
         int32_t p;
@@ -317,18 +317,18 @@ void As2JsInt64UnitTests::test_int64()
         CPPUNIT_ASSERT(as2js::compare_utils::is_ordered(copy.compare(random)));
         if(q < r)
         {
-            CPPUNIT_ASSERT(random.compare(copy) == as2js::COMPARE_LESS);
-            CPPUNIT_ASSERT(copy.compare(random) == as2js::COMPARE_GREATER);
+            CPPUNIT_ASSERT(random.compare(copy) == as2js::compare_t::COMPARE_LESS);
+            CPPUNIT_ASSERT(copy.compare(random) == as2js::compare_t::COMPARE_GREATER);
         }
         else if(q > r)
         {
-            CPPUNIT_ASSERT(random.compare(copy) == as2js::COMPARE_GREATER);
-            CPPUNIT_ASSERT(copy.compare(random) == as2js::COMPARE_LESS);
+            CPPUNIT_ASSERT(random.compare(copy) == as2js::compare_t::COMPARE_GREATER);
+            CPPUNIT_ASSERT(copy.compare(random) == as2js::compare_t::COMPARE_LESS);
         }
         else
         {
-            CPPUNIT_ASSERT(random.compare(copy) == as2js::COMPARE_EQUAL);
-            CPPUNIT_ASSERT(copy.compare(random) == as2js::COMPARE_EQUAL);
+            CPPUNIT_ASSERT(random.compare(copy) == as2js::compare_t::COMPARE_EQUAL);
+            CPPUNIT_ASSERT(copy.compare(random) == as2js::compare_t::COMPARE_EQUAL);
         }
 
         uint32_t p;
@@ -367,18 +367,18 @@ void As2JsInt64UnitTests::test_int64()
         CPPUNIT_ASSERT(as2js::compare_utils::is_ordered(copy.compare(random)));
         if(q < r)
         {
-            CPPUNIT_ASSERT(random.compare(copy) == as2js::COMPARE_LESS);
-            CPPUNIT_ASSERT(copy.compare(random) == as2js::COMPARE_GREATER);
+            CPPUNIT_ASSERT(random.compare(copy) == as2js::compare_t::COMPARE_LESS);
+            CPPUNIT_ASSERT(copy.compare(random) == as2js::compare_t::COMPARE_GREATER);
         }
         else if(q > r)
         {
-            CPPUNIT_ASSERT(random.compare(copy) == as2js::COMPARE_GREATER);
-            CPPUNIT_ASSERT(copy.compare(random) == as2js::COMPARE_LESS);
+            CPPUNIT_ASSERT(random.compare(copy) == as2js::compare_t::COMPARE_GREATER);
+            CPPUNIT_ASSERT(copy.compare(random) == as2js::compare_t::COMPARE_LESS);
         }
         else
         {
-            CPPUNIT_ASSERT(random.compare(copy) == as2js::COMPARE_EQUAL);
-            CPPUNIT_ASSERT(copy.compare(random) == as2js::COMPARE_EQUAL);
+            CPPUNIT_ASSERT(random.compare(copy) == as2js::compare_t::COMPARE_EQUAL);
+            CPPUNIT_ASSERT(copy.compare(random) == as2js::compare_t::COMPARE_EQUAL);
         }
 
         int64_t p;
@@ -420,18 +420,18 @@ void As2JsInt64UnitTests::test_int64()
         CPPUNIT_ASSERT(as2js::compare_utils::is_ordered(copy.compare(random)));
         if(static_cast<int64_t>(q) < static_cast<int64_t>(r))
         {
-            CPPUNIT_ASSERT(random.compare(copy) == as2js::COMPARE_LESS);
-            CPPUNIT_ASSERT(copy.compare(random) == as2js::COMPARE_GREATER);
+            CPPUNIT_ASSERT(random.compare(copy) == as2js::compare_t::COMPARE_LESS);
+            CPPUNIT_ASSERT(copy.compare(random) == as2js::compare_t::COMPARE_GREATER);
         }
         else if(static_cast<int64_t>(q) > static_cast<int64_t>(r))
         {
-            CPPUNIT_ASSERT(random.compare(copy) == as2js::COMPARE_GREATER);
-            CPPUNIT_ASSERT(copy.compare(random) == as2js::COMPARE_LESS);
+            CPPUNIT_ASSERT(random.compare(copy) == as2js::compare_t::COMPARE_GREATER);
+            CPPUNIT_ASSERT(copy.compare(random) == as2js::compare_t::COMPARE_LESS);
         }
         else
         {
-            CPPUNIT_ASSERT(random.compare(copy) == as2js::COMPARE_EQUAL);
-            CPPUNIT_ASSERT(copy.compare(random) == as2js::COMPARE_EQUAL);
+            CPPUNIT_ASSERT(random.compare(copy) == as2js::compare_t::COMPARE_EQUAL);
+            CPPUNIT_ASSERT(copy.compare(random) == as2js::compare_t::COMPARE_EQUAL);
         }
 
         uint64_t p;

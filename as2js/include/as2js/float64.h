@@ -129,14 +129,14 @@ public:
                         // if we got a NaN, it's not ordered
                         if(is_NaN() || rhs.is_NaN())
                         {
-                            return COMPARE_UNORDERED;
+                            return compare_t::COMPARE_UNORDERED;
                         }
 
                         // comparing two floats properly handles infinity
                         // (at least in g++ on Intel processors)
-                        return f_float == rhs.f_float ? COMPARE_EQUAL
-                             : (f_float < rhs.f_float ? COMPARE_LESS
-                                                      : COMPARE_GREATER);
+                        return f_float == rhs.f_float ? compare_t::COMPARE_EQUAL
+                             : (f_float < rhs.f_float ? compare_t::COMPARE_LESS
+                                                      : compare_t::COMPARE_GREATER);
                     }
 
 private:

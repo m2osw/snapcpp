@@ -40,7 +40,7 @@ namespace as2js
 {
 
 
-enum compare_t
+enum class compare_t
 {
 	COMPARE_EQUAL = 0,
 	COMPARE_GREATER = 1,
@@ -55,7 +55,7 @@ namespace compare_utils
 {
 inline bool is_ordered(compare_t const c)
 {
-    return c == COMPARE_EQUAL || c == COMPARE_GREATER || c == COMPARE_LESS;
+    return c == compare_t::COMPARE_EQUAL || c == compare_t::COMPARE_GREATER || c == compare_t::COMPARE_LESS;
 }
 }
 // namespace compare

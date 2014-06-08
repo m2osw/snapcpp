@@ -45,14 +45,14 @@ namespace as2js
 
 
 JSON::JSONValue::JSONValue(Position const &position)
-    : f_type(JSON_TYPE_NULL)
+    : f_type(type_t::JSON_TYPE_NULL)
     , f_position(position)
 {
 }
 
 
 JSON::JSONValue::JSONValue(Position const &position, Int64 integer)
-    : f_type(JSON_TYPE_INT64)
+    : f_type(type_t::JSON_TYPE_INT64)
     , f_position(position)
     , f_integer(integer)
 {
@@ -60,7 +60,7 @@ JSON::JSONValue::JSONValue(Position const &position, Int64 integer)
 
 
 JSON::JSONValue::JSONValue(Position const &position, Float64 floating_point)
-    : f_type(JSON_TYPE_FLOAT64)
+    : f_type(type_t::JSON_TYPE_FLOAT64)
     , f_position(position)
     , f_float(floating_point)
 {
@@ -68,7 +68,7 @@ JSON::JSONValue::JSONValue(Position const &position, Float64 floating_point)
 
 
 JSON::JSONValue::JSONValue(Position const &position, String const& string)
-    : f_type(JSON_TYPE_STRING)
+    : f_type(type_t::JSON_TYPE_STRING)
     , f_position(position)
     , f_string(string)
 {
@@ -76,14 +76,14 @@ JSON::JSONValue::JSONValue(Position const &position, String const& string)
 
 
 JSON::JSONValue::JSONValue(Position const &position, bool boolean)
-    : f_type(boolean ? JSON_TYPE_TRUE : JSON_TYPE_FALSE)
+    : f_type(boolean ? type_t::JSON_TYPE_TRUE : type_t::JSON_TYPE_FALSE)
     , f_position(position)
 {
 }
 
 
 JSON::JSONValue::JSONValue(Position const &position, array_t const& array)
-    : f_type(JSON_TYPE_ARRAY)
+    : f_type(type_t::JSON_TYPE_ARRAY)
     , f_position(position)
     , f_array(array)
 {
@@ -91,7 +91,7 @@ JSON::JSONValue::JSONValue(Position const &position, array_t const& array)
 
 
 JSON::JSONValue::JSONValue(Position const &position, object_t const& object)
-    : f_type(JSON_TYPE_OBJECT)
+    : f_type(type_t::JSON_TYPE_OBJECT)
     , f_position(position)
     , f_object(object)
 {
@@ -178,7 +178,7 @@ String JSON::JSONValue::to_string() const
 
     switch(f_type)
     {
-    case JSON_TYPE_ARRAY:
+    case type_t::JSON_TYPE_ARRAY:
         result += "[";
         if(f_array.size() > 0)
         {
@@ -193,11 +193,11 @@ String JSON::JSONValue::to_string() const
         result += "]";
         break;
 
-    case JSON_TYPE_FALSE:
+    case type_t::JSON_TYPE_FALSE:
         result += "false";
         break;
 
-    case JSON_TYPE_FLOAT64:
+    case type_t::JSON_TYPE_FLOAT64:
         {
             std::stringstream value;
             value << f_float.get();
@@ -205,7 +205,7 @@ String JSON::JSONValue::to_string() const
         }
         break;
 
-    case JSON_TYPE_INT64:
+    case type_t::JSON_TYPE_INT64:
         {
             std::stringstream value;
             value << f_integer.get();
@@ -213,11 +213,11 @@ String JSON::JSONValue::to_string() const
         }
         break;
 
-    case JSON_TYPE_NULL:
+    case type_t::JSON_TYPE_NULL:
         result += "null";
         break;
 
-    case JSON_TYPE_OBJECT:
+    case type_t::JSON_TYPE_OBJECT:
         result += "{";
         if(f_object.size() > 0)
         {
@@ -236,15 +236,15 @@ String JSON::JSONValue::to_string() const
         result += "}";
         break;
 
-    case JSON_TYPE_STRING:
+    case type_t::JSON_TYPE_STRING:
         result += f_string;
         break;
 
-    case JSON_TYPE_TRUE:
+    case type_t::JSON_TYPE_TRUE:
         result += "true";
         break;
 
-    case JSON_TYPE_UNKNOWN:
+    case type_t::JSON_TYPE_UNKNOWN:
         throw exception_internal_error("JSON type \"Unknown\" is not value and should never be used (it should not possible to use it in an element)");
 
     }
@@ -263,7 +263,7 @@ JSON::JSONValue::pointer_t JSON::load(String const& filename, Options::pointer_t
     FileInput::pointer_t in(new FileInput());
     if(!in->open(filename))
     {
-        Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_NOT_FOUND, pos);
+        Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_NOT_FOUND, pos);
         msg << "cannot open JSON file \"" << filename << "\".";
         return JSONValue::pointer_t();
     }
@@ -276,13 +276,13 @@ JSON::JSONValue::pointer_t JSON::parse(Input::pointer_t in, Options::pointer_t o
 {
     // Parse the JSON file
     // make sure it is marked as JSON
-    options->set_option(Options::OPTION_JSON, 1);
+    options->set_option(Options::option_t::OPTION_JSON, 1);
     f_lexer.reset(new Lexer(in, options));
     f_value = read_json_value();
 
     if(!f_value)
     {
-        Message msg(MESSAGE_LEVEL_FATAL, AS_ERR_CANNOT_COMPILE, in->get_position());
+        Message msg(message_level_t::MESSAGE_LEVEL_FATAL, err_code_t::AS_ERR_CANNOT_COMPILE, in->get_position());
         msg << "could not interpret this JSON input \"" << in->get_position().get_filename() << "\".";
     }
 
@@ -329,7 +329,7 @@ JSON::JSONValue::pointer_t JSON::read_json_value()
                     }
                     if(n->get_type() != Node::node_t::NODE_STRING)
                     {
-                        Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_STRING_EXPECTED, f_lexer->get_input()->get_position());
+                        Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_STRING_EXPECTED, f_lexer->get_input()->get_position());
                         msg << "expected a string as the JSON object member name";
                         return JSONValue::pointer_t();
                     }
@@ -337,7 +337,7 @@ JSON::JSONValue::pointer_t JSON::read_json_value()
                     n = f_lexer->get_next_token();
                     if(n->get_type() != Node::node_t::NODE_COLON)
                     {
-                        Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_COLON_EXPECTED, f_lexer->get_input()->get_position());
+                        Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_COLON_EXPECTED, f_lexer->get_input()->get_position());
                         msg << "expected a colon (:) as the JSON object member name and member value separator";
                         return JSONValue::pointer_t();
                     }
@@ -351,7 +351,7 @@ JSON::JSONValue::pointer_t JSON::read_json_value()
                     {
                         // TBD: we should verify that JSON indeed forbids such
                         //      nonsense; because we may have it wrong
-                        Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_OBJECT_MEMBER_DEFINED_TWICE, f_lexer->get_input()->get_position());
+                        Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_OBJECT_MEMBER_DEFINED_TWICE, f_lexer->get_input()->get_position());
                         msg << "the same object member \"" << name << "\" was defined twice, which is not allowed in JSON.";
                         // continue because the element in its is otherwise
                         // valid
@@ -398,7 +398,7 @@ JSON::JSONValue::pointer_t JSON::read_json_value()
             return JSONValue::pointer_t(new JSONValue(f_lexer->get_input()->get_position(), true));
 
         default:
-            Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_UNEXPECTED_TOKEN, f_lexer->get_input()->get_position());
+            Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_UNEXPECTED_TOKEN, f_lexer->get_input()->get_position());
             msg << "unexpected token (" << n->get_type_name() << ") found in a JSON input stream";
             return JSONValue::pointer_t();
 
@@ -412,7 +412,7 @@ bool JSON::save(String const& filename, String const& header) const
     FileOutput::pointer_t out(new FileOutput());
     if(!out->open(filename))
     {
-        Message msg(MESSAGE_LEVEL_FATAL, AS_ERR_CANNOT_COMPILE, out->get_position());
+        Message msg(message_level_t::MESSAGE_LEVEL_FATAL, err_code_t::AS_ERR_CANNOT_COMPILE, out->get_position());
         msg << "could not open output file \"" << filename << "\".";
         return false;
     }

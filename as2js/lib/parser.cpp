@@ -86,7 +86,7 @@ void Parser::get_token()
     }
 
     if(f_options
-    && f_options->get_option(Options::OPTION_DEBUG_LEXER) != 0)
+    && f_options->get_option(Options::option_t::OPTION_DEBUG_LEXER) != 0)
     {
         std::cerr << (reget ? "RE-TOKEN" : "TOKEN") << ": " << f_node << std::endl;
     }

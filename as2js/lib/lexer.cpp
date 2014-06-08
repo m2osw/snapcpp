@@ -71,6 +71,10 @@ Input::pointer_t Lexer::get_input() const
 }
 
 
+/** \brief Retrieve the next character of input.
+ *
+ * This function reads one character of input and returns it.
+ */
 Input::char_t Lexer::getc()
 {
     Input::char_t c(f_input->getc());
@@ -252,7 +256,7 @@ int64_t Lexer::read_hex(long max)
     if(p == 0)
     {
         {
-            Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_UNICODE_ESCAPE_SEQUENCE, f_input->get_position());
+            Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_UNICODE_ESCAPE_SEQUENCE, f_input->get_position());
             msg << "invalid unicode (\\[xXuU]##) escape sequence)";
         }
         return -1;
@@ -307,8 +311,8 @@ Input::char_t Lexer::escape_sequence()
 
     case 'e':
         // strict has priority
-        if(!has_option_set(Options::OPTION_STRICT)
-        && has_option_set(Options::OPTION_EXTENDED_ESCAPE_SEQUENCES))
+        if(!has_option_set(Options::option_t::OPTION_STRICT)
+        && has_option_set(Options::option_t::OPTION_EXTENDED_ESCAPE_SEQUENCES))
         {
             return '\033';
         }
@@ -330,7 +334,7 @@ Input::char_t Lexer::escape_sequence()
         return '\v';
 
     default:
-        if(has_option_set(Options::OPTION_STRICT))
+        if(has_option_set(Options::option_t::OPTION_STRICT))
         {
             if(c == '0')
             {
@@ -351,14 +355,14 @@ Input::char_t Lexer::escape_sequence()
     if(c > ' ' && c < 0x7F)
     {
         {
-            Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_UNKNOWN_ESCAPE_SEQUENCE, f_input->get_position());
+            Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_UNKNOWN_ESCAPE_SEQUENCE, f_input->get_position());
             msg << "unknown escape letter '" << static_cast<char>(c) << "'";
         }
     }
     else
     {
         {
-            Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_UNKNOWN_ESCAPE_SEQUENCE, f_input->get_position());
+            Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_UNKNOWN_ESCAPE_SEQUENCE, f_input->get_position());
             msg << "unknown escape letter '\\U" << std::hex << std::setw(8) << std::setfill('0') << static_cast<int32_t>(c) << "'";
         }
     }
@@ -511,7 +515,7 @@ void Lexer::read_identifier(Input::char_t c)
             break;
 
         case 'g':
-            if(has_option_set(Options::OPTION_EXTENDED_STATEMENTS))
+            if(has_option_set(Options::option_t::OPTION_EXTENDED_STATEMENTS))
             {
                 if(l == 4 && str == "goto")
                 {
@@ -794,7 +798,7 @@ void Lexer::read_number(Input::char_t c)
         }
         // octal is not permitted in ECMAScript version 3+
         // (especially in strict  mode)
-        if(has_option_set(Options::OPTION_OCTAL)
+        if(has_option_set(Options::option_t::OPTION_OCTAL)
         && c >= '0' && c <= '7')
         {
             // octal
@@ -854,13 +858,13 @@ void Lexer::read_string(Input::char_t quote)
     {
         if(c < 0)
         {
-            Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_UNTERMINTED_STRING, f_input->get_position());
+            Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_UNTERMINTED_STRING, f_input->get_position());
             msg << "the last string was not closed before the end of the input was reached";
             return;
         }
         if((f_char_type & CHAR_LINE_TERMINATOR) != 0)
         {
-            Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_UNTERMINTED_STRING, f_input->get_position());
+            Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_UNTERMINTED_STRING, f_input->get_position());
             msg << "a string cannot include a line terminator";
             return;
         }
@@ -975,11 +979,35 @@ void Lexer::get_token()
                 f_result_type = Node::node_t::NODE_LESS_EQUAL;
                 return;
             }
-            if(has_option_set(Options::OPTION_EXTENDED_OPERATORS))
+            if(has_option_set(Options::option_t::OPTION_EXTENDED_OPERATORS))
             {
                 if(c == '>')
                 {
                     f_result_type = Node::node_t::NODE_NOT_EQUAL;
+                    return;
+                }
+                if(c == '?')
+                {
+                    c = getc();
+                    if(c == '=')
+                    {
+                        f_result_type = Node::node_t::NODE_ASSIGNMENT_MINIMUM;
+                        return;
+                    }
+                    ungetc(c);
+                    f_result_type = Node::node_t::NODE_MINIMUM;
+                    return;
+                }
+                if(c == '!')
+                {
+                    c = getc();
+                    if(c == '=')
+                    {
+                        f_result_type = Node::node_t::NODE_ASSIGNMENT_ROTATE_LEFT;
+                        return;
+                    }
+                    ungetc(c);
+                    f_result_type = Node::node_t::NODE_ROTATE_LEFT;
                     return;
                 }
             }
@@ -1018,27 +1046,21 @@ void Lexer::get_token()
                 f_result_type = Node::node_t::NODE_GREATER_EQUAL;
                 return;
             }
-            ungetc(c);
-            f_result_type = Node::node_t::NODE_GREATER;
-            return;
-
-        case '!':
-            c = getc();
-            if(has_option_set(Options::OPTION_EXTENDED_OPERATORS))
+            if(has_option_set(Options::option_t::OPTION_EXTENDED_OPERATORS))
             {
-                if(c == '<')
+                if(c == '?')
                 {
                     c = getc();
                     if(c == '=')
                     {
-                        f_result_type = Node::node_t::NODE_ASSIGNMENT_ROTATE_LEFT;
+                        f_result_type = Node::node_t::NODE_ASSIGNMENT_MAXIMUM;
                         return;
                     }
                     ungetc(c);
-                    f_result_type = Node::node_t::NODE_ROTATE_LEFT;
+                    f_result_type = Node::node_t::NODE_MAXIMUM;
                     return;
                 }
-                if(c == '>')
+                if(c == '!')
                 {
                     c = getc();
                     if(c == '=')
@@ -1051,6 +1073,12 @@ void Lexer::get_token()
                     return;
                 }
             }
+            ungetc(c);
+            f_result_type = Node::node_t::NODE_GREATER;
+            return;
+
+        case '!':
+            c = getc();
             if(c == '=')
             {
                 c = getc();
@@ -1087,7 +1115,7 @@ void Lexer::get_token()
 
         case ':':
             c = getc();
-            if(has_option_set(Options::OPTION_EXTENDED_OPERATORS)
+            if(has_option_set(Options::option_t::OPTION_EXTENDED_OPERATORS)
             && c == '=')
             {
                 f_result_type = Node::node_t::NODE_ASSIGNMENT;
@@ -1104,7 +1132,7 @@ void Lexer::get_token()
 
         case '~':
             c = getc();
-            if(has_option_set(Options::OPTION_EXTENDED_OPERATORS)
+            if(has_option_set(Options::option_t::OPTION_EXTENDED_OPERATORS)
             && c == '=')
             {
                 f_result_type = Node::node_t::NODE_MATCH;
@@ -1153,7 +1181,7 @@ void Lexer::get_token()
                 f_result_type = Node::node_t::NODE_ASSIGNMENT_MULTIPLY;
                 return;
             }
-            if(has_option_set(Options::OPTION_EXTENDED_OPERATORS)
+            if(has_option_set(Options::option_t::OPTION_EXTENDED_OPERATORS)
             && c == '*')
             {
                 c = getc();
@@ -1222,35 +1250,6 @@ void Lexer::get_token()
             return;
 
         case '?':
-            c = getc();
-            if(has_option_set(Options::OPTION_EXTENDED_OPERATORS))
-            {
-                if(c == '<')
-                {
-                    c = getc();
-                    if(c == '=')
-                    {
-                        f_result_type = Node::node_t::NODE_ASSIGNMENT_MINIMUM;
-                        return;
-                    }
-                    ungetc(c);
-                    f_result_type = Node::node_t::NODE_MINIMUM;
-                    return;
-                }
-                if(c == '>')
-                {
-                    c = getc();
-                    if(c == '=')
-                    {
-                        f_result_type = Node::node_t::NODE_ASSIGNMENT_MAXIMUM;
-                        return;
-                    }
-                    ungetc(c);
-                    f_result_type = Node::node_t::NODE_MAXIMUM;
-                    return;
-                }
-            }
-            ungetc(c);
             f_result_type = Node::node_t::NODE_CONDITIONAL;
             return;
 
@@ -1387,12 +1386,12 @@ void Lexer::get_token()
         default:
             if(c > ' ' && c < 0x7F)
             {
-                Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_UNEXPECTED_PUNCTUATION, f_input->get_position());
+                Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_UNEXPECTED_PUNCTUATION, f_input->get_position());
                 msg << "unexpected punctuation '" << static_cast<char>(c) << "'";
             }
             else
             {
-                Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_UNEXPECTED_PUNCTUATION, f_input->get_position());
+                Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_UNEXPECTED_PUNCTUATION, f_input->get_position());
                 msg << "unexpected punctuation '\\U" << c << "'";
             }
             break;
@@ -1403,6 +1402,22 @@ void Lexer::get_token()
 }
 
 
+/** \brief Check whether a given option is set.
+ *
+ * Because the lexer checks options in many places, it makes use of this
+ * helper function to avoid having to check the f_options pointer
+ * every single time.
+ *
+ * This function checks whether the specified option is set. If so,
+ * then it returns true, otherwise it returns false.
+ *
+ * If no option were specified when the Lexer object was created,
+ * then the function always returns false.
+ *
+ * \param[in] option  The option to check.
+ *
+ * \return true if the option was set, false otherwise.
+ */
 bool Lexer::has_option_set(Options::option_t option) const
 {
     if(f_options)

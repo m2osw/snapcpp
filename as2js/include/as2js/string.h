@@ -59,7 +59,7 @@ public:
     // Unicode BOM character
     static as_char_t const  STRING_BOM = 0xFEFF;
 
-    enum conversion_result_t
+    enum class conversion_result_t
     {
         STRING_GOOD    =  0,   // string conversion succeeded
         STRING_END     = -1,   // not enough data to form a character

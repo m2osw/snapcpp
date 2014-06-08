@@ -209,7 +209,7 @@ bool Compiler::find_module(String const& filename, Node::pointer_t& result)
         // 'in' is just a 'class Input' so we need to cast
         if(!static_cast<FileInput&>(*in).open(filename))
         {
-            Message msg(MESSAGE_LEVEL_FATAL, AS_ERR_NOT_FOUND, in->get_position());
+            Message msg(message_level_t::MESSAGE_LEVEL_FATAL, err_code_t::AS_ERR_NOT_FOUND, in->get_position());
             msg << "cannot open module file \"" << filename << "\".";
             throw exception_exit(1, "cannot open module file");
         }
@@ -227,7 +227,7 @@ result.Display(stderr);
 
     if(!result)
     {
-        Message msg(MESSAGE_LEVEL_FATAL, AS_ERR_CANNOT_COMPILE, in->get_position());
+        Message msg(message_level_t::MESSAGE_LEVEL_FATAL, err_code_t::AS_ERR_CANNOT_COMPILE, in->get_position());
         msg << "could not compile module file \"" << filename << "\".";
         throw exception_exit(1, "could not compile module file");
     }
@@ -411,7 +411,7 @@ void Compiler::load_internal_packages(char const *module)
         // could not read this directory
         Position pos;
         pos.set_filename(path);
-        Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INSTALLATION, pos);
+        Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INSTALLATION, pos);
         msg << "cannot read directory \"" << path << "\".\n";
         throw exception_exit(1, "cannot read directory");
     }
@@ -480,7 +480,7 @@ void Compiler::import(Node::pointer_t& import_node)
         }
         if(!package)
         {
-            Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_NOT_FOUND, import_node->get_position());
+            Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_NOT_FOUND, import_node->get_position());
             msg << "cannot find package '" << import_node->get_string() << "'.";
             return;
         }
@@ -590,7 +590,7 @@ bool Compiler::find_package_item(Node::pointer_t program_node, Node::pointer_t i
             // this is a bad error! we should always find the
             // packages in this case (i.e. when looking using the
             // database.)
-            Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INTERNAL_ERROR, import_node->get_position());
+            Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INTERNAL_ERROR, import_node->get_position());
             msg << "cannot find package '" << import_node->get_string() << "' in any of the previously registered packages.";
             throw exception_exit(1, "cannot find package");
         }

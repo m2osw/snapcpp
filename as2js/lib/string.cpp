@@ -472,7 +472,7 @@ String::conversion_result_t String::from_char(char const *str, int len)
         }
     }
 
-    return STRING_GOOD;
+    return conversion_result_t::STRING_GOOD;
 }
 
 
@@ -509,14 +509,14 @@ String::conversion_result_t String::from_wchar(wchar_t const *str, int len)
             if(c >= 0xD800 && c < 0xDC00)
             {
                 f_lead_surrogate = c;
-                return STRING_END; // not an error unless it was the last character
+                return conversion_result_t::STRING_END; // not an error unless it was the last character
             }
             else if(c >= 0xDC00 && c <= 0xDFFF)
             {
                 if(f_lead_surrogate == 0)
                 {
                     // invalid encoding
-                    return STRING_BAD;
+                    return conversion_result_t::STRING_BAD;
                 }
                 c = (((static_cast<as_char_t>(f_lead_surrogate) & 0x03FF) << 10) | (static_cast<as_char_t>(c) & 0x03FF)) + 0x10000;
                 // Note: UTF-16 characters cannot be invalid here
@@ -524,12 +524,12 @@ String::conversion_result_t String::from_wchar(wchar_t const *str, int len)
                 //       among invalid characters)
                 if(!f_string.valid_character(c))
                 {
-                    return STRING_INVALID; // LCOV_EXCL_LINE
+                    return conversion_result_t::STRING_INVALID; // LCOV_EXCL_LINE
                 }
                 f_lead_surrogate = 0;
             }
             f_string.append(1, c);
-            return STRING_GOOD;
+            return conversion_result_t::STRING_GOOD;
         }
 
         String          f_string;
@@ -537,7 +537,7 @@ String::conversion_result_t String::from_wchar(wchar_t const *str, int len)
     };
 
     out o;
-    String::conversion_result_t result(STRING_GOOD);
+    String::conversion_result_t result(conversion_result_t::STRING_GOOD);
     if(str != nullptr)
     {
         if(len == -1)
@@ -545,7 +545,7 @@ String::conversion_result_t String::from_wchar(wchar_t const *str, int len)
             for(; *str != '\0'; ++str)
             {
                 result = o.add(*str);
-                if(result != STRING_GOOD && result != STRING_END)
+                if(result != conversion_result_t::STRING_GOOD && result != conversion_result_t::STRING_END)
                 {
                     break;
                 }
@@ -556,7 +556,7 @@ String::conversion_result_t String::from_wchar(wchar_t const *str, int len)
             for(; len > 0 && *str != '\0'; --len, ++str)
             {
                 result = o.add(*str);
-                if(result != STRING_GOOD && result != STRING_END)
+                if(result != conversion_result_t::STRING_GOOD && result != conversion_result_t::STRING_END)
                 {
                     break;
                 }
@@ -564,7 +564,7 @@ String::conversion_result_t String::from_wchar(wchar_t const *str, int len)
         }
     }
 
-    if(result == STRING_GOOD)
+    if(result == conversion_result_t::STRING_GOOD)
     {
         *this = o.f_string;
     }
@@ -606,7 +606,7 @@ String::conversion_result_t String::from_as_char(as_char_t const *str, int len)
             {
                 if(!valid_character(*str))
                 {
-                    return STRING_INVALID;
+                    return conversion_result_t::STRING_INVALID;
                 }
                 s.append(1, *str);
             }
@@ -617,7 +617,7 @@ String::conversion_result_t String::from_as_char(as_char_t const *str, int len)
             {
                 if(!valid_character(*str))
                 {
-                    return STRING_INVALID;
+                    return conversion_result_t::STRING_INVALID;
                 }
                 s.append(1, *str);
             }
@@ -626,7 +626,7 @@ String::conversion_result_t String::from_as_char(as_char_t const *str, int len)
 
     *this = s;
 
-    return STRING_GOOD;
+    return conversion_result_t::STRING_GOOD;
 }
 
 
@@ -708,12 +708,12 @@ String::conversion_result_t String::from_utf8(char const *str, int len)
                 else
                 {
                     // invalid UTF-8 sequence
-                    return STRING_BAD;
+                    return conversion_result_t::STRING_BAD;
                 }
                 if(len < l)
                 {
                     // not enough character
-                    return STRING_END;
+                    return conversion_result_t::STRING_END;
                 }
                 len -= l;
                 while(l > 0)
@@ -721,7 +721,7 @@ String::conversion_result_t String::from_utf8(char const *str, int len)
                     c = static_cast<unsigned char>(*str++);
                     if(c < 0x80 || c > 0xBF)
                     {
-                        return STRING_BAD;
+                        return conversion_result_t::STRING_BAD;
                     }
                     l--;
                     w = (w << 6) | (c & 0x3F);
@@ -729,7 +729,7 @@ String::conversion_result_t String::from_utf8(char const *str, int len)
             }
             if(!valid_character(w))
             {
-                return STRING_INVALID;
+                return conversion_result_t::STRING_INVALID;
             }
             result.append(1, w);
         }
@@ -738,7 +738,7 @@ String::conversion_result_t String::from_utf8(char const *str, int len)
     // it worked, we can smash this String
     *this = result;
 
-    return STRING_GOOD;
+    return conversion_result_t::STRING_GOOD;
 }
 
 

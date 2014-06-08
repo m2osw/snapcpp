@@ -74,7 +74,7 @@ void Compiler::parameters(Node::pointer_t parameters_node)
             Node::pointer_t prev(parameters_node->get_child(k));
             if(prev->get_string() == param->get_string())
             {
-                Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_DUPLICATES, parameters_node->get_position());
+                Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_DUPLICATES, parameters_node->get_position());
                 msg << "parameter '" << param->get_string() << "' is defined two or more times in the same list of parameters.";
                 break;
             }
@@ -104,7 +104,7 @@ void Compiler::parameters(Node::pointer_t parameters_node)
                     }
                     else if(existing_type != type)
                     {
-                        Message msg(MESSAGE_LEVEL_FATAL, AS_ERR_INVALID_TYPE, param->get_position());
+                        Message msg(message_level_t::MESSAGE_LEVEL_FATAL, err_code_t::AS_ERR_INVALID_TYPE, param->get_position());
                         msg << "Existing type is:\n" << existing_type << "\nNew type would be:\n" << type;
                     }
                 }
@@ -208,7 +208,7 @@ void Compiler::function(Node::pointer_t function_node)
     {
         if(!member)
         {
-            Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_ATTRIBUTES, function_node->get_position());
+            Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_ATTRIBUTES, function_node->get_position());
             msg << "function \"" << function_node->get_string() << "\" was defined with an attribute which can only be used with a function member inside a class definition.";
         }
     }
@@ -216,7 +216,7 @@ void Compiler::function(Node::pointer_t function_node)
     {
         if(!member)
         {
-            Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_OPERATOR, function_node->get_position());
+            Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_OPERATOR, function_node->get_position());
             msg << "operator \"" << function_node->get_string() << "\" can only be defined inside a class definition.";
         }
     }
@@ -227,7 +227,7 @@ void Compiler::function(Node::pointer_t function_node)
     {
         if(!package && !member)
         {
-            Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_ATTRIBUTES, function_node->get_position());
+            Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_ATTRIBUTES, function_node->get_position());
             msg << "function \"" << function_node->get_string() << "\" was defined with an attribute which can only be used inside a class or package definition.";
         }
     }
@@ -238,7 +238,7 @@ void Compiler::function(Node::pointer_t function_node)
     {
         if(check_final_functions(function_node, parent))
         {
-            Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_CANNOT_OVERLOAD, function_node->get_position());
+            Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_CANNOT_OVERLOAD, function_node->get_position());
             msg << "function \"" << function_node->get_string() << "\" was marked as final in a super class and thus it cannot be defined in class \"" << parent->get_string() << "\".";
         }
         check_unique_functions(function_node, parent, true);
@@ -271,7 +271,7 @@ void Compiler::function(Node::pointer_t function_node)
         case Node::node_t::NODE_DIRECTIVE_LIST:
             if(get_attribute(function_node, Node::attribute_t::NODE_ATTR_ABSTRACT))
             {
-                Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_IMPROPER_STATEMENT, function_node->get_position());
+                Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_IMPROPER_STATEMENT, function_node->get_position());
                 msg << "the function \"" << function_node->get_string() << "\" is marked abstract and cannot have a body.";
             }
             // find all the labels of this function
@@ -288,7 +288,7 @@ void Compiler::function(Node::pointer_t function_node)
             // it be the same name as the class?)
             if(is_constructor(function_node))
             {
-                Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_RETURN_TYPE, function_node->get_position());
+                Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_RETURN_TYPE, function_node->get_position());
                 msg << "a constructor must return \"void\" and nothing else, \"" << function_node->get_string() << "\" is invalid.";
             }
             break;
@@ -298,7 +298,7 @@ void Compiler::function(Node::pointer_t function_node)
 
     if(function_node->get_flag(Node::flag_t::NODE_FUNCTION_FLAG_NEVER) && is_constructor(function_node))
     {
-        Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_RETURN_TYPE, function_node->get_position());
+        Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_RETURN_TYPE, function_node->get_position());
         msg << "a constructor must return (it cannot be marked Never).";
     }
 
@@ -469,7 +469,7 @@ Node::depth_t Compiler::match_type(Node::pointer_t t1, Node::pointer_t t2)
                 // NOTE: we can't generate an error here
                 //     because there could be another
                 //     valid function somewhere else...
-                Message msg(MESSAGE_LEVEL_WARNING, AS_ERR_MISSSING_VARIABLE_NAME, t1->get_position());
+                Message msg(message_level_t::MESSAGE_LEVEL_WARNING, err_code_t::AS_ERR_MISSSING_VARIABLE_NAME, t1->get_position());
                 msg << "a variable name is expected for a function parameter flagged as an OUT parameter.";
                 return Node::MATCH_NOT_FOUND;
             }
@@ -605,7 +605,7 @@ func.Display(stderr);
             //          before to generate an error
             if(!is_constructor(function_node))
             {
-                Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_MISMATCH_FUNC_VAR, function_node->get_position());
+                Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_MISMATCH_FUNC_VAR, function_node->get_position());
                 msg << "a variable name was expected, we found the function '" << function_node->get_string() << "' instead.";
             }
             return false;
@@ -746,14 +746,14 @@ fprintf(stderr, ")\n");
                 if(child->get_children_size() != 1)
                 {
                     // an error in the parser?
-                    Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INTERNAL_ERROR, function_node->get_position());
+                    Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INTERNAL_ERROR, function_node->get_position());
                     msg << "found a NODE_NAME without children.";
                     return -1;
                 }
                 Node::pointer_t name_node(child->get_child(0));
                 if(name_node->get_type() != Node::node_t::NODE_IDENTIFIER)
                 {
-                    Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INTERNAL_ERROR, function_node->get_position());
+                    Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INTERNAL_ERROR, function_node->get_position());
                     msg << "the name of a parameter needs to be an identifier.";
                     return -1;
                 }
@@ -780,7 +780,7 @@ fprintf(stderr, ")\n");
             if(!fp)
             {
                 // cannot find a parameter with that name...
-                Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_FIELD_NAME, function_node->get_position());
+                Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_FIELD_NAME, function_node->get_position());
                 msg << "no parameter named '" << name << "' was found in this function declaration.";
                 return -1;
             }
@@ -789,7 +789,7 @@ fprintf(stderr, ")\n");
             {
                 if(fp->get_flag(Node::flag_t::NODE_PARAMETERS_FLAG_REST))
                 {
-                    Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_FIELD_NAME, function_node->get_position());
+                    Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_FIELD_NAME, function_node->get_position());
                     msg << "function parameter name '" << name << "' already used & not a 'rest' (...).";
                     return -1;
                 }
@@ -928,7 +928,7 @@ bool Compiler::best_param_match_derived_from(Node::pointer_t& best, Node::pointe
         return true;
     }
 
-    Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_DUPLICATES, best->get_position());
+    Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_DUPLICATES, best->get_position());
     msg << "found two functions named '" << best->get_string() << "' and both have the same prototype. Cannot determine which one to use.";
 
     return false;
@@ -1328,20 +1328,20 @@ bool Compiler::resolve_call(Node::pointer_t call)
                 }
                 else
                 {
-                    Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_UNKNOWN_OPERATOR, call->get_position());
+                    Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_UNKNOWN_OPERATOR, call->get_position());
                     msg << "no '()' operators found in '" << var_class->get_string() << "'.";
                     return false;
                 }
             }
             else
             {
-                Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INTERNAL_ERROR, resolution->get_position());
+                Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INTERNAL_ERROR, resolution->get_position());
                 msg << "getters and setters not supported yet (what is that error message saying?!).";
             }
         }
         else if(resolution->get_type() != Node::node_t::NODE_FUNCTION)
         {
-            Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_TYPE, id->get_position());
+            Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_TYPE, id->get_position());
             msg << "'" << id->get_string() << "' was expected to be a type, a variable or a function.";
             return false;
         }
@@ -1378,7 +1378,7 @@ bool Compiler::resolve_call(Node::pointer_t call)
 
     if(errcnt == Message::error_count())
     {
-        Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_NOT_FOUND, id->get_position());
+        Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_NOT_FOUND, id->get_position());
         msg << "function named '" << id->get_string() << "' not found.";
     }
 
@@ -1560,7 +1560,7 @@ bool Compiler::check_unique_functions(Node::pointer_t function_node, Node::point
             {
                 if(compare_parameters(function_node, child))
                 {
-                    Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_DUPLICATES, function_node->get_position());
+                    Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_DUPLICATES, function_node->get_position());
                     msg << "you cannot define two functions with the same name (" << function_node->get_string()
                                 << ") and prototype in the same scope, class or interface.";
                     return true;
@@ -1576,7 +1576,7 @@ bool Compiler::check_unique_functions(Node::pointer_t function_node, Node::point
                 Node::pointer_t variable_node(child->get_child(j));
                 if(function_node->get_string() == variable_node->get_string())
                 {
-                    Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_DUPLICATES, function_node->get_position());
+                    Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_DUPLICATES, function_node->get_position());
                     msg << "you cannot define a function and a variable (found at line #"
                             << variable_node->get_position().get_line()
                             << ") with the same name ("

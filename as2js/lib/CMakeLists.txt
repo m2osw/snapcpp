@@ -55,6 +55,16 @@ add_library( as2js SHARED
     lexer.cpp
     message.cpp
     node.cpp
+    node_attribute.cpp
+    node_convert.cpp
+    node_display.cpp
+    node_flag.cpp
+    node_lock.cpp
+    node_operator.cpp
+    node_param.cpp
+    node_tree.cpp
+    node_type.cpp
+    node_value.cpp
     optimizer.cpp
     options.cpp
     parser.cpp

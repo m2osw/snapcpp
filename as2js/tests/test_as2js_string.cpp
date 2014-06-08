@@ -319,7 +319,7 @@ void As2JsStringUnitTests::test_iso88591()
         CPPUNIT_ASSERT(str4.valid());
 
         as2js::String str5;
-        CPPUNIT_ASSERT(str5.from_char("ignored", 0) == as2js::String::STRING_GOOD);
+        CPPUNIT_ASSERT(str5.from_char("ignored", 0) == as2js::String::conversion_result_t::STRING_GOOD);
         CPPUNIT_ASSERT(str5.empty());
         CPPUNIT_ASSERT(str5.length() == 0);
         CPPUNIT_ASSERT(str5.utf8_length() == 0);
@@ -328,7 +328,7 @@ void As2JsStringUnitTests::test_iso88591()
         CPPUNIT_ASSERT(str5.valid());
 
         as2js::String str6;
-        CPPUNIT_ASSERT(str6.from_char("", 5) == as2js::String::STRING_GOOD);
+        CPPUNIT_ASSERT(str6.from_char("", 5) == as2js::String::conversion_result_t::STRING_GOOD);
         CPPUNIT_ASSERT(str6.empty());
         CPPUNIT_ASSERT(str6.length() == 0);
         CPPUNIT_ASSERT(str6.utf8_length() == 0);
@@ -337,7 +337,7 @@ void As2JsStringUnitTests::test_iso88591()
         CPPUNIT_ASSERT(str6.valid());
 
         as2js::String str7;
-        CPPUNIT_ASSERT(str7.from_char("") == as2js::String::STRING_GOOD);
+        CPPUNIT_ASSERT(str7.from_char("") == as2js::String::conversion_result_t::STRING_GOOD);
         CPPUNIT_ASSERT(str7.empty());
         CPPUNIT_ASSERT(str7.length() == 0);
         CPPUNIT_ASSERT(str7.utf8_length() == 0);
@@ -405,7 +405,7 @@ void As2JsStringUnitTests::test_iso88591()
         CPPUNIT_ASSERT(str3.valid());
 
         as2js::String str4;
-        CPPUNIT_ASSERT(str4.from_char(iso8859_1_bad_start) == as2js::String::STRING_GOOD);
+        CPPUNIT_ASSERT(str4.from_char(iso8859_1_bad_start) == as2js::String::conversion_result_t::STRING_GOOD);
         CPPUNIT_ASSERT(strlen(iso8859_1_bad_start) == str4.length());
         CPPUNIT_ASSERT(compare_chars(iso8859_1_bad_start, str4.c_str()));
         CPPUNIT_ASSERT(iso8859_1_bad_start == str4);
@@ -448,7 +448,7 @@ void As2JsStringUnitTests::test_iso88591()
         CPPUNIT_ASSERT(str3.valid());
 
         as2js::String str4;
-        CPPUNIT_ASSERT(str4.from_char(iso8859_1_bom_and_bad_start) == as2js::String::STRING_GOOD);
+        CPPUNIT_ASSERT(str4.from_char(iso8859_1_bom_and_bad_start) == as2js::String::conversion_result_t::STRING_GOOD);
         CPPUNIT_ASSERT(strlen(iso8859_1_bom_and_bad_start) == str4.length());
         CPPUNIT_ASSERT(compare_chars(iso8859_1_bom_and_bad_start, str4.c_str()));
         CPPUNIT_ASSERT(iso8859_1_bom_and_bad_start == str4);
@@ -500,7 +500,7 @@ void As2JsStringUnitTests::test_iso88591()
         CPPUNIT_ASSERT(str3.valid());
 
         as2js::String str4;
-        CPPUNIT_ASSERT(str4.from_char(buf) == as2js::String::STRING_GOOD);
+        CPPUNIT_ASSERT(str4.from_char(buf) == as2js::String::conversion_result_t::STRING_GOOD);
         CPPUNIT_ASSERT(strlen(buf) == str4.length());
         CPPUNIT_ASSERT(compare_chars(buf, str4.c_str()));
         CPPUNIT_ASSERT(buf == str4);
@@ -568,7 +568,7 @@ void As2JsStringUnitTests::test_iso88591()
 
             // also test the from_char(), should get the same result
             as2js::String str4;
-            CPPUNIT_ASSERT(str4.from_char(buf) == as2js::String::STRING_GOOD);
+            CPPUNIT_ASSERT(str4.from_char(buf) == as2js::String::conversion_result_t::STRING_GOOD);
             CPPUNIT_ASSERT(strlen(buf) == str4.length());
             CPPUNIT_ASSERT(compare_chars(buf, str4.c_str()));
             CPPUNIT_ASSERT(buf == str4);
@@ -603,7 +603,7 @@ void As2JsStringUnitTests::test_iso88591()
                 CPPUNIT_ASSERT(str1_1.valid());
 
                 as2js::String str1_2;
-                CPPUNIT_ASSERT(str1_2.from_char(buf, size) == as2js::String::STRING_GOOD);
+                CPPUNIT_ASSERT(str1_2.from_char(buf, size) == as2js::String::conversion_result_t::STRING_GOOD);
                 char save1_2(buf[end]);
                 buf[end] = '\0';
                 CPPUNIT_ASSERT(strlen(buf) == str1_2.length());
@@ -701,7 +701,7 @@ void As2JsStringUnitTests::test_utf8()
 
         {
             as2js::String str1;
-            CPPUNIT_ASSERT(str1.from_utf8(mbs.c_str()) == as2js::String::STRING_GOOD);
+            CPPUNIT_ASSERT(str1.from_utf8(mbs.c_str()) == as2js::String::conversion_result_t::STRING_GOOD);
             CPPUNIT_ASSERT(max_chars == str1.length());
             CPPUNIT_ASSERT(buf == str1);
             CPPUNIT_ASSERT(str1 == buf);
@@ -739,8 +739,8 @@ void As2JsStringUnitTests::test_utf8()
                 while(r > 0);
                 // all characters are good, but we may read the end early
                 as2js::String::conversion_result_t const cr(
-                        r == 0 ? as2js::String::STRING_GOOD
-                               : as2js::String::STRING_END
+                        r == 0 ? as2js::String::conversion_result_t::STRING_GOOD
+                               : as2js::String::conversion_result_t::STRING_END
                     );
                 as2js::String str3;
                 CPPUNIT_ASSERT(str3.from_utf8(mbs.c_str(), k) == cr);
@@ -794,7 +794,7 @@ void As2JsStringUnitTests::test_utf8()
 
         {
             as2js::String str1;
-            CPPUNIT_ASSERT(str1.from_utf8(mbs.c_str()) == as2js::String::STRING_GOOD);
+            CPPUNIT_ASSERT(str1.from_utf8(mbs.c_str()) == as2js::String::conversion_result_t::STRING_GOOD);
             CPPUNIT_ASSERT(1 == str1.length());
             CPPUNIT_ASSERT(buf == str1);
             CPPUNIT_ASSERT(str1 == buf);
@@ -824,11 +824,11 @@ void As2JsStringUnitTests::test_utf8()
         wctombs(buf, i);
 
         as2js::String str1;
-        CPPUNIT_ASSERT(str1.from_utf8(buf) == as2js::String::STRING_INVALID);
+        CPPUNIT_ASSERT(str1.from_utf8(buf) == as2js::String::conversion_result_t::STRING_INVALID);
         CPPUNIT_ASSERT(str1.empty()); // not modified
 
         as2js::String str2("old value");
-        CPPUNIT_ASSERT(str2.from_utf8(buf) == as2js::String::STRING_INVALID);
+        CPPUNIT_ASSERT(str2.from_utf8(buf) == as2js::String::conversion_result_t::STRING_INVALID);
         CPPUNIT_ASSERT(str2.length() == 9); // not modified
         CPPUNIT_ASSERT(str2 == "old value"); // not modified
     }
@@ -846,7 +846,7 @@ void As2JsStringUnitTests::test_utf8()
             buf[2] = '\0';
 
             as2js::String str1;
-            CPPUNIT_ASSERT(str1.from_utf8(buf) == as2js::String::STRING_BAD);
+            CPPUNIT_ASSERT(str1.from_utf8(buf) == as2js::String::conversion_result_t::STRING_BAD);
         }
         {
             buf[0] = static_cast<char>(0xFE);
@@ -854,7 +854,7 @@ void As2JsStringUnitTests::test_utf8()
             buf[2] = '\0';
 
             as2js::String str1;
-            CPPUNIT_ASSERT(str1.from_utf8(buf) == as2js::String::STRING_BAD);
+            CPPUNIT_ASSERT(str1.from_utf8(buf) == as2js::String::conversion_result_t::STRING_BAD);
         }
         {
             buf[0] = static_cast<char>(0xFF);
@@ -862,7 +862,7 @@ void As2JsStringUnitTests::test_utf8()
             buf[2] = '\0';
 
             as2js::String str1;
-            CPPUNIT_ASSERT(str1.from_utf8(buf) == as2js::String::STRING_BAD);
+            CPPUNIT_ASSERT(str1.from_utf8(buf) == as2js::String::conversion_result_t::STRING_BAD);
         }
         for(int i(0xC0); i < 0xFD; ++i)
         {
@@ -883,7 +883,7 @@ void As2JsStringUnitTests::test_utf8()
             buf[7] = '\0';
 
             as2js::String str1;
-            CPPUNIT_ASSERT(str1.from_utf8(buf) == as2js::String::STRING_BAD);
+            CPPUNIT_ASSERT(str1.from_utf8(buf) == as2js::String::conversion_result_t::STRING_BAD);
         }
     }
     // and now 10 random invalid strings
@@ -906,13 +906,13 @@ void As2JsStringUnitTests::test_utf8()
         uint32_t wc;
         as2js::String out;
         int r(0);
-        as2js::String::conversion_result_t result(as2js::String::STRING_BAD);
+        as2js::String::conversion_result_t result(as2js::String::conversion_result_t::STRING_BAD);
         do
         {
             r = mbstowc(wc, sub, length);
             if(r > 0 && !as2js::String::valid_character(wc))
             {
-                result = as2js::String::STRING_INVALID;
+                result = as2js::String::conversion_result_t::STRING_INVALID;
                 r = -2;
                 break;
             }
@@ -946,11 +946,11 @@ void As2JsStringUnitTests::test_utf8()
         wctombs(buf, i);
 
         as2js::String str1;
-        CPPUNIT_ASSERT(str1.from_utf8(buf) == as2js::String::STRING_INVALID);
+        CPPUNIT_ASSERT(str1.from_utf8(buf) == as2js::String::conversion_result_t::STRING_INVALID);
         CPPUNIT_ASSERT(str1.empty()); // not modified
 
         as2js::String str2("old value");
-        CPPUNIT_ASSERT(str2.from_utf8(buf) == as2js::String::STRING_INVALID);
+        CPPUNIT_ASSERT(str2.from_utf8(buf) == as2js::String::conversion_result_t::STRING_INVALID);
         CPPUNIT_ASSERT(str2.length() == 9); // not modified
         CPPUNIT_ASSERT(str2 == "old value"); // not modified
     }
@@ -965,11 +965,11 @@ void As2JsStringUnitTests::test_utf8()
     //    wctombs(buf, i);
 
     //    as2js::String str1;
-    //    CPPUNIT_ASSERT(str1.from_utf8(buf) == as2js::String::STRING_INVALID);
+    //    CPPUNIT_ASSERT(str1.from_utf8(buf) == as2js::String::conversion_result_t::STRING_INVALID);
     //    CPPUNIT_ASSERT(str1.empty()); // not modified
 
     //    as2js::String str2("old value");
-    //    CPPUNIT_ASSERT(str2.from_utf8(buf) == as2js::String::STRING_INVALID);
+    //    CPPUNIT_ASSERT(str2.from_utf8(buf) == as2js::String::conversion_result_t::STRING_INVALID);
     //    CPPUNIT_ASSERT(str2.length() == 9); // not modified
     //    CPPUNIT_ASSERT(str2 == "old value"); // not modified
     //}
@@ -1037,7 +1037,7 @@ void As2JsStringUnitTests::test_utf16()
 
         {
             as2js::String str1;
-            CPPUNIT_ASSERT(str1.from_wchar(buf) == as2js::String::STRING_GOOD);
+            CPPUNIT_ASSERT(str1.from_wchar(buf) == as2js::String::conversion_result_t::STRING_GOOD);
             CPPUNIT_ASSERT(1 == str1.length());
             //CPPUNIT_ASSERT(buf == str1); -- we do not support those
             //CPPUNIT_ASSERT(str1 == buf);
@@ -1079,7 +1079,7 @@ void As2JsStringUnitTests::test_utf16()
 
             {
                 as2js::String str3;
-                CPPUNIT_ASSERT(str3.from_wchar(buf) == as2js::String::STRING_GOOD);
+                CPPUNIT_ASSERT(str3.from_wchar(buf) == as2js::String::conversion_result_t::STRING_GOOD);
                 CPPUNIT_ASSERT(1 == str3.length());
                 CPPUNIT_ASSERT(str3.valid());
 
@@ -1178,13 +1178,13 @@ void As2JsStringUnitTests::test_utf16()
             buf[6] = '\0';
 
             as2js::String str7("original");
-            CPPUNIT_ASSERT(str7.from_wchar(buf) == as2js::String::STRING_END);
+            CPPUNIT_ASSERT(str7.from_wchar(buf) == as2js::String::conversion_result_t::STRING_END);
             CPPUNIT_ASSERT(8 == str7.length());
             CPPUNIT_ASSERT("original" == str7);
             CPPUNIT_ASSERT(str7.valid());
 
             as2js::String str8("original");
-            CPPUNIT_ASSERT(str8.from_wchar(buf, 6) == as2js::String::STRING_END);
+            CPPUNIT_ASSERT(str8.from_wchar(buf, 6) == as2js::String::conversion_result_t::STRING_END);
             CPPUNIT_ASSERT(8 == str8.length());
             CPPUNIT_ASSERT("original" == str8);
             CPPUNIT_ASSERT(str8.valid());
@@ -1199,7 +1199,7 @@ void As2JsStringUnitTests::test_utf16()
             buf[2] = '\0';
 
             as2js::String str7("original");
-            CPPUNIT_ASSERT(str7.from_wchar(buf) == as2js::String::STRING_BAD);
+            CPPUNIT_ASSERT(str7.from_wchar(buf) == as2js::String::conversion_result_t::STRING_BAD);
             CPPUNIT_ASSERT(8 == str7.length());
             CPPUNIT_ASSERT("original" == str7);
             CPPUNIT_ASSERT(str7.valid());
@@ -1213,7 +1213,7 @@ void As2JsStringUnitTests::test_utf16()
             buf[8] = rand();
             buf[9] = rand();
             as2js::String str11("original");
-            CPPUNIT_ASSERT(str11.from_wchar(buf, rand() % 8 + 2) == as2js::String::STRING_BAD);
+            CPPUNIT_ASSERT(str11.from_wchar(buf, rand() % 8 + 2) == as2js::String::conversion_result_t::STRING_BAD);
             CPPUNIT_ASSERT(8 == str11.length());
             CPPUNIT_ASSERT("original" == str11);
             CPPUNIT_ASSERT(str11.valid());
@@ -1272,7 +1272,7 @@ void As2JsStringUnitTests::test_utf32()
 
         {
             as2js::String str1;
-            CPPUNIT_ASSERT(str1.from_as_char(buf) == as2js::String::STRING_GOOD);
+            CPPUNIT_ASSERT(str1.from_as_char(buf) == as2js::String::conversion_result_t::STRING_GOOD);
             CPPUNIT_ASSERT(1 == str1.length());
             CPPUNIT_ASSERT(buf == str1);
             CPPUNIT_ASSERT(str1 == buf);
@@ -1326,7 +1326,7 @@ void As2JsStringUnitTests::test_utf32()
         CPPUNIT_ASSERT(str1.valid());
 
         // try again with the from_as_char()
-        CPPUNIT_ASSERT(str1.from_as_char(buf) == as2js::String::STRING_GOOD);
+        CPPUNIT_ASSERT(str1.from_as_char(buf) == as2js::String::conversion_result_t::STRING_GOOD);
         CPPUNIT_ASSERT(255 == str1.length());
         CPPUNIT_ASSERT(buf == str1);
         CPPUNIT_ASSERT(str1 == buf);
@@ -1348,7 +1348,7 @@ void As2JsStringUnitTests::test_utf32()
             buf[size] = save_a;
 
             // try again with the from_as_char()
-            CPPUNIT_ASSERT(str2.from_as_char(buf, size) == as2js::String::STRING_GOOD);
+            CPPUNIT_ASSERT(str2.from_as_char(buf, size) == as2js::String::conversion_result_t::STRING_GOOD);
             CPPUNIT_ASSERT(size == str2.length());
             as2js::as_char_t save_b(buf[size]);
             buf[size] = '\0';
@@ -1395,7 +1395,7 @@ void As2JsStringUnitTests::test_utf32()
             while((buf[bad_pos] > 0 && buf[bad_pos] < 0xD800)
                || (buf[bad_pos] > 0xDFFF && buf[bad_pos] < 0x110000));
             as2js::String str4;
-            CPPUNIT_ASSERT(str4.from_as_char(buf, size) == as2js::String::STRING_INVALID);
+            CPPUNIT_ASSERT(str4.from_as_char(buf, size) == as2js::String::conversion_result_t::STRING_INVALID);
             CPPUNIT_ASSERT(0 == str4.length());
             CPPUNIT_ASSERT(str4.empty());
             CPPUNIT_ASSERT("" == str4);
@@ -1430,20 +1430,20 @@ void As2JsStringUnitTests::test_utf32()
         buf[1] = '\0';
 
         as2js::String str1;
-        CPPUNIT_ASSERT(str1.from_as_char(buf) == as2js::String::STRING_INVALID);
+        CPPUNIT_ASSERT(str1.from_as_char(buf) == as2js::String::conversion_result_t::STRING_INVALID);
         CPPUNIT_ASSERT(str1.empty()); // not modified
 
         as2js::String str2("old value");
-        CPPUNIT_ASSERT(str2.from_as_char(buf) == as2js::String::STRING_INVALID);
+        CPPUNIT_ASSERT(str2.from_as_char(buf) == as2js::String::conversion_result_t::STRING_INVALID);
         CPPUNIT_ASSERT(str2.length() == 9); // not modified
         CPPUNIT_ASSERT(str2 == "old value"); // not modified
 
         as2js::String str3;
-        CPPUNIT_ASSERT(str3.from_as_char(buf, 1) == as2js::String::STRING_INVALID);
+        CPPUNIT_ASSERT(str3.from_as_char(buf, 1) == as2js::String::conversion_result_t::STRING_INVALID);
         CPPUNIT_ASSERT(str3.empty()); // not modified
 
         as2js::String str4("old value");
-        CPPUNIT_ASSERT(str4.from_as_char(buf, 1) == as2js::String::STRING_INVALID);
+        CPPUNIT_ASSERT(str4.from_as_char(buf, 1) == as2js::String::conversion_result_t::STRING_INVALID);
         CPPUNIT_ASSERT(str4.length() == 9); // not modified
         CPPUNIT_ASSERT(str4 == "old value"); // not modified
     }
@@ -1471,11 +1471,11 @@ void As2JsStringUnitTests::test_utf32()
         buf[1] = '\0';
 
         as2js::String str1;
-        CPPUNIT_ASSERT(str1.from_as_char(buf) == as2js::String::STRING_INVALID);
+        CPPUNIT_ASSERT(str1.from_as_char(buf) == as2js::String::conversion_result_t::STRING_INVALID);
         CPPUNIT_ASSERT(str1.empty()); // not modified
 
         as2js::String str2("old value");
-        CPPUNIT_ASSERT(str2.from_as_char(buf) == as2js::String::STRING_INVALID);
+        CPPUNIT_ASSERT(str2.from_as_char(buf) == as2js::String::conversion_result_t::STRING_INVALID);
         CPPUNIT_ASSERT(str2.length() == 9); // not modified
         CPPUNIT_ASSERT(str2 == "old value"); // not modified
     }

@@ -79,7 +79,7 @@ Node::pointer_t Compiler::directive_list(Node::pointer_t directive_list_node)
             {
                 // err only once on this one
                 no_access = true;
-                Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INACCESSIBLE_STATEMENT, child->get_position());
+                Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INACCESSIBLE_STATEMENT, child->get_position());
                 msg << "code is not accessible after a break, continue, goto, throw or return statement.";
             }
 #if 0
@@ -241,7 +241,7 @@ fprintf(stderr, " (%d + 1 of %d)\n", idx, max);
 
             default:
                 {
-                    Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INTERNAL_ERROR, child->get_position());
+                    Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INTERNAL_ERROR, child->get_position());
                     msg << "directive node '" << child->get_type_name() << "' not handled yet in Compiler::directive_list().";
                 }
                 break;

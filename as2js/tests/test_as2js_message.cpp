@@ -70,14 +70,14 @@ public:
         CPPUNIT_ASSERT(pos.get_line() == f_expected_pos.get_line());
         CPPUNIT_ASSERT(message == f_expected_message);
 
-        if(message_level == as2js::MESSAGE_LEVEL_WARNING)
+        if(message_level == as2js::message_level_t::MESSAGE_LEVEL_WARNING)
         {
             ++g_warning_count;
             CPPUNIT_ASSERT(g_warning_count == as2js::Message::warning_count());
         }
 
-        if(message_level == as2js::MESSAGE_LEVEL_FATAL
-        || message_level == as2js::MESSAGE_LEVEL_ERROR)
+        if(message_level == as2js::message_level_t::MESSAGE_LEVEL_FATAL
+        || message_level == as2js::message_level_t::MESSAGE_LEVEL_ERROR)
         {
             ++g_error_count;
 //std::cerr << "error: " << g_error_count << " / " << as2js::Message::error_count() << "\n";
@@ -109,12 +109,14 @@ controlled_vars::zint32_t   test_callback::g_error_count;
 
 void As2JsMessageUnitTests::test_message()
 {
-    for(as2js::message_level_t i(as2js::MESSAGE_LEVEL_OFF); i <= as2js::MESSAGE_LEVEL_TRACE; i = static_cast<as2js::message_level_t>(static_cast<int>(i) + 1))
+    for(as2js::message_level_t i(as2js::message_level_t::MESSAGE_LEVEL_OFF);
+                               i <= as2js::message_level_t::MESSAGE_LEVEL_TRACE;
+                               i = static_cast<as2js::message_level_t>(static_cast<int>(i) + 1))
     {
 //i = static_cast<as2js::message_level_t>(static_cast<int>(i) + 1);
         std::cerr << "[" << static_cast<int32_t>(i) << "]";
 
-        for(as2js::err_code_t j(as2js::AS_ERR_NONE); j <= as2js::AS_ERR_max; j = static_cast<as2js::err_code_t>(static_cast<int>(j) + 1))
+        for(as2js::err_code_t j(as2js::err_code_t::AS_ERR_NONE); j <= as2js::err_code_t::AS_ERR_max; j = static_cast<as2js::err_code_t>(static_cast<int>(j) + 1))
         {
             std::cerr << ".";
 
@@ -125,10 +127,10 @@ void As2JsMessageUnitTests::test_message()
                 c.f_expected_pos.set_filename("unknown-file");
                 c.f_expected_pos.set_function("unknown-func");
                 as2js::Message::set_message_callback(&c);
-                for(as2js::message_level_t k(as2js::MESSAGE_LEVEL_OFF); k <= as2js::MESSAGE_LEVEL_TRACE; k = static_cast<as2js::message_level_t>(static_cast<int>(k) + 1))
+                for(as2js::message_level_t k(as2js::message_level_t::MESSAGE_LEVEL_OFF); k <= as2js::message_level_t::MESSAGE_LEVEL_TRACE; k = static_cast<as2js::message_level_t>(static_cast<int>(k) + 1))
                 {
                     as2js::Message::set_message_level(k);
-                    as2js::message_level_t min(k < as2js::MESSAGE_LEVEL_ERROR ? as2js::MESSAGE_LEVEL_ERROR : k);
+                    as2js::message_level_t min(k < as2js::message_level_t::MESSAGE_LEVEL_ERROR ? as2js::message_level_t::MESSAGE_LEVEL_ERROR : k);
 //std::cerr << "i == " << static_cast<int32_t>(i) << ", k == " << static_cast<int32_t>(k) << ", min == " << static_cast<int32_t>(min) << " expect = " << c.f_expected_call << "\n";
                     {
                         c.f_expected_call = false;
@@ -138,7 +140,7 @@ void As2JsMessageUnitTests::test_message()
                     }
                     CPPUNIT_ASSERT(!c.f_got_called); // no message no call
                     {
-                        c.f_expected_call = i != as2js::MESSAGE_LEVEL_OFF && i <= min;
+                        c.f_expected_call = i != as2js::message_level_t::MESSAGE_LEVEL_OFF && i <= min;
                         c.f_got_called = false;
                         c.f_expected_message = "with a message";
                         as2js::Message msg(i, j);
@@ -179,10 +181,10 @@ void As2JsMessageUnitTests::test_message()
                         c.f_expected_pos.set_filename("file.js");
                         c.f_expected_pos.set_function("unknown-func");
                         as2js::Message::set_message_callback(&c);
-                        for(as2js::message_level_t k(as2js::MESSAGE_LEVEL_OFF); k <= as2js::MESSAGE_LEVEL_TRACE; k = static_cast<as2js::message_level_t>(static_cast<int>(k) + 1))
+                        for(as2js::message_level_t k(as2js::message_level_t::MESSAGE_LEVEL_OFF); k <= as2js::message_level_t::MESSAGE_LEVEL_TRACE; k = static_cast<as2js::message_level_t>(static_cast<int>(k) + 1))
                         {
                             as2js::Message::set_message_level(k);
-                            as2js::message_level_t min(k < as2js::MESSAGE_LEVEL_ERROR ? as2js::MESSAGE_LEVEL_ERROR : k);
+                            as2js::message_level_t min(k < as2js::message_level_t::MESSAGE_LEVEL_ERROR ? as2js::message_level_t::MESSAGE_LEVEL_ERROR : k);
                             {
                                 c.f_expected_call = false;
                                 c.f_got_called = false;
@@ -191,7 +193,7 @@ void As2JsMessageUnitTests::test_message()
                             }
                             CPPUNIT_ASSERT(!c.f_got_called);
                             {
-                                c.f_expected_call = i != as2js::MESSAGE_LEVEL_OFF && i <= min;
+                                c.f_expected_call = i != as2js::message_level_t::MESSAGE_LEVEL_OFF && i <= min;
                                 c.f_got_called = false;
                                 c.f_expected_message = "and a small message";
                                 as2js::Message msg(i, j, pos);
@@ -220,12 +222,12 @@ void As2JsMessageUnitTests::test_message()
 void As2JsMessageUnitTests::test_operator()
 {
     test_callback c;
-    c.f_expected_message_level = as2js::MESSAGE_LEVEL_ERROR;
-    c.f_expected_error_code = as2js::AS_ERR_CANNOT_COMPILE;
+    c.f_expected_message_level = as2js::message_level_t::MESSAGE_LEVEL_ERROR;
+    c.f_expected_error_code = as2js::err_code_t::AS_ERR_CANNOT_COMPILE;
     c.f_expected_pos.set_filename("operator.js");
     c.f_expected_pos.set_function("compute");
     as2js::Message::set_message_callback(&c);
-    as2js::Message::set_message_level(as2js::MESSAGE_LEVEL_INFO);
+    as2js::Message::set_message_level(as2js::message_level_t::MESSAGE_LEVEL_INFO);
 
     // test the copy constructor and operator
     test_callback try_copy(c);
@@ -242,7 +244,7 @@ void As2JsMessageUnitTests::test_operator()
         c.f_expected_call = false;
         c.f_got_called = false;
         c.f_expected_message = "";
-        as2js::Message msg(as2js::MESSAGE_LEVEL_ERROR, as2js::AS_ERR_CANNOT_COMPILE, pos);
+        as2js::Message msg(as2js::message_level_t::MESSAGE_LEVEL_ERROR, as2js::err_code_t::AS_ERR_CANNOT_COMPILE, pos);
     }
     CPPUNIT_ASSERT(!c.f_got_called); // no message no call
 
@@ -251,7 +253,7 @@ void As2JsMessageUnitTests::test_operator()
         c.f_expected_call = true;
         c.f_got_called = false;
         c.f_expected_message = "with a message";
-        as2js::Message msg(as2js::MESSAGE_LEVEL_ERROR, as2js::AS_ERR_CANNOT_COMPILE, pos);
+        as2js::Message msg(as2js::message_level_t::MESSAGE_LEVEL_ERROR, as2js::err_code_t::AS_ERR_CANNOT_COMPILE, pos);
         msg << "with a message";
     }
     CPPUNIT_ASSERT(c.f_expected_call == c.f_got_called);
@@ -261,7 +263,7 @@ void As2JsMessageUnitTests::test_operator()
         c.f_expected_call = true;
         c.f_got_called = false;
         c.f_expected_message = "with an std::string message";
-        as2js::Message msg(as2js::MESSAGE_LEVEL_ERROR, as2js::AS_ERR_CANNOT_COMPILE, pos);
+        as2js::Message msg(as2js::message_level_t::MESSAGE_LEVEL_ERROR, as2js::err_code_t::AS_ERR_CANNOT_COMPILE, pos);
         std::string str("with an std::string message");
         msg << str;
     }
@@ -272,7 +274,7 @@ void As2JsMessageUnitTests::test_operator()
         c.f_expected_call = true;
         c.f_got_called = false;
         c.f_expected_message = "Simple wide char string";
-        as2js::Message msg(as2js::MESSAGE_LEVEL_ERROR, as2js::AS_ERR_CANNOT_COMPILE, pos);
+        as2js::Message msg(as2js::message_level_t::MESSAGE_LEVEL_ERROR, as2js::err_code_t::AS_ERR_CANNOT_COMPILE, pos);
         wchar_t const *str(L"Simple wide char string");
         msg << str;
     }
@@ -285,7 +287,7 @@ void As2JsMessageUnitTests::test_operator()
         c.f_expected_call = true;
         c.f_got_called = false;
         c.f_expected_message = unicode.to_utf8();
-        as2js::Message msg(as2js::MESSAGE_LEVEL_ERROR, as2js::AS_ERR_CANNOT_COMPILE, pos);
+        as2js::Message msg(as2js::message_level_t::MESSAGE_LEVEL_ERROR, as2js::err_code_t::AS_ERR_CANNOT_COMPILE, pos);
         msg << str;
     }
     CPPUNIT_ASSERT(c.f_expected_call == c.f_got_called);
@@ -295,7 +297,7 @@ void As2JsMessageUnitTests::test_operator()
         c.f_expected_call = true;
         c.f_got_called = false;
         c.f_expected_message = "with an std::string message";
-        as2js::Message msg(as2js::MESSAGE_LEVEL_ERROR, as2js::AS_ERR_CANNOT_COMPILE, pos);
+        as2js::Message msg(as2js::message_level_t::MESSAGE_LEVEL_ERROR, as2js::err_code_t::AS_ERR_CANNOT_COMPILE, pos);
         std::wstring str(L"with an std::string message");
         msg << str;
     }
@@ -308,7 +310,7 @@ void As2JsMessageUnitTests::test_operator()
         c.f_expected_call = true;
         c.f_got_called = false;
         c.f_expected_message = unicode.to_utf8();
-        as2js::Message msg(as2js::MESSAGE_LEVEL_ERROR, as2js::AS_ERR_CANNOT_COMPILE, pos);
+        as2js::Message msg(as2js::message_level_t::MESSAGE_LEVEL_ERROR, as2js::err_code_t::AS_ERR_CANNOT_COMPILE, pos);
         msg << str;
     }
     CPPUNIT_ASSERT(c.f_expected_call == c.f_got_called);
@@ -320,7 +322,7 @@ void As2JsMessageUnitTests::test_operator()
         c.f_expected_call = true;
         c.f_got_called = false;
         c.f_expected_message = unicode.to_utf8();
-        as2js::Message msg(as2js::MESSAGE_LEVEL_ERROR, as2js::AS_ERR_CANNOT_COMPILE, pos);
+        as2js::Message msg(as2js::message_level_t::MESSAGE_LEVEL_ERROR, as2js::err_code_t::AS_ERR_CANNOT_COMPILE, pos);
         msg << unicode;
     }
     CPPUNIT_ASSERT(c.f_expected_call == c.f_got_called);
@@ -335,7 +337,7 @@ void As2JsMessageUnitTests::test_operator()
             c.f_expected_call = true;
             c.f_got_called = false;
             c.f_expected_message = str.str();
-            as2js::Message msg(as2js::MESSAGE_LEVEL_ERROR, as2js::AS_ERR_CANNOT_COMPILE, pos);
+            as2js::Message msg(as2js::message_level_t::MESSAGE_LEVEL_ERROR, as2js::err_code_t::AS_ERR_CANNOT_COMPILE, pos);
             msg << ci;
         }
         CPPUNIT_ASSERT(c.f_expected_call == c.f_got_called);
@@ -351,7 +353,7 @@ void As2JsMessageUnitTests::test_operator()
             c.f_expected_call = true;
             c.f_got_called = false;
             c.f_expected_message = str.str();
-            as2js::Message msg(as2js::MESSAGE_LEVEL_ERROR, as2js::AS_ERR_CANNOT_COMPILE, pos);
+            as2js::Message msg(as2js::message_level_t::MESSAGE_LEVEL_ERROR, as2js::err_code_t::AS_ERR_CANNOT_COMPILE, pos);
             msg << ci;
         }
         CPPUNIT_ASSERT(c.f_expected_call == c.f_got_called);
@@ -367,7 +369,7 @@ void As2JsMessageUnitTests::test_operator()
             c.f_expected_call = true;
             c.f_got_called = false;
             c.f_expected_message = str.str();
-            as2js::Message msg(as2js::MESSAGE_LEVEL_ERROR, as2js::AS_ERR_CANNOT_COMPILE, pos);
+            as2js::Message msg(as2js::message_level_t::MESSAGE_LEVEL_ERROR, as2js::err_code_t::AS_ERR_CANNOT_COMPILE, pos);
             msg << ci;
         }
         CPPUNIT_ASSERT(c.f_expected_call == c.f_got_called);
@@ -383,7 +385,7 @@ void As2JsMessageUnitTests::test_operator()
             c.f_expected_call = true;
             c.f_got_called = false;
             c.f_expected_message = str.str();
-            as2js::Message msg(as2js::MESSAGE_LEVEL_ERROR, as2js::AS_ERR_CANNOT_COMPILE, pos);
+            as2js::Message msg(as2js::message_level_t::MESSAGE_LEVEL_ERROR, as2js::err_code_t::AS_ERR_CANNOT_COMPILE, pos);
             msg << ci;
         }
         CPPUNIT_ASSERT(c.f_expected_call == c.f_got_called);
@@ -399,7 +401,7 @@ void As2JsMessageUnitTests::test_operator()
             c.f_expected_call = true;
             c.f_got_called = false;
             c.f_expected_message = str.str();
-            as2js::Message msg(as2js::MESSAGE_LEVEL_ERROR, as2js::AS_ERR_CANNOT_COMPILE, pos);
+            as2js::Message msg(as2js::message_level_t::MESSAGE_LEVEL_ERROR, as2js::err_code_t::AS_ERR_CANNOT_COMPILE, pos);
             msg << ci;
         }
         CPPUNIT_ASSERT(c.f_expected_call == c.f_got_called);
@@ -415,7 +417,7 @@ void As2JsMessageUnitTests::test_operator()
             c.f_expected_call = true;
             c.f_got_called = false;
             c.f_expected_message = str.str();
-            as2js::Message msg(as2js::MESSAGE_LEVEL_ERROR, as2js::AS_ERR_CANNOT_COMPILE, pos);
+            as2js::Message msg(as2js::message_level_t::MESSAGE_LEVEL_ERROR, as2js::err_code_t::AS_ERR_CANNOT_COMPILE, pos);
             msg << ci;
         }
         CPPUNIT_ASSERT(c.f_expected_call == c.f_got_called);
@@ -431,7 +433,7 @@ void As2JsMessageUnitTests::test_operator()
             c.f_expected_call = true;
             c.f_got_called = false;
             c.f_expected_message = str.str();
-            as2js::Message msg(as2js::MESSAGE_LEVEL_ERROR, as2js::AS_ERR_CANNOT_COMPILE, pos);
+            as2js::Message msg(as2js::message_level_t::MESSAGE_LEVEL_ERROR, as2js::err_code_t::AS_ERR_CANNOT_COMPILE, pos);
             msg << ci;
         }
         CPPUNIT_ASSERT(c.f_expected_call == c.f_got_called);
@@ -451,7 +453,7 @@ void As2JsMessageUnitTests::test_operator()
             c.f_expected_call = true;
             c.f_got_called = false;
             c.f_expected_message = str.str();
-            as2js::Message msg(as2js::MESSAGE_LEVEL_ERROR, as2js::AS_ERR_CANNOT_COMPILE, pos);
+            as2js::Message msg(as2js::message_level_t::MESSAGE_LEVEL_ERROR, as2js::err_code_t::AS_ERR_CANNOT_COMPILE, pos);
             msg << ci;
         }
         CPPUNIT_ASSERT(c.f_expected_call == c.f_got_called);
@@ -471,7 +473,7 @@ void As2JsMessageUnitTests::test_operator()
             c.f_expected_call = true;
             c.f_got_called = false;
             c.f_expected_message = str.str();
-            as2js::Message msg(as2js::MESSAGE_LEVEL_ERROR, as2js::AS_ERR_CANNOT_COMPILE, pos);
+            as2js::Message msg(as2js::message_level_t::MESSAGE_LEVEL_ERROR, as2js::err_code_t::AS_ERR_CANNOT_COMPILE, pos);
             msg << ci;
         }
         CPPUNIT_ASSERT(c.f_expected_call == c.f_got_called);
@@ -495,7 +497,7 @@ void As2JsMessageUnitTests::test_operator()
             c.f_expected_call = true;
             c.f_got_called = false;
             c.f_expected_message = str.str();
-            as2js::Message msg(as2js::MESSAGE_LEVEL_ERROR, as2js::AS_ERR_CANNOT_COMPILE, pos);
+            as2js::Message msg(as2js::message_level_t::MESSAGE_LEVEL_ERROR, as2js::err_code_t::AS_ERR_CANNOT_COMPILE, pos);
             msg << ci;
         }
         CPPUNIT_ASSERT(c.f_expected_call == c.f_got_called);
@@ -515,7 +517,7 @@ void As2JsMessageUnitTests::test_operator()
             c.f_expected_call = true;
             c.f_got_called = false;
             c.f_expected_message = str.str();
-            as2js::Message msg(as2js::MESSAGE_LEVEL_ERROR, as2js::AS_ERR_CANNOT_COMPILE, pos);
+            as2js::Message msg(as2js::message_level_t::MESSAGE_LEVEL_ERROR, as2js::err_code_t::AS_ERR_CANNOT_COMPILE, pos);
             msg << ci;
         }
         CPPUNIT_ASSERT(c.f_expected_call == c.f_got_called);
@@ -536,7 +538,7 @@ void As2JsMessageUnitTests::test_operator()
             c.f_expected_call = true;
             c.f_got_called = false;
             c.f_expected_message = str.str();
-            as2js::Message msg(as2js::MESSAGE_LEVEL_ERROR, as2js::AS_ERR_CANNOT_COMPILE, pos);
+            as2js::Message msg(as2js::message_level_t::MESSAGE_LEVEL_ERROR, as2js::err_code_t::AS_ERR_CANNOT_COMPILE, pos);
             msg << value;
         }
         CPPUNIT_ASSERT(c.f_expected_call == c.f_got_called);
@@ -561,7 +563,7 @@ void As2JsMessageUnitTests::test_operator()
             c.f_expected_call = true;
             c.f_got_called = false;
             c.f_expected_message = str.str();
-            as2js::Message msg(as2js::MESSAGE_LEVEL_ERROR, as2js::AS_ERR_CANNOT_COMPILE, pos);
+            as2js::Message msg(as2js::message_level_t::MESSAGE_LEVEL_ERROR, as2js::err_code_t::AS_ERR_CANNOT_COMPILE, pos);
             msg << r;
         }
         CPPUNIT_ASSERT(c.f_expected_call == c.f_got_called);
@@ -586,7 +588,7 @@ void As2JsMessageUnitTests::test_operator()
             c.f_expected_call = true;
             c.f_got_called = false;
             c.f_expected_message = str.str();
-            as2js::Message msg(as2js::MESSAGE_LEVEL_ERROR, as2js::AS_ERR_CANNOT_COMPILE, pos);
+            as2js::Message msg(as2js::message_level_t::MESSAGE_LEVEL_ERROR, as2js::err_code_t::AS_ERR_CANNOT_COMPILE, pos);
             msg << r;
         }
         CPPUNIT_ASSERT(c.f_expected_call == c.f_got_called);
@@ -612,7 +614,7 @@ void As2JsMessageUnitTests::test_operator()
             c.f_expected_call = true;
             c.f_got_called = false;
             c.f_expected_message = str.str();
-            as2js::Message msg(as2js::MESSAGE_LEVEL_ERROR, as2js::AS_ERR_CANNOT_COMPILE, pos);
+            as2js::Message msg(as2js::message_level_t::MESSAGE_LEVEL_ERROR, as2js::err_code_t::AS_ERR_CANNOT_COMPILE, pos);
             msg << f;
         }
         CPPUNIT_ASSERT(c.f_expected_call == c.f_got_called);
@@ -628,7 +630,7 @@ void As2JsMessageUnitTests::test_operator()
             c.f_expected_call = true;
             c.f_got_called = false;
             c.f_expected_message = str.str();
-            as2js::Message msg(as2js::MESSAGE_LEVEL_ERROR, as2js::AS_ERR_CANNOT_COMPILE, pos);
+            as2js::Message msg(as2js::message_level_t::MESSAGE_LEVEL_ERROR, as2js::err_code_t::AS_ERR_CANNOT_COMPILE, pos);
             msg << ci;
         }
         CPPUNIT_ASSERT(c.f_expected_call == c.f_got_called);

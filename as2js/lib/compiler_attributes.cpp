@@ -47,13 +47,14 @@ void Compiler::variable_to_attrs(Node::pointer_t node, Node::pointer_t var_node)
 {
     if(var_node->get_type() != Node::node_t::NODE_SET)
     {
-        Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_VARIABLE, var_node->get_position());
+        Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_VARIABLE, var_node->get_position());
         msg << "an attribute variable has to be given a value.";
         return;
     }
 
     Node::pointer_t a(var_node->get_child(0));
-    switch(a->get_type()) {
+    switch(a->get_type())
+    {
     case Node::node_t::NODE_FALSE:
     case Node::node_t::NODE_IDENTIFIER:
     case Node::node_t::NODE_PRIVATE:
@@ -72,7 +73,8 @@ void Compiler::variable_to_attrs(Node::pointer_t node, Node::pointer_t var_node)
     expression(a);
     f_optimizer->optimize(a);
 
-    switch(a->get_type()) {
+    switch(a->get_type())
+    {
     case Node::node_t::NODE_TRUE:
     case Node::node_t::NODE_FALSE:
         node_to_attrs(node, a);
@@ -83,7 +85,7 @@ void Compiler::variable_to_attrs(Node::pointer_t node, Node::pointer_t var_node)
 
     }
 
-    Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_EXPRESSION, var_node->get_position());
+    Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_EXPRESSION, var_node->get_position());
     msg << "an attribute which is an expression needs to result in a boolean value (true or false).";
 }
 
@@ -218,7 +220,7 @@ void Compiler::identifier_to_attrs(Node::pointer_t node, Node::pointer_t a)
     Node::pointer_t resolution;
     if(!resolve_name(node, a, resolution, Node::pointer_t(), SEARCH_FLAG_NO_PARSING))
     {
-        Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_NOT_FOUND, a->get_position());
+        Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_NOT_FOUND, a->get_position());
         msg << "cannot find a variable named '" << a->get_string() << "'.";
         return;
     }
@@ -230,7 +232,7 @@ void Compiler::identifier_to_attrs(Node::pointer_t node, Node::pointer_t a)
     if(resolution->get_type() != Node::node_t::NODE_VARIABLE
     && resolution->get_type() != Node::node_t::NODE_VAR_ATTRIBUTES)
     {
-        Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_DYNAMIC, a->get_position());
+        Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_DYNAMIC, a->get_position());
         msg << "a dynamic attribute name can only reference a variable and '" << a->get_string() << "' is not one.";
         return;
     }
@@ -239,7 +241,7 @@ void Compiler::identifier_to_attrs(Node::pointer_t node, Node::pointer_t a)
     // with each identifiers; but make sure we do not loop forever
     if(resolution->get_flag(Node::flag_t::NODE_VAR_FLAG_ATTRS))
     {
-        Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_LOOPING_REFERENCE, a->get_position());
+        Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_LOOPING_REFERENCE, a->get_position());
         msg << "the dynamic attribute variable '" << a->get_string() << "' is used circularly (it loops).";
         return;
     }
@@ -286,7 +288,7 @@ void Compiler::node_to_attrs(Node::pointer_t node, Node::pointer_t a)
         // Note that will happen whenever someone references a
         // variable which is an expression which does not resolve
         // to a valid attribute and thus we need a user error here
-        Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_NOT_SUPPORTED, a->get_position());
+        Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_NOT_SUPPORTED, a->get_position());
         msg << "unsupported attribute data type, dynamic expressions for attributes need to be resolved as constants.";
         break;
 
@@ -394,7 +396,7 @@ void Compiler::prepare_attributes(Node::pointer_t node)
                 // fine if it comes from the parent
                 if(has_direct_intrinsic)
                 {
-                    Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INTRINSIC, node->get_position());
+                    Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INTRINSIC, node->get_position());
                     msg << "'intrinsic' is not permitted on a function with a body.";
                 }
                 node->set_attribute(Node::attribute_t::NODE_ATTR_INTRINSIC, false);

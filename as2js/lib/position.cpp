@@ -234,7 +234,14 @@ Position::counter_t Position::get_line() const
  */
 std::ostream& operator << (std::ostream& out, Position const& pos)
 {
-    out << pos.get_filename() << ":" << pos.get_line() << ":";
+    if(pos.get_filename().empty())
+    {
+        out << "line " << pos.get_line() << ":";
+    }
+    else
+    {
+        out << pos.get_filename() << ":" << pos.get_line() << ":";
+    }
 
     return out;
 }

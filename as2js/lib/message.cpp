@@ -42,7 +42,7 @@ namespace as2js
 namespace
 {
     MessageCallback *   g_message_callback = nullptr;
-    message_level_t     g_maximum_message_level = MESSAGE_LEVEL_INFO;
+    message_level_t     g_maximum_message_level = message_level_t::MESSAGE_LEVEL_INFO;
     int                 g_warning_count = 0;
     int                 g_error_count = 0;
 }
@@ -107,8 +107,8 @@ Message::~Message()
 {
     // actually emit the message
     if(g_message_callback                           // there is a callback?
-    && MESSAGE_LEVEL_OFF != f_message_level         // level is off?!
-    && static_cast<int32_t>(f_message_level) <= g_maximum_message_level   // level is large enough?
+    && message_level_t::MESSAGE_LEVEL_OFF != f_message_level         // level is off?!
+    && f_message_level <= g_maximum_message_level   // level is large enough?
     && rdbuf()->in_avail() != 0)                    // there is a message?
     {
         if(f_position.get_filename().empty())
@@ -122,12 +122,12 @@ Message::~Message()
 
         switch(f_message_level)
         {
-        case MESSAGE_LEVEL_FATAL:
-        case MESSAGE_LEVEL_ERROR:
+        case message_level_t::MESSAGE_LEVEL_FATAL:
+        case message_level_t::MESSAGE_LEVEL_ERROR:
             ++g_error_count;
             break;
 
-        case MESSAGE_LEVEL_WARNING:
+        case message_level_t::MESSAGE_LEVEL_WARNING:
             ++g_warning_count;
             break;
 
@@ -486,8 +486,8 @@ void Message::set_message_callback(MessageCallback *callback)
  */
 void Message::set_message_level(message_level_t max_level)
 {
-    g_maximum_message_level = max_level < MESSAGE_LEVEL_ERROR
-                            ? MESSAGE_LEVEL_ERROR
+    g_maximum_message_level = max_level < message_level_t::MESSAGE_LEVEL_ERROR
+                            ? message_level_t::MESSAGE_LEVEL_ERROR
                             : max_level;
 }
 

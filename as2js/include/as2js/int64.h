@@ -80,9 +80,9 @@ public:
 
     compare_t       compare(Int64 const& rhs) const
                     {
-                        return f_int == rhs.f_int ? COMPARE_EQUAL
-                             : (f_int < rhs.f_int ? COMPARE_LESS
-                                                  : COMPARE_GREATER);
+                        return f_int == rhs.f_int ? compare_t::COMPARE_EQUAL
+                             : (f_int < rhs.f_int ? compare_t::COMPARE_LESS
+                                                  : compare_t::COMPARE_GREATER);
                     }
 
 private:

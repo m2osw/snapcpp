@@ -145,14 +145,14 @@ void Parser::directive(Node::pointer_t& node)
     case Node::node_t::NODE_COLON:
         if(attr_count == 0)
         {
-            Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_OPERATOR, f_lexer->get_input()->get_position());
+            Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_OPERATOR, f_lexer->get_input()->get_position());
             msg << "unexpected ':' without an identifier";
             break;
         }
         last_attr = attr_list->get_child(attr_count - 1);
         if(last_attr->get_type() != Node::node_t::NODE_IDENTIFIER)
         {
-            Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_OPERATOR, f_lexer->get_input()->get_position());
+            Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_OPERATOR, f_lexer->get_input()->get_position());
             msg << "unexpected ':' without an identifier";
             break;
         }
@@ -307,7 +307,7 @@ void Parser::directive(Node::pointer_t& node)
         case Node::node_t::NODE_SEMICOLON:
         {
             // annotated empty statements are not allowed
-            Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_ATTRIBUTES, f_lexer->get_input()->get_position());
+            Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_ATTRIBUTES, f_lexer->get_input()->get_position());
             msg << "no attributes were expected here (statements, expressions and pragmas can't be annotated)";
             attr_list.reset();
             attr_count = 0;
@@ -591,7 +591,7 @@ void Parser::directive(Node::pointer_t& node)
     case Node::node_t::NODE_GREATER:
     case Node::node_t::NODE_CLOSE_SQUARE_BRACKET:
     {
-        Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_OPERATOR, f_lexer->get_input()->get_position());
+        Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_OPERATOR, f_lexer->get_input()->get_position());
         msg << "unexpected operator";
         get_token();
     }
@@ -601,7 +601,7 @@ void Parser::directive(Node::pointer_t& node)
     case Node::node_t::NODE_ELSE:
     case Node::node_t::NODE_EXTENDS:
     {
-        Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_KEYWORD, f_lexer->get_input()->get_position());
+        Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_KEYWORD, f_lexer->get_input()->get_position());
         msg << "unexpected keyword";
         get_token();
     }
@@ -617,7 +617,6 @@ void Parser::directive(Node::pointer_t& node)
     case Node::node_t::NODE_CALL:
     case Node::node_t::NODE_DIRECTIVE_LIST:
     case Node::node_t::NODE_EMPTY:
-    case Node::node_t::NODE_ENTRY:
     case Node::node_t::NODE_EXCLUDE:
     case Node::node_t::NODE_INCLUDE:
     case Node::node_t::NODE_LABEL:
@@ -634,10 +633,10 @@ void Parser::directive(Node::pointer_t& node)
     case Node::node_t::NODE_TYPE:
     case Node::node_t::NODE_UNKNOWN:    // ?!
     case Node::node_t::NODE_VAR_ATTRIBUTES:
-    case Node::node_t::NODE_other:    // no node should be of this type
+    case Node::node_t::NODE_other:      // no node should be of this type
     case Node::node_t::NODE_max:        // no node should be of this type
         {
-            Message msg(MESSAGE_LEVEL_FATAL, AS_ERR_INTERNAL_ERROR, f_lexer->get_input()->get_position());
+            Message msg(message_level_t::MESSAGE_LEVEL_FATAL, err_code_t::AS_ERR_INTERNAL_ERROR, f_lexer->get_input()->get_position());
             msg << "INTERNAL ERROR: invalid node (" << Node::operator_to_string(type) << ") in directive_list.";
         }
         throw exception_internal_error("unexpected node type found while parsing directives");
@@ -696,7 +695,7 @@ void Parser::directive(Node::pointer_t& node)
         if(f_node->get_type() != Node::node_t::NODE_SEMICOLON
         && f_node->get_type() != Node::node_t::NODE_CLOSE_CURVLY_BRACKET)
         {
-            Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_SEMICOLON_EXPECTED, f_lexer->get_input()->get_position());
+            Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_SEMICOLON_EXPECTED, f_lexer->get_input()->get_position());
             msg << "';' was expected";
         }
         // skip all that whatever up to the next end of this

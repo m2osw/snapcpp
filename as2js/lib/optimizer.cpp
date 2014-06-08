@@ -673,7 +673,7 @@ void Optimizer::assignment_divide(Node::pointer_t& assignment_node)
         Int64::int64_type i(right->get_int64().get());
         if(i == 0)
         {
-            Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_DIVIDE_BY_ZERO, assignment_node->get_position());
+            Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_DIVIDE_BY_ZERO, assignment_node->get_position());
             msg << "dividing by zero is illegal";
         }
         else if(i == 1)
@@ -693,7 +693,7 @@ void Optimizer::assignment_divide(Node::pointer_t& assignment_node)
 #pragma GCC diagnostic ignored "-Wfloat-equal"
         if(f == 0.0)
         {
-            Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_DIVIDE_BY_ZERO, assignment_node->get_position());
+            Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_DIVIDE_BY_ZERO, assignment_node->get_position());
             msg << "dividing by zero is illegal";
         }
         else if(f == 1.0)
@@ -723,7 +723,7 @@ void Optimizer::assignment_modulo(Node::pointer_t& assignment_node)
     {
         if(right->get_int64().get() == 0)
         {
-            Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_DIVIDE_BY_ZERO, assignment_node->get_position());
+            Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_DIVIDE_BY_ZERO, assignment_node->get_position());
             msg << "modulo by zero is illegal";
         }
     }
@@ -733,7 +733,7 @@ void Optimizer::assignment_modulo(Node::pointer_t& assignment_node)
 #pragma GCC diagnostic ignored "-Wfloat-equal"
         if(right->get_float64().get() == 0.0)
         {
-            Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_DIVIDE_BY_ZERO, assignment_node->get_position());
+            Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_DIVIDE_BY_ZERO, assignment_node->get_position());
             msg << "modulo by zero is illegal";
         }
 #pragma GCC diagnostic pop
@@ -1364,7 +1364,7 @@ void Optimizer::divide(Node::pointer_t& divide_node)
                     Int64::int64_type ri(right->get_int64().get());
                     if(ri == 0)
                     {
-                        Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_DIVIDE_BY_ZERO, divide_node->get_position());
+                        Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_DIVIDE_BY_ZERO, divide_node->get_position());
                         msg << "dividing by zero is illegal";
                         return;
                     }
@@ -1396,7 +1396,7 @@ void Optimizer::divide(Node::pointer_t& divide_node)
 #pragma GCC diagnostic ignored "-Wfloat-equal"
                     if(rf == 0)
                     {
-                        Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_DIVIDE_BY_ZERO, divide_node->get_position());
+                        Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_DIVIDE_BY_ZERO, divide_node->get_position());
                         msg << "dividing by zero is illegal";
                         return;
                     }
@@ -1417,7 +1417,7 @@ void Optimizer::divide(Node::pointer_t& divide_node)
                     Int64::int64_type ri(right->get_int64().get());
                     if(ri == 0)
                     {
-                        Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_DIVIDE_BY_ZERO, divide_node->get_position());
+                        Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_DIVIDE_BY_ZERO, divide_node->get_position());
                         msg << "dividing by zero is illegal";
                         return;
                     }
@@ -1436,7 +1436,7 @@ void Optimizer::divide(Node::pointer_t& divide_node)
 #pragma GCC diagnostic ignored "-Wfloat-equal"
                     if(rf == 0)
                     {
-                        Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_DIVIDE_BY_ZERO, divide_node->get_position());
+                        Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_DIVIDE_BY_ZERO, divide_node->get_position());
                         msg << "dividing by zero is illegal";
                         return;
                     }
@@ -1524,7 +1524,7 @@ void Optimizer::divide(Node::pointer_t& divide_node)
             Int64::int64_type i(right->get_int64().get());
             if(i == 0)
             {
-                Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_DIVIDE_BY_ZERO, divide_node->get_position());
+                Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_DIVIDE_BY_ZERO, divide_node->get_position());
                 msg << "dividing by zero is illegal";
                 return;
             }
@@ -1556,7 +1556,7 @@ void Optimizer::divide(Node::pointer_t& divide_node)
 #pragma GCC diagnostic ignored "-Wfloat-equal"
             if(f == 0.0)
             {
-                Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_DIVIDE_BY_ZERO, divide_node->get_position());
+                Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_DIVIDE_BY_ZERO, divide_node->get_position());
                 msg << "dividing by zero is illegal";
                 return;
             }
@@ -1619,7 +1619,7 @@ void Optimizer::modulo(Node::pointer_t& modulo_node)
                     Int64::int64_type ri(right->get_int64().get());
                     if(ri == 0)
                     {
-                        Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_DIVIDE_BY_ZERO, modulo_node->get_position());
+                        Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_DIVIDE_BY_ZERO, modulo_node->get_position());
                         msg << "modulo by zero is illegal";
                         return;
                     }
@@ -1651,7 +1651,7 @@ void Optimizer::modulo(Node::pointer_t& modulo_node)
 #pragma GCC diagnostic ignored "-Wfloat-equal"
                     if(rf == 0)
                     {
-                        Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_DIVIDE_BY_ZERO, modulo_node->get_position());
+                        Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_DIVIDE_BY_ZERO, modulo_node->get_position());
                         msg << "modulo by zero is illegal";
                         return;
                     }
@@ -1672,7 +1672,7 @@ void Optimizer::modulo(Node::pointer_t& modulo_node)
                     Int64::int64_type ri(right->get_int64().get());
                     if(ri == 0)
                     {
-                        Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_DIVIDE_BY_ZERO, modulo_node->get_position());
+                        Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_DIVIDE_BY_ZERO, modulo_node->get_position());
                         msg << "modulo by zero is illegal";
                         return;
                     }
@@ -1691,7 +1691,7 @@ void Optimizer::modulo(Node::pointer_t& modulo_node)
 #pragma GCC diagnostic ignored "-Wfloat-equal"
                     if(rf == 0)
                     {
-                        Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_DIVIDE_BY_ZERO, modulo_node->get_position());
+                        Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_DIVIDE_BY_ZERO, modulo_node->get_position());
                         msg << "modulo by zero is illegal";
                         return;
                     }
@@ -1779,7 +1779,7 @@ void Optimizer::modulo(Node::pointer_t& modulo_node)
             Int64::int64_type i(right->get_int64().get());
             if(i == 0)
             {
-                Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_DIVIDE_BY_ZERO, modulo_node->get_position());
+                Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_DIVIDE_BY_ZERO, modulo_node->get_position());
                 msg << "modulo by zero is illegal";
                 return;
             }
@@ -1811,7 +1811,7 @@ void Optimizer::modulo(Node::pointer_t& modulo_node)
 #pragma GCC diagnostic ignored "-Wfloat-equal"
             if(f == 0.0)
             {
-                Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_DIVIDE_BY_ZERO, modulo_node->get_position());
+                Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_DIVIDE_BY_ZERO, modulo_node->get_position());
                 msg << "modulo by zero is illegal";
                 return;
             }
@@ -2237,8 +2237,8 @@ void Optimizer::shift_right_unsigned(Node::pointer_t& shift_right_unsigned_node)
 void Optimizer::rotate_left(Node::pointer_t& rotate_left_node)
 {
     // Reduce
-    //    a !< b       -- when a and b are literals
-    //    a !< 0       -- this CANNOT be simplified because it is like a = static_cast<uint32_t>(a) instead...
+    //    a <! b       -- when a and b are literals
+    //    a <! 0       -- this CANNOT be simplified because it is like a = static_cast<uint32_t>(a) instead...
 
     if(rotate_left_node->get_children_size() != 2)
     {
@@ -2254,9 +2254,9 @@ void Optimizer::rotate_left(Node::pointer_t& rotate_left_node)
         right->to_int64();
 
         // Source:
-        //   a !< b
+        //   a <! b
         // Destination:
-        //   ToUInt32(a !< (b & 0x1F))   -- computed
+        //   ToUInt32(a <! (b & 0x1F))   -- computed
         //
         int32_t const shift(right->get_int64().get() & 0x1F);
         if(shift != 0)
@@ -2269,7 +2269,7 @@ void Optimizer::rotate_left(Node::pointer_t& rotate_left_node)
     else if(left->is_float64() && left->get_float64().is_NaN())
     {
         // Source:
-        //   NaN !< b
+        //   NaN <! b
         // Destination:
         //   0
         //
@@ -2283,7 +2283,7 @@ void Optimizer::rotate_left(Node::pointer_t& rotate_left_node)
     else if(right->is_float64() && right->get_float64().is_NaN())
     {
         // Source:
-        //   a !< NaN
+        //   a <! NaN
         // Destination:
         //   a
         //
@@ -2296,7 +2296,7 @@ void Optimizer::rotate_left(Node::pointer_t& rotate_left_node)
     //     || (right->is_float64() && right->get_float64().get() == 0.0))
     //{
     //    // Source:
-    //    //   a !< 0;    or    a !< 0.0;
+    //    //   a <! 0;    or    a <! 0.0;
     //    // Destination:
     //    //   a;
     //    //
@@ -2304,7 +2304,7 @@ void Optimizer::rotate_left(Node::pointer_t& rotate_left_node)
     //    //       it should be because the final result is computed in an
     //    //       int32_t or something like a = (a & 0x0FFFFFFFF)
     //    //
-    //    //       (Obviously, since the !< and !> operators are our
+    //    //       (Obviously, since the <! and >! operators are our
     //    //       additions we could change the rules, but it makes
     //    //       more sense to follow the rules used to compute
     //    //       other bitwise operations.)
@@ -2319,8 +2319,8 @@ void Optimizer::rotate_left(Node::pointer_t& rotate_left_node)
 void Optimizer::rotate_right(Node::pointer_t& rotate_right_node)
 {
     // Reduce
-    //    a !> b       -- when a and b are literals
-    //    a !> 0       -- this CANNOT be simplified because it is like a = static_cast<uint32_t>(a) instead...
+    //    a >! b       -- when a and b are literals
+    //    a >! 0       -- this CANNOT be simplified because it is like a = static_cast<uint32_t>(a) instead...
 
     if(rotate_right_node->get_children_size() != 2)
     {
@@ -2336,9 +2336,9 @@ void Optimizer::rotate_right(Node::pointer_t& rotate_right_node)
         right->to_int64();
 
         // Source:
-        //   a !< b
+        //   a <! b
         // Destination:
-        //   ToUInt32(a !< (b & 0x1F))   -- computed
+        //   ToUInt32(a <! (b & 0x1F))   -- computed
         //
         int32_t const shift(right->get_int64().get() & 0x1F);
         if(shift != 0)
@@ -2351,7 +2351,7 @@ void Optimizer::rotate_right(Node::pointer_t& rotate_right_node)
     else if(left->is_float64() && left->get_float64().is_NaN())
     {
         // Source:
-        //   NaN !> b
+        //   NaN >! b
         // Destination:
         //   0
         //
@@ -2365,7 +2365,7 @@ void Optimizer::rotate_right(Node::pointer_t& rotate_right_node)
     else if(right->is_float64() && right->get_float64().is_NaN())
     {
         // Source:
-        //   a !> NaN
+        //   a >! NaN
         // Destination:
         //   a
         //
@@ -2378,7 +2378,7 @@ void Optimizer::rotate_right(Node::pointer_t& rotate_right_node)
     //     || (right->is_float64() && right->get_float64().get() == 0.0))
     //{
     //    // Source:
-    //    //   a !> 0;    or    a !> 0.0;
+    //    //   a >! 0;    or    a >! 0.0;
     //    // Destination:
     //    //   a;
     //    //
@@ -2386,7 +2386,7 @@ void Optimizer::rotate_right(Node::pointer_t& rotate_right_node)
     //    //       it should be because the final result is computed in an
     //    //       int32_t or something like a = (a & 0x0FFFFFFFF)
     //    //
-    //    //       (Obviously, since the !< and !> operators are our
+    //    //       (Obviously, since the <! and >! operators are our
     //    //       additions we could change the rules, but it makes
     //    //       more sense to follow the rules used to compute
     //    //       other bitwise operations.)
@@ -2408,7 +2408,7 @@ compare_t Optimizer::compare(Node::pointer_t& relational)
 {
     if(relational->get_children_size() != 2)
     {
-        return COMPARE_ERROR;
+        return compare_t::COMPARE_ERROR;
     }
 
     Node::pointer_t left(relational->get_child(0));
@@ -2423,9 +2423,9 @@ compare_t Optimizer::compare(Node::pointer_t& relational)
         // equal, however, negative or postive when no equal
         // so we have to normalize the return value
         int r(left->get_string().compare(right->get_string()));
-        return r == 0 ? COMPARE_EQUAL
-             : (r < 0 ? COMPARE_LESS
-                      : COMPARE_GREATER);
+        return r == 0 ? compare_t::COMPARE_EQUAL
+             : (r < 0 ? compare_t::COMPARE_LESS
+                      : compare_t::COMPARE_GREATER);
     }
 
     // if both are numbers, then convert and test
@@ -2433,7 +2433,7 @@ compare_t Optimizer::compare(Node::pointer_t& relational)
     if(left->is_nan() || right->is_nan()
     || !left->to_number() || !right->to_number())
     {
-        return COMPARE_ERROR;
+        return compare_t::COMPARE_ERROR;
     }
 
     // if both are integers, compare as integers
@@ -2456,7 +2456,7 @@ void Optimizer::less(Node::pointer_t& less_node)
     compare_t r(compare(less_node));
     if(compare_utils::is_ordered(r))
     {
-        Node::pointer_t result(less_node->create_replacement(r == COMPARE_LESS ? Node::node_t::NODE_TRUE : Node::node_t::NODE_FALSE));
+        Node::pointer_t result(less_node->create_replacement(r == compare_t::COMPARE_LESS ? Node::node_t::NODE_TRUE : Node::node_t::NODE_FALSE));
         less_node->replace_with(result);
     }
 }
@@ -2467,7 +2467,7 @@ void Optimizer::less_equal(Node::pointer_t& less_equal_node)
     compare_t r(compare(less_equal_node));
     if(compare_utils::is_ordered(r))
     {
-        Node::pointer_t result(less_equal_node->create_replacement(r != COMPARE_GREATER ? Node::node_t::NODE_TRUE : Node::node_t::NODE_FALSE));
+        Node::pointer_t result(less_equal_node->create_replacement(r != compare_t::COMPARE_GREATER ? Node::node_t::NODE_TRUE : Node::node_t::NODE_FALSE));
         less_equal_node->replace_with(result);
     }
 }
@@ -2478,7 +2478,7 @@ void Optimizer::greater(Node::pointer_t& greater_node)
     compare_t r(compare(greater_node));
     if(compare_utils::is_ordered(r))
     {
-        Node::pointer_t result(greater_node->create_replacement(r == COMPARE_GREATER ? Node::node_t::NODE_TRUE : Node::node_t::NODE_FALSE));
+        Node::pointer_t result(greater_node->create_replacement(r == compare_t::COMPARE_GREATER ? Node::node_t::NODE_TRUE : Node::node_t::NODE_FALSE));
         greater_node->replace_with(result);
     }
 }
@@ -2489,7 +2489,7 @@ void Optimizer::greater_equal(Node::pointer_t& greater_equal_node)
     compare_t r(compare(greater_equal_node));
     if(compare_utils::is_ordered(r))
     {
-        Node::pointer_t result(greater_equal_node->create_replacement(r != COMPARE_LESS ? Node::node_t::NODE_TRUE : Node::node_t::NODE_FALSE));
+        Node::pointer_t result(greater_equal_node->create_replacement(r != compare_t::COMPARE_LESS ? Node::node_t::NODE_TRUE : Node::node_t::NODE_FALSE));
         greater_equal_node->replace_with(result);
     }
 }
@@ -2921,7 +2921,7 @@ void Optimizer::bitwise_and(Node::pointer_t& bitwise_and_node)
         // Source:
         //   a & b
         // Destination:
-        //   ToInt32(a !< (b & 0x1F))   -- computed
+        //   ToInt32(a <! (b & 0x1F))   -- computed
         //
         left->set_int64(static_cast<int32_t>(left->get_int64().get())
                       & static_cast<int32_t>(right->get_int64().get()));
@@ -2976,7 +2976,7 @@ void Optimizer::bitwise_and(Node::pointer_t& bitwise_and_node)
     //    //       it should be because the final result is computed in an
     //    //       int32_t or something like a = (a & 0x0FFFFFFFF)
     //    //
-    //    //       (Obviously, since the !< and !> operators are our
+    //    //       (Obviously, since the <! and >! operators are our
     //    //       additions we could change the rules, but it makes
     //    //       more sense to follow the rules used to compute
     //    //       other bitwise operations.)
@@ -3477,7 +3477,7 @@ void Optimizer::minimum(Node::pointer_t& minimum_node)
     compare_t r(compare(minimum_node));
     if(compare_utils::is_ordered(r))
     {
-        if(r != COMPARE_GREATER)
+        if(r != compare_t::COMPARE_GREATER)
         {
             minimum_node->replace_with(minimum_node->get_child(0));
         }
@@ -3495,7 +3495,7 @@ void Optimizer::maximum(Node::pointer_t& maximum_node)
     compare_t r(compare(maximum_node));
     if(compare_utils::is_ordered(r))
     {
-        if(r != COMPARE_LESS)
+        if(r != compare_t::COMPARE_LESS)
         {
             maximum_node->replace_with(maximum_node->get_child(0));
         }

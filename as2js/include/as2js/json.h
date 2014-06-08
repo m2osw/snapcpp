@@ -74,7 +74,7 @@ public:
         typedef std::vector<JSONValue::pointer_t>       array_t;
         typedef std::map<String, JSONValue::pointer_t>  object_t;
 
-        enum type_t
+        enum class type_t
         {
             JSON_TYPE_UNKNOWN,
 
@@ -87,7 +87,7 @@ public:
             JSON_TYPE_STRING,
             JSON_TYPE_TRUE
         };
-        typedef controlled_vars::limited_auto_enum_init<type_t, JSON_TYPE_UNKNOWN, JSON_TYPE_TRUE, JSON_TYPE_UNKNOWN> safe_type_t;
+        typedef controlled_vars::limited_auto_enum_init<type_t, type_t::JSON_TYPE_UNKNOWN, type_t::JSON_TYPE_TRUE, type_t::JSON_TYPE_UNKNOWN> safe_type_t;
 
                             JSONValue(Position const& position);  // null
                             JSONValue(Position const& position, Int64 integer);

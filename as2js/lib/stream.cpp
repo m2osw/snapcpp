@@ -465,7 +465,7 @@ Input::char_t DecodingFilterDetect::get_char()
             // if each character is valid UTF-8, the use UTF-8
             String s;
             String::conversion_result_t r(s.from_utf8(reinterpret_cast<char const *>(&f_buffer[0]), f_buffer.size()));
-            if(r == String::STRING_GOOD || r == String::STRING_END)
+            if(r == String::conversion_result_t::STRING_GOOD || r == String::conversion_result_t::STRING_END)
             {
                 f_filter.reset(new DecodingFilterUTF8);
             }
@@ -895,7 +895,7 @@ void StandardOutput::internal_write(String const& data)
     if(!std::cout)
     {
         // should we do something here?
-        Message msg(MESSAGE_LEVEL_FATAL, AS_ERR_IO_ERROR, get_position());
+        Message msg(message_level_t::MESSAGE_LEVEL_FATAL, err_code_t::AS_ERR_IO_ERROR, get_position());
         msg << "I/O error: could not write to output.";
         throw exception_exit(1, "I/O error: could not write to output.");
     }
@@ -959,7 +959,7 @@ void FileOutput::internal_write(String const& data)
     if(!f_file)
     {
         // should we do something here?
-        Message msg(MESSAGE_LEVEL_FATAL, AS_ERR_IO_ERROR, get_position());
+        Message msg(message_level_t::MESSAGE_LEVEL_FATAL, err_code_t::AS_ERR_IO_ERROR, get_position());
         msg << "I/O error: could not write to output.";
         throw exception_exit(1, "I/O error: could not write to output.");
     }

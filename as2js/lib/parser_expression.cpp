@@ -94,7 +94,7 @@ void Parser::list_expression(Node::pointer_t& node, bool rest, bool empty)
             get_token();
             if(has_rest == 1)
             {
-                Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_REST, f_lexer->get_input()->get_position());
+                Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_REST, f_lexer->get_input()->get_position());
                 msg << "'...' was expected to be the last expression only";
                 has_rest = 2;
             }
@@ -238,7 +238,7 @@ void Parser::conditional_expression(Node::pointer_t& node, bool assignment)
         }
         else
         {
-            Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_CONDITIONAL, f_lexer->get_input()->get_position());
+            Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_CONDITIONAL, f_lexer->get_input()->get_position());
             msg << "invalid use of the conditional operator, ':' was expected";
         }
     }
@@ -575,7 +575,7 @@ void Parser::postfix_expression(Node::pointer_t& node)
             }
             else
             {
-                Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_SCOPE, f_lexer->get_input()->get_position());
+                Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_SCOPE, f_lexer->get_input()->get_position());
                 msg << "scope operator '::' is expected to be followed by an identifier";
             }
             // don't repeat scope (it seems)
@@ -640,7 +640,7 @@ void Parser::postfix_expression(Node::pointer_t& node)
             }
             else
             {
-                Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_PARENTHESIS_EXPECTED, f_lexer->get_input()->get_position());
+                Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_PARENTHESIS_EXPECTED, f_lexer->get_input()->get_position());
                 msg << "')' expected to end the list of arguments";
             }
         }
@@ -668,7 +668,7 @@ void Parser::postfix_expression(Node::pointer_t& node)
             }
             else
             {
-                Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_SQUARE_BRAKETS_EXPECTED, f_lexer->get_input()->get_position());
+                Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_SQUARE_BRAKETS_EXPECTED, f_lexer->get_input()->get_position());
                 msg << "']' expected to end the list of element references or declarations";
             }
         }
@@ -734,7 +734,7 @@ void Parser::primary_expression(Node::pointer_t& node)
         }
         else
         {
-            Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_PARENTHESIS_EXPECTED, f_lexer->get_input()->get_position());
+            Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_PARENTHESIS_EXPECTED, f_lexer->get_input()->get_position());
             msg << "')' expected to match the '('";
         }
     }
@@ -754,7 +754,7 @@ void Parser::primary_expression(Node::pointer_t& node)
         }
         else
         {
-            Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_SQUARE_BRAKETS_EXPECTED, f_lexer->get_input()->get_position());
+            Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_SQUARE_BRAKETS_EXPECTED, f_lexer->get_input()->get_position());
             msg << "']' expected to match the '[' of this array";
         }
     }
@@ -770,7 +770,7 @@ void Parser::primary_expression(Node::pointer_t& node)
         }
         else
         {
-            Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_CURVLY_BRAKETS_EXPECTED, f_lexer->get_input()->get_position());
+            Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_CURVLY_BRAKETS_EXPECTED, f_lexer->get_input()->get_position());
             msg << "'}' expected to match the '{' of this object literal";
         }
     }
@@ -784,7 +784,7 @@ void Parser::primary_expression(Node::pointer_t& node)
         break;
 
     default:
-        Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_EXPRESSION, f_lexer->get_input()->get_position());
+        Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_EXPRESSION, f_lexer->get_input()->get_position());
         msg << "unexpected token found in an expression";
         break;
 
@@ -836,13 +836,13 @@ and_scope:
                 }
                 else
                 {
-                    Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_SCOPE, f_lexer->get_input()->get_position());
+                    Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_SCOPE, f_lexer->get_input()->get_position());
                     msg << "'::' is expected to be followed by an identifier";
                 }
             }
             else if(type != Node::node_t::NODE_IDENTIFIER)
             {
-                Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_FIELD_NAME, f_lexer->get_input()->get_position());
+                Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_FIELD_NAME, f_lexer->get_input()->get_position());
                 msg << "'public' or 'private' cannot be used as a field name, '::' was expected";
             }
             break;
@@ -855,7 +855,7 @@ and_scope:
             break;
 
         default:
-            Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_FIELD, f_lexer->get_input()->get_position());
+            Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_FIELD, f_lexer->get_input()->get_position());
             msg << "the name of a field was expected";
             break;
 
@@ -876,7 +876,7 @@ and_scope:
                 break;
             }
 
-            Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_COLON_EXPECTED, f_lexer->get_input()->get_position());
+            Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_COLON_EXPECTED, f_lexer->get_input()->get_position());
             msg << "':' expected after the name of a field";
 
             if(f_node->get_type() == Node::node_t::NODE_SEMICOLON)

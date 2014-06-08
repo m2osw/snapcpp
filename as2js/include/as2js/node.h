@@ -61,6 +61,7 @@ class Node : public std::enable_shared_from_this<Node>
 {
 public:
     typedef std::shared_ptr<Node>               pointer_t;
+    typedef std::weak_ptr<Node>                 weak_pointer_t;
     typedef std::map<String, pointer_t>         map_of_pointers_t;
     typedef std::vector<pointer_t>              vector_of_pointers_t;
 
@@ -147,7 +148,6 @@ public:
         NODE_DO,
         NODE_ELSE,
         NODE_EMPTY,
-        NODE_ENTRY,
         NODE_ENUM,
         NODE_EQUAL,
         NODE_EXCLUDE,
@@ -370,7 +370,7 @@ public:
 
     typedef std::bitset<static_cast<int>(attribute_t::NODE_ATTRIBUTE_max)>     attribute_set_t;
 
-    enum class link_t
+    enum class link_t : uint32_t
     {
         LINK_INSTANCE = 0,
         LINK_TYPE,
@@ -382,7 +382,6 @@ public:
     };
 
                                 Node(node_t type);
-                                ~Node();
 
                                 Node(Node const&) = delete;
     Node&                       operator = (Node const&) = delete;
@@ -467,7 +466,6 @@ public:
     void                        append_child(pointer_t child);
     void                        insert_child(int index, pointer_t child);
     void                        set_child(int index, pointer_t child);
-    vector_of_pointers_t const& get_children() const;
     pointer_t                   get_child(int index) const;
     pointer_t                   find_first_child(node_t type) const;
     pointer_t                   find_next_child(pointer_t start, node_t type) const;
@@ -481,14 +479,12 @@ public:
     pointer_t                   get_variable(int index) const;
 
     void                        add_label(pointer_t label);
-    size_t                      get_label_size() const;
-    //pointer_t                   get_label(size_t index) const; -- because of the map and it looks like we're not using this one anyway
     pointer_t                   find_label(String const& name) const;
 
     static char const *         operator_to_string(node_t op);
     static node_t               string_to_operator(String const& str);
 
-    void                        display(std::ostream& out, int indent, pointer_t parent, char c) const;
+    void                        display(std::ostream& out, int indent, char c) const;
 
     String                      output() const;
 
@@ -496,11 +492,13 @@ private:
     typedef std::vector<controlled_vars::zint32_t>  param_depth_t;
     typedef std::vector<controlled_vars::zuint32_t> param_index_t;
 
-    // verify that the specified flag correspond to the node type
+    // verify different parameters
     void                        verify_flag(flag_t f) const;
     void                        verify_attribute(attribute_t f) const;
     void                        verify_exclusive_attributes(attribute_t f) const;
     void                        modifying() const;
+
+    // output a node to out (on your end, use the << operator)
     void                        display_data(std::ostream& out) const;
 
     // define the node type
@@ -525,7 +523,7 @@ private:
     param_index_t                   f_param_index;
 
     // parent children node tree handling
-    pointer_t                       f_parent;
+    weak_pointer_t                  f_parent;
     controlled_vars::zint32_t       f_offset;        // offset (index) in parent array of children -- set by compiler, should probably be removed...
     vector_of_pointers_t            f_children;
 

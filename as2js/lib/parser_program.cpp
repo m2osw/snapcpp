@@ -58,13 +58,13 @@ void Parser::program(Node::pointer_t& node)
 
         if(f_node->get_type() == Node::node_t::NODE_ELSE)
         {
-            Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_KEYWORD, f_lexer->get_input()->get_position());
+            Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_KEYWORD, f_lexer->get_input()->get_position());
             msg << "'else' not expected without an 'if' keyword";
             get_token();
         }
         else if(f_node->get_type() == Node::node_t::NODE_CLOSE_CURVLY_BRACKET)
         {
-            Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_CURVLY_BRAKETS_EXPECTED, f_lexer->get_input()->get_position());
+            Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_CURVLY_BRAKETS_EXPECTED, f_lexer->get_input()->get_position());
             msg << "'}' not expected without a '{'";
             get_token();
         }

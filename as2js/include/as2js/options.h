@@ -56,9 +56,11 @@ class Options
 public:
     typedef std::shared_ptr<Options>    pointer_t;
 
-    enum option_t
+    enum class option_t
     {
         OPTION_UNKNOWN = 0,
+
+        OPTION_ALLOW_WITH,          // we do NOT allow with() statements by default
         OPTION_DEBUG,
         OPTION_DEBUG_LEXER,
         OPTION_EXTENDED_ESCAPE_SEQUENCES,

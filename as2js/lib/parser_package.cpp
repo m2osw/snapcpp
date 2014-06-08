@@ -63,7 +63,7 @@ void Parser::package(Node::pointer_t& node)
             if(f_node->get_type() != Node::node_t::NODE_IDENTIFIER)
             {
                 // unexpected token/missing name
-                Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_PACKAGE_NAME, f_lexer->get_input()->get_position());
+                Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_PACKAGE_NAME, f_lexer->get_input()->get_position());
                 msg << "invalid package name (expected an identifier after the last '.')";
                 break;
             }
@@ -91,7 +91,7 @@ void Parser::package(Node::pointer_t& node)
     }
     else
     {
-        Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_PACKAGE_NAME, f_lexer->get_input()->get_position());
+        Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_PACKAGE_NAME, f_lexer->get_input()->get_position());
         msg << "'{' expected after the package name";
         // TODO: should we return and not try to read the package?
     }
@@ -107,7 +107,7 @@ void Parser::package(Node::pointer_t& node)
     }
     else
     {
-        Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_PACKAGE_NAME, f_lexer->get_input()->get_position());
+        Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_PACKAGE_NAME, f_lexer->get_input()->get_position());
         msg << "'}' expected after the package declaration";
     }
 }
@@ -149,7 +149,7 @@ void Parser::import(Node::pointer_t& node)
                 get_token();
                 if(f_node->get_type() == Node::node_t::NODE_MEMBER)
                 {
-                    Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_PACKAGE_NAME, f_lexer->get_input()->get_position());
+                    Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_PACKAGE_NAME, f_lexer->get_input()->get_position());
                     msg << "a package name is either a string or a list of identifiers separated by periods (.); you can't mixed both";
                 }
             }
@@ -160,7 +160,7 @@ void Parser::import(Node::pointer_t& node)
             }
             else
             {
-                Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_PACKAGE_NAME, f_lexer->get_input()->get_position());
+                Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_PACKAGE_NAME, f_lexer->get_input()->get_position());
                 msg << "the name of a package was expected";
             }
         }
@@ -175,7 +175,7 @@ void Parser::import(Node::pointer_t& node)
             if(everything == 1)
             {
                 everything = 2;
-                Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_PACKAGE_NAME, f_lexer->get_input()->get_position());
+                Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_PACKAGE_NAME, f_lexer->get_input()->get_position());
                 msg << "the * notation can only be used once at the end of a name";
             }
             name += ".";
@@ -184,7 +184,7 @@ void Parser::import(Node::pointer_t& node)
             {
                 if(is_renaming && everything == 0)
                 {
-                    Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_PACKAGE_NAME, f_lexer->get_input()->get_position());
+                    Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_PACKAGE_NAME, f_lexer->get_input()->get_position());
                     msg << "the * notation cannot be used when renaming an import";
                     everything = 2;
                 }
@@ -199,12 +199,12 @@ void Parser::import(Node::pointer_t& node)
             {
                 if(f_node->get_type() == Node::node_t::NODE_STRING)
                 {
-                    Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_PACKAGE_NAME, f_lexer->get_input()->get_position());
+                    Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_PACKAGE_NAME, f_lexer->get_input()->get_position());
                     msg << "a package name is either a string or a list of identifiers separated by periods (.); you can't mixed both";
                 }
                 else
                 {
-                    Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_PACKAGE_NAME, f_lexer->get_input()->get_position());
+                    Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_PACKAGE_NAME, f_lexer->get_input()->get_position());
                     msg << "the name of a package was expected";
                 }
                 break;
@@ -226,7 +226,7 @@ void Parser::import(Node::pointer_t& node)
     }
     else
     {
-        Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_PACKAGE_NAME, f_lexer->get_input()->get_position());
+        Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_PACKAGE_NAME, f_lexer->get_input()->get_position());
         msg << "a composed name or a string was expected after 'import'";
         if(f_node->get_type() != Node::node_t::NODE_SEMICOLON && f_node->get_type() != Node::node_t::NODE_COMMA)
         {
@@ -258,7 +258,7 @@ void Parser::import(Node::pointer_t& node)
             {
                 if(include_exclude == 2)
                 {
-                    Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_PACKAGE_NAME, f_lexer->get_input()->get_position());
+                    Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_PACKAGE_NAME, f_lexer->get_input()->get_position());
                     msg << "include and exclude are mutually exclusive";
                     include_exclude = 3;
                 }
@@ -278,7 +278,7 @@ void Parser::import(Node::pointer_t& node)
             {
                 if(include_exclude == 1)
                 {
-                    Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_PACKAGE_NAME, f_lexer->get_input()->get_position());
+                    Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_PACKAGE_NAME, f_lexer->get_input()->get_position());
                     msg << "include and exclude are mutually exclusive";
                     include_exclude = 3;
                 }
@@ -296,7 +296,7 @@ void Parser::import(Node::pointer_t& node)
             }
             else
             {
-                Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_PACKAGE_NAME, f_lexer->get_input()->get_position());
+                Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_PACKAGE_NAME, f_lexer->get_input()->get_position());
                 msg << "namespace, include or exclude was expected after the comma";
             }
         }
@@ -334,7 +334,7 @@ void Parser::namespace_block(Node::pointer_t& node)
     }
     else
     {
-        Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INVALID_NAMESPACE, f_lexer->get_input()->get_position());
+        Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_NAMESPACE, f_lexer->get_input()->get_position());
         msg << "the 'namespace' declaration expects an identifier";
     }
 }

@@ -76,7 +76,7 @@ void Parser::pragma()
                     if(negative)
                     {
                         negative = false;
-                        Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_BAD_PRAGMA, f_lexer->get_input()->get_position());
+                        Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_BAD_PRAGMA, f_lexer->get_input()->get_position());
                         msg << "invalid negative argument for a pragma";
                     }
                     argument = f_node;
@@ -103,14 +103,15 @@ void Parser::pragma()
 
                 case Node::node_t::NODE_CLOSE_PARENTHESIS:
                 {
-                    Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_BAD_PRAGMA, f_lexer->get_input()->get_position());
-                    msg << "a pragma argument can't just be '-'";
+                    // we cannot negate "nothingness"
+                    Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_BAD_PRAGMA, f_lexer->get_input()->get_position());
+                    msg << "a pragma argument cannot just be '-'";
                 }
                     break;
 
                 default:
                 {
-                    Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_BAD_PRAGMA, f_lexer->get_input()->get_position());
+                    Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_BAD_PRAGMA, f_lexer->get_input()->get_position());
                     msg << "invalid argument type for a pragma";
                 }
                     break;
@@ -119,7 +120,7 @@ void Parser::pragma()
             }
             if(f_node->get_type() == Node::node_t::NODE_CLOSE_PARENTHESIS)
             {
-                Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_BAD_PRAGMA, f_lexer->get_input()->get_position());
+                Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_BAD_PRAGMA, f_lexer->get_input()->get_position());
                 msg << "invalid argument for a pragma";
             }
             else
@@ -144,62 +145,62 @@ void Parser::pragma()
         //       being ignored.
         //
         Options::option_value_t value(1);
-        Options::option_t option = Options::OPTION_UNKNOWN;
+        Options::option_t option = Options::option_t::OPTION_UNKNOWN;
         if(name == "extended_operators")
         {
-            option = Options::OPTION_EXTENDED_OPERATORS;
+            option = Options::option_t::OPTION_EXTENDED_OPERATORS;
         }
         else if(name == "no_extended_operators")
         {
-            option = Options::OPTION_EXTENDED_OPERATORS;
+            option = Options::option_t::OPTION_EXTENDED_OPERATORS;
             value = 0;
         }
         else if(name == "extended_escape_sequences")
         {
-            option = Options::OPTION_EXTENDED_ESCAPE_SEQUENCES;
+            option = Options::option_t::OPTION_EXTENDED_ESCAPE_SEQUENCES;
         }
         else if(name == "no_extended_escape_sequences")
         {
-            option = Options::OPTION_EXTENDED_ESCAPE_SEQUENCES;
+            option = Options::option_t::OPTION_EXTENDED_ESCAPE_SEQUENCES;
             value = 0;
         }
         else if(name == "octal")
         {
-            option = Options::OPTION_OCTAL;
+            option = Options::option_t::OPTION_OCTAL;
         }
         else if(name == "no_octal")
         {
-            option = Options::OPTION_OCTAL;
+            option = Options::option_t::OPTION_OCTAL;
             value = 0;
         }
         else if(name == "strict")
         {
-            option = Options::OPTION_STRICT;
+            option = Options::option_t::OPTION_STRICT;
         }
         else if(name == "not_strict")
         {
-            option = Options::OPTION_STRICT;
+            option = Options::option_t::OPTION_STRICT;
             value = 0;
         }
         else if(name == "trace_to_object")
         {
-            option = Options::OPTION_TRACE_TO_OBJECT;
+            option = Options::option_t::OPTION_TRACE_TO_OBJECT;
         }
         else if(name == "no_trace_to_object")
         {
-            option = Options::OPTION_TRACE_TO_OBJECT;
+            option = Options::option_t::OPTION_TRACE_TO_OBJECT;
             value = 0;
         }
         else if(name == "trace")
         {
-            option = Options::OPTION_TRACE;
+            option = Options::option_t::OPTION_TRACE;
         }
         else if(name == "no_trace")
         {
-            option = Options::OPTION_TRACE;
+            option = Options::option_t::OPTION_TRACE;
             value = 0;
         }
-        if(option != Options::OPTION_UNKNOWN)
+        if(option != Options::option_t::OPTION_UNKNOWN)
         {
             pragma_option(option, prima, argument, value);
         }
@@ -218,30 +219,27 @@ void Parser::pragma_option(Options::option_t option, bool prima, Node::pointer_t
     }
 
     // user overloaded the value?
-    switch(argument->get_type())
+    // if argument is a null pointer, then keep the input value as is
+    if(argument) switch(argument->get_type())
     {
-    case Node::node_t::NODE_UNKNOWN:
-        // default value used
-        break;
-
     case Node::node_t::NODE_TRUE:
         value = 1;
         break;
 
     case Node::node_t::NODE_INT64:
-        value = option, argument->get_int64().get() != 0;
+        value = argument->get_int64().get() != 0;
         break;
 
     case Node::node_t::NODE_FLOAT64:
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
-        value = option, argument->get_float64().get() != 0.0;
+        value = argument->get_float64().get() != 0.0;
 #pragma GCC diagnostic pop
         break;
 
     case Node::node_t::NODE_STRING:
     {
-        Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INCOMPATIBLE_PRAGMA_ARGUMENT, f_lexer->get_input()->get_position());
+        Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INCOMPATIBLE_PRAGMA_ARGUMENT, f_lexer->get_input()->get_position());
         msg << "incompatible pragma argument";
     }
         break;
@@ -256,7 +254,7 @@ void Parser::pragma_option(Options::option_t option, bool prima, Node::pointer_t
     {
         if(f_options->get_option(option) != value)
         {
-            Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_PRAGMA_FAILED, f_lexer->get_input()->get_position());
+            Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_PRAGMA_FAILED, f_lexer->get_input()->get_position());
             msg << "prima pragma failed";
         }
         return;

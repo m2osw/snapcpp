@@ -90,7 +90,7 @@ int Compiler::compile(Node::pointer_t& root)
         }
         else
         {
-            Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_INTERNAL_ERROR, root->get_position());
+            Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INTERNAL_ERROR, root->get_position());
             msg << "the Compiler::compile() function expected a root or a program node to start with.";
         }
     }
@@ -122,7 +122,7 @@ void Compiler::find_labels(Node::pointer_t function_node, Node::pointer_t node)
         if(label)
         {
             // TODO: test function type
-            Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_DUPLICATES, function_node->get_position());
+            Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_DUPLICATES, function_node->get_position());
             msg << "label '" << node->get_string() << "' defined twice in the same program, package or function.";
         }
         else
@@ -227,7 +227,7 @@ void Compiler::print_search_errors(Node::pointer_t name)
         return;
     }
 
-    Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_CANNOT_MATCH, name->get_position());
+    Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_CANNOT_MATCH, name->get_position());
     msg << "the name '" << name->get_string() << "' could not be resolved because:\n";
 
     if((f_err_flags & SEARCH_ERROR_PRIVATE) != 0)
@@ -284,7 +284,7 @@ void Compiler::resolve_internal_type(Node::pointer_t parent, char const *type, N
     if(!r)
     {
         // if the compiler can't find an internal type, that's really bad!
-        Message msg(MESSAGE_LEVEL_FATAL, AS_ERR_INTERNAL_ERROR, parent->get_position());
+        Message msg(message_level_t::MESSAGE_LEVEL_FATAL, err_code_t::AS_ERR_INTERNAL_ERROR, parent->get_position());
         msg << "cannot find internal type \"" << type << "\".";
         throw exception_exit(1, "cannot find internal type");
     }

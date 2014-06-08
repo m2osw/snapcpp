@@ -112,18 +112,18 @@ void As2JsFloat64UnitTests::test_float64()
         CPPUNIT_ASSERT(as2js::compare_utils::is_ordered(copy.compare(random)));
         if(q < r)
         {
-            CPPUNIT_ASSERT(random.compare(copy) == as2js::COMPARE_LESS);
-            CPPUNIT_ASSERT(copy.compare(random) == as2js::COMPARE_GREATER);
+            CPPUNIT_ASSERT(random.compare(copy) == as2js::compare_t::COMPARE_LESS);
+            CPPUNIT_ASSERT(copy.compare(random) == as2js::compare_t::COMPARE_GREATER);
         }
         else if(q > r)
         {
-            CPPUNIT_ASSERT(random.compare(copy) == as2js::COMPARE_GREATER);
-            CPPUNIT_ASSERT(copy.compare(random) == as2js::COMPARE_LESS);
+            CPPUNIT_ASSERT(random.compare(copy) == as2js::compare_t::COMPARE_GREATER);
+            CPPUNIT_ASSERT(copy.compare(random) == as2js::compare_t::COMPARE_LESS);
         }
         else
         {
-            CPPUNIT_ASSERT(random.compare(copy) == as2js::COMPARE_EQUAL);
-            CPPUNIT_ASSERT(copy.compare(random) == as2js::COMPARE_EQUAL);
+            CPPUNIT_ASSERT(random.compare(copy) == as2js::compare_t::COMPARE_EQUAL);
+            CPPUNIT_ASSERT(copy.compare(random) == as2js::compare_t::COMPARE_EQUAL);
         }
 
         float s3(rand() & 1 ? -1 : 1);
@@ -202,18 +202,18 @@ void As2JsFloat64UnitTests::test_float64()
         CPPUNIT_ASSERT(as2js::compare_utils::is_ordered(copy.compare(random)));
         if(q < r)
         {
-            CPPUNIT_ASSERT(random.compare(copy) == as2js::COMPARE_LESS);
-            CPPUNIT_ASSERT(copy.compare(random) == as2js::COMPARE_GREATER);
+            CPPUNIT_ASSERT(random.compare(copy) == as2js::compare_t::COMPARE_LESS);
+            CPPUNIT_ASSERT(copy.compare(random) == as2js::compare_t::COMPARE_GREATER);
         }
         else if(q > r)
         {
-            CPPUNIT_ASSERT(random.compare(copy) == as2js::COMPARE_GREATER);
-            CPPUNIT_ASSERT(copy.compare(random) == as2js::COMPARE_LESS);
+            CPPUNIT_ASSERT(random.compare(copy) == as2js::compare_t::COMPARE_GREATER);
+            CPPUNIT_ASSERT(copy.compare(random) == as2js::compare_t::COMPARE_LESS);
         }
         else
         {
-            CPPUNIT_ASSERT(random.compare(copy) == as2js::COMPARE_EQUAL);
-            CPPUNIT_ASSERT(copy.compare(random) == as2js::COMPARE_EQUAL);
+            CPPUNIT_ASSERT(random.compare(copy) == as2js::compare_t::COMPARE_EQUAL);
+            CPPUNIT_ASSERT(copy.compare(random) == as2js::compare_t::COMPARE_EQUAL);
         }
 
         double s3(rand() & 1 ? -1 : 1);
@@ -280,9 +280,9 @@ void As2JsFloat64UnitTests::test_special_numbers()
     //CPPUNIT_ASSERT(!(special < r));
     //CPPUNIT_ASSERT(!(special <= r));
     CPPUNIT_ASSERT(special.get() != std::numeric_limits<double>::quiet_NaN());
-    CPPUNIT_ASSERT(special.compare(p) == as2js::COMPARE_UNORDERED);
-    CPPUNIT_ASSERT(special.compare(r) == as2js::COMPARE_UNORDERED);
-    CPPUNIT_ASSERT(r.compare(special) == as2js::COMPARE_UNORDERED);
+    CPPUNIT_ASSERT(special.compare(p) == as2js::compare_t::COMPARE_UNORDERED);
+    CPPUNIT_ASSERT(special.compare(r) == as2js::compare_t::COMPARE_UNORDERED);
+    CPPUNIT_ASSERT(r.compare(special) == as2js::compare_t::COMPARE_UNORDERED);
     CPPUNIT_ASSERT(special.classified_infinity() == 0);
 
     // test Infinity
@@ -306,15 +306,15 @@ void As2JsFloat64UnitTests::test_special_numbers()
     //CPPUNIT_ASSERT(!(special < r));
     //CPPUNIT_ASSERT(!(special <= r));
     CPPUNIT_ASSERT(special.get() != std::numeric_limits<double>::quiet_NaN());
-    CPPUNIT_ASSERT(special.compare(p) == as2js::COMPARE_GREATER);
-    CPPUNIT_ASSERT(special.compare(r) == as2js::COMPARE_GREATER);
-    CPPUNIT_ASSERT(r.compare(special) == as2js::COMPARE_LESS);
+    CPPUNIT_ASSERT(special.compare(p) == as2js::compare_t::COMPARE_GREATER);
+    CPPUNIT_ASSERT(special.compare(r) == as2js::compare_t::COMPARE_GREATER);
+    CPPUNIT_ASSERT(r.compare(special) == as2js::compare_t::COMPARE_LESS);
     CPPUNIT_ASSERT(special.classified_infinity() == 1);
 
     as2js::Float64 pinf;
     pinf.set_infinity();
-    CPPUNIT_ASSERT(pinf.compare(special) == as2js::COMPARE_EQUAL);
-    CPPUNIT_ASSERT(special.compare(pinf) == as2js::COMPARE_EQUAL);
+    CPPUNIT_ASSERT(pinf.compare(special) == as2js::compare_t::COMPARE_EQUAL);
+    CPPUNIT_ASSERT(special.compare(pinf) == as2js::compare_t::COMPARE_EQUAL);
 
     special.set(-special.get()); // -inf
     CPPUNIT_ASSERT(!special.is_NaN());
@@ -336,13 +336,13 @@ void As2JsFloat64UnitTests::test_special_numbers()
     //CPPUNIT_ASSERT(!(special < r));
     //CPPUNIT_ASSERT(!(special <= r));
     CPPUNIT_ASSERT(special.get() != std::numeric_limits<double>::quiet_NaN());
-    CPPUNIT_ASSERT(special.compare(p) == as2js::COMPARE_LESS);
-    CPPUNIT_ASSERT(special.compare(r) == as2js::COMPARE_LESS);
-    CPPUNIT_ASSERT(r.compare(special) == as2js::COMPARE_GREATER);
+    CPPUNIT_ASSERT(special.compare(p) == as2js::compare_t::COMPARE_LESS);
+    CPPUNIT_ASSERT(special.compare(r) == as2js::compare_t::COMPARE_LESS);
+    CPPUNIT_ASSERT(r.compare(special) == as2js::compare_t::COMPARE_GREATER);
     CPPUNIT_ASSERT(special.classified_infinity() == -1);
 
-    CPPUNIT_ASSERT(pinf.compare(special) != as2js::COMPARE_EQUAL);
-    CPPUNIT_ASSERT(special.compare(pinf) != as2js::COMPARE_EQUAL);
+    CPPUNIT_ASSERT(pinf.compare(special) != as2js::compare_t::COMPARE_EQUAL);
+    CPPUNIT_ASSERT(special.compare(pinf) != as2js::compare_t::COMPARE_EQUAL);
 }
 
 

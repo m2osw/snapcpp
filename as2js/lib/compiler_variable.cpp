@@ -220,7 +220,7 @@ void Compiler::variable(Node::pointer_t variable_node, bool const side_effects_o
         variable_node->to_var_attributes();
         if(!constant)
         {
-            Message msg(MESSAGE_LEVEL_ERROR, AS_ERR_NEED_CONST, variable_node->get_position());
+            Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_NEED_CONST, variable_node->get_position());
             msg << "a variable cannot be a list of attributes unless it is made constant and '" << variable_node->get_string() << "' is not constant.";
         }
     }
