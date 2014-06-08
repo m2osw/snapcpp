@@ -58,20 +58,21 @@ struct node_type_info_t
 };
 
 
-uint64_t const              TEST_NODE_IS_NUMBER        = 0x0000000000000001;
-uint64_t const              TEST_NODE_IS_NAN           = 0x0000000000000002;
-uint64_t const              TEST_NODE_IS_INT64         = 0x0000000000000004;
-uint64_t const              TEST_NODE_IS_FLOAT64       = 0x0000000000000008;
-uint64_t const              TEST_NODE_IS_BOOLEAN       = 0x0000000000000010;
-uint64_t const              TEST_NODE_IS_TRUE          = 0x0000000000000020;
-uint64_t const              TEST_NODE_IS_FALSE         = 0x0000000000000040;
-uint64_t const              TEST_NODE_IS_STRING        = 0x0000000000000080;
-uint64_t const              TEST_NODE_IS_UNDEFINED     = 0x0000000000000100;
-uint64_t const              TEST_NODE_IS_NULL          = 0x0000000000000200;
-uint64_t const              TEST_NODE_IS_IDENTIFIER    = 0x0000000000000400;
-uint64_t const              TEST_NODE_ACCEPT_STRING    = 0x0000000000000800;
-uint64_t const              TEST_NODE_HAS_SIDE_EFFECTS = 0x0000000000001000;
-uint64_t const              TEST_NODE_IS_PARAM_MATCH   = 0x0000000000002000;
+uint64_t const              TEST_NODE_IS_NUMBER          = 0x0000000000000001;
+uint64_t const              TEST_NODE_IS_NAN             = 0x0000000000000002;
+uint64_t const              TEST_NODE_IS_INT64           = 0x0000000000000004;
+uint64_t const              TEST_NODE_IS_FLOAT64         = 0x0000000000000008;
+uint64_t const              TEST_NODE_IS_BOOLEAN         = 0x0000000000000010;
+uint64_t const              TEST_NODE_IS_TRUE            = 0x0000000000000020;
+uint64_t const              TEST_NODE_IS_FALSE           = 0x0000000000000040;
+uint64_t const              TEST_NODE_IS_STRING          = 0x0000000000000080;
+uint64_t const              TEST_NODE_IS_UNDEFINED       = 0x0000000000000100;
+uint64_t const              TEST_NODE_IS_NULL            = 0x0000000000000200;
+uint64_t const              TEST_NODE_IS_IDENTIFIER      = 0x0000000000000400;
+uint64_t const              TEST_NODE_ACCEPT_STRING      = 0x0000000000000800;
+uint64_t const              TEST_NODE_HAS_SIDE_EFFECTS   = 0x0000000000001000;
+uint64_t const              TEST_NODE_IS_PARAM_MATCH     = 0x0000000000002000;
+uint64_t const              TEST_NODE_IS_SWITCH_OPERATOR = 0x0000000000004000;
 
 
 // index from 0 to g_node_types_size - 1 to go through all the valid
@@ -91,7 +92,7 @@ node_type_info_t g_node_types[] =
         .f_type = as2js::Node::node_t::NODE_UNKNOWN,
         .f_name = "UNKNOWN",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_IS_SWITCH_OPERATOR
     },
     {
         .f_type = as2js::Node::node_t::NODE_ADD,
@@ -175,13 +176,13 @@ node_type_info_t g_node_types[] =
         .f_type = as2js::Node::node_t::NODE_GREATER,
         .f_name = "GREATER",
         .f_operator = ">",
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_IS_SWITCH_OPERATOR
     },
     {
         .f_type = as2js::Node::node_t::NODE_LESS,
         .f_name = "LESS",
         .f_operator = "<",
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_IS_SWITCH_OPERATOR
     },
     {
         .f_type = as2js::Node::node_t::NODE_LOGICAL_NOT,
@@ -253,7 +254,7 @@ node_type_info_t g_node_types[] =
         .f_type = as2js::Node::node_t::NODE_AS,
         .f_name = "AS",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_IS_SWITCH_OPERATOR
     },
     {
         .f_type = as2js::Node::node_t::NODE_ASSIGNMENT_ADD,
@@ -439,7 +440,7 @@ node_type_info_t g_node_types[] =
         .f_type = as2js::Node::node_t::NODE_DEFAULT,
         .f_name = "DEFAULT",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_IS_SWITCH_OPERATOR
     },
     {
         .f_type = as2js::Node::node_t::NODE_DELETE,
@@ -481,7 +482,7 @@ node_type_info_t g_node_types[] =
         .f_type = as2js::Node::node_t::NODE_EQUAL,
         .f_name = "EQUAL",
         .f_operator = "==",
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_IS_SWITCH_OPERATOR
     },
     {
         .f_type = as2js::Node::node_t::NODE_EXCLUDE,
@@ -535,7 +536,7 @@ node_type_info_t g_node_types[] =
         .f_type = as2js::Node::node_t::NODE_GREATER_EQUAL,
         .f_name = "GREATER_EQUAL",
         .f_operator = ">=",
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_IS_SWITCH_OPERATOR
     },
     {
         .f_type = as2js::Node::node_t::NODE_IDENTIFIER,
@@ -565,7 +566,7 @@ node_type_info_t g_node_types[] =
         .f_type = as2js::Node::node_t::NODE_IN,
         .f_name = "IN",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_IS_SWITCH_OPERATOR
     },
     {
         .f_type = as2js::Node::node_t::NODE_INCLUDE,
@@ -583,7 +584,7 @@ node_type_info_t g_node_types[] =
         .f_type = as2js::Node::node_t::NODE_INSTANCEOF,
         .f_name = "INSTANCEOF",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_IS_SWITCH_OPERATOR
     },
     {
         .f_type = as2js::Node::node_t::NODE_INT64,
@@ -601,7 +602,7 @@ node_type_info_t g_node_types[] =
         .f_type = as2js::Node::node_t::NODE_IS,
         .f_name = "IS",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_IS_SWITCH_OPERATOR
     },
     {
         .f_type = as2js::Node::node_t::NODE_LABEL,
@@ -613,7 +614,7 @@ node_type_info_t g_node_types[] =
         .f_type = as2js::Node::node_t::NODE_LESS_EQUAL,
         .f_name = "LESS_EQUAL",
         .f_operator = "<=",
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_IS_SWITCH_OPERATOR
     },
     {
         .f_type = as2js::Node::node_t::NODE_LIST,
@@ -643,7 +644,7 @@ node_type_info_t g_node_types[] =
         .f_type = as2js::Node::node_t::NODE_MATCH,
         .f_name = "MATCH",
         .f_operator = "~=",
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_IS_SWITCH_OPERATOR
     },
     {
         .f_type = as2js::Node::node_t::NODE_MAXIMUM,
@@ -679,7 +680,7 @@ node_type_info_t g_node_types[] =
         .f_type = as2js::Node::node_t::NODE_NOT_EQUAL,
         .f_name = "NOT_EQUAL",
         .f_operator = "!=",
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_IS_SWITCH_OPERATOR
     },
     {
         .f_type = as2js::Node::node_t::NODE_NULL,
@@ -829,13 +830,13 @@ node_type_info_t g_node_types[] =
         .f_type = as2js::Node::node_t::NODE_STRICTLY_EQUAL,
         .f_name = "STRICTLY_EQUAL",
         .f_operator = "===",
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_IS_SWITCH_OPERATOR
     },
     {
         .f_type = as2js::Node::node_t::NODE_STRICTLY_NOT_EQUAL,
         .f_name = "STRICTLY_NOT_EQUAL",
         .f_operator = "!==",
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_IS_SWITCH_OPERATOR
     },
     {
         .f_type = as2js::Node::node_t::NODE_STRING,
@@ -1039,6 +1040,26 @@ void As2JsNodeUnitTests::test_type()
             //std::cerr << " testing " << node->get_type_name() << std::endl;
             CPPUNIT_ASSERT(node->operator_to_string(g_node_types[i].f_type) == nullptr);
             CPPUNIT_ASSERT(as2js::Node::string_to_operator(node->get_type_name()) == as2js::Node::node_t::NODE_UNKNOWN);
+        }
+
+        if((g_node_types[i].f_flags & TEST_NODE_IS_SWITCH_OPERATOR) == 0)
+        {
+            // only NODE_PARAM_MATCH accepts this call
+            as2js::Node::pointer_t node_switch(new as2js::Node(as2js::Node::node_t::NODE_SWITCH));
+            CPPUNIT_ASSERT_THROW(node_switch->set_switch_operator(node_type), as2js::exception_internal_error);
+        }
+        else
+        {
+            as2js::Node::pointer_t node_switch(new as2js::Node(as2js::Node::node_t::NODE_SWITCH));
+            node_switch->set_switch_operator(node_type);
+            CPPUNIT_ASSERT(node_switch->get_switch_operator() == node_type);
+        }
+        if(node_type != as2js::Node::node_t::NODE_SWITCH)
+        {
+            // a valid operator, but not a valid node to set
+            CPPUNIT_ASSERT_THROW(node->set_switch_operator(as2js::Node::node_t::NODE_STRICTLY_EQUAL), as2js::exception_internal_error);
+            // not a valid node to get
+            CPPUNIT_ASSERT_THROW(node->get_switch_operator(), as2js::exception_internal_error);
         }
 
         if((g_node_types[i].f_flags & TEST_NODE_IS_PARAM_MATCH) == 0)

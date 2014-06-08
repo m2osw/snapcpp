@@ -274,7 +274,7 @@ Node::node_t Node::get_switch_operator() const
 {
     if(node_t::NODE_SWITCH != f_type)
     {
-        throw exception_internal_error("INTERNAL ERROR: set_switch_operator() called on a node which is not a switch node.");
+        throw exception_internal_error("INTERNAL ERROR: get_switch_operator() called on a node which is not a switch node.");
     }
 
     return f_switch_operator;
@@ -295,7 +295,9 @@ Node::node_t Node::get_switch_operator() const
  *
  * \exception exception_internal_error
  * If the function is called on a node of a type other than NODE_SWITCH
- * then this exception is raised.
+ * then this exception is raised. It will also raise this exception
+ * if the specified operator is not an operator supported by the
+ * switch statement.
  *
  * \param[in] op  The new operator to save in this switch statement.
  */
@@ -304,6 +306,30 @@ void Node::set_switch_operator(node_t op)
     if(node_t::NODE_SWITCH != f_type)
     {
         throw exception_internal_error("INTERNAL ERROR: set_switch_operator() called on a node which is not a switch node.");
+    }
+
+    switch(op)
+    {
+    case node_t::NODE_UNKNOWN:
+    case node_t::NODE_STRICTLY_EQUAL:
+    case node_t::NODE_EQUAL:
+    case node_t::NODE_NOT_EQUAL:
+    case node_t::NODE_STRICTLY_NOT_EQUAL:
+    case node_t::NODE_MATCH:
+    case node_t::NODE_IN:
+    case node_t::NODE_IS:
+    case node_t::NODE_AS:
+    case node_t::NODE_INSTANCEOF:
+    case node_t::NODE_LESS:
+    case node_t::NODE_LESS_EQUAL:
+    case node_t::NODE_GREATER:
+    case node_t::NODE_GREATER_EQUAL:
+    case node_t::NODE_DEFAULT:
+        break;
+
+    default:
+        throw exception_internal_error("INTERNAL ERROR: set_switch_operator() called with an operator which is not valid for switch.");
+
     }
 
     f_switch_operator = op;
