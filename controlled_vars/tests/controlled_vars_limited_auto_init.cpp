@@ -63,11 +63,12 @@ int main(int /*argc*/, char * /*argv*/[])
 	// This test fails when using 123 directly because the compiler
 	// knows to convert the value to a bool! so we really have to
 	// trick it to get a value other than just 0 or 1
-	char boolean(123);
+	char const boolean(123);
+	char const *boolean_ptr(&boolean);
 	try {
 		// this must throw because the check uses a template<class L>
 		// for the type instead of casting to bool first!
-		t.f_false = *reinterpret_cast<bool *>(&boolean);
+		t.f_false = *reinterpret_cast<bool const *>(boolean_ptr);
 		fprintf(stderr, "error: expected t.f_false to throw an exception on 256.\n");
 		e = 1;
 	}
