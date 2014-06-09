@@ -33,8 +33,8 @@ cmake_minimum_required(VERSION 2.8)
 ## Controlled Variables Version
 ##
 set(CONTROLLED_VARS_MAJOR 1)
-set(CONTROLLED_VARS_MINOR 4)
-set(CONTROLLED_VARS_PATCH 0)
+set(CONTROLLED_VARS_MINOR 3)
+set(CONTROLLED_VARS_PATCH 7)
 
 ##
 ## Controlled Variables Generator
