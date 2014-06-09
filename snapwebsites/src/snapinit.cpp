@@ -97,6 +97,14 @@ namespace
             advgetopt::getopt::optional_argument
         },
         {
+            '\0',
+            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE,
+            "debug",
+            nullptr,
+            "Start the server and backend services in debug mode.",
+            advgetopt::getopt::no_argument
+        },
+        {
             'd',
             advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE,
             "detach",
@@ -169,34 +177,49 @@ class process
 public:
     typedef std::shared_ptr<process> pointer_t;
 
-    typedef enum { Server, Backend } type_t;
+    enum type_t
+    {
+        Server,
+        Backend
+    };
 
-    process( const QString& n )
+    process( QString const& n )
         : f_type(Backend)
+        //, f_path("") -- auto-init
+        //, f_config_filename("") -- auto-init
         , f_name(n)
-        , f_pid(0)
-        , f_exit(0)
-        , f_startcount(0)
-        , f_disabled(false)
+        //, f_pid(0) -- auto-init
+        //, f_exit(0) -- auto-init
+        //, f_startcount(0) -- auto-init
+        //, f_timer() -- auto-init
+        //, f_disabled(false) -- auto-init
+        //, f_debug(false) -- auto-init
     {
     }
 
     process()
         : f_type(Server)
+        //, f_path("") -- auto-init
+        //, f_config_filename("") -- auto-init
         , f_name("snapserver")
-        , f_pid(0)
-        , f_exit(0)
-        , f_startcount(0)
-        , f_disabled(false)
+        //, f_pid(0) -- auto-init
+        //, f_exit(0) -- auto-init
+        //, f_startcount(0) -- auto-init
+        //, f_timer() -- auto-init
+        //, f_disabled(false) -- auto-init
+        //, f_debug(false) -- auto-init
     {
     }
 
-    void set_path( const QString& path )     { f_path = path; }
-    void set_config( const QString& config ) { f_config_filename = config; }
+    void set_path( QString const& path )     { f_path = path; }
+    void set_config( QString const& config ) { f_config_filename = config; }
+    void set_debug( bool const debug )       { f_debug = debug; }
 
-    bool   run();
-    bool   is_running();
-    void   kill();
+    bool    exists() const;
+    bool    run();
+    bool    is_running();
+    void    stop_service();
+    void    kill_service();
     //
     pid_t   pid()        const { return f_pid;             }
     QString name()       const { return f_name;            }
@@ -205,21 +228,42 @@ public:
     int     elapsed()    const { return f_timer.elapsed(); }
     bool    disabled()   const { return f_disabled;        }
     //
-    void   set_disabled( const bool val ) { f_disabled = val; }
+    void    set_disabled( bool const val ) { f_disabled = val; }
 
 private:
-    type_t   f_type;
-    QString  f_path;
-    QString  f_config_filename;
-    QString  f_name;
-    int      f_pid;
-    int      f_exit;
-    int      f_startcount;
-    QTime    f_timer;
-    bool     f_disabled;
+    type_t const                f_type; // mandatory because of 'const', no need for controlled_vars
+    QString                     f_path;
+    QString                     f_config_filename;
+    QString                     f_name;
+    controlled_vars::zint32_t   f_pid;
+    controlled_vars::zint32_t   f_exit;
+    controlled_vars::zint32_t   f_startcount;
+    QTime                       f_timer;
+    controlled_vars::flbool_t   f_disabled;
+    controlled_vars::flbool_t   f_debug;
 
     void handle_status( const int pid, const int status );
 };
+
+
+/** \brief Verify that this executable exists.
+ *
+ * This function generates the full path to the executable to use to
+ * start this process. If that full path represents an existing file
+ * and that file has it's executable flag set, then the function
+ * returns true. Otherwise it returns false.
+ *
+ * When the snapinit tool starts, it first checks whether all the
+ * services that are required to start exist. If not then it fails
+ * because if any one service is missing, something is awry anyway.
+ *
+ * \return true if the file exists and can be executed.
+ */
+bool process::exists() const
+{
+    QString const cmd( QString("%1/%2").arg(f_path).arg( f_type == Server ? "snapserver" : "snapbackend") );
+    return access(cmd.toUtf8().data(), R_OK | X_OK) == 0;
+}
 
 
 bool process::run()
@@ -231,18 +275,22 @@ bool process::run()
     {
         // child
         //
-        const QString cmd( QString("%1/%2").arg(f_path).arg( (f_type == Server)? "snapserver": "snapbackend") );
+        QString const cmd( QString("%1/%2").arg(f_path).arg( f_type == Server ? "snapserver" : "snapbackend") );
         QStringList qargs;
-        qargs << cmd
-              << "-c" << f_config_filename;
+        qargs << cmd;
+        if(f_debug)
+        {
+            qargs << "--debug";
+        }
+        qargs << "--config" << f_config_filename;
         //
         if( f_type == Backend )
         {
-            qargs << "-a" << f_name;
+            qargs << "--action" << f_name;
         }
 
         std::vector<std::string> args;
-        std::vector<const char *> args_p;
+        std::vector<char const *> args_p;
         //
         for( auto arg : qargs )
         {
@@ -253,12 +301,16 @@ bool process::run()
         args_p.push_back(NULL);
 
         // Quiet up the console by redirecting these from/to /dev/null
+        // except in debug mode
         //
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-result"
-        freopen( "/dev/null", "r", stdin  );
-        freopen( "/dev/null", "w", stdout );
-        freopen( "/dev/null", "w", stderr );
+        if(!f_debug)
+        {
+            freopen( "/dev/null", "r", stdin  );
+            freopen( "/dev/null", "w", stdout );
+            freopen( "/dev/null", "w", stderr );
+        }
 
         // Execute the child processes
         //
@@ -312,7 +364,7 @@ bool process::is_running()
     }
 
     int status = 0;
-    const int the_pid = waitpid( f_pid, &status, WNOHANG );
+    int const the_pid = waitpid( f_pid, &status, WNOHANG );
     if( the_pid == 0 )
     {
         return true;
@@ -324,7 +376,7 @@ bool process::is_running()
 }
 
 
-void process::kill()
+void process::stop_service()
 {
     if( f_pid == 0 )
     {
@@ -332,11 +384,22 @@ void process::kill()
         return;
     }
 
-    const QString command( QString("%1/snapsignal -c %2 -a %3 STOP").arg(f_path).arg(f_config_filename).arg(f_name) );
-    const int retval = system( command.toUtf8().data() );
+    // run the corresponding snapsignal command to stop this process
+    QString const command( QString("%1/snapsignal -c %2 -a %3 STOP").arg(f_path).arg(f_config_filename).arg(f_name) );
+    int const retval = system( command.toUtf8().data() );
     if( retval == -1 )
     {
-        SNAP_LOG_ERROR() << "Cannot execute command '" << command << "', so " << f_name << " has not been halted!";
+        SNAP_LOG_ERROR() << "Cannot execute command '" << command << "', so " << f_name << " won't be halted properly!";
+        return;
+    }
+}
+
+
+void process::kill_service()
+{
+    if( f_pid == 0 )
+    {
+        // Do nothing if no process running...
         return;
     }
 
@@ -363,6 +426,7 @@ void process::kill()
         {
             SNAP_LOG_WARNING() << "process " << f_name << ", pid=" << f_pid << ", failed to respond to signal, using SIGKILL...";
             ::kill( f_pid, SIGKILL );
+            sleep(1);
         }
         else if( timeout < -1 )
         {
@@ -410,6 +474,7 @@ private:
     bool backend_ready();
     void create_server_process();
     void create_backend_process( QString const& name );
+    bool verify_process( QString const& name );
     void start_processes();
     void monitor_processes();
     void terminate_processes();
@@ -468,6 +533,12 @@ snap_init::snap_init( int argc, char *argv[] )
     for(int idx(0); idx < max_services; ++idx)
     {
         QString service(service_list[idx].trimmed());
+        if(service == "snapserver")
+        {
+            // internally we just call it server everywhere else
+            // (except the executable, of course)
+            service = "server";
+        }
         f_services.push_back(service.toStdString());
 
         if(list)
@@ -485,6 +556,7 @@ snap_init::snap_init( int argc, char *argv[] )
 
 snap_init::~snap_init()
 {
+    remove_lock();
 }
 
 
@@ -554,7 +626,7 @@ void snap_init::validate()
 
     if( ((command == "start") || (command == "restart")) && f_services.empty() )
     {
-        throw std::invalid_argument("Must specify at least one service in the services parameter in the configuration file");
+        throw std::invalid_argument("Must specify at least one service in the \"services=...\" parameter of the snapserver.conf configuration file");
     }
     else if( command == "stop" )
     {
@@ -595,10 +667,30 @@ bool snap_init::backend_ready()
     {
         SNAP_LOG_FATAL() << "snap_websites context does not exist! Exiting.";
         exit(1);
+        snap::NOTREACHED();
     }
 
     QtCassandra::QCassandraTable::pointer_t sites_table( context->findTable( snap::get_name(snap::SNAP_NAME_SITES) ) );
     return static_cast<bool>(sites_table);
+}
+
+
+bool snap_init::verify_process( QString const& name )
+{
+    // initialize a server as usual
+    process::pointer_t p;
+    if(name == "server")
+    {
+        p.reset( new process() );
+    }
+    else
+    {
+        p.reset( new process( name ) );
+    }
+    p->set_path( f_opt.get_string("binary_path").c_str() );
+    p->set_config( f_opt.get_string("config").c_str() );
+    // check whether the binary can be started
+    return p->exists();
 }
 
 
@@ -607,6 +699,7 @@ void snap_init::create_server_process()
     process::pointer_t p( new process() );
     p->set_path( f_opt.get_string("binary_path").c_str() );
     p->set_config( f_opt.get_string("config").c_str() );
+    p->set_debug( f_opt.is_defined("debug") );
     p->run();
     f_process_list.push_back( p );
 }
@@ -623,6 +716,7 @@ void snap_init::create_backend_process( QString const& name )
     process::pointer_t p( new process( name ) );
     p->set_path( f_opt.get_string("binary_path").c_str() );
     p->set_config( f_opt.get_string("config").c_str() );
+    p->set_debug( f_opt.is_defined("debug") );
     p->run();
     f_process_list.push_back( p );
 }
@@ -672,32 +766,73 @@ void snap_init::monitor_processes()
 
 void snap_init::terminate_processes()
 {
+    // first send a STOP to each process, all at once
     for( auto p : f_process_list )
     {
-        p->kill();
+        p->stop_service();
+    }
+
+    // give them a second to exit
+    sleep(1);
+
+    // then wait on all the processes still running
+    for( auto p : f_process_list )
+    {
+        p->kill_service();
     }
 }
 
 
 void snap_init::start_processes()
 {
+    // lock snapinit so we cannot start more than one
     f_lock_file.open( QFile::ReadWrite );
-    for( auto opt : f_services )
+
+    // check whether all executable are available
+    bool failed(false);
+    for( auto service : f_services )
+    {
+        if(!verify_process(service.c_str()))
+        {
+            failed = true;
+            SNAP_LOG_FATAL("FATAL ERROR: process for service \"")(service)("\" was not found. snapinit will stop without starting anything.");
+        }
+    }
+    // also verify that the snapsignal tool is accessible
+    QString const snapsignal( QString("%1/snapsignal").arg(f_opt.get_string("binary_path").c_str()) );
+    if(access(snapsignal.toUtf8().data(), R_OK | X_OK) != 0)
+    {
+        failed = true;
+        SNAP_LOG_FATAL("FATAL ERROR: process for service \"snapsignal\" was not found. snapinit will stop without starting anything.");
+    }
+    if(failed)
+    {
+        SNAP_LOG_INFO("Premature exit because one or more services cannot be started (their executable are not available.) This may be because you changed the binary path to an invalid location.");
+        // this shows the user if he's looking the screen, otherwise the
+        // log are likely very silent!
+        std::cerr << "Premature exit because one or more services cannot be started (their executable are not available.) This may be because you changed the binary path to an invalid location. More information can be found in the snapinit.log file." << std::endl;
+        return;
+    }
+
+    // start all the services we can start at this time (it may just be
+    // the server.)
+    for( auto service : f_services )
     {
         //
-        if( opt == "server" )
+        if( service == "server" )
         {
             create_server_process();
         }
         else
         {
-            create_backend_process( opt.c_str() );
+            create_backend_process( service.c_str() );
         }
     }
 
+    // sleep until stopped
     snap::server::udp_server_t udp_signals( snap::server::udp_get_server( UDP_SERVER ) );
     //
-    while( true )
+    for(;;)
     {
         monitor_processes();
         //
@@ -707,7 +842,7 @@ void snap_init::start_processes()
             terminate_processes();
             break;
         }
-        sleep( 1 );
+        //sleep( 1 ); -- we already sleep in the timed_recv() call
     }
 
     remove_lock();

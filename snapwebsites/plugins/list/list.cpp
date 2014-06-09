@@ -82,9 +82,6 @@ char const *get_name(name_t name)
     case SNAP_NAME_LIST_STANDALONELIST: // --action standalonelist
         return "standalonelist";
 
-    case SNAP_NAME_LIST_STOP: // STOP signal
-        return "STOP";
-
     case SNAP_NAME_LIST_TABLE:
         return "list";
 
@@ -815,6 +812,13 @@ void list::on_backend_action(QString const& action)
             snap_backend::message_t message;
             if( backend->pop_message( message, 5 * 60 * 1000 ) )
             {
+                // quickly end this process if the user requested a stop
+                if(backend->stop_received())
+                {
+                    // clean STOP
+                    return;
+                }
+
                 // Because there is a delay of LIST_PROCESSING_LATENCY
                 // between the time when the user generates the PING and
                 // the time we can make use of the data, we sleep here
