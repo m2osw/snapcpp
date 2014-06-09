@@ -33,7 +33,7 @@ class snap_cassandra
 public:
     snap_cassandra();
 
-    void connect( snap_config* config );
+    void connect( snap_config const& config );
     void init_context();
     QtCassandra::QCassandraContext::pointer_t get_snap_context();
 
