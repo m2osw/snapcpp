@@ -301,97 +301,21 @@ void snap_backend::run_backend()
             throw snap_child_exception_no_server("snap_backend::process(): The p_server weak pointer could not be locked");
         }
 
-        const QString uri( p_server->get_parameter("__BACKEND_URI") );
-        //
+        // verify that the "sites" table exists
         QtCassandra::QCassandraTable::pointer_t sites_table = f_context->findTable(get_name(SNAP_NAME_SITES));
-#if 0
-        // TODO: this code needs to be moved to snapinit
-        //
-        if( !sites_table )
-        {
-            if( !uri.isEmpty())
-            {
-                // if it failed and the backend was specific, then we've got a
-                // real problem so we have to stop with a fatal error
-                //
-                // the whole table is still empty
-                SNAP_LOG_FATAL("The 'sites' table is empty or nonexistent! Likely you have not set up the domains and websites tables, either. Exiting!");
-                return;
-            }
-
-            // TODO: we probably want to move the PING and STOP events sent via
-            //       UDP to this function because it can be used in the wait of
-            //       the 'sites' table and we could also make use of the loop
-            //       over the 'sites' table in the backends...
-            //       This would also offer all backends to run instead of having
-            //       some such as sendmail and pagelist capturing the action and
-            //       having their own infinite loops.
-            //       Finally, we would have one place where we can easily define
-            //       the amount of time we should wait and other similar
-            //       parameters in link with the loop.
-
-            // try up to 60 times or 5 minutes
-            for(int i(0); i < 60; ++i)
-            {
-                // try getting the sites_table
-                sites_table = f_context->findTable(get_name(SNAP_NAME_SITES));
-                if(sites_table)
-                {
-                    break;
-                }
-
-                if(i == 0)
-                {
-                    SNAP_LOG_TRACE("The 'sites' table does not exist yet. Waiting...");
-                }
-
-                // otherwise wait 5 seconds before trying again
-                sleep(5);
-                f_context->clearCache();
-            }
-            //
-            SNAP_LOG_TRACE("Got the 'sites' table, processing...");
-
-            // TODO: how do we know that all the tables were created?
-            //       actually, that could happen at any time, we may end up
-            //       installing a new plugin that creates a table that's
-            //       required by the backend at some point and the table
-            //       won't exist in the f_context... at least here we
-            //       wait 60 seconds to increase changes that our
-            //       backends won't crash too soon after the first
-            //       initialization of the server.
-            //
-            //       However, the libQtCassandra library is NOT currently
-            //       testing to see whether a table exists after the first
-            //       initialization. That is probably the worst problem at
-            //       this point.
-            //
-            //       Finally, right now we've been testing with environment
-            //       using 1 node. That's definitively not enough as a 3
-            //       local nodes environment functions quite differently
-            //       already, and then an environment with separate clusters
-            //       where updates take even more time between nodes.
-            sleep(60);
-            f_context->clearCache();
-            sites_table = f_context->findTable(get_name(SNAP_NAME_SITES));
-            if(!sites_table)
-            {
-                // the whole table is still missing after 5 minutes!
-                // in this case it is an error instead of a fatal error
-                SNAP_LOG_ERROR("Lost the 'sites' table when re-resetting the context cache.");
-                return;
-            }
-        }
-#endif
-        //
         if(!sites_table)
         {
             // the whole table is still missing after 5 minutes!
             // in this case it is an error instead of a fatal error
-            SNAP_LOG_ERROR("After five minutes wait, the 'sites' table is still empty or nonexistent! Likely you have not set up the domains and websites tables, either. Exiting!");
-            return;
+            SNAP_LOG_ERROR("The 'sites' table is still empty or nonexistent! Likely you have not set up the domains and websites tables, either. Exiting this backend!");
+
+            // this applies to all the backends so we can as well exit
+            // immediately instead of testing again and again
+            exit(1);
+            NOTREACHED();
         }
 
+        QString const uri( p_server->get_parameter("__BACKEND_URI") );
         if( !uri.isEmpty() )
         {
             process_backend_uri(uri);
@@ -421,6 +345,9 @@ void snap_backend::run_backend()
                 }
             }
         }
+
+        // return normally if no exception occured
+        return;
     }
     catch( snap_exception const& except )
     {

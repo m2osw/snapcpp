@@ -245,20 +245,20 @@ namespace
             advgetopt::getopt::optional_argument
         },
         {
-            'c',
-            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
-            "config",
-            "/etc/snapwebsites/snapserver.conf",
-            "Specify the configuration file to load at startup.",
-            advgetopt::getopt::optional_argument
-        },
-        {
             'b',
             advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE,
             "background",
             nullptr,
             "Detaches the server to the background (default is stay in the foreground).",
             advgetopt::getopt::no_argument
+        },
+        {
+            'c',
+            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
+            "config",
+            "/etc/snapwebsites/snapserver.conf",
+            "Specify the configuration file to load at startup.",
+            advgetopt::getopt::optional_argument
         },
         {
             'd',
