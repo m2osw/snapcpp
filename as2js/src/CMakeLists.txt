@@ -35,8 +35,11 @@
 project(as2js-compiler)
 
 include_directories(
+    SYSTEM
     ${CONTROLLEDVARS_INCLUDE_DIRS}
     ${ADVGETOPT_INCLUDE_DIRS}
+)
+include_directories(
     ${as2js_compiler_BINARY_DIR}/include
     ${as2js_compiler_SOURCE_DIR}/include
     ${as2js_SOURCE_DIR}
