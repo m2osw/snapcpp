@@ -1,8 +1,9 @@
 //
 // File:	iplock.cpp
-// Object:	Generates the iplock tool
+// Object:	Allow users to easily add and remove IPs to/from a blacklist
+//              of IP defined in an iptables firewall
 //
-// Copyright:	Copyright (c) 2007-2012 Made to Order Software Corp.
+// Copyright:	Copyright (c) 2007-2014 Made to Order Software Corp.
 //		All Rights Reserved.
 //
 // http://snapwebsites.org/
@@ -63,32 +64,38 @@ private:
 
 
 configuration::configuration()
-	: //f_variables -- auto-init
-	  f_ports_defined(false)
-	  //f_ports -- auto-init
+	//: f_variables -- auto-init
+	: f_ports_defined(false)
+	//, f_ports -- auto-init
 {
 	FILE *f = fopen("/etc/network/iplock.conf", "r");
-	if(f == NULL) {
+	if(f == NULL)
+	{
 		// no configuration
 		return;
 	}
 
 	char buf[256];
 	int line = 0;
-	while(fgets(buf, sizeof(buf) - 1, f) != NULL) {
+	while(fgets(buf, sizeof(buf) - 1, f) != NULL)
+	{
 		++line;
 		buf[sizeof(buf) - 1] = '\0';
 		char *s = buf;
-		while(isspace(*s)) {
+		while(isspace(*s))
+		{
 			++s;
 		}
-		if(*s == '\0' || *s == '#') {
+		if(*s == '\0' || *s == '#')
+		{
 			// empty lines & comments
 			continue;
 		}
 		const char *name = s;
-		while(*s != '=' && *s != '\0') {
-			if(isspace(*s)) {
+		while(*s != '=' && *s != '\0')
+		{
+			if(isspace(*s))
+			{
 				*s = '\0';
 				do {
 					++s;
@@ -97,26 +104,32 @@ configuration::configuration()
 			}
 			++s;
 		}
-		if(*s != '=') {
+		if(*s != '=')
+		{
 			fprintf(stderr, "iplock:error:configuration file variable name not followed by '=' (%s)\n", buf);
 			exit(1);
 		}
 		*s++ = '\0';
-		while(isspace(*s)) {
+		while(isspace(*s))
+		{
 			++s;
 		}
 		const char *value = s;
-		while(*s != '\0') {
+		while(*s != '\0')
+		{
 			++s;
 		}
-		while(s > value && isspace(s[-1])) {
+		while(s > value && isspace(s[-1]))
+		{
 			--s;
 		}
 		*s = '\0';
-		if(s > value) {
+		if(s > value)
+		{
 			// remove quotes if any
 			if((*value == '"'  && s[-1] == '"')
-			|| (*value == '\'' && s[-1] == '\'')) {
+			|| (*value == '\'' && s[-1] == '\''))
+			{
 				s[-1] = '\0';
 				++value;
 			}
@@ -131,17 +144,22 @@ configuration::configuration()
 
 const configuration::ports_t configuration::ports()
 {
-	if(!f_ports_defined) {
+	if(!f_ports_defined)
+	{
 		f_ports_defined = true;
 		const std::string prts( operator [] ("ports") );
 		const char *s = prts.c_str();
-		while(*s != '\0') {
-			while(*s == ',' || isspace(*s)) {
+		while(*s != '\0')
+		{
+			while(*s == ',' || isspace(*s))
+			{
 				++s;
 			}
-			if(*s != '\0') {
+			if(*s != '\0')
+			{
 				const char *p(s);
-				while(*s != '\0' && *s != ',' && !isspace(*s)) {
+				while(*s != '\0' && *s != ',' && !isspace(*s))
+				{
 					++s;
 				}
 				f_ports.push_back(std::string(p, s - p));
@@ -170,18 +188,24 @@ void block_ip(configuration& conf, const char *ip, bool quiet)
 
 	// repeat the block for each specified port
 	for(configuration::ports_t::const_iterator p(ports.begin());
-			p != ports.end(); ++p) {
+			p != ports.end(); ++p)
+	{
 		std::string cmd(conf["block"]);
 		size_t port_position(cmd.find("[port]"));
 		cmd.replace(port_position, 6, *p);
 		size_t ip_position(cmd.find("[ip]"));
 		cmd.replace(ip_position, 4, ip);
-		if(quiet) {
+		if(quiet)
+		{
 			cmd += " 2>/dev/null";
 		}
-		system(cmd.c_str());
+		if(system(cmd.c_str()) != 0)
+		{
+			perror("firewall command failed");
+		}
 	}
 }
+
 
 void unblock_ip(configuration& conf, const char *ip, bool quiet)
 {
@@ -189,16 +213,21 @@ void unblock_ip(configuration& conf, const char *ip, bool quiet)
 
 	// repeat the unblock for each specified port
 	for(configuration::ports_t::const_iterator p(ports.begin());
-			p != ports.end(); ++p) {
+			p != ports.end(); ++p)
+	{
 		std::string cmd(conf["unblock"]);
 		size_t port_position(cmd.find("[port]"));
 		cmd.replace(port_position, 6, *p);
 		size_t ip_position(cmd.find("[ip]"));
 		cmd.replace(ip_position, 4, ip);
-		if(quiet) {
+		if(quiet)
+		{
 			cmd += " 2>/dev/null";
 		}
-		system(cmd.c_str());
+		if(system(cmd.c_str()) != 0)
+		{
+			perror("firewall command failed");
+		}
 	}
 }
 
@@ -208,17 +237,23 @@ void verify_ip(const char *ip)
 	int c(1);
 	int n(-1);
 	const char *s(ip);
-	while(*s != '\0') {
-		if(*s >= '0' && *s <= '9') {
-			if(n == -1) {
+	while(*s != '\0')
+	{
+		if(*s >= '0' && *s <= '9')
+		{
+			if(n == -1)
+			{
 				n = *s - '0';
 			}
-			else {
+			else
+			{
 				n = n * 10 + *s - '0';
 			}
 		}
-		else if(*s == '.') {
-			if(n < 0 || n > 255) {
+		else if(*s == '.')
+		{
+			if(n < 0 || n > 255)
+			{
 				fprintf(stderr, "iplock:error:IP numbers are limited to a value between 0 and 255. \"%s\" is invalid.\n", ip);
 				exit(1);
 			}
@@ -226,13 +261,15 @@ void verify_ip(const char *ip)
 			n = -1;
 			++c;
 		}
-		else {
+		else
+		{
 			fprintf(stderr, "iplock:error:IP addresses are currently limited to IPv4 syntax only (a.b.c.d) \"%s\" is invalid.\n", ip);
 			exit(1);
 		}
 		++s;
 	}
-	if(c != 4 || n == -1) {
+	if(c != 4 || n == -1)
+	{
 		fprintf(stderr, "iplock:error:IP addresses are currently limited to IPv4 syntax with exactly 4 numbers (a.b.c.d), %d found in \"%s\" is invalid.\n", c, ip);
 		exit(1);
 	}
@@ -245,31 +282,39 @@ int main(int argc, const char *argv[])
 
 	bool block(true);
 	bool quiet(false);
-	for(int i = 1; i < argc; ++i) {
+	for(int i = 1; i < argc; ++i)
+	{
 		if(strcmp(argv[i], "-h") == 0
-		|| strcmp(argv[i], "--help") == 0) {
+		|| strcmp(argv[i], "--help") == 0)
+		{
 			usage();
 			/*NOTREACHED*/
 		}
 		if(strcmp(argv[i], "-q") == 0
-		|| strcmp(argv[i], "--quiet") == 0) {
+		|| strcmp(argv[i], "--quiet") == 0)
+		{
 			quiet = true;
 		}
 		else if(strcmp(argv[i], "-r") == 0
-		|| strcmp(argv[i], "--remove") == 0) {
+		|| strcmp(argv[i], "--remove") == 0)
+		{
 			block = false;
 		}
 		else if(strcmp(argv[i], "-b") == 0
-		|| strcmp(argv[i], "--block") == 0) {
+		|| strcmp(argv[i], "--block") == 0)
+		{
 			block = true;
 		}
-		else if(argv[i][0] == '-') {
+		else if(argv[i][0] == '-')
+		{
 			fprintf(stderr, "iplock:error:unknown command line flag \"%s\".\n", argv[i]);
 			exit(1);
 		}
-		else {
+		else
+		{
 			verify_ip(argv[i]);
-			if(block) {
+			if(block)
+			{
 				block_ip(conf, argv[i], quiet);
 			}
 			else {

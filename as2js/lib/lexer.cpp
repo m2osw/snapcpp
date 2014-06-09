@@ -234,11 +234,11 @@ Lexer::char_type_t Lexer::char_type(Input::char_t c)
 
 
 
-int64_t Lexer::read_hex(long max)
+int64_t Lexer::read_hex(unsigned long max)
 {
     int64_t result(0);
     Input::char_t c(getc());
-    long p(0);
+    unsigned long p(0);
     for(; (f_char_type & CHAR_HEXDIGIT) != 0 && p < max; ++p)
     {
         if(c <= '9')
@@ -269,11 +269,11 @@ int64_t Lexer::read_hex(long max)
 }
 
 
-int64_t Lexer::read_octal(Input::char_t c, long max)
+int64_t Lexer::read_octal(Input::char_t c, unsigned long max)
 {
     int64_t result(c - '0');
     c = getc();
-    for(long p(1); c >= '0' && c <= '7' && p < max; ++p, c = getc())
+    for(unsigned long p(1); c >= '0' && c <= '7' && p < max; ++p, c = getc())
     {
         result = result * 8 + c - '0';
     }
